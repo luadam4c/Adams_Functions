@@ -16,12 +16,15 @@ function h = bar_w_CI(h, data, low, high, varargin)
 %       /home/Matlab/Downloaded_Functions/rgb.m
 % Used by:
 %       /media/adamX/Paula_IEIs/paula_iei3.m
-%        /media/adamX/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
+%       /media/adamX/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
 %
 % File History: 
 % 2017-10-19 - Moved from paula_iei3.m
 % 2017-10-19 - Added input parser and various optional arguments
 %
+
+%% Parameters
+barColor = 'blue';
 
 %% Default values for optional arguments
 cILineWidthDefault = 2;             % default line width for CIs
@@ -122,7 +125,7 @@ hold on;
 if nRows == 1       % Data is not grouped
     % Make each bar a different color 
     %% b.CData = colormap(lines(nCols));    % TODO: Not working!
-    b.FaceColor = rgb('cyan');
+    b.FaceColor = rgb(barColor);
        
     for iCol = 1:nCols              % for each column
         % Draw error bar

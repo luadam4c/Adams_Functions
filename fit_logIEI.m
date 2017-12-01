@@ -1,6 +1,6 @@
-function [model1, model2, model3, outparams] = fit_logIEI (logData, identifier, varargin)
+function [model0, model1, pdfModel2, pdfModel3, outparams] = fit_logIEI (logData, identifier, varargin)
 %% Fit log(IEI) logData to curves
-% Usage: [model1, model2, model3, outparams] = fit_logIEI (logData, identifier, varargin)
+% Usage: [model0, model1, pdfModel2, pdfModel3, outparams] = fit_logIEI (logData, identifier, varargin)
 % Explanation:
 %       TODO
 % Side Effects:
@@ -30,9 +30,13 @@ function [model1, model2, model3, outparams] = fit_logIEI (logData, identifier, 
 %       /media/adamX/Paula_IEIs/paula_iei4.m
 %
 % File History: 
-% 2017-10-19 - Moved from paula_isi2.m
-% 2017-10-19 - Changed cutoff to parameter xLimits
-% 2017-10-19 - Added XUnit and TruncateFlag
+% 2017-11-29 - Modified from fit_IEI.m
+% 2017-11-29 - Added model0 (kernel distribution)
+% 2017-11-29 - Now uses mle() instead of fistgmdist() to fit two Gaussians
+% 2017-11-29 - Added lower bounds and upper bounds to mle fits
+% 2017-11-30 - pdfModel1 is now a function whereas pdfPlotModel1 is a vector
+% 2017-11-30 - Added spacing, threshold and void
+% 2017-12-01 - threshold, void -> threshold1, void1, threshold2, void2
 
 %% Parameters
 nPoints = 500;                      % number of points for plotting pdfs
@@ -48,7 +52,6 @@ xLimitsDefault = [];                % default x limits of histogram
 truncateFlagDefault = false;        % whether to truncate logData by default
 outFolderDefault = '';              % default directory for saving plots
 plotFlagDefault = true;             % whether to plot by default
-skipModel3Default = false;          % whether to skip model 3 by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -80,8 +83,6 @@ addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'nonempty'}));
 addParameter(iP, 'PlotFlag', plotFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'SkipModel3', skipModel3Default, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, logData, identifier, varargin{:});
@@ -90,7 +91,6 @@ xLimits      = iP.Results.XLimits;
 truncateFlag = iP.Results.TruncateFlag;
 outFolder    = iP.Results.OutFolder;
 plotFlag     = iP.Results.PlotFlag;
-skipModel3   = iP.Results.SkipModel3;
 
 % Set dependent argument defaults
 if isempty(xUnit)
@@ -117,6 +117,9 @@ end
 npts = length(logData);
 logMeanIEI = log(mean(exp(logData)));
 logMedianIEI = log(median(exp(logData)));
+minLogIEI = min(logData);
+maxLogIEI = max(logData);
+stdLogIEI = std(logData);
 
 % Number of bins is square root of npts logData count
 %   Cocatre-Zilgien & Delcomyn, 1992 
@@ -131,6 +134,29 @@ harea = binWidth * npts;            % total histogram area
 x = linspace(xLimits(1), xLimits(2), nPoints)';
 
 try
+    % Fit logData to a kernel distribution using Gaussian kernels
+    model0 = fitdist(logData, 'Kernel');
+
+    % TODO: Fit logData to a kernel distribution using Epanechnikov (parabolic) kernels
+%    model0 = fitdist(logData, 'Kernel', 'Kernel', 'epanechnikov');
+
+    % TODO: Fit logData to a kernel distribution using Gaussian kernels
+    %   and using a tenth of the standard deviation as the bandwidth
+%    model0 = fitdist(logData, 'Kernel', 'Bandwidth', stdLogIEI/10);
+
+    % Get pdf and scaled pdf for the fit
+    pdfModel0 = @(X) pdf(model0, X);
+    pdfPlotModel0 = harea * pdfModel0(x);
+
+    % Find largest (in x) and second largest modes of the kernel distribution
+    [~, locs] = findpeaks(pdfPlotModel0);
+    mode1Model0 = x(locs(end-1));
+    mode2Model0 = x(locs(end));
+catch
+    model0 = [];
+end
+
+try
     % Fit logData to one Gaussian
     model1 = fitgmdist(logData, 1);
 
@@ -138,13 +164,15 @@ try
     muModel1 = model1.mu;
     sigmaModel1 = model1.Sigma;
 
-    % Get scaled pdf for the fit
-    pdfModel1 = harea * pdf(model1, x);
+    % Get pdf and scaled pdf for the fit
+    pdfModel1 = @(X) pdf(model1, X);
+    pdfPlotModel1 = harea * pdfModel1(x);
 catch
     model1 = [];
 end
 
 try
+%{
     % Fit logData to two Gaussians
     model2 = fitgmdist(logData, 2);
 
@@ -158,38 +186,163 @@ try
     prop2Model2 = model2.ComponentProportion(origInd(2));
 
     % Get scaled pdf for the fit
-    pdfModel2 = harea * pdf(model2, x);
+    pdfModel2 = @(X) pdf(model2, X);
+    pdfPlotModel2 = harea * pdfModel2(x);
 
     % Get scaled pdfs for components of the mixture fit
-    comp1Model2 = prop1Model2 * harea * normpdf(x, mu1Model2, sigma1Model2);
-    comp2Model2 = prop2Model2 * harea * normpdf(x, mu2Model2, sigma2Model2);
+    comp1Model2 = @(X) prop1Model2 * normpdf(X, mu1Model2, sigma1Model2);
+    comp1PlotModel2 = harea * comp1Model2(x);
+    comp2Model2 = @(X) prop2Model2 * normpdf(X, mu2Model2, sigma2Model2);
+    comp2PlotModel2 = harea * comp2Model2(x);
+%}
 
+    % Fit logData to two Gaussians
+    mypdf2 = @(X, lambda, mu1, sigma1, mu2, sigma2) ...
+                    lambda * normpdf(X, mu1, sigma1) + ...
+                    (1 - lambda) * normpdf(X, mu2, sigma2);
+    lowerBound2 = [0, minLogIEI, 0.0000001, logMedianIEI, 0.0000001];
+    start2 = [lambdaInit, logMedianIEI, stdLogIEI, mode2Model0, stdLogIEI];
+    upperBound2 = [1, maxLogIEI, Inf, maxLogIEI, Inf];
+    [phat2, pci2] = mle(logData, 'pdf', mypdf2, 'start', start2, ...
+                        'LowerBound', lowerBound2, 'UpperBound', upperBound2);
+
+    % Find parameters for the fits; make sure mu1 <= mu2
+    if phat2(2) <= phat2(4)
+        lambdaModel2 = phat2(1);
+        lambdaCIModel2 = pci2(:, 1);
+        mu1Model2 = phat2(2);
+        mu1CIModel2 = pci2(:, 2);
+        sigma1Model2 = phat2(3);
+        sigma1CIModel2 = pci2(:, 3);
+        mu2Model2 = phat2(4);
+        mu2CIModel2 = pci2(:, 4);
+        sigma2Model2 = phat2(5);
+        sigma2CIModel2 = pci2(:, 5);
+    else
+        lambdaModel2 = 1 - phat2(1);
+        lambdaCIModel2 = flipud(1 - pci2(:, 1));
+        mu1Model2 = phat2(4);
+        mu1CIModel2 = pci2(:, 4);
+        sigma1Model2 = phat2(5);
+        sigma1CIModel2 = pci2(:, 5);
+        mu2Model2 = phat2(2);
+        mu2CIModel2 = pci2(:, 2);
+        sigma2Model2 = phat2(3);
+        sigma2CIModel2 = pci2(:, 3);
+    end
+
+    % Get model pdf
+    pdfModel2 = @(X) mypdf2(X, lambdaModel2, mu1Model2, sigma1Model2, ...
+                            mu2Model2, sigma2Model2);
+
+    % Get scaled pdf for the fit
+    pdfPlotModel2 = harea * pdfModel2(x);
+
+    % Get scaled pdfs for components of the mixture fit
+    comp1Model2 = @(X) lambdaModel2 * normpdf(X, mu1Model2, sigma1Model2);
+    comp1PlotModel2 = harea * comp1Model2(x);
+    comp2Model2 = @(X) (1 - lambdaModel2) * normpdf(X, mu2Model2, sigma2Model2);
+    comp2PlotModel2 = harea * comp2Model2(x);
+
+    % Compute the "time scale spacing parameter",
+    %   see Selinger et al., 2007
+    spacingModel2 = mu2Model2 - mu1Model2;
+    spacingErrModel2 = (mu2CIModel2(2) - mu2Model2) + ...
+                        (mu1CIModel2(2) - mu1Model2);
+    spacingCIModel2 = [spacingModel2 - spacingErrModel2; ...
+                        spacingModel2 + spacingErrModel2];
+
+    % Compute threshold #1 that separates the two components, 
+    %   defined as the intersection between the pdfs of each component
+    diffCompModel2 = @(X) comp1Model2(X) - comp2Model2(X);
+    threshold1Model2 = fzero(diffCompModel2, ...
+                            [mu1Model2, mu2Model2 + 2 * sigma2Model2]);
+    % TODO: threshold1CIModel2
+
+    % Compute threshold #2 that separates the two components, 
+    %   defined as the minimum between the peaks in the overall pdf
+    threshold2Model2 = fminbnd(pdfModel2, mu1Model2, mu2Model2);
+    % TODO: threshold2CIModel2
+
+    % Compute the "void parameter" #1 or #2 using threshold #1 or #2 
+    %   as the minimum in the equation in Selinger et al., 2007
+    void1Model2 = 1 - pdfModel2(threshold1Model2)/ ...
+                        sqrt(pdfModel2(mu1Model2) * pdfModel2(mu2Model2));
+    % TODO: void1CIModel2
+    void2Model2 = 1 - pdfModel2(threshold2Model2)/ ...
+                        sqrt(pdfModel2(mu1Model2) * pdfModel2(mu2Model2));
+    % TODO: void2CIModel2
 catch
-    model2 = [];
+    pdfModel2 = [];
 end
 
 try
     % Fit logData to a mixture of Gaussian and Exp-Exponential
-    mypdf = @(X, lambda, mu1, sigma, mu2) ...
+    mypdf3 = @(X, lambda, mu1, sigma, mu2) ...
                     lambda * normpdf(X, mu1, sigma) + ...
                     (1 - lambda) * (1/mu2) * exp(X - exp(X)/mu2);
-    start = [lambdaInit, mu1Model2, sigma1Model2, mu2Model2];
-    [phat, pci] = mle(logData, 'pdf', mypdf, 'start', start);
-    lambdaModel3 = phat(1);
-    lambdaCIModel3 = pci(:, 1);
-    mu1Model3 = phat(2);
-    mu1CIModel3 = pci(:, 2);
-    sigmaModel3 = phat(3);
-    sigmaCIModel3 = pci(:, 3);
-    mu2Model3 = phat(4);
-    mu2CIModel3 = pci(:, 4);
-    model3 = @(X) mypdf(X, lambdaModel3, mu1Model3, sigmaModel3, mu2Model3);
-    pdfModel3 = harea * model3(x);
-    comp1Model3 = lambdaModel3 * harea * normpdf(x, mu1Model3, sigmaModel3);
-    comp2Model3 = (1 - lambdaModel3) * harea * ...
-                    (1/mu2Model3) .* exp(x - exp(x)./mu2Model3);
+    lowerBound3 = [0, minLogIEI, 0.0000001, exp(logMedianIEI)];
+    upperBound3 = [1, maxLogIEI, Inf, exp(maxLogIEI)];
+    try
+        start3 = [lambdaInit, mu1Model2, sigma1Model2, exp(mu2Model2)];
+        [phat3, pci3] = mle(logData, 'pdf', mypdf3, 'start', start3, ...
+                        'LowerBound', lowerBound3, 'UpperBound', upperBound3);
+    catch
+        start3 = [lambdaInit, logMedianIEI, stdLogIEI, exp(mode2Model0)];
+        [phat3, pci3] = mle(logData, 'pdf', mypdf3, 'start', start3, ...
+                        'LowerBound', lowerBound3, 'UpperBound', upperBound3);
+    end
+
+    % Find parameters for the fits
+    lambdaModel3 = phat3(1);
+    lambdaCIModel3 = pci3(:, 1);
+    mu1Model3 = phat3(2);
+    mu1CIModel3 = pci3(:, 2);
+    sigmaModel3 = phat3(3);
+    sigmaCIModel3 = pci3(:, 3);
+    mu2Model3 = phat3(4);
+    mu2CIModel3 = pci3(:, 4);
+    pdfModel3 = @(X) mypdf3(X, lambdaModel3, mu1Model3, sigmaModel3, mu2Model3);
+
+    % Get scaled pdf for the fit
+    pdfPlotModel3 = harea * pdfModel3(x);
+
+    % Get scaled pdfs for components of the mixture fit
+    comp1Model3 = @(X) lambdaModel3 * normpdf(X, mu1Model3, sigmaModel3);
+    comp1PlotModel3 = harea * comp1Model3(x);
+    comp2Model3 = @(X) (1 - lambdaModel3) * ...
+                        (1/mu2Model3) * exp(X - exp(X)/mu2Model3);
+    comp2PlotModel3 = harea * comp2Model3(x);
+
+    % Compute the "time scale spacing parameter",
+    %   see Selinger et al., 2007
+    spacingModel3 = log(mu2Model3) - mu1Model3;
+    spacingErrModel3 = (mu2CIModel3(2) - mu2Model3)/mu2Model3 + ...
+                        (mu1CIModel3(2) - mu1Model3);
+    spacingCIModel3 = [spacingModel3 - spacingErrModel3; ...
+                        spacingModel3 + spacingErrModel3];
+
+    % Compute threshold #1 that separates the two components, 
+    %   defined as the intersection between the pdfs of each component
+    diffCompModel3 = @(X) comp1Model3(X) - comp2Model3(X);
+    threshold1Model3 = fzero(diffCompModel3, [mu1Model3, log(mu2Model3)]);
+    % TODO: threshold1CIModel3
+
+    % Compute threshold #2 that separates the two components, 
+    %   defined as the minimum between the peaks in the overall pdf
+    threshold2Model3 = fminbnd(pdfModel3, mu1Model3, log(mu2Model3));
+    % TODO: threshold2CIModel3
+
+    % Compute the "void parameter" #1 or #2 using threshold #1 or #2 
+    %   as the minimum in the equation in Selinger et al., 2007
+    void1Model3 = 1 - pdfModel3(threshold1Model3)/ ...
+                        sqrt(pdfModel3(mu1Model3) * pdfModel3(log(mu2Model3)));
+    % TODO: void1CIModel3
+    void2Model3 = 1 - pdfModel3(threshold2Model3)/ ...
+                        sqrt(pdfModel3(mu1Model3) * pdfModel3(log(mu2Model3)));
+    % TODO: void2CIModel3
 catch
-    model3 = [];
+    pdfModel3 = [];
 end
 
 %% Plot histograms and fits
@@ -199,48 +352,97 @@ if plotFlag
     % Change default values
     set(groot, 'defaultLineLineWidth', defaultLineWidth);
 
-    if ~isempty(model1)
-        % Plot histograms with fits
-        h = figure(1001);
+    % Plot histograms with fits
+    h = figure(100);
+    clf(h);
+    hold on;
+    histogram(logData, edges, 'FaceColor', colorHist);
+    xlim(xLimits);
+    yLimits = get(gca, 'YLim');
+    line(logMeanIEI * ones(1, 2), yLimits, 'Color', 'g', 'LineStyle', '--', ...
+            'LineWidth', linewidthLines, ...
+            'DisplayName', ['logMean = ', num2str(logMeanIEI, 3)]);
+    line(logMedianIEI * ones(1, 2), yLimits, 'Color', 'y', 'LineStyle', '--', ...
+            'LineWidth', linewidthLines, ...
+            'DisplayName', ['logMedian = ', num2str(logMedianIEI, 3)]);
+    legend('location', 'northeast');
+    xlabel(['Log of Inter-event intervals (', xUnit, ')']);
+    ylabel('Count');
+    title(['Raw logData for ', strrep(identifier, '_', '\_')]);
+    saveas(h, fullfile(outFolder, [identifier, '_HistOnly']), 'png');
+
+    if ~isempty(model0)       
+        % Plot histograms with Kernel distribution
+        h = figure(101);
         clf(h);
         hold on;
-        hist(logData, edges, 'FaceColor', colorHist);
+        histogram(logData, edges, 'FaceColor', colorHist);
         xlim(xLimits);
+        plot(x, pdfPlotModel0, 'c', 'Displayname', 'kernel fit');
         yLimits = get(gca, 'YLim');
         line(logMeanIEI * ones(1, 2), yLimits, 'Color', 'g', 'LineStyle', '--', ...
                 'LineWidth', linewidthLines, ...
                 'DisplayName', ['logMean = ', num2str(logMeanIEI, 3)]);
-        line(logMedianIEI * ones(1, 2), yLimits, 'Color', 'm', 'LineStyle', '--', ...
+        line(logMedianIEI * ones(1, 2), yLimits, 'Color', 'y', 'LineStyle', '--', ...
                 'LineWidth', linewidthLines, ...
                 'DisplayName', ['logMedian = ', num2str(logMedianIEI, 3)]);
+        line(mode1Model0 * ones(1, 2), yLimits, 'Color', 'm', 'LineStyle', '-', ...
+                'LineWidth', linewidthLines, ...
+                'DisplayName', ['Mode1 = ', num2str(mode1Model0, 3)]);
+        line(mode2Model0 * ones(1, 2), yLimits, 'Color', 'r', 'LineStyle', '-', ...
+                'LineWidth', linewidthLines, ...
+                'DisplayName', ['Mode2 = ', num2str(mode2Model0, 3)]);
         legend('location', 'northeast');
         xlabel(['Log of Inter-event intervals (', xUnit, ')']);
         ylabel('Count');
-        title(['Raw logData for ', strrep(identifier, '_', '\_')]);
-        saveas(h, fullfile(outFolder, [identifier, '_HistOnly']), 'png');
+        title(['Kernel Fit for ', strrep(identifier, '_', '\_')]);
+        saveas(h, fullfile(outFolder, [identifier, '_Kernel']), 'png');
     end
 
-    if ~isempty(model2)
+    if ~isempty(model1) || ~isempty(pdfModel2)
         % Plot histograms with Gaussian fits
-        h = figure(1002);
+        h = figure(102);
         clf(h);
         hold on;
-        hist(logData, edges, 'FaceColor', colorHist);
+        histogram(logData, edges, 'FaceColor', colorHist);
         xlim(xLimits);
-        plot(x, pdfModel1, 'g', 'Displayname', 'single Gaussian');
-        plot(x, pdfModel2, 'c', 'Displayname', 'double Gaussian');
-        plot(x, comp1Model2, 'm', 'Displayname', 'Component #1 of double Gaussian');
-        plot(x, comp2Model2, 'r', 'Displayname', 'Component #2 of double Gaussian');
+        if ~isempty(model1)
+            plot(x, pdfPlotModel1, 'g', 'Displayname', 'single Gaussian');
+        end
+        if ~isempty(pdfModel2)
+            plot(x, pdfPlotModel2, 'c', 'Displayname', 'double Gaussian');
+            plot(x, comp1PlotModel2, 'm', 'Displayname', 'Component #1 of double Gaussian');
+            plot(x, comp2PlotModel2, 'r', 'Displayname', 'Component #2 of double Gaussian');
+        end
         yLimits = get(gca, 'YLim');
-        line(muModel1 * ones(1, 2), yLimits, 'Color', 'g', 'LineStyle', '--', ...
-                'LineWidth', linewidthLines, ...
-                'DisplayName', ['Mean of Single Gaussian = ', num2str(muModel1, 3)]);
-        line(mu1Model2 * ones(1, 2), yLimits, 'Color', 'm', 'LineStyle', '--', ...
-                'LineWidth', linewidthLines, ...
-                'DisplayName', ['Mean of Component #1 = ', num2str(mu1Model2, 3)]);
-        line(mu2Model2 * ones(1, 2), yLimits, 'Color', 'r', 'LineStyle', '--', ...
-                'LineWidth', linewidthLines, ...
-                'DisplayName', ['Mean of Component #2 = ', num2str(mu2Model2, 3)]);
+        if ~isempty(model1)
+            line(muModel1 * ones(1, 2), yLimits, 'Color', 'g', 'LineStyle', '--', ...
+                    'LineWidth', linewidthLines, ...
+                    'DisplayName', ['Mean of Single Gaussian = ', num2str(muModel1, 3)]);
+        end
+        if ~isempty(pdfModel2)
+            line(mu1Model2 * ones(1, 2), yLimits, 'Color', 'm', 'LineStyle', '-', ...
+                    'LineWidth', linewidthLines, ...
+                    'DisplayName', ['Mean of Component #1 = ', num2str(mu1Model2, 3)]);
+            line(mu2Model2 * ones(1, 2), yLimits, 'Color', 'r', 'LineStyle', '-', ...
+                    'LineWidth', linewidthLines, ...
+                    'DisplayName', ['Mean of Component #2 = ', num2str(mu2Model2, 3)]);
+            line(threshold1Model2 * ones(1, 2), yLimits, 'Color', 'c', 'LineStyle', '--', ...
+                    'LineWidth', linewidthLines, ...
+                    'DisplayName', ['Threshold #1 = ', num2str(threshold1Model2, 3)]);
+            line(threshold2Model2 * ones(1, 2), yLimits, 'Color', 'b', 'LineStyle', '--', ...
+                    'LineWidth', linewidthLines, ...
+                    'DisplayName', ['Threshold #2 = ', num2str(threshold2Model2, 3)]);
+            text(0.05, 0.975, ...
+                    ['Spacing Parameter = ', num2str(spacingModel2, 3)], ...
+                    'Units', 'normalized')
+            text(0.05, 0.95, ...
+                    ['Void Parameter = ', num2str(void1Model2, 3)], ...
+                    'Units', 'normalized')
+            text(0.05, 0.925, ...
+                    ['Void Parameter #2 = ', num2str(void2Model2, 3)], ...
+                    'Units', 'normalized')
+        end
         legend('location', 'northeast');
         xlabel(['Log of Inter-event intervals (', xUnit, ')']);
         ylabel('Count');
@@ -248,23 +450,38 @@ if plotFlag
         saveas(h, fullfile(outFolder, [identifier, '_GaussOnly']), 'png');
     end
     
-    if ~isempty(model3)
+    if ~isempty(pdfModel3)
         % Plot histograms with Gaussian-Exp-Exponential fits
-        h = figure(1003);
+        h = figure(103);
         clf(h);
         hold on;
-        hist(logData, edges, 'FaceColor', colorHist);
+        histogram(logData, edges, 'FaceColor', colorHist);
         xlim(xLimits);
-        plot(x, pdfModel3, 'c', 'Displayname', 'Gaussian + Exp-Exponential');
-        plot(x, comp1Model3, 'm', 'Displayname', 'Gaussian part');
-        plot(x, comp2Model3, 'r', 'Displayname', 'Exp-Exponential part');
+        plot(x, pdfPlotModel3, 'c', 'Displayname', 'Gaussian + Exp-Exponential');
+        plot(x, comp1PlotModel3, 'm', 'Displayname', 'Gaussian part');
+        plot(x, comp2PlotModel3, 'r', 'Displayname', 'Exp-Exponential part');
         yLimits = get(gca, 'YLim');
-        line(mu1Model3 * ones(1, 2), yLimits, 'Color', 'm', 'LineStyle', '--', ...
+        line(mu1Model3 * ones(1, 2), yLimits, 'Color', 'm', 'LineStyle', '-', ...
                 'LineWidth', linewidthLines, ...
                 'DisplayName', ['Mean of Gaussian part = ', num2str(mu1Model3, 3)]);
-        line(mu2Model3 * ones(1, 2), yLimits, 'Color', 'r', 'LineStyle', '--', ...
+        line(log(mu2Model3) * ones(1, 2), yLimits, 'Color', 'r', 'LineStyle', '-', ...
                 'LineWidth', linewidthLines, ...
-                'DisplayName', ['Mean of Exp-Exponential part = ', num2str(mu2Model3, 3)]);
+                'DisplayName', ['log(mu) of Exp-Exponential part = ', num2str(log(mu2Model3), 3)]);
+        line(threshold1Model3 * ones(1, 2), yLimits, 'Color', 'c', 'LineStyle', '--', ...
+                'LineWidth', linewidthLines, ...
+                'DisplayName', ['Threshold #1 = ', num2str(threshold1Model3, 3)]);
+        line(threshold2Model3 * ones(1, 2), yLimits, 'Color', 'b', 'LineStyle', '--', ...
+                'LineWidth', linewidthLines, ...
+                'DisplayName', ['Threshold #2 = ', num2str(threshold2Model3, 3)]);
+        text(0.05, 0.975, ...
+                ['Spacing Parameter = ', num2str(spacingModel3, 3)], ...
+                'Units', 'normalized')
+        text(0.05, 0.95, ...
+                ['Void Parameter #1 = ', num2str(void1Model3, 3)], ...
+                'Units', 'normalized')
+        text(0.05, 0.925, ...
+                ['Void Parameter #2 = ', num2str(void2Model3, 3)], ...
+                'Units', 'normalized')
         legend('location', 'northeast');
         xlabel(['Log of Inter-event intervals (', xUnit, ')']);
         ylabel('Count');
@@ -280,24 +497,54 @@ end
 outparams.logMeanIEI = logMeanIEI;
 outparams.logMedianIEI = logMedianIEI;
 
+if ~isempty(model0)
+    outparams.pdfModel0 = pdfModel0;
+    outparams.mode1Model0 = mode1Model0;
+    outparams.mode2Model0 = mode2Model0;
+end
+
 if ~isempty(model1)
     outparams.pdfModel1 = pdfModel1;
     outparams.muModel1 = muModel1;
     outparams.sigmaModel1 = sigmaModel1;
 end
 
-if ~isempty(model2)
+if ~isempty(pdfModel2)
     outparams.pdfModel2 = pdfModel2;
+    outparams.comp1Model2 = comp1Model2;
+    outparams.comp2Model2 = comp2Model2;
+    outparams.lambdaModel2 = lambdaModel2;
+    outparams.lambdaCIModel2 = lambdaCIModel2;
     outparams.mu1Model2 = mu1Model2;
-    outparams.mu2Model2 = mu2Model2;
+    outparams.mu1CIModel2 = mu1CIModel2;
     outparams.sigma1Model2 = sigma1Model2;
+    outparams.sigma1CIModel2 = sigma1CIModel2;
+    outparams.mu2Model2 = mu2Model2;
+    outparams.mu2CIModel2 = mu2CIModel2;
     outparams.sigma2Model2 = sigma2Model2;
-    outparams.prop1Model2 = prop1Model2;
-    outparams.prop2Model2 = prop2Model2;
+    outparams.sigma2CIModel2 = sigma2CIModel2;
+    outparams.spacingModel2 = spacingModel2;
+    outparams.spacingCIModel2 = spacingCIModel2;
+    outparams.threshold1Model2 = threshold1Model2;
+%    outparams.threshold1CIModel2 = threshold1CIModel2;
+    outparams.threshold2Model2 = threshold2Model2;
+%    outparams.threshold2CIModel2 = threshold2CIModel2;
+    outparams.void1Model2 = void1Model2;
+%    outparams.void1CIModel2 = void1CIModel2;
+    outparams.void2Model2 = void2Model2;
+%    outparams.void2CIModel2 = void2CIModel2;
+
+%    outparams.mu2Model2 = mu2Model2;
+%    outparams.sigma1Model2 = sigma1Model2;
+%    outparams.sigma2Model2 = sigma2Model2;
+%    outparams.prop1Model2 = prop1Model2;
+%    outparams.prop2Model2 = prop2Model2;
 end
 
-if ~isempty(model3)
+if ~isempty(pdfModel3)
     outparams.pdfModel3 = pdfModel3;
+    outparams.comp1Model3 = comp1Model3;
+    outparams.comp2Model3 = comp2Model3;
     outparams.lambdaModel3 = lambdaModel3;
     outparams.lambdaCIModel3 = lambdaCIModel3;
     outparams.mu1Model3 = mu1Model3;
@@ -306,13 +553,27 @@ if ~isempty(model3)
     outparams.sigmaCIModel3 = sigmaCIModel3;
     outparams.mu2Model3 = mu2Model3;
     outparams.mu2CIModel3 = mu2CIModel3;
-    outparams.comp1Model3 = comp1Model3;
-    outparams.comp2Model3 = comp2Model3;
+    outparams.spacingModel3 = spacingModel3;
+    outparams.spacingCIModel3 = spacingCIModel3;
+    outparams.threshold1Model3 = threshold1Model3;
+%    outparams.threshold1CIModel3 = threshold1CIModel3;
+    outparams.threshold2Model3 = threshold2Model3;
+%    outparams.threshold2CIModel3 = threshold2CIModel3;
+    outparams.void1Model3 = void1Model3;
+%    outparams.void1CIModel3 = void1CIModel3;
+    outparams.void2Model3 = void2Model3;
+%    outparams.void2CIModel3 = void2CIModel3;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+    if exist('mu1Model2', 'var') == 1
+
+skipModel3Default = false;          % whether to skip model 3 by default
+addParameter(iP, 'SkipModel3', skipModel3Default, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+skipModel3   = iP.Results.SkipModel3;
 
 %}
