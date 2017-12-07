@@ -133,217 +133,231 @@ binWidth = xLimits(2)/nBins;        % bin width
 harea = binWidth * npts;            % total histogram area
 x = linspace(xLimits(1), xLimits(2), nPoints)';
 
-try
-    % Fit logData to a kernel distribution using Gaussian kernels
-    model0 = fitdist(logData, 'Kernel');
+%% Fit logData to a kernel distribution using Gaussian kernels
+model0 = fitdist(logData, 'Kernel');
 
-    % TODO: Fit logData to a kernel distribution using Epanechnikov (parabolic) kernels
+% TODO: Fit logData to a kernel distribution using Epanechnikov (parabolic) kernels
 %    model0 = fitdist(logData, 'Kernel', 'Kernel', 'epanechnikov');
 
-    % TODO: Fit logData to a kernel distribution using Gaussian kernels
-    %   and using a tenth of the standard deviation as the bandwidth
+% TODO: Fit logData to a kernel distribution using Gaussian kernels
+%   and using a tenth of the standard deviation as the bandwidth
 %    model0 = fitdist(logData, 'Kernel', 'Bandwidth', stdLogIEI/10);
 
-    % Get pdf and scaled pdf for the fit
-    pdfModel0 = @(X) pdf(model0, X);
-    pdfPlotModel0 = harea * pdfModel0(x);
+% Get pdf and scaled pdf for the fit
+pdfModel0 = @(X) pdf(model0, X);
+pdfPlotModel0 = harea * pdfModel0(x);
 
-    % Find largest (in x) and second largest modes of the kernel distribution
-    [~, locs] = findpeaks(pdfPlotModel0);
+% Find largest (in x) and second largest modes of the kernel distribution
+[~, locs] = findpeaks(pdfPlotModel0);
+mode2Model0 = x(locs(end));
+if length(locs) > 1
     mode1Model0 = x(locs(end-1));
-    mode2Model0 = x(locs(end));
-catch
-    model0 = [];
+else
+    mode1Model0 = NaN;
 end
 
-try
-    % Fit logData to one Gaussian
-    model1 = fitgmdist(logData, 1);
+% Fit logData to one Gaussian
+model1 = fitgmdist(logData, 1);
 
-    % Find mean and standard deviations for the fits
-    muModel1 = model1.mu;
-    sigmaModel1 = model1.Sigma;
+% Find mean and standard deviations for the fits
+muModel1 = model1.mu;
+sigmaModel1 = model1.Sigma;
 
-    % Get pdf and scaled pdf for the fit
-    pdfModel1 = @(X) pdf(model1, X);
-    pdfPlotModel1 = harea * pdfModel1(x);
-catch
-    model1 = [];
-end
+% Get pdf and scaled pdf for the fit
+pdfModel1 = @(X) pdf(model1, X);
+pdfPlotModel1 = harea * pdfModel1(x);
 
-try
 %{
-    % Fit logData to two Gaussians
-    model2 = fitgmdist(logData, 2);
+% Fit logData to two Gaussians
+model2 = fitgmdist(logData, 2);
 
-    % Find mean and standard deviations for the fits
-    [~, origInd] = sort(model2.mu, 'ascend');
-    mu1Model2 = model2.mu(origInd(1));
-    mu2Model2 = model2.mu(origInd(2));
-    sigma1Model2 = model2.Sigma(origInd(1));
-    sigma2Model2 = model2.Sigma(origInd(2));
-    prop1Model2 = model2.ComponentProportion(origInd(1));
-    prop2Model2 = model2.ComponentProportion(origInd(2));
+% Find mean and standard deviations for the fits
+[~, origInd] = sort(model2.mu, 'ascend');
+mu1Model2 = model2.mu(origInd(1));
+mu2Model2 = model2.mu(origInd(2));
+sigma1Model2 = model2.Sigma(origInd(1));
+sigma2Model2 = model2.Sigma(origInd(2));
+prop1Model2 = model2.ComponentProportion(origInd(1));
+prop2Model2 = model2.ComponentProportion(origInd(2));
 
-    % Get scaled pdf for the fit
-    pdfModel2 = @(X) pdf(model2, X);
-    pdfPlotModel2 = harea * pdfModel2(x);
+% Get scaled pdf for the fit
+pdfModel2 = @(X) pdf(model2, X);
+pdfPlotModel2 = harea * pdfModel2(x);
 
-    % Get scaled pdfs for components of the mixture fit
-    comp1Model2 = @(X) prop1Model2 * normpdf(X, mu1Model2, sigma1Model2);
-    comp1PlotModel2 = harea * comp1Model2(x);
-    comp2Model2 = @(X) prop2Model2 * normpdf(X, mu2Model2, sigma2Model2);
-    comp2PlotModel2 = harea * comp2Model2(x);
+% Get scaled pdfs for components of the mixture fit
+comp1Model2 = @(X) prop1Model2 * normpdf(X, mu1Model2, sigma1Model2);
+comp1PlotModel2 = harea * comp1Model2(x);
+comp2Model2 = @(X) prop2Model2 * normpdf(X, mu2Model2, sigma2Model2);
+comp2PlotModel2 = harea * comp2Model2(x);
 %}
 
-    % Fit logData to two Gaussians
-    mypdf2 = @(X, lambda, mu1, sigma1, mu2, sigma2) ...
-                    lambda * normpdf(X, mu1, sigma1) + ...
-                    (1 - lambda) * normpdf(X, mu2, sigma2);
-    lowerBound2 = [0, minLogIEI, 0.0000001, logMedianIEI, 0.0000001];
-    start2 = [lambdaInit, logMedianIEI, stdLogIEI, mode2Model0, stdLogIEI];
-    upperBound2 = [1, maxLogIEI, Inf, maxLogIEI, Inf];
-    [phat2, pci2] = mle(logData, 'pdf', mypdf2, 'start', start2, ...
-                        'LowerBound', lowerBound2, 'UpperBound', upperBound2);
+%% Fit logData to two Gaussians
+mypdf2 = @(X, lambda, mu1, sigma1, mu2, sigma2) ...
+                lambda * normpdf(X, mu1, sigma1) + ...
+                (1 - lambda) * normpdf(X, mu2, sigma2);
+lowerBound2 = [0, minLogIEI, 0.0000001, logMedianIEI, 0.0000001];
+start2 = [lambdaInit, logMedianIEI, stdLogIEI, ...
+            max(logMedianIEI, mode2Model0), stdLogIEI];
+upperBound2 = [1, maxLogIEI, Inf, maxLogIEI, Inf];
+[phat2, pci2] = mle(logData, 'pdf', mypdf2, 'start', start2, ...
+                    'LowerBound', lowerBound2, 'UpperBound', upperBound2);
 
-    % Find parameters for the fits; make sure mu1 <= mu2
-    if phat2(2) <= phat2(4)
-        lambdaModel2 = phat2(1);
-        lambdaCIModel2 = pci2(:, 1);
-        mu1Model2 = phat2(2);
-        mu1CIModel2 = pci2(:, 2);
-        sigma1Model2 = phat2(3);
-        sigma1CIModel2 = pci2(:, 3);
-        mu2Model2 = phat2(4);
-        mu2CIModel2 = pci2(:, 4);
-        sigma2Model2 = phat2(5);
-        sigma2CIModel2 = pci2(:, 5);
-    else
-        lambdaModel2 = 1 - phat2(1);
-        lambdaCIModel2 = flipud(1 - pci2(:, 1));
-        mu1Model2 = phat2(4);
-        mu1CIModel2 = pci2(:, 4);
-        sigma1Model2 = phat2(5);
-        sigma1CIModel2 = pci2(:, 5);
-        mu2Model2 = phat2(2);
-        mu2CIModel2 = pci2(:, 2);
-        sigma2Model2 = phat2(3);
-        sigma2CIModel2 = pci2(:, 3);
-    end
+% Find parameters for the fits; make sure mu1 <= mu2
+if phat2(2) <= phat2(4)
+    lambdaModel2 = phat2(1);
+    lambdaCIModel2 = pci2(:, 1);
+    mu1Model2 = phat2(2);
+    mu1CIModel2 = pci2(:, 2);
+    sigma1Model2 = phat2(3);
+    sigma1CIModel2 = pci2(:, 3);
+    mu2Model2 = phat2(4);
+    mu2CIModel2 = pci2(:, 4);
+    sigma2Model2 = phat2(5);
+    sigma2CIModel2 = pci2(:, 5);
+else
+    lambdaModel2 = 1 - phat2(1);
+    lambdaCIModel2 = flipud(1 - pci2(:, 1));
+    mu1Model2 = phat2(4);
+    mu1CIModel2 = pci2(:, 4);
+    sigma1Model2 = phat2(5);
+    sigma1CIModel2 = pci2(:, 5);
+    mu2Model2 = phat2(2);
+    mu2CIModel2 = pci2(:, 2);
+    sigma2Model2 = phat2(3);
+    sigma2CIModel2 = pci2(:, 3);
+end
 
-    % Get model pdf
-    pdfModel2 = @(X) mypdf2(X, lambdaModel2, mu1Model2, sigma1Model2, ...
-                            mu2Model2, sigma2Model2);
+% Get model pdf
+pdfModel2 = @(X) mypdf2(X, lambdaModel2, mu1Model2, sigma1Model2, ...
+                        mu2Model2, sigma2Model2);
 
-    % Get scaled pdf for the fit
-    pdfPlotModel2 = harea * pdfModel2(x);
+% Get scaled pdf for the fit
+pdfPlotModel2 = harea * pdfModel2(x);
 
-    % Get scaled pdfs for components of the mixture fit
-    comp1Model2 = @(X) lambdaModel2 * normpdf(X, mu1Model2, sigma1Model2);
-    comp1PlotModel2 = harea * comp1Model2(x);
-    comp2Model2 = @(X) (1 - lambdaModel2) * normpdf(X, mu2Model2, sigma2Model2);
-    comp2PlotModel2 = harea * comp2Model2(x);
+% Get scaled pdfs for components of the mixture fit
+comp1Model2 = @(X) lambdaModel2 * normpdf(X, mu1Model2, sigma1Model2);
+comp1PlotModel2 = harea * comp1Model2(x);
+comp2Model2 = @(X) (1 - lambdaModel2) * normpdf(X, mu2Model2, sigma2Model2);
+comp2PlotModel2 = harea * comp2Model2(x);
 
-    % Compute the "time scale spacing parameter",
-    %   see Selinger et al., 2007
-    spacingModel2 = mu2Model2 - mu1Model2;
-    spacingErrModel2 = (mu2CIModel2(2) - mu2Model2) + ...
-                        (mu1CIModel2(2) - mu1Model2);
-    spacingCIModel2 = [spacingModel2 - spacingErrModel2; ...
-                        spacingModel2 + spacingErrModel2];
+% Compute the "time scale spacing parameter",
+%   see Selinger et al., 2007
+spacingModel2 = mu2Model2 - mu1Model2;
+spacingErrModel2 = (mu2CIModel2(2) - mu2Model2) + ...
+                    (mu1CIModel2(2) - mu1Model2);
+spacingCIModel2 = [spacingModel2 - spacingErrModel2; ...
+                    spacingModel2 + spacingErrModel2];
 
-    % Compute threshold #1 that separates the two components, 
-    %   defined as the intersection between the pdfs of each component
-    diffCompModel2 = @(X) comp1Model2(X) - comp2Model2(X);
+% Compute threshold #1 that separates the two components, 
+%   defined as the intersection between the pdfs of each component
+diffCompModel2 = @(X) comp1Model2(X) - comp2Model2(X);
+if diffCompModel2(mu1Model2) * diffCompModel2(mu2Model2) < 0
+    threshold1Model2 = fzero(diffCompModel2, [mu1Model2, mu2Model2]);
+elseif diffCompModel2(mu1Model2) * ...
+            diffCompModel2(mu2Model2 + 2 * sigma2Model2) < 0
     threshold1Model2 = fzero(diffCompModel2, ...
-                            [mu1Model2, mu2Model2 + 2 * sigma2Model2]);
-    % TODO: threshold1CIModel2
-
-    % Compute threshold #2 that separates the two components, 
-    %   defined as the minimum between the peaks in the overall pdf
-    threshold2Model2 = fminbnd(pdfModel2, mu1Model2, mu2Model2);
-    % TODO: threshold2CIModel2
-
-    % Compute the "void parameter" #1 or #2 using threshold #1 or #2 
-    %   as the minimum in the equation in Selinger et al., 2007
-    void1Model2 = 1 - pdfModel2(threshold1Model2)/ ...
-                        sqrt(pdfModel2(mu1Model2) * pdfModel2(mu2Model2));
-    % TODO: void1CIModel2
-    void2Model2 = 1 - pdfModel2(threshold2Model2)/ ...
-                        sqrt(pdfModel2(mu1Model2) * pdfModel2(mu2Model2));
-    % TODO: void2CIModel2
-catch
-    pdfModel2 = [];
+                        [mu1Model2, mu2Model2 + 2 * sigma2Model2]);
+elseif diffCompModel2(mu1Model2) * diffCompModel2(maxLogIEI) < 0
+    threshold1Model2 = fzero(diffCompModel2, [mu1Model2, maxLogIEI]);
+else
+    threshold1Model2 = NaN;
 end
+% TODO: threshold1CIModel2
 
+% Compute threshold #2 that separates the two components, 
+%   defined as the minimum between the peaks in the overall pdf
+threshold2Model2 = fminbnd(pdfModel2, mu1Model2, mu2Model2);
+% TODO: threshold2CIModel2
+
+% Compute the "void parameter" #1 or #2 using threshold #1 or #2 
+%   as the minimum in the equation in Selinger et al., 2007
+void1Model2 = 1 - pdfModel2(threshold1Model2)/ ...
+                    sqrt(pdfModel2(mu1Model2) * pdfModel2(mu2Model2));
+% TODO: void1CIModel2
+void2Model2 = 1 - pdfModel2(threshold2Model2)/ ...
+                    sqrt(pdfModel2(mu1Model2) * pdfModel2(mu2Model2));
+% TODO: void2CIModel2
+
+%% Fit logData to a mixture of Gaussian and Exp-Exponential
+mypdf3 = @(X, lambda, mu1, sigma, mu2) ...
+                lambda * normpdf(X, mu1, sigma) + ...
+                (1 - lambda) * (1/mu2) * exp(X - exp(X)/mu2);
+lowerBound3 = [0, minLogIEI, 0.0000001, exp(logMedianIEI)];
+upperBound3 = [1, maxLogIEI, Inf, exp(maxLogIEI)];
 try
-    % Fit logData to a mixture of Gaussian and Exp-Exponential
-    mypdf3 = @(X, lambda, mu1, sigma, mu2) ...
-                    lambda * normpdf(X, mu1, sigma) + ...
-                    (1 - lambda) * (1/mu2) * exp(X - exp(X)/mu2);
-    lowerBound3 = [0, minLogIEI, 0.0000001, exp(logMedianIEI)];
-    upperBound3 = [1, maxLogIEI, Inf, exp(maxLogIEI)];
-    try
-        start3 = [lambdaInit, mu1Model2, sigma1Model2, exp(mu2Model2)];
-        [phat3, pci3] = mle(logData, 'pdf', mypdf3, 'start', start3, ...
-                        'LowerBound', lowerBound3, 'UpperBound', upperBound3);
-    catch
-        start3 = [lambdaInit, logMedianIEI, stdLogIEI, exp(mode2Model0)];
-        [phat3, pci3] = mle(logData, 'pdf', mypdf3, 'start', start3, ...
-                        'LowerBound', lowerBound3, 'UpperBound', upperBound3);
-    end
-
-    % Find parameters for the fits
-    lambdaModel3 = phat3(1);
-    lambdaCIModel3 = pci3(:, 1);
-    mu1Model3 = phat3(2);
-    mu1CIModel3 = pci3(:, 2);
-    sigmaModel3 = phat3(3);
-    sigmaCIModel3 = pci3(:, 3);
-    mu2Model3 = phat3(4);
-    mu2CIModel3 = pci3(:, 4);
-    pdfModel3 = @(X) mypdf3(X, lambdaModel3, mu1Model3, sigmaModel3, mu2Model3);
-
-    % Get scaled pdf for the fit
-    pdfPlotModel3 = harea * pdfModel3(x);
-
-    % Get scaled pdfs for components of the mixture fit
-    comp1Model3 = @(X) lambdaModel3 * normpdf(X, mu1Model3, sigmaModel3);
-    comp1PlotModel3 = harea * comp1Model3(x);
-    comp2Model3 = @(X) (1 - lambdaModel3) * ...
-                        (1/mu2Model3) * exp(X - exp(X)/mu2Model3);
-    comp2PlotModel3 = harea * comp2Model3(x);
-
-    % Compute the "time scale spacing parameter",
-    %   see Selinger et al., 2007
-    spacingModel3 = log(mu2Model3) - mu1Model3;
-    spacingErrModel3 = (mu2CIModel3(2) - mu2Model3)/mu2Model3 + ...
-                        (mu1CIModel3(2) - mu1Model3);
-    spacingCIModel3 = [spacingModel3 - spacingErrModel3; ...
-                        spacingModel3 + spacingErrModel3];
-
-    % Compute threshold #1 that separates the two components, 
-    %   defined as the intersection between the pdfs of each component
-    diffCompModel3 = @(X) comp1Model3(X) - comp2Model3(X);
-    threshold1Model3 = fzero(diffCompModel3, [mu1Model3, log(mu2Model3)]);
-    % TODO: threshold1CIModel3
-
-    % Compute threshold #2 that separates the two components, 
-    %   defined as the minimum between the peaks in the overall pdf
-    threshold2Model3 = fminbnd(pdfModel3, mu1Model3, log(mu2Model3));
-    % TODO: threshold2CIModel3
-
-    % Compute the "void parameter" #1 or #2 using threshold #1 or #2 
-    %   as the minimum in the equation in Selinger et al., 2007
-    void1Model3 = 1 - pdfModel3(threshold1Model3)/ ...
-                        sqrt(pdfModel3(mu1Model3) * pdfModel3(log(mu2Model3)));
-    % TODO: void1CIModel3
-    void2Model3 = 1 - pdfModel3(threshold2Model3)/ ...
-                        sqrt(pdfModel3(mu1Model3) * pdfModel3(log(mu2Model3)));
-    % TODO: void2CIModel3
+    start3 = [lambdaInit, mu1Model2, sigma1Model2, exp(mu2Model2)];
+    [phat3, pci3] = mle(logData, 'pdf', mypdf3, 'start', start3, ...
+                    'LowerBound', lowerBound3, 'UpperBound', upperBound3);
 catch
-    pdfModel3 = [];
+    start3 = [lambdaInit, logMedianIEI, stdLogIEI, exp(mode2Model0)];
+    [phat3, pci3] = mle(logData, 'pdf', mypdf3, 'start', start3, ...
+                    'LowerBound', lowerBound3, 'UpperBound', upperBound3);
 end
+
+% Find parameters for the fits
+lambdaModel3 = phat3(1);
+lambdaCIModel3 = pci3(:, 1);
+mu1Model3 = phat3(2);
+mu1CIModel3 = pci3(:, 2);
+sigmaModel3 = phat3(3);
+sigmaCIModel3 = pci3(:, 3);
+mu2Model3 = phat3(4);
+mu2CIModel3 = pci3(:, 4);
+pdfModel3 = @(X) mypdf3(X, lambdaModel3, mu1Model3, sigmaModel3, mu2Model3);
+
+% Get scaled pdf for the fit
+pdfPlotModel3 = harea * pdfModel3(x);
+
+% Get scaled pdfs for components of the mixture fit
+comp1Model3 = @(X) lambdaModel3 * normpdf(X, mu1Model3, sigmaModel3);
+comp1PlotModel3 = harea * comp1Model3(x);
+comp2Model3 = @(X) (1 - lambdaModel3) * ...
+                    (1/mu2Model3) * exp(X - exp(X)/mu2Model3);
+comp2PlotModel3 = harea * comp2Model3(x);
+
+% Compute the "time scale spacing parameter",
+%   see Selinger et al., 2007
+spacingModel3 = log(mu2Model3) - mu1Model3;
+spacingErrModel3 = (mu2CIModel3(2) - mu2Model3)/mu2Model3 + ...
+                    (mu1CIModel3(2) - mu1Model3);
+spacingCIModel3 = [spacingModel3 - spacingErrModel3; ...
+                    spacingModel3 + spacingErrModel3];
+
+% Compute threshold #1 that separates the two components, 
+%   defined as the intersection between the pdfs of each component
+diffCompModel3 = @(X) comp1Model3(X) - comp2Model3(X);
+if diffCompModel3(mu1Model3) * diffCompModel3(log(mu2Model3)) < 0
+    threshold1Model3 = fzero(diffCompModel3, [mu1Model3, log(mu2Model3)]);
+elseif diffCompModel3(mu1Model3) * ...
+        diffCompModel3(log(mu2Model3) + 2 * sigma2Model2) < 0
+    threshold1Model3 = fzero(diffCompModel3, ...
+                [mu1Model3, log(mu2Model3) + 2 * sigma2Model2]);
+elseif diffCompModel3(mu1Model3) * diffCompModel3(maxLogIEI) < 0
+    threshold1Model3 = fzero(diffCompModel3, [mu1Model3, maxLogIEI]);
+else
+    threshold1Model3 = NaN;
+end
+% TODO: threshold1CIModel3
+
+% Compute threshold #2 that separates the two components, 
+%   defined as the minimum between the peaks in the overall pdf
+%   or the minimum after mu1
+if log(mu2Model3) >= mu1Model3
+    threshold2Model3 = fminbnd(pdfModel3, mu1Model3, log(mu2Model3));
+else
+    threshold2Model3 = fminbnd(pdfModel3, mu1Model3, maxLogIEI);
+end
+
+% TODO: threshold2CIModel3
+
+% Compute the "void parameter" #1 or #2 using threshold #1 or #2 
+%   as the minimum in the equation in Selinger et al., 2007
+void1Model3 = 1 - pdfModel3(threshold1Model3)/ ...
+                    sqrt(pdfModel3(mu1Model3) * pdfModel3(log(mu2Model3)));
+% TODO: void1CIModel3
+void2Model3 = 1 - pdfModel3(threshold2Model3)/ ...
+                    sqrt(pdfModel3(mu1Model3) * pdfModel3(log(mu2Model3)));
+% TODO: void2CIModel3
 
 %% Plot histograms and fits
 if plotFlag
@@ -575,5 +589,20 @@ skipModel3Default = false;          % whether to skip model 3 by default
 addParameter(iP, 'SkipModel3', skipModel3Default, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 skipModel3   = iP.Results.SkipModel3;
+
+try
+catch
+    model0 = [];
+end
+
+try
+catch
+    model1 = [];
+end
+
+try
+catch
+    pdfModel3 = [];
+end
 
 %}
