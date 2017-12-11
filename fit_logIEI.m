@@ -6,7 +6,7 @@ function [model0, model1, pdfModel2, pdfModel3, outparams] = fit_logIEI (logData
 % Side Effects:
 %       Plots TODO
 % Arguments:
-%       logData        - a vector of IEIs
+%       logData     - a vector of IEIs
 %                   must be a numeric nonnegative vector
 %       identifier  - an identifier for plotting logData
 %                   must be a string scalar or a character vector
@@ -37,6 +37,8 @@ function [model0, model1, pdfModel2, pdfModel3, outparams] = fit_logIEI (logData
 % 2017-11-30 - pdfModel1 is now a function whereas pdfPlotModel1 is a vector
 % 2017-11-30 - Added spacing, threshold and void
 % 2017-12-01 - threshold, void -> threshold1, void1, threshold2, void2
+% 2017-12-11 - Constrain fminbnd so that mu1Model0 would not stop 
+%               at a local maximum
 
 %% Parameters
 nPoints = 500;                      % number of points for plotting pdfs
@@ -119,6 +121,7 @@ logMeanIEI = log(mean(exp(logData)));
 logMedianIEI = log(median(exp(logData)));
 minLogIEI = min(logData);
 maxLogIEI = max(logData);
+meanLogIEI = mean(logData);
 stdLogIEI = std(logData);
 
 % Number of bins is square root of npts logData count
@@ -134,29 +137,87 @@ harea = binWidth * npts;            % total histogram area
 x = linspace(xLimits(1), xLimits(2), nPoints)';
 
 %% Fit logData to a kernel distribution using Gaussian kernels
-model0 = fitdist(logData, 'Kernel');
+%   This yielded many small peaks that were probably insignificant
+%   model0 = fitdist(logData, 'Kernel');
 
-% TODO: Fit logData to a kernel distribution using Epanechnikov (parabolic) kernels
-%    model0 = fitdist(logData, 'Kernel', 'Kernel', 'epanechnikov');
+%%Fit logData to a kernel distribution using Epanechnikov (parabolic) kernels
+%   This was not much different from Gaussian kernels
+% model0 = fitdist(logData, 'Kernel', 'Kernel', 'epanechnikov');
 
-% TODO: Fit logData to a kernel distribution using Gaussian kernels
-%   and using a tenth of the standard deviation as the bandwidth
-%    model0 = fitdist(logData, 'Kernel', 'Bandwidth', stdLogIEI/10);
+%% Fit logData to a kernel distribution using Gaussian kernels
+%   and using a fifth of the standard deviation as the bandwidth
+model0 = fitdist(logData, 'Kernel', 'Bandwidth', stdLogIEI/5);
 
 % Get pdf and scaled pdf for the fit
 pdfModel0 = @(X) pdf(model0, X);
 pdfPlotModel0 = harea * pdfModel0(x);
 
-% Find largest (in x) and second largest modes of the kernel distribution
+% Find right most two peaks of the kernel distribution
+%   This follows the algorithm of Selinger et al., 2007
 [~, locs] = findpeaks(pdfPlotModel0);
-mode2Model0 = x(locs(end));
-if length(locs) > 1
-    mode1Model0 = x(locs(end-1));
+if length(locs) > 0
+    peak2Model0 = x(locs(end));
 else
-    mode1Model0 = NaN;
+    peak2Model0 = maxLogIEI;
+end
+if length(locs) > 1
+    peak1Model0 = x(locs(end-1));
+else
+    peak1Model0 = NaN;
 end
 
-% Fit logData to one Gaussian
+% Find the mode of the kernel distribution
+[~, idxModeApprox] = max(pdfPlotModel0);
+modeModel0Approx = x(idxModeApprox);
+skewness = abs(modeModel0Approx - meanLogIEI);
+leftBnd = max(minLogIEI, modeModel0Approx - skewness);
+rightBnd = min(maxLogIEI, modeModel0Approx + skewness);
+mu1Model0 = fminbnd(@(X) -pdfModel0(X), leftBnd, rightBnd);
+
+% Find all peaks to the right of the mode of the kernel distribution
+toTheRight = x >= mu1Model0;                % whether the index of x is 
+                                            % to the right of the mode
+xToTheRight = x(toTheRight);                % parts of x that is 
+                                            % to the right of the mode
+pdfToTheRight = pdfPlotModel0(toTheRight);  % parts of the pdf that is 
+                                            % to the right of the mode
+[pksToTheRight, locsToTheRight] = findpeaks(pdfToTheRight);
+
+% Select the peak that gives the largest void parameter 
+%   when paired with the mode
+%   This follows the algorithm of Pasquale et al., 2010
+nToTheRight = length(locsToTheRight);
+if nToTheRight == 0
+    mu2Model0 = NaN;
+    spacingModel0 = 0;
+    thresholdModel0 = NaN;
+    voidModel0 = 0;
+else
+    thresholds = zeros(nToTheRight, 1);     % stores all possible thresholds
+    voids = zeros(nToTheRight, 1);          % stores all void parameters
+    for iToTheRight = 1:nToTheRight
+        % The threshold is the minimum between the mode and the current peak
+        thresholds(iToTheRight) = ...
+            fminbnd(pdfModel0, mu1Model0, ...
+                    xToTheRight(locsToTheRight(iToTheRight)));
+
+        % Compute the void parameter corresponding to this pair of peaks
+        voids(iToTheRight) = ...
+            1 - pdfModel0(thresholds(iToTheRight)) / ...
+                sqrt(pdfModel0(mu1Model0) * pksToTheRight(iToTheRight));
+    end
+    % Select the peak that gives the largest void parameter
+    [voidModel0, iSelected] = max(voids);   
+
+    % Record the x value and threshold for this peak
+    mu2Model0 = xToTheRight(locsToTheRight(iSelected));
+    thresholdModel0 = thresholds(iSelected);    
+
+    % Compute the spacing parameter for this peak
+    spacingModel0 = mu2Model0 - mu1Model0;
+end
+
+%% Fit logData to one Gaussian
 model1 = fitgmdist(logData, 1);
 
 % Find mean and standard deviations for the fits
@@ -197,7 +258,7 @@ mypdf2 = @(X, lambda, mu1, sigma1, mu2, sigma2) ...
                 (1 - lambda) * normpdf(X, mu2, sigma2);
 lowerBound2 = [0, minLogIEI, 0.0000001, logMedianIEI, 0.0000001];
 start2 = [lambdaInit, logMedianIEI, stdLogIEI, ...
-            max(logMedianIEI, mode2Model0), stdLogIEI];
+            max(logMedianIEI, peak2Model0), stdLogIEI];
 upperBound2 = [1, maxLogIEI, Inf, maxLogIEI, Inf];
 [phat2, pci2] = mle(logData, 'pdf', mypdf2, 'start', start2, ...
                     'LowerBound', lowerBound2, 'UpperBound', upperBound2);
@@ -289,7 +350,7 @@ try
     [phat3, pci3] = mle(logData, 'pdf', mypdf3, 'start', start3, ...
                     'LowerBound', lowerBound3, 'UpperBound', upperBound3);
 catch
-    start3 = [lambdaInit, logMedianIEI, stdLogIEI, exp(mode2Model0)];
+    start3 = [lambdaInit, logMedianIEI, stdLogIEI, exp(peak2Model0)];
     [phat3, pci3] = mle(logData, 'pdf', mypdf3, 'start', start3, ...
                     'LowerBound', lowerBound3, 'UpperBound', upperBound3);
 end
@@ -400,12 +461,27 @@ if plotFlag
         line(logMedianIEI * ones(1, 2), yLimits, 'Color', 'y', 'LineStyle', '--', ...
                 'LineWidth', linewidthLines, ...
                 'DisplayName', ['logMedian = ', num2str(logMedianIEI, 3)]);
-        line(mode1Model0 * ones(1, 2), yLimits, 'Color', 'm', 'LineStyle', '-', ...
+        line(peak1Model0 * ones(1, 2), yLimits, 'Color', 'm', 'LineStyle', '--', ...
                 'LineWidth', linewidthLines, ...
-                'DisplayName', ['Mode1 = ', num2str(mode1Model0, 3)]);
-        line(mode2Model0 * ones(1, 2), yLimits, 'Color', 'r', 'LineStyle', '-', ...
+                'DisplayName', ['2nd right most peak = ', num2str(peak1Model0, 3)]);
+        line(peak2Model0 * ones(1, 2), yLimits, 'Color', 'r', 'LineStyle', '--', ...
                 'LineWidth', linewidthLines, ...
-                'DisplayName', ['Mode2 = ', num2str(mode2Model0, 3)]);
+                'DisplayName', ['Right most peak = ', num2str(peak2Model0, 3)]);
+        line(mu1Model0 * ones(1, 2), yLimits, 'Color', 'm', 'LineStyle', '-', ...
+                'LineWidth', linewidthLines, ...
+                'DisplayName', ['Mode = ', num2str(mu1Model0, 3)]);
+        line(mu2Model0 * ones(1, 2), yLimits, 'Color', 'r', 'LineStyle', '-', ...
+                'LineWidth', linewidthLines, ...
+                'DisplayName', ['Best peak = ', num2str(mu2Model0, 3)]);
+        line(thresholdModel0 * ones(1, 2), yLimits, 'Color', 'b', 'LineStyle', '--', ...
+                'LineWidth', linewidthLines, ...
+                'DisplayName', ['Threshold = ', num2str(thresholdModel0, 3)]);
+        text(0.05, 0.975, ...
+                ['Spacing Parameter = ', num2str(spacingModel0, 3)], ...
+                'Units', 'normalized')
+        text(0.05, 0.95, ...
+                ['Void Parameter = ', num2str(voidModel0, 3)], ...
+                'Units', 'normalized')
         legend('location', 'northeast');
         xlabel(['Log of Inter-event intervals (', xUnit, ')']);
         ylabel('Count');
@@ -451,7 +527,7 @@ if plotFlag
                     ['Spacing Parameter = ', num2str(spacingModel2, 3)], ...
                     'Units', 'normalized')
             text(0.05, 0.95, ...
-                    ['Void Parameter = ', num2str(void1Model2, 3)], ...
+                    ['Void Parameter #1 = ', num2str(void1Model2, 3)], ...
                     'Units', 'normalized')
             text(0.05, 0.925, ...
                     ['Void Parameter #2 = ', num2str(void2Model2, 3)], ...
@@ -513,8 +589,13 @@ outparams.logMedianIEI = logMedianIEI;
 
 if ~isempty(model0)
     outparams.pdfModel0 = pdfModel0;
-    outparams.mode1Model0 = mode1Model0;
-    outparams.mode2Model0 = mode2Model0;
+    outparams.peak1Model0 = peak1Model0;
+    outparams.peak2Model0 = peak2Model0;
+    outparams.mu1Model0 = mu1Model0;
+    outparams.mu2Model0 = mu2Model0;
+    outparams.spacingModel0 = spacingModel0;
+    outparams.thresholdModel0 = thresholdModel0;
+    outparams.voidModel0 = voidModel0;
 end
 
 if ~isempty(model1)
@@ -604,5 +685,6 @@ try
 catch
     pdfModel3 = [];
 end
+
 
 %}

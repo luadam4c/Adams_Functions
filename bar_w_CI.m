@@ -21,7 +21,8 @@ function h = bar_w_CI(h, data, low, high, varargin)
 % File History: 
 % 2017-10-19 - Moved from paula_iei3.m
 % 2017-10-19 - Added input parser and various optional arguments
-%
+% 2017-12-01 - Added figure(h)
+% 
 
 %% Parameters
 barColor = 'blue';
@@ -105,6 +106,9 @@ if isempty(xTickAngle)
 end
 
 %% Plot things
+% Go to figure
+figure(h);
+
 % Draw bar graph
 if isempty(xValues)
     b = bar(data);
