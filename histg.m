@@ -20,6 +20,7 @@ function [varargout] = histg (x, c, varargin)
 % Used by:
 %		/home/Matlab/Adams_Functions/plot_and_save_histogram.m
 %		/home/Matlab/Adams_Functions/fit_gaussians_and_refine_threshold.m
+%		/media/adamX/Paula_IEIs/paula_iei4.m
 %
 % 20160930 - Added edges & group_names as options
 % 20160930 - Changed histc to histcounts
