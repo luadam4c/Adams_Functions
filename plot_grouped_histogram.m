@@ -11,6 +11,7 @@ function plot_grouped_histogram(figname, stats, grouping, grouping_labels, xLabe
 % 20171211 - Created
 
 %% Default values for optional arguments
+yLabelDefault = 'Count';
 xLimitsDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -20,12 +21,17 @@ iP = inputParser;
 iP.FunctionName = 'plot_grouped_histogram';
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'YLabel', yLabelDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'nonempty'}));
+%    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+                                                % introduced after 2016B
 addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) validateattributes(x, {'numeric', 'categorical', ...
         'datetime', 'duration'}, {'vector', 'numel', 2}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
+yLabel = iP.Results.YLabel;
 xLimits = iP.Results.XLimits;
 
 %% Plot and save histogram
@@ -41,8 +47,7 @@ if ~isempty(xUnits)
 else
     xlabel(xLabel);
 end
-ylabel('Cell count');
-%ylabel('Count');
+ylabel(yLabel);
 title(titleStr, 'Interpreter', 'none');
 saveas(h, figname, 'png');
 close(h);
