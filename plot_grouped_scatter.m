@@ -1,6 +1,6 @@
-function plot_grouped_scatter(figname, X, Y, grouping, grouping_labels, xLabel, xUnits, yLabel, yUnits, titleStr, varargin)
-%% Plot a grouped scatter plot
-% Usage: plot_grouped_scatter(figname, X, Y, grouping, grouping_labels, xLabel, xUnits, yLabel, yUnits, titleStr, varargin)
+function [h, g] = plot_grouped_scatter(figname, X, Y, grouping, grouping_labels, xLabel, xUnits, yLabel, yUnits, titleStr, varargin)
+%% Plot and save a grouped scatter plot with 95% confidence ellipses
+% Usage: [h, g] = plot_grouped_scatter(figname, X, Y, grouping, grouping_labels, xLabel, xUnits, yLabel, yUnits, titleStr, varargin)
 %
 % Requires:
 %       /home/Matlab/Adams_Functions/plot_ellipse.m
@@ -16,7 +16,7 @@ ellipseLineStyle = '-';             % dashed line
 ellipseLineWidth = 1;
 
 %% Default values for optional arguments
-fitGaussianDefault = true;          % whether to fit Gaussian by default
+plotEllipseDefault = true;          % whether to plot ellipses by default
 percentCLDefault = 95;              % default confidence level (%)
 xScaleDefault = 'linear';
 yScaleDefault = 'linear';
@@ -33,7 +33,7 @@ iP = inputParser;
 iP.FunctionName = 'plot_grouped_scatter';
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'fitGaussian', fitGaussianDefault, ...
+addParameter(iP, 'PlotEllipse', plotEllipseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PercentCL', percentCLDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
@@ -57,7 +57,7 @@ addParameter(iP, 'MarkerLineWidth', markerLineWidthDefault, ...
 
 % Read from the Input Parser
 parse(iP, varargin{:});
-fitGaussian = iP.Results.fitGaussian;
+plotEllipse = iP.Results.PlotEllipse;
 percentCL = iP.Results.PercentCL;
 xScale = iP.Results.XScale;
 yScale = iP.Results.YScale;
@@ -72,7 +72,7 @@ nGroups = max(grouping);
 cm = colormap(parula(nGroups));
 
 %% Fit each group with a bivariate Gaussian
-if fitGaussian
+if plotEllipse
     % Compute the critical value for the chi-squared distribution
     %   to have a cumulative probability of percentCL % confidence level
     criticalValue = chi2inv(percentCL/100, 2);
@@ -150,15 +150,15 @@ if fitGaussian
             ~isempty(theta0s(iGroup))
             % Obtain the x and y values of the ellipse on the scaled plot
             [~, xPlot, yPlot] = ...
-                        plot_ellipse(mus{iGroup}, halflengths{iGroup}, ...
-                        theta0s(iGroup), 'NPoints', ellipseNPoints, ...
-                        'ToPlot', false);
+                plot_ellipse(mus{iGroup}, halflengths{iGroup}, ...
+                            theta0s(iGroup), 'NPoints', ellipseNPoints, ...
+                            'ToPlot', false);
             if strcmp(xScale, 'log')
                 xValues{iGroup} = 10.^(xPlot);
             else
                 xValues{iGroup} = xPlot;
             end
-            if strcmp(xScale, 'log')
+            if strcmp(yScale, 'log')
                 yValues{iGroup} = 10.^(yPlot);
             else
                 yValues{iGroup} = yPlot;
@@ -173,7 +173,7 @@ clf(h);
 g = gscatter(X, Y, grouping, cm, markerType);
 set(g, 'MarkerSize', markerSize);
 set(g, 'LineWidth', markerLineWidth);
-if fitGaussian
+if plotEllipse
     % Plot a 95% confidence ellipse for each group
     hold on;
     for iGroup = 1:nGroups
