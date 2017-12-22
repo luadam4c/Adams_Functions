@@ -103,6 +103,7 @@ function [params_final, cpa, pw, dv_rec, rmse_R, rmse_F, params_L_F2, params_S_R
 % 2016-12-05 Removed typtau and tau_max, changed initial conditions to tau0_range(1) and tau1_range(2)
 % 2016-12-05 Added tau0_range_R and tau1_range_R
 % 2016-12-05 Added typtau0, typtau1, typtau0_R, typtau1_R
+% 2017-12-21 SpecsForFitmode() -> specs_for_fitmode()
 %  
 
 %% Flags
@@ -216,7 +217,7 @@ end
 %% Only do the following if fitmode is used
 if nargin >= 11
 	% Set suffices and title modifications for each fitmode
-	[suffix, title_mod] = SpecsForFitmode (fitmode);
+	[suffix, title_mod] = specs_for_fitmode (fitmode);
 
 	% Change directory names to make it specific to each fitmode
 	for k = 1:numel(directories)
