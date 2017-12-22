@@ -341,6 +341,7 @@ vpeak_ub = zeros(npks, 1);
 vpeak_2der = zeros(npks, 1);
 v0_pk = cell(npks, 1);
 v0_pk_begin = zeros(npks, 1);
+v0_pk_end = zeros(npks, 1);
 spi = cell(npks, 1);
 sp1sti = zeros(npks, 1);
 for p = 1:npks
@@ -381,6 +382,7 @@ for p = 1:npks
     % Detect spikes in original trace within the peak
     v0_pk{p} = v0(vpeak_lb(p):vpeak_ub(p));        % take only the peak part
     v0_pk_begin(p) = vpeak_lb(p);
+    v0_pk_end(p) = vpeak_ub(p);
     [pspikes_a, pspikes_i] = findpeaks(v0_pk{p});    % find all "spikes" within the peak
     stemp1 = find(pspikes_a > sp_thr_init);        % action potentials must be greater than threshold
     if ~isempty(stemp1)
