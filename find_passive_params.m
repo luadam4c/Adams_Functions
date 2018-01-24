@@ -80,30 +80,31 @@ function [params_final, cpa, pw, dv_rec, rmse_R, rmse_F, params_L_F2, params_S_R
 %		/media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
 %
 %
-% 2016-10-27 Adapted from find_IPSC_peak.m and dclampDataExtractor.m
-% 2016-10-31 Changed equation form of ft to 'a*(exp(-x/b)-1)+c*(exp(-x/d)-1)' from 'a*exp(-x/b)+c*exp(-x/d)+e'
-% 2016-10-31 Removed '- round(0.5/sims)' from the definition of base_ind
-% 2016-10-31 Made sure tau0 >= tau1
-% 2016-11-01 Added fitmode so that the titles and filenames can change
-% 2016-11-01 Exclude faulty traces, including those with spontaneous spikes, from the fitting
-% 2016-11-01 Added pulse width
-% 2016-11-01 Added long pulse response
-% 2016-11-01 Added L, rho, taum
-% 2016-11-01 Plot ivec1s only (ivec0s is not directly used in the analyses)
-% 2016-11-02 Moved check directories to check_subdir.m
-% 2016-11-02 Added the falling phase of the current pulse response
-% 2016-11-12 Now returns estimates from pooled data if those from averaged data don't exist
-% 2016-11-12 Now outputs all estimates
-% 2016-12-04 Added series resistance Rs and changed the way somatic and dendritic resistances are computed
-% 2016-12-04 Increase the upper bound of tau to 500 ms
-% 2016-12-04 Added rmse_R && rmse_F, the root-mean-squared errors of the rising and falling phase, respectively, for each sweep
-% 2016-12-04 Added the functions fit_setup && measure_error
-% 2016-12-04 Fixed measure_error so that sweeps yielding nonsensical responses have rmse = Inf
-% 2016-12-05 Added tau0_range = [20, 500] and tau1_range = [0, 20]
-% 2016-12-05 Removed typtau and tau_max, changed initial conditions to tau0_range(1) and tau1_range(2)
-% 2016-12-05 Added tau0_range_R and tau1_range_R
-% 2016-12-05 Added typtau0, typtau1, typtau0_R, typtau1_R
-% 2017-12-21 SpecsForFitmode() -> specs_for_fitmode()
+% 2016-10-27 - Adapted from find_IPSC_peak.m and dclampDataExtractor.m
+% 2016-10-31 - Changed equation form of ft to 'a*(exp(-x/b)-1)+c*(exp(-x/d)-1)' from 'a*exp(-x/b)+c*exp(-x/d)+e'
+% 2016-10-31 - Removed '- round(0.5/sims)' from the definition of base_ind
+% 2016-10-31 - Made sure tau0 >= tau1
+% 2016-11-01 - Added fitmode so that the titles and filenames can change
+% 2016-11-01 - Exclude faulty traces, including those with spontaneous spikes, from the fitting
+% 2016-11-01 - Added pulse width
+% 2016-11-01 - Added long pulse response
+% 2016-11-01 - Added L, rho, taum
+% 2016-11-01 - Plot ivec1s only (ivec0s is not directly used in the analyses)
+% 2016-11-02 - Moved check directories to check_subdir.m
+% 2016-11-02 - Added the falling phase of the current pulse response
+% 2016-11-12 - Now returns estimates from pooled data if those from averaged data don't exist
+% 2016-11-12 - Now outputs all estimates
+% 2016-12-04 - Added series resistance Rs and changed the way somatic and dendritic resistances are computed
+% 2016-12-04 - Increase the upper bound of tau to 500 ms
+% 2016-12-04 - Added rmse_R && rmse_F, the root-mean-squared errors of the rising and falling phase, respectively, for each sweep
+% 2016-12-04 - Added the functions fit_setup && measure_error
+% 2016-12-04 - Fixed measure_error so that sweeps yielding nonsensical responses have rmse = Inf
+% 2016-12-05 - Added tau0_range = [20, 500] and tau1_range = [0, 20]
+% 2016-12-05 - Removed typtau and tau_max, changed initial conditions to tau0_range(1) and tau1_range(2)
+% 2016-12-05 - Added tau0_range_R and tau1_range_R
+% 2016-12-05 - Added typtau0, typtau1, typtau0_R, typtau1_R
+% 2017-12-21 - SpecsForFitmode() -> specs_for_fitmode()
+% 2018-01-24 - Added isdeployed
 %  
 
 %% Flags
@@ -237,7 +238,10 @@ elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
 else
 	error('Valid functionsdirectory does not exist!');
 end
-addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));	% for subplotsqueeze.m
+if ~isdeployed
+    addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));
+                                    % for subplotsqueeze.m
+end
 
 % Display standard output header
 % fprintf('ANALYZING passive parameters for %s ...\n', filebase);

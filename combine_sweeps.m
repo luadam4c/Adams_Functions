@@ -16,8 +16,9 @@ function allData = combine_sweeps(dataDirectory, expLabel, dataMode, varargin)
 %       /home/Matlab/minEASE/minEASE.m
 %
 % File History:
-% 2017-07-25 Created by AL
-% 2017-10-15 Added success message
+% 2017-07-25 - Created by AL
+% 2017-10-15 - Added success message
+% 2018-01-24 - Added isdeployed
 % 
 
 %% Default values for optional arguments
@@ -33,10 +34,12 @@ elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
 else
     error('Valid functionsDirectory does not exist!');
 end
-addpath(fullfile(functionsDirectory, '/Downloaded_Functions/'));
+if ~isdeployed
+    addpath(fullfile(functionsDirectory, '/Downloaded_Functions/'));
                                                 % for abf2load.m
-addpath(fullfile(functionsDirectory, '/Brians_Functions/'));
+    addpath(fullfile(functionsDirectory, '/Brians_Functions/'));
                                                 % for identify_channels.m
+end
                                                 
 % Set up Input Parser Scheme
 iP = inputParser;         

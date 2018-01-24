@@ -53,6 +53,7 @@ function [d, sius, tvec] = plot_traces_abf (filename, expmode, d, sius, outfolde
 % 2017-04-13 - Added d, sius as optional arguments
 % 2017-06-16 - Now uses identify_channels.m
 % 2017-06-16 - Changed ch_labels to include units
+% 2018-01-24 - Added isdeployed
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -64,8 +65,10 @@ elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
 else
 	error('Valid functionsdirectory does not exist!');
 end
-addpath(fullfile(functionsdirectory, '/Brians_Functions/'));    
+if ~isdeployed
+    addpath(fullfile(functionsdirectory, '/Brians_Functions/'));    
                                                     % for identify_channels.m
+end
 
 %% Check arguments
 if nargin < 1

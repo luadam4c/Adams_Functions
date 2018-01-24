@@ -17,11 +17,12 @@ function plot_all_abfs_dir (directory, expmode)
 %		/home/Matlab/Brians_Functions/identify_CI.m
 %		
 % File history: 
-% 2016-09-22 Created
-% 2017-04-11 Added expmode as arguments
-% 2017-04-11 Now uses dirr.m to find abf files in subdirectories too
+% 2016-09-22 - Created
+% 2017-04-11 - Added expmode as arguments
+% 2017-04-11 - Now uses dirr.m to find abf files in subdirectories too
 % 2017-04-17 - BT - Creates F-I plot for current injection protocols
 % 2017-04-19 - BT - Changed detection method to difference of sweep averages
+% 2018-01-24 - Added isdeployed
 
 max_swp_spacing = 2;
 
@@ -35,8 +36,10 @@ elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
 else
 	error('Valid functionsdirectory does not exist!');
 end
-addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));	% for dirr.m, abf2load.m or abfload.m
-addpath(fullfile(functionsdirectory, '/Brians_Functions/'));		% for identify_CI.m
+if ~isdeployed
+    addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));	% for dirr.m, abf2load.m or abfload.m
+    addpath(fullfile(functionsdirectory, '/Brians_Functions/'));		% for identify_CI.m
+end
 
 %% Set defaults
 if nargin < 1

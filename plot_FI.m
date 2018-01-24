@@ -19,18 +19,19 @@ function plot_FI (filename, alldata, sius, outfolder)
 %
 % Used by:
 % 
-% 2017-04-04 Adapted from analyzeCI_20140730
-% 2017-04-04 Used dirr.m to find all abf files
-% 2017-04-04 Updated file names
+% 2017-04-04 - Adapted from analyzeCI_20140730
+% 2017-04-04 - Used dirr.m to find all abf files
+% 2017-04-04 - Updated file names
 % 2017-04-06 - BT - Computed and plotted spike frequency
-% 2017-04-11 Moved a copy of identify_channels.m to /home/Matlab/Adams_Functions/
-% 2017-04-11 Now uses filename directly and calls each file from plot_all_abfs_dir.m
-% 2017-04-11 Cleaned code
-% 2017-04-11 Changed the color map to lines
+% 2017-04-11 - Moved a copy of identify_channels.m to /home/Matlab/Adams_Functions/
+% 2017-04-11 - Now uses filename directly and calls each file from plot_all_abfs_dir.m
+% 2017-04-11 - Cleaned code
+% 2017-04-11 - Changed the color map to lines
 % 2017-04-13 - BT - Marked on plot spike frequency time interval
 % 2017-04-13 - Added alldata, sius as optional arguments
 % 2017-05-01 - BT - Converted spif_time to use identify_CI.m
-% 2017-06-16 AL - Updated 
+% 2017-06-16 - AL - Updated 
+% 2018-01-24 - Added isdeployed
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -68,10 +69,12 @@ elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
 else
     error('Valid functionsdirectory does not exist!');
 end
-addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));
+if ~isdeployed
+    addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));
                                                 % for abf2load.m or abfload.m
-addpath(fullfile(functionsdirectory, '/Brians_Functions/'));        '
+    addpath(fullfile(functionsdirectory, '/Brians_Functions/'));        '
                                                 % for identify_channels.m
+end
 
 %% Create outfolder if not already exists
 if exist(outfolder, 'dir') ~= 7

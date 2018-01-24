@@ -11,17 +11,18 @@ function [BestModel, numComponents, Mu_best, Stdev_best, Prop_best, minAIC, new_
 % Used by:    
 %        /media/adamX/m3ha/data_dclamp/PlotHistogramsRefineThreshold.m
 %
-% 2016-08-03 Created
-% 2016-09-15 Added fitmode
-% 2016-09-30 Added peakclass & peakclass_labels
-% 2016-09-30 Took out spontaneous spikes 
-% 2016-11-01 Replaced ProbDistUnivParam with makedist, also from the Statistics and Machine Learning Toolbox
+% 2016-08-03 - Created
+% 2016-09-15 - Added fitmode
+% 2016-09-30 - Added peakclass & peakclass_labels
+% 2016-09-30 - Took out spontaneous spikes 
+% 2016-11-01 - Replaced ProbDistUnivParam with makedist, also from the Statistics and Machine Learning Toolbox
 % 2017-02-08 - BT - Changed legend location for RMSE graph fitting
 % 2017-02-22 - BT - Identified RMSEs above threshold, returns modified peakclass for RMSE
-% 2017-04-29 Don't apply reorder.m unless plotting RMSE
+% 2017-04-29 - Don't apply reorder.m unless plotting RMSE
 % 2017-05-01 - BT - remove_cells for cells to be examined between RMSE plots. 
 % 2017-05-05 - BT - Examine cell plot must have figname rmse_*R/F*_row_Fit_traces 
 %               and threshold plot must have figname rmse_*R/F*_row_Fit_threshold
+% 2018-01-24 - Added isdeployed
 % TODO: add input parser and make arguments except data parameter-value pairs with sensible default values
 
 %% Set parameters
@@ -42,7 +43,9 @@ elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
 else
     error('Valid functionsdirectory does not exist!');
 end
-addpath(fullfile(functionsdirectory, '/Adams_Functions/'));    % for histg.m
+if ~isdeployed
+    addpath(fullfile(functionsdirectory, '/Adams_Functions/'));    % for histg.m
+end
 
 %% Take out spontaneous spikes (peak class == 3)
 ind_nospont = find(peakclass ~= 3);
