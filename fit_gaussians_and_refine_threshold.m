@@ -3,11 +3,11 @@ function [BestModel, numComponents, Mu_best, Stdev_best, Prop_best, minAIC, new_
 % arguments: data must be a column vector of values; 
 %         max_numComponents is defaulted to be 5
 %        the rest are only necessary if the histogram is to be plotted and saved
-%        Examine cell plot must have figname rmse_*R/F*_row_Fit_traces and threshold plot must have figname rmse_*R/F*_row_Fit_threshold
+%        Examine cell plot must have figname rmse_*R/F*_row_Fit_traces and 
+%           threshold plot must have figname rmse_*R/F*_row_Fit_threshold
 % 
 % Requires:    
 %        /home/Matlab/Adams_Functions/histg.m
-%        /home/Matlab/Brians_Functions/reorder.m
 % Used by:    
 %        /media/adamX/m3ha/data_dclamp/PlotHistogramsRefineThreshold.m
 %
@@ -20,13 +20,13 @@ function [BestModel, numComponents, Mu_best, Stdev_best, Prop_best, minAIC, new_
 % 2017-02-22 - BT - Identified RMSEs above threshold, returns modified peakclass for RMSE
 % 2017-04-29 Don't apply reorder.m unless plotting RMSE
 % 2017-05-01 - BT - remove_cells for cells to be examined between RMSE plots. 
-% 2017-05-05 - BT - Examine cell plot must have figname rmse_*R/F*_row_Fit_traces and threshold plot must have figname rmse_*R/F*_row_Fit_threshold
+% 2017-05-05 - BT - Examine cell plot must have figname rmse_*R/F*_row_Fit_traces 
+%               and threshold plot must have figname rmse_*R/F*_row_Fit_threshold
 % TODO: add input parser and make arguments except data parameter-value pairs with sensible default values
 
-
 %% Set parameters
-prec = 10^-4;                % Precision
-remove_cells = [5 14 19];        % Cell #s to examine in RMSE plotting
+prec = 10^-4;               % Precision
+remove_cells = [5 14 19];   % Cell #s to examine in RMSE plotting
 
 %% Set up log file
 logfile = fullfile(outfolder, strrep(filename, '.png', ['_fit_gaussians_', num2str(max_numComponents), 'maxcomplog.txt']));
@@ -42,7 +42,7 @@ elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
 else
     error('Valid functionsdirectory does not exist!');
 end
-addpath(fullfile(functionsdirectory, '/Brians_Functions/'));        % for reorder.m
+addpath(fullfile(functionsdirectory, '/Adams_Functions/'));    % for histg.m
 
 %% Take out spontaneous spikes (peak class == 3)
 ind_nospont = find(peakclass ~= 3);
@@ -119,15 +119,18 @@ Pdf = pdf(BestModel, x);
 Normal = cell(numComponents, 1);
 Normalpdf = cell(numComponents, 1);
 for i = 1:numComponents
-    Normal{i} = makedist('Normal', 'mu', Mu_best(i), 'sigma', Stdev_best(i));    % create a normal distribution for this component
-    Normalpdf{i} = pdf(Normal{i}, x);                        % create the probability density function
+    % Create a normal distribution for this component
+    Normal{i} = makedist('Normal', 'mu', Mu_best(i), 'sigma', Stdev_best(i));
+
+    % Get the probability density function
+    Normalpdf{i} = pdf(Normal{i}, x);
 end
 
 %% Find new thresholds
 if numComponents == 3                    % 2 possible thresholds
 
     % Find the minimum between lower two Gaussians
-    left1 = max(floor(Mu_best(1)/prec)*prec, thr_min);    % left bound; threshold can't be lower than thr_min
+    left1 = max(floor(Mu_best(1)/prec)*prec, thr_min);  % left bound; threshold can't be lower than thr_min
     right1 = max(ceil(Mu_best(2)/prec)*prec, left1);    % right bound
     xx1 = (left1:prec:right1)';
     Pdf_part1 = pdf(BestModel, xx1);
@@ -135,7 +138,7 @@ if numComponents == 3                    % 2 possible thresholds
     new_thr1 = xx1(minprob1_ind);
 
     % Find the minimum between upper two Gaussians
-    left2 = max(floor(Mu_best(2)/prec)*prec, thr_min);    % left bound; threshold can't be lower than thr_min
+    left2 = max(floor(Mu_best(2)/prec)*prec, thr_min);  % left bound; threshold can't be lower than thr_min
     right2 = max(ceil(Mu_best(3)/prec)*prec, left2);    % right bound
     xx2 = (left2:prec:right2)';
     Pdf_part2 = pdf(BestModel, xx2);
@@ -160,13 +163,13 @@ if numComponents == 3                    % 2 possible thresholds
  
 elseif numComponents == 4                % 3 possible thresholds
 else
-    comp1 = find(Mu_best < old_thr, 1, 'last');    % Gaussian peak left of old_thr
-    comp2 = find(Mu_best > old_thr, 1);        % Gaussian peak right of old_thr
+    comp1 = find(Mu_best < old_thr, 1, 'last');         % Gaussian peak left of old_thr
+    comp2 = find(Mu_best > old_thr, 1);                 % Gaussian peak right of old_thr
     value1 = Mu_best(comp1);
     value2 = Mu_best(comp2);
 
-    left1 = max(floor(value1/prec)*prec, thr_min);    % left bound; threshold can't be lower than thr_min
-    right1 = ceil(value2/prec)*prec;        % right bound
+    left1 = max(floor(value1/prec)*prec, thr_min);      % left bound; threshold can't be lower than thr_min
+    right1 = ceil(value2/prec)*prec;                    % right bound
     xx = (left1:prec:right1)';
     Pdf_part = pdf(BestModel, xx);
     [minprob minprob_ind] = min(Pdf_part);
@@ -184,49 +187,59 @@ elseif fitmode == 2
     fitsuffix = ' (for fitting)';
 end
 
-new_peakclass = peakclass;    % copy peakclass to new_peakclass as template
-new_peakclass_labels = peakclass_labels;    % copy peakclass_labels to new_peakclass_labels as template if not changed later
+% Copy peakclass to new_peakclass as template
+new_peakclass = peakclass;
 
-if nargin > 3        %%% TODO: Why 3? BT - in the original source
+% Copy peakclass_labels to new_peakclass_labels as template if not changed later
+new_peakclass_labels = peakclass_labels;
+
+if nargin > 3       %%% TODO: Why 3? BT - in the original source
     h = figure(400);
     set(h, 'Visible', 'on');
     set(h, 'Name', ['Distribution of ', label]);
     clf(h)
-    opt.edges = edges;            % needed for histg
+    opt.edges = edges;                      % needed for histg
     opt.group_names = peakclass_labels';    % needed for histg
-    if length(peakclass_labels) >= 10 && strcmp(label, 'RMSE (mV) in the falling phase');    % RMSE falling phase plot analysis plots
-        if ~isempty(strfind(filename, 'rmse_F_row_Fit_threshold'))        % marker for plotting above/below threshold 
-            new_peakclass_labels = {'Above Threshold', 'Below Threshold'};    % labels for above/below threshold plot
-            opt.group_names = new_peakclass_labels';    % for histg.m
-        elseif ~isempty(strfind(filename, 'rmse_F_row_Fit_traces')) && size(remove_cells,2) > 0     % plotting specific cells
+    if length(peakclass_labels) >= 10 && ...
+        strcmp(label, 'RMSE (mV) in the falling phase');
+                                            % RMSE falling phase plot analysis plots
+        if ~isempty(strfind(filename, 'rmse_F_row_Fit_threshold'))        
+                                            % marker for plotting above/below threshold 
+            % Labels for above/below threshold plot
+            new_peakclass_labels = {'Above Threshold', 'Below Threshold'};
+            opt.group_names = new_peakclass_labels';        % for histg.m
+        elseif ~isempty(strfind(filename, 'rmse_F_row_Fit_traces')) && ...
+                size(remove_cells,2) > 0    % plotting specific cells
 %            new_peakclass_labels = {'All other cells'};        % Make labels for cells to remove
 %            for q = 1:size(remove_cells,2)
 %                new_peakclass_labels{q+1} = ['Cell #' num2str(remove_cells(q))];
 %            end
-%            opt.group_names = new_peakclass_labels';    % for histg.m
-            new_peakclass_labels = {'All other cells'};        % Make labels for cells to remove
-            not_remove_cells_indices = {};                % indices of cells not in remove_cells
+%            opt.group_names = new_peakclass_labels';       % for histg.m
+            % Make labels for cells to remove
+            new_peakclass_labels = {'All other cells'};
+            not_remove_cells_indices = {};                  % indices of cells not in remove_cells
             for q = 1:size(remove_cells,2)
                 new_peakclass_labels{q+1} = ['Cell #' num2str(remove_cells(q))];    % make cell labels
                 not_remove_cells_indices{q} = find(peakclass ~= remove_cells(q));    
                                 % track indices of cells not being examined
             end
-            opt.group_names = new_peakclass_labels';    % for histg.m
+            opt.group_names = new_peakclass_labels';        % for histg.m
             new_peakclass(intersectm(not_remove_cells_indices)) = 1;    
                                 % change all indices of cells not being examined to 1
-            for q = 1:size(remove_cells,2)        % cells being examined given new classes for histg.m
-                new_peakclass(peakclass == remove_cells(q)) = q+1;
+            for q = 1:size(remove_cells,2)  % cells being examined given new classes for histg.m
+                new_peakclass(peakclass == remove_cells(q)) = q + 1;
             end
         end
     end
-    z = histg(data, new_peakclass, opt);        % plots stacked histogram
-    for i = 1:numComponents                % plots gaussian components
+    z = histg(data, new_peakclass, opt);    % plots stacked histogram
+    for i = 1:numComponents                 % plots gaussian components
         plot(x, Normalpdf{i} * Prop_best(i) * harea, 'w', 'Displayname', ['component #', num2str(i)]);
     end
-    full_dist = plot(x, Pdf * harea, 'r', 'LineWidth', 1, 'Displayname', 'full distribution');    % plots full distribution
+    full_dist = plot(x, Pdf * harea, 'r', 'LineWidth', 1, ...
+                    'Displayname', 'full distribution');    % plots full distribution
     if numComponents == 3
-            line([new_thr new_thr], [0 npts], 'Color', 'r', 'LineStyle', '--', ...
-                    'Displayname', ['New threshold = ', num2str(new_thr)]); hold on;
+        line([new_thr new_thr], [0 npts], 'Color', 'r', 'LineStyle', '--', ...
+                'Displayname', ['New threshold = ', num2str(new_thr)]); hold on;
         line([alt_thr alt_thr], [0 npts], 'Color', 'b', 'LineStyle', '--', ...
             'Displayname', ['Alternate threshold = ', num2str(alt_thr)]);
     end
@@ -236,20 +249,20 @@ if nargin > 3        %%% TODO: Why 3? BT - in the original source
     xlabel(label)
     ylabel('# of sweeps')
     title(['Distribution of ', label, fitsuffix]);
-
     if length(peakclass_labels) < 10        % Legend for 2nd derivative, using peakclass
         legend('Location', 'northwest'); 
-      elseif length(peakclass_labels) >= 10 && ...
+    elseif length(peakclass_labels) >= 10 && ...
         strcmp(label, 'RMSE (mV) in the rising phase')
-                    % Legend for rising RMSE, location northwest overlaps plot; peakclass = cellidrow
-        [min_val, min_ind] = min(full_dist.YData);    % Minimum y value of data to determine threshold
-        x_min = full_dist.XData(min_ind);    % Corresponding x value of minimum y value
+        % Legend for rising RMSE, location northwest overlaps plot; peakclass = cellidrow
+        [min_val, min_ind] = min(full_dist.YData);  % Minimum y value of data to determine threshold
+        x_min = full_dist.XData(min_ind);           % Corresponding x value of minimum y value
         if strfind(filename, 'rmse_R_row_Fit_threshold')    % above/below threshold RMSE plot
-            new_peakclass(data >= x_min) = 2;    % Change peakclasses to visibly identify traces above threshold
-            new_peakclass(data < x_min) = 1;    % All data above and below min x value altered
+            new_peakclass(data >= x_min) = 2;       % Change peakclasses to visibly identify traces above threshold
+            new_peakclass(data < x_min) = 1;        % All data above and below min x value altered
             new_peakclass_labels = {'Above Threshold', 'Below Threshold'};
             opt.group_names = new_peakclass_labels';
-        elseif ~isempty(strfind(filename, 'rmse_R_row_Fit_traces')) && size(remove_cells,2) > 0    % cells are being examined between rising/falling plots
+        elseif ~isempty(strfind(filename, 'rmse_R_row_Fit_traces')) && ...
+                size(remove_cells,2) > 0        % cells are being examined between rising/falling plots
             new_peakclass_labels = {'All other cells'};        % Make labels for cells to remove
             not_remove_cells_indices = {};                % indices of cells not in remove_cells
             for q = 1:size(remove_cells,2)
@@ -276,7 +289,8 @@ if nargin > 3        %%% TODO: Why 3? BT - in the original source
         xlabel(label)
         ylabel('# of sweeps')
         title(['Distribution of ', label, fitsuffix]);
-        legend(new_peakclass_labels, 'Location', 'eastoutside');    % Revised legend, original if no analysis criteria met
+        legend(new_peakclass_labels, 'Location', 'eastoutside');    
+                                        % Revised legend, original if no analysis criteria met
 %        legend('Location', 'eastoutside');    % Revised legend, original if no analysis criteria met
         line([x_min x_min], [0 npts], 'Color', 'r', 'LineStyle', '--', ...
             'Displayname', ['New threshold = ', num2str(new_thr)]); hold on;    % Plot threshold line at minimum in rising
@@ -360,4 +374,7 @@ if find(remove_cells == -1) > 0            % above/below threshold RMSE plot
        length(unique(peakclass)) ~= length(peakclass_labels)    % if peakclasses are removed/absent from peakclass
         new_peakclass = reorder(new_peakclass);        % see reorder.m in /home/Matlab/Brians_Functions/ e.g. [1 2 4 4 5] -> [1 2 3 3 4]
     end
+addpath(fullfile(functionsdirectory, '/Brians_Functions/'));    % for reorder.m
+%        /home/Matlab/Brians_Functions/reorder.m
+
 %}

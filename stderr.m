@@ -3,6 +3,7 @@ function stdErr = stderr(X)
 % Usage: stdErr = stderr(X)
 %
 % Used by:
+%       /home/Matlab/Adams_Functions/fit_IEI.m
 %
 % 2017-12-14 Created
 

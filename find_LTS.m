@@ -107,6 +107,7 @@ function [actVhold, maxnoise, peaktime, peak2ndder, peakprom, peakwidth, peakcla
 % 2017-12-21 AL - Added spike threshold, first spike time, last spike time
 % 2017-12-21 AL - Changed the definition of burst onset time
 % 2017-12-21 AL - Added bursttime_label and spiketime_label
+% 2017-12-27 AL - Fixed spike threshold, first spike time, last spike time for not LTS by overrule 
 %
 
 %% Parameters used for data analysis
@@ -862,6 +863,9 @@ if ismember(filebase, traces_to_override{ind_Nit}) ...
     maxslopeval = NaN;
     bursttime = NaN;
     spikesperburst = NaN;
+    spikethreshold = NaN;
+    firstspiketime = NaN;
+    lastspiketime = NaN;
     maxspikeamp = NaN;
     minspikeamp = NaN;
     spikefrequency = NaN;

@@ -10,17 +10,17 @@ function abf2mat(abfFileOrDir, varargin)
 %           abf2mat('Voltage_clamp', 'OmitTime', true, 'SaveIndividual', false)
 %
 % Arguments:
-%       abfFileOrDir    - file name of .abf file or 
-%                           file directory containing .abf files
-%                       if not full path, file must be in current directory
-%                       must be a string scalar or a character vector
+%       abfFileOrDir- file name of .abf file or 
+%                       file directory containing .abf files
+%                   if not full path, file must be in current directory
+%                   must be a string scalar or a character vector
 %       varargin    - 'OmitTime': whether to omit time vector
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'SaveIndividual': whether to save individual vectors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
-%
+
 % File History:
 % 2016-08-02 Created
 % 2016-09-19 Modified so that it reads files in 
@@ -39,6 +39,13 @@ omitTimeDefault = false;        % whether to omit time vector by default
 saveIndividualDefault = true;   % whether to save individual vectors by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Deal with arguments
+% Check number of required arguments
+if nargin < 1
+    error(['Not enough input arguments, ', ...
+            'type ''help abf2mat'' for usage']);
+end
 
 % Set up Input Parser Scheme
 iP = inputParser;         
@@ -91,7 +98,7 @@ elseif exist(fullfile(pwd, abfFileOrDir), 'dir') == 7       % it's a directory
     % Set flag
     multipleFiles = true;
 else
-    error('File or directory undefined!\n');
+    error('File or directory undefined!');
 end
 
 % Find all .abf files to convert

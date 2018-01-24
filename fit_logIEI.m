@@ -6,7 +6,7 @@ function [model0, model1, pdfModel2, pdfModel3, outparams] = fit_logIEI (logData
 % Side Effects:
 %       Plots TODO
 % Arguments:
-%       logData     - a vector of IEIs
+%       logData     - a vector of log(IEI)s
 %                   must be a numeric nonnegative vector
 %       identifier  - an identifier for plotting logData
 %                   must be a string scalar or a character vector
@@ -47,7 +47,6 @@ linewidthLines = 0.5;               % line width for lines
 colorHist = 'k';                    % color of histogram
 lambdaInit = 0.7;                   % initial weight of Gaussian part
                                     %   in Gaussian-Exp-Exponential Fit
-
 %% Default values for optional arguments
 xUnitDefault = '';                  % default unit for IEIs
 xLimitsDefault = [];                % default x limits of histogram
@@ -61,15 +60,15 @@ plotFlagDefault = true;             % whether to plot by default
 % Check number of required arguments
 if nargin < 2
     error(['Not enough input arguments, ', ...
-            'type ''help fit_IEI'' for usage']);
+            'type ''help fit_logIEI'' for usage']);
 end
 
 % Set up Input Parser Scheme
 iP = inputParser;         
-iP.FunctionName = 'fit_IEI';
+iP.FunctionName = 'fit_logIEI';
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'logData', ...                 % a vector of IEIs
+addRequired(iP, 'logData', ...              % a vector of IEIs
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addRequired(iP, 'identifier', ...           % an identifier for plotting logData
     @(x) validateattributes(x, {'char', 'string'}, {'nonempty'}));
@@ -96,7 +95,7 @@ plotFlag     = iP.Results.PlotFlag;
 
 % Set dependent argument defaults
 if isempty(xUnit)
-    xUnit = 'ms';
+    xUnit = 'log s';
     fprintf('Unit for IEIs not provided. Set to default %s!\n', xUnit);
 end
 if isempty(xLimits)
@@ -140,7 +139,7 @@ x = linspace(xLimits(1), xLimits(2), nPoints)';
 %   This yielded many small peaks that were probably insignificant
 %   model0 = fitdist(logData, 'Kernel');
 
-%%Fit logData to a kernel distribution using Epanechnikov (parabolic) kernels
+%% Fit logData to a kernel distribution using Epanechnikov (parabolic) kernels
 %   This was not much different from Gaussian kernels
 % model0 = fitdist(logData, 'Kernel', 'Kernel', 'epanechnikov');
 
@@ -577,10 +576,10 @@ if plotFlag
         ylabel('Count');
         title(['Gaussian-Exp-Exponential Fit for ', strrep(identifier, '_', '\_')]);
         saveas(h, fullfile(outFolder, [identifier, '_GaussExp']), 'png');
-
-        % Remove default values
-        set(groot, 'defaultLineLineWidth', 'remove');
     end
+
+    % Remove default values
+    set(groot, 'defaultLineLineWidth', 'remove');
 end
 
 %% Package parameters into outparams
@@ -588,6 +587,7 @@ outparams.logMeanIEI = logMeanIEI;
 outparams.logMedianIEI = logMedianIEI;
 
 if ~isempty(model0)
+    outparams.model0 = model0;
     outparams.pdfModel0 = pdfModel0;
     outparams.peak1Model0 = peak1Model0;
     outparams.peak2Model0 = peak2Model0;
@@ -599,12 +599,14 @@ if ~isempty(model0)
 end
 
 if ~isempty(model1)
+    outparams.model1 = model1;
     outparams.pdfModel1 = pdfModel1;
     outparams.muModel1 = muModel1;
     outparams.sigmaModel1 = sigmaModel1;
 end
 
 if ~isempty(pdfModel2)
+    outparams.mypdf2 = mypdf2;
     outparams.pdfModel2 = pdfModel2;
     outparams.comp1Model2 = comp1Model2;
     outparams.comp2Model2 = comp2Model2;
@@ -637,6 +639,7 @@ if ~isempty(pdfModel2)
 end
 
 if ~isempty(pdfModel3)
+    outparams.mypdf3 = mypdf3;
     outparams.pdfModel3 = pdfModel3;
     outparams.comp1Model3 = comp1Model3;
     outparams.comp2Model3 = comp2Model3;
