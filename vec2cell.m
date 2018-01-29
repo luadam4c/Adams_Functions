@@ -12,7 +12,13 @@ function cellArray = vec2cell (vecORarray, classVector, varargin)
 %                       the same number of rows as vecORarray
 %       varargin    - 'SetOrder' - a flag indicating the 
 %                       order of vectors/arrays in cellArray
-%                   TODO: annotate and implement this
+%                   TODO: Change optstr2 to SetOrder, etc.
+%                   - 'optstr2' - a flag indicating the 
+%                       order of vectors/arrays in cellArray
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'str1'        - TODO: Description of str1
+%                       'str2'        - TODO: Description of str2
+%                   default == 'defaultstr'
 %
 % Requires:
 %
@@ -24,10 +30,19 @@ function cellArray = vec2cell (vecORarray, classVector, varargin)
 % 2017-05-12 Created by Adam Lu
 % 2017-10-31 Now accepts an array (each column is a vector to be separated) 
 %               as the first argument
-% TODO: Add a parameter 'SetOrder' that can take the values 
+% 2018-01-29 MD - Added setOrder 
+% TODO: Make 'SetOrder' a parameter-value pair that can take the values 
 %           'sorted' (ascending order), 'stable' (original order)
 %           with default being 'sorted'
 % 
+
+%% Default values for optional arguments
+%% TODO: Modify the following:
+optstr2Default  = [];                   % default TODO: Description of optstr2
+
+% TODO: Remove the following two lines after you add setOrder as a parameter
+setOrder = 'stable'; 
+disp(setOrder);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -45,9 +60,14 @@ addRequired(iP, 'classVector', ...      % vector of classes of each element
     @(x) validateattributes(x, {'numeric'}, {'vector', 'nonempty'}));
 
 % Add parameter-value pairs to the Input Parser
+%% TODO: Modify the following:
+addParameter(iP, 'Optstr2', optstr2Default, ...
+    @(x) any(validatestring(x, {'str1', 'str2'})));
 
 % Read from the Input Parser
 parse(iP, vecORarray, classVector, varargin{:});
+%% TODO: Modify the following:
+optstr2 = validatestring(iP.Results.optstr2, {'str1', 'str2'});
 
 % Check relationships between arguments
 if size(vecORarray, 1) ~= length(classVector)
@@ -56,10 +76,8 @@ if size(vecORarray, 1) ~= length(classVector)
 end
 
 %% Find the unique classes
-uniqueClasses = unique(classVector);    
-                        % this also puts the classes in ascending order
-                        % TODO: allow for original order
-                        %       Hint: see documentation for unique() 
+%   See documentation for unique() 
+uniqueClasses = unique(classVector, setOrder); 
 numClasses = numel(uniqueClasses);
 
 %% Create cell array of vectors for each class

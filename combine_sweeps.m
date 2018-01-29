@@ -100,7 +100,7 @@ if strcmpi(dataMode, 'Katie')       % if there is only one sweep per file
 
     % Check if number of abf files is correct
     if nDataFiles < max(sweepNumbers)
-        fprintf('Too few abf files! Failed to combine sweeps!\n\n');
+        fprintf('Too few data files! Failed to combine sweeps!\n\n');
         return;
     end
 
@@ -144,16 +144,18 @@ if strcmpi(dataMode, 'Katie')       % if there is only one sweep per file
         allData = [allData; current];
     end
 elseif strcmpi(dataMode, 'Peter')   % if there are multiple sweeps per file
-    % Check if multiple abf files exist
+    % Check if multiple data files exist
     if nDataFiles > 1
-        fprintf('Too many abf files! Failed to combine sweeps!\n\n');
+        fprintf('Too many data files! Failed to combine sweeps!\n\n');
         return;
     end
 
-    % Load abf data for all sweeps
-    abfFileName = fullfile(dataDirectory, dataFiles(1).name);
-    [data, ~] = abf2load(abfFileName);
+    % Get current data file name
+    dataFileName = fullfile(dataDirectory, allDataFiles(1).name);
 
+    % Load abf data for all sweeps
+    [data, ~] = abf2load(abfFileName);
+    
     % Find the number of sweeps
     nSwps = size(data, 3);
     
