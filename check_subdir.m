@@ -12,8 +12,10 @@ function check_subdir (outfolder, subdir)
 %		/home/Matlab/Adams_Functions/find_IPSC_peak.m
 %		/home/Matlab/Adams_Functions/find_LTS.m
 %		/home/Matlab/Adams_Functions/create_subdir_copy_files.m
+%       /home/Matlab/minEASE.m
 %
-% Created 2016-11-02
+% File History:
+% 2016-11-02 Created
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -38,7 +38,7 @@ function [model0, model1, pdfModel2, pdfModel3, pdfModel4, outparams] = fit_IEI 
 % 2017-10-19 - Changed cutoff to parameter xLimits
 % 2017-10-19 - Added XUnit and TruncateFlag
 % 2018-01-19 - Combined code from fit_logIEI.m
-% 2018-01-21 - TODO: Implement Bodova et al 2015 
+% 2018-01-21 - Implement Bodova et al 2015 
 
 %% Parameters
 nPoints = 500;                      % number of points for plotting pdfs
