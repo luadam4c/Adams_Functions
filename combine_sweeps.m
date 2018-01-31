@@ -40,14 +40,14 @@ dataTypeDefault = 'default';    % to detect input data type
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Add directories to search path for required functions
-if exist('/home/Matlab/', 'dir') == 7
-    functionsDirectory = '/home/Matlab/';
-elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
-    functionsDirectory = '/scratch/al4ng/Matlab/';
-else
-    error('Valid functionsDirectory does not exist!');
-end
 if ~isdeployed
+    if exist('/home/Matlab/', 'dir') == 7
+        functionsDirectory = '/home/Matlab/';
+    elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
+        functionsDirectory = '/scratch/al4ng/Matlab/';
+    else
+        error('Valid functionsDirectory does not exist!');
+    end
     addpath(fullfile(functionsDirectory, '/Downloaded_Functions/'));
                                                 % for abf2load.m
     addpath(fullfile(functionsDirectory, '/Brians_Functions/'));
