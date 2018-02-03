@@ -9,13 +9,19 @@ function allData = combine_sweeps(dataDirectory, expLabel, dataMode, varargin)
 %       TODO
 %       varargin    - 'DataType': input data type
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'abf'       - AXON binary files
-%                       'mat'       - MATLAB data files
+%                       'abf'   - AXON binary files
+%                       'mat'   - MATLAB data files
+%                       'txt'   - text files
+%                   default == automatically detect from dataDirectory
+%                   - 'ShowMessage': whether to show messages in messages boxes
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       /home/Matlab/Downloaded_Functions/abf2load.m
 %       /home/Matlab/Brians_Functions/identify_channels.m
 %       /home/Matlab/Adams_Functions/find_data_files.m
+%       /home/Matlab/Adams_Functions/print_or_show_message.m
 %
 % Used by:    
 %       /home/Matlab/minEASE/minEASE.m
@@ -26,6 +32,8 @@ function allData = combine_sweeps(dataDirectory, expLabel, dataMode, varargin)
 % 2018-01-24 Added isdeployed
 % 2018-01-29 Now uses find_data_files.m
 % 2018-01-29 Added dataType as an optional parameter-value pair argument
+% 2018-02-02 Added showMessage as an optional parameter-value pair argument
+% 2018-02-02 Now uses print_or_show_message.m for output
 % 
 
 %% Lists
@@ -34,8 +42,9 @@ possibleDataTypes = {'abf', 'mat', 'txt'};
 
 %% Default values for optional arguments
 sweepNumbersDefault = 'all';
-dataTypeDefault = 'default';    % to detect input data type 
-                                %   from possibleDataTypes
+dataTypeDefault     = 'auto';       % to detect input data type 
+                                    %   from possibleDataTypes
+showMessageDefault  = false;        % print to standard output by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -67,12 +76,15 @@ iP.FunctionName = 'combine_sweeps';
 addParameter(iP, 'SweepNumbers', sweepNumbersDefault);
 addParameter(iP, 'DataType', dataTypeDefault, ...
     @(x) any(validatestring(x, possibleDataTypes)));
+addParameter(iP, 'ShowMessage', showMessageDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 sweepNumbers = iP.Results.SweepNumbers;
 dataTypeUser = validatestring(iP.Results.DataType, ...
-                    [possibleDataTypes, {'default'}]);
+                    [possibleDataTypes, {'auto'}]);
+showMessage = iP.Results.ShowMessage;
 
 % Get file identifier from expLabel
 fileIdentifier = strrep(strrep(expLabel, '_IPSC', ''), '_EPSC', '');
@@ -82,12 +94,21 @@ fileIdentifier = strrep(strrep(expLabel, '_IPSC', ''), '_EPSC', '');
 [dataType, allDataFiles, nDataFiles, message] = ...
     find_data_files (dataTypeUser, dataDirectory, possibleDataTypes, ...
                         'FileIdentifier', fileIdentifier);
-fprintf('%s\n', message);
 
 % Check if files are found
 if nDataFiles <= 0
-    fprintf('Cannot find data files! Failed to combine sweeps!\n\n');
+    message = {message, 'Failed to combine sweeps!'};
+    mTitle = 'Data files not found';
+    % TODO: load custom icon
+    icon = 'error';
+    print_or_show_message(showMessage, message, mTitle, icon);
     return;
+else
+    % TODO: implement icon
+    mTitle = 'Data type used';
+    % TODO: load custom icon
+    icon = 'none';
+    print_or_show_message(showMessage, message, mTitle, icon);
 end
 
 % Concatenate sweep data
@@ -100,7 +121,10 @@ if strcmpi(dataMode, 'Katie')       % if there is only one sweep per file
 
     % Check if number of abf files is correct
     if nDataFiles < max(sweepNumbers)
-        fprintf('Too few data files! Failed to combine sweeps!\n\n');
+        message = 'Too few data files! Failed to combine sweeps!';
+        mTitle = 'Combine sweep error';
+        icon = 'error';
+        print_or_show_message(showMessage, message, mTitle, icon);
         return;
     end
 
@@ -114,16 +138,16 @@ if strcmpi(dataMode, 'Katie')       % if there is only one sweep per file
         case 'abf'
             % Load abf data for this sweep
             [data, ~] = abf2load(dataFileName);
-        case 'mat'
-            % Import data
-            data = importdata(dataFileName);
-        case 'txt'
+        case {'mat', 'txt'}
             % Import data (the current vector must be one of the columns)
             %   Only one cell per file!
             data = importdata(dataFileName);            
         otherwise
-            fprintf(['The data type .%s is not supported yet!\n', ...
-                    ' Failed to combine sweeps!\n\n'], dataType);
+            message = {sprintf('The data type .%s is not supported yet!', ...
+                        dataType), 'Failed to combine sweeps!'};
+            mTitle = 'Combine sweep error';
+            icon = 'error';
+            print_or_show_message(showMessage, message, mTitle, icon);
             return;            
         end
 
@@ -146,7 +170,10 @@ if strcmpi(dataMode, 'Katie')       % if there is only one sweep per file
 elseif strcmpi(dataMode, 'Peter')   % if there are multiple sweeps per file
     % Check if multiple data files exist
     if nDataFiles > 1
-        fprintf('Too many data files! Failed to combine sweeps!\n\n');
+        message = 'Too many data files! Failed to combine sweeps!';
+        mTitle = 'Combine sweep error';
+        icon = 'error';
+        print_or_show_message(showMessage, message, mTitle, icon);
         return;
     end
 
@@ -179,7 +206,12 @@ elseif strcmpi(dataMode, 'Peter')   % if there are multiple sweeps per file
     end
 end
 
-fprintf('Sweeps successfully combined!!\n\n');
+% Show success message
+message = 'Sweeps successfully combined!!';
+mTitle = 'Combine sweep success';
+% TODO: load custom icon
+icon = 'none';
+print_or_show_message(showMessage, message, mTitle, icon);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -195,5 +227,12 @@ if nAbfFiles <= 0
     fprintf('Cannot find abf files! Failed to combine sweeps!\n\n');
     return;
 end
+
+fprintf('Cannot find data files! Failed to combine sweeps!\n\n');
+fprintf('Too few data files! Failed to combine sweeps!');
+fprintf(['The data type .%s is not supported yet!\n', ...
+        ' Failed to combine sweeps!\n\n'], dataType);
+fprintf('Too many data files! Failed to combine sweeps!\n\n');
+fprintf('Sweeps successfully combined!!\n\n');
 
 %}

@@ -12,13 +12,10 @@ function cellArray = vec2cell (vecORarray, classVector, varargin)
 %                       the same number of rows as vecORarray
 %       varargin    - 'SetOrder' - a flag indicating the 
 %                       order of vectors/arrays in cellArray
-%                   TODO: Change optstr2 to SetOrder, etc.
-%                   - 'optstr2' - a flag indicating the 
-%                       order of vectors/arrays in cellArray
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'str1'        - TODO: Description of str1
-%                       'str2'        - TODO: Description of str2
-%                   default == 'defaultstr'
+%                       'sorted' - sorts data in ascending order
+%                       'stable' - keeps data in its original order
+%                   default == 'sorted'
 %
 % Requires:
 %
@@ -31,18 +28,11 @@ function cellArray = vec2cell (vecORarray, classVector, varargin)
 % 2017-10-31 Now accepts an array (each column is a vector to be separated) 
 %               as the first argument
 % 2018-01-29 MD - Added setOrder 
-% TODO: Make 'SetOrder' a parameter-value pair that can take the values 
-%           'sorted' (ascending order), 'stable' (original order)
-%           with default being 'sorted'
+% 2018-01-30 MD - changed strings, put valid strings, check valid strings           
 % 
 
 %% Default values for optional arguments
-%% TODO: Modify the following:
-optstr2Default  = [];                   % default TODO: Description of optstr2
-
-% TODO: Remove the following two lines after you add setOrder as a parameter
-setOrder = 'stable'; 
-disp(setOrder);
+setOrderDefault  = 'sorted';                   
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -52,22 +42,25 @@ if nargin < 2
     error('Not enough input arguments, type ''help vec2cell'' for usage');
 end
 
-% Add required inputs to an Input Parser
+% Set up Input Parser Scheme
 iP = inputParser;
+defaultOrder = 'sorted';
+validOrders = {'sorted','stable'};
+checkOrder = @(x) any(validatestring(x,validOrders));
+
+% Add required inputs to an Input Parser
 addRequired(iP, 'vecORarray', ...       % vector(s) to reorganize
     @(x) validateattributes(x, {'numeric', 'cell', 'struct'}, {'nonempty'}));
 addRequired(iP, 'classVector', ...      % vector of classes of each element
     @(x) validateattributes(x, {'numeric'}, {'vector', 'nonempty'}));
 
 % Add parameter-value pairs to the Input Parser
-%% TODO: Modify the following:
-addParameter(iP, 'Optstr2', optstr2Default, ...
-    @(x) any(validatestring(x, {'str1', 'str2'})));
+addParameter(iP, 'SetOrder', setOrderDefault, ...
+    @(x) any(validatestring(x, {'sorted', 'stable'})));
 
 % Read from the Input Parser
 parse(iP, vecORarray, classVector, varargin{:});
-%% TODO: Modify the following:
-optstr2 = validatestring(iP.Results.optstr2, {'str1', 'str2'});
+setOrder = validatestring(iP.Results.SetOrder, {'sorted', 'stable'});
 
 % Check relationships between arguments
 if size(vecORarray, 1) ~= length(classVector)
@@ -81,7 +74,6 @@ uniqueClasses = unique(classVector, setOrder);
 numClasses = numel(uniqueClasses);
 
 %% Create cell array of vectors for each class
-%% TODO: Test if this works for cell arrays and struct arrays
 cellArray = cell(1, numClasses);
 for c = 1:numClasses
     cellArray{c} = vecORarray(classVector == uniqueClasses(c), :);

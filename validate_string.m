@@ -1,5 +1,5 @@
 function strValidated = validate_string (str, validStrings, varargin)
-%% Validate whether a string is a figure type
+%% Validate whether a string is an element of a cell array of valid strings
 % Usage: strValidated = validate_string (str, validStrings, varargin)
 % Explanation:
 %       Same as the built-in validatestring() except that an empty string can be 
@@ -41,6 +41,7 @@ function strValidated = validate_string (str, validStrings, varargin)
 % 2017-05-25 Made everything more general
 % 2017-05-25 Added input parser scheme
 % 2017-06-09 Added IgnoreCase and made true the default
+% 2018-02-01 Updated description
 %
 
 %% Default values for optional arguments

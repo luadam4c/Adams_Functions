@@ -54,10 +54,14 @@ case possibleDataTypes              % if user provided a possible data type
                     [fileIdentifier, '*.', dataTypeUser]));
     nDataFiles = length(allDataFiles);  % # of files in data subdirectory
     if nDataFiles == 0
-        message = sprintf(['There are no %s files in this directory:\n', ...
-                            '%s\n'], dataTypeUser, dataDirectory);
+        message = {sprintf('There are no .%s files in this directory:', ...
+                            dataTypeUser), sprintf('%s', dataDirectory)};
+    else
+        message = {sprintf(['The .%s files in this directory ', ...
+                            'will be used as data:'], dataType), ...
+                    sprintf('%s', dataDirectory)};
     end
-case 'default'                      % if using default data types
+case 'auto'                         % if automatically detecting data types
     % Iterate through possibleDataTypes to look for possible data type
     for iDataType = 1:nDataTypes
         tempType = possibleDataTypes{iDataType};
@@ -66,17 +70,16 @@ case 'default'                      % if using default data types
         nDataFiles = length(allDataFiles);% # of files in data subdirectory
         if nDataFiles > 0
             dataType = tempType;
-            message = sprintf(['The .%s files in this directory ', ...
-                                'will be used as data:\n', '%s\n\n'], ...
-                                dataType, dataDirectory);
+            message = {sprintf(['The .%s files in this directory ', ...
+                                'will be used as data:'], dataType), ...
+                        sprintf('%s', dataDirectory)};
             break;
         end
     end
     if nDataFiles == 0
         dataType = '';
-        message = sprintf(['There are no acceptable data files', ...
-                            ' in this directory:\n', ...
-                            '%s\n'], dataDirectory);
+        message = {'There are no acceptable data files in this directory:', ...
+                        sprintf('%s', dataDirectory)};
     end
 otherwise
     dataType = '';
@@ -84,38 +87,34 @@ otherwise
     nDataFiles = 0;
 
     % Start message
-    message = sprintf(['The data type %s is not recognized!'
-                        'The possible data types are:\n'], dataTypeUser);
-                        
-    % Print possible data types in a line
-    for iDataType = 1:nDataTypes
-        message = [message, sprintf('%s', possibleDataTypes{iDataType})];
-        if iDataType < nDataTypes
-            message = [message, ', '];
-        else
-            message = [message, '\n'];
-        end
-    end
-    % TODO: Make more general into print_cell.m
-    %       function string = print_cell(cellArray, varargin)
-    %       %% Prints a cell array of strings into a single line with each entry separated by a delimiter (default ',')
-    %       % Usage: string = print_cell(cellArray, varargin)
-    %       %   
-    %       % Arguments:
-    %       %       varargin    - 'Delimiter' - delimiter used to separate entries
-    %       %                   default == ','
-    %       %                   - 'OmitNewline' - whether to omit the newline character
-    %       %                   default == false
-    
+    message = {sprintf('The data type %s is not recognized!', dataTypeUser), ...
+                sprintf('The possible data types are: %s'), ...
+                        strjoin(possibleDataTypes, ', ')};                     
+  
     % End message
-    message = [message, 'You could also say ''default''.\n'];
-
-
+    message = [message, 'You could also say ''auto''.\n'];
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+message = [message, sprintf('%s', possibleDataTypes{iDataType})];
+if iDataType < nDataTypes
+    message = [message, ', '];
+else
+    message = [message, '\n'];
+end
+
+% Print possible data types in a line
+for iDataType = 1:nDataTypes
+    message = [message, sprintf('%s', possibleDataTypes{iDataType})];
+    if iDataType < nDataTypes
+        message = [message, ', '];
+    else
+        message = [message, '\n'];
+    end
+end
 
 %}

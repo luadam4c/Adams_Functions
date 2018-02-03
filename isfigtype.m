@@ -2,7 +2,7 @@ function [results, figtypes] = isfigtype (strings, varargin)
 %% Check whether a string or each string in a cell array is a valid figure type
 % Usage: [results, figtypes] = isfigtype (strings, varargin)
 % Outputs:    
-%       results     - indication of whether the specified name is a folder
+%       results     - indication of whether the specified name is a figure type
 %                   specified as a logical array
 %       figtypes    - validated figtypes, if any
 %                   specified as a string/char-vec or 
