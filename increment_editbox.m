@@ -26,9 +26,13 @@ function newStr = increment_editbox(hEditBox, minNo, maxNo, incr, strings, varar
 % 2017-08-03 Fixed bug by adding newStr = prevStr;
 % 2017-10-17 Added parameter 'RankNo' to allow incrementing according to rank
 % 2017-10-18 Added at_lower_limit() & at_upper_limit()
+% 2018-02-03 Added parameter 'Operation' to allow incrementing by multiples
 %
 
-valueNoDefault = [];                            % default value of each number
+possibleOperations = {'add', 'multiply'};
+
+valueNoDefault = [];                    % default value of each number
+operationDefault = 'add';               % default operation for incrementation
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -39,10 +43,13 @@ iP.FunctionName = 'increment_editbox';
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ValueNo', valueNoDefault);
+addParameter(iP, 'Operation', operationDefault, ...
+    @(x) any(validatestring(x, possibleOperations)));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 valueNo = iP.Results.ValueNo;                   % value of each number
+operation = validatestring(iP.Results.Operation, possibleOperations);
 
 % Extract number of strings
 nStrs = numel(strings);                         % number of strings
@@ -84,7 +91,6 @@ if ~isempty(valueNo)
     
     % Give a rank to each event
     rankNo(origInd) = (1:nNo)';
- 
 else
     nNo = [];
     allNo = [];
@@ -102,7 +108,8 @@ if nStrs == 0                                   % no strings exist, linear
             newStr = prevStr;
         else                                    % not at lower limit
             % Decrement number
-            newStr = decrement(prevNo, incrAbs, nNo, allNo, rankNo, incrRank);
+            newStr = decrement(prevNo, incrAbs, nNo, allNo, ...
+                                rankNo, incrRank, operation);
         end       
     case 'up'
         if isnan(prevNo)
@@ -112,7 +119,8 @@ if nStrs == 0                                   % no strings exist, linear
             newStr = prevStr;
         else                                    % not at upper limit
             % Increment number
-            newStr = increment(prevNo, incrAbs, nNo, allNo, rankNo, incrRank);
+            newStr = increment(prevNo, incrAbs, nNo, allNo, ...
+                                rankNo, incrRank, operation);
         end
     otherwise
         error('direction undefined!');
@@ -144,7 +152,8 @@ elseif nStrs > 0                                % strings exist, circular
             newStr = strings{nStrs};
         else                                % not at lower limit
             % Decrement number
-            newStr = decrement(prevNo, incrAbs, nNo, allNo, rankNo, incrRank);
+            newStr = decrement(prevNo, incrAbs, nNo, allNo, ...
+                                rankNo, incrRank, operation);
         end
     case 'up'
         if idx == nStrs                     % last of strings
@@ -164,7 +173,8 @@ elseif nStrs > 0                                % strings exist, circular
             newStr = strings{1};
         else                                % not at upper limit
             % Increment number
-            newStr = increment(prevNo, incrAbs, nNo, allNo, rankNo, incrRank);
+            newStr = increment(prevNo, incrAbs, nNo, allNo, ...
+                                rankNo, incrRank, operation);
         end
     otherwise
         error('direction undefined!');
@@ -176,7 +186,7 @@ set(hEditBox, 'String', newStr);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function newStr = decrement(prevNo, incrAbs, nNo, allNo, rankNo, incrRank)
+function newStr = decrement(prevNo, incrAbs, nNo, allNo, rankNo, incrRank, operation)
 %% Decrement number by rank or not
 
 if ~isempty(rankNo)
@@ -192,7 +202,14 @@ if ~isempty(rankNo)
     end
 else
     % Just decrement the number
-    newNo = prevNo - incrAbs;    
+    switch operation
+    case 'add'
+        newNo = prevNo - incrAbs;    
+    case 'multiply'
+        newNo = prevNo / incrAbs;
+    otherwise
+        error('Incrementing operation undefined! Error with code!');
+    end
 end
 
 % Generate new string
@@ -200,7 +217,7 @@ newStr = num2str(newNo);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function newStr = increment(prevNo, incrAbs, nNo, allNo, rankNo, incrRank)
+function newStr = increment(prevNo, incrAbs, nNo, allNo, rankNo, incrRank, operation)
 %% Increment number by rank or not
 
 if ~isempty(rankNo)
@@ -215,8 +232,15 @@ if ~isempty(rankNo)
         newNo = allNo(rankNo == nNo);
     end   
 else
-    % Just increment the number
-    newNo = prevNo + incrAbs;    
+    % Just increment the number  
+    switch operation
+    case 'add'
+        newNo = prevNo + incrAbs;    
+    case 'multiply'
+        newNo = prevNo * incrAbs;
+    otherwise
+        error('Incrementing operation undefined! Error with code!');
+    end
 end
 
 % Generate new string

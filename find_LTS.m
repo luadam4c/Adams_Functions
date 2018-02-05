@@ -947,6 +947,7 @@ if plotflag
     set(h, 'Visible', 'off');
     set(h, 'Name', 'Voltage trace');
     clf(h);
+    %% TODO: Fix the legend: Label the plots and use 'Displayname' and legend(subset, ...)
     plot(tvec0, vvec0, 'b-', 'LineWidth', 0.5); hold on;
     plot(tvec0, vvec1, 'g-', 'LineWidth', 0.5);
     plot(tvec0, vvec3, 'r-', 'LineWidth', 0.5);
@@ -990,6 +991,7 @@ if plotflag
 %            'Color', 'b');                                             % line for maxslope
         line([leftslopepoint_x, rightslopepoint_x], [leftslopepoint_y, rightslopepoint_y], ...
             'Color', 'm');                                              % line for maxslope
+    %% TODO: Fix the legend: Label the plots and use 'Displayname' and legend(subset, ...)
         legend('raw trace', 'median-filtered', 'median-filtered then moving-average-filtered', ...
             peakclass_label, peakfeature_label, 'Location', 'SouthOutside')
 %        plot(tvec0(maxslopeind), vvec3(maxslopeind), 'm.');            % dot for maxslope
@@ -1004,6 +1006,7 @@ if plotflag
             plot(tvec0(npi), vvec1(npi), 'kx', 'MarkerSize', 10);
         end
         if isempty(allspi)            % noise
+    %% TODO: Fix the legend: Label the plots and use 'Displayname' and legend(subset, ...)
             legend('raw trace', 'median-filtered', 'median-filtered then moving-average-filtered', ...
                 peakclass_label, 'Location', 'SouthOutside')
         elseif isspontaneous            % spontaneous spikes
@@ -1038,6 +1041,7 @@ if plotflag
     xlimits = ltswin;
     xlim(xlimits);
     ylim([-100 -40]);            % Fix y-axis to determine whether the trace is good for fitting
+    %% TODO: Fix the legend: Label the plots and use 'Displayname' and legend(subset, ...)
     legend('raw trace', 'median-filtered', 'median-filtered then moving-average-filtered', peakclass_label);
     figname = fullfile(outfolder, directories{4}, [filebase, '_scaled.png']);
     saveas(h, figname);
@@ -1145,6 +1149,7 @@ if plotflag
     xlim(xlimits);
     xlabel('Time (ms)');
     ylabel('dV/dT');
+    %% TODO: Fix the legend: Label the plots and use 'Displayname' and legend(subset, ...)
     legend('unsmoothed', 'smoothed');
     subplot(3,1,3) % 2nd derivative of voltage trace
     plot(tvec0(3:end), ddvvec3, 'k-', 'LineWidth', 0.5); hold on
@@ -1218,6 +1223,7 @@ if plotflag
             'Color', 'm');                                              % line for maxslope
         plot(tvec0(bon_i), vvec0(bon_i), 'g>', 'MarkerSize', 10);       % triangle for burst onset time
         plot(tvec0(allspi), vvec0(allspi), 'gx', 'MarkerSize', 10);     % crosses for spikes
+    %% TODO: Fix the legend: Label the plots and use 'Displayname' and legend(subset, ...)
         legend('raw trace', 'median-filtered then resampled', 'median-filtered then moving-average-filtered', ...
             peakclass_label, peakfeature_label, bursttime_label, spiketime_label, ...
             'Location', 'SouthOutside')
@@ -1245,6 +1251,7 @@ if plotflag
 %            'Color', 'b');                                % line for maxslope
         line([leftslopepoint_x, rightslopepoint_x], [leftslopepoint_y, rightslopepoint_y], ...
             'Color', 'm');                                % line for maxslope
+    %% TODO: Fix the legend: Label the plots and use 'Displayname' and legend(subset, ...)
         legend('raw trace', 'median-filtered then resampled', 'median-filtered then moving-average-filtered', ...
             peakclass_label, peakfeature_label, 'Location', 'SouthOutside')
 %        plot(tvec0(maxslopeind), vvec3(maxslopeind), 'm.');            % dot for maxslope
@@ -1259,6 +1266,7 @@ if plotflag
             plot(tvec0(npi), vvec1(npi), 'kx', 'MarkerSize', 10);
         end
         if isempty(allspi)
+    %% TODO: Fix the legend: Label the plots and use 'Displayname' and legend(subset, ...)
             legend('raw trace', 'median-filtered then resampled', 'median-filtered then moving-average-filtered', ...
                 peakclass_label, 'Location', 'SouthOutside')
         elseif isspontaneous            % spontaneous spikes
