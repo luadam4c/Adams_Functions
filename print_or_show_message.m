@@ -3,7 +3,7 @@ function print_or_show_message(toShow, message, mTitle, icon, varargin)
 % Usage: print_or_show_message(toShow, message, mTitle, icon, varargin)
 % 
 % Requires:
-% TODO:      /home/Matlab/Miras_Functions/print_cellstr.m
+%       /home/Matlab/Miras_Functions/print_cellstr.m
 %
 % Used by:
 %       /home/Matlab/minEASE/minEASE.m
