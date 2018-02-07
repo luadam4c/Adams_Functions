@@ -34,6 +34,7 @@ function allData = combine_sweeps(dataDirectory, expLabel, dataMode, varargin)
 % 2018-01-29 Added dataType as an optional parameter-value pair argument
 % 2018-02-02 Added showMessage as an optional parameter-value pair argument
 % 2018-02-02 Now uses print_or_show_message.m for output
+% 2018-02-07 MD - Changed usage of print_or_show_message()
 % 
 
 %% Lists
@@ -101,14 +102,16 @@ if nDataFiles <= 0
     mTitle = 'Data files not found';
     % TODO: load custom icon
     icon = 'error';
-    print_or_show_message(showMessage, message, mTitle, icon);
+    print_or_show_message(showMessage, message, ...
+                            'MTitle', mTitle, 'Icon', icon);
     return;
 else
     % TODO: implement icon
     mTitle = 'Data type used';
     % TODO: load custom icon
     icon = 'none';
-    print_or_show_message(showMessage, message, mTitle, icon);
+    print_or_show_message(showMessage, message, ...
+                            'MTitle', mTitle, 'Icon', icon);
 end
 
 % Concatenate sweep data
@@ -124,7 +127,8 @@ if strcmpi(dataMode, 'Katie')       % if there is only one sweep per file
         message = 'Too few data files! Failed to combine sweeps!';
         mTitle = 'Combine sweep error';
         icon = 'error';
-        print_or_show_message(showMessage, message, mTitle, icon);
+        print_or_show_message(showMessage, message, ...
+                                'MTitle', mTitle, 'Icon', icon);
         return;
     end
 
@@ -147,7 +151,8 @@ if strcmpi(dataMode, 'Katie')       % if there is only one sweep per file
                         dataType), 'Failed to combine sweeps!'};
             mTitle = 'Combine sweep error';
             icon = 'error';
-            print_or_show_message(showMessage, message, mTitle, icon);
+            print_or_show_message(showMessage, message, ...
+                                    'MTitle', mTitle, 'Icon', icon);
             return;            
         end
 
@@ -173,7 +178,8 @@ elseif strcmpi(dataMode, 'Peter')   % if there are multiple sweeps per file
         message = 'Too many data files! Failed to combine sweeps!';
         mTitle = 'Combine sweep error';
         icon = 'error';
-        print_or_show_message(showMessage, message, mTitle, icon);
+        print_or_show_message(showMessage, message, ...
+                                'MTitle', mTitle, 'Icon', icon);
         return;
     end
 
@@ -211,7 +217,8 @@ message = 'Sweeps successfully combined!!';
 mTitle = 'Combine sweep success';
 % TODO: load custom icon
 icon = 'none';
-print_or_show_message(showMessage, message, mTitle, icon);
+print_or_show_message(showMessage, message, ...
+                        'MTitle', mTitle, 'Icon', icon);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
