@@ -114,8 +114,19 @@ allDataFiles = allDataFiles(~cellfun(@isempty, {allDataFiles.date}));
 
 % Exclude entries with an excluded string in the name
 for iString = 1:numel(excludedStrings)
-    allDataFiles = allDataFiles(~strfind({allDataFiles.name}, ...
-                                            excludedStrings{iString}));
+    if ~isempty(allDataFiles)       % if allDataFiles not already empty
+        % Get this excluded string
+        string = excludedStrings{iString};
+        
+        % Get all the data file names as a cell array
+        allNames = {allDataFiles.name};
+        
+        % Determine for each file whether you cannot find the string in the name
+        doesNotContainString = cellfun(@isempty, strfind(allNames, string));
+        
+        % Restrict to those files 
+        allDataFiles = allDataFiles();
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
