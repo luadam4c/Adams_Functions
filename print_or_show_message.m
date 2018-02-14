@@ -32,7 +32,7 @@ iconDefault = 'none';               % default : Does not display an icon with
 
 % Set up Input Parser Scheme
 iP = inputParser;
-iP.FunctionName = 'print_or_show_message';
+iP.FunctionName = mfilename;
 iP.KeepUnmatched = false;
 
 % Add required inputs to the Input Parser
@@ -87,5 +87,7 @@ function print_or_show_message(toShow, message, mTitle, icon, varargin)
 
 % User Input Specifications:
 if toShow == 1
+
+    msgbox(message, mTitle, icon);
 
 %}
