@@ -125,7 +125,7 @@ for iString = 1:numel(excludedStrings)
         doesNotContainString = cellfun(@isempty, strfind(allNames, string));
         
         % Restrict to those files 
-        allDataFiles = allDataFiles();
+        allDataFiles = allDataFiles(doesNotContainString);
     end
 end
 
