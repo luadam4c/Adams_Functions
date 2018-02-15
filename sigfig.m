@@ -28,6 +28,7 @@ function nSigFig = sigfig(number, varargin)
 %
 % File History:
 % 2018-02-14 Created by Adam Lu
+% 2018-02-15 Fixed the infinite loop when the argument is 0
 % TODO: Easy: the case where the input is a character vector or a string
 % TODO: Hard: Can bi2de and de2bi solve the precision problem?
 
@@ -52,6 +53,12 @@ addRequired(iP, 'number', @isnumeric);
 parse(iP, number, varargin{:});
 
 %% Do the job
+% If the number is within eps of 0, return 0
+if number < eps(0)
+    nSigFig = 0;
+    return
+end
+
 % Find the first place of the first nonzero digit
 firstNonzeroPlace = -floor(log10(abs(number)));
 
