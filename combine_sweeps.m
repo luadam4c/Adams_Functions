@@ -13,9 +13,14 @@ function allData = combine_sweeps(dataDirectory, expLabel, dataMode, varargin)
 %                       'mat'   - MATLAB data files
 %                       'txt'   - text files
 %                   default == automatically detect from dataDirectory
-%                   - 'ShowMessage': whether to show messages in messages boxes
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   - 'MessageMode' - how message boxes are shown
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'wait'  - stops program and waits for the user
+%                                   to close the message box
+%                       'show'  - does not stop program but still show the
+%                                   message box
+%                       'none'  - neither stop program nor show a message box
+%                   default == 'wait'
 %
 % Requires:
 %       /home/Matlab/Downloaded_Functions/abf2load.m
@@ -35,17 +40,20 @@ function allData = combine_sweeps(dataDirectory, expLabel, dataMode, varargin)
 % 2018-02-02 Added showMessage as an optional parameter-value pair argument
 % 2018-02-02 Now uses print_or_show_message.m for output
 % 2018-02-07 MD - Changed usage of print_or_show_message()
+% 2018-02-27 AL - Changed showMessages to messageMode with possible values:
+%                   'wait', 'show', 'none'
 % 
 
-%% Lists
+%% Hard-coded parameters
 possibleDataTypes = {'abf', 'mat', 'txt'};     
                     % Precedence: .abf > .mat > .txt
+validMessageModes = {'wait', 'show', 'none'};
 
 %% Default values for optional arguments
 sweepNumbersDefault = 'all';
 dataTypeDefault     = 'auto';       % to detect input data type 
                                     %   from possibleDataTypes
-showMessageDefault  = false;        % print to standard output by default
+messageModeDefault  = 'none';       % print to standard output by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -77,15 +85,15 @@ iP.FunctionName = 'combine_sweeps';
 addParameter(iP, 'SweepNumbers', sweepNumbersDefault);
 addParameter(iP, 'DataType', dataTypeDefault, ...
     @(x) any(validatestring(x, possibleDataTypes)));
-addParameter(iP, 'ShowMessage', showMessageDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'MessageMode', messageModeDefault, ...
+    @(x) any(validatestring(x, validMessageModes)));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 sweepNumbers = iP.Results.SweepNumbers;
 dataTypeUser = validatestring(iP.Results.DataType, ...
                     [possibleDataTypes, {'auto'}]);
-showMessage = iP.Results.ShowMessage;
+messageMode = validatestring(iP.Results.MessageMode, validMessageModes);
 
 % Get file identifier from expLabel
 fileIdentifier = strrep(strrep(expLabel, '_IPSC', ''), '_EPSC', '');
@@ -102,7 +110,7 @@ if nDataFiles <= 0
     mTitle = 'Data files not found';
     % TODO: load custom icon
     icon = 'error';
-    print_or_show_message(showMessage, message, ...
+    print_or_show_message(message, 'MessageMode', messageMode, ...
                             'MTitle', mTitle, 'Icon', icon);
     return;
 else
@@ -110,7 +118,7 @@ else
     mTitle = 'Data type used';
     % TODO: load custom icon
     icon = 'none';
-    print_or_show_message(showMessage, message, ...
+    print_or_show_message(message, 'MessageMode', messageMode, ...
                             'MTitle', mTitle, 'Icon', icon);
 end
 
@@ -127,7 +135,7 @@ if strcmpi(dataMode, 'Katie')       % if there is only one sweep per file
         message = 'Too few data files! Failed to combine sweeps!';
         mTitle = 'Combine sweep error';
         icon = 'error';
-        print_or_show_message(showMessage, message, ...
+        print_or_show_message(message, 'MessageMode', messageMode, ...
                                 'MTitle', mTitle, 'Icon', icon);
         return;
     end
@@ -151,7 +159,7 @@ if strcmpi(dataMode, 'Katie')       % if there is only one sweep per file
                         dataType), 'Failed to combine sweeps!'};
             mTitle = 'Combine sweep error';
             icon = 'error';
-            print_or_show_message(showMessage, message, ...
+            print_or_show_message(message, 'MessageMode', messageMode, ...
                                     'MTitle', mTitle, 'Icon', icon);
             return;            
         end
@@ -178,7 +186,7 @@ elseif strcmpi(dataMode, 'Peter')   % if there are multiple sweeps per file
         message = 'Too many data files! Failed to combine sweeps!';
         mTitle = 'Combine sweep error';
         icon = 'error';
-        print_or_show_message(showMessage, message, ...
+        print_or_show_message(message, 'MessageMode', messageMode, ...
                                 'MTitle', mTitle, 'Icon', icon);
         return;
     end
@@ -217,7 +225,7 @@ message = 'Sweeps successfully combined!!';
 mTitle = 'Combine sweep success';
 % TODO: load custom icon
 icon = 'none';
-print_or_show_message(showMessage, message, ...
+print_or_show_message(message, 'MessageMode', messageMode, ...
                         'MTitle', mTitle, 'Icon', icon);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -241,5 +249,20 @@ fprintf(['The data type .%s is not supported yet!\n', ...
         ' Failed to combine sweeps!\n\n'], dataType);
 fprintf('Too many data files! Failed to combine sweeps!\n\n');
 fprintf('Sweeps successfully combined!!\n\n');
+
+%                   - 'ShowMessage': whether to show messages in messages boxes
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+showMessageDefault  = false;        % print to standard output by default
+addParameter(iP, 'ShowMessage', showMessageDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+showMessage = iP.Results.ShowMessage;
+        if showMessage
+            print_or_show_message(message, 'MessageMode', 'show', ...
+                                    'MTitle', mTitle, 'Icon', icon);
+        else
+            print_or_show_message(message, 'MessageMode', 'none', ...
+                                    'MTitle', mTitle, 'Icon', icon);
+        end
 
 %}

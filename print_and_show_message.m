@@ -2,25 +2,25 @@ function print_and_show_message(message, varargin)
 %% Print to standard output and show message box at the same time
 % Usage: print_and_show_message(message, varargin)
 % Explanation: 
-%           Either pause program and show message box, only show message box, 
+%       Either pause program and show message box, only show message box, 
 %               or neither
-%           Message will be printed in stardard output in all cases.
+%       Message will be printed in stardard output in all cases.
 % Arguments:
 %       message     - message displayed in message box
 %                   must be a string scalar or a character vector
-%       varargin    - 'mTitle': Title of message box
+%       varargin    - 'MTitle': Title of message box
 %                   must be a character vector
 %                   default == 'Message box'
-%                   - 'icon': displayed icon on message box
+%                   - 'Icon': displayed icon on message box
 %                   must be a character vector
 %                   default == 'none'
-%                   - 'messageMode' - determines the message output
+%                   - 'MessageMode' - how message boxes are shown
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'wait'      -stops program and waits until user
-%                                    acknowledges the message box
-%                       'show'      -does not stop program but still shows
-%                                    message box
-%                       'none'      -does not stop program or show message box
+%                       'wait'  - stops program and waits for the user
+%                                   to close the message box
+%                       'show'  - does not stop program but still show the
+%                                   message box
+%                       'none'  - neither stop program nor show a message box
 %                   default == 'wait'
 % 
 % Requires:
@@ -41,7 +41,7 @@ function print_and_show_message(message, varargin)
 %   2018-02-14 AL - Changed description and usage documentation
 
 %% Hard-coded parameters
-validstrings = {'wait','show','none'};
+validMessageModes = {'wait', 'show', 'none'};
 
 %% Default values for optional arguments
 mTitleDefault = 'Message box';      % default : Title for message box will
@@ -66,19 +66,19 @@ addRequired(iP, 'message', ...              % the message to show
 addParameter(iP, 'MTitle', mTitleDefault, @ischar);
 addParameter(iP, 'Icon', iconDefault, @ischar);
 addParameter(iP, 'MessageMode', messageModeDefault, ...
-    @(x) any(validatestring(x, {'wait', 'show', 'none'})));
+    @(x) any(validatestring(x, validMessageModes)));
 
 % Read from the Input Parser
 parse(iP, message, varargin{:});
 mTitle = iP.Results.MTitle;
 icon = iP.Results.Icon;
 
-% Match unambiguous strings to valid strings
-messageMode = validatestring(iP.Results.MessageMode, validstrings); 
+% Match possibly ambiguous strings to valid strings
+messageMode = validatestring(iP.Results.MessageMode, validMessageModes); 
 
 % Message prints in standard output
 messageStr = print_cellstr(message, 'Delimiter', '\n', 'OmitNewline', true);
-    fprintf('%s\n', messageStr); 
+fprintf('%s\n', messageStr); 
     
 %   Display message box and/or stop program
 switch messageMode

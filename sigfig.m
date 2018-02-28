@@ -2,6 +2,7 @@ function nSigFig = sigfig(number, varargin)
 %% Get the number of significant figures from a number (numeric or string)
 % Usage: nSigFig = sigfig(number, varargin)
 % Explanation:
+%       Returns 0 for 0
 %       It seems like the maximum number of significant figures
 %           possible is 16. And it still doesn't do well 
 %           with very small numbers (2.3e-400) or very large numbers (2.3e400)
