@@ -21,6 +21,11 @@ function print_or_show_message(message, varargin)
 %                                   message box
 %                       'none'  - neither stop program nor show a message box
 %                   default == 'wait'
+%                   - 'Verbose' - whether to print to standard output
+%                                   regardless of message mode
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   
 % 
 % Requires:
 %       /home/Matlab/Miras_Functions/print_cellstr.m
@@ -53,7 +58,7 @@ iconDefault = 'none';               % default : Does not display an icon with
                                     %   with message box.
 messageModeDefault = 'wait';        % default : Pauses program and displays
                                     %   message box.
-verboseDefault = false;           % default: Program does not print message
+verboseDefault = false;             % default: Program does not print message
                                     %   even if message box is shown
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

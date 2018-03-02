@@ -21,6 +21,10 @@ function allData = combine_sweeps(dataDirectory, expLabel, dataMode, varargin)
 %                                   message box
 %                       'none'  - neither stop program nor show a message box
 %                   default == 'wait'
+%                   - 'Verbose' - whether to print to standard output
+%                                   regardless of message mode
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       /home/Matlab/Downloaded_Functions/abf2load.m
@@ -42,6 +46,7 @@ function allData = combine_sweeps(dataDirectory, expLabel, dataMode, varargin)
 % 2018-02-07 MD - Changed usage of print_or_show_message()
 % 2018-02-27 AL - Changed showMessages to messageMode with possible values:
 %                   'wait', 'show', 'none'
+% 2018-03-02 MD - Defined verbose parameter for print_or_show_message
 % 
 
 %% Hard-coded parameters
@@ -54,6 +59,8 @@ sweepNumbersDefault = 'all';
 dataTypeDefault     = 'auto';       % to detect input data type 
                                     %   from possibleDataTypes
 messageModeDefault  = 'none';       % print to standard output by default
+verboseDefault = false;             % default: Program does not print message
+                                    %   even if message box is shown
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -87,6 +94,8 @@ addParameter(iP, 'DataType', dataTypeDefault, ...
     @(x) any(validatestring(x, possibleDataTypes)));
 addParameter(iP, 'MessageMode', messageModeDefault, ...
     @(x) any(validatestring(x, validMessageModes)));
+addParameter(iP, 'Verbose', verboseDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -94,6 +103,10 @@ sweepNumbers = iP.Results.SweepNumbers;
 dataTypeUser = validatestring(iP.Results.DataType, ...
                     [possibleDataTypes, {'auto'}]);
 messageMode = validatestring(iP.Results.MessageMode, validMessageModes);
+verbose = iP.Results.Verbose;
+
+% TODO: Remove the following line when Verbose is implemented
+verbose = true;
 
 % Get file identifier from expLabel
 fileIdentifier = strrep(strrep(expLabel, '_IPSC', ''), '_EPSC', '');
