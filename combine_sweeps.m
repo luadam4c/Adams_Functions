@@ -124,7 +124,8 @@ if nDataFiles <= 0
     % TODO: load custom icon
     icon = 'error';
     print_or_show_message(message, 'MessageMode', messageMode, ...
-                            'MTitle', mTitle, 'Icon', icon);
+                            'MTitle', mTitle, 'Icon', icon, ...
+                            'Verbose', verbose);
     return;
 else
     % TODO: implement icon
@@ -132,7 +133,8 @@ else
     % TODO: load custom icon
     icon = 'none';
     print_or_show_message(message, 'MessageMode', messageMode, ...
-                            'MTitle', mTitle, 'Icon', icon);
+                            'MTitle', mTitle, 'Icon', icon, ...
+                            'Verbose', verbose);
 end
 
 % Concatenate sweep data
@@ -149,7 +151,8 @@ if strcmpi(dataMode, 'Katie')       % if there is only one sweep per file
         mTitle = 'Combine sweep error';
         icon = 'error';
         print_or_show_message(message, 'MessageMode', messageMode, ...
-                                'MTitle', mTitle, 'Icon', icon);
+                                'MTitle', mTitle, 'Icon', icon, ...
+                                'Verbose', verbose);
         return;
     end
 
@@ -173,7 +176,8 @@ if strcmpi(dataMode, 'Katie')       % if there is only one sweep per file
             mTitle = 'Combine sweep error';
             icon = 'error';
             print_or_show_message(message, 'MessageMode', messageMode, ...
-                                    'MTitle', mTitle, 'Icon', icon);
+                                    'MTitle', mTitle, 'Icon', icon, ...
+                                    'Verbose', verbose);
             return;            
         end
 
@@ -200,7 +204,8 @@ elseif strcmpi(dataMode, 'Peter')   % if there are multiple sweeps per file
         mTitle = 'Combine sweep error';
         icon = 'error';
         print_or_show_message(message, 'MessageMode', messageMode, ...
-                                'MTitle', mTitle, 'Icon', icon);
+                                'MTitle', mTitle, 'Icon', icon, ...
+                                'Verbose', verbose);
         return;
     end
 
@@ -239,7 +244,8 @@ mTitle = 'Combine sweep success';
 % TODO: load custom icon
 icon = 'none';
 print_or_show_message(message, 'MessageMode', messageMode, ...
-                        'MTitle', mTitle, 'Icon', icon);
+                        'MTitle', mTitle, 'Icon', icon, ...
+                        'Verbose', verbose);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
