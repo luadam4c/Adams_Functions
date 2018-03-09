@@ -105,9 +105,6 @@ dataTypeUser = validatestring(iP.Results.DataType, ...
 messageMode = validatestring(iP.Results.MessageMode, validMessageModes);
 verbose = iP.Results.Verbose;
 
-% TODO: Remove the following line when Verbose is implemented
-verbose = true;
-
 % Get file identifier from expLabel
 fileIdentifier = strrep(strrep(expLabel, '_IPSC', ''), '_EPSC', '');
 

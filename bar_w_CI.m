@@ -22,6 +22,8 @@ function h = bar_w_CI(h, data, low, high, varargin)
 % 2017-10-19 - Moved from paula_iei3.m
 % 2017-10-19 - Added input parser and various optional arguments
 % 2017-12-01 - Added figure(h)
+% 2019-03-08 - Changed figure(h) to set(0, 'CurrentFigure', h)
+%               to prevent the display of invisible figures
 % 
 
 %% Parameters
@@ -106,8 +108,8 @@ if isempty(xTickAngle)
 end
 
 %% Plot things
-% Go to figure
-figure(h);
+% Set figure as current figure
+set(0, 'CurrentFigure', h);
 
 % Draw bar graph
 if isempty(xValues)
@@ -164,3 +166,9 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%{
+OLD CODE:
+
+figure(h);
+
+%}
