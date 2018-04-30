@@ -20,6 +20,12 @@ function abf2mat(abfFileOrDir, varargin)
 %                   - 'SaveIndividual': whether to save individual vectors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'SaveTogether': whether to save vectors together
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'MaxRecordingLength': maximum recording length in ms
+%                   must be a positive number
+%                   default == Inf
 
 % File History:
 % 2016-08-02 Created
@@ -32,11 +38,14 @@ function abf2mat(abfFileOrDir, varargin)
 % 2017-08-01 Added input parser scheme
 % 2017-08-01 Made saving individual vectors and option
 % 2017-08-01 Now accepts a directory as the first argument
+% 2018-04-26 Add 'MaxRecordingLength' as a parameter
 % TODO: Apply identify_channels.m and save each channel
 
 %% Default values for optional arguments
 omitTimeDefault = false;        % whether to omit time vector by default
 saveIndividualDefault = true;   % whether to save individual vectors by default
+saveTogetherDefault = true;     % whether to save vectors together by default
+maxRecordingLengthDefault = Inf;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -49,7 +58,7 @@ end
 
 % Set up Input Parser Scheme
 iP = inputParser;         
-iP.FunctionName = 'abf2mat';
+iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'abfFileOrDir', ... % file name or file directory
@@ -60,11 +69,17 @@ addParameter(iP, 'OmitTime', omitTimeDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SaveIndividual', saveIndividualDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveTogether', saveTogetherDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'MaxRecordingLength', maxRecordingLengthDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive'}));
 
 % Read from the Input Parser
 parse(iP, abfFileOrDir, varargin{:});
 omitTime = iP.Results.OmitTime;
 saveIndividual = iP.Results.SaveIndividual;
+saveTogether = iP.Results.SaveTogether;
+maxRecordingLength = iP.Results.MaxRecordingLength;
 
 % Parse first argument
 if exist(abfFileOrDir, 'file') == 2                         % it's a file
@@ -106,57 +121,114 @@ if multipleFiles
     allAbfFiles = dir(fullfile(abfDir, '*.abf'));
     nAbfFiles = length(allAbfFiles);   % # of .abf files in directory
     for iFile = 1:nAbfFiles
-        convert_abf2mat(fullfile(abfDir, allAbfFiles(iFile).name), ...
-                        omitTime, saveIndividual);
+        convert_abf2mat(fullfile(abfDir, allAbfFiles(iFile).name), omitTime, ...
+                        saveIndividual, saveTogether, maxRecordingLength);
     end
 else
-    convert_abf2mat(abfFullFileName, omitTime, saveIndividual);
+    convert_abf2mat(abfFullFileName, omitTime, ...
+                    saveIndividual, saveTogether, maxRecordingLength);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function convert_abf2mat(abfFullFileName, omitTime, saveIndividual)
+function convert_abf2mat(abfFullFileName, omitTime, saveIndividual, saveTogether, maxRecordingLength)
 %% TODO: work with 3-D data
 
 % Load abf file
 %   d       - the data with 3 voltage channels; 
 %   siUs    - the sampling interval in us
-[d, siUs, ~] = abf2load(abfFullFileName);    
+[d, siUs, ~] = abf2load(abfFullFileName);
 
 nDps = size(d, 1);          % Total number of data points in each channel
 nChannels = size(d, 2);     % Total number of channels in each abf file
 siMs = siUs/1000;           % sampling interval in ms
-t = siMs*(1:nDps)';         % time vector in ms
 
-% Create a data vector 
-for k = 1:nChannels
-    eval(sprintf('vec%d = d(:, %d);', k, k));   % voltage vector 
-                                                %   (in uV for EEG), channel #k
-end
+% Compute the total recording length in ms
+totalRecordingLength = siMs * nDps;
 
-% Save all vectors into one v7.3 mat file
-matFullFileName = strrep(abfFullFileName, '.abf', '.mat');
-command_string_part = [];
-for k = 1:nChannels
-    command_string_part = [command_string_part, ', ''vec', num2str(k), ''''];
-end
-if ~omitTime
-    eval(sprintf('save(matFullFileName, ''t''%s, ''-v7.3'');', ...
-                    command_string_part));
+% Decide whether to break up the trace into multiple files:
+%   If greater than max recording length, break up the trace into pieces
+if totalRecordingLength > maxRecordingLength
+    breakUpTrace = true;
+
+    % Compute the number of pieces after breaking up the trace
+    nPieces = ceil(totalRecordingLength / maxRecordingLength);
+
+    % Compute the number of indices per piece
+    indPerPiece = round(maxRecordingLength / siMs);
 else
-    eval(sprintf('save(matFullFileName, ''d'');'));
+    breakUpTrace = false;
+    nPieces = 1;
+    indPerPiece = nDps;
 end
 
-% Save individual vectors into its own mat file (old version)
-if saveIndividual
-    for k = 1:nChannels
-        vec = d(:, k);
-        subMatFullFileName = strrep(abfFullFileName, '.abf', ...
-                                ['_channel', num2str(k), '.mat']);
-        if ~omitTime
-            save(subMatFullFileName, 't', 'vec', '-v7.3');
+% For each piece
+for iPiece = 1:nPieces
+    % Get the index start and end points for this piece
+    indThisStart = (iPiece - 1) * indPerPiece + 1;
+    if iPiece < nPieces
+        indThisEnd = (iPiece - 1) * indPerPiece + indPerPiece;
+    elseif iPiece == nPieces
+        indThisEnd = nDps;
+    else
+        error('error with code!');
+    end
+
+    % Get the time vector in ms
+    t = siMs*(indThisStart:indThisEnd)';
+
+    % Save individual vectors into its own mat file (default)
+    if saveIndividual
+        for iChannel = 1:nChannels
+            % Save as 'vec'
+            vec = d(indThisStart:indThisEnd, iChannel);
+
+            if breakUpTrace
+                % Create a matfile name with the channel & piece number
+                subMatFullFileName = strrep(abfFullFileName, '.abf', ...
+                                    ['_channel', num2str(iChannel), ...
+                                    '_piece', num2str(iPiece), '.mat']);                
+            else
+                % Create a matfile name with the channel number
+                subMatFullFileName = strrep(abfFullFileName, '.abf', ...
+                                    ['_channel', num2str(iChannel), '.mat']);
+            end
+            if ~omitTime
+                save(subMatFullFileName, 't', 'vec', '-v7.3');
+            else
+                save(subMatFullFileName, 'vec');
+            end
+        end
+    end
+
+    % Create a data vector for each channel
+    for iChannel = 1:nChannels
+        % Name by the channel number
+        %   (in uV for EEG), channel #iChannel
+        eval(sprintf('vec%d = d(%d:%d, %d);', ...
+                    iChannel, indThisStart, indThisEnd, iChannel));
+    end
+
+    % Save all vectors into one v7.3 mat file
+    if saveTogether
+        if breakUpTrace
+            % Create a matfile name with the piece number
+            matFullFileName = strrep(abfFullFileName, '.abf', ...
+                                    ['_piece', num2str(iPiece), '.mat']);
         else
-            save(subMatFullFileName, 'vec');
+            % Create a matfile name
+            matFullFileName = strrep(abfFullFileName, '.abf', '.mat');
+        end
+        command_string_part = [];
+        for k = 1:nChannels
+            command_string_part = [command_string_part, ...
+                                    ', ''vec', num2str(k), ''''];
+        end
+        if ~omitTime
+            eval(sprintf('save(matFullFileName, ''t''%s, ''-v7.3'');', ...
+                            command_string_part));
+        else
+            eval(sprintf('save(matFullFileName, ''d'');'));
         end
     end
 end
