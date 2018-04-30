@@ -1,7 +1,7 @@
 function abf2mat(abfFileOrDir, varargin)
 %% Converts .abf files to .mat files with time vector included
 % NOTE: Currently, data must be 2-dimensional (1 sweep per channel) 
-%           is saveIndividual is true (default). Otherwise, set
+%           if saveIndividual is true (default). Otherwise, set
 %           'OmitTime' to true and 'SaveIndividual' to false to
 %           simply save the data matrix
 % Usage: abf2mat(abfFileOrDir, varargin)
@@ -22,7 +22,7 @@ function abf2mat(abfFileOrDir, varargin)
 %                   default == true
 %                   - 'SaveTogether': whether to save vectors together
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == false
 %                   - 'MaxRecordingLength': maximum recording length in ms
 %                   must be a positive number
 %                   default == Inf
@@ -39,12 +39,14 @@ function abf2mat(abfFileOrDir, varargin)
 % 2017-08-01 Made saving individual vectors and option
 % 2017-08-01 Now accepts a directory as the first argument
 % 2018-04-26 Add 'MaxRecordingLength' as a parameter
+% 2018-04-30 Changed num2str(iPiece) -> num2str(iPiece, '%02.f')
+%               so that files will be in alphabetical order
 % TODO: Apply identify_channels.m and save each channel
 
 %% Default values for optional arguments
 omitTimeDefault = false;        % whether to omit time vector by default
 saveIndividualDefault = true;   % whether to save individual vectors by default
-saveTogetherDefault = true;     % whether to save vectors together by default
+saveTogetherDefault = false;    % whether to save vectors together by default
 maxRecordingLengthDefault = Inf;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -187,7 +189,7 @@ for iPiece = 1:nPieces
                 % Create a matfile name with the channel & piece number
                 subMatFullFileName = strrep(abfFullFileName, '.abf', ...
                                     ['_channel', num2str(iChannel), ...
-                                    '_piece', num2str(iPiece), '.mat']);                
+                                    '_piece', num2str(iPiece, '%02.f'), '.mat']);                
             else
                 % Create a matfile name with the channel number
                 subMatFullFileName = strrep(abfFullFileName, '.abf', ...
@@ -214,7 +216,7 @@ for iPiece = 1:nPieces
         if breakUpTrace
             % Create a matfile name with the piece number
             matFullFileName = strrep(abfFullFileName, '.abf', ...
-                                    ['_piece', num2str(iPiece), '.mat']);
+                                    ['_piece', num2str(iPiece, '%02.f'), '.mat']);
         else
             % Create a matfile name
             matFullFileName = strrep(abfFullFileName, '.abf', '.mat');
