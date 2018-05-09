@@ -29,6 +29,7 @@ function [paramvals] = update_params(paramnames, paramvals, varargin)
 % 2017-05-03 Added 'ExperimentName' as a parameter
 % 2017-11-07 Fixed TCgabaaGmax for bicuculline mode
 % 2018-05-08 Changed tabs to spaces and limited width to 80
+% 2018-05-09 Fixed cpamp calculation for 'RTCl'
 
 %% Hard-coded parameters
 validExperiments = {'RTCl', 'm3ha', 'noexp'};
@@ -53,8 +54,11 @@ if nargin < 2
             'type ''help %s'' for usage'], mfilename);
 end
 
-% Add required inputs to an input Parser
+% Set up Input Parser Scheme
 iP = inputParser;
+iP.FunctionName = mfilename;
+
+% Add required inputs to an input Parser
 addRequired(iP, 'paramnames', ...
     @(x) assert(iscell(x) && ...
                 (min(cellfun(@ischar, x)) || min(cellfun(@isstring, x))), ...
@@ -88,13 +92,21 @@ case {'RTCl', 'm3ha'}
     indcpper = find_ind_str_in_cell('cp_per', paramnames);
     indcpnum = find_ind_str_in_cell('cp_num', paramnames);
 
-    % Update parameters that are influenced by other parameters
-    paramvals(indcpamp) = 0.2*(paramvals(indREdia)/10)^2;
-                                        % update current pulse amplitude (nA)
+    % Update current pulse period (ms)
     paramvals(indcpper) = floor(1000/paramvals(indstimf));
-                                        % update current pulse period (ms)
+
+    % Update number of current pulses                                        
     paramvals(indcpnum) = ceil(paramvals(indstimd)/paramvals(indcpper));
-                                        % update number of current pulses
+case 'noexp'
+    % Do nothing
+end
+
+% Update current pulse amplitude (nA)
+switch experimentname
+case 'RTCl'
+    paramvals(indcpamp) = 4*(paramvals(indREdia)/10)^2;
+case 'm3ha'
+    paramvals(indcpamp) = 0.2*(paramvals(indREdia)/10)^2;
 case 'noexp'
     % Do nothing
 end
