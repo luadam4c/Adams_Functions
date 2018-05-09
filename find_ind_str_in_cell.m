@@ -34,6 +34,9 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 %                   - 'IgnoreCase': whether to ignore differences in letter case
 %                   must be logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'MaxNum': maximum number of indices to find
+%                   must be a positive integer
+%                   default == numel(cellArray)
 %
 % Requires:
 %       /home/Matlab/Adams_Functions/intersectm.m
@@ -56,6 +59,7 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 %       /home/Matlab/Adams_Functions/increment_editbox.m
 %       /home/Matlab/minEASE/read_params.m
 %       /home/Matlab/minEASE/gui_examine_events.m
+%       /home/Matlab/EEG_gui/EEG_gui.m
 %
 % 2016-09--- Created
 % 2016-10-13 moved to Adams_Functions
@@ -66,21 +70,27 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 % 2017-05-09 Added elements as output
 % 2017-05-25 Changed line width and indentation
 % 2017-06-09 Fixed the returned element to be of original case
+% 2018-05-01 Added MaxNum as a parameter
 
 %% Default values for optional arguments
-searchModeDefault = 'substrings';           % default search mode
-ignoreCaseDefault = false;                  % whether to ignore case by default
+searchModeDefault = 'substrings';       % default search mode
+ignoreCaseDefault = false;              % whether to ignore case by default
+maxNumDefault = [];                     % will be changed to numel(cellArray)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Check number of arguments (better error message than inputParser)
+%% Deal with arguments
+% Check number of required arguments
 if nargin < 2
     error(['Not enough input arguments, ', ...
-            'type ''help find_ind_str_in_cell'' for usage']);
+            'type ''help %s'' for usage'], mfilename);
 end
 
-%% Add required inputs to an input Parser
+% Set up Input Parser Scheme
 iP = inputParser;
+iP.FunctionName = mfilename;
+
+% Add required inputs to the Input Parser
 addRequired(iP, 'str', ...              % a string/substrings of interest
     @(x) assert(ischar(x) || iscell(x) && (min(cellfun(@ischar, x)) || ...
                 min(cellfun(@isstring, x))) || isstring(x), ...
@@ -92,20 +102,32 @@ addRequired(iP, 'cellArray', ...        % a cell array that contains strings
                 ['Second input must be a cell array ', ...
                 'of strings/character arrays!']));
 
-%% Add parameter-value pairs to the input Parser
+% Add parameter-value pairs to the Input Parser
 addParameter(iP, 'SearchMode', searchModeDefault, ...   % the search mode
     @(x) any(validatestring(x, {'exact', 'substrings'})));
 addParameter(iP, 'IgnoreCase', ignoreCaseDefault, ...   % whether to ignore case
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'MaxNum', maxNumDefault, ...       % maximum number of indices
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer'}));
 
-%% Read parameter values from the input Parser
+% Read from the Input Parser
 parse(iP, str, cellArray, varargin{:});
 searchMode = validatestring(iP.Results.SearchMode, {'exact', 'substrings'});
 ignoreCase = iP.Results.IgnoreCase;
+maxNum = iP.Results.MaxNum;
 
-%% Check more arguments
+% Check relationships between arguments
 if strcmpi(searchMode, 'exact') && iscell(str)
     error('First input cannot be a cell array if searchMode is 1!');
+end
+
+%% Prepare for the search
+% Count the number of indices
+nIndices = numel(cellArray);
+
+% Set the maximum number of indices if not provided
+if isempty(maxNum)
+    maxNum = nIndices;
 end
 
 %% Find the indices
@@ -122,9 +144,9 @@ if strcmpi(searchMode, 'exact')             % String must be exact
     % Find indices that corresponds to str exactly in cellArray, 
     %   case-insensitive if IgnoreCase is set to true
     if ignoreCase
-        indices = find(cellfun(@strcmpi, cellArray, str_cell));
+        indices = find(cellfun(@strcmpi, cellArray, str_cell), maxNum);
     else
-        indices = find(cellfun(@strcmp, cellArray, str_cell));
+        indices = find(cellfun(@strcmp, cellArray, str_cell), maxNum);
     end
 
 elseif strcmpi(searchMode, 'substrings')    % String can be a substring 
@@ -155,8 +177,13 @@ elseif strcmpi(searchMode, 'substrings')    % String can be a substring
         end
 
         % Find the indices that contain all substrings by intersection
-        indices = intersectm(indices_eachstr);    
-    
+        indices = intersectm(indices_eachstr);
+
+        % If more than maxNum indices found, 
+        %   restrict to the first maxNum indices
+        if length(indices) > maxNum
+            indices = indices(1:maxNum);
+        end
     else                    % if str is a single substring
         % Convert substring to lower case if IgnoreCase is set to true
         if ignoreCase
@@ -167,7 +194,7 @@ elseif strcmpi(searchMode, 'substrings')    % String can be a substring
 
         % Find the indices that contain the substring
         indicesarray = strfind(cellArrayMod, strMod);
-        indices = find(~cellfun(@isempty, indicesarray));
+        indices = find(~cellfun(@isempty, indicesarray), maxNum);
     end
 
 end

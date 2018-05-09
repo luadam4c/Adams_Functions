@@ -1,5 +1,5 @@
 function abf2mat(abfFileOrDir, varargin)
-%% Converts .abf files to .mat files with time vector included
+%% Converts .abf files to .mat files with time vector (in ms) included
 % NOTE: Currently, data must be 2-dimensional (1 sweep per channel) 
 %           if saveIndividual is true (default). Otherwise, set
 %           'OmitTime' to true and 'SaveIndividual' to false to
@@ -26,6 +26,10 @@ function abf2mat(abfFileOrDir, varargin)
 %                   - 'MaxRecordingLength': maximum recording length in ms
 %                   must be a positive number
 %                   default == Inf
+%                   - 'OutFolder': directory to output csv file, 
+%                                   e.g. 'output'
+%                   must be a string scalar or a character vector
+%                   default == 'fullfile(abfDir, matfiles)'
 
 % File History:
 % 2016-08-02 Created
@@ -41,6 +45,9 @@ function abf2mat(abfFileOrDir, varargin)
 % 2018-04-26 Add 'MaxRecordingLength' as a parameter
 % 2018-04-30 Changed num2str(iPiece) -> num2str(iPiece, '%02.f')
 %               so that files will be in alphabetical order
+% 2018-05-01 Changed num2str(iChannel) -> num2str(iChannel, '%02.f')
+%               so that files will be in alphabetical order
+% 2018-05-02 Added outFolder and made the default 'matfiles'
 % TODO: Apply identify_channels.m and save each channel
 
 %% Default values for optional arguments
@@ -48,6 +55,7 @@ omitTimeDefault = false;        % whether to omit time vector by default
 saveIndividualDefault = true;   % whether to save individual vectors by default
 saveTogetherDefault = false;    % whether to save vectors together by default
 maxRecordingLengthDefault = Inf;
+outFolderDefault = '';          % default directory to output csv file
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -75,6 +83,8 @@ addParameter(iP, 'SaveTogether', saveTogetherDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'MaxRecordingLength', maxRecordingLengthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive'}));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, abfFileOrDir, varargin{:});
@@ -82,6 +92,7 @@ omitTime = iP.Results.OmitTime;
 saveIndividual = iP.Results.SaveIndividual;
 saveTogether = iP.Results.SaveTogether;
 maxRecordingLength = iP.Results.MaxRecordingLength;
+outFolder = iP.Results.OutFolder;
 
 % Parse first argument
 if exist(abfFileOrDir, 'file') == 2                         % it's a file
@@ -118,27 +129,43 @@ else
     error('File or directory undefined!');
 end
 
+% Set dependent argument defaults
+if isempty(outFolder)
+    % Default output directory is matfiles under the data directory
+    outFolder = fullfile(abfDir, 'matfiles');
+end
+
+% Make sure the output directory exists
+if exist(outFolder, 'dir') ~= 7
+    mkdir(outFolder);
+    fprintf('New directory is made: %s\n\n', outFolder);
+end
+
 % Find all .abf files to convert
 if multipleFiles
     allAbfFiles = dir(fullfile(abfDir, '*.abf'));
     nAbfFiles = length(allAbfFiles);   % # of .abf files in directory
     for iFile = 1:nAbfFiles
-        convert_abf2mat(fullfile(abfDir, allAbfFiles(iFile).name), omitTime, ...
-                        saveIndividual, saveTogether, maxRecordingLength);
+        abfFileName = allAbfFiles(iFile).name;
+        convert_abf2mat(abfDir, abfFileName, outFolder, ...
+                        omitTime, saveIndividual, saveTogether, ...
+                        maxRecordingLength);
     end
 else
-    convert_abf2mat(abfFullFileName, omitTime, ...
-                    saveIndividual, saveTogether, maxRecordingLength);
+    convert_abf2mat(abfDir, abfFileName, outFolder, ...
+                    omitTime, saveIndividual, saveTogether, ...
+                    maxRecordingLength);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function convert_abf2mat(abfFullFileName, omitTime, saveIndividual, saveTogether, maxRecordingLength)
+function convert_abf2mat(abfDir, abfFileName, outFolder, omitTime, saveIndividual, saveTogether, maxRecordingLength)
 %% TODO: work with 3-D data
 
 % Load abf file
 %   d       - the data with 3 voltage channels; 
 %   siUs    - the sampling interval in us
+abfFullFileName = fullfile(abfDir, abfFileName);
 [d, siUs, ~] = abf2load(abfFullFileName);
 
 nDps = size(d, 1);          % Total number of data points in each channel
@@ -187,18 +214,18 @@ for iPiece = 1:nPieces
 
             if breakUpTrace
                 % Create a matfile name with the channel & piece number
-                subMatFullFileName = strrep(abfFullFileName, '.abf', ...
-                                    ['_channel', num2str(iChannel), ...
+                subMatFileName = strrep(abfFileName, '.abf', ...
+                                    ['_channel', num2str(iChannel, '%02.f'), ...
                                     '_piece', num2str(iPiece, '%02.f'), '.mat']);                
             else
                 % Create a matfile name with the channel number
-                subMatFullFileName = strrep(abfFullFileName, '.abf', ...
-                                    ['_channel', num2str(iChannel), '.mat']);
+                subMatFileName = strrep(abfFileName, '.abf', ...
+                                    ['_channel', num2str(iChannel, '%02.f'), '.mat']);
             end
             if ~omitTime
-                save(subMatFullFileName, 't', 'vec', '-v7.3');
+                save(fullfile(outFolder, subMatFileName), 't', 'vec', '-v7.3');
             else
-                save(subMatFullFileName, 'vec');
+                save(fullfile(outFolder, subMatFileName), 'vec');
             end
         end
     end
@@ -215,11 +242,11 @@ for iPiece = 1:nPieces
     if saveTogether
         if breakUpTrace
             % Create a matfile name with the piece number
-            matFullFileName = strrep(abfFullFileName, '.abf', ...
+            matFileName = strrep(abfFileName, '.abf', ...
                                     ['_piece', num2str(iPiece, '%02.f'), '.mat']);
         else
             % Create a matfile name
-            matFullFileName = strrep(abfFullFileName, '.abf', '.mat');
+            matFileName = strrep(abfFileName, '.abf', '.mat');
         end
         command_string_part = [];
         for k = 1:nChannels
@@ -227,10 +254,11 @@ for iPiece = 1:nPieces
                                     ', ''vec', num2str(k), ''''];
         end
         if ~omitTime
-            eval(sprintf('save(matFullFileName, ''t''%s, ''-v7.3'');', ...
+            eval(sprintf('save(fullfile(outFolder, matFileName), ', ...
+                            '''t''%s, ''-v7.3'');', ...
                             command_string_part));
         else
-            eval(sprintf('save(matFullFileName, ''d'');'));
+            eval(sprintf('save(fullfile(outFolder, matFileName), ''d'');'));
         end
     end
 end
