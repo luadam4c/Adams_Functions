@@ -1,20 +1,21 @@
-function [results, figtypes] = isfigtype (strings, varargin)
-%% Check whether a string or each string in a cell array is a valid figure type accepted by saveas()
-% Usage: [results, figtypes] = isfigtype (strings, varargin)
+function [results, sheettypes] = issheettype (strings, varargin)
+%% Check whether a string or each string in a cell array is a valid spreadsheet type accepted by readtable()
+% Usage: [results, sheettypes] = issheettype (strings, varargin)
 % Outputs:    
-%       results     - indication of whether the specified name is a figure type
+%       results     - indication of whether the specified name is
+%                        a spreadsheet type
 %                   specified as a logical array
-%       figtypes    - validated figtypes, if any
+%       sheettypes  - validated sheettypes, if any
 %                   specified as a string/char-vec or 
 %                       a cell array of strings/char-vecs
 %                   returns the shortest match if matchmode == 'substring' 
 %                       (sames as validatestring())
-% Arguments:        
+% Arguments:
 %       strings     - string or strings to check
 %                   must be a string/char-vec or 
 %                       a cell array of strings/char-vecs
 %       varargin    - 'ValidateMode': whether to validate string and 
-%                       throw error if string is not a substring of a figtype
+%                       throw error if string is not a substring of a sheettype
 %                   must be logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'MatchMode': the matching mode
@@ -31,30 +32,17 @@ function [results, figtypes] = isfigtype (strings, varargin)
 %
 % Used by:
 %       /home/Matlab/function_template.m
-%       /home/Matlab/minEASE/detect_gapfree_events.m
-%       /home/Matlab/Adams_Functions/plot_tuning_curve.m
-%       /home/Matlab/Adams_Functions/plot_tuning_map.m
-%       /media/adamX/RTCl/raster_plot.m
-%       /media/adamX/RTCl/single_neuron.m
-%       /media/adamX/RTCl/tuning_curves.m
-%       /media/adamX/RTCl/tuning_maps.m
+%       /home/Matlab/EEG_gui/combine_EEG_gui_outputs.m
 %
 % File History:
-% 2017-05-09 Created by Adam Lu
-% 2017-05-23 Modified linewidth and indentation
-% 2018-05-08 Changed tabs to spaces and limited width to 80
-% 2018-05-15 possible_figtypes -> validFigTypes
+% 2018-05-15 Modified from issheettype.m
 % 
 
 %% Hard-coded parameters
-validFigTypes = {'png', 'fig', 'm', 'mfig', ...
-                'jpeg', 'tiff', 'tiffn', 'meta', ...
-                'bmpmono', 'bmp', 'bmp16m', 'bmp256', ...
-                'hdf', 'pbm', 'pbmraw', 'pcxmono', ...
-                'pcx24b', 'pcx256', 'pcx16', 'pgm', ...
-                'pgmraw', 'ppm', 'ppmraw'};
-                                        % accepted by saveas()
-                                        % Note: from Matlab 2017a Documentation
+validSheetTypes = {'txt', 'dat', 'csv', 'xls', 'xlsb', 'xlsm', ...
+                    'xlsx', 'xltm', 'xltx', 'ods'};
+                                        % accepted by readtable()
+                                        % Note: from Matlab 2018a Documentation
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -97,16 +85,16 @@ end
 
 %% Check strings and validate
 if iscell(strings)
-    figtypes = cellfun(@(x) validate_string(x, validFigTypes, ...
+    sheettypes = cellfun(@(x) validate_string(x, validSheetTypes, ...
                                             'ValidateMode', validatemode, ...
                                             'MatchMode', matchmode), ...
                                             strings, 'UniformOutput', false);
-    results = ~cellfun(@isempty, figtypes);
+    results = ~cellfun(@isempty, sheettypes);
 elseif ischar(strings)
-    figtypes = validate_string(strings, validFigTypes, ...
+    sheettypes = validate_string(strings, validSheetTypes, ...
                                 'ValidateMode', validatemode, ...
                                 'MatchMode', matchmode);
-    results = ~isempty(figtypes);
+    results = ~isempty(sheettypes);
 else
     error(['input argument is in the wrong format! ', ...
             'Type ''help %s'' for usage'], mfilename);

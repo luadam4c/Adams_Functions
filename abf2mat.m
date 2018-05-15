@@ -50,6 +50,11 @@ function abf2mat(abfFileOrDir, varargin)
 % 2018-05-02 Added outFolder and made the default 'matfiles'
 % TODO: Apply identify_channels.m and save each channel
 
+%% Hard-coded parameters
+% TODO: Make these default values for optional arguments
+channelStr = '_channel';        % string in file names that separate channels
+pieceStr = '_piece';            % string in file names that separate pieces
+
 %% Default values for optional arguments
 omitTimeDefault = false;        % whether to omit time vector by default
 saveIndividualDefault = true;   % whether to save individual vectors by default
@@ -215,12 +220,12 @@ for iPiece = 1:nPieces
             if breakUpTrace
                 % Create a matfile name with the channel & piece number
                 subMatFileName = strrep(abfFileName, '.abf', ...
-                                    ['_channel', num2str(iChannel, '%02.f'), ...
-                                    '_piece', num2str(iPiece, '%02.f'), '.mat']);                
+                            [channelStr, num2str(iChannel, '%02.f'), ...
+                                pieceStr, num2str(iPiece, '%02.f'), '.mat']);                
             else
                 % Create a matfile name with the channel number
                 subMatFileName = strrep(abfFileName, '.abf', ...
-                                    ['_channel', num2str(iChannel, '%02.f'), '.mat']);
+                            [channelStr, num2str(iChannel, '%02.f'), '.mat']);
             end
             if ~omitTime
                 save(fullfile(outFolder, subMatFileName), 't', 'vec', '-v7.3');
@@ -243,7 +248,7 @@ for iPiece = 1:nPieces
         if breakUpTrace
             % Create a matfile name with the piece number
             matFileName = strrep(abfFileName, '.abf', ...
-                                    ['_piece', num2str(iPiece, '%02.f'), '.mat']);
+                                [pieceStr, num2str(iPiece, '%02.f'), '.mat']);
         else
             % Create a matfile name
             matFileName = strrep(abfFileName, '.abf', '.mat');

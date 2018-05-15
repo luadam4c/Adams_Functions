@@ -53,16 +53,16 @@ function print_or_show_message(message, varargin)
 %       /home/Matlab/Adams_Functions/create_input_file.m
 %
 % File History:
-%   2018-02-02 Created
-%   2018-02-07 MD - Input Parser implemented, function working.
-%   2018-02-08 AL - Changed specification of toShow from isnumeric
-%                       to both isnumeric and islogical
-%   2018-02-08 AL - Reverted back to using uiwait() and 'modal'
-%   2018-02-26 MD - Modified to have messageMode and removed toShow, messagebox
+% 2018-02-02 Created
+% 2018-02-07 MD - Input Parser implemented, function working.
+% 2018-02-08 AL - Changed specification of toShow from isnumeric
+%                   to both isnumeric and islogical
+% 2018-02-08 AL - Reverted back to using uiwait() and 'modal'
+% 2018-02-26 MD - Modified to have messageMode and removed toShow, messagebox
 %                   always shows now with the fprintf being optional.
-%   2018-03-01 MD - Added verbose parameter
-%   2018-05-15 AL - Added example usage
-%   2018-05-15 AL - Added CreateMode
+% 2018-03-01 MD - Added verbose parameter
+% 2018-05-15 AL - Added example usage
+% 2018-05-15 AL - Added CreateMode
 
 %% Hard-coded parameters
 validMessageModes = {'wait', 'show', 'none'};
