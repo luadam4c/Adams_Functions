@@ -1,6 +1,6 @@
-function combine_spreadsheets (inputFileNames, outputFileName, varargin)
-%% Combine csv files
-% Usage: combine_spreadsheets (inputFileNames, outputFileName, varargin)
+function vertcat_spreadsheets (inputFileNames, outputFileName, varargin)
+%% Combine spreadsheets using readtable, vertcat, then writetable
+% Usage: vertcat_spreadsheets (inputFileNames, outputFileName, varargin)
 % Explanation:
 %       TODO
 % Example:
@@ -13,11 +13,8 @@ function combine_spreadsheets (inputFileNames, outputFileName, varargin)
 %       outputFileName  - output spreadsheet file name
 %                       must be a string scalar or a character vector
 %
-% Requires:
-%       TODO: place any custom functions used in this function/script here
-%
 % Used by:    
-%       TODO: place any custom functions/scripts that uses this function here
+%       /home/Matlab/EEG_gui/combine_EEG_gui_outputs.m
 %
 % File History:
 % 2018-05-15 Created by Adam Lu
@@ -69,7 +66,7 @@ for iTable = 1:nTables
         outputTable = inputTable;
     else
         % Vertically concatenate the new input table to the existing outputTable
-        outerjoin(outputTable, inputTable, 'MergeKeys', true);
+        outputTable = vertcat(outputTable, inputTable);
     end
 end
 
@@ -80,5 +77,8 @@ writetable(outputTable, outputFileName);
 
 %{
 OLD CODE:
+
+% The following will reorder the rows, so is not ideal
+outputTable = outerjoin(outputTable, inputTable, 'MergeKeys', true);
 
 %}
