@@ -4,6 +4,10 @@ function print_or_show_message(message, varargin)
 % Explanation: 
 %       Either pause program and show message box, only show message box, 
 %           or printed in stardard output
+% Example:
+%       print_or_show_message(message, 'MTitle', mTitle, 'Icon', icon, ...
+%                             'MessageMode', 'show', 'Verbose', true, ...
+%                             'CreateMode', 'non-modal')
 % Arguments:
 %       message     - message displayed in message box
 %                   must be a string scalar or a character vector
@@ -21,6 +25,15 @@ function print_or_show_message(message, varargin)
 %                                   message box
 %                       'none'  - neither stop program nor show a message box
 %                   default == 'wait'
+%                   - 'CreateMode' - window mode for the msgbox() function 
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'non-modal' - does not disable main content and 
+%                                       does not overwrite other dialog boxes
+%                       'modal'     - disables main content and overwrites
+%                                       dialog boxes of the same title
+%                       'replace'   - overwrites dialog boxes of the same title
+%                                       with non-modal dialog boxes
+%                   default == 'modal'
 %                   - 'Verbose' - whether to print to standard output
 %                                   regardless of message mode
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -48,9 +61,12 @@ function print_or_show_message(message, varargin)
 %   2018-02-26 MD - Modified to have messageMode and removed toShow, messagebox
 %                   always shows now with the fprintf being optional.
 %   2018-03-01 MD - Added verbose parameter
+%   2018-05-15 AL - Added example usage
+%   2018-05-15 AL - Added CreateMode
 
 %% Hard-coded parameters
 validMessageModes = {'wait', 'show', 'none'};
+validCreateModes = {'non-modal', 'modal', 'replace'};
 
 %% Default values for optional arguments
 mTitleDefault = 'Message box';      % default : Title for message box will
@@ -59,6 +75,8 @@ iconDefault = 'none';               % default : Does not display an icon with
                                     %   with message box.
 messageModeDefault = 'wait';        % default : Pauses program and displays
                                     %   message box.
+createModeDefault = 'modal';        % default : Disables main content and 
+                                    %   overwrites dialog boxes of the same title
 verboseDefault = false;             % default: Program does not print message
                                     %   even if message box is shown
 
@@ -79,6 +97,8 @@ addParameter(iP, 'MTitle', mTitleDefault, @ischar);
 addParameter(iP, 'Icon', iconDefault, @ischar);
 addParameter(iP, 'MessageMode', messageModeDefault, ...
     @(x) any(validatestring(x, validMessageModes)));
+addParameter(iP, 'CreateMode', createModeDefault, ...
+    @(x) any(validatestring(x, validCreateModes)));
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
@@ -90,6 +110,7 @@ verbose = iP.Results.Verbose;
 
 % Match possibly ambiguous strings to valid strings
 messageMode = validatestring(iP.Results.MessageMode, validMessageModes);
+createMode = validatestring(iP.Results.CreateMode, validCreateModes);
 
 % Print to standard output if verbose is true or messageMode == 'none'
 if verbose || strcmp(messageMode, 'none')
@@ -100,11 +121,11 @@ end
 % Display message box and/or stop program
 switch messageMode
 case 'wait'
-    %   Program stops and displays message box               
-    uiwait(msgbox(message, mTitle, icon, 'modal'));                  
+    %   Program stops and displays message box
+    uiwait(msgbox(message, mTitle, icon, createMode));                  
 case 'show'
     %   Program does not stop but still displays message box
-    msgbox(message, mTitle, icon, 'modal');
+    msgbox(message, mTitle, icon, createMode);
 case 'none'
     %   Program does not stop or display message box
 otherwise
@@ -171,5 +192,8 @@ else
 % warning('off', verbose) isn't this how verbose is used? I also looked in
 % minEASE to see how it was used but I'm still confused. I was able to add it
 % as a pair parameter though!
+
+uiwait(msgbox(message, mTitle, icon, 'modal'));                  
+msgbox(message, mTitle, icon, 'modal');
 
 %}
