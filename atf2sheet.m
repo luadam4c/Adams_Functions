@@ -25,7 +25,7 @@ function sheetFullFileNames = atf2sheet (atfFileOrDir, varargin)
 %                   - 'OutFolder': directory to output csv file, 
 %                                   e.g. 'output'
 %                   must be a string scalar or a character vector
-%                   default == pwd
+%                   default == same as location of atf file (atfDir)
 %                   - 'NLinesToSkip': number of lines to skip
 %                   must be a positive integer scalar
 %                   default == 2
@@ -45,6 +45,7 @@ function sheetFullFileNames = atf2sheet (atfFileOrDir, varargin)
 
 % File History:
 % 2018-05-16 Created by Adam Lu, some code from abf2mat.m
+% 2018-05-17 Changed default OutFolder to atfDir
 % TODO: isdelimiter.m
 % 
 
@@ -141,8 +142,8 @@ end
 
 % Set dependent argument defaults
 if isempty(outFolder)
-    % Default output directory is pwd
-    outFolder = pwd;
+    % Default output directory is atfDir
+    outFolder = atfDir;
 end
 
 % Make sure the output directory exists
