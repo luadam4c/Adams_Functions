@@ -20,6 +20,9 @@ function abf2mat(abfFileOrDir, varargin)
 %       varargin    - 'OmitTime': whether to omit time vector
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'OmitChannels': array of channels to omit
+%                   must be a positive integer vector
+%                   default == []
 %                   - 'SaveIndividual': whether to save individual vectors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
@@ -27,12 +30,16 @@ function abf2mat(abfFileOrDir, varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'MaxRecordingLength': maximum recording length in ms
-%                   must be a positive number
+%                   must be a positive scalar
 %                   default == Inf
+%                   - 'ChannelsPerAnimal': number of channels per animal
+%                   must be a positive integer scalar
+%                   default == []
 %                   - 'OutFolder': directory to output csv file, 
 %                                   e.g. 'output'
 %                   must be a string scalar or a character vector
 %                   default == 'fullfile(abfDir, matfiles)'
+
 
 % File History:
 % 2016-08-02 Created
@@ -51,18 +58,23 @@ function abf2mat(abfFileOrDir, varargin)
 % 2018-05-01 Changed num2str(iChannel) -> num2str(iChannel, '%02.f')
 %               so that files will be in alphabetical order
 % 2018-05-02 Added outFolder and made the default 'matfiles'
+% 2018-05-17 Added ChannelsPerAnimal and animalStr
+% 2018-05-17 Added OmitChannels
 % TODO: Apply identify_channels.m and save each channel
 
 %% Hard-coded parameters
 % TODO: Make these default values for optional arguments
+animalStr = '_animal';          % string in file names that separate animals
 channelStr = '_channel';        % string in file names that separate channels
 pieceStr = '_piece';            % string in file names that separate pieces
 
 %% Default values for optional arguments
 omitTimeDefault = false;        % whether to omit time vector by default
+omitChannelsDefault = [];       % list of channels to omit by default
 saveIndividualDefault = true;   % whether to save individual vectors by default
 saveTogetherDefault = false;    % whether to save vectors together by default
 maxRecordingLengthDefault = Inf;
+channelsPerAnimalDefault = [];  % default number of channels per animal
 outFolderDefault = '';          % default directory to output mat file
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -85,21 +97,27 @@ addRequired(iP, 'abfFileOrDir', ... % file name or file directory
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'OmitTime', omitTimeDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'OmitChannels', omitChannelsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'vector'}));
 addParameter(iP, 'SaveIndividual', saveIndividualDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SaveTogether', saveTogetherDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'MaxRecordingLength', maxRecordingLengthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive'}));
+addParameter(iP, 'ChannelsPerAnimal', channelsPerAnimalDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, abfFileOrDir, varargin{:});
 omitTime = iP.Results.OmitTime;
+omitChannels = iP.Results.OmitChannels;
 saveIndividual = iP.Results.SaveIndividual;
 saveTogether = iP.Results.SaveTogether;
 maxRecordingLength = iP.Results.MaxRecordingLength;
+channelsPerAnimal = iP.Results.ChannelsPerAnimal;
 outFolder = iP.Results.OutFolder;
 
 % Parse first argument
@@ -161,18 +179,22 @@ if multipleFiles
     parfor iFile = 1:nAbfFiles
         abfFileName = allAbfFiles(iFile).name;
         convert_abf2mat(abfDir, abfFileName, outFolder, ...
-                        omitTime, saveIndividual, saveTogether, ...
-                        maxRecordingLength, channelStr, pieceStr);
+                        omitTime, omitChannels, ...
+                        saveIndividual, saveTogether, ...
+                        maxRecordingLength, channelsPerAnimal, ...
+                        animalStr, channelStr, pieceStr);
     end
 else
     convert_abf2mat(abfDir, abfFileName, outFolder, ...
-                    omitTime, saveIndividual, saveTogether, ...
-                    maxRecordingLength, channelStr, pieceStr);
+                    omitTime, omitChannels, ...
+                    saveIndividual, saveTogether, ...
+                    maxRecordingLength, channelsPerAnimal, ...
+                    animalStr, channelStr, pieceStr);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function convert_abf2mat(abfDir, abfFileName, outFolder, omitTime, saveIndividual, saveTogether, maxRecordingLength, channelStr, pieceStr)
+function convert_abf2mat(abfDir, abfFileName, outFolder, omitTime, omitChannels, saveIndividual, saveTogether, maxRecordingLength, channelsPerAnimal, animalStr, channelStr, pieceStr)
 %% Convert an .abf file to matfile(s)
 % TODO: work with 3-D data
 
@@ -183,11 +205,23 @@ abfFullFileName = fullfile(abfDir, abfFileName);
 [d, siUs, ~] = abf2load(abfFullFileName);
 
 nDps = size(d, 1);          % Total number of data points in each channel
-nChannels = size(d, 2);     % Total number of channels in each abf file
+nChannelsAll = size(d, 2);  % Total number of channels in each abf file
 siMs = siUs/1000;           % sampling interval in ms
 
 % Compute the total recording length in ms
 totalRecordingLength = siMs * nDps;
+
+% Decide if there is more than one animal
+if ~isempty(channelsPerAnimal) && nChannelsAll > channelsPerAnimal
+    moreThanOneAnimal = true;
+
+    % Compute the number of animals
+    nAnimals = floor(nChannelsAll / channelsPerAnimal);
+else
+    moreThanOneAnimal = false;
+    nAnimals = 1;
+    channelsPerAnimal = nChannelsAll;
+end
 
 % Decide whether to break up the trace into multiple files:
 %   If greater than max recording length, break up the trace into pieces
@@ -217,62 +251,106 @@ for iPiece = 1:nPieces
         error('error with code!');
     end
 
+    % Construct the full piece string if any
+    if breakUpTrace
+        fullPieceStr = [pieceStr, num2str(iPiece, '%02.f')];
+    else
+        fullPieceStr = '';
+    end        
+
     % Get the time vector in ms
     t = siMs*(indThisStart:indThisEnd)';
 
-    % Save individual vectors into its own mat file (default)
-    if saveIndividual
-        for iChannel = 1:nChannels
-            % Save as 'vec'
-            vec = d(indThisStart:indThisEnd, iChannel);
+    % For each animal
+    for iAnimal = 1:nAnimals
+        % Construct the full animal string if any
+        if moreThanOneAnimal
+            fullAnimalStr = [animalStr, num2str(iAnimal)];
+        else
+            fullAnimalStr = '';
+        end
 
-            if breakUpTrace
-                % Create a matfile name with the channel & piece number
+        % Find the channels that the user wants to save
+        channelsToSave = setdiff(1:channelsPerAnimal, omitChannels);
+
+        % Find the original channel numbers in the abf file
+        if moreThanOneAnimal
+            channelNos = (iAnimal - 1) * channelsPerAnimal + channelsToSave;
+        else
+            channelNos = channelsToSave;
+        end
+
+        % Get the number of distinct channel numbers
+        nChannelsToSave = length(channelNos);
+
+        % Save individual vectors into its own mat file (default)
+        if saveIndividual
+            for iChannel = 1:nChannelsToSave
+                % Get the original channel number in the abf file
+                channelNo = channelNos(iChannel);
+
+                % Get the channel number in the animal
+                channelToSave = channelsToSave(iChannel);
+
+                % Save as 'vec'
+                vec = d(indThisStart:indThisEnd, channelNo);
+
+                % Construct the full channel string
+                fullChannelStr = [channelStr, num2str(channelToSave, '%02.f')];
+
+                % Create the matfile name
                 subMatFileName = strrep(abfFileName, '.abf', ...
-                            [channelStr, num2str(iChannel, '%02.f'), ...
-                                pieceStr, num2str(iPiece, '%02.f'), '.mat']);                
-            else
-                % Create a matfile name with the channel number
-                subMatFileName = strrep(abfFileName, '.abf', ...
-                            [channelStr, num2str(iChannel, '%02.f'), '.mat']);
+                                        [fullAnimalStr, fullChannelStr, ...
+                                        fullPieceStr, '.mat']);                
+
+                % Save vectors to matfile
+                if ~omitTime
+                    save(fullfile(outFolder, subMatFileName), ...
+                         't', 'vec', '-v7.3');
+                else
+                    save(fullfile(outFolder, subMatFileName), 'vec');
+                end
+            end
+        end
+
+        % Create a data vector for each channel
+        for iChannel = 1:nChannelsToSave
+            % Get the original channel number in the abf file
+            channelNo = channelNos(iChannel);
+
+            % Get the channel number in the animal
+            channelToSave = channelsToSave(iChannel);
+
+            % Name by the channel number for this animal
+            %   (in uV for EEG)
+            eval(sprintf('vec%d = d(%d:%d, %d);', ...
+                        channelToSave, indThisStart, indThisEnd, channelNo));
+        end
+
+        % Save all vectors into one v7.3 mat file
+        if saveTogether
+            % Create matfile name
+            matFileName = strrep(abfFileName, '.abf', ...
+                                [fullAnimalStr, fullPieceStr, '.mat']);
+
+            % Save vectors to matfile
+            command_string_part = [];
+            for iChannel = 1:nChannelsToSave
+                % Get the channel number in the animal
+                channelToSave = channelsToSave(iChannel);
+
+                % Construct the part of the command string that saves 
+                %   this channel
+                command_string_part = [command_string_part, ...
+                                        ', ''vec', num2str(channelToSave), ''''];
             end
             if ~omitTime
-                save(fullfile(outFolder, subMatFileName), 't', 'vec', '-v7.3');
+                eval(sprintf(['save(fullfile(outFolder, matFileName)', ...
+                                ', ''t''%s, ''-v7.3'');'], ...
+                                command_string_part));
             else
-                save(fullfile(outFolder, subMatFileName), 'vec');
+                eval(sprintf('save(fullfile(outFolder, matFileName), ''d'');'));
             end
-        end
-    end
-
-    % Create a data vector for each channel
-    for iChannel = 1:nChannels
-        % Name by the channel number
-        %   (in uV for EEG), channel #iChannel
-        eval(sprintf('vec%d = d(%d:%d, %d);', ...
-                    iChannel, indThisStart, indThisEnd, iChannel));
-    end
-
-    % Save all vectors into one v7.3 mat file
-    if saveTogether
-        if breakUpTrace
-            % Create a matfile name with the piece number
-            matFileName = strrep(abfFileName, '.abf', ...
-                                [pieceStr, num2str(iPiece, '%02.f'), '.mat']);
-        else
-            % Create a matfile name
-            matFileName = strrep(abfFileName, '.abf', '.mat');
-        end
-        command_string_part = [];
-        for k = 1:nChannels
-            command_string_part = [command_string_part, ...
-                                    ', ''vec', num2str(k), ''''];
-        end
-        if ~omitTime
-            eval(sprintf('save(fullfile(outFolder, matFileName), ', ...
-                            '''t''%s, ''-v7.3'');', ...
-                            command_string_part));
-        else
-            eval(sprintf('save(fullfile(outFolder, matFileName), ''d'');'));
         end
     end
 end
@@ -287,5 +365,33 @@ v2 = d(:, 2);                % voltage vector, channel #2
 v3 = d(:, 3);                % voltage vector, channel #3
 
 save(matFullFileName, 't', 'v1', 'v2', 'v3', '-v7.3');
+
+% nChannels = size(d, 2);     % Total number of channels in each abf file
+
+% Create a matfile name with the piece number
+if breakUpTrace
+else
+    % Create a matfile name
+    matFileName = strrep(abfFileName, '.abf', '.mat');
+end
+
+if breakUpTrace
+    % Create a matfile name with the channel & piece number
+else
+    % Create a matfile name with the channel number
+    subMatFileName = strrep(abfFileName, '.abf', ...
+                    [fullChannelStr, '.mat']);
+end
+
+% If more than one animal, get the actual channel number
+if moreThanOneAnimal
+    iChannel = mod(channelNo, channelsPerAnimal);
+else
+    iChannel = channelNo;
+end
+
+% Compute the number of channels that are for animals
+nChannels = nAnimals * channelsPerAnimal;
+nChannels = nChannelsAll;
 
 %}
