@@ -32,9 +32,8 @@ function strValidated = validate_string (str, validStrings, varargin)
 % Requires:
 %       /home/Matlab/Adams_Functions/find_ind_str_in_cell.m
 %
-% Used by:    
-%       /home/Matlab/Adams_Functions/isfigtype.m
-%       /home/Matlab/Adams_Functions/issheettype.m
+% Used by:
+%       /home/Matlab/Adams_Functions/istype.m
 %       /home/Matlab/minEASE/gui_examine_events.m
 %
 % File History:
@@ -44,6 +43,7 @@ function strValidated = validate_string (str, validStrings, varargin)
 % 2017-06-09 Added IgnoreCase and made true the default
 % 2018-02-01 Updated description
 % 2018-05-15 issheettype.m also uses this now
+% 2018-05-16 Now is used by istype.m instead
 %
 
 %% Default values for optional arguments

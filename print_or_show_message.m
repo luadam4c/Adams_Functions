@@ -51,6 +51,8 @@ function print_or_show_message(message, varargin)
 %       /home/Matlab/Kojis_Functions/compute_average_PSC_trace.m
 %       /home/Matlab/Adams_Functions/combine_sweeps.m
 %       /home/Matlab/Adams_Functions/create_input_file.m
+%       /home/Matlab/EEG_gui/combine_EEG_gui_outputs.m
+%       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
 %
 % File History:
 % 2018-02-02 Created

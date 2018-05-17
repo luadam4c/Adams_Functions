@@ -60,6 +60,7 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 %       /home/Matlab/minEASE/read_params.m
 %       /home/Matlab/minEASE/gui_examine_events.m
 %       /home/Matlab/EEG_gui/EEG_gui.m
+%       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
 %
 % 2016-09--- Created
 % 2016-10-13 moved to Adams_Functions

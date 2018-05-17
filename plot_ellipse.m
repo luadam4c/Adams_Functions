@@ -40,12 +40,14 @@ function [h, xValues, yValues] = plot_ellipse (center, halflengths, theta0, vara
 %                   default == true
 %
 % Requires:
+%       /home/Matlab/Adams_Functions/islinestyle.m
 %
-% Used by:    
+% Used by:
 %       /home/Matlab/Adams_Functions/plot_grouped_scatter.m
 %
 % File History:
 % 2017-12-15 Created by Adam Lu
+% 2018-05-16 Now uses islinestyle.m
 % 
 
 %% Default values for optional arguments
@@ -82,7 +84,7 @@ addParameter(iP, 'Color', colorDefault);
 addParameter(iP, 'NPoints', nPointsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 addParameter(iP, 'LineStyle', lineStyleDefault, ...
-    @(x) any(validatestring(x, {'-', '--', ':', '-.', 'none'})));
+    @(x) all(islinestyle(x, 'ValidateMode', true)));
 addParameter(iP, 'LineWidth', lineWidthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'ToPlot', toPlotDefault, ...
@@ -92,7 +94,7 @@ addParameter(iP, 'ToPlot', toPlotDefault, ...
 parse(iP, center, halflengths, theta0, varargin{:});
 nPoints = iP.Results.NPoints;
 color = iP.Results.Color;
-lineStyle = iP.Results.LineStyle;
+[~, lineStyle] = islinestyle(iP.Results.LineStyle, 'ValidateMode', true);
 lineWidth = iP.Results.LineWidth;
 toPlot = iP.Results.ToPlot;
 
@@ -139,5 +141,11 @@ end
 
 %{
 OLD CODE:
+
+%% Hard-coded parameters
+validLineStyles = {'-', '--', ':', '-.', 'none'};
+
+addParameter(iP, 'LineStyle', lineStyleDefault, ...
+    @(x) any(validatestring(x, validLineStyles)));
 
 %}

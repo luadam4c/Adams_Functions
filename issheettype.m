@@ -2,13 +2,13 @@ function [results, sheettypes] = issheettype (strings, varargin)
 %% Check whether a string or each string in a cell array is a valid spreadsheet type accepted by readtable()
 % Usage: [results, sheettypes] = issheettype (strings, varargin)
 % Outputs:    
-%       results     - indication of whether the specified name is
+%       results     - indication of whether the specified string is
 %                        a spreadsheet type
 %                   specified as a logical array
 %       sheettypes  - validated sheettypes, if any
 %                   specified as a string/char-vec or 
 %                       a cell array of strings/char-vecs
-%                   returns the shortest match if matchmode == 'substring' 
+%                   returns the shortest match if matchMode == 'substring' 
 %                       (sames as validatestring())
 % Arguments:
 %       strings     - string or strings to check
@@ -28,14 +28,16 @@ function [results, sheettypes] = issheettype (strings, varargin)
 %                   default == 'substring'
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/validate_string.m
+%       /home/Matlab/Adams_Functions/istype.m
 %
 % Used by:
+%       /home/Matlab/Adams_Functions/atf2sheet.m
 %       /home/Matlab/function_template.m
 %       /home/Matlab/EEG_gui/combine_EEG_gui_outputs.m
 %
 % File History:
 % 2018-05-15 Modified from issheettype.m
+% 2018-05-16 Now uses istype.m
 % 
 
 %% Hard-coded parameters
@@ -74,8 +76,8 @@ addParameter(iP, 'MatchMode', 'substring', ...  % the matching mode
 
 % Read from the Input Parser
 parse(iP, strings, varargin{:});
-validatemode = iP.Results.ValidateMode;
-matchmode = iP.Results.MatchMode;
+validateMode = iP.Results.ValidateMode;
+matchMode = iP.Results.MatchMode;
 
 % Display warning message if some inputs are unmatched
 if ~isempty(fieldnames(iP.Unmatched))
@@ -83,27 +85,34 @@ if ~isempty(fieldnames(iP.Unmatched))
     disp(iP.Unmatched);
 end
 
-%% Check strings and validate
-if iscell(strings)
-    sheettypes = cellfun(@(x) validate_string(x, validSheetTypes, ...
-                                            'ValidateMode', validatemode, ...
-                                            'MatchMode', matchmode), ...
-                                            strings, 'UniformOutput', false);
-    results = ~cellfun(@isempty, sheettypes);
-elseif ischar(strings)
-    sheettypes = validate_string(strings, validSheetTypes, ...
-                                'ValidateMode', validatemode, ...
-                                'MatchMode', matchmode);
-    results = ~isempty(sheettypes);
-else
-    error(['input argument is in the wrong format! ', ...
-            'Type ''help %s'' for usage'], mfilename);
-end
-
+%% Check strings and validate with istype.m
+[results, sheettypes] = istype(strings, validSheetTypes, ...
+                               'ValidateMode', validateMode, ...
+                               'MatchMode', matchMode);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+% Requires:
+%       /home/Matlab/Adams_Functions/validate_string.m
+
+%% Check strings and validate
+if iscell(strings)
+    sheettypes = cellfun(@(x) validate_string(x, validSheetTypes, ...
+                                            'ValidateMode', validateMode, ...
+                                            'MatchMode', matchMode), ...
+                                            strings, 'UniformOutput', false);
+    results = ~cellfun(@isempty, sheettypes);
+elseif ischar(strings)
+    sheettypes = validate_string(strings, validSheetTypes, ...
+                                'ValidateMode', validateMode, ...
+                                'MatchMode', matchMode);
+    results = ~isempty(sheettypes);
+else
+    error(['input argument is in the wrong format! ', ...
+            'Type ''help %s'' for usage'], mfilename);
+end
 
 %}

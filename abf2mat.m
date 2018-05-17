@@ -6,8 +6,11 @@ function abf2mat(abfFileOrDir, varargin)
 %           simply save the data matrix
 % Usage: abf2mat(abfFileOrDir, varargin)
 %
-% Examples: abf2mat('DBA01_31_2016_cage1.abf')
-%           abf2mat('Voltage_clamp', 'OmitTime', true, 'SaveIndividual', false)
+% Examples: abf2mat('DBA01_31_2016_cage1.abf');
+%           abf2mat('Voltage_clamp', ...
+%                   'OmitTime', false, ...
+%                   'SaveIndividual', true, 'SaveTogether', false, ...
+%                   'MaxRecordingLength', 60 * 60 * 1000);
 %
 % Arguments:
 %       abfFileOrDir- file name of .abf file or 
@@ -60,7 +63,7 @@ omitTimeDefault = false;        % whether to omit time vector by default
 saveIndividualDefault = true;   % whether to save individual vectors by default
 saveTogetherDefault = false;    % whether to save vectors together by default
 maxRecordingLengthDefault = Inf;
-outFolderDefault = '';          % default directory to output csv file
+outFolderDefault = '';          % default directory to output mat file
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -148,24 +151,30 @@ end
 
 % Find all .abf files to convert
 if multipleFiles
+    % List all the .abf files in the directory
     allAbfFiles = dir(fullfile(abfDir, '*.abf'));
-    nAbfFiles = length(allAbfFiles);   % # of .abf files in directory
-    for iFile = 1:nAbfFiles
+
+    % Compute the number of .abf files in the directory
+    nAbfFiles = length(allAbfFiles);
+
+    % Loop through all files
+    parfor iFile = 1:nAbfFiles
         abfFileName = allAbfFiles(iFile).name;
         convert_abf2mat(abfDir, abfFileName, outFolder, ...
                         omitTime, saveIndividual, saveTogether, ...
-                        maxRecordingLength);
+                        maxRecordingLength, channelStr, pieceStr);
     end
 else
     convert_abf2mat(abfDir, abfFileName, outFolder, ...
                     omitTime, saveIndividual, saveTogether, ...
-                    maxRecordingLength);
+                    maxRecordingLength, channelStr, pieceStr);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function convert_abf2mat(abfDir, abfFileName, outFolder, omitTime, saveIndividual, saveTogether, maxRecordingLength)
-%% TODO: work with 3-D data
+function convert_abf2mat(abfDir, abfFileName, outFolder, omitTime, saveIndividual, saveTogether, maxRecordingLength, channelStr, pieceStr)
+%% Convert an .abf file to matfile(s)
+% TODO: work with 3-D data
 
 % Load abf file
 %   d       - the data with 3 voltage channels; 
