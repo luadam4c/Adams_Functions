@@ -38,6 +38,10 @@ function sheetFullFileNames = atf2sheet (atfFileOrDir, varargin)
 %
 % Requires:
 %       /home/Matlab/Adams_Functions/issheettype.m
+%       /home/Matlab/Adams_Functions/print_or_show_message.m
+%
+% Used by:
+%       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
 
 % File History:
 % 2018-05-16 Created by Adam Lu, some code from abf2mat.m
@@ -125,7 +129,14 @@ elseif exist(fullfile(pwd, atfFileOrDir), 'dir') == 7       % it's a directory
     % Set flag
     multipleFiles = true;
 else
-    error('File or directory undefined!');
+    message = sprintf('The .atf file or directory %s does not exist!', ...
+                        atfFileOrDir);
+    mTitle = 'File or Directory Not Found';
+    icon = 'warn';
+    print_or_show_message(message, 'MTitle', mTitle, 'Icon', icon, ...
+                          'MessageMode', 'show', 'Verbose', true, ...
+                          'CreateMode', 'replace');
+    return;
 end
 
 % Set dependent argument defaults

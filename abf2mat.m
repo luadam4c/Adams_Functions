@@ -39,6 +39,8 @@ function abf2mat(abfFileOrDir, varargin)
 %                                   e.g. 'output'
 %                   must be a string scalar or a character vector
 %                   default == 'fullfile(abfDir, matfiles)'
+% Requires:
+%       /home/Matlab/Adams_Functions/print_or_show_message.m
 
 
 % File History:
@@ -152,7 +154,14 @@ elseif exist(fullfile(pwd, abfFileOrDir), 'dir') == 7       % it's a directory
     % Set flag
     multipleFiles = true;
 else
-    error('File or directory undefined!');
+    message = sprintf('The .abf file or directory %s does not exist!', ...
+                        abfFileOrDir);
+    mTitle = 'File or Directory Not Found';
+    icon = 'warn';
+    print_or_show_message(message, 'MTitle', mTitle, 'Icon', icon, ...
+                          'MessageMode', 'show', 'Verbose', true, ...
+                          'CreateMode', 'replace');
+    return;
 end
 
 % Set dependent argument defaults

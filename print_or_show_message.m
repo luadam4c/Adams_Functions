@@ -49,6 +49,8 @@ function print_or_show_message(message, varargin)
 %       /home/Matlab/minEASE/compute_plot_average_PSC_traces.m
 %       /home/Matlab/minEASE/detect_gapfree_events.m
 %       /home/Matlab/Kojis_Functions/compute_average_PSC_trace.m
+%       /home/Matlab/Adams_Functions/abf2mat.m
+%       /home/Matlab/Adams_Functions/atf2sheet.m
 %       /home/Matlab/Adams_Functions/combine_sweeps.m
 %       /home/Matlab/Adams_Functions/create_input_file.m
 %       /home/Matlab/EEG_gui/combine_EEG_gui_outputs.m
