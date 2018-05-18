@@ -1,4 +1,4 @@
-function plot_grouped_histogram(figname, timestamp, stats, grouping, grouping_labels, xLabel, xUnits, titleStr, varargin)
+function plot_grouped_histogram(figname, stats, grouping, grouping_labels, xLabel, xUnits, titleStr, varargin)
 %% Plot a grouped histogram
 % Usage: plot_grouped_histogram(figname, stats, grouping, grouping_labels, xLabel, xUnits, titleStr, varargin)
 %
