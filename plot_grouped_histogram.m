@@ -2,17 +2,25 @@ function plot_grouped_histogram(figname, stats, grouping, grouping_labels, xLabe
 %% Plot a grouped histogram
 % Usage: plot_grouped_histogram(figname, stats, grouping, grouping_labels, xLabel, xUnits, titleStr, varargin)
 %
+% Arguments: TODO
+%       varargin    - 'OutFolder': directory to output csv file, 
+%                                   e.g. 'output'
+%                   must be a string scalar or a character vector
+%                   default == pwd
 % Requires:
 %		/home/Matlab/Adams_Functions/histg.m
 %
 % Used by:
 %		/media/adamX/Paula_IEIs/paula_iei4.m
+%       /home/Matlab/Marks_Functions/paula/Oct2017/freqsPostJustinPartTwo.m
 %
 % 2017-12-11 Created by Adam Lu
+% 2018-05-18 Added outFolder as a parameter
 
 %% Default values for optional arguments
 yLabelDefault = 'Count';
 xLimitsDefault = [];
+outFolderDefault = '';          % default directory to output spreadsheet file
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -28,11 +36,20 @@ addParameter(iP, 'YLabel', yLabelDefault, ...
 addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) validateattributes(x, {'numeric', 'categorical', ...
         'datetime', 'duration'}, {'vector', 'numel', 2}));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 yLabel = iP.Results.YLabel;
 xLimits = iP.Results.XLimits;
+outFolder = iP.Results.OutFolder;
+
+% Set dependent argument defaults
+if isempty(outFolder)
+    % Default output directory is present working directory
+    outFolder = pwd;
+end
 
 %% Plot and save histogram
 h = figure('Visible', 'on');
@@ -49,7 +66,7 @@ else
 end
 ylabel(yLabel);
 title(titleStr, 'Interpreter', 'none');
-saveas(h, figname, 'png');
+saveas(h, fullfile(outFolder, figname), 'png');
 close(h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
