@@ -1,4 +1,4 @@
-function [model0, model1, pdfModel2, pdfModel3, outparams] = fit_logIEI (logData, timestamp, identifier, varargin)
+function [model0, model1, pdfModel2, pdfModel3, outparams] = fit_logIEI (logData, identifier, varargin)
 %% Fit log(IEI) logData to curves
 % Usage: [model0, model1, pdfModel2, pdfModel3, outparams] = fit_logIEI (logData, identifier, varargin)
 % Explanation:
