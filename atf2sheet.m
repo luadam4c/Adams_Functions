@@ -100,11 +100,16 @@ encoding = iP.Results.Encoding;
 
 % Parse first argument
 if exist(atfFileOrDir, 'file') == 2                         % it's a file
-    % The argument is already the full path
-    atfFullFileName = atfFileOrDir;
+    % Store the directory containing the file
+    [atfDir, atfFileBase, atfFileExt] = fileparts(atfFileOrDir);
 
-    % Store directory containing the file
-    [atfDir, ~, ~] = fileparts(atfFileOrDir);
+    % If the directory is empty, it is the present working directory
+    if isempty(atfDir)
+        atfDir = pwd;
+    end
+
+    % Get the relative path for the file name
+    atfFileName = [atfFileBase, atfFileExt];
 
     % Set flag
     multipleFiles = false;
@@ -116,9 +121,10 @@ elseif exist(atfFileOrDir, 'dir') == 7                      % it's a directory
     multipleFiles = true;
 elseif exist(fullfile(pwd, atfFileOrDir), 'file') == 2      % it's a file
     % The first argument is just the file name in current directory
-    %   Get full path to file and directory
-    atfFullFileName = fullfile(pwd, atfFileOrDir);
     atfDir = pwd;
+
+    % Get the relative path for the file name
+    atfFileName = atfFileOrDir;
 
     % Set flag
     multipleFiles = false;

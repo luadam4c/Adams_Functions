@@ -10,7 +10,8 @@ function abf2mat(abfFileOrDir, varargin)
 %           abf2mat('Voltage_clamp', ...
 %                   'OmitTime', false, ...
 %                   'SaveIndividual', true, 'SaveTogether', false, ...
-%                   'MaxRecordingLength', 60 * 60 * 1000);
+%                   'MaxRecordingLength', 60 * 60 * 1000, ...
+%                   'AnimalStr', '_rat');
 %
 % Arguments:
 %       abfFileOrDir- file name of .abf file or 
@@ -35,12 +36,22 @@ function abf2mat(abfFileOrDir, varargin)
 %                   - 'ChannelsPerAnimal': number of channels per animal
 %                   must be a positive integer scalar
 %                   default == []
+%                   - 'AnimalStr': string in file names that separate animals
+%                   must be a string scalar or a character vector
+%                   default == '_animal'
+%                   - 'ChannelStr': string in file names that separate channels
+%                   must be a string scalar or a character vector
+%                   default == '_animal'
+%                   - 'PieceStr': string in file names that separate pieces
+%                   must be a string scalar or a character vector
+%                   default == '_animal'
 %                   - 'OutFolder': directory to output csv file, 
 %                                   e.g. 'output'
 %                   must be a string scalar or a character vector
 %                   default == 'fullfile(abfDir, matfiles)'
 % Requires:
 %       /home/Matlab/Adams_Functions/print_or_show_message.m
+%       /home/Matlab/Downloaded_Functions/abf2load.m
 
 
 % File History:
@@ -65,10 +76,6 @@ function abf2mat(abfFileOrDir, varargin)
 % TODO: Apply identify_channels.m and save each channel
 
 %% Hard-coded parameters
-% TODO: Make these default values for optional arguments
-animalStr = '_animal';          % string in file names that separate animals
-channelStr = '_channel';        % string in file names that separate channels
-pieceStr = '_piece';            % string in file names that separate pieces
 
 %% Default values for optional arguments
 omitTimeDefault = false;        % whether to omit time vector by default
@@ -77,9 +84,25 @@ saveIndividualDefault = true;   % whether to save individual vectors by default
 saveTogetherDefault = false;    % whether to save vectors together by default
 maxRecordingLengthDefault = Inf;
 channelsPerAnimalDefault = [];  % default number of channels per animal
+animalStrDefault = '_animal';   % string in file names that separate animals
+channelStrDefault = '_channel'; % string in file names that separate channels
+pieceStrDefault = '_piece';     % string in file names that separate pieces
 outFolderDefault = '';          % default directory to output mat file
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Add directories to search path for required functions across servers
+if ~isdeployed
+    if exist('/home/Matlab/', 'dir') == 7
+        functionsDirectory = '/home/Matlab/';
+    elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
+        functionsDirectory = '/scratch/al4ng/Matlab/';
+    else
+        error('Valid functionsDirectory does not exist!');
+    end
+    addpath(fullfile(functionsDirectory, 'Downloaded_Functions')); 
+                                            % for abf2load.m
+end
 
 %% Deal with arguments
 % Check number of required arguments
@@ -109,6 +132,12 @@ addParameter(iP, 'MaxRecordingLength', maxRecordingLengthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive'}));
 addParameter(iP, 'ChannelsPerAnimal', channelsPerAnimalDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'AnimalStr', animalStrDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'ChannelStr', channelStrDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'PieceStr', pieceStrDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
@@ -120,15 +149,18 @@ saveIndividual = iP.Results.SaveIndividual;
 saveTogether = iP.Results.SaveTogether;
 maxRecordingLength = iP.Results.MaxRecordingLength;
 channelsPerAnimal = iP.Results.ChannelsPerAnimal;
+animalStr = iP.Results.AnimalStr;
+channelStr = iP.Results.ChannelStr;
+pieceStr = iP.Results.PieceStr;
 outFolder = iP.Results.OutFolder;
 
 % Parse first argument
 if exist(abfFileOrDir, 'file') == 2                         % it's a file
-    % The argument is already the full path
-    abfFullFileName = abfFileOrDir;
+    % Store the directory containing the file
+    [abfDir, abfFileBase, abfFileExt] = fileparts(abfFileOrDir);
 
-    % Store directory containing the file
-    [abfDir, ~, ~] = fileparts(abfFileOrDir);
+    % Get the relative path for the file name
+    abfFileName = [abfFileBase, abfFileExt];
 
     % Set flag
     multipleFiles = false;
@@ -140,9 +172,10 @@ elseif exist(abfFileOrDir, 'dir') == 7                      % it's a directory
     multipleFiles = true;
 elseif exist(fullfile(pwd, abfFileOrDir), 'file') == 2      % it's a file
     % The first argument is just the file name in current directory
-    %   Get full path to file and directory
-    abfFullFileName = fullfile(pwd, abfFileOrDir);
     abfDir = pwd;
+
+    % Get the relative path for the file name
+    abfFileName = abfFileOrDir;
 
     % Set flag
     multipleFiles = false;
@@ -402,5 +435,10 @@ end
 % Compute the number of channels that are for animals
 nChannels = nAnimals * channelsPerAnimal;
 nChannels = nChannelsAll;
+
+% The argument is already the full path
+abfFullFileName = abfFileOrDir;
+    %   Get full path to file and directory
+abfFullFileName = fullfile(pwd, abfFileOrDir);
 
 %}

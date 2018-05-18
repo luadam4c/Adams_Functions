@@ -86,6 +86,18 @@ verboseDefault = false;             % default: Program does not print message
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%% Add directories to search path for required functions across servers
+if ~isdeployed
+    if exist('/home/Matlab/', 'dir') == 7
+        functionsDirectory = '/home/Matlab/';
+    elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
+        functionsDirectory = '/scratch/al4ng/Matlab/';
+    else
+        error('Valid functionsDirectory does not exist!');
+    end
+    addpath(fullfile(functionsDirectory, 'Miras_Functions')); 
+                                            % for print_cellstr.m
+end
 
 % Set up Input Parser Scheme
 iP = inputParser;
