@@ -1,4 +1,4 @@
-function plot_grouped_histogram(figname, stats, grouping, grouping_labels, xLabel, xUnits, titleStr, varargin)
+function plot_grouped_histogram(figname, timestamp, stats, grouping, grouping_labels, xLabel, xUnits, titleStr, varargin)
 %% Plot a grouped histogram
 % Usage: plot_grouped_histogram(figname, stats, grouping, grouping_labels, xLabel, xUnits, titleStr, varargin)
 %
@@ -35,7 +35,7 @@ yLabel = iP.Results.YLabel;
 xLimits = iP.Results.XLimits;
 
 %% Plot and save histogram
-h = figure('Visible', 'off');
+h = figure('Visible', 'on');
 clf(h);
 histg(stats, grouping);
 if ~isempty(xLimits)
@@ -49,7 +49,12 @@ else
 end
 ylabel(yLabel);
 title(titleStr, 'Interpreter', 'none');
-saveas(h, figname, 'png');
+
+finalFigDir = strcat('/home/barrettlab/marksFigs/', timestamp, '/histoFitFigs/') ;
+mkdir(finalFigDir) ;
+finalFigName = strcat(finalFigDir, figname) ;
+saveas(h, finalFigName, 'png');
+
 close(h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
