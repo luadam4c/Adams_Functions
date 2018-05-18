@@ -8,7 +8,7 @@ function plot_grouped_histogram(figname, timestamp, stats, grouping, grouping_la
 % Used by:
 %		/media/adamX/Paula_IEIs/paula_iei4.m
 %
-% 20171211 - Created
+% 2017-12-11 Created by Adam Lu
 
 %% Default values for optional arguments
 yLabelDefault = 'Count';
@@ -49,12 +49,7 @@ else
 end
 ylabel(yLabel);
 title(titleStr, 'Interpreter', 'none');
-
-finalFigDir = strcat('/home/barrettlab/marksFigs/', timestamp, '/histoFitFigs/') ;
-mkdir(finalFigDir) ;
-finalFigName = strcat(finalFigDir, figname) ;
-saveas(h, finalFigName, 'png');
-
+saveas(h, figname, 'png');
 close(h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
