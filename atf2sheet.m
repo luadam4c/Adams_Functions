@@ -1,6 +1,6 @@
-function sheetFullFileNames = atf2sheet (atfFileOrDir, varargin)
+function [tablesAll, sheetFullFileNames] = atf2sheet (atfFileOrDir, varargin)
 %% Converts .atf text file(s) to a spreadsheet file(s) (type specified by the 'SheetType' argument)
-% Usage: sheetFullFileNames = atf2sheet (atfFileOrDir, varargin)
+% Usage: [tablesAll, sheetFullFileNames] = atf2sheet (atfFileOrDir, varargin)
 % Explanation:
 %       Converts .atf text file(s) to a spreadsheet file(s) 
 %           Default file type to convert is xlsx, 
@@ -10,8 +10,11 @@ function sheetFullFileNames = atf2sheet (atfFileOrDir, varargin)
 %       atf2sheet(pwd);
 %       atf2sheet(pwd, 'SheetType', 'csv');
 % Outputs:
+%       tablesAll           - data from the atf file(s)
+%                           specified as a table or a cell array of tables
 %       sheetFullFileNames  - spreadsheet file name(s)
 %                           specified as a string scalar or a character vector
+%                               or a cell array of them
 % Side Effects:
 %       Creates a spreadsheet file
 % Arguments:    
@@ -46,6 +49,7 @@ function sheetFullFileNames = atf2sheet (atfFileOrDir, varargin)
 % File History:
 % 2018-05-16 Created by Adam Lu, some code from abf2mat.m
 % 2018-05-17 Changed default OutFolder to atfDir
+% 2018-05-23 Now has tablesAll as the first output
 % TODO: isdelimiter.m
 % 
 
@@ -167,22 +171,23 @@ if multipleFiles
     nAtfFiles = length(allAtfFiles);
 
     % Loop through all files
+    tablesAll = cell(nAtfFiles, 1);
     sheetFullFileNames = cell(nAtfFiles, 1);
     parfor iFile = 1:nAtfFiles
         atfFileName = allAtfFiles(iFile).name;
-        sheetFullFileNames{iFile} = ...
+        [tablesAll{iFile}, sheetFullFileNames{iFile} = ...
             convert_atf2sheet(atfDir, atfFileName, outFolder, ...
                                 sheetType, delimiter, nLinesToSkip, encoding);
     end
 else
-    sheetFullFileNames = ...
+    [tablesAll, sheetFullFileNames]  = ...
         convert_atf2sheet(atfDir, atfFileName, outFolder, ...
                                 sheetType, delimiter, nLinesToSkip, encoding);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function sheetFullFileName = convert_atf2sheet (atfDir, atfFileName, outFolder, sheetType, delimiter, nLinesToSkip, encoding)
+function [table, sheetFullFileName] = convert_atf2sheet (atfDir, atfFileName, outFolder, sheetType, delimiter, nLinesToSkip, encoding)
 %% Convert an .aft file to a spreadsheet file
 
 % Get the full file name of the .atf file
