@@ -16,6 +16,7 @@ function plot_grouped_histogram(figname, stats, grouping, grouping_labels, xLabe
 %
 % 2017-12-11 Created by Adam Lu
 % 2018-05-18 Added outFolder as a parameter
+% 2018-05-25 Now doesn't plot if stats is empty
 
 %% Default values for optional arguments
 yLabelDefault = 'Count';
@@ -51,10 +52,17 @@ if isempty(outFolder)
     outFolder = pwd;
 end
 
+% If the figure name is not a full path, create full path
+if ~any(strfind(figname, filesep))
+    figname = fullfile(outFolder, figname);
+end
+
 %% Plot and save histogram
 h = figure('Visible', 'on');
 clf(h);
-histg(stats, grouping);
+if ~isempty(stats)
+    histg(stats, grouping);
+end
 if ~isempty(xLimits)
     xlim(xLimits);
 end
@@ -66,7 +74,7 @@ else
 end
 ylabel(yLabel);
 title(titleStr, 'Interpreter', 'none');
-saveas(h, fullfile(outFolder, figname), 'png');
+saveas(h, figname, 'png');
 close(h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
