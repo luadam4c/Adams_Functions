@@ -9,6 +9,7 @@ function [h, g] = plot_grouped_scatter(figname, X, Y, grouping, grouping_labels,
 %		/media/adamX/Paula_IEIs/paula_iei4.m
 %
 % 2017-12-13 - Modified from plot_grouped_histogram.m
+% 2018-05-27 - Fixed the case when nGroups is NaN or 0
 
 %% TODO: make the following optional arguments with given default
 ellipseNPoints = 1000;              % 1000 points
@@ -69,10 +70,12 @@ markerLineWidth = iP.Results.MarkerLineWidth;
 
 %% Determine colors
 nGroups = max(grouping);
-cm = colormap(parula(nGroups));
+if nGroups > 0
+    cm = colormap(parula(nGroups));
+end
 
 %% Fit each group with a bivariate Gaussian
-if plotEllipse
+if plotEllipse && nGroups > 0
     % Compute the critical value for the chi-squared distribution
     %   to have a cumulative probability of percentCL % confidence level
     criticalValue = chi2inv(percentCL/100, 2);
@@ -170,10 +173,12 @@ end
 %% Plot and save scatter plot
 h = figure('Visible', 'off');
 clf(h);
-g = gscatter(X, Y, grouping, cm, markerType);
-set(g, 'MarkerSize', markerSize);
-set(g, 'LineWidth', markerLineWidth);
-if plotEllipse
+if nGroups > 0
+    g = gscatter(X, Y, grouping, cm, markerType);
+    set(g, 'MarkerSize', markerSize);
+    set(g, 'LineWidth', markerLineWidth);
+end
+if plotEllipse && nGroups > 0
     % Plot a 95% confidence ellipse for each group
     hold on;
     for iGroup = 1:nGroups
@@ -186,14 +191,18 @@ if plotEllipse
     end    
     hold off;
 end
-set(gca, 'XScale', xScale, 'YScale', yScale);
+if nGroups > 0
+    set(gca, 'XScale', xScale, 'YScale', yScale);
+end
 if ~isempty(xLimits)
     xlim(xLimits);
 end
 if ~isempty(yLimits)
     ylim(yLimits);
 end
-legend(grouping_labels, 'Interpreter', 'none', 'location', 'eastoutside');    
+if nGroups > 0
+    legend(grouping_labels, 'Interpreter', 'none', 'location', 'eastoutside');    
+end
 if ~isempty(xUnits)
     xlabel([xLabel, ' (', xUnits, ')']);
 else
