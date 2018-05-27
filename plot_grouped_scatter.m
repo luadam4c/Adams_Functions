@@ -68,8 +68,14 @@ markerSize = iP.Results.MarkerSize;
 markerType = iP.Results.MarkerType;
 markerLineWidth = iP.Results.MarkerLineWidth;
 
+%% Count the number of groups
+if ~isempty(grouping)
+    nGroups = max(grouping);
+else
+    nGroups = 0;
+end
+
 %% Determine colors
-nGroups = max(grouping);
 if nGroups > 0
     cm = colormap(parula(nGroups));
 end
