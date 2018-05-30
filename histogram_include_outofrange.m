@@ -18,10 +18,10 @@ function [b, h1, h2] = histogram_include_outofrange(X, edges, varargin)
 % Arguments:    
 %       X           - data to distribute among bins
 %                   must be an array of one the following types:
-%                       'numeric', 'logical''datetime', 'duration'
+%                       'numeric', 'logical', 'datetime', 'duration'
 %       edges       - bin edges
 %                   must be a vector of one the following types:
-%                       'numeric', 'logical''datetime', 'duration'
+%                       'numeric', 'logical', 'datetime', 'duration'
 %       varargin    - 'SpecialColor': color of expanded bins
 %                   must be a 3-element numeric vector:
 %                   default == [0 0.8 0.8] (light blue)
