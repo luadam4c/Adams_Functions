@@ -36,6 +36,9 @@ function [b, h1, h2] = histogram_include_outofrange(X, edges, varargin)
 %
 % File History:
 % 2017-12-12 Created by Adam Lu
+% TODO: Make edges an optional parameter and make the default dependent
+%       on the outlier function
+% TODO: Look for the functions on chalkboard that uses this
 % 
 
 %% Default values for optional arguments
