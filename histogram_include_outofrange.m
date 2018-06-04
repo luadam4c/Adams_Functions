@@ -31,8 +31,7 @@ function [b, h1, h2] = histogram_include_outofrange(X, edges, varargin)
 %                   default == minimum and maximum edges of bins
 %
 % Used by:    
-%       TODO: place any custom functions/scripts that uses this function here
-%       /TODO:dir/TODO:file
+%       /home/Matlab/Marks_Functions/paula/Oct2017/zgRasterFigureMaker.m
 %
 % File History:
 % 2017-12-12 Created by Adam Lu
