@@ -689,5 +689,7 @@ catch
     pdfModel3 = [];
 end
 
+% Use the mean plus 2 standard deviations as the threshold
+thresholdModel1 = muModel1 + 2 * sigmaModel1
 
 %}
