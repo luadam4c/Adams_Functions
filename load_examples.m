@@ -27,7 +27,7 @@ info = struct;
 info.names = names;
 info.isMarried = isMarried;
 
-% Data
+% Sheet Data
 xlsData = {'A Number' 'Boolean Data' 'Empty Cells' 'Strings';...
     1 true [] 'String Text';...
     5 false [] 'Another very descriptive text';...
@@ -35,3 +35,10 @@ xlsData = {'A Number' 'Boolean Data' 'Empty Cells' 'Strings';...
     1e8 true [] 'Last cell with text';...
     1e3 false NaN NaN;...
     1e2 true [] 'test'};
+
+% Normally distributed data
+normData = randn(100, 1);
+
+% Normally distributed data with outliers
+normDataWOutliers = [normData; -100; 200; 1000];
+

@@ -1,13 +1,13 @@
-function [b, h1, h2] = histogram_include_outofrange(X, edges, varargin)
+function [h, h1, h2] = histogram_include_outofrange(X, varargin)
 %% Plot a histogram including out of range values
-% Usage: [b, h1, h2] = histogram_include_outofrange(X, edges, varargin)
+% Usage: [h, h1, h2] = histogram_include_outofrange(X, varargin)
 % Explanation:
 %       Automatically combines the counts of X outside of the finite range 
 %           of edges on the left or on the right to a bin on the left or 
 %           on the right, respectively.
 %       Note: The bar() function is actually used for the main histogram
 % Outputs:
-%       b           - the histogram returned as a Bar object
+%       h           - the histogram returned as a Bar object
 %                   specified as a Patch (R2015a) or Bar (R2017a) object
 %       h1          - the histogram for the isolated expanded left bar if exists
 %                   specified as a Histogram object
@@ -19,7 +19,7 @@ function [b, h1, h2] = histogram_include_outofrange(X, edges, varargin)
 %       X           - data to distribute among bins
 %                   must be an array of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
-%       edges       - bin edges
+%       edges       - (opt) bin edges
 %                   must be a vector of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
 %       varargin    - 'SpecialColor': color of expanded bins
@@ -29,26 +29,37 @@ function [b, h1, h2] = histogram_include_outofrange(X, edges, varargin)
 %                   must be a two element vector of one the following types:
 %                       'numeric', 'logical''datetime', 'duration'
 %                   default == minimum and maximum edges of bins
+%                   - 'OutlierMethod': method for determining outliers
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'isoutlier' - Use the built-in isoutlier function
+%                       'threeStds'      - Take out data points 
+%                                       more than 3 standard deviations away
+%                       'twoStds'      - Take out data points 
+%                                       more than 2 standard deviations away
+%                   default == 'isoutlier'
 %
 % Used by:    
 %       /home/Matlab/Marks_Functions/paula/Oct2017/zgRasterFigureMaker.m
+%       /media/adamX/m3ha/data_dclamp/initial_slopes.m
 %
 % File History:
 % 2017-12-12 Created by Adam Lu
-% TODO: Make edges an optional parameter and make the default dependent
-%       on the outlier function
-% TODO: Look for the functions on chalkboard that uses this
-% 
+% 2018-06-05 Made edges an optional parameter and make the default dependent
+%               on the isoutlier() and histcounts() functions
+
+%% Hard-coded parameters
+validOutlierMethods = {'isoutlier', 'fiveStds', 'threeStds', 'twoStds'};
 
 %% Default values for optional arguments
 xLimitsDefault = [];
-specialColorDefault = [0 0.8 0.8];          % light blue
+specialColorDefault = [0, 0.8, 0.8];    % light blue
+outlierMethodDefault = 'isoutlier';     % use built-in isoutlier function
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 2
+if nargin < 1
     error(['Not enough input arguments, ', ...
             'type ''help histogram_include_outofrange'' for usage']);
 end
@@ -62,7 +73,9 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 addRequired(iP, 'X', ...                        % data to distribute among bins
     @(x) validateattributes(x, {'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'nonempty'}));
-addRequired(iP, 'edges', ...                    % bin edges
+
+% Add optional inputs to the Input Parser
+addOptional(iP, 'edges', [], ...                % bin edges
     @(x) validateattributes(x, {'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'vector'}));
 
@@ -72,19 +85,55 @@ addParameter(iP, 'SpecialColor', specialColorDefault, ...
 addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) validateattributes(x, {'numeric', 'categorical', ...
         'datetime', 'duration'}, {'vector', 'numel', 2}));
+addParameter(iP, 'OutlierMethod', outlierMethodDefault, ...
+    @(x) any(validatestring(x, validOutlierMethods)));
 
 % Read from the Input Parser
-parse(iP, X, edges, varargin{:});
+parse(iP, X, varargin{:});
+edges = iP.Results.edges;
 xLimits = iP.Results.XLimits;
 specialColor = iP.Results.SpecialColor;
+outlierMethod = validatestring(iP.Results.OutlierMethod, validOutlierMethods);
 
-% Display warning message if some inputs are unmatched
-if ~isempty(fieldnames(iP.Unmatched))
-    fprintf('WARNING: The following name-value pairs could not be parsed: \n');
-    disp(iP.Unmatched);
+%% Prepare
+% Get the current MATLAB release
+matlabRelease = version('-release');
+
+% Get the current MATLAB release year
+matlabYear = str2num(matlabRelease(1:4));
+
+%% Identify edges if not provided
+if isempty(edges)
+    % Take out outliers if any
+    switch outlierMethod
+    case 'isoutlier'
+        % Take out values with the built-in isoutlier() function
+        XTrimmed = X(~isoutlier(X));
+    case {'fiveStds', 'threeStds', 'twoStds'}
+        % Compute the mean
+        meanX = mean(X);
+
+        % Compute the standard deviation
+        stdX = std(X);
+
+        % Get the number of standard deviations away from the mean
+        if strcmp(outlierMethod, 'fiveStds')
+            nStds = 5;
+        elseif strcmp(outlierMethod, 'threeStds')
+            nStds = 3;
+        elseif strcmp(outlierMethod, 'twoStds')
+            nStds = 2;
+        end
+
+        % Only include the points within a nStds standard deviations of the mean
+        XTrimmed = X(X >= meanX - nStds * stdX & X <= meanX + nStds * stdX);
+    end
+
+    % Use the built-in histcounts function to find the proper bin edges
+    [~, edges] = histcounts(XTrimmed);
 end
 
-%% Perform job
+%% Create histogram
 % Extract finite part of edges
 edgesFinite = edges(isfinite(edges));
 
@@ -179,8 +228,15 @@ if isempty(xLimits)
     xLimits = [edgesPlot(1), edgesPlot(end)];
 end
 
-% Plot histogram by using the bar() function in the 'histc' style
-b = bar(leftEdgesPlot, counts, 'histc');
+% Plot histogram
+if matlabYear >= 2017
+    % Plot histogram with histogram()
+    h = histogram('BinEdges', edgesPlot, 'BinCounts', counts);
+                                    % available for R2017a and above
+else
+    % Plot histogram by using the bar() function in the 'histc' style
+    h = bar(leftEdgesPlot, counts, 'histc');
+end
 
 % Initialize XTick locations with current locations
 xTicks = get(gca, 'XTick'); 
@@ -229,7 +285,6 @@ if xTickLabelNums(1) == -Inf
     h1 = histogram(edgesPlot(1) * ones(1, counts(1)), ...
                     edgesPlot(1:2), ...
                     'FaceAlpha', 1, 'FaceColor', specialColor);
-    % b.CData(1, :) = specialColor;      % valid for at least R2017a
 else
     h1 = [];
 end
@@ -237,7 +292,6 @@ if xTickLabelNums(end) == Inf
     h2 = histogram(edgesPlot(end-1) * ones(1, counts(end)), ...
                     edgesPlot(end-1:end), ...
                     'FaceAlpha', 1, 'FaceColor', specialColor);
-    % b.CData(1, :) = specialColor;      % valid for at least R2017a
 else
     h2 = [];
 end
@@ -247,10 +301,6 @@ end
 
 % Update x axis limits
 xlim(xLimits);
-
-% Newer versions of MATLAB (at least 2017a) can use histogram()
-% TODO: Check version?
-% histogram('BinEdges', edgesPlot, 'BinCounts', counts);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -300,6 +350,15 @@ if edgesNew(end) == Inf              % data out of range on the right
         xTickLabelNums = [xTickLabelNums, Inf];
     end
 end
+
+if matlabYear >= 2017
+    b.CData(1, :) = specialColor;      % valid for at least R2017a
+end
+if matlabYear >= 2017
+    b.CData(1, :) = specialColor;      % valid for at least R2017a
+end
+
+nStds = str2double(outlierMethod(1));
 
 %}
 
