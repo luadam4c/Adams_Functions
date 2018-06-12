@@ -1,14 +1,18 @@
 function [xValues, pdfValues] = plot_pdf (X, pdfModel, varargin)
 %% Plots pdf fit of data X and return vectors for the plots
 % Usage: [xValues, pdfValues] = plot_pdf (X, pdfModel, varargin)
-% Explanation:
-%       TODO
 % Example(s):
-%       [xValues, pdfValues] = plot_pdf(data, @(x) normpdf(x));
+%       plot_pdf(data, @(x) normpdf(x));
 %       model = fitdist(data, 'Kernel');
 %       [xValues, pdfValues] = plot_pdf(data, @(x) pdf(model, x), ...
 %                                           'NPointsToPlot', 1000, ...
 %                                           'PlotFlag', false);
+%       Value = [2; 3; 4];
+%       Color = {'Red'; 'Green'; 'Purple'};
+%       LineStyle = {'--'; '--'; '--'};
+%       Label = {'Peak 1'; 'Peak 2'; 'Threshold'};
+%       linesToPlot = table(Value, Color, LineStyle, Label);
+%       plot_pdf(data, @(x) pdf(model, x), 'LinesToPlot', linesToPlot);
 %
 % Outputs:
 %       xValues     - x values for the pdf plot
