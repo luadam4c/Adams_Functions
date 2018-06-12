@@ -99,7 +99,7 @@ pdfModel = @(X) pdf(model, X);
 nPointsToResolve = ceil(range(X)/resolution);
 
 % Get scaled pdf values for the fit
-[xValues, pdfValues] = plot_pdf(X, pdfModel, 'PlotFlag', false, ...
+[xValues, pdfValues] = plot_pdf(X, 'PDF', pdfModel, 'PlotFlag', false, ...
                                 'NPointsToPlot', nPointsToResolve);
 
 %% Find the mode of the kernel distribution

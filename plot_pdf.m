@@ -1,18 +1,20 @@
-function [xValues, pdfValues] = plot_pdf (X, pdfModel, varargin)
-%% Plots pdf fit of data X and return vectors for the plots
-% Usage: [xValues, pdfValues] = plot_pdf (X, pdfModel, varargin)
+function [xValues, pdfValues] = plot_pdf (X, varargin)
+%% Plots scaled pdf fit of data X and return vectors for the plots
+% Usage: [xValues, pdfValues] = plot_pdf (X, varargin)
 % Example(s):
-%       plot_pdf(data, @(x) normpdf(x));
+%       plot_pdf(data);
+%       plot_pdf(randn(3, 1), 'PDF', @(x) normpdf(x));
+%       plot_pdf(data, 'PDF', @(x) normpdf(x, mean(data), std(data)));
 %       model = fitdist(data, 'Kernel');
-%       [xValues, pdfValues] = plot_pdf(data, @(x) pdf(model, x), ...
+%       [xValues, pdfValues] = plot_pdf(data, 'PDF', @(x) pdf(model, x), ...
 %                                           'NPointsToPlot', 1000, ...
 %                                           'PlotFlag', false);
-%       Value = [2; 3; 4];
+%       Value = [-1; 1; 2];
 %       Color = {'Red'; 'Green'; 'Purple'};
-%       LineStyle = {'--'; '--'; '--'};
+%       LineStyle = {'--'; ':'; '--'};
 %       Label = {'Peak 1'; 'Peak 2'; 'Threshold'};
 %       linesToPlot = table(Value, Color, LineStyle, Label);
-%       plot_pdf(data, @(x) pdf(model, x), 'LinesToPlot', linesToPlot);
+%       plot_pdf(data, 'LinesToPlot', linesToPlot);
 %
 % Outputs:
 %       xValues     - x values for the pdf plot
@@ -25,9 +27,10 @@ function [xValues, pdfValues] = plot_pdf (X, pdfModel, varargin)
 %       X           - data to distribute among bins
 %                   must be an array of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
-%       pdfModel    - pdf function for a fitted model
+%       varargin    - 'PDF': fitted probability density function
 %                   must be a function handle
-%       varargin    - 'NPointsToPlot': number of points for plotting the pdf
+%                   default == pdf from a kernel distribution fit to data
+%                   - 'NPointsToPlot': number of points for plotting the pdf
 %                   must be a positive integer scalar
 %                   default == 500
 %                   - 'PlotFlag': whether to plot the pdf
@@ -51,6 +54,7 @@ function [xValues, pdfValues] = plot_pdf (X, pdfModel, varargin)
 % 
 
 %% Default values for optional arguments
+pdfDefault = [];                % Use a kernel distribution fit by default
 nPointsToPlotDefault = 500;     % default number of points for plotting the pdf
 plotFlagDefault = true;         % whether to plot a pdf by default
 linesToPlotDefault = [];        % do not plot lines by default
@@ -74,7 +78,7 @@ end
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 2
+if nargin < 1
     error(['Not enough input arguments, ', ...
             'type ''help %s'' for usage'], mfilename);
 end
@@ -87,22 +91,30 @@ iP.FunctionName = mfilename;
 addRequired(iP, 'X', ...                    % data to distribute among bins
     @(x) validateattributes(x, {'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'nonempty'}));
-addRequired(iP, 'pdf');
-
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'PDF', pdfDefault, ...
+    @(x) validateattributes(x, {'function_handle'}, {'nonempty'}));
 addParameter(iP, 'NPointsToPlot', nPointsToPlotDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 addParameter(iP, 'PlotFlag', plotFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'LinesToPlot', linesToPlotDefault);
-    % TODO: istable?
+addParameter(iP, 'LinesToPlot', linesToPlotDefault, ...
+    @(x) validateattributes(x, {'table'}, {'nonempty'}));
 
 % Read from the Input Parser
-parse(iP, X, pdfModel, varargin{:});
+parse(iP, X, varargin{:});
+pdfModel = iP.Results.PDF;
 nPointsToPlot = iP.Results.NPointsToPlot;
 plotFlag = iP.Results.PlotFlag;
 linesToPlot = iP.Results.LinesToPlot;
 
+% Set dependent argument defaults
+if isempty(pdfModel)
+    model = fitdist(X, 'Kernel');
+    pdfModel = @(x) pdf(model, x);
+end
+
+%% Generate x and y values
 % Compute the area and edges for the histogram
 [harea, edges] = histproperties(X);
 
