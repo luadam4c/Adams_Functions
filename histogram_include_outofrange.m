@@ -217,11 +217,13 @@ end
 % Plot histogram
 if matlabYear >= 2017
     % Plot histogram with histogram()
-    h = histogram('BinEdges', edgesPlot, 'BinCounts', counts);
+    h = histogram('BinEdges', edgesPlot, 'BinCounts', counts, ...
+                  'DisplayName', 'data');
                                     % available for R2017a and beyond
 else
     % Plot histogram by using the bar() function in the 'histc' style
-    h = bar(leftEdgesPlot, counts, 'histc');
+    h = bar(leftEdgesPlot, counts, 'histc', ...
+            'DisplayName', 'data');
 end
 
 % Initialize XTick locations with current locations
@@ -270,14 +272,16 @@ end
 if xTickLabelNums(1) == -Inf
     h1 = histogram(edgesPlot(1) * ones(1, counts(1)), ...
                     edgesPlot(1:2), ...
-                    'FaceAlpha', 1, 'FaceColor', specialColor);
+                    'FaceAlpha', 1, 'FaceColor', specialColor, ...
+                    'DisplayName', 'data too small');
 else
     h1 = [];
 end
 if xTickLabelNums(end) == Inf
     h2 = histogram(edgesPlot(end-1) * ones(1, counts(end)), ...
                     edgesPlot(end-1:end), ...
-                    'FaceAlpha', 1, 'FaceColor', specialColor);
+                    'FaceAlpha', 1, 'FaceColor', specialColor...
+                    'DisplayName', 'data too large');
 else
     h2 = [];
 end

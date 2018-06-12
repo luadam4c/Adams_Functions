@@ -105,7 +105,7 @@ pdfValues = harea * pdfModel(xValues);
 
 %% Plot the pdf
 if plotFlag
-    plot(xValues, pdfValues);
+    plot(xValues, pdfValues, 'DisplayName', 'fit');
     if ~isempty(linesToPlot)
         hold on
         ylimits = get(gca, 'YLim');
