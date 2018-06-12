@@ -25,11 +25,13 @@ function [xValues, pdfValues] = plot_pdf (X, pdfModel, varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %                   - 'LinesToPlot': table with fields 
-%                   must be a table with columns 'Value', 'Color', 'Label' 
+%                   must be a table with the following columns:
+%                       'Value', 'Color', 'LineStyle', 'Label' 
 %                   default == []
 %
 % Requires:
 %       /home/Matlab/Adams_Functions/histproperties.m
+%       /home/Matlab/Downloaded_Functions/rgb.m
 %
 % Used by:    
 %       /home/Matlab/Adams_Functions/fit_kernel.m
@@ -45,6 +47,21 @@ plotFlagDefault = true;         % whether to plot a pdf by default
 linesToPlotDefault = [];        % do not plot lines by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Add directories to search path for required functions across servers
+if ~isdeployed
+    if exist(fullfile(pwd, 'Downloaded_Functions'), 'dir') == 7
+        functionsdirectory = pwd;
+    elseif exist('/home/Matlab/', 'dir') == 7
+        functionsDirectory = '/home/Matlab/';
+    elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
+        functionsDirectory = '/scratch/al4ng/Matlab/';
+    else
+        error('Valid functionsDirectory does not exist!');
+    end
+    addpath(fullfile(functionsDirectory, 'Downloaded_Functions')); 
+                                            % for rgb.m
+end
 
 %% Deal with arguments
 % Check number of required arguments
@@ -94,7 +111,7 @@ if plotFlag
         ylimits = get(gca, 'YLim');
         for iRow = 1:height(linesToPlot)
             line(linesToPlot.Value(iRow) * ones(1, 2), ylimits, ...
-                 'Color', linesToPlot.Color(iRow), ...
+                 'Color', rgb(linesToPlot.Color(iRow)), ...
                  'LineStyle', linesToPlot.LineStyle(iRow), ...
                  'DisplayName', linesToPlot.Label(iRow))
         end
