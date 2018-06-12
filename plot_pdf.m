@@ -4,12 +4,17 @@ function [xValues, pdfValues] = plot_pdf (X, pdfModel, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       TODO
+%       [xValues, pdfValues] = plot_pdf(data, @(x) normpdf(x));
+%       model = fitdist(data, 'Kernel');
+%       [xValues, pdfValues] = plot_pdf(data, @(x) pdf(model, x), ...
+%                                           'NPointsToPlot', 1000, ...
+%                                           'PlotFlag', false);
+%
 % Outputs:
-%       output1     - TODO: Description of output1
-%                   specified as a TODO
-%       output2     - TODO: Description of output2
-%                   specified as a TODO
+%       xValues     - x values for the pdf plot
+%                   specified as a numeric column vector
+%       pdfValues   - y values for the pdf plot
+%                   specified as a numeric column vector
 % Side Effects:
 %       Plots a scaled probability density function
 % Arguments:    
@@ -17,7 +22,7 @@ function [xValues, pdfValues] = plot_pdf (X, pdfModel, varargin)
 %                   must be an array of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
 %       pdfModel    - pdf function for a fitted model
-%                   must be a TODO
+%                   must be a function handle
 %       varargin    - 'NPointsToPlot': number of points for plotting the pdf
 %                   must be a positive integer scalar
 %                   default == 500

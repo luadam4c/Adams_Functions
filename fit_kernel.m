@@ -10,7 +10,9 @@ function [model, pdfModel, peak1Model, peak2Model, thresholdModel, voidModel, sp
 %           that yields the largest void parameter. This follows from the
 %           algorithm of Pasquale et al., 2010
 % Example(s):
-%       TODO
+%       [model, pdfModel, peak1Model, peak2Model, ...
+%           thresholdModel, voidModel, spacingModel] = ...
+%           fit_kernel(data, 'Bandwidth2StdRatio', 1/5);
 % Outputs:
 %       output1     - TODO: Description of output1
 %                   specified as a TODO
