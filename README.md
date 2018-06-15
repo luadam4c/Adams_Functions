@@ -1,7 +1,99 @@
 ## Adam's functions for sharing across projects
 
-Last Updated 2018-06-12
+Last Updated 2018-06-15 by Adam Lu
 
--------
+***
 
-[**plot_pdf.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pdf.m): Plots pdf fit of data X and return vectors for the plots
+- [**abf2mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/abf2mat.m): Converts .abf files to .mat files with time vector (in ms) included
+- [**adjust_peaks.m**](https://github.com/blabuva/Adams_Functions/blob/master/adjust_peaks.m): Adjusts peak indices and values given approximate peak indices
+- [**all_ordered_pairs.m**](https://github.com/blabuva/Adams_Functions/blob/master/all_ordered_pairs.m): Generates a cell array of all ordered pairs of elements/indices, one from each vector
+- [**analyzeCI.m**](https://github.com/blabuva/Adams_Functions/blob/master/analyzeCI.m): date = '20140729';
+- [**atf2sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/atf2sheet.m): Converts .atf text file(s) to a spreadsheet file(s) (type specified by the 'SheetType' argument)
+- [**bar_w_CI.m**](https://github.com/blabuva/Adams_Functions/blob/master/bar_w_CI.m): Plot bar graph (esp. grouped) with confidence intervals
+- [**boltzmann.m**](https://github.com/blabuva/Adams_Functions/blob/master/boltzmann.m): the sigmoidal Boltzmann function
+- [**change_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/change_params.m): Change parameter values
+- [**check_and_collapse_identical_contents.m**](https://github.com/blabuva/Adams_Functions/blob/master/check_and_collapse_identical_contents.m): Checks if a cell array or array has identical contents and collapse it to one copy of the content
+- [**check_subdir.m**](https://github.com/blabuva/Adams_Functions/blob/master/check_subdir.m): Checks if needed subdirectory(ies) exist in outfolder
+- [**clcf.m**](https://github.com/blabuva/Adams_Functions/blob/master/clcf.m): Forcefully clear command window
+- [**color_index.m**](https://github.com/blabuva/Adams_Functions/blob/master/color_index.m): Find the colormap index for a given value with boundaries set by edges
+- [**combine_loopedparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_loopedparams.m): TODO
+- [**combine_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_sweeps.m): Combines sweeps that begin with expLabel in dataDirectory under dataMode
+- [**compute_conductance.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_conductance.m): Compute theoretical conductance curve for the GABA_B IPSC used by dynamic clamp
+- [**compute_elcurr.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_elcurr.m): Compute electrode current from conductance & voltage
+- [**compute_eRev.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_eRev.m): Compute the reversal potential of a channel that passes monovalent ions using the GHK voltage equation
+- [**compute_IMax_GHK.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_IMax_GHK.m): Compute the maximum current [mA/cm^2] using the GHK current equation
+- [**compute_slope.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_slope.m): Compute the slope given two vectors and two indices
+- [**construct_abffilename.m**](https://github.com/blabuva/Adams_Functions/blob/master/construct_abffilename.m): Constructs the full file name to an abf file robustly based on filename and display message if doesn't exist
+- [**construct_fullfilename.m**](https://github.com/blabuva/Adams_Functions/blob/master/construct_fullfilename.m): Constructs full file name based on filename and an optional full directory path with optional suffices and/or Name-Value pairs
+- [**construct_suffix.m**](https://github.com/blabuva/Adams_Functions/blob/master/construct_suffix.m): Constructs final suffix based on optional suffices and/or Name-Value pairs
+- [**create_input_file.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_input_file.m): Create an input spreadsheet file from data file names in a directory based on default parameters
+- [**create_subdir_copy_files.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_subdir_copy_files.m): Create subdirectory and copy figure files
+- [**csvwrite_with_header.m**](https://github.com/blabuva/Adams_Functions/blob/master/csvwrite_with_header.m): Write a comma-separated value file with given header
+- [**draw_arrow.m**](https://github.com/blabuva/Adams_Functions/blob/master/draw_arrow.m): Draw an arrow from p1 to p2
+- [**find_custom.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_custom.m): Same as find() but takes custom parameter-value pairs
+- [**find_data_files.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_data_files.m): Looks for data files in a dataDirectory according to either dataTypeUser or going through a list of possibleDataTypes
+- [**find_filebases.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_filebases.m): Finds base names for files in infolder/subdir and return as a cell array of cell arrays of strings
+- [**find_ind_str_in_cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_ind_str_in_cell.m): Find all indices of a particular string in a cell array
+- [**find_IPSC_peak.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_IPSC_peak.m): Finds time of current peak from a an inhibitory current trace (must be negative current)
+- [**find_istart.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_istart.m): Finds time of current application from a series of current vectors
+- [**find_istart_old.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_istart_old.m): Finds time of current application from a series of current vectors
+- [**find_LTS.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_LTS.m): Find, plot and classify the most likely low-threshold spike (LTS) candidate in a voltage trace
+- [**find_LTSs_many_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_LTSs_many_sweeps.m): Calls find_LTS.m for many voltage traces
+- [**find_passive_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_passive_params.m): Extract passive parameters from both the rising and falling phase of the current pulse response
+- [**fit_gaussians_and_refine_threshold.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_gaussians_and_refine_threshold.m): Fits data to Gaussian mixture models and finds the optimal number of components
+- [**fit_IEI.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_IEI.m): Fit IEI data to curves
+- [**fit_kernel.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_kernel.m): Fits a kernel distribution to a data vector and determine the two primary peaks, the threshold and the void and spacing parameters
+- [**fit_logIEI.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_logIEI.m): Fit log(IEI) logData to curves
+- [**get_idxEnd.m**](https://github.com/blabuva/Adams_Functions/blob/master/get_idxEnd.m): Get the index of the end of an event
+- [**get_loopedparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/get_loopedparams.m): Get parameters that were looped in the simulation from loopedparams.mat
+- [**histg.m**](https://github.com/blabuva/Adams_Functions/blob/master/histg.m): HISTG    'Grouped' univariate histogram
+- [**histogram_include_outofrange.m**](https://github.com/blabuva/Adams_Functions/blob/master/histogram_include_outofrange.m): Plots a histogram including out of range values
+- [**histproperties.m**](https://github.com/blabuva/Adams_Functions/blob/master/histproperties.m): Computes the area, edges of the histogram for given data array
+- [**increment_editbox.m**](https://github.com/blabuva/Adams_Functions/blob/master/increment_editbox.m): Increment or decrement editbox value based on direction
+- [**intersectm.m**](https://github.com/blabuva/Adams_Functions/blob/master/intersectm.m): Find the intersection of multiple arrays
+- [**isfigtype.m**](https://github.com/blabuva/Adams_Functions/blob/master/isfigtype.m): Check whether a string or each string in a cell array is a valid figure type accepted by saveas()
+- [**islinestyle.m**](https://github.com/blabuva/Adams_Functions/blob/master/islinestyle.m): Check whether a string or each string in a cell array is a valid line style accepted by plot() or line()
+- [**issheettype.m**](https://github.com/blabuva/Adams_Functions/blob/master/issheettype.m): Check whether a string or each string in a cell array is a valid spreadsheet type accepted by readtable()
+- [**istype.m**](https://github.com/blabuva/Adams_Functions/blob/master/istype.m): Check whether a string or each string in a cell array is a valid type specified by validTypes
+- [**load_examples.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_examples.m): Load example data structures for testing
+- [**load_matfiles_part.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_matfiles_part.m): Load set of matfiles and return relevant info
+- [**log_arraytext.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_arraytext.m): Create a text file that logs the array information
+- [**log_matfile.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_matfile.m): Print variables in a MATfile to a comma-separated-value file
+- [**make_loopedparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/make_loopedparams.m): Construct parameters to change for each trial from loopmode, pnames, pislog, pmin, pmax, pinc 
+- [**mat2sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/mat2sheet.m): Converts .mat files to a spreadsheet file(s) (type specified by the 'SheetType' argument)
+- [**my_closereq.m**](https://github.com/blabuva/Adams_Functions/blob/master/my_closereq.m): Close request function that displays a question dialog box
+- [**nanstderr.m**](https://github.com/blabuva/Adams_Functions/blob/master/nanstderr.m): Calculate the standard error of the mean excluding NaN values
+- [**plot_all_abfs_dir.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_all_abfs_dir.m): Plots all abf files in directory
+- [**plot_and_save_boxplot.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_and_save_boxplot.m): Plots a box plot from a grouped vector according to group
+- [**plot_and_save_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_and_save_histogram.m): Plots and saves a stacked histogram for a vector and color code according to class
+- [**plot_ellipse.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_ellipse.m): Plot an ellipse that may be oblique
+- [**plot_FI.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_FI.m): From a current injection protocol, detect spikes for each sweep and make an F-I plot
+- [**plot_grouped_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_grouped_histogram.m): Plot a grouped histogram
+- [**plot_grouped_scatter.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_grouped_scatter.m): Plot and save a grouped scatter plot with 95% confidence ellipses
+- [**plot_pdf.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pdf.m): Plots scaled pdf fit of data X and return vectors for the plots
+- [**plot_raster.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_raster.m): Make a raster plot from a cell array of event time arrays
+- [**plot_traces_abf_EEG.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_abf_EEG.m): Usage: plot_traces_abf_EEG (abffilename, left, right)
+- [**plot_traces_abf.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_abf.m): Takes an abf file and plots all traces
+- [**plot_traces_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_mat.m): Plot traces from mat file
+- [**plot_tuning_curve.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_curve.m): Plot a 1-dimensional tuning curve
+- [**plot_tuning_map.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_map.m): Plot a 2-dimensional tuning map
+- [**print_all_fields.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_all_fields.m): Print everything in a structure
+- [**print_and_show_message.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_and_show_message.m): Print to standard output and show message box at the same time
+- [**print_next_in_csv.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_next_in_csv.m): What to print next in a csv file
+- [**print_or_show_message.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_or_show_message.m): Either print a message in standard output or show a message box
+- [**remove_outliers.m**](https://github.com/blabuva/Adams_Functions/blob/master/remove_outliers.m): Removes outliers from a data matrix and return a new matrix
+- [**rescale_vec.m**](https://github.com/blabuva/Adams_Functions/blob/master/rescale_vec.m): Rescale a vector (vec1) to be in the same ballpark as another vector (vec2),
+- [**restore_fields.m**](https://github.com/blabuva/Adams_Functions/blob/master/restore_fields.m): Set each field specified in varargin to previous values from the field strcat(field, '_prev')
+- [**save_all_figtypes.m**](https://github.com/blabuva/Adams_Functions/blob/master/save_all_figtypes.m): Save figures using all figure types provided
+- [**set_fields_zero.m**](https://github.com/blabuva/Adams_Functions/blob/master/set_fields_zero.m): Set each field specified in varargin to zero and store previous values in a new field strcat(field, '_prev')
+- [**sigfig.m**](https://github.com/blabuva/Adams_Functions/blob/master/sigfig.m): Get the number of significant figures from a number (numeric or string)
+- [**stderr.m**](https://github.com/blabuva/Adams_Functions/blob/master/stderr.m): Calculate the standard error of the mean
+- [**struct2mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/struct2mat.m): Saves each variable in a structure as a variable in a MAT-file and create a logHeader and a logVariables
+- [**structs2vecs.m**](https://github.com/blabuva/Adams_Functions/blob/master/structs2vecs.m): Converts a cell array of structs with equal numbers of fields to a column cell array of row vectors or cell arrays
+- [**suptitle.m**](https://github.com/blabuva/Adams_Functions/blob/master/suptitle.m): SUPTITLE puts a title above all subplots.
+- [**test.m**](https://github.com/blabuva/Adams_Functions/blob/master/test.m): y1 = 200*exp(-0.05*x).*sin(x);
+- [**update_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/update_params.m): Update dependent parameters for particular experiments
+- [**validate_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/validate_string.m): Validate whether a string is an element of a cell array of valid strings
+- [**vec2array.m**](https://github.com/blabuva/Adams_Functions/blob/master/vec2array.m): Convert a vector to an array with dimensions given by dims using linear indexing
+- [**vec2cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/vec2cell.m): Reorganize a vector or array into a cell array of partial vectors/arrays according to class
+- [**vertcat_spreadsheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/vertcat_spreadsheets.m): Combine spreadsheets using readtable, vertcat, then writetable
