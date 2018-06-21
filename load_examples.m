@@ -4,28 +4,50 @@
 % 2018-XX-XX Created by Adam LU
 % 2018-06-12 Moved xlsData from Test_xlWrite.m
 
-nRows = 15;
-nCols = 15;
+nRows = 3;
+nCols = 3;
 
 % Logical arrays
-isMarried = [false; false; true; false; false];
+myLogicalScalar = true;
+myLogicalRow = [true, false, true, true, false];
+myLogicalCol = [false; false; true; false; false];
+myLogical2D = [true, false; false, true];
 
 % Character arrays
-string = 'I love you';
+myString = 'I love you';
 
 % Numeric arrays
-numericScalar = nCols;
-numericCol = ones(nRows, 1);
-numericRow = ones(1, nCols);
-numericArray = magic(nRows);
+myNumericScalar = nCols;
+myNumericCol = ones(nRows, 1);
+myNumericRow = ones(1, nCols);
+myNumeric2D = magic(nRows);
 
-% Cell arrays
+% Cell arrays of character arrays
 names = {'Adam', 'Ashley', 'Mark', 'Peter', 'Katie'};
+myCellStrScalar = {'I love you'};
+myCellStrRow = {'I love you', 'You love me', 'Blab hooray!', 'Why?'};
+myCellStrCol = {'I love you'; 'You love me'; 'Blab hooray!'; 'Why?'};
+myCellStr2D = {'I love you', 'You love me'; 'Blab hooray!', 'Why?'};
 
 % Structures
-info = struct;
-info.names = names;
-info.isMarried = isMarried;
+blab = struct;
+blab.students = names;
+blab.isMarried = myLogicalCol;
+myStruct = struct;
+myStruct.myLogicalScalar = myLogicalScalar;
+myStruct.myLogicalCol = myLogicalCol;
+myStruct.myLogicalRow = myLogicalRow;
+myStruct.myLogical2D = myLogical2D;
+myStruct.myNumericScalar = myNumericScalar;
+myStruct.myNumericCol = myNumericCol;
+myStruct.myNumericRow = myNumericRow;
+myStruct.myNumeric2D = myNumeric2D;
+myStruct.names = names;
+myStruct.myCellStrScalar = myCellStrScalar;
+myStruct.myCellStrRow = myCellStrRow;
+myStruct.myCellStrCol = myCellStrCol;
+myStruct.myCellStr2D = myCellStr2D;
+myStruct.blab = blab;
 
 % Sheet Data
 xlsData = {'A Number' 'Boolean Data' 'Empty Cells' 'Strings';...

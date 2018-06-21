@@ -88,7 +88,9 @@ verboseDefault = false;             % default: Program does not print message
 
 %% Add directories to search path for required functions across servers
 if ~isdeployed
-    if exist('/home/Matlab/', 'dir') == 7
+    if exist(fullfile(pwd, 'Miras_Functions'), 'dir') == 7
+        functionsdirectory = pwd;
+    elseif exist('/home/Matlab/', 'dir') == 7
         functionsDirectory = '/home/Matlab/';
     elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
         functionsDirectory = '/scratch/al4ng/Matlab/';
@@ -99,10 +101,16 @@ if ~isdeployed
                                             % for print_cellstr.m
 end
 
+%% Deal with arguments
+% Check number of required arguments
+if nargin < 1
+    error(['Not enough input arguments, ', ...
+            'type ''help %s'' for usage'], mfilename);
+end
+
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
-iP.KeepUnmatched = false;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'message', ...              % the message to show
@@ -130,8 +138,11 @@ createMode = validatestring(iP.Results.CreateMode, validCreateModes);
 
 % Print to standard output if verbose is true or messageMode == 'none'
 if verbose || strcmp(messageMode, 'none')
-    messageStr = print_cellstr(message, 'Delimiter', '\n', 'OmitNewline', true);
-    fprintf('%s\n', messageStr);
+    messageStr = print_cellstr(message, 'Delimiter', '\n', ...
+                                        'OmitQuotes', true, ...
+                                        'OmitBraces', true, ...
+                                        'OmitNewline', false, ...
+                                        'ToPrint', true);
 end
 
 % Display message box and/or stop program
@@ -212,4 +223,10 @@ else
 uiwait(msgbox(message, mTitle, icon, 'modal'));                  
 msgbox(message, mTitle, icon, 'modal');
 
+messageStr = print_cellstr(message, 'Delimiter', '\n', ...
+                                    'OmitQuotes', true, ...
+                                    'OmitBraces', true, ...
+                                    'OmitNewline', true, ...
+                                    'ToPrint', false);
+fprintf('%s\n', messageStr);
 %}

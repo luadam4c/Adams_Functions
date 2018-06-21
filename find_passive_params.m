@@ -73,7 +73,7 @@ function [params_final, cpa, pw, dv_rec, rmse_R, rmse_F, params_L_F2, params_S_R
 %		/media/adamX/m3ha/data_dclamp/specs_for_fitmode (if fitmode is used)
 %		/home/Matlab/Downloaded_Functions/subplotsqueeze.m
 %		/home/Matlab/Adams_Functions/check_subdir.m
-%		/home/Matlab/Adams_Functions/print_all_fields.m
+%		/home/Matlab/Adams_Functions/print_structure.m
 %
 % Used by:
 %		/media/adamX/m3ha/data_dclamp/dclampDataExtractor.m
@@ -384,7 +384,7 @@ if ~isempty(xvecR_all)
 	% Estimate parameters from short-pulse coefficients
 	[params_S_R1] = ParamsFromCoeff (CS0_R1, tau0_R1, CS1_R1, tau1_R1, cpa_mean, Cm, Ra, Rs);
 	if printfieldsflag
-		print_all_fields(params_S_R1);
+		print_structure(params_S_R1);
 	end
 else
 	params_S_R1 = NaN;
@@ -397,7 +397,7 @@ if ~isempty(xvecF_all)
 	% Estimate parameters from long-pulse coefficients
 	[params_L_F1] = ParamsFromCoeff (CL0_F1, tau0_F1, CL1_F1, tau1_F1, cpa_mean, Cm, Ra, Rs);
 	if printfieldsflag
-		print_all_fields(params_L_F1);
+		print_structure(params_L_F1);
 	end
 else
 	params_L_F1 = NaN;
@@ -410,7 +410,7 @@ if ~isempty(xvecR_mean)
 	% Estimate parameters from short-pulse coefficients
 	[params_S_R2] = ParamsFromCoeff (CS0_R2, tau0_R2, CS1_R2, tau1_R2, cpa_mean, Cm, Ra, Rs);
 	if printfieldsflag
-		print_all_fields(params_S_R2);
+		print_structure(params_S_R2);
 	end
 else
 	params_S_R2 = NaN;
@@ -423,7 +423,7 @@ if ~isempty(xvecF_all)
 	% Estimate parameters from long-pulse coefficients
 	[params_L_F2] = ParamsFromCoeff (CL0_F2, tau0_F2, CL1_F2, tau1_F2, cpa_mean, Cm, Ra, Rs);
 	if printfieldsflag
-		print_all_fields(params_L_F2);
+		print_structure(params_L_F2);
 	end
 else
 	params_L_F2 = NaN;
