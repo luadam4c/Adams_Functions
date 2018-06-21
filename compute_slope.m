@@ -15,7 +15,7 @@ function slope = compute_slope(x, y, idxStart, idxEnd)
 %                   must be a numeric positive scalar
 %
 % Used by:    
-%       /media/adamX/m3ha/data_dclamp/initial_slopes.m
+%       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
 %
 % File History:
 % 2018-06-11 Created by Adam Lu

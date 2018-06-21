@@ -47,7 +47,7 @@ function [h, h1, h2] = histogram_include_outofrange(X, varargin)
 %       /home/Matlab/Adams_Functions/remove_outliers.m
 % Used by:    
 %       /home/Matlab/Marks_Functions/paula/Oct2017/zgRasterFigureMaker.m
-%       /media/adamX/m3ha/data_dclamp/initial_slopes.m
+%       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
 %
 % File History:
 % 2017-12-12 Created by Adam Lu

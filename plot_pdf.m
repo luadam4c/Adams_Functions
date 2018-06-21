@@ -47,7 +47,7 @@ function [xValues, pdfValues] = plot_pdf (X, varargin)
 %
 % Used by:    
 %       /home/Matlab/Adams_Functions/fit_kernel.m
-%       /media/adamX/m3ha/data_dclamp/initial_slopes.m
+%       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
 %
 % File History:
 % 2018-06-12 Adapted from fit_IEI.m 
