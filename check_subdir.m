@@ -2,7 +2,7 @@ function check_subdir (parentDirectory, subDirectories)
 %% Checks if needed subdirectory(ies) exist in parentDirectory
 % Usage: check_subdir (parentDirectory, subDirectories)
 % Arguments:
-%       %%% TO DO
+%      TODO
 %
 % Used by:    
 %       /media/adamX/m3ha/data_dclamp/take4/find_special_cases.m
@@ -26,7 +26,7 @@ function check_subdir (parentDirectory, subDirectories)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Check arguments
-%%% TO DO
+% TODO
 
 %% Check subdirectory(ies)
 if iscell(subDirectories)
@@ -45,3 +45,4 @@ else
     end
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
