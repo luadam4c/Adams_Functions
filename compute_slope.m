@@ -1,5 +1,5 @@
 function slope = compute_slope(x, y, idxStart, idxEnd)
-%% Compute the slope given two vectors and two indices
+%% Computes the slope given two vectors and two indices
 % Usage: slope = compute_slope(x, y, idxStart, idxEnd)
 % Outputs:
 %       slope       - dy/dx

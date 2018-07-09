@@ -1,5 +1,5 @@
 function eRev = compute_eRev (cOutArray, cInArray, pArray, zArray, celsius)
-% Compute the reversal potential of a channel that passes monovalent ions using the GHK voltage equation
+%% Computes the reversal potential of a channel that passes monovalent ions using the GHK voltage equation
 % Usage: eRev = compute_eRev (cOutArray, cInArray, pArray, zArray, celsius)
 % Examples: 
 %       For a channel selective for a single ion:

@@ -1,5 +1,5 @@
 function IMax = compute_IMax_GHK (v, pbar, z, celsius, cOut, cIn)
-% Compute the maximum current [mA/cm^2] using the GHK current equation
+%% Computes the maximum current [mA/cm^2] using the GHK current equation
 % Usage: IMax = compute_IMax_GHK (v, pbar, z, celsius, cOut, cIn)
 %
 % Arguments:
