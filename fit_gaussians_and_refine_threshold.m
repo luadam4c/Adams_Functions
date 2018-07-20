@@ -1,4 +1,4 @@
-function [BestModel, numComponents, Mu_best, Stdev_best, Prop_best, minAIC, new_thr, alt_thr, new_peakclass, min_threshold] = fit_gaussians_and_refine_threshold (data, max_numComponents, old_thr, thr_min, label, outfolder, filename, fitmode, peakclass, peakclass_labels, min_threshold)
+function [BestModel, numComponents, Mu_best, Stdev_best, Prop_best, minAIC, new_thr, alt_thr, new_peakclass, min_threshold] = fit_gaussians_and_refine_threshold (Data, FileName, Label, varargin)
 %% Fits data to Gaussian mixture models and finds the optimal number of components
 % arguments: data must be a column vector of values; 
 %         max_numComponents is defaulted to be 5
@@ -10,6 +10,7 @@ function [BestModel, numComponents, Mu_best, Stdev_best, Prop_best, minAIC, new_
 %        /home/Matlab/Adams_Functions/histg.m
 % Used by:    
 %        /media/adamX/m3ha/data_dclamp/PlotHistogramsRefineThreshold.m
+%        /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
 %
 % 2016-08-03 - Created
 % 2016-09-15 - Added fitmode
@@ -23,15 +24,23 @@ function [BestModel, numComponents, Mu_best, Stdev_best, Prop_best, minAIC, new_
 % 2017-05-05 - BT - Examine cell plot must have figname rmse_*R/F*_row_Fit_traces 
 %               and threshold plot must have figname rmse_*R/F*_row_Fit_threshold
 % 2018-01-24 - Added isdeployed
-% TODO: add input parser and make arguments except data parameter-value pairs with sensible default values
+% 2018-07-18 - BT - Implemented input parser
 
 %% Set parameters
 prec = 10^-4;               % Precision
 remove_cells = [5 14 19];   % Cell #s to examine in RMSE plotting
 
-%% Set up log file
-logfile = fullfile(outfolder, strrep(filename, '.png', ['_fit_gaussians_', num2str(max_numComponents), 'maxcomplog.txt']));
-fid = fopen(logfile, 'w');
+%% Default values for optional arguments
+defaultMax_NumComponents = 5;
+defaultOld_Thr = 0;
+defaultThr_Min = 0;
+defaultOutFolder = pwd;
+defaultFitMode = 0;
+defaultPeakClass = [];
+defaultPeakClass_Labels = {}; % length must be the same as unique elements in peakclass, set 'data' as prefix in dependent argument
+defaultMin_Threshold = 0;
+defaultThresMode = 'minFirstTwoComponents';     % 'minFirstTwoComponents' - Passive fitting for Narrowest_peak_2ndder_nospont & RMSE
+                                                % 'threeStdFirstComponent' - Initial slopes
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -46,6 +55,72 @@ end
 if ~isdeployed
     addpath(fullfile(functionsdirectory, '/Adams_Functions/'));    % for histg.m
 end
+
+%% Deal with arguments
+% Set up Input Parser Scheme
+iP = inputParser;
+iP.FunctionName = mfilename;
+
+% Add required inputs to the Input Parser
+addRequired(iP, 'Data', ...
+    @(x) validateattributes(x, {'numeric'}, {'nonempty', 'column'}));
+addRequired(iP, 'FileName', ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addRequired(iP, 'Label', ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'Max_NumComponents', defaultMax_NumComponents, ...
+    @(x) validateattributes(x, {'numeric'}, ...
+        {'scalar', 'positive', 'integer'}));
+addParameter(iP, 'Old_Thr', defaultOld_Thr, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'Thr_Min', defaultThr_Min, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'OutFolder', defaultOutFolder, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FitMode', defaultFitMode, ...
+    @(x) validateattributes(x, {'numeric'}, ...
+        {'>=', 0, '<=', 2}));
+addParameter(iP, 'PeakClass', defaultPeakClass, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'PeakClass_Labels', defaultPeakClass_Labels, ...
+    @(x) validateattributes(x, {'cell'}, {'vector'}));
+addParameter(iP, 'Min_Threshold', defaultMin_Threshold, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'ThresMode', defaultThresMode, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+
+% Read from the Input Parser
+parse(iP, Data, FileName, Label, varargin{:});
+data = iP.Results.Data;
+filename = iP.Results.FileName;
+label = iP.Results.Label;
+max_numComponents = iP.Results.Max_NumComponents;
+old_thr = iP.Results.Old_Thr;
+thr_min = iP.Results.Thr_Min;
+outfolder = iP.Results.OutFolder;
+fitmode = iP.Results.FitMode;
+peakclass = iP.Results.PeakClass;
+peakclass_labels = iP.Results.PeakClass_Labels;
+min_threshold = iP.Results.Min_Threshold;
+thresMode = iP.Results.ThresMode; 
+
+% Set dependent argument defaults
+if isempty(peakclass) && isempty(peakclass_labels)
+    peakclass = ones(size(data));
+    peakclass_labels = {'data'};
+elseif ~isempty(peakclass) && isempty(peakclass_labels)
+    peakclass_labels_prefix = peakclass_labels
+    peakclass_labels = cell(size(peakclass));
+    for i = 1:length(peakclass)
+        peakclass_labels{i} = ['data' num2str(i)];
+    end
+end
+
+%% Set up log file
+logfile = fullfile(outfolder, strrep(filename, '.png', ['_fit_gaussians_', num2str(max_numComponents), 'maxcomplog.txt']));
+fid = fopen(logfile, 'w');
 
 %% Take out spontaneous spikes (peak class == 3)
 ind_nospont = find(peakclass ~= 3);
@@ -87,23 +162,42 @@ Props = cell(max_numComponents,1);      % Preallocation of proportions of Gaussi
 options = statset('MaxIter', 1000);
 rng(1);                    % For reproducibility
 for k = 1:max_numComponents
-    GMModels{k} = fitgmdist(data, k, 'Options', options);    
-    Mu = zeros(k, 1);
-    Stdev = zeros(k, 1);
-    Prop = zeros(k, 1);
-    for i = 1:k
-        Mu(i) = GMModels{k}.mu(i);
-        Stdev(i) = sqrt(GMModels{k}.Sigma(1, 1, i));
-        Prop(i) = GMModels{k}.ComponentProportion(1, i);
+    try 
+        GMModels{k} = fitgmdist(data, k, 'Options', options);    
+        Mu = zeros(k, 1);
+        Stdev = zeros(k, 1);
+        Prop = zeros(k, 1);
+        for i = 1:k
+            Mu(i) = GMModels{k}.mu(i);
+            Stdev(i) = sqrt(GMModels{k}.Sigma(1, 1, i));
+            Prop(i) = GMModels{k}.ComponentProportion(1, i);
+        end
+        [Mus{k}, I_s] = sort(Mu);
+        Stdevs{k} = Stdev(I_s);
+        Props{k} = Prop(I_s);
+        fprintf(fid, '\n GM Mean(s), Standard deviation(s) & Proportions(s) for %i Component(s)\n', k);
+        for i = 1:k
+            fprintf(fid, '%g\t%g\t%g\n', Mus{k}(i), Stdevs{k}(i), Props{k}(i));
+        end
+        AIC(k)= GMModels{k}.AIC;
+    catch ME
+        switch ME.identifier
+            case 'stats:gmdistribution:IllCondCovIter'
+                AIC(k) = NaN;
+                GMModels{k} = NaN;
+                Mus{k} = NaN;
+                Stdevs{k} = NaN;
+                Props{k} = NaN;
+                warning(['Ill-conditioned covariance created, skipping ' num2str(k) ' components.']);
+            otherwise
+                AIC(k) = NaN;
+                GMModels{k} = NaN;
+                Mus{k} = NaN;
+                Stdevs{k} = NaN;
+                Props{k} = NaN;
+                continue;
+        end
     end
-    [Mus{k}, I_s] = sort(Mu);
-    Stdevs{k} = Stdev(I_s);
-    Props{k} = Prop(I_s);
-    fprintf(fid, '\n GM Mean(s), Standard deviation(s) & Proportions(s) for %i Component(s)\n', k);
-    for i = 1:k
-        fprintf(fid, '%g\t%g\t%g\n', Mus{k}(i), Stdevs{k}(i), Props{k}(i));
-    end
-    AIC(k)= GMModels{k}.AIC;
 end
 [minAIC, numComponents] = min(AIC);
 BestModel = GMModels{numComponents};
@@ -130,55 +224,60 @@ for i = 1:numComponents
 end
 
 %% Find new thresholds
-if numComponents == 3                    % 2 possible thresholds
+if strcmp(thresMode, 'minFirstTwoComponents')
+    if numComponents == 3                    % 2 possible thresholds
 
-    % Find the minimum between lower two Gaussians
-    left1 = max(floor(Mu_best(1)/prec)*prec, thr_min);  % left bound; threshold can't be lower than thr_min
-    right1 = max(ceil(Mu_best(2)/prec)*prec, left1);    % right bound
-    xx1 = (left1:prec:right1)';
-    Pdf_part1 = pdf(BestModel, xx1);
-    [minprob1 minprob1_ind] = min(Pdf_part1);
-    new_thr1 = xx1(minprob1_ind);
+        % Find the minimum between lower two Gaussians
+        left1 = max(floor(Mu_best(1)/prec)*prec, thr_min);  % left bound; threshold can't be lower than thr_min
+        right1 = max(ceil(Mu_best(2)/prec)*prec, left1);    % right bound
+        xx1 = (left1:prec:right1)';
+        Pdf_part1 = pdf(BestModel, xx1);
+        [minprob1 minprob1_ind] = min(Pdf_part1);
+        new_thr1 = xx1(minprob1_ind);
 
-    % Find the minimum between upper two Gaussians
-    left2 = max(floor(Mu_best(2)/prec)*prec, thr_min);  % left bound; threshold can't be lower than thr_min
-    right2 = max(ceil(Mu_best(3)/prec)*prec, left2);    % right bound
-    xx2 = (left2:prec:right2)';
-    Pdf_part2 = pdf(BestModel, xx2);
-    [minprob2 minprob2_ind] = min(Pdf_part2);
-    new_thr2 = xx2(minprob2_ind);
+        % Find the minimum between upper two Gaussians
+        left2 = max(floor(Mu_best(2)/prec)*prec, thr_min);  % left bound; threshold can't be lower than thr_min
+        right2 = max(ceil(Mu_best(3)/prec)*prec, left2);    % right bound
+        xx2 = (left2:prec:right2)';
+        Pdf_part2 = pdf(BestModel, xx2);
+        [minprob2 minprob2_ind] = min(Pdf_part2);
+        new_thr2 = xx2(minprob2_ind);
 
-    % Use the closest value to the old threshold as the new threshold
-    [~, choice] = min(abs([new_thr1 new_thr2] - old_thr));
-    if choice == 1
-        new_thr = new_thr1;
-        alt_thr = new_thr2;
-    elseif choice == 2
-        new_thr = new_thr2;
-        alt_thr = new_thr1;
+        % Use the closest value to the old threshold as the new threshold
+        [~, choice] = min(abs([new_thr1 new_thr2] - old_thr));
+        if choice == 1
+            new_thr = new_thr1;
+            alt_thr = new_thr2;
+        elseif choice == 2
+            new_thr = new_thr2;
+            alt_thr = new_thr1;
+        else
+            error('threshold is wrong!')
+        end
+
+        fprintf(fid, 'New LTS threshold is %g V^2/s^2\n', new_thr);
+        fprintf(fid, 'Alternate LTS threshold is %g V^2/s^2\n', alt_thr);
+        fclose(fid);
+     
+    % elseif numComponents == 4                % 3 possible thresholds
     else
-        error('threshold is wrong!')
+        comp1 = find(Mu_best < old_thr, 1, 'last');         % Gaussian peak left of old_thr
+        comp2 = find(Mu_best > old_thr, 1);                 % Gaussian peak right of old_thr
+        value1 = Mu_best(comp1);
+        value2 = Mu_best(comp2);
+
+        left1 = max(floor(value1/prec)*prec, thr_min);      % left bound; threshold can't be lower than thr_min
+        right1 = ceil(value2/prec)*prec;                    % right bound
+        xx = (left1:prec:right1)';
+        Pdf_part = pdf(BestModel, xx);
+        [minprob minprob_ind] = min(Pdf_part);
+        new_thr = xx(minprob_ind);
+        fprintf(fid, 'New LTS threshold is %g V^2/s^2\n', new_thr);
+        fclose(fid);
     end
-
-    fprintf(fid, 'New LTS threshold is %g V^2/s^2\n', new_thr);
-    fprintf(fid, 'Alternate LTS threshold is %g V^2/s^2\n', alt_thr);
-    fclose(fid);
- 
-elseif numComponents == 4                % 3 possible thresholds
-else
-    comp1 = find(Mu_best < old_thr, 1, 'last');         % Gaussian peak left of old_thr
-    comp2 = find(Mu_best > old_thr, 1);                 % Gaussian peak right of old_thr
-    value1 = Mu_best(comp1);
-    value2 = Mu_best(comp2);
-
-    left1 = max(floor(value1/prec)*prec, thr_min);      % left bound; threshold can't be lower than thr_min
-    right1 = ceil(value2/prec)*prec;                    % right bound
-    xx = (left1:prec:right1)';
-    Pdf_part = pdf(BestModel, xx);
-    [minprob minprob_ind] = min(Pdf_part);
-    new_thr = xx(minprob_ind);
-    fprintf(fid, 'New LTS threshold is %g V^2/s^2\n', new_thr);
-    fclose(fid);
+elseif strcmp(thresMode, 'threeStdFirstComponent')
+    new_thr = Mu_best(1) + 3 * Stdev_best(1);
+    alt_thr = Mu_best(1) - 3 * Stdev_best(1);
 end
 
 %% Plot and save histogram with fitted Gaussian mixture pdf
@@ -253,7 +352,8 @@ if nargin > 3       %%% TODO: Why 3? BT - in the original source
     ylabel('# of sweeps')
     title(['Distribution of ', label, fitsuffix]);
     if length(peakclass_labels) < 10        % Legend for 2nd derivative, using peakclass
-        legend('Location', 'northwest'); 
+        % legend('Location', 'northwest'); %
+        legend('Location', 'northeast'); %%% for fitting initial slopes
     elseif length(peakclass_labels) >= 10 && ...
         strcmp(label, 'RMSE (mV) in the rising phase')
         % Legend for rising RMSE, location northwest overlaps plot; peakclass = cellidrow
@@ -379,5 +479,6 @@ if find(remove_cells == -1) > 0            % above/below threshold RMSE plot
     end
 addpath(fullfile(functionsdirectory, '/Brians_Functions/'));    % for reorder.m
 %        /home/Matlab/Brians_Functions/reorder.m
+function [BestModel, numComponents, Mu_best, Stdev_best, Prop_best, minAIC, new_thr, alt_thr, new_peakclass, min_threshold] = fit_gaussians_and_refine_threshold (data, max_numComponents, old_thr, thr_min, label, outfolder, filename, fitmode, peakclass, peakclass_labels, min_threshold)
 
 %}

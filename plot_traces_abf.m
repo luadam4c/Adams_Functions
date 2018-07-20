@@ -11,8 +11,8 @@ function [d, sius, tvec] = plot_traces_abf (filename, expmode, d, sius, outfolde
 % Arguments:
 %       filename    - must be either the full address or must be in current directory
 %                       .abf is not needed (e.g. 'B20160908_0004')
-%       expmode        -    'EEG'
-%                    'patch'
+%       expmode     -   'EEG'
+%                       'patch'
 %       d           - (opt) full data
 %       sius        - (opt) sampling interval in microseconds
 %       outfolder   - (opt) the name of the directory that the plots will be placed
@@ -24,7 +24,7 @@ function [d, sius, tvec] = plot_traces_abf (filename, expmode, d, sius, outfolde
 %       right       - (opt) the end of the time interval of interest (in seconds for 2-d data and in ms for 3-d data)
 %                   default == tvec(end)
 %       plotmode    - (opt) 1: all traces are to be plotted together;
-%                    2: each trace is to be plotted individually
+%                           2: each trace is to be plotted individually
 %                   default == 1
 %       t_units     - (opt) units for time, must be a character array
 %                   default == 's' for 2-d data and 'ms' for 3-d data
