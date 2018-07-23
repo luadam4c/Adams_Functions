@@ -1,9 +1,11 @@
-function [BestModel, numComponents, Mu_best, Stdev_best, Prop_best, minAIC, new_thr, alt_thr, new_peakclass, min_threshold] = fit_gaussians_and_refine_threshold (Data, FileName, Label, varargin)
+function [modelBest, numComponents, muBest, stdevBest, proportionBest, minAIC, newThr1, newThr2, newPeakclass, minThreshold] = fit_gaussians_and_refine_threshold (data, fileName, label, varargin)
 %% Fits data to Gaussian mixture models and finds the optimal number of components
-% arguments: data must be a column vector of values; 
-%         max_numComponents is defaulted to be 5
-%        the rest are only necessary if the histogram is to be plotted and saved
-%        Examine cell plot must have figname rmse_*R/F*_row_Fit_traces and 
+% Usage: [modelBest, numComponents, muBest, stdevBest, proportionBest, minAIC, newThr1, newThr2, newPeakclass, minThreshold] = fit_gaussians_and_refine_threshold (data, fileName, label, varargin)
+% Arguments: TODO
+%       data must be a column vector of values; 
+%       maxNumComponents is defaulted to be 5
+%       the rest are only necessary if the histogram is to be plotted and saved
+%       Examine cell plot must have figname rmse_*R/F*_row_Fit_traces and 
 %           threshold plot must have figname rmse_*R/F*_row_Fit_threshold
 % 
 % Requires:    
@@ -14,7 +16,7 @@ function [BestModel, numComponents, Mu_best, Stdev_best, Prop_best, minAIC, new_
 %
 % 2016-08-03 - Created
 % 2016-09-15 - Added fitmode
-% 2016-09-30 - Added peakclass & peakclass_labels
+% 2016-09-30 - Added peakclass & peakclassLabels
 % 2016-09-30 - Took out spontaneous spikes 
 % 2016-11-01 - Replaced ProbDistUnivParam with makedist, also from the Statistics and Machine Learning Toolbox
 % 2017-02-08 - BT - Changed legend location for RMSE graph fitting
@@ -28,31 +30,31 @@ function [BestModel, numComponents, Mu_best, Stdev_best, Prop_best, minAIC, new_
 
 %% Set parameters
 prec = 10^-4;               % Precision
-remove_cells = [5 14 19];   % Cell #s to examine in RMSE plotting
+remove_cells = [5, 14, 19]; % Cell #s to examine in RMSE plotting
 
 %% Default values for optional arguments
-defaultMax_NumComponents = 5;
-defaultOld_Thr = 0;
-defaultThr_Min = 0;
+defaultMaxNumComponents = 5;
+defaultOldThr = 0;
+defaultThrMin = 0;
 defaultOutFolder = pwd;
 defaultFitMode = 0;
 defaultPeakClass = [];
 defaultPeakClass_Labels = {}; % length must be the same as unique elements in peakclass, set 'data' as prefix in dependent argument
 defaultMin_Threshold = 0;
-defaultThresMode = 'minFirstTwoComponents';     % 'minFirstTwoComponents' - Passive fitting for Narrowest_peak_2ndder_nospont & RMSE
+defaultThresMode = 'threeStdFirstComponent';     % 'minFirstTwoComponents' - Passive fitting for Narrowest_peak_2ndder_nospont & RMSE
                                                 % 'threeStdFirstComponent' - Initial slopes
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Add directories to search path for required functions
-if exist('/home/Matlab/', 'dir') == 7
-    functionsdirectory = '/home/Matlab/';
-elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
-    functionsdirectory = '/scratch/al4ng/Matlab/';
-else
-    error('Valid functionsdirectory does not exist!');
-end
 if ~isdeployed
+    if exist('/home/Matlab/', 'dir') == 7
+        functionsdirectory = '/home/Matlab/';
+    elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
+        functionsdirectory = '/scratch/al4ng/Matlab/';
+    else
+        error('Valid functionsdirectory does not exist!');
+    end
     addpath(fullfile(functionsdirectory, '/Adams_Functions/'));    % for histg.m
 end
 
@@ -62,20 +64,20 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'Data', ...
+addRequired(iP, 'data', ...
     @(x) validateattributes(x, {'numeric'}, {'nonempty', 'column'}));
-addRequired(iP, 'FileName', ...
+addRequired(iP, 'fileName', ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addRequired(iP, 'Label', ...
+addRequired(iP, 'label', ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'Max_NumComponents', defaultMax_NumComponents, ...
+addParameter(iP, 'MaxNumComponents', defaultMaxNumComponents, ...
     @(x) validateattributes(x, {'numeric'}, ...
         {'scalar', 'positive', 'integer'}));
-addParameter(iP, 'Old_Thr', defaultOld_Thr, ...
+addParameter(iP, 'OldThr', defaultOldThr, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
-addParameter(iP, 'Thr_Min', defaultThr_Min, ...
+addParameter(iP, 'ThrMin', defaultThrMin, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'OutFolder', defaultOutFolder, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
@@ -84,42 +86,40 @@ addParameter(iP, 'FitMode', defaultFitMode, ...
         {'>=', 0, '<=', 2}));
 addParameter(iP, 'PeakClass', defaultPeakClass, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
-addParameter(iP, 'PeakClass_Labels', defaultPeakClass_Labels, ...
+addParameter(iP, 'PeakClassLabels', defaultPeakClass_Labels, ...
     @(x) validateattributes(x, {'cell'}, {'vector'}));
-addParameter(iP, 'Min_Threshold', defaultMin_Threshold, ...
+addParameter(iP, 'MinThreshold', defaultMin_Threshold, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'ThresMode', defaultThresMode, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
-parse(iP, Data, FileName, Label, varargin{:});
-data = iP.Results.Data;
-filename = iP.Results.FileName;
-label = iP.Results.Label;
-max_numComponents = iP.Results.Max_NumComponents;
-old_thr = iP.Results.Old_Thr;
-thr_min = iP.Results.Thr_Min;
+parse(iP, data, fileName, label, varargin{:});
+maxNumComponents = iP.Results.MaxNumComponents;
+oldThr = iP.Results.OldThr;
+thrMin = iP.Results.ThrMin;
 outfolder = iP.Results.OutFolder;
 fitmode = iP.Results.FitMode;
 peakclass = iP.Results.PeakClass;
-peakclass_labels = iP.Results.PeakClass_Labels;
-min_threshold = iP.Results.Min_Threshold;
+peakclassLabels = iP.Results.PeakClassLabels;
+minThreshold = iP.Results.MinThreshold;
 thresMode = iP.Results.ThresMode; 
 
 % Set dependent argument defaults
-if isempty(peakclass) && isempty(peakclass_labels)
+if isempty(peakclass) && isempty(peakclassLabels)
     peakclass = ones(size(data));
-    peakclass_labels = {'data'};
-elseif ~isempty(peakclass) && isempty(peakclass_labels)
-    peakclass_labels_prefix = peakclass_labels
-    peakclass_labels = cell(size(peakclass));
+    peakclassLabels = {'data'};
+elseif ~isempty(peakclass) && isempty(peakclassLabels)
+    peakclass_labels_prefix = peakclassLabels
+    peakclassLabels = cell(size(peakclass));
     for i = 1:length(peakclass)
-        peakclass_labels{i} = ['data' num2str(i)];
+        peakclassLabels{i} = ['data' num2str(i)];
     end
 end
 
 %% Set up log file
-logfile = fullfile(outfolder, strrep(filename, '.png', ['_fit_gaussians_', num2str(max_numComponents), 'maxcomplog.txt']));
+logSuffix = ['_fit_gaussians_', num2str(maxNumComponents), 'maxcomplog.txt'];
+logfile = fullfile(outfolder, strrep(filename, '.png', logSuffix));
 fid = fopen(logfile, 'w');
 
 %% Take out spontaneous spikes (peak class == 3)
@@ -142,9 +142,9 @@ dabs_max = max([abs(dmax) abs(dmin)]);
 ordomag = floor(log10(dabs_max));
 
 %% Find proper bounds and bins for histogram
-binw = 10^(ordomag - 1);        % Bin width
-left = floor(dmin/binw)*binw;        % left bound
-right = ceil(dmax/binw)*binw;        % right bound
+binw = 10^(ordomag - 1);            % Bin width
+left = floor(dmin/binw)*binw;       % left bound
+right = ceil(dmax/binw)*binw;       % right bound
 edges = (left:binw:right)';
 
 %% Find area of histogram
@@ -152,16 +152,16 @@ harea = binw * npts;
 
 %% Find the best Gaussian mixture fit
 if nargin < 2
-    max_numComponents = 5;
+    maxNumComponents = 5;
 end
-AIC = zeros(max_numComponents,1);
-GMModels = cell(max_numComponents,1);   % Preallocation of Gaussian mixture models
-Mus = cell(max_numComponents,1);        % Preallocation of means of Gaussian mixture components
-Stdevs = cell(max_numComponents,1);     % Preallocation of standard deviations of Gaussian mixture components
-Props = cell(max_numComponents,1);      % Preallocation of proportions of Gaussian mixture components
+AIC = zeros(maxNumComponents,1);
+GMModels = cell(maxNumComponents,1);   % Preallocation of Gaussian mixture models
+Mus = cell(maxNumComponents,1);        % Preallocation of means of Gaussian mixture components
+Stdevs = cell(maxNumComponents,1);     % Preallocation of standard deviations of Gaussian mixture components
+Props = cell(maxNumComponents,1);      % Preallocation of proportions of Gaussian mixture components
 options = statset('MaxIter', 1000);
 rng(1);                    % For reproducibility
-for k = 1:max_numComponents
+for k = 1:maxNumComponents
     try 
         GMModels{k} = fitgmdist(data, k, 'Options', options);    
         Mu = zeros(k, 1);
@@ -188,7 +188,8 @@ for k = 1:max_numComponents
                 Mus{k} = NaN;
                 Stdevs{k} = NaN;
                 Props{k} = NaN;
-                warning(['Ill-conditioned covariance created, skipping ' num2str(k) ' components.']);
+                warning(['Ill-conditioned covariance created, skipping ', ...
+                        num2str(k), ' components.']);
             otherwise
                 AIC(k) = NaN;
                 GMModels{k} = NaN;
@@ -200,24 +201,24 @@ for k = 1:max_numComponents
     end
 end
 [minAIC, numComponents] = min(AIC);
-BestModel = GMModels{numComponents};
-Mu_best = Mus{numComponents};
-Stdev_best = Stdevs{numComponents};
-Prop_best = Props{numComponents};
+modelBest = GMModels{numComponents};
+muBest = Mus{numComponents};
+stdevBest = Stdevs{numComponents};
+proportionBest = Props{numComponents};
 fprintf(fid, '\n GM Model selected has %d components \n', numComponents);
 fprintf(fid, '\n Mean(s)\tStandard deviation(s)\tProportions(s)\n');
 for i = 1:numComponents
-    fprintf(fid, '%g\t%g\t%g\n', Mu_best(i), Stdev_best(i), Prop_best(i));
+    fprintf(fid, '%g\t%g\t%g\n', muBest(i), stdevBest(i), proportionBest(i));
 end
 
 %% Extract info about the Gaussian mixture fit
 x = (left:prec:right)';
-Pdf = pdf(BestModel, x);
+Pdf = pdf(modelBest, x);
 Normal = cell(numComponents, 1);
 Normalpdf = cell(numComponents, 1);
 for i = 1:numComponents
     % Create a normal distribution for this component
-    Normal{i} = makedist('Normal', 'mu', Mu_best(i), 'sigma', Stdev_best(i));
+    Normal{i} = makedist('Normal', 'mu', muBest(i), 'sigma', stdevBest(i));
 
     % Get the probability density function
     Normalpdf{i} = pdf(Normal{i}, x);
@@ -228,56 +229,61 @@ if strcmp(thresMode, 'minFirstTwoComponents')
     if numComponents == 3                    % 2 possible thresholds
 
         % Find the minimum between lower two Gaussians
-        left1 = max(floor(Mu_best(1)/prec)*prec, thr_min);  % left bound; threshold can't be lower than thr_min
-        right1 = max(ceil(Mu_best(2)/prec)*prec, left1);    % right bound
+        left1 = max(floor(muBest(1)/prec)*prec, thrMin);  % left bound; threshold can't be lower than thrMin
+        right1 = max(ceil(muBest(2)/prec)*prec, left1);     % right bound
         xx1 = (left1:prec:right1)';
-        Pdf_part1 = pdf(BestModel, xx1);
+        Pdf_part1 = pdf(modelBest, xx1);
         [minprob1 minprob1_ind] = min(Pdf_part1);
-        new_thr1 = xx1(minprob1_ind);
+        newThrLower = xx1(minprob1_ind);
 
         % Find the minimum between upper two Gaussians
-        left2 = max(floor(Mu_best(2)/prec)*prec, thr_min);  % left bound; threshold can't be lower than thr_min
-        right2 = max(ceil(Mu_best(3)/prec)*prec, left2);    % right bound
+        left2 = max(floor(muBest(2)/prec)*prec, thrMin);  % left bound; threshold can't be lower than thrMin
+        right2 = max(ceil(muBest(3)/prec)*prec, left2);    % right bound
         xx2 = (left2:prec:right2)';
-        Pdf_part2 = pdf(BestModel, xx2);
+        Pdf_part2 = pdf(modelBest, xx2);
         [minprob2 minprob2_ind] = min(Pdf_part2);
-        new_thr2 = xx2(minprob2_ind);
+        newThrUpper = xx2(minprob2_ind);
 
         % Use the closest value to the old threshold as the new threshold
-        [~, choice] = min(abs([new_thr1 new_thr2] - old_thr));
+        [~, choice] = min(abs([newThrLower, newThrUpper] - oldThr));
         if choice == 1
-            new_thr = new_thr1;
-            alt_thr = new_thr2;
+            newThr1 = newThrLower;
+            newThr2 = newThrUpper;
         elseif choice == 2
-            new_thr = new_thr2;
-            alt_thr = new_thr1;
+            newThr1 = newThrUpper;
+            newThr2 = newThrLower;
         else
             error('threshold is wrong!')
         end
 
-        fprintf(fid, 'New LTS threshold is %g V^2/s^2\n', new_thr);
-        fprintf(fid, 'Alternate LTS threshold is %g V^2/s^2\n', alt_thr);
+        fprintf(fid, 'New LTS threshold is %g V^2/s^2\n', newThr1);
+        fprintf(fid, 'Alternate LTS threshold is %g V^2/s^2\n', newThr2);
         fclose(fid);
      
     % elseif numComponents == 4                % 3 possible thresholds
     else
-        comp1 = find(Mu_best < old_thr, 1, 'last');         % Gaussian peak left of old_thr
-        comp2 = find(Mu_best > old_thr, 1);                 % Gaussian peak right of old_thr
-        value1 = Mu_best(comp1);
-        value2 = Mu_best(comp2);
+        comp1 = find(muBest < oldThr, 1, 'last');         % Gaussian peak left of oldThr
+        comp2 = find(muBest > oldThr, 1);                 % Gaussian peak right of oldThr
+        value1 = muBest(comp1);
+        value2 = muBest(comp2);
 
-        left1 = max(floor(value1/prec)*prec, thr_min);      % left bound; threshold can't be lower than thr_min
+        left1 = max(floor(value1/prec)*prec, thrMin);      % left bound; threshold can't be lower than thrMin
         right1 = ceil(value2/prec)*prec;                    % right bound
         xx = (left1:prec:right1)';
-        Pdf_part = pdf(BestModel, xx);
+        Pdf_part = pdf(modelBest, xx);
         [minprob minprob_ind] = min(Pdf_part);
-        new_thr = xx(minprob_ind);
-        fprintf(fid, 'New LTS threshold is %g V^2/s^2\n', new_thr);
+        newThr1 = xx(minprob_ind);
+        fprintf(fid, 'New LTS threshold is %g V^2/s^2\n', newThr1);
         fclose(fid);
     end
 elseif strcmp(thresMode, 'threeStdFirstComponent')
-    new_thr = Mu_best(1) + 3 * Stdev_best(1);
-    alt_thr = Mu_best(1) - 3 * Stdev_best(1);
+    maxGaussians = zeros(size(proportionBest)); % holds maximum value per component
+    for idx = 1:length(Normalpdf)   % compute maximum value of each component
+        maxGaussians(idx) = max(Normalpdf{idx} * proportionBest(idx) * harea);
+    end
+    [~, bestGaussianIdx] = max(maxGaussians);    % index of most representative Gaussian
+    newThr1 = muBest(bestGaussianIdx) + 3 * stdevBest(bestGaussianIdx);   % right bound
+    newThr2 = muBest(bestGaussianIdx) - 3 * stdevBest(bestGaussianIdx);   % left bound
 end
 
 %% Plot and save histogram with fitted Gaussian mixture pdf
@@ -289,11 +295,11 @@ elseif fitmode == 2
     fitsuffix = ' (for fitting)';
 end
 
-% Copy peakclass to new_peakclass as template
-new_peakclass = peakclass;
+% Copy peakclass to newPeakclass as template
+newPeakclass = peakclass;
 
-% Copy peakclass_labels to new_peakclass_labels as template if not changed later
-new_peakclass_labels = peakclass_labels;
+% Copy peakclassLabels to new_peakclass_labels as template if not changed later
+new_peakclass_labels = peakclassLabels;
 
 if nargin > 3       %%% TODO: Why 3? BT - in the original source
     h = figure(400);
@@ -301,8 +307,8 @@ if nargin > 3       %%% TODO: Why 3? BT - in the original source
     set(h, 'Name', ['Distribution of ', label]);
     clf(h)
     opt.edges = edges;                      % needed for histg
-    opt.group_names = peakclass_labels';    % needed for histg
-    if length(peakclass_labels) >= 10 && ...
+    opt.group_names = peakclassLabels';    % needed for histg
+    if length(peakclassLabels) >= 10 && ...
         strcmp(label, 'RMSE (mV) in the falling phase');
                                             % RMSE falling phase plot analysis plots
         if ~isempty(strfind(filename, 'rmse_F_row_Fit_threshold'))        
@@ -326,42 +332,42 @@ if nargin > 3       %%% TODO: Why 3? BT - in the original source
                                 % track indices of cells not being examined
             end
             opt.group_names = new_peakclass_labels';        % for histg.m
-            new_peakclass(intersectm(not_remove_cells_indices)) = 1;    
+            newPeakclass(intersectm(not_remove_cells_indices)) = 1;    
                                 % change all indices of cells not being examined to 1
             for q = 1:size(remove_cells,2)  % cells being examined given new classes for histg.m
-                new_peakclass(peakclass == remove_cells(q)) = q + 1;
+                newPeakclass(peakclass == remove_cells(q)) = q + 1;
             end
         end
     end
-    z = histg(data, new_peakclass, opt);    % plots stacked histogram
+    z = histg(data, newPeakclass, opt);    % plots stacked histogram
     for i = 1:numComponents                 % plots gaussian components
-        plot(x, Normalpdf{i} * Prop_best(i) * harea, 'w', 'Displayname', ['component #', num2str(i)]);
+        plot(x, Normalpdf{i} * proportionBest(i) * harea, 'w', 'Displayname', ['component #', num2str(i)]);
     end
     full_dist = plot(x, Pdf * harea, 'r', 'LineWidth', 1, ...
                     'Displayname', 'full distribution');    % plots full distribution
     if numComponents == 3
-        line([new_thr new_thr], [0 npts], 'Color', 'r', 'LineStyle', '--', ...
-                'Displayname', ['New threshold = ', num2str(new_thr)]); hold on;
-        line([alt_thr alt_thr], [0 npts], 'Color', 'b', 'LineStyle', '--', ...
-            'Displayname', ['Alternate threshold = ', num2str(alt_thr)]);
+        line([newThr1 newThr1], [0 npts], 'Color', 'r', 'LineStyle', '--', ...
+                'Displayname', ['New threshold = ', num2str(newThr1)]); hold on;
+        line([newThr2 newThr2], [0 npts], 'Color', 'b', 'LineStyle', '--', ...
+            'Displayname', ['Alternate threshold = ', num2str(newThr2)]);
     end
-    new_thr = -1; alt_thr = -1;              % temp        %%% TODO: annotate here
+    newThr1 = -1; newThr2 = -1;              % temp        %%% TODO: annotate here
     xlim([left right]); 
     ylim([0 max(Pdf * harea)]); 
     xlabel(label)
     ylabel('# of sweeps')
     title(['Distribution of ', label, fitsuffix]);
-    if length(peakclass_labels) < 10        % Legend for 2nd derivative, using peakclass
+    if length(peakclassLabels) < 10        % Legend for 2nd derivative, using peakclass
         % legend('Location', 'northwest'); %
         legend('Location', 'northeast'); %%% for fitting initial slopes
-    elseif length(peakclass_labels) >= 10 && ...
+    elseif length(peakclassLabels) >= 10 && ...
         strcmp(label, 'RMSE (mV) in the rising phase')
         % Legend for rising RMSE, location northwest overlaps plot; peakclass = cellidrow
         [min_val, min_ind] = min(full_dist.YData);  % Minimum y value of data to determine threshold
         x_min = full_dist.XData(min_ind);           % Corresponding x value of minimum y value
         if strfind(filename, 'rmse_R_row_Fit_threshold')    % above/below threshold RMSE plot
-            new_peakclass(data >= x_min) = 2;       % Change peakclasses to visibly identify traces above threshold
-            new_peakclass(data < x_min) = 1;        % All data above and below min x value altered
+            newPeakclass(data >= x_min) = 2;       % Change peakclasses to visibly identify traces above threshold
+            newPeakclass(data < x_min) = 1;        % All data above and below min x value altered
             new_peakclass_labels = {'Above Threshold', 'Below Threshold'};
             opt.group_names = new_peakclass_labels';
         elseif ~isempty(strfind(filename, 'rmse_R_row_Fit_traces')) && ...
@@ -374,17 +380,17 @@ if nargin > 3       %%% TODO: Why 3? BT - in the original source
                                 % track indices of cells not being examined
             end
             opt.group_names = new_peakclass_labels';    % for histg.m
-            new_peakclass(intersectm(not_remove_cells_indices)) = 1;    
+            newPeakclass(intersectm(not_remove_cells_indices)) = 1;    
                                 % change all indices of cells not being examined to 1
             for q = 1:size(remove_cells,2)        % cells being examined given new classes for histg.m
-                new_peakclass(peakclass == remove_cells(q)) = q+1;
+                newPeakclass(peakclass == remove_cells(q)) = q+1;
             end
         end
         clf(h);    % Clear figure to replot with new peakclasses
-        histg(data, new_peakclass, opt);    % Replot with new peakclass identifier
-        new_peakclass = new_peakclass';        % Inverted to pass as argument from rising to falling phase
+        histg(data, newPeakclass, opt);    % Replot with new peakclass identifier
+        newPeakclass = newPeakclass';        % Inverted to pass as argument from rising to falling phase
         for i = 1:numComponents            % Plot each Gaussian component
-            plot(x, Normalpdf{i} * Prop_best(i) * harea, 'w', 'Displayname', ['component #', num2str(i)]);
+            plot(x, Normalpdf{i} * proportionBest(i) * harea, 'w', 'Displayname', ['component #', num2str(i)]);
         end
         full_dist = plot(x, Pdf * harea, 'r', 'LineWidth', 1, 'Displayname', 'full distribution');    % Plot the final fit
         xlim([left right]); 
@@ -396,18 +402,18 @@ if nargin > 3       %%% TODO: Why 3? BT - in the original source
                                         % Revised legend, original if no analysis criteria met
 %        legend('Location', 'eastoutside');    % Revised legend, original if no analysis criteria met
         line([x_min x_min], [0 npts], 'Color', 'r', 'LineStyle', '--', ...
-            'Displayname', ['New threshold = ', num2str(new_thr)]); hold on;    % Plot threshold line at minimum in rising
+            'Displayname', ['New threshold = ', num2str(newThr1)]); hold on;    % Plot threshold line at minimum in rising
         text(1.1, 0.95, ['Rising Threshold: ' num2str(x_min)], 'Units', 'normalized');        
                                         % Text at what RMSE the threshold is at
-            text(1.1, 0.85, ['Components: ' num2str(max_numComponents)], 'Units', 'normalized');    
+            text(1.1, 0.85, ['Components: ' num2str(maxNumComponents)], 'Units', 'normalized');    
                                         % Text how many components are present
-        min_threshold = x_min;    % Pass as argument to falling phase for labelling
-      elseif length(peakclass_labels) >= 10 && ...
+        minThreshold = x_min;    % Pass as argument to falling phase for labelling
+      elseif length(peakclassLabels) >= 10 && ...
         strcmp(label, 'RMSE (mV) in the falling phase')        % Legend for falling RMSE without replotting
         legend(new_peakclass_labels, 'Location', 'eastoutside');    % Revised legend, original if no analysis criteria met
 %        legend('Location', 'eastoutside');    % Revised legend, original if no analysis criteria met
-        text(1.1, 0.95, ['Rising Threshold: ' num2str(min_threshold)], 'Units', 'normalized');        % Text at what RMSE the threshold is at
-        text(1.1, 0.85, ['Components: ' num2str(max_numComponents)], 'Units', 'normalized');    % Text how many components are present    
+        text(1.1, 0.95, ['Rising Threshold: ' num2str(minThreshold)], 'Units', 'normalized');        % Text at what RMSE the threshold is at
+        text(1.1, 0.85, ['Components: ' num2str(maxNumComponents)], 'Units', 'normalized');    % Text how many components are present    
     end
 end
 if nargin > 4        %%% TODO: Why 4? BT - also in original source
@@ -448,23 +454,23 @@ end
     end
 
     if numComponents == 3
-        legend(['New threshold = ', num2str(new_thr)], ...
-            ['Alternate threshold = ', num2str(alt_thr)], ...
+        legend(['New threshold = ', num2str(newThr1)], ...
+            ['Alternate threshold = ', num2str(newThr2)], ...
             'Peak class #1', 'Peak class #2', 'Peak class #3', ...
             'Peak class #4', 'Peak class #5', 'Peak class #6', ...
             'Peak class #7', 'Location', 'northwest');
     else
-        legend(['New threshold = ', num2str(new_thr)], ...
+        legend(['New threshold = ', num2str(newThr1)], ...
             'Peak class #1', 'Peak class #2', 'Peak class #3', ...
             'Peak class #4', 'Peak class #5', 'Peak class #6', ...
             'Peak class #7', 'Location', 'northwest');
     end
 
-Normal{i} = ProbDistUnivParam('normal', [Mu_best(i) Stdev_best(i)]);
-new_peakclass(peakclass ~= 5 & peakclass ~= 14 & peakclass ~= 19) = 1;
-        new_peakclass(peakclass == 5) = 2;
-        new_peakclass(peakclass == 14) = 3;
-        new_peakclass(peakclass == 19) = 4;
+Normal{i} = ProbDistUnivParam('normal', [muBest(i) stdevBest(i)]);
+newPeakclass(peakclass ~= 5 & peakclass ~= 14 & peakclass ~= 19) = 1;
+        newPeakclass(peakclass == 5) = 2;
+        newPeakclass(peakclass == 14) = 3;
+        newPeakclass(peakclass == 19) = 4;
 
                         %%%TODO: You should annotate what you are doing here
                         %%%     I will have a hard time understanding if you don't annotate here
@@ -473,12 +479,16 @@ new_peakclass(peakclass ~= 5 & peakclass ~= 14 & peakclass ~= 19) = 1;
                         %%%     should go under File history. This way I can find out where you change
                         %%%    things just by CTRL+F the variables
 if find(remove_cells == -1) > 0            % above/below threshold RMSE plot
-    if length(peakclass_labels) >= 10 && ...    % length over 10 should only be in cases of RMSE plots
-       length(unique(peakclass)) ~= length(peakclass_labels)    % if peakclasses are removed/absent from peakclass
-        new_peakclass = reorder(new_peakclass);        % see reorder.m in /home/Matlab/Brians_Functions/ e.g. [1 2 4 4 5] -> [1 2 3 3 4]
+    if length(peakclassLabels) >= 10 && ...    % length over 10 should only be in cases of RMSE plots
+       length(unique(peakclass)) ~= length(peakclassLabels)    % if peakclasses are removed/absent from peakclass
+        newPeakclass = reorder(newPeakclass);        % see reorder.m in /home/Matlab/Brians_Functions/ e.g. [1 2 4 4 5] -> [1 2 3 3 4]
     end
 addpath(fullfile(functionsdirectory, '/Brians_Functions/'));    % for reorder.m
 %        /home/Matlab/Brians_Functions/reorder.m
-function [BestModel, numComponents, Mu_best, Stdev_best, Prop_best, minAIC, new_thr, alt_thr, new_peakclass, min_threshold] = fit_gaussians_and_refine_threshold (data, max_numComponents, old_thr, thr_min, label, outfolder, filename, fitmode, peakclass, peakclass_labels, min_threshold)
+function [modelBest, numComponents, muBest, stdevBest, proportionBest, minAIC, newThr1, newThr2, newPeakclass, minThreshold] = fit_gaussians_and_refine_threshold (data, maxNumComponents, oldThr, thrMin, label, outfolder, filename, fitmode, peakclass, peakclassLabels, minThreshold)
+
+data = iP.Results.Data;
+filename = iP.Results.FileName;
+label = iP.Results.Label;
 
 %}
