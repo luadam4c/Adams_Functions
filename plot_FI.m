@@ -72,7 +72,7 @@ end
 if ~isdeployed
     addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));
                                                 % for abf2load.m or abfload.m
-    addpath(fullfile(functionsdirectory, '/Brians_Functions/'));        '
+    addpath(fullfile(functionsdirectory, '/Brians_Functions/'));
                                                 % for identify_channels.m
 end
 

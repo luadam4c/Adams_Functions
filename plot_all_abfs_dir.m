@@ -24,9 +24,9 @@ function plot_all_abfs_dir (directory, expmode)
 % 2017-04-19 - BT - Changed detection method to difference of sweep averages
 % 2018-01-24 - Added isdeployed
 
-max_swp_spacing = 2;
+maxSwpSpacing = 2;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Add directories to search path for required functions
 if exist('/home/Matlab/', 'dir') == 7
@@ -58,7 +58,8 @@ end
 nfiles = numel(filenames);
 
 %% Plot traces from each file using plot_traces_abf.m
-parfor k = 1:nfiles
+%parfor k = 1:nfiles
+for k = 1:nfiles
 	% Plot all traces
 	[d, sius] = plot_traces_abf(filenames{k}, expmode);
 	[is_CI, CI_range] = identify_CI(d);
@@ -68,6 +69,7 @@ parfor k = 1:nfiles
 	end
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
@@ -103,7 +105,7 @@ for file = files'
 		reduction = abs(diff(diff(avgs_byswp)));			% reduces sweeps into differences between successive sweep averages		%%% TODO: this is not differences but rather differences of differences
 		[~, max_swp] = max(avgs_byswp);					% highest sweep by average
 		max_swp_peaks_avg = mean(findpeaks(injection_data(:, max_swp)));	% average peak value of greatest sweep
-		if reduction < max_swp_spacing & max_swp_peaks_avg > 100 & size(d, 3) > 1	% sweep avgs should be separated by constant
+		if reduction < maxSwpSpacing & max_swp_peaks_avg > 100 & size(d, 3) > 1	% sweep avgs should be separated by constant
 			plot_FI(filenames{k}, d, sius);
 		end
 	end
