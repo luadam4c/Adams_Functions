@@ -30,8 +30,8 @@ function [model0, model1, pdfModel2, pdfModel3, pdfModel4, outparams] = fit_IEI 
 %       /home/Matlab/Adams_Functions/stderr.m
 %
 % Used By:
+%       cd/compute_iei_thresholds.m
 %       /media/adamX/Paula_IEIs/paula_iei3.m
-%       /media/adamX/Paula_IEIs/paula_iei5.m
 %
 % File History: 
 % 2017-10-19 - Moved from paula_isi2.m

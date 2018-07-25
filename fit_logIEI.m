@@ -27,6 +27,7 @@ function [model0, model1, pdfModel2, pdfModel3, outparams] = fit_logIEI (logData
 %                   default == true
 %
 % Used By:
+%       cd/compute_iei_thresholds.m
 %       /media/adamX/Paula_IEIs/paula_iei4.m
 %
 % File History: 
@@ -47,6 +48,7 @@ linewidthLines = 0.5;               % line width for lines
 colorHist = 'k';                    % color of histogram
 lambdaInit = 0.7;                   % initial weight of Gaussian part
                                     %   in Gaussian-Exp-Exponential Fit
+
 %% Default values for optional arguments
 xUnitDefault = '';                  % default unit for IEIs
 xLimitsDefault = [];                % default x limits of histogram
