@@ -9,7 +9,9 @@ Last Updated 2018-07-24 by Adam Lu
 - [**abf2mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/abf2mat.m): Converts .abf files to .mat files with time vector (in ms) included
 - [**adjust_peaks.m**](https://github.com/blabuva/Adams_Functions/blob/master/adjust_peaks.m): Adjusts peak indices and values given approximate peak indices
 - [**all_ordered_pairs.m**](https://github.com/blabuva/Adams_Functions/blob/master/all_ordered_pairs.m): Generates a cell array of all ordered pairs of elements/indices, one from each vector
+- [**analyze_adicht.m**](https://github.com/blabuva/Adams_Functions/blob/master/analyze_adicht.m): 
 - [**analyzeCI.m**](https://github.com/blabuva/Adams_Functions/blob/master/analyzeCI.m): date = '20140729';
+- [**analyze_cobalt.m**](https://github.com/blabuva/Adams_Functions/blob/master/analyze_cobalt.m): clear all force hidden
 - [**atf2sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/atf2sheet.m): Converts .atf text file(s) to a spreadsheet file(s) (type specified by the 'SheetType' argument)
 - [**bar_w_CI.m**](https://github.com/blabuva/Adams_Functions/blob/master/bar_w_CI.m): Plot bar graph (esp. grouped) with confidence intervals
 - [**boltzmann.m**](https://github.com/blabuva/Adams_Functions/blob/master/boltzmann.m): the sigmoidal Boltzmann function
@@ -76,6 +78,7 @@ Last Updated 2018-07-24 by Adam Lu
 - [**plot_grouped_scatter.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_grouped_scatter.m): Plot and save a grouped scatter plot with 95% confidence ellipses
 - [**plot_pdf.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pdf.m): Plots scaled pdf fit of data X and return vectors for the plots
 - [**plot_raster.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_raster.m): Make a raster plot from a cell array of event time arrays
+- [**plot_signals.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_signals.m): 
 - [**plot_traces_abf_EEG.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_abf_EEG.m): Usage: plot_traces_abf_EEG (abffilename, left, right)
 - [**plot_traces_abf.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_abf.m): Takes an abf file and plots all traces
 - [**plot_traces_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_mat.m): Plot traces from mat file
@@ -85,6 +88,7 @@ Last Updated 2018-07-24 by Adam Lu
 - [**print_next_in_csv.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_next_in_csv.m): What to print next in a csv file
 - [**print_or_show_message.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_or_show_message.m): Either print a message in standard output or show a message box
 - [**print_structure.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_structure.m): Display all fields of a structure recursively
+- [**read_adicht.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_adicht.m): 
 - [**remove_outliers.m**](https://github.com/blabuva/Adams_Functions/blob/master/remove_outliers.m): Removes outliers from a data matrix and return a new matrix
 - [**rescale_vec.m**](https://github.com/blabuva/Adams_Functions/blob/master/rescale_vec.m): Rescale a vector (vec1) to be in the same ballpark as another vector (vec2),
 - [**restore_fields.m**](https://github.com/blabuva/Adams_Functions/blob/master/restore_fields.m): Set each field specified in varargin to previous values from the field strcat(field, '_prev')

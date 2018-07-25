@@ -11,7 +11,8 @@ function [d, sius, tvec] = plot_traces_abf (filename, expmode, d, sius, outfolde
 % Arguments:
 %       filename    - must be either the full address or must be in current directory
 %                       .abf is not needed (e.g. 'B20160908_0004')
-%       expmode     -   'EEG'
+%       expmode     - TODO
+%                       'EEG'
 %                       'patch'
 %       d           - (opt) full data
 %       sius        - (opt) sampling interval in microseconds
@@ -54,6 +55,7 @@ function [d, sius, tvec] = plot_traces_abf (filename, expmode, d, sius, outfolde
 % 2017-06-16 - Now uses identify_channels.m
 % 2017-06-16 - Changed chLabels to include units
 % 2018-01-24 - Added isdeployed
+% 2018-07-24 - Now uses a try catch statement
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
