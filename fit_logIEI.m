@@ -40,6 +40,8 @@ function [model0, model1, pdfModel2, pdfModel3, outparams] = fit_logIEI (logData
 % 2017-12-01 - threshold, void -> threshold1, void1, threshold2, void2
 % 2017-12-11 - Constrain fminbnd so that mu1Model0 would not stop 
 %               at a local maximum
+% 2018-07-30 - Model 1 now fits truncated data based on thresholdModel0
+% 2018-07-30 - Added zScoreCutoff and thresholdModel1
 
 %% Parameters
 nPoints = 500;                      % number of points for plotting pdfs
@@ -48,6 +50,8 @@ linewidthLines = 0.5;               % line width for lines
 colorHist = 'k';                    % color of histogram
 lambdaInit = 0.7;                   % initial weight of Gaussian part
                                     %   in Gaussian-Exp-Exponential Fit
+zScoreCutoff = 2;                   % number of standard deviations 
+                                    %   away from the mean for thresholdModel1
 
 %% Default values for optional arguments
 xUnitDefault = '';                  % default unit for IEIs
@@ -62,7 +66,7 @@ plotFlagDefault = true;             % whether to plot by default
 % Check number of required arguments
 if nargin < 2
     error(['Not enough input arguments, ', ...
-            'type ''help fit_logIEI'' for usage']);
+            'type ''help %s'' for usage'], mfilename);
 end
 
 % Set up Input Parser Scheme
@@ -218,8 +222,16 @@ else
     spacingModel0 = mu2Model0 - mu1Model0;
 end
 
-%% Fit logData to one Gaussian
-model1 = fitgmdist(logData, 1);
+%% Fit truncated logData to one Gaussian
+% Truncate logData with thresholdModel0
+if ~isnan(thresholdModel0)
+    logDataTruncated = logData(logData < thresholdModel0);
+else
+    logDataTruncated = logData;
+end
+
+% Fit to a single Gaussian
+model1 = fitgmdist(logDataTruncated, 1);
 
 % Find mean and standard deviations for the fits
 muModel1 = model1.mu;
@@ -229,8 +241,12 @@ sigmaModel1 = model1.Sigma;
 pdfModel1 = @(X) pdf(model1, X);
 pdfPlotModel1 = harea * pdfModel1(x);
 
+% Find mean and standard deviations for the fits
+thresholdModel1 = muModel1 + zScoreCutoff * sigmaModel1;
+
+%% Fit logData to two Gaussians
+
 %{
-% Fit logData to two Gaussians
 model2 = fitgmdist(logData, 2);
 
 % Find mean and standard deviations for the fits
@@ -253,7 +269,6 @@ comp2Model2 = @(X) prop2Model2 * normpdf(X, mu2Model2, sigma2Model2);
 comp2PlotModel2 = harea * comp2Model2(x);
 %}
 
-%% Fit logData to two Gaussians
 mypdf2 = @(X, lambda, mu1, sigma1, mu2, sigma2) ...
                 lambda * normpdf(X, mu1, sigma1) + ...
                 (1 - lambda) * normpdf(X, mu2, sigma2);
@@ -605,6 +620,7 @@ if ~isempty(model1)
     outparams.pdfModel1 = pdfModel1;
     outparams.muModel1 = muModel1;
     outparams.sigmaModel1 = sigmaModel1;
+    outparams.thresholdModel1 = thresholdModel1;
 end
 
 if ~isempty(pdfModel2)
@@ -693,5 +709,16 @@ end
 
 % Use the mean plus 2 standard deviations as the threshold
 thresholdModel1 = muModel1 + 2 * sigmaModel1
+
+%% Fit logData to one Gaussian
+model1 = fitgmdist(logData, 1);
+
+% Find mean and standard deviations for the fits
+muModel1 = model1.mu;
+sigmaModel1 = model1.Sigma;
+
+% Get pdf and scaled pdf for the fit
+pdfModel1 = @(X) pdf(model1, X);
+pdfPlotModel1 = harea * pdfModel1(x);
 
 %}

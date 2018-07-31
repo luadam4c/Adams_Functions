@@ -5,12 +5,12 @@ function [m, fileName, logHeader, logVariables] = struct2mat (structure, varargi
 % Arguments: TODO
 %       structure   - must be a structure
 %       varargin    - 'FileName' - file name to save as, can include .mat or not    
-%                   must be a TODO
+%                   must be a string scalar or a character vector
 %                   default == 'mystruct.mat'
 %                   - 'LogHeader' - a cell array of labels 
 %                                   for the fields of the structure 
 %                   must be a cell array with the same length as 
-%                       the number of variables in the structure
+%                       the number of variables in the structure TODO
 %                   default == ''
 %
 % Used by:
@@ -18,24 +18,47 @@ function [m, fileName, logHeader, logVariables] = struct2mat (structure, varargi
 % File History:
 % 2016-11-07 Envisioned
 % 2017-05-21 Created
-% TODO: Add a parameter FileName to allow user to provide a custom file name
-%       fileName = iP.FileName;
-% TODO: Add a parameter LogHeader to allow user to provide a custom log header
-%       logHeader = iP.LogHeader;
+% 2018-07-30 Implemented input parser 
+% 2018-07-30 Add a parameter FileName to allow user to provide 
+%               a custom file name
+% 2018-07-30 Add a parameter LogHeader to allow user to provide 
+%               a custom log header
 % 
 
-%% Constants
-DEFAULT_FILENAME = 'mystruct.mat';
+%% Hard-coded parameters
+DEFAULT_FILENAME = 'my_struct.mat';
+
+%% Default values for optional arguments
+fileNameDefault = '';           % default file name
+logHeaderDefault = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments 
-%% TODO: Use input Parser instead
+% Check number of required arguments
 if nargin < 1
-    error('Not enough input arguments, type ''help struct2mat'' for usage');
-elseif ~isstruct(structure)
-    error('First argument must be a structure array!');
+    error(['Not enough input arguments, ', ...
+            'type ''help %s'' for usage'], mfilename);
 end
+
+% Set up Input Parser Scheme
+iP = inputParser;         
+iP.FunctionName = 'fit_logIEI';
+
+% Add required inputs to the Input Parser
+addRequired(iP, 'structure', ...              % a vector of IEIs
+    @(x) validateattributes(x, {'struct'}, {'2d'}));
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'FileName', fileNameDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'nonempty'}));
+addParameter(iP, 'LogHeader', logHeaderDefault, ...
+    @(x) validateattributes(x, {'cell'}, {'nonempty'}));
+
+% Read from the Input Parser
+parse(iP, structure, varargin{:});
+fileName = iP.Results.FileName;
+logHeader = iP.Results.LogHeader;
 
 %% Perform task
 % If no file name provided, create a file name
@@ -45,8 +68,8 @@ if isempty(fileName)
 
     % Create file name
     if ~isempty(structName)             % original structure name provided
-        % Use original structure name to for file name
-        fileName = [structName, '.mat'];
+        % Use original structure name appended with '_struct' for file name
+        fileName = [structName, '_struct.mat'];
     else                                % no original structure name provided
         % Use default file name
         fileName = DEFAULT_FILENAME;

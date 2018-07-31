@@ -39,6 +39,8 @@ function [model0, model1, pdfModel2, pdfModel3, pdfModel4, outparams] = fit_IEI 
 % 2017-10-19 - Added XUnit and TruncateFlag
 % 2018-01-19 - Combined code from fit_logIEI.m
 % 2018-01-21 - Implement Bodova et al 2015 
+% 2018-07-30 - Model 1 now fits truncated data based on thresholdModel0
+% 2018-07-30 - Added zScoreCutoff and thresholdModel1
 
 %% Parameters
 nPoints = 500;                      % number of points for plotting pdfs
@@ -49,6 +51,8 @@ lambdaInit = 0.7;                   % initial weight of Gaussian part
                                     %   in Gaussian-Exponential Fit
 pSQInit = 0.5;          % initial Spiking to Quiescent transition probability
 pQSInit = 0.5;          % initial Quiescent to Spiking transition probability
+zScoreCutoff = 2;                   % number of standard deviations 
+                                    %   away from the mean for thresholdModel1
 
 %% Default values for optional arguments
 xUnitDefault = '';                  % default unit for IEIs
@@ -63,7 +67,7 @@ plotFlagDefault = true;             % whether to plot by default
 % Check number of required arguments
 if nargin < 2
     error(['Not enough input arguments, ', ...
-            'type ''help fit_IEI'' for usage']);
+            'type ''help %s'' for usage'], mfilename);
 end
 
 % Set up Input Parser Scheme
@@ -225,8 +229,16 @@ else
     spacingModel0 = mu2Model0 - mu1Model0;
 end
 
-%% Fit data to one Gaussian
-model1 = fitgmdist(data, 1);
+%% Fit truncated data to one Gaussian
+% Truncate data with thresholdModel0
+if ~isnan(thresholdModel0)
+    dataTruncated = data(data < thresholdModel0);
+else
+    dataTruncated = data;
+end
+
+% Fit to a single Gaussian
+model1 = fitgmdist(dataTruncated, 1);
 
 % Find mean and standard deviations for the fits
 muModel1 = model1.mu;
@@ -236,32 +248,35 @@ sigmaModel1 = model1.Sigma;
 pdfModel1 = @(X) pdf(model1, X);
 pdfPlotModel1 = harea * pdfModel1(x);
 
-%{
-% Fit data to two Gaussians
-model2 = fitgmdist(data, 2);
-
 % Find mean and standard deviations for the fits
-[~, origInd] = sort(model2.mu, 'ascend');
-mu1Model2 = model2.mu(origInd(1));
-mu2Model2 = model2.mu(origInd(2));
-sigma1Model2 = model2.Sigma(origInd(1));
-sigma2Model2 = model2.Sigma(origInd(2));
-prop1Model2 = model2.ComponentProportion(origInd(1));
-prop2Model2 = model2.ComponentProportion(origInd(2));
+thresholdModel1 = muModel1 + zScoreCutoff * sigmaModel1;
 
-% Get scaled pdf for the fit
-pdfModel2 = @(X) pdf(model2, X);
-pdfPlotModel2 = harea * pdfModel2(x);
-
-% Get scaled pdfs for components of the mixture fit
-comp1Model2 = @(X) prop1Model2 * normpdf(X, mu1Model2, sigma1Model2);
-comp1PlotModel2 = harea * comp1Model2(x);
-comp2Model2 = @(X) prop2Model2 * normpdf(X, mu2Model2, sigma2Model2);
-comp2PlotModel2 = harea * comp2Model2(x);
-%}
-
+%% Fit data to two Gaussians
 try 
-    %% Fit data to two Gaussians
+    %{
+    % Fit data to two Gaussians
+    model2 = fitgmdist(data, 2);
+
+    % Find mean and standard deviations for the fits
+    [~, origInd] = sort(model2.mu, 'ascend');
+    mu1Model2 = model2.mu(origInd(1));
+    mu2Model2 = model2.mu(origInd(2));
+    sigma1Model2 = model2.Sigma(origInd(1));
+    sigma2Model2 = model2.Sigma(origInd(2));
+    prop1Model2 = model2.ComponentProportion(origInd(1));
+    prop2Model2 = model2.ComponentProportion(origInd(2));
+
+    % Get scaled pdf for the fit
+    pdfModel2 = @(X) pdf(model2, X);
+    pdfPlotModel2 = harea * pdfModel2(x);
+
+    % Get scaled pdfs for components of the mixture fit
+    comp1Model2 = @(X) prop1Model2 * normpdf(X, mu1Model2, sigma1Model2);
+    comp1PlotModel2 = harea * comp1Model2(x);
+    comp2Model2 = @(X) prop2Model2 * normpdf(X, mu2Model2, sigma2Model2);
+    comp2PlotModel2 = harea * comp2Model2(x);
+    %}
+
     mypdf2 = @(X, lambda, mu1, sigma1, mu2, sigma2) ...
                     lambda * normpdf(X, mu1, sigma1) + ...
                     (1 - lambda) * normpdf(X, mu2, sigma2);
@@ -702,6 +717,7 @@ if ~isempty(model1)
     outparams.pdfModel1 = pdfModel1;
     outparams.muModel1 = muModel1;
     outparams.sigmaModel1 = sigmaModel1;
+    outparams.thresholdModel1 = thresholdModel1;
 end
 
 if ~isempty(pdfModel2)
@@ -790,5 +806,16 @@ end
 
 %{
 OLD CODE:
+
+%% Fit data to one Gaussian
+model1 = fitgmdist(data, 1);
+
+% Find mean and standard deviations for the fits
+muModel1 = model1.mu;
+sigmaModel1 = model1.Sigma;
+
+% Get pdf and scaled pdf for the fit
+pdfModel1 = @(X) pdf(model1, X);
+pdfPlotModel1 = harea * pdfModel1(x);
 
 %}

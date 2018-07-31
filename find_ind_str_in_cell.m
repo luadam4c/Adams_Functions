@@ -58,6 +58,7 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 %       /home/Matlab/Adams_Functions/validate_string.m
 %       /home/Matlab/Adams_Functions/update_params.m
 %       /home/Matlab/Adams_Functions/increment_editbox.m
+%       /home/Matlab/Adams_Functions/ZG_extract_all_IEIs.m
 %       /home/Matlab/minEASE/read_params.m
 %       /home/Matlab/minEASE/gui_examine_events.m
 %       /home/Matlab/EEG_gui/EEG_gui.m
