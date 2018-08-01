@@ -39,7 +39,7 @@ function [ieisGrouped, ieisTable, ieisCellArray, ieisHeader, sheetPath, groupedF
 % File History:
 % 2018-07-30 Created by Adam Lu
 % 2018-08-01 Updated the directory pattern
-% 2018-08-01 Appended classesToInclude and timeWindow in the output file names
+% TODO: 2018-08-01 Appended classesToInclude and timeWindow in the output file names
 % 
 
 %% Hard-coded parameters
@@ -127,14 +127,14 @@ for iDir = 1:nSubdirs
     % Extract the inter-event intervals
     ieisAllCells{iDir} = output.interEventIntervals;
 
-    % Extract the slice and cell labels
+    % Extract the group, slice and cell labels
     tempCell1 = strsplit(groupSliceCellLabel, '_');
-    sliceLabelAllCells{iDir} = tempCell1{1};
-    cellLabelAllCells{iDir} = tempCell1{2};
+    groupLabelAllCells{iDir} = tempCell1{1};
+    sliceLabelAllCells{iDir} = tempCell1{2};
+    cellLabelAllCells{iDir} = tempCell1{3};
 end
 
 %% Combine inter-event intervals of the same slice and of the same group
-
 % Find all unique groups
 uniqueGroups = unique(groupLabelAllCells);
 
