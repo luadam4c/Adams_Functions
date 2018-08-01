@@ -1,6 +1,6 @@
-function [ieisGrouped, ieisTable, ieisCellArray, ieisHeader, sheetPath, matfilePath] = ZG_extract_all_IEIs (varargin)
+function [ieisGrouped, ieisTable, ieisCellArray, ieisHeader, sheetPath, groupedFilePath, cellArrayFilePath] = ZG_extract_all_IEIs (varargin)
 %% Extract all the inter-event intervals from an all_output directory
-% Usage: [ieisGrouped, ieisTable, ieisCellArray, ieisHeader, sheetPath, matfilePath] = ZG_extract_all_IEIs (varargin)
+% Usage: [ieisGrouped, ieisTable, ieisCellArray, ieisHeader, sheetPath, groupedFilePath, cellArrayFilePath] = ZG_extract_all_IEIs (varargin)
 % Outputs:
 %       TODO
 % Arguments:
@@ -8,9 +8,12 @@ function [ieisGrouped, ieisTable, ieisCellArray, ieisHeader, sheetPath, matfileP
 %                                       many subdirectories named by slice_cell
 %                   must be a valid directory
 %                   default == pwd
-%                   - 'OutFileBase': the output file base name
+%                   - 'GroupedFileBase': the output structure file base name
 %                   must be a string scalar or a character vector
 %                   default == 'ieisGrouped'
+%                   - 'CellArrayFileBase': the output cell array file base name
+%                   must be a string scalar or a character vector
+%                   default == 'ieisCellArray'
 %                   - 'SheetType': sheet type; 
 %                       e.g., 'xlsx', 'csv', etc.
 %                   could be anything recognised by the readtable() function 
@@ -35,18 +38,19 @@ function [ieisGrouped, ieisTable, ieisCellArray, ieisHeader, sheetPath, matfileP
 %
 % File History:
 % 2018-07-30 Created by Adam Lu
+% 2018-08-01 Updated the directory pattern
+% 2018-08-01 Appended classesToInclude and timeWindow in the output file names
 % 
 
 %% Hard-coded parameters
-masterListFile = '/home/barrettlab/holySheet/CaImagingExperiments_MasterList.xlsx';
-masterListTab = '4mark';
-dirPattern = 'data[0-9]*_cell[0-9]*';
-dataDirNamesColNum = 3;     % dataDirNames column number in the master list tab
-groupLabelsColNum = 5;      % groupLabels column number in the master list tab
+dirRegexp = 'x[A-Za-z0-9]*_data[0-9]*_cell[0-9]*';
+                                % regular expression pattern 
+                                %   for each output subdirectory
 
 %% Default values for optional arguments
 allOutputDirDefault = pwd;
-outFileBaseDefault = 'ieisGrouped';
+groupedFileBaseDefault = 'ieisGrouped';
+cellArrayFileBaseDefault = 'ieisCellArray';
 sheetTypeDefault = 'xlsx';      % default spreadsheet type
 classesToIncludeDefault = 1:5;
 timeWindowDefault = [90, 600];
@@ -63,7 +67,9 @@ addParameter(iP, 'AllOutputDir', allOutputDirDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
                                                 % introduced after R2016b
 %    @(x) validateattributes(x, {'char', 'string'}, {'nonempty'}));
-addParameter(iP, 'OutFileBase', outFileBaseDefault, ...
+addParameter(iP, 'GroupedFileBase', groupedFileBaseDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'CellArrayFileBase', cellArrayFileBaseDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SheetType', sheetTypeDefault, ...
     @(x) all(issheettype(x, 'ValidateMode', true)));
@@ -75,7 +81,8 @@ addParameter(iP, 'TimeWindow', timeWindowDefault, ...
 % Read from the Input Parser
 parse(iP, varargin{:});
 allOutputDir = iP.Results.AllOutputDir;
-outFileBase = iP.Results.OutFileBase;
+groupedFileBase = iP.Results.GroupedFileBase;
+cellArrayFileBase = iP.Results.CellArrayFileBase;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 classesToInclude = iP.Results.ClassesToInclude;
 timeWindow = iP.Results.TimeWindow;
@@ -92,13 +99,14 @@ files = dir(fullfile(allOutputDir));
 
 % Filter for subdirectories
 subDirs = files(cellfun(@(x) x, {files.isdir}) & ...
-                cellfun(@(x) any(regexp(x, dirPattern)), {files.name}));
+                cellfun(@(x) any(regexp(x, dirRegexp)), {files.name}));
 
 % Count the number of subdirectories
 nSubdirs = numel(subDirs);
 
 % Extract all inter-event intervals and slice and cell labels
 ieisAllCells = cell(nSubdirs, 1);
+groupLabelAllCells = cell(nSubdirs, 1);
 sliceLabelAllCells = cell(nSubdirs, 1);
 cellLabelAllCells = cell(nSubdirs, 1);
 for iDir = 1:nSubdirs
@@ -106,10 +114,10 @@ for iDir = 1:nSubdirs
     parentDir = subDirs(iDir).folder;
 
     % Get the current subdirectory name (the slice_cell label)
-    sliceCellLabel = subDirs(iDir).name;
+    groupSliceCellLabel = subDirs(iDir).name;
 
     % Get the full path to the current subdirectory
-    fullPath = fullfile(parentDir, sliceCellLabel);
+    fullPath = fullfile(parentDir, groupSliceCellLabel);
 
     % Filter the output 
     output = filter_minEASE_output('OutputDir', fullPath, ...
@@ -120,48 +128,12 @@ for iDir = 1:nSubdirs
     ieisAllCells{iDir} = output.interEventIntervals;
 
     % Extract the slice and cell labels
-    tempCell1 = strsplit(sliceCellLabel, '_');
+    tempCell1 = strsplit(groupSliceCellLabel, '_');
     sliceLabelAllCells{iDir} = tempCell1{1};
     cellLabelAllCells{iDir} = tempCell1{2};
 end
 
 %% Combine inter-event intervals of the same slice and of the same group
-% Read slice groupings
-[~, ~, masterList] = xlsread(masterListFile, masterListTab);
-dataDirNames = masterList(2:end, dataDirNamesColNum);
-groupLabels = masterList(2:end, groupLabelsColNum);
-
-% Convert the contents to strings if not already so
-dataDirNames = cellfun(@num2str, dataDirNames, 'UniformOutput', false);
-groupLabels = cellfun(@num2str, groupLabels, 'UniformOutput', false);
-
-% Add an 'x' to the beginning of group labels so that they can be 
-%   valid field names of structures
-groupLabels = cellfun(@(x) ['x', x], groupLabels, 'UniformOutput', false);
-
-% Find the group labels for all cells
-groupLabelAllCells = cell(nSubdirs, 1);
-parfor iDir = 1:nSubdirs
-    % Get the slice label (dataXXX)
-    sliceLabel = sliceLabelAllCells{iDir};
-
-    % Find the matching slice label in the dataDirNames cell array
-    %   Note: Must search for substrings and ignore case because 
-    %           dataDirNames has  elements of the form DataXXX_caltracer_ORAMA
-    idxSlice = find_ind_str_in_cell(sliceLabel, dataDirNames, ...
-                                    'SearchMode', 'substrings', ...
-                                    'IgnoreCase', true);
-
-    if isempty(idxSlice)
-        fprintf('Cannot find the slice label %s in dataDirNames!', sliceLabel);
-        % Get the corresponding group label
-        groupLabelAllCells{iDir} = 'Not found';
-    else
-        % Get the corresponding group label
-        groupLabelAllCells{iDir} = groupLabels{idxSlice};
-    end
-
-end
 
 % Find all unique groups
 uniqueGroups = unique(groupLabelAllCells);
@@ -229,15 +201,22 @@ for iGroup = 1:nGroups
         ieisThisGroup;
 end
 
-% Create matfile path
-matfilePath = fullfile(allOutputDir, [outFileBase, '.mat']);
+% Create matfile paths
+groupedFilePath = fullfile(allOutputDir, ...
+    [groupedFileBase, '.mat']);
+cellArrayFilePath = fullfile(allOutputDir, ...
+    [cellArrayFileBase, '.mat']);
 
-% Save in matfile
-save(matfilePath, '-struct', 'ieisGrouped');
+% Save structure in matfile
+save(groupedFilePath, '-struct', 'ieisGrouped');
 
 % Convert to spreadsheet file
 [sheetPath, ieisTable, ieisCellArray, ieisHeader] = ...
-    mat2sheet(matfilePath, 'SheetType', sheetType);
+    mat2sheet(groupedFilePath, 'SheetType', sheetType);
+
+% Save parameters in another matfile
+save(cellArrayFilePath, 'groupLabelAllCells', 'cellLabelAllCells', ...
+                    'sliceLabelAllCells', 'ieisCellArray', '-v7.3');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -246,5 +225,26 @@ OLD CODE:
 
 classesToInclude = 1:5;
 timeWindow = [90, 600];
+
+% Find the group labels for all cells
+groupLabelAllCells = cell(nSubdirs, 1);
+parfor iDir = 1:nSubdirs
+    % Get the slice label (dataXXX)
+    sliceLabel = sliceLabelAllCells{iDir};
+
+end
+
+dirRegexp = 'data[0-9]*_cell[0-9]*';
+
+% Get the current subdirectory name (the slice_cell label)
+sliceCellLabel = subDirs(iDir).name;
+
+% Get the full path to the current subdirectory
+fullPath = fullfile(parentDir, sliceCellLabel);
+
+% Extract the slice and cell labels
+tempCell1 = strsplit(sliceCellLabel, '_');
+sliceLabelAllCells{iDir} = tempCell1{1};
+cellLabelAllCells{iDir} = tempCell1{2};
 
 %}
