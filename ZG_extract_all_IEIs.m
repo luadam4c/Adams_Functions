@@ -10,13 +10,13 @@ function [ieisGrouped, ieisTable, ieisListed, ieisHeader, sheetPath, groupedFile
 %                   default == pwd
 %                   - 'GroupedFileBase': the base name of the output matfile 
 %                                       containing inter-event interval vectors 
-%                                       grouped as a structure
+%                                       for each data source grouped as a structure
 %                   must be a string scalar or a character vector
 %                   default == ['ieisGrouped', '_' eventClassStr, ...
 %                                   '_', timeWindowStr]
 %                   - 'ListedFileBase': the base name of the matfile
 %                                       containing inter-event interval vectors 
-%                                       listed as a cell array
+%                                       for each cell listed as a cell array
 %                   must be a string scalar or a character vector
 %                   default == ['ieisListed', '_' eventClassStr, ...
 %                                   '_', timeWindowStr]
@@ -46,6 +46,7 @@ function [ieisGrouped, ieisTable, ieisListed, ieisHeader, sheetPath, groupedFile
 % 2018-07-30 Created by Adam Lu
 % 2018-08-01 Updated the directory pattern
 % 2018-08-01 Appended classesToInclude and timeWindow to the output file names
+% 2018-08-02 Added ieisThisDataset
 % 
 
 %% Hard-coded parameters
@@ -111,6 +112,11 @@ if isempty(listedFileBase)
                             '_', eventClassStr, '_', timeWindowStr];
 end
 
+%% Preparation
+% Create matfile paths
+groupedFilePath = fullfile(allOutputDir, [groupedFileBase, '.mat']);
+listedFilePath = fullfile(allOutputDir, [listedFileBase, '.mat']);
+
 %% Extract inter-event intervals from each cell
 % Get all files under the all output directory
 files = dir(fullfile(allOutputDir));
@@ -152,6 +158,10 @@ for iDir = 1:nSubdirs
     cellLabelAllCells{iDir} = tempCell1{3};
 end
 
+% Save cell array and labels in a matfile
+save(listedFilePath, 'groupLabelAllCells', 'cellLabelAllCells', ...
+                    'sliceLabelAllCells', 'ieisAllCells', '-v7.3');
+
 %% Combine inter-event intervals of the same slice and of the same group
 % Find all unique groups
 uniqueGroups = unique(groupLabelAllCells);
@@ -160,6 +170,7 @@ uniqueGroups = unique(groupLabelAllCells);
 nGroups = numel(uniqueGroups);
 
 % Loop through all unique groups
+ieisThisDataset = [];
 for iGroup = 1:nGroups
     % Get the current group label
     groupLabel = uniqueGroups{iGroup};
@@ -195,44 +206,42 @@ for iGroup = 1:nGroups
             % Find the index of this cell in the cell arrays
             idxCell = find_ind_str_in_cell(cellLabel, cellLabelAllCells);
 
-            % Get the ieis for this cell
+            % Get the inter-event intervals for this cell
             ieisThisCell = ieisAllCells{idxCell};
 
-            % Save in structure
+            % Save inter-event intervals from this cell in the structure
             ieisGrouped.(groupLabel).(sliceLabel).(cellLabel).interEventIntervals = ...
                 ieisThisCell;
 
-            % Append to ieisThisSlice
+            % Append inter-event intervals from this cell to this slice
             ieisThisSlice = [ieisThisSlice; ieisThisCell];
         end
 
-        % Save in structure
+        % Save inter-event intervals from this slice in the structure
         ieisGrouped.(groupLabel).(sliceLabel).interEventIntervals = ...
             ieisThisSlice;        
 
-        % Combine inter-event intervals from all slices for this group
+        % Append inter-event intervals from this slice to this group
         ieisThisGroup = [ieisThisGroup; ieisThisSlice];
     end
 
-    % Save in structure
+    % Save inter-event intervals from this group in the structure
     ieisGrouped.(groupLabel).interEventIntervals = ...
         ieisThisGroup;
+
+    % Append inter-event intervals from this group to this dataset
+    ieisThisDataset = [ieisThisDataset; ieisThisGroup];
 end
 
-% Create matfile paths
-groupedFilePath = fullfile(allOutputDir, [groupedFileBase, '.mat']);
-listedFilePath = fullfile(allOutputDir, [listedFileBase, '.mat']);
+% Save inter-event intervals from this dataset in the structure
+ieisGrouped.interEventIntervals = ieisThisDataset;
 
 % Save structure in a matfile
 save(groupedFilePath, '-struct', 'ieisGrouped');
 
-% Save cell array and labels in a matfile
-save(listedFilePath, 'groupLabelAllCells', 'cellLabelAllCells', ...
-                    'sliceLabelAllCells', 'ieisAllCells', '-v7.3');
-
 % Convert structure to spreadsheet file
-% [sheetPath, ieisTable, ieisListed, ieisHeader] = ...
-%     mat2sheet(groupedFilePath, 'SheetType', sheetType);
+[sheetPath, ieisTable, ieisListed, ieisHeader] = ...
+    mat2sheet(groupedFilePath, 'SheetType', sheetType);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

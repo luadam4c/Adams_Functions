@@ -2,7 +2,8 @@ function fitsGrouped = ZG_fit_IEI_distributions (ieisGrouped, varargin)
 %% Fit inter-event-interval distributions and log distributions
 % Usage: fitsGrouped = ZG_fit_IEI_distributions (ieisGrouped, varargin)
 % Outputs:
-%       TODO
+%       fitsGrouped - fits grouped by experimental group, slice and cell
+%                   specified as a nonempty structure
 % Arguments:
 %       ieisGrouped - inter-event intervals grouped by experimental group,
 %                       slice and cell
@@ -33,6 +34,7 @@ function fitsGrouped = ZG_fit_IEI_distributions (ieisGrouped, varargin)
 % 2018-07-25 Adapted code from zgPeriodStats.m, 
 %               which was derived from paula_iei4.m
 % 2018-07-30 Now fits both IEIs and logIEIs
+% 2018-08-02 Added fitsThisDataset
 % TODO: Test and debug all plots
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -50,12 +52,6 @@ truncateDataFlag = false;   % whether to truncate data
 nPoints = 500;              % number of points for plotting pdfs
 maxPdfValue = 4.5;          % maximum probability density value
 cutPdfValue = 0.1;          % cutoff probability density value
-
-%% Set the order of groups
-% allGroups = {'xHC067_3nMAng_Control', ...
-%             'x10HC067_3nMAng', ...
-%             'x50pMAng', 'x300pMAng', ...
-%             'x3nMAng', 'x1uMang'};
 
 %% Default values for optional arguments
 outFolderParentDefault = pwd;
@@ -111,9 +107,55 @@ if exist(figsFolder, 'dir') ~= 7
     mkdir(figsFolder);
 end
 
+%% Fit with distributions and compute thresholds for this dataset
+fprintf('Processing IEIs pooled from the entire dataset ... \n');
+
+% Extract all IEIs pooled from different slices of this experimental group
+IEIsThisDataset = ieisGrouped.interEventIntervals;
+
+% Convert to log(IEI)s
+logIEIsThisDataset = log(IEIsThisDataset);
+
+% Fit IEIs to distributions and plot on top of histograms
+if ~isempty(IEIsThisDataset)
+    [~, ~, ~, ~, ~, IEIparams] = ...
+        fit_IEI(IEIsThisDataset, 'dataset', ...
+                'XUnit', xUnitHist, ...
+                'TruncateFlag', truncateDataFlag, ...
+                'PlotFlag', plotFitsFlag, ...
+                'OutFolder', figsFolder);
+    fprintf('Done fitting IEIs pooled from the entire dataset!\n');
+
+    % Store parameter fits in data structure
+    fitsGrouped.IEIparams = IEIparams;
+else
+    fprintf('No IEIs for the entire dataset!\n\n');
+end
+
+% Fit logIEIs to distributions and plot on top of histograms
+if ~isempty(logIEIsThisDataset)
+    [~, ~, ~, ~, logIEIparams] = ...
+        fit_logIEI(logIEIsThisDataset, 'dataset', ...
+                'XUnit', xUnitHist, ...
+                'TruncateFlag', truncateDataFlag, ...
+                'PlotFlag', plotFitsFlag, ...
+                'OutFolder', figsFolder);
+    fprintf('Done fitting log(IEI)s pooled from the entire dataset!\n');
+
+    % Store parameter fits in data structure
+    fitsGrouped.logIEIparams = logIEIparams;
+else
+    fprintf('No logIEIs for the entire dataset!\n\n');
+end
+
+
 %% Fit with distributions and compute thresholds for each experimental group
+% Remove pooled data for this data set from the structure
+thisDataset = rmfield(ieisGrouped, 'interEventIntervals');  
+                                    % a structure
+
 % Determine the experimental groups
-allGroups = fieldnames(ieisGrouped);
+allGroups = fieldnames(thisDataset);
 nGroups = numel(allGroups);
 
 % Fit and plot pooled IEIs and logIEIs for each experimental group
@@ -1610,4 +1652,11 @@ fprintf('logIEIs extracted from %s ... \n', idCellFull);
 thisSlice = thisGroup.(idSlice).perCell;             % a cell array
 nCells = numel(thisSlice);
 
+% Set the order of groups
+allGroups = {'xHC067_3nMAng_Control', ...
+            'x10HC067_3nMAng', ...
+            'x50pMAng', 'x300pMAng', ...
+            'x3nMAng', 'x1uMang'};
+
 %}
+

@@ -29,6 +29,7 @@ function thresholdsTable = ZG_extract_IEI_thresholds(fitsGrouped, varargin)
 %
 % File History:
 % 2018-07-30 Adapted code from zgThreshold_MEANS.m
+% 2018-08-02 Added 'dataset' as a data source
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -162,8 +163,12 @@ sheetFullFileName = fullfile(outFolder, [sheetFileBase, '.', sheetType]);
 % Start a counter
 ct = 0;                        % Counts the data sources
 
+% Removed pooled parameters from this data set
+thisDataset = rmfield(fitsGrouped, {'IEIparams', 'logIEIparams'});
+ct = ct + 1;
+
 % Determine the number of experimental groups and add to counter
-allGroups = fieldnames(fitsGrouped);
+allGroups = fieldnames(thisDataset);
 nGroups = numel(allGroups);
 ct = ct + nGroups;
 
@@ -206,6 +211,12 @@ allLogIEIparams = cell(nSources, 1);
 
 % Start a counter for the row number
 row = 0;
+
+% Get the thresholds for pooled data from the entire dataset
+row = row + 1;
+dataSourceLabels{row} = 'dataset';
+allIEIparams{row} = fitsGrouped.IEIparams;
+allLogIEIparams{row} = fitsGrouped.logIEIparams;
 
 % Loop through each group first
 for iGroup = 1:nGroups
