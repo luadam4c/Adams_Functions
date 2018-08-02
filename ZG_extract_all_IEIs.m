@@ -1,6 +1,6 @@
-function [ieisGrouped, ieisTable, ieisCellArray, ieisHeader, sheetPath, groupedFilePath, cellArrayFilePath] = ZG_extract_all_IEIs (varargin)
-%% Extract all the inter-event intervals from an all_output directory
-% Usage: [ieisGrouped, ieisTable, ieisCellArray, ieisHeader, sheetPath, groupedFilePath, cellArrayFilePath] = ZG_extract_all_IEIs (varargin)
+function [ieisGrouped, ieisTable, ieisListed, ieisHeader, sheetPath, groupedFilePath, listedFilePath] = ZG_extract_all_IEIs (varargin)
+%% Extract all the inter-event intervals from a directory containing multiple minEASE output subdirectories
+% Usage: [ieisGrouped, ieisTable, ieisListed, ieisHeader, sheetPath, groupedFilePath, listedFilePath] = ZG_extract_all_IEIs (varargin)
 % Outputs:
 %       TODO
 % Arguments:
@@ -8,12 +8,18 @@ function [ieisGrouped, ieisTable, ieisCellArray, ieisHeader, sheetPath, groupedF
 %                                       many subdirectories named by slice_cell
 %                   must be a valid directory
 %                   default == pwd
-%                   - 'GroupedFileBase': the output structure file base name
+%                   - 'GroupedFileBase': the base name of the output matfile 
+%                                       containing inter-event interval vectors 
+%                                       grouped as a structure
 %                   must be a string scalar or a character vector
-%                   default == 'ieisGrouped'
-%                   - 'CellArrayFileBase': the output cell array file base name
+%                   default == ['ieisGrouped', '_' eventClassStr, ...
+%                                   '_', timeWindowStr]
+%                   - 'ListedFileBase': the base name of the matfile
+%                                       containing inter-event interval vectors 
+%                                       listed as a cell array
 %                   must be a string scalar or a character vector
-%                   default == 'ieisCellArray'
+%                   default == ['ieisListed', '_' eventClassStr, ...
+%                                   '_', timeWindowStr]
 %                   - 'SheetType': sheet type; 
 %                       e.g., 'xlsx', 'csv', etc.
 %                   could be anything recognised by the readtable() function 
@@ -39,7 +45,7 @@ function [ieisGrouped, ieisTable, ieisCellArray, ieisHeader, sheetPath, groupedF
 % File History:
 % 2018-07-30 Created by Adam Lu
 % 2018-08-01 Updated the directory pattern
-% TODO: 2018-08-01 Appended classesToInclude and timeWindow in the output file names
+% 2018-08-01 Appended classesToInclude and timeWindow to the output file names
 % 
 
 %% Hard-coded parameters
@@ -49,8 +55,8 @@ dirRegexp = 'x[A-Za-z0-9]*_data[0-9]*_cell[0-9]*';
 
 %% Default values for optional arguments
 allOutputDirDefault = pwd;
-groupedFileBaseDefault = 'ieisGrouped';
-cellArrayFileBaseDefault = 'ieisCellArray';
+groupedFileBaseDefault = '';
+listedFileBaseDefault = '';
 sheetTypeDefault = 'xlsx';      % default spreadsheet type
 classesToIncludeDefault = 1:5;
 timeWindowDefault = [90, 600];
@@ -69,7 +75,7 @@ addParameter(iP, 'AllOutputDir', allOutputDirDefault, ...
 %    @(x) validateattributes(x, {'char', 'string'}, {'nonempty'}));
 addParameter(iP, 'GroupedFileBase', groupedFileBaseDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'CellArrayFileBase', cellArrayFileBaseDefault, ...
+addParameter(iP, 'ListedFileBase', listedFileBaseDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SheetType', sheetTypeDefault, ...
     @(x) all(issheettype(x, 'ValidateMode', true)));
@@ -82,7 +88,7 @@ addParameter(iP, 'TimeWindow', timeWindowDefault, ...
 parse(iP, varargin{:});
 allOutputDir = iP.Results.AllOutputDir;
 groupedFileBase = iP.Results.GroupedFileBase;
-cellArrayFileBase = iP.Results.CellArrayFileBase;
+listedFileBase = iP.Results.ListedFileBase;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 classesToInclude = iP.Results.ClassesToInclude;
 timeWindow = iP.Results.TimeWindow;
@@ -91,6 +97,18 @@ timeWindow = iP.Results.TimeWindow;
 if ~isfolder(allOutputDir)
     fprint('%s does not exist or is not readable!\n', allOutputDir);
     return;
+end
+
+% Set defaults for dependent arguments
+eventClassStr = ['eventClass', sscanf(num2str(classesToInclude), '%s')];
+timeWindowStr = ['timeWindow', strjoin(strsplit(num2str(timeWindow)), 'to')];
+if isempty(groupedFileBase)
+    groupedFileBase = ['ieisGrouped', ...
+                            '_', eventClassStr, '_', timeWindowStr];
+end
+if isempty(listedFileBase)
+    listedFileBase = ['ieisListed', ...
+                            '_', eventClassStr, '_', timeWindowStr];
 end
 
 %% Extract inter-event intervals from each cell
@@ -202,21 +220,19 @@ for iGroup = 1:nGroups
 end
 
 % Create matfile paths
-groupedFilePath = fullfile(allOutputDir, ...
-    [groupedFileBase, '.mat']);
-cellArrayFilePath = fullfile(allOutputDir, ...
-    [cellArrayFileBase, '.mat']);
+groupedFilePath = fullfile(allOutputDir, [groupedFileBase, '.mat']);
+listedFilePath = fullfile(allOutputDir, [listedFileBase, '.mat']);
 
-% Save structure in matfile
+% Save structure in a matfile
 save(groupedFilePath, '-struct', 'ieisGrouped');
 
-% Convert to spreadsheet file
-[sheetPath, ieisTable, ieisCellArray, ieisHeader] = ...
-    mat2sheet(groupedFilePath, 'SheetType', sheetType);
+% Save cell array and labels in a matfile
+save(listedFilePath, 'groupLabelAllCells', 'cellLabelAllCells', ...
+                    'sliceLabelAllCells', 'ieisAllCells', '-v7.3');
 
-% Save parameters in another matfile
-save(cellArrayFilePath, 'groupLabelAllCells', 'cellLabelAllCells', ...
-                    'sliceLabelAllCells', 'ieisCellArray', '-v7.3');
+% Convert structure to spreadsheet file
+% [sheetPath, ieisTable, ieisListed, ieisHeader] = ...
+%     mat2sheet(groupedFilePath, 'SheetType', sheetType);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
