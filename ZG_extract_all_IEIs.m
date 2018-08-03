@@ -1,6 +1,6 @@
-function [ieisGrouped, ieisTable, ieisCellArray, ieisHeader, sheetPath, matfilePath] = ZG_extract_all_IEIs (varargin)
-%% Extract all the inter-event intervals from an all_output directory
-% Usage: [ieisGrouped, ieisTable, ieisCellArray, ieisHeader, sheetPath, matfilePath] = ZG_extract_all_IEIs (varargin)
+function [ieisGrouped, ieisTable, ieisListed, ieisHeader, sheetPath, groupedFilePath, listedFilePath] = ZG_extract_all_IEIs (varargin)
+%% Extract all the inter-event intervals from a directory containing multiple minEASE output subdirectories
+% Usage: [ieisGrouped, ieisTable, ieisListed, ieisHeader, sheetPath, groupedFilePath, listedFilePath] = ZG_extract_all_IEIs (varargin)
 % Outputs:
 %       TODO
 % Arguments:
@@ -8,9 +8,18 @@ function [ieisGrouped, ieisTable, ieisCellArray, ieisHeader, sheetPath, matfileP
 %                                       many subdirectories named by slice_cell
 %                   must be a valid directory
 %                   default == pwd
-%                   - 'OutFileBase': the output file base name
+%                   - 'GroupedFileBase': the base name of the output matfile 
+%                                       containing inter-event interval vectors 
+%                                       for each data source grouped as a structure
 %                   must be a string scalar or a character vector
-%                   default == 'ieisGrouped'
+%                   default == ['ieisGrouped', '_' eventClassStr, ...
+%                                   '_', timeWindowStr]
+%                   - 'ListedFileBase': the base name of the matfile
+%                                       containing inter-event interval vectors 
+%                                       for each cell listed as a cell array
+%                   must be a string scalar or a character vector
+%                   default == ['ieisListed', '_' eventClassStr, ...
+%                                   '_', timeWindowStr]
 %                   - 'SheetType': sheet type; 
 %                       e.g., 'xlsx', 'csv', etc.
 %                   could be anything recognised by the readtable() function 
@@ -35,18 +44,20 @@ function [ieisGrouped, ieisTable, ieisCellArray, ieisHeader, sheetPath, matfileP
 %
 % File History:
 % 2018-07-30 Created by Adam Lu
+% 2018-08-01 Updated the directory pattern
+% 2018-08-01 Appended classesToInclude and timeWindow to the output file names
+% 2018-08-02 Added ieisThisDataset
 % 
 
 %% Hard-coded parameters
-masterListFile = '/home/barrettlab/holySheet/CaImagingExperiments_MasterList.xlsx';
-masterListTab = '4mark';
-dirPattern = 'data[0-9]*_cell[0-9]*';
-dataDirNamesColNum = 3;     % dataDirNames column number in the master list tab
-groupLabelsColNum = 5;      % groupLabels column number in the master list tab
+dirRegexp = 'x[A-Za-z0-9]*_data[0-9]*_cell[0-9]*';
+                                % regular expression pattern 
+                                %   for each output subdirectory
 
 %% Default values for optional arguments
 allOutputDirDefault = pwd;
-outFileBaseDefault = 'ieisGrouped';
+groupedFileBaseDefault = '';
+listedFileBaseDefault = '';
 sheetTypeDefault = 'xlsx';      % default spreadsheet type
 classesToIncludeDefault = 1:5;
 timeWindowDefault = [90, 600];
@@ -63,7 +74,9 @@ addParameter(iP, 'AllOutputDir', allOutputDirDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
                                                 % introduced after R2016b
 %    @(x) validateattributes(x, {'char', 'string'}, {'nonempty'}));
-addParameter(iP, 'OutFileBase', outFileBaseDefault, ...
+addParameter(iP, 'GroupedFileBase', groupedFileBaseDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'ListedFileBase', listedFileBaseDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SheetType', sheetTypeDefault, ...
     @(x) all(issheettype(x, 'ValidateMode', true)));
@@ -75,7 +88,8 @@ addParameter(iP, 'TimeWindow', timeWindowDefault, ...
 % Read from the Input Parser
 parse(iP, varargin{:});
 allOutputDir = iP.Results.AllOutputDir;
-outFileBase = iP.Results.OutFileBase;
+groupedFileBase = iP.Results.GroupedFileBase;
+listedFileBase = iP.Results.ListedFileBase;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 classesToInclude = iP.Results.ClassesToInclude;
 timeWindow = iP.Results.TimeWindow;
@@ -86,19 +100,37 @@ if ~isfolder(allOutputDir)
     return;
 end
 
+% Set defaults for dependent arguments
+eventClassStr = ['eventClass', sscanf(num2str(classesToInclude), '%s')];
+timeWindowStr = ['timeWindow', strjoin(strsplit(num2str(timeWindow)), 'to')];
+if isempty(groupedFileBase)
+    groupedFileBase = ['ieisGrouped', ...
+                            '_', eventClassStr, '_', timeWindowStr];
+end
+if isempty(listedFileBase)
+    listedFileBase = ['ieisListed', ...
+                            '_', eventClassStr, '_', timeWindowStr];
+end
+
+%% Preparation
+% Create matfile paths
+groupedFilePath = fullfile(allOutputDir, [groupedFileBase, '.mat']);
+listedFilePath = fullfile(allOutputDir, [listedFileBase, '.mat']);
+
 %% Extract inter-event intervals from each cell
 % Get all files under the all output directory
 files = dir(fullfile(allOutputDir));
 
 % Filter for subdirectories
 subDirs = files(cellfun(@(x) x, {files.isdir}) & ...
-                cellfun(@(x) any(regexp(x, dirPattern)), {files.name}));
+                cellfun(@(x) any(regexp(x, dirRegexp)), {files.name}));
 
 % Count the number of subdirectories
 nSubdirs = numel(subDirs);
 
 % Extract all inter-event intervals and slice and cell labels
 ieisAllCells = cell(nSubdirs, 1);
+groupLabelAllCells = cell(nSubdirs, 1);
 sliceLabelAllCells = cell(nSubdirs, 1);
 cellLabelAllCells = cell(nSubdirs, 1);
 for iDir = 1:nSubdirs
@@ -106,10 +138,10 @@ for iDir = 1:nSubdirs
     parentDir = subDirs(iDir).folder;
 
     % Get the current subdirectory name (the slice_cell label)
-    sliceCellLabel = subDirs(iDir).name;
+    groupSliceCellLabel = subDirs(iDir).name;
 
     % Get the full path to the current subdirectory
-    fullPath = fullfile(parentDir, sliceCellLabel);
+    fullPath = fullfile(parentDir, groupSliceCellLabel);
 
     % Filter the output 
     output = filter_minEASE_output('OutputDir', fullPath, ...
@@ -119,50 +151,18 @@ for iDir = 1:nSubdirs
     % Extract the inter-event intervals
     ieisAllCells{iDir} = output.interEventIntervals;
 
-    % Extract the slice and cell labels
-    tempCell1 = strsplit(sliceCellLabel, '_');
-    sliceLabelAllCells{iDir} = tempCell1{1};
-    cellLabelAllCells{iDir} = tempCell1{2};
+    % Extract the group, slice and cell labels
+    tempCell1 = strsplit(groupSliceCellLabel, '_');
+    groupLabelAllCells{iDir} = tempCell1{1};
+    sliceLabelAllCells{iDir} = tempCell1{2};
+    cellLabelAllCells{iDir} = tempCell1{3};
 end
+
+% Save cell array and labels in a matfile
+save(listedFilePath, 'groupLabelAllCells', 'cellLabelAllCells', ...
+                    'sliceLabelAllCells', 'ieisAllCells', '-v7.3');
 
 %% Combine inter-event intervals of the same slice and of the same group
-% Read slice groupings
-[~, ~, masterList] = xlsread(masterListFile, masterListTab);
-dataDirNames = masterList(2:end, dataDirNamesColNum);
-groupLabels = masterList(2:end, groupLabelsColNum);
-
-% Convert the contents to strings if not already so
-dataDirNames = cellfun(@num2str, dataDirNames, 'UniformOutput', false);
-groupLabels = cellfun(@num2str, groupLabels, 'UniformOutput', false);
-
-% Add an 'x' to the beginning of group labels so that they can be 
-%   valid field names of structures
-groupLabels = cellfun(@(x) ['x', x], groupLabels, 'UniformOutput', false);
-
-% Find the group labels for all cells
-groupLabelAllCells = cell(nSubdirs, 1);
-parfor iDir = 1:nSubdirs
-    % Get the slice label (dataXXX)
-    sliceLabel = sliceLabelAllCells{iDir};
-
-    % Find the matching slice label in the dataDirNames cell array
-    %   Note: Must search for substrings and ignore case because 
-    %           dataDirNames has  elements of the form DataXXX_caltracer_ORAMA
-    idxSlice = find_ind_str_in_cell(sliceLabel, dataDirNames, ...
-                                    'SearchMode', 'substrings', ...
-                                    'IgnoreCase', true);
-
-    if isempty(idxSlice)
-        fprintf('Cannot find the slice label %s in dataDirNames!', sliceLabel);
-        % Get the corresponding group label
-        groupLabelAllCells{iDir} = 'Not found';
-    else
-        % Get the corresponding group label
-        groupLabelAllCells{iDir} = groupLabels{idxSlice};
-    end
-
-end
-
 % Find all unique groups
 uniqueGroups = unique(groupLabelAllCells);
 
@@ -170,6 +170,7 @@ uniqueGroups = unique(groupLabelAllCells);
 nGroups = numel(uniqueGroups);
 
 % Loop through all unique groups
+ieisThisDataset = [];
 for iGroup = 1:nGroups
     % Get the current group label
     groupLabel = uniqueGroups{iGroup};
@@ -205,39 +206,42 @@ for iGroup = 1:nGroups
             % Find the index of this cell in the cell arrays
             idxCell = find_ind_str_in_cell(cellLabel, cellLabelAllCells);
 
-            % Get the ieis for this cell
+            % Get the inter-event intervals for this cell
             ieisThisCell = ieisAllCells{idxCell};
 
-            % Save in structure
+            % Save inter-event intervals from this cell in the structure
             ieisGrouped.(groupLabel).(sliceLabel).(cellLabel).interEventIntervals = ...
                 ieisThisCell;
 
-            % Append to ieisThisSlice
+            % Append inter-event intervals from this cell to this slice
             ieisThisSlice = [ieisThisSlice; ieisThisCell];
         end
 
-        % Save in structure
+        % Save inter-event intervals from this slice in the structure
         ieisGrouped.(groupLabel).(sliceLabel).interEventIntervals = ...
             ieisThisSlice;        
 
-        % Combine inter-event intervals from all slices for this group
+        % Append inter-event intervals from this slice to this group
         ieisThisGroup = [ieisThisGroup; ieisThisSlice];
     end
 
-    % Save in structure
+    % Save inter-event intervals from this group in the structure
     ieisGrouped.(groupLabel).interEventIntervals = ...
         ieisThisGroup;
+
+    % Append inter-event intervals from this group to this dataset
+    ieisThisDataset = [ieisThisDataset; ieisThisGroup];
 end
 
-% Create matfile path
-matfilePath = fullfile(allOutputDir, [outFileBase, '.mat']);
+% Save inter-event intervals from this dataset in the structure
+ieisGrouped.interEventIntervals = ieisThisDataset;
 
-% Save in matfile
-save(matfilePath, '-struct', 'ieisGrouped');
+% Save structure in a matfile
+save(groupedFilePath, '-struct', 'ieisGrouped');
 
-% Convert to spreadsheet file
-[sheetPath, ieisTable, ieisCellArray, ieisHeader] = ...
-    mat2sheet(matfilePath, 'SheetType', sheetType);
+% Convert structure to spreadsheet file
+[sheetPath, ieisTable, ieisListed, ieisHeader] = ...
+    mat2sheet(groupedFilePath, 'SheetType', sheetType);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -246,5 +250,26 @@ OLD CODE:
 
 classesToInclude = 1:5;
 timeWindow = [90, 600];
+
+% Find the group labels for all cells
+groupLabelAllCells = cell(nSubdirs, 1);
+parfor iDir = 1:nSubdirs
+    % Get the slice label (dataXXX)
+    sliceLabel = sliceLabelAllCells{iDir};
+
+end
+
+dirRegexp = 'data[0-9]*_cell[0-9]*';
+
+% Get the current subdirectory name (the slice_cell label)
+sliceCellLabel = subDirs(iDir).name;
+
+% Get the full path to the current subdirectory
+fullPath = fullfile(parentDir, sliceCellLabel);
+
+% Extract the slice and cell labels
+tempCell1 = strsplit(sliceCellLabel, '_');
+sliceLabelAllCells{iDir} = tempCell1{1};
+cellLabelAllCells{iDir} = tempCell1{2};
 
 %}

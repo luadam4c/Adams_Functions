@@ -14,7 +14,9 @@ function h = bar_w_CI(h, data, low, high, varargin)
 %
 % Requires:
 %       /home/Matlab/Downloaded_Functions/rgb.m
+%
 % Used by:
+%       /home/Matlab/Adams_Functions/ZG_fit_IEI_distributions.m
 %       /media/adamX/Paula_IEIs/paula_iei3.m
 %       /media/adamX/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
 %

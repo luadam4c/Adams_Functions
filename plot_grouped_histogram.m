@@ -11,6 +11,7 @@ function plot_grouped_histogram(figname, stats, grouping, grouping_labels, xLabe
 %		/home/Matlab/Adams_Functions/histg.m
 %
 % Used by:
+%       /home/Matlab/Adams_Functions/ZG_fit_IEI_distributions.m
 %		/media/adamX/Paula_IEIs/paula_iei4.m
 %       /home/Matlab/Marks_Functions/paula/Oct2017/freqsPostJustinPartTwo.m
 %
