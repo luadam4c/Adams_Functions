@@ -116,9 +116,6 @@ nSigFig = lastNonzeroPlace - firstNonzeroPlace + 1;
 
 %{
 OLD CODE:
-TODO: Place older versions of the code that you want to save here, 
-        in case you need it back in the future
-
 
 % Print integer as string
 % This doesn't work in Matlab for decimal values 
