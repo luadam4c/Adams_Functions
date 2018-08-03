@@ -11,6 +11,7 @@ function csvwrite_with_header (filename, M, varargin)
 % Used by:    
 %       /home/Matlab/minEASE/minEASE.m
 %       /home/Matlab/minEASE/combine_eventInfo.m
+%       /home/Matlab/minEASE/filter_minEASE_output.m
 %       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
 %
 % File History:
