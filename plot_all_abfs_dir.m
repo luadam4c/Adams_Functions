@@ -68,7 +68,7 @@ parfor k = 1:nfiles
         [d, sius] = plot_traces_abf(filenames{k}, expmode);
 
         % Identify whether this is a current injection protocol
-        isCI = identify_CI(d);
+        isCI = identify_CI(d, sius);
 
         % If it's a current injection protocol, 
         %   detect spikes for each sweep and make an F-I plot
