@@ -1,16 +1,17 @@
-function [allWays, nWays] = distribute_balls_into_boxes (nBalls, nBoxes, varargin)
+function [allWays, nWays] = distribute_balls_into_boxes (nBalls, varargin)
 %% Returns the ways and number of ways to distribute identical/discrete balls into identical/discrete boxes
-% Usage: [allWays, nWays] = distribute_balls_into_boxes (nBalls, nBoxes, varargin)
+% Usage: [allWays, nWays] = distribute_balls_into_boxes (nBalls, varargin)
 %
 % Outputs:
 %       allWays     - all ways of distribution
-%                   specified as a column cell array of row numeric vectors
+%                   specified as a numeric array with nBoxes columns 
+%                       (each row is a way of distribution)
 %       nWays       - number of ways of distribution
 %                   specified as a positive integer scalar
 % Arguments:    
 %       nBalls      - number of balls to place in boxes
 %                   must be a positive integer scalar
-%       nBoxes       - number of boxes to accept balls
+%       nBoxes      - (opt) number of boxes to accept balls
 %                   must be a positive integer scalar
 %       varargin    - 'DistinctBalls': whether balls are distinct
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -21,10 +22,13 @@ function [allWays, nWays] = distribute_balls_into_boxes (nBalls, nBoxes, varargi
 %                   - 'NonemptyBoxes': whether boxes must be nonempty
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'Evenly': whether to distribute as evenly as possible
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Used by:
 %       /home/Matlab/Adams_Functions/piecelinspace.m
-%
+
 % File History:
 %   2018-08-02 - Created by Adam Lu
 %   TODO: Implement the cases where balls and/or boxes are distinct
@@ -32,15 +36,17 @@ function [allWays, nWays] = distribute_balls_into_boxes (nBalls, nBoxes, varargi
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-distinctBallsDefault = false;           % balls are identical by default
-distinctBoxesDefault = false;           % boxes are identical by default
-nonemptyBoxesDefault = false;           % boxes can be empty by default
+nBoxesDefault = nBalls;             % default number of boxes is the number of balls
+distinctBallsDefault = false;       % balls are identical by default
+distinctBoxesDefault = false;       % boxes are identical by default
+nonemptyBoxesDefault = false;       % boxes can be empty by default
+evenlyDefault = false;              % not always evenly distributed by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 2
+if nargin < 1
     error(['Not enough input arguments, ', ...
             'type ''help %s'' for usage'], mfilename);
 end
@@ -52,7 +58,9 @@ iP.FunctionName = mfilename;
 % Add required inputs to the Input Parser
 addRequired(iP, 'nBalls', ...                  % number of balls
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
-addRequired(iP, 'nBoxes', ...                  % number of boxes
+
+% Add optional inputs to the Input Parser
+addOptional(iP, 'nBoxes', nBoxesDefault, ...   % number of boxes
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 
 % Add parameter-value pairs to the Input Parser
@@ -62,48 +70,95 @@ addParameter(iP, 'DistinctBoxes', distinctBoxesDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'NonemptyBoxes', nonemptyBoxesDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Evenly', evenlyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
-parse(iP, nBalls, nBoxes, varargin{:});
+parse(iP, nBalls, varargin{:});
+nBoxes = iP.Results.nBoxes;
 distinctBalls = iP.Results.DistinctBalls;
 distinctBoxes = iP.Results.DistinctBoxes;
 nonemptyBoxes = iP.Results.NonemptyBoxes;
+evenly = iP.Results.Evenly;
+
+%% Check if the distribution is possible
+if nonemptyBoxes && nBalls < nBoxes
+    fprintf('It is impossible to put %d balls into %d nonempy boxes!\n', ...
+            nBalls, nBoxes);
+    allways = {};
+    nWays = 0;
+    return;
+end
 
 %% Distribute balls!
-if distinctBalls && distinctBoxes && nonemptyBoxes
+if distinctBalls && distinctBoxes && nonemptyBoxes && evenly
     error('Not implemented yet!');
-elseif distinctBalls && distinctBoxes && ~nonemptyBoxes
+elseif distinctBalls && distinctBoxes && nonemptyBoxes && ~evenly
     error('Not implemented yet!');
-elseif distinctBalls && ~distinctBoxes && nonemptyBoxes
+elseif distinctBalls && distinctBoxes && ~nonemptyBoxes && evenly
     error('Not implemented yet!');
-elseif distinctBalls && ~distinctBoxes && ~nonemptyBoxes
+elseif distinctBalls && distinctBoxes && ~nonemptyBoxes && ~evenly
     error('Not implemented yet!');
-elseif ~distinctBalls && distinctBoxes && nonemptyBoxes
+elseif distinctBalls && ~distinctBoxes && nonemptyBoxes && evenly
     error('Not implemented yet!');
-elseif ~distinctBalls && distinctBoxes && ~nonemptyBoxes
+elseif distinctBalls && ~distinctBoxes && nonemptyBoxes && ~evenly
     error('Not implemented yet!');
-elseif ~distinctBalls && ~distinctBoxes && nonemptyBoxes
+elseif distinctBalls && ~distinctBoxes && ~nonemptyBoxes && evenly
     error('Not implemented yet!');
-elseif ~distinctBalls && ~distinctBoxes && ~nonemptyBoxes
+elseif distinctBalls && ~distinctBoxes && ~nonemptyBoxes && ~evenly
+    error('Not implemented yet!');
+elseif ~distinctBalls && distinctBoxes && nonemptyBoxes && evenly
+    error('Not implemented yet!');
+elseif ~distinctBalls && distinctBoxes && nonemptyBoxes && ~evenly
+    error('Not implemented yet!');
+elseif ~distinctBalls && distinctBoxes && ~nonemptyBoxes && evenly
+    error('Not implemented yet!');
+elseif ~distinctBalls && distinctBoxes && ~nonemptyBoxes && ~evenly
+    error('Not implemented yet!');
+elseif ~distinctBalls && ~distinctBoxes
     % Balls and boxes are all identical, 
     %   so we need to partition nBalls into nBoxes numbers
+% TODO: Try a version starting from the evenly position
 
     % Start a counter
     ct = 0;
 
-    % Initialize a partition with all balls in the first box
-    partition = zeros(1, nBoxes);
-    partition(1) = nBalls;
-    partitionPaths = partition;
+    % Initialize a partition
+    if evenly
+        % Divide nBalls by nBoxes and get the quotient and remainder
+        quotient = floor(nBalls / nBoxes);
+        remainder = mod(nBalls, nBoxes);
+
+        % Distribute as evenly as possible
+        partition = quotient * ones(1, nBoxes);
+        partition(1:remainder) = quotient + 1;
+
+        % There is no need for further computations
+        partitionPaths = [];
+    elseif nonemptyBoxes
+        % First place one ball in each box
+        partition = ones(1, nBoxes);
+
+        % Then place the remaining balls in the first box
+        partition(1) = nBalls - nBoxes + 1;
+        partitionPaths = partition;
+    else
+        % Initialize a partition with all balls in the first box
+        partition = zeros(1, nBoxes);
+        partition(1) = nBalls;
+        partitionPaths = partition;
+    end
+
+    % Place it in allWays output
     ct = ct + 1;
-    allWays{ct, 1} = partition;
+    allWays(ct, :) = partition;
 
     % Continue to move a ball from a box to one of its right neighbors 
     %   (starting from the left-most right neighbor), as long as the box has 
     %   at least two more balls than that right neighbor.
-    %   TODO: If there is more than one move possible, split into two different paths.
-    %   TODO: If a path has no more moves, remove it
-    %   TODO: Stop when there are no more paths
+    %   If there is more than one move possible, split into two different paths.
+    %   If a path has no more moves, remove it
+    %   Stop when there are no more paths
     while ~isempty(partitionPaths)
         % Use the last partition path if possible
         partition = partitionPaths(end, :);
@@ -128,7 +183,6 @@ elseif ~distinctBalls && ~distinctBoxes && ~nonemptyBoxes
         %   same number of balls
         indToMove = find(hasBallToMove & ~rightNeighborTheSame);
 
-
         % Count the number of boxes that has a ball to be moved
         nToMove = length(indToMove);
 
@@ -152,7 +206,7 @@ elseif ~distinctBalls && ~distinctBoxes && ~nonemptyBoxes
 
             % Increment the counter and store the new partition in allWays
             ct = ct + 1;
-            allWays{ct, 1} = partitionThis;
+            allWays(ct, :) = partitionThis;
 
             % Update the partition in partitionPaths
             partitionPaths(end + iToMove - 1, :) = partitionThis;
@@ -166,15 +220,10 @@ elseif ~distinctBalls && ~distinctBoxes && ~nonemptyBoxes
     end
 
     % Collapse identical partitions
-    allWays = ...
-        cellfun(@str2num, ...
-                unique(cellfun(@num2str, allWays, ...
-                               'UniformOutput', false), ...
-                       'stable'), ...
-                'UniformOutput', false);
+    allWays = unique(allWays, 'rows');
 
     % Record the number of ways
-    nWays = numel(allWays);
+    nWays = size(allWays, 1);
 else
     error('Problem with code logic!');
 end
@@ -214,5 +263,21 @@ else
     idxToMove = idxToMove - 1;
 end
 
+%       allWays     - all ways of distribution
+%                   specified as a column cell array of row numeric vectors
+
+ct = ct + 1;
+allWays{ct, 1} = partition;
+
+% Collapse identical partitions
+allWays = ...
+    cellfun(@str2num, ...
+            unique(cellfun(@num2str, allWays, ...
+                           'UniformOutput', false), ...
+                   'stable'), ...
+            'UniformOutput', false);
+
+% Record the number of ways
+nWays = numel(allWays);
 
 %}

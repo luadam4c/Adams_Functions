@@ -36,9 +36,9 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'filename', ...
-    @(x) validateattributes(x, {'char', 'string'}, {'nonempty', 'scalartext'}));
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addRequired(iP, 'M', ...
-    @(x) validateattributes(x, {'numeric'}, {'nonempty'}));
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'RowHeader', {}, ...
