@@ -26,6 +26,9 @@ figTitle = iP.Results.Title;
 % Get the number of channels in the data
 nChannels = size(data, 2);
 
+% Decide on the colormap
+cm = colormap(jet(nChannels));
+
 % Find the minimum time
 minTime = min(timeVec);
 
@@ -38,7 +41,7 @@ for iPlot = 1:nChannels
     subplot(nChannels, 1, iPlot);
   
     % Plot the signal against the time vector
-    plot(timeVec, data(:, iPlot));
+    plot(timeVec, data(:, iPlot), 'Color', cm(iPlot, :));
 
     % Plot the signal against the time vector
     xlim([minTime, maxTime]);
