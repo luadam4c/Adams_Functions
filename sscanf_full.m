@@ -2,8 +2,8 @@ function [matches, nMatches] = sscanf_full (str, formatSpec, varargin)
 %% Same as sscanf but treats unmatched parts as whitespace (does not stop until end of string)
 % Usage: [matches, nMatches] = sscanf_full (str, formatSpec, varargin)
 % Example(s):
-%       [A, n] = sscanf_full('test(-23.5 -> 230)', '%f')
-%       [A, n] = sscanf_full('test(-23.5 -> 230)', '%d')
+%       [matches, nMatches] = sscanf_full('test(-23.5 -> 230)', '%f')
+%       [matches, nMatches] = sscanf_full('test(-23.5 -> 230)', '%d')
 % Outputs:
 %       matches     - matches of pattern from the input text
 %                   specified as a column vector or 2-d array

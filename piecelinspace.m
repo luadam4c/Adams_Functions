@@ -1,7 +1,12 @@
-function vector = piecelinspace (nodes, nPoints)
+function vector = piecelinspace (nodes, nPoints, varargin)
 %% Generates a piece-wise linear row vector from nodes and number of points
-% Usage: vector = piecelinspace (nodes, nPoints)
+% Usage: vector = piecelinspace (nodes, nPoints, varargin)
 %
+% Arguments:    
+%       nodes     - nodes that must be included
+%                   must be a numeric vector
+%       nPoints     - total number of points in the vector
+%                   must be a positive integer scalar
 % Requires:
 %       /home/Matlab/Adams_Functions/distribute_balls_into_boxes.m
 %
@@ -13,6 +18,27 @@ function vector = piecelinspace (nodes, nPoints)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%% Deal with arguments
+% Check number of required arguments
+if nargin < 2
+    error(['Not enough input arguments, ', ...
+            'type ''help %s'' for usage'], mfilename);
+end
+
+% Set up Input Parser Scheme
+iP = inputParser;
+iP.FunctionName = mfilename;
+
+% Add required inputs to the Input Parser
+addRequired(iP, 'nodes', ...        % nodes that must be included
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addRequired(iP, 'nPoints', ...      % total number of points in the vector
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+
+% Read from the Input Parser
+parse(iP, nodes, nPoints, varargin{:});
+
+%% Preparation
 % Count the number of nodes
 nNodes = length(nodes);
 
@@ -20,6 +46,14 @@ nNodes = length(nodes);
 if nPoints < nNodes
     fprintf('The number of points can''t be smaller than the number of nodes!');
     return
+end
+
+%% Generate the vector
+% If there is only one node, generate a vector with the same value repeated
+%   nPoints times
+if nNodes == 1
+    vector = nodes(1) * ones(1, nPoints);
+    return;
 end
 
 % Compute the number of segments
