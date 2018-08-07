@@ -1,6 +1,6 @@
-function sheetFullFileNames = mat2sheet (matFileOrDir, varargin)
+function [sheetFullFileNameAll, tableAll, varsAll, varNamesAll] = mat2sheet (matFileOrDir, varargin)
 %% Converts .mat files to a spreadsheet file(s) (type specified by the 'SheetType' argument)
-% Usage: sheetFullFileNames = mat2sheet (matFileOrDir, varargin)
+% Usage: [sheetFullFileNameAll, tableAll, varsAll, varNamesAll] = mat2sheet (matFileOrDir, varargin)
 % Explanation:
 %       Converts .mat file(s) to a spreadsheet file(s) 
 %           Default file type to convert is xlsx, 
@@ -33,6 +33,7 @@ function sheetFullFileNames = mat2sheet (matFileOrDir, varargin)
 %
 % Used by:
 %       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
+%       /home/Matlab/Adams_Functions/ZG_extract_all_IEIs.m
 
 % File History:
 % 2018-05-17 Modified from atf2sheet.m
@@ -143,21 +144,25 @@ if multipleFiles
     nMatFiles = length(allMatFiles);
 
     % Loop through all files
-    sheetFullFileNames = cell(nMatFiles, 1);
+    sheetFullFileNameAll = cell(nMatFiles, 1);
+    tableAll = cell(nMatFiles, 1);
+    varsAll = cell(nMatFiles, 1);
+    varNamesAll = cell(nMatFiles, 1);
     parfor iFile = 1:nMatFiles
         matFileName = allMatFiles(iFile).name;
-        sheetFullFileNames{iFile} = ...
+        [sheetFullFileNameAll{iFile}, tableAll{iFile}, ...
+            varsAll{iFile}, varNamesAll{iFile}] = ...
             convert_mat2sheet(matDir, matFileName, outFolder, sheetType);
     end
 else
-    sheetFullFileNames = ...
+    [sheetFullFileNameAll, tableAll, varsAll, varNamesAll] = ...
         convert_mat2sheet(matDir, matFileName, outFolder, sheetType);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function sheetFullFileName = convert_mat2sheet (matDir, matFileName, outFolder, sheetType)
-%% Convert an .aft file to a spreadsheet file
+function [sheetFullFileName, table, vars, varNames] = convert_mat2sheet (matDir, matFileName, outFolder, sheetType)
+%% Convert an .mat file to a spreadsheet file
 
 % Get the full file name of the .mat file
 matFullFileName = fullfile(matDir, matFileName);
@@ -260,7 +265,7 @@ end
 % Convert the vars cell array into a table
 table = struct2table(cell2struct(vars, varNames, 1));
 
-% Write to a spreadsheet file
+% Write the table to a spreadsheet file
 writetable(table, sheetFullFileName);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

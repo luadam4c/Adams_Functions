@@ -19,6 +19,8 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 % Arguments:
 %       str         - a string or a substring or 
 %                       a cell array of substrings of interest
+%                       If str is a cell array, all substrings must 
+%                           exist in the string to be matched
 %                   must be a string/character array or 
 %                       a cell array of strings/character arrays
 %       cellArray   - a cell array that contains strings
@@ -29,7 +31,9 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 %                                           an element in cellArray
 %                       'substrings'    - str can be a substring or 
 %                                           a cell array of substrings
-%                   if searchMode is 'exact', str cannot be a cell array
+%                       'regexp'        - str is considered a regular expression
+%                   if searchMode is 'exact' or 'regexp', 
+%                       str cannot be a cell array
 %                   default == 'substrings'
 %                   - 'IgnoreCase': whether to ignore differences in letter case
 %                   must be logical 1 (true) or 0 (false)
@@ -58,6 +62,10 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 %       /home/Matlab/Adams_Functions/validate_string.m
 %       /home/Matlab/Adams_Functions/update_params.m
 %       /home/Matlab/Adams_Functions/increment_editbox.m
+%       /home/Matlab/Adams_Functions/ZG_extract_all_IEIs.m
+%       /home/Matlab/Adams_Functions/ZG_extract_all_data.m
+%       /home/Matlab/minEASE/combine_eventInfo.m
+%       /home/Matlab/minEASE/extract_from_minEASE_output_filename.m
 %       /home/Matlab/minEASE/read_params.m
 %       /home/Matlab/minEASE/gui_examine_events.m
 %       /home/Matlab/EEG_gui/EEG_gui.m
@@ -73,6 +81,10 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 % 2017-05-25 Changed line width and indentation
 % 2017-06-09 Fixed the returned element to be of original case
 % 2018-05-01 Added MaxNum as a parameter
+% 2018-08-02 Added 'regexp' as a SearchMode
+
+%% Hard-coded constants
+validSearchModes = {'exact', 'substrings', 'regexp'};
 
 %% Default values for optional arguments
 searchModeDefault = 'substrings';       % default search mode
@@ -106,7 +118,7 @@ addRequired(iP, 'cellArray', ...        % a cell array that contains strings
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'SearchMode', searchModeDefault, ...   % the search mode
-    @(x) any(validatestring(x, {'exact', 'substrings'})));
+    @(x) any(validatestring(x, validSearchModes)));
 addParameter(iP, 'IgnoreCase', ignoreCaseDefault, ...   % whether to ignore case
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'MaxNum', maxNumDefault, ...       % maximum number of indices
@@ -114,13 +126,15 @@ addParameter(iP, 'MaxNum', maxNumDefault, ...       % maximum number of indices
 
 % Read from the Input Parser
 parse(iP, str, cellArray, varargin{:});
-searchMode = validatestring(iP.Results.SearchMode, {'exact', 'substrings'});
+searchMode = validatestring(iP.Results.SearchMode, validSearchModes);
 ignoreCase = iP.Results.IgnoreCase;
 maxNum = iP.Results.MaxNum;
 
 % Check relationships between arguments
-if strcmpi(searchMode, 'exact') && iscell(str)
-    error('First input cannot be a cell array if searchMode is 1!');
+if iscell(str) && ...
+    (strcmpi(searchMode, 'exact') || strcmpi(searchMode, 'regexp'))
+    error(['First input cannot be a cell array if ', ...
+            'SearchMode'' is ''exact'' or ''rexexp''!']);
 end
 
 %% Prepare for the search
@@ -133,8 +147,8 @@ if isempty(maxNum)
 end
 
 %% Find the indices
-if strcmpi(searchMode, 'exact')             % String must be exact
-
+switch searchMode
+case 'exact'        % String must be an exact match
     % Construct a cell array with the same size as cellArray 
     %   but with str duplicated throughout
     str_cell = cell(size(cellArray));    % a cell array to store copies of str
@@ -150,10 +164,7 @@ if strcmpi(searchMode, 'exact')             % String must be exact
     else
         indices = find(cellfun(@strcmp, cellArray, str_cell), maxNum);
     end
-
-elseif strcmpi(searchMode, 'substrings')    % String can be a substring 
-                                            % or a cell array of substrings
-
+case 'substrings'   % String can be a substring or a cell array of substrings
     % Convert each string to lower case if IgnoreCase is set to true
     if ignoreCase
         cellArrayMod = cellfun(@lower, cellArray, 'UniformOutput', false);
@@ -198,7 +209,16 @@ elseif strcmpi(searchMode, 'substrings')    % String can be a substring
         indicesarray = strfind(cellArrayMod, strMod);
         indices = find(~cellfun(@isempty, indicesarray), maxNum);
     end
+case 'regexp'   % String is considered a regular expression
+    % Find all starting indices in the strings for the matches
+    if ignoreCase
+        startIndices = regexpi(cellArray, str);
+    else
+        startIndices = regexp(cellArray, str);
+    end
 
+    % Find all indices in the cell array for the matches
+    indices = find(~cellfun(@isempty, startIndices), maxNum);
 end
 
 %% Return the elements too
@@ -214,5 +234,12 @@ end
 
 %{
 OLD CODE:
+
+validSearchModes = {'exact', 'substrings'};
+
+if strcmpi(searchMode, 'exact')             % String must be exact
+elseif strcmpi(searchMode, 'substrings')    % String can be a substring 
+                                            % or a cell array of substrings
+end
 
 %}

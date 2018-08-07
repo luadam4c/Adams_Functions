@@ -32,6 +32,9 @@ function [results, sheettypes] = issheettype (strings, varargin)
 %
 % Used by:
 %       /home/Matlab/Adams_Functions/atf2sheet.m
+%       /home/Matlab/Adams_Functions/ZG_extract_all_IEIs.m
+%       /home/Matlab/Adams_Functions/ZG_extract_IEI_thresholds.m
+%       /home/Matlab/Adams_Functions/ZG_compute_IEI_thresholds.m
 %       /home/Matlab/function_template.m
 %       /home/Matlab/EEG_gui/combine_EEG_gui_outputs.m
 %

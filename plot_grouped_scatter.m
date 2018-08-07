@@ -6,6 +6,7 @@ function [h, g] = plot_grouped_scatter(figname, X, Y, grouping, grouping_labels,
 %       /home/Matlab/Adams_Functions/plot_ellipse.m
 %
 % Used by:
+%       /home/Matlab/Adams_Functions/ZG_fit_IEI_distributions.m
 %		/media/adamX/Paula_IEIs/paula_iei4.m
 %
 % 2017-12-13 - Modified from plot_grouped_histogram.m

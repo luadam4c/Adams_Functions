@@ -11,6 +11,7 @@ function csvwrite_with_header (filename, M, varargin)
 % Used by:    
 %       /home/Matlab/minEASE/minEASE.m
 %       /home/Matlab/minEASE/combine_eventInfo.m
+%       /home/Matlab/minEASE/filter_minEASE_output.m
 %       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
 %
 % File History:
@@ -35,9 +36,9 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'filename', ...
-    @(x) validateattributes(x, {'char', 'string'}, {'nonempty', 'scalartext'}));
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addRequired(iP, 'M', ...
-    @(x) validateattributes(x, {'numeric'}, {'nonempty'}));
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'RowHeader', {}, ...

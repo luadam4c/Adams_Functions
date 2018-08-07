@@ -64,3 +64,5 @@ normData = randn(100, 1);
 % Normally distributed data with outliers
 normDataWOutliers = [normData; -100; 200; 1000];
 
+% A random time series
+myRandomSignal = rand(100, 1);

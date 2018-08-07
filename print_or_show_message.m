@@ -89,7 +89,7 @@ verboseDefault = false;             % default: Program does not print message
 %% Add directories to search path for required functions across servers
 if ~isdeployed
     if exist(fullfile(pwd, 'Miras_Functions'), 'dir') == 7
-        functionsdirectory = pwd;
+        functionsDirectory = pwd;
     elseif exist('/home/Matlab/', 'dir') == 7
         functionsDirectory = '/home/Matlab/';
     elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
