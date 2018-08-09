@@ -27,7 +27,7 @@ function waveform = create_pulse_train_series (varargin)
 %                   default == 10000 Hz
 %                   - 'PulseAmplitude': pulse amplitude
 %                   must be a numeric scalar
-%                   default == 1
+%                   default == 5
 %                   - 'PulseFrequency': pulse frequency in Hz
 %                   must be a positive scalar
 %                   default == 100 Hz
@@ -82,6 +82,7 @@ function waveform = create_pulse_train_series (varargin)
 % File History:
 % 2018-08-08 Created by Adam Lu
 % 2018-08-09 Added seriesDelay and NSweeps
+% 2018-08-09 Now defaults the pulse amplitude to 5
 
 % Hard-coded constants
 MS_PER_S = 1000;                % 1000 ms per second
@@ -90,15 +91,16 @@ MS_PER_S = 1000;                % 1000 ms per second
 
 %% Default values for optional arguments
 samplingRateDefault = 10000;    % default sampling rate is 10 kHz
-pulseAmplitudeDefault = 1;      % default pulse amplitude is 1 V
+pulseAmplitudeDefault = 5;      % default pulse amplitude is 5 V 
+                                %   (industry standard for an ON signal)
 pulseFrequencyDefault = 100;    % default pulse frequency is 100 Hz
 trainFrequencyDefault = 5;      % default train frequency is 5 Hz
-pulseDurationDefault = 1;       % default pulse duration is 1 ms
+pulseDurationDefault = 1;       % default pulse duration is 4 ms
 trainDurationDefault = 40;      % default train duration is 40 ms
 seriesDelayDefault = 1000;      % default series delay is 1 second
 seriesDurationDefault = 2000;   % default series duration is 2 seconds
 totalDurationDefault = 10000;   % default total duration is 10 seconds
-nSweepsDefault = 1; %10;            % default sweep number is 10
+nSweepsDefault = 10;            % default sweep number is 10
 outFolderDefault = '';          % default directory to output spreadsheet file
 sheetTypeDefault = 'dat';       % default spreadsheet type
 figTypesDefault = 'png';        % default figure type(s) for saving
@@ -187,11 +189,19 @@ pulse = ones(pulseDurationSamples, 1) * pulseAmplitude;
 pulseTrain = create_waveform_train(pulse, pulseFrequency, trainDuration, ...
                                         'SamplingRate', samplingRate, ...
                                         'plotFlag', false, 'saveFlag', false);
+if isempty(pulseTrain)
+    waveform = [];
+    return;
+end
 
 %% Create a pulse train series from the pulse train
 trainSeries = create_waveform_train (pulseTrain, trainFrequency, ...
                                 seriesDuration, 'SamplingRate', samplingRate, ...
                                 'plotFlag', false, 'saveFlag', false);
+if isempty(trainSeries)
+    waveform = [];
+    return;
+end
 seriesLength = length(trainSeries);
 
 %%  Create the waveform

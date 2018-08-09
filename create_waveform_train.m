@@ -50,6 +50,7 @@ function waveformTrain = create_waveform_train (waveform, frequency, totalDurati
 % Requires:
 %       /home/Matlab/Adams_Functions/isfigtype.m
 %       /home/Matlab/Adams_Functions/issheettype.m
+%       /home/Matlab/Adams_Functions/print_or_show_message.m
 %       /home/Matlab/Adams_Functions/save_all_figtypes.m
 %
 % Used by:    
@@ -139,23 +140,37 @@ waveformIntervalMs = (1 / frequency) * MS_PER_S;
 % Compute the waveform interval in samples
 waveformIntervalSamples = floor(waveformIntervalMs / siMs);
 
+% Return with error message if the waveform is longer than the interval
+if waveformDurationSamples > waveformIntervalSamples
+    waveformTrain = [];
+    message = {['The waveform duration cannot be longer ', ...
+                    'than the waveform interval.'], ...
+                'Please decrease the waveform frequency!'};
+    mTitle = 'Create Waveform Error';
+    icon = 'error';
+    print_or_show_message(message, 'MTitle', mTitle, 'Icon', icon, ...
+                        'MessageMode', 'show', 'Verbose', true, ...
+                        'CreateMode', 'non-modal');
+    return
+end
+
 %% Create the waveformTrain
 % Compute the number of waveforms
-nPulses = floor(totalDurationSamples / waveformIntervalSamples);
+nWaveforms = floor(totalDurationSamples / waveformIntervalSamples);
 
 % Create a single waveform
-singlePulse = zeros(waveformIntervalSamples, 1);
-singlePulse(1:waveformDurationSamples) = waveform;
+singleWaveform = zeros(waveformIntervalSamples, 1);
+singleWaveform(1:waveformDurationSamples) = waveform;
 
 % Create all waveforms
-allPulses = repmat(singlePulse, nPulses, 1);
+allWaveforms = repmat(singleWaveform, nWaveforms, 1);
 
 % Find the length of all waveforms
-allPulsesLength = length(allPulses);
+allPulsesLength = length(allWaveforms);
 
 % Create the waveform train
 waveformTrain = zeros(totalDurationSamples, 1);
-waveformTrain(1:allPulsesLength) = allPulses;
+waveformTrain(1:allPulsesLength) = allWaveforms;
 
 % Create a time vector
 timeVec = (1:totalDurationSamples)' * siMs;
