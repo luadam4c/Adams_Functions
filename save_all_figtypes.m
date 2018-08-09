@@ -6,7 +6,7 @@ function save_all_figtypes (fig, filename, varargin)
 %                   must be a a figure object or a Simulink block diagram
 %       filename    - file name
 %                   must be a character vector
-%       figtypes    figure type(s) for saving; 
+%       figtypes    - (opt) figure type(s) for saving; 
 %                       e.g., 'png', 'fig', or {'png', 'fig'}, etc.
 %                   could be anything recognised by the built-in 
 %                       saveas() function 
@@ -22,6 +22,7 @@ function save_all_figtypes (fig, filename, varargin)
 %       /media/adamX/RTCl/tuning_curves.m
 %       /media/adamX/RTCl/tuning_maps.m
 %       /media/adamX/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
+%       /home/Matlab/Adams_Functions/create_pulse_train_series.m
 %       /home/Matlab/Adams_Functions/plot_tuning_curve.m
 %       /home/Matlab/Adams_Functions/plot_tuning_map.m
 %

@@ -32,6 +32,7 @@ function [results, figtypes] = isfigtype (strings, varargin)
 % Used by:
 %       /home/Matlab/function_template.m
 %       /home/Matlab/minEASE/detect_gapfree_events.m
+%       /home/Matlab/Adams_Functions/create_pulse_train_series.m
 %       /home/Matlab/Adams_Functions/plot_tuning_curve.m
 %       /home/Matlab/Adams_Functions/plot_tuning_map.m
 %       /media/adamX/RTCl/raster_plot.m

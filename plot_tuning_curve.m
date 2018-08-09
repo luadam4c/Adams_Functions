@@ -68,7 +68,7 @@ iP.FunctionName = mfilename;
 % Use Input Parser for parameter-value pairs
 addParameter(iP, 'SingleColor', [0, 0, 1]);     % color when ncols_to_plot is 1
 addParameter(iP, 'FigTypes', 'png', ...         % figure type(s) for saving
-    @(x) min(isfigtype(x, 'ValidateMode', true)));
+    @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, varargin{:});

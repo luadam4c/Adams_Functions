@@ -95,7 +95,7 @@ addParameter(iP, 'CLim', [], ...            % limits of color axis
 addParameter(iP, 'FigName', '', ...         % figure name for saving
     @(x) validateattributes(x, {'char', 'string'}, {'nonempty'}));
 addParameter(iP, 'FigTypes', 'png', ...     % figure type(s) for saving
-    @(x) min(isfigtype(x, 'ValidateMode', true)));
+    @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, pvalues, readout, varargin{:});
