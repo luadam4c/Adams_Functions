@@ -33,7 +33,7 @@ Last Updated 2018-08-09 by Adam Lu
 - [**construct_fullfilename.m**](https://github.com/blabuva/Adams_Functions/blob/master/construct_fullfilename.m): Constructs full file name based on filename and an optional full directory path with optional suffices and/or Name-Value pairs
 - [**construct_suffix.m**](https://github.com/blabuva/Adams_Functions/blob/master/construct_suffix.m): Constructs final suffix based on optional suffices and/or Name-Value pairs
 - [**create_input_file.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_input_file.m): Create an input spreadsheet file from data file names in a directory based on default parameters
-- [**create_pulse_train_series.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pulse_train_series.m): Creates a stimulus waveform (a theta burst stimulation by default)
+- [**create_pulse_train_series.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pulse_train_series.m): Creates a pulse train series (a theta burst stimulation by default)
 - [**create_subdir_copy_files.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_subdir_copy_files.m): Create subdirectory and copy figure files
 - [**create_waveform_train.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_waveform_train.m): Creates a waveform train from a waveform, a frequency, and a total duration
 - [**crosscorr_profile.m**](https://github.com/blabuva/Adams_Functions/blob/master/crosscorr_profile.m): data: each channel is a column
