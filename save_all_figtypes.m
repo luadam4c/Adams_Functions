@@ -22,6 +22,7 @@ function save_all_figtypes (fig, filename, varargin)
 %       /media/adamX/RTCl/tuning_curves.m
 %       /media/adamX/RTCl/tuning_maps.m
 %       /media/adamX/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
+%       /home/Matlab/Adams_Functions/create_waveform_train.m
 %       /home/Matlab/Adams_Functions/create_pulse_train_series.m
 %       /home/Matlab/Adams_Functions/plot_tuning_curve.m
 %       /home/Matlab/Adams_Functions/plot_tuning_map.m

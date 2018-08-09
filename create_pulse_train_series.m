@@ -1,5 +1,5 @@
 function waveform = create_pulse_train_series (varargin)
-%% Create a stimulus waveform (a theta burst stimulation by default)
+%% Creates a stimulus waveform (a theta burst stimulation by default)
 % Usage: waveform = create_pulse_train_series (varargin)
 % Explanation:
 %       Creates a pulse train series (defaults to a theta burst stimulation)
@@ -58,10 +58,17 @@ function waveform = create_pulse_train_series (varargin)
 %                   could be anything recognised by the saveas() function 
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
+%                   - 'plotFlag': whether to plot the pulse train series
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'saveFlag': whether to save the pulse train series
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/create_pulse_train.m
+%       /home/Matlab/Adams_Functions/create_waveform_train.m
+%       /home/Matlab/Adams_Functions/isfigtype.m
 %       /home/Matlab/Adams_Functions/issheettype.m
 %       /home/Matlab/Adams_Functions/save_all_figtypes.m
 
@@ -85,6 +92,8 @@ totalDurationDefault = 10000;   % default total duration is 10 seconds
 outFolderDefault = '';          % default directory to output spreadsheet file
 sheetTypeDefault = 'dat';       % default spreadsheet type
 figTypesDefault = 'png';        % default figure type(s) for saving
+plotFlagDefault = true;         % plot the pulse train series by default
+saveFlagDefault = true;         % save the pulse train series by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -116,6 +125,10 @@ addParameter(iP, 'SheetType', sheetTypeDefault, ...
     @(x) all(issheettype(x, 'ValidateMode', true)));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
+addParameter(iP, 'PlotFlag', plotFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveFlag', saveFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -130,6 +143,8 @@ totalDuration = iP.Results.TotalDuration;
 outFolder = iP.Results.OutFolder;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
+plotFlag = iP.Results.PlotFlag;
+saveFlag = iP.Results.SaveFlag;
 
 %% Preparation
 % Compute the sampling interval in ms
@@ -152,12 +167,14 @@ pulseDurationSamples = floor(pulseDuration / siMs);
 pulse = ones(pulseDurationSamples, 1) * pulseAmplitude;
 
 % Create a pulse train from the pulse
-pulseTrain = create_pulse_train(pulse, pulseFrequency, trainDuration, ...
-                                        'SamplingRate', samplingRate);
+pulseTrain = create_waveform_train(pulse, pulseFrequency, trainDuration, ...
+                                        'SamplingRate', samplingRate, ...
+                                        'plotFlag', false, 'saveFlag', false);
 
 %% Create a pulse train series from the pulse train
-trainSeries = create_pulse_train (pulseTrain, trainFrequency, ...
-                                seriesDuration, 'SamplingRate', samplingRate);
+trainSeries = create_waveform_train (pulseTrain, trainFrequency, ...
+                                seriesDuration, 'SamplingRate', samplingRate, ...
+                                'plotFlag', false, 'saveFlag', false);
 seriesLength = length(trainSeries);
 
 %%  Create the waveform
@@ -169,32 +186,36 @@ waveform = zeros(totalDurationSamples, 1);
 waveform(1:seriesLength) = trainSeries;
 
 %% Plot the waveform
-% Create a time vector
-timeVec = (1:totalDurationSamples)' * siMs;
+if plotFlag
+    % Create a time vector
+    timeVec = (1:totalDurationSamples)' * siMs;
 
-% Plot the waveform
-h = figure;
-clf(h)
-plot(timeVec, waveform);
-xlabel('Time (ms)');
-ylabel('Amplitude');
-title(['Stimulus waveform for ', fileBase], 'Interpreter', 'none');
+    % Plot the waveform
+    h = figure;
+    clf(h)
+    plot(timeVec, waveform);
+    xlabel('Time (ms)');
+    ylabel('Amplitude');
+    title(['Stimulus waveform for ', fileBase], 'Interpreter', 'none');
 
-% Create the full path to the fileBase
-fileBasePath = fullfile(outFolder, fileBase);
+    % Create the full path to the fileBase
+    fileBasePath = fullfile(outFolder, fileBase);
 
-% Save the figure
-save_all_figtypes(h, fileBasePath, figTypes);
+    % Save the figure
+    save_all_figtypes(h, fileBasePath, figTypes);
+end
 
 %% Write output
-% Create the full path to the spreadsheet file
-sheetPath = fullfile(outFolder, [fileBase, '.', sheetType]);
+if saveFlag
+    % Create the full path to the spreadsheet file
+    sheetPath = fullfile(outFolder, [fileBase, '.', sheetType]);
 
-% Convert the waveform to a table
-waveformTable = array2table(waveform);
+    % Convert the waveform to a table
+    waveformTable = array2table(waveform);
 
-% Write the waveform to a spreadsheet file
-writetable(waveformTable, sheetPath, 'WriteVariableNames', false);
+    % Write the waveform to a spreadsheet file
+    writetable(waveformTable, sheetPath, 'WriteVariableNames', false);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
