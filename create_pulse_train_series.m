@@ -1,10 +1,11 @@
 function waveform = create_pulse_train_series (varargin)
-%% Creates a stimulus waveform (a theta burst stimulation by default)
+%% Creates a pulse train series (a theta burst stimulation by default)
 % Usage: waveform = create_pulse_train_series (varargin)
 % Explanation:
 %       Creates a pulse train series (defaults to a theta burst stimulation)
-%           i.e., a sweep (with a specific duration) that contains 
-%                   a series (with a specific duration) of 
+%           i.e., a specific number of sweeps (with a specific duration) 
+%                   each containing:
+%                   a series (with a specific duration aftera delay) of 
 %                   trains (with a specific frequency and duration) of 
 %                   pulses (with a specific amplitude, frequency and duration)
 %
@@ -39,12 +40,18 @@ function waveform = create_pulse_train_series (varargin)
 %                   - 'TrainDuration': train duration in ms
 %                   must be a positive scalar
 %                   default == 40 ms
+%                   - 'SeriesDelay': series delay in ms
+%                   must be a positive scalar
+%                   default == 1000 ms
 %                   - 'SeriesDuration': series duration in ms
 %                   must be a positive scalar
 %                   default == 2000 ms
 %                   - 'TotalDuration': total duration in ms
 %                   must be a positive scalar
 %                   default == 10000 ms
+%                   - 'NSweeps': total number of sweeps
+%                   must be a positive integer scalar
+%                   default == 10
 %                   - 'OutFolder': directory to output files and figures
 %                   must be a string scalar or a character vector
 %                   default == pwd
@@ -74,6 +81,7 @@ function waveform = create_pulse_train_series (varargin)
 
 % File History:
 % 2018-08-08 Created by Adam Lu
+% 2018-08-09 Added seriesDelay and NSweeps
 
 % Hard-coded constants
 MS_PER_S = 1000;                % 1000 ms per second
@@ -87,8 +95,10 @@ pulseFrequencyDefault = 100;    % default pulse frequency is 100 Hz
 trainFrequencyDefault = 5;      % default train frequency is 5 Hz
 pulseDurationDefault = 1;       % default pulse duration is 1 ms
 trainDurationDefault = 40;      % default train duration is 40 ms
+seriesDelayDefault = 1000;      % default series delay is 1 second
 seriesDurationDefault = 2000;   % default series duration is 2 seconds
 totalDurationDefault = 10000;   % default total duration is 10 seconds
+nSweepsDefault = 1; %10;            % default sweep number is 10
 outFolderDefault = '';          % default directory to output spreadsheet file
 sheetTypeDefault = 'dat';       % default spreadsheet type
 figTypesDefault = 'png';        % default figure type(s) for saving
@@ -115,10 +125,14 @@ addParameter(iP, 'PulseDuration', pulseDurationDefault, ...
    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'TrainDuration', trainDurationDefault, ...
    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'SeriesDelay', seriesDelayDefault, ...
+   @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'SeriesDuration', seriesDurationDefault, ...
    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'TotalDuration', totalDurationDefault, ...
    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'NSweeps', nSweepsDefault, ...
+   @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SheetType', sheetTypeDefault, ...
@@ -138,8 +152,10 @@ pulseFrequency = iP.Results.PulseFrequency;
 trainFrequency = iP.Results.TrainFrequency;
 pulseDuration = iP.Results.PulseDuration;
 trainDuration = iP.Results.TrainDuration;
+seriesDelay = iP.Results.SeriesDelay;
 seriesDuration = iP.Results.SeriesDuration;
 totalDuration = iP.Results.TotalDuration;
+nSweeps = iP.Results.NSweeps;
 outFolder = iP.Results.OutFolder;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
@@ -156,7 +172,8 @@ fileBase = ['pulseTrainSeries', '_', num2str(pulseAmplitude), 'V', ...
             'Pulse', '_', num2str(trainDuration), 'ms', ...
             num2str(trainFrequency), 'Hz', 'Train', '_', ...
             num2str(seriesDuration), 'ms', 'Series', '_', ...
-            num2str(totalDuration), 'ms', 'Sweep'];
+            num2str(seriesDelay), 'ms', 'Delay', '_', ...
+            num2str(totalDuration), 'ms', 'Swp'];
 
 
 %% Create a pulse train
@@ -178,18 +195,24 @@ trainSeries = create_waveform_train (pulseTrain, trainFrequency, ...
 seriesLength = length(trainSeries);
 
 %%  Create the waveform
-% Count the number of samples
+% Convert delay and total duration to samples
+seriesDelaySamples = floor(seriesDelay / siMs);
 totalDurationSamples = floor(totalDuration / siMs);
 
 % Create the waveform
 waveform = zeros(totalDurationSamples, 1);
-waveform(1:seriesLength) = trainSeries;
+seriesIndices = seriesDelaySamples + (1:seriesLength);
+waveform(seriesIndices) = trainSeries;
+
+% Create a time vector
+timeVec = (1:totalDurationSamples)' * siMs;
+
+% Place the time and waveform vector in the same array
+%   with nSweeps repetition counts
+waveformArray = [timeVec, repmat(waveform, 1, nSweeps)];
 
 %% Plot the waveform
 if plotFlag
-    % Create a time vector
-    timeVec = (1:totalDurationSamples)' * siMs;
-
     % Plot the waveform
     h = figure;
     clf(h)
@@ -207,14 +230,24 @@ end
 
 %% Write output
 if saveFlag
+    % Append the number of sweeps to the file name
+    %   if greater than 1
+    if nSweeps > 1
+        sheetBase = [fileBase, '_', num2str(nSweeps), 'Swps'];
+    else
+        sheetBase = fileBase;
+    end
+
     % Create the full path to the spreadsheet file
-    sheetPath = fullfile(outFolder, [fileBase, '.', sheetType]);
+    sheetPath = fullfile(outFolder, [sheetBase, '.', sheetType]);
 
     % Convert the waveform to a table
-    waveformTable = array2table(waveform);
+    waveformTable = array2table(waveformArray);
 
     % Write the waveform to a spreadsheet file
-    writetable(waveformTable, sheetPath, 'WriteVariableNames', false);
+    writetable(waveformTable, sheetPath, ...
+                'WriteVariableNames', false, ...
+                'Delimiter', '\t');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

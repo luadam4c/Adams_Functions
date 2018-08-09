@@ -157,11 +157,14 @@ allPulsesLength = length(allPulses);
 waveformTrain = zeros(totalDurationSamples, 1);
 waveformTrain(1:allPulsesLength) = allPulses;
 
+% Create a time vector
+timeVec = (1:totalDurationSamples)' * siMs;
+
+% Place the time and waveform vector in the same array
+waveformArray = [timeVec, waveformTrain];
+
 % Plot the waveform
 if plotFlag
-    % Create a time vector
-    timeVec = (1:totalDurationSamples)' * siMs;
-
     % Plot the waveform
     h = figure;
     clf(h)
@@ -183,15 +186,20 @@ if saveFlag
     sheetPath = fullfile(outFolder, [fileBase, '.', sheetType]);
 
     % Convert the waveform to a table
-    waveformTable = array2table(waveformTrain);
+    waveformTable = array2table(waveformArray);
 
     % Write the waveform to a spreadsheet file
-    writetable(waveformTable, sheetPath, 'WriteVariableNames', false);
+    writetable(waveformTable, sheetPath, ...
+                'WriteVariableNames', false, ...
+                'Delimiter', '\t');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+% Convert the waveform to a table
+waveformTable = array2table(waveformTrain);
 
 %}
