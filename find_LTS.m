@@ -165,20 +165,24 @@ end
 
 %% Extract info from data
 sims = tvec0(2) - tvec0(1);            % sampling interval in ms
-tbase = tvec0(1) - sims;
+tBase = tvec0(1) - sims;
 
 %% Check more arguments
-if istart < tbase + blw || istart > tvec0(end) || ipeakt < istart || ipeakt > tvec0(end)
-    error('istart or ipeakt out of range!');
+if istart < tBase || istart > tvec0(end)
+    error('istart out of time vector range!');
+elseif ipeakt < istart
+    error('ipeakt cannot be before istart!');
+elseif ipeakt > tvec0(end)
+    error('ipeakt out of time vector range!');
 elseif length(hrangeORmaxnoise) > 2
     error('hrange or maxnoise has too many components!');
-elseif length(hrangeORmaxnoise) == 2 && (hrangeORmaxnoise(1) < tbase || hrangeORmaxnoise(2) > tvec0(end))
+elseif length(hrangeORmaxnoise) == 2 && (hrangeORmaxnoise(1) < tBase || hrangeORmaxnoise(2) > tvec0(end))
     error('hrange out of range!');
 elseif length(hrangeORmaxnoise) == 1 && hrangeORmaxnoise < 0
     error('maxnoise out of range!');
 elseif nargin >= 6 && length(ltswin) < 2
     error('ltswin must have a start and an end!');
-elseif nargin >= 6 && (ltswin(1) < tbase || ltswin(2) > tvec0(end))
+elseif nargin >= 6 && (ltswin(1) < tBase || ltswin(2) > tvec0(end))
     error('ltswin out of range!');
 elseif nargin >= 7 && (plotflag ~= 1 && plotflag ~= 0 && plotflag ~= false && plotflag ~= true)
     error('plotflag out of range!');
@@ -188,7 +192,7 @@ elseif nargin >= 9 && ~ischar(filebase)
     error('filebase must be a character array!');
 elseif nargin >= 10 && ~isnumeric(tvec2)
     error('tvec2 must be a numeric array!');
-elseif nargin >= 10 && (tvec2(1) < tbase || tvec2(end) > tvec0(end) + sims)
+elseif nargin >= 10 && (tvec2(1) < tBase || tvec2(end) > tvec0(end) + sims)
     error('tvec2 out of range!');
 elseif nargin >= 11 && ~isnumeric(vvec1)
     error('vvec1 must be a numeric array!');
@@ -205,13 +209,22 @@ elseif nargin >= 13 && ~isequal(size(vvec0, 1), size(vvec3, 1))
 end
 
 %% Set defaults for optional arguments
+if istart < tBase + blw
+    fprintf(['istart must be at least %g ms after tBase ', ...
+                'for baseline voltage computation!\n'], blw);
+    fprintf('Actual holding potential will be empty!\n');
+    actVhold = [];
+    computeActVholdFlag = false;
+else
+    computeActVholdFlag = true;
+end
 if length(hrangeORmaxnoise) == 2
     hrange = hrangeORmaxnoise;
 else
     maxnoise = hrangeORmaxnoise;
 end
 if nargin < 6
-    ltswin = [ipeakt tvec0(end)-mfw3];    
+    ltswin = [ipeakt, tvec0(end) - mfw3];    
 end
 if nargin < 7
     plotflag = 0;
@@ -295,7 +308,9 @@ if length(hrangeORmaxnoise) == 2
     hr_ind_end = find(tvec0 <= hrange(2), 1, 'last');
     hr_ind = hr_ind_begin:hr_ind_end;   % indices for calculating maxnoise
 end
-bl_ind = istart_ind - fliplr(1:round(blw/sims));    % indices for calculating baseline voltage
+if computeActVholdFlag
+    bl_ind = istart_ind - fliplr(1:round(blw/sims));    % indices for calculating baseline voltage
+end
 ind3_begin = find(tvec0 >= ltswin(1), 1);
 ind3_begin = max(ind3_begin, ipeak_ind);            % first index for LTS search must be after current peak
 ind3_end = find(tvec0 <= ltswin(2), 1, 'last');     % last index for LTS search
@@ -309,9 +324,11 @@ end
 % fprintf('Maximum noise == %g mV\n', maxnoise);
 
 % Calculate baseline voltage (holding potential)
-actVhold = mean(vvec1(bl_ind));         % baseline voltage (actual holding potential)
-                                        % Previously uses vvec0
-% fprintf('Actual holding potential == %g mV\n', actVhold);
+if computeActVholdFlag
+    actVhold = mean(vvec1(bl_ind));         % baseline voltage (actual holding potential)
+                                            % Previously uses vvec0
+    % fprintf('Actual holding potential == %g mV\n', actVhold);
+end
 
 % Set up 2nd derivative of median-filtered voltage trace
 dvvec3 = diff(vvec3)./diff(tvec0);              % differentiate vvec3, the median-filtered 
@@ -907,9 +924,11 @@ if plotflag
     % Check if needed directories exist in outfolder
     check_subdir(outfolder, directories);
 
-    % For convenience
-    bl_start = bl_ind(1);
-    bl_end = bl_ind(end);
+    if computeActVholdFlag
+        % For convenience
+        bl_start = bl_ind(1);
+        bl_end = bl_ind(end);
+    end
 
     % Compute info needed for plotting peak properties
     if ~isnan(ltspeaktime)
@@ -1021,8 +1040,10 @@ if plotflag
                 'Location', 'SouthOutside')
         end
     end
-    plot(tvec0(bl_start), vvec1(bl_start), 'g>');
-    plot(tvec0(bl_end), vvec1(bl_end), 'y<');
+    if computeActVholdFlag
+        plot(tvec0(bl_start), vvec1(bl_start), 'g>');
+        plot(tvec0(bl_end), vvec1(bl_end), 'y<');
+    end
     plot(tvec0(np_lbi_old), vvec3(np_lbi_old), 'k*');
     plot(tvec0(np_ubi_old), vvec3(np_ubi_old), 'k*');
     plot(tvec0(np_lbi), vvec3(np_lbi), 'r*');
