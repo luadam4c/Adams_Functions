@@ -40,10 +40,10 @@ function waveformTrain = create_waveform_train (waveform, frequency, totalDurati
 %                   could be anything recognised by the saveas() function 
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
-%                   - 'plotFlag': whether to plot the pulse train series
+%                   - 'PlotFlag': whether to plot the pulse train series
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
-%                   - 'saveFlag': whether to save the pulse train series
+%                   - 'SaveFlag': whether to save the pulse train series
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %

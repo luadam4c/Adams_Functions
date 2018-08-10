@@ -65,10 +65,13 @@ function waveform = create_pulse_train_series (varargin)
 %                   could be anything recognised by the saveas() function 
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
-%                   - 'plotFlag': whether to plot the pulse train series
+%                   - 'GuiFlag': whether to open a dialog box to check params
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
-%                   - 'saveFlag': whether to save the pulse train series
+%                   - 'PlotFlag': whether to plot the pulse train series
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'SaveFlag': whether to save the pulse train series
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %                   
@@ -77,17 +80,20 @@ function waveform = create_pulse_train_series (varargin)
 %       /home/Matlab/Adams_Functions/create_waveform_train.m
 %       /home/Matlab/Adams_Functions/isfigtype.m
 %       /home/Matlab/Adams_Functions/issheettype.m
+%       /home/Matlab/Adams_Functions/print_or_show_message.m
 %       /home/Matlab/Adams_Functions/save_all_figtypes.m
 
 % File History:
 % 2018-08-08 Created by Adam Lu
 % 2018-08-09 Added seriesDelay and NSweeps
 % 2018-08-09 Now defaults the pulse amplitude to 5
+% 2018-08-10 Added an input dialog box
 
 % Hard-coded constants
 MS_PER_S = 1000;                % 1000 ms per second
 
 % Hard-coded parameters
+dialogDimensions = [1, 60];
 
 %% Default values for optional arguments
 samplingRateDefault = 10000;    % default sampling rate is 10 kHz
@@ -104,6 +110,7 @@ nSweepsDefault = 10;            % default sweep number is 10
 outFolderDefault = '';          % default directory to output spreadsheet file
 sheetTypeDefault = 'dat';       % default spreadsheet type
 figTypesDefault = 'png';        % default figure type(s) for saving
+guiFlagDefault = true;          % opens a dialog box to check params by default
 plotFlagDefault = true;         % plot the pulse train series by default
 saveFlagDefault = true;         % save the pulse train series by default
 
@@ -141,6 +148,8 @@ addParameter(iP, 'SheetType', sheetTypeDefault, ...
     @(x) all(issheettype(x, 'ValidateMode', true)));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
+addParameter(iP, 'GuiFlag', guiFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotFlag', plotFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SaveFlag', saveFlagDefault, ...
@@ -148,21 +157,119 @@ addParameter(iP, 'SaveFlag', saveFlagDefault, ...
 
 % Read from the Input Parser
 parse(iP, varargin{:});
-samplingRate = iP.Results.SamplingRate;
-pulseAmplitude = iP.Results.PulseAmplitude;
-pulseFrequency = iP.Results.PulseFrequency;
-trainFrequency = iP.Results.TrainFrequency;
-pulseDuration = iP.Results.PulseDuration;
-trainDuration = iP.Results.TrainDuration;
-seriesDelay = iP.Results.SeriesDelay;
-seriesDuration = iP.Results.SeriesDuration;
-totalDuration = iP.Results.TotalDuration;
-nSweeps = iP.Results.NSweeps;
+samplingRateInput = iP.Results.SamplingRate;
+pulseAmplitudeInput = iP.Results.PulseAmplitude;
+pulseFrequencyInput = iP.Results.PulseFrequency;
+trainFrequencyInput = iP.Results.TrainFrequency;
+pulseDurationInput = iP.Results.PulseDuration;
+trainDurationInput = iP.Results.TrainDuration;
+seriesDelayInput = iP.Results.SeriesDelay;
+seriesDurationInput = iP.Results.SeriesDuration;
+totalDurationInput = iP.Results.TotalDuration;
+nSweepsInput = iP.Results.NSweeps;
 outFolder = iP.Results.OutFolder;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
+guiFlag = iP.Results.GuiFlag;
 plotFlag = iP.Results.PlotFlag;
 saveFlag = iP.Results.SaveFlag;
+
+%% Create a parameters dialog box for the user to modify/check
+% Prepare for parameters dialog box
+prompt = {'Sampling rate in Hz:', ...
+            'Pulse amplitude:', ...
+            'Pulse frequency in Hz:', ...
+            'Train frequency in Hz:', ...
+            'Pulse duration in ms:', ...
+            'Train duration in ms:', ...
+            'Series delay in ms:', ...
+            'Series duration in ms:', ...
+            'Total duration in ms:', ...
+            'Total number of sweeps:'};
+dialogTitle = 'Parameters for the pulse train series';
+dimensions = repmat(dialogDimensions, numel(prompt), 1);
+defaultParams = {num2str(samplingRateInput), ...
+                num2str(pulseAmplitudeInput), ...
+                num2str(pulseFrequencyInput), ...
+                num2str(trainFrequencyInput), ...
+                num2str(pulseDurationInput), ...
+                num2str(trainDurationInput), ...
+                num2str(seriesDelayInput), ...
+                num2str(seriesDurationInput), ...
+                num2str(totalDurationInput), ...
+                num2str(nSweepsInput)};
+
+% Open parameters dialog box:
+if guiFlag
+    % Inputs need to be checked
+    inputsValid = false;
+else
+    % Inputs already valid
+    inputsValid = true;
+end
+mTitle = 'Preference invalid';  % for a message box if needed
+icon = 'help';
+while ~inputsValid
+    % Open input dialog box
+    params = inputdlg(prompt, dialogTitle, dimensions, defaultParams, 'on');
+
+    % If the user closes it, exit the program
+    if isempty(params)
+        print_or_show_message('Action cancelled ...', ...
+                              'MTitle', 'Create Pulse Train Series Warning', ...
+                              'Icon', 'warn');
+        return;
+    end
+
+    % Read in user inputs
+    samplingRate = str2double(params{1});
+    pulseAmplitude = str2double(params{2});
+    pulseFrequency = str2double(params{3});
+    trainFrequency = str2double(params{4});
+    pulseDuration = str2double(params{5});
+    trainDuration = str2double(params{6});
+    seriesDelay = str2double(params{7});
+    seriesDuration = str2double(params{8});
+    totalDuration = str2double(params{9});
+    nSweeps = str2double(params{10});
+
+    % Update defaults shown in the new dialog box if unsuccessful
+    defaultParams = params;
+
+    if isnan(samplingRate) || samplingRate <= 0
+        msg = 'Sampling Rate must be a positive scalar!';
+    elseif isnan(pulseAmplitude)
+        msg = 'Pulse Amplitude must be a numeric scalar!';
+    elseif isnan(pulseFrequency) || pulseFrequency <= 0
+        msg = 'Pulse Frequency must be a positive scalar!';
+    elseif isnan(trainFrequency) || trainFrequency <= 0
+        msg = 'Train Frequency must be a positive scalar!';
+    elseif isnan(pulseDuration) || pulseDuration <= 0
+        msg = 'Pulse Duration must be a positive scalar!';
+    elseif isnan(trainDuration) || trainDuration <= 0
+        msg = 'Train Duration must be a positive scalar!';
+    elseif isnan(seriesDelay) || seriesDelay <= 0
+        msg = 'Series Delay must be a positive scalar!';
+    elseif isnan(seriesDuration) || seriesDuration <= 0
+        msg = 'Series Duration must be a positive scalar!';
+    elseif isnan(totalDuration) || totalDuration <= 0
+        msg = 'Total Duration must be a positive scalar!';
+    elseif isnan(nSweeps) || nSweeps <= 0 || ~isinteger(nSweeps)
+        msg = 'NSweeps must be a positive scalar!';
+    else                        % all inputs are valid
+        msg = '';
+    end
+
+    % Check whether there was an invalid input
+    if isempty(msg)
+        % Exit while loop
+        inputsValid = true;
+    else
+        % Show error message and wait for user to close it
+        %   before reloading session preferences dialog box
+        uiwait(msgbox(msg, mTitle, 'modal'));    
+    end
+end
 
 %% Preparation
 % Compute the sampling interval in ms

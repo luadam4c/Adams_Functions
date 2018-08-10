@@ -53,7 +53,9 @@ function print_or_show_message(message, varargin)
 %       /home/Matlab/Adams_Functions/atf2sheet.m
 %       /home/Matlab/Adams_Functions/combine_sweeps.m
 %       /home/Matlab/Adams_Functions/create_input_file.m
+%       /home/Matlab/Adams_Functions/create_pulse_train_series.m
 %       /home/Matlab/Adams_Functions/create_waveform_train.m
+%       /home/Matlab/Adams_Functions/match_time_points.m
 %       /home/Matlab/EEG_gui/combine_EEG_gui_outputs.m
 %       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
 %
