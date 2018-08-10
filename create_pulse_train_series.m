@@ -15,14 +15,39 @@ function waveform = create_pulse_train_series (varargin)
 %
 % Example(s):
 %       waveform = create_pulse_train_series;
-%       waveform = create_pulse_train_series('PulseAmplitude', 5);
+%       waveform = create_pulse_train_series('PulseAmplitude', 1);
+%       waveform = create_pulse_train_series('guiFlag', false, ...
+%                                            'plotFlag', false, ...
+%                                            'saveFlag', false);
 %
 % Outputs:
 %       waveform    - a waveform for the pulse train series
 %                   specified as a column vector
 %
 % Arguments:    
-%       varargin    - 'SamplingRate': sampling rate in Hz
+%       varargin    - 'GuiFlag': whether to open a dialog box to check params
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'PlotFlag': whether to plot the pulse train series
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'SaveFlag': whether to save the pulse train series
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'OutFolder': directory to output files and figures
+%                   must be a string scalar or a character vector
+%                   default == pwd
+%                   - 'SheetType': sheet type; 
+%                       e.g., 'xlsx', 'csv', etc.
+%                   could be anything recognised by the readtable() function 
+%                   (see issheettype.m under Adams_Functions)
+%                   default == 'dat'
+%                   - 'FigTypes': figure type(s) for saving
+%                       e.g., 'png', 'fig', or {'png', 'fig'}, etc.
+%                   could be anything recognised by the saveas() function 
+%                   (see isfigtype.m under Adams_Functions)
+%                   default == 'png'
+%                   - 'SamplingRate': sampling rate in Hz
 %                   must be a positive scalar
 %                   default == 10000 Hz
 %                   - 'PulseAmplitude': pulse amplitude
@@ -52,28 +77,6 @@ function waveform = create_pulse_train_series (varargin)
 %                   - 'NSweeps': total number of sweeps
 %                   must be a positive integer scalar
 %                   default == 10
-%                   - 'OutFolder': directory to output files and figures
-%                   must be a string scalar or a character vector
-%                   default == pwd
-%                   - 'SheetType': sheet type; 
-%                       e.g., 'xlsx', 'csv', etc.
-%                   could be anything recognised by the readtable() function 
-%                   (see issheettype.m under Adams_Functions)
-%                   default == 'dat'
-%                   - 'FigTypes': figure type(s) for saving
-%                       e.g., 'png', 'fig', or {'png', 'fig'}, etc.
-%                   could be anything recognised by the saveas() function 
-%                   (see isfigtype.m under Adams_Functions)
-%                   default == 'png'
-%                   - 'GuiFlag': whether to open a dialog box to check params
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
-%                   - 'PlotFlag': whether to plot the pulse train series
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
-%                   - 'SaveFlag': whether to save the pulse train series
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
 %                   
 %
 % Requires:
@@ -96,6 +99,12 @@ MS_PER_S = 1000;                % 1000 ms per second
 dialogDimensions = [1, 60];
 
 %% Default values for optional arguments
+guiFlagDefault = true;          % opens a dialog box to check params by default
+plotFlagDefault = true;         % plot the pulse train series by default
+saveFlagDefault = true;         % save the pulse train series by default
+outFolderDefault = '';          % default directory to output spreadsheet file
+sheetTypeDefault = 'dat';       % default spreadsheet type
+figTypesDefault = 'png';        % default figure type(s) for saving
 samplingRateDefault = 10000;    % default sampling rate is 10 kHz
 pulseAmplitudeDefault = 5;      % default pulse amplitude is 5 V 
                                 %   (industry standard for an ON signal)
@@ -107,12 +116,6 @@ seriesDelayDefault = 1000;      % default series delay is 1 second
 seriesDurationDefault = 2000;   % default series duration is 2 seconds
 totalDurationDefault = 10000;   % default total duration is 10 seconds
 nSweepsDefault = 10;            % default sweep number is 10
-outFolderDefault = '';          % default directory to output spreadsheet file
-sheetTypeDefault = 'dat';       % default spreadsheet type
-figTypesDefault = 'png';        % default figure type(s) for saving
-guiFlagDefault = true;          % opens a dialog box to check params by default
-plotFlagDefault = true;         % plot the pulse train series by default
-saveFlagDefault = true;         % save the pulse train series by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -122,6 +125,18 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'GuiFlag', guiFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotFlag', plotFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveFlag', saveFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'SheetType', sheetTypeDefault, ...
+    @(x) all(issheettype(x, 'ValidateMode', true)));
+addParameter(iP, 'FigTypes', figTypesDefault, ...
+    @(x) all(isfigtype(x, 'ValidateMode', true)));
 addParameter(iP, 'SamplingRate', samplingRateDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'PulseAmplitude', pulseAmplitudeDefault, ...
@@ -142,37 +157,25 @@ addParameter(iP, 'TotalDuration', totalDurationDefault, ...
    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'NSweeps', nSweepsDefault, ...
    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
-addParameter(iP, 'OutFolder', outFolderDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'SheetType', sheetTypeDefault, ...
-    @(x) all(issheettype(x, 'ValidateMode', true)));
-addParameter(iP, 'FigTypes', figTypesDefault, ...
-    @(x) all(isfigtype(x, 'ValidateMode', true)));
-addParameter(iP, 'GuiFlag', guiFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'PlotFlag', plotFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'SaveFlag', saveFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
-samplingRateInput = iP.Results.SamplingRate;
-pulseAmplitudeInput = iP.Results.PulseAmplitude;
-pulseFrequencyInput = iP.Results.PulseFrequency;
-trainFrequencyInput = iP.Results.TrainFrequency;
-pulseDurationInput = iP.Results.PulseDuration;
-trainDurationInput = iP.Results.TrainDuration;
-seriesDelayInput = iP.Results.SeriesDelay;
-seriesDurationInput = iP.Results.SeriesDuration;
-totalDurationInput = iP.Results.TotalDuration;
-nSweepsInput = iP.Results.NSweeps;
-outFolder = iP.Results.OutFolder;
-[~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
-[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 guiFlag = iP.Results.GuiFlag;
 plotFlag = iP.Results.PlotFlag;
 saveFlag = iP.Results.SaveFlag;
+outFolder = iP.Results.OutFolder;
+[~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
+samplingRate = iP.Results.SamplingRate;
+pulseAmplitude = iP.Results.PulseAmplitude;
+pulseFrequency = iP.Results.PulseFrequency;
+trainFrequency = iP.Results.TrainFrequency;
+pulseDuration = iP.Results.PulseDuration;
+trainDuration = iP.Results.TrainDuration;
+seriesDelay = iP.Results.SeriesDelay;
+seriesDuration = iP.Results.SeriesDuration;
+totalDuration = iP.Results.TotalDuration;
+nSweeps = iP.Results.NSweeps;
 
 %% Create a parameters dialog box for the user to modify/check
 % Prepare for parameters dialog box
@@ -188,16 +191,16 @@ prompt = {'Sampling rate in Hz:', ...
             'Total number of sweeps:'};
 dialogTitle = 'Parameters for the pulse train series';
 dimensions = repmat(dialogDimensions, numel(prompt), 1);
-defaultParams = {num2str(samplingRateInput), ...
-                num2str(pulseAmplitudeInput), ...
-                num2str(pulseFrequencyInput), ...
-                num2str(trainFrequencyInput), ...
-                num2str(pulseDurationInput), ...
-                num2str(trainDurationInput), ...
-                num2str(seriesDelayInput), ...
-                num2str(seriesDurationInput), ...
-                num2str(totalDurationInput), ...
-                num2str(nSweepsInput)};
+defaultParams = {num2str(samplingRate), ...
+                num2str(pulseAmplitude), ...
+                num2str(pulseFrequency), ...
+                num2str(trainFrequency), ...
+                num2str(pulseDuration), ...
+                num2str(trainDuration), ...
+                num2str(seriesDelay), ...
+                num2str(seriesDuration), ...
+                num2str(totalDuration), ...
+                num2str(nSweeps)};
 
 % Open parameters dialog box:
 if guiFlag
@@ -254,8 +257,8 @@ while ~inputsValid
         msg = 'Series Duration must be a positive scalar!';
     elseif isnan(totalDuration) || totalDuration <= 0
         msg = 'Total Duration must be a positive scalar!';
-    elseif isnan(nSweeps) || nSweeps <= 0 || ~isinteger(nSweeps)
-        msg = 'NSweeps must be a positive scalar!';
+    elseif isnan(nSweeps) || nSweeps <= 0 || round(nSweeps) ~= nSweeps
+        msg = 'NSweeps must be a positive integer!';
     else                        % all inputs are valid
         msg = '';
     end
