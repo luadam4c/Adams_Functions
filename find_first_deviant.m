@@ -26,6 +26,7 @@ function [valDeviant, idxDeviant] = find_first_deviant (vector, varargin)
 
 % File History:
 % 2018-08-11 Adapted from find_first_jump.m
+% 2018-08-12 Fixed bug: deviant2peers was never used XD
 
 %% Default values for optional arguments
 deviant2peersDefault = 2;        % default deviant to peers ratio
@@ -77,13 +78,16 @@ for idxDeviant = idxFirstDeviantToTest:nDeviants
     % Get the value of the deviant
     valDeviant = vector(idxDeviant);
 
-    % If the deviant magnitude is more than deviant2peers of avgPeers, stop
-    if abs(valDeviant) > avgPeers
+    % If the deviant magnitude is more than deviant2peers times of avgPeers, 
+    %   stop
+    if abs(valDeviant) > deviant2peers * avgPeers
         break
-    elseif idxDeviant == nDeviants
-        idxDeviant = [];
-        valDeviant = [];
     end
+end
+
+if abs(valDeviant) <= deviant2peers * avgPeers
+    idxDeviant = [];
+    valDeviant = [];
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
