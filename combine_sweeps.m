@@ -1,18 +1,36 @@
-function allData = combine_sweeps(dataDirectory, expLabel, dataMode, varargin)
+function [allData, timeVec] = combine_sweeps(varargin)
 %% Combines sweeps that begin with expLabel in dataDirectory under dataMode
-% Usage: allData = combine_sweeps(dataDirectory, expLabel, dataMode, varargin)
+% Usage: [allData, timeVec] = combine_sweeps(varargin)
 % Explanation:
 %       TODO
 % Outputs:
 %       TODO
 % Arguments:    
-%       TODO
-%       varargin    - 'DataType': input data type
+%       varargin    - 'DataDirectory'- dataDirectory containing files to combine
+%                   must be a string scalar or a character vector
+%                   default == pwd
+%                   - 'ExpLabel'    - experiment label for files to combine
+%                   must be a string scalar or a character vector
+%                   default == '' 
+%                   - 'OutputLabel' - experiment label for output file names
+%                   must be a string scalar or a character vector
+%                   default == expLabel if provided and dataDirectory name otherwise
+%                   - 'SweepNumbers' - the sweep numbers to combine
+%                   must be a numeric vector or 'all'
+%                   default == 'all'
+%                   - 'DataType': input data type
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'abf'   - AXON binary files
 %                       'mat'   - MATLAB data files
 %                       'txt'   - text files
-%                   default == automatically detect from dataDirectory
+%                       'auto'  - automatically detect from dataDirectory
+%                   default == 'auto'
+%                   - 'DataMode': input data mode
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       '2d'    - a single sweep per file
+%                       '3d'    - multiple sweeps per file
+%                       'auto'  - automatically detect from dataDirectory
+%                   default == 'auto'
 %                   - 'MessageMode' - how message boxes are shown
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'wait'  - stops program and waits for the user
@@ -47,20 +65,31 @@ function allData = combine_sweeps(dataDirectory, expLabel, dataMode, varargin)
 % 2018-02-27 AL - Changed showMessages to messageMode with possible values:
 %                   'wait', 'show', 'none'
 % 2018-03-02 MD - Defined verbose parameter for print_or_show_message
+% 2018-08-12 AL - Made 'DataDirectory', 'ExpLabel', 'DataMode', etc.
+%                   optional arguments
+% 2018-08-12 AL - Now detects data mode automatically
 % 
+
+%% Hard-coded constants
+US_PER_MS = 1000;
 
 %% Hard-coded parameters
 possibleDataTypes = {'abf', 'mat', 'txt'};     
                     % Precedence: .abf > .mat > .txt
+possibleDataModes = {'2d', '3d'};
 validMessageModes = {'wait', 'show', 'none'};
 
 %% Default values for optional arguments
-sweepNumbersDefault = 'all';
-dataTypeDefault     = 'auto';       % to detect input data type 
-                                    %   from possibleDataTypes
-messageModeDefault  = 'none';       % print to standard output by default
-verboseDefault = false;             % default: Program does not print message
-                                    %   even if message box is shown
+dataDirectoryDefault = pwd;            % use the present working directory by default
+expLabelDefault = '';           % disregard any experiment label by default
+outputLabelDefault = '';        % (will be changed later)
+sweepNumbersDefault = 'all';    % combine all sweeps by default
+dataTypeDefault     = 'auto';   % to detect input data type 
+                                %   from possibleDataTypes
+dataModeDefault     = 'auto';   % to detect input data type
+messageModeDefault  = 'none';   % print to standard output by default
+verboseDefault = false;         % default: Program does not print message
+                                %   even if message box is shown
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -83,15 +112,20 @@ end
                                                 
 % Set up Input Parser Scheme
 iP = inputParser;         
-iP.FunctionName = 'combine_sweeps';
-
-% Add required inputs to the Input Parser
-% TODO
+iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'DataDirectory', dataDirectoryDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'ExpLabel', expLabelDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'OutputLabel', outputLabelDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SweepNumbers', sweepNumbersDefault);
 addParameter(iP, 'DataType', dataTypeDefault, ...
     @(x) any(validatestring(x, possibleDataTypes)));
+addParameter(iP, 'DataMode', dataModeDefault, ...
+    @(x) any(validatestring(x, possibleDataModes)));
 addParameter(iP, 'MessageMode', messageModeDefault, ...
     @(x) any(validatestring(x, validMessageModes)));
 addParameter(iP, 'Verbose', verboseDefault, ...
@@ -99,7 +133,12 @@ addParameter(iP, 'Verbose', verboseDefault, ...
 
 % Read from the Input Parser
 parse(iP, varargin{:});
+dataDirectory = iP.Results.DataDirectory;
+expLabel = iP.Results.ExpLabel;
+outputLabel = iP.Results.OutputLabel;
 sweepNumbers = iP.Results.SweepNumbers;
+dataModeUser = validatestring(iP.Results.DataType, ...
+                    [possibleDataModes, {'auto'}]);
 dataTypeUser = validatestring(iP.Results.DataType, ...
                     [possibleDataTypes, {'auto'}]);
 messageMode = validatestring(iP.Results.MessageMode, validMessageModes);
@@ -134,9 +173,47 @@ else
                             'Verbose', verbose);
 end
 
+% Decide on the data mode and the sampling interval if any
+if strcmpi(dataModeUser, 'auto')
+    if strcmpi(dataType, 'abf')
+        % Get the first data file name
+        firstDataFileName = fullfile(dataDirectory, allDataFiles(1).name);
+
+        % Load it
+        [data, siUs, ~] = abf2load(firstDataFileName);
+
+        % Determine the dimensions of the data structure
+        nDims = length(size(data));
+
+        % Decide based on the dimensions
+        if nDims == 2
+            dataMode = '2d';
+        elseif nDims == 3
+            dataMode = '3d';
+        else
+            error('data mode unrecognized!');
+        end
+
+        % Get the sampling interval in milliseconds
+        siMs = siUs / US_PER_MS;
+    else
+        % The other file types should always be one sweep per file
+        dataMode = '2d';
+
+        % TODO: let the user provide a sampling interval
+        siMs = [];
+    end
+else
+    % Let the user override the data mode detection
+    dataMode = dataModeUser;
+
+    % TODO: let the user provide a sampling interval
+    siMs = [];
+end
+
 % Concatenate sweep data
 allData = [];                       % Initialize combined sweep data
-if strcmpi(dataMode, 'Katie')       % if there is only one sweep per file
+if strcmpi(dataMode, '2d')       % if there is only one sweep per file
     % Set default sweep numbers for one sweep per file
     if ~isnumeric(sweepNumbers) && strcmpi(sweepNumbers, 'all')
         sweepNumbers = 1:nDataFiles;
@@ -194,7 +271,7 @@ if strcmpi(dataMode, 'Katie')       % if there is only one sweep per file
         % Add to allData
         allData = [allData; current];
     end
-elseif strcmpi(dataMode, 'Peter')   % if there are multiple sweeps per file
+elseif strcmpi(dataMode, '3d')   % if there are multiple sweeps per file
     % Check if multiple data files exist
     if nDataFiles > 1
         message = 'Too many data files! Failed to combine sweeps!';
@@ -235,7 +312,29 @@ elseif strcmpi(dataMode, 'Peter')   % if there are multiple sweeps per file
     end
 end
 
-% Show success message
+% Construct a time vector if possible
+if ~isempty(siMs)
+    % Count the number of samples
+    nSamples = length(allData);
+
+    % Construct a time vector in milliseconds
+    timeVec = (1:nSamples)' * siMs;
+else
+    timeVec = [];
+end
+
+%% Save output TODO
+% Decide on the output label
+[~, dataDirectoryName, ~] = fileparts(dataDirectory);
+if isempty(outputLabel)
+    if ~isempty(expLabel)
+        outputLabel = expLabel;
+    else
+        outputLabel = dataDirectoryName;
+    end
+end
+
+%% Show success message
 message = 'Sweeps successfully combined!!';
 mTitle = 'Combine sweep success';
 % TODO: load custom icon

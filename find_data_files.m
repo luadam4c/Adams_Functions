@@ -4,12 +4,13 @@ function [dataType, allDataFiles, nDataFiles, message] = find_data_files (dataTy
 %
 % Arguments:
 %       TODO    
-%       varargin    - 'FileIdentifier': data file identifier
+%       varargin    - 'FileIdentifier': data file identifier (may be empty)
 %                   must be a string scalar or a character vector
 %                   default == ''
 %                   - 'ExcludedStrings': excluded strings from the filename
 %                   must be a cell array of character vectors
 %                   default == {}
+%
 % Used by:
 %       /home/Matlab/minEASE/minEASE.m
 %       /home/Matlab/Adams_Functions/combine_sweeps.m
@@ -41,7 +42,7 @@ iP.FunctionName = 'find_data_files';
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'FileIdentifier', fileIdentifierDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'nonempty'}));
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ExcludedStrings', excludedStringsDefault, @iscellstr);
 
 % Read from the Input Parser

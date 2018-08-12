@@ -1,6 +1,6 @@
-function [modelBest, numComponents, muBest, stdevBest, proportionBest, minAIC, newThr1, newThr2, newPeakclass, minThreshold, gaussianOrder] = fit_gaussians_and_refine_threshold (data, fileName, label, varargin)
+function [modelBest, numComponents, muBest, stdevBest, proportionBest, minAIC, newThr1, newThr2, newPeakclass, minThreshold, indRanked] = fit_gaussians_and_refine_threshold (data, fileName, label, varargin)
 %% Fits data to Gaussian mixture models and finds the optimal number of components
-% Usage: [modelBest, numComponents, muBest, stdevBest, proportionBest, minAIC, newThr1, newThr2, newPeakclass, minThreshold] = fit_gaussians_and_refine_threshold (data, fileName, label, varargin)
+% Usage: [modelBest, numComponents, muBest, stdevBest, proportionBest, minAIC, newThr1, newThr2, newPeakclass, minThreshold, indRanked] = fit_gaussians_and_refine_threshold (data, fileName, label, varargin)
 % Arguments: TODO
 %       data must be a column vector of values; 
 %       maxNumComponents is defaulted to be 5
@@ -27,6 +27,7 @@ function [modelBest, numComponents, muBest, stdevBest, proportionBest, minAIC, n
 %               and threshold plot must have figname rmse_*R/F*_row_Fit_threshold
 % 2018-01-24 - Added isdeployed
 % 2018-07-18 - BT - Implemented input parser
+% 2018-08-12 - AL - Changed gaussianOrder to indRanked
 
 %% Set parameters
 prec = 10^-4;               % Precision
@@ -41,8 +42,9 @@ defaultFitMode = 0;
 defaultPeakClass = [];
 defaultPeakClass_Labels = {}; % length must be the same as unique elements in peakclass, set 'data' as prefix in dependent argument
 defaultMin_Threshold = 0;
-defaultThresMode = 'threeStdFirstComponent';     % 'minFirstTwoComponents' - Passive fitting for Narrowest_peak_2ndder_nospont & RMSE
-                                                % 'threeStdFirstComponent' - Initial slopes
+defaultThresMode = 'threeStdMainComponent'; 
+            % 'minFirstTwoComponents' - Passive fitting for Narrowest_peak_2ndder_nospont & RMSE
+            % 'threeStdMainComponent' - Initial slopes
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -92,6 +94,7 @@ addParameter(iP, 'MinThreshold', defaultMin_Threshold, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'ThresMode', defaultThresMode, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+% TODO: Use validatestring
 
 % Read from the Input Parser
 parse(iP, data, fileName, label, varargin{:});
@@ -224,6 +227,15 @@ for i = 1:numComponents
     Normalpdf{i} = pdf(Normal{i}, x);
 end
 
+% Compute the maximum value for each component
+maxComponentAll = zeros(numComponents, 1);
+for idx = 1:numComponents
+    maxComponentAll(idx) = max(Normalpdf{idx} * proportionBest(idx));
+end
+
+% Sort the components by the maximum values
+[~, indRanked] = sort(maxComponentAll, 'descend');
+
 %% Find new thresholds
 if strcmp(thresMode, 'minFirstTwoComponents')
     if numComponents == 3                    % 2 possible thresholds
@@ -276,23 +288,14 @@ if strcmp(thresMode, 'minFirstTwoComponents')
         fprintf(fid, 'New LTS threshold is %g V^2/s^2\n', newThr1);
         fclose(fid);
     end
-elseif strcmp(thresMode, 'threeStdFirstComponent')
-    maxGaussians = zeros(size(proportionBest)); % holds maximum value per component
-    for idx = 1:length(Normalpdf)   % compute maximum value of each component
-        maxGaussians(idx) = max(Normalpdf{idx} * proportionBest(idx) * harea);
-    end
-    [~, modeIdx] = max(maxGaussians);    % index of most representative Gaussian
-    newThr1 = muBest(modeIdx) + 3 * stdevBest(modeIdx);   % right bound
-    newThr2 = muBest(modeIdx) - 3 * stdevBest(modeIdx);   % left bound
-    gaussianOrder = zeros(3,1); % order gaussians 1) mode, 2) leftmost if mode is center, 3) rightmost if mode is center
-    gaussianOrder(1) = modeIdx; % or 1) mode, 2) center if mode is leftmost, 3) rightmost if mode is leftmost
-    if modeIdx == 2
-        gaussianOrder(2) = 1;
-        gaussianOrder(3) = 3;
-    elseif modeIdx == 1
-        gaussianOrder(2) = 2;
-        gaussianOrder(3) = 3;
-    end
+elseif strcmp(thresMode, 'threeStdMainComponent')
+    % Find the index of the most representative Gaussian
+    idxMode = indRanked(1);
+
+    % Compute the thresholds based on 3 standard deviations of the mean
+    %   of the most representative Gaussian
+    newThr1 = muBest(idxMode) + 3 * stdevBest(idxMode);   % right bound
+    newThr2 = muBest(idxMode) - 3 * stdevBest(idxMode);   % left bound
 end
 
 %% Plot and save histogram with fitted Gaussian mixture pdf
@@ -499,5 +502,23 @@ function [modelBest, numComponents, muBest, stdevBest, proportionBest, minAIC, n
 data = iP.Results.Data;
 fileName = iP.Results.FileName;
 label = iP.Results.Label;
+
+maxGaussians = zeros(size(proportionBest)); % holds maximum value per component
+for idx = 1:length(Normalpdf)   % compute maximum value of each component
+    maxGaussians(idx) = max(Normalpdf{idx} * proportionBest(idx) * harea);
+end
+[~, idxMode] = max(maxGaussians);    % index of most representative Gaussian
+newThr1 = muBest(idxMode) + 3 * stdevBest(idxMode);   % right bound
+newThr2 = muBest(idxMode) - 3 * stdevBest(idxMode);   % left bound
+
+gaussianOrder = zeros(3,1); % order gaussians 1) mode, 2) leftmost if mode is center, 3) rightmost if mode is center
+gaussianOrder(1) = idxMode; % or 1) mode, 2) center if mode is leftmost, 3) rightmost if mode is leftmost
+if idxMode == 2
+    gaussianOrder(2) = 1;
+    gaussianOrder(3) = 3;
+elseif idxMode == 1
+    gaussianOrder(2) = 2;
+    gaussianOrder(3) = 3;
+end
 
 %}
