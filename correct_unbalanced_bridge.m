@@ -85,7 +85,7 @@ indToShift = idxLast1:idxFirst2;
 vvecNew = vvecOld;
 
 % Calculate the time difference that the average slope was computed for
-deltaTime = tvecOld(idxStart + nSamples - 1) - tvecOld(idxStart);
+deltaTime = tvecOld(nSamples) - tvecOld(1);
 
 % Calculate the voltage to correct by
 shiftBy = avgSlope * deltaTime;
