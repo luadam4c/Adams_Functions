@@ -23,6 +23,8 @@ function [vvecNew] = correct_unbalanced_bridge (vvecOld, ivecOld, varargin)
 % 2018-08-10 AL - Now checks number of arguments
 % 2018-08-11 AL - Added UseCurrentFlag and set the default to not use it
 % 2018-08-12 AL - Set default of UseCurrentFlag to true
+% 2018-08-13 AL - Now uses the actual endpoints used by 
+%                   compute_average_initial_slopes to find the indices to shift
 
 %% Hard-coded parameters
 nSamples = 2;       % number of samples between the voltage jump
