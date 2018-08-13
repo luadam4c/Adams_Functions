@@ -259,6 +259,17 @@ while ~inputsValid
         msg = 'Total Duration must be a positive scalar!';
     elseif isnan(nSweeps) || nSweeps <= 0 || round(nSweeps) ~= nSweeps
         msg = 'NSweeps must be a positive integer!';
+    elseif pulseDuration > floor(MS_PER_S / pulseFrequency)
+        msg = 'Pulse Duration too large or Pulse Frequency too large!';
+    elseif pulseDuration > trainDuration
+        msg = 'Pulse Duration cannot be greater than Train Duration!';
+    elseif trainDuration > floor(MS_PER_S / trainFrequency)
+        msg = 'Train Duration too large or Train Frequency too large!';
+    elseif trainDuration > seriesDuration
+        msg = 'Train Duration cannot be greater than Series Duration!';
+    elseif seriesDelay + seriesDuration > totalDuration
+        msg = ['The sum of Series Delay and Series Duration ', ...
+                'cannot be greater than Total Duration!'];
     else                        % all inputs are valid
         msg = '';
     end
