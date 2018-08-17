@@ -43,7 +43,7 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 %                   default == numel(cellArray)
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/intersectm.m
+%       /home/Matlab/Adams_Functions/intersect_over_cells.m
 %
 % Used by:    
 %       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
@@ -183,14 +183,14 @@ case 'substrings'   % String can be a substring or a cell array of substrings
 
         % Find the indices that contain each substring
         numstrs = numel(strMod);
-        indices_eachstr = cell(1, numstrs);
+        indicesEachStr = cell(1, numstrs);
         for k = 1:numstrs
             indicesarray = strfind(cellArrayMod, strMod(k));    
-            indices_eachstr{k} = find(~cellfun(@isempty, indicesarray));
+            indicesEachStr{k} = find(~cellfun(@isempty, indicesarray));
         end
 
         % Find the indices that contain all substrings by intersection
-        indices = intersectm(indices_eachstr);
+        indices = intersect_over_cells(indicesEachStr);
 
         % If more than maxNum indices found, 
         %   restrict to the first maxNum indices

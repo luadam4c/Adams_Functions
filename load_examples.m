@@ -29,6 +29,9 @@ myCellStrRow = {'I love you', 'You love me', 'Blab hooray!', 'Why?'};
 myCellStrCol = {'I love you'; 'You love me'; 'Blab hooray!'; 'Why?'};
 myCellStr2D = {'I love you', 'You love me'; 'Blab hooray!', 'Why?'};
 
+% Cell arrays of cell arrays
+myCellCell = {myCellStrRow, myCellStrRow, myCellStrRow};
+
 % Structures
 blab = struct;
 blab.students = names;
