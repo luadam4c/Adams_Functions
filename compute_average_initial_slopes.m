@@ -22,7 +22,7 @@ function [avgSlope, startSlope, endSlope, indsUsed, isUnbalanced] = ...
 %
 % Used by:    
 %       /home/Matlab/Adams_Functions/correct_unbalanced_bridge.m
-%       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
+%       /home/Matlab/Adams_Functions/find_initial_slopes.m
 
 % File History:
 % 2018-07-25 BT - Adapted from find_initial_slopes.m
