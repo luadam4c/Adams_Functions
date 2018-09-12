@@ -13,6 +13,29 @@ function [bestModels, pdfModels, peak1s, peak2s, peak3s, ...
 %                       'threeStdMainComponent' 
 %                                       - use the center Gaussian distribution
 %                   default == 'threeStdMainComponent'
+%                   - 'OutlierMethod': method for determining outliers
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'boxplot'   - same as the Matlab function boxplot()
+%                       'isoutlier' - Use the built-in isoutlier function
+%                       'fiveStds'  - Take out data points 
+%                                       more than 5 standard deviations away
+%                       'threeStds' - Take out data points 
+%                                       more than 3 standard deviations away
+%                       'twoStds'   - Take out data points 
+%                                       more than 2 standard deviations away
+%                   default == 'isoutlier'
+%                   - 'Bandwidth2StdRatio': ratio of kernel bandwidth to 
+%                                           standard deviation
+%                   must be a positive scalar
+%                   default == 1/5
+%                   - 'MaxNumComponents': maximum number of Gaussian components
+%                   must be a positive integer scalar
+%                   default == 3
+%                   - 'outFolder': directory to save figures
+%                   must be a string scalar or a character vector
+%                   default == pwd
+%
+%
 % Requires:
 %       /home/Matlab/Adams_Functions/fit_kernel.m
 %       /home/Matlab/Adams_Functions/fit_gaussians_and_refine_threshold.m
@@ -26,13 +49,17 @@ function [bestModels, pdfModels, peak1s, peak2s, peak3s, ...
 
 %% Hard-coded parameters (must be consistent with dataDclampExtractor.m)
 validMethods = {'kernelVoid', 'threeStdMainComponent'};
+validOutlierMethods = {'boxplot', 'isoutlier', ...
+                        'fiveStds', 'threeStds', 'twoStds'};
 
-%% TODO: Fix
-outlierMethod = 'fiveStds';         % method for determining outliers
-bandwidth2StdRatio = 1/5;           % ratio of kernel bandwidth to 
-                                    %   standard deviation
-maxNumComponents = 4;               % maximum number of components
+%% Default values for optional arguments
+outlierMethodDefault = 'fiveStds';  % use five standard deviations from the mean
+bandwidth2StdRatioDefault = 1/5;    % use a fifth of the standard deviation
+                                    %   as the bandwidth by default
+maxNumComponentsDefault = 3;        % maximum number of components
                                     %   if multiple Gaussians are used to fit
+outFolderDefault = '';              % default directory to save figures
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -50,10 +77,29 @@ iP.FunctionName = mfilename;
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ThresMethod', thresMethodDefault, ...
     @(x) any(validatestring(x, validMethods)));
+addParameter(iP, 'OutlierMethod', outlierMethodDefault, ...
+    @(x) any(validatestring(x, validOutlierMethods)));
+addParameter(iP, 'Bandwidth2StdRatio', bandwidth2StdRatioDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'MaxNumComponents', maxNumComponentsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, ...
+        {'scalar', 'positive', 'integer'}));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+                                                % introduced after R2016b
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 thresMethod = validatestring(iP.Results.ThresMethod, validMethods);
+outlierMethod = validatestring(iP.Results.OutlierMethod, validOutlierMethods);
+bandwidth2StdRatio = iP.Results.Bandwidth2StdRatio;
+maxNumComponents = iP.Results.MaxNumComponents;
+outFolder = iP.Results.OutFolder;
+
+% Set dependent argument defaults
+if isempty(outFolder)
+    outFolder = pwd;
+end
 
 % Count the number of possible nSamples to use
 nNSamples = length(allNSamples);
@@ -103,7 +149,7 @@ parfor iNSample = 1:nNSamples
             rightThres, leftThres, ~, ~, indRanked] = ...
             fit_gaussians_and_refine_threshold(avgSlopesThisTrunc, figname, ...
                'Slope (V/s)', 'MaxNumComponents', maxNumComponents, ...
-               'OldThr', 0, 'ThrMin', 0, 'OutFolder', histFolder, ...
+               'OldThr', 0, 'ThrMin', 0, 'OutFolder', outFolder, ...
                'FitMode', 0, 'PeakClass', ones(size(avgSlopesThisTrunc)), ...
                'PeakClassLabels', {'data'}, ...
                'MinThreshold', 0, 'ThresMode', thresMethod);
