@@ -32,6 +32,7 @@ function [avgSlope, startSlope, endSlope, indsUsed, isUnbalanced] = ...
 %                   to define a region of interest
 % 2018-08-12 AL - Changed signal2Noise to 10
 % 2018-08-13 AL - Moved code to find_pulse_response_endpoints.m
+% 2018-09-17 AL - Updated usage of find_pulse_response_endpoints.m
 
 %% Hard-coded parameters
 
@@ -70,8 +71,13 @@ ivecCpr = iP.Results.IvecCpr;
 nSamples = iP.Results.NSamples;
 
 %% Find the endpoints of the pulse response
+% Get the sampling interval in milliseconds
+siMs = tVec(2) - tVec(1);
+
+% Find the endpoints of the pulse response
 [idxCprStart, idxCprEnd, isUnbalanced] = ...
-            find_pulse_response_endpoints(tvecCpr, vvecCpr, 'IvecCpr', ivecCpr);
+    find_pulse_response_endpoints(vvecCpr, siMs, 'IvecCpr', ivecCpr, ...
+                                    'SameAsIvec', false, 'CprLengthMs', 0);
 
 %% Compute the average slope
 % Compute slope right after current pulse start

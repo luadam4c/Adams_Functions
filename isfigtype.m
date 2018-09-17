@@ -27,19 +27,21 @@ function [results, figtypes] = isfigtype (strings, varargin)
 %                   default == 'substring'
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/istype.m
+%       cd/istype.m
 %
 % Used by:
-%       /home/Matlab/function_template.m
+%       cd/create_waveform_train.m
+%       cd/create_pulse_train_series.m
+%       cd/plot_tuning_curve.m
+%       cd/plot_tuning_map.m
+%       cd/compute_and_plot_evoked_LFP.m
+%       /home/Matlab/minEASE/compute_plot_average_PSC_traces.m
 %       /home/Matlab/minEASE/detect_gapfree_events.m
-%       /home/Matlab/Adams_Functions/create_waveform_train.m
-%       /home/Matlab/Adams_Functions/create_pulse_train_series.m
-%       /home/Matlab/Adams_Functions/plot_tuning_curve.m
-%       /home/Matlab/Adams_Functions/plot_tuning_map.m
 %       /media/adamX/RTCl/raster_plot.m
 %       /media/adamX/RTCl/single_neuron.m
 %       /media/adamX/RTCl/tuning_curves.m
 %       /media/adamX/RTCl/tuning_maps.m
+%       /media/adamX/Settings_Matlab/function_template.m
 %
 % File History:
 % 2017-05-09 Created by Adam Lu

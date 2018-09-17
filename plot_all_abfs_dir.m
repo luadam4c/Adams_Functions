@@ -33,8 +33,10 @@ function plot_all_abfs_dir (varargin)
 %                   default == tVec(end)
 %
 % Requires:
+%       cd/compute_and_plot_evoked_LFP.m
 %       cd/plot_traces_abf.m
 %       cd/plot_FI.m
+%       cd/identify_eLFP.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
 %       /home/Matlab/Downloaded_Functions/dirr.m
 %       /home/Matlab/Brians_Functions/identify_CI.m
@@ -125,21 +127,46 @@ nfiles = numel(filenames);
 
 %% Plot traces from each file using plot_traces_abf.m
 parfor k = 1:nfiles
+%for k = 1:nfiles
     % Plot traces from this abf file
     try 
-        [data, siUs] =...
-            plot_traces_abf(filenames{k}, ...
-                            'ExpMode', expMode, 'Individually', individually, ...
-                            'OutFolder', outFolder, 'TimeUnits', timeUnits, ...
-                            'TimeStart', timeStart, 'TimeEnd', timeEnd);
+        % Parse the abf file
+        [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
+            parse_abf(filenames{k});
+
+        % Extract some parameters
+        siUs = abfParams.siUs;
 
         % Identify whether this is a current injection protocol
         isCI = identify_CI(data, siUs);
 
-        % If it's a current injection protocol, 
-        %   detect spikes for each sweep and make an F-I plot
+        % Identify whether this is an evoked LFP protocol
+        isEvokedLfp = identify_eLFP(vVecs, iVecs);
+
+        % Plot the appropriate trace
         if isCI
+            % If it's a current injection protocol, 
+            %   detect spikes for each sweep and make an F-I plot
             plot_FI(filenames{k}, data, siUs);
+        elseif isEvokedLfp
+            % If it is an evoked LFP protocol, compute and plot it
+            tVecLfp = ...
+                compute_and_plot_evoked_LFP(filenames{k}, ...
+                                            'OutFolder', outFolder, ...
+                                            'PlotFlag', true, ...
+                                            'SaveFlag', true);
+
+            % Plot all traces within the time window
+            plot_traces_abf(filenames{k}, ...
+                'ExpMode', expMode, 'Individually', individually, ...
+                'OutFolder', outFolder, 'TimeUnits', timeUnits, ...
+                'TimeStart', min(tVecLfp), 'TimeEnd', max(tVecLfp));
+        else
+            % Just plot the traces
+            plot_traces_abf(filenames{k}, ...
+                'ExpMode', expMode, 'Individually', individually, ...
+                'OutFolder', outFolder, 'TimeUnits', timeUnits, ...
+                'TimeStart', timeStart, 'TimeEnd', timeEnd);
         end
     catch ME
         fprintf('Traces for %s cannot be plotted!\n', filenames{k});

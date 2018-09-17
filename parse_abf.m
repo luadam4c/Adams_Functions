@@ -1,7 +1,7 @@
-function [data, siUs, abfParams, tVec, vVecs, iVecs, gVecs] = ...
+function [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
     parse_abf(fileName, varargin)
 %% Loads and parses an abf file
-% Usage: [data, siUs, abfParams, tVec, vVecs, iVecs, gVecs] = ...
+% Usage: [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
 %   parse_abf(fileName, varargin)
 % Explanation:
 %   This function does the following:
@@ -12,11 +12,9 @@ function [data, siUs, abfParams, tVec, vVecs, iVecs, gVecs] = ...
 %       4. Identify whether each channel is voltage, current or conductance
 %           and extract them into vVecs, iVecs and gVecs
 % Examples:
-%       [~, ~, abfParams, tVec, vVecs, iVecs, gVecs] = ...
+%       [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
 %           parse_abf('20180914C_0001');
 % Outputs:
-%       data        - full data
-%       siUs        - sampling interval in microseconds
 %       abfParams   - a structure containing the following fields:
 %                       siUs
 %                       siMs
@@ -30,10 +28,12 @@ function [data, siUs, abfParams, tVec, vVecs, iVecs, gVecs] = ...
 %                       nSamples
 %                       nChannels
 %                       nSweeps
+%       data        - full data
 %       tVec        - a constructed time vector with units given by 'TimeUnits'
 %       vVecs       - any identified voltage vector(s)
 %       iVecs       - any identified current vector(s)
 %       gVecs       - any identified conductance vector(s)
+%
 % Arguments:
 %       fileName    - file name could be either the full path or 
 %                       a relative path in current directory
@@ -53,7 +53,7 @@ function [data, siUs, abfParams, tVec, vVecs, iVecs, gVecs] = ...
 %
 % Used by:
 %       cd/plot_traces_abf.m
-%       cd/plot_evoked_LFP.m
+%       cd/compute_and_plot_evoked_LFP.m
 
 % File history: 
 % 2018-09-17 - Moved from plot_traces_abf.m
@@ -151,6 +151,8 @@ nSamples = size(data, 1);          % number of samples
 nChannels = size(data, 2);         % number of channels
 if nDimensions == 3
     nSweeps = size(data, 3);       % number of sweeps
+else
+    nSweeps = 1;
 end
 
 % Identify proper channel units and labels

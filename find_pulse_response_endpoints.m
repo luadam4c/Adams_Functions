@@ -1,18 +1,25 @@
-function [idxCprStart, idxCprEnd, isUnbalanced] = ...
-            find_pulse_response_endpoints (tvecCpr, vvecCpr, varargin)
+function [idxCprStart, idxCprEnd, isUnbalanced, idxCpStart, idxCpEnd] = ...
+            find_pulse_response_endpoints (vvecCpr, siMs, varargin)
 %% Computes the average initial slope from a current pulse response
 % Usage: [idxCprStart, idxCprEnd, isUnbalanced] = ...
-%           find_pulse_response_endpoints (tvecCpr, vvecCpr, varargin)
+%           find_pulse_response_endpoints (vvecCpr, siMs, varargin)
 %
 % Arguments:    
-%       tvecCpr     - time vector of the current pulse response
-%                   must be a numeric vector
 %       vvecCpr     - voltage vector of the current pulse response
 %                   must be a numeric vector
+%       siMs        - sampling interval in ms
+%                   must be a positive scalar
 %       varargin    - 'IvecCpr': current vector of the current pulse response
 %                   must be a numeric vector
 %                   default == [] (not used)
-%                   
+%                   - 'SameAsIvec': whether always the same as 
+%                                       the current pulse endpoints
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'CprLengthMs': length of the current pulse response
+%                                       after pulse endpoint in ms
+%                   must be a nonnegative scalar
+%                   default = 20 ms
 %
 % Requires:
 %       /home/Matlab/Adams_Functions/find_first_jump.m
@@ -20,16 +27,21 @@ function [idxCprStart, idxCprEnd, isUnbalanced] = ...
 %
 % Used by:    
 %       /home/Matlab/Adams_Functions/compute_average_initial_slopes.m
+%       /home/Matlab/Adams_Functions/plot_evoked_LFP.m
 
 % File History:
 % 2018-08-13 AL - Adapted from compute_average_initial_slopes.m
+% 2018-09-17 AL - Changed required arguement tVecCpr to siMs
+% 2018-09-17 AL - Added optional parameters SameAsIvec and CprLengthMs
 
 %% Hard-coded parameters
 signal2Noise = 10;
 noiseWindowSize = 5;
 
 %% Default values for optional arguments
-defaultIvecCpr = [];                % don't use current vector by default
+ivecCprDefault = [];            % don't use current vector by default
+sameAsIvecDefault = true;       % use current pulse endpoints by default
+cprLengthMsDefault = 20;        % a response of 20 ms by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -45,20 +57,29 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'tvecCpr', ...
-    @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addRequired(iP, 'vvecCpr', ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addRequired(iP, 'siMs', ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'IvecCpr', defaultIvecCpr, ...
+addParameter(iP, 'IvecCpr', ivecCprDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'SameAsIvec', sameAsIvecDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'CprLengthMs', cprLengthMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 
 % Read from the Input Parser
-parse(iP, tvecCpr, vvecCpr, varargin{:});
+parse(iP, vvecCpr, siMs, varargin{:});
 ivecCpr = iP.Results.IvecCpr;
+sameAsIvec = iP.Results.SameAsIvec;
+cprLengthMs = iP.Results.CprLengthMs;
 
 %% Do the job
+% Compute the length of the current pulse response in samples
+cprLengthSamples = floor(cprLengthMs / siMs);
+
 % Find the start and end points of the current pulse
 if ~isempty(ivecCpr)
     % If provided, use the current trace
@@ -86,28 +107,33 @@ vvecRegion2 = vvecCpr(idxRegion2Start:idxRegion2End);
 % Initialize isUnbalanced as false
 isUnbalanced = false;
 
-% Find the start/end point of the current pulse response
-%   by detecting the 'first jump' in the region of interest
-%   If it doesn't exist, use the start/end point of the current pulse
+% Find the start point of the current pulse response
+%   by detecting the 'first jump' in the region of interest #1
+%   If it doesn't exist, use the start point of the current pulse
 [~, idxTemp1] = ...
     find_first_jump(vvecRegion1, 'NSamplesPerJump', 2, ...
-                             'Signal2Noise', signal2Noise, ...
-                             'NoiseWindowSize', noiseWindowSize);
-if ~isempty(idxTemp1)
+                                 'Signal2Noise', signal2Noise, ...
+                                 'NoiseWindowSize', noiseWindowSize);
+if ~isempty(idxTemp1) && ~sameAsIvec
     idxCprStart = (idxRegion1Start - 1) + idxTemp1;
     isUnbalanced = true;
 else
     idxCprStart = idxCpStart;
 end
+
+% Find the end point of the current pulse response
+%   by detecting the 'first jump' in the region of interest #2
+%   If it doesn't exist, use the end point of the current pulse
+%       plus cprLengthSamples
 [~, idxTemp2] = ...
     find_first_jump(vvecRegion2, 'NSamplesPerJump', 2, ...
                                  'Signal2Noise', signal2Noise, ...
                                  'NoiseWindowSize', noiseWindowSize);
-if ~isempty(idxTemp2)
-    idxCprEnd = (idxRegion2Start - 1) + idxTemp2;
+if ~isempty(idxTemp2) && ~sameAsIvec
+    idxCprEnd = (idxRegion2Start - 1) + idxTemp2 + cprLengthSamples;
     isUnbalanced = true;
 else
-    idxCprEnd = idxCpEnd;
+    idxCprEnd = idxCpEnd + cprLengthSamples;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -154,6 +180,11 @@ endSlope = compute_slope(tvecCpr, vvecCpr, idxFirst2, idxLast2);
 % Crop the voltage trace
 vvecCropped = vvecCpr((idxCprStart + 1):end);
 
+%       tvecCpr     - time vector of the current pulse response in ms
+%                   must be a numeric vector
+addRequired(iP, 'tvecCpr', ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+parse(iP, tvecCpr, vvecCpr, varargin{:});
 
 %}
 

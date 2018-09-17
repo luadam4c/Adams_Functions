@@ -80,11 +80,11 @@ function waveform = create_pulse_train_series (varargin)
 %                   
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/create_waveform_train.m
-%       /home/Matlab/Adams_Functions/isfigtype.m
-%       /home/Matlab/Adams_Functions/issheettype.m
-%       /home/Matlab/Adams_Functions/print_or_show_message.m
-%       /home/Matlab/Adams_Functions/save_all_figtypes.m
+%       cd/create_waveform_train.m
+%       cd/isfigtype.m
+%       cd/issheettype.m
+%       cd/print_or_show_message.m
+%       cd/save_all_figtypes.m
 
 % File History:
 % 2018-08-08 Created by Adam Lu

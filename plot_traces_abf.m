@@ -1,6 +1,6 @@
-function [data, siUs, tVec] = plot_traces_abf (fileName, varargin)
+function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 %% Takes an abf file and plots all traces
-% Usage: [data, siUs, tVec] = plot_traces_abf (fileName, varargin)
+% Usage: [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 % Explanation:
 %       TODO: Uses abf2load, and if not found, uses abfload
 % Outputs:
@@ -8,6 +8,7 @@ function [data, siUs, tVec] = plot_traces_abf (fileName, varargin)
 %       siUs        - sampling interval in microseconds
 %       tVec        - a time vector that can be used to plot things, 
 %                       units are in timeUnits (see below for default)
+%       siPlot      - sampling interval used for plotting
 % Arguments:
 %       fileName    - file name could be either the full path or 
 %                       a relative path in current directory
@@ -48,6 +49,7 @@ function [data, siUs, tVec] = plot_traces_abf (fileName, varargin)
 %       cd/parse_abf.m
 %
 % Used by:
+%       cd/plot_all_abfs_dir.m
 %       /media/shareX/share/Adam/Sample_files_from_Katie/test_sweeps.m
 %
 % File history: 
@@ -143,17 +145,16 @@ end
 
 %% Load data and prepare for plotting
 % Load and parse the abf file
-[data, ~, abfParams, tVec] = ...
+[abfParams, data, tVec] = ...
     parse_abf(fileName, 'Verbose', false, 'TimeUnits', timeUnits);
 
 % Extract the parsed parameters
-channelTypes = abfParams.channelTypes;
-channelUnits = abfParams.channelUnits;
 channelLabels = abfParams.channelLabels;
 nDimensions = abfParams.nDimensions;
-nSamples = abfParams.nSamples;
 nChannels = abfParams.nChannels;
 nSweeps = abfParams.nSweeps;
+siUs = abfParams.siUs;
+siPlot = abfParams.siPlot;
 
 % Set default x-axis limits
 if isempty(timeStart)
@@ -227,24 +228,30 @@ if nDimensions == 2 && individually        % could be EEG or patch clamp
     if strcmp(expMode, 'EEG')
         for j = 1:nChannels
             fprintf('Plotting channel #%d ...\n', j);
+            figName = fullfile(outFolder, ...
+                        sprintf('%.1f_%.1f_Channel%d.png', ...
+                        timeStart, timeEnd, j))
             vvec = data(:, j);
             figureNum = 1+j;
             h = plot_traces_abf_bt_helper(figureNum, tVec, vvec, timeStart, timeEnd, timeUnits, 1);
             title(sprintf('Data for %s between %.1f %s and %.1f %s', traceLabels{j}, timeStart, timeUnits, timeEnd, timeUnits));
             ylabel(channelLabels);
-            saveas(h, fullfile(outFolder, sprintf('%.1f_%.1f_Channel%d.png', timeStart, timeEnd, j)), 'png');
+            saveas(h, figName, 'png');
             hold off;
             close(h);
         end
     elseif strcmp(expMode, 'patch')
         for j = 1:nChannels
             fprintf('Plotting channel #%d ...\n', j);
+            figName = fullfile(outFolder, ...
+                                sprintf('%.1f_%.1f_Channel%d.png', ...
+                                        timeStart, timeEnd, j));
             vvec = data(:, j);
             figureNum = 1+j;
             h = plot_traces_abf_bt_helper(figureNum, tVec, vvec, timeStart, timeEnd, timeUnits, 1);
             title(sprintf('Data for %s between %.1f %s and %.1f %s', traceLabels{j}, timeStart, timeUnits, timeEnd, timeUnits));
             ylabel(channelLabels{j});
-            saveas(h, fullfile(outFolder, sprintf('%.1f_%.1f_Channel%d.png', timeStart, timeEnd, j)), 'png');
+            saveas(h, figName, 'png');
             hold off;
             close(h);
         end
@@ -254,14 +261,16 @@ elseif nDimensions == 3 && individually    % usually Patch clamp        %%% Need
         for j = 1:nChannels
             for k = 1:nSweeps
                 fprintf('Plotting channel #%d and sweep #%d ...\n', j, k);
+                figName = fullfile(outFolder, ...
+                                    sprintf('%.1f_%.1f_Channel%d_Sweep%d.png', ...
+                                            timeStart, timeEnd, j, k));
                 vec = data(:, j, k);
                 figureNum = 100*j+k;
                 h = plot_traces_abf_bt_helper(figureNum, tVec, vec, timeStart, timeEnd, timeUnits, 1);
                 title(sprintf('Data for %s between %.1f %s and %.1f %s', ...
                         traceLabels{k}, timeStart, timeUnits, timeEnd, timeUnits));
                 ylabel(channelLabels);
-                saveas(h, fullfile(outFolder, sprintf('%.1f_%.1f_Channel%d_Sweep%d.png', ...
-                        timeStart, timeEnd, j, k)), 'png');
+                saveas(h, figName, 'png');
                 hold off;
                 close(h);
             end
@@ -270,14 +279,16 @@ elseif nDimensions == 3 && individually    % usually Patch clamp        %%% Need
         for j = 1:nChannels
             for k = 1:nSweeps
                 fprintf('Plotting channel #%d and sweep #%d ...\n', j, k);
+                figName = fullfile(outFolder, ...
+                                    sprintf('%.1f_%.1f_Channel%d_Sweep%d.png', ...
+                                            timeStart, timeEnd, j, k));
                 vec = data(:, j, k);
                 figureNum = 100*j+k;
                 h = plot_traces_abf_bt_helper(figureNum, tVec, vec, timeStart, timeEnd, timeUnits, 1);
                 title(sprintf('Data for %s between %.1f %s and %.1f %s', ...
                     traceLabels{k}, timeStart, timeUnits, timeEnd, timeUnits));
                 ylabel(channelLabels{j});
-                saveas(h, fullfile(outFolder, sprintf('%.1f_%.1f_Channel%d_Sweep%d.png', ...
-                    timeStart, timeEnd, j, k)), 'png');
+                saveas(h, figName, 'png');
                 hold off;
                 close(h);
             end
