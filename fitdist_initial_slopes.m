@@ -31,7 +31,7 @@ function [bestModels, pdfModels, peak1s, peak2s, peak3s, ...
 %                   - 'MaxNumComponents': maximum number of Gaussian components
 %                   must be a positive integer scalar
 %                   default == 3
-%                   - 'outFolder': directory to save figures
+%                   - 'OutFolder': directory to save figures
 %                   must be a string scalar or a character vector
 %                   default == pwd
 %
@@ -53,6 +53,7 @@ validOutlierMethods = {'boxplot', 'isoutlier', ...
                         'fiveStds', 'threeStds', 'twoStds'};
 
 %% Default values for optional arguments
+thresMethodDefault = 'threeStdMainComponent';
 outlierMethodDefault = 'fiveStds';  % use five standard deviations from the mean
 bandwidth2StdRatioDefault = 1/5;    % use a fifth of the standard deviation
                                     %   as the bandwidth by default
@@ -164,10 +165,18 @@ parfor iNSample = 1:nNSamples
         peak1s(iNSample) = muBest(indRanked(1));
 
         % Get mu of the second largest component
-        peak2s(iNSample) = muBest(indRanked(2));
+        if length(indRanked) >= 2
+            peak2s(iNSample) = muBest(indRanked(2));
+        else
+            peak2s(iNSample) = NaN;
+        end
 
         % Get mu of the third largest component
-        peak3s(iNSample) = muBest(indRanked(3));
+        if length(indRanked) >= 3
+            peak3s(iNSample) = muBest(indRanked(3));
+        else
+            peak3s(iNSample) = NaN;
+        end
 
         % Set 1st threshold to 3 standard deviations to the left of the mean
         threshold1s(iNSample) = leftThres;

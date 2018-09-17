@@ -1,10 +1,17 @@
 function [startSlopes, endSlopes, avgSlopes, isUnbalancedAll, indUsedForPlot] = ...
-    find_initial_slopes(tvecCprAll, ivecCprAll, vvecCprAll, allNSamples);
+    find_initial_slopes(tvecCprAll, ivecCprAll, vvecCprAll, allNSamples, varargin);
 %% Find all initial slopes from a current pulse response
 % Usage: [startSlopes, endSlopes, avgSlopes, isUnbalancedAll, indUsedForPlot] = ...
-%   find_initial_slopes(tvecCprAll, ivecCprAll, vvecCprAll, allNSamples);
+%   find_initial_slopes(tvecCprAll, ivecCprAll, vvecCprAll, allNSamples, varargin);
 % Arguments:
 %       TODO
+%       varargin    - 'UseCurrentFlag': whether to use the current trace
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'NSamplesForPlot': the number of samples to average when 
+%                                   plotting CPR
+%                   must be a positive integer scalar
+%                   default == 10
 %
 % Requires:
 %       /home/Matlab/Adams_Functions/compute_average_initial_slopes.m
@@ -15,6 +22,11 @@ function [startSlopes, endSlopes, avgSlopes, isUnbalancedAll, indUsedForPlot] = 
 
 % File History:
 % 2018-09-11 Moved from /media/adamX/m3ha/data_dclamp/initial_slopes.m
+% 2018-09-12 Added useCurrentFlag
+
+%% Default values for optional arguments
+useCurrentFlagDefault = true;      % use the current trace by default
+nSamplesForPlotDefault = 2;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -26,7 +38,20 @@ if nargin < 4
 end
 
 % Set up Input Parser Scheme
-% TODO
+iP = inputParser;
+iP.FunctionName = mfilename;
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'NSamplesForPlot', nSamplesForPlotDefault, ...       
+    @(x) validateattributes(x, {'numeric'}, ...
+        {'scalar', 'positive', 'integer'}));
+addParameter(iP, 'UseCurrentFlag', useCurrentFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+
+% Read from the Input Parser
+parse(iP, varargin{:});
+nSamplesForPlot = iP.Results.NSamplesForPlot;
+useCurrentFlag = iP.Results.UseCurrentFlag;
 
 % Count the number of sweeps
 nSwps = numel(tvecCprAll);
