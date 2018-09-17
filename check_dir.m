@@ -21,14 +21,14 @@ if iscell(directories)
     for k = 1:numel(directories)
         if exist(directories{k}, 'dir') ~= 7
             mkdir(directories{k});
-            fprintf('New subdirectory is made: %s\n\n', ...
+            fprintf('New directory is made: %s\n\n', ...
                 directories{k});
         end
     end
 else
     if exist(directories, 'dir') ~= 7
         mkdir(directories);
-        fprintf('New subdirectory is made: %s\n\n', ...
+        fprintf('New directory is made: %s\n\n', ...
                 directories);
     end
 end

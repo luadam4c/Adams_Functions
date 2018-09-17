@@ -1,48 +1,54 @@
-function [d, sius, tvec] = plot_traces_abf (filename, expmode, d, sius, outfolder, left, right, plotmode, tUnits, chUnits, chLabels)
+function [data, siUs, tVec] = plot_traces_abf (fileName, varargin)
 %% Takes an abf file and plots all traces
-% Usage: [d, sius, tvec] = plot_traces_abf (filename, expmode, d, sius, outfolder, left, right, plotmode, tUnits, chUnits, chLabels)
+% Usage: [data, siUs, tVec] = plot_traces_abf (fileName, varargin)
 % Explanation:
-%   TODO: Uses abf2load, and if not found, uses abfload
+%       TODO: Uses abf2load, and if not found, uses abfload
 % Outputs:
-%       d           - full data
-%       sius        - sampling interval in microseconds
-%       tvec        - a time vector that can be used to plot things, 
-%                       units are in tUnits (see below for default)
+%       data        - full data
+%       siUs        - sampling interval in microseconds
+%       tVec        - a time vector that can be used to plot things, 
+%                       units are in timeUnits (see below for default)
 % Arguments:
-%       filename    - must be either the full address or must be in current directory
+%       fileName    - file name could be either the full path or 
+%                       a relative path in current directory
 %                       .abf is not needed (e.g. 'B20160908_0004')
-%       expmode     - TODO
-%                       'EEG'
-%                       'patch'
-%       d           - (opt) full data
-%       sius        - (opt) sampling interval in microseconds
-%       outfolder   - (opt) the name of the directory that the plots will be placed
-%                   must be a character array
-%                   default == a subdirectory named by {filename}_traces
-%       left        - (opt) the start of the time interval of interest 
-%                   (in seconds for 2-d data and in ms for 3-d data)
+%                   must be a string scalar or a character vector
+%       varargin    - 'ExpMode': experiment mode
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'EEG'   - EEG data; x axis in seconds; y-axis in uV
+%                       'patch' - patch data; x axis in ms; y-axis in mV
+%                   default == 'patch'
+%                   - 'Individually': whether sweeps are plotted individually
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'OutFolder': the name of the directory that 
+%                                       plots will be placed
+%                   must be a string scalar or a character vector
+%                   default == a subdirectory named by {fileName}_traces in pwd
+%                   - 'TimeUnits': units for time
+%                   must be a string scalar or a character vector
+%                   default == 's' for 2-data data and 'ms' for 3-data data
+%                   - 'TimeStart': the start of the time interval of interest 
+%                                   (in units set by TimeUnits)
+%                   must be a numeric nonnegative scalar
 %                   default == 0
-%       right       - (opt) the end of the time interval of interest (in seconds for 2-d data and in ms for 3-d data)
-%                   default == tvec(end)
-%       plotmode    - (opt) 1: all traces are to be plotted together;
-%                           2: each trace is to be plotted individually
-%                   default == 1
-%       tUnits     - (opt) units for time, must be a character array
-%                   default == 's' for 2-d data and 'ms' for 3-d data
-%   TODO: update below:
-%       chUnits    - (opt) units for each channel, must be a char array for 2-d data 
-%                   and a cell array of char arrays for 3-d data
-%                   default == 'uV' for 2-d data and {'mV', 'pA', 'nS'} for 3-d data)
-%       chLabels   - (opt) labels for each channel, must be a char array for 2-d data
-%                   and a cell array of char arrays for 3-d data
-%                   default == 'EEG amplitude' for 2-d data and {'Voltage', 'Current', 'Conductance'} for 3-d data
+%                   - 'TimeEnd': the end of the time interval of interest 
+%                                   (in units set by TimeUnits)
+%                   must be a numeric nonnegative scalar
+%                   default == tVec(end)
+%                   TODO:
+%                   - 'Data': full data
+%                   must be a TODO
+%                   default == what the file provides
+%                   - 'SiUs': sampling interval in microseconds
+%                   must be a TODO
+%                   default == what the file provides
 %
 % Requires:
-%        cd/construct_abffilename.m
-%        /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
-%        /home/Matlab/Brians_Functions/identify_channels.m
+%       cd/parse_abf.m
+%
 % Used by:
-%        /media/shareX/share/Adam/Sample_files_from_Katie/test_sweeps.m
+%       /media/shareX/share/Adam/Sample_files_from_Katie/test_sweeps.m
 %
 % File history: 
 % 2016-09-22 - adapted from plot_traces_abf_EEG
@@ -50,273 +56,238 @@ function [d, sius, tvec] = plot_traces_abf (filename, expmode, d, sius, outfolde
 % 2017-03-01 - BT - moved duplicate plotting code into separate helper function
 % 2017-03-15 - BT - adapted labelling detection for conductance and differing recmodes
 % 2017-04-11 - Fixed the case when range == 0 in plot_traces_abf_bt_helper
-% 2017-04-11 - Added outfolder as an optional argument
-% 2017-04-13 - Added d, sius as optional arguments
+% 2017-04-11 - Added outFolder as an optional argument
+% 2017-04-13 - Added data, siUs as optional arguments
 % 2017-06-16 - Now uses identify_channels.m
-% 2017-06-16 - Changed chLabels to include units
+% 2017-06-16 - Changed channelLabels to include units
 % 2018-01-24 - Added isdeployed
 % 2018-07-24 - Now uses a try catch statement
+% 2018-09-17 - Added the input parser
+% 2018-09-17 - Moved code to parse_abf.m
+%
+
+%% Hard-coded parameters
+validExpModes = {'EEG', 'patch'};
+
+%% Default values for optional arguments
+expModeDefault = 'patch';       % assume traces are patching data by default
+individuallyDefault = false;    % plot all sweeps together by default
+outFolderDefault = '';          % set later
+timeUnitsDefault = '';          % set later
+timeStartDefault = [];          % set later
+timeEndDefault = [];            % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Add directories to search path for required functions
-if exist('/home/Matlab/', 'dir') == 7
-	functionsdirectory = '/home/Matlab/';
-elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
-	functionsdirectory = '/scratch/al4ng/Matlab/';
-else
-	error('Valid functionsdirectory does not exist!');
-end
-if ~isdeployed
-    addpath(fullfile(functionsdirectory, '/Brians_Functions/'));    
-                                                    % for identify_channels.m
-end
-
-%% Check arguments
+%% Deal with arguments
+% Check number of required arguments
 if nargin < 1
-    error('No filename specified!');
-elseif ~ischar(filename)
-    error('Filename must be a char array in single quotes!');
-elseif nargin < 2
-    error('No expmode specified!');
-elseif ~strcmp(expmode, 'EEG') && ~strcmp(expmode, 'patch')
-    error('Expmode must be ''EEG'' or ''patch''!');
-elseif nargin >= 5 && ~isdir(outfolder)
-    error('outfolder must be a directory!');
-elseif nargin >= 8 && plotmode ~= 1 && plotmode ~= 2
-    error('The plot mode %d is not currently supported!', plotmode);
-elseif nargin >= 9 && ~ischar(tUnits)
-    error('tUnits must be a char array!');
+    error(['Not enough input arguments, ', ...
+            'type ''help %s'' for usage'], mfilename);
 end
 
-%% Set defaults
-if nargin < 3
-    % Load abf file, si is in us
-    abffilename_full = construct_abffilename(filename);    % creates full path to abf file robustly
-    if exist('abf2load', 'file') == 2
-        try
-            [d, sius] = abf2load(abffilename_full);
-        catch ME
-            printf('The file %s cannot be read!\n', abffilename_full);
-            rethrow(ME)
-            return
-        end
-    elseif exist('abfload', 'file') == 2
-        [d, sius] = abfload(abffilename_full);
+% Set up Input Parser Scheme
+iP = inputParser;
+iP.FunctionName = mfilename;
+
+% Add required inputs to the Input Parser
+addRequired(iP, 'fileName', ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+                                                % introduced after R2016b
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'ExpMode', expModeDefault, ...
+    @(x) any(validatestring(x, validExpModes)));
+addParameter(iP, 'Individually', individuallyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'TimeStart', timeStartDefault, ...
+    @(x) isempty(x) || isnumeric(x) && isscalar(x) && x >= 0);
+addParameter(iP, 'TimeEnd', timeEndDefault, ...
+    @(x) isempty(x) || isnumeric(x) && isscalar(x) && x >= 0);
+
+% Read from the Input Parser
+parse(iP, fileName, varargin{:});
+expMode = validatestring(iP.Results.ExpMode, validExpModes);
+individually = iP.Results.Individually;
+outFolder = iP.Results.OutFolder;
+timeUnits = iP.Results.TimeUnits;
+timeStart = iP.Results.TimeStart;
+timeEnd = iP.Results.TimeEnd;
+
+% Set (some) dependent argument defaults
+if isempty(outFolder)
+    [fileDir, fileBase, ~] = fileparts(fileName);
+    outFolder = fullfile(fileDir, strcat(fileBase, '_traces'));
+end
+fprintf('Outfolder is %s ...\n', outFolder);
+if isempty(timeUnits)
+    switch expMode
+    case 'EEG'
+        timeUnits = 's';
+    case 'patch'
+        timeUnits = 'ms';
+    otherwise
+        error('ExpMode unrecognize!');
     end
 end
 
-% Set default output folder to place figures
-if nargin < 5 || isempty(outfolder) 
-    [filepath, filebase, ~] = fileparts(filename);
-    outfolder = fullfile(filepath, strcat(filebase, '_traces'));
-end
-fprintf('Outfolder is %s ...\n', outfolder);
-% Set default plot mode
-if nargin < 8 || isempty(plotmode)
-    plotmode = 1;
-end
-fprintf('Using plot mode == %d ...\n', plotmode);
-
-%% Add directories to search path for required functions
-if exist('/home/Matlab/', 'dir') == 7
-    functionsdirectory = '/home/Matlab/';
-elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
-    functionsdirectory = '/scratch/al4ng/Matlab/';
-else
-    error('Valid functionsdirectory does not exist!');
-end
-addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));    % for abf2load.m or abfload.m
-
-%% Create outfolder if not already exists
-if exist(outfolder, 'dir') ~= 7
-    mkdir(outfolder);
-    fprintf('New directory made: %s\n\n', outfolder);
+%% Check if needed output directories exist
+if exist(outFolder, 'dir') ~= 7
+    mkdir(outFolder);
+    fprintf('New directory is made: %s\n\n', outFolder);
 end
 
+%% Load data and prepare for plotting
+% Load and parse the abf file
+[data, siUs, abfParams] = parse_abf(fileName);
 
-%% Find data dimensions
-ndim = ndims(d);    % number of dimensions in data
-if ndim > 3
-    error('Cannot parse data with more than 3 dimensions!');
-end
-fprintf('Number of data dimensions =  %d\n\n', ndim);
+% Extract the parsed parameters
+channelUnits = abfParams.channelUnits;
+channelLabels = abfParams.channelLabels;
+ndim = abfParams.ndim;
+nSamples = abfParams.nSamples;
+nChannels = abfParams.nChannels;
+nSweeps = abfParams.nSweeps;
 
-%% Units and labels
-if nargin < 9 || isempty(tUnits)
-    if strcmp(expmode, 'EEG')
-        tUnits = 's';
-    elseif strcmp(expmode, 'patch')
-        tUnits = 'ms';
-    end
-end
-% TODO: Get rid of chUnits
-if nargin < 11 || isempty(chUnits)
-    if strcmp(expmode, 'EEG')
-        if size(d, 2) == 1
-            chUnits = 'mV';
-        else
-            chUnits = 'uV';
-        end
-    elseif strcmp(expmode, 'patch')
-        [~, chUnits, ~] = identify_channels(d);
-    end
-elseif ndim == 2 && ~ischar(chUnits) ...
-    || ndim == 3 && ~iscellstr(chUnits)
-    error('chUnits must be a char array for 2-d data and a cell array of char arrays for 3-d data!');
-end
-if nargin < 11 || isempty(chLabels)
-    if strcmp(expmode, 'EEG')
-        chLabels = 'EEG amplitude (mV)';
-    elseif strcmp(expmode, 'patch')
-        [~, ~, chLabels] = identify_channels(d);
-    end
-elseif ndim == 2 && ~ischar(chLabels) ...
-    || ndim == 3 && ~iscellstr(chLabels)
-    error('chLabels must be a char array for 2-d data and a cell array of char arrays for 3-d data!');
+% Get the sampling interval for plotting
+if strcmp(timeUnits, 'ms')
+    % Use a sampling interval in ms
+    si = abfParams.siMs;
+elseif strcmp(timeUnits, 's')
+    % Use a sampling interval in seconds
+    si = abfParams.siSeconds;
 end
 
-% Find data parameters
-if strcmp(tUnits, 'ms')
-    si = sius/1e3;              % sampling interval in ms
-elseif strcmp(tUnits, 's')
-    si = sius/1e6;              % sampling interval in sec
-end
-fprintf('Sampling interval = %d %s\n', si, tUnits);
-ntps = size(d, 1);              % number of time points (samples)
-nchannels = size(d, 2);         % number of channels
-fprintf('Number of samples = %d\n', ntps);
-fprintf('Number of channels = %d\n', nchannels);
-if ndim == 3
-    nsweeps = size(d, 3);       % number of sweeps
-    fprintf('Number of sweeps = %d\n\n', nsweeps);
-end
+% Construct time vector
+tVec = si * (1:nSamples)';
 
-% Set up time vector
-tvec = si*(1:ntps)';        % see units for sampling interval
-
-% Set default xlimits
-if nargin < 6 || isempty(left)
-    left = 0;
+% Set default x-axis limits
+if isempty(timeStart)
+    timeStart = 0;
 end
-if nargin < 7 || isempty(right)
-    right = tvec(end);
+if isempty(timeEnd)
+    timeEnd = tVec(end);
 end
-fprintf('Interval to show = [%g %g]\n', left, right);
+fprintf('Interval to show = [%g %g]\n', timeStart, timeEnd);
 
 % Set up labels for each trace
 if ndim == 2        % Usually EEG
-    traceLabels = cell(1, nchannels);
-    for j = 1:nchannels
+    traceLabels = cell(1, nChannels);
+    for j = 1:nChannels
         traceLabels{j} = ['Channel #', num2str(j)];
     end
 elseif ndim == 3    % Usually Patch clamp
-    traceLabels = cell(1, nsweeps);
-    for k = 1:nsweeps
+    traceLabels = cell(1, nSweeps);
+    for k = 1:nSweeps
         traceLabels{k} = ['Sweep #', num2str(k)];
     end
 end
 
+%% Do the plotting
 % Plot raw data all at once
-if ndim == 2 && plotmode == 1        % Could be EEG or patch clamp
-    if strcmp(expmode, 'EEG')
+if ndim == 2 && ~individually       % could be EEG or patch clamp
+    if strcmp(expMode, 'EEG')
         fprintf('Plotting all channels ...\n');
-        vvecAll = d;
+        vvecAll = data;
         figureNum = 1;
-        h = plot_traces_abf_bt_helper(figureNum, tvec, vvecAll, left, right, tUnits, nchannels);
-        title(sprintf('Data for all channels between %.1f %s and %.1f %s', left, tUnits, right, tUnits));
-        ylabel(chLabels);
+        h = plot_traces_abf_bt_helper(figureNum, tVec, vvecAll, timeStart, timeEnd, timeUnits, nChannels);
+        title(sprintf('Data for all channels between %.1f %s and %.1f %s', timeStart, timeUnits, timeEnd, timeUnits));
+        ylabel(channelLabels);
         legend(traceLabels);
-        saveas(h, fullfile(outfolder, sprintf('%.1f_%.1f_all.png', left, right)), 'png');    
+        saveas(h, fullfile(outFolder, sprintf('%.1f_%.1f_all.png', timeStart, timeEnd)), 'png');    
         hold off;
-    elseif strcmp(expmode, 'patch')
+    elseif strcmp(expMode, 'patch')
         % Plot sweeps
-        for j = 1:nchannels
+        for j = 1:nChannels
             fprintf('Plotting channel #%d for all sweeps ...\n', j);
-            vecAll = squeeze(d(:, j, :));
+            vecAll = squeeze(data(:, j, :));
             figureNum = 1*j;
-            h = plot_traces_abf_bt_helper(figureNum, tvec, vecAll, left, right, tUnits, 1);
-            title(sprintf('Data for all channels between %.1f %s and %.1f %s', left, tUnits, right, tUnits));
-            ylabel(chLabels{j});
+            h = plot_traces_abf_bt_helper(figureNum, tVec, vecAll, timeStart, timeEnd, timeUnits, 1);
+            title(sprintf('Data for all channels between %.1f %s and %.1f %s', timeStart, timeUnits, timeEnd, timeUnits));
+            ylabel(channelLabels{j});
             legend(traceLabels);
-            saveas(h, fullfile(outfolder, sprintf('%.1f_%.1f_Channel%d_all.png', left, right, j)), 'png');
+            saveas(h, fullfile(outFolder, sprintf('%.1f_%.1f_Channel%d_all.png', timeStart, timeEnd, j)), 'png');
             hold off;
     %        close(h);
         end
     end
 %    close(h);
-elseif ndim == 3 && plotmode == 1    % Usually Patch clamp
+elseif ndim == 3 && ~individually   % usually Patch clamp
     % Plot sweeps
-    for j = 1:nchannels
+    for j = 1:nChannels
         fprintf('Plotting channel #%d for all sweeps ...\n', j);
-        vecAll = squeeze(d(:, j, :));
+        vecAll = squeeze(data(:, j, :));
         figureNum = 100*j;
-        h = plot_traces_abf_bt_helper(figureNum, tvec, vecAll, left, right, tUnits, nsweeps);
-        title(sprintf('Data for all sweeps between %.1f %s and %.1f %s', left, tUnits, right, tUnits));
-        ylabel(chLabels{j});
+        h = plot_traces_abf_bt_helper(figureNum, tVec, vecAll, timeStart, timeEnd, timeUnits, nSweeps);
+        title(sprintf('Data for all sweeps between %.1f %s and %.1f %s', timeStart, timeUnits, timeEnd, timeUnits));
+        ylabel(channelLabels{j});
         legend(traceLabels);
-        saveas(h, fullfile(outfolder, sprintf('%.1f_%.1f_Channel%d_all.png', left, right, j)), 'png');
+        saveas(h, fullfile(outFolder, sprintf('%.1f_%.1f_Channel%d_all.png', timeStart, timeEnd, j)), 'png');
         hold off;
 %        close(h);
     end
 end
 
 % Plot raw data (each channel and/or sweep individually)
-if ndim == 2 && plotmode == 2        % Could be EEG or patch clamp
-    if strcmp(expmode, 'EEG')
-        for j = 1:nchannels
+if ndim == 2 && individually        % could be EEG or patch clamp
+    if strcmp(expMode, 'EEG')
+        for j = 1:nChannels
             fprintf('Plotting channel #%d ...\n', j);
-            vvec = d(:, j);
+            vvec = data(:, j);
             figureNum = 1+j;
-            h = plot_traces_abf_bt_helper(figureNum, tvec, vvec, left, right, tUnits, 1);
-            title(sprintf('Data for %s between %.1f %s and %.1f %s', traceLabels{j}, left, tUnits, right, tUnits));
-            ylabel(chLabels);
-            saveas(h, fullfile(outfolder, sprintf('%.1f_%.1f_Channel%d.png', left, right, j)), 'png');
+            h = plot_traces_abf_bt_helper(figureNum, tVec, vvec, timeStart, timeEnd, timeUnits, 1);
+            title(sprintf('Data for %s between %.1f %s and %.1f %s', traceLabels{j}, timeStart, timeUnits, timeEnd, timeUnits));
+            ylabel(channelLabels);
+            saveas(h, fullfile(outFolder, sprintf('%.1f_%.1f_Channel%d.png', timeStart, timeEnd, j)), 'png');
             hold off;
             close(h);
         end
-    elseif strcmp(expmode, 'patch')
-        for j = 1:nchannels
+    elseif strcmp(expMode, 'patch')
+        for j = 1:nChannels
             fprintf('Plotting channel #%d ...\n', j);
-            vvec = d(:, j);
+            vvec = data(:, j);
             figureNum = 1+j;
-            h = plot_traces_abf_bt_helper(figureNum, tvec, vvec, left, right, tUnits, 1);
-            title(sprintf('Data for %s between %.1f %s and %.1f %s', traceLabels{j}, left, tUnits, right, tUnits));
-            ylabel(chLabels{j});
-            saveas(h, fullfile(outfolder, sprintf('%.1f_%.1f_Channel%d.png', left, right, j)), 'png');
+            h = plot_traces_abf_bt_helper(figureNum, tVec, vvec, timeStart, timeEnd, timeUnits, 1);
+            title(sprintf('Data for %s between %.1f %s and %.1f %s', traceLabels{j}, timeStart, timeUnits, timeEnd, timeUnits));
+            ylabel(channelLabels{j});
+            saveas(h, fullfile(outFolder, sprintf('%.1f_%.1f_Channel%d.png', timeStart, timeEnd, j)), 'png');
             hold off;
             close(h);
         end
     end
-elseif ndim == 3 && plotmode == 2    % Usually Patch clamp        %%% Need to fix this part too
-    if strcmp(expmode, 'EEG')
-        for j = 1:nchannels
-            for k = 1:nsweeps
+elseif ndim == 3 && individually    % usually Patch clamp        %%% Need to fix this part too
+    if strcmp(expMode, 'EEG')
+        for j = 1:nChannels
+            for k = 1:nSweeps
                 fprintf('Plotting channel #%d and sweep #%d ...\n', j, k);
-                vec = d(:, j, k);
+                vec = data(:, j, k);
                 figureNum = 100*j+k;
-                h = plot_traces_abf_bt_helper(figureNum, tvec, vec, left, right, tUnits, 1);
+                h = plot_traces_abf_bt_helper(figureNum, tVec, vec, timeStart, timeEnd, timeUnits, 1);
                 title(sprintf('Data for %s between %.1f %s and %.1f %s', ...
-                        traceLabels{k}, left, tUnits, right, tUnits));
-                ylabel(chLabels);
-                saveas(h, fullfile(outfolder, sprintf('%.1f_%.1f_Channel%d_Sweep%d.png', ...
-                        left, right, j, k)), 'png');
+                        traceLabels{k}, timeStart, timeUnits, timeEnd, timeUnits));
+                ylabel(channelLabels);
+                saveas(h, fullfile(outFolder, sprintf('%.1f_%.1f_Channel%d_Sweep%d.png', ...
+                        timeStart, timeEnd, j, k)), 'png');
                 hold off;
                 close(h);
             end
         end
-    elseif strcmp(expmode, 'patch')
-        for j = 1:nchannels
-            for k = 1:nsweeps
+    elseif strcmp(expMode, 'patch')
+        for j = 1:nChannels
+            for k = 1:nSweeps
                 fprintf('Plotting channel #%d and sweep #%d ...\n', j, k);
-                vec = d(:, j, k);
+                vec = data(:, j, k);
                 figureNum = 100*j+k;
-                h = plot_traces_abf_bt_helper(figureNum, tvec, vec, left, right, tUnits, 1);
+                h = plot_traces_abf_bt_helper(figureNum, tVec, vec, timeStart, timeEnd, timeUnits, 1);
                 title(sprintf('Data for %s between %.1f %s and %.1f %s', ...
-                    traceLabels{k}, left, tUnits, right, tUnits));
-                ylabel(chLabels{j});
-                saveas(h, fullfile(outfolder, sprintf('%.1f_%.1f_Channel%d_Sweep%d.png', ...
-                    left, right, j, k)), 'png');
+                    traceLabels{k}, timeStart, timeUnits, timeEnd, timeUnits));
+                ylabel(channelLabels{j});
+                saveas(h, fullfile(outFolder, sprintf('%.1f_%.1f_Channel%d_Sweep%d.png', ...
+                    timeStart, timeEnd, j, k)), 'png');
                 hold off;
                 close(h);
             end
@@ -326,17 +297,17 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [h] = plot_traces_abf_bt_helper(fig_num, tvec, vvec, left, right, tUnits, channels_or_sweep_num)
+function [h] = plot_traces_abf_bt_helper(fig_num, tVec, vvec, timeStart, timeEnd, timeUnits, channels_or_sweep_num)
 %% Plots traces, sets axes and xlabel
-% Usage: [h] = plot_traces_abf_bt_helper(fig_num, tvec, vvec, left, right, tUnits, channels_or_sweep_num)
+% Usage: [h] = plot_traces_abf_bt_helper(fig_num, tVec, vvec, timeStart, timeEnd, timeUnits, channels_or_sweep_num)
 %    h            - figure
 %    fig_num            - figure of number
-%    tvec            - time vector for plotting
+%    tVec            - time vector for plotting
 %    vvec            - compressed data vector
-%     left            - time interval start
-%    right            - time interval end
-%    tUnits            - units of time
-%    channels_or_sweep_num    - number of channels if plotmode == 1, 1 if plotmode == 2
+%     timeStart            - time interval start
+%    timeEnd            - time interval end
+%    timeUnits            - units of time
+%    channels_or_sweep_num    - number of channels if plotMode == 1, 1 if plotMode == 2
 % Used by:
 %        /media/shareX/brianT/ABF_plotting/plot_traces_abf_bt.m
 
@@ -347,14 +318,14 @@ h = figure(fig_num);
 set(h, 'Visible', 'Off');
 clf(h);
 for k = 1:channels_or_sweep_num
-    plot(tvec, vvec(:, k));    hold on;
+    plot(tVec, vvec(:, k));    hold on;
 end
 if range ~= 0
-    axis([left, right, minimum - 0.2 * range, maximum + 0.2 * range]);
+    axis([timeStart, timeEnd, minimum - 0.2 * range, maximum + 0.2 * range]);
 else
-    xlim([left, right]);
+    xlim([timeStart, timeEnd]);
 end
-xlabel(['Time (', tUnits, ')']);
+xlabel(['Time (', timeUnits, ')']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -367,11 +338,11 @@ OLD CODE:
 %    h = figure(1);
 %    set(h, 'Visible', 'Off');
 %    clf(h);
-%    for j = 1:nchannels
-%        plot(tvec, vvecAll(:, j));    hold on;
+%    for j = 1:nChannels
+%        plot(tVec, vvecAll(:, j));    hold on;
 %    end
-%    axis([left right minimum-0.2*range maximum+0.2*range]);
-%    xlabel(['Time (', tUnits, ')']);
+%    axis([timeStart timeEnd minimum-0.2*range maximum+0.2*range]);
+%    xlabel(['Time (', timeUnits, ')']);
 %
 %        minimum = min(min(vecAll));
 %        maximum = max(max(vecAll));
@@ -379,11 +350,11 @@ OLD CODE:
 %        h = figure(100*j);
 %        set(h, 'Visible', 'Off');
 %        clf(h);
-%        for k = 1:nsweeps
-%            plot(tvec, vecAll(:, k));    hold on;
+%        for k = 1:nSweeps
+%            plot(tVec, vecAll(:, k));    hold on;
 %        end
-%        axis([left right minimum-0.2*range maximum+0.2*range]);
-%        xlabel(['Time (', tUnits, ')']);
+%        axis([timeStart timeEnd minimum-0.2*range maximum+0.2*range]);
+%        xlabel(['Time (', timeUnits, ')']);
 %
 %        minimum = min(vvec);
 %        maximum = max(vvec);
@@ -391,9 +362,9 @@ OLD CODE:
 %        h = figure(1+j);
 %        set(h, 'Visible', 'Off');
 %        clf(h);
-%        plot(tvec, vvec, 'k');    hold on;
-%        axis([left right minimum-0.2*range maximum+0.2*range]);
-%        xlabel(['Time (', tUnits, ')']);
+%        plot(tVec, vvec, 'k');    hold on;
+%        axis([timeStart timeEnd minimum-0.2*range maximum+0.2*range]);
+%        xlabel(['Time (', timeUnits, ')']);
 %
 %            minimum = min(vec);
 %            maximum = max(vec);
@@ -401,44 +372,44 @@ OLD CODE:
 %            h = figure(100*j + k);
 %            set(h, 'Visible', 'Off');
 %            clf(h);
-%            plot(tvec, vec, 'k');    hold on;
-%            axis([left right minimum-0.2*range maximum+0.2*range]);
-%            xlabel(['Time (', tUnits, ')']);
-%         % y-axis labels: chLabels{1} is Voltage, chLabels{2} is Current, chLabels{3} is Conductance
+%            plot(tVec, vec, 'k');    hold on;
+%            axis([timeStart timeEnd minimum-0.2*range maximum+0.2*range]);
+%            xlabel(['Time (', timeUnits, ')']);
+%         % y-axis labels: channelLabels{1} is Voltage, channelLabels{2} is Current, channelLabels{3} is Conductance
 %        if j == ind_current    % if the current channel is "Current"
-%            ylabel(sprintf('%s (%s)', chLabels{2}, chUnits{2}));        
+%            ylabel(sprintf('%s (%s)', channelLabels{2}, channelUnits{2}));        
 %        else            %%% what happens if we have conductance channels too?
-%            ylabel(sprintf('%s (%s)', chLabels{1}, chUnits{1}));
+%            ylabel(sprintf('%s (%s)', channelLabels{1}, channelUnits{1}));
 %        end
-%if strcmp(expmode, 'EEG')
+%if strcmp(expMode, 'EEG')
 %    if ndim == 1
-%        chUnits = 'mV';
+%        channelUnits = 'mV';
 %    elseif ndim == 2
-%        chUnits = {'uV', 'uV'};
+%        channelUnits = {'uV', 'uV'};
 %    elseif ndim == 3
-%        chUnits = {'uV', 'uV', 'uV'};
+%        channelUnits = {'uV', 'uV', 'uV'};
 %    end
-%    chLabels = 'EEG amplitude';
-%elseif strcmp(expmode, 'patch')
-%    [chUnits, chLabels] = correct_patch_labels(ndim, d);
+%    channelLabels = 'EEG amplitude';
+%elseif strcmp(expMode, 'patch')
+%    [channelUnits, channelLabels] = correct_patch_labels(ndim, data);
 %end
 %
 
 
     if ndim == 2        % Usually EEG         %TODO: Not always true, should be fixed
-        tUnits = 's';
+        timeUnits = 's';
     elseif ndim == 3    % Usually Patch clamp    %TODO: Not always true, should be fixed
-        tUnits = 'ms';
+        timeUnits = 'ms';
     end
     if ndim == 2        % Usually EEG
-        chUnits = 'uV';
+        channelUnits = 'uV';
     elseif ndim == 3    % Usually Patch clamp
-        chUnits = {'mV', 'pA', 'nS'};
+        channelUnits = {'mV', 'pA', 'nS'};
     end
     if ndim == 2        % Usually EEG
-        chLabels = 'EEG amplitude';
+        channelLabels = 'EEG amplitude';
     elseif ndim == 3    % Usually Patch clamp
-        chLabels = {'Voltage', 'Current', 'Conductance'};
+        channelLabels = {'Voltage', 'Current', 'Conductance'};
     end
 
 %    recmode        - (opt)    1: (mV)        %%% BT: recmode never explicitly implemented, documentation for possible channel combinations
@@ -452,60 +423,130 @@ OLD CODE:
 %                sampling interval is assumed to be in microseconds
 %                default == TODO
 
-function [chUnits, chLabels] = correct_patch_labels(data)
+function [channelUnits, channelLabels] = correct_patch_labels(data)
 %% Finds correct units and labels of channels if data is patch clamp
-% Usage: [chUnits, chLabels] = correct_patch_labels(data)
+% Usage: [channelUnits, channelLabels] = correct_patch_labels(data)
 %    data        - raw data vector
 % Used by:
 %        /media/shareX/brianT/ABF_plotting/plot_traces_abf_bt.m
 
-nchannels = size(data, 2);
-chUnits = cell(1, nchannels);
-chLabels = cell(1, nchannels);
-ranges = zeros(1, nchannels);    % stores maximum absolute range for each channel
-peak = zeros(1, nchannels);    % maximum for each channel
-avgs = zeros(1, nchannels);    % average for each channel
-for j = 1:nchannels        % for each channel
+nChannels = size(data, 2);
+channelUnits = cell(1, nChannels);
+channelLabels = cell(1, nChannels);
+ranges = zeros(1, nChannels);    % stores maximum absolute range for each channel
+peak = zeros(1, nChannels);    % maximum for each channel
+avgs = zeros(1, nChannels);    % average for each channel
+for j = 1:nChannels        % for each channel
     vecAll = squeeze(data(:, j, :));                % all traces in this channel
     ranges(j) = abs(max(max(vecAll)) - min(min(vecAll)));    % maximum range of all traces in this channel
     peak(j) = max(max(vecAll));
 end
 avgs = mean(mean(data, 1), 3);
-if nchannels == 2
+if nChannels == 2
     [~, ind_current] = max(ranges);
     ranges(ind_current) = -Inf;
     [~, ind_voltage] = max(ranges);
-    chUnits{ind_voltage} = 'mV';
-    chUnits{ind_current} = 'pA';
-    chLabels{ind_voltage} = 'Voltage';
-    chLabels{ind_current} = 'Current';
-elseif nchannels == 3
+    channelUnits{ind_voltage} = 'mV';
+    channelUnits{ind_current} = 'pA';
+    channelLabels{ind_voltage} = 'Voltage';
+    channelLabels{ind_current} = 'Current';
+elseif nChannels == 3
     if abs(range(1) - range(2)) < 5    % if ranges of first two channels are similar enough, assume both are voltage
-        chUnits = {'mV', 'mV', 'pA'};         % default: chUnits = {'mV', 'pA', 'nS'};
-        chLabels = {'Voltage', 'Voltage', 'Current'};    % default: chLabels = {'Voltage', 'Current', 'Conductance'};
+        channelUnits = {'mV', 'mV', 'pA'};         % default: channelUnits = {'mV', 'pA', 'nS'};
+        channelLabels = {'Voltage', 'Voltage', 'Current'};    % default: channelLabels = {'Voltage', 'Current', 'Conductance'};
     else                
         [~, ind_conductance] = max(avgs);    % greatest average is presumably "Conductance" (generally positive)
         ranges(ind_conductance) = -Inf;        % all ranges are positive, remove conductance from current detection
         [~, ind_current] = max(ranges);        % the channel with largest range is presumably "Current"
         ranges(ind_current) = -Inf;        % remove current from ranges, leaving only "Voltage"
         [~, ind_voltage] = max(ranges);
-        chUnits{ind_voltage} = 'mV';        % Reorder chUnits and chLabels to new indices
-        chUnits{ind_current} = 'pA';
-        chLabels{ind_voltage} = 'Voltage';
-        chLabels{ind_current} = 'Current';
-        chLabels{ind_conductance} = 'Conductance';
+        channelUnits{ind_voltage} = 'mV';        % Reorder channelUnits and channelLabels to new indices
+        channelUnits{ind_current} = 'pA';
+        channelLabels{ind_voltage} = 'Voltage';
+        channelLabels{ind_current} = 'Current';
+        channelLabels{ind_conductance} = 'Conductance';
         if peak(ind_conductance) > 2000    % Conductance usually exceeds 2000 when pico    
-            chUnits{ind_conductance} = 'pS';
+            channelUnits{ind_conductance} = 'pS';
         else
-            chUnits{ind_conductance} = 'nS';
+            channelUnits{ind_conductance} = 'nS';
         end
     end
 end
 
-        [chUnits, ~] = correct_patch_labels(d);
-        [~, chLabels] = correct_patch_labels(d);
+        [channelUnits, ~] = correct_patch_labels(data);
+        [~, channelLabels] = correct_patch_labels(data);
 
-ylabel(sprintf('%s (%s)', chLabels, chUnits));
-ylabel(sprintf('%s (%s)', chLabels{j}, chUnits{j}));
+ylabel(sprintf('%s (%s)', channelLabels, channelUnits));
+ylabel(sprintf('%s (%s)', channelLabels{j}, channelUnits{j}));
+
+if nargin < 1
+    error('No fileName specified!');
+elseif ~ischar(fileName)
+    error('Filename must be a char array in single quotes!');
+elseif nargin < 2
+    error('No expMode specified!');
+elseif ~strcmp(expMode, 'EEG') && ~strcmp(expMode, 'patch')
+    error('Expmode must be ''EEG'' or ''patch''!');
+elseif nargin >= 5 && ~isdir(outFolder)
+    error('outFolder must be a directory!');
+elseif nargin >= 8 && plotMode ~= 1 && plotMode ~= 2
+    error('The plot mode %d is not currently supported!', plotMode);
+elseif nargin >= 9 && ~ischar(timeUnits)
+    error('timeUnits must be a char array!');
+end
+
+% Set default plot mode
+if nargin < 8 || isempty(plotMode)
+    plotMode = 1;
+end
+fprintf('Using plot mode == %d ...\n', plotMode);
+
+if nargin < 3
+end
+
+if nargin < 11 || isempty(channelUnits)
+    if strcmp(expMode, 'EEG')
+        if size(data, 2) == 1
+            channelUnits = 'mV';
+        else
+            channelUnits = 'uV';
+        end
+    elseif strcmp(expMode, 'patch')
+        [~, channelUnits, ~] = identify_channels(data);
+    end
+elseif ndim == 2 && ~ischar(channelUnits) ...
+    || ndim == 3 && ~iscellstr(channelUnits)
+    error('channelUnits must be a char array for 2-data data and a cell array of char arrays for 3-data data!');
+end
+if nargin < 11 || isempty(channelLabels)
+    if strcmp(expMode, 'EEG')
+        channelLabels = 'EEG amplitude (mV)';
+    elseif strcmp(expMode, 'patch')
+        [~, ~, channelLabels] = identify_channels(data);
+    end
+elseif ndim == 2 && ~ischar(channelLabels) ...
+    || ndim == 3 && ~iscellstr(channelLabels)
+    error('channelLabels must be a char array for 2-data data and a cell array of char arrays for 3-data data!');
+end
+
+%   TODO: update below:
+%       channelUnits    - (opt) units for each channel, must be a char array for 2-data data 
+%                   and a cell array of char arrays for 3-data data
+%                   default == 'uV' for 2-data data and {'mV', 'pA', 'nS'} for 3-data data)
+%       channelLabels   - (opt) labels for each channel, must be a char array for 2-data data
+%                   and a cell array of char arrays for 3-data data
+%                   default == 'EEG amplitude' for 2-data data and {'Voltage', 'Current', 'Conductance'} for 3-data data
+
+function [data, siUs, tVec] = plot_traces_abf (fileName, expMode, data, siUs, outFolder, timeStart, timeEnd, plotMode, timeUnits, channelUnits, channelLabels)
+
+if strcmp(timeUnits, 'ms')
+    % Use a sampling interval in ms
+    si = siUs / MS_PER_S;
+elseif strcmp(timeUnits, 's')
+    % Use a sampling interval in seconds
+    si = siUs / US_PER_S;
+end
+fprintf('Sampling interval = %d %s\n', si, timeUnits);
+
 
 %}
