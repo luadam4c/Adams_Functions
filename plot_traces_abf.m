@@ -27,7 +27,7 @@ function [data, siUs, tVec] = plot_traces_abf (fileName, varargin)
 %                   default == a subdirectory named by {fileName}_traces in pwd
 %                   - 'TimeUnits': units for time
 %                   must be a string scalar or a character vector
-%                   default == 's' for 2-data data and 'ms' for 3-data data
+%                   default == 's' for EEG data and 'ms' for patch data
 %                   - 'TimeStart': the start of the time interval of interest 
 %                                   (in units set by TimeUnits)
 %                   must be a numeric nonnegative scalar
@@ -143,27 +143,17 @@ end
 
 %% Load data and prepare for plotting
 % Load and parse the abf file
-[data, siUs, abfParams] = parse_abf(fileName);
+[data, ~, abfParams, tVec] = ...
+    parse_abf(fileName, 'Verbose', false, 'TimeUnits', timeUnits);
 
 % Extract the parsed parameters
+channelTypes = abfParams.channelTypes;
 channelUnits = abfParams.channelUnits;
 channelLabels = abfParams.channelLabels;
-ndim = abfParams.ndim;
+nDimensions = abfParams.nDimensions;
 nSamples = abfParams.nSamples;
 nChannels = abfParams.nChannels;
 nSweeps = abfParams.nSweeps;
-
-% Get the sampling interval for plotting
-if strcmp(timeUnits, 'ms')
-    % Use a sampling interval in ms
-    si = abfParams.siMs;
-elseif strcmp(timeUnits, 's')
-    % Use a sampling interval in seconds
-    si = abfParams.siSeconds;
-end
-
-% Construct time vector
-tVec = si * (1:nSamples)';
 
 % Set default x-axis limits
 if isempty(timeStart)
@@ -175,12 +165,12 @@ end
 fprintf('Interval to show = [%g %g]\n', timeStart, timeEnd);
 
 % Set up labels for each trace
-if ndim == 2        % Usually EEG
+if nDimensions == 2        % Usually EEG
     traceLabels = cell(1, nChannels);
     for j = 1:nChannels
         traceLabels{j} = ['Channel #', num2str(j)];
     end
-elseif ndim == 3    % Usually Patch clamp
+elseif nDimensions == 3    % Usually Patch clamp
     traceLabels = cell(1, nSweeps);
     for k = 1:nSweeps
         traceLabels{k} = ['Sweep #', num2str(k)];
@@ -189,7 +179,7 @@ end
 
 %% Do the plotting
 % Plot raw data all at once
-if ndim == 2 && ~individually       % could be EEG or patch clamp
+if nDimensions == 2 && ~individually       % could be EEG or patch clamp
     if strcmp(expMode, 'EEG')
         fprintf('Plotting all channels ...\n');
         vvecAll = data;
@@ -216,7 +206,7 @@ if ndim == 2 && ~individually       % could be EEG or patch clamp
         end
     end
 %    close(h);
-elseif ndim == 3 && ~individually   % usually Patch clamp
+elseif nDimensions == 3 && ~individually   % usually Patch clamp
     % Plot sweeps
     for j = 1:nChannels
         fprintf('Plotting channel #%d for all sweeps ...\n', j);
@@ -233,7 +223,7 @@ elseif ndim == 3 && ~individually   % usually Patch clamp
 end
 
 % Plot raw data (each channel and/or sweep individually)
-if ndim == 2 && individually        % could be EEG or patch clamp
+if nDimensions == 2 && individually        % could be EEG or patch clamp
     if strcmp(expMode, 'EEG')
         for j = 1:nChannels
             fprintf('Plotting channel #%d ...\n', j);
@@ -259,7 +249,7 @@ if ndim == 2 && individually        % could be EEG or patch clamp
             close(h);
         end
     end
-elseif ndim == 3 && individually    % usually Patch clamp        %%% Need to fix this part too
+elseif nDimensions == 3 && individually    % usually Patch clamp        %%% Need to fix this part too
     if strcmp(expMode, 'EEG')
         for j = 1:nChannels
             for k = 1:nSweeps
@@ -382,33 +372,33 @@ OLD CODE:
 %            ylabel(sprintf('%s (%s)', channelLabels{1}, channelUnits{1}));
 %        end
 %if strcmp(expMode, 'EEG')
-%    if ndim == 1
+%    if nDimensions == 1
 %        channelUnits = 'mV';
-%    elseif ndim == 2
+%    elseif nDimensions == 2
 %        channelUnits = {'uV', 'uV'};
-%    elseif ndim == 3
+%    elseif nDimensions == 3
 %        channelUnits = {'uV', 'uV', 'uV'};
 %    end
 %    channelLabels = 'EEG amplitude';
 %elseif strcmp(expMode, 'patch')
-%    [channelUnits, channelLabels] = correct_patch_labels(ndim, data);
+%    [channelUnits, channelLabels] = correct_patch_labels(nDimensions, data);
 %end
 %
 
 
-    if ndim == 2        % Usually EEG         %TODO: Not always true, should be fixed
+    if nDimensions == 2        % Usually EEG         %TODO: Not always true, should be fixed
         timeUnits = 's';
-    elseif ndim == 3    % Usually Patch clamp    %TODO: Not always true, should be fixed
+    elseif nDimensions == 3    % Usually Patch clamp    %TODO: Not always true, should be fixed
         timeUnits = 'ms';
     end
-    if ndim == 2        % Usually EEG
+    if nDimensions == 2        % Usually EEG
         channelUnits = 'uV';
-    elseif ndim == 3    % Usually Patch clamp
+    elseif nDimensions == 3    % Usually Patch clamp
         channelUnits = {'mV', 'pA', 'nS'};
     end
-    if ndim == 2        % Usually EEG
+    if nDimensions == 2        % Usually EEG
         channelLabels = 'EEG amplitude';
-    elseif ndim == 3    % Usually Patch clamp
+    elseif nDimensions == 3    % Usually Patch clamp
         channelLabels = {'Voltage', 'Current', 'Conductance'};
     end
 
@@ -514,8 +504,8 @@ if nargin < 11 || isempty(channelUnits)
     elseif strcmp(expMode, 'patch')
         [~, channelUnits, ~] = identify_channels(data);
     end
-elseif ndim == 2 && ~ischar(channelUnits) ...
-    || ndim == 3 && ~iscellstr(channelUnits)
+elseif nDimensions == 2 && ~ischar(channelUnits) ...
+    || nDimensions == 3 && ~iscellstr(channelUnits)
     error('channelUnits must be a char array for 2-data data and a cell array of char arrays for 3-data data!');
 end
 if nargin < 11 || isempty(channelLabels)
@@ -524,8 +514,8 @@ if nargin < 11 || isempty(channelLabels)
     elseif strcmp(expMode, 'patch')
         [~, ~, channelLabels] = identify_channels(data);
     end
-elseif ndim == 2 && ~ischar(channelLabels) ...
-    || ndim == 3 && ~iscellstr(channelLabels)
+elseif nDimensions == 2 && ~ischar(channelLabels) ...
+    || nDimensions == 3 && ~iscellstr(channelLabels)
     error('channelLabels must be a char array for 2-data data and a cell array of char arrays for 3-data data!');
 end
 
@@ -541,12 +531,12 @@ function [data, siUs, tVec] = plot_traces_abf (fileName, expMode, data, siUs, ou
 
 if strcmp(timeUnits, 'ms')
     % Use a sampling interval in ms
-    si = siUs / MS_PER_S;
+    siPlot = siUs / MS_PER_S;
 elseif strcmp(timeUnits, 's')
     % Use a sampling interval in seconds
-    si = siUs / US_PER_S;
+    siPlot = siUs / US_PER_S;
 end
-fprintf('Sampling interval = %d %s\n', si, timeUnits);
+fprintf('Sampling interval = %d %s\n', siPlot, timeUnits);
 
 
 %}

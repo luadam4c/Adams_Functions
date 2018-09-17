@@ -1,11 +1,39 @@
-function [data, siUs, abfParams] = parse_abf(fileName, varargin)
+function [data, siUs, abfParams, tVec, vVecs, iVecs, gVecs] = ...
+    parse_abf(fileName, varargin)
 %% Loads and parses an abf file
-% Usage: [data, siUs, abfParams] = parse_abf(fileName, varargin)
-%
+% Usage: [data, siUs, abfParams, tVec, vVecs, iVecs, gVecs] = ...
+%   parse_abf(fileName, varargin)
+% Explanation:
+%   This function does the following:
+%       1. Construct the full path to the abf file
+%       2. Load the abf file using either abf2load or abfload, 
+%           whichever's available
+%       3. Identify the appropriate time units and construct a time vector
+%       4. Identify whether each channel is voltage, current or conductance
+%           and extract them into vVecs, iVecs and gVecs
+% Examples:
+%       [~, ~, abfParams, tVec, vVecs, iVecs, gVecs] = ...
+%           parse_abf('20180914C_0001');
 % Outputs:
 %       data        - full data
 %       siUs        - sampling interval in microseconds
-%       abfParams   - TODO
+%       abfParams   - a structure containing the following fields:
+%                       siUs
+%                       siMs
+%                       siSeconds
+%                       siPlot
+%                       timeUnits
+%                       channelTypes
+%                       channelUnits
+%                       channelLabels
+%                       nDimensions
+%                       nSamples
+%                       nChannels
+%                       nSweeps
+%       tVec        - a constructed time vector with units given by 'TimeUnits'
+%       vVecs       - any identified voltage vector(s)
+%       iVecs       - any identified current vector(s)
+%       gVecs       - any identified conductance vector(s)
 % Arguments:
 %       fileName    - file name could be either the full path or 
 %                       a relative path in current directory
@@ -14,18 +42,23 @@ function [data, siUs, abfParams] = parse_abf(fileName, varargin)
 %       varargin    - 'Verbose': whether to output parsed results
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'TimeUnits': units for time
+%                   must be a string scalar or a character vector
+%                   default == 's' for 2-data data and 'ms' for 3-data data
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/construct_abffilename.m
+%       cd/construct_abffilename.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
 %       /home/Matlab/Brians_Functions/identify_channels.m
 %
 % Used by:
 %       cd/plot_traces_abf.m
-%
+%       cd/plot_evoked_LFP.m
+
 % File history: 
 % 2018-09-17 - Moved from plot_traces_abf.m
 % 2018-09-17 - Added 'Verbose' as a parameter
+% 2018-09-17 - Added tVec, vVecs, iVecs, gVecs as outputs
 
 %% Hard-coded constants
 US_PER_MS = 1e3;            % number of microseconds per millisecond
@@ -33,6 +66,7 @@ US_PER_S = 1e6;             % number of microseconds per second
 
 %% Default values for optional arguments
 verboseDefault = true;
+timeUnitsDefault = '';      % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -69,10 +103,13 @@ addRequired(iP, 'fileName', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, fileName, varargin{:});
 verbose = iP.Results.Verbose;
+timeUnits = iP.Results.TimeUnits;
 
 %% Do the job
 % Create the full path to .abf file robustly
@@ -92,44 +129,94 @@ elseif exist('abfload', 'file') == 2
 end
 
 % Find data dimensions and make sure it is <= 3
-ndim = ndims(data);        % number of dimensions in data
-if ndim > 3
+nDimensions = ndims(data);        % number of dimensions in data
+if nDimensions > 3
     error('Cannot parse data with more than 3 dimensions!');
+end
+
+% Set default time units if not provided
+if isempty(timeUnits)
+    switch nDimensions
+    case 2
+        timeUnits = 's';
+    case 3
+        timeUnits = 'ms';
+    otherwise
+        error('nDimensions unrecognize!');
+    end
 end
 
 % Query data dimensions
 nSamples = size(data, 1);          % number of samples
 nChannels = size(data, 2);         % number of channels
-if ndim == 3
+if nDimensions == 3
     nSweeps = size(data, 3);       % number of sweeps
 end
 
 % Identify proper channel units and labels
-[~, channelUnits, channelLabels] = identify_channels(data);
+[channelTypes, channelUnits, channelLabels] = identify_channels(data);
 
 % Convert sampling interval to other units
 siMs = siUs / US_PER_MS;
 siSeconds = siUs / US_PER_S;
 
+% Get the sampling interval for plotting
+if strcmp(timeUnits, 'ms')
+    % Use a sampling interval in ms
+    siPlot = siMs;
+elseif strcmp(timeUnits, 's')
+    % Use a sampling interval in seconds
+    siPlot = siSeconds;
+end
+
+% Construct a time vector for plotting
+tVec = siPlot * (1:nSamples)';
+
+% Extract vectors by type
+if nDimensions == 2
+    % All are voltage vectors
+    vVecs = data;
+    iVecs = [];
+    gVecs = [];
+elseif nDimensions == 3
+    % Extract voltage vectors if any
+    indVoltage = find_ind_str_in_cell('voltage', channelTypes);
+    vVecs = squeeze(data(:, indVoltage, :));
+
+    % Extract current vectors if any
+    indCurrent = find_ind_str_in_cell('current', channelTypes);
+    iVecs = squeeze(data(:, indCurrent, :));
+
+    % Extract conductance vectors if any
+    indConductance = find_ind_str_in_cell('conductance', channelTypes);
+    gVecs = squeeze(data(:, indConductance, :));
+end
+
+%% Return and/or print results
 % Store in abfParams
+abfParams.abfFullFileName = abfFullFileName;
+abfParams.siUs = siUs;
+abfParams.siMs = siMs;
+abfParams.siSeconds = siSeconds;
+abfParams.siPlot = siPlot;
+abfParams.timeUnits = timeUnits;
+abfParams.channelTypes = channelTypes;
 abfParams.channelUnits = channelUnits;
 abfParams.channelLabels = channelLabels;
-abfParams.ndim = ndim;
+abfParams.nDimensions = nDimensions;
 abfParams.nSamples = nSamples;
 abfParams.nChannels = nChannels;
 abfParams.nSweeps = nSweeps;
 
 % Write results to standard output
 if verbose
-    fprintf('Sampling Interval (us) = %g\n', siUs);
-    fprintf('Sampling Interval (ms) = %g\n', siMs);
-    fprintf('Sampling Interval (s) = %g\n', siSeconds);
-    fprintf('Channel Units = %s\n', strjoin(channelUnits, ', '));
-    fprintf('Channel Labels = %s\n', strjoin(channelLabels, ', '));
-    fprintf('Number of data dimensions = %d\n', ndim);
+    fprintf('The full path is: %s\n', abfFullFileName);
+    fprintf('Number of data dimensions = %d\n', nDimensions);
     fprintf('Number of samples = %d\n', nSamples);
     fprintf('Number of channels = %d\n', nChannels);
-    fprintf('Number of sweeps = %d\n\n', nSweeps);
+    fprintf('Number of sweeps = %d\n', nSweeps);
+    fprintf('Sampling Interval for plotting = %g %s\n', siPlot, timeUnits);
+    fprintf('Channel Labels = %s\n', strjoin(channelLabels, ', '));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
