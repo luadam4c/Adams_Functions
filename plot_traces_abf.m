@@ -37,6 +37,9 @@ function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 %                                   (in units set by TimeUnits)
 %                   must be a numeric nonnegative scalar
 %                   default == tVec(end)
+%                   - 'ChannelTypes': the channel types
+%                   must be a cellstr with nChannels elements
+%                   default == detected with identify_channels
 %                   TODO:
 %                   - 'Data': full data
 %                   must be a TODO
@@ -78,6 +81,7 @@ outFolderDefault = '';          % set later
 timeUnitsDefault = '';          % set later
 timeStartDefault = [];          % set later
 timeEndDefault = [];            % set later
+channelTypesDefault = {};       % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -110,6 +114,8 @@ addParameter(iP, 'TimeStart', timeStartDefault, ...
     @(x) isempty(x) || isnumeric(x) && isscalar(x) && x >= 0);
 addParameter(iP, 'TimeEnd', timeEndDefault, ...
     @(x) isempty(x) || isnumeric(x) && isscalar(x) && x >= 0);
+addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
+    @(x) validateattributes(x, {'cell'}, {'nonempty'}));
 
 % Read from the Input Parser
 parse(iP, fileName, varargin{:});
@@ -119,10 +125,11 @@ outFolder = iP.Results.OutFolder;
 timeUnits = iP.Results.TimeUnits;
 timeStart = iP.Results.TimeStart;
 timeEnd = iP.Results.TimeEnd;
+channelTypes = iP.Results.ChannelTypes;
 
 % Set (some) dependent argument defaults
+[fileDir, fileBase, ~] = fileparts(fileName);
 if isempty(outFolder)
-    [fileDir, fileBase, ~] = fileparts(fileName);
     outFolder = fullfile(fileDir, strcat(fileBase, '_traces'));
 end
 fprintf('Outfolder is %s ...\n', outFolder);
@@ -179,29 +186,36 @@ elseif nDimensions == 3    % Usually Patch clamp
 end
 
 %% Do the plotting
+% Construct a file identifier
+fileIdentifier = sprintf('%s_%.1f_%.1f', fileBase, timeStart, timeEnd);
+
 % Plot raw data all at once
 if nDimensions == 2 && ~individually       % could be EEG or patch clamp
     if strcmp(expMode, 'EEG')
         fprintf('Plotting all channels ...\n');
+        figName = fullfile(outFolder, sprintf('%s_all.png', fileIdentifier));
         vvecAll = data;
         figureNum = 1;
         h = plot_traces_abf_bt_helper(figureNum, tVec, vvecAll, timeStart, timeEnd, timeUnits, nChannels);
         title(sprintf('Data for all channels between %.1f %s and %.1f %s', timeStart, timeUnits, timeEnd, timeUnits));
         ylabel(channelLabels);
         legend(traceLabels);
-        saveas(h, fullfile(outFolder, sprintf('%.1f_%.1f_all.png', timeStart, timeEnd)), 'png');    
+        saveas(h, figName, 'png');    
         hold off;
     elseif strcmp(expMode, 'patch')
         % Plot sweeps
         for j = 1:nChannels
             fprintf('Plotting channel #%d for all sweeps ...\n', j);
+            figName = fullfile(outFolder, ...
+                                sprintf('%s_Channel%d_all.png', ...
+                                        fileIdentifier, j));
             vecAll = squeeze(data(:, j, :));
-            figureNum = 1*j;
+            figureNum = 1 * j;
             h = plot_traces_abf_bt_helper(figureNum, tVec, vecAll, timeStart, timeEnd, timeUnits, 1);
             title(sprintf('Data for all channels between %.1f %s and %.1f %s', timeStart, timeUnits, timeEnd, timeUnits));
             ylabel(channelLabels{j});
             legend(traceLabels);
-            saveas(h, fullfile(outFolder, sprintf('%.1f_%.1f_Channel%d_all.png', timeStart, timeEnd, j)), 'png');
+            saveas(h, figName, 'png');
             hold off;
     %        close(h);
         end
@@ -211,13 +225,16 @@ elseif nDimensions == 3 && ~individually   % usually Patch clamp
     % Plot sweeps
     for j = 1:nChannels
         fprintf('Plotting channel #%d for all sweeps ...\n', j);
+        figName = fullfile(outFolder, ...
+                            sprintf('%s_Channel%d_all.png', ...
+                                    fileIdentifier, j));
         vecAll = squeeze(data(:, j, :));
         figureNum = 100*j;
         h = plot_traces_abf_bt_helper(figureNum, tVec, vecAll, timeStart, timeEnd, timeUnits, nSweeps);
         title(sprintf('Data for all sweeps between %.1f %s and %.1f %s', timeStart, timeUnits, timeEnd, timeUnits));
         ylabel(channelLabels{j});
         legend(traceLabels);
-        saveas(h, fullfile(outFolder, sprintf('%.1f_%.1f_Channel%d_all.png', timeStart, timeEnd, j)), 'png');
+        saveas(h, figName, 'png');
         hold off;
 %        close(h);
     end
@@ -229,8 +246,8 @@ if nDimensions == 2 && individually        % could be EEG or patch clamp
         for j = 1:nChannels
             fprintf('Plotting channel #%d ...\n', j);
             figName = fullfile(outFolder, ...
-                        sprintf('%.1f_%.1f_Channel%d.png', ...
-                        timeStart, timeEnd, j))
+                        sprintf('%s_Channel%d.png', ...
+                        fileIdentifier, j))
             vvec = data(:, j);
             figureNum = 1+j;
             h = plot_traces_abf_bt_helper(figureNum, tVec, vvec, timeStart, timeEnd, timeUnits, 1);
@@ -244,8 +261,8 @@ if nDimensions == 2 && individually        % could be EEG or patch clamp
         for j = 1:nChannels
             fprintf('Plotting channel #%d ...\n', j);
             figName = fullfile(outFolder, ...
-                                sprintf('%.1f_%.1f_Channel%d.png', ...
-                                        timeStart, timeEnd, j));
+                                sprintf('%s_Channel%d.png', ...
+                                        fileIdentifier, j));
             vvec = data(:, j);
             figureNum = 1+j;
             h = plot_traces_abf_bt_helper(figureNum, tVec, vvec, timeStart, timeEnd, timeUnits, 1);
@@ -262,8 +279,8 @@ elseif nDimensions == 3 && individually    % usually Patch clamp        %%% Need
             for k = 1:nSweeps
                 fprintf('Plotting channel #%d and sweep #%d ...\n', j, k);
                 figName = fullfile(outFolder, ...
-                                    sprintf('%.1f_%.1f_Channel%d_Sweep%d.png', ...
-                                            timeStart, timeEnd, j, k));
+                                    sprintf('%s_Channel%d_Sweep%d.png', ...
+                                            fileIdentifier, j, k));
                 vec = data(:, j, k);
                 figureNum = 100*j+k;
                 h = plot_traces_abf_bt_helper(figureNum, tVec, vec, timeStart, timeEnd, timeUnits, 1);
@@ -280,8 +297,8 @@ elseif nDimensions == 3 && individually    % usually Patch clamp        %%% Need
             for k = 1:nSweeps
                 fprintf('Plotting channel #%d and sweep #%d ...\n', j, k);
                 figName = fullfile(outFolder, ...
-                                    sprintf('%.1f_%.1f_Channel%d_Sweep%d.png', ...
-                                            timeStart, timeEnd, j, k));
+                                    sprintf('%s_Channel%d_Sweep%d.png', ...
+                                            fileIdentifier, j, k));
                 vec = data(:, j, k);
                 figureNum = 100*j+k;
                 h = plot_traces_abf_bt_helper(figureNum, tVec, vec, timeStart, timeEnd, timeUnits, 1);

@@ -191,8 +191,8 @@ end
 
 % Plot spike frequency over current injected (F-I plot)
 figname_FI = [filebase, '_FI'];
-channelType = identify_channels(alldata);
-ind_cur = strcmp('current', channelType);
+channelTypes = identify_channels(alldata);
+ind_cur = strcmpi('Current', channelTypes);
 currents = zeros(1, nsweeps);
 parfor i = 1:nsweeps
     currents(i) = mean(alldata(spif_time(1):spif_time(2), ind_cur, i));    %%%TODO: after identify_CI.m is finished, use to find injection range

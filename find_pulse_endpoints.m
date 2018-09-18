@@ -15,6 +15,7 @@ function [idxStart, idxEnd] = find_pulse_endpoints (pulse)
 % 2018-08-10 AL - Change the amplitude to take the value from pulseShifted
 %                   rather than from pulse
 % 2018-08-10 AL - Now checks number of arguments
+% 2018-09-17 AL - Now returns empty indices if there is no pulse
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -60,6 +61,10 @@ elseif signAmplitude == -1
 
     % Find the last point less than 3/4 of the amplitude
     idxEndRel = find(pulseShifted(idxAbsMax:end) < amplitude * 0.75, 1, 'last');
+else
+    idxStart = [];
+    idxEnd = [];
+    return;
 end
 
 % Shift the indices to correspond to entire ivecCpr

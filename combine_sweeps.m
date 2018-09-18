@@ -14,7 +14,8 @@ function [allData, timeVec] = combine_sweeps(varargin)
 %                   default == '' 
 %                   - 'OutputLabel' - experiment label for output file names
 %                   must be a string scalar or a character vector
-%                   default == expLabel if provided and dataDirectory name otherwise
+%                   default == expLabel if provided and 
+%                                   dataDirectory name otherwise
 %                   - 'SweepNumbers' - the sweep numbers to combine
 %                   must be a numeric vector or 'all'
 %                   default == 'all'
@@ -261,7 +262,7 @@ if strcmpi(dataMode, '2d')       % if there is only one sweep per file
         if isempty(channelTypes{1})
             idxCurrent = 1;
         else
-            idxCurrent = strcmp('current', channelTypes);
+            idxCurrent = strcmpi('Current', channelTypes);
         end
 
         % Get current vector (usually pA) for this sweep
@@ -299,7 +300,7 @@ elseif strcmpi(dataMode, '3d')   % if there are multiple sweeps per file
 
     % Identify the channels in data
     channelTypes = identify_channels(data);
-    idxCurrent = strcmp('current', channelTypes);
+    idxCurrent = strcmpi('Current', channelTypes);
   
     % Do for each sweep
     for iSwp = sweepNumbers

@@ -31,6 +31,9 @@ function plot_all_abfs_dir (varargin)
 %                                   (in units set by TimeUnits)
 %                   must be a numeric nonnegative scalar
 %                   default == tVec(end)
+%                   - 'ChannelTypes': the channel types
+%                   must be a cellstr with nChannels elements
+%                   default == detected with identify_channels
 %
 % Requires:
 %       cd/compute_and_plot_evoked_LFP.m
@@ -50,6 +53,8 @@ function plot_all_abfs_dir (varargin)
 % 2018-01-24 - Added isdeployed
 % 2018-07-24 - Now uses a try catch statement
 % 2018-09-17 - Added the input parser
+% 2018-09-17 - Added identify_eLFP() and compute_and_plot_evoked_LFP()
+% 2018-09-18 - Now plots a combined trace
 
 %% Hard-coded parameters
 validExpModes = {'EEG', 'patch'};
@@ -62,6 +67,7 @@ outFolderDefault = '';          % set later
 timeUnitsDefault = '';          % set later
 timeStartDefault = [];          % set later
 timeEndDefault = [];            % set later
+channelTypesDefault = {};       % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -101,6 +107,8 @@ addParameter(iP, 'TimeStart', timeStartDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
 addParameter(iP, 'TimeEnd', timeEndDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
+addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
+    @(x) validateattributes(x, {'cell'}, {'nonempty'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -111,6 +119,7 @@ outFolder = iP.Results.OutFolder;
 timeUnits = iP.Results.TimeUnits;
 timeStart = iP.Results.TimeStart;
 timeEnd = iP.Results.TimeEnd;
+channelTypesUser = iP.Results.ChannelTypes;
 
 % Set dependent argument defaults
 if isempty(directory)
@@ -126,22 +135,34 @@ end
 nfiles = numel(filenames);
 
 %% Plot traces from each file using plot_traces_abf.m
+siSecondsAll = zeros(nfiles, 1);
+channelTypesAll = cell(nfiles, 1);
+nSweepsAll = zeros(nfiles, 1);
+nSamplesAll = zeros(nfiles, 1);
+vVecsAll = cell(nfiles, 1);
+iVecsAll = cell(nfiles, 1);
+gVecsAll = cell(nfiles, 1);
 parfor k = 1:nfiles
 %for k = 1:nfiles
     % Plot traces from this abf file
-    try 
+%    try 
         % Parse the abf file
         [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
-            parse_abf(filenames{k});
+            parse_abf(filenames{k}, 'Verbose', false, ...
+                        'ChannelTypes', channelTypesUser);
 
         % Extract some parameters
         siUs = abfParams.siUs;
+        siSeconds = abfParams.siSeconds;
+        channelTypes = abfParams.channelTypes;
+        nSweeps = abfParams.nSweeps;
+        nSamples = abfParams.nSamples;
 
         % Identify whether this is a current injection protocol
         isCI = identify_CI(data, siUs);
 
         % Identify whether this is an evoked LFP protocol
-        isEvokedLfp = identify_eLFP(vVecs, iVecs);
+        isEvokedLfp = identify_eLFP(iVecs);
 
         % Plot the appropriate trace
         if isCI
@@ -150,29 +171,120 @@ parfor k = 1:nfiles
             plot_FI(filenames{k}, data, siUs);
         elseif isEvokedLfp
             % If it is an evoked LFP protocol, compute and plot it
-            tVecLfp = ...
+            [tVecLfp, vVecLfp, iVecStim] = ...
                 compute_and_plot_evoked_LFP(filenames{k}, ...
                                             'OutFolder', outFolder, ...
                                             'PlotFlag', true, ...
-                                            'SaveFlag', true);
+                                            'SaveFlag', true, ...
+                                            'ChannelTypes', channelTypes);
 
-            % Plot all traces within the time window
+            % Plot all traces within the LFP time window
             plot_traces_abf(filenames{k}, ...
                 'ExpMode', expMode, 'Individually', individually, ...
                 'OutFolder', outFolder, 'TimeUnits', timeUnits, ...
-                'TimeStart', min(tVecLfp), 'TimeEnd', max(tVecLfp));
+                'TimeStart', min(tVecLfp), 'TimeEnd', max(tVecLfp), ...
+                'ChannelTypes', channelTypes);
         else
             % Just plot the traces
             plot_traces_abf(filenames{k}, ...
                 'ExpMode', expMode, 'Individually', individually, ...
                 'OutFolder', outFolder, 'TimeUnits', timeUnits, ...
-                'TimeStart', timeStart, 'TimeEnd', timeEnd);
+                'TimeStart', timeStart, 'TimeEnd', timeEnd, ...
+                'ChannelTypes', channelTypes);
         end
-    catch ME
-        fprintf('Traces for %s cannot be plotted!\n', filenames{k});
-        fprintf([ME.identifier, ': ', ME.message]);
-    end
+
+        % Combine sweeps to combine later
+        if nSweeps > 1
+            nSamples = nSamples * nSweeps;
+            nSweeps = 1;
+            vVecs = reshape(vVecs, nSamples, nSweeps);
+            iVecs = reshape(iVecs, nSamples, nSweeps);
+            gVecs = [];
+        end
+
+        % Save for later
+        channelTypesAll{k} = channelTypes;
+        siSecondsAll(k) = siSeconds;
+        nSweepsAll(k) = nSweeps;
+        nSamplesAll(k) = nSamples;
+        vVecsAll{k} = vVecs;
+        iVecsAll{k} = iVecs;
+        gVecsAll{k} = gVecs;
+%    catch ME
+%        fprintf('Traces for %s cannot be plotted!\n', filenames{k});
+%        fprintf([ME.identifier, ': ', ME.message]);
+%    end
 end
+
+%% Combine and plot all traces if the sampling intervals, channel types
+%       and number of sweeps are all the same
+% TODO: Put this in a function
+if numel(unique(siSecondsAll)) == 1 && ...
+    isequal(channelTypesAll{:}) == 1 && ...
+    numel(unique(nSweepsAll)) == 1
+    % Decide on the outFolder
+    if isempty(outFolder)
+        outFolder = directory;
+    end
+
+    % TODO Decide on the output label
+    [~, directoryName, ~] = fileparts(directory);
+    %{
+    if isempty(outputLabel)
+        if ~isempty(expLabel)
+            outputLabel = expLabel;
+        else
+            outputLabel = directoryName;
+        end
+    end
+    %}
+    outputLabel = directoryName;
+    figName = fullfile(outFolder, [directoryName, '_combined']);
+
+    % Combine the vectors
+    vVecCombined = vertcat(vVecsAll{:});
+    iVecCombined = vertcat(iVecsAll{:});
+    gVecCombined = vertcat(gVecsAll{:});
+    allVecs = {vVecCombined, iVecCombined, gVecCombined};
+    allLabels = {'Voltage (mV)', 'Current (pA)', 'Conductance (nS)'};
+
+    % Determine which vectors are not empty
+    nonempty = cellfun(@(x) ~isempty(x), allVecs);
+    nToPlot = sum(nonempty);
+    indToPlot = find(nonempty);
+
+    % Extract the common siUs
+    siSeconds = siSecondsAll(1);
+
+    % Count the total number of samples
+    nSamplesCombined = sum(nSamplesAll);
+
+    % Generate a combined time vector
+    tVecCombined = (1:nSamplesCombined)' * siSeconds;
+
+    % Count the maximum time
+    timeLength = nSamplesCombined * siSeconds;
+
+    % Plot the combined trace
+    h = figure('Visible', 'off', 'PaperPosition', [0, 0, 80, 5]);
+    clf(h)
+    for iPlot = 1:nToPlot
+        idxToPlot = indToPlot(iPlot);
+        ax(iPlot) = subplot(nToPlot, 1, iPlot);
+        plot(tVecCombined, allVecs{idxToPlot});
+        ylabel(allLabels{idxToPlot});
+        if iPlot == nToPlot
+            xlabel('Time (seconds)');
+        end
+        xlim([min(tVecCombined), max(tVecCombined)]);
+    end
+    linkaxes(ax, 'x');
+    suptitle(['Combined traces for ', outputLabel]);
+    % TODO: Use print() and make the width dependent on timeLength
+    print(h, figName, '-djpeg');
+    close(h)
+end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -218,5 +330,15 @@ for file = files'
 maxSwpSpacing = 2;
 
 function plot_all_abfs_dir (directory, expmode)
+
+[vVecCombined] = combine_sweeps('Vectors', vVecsAll);
+[iVecCombined] = combine_sweeps('Vectors', iVecsAll);
+[gVecCombined] = combine_sweeps('Vectors', gVecsAll);
+
+saveas(h, figName, 'png');
+
+if isempty(outFolder)
+    outFolder = directory;
+end
 
 %}

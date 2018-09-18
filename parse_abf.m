@@ -45,6 +45,9 @@ function [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
 %                   - 'TimeUnits': units for time
 %                   must be a string scalar or a character vector
 %                   default == 's' for 2-data data and 'ms' for 3-data data
+%                   - 'ChannelTypes': the channel types
+%                   must be a cellstr with nChannels elements
+%                   default == detected with identify_channels
 %
 % Requires:
 %       cd/construct_abffilename.m
@@ -54,11 +57,13 @@ function [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
 % Used by:
 %       cd/plot_traces_abf.m
 %       cd/compute_and_plot_evoked_LFP.m
+%       cd/identify_eLFP.m
 
 % File history: 
 % 2018-09-17 - Moved from plot_traces_abf.m
 % 2018-09-17 - Added 'Verbose' as a parameter
 % 2018-09-17 - Added tVec, vVecs, iVecs, gVecs as outputs
+% TODO: Make 'ChannelTypes' an optional argument
 
 %% Hard-coded constants
 US_PER_MS = 1e3;            % number of microseconds per millisecond
@@ -67,6 +72,7 @@ US_PER_S = 1e6;             % number of microseconds per second
 %% Default values for optional arguments
 verboseDefault = true;
 timeUnitsDefault = '';      % set later
+channelTypesDefault = {};   % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -105,11 +111,14 @@ addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
+    @(x) iscell(x));
 
 % Read from the Input Parser
 parse(iP, fileName, varargin{:});
 verbose = iP.Results.Verbose;
 timeUnits = iP.Results.TimeUnits;
+channelTypes = iP.Results.ChannelTypes;
 
 %% Do the job
 % Create the full path to .abf file robustly
@@ -156,7 +165,29 @@ else
 end
 
 % Identify proper channel units and labels
-[channelTypes, channelUnits, channelLabels] = identify_channels(data);
+if isempty(channelTypes)
+    [channelTypes, channelUnits, channelLabels] = identify_channels(data);
+else
+    channelUnits = cell(size(channelTypes));
+    channelLabels = cell(size(channelTypes));
+    parfor iChannel = 1:nChannels
+        % Set default channel units
+        switch channelTypes{iChannel}
+        case 'Voltage'
+            channelUnits{iChannel} = 'mV';
+        case 'Current'
+            channelUnits{iChannel} = 'pA';
+        case 'Conductance'
+            channelUnits{iChannel} = 'nS';
+        otherwise
+            error('channelTypes unrecognized!');
+        end
+
+        % Construct channel labels
+        channelLabels{iChannel} = [channelTypes{iChannel}, ' ', ...
+                                    channelUnits{iChannel}];
+    end
+end
 
 % Convert sampling interval to other units
 siMs = siUs / US_PER_MS;
@@ -175,22 +206,29 @@ end
 tVec = siPlot * (1:nSamples)';
 
 % Extract vectors by type
+indVoltage = find_ind_str_in_cell('Voltage', channelTypes, ...
+                                    'IgnoreCase', true);
+indCurrent = find_ind_str_in_cell('Current', channelTypes, ...
+                                    'IgnoreCase', true);
+indConductance = find_ind_str_in_cell('Conductance', channelTypes, ...
+                                    'IgnoreCase', true);
 if nDimensions == 2
-    % All are voltage vectors
-    vVecs = data;
-    iVecs = [];
-    gVecs = [];
+    % Extract voltage vectors if any
+    vVecs = data(:, indVoltage);
+
+    % Extract current vectors if any
+    iVecs = data(:, indCurrent);
+
+    % Extract conductance vectors if any
+    gVecs = data(:, indConductance);
 elseif nDimensions == 3
     % Extract voltage vectors if any
-    indVoltage = find_ind_str_in_cell('voltage', channelTypes);
     vVecs = squeeze(data(:, indVoltage, :));
 
     % Extract current vectors if any
-    indCurrent = find_ind_str_in_cell('current', channelTypes);
     iVecs = squeeze(data(:, indCurrent, :));
 
     % Extract conductance vectors if any
-    indConductance = find_ind_str_in_cell('conductance', channelTypes);
     gVecs = squeeze(data(:, indConductance, :));
 end
 
@@ -225,6 +263,11 @@ end
 
 %{
 OLD CODE:
+
+% All are voltage vectors
+vVecs = data;
+iVecs = [];
+gVecs = [];
 
 %}
 

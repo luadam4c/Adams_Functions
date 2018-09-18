@@ -27,6 +27,9 @@ function [tVecLfp, vVecLfp, iVecStim] = compute_and_plot_evoked_LFP (fileName, v
 %                   - 'SaveFlag': whether to save the pulse train series
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'ChannelTypes': the channel types
+%                   must be a cellstr with nChannels elements
+%                   default == detected with identify_channels
 %
 % Requires:
 %       cd/parse_abf.m
@@ -47,6 +50,7 @@ outFolderDefault = '';          % set later
 plotFlagDefault = true;         % plot the evoked LFP with stim by default
 saveFlagDefault = true;         % save the pulse train series by default
 figTypesDefault = 'png';        % default figure type(s) for saving
+channelTypesDefault = {};       % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -75,6 +79,8 @@ addParameter(iP, 'SaveFlag', saveFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
+addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
+    @(x) validateattributes(x, {'cell'}, {'nonempty'}));
 
 % Read from the Input Parser
 parse(iP, fileName, varargin{:});
@@ -82,6 +88,7 @@ outFolder = iP.Results.OutFolder;
 plotFlag = iP.Results.PlotFlag;
 saveFlag = iP.Results.SaveFlag;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
+channelTypes = iP.Results.ChannelTypes;
 
 % Set (some) dependent argument defaults
 [fileDir, fileBase, ~] = fileparts(fileName);
@@ -97,7 +104,8 @@ end
 
 %% Load data and prepare for plotting
 % Load and parse the abf file
-[abfParams, ~, tVec, vVecs, iVecs] = parse_abf(fileName, 'Verbose', false);
+[abfParams, ~, tVec, vVecs, iVecs] = ...
+    parse_abf(fileName, 'Verbose', false, 'ChannelTypes', channelTypes);
 
 % Extract the parsed parameters
 channelLabels = abfParams.channelLabels;
@@ -147,6 +155,11 @@ iVecStim = mean(iVecCprs, 2);
 
 % Average the current pulse responses to get the evoked local field potential
 vVecLfp = mean(vVecCprs, 2);
+
+%% Analyze the evoked local field potential
+% TODO: Extract the amplitude
+
+% TODO: Extract the slope
 
 %% Plot the evoked local field potential with the stimulation pulse
 if plotFlag
