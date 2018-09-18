@@ -1,8 +1,8 @@
 function [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
-    parse_abf(fileName, varargin)
+                parse_abf(fileName, varargin)
 %% Loads and parses an abf file
 % Usage: [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
-%   parse_abf(fileName, varargin)
+%               parse_abf(fileName, varargin)
 % Explanation:
 %   This function does the following:
 %       1. Construct the full path to the abf file

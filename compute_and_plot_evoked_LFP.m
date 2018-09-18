@@ -1,5 +1,5 @@
 function [tVecLfp, vVecLfp, iVecStim] = compute_and_plot_evoked_LFP (fileName, varargin)
-%% Plots an evoked local field potential
+%% Computes and plots an evoked local field potential with its stimulus
 % Usage: [tVecLfp, vVecLfp, iVecStim] = compute_and_plot_evoked_LFP (fileName, varargin)
 % Explanation:
 %       TODO

@@ -1,5 +1,6 @@
 function [alldata, si] = plot_traces_abf_EEG (abffilename, left, right)
-%% Usage: plot_traces_abf_EEG (abffilename, left, right)
+%% (May be obsolete) Plots traces all in one place for EEG data
+% Usage: [alldata, si] = plot_traces_abf_EEG (abffilename, left, right)
 %        abffilename either is the full address or must be in current directory
 %        left is the start of the time interval of interest
 %        right is the end of the time interval of interest

@@ -1,5 +1,5 @@
 function check_dir (directories, varargin)
-%% Checks if needed directory(ies) exist and create them if not
+%% Checks if needed directory(ies) exist and creates them if not
 % Usage: check_dir (directories, varargin)
 % Arguments:
 %       directories - directory(ies) to check
