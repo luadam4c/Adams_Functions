@@ -99,6 +99,7 @@ Last Updated 2018-09-18 by Adam Lu
 - [**plot_signals.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_signals.m): 
 - [**plot_traces_abf_EEG.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_abf_EEG.m): Usage: plot_traces_abf_EEG (abffilename, left, right)
 - [**plot_traces_abf.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_abf.m): Takes an abf file and plots all traces
+- [**plot_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces.m): figTitle, figName, figNum)
 - [**plot_traces_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_mat.m): Plot traces from mat file
 - [**plot_tuning_curve.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_curve.m): Plot a 1-dimensional tuning curve
 - [**plot_tuning_map.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_map.m): Plot a 2-dimensional tuning map
