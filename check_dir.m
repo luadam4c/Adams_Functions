@@ -10,6 +10,7 @@ function check_dir (directories, varargin)
 %                   default == true
 %
 % Used by:
+%       cd/check_subdir.m
 %       cd/plot_traces_abf.m
 %       /media/adamX/m3ha/data_dclamp/take4/find_initial_slopes.m
 %
@@ -67,5 +68,12 @@ else
         end
     end
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%{ 
+OLD CODE:
+
+%}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
