@@ -42,6 +42,11 @@ function [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
 %       varargin    - 'Verbose': whether to output parsed results
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'ExpMode': experiment mode
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'EEG'   - EEG data; x axis in seconds; y-axis in uV
+%                       'patch' - patch data; x axis in ms; y-axis in mV
+%                   default == 'EEG' for 2d data 'patch' for 3d data
 %                   - 'TimeUnits': units for time
 %                   must be a string scalar or a character vector
 %                   default == 's' for 2-data data and 'ms' for 3-data data
@@ -63,14 +68,19 @@ function [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
 % 2018-09-17 - Moved from plot_traces_abf.m
 % 2018-09-17 - Added 'Verbose' as a parameter
 % 2018-09-17 - Added tVec, vVecs, iVecs, gVecs as outputs
+% 2018-09-18 - Added expMode and now sets timeUnits according to expMode
 % TODO: Make 'ChannelTypes' an optional argument
 
 %% Hard-coded constants
 US_PER_MS = 1e3;            % number of microseconds per millisecond
 US_PER_S = 1e6;             % number of microseconds per second
 
+%% Hard-coded parameters
+validExpModes = {'EEG', 'patch', ''};
+
 %% Default values for optional arguments
 verboseDefault = true;
+expModeDefault = '';        % set later
 timeUnitsDefault = '';      % set later
 channelTypesDefault = {};   % set later
 
@@ -106,9 +116,12 @@ iP.FunctionName = mfilename;
 addRequired(iP, 'fileName', ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
                                                 % introduced after R2016b
+
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ExpMode', expModeDefault, ...
+    @(x) any(validatestring(x, validExpModes)));
 addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
@@ -117,6 +130,7 @@ addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
 % Read from the Input Parser
 parse(iP, fileName, varargin{:});
 verbose = iP.Results.Verbose;
+expMode = validatestring(iP.Results.ExpMode, validExpModes);
 timeUnits = iP.Results.TimeUnits;
 channelTypes = iP.Results.ChannelTypes;
 
@@ -143,15 +157,27 @@ if nDimensions > 3
     error('Cannot parse data with more than 3 dimensions!');
 end
 
-% Set default time units if not provided
-if isempty(timeUnits)
+% Set experiment mode (if not provided) based on data dimensions
+if isempty(expMode)
     switch nDimensions
     case 2
-        timeUnits = 's';
+        expMode = 'EEG';
     case 3
-        timeUnits = 'ms';
+        expMode = 'patch';
     otherwise
         error('nDimensions unrecognize!');
+    end
+end
+
+% Set time units (if not provided) based on experiment mode
+if isempty(timeUnits)
+    switch expMode
+    case 'EEG'
+        timeUnits = 's';
+    case 'patch'
+        timeUnits = 'ms';
+    otherwise
+        error('expMode unrecognize!');
     end
 end
 
@@ -164,17 +190,22 @@ else
     nSweeps = 1;
 end
 
-% Identify proper channel units and labels
+% Identify proper channel types, units and labels
 if isempty(channelTypes)
-    [channelTypes, channelUnits, channelLabels] = identify_channels(data);
+    [channelTypes, channelUnits, channelLabels] = ...
+        identify_channels(data, 'ExpMode', expMode);
 else
+    % Decide on channel units
     channelUnits = cell(size(channelTypes));
-    channelLabels = cell(size(channelTypes));
     parfor iChannel = 1:nChannels
         % Set default channel units
         switch channelTypes{iChannel}
         case 'Voltage'
-            channelUnits{iChannel} = 'mV';
+            if strcmpi(expMode, 'patch')
+                channelUnits{iChannel} = 'mV';
+            elseif strcmpi(expMode, 'EEG')
+                channelUnits{iChannel} = 'uV';
+            end
         case 'Current'
             channelUnits{iChannel} = 'pA';
         case 'Conductance'
@@ -182,11 +213,12 @@ else
         otherwise
             error('channelTypes unrecognized!');
         end
-
-        % Construct channel labels
-        channelLabels{iChannel} = [channelTypes{iChannel}, ' ', ...
-                                    channelUnits{iChannel}];
     end
+
+    % Construct channel labels
+    channelLabels = cellfun(@(x, y) [x , '(', y, ')'], ...
+                            channelTypes, channelUnits, ...
+                            'UniformOutput', false);
 end
 
 % Convert sampling interval to other units
@@ -235,6 +267,7 @@ end
 %% Return and/or print results
 % Store in abfParams
 abfParams.abfFullFileName = abfFullFileName;
+abfParams.expMode = expMode;
 abfParams.siUs = siUs;
 abfParams.siMs = siMs;
 abfParams.siSeconds = siSeconds;
@@ -251,6 +284,7 @@ abfParams.nSweeps = nSweeps;
 % Write results to standard output
 if verbose
     fprintf('The full path is: %s\n', abfFullFileName);
+    fprintf('The experiment mode is: %s\n', expMode);
     fprintf('Number of data dimensions = %d\n', nDimensions);
     fprintf('Number of samples = %d\n', nSamples);
     fprintf('Number of channels = %d\n', nChannels);
@@ -268,6 +302,20 @@ OLD CODE:
 vVecs = data;
 iVecs = [];
 gVecs = [];
+
+if isempty(timeUnits)
+    switch nDimensions
+    case 2
+        timeUnits = 's';
+    case 3
+        timeUnits = 'ms';
+    otherwise
+        error('nDimensions unrecognize!');
+    end
+end
+
+channelLabels{iChannel} = [channelTypes{iChannel}, ' (', ...
+                            channelUnits{iChannel}, ')'];
 
 %}
 

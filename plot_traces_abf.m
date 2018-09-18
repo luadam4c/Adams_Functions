@@ -40,6 +40,9 @@ function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 %                   - 'ChannelTypes': the channel types
 %                   must be a cellstr with nChannels elements
 %                   default == detected with identify_channels
+%                   - 'Verbose': whether to write to standard output
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   TODO:
 %                   - 'Data': full data
 %                   must be a TODO
@@ -49,7 +52,9 @@ function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 %                   default == what the file provides
 %
 % Requires:
+%       cd/check_dir.m
 %       cd/parse_abf.m
+%       cd/plot_traces.m
 %
 % Used by:
 %       cd/plot_all_abfs_dir.m
@@ -60,7 +65,7 @@ function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 % 2017-02-13 - BT - added labelling detection between current and voltage
 % 2017-03-01 - BT - moved duplicate plotting code into separate helper function
 % 2017-03-15 - BT - adapted labelling detection for conductance and differing recmodes
-% 2017-04-11 - Fixed the case when range == 0 in plot_traces_abf_bt_helper
+% 2017-04-11 - Fixed the case when range == 0 in plot_traces_abf_helper
 % 2017-04-11 - Added outFolder as an optional argument
 % 2017-04-13 - Added data, siUs as optional arguments
 % 2017-06-16 - Now uses identify_channels.m
@@ -69,6 +74,8 @@ function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 % 2018-07-24 - Now uses a try catch statement
 % 2018-09-17 - Added the input parser
 % 2018-09-17 - Moved code to parse_abf.m
+% 2018-09-18 - Renamed plot_traces_abf_helper -> plot_traces
+%               and moved to its own function
 %
 
 %% Hard-coded parameters
@@ -82,6 +89,7 @@ timeUnitsDefault = '';          % set later
 timeStartDefault = [];          % set later
 timeEndDefault = [];            % set later
 channelTypesDefault = {};       % set later
+verboseDefault = true;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -116,6 +124,8 @@ addParameter(iP, 'TimeEnd', timeEndDefault, ...
     @(x) isempty(x) || isnumeric(x) && isscalar(x) && x >= 0);
 addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
     @(x) validateattributes(x, {'cell'}, {'nonempty'}));
+addParameter(iP, 'Verbose', verboseDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, fileName, varargin{:});
@@ -126,43 +136,38 @@ timeUnits = iP.Results.TimeUnits;
 timeStart = iP.Results.TimeStart;
 timeEnd = iP.Results.TimeEnd;
 channelTypes = iP.Results.ChannelTypes;
+verbose = iP.Results.Verbose;
 
 % Set (some) dependent argument defaults
 [fileDir, fileBase, ~] = fileparts(fileName);
 if isempty(outFolder)
     outFolder = fullfile(fileDir, strcat(fileBase, '_traces'));
 end
-fprintf('Outfolder is %s ...\n', outFolder);
-if isempty(timeUnits)
-    switch expMode
-    case 'EEG'
-        timeUnits = 's';
-    case 'patch'
-        timeUnits = 'ms';
-    otherwise
-        error('ExpMode unrecognize!');
-    end
+if verbose
+    fprintf('Outfolder is %s ...\n', outFolder);
 end
 
 %% Check if needed output directories exist
-if exist(outFolder, 'dir') ~= 7
-    mkdir(outFolder);
-    fprintf('New directory is made: %s\n\n', outFolder);
-end
+check_dir(outFolder, 'Verbose', verbose);
 
-%% Load data and prepare for plotting
+%% Load data
 % Load and parse the abf file
 [abfParams, data, tVec] = ...
-    parse_abf(fileName, 'Verbose', false, 'TimeUnits', timeUnits);
+    parse_abf(fileName, 'Verbose', false, ...
+              'ExpMode', expMode, 'TimeUnits', timeUnits, ...
+              'ChannelTypes', channelTypes);
 
 % Extract the parsed parameters
+expMode = abfParams.expMode;
 channelLabels = abfParams.channelLabels;
 nDimensions = abfParams.nDimensions;
 nChannels = abfParams.nChannels;
 nSweeps = abfParams.nSweeps;
 siUs = abfParams.siUs;
 siPlot = abfParams.siPlot;
+timeUnits = abfParams.timeUnits;
 
+%% Prepare for plotting
 % Set default x-axis limits
 if isempty(timeStart)
     timeStart = 0;
@@ -170,180 +175,110 @@ end
 if isempty(timeEnd)
     timeEnd = tVec(end);
 end
-fprintf('Interval to show = [%g %g]\n', timeStart, timeEnd);
-
-% Set up labels for each trace
-if nDimensions == 2        % Usually EEG
-    traceLabels = cell(1, nChannels);
-    for j = 1:nChannels
-        traceLabels{j} = ['Channel #', num2str(j)];
-    end
-elseif nDimensions == 3    % Usually Patch clamp
-    traceLabels = cell(1, nSweeps);
-    for k = 1:nSweeps
-        traceLabels{k} = ['Sweep #', num2str(k)];
-    end
+if verbose
+    fprintf('Interval to show = [%g %g]\n', timeStart, timeEnd);
 end
+xlimits = [timeStart, timeEnd];
+
+% Set up labels for each trace based on experiment mode
+switch expMode
+case 'EEG'
+    traceLabels = cell(1, nChannels);
+    for iChannel = 1:nChannels
+        traceLabels{iChannel} = ['Channel #', num2str(iChannel)];
+    end
+case 'patch'
+    traceLabels = cell(1, nSweeps);
+    for iSwp = 1:nSweeps
+        traceLabels{iSwp} = ['Sweep #', num2str(iSwp)];
+    end
+otherwise
+    error('Expmode unrecognized!');
+end
+
+% Set up the time axis label
+xLabel = ['Time (', timeUnits, ')'];
 
 %% Do the plotting
 % Construct a file identifier
-fileIdentifier = sprintf('%s_%.1f_%.1f', fileBase, timeStart, timeEnd);
+fileIdentifier = sprintf('%s_%g%s_%g%s', fileBase, xlimits(1), timeUnits, ...
+                                        xlimits(2), timeUnits);
 
-% Plot raw data all at once
-if nDimensions == 2 && ~individually       % could be EEG or patch clamp
-    if strcmp(expMode, 'EEG')
+% Plot data
+if ~individually && strcmpi(expMode, 'EEG')
+    % Print message
+    if verbose
         fprintf('Plotting all channels ...\n');
-        figName = fullfile(outFolder, sprintf('%s_all.png', fileIdentifier));
-        vvecAll = data;
-        figureNum = 1;
-        h = plot_traces_abf_bt_helper(figureNum, tVec, vvecAll, timeStart, timeEnd, timeUnits, nChannels);
-        title(sprintf('Data for all channels between %.1f %s and %.1f %s', timeStart, timeUnits, timeEnd, timeUnits));
-        ylabel(channelLabels);
-        legend(traceLabels);
-        saveas(h, figName, 'png');    
-        hold off;
-    elseif strcmp(expMode, 'patch')
-        % Plot sweeps
-        for j = 1:nChannels
-            fprintf('Plotting channel #%d for all sweeps ...\n', j);
-            figName = fullfile(outFolder, ...
-                                sprintf('%s_Channel%d_all.png', ...
-                                        fileIdentifier, j));
-            vecAll = squeeze(data(:, j, :));
-            figureNum = 1 * j;
-            h = plot_traces_abf_bt_helper(figureNum, tVec, vecAll, timeStart, timeEnd, timeUnits, 1);
-            title(sprintf('Data for all channels between %.1f %s and %.1f %s', timeStart, timeUnits, timeEnd, timeUnits));
-            ylabel(channelLabels{j});
-            legend(traceLabels);
-            saveas(h, figName, 'png');
-            hold off;
-    %        close(h);
-        end
     end
-%    close(h);
-elseif nDimensions == 3 && ~individually   % usually Patch clamp
-    % Plot sweeps
-    for j = 1:nChannels
-        fprintf('Plotting channel #%d for all sweeps ...\n', j);
-        figName = fullfile(outFolder, ...
-                            sprintf('%s_Channel%d_all.png', ...
-                                    fileIdentifier, j));
-        vecAll = squeeze(data(:, j, :));
-        figureNum = 100*j;
-        h = plot_traces_abf_bt_helper(figureNum, tVec, vecAll, timeStart, timeEnd, timeUnits, nSweeps);
-        title(sprintf('Data for all sweeps between %.1f %s and %.1f %s', timeStart, timeUnits, timeEnd, timeUnits));
-        ylabel(channelLabels{j});
-        legend(traceLabels);
-        saveas(h, figName, 'png');
-        hold off;
-%        close(h);
-    end
-end
 
-% Plot raw data (each channel and/or sweep individually)
-if nDimensions == 2 && individually        % could be EEG or patch clamp
-    if strcmp(expMode, 'EEG')
-        for j = 1:nChannels
-            fprintf('Plotting channel #%d ...\n', j);
-            figName = fullfile(outFolder, ...
-                        sprintf('%s_Channel%d.png', ...
-                        fileIdentifier, j))
-            vvec = data(:, j);
-            figureNum = 1+j;
-            h = plot_traces_abf_bt_helper(figureNum, tVec, vvec, timeStart, timeEnd, timeUnits, 1);
-            title(sprintf('Data for %s between %.1f %s and %.1f %s', traceLabels{j}, timeStart, timeUnits, timeEnd, timeUnits));
-            ylabel(channelLabels);
-            saveas(h, figName, 'png');
-            hold off;
-            close(h);
+    % Decide on figure name and title
+    vecAll = data;
+    yLabel = channelLabels{1};
+    figTitle = sprintf('All channels for %s', fileIdentifier);
+    figName = fullfile(outFolder, sprintf('%s_all.png', fileIdentifier));
+    figNum = 1;
+
+    % Do the plotting
+    h = plot_traces(tVec, vecAll, xlimits, xLabel, yLabel, ...
+                    traceLabels, figTitle, figName, figNum);
+elseif ~individually && strcmpi(expMode, 'patch') || ...
+        individually && strcmpi(expMode, 'EEG')
+    % Loop through all channels
+    parfor iChannel = 1:nChannels
+        % Print message
+        if verbose
+            fprintf('Plotting all sweeps of Channel #%d ...\n', iChannel);
         end
-    elseif strcmp(expMode, 'patch')
-        for j = 1:nChannels
-            fprintf('Plotting channel #%d ...\n', j);
-            figName = fullfile(outFolder, ...
-                                sprintf('%s_Channel%d.png', ...
-                                        fileIdentifier, j));
-            vvec = data(:, j);
-            figureNum = 1+j;
-            h = plot_traces_abf_bt_helper(figureNum, tVec, vvec, timeStart, timeEnd, timeUnits, 1);
-            title(sprintf('Data for %s between %.1f %s and %.1f %s', traceLabels{j}, timeStart, timeUnits, timeEnd, timeUnits));
-            ylabel(channelLabels{j});
-            saveas(h, figName, 'png');
-            hold off;
-            close(h);
+
+        % Decide on figure name and title
+        if nDimensions == 2
+            vecAll = data(:, iChannel);
+        else
+            vecAll = squeeze(data(:, iChannel, :));
         end
+        yLabel = channelLabels{iChannel};
+        figTitle = sprintf('Data for Channel #%d for %s', ...
+                            iChannel, fileIdentifier);
+        figName = fullfile(outFolder, sprintf('%s_Channel%d_all.png', ...
+                                            fileIdentifier, iChannel));
+        figNum = 100 * iChannel;
+
+        % Do the plotting
+        h = plot_traces(tVec, vecAll, xlimits, xLabel, yLabel, ...
+                        traceLabels, figTitle, figName, figNum);
     end
-elseif nDimensions == 3 && individually    % usually Patch clamp        %%% Need to fix this part too
-    if strcmp(expMode, 'EEG')
-        for j = 1:nChannels
-            for k = 1:nSweeps
-                fprintf('Plotting channel #%d and sweep #%d ...\n', j, k);
-                figName = fullfile(outFolder, ...
-                                    sprintf('%s_Channel%d_Sweep%d.png', ...
-                                            fileIdentifier, j, k));
-                vec = data(:, j, k);
-                figureNum = 100*j+k;
-                h = plot_traces_abf_bt_helper(figureNum, tVec, vec, timeStart, timeEnd, timeUnits, 1);
-                title(sprintf('Data for %s between %.1f %s and %.1f %s', ...
-                        traceLabels{k}, timeStart, timeUnits, timeEnd, timeUnits));
-                ylabel(channelLabels);
-                saveas(h, figName, 'png');
-                hold off;
-                close(h);
+elseif individually && strcmpi(expMode, 'patch')
+    % Plot each channel and sweep individually
+    for iChannel = 1:nChannels
+        parfor iSwp = 1:nSweeps
+            % Print message
+            if verbose
+                fprintf('Plotting Channel #%d, Sweep #%d ...\n', ...
+                            iChannel, iSwp);
             end
-        end
-    elseif strcmp(expMode, 'patch')
-        for j = 1:nChannels
-            for k = 1:nSweeps
-                fprintf('Plotting channel #%d and sweep #%d ...\n', j, k);
-                figName = fullfile(outFolder, ...
-                                    sprintf('%s_Channel%d_Sweep%d.png', ...
-                                            fileIdentifier, j, k));
-                vec = data(:, j, k);
-                figureNum = 100*j+k;
-                h = plot_traces_abf_bt_helper(figureNum, tVec, vec, timeStart, timeEnd, timeUnits, 1);
-                title(sprintf('Data for %s between %.1f %s and %.1f %s', ...
-                    traceLabels{k}, timeStart, timeUnits, timeEnd, timeUnits));
-                ylabel(channelLabels{j});
-                saveas(h, figName, 'png');
-                hold off;
-                close(h);
+
+            % Decide on figure name and title
+            if nDimensions == 2
+                vecAll = data(:, iChannel);
+            elseif nDimensions == 3
+                vecAll = data(:, iChannel, iSwp);
             end
+            yLabel = channelLabels{iChannel};
+            figTitle = sprintf('Data for Channel #%d, Sweep #%d for %s', ...
+                                iChannel, iSwp, fileIdentifier);
+            figName = fullfile(outFolder, ...
+                                sprintf('%s_Channel%d_Sweep%d.png', ...
+                                        fileIdentifier, iChannel, iSwp));
+            figNum = 100 * iChannel + iSwp;
+
+            % Do the plotting
+            h = plot_traces(tVec, vecAll, xlimits, xLabel, yLabel, ...
+                            traceLabels, figTitle, figName, figNum);
         end
     end
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [h] = plot_traces_abf_bt_helper(fig_num, tVec, vvec, timeStart, timeEnd, timeUnits, channels_or_sweep_num)
-%% Plots traces, sets axes and xlabel
-% Usage: [h] = plot_traces_abf_bt_helper(fig_num, tVec, vvec, timeStart, timeEnd, timeUnits, channels_or_sweep_num)
-%    h            - figure
-%    fig_num            - figure of number
-%    tVec            - time vector for plotting
-%    vvec            - compressed data vector
-%     timeStart            - time interval start
-%    timeEnd            - time interval end
-%    timeUnits            - units of time
-%    channels_or_sweep_num    - number of channels if plotMode == 1, 1 if plotMode == 2
-% Used by:
-%        /media/shareX/brianT/ABF_plotting/plot_traces_abf_bt.m
-
-minimum = min(min(vvec));
-maximum = max(max(vvec));
-range = maximum - minimum;
-h = figure(fig_num);
-set(h, 'Visible', 'Off');
-clf(h);
-for k = 1:channels_or_sweep_num
-    plot(tVec, vvec(:, k));    hold on;
-end
-if range ~= 0
-    axis([timeStart, timeEnd, minimum - 0.2 * range, maximum + 0.2 * range]);
 else
-    xlim([timeStart, timeEnd]);
+    error('Not Implemented Yet!');
 end
-xlabel(['Time (', timeUnits, ')']);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -566,5 +501,102 @@ elseif strcmp(timeUnits, 's')
 end
 fprintf('Sampling interval = %d %s\n', siPlot, timeUnits);
 
+if exist(outFolder, 'dir') ~= 7
+    mkdir(outFolder);
+    fprintf('New directory is made: %s\n\n', outFolder);
+end
+
+if isempty(timeUnits)
+    switch expMode
+    case 'EEG'
+        timeUnits = 's';
+    case 'patch'
+        timeUnits = 'ms';
+    otherwise
+        error('ExpMode unrecognize!');
+    end
+end
+
+axis([timeStart, timeEnd, minY - 0.2 * rangeY, maxY + 0.2 * rangeY]);
+
+% Used by:
+%        /media/shareX/brianT/ABF_plotting/plot_traces_abf_bt.m
+
+vvecAll = data;
+
+%    timeStart  - time interval start
+%    timeEnd    - time interval end
+xlim([timeStart, timeEnd]);
+
+% Set up labels for each trace
+if nDimensions == 2        % Usually EEG
+    traceLabels = cell(1, nChannels);
+    for j = 1:nChannels
+        traceLabels{j} = ['Channel #', num2str(j)];
+    end
+elseif nDimensions == 3    % Usually Patch clamp
+    traceLabels = cell(1, nSweeps);
+    for k = 1:nSweeps
+        traceLabels{k} = ['Sweep #', num2str(k)];
+    end
+end
+
+plot(tVec, dataVec(:, iTrace), ...
+    'DisplayName', ['Sweep #', num2str(iTrace)]);
+
+legend(traceLabels);
+
+fileIdentifier = sprintf('%s_%.1f_%.1f', fileBase, xlimits(1), xlimits(2));
+title(sprintf('Data for all channels between %.1f %s and %.1f %s', timeStart, timeUnits, timeEnd, timeUnits));
+
+%    timeUnits  - units of time
+%    nTraces    - number of channels if plotMode == 1, 1 if plotMode == 2
+
+title(sprintf('Data for Channel #%d between %.1f %s and %.1f %s', ...
+                iChannel, timeStart, timeUnits, timeEnd, timeUnits));
+
+% Plot raw data (each channel and/or sweep individually)
+if nDimensions == 2 && individually        % could be EEG or patch clamp
+    for iChannel = 1:nChannels
+        if verbose
+            fprintf('Plotting channel #%d ...\n', iChannel);
+        end
+        figName = fullfile(outFolder, ...
+                    sprintf('%s_Channel%d.png', ...
+                    fileIdentifier, iChannel))
+        vvec = data(:, iChannel);
+        figNum = 1+iChannel;
+        h = plot_traces(figNum, tVec, vvec, ...
+                                    xlimits, xLabel, yLabel, ...
+                                    traceLabels, figTitle, figName);
+        title(sprintf('Data for %s between %.1f %s and %.1f %s', traceLabels{iChannel}, timeStart, timeUnits, timeEnd, timeUnits));
+        ylabel(channelLabels);
+        saveas(h, figName, 'png');
+        hold off;
+        close(h);
+    end
+elseif nDimensions == 3 && individually    % usually Patch clamp        %%% Need to fix this part too
+    for iChannel = 1:nChannels
+        for iSwp = 1:nSweeps
+            if verbose
+                fprintf('Plotting channel #%d and sweep #%d ...\n', iChannel, iSwp);
+            end
+            figName = fullfile(outFolder, ...
+                                sprintf('%s_Channel%d_Sweep%d.png', ...
+                                        fileIdentifier, iChannel, iSwp));
+            vec = data(:, iChannel, iSwp);
+            figNum = 100*iChannel+iSwp;
+            h = plot_traces(figNum, tVec, vec, ...
+                                       xlimits, xLabel, yLabel, ...
+                                       traceLabels, figTitle, figName);
+            title(sprintf('Data for %s between %.1f %s and %.1f %s', ...
+                    traceLabels{iSwp}, timeStart, timeUnits, timeEnd, timeUnits));
+            ylabel(channelLabels);
+            saveas(h, figName, 'png');
+            hold off;
+            close(h);
+        end
+    end
+end
 
 %}
