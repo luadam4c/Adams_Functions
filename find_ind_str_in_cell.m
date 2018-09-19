@@ -64,6 +64,7 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 %       /home/Matlab/Adams_Functions/increment_editbox.m
 %       /home/Matlab/Adams_Functions/ZG_extract_all_IEIs.m
 %       /home/Matlab/Adams_Functions/ZG_extract_all_data.m
+%       /home/Matlab/minEASE/minEASE.m
 %       /home/Matlab/minEASE/combine_eventInfo.m
 %       /home/Matlab/minEASE/extract_from_minEASE_output_filename.m
 %       /home/Matlab/minEASE/read_params.m
