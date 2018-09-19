@@ -191,7 +191,7 @@ end
 
 % Plot spike frequency over current injected (F-I plot)
 figname_FI = [filebase, '_FI'];
-channelTypes = identify_channels(alldata);
+channelTypes = identify_channels(alldata, 'ExpMode', 'patch');
 ind_cur = strcmpi('Current', channelTypes);
 currents = zeros(1, nsweeps);
 parfor i = 1:nsweeps

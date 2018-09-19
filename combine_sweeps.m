@@ -79,6 +79,7 @@ possibleDataTypes = {'abf', 'mat', 'txt'};
                     % Precedence: .abf > .mat > .txt
 possibleDataModes = {'2d', '3d'};
 validMessageModes = {'wait', 'show', 'none'};
+expMode = 'patch';              % TODO: Make an optional argument
 
 %% Default values for optional arguments
 dataDirectoryDefault = pwd;            % use the present working directory by default
@@ -258,7 +259,7 @@ if strcmpi(dataMode, '2d')       % if there is only one sweep per file
 
         % Identify the current channel from data
         %   To avoid confusion, place only one channel in data
-        channelTypes = identify_channels(data);
+        channelTypes = identify_channels(data, 'ExpMode', expMode);
         if isempty(channelTypes{1})
             idxCurrent = 1;
         else
@@ -299,7 +300,7 @@ elseif strcmpi(dataMode, '3d')   % if there are multiple sweeps per file
     end
 
     % Identify the channels in data
-    channelTypes = identify_channels(data);
+    channelTypes = identify_channels(data, 'ExpMode', expMode);
     idxCurrent = strcmpi('Current', channelTypes);
   
     % Do for each sweep

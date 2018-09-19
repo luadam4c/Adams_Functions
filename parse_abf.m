@@ -70,6 +70,7 @@ function [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
 % 2018-09-17 - Added tVec, vVecs, iVecs, gVecs as outputs
 % 2018-09-18 - Added expMode and now sets timeUnits according to expMode
 % TODO: Make 'ChannelTypes' an optional argument
+% TODO: Make 'UseOriginalLabels' an optional argument
 
 %% Hard-coded constants
 US_PER_MS = 1e3;            % number of microseconds per millisecond
@@ -138,17 +139,23 @@ channelTypes = iP.Results.ChannelTypes;
 % Create the full path to .abf file robustly
 abfFullFileName = construct_abffilename(fileName);
 
+% Check if the file exists
+if exist(abfFullFileName, 'file') ~= 2
+    fprintf('The file %s does not exist!!\n', abfFullFileName);
+    return;
+end
+
 % Load abf file, si is in us
 if exist('abf2load', 'file') == 2
     try
-        [data, siUs] = abf2load(abfFullFileName);
+        [data, siUs, fileInfo] = abf2load(abfFullFileName);
     catch ME
-        printf('The file %s cannot be read!\n', abfFullFileName);
+        fprintf('The file %s cannot be read!\n', abfFullFileName);
         rethrow(ME)
         return
     end
 elseif exist('abfload', 'file') == 2
-    [data, siUs] = abfload(abfFullFileName);
+    [data, siUs, fileInfo] = abfload(abfFullFileName);
 end
 
 % Find data dimensions and make sure it is <= 3
@@ -280,6 +287,7 @@ abfParams.nDimensions = nDimensions;
 abfParams.nSamples = nSamples;
 abfParams.nChannels = nChannels;
 abfParams.nSweeps = nSweeps;
+abfParams.fileInfo = fileInfo;
 
 % Write results to standard output
 if verbose
@@ -290,6 +298,8 @@ if verbose
     fprintf('Number of channels = %d\n', nChannels);
     fprintf('Number of sweeps = %d\n', nSweeps);
     fprintf('Sampling Interval for plotting = %g %s\n', siPlot, timeUnits);
+    fprintf('Channel Types = %s\n', strjoin(channelTypes, ', '));
+    fprintf('Channel Units = %s\n', strjoin(channelUnits, ', '));
     fprintf('Channel Labels = %s\n', strjoin(channelLabels, ', '));
 end
 
