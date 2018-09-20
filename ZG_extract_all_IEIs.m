@@ -239,7 +239,7 @@ ieisGrouped.interEventIntervals = ieisThisDataset;
 % Save structure in a matfile
 save(groupedFilePath, '-struct', 'ieisGrouped');
 
-% Convert structure to spreadsheet file
+%% Convert structure to spreadsheet file
 [sheetPath, ieisTable, ieisListed, ieisHeader] = ...
     mat2sheet(groupedFilePath, 'SheetType', sheetType);
 
