@@ -42,6 +42,10 @@ function [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
 %       varargin    - 'Verbose': whether to output parsed results
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - TODO: 'UseOriginalLabels': whether to use original 
+%                           channel labels instead of identify_channels.m
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'ExpMode': experiment mode
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'EEG'   - EEG data; x axis in seconds; y-axis in uV
@@ -70,7 +74,7 @@ function [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
 % 2018-09-17 - Added tVec, vVecs, iVecs, gVecs as outputs
 % 2018-09-18 - Added expMode and now sets timeUnits according to expMode
 % TODO: Make 'ChannelTypes' an optional argument
-% TODO: Make 'UseOriginalLabels' an optional argument
+% TODO: Make 'UseOriginalLabels' an optional argument and implement it (use fileInfo)
 
 %% Hard-coded constants
 US_PER_MS = 1e3;            % number of microseconds per millisecond

@@ -72,7 +72,7 @@ nSamples = iP.Results.NSamples;
 
 %% Find the endpoints of the pulse response
 % Get the sampling interval in milliseconds
-siMs = tVec(2) - tVec(1);
+siMs = tvecCpr(2) - tvecCpr(1);
 
 % Find the endpoints of the pulse response
 [idxCprStart, idxCprEnd, isUnbalanced] = ...
