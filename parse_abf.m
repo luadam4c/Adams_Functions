@@ -43,7 +43,7 @@ function [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %                   - TODO: 'UseOriginalLabels': whether to use original 
-%                           channel labels instead of identify_channels.m
+%                           channel labels instead of identify_channels()
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'ExpMode': experiment mode
@@ -56,7 +56,7 @@ function [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
 %                   default == 's' for 2-data data and 'ms' for 3-data data
 %                   - 'ChannelTypes': the channel types
 %                   must be a cellstr with nChannels elements
-%                   default == detected with identify_channels
+%                   default == detected with identify_channels()
 %
 % Requires:
 %       cd/construct_abffilename.m
@@ -73,8 +73,9 @@ function [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
 % 2018-09-17 - Added 'Verbose' as a parameter
 % 2018-09-17 - Added tVec, vVecs, iVecs, gVecs as outputs
 % 2018-09-18 - Added expMode and now sets timeUnits according to expMode
+% 2018-09-20 - Made 'UseOriginalLabels' an optional argument and 
+%                   implement it (uses information in fileInfo)
 % TODO: Make 'ChannelTypes' an optional argument
-% TODO: Make 'UseOriginalLabels' an optional argument and implement it (use fileInfo)
 
 %% Hard-coded constants
 US_PER_MS = 1e3;            % number of microseconds per millisecond
@@ -82,12 +83,17 @@ US_PER_S = 1e6;             % number of microseconds per second
 
 %% Hard-coded parameters
 validExpModes = {'EEG', 'patch', ''};
+validVoltageUnits = {'pV', 'nV', 'mV', 'V'};
+validCurrentUnits = {'pA', 'nA', 'mA', 'A'};
+validConductanceUnits = {'pS', 'nS', 'mS', 'S'};
 
 %% Default values for optional arguments
-verboseDefault = true;
-expModeDefault = '';        % set later
-timeUnitsDefault = '';      % set later
-channelTypesDefault = {};   % set later
+verboseDefault = true;              % print to standard output by default
+useOriginalLabelsDefault = false;   % use identify_channels.m instead
+                                    % of the original channel labels by default
+expModeDefault = '';                % set later
+timeUnitsDefault = '';              % set later
+channelTypesDefault = {};           % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -125,6 +131,8 @@ addRequired(iP, 'fileName', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'UseOriginalLabels', useOriginalLabelsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ExpMode', expModeDefault, ...
     @(x) any(validatestring(x, validExpModes)));
 addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
@@ -135,6 +143,7 @@ addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
 % Read from the Input Parser
 parse(iP, fileName, varargin{:});
 verbose = iP.Results.Verbose;
+useOriginalLabels = iP.Results.UseOriginalLabels;
 expMode = validatestring(iP.Results.ExpMode, validExpModes);
 timeUnits = iP.Results.TimeUnits;
 channelTypes = iP.Results.ChannelTypes;
@@ -201,12 +210,9 @@ else
     nSweeps = 1;
 end
 
-% Identify proper channel types, units and labels
-if isempty(channelTypes)
-    [channelTypes, channelUnits, channelLabels] = ...
-        identify_channels(data, 'ExpMode', expMode);
-else
-    % Decide on channel units
+%% Identify proper channel types, units and labels
+if ~isempty(channelTypes)
+    % Decide on channel units based on channel type
     channelUnits = cell(size(channelTypes));
     parfor iChannel = 1:nChannels
         % Set default channel units
@@ -227,11 +233,48 @@ else
     end
 
     % Construct channel labels
-    channelLabels = cellfun(@(x, y) [x , '(', y, ')'], ...
+    channelLabels = cellfun(@(x, y) [x , ' (', y, ')'], ...
                             channelTypes, channelUnits, ...
                             'UniformOutput', false);
+else
+    if useOriginalLabels
+        % Use the original channel units and labels that came with
+        %   the .abf file
+        channelNames = (fileInfo.recChNames)';
+        channelUnits = (fileInfo.recChUnits)';
+
+        % Construct channel labels
+        channelLabels = cellfun(@(x, y) [x , ' (', y, ')'], ...
+                                channelNames, channelUnits, ...
+                                'UniformOutput', false);
+
+        % Determine the appropriate channel type from the channel units
+        channelTypes = cell(size(channelUnits));
+        parfor iChannel = 1:nChannels
+            % Get the units for this channel
+            units = channelUnits{iChannel};
+
+            % Decide on channel type based on channel units
+            if any(strcmpi(units, validVoltageUnits))
+                channelTypes{iChannel} = 'Voltage';
+            elseif any(strcmpi(units, validCurrentUnits))
+                channelTypes{iChannel} = 'Current';
+            elseif any(strcmpi(units, validConductanceUnits))
+                channelTypes{iChannel} = 'Conductance';
+            else
+                % The channel unit is not recognized
+                channelTypes{iChannel} = 'Undefined';
+            end
+        end
+    else
+        % Identify channels using the data value ranges and absolute values
+        %   of means, etc.
+        [channelTypes, channelUnits, channelLabels] = ...
+            identify_channels(data, 'ExpMode', expMode);
+    end
 end
 
+%% Time info
 % Convert sampling interval to other units
 siMs = siUs / US_PER_MS;
 siSeconds = siUs / US_PER_S;
@@ -248,7 +291,7 @@ end
 % Construct a time vector for plotting
 tVec = siPlot * (1:nSamples)';
 
-% Extract vectors by type
+%% Extract data vectors by type
 indVoltage = find_ind_str_in_cell('Voltage', channelTypes, ...
                                     'IgnoreCase', true);
 indCurrent = find_ind_str_in_cell('Current', channelTypes, ...
