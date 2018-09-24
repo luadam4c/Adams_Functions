@@ -159,11 +159,11 @@ addParameter(iP, 'ExpMode', expModeDefault, ...
 addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
-    @(x) isempty(x) || iscellstr(x));
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
-    @(x) isempty(x) || iscellstr(x));
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'ChannelLabels', channelLabelsDefault, ...
-    @(x) isempty(x) || iscellstr(x));
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
 
 % Read from the Input Parser
 parse(iP, fileName, varargin{:});
@@ -198,7 +198,6 @@ if exist('abf2load', 'file') == 2
     catch ME
         fprintf('The file %s cannot be read!\n', abfFullFileName);
         rethrow(ME)
-        return
     end
 elseif exist('abfload', 'file') == 2
     [data, siUs, fileInfo] = abfload(abfFullFileName);

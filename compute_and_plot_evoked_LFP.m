@@ -1,18 +1,21 @@
-function [tVecLfp, vVecLfp, iVecStim] = compute_and_plot_evoked_LFP (fileName, varargin)
+function [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (fileName, varargin)
 %% Computes and plots an evoked local field potential with its stimulus
-% Usage: [tVecLfp, vVecLfp, iVecStim] = compute_and_plot_evoked_LFP (fileName, varargin)
+% Usage: [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (fileName, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       [tVecLfp, vVecLfp, iVecStim] = ...
+%       [tVecLfp, vVecLfp, iVecStim, features] = ...
 %           compute_and_plot_evoked_LFP('20180914C_0001');
 % Outputs:
 %       tVecLfp     - time vector for evoked local field potential
 %                   specified as a numeric column vector
 %       vVecLfp     - voltage trace of evoked local field potential
 %                   specified as a numeric column vector
-%       iVecStim      - current trace of stimulation current pulse
+%       iVecStim    - current trace of stimulation current pulse
 %                   specified as a numeric column vector
+%       features    - computed LFP features
+%                       peakAmp
+%                       peakSlope
 % Arguments:    
 %       fileName    - file name could be either the full path or 
 %                       a relative path in current directory
@@ -48,10 +51,14 @@ function [tVecLfp, vVecLfp, iVecStim] = compute_and_plot_evoked_LFP (fileName, v
 % 2018-09-17 Created by Adam Lu
 % 2018-09-21 Considered the case when iVecs or vVecs is a cellarray
 % 2018-09-21 Considered the case when iVecs or vVecs is 3-D
+% 2018-09-23 Added computation of peak amplitude
+% TODO: add timeUnits as a parameter with default 'ms'
 % 
 
 %% Hard-coded parameters
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
+baselineLengthMs = 5;           % baseline length in ms
+colorAnnotations = 'r';
 
 %% Default values for optional arguments
 outFolderDefault = '';          % set later
@@ -66,7 +73,7 @@ channelLabelsDefault = {};      % set later
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 1    % TODO: 1 might need to be changed
+if nargin < 1
     error(['Not enough input arguments, ', ...
             'type ''help %s'' for usage'], mfilename);
 end
@@ -153,15 +160,26 @@ channelLabels = abfParams.channelLabels;
 nSweeps = abfParams.nSweeps;
 siMs = abfParams.siMs;
 
+% Compute the baseline length in samples
+baselineLengthSamples = floor(baselineLengthMs / siMs);
+
 %% Average the voltage responses
 % Identify the current pulse response endpoints
 idxCprStarts = zeros(nSweeps, 1);
 idxCprEnds = zeros(nSweeps, 1);
+idxCpStarts = zeros(nSweeps, 1);
+idxCpEnds = zeros(nSweeps, 1);
 parfor iSwp = 1:nSweeps
+    % Extract the voltage and current vectors for this sweep
+    vVecCpr = vVecs(:, iSwp);
+    iVecCpr = iVecs(:, iSwp);
+
     % Identify the current pulse and current pulse response endpoints
-    [idxCprStarts(iSwp), idxCprEnds(iSwp)] = ...
-        find_pulse_response_endpoints(vVecs(:, iSwp), siMs, ...
-                                        'IvecCpr', iVecs(:, iSwp));
+    [idxCprStarts(iSwp), idxCprEnds(iSwp), ~, ...
+        idxCpStarts(iSwp), idxCpEnds(iSwp)] = ...
+        find_pulse_response_endpoints(vVecCpr, siMs, ...
+                                        'IvecCpr', iVecCpr, ...
+                                        'BaselineLengthMs', baselineLengthMs);
 end
 
 % Compute the number of samples in each current pulse response
@@ -176,7 +194,6 @@ idxCprStartEnd = (idxCprStartFirst - 1) + nSamplesCpr;
 tVecLfp = tVec(idxCprStartFirst:idxCprStartEnd);
 
 % Place the current pulses and current pulse responses in the same matrix
-%   and extract the time vector from the first response
 iVecCprs = zeros(nSamplesCpr, nSweeps);
 vVecCprs = zeros(nSamplesCpr, nSweeps);
 parfor iSwp = 1:nSweeps
@@ -197,10 +214,22 @@ iVecStim = mean(iVecCprs, 2);
 % Average the current pulse responses to get the evoked local field potential
 vVecLfp = mean(vVecCprs, 2);
 
-%% Analyze the evoked local field potential
-% TODO: Extract the amplitude
+%% Extract the amplitude of the evoked local field potential
+% Compute the baseline voltage value of the averaged trace
+baseVal = mean(vVecLfp(1:baselineLengthSamples));
 
-% TODO: Extract the slope
+% Assume the current pulses all end at the same index
+idxCpEnd = idxCpEnds(1) - idxCprStartFirst + 1;
+
+% Compute the peak voltage value of the averaged trace
+[peakVal, temp1] = max(vVecLfp((idxCpEnd + 1):end));
+idxPeak = temp1 + idxCpEnd;
+
+% Compute the relative peak amplitude
+peakAmp = peakVal - baseVal;
+
+%% Extract the slope of the evoked local field potential
+% TODO
 
 %% Plot the evoked local field potential with the stimulation pulse
 if plotFlag
@@ -213,24 +242,45 @@ if plotFlag
         figure;
     end
 
+    % Compute the x axis limits
+    left = min(tVecLfp);
+    right = max(tVecLfp);
+    xlimits = [left, right];
+    
+    % Find the time of the peak relative to the x limits
+    width = right - left;
+    timePeakRel = (tVecLfp(idxPeak) - left) / width;
+
     % Generate a subplot for the evoked local field potential
+    %   Annotations:
+    %       red double arrow for peak amplitude
     ax1 = subplot(3, 1, 1:2);
+    hold on;
     plot(tVecLfp, vVecLfp);
-    ylabel(channelLabels{1});       % TODO: Make more robust
+    xlim(xlimits);
+    ylimits = get(gca, 'YLim');
+    pos = get(gca, 'Position');
+    height = ylimits(2) - ylimits(1);
+    bottom = ylimits(1);
+    annotation('doublearrow', pos(1) + pos(3) * timePeakRel * ones(1, 2), ...
+                pos(2) + pos(4) * ([baseVal, peakVal] - bottom) / height, ...
+                'Color', colorAnnotations);
+    text(tVecLfp(idxPeak) + 1, mean([baseVal, peakVal]), ...
+            ['peak amp = ', num2str(peakAmp), ' (mV)']);
+    ylabel(channelLabels{1});
     title(['Evoked potential for ', fileBase], 'Interpreter', 'none');
 
     % Generate a subplot for the stimulation pulse
     ax2 = subplot(3, 1, 3);
+    hold on;
     plot(tVecLfp, iVecStim);
-    ylabel(channelLabels{2});       % TODO: Make more robust
+    xlim(xlimits);    
+    ylabel(channelLabels{2});
     xlabel('Time (ms)');
-    title(['Stimlus for ', fileBase], 'Interpreter', 'none');
+    title(['Stimulus for ', fileBase], 'Interpreter', 'none');
 
     % Link the axes
     linkaxes([ax1, ax2], 'x');
-
-    % Adjust the x limits
-    xlim([min(tVecLfp), max(tVecLfp)]);
 
     % Save and close figure
     if saveFlag
@@ -238,6 +288,9 @@ if plotFlag
         close(h)
     end
 end
+
+% Output features in the features structure
+features.peakAmp = peakAmp;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

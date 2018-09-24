@@ -205,7 +205,8 @@ abfParamsAllStruct = [abfParamsAllCell{:}];
 
 %% Plot traces appropriate for the identified protocol
 parfor iFile = 1:nFiles
-    try 
+%for iFile = 1:nFiles
+%    try 
         % Extract from cell arrays
         abfParams = abfParamsAllCell{iFile};
         data = dataAll{iFile};
@@ -214,6 +215,8 @@ parfor iFile = 1:nFiles
         % Extract some parameters
         siUs = abfParams.siUs;
         channelTypes = abfParams.channelTypes;
+        channelUnits = abfParams.channelUnits;
+        channelLabels = abfParams.channelLabels;
 
         % Identify whether this is a current injection protocol
         isCI = identify_CI(iVecs, siUs);
@@ -228,7 +231,7 @@ parfor iFile = 1:nFiles
             plot_FI(filenames{iFile}, data, siUs);
         elseif isEvokedLfp
             % If it is an evoked LFP protocol, compute and plot it
-            [tVecLfp, vVecLfp, iVecStim] = ...
+            [tVecLfp, vVecLfp, iVecStim, features] = ...
                 compute_and_plot_evoked_LFP(filenames{iFile}, ...
                                             'OutFolder', outFolder, ...
                                             'PlotFlag', true, ...
@@ -256,10 +259,10 @@ parfor iFile = 1:nFiles
                 'ChannelLabels', channelLabels);
         end
 
-   catch ME
-       fprintf('Traces for %s cannot be plotted!\n', filenames{iFile});
-       fprintf([ME.identifier, ': ', ME.message]);
-   end
+%   catch ME
+%       fprintf('Traces for %s cannot be plotted!\n', filenames{iFile});
+%       fprintf([ME.identifier, ': ', ME.message]);
+%   end
 end
 
 %% Compute and plot concatenated traces for each channel
@@ -267,6 +270,9 @@ end
 compute_and_plot_concatenated_trace(abfParamsAllStruct, dataReorderedAll, ...
                                     'SourceDirectory', directory, ...
                                     'OutFolder', outFolder);
+
+%% Copy similar figure types to its own directory
+% TODO
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

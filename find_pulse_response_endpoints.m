@@ -1,11 +1,11 @@
 function [idxCprStart, idxCprEnd, isUnbalanced, idxCpStart, idxCpEnd] = ...
-            find_pulse_response_endpoints (vvecCpr, siMs, varargin)
+            find_pulse_response_endpoints (vVecCpr, siMs, varargin)
 %% Computes the average initial slope from a current pulse response
 % Usage: [idxCprStart, idxCprEnd, isUnbalanced] = ...
-%           find_pulse_response_endpoints (vvecCpr, siMs, varargin)
+%           find_pulse_response_endpoints (vVecCpr, siMs, varargin)
 %
 % Arguments:    
-%       vvecCpr     - voltage vector of the current pulse response
+%       vVecCpr     - voltage vector of the current pulse response
 %                   must be a numeric vector
 %       siMs        - sampling interval in ms
 %                   must be a positive scalar
@@ -20,6 +20,10 @@ function [idxCprStart, idxCprEnd, isUnbalanced, idxCpStart, idxCpEnd] = ...
 %                                       after pulse endpoint in ms
 %                   must be a nonnegative scalar
 %                   default = 20 ms
+%                   - 'BaselineLengthMs': length of the current pulse response
+%                                       before pulse start in ms
+%                   must be a nonnegative scalar
+%                   default = 20 ms
 %
 % Requires:
 %       /home/Matlab/Adams_Functions/find_first_jump.m
@@ -27,12 +31,13 @@ function [idxCprStart, idxCprEnd, isUnbalanced, idxCpStart, idxCpEnd] = ...
 %
 % Used by:    
 %       /home/Matlab/Adams_Functions/compute_average_initial_slopes.m
-%       /home/Matlab/Adams_Functions/plot_evoked_LFP.m
+%       /home/Matlab/Adams_Functions/compute_and_plot_evoked_LFP.m
 
 % File History:
 % 2018-08-13 AL - Adapted from compute_average_initial_slopes.m
 % 2018-09-17 AL - Changed required arguement tVecCpr to siMs
 % 2018-09-17 AL - Added optional parameters SameAsIvec and CprLengthMs
+% 2018-09-23 AL - Added the optional parameter baselineLengthSamples
 
 %% Hard-coded parameters
 signal2Noise = 10;
@@ -42,6 +47,7 @@ noiseWindowSize = 5;
 ivecCprDefault = [];            % don't use current vector by default
 sameAsIvecDefault = true;       % use current pulse endpoints by default
 cprLengthMsDefault = 20;        % a response of 20 ms by default
+baselineLengthMsDefault = 0;    % don't include a baseline by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -57,7 +63,7 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'vvecCpr', ...
+addRequired(iP, 'vVecCpr', ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addRequired(iP, 'siMs', ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
@@ -69,16 +75,22 @@ addParameter(iP, 'SameAsIvec', sameAsIvecDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'CprLengthMs', cprLengthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+addParameter(iP, 'BaselineLengthMs', baselineLengthMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 
 % Read from the Input Parser
-parse(iP, vvecCpr, siMs, varargin{:});
+parse(iP, vVecCpr, siMs, varargin{:});
 ivecCpr = iP.Results.IvecCpr;
 sameAsIvec = iP.Results.SameAsIvec;
 cprLengthMs = iP.Results.CprLengthMs;
+baselineLengthMs = iP.Results.BaselineLengthMs;
 
 %% Do the job
 % Compute the length of the current pulse response in samples
 cprLengthSamples = floor(cprLengthMs / siMs);
+
+% Compute the baseline length in samples
+baselineLengthSamples = floor(baselineLengthMs / siMs);
 
 % Find the start and end points of the current pulse
 if ~isempty(ivecCpr)
@@ -98,11 +110,11 @@ end
 %           index for checking, and will check noiseWindowSize more points
 idxRegion1Start = idxCpStart - noiseWindowSize;
 idxRegion1End = idxCpStart + noiseWindowSize;
-vvecRegion1 = vvecCpr(idxRegion1Start:idxRegion1End);
+vvecRegion1 = vVecCpr(idxRegion1Start:idxRegion1End);
 
 idxRegion2Start = idxCpEnd - noiseWindowSize;
 idxRegion2End = idxCpEnd + noiseWindowSize;
-vvecRegion2 = vvecCpr(idxRegion2Start:idxRegion2End);
+vvecRegion2 = vVecCpr(idxRegion2Start:idxRegion2End);
 
 % Initialize isUnbalanced as false
 isUnbalanced = false;
@@ -115,10 +127,10 @@ isUnbalanced = false;
                                  'Signal2Noise', signal2Noise, ...
                                  'NoiseWindowSize', noiseWindowSize);
 if ~isempty(idxTemp1) && ~sameAsIvec
-    idxCprStart = (idxRegion1Start - 1) + idxTemp1;
+    idxCprStart = (idxRegion1Start - 1) + idxTemp1 - baselineLengthSamples;
     isUnbalanced = true;
 else
-    idxCprStart = idxCpStart;
+    idxCprStart = idxCpStart - baselineLengthSamples;
 end
 
 % Find the end point of the current pulse response
@@ -144,22 +156,22 @@ OLD CODE:
 % Compute slope right after current pulse start
 idxFirst1 = idxCpStart;
 idxLast1 = idxCpStart + nSamples - 1;
-startSlope1 = compute_slope(tvecCpr, vvecCpr, idxFirst1, idxLast1);
+startSlope1 = compute_slope(tvecCpr, vVecCpr, idxFirst1, idxLast1);
 
 % Compute slope right after current pulse end
 idxFirst2 = idxCpEnd;
 idxLast2 = idxCpEnd + nSamples - 1;
-endSlope2 = compute_slope(tvecCpr, vvecCpr, idxFirst2, idxLast2);
+endSlope2 = compute_slope(tvecCpr, vVecCpr, idxFirst2, idxLast2);
 
 % Compute slope right after current pulse start
 idxFirst3 = idxCpStart2;
 idxLast3 = idxCpStart2 + nSamples - 1;
-startSlope3 = compute_slope(tvecCpr, vvecCpr, idxFirst3, idxLast3);
+startSlope3 = compute_slope(tvecCpr, vVecCpr, idxFirst3, idxLast3);
 
 % Compute slope right after current pulse end
 idxFirst4 = idxCpEnd2;
 idxLast4 = idxCpEnd2 + nSamples - 1;
-endSlope4 = compute_slope(tvecCpr, vvecCpr, idxFirst4, idxLast4);
+endSlope4 = compute_slope(tvecCpr, vVecCpr, idxFirst4, idxLast4);
 
 % Choose the more negative of the start slopes 
 %  and the more positive of the end slopes
@@ -168,23 +180,23 @@ endSlope = max([endSlope2, endSlope4]);
 
 addRequired(iP, 'nSamples', ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
-parse(iP, tvecCpr, vvecCpr, ivecCpr, nSamples);
+parse(iP, tvecCpr, vVecCpr, ivecCpr, nSamples);
 
-function [avgSlope, startSlope, endSlope, indsUsedForPlot] = find_pulse_response_endpoints (tvecCpr, vvecCpr, ivecCpr, nSamples)
+function [avgSlope, startSlope, endSlope, indsUsedForPlot] = find_pulse_response_endpoints (tvecCpr, vVecCpr, ivecCpr, nSamples)
 
 % Note: function calls are slower
 %       /home/Matlab/Adams_Functions/compute_slope.m
-startSlope = compute_slope(tvecCpr, vvecCpr, idxFirst1, idxLast1);
-endSlope = compute_slope(tvecCpr, vvecCpr, idxFirst2, idxLast2);
+startSlope = compute_slope(tvecCpr, vVecCpr, idxFirst1, idxLast1);
+endSlope = compute_slope(tvecCpr, vVecCpr, idxFirst2, idxLast2);
 
 % Crop the voltage trace
-vvecCropped = vvecCpr((idxCprStart + 1):end);
+vvecCropped = vVecCpr((idxCprStart + 1):end);
 
 %       tvecCpr     - time vector of the current pulse response in ms
 %                   must be a numeric vector
 addRequired(iP, 'tvecCpr', ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
-parse(iP, tvecCpr, vvecCpr, varargin{:});
+parse(iP, tvecCpr, vVecCpr, varargin{:});
 
 %}
 
