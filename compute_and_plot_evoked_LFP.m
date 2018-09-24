@@ -29,7 +29,12 @@ function [tVecLfp, vVecLfp, iVecStim] = compute_and_plot_evoked_LFP (fileName, v
 %                   default == true
 %                   - 'ChannelTypes': the channel types
 %                   must be a cellstr with nChannels elements
-%                   default == detected with identify_channels
+%                       each being one of the following:
+%                           'Voltage'
+%                           'Current'
+%                           'Conductance'
+%                           'Undefined'
+%                   default == detected with identify_channels()
 %
 % Requires:
 %       cd/parse_abf.m
@@ -41,9 +46,12 @@ function [tVecLfp, vVecLfp, iVecStim] = compute_and_plot_evoked_LFP (fileName, v
 
 % File History:
 % 2018-09-17 Created by Adam Lu
+% 2018-09-21 Considered the case when iVecs or vVecs is a cellarray
+% 2018-09-21 Considered the case when iVecs or vVecs is 3-D
 % 
 
 %% Hard-coded parameters
+validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
 
 %% Default values for optional arguments
 outFolderDefault = '';          % set later
@@ -51,6 +59,8 @@ plotFlagDefault = true;         % plot the evoked LFP with stim by default
 saveFlagDefault = true;         % save the pulse train series by default
 figTypesDefault = 'png';        % default figure type(s) for saving
 channelTypesDefault = {};       % set later
+channelUnitsDefault = {};       % set later
+channelLabelsDefault = {};      % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -80,7 +90,11 @@ addParameter(iP, 'SaveFlag', saveFlagDefault, ...
 addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
 addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
-    @(x) validateattributes(x, {'cell'}, {'nonempty'}));
+    @(x) isempty(x) || iscellstr(x));
+addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
+    @(x) isempty(x) || iscellstr(x));
+addParameter(iP, 'ChannelLabels', channelLabelsDefault, ...
+    @(x) isempty(x) || iscellstr(x));
 
 % Read from the Input Parser
 parse(iP, fileName, varargin{:});
@@ -89,6 +103,14 @@ plotFlag = iP.Results.PlotFlag;
 saveFlag = iP.Results.SaveFlag;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 channelTypes = iP.Results.ChannelTypes;
+channelUnits = iP.Results.ChannelUnits;
+channelLabels = iP.Results.ChannelLabels;
+
+% Validate channel types
+if ~isempty(channelTypes)
+    channelTypes = cellfun(@(x) validatestring(x, validChannelTypes), ...
+                            channelTypes, 'UniformOutput', false);
+end
 
 % Set (some) dependent argument defaults
 [fileDir, fileBase, ~] = fileparts(fileName);
@@ -105,7 +127,26 @@ end
 %% Load data and prepare for plotting
 % Load and parse the abf file
 [abfParams, ~, tVec, vVecs, iVecs] = ...
-    parse_abf(fileName, 'Verbose', false, 'ChannelTypes', channelTypes);
+    parse_abf(fileName, 'Verbose', false, ...
+              'ChannelTypes', channelTypes, ...
+              'ChannelUnits', channelUnits, ...
+              'ChannelLabels', channelLabels);
+
+% If vVecs or iVecs is a cellarray, use the first element
+if iscell(vVecs)
+    vVecs = vVecs{1};
+end
+if iscell(iVecs)
+    iVecs = iVecs{1};
+end
+
+% If vVecs or iVecs is 3-D, use the first two dimensions 
+if ndims(vVecs) > 2
+    vVecs = squeeze(vVecs(:, :, 1));
+end
+if ndims(iVecs) > 2
+    iVecs = squeeze(iVecs(:, :, 1));
+end
 
 % Extract the parsed parameters
 channelLabels = abfParams.channelLabels;

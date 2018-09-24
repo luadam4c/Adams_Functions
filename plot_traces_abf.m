@@ -39,7 +39,18 @@ function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 %                   default == tVec(end)
 %                   - 'ChannelTypes': the channel types
 %                   must be a cellstr with nChannels elements
-%                   default == detected with identify_channels
+%                       each being one of the following:
+%                           'Voltage'
+%                           'Current'
+%                           'Conductance'
+%                           'Undefined'
+%                   default == detected with identify_channels()
+%                   - 'ChannelUnits': the channel units
+%                   must be a cellstr with nChannels elements
+%                   default == detected with identify_channels()
+%                   - 'ChannelLabels': the channel labels
+%                   must be a cellstr with nChannels elements
+%                   default == detected with identify_channels()
 %                   - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
@@ -76,10 +87,12 @@ function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 % 2018-09-17 - Moved code to parse_abf.m
 % 2018-09-18 - Renamed plot_traces_abf_helper -> plot_traces
 %               and moved to its own function
+% TODO: Improve code legibility with usage of dataReordered instead of data
 %
 
 %% Hard-coded parameters
-validExpModes = {'EEG', 'patch'};
+validExpModes = {'EEG', 'patch', ''};
+validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
 
 %% Default values for optional arguments
 expModeDefault = 'patch';       % assume traces are patching data by default
@@ -89,6 +102,8 @@ timeUnitsDefault = '';          % set later
 timeStartDefault = [];          % set later
 timeEndDefault = [];            % set later
 channelTypesDefault = {};       % set later
+channelUnitsDefault = {};       % set later
+channelLabelsDefault = {};      % set later
 verboseDefault = true;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -123,7 +138,11 @@ addParameter(iP, 'TimeStart', timeStartDefault, ...
 addParameter(iP, 'TimeEnd', timeEndDefault, ...
     @(x) isempty(x) || isnumeric(x) && isscalar(x) && x >= 0);
 addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
-    @(x) validateattributes(x, {'cell'}, {'nonempty'}));
+    @(x) isempty(x) || iscellstr(x));
+addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
+    @(x) isempty(x) || iscellstr(x));
+addParameter(iP, 'ChannelLabels', channelLabelsDefault, ...
+    @(x) isempty(x) || iscellstr(x));
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
@@ -136,7 +155,15 @@ timeUnits = iP.Results.TimeUnits;
 timeStart = iP.Results.TimeStart;
 timeEnd = iP.Results.TimeEnd;
 channelTypes = iP.Results.ChannelTypes;
+channelUnits = iP.Results.ChannelUnits;
+channelLabels = iP.Results.ChannelLabels;
 verbose = iP.Results.Verbose;
+
+% Validate channel types
+if ~isempty(channelTypes)
+    channelTypes = cellfun(@(x) validatestring(x, validChannelTypes), ...
+                            channelTypes, 'UniformOutput', false);
+end
 
 % Set (some) dependent argument defaults
 [fileDir, fileBase, ~] = fileparts(fileName);
@@ -152,10 +179,12 @@ check_dir(outFolder, 'Verbose', verbose);
 
 %% Load data
 % Load and parse the abf file
-[abfParams, data, tVec] = ...
+[abfParams, data, tVec, ~, ~, ~, dataReordered] = ...
     parse_abf(fileName, 'Verbose', false, ...
               'ExpMode', expMode, 'TimeUnits', timeUnits, ...
-              'ChannelTypes', channelTypes);
+              'ChannelTypes', channelTypes, ...
+              'ChannelUnits', channelUnits, ...
+              'ChannelLabels', channelLabels);
 
 % Extract the parsed parameters
 expMode = abfParams.expMode;

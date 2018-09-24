@@ -12,6 +12,9 @@ function [allData, timeVec] = combine_sweeps(varargin)
 %                   - 'ExpLabel'    - experiment label for files to combine
 %                   must be a string scalar or a character vector
 %                   default == '' 
+%                   - 'FileIdentifier': data file identifier (may be empty)
+%                   must be a string scalar or a character vector
+%                   default == ''
 %                   - 'OutputLabel' - experiment label for output file names
 %                   must be a string scalar or a character vector
 %                   default == expLabel if provided and 
@@ -53,6 +56,7 @@ function [allData, timeVec] = combine_sweeps(varargin)
 %
 % Used by:    
 %       /home/Matlab/minEASE/minEASE.m
+%       /home/Matlab/Katies_Functions/loadcell_attached_TimeSeries.m
 %
 % File History:
 % 2017-07-25 Created by AL
@@ -69,6 +73,7 @@ function [allData, timeVec] = combine_sweeps(varargin)
 % 2018-08-12 AL - Made 'DataDirectory', 'ExpLabel', 'DataMode', etc.
 %                   optional arguments
 % 2018-08-12 AL - Now detects data mode automatically
+% 2018-09-23 AL - Added FileIdentifier as an optional argument
 % 
 
 %% Hard-coded constants
@@ -84,6 +89,7 @@ expMode = 'patch';              % TODO: Make an optional argument
 %% Default values for optional arguments
 dataDirectoryDefault = pwd;            % use the present working directory by default
 expLabelDefault = '';           % disregard any experiment label by default
+fileIdentifierDefault = '';     % no file identifier by default
 outputLabelDefault = '';        % (will be changed later)
 sweepNumbersDefault = 'all';    % combine all sweeps by default
 dataTypeDefault     = 'auto';   % to detect input data type 
@@ -121,6 +127,8 @@ addParameter(iP, 'DataDirectory', dataDirectoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ExpLabel', expLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FileIdentifier', fileIdentifierDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutputLabel', outputLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SweepNumbers', sweepNumbersDefault);
@@ -137,6 +145,7 @@ addParameter(iP, 'Verbose', verboseDefault, ...
 parse(iP, varargin{:});
 dataDirectory = iP.Results.DataDirectory;
 expLabel = iP.Results.ExpLabel;
+fileIdentifier = iP.Results.FileIdentifier;
 outputLabel = iP.Results.OutputLabel;
 sweepNumbers = iP.Results.SweepNumbers;
 dataModeUser = validatestring(iP.Results.DataType, ...
@@ -146,8 +155,10 @@ dataTypeUser = validatestring(iP.Results.DataType, ...
 messageMode = validatestring(iP.Results.MessageMode, validMessageModes);
 verbose = iP.Results.Verbose;
 
-% Get file identifier from expLabel
-fileIdentifier = strrep(strrep(expLabel, '_IPSC', ''), '_EPSC', '');
+% Extract from experiment label if requested
+if strcmpi(fileIdentifier, 'fromExpLabel')
+    fileIdentifier = strrep(strrep(expLabel, '_IPSC', ''), '_EPSC', '');
+end
 
 % Determine data type, list all .abf, .mat or .txt files from 
 %   data subdirectory

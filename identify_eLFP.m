@@ -25,11 +25,14 @@ function [isEvokedLfp] = identify_eLFP (iVecsORfileName, varargin)
 
 % File History:
 % 2018-09-17 Created by Adam Lu
+% 2018-09-21 Considered the case when iVecs is a cellarray
+% 2018-09-21 Considered the case when iVecs is 3-D
 % 
 
 %% Hard-coded parameters
 coeffVarThreshold = 0.01;       % coefficient of variation threshold
 minSweeps = 2;                  % must have at least 2 sweeps
+validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
 
 %% Default values for optional arguments
 channelTypesDefault = {};       % set later
@@ -58,6 +61,12 @@ addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
 parse(iP, iVecsORfileName, varargin{:});
 channelTypes = iP.Results.ChannelTypes;
 
+% Validate channel types
+if ~isempty(channelTypes)
+    channelTypes = cellfun(@(x) validatestring(x, validChannelTypes), ...
+                            channelTypes, 'UniformOutput', false);
+end
+
 %% Preparation
 if ischar(iVecsORfileName) || isstring(iVecsORfileName)
     % The first arguement is a file name
@@ -65,7 +74,18 @@ if ischar(iVecsORfileName) || isstring(iVecsORfileName)
 
     % Parse the abf file to get the current vectors
     [~, ~, ~, ~, iVecs, ~] = ...
-        parse_abf(fileName, 'Verbose', false, 'ChannelTypes', channelTypes);
+        parse_abf(fileName, 'Verbose', false, ...
+                    'ChannelTypes', channelTypes);
+
+    % If iVecs is a cellarray, use the first element
+    if iscell(iVecs)
+        iVecs = iVecs{1};
+    end
+
+    % If iVecs is 3-D, use the first two dimensions 
+    if ndims(iVecs) > 2
+        iVecs = squeeze(iVecs(:, :, 1));
+    end
 else
     % The first arguement are the current vectors
     iVecs = iVecsORfileName;

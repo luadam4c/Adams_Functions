@@ -52,6 +52,9 @@ myStruct.myCellStrCol = myCellStrCol;
 myStruct.myCellStr2D = myCellStr2D;
 myStruct.blab = blab;
 
+% Structure arrays
+myStructArray = [myStruct, myStruct, myStruct];
+
 % Sheet Data
 xlsData = {'A Number' 'Boolean Data' 'Empty Cells' 'Strings';...
     1 true [] 'String Text';...
