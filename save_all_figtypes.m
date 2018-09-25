@@ -16,9 +16,10 @@ function save_all_figtypes (fig, filename, varargin)
 % Requires:
 %       cd/isfigtype.m
 %
-% Used by:    
+% Used by:
 %       cd/create_waveform_train.m
 %       cd/create_pulse_train_series.m
+%       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_tuning_map.m
 %       cd/compute_and_plot_evoked_LFP.m

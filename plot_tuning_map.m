@@ -1,12 +1,15 @@
-function plot_tuning_map (pvalues, readout, varargin)
+function h = plot_tuning_map (pValues, readout, varargin)
 %% Plot a 2-dimensional tuning map
-% Usage: plot_tuning_map (pvalues, readout, varargin)
+% Usage: h = plot_tuning_map (pValues, readout, varargin)
+% Outputs:
+%       h           - figure handle for the created figure
+%                   must be a figure handle
 % Arguments:
-%       pvalues     - 2 vectors of parameter values
+%       pValues     - 2 vectors of parameter values
 %                   must be a 2-element cell array of numeric vectors
 %       readout     - a readout matrix corresponding to the parameter-pairs
 %                   must be a 2-dimensional numeric array with dimensions 
-%                   given by the lengths of elements of pvalues
+%                   given by the lengths of elements of pValues
 %       varargin    - 'PisLog': whether parameter values are to be plotted 
 %                               log-scaled
 %                   must be a 2-element binary array
@@ -18,13 +21,13 @@ function plot_tuning_map (pvalues, readout, varargin)
 %                   - 'ReadoutLabel': label for readout matrix
 %                   must be a string scalar or a character vector
 %                   default == 'Readout'
-%                   - 'XLim': limits of x axis
+%                   - 'XLimits': limits of x axis
 %                   must be a 2-element increasing numeric vector
 %                   default == []
-%                   - 'YLim': limits of y axis
+%                   - 'YLimits': limits of y axis
 %                   must be a 2-element increasing numeric vector
 %                   default == []
-%                   - 'CLim': limits of color axis
+%                   - 'CLimits': limits of color axis
 %                   must be a 2-element increasing numeric vector
 %                   default == []
 %                   - 'FigName': figure name for saving
@@ -38,8 +41,8 @@ function plot_tuning_map (pvalues, readout, varargin)
 %                   default == 'png'
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/isfigtype.m
-%       /home/Matlab/Adams_Functions/save_all_figtypes.m
+%       cd/isfigtype.m
+%       cd/save_all_figtypes.m
 %
 % Used by:    
 %       /media/adamX/RTCl/tuning_maps.m
@@ -50,6 +53,16 @@ function plot_tuning_map (pvalues, readout, varargin)
 % 2017-12-18 Changed tabs to spaces
 % 2018-05-08 Changed tabs to spaces and limited width to 80
 % 
+
+%% Default values for optional arguments
+pislogDefault = [false, false];
+pLabelsDefault = {'Parameter1', 'Parameter2'};
+readoutLabelDefault = 'Readout';
+xlimitsDefault = [];
+ylimitsDefault = [];
+climitsDefault = [];
+figNameDefault = '';
+figTypesDefault = 'png';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -64,71 +77,76 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to an Input Parser
-addRequired(iP, 'pvalues', ...              % 2 vectors of parameter values
+addRequired(iP, 'pValues', ...              % 2 vectors of parameter values
     @(x) assert(iscell(x) && numel(x) == 2 ...
         && isnumeric(x{1}) && isvector(x{1}) ...
         && isnumeric(x{2}) && isvector(x{1}), ...
-        'pvalues must be a 2-element cell array of numeric vectors!'));
+        'pValues must be a 2-element cell array of numeric vectors!'));
 addRequired(iP, 'readout', ...              % a readout matrix
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'PisLog', [0, 0], ...
+addParameter(iP, 'PisLog', pislogDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, ...
                                 {'binary', 'vector', 'numel', 2}));
-addParameter(iP, 'PLabels', {'Parameter1', 'Parameter2'}, ...
+addParameter(iP, 'PLabels', pLabelsDefault, ...
     @(x) assert(iscell(x) && numel(x) == 2 ...
         && (min(cellfun(@ischar, x)) || min(cellfun(@isstring, x))), ...
-        ['pvalues must be a 2-element cell array of ', ...
+        ['PLabels must be a 2-element cell array of ', ...
             'string scalars or character vectors!']));
-addParameter(iP, 'ReadoutLabel', 'Readout', ...     % label for readout matrix
-    @(x) validateattributes(x, {'char', 'string'}, {'nonempty'}));
-addParameter(iP, 'XLim', [], ...            % limits of x axis
+addParameter(iP, 'ReadoutLabel', readoutLabelDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'XLimits', xlimitsDefault, ...
     @(x) validateattributes(x, {'numeric'}, ...
                             {'increasing', 'vector', 'numel', 2}));
-addParameter(iP, 'YLim', [], ...            % limits of y axis
+addParameter(iP, 'YLimits', ylimitsDefault, ...
     @(x) validateattributes(x, {'numeric'}, ...
                             {'increasing', 'vector', 'numel', 2}));
-addParameter(iP, 'CLim', [], ...            % limits of color axis
+addParameter(iP, 'CLimits', climitsDefault, ...
     @(x) validateattributes(x, {'numeric'}, ...
                             {'increasing', 'vector', 'numel', 2}));
-addParameter(iP, 'FigName', '', ...         % figure name for saving
-    @(x) validateattributes(x, {'char', 'string'}, {'nonempty'}));
-addParameter(iP, 'FigTypes', 'png', ...     % figure type(s) for saving
+addParameter(iP, 'FigName', figNameDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
-parse(iP, pvalues, readout, varargin{:});
-pislog = iP.Results.PisLog;
-plabels = iP.Results.PLabels;
-readout_label = iP.Results.ReadoutLabel;
-xlimits = iP.Results.XLim;
-ylimits = iP.Results.YLim;
-climits = iP.Results.CLim;
-figname = iP.Results.FigName;
+parse(iP, pValues, readout, varargin{:});
+pIsLog = iP.Results.PisLog;
+pLabels = iP.Results.PLabels;
+readoutLabel = iP.Results.ReadoutLabel;
+xlimits = iP.Results.XLimits;
+ylimits = iP.Results.YLimits;
+climits = iP.Results.CLimits;
+figName = iP.Results.FigName;
 [~, figtypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Check relationships between arguments
-if size(readout) ~= cellfun(@length, pvalues)
+if size(readout) ~= cellfun(@length, pValues)
     error(['Readout matrix must have dimensions given ', ...
-            'by the lengths of elements of pvalues!']);
+            'by the lengths of elements of pValues!']);
 end
 
-% Create and clear figure if figname provided
-if ~isempty(figname)
+%% Prepare for tuning curve
+% Decide on the figure to plot on
+if ~isempty(figName)
+    % Create and clear figure if figName provided
     h = figure(floor(rand()*10^4)+1);
     clf(h);
+else
+    % Get the current figure
+    h = gcf;
 end
 
 %% Plot tuning map
 % Plot readout values against parameter values
-surf(pvalues{1}, pvalues{2}, readout');
-if pislog(1)
+surf(pValues{1}, pValues{2}, readout');
+if pIsLog(1)
     set(gca, 'XScale', 'log');
-elseif pislog(2)
+elseif pIsLog(2)
     set(gca, 'YScale', 'log');
 end
-set(gca, 'CLim', climits);
+set(gca, 'CLimits', climits);
 colorbar;
 
 % Restrict x axis if xlimits provided
@@ -142,22 +160,23 @@ if ~isempty(ylimits)
 end
 
 % Set title and axes labels; allow to be suppressed
-if ~isequal(plabels{1}, 'suppress')
-    xlabel(plabels{1});
+if ~isequal(pLabels{1}, 'suppress')
+    xlabel(pLabels{1});
 end
-if ~isequal(plabels{2}, 'suppress')
-    ylabel(plabels{2});
+if ~isequal(pLabels{2}, 'suppress')
+    ylabel(pLabels{2});
 end
-if ~isequal(plabels{1}, 'suppress') && ...
-    ~isequal(plabels{2}, 'suppress') && ~isequal(readout_label, 'suppress')
-    title(strrep(readout_label, '_', '\_'));
-%    title(strrep([readout_label, ' vs. ', plabels{1}, ...
-%                   ' and ', plabels{2}], '_', '\_'));
+if ~isequal(pLabels{1}, 'suppress') && ...
+    ~isequal(pLabels{2}, 'suppress') && ~isequal(readoutLabel, 'suppress')
+    title(strrep(readoutLabel, '_', '\_'));
+%    title(strrep([readoutLabel, ' vs. ', pLabels{1}, ...
+%                   ' and ', pLabels{2}], '_', '\_'));
 end
 
-% Save figure if figname provided
-if ~isempty(figname)
-    save_all_figtypes(h, figname, figtypes);
+%% Post-plotting
+% Save figure if figName provided
+if ~isempty(figName)
+    save_all_figtypes(h, figName, figtypes);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

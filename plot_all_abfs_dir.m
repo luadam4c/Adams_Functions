@@ -53,6 +53,12 @@ function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 %                   - 'ChannelLabels': the channel labels
 %                   must be a cellstr with nChannels elements
 %                   default == detected with identify_channels()
+%                   - 'FigTypes': figure type(s) for saving; 
+%                               e.g., 'png', 'fig', or {'png', 'fig'}, etc.
+%                   could be anything recognised by 
+%                       the built-in saveas() function
+%                   (see isfigtype.m under Adams_Functions)
+%                   default == 'png'
 %
 % Requires:
 %       cd/compute_and_plot_evoked_LFP.m
@@ -62,6 +68,7 @@ function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 %       cd/plot_traces_abf.m
 %       cd/plot_FI.m
 %       cd/identify_eLFP.m
+%       cd/isfigtype.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
 %       /home/Matlab/Downloaded_Functions/dirr.m
 %       /home/Matlab/Brians_Functions/identify_CI.m
@@ -82,6 +89,7 @@ function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 %                   optional arguments
 % 2018-09-22 - Added 'useOriginal' as an optional argument
 % 2018-09-24 - Now tried abfload if abf2load fails
+% 2018-09-25 - Added figTypes as an argument
 
 %% Hard-coded parameters
 validExpModes = {'EEG', 'patch'};
@@ -100,6 +108,7 @@ timeEndDefault = [];            % set later
 channelTypesDefault = {};       % set later
 channelUnitsDefault = {};       % set later
 channelLabelsDefault = {};      % set later
+figTypesDefault = {'png', 'fig'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -147,6 +156,8 @@ addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'ChannelLabels', channelLabelsDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'FigTypes', figTypesDefault, ...
+    @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -161,6 +172,7 @@ timeEndUser = iP.Results.TimeEnd;
 channelTypesUser = iP.Results.ChannelTypes;
 channelUnitsUser = iP.Results.ChannelUnits;
 channelLabelsUser = iP.Results.ChannelLabels;
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Validate channel types
 if ~isempty(channelTypesUser)
@@ -269,7 +281,8 @@ parfor iFile = 1:nFiles
                 'TimeStart', timeStart, 'TimeEnd', timeEnd, ...
                 'ChannelTypes', channelTypes, ...
                 'ChannelUnits', channelUnits, ...
-                'ChannelLabels', channelLabels);            
+                'ChannelLabels', channelLabels, ...
+                'FigTypes', figTypes);
         end
 
         % Save in cell arrays

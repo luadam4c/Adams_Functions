@@ -2,7 +2,7 @@ function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 %% Takes an abf file and plots all traces
 % Usage: [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 % Explanation:
-%       TODO: Uses abf2load, and if not found, uses abfload
+%       TODO
 % Outputs:
 %       data        - full data
 %       siUs        - sampling interval in microseconds
@@ -54,6 +54,12 @@ function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 %                   - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'FigTypes': figure type(s) for saving; 
+%                               e.g., 'png', 'fig', or {'png', 'fig'}, etc.
+%                   could be anything recognised by 
+%                       the built-in saveas() function
+%                   (see isfigtype.m under Adams_Functions)
+%                   default == 'png'
 %                   TODO:
 %                   - 'Data': full data
 %                   must be a TODO
@@ -66,6 +72,7 @@ function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 %       cd/check_dir.m
 %       cd/parse_abf.m
 %       cd/plot_traces.m
+%       cd/isfigtype.m
 %
 % Used by:
 %       cd/plot_all_abfs_dir.m
@@ -87,7 +94,12 @@ function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 % 2018-09-17 - Moved code to parse_abf.m
 % 2018-09-18 - Renamed plot_traces_abf_helper -> plot_traces
 %               and moved to its own function
+% 2018-09-25 - Updated usage of plot_traces.m
+% 2018-09-25 - Added figTypes as an argument
 % TODO: Improve code legibility with usage of dataReordered instead of data
+% TODO: Pull code to a separate function that takes
+%           data, abfParams, tVec as required arguments
+%           (dataReordered will have to be reconstructed)
 %
 
 %% Hard-coded parameters
@@ -105,6 +117,7 @@ channelTypesDefault = {};       % set later
 channelUnitsDefault = {};       % set later
 channelLabelsDefault = {};      % set later
 verboseDefault = true;
+figTypesDefault = 'png';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -145,6 +158,8 @@ addParameter(iP, 'ChannelLabels', channelLabelsDefault, ...
     @(x) isempty(x) || iscellstr(x));
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'FigTypes', figTypesDefault, ...
+    @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, fileName, varargin{:});
@@ -158,6 +173,7 @@ channelTypes = iP.Results.ChannelTypes;
 channelUnits = iP.Results.ChannelUnits;
 channelLabels = iP.Results.ChannelLabels;
 verbose = iP.Results.Verbose;
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Validate channel types
 if ~isempty(channelTypes)
@@ -248,8 +264,15 @@ if ~individually && strcmpi(expMode, 'EEG')
     figNum = 1;
 
     % Do the plotting
-    h = plot_traces(tVec, vecAll, xlimits, xLabel, yLabel, ...
-                    traceLabels, figTitle, figName, figNum);
+    h = plot_traces(tVec, vecAll, 'XLimits', xlimits, ...
+                    'XLabel', xLabel, 'YLabel', yLabel, ...
+                    'TraceLabels', traceLabels, ...
+                    'FigTitle', figTitle, 'FigName', figName, ...
+                    'FigNumber', figNum, 'FigTypes', figTypes);
+
+    % Hold off and close figure
+    hold off;
+    close(h);
 elseif ~individually && strcmpi(expMode, 'patch') || ...
         individually && strcmpi(expMode, 'EEG')
     % Loop through all channels
@@ -266,15 +289,22 @@ elseif ~individually && strcmpi(expMode, 'patch') || ...
             vecAll = squeeze(data(:, iChannel, :));
         end
         yLabel = channelLabels{iChannel};
-        figTitle = sprintf('Data for Channel #%d for %s', ...
+        figTitle = sprintf('Data for Channel #%d of %s', ...
                             iChannel, fileIdentifier);
         figName = fullfile(outFolder, sprintf('%s_Channel%d_all.png', ...
                                             fileIdentifier, iChannel));
         figNum = 100 * iChannel;
 
         % Do the plotting
-        h = plot_traces(tVec, vecAll, xlimits, xLabel, yLabel, ...
-                        traceLabels, figTitle, figName, figNum);
+        h = plot_traces(tVec, vecAll, 'XLimits', xlimits, ...
+                        'XLabel', xLabel, 'YLabel', yLabel, ...
+                        'TraceLabels', traceLabels, ...
+                        'FigTitle', figTitle, 'FigName', figName, ...
+                        'FigNumber', figNum, 'FigTypes', figTypes);
+
+        % Hold off and close figure
+        hold off;
+        close(h);
     end
 elseif individually && strcmpi(expMode, 'patch')
     % Plot each channel and sweep individually
@@ -293,7 +323,7 @@ elseif individually && strcmpi(expMode, 'patch')
                 vecAll = data(:, iChannel, iSwp);
             end
             yLabel = channelLabels{iChannel};
-            figTitle = sprintf('Data for Channel #%d, Sweep #%d for %s', ...
+            figTitle = sprintf('Data for Channel #%d, Sweep #%d of %s', ...
                                 iChannel, iSwp, fileIdentifier);
             figName = fullfile(outFolder, ...
                                 sprintf('%s_Channel%d_Sweep%d.png', ...
@@ -301,8 +331,15 @@ elseif individually && strcmpi(expMode, 'patch')
             figNum = 100 * iChannel + iSwp;
 
             % Do the plotting
-            h = plot_traces(tVec, vecAll, xlimits, xLabel, yLabel, ...
-                            traceLabels, figTitle, figName, figNum);
+            h = plot_traces(tVec, vecAll, 'XLimits', xlimits, ...
+                            'XLabel', xLabel, 'YLabel', yLabel, ...
+                            'TraceLabels', traceLabels, ...
+                            'FigTitle', figTitle, 'FigName', figName, ...
+                            'FigNumber', figNum, 'FigTypes', figTypes);
+
+            % Hold off and close figure
+            hold off;
+            close(h);
         end
     end
 else
@@ -627,5 +664,8 @@ elseif nDimensions == 3 && individually    % usually Patch clamp        %%% Need
         end
     end
 end
+
+h = plot_traces(tVec, vecAll, xlimits, xLabel, yLabel, ...
+                traceLabels, figTitle, figName, figNum);
 
 %}

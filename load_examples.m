@@ -21,6 +21,7 @@ myNumericScalar = nCols;
 myNumericCol = ones(nRows, 1);
 myNumericRow = ones(1, nCols);
 myNumeric2D = magic(nRows);
+myNumeric3D = floor(rand(3, 4, 2) * 100);
 
 % Cell arrays of character arrays
 names = {'Adam', 'Ashley', 'Mark', 'Peter', 'Katie'};

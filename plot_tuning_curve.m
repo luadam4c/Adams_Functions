@@ -1,44 +1,57 @@
-function plot_tuning_curve(pvalues, readout, cols_to_plot, pislog, plabel, readout_label, col_labels, xlimits, ylimits, figname, varargin)
+function h = plot_tuning_curve(pValues, readout, varargin)
 %% Plot a 1-dimensional tuning curve
-% USAGE: plot_tuning_curve(pvalues, readout, cols_to_plot, pislog, plabel, readout_label, col_labels, xlimits, ylimits, figname, varargin)
-% Arguments: TODO: argument requirements
-%       pvalues         - column vector of parameter values
-%       readout         - matrix of readout values where each column is 
-%                           a readout vector
-%       cols_to_plot    - (opt) columns of the readout matrix to plot
-%                       default == 1
-%       pislog          - (opt) whether parameter values are to be plotted 
+% Usage: h = plot_tuning_curve(pValues, readout, varargin)
+% Outputs:
+%       h           - figure handle for the created figure
+%                   must be a figure handle
+% Arguments:
+%       pValues     - column vector of parameter values
+%                   must be a numeric vector
+%       readout     - a readout matrix where each column is a readout vector
+%                   must be a numeric 2-D array
+%       varargin    - 'ColsToPlot': columns of the readout matrix to plot
+%                   must be a numeric vector
+%                   default == 1:size(readout, 2);
+%                   - 'PisLog': whether parameter values are to be plotted 
 %                               log-scaled
-%                       default == 0
-%       plabel          - (opt) label for the parameter changed, 
-%                               suppress by setting value to 'suppress'
-%                       default == 'Parameter'
-%       readout_label   - (opt) label for the readout, 
-%                               suppress by setting value to 'suppress'
-%                       default == 'Readout'
-%       col_labels      - (opt) labels for the columns in the readout matrix, 
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == [false, false];
+%                   - 'PLabel': label for the parameter
+%                   must be a string scalar or a character vector
+%                   default == 'Parameter'
+%                   - 'ReadoutLabel': label for the readout
+%                   must be a string scalar or a character vector
+%                   default == 'Readout'
+%                   - 'ColumnLabels': labels for the readout columns, 
 %                               suppress by setting value to {'suppress'}
-%                       default == 'Column #1', 'Column #2', ...
-%       xlimits         - (opt) axes limits for the parameter values, 
-%                               suppress by setting value to -1
-%                       default == expand by a little bit
-%       ylimits         - (opt) axes limits for the readout
-%                       default == NIL
-%       figname         - (opt) figure name for saving file
-%                       default == NIL
-%       varargin        - 'FigTypes': figure type(s) for saving; 
+%                   must be a scalartext 
+%                       or a cell array of strings or character vectors
+%                   default == {'Column #1', 'Column #2', ...}
+%                   - 'XLimits': limits of x axis
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == expand by a little bit
+%                   - 'YLimits': limits of y axis
+%                   must be a 2-element increasing numeric vector
+%                   default == []
+%                   - 'SingleColor': color when colsToPlot == 1
+%                   must be a 3-element vector
+%                   - 'FigName': figure name for saving
+%                   must be a string scalar or a character vector
+%                   default == ''
+%                   - 'FigTypes': figure type(s) for saving; 
 %                               e.g., 'png', 'fig', or {'png', 'fig'}, etc.
-%                       could be anything recognised by 
-%                           the built-in saveas() function
-%                       (see isfigtype.m under Adams_Functions)
-%                       default == 'png'
+%                   could be anything recognised by 
+%                       the built-in saveas() function
+%                   (see isfigtype.m under Adams_Functions)
+%                   default == 'png'
 %
 % Requires:
-%        /home/Matlab/Adams_Functions/isfigtype.m
-%        /home/Matlab/Adams_Functions/save_all_figtypes.m
+%       cd/isfigtype.m
+%       cd/save_all_figtypes.m
 %
 % Used by:
-%        /media/adamX/RTCl/tuning_curves.m
+%       /media/adamX/RTCl/tuning_curves.m
 %
 % 2017-04-17 Moved from tuning_curves.m
 % 2017-04-17 Simplified code
@@ -46,7 +59,19 @@ function plot_tuning_curve(pvalues, readout, cols_to_plot, pislog, plabel, reado
 % 2017-04-17 Color map is now based on number of columns to plot
 % 2017-05-09 Added 'FigTypes' as a parameter-value pair argument
 % 2018-05-08 Changed tabs to spaces and limited width to 80
+% 2018-09-25 Made almost all arguments parameter-value pairs
 %
+
+%% Default values for optional arguments
+pislogDefault = [false, false];
+pLabelDefault = 'Parameter';
+readoutLabelDefault = 'Readout';
+columnLabelsDefault = '';               % set later
+xlimitsDefault = [];
+ylimitsDefault = [];
+singleColorDefault = [0, 0, 1];
+figNameDefault = '';
+figTypesDefault = 'png';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -61,120 +86,165 @@ end
 iP = inputParser;
 iP.FunctionName = mfilename;
 
-% TODO: Add required inputs to an Input Parser
+% Add required inputs to an Input Parser
+addRequired(iP, 'pValues', ...              % vector of parameter values
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addRequired(iP, 'readout', ...              % a readout matrix
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 
-% TODO: Add optional inputs to an Input Parser
-
-% Use Input Parser for parameter-value pairs
-addParameter(iP, 'SingleColor', [0, 0, 1]);     % color when ncols_to_plot is 1
-addParameter(iP, 'FigTypes', 'png', ...         % figure type(s) for saving
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'ColsToPlot', colsToPlotDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'PisLog', pislogDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PLabel', pLabelDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'ReadoutLabel', readoutLabelDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'ColumnLabels', columnLabelsDefault, ...
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'XLimits', xlimitsDefault, ...
+    @(x) ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
+addParameter(iP, 'YLimits', ylimitsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, ...
+                            {'increasing', 'vector', 'numel', 2}));
+addParameter(iP, 'SingleColor', singleColorDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 3}));
+addParameter(iP, 'FigName', figNameDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
-parse(iP, varargin{:});
+parse(iP, pValues, readout, varargin{:});
+colsToPlot = iP.Results.ColsToPlot;
+pIsLog = iP.Results.PisLog;
+pLabel = iP.Results.PLabel;
+readoutLabel = iP.Results.ReadoutLabel;
+columnLabels = iP.Results.ColumnLabels;
+xlimits = iP.Results.XLimits;
+ylimits = iP.Results.YLimits;
 singlecolor = iP.Results.SingleColor;
+figName = iP.Results.FigName;
 [~, figtypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 %% Prepare for tuning curve
 % Extract number of columns
-ncols = size(readout, 2);
+nCols = size(readout, 2);
 
-% Set defaults
-if nargin < 3 || isempty(cols_to_plot)
-    cols_to_plot = 1;
-end
-if nargin < 4 || isempty(pislog)
-    pislog = 0;
-end
-if nargin < 5 || isempty(plabel)
-    plabel = 'Parameter';
-end
-if nargin < 6 || isempty(readout_label)
-    readout_label = 'Readout';
-end
-if nargin < 7 || isempty(col_labels)
-    col_labels = cell(1, ncols);
-    for c = 1:ncols
-        col_labels{c} = ['Column #', num2str(c)];
+% Set column labels
+if isempty(columnLabels)
+    columnLabels = cell(1, nCols);
+    for c = 1:nCols
+        columnLabels{c} = ['Column #', num2str(c)];
     end
 end
 
-% Create and clear figure if figname provided
-if nargin >= 10 && ~isempty(figname)
+% Compute the number of parameter values that 
+%   don't give infinite values
+nNonInf = sum(~isinf(readout), 1);
+
+% Count the number of columns to plot
+nColsToPlot = length(colsToPlot);
+
+% Define the color map to use
+cm = colormap(jet(nColsToPlot));
+
+% Decide on the figure to plot on
+if ~isempty(figName)
+    % Create and clear figure if figName provided
     h = figure(floor(rand()*10^4)+1);
     clf(h);
+else
+    % Get the current figure
+    h = gcf;
 end
 
 %% Plot tuning curve
 % Plot readout values against parameter values
-numnoninf = sum(~isinf(readout), 1);    % number of parameter values that 
-                                        %   don't give infinite values
-ncols_to_plot = length(cols_to_plot);   % number of columns to plot
-cm = colormap(jet(ncols_to_plot));      % color map used
-for c = 1:ncols_to_plot
+for c = 1:nColsToPlot
+    % Get the column to plot
+    col = colsToPlot(c);
+
     % Plot curve
-    col = cols_to_plot(c);              % current column to plot
-    if pislog
+    if pIsLog
         % Note: can't have hold on before semilogx
-        p = semilogx(pvalues, readout(:, col)); hold on;
+        p = semilogx(pValues, readout(:, col)); hold on;
     else
-        p = plot(pvalues, readout(:, col)); hold on;
+        p = plot(pValues, readout(:, col)); hold on;
     end
     
-    % Set color and display name
-    if ncols_to_plot > 1
+    % Set color
+    if nColsToPlot > 1
         set(p, 'Color', cm(c, :))
-    elseif ncols_to_plot == 1
+    elseif nColsToPlot == 1
         set(p, 'Color', singlecolor);
     end
-    if ~isequal(col_labels, {'suppress'})
-        set(p, 'DisplayName', strrep(col_labels{col}, '_', '\_'));
+
+    % Set display name
+    if ~strcmpi(columnLabels, 'suppress')
+        set(p, 'DisplayName', strrep(columnLabels{col}, '_', '\_'));
     end
 
-    % If there is only one value, mark with a circle
-    if numnoninf(col) == 1
+    % If there is only one value for this column, mark with a circle
+    if nNonInf(col) == 1
         set(p, 'Marker', 'o');
     end
 end
 
 % Show legend only if readout has more than one columns
-if ncols > 1
+if nCols > 1
     legend('Location', 'eastoutside');
 end
 
 % Restrict x axis if xlimits provided; 
 %   otherwise expand the x axis by a little bit
-if nargin >= 8 && ~isempty(xlimits)
-    xlim(xlimits);
-elseif ~isequal(xlimits, -1)
-    xlim([pvalues(1) - (pvalues(2) - pvalues(1)), ...
-        pvalues(end) + (pvalues(end) - pvalues(end-1))]);
+if ~isempty(xlimits)
+    if ~strcmpi(xlimits, 'suppress')
+        % Use x limits
+        xlim(xlimits);
+    end
+else
+    xlim([pValues(1) - (pValues(2) - pValues(1)), ...
+        pValues(end) + (pValues(end) - pValues(end-1))]);
 end
 
 % Restrict y axis if ylimits provided
-if nargin >= 9 && ~isempty(ylimits)
+if ~isempty(ylimits)
     ylim(ylimits);
 end
 
 % Set title and axes labels
-if ~isequal(plabel, 'suppress')
-    xlabel(plabel);
+if ~strcmpi(pLabel, 'suppress')
+    xlabel(pLabel);
 end
-if ~isequal(readout_label, 'suppress')
-    ylabel(readout_label);
+if ~strcmpi(readoutLabel, 'suppress')
+    ylabel(readoutLabel);
 end
-if ~isequal(plabel, 'suppress') && ~isequal(readout_label, 'suppress')
-    title(strrep([readout_label, ' vs. ', plabel], '_', '\_'));
+if ~strcmpi(pLabel, 'suppress') && ~strcmpi(readoutLabel, 'suppress')
+    title(strrep([readoutLabel, ' vs. ', pLabel], '_', '\_'));
 end
 
-% Save figure if figname provided
-if nargin >= 10 && ~isempty(figname)
-    save_all_figtypes(h, figname, figtypes);
+%% Post-plotting
+% Save figure if figName provided
+if ~isempty(figName)
+    save_all_figtypes(h, figName, figtypes);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+% Usage: plot_tuning_curve(pValues, readout, colsToPlot, pIsLog, pLabel, readoutLabel, columnLabels, xlimits, ylimits, figName, varargin)
+
+if ~isequal(columnLabels, {'suppress'})
+
+if isequal(xlimits, -1)
+
+if ~isequal(pLabel, 'suppress')
+if ~isequal(readoutLabel, 'suppress')
+if ~isequal(pLabel, 'suppress') && ~isequal(readoutLabel, 'suppress')
 
 %}
