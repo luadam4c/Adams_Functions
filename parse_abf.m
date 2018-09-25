@@ -196,8 +196,12 @@ if exist('abf2load', 'file') == 2
     try
         [data, siUs, fileInfo] = abf2load(abfFullFileName);
     catch ME
-        fprintf('The file %s cannot be read!\n', abfFullFileName);
-        rethrow(ME)
+        try
+            [data, siUs, fileInfo] = abfload(abfFullFileName);
+        catch ME
+            fprintf('The file %s cannot be read!\n', abfFullFileName);
+            rethrow(ME)    
+        end
     end
 elseif exist('abfload', 'file') == 2
     [data, siUs, fileInfo] = abfload(abfFullFileName);

@@ -37,6 +37,7 @@ function filteredData = freqfilter (data, fc, varargin)
 %
 % Used by:    
 %        /home/Matlab/minEASE/minEASE.m
+%        /home/Matlab/Brians_Functions/identify_CI.m
 %        many others; apply this command in a LINUX terminal to find them:
 %             grep --include=*.m -rlw '/home/Matlab/' -e "freqfilter"
 %

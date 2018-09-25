@@ -58,6 +58,7 @@ function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 %       cd/compute_and_plot_evoked_LFP.m
 %       cd/compute_and_plot_concatenated_trace.m
 %       cd/parse_abf.m
+%       cd/plot_fields.m
 %       cd/plot_traces_abf.m
 %       cd/plot_FI.m
 %       cd/identify_eLFP.m
@@ -80,6 +81,7 @@ function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 % 2018-09-22 - Made 'ChannelTypes', 'ChannelUnits' and 'ChannelLabels' 
 %                   optional arguments
 % 2018-09-22 - Added 'useOriginal' as an optional argument
+% 2018-09-24 - Now tried abfload if abf2load fails
 
 %% Hard-coded parameters
 validExpModes = {'EEG', 'patch'};
@@ -140,11 +142,11 @@ addParameter(iP, 'TimeStart', timeStartDefault, ...
 addParameter(iP, 'TimeEnd', timeEndDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
 addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
-    @(x) isempty(x) || iscellstr(x));
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
-    @(x) isempty(x) || iscellstr(x));
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'ChannelLabels', channelLabelsDefault, ...
-    @(x) isempty(x) || iscellstr(x));
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -154,8 +156,8 @@ expMode = validatestring(iP.Results.ExpMode, validExpModes);
 individually = iP.Results.Individually;
 outFolder = iP.Results.OutFolder;
 timeUnits = iP.Results.TimeUnits;
-timeStart = iP.Results.TimeStart;
-timeEnd = iP.Results.TimeEnd;
+timeStartUser = iP.Results.TimeStart;
+timeEndUser = iP.Results.TimeEnd;
 channelTypesUser = iP.Results.ChannelTypes;
 channelUnitsUser = iP.Results.ChannelUnits;
 channelLabelsUser = iP.Results.ChannelLabels;
@@ -195,6 +197,8 @@ parfor iFile = 1:nFiles
         iVecsAll{iFile}, gVecsAll{iFile}, dataReorderedAll{iFile}] = ...
         parse_abf(filenames{iFile}, 'Verbose', false, ...
                     'UseOriginal', useOriginal, ...
+                    'ExpMode', expMode, ...
+                    'TimeUnits', timeUnits, ...
                     'ChannelTypes', channelTypesUser, ...
                     'ChannelUnits', channelUnitsUser, ...
                     'ChannelLabels', channelLabelsUser);
@@ -203,7 +207,8 @@ end
 % Convert to a struct array
 abfParamsAllStruct = [abfParamsAllCell{:}];
 
-%% Plot traces appropriate for the identified protocol
+%% Plot graphs appropriate for the identified protocol
+featuresLfpAll = cell(nFiles, 1);
 parfor iFile = 1:nFiles
 %for iFile = 1:nFiles
 %    try 
@@ -211,54 +216,64 @@ parfor iFile = 1:nFiles
         abfParams = abfParamsAllCell{iFile};
         data = dataAll{iFile};
         iVecs = iVecsAll{iFile};
+        fileName = filenames{iFile};
 
         % Extract some parameters
         siUs = abfParams.siUs;
+        expMode = abfParams.expMode;
+        timeUnits = abfParams.timeUnits;
         channelTypes = abfParams.channelTypes;
         channelUnits = abfParams.channelUnits;
         channelLabels = abfParams.channelLabels;
 
         % Identify whether this is a current injection protocol
+        %   If so, detect spikes for each sweep and make an F-I plot
         isCI = identify_CI(iVecs, siUs);
+        if isCI
+            plot_FI(fileName, data, siUs);
+        end
 
         % Identify whether this is an evoked LFP protocol
+        %   If so, compute the averaged evoked LFP and plot it
         isEvokedLfp = identify_eLFP(iVecs);
-
-        % Plot the appropriate trace
-        if isCI
-            % If it's a current injection protocol, 
-            %   detect spikes for each sweep and make an F-I plot
-            plot_FI(filenames{iFile}, data, siUs);
-        elseif isEvokedLfp
+        if isEvokedLfp
             % If it is an evoked LFP protocol, compute and plot it
-            [tVecLfp, vVecLfp, iVecStim, features] = ...
-                compute_and_plot_evoked_LFP(filenames{iFile}, ...
+            [tVecLfp, ~, ~, featuresLfp] = ...
+                compute_and_plot_evoked_LFP(fileName, ...
                                             'OutFolder', outFolder, ...
                                             'PlotFlag', true, ...
                                             'SaveFlag', true, ...
                                             'ChannelTypes', channelTypes, ...
                                             'ChannelUnits', channelUnits, ...
                                             'ChannelLabels', channelLabels);
-
-            % Plot all traces within the LFP time window
-            plot_traces_abf(filenames{iFile}, 'Verbose', false, ...
-                'ExpMode', expMode, 'Individually', individually, ...
-                'OutFolder', outFolder, 'TimeUnits', timeUnits, ...
-                'TimeStart', min(tVecLfp), 'TimeEnd', max(tVecLfp), ...
-                'ChannelTypes', channelTypes, ...
-                'ChannelUnits', channelUnits, ...
-                'ChannelLabels', channelLabels);
         else
-            % Just plot the traces
-            plot_traces_abf(filenames{iFile}, 'Verbose', false, ...
+            % Make outputs empty
+            tVecLfp = [];
+            featuresLfp = [];
+        end
+
+        % Set the time endpoints for individual traces
+        if isEvokedLfp
+            timeStart = min(tVecLfp);
+            timeEnd = max(tVecLfp);
+        else
+            timeStart = timeStartUser;
+            timeEnd = timeEndUser;
+        end
+
+        % Plot individual traces
+        if ~isCI
+            plot_traces_abf(fileName, 'Verbose', false, ...
                 'ExpMode', expMode, 'Individually', individually, ...
                 'OutFolder', outFolder, 'TimeUnits', timeUnits, ...
                 'TimeStart', timeStart, 'TimeEnd', timeEnd, ...
                 'ChannelTypes', channelTypes, ...
                 'ChannelUnits', channelUnits, ...
-                'ChannelLabels', channelLabels);
+                'ChannelLabels', channelLabels);            
         end
 
+        % Save in cell arrays
+        featuresLfpAll{iFile} = featuresLfp;
 %   catch ME
 %       fprintf('Traces for %s cannot be plotted!\n', filenames{iFile});
 %       fprintf([ME.identifier, ': ', ME.message]);
@@ -270,6 +285,20 @@ end
 compute_and_plot_concatenated_trace(abfParamsAllStruct, dataReorderedAll, ...
                                     'SourceDirectory', directory, ...
                                     'OutFolder', outFolder);
+
+%% If any LFPs were computed, plot a time series for the features
+% Remove empty entries
+isEmpty = cellfun(@isempty, featuresLfpAll);
+lfpFeaturesCell = featuresLfpAll(~isEmpty);
+lfpFileNames = filenames(~isEmpty);
+
+% Convert to a structure array
+lfpFeaturesStruct = [lfpFeaturesCell{:}];
+
+% Plot each field of the structure as its own time series
+if ~isempty(lfpFeaturesStruct)
+%    plot_fields(lfpFeaturesStruct, 'XTickLabel', lfpFileNames);
+end
 
 %% Copy similar figure types to its own directory
 % TODO
@@ -430,5 +459,31 @@ for iPlot = 1:nToPlot
     end
     xlim([min(tVecCombined), max(tVecCombined)]);
 end
+
+% Plot all traces within the LFP time window
+plot_traces_abf(fileName, 'Verbose', false, ...
+    'ExpMode', expMode, 'Individually', individually, ...
+    'OutFolder', outFolder, 'TimeUnits', timeUnits, ...
+    'TimeStart', min(tVecLfp), 'TimeEnd', max(tVecLfp), ...
+    'ChannelTypes', channelTypes, ...
+    'ChannelUnits', channelUnits, ...
+    'ChannelLabels', channelLabels);
+
+% If both the above are true, give preference to 
+%   an evoked LFP protocol
+if isCI && isEvokedLfp
+    isCI = false;
+end
+
+% Save in graph outputs
+graphOutputs.tVecLfp = tVecLfp;
+graphOutputs.vVecLfp = vVecLfp;
+graphOutputs.iVecStim = iVecStim;
+graphOutputs.features = features;
+graphOutputs.timeStart = timeStart;
+graphOutputs.timeEnd = timeEnd;
+
+% Save in graph outputs cell array
+graphOutputsAll{iFile} = graphOutputs;
 
 %}

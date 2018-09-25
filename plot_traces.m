@@ -3,8 +3,9 @@ function [h] = plot_traces(tVec, data, xlimits, xLabel, yLabel, ...
 %% Plots traces all in one place
 % Usage: [h] = plot_traces(tVec, data, xlimits, xLabel, yLabel, ...
 %                           traceLabels, figTitle, figName, figNum)
-% Outputs: TODO
-%       h           - figure handle
+% Outputs:
+%       h           - figure handle for the created figure
+%                   must be a figure handle
 %
 % Arguments: TODO
 %       tVec        - time vector for plotting

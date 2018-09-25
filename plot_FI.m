@@ -82,7 +82,6 @@ if exist(outfolder, 'dir') ~= 7
     fprintf('New directory made: %s\n\n', outfolder);
 end
 
-
 % Extract data parameters
 nsweeps = size(alldata, 3);     % Number of sweeps
 ntimepoints = size(alldata, 1);  % Number of time points
@@ -147,7 +146,8 @@ close(h);
 
 % Compute spike frequency for each sweep
 spike_freq = zeros(1,nsweeps);
-[~, spif_time] = identify_CI(alldata);    % time range to take spike frequency (10^-4 s)
+iVecs = squeeze(alldata(:, 2, :));
+[~, spif_time] = identify_CI(iVecs, sius);    % time range to take spike frequency (10^-4 s)
 parfor i = 1:nsweeps
     cdata = alldata(:,1,i);
     spike_indices = find(is_spike(:,1,i));

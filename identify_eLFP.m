@@ -87,12 +87,19 @@ if ischar(iVecsORfileName) || isstring(iVecsORfileName)
         iVecs = squeeze(iVecs(:, :, 1));
     end
 else
-    % The first arguement are the current vectors
+    % The first argument are the current vectors
     iVecs = iVecsORfileName;
 end
 
 % Count the number of sweeps
 nSweeps = size(iVecs, 2);
+
+% If there are no sweeps, this is not an evoked local field potential
+%   protocol
+if nSweeps == 0
+    isEvokedLfp = false;
+    return
+end
 
 %% Do the job
 % Not an evoked LFP protocol if there are no current vectors recorded
