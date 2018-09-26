@@ -33,6 +33,7 @@ function [results, figtypes] = isfigtype (strings, varargin)
 %       cd/create_waveform_train.m
 %       cd/create_pulse_train_series.m
 %       cd/plot_all_abfs_dir.m
+%       cd/plot_fields.m
 %       cd/plot_traces.m
 %       cd/plot_traces_abf.m
 %       cd/plot_tuning_curve.m
