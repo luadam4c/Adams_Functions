@@ -63,6 +63,7 @@ function h = plot_tuning_curve(pValues, readout, varargin)
 %
 
 %% Default values for optional arguments
+colsToPlotDefault = [];                 % set later
 pislogDefault = [false, false];
 pLabelDefault = 'Parameter';
 readoutLabelDefault = 'Readout';
@@ -132,6 +133,11 @@ figName = iP.Results.FigName;
 %% Prepare for tuning curve
 % Extract number of columns
 nCols = size(readout, 2);
+
+% Set default columns to plot
+if isempty(colsToPlot)
+    colsToPlot = 1:size(readout, 2);
+end
 
 % Set column labels
 if isempty(columnLabels)
