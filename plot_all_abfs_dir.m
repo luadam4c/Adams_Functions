@@ -21,6 +21,12 @@ function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 %                       'patch' - patch data; x axis in ms; y-axis in mV
 %                   must be consistent with plot_traces_abf.m
 %                   default == 'patch'
+%                   - 'PlotMode': plotting mode for multiple traces
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'overlapped'    - overlapped in a single plot
+%                       'parallel'      - in parallel in subplots
+%                   must be consistent with plot_traces_abf.m
+%                   default == 'overlapped'
 %                   - 'Individually': whether sweeps are plotted individually
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -94,12 +100,14 @@ function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 %% Hard-coded parameters
 validExpModes = {'EEG', 'patch'};
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
+validPlotModes = {'overlapped', 'parallel'};
 
 %% Default values for optional arguments
 directoryDefault = '';          % set later
 useOriginalLabelsDefault = false;   % use identify_channels.m instead
                                     % of the original channel labels by default
 expModeDefault = 'patch';       % assume traces are patching data by default
+plotModeDefault = 'overlapped'; % plot traces overlapped by default
 individuallyDefault = false;    % plot all sweeps together by default
 outFolderDefault = '';          % set later
 timeUnitsDefault = '';          % set later
@@ -140,6 +148,8 @@ addParameter(iP, 'UseOriginal', useOriginalLabelsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ExpMode', expModeDefault, ...
     @(x) any(validatestring(x, validExpModes)));
+addParameter(iP, 'PlotMode', plotModeDefault, ...
+    @(x) any(validatestring(x, validPlotModes)));
 addParameter(iP, 'Individually', individuallyDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
@@ -164,6 +174,7 @@ parse(iP, varargin{:});
 directory = iP.Results.Directory;
 useOriginal = iP.Results.UseOriginal;
 expMode = validatestring(iP.Results.ExpMode, validExpModes);
+plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
 individually = iP.Results.Individually;
 outFolder = iP.Results.OutFolder;
 timeUnits = iP.Results.TimeUnits;
