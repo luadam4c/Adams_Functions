@@ -1,9 +1,9 @@
-function h = plot_tuning_curve(pValues, readout, varargin)
+function h = plot_tuning_curve (pValues, readout, varargin)
 %% Plot a 1-dimensional tuning curve
-% Usage: h = plot_tuning_curve(pValues, readout, varargin)
+% Usage: h = plot_tuning_curve (pValues, readout, varargin)
 % Outputs:
 %       h           - figure handle for the created figure
-%                   must be a figure handle
+%                   specified as a figure handle
 % Arguments:
 %       pValues     - column vector of parameter values
 %                   must be a numeric vector
@@ -16,6 +16,19 @@ function h = plot_tuning_curve(pValues, readout, varargin)
 %                               log-scaled
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == [false, false];
+%                   - 'XLimits': limits of x axis
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == expand by a little bit
+%                   - 'YLimits': limits of y axis
+%                   must be a 2-element increasing numeric vector
+%                   default == []
+%                   - 'PTicks': x tick values for the parameter values
+%                   must be a numeric vector
+%                   default == []
+%                   - 'PTickLabels': x tick labels in place of parameter values
+%                   must be a cell array of character vectors/strings
+%                   default == {}
 %                   - 'PLabel': label for the parameter
 %                   must be a string scalar or a character vector
 %                   default == 'Parameter'
@@ -27,15 +40,23 @@ function h = plot_tuning_curve(pValues, readout, varargin)
 %                   must be a scalartext 
 %                       or a cell array of strings or character vectors
 %                   default == {'Column #1', 'Column #2', ...}
-%                   - 'XLimits': limits of x axis
-%                               suppress by setting value to 'suppress'
-%                   must be 'suppress' or a 2-element increasing numeric vector
-%                   default == expand by a little bit
-%                   - 'YLimits': limits of y axis
-%                   must be a 2-element increasing numeric vector
-%                   default == []
 %                   - 'SingleColor': color when colsToPlot == 1
 %                   must be a 3-element vector
+%                   - 'LegendLocation': location for legend
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       ''  - use default
+%                       'suppress'  - no legend
+%                       anything else recognized by the legend() function
+%                   default == 'suppress' if nTraces == 1 
+%                               'northeast' if nTraces is 2~9
+%                               'eastoutside' if nTraces is 10+
+%                   - 'FigTitle': title for the figure
+%                   must be a string scalar or a character vector
+%                   default == ['Traces for ', figName]
+%                               or [yLabel, ' over time']
+%                   - 'FigNumber': figure number for creating figure
+%                   must be a positive integer scalar
+%                   default == []
 %                   - 'FigName': figure name for saving
 %                   must be a string scalar or a character vector
 %                   default == ''
@@ -62,15 +83,29 @@ function h = plot_tuning_curve(pValues, readout, varargin)
 % 2018-09-25 Made almost all arguments parameter-value pairs
 %
 
+%% Hard-coded parameters
+validLegendLocations = {'', 'suppress', ...
+                        'north', 'south', 'east', 'west', ...
+                        'northeast', 'northwest', 'southeast', 'southwest', ...
+                        'northoutside', 'southoutside', 'eastoutside', ...
+                        'westoutside', 'northeastoutside', ...
+                        'northwestoutside', 'southeastoutside', ...
+                        'southwestoutside', 'best', 'bestoutside', 'none'};
+
 %% Default values for optional arguments
-colsToPlotDefault = [];                 % set later
+colsToPlotDefault = [];         % set later
 pislogDefault = [false, false];
-pLabelDefault = 'Parameter';
-readoutLabelDefault = 'Readout';
-columnLabelsDefault = '';               % set later
 xlimitsDefault = [];
 ylimitsDefault = [];
+pTicksDefault = [];
+pTickLabelsDefault = {};
+pLabelDefault = 'Parameter';
+readoutLabelDefault = 'Readout';
+columnLabelsDefault = '';       % set later
 singleColorDefault = [0, 0, 1];
+legendLocationDefault = '';     % set later
+figTitleDefault = '';           % set later
+figNumberDefault = [];          % invisible figure by default
 figNameDefault = '';
 figTypesDefault = 'png';
 
@@ -98,20 +133,30 @@ addParameter(iP, 'ColsToPlot', colsToPlotDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'PisLog', pislogDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'PLabel', pLabelDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'ReadoutLabel', readoutLabelDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'ColumnLabels', columnLabelsDefault, ...
-    @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'XLimits', xlimitsDefault, ...
     @(x) ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'YLimits', ylimitsDefault, ...
     @(x) validateattributes(x, {'numeric'}, ...
                             {'increasing', 'vector', 'numel', 2}));
+addParameter(iP, 'PTicks', pTicksDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'PTickLabels', pTickLabelsDefault, ...
+    @(x) iscellstr(x) || isstring(x));
+addParameter(iP, 'PLabel', pLabelDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'ReadoutLabel', readoutLabelDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'ColumnLabels', columnLabelsDefault, ...
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'SingleColor', singleColorDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 3}));
+addParameter(iP, 'LegendLocation', legendLocationDefault, ...
+    @(x) any(validatestring(x, validLegendLocations)));
+addParameter(iP, 'FigTitle', figTitleDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigNumber', figNumberDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 addParameter(iP, 'FigName', figNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
@@ -121,14 +166,27 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 parse(iP, pValues, readout, varargin{:});
 colsToPlot = iP.Results.ColsToPlot;
 pIsLog = iP.Results.PisLog;
+xlimits = iP.Results.XLimits;
+ylimits = iP.Results.YLimits;
+pTicks = iP.Results.PTicks;
+pTickLabels = iP.Results.PTickLabels;
 pLabel = iP.Results.PLabel;
 readoutLabel = iP.Results.ReadoutLabel;
 columnLabels = iP.Results.ColumnLabels;
-xlimits = iP.Results.XLimits;
-ylimits = iP.Results.YLimits;
 singlecolor = iP.Results.SingleColor;
+legendLocation = validatestring(iP.Results.LegendLocation, ...
+                                validLegendLocations);
+figTitle = iP.Results.FigTitle;
+figNumber = iP.Results.FigNumber;
 figName = iP.Results.FigName;
 [~, figtypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
+
+% Check relationships between arguments
+if numel(pTicks) ~= numel(pTickLabels)
+    fprintf('PTicks and PTickLabels must have the same number of elements!\n');
+    h = [];
+    return
+end
 
 %% Prepare for tuning curve
 % Extract number of columns
@@ -147,6 +205,28 @@ if isempty(columnLabels)
     end
 end
 
+% Set legend location based on number of traces
+if isempty(legendLocation)
+    if nCols > 1 && nCols < 10
+        legendLocation = 'northeast';
+    elseif nCols >= 10
+        legendLocation = 'eastoutside';
+    else
+        legendLocation = 'suppress';
+    end
+end
+
+% Set the default figure title
+if isempty(figTitle)
+    if ~strcmpi(readoutLabel, 'suppress') && ~strcmpi(pLabel, 'suppress')
+        figTitle = strrep([readoutLabel, ' vs. ', pLabel], '_', '\_');
+    elseif ~strcmpi(readoutLabel, 'suppress')
+        figTitle = strrep([readoutLabel, ' vs. parameter'], '_', '\_');
+    else
+        figTitle = 'Readout vs. parameter';
+    end
+end
+
 % Compute the number of parameter values that 
 %   don't give infinite values
 nNonInf = sum(~isinf(readout), 1);
@@ -157,10 +237,15 @@ nColsToPlot = length(colsToPlot);
 % Define the color map to use
 cm = colormap(jet(nColsToPlot));
 
-% Decide on the figure to plot on
 if ~isempty(figName)
-    % Create and clear figure if figName provided
-    h = figure(floor(rand()*10^4)+1);
+    % Create an invisible figure and clear it
+    if ~isempty(figNumber)
+        h = figure(figNumber);
+        set(h, 'Visible', 'Off');
+    else
+        h = figure(floor(rand()*10^4)+1);
+        set(h, 'Visible', 'Off');
+    end
     clf(h);
 else
     % Get the current figure
@@ -168,6 +253,11 @@ else
 end
 
 %% Plot tuning curve
+% Hold on if more than one column
+if nColsToPlot > 1
+    hold on
+end
+
 % Plot readout values against parameter values
 for c = 1:nColsToPlot
     % Get the column to plot
@@ -176,9 +266,9 @@ for c = 1:nColsToPlot
     % Plot curve
     if pIsLog
         % Note: can't have hold on before semilogx
-        p = semilogx(pValues, readout(:, col)); hold on;
+        p = semilogx(pValues, readout(:, col));
     else
-        p = plot(pValues, readout(:, col)); hold on;
+        p = plot(pValues, readout(:, col));
     end
     
     % Set color
@@ -199,9 +289,14 @@ for c = 1:nColsToPlot
     end
 end
 
-% Show legend only if readout has more than one columns
-if nCols > 1
-    legend('Location', 'eastoutside');
+% Hold off if more than one column
+if nColsToPlot > 1
+    hold off
+end
+
+% Generate a legend if there is more than one trace
+if ~strcmpi(legendLocation, 'suppress')
+    legend('location', legendLocation);
 end
 
 % Restrict x axis if xlimits provided; 
@@ -222,6 +317,14 @@ if ~isempty(ylimits)
 end
 
 % Set title and axes labels
+if ~isempty(pTicks)
+    set(gca, 'XTick', pTicks);
+    % xticks(pTicks);
+end
+if ~isempty(pTickLabels)
+    set(gca, 'XTickLabel', pTickLabels);
+    % xticklabels(pTicks);
+end
 if ~strcmpi(pLabel, 'suppress')
     xlabel(pLabel);
 end
@@ -229,7 +332,7 @@ if ~strcmpi(readoutLabel, 'suppress')
     ylabel(readoutLabel);
 end
 if ~strcmpi(pLabel, 'suppress') && ~strcmpi(readoutLabel, 'suppress')
-    title(strrep([readoutLabel, ' vs. ', pLabel], '_', '\_'));
+    title(figTitle);
 end
 
 %% Post-plotting

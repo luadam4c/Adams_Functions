@@ -1,9 +1,9 @@
-function h = plot_traces(tVec, data, varargin)
+function h = plot_traces (tVec, data, varargin)
 %% Plots traces all in one place, overlapped or in parallel
-% Usage: h = plot_traces(tVec, data, varargin)
+% Usage: h = plot_traces (tVec, data, varargin)
 % Outputs:
 %       h           - figure handle for the created figure
-%                   must be a figure handle
+%                   specified as a figure handle
 %
 % Arguments:
 %       tVec        - time vector for plotting
@@ -248,7 +248,7 @@ if isempty(figTitle)
         figTitle = ['Traces for ', figName];
     elseif ischar(yLabel)
         figTitle = [yLabel, ' over ', xLabel];
-    elseif iscell(yLabel)
+    else
         figTitle = ['Data over ', xLabel];        
     end
 end

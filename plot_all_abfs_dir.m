@@ -321,7 +321,9 @@ lfpFeaturesStruct = [lfpFeaturesCell{:}];
 
 % Plot each field of the structure as its own time series
 if ~isempty(lfpFeaturesStruct)
-%    plot_fields(lfpFeaturesStruct, 'XTickLabel', lfpFileNames);
+%    plot_fields(lfpFeaturesStruct, ...
+%                   'XTickLabel', lfpFileNames, ...
+%                   'XLabel', 'File Names');
 end
 
 %% Copy similar figure types to its own directory

@@ -3,7 +3,7 @@ function h = plot_tuning_map (pValues, readout, varargin)
 % Usage: h = plot_tuning_map (pValues, readout, varargin)
 % Outputs:
 %       h           - figure handle for the created figure
-%                   must be a figure handle
+%                   specified as a figure handle
 % Arguments:
 %       pValues     - 2 vectors of parameter values
 %                   must be a 2-element cell array of numeric vectors

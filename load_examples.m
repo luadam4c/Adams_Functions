@@ -52,9 +52,15 @@ myStruct.myCellStrRow = myCellStrRow;
 myStruct.myCellStrCol = myCellStrCol;
 myStruct.myCellStr2D = myCellStr2D;
 myStruct.blab = blab;
+myScalarStruct.a = floor(rand(1) * 10);
+myScalarStruct.b = floor(rand(1) * 10);
 
 % Structure arrays
 myStructArray = [myStruct, myStruct, myStruct];
+for i = 1:10
+    myScalarStructArray(i).a = floor(rand(1) * 10);
+    myScalarStructArray(i).b = floor(rand(1) * 10);
+end
 
 % Sheet Data
 xlsData = {'A Number' 'Boolean Data' 'Empty Cells' 'Strings';...
