@@ -183,7 +183,8 @@ figName = iP.Results.FigName;
 [~, figtypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Check relationships between arguments
-if numel(pTicks) ~= numel(pTickLabels)
+if ~isempty(pTicks) && ~isempty(pTickLabels) && ...
+        numel(pTicks) ~= numel(pTickLabels)
     fprintf('PTicks and PTickLabels must have the same number of elements!\n');
     h = [];
     return
