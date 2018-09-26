@@ -26,15 +26,18 @@ function h = plot_traces(tVec, data, varargin)
 %                   default == expand by a little bit
 %                   - 'XLabel': label for the time axis, 
 %                               suppress by setting value to 'suppress'
-%                   must be a string scalar or a character vector
+%                   must be a string scalar or a character vector 
+%                       or a cell array of strings or character vectors
 %                   default == 'Time'
-%                   - 'YLabel': label for the y axis, 
+%                   - 'YLabel': label(s) for the y axis, 
 %                               suppress by setting value to 'suppress'
 %                   must be a string scalar or a character vector
-%                   default == 'Data'
+%                   default == 'Data' if plotMode is 'overlapped'
+%                               {'Trace #1', 'Trace #2', ...}
+%                                   if plotMode is 'parallel'
 %                   - 'TraceLabels': labels for the traces, 
 %                               suppress by setting value to 'suppress'
-%                   must be a scalartext 
+%                   must be a string scalar or a character vector 
 %                       or a cell array of strings or character vectors
 %                   default == {'Trace #1', 'Trace #2', ...}
 %                   - 'LegendLocation': location for legend
@@ -86,16 +89,16 @@ validLegendLocations = {'', 'suppress', ...
 
 %% Default values for optional arguments
 plotModeDefault = 'overlapped'; % plot traces overlapped by default
-xlimitsDefault = [];
-ylimitsDefault = [];
-xLabelDefault = 'Time';
-yLabelDefault = 'Data';
+xlimitsDefault = [];            % set later
+ylimitsDefault = [];            % set later
+xLabelDefault = 'Time';         % the default x-axis label
+yLabelDefault = '';             % set later
 traceLabelsDefault = '';        % set later
 legendLocationDefault = '';     % set later
 figTitleDefault = '';           % set later
-figNumberDefault = [];
-figNameDefault = '';
-figTypesDefault = 'png';
+figNumberDefault = [];          % invisible figure by default
+figNameDefault = '';            % don't save figure by default
+figTypesDefault = 'png';        % save as png file by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -126,7 +129,7 @@ addParameter(iP, 'YLimits', ylimitsDefault, ...
 addParameter(iP, 'XLabel', xLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'YLabel', yLabelDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'TraceLabels', traceLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
@@ -148,7 +151,8 @@ ylimits = iP.Results.YLimits;
 xLabel = iP.Results.XLabel;
 yLabel = iP.Results.YLabel;
 traceLabels = iP.Results.TraceLabels;
-legendLocation = validatestring(iP.Results.LegendLocation, validLegendLocations);
+legendLocation = validatestring(iP.Results.LegendLocation, ...
+                                validLegendLocations);
 figTitle = iP.Results.FigTitle;
 figNumber = iP.Results.FigNumber;
 figName = iP.Results.FigName;
@@ -158,20 +162,67 @@ figName = iP.Results.FigName;
 % Extract number of traces
 nTraces = size(data, 2);
 
+% Compute minimum and maximum Y values
+minY = min(min(data));
+maxY = max(max(data));
+rangeY = maxY - minY;
+
 % Set the default time axis limits
 if isempty(xlimits)
     xlimits = [min(tVec), max(tVec)];
 end
 
 % Set the default y-axis limits
-if isempty(ylimits) && rangeY ~= 0
+if isempty(ylimits) && ~strcmpi(plotMode, 'parallel') && rangeY ~= 0
     ylimits = [minY - 0.2 * rangeY, maxY + 0.2 * rangeY];
+end
+
+% Set the default y-axis labels
+if isempty(yLabel)
+    switch plotMode
+    case 'overlapped'
+        yLabel = 'Data';
+    case 'parallel'
+        if nTraces > 1
+            yLabel = cell(1, nTraces);
+            parfor iTrace = 1:nTraces
+                yLabel{iTrace} = ['Trace #', num2str(iTrace)];
+            end
+        else
+            yLabel = {'Data'};
+        end
+    otherwise
+        error(['The plot mode ', plotMode, ' has not been implemented yet!']);
+    end
+end
+
+% Make sure y-axis labels are consistent
+switch plotMode
+case 'overlapped'
+    if iscell(yLabel)
+        fprintf('Only the first yLabel will be used!\n');
+        yLabel = yLabel{1};
+    end
+case 'parallel'
+    if ~iscell(yLabel)
+        yLabel = {yLabel};
+    end
+    if iscell(yLabel)
+        if numel(yLabel) > nTraces
+            fprintf('Too many y labels! Only some will be used!\n');
+        elseif numel(yLabel) < nTraces
+            fprintf('Not enough y labels!!\n');
+            return;
+        end
+    end
+otherwise
+    error(['The plot mode ', plotMode, ' has not been implemented yet!']);
 end
 
 % Set the default trace labels
 if isempty(traceLabels)
     traceLabels = cell(1, nTraces);
-    for iTrace = 1:nTraces
+    parfor iTrace = 1:nTraces
         traceLabels{iTrace} = ['Trace #', num2str(iTrace)];
     end
 end
@@ -195,8 +246,10 @@ if isempty(figTitle)
         figTitle = ['Traces for ', traceLabels{1}];
     elseif ~isempty(figName)
         figTitle = ['Traces for ', figName];
-    else
+    elseif ischar(yLabel)
         figTitle = [yLabel, ' over ', xLabel];
+    elseif iscell(yLabel)
+        figTitle = ['Data over ', xLabel];        
     end
 end
 
@@ -210,11 +263,6 @@ if isempty(legendLocation)
         legendLocation = 'suppress';
     end
 end
-
-% Compute minimum and maximum Y values
-minY = min(min(data));
-maxY = max(max(data));
-rangeY = maxY - minY;
 
 % Decide on the figure to plot on
 if ~isempty(figName)
@@ -235,17 +283,26 @@ end
 cm = colormap(jet(nTraces));
 
 %% Plot
+% Hold on if more than one trace
+if nTraces > 1
+    hold on
+end
+
 % Plot all traces
 switch plotMode
 case 'overlapped'
     % Plot all traces together
-    hold on;
-    parfor iTrace = 1:nTraces
-        plot(tVec, data(:, iTrace), ...
-            'DisplayName', traceLabels{iTrace}, ...
+    for iTrace = 1:nTraces
+        % Plot the trace
+        p = plot(tVec, data(:, iTrace), ...
             'Color', cm(iTrace, :));
+        
+        % Set the legend label as the trace label if provided
+        if ~strcmpi(traceLabels, 'suppress')
+            set(p, 'DisplayName', traceLabels{iTrace});
+        end
     end
-
+    
     % Set time axis limits
     if ~strcmpi(xlimits, 'suppress')
         xlim(xlimits);
@@ -287,9 +344,13 @@ case 'parallel'
         subplot(nTraces, 1, iTrace);
         
         % Plot the signal against the time vector
-        plot(tVec, data(:, iTrace), ...
-            'DisplayName', traceLabels{iTrace}, ...
-            'Color', cm(iTrace, :));
+        p = plot(tVec, data(:, iTrace), ...
+                'Color', cm(iTrace, :));
+
+        % Set the legend label as the trace label if provided
+        if ~strcmpi(traceLabels, 'suppress')
+            set(p, 'DisplayName', traceLabels{iTrace});
+        end
 
         % Set time axis limits
         if ~strcmpi(xlimits, 'suppress')
@@ -302,8 +363,8 @@ case 'parallel'
         end
 
         % Generate a y-axis label
-        if ~strcmpi(yLabel, 'suppress')
-            ylabel(yLabel);
+        if ~strcmpi(yLabel{iTrace}, 'suppress')
+            ylabel(yLabel{iTrace});
         end
 
         % Generate a legend
@@ -322,7 +383,12 @@ case 'parallel'
         end
     end
 otherwise
-    error('The plot mode ', plotMode, ' has not been implemented yet!');
+    error(['The plot mode ', plotMode, ' has not been implemented yet!']);
+end
+
+% Hold off if more than one trace
+if nTraces > 1
+    hold off
 end
 
 %% Save

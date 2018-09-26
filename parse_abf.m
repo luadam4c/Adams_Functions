@@ -369,8 +369,13 @@ end
 
 %% Return and/or print results
 % Store in abfParams
+abfParams.fileInfo = fileInfo;
 abfParams.abfFullFileName = abfFullFileName;
 abfParams.expMode = expMode;
+abfParams.nDimensions = nDimensions;
+abfParams.nSamples = nSamples;
+abfParams.nChannels = nChannels;
+abfParams.nSweeps = nSweeps;
 abfParams.siUs = siUs;
 abfParams.siMs = siMs;
 abfParams.siSeconds = siSeconds;
@@ -379,11 +384,6 @@ abfParams.timeUnits = timeUnits;
 abfParams.channelTypes = channelTypes;
 abfParams.channelUnits = channelUnits;
 abfParams.channelLabels = channelLabels;
-abfParams.nDimensions = nDimensions;
-abfParams.nSamples = nSamples;
-abfParams.nChannels = nChannels;
-abfParams.nSweeps = nSweeps;
-abfParams.fileInfo = fileInfo;
 
 % Write results to standard output
 if verbose
