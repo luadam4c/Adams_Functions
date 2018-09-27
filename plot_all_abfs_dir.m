@@ -96,6 +96,7 @@ function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 % 2018-09-22 - Added 'useOriginal' as an optional argument
 % 2018-09-24 - Now tried abfload if abf2load fails
 % 2018-09-25 - Added figTypes as an argument
+% TODO: Restructure code so that each type of plot is its own subfunction
 
 %% Hard-coded parameters
 validExpModes = {'EEG', 'patch'};
@@ -320,10 +321,31 @@ lfpFileNames = filenames(~isEmpty);
 lfpFeaturesStruct = [lfpFeaturesCell{:}];
 
 % Plot each field of the structure as its own time series
-if ~isempty(lfpFeaturesStruct)
+if ~isempty(lfpFeaturesStruct)    
+    % Set an x label
+    xLabel = 'filenames';
+    
+    % Get all field names
+    lfpFieldNames = fieldnames(lfpFeaturesStruct);
+    
+    % Get the file bases
+    [~, lfpFileBases, ~] = ...
+        cellfun(@(x) fileparts(x), lfpFileNames, 'UniformOutput', false);
+
+    % Create x tick labels
+    xTickLabels = cellfun(@(x) strrep(x, '_', '\_'), lfpFileBases, ...
+                            'UniformOutput', false);
+
+    % Create figure names
+    lfpFigNames = ...
+        cellfun(@(x) fullfile(outFolder, [x, '_vs_', xLabel]), ...
+                lfpFieldNames, 'UniformOutput', false);
+    
+    % Plot fields
     plot_fields(lfpFeaturesStruct, ...
-                'XTickLabel', lfpFileNames, ...
-                'XLabel', 'File Names');
+                    'XTickLabels', xTickLabels, ...
+                    'XLabel', xLabel, ...
+                    'FigNames', lfpFigNames);
 end
 
 %% Copy similar figure types to its own directory

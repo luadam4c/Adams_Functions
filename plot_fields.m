@@ -42,9 +42,9 @@ function h = plot_fields (structArray, varargin)
 %                   - 'FigNumber': figure number for creating figure
 %                   must be a positive integer scalar
 %                   default == []
-%                   - 'FigName': figure name for saving
-%                   must be a string scalar or a character vector
-%                   default == ''
+%                   - 'FigNames': figure names for saving
+%                   must be a cell array of character vectors/strings
+%                   default == {}
 %                   - 'FigTypes': figure type(s) for saving; 
 %                               e.g., 'png', 'fig', or {'png', 'fig'}, etc.
 %                   could be anything recognised by 
@@ -77,7 +77,7 @@ fieldLabelsDefault = {};
 singleColorDefault = [0, 0, 1];
 figTitlesDefault = {};          % set later
 figNumberDefault = [];          % invisible figure by default
-figNameDefault = '';
+figNamesDefault = {};
 figTypesDefault = 'png';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -120,8 +120,8 @@ addParameter(iP, 'FigTitles', figTitlesDefault, ...
     @(x) iscellstr(x) || isstring(x));
 addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
-addParameter(iP, 'FigName', figNameDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigNames', figNamesDefault, ...
+    @(x) iscellstr(x) || isstring(x));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
 
@@ -137,12 +137,14 @@ fieldLabels = iP.Results.FieldLabels;
 singlecolor = iP.Results.SingleColor;
 figTitles = iP.Results.FigTitles;
 figNumber = iP.Results.FigNumber;
-figName = iP.Results.FigName;
+figNames = iP.Results.FigNames;
 [~, figtypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Check relationships between arguments
-if numel(xTicks) ~= numel(xTickLabels)
-    fprintf('PTicks and PTickLabels must have the same number of elements!\n');
+if ~isempty(xTicks) && ~isempty(xTickLabels) && ...
+    numel(xTicks) ~= numel(xTickLabels)
+    fprintf(['XTicks and XTickLabels must have ', ...
+                'the same number of elements!\n']);
     h = [];
     return
 end
@@ -163,7 +165,8 @@ if isempty(xTicks)
     xTicks = xValues;
 end
 if isempty(xTickLabels)
-    xTickLabels = arrayfun(@(x) num2str(x), xValues, 'UniformOutput', false);
+    xTickLabels = arrayfun(@(x) num2str(x), xValues, ...
+                            'UniformOutput', false);
 end
 
 % Get all the fields of the structArray as a cell array
@@ -234,13 +237,20 @@ for iField = 1:nFields
         end
     end
     
+    % Set the figure name
+    if ~isempty(figNames)
+        figName = figNames{iField};
+    else
+        figName = '';
+    end
+    
     % Create a figure
     h = figure;
     
     % Plot the tuning curve
     h = plot_tuning_curve(xValues, field, 'PisLog', xIsLog, ...
                         'XLimits', xLimits, 'YLimits', yLimits, ...
-                        'PTicks', xValues, 'PTickLabels', xTickLabels, ...
+                        'PTicks', xTicks, 'PTickLabels', xTickLabels, ...
                         'PLabel', 'suppress', ...
                         'ReadoutLabel', fieldLabel, ...
                         'SingleColor', singlecolor, ...

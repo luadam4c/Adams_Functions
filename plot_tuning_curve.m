@@ -92,7 +92,9 @@ validLegendLocations = {'', 'suppress', ...
                         'westoutside', 'northeastoutside', ...
                         'northwestoutside', 'southeastoutside', ...
                         'southwestoutside', 'best', 'bestoutside', 'none'};
-
+pTickAngle = 60;                % x tick angle in degrees
+lineWidth = 2;
+                    
 %% Default values for optional arguments
 colsToPlotDefault = [];         % set later
 pislogDefault = [false, false];
@@ -268,9 +270,9 @@ for c = 1:nColsToPlot
     % Plot curve
     if pIsLog
         % Note: can't have hold on before semilogx
-        p = semilogx(pValues, readout(:, col));
+        p = semilogx(pValues, readout(:, col), 'LineWidth', lineWidth);
     else
-        p = plot(pValues, readout(:, col));
+        p = plot(pValues, readout(:, col), 'LineWidth', lineWidth);
     end
     
     % Set color
@@ -336,6 +338,10 @@ end
 if ~strcmpi(figTitle, 'suppress')
     title(figTitle);
 end
+
+% Rotate p tick labels if too long
+% TODO
+xtickangle(pTickAngle);
 
 %% Post-plotting
 % Save figure if figName provided
