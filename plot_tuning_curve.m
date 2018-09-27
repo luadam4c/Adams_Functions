@@ -193,7 +193,10 @@ if ~isempty(pTicks) && ~isempty(pTickLabels) && ...
 end
 
 %% Prepare for tuning curve
-% Extract number of columns
+% Count number of entries
+nEntries = length(pValues);
+
+% Count number of columns
 nCols = size(readout, 2);
 
 % Set default columns to plot
@@ -311,8 +314,10 @@ if ~isempty(xlimits)
         xlim(xlimits);
     end
 else
-    xlim([pValues(1) - (pValues(2) - pValues(1)), ...
-        pValues(end) + (pValues(end) - pValues(end-1))]);
+    if nEntries > 1
+        xlim([pValues(1) - (pValues(2) - pValues(1)), ...
+            pValues(end) + (pValues(end) - pValues(end-1))]);
+    end
 end
 
 % Restrict y axis if ylimits provided

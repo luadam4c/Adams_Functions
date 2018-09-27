@@ -28,12 +28,12 @@ function [sheetFullFileNameAll, tableAll, varsAll, varNamesAll] = mat2sheet (mat
 %                   default == same as location of mat file (matDir)
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/issheettype.m
-%       /home/Matlab/Adams_Functions/print_or_show_message.m
+%       cd/issheettype.m
+%       cd/print_or_show_message.m
 %
 % Used by:
 %       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
-%       /home/Matlab/Adams_Functions/ZG_extract_all_IEIs.m
+%       cd/ZG_extract_all_IEIs.m
 
 % File History:
 % 2018-05-17 Modified from atf2sheet.m

@@ -74,7 +74,7 @@ end
 
 % Check if the channel types are all the same
 channelTypesAll = {abfParamsAllStruct.channelTypes};
-if ~isequal(channelTypesAll{:})
+if numel(channelTypesAll) > 2 && ~isequal(channelTypesAll{:})
     fprintf('The channel types are not all the same!\n');
     fprintf('Sweeps cannot be concatenated!!\n\n');
     return;

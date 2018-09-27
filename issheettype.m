@@ -28,15 +28,16 @@ function [results, sheettypes] = issheettype (strings, varargin)
 %                   default == 'substring'
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/istype.m
+%       cd/istype.m
 %
 % Used by:
-%       /home/Matlab/Adams_Functions/atf2sheet.m
-%       /home/Matlab/Adams_Functions/create_waveform_train.m
-%       /home/Matlab/Adams_Functions/create_pulse_train_series.m
-%       /home/Matlab/Adams_Functions/ZG_extract_all_IEIs.m
-%       /home/Matlab/Adams_Functions/ZG_extract_IEI_thresholds.m
-%       /home/Matlab/Adams_Functions/ZG_compute_IEI_thresholds.m
+%       cd/atf2sheet.m
+%       cd/create_waveform_train.m
+%       cd/create_pulse_train_series.m
+%       cd/parse_all_abfs.m
+%       cd/ZG_extract_all_IEIs.m
+%       cd/ZG_extract_IEI_thresholds.m
+%       cd/ZG_compute_IEI_thresholds.m
 %       /home/Matlab/function_template.m
 %       /home/Matlab/EEG_gui/combine_EEG_gui_outputs.m
 %

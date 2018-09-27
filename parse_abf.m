@@ -222,7 +222,7 @@ end
 % Find data dimensions and make sure it is <= 3
 nDimensions = ndims(data);        % number of dimensions in data
 if nDimensions > 3
-    error('Cannot parse data with more than 3 dimensions!');
+    error('Cannot parse data with more than 3 dimensions!\n');
 end
 
 % Set experiment mode (if not provided) based on data dimensions
@@ -327,6 +327,11 @@ else
     channelLabels = channelLabelsAuto;
 end
 
+% Convert to a single character vector for visualization
+channelTypesStr = strjoin(channelTypes, ', ');
+channelUnitsStr = strjoin(channelUnits, ', ');
+channelLabelsStr = strjoin(channelLabels, ', ');
+
 %% Time info
 % Convert sampling interval to other units
 siMs = siUs / US_PER_MS;
@@ -390,7 +395,6 @@ end
 
 %% Return and/or print results
 % Store in abfParams
-abfParams.fileInfo = fileInfo;
 abfParams.abfFullFileName = abfFullFileName;
 abfParams.expMode = expMode;
 abfParams.nDimensions = nDimensions;
@@ -402,13 +406,17 @@ abfParams.siMs = siMs;
 abfParams.siSeconds = siSeconds;
 abfParams.siPlot = siPlot;
 abfParams.timeUnits = timeUnits;
-abfParams.channelTypes = channelTypes;
-abfParams.channelUnits = channelUnits;
-abfParams.channelLabels = channelLabels;
+abfParams.channelTypesStr = channelTypesStr;
+abfParams.channelUnitsStr = channelUnitsStr;
+abfParams.channelLabelsStr = channelLabelsStr;
 if identifyProtocols
     abfParams.isCI = isCI;
     abfParams.isEvokedLfp = isEvokedLfp;
 end
+abfParams.channelTypes = channelTypes;
+abfParams.channelUnits = channelUnits;
+abfParams.channelLabels = channelLabels;
+abfParams.fileInfo = fileInfo;
 
 % Write results to standard output
 if verbose
@@ -419,9 +427,9 @@ if verbose
     fprintf('Number of channels = %d\n', nChannels);
     fprintf('Number of sweeps = %d\n', nSweeps);
     fprintf('Sampling Interval for plotting = %g %s\n', siPlot, timeUnits);
-    fprintf('Channel Types = %s\n', strjoin(channelTypes, ', '));
-    fprintf('Channel Units = %s\n', strjoin(channelUnits, ', '));
-    fprintf('Channel Labels = %s\n', strjoin(channelLabels, ', '));
+    fprintf('Channel Types = %s\n', channelTypesStr);
+    fprintf('Channel Units = %s\n', channelUnitsStr);
+    fprintf('Channel Labels = %s\n', channelLabelsStr);
     if identifyProtocols
         fprintf('Is a current injection protocol = %s\n', num2str(isCI));
         fprintf('Is an evoked LFP protocol = %s\n', num2str(isEvokedLfp));

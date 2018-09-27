@@ -72,13 +72,13 @@ function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 % Requires:
 %       cd/compute_and_plot_evoked_LFP.m
 %       cd/compute_and_plot_concatenated_trace.m
+%       cd/extract_fullpaths.m
 %       cd/parse_all_abfs.m
 %       cd/plot_fields.m
 %       cd/plot_traces_abf.m
 %       cd/plot_FI.m
 %       cd/isfigtype.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
-%       /home/Matlab/Downloaded_Functions/dirr.m
 %
 % Used by:
 %       /home/zhongxiao/SCIDmiceLTP/Code/analyze_SCIDmiceLTP.m
@@ -140,9 +140,7 @@ else
 end
 if ~isdeployed
     addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));
-                                            % for dirr.m, abf2load.m or abfload.m
-    addpath(fullfile(functionsdirectory, '/Brians_Functions/'));        
-                                            % for identify_CI.m
+                                            % for abf2load.m or abfload.m
 end
 
 %% Deal with arguments
@@ -208,12 +206,23 @@ end
 % Decide on the files to use
 if isempty(fileNames)
     % Find all .abf files in the directory
-    [~, ~, fileNames] = dirr(directory, '.abf', 'name');
-    if isempty(fileNames)
-        fprintf('No abf files in current directory!\n');
-        fprintf('Type ''help plot_all_abfs'' for usage\n');
+    files = dir(fullfile(directory, '*.abf'));
+    if isempty(files)
+        fprintf('No .abf files in current directory!\n');
+        fprintf('Type ''help %s'' for usage\n', mfilename);
+        abfParamsAllStruct = struct;
+        dataAll = {};
+        tVecAll = {};
+        vVecsAll = {};
+        iVecsAll = {};
+        gVecsAll = {};
+        dataReorderedAll = {};
+        abfParamsAllCell = {};
         return
     end
+
+    % Construct the full file names
+    fileNames = extract_fullpaths(files);
 end
 
 % Count the number of files
@@ -223,6 +232,7 @@ nFiles = numel(fileNames);
 [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, ...
     iVecsAll, gVecsAll, dataReorderedAll, abfParamsAllCell] = ...
     parse_all_abfs('FileNames', fileNames, ...
+                    'Directory', directory, ...
                     'Verbose', false, 'UseOriginal', useOriginal, ...
                     'ExpMode', expMode, 'TimeUnits', timeUnits, ...
                     'ChannelTypes', channelTypesUser, ...
@@ -616,5 +626,20 @@ parfor iFile = 1:nFiles
         % Identify whether this is an evoked LFP protocol
         isEvokedLfpAll(iFile) = identify_eLFP(iVecs);
 end
+
+% Decide on the files to use
+if isempty(fileNames)
+    % Find all .abf files in the directory
+    [~, ~, fileNames] = dirr(directory, '.abf', 'name');
+    if isempty(fileNames)
+        fprintf('No abf files in current directory!\n');
+        fprintf('Type ''help plot_all_abfs'' for usage\n');
+        return
+    end
+end
+
+fileNames = cellfun(@(x, y) fullfile(x, y), ...
+                    {files.folder}, {files.name}, ...
+                    'UniformOutput', false);
 
 %}

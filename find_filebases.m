@@ -1,5 +1,5 @@
 function base_names = find_filebases (infolder, subdirs, fileext)
-%% Finds base names for files in infolder/subdir and return as a cell array of cell arrays of strings
+%% Finds base names for files in infolder/subdir and return as a cell array or cell arrays of strings
 % Usage: base_names = find_filebases (infolder, subdirs, fileext)
 % Arguments:
 %		infolder	- the directory that contains the subdirectories which contains the special case files

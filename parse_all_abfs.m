@@ -55,16 +55,23 @@ function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 %                   - 'IdentifyProtocols': whether to identify protocols
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
-%
+%                   - 'SheetType': sheet type; 
+%                       e.g., 'xlsx', 'csv', etc.
+%                   could be anything recognised by the readtable() function 
+%                   (see issheettype.m under Adams_Functions)
+%                   default == 'xlsx'
+%                   
 % Requires:
+%       cd/extract_fullpaths.m
 %       cd/parse_abf.m
-%       /home/Matlab/Downloaded_Functions/dirr.m
+%       cd/issheettype.m
 %
 % Used by:    
 %       cd/plot_all_abfs.m
 
 % File History:
 % 2018-09-27 Pulled code from plot_all_abfs.m
+% 2018-09-27 Now saves parameters into a spreadsheet file
 % 
 
 %% Hard-coded parameters
@@ -84,6 +91,7 @@ channelTypesDefault = {};           % set later
 channelUnitsDefault = {};           % set later
 channelLabelsDefault = {};          % set later
 identifyProtocolsDefault = false;   % don't identify protocols by default
+sheetTypeDefault = 'xlsx';          % default spreadsheet type
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -114,6 +122,8 @@ addParameter(iP, 'ChannelLabels', channelLabelsDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'IdentifyProtocols', identifyProtocolsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SheetType', sheetTypeDefault, ...
+    @(x) all(issheettype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -127,6 +137,7 @@ channelTypes = iP.Results.ChannelTypes;
 channelUnits = iP.Results.ChannelUnits;
 channelLabels = iP.Results.ChannelLabels;
 identifyProtocols = iP.Results.IdentifyProtocols;
+[~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 
 % Validate channel types
 if ~isempty(channelTypes)
@@ -138,12 +149,23 @@ end
 % Decide on the files to use
 if isempty(fileNames)
     % Find all .abf files in the directory
-    [~, ~, fileNames] = dirr(directory, '.abf', 'name');
-    if isempty(fileNames)
-        fprintf('No abf files in current directory!\n');
-        fprintf('Type ''help plot_all_abfs'' for usage\n');
+    files = dir(fullfile(directory, '*.abf'));
+    if isempty(files)
+        fprintf('No .abf files in current directory!\n');
+        fprintf('Type ''help %s'' for usage\n', mfilename);
+        abfParamsAllStruct = struct;
+        dataAll = {};
+        tVecAll = {};
+        vVecsAll = {};
+        iVecsAll = {};
+        gVecsAll = {};
+        dataReorderedAll = {};
+        abfParamsAllCell = {};
         return
     end
+
+    % Construct the full file names
+    fileNames = extract_fullpaths(files);
 end
 
 % Count the number of files
@@ -176,10 +198,25 @@ end
 % Convert to a struct array
 abfParamsAllStruct = [abfParamsAllCell{:}];
 
+%% Print parameters to a file
+% Get the directory name
+[~, directoryName, ~] = fileparts(directory);
+
+% Set a file name for the params table
+sheetName = fullfile(directory, [directoryName, '_abfParams.', sheetType]);
+
+% Convert to a table
+abfTable = struct2table(abfParamsAllStruct);
+
+% Print the table to a file
+writetable(abfTable, sheetName);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+[~, ~, fileNames] = dirr(directory, '.abf', 'name');
 
 %}
 
