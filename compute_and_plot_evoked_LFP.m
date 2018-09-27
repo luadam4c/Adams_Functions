@@ -45,7 +45,7 @@ function [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (f
 %       cd/save_all_figtypes.m
 %
 % Used by:    
-%       cd/plot_all_abfs_dir.m
+%       cd/plot_all_abfs.m
 
 % File History:
 % 2018-09-17 Created by Adam Lu

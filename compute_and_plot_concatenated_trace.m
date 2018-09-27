@@ -4,7 +4,7 @@ function compute_and_plot_concatenated_trace(abfParamsAllStruct, dataReorderedAl
 %
 %
 % Used by:
-%       cd/plot_all_abfs_dir.m
+%       cd/plot_all_abfs.m
 
 % File History:
 % 2018-09-21 - Moved from plot_all_abfs_dir.m 

@@ -76,17 +76,24 @@ function [abfParams, data, tVec, vVecs, iVecs, gVecs, dataReordered] = ...
 %                   - 'ChannelLabels': the channel labels
 %                   must be a cellstr with nChannels elements
 %                   default == detected with identify_channels()
+%                   - 'IdentifyProtocols': whether to identify protocols
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+
 %
 % Requires:
 %       cd/construct_abffilename.m
+%       cd/identify_eLFP.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
 %       /home/Matlab/Brians_Functions/identify_channels.m
+%       /home/Matlab/Brians_Functions/identify_CI.m
 %
 % Used by:
-%       cd/plot_all_abfs_dir.m
+%       cd/parse_all_abfs.m
 %       cd/plot_traces_abf.m
 %       cd/compute_and_plot_evoked_LFP.m
 %       cd/identify_eLFP.m
+%       /home/Matlab/Brians_Functions/identify_CI.m
 
 % File history: 
 % 2018-09-17 - Moved from plot_traces_abf.m
@@ -108,13 +115,14 @@ validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
 
 %% Default values for optional arguments
 verboseDefault = true;              % print to standard output by default
-useOriginalLabelsDefault = false;   % use identify_channels.m instead
+useOriginalDefault = false;         % use identify_channels.m instead
                                     % of the original channel labels by default
 expModeDefault = '';                % set later
 timeUnitsDefault = '';              % set later
 channelTypesDefault = {};           % set later
 channelUnitsDefault = {};           % set later
 channelLabelsDefault = {};          % set later
+identifyProtocolsDefault = false;   % don't identify protocols by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -131,6 +139,7 @@ if ~isdeployed
                                             % for abf2load.m or abfload.m
     addpath(fullfile(functionsdirectory, '/Brians_Functions/'));
                                             % for identify_channels.m
+                                            %   and identify_CI.m
 end
 
 %% Deal with arguments
@@ -152,10 +161,10 @@ addRequired(iP, 'fileName', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'UseOriginal', useOriginalLabelsDefault, ...
+addParameter(iP, 'UseOriginal', useOriginalDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ExpMode', expModeDefault, ...
-    @(x) any(validatestring(x, validExpModes)));
+    @(x) isempty(x) || any(validatestring(x, validExpModes)));
 addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
@@ -164,6 +173,8 @@ addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'ChannelLabels', channelLabelsDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'IdentifyProtocols', identifyProtocolsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, fileName, varargin{:});
@@ -174,6 +185,7 @@ timeUnits = iP.Results.TimeUnits;
 channelTypes = iP.Results.ChannelTypes;
 channelUnits = iP.Results.ChannelUnits;
 channelLabels = iP.Results.ChannelLabels;
+identifyProtocols = iP.Results.IdentifyProtocols;
 
 % Validate channel types
 if ~isempty(channelTypes)
@@ -367,6 +379,15 @@ elseif nDimensions == 3
     gVecs = squeeze(dataReordered(:, :, indConductance));
 end
 
+%% Identify protocols
+if identifyProtocols
+    % Identify whether this is a current injection protocol
+    isCI = identify_CI(iVecs, siUs);
+
+    % Identify whether this is an evoked LFP protocol
+    isEvokedLfp = identify_eLFP(iVecs);
+end
+
 %% Return and/or print results
 % Store in abfParams
 abfParams.fileInfo = fileInfo;
@@ -384,6 +405,10 @@ abfParams.timeUnits = timeUnits;
 abfParams.channelTypes = channelTypes;
 abfParams.channelUnits = channelUnits;
 abfParams.channelLabels = channelLabels;
+if identifyProtocols
+    abfParams.isCI = isCI;
+    abfParams.isEvokedLfp = isEvokedLfp;
+end
 
 % Write results to standard output
 if verbose
@@ -397,6 +422,10 @@ if verbose
     fprintf('Channel Types = %s\n', strjoin(channelTypes, ', '));
     fprintf('Channel Units = %s\n', strjoin(channelUnits, ', '));
     fprintf('Channel Labels = %s\n', strjoin(channelLabels, ', '));
+    if identifyProtocols
+        fprintf('Is a current injection protocol = %s\n', num2str(isCI));
+        fprintf('Is an evoked LFP protocol = %s\n', num2str(isEvokedLfp));
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

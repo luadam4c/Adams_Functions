@@ -81,7 +81,7 @@ function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 %       cd/isfigtype.m
 %
 % Used by:
-%       cd/plot_all_abfs_dir.m
+%       cd/plot_all_abfs.m
 %       /media/shareX/share/Adam/Sample_files_from_Katie/test_sweeps.m
 %
 % File history: 

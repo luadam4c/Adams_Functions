@@ -35,6 +35,7 @@ function save_all_figtypes (fig, filename, varargin)
 % 2017-05-09 Created by Adam Lu
 % 2017-11-08 Replaced figbase with [figbase, '.', figtypes]
 % 2018-05-08 Changed tabs to spaces and limited width to 80
+% 2018-09-27 Made sure figure is visible when saved as a .fig file
 % 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -64,6 +65,12 @@ addOptional(iP, 'figtypes', 'png', ...          % figure type(s) for saving
 parse(iP, fig, filename, varargin{:});
 [~, figtypes] = isfigtype(iP.Results.figtypes, 'ValidateMode', true);
 
+%% Preparation
+% Make the figure visible if at least one of the figtypes is 'fig'
+if any(strcmpi('fig', figtypes))
+    set(fig, 'Visible', 'on');
+end
+
 %% Save figure(s)
 if ~isempty(figtypes)    % if at least one figtype is provided
     % Break down file name
@@ -74,16 +81,32 @@ if ~isempty(figtypes)    % if at least one figtype is provided
         % Save figure as each figtype
         nfigtypes = numel(figtypes);    % number of figure types for saving
         for f = 1:nfigtypes
-            saveas(fig, fullfile(directory, ...
-                                [figbase, '.', figtypes{f}]), figtypes{f});
+            % Set the figure name
+            figName = fullfile(directory, ...
+                                [figbase, '.', figtypes{f}]);
+            
+            % Get the current figure type
+            figType = figtypes{f};
+            
+            % Save figure as the figtype
+            saveas(fig, figName, figType);
         end
     elseif ischar(figtypes)        % if only one figtype provided
+        % Set the figure name
+        figName = fullfile(directory, [figbase, '.', figtypes]);
+        
+        % Get the figure type
+        figType = figtypes;
+        
         % Save figure as the figtype
-        saveas(fig, fullfile(directory, [figbase, '.', figtypes]), figtypes);
+        saveas(fig, figName, figType);
     end
 else            % if no figtype provided
+    % Set the figure name as the file name
+    figName = filename;
+    
     % Simply use saveas()
-    saveas(fig, filename);
+    saveas(fig, figName);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

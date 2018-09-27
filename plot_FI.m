@@ -18,6 +18,7 @@ function plot_FI (filename, alldata, sius, outfolder)
 %       /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
 %
 % Used by:
+%       cd/plot_all_abfs.m
 % 
 % 2017-04-04 - Adapted from analyzeCI_20140730
 % 2017-04-04 - Used dirr.m to find all abf files

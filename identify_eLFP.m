@@ -21,7 +21,7 @@ function [isEvokedLfp] = identify_eLFP (iVecsORfileName, varargin)
 %       cd/parse_abf.m
 %
 % Used by:    
-%       cd/plot_all_abfs_dir.m
+%       cd/parse_abf.m
 
 % File History:
 % 2018-09-17 Created by Adam Lu
@@ -154,13 +154,13 @@ else
     isEvokedLfp = false;
 end
 
-disp('done');
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
 
 ampCp = iVecs(idxCpMid, iSwp);
+
+disp('done');
 
 %}

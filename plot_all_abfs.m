@@ -1,16 +1,19 @@
 function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
             gVecsAll, dataReorderedAll, abfParamsAllCell] = ...
-                plot_all_abfs_dir (varargin)
+                plot_all_abfs (varargin)
 %% Plots all abf files in a directory
 % Usage: [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 %           gVecsAll, dataReorderedAll, abfParamsAllCell] = ...
-%               plot_all_abfs_dir (varargin)
+%               plot_all_abfs (varargin)
 %
 % Arguments:
 %       varargin    - 'Directory': the name of the directory containing 
 %                                   the abf files, e.g. '20161216'
 %                   must be a string scalar or a character vector
 %                   default == pwd
+%                   - 'FileNames': names of .abf files to detect
+%                   must be a cell array of character arrays or strings
+%                   default == detect from pwd
 %                   - 'UseOriginal': whether to use original 
 %                           channel labels and units over identify_channels()
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -69,16 +72,19 @@ function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 % Requires:
 %       cd/compute_and_plot_evoked_LFP.m
 %       cd/compute_and_plot_concatenated_trace.m
-%       cd/parse_abf.m
+%       cd/parse_all_abfs.m
 %       cd/plot_fields.m
 %       cd/plot_traces_abf.m
 %       cd/plot_FI.m
-%       cd/identify_eLFP.m
 %       cd/isfigtype.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
 %       /home/Matlab/Downloaded_Functions/dirr.m
-%       /home/Matlab/Brians_Functions/identify_CI.m
 %
+% Used by:
+%       /home/zhongxiao/SCIDmiceLTP/Code/analyze_SCIDmiceLTP.m
+%       /media/ashleyX/Recordings/analyze_recordings.m
+%
+
 % File history: 
 % 2016-09-22 - Created
 % 2017-04-11 - Added expmode as arguments
@@ -96,17 +102,20 @@ function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 % 2018-09-22 - Added 'useOriginal' as an optional argument
 % 2018-09-24 - Now tried abfload if abf2load fails
 % 2018-09-25 - Added figTypes as an argument
+% 2018-09-27 - Pulled all the parsing to parse_all_abfs.m
 % TODO: Restructure code so that each type of plot is its own subfunction
 
 %% Hard-coded parameters
-validExpModes = {'EEG', 'patch'};
+validExpModes = {'EEG', 'patch', ''};
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
 validPlotModes = {'overlapped', 'parallel'};
 
 %% Default values for optional arguments
-directoryDefault = '';          % set later
-useOriginalLabelsDefault = false;   % use identify_channels.m instead
-                                    % of the original channel labels by default
+directoryDefault = pwd;         % look for .abf files in 
+                                %   the present working directory by default
+fileNamesDefault = {};              % detect from pwd by default
+useOriginalDefault = false;     % use identify_channels.m instead
+                                % of the original channel labels by default
 expModeDefault = 'patch';       % assume traces are patching data by default
 plotModeDefault = 'overlapped'; % plot traces overlapped by default
 individuallyDefault = false;    % plot all sweeps together by default
@@ -145,10 +154,12 @@ iP.FunctionName = mfilename;
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
                                                 % introduced after R2016b
-addParameter(iP, 'UseOriginal', useOriginalLabelsDefault, ...
+addParameter(iP, 'FileNames', fileNamesDefault, ...
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'UseOriginal', useOriginalDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ExpMode', expModeDefault, ...
-    @(x) any(validatestring(x, validExpModes)));
+    @(x) isempty(x) || any(validatestring(x, validExpModes)));
 addParameter(iP, 'PlotMode', plotModeDefault, ...
     @(x) any(validatestring(x, validPlotModes)));
 addParameter(iP, 'Individually', individuallyDefault, ...
@@ -173,6 +184,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 % Read from the Input Parser
 parse(iP, varargin{:});
 directory = iP.Results.Directory;
+fileNames = iP.Results.FileNames;
 useOriginal = iP.Results.UseOriginal;
 expMode = validatestring(iP.Results.ExpMode, validExpModes);
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
@@ -192,89 +204,88 @@ if ~isempty(channelTypesUser)
                             channelTypesUser, 'UniformOutput', false);
 end
 
-% Set dependent argument defaults
-if isempty(directory)
-    directory = pwd;
+%% Get file names
+% Decide on the files to use
+if isempty(fileNames)
+    % Find all .abf files in the directory
+    [~, ~, fileNames] = dirr(directory, '.abf', 'name');
+    if isempty(fileNames)
+        fprintf('No abf files in current directory!\n');
+        fprintf('Type ''help plot_all_abfs'' for usage\n');
+        return
+    end
 end
 
-%% Find all .abf files in the directory
-[~, ~, filenames] = dirr(directory, '.abf', 'name');
-if isempty(filenames)
-    fprintf('No abf files in current directory!\n');
-    fprintf('Type ''help plot_all_abfs_dir'' for usage\n');
-end
-nFiles = numel(filenames);
+% Count the number of files
+nFiles = numel(fileNames);
 
-%% Parse each file in the directory
-abfParamsAllCell = cell(nFiles, 1);
-dataAll = cell(nFiles, 1);
-tVecAll = cell(nFiles, 1);
-vVecsAll = cell(nFiles, 1);
-iVecsAll = cell(nFiles, 1);
-gVecsAll = cell(nFiles, 1);
-dataReorderedAll = cell(nFiles, 1);
-parfor iFile = 1:nFiles
-%for iFile = 1:nFiles
-    % Parse the abf file
-    [abfParamsAllCell{iFile}, dataAll{iFile}, ...
-        tVecAll{iFile}, vVecsAll{iFile}, ...
-        iVecsAll{iFile}, gVecsAll{iFile}, dataReorderedAll{iFile}] = ...
-        parse_abf(filenames{iFile}, 'Verbose', false, ...
-                    'UseOriginal', useOriginal, ...
-                    'ExpMode', expMode, ...
-                    'TimeUnits', timeUnits, ...
+%% Parse and identify protocols from each file in the directory
+[abfParamsAllStruct, dataAll, tVecAll, vVecsAll, ...
+    iVecsAll, gVecsAll, dataReorderedAll, abfParamsAllCell] = ...
+    parse_all_abfs('FileNames', fileNames, ...
+                    'Verbose', false, 'UseOriginal', useOriginal, ...
+                    'ExpMode', expMode, 'TimeUnits', timeUnits, ...
                     'ChannelTypes', channelTypesUser, ...
                     'ChannelUnits', channelUnitsUser, ...
-                    'ChannelLabels', channelLabelsUser);
+                    'ChannelLabels', channelLabelsUser, ...
+                    'IdentifyProtocols', true);
+
+%% Plot F-I plots
+parfor iFile = 1:nFiles
+    % Extract from cell arrays
+    abfParams = abfParamsAllCell{iFile};
+
+    % Extract some parameters
+    isCI = abfParams.isCI;
+
+    % Only do anything for current injection protocols
+    if isCI
+        % Extract from cell arrays
+        data = dataAll{iFile};
+        fileName = fileNames{iFile};
+
+        % Extract some more parameters
+        siUs = abfParams.siUs;
+
+        % Detect spikes for each sweep and make an F-I plot
+        plot_FI(fileName, data, siUs);
+    end
 end
 
-% Convert to a struct array
-abfParamsAllStruct = [abfParamsAllCell{:}];
+%% Deal with LFP protocols
+% [lfpFeaturesStruct, lfpFileNames, xTickLabels, lfpFigNames] = 
+%       compute_and_plot_LFP_features(fileNames, 'AbfParams', abfParams ...
+%                                       'OutFolder', outFolder)
 
-%% Plot graphs appropriate for the identified protocol
+% Compute LFP features and plot averaged LFP traces
 featuresLfpAll = cell(nFiles, 1);
 parfor iFile = 1:nFiles
-%for iFile = 1:nFiles
-%    try 
-        % Extract from cell arrays
-        abfParams = abfParamsAllCell{iFile};
-        data = dataAll{iFile};
-        iVecs = iVecsAll{iFile};
-        fileName = filenames{iFile};
+    % Extract from cell arrays
+    abfParams = abfParamsAllCell{iFile};
 
-        % Extract some parameters
-        siUs = abfParams.siUs;
-        expMode = abfParams.expMode;
+    % Extract some parameters
+    isEvokedLfp = abfParams.isEvokedLfp;
+
+    % Only do anything for evoked LFP protocols
+    if isEvokedLfp
+        % Extract from cell arrays
+        fileName = fileNames{iFile};
+
+        % Extract some more parameters
         timeUnits = abfParams.timeUnits;
         channelTypes = abfParams.channelTypes;
         channelUnits = abfParams.channelUnits;
         channelLabels = abfParams.channelLabels;
 
-        % Identify whether this is a current injection protocol
-        %   If so, detect spikes for each sweep and make an F-I plot
-        isCI = identify_CI(iVecs, siUs);
-        if isCI
-            plot_FI(fileName, data, siUs);
-        end
-
-        % Identify whether this is an evoked LFP protocol
-        %   If so, compute the averaged evoked LFP and plot it
-        isEvokedLfp = identify_eLFP(iVecs);
-        if isEvokedLfp
-            % If it is an evoked LFP protocol, compute and plot it
-            [tVecLfp, ~, ~, featuresLfp] = ...
-                compute_and_plot_evoked_LFP(fileName, ...
-                                            'OutFolder', outFolder, ...
-                                            'PlotFlag', true, ...
-                                            'SaveFlag', true, ...
-                                            'ChannelTypes', channelTypes, ...
-                                            'ChannelUnits', channelUnits, ...
-                                            'ChannelLabels', channelLabels);
-        else
-            % Make outputs empty
-            tVecLfp = [];
-            featuresLfp = [];
-        end
+        % Compute the averaged evoked LFP and plot it
+        [tVecLfp, ~, ~, featuresLfp] = ...
+            compute_and_plot_evoked_LFP(fileName, ...
+                                        'OutFolder', outFolder, ...
+                                        'PlotFlag', true, ...
+                                        'SaveFlag', true, ...
+                                        'ChannelTypes', channelTypes, ...
+                                        'ChannelUnits', channelUnits, ...
+                                        'ChannelLabels', channelLabels);
 
         % Set the time endpoints for individual traces
         if isEvokedLfp
@@ -286,36 +297,29 @@ parfor iFile = 1:nFiles
         end
 
         % Plot individual traces
-        if ~isCI
-            plot_traces_abf(fileName, 'Verbose', false, ...
-                'ExpMode', expMode, 'Individually', individually, ...
-                'OutFolder', outFolder, 'TimeUnits', timeUnits, ...
-                'TimeStart', timeStart, 'TimeEnd', timeEnd, ...
-                'ChannelTypes', channelTypes, ...
-                'ChannelUnits', channelUnits, ...
-                'ChannelLabels', channelLabels, ...
-                'FigTypes', figTypes);
-        end
+        plot_traces_abf(fileName, 'Verbose', false, ...
+            'ExpMode', expMode, 'Individually', individually, ...
+            'OutFolder', outFolder, 'TimeUnits', timeUnits, ...
+            'TimeStart', timeStart, 'TimeEnd', timeEnd, ...
+            'ChannelTypes', channelTypes, ...
+            'ChannelUnits', channelUnits, ...
+            'ChannelLabels', channelLabels, ...
+            'FigTypes', figTypes);        
+        
+    else
+        % Make outputs empty
+        featuresLfp = [];
+    end
 
-        % Save in cell arrays
-        featuresLfpAll{iFile} = featuresLfp;
-%   catch ME
-%       fprintf('Traces for %s cannot be plotted!\n', filenames{iFile});
-%       fprintf([ME.identifier, ': ', ME.message]);
-%   end
+    % Save in cell arrays
+    featuresLfpAll{iFile} = featuresLfp;
 end
 
-%% Compute and plot concatenated traces for each channel
-%       if the number of channels and channel types are all the same
-compute_and_plot_concatenated_trace(abfParamsAllStruct, dataReorderedAll, ...
-                                    'SourceDirectory', directory, ...
-                                    'OutFolder', outFolder);
-
-%% If any LFPs were computed, plot a time series for the features
+% If any LFPs were computed, plot a time series for the features
 % Remove empty entries
 isEmpty = cellfun(@isempty, featuresLfpAll);
 lfpFeaturesCell = featuresLfpAll(~isEmpty);
-lfpFileNames = filenames(~isEmpty);
+lfpFileNames = fileNames(~isEmpty);
 
 % Convert to a structure array
 lfpFeaturesStruct = [lfpFeaturesCell{:}];
@@ -323,7 +327,7 @@ lfpFeaturesStruct = [lfpFeaturesCell{:}];
 % Plot each field of the structure as its own time series
 if ~isempty(lfpFeaturesStruct)    
     % Set an x label
-    xLabel = 'filenames';
+    xLabel = 'fileNames';
     
     % Get all field names
     lfpFieldNames = fieldnames(lfpFeaturesStruct);
@@ -348,6 +352,51 @@ if ~isempty(lfpFeaturesStruct)
                     'FigNames', lfpFigNames);
 end
 
+%% Plot individual traces
+parfor iFile = 1:nFiles
+    % Extract from cell arrays
+    abfParams = abfParamsAllCell{iFile};
+
+    % Extract some parameters
+    isCI = abfParams.isCI;
+    isEvokedLfp = abfParams.isEvokedLfp;
+
+    % Don't do this for current injection protocols 
+    %   and evoked LFP protocols
+    %   because individual traces are already plotted
+    if ~isCI && ~isEvokedLfp
+        % Extract from cell arrays
+        fileName = fileNames{iFile};
+
+        % Extract some more parameters
+        expMode = abfParams.expMode;
+        timeUnits = abfParams.timeUnits;
+        channelTypes = abfParams.channelTypes;
+        channelUnits = abfParams.channelUnits;
+        channelLabels = abfParams.channelLabels;
+
+        % Set the time endpoints for individual traces
+        timeStart = timeStartUser;
+        timeEnd = timeEndUser;
+
+        % Plot individual traces
+        plot_traces_abf(fileName, 'Verbose', false, ...
+            'ExpMode', expMode, 'Individually', individually, ...
+            'OutFolder', outFolder, 'TimeUnits', timeUnits, ...
+            'TimeStart', timeStart, 'TimeEnd', timeEnd, ...
+            'ChannelTypes', channelTypes, ...
+            'ChannelUnits', channelUnits, ...
+            'ChannelLabels', channelLabels, ...
+            'FigTypes', figTypes);
+    end
+end
+
+%% Compute and plot concatenated traces for each channel
+%       if the number of channels and channel types are all the same
+compute_and_plot_concatenated_trace(abfParamsAllStruct, dataReorderedAll, ...
+                                    'SourceDirectory', directory, ...
+                                    'OutFolder', outFolder);
+
 %% Copy similar figure types to its own directory
 % TODO
 
@@ -363,13 +412,13 @@ files = dirr(directory, '.abf');
 for file = files'
 
     if nargin >= 3
-        plot_traces_abf(fullfile(directory, filenames{iFile}), expmode, recmode);
+        plot_traces_abf(fullfile(directory, fileNames{iFile}), expmode, recmode);
     else
-        plot_traces_abf(fullfile(directory, filenames{iFile}), expmode);
+        plot_traces_abf(fullfile(directory, fileNames{iFile}), expmode);
     end
 
     % Load abf file
-    abffilename_full = construct_abffilename(filenames{iFile});    % creates full path to abf file robustly
+    abffilename_full = construct_abffilename(fileNames{iFile});    % creates full path to abf file robustly
     if exist('abf2load', 'file') == 2
         [data, siUs] = abf2load(abffilename_full);
     elseif exist('abfload', 'file') == 2
@@ -378,7 +427,7 @@ for file = files'
 
         injection_data = current_data(12000:20000,:,:);
         if std(injection_data,0,1) < 4 & abs(max(max(injection_data)) - min(min(injection_data))) > 100
-            plot_FI_bt(filenames{iFile}, data, siUs);
+            plot_FI_bt(fileNames{iFile}, data, siUs);
         end
     if length(current_data) > 20000            % tests sweeps if values within injection time range are consistent
         
@@ -388,13 +437,13 @@ for file = files'
         [~, max_swp] = max(avgs_byswp);                    % highest sweep by average
         max_swp_peaks_avg = mean(findpeaks(injection_data(:, max_swp)));    % average peak value of greatest sweep
         if reduction < maxSwpSpacing & max_swp_peaks_avg > 100 & size(data, 3) > 1    % sweep avgs should be separated by constant
-            plot_FI(filenames{iFile}, data, siUs);
+            plot_FI(fileNames{iFile}, data, siUs);
         end
     end
 
 maxSwpSpacing = 2;
 
-function plot_all_abfs_dir (directory, expmode)
+function plot_all_abfs (directory, expmode)
 
 [vVecCombined] = combine_sweeps('Vectors', vVecsAll);
 [iVecCombined] = combine_sweeps('Vectors', iVecsAll);
@@ -533,5 +582,39 @@ graphOutputs.timeEnd = timeEnd;
 
 % Save in graph outputs cell array
 graphOutputsAll{iFile} = graphOutputs;
+
+%% Plot graphs appropriate for the identified protocol
+parfor iFile = 1:nFiles
+   try
+   catch ME
+       fprintf('Traces for %s cannot be plotted!\n', fileNames{iFile});
+       fprintf([ME.identifier, ': ', ME.message]);
+   end
+end
+
+%       /home/Matlab/Brians_Functions/identify_CI.m
+
+% Set dependent argument defaults
+if isempty(directory)
+    directory = pwd;
+end
+
+%% Identify protocols
+isCIAll = false(nFiles, 1);
+isEvokedLfpAll = false(nFiles, 1);
+parfor iFile = 1:nFiles
+        % Extract from cell arrays
+        abfParams = abfParamsAllCell{iFile};
+        iVecs = iVecsAll{iFile};
+
+        % Extract some parameters
+        siUs = abfParams.siUs;
+
+        % Identify whether this is a current injection protocol
+        isCIAll(iFile) = identify_CI(iVecs, siUs);
+
+        % Identify whether this is an evoked LFP protocol
+        isEvokedLfpAll(iFile) = identify_eLFP(iVecs);
+end
 
 %}

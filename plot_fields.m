@@ -57,7 +57,7 @@ function h = plot_fields (structArray, varargin)
 %       cd/isfigtype.m
 %
 % Used by:    
-%       cd/plot_all_abfs_dir.m
+%       cd/plot_all_abfs.m
 
 % File History:
 % 2018-09-26 Created by Adam Lu
