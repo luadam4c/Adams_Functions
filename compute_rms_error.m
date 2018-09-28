@@ -12,6 +12,7 @@ function rmsError = compute_rms_error(vec1, varargin)
 %                   default == nanmean(vec1) * ones(size(vec1))
 %
 % Used by:    
+%       /media/adamX/m3ha/optimizer4gabab/import_rawtraces.m
 %       /media/adamX/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
 %
 % File History:
