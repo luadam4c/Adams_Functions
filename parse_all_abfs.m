@@ -35,6 +35,10 @@ function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 %                       'EEG'   - EEG data; x axis in seconds; y-axis in uV
 %                       'patch' - patch data; x axis in ms; y-axis in mV
 %                   default == 'EEG' for 2d data 'patch' for 3d data
+%                   - 'OutFolder': the name of the directory that 
+%                                       plots will be placed
+%                   must be a string scalar or a character vector
+%                   default == same as directory
 %                   - 'TimeUnits': units for time
 %                   must be a string scalar or a character vector
 %                   default == 's' for 2-data data and 'ms' for 3-data data
@@ -70,8 +74,9 @@ function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 %       cd/plot_all_abfs.m
 
 % File History:
-% 2018-09-27 Pulled code from plot_all_abfs.m
-% 2018-09-27 Now saves parameters into a spreadsheet file
+% 2018-09-27 - Pulled code from plot_all_abfs.m
+% 2018-09-27 - Now saves parameters into a spreadsheet file
+% 2018-09-30 - Now defaults outFolder to directory
 % 
 
 %% Hard-coded parameters
@@ -86,6 +91,7 @@ verboseDefault = false;             % print to standard output by default
 useOriginalDefault = false;         % use identify_channels.m instead
                                     % of the original channel labels by default
 expModeDefault = '';                % set later
+outFolderDefault = '';          % set later
 timeUnitsDefault = '';              % set later
 channelTypesDefault = {};           % set later
 channelUnitsDefault = {};           % set later
@@ -112,6 +118,8 @@ addParameter(iP, 'UseOriginal', useOriginalDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ExpMode', expModeDefault, ...
     @(x) isempty(x) || any(validatestring(x, validExpModes)));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
@@ -132,6 +140,7 @@ fileNames = iP.Results.FileNames;
 verbose = iP.Results.Verbose;
 useOriginal = iP.Results.UseOriginal;
 expMode = validatestring(iP.Results.ExpMode, validExpModes);
+outFolder = iP.Results.OutFolder;
 timeUnits = iP.Results.TimeUnits;
 channelTypes = iP.Results.ChannelTypes;
 channelUnits = iP.Results.ChannelUnits;
@@ -143,6 +152,11 @@ identifyProtocols = iP.Results.IdentifyProtocols;
 if ~isempty(channelTypes)
     channelTypes = cellfun(@(x) validatestring(x, validChannelTypes), ...
                             channelTypes, 'UniformOutput', false);
+end
+
+% Set default output folder
+if isempty(outFolder)
+    outFolder = directory;
 end
 
 %% Get file names
@@ -203,7 +217,7 @@ abfParamsAllStruct = [abfParamsAllCell{:}];
 [~, directoryName, ~] = fileparts(directory);
 
 % Set a file name for the params table
-sheetName = fullfile(directory, [directoryName, '_abfParams.', sheetType]);
+sheetName = fullfile(outFolder, [directoryName, '_abfParams.', sheetType]);
 
 % Convert to a table
 abfTable = struct2table(abfParamsAllStruct);
@@ -217,6 +231,8 @@ writetable(abfTable, sheetName);
 OLD CODE:
 
 [~, ~, fileNames] = dirr(directory, '.abf', 'name');
+
+sheetName = fullfile(directory, [directoryName, '_abfParams.', sheetType]);
 
 %}
 
