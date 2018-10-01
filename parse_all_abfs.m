@@ -159,6 +159,9 @@ if isempty(outFolder)
     outFolder = directory;
 end
 
+%% Check if needed output directories exist
+check_dir(outFolder);
+
 %% Get file names
 % Decide on the files to use
 if isempty(fileNames)

@@ -52,6 +52,7 @@ function [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (f
 % 2018-09-21 Considered the case when iVecs or vVecs is a cellarray
 % 2018-09-21 Considered the case when iVecs or vVecs is 3-D
 % 2018-09-23 Added computation of peak amplitude
+% 2018-09-30 Changed default outFolder to 'LFPs' under fileDir
 % TODO: add timeUnits as a parameter with default 'ms'
 % 
 
@@ -122,14 +123,11 @@ end
 % Set (some) dependent argument defaults
 [fileDir, fileBase, ~] = fileparts(fileName);
 if isempty(outFolder)
-    outFolder = fullfile(fileDir, strcat(fileBase, '_traces'));
+    outFolder = fullfile(fileDir, 'LFPs');
 end
 
 %% Check if needed output directories exist
-if exist(outFolder, 'dir') ~= 7
-    mkdir(outFolder);
-    fprintf('New directory is made: %s\n\n', outFolder);
-end
+check_dir(outFolder);
 
 %% Load data and prepare for plotting
 % Load and parse the abf file
@@ -304,5 +302,7 @@ idxCpEnds = zeros(nSweeps, 1);
     idxCpStarts(iSwp), idxCpEnds(iSwp)] = ...
     find_pulse_response_endpoints(vVecs(:, iSwp), siMs, ...
                                     'IvecCpr', iVecs(:, iSwp));
+
+outFolder = fullfile(fileDir, strcat(fileBase, '_traces'));
 
 %}
