@@ -8,10 +8,13 @@ function check_dir (directories, varargin)
 %       varargin    - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+% Requires:
+%       cd/construct_fullfilename.m
 %
 % Used by:
 %       cd/check_subdir.m
 %       cd/compute_and_plot_evoked_LFP.m
+%       cd/create_input_file.m
 %       cd/parse_all_abfs.m
 %       cd/plot_all_abfs.m
 %       cd/plot_traces_abf.m
@@ -21,6 +24,12 @@ function check_dir (directories, varargin)
 % 2018-06-21 Modified from check_subdir.m
 % 2018-09-18 Added input parser and verbose
 % TODO: Use print_or_show_message
+
+%% Hard-coded parameters
+mtitle = 'New Directory Made';              % message title
+
+% TODO:Make this an optional parameter
+messageMode= 'show';
 
 %% Default values for optional arguments
 verboseDefault = true;
@@ -53,29 +62,45 @@ verbose = iP.Results.Verbose;
 
 %% Check directory(ies)
 if iscell(directories)
-    for k = 1:numel(directories)
-        if exist(directories{k}, 'dir') ~= 7
-            mkdir(directories{k});
-            if verbose
-                fprintf('New directory is made: %s\n\n', ...
-                    directories{k});
-            end
-        end
+    for k = 1:numel(directories)        
+        % Construct the full path to the directory
+        directory = construct_fullfilename(directories{k});
+
+        % Check the directory and create it if it doesn't already exist
+        check_dir_helper(directory, mtitle, messageMode, verbose);
     end
 else
-    if exist(directories, 'dir') ~= 7
-        mkdir(directories);
-        if verbose
-            fprintf('New directory is made: %s\n\n', ...
-                    directories);
-        end
-    end
+    % Construct the full path to the directory
+    directory = construct_fullfilename(directories);
+    
+    % Check the directory and create it if it doesn't already exist
+    check_dir_helper(directory, mtitle, messageMode, verbose);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function check_dir_helper(directory, mtitle, messageMode, verbose)
+
+% Check if the directory exists
+if exist(directory, 'dir') ~= 7
+    % Create the directory
+    mkdir(directory);
+
+    % Show message and print to standard output
+    msg = sprintf('New directory is made: %s\n\n', directory);
+    print_or_show_message(msg, 'MTitle', mtitle, ...
+                                'MessageMode', messageMode, ...
+                                'Verbose', verbose);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{ 
 OLD CODE:
+
+if verbose
+    fprintf('New directory is made: %s\n\n', directory);
+end
 
 %}
 

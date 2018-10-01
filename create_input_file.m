@@ -95,12 +95,8 @@ if isempty(outFolder)
 end
 
 % Make sure the output directory exists
-if exist(outFolder, 'dir') ~= 7
-    mkdir(outFolder);
-    msg = sprintf('New directory is made: %s\n\n', outFolder);
-    mtitle = 'New Directory Made';
-    print_or_show_message(msg, 'MTitle', mtitle, 'MessageMode', messageMode);
-end
+check_dir(outFolder);
+
 
 %% Create and check full input file name
 % Split the data directory path into parts
@@ -301,5 +297,12 @@ fclose(fid);
 
 % Create the header with spaces (doesn't work!)
 inputTable.Properties.VariableNames = [dataFileHeader; paramNames];
+
+if exist(outFolder, 'dir') ~= 7
+    mkdir(outFolder);
+    msg = sprintf('New directory is made: %s\n\n', outFolder);
+    mtitle = 'New Directory Made';
+    print_or_show_message(msg, 'MTitle', mtitle, 'MessageMode', messageMode);
+end
 
 %}

@@ -24,7 +24,9 @@ function [fullfilename] = construct_fullfilename (filename, varargin)
 %
 % Requires:
 %       cd/construct_suffix.m
+%
 % Used by:
+%       cd/check_dir.m
 %       /media/adamX/RTCl/neuronlaunch.m
 % 
 % 2017-03-27 Created
