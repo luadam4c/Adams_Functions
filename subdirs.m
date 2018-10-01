@@ -7,6 +7,7 @@ function [subDirs, fullPaths] = subdirs(directory)
 %
 % Used by: 
 %       /media/ashleyX/Recordings/analyze_recordings.m
+%       /home/zhongxiao/SCIDmiceLTP/Code/analyze_SCIDmiceLTP.m
 %       
 
 % File History:
