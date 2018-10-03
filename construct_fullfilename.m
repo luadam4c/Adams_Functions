@@ -4,14 +4,15 @@ function [fullfilename] = construct_fullfilename (filename, varargin)
 % Outputs:
 %       fullfilename    - the full path to file constructed
 % Arguments:
-%       filename    - filename with extension but without directory, 
+%       filename    - filename with file extension, 
+%                       with or without directory, 
 %                       e.g. 'A100110_0008_18.mat'
 %                   must be a string scalar or a character vector
 %       varargin    - 'Directory': a full directory path, 
 %                       e.g. '/media/shareX/share/'
 %                   must be a string scalar or a character vector
 %                   default == pwd
-%                   - 'Suffices': suffix(ces) to add to filebase
+%                   - 'Suffices': suffix(ces) to add to fileBase
 %                   must be a string/character array or a cell array 
 %                       of strings/character arrays
 %                   default == 'nosuffices'
@@ -36,6 +37,7 @@ function [fullfilename] = construct_fullfilename (filename, varargin)
 %                and made it a parameter 
 % 2017-05-04 Made 'suffices' a parameter 
 % 2018-05-08 Changed tabs to spaces and limited width to 80
+% 2018-10-03 Now accepts file names that are full paths
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -80,28 +82,35 @@ directory = iP.Results.Directory;
 suffices = iP.Results.Suffices;
 namevaluepairs = iP.Results.NameValuePairs;
 
-% Set default arguments
-if isempty(directory)
-    directory = pwd;        % default path is current directory
-end
-
 %% Do the job
-% Separate filebase and extension from filename
-[~, filebase, extension] = fileparts(filename);
+% Separate fileDir, fileBase and fileExt from filename
+[fileDir, fileBase, fileExt] = fileparts(filename);
+
+% Decide on the directory if not provided
+if isempty(directory)
+    if ~isempty(fileDir)
+        % Use the original file directory
+        directory = fileDir;
+    else
+        % Use the present working directory
+        directory = pwd;
+    end
+end
 
 % Construct final suffix
 finalSuffix = construct_suffix('Suffices', suffices, ...
                                 'NameValuePairs', namevaluepairs);
 
+                            
 % Construct full file name
 if isempty(finalSuffix)                % if nothing provided
-    % Construct path based on directory, filebase and extension
+    % Construct path based on directory, fileBase and fileExt
     fullfilename = fullfile(directory, ...
-                            [filebase, extension]);    
+                            [fileBase, fileExt]);    
 elseif ~isempty(finalSuffix)              % suffix(ces) is(are) provided
-    % Construct path based on directory, filebase, final suffix and extension
+    % Construct path based on directory, fileBase, final suffix and fileExt
     fullfilename = fullfile(directory, ...
-                            [filebase, '_', finalSuffix, extension]);
+                            [fileBase, '_', finalSuffix, fileExt]);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
