@@ -8,6 +8,14 @@ function check_dir (directories, varargin)
 %       varargin    - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'MessageMode' - how message boxes are shown
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'wait'  - stops program and waits for the user
+%                                   to close the message box
+%                       'show'  - does not stop program but still show the
+%                                   message box
+%                       'none'  - neither stop program nor show a message box
+%                   default == 'wait'
 % Requires:
 %       cd/construct_fullfilename.m
 %
@@ -23,16 +31,15 @@ function check_dir (directories, varargin)
 % File History:
 % 2018-06-21 Modified from check_subdir.m
 % 2018-09-18 Added input parser and verbose
-% TODO: Use print_or_show_message
+% 2018-10-03 Now uses print_or_show_message
 
 %% Hard-coded parameters
+validMessageModes = {'wait', 'show', 'none'};
 mtitle = 'New Directory Made';              % message title
 
-% TODO:Make this an optional parameter
-messageMode= 'show';
-
 %% Default values for optional arguments
-verboseDefault = true;
+verboseDefault = true;              % print to standard output by default
+messageModeDefault = 'none';        % do not display message box by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -55,10 +62,13 @@ addRequired(iP, 'directories', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'MessageMode', messageModeDefault, ...
+    @(x) any(validatestring(x, validMessageModes)));
 
 % Read from the Input Parser
 parse(iP, directories, varargin{:});
 verbose = iP.Results.Verbose;
+messageMode = validatestring(iP.Results.MessageMode, validMessageModes);
 
 %% Check directory(ies)
 if iscell(directories)
@@ -101,6 +111,8 @@ OLD CODE:
 if verbose
     fprintf('New directory is made: %s\n\n', directory);
 end
+
+messageMode= 'show';
 
 %}
 

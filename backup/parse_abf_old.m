@@ -1,6 +1,8 @@
-function [parsedParams, parsedData] = parse_abf (fileName, varargin)
+function [parsedParams, data, tVec, vVecs, iVecs, gVecs, dataReordered] = ...
+                parse_abf(fileName, varargin)
 %% Loads and parses an abf file
-% Usage: [parsedParams, parsedData] = parse_abf (fileName, varargin)
+% Usage: [parsedParams, data, tVec, vVecs, iVecs, gVecs, dataReordered] = ...
+%               parse_abf(fileName, varargin)
 % Explanation:
 %   This function does the following:
 %       1. Construct the full path to the abf file
@@ -13,35 +15,32 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %       [parsedParams, data, tVec, vVecs, iVecs, gVecs] = ...
 %           parse_abf('20180914C_0001');
 % Outputs:
-%       parsedParams    - a structure containing the following fields:
-%                           siUs
-%                           siMs
-%                           siSeconds
-%                           siPlot
-%                           timeUnits
-%                           channelTypes
-%                           channelUnits
-%                           channelLabels
-%                           nDimensions
-%                           nSamples
-%                           nChannels
-%                           nSweeps
-%       parsedData      - a structure containing the following fields:
-%                           data: full data as returned by abf2load.m
-%                           tVec: a constructed time vector with units 
-%                                   given by 'TimeUnits'
-%                           vVecs: any identified voltage vector(s) 
-%                                   (Note: 2nd dimension: sweep; 
-%                                       optional 3rd dimension: channel)
-%                           iVecs: any identified current vector(s)
-%                                   (Note: 2nd dimension: sweep; 
-%                                       optional 3rd dimension: channel)
-%                           gVecs: any identified conductance vector(s)
-%                                   (Note: 2nd dimension: sweep; 
-%                                       optional 3rd dimension: channel)
-%                           dataReordered: data reordered so that 
-%                                       the 2nd dimension is sweep
-%                                        and 3rd dimension is channel
+%       parsedParams   - a structure containing the following fields:
+%                       siUs
+%                       siMs
+%                       siSeconds
+%                       siPlot
+%                       timeUnits
+%                       channelTypes
+%                       channelUnits
+%                       channelLabels
+%                       nDimensions
+%                       nSamples
+%                       nChannels
+%                       nSweeps
+%       data        - full data
+%       tVec        - a constructed time vector with units given by 'TimeUnits'
+%       vVecs       - any identified voltage vector(s) 
+%                       (Note: 2nd dimension: sweep; 
+%                               optional 3rd dimension: channel)
+%       iVecs       - any identified current vector(s)
+%                       (Note: 2nd dimension: sweep; 
+%                               optional 3rd dimension: channel)
+%       gVecs       - any identified conductance vector(s)
+%                       (Note: 2nd dimension: sweep; 
+%                               optional 3rd dimension: channel)
+%       dataReordered - data reordered so that the 2nd dimension is sweep
+%                       and 3rd dimension is channel
 %
 % Arguments:
 %       fileName    - file name could be either the full path or 
@@ -397,7 +396,7 @@ if identifyProtocols
 end
 
 %% Return and/or print results
-% Store parameters in parsedParams
+% Store in parsedParams
 parsedParams.abfFullFileName = abfFullFileName;
 parsedParams.expMode = expMode;
 parsedParams.nDimensions = nDimensions;
@@ -420,14 +419,6 @@ parsedParams.channelTypes = channelTypes;
 parsedParams.channelUnits = channelUnits;
 parsedParams.channelLabels = channelLabels;
 parsedParams.fileInfo = fileInfo;
-
-% Store arrays and vectors in parsedData
-parsedData.data = data;
-parsedData.tVec = tVec;
-parsedData.vVecs = vVecs;
-parsedData.iVecs = iVecs;
-parsedData.gVecs = gVecs;
-parsedData.dataReordered = dataReordered;
 
 % Write results to standard output
 if verbose

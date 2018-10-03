@@ -106,6 +106,7 @@ function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 % 2018-09-30 - Now defaults outFolder to directory
 %                   but plots individual traces to subdirectories
 % 2018-09-30 - Changed LFP tuning curves outFolder to fullfile(outFolder, 'LFP')
+% 2018-10-03 - Updated usage of parse_all_abfs.m
 % TODO: Restructure code so that each type of plot is its own subfunction
 
 %% Hard-coded parameters
@@ -240,8 +241,7 @@ end
 nFiles = numel(fileNames);
 
 %% Parse and identify protocols from each file in the directory
-[abfParamsAllStruct, dataAll, tVecAll, vVecsAll, ...
-    iVecsAll, gVecsAll, dataReorderedAll, abfParamsAllCell] = ...
+[abfParamsAllStruct, abfDataAllStruct, abfParamsAllCell] = ...
     parse_all_abfs('FileNames', fileNames, ...
                     'Directory', directory, 'OutFolder', outFolder, ...
                     'Verbose', false, 'UseOriginal', useOriginal, ...
@@ -250,6 +250,13 @@ nFiles = numel(fileNames);
                     'ChannelUnits', channelUnitsUser, ...
                     'ChannelLabels', channelLabelsUser, ...
                     'IdentifyProtocols', true);
+
+dataAll
+tVecAll
+vVecsAll
+iVecsAll
+gVecsAll
+dataReorderedAll
 
 %% Plot F-I plots
 parfor iFile = 1:nFiles

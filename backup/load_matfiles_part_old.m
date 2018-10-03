@@ -1,12 +1,10 @@
-function [params, vectors] = load_matfiles_part (newinfolder, datfn, nswps)
+function [ndps, sims, tvec0, gvec0s, ivec0s, vvec0s, gvec1s, ivec1s, vvec1s, ndps2, sims2, tvec2, gvec2s, ivec2s, vvec2s, vvec3s] = load_matfiles_part (newinfolder, datfn, nswps)
 % Load set of matfiles and return relevant info
 % Usage: [ndps, sims, tvec0, gvec0s, ivec0s, vvec0s, gvec1s, ivec1s, vvec1s, ndps2, sims2, tvec2, gvec2s, ivec2s, vvec2s, vvec3s] = load_matfiles_part (newinfolder, datfn, nswps)
 %
 % Used by:
 %		/media/adamX/m3ha/data_dclamp/dclampDataExtractor.m
-% 
-
-% File History:
+%
 % 2016-11-07 Moved from dclampDataExtractor.m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -61,15 +59,3 @@ parfor swp = 1:nswps		% FOR each sweep
 	vvec3s(:, swp) = m.d_mfmaf(:, 4);
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%{
-OLD CODE:
-
-[ndps, sims, tvec0, gvec0s, ivec0s, vvec0s, gvec1s, ivec1s, ...
-    vvec1s, ndps2, sims2, tvec2, gvec2s, ivec2s, vvec2s, vvec3s] = ...
-    load_matfiles_part (newinfolder, datfn, nswps)
-
-%}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

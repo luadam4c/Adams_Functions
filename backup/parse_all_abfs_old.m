@@ -1,19 +1,20 @@
-function [allParsedParamsStruct, allParsedDataStruct, ...
-            allParsedParamsCell, allParsedDataCell] = parse_all_abfs (varargin)
+function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
+            gVecsAll, dataReorderedAll, abfParamsAllCell] = ...
+                parse_all_abfs (varargin)
 %% Parses all abf files in the directory
-% Usage: [allParsedParamsStruct, allParsedDataStruct, ...
-%           allParsedParamsCell, allParsedDataCell] = parse_all_abfs (varargin)
+% Usage: [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
+%           gVecsAll, dataReorderedAll, abfParamsAllCell] = ...
+%               parse_all_abfs (varargin)
 % Explanation:
 %       This function calls parse_abf.m with 'IdentifyProtocols' == true
 %           for all the .abf files in the provided directory (default pwd)
 % Example(s):
-%       [allParsedParams, allParsedData] = parse_all_abfs;
+%       [abfParams, data, tVec, vVecs, iVecs, gVecs] = ...
+%           parse_all_abfs;
 % Outputs:
-%       (see parse_abf.m for details of parsedParams & parsedData)
-%       allParsedParamsStruct - a structure array of parsedParams
-%       allParsedDataStruct   - a structure array of parsedData
-%       allParsedParamsCell   - a cell array of parsedParams
-%       allParsedDataCell     - a cell array of parsedData
+%       structure array of abfParams (see parse_abf.m)
+%       cell arrays of other outputs of parse_abf.m
+%
 % Arguments:
 %       varargin    - 'Directory': the name of the directory containing 
 %                                   the abf files, e.g. '20161216'
@@ -76,9 +77,6 @@ function [allParsedParamsStruct, allParsedDataStruct, ...
 % 2018-09-27 - Pulled code from plot_all_abfs.m
 % 2018-09-27 - Now saves parameters into a spreadsheet file
 % 2018-09-30 - Now defaults outFolder to directory
-% 2018-10-03 - Changed usage of parse_abf.m
-% 2018-10-03 - Changed outputs to allParsedParamsStruct, allParsedDataStruct, 
-%                   allParsedParamsCell, allParsedDataCell
 % 
 
 %% Hard-coded parameters
@@ -172,10 +170,14 @@ if isempty(fileNames)
     if isempty(files)
         fprintf('No .abf files in current directory!\n');
         fprintf('Type ''help %s'' for usage\n', mfilename);
-        allParsedParamsStruct = struct;
-        allParsedDataStruct = struct;
-        allParsedParamsCell = cell;
-        allParsedDataCell = cell;
+        abfParamsAllStruct = struct;
+        dataAll = {};
+        tVecAll = {};
+        vVecsAll = {};
+        iVecsAll = {};
+        gVecsAll = {};
+        dataReorderedAll = {};
+        abfParamsAllCell = {};
         return
     end
 
@@ -187,12 +189,19 @@ end
 nFiles = numel(fileNames);
 
 %% Loop through all .abf files
-allParsedParamsCell = cell(nFiles, 1);
-allParsedDataCell = cell(nFiles, 1);
+abfParamsAllCell = cell(nFiles, 1);
+dataAll = cell(nFiles, 1);
+tVecAll = cell(nFiles, 1);
+vVecsAll = cell(nFiles, 1);
+iVecsAll = cell(nFiles, 1);
+gVecsAll = cell(nFiles, 1);
+dataReorderedAll = cell(nFiles, 1);
 parfor iFile = 1:nFiles
 %for iFile = 1:nFiles
     % Parse the abf file
-    [allParsedParamsCell{iFile}, allParsedDataCell{iFile}] = ...
+    [abfParamsAllCell{iFile}, dataAll{iFile}, ...
+        tVecAll{iFile}, vVecsAll{iFile}, ...
+        iVecsAll{iFile}, gVecsAll{iFile}, dataReorderedAll{iFile}] = ...
         parse_abf(fileNames{iFile}, 'Verbose', verbose, ...
                     'UseOriginal', useOriginal, ...
                     'ExpMode', expMode, ...
@@ -204,8 +213,7 @@ parfor iFile = 1:nFiles
 end
 
 % Convert to a struct array
-allParsedParamsStruct = [allParsedParamsCell{:}];
-allParsedDataStruct = [allParsedDataCell{:}];
+abfParamsAllStruct = [abfParamsAllCell{:}];
 
 %% Print parameters to a file
 % Get the directory name
@@ -215,7 +223,7 @@ allParsedDataStruct = [allParsedDataCell{:}];
 sheetName = fullfile(outFolder, [directoryName, '_abfParams.', sheetType]);
 
 % Convert to a table
-abfTable = struct2table(allParsedParamsStruct);
+abfTable = struct2table(abfParamsAllStruct);
 
 % Print the table to a file
 writetable(abfTable, sheetName);
@@ -228,25 +236,6 @@ OLD CODE:
 [~, ~, fileNames] = dirr(directory, '.abf', 'name');
 
 sheetName = fullfile(directory, [directoryName, '_abfParams.', sheetType]);
-
-dataAll = {};
-tVecAll = {};
-vVecsAll = {};
-iVecsAll = {};
-gVecsAll = {};
-dataReorderedAll = {};
-allParsedParamsCell = {};
-
-dataAll = cell(nFiles, 1);
-tVecAll = cell(nFiles, 1);
-vVecsAll = cell(nFiles, 1);
-iVecsAll = cell(nFiles, 1);
-gVecsAll = cell(nFiles, 1);
-dataReorderedAll = cell(nFiles, 1);
-
-[allParsedParamsCell{iFile}, dataAll{iFile}, ...
-    tVecAll{iFile}, vVecsAll{iFile}, ...
-    iVecsAll{iFile}, gVecsAll{iFile}, dataReorderedAll{iFile}] = ...
 
 %}
 

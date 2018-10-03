@@ -95,7 +95,7 @@ if isempty(outFolder)
 end
 
 % Make sure the output directory exists
-check_dir(outFolder);
+check_dir(outFolder, 'MessageMode', 'show');
 
 
 %% Create and check full input file name
