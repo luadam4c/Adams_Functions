@@ -274,6 +274,7 @@ parfor iFile = 1:nFiles
 end
 
 %% Deal with LFP protocols
+% TODO: Make this part its own function:
 % [lfpFeaturesStruct, lfpFileNames, xTickLabels, lfpFigNames] = 
 %       compute_and_plot_LFP_features(fileNames, 'AbfParams', abfParams ...
 %                                       'OutFolder', outFolder)

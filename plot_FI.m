@@ -33,6 +33,11 @@ function plot_FI (filename, alldata, sius, outfolder)
 % 2017-05-01 - BT - Converted spif_time to use identify_CI.m
 % 2017-06-16 - AL - Updated 
 % 2018-01-24 - Added isdeployed
+% TODO: Change the arguments structure
+% TODO: Improve documentation and code structure
+% TODO: Use parse_abf.m
+% TODO: The injection period isn't right in some cases?
+%       See /media/ashleyX/Recordings/20180910/2018_09_10_A_0000_traces
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

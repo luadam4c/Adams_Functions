@@ -239,6 +239,8 @@ end
 %% Locate home directory
 if exist('/media/adamX/m3ha/', 'dir') == 7
     homedirectory = '/media/adamX/m3ha/';
+elseif exist('/home/adam/m3ha/', 'dir') == 7
+    homedirectory = '/home/adam/m3ha/';
 elseif exist('/scratch/al4ng/m3ha/', 'dir') == 7
     homedirectory = '/scratch/al4ng/m3ha/';
 else
