@@ -18,3 +18,12 @@ absmax1 = max(abs(vec1));
 absmax2 = max(abs(vec2));
 scaling_factor = round((absmax2/absmax1) / precision) * precision;
 vec1_rescaled = scaling_factor * vec1;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%{
+OLD CODE:
+
+%}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

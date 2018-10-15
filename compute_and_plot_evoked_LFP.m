@@ -38,6 +38,12 @@ function [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (f
 %                           'Conductance'
 %                           'Undefined'
 %                   default == detected with identify_channels()
+%                   - 'ParsedParams': parsed parameters returned by parse_abf.m
+%                   must be a scalar structure
+%                   default == what the file provides
+%                   - 'ParsedData': parsed data returned by parse_abf.m
+%                   must be a scalar structure
+%                   default == what the file provides
 %
 % Requires:
 %       cd/parse_abf.m
@@ -48,17 +54,21 @@ function [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (f
 %       cd/plot_all_abfs.m
 
 % File History:
-% 2018-09-17 Created by Adam Lu
-% 2018-09-21 Considered the case when iVecs or vVecs is a cellarray
-% 2018-09-21 Considered the case when iVecs or vVecs is 3-D
-% 2018-09-23 Added computation of peak amplitude
-% 2018-09-30 Changed default outFolder to 'LFPs' under fileDir
+% 2018-09-17 - Created by Adam Lu
+% 2018-09-21 - Considered the case when iVecs or vVecs is a cellarray
+% 2018-09-21 - Considered the case when iVecs or vVecs is 3-D
+% 2018-09-23 - Added computation of peak amplitude
+% 2018-09-30 - Changed default outFolder to 'LFPs' under fileDir
+% 2018-10-03 - Updated usage of parse_abf.m
+% 2018-10-03 - Added ParsedData, ParsedParams as optional arguments
+% 2018-10-09 - Updated usage of find_pulse_response_endpoints.m
 % TODO: add timeUnits as a parameter with default 'ms'
 % 
 
 %% Hard-coded parameters
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
 baselineLengthMs = 5;           % baseline length in ms
+responseLengthMs - 20;          % response length in ms
 colorAnnotations = 'r';
 
 %% Default values for optional arguments
@@ -69,6 +79,8 @@ figTypesDefault = 'png';        % default figure type(s) for saving
 channelTypesDefault = {};       % set later
 channelUnitsDefault = {};       % set later
 channelLabelsDefault = {};      % set later
+parsedParamsDefault = [];       % set later
+parsedDataDefault = [];         % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -103,6 +115,10 @@ addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
     @(x) isempty(x) || iscellstr(x));
 addParameter(iP, 'ChannelLabels', channelLabelsDefault, ...
     @(x) isempty(x) || iscellstr(x));
+addParameter(iP, 'ParsedParams', parsedParamsDefault, ...
+    @(x) validateattributes(x, {'struct'}, {'scalar'}));
+addParameter(iP, 'ParsedData', parsedDataDefault, ...
+    @(x) validateattributes(x, {'struct'}, {'scalar'}));
 
 % Read from the Input Parser
 parse(iP, fileName, varargin{:});
@@ -113,6 +129,8 @@ saveFlag = iP.Results.SaveFlag;
 channelTypes = iP.Results.ChannelTypes;
 channelUnits = iP.Results.ChannelUnits;
 channelLabels = iP.Results.ChannelLabels;
+parsedParams = iP.Results.ParsedParams;
+parsedData = iP.Results.ParsedData;
 
 % Validate channel types
 if ~isempty(channelTypes)
@@ -130,12 +148,19 @@ end
 check_dir(outFolder);
 
 %% Load data and prepare for plotting
-% Load and parse the abf file
-[abfParams, ~, tVec, vVecs, iVecs] = ...
-    parse_abf(fileName, 'Verbose', false, ...
-              'ChannelTypes', channelTypes, ...
-              'ChannelUnits', channelUnits, ...
-              'ChannelLabels', channelLabels);
+% Load and parse the abf file if parsedParams and parsedData not both provided
+if isempty(parsedParams) || isempty(parsedData)
+    [parsedParams, parsedData] = ...
+        parse_abf(fileName, 'Verbose', false, ...
+                  'ChannelTypes', channelTypes, ...
+                  'ChannelUnits', channelUnits, ...
+                  'ChannelLabels', channelLabels);
+end
+
+% Extract vectors
+tVec = parsedData.tVec;
+vVecs = parsedData.vVecs;
+iVecs = parsedData.iVecs;
 
 % If vVecs or iVecs is a cellarray, use the first element
 if iscell(vVecs)
@@ -154,9 +179,9 @@ if ndims(iVecs) > 2
 end
 
 % Extract the parsed parameters
-channelLabels = abfParams.channelLabels;
-nSweeps = abfParams.nSweeps;
-siMs = abfParams.siMs;
+channelLabels = parsedParams.channelLabels;
+nSweeps = parsedParams.nSweeps;
+siMs = parsedParams.siMs;
 
 % Compute the baseline length in samples
 baselineLengthSamples = floor(baselineLengthMs / siMs);
@@ -176,8 +201,9 @@ parfor iSwp = 1:nSweeps
     [idxCprStarts(iSwp), idxCprEnds(iSwp), ~, ...
         idxCpStarts(iSwp), idxCpEnds(iSwp)] = ...
         find_pulse_response_endpoints(vVecCpr, siMs, ...
-                                        'IvecCpr', iVecCpr, ...
-                                        'BaselineLengthMs', baselineLengthMs);
+                                        'PulseVectors', iVecCpr, ...
+                                        'BaselineLengthMs', baselineLengthMs, ...
+                                        'ResponseLengthMs', responseLengthMs);
 end
 
 % Compute the number of samples in each current pulse response
@@ -305,4 +331,12 @@ idxCpEnds = zeros(nSweeps, 1);
 
 outFolder = fullfile(fileDir, strcat(fileBase, '_traces'));
 
+[parsedParams, ~, tVec, vVecs, iVecs] = ...
+    parse_abf(fileName, 'Verbose', false, ...
+              'ChannelTypes', channelTypes, ...
+              'ChannelUnits', channelUnits, ...
+              'ChannelLabels', channelLabels);
+
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

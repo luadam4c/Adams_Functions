@@ -24,9 +24,10 @@ function [isEvokedLfp] = identify_eLFP (iVecsORfileName, varargin)
 %       cd/parse_abf.m
 
 % File History:
-% 2018-09-17 Created by Adam Lu
-% 2018-09-21 Considered the case when iVecs is a cellarray
-% 2018-09-21 Considered the case when iVecs is 3-D
+% 2018-09-17 - Created by Adam Lu
+% 2018-09-21 - Considered the case when iVecs is a cellarray
+% 2018-09-21 - Considered the case when iVecs is 3-D
+% 2018-10-03 - Updated usage of parse_abf.m
 % 
 
 %% Hard-coded parameters
@@ -69,13 +70,13 @@ end
 
 %% Preparation
 if ischar(iVecsORfileName) || isstring(iVecsORfileName)
-    % The first arguement is a file name
+    % The first argument is a file name
     fileName = iVecsORfileName;
 
     % Parse the abf file to get the current vectors
-    [~, ~, ~, ~, iVecs, ~] = ...
-        parse_abf(fileName, 'Verbose', false, ...
-                    'ChannelTypes', channelTypes);
+    [~, parsedData] = parse_abf(fileName, 'Verbose', false, ...
+                                'ChannelTypes', channelTypes);
+    iVecs = parsedData.iVecs;
 
     % If iVecs is a cellarray, use the first element
     if iscell(iVecs)
@@ -163,4 +164,10 @@ ampCp = iVecs(idxCpMid, iSwp);
 
 disp('done');
 
+[~, ~, ~, ~, iVecs, ~] = ...
+    parse_abf(fileName, 'Verbose', false, ...
+                'ChannelTypes', channelTypes);
+
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

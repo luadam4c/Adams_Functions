@@ -22,16 +22,17 @@ function print_structure (structure, varargin)
 %                   default == inputname(1)
 %
 % Requires:
-%       /home/Matlab/Miras_Functions/print_cellstr.m
+%       cd/print_cellstr.m
 %
 % Used by:
-%       /home/Matlab/Adams_Functions/find_passive_params.m
+%       cd/find_passive_params.m
 %
 % 2016-11-02 Created
 % 2018-06-21 Added comments and input parser
 % 2018-06-21 Added cell string and now uses print_cellstr.m
 % 2018-06-21 Now uses mat2str
 % 2018-06-21 Added FileID, NTabs, StructName
+% TODO: Deal with non-scalar structures
 % TODO: Change disp() to fprintf for it to work when fileID is not 1
 
 %% Default values for optional arguments
@@ -40,21 +41,6 @@ nTabsDefault = 1;                       % default number of tabs before fields
 structNameDefault = inputname(1);       % default structure name
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Add directories to search path for required functions across servers
-if ~isdeployed
-    if exist(fullfile(pwd, 'Miras_Functions'), 'dir') == 7
-        functionsdirectory = pwd;
-    elseif exist('/home/Matlab/', 'dir') == 7
-        functionsDirectory = '/home/Matlab/';
-    elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
-        functionsDirectory = '/scratch/al4ng/Matlab/';
-    else
-        error('Valid functionsDirectory does not exist!');
-    end
-    addpath(fullfile(functionsDirectory, 'Miras_Functions')); 
-                                            % for print_cellstr.m
-end
 
 %% Deal with arguments
 % Check number of required arguments
@@ -85,6 +71,13 @@ parse(iP, structure, varargin{:});
 fileId = iP.Results.FileId;
 nTabs = iP.Results.NTabs;
 structName = iP.Results.StructName;
+
+%% Preparation
+% Display warning if a nonscalar structure array is passed
+if numel(structure) > 1
+    fprintf(['Warning: Only the first entry of a non-scalar ', ...
+            'structure array will be printed.\n\n']);
+end
 
 %% Perform task
 % Print structure name
@@ -163,4 +156,21 @@ fprintf(fileId, '''%s'' has value:\n', fieldName);
 
 fprintf(fileId, [repmat('\t', 1, nTabs - 1), '''%s'':\n'], inputname(1));
 
+%% Add directories to search path for required functions across servers
+if ~isdeployed
+    if exist(fullfile(pwd, 'Miras_Functions'), 'dir') == 7
+        functionsdirectory = pwd;
+    elseif exist('/home/Matlab/', 'dir') == 7
+        functionsDirectory = '/home/Matlab/';
+    elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
+        functionsDirectory = '/scratch/al4ng/Matlab/';
+    else
+        error('Valid functionsDirectory does not exist!');
+    end
+    addpath(fullfile(functionsDirectory, 'Miras_Functions')); 
+                                            % for print_cellstr.m
+end
+
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

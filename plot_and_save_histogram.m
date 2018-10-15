@@ -2,10 +2,10 @@ function plot_and_save_histogram (h, vec, veclabel, countlabel, outfolder, filen
 %% Plots and saves a stacked histogram for a vector and color code according to class
 % Usage: plot_and_save_histogram (h, vec, veclabel, countlabel, outfolder, filename, nbins, title_mod, class_vec, class_labels)
 %
-% Requires:	
-%		/home/Matlab/Adams_Functions/histg.m
-% Used by:	
-%		/media/adamX/m3ha/data_dclamp/PlotHistogramsRefineThreshold.m
+% Requires:    
+%       cd/histg.m
+% Used by:    
+%       /media/adamX/m3ha/data_dclamp/PlotHistogramsRefineThreshold.m
 % 
 % 2016-??-?? Created
 % 2016-10-14 Moved to /home/Matlab/Adams_Functions/
@@ -21,19 +21,19 @@ function plot_and_save_histogram (h, vec, veclabel, countlabel, outfolder, filen
 %% Set defaults
 % UNFINISHED
 if nargin < 3
-	veclabel = 'something';
+    veclabel = 'something';
 end
 if nargin < 7
-	nbins = 50;
+    nbins = 50;
 end
 if nargin < 8
-	title_mod = '';
+    title_mod = '';
 end
 if nargin < 9
-	class_vec = [];
+    class_vec = [];
 end
 if nargin < 10
-	class_labels = [];
+    class_labels = [];
 end
 
 %% Create figure and plot histogram
@@ -42,31 +42,35 @@ h = figure(h);
 set(h, 'Name', ['Distribution of ', veclabel]);
 clf(h);
 if ~isempty(class_vec) && ~isempty(class_labels)
-	opt.nbins = nbins;			% needed for histg
-	opt.group_names = class_labels';	% needed for histg
-	histg(vec, class_vec, opt);		% plots stacked histogram
-	legend('Location', 'eastoutside');
+    opt.nbins = nbins;            % needed for histg
+    opt.group_names = class_labels';    % needed for histg
+    histg(vec, class_vec, opt);        % plots stacked histogram
+    legend('Location', 'eastoutside');
 else
-	histogram(vec, nbins);			% plots regular histogram
+    histogram(vec, nbins);            % plots regular histogram
 end
 xlabel(veclabel)
 ylabel(countlabel)
 title(['Distribution of ', veclabel, title_mod]);
 
 if nargin >= 6
-	figname = fullfile(outfolder, filename);
-	saveas(h, figname);
+    figname = fullfile(outfolder, filename);
+    saveas(h, figname);
 end
 
-% Old codes
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %{
+OLD CODE:
 
 if fitmode == 0
-	title(['Distribution of ', veclabel, ' (all)']);
+    title(['Distribution of ', veclabel, ' (all)']);
 elseif fitmode == 1
-	title(['Distribution of ', veclabel, ' (100%, 200%, 400% g incr)']);
+    title(['Distribution of ', veclabel, ' (100%, 200%, 400% g incr)']);
 elseif fitmode == 2
-	title(['Distribution of ', veclabel, ' (for fitting)']);
+    title(['Distribution of ', veclabel, ' (for fitting)']);
 end
 
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

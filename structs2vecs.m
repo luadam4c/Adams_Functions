@@ -14,6 +14,7 @@ function [vectors, vector_names] = structs2vecs(structs)
 % 2016-12-05 Moved from PlotHistogramsRefineThreshold.m, originally Brian Truong's code
 % 2017-01-25 Now stores field names in vector_names
 % 2017-01-25 Now allows fields to have different data types
+% TODO: Use struct2table, than convert
 %
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -58,3 +59,11 @@ else
 	end
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%{
+OLD CODE:
+
+%}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

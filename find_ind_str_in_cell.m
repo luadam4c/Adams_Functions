@@ -43,9 +43,15 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 %                   default == numel(cellArray)
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/intersect_over_cells.m
+%       cd/intersect_over_cells.m
 %
 % Used by:    
+%       cd/validate_string.m
+%       cd/update_params.m
+%       cd/increment_editbox.m
+%       cd/m3ha_correct_unbalanced_bridge.m
+%       cd/ZG_extract_all_IEIs.m
+%       cd/ZG_extract_all_data.m
 %       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
 %       /media/adamX/m3ha/data_dclamp/PlotHistogramsRefineThreshold.m
 %       /media/adamX/m3ha/data_dclamp/test_sweep.m
@@ -59,11 +65,6 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 %       /media/adamX/RTCl/raster_plot.m
 %       /media/adamX/RTCl/tuning_curves.m
 %       /media/adamX/RTCl/single_neuron.m
-%       /home/Matlab/Adams_Functions/validate_string.m
-%       /home/Matlab/Adams_Functions/update_params.m
-%       /home/Matlab/Adams_Functions/increment_editbox.m
-%       /home/Matlab/Adams_Functions/ZG_extract_all_IEIs.m
-%       /home/Matlab/Adams_Functions/ZG_extract_all_data.m
 %       /home/Matlab/minEASE/minEASE.m
 %       /home/Matlab/minEASE/combine_eventInfo.m
 %       /home/Matlab/minEASE/extract_from_minEASE_output_filename.m
@@ -244,3 +245,5 @@ elseif strcmpi(searchMode, 'substrings')    % String can be a substring
 end
 
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

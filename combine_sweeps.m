@@ -49,10 +49,11 @@ function [allData, timeVec] = combine_sweeps(varargin)
 %                   default == false
 %
 % Requires:
+%       cd/identify_channels.m
+%       cd/find_data_files.m
+%       cd/locate_functionsdir.m
+%       cd/print_or_show_message.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m
-%       /home/Matlab/Brians_Functions/identify_channels.m
-%       /home/Matlab/Adams_Functions/find_data_files.m
-%       /home/Matlab/Adams_Functions/print_or_show_message.m
 %
 % Used by:    
 %       /home/Matlab/minEASE/minEASE.m
@@ -104,20 +105,13 @@ verboseDefault = false;         % default: Program does not print message
 
 %% Add directories to search path for required functions
 if ~isdeployed
-    if exist('/home/Matlab/', 'dir') == 7
-        functionsDirectory = '/home/Matlab/';
-    elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
-        functionsDirectory = '/scratch/al4ng/Matlab/';
-    else
-        error('Valid functionsDirectory does not exist!');
-    end
-    addpath(fullfile(functionsDirectory, '/Downloaded_Functions/'));
-                                                % for abf2load.m
-    addpath(fullfile(functionsDirectory, '/Brians_Functions/'));
-                                                % for identify_channels.m
-    addpath(fullfile(functionsDirectory, '/Adams_Functions/'));
-                                                % for find_data_files.m
+    % Locate the functions directory
+    functionsDirectory = locate_functionsdir;
+
+    % Add path for abf2load.m, abfload.m
+    addpath(fullfile(functionsDirectory, 'Downloaded_Functions'));
 end
+
                                                 
 % Set up Input Parser Scheme
 iP = inputParser;         
@@ -394,4 +388,11 @@ showMessage = iP.Results.ShowMessage;
                                     'MTitle', mTitle, 'Icon', icon);
         end
 
+addpath(fullfile(functionsDirectory, '/Brians_Functions/'));
+                                            % for identify_channels.m
+addpath(fullfile(functionsDirectory, '/Adams_Functions/'));
+                                            % for find_data_files.m
+
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

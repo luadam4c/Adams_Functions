@@ -42,7 +42,7 @@ function h = plot_traces (tVec, data, varargin)
 %                   default == {'Trace #1', 'Trace #2', ...}
 %                   - 'LegendLocation': location for legend
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       ''  - use default
+%                       'auto'      - use default
 %                       'suppress'  - no legend
 %                       anything else recognized by the legend() function
 %                   default == 'suppress' if nTraces == 1 
@@ -67,6 +67,7 @@ function h = plot_traces (tVec, data, varargin)
 %
 % Requires:
 %       cd/isfigtype.m
+%       cd/islegendlocation.m
 %       cd/save_all_figtypes.m
 %
 % Used by:
@@ -79,22 +80,15 @@ function h = plot_traces (tVec, data, varargin)
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel'};
-validLegendLocations = {'', 'suppress', ...
-                        'north', 'south', 'east', 'west', ...
-                        'northeast', 'northwest', 'southeast', 'southwest', ...
-                        'northoutside', 'southoutside', 'eastoutside', ...
-                        'westoutside', 'northeastoutside', ...
-                        'northwestoutside', 'southeastoutside', ...
-                        'southwestoutside', 'best', 'bestoutside', 'none'};
 
 %% Default values for optional arguments
 plotModeDefault = 'overlapped'; % plot traces overlapped by default
-xlimitsDefault = [];            % set later
-ylimitsDefault = [];            % set later
+xLimitsDefault = [];            % set later
+yLimitsDefault = [];            % set later
 xLabelDefault = 'Time';         % the default x-axis label
 yLabelDefault = '';             % set later
 traceLabelsDefault = '';        % set later
-legendLocationDefault = '';     % set later
+legendLocationDefault = 'auto'; % set later
 figTitleDefault = '';           % set later
 figNumberDefault = [];          % invisible figure by default
 figNameDefault = '';            % don't save figure by default
@@ -120,10 +114,10 @@ addRequired(iP, 'data', ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'PlotMode', plotModeDefault, ...
     @(x) any(validatestring(x, validPlotModes)));
-addParameter(iP, 'XLimits', xlimitsDefault, ...
+addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
-addParameter(iP, 'YLimits', ylimitsDefault, ...
+addParameter(iP, 'YLimits', yLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'XLabel', xLabelDefault, ...
@@ -133,7 +127,7 @@ addParameter(iP, 'YLabel', yLabelDefault, ...
 addParameter(iP, 'TraceLabels', traceLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
-    @(x) any(validatestring(x, validLegendLocations)));
+    @(x) all(islegendlocation(x, 'ValidateMode', true)));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigNumber', figNumberDefault, ...
@@ -146,13 +140,13 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 % Read from the Input Parser
 parse(iP, tVec, data, varargin{:});
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
-xlimits = iP.Results.XLimits;
-ylimits = iP.Results.YLimits;
+xLimits = iP.Results.XLimits;
+yLimits = iP.Results.YLimits;
 xLabel = iP.Results.XLabel;
 yLabel = iP.Results.YLabel;
 traceLabels = iP.Results.TraceLabels;
-legendLocation = validatestring(iP.Results.LegendLocation, ...
-                                validLegendLocations);
+[~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
+                                        'ValidateMode', true);
 figTitle = iP.Results.FigTitle;
 figNumber = iP.Results.FigNumber;
 figName = iP.Results.FigName;
@@ -168,13 +162,13 @@ maxY = max(max(data));
 rangeY = maxY - minY;
 
 % Set the default time axis limits
-if isempty(xlimits)
-    xlimits = [min(tVec), max(tVec)];
+if isempty(xLimits)
+    xLimits = [min(tVec), max(tVec)];
 end
 
 % Set the default y-axis limits
-if isempty(ylimits) && ~strcmpi(plotMode, 'parallel') && rangeY ~= 0
-    ylimits = [minY - 0.2 * rangeY, maxY + 0.2 * rangeY];
+if isempty(yLimits) && ~strcmpi(plotMode, 'parallel') && rangeY ~= 0
+    yLimits = [minY - 0.2 * rangeY, maxY + 0.2 * rangeY];
 end
 
 % Set the default y-axis labels
@@ -304,13 +298,13 @@ case 'overlapped'
     end
     
     % Set time axis limits
-    if ~strcmpi(xlimits, 'suppress')
-        xlim(xlimits);
+    if ~strcmpi(xLimits, 'suppress')
+        xlim(xLimits);
     end
 
     % Set y axis limits
-    if ~isempty(ylimits) && ~strcmpi(ylimits, 'suppress')
-        ylim(ylimits);
+    if ~isempty(yLimits) && ~strcmpi(yLimits, 'suppress')
+        ylim(yLimits);
     end
 
     % Generate an x-axis label
@@ -353,13 +347,13 @@ case 'parallel'
         end
 
         % Set time axis limits
-        if ~strcmpi(xlimits, 'suppress')
-            xlim(xlimits);
+        if ~strcmpi(xLimits, 'suppress')
+            xlim(xLimits);
         end
 
         % Set y axis limits
-        if ~isempty(ylimits) && ~strcmpi(ylimits, 'suppress')
-            ylim(ylimits);
+        if ~isempty(yLimits) && ~strcmpi(yLimits, 'suppress')
+            ylim(yLimits);
         end
 
         % Generate a y-axis label
@@ -402,9 +396,9 @@ end
 %{ 
 OLD CODE:
 
-function h = plot_traces(tVec, data, xlimits, xLabel, yLabel, ...
+function h = plot_traces(tVec, data, xLimits, xLabel, yLabel, ...
                             traceLabels, figTitle, figName, figNum)
-%       xlimits     - x-axis limits
+%       xLimits     - x-axis limits
 %       xLabel      - x-axis label
 %       yLabel      - y-axis label
 %       traceLabels - legend labels for each trace
@@ -422,24 +416,28 @@ h = figure(figNum);
 set(h, 'Visible', 'Off');
 
 % Determine the appropriate time axis limits
-if ~isempty(xlimits)
-    if ~strcmpi(xlimits, 'suppress')
-        xlim(xlimits);
+if ~isempty(xLimits)
+    if ~strcmpi(xLimits, 'suppress')
+        xlim(xLimits);
     end
 else
     xlim([min(tVec), max(tVec)]);
 end
 
 % Determine the appropriate y axis limits
-if ~isempty(ylimits)
-    if ~strcmpi(ylimits, 'suppress')
-        ylim(ylimits);
+if ~isempty(yLimits)
+    if ~strcmpi(yLimits, 'suppress')
+        ylim(yLimits);
     end
 else
     if rangeY ~= 0
         ylim([minY - 0.2 * rangeY, maxY + 0.2 * rangeY]);
     end
 end
+
+    @(x) any(validatestring(x, validLegendLocations)));
+legendLocation = validatestring(iP.Results.LegendLocation, ...
+                                validLegendLocations);
 
 %}
 

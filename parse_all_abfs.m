@@ -1,15 +1,21 @@
-function [allParsedParamsStruct, allParsedDataStruct, ...
-            allParsedParamsCell, allParsedDataCell] = parse_all_abfs (varargin)
+function [allParsedParamsTable, allParsedDataTable, ...
+            allParsedParamsStruct, allParsedDataStruct, ...
+            allParsedParamsCell, allParsedDataCell] = ...
+                parse_all_abfs (varargin)
 %% Parses all abf files in the directory
-% Usage: [allParsedParamsStruct, allParsedDataStruct, ...
-%           allParsedParamsCell, allParsedDataCell] = parse_all_abfs (varargin)
+% Usage: [allParsedParamsTable, allParsedDataTable, ...
+%           allParsedParamsStruct, allParsedDataStruct, ...
+%           allParsedParamsCell, allParsedDataCell] = ...
+%               parse_all_abfs (varargin)
 % Explanation:
 %       This function calls parse_abf.m with 'IdentifyProtocols' == true
 %           for all the .abf files in the provided directory (default pwd)
 % Example(s):
-%       [allParsedParams, allParsedData] = parse_all_abfs;
+%       [abfParamsTable, abfDataTable] = parse_all_abfs;
 % Outputs:
 %       (see parse_abf.m for details of parsedParams & parsedData)
+%       allParsedParamsTable  - a table of parsedParams
+%       allParsedDataTable    - a table of parsedData
 %       allParsedParamsStruct - a structure array of parsedParams
 %       allParsedDataStruct   - a structure array of parsedData
 %       allParsedParamsCell   - a cell array of parsedParams
@@ -65,7 +71,7 @@ function [allParsedParamsStruct, allParsedDataStruct, ...
 %                   default == 'xlsx'
 %                   
 % Requires:
-%       cd/extract_fullpaths.m
+%       cd/all_files.m
 %       cd/parse_abf.m
 %       cd/issheettype.m
 %
@@ -76,12 +82,14 @@ function [allParsedParamsStruct, allParsedDataStruct, ...
 % 2018-09-27 - Pulled code from plot_all_abfs.m
 % 2018-09-27 - Now saves parameters into a spreadsheet file
 % 2018-09-30 - Now defaults outFolder to directory
-% 2018-10-03 - Changed usage of parse_abf.m
-% 2018-10-03 - Changed outputs to allParsedParamsStruct, allParsedDataStruct, 
+% 2018-10-03 - Updated usage of parse_abf.m
+% 2018-10-03 - Changed outputs to allParsedParamsTable, allParsedDataTable, 
+%                   allParsedParamsStruct, allParsedDataStruct, 
 %                   allParsedParamsCell, allParsedDataCell
 % 
 
 %% Hard-coded parameters
+tableSuffix = '_abfParams';
 validExpModes = {'EEG', 'patch', ''};
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
 
@@ -93,7 +101,7 @@ verboseDefault = false;             % print to standard output by default
 useOriginalDefault = false;         % use identify_channels.m instead
                                     % of the original channel labels by default
 expModeDefault = '';                % set later
-outFolderDefault = '';          % set later
+outFolderDefault = '';              % set later
 timeUnitsDefault = '';              % set later
 channelTypesDefault = {};           % set later
 channelUnitsDefault = {};           % set later
@@ -168,19 +176,21 @@ check_dir(outFolder);
 % Decide on the files to use
 if isempty(fileNames)
     % Find all .abf files in the directory
-    files = dir(fullfile(directory, '*.abf'));
-    if isempty(files)
-        fprintf('No .abf files in current directory!\n');
+    [~, fileNames] = all_files('Directory', directory, ...
+                                'Extension', '.abf', ...
+                                'Verbose', verbose);
+
+    % Find all .abf files in the directory
+    if isempty(fileNames)
         fprintf('Type ''help %s'' for usage\n', mfilename);
+        allParsedParamsTable = table;
+        allParsedDataTable = table;
         allParsedParamsStruct = struct;
         allParsedDataStruct = struct;
         allParsedParamsCell = cell;
         allParsedDataCell = cell;
         return
     end
-
-    % Construct the full file names
-    fileNames = extract_fullpaths(files);
 end
 
 % Count the number of files
@@ -207,18 +217,19 @@ end
 allParsedParamsStruct = [allParsedParamsCell{:}];
 allParsedDataStruct = [allParsedDataCell{:}];
 
+% Convert to a table
+allParsedParamsTable = struct2table(allParsedParamsStruct);
+allParsedDataTable = struct2table(allParsedDataStruct);
+
 %% Print parameters to a file
 % Get the directory name
 [~, directoryName, ~] = fileparts(directory);
 
 % Set a file name for the params table
-sheetName = fullfile(outFolder, [directoryName, '_abfParams.', sheetType]);
-
-% Convert to a table
-abfTable = struct2table(allParsedParamsStruct);
+sheetName = fullfile(outFolder, [directoryName, tableSuffix, '.', sheetType]);
 
 % Print the table to a file
-writetable(abfTable, sheetName);
+writetable(allParsedParamsTable, sheetName);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -248,7 +259,26 @@ dataReorderedAll = cell(nFiles, 1);
     tVecAll{iFile}, vVecsAll{iFile}, ...
     iVecsAll{iFile}, gVecsAll{iFile}, dataReorderedAll{iFile}] = ...
 
+if nargout >= 5
+else
+end
+
+if nargout >= 6
+end
+
+% Find all .abf files in the directory
+files = dir(fullfile(directory, '*.abf'));
+if isempty(files)
+    fprintf('No .abf files in current directory!\n');
+    fprintf('Type ''help %s'' for usage\n', mfilename);
+    return
+end
+
+% Construct the full file names
+fileNames = extract_fullpath(files);
+
+%       cd/extract_fullpath.m
+
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-

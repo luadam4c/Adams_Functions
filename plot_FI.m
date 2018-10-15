@@ -1,20 +1,20 @@
-function plot_FI (filename, alldata, sius, outfolder)
+function plot_FI (fileName, alldata, sius, outfolder)
 %% From a current injection protocol, detect spikes for each sweep and make an F-I plot
-% Usage: plot_FI (filename, alldata, sius, outfolder)
+% Usage: plot_FI (fileName, alldata, sius, outfolder)
 % Arguments:
-%       filename    - must be either the full address or must be in current directory
+%       fileName    - must be either the full address or must be in current directory
 %                   .abf is not needed (e.g. 'B20160908_0004')
 %                   Uses abf2load, and if not found, uses abfload
 %       alldata     - (opt) full data
 %       sius        - (opt) sampling interval in microseconds
 %       outfolder   - (opt) the name of the directory that the plots will be placed
 %                   must be a character array
-%                   default == a subdirectory named by {filename}_traces
+%                   default == a subdirectory named by {fileName}_traces
 %
 % Requires:
-%       cd/construct_abffilename.m
-%       /home/Matlab/Brians_Functions/identify_channels.m
-%       /home/Matlab/Brians_Functions/identify_CI.m
+%       cd/construct_and_check_fullpath.m
+%       cd/identify_channels.m
+%       cd/identify_CI.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
 %
 % Used by:
@@ -25,7 +25,7 @@ function plot_FI (filename, alldata, sius, outfolder)
 % 2017-04-04 - Updated file names
 % 2017-04-06 - BT - Computed and plotted spike frequency
 % 2017-04-11 - Moved a copy of identify_channels.m to /home/Matlab/Adams_Functions/
-% 2017-04-11 - Now uses filename directly and calls each file from plot_all_abfs_dir.m
+% 2017-04-11 - Now uses fileName directly and calls each file from plot_all_abfs_dir.m
 % 2017-04-11 - Cleaned code
 % 2017-04-11 - Changed the color map to lines
 % 2017-04-13 - BT - Marked on plot spike frequency time interval
@@ -43,43 +43,37 @@ function plot_FI (filename, alldata, sius, outfolder)
 
 %% Check arguments
 if nargin < 1
-    error('No filename specified!');
-elseif ~ischar(filename)
+    error('No fileName specified!');
+elseif ~ischar(fileName)
     error('Filename must be a char array in single quotes!');
 end
 
-%% Get file parts
-[filepath, filebase, ~] = fileparts(filename);
-
-%% Set default outfolder
+%% Set defaults for optional arguments
 if nargin < 2
-    % Creates full path to abf file robustly
-    abffilename_full = construct_abffilename(filename);
+    % Creates and checks full path to abf file robustly
+    [abfFullFileName, fileExists] = ...
+        construct_and_check_fullpath(fileName, 'Extension', '.abf');
+    if ~fileExists
+        return 
+    end
+
+    % Add directories to search path for abf2load.m
+    functionsDirectory = locate_functionsdir;
+    if ~isdeployed
+        addpath(fullfile(functionsDirectory, '/Downloaded_Functions/'));
+    end
 
     % Load abf file, si is in us
     if exist('abf2load', 'file') == 2
-        [alldata, sius] = abf2load(abffilename_full);
+        [alldata, sius] = abf2load(abfFullFileName);
     elseif exist('abfload', 'file') == 2
-        [alldata, sius] = abfload(abffilename_full);
+        [alldata, sius] = abfload(abfFullFileName);
     end
 end
-if nargin < 4 || isempty(outfolder) 
-    outfolder = fullfile(filepath, strcat(filebase, '_traces'));
-end
 
-%% Add directories to search path for required functions
-if exist('/home/Matlab/', 'dir') == 7
-    functionsdirectory = '/home/Matlab/';
-elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
-    functionsdirectory = '/scratch/al4ng/Matlab/';
-else
-    error('Valid functionsdirectory does not exist!');
-end
-if ~isdeployed
-    addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));
-                                                % for abf2load.m or abfload.m
-    addpath(fullfile(functionsdirectory, '/Brians_Functions/'));
-                                                % for identify_channels.m
+[fileDir, fileBase, ~] = fileparts(fileName);
+if nargin < 4 || isempty(outfolder) 
+    outfolder = fullfile(fileDir, strcat(fileBase, '_traces'));
 end
 
 %% Create outfolder if not already exists
@@ -135,7 +129,7 @@ timepoints = ( sius/1000 : sius/1000 : ntimepoints * sius/1000 )'; % vector for 
 h = figure(nsweeps + 1);
 set(h, 'Visible', 'off');
 clf(h);
-figname = [filebase, '_all'];
+figname = [fileBase, '_all'];
 cm = colormap(lines);
 for i = 1:nsweeps
     cdata = alldata(:, 1, i);
@@ -170,7 +164,7 @@ end
 parfor i = 1:nsweeps
     cdata = alldata(:,1,i);
     spike_indices = find(is_spike(:,1,i));
-    figname = [filebase, '_sweep', num2str(i)];
+    figname = [fileBase, '_sweep', num2str(i)];
 
     h = figure(i);
     set(h, 'Visible', 'off');
@@ -196,7 +190,7 @@ parfor i = 1:nsweeps
 end
 
 % Plot spike frequency over current injected (F-I plot)
-figname_FI = [filebase, '_FI'];
+figname_FI = [fileBase, '_FI'];
 channelTypes = identify_channels(alldata, 'ExpMode', 'patch');
 ind_cur = strcmpi('Current', channelTypes);
 currents = zeros(1, nsweeps);
@@ -207,7 +201,7 @@ h = figure(999);
 set(h, 'Visible', 'off');
 clf(h);
 plot(currents, spike_freq);
-title(['F-I plot for ', strrep(filebase, '_', '\_')]);
+title(['F-I plot for ', strrep(fileBase, '_', '\_')]);
 xlabel('Current Injected (pA)');
 ylabel('Spike Frequency (Hz)');
 saveas(h, fullfile(outfolder, figname_FI), 'png');
@@ -236,13 +230,13 @@ nfiles = numel(filenames);
 for f = 1:nfiles            % for debug
 end
 
-filebase = [strrep(files(f).name, '.abf', ''), '_sweep', num2str(i)];
-filebase = strrep(files(f).name, '.abf', '');
-title(strrep(filebase, '_', '\_'));
-saveas(h, fullfile(outfolder, filebase), 'png');
-filebase = [strrep(files(f).name, '.abf', ''), '_spikecurrent'];
-title(strrep(filebase, '_', '\_'));
-saveas(h, fullfile(outfolder, filebase), 'png');
+fileBase = [strrep(files(f).name, '.abf', ''), '_sweep', num2str(i)];
+fileBase = strrep(files(f).name, '.abf', '');
+title(strrep(fileBase, '_', '\_'));
+saveas(h, fullfile(outfolder, fileBase), 'png');
+fileBase = [strrep(files(f).name, '.abf', ''), '_spikecurrent'];
+title(strrep(fileBase, '_', '\_'));
+saveas(h, fullfile(outfolder, fileBase), 'png');
 
 legend1 = legend('Sweep #1','Sweep #2','Sweep #3','Sweep #4','Sweep #5','Sweep #6','Sweep #7','Sweep #8','Sweep #9','Sweep #10');
 set(legend1,'Position',[0.132589285714285 0.419345238095237 0.209821428571428 0.501488095238095]);
@@ -277,4 +271,13 @@ jmap = colormap(jet);
 
 ind_cur = find(vcc == 2);
 
+%       cd/construct_abffilename.m
+% Creates full path to abf file robustly
+abfFullFileName = construct_abffilename(fileName);
+
+addpath(fullfile(functionsdirectory, '/Brians_Functions/'));
+                                            % for identify_channels.m
+
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

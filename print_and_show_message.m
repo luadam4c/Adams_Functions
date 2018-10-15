@@ -24,7 +24,7 @@ function print_and_show_message(message, varargin)
 %                   default == 'wait'
 % 
 % Requires:
-%       /home/Matlab/Miras_Functions/print_cellstr.m
+%       cd/print_cellstr.m
 %
 % Used by:
 %       /home/Matlab/minEASE/minEASE.m
@@ -52,21 +52,6 @@ messageModeDefault = 'wait';        % default : Pauses program and displays
                                     %   message box
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Add directories to search path for required functions across servers
-if ~isdeployed
-    if exist(fullfile(pwd, 'Miras_Functions'), 'dir') == 7
-        functionsdirectory = pwd;
-    elseif exist('/home/Matlab/', 'dir') == 7
-        functionsDirectory = '/home/Matlab/';
-    elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
-        functionsDirectory = '/scratch/al4ng/Matlab/';
-    else
-        error('Valid functionsDirectory does not exist!');
-    end
-    addpath(fullfile(functionsDirectory, 'Miras_Functions')); 
-                                            % for print_cellstr.m
-end
 
 %% Deal with arguments
 % Check number of required arguments
@@ -173,4 +158,21 @@ messageStr = print_cellstr(message, 'Delimiter', '\n', ...
                                     'ToPrint', false);
 fprintf('%s\n', messageStr); 
 
+%% Add directories to search path for required functions across servers
+if ~isdeployed
+    if exist(fullfile(pwd, 'Miras_Functions'), 'dir') == 7
+        functionsdirectory = pwd;
+    elseif exist('/home/Matlab/', 'dir') == 7
+        functionsDirectory = '/home/Matlab/';
+    elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
+        functionsDirectory = '/scratch/al4ng/Matlab/';
+    else
+        error('Valid functionsDirectory does not exist!');
+    end
+    addpath(fullfile(functionsDirectory, 'Miras_Functions')); 
+                                            % for print_cellstr.m
+end
+
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

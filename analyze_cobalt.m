@@ -261,8 +261,11 @@ if plotFilteredFlag
     end
 end
     
-%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %{
+OLD CODE:
+
 OLD CODE
 
 exampleFile = fullfile(dataDir, 'SmartboxRecording_20180620-112301.rhd');
@@ -275,5 +278,6 @@ cd(outFolder);
 
 samplingRate = 10000; % 1000            % sampling rate in Hz
 
-
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

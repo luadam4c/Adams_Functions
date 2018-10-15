@@ -44,7 +44,7 @@ function h = plot_tuning_curve (pValues, readout, varargin)
 %                   must be a 3-element vector
 %                   - 'LegendLocation': location for legend
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       ''  - use default
+%                       'auto'      - use default
 %                       'suppress'  - no legend
 %                       anything else recognized by the legend() function
 %                   default == 'suppress' if nTraces == 1 
@@ -69,6 +69,7 @@ function h = plot_tuning_curve (pValues, readout, varargin)
 %
 % Requires:
 %       cd/isfigtype.m
+%       cd/islegendlocation.m
 %       cd/save_all_figtypes.m
 %
 % Used by:
@@ -85,13 +86,6 @@ function h = plot_tuning_curve (pValues, readout, varargin)
 %
 
 %% Hard-coded parameters
-validLegendLocations = {'', 'suppress', ...
-                        'north', 'south', 'east', 'west', ...
-                        'northeast', 'northwest', 'southeast', 'southwest', ...
-                        'northoutside', 'southoutside', 'eastoutside', ...
-                        'westoutside', 'northeastoutside', ...
-                        'northwestoutside', 'southeastoutside', ...
-                        'southwestoutside', 'best', 'bestoutside', 'none'};
 pTickAngle = 60;                % x tick angle in degrees
 lineWidth = 2;
                     
@@ -106,7 +100,7 @@ pLabelDefault = 'Parameter';
 readoutLabelDefault = 'Readout';
 columnLabelsDefault = '';       % set later
 singleColorDefault = [0, 0, 1];
-legendLocationDefault = '';     % set later
+legendLocationDefault = 'auto'; % set later
 figTitleDefault = '';           % set later
 figNumberDefault = [];          % invisible figure by default
 figNameDefault = '';
@@ -155,7 +149,7 @@ addParameter(iP, 'ColumnLabels', columnLabelsDefault, ...
 addParameter(iP, 'SingleColor', singleColorDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 3}));
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
-    @(x) any(validatestring(x, validLegendLocations)));
+    @(x) all(islegendlocation(x, 'ValidateMode', true)));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigNumber', figNumberDefault, ...
@@ -177,8 +171,8 @@ pLabel = iP.Results.PLabel;
 readoutLabel = iP.Results.ReadoutLabel;
 columnLabels = iP.Results.ColumnLabels;
 singlecolor = iP.Results.SingleColor;
-legendLocation = validatestring(iP.Results.LegendLocation, ...
-                                validLegendLocations);
+[~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
+                                        'ValidateMode', true);
 figTitle = iP.Results.FigTitle;
 figNumber = iP.Results.FigNumber;
 figName = iP.Results.FigName;
@@ -370,3 +364,5 @@ if ~isequal(readoutLabel, 'suppress')
 if ~isequal(pLabel, 'suppress') && ~isequal(readoutLabel, 'suppress')
 
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

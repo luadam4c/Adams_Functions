@@ -137,17 +137,21 @@ if plotflag == 1
 	close(h);
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %{
-%% OLD CODE
+OLD CODE:
 
-IPSC_ind = round(ipscpwin(1)/sims);		% Assume no IPSC offset	% NOT ROBUST
-ind = IPSC_ind:round(ipscpwin(2)/sims);		% indices of interest	% NOT ROBUST
+IPSC_ind = round(ipscpwin(1)/sims);     % Assume no IPSC offset % NOT ROBUST
+ind = IPSC_ind:round(ipscpwin(2)/sims);     % indices of interest   % NOT ROBUST
 
-	[ipeak_amp, itemp1] = min(ivec0s_part1);	% ipeak_amp is the amplitude of ipeak
-	ipeak_ind = (ind(1) - 1) + itemp1;		% index of ipeak relative to ivec0s
-	ipeak_time = tvec0(ipeak_ind);			% time of ipeak in ms
+    [ipeak_amp, itemp1] = min(ivec0s_part1);    % ipeak_amp is the amplitude of ipeak
+    ipeak_ind = (ind(1) - 1) + itemp1;      % index of ipeak relative to ivec0s
+    ipeak_time = tvec0(ipeak_ind);          % time of ipeak in ms
 
-	close(h);
+    close(h);
 
 
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,8 +1,20 @@
-function [avgSlope, startSlope, endSlope, indsUsed, isUnbalanced] = ...
-            compute_average_initial_slopes (tvecCpr, vvecCpr, varargin)
+function [avgSlope, startSlope, endSlope, indsUsed, hasJump] = ...
+            compute_initial_slopes (tvecCpr, vvecCpr, varargin)
 %% Computes the average initial slope from a current pulse response
-% Usage: [avgSlope, startSlope, endSlope, indsUsed, isUnbalanced] = ...
-%           compute_average_initial_slopes (tvecCpr, vvecCpr, varargin)
+% Usage: [avgSlope, startSlope, endSlope, indsUsed, hasJump] = ...
+%           compute_initial_slopes (tvecCpr, vvecCpr, varargin)
+%
+% Outputs:
+%       avgSlope    - the average initial slope
+%                   specified as a numeric scalar
+%       startSlope  - the initial slope at pulse response start
+%                   specified as a numeric scalar
+%       endSlope    - the initial slope at pulse response end
+%                   specified as a numeric scalar
+%       indsUsed    - indices for computing slopes
+%                   specified as a 4-element positive integer row vector
+%       hasJump     - whether there was a significant "jump" detected
+%                   specified as a logical scalar
 %
 % Arguments:    
 %       tvecCpr     - time vector of the current pulse response
@@ -18,11 +30,11 @@ function [avgSlope, startSlope, endSlope, indsUsed, isUnbalanced] = ...
 %                   
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/find_pulse_response_endpoints.m
+%       cd/find_pulse_response_endpoints.m
 %
 % Used by:    
-%       /home/Matlab/Adams_Functions/correct_unbalanced_bridge.m
-%       /home/Matlab/Adams_Functions/find_initial_slopes.m
+%       cd/correct_unbalanced_bridge.m
+%       cd/find_initial_slopes.m
 
 % File History:
 % 2018-07-25 BT - Adapted from find_initial_slopes.m
@@ -33,8 +45,13 @@ function [avgSlope, startSlope, endSlope, indsUsed, isUnbalanced] = ...
 % 2018-08-12 AL - Changed signal2Noise to 10
 % 2018-08-13 AL - Moved code to find_pulse_response_endpoints.m
 % 2018-09-17 AL - Updated usage of find_pulse_response_endpoints.m
+% 2018-10-09 AL - Improved documentation
+% 2018-10-09 AL - Updated usage of find_pulse_response_endpoints.m
 
 %% Hard-coded parameters
+sameAsPulse = false;
+responseLengthMs = 0;
+baselineLengthMs = 0;
 
 %% Default values for optional arguments
 defaultIvecCpr = [];                % don't use current vector by default
@@ -75,9 +92,11 @@ nSamples = iP.Results.NSamples;
 siMs = tvecCpr(2) - tvecCpr(1);
 
 % Find the endpoints of the pulse response
-[idxCprStart, idxCprEnd, isUnbalanced] = ...
-    find_pulse_response_endpoints(vvecCpr, siMs, 'IvecCpr', ivecCpr, ...
-                                    'SameAsIvec', false, 'CprLengthMs', 0);
+[idxCprStart, idxCprEnd, hasJump] = ...
+    find_pulse_response_endpoints(vvecCpr, siMs, 'PulseVectors', ivecCpr, ...
+                                    'SameAsPulse', sameAsPulse, ...
+                                    'ResponseLengthMs', responseLengthMs, ...
+                                    'BaselineLengthMs', baselineLengthMs);
 
 %% Compute the average slope
 % Compute slope right after current pulse start
@@ -132,7 +151,7 @@ addRequired(iP, 'nSamples', ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 parse(iP, tvecCpr, vvecCpr, ivecCpr, nSamples);
 
-function [avgSlope, startSlope, endSlope, indsUsed] = compute_average_initial_slopes (tvecCpr, vvecCpr, ivecCpr, nSamples)
+function [avgSlope, startSlope, endSlope, indsUsed] = compute_initial_slopes (tvecCpr, vvecCpr, ivecCpr, nSamples)
 
 % Note: function calls are slower
 %       /home/Matlab/Adams_Functions/compute_slope.m
@@ -142,6 +161,10 @@ endSlope = compute_slope(tvecCpr, vvecCpr, idxFirst2, idxLast2);
 % Crop the voltage trace
 vvecCropped = vvecCpr((idxCprStart + 1):end);
 
+[idxCprStart, idxCprEnd, hasJump] = ...
+    find_pulse_response_endpoints(vvecCpr, siMs, 'IvecCpr', ivecCpr, ...
+                                    'SameAsIvec', false, 'CprLengthMs', 0);
 
 %}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

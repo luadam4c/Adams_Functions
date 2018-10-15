@@ -28,11 +28,11 @@ function [results, linestyles] = islinestyle (strings, varargin)
 %                   default == 'substring'
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/istype.m
+%       cd/istype.m
 %
 % Used by:
-%       /home/Matlab/Adams_Functions/plot_ellipse.m
-%       /home/Matlab/Adams_Functions/plot_raster.m
+%       cd/plot_ellipse.m
+%       cd/plot_raster.m
 %       /home/Matlab/EEG_gui/combine_EEG_gui_outputs.m
 %
 % File History:
@@ -114,3 +114,5 @@ else
 end
 
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

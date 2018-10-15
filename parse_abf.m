@@ -25,13 +25,13 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %                           nDimensions
 %                           nSamples
 %                           nChannels
-%                           nSweeps
+%                           nSweeps%                                   (Note: 2nd dimension: sweep; 
+
 %       parsedData      - a structure containing the following fields:
 %                           data: full data as returned by abf2load.m
 %                           tVec: a constructed time vector with units 
 %                                   given by 'TimeUnits'
 %                           vVecs: any identified voltage vector(s) 
-%                                   (Note: 2nd dimension: sweep; 
 %                                       optional 3rd dimension: channel)
 %                           iVecs: any identified current vector(s)
 %                                   (Note: 2nd dimension: sweep; 
@@ -83,18 +83,19 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 
 %
 % Requires:
-%       cd/construct_abffilename.m
+%       cd/construct_and_check_fullpath
+%       cd/identify_channels.m
+%       cd/identify_CI.m
 %       cd/identify_eLFP.m
+%       cd/locate_functionsdir.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
-%       /home/Matlab/Brians_Functions/identify_channels.m
-%       /home/Matlab/Brians_Functions/identify_CI.m
 %
 % Used by:
 %       cd/parse_all_abfs.m
 %       cd/plot_traces_abf.m
 %       cd/compute_and_plot_evoked_LFP.m
+%       cd/identify_CI.m
 %       cd/identify_eLFP.m
-%       /home/Matlab/Brians_Functions/identify_CI.m
 
 % File history: 
 % 2018-09-17 - Moved from plot_traces_abf.m
@@ -107,6 +108,7 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %                   optional arguments and gave it priority over original labels
 % 2018-10-03 - Renamed abfParams -> parsedParams
 %               and placed all other outputs in a structure called parsedData
+% 2018-10-03 - Added nargout
 
 %% Hard-coded constants
 US_PER_MS = 1e3;            % number of microseconds per millisecond
@@ -129,20 +131,13 @@ identifyProtocolsDefault = false;   % don't identify protocols by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Add directories to search path for required functions
+%% If not compiled, add directories to search path for required functions
 if ~isdeployed
-    if exist('/home/Matlab/', 'dir') == 7
-        functionsdirectory = '/home/Matlab/';
-    elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
-        functionsdirectory = '/scratch/al4ng/Matlab/';
-    else
-        error('Valid functionsdirectory does not exist!');
-    end
-    addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));
-                                            % for abf2load.m or abfload.m
-    addpath(fullfile(functionsdirectory, '/Brians_Functions/'));
-                                            % for identify_channels.m
-                                            %   and identify_CI.m
+    % Locate the functions directory
+    functionsDirectory = locate_functionsdir;
+
+    % Add path for abf2load.m, abfload.m
+    addpath(fullfile(functionsDirectory, 'Downloaded_Functions'));
 end
 
 %% Deal with arguments
@@ -197,13 +192,13 @@ if ~isempty(channelTypes)
 end
 
 %% Do the job
-% Create the full path to .abf file robustly
-abfFullFileName = construct_abffilename(fileName);
-
-% Check if the file exists
-if exist(abfFullFileName, 'file') ~= 2
-    fprintf('The file %s does not exist!!\n', abfFullFileName);
-    return;
+% Create the full path to .abf file robustly and check for existence
+[abfFullFileName, fileExists] = ...
+    construct_and_check_fullpath(fileName, 'Extension', '.abf');
+if ~fileExists
+    parsedParams = [];
+    parsedData = [];
+    return 
 end
 
 % Load abf file, si is in us
@@ -350,41 +345,45 @@ elseif strcmp(timeUnits, 's')
 end
 
 % Construct a time vector for plotting
-tVec = siPlot * (1:nSamples)';
+if nargout >= 2
+    tVec = siPlot * (1:nSamples)';
+end
 
 %% Extract data vectors by type
-indVoltage = find_ind_str_in_cell('Voltage', channelTypes, ...
-                                    'IgnoreCase', true);
-indCurrent = find_ind_str_in_cell('Current', channelTypes, ...
-                                    'IgnoreCase', true);
-indConductance = find_ind_str_in_cell('Conductance', channelTypes, ...
-                                    'IgnoreCase', true);
+if nargout >= 2
+    indVoltage = find_ind_str_in_cell('Voltage', channelTypes, ...
+                                        'IgnoreCase', true);
+    indCurrent = find_ind_str_in_cell('Current', channelTypes, ...
+                                        'IgnoreCase', true);
+    indConductance = find_ind_str_in_cell('Conductance', channelTypes, ...
+                                        'IgnoreCase', true);
 
-if nDimensions == 2
-    % Extract voltage vectors if any
-    vVecs = data(:, indVoltage);
+    if nDimensions == 2
+        % Extract voltage vectors if any
+        vVecs = data(:, indVoltage);
 
-    % Extract current vectors if any
-    iVecs = data(:, indCurrent);
+        % Extract current vectors if any
+        iVecs = data(:, indCurrent);
 
-    % Extract conductance vectors if any
-    gVecs = data(:, indConductance);
+        % Extract conductance vectors if any
+        gVecs = data(:, indConductance);
 
-    % The data doesn't have to be reordered in this case
-    dataReordered = data;
-elseif nDimensions == 3
-    % Reorder data so that the 2nd dimension is sweep 
-    %   and the 3rd dimension is channel
-    dataReordered = permute(data, [1, 3, 2]);
+        % The data doesn't have to be reordered in this case
+        dataReordered = data;
+    elseif nDimensions == 3
+        % Reorder data so that the 2nd dimension is sweep 
+        %   and the 3rd dimension is channel
+        dataReordered = permute(data, [1, 3, 2]);
 
-    % Extract voltage vectors if any
-    vVecs = squeeze(dataReordered(:, :, indVoltage));
+        % Extract voltage vectors if any
+        vVecs = squeeze(dataReordered(:, :, indVoltage));
 
-    % Extract current vectors if any
-    iVecs = squeeze(dataReordered(:, :, indCurrent));
+        % Extract current vectors if any
+        iVecs = squeeze(dataReordered(:, :, indCurrent));
 
-    % Extract conductance vectors if any
-    gVecs = squeeze(dataReordered(:, :, indConductance));
+        % Extract conductance vectors if any
+        gVecs = squeeze(dataReordered(:, :, indConductance));
+    end
 end
 
 %% Identify protocols
@@ -396,40 +395,7 @@ if identifyProtocols
     isEvokedLfp = identify_eLFP(iVecs);
 end
 
-%% Return and/or print results
-% Store parameters in parsedParams
-parsedParams.abfFullFileName = abfFullFileName;
-parsedParams.expMode = expMode;
-parsedParams.nDimensions = nDimensions;
-parsedParams.nSamples = nSamples;
-parsedParams.nChannels = nChannels;
-parsedParams.nSweeps = nSweeps;
-parsedParams.siUs = siUs;
-parsedParams.siMs = siMs;
-parsedParams.siSeconds = siSeconds;
-parsedParams.siPlot = siPlot;
-parsedParams.timeUnits = timeUnits;
-parsedParams.channelTypesStr = channelTypesStr;
-parsedParams.channelUnitsStr = channelUnitsStr;
-parsedParams.channelLabelsStr = channelLabelsStr;
-if identifyProtocols
-    parsedParams.isCI = isCI;
-    parsedParams.isEvokedLfp = isEvokedLfp;
-end
-parsedParams.channelTypes = channelTypes;
-parsedParams.channelUnits = channelUnits;
-parsedParams.channelLabels = channelLabels;
-parsedParams.fileInfo = fileInfo;
-
-% Store arrays and vectors in parsedData
-parsedData.data = data;
-parsedData.tVec = tVec;
-parsedData.vVecs = vVecs;
-parsedData.iVecs = iVecs;
-parsedData.gVecs = gVecs;
-parsedData.dataReordered = dataReordered;
-
-% Write results to standard output
+%% Write results to standard output
 if verbose
     fprintf('The full path is: %s\n', abfFullFileName);
     fprintf('The experiment mode is: %s\n', expMode);
@@ -445,6 +411,43 @@ if verbose
         fprintf('Is a current injection protocol = %s\n', num2str(isCI));
         fprintf('Is an evoked LFP protocol = %s\n', num2str(isEvokedLfp));
     end
+end
+
+%% Return results
+% Store parameters in parsedParams
+if nargout >= 1
+    parsedParams.abfFullFileName = abfFullFileName;
+    parsedParams.expMode = expMode;
+    parsedParams.nDimensions = nDimensions;
+    parsedParams.nSamples = nSamples;
+    parsedParams.nChannels = nChannels;
+    parsedParams.nSweeps = nSweeps;
+    parsedParams.siUs = siUs;
+    parsedParams.siMs = siMs;
+    parsedParams.siSeconds = siSeconds;
+    parsedParams.siPlot = siPlot;
+    parsedParams.timeUnits = timeUnits;
+    parsedParams.channelTypesStr = channelTypesStr;
+    parsedParams.channelUnitsStr = channelUnitsStr;
+    parsedParams.channelLabelsStr = channelLabelsStr;
+    if identifyProtocols
+        parsedParams.isCI = isCI;
+        parsedParams.isEvokedLfp = isEvokedLfp;
+    end
+    parsedParams.channelTypes = channelTypes;
+    parsedParams.channelUnits = channelUnits;
+    parsedParams.channelLabels = channelLabels;
+    parsedParams.fileInfo = fileInfo;
+end
+
+% Store arrays and vectors in parsedData
+if nargout >= 2
+    parsedData.data = data;
+    parsedData.tVec = tVec;
+    parsedData.vVecs = vVecs;
+    parsedData.iVecs = iVecs;
+    parsedData.gVecs = gVecs;
+    parsedData.dataReordered = dataReordered;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -659,6 +662,27 @@ end
 
 function [parsedParams, data, tVec, vVecs, iVecs, gVecs, dataReordered] = ...
                 parse_abf(fileName, varargin)
+
+% Create the full path to .abf file robustly
+abfFullFileName = construct_abffilename(fileName);
+
+% Check if the file exists
+if exist(abfFullFileName, 'file') ~= 2
+    fprintf('The file %s does not exist!!\n', abfFullFileName);
+    return;
+end
+
+%       cd/construct_abffilename.m
+
+if isempty(abfFullFileName)
+    fprintf('The file %s does not exist!!\n', abfFullFileName);
+    parsedParams = [];
+    parsedData = [];
+    return 
+end
+
+% Add path for identify_channels.m, identify_CI.m
+addpath(fullfile(functionsDirectory, 'Brians_Functions'));
 
 %}
 

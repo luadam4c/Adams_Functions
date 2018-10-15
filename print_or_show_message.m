@@ -1,6 +1,6 @@
-function print_or_show_message(message, varargin)
+function print_or_show_message (message, varargin)
 %% Either print a message in standard output or show a message box
-% Usage: print_or_show_message(message, varargin)
+% Usage: print_or_show_message (message, varargin)
 % Explanation: 
 %       Either pause program and show message box, only show message box, 
 %           or printed in stardard output
@@ -41,21 +41,22 @@ function print_or_show_message(message, varargin)
 %                   
 % 
 % Requires:
-%       /home/Matlab/Miras_Functions/print_cellstr.m
+%       cd/print_cellstr.m
 %
 % Used by:
+%       cd/abf2mat.m
+%       cd/atf2sheet.m
+%       cd/check_dir.m
+%       cd/combine_sweeps.m
+%       cd/create_input_file.m
+%       cd/create_pulse_train_series.m
+%       cd/create_waveform_train.m
+%       cd/match_time_points.m
 %       /home/Matlab/minEASE/minEASE.m
 %       /home/Matlab/minEASE/combine_eventInfo.m
 %       /home/Matlab/minEASE/compute_plot_average_PSC_traces.m
 %       /home/Matlab/minEASE/detect_gapfree_events.m
 %       /home/Matlab/Kojis_Functions/compute_average_PSC_trace.m
-%       /home/Matlab/Adams_Functions/abf2mat.m
-%       /home/Matlab/Adams_Functions/atf2sheet.m
-%       /home/Matlab/Adams_Functions/combine_sweeps.m
-%       /home/Matlab/Adams_Functions/create_input_file.m
-%       /home/Matlab/Adams_Functions/create_pulse_train_series.m
-%       /home/Matlab/Adams_Functions/create_waveform_train.m
-%       /home/Matlab/Adams_Functions/match_time_points.m
 %       /home/Matlab/EEG_gui/combine_EEG_gui_outputs.m
 %       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
 %
@@ -88,21 +89,6 @@ verboseDefault = false;             % default: Program does not print message
                                     %   even if message box is shown
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Add directories to search path for required functions across servers
-if ~isdeployed
-    if exist(fullfile(pwd, 'Miras_Functions'), 'dir') == 7
-        functionsDirectory = pwd;
-    elseif exist('/home/Matlab/', 'dir') == 7
-        functionsDirectory = '/home/Matlab/';
-    elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
-        functionsDirectory = '/scratch/al4ng/Matlab/';
-    else
-        error('Valid functionsDirectory does not exist!');
-    end
-    addpath(fullfile(functionsDirectory, 'Miras_Functions')); 
-                                            % for print_cellstr.m
-end
 
 %% Deal with arguments
 % Check number of required arguments
@@ -232,4 +218,22 @@ messageStr = print_cellstr(message, 'Delimiter', '\n', ...
                                     'OmitNewline', true, ...
                                     'ToPrint', false);
 fprintf('%s\n', messageStr);
+
+%% Add directories to search path for required functions across servers
+if ~isdeployed
+    if isfolder(fullfile(pwd, 'Miras_Functions'))
+        functionsDirectory = pwd;
+    elseif isfolder('/home/Matlab/')
+        functionsDirectory = '/home/Matlab/';
+    elseif isfolder('/scratch/al4ng/Matlab/')
+        functionsDirectory = '/scratch/al4ng/Matlab/';
+    else
+        error('Valid functionsDirectory does not exist!');
+    end
+    addpath(fullfile(functionsDirectory, 'Miras_Functions')); 
+                                            % for print_cellstr.m
+end
+
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

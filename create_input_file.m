@@ -34,7 +34,7 @@ function create_input_file (dataDir, defParams, varargin)
 %
 % Used by:    
 %       /home/Matlab/EEG_gui/EEG_gui.m
-%
+
 % File History:
 % 2018-04-30 Created by Adam Lu
 % 2018-05-02 Added outFolder
@@ -306,3 +306,5 @@ if exist(outFolder, 'dir') ~= 7
 end
 
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

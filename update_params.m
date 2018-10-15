@@ -17,11 +17,13 @@ function [paramvals] = update_params(paramnames, paramvals, varargin)
 %                   default == 'noexp'
 %
 % Requires:    
-%        /home/Matlab/Adams_Functions/find_ind_str_in_cell.m
+%        cd/find_ind_str_in_cell.m
 %
 % Used by:    
-%        /home/Matlab/Adams_Functions/change_params.m
+%        cd/change_params.m
 %
+
+% File History:
 % 2017-03-30 Created by Adam Lu
 % 2017-05-03 Moved to /media/adamX/RTCl/
 % 2017-05-03 Moved parts to change_params.m
@@ -156,3 +158,5 @@ end
 OLD CODE:
 
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

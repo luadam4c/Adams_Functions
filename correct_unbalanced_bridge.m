@@ -11,10 +11,11 @@ function [vvecNew] = correct_unbalanced_bridge (vvecOld, ivecOld, varargin)
 %                   default == true
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/find_pulse_endpoints.m
-%       /home/Matlab/Adams_Functions/compute_average_initial_slopes.m
+%       cd/find_pulse_endpoints.m
+%       cd/compute_initial_slopes.m
 %
-% Used by:    
+% Used by:
+%       cd/m3ha_correct_unbalanced_bridge.m
 %       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
 %       /media/adamX/m3ha/optimizer4gabab/import_rawtraces.m
 %
@@ -24,7 +25,7 @@ function [vvecNew] = correct_unbalanced_bridge (vvecOld, ivecOld, varargin)
 % 2018-08-11 AL - Added UseCurrentFlag and set the default to not use it
 % 2018-08-12 AL - Set default of UseCurrentFlag to true
 % 2018-08-13 AL - Now uses the actual endpoints used by 
-%                   compute_average_initial_slopes to find the indices to shift
+%                   compute_initial_slopes to find the indices to shift
 
 %% Hard-coded parameters
 nSamples = 2;       % number of samples between the voltage jump
@@ -67,13 +68,13 @@ tvecOld = 1:length(ivecOld);
 % Get average initial slope
 if useCurrentFlag
     [avgSlope, startSlope, endSlope, indsUsed] = ...
-        compute_average_initial_slopes(tvecOld, vvecOld, ...
-                                       'IvecCpr', ivecOld, ...
-                                       'NSamples', nSamples);
+        compute_initial_slopes(tvecOld, vvecOld, ...
+                               'IvecCpr', ivecOld, ...
+                               'NSamples', nSamples);
 else
     [avgSlope, startSlope, endSlope, indsUsed] = ...
-        compute_average_initial_slopes(tvecOld, vvecOld, ...
-                                       'NSamples', nSamples);
+        compute_initial_slopes(tvecOld, vvecOld, ...
+                               'NSamples', nSamples);
 end
 
 % Get the indices for the region to shift
@@ -115,3 +116,5 @@ shiftBy = avgSlope * (tvecOld(idxStart + nSamples - 1) - tvecOld(idxStart));
 vvecNew(idxStart + 1:idxEnd) = vvecOld(idxStart + 1:idxEnd) + shiftBy;
 
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

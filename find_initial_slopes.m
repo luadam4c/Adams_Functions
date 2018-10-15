@@ -1,6 +1,6 @@
 function [startSlopes, endSlopes, avgSlopes, isUnbalancedAll, indUsedForPlot] = ...
     find_initial_slopes(tvecCprAll, ivecCprAll, vvecCprAll, allNSamples, varargin);
-%% Find all initial slopes from a current pulse response
+%% Find all initial slopes from a set of current pulse responses
 % Usage: [startSlopes, endSlopes, avgSlopes, isUnbalancedAll, indUsedForPlot] = ...
 %   find_initial_slopes(tvecCprAll, ivecCprAll, vvecCprAll, allNSamples, varargin);
 % Arguments:
@@ -11,10 +11,10 @@ function [startSlopes, endSlopes, avgSlopes, isUnbalancedAll, indUsedForPlot] = 
 %                   - 'NSamplesForPlot': the number of samples to average when 
 %                                   plotting CPR
 %                   must be a positive integer scalar
-%                   default == 10
+%                   default == 2
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/compute_average_initial_slopes.m
+%       cd/compute_initial_slopes.m
 %
 % Used by:
 %       /media/adamX/m3ha/data_dclamp/initial_slopes.m
@@ -43,8 +43,7 @@ iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'NSamplesForPlot', nSamplesForPlotDefault, ...       
-    @(x) validateattributes(x, {'numeric'}, ...
-        {'scalar', 'positive', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 addParameter(iP, 'UseCurrentFlag', useCurrentFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
@@ -92,13 +91,13 @@ parfor iSwp = 1:nSwps
         if useCurrentFlag
             [avgSlope, startSlope, endSlope, ...
                 indsUsedForPlotSwp, isUnbalanced] = ...
-                compute_average_initial_slopes(tvecCpr, vvecCpr, ...
+                compute_initial_slopes(tvecCpr, vvecCpr, ...
                                                 'IvecCpr', ivecCpr, ...
                                                 'NSamples', nSamples);
         else
             [avgSlope, startSlope, endSlope, ...
                 indsUsedForPlotSwp, isUnbalanced] = ...
-                compute_average_initial_slopes(tvecCpr, vvecCpr, ...
+                compute_initial_slopes(tvecCpr, vvecCpr, ...
                                                 'NSamples', nSamples);
         end
 
@@ -127,3 +126,5 @@ end
 OLD CODE:
 
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

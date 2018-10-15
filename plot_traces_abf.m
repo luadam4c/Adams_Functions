@@ -1,16 +1,17 @@
-function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
+function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 %% Takes an abf file and plots all traces
-% Usage: [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
+% Usage: [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 % Explanation:
 %       TODO
 % Outputs:
 %       data        - full data
 %       siUs        - sampling interval in microseconds
-%       tVec        - a time vector that can be used to plot things, 
+%       timeVec        - a time vector that can be used to plot things, 
 %                       units are in timeUnits (see below for default)
 %       siPlot      - sampling interval used for plotting
 % Arguments:
-%       fileName    - file name could be either the full path or 
+%       fileName    - file name of the abf file
+%                       could be either the full path or 
 %                       a relative path in current directory
 %                       .abf is not needed (e.g. 'B20160908_0004')
 %                   must be a string scalar or a character vector
@@ -42,7 +43,7 @@ function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 %                   - 'TimeEnd': the end of the time interval of interest 
 %                                   (in units set by TimeUnits)
 %                   must be a numeric nonnegative scalar
-%                   default == tVec(end)
+%                   default == timeVec(end)
 %                   - 'ChannelTypes': the channel types
 %                   must be a cellstr with nChannels elements
 %                       each being one of the following:
@@ -66,12 +67,11 @@ function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
-%                   TODO:
-%                   - 'Data': full data
-%                   must be a TODO
+%                   - 'ParsedParams': parsed parameters returned by parse_abf.m
+%                   must be a scalar structure
 %                   default == what the file provides
-%                   - 'SiUs': sampling interval in microseconds
-%                   must be a TODO
+%                   - 'ParsedData': parsed data returned by parse_abf.m
+%                   must be a scalar structure
 %                   default == what the file provides
 %
 % Requires:
@@ -82,8 +82,8 @@ function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 %
 % Used by:
 %       cd/plot_all_abfs.m
-%       /media/shareX/share/Adam/Sample_files_from_Katie/test_sweeps.m
-%
+%       /media/shareX/share/Adam/Sample_files_from_Katie/test_sweeps.m TODO: update this file
+
 % File history: 
 % 2016-09-22 - adapted from plot_traces_abf_EEG
 % 2017-02-13 - BT - added labelling detection between current and voltage
@@ -102,10 +102,10 @@ function [data, siUs, tVec, siPlot] = plot_traces_abf (fileName, varargin)
 %               and moved to its own function
 % 2018-09-25 - Updated usage of plot_traces.m
 % 2018-09-25 - Added figTypes as an argument
-% TODO: Improve code legibility with usage of dataReordered instead of data
-% TODO: Pull code to a separate function that takes
-%           data, abfParams, tVec as required arguments
-%           (dataReordered will have to be reconstructed)
+% 2018-10-03 - Updated usage of parse_abf.m
+% 2018-10-03 - Added ParsedData, ParsedParams as optional arguments
+% TODO: Change the outputs to a cell array of figure handles
+% TODO: (Not sure) Improve code legibility with usage of dataReordered instead of data
 %
 
 %% Hard-coded parameters
@@ -124,6 +124,8 @@ timeEndDefault = [];            % set later
 channelTypesDefault = {};       % set later
 channelUnitsDefault = {};       % set later
 channelLabelsDefault = {};      % set later
+parsedParamsDefault = [];       % set later
+parsedDataDefault = [];         % set later
 verboseDefault = true;
 figTypesDefault = 'png';
 
@@ -143,7 +145,6 @@ iP.FunctionName = mfilename;
 % Add required inputs to the Input Parser
 addRequired(iP, 'fileName', ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-                                                % introduced after R2016b
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ExpMode', expModeDefault, ...
@@ -166,6 +167,10 @@ addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
     @(x) isempty(x) || iscellstr(x));
 addParameter(iP, 'ChannelLabels', channelLabelsDefault, ...
     @(x) isempty(x) || iscellstr(x));
+addParameter(iP, 'ParsedParams', parsedParamsDefault, ...
+    @(x) validateattributes(x, {'struct'}, {'scalar'}));
+addParameter(iP, 'ParsedData', parsedDataDefault, ...
+    @(x) validateattributes(x, {'struct'}, {'scalar'}));
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
@@ -183,6 +188,8 @@ timeEnd = iP.Results.TimeEnd;
 channelTypes = iP.Results.ChannelTypes;
 channelUnits = iP.Results.ChannelUnits;
 channelLabels = iP.Results.ChannelLabels;
+parsedParams = iP.Results.ParsedParams;
+parsedData = iP.Results.ParsedData;
 verbose = iP.Results.Verbose;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
@@ -192,8 +199,34 @@ if ~isempty(channelTypes)
                             channelTypes, 'UniformOutput', false);
 end
 
-% Set (some) dependent argument defaults
+%% Load data
+% Load and parse the abf file if parsedParams and parsedData not both provided
+if isempty(parsedParams) || isempty(parsedData)
+    [parsedParams, parsedData] = ...
+        parse_abf(fileName, 'Verbose', false, ...
+                  'ExpMode', expMode, 'TimeUnits', timeUnits, ...
+                  'ChannelTypes', channelTypes, ...
+                  'ChannelUnits', channelUnits, ...
+                  'ChannelLabels', channelLabels);
+end
+
+% Decide on the file directory and file base
 [fileDir, fileBase, ~] = fileparts(fileName);
+if isempty(fileDir)
+    % Use the present working directory
+    fileDir = pwd;
+end
+if isempty(fileBase)
+    % Get the current time stamp
+    tempStamp = datestr(clock, 30);     % current time stamp
+    dateStamp = [tempStamp(1:8)];       % only use date
+    dateTimeStamp = [tempStamp(1:end-2)];  % take off seconds
+
+    % Construct a file base based on the time stamp
+    fileBase = ['someData_', dateTimeStamp];
+end
+
+% Decide on the output folder
 if isempty(outFolder)
     outFolder = fullfile(fileDir, strcat(fileBase, '_traces'));
 end
@@ -201,27 +234,22 @@ if verbose
     fprintf('Outfolder is %s ...\n', outFolder);
 end
 
-%% Check if needed output directories exist
+% Check if needed output directories exist
 check_dir(outFolder, 'Verbose', verbose);
 
-%% Load data
-% Load and parse the abf file
-[abfParams, data, tVec, ~, ~, ~, dataReordered] = ...
-    parse_abf(fileName, 'Verbose', false, ...
-              'ExpMode', expMode, 'TimeUnits', timeUnits, ...
-              'ChannelTypes', channelTypes, ...
-              'ChannelUnits', channelUnits, ...
-              'ChannelLabels', channelLabels);
-
 % Extract the parsed parameters
-expMode = abfParams.expMode;
-channelLabels = abfParams.channelLabels;
-nDimensions = abfParams.nDimensions;
-nChannels = abfParams.nChannels;
-nSweeps = abfParams.nSweeps;
-siUs = abfParams.siUs;
-siPlot = abfParams.siPlot;
-timeUnits = abfParams.timeUnits;
+expMode = parsedParams.expMode;
+channelLabels = parsedParams.channelLabels;
+nDimensions = parsedParams.nDimensions;
+nChannels = parsedParams.nChannels;
+nSweeps = parsedParams.nSweeps;
+siUs = parsedParams.siUs;
+siPlot = parsedParams.siPlot;
+timeUnits = parsedParams.timeUnits;
+
+% Extract time and data vectors
+timeVec = parsedData.tVec;
+data = parsedData.data;
 
 %% Prepare for plotting
 % Set default x-axis limits
@@ -229,7 +257,7 @@ if isempty(timeStart)
     timeStart = 0;
 end
 if isempty(timeEnd)
-    timeEnd = tVec(end);
+    timeEnd = timeVec(end);
 end
 if verbose
     fprintf('Interval to show = [%g %g]\n', timeStart, timeEnd);
@@ -275,7 +303,7 @@ if ~individually && strcmpi(expMode, 'EEG')
     figNum = 1;
 
     % Do the plotting
-    h = plot_traces(tVec, vecAll, 'XLimits', xlimits, ...
+    h = plot_traces(timeVec, vecAll, 'XLimits', xlimits, ...
                     'XLabel', xLabel, 'YLabel', yLabel, ...
                     'TraceLabels', traceLabels, ...
                     'FigTitle', figTitle, 'FigName', figName, ...
@@ -307,7 +335,7 @@ elseif ~individually && strcmpi(expMode, 'patch') || ...
         figNum = 100 * iChannel;
 
         % Do the plotting
-        h = plot_traces(tVec, vecAll, 'XLimits', xlimits, ...
+        h = plot_traces(timeVec, vecAll, 'XLimits', xlimits, ...
                         'XLabel', xLabel, 'YLabel', yLabel, ...
                         'TraceLabels', traceLabels, ...
                         'FigTitle', figTitle, 'FigName', figName, ...
@@ -342,7 +370,7 @@ elseif individually && strcmpi(expMode, 'patch')
             figNum = 100 * iChannel + iSwp;
 
             % Do the plotting
-            h = plot_traces(tVec, vecAll, 'XLimits', xlimits, ...
+            h = plot_traces(timeVec, vecAll, 'XLimits', xlimits, ...
                             'XLabel', xLabel, 'YLabel', yLabel, ...
                             'TraceLabels', traceLabels, ...
                             'FigTitle', figTitle, 'FigName', figName, ...
@@ -369,7 +397,7 @@ OLD CODE:
 %    set(h, 'Visible', 'Off');
 %    clf(h);
 %    for j = 1:nChannels
-%        plot(tVec, vvecAll(:, j));    hold on;
+%        plot(timeVec, vvecAll(:, j));    hold on;
 %    end
 %    axis([timeStart timeEnd minimum-0.2*range maximum+0.2*range]);
 %    xlabel(['Time (', timeUnits, ')']);
@@ -381,7 +409,7 @@ OLD CODE:
 %        set(h, 'Visible', 'Off');
 %        clf(h);
 %        for k = 1:nSweeps
-%            plot(tVec, vecAll(:, k));    hold on;
+%            plot(timeVec, vecAll(:, k));    hold on;
 %        end
 %        axis([timeStart timeEnd minimum-0.2*range maximum+0.2*range]);
 %        xlabel(['Time (', timeUnits, ')']);
@@ -392,7 +420,7 @@ OLD CODE:
 %        h = figure(1+j);
 %        set(h, 'Visible', 'Off');
 %        clf(h);
-%        plot(tVec, vvec, 'k');    hold on;
+%        plot(timeVec, vvec, 'k');    hold on;
 %        axis([timeStart timeEnd minimum-0.2*range maximum+0.2*range]);
 %        xlabel(['Time (', timeUnits, ')']);
 %
@@ -402,7 +430,7 @@ OLD CODE:
 %            h = figure(100*j + k);
 %            set(h, 'Visible', 'Off');
 %            clf(h);
-%            plot(tVec, vec, 'k');    hold on;
+%            plot(timeVec, vec, 'k');    hold on;
 %            axis([timeStart timeEnd minimum-0.2*range maximum+0.2*range]);
 %            xlabel(['Time (', timeUnits, ')']);
 %         % y-axis labels: channelLabels{1} is Voltage, channelLabels{2} is Current, channelLabels{3} is Conductance
@@ -567,7 +595,7 @@ end
 %                   and a cell array of char arrays for 3-data data
 %                   default == 'EEG amplitude' for 2-data data and {'Voltage', 'Current', 'Conductance'} for 3-data data
 
-function [data, siUs, tVec] = plot_traces_abf (fileName, expMode, data, siUs, outFolder, timeStart, timeEnd, plotMode, timeUnits, channelUnits, channelLabels)
+function [data, siUs, timeVec] = plot_traces_abf (fileName, expMode, data, siUs, outFolder, timeStart, timeEnd, plotMode, timeUnits, channelUnits, channelLabels)
 
 if strcmp(timeUnits, 'ms')
     % Use a sampling interval in ms
@@ -618,7 +646,7 @@ elseif nDimensions == 3    % Usually Patch clamp
     end
 end
 
-plot(tVec, dataVec(:, iTrace), ...
+plot(timeVec, dataVec(:, iTrace), ...
     'DisplayName', ['Sweep #', num2str(iTrace)]);
 
 legend(traceLabels);
@@ -643,7 +671,7 @@ if nDimensions == 2 && individually        % could be EEG or patch clamp
                     fileIdentifier, iChannel))
         vvec = data(:, iChannel);
         figNum = 1+iChannel;
-        h = plot_traces(figNum, tVec, vvec, ...
+        h = plot_traces(figNum, timeVec, vvec, ...
                                     xlimits, xLabel, yLabel, ...
                                     traceLabels, figTitle, figName);
         title(sprintf('Data for %s between %.1f %s and %.1f %s', traceLabels{iChannel}, timeStart, timeUnits, timeEnd, timeUnits));
@@ -663,7 +691,7 @@ elseif nDimensions == 3 && individually    % usually Patch clamp        %%% Need
                                         fileIdentifier, iChannel, iSwp));
             vec = data(:, iChannel, iSwp);
             figNum = 100*iChannel+iSwp;
-            h = plot_traces(figNum, tVec, vec, ...
+            h = plot_traces(figNum, timeVec, vec, ...
                                        xlimits, xLabel, yLabel, ...
                                        traceLabels, figTitle, figName);
             title(sprintf('Data for %s between %.1f %s and %.1f %s', ...
@@ -676,7 +704,63 @@ elseif nDimensions == 3 && individually    % usually Patch clamp        %%% Need
     end
 end
 
-h = plot_traces(tVec, vecAll, xlimits, xLabel, yLabel, ...
+h = plot_traces(timeVec, vecAll, xlimits, xLabel, yLabel, ...
                 traceLabels, figTitle, figName, figNum);
 
+[parsedParams, data, timeVec, ~, ~, ~, dataReordered] = ...
+
+addRequired(iP, 'fileNameORdata', ...
+    @(x) ischar(x) || isstring(x) || isempty(x) || isnumeric(x));
+
+%       fileNameORdata    - file name or the data array returned by abf2load
+%                       if file name: 
+%                           could be either the full path or 
+%                           a relative path in current directory
+%                           .abf is not needed (e.g. 'B20160908_0004')
+%                       if data:
+%                           parsedParams and timeVec must also be provided
+%                   must be a string scalar or a character vector
+%                       or a numeric array
+
+% Parse the first argument
+if ischar(fileNameORdata) || isstring(fileNameORdata)
+    % The first argument is the file name
+    fileName = fileNameORdata;
+
+    % Load and parse the abf file
+    [parsedParams, data, timeVec, ~, ~, ~, ~] = ...
+        parse_abf(fileName, 'Verbose', false, ...
+                  'ExpMode', expMode, 'TimeUnits', timeUnits, ...
+                  'ChannelTypes', channelTypes, ...
+                  'ChannelUnits', channelUnits, ...
+                  'ChannelLabels', channelLabels);
+else
+    % The first argument is the data
+    data = fileNameORdata;
+
+    % Check if parsedParams and timeVec are provided
+    if isempty(parsedParams)
+        error({['If the first argument is the data, ', ...
+                'you must provide parsedParams!'], ...
+                'Type ''help %s'' for usage']}, mfilename);
+    elseif isempty(timeVec)
+        error({['If the first argument is the data, ', ...
+                'you must provide parsedParams!'], ...
+                'Type ''help %s'' for usage']}, mfilename);
+    end
+
+    % Set an empty file name unless a file name is provided as 
+    %   an optional argument
+    if ~isempty(fileNameUser)
+        fileName = fileNameUser;
+    else
+        fileName = '';
+    end
+end
+
+% 2018-10-03 - The first argument can now be data,
+%               in which case parsedParams and timeVec must be provided
+
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

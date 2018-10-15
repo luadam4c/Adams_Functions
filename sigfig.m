@@ -1,5 +1,5 @@
 function nSigFig = sigfig(number, varargin)
-%% Get the number of significant figures from a number (numeric or string)
+%% Returns the number of significant figures from a number (numeric or string)
 % Usage: nSigFig = sigfig(number, varargin)
 % Explanation:
 %       Returns 0 for 0
@@ -25,7 +25,6 @@ function nSigFig = sigfig(number, varargin)
 %       varargin    - TODO
 %
 % Used by:    
-%       /home/Matlab/minEASE/minEASE.m
 %
 % File History:
 % 2018-02-14 Created by Adam Lu
@@ -167,5 +166,8 @@ maxSigFigDefault = 15;      % maximum number of significant figures by default
 % TODO: Change this
 maxSigFig = maxSigFigDefault;
 
+%       /home/Matlab/minEASE/minEASE.m
 
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

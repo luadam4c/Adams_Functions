@@ -1,9 +1,9 @@
-function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
-            gVecsAll, dataReorderedAll, abfParamsAllCell] = ...
+function [abfParamsTable, abfDataTable, abfParamsStruct, ...
+            abfDataStruct, abfParamsCell, abfDataCell] = ...
                 plot_all_abfs (varargin)
 %% Plots all abf files in a directory
-% Usage: [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
-%           gVecsAll, dataReorderedAll, abfParamsAllCell] = ...
+% Usage: [abfParamsTable, abfDataTable, abfParamsStruct, ...
+%           abfDataStruct, abfParamsCell, abfDataCell] = ...
 %               plot_all_abfs (varargin)
 %
 % Arguments:
@@ -70,9 +70,9 @@ function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 %                   default == 'png'
 %
 % Requires:
+%       cd/all_files.m
 %       cd/compute_and_plot_evoked_LFP.m
 %       cd/compute_and_plot_concatenated_trace.m
-%       cd/extract_fullpaths.m
 %       cd/parse_all_abfs.m
 %       cd/plot_fields.m
 %       cd/plot_traces_abf.m
@@ -107,6 +107,8 @@ function [abfParamsAllStruct, dataAll, tVecAll, vVecsAll, iVecsAll, ...
 %                   but plots individual traces to subdirectories
 % 2018-09-30 - Changed LFP tuning curves outFolder to fullfile(outFolder, 'LFP')
 % 2018-10-03 - Updated usage of parse_all_abfs.m
+%               changed outputs to allParsedParamsTable, allParsedDataTable, 
+%                   abfParamsCell
 % TODO: Restructure code so that each type of plot is its own subfunction
 
 %% Hard-coded parameters
@@ -218,30 +220,30 @@ check_dir(outFolder);
 % Decide on the files to use
 if isempty(fileNames)
     % Find all .abf files in the directory
-    files = dir(fullfile(directory, '*.abf'));
-    if isempty(files)
-        fprintf('No .abf files in current directory!\n');
+    [~, fileNames] = all_files('Directory', directory, ...
+                                'Extension', '.abf', ...
+                                'Verbose', verbose);
+
+    % Find all .abf files in the directory
+    if isempty(fileNames)
         fprintf('Type ''help %s'' for usage\n', mfilename);
-        abfParamsAllStruct = struct;
-        dataAll = {};
-        tVecAll = {};
-        vVecsAll = {};
-        iVecsAll = {};
-        gVecsAll = {};
-        dataReorderedAll = {};
-        abfParamsAllCell = {};
+        allParsedParamsTable = table;
+        allParsedDataTable = table;
+        allParsedParamsStruct = struct;
+        allParsedDataStruct = struct;
+        allParsedParamsCell = cell;
+        allParsedDataCell = cell;
         return
     end
-
-    % Construct the full file names
-    fileNames = extract_fullpaths(files);
 end
 
 % Count the number of files
 nFiles = numel(fileNames);
 
 %% Parse and identify protocols from each file in the directory
-[abfParamsAllStruct, abfDataAllStruct, abfParamsAllCell] = ...
+% Parse all .abf files in this directory
+[abfParamsTable, abfDataTable, ...
+    abfParamsStruct, abfDataStruct, abfParamsCell, abfDataCell] = ...
     parse_all_abfs('FileNames', fileNames, ...
                     'Directory', directory, 'OutFolder', outFolder, ...
                     'Verbose', false, 'UseOriginal', useOriginal, ...
@@ -251,17 +253,18 @@ nFiles = numel(fileNames);
                     'ChannelLabels', channelLabelsUser, ...
                     'IdentifyProtocols', true);
 
-dataAll
-tVecAll
-vVecsAll
-iVecsAll
-gVecsAll
-dataReorderedAll
+% Extract each column from the data table as cell arrays
+dataAll = abfDataTable.data;
+tVecAll = abfDataTable.tVec;
+vVecsAll = abfDataTable.vVecs;
+iVecsAll = abfDataTable.iVecs;
+gVecsAll = abfDataTable.gVecs;
+dataReorderedAll = abfDataTable.dataReordered;
 
 %% Plot F-I plots
 parfor iFile = 1:nFiles
     % Extract from cell arrays
-    abfParams = abfParamsAllCell{iFile};
+    abfParams = abfParamsCell{iFile};
 
     % Extract some parameters
     isCI = abfParams.isCI;
@@ -296,7 +299,7 @@ check_dir(outFolderLfp);
 featuresLfpAll = cell(nFiles, 1);
 parfor iFile = 1:nFiles
     % Extract from cell arrays
-    abfParams = abfParamsAllCell{iFile};
+    abfParams = abfParamsCell{iFile};
 
     % Extract some parameters
     isEvokedLfp = abfParams.isEvokedLfp;
@@ -305,6 +308,7 @@ parfor iFile = 1:nFiles
     if isEvokedLfp
         % Extract from cell arrays
         fileName = fileNames{iFile};
+        abfData = abfDataCell{iFile};
 
         % Extract some more parameters
         timeUnits = abfParams.timeUnits;
@@ -335,6 +339,7 @@ parfor iFile = 1:nFiles
         %   Note: Must make outFolder empty so that outputs
         %           be plotted in subdirectories
         plot_traces_abf(fileName, ...
+            'ParsedParams', abfParams, 'ParsedData', abfData, ...
             'Verbose', false, 'ExpMode', expMode, ...
             'PlotMode', plotMode, 'Individually', individually, ...
             'OutFolder', '', 'TimeUnits', timeUnits, ...
@@ -393,7 +398,8 @@ end
 %% Plot individual traces
 parfor iFile = 1:nFiles
     % Extract from cell arrays
-    abfParams = abfParamsAllCell{iFile};
+    abfParams = abfParamsCell{iFile};
+    abfData = abfDataCell{iFile};
 
     % Extract some parameters
     isCI = abfParams.isCI;
@@ -421,6 +427,7 @@ parfor iFile = 1:nFiles
         %   Note: Must make outFolder empty so that outputs
         %           be plotted in subdirectories
         plot_traces_abf(fileName, 'Verbose', false, ...
+            'ParsedParams', abfParams, 'ParsedData', abfData, ...
             'ExpMode', expMode, 'Individually', individually, ...
             'OutFolder', '', 'TimeUnits', timeUnits, ...
             'TimeStart', timeStart, 'TimeEnd', timeEnd, ...
@@ -433,7 +440,7 @@ end
 
 %% Compute and plot concatenated traces for each channel
 %       if the number of channels and channel types are all the same
-compute_and_plot_concatenated_trace(abfParamsAllStruct, dataReorderedAll, ...
+compute_and_plot_concatenated_trace(abfParamsStruct, dataReorderedAll, ...
                                     'SourceDirectory', directory, ...
                                     'OutFolder', outFolder);
 
@@ -644,7 +651,7 @@ isCIAll = false(nFiles, 1);
 isEvokedLfpAll = false(nFiles, 1);
 parfor iFile = 1:nFiles
         % Extract from cell arrays
-        abfParams = abfParamsAllCell{iFile};
+        abfParams = abfParamsCell{iFile};
         iVecs = iVecsAll{iFile};
 
         % Extract some parameters
@@ -677,4 +684,37 @@ lfpFigNames = ...
             lfpFieldNames, 'UniformOutput', false);
 
 
+%       cd/get_column.m
+dataAll = get_column(abfDataTable, 'data');
+tVecAll = get_column(abfDataTable, 'tVec');
+vVecsAll = get_column(abfDataTable, 'vVecs');
+iVecsAll = get_column(abfDataTable, 'iVecs');
+gVecsAll = get_column(abfDataTable, 'gVecs');
+dataReorderedAll = get_column(abfDataTable, 'dataReordered');
+
+%       cd/extract_fullpath.m
+
+if isempty(fileNames)
+    % Find all .abf files in the directory
+    files = dir(fullfile(directory, '*.abf'));
+    if isempty(files)
+        fprintf('No .abf files in current directory!\n');
+        fprintf('Type ''help %s'' for usage\n', mfilename);
+        abfParamsStruct = struct;
+        dataAll = {};
+        tVecAll = {};
+        vVecsAll = {};
+        iVecsAll = {};
+        gVecsAll = {};
+        dataReorderedAll = {};
+        abfParamsCell = {};
+        return
+    end
+
+    % Construct the full file names
+    fileNames = extract_fullpath(files);
+end
+
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -16,8 +16,10 @@ function check_dir (directories, varargin)
 %                                   message box
 %                       'none'  - neither stop program nor show a message box
 %                   default == 'wait'
+%
 % Requires:
-%       cd/construct_fullfilename.m
+%       cd/construct_fullpath.m
+%       cd/print_or_show_message.m
 %
 % Used by:
 %       cd/check_subdir.m
@@ -26,12 +28,15 @@ function check_dir (directories, varargin)
 %       cd/parse_all_abfs.m
 %       cd/plot_all_abfs.m
 %       cd/plot_traces_abf.m
-%       /media/adamX/m3ha/data_dclamp/take4/find_initial_slopes.m
-%
+%       /media/adamX/m3ha/data_dclamp/initial_slopes.m
+%       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
+%       /home/Matlab/function_template.m
+
 % File History:
 % 2018-06-21 Modified from check_subdir.m
 % 2018-09-18 Added input parser and verbose
 % 2018-10-03 Now uses print_or_show_message
+% 2018-10-03 Now uses isfolder()
 
 %% Hard-coded parameters
 validMessageModes = {'wait', 'show', 'none'};
@@ -74,14 +79,14 @@ messageMode = validatestring(iP.Results.MessageMode, validMessageModes);
 if iscell(directories)
     for k = 1:numel(directories)        
         % Construct the full path to the directory
-        directory = construct_fullfilename(directories{k});
+        directory = construct_fullpath(directories{k});
 
         % Check the directory and create it if it doesn't already exist
         check_dir_helper(directory, mtitle, messageMode, verbose);
     end
 else
     % Construct the full path to the directory
-    directory = construct_fullfilename(directories);
+    directory = construct_fullpath(directories);
     
     % Check the directory and create it if it doesn't already exist
     check_dir_helper(directory, mtitle, messageMode, verbose);
@@ -92,7 +97,7 @@ end
 function check_dir_helper(directory, mtitle, messageMode, verbose)
 
 % Check if the directory exists
-if exist(directory, 'dir') ~= 7
+if ~isfolder(directory)
     % Create the directory
     mkdir(directory);
 
@@ -113,6 +118,8 @@ if verbose
 end
 
 messageMode= 'show';
+
+if exist(directory, 'dir') ~= 7
 
 %}
 

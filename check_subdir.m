@@ -7,35 +7,47 @@ function check_subdir (parentDirectory, subDirectories, varargin)
 %       subDirectories - directory(ies) to check
 %                       must be a cell array of character arrays
 %                           or a scalar text
-%       varargin        - 'Verbose': whether to write to standard output
-%                       must be numeric/logical 1 (true) or 0 (false)
-%                       default == true
+%       varargin    - 'Verbose': whether to write to standard output
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'MessageMode' - how message boxes are shown
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'wait'  - stops program and waits for the user
+%                                   to close the message box
+%                       'show'  - does not stop program but still show the
+%                                   message box
+%                       'none'  - neither stop program nor show a message box
+%                   default == 'wait'
 %
 % Requires:
 %       cd/check_dir.m
 %
 % Used by:    
+%       cd/find_passive_params.m
+%       cd/find_istart.m
+%       cd/find_IPSC_peak.m
+%       cd/find_LTS.m
+%       cd/create_subdir_copy_files.m
+%       cd/create_input_file.m
 %       /media/adamX/m3ha/data_dclamp/take4/find_special_cases.m
 %       /media/adamX/m3ha/optimizer4gabab/optimizer_4compgabab.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting22.m
-%       /home/Matlab/Adams_Functions/find_passive_params.m
-%       /home/Matlab/Adams_Functions/find_istart.m
-%       /home/Matlab/Adams_Functions/find_IPSC_peak.m
-%       /home/Matlab/Adams_Functions/find_LTS.m
-%       /home/Matlab/Adams_Functions/create_subdir_copy_files.m
-%       /home/Matlab/Adams_Functions/create_input_file.m
 %       /home/Matlab/minEASE/minEASE.m
 %       /home/Matlab/EEG_gui/EEG_gui.m
 %       /home/Matlab/function_template.m
-%
+
 % File History:
 % 2016-11-02 Created
 % 2018-06-19 Changed tabs to spaces
 % 2018-09-18 Added input parser and verbose
-% TODO: Use print_or_show_message
+% 2018-10-03 Added 'MessageMode'
+
+%% Hard-coded parameters
+validMessageModes = {'wait', 'show', 'none'};
 
 %% Default values for optional arguments
 verboseDefault = true;
+messageModeDefault = 'none';        % do not display message box by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -61,10 +73,13 @@ addRequired(iP, 'subDirectories', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'MessageMode', messageModeDefault, ...
+    @(x) any(validatestring(x, validMessageModes)));
 
 % Read from the Input Parser
 parse(iP, parentDirectory, subDirectories, varargin{:});
 verbose = iP.Results.Verbose;
+messageMode = validatestring(iP.Results.MessageMode, validMessageModes);
 
 %% Construct the full paths for checking
 if iscell(subDirectories)
@@ -77,7 +92,7 @@ else
 end
 
 %% Check directory(ies)
-check_dir(directories, 'Verbose', verbose);
+check_dir(directories, 'Verbose', verbose, 'MessageMode', messageMode);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

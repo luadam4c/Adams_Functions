@@ -1,6 +1,6 @@
-function [finalSuffix] = construct_suffix (varargin)
+function finalSuffix = construct_suffix (varargin)
 %% Constructs final suffix based on optional suffices and/or Name-Value pairs
-% Usage: [finalSuffix] = construct_suffix (varargin)
+% Usage: finalSuffix = construct_suffix (varargin)
 % Outputs:
 %       finalSuffix    - a string (may be empty) that is a final suffix
 % Arguments:
@@ -22,6 +22,10 @@ function [finalSuffix] = construct_suffix (varargin)
 % 2017-05-04 Moved from construct_fullfilename.m
 % 2018-05-08 Changed tabs to spaces and limited width to 80
 
+%% Default values for optional arguments
+sufficesDefault = '';
+nameValuePairsDefault = {'', NaN};
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
@@ -30,12 +34,12 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the input Parser
-addParameter(iP, 'Suffices', '', ...
+addParameter(iP, 'Suffices', sufficesDefault, ...
     @(x) assert(ischar(x) || iscell(x) && (min(cellfun(@ischar, x)) || ...
                 min(cellfun(@isstring, x))) || isstring(x), ...
                 ['Suffices must be either a string/character array ', ...
                     'or a cell array of strings/character arrays!']));
-addParameter(iP, 'NameValuePairs', {'', NaN}, ...
+addParameter(iP, 'NameValuePairs', nameValuePairsDefault, ...
     @(x) assert(iscell(x) && numel(x) == 2 ...
             && (ischar(x{1}) || iscell(x{1}) || isstring(x{1})) ...
             && isnumeric(x{2}), ...
@@ -130,3 +134,5 @@ end
 OLD CODE:
 
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

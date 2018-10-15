@@ -88,7 +88,7 @@ for p = 1:nump
 	% Store parameter names and values for each file (to keep things in order)
 	indices = (ct + 1):(ct + nperp(p));					% indices for this parameter
 	pchnames(indices) = repmat(pnames(p), 1, length(indices));
-	pchvalues(indices) = pvalues{p}';
+	pchvalues(indices) = transpose(pvalues{p});
 
 	% Update count of number of files used
 	ct = ct + nperp(p);
@@ -103,7 +103,7 @@ m3.ntrials = ntrials;
 m3.pchnames = pchnames;
 m3.pchvalues = pchvalues;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
@@ -111,22 +111,22 @@ OLD CODE:
 loopfiles1 = dirr(infolder1, loopedparamsfile);
 loopfiles2 = dirr(infolder2, loopedparamsfile);
 if length(loopfiles1) > 1 || length(loopfiles2) > 1
-	error('Too many versions of %s!', loopedparamsfile);
+    error('Too many versions of %s!', loopedparamsfile);
 elseif length(loopfiles1) < 1 || length(loopfiles2) < 1
-	error('%s is required in each infolder!', loopedparamsfile);
+    error('%s is required in each infolder!', loopedparamsfile);
 else
-	m1 = matfile(fullfile(infolder1, loopfiles1(1).name));		% there should be only one loopedparams.mat
-	m2 = matfile(fullfile(infolder2, loopfiles2(1).name));
+    m1 = matfile(fullfile(infolder1, loopfiles1(1).name));      % there should be only one loopedparams.mat
+    m2 = matfile(fullfile(infolder2, loopfiles2(1).name));
 end
 
 if ~isequal(latency_cells_to_plot1, latency_cells_to_plot2)
-	error('latency_cells_to_plot are not the same!');
+    error('latency_cells_to_plot are not the same!');
 else
-	m3.latency_cells_to_plot = latency_cells_to_plot1;
+    m3.latency_cells_to_plot = latency_cells_to_plot1;
 end
 
 loopedparamsfile_old = 'loopvariables.mat'; %%% TODO: Make this an option too for compatibility with old data
 
 %}
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

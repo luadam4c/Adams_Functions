@@ -27,7 +27,8 @@ function [allWays, nWays] = distribute_balls_into_boxes (nBalls, varargin)
 %                   default == false
 %
 % Used by:
-%       /home/Matlab/Adams_Functions/piecelinspace.m
+%       cd/load_examples.m
+%       cd/piecelinspace.m
 
 % File History:
 %   2018-08-02 - Created by Adam Lu
@@ -281,3 +282,5 @@ allWays = ...
 nWays = numel(allWays);
 
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

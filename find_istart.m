@@ -168,10 +168,13 @@ if plotflag
 	close(h);
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %{
-%% OLD CODE
+OLD CODE:
 
-ind = round(istartwin(1)/sims):round(istartwin(2)/sims);	% indices of interest % NOT ROBUST
-
+ind = round(istartwin(1)/sims):round(istartwin(2)/sims);    % indices of interest % NOT ROBUST
 
 %}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
