@@ -9,6 +9,7 @@ function vectors = force_column_numeric (vectors)
 % Example(s):
 %       vector = force_column_numeric(vector);
 %       vectors = force_column_numeric(vectors);
+%       force_column_numeric({[3, 4], [5; 6], magic(3)})
 % Outputs:
 %       vectors     - vectors transformed
 %                   specified as a numeric array 

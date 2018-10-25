@@ -1,6 +1,6 @@
-function errors = m3ha_compute_single_neuron_errors (vSim, vReal, varargin)
+function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %% Computes all errors for single neuron data
-% Usage: errors = m3ha_compute_single_neuron_errors (vSim, vReal, varargin)
+% Usage: errors = compute_single_neuron_errors (vSim, vReal, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -39,8 +39,10 @@ function errors = m3ha_compute_single_neuron_errors (vSim, vReal, varargin)
 %                   default == TODO
 %
 % Requires:
+%       cd/find_window_endpoints.m
+%       cd/force_row_numeric.m
 %       cd/iscellnumeric.m
-%       cd/match_row_counts.m
+%       cd/match_row_count.m
 %
 % Used by:    
 %       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
@@ -52,7 +54,14 @@ function errors = m3ha_compute_single_neuron_errors (vSim, vReal, varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-param1Default   = [];                   % default TODO: Description of param1
+timeVecsDefault = ;         % default TODO: Description of param1
+ivecsSimDefault = ;         % default TODO: Description of param1
+ivecsRealDefault = ;        % default TODO: Description of param1
+simModeDefault = ;          % default TODO: Description of param1
+fitWindowDefault = ;        % default TODO: Description of param1
+baseWindowDefault = ;       % default TODO: Description of param1
+baseNoiseDefault = ;        % default TODO: Description of param1
+sweepWeightsDefault = ;     % default TODO: Description of param1
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -78,21 +87,45 @@ addRequired(iP, 'vReal', ...
                     'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'param1', param1Default, ...
+addParameter(iP, 'TimeVecs', timeVecsDefault, ...
+    % TODO: validation function %);
+addParameter(iP, 'IvecsSim', ivecsSimDefault, ...
+    % TODO: validation function %);
+addParameter(iP, 'IvecsReal', ivecsRealDefault, ...
+    % TODO: validation function %);
+addParameter(iP, 'SimMode', simModeDefault, ...
+    % TODO: validation function %);
+addParameter(iP, 'FitWindow', fitWindowDefault, ...
+    % TODO: validation function %);
+addParameter(iP, 'BaseWindow', baseWindowDefault, ...
+    % TODO: validation function %);
+addParameter(iP, 'BaseNoise', baseNoiseDefault, ...
+    % TODO: validation function %);
+addParameter(iP, 'SweepWeights', sweepWeightsDefault, ...
     % TODO: validation function %);
 
 % Read from the Input Parser
-parse(iP, vReal, varargin{:});
-param1 = iP.Results.param1;
+parse(iP, vSim, vReal, varargin{:});
+tBoth = iP.Results.TimeVecs;
+iSim = iP.Results.IvecsSim;
+iReal = iP.Results.IvecsReal;
+simMode = iP.Results.SimMode;
+fitWindow = iP.Results.FitWindow;
+baseWindow = iP.Results.BaseWindow;
+baseNoise = iP.Results.BaseNoise;
+sweepWeights = iP.Results.SweepWeights;
 
-% Make sure windows are row vectors
-if numel(fitWindow) == 2 && iscolumn(fitWindow)
-    fitWindow = transpose(fitWindow);
+% Make sure all windows, if a vector and not a matrix, are row vectors
+if isvector(fitWindow)
+    fitWindow = force_row_numeric(fitWindow);
 end
 
 %% Preparation
 % Count the number of sweeps
 nSweeps = numel(vSim);
+
+% Match row counts for sweep-dependent variables with the number of sweeps
+fitWindow = match_row_count(fitWindow, nSweeps);
 
 % Simulation mode specific operations
 switch simMode
@@ -103,15 +136,35 @@ switch simMode
 end
 
 % Get the lower and upper bounds of the fit windows
-fitWindow = match_row_counts(fitWindow, nSweeps);
 fitWindowLowerBounds = fitWindow(:, 1);
 fitWindowUpperBounds = fitWindow(:, 2);
 
-% Calculate constants for efficiency
-totalSweepWeights = sum(sweepWeights);
-totalltsw = sum(ltsWeights);
+% Extract the regions to fit
+tBoth = cellfun();
+vSim = cellfun();
+vReal = cellfun();
+iSim = cellfun();
+iReal = cellfun();
 
+% compute root-mean-squared error
+parfor iSwp = 1:nSweeps
+    % Get the time vector for this sweep
+    timeVec = realData{iSwp}(:, 1);
 
+    % Find the indices of the time vector for fitting
+    indFitWin = find(timeVec >= fitWindowLowerBound(iSwp) & ...
+                     timeVec <= fitWindowUpperBound(iSwp));
+
+    % Extract the vectors for fitting
+    tFit{iSwp} = timeVec(indFitWin);
+    vreal{iSwp} = realData{iSwp}(indFitWin, 2);
+    vsim{iSwp} = simData{iSwp}(indFitWin, 2);
+    ireal{iSwp} = realData{iSwp}(indFitWin, 3);
+    isim{iSwp} = simData{iSwp}(indFitWin, 9);
+
+    % Compute root-mean-squared error (mV) over the fit window
+    rmse(iSwp) = compute_rms_error(vreal{iSwp}, vsim{iSwp});
+end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

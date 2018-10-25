@@ -9,6 +9,7 @@ function vectors = force_row_numeric (vectors)
 % Example(s):
 %       vector = force_row_numeric(vector);
 %       vectors = force_row_numeric(vectors);
+%       force_row_numeric({[3, 4], [5; 6], magic(3)})
 % Outputs:
 %       vectors     - vectors transformed
 %                   specified as a numeric array 
@@ -23,7 +24,7 @@ function vectors = force_row_numeric (vectors)
 %       cd/iscellnumeric.m
 %
 % Used by:    
-%       cd/m3ha_compute_single_neuron_errors.m TODO
+%       cd/compute_single_neuron_errors.m
 
 % File History:
 % 2018-10-25 Modified from force_column_numeric.m
@@ -52,10 +53,10 @@ addRequired(iP, 'vectors', ...                   % vectors
 parse(iP, vectors);
 
 %% Do the job
-if isnumeric(vectors) && ~iscolumn(vectors)
+if isnumeric(vectors) && ~isrow(vectors)
     if isvector(vectors)
-        % Reassign as a row
-        vectors = reshape(vectors, 1, numel(vectors));
+        % Must be a column vector, so transpose it
+        vectors = transpose(vectors);
     else
         % TODO: Make this more efficient by modifying force_column_cell.m
         % Reassign as a column cell array of column vectors
@@ -76,6 +77,8 @@ end
 
 %{
 OLD CODE:
+
+vectors = reshape(vectors, 1, numel(vectors));
 
 %}
 

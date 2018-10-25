@@ -1,6 +1,6 @@
-function [vvecNew] = correct_unbalanced_bridge (vvecOld, ivecOld, varargin)
+function vvecNew = correct_unbalanced_bridge (vvecOld, ivecOld, varargin)
 %% Shifts a current pulse response to correct the unbalanced bridge
-% Usage: [vvecNew] = correct_unbalanced_bridge (vvecOld, ivecOld, varargin)
+% Usage: vvecNew = correct_unbalanced_bridge (vvecOld, ivecOld, varargin)
 % Arguments:    
 %       vvecOld     - Voltage vector to correct
 %                   must be a numeric vector

@@ -18,7 +18,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %                   must be a positive integer scalar
 %
 % Used by:    
-%       cd/m3ha_compute_single_neuron_errors.m
+%       cd/compute_single_neuron_errors.m
 
 % File History:
 % 2018-10-25 Created by Adam Lu

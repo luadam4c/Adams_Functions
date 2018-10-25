@@ -36,6 +36,7 @@ Last Updated 2018-10-25 by Adam Lu
 - [**compute_initial_slopes.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_initial_slopes.m): Computes the average initial slope from a current pulse response
 - [**compute_residuals.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_residuals.m): Computes residual vector(s) from simulated and recorded vectors
 - [**compute_rms_error.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_rms_error.m): Computes the root mean squared error given two vectors
+- [**compute_single_neuron_errors.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_single_neuron_errors.m): Computes all errors for single neuron data
 - [**compute_slope.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_slope.m): Computes the slope given two vectors and two indices
 - [**compute_ylimits.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_ylimits.m): Computes y-axis limits from a minimum and maximum value
 - [**construct_and_check_fullpath.m**](https://github.com/blabuva/Adams_Functions/blob/master/construct_and_check_fullpath.m): Constructs the full path to the file or directory and checks whether it exists
@@ -100,6 +101,7 @@ Last Updated 2018-10-25 by Adam Lu
 - [**intersect_over_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/intersect_over_cells.m): Apply the intersect function over all contents of a cell array
 - [**isaninteger.m**](https://github.com/blabuva/Adams_Functions/blob/master/isaninteger.m): Returns whether each element of an array is an integer
 - [**iscellnumeric.m**](https://github.com/blabuva/Adams_Functions/blob/master/iscellnumeric.m): Returns whether an input is a cell array of numeric arrays
+- [**iscellnumericvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/iscellnumericvector.m): Returns whether an input is a cell array of numeric vectors
 - [**isfigtype.m**](https://github.com/blabuva/Adams_Functions/blob/master/isfigtype.m): Check whether a string or each string in a cell array is a valid figure type accepted by saveas()
 - [**islegendlocation.m**](https://github.com/blabuva/Adams_Functions/blob/master/islegendlocation.m): Check whether a string or each string in a cell array is a valid legend location or 'suppress' or 'auto'
 - [**islinestyle.m**](https://github.com/blabuva/Adams_Functions/blob/master/islinestyle.m): Check whether a string or each string in a cell array is a valid line style accepted by plot() or line()
@@ -113,7 +115,6 @@ Last Updated 2018-10-25 by Adam Lu
 - [**locate_functionsdir.m**](https://github.com/blabuva/Adams_Functions/blob/master/locate_functionsdir.m): Locate the first shared functions directory that exists
 - [**log_arraytext.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_arraytext.m): Create a text file that logs the array information
 - [**log_matfile.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_matfile.m): Print variables in a MATfile to a comma-separated-value file
-- [**m3ha_compute_single_neuron_errors.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_single_neuron_errors.m): Computes all errors for single neuron data
 - [**m3ha_correct_unbalanced_bridge.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_correct_unbalanced_bridge.m): Fix current pulse response traces that may have out-of-balance bridges
 - [**m3ha_create_simulation_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_create_simulation_params.m): Generates a table of simulation parameters from table(s) of neuron parameters
 - [**m3ha_create_single_neuron_commands.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_create_single_neuron_commands.m): Generates simulation commands to be read by NEURON from a table of simulation parameters
