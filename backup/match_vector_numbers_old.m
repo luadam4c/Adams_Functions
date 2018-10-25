@@ -9,18 +9,18 @@ function [vecsMatched, vecsToBeMatched] = ...
 %       TODO
 % Outputs:
 %       vecsMatched - vector(s) matched that may be transformed
-%                   specified as a cell array of numeric column vecsToBeMatched
+%                   specified as a cell array of numeric column vectors
 %       vecsToBeMatched - vector(s) to be matched that may be transformed
-%                   specified as a cell array of numeric column vecsToBeMatched
+%                   specified as a cell array of numeric column vectors
 % Arguments:    
 %       vecsToMatch - vector(s) to match
 %                   Note: If a cell array, each element must be a vector
 %                         If an array, each column is a vector
-%                   must be a numeric array or a cell array of numeric vecsToBeMatched
+%                   must be a numeric array or a cell array of numeric vectors
 %       vecsToBeMatched - vector(s) to be matched
 %                   Note: If a cell array, each element must be a vector
 %                         If an array, each column is a vector
-%                   must be a numeric array or a cell array of numeric vecsToBeMatched
+%                   must be a numeric array or a cell array of numeric vectors
 %
 % Requires:
 %       cd/count_vectors.m
@@ -70,7 +70,7 @@ vecsToMatch = force_column_cell(vecsToMatch);
 % Count the number of vecsToBeMatched
 nToBeMatched = count_vectors(vecsToBeMatched);
 
-% Count the number of pulse vecsToBeMatched
+% Count the number of vecsToMatch
 nOrig = count_vectors(vecsToMatch);
 
 % Make sure nOrig matches up with nToBeMatched

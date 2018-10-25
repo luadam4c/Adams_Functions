@@ -26,7 +26,8 @@ function [allParsedParamsTable, allParsedDataTable, ...
 %                   must be a string scalar or a character vector
 %                   default == pwd
 %                   - 'FileNames': names of .abf files to detect
-%                   must be a cell array of character arrays or strings
+%                   must be a characeter vector, a string array 
+%                       or a cell array of character arrays
 %                   default == detect from pwd
 %                   - 'Verbose': whether to output parsed results
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -86,6 +87,7 @@ function [allParsedParamsTable, allParsedDataTable, ...
 % 2018-10-03 - Changed outputs to allParsedParamsTable, allParsedDataTable, 
 %                   allParsedParamsStruct, allParsedDataStruct, 
 %                   allParsedParamsCell, allParsedDataCell
+% 2018-10-23 - Allowed fileNames to be a character vector
 % 
 
 %% Hard-coded parameters
@@ -121,7 +123,7 @@ addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
                                                 % introduced after R2016b
 addParameter(iP, 'FileNames', fileNamesDefault, ...
-    @(x) isempty(x) || iscellstr(x) || isstring(x));
+    @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'UseOriginal', useOriginalDefault, ...
@@ -180,7 +182,7 @@ if isempty(fileNames)
                                 'Extension', '.abf', ...
                                 'Verbose', verbose);
 
-    % Find all .abf files in the directory
+    % Return usage message if no .abf files found
     if isempty(fileNames)
         fprintf('Type ''help %s'' for usage\n', mfilename);
         allParsedParamsTable = table;
@@ -191,6 +193,9 @@ if isempty(fileNames)
         allParsedDataCell = cell;
         return
     end
+elseif ischar(fileNames)
+    % Place in cell array
+    fileNames = {fileNames};
 end
 
 % Count the number of files

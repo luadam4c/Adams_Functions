@@ -63,7 +63,7 @@ function h = plot_cfit_pulse_response (xVec, yVec, varargin)
 % Requires:
 %       cd/compute_ylimits.m
 %       cd/fit_and_estimate_passive_params.m
-%       cd/force_column_vector.m
+%       cd/force_column_numeric.m
 %       cd/islegendlocation.m
 %       ~/Downloaded_Functions/rgb.m
 %
@@ -73,6 +73,7 @@ function h = plot_cfit_pulse_response (xVec, yVec, varargin)
 % File History:
 % 2018-10-12 Modified from find_passive_params.m
 % 2018-10-12 Now uses phaseName stored in fit_pulse_response.m
+% 2018-10-15 Added display of root-mean-square error
 % 
 
 %% Hard-coded parameters
@@ -80,6 +81,7 @@ yCoverage = 90;                 % coverage of y axis (%)
 nSigFig = 3;                    % number of significant figures for Rinput
 sprColor = 'Crimson';
 lprColor = 'MediumOrchid';
+rmseColor = 'Navy';
 asymptoteColor = 'Navy';
 component1Color = 'Turquoise';
 component2Color = 'DarkGreen';
@@ -371,7 +373,7 @@ otherwise
 end
 
 % Show the root-mean-square error
-text(xpos, ypos, num2str(rmse), ...
+text(xpos, ypos, ['root-mean-square error = ', num2str(rmse), ' mV'], ...
     'FontSize', 8, 'Color', rgb(rmseColor), ...
     'Units', 'normalized');
 
@@ -511,11 +513,11 @@ xVecRising = xVec;
 
 % The x vector is for the falling phase
 %   Note: make sure it is a column vector
-xVecFalling = force_column_vector(xVec);
+xVecFalling = force_column_numeric(xVec);
 
 % The x vector is already for the combined phases
 %   Note: make sure it is a column vector
-xVecCombined = force_column_vector(xVec);
+xVecCombined = force_column_numeric(xVec);
 
 ypos = 5/30;
 

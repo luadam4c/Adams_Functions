@@ -56,7 +56,8 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 %
 % Requires:
 %       /home/Matlab/Downloaded_Functions/rgb.m
-%       /home/Matlab/Adams_Functions/islinestyle.m
+%       cd/iscellnumeric.m
+%       cd/islinestyle.m
 %
 % Used by:    
 %       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
@@ -87,7 +88,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'data', ...             % a cell array of event time arrays
-    @(x) assert(iscell(x) && all(cellfun(@isnumeric, x)), ...
+    @(x) assert(iscellnumeric(x), ...
         'data must be a cell array of numeric arrays!'));
 
 % Add parameter-value pairs to the Input Parser

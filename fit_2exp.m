@@ -157,8 +157,8 @@ end
 
 %% Preparation
 % Force xVec and yVec to be columns
-xVec = force_column_vector(xVec);
-yVec = force_column_vector(yVec);
+xVec = force_column_numeric(xVec);
+yVec = force_column_numeric(yVec);
 
 % Extract the first and last y value
 if isempty(amplitudeEstimate) || strcmpi(direction, 'auto')

@@ -165,11 +165,13 @@ if nToUse == nVectors
     % Plot all vectors at once
     plot(timeVec, pulseVecs, '-');
 else
-    % Plot vectors as dotted line if not used
-    parfor iVec = 1:nVectors
+    % Plot vectors
+    for iVec = 1:nVectors
         if toUse(iVec)
+            % Plot vectors as solid line if used
             plot(timeVec, pulseVecs(:, iVec), '-');
         else
+            % Plot vectors as dotted line if not used
             plot(timeVec, pulseVecs(:, iVec), '--');
         end
     end

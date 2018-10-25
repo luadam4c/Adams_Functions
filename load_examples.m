@@ -46,6 +46,8 @@ myCellStrCol = {'I love you'; 'You love me'; 'Blab hooray!'; 'Why?'};
 myCellStr2D = {'I love you', 'You love me'; 'Blab hooray!', 'Why?'};
 
 % Cell arrays of numeric arrays
+myCellNumeric2D = {myNumeric2D; myNumeric2D * 2; myNumeric2D * 0.5};
+myCellNumeric3D = {myNumeric3D; myNumeric3D * 2; myNumeric3D * 0.5};
 myCellColumnVecs = {myNumericCol; myNumericCol * 2; myNumericCol * 0.5};
 myCellRowVecs = {myNumericRow; myNumericRow * 2; myNumericRow * 0.5};
 

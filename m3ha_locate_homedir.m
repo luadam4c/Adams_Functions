@@ -14,6 +14,7 @@ function homeDirectory = m3ha_locate_homedir
 %       ~/m3ha/data_dclamp/dclampdatalog_analyze.m
 %       ~/m3ha/data_dclamp/dclampPassiveFitter.m
 %       ~/m3ha/data_dclamp/PlotHistogramsRefineThreshold.m
+%       ~/m3ha/optimizer4gabab/singleneuronfitting42.m and beyond
 
 % File History:
 % 2018-10-04 Created by Adam Lu
@@ -21,7 +22,9 @@ function homeDirectory = m3ha_locate_homedir
 
 %% Hard-coded parameters
 homeDirectoryCandidates = {'/tmp/data/m3ha/', '/media/adamX/m3ha/', ...
-                          '/home/adam/m3ha/', '/scratch/al4ng/m3ha/'};
+                          '/home/adam/m3ha/', '/scratch/al4ng/m3ha/', ...
+                          '/sfs/lustre/scratch/al4ng/m3ha/', ...
+                          '/home/shared/mcm/'};
 directoryType = 'home directory';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

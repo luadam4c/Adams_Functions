@@ -19,9 +19,10 @@ function [idxStartAll, idxEndAll, idxStart2All, idxEnd2All] = ...
 %                   must be a numeric array or a cell array of numeric vectors
 %
 % Requires:
+%       cd/count_vectors.m
+%       cd/iscellnumeric.m
 %       
 % Used by:
-%       cd/count_vectors.m
 %       cd/parse_pulse.m
 %       cd/find_pulse_response_endpoints.m
 %
@@ -50,7 +51,9 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vectors', ...                   % vectors
-    @(x) isnumeric(x) || iscell(x) && all(cellfun(@isnumeric, x)) );
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['vectors must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
 
 % Read from the Input Parser
 parse(iP, vectors);

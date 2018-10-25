@@ -36,6 +36,7 @@ function [parsedParams, parsedData] = parse_pulse (vectors, varargin)
 %       cd/count_samples.m
 %       cd/find_pulse_endpoints.m
 %       cd/force_column_cell.m
+%       cd/iscellnumeric.m
 %
 % Used by:    
 %       cd/find_passive_params.m
@@ -64,7 +65,9 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vectors', ...                   % vectors
-    @(x) isnumeric(x) || iscell(x) && all(cellfun(@isnumeric, x)) );
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['vectors must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
 

@@ -22,10 +22,12 @@ function [avgTrace, paramsUsed] = compute_average_trace (traces, varargin)
 %                       'RightAdjust' - Align to the right
 %                   default == 'LeftAdjust'
 %                   
+% Requires:
+%       cd/iscellnumeric.m
 %
 % Used by:    
 %       cd/find_passive_params.m
-%       cd/force_column_vector.m
+%       cd/force_column_numeric.m
 
 % File History:
 % 2018-10-11 Created by Adam Lu
@@ -52,8 +54,10 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'traces', ...
-    @(x) isnumeric(x) || iscell(x) && all(cellfun(@isnumeric, x)) );
+addRequired(iP, 'traces', ...                   % vectors
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['traces must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'NSamples', nSamplesDefault, ...
@@ -80,7 +84,7 @@ if isempty(nSamples)
 end
 
 % If in a cell array, force each trace to be a column vector
-traces = force_column_vector(traces);
+traces = force_column_numeric(traces);
 
 %% Do the job
 % Return if there are no samples

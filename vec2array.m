@@ -1,5 +1,5 @@
 function array = vec2array (vector, dims)
-%% Convert a vector to an array with dimensions given by dims using linear indexing
+%% Convert a vector to an array with dimensions given by dims using linear indexing (obsolete, use reshape() instead)
 % Usage: array = vec2array (vector, dims)
 % Outputs:  
 %       array       - array with dimensions given by dims

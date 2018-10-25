@@ -1,19 +1,19 @@
-function [results, linestyles] = islinestyle (strings, varargin)
+function [results, linestyles] = islinestyle (candidates, varargin)
 %% Check whether a string or each string in a cell array is a valid line style accepted by plot() or line()
-% Usage: [results, linestyles] = islinestyle (strings, varargin)
+% Usage: [results, linestyles] = islinestyle (candidates, varargin)
 % Outputs:    
 %       results     - indication of whether the specified string is
 %                        valid linestyle accepted by plot() or line()
 %                   specified as a logical array
 %       linestyles  - validated linestyles, if any
-%                   specified as a string/char-vec or 
-%                       a cell array of strings/char-vecs
+%                   specified as a string vector, a character vector, 
+%                       or a cell array of character vectors
 %                   returns the shortest match if matchMode == 'substring' 
 %                       (sames as validatestring())
 % Arguments:
-%       strings     - string or strings to check
-%                   must be a string/char-vec or 
-%                       a cell array of strings/char-vecs
+%       candidates  - string or strings to check
+%                   must be a string vector, a character vector, 
+%                       or a cell array of character vectors
 %       varargin    - 'ValidateMode': whether to validate string and 
 %                       throw error if string is not a substring of a sheettype
 %                   must be logical 1 (true) or 0 (false)
@@ -59,12 +59,10 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to an Input Parser
-addRequired(iP, 'strings', ...                  % string or strings to check
-    @(x) assert(ischar(x) || ...
-                iscell(x) && (min(cellfun(@ischar, x)) || ...
-                min(cellfun(@isstring, x))) || isstring(x) , ...
-                ['strings must be either a string/character array ', ...
-                'or a cell array of strings/character arrays!']));
+addRequired(iP, 'candidates', ...               % string or strings to check
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+                ['candidates must be either a string array, ', ...
+                'a character array or a cell array of character vectors!']));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ValidateMode', false, ...     % whether to validate string
@@ -73,7 +71,7 @@ addParameter(iP, 'MatchMode', 'substring', ...  % the matching mode
     @(x) any(validatestring(x, {'exact', 'substring'})));
 
 % Read from the Input Parser
-parse(iP, strings, varargin{:});
+parse(iP, candidates, varargin{:});
 validateMode = iP.Results.ValidateMode;
 matchMode = iP.Results.MatchMode;
 
@@ -83,8 +81,8 @@ if ~isempty(fieldnames(iP.Unmatched))
     disp(iP.Unmatched);
 end
 
-%% Check strings and validate with istype.m
-[results, linestyles] = istype(strings, validLineStyles, ...
+%% Check candidates and validate with istype.m
+[results, linestyles] = istype(candidates, validLineStyles, ...
                                'ValidateMode', validateMode, ...
                                'MatchMode', matchMode);
 

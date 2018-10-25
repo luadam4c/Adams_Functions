@@ -23,7 +23,7 @@ function [subDirs, fullPaths] = all_subdirs(varargin)
 %
 % Requires:
 %       cd/construct_and_check_fullpath.m
-%       cd/extract_fullpath.m
+%       cd/extract_fullpaths.m
 %
 % Used by: 
 %       /media/ashleyX/Recordings/analyze_recordings.m TODO: Update this
@@ -80,7 +80,7 @@ isIrrelevant = cellfun(@(x) any(strcmp(x, {'.', '..'})), {files.name});
 subDirs = files(isDir & ~isIrrelevant);
 
 % Extract the full paths
-fullPaths = extract_fullpath(subDirs);
+fullPaths = extract_fullpaths(subDirs);
 
 %% Print to standard output
 % Count the number of subdirectories

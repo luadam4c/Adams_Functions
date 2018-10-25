@@ -1,9 +1,9 @@
-function fullPath = extract_fullpath(files)
+function fullPaths = extract_fullpaths (files)
 %% Extracts full paths from a files structure array
-% Usage: fullPath = extract_fullpath(files)
+% Usage: fullPaths = extract_fullpaths (files)
 %
 % Outputs:
-%       fullPath    - full path(s) to the files
+%       fullPaths   - full path(s) to the files
 %                   specified as a column cell array of character vectors
 %                       or a character vector
 %
@@ -19,6 +19,7 @@ function fullPath = extract_fullpath(files)
 % 2018-09-27 Created by Adam Lu
 % 2018-10-03 Added the case when files is a single structure
 % 2018-10-03 Renamed extract_fullpaths() -> extract_fullpath()
+% 2018-10-24 Renamed extract_fullpath() -> extract_fullpaths()
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -42,7 +43,7 @@ parse(iP, files);
 %% Return nothing if the files structure is empty 
 %   or does not have required fields
 if isempty(files) || ~isfield(files, 'folder') || ~isfield(files, 'name')
-    fullPath = '';
+    fullPaths = '';
     return
 end
 
@@ -55,11 +56,11 @@ if numel(files) > 1
     names = transpose({files.name});
 
     % Get the full paths
-    fullPath = cellfun(@(x, y) fullfile(x, y), folders, names, ...
+    fullPaths = cellfun(@(x, y) fullfile(x, y), folders, names, ...
                         'UniformOutput', false);
 else
     % Just put the folder and the name together
-    fullPath = fullfile(files.folder, files.name);
+    fullPaths = fullfile(files.folder, files.name);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

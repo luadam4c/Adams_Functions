@@ -16,6 +16,9 @@ function nSamples = count_samples (vectors)
 %                         If an array, each column is a vector
 %                   must be a numeric array or a cell array of numeric vectors
 %
+% Requires:
+%       cd/iscellnumeric.m
+%
 % Used by:    
 %       cd/force_column_cell.m
 %       cd/parse_pulse.m
@@ -40,7 +43,9 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vectors', ...                   % vectors
-    @(x) isnumeric(x) || iscell(x) && all(cellfun(@isnumeric, x)) );
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['vectors must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
 
 % Read from the Input Parser
 parse(iP, vectors);

@@ -15,16 +15,22 @@ function vectorsCell = force_column_cell (vectorsOrig)
 %       vectorsOrig - original vectors
 %                   Note: If an array, each column is a vector 
 %                           to be placed in a cell
-%                   must be a numeric array or a cell array
+%                   must be a numeric array or a cell array 
+%                       or a character vector
 %
 % Used by:
 %       cd/count_samples.m
-%       cd/match_vector_numbers.m
+%       cd/force_column_numeric.m
+%       cd/force_row_numeric.m
+%       cd/match_vector_counts.m
+%       cd/m3ha_save_neuronparams.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
+%       cd/run_neuron.m
 
 % File History:
 % 2018-10-10 Created by Adam Lu
+% 2018-10-19 Now accepts character vectors
 % 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -42,7 +48,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vectorsOrig', ...
-    @(x) isnumeric(x) || iscell(x));
+    @(x) isnumeric(x) || iscell(x) || ischar(x));
 
 % Read from the Input Parser
 parse(iP, vectorsOrig);
@@ -61,6 +67,9 @@ elseif isnumeric(vectorsOrig)
 
     % Reassign as a column
     vectorsCell = vectorsCell(:);
+elseif ischar(vectorsOrig)
+    % Place in a cell array
+    vectorsCell = {vectorsOrig};
 else
     % Do nothing
     vectorsCell = vectorsOrig;

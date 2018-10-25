@@ -1,19 +1,19 @@
-function [results, sheettypes] = issheettype (strings, varargin)
+function [results, sheettypes] = issheettype (candidates, varargin)
 %% Check whether a string or each string in a cell array is a valid spreadsheet type accepted by readtable()
-% Usage: [results, sheettypes] = issheettype (strings, varargin)
+% Usage: [results, sheettypes] = issheettype (candidates, varargin)
 % Outputs:    
 %       results     - indication of whether the specified string is
 %                        a spreadsheet type
 %                   specified as a logical array
 %       sheettypes  - validated sheettypes, if any
-%                   specified as a string/char-vec or 
-%                       a cell array of strings/char-vecs
+%                   specified as a string vector, a character vector, 
+%                       or a cell array of character vectors
 %                   returns the shortest match if matchMode == 'substring' 
 %                       (sames as validatestring())
 % Arguments:
-%       strings     - string or strings to check
-%                   must be a string/char-vec or 
-%                       a cell array of strings/char-vecs
+%       candidates  - string or strings to check
+%                   must be a string vector, a character vector, 
+%                       or a cell array of character vectors
 %       varargin    - 'ValidateMode': whether to validate string and 
 %                       throw error if string is not a substring of a sheettype
 %                   must be logical 1 (true) or 0 (false)
@@ -34,7 +34,9 @@ function [results, sheettypes] = issheettype (strings, varargin)
 %       cd/atf2sheet.m
 %       cd/create_waveform_train.m
 %       cd/create_pulse_train_series.m
+%       cd/load_params.m
 %       cd/parse_all_abfs.m
+%       cd/save_params.m
 %       cd/ZG_extract_all_IEIs.m
 %       cd/ZG_extract_IEI_thresholds.m
 %       cd/ZG_compute_IEI_thresholds.m
@@ -44,6 +46,7 @@ function [results, sheettypes] = issheettype (strings, varargin)
 % File History:
 % 2018-05-15 Modified from issheettype.m
 % 2018-05-16 Now uses istype.m
+% 2018-10-21 Now removes any '.' in the string candidates
 % 
 
 %% Hard-coded parameters
@@ -51,6 +54,10 @@ validSheetTypes = {'txt', 'dat', 'csv', 'xls', 'xlsb', 'xlsm', ...
                     'xlsx', 'xltm', 'xltx', 'ods'};
                                         % accepted by readtable()
                                         % Note: from Matlab 2018a Documentation
+
+%% Default values for optional arguments
+validateModeDefault = false;        % don't throw error by default
+matchModeDefault = 'substring';     % match as a substring by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -67,21 +74,19 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to an Input Parser
-addRequired(iP, 'strings', ...                  % string or strings to check
-    @(x) assert(ischar(x) || ...
-                iscell(x) && (min(cellfun(@ischar, x)) || ...
-                min(cellfun(@isstring, x))) || isstring(x) , ...
-                ['strings must be either a string/character array ', ...
-                'or a cell array of strings/character arrays!']));
+addRequired(iP, 'candidates', ...               % string or strings to check
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+                ['candidates must be either a string array, ', ...
+                'a character array or a cell array of character vectors!']));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'ValidateMode', false, ...     % whether to validate string
+addParameter(iP, 'ValidateMode', validateModeDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'MatchMode', 'substring', ...  % the matching mode
+addParameter(iP, 'MatchMode', matchModeDefault, ...
     @(x) any(validatestring(x, {'exact', 'substring'})));
 
 % Read from the Input Parser
-parse(iP, strings, varargin{:});
+parse(iP, candidates, varargin{:});
 validateMode = iP.Results.ValidateMode;
 matchMode = iP.Results.MatchMode;
 
@@ -91,8 +96,12 @@ if ~isempty(fieldnames(iP.Unmatched))
     disp(iP.Unmatched);
 end
 
-%% Check strings and validate with istype.m
-[results, sheettypes] = istype(strings, validSheetTypes, ...
+%% Preparation
+% Remove any '.'
+candidates = replace(candidates, '.', '');
+
+%% Check candidates and validate with istype.m
+[results, sheettypes] = istype(candidates, validSheetTypes, ...
                                'ValidateMode', validateMode, ...
                                'MatchMode', matchMode);
 

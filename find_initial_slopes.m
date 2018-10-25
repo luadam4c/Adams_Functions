@@ -1,5 +1,5 @@
 function [startSlopes, endSlopes, avgSlopes, isUnbalancedAll, indUsedForPlot] = ...
-    find_initial_slopes(tvecCprAll, ivecCprAll, vvecCprAll, allNSamples, varargin);
+    find_initial_slopes(tvecCprAll, ivecCprAll, vvecCprAll, allNSamples, varargin)
 %% Find all initial slopes from a set of current pulse responses
 % Usage: [startSlopes, endSlopes, avgSlopes, isUnbalancedAll, indUsedForPlot] = ...
 %   find_initial_slopes(tvecCprAll, ivecCprAll, vvecCprAll, allNSamples, varargin);

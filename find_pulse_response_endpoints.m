@@ -44,7 +44,8 @@ function [idxResponseStart, idxResponseEnd, hasJump, idxPulseStart, idxPulseEnd]
 % Requires:
 %       cd/find_first_jump.m
 %       cd/find_pulse_endpoints.m
-%       cd/match_vector_numbers.m
+%       cd/iscellnumeric.m
+%       cd/match_vector_counts.m
 %
 % Used by:    
 %       cd/compute_initial_slopes.m
@@ -83,8 +84,10 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'vectors', ...
-    @(x) isnumeric(x) || iscell(x) && all(cellfun(@isnumeric, x)) );
+addRequired(iP, 'vectors', ...                   % vectors
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['vectors must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
 addRequired(iP, 'siMs', ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
 
@@ -107,7 +110,8 @@ baselineLengthMs = iP.Results.BaselineLengthMs;
 
 %% Preparation
 % Match up pulseVectors with vectors and make sure they are both cell arrays
-[pulseVectors, vectors] = match_vector_numbers(pulseVectors, vectors);
+[pulseVectors, vectors] = ...
+    match_vector_counts(pulseVectors, vectors, 'ForceCellOutputs', true);
 
 %% Do the job
 [idxResponseStart, idxResponseEnd, hasJump, idxPulseStart, idxPulseEnd] = ...

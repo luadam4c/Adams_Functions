@@ -1,5 +1,5 @@
 function functionsDirectory = locate_functionsdir
-%% Locate the first functions directory that exists for the GAT blockade project
+%% Locate the first shared functions directory that exists
 % Usage: functionsDirectory = locate_functionsdir
 % Outputs:
 %       functionsDirectory  - the first functions directory that exists
@@ -14,6 +14,10 @@ function functionsDirectory = locate_functionsdir
 %       cd/combine_sweeps.m
 %       cd/find_passive_params.m
 %       cd/parse_abf.m
+%       ~/m3ha/data_dclamp/dclampPassiveFitter.m
+%       ~/m3ha/optimizer4gabab/singleneuronfitting42.m and beyond
+%       ~/m3ha/optimizer4gabab/optimizer_4compgabab.m
+%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
 %
 
 % File History:
@@ -21,7 +25,9 @@ function functionsDirectory = locate_functionsdir
 % 
 
 %% Hard-coded parameters
-functionsDirectoryCandidates = {pwd, '/home/Matlab/', '/scratch/al4ng/Matlab/'};
+functionsDirectoryCandidates = {pwd, '/home/Matlab/', ...
+                                '/scratch/al4ng/Matlab/', ...
+                                '/sfs/lustre/scratch/al4ng/Matlab/'};
 directoryType = 'functions directory';
 containedSubdir = 'Adams_Functions';
 

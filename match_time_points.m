@@ -14,14 +14,15 @@ function dataNew = match_time_points (dataOld, timeNew)
 %                   must be a numeric vector
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/print_or_show_message.m
+%       cd/print_or_show_message.m
 %
 % Used by:
-%       /home/Matlab/Adams_Functions/run_neuron_once_4compgabab.m
+%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
+
 %
 % File History:
-%   2018-08-10 Adapted from code in run_neuron_once_4compgabab.m
-%   TODO: Input parser
+% 2018-08-10 Adapted from code in run_neuron_once_4compgabab.m
+% TODO: Input parser
 %
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

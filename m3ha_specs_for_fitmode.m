@@ -2,8 +2,7 @@ function [fileSuffix, titleModifier] = m3ha_specs_for_fitmode (fitMode)
 %% Specifications depending on fitMode for the GAT blockade project
 % Usage: [fileSuffix, titleModifier] = m3ha_specs_for_fitmode (fitMode)
 %
-% Used by:    
-%       cd/find_passive_params.m
+% Used by:
 %       ~/m3ha/data_dclamp/dclampdatalog_analyze.m
 %       ~/m3ha/data_dclamp/dclampPassiveFitter.m
 %       ~/m3ha/data_dclamp/PlotHistogramsRefineThreshold.m
@@ -38,6 +37,8 @@ end
 
 %{
 OLD CODE:
+
+%       cd/find_passive_params.m
 
 %}
 

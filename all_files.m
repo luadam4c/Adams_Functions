@@ -26,7 +26,7 @@ function [files, fullPaths] = all_files(varargin)
 %
 % Requires:
 %       cd/construct_and_check_fullpath.m
-%       cd/extract_fullpath.m
+%       cd/extract_fullpaths.m
 %
 % Used by: 
 %       cd/parse_all_abfs.m
@@ -102,7 +102,7 @@ end
 files = filesOrDirs(~isDir & isMatch);
 
 % Extract the full paths
-fullPaths = extract_fullpath(files);
+fullPaths = extract_fullpaths(files);
 
 %% Print to standard output
 % Count the number of files
