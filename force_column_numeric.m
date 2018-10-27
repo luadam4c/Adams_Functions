@@ -27,6 +27,7 @@ function vectors = force_column_numeric (vectors)
 %       cd/compute_average_trace.m
 %       cd/extract_columns.m
 %       cd/fit_2exp.m
+%       cd/match_reciprocals.m
 %       cd/m3ha_create_simulation_params.m
 %       cd/plot_cfit_pulse_response.m
 

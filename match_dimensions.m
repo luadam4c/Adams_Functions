@@ -18,8 +18,11 @@ function arrayNew = match_dimensions (arrayOld, dimNew, varargin)
 %       cd/ispositiveintegervector.m
 %
 % Used by:    
+%       cd/compute_weighted_average.m
+%       cd/create_time_vectors.m
 %       cd/extract_columns.m
 %       cd/match_vector_counts.m
+%       cd/normalize_by_initial_value.m
 
 % File History:
 % 2018-10-24 Created by Adam Lu
@@ -111,8 +114,10 @@ elseif nElementsOld < nElementsNew
             % If all factors are positive integers, use repmat
             arrayNew = repmat(arrayOld, factorToExpand);
         else
-            % TODO: Make this work somehow
-            error('array cannot be expanded!');
+            % Otherwise, return error
+            error(['Factor to expand not all integers.\n', ...
+                    'Array ''%s'' cannot be expanded to match ', ...
+                    'the requested dimensions!'], inputname(1));
         end
     else
         error('Not implemented yet!');

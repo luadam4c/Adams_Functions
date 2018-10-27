@@ -15,6 +15,7 @@ function isCellNumericVector = iscellnumericvector (x)
 %       x               - an input to check
 %
 % Used by:
+%       cd/compute_single_neuron_errors.m
 %       cd/find_window_endpoints.m
 
 % File History:

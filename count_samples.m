@@ -20,6 +20,7 @@ function nSamples = count_samples (vectors)
 %       cd/iscellnumeric.m
 %
 % Used by:    
+%       cd/compute_single_neuron_errors.m
 %       cd/force_column_cell.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m

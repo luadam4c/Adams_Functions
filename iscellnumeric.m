@@ -15,7 +15,6 @@ function isCellNumeric = iscellnumeric (x)
 % Used by:
 %       cd/compute_average_trace.m
 %       cd/compute_residuals.m
-%       cd/compute_single_neuron_errors.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
 %       cd/find_pulse_endpoints.m
