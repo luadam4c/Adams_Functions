@@ -14,16 +14,22 @@ function errors = compute_sweep_errors (vSim, vReal, varargin)
 %                   specified as a scalar structure
 % Arguments:    
 %       vSim        - simulated voltage traces
+%                   Note: If a cell array, each element must be a vector
+%                         If a non-vector array, each column is a vector
 %                   must be a numeric vector or a cell array of numeric vectors
 %       vReal       - recorded voltage traces
+%                   Note: If a cell array, each element must be a vector
+%                         If a non-vector array, each column is a vector
 %                   must be a numeric vector or a cell array of numeric vectors
 %       varargin    - 'TimeVecs': common time vectors
+%                   Note: If a cell array, each element must be a vector
+%                         If a non-vector array, each column is a vector
 %                   must be a numeric vector or a cell array of numeric vectors
 %                   default == create_time_vectors(nSamples)
 %                   - 'FitWindow': time window to fit for each trace
 %                   must be empty or a numeric vector with 2 elements,
 %                       or a numeric array with 2 rows
-%                       or a cell array of numeric arrays
+%                       or a cell array of numeric vectors with 2 elements
 %                   default == []
 %                   - 'SweepWeights': sweep weights for averaging
 %                   must be empty or a numeric vector with length == nSweeps

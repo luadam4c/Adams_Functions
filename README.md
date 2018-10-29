@@ -30,6 +30,7 @@ Last Updated 2018-10-28 by Adam Lu
 - [**compute_and_plot_concatenated_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_and_plot_concatenated_trace.m): Computes and plots concatenated traces from parsed ABF file results
 - [**compute_and_plot_evoked_LFP.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_and_plot_evoked_LFP.m): Computes and plots an evoked local field potential with its stimulus
 - [**compute_average_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_average_trace.m): Computes the average of traces that are not necessarily the same length
+- [**compute_baseline_noise.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_baseline_noise.m): Computes the baseline noise from a set of data vectors, time vectors and baseline windows
 - [**compute_conductance.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_conductance.m): Compute theoretical conductance curve for the GABA_B IPSC used by dynamic clamp
 - [**compute_elcurr.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_elcurr.m): Computes electrode current from conductance & voltage
 - [**compute_eRev.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_eRev.m): Computes the reversal potential of a channel that passes monovalent ions using the GHK voltage equation

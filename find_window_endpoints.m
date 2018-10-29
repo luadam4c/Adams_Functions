@@ -21,7 +21,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %       timeWindows - time window(s); if empty, returns the first and last index
 %                   must be empty or a numeric vector with 2 elements,
 %                       or a numeric array with 2 rows
-%                       or a cell array of numeric arrays
+%                       or a cell array of numeric vectors with 2 elements
 %       timeVecs    - time vector(s)
 %                   Note: If a cell array, each element must be a vector
 %                         If a non-vector array, each column is a vector
@@ -44,6 +44,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %       cd/match_format_vectors.m
 %
 % Used by:
+%       cd/compute_baseline_noise.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/extract_subvectors.m

@@ -12,10 +12,14 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 % Outputs:
 %       rmsErrors   - root mean squared error(s)
 %                   specified as a numeric vector
-% Arguments:    
+% Arguments:
 %       vec1s       - the first set of vector(s)
+%                   Note: If a cell array, each element must be a vector
+%                         If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array of numeric arrays
 %       vec2s       - (opt) the second set of vector(s)
+%                   Note: If a cell array, each element must be a vector
+%                         If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array of numeric arrays
 %                   default == nanmean(vec1s)
 %       varargin    - 'Endpoints': endpoints for the subvectors to extract 
@@ -31,7 +35,8 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 %       cd/force_column_cell.m
 %       cd/match_format_vectors.m
 %
-% Used by:    
+% Used by:
+%       cd/compute_baseline_noise.m
 %       cd/compute_sweep_errors.m
 %       ~/m3ha/optimizer4gabab/import_rawtraces.m
 %       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
@@ -41,7 +46,6 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 % 2018-10-28 Now vectors do not need to have equal lengths
 % 2018-10-28 Now takes multiple vectors as arguments
 % 2018-10-28 Added 'Endpoints' as an optional argument
-%   TODO: implement dim as in rms.m
 % 
 
 %% Default values for optional arguments
@@ -149,6 +153,8 @@ if iscell(vec1s)
 else
     rmsErrors = compute_rms_error_helper(vec1s, vec2s);
 end
+
+%   TODO: implement dim as in rms.m
 
 %}
 
