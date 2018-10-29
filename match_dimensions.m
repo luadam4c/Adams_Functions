@@ -21,7 +21,9 @@ function arrayNew = match_dimensions (arrayOld, dimNew, varargin)
 %       cd/compute_weighted_average.m
 %       cd/create_time_vectors.m
 %       cd/extract_columns.m
-%       cd/match_vector_counts.m
+%       cd/find_window_endpoints.m
+%       cd/match_format_vectors.m
+%       cd/match_array_counts.m
 %       cd/normalize_by_initial_value.m
 
 % File History:
@@ -59,8 +61,10 @@ parse(iP, arrayOld, dimNew, varargin{:});
 % Query the old dimensions
 dimOld = size(arrayOld);
 
-% If the new dimensions are the same as the old ones, just return the old array
-if isequal(dimNew, dimOld)
+% If the old array is empty 
+%   or if the new dimensions are the same as the old ones, 
+%   just return the old array
+if isempty(arrayOld) || isequal(dimNew, dimOld)
     arrayNew = arrayOld;
     return
 end

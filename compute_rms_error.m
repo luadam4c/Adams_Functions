@@ -1,28 +1,52 @@
-function rmsError = compute_rms_error(vec1, varargin)
-%% Computes the root mean squared error given two vectors
-% Usage: rmsError = compute_rms_error(vec1, varargin)
+function rmsErrors = compute_rms_error(vec1s, varargin)
+%% Computes the root mean squared error(s) given one or two sets of vectors
+% Usage: rmsErrors = compute_rms_error(vec1s, varargin)
+% Explanation:
+%       TODO
+% Example(s):
+%       rmsErrors1 = compute_rms_error(1:5)
+%       rmsErrors2 = compute_rms_error(1:5, 2:6)
+%       rmsErrors3 = compute_rms_error({1:5, 2:6}, 'Endpoints', [1, 3])
+%       rmsErrors4 = compute_rms_error({1:5, 2:6}, 'Endpoints', {[1, 3], [2, 4]})
+%       rmsErrors5 = compute_rms_error(1:5, 2:6, 'Endpoints', {[1, 3], [2, 4]})
 % Outputs:
-%       rmsError    - root mean squared error
-%                   specified as a numeric scalar
+%       rmsErrors   - root mean squared error(s)
+%                   specified as a numeric vector
 % Arguments:    
-%       vec1        - the first vector
-%                   must be a numeric vector
-%       vec2        - (opt) the second vector
-%                   must be a numeric vector with length equal to vec1
-%                   default == nanmean(vec1) * ones(size(vec1))
+%       vec1s       - the first set of vector(s)
+%                   must be a numeric array or a cell array of numeric arrays
+%       vec2s       - (opt) the second set of vector(s)
+%                   must be a numeric array or a cell array of numeric arrays
+%                   default == nanmean(vec1s)
+%       varargin    - 'Endpoints': endpoints for the subvectors to extract 
+%                   must be a numeric vector with 2 elements
+%                       or a cell array of numeric vectors with 2 elements
+%                   default == find_window_endpoints([], vec1s)
+%                   
+% Requires:
+%       cd/iscellnumeric.m
+%       cd/iscellnumericvector.m
+%       cd/isnumericvector.m
+%       cd/extract_subvectors.m
+%       cd/force_column_cell.m
+%       cd/match_format_vectors.m
 %
 % Used by:    
-%       cd/compute_single_neuron_errors.m
-%       /media/adamX/m3ha/optimizer4gabab/import_rawtraces.m
-%       /media/adamX/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
+%       cd/compute_sweep_errors.m
+%       ~/m3ha/optimizer4gabab/import_rawtraces.m
+%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
 %
 % File History:
 % 2018-07-09 Modified from the built-in rms.m
+% 2018-10-28 Now vectors do not need to have equal lengths
+% 2018-10-28 Now takes multiple vectors as arguments
+% 2018-10-28 Added 'Endpoints' as an optional argument
 %   TODO: implement dim as in rms.m
 % 
 
 %% Default values for optional arguments
-vec2Default = [];
+vecs2Default = [];              % set later
+endPointsDefault = [];          % set in extract_subvectors.m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -38,29 +62,54 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'vec1', ...
-    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addRequired(iP, 'vec1s', ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['vec1s must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
 
 % Add optional inputs to the Input Parser
-addOptional(iP, 'vec2', [], ...
-    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addOptional(iP, 'vec2s', vecs2Default, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['vec2s must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
+addParameter(iP, 'EndPoints', endPointsDefault, ...
+    @(x) assert(isnumericvector(x) || iscellnumericvector(x), ...
+                ['EndPoints must be either a numeric vector ', ...
+                    'or a cell array of numeric vectors!']));
 
 % Read from the Input Parser
-parse(iP, vec1, varargin{:});
-vec2 = iP.Results.vec2;
+parse(iP, vec1s, varargin{:});
+vec2s = iP.Results.vec2s;
+endPoints = iP.Results.EndPoints;
 
-% Set dependent argument defaults
-if isempty(vec2)
-    % Compare each sample point to the mean of the entire vector
-    vec2 = nanmean(vec1) * ones(size(vec1));
+%% Preparation
+% Force vec1s to be a cell array of column vectors
+vec1s = force_column_cell(vec1s);
+
+% Restrict to the given end points
+%   Note: default is first and last indices
+vec1s = extract_subvectors(vec1s, 'Endpoints', endPoints);
+
+% If not provided, set default vec2s to be the means of each vector
+%   Otherwise, restrict to the same endpoints
+if isempty(vec2s)
+    vec2s = cellfun(@nanmean, vec1s, 'UniformOutput', false);
+else
+    vec2s = extract_subvectors(vec2s, 'Endpoints', endPoints);
 end
 
-% Check relationships between arguments
-if length(vec1) ~= length(vec2)
-    error('The two vectors must have the same length!');
-end
+% Make sure vec1s and vec2s are both column cell arrays
+%   with the same number of vectors
+[vec1s, vec2s] = match_format_vectors(vec1s, vec2s, 'ForceCellOutputs', true);
 
-%% Perform job
+%% Do the job
+rmsErrors = cellfun(@(x, y) compute_rms_error_helper(x, y), vec1s, vec2s);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function rmsError = compute_rms_error_helper (vec1, vec2)
+%% Compute the root-mean-square error between two vectors
+
 % Compute errors at every sample point
 errors = vec1 - vec2;
 
@@ -77,6 +126,29 @@ rmsError = sqrt(meanSquaredError);
 
 %{
 OLD CODE:
+
+% Check relationships between arguments
+if length(vec1s) ~= length(vec2s)
+    error('The two vectors must have the same length!');
+end
+
+% Compare each sample point to the mean of the entire vector
+vec2s = nanmean(vec1s) * ones(size(vec1s));
+
+% Compare each sample point to the mean of the entire vector
+if iscell(vec1s)
+    vec2s = cellfun(@nanmean, vec1s, 'UniformOutput', false);
+else
+    vec2s = nanmean(vec1s);
+end
+
+% Make sure vec2s is either a column vector or a cell array of column vectors
+vec2s = force_column_numeric(vec2s);
+
+if iscell(vec1s)
+else
+    rmsErrors = compute_rms_error_helper(vec1s, vec2s);
+end
 
 %}
 

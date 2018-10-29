@@ -19,13 +19,13 @@ function [idxResponseStart, idxResponseEnd, hasJump, idxPulseStart, idxPulseEnd]
 % Arguments:
 %       vectors     - vector(s) containing a pulse response
 %                   Note: If a cell array, each element must be a vector
-%                         If an array, each column is a vector
+%                         If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array of numeric vectors
-%       siMs                - sampling interval in ms
-%                           must be a positive scalar
+%       siMs        - sampling interval in ms
+%                   must be a positive scalar
 %       varargin    - 'PulseVectors': vectors that contains the pulse itself
 %                   Note: If a cell array, each element must be a vector
-%                         If an array, each column is a vector
+%                         If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array of numeric vectors
 %                   default == [] (not used)
 %                   - 'SameAsPulse': whether always the same as 
@@ -45,7 +45,7 @@ function [idxResponseStart, idxResponseEnd, hasJump, idxPulseStart, idxPulseEnd]
 %       cd/find_first_jump.m
 %       cd/find_pulse_endpoints.m
 %       cd/iscellnumeric.m
-%       cd/match_vector_counts.m
+%       cd/match_format_vectors.m
 %
 % Used by:    
 %       cd/compute_initial_slopes.m
@@ -111,7 +111,7 @@ baselineLengthMs = iP.Results.BaselineLengthMs;
 %% Preparation
 % Match up pulseVectors with vectors and make sure they are both cell arrays
 [pulseVectors, vectors] = ...
-    match_vector_counts(pulseVectors, vectors, 'ForceCellOutputs', true);
+    match_format_vectors(pulseVectors, vectors, 'ForceCellOutputs', true);
 
 %% Do the job
 [idxResponseStart, idxResponseEnd, hasJump, idxPulseStart, idxPulseEnd] = ...
@@ -263,6 +263,10 @@ idxResponseEnd = zeros(nVectors, 1);
 hasJump = zeros(nVectors, 1);
 idxPulseStart = zeros(nVectors, 1);
 idxPulseEnd = zeros(nVectors, 1);
+
+%       cd/match_array_counts.m
+[pulseVectors, vectors] = ...
+    match_array_counts(pulseVectors, vectors, 'ForceCellOutputs', true);
 
 %}
 

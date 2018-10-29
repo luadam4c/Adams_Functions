@@ -36,6 +36,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %
 % Used by:    
 %       cd/compute_single_neuron_errors.m
+%       cd/compute_sweep_errors.m
 
 % File History:
 % 2018-10-25 Adapted from make_time_column.m in Marks_Functions

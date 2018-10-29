@@ -1,6 +1,6 @@
-function vectors = force_row_numeric (vectors)
+function vectors = force_row_numeric (vectors, varargin)
 %% Transform column numeric vector(s) or numeric array(s) to row numeric vector(s)
-% Usage: vectors = force_row_numeric (vectors)
+% Usage: vectors = force_row_numeric (vectors, varargin)
 % Explanation:
 %       Starting with a cell array of mixed vectors, some row and some column,
 %           this function makes sure each vector is a row vector.
@@ -18,6 +18,9 @@ function vectors = force_row_numeric (vectors)
 % Arguments:
 %       vectors     - original vectors
 %                   must be a numeric vector or a cell array of numeric arrays
+%       varargin    - 'IgnoreNonVectors': whether to ignore non-vectors
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/force_column_cell.m
@@ -25,10 +28,15 @@ function vectors = force_row_numeric (vectors)
 %
 % Used by:    
 %       cd/compute_single_neuron_errors.m
+%       cd/compute_sweep_errors.m
 
 % File History:
 % 2018-10-25 Modified from force_column_numeric.m
+% 2018-10-27 Added 'IgnoreNonVectors' as an optional argument
 % 
+
+%% Default values for optional arguments
+ignoreNonVectorsDefault = false;    % don't ignore non-vectors by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -49,21 +57,31 @@ addRequired(iP, 'vectors', ...                   % vectors
                 ['vectors must be either a numeric array', ...
                     'or a cell array of numeric arrays!']));
 
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'IgnoreNonVectors', ignoreNonVectorsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+
 % Read from the Input Parser
-parse(iP, vectors);
+parse(iP, vectors, varargin{:});
+ignoreNonVectors = iP.Results.IgnoreNonVectors;
 
 %% Do the job
 if isnumeric(vectors) && ~isrow(vectors)
-    if isvector(vectors)
+    if isempty(vectors)
+        % Do nothing
+    elseif isvector(vectors)
         % Must be a column vector, so transpose it
         vectors = transpose(vectors);
     else
-        % TODO: Make this more efficient by modifying force_column_cell.m
-        % Reassign as a column cell array of column vectors
-        vectors = force_column_cell(vectors);
+        % Must be a non-vectors
+        if ~ignoreNonVectors
+            % TODO: Make this more efficient by modifying force_column_cell.m
+            % Reassign as a column cell array of column vectors
+            vectors = force_column_cell(vectors);
 
-        % Change the column vectors to row vectors
-        vectors = force_row_numeric(vectors);
+            % Change the column vectors to row vectors
+            vectors = force_row_numeric(vectors);
+        end
     end
 elseif iscell(vectors)
     % Extract as a cell array

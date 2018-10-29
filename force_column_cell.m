@@ -4,9 +4,15 @@ function vectorsCell = force_column_cell (vectorsOrig)
 % Explanation:
 %       This is an attempt to standardize the way multiple vectors are stored
 %           -- always as column cell arrays
+%       1. Row cell arrays are converted to column cell arrays
+%       2. Empty numeric arrays and character arrays are placed in a cell array
+%       3. Numeric arrays are transformed to a column cell array
+%           of column numeric vectors based on the original columns
+%
 % Example(s):
 %       vectors = force_column_cell(data);
 %       vectors = force_column_cell(vectors);
+%
 % Outputs:
 %       vectorsCell - vectors as a column cell array
 %                   specified as a column cell array
@@ -17,13 +23,15 @@ function vectorsCell = force_column_cell (vectorsOrig)
 %                           to be placed in a cell
 %                   must be a numeric array or a cell array 
 %                       or a character vector
+% Requires:
+%       cd/count_vectors.m
+%       cd/force_column_numeric.m
 %
 % Used by:
-%       cd/count_samples.m
+%       cd/compute_rms_error.m
 %       cd/force_column_numeric.m
 %       cd/force_row_numeric.m
-%       cd/match_vector_counts.m
-%       cd/m3ha_save_neuronparams.m
+%       cd/match_format_vectors.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 %       cd/run_neuron.m
@@ -31,6 +39,7 @@ function vectorsCell = force_column_cell (vectorsOrig)
 % File History:
 % 2018-10-10 Created by Adam Lu
 % 2018-10-19 Now accepts character vectors
+% 2018-10-27 Now places empty numeric arrays in a cell array
 % 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -57,19 +66,26 @@ parse(iP, vectorsOrig);
 if iscell(vectorsOrig) && ~iscolumn(vectorsOrig)
     % Reassign as a column
     vectorsCell = vectorsOrig(:);
-elseif isnumeric(vectorsOrig)
-    % Count the number of vectors
-    nVectors = size(vectorsOrig, 2);
-
-    % Extract as a cell array
-    vectorsCell = arrayfun(@(x) vectorsOrig(:, x), 1:nVectors, ...
-                            'UniformOutput', false);
-
-    % Reassign as a column
-    vectorsCell = vectorsCell(:);
 elseif ischar(vectorsOrig)
     % Place in a cell array
     vectorsCell = {vectorsOrig};
+elseif isnumeric(vectorsOrig)
+    if isempty(vectorsOrig)
+        % Place in a cell array
+        vectorsCell = {vectorsOrig};
+    else
+        % Force any numeric vector as a column vector
+        vectorsOrig = force_column_numeric(vectorsOrig, ...
+                                            'IgnoreNonVectors', true);
+
+        % Count the number of vectors
+        nVectors = count_vectors(vectorsOrig);
+
+        % Extract as a cell array
+        vectorsCell = arrayfun(@(x) vectorsOrig(:, x), ...
+                                transpose(1:nVectors), ...
+                                'UniformOutput', false);
+    end
 else
     % Do nothing
     vectorsCell = vectorsOrig;
@@ -79,6 +95,11 @@ end
 
 %{
 OLD CODE:
+
+nVectors = size(vectorsOrig, 2);
+
+% Reassign as a column
+vectorsCell = vectorsCell(:);
 
 %}
 

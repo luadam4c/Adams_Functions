@@ -1,33 +1,25 @@
-function errors = compute_single_neuron_errors (vSim, vReal, varargin)
+function errors = compute_sweep_errors (vSim, vReal, varargin)
 %% Computes all errors for single neuron data
-% Usage: errors = compute_single_neuron_errors (vSim, vReal, varargin)
+% Usage: errors = compute_sweep_errors (vSim, vReal, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
 %       errors      - a structure of all the errors computed, with fields:
-%                       see compute_sweep_errors.m
+%                       swpErrors       - all sweep errors
+%                       avgSwpError     - average sweep error
+%                       normAvgSwpError - normalized average sweep error
+%                       initSwpError    - initial sweep error
 %                   specified as a scalar structure
 % Arguments:    
 %       vSim        - simulated voltage traces
 %                   must be a numeric vector or a cell array of numeric vectors
 %       vReal       - recorded voltage traces
 %                   must be a numeric vector or a cell array of numeric vectors
-%       varargin    - 'ErrorMode': error mode
-%                   must be an unambiguous, case-insensitive match to one of: 
-%                       'SweepOnly' - compute sweep errors only
-%                       'Sweep&LTS' - compute sweep & LTS errors only
-%                   default == 'passive'
-%                   - 'TimeVecs': common time vectors
+%       varargin    - 'TimeVecs': common time vectors
 %                   must be a numeric vector or a cell array of numeric vectors
 %                   default == create_time_vectors(nSamples)
-%                   - 'IvecsSim': simulated current traces
-%                   must be a numeric vector or a cell array of numeric vectors
-%                   default == []
-%                   - 'IvecsReal': recorded current traces
-%                   must be a numeric vector or a cell array of numeric vectors
-%                   default == []
 %                   - 'FitWindow': time window to fit for each trace
 %                   must be empty or a numeric vector with 2 elements,
 %                       or a numeric array with 2 rows
@@ -43,18 +35,13 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %                   - 'InitSwpError': initial sweep errors
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == []
-% 
-%                   - 'BaseWindow': TODO: Description of BaseWindow
-%                   must be a TODO
-%                   default == TODO
-%                   - 'BaseNoise': TODO: Description of BaseNoise
-%                   must be a TODO
-%                   default == TODO
 %
 % Requires:
 %       cd/argfun.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
+%       cd/compute_rms_error.m
+%       cd/compute_weighted_average.m
 %       cd/create_time_vectors.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
@@ -63,31 +50,24 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %       cd/iscellnumericvector.m
 %       cd/isnumericvector.m
 %       cd/match_row_count.m
+%       cd/normalize_by_initial_value.m
 %
 % Used by:    
 %       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
 
 % File History:
-% 2018-10-24 Adapted from code in run_neuron_once_4compgabab.m
+% 2018-10-28 Adapted from compute_single_neuron_errors.m
 % 2018-10-28 Now uses extract_subvectors.m
 % 
 
 %% Hard-coded parameters
-validErrorModes = {'SweepOnly', 'Sweep&LTS'};
 
 %% Default values for optional arguments
-errorModeDefault = 'SweepOnly'; %'Sweep&LTS'; % compute sweep & LTS errors by default
-timeVecsDefault = [];           % set later
-ivecsSimDefault = [];           % not provided by default
-ivecsRealDefault = [];          % not provided by default
-fitWindowDefault = [];          % use entire trace(s) by default
-sweepWeightsDefault = [];       % set later
+timeVecsDefault = [];       % set later
+fitWindowDefault = [];      % use entire trace(s) by default
+sweepWeightsDefault = [];   % set later
 normalizeErrorDefault = false;  % don't normalize errors by default
 initSwpErrorDefault = [];   % no initial error values by default
-
-% errorModeDefault = ;          % default TODO: Description of param1
-% baseWindowDefault = ;       % default TODO: Description of param1
-% baseNoiseDefault = ;        % default TODO: Description of param1
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -113,19 +93,9 @@ addRequired(iP, 'vReal', ...
                     'or a cell array of numeric vectors!']));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'ErrorMode', errorModeDefault, ...
-    @(x) any(validatestring(x, validErrorModes)));
 addParameter(iP, 'TimeVecs', timeVecsDefault, ...
     @(x) assert(isnumericvector(x) || iscellnumericvector(x), ...
                 ['TimeVecs must be either a numeric vector ', ...
-                    'or a cell array of numeric vectors!']));
-addParameter(iP, 'IvecsSim', ivecsSimDefault, ...
-    @(x) assert(isnumericvector(x) || iscellnumericvector(x), ...
-                ['IvecsSim must be either a numeric vector ', ...
-                    'or a cell array of numeric vectors!']));
-addParameter(iP, 'IvecsReal', ivecsRealDefault, ...
-    @(x) assert(isnumericvector(x) || iscellnumericvector(x), ...
-                ['IvecsReal must be either a numeric vector ', ...
                     'or a cell array of numeric vectors!']));
 addParameter(iP, 'FitWindow', fitWindowDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
@@ -138,24 +108,13 @@ addParameter(iP, 'NormalizeError', normalizeErrorDefault, ...
 addParameter(iP, 'InitSwpError', initSwpErrorDefault, ...
     @(x) assert(isnumericvector(x), 'InitSwpError must be a numeric vector!'));
 
-% addParameter(iP, 'BaseWindow', baseWindowDefault, ...
-%     % TODO: validation function %);
-% addParameter(iP, 'BaseNoise', baseNoiseDefault, ...
-%     % TODO: validation function %);
-
 % Read from the Input Parser
 parse(iP, vSim, vReal, varargin{:});
-errorMode = validatestring(iP.Results.ErrorMode, validErrorModes);
 tBoth = iP.Results.TimeVecs;
-iSim = iP.Results.IvecsSim;
-iReal = iP.Results.IvecsReal;
 fitWindow = iP.Results.FitWindow;
 sweepWeights = iP.Results.SweepWeights;
 normalizeError = iP.Results.NormalizeError;
 initSwpError = iP.Results.InitSwpError;
-
-% baseWindow = iP.Results.BaseWindow;
-% baseNoise = iP.Results.BaseNoise;
 
 % Make sure all windows, if a vector and not a matrix, are row vectors
 if isvector(fitWindow)
@@ -180,47 +139,86 @@ if isempty(sweepWeights)
 end
 
 % Force data vectors to become column numeric vectors
-[tBoth, vSim, vReal, iSim, iReal] = ...
-    argfun(@force_column_numeric, tBoth, vSim, vReal, iSim, iReal);
+[tBoth, vSim, vReal] = ...
+    argfun(@force_column_numeric, tBoth, vSim, vReal);
 
 % Force data arrays to become column cell arrays of column numeric vectors
-[tBoth, vSim, vReal, iSim, iReal] = ...
-    argfun(@force_column_cell, tBoth, vSim, vReal, iSim, iReal);
+[tBoth, vSim, vReal] = ...
+    argfun(@force_column_cell, tBoth, vSim, vReal);
 
 % Match row counts for sweep-dependent variables with the number of sweeps
-[fitWindow, vReal, tBoth, iSim, iReal] = ...
+[fitWindow, vReal, tBoth] = ...
     argfun(@(x) match_row_count(x, nSweeps), ...
-            fitWindow, vReal, tBoth, iSim, iReal);
+            fitWindow, vReal, tBoth);
 
 % Extract the start and end indices of the time vector for fitting
 endPoints = find_window_endpoints(transpose(fitWindow), tBoth);
 
 % Extract the regions to fit
-[tBoth, vSim, vReal, iSim, iReal] = ...
+[vSim, vReal] = ...
     argfun(@(x) extract_subvectors(x, 'Endpoints', endPoints), ...
-            tBoth, vSim, vReal, iSim, iReal);
+            vSim, vReal);
 
 %% Compute errors
-% Compute sweep errors
-swpErrors = compute_sweep_errors(vSim, vReal, 'TimeVecs', tBoth, ...
-                                'SweepWeights', sweepWeights, ...
-                                'NormalizeError', normalizeError, ...
-                                'InitSwpError', initSwpError);
+% Compute root-mean-square sweep errors over all sample points
+swpErrors = compute_rms_error(vSim, vReal);
+
+% Compute a weighted root-mean-square error over all sweeps
+avgSwpError = compute_weighted_average(swpErrors, 'Weights', sweepWeights, ...
+                                        'AverageMethod', 'root-mean-square');
+
+% If requested, make errors dimensionless by 
+%   storing or dividing by an initial error value
+if normalizeError
+    [normAvgSwpError, initSwpError] = ...
+        normalize_by_initial_value(avgSwpError, initSwpError);
+end
 
 %% Store in output errors structure
-switch errorMode
-    case 'SweepOnly'
-        errors = swpErrors;
-    case 'Sweep&LTS'
-%     errors = merge_structs(swpErrors, )
-    otherwise
-        error('code logic error!');
+errors.swpErrors = swpErrors;
+errors.avgSwpError = avgSwpError;
+if normalizeError
+    errors.normAvgSwpError = normAvgSwpError;
+    errors.initSwpError = initSwpError;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+fitWindowLowerBounds = match_vector_counts(fitWindowLowerBounds, [nSweeps, 1]);
+fitWindowUpperBounds = match_vector_counts(fitWindowUpperBounds, [nSweeps, 1]);
+
+if isempty(tBoth)
+    tBoth = arrayfun(@(x) transpose(1:x), nSamples);
+end
+
+% Simulation mode specific operations
+switch simMode
+    case 'passive'
+    case 'active'
+    otherwise
+        error('simMode unrecognized!');
+end
+
+% Extract the lower and upper bounds of the fit windows
+fitWindowLowerBounds = fitWindow(:, 1);
+fitWindowUpperBounds = fitWindow(:, 2);
+
+[idxStarts, idxEnds] = find_window_endpoints(transpose(fitWindow), tBoth);
+
+[tBoth, vSim, vReal, iSim, iReal] = ...
+    argfun(@(w) cellfun(@(x, y, z) x(y:z), w, ...
+                        num2cell(idxStarts), num2cell(idxEnds)), ...
+            tBoth, vSim, vReal, iSim, iReal);
+
+[tBoth, vSim, vReal, iSim, iReal] = ...
+    argfun(@(w) if isempty(w); w; else; ...
+            cellfun(@(x, y) x(y(1):y(2), w, endPoints)); end, ...
+            tBoth, vSim, vReal, iSim, iReal);
+
+swpErrors = cellfun(@(x, y) compute_rms_error(x, y), vSim, vReal);
 
 %}
 

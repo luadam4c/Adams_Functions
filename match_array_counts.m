@@ -1,22 +1,25 @@
-function [vecs1, vecs2] = match_vector_counts(vecs1, vecs2, varargin)
-%% Matches a set of vectors to another set of vectors so that they have equal number of vectors
-% Usage: [vecs1, vecs2] = match_vector_counts(vecs1, vecs2, varargin)
+function [arrays1, arrays2] = match_array_counts (arrays1, arrays2, varargin)
+%% Matches a set of arrays to another set of arrays so that they have equal number of arrays
+% Usage: [arrays1, arrays2] = match_array_counts (arrays1, arrays2, varargin)
 % Explanation:
 %       TODO
+%       cf. match_format_vectors.m
 % Example(s):
-%       TODO
+%       [a, b] = match_array_counts({1:5, 2:6}, 1:5)
+%       [a, b] = match_array_counts({1:5, [2:6]'}, 1:5)
+%       [a, b] = match_array_counts([[1:5]', [2:6]'], [1:5]')
 % Outputs:
-%       vecs1       - new first set of vectors
-%                   specified as a numeric vector 
-%                       or a cell array of numeric vectors
-%       vecs2       - new second set of vectors
-%                   specified as a numeric vector 
-%                       or a cell array of numeric vectors
+%       arrays1     - new first set of arrays
+%                   specified as a numeric array 
+%                       or a cell array of numeric arrays
+%       arrays2     - new second set of arrays
+%                   specified as a numeric array 
+%                       or a cell array of numeric arrays
 % Arguments:    
-%       vecs1       - first set of vectors
-%                   must be a numeric vector or a cell array of numeric vectors
-%       vecs2       - second set of vectors
-%                   must be a numeric vector or a cell array of numeric vectors
+%       arrays1     - first set of arrays
+%                   must be a numeric array or a cell array of numeric arrays
+%       arrays2     - second set of arrays
+%                   must be a numeric array or a cell array of numeric arrays
 %       varargin    - 'ForceCellOutputs': whether to force outputs as 
 %                                           cell arrays
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -27,21 +30,17 @@ function [vecs1, vecs2] = match_vector_counts(vecs1, vecs2, varargin)
 %                   
 %
 % Requires:
-%       cd/count_vectors.m
-%       cd/force_column_cell.m
 %       cd/iscellnumeric.m
 %       cd/match_dimensions.m
 %
-% Used by:    
-%       cd/compute_residuals.m
-%       cd/find_pulse_response_endpoints.m
+% Used by:
+%
 
 % File History:
 % 2018-10-11 Created by Adam Lu
-% 2018-10-23 Now matches vectors both ways
+% 2018-10-23 Now matches arrays both ways
 % 2018-10-23 Added 'ForceCellOutputs' as an optional argument
 % 2018-10-24 Added 'MatchDimensions' as an optional argument
-% TODO: Deal with vectors as an array (many columns)
 % 
 
 %% Hard-coded parameters
@@ -64,13 +63,13 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'vecs1', ...
+addRequired(iP, 'arrays1', ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['vecs1 must be either a numeric array', ...
+                ['arrays1 must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
-addRequired(iP, 'vecs2', ...
+addRequired(iP, 'arrays2', ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['vecs2 must be either a numeric array', ...
+                ['arrays2 must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
@@ -80,36 +79,36 @@ addParameter(iP, 'MatchDimensions', matchDimensionsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
-parse(iP, vecs1, vecs2, varargin{:});
+parse(iP, arrays1, arrays2, varargin{:});
 forceCellOutputs = iP.Results.ForceCellOutputs;
 matchDimensions = iP.Results.MatchDimensions;
 
 %% Do the job
-% Make sure vecs1 and vecs2 are both cell arrays
+% Make sure arrays1 and arrays2 are both cell arrays
 %   if one of them is a cell array
-if iscell(vecs1) && isnumeric(vecs2)
-    vecs2 = {vecs2};
-elseif isnumeric(vecs1) && iscell(vecs2)
-    vecs1 = {vecs1};
+if iscell(arrays1) && isnumeric(arrays2)
+    arrays2 = {arrays2};
+elseif isnumeric(arrays1) && iscell(arrays2)
+    arrays1 = {arrays1};
 end
 
-% Make sure vecs1 and vecs2 have the same length
-if iscell(vecs1) && iscell(vecs2)
-    % Count the number of vectors
-    nVecs1 = numel(vecs1);
-    nVecs2 = numel(vecs2);
+% Make sure arrays1 and arrays2 have the same length
+if iscell(arrays1) && iscell(arrays2)
+    % Count the number of arrays
+    nVecs1 = numel(arrays1);
+    nVecs2 = numel(arrays2);
 
     % If unequal, match numbers
     if nVecs1 ~= nVecs2
         if nVecs1 ~= 1 && nVecs2 ~= 1        
             % If both are not one, return error
-            error(['Either vecs1 and vecs2 have ', ...
-                    'equal numbers of vectors or one of them ', ...
-                    'must have just one vector!']);
+            error(['Either arrays1 and arrays2 have ', ...
+                    'equal numbers of arrays or one of them ', ...
+                    'must have just one array!']);
         elseif nVecs1 == 1
-            vecs1 = repmat(vecs1, size(vecs2));
+            arrays1 = repmat(arrays1, size(arrays2));
         elseif nVecs2 == 1
-            vecs2 = repmat(vecs2, size(vecs1));
+            arrays2 = repmat(arrays2, size(arrays1));
         else
             error('Error in code logic!');
         end
@@ -117,13 +116,13 @@ if iscell(vecs1) && iscell(vecs2)
 
     % If requested, match dimensions
     if matchDimensions
-        vecs1 = match_dimensions(vecs1, size(vecs2));
+        arrays1 = match_dimensions(arrays1, size(arrays2));
     end
 else
     % Force outputs to be cell arrays if requested
     if forceCellOutputs
-        vecs1 = {vecs1};
-        vecs2 = {vecs2};
+        arrays1 = {arrays1};
+        arrays2 = {arrays2};
     end
 end
 
@@ -133,36 +132,39 @@ end
 %{
 OLD CODE:
 
-% Force both vecs2 and vecs1 to be column cell arrays
+%       cd/count_vectors.m
+%       cd/force_column_cell.m
+
+% Force both arrays2 and arrays1 to be column cell arrays
 %   Note: This allows the user to provide a cell array for one 
 %           and a numeric array for the other
-vecs2 = force_column_cell(vecs2);
-vecs1 = force_column_cell(vecs1);
+arrays2 = force_column_cell(arrays2);
+arrays1 = force_column_cell(arrays1);
 
-% Count the number of vecs2
-nToBeMatched = count_vectors(vecs2);
+% Count the number of arrays2
+nToBeMatched = count_vectors(arrays2);
 
-% Count the number of vecs1
-nOrig = count_vectors(vecs1);
+% Count the number of arrays1
+nOrig = count_vectors(arrays1);
 
 % Make sure nOrig matches up with nToBeMatched
 if nOrig ~= nToBeMatched
     if nOrig == 0 
-        % Generate a cell array of empty vecs2
-        vecs1 = cell(nToBeMatched, 1);
+        % Generate a cell array of empty arrays2
+        arrays1 = cell(nToBeMatched, 1);
     elseif nOrig == 1
-        % Generate a cell array of the same vector
-        vecs1 = repmat(vecs1, nToBeMatched, 1);
+        % Generate a cell array of the same array
+        arrays1 = repmat(arrays1, nToBeMatched, 1);
     else
-        error(['# of vecs1 provided must be 0, 1 or ', ...
-                'the same as vecs2!!']);
+        error(['# of arrays1 provided must be 0, 1 or ', ...
+                'the same as arrays2!!']);
     end
 else
     % Numbers already matched
-    vecs1 = vecs1;
+    arrays1 = arrays1;
 end
 
-vecs1 = match_dimensions(vecs1, vecs2);
+arrays1 = match_dimensions(arrays1, arrays2);
 
 %}
 

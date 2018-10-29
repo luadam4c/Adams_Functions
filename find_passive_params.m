@@ -341,8 +341,8 @@ end
 
 %% Restrict the original vectors to the current pulse response window for speed
 % Find the indices for the current pulse response
-[idxStart, idxEnd] = find_window_endpoints(pulseResponseWindow, tvec0);
-indCpr = transpose(idxStart:idxEnd);
+endPoints = find_window_endpoints(pulseResponseWindow, tvec0);
+indCpr = transpose(endPoints(1):endPoints(2));
 
 % Restrict the vectors to the current pulse response window
 tvecCpr = tvec0(indCpr);
@@ -1551,6 +1551,8 @@ elseif fitMode ~= 0 && fitMode ~= 1 && fitMode ~= 2
 % Set suffix and title modification according to fitMode
 [suffix, titleMod] = m3ha_specs_for_fitmode(fitMode);
 
+[idxStart, idxEnd] = find_window_endpoints(pulseResponseWindow, tvec0);
+indCpr = transpose(idxStart:idxEnd);
 
 %} 
 

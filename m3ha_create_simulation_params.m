@@ -329,14 +329,13 @@ end
 % Check if any other simulation parameter that's not a scalar has the 
 %   same number of elements as the number of simulations
 %   If it's a scalar, repmat it to the number of simulations
+%% TODO: Use match_row_counts.m and argfun.m instead
 for iParam = 1:nSimParamsFromArguments
     % Get this parameter name
     thisParam = simParamsFromArguments{iParam};
 
     % Get the number of elements
     nOld = eval(sprintf('numel(%s)', thisParam));
-
-%% TODO: Use match_row_counts.m
 
     % Match it up to the number of simulations
     if nOld > 1 && nOld ~= nSims

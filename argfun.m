@@ -14,6 +14,9 @@ function varargout = argfun (myFunction, varargin)
 %
 % Used by:    
 %       cd/compute_single_neuron_errors.m
+%       cd/compute_sweep_errors.m
+%       cd/find_window_endpoints.m
+%       cd/match_format_vectors.m
 %       cd/match_reciprocals.m
 
 % File History:

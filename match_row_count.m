@@ -19,6 +19,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %
 % Used by:    
 %       cd/compute_single_neuron_errors.m
+%       cd/compute_sweep_errors.m
 
 % File History:
 % 2018-10-25 Created by Adam Lu
@@ -56,9 +57,10 @@ parse(iP, arrayOld, nRowsNew, varargin{:});
 % Query the old number of rows
 nRowsOld = size(arrayOld, 1);
 
-% If the new number of rows are the same as the old ones, 
+% If arrayOld is empty 
+%   or if the new number of rows are the same as the old ones, 
 %   just return the old array
-if nRowsNew == nRowsOld
+if isempty(arrayOld) || nRowsNew == nRowsOld
     arrayNew = arrayOld;
     return
 end

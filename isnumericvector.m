@@ -1,29 +1,25 @@
-function isCellNumericVector = iscellnumericvector (x)
-%% Returns whether an input is a cell array of numeric vectors (may be empty)
-% Usage: isCellNumericVector = iscellnumericvector (x)
+function isNumericVector = isnumericvector (x)
+%% Returns whether an input is a numeric vector (may be empty)
+% Usage: isNumericVector = isnumericvector (x)
 % Explanation:
 %       Tests whether the input is a cell array of numeric vectors
 % Example(s):
-%       iscellnumericvector({1:10, 2:20})
-%       iscellnumericvector({magic(3), 2:20})
-%       iscellnumericvector({'sets', 'lasts'})
+%       isnumericvector([])
+%       isnumericvector(2:20)
+%       isnumericvector(magic(3))
+%       isnumericvector('sets')
 % Outputs:
-%       isCellNumericVector   
-%                       - whether the input is a cell array of numeric vectors
+%       isNumericVector - whether the input is a numeric vector (may be empty)
 %                       specified as a logical scalar
 % Arguments:    
 %       x               - an input to check
-%
-% Requires:
-%       cd/isnumericvector.m
 %
 % Used by:
 %       cd/compute_rms_error.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
-%       cd/count_samples.m
-%       cd/count_vectors.m
 %       cd/extract_subvectors.m
+%       cd/iscellnumericvector.m
 
 % File History:
 % 2018-10-25 Created by Adam Lu
@@ -39,7 +35,7 @@ if nargin < 1
 end
 
 %% Do the job
-isCellNumericVector = iscell(x) && all(cellfun(@isnumericvector, x));
+isNumericVector = isnumeric(x) && (isempty(x) || isvector(x));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

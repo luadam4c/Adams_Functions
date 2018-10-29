@@ -15,14 +15,15 @@ function isCellNumeric = iscellnumeric (x)
 % Used by:
 %       cd/compute_average_trace.m
 %       cd/compute_residuals.m
-%       cd/count_samples.m
-%       cd/count_vectors.m
+%       cd/compute_rms_error.m
 %       cd/find_pulse_endpoints.m
 %       cd/find_pulse_response_endpoints.m
+%       cd/find_window_endpoints.m
 %       cd/force_column_numeric.m
 %       cd/force_row_numeric.m
 %       cd/extract_columns.m
-%       cd/match_vector_counts.m
+%       cd/match_array_counts.m
+%       cd/match_format_vectors.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 %       cd/plot_raster.m

@@ -40,10 +40,11 @@ function avgValues = compute_weighted_average (values, varargin)
 %       cd/match_dimensions.m
 %
 % Used by:    
-%       /TODO:dir/TODO:file
+%       cd/compute_sweep_errors.m
 
 % File History:
 % 2018-10-26 Created by Adam Lu
+% 2018-10-28 Fixed the case when values has less than one element
 % 
 
 %% Hard-coded parameters
@@ -108,6 +109,12 @@ if strcmpi(averageMethod, 'exponential') && ~isempty(valueWeights)
 end
 
 %% Preparation
+% If there is only one value, return it
+if numel(values) <= 1
+    avgValues = values;
+    return
+end
+
 % Set default weights
 if isempty(valueWeights)
     valueWeights = ones(size(values));

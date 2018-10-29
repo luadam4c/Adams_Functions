@@ -11,19 +11,25 @@ function residuals = compute_residuals (simVectors, realVectors, varargin)
 %                       or a cell array of numeric vectors
 % Arguments:    
 %       simVectors  - simulated vectors
-%                   must be a numeric vector or a cell array of numeric vectors
+%                   Note: If a cell array, each element must be a vector
+%                         If a non-vector array, each column is a vector
+%                   must be a numeric array or a cell array of numeric arrays
 %       realVectors - recorded vectors
-%                   must be a numeric vector or a cell array of numeric vectors
+%                   Note: If a cell array, each element must be a vector
+%                         If a non-vector array, each column is a vector
+%                   must be a numeric array or a cell array of numeric arrays
 %
 % Requires:
 %       cd/iscellnumeric.m
-%       cd/match_vector_counts.m
+%       cd/match_format_vectors.m
 %
 % Used by:    
 %       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
 
 % File History:
 % 2018-10-23 Created by Adam Lu
+% 2018-10-28 Now uses match_format_vectors.m and accepts numeric arrays
+%               with multiple columns
 % 
 
 %% Hard-coded parameters
@@ -60,9 +66,9 @@ parse(iP, simVectors, realVectors, varargin{:});
 
 %% Preparation
 % Make sure simVectors and realVectors are both cell arrays of the same length
-%   if one of them is a cell array
+%   if one of them has multiple vectors
 [simVectors, realVectors] = ...
-    match_vector_counts(simVectors, realVectors, 'ForceCellOutputs', false);
+    match_format_vectors(simVectors, realVectors, 'ForceCellOutputs', false);
 
 %% Compute residuals
 if iscell(simVectors) && iscell(realVectors)
@@ -92,6 +98,10 @@ parfor iSwp = 1:nSweeps
     % Compute the residual
     residuals{iSwp} = simVectors - realVectors;
 end
+
+%       cd/match_array_counts.m
+[simVectors, realVectors] = ...
+    match_array_counts(simVectors, realVectors, 'ForceCellOutputs', false);
 
 %}
 

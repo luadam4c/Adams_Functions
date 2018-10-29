@@ -2,7 +2,9 @@ function nVectors = count_vectors (vectors)
 %% Counts the number of vectors whether given an array or a cell array
 % Usage: nVectors = count_vectors (vectors)
 % Explanation:
-%       Uses either size(x, 2) for arrays and numel() for cell arrays
+%       Uses either 1 for vectors,
+%               size(x, 2) for arrays 
+%               or numel() for cell arrays
 % Example(s):
 %       nVectors = count_vectors(data)
 % Outputs:
@@ -12,16 +14,17 @@ function nVectors = count_vectors (vectors)
 % Arguments:
 %       vectors     - vectors to count
 %                   Note: If a cell array, each element must be a vector
-%                         If an array, each column is a vector
+%                         If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array of numeric vectors
 %
 % Requires:
-%       cd/iscellnumeric.m
+%       cd/iscellnumericvector.m
 %
 % Used by:
 %       cd/compute_single_neuron_errors.m
+%       cd/compute_sweep_errors.m
 %       cd/find_pulse_endpoints.m
-%       cd/match_vector_counts.m
+%       cd/force_column_cell.m
 
 % File History:
 % 2018-10-10 Created by Adam Lu
@@ -42,9 +45,9 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vectors', ...                   % vectors
-    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+    @(x) assert(isnumeric(x) || iscellnumericvector(x), ...
                 ['vectors must be either a numeric array', ...
-                    'or a cell array of numeric arrays!']));
+                    'or a cell array of numeric vectors!']));
 
 % Read from the Input Parser
 parse(iP, vectors);
@@ -53,7 +56,11 @@ parse(iP, vectors);
 if iscell(vectors)
     nVectors = numel(vectors);
 elseif isnumeric(vectors)    
-    nVectors = size(vectors, 2);
+    if isvector(vectors)
+        nVectors = 1;
+    else
+        nVectors = size(vectors, 2);
+    end
 else
     error('vectors is not the right type!');
 end

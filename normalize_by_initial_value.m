@@ -23,7 +23,7 @@ function [normalizedValue, initValue] = ...
 %       cd/match_dimensions.m
 %
 % Used by:    
-%       cd/compute_single_neuron_errors.m
+%       cd/compute_sweep_errors.m
 
 % File History:
 % 2018-10-26 Created by Adam Lu
