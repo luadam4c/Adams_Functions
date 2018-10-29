@@ -1,12 +1,12 @@
-function errors = compute_sweep_errors (vSim, vReal, varargin)
+function errorStruct = compute_sweep_errors (vSim, vReal, varargin)
 %% Computes all errors for single neuron data
-% Usage: errors = compute_sweep_errors (vSim, vReal, varargin)
+% Usage: errorStruct = compute_sweep_errors (vSim, vReal, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       errors      - a structure of all the errors computed, with fields:
+%       errorStruct - a structure of all the errors computed, with fields:
 %                       swpErrors       - all sweep errors
 %                       avgSwpError     - average sweep error
 %                       normAvgSwpError - normalized average sweep error
@@ -181,11 +181,11 @@ if normalizeError
 end
 
 %% Store in output errors structure
-errors.swpErrors = swpErrors;
-errors.avgSwpError = avgSwpError;
+errorStruct.swpErrors = swpErrors;
+errorStruct.avgSwpError = avgSwpError;
 if normalizeError
-    errors.normAvgSwpError = normAvgSwpError;
-    errors.initSwpError = initSwpError;
+    errorStruct.normAvgSwpError = normAvgSwpError;
+    errorStruct.initSwpError = initSwpError;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

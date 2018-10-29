@@ -6,7 +6,9 @@ function vectorsCell = force_column_cell (vectorsOrig)
 %           -- always as column cell arrays
 %       1. Row cell arrays are converted to column cell arrays
 %       2. Empty numeric arrays and character arrays are placed in a cell array
-%       3. Numeric arrays are transformed to a column cell array
+%       3. Numeric vector arrays are forced as a column vector
+%           placed in a cell array
+%       4. Numeric non-vector arrays are transformed to a column cell array
 %           of column numeric vectors based on the original columns
 %
 % Example(s):
@@ -34,6 +36,7 @@ function vectorsCell = force_column_cell (vectorsOrig)
 %       cd/match_format_vectors.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
+%       cd/plot_traces.m
 %       cd/run_neuron.m
 
 % File History:

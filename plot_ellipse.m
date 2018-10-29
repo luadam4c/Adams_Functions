@@ -18,7 +18,7 @@ function [h, xValues, yValues] = plot_ellipse (center, halflengths, theta0, vara
 %       theta0      - angle between x axis and 
 %                       the first axis of ellipse (radians)
 %                   must be a numeric scalar
-%       varargin    - 'Color': color of ellipse
+%       varargin    - 'LineColor': color of ellipse
 %                   must be recognized by the plot() function
 %                   default == 'r'
 %                   - 'NPoints': number of points to plot
@@ -52,7 +52,7 @@ function [h, xValues, yValues] = plot_ellipse (center, halflengths, theta0, vara
 
 %% Default values for optional arguments
 nPointsDefault = 1000;                  % default number of points to plot
-colorDefault = 'r';                     % default color of ellipse
+lineColorDefault = 'r';                 % default line color of ellipse
 lineStyleDefault = '-';                 % default line style of ellipse
 lineWidthDefault = 1;                   % default line width of ellipse
 toPlotDefault = true;                   % whether to plot
@@ -80,7 +80,7 @@ addRequired(iP, 'theta0', ...                   % angle of ellipse
     @(x) validateattributes(x, {'numeric'}, {'nonempty'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'Color', colorDefault);
+addParameter(iP, 'LineColor', lineColorDefault);
 addParameter(iP, 'NPoints', nPointsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 addParameter(iP, 'LineStyle', lineStyleDefault, ...
@@ -93,7 +93,7 @@ addParameter(iP, 'ToPlot', toPlotDefault, ...
 % Read from the Input Parser
 parse(iP, center, halflengths, theta0, varargin{:});
 nPoints = iP.Results.NPoints;
-color = iP.Results.Color;
+lineColor = iP.Results.LineColor;
 [~, lineStyle] = islinestyle(iP.Results.LineStyle, 'ValidateMode', true);
 lineWidth = iP.Results.LineWidth;
 toPlot = iP.Results.ToPlot;
@@ -132,9 +132,10 @@ xValues = shifted(1, :);
 yValues = shifted(2, :);
 if toPlot
     h = plot(xValues, yValues, ...
-            'LineStyle', lineStyle, 'Color', color, ...
+            'LineStyle', lineStyle, 'Color', lineColor, ...
             'LineWidth', lineWidth);
-else h = [];
+else 
+    h = [];
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

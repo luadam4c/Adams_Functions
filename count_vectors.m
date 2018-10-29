@@ -25,6 +25,7 @@ function nVectors = count_vectors (vectors)
 %       cd/compute_sweep_errors.m
 %       cd/find_pulse_endpoints.m
 %       cd/force_column_cell.m
+%       cd/plot_traces.m
 
 % File History:
 % 2018-10-10 Created by Adam Lu

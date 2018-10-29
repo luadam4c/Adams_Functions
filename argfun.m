@@ -18,6 +18,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/find_window_endpoints.m
 %       cd/match_format_vectors.m
 %       cd/match_reciprocals.m
+%       cd/plot_traces.m
 %       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
 
 % File History:

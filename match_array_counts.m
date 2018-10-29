@@ -34,6 +34,7 @@ function [arrays1, arrays2] = match_array_counts (arrays1, arrays2, varargin)
 %       cd/match_dimensions.m
 %
 % Used by:
+%       cd/plot_traces.m
 %
 
 % File History:

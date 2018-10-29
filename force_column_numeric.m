@@ -22,7 +22,7 @@ function vectors = force_column_numeric (vectors, varargin)
 %
 % Arguments:
 %       vectors     - original vectors
-%                   must be a numeric vector or a cell array of numeric arrays
+%                   must be a numeric array or a cell array of numeric arrays
 %       varargin    - 'IgnoreNonVectors': whether to ignore non-vectors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
