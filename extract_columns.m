@@ -100,6 +100,12 @@ if iscell(colNumbers)
 end
 
 %% Preparation
+% If arrays is empty, return empty outputs
+if isempty(arrays)
+    varargout = cell(1, nargout);
+    return
+end
+
 % Count the number of arrays
 if isnumeric(arrays)
     nArrays = 1;

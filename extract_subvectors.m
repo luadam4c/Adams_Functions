@@ -35,9 +35,11 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/compute_rms_error.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
+%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
 
 % File History:
 % 2018-10-28 Created by Adam Lu
+% 2018-10-29 Now returns empty if input is empty
 % 
 
 %% Hard-coded parameters
@@ -88,6 +90,12 @@ end
 % TODO: check if all endpoints have 2 elements
 
 %% Preparation
+% If vecs is empty, return empty
+if isempty(vecs)
+    subVecs = vecs;
+    return
+end
+
 % Find default end points if not provided
 % TODO: check if vecs are nondecreasing
 if isempty(endPoints)

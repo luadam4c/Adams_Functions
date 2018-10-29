@@ -274,7 +274,7 @@ else
 end
 
 % Decide on the colormap
-cm = colormap(jet(nTraces));
+colorMap = colormap(jet(nTraces));
 
 %% Plot
 % Hold on if more than one trace
@@ -289,7 +289,7 @@ case 'overlapped'
     for iTrace = 1:nTraces
         % Plot the trace
         p = plot(tVec, data(:, iTrace), ...
-            'Color', cm(iTrace, :));
+            'Color', colorMap(iTrace, :));
         
         % Set the legend label as the trace label if provided
         if ~strcmpi(traceLabels, 'suppress')
@@ -339,7 +339,7 @@ case 'parallel'
         
         % Plot the signal against the time vector
         p = plot(tVec, data(:, iTrace), ...
-                'Color', cm(iTrace, :));
+                'Color', colorMap(iTrace, :));
 
         % Set the legend label as the trace label if provided
         if ~strcmpi(traceLabels, 'suppress')
