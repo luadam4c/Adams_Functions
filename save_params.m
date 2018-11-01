@@ -73,7 +73,7 @@ outFolder = iP.Results.OutFolder;
 
 %% Preparation
 % Construct the full path
-%   TODO: Expand to accept optional 'Directory', 'Suffix', etc.
+%   TODO: Expand to accept optional Suffix', etc.
 fullPath = construct_fullpath(fileName, 'Directory', outFolder);
 
 % Get the file extension

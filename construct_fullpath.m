@@ -50,6 +50,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 % Used by:
 %       cd/check_dir.m
 %       cd/locate_dir.m
+%       cd/m3ha_create_initial_neuronparams.m
 %       cd/save_params.m
 %       ~/RTCl/neuronlaunch.m
 %       ~/m3ha/data_dclamp/dclampPassiveFitter.m
@@ -66,6 +67,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 % 2018-10-03 Rename construct_fullfilename -> construct_fullpath
 % 2018-10-03 Added pathType as an output
 % 2018-10-03 Now accepts a cell array of paths as input
+% 2018-11-01 Now uses argfun.m, force_column_cell.m, match_format_vectors.m
 
 %% Default values for optional arguments
 verboseDefault = false;             % don't print to standard output by default

@@ -29,6 +29,7 @@ function [neuronParamsTables, neuronParamsFiles, ...
 %
 % Requires:
 %       cd/argfun.m
+%       cd/construct_fullpath.m
 %       cd/force_column_numeric.m
 %       cd/save_params.m
 %       cd/update_param_values.m
@@ -238,8 +239,9 @@ paramsFileNames = cellfun(@(x, y) ['initial_params_', y, '.xlsx'], ...
 paramsFilePaths = construct_fullpath(paramsFileNames, 'Directory', outFolder);
 
 % Save as parameter files
-neuronParamsFiles = cellfun(@(x) save_params(x, 'OutFolder', outFolder), ...
-                            neuronParamsTables, 'UniformOutput', false);
+neuronParamsFiles = cellfun(@(x, y) save_params(x, 'FileName', y), ...
+                            neuronParamsTables, paramsFilePaths, ...
+                            'UniformOutput', false);
 
 %% Deal with outputs
 % Save the passive parameters file name
