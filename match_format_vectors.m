@@ -14,6 +14,8 @@ function [vecs1, vecs2] = match_format_vectors (vecs1, vecs2, varargin)
 %       [a, b] = match_format_vectors({1:5, 2:6}, 1:5)
 %       [a, b] = match_format_vectors({1:5, [2:6]'}, 1:5)
 %       [a, b] = match_format_vectors([[1:5]', [2:6]'], [1:5]')
+%       [a, b] = match_format_vectors('yes', 1:5)
+%       [a, b] = match_format_vectors('yes', magic(3))
 %
 % Outputs:
 %       vecs1       - new first set of vectors
@@ -100,7 +102,8 @@ forceCellOutputs = iP.Results.ForceCellOutputs;
 %% Do the job
 % If the vecs1 or vecs2 is a numeric vector, make sure it is a column vector
 [vecs1, vecs2] = ...
-    argfun(@(x) apply_or_return(@force_column_numeric, isnumericvector(x), ...
+    argfun(@(x) apply_or_return(isnumericvector(x), ...
+                                @force_column_numeric, x), ...
             vecs1, vecs2);
 
 % If there are more than one vectors in either vecs1 or vecs2, 
