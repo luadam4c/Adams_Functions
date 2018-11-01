@@ -41,7 +41,7 @@ function output = run_neuron (hocFile, varargin)
 %       cd/force_string_end.m
 %
 % Used by:    
-%       ~/m3ha/run_neuron_once_4compgabab.m
+%       cd/m3ha_run_neuron_once.m
 
 % File History:
 % 2018-10-19 Adapted from code in ~/m3ha/run_neuron_once_4compgabab.m

@@ -7,7 +7,10 @@ function paramTables = load_params (fileNames, varargin)
 %       TODO
 % Outputs:
 %       paramTables - parameter table(s) with parameter names as 
-%                       row names
+%                       row names and at least these variables:
+%                           Value
+%                           LowerBound
+%                           UpperBound
 %                   specified as a 2d table or a cell array of 2d tables
 % Arguments:    
 %       fileNames   - parameter file name(s)

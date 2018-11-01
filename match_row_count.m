@@ -20,6 +20,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 % Used by:    
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
+%       cd/m3ha_plot_individual_traces.m
 
 % File History:
 % 2018-10-25 Created by Adam Lu

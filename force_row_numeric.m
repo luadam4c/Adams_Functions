@@ -27,8 +27,6 @@ function vectors = force_row_numeric (vectors, varargin)
 %       cd/iscellnumeric.m
 %
 % Used by:    
-%       cd/compute_single_neuron_errors.m
-%       cd/compute_sweep_errors.m
 
 % File History:
 % 2018-10-25 Modified from force_column_numeric.m

@@ -48,10 +48,10 @@ function [actVhold, maxnoise, peaktime, peak2ndder, peakprom, peakwidth, peakcla
 %        cd/find_ind_str_in_cell.m
 %
 % Used by:
-%        /home/Matlab/Adams_Functions/find_LTSs_many_sweeps
-%        /media/adamX/m3ha/data_dclamp/test_sweep.m
-%        /media/adamX/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
-%        /media/shareX/share/Adam/Sample_files_from_Katie/test_sweeps.m
+%       cd/find_LTSs_many_sweeps.m
+%       cd/m3ha_run_neuron_once.m
+%       /media/adamX/m3ha/data_dclamp/test_sweep.m
+%       /media/shareX/share/Adam/Sample_files_from_Katie/test_sweeps.m
 %
 %
 % 2016-09-22 Adapted from dclampDataExtractor.m

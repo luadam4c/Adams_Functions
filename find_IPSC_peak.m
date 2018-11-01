@@ -31,8 +31,8 @@ function [ipeak_time, ipeak_ind, ipeak_amp, ipeak_delay] = find_IPSC_peak (tvec0
 %		cd/check_subdir.m
 %
 % Used by:
+%       cd/m3ha_run_neuron_once.m
 %		/media/adamX/m3ha/data_dclamp/dclampDataExtractor.m
-%		/media/adamX/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
 %
 %
 % 2016-10-05 Adapted from find_istart.m and dclampDataExtractor.m

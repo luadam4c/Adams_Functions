@@ -11,8 +11,11 @@ function fileName = save_params (paramsTable, varargin)
 % Arguments:    
 %       paramsTable - a table for all the parameters
 %                   specified as a 2-d table
-%       varargin    'FileName' - file name to use
+%       varargin    - 'FileName' - file name to use
 %                   must be a string scalar or a character vector
+%                   - 'OutFolder': directory to place parameters file
+%                   must be a string scalar or a character vector
+%                   default == pwd
 %
 % Requires:
 %       cd/create_time_stamp.m
@@ -20,13 +23,15 @@ function fileName = save_params (paramsTable, varargin)
 %       cd/issheettype.m
 %
 % Used by:
+%       cd/m3ha_create_initial_neuronparams.m
+%       cd/m3ha_run_neuron_once.m TODO
 %       ~/m3ha/optimizer4gabab/fminsearch3_4compgabab.m TODO
 %       ~/m3ha/optimizer4gabab/log_errors_params.m TODO
-%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m TODO
 
 % File History:
 % 2018-10-16 Created by Adam Lu
 % 2018-10-21 The first argument is now a parameters table
+% 2018-10-31 Added 'OutFolder' as an optional parameter
 % TODO: Make 'Suffix' an optional parameter
 % 
 
@@ -35,6 +40,7 @@ function fileName = save_params (paramsTable, varargin)
 %% Default values for optional arguments
 suffixDefault = '_params.csv';
 fileNameDefault = strcat(create_time_stamp, suffixDefault);
+outFolderDefault = '';      % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -57,15 +63,23 @@ addRequired(iP, 'paramsTable', ...
 addParameter(iP, 'FileName', fileNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
                                                 % introduced after R2016b
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));    
 
 % Read from the Input Parser
 parse(iP, paramsTable, varargin{:});
 fileName = iP.Results.FileName;
+outFolder = iP.Results.OutFolder;
 
 %% Preparation
+% Set default output folder
+if isempty(outFolder)
+    outFolder = pwd;
+end
+
 % Construct the full path
 %   TODO: Expand to accept optional 'Directory', 'Suffix', etc.
-fullPath = construct_fullpath(fileName);
+fullPath = construct_fullpath(fileName, 'Directory', outFolder);
 
 % Get the file extension
 [~, ~, fileExt] = fileparts(fullPath);

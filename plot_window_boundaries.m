@@ -7,7 +7,7 @@ function plot_window_boundaries (win, varargin)
 %       TODO
 % Arguments:
 %       win         - window to plot boundaries for
-%                   must be a TODO
+%                   must be a 2-element numeric vector
 %       varargin    - 'LineColor': color of boundaries
 %                   must be recognized by the plot() function
 %                   default == 'r'
@@ -20,8 +20,11 @@ function plot_window_boundaries (win, varargin)
 %                       'none'  - no line
 %                   default == '-'
 %
+% Requires:
+%       cd/islinestyle.m
+%
 % Used by:    
-%       /TODO:dir/TODO:file
+%       cd/m3ha_plot_individual_traces.m
 
 % File History:
 % 2018-10-29 Created by Adam Lu
@@ -48,17 +51,17 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'win', ...
-    % TODO: validation function %);
+    @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 2}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'LineColor', lineColorDefault);
-addParameter(iP, 'LineWidth', lineWidthDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'LineStyle', lineStyleDefault, ...
+    @(x) all(islinestyle(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, win, varargin{:});
 lineColor = iP.Results.LineColor;
-lineWidth = iP.Results.LineWidth;
+[~, lineStyle] = islinestyle(iP.Results.LineStyle, 'ValidateMode', true);
 
 %% Preparation
 % Get the y-axis limits
@@ -67,9 +70,9 @@ yLimits = get(gca, 'YLim');
 %% Do the job
 % Plot lines spanning the y-axis
 line(win(1) * ones(1, 2), yLimits, ...
-    'LineColor', lineColor, 'LineStyle', lineStyle);
+    'Color', lineColor, 'LineStyle', lineStyle);
 line(win(2) * ones(1, 2), yLimits, ...
-    'LineColor', lineColor, 'LineStyle', lineStyle);
+    'Color', lineColor, 'LineStyle', lineStyle);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

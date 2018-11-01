@@ -17,10 +17,11 @@ function colorMap = create_colormap (nColors, varargin);
 %
 % Requires:
 %       ~/Downloaded_Functions/rgb.m
+%       cd/locate_functionsdir.m
 %
 % Used by:
+%       cd/m3ha_run_neuron_once.m
 %       cd/plot_traces.m   
-%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
 
 % File History:
 % 2018-10-29 Adapted from code in run_neuron_once_4compgabab.m

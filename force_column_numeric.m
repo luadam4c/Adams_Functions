@@ -32,6 +32,8 @@ function vectors = force_column_numeric (vectors, varargin)
 %       cd/iscellnumeric.m
 %
 % Used by:    
+%   TODO: Check if some of these can use 
+%           match_format_cell or force_column_cell instead
 %       cd/compute_average_trace.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
@@ -41,7 +43,9 @@ function vectors = force_column_numeric (vectors, varargin)
 %       cd/force_column_cell.m
 %       cd/match_format_vectors.m
 %       cd/match_reciprocals.m
+%       cd/m3ha_create_initial_neuronparams.m
 %       cd/m3ha_create_simulation_params.m
+%       cd/m3ha_plot_individual_traces.m
 %       cd/plot_cfit_pulse_response.m
 
 % File History:

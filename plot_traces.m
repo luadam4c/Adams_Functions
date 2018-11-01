@@ -89,19 +89,17 @@ function h = plot_traces (tVecs, data, varargin)
 %                   default == 'png'
 %
 % Requires:
-%       cd/argfun.m
 %       cd/count_vectors.m
 %       cd/create_colormap.m
-%       cd/force_column_cell.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
-%       cd/match_array_counts.m
-%       cd/match_dimensions.m
+%       cd/match_format_vectors.m
 %       cd/save_all_figtypes.m
 %       ~/Downloaded_Function/suplabel.m
 %       ~/Downloaded_Function/subplotsqueeze.m
 %
 % Used by:
+%       cd/m3ha_plot_individual_traces.m
 %       cd/plot_traces_abf.m
 
 % File History:
@@ -112,6 +110,7 @@ function h = plot_traces (tVecs, data, varargin)
 % 2018-10-29 Number of rows in parallel mode is now dependent on the 
 %               number of rows in the colorMap provided
 % 2018-10-29 Added 'DataToCompare' as an optional parameter
+% 2018-10-31 Now uses match_format_vectors.m
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel'};
@@ -210,15 +209,9 @@ figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 %% Preparation
-% Force data vectors as column cell arrays of column vectors
-[tVecs, data, dataToCompare] = ...
-    argfun(@force_column_cell, tVecs, data, dataToCompare);
-
 % Match the number of vectors between data and dataToCompare
-[data, dataToCompare] = match_array_counts(data, dataToCompare);
-
-% Match the dimensions of tVecs to data
-tVecs = match_dimensions(tVecs, size(data));
+%   and make sure boths are column cell arrays of column vectors
+[data, dataToCompare] = match_format_vectors(data, dataToCompare);
 
 % Extract number of traces
 nTraces = count_vectors(data);
@@ -241,6 +234,9 @@ nTracesPerRow = ceil(nTraces / nRows);
 minY = min(cellfun(@min, data));
 maxY = max(cellfun(@max, data));
 rangeY = maxY - minY;
+
+% Force as column cell array and match up to nTraces elements 
+tVecs = match_format_vectors(tVecs, data);
 
 % Set the default time axis limits
 if isempty(xLimits)
@@ -282,11 +278,8 @@ case 'overlapped'
         yLabel = yLabel{1};
     end
 case 'parallel'
-    % Force as column cell arrays
-    yLabel = force_column_cell(yLabel);
-
-    % Match up to nTraces elements
-    yLabel = match_dimensions(yLabel, [nTraces, 1]);
+    % Force as column cell array and match up to nTraces elements
+    yLabel = match_format_cell(yLabel, data);
 otherwise
     error(['The plot mode ', plotMode, ' has not been implemented yet!']);
 end
@@ -607,6 +600,27 @@ end
 if nTraces > 1
     hold off
 end
+
+% Force as column cell arrays
+yLabel = force_column_cell(yLabel);
+
+% Match up to nTraces elements
+yLabel = match_dimensions(yLabel, [nTraces, 1]);
+
+% Force data vectors as column cell arrays of column vectors
+[tVecs, data, dataToCompare] = ...
+    argfun(@force_column_cell, tVecs, data, dataToCompare);
+
+% Match the number of vectors between data and dataToCompare
+[data, dataToCompare] = match_array_counts(data, dataToCompare);
+
+% Match the dimensions of tVecs to data
+tVecs = match_dimensions(tVecs, size(data));
+
+%       cd/argfun.m
+%       cd/force_column_cell.m
+%       cd/match_dimensions.m
+%       cd/match_array_counts.m
 
 %}
 

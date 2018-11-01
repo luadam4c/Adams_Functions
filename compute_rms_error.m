@@ -28,6 +28,7 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 %                   default == find_window_endpoints([], vec1s)
 %                   
 % Requires:
+%       cd/argfun.m
 %       cd/iscellnumeric.m
 %       cd/iscellnumericvector.m
 %       cd/isnumericvector.m
@@ -87,27 +88,35 @@ vec2s = iP.Results.vec2s;
 endPoints = iP.Results.EndPoints;
 
 %% Preparation
-% Force vec1s to be a cell array of column vectors
-vec1s = force_column_cell(vec1s);
-
-% Restrict to the given end points
-%   Note: default is first and last indices
-vec1s = extract_subvectors(vec1s, 'Endpoints', endPoints);
-
-% If not provided, set default vec2s to be the means of each vector
-%   Otherwise, restrict to the same endpoints
-if isempty(vec2s)
-    vec2s = cellfun(@nanmean, vec1s, 'UniformOutput', false);
-else
-    vec2s = extract_subvectors(vec2s, 'Endpoints', endPoints);
-end
+% Force vec1s and vec2s to be a cell array of column vectors
+[vec1s, vec2s] = argfun(@force_column_cell, vec1s, vec2s);
 
 % Make sure vec1s and vec2s are both column cell arrays
 %   with the same number of vectors
-[vec1s, vec2s] = match_format_vectors(vec1s, vec2s, 'ForceCellOutputs', true);
+[vec1s, vec2s] = match_format_vectors(vec1s, vec2s);
+
+% Restrict to the given end points
+%   Note: default is first and last indices
+[vec1s, vec2s] = ...
+    argfun(@(x) extract_subvectors(x, 'Endpoints', endPoints), ...
+            vec1s, vec2s);
+
+% If not provided, set default vec2s to be the means of each vector
+%   Otherwise, restrict to the same endpoints
+vec2s = cellfun(@(x, y) set_vec2_if_empty(x, y), ...
+                vec1s, vec2s, 'UniformOutput', false);
 
 %% Do the job
 rmsErrors = cellfun(@(x, y) compute_rms_error_helper(x, y), vec1s, vec2s);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function vec2 = set_vec2_if_empty (vec1, vec2)
+%% Set the default second vector to be the mean values of the first vector
+
+if isempty(vec2)
+    vec2 = nanmean(vec1) * ones(size(vec1));
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -155,6 +164,14 @@ else
 end
 
 %   TODO: implement dim as in rms.m
+
+if isempty(vec2s)
+    vec2s = cellfun(@nanmean, vec1s, 'UniformOutput', false);
+else
+    vec2s = extract_subvectors(vec2s, 'Endpoints', endPoints);
+end
+
+[vec1s, vec2s] = match_format_vectors(vec1s, vec2s, 'ForceCellOutputs', true);
 
 %}
 

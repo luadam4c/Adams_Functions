@@ -29,7 +29,8 @@ function baseNoises = compute_baseline_noise (dataVecs, timeVecs, baseWindows)
 %       cd/iscellnumeric.m
 %
 % Used by:    
-%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
+%       cd/m3ha_plot_individual_traces.m
+%       cd/m3ha_run_neuron_once.m
 
 % File History:
 % 2018-10-28 Created by Adam Lu

@@ -17,7 +17,7 @@ function dataNew = match_time_points (dataOld, timeNew)
 %       cd/print_or_show_message.m
 %
 % Used by:
-%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
+%       cd/m3ha_run_neuron_once.m
 
 %
 % File History:

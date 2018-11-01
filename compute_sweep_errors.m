@@ -41,6 +41,10 @@ function errorStruct = compute_sweep_errors (vSim, vReal, varargin)
 %                   - 'InitSwpError': initial sweep errors
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == []
+%   TODO:
+%                   - 'ReturnSweepErrors': whether to return sweep errors only
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/argfun.m
@@ -52,13 +56,14 @@ function errorStruct = compute_sweep_errors (vSim, vReal, varargin)
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_numeric.m
-%       cd/force_row_numeric.m
 %       cd/iscellnumericvector.m
 %       cd/isnumericvector.m
 %       cd/match_row_count.m
 %       cd/normalize_by_initial_value.m
 %
-% Used by:    
+% Used by:
+%       cd/compute_single_neuron_errors.m
+%       cd/m3ha_plot_individual_traces.m
 %       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
 
 % File History:
@@ -122,43 +127,38 @@ sweepWeights = iP.Results.SweepWeights;
 normalizeError = iP.Results.NormalizeError;
 initSwpError = iP.Results.InitSwpError;
 
-% Make sure all windows, if a vector and not a matrix, are row vectors
-if isvector(fitWindow)
-    fitWindow = force_row_numeric(fitWindow);
-end
-
 %% Preparation
 % Count the number of samples
 nSamples = count_samples(vSim);
-
-% Count the number of sweeps
-nSweeps = count_vectors(vSim);
 
 % Set default time vector(s)
 if isempty(tBoth)
     tBoth = create_time_vectors(nSamples);
 end
 
-% Set default sweep weights for averaging
-if isempty(sweepWeights)
-    sweepWeights = ones(nSweeps, 1);
-end
-
 % Force data vectors to become column numeric vectors
-[tBoth, vSim, vReal] = ...
-    argfun(@force_column_numeric, tBoth, vSim, vReal);
+[tBoth, vSim, vReal, fitWindow] = ...
+    argfun(@force_column_numeric, tBoth, vSim, vReal, fitWindow);
 
 % Force data arrays to become column cell arrays of column numeric vectors
-[tBoth, vSim, vReal] = ...
-    argfun(@force_column_cell, tBoth, vSim, vReal);
+[tBoth, vSim, vReal, fitWindow] = ...
+    argfun(@force_column_cell, tBoth, vSim, vReal, fitWindow);
+
+% Count the number of sweeps
+nSweeps = count_vectors(vSim);
 
 % Match row counts for sweep-dependent variables with the number of sweeps
 [fitWindow, vReal, tBoth] = ...
     argfun(@(x) match_row_count(x, nSweeps), ...
             fitWindow, vReal, tBoth);
 
+% Set default sweep weights for averaging
+if isempty(sweepWeights)
+    sweepWeights = ones(nSweeps, 1);
+end
+
 % Extract the start and end indices of the time vector for fitting
-endPoints = find_window_endpoints(transpose(fitWindow), tBoth);
+endPoints = find_window_endpoints(fitWindow, tBoth);
 
 % Extract the regions to fit
 [vSim, vReal] = ...
@@ -225,6 +225,13 @@ fitWindowUpperBounds = fitWindow(:, 2);
             tBoth, vSim, vReal, iSim, iReal);
 
 swpErrors = cellfun(@(x, y) compute_rms_error(x, y), vSim, vReal);
+
+%       cd/force_row_numeric.m
+% Make sure all windows, if a vector and not a matrix, are row vectors
+if isvector(fitWindow)
+    fitWindow = force_row_numeric(fitWindow);
+end
+endPoints = find_window_endpoints(transpose(fitWindow), tBoth);
 
 %}
 

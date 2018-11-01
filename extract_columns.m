@@ -37,7 +37,7 @@ function varargout = extract_columns (arrays, varargin)
 %       cd/iscellnumeric.m
 %
 % Used by:    
-%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
+%       cd/m3ha_run_neuron_once.m
 
 % File History:
 % 2018-10-24 Created by Adam Lu

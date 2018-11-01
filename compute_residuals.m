@@ -16,7 +16,7 @@ function residuals = compute_residuals (simVectors, realVectors, varargin)
 %                   must be a numeric array or a cell array of numeric arrays
 %       realVectors - recorded vectors
 %                   Note: If a cell array, each element must be a vector
-%                         If a non-vector array, each column is a vector
+%                         If a non-vector array, each column is a vectors
 %                   must be a numeric array or a cell array of numeric arrays
 %
 % Requires:
@@ -24,7 +24,7 @@ function residuals = compute_residuals (simVectors, realVectors, varargin)
 %       cd/match_format_vectors.m
 %
 % Used by:    
-%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
+%       cd/m3ha_run_neuron_once.m
 
 % File History:
 % 2018-10-23 Created by Adam Lu

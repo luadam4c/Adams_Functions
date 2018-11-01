@@ -73,7 +73,7 @@ prefix = force_string_end(prefix, '_', 'OnlyIfNonempty', true);
 myfun = @(x) fullfile(outFolder, strcat(prefix, sprintf('sim%d.out', x)));
 
 % Label the file names from 1 to nSims
-outFilePaths = arrayfun(@myfun, transpose([1:nSims]), 'UniformOutput', false);
+outFilePaths = arrayfun(myfun, transpose([1:nSims]), 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

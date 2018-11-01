@@ -47,25 +47,25 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %                   - 'BaseWindow': TODO: Description of BaseWindow
 %                   must be a TODO
 %                   default == TODO
-%                   - 'BaseNoise': TODO: Description of BaseNoise
-%                   must be a TODO
+%                   - 'BaseNoise': baseline noise value(s)
+%                   must be a numeric vector
 %                   default == TODO
 %
 % Requires:
 %       cd/argfun.m
+%       cd/compute_sweep_errors.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
 %       cd/create_time_vectors.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_numeric.m
-%       cd/force_row_numeric.m
 %       cd/iscellnumericvector.m
 %       cd/isnumericvector.m
 %       cd/match_row_count.m
 %
-% Used by:    
-%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
+% Used by:
+%       cd/m3ha_run_neuron_once.m
 
 % File History:
 % 2018-10-24 Adapted from code in run_neuron_once_4compgabab.m
@@ -157,43 +157,38 @@ initSwpError = iP.Results.InitSwpError;
 % baseWindow = iP.Results.BaseWindow;
 % baseNoise = iP.Results.BaseNoise;
 
-% Make sure all windows, if a vector and not a matrix, are row vectors
-if isvector(fitWindow)
-    fitWindow = force_row_numeric(fitWindow);
-end
-
 %% Preparation
 % Count the number of samples
 nSamples = count_samples(vSim);
-
-% Count the number of sweeps
-nSweeps = count_vectors(vSim);
 
 % Set default time vector(s)
 if isempty(tBoth)
     tBoth = create_time_vectors(nSamples);
 end
 
-% Set default sweep weights for averaging
-if isempty(sweepWeights)
-    sweepWeights = ones(nSweeps, 1);
-end
-
 % Force data vectors to become column numeric vectors
-[tBoth, vSim, vReal, iSim, iReal] = ...
-    argfun(@force_column_numeric, tBoth, vSim, vReal, iSim, iReal);
+[tBoth, vSim, vReal, iSim, iReal, fitWindow] = ...
+    argfun(@force_column_numeric, tBoth, vSim, vReal, iSim, iReal, fitWindow);
 
 % Force data arrays to become column cell arrays of column numeric vectors
-[tBoth, vSim, vReal, iSim, iReal] = ...
-    argfun(@force_column_cell, tBoth, vSim, vReal, iSim, iReal);
+[tBoth, vSim, vReal, iSim, iReal, fitWindow] = ...
+    argfun(@force_column_cell, tBoth, vSim, vReal, iSim, iReal, fitWindow);
+
+% Count the number of sweeps
+nSweeps = count_vectors(vSim);
 
 % Match row counts for sweep-dependent variables with the number of sweeps
 [fitWindow, vReal, tBoth, iSim, iReal] = ...
     argfun(@(x) match_row_count(x, nSweeps), ...
             fitWindow, vReal, tBoth, iSim, iReal);
 
+% Set default sweep weights for averaging
+if isempty(sweepWeights)
+    sweepWeights = ones(nSweeps, 1);
+end
+
 % Extract the start and end indices of the time vector for fitting
-endPoints = find_window_endpoints(transpose(fitWindow), tBoth);
+endPoints = find_window_endpoints(fitWindow, tBoth);
 
 % Extract the regions to fit
 [tBoth, vSim, vReal, iSim, iReal] = ...
@@ -221,6 +216,14 @@ end
 
 %{
 OLD CODE:
+
+% Make sure all windows, if a vector and not a matrix, are row vectors
+if isvector(fitWindow)
+    fitWindow = force_row_numeric(fitWindow);
+end
+endPoints = find_window_endpoints(transpose(fitWindow), tBoth);
+
+%       cd/force_row_numeric.m
 
 %}
 

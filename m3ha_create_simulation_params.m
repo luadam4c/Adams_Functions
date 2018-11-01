@@ -13,9 +13,17 @@ function [simParamsTable, simParamsPath] = ...
 %                       specified as a 2d table
 %       simParamsPath   - file path for saved simulation parameters
 %                       specified as a character vector
-% Arguments:    
-%       neuronParamsTable   - table(s) of single neuron parameters
-%                           must be a 2d table or a cell array of 2d tables
+% Arguments:
+%       neuronParamsTable   
+%                   - table(s) of single neuron parameters with 
+%                       parameter names as 'RowNames' and with variables:
+%                       'Value': value of the parameter
+%                       'LowerBound': lower bound of the parameter
+%                       'UpperBound': upper bound of the parameter
+%                       'JitterPercentage': jitter percentage of the parameter
+%                       'IsLog': whether the parameter is 
+%                                   to be varied on a log scale
+%                   must be a 2d table or a cell array of 2d tables
 %       varargin    - 'Prefix': prefix to prepend to file names
 %                   must be a character array
 %                   default == ''
@@ -91,10 +99,11 @@ function [simParamsTable, simParamsPath] = ...
 %       cd/create_simulation_output_filenames.m
 %       cd/force_column_numeric.m
 %       cd/force_string_end.m
+%       cd/isnumericvector.m
 %       cd/transpose_table.m
 %
 % Used by:    
-%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
+%       cd/m3ha_run_neuron_once.m
 
 % File History:
 % 2018-10-22 Adapted from code in run_neuron_once_4compgabab.m
@@ -185,7 +194,7 @@ addParameter(iP, 'SimMode', simModeDefault, ...
 addParameter(iP, 'OutFilePath', outFilePathDefault, ...
     @(x) ischar(x) || isstring(x) || iscellstr(x));
 addParameter(iP, 'Tstop', tstopDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+    @(x) assert(isnumericvector(x), 'Tstop must be a numeric vector!'));
 addParameter(iP, 'HoldPotential', holdPotentialDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'CurrentPulseAmplitude', currentPulseAmplitudeDefault, ...

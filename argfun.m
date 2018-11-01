@@ -2,7 +2,10 @@ function varargout = argfun (myFunction, varargin)
 %% Applies a function to each input argument
 % Usage: varargout = argfun (myFunction, varargin)
 % Explanation:
-%       TODO
+%       This function applies the first argument (a function)
+%           to each of the rest of the arguments
+%       The first argument becomes the first output,
+%           the second argument becomes the second output, and so on ...
 % Example(s):
 %       [a, b] = argfun(@sum, 1:10, magic(3))
 % Outputs:
@@ -12,14 +15,16 @@ function varargout = argfun (myFunction, varargin)
 %                   must be a function handle
 %       varargin    - input arguments
 %
-% Used by:    
+% Used by:
+%       cd/compute_rms_error.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/find_window_endpoints.m
+%       cd/m3ha_create_initial_neuronparams.m
+%       cd/m3ha_plot_individual_traces.m
+%       cd/m3ha_run_neuron_once.m
 %       cd/match_format_vectors.m
 %       cd/match_reciprocals.m
-%       cd/plot_traces.m
-%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
 
 % File History:
 % 2019-10-25 Created by Adam Lu

@@ -49,7 +49,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %       cd/compute_sweep_errors.m
 %       cd/extract_subvectors.m
 %       cd/find_passive_params.m
-%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
+%       cd/m3ha_run_neuron_once.m
 
 % File History:
 % 2018-10-09 Created by Adam Lu
@@ -196,7 +196,8 @@ OLD CODE:
 @(x) validateattributes(x, {'numeric'}, ...
         {'vector', 'nondecreasing', 'numel', 2}));
 
-function [idxStarts, idxEnds] = find_window_endpoints (timeWindows, timeVecs, varargin)
+function [idxStarts, idxEnds] = ...
+    find_window_endpoints (timeWindows, timeVecs, varargin)
 
 idxStart = [];
 idxEnd = [];

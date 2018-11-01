@@ -19,17 +19,18 @@ function save_all_figtypes (fig, filename, varargin)
 % Used by:
 %       cd/create_waveform_train.m
 %       cd/create_pulse_train_series.m
+%       cd/m3ha_plot_individual_traces.m
+%       cd/m3ha_run_neuron_once.m
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_tuning_map.m
 %       cd/compute_and_plot_evoked_LFP.m
-%       /home/Matlab/minEASE/compute_plot_average_PSC_traces.m
-%       /home/Matlab/minEASE/detect_gapfree_events.m
-%       /media/adamX/RTCl/raster_plot.m
-%       /media/adamX/RTCl/single_neuron.m
-%       /media/adamX/RTCl/tuning_curves.m
-%       /media/adamX/RTCl/tuning_maps.m
-%       /media/adamX/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
+%       ~/minEASE/compute_plot_average_PSC_traces.m
+%       ~/minEASE/detect_gapfree_events.m
+%       ~/RTCl/raster_plot.m
+%       ~/RTCl/single_neuron.m
+%       ~/RTCl/tuning_curves.m
+%       ~/RTCl/tuning_maps.m
 %
 % File History:
 % 2017-05-09 Created by Adam Lu

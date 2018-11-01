@@ -12,12 +12,12 @@ function functionsDirectory = locate_functionsdir
 %
 % Used by:
 %       cd/combine_sweeps.m
+%       cd/create_colormap.m
 %       cd/find_passive_params.m
 %       cd/parse_abf.m
 %       ~/m3ha/data_dclamp/dclampPassiveFitter.m
 %       ~/m3ha/optimizer4gabab/singleneuronfitting42.m and beyond
 %       ~/m3ha/optimizer4gabab/optimizer_4compgabab.m
-%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
 %
 
 % File History:

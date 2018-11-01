@@ -40,10 +40,10 @@ function [h, xValues, yValues] = plot_ellipse (center, halflengths, theta0, vara
 %                   default == true
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/islinestyle.m
+%       cd/islinestyle.m
 %
 % Used by:
-%       /home/Matlab/Adams_Functions/plot_grouped_scatter.m
+%       cd/plot_grouped_scatter.m
 %
 % File History:
 % 2017-12-15 Created by Adam Lu

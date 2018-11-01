@@ -20,6 +20,9 @@ function isNumericVector = isnumericvector (x)
 %       cd/compute_sweep_errors.m
 %       cd/extract_subvectors.m
 %       cd/iscellnumericvector.m
+%       cd/m3ha_create_simulation_params.m
+%       cd/m3ha_plot_individual_traces.m
+%       cd/match_format_vectors.m
 
 % File History:
 % 2018-10-25 Created by Adam Lu

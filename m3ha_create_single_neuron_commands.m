@@ -15,7 +15,49 @@ function [simCommands, simCmdsFilePath] = ...
 %                       specified as a character vector
 % Arguments:    
 %       simParamsTable  - table of simulation parameters, 
-%                           with each row being a simulation
+%                           with each row being a simulation, with variables:
+%                               diamSoma
+%                               LDend
+%                               diamDend
+%                               cm
+%                               Ra
+%                               gpas
+%                               epas
+%                               corrD
+%                               pcabarITSoma
+%                               pcabarITDend1
+%                               pcabarITDend2
+%                               shiftmIT
+%                               shifthIT
+%                               slopemIT
+%                               slopehIT
+%                               ghbarIhSoma
+%                               ghbarIhDend1
+%                               ghbarIhDend2
+%                               ehIh
+%                               shiftmIh
+%                               gkbarIKirSoma
+%                               gkbarIKirDend1
+%                               gkbarIKirDend2
+%                               gkbarIASoma
+%                               gkbarIADend1
+%                               gkbarIADend2
+%                               gnabarINaPSoma
+%                               gnabarINaPDend1
+%                               gnabarINaPDend2
+%                               simMode
+%                               outFilePath
+%                               tstop
+%                               holdPotential
+%                               currentPulseAmplitude
+%                               gababAmp
+%                               gababTrise
+%                               gababTfallFast
+%                               gababTfallSlow
+%                               gababWeight
+%                               customHoldCurrentFlag
+%                               holdCurrent
+%                               holdCurrentNoise
 %                       must be a 2d table
 %       varargin    - 'Prefix': prefix to prepend to file names
 %                   must be a character array
@@ -31,7 +73,7 @@ function [simCommands, simCmdsFilePath] = ...
 %       cd/force_string_end.m
 %
 % Used by:    
-%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
+%       cd/m3ha_run_neuron_once.m
 
 % File History:
 % 2018-10-22 Adapted from code in run_neuron_once_4compgabab.m

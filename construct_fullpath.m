@@ -118,6 +118,10 @@ suffices = iP.Results.Suffices;
 extension = iP.Results.Extension;
 namevaluepairs = iP.Results.NameValuePairs;
 
+%% Preparation
+
+argfun(@match_format_vectors, )
+
 %% Do the job for all paths
 if iscell(pathName)
     [fullPath, pathType] = ...
