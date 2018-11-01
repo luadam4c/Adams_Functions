@@ -16,8 +16,8 @@ function finalSuffix = construct_suffix (varargin)
 %        
 %
 % Used by:
-%        cd/construct_fullfilename.m
-%        /media/adamX/RTCl/raster_plot.m
+%       cd/construct_fullpath.m
+%       /media/adamX/RTCl/raster_plot.m
 % 
 % 2017-05-04 Moved from construct_fullfilename.m
 % 2018-05-08 Changed tabs to spaces and limited width to 80

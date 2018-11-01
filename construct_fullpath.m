@@ -33,6 +33,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %                   - 'Extension': file extension to use
 %                   must be a string scalar or a character vector
 %                   default == whatever is provided by the file name
+%   TODO: Change this to 'SuffixNameValuePairs'
 %                   - 'NameValuePairs': Name-Value pairs that are changed
 %                   must be a 2-element cell array whose first element 
 %                       is a string/char array or cell array 
@@ -41,7 +42,10 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %        
 %
 % Requires:
+%       cd/argfun.m
 %       cd/construct_suffix.m
+%       cd/force_column_cell.m
+%       cd/match_format_vectors.m
 %
 % Used by:
 %       cd/check_dir.m
@@ -116,29 +120,27 @@ verbose = iP.Results.Verbose;
 directory = iP.Results.Directory;
 suffices = iP.Results.Suffices;
 extension = iP.Results.Extension;
-namevaluepairs = iP.Results.NameValuePairs;
+suffixNameValuePairs = iP.Results.NameValuePairs;
 
 %% Preparation
+% Force as a cell array
+pathName = force_column_cell(pathName);
 
-argfun(@match_format_vectors, )
+% Match the number of directories and extensions
+[directory, extension] = ...
+    argfun(@(x) match_format_vectors(x, pathName), directory, extension);
 
 %% Do the job for all paths
-if iscell(pathName)
-    [fullPath, pathType] = ...
-        cellfun(@(x) construct_fullpath_helper(x, verbose, directory, ...
-                                    suffices, extension, namevaluepairs), ...
-                pathName, 'UniformOutput', false);
-else
-    [fullPath, pathType] = ...
-        construct_fullpath_helper(pathName, verbose, directory, ...
-                                    suffices, extension, namevaluepairs);
-end
+[fullPath, pathType] = ...
+    cellfun(@(x, y, z) construct_fullpath_helper(x, verbose, y, ...
+                        suffices, z, suffixNameValuePairs), ...
+            pathName, directory, extension, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [fullPath, pathType] = ...
             construct_fullpath_helper (pathName, verbose, directory, ...
-                                        suffices, extension, namevaluepairs)
+                                        suffices, extension, suffixNameValuePairs)
 %% Create full path to file robustly
 
 % Separate fileDir, fileBase and fileExt from pathName
@@ -177,7 +179,7 @@ end
 
 % Construct final suffix
 finalSuffix = construct_suffix('Suffices', suffices, ...
-                                'NameValuePairs', namevaluepairs);
+                                'NameValuePairs', suffixNameValuePairs);
 
 
 % Construct full file name
@@ -205,6 +207,13 @@ OLD CODE:
             min(cellfun(@isstring, x))) || isstring(x), ...
             ['Suffices must be either a string/character array ', ...
                 'or a cell array of strings/character arrays!']));
+
+if iscell(pathName)
+else
+    [fullPath, pathType] = ...
+        construct_fullpath_helper(pathName, verbose, directory, ...
+                                    suffices, extension, suffixNameValuePairs);
+end
 
 %}
 

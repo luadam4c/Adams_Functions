@@ -40,7 +40,7 @@ function fileName = save_params (paramsTable, varargin)
 %% Default values for optional arguments
 suffixDefault = '_params.csv';
 fileNameDefault = strcat(create_time_stamp, suffixDefault);
-outFolderDefault = '';      % set later
+outFolderDefault = '';      % set in construct_fullpath.m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -72,11 +72,6 @@ fileName = iP.Results.FileName;
 outFolder = iP.Results.OutFolder;
 
 %% Preparation
-% Set default output folder
-if isempty(outFolder)
-    outFolder = pwd;
-end
-
 % Construct the full path
 %   TODO: Expand to accept optional 'Directory', 'Suffix', etc.
 fullPath = construct_fullpath(fileName, 'Directory', outFolder);
