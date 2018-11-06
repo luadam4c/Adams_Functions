@@ -672,9 +672,9 @@ if plotFlag
                             'LegendLocation', 'suppress');
     figname = fullfile(outFolder, directories{1}, ...
                         [fileBase, '_cprRising', suffix, '.png']);
-    subplotsqueeze(h, 1.1);
-    suptitle(strjoin({'Rising phase of current pulse response for', ...
-                        strrep(fileBase, '_', '\_'), titleMod}));
+    % subplotsqueeze(h, 1.1);
+    % suptitle(strjoin({'Rising phase of current pulse response for', ...
+    %                     strrep(fileBase, '_', '\_'), titleMod}));
     saveas(h, figname);
     % close(h);
 
@@ -705,9 +705,9 @@ if plotFlag
                             'LegendLocation', 'suppress');
     figname = fullfile(outFolder, directories{2}, ...
                         [fileBase, '_cprFalling', suffix, '.png']);
-    subplotsqueeze(h, 1.1);
-    suptitle(strjoin({'Falling phase of current pulse response for', ...
-                        strrep(fileBase, '_', '\_'), titleMod}));
+    % subplotsqueeze(h, 1.1);
+    % suptitle(strjoin({'Falling phase of current pulse response for', ...
+    %                     strrep(fileBase, '_', '\_'), titleMod}));
     saveas(h, figname);
     % close(h);
 
@@ -783,15 +783,17 @@ if plotFlag
                             'PassiveParams', paramsAvgFalling, ...
                             'LegendLocation', 'suppress');
     subplot(3,2,5);
-    plot_geometry_both(paramsAllCombined, paramsAllFalling);
+    % plot_geometry_and_passive_params(paramsAllCombined, paramsAllFalling);
+    plot_geometry_and_passive_params(paramsAllCombined, []);
     subplot(3,2,6);
-    plot_geometry_both(paramsAvgCombined, paramsAvgFalling);
+    % plot_geometry_and_passive_params(paramsAvgCombined, paramsAvgFalling);
+    plot_geometry_and_passive_params(paramsAvgCombined, []);
     % figname = fullfile(outFolder, directories{4}, [fileBase, '_passive', suffix, '.png']);
     figname_nopng = fullfile(outFolder, directories{4}, ...
                             [strrep(fileBase, '.', 'p'), '_passive', suffix]);
-    subplotsqueeze(h, 1.1);
-    suptitle(sprintf('Passive parameter fitting for %s %s\n', ...
-                        strrep(fileBase, '_', '\_'), titleMod));
+    % subplotsqueeze(h, 1.1);
+    % suptitle(sprintf('Passive parameter fitting for %s %s\n', ...
+    %                     strrep(fileBase, '_', '\_'), titleMod));
     print(h, figname_nopng, '-dpng', '-r0');
     % saveas(h, figname);
     % close(h);
@@ -883,26 +885,33 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_geometry_both (params1, params2)
-%% Plots geometry of model cell from both the rising phase parameters and the falling phase parameters
+function plot_geometry_and_passive_params (params1, params2)
+%% Plots geometry of model cell from both the combined phase parameters and the falling phase parameters
 
-% Plot model cells
-plot_geometry(params1, 'r');
-plot_geometry(params2, 'm');
+% Plot model cell #1
+plot_ball_stick(params1, 'r');
+
+% Plot model cell #2 if exists
+if ~isempty(params2)
+    plot_ball_stick(params2, 'm');
+end
 
 % Add axes labels
 xlabel('Position (um)')
 ylabel('Position (um)')
 
 % Adjust axes
-xlim([-100, 100]);
-ylim([-100, 100]);
+xlim([-50, 50]);
+ylim([-50, 50]);
+% xlim([-100, 100]);
+% ylim([-100, 100]);
 
 % Get axes limits
 ax = gca;
 xLimits = get(ax, 'Xlim');
 yLimits = get(ax, 'Ylim');
 
+%{
 % Get axes ranges
 xRange = xLimits(2) - xLimits(1);
 yRange = yLimits(2) - yLimits(1);
@@ -948,10 +957,11 @@ text(xpos, ypos - (13/15) * yRange, ...
 text(xpos, ypos - (14/15) * yRange, ...
     ['Rm_2 = ', num2str(params2.Rm), ' Ohm-cm^2'], ...
     'FontSize', 8, 'Color', 'm');
+%}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_geometry (params, edgeColor)
+function plot_ball_stick (params, edgeColor)
 %% Plots geometry of model cell (ball-and-stick) based on fitted parameters
 
 % Extract parameters from params
@@ -1525,9 +1535,9 @@ plot_cfit_pulse_response(tAvgFalling, vAvgFalling, ...
                         'PassiveParams', paramsAvgFalling, ...
                         'LegendLocation', 'suppress');
 subplot(3,2,5);
-plot_geometry_both(paramsAllRising, paramsAllFalling);
+plot_geometry_and_passive_params(paramsAllRising, paramsAllFalling);
 subplot(3,2,6);
-plot_geometry_both(paramsAvgRising, paramsAvgFalling);
+plot_geometry_and_passive_params(paramsAvgRising, paramsAvgFalling);
 
 %                   - 'FitMode': fitting mode
 %                   must be one of the following

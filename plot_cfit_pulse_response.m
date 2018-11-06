@@ -61,7 +61,9 @@ function h = plot_cfit_pulse_response (xVec, yVec, varargin)
 %                   default == 'northeast'
 %
 % Requires:
+%       cd/argfun.m
 %       cd/compute_ylimits.m
+%       cd/create_latex_string.m
 %       cd/fit_and_estimate_passive_params.m
 %       cd/force_column_numeric.m
 %       cd/islegendlocation.m
@@ -86,6 +88,7 @@ asymptoteColor = 'Navy';
 component1Color = 'Turquoise';
 component2Color = 'DarkGreen';
 RinColor = 'Indigo';
+lineWidth = 2;
 
 %% Default values for optional arguments
 fitObjectDefault = [];          % set later
@@ -261,14 +264,51 @@ if isempty(yLimits)
     yLimits = compute_ylimits(minY, maxY, 'Coverage', yCoverage);
 end
 
+% Break up the equation for the combined phase
+% TODO: Make a function break_equation.m
+if strcmp(phaseName, 'combined')
+    % Find the index of the first ' + '
+    idxFirstConnection = strfind(eqnS, ' + ');
+
+    % Get the first part of the equation
+    eqnSPart1 = eqnS(1:(idxFirstConnection-1));
+
+    % Get the rest of the equation
+    eqnSRest = eqnS((idxFirstConnection+1):end);
+
+    % Find the index of the second ' + '
+    idxSecondConnection = strfind(eqnSRest, ' + ');
+
+    % Get the second part of the equation
+    eqnSPart2 = eqnSRest(1:(idxSecondConnection-1));
+
+    % Get the rest of the equation
+    eqnSPart3 = eqnSRest((idxSecondConnection+1):end);
+
+else
+    eqnSPart1 = '';
+    eqnSPart2 = '';
+    eqnSPart3 = '';
+end
+
+% Generate latex strings for each equation
+[eqnSLatex, eqnLLatex, eqnSPart1Latex, eqnSPart2Latex, eqnSPart3Latex] = ...
+    argfun(@create_latex_string, eqnS, eqnL, eqnSPart1, eqnSPart2, eqnSPart3);
+
 %% Plotting
 % Plot the fitted curve with the data
-plot(fitObject, xVec, yVec);
+hObjects = plot(fitObject, xVec, yVec);
 
-% Remove default legend
+% The fitted curve is the second object
+fittedCurve = hObjects(2);
+
+% Change the linewidth of the fitted curve
+set(fittedCurve, 'LineWidth', lineWidth);
+
+% Remove the default legend
 legend('off');
 
-% Create new legend
+% Create a new legend
 if ~strcmpi(legendLocation, 'suppress')
     legend('data', 'fitted', 'Location', legendLocation);
 end
@@ -285,9 +325,11 @@ case 'rising'
 
     % Plot the components
     plot(xVecRising, yVecRisingComp1, 'Color', rgb(component1Color), ...
-            'LineStyle', '--', 'DisplayName', 'Comp1');
+            'LineStyle', '--', 'DisplayName', 'Comp1', ...
+            'LineWidth', lineWidth);
     plot(xVecRising, yVecRisingComp2, 'Color', rgb(component2Color), ...
-            'LineStyle', '--', 'DisplayName', 'Comp2');
+            'LineStyle', '--', 'DisplayName', 'Comp2', ...
+            'LineWidth', lineWidth);
 case {'falling', 'combined'}
     % Generate time vectors for the falling and combined phases
     if strcmpi(phaseName, 'falling')
@@ -336,9 +378,11 @@ case {'falling', 'combined'}
 
     % Plot the components
     plot(xVecCombined, yVecComp1, 'Color', rgb(component1Color), ...
-            'LineStyle', '--', 'DisplayName', 'Comp1');
+            'LineStyle', '--', 'DisplayName', 'Comp1', ...
+            'LineWidth', lineWidth);
     plot(xVecCombined, yVecComp2, 'Color', rgb(component2Color), ...
-            'LineStyle', '--', 'DisplayName', 'Comp2');
+            'LineStyle', '--', 'DisplayName', 'Comp2', ...
+            'LineWidth', lineWidth);
 
     % Set new x-axis limits
     xLimits = [min(xLimits(1), min(xVecRising)), ...
@@ -365,10 +409,15 @@ line(xLimits, responseAmplitude * [1, 1], ...
 % Define starting x and y positions for texts
 xpos = 1/30;
 switch phaseName
-case {'rising', 'combined'}
-    ypos = 7/30;
-case 'falling'
+case 'rising'
+    % 3 lines are needed
     ypos = 5/30;
+case 'falling'
+    % 4 lines are needed
+    ypos = 7/30;
+case 'combined'
+    % 5 lines are needed
+    ypos = 9/30;
 otherwise
 end
 
@@ -377,18 +426,39 @@ text(xpos, ypos, ['root-mean-square error = ', num2str(rmse), ' mV'], ...
     'FontSize', 8, 'Color', rgb(rmseColor), ...
     'Units', 'normalized');
 
-% Show the short-pulse response equation
-ypos = ypos - (1/15);
-text(xpos, ypos, eqnS, ...
-    'FontSize', 8, 'Color', rgb(sprColor), ...
-    'Units', 'normalized');
+% Show the short-pulse response equation for all phases
+%   but break up the equation into two for the combined phase
+if strcmp(phaseName, 'rising') || strcmp(phaseName, 'falling')
+    ypos = ypos - (1/15);
+    text(xpos, ypos, eqnSLatex, ...
+        'FontSize', 8, 'Color', rgb(sprColor), ...
+        'Interpreter', 'latex', 'Units', 'normalized');
+elseif strcmp(phaseName, 'combined')
+    % Show the first part of the equation
+    ypos = ypos - (1/15);
+    text(xpos, ypos, eqnSPart1Latex, ...
+        'FontSize', 8, 'Color', rgb(sprColor), ...
+        'Interpreter', 'latex', 'Units', 'normalized');
 
-% Show the long-pulse response equation
+    % Show the second part of the equation
+    ypos = ypos - (1/15);
+    text(xpos, ypos, eqnSPart2Latex, ...
+        'FontSize', 8, 'Color', rgb(sprColor), ...
+        'Interpreter', 'latex', 'Units', 'normalized');
+
+    % Show the third part of the equation
+    ypos = ypos - (1/15);
+    text(xpos, ypos, eqnSPart3Latex, ...
+        'FontSize', 8, 'Color', rgb(sprColor), ...
+        'Interpreter', 'latex', 'Units', 'normalized');
+end
+
+% Show the long-pulse response equation for the falling phase only
 if strcmp(phaseName, 'falling')
     ypos = ypos - (1/15);
-    text(xpos, ypos, eqnL, ...
+    text(xpos, ypos, eqnLLatex, ...
         'FontSize', 8, 'Color', rgb(lprColor), ...
-        'Units', 'normalized');
+        'Interpreter', 'latex', 'Units', 'normalized');
 end
 
 % Show Rinput

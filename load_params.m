@@ -66,6 +66,7 @@ parse(iP, fileNames, varargin{:});
 
 % Return if not all paths exist
 if ~all(pathExists)
+    paramTables = [];
     return
 end
 

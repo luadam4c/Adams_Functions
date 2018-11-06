@@ -1,9 +1,11 @@
-function h = plot_traces (tVecs, data, varargin)
+function [h, subPlots] = plot_traces (tVecs, data, varargin)
 %% Plots traces all in one place, overlapped or in parallel
-% Usage: h = plot_traces (tVecs, data, varargin)
+% Usage: [h, subPlots] = plot_traces (tVecs, data, varargin)
 % Outputs:
 %       h           - figure handle for the created figure
 %                   specified as a figure handle
+%       subPlots    - axes handles for the subplots
+%                   specified as a vector of axes handles
 %
 % Arguments:
 %       tVecs       - time vector(s) for plotting
@@ -17,7 +19,7 @@ function h = plot_traces (tVecs, data, varargin)
 %       varargin    - 'PlotMode': plotting mode for multiple traces
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'overlapped'    - overlapped in a single plot
-%                       'parallel'      - in parallel in subplots
+%                       'parallel'      - in parallel in subPlots
 %                   must be consistent with plot_traces_abf.m
 %                   default == 'overlapped'
 %                   - 'DataToCompare': data vector(s) to compare against
@@ -111,10 +113,15 @@ function h = plot_traces (tVecs, data, varargin)
 %               number of rows in the colorMap provided
 % 2018-10-29 Added 'DataToCompare' as an optional parameter
 % 2018-10-31 Now uses match_format_vectors.m
+% 2018-11-01 Now returns axes handles for subplots
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel'};
 validLinkAxesOptions = {'none', 'x', 'y', 'xy', 'off'};
+maxRowsWithOneOnly = 8;
+maxNTracesForAnnotations = 8;
+maxNTracesForLegends = 12;
+subPlotSqeezeFactor = 1.2;
 
 %% Default values for optional arguments
 plotModeDefault = 'overlapped'; % plot traces overlapped by default
@@ -209,6 +216,12 @@ figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 %% Preparation
+% If data is empty, return
+if isempty(data) || iscell(data) && all(cellfun(@isempty, data))
+    fprintf('Nothing to plot!\n');
+    return
+end
+
 % Match the number of vectors between data and dataToCompare
 %   and make sure boths are column cell arrays of column vectors
 [data, dataToCompare] = match_format_vectors(data, dataToCompare);
@@ -218,7 +231,7 @@ nTraces = count_vectors(data);
 
 % Decide on the colormap
 if isempty(colorMap)
-    if nTraces <= 12
+    if nTraces <= maxRowsWithOneOnly
         colorMap = create_colormap(nTraces);
     else
         colorMap = create_colormap(floor(sqrt(nTraces)));
@@ -279,7 +292,7 @@ case 'overlapped'
     end
 case 'parallel'
     % Force as column cell array and match up to nTraces elements
-    yLabel = match_format_cell(yLabel, data);
+    yLabel = match_format_vectors(yLabel, data);
 otherwise
     error(['The plot mode ', plotMode, ' has not been implemented yet!']);
 end
@@ -318,9 +331,9 @@ end
 
 % Set legend location based on number of traces
 if strcmpi(legendLocation, 'auto')
-    if nTraces > 1 && nTraces < 10
+    if nTraces > 1 && nTraces <= maxNTracesForAnnotations
         legendLocation = 'northeast';
-    elseif nTraces >= 10 && nTraces < 20
+    elseif nTraces > maxNTracesForAnnotations && nTraces <= maxNTracesForLegends
         legendLocation = 'eastoutside';
     else
         legendLocation = 'suppress';
@@ -399,9 +412,6 @@ case 'overlapped'
     if ~strcmpi(legendLocation, 'suppress')
         legend(p1, 'location', legendLocation);
     end
-
-    % Hold off
-    hold off
 case 'parallel'
     if ~strcmpi(legendLocation, 'suppress')
         % Set a legend location differently    
@@ -418,7 +428,11 @@ case 'parallel'
         thisRowNumber = ceil(iTrace/nTracesPerRow);
 
         % Get the current column number
-        thisColNumber = mod(iTrace, nTracesPerRow);
+        if nTracesPerRow > 1
+            thisColNumber = mod(iTrace, nTracesPerRow);
+        else
+            thisColNumber = 1;
+        end
         
         % Plot data to compare against as a black trace
         if ~isempty(dataToCompare{iTrace})
@@ -478,20 +492,17 @@ case 'parallel'
         end
 
         % Save axes in array
-        axesAll(iTrace) = ax;
-
-        % Hold off
-        hold off
+        subPlots(iTrace) = ax;
     end
 
-    % If requested, link or unlink axes of subplots
+    % If requested, link or unlink axes of subPlots
     if ~strcmpi(linkAxesOption, 'none')
-        linkaxes(axesAll, linkAxesOption);
+        linkaxes(subPlots, linkAxesOption);
     end
 
-    % If nTraces >= 20, expand all subplots by 1.2
-    if nTraces >= 20
-        subplotsqueeze(h, 1.2);
+    % If nTraces > maxNTracesForAnnotations, expand all subPlots by 1.2
+    if nTraces > maxNTracesForAnnotations
+        subplotsqueeze(h, subPlotSqeezeFactor);
     end
     
     % Create an overarching title
@@ -621,6 +632,12 @@ tVecs = match_dimensions(tVecs, size(data));
 %       cd/force_column_cell.m
 %       cd/match_dimensions.m
 %       cd/match_array_counts.m
+
+% Hold off
+hold off
+
+% Hold off
+hold off
 
 %}
 

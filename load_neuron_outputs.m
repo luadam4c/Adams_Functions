@@ -27,12 +27,14 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 %
 % Requires:
 %       cd/construct_and_check_fullpath.m
+%       cd/is_in_parallel.m
 %
 % Used by:    
 %       cd/m3ha_run_neuron_once.m
 
 % File History:
-% 2018-10-23Adapted from code in run_neuron_once_4compgabab.m
+% 2018-10-23 Adapted from code in run_neuron_once_4compgabab.m
+% 2018-10-31 Went back to using parfor for loading
 
 %% Hard-coded parameters
 outputExtension = '.out';
@@ -89,18 +91,34 @@ elseif ischar(fileNames)
 end
 
 % Construct full paths and check whether the files exist
-%   TODO: Expand to accept optional 'Directory', 'Suffix', etc.
+%   TODO: Expand to accept optional Suffix', etc.
 [fullPaths, pathExists] = construct_and_check_fullpath(fileNames, ...
                                                         'Directory', directory);
 
 % Return if not all paths exist
 if ~all(pathExists)
+    outputs = {};
+    fullPaths = {};
     return
 end
 
 %% Load files
 % Load the data saved by NEURON to a .out file into a cell array
-outputs = cellfun(@load, fullPaths, 'UniformOutput', false);
+% TODO: Make a wrapper function parcellfun.m
+%       That uses parfor if not is_in_parallel
+if is_in_parallel
+    % Use cellfun
+    outputs = cellfun(@load, fullPaths, 'UniformOutput', false);
+else
+    % Count the number of output files
+    nFiles = numel(fullPaths);
+
+    % Use parfor
+    outputs = cell(nFiles, 1);
+    parfor iFile = 1:nFiles
+        outputs{iFile} = load(fullPaths{iFile});
+    end
+end
 
 %% Remove files
 % Remove .out files created by NEURON if not to be saved
@@ -126,6 +144,11 @@ parfor iFile = 1:nFiles
     delete(fullPaths{iFile});
 end
 
+% 2018-11-01 The following is slower than parfor for large files
+% Load the data saved by NEURON to a .out file into a cell array
+outputs = cellfun(@load, fullPaths, 'UniformOutput', false);
+
 %}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

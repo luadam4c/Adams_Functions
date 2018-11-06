@@ -77,6 +77,7 @@ function [simCommands, simCmdsFilePath] = ...
 
 % File History:
 % 2018-10-22 Adapted from code in run_neuron_once_4compgabab.m
+% 2018-11-01 Made corrD an argument of build()
 % 
 
 %% Hard-coded parameters
@@ -189,9 +190,9 @@ simCommands = cell(nSims, 1);
 parfor iSim = 1:nSims
 %for iSim = 1:nSims
     % Start with the build() command in singleneuron4compgabab.hoc
-    thisCmds = sprintf('build("%s", %g, %g, %g)\n', ...
+    thisCmds = sprintf('build("%s", %g, %g, %g, %g)\n', ...
                         simMode{iSim}, diamSoma(iSim), ...
-                        LDend(iSim), diamDend(iSim));
+                        LDend(iSim), diamDend(iSim), corrD(iSim));
 
     % Command to adjust global passive parameters
     thisCmds = [thisCmds, sprintf('adjust_globalpas(%g, %g, %g)\n', ...

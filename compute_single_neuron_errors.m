@@ -28,14 +28,22 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %                   - 'IvecsReal': recorded current traces
 %                   must be a numeric vector or a cell array of numeric vectors
 %                   default == []
+%                   - 'BaseWindow': baseline window for each trace
+%                   must be empty or a numeric vector with 2 elements,
+%                       or a numeric array with 2 rows
+%                       or a cell array of numeric vectors with 2 elements
+%                   default == first half of the trace
 %                   - 'FitWindow': time window to fit for each trace
 %                   must be empty or a numeric vector with 2 elements,
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric arrays
-%                   default == []
+%                   default == second half of the trace
+%                   - 'BaseNoise': baseline noise value(s)
+%                   must be a numeric vector
+%                   default == apply compute_baseline_noise.m
 %                   - 'SweepWeights': sweep weights for averaging
 %                   must be empty or a numeric vector with length == nSweeps
-%                   default == ones(nSweeps, 1)
+%                   default == 1 ./ baseNoise
 %                   - 'NormalizeError': whether to normalize errors 
 %                                       by an initial error
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -43,16 +51,10 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %                   - 'InitSwpError': initial sweep errors
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == []
-% 
-%                   - 'BaseWindow': TODO: Description of BaseWindow
-%                   must be a TODO
-%                   default == TODO
-%                   - 'BaseNoise': baseline noise value(s)
-%                   must be a numeric vector
-%                   default == TODO
 %
 % Requires:
 %       cd/argfun.m
+%       cd/compute_default_sweep_info.m
 %       cd/compute_sweep_errors.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
@@ -80,7 +82,9 @@ errorModeDefault = 'SweepOnly'; %'Sweep&LTS'; % compute sweep & LTS errors by de
 timeVecsDefault = [];           % set later
 ivecsSimDefault = [];           % not provided by default
 ivecsRealDefault = [];          % not provided by default
-fitWindowDefault = [];          % use entire trace(s) by default
+baseWindowDefault = [];         % set later
+fitWindowDefault = [];          % set later
+baseNoiseDefault = [];          % set later
 sweepWeightsDefault = [];       % set later
 normalizeErrorDefault = false;  % don't normalize errors by default
 initSwpErrorDefault = [];   % no initial error values by default
@@ -127,10 +131,16 @@ addParameter(iP, 'IvecsReal', ivecsRealDefault, ...
     @(x) assert(isnumericvector(x) || iscellnumericvector(x), ...
                 ['IvecsReal must be either a numeric vector ', ...
                     'or a cell array of numeric vectors!']));
+addParameter(iP, 'BaseWindow', baseWindowDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['BaseWindow must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
 addParameter(iP, 'FitWindow', fitWindowDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['FitWindow must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
+addParameter(iP, 'BaseNoise', baseNoiseDefault, ...
+    @(x) assert(isnumericvector(x), 'BaseNoise must be a numeric vector!'));
 addParameter(iP, 'SweepWeights', sweepWeightsDefault, ...
     @(x) assert(isnumericvector(x), 'SweepWeights must be a numeric vector!'));
 addParameter(iP, 'NormalizeError', normalizeErrorDefault, ...
@@ -138,24 +148,18 @@ addParameter(iP, 'NormalizeError', normalizeErrorDefault, ...
 addParameter(iP, 'InitSwpError', initSwpErrorDefault, ...
     @(x) assert(isnumericvector(x), 'InitSwpError must be a numeric vector!'));
 
-% addParameter(iP, 'BaseWindow', baseWindowDefault, ...
-%     % TODO: validation function %);
-% addParameter(iP, 'BaseNoise', baseNoiseDefault, ...
-%     % TODO: validation function %);
-
 % Read from the Input Parser
 parse(iP, vSim, vReal, varargin{:});
 errorMode = validatestring(iP.Results.ErrorMode, validErrorModes);
 tBoth = iP.Results.TimeVecs;
 iSim = iP.Results.IvecsSim;
 iReal = iP.Results.IvecsReal;
+baseWindow = iP.Results.BaseWindow;
 fitWindow = iP.Results.FitWindow;
+baseNoise = iP.Results.BaseNoise;
 sweepWeights = iP.Results.SweepWeights;
 normalizeError = iP.Results.NormalizeError;
 initSwpError = iP.Results.InitSwpError;
-
-% baseWindow = iP.Results.BaseWindow;
-% baseNoise = iP.Results.BaseNoise;
 
 %% Preparation
 % Count the number of samples
@@ -165,6 +169,12 @@ nSamples = count_samples(vSim);
 if isempty(tBoth)
     tBoth = create_time_vectors(nSamples);
 end
+
+% Compute default windows, noise and weights
+[baseWindow, fitWindow, baseNoise, sweepWeights] = ...
+    compute_default_sweep_info(tBoth, vReal, ...
+            'BaseWindow', baseWindow, 'FitWindow', fitWindow, ...
+            'BaseNoise', baseNoise, 'SweepWeights', sweepWeights);
 
 % Force data vectors to become column numeric vectors
 [tBoth, vSim, vReal, iSim, iReal, fitWindow] = ...
@@ -181,11 +191,6 @@ nSweeps = count_vectors(vSim);
 [fitWindow, vReal, tBoth, iSim, iReal] = ...
     argfun(@(x) match_row_count(x, nSweeps), ...
             fitWindow, vReal, tBoth, iSim, iReal);
-
-% Set default sweep weights for averaging
-if isempty(sweepWeights)
-    sweepWeights = ones(nSweeps, 1);
-end
 
 % Extract the start and end indices of the time vector for fitting
 endPoints = find_window_endpoints(fitWindow, tBoth);
@@ -224,6 +229,13 @@ end
 endPoints = find_window_endpoints(transpose(fitWindow), tBoth);
 
 %       cd/force_row_numeric.m
+
+%                   default == ones(nSweeps, 1)
+% Set default sweep weights for averaging
+if isempty(sweepWeights)
+    sweepWeights = ones(nSweeps, 1);
+end
+
 
 %}
 

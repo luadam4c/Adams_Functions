@@ -1,5 +1,5 @@
 function [vecs1, vecs2] = match_format_vectors (vecs1, vecs2, varargin)
-%% Matches a set of vectors to another set of vectors so that they are both cell arrays of the same number of column vectors
+%% Matches two sets of vectors so that they are both cell arrays of the same number of column vectors
 % Usage: [vecs1, vecs2] = match_format_vectors (vecs1, vecs2, varargin)
 % Explanation:
 %       This function takes two sets of vectors as input arguments
@@ -19,17 +19,15 @@ function [vecs1, vecs2] = match_format_vectors (vecs1, vecs2, varargin)
 %
 % Outputs:
 %       vecs1       - new first set of vectors
-%                   specified as a numeric vector 
-%                       or a cell array of numeric vectors
+%                   must be a numeric vector, a character array or a cell array
 %       vecs2       - new second set of vectors
-%                   specified as a numeric vector 
-%                       or a cell array of numeric vectors
+%                   must be a numeric vector, a character array or a cell array
 %
 % Arguments:
 %       vecs1       - first set of vectors
-%                   must be a numeric array or a cell array of numeric arrays
+%                   must be a numeric array, a character array or a cell array
 %       vecs2       - second set of vectors
-%                   must be a numeric array or a cell array of numeric arrays
+%                   must be a numeric array, a character array or a cell array
 %       varargin    - 'ForceCellOutputs': whether to force outputs as 
 %                                           cell arrays
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -44,7 +42,8 @@ function [vecs1, vecs2] = match_format_vectors (vecs1, vecs2, varargin)
 %       cd/isnumericvector.m
 %       cd/match_dimensions.m
 %
-% Used by:    
+% Used by:
+%       cd/compute_default_sweep_info.m
 %       cd/compute_residuals.m
 %       cd/compute_rms_error.m
 %       cd/construct_fullpath.m
@@ -82,15 +81,13 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vecs1', ...
-    @(x) assert(isnumeric(x) || ischar(x) || iscellnumeric(x), ...
+    @(x) assert(isnumeric(x) || ischar(x) || iscell(x), ...
                 ['vecs1 must be either a numeric array, ', ...
-                    'a character array, ', ...
-                    'or a cell array of numeric arrays!']));
+                    'a character array or a cell array!']));
 addRequired(iP, 'vecs2', ...
-    @(x) assert(isnumeric(x) || ischar(x) || iscellnumeric(x), ...
+    @(x) assert(isnumeric(x) || ischar(x) || iscell(x), ...
                 ['vecs2 must be either a numeric array, ', ...
-                    'a character array, ', ...
-                    'or a cell array of numeric arrays!']));
+                    'a character array or a cell array!']));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ForceCellOutputs', forceCellOutputsDefault, ...
@@ -109,11 +106,10 @@ forceCellOutputs = iP.Results.ForceCellOutputs;
 
 % If there are more than one vectors in either vecs1 or vecs2, 
 %   put things in a format so cellfun can be used
-if isnumericvector(vecs1) && isnumericvector(vecs2) || ...
-        ischar(vecs1) && ischar(vecs2)
-    % If both inputs are numeric vectors (could be empty) 
-    %   or if both inputs are character vectors, 
-    %   force outputs to be cell arrays if requested
+if (isnumericvector(vecs1) || ischar(vecs1)) && ...
+    (isnumericvector(vecs2) || ischar(vecs2))
+    % If both inputs are either a numeric vector (could be empty) 
+    %   or a character array, force outputs to be cell arrays if requested
     if forceCellOutputs
         vecs1 = {vecs1};
         vecs2 = {vecs2};

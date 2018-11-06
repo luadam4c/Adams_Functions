@@ -107,6 +107,8 @@ addParameter(iP, 'Tau2Range', tau2RangeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 2}));
 addParameter(iP, 'EquationForm', eqFormDefault, ...
     @(x) validateattributes(x, {'char'}, {'2d'}));
+addParameter(iP, 'EquationFormLatex', eqFormDefault, ...
+    @(x) validateattributes(x, {'char'}, {'2d'}));
 
 % Read from the Input Parser
 parse(iP, direction, varargin{:});
@@ -203,6 +205,12 @@ elseif strcmpi(direction, 'falling')
 else
     error('direction unrecognized!!');
 end
+
+eqFormRisingLatex = '$$a(1-e^{-x/b})+c(1-e^{-x/d})$$';
+                            % double exponential equation form for rising phase
+eqFormFallingLatex = '$$ae^{-x/b}+ce^{-x/d}$$';
+                            % double exponential equation form for falling phase
+
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -33,6 +33,7 @@ Last Updated 2018-11-01 by Adam Lu
 - [**compute_average_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_average_trace.m): Computes the average of traces that are not necessarily the same length
 - [**compute_baseline_noise.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_baseline_noise.m): Computes the baseline noise from a set of data vectors, time vectors and baseline windows
 - [**compute_conductance.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_conductance.m): Compute theoretical conductance curve for the GABA_B IPSC used by dynamic clamp
+- [**compute_default_sweep_info.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_default_sweep_info.m): Computes default windows, noise, weights and errors
 - [**compute_elcurr.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_elcurr.m): Computes electrode current from conductance & voltage
 - [**compute_eRev.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_eRev.m): Computes the reversal potential of a channel that passes monovalent ions using the GHK voltage equation
 - [**compute_IMax_GHK.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_IMax_GHK.m): Computes the maximum current [mA/cm^2] using the GHK current equation
@@ -52,6 +53,7 @@ Last Updated 2018-11-01 by Adam Lu
 - [**count_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/count_vectors.m): Counts the number of vectors whether given an array or a cell array
 - [**create_colormap.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_colormap.m): Returns colorMap based on the number of colors requested
 - [**create_input_file.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_input_file.m): Create an input spreadsheet file from data file names in a directory based on default parameters
+- [**create_latex_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_latex_string.m): Creates a LaTeX string from an equation used for fitting
 - [**create_pulse_train_series.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pulse_train_series.m): Creates a pulse train series (a theta burst stimulation by default)
 - [**create_simulation_output_filenames.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_simulation_output_filenames.m): TODO: A summary of what the function does (must be a single unbreaked line)
 - [**create_subdir_copy_files.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_subdir_copy_files.m): Create subdirectory and copy figure files
@@ -114,6 +116,7 @@ Last Updated 2018-11-01 by Adam Lu
 - [**iscellnumeric.m**](https://github.com/blabuva/Adams_Functions/blob/master/iscellnumeric.m): Returns whether an input is a cell array of numeric arrays
 - [**iscellnumericvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/iscellnumericvector.m): Returns whether an input is a cell array of numeric vectors (may be empty)
 - [**isfigtype.m**](https://github.com/blabuva/Adams_Functions/blob/master/isfigtype.m): Check whether a string or each string in a cell array is a valid figure type accepted by saveas()
+- [**is_in_parallel.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_in_parallel.m): Checks whether in a parfor loop
 - [**islegendlocation.m**](https://github.com/blabuva/Adams_Functions/blob/master/islegendlocation.m): Check whether a string or each string in a cell array is a valid legend location or 'suppress' or 'auto'
 - [**islinestyle.m**](https://github.com/blabuva/Adams_Functions/blob/master/islinestyle.m): Check whether a string or each string in a cell array is a valid line style accepted by plot() or line()
 - [**isnumericvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/isnumericvector.m): Returns whether an input is a numeric vector (may be empty)
@@ -142,7 +145,7 @@ Last Updated 2018-11-01 by Adam Lu
 - [**mat2sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/mat2sheet.m): Converts .mat files to a spreadsheet file(s) (type specified by the 'SheetType' argument)
 - [**match_array_counts.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_array_counts.m): Matches a set of arrays to another set of arrays so that they have equal number of arrays
 - [**match_dimensions.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_dimensions.m): Reshapes or expands an array to match given dimensions
-- [**match_format_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_format_vectors.m): Matches a set of vectors to another set of vectors so that they are both cell arrays of the same number of column vectors
+- [**match_format_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_format_vectors.m): Matches two sets of vectors so that they are both cell arrays of the same number of column vectors
 - [**match_reciprocals.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_reciprocals.m): Check reciprocals, make them column vectors and generate the reciprocal if empty
 - [**match_row_count.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_row_count.m): Expands or truncates an array to match a given number of rows (dimension #1)
 - [**match_time_points.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_time_points.m): Interpolates data (containing a time column) to match the time points of a new time vector
@@ -160,6 +163,7 @@ Last Updated 2018-11-01 by Adam Lu
 - [**plot_all_abfs.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_all_abfs.m): Plots all abf files in a directory
 - [**plot_and_save_boxplot.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_and_save_boxplot.m): Plots a box plot from a grouped vector according to group
 - [**plot_and_save_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_and_save_histogram.m): Plots and saves a stacked histogram for a vector and color code according to class
+- [**plot_ball_stick.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_ball_stick.m): Plots a ball-and-stick model
 - [**plot_cfit_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_cfit_pulse_response.m): Plots data along with the fitted curve
 - [**plot_ellipse.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_ellipse.m): Plot an ellipse that may be oblique
 - [**plot_fields.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_fields.m): Plot all fields from a structure array as tuning curves

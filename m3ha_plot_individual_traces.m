@@ -45,15 +45,18 @@ function hfig = m3ha_plot_individual_traces (tVecs, data, varargin)
 %                   must be empty or a numeric vector with 2 elements,
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
-%                   default == []
+%                   default == first half of the trace
 %                   - 'FitWindow': time window to fit for each trace
 %                   must be a numeric vector with 2 elements,
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
-%                   default == []
+%                   default == second half of the trace
 %                   - 'BaseNoise': baseline noise value(s)
 %                   must be a numeric vector
-%                   default == apply compute_baseline_noise.m
+%                   default == apply compute_default_sweep_info.m
+%                   - 'SweepWeights': sweep weights for averaging
+%                   must be empty or a numeric vector with length == nSweeps
+%                   default == 1 ./ baseNoise
 %                   - 'SweepErrors': sweep errors
 %                   must be a numeric vector
 %                   default == apply compute_sweep_errors.m
@@ -62,8 +65,9 @@ function hfig = m3ha_plot_individual_traces (tVecs, data, varargin)
 %                   default == 'auto'
 %
 % Requires:
+%       ~/Downloaded_Functions.m/rgb.m
 %       cd/argfun.m
-%       cd/compute_baseline_noise.m
+%       cd/compute_default_sweep_info.m
 %       cd/compute_sweep_errors.m
 %       cd/force_column_cell.m
 %       cd/force_column_numeric.m
@@ -84,6 +88,9 @@ function hfig = m3ha_plot_individual_traces (tVecs, data, varargin)
 % 
 
 %% Hard-coded parameters
+maxNTracesForAnnotations = 8;
+nSigFig = 3;
+fontSize = 8;
 
 %% Default values for optional arguments
 dataToCompareDefault = [];      % no data to compare against by default
@@ -92,9 +99,10 @@ colorMapDefault = [];           % set later
 figTitleDefault = '';           % set later
 figNumberDefault = 104;         % figure 104 by default
 figNameDefault = '';            % don't save figure by default
-baseWindowDefault = [];         % use half the trace by default
-fitWindowDefault = [];          % use half the trace by default
+baseWindowDefault = [];         % set later
+fitWindowDefault = [];          % set later
 baseNoiseDefault = [];          % set later
+sweepWeightsDefault = [];       % set later
 sweepErrorsDefault = [];        % set later
 plotSwpWeightsFlagDefault = 'auto'; % set later
 
@@ -147,6 +155,8 @@ addParameter(iP, 'FitWindow', fitWindowDefault, ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'BaseNoise', baseNoiseDefault, ...
     @(x) assert(isnumericvector(x), 'BaseNoise must be a numeric vector!'));
+addParameter(iP, 'SweepWeights', sweepWeightsDefault, ...
+    @(x) assert(isnumericvector(x), 'SweepWeights must be a numeric vector!'));
 addParameter(iP, 'SweepErrors', sweepErrorsDefault, ...
     @(x) assert(isnumericvector(x), 'SweepErrors must be a numeric vector!'));
 addParameter(iP, 'PlotSwpWeightsFlag', plotSwpWeightsFlagDefault, ...
@@ -164,10 +174,18 @@ figName = iP.Results.FigName;
 baseWindow = iP.Results.BaseWindow;
 fitWindow = iP.Results.FitWindow;
 baseNoise = iP.Results.BaseNoise;
+sweepWeights = iP.Results.SweepWeights;
 sweepErrors = iP.Results.SweepErrors;
 plotSwpWeightsFlag = iP.Results.PlotSwpWeightsFlag;
 
 %% Preparation
+% If data is empty, return
+if isempty(data) || iscell(data) && all(cellfun(@isempty, data))
+    fprintf('Nothing to plot!\n');
+    hfig = [];
+    return
+end
+
 % Force time and data vectors as column cell arrays of column vectors
 [tVecs, data] = argfun(@force_column_cell, tVecs, data);
 
@@ -176,45 +194,21 @@ nSweeps = numel(data);
 
 % Decide whether to plot sweep weights
 if plotSwpWeightsFlag == 'auto'
-    if nSweeps > 1 && nSweeps < 20
+    if nSweeps > 1 && nSweeps <= maxNTracesForAnnotations
         plotSwpWeightsFlag = true;
     else
         plotSwpWeightsFlag = false;
     end
 end
 
-% Find the minimum and maximum times and center times
-if isempty(baseWindow) || isempty(fitWindow)
-    % Find the minimum times as a column vector
-    minTimes = cellfun(@min, tVecs);
-
-    % Find the maximum times as a column vector
-    maxTimes = cellfun(@min, tVecs);
-
-    % Find the center times as a column vector
-    centerTimes = (minTimes + maxTimes) / 2;
-end
-
-% Set default baseline window(s)
-if isempty(baseWindow)
-    baseWindow = transpose([minTimes, centerTimes]);
-end
-
-% Set default window(s) for fitting
-if isempty(fitWindow)
-    fitWindow = transpose([centerTimes, maxTimes]);
-end
-
-% Re-compute baseline noise if not provided
-if isempty(baseNoise)
-    baseNoise = compute_baseline_noise(data, tVecs, baseWindow);
-end
+% Compute default windows, noise and weights
+[baseWindow, fitWindow, baseNoise, sweepWeights] = ...
+    compute_default_sweep_info(tVecs, data, ...
+            'BaseWindow', baseWindow, 'FitWindow', fitWindow, ...
+            'BaseNoise', baseNoise, 'SweepWeights', sweepWeights);
 
 % Re-compute sweep errors if not provided
 if isempty(sweepErrors)
-    % Compute sweep weights
-    sweepWeights = 1 ./ baseNoise;
-
     % Compute sweep errors
     errorStructTemp = compute_sweep_errors (data, dataToCompare, ...
                         'TimeVecs', tVecs, 'FitWindow', fitWindow, ...
@@ -252,15 +246,18 @@ set(hfig, 'Name', 'All individual voltage traces');
 clf(hfig);
 
 % Plot traces
-plot_traces(tVecs, data, 'DataToCompare', dataToCompare, ...
-            'ColorMap', colorMap, 'XLimits', xLimits, ...
-            'FigTitle', figTitle, 'YLabel', 'suppress', ...
-            'PlotMode', 'parallel', 'LinkAxesOption', 'xy');
+[hfig, subPlots] = plot_traces(tVecs, data, 'DataToCompare', dataToCompare, ...
+                        'ColorMap', colorMap, 'XLimits', xLimits, ...
+                        'YLabel', 'suppress', 'LegendLocation', 'suppress', ...
+                        'PlotMode', 'parallel', 'LinkAxesOption', 'xy');
 
 % Plot annotations
 for iSwp = 1:nSweeps
     % Get the subplot of interest
-    subplot(nRows, nTracesPerRow, iSwp); hold on;
+    subplot(subPlots(iSwp));
+
+    % Hold on
+    hold on
 
     % Plot sweep weights
     if plotSwpWeightsFlag
@@ -269,32 +266,32 @@ for iSwp = 1:nSweeps
 
         % Decide on the text color
         if sweepWeight ~= 0
-            colorText = 'green';
+            colorText = rgb('DarkGreen');
         else
-            colorText = 'gray';
+            colorText = rgb('Gray');
         end
 
         % Show sweep weight
-        text('String', ['\color{', colorText, '} \bf ', ...
-                        num2str(sweepWeight, 2)], ...
-                'Units', 'normalized', 'Position', [0.1 0.9]);
+        text('String', ['w: ', num2str(sweepWeight, nSigFig)], ...
+            'Color', colorText, 'FontSize', fontSize, ...
+            'Position', [0.1 0.9], 'Units', 'normalized');
     end
 
-    % Show sweep info and error only if nSweeps <= 12
-    if nSweeps <= 12
-        title(['Noise = ', num2str(baseNoise(iSwp), 3), '; ', ...
-                'RMSE = ', num2str(sweepErrors(iSwp), 3)]);
+    % Show sweep info and error only if nSweeps <= maxNTracesForAnnotations
+    if nSweeps <= maxNTracesForAnnotations
+        title(['Noise = ', num2str(baseNoise(iSwp), nSigFig), '; ', ...
+                'RMSE = ', num2str(sweepErrors(iSwp), nSigFig)]);
     end
 
-    % Plot fitWindow only if nSweeps <= 12
-    if nSweeps <= 12
+    % Plot fitWindow only if nSweeps <= maxNTracesForAnnotations
+    if nSweeps <= maxNTracesForAnnotations
         plot_window_boundaries(fitWindow{iSwp}, ...
                                 'LineColor', 'g', 'LineStyle', '--');
     end
-
-    % Hold off
-    hold off
 end
+
+% Create a title
+suptitle(figTitle);
 
 %% Output results
 % Save figure
@@ -306,6 +303,23 @@ save_all_figtypes(hfig, figName);
 OLD CODE:
 
 if plotSwpWeightsFlag && nSweeps < 20
+
+% Hold off
+hold off
+
+if sweepWeight ~= 0
+    colorText = 'green';
+else
+    colorText = 'gray';
+end
+
+text('String', ['\color{', colorText, '} \bf ', ...
+                num2str(sweepWeight, 2)], ...
+        'Units', 'normalized', 'Position', [0.1 0.9]);
+
+subplot(nRows, nTracesPerRow, iSwp); hold on;
+
+'FigTitle', figTitle, 
 
 %}
 

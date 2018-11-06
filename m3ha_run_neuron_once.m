@@ -210,7 +210,7 @@ function [err, hfig, simData] = ...
 %       ~/m3ha/optimizer4gabab/singleneuron4compgabab.hoc
 %       cd/argfun.m
 %       cd/bar_w_CI.m
-%       cd/compute_baseline_noise.m
+%       cd/compute_default_sweep_info.m
 %       cd/compute_residuals.m
 %       cd/create_colormap.m
 %       cd/extract_columns.m
@@ -335,6 +335,7 @@ function [err, hfig, simData] = ...
 validSimModes = {'active', 'passive'};
 hocFile = 'singleneuron4compgabab.hoc';
 timeToStabilize = 2000;
+maxRowsWithOneOnly = 8;
 
 %% Column numbers for recorded and simulated data
 TIME_COL_REC = 1;
@@ -370,7 +371,7 @@ plotCurrentFlagDefault = true;      % all current traces plotted by default
 plotIpeakFlagDefault = true;        % current peak analyses plotted by default
 plotLtsFlagDefault = true;          % LTS/burst analyses plotted by default
 plotStatisticsFlagDefault = true;   % LTS & burst statistics plotted by default
-plotSwpWeightsFlagDefault = true;   % sweep weights are plotted by default
+plotSwpWeightsFlagDefault = 'auto'; % set in m3ha_plot_inidividual_traces.m
 plotMarkFlagDefault = true;         % the way Mark wants plots to look
 showSweepsFlagDefault = true;       % whether to show sweep figures
 jitterFlagDefault = false;      % no jitter by default
@@ -380,7 +381,7 @@ outFilePathDefault = 'auto';    % set later
 tstopDefault = [];              % set later
 holdPotentialIpscrDefault = -70;% (mV)
 holdPotentialCprDefault = -70;  % (mV)
-currentPulseAmplitudeDefault = -0.050;                          % (nA)
+currentPulseAmplitudeDefault = -0.050;  % (nA)
 gababAmpDefault = [];           % set later
 gababTriseDefault = [];         % set later
 gababTfallFastDefault = [];     % set later
@@ -396,10 +397,10 @@ fitWindowCprDefault = [100, 250] + timeToStabilize;     % (ms)
 fitWindowIpscrDefault = [980, 8000] + timeToStabilize;  % (ms)
 baseWindowCprDefault = [0, 100] + timeToStabilize;      % (ms)
 baseWindowIpscrDefault = [0, 980] + timeToStabilize;    % (ms)
-baseNoiseCprDefault = 1;        % (mV)
-baseNoiseIpscrDefault = 1;      % (mV)
-sweepWeightsCprDefault = 1;     % equal weights by default
-sweepWeightsIpscrDefault = 1;   % equal weights by default
+baseNoiseCprDefault = [];        % set later
+baseNoiseIpscrDefault = [];      % set later
+sweepWeightsCprDefault = [];     % set later
+sweepWeightsIpscrDefault = [];   % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -630,14 +631,9 @@ else
     figNumberIndividual = [];
 end
 
-% Place each sweep on its own row if rowConditions not provided
-if isempty(rowConditions)
-    % Label the rows 1, 2, ..., nSweeps
-    rowConditions = transpose(1:nSweeps);
-end
-
-% Get the number of rows for plotting
-nRows = size(rowConditions, 1);
+% Decide on rowConditions and nRows
+[rowConditions, nRows] = ...
+    decide_on_row_conditions(rowConditions, nSweeps, maxRowsWithOneOnly);
 
 % Decide on the colors for each row in the plots
 colorMap = create_colormap(nRows);
@@ -674,6 +670,12 @@ simCommands = m3ha_create_single_neuron_commands(simParamsTable, ...
 [timeVecs, vvecsReal, ivecsReal] = ...
     extract_columns(realData, [TIME_COL_REC, VOLT_COL_REC, CURR_COL_REC]);
 
+% Compute baseline noise and sweep weights if not provided
+[~, ~, baseNoise, sweepWeights] = ...
+    compute_default_sweep_info(timeVecs, vvecsReal, ...
+            'BaseWindow', baseWindow, 'BaseNoise', baseNoise, ...
+            'SweepWeights', sweepWeights);
+
 %% Run NEURON
 % Run NEURON with the hocfile and attached simulation commands
 run_neuron(hocFile, 'SimCommands', simCommands, ...
@@ -682,6 +684,7 @@ run_neuron(hocFile, 'SimCommands', simCommands, ...
                     'SaveStdOutFlag', saveStdOutFlag);
 
 %% Analyze results
+% TODO: Break the function here into two
 % Load .out files created by NEURON
 simDataOrig = load_neuron_outputs('FileNames', outFilePath, ...
                                 'RemoveAfterLoad', ~saveSimOutFlag);
@@ -724,11 +727,10 @@ if ~isempty(realData)
         % Re-compute number of sweeps
         nSweeps = numel(realData);
 
-        % Re-compute baseline noise 
-        baseNoise = compute_baseline_noise(vvecsReal, timeVecs, baseWindow);
-
-        % Re-compute sweep weights based on baseline noise
-        sweepWeights = 1 ./ baseNoise;
+        % Re-compute baseline noise and sweep weights
+        [~, ~, baseNoise, sweepWeights] = ...
+            compute_default_sweep_info(timeVecs, vvecsReal, ...
+                                        'BaseWindow', baseWindow);
     end
 
     % Calculate voltage residuals (simulated - recorded)
@@ -838,6 +840,29 @@ elseif ~isempty(nSweepsUser)
     nSweeps = nSweepsUser;
 else
     nSweeps = 1;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [rowConditions, nRows] = ...
+                decide_on_row_conditions (rowConditions, nSweeps, ...
+                                            maxRowsWithOneOnly)
+%% Decide on rowConditions and nRows
+
+% Place each sweep on its own row if rowConditions not provided
+if isempty(rowConditions)
+    % Decide on the number of rows
+    if nSweeps <= maxRowsWithOneOnly
+        nRows = nSweeps;
+    else
+        nRows = floor(sqrt(nSweeps));
+    end
+
+    % Label the rows 1, 2, ..., nRows
+    rowConditions = transpose(1:nRows);
+else
+    % Get the number of rows for plotting
+    nRows = size(rowConditions, 1);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2898,5 +2923,16 @@ line([fitWindow(1), fitWindow(1)], yLimits, ...
         'Color', 'g', 'LineStyle', '--');
 line([fitWindow(2), fitWindow(2)], yLimits, ...
         'Color', 'g', 'LineStyle', '--');
+
+% Re-compute baseline noise 
+baseNoise = compute_baseline_noise(vvecsReal, timeVecs, baseWindow);
+
+% Re-compute sweep weights based on baseline noise
+sweepWeights = 1 ./ baseNoise;
+
+baseNoiseCprDefault = 1;        % (mV)
+baseNoiseIpscrDefault = 1;      % (mV)
+sweepWeightsCprDefault = 1;     % equal weights by default
+sweepWeightsIpscrDefault = 1;   % equal weights by default
 
 %}

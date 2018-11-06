@@ -29,8 +29,7 @@ function baseNoises = compute_baseline_noise (dataVecs, timeVecs, baseWindows)
 %       cd/iscellnumeric.m
 %
 % Used by:    
-%       cd/m3ha_plot_individual_traces.m
-%       cd/m3ha_run_neuron_once.m
+%       cd/compute_default_sweep_info.m
 
 % File History:
 % 2018-10-28 Created by Adam Lu

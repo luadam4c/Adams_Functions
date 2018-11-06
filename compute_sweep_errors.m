@@ -30,7 +30,7 @@ function errorStruct = compute_sweep_errors (vSim, vReal, varargin)
 %                   must be empty or a numeric vector with 2 elements,
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
-%                   default == []
+%                   default == entire trace
 %                   - 'SweepWeights': sweep weights for averaging
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == ones(nSweeps, 1)

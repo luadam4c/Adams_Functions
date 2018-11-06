@@ -125,18 +125,30 @@ extension = iP.Results.Extension;
 suffixNameValuePairs = iP.Results.NameValuePairs;
 
 %% Preparation
-% Force as a cell array
-pathName = force_column_cell(pathName);
-
-% Match the number of directories and extensions
-[directory, extension] = ...
-    argfun(@(x) match_format_vectors(x, pathName), directory, extension);
+% Match the number of pathNames to directory and extension
+pathName = match_format_vectors(pathName, directory, 'ForceCellOutputs', false);
+pathName = match_format_vectors(pathName, extension, 'ForceCellOutputs', false);
 
 %% Do the job for all paths
-[fullPath, pathType] = ...
-    cellfun(@(x, y, z) construct_fullpath_helper(x, verbose, y, ...
-                        suffices, z, suffixNameValuePairs), ...
-            pathName, directory, extension, 'UniformOutput', false);
+if iscell(pathName)
+    % Force as a column cell array
+    pathName = force_column_cell(pathName);
+    
+    % Match the number of directories and extensions to pathName
+    [directory, extension] = ...
+        argfun(@(x) match_format_vectors(x, pathName, 'ForceCellOutputs', true), ...
+        directory, extension);
+
+    % Do for each path
+    [fullPath, pathType] = ...
+        cellfun(@(x, y, z) construct_fullpath_helper(x, verbose, y, ...
+                            suffices, z, suffixNameValuePairs), ...
+                pathName, directory, extension, 'UniformOutput', false);
+else
+    [fullPath, pathType] = ...
+        construct_fullpath_helper(pathName, verbose, directory, ...
+                                    suffices, extension, suffixNameValuePairs);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -209,13 +221,6 @@ OLD CODE:
             min(cellfun(@isstring, x))) || isstring(x), ...
             ['Suffices must be either a string/character array ', ...
                 'or a cell array of strings/character arrays!']));
-
-if iscell(pathName)
-else
-    [fullPath, pathType] = ...
-        construct_fullpath_helper(pathName, verbose, directory, ...
-                                    suffices, extension, suffixNameValuePairs);
-end
 
 %}
 
