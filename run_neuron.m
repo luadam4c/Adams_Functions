@@ -18,6 +18,12 @@ function output = run_neuron (hocFile, varargin)
 %                       can be either the actual commands or file names
 %                   must be a cell array of strings or character vectors
 %                   default == {}
+%                   - 'OpenGuiFlag': whether to open GUI for NEURON
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'RunCommand': the command used to run NEURON
+%                   must be a string scalar or a character vector
+%                   default == 'nrngui' if OpenGui is true, 'nrniv' otherwise
 %                   - 'Prefix': prefix to prepend to file names
 %                   must be a character array
 %                   default == ''
@@ -46,9 +52,12 @@ function output = run_neuron (hocFile, varargin)
 % File History:
 % 2018-10-19 Adapted from code in ~/m3ha/run_neuron_once_4compgabab.m
 % 2018-10-19 SimCommands can now be file names
+% 2018-11-06 Added 'RunCommand' as an optional parameter
 % 
 
 %% Hard-coded parameters
+nrnivCommand = 'nrniv';
+nrnguiCommand = 'nrngui';
 specialFile = 'x86_64/special';
 noErrorsStr = 'No_Errors!';
 
@@ -71,6 +80,8 @@ moduleLoadCommandsHpc = sprintf([...
 %% Default values for optional arguments
 simCommandsDefault = {};        % no simulation commands outside the .hoc file
                                 %   by default
+openGuiFlagDefault = false;     % don't open GUI by default
+runCommandDefault = '';         % set later
 prefixDefault = '';             % prepend nothing to file names by default
 outFolderDefault = pwd;         % use the present working directory for outputs
                                 %   by default
@@ -99,6 +110,10 @@ addRequired(iP, 'hocFile', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'SimCommands', simCommandsDefault, ...
     @(x) iscellstr(x) || isstring(x) || ischar(x));
+addParameter(iP, 'OpenGuiFlag', openGuiFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RunCommand', runCommandDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'Prefix', prefixDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
@@ -113,6 +128,8 @@ addParameter(iP, 'SaveStdOutFlag', saveStdOutFlagDefault, ...
 % Read from the Input Parser
 parse(iP, hocFile, varargin{:});
 simCommands = iP.Results.SimCommands;
+openGuiFlag = iP.Results.OpenGuiFlag;
+runCommand = iP.Results.RunCommand;
 prefix = iP.Results.Prefix;
 outFolder = iP.Results.OutFolder;
 debugFlag = iP.Results.DebugFlag;
@@ -123,6 +140,20 @@ saveStdOutFlag = iP.Results.SaveStdOutFlag;
 simCommands = force_column_cell(simCommands);
 
 %% Preparation
+% Decide on the command for running NEURON
+if isempty(runCommand)
+    if openGuiFlag
+        % Use nrngui
+        runCommand = nrnguiCommand;
+    else
+        % Use nrniv
+        %   Note: Dr. Carnevale said this is better than running 
+        %           the special file
+        runCommand = nrnivCommand;
+        % runCommand = specialFile;
+    end
+end
+
 % Decide on the moduleLoadCommands
 if onHpcFlag && isdeployed      % if on a high performance computing server
                                 %   and the code is compiled
@@ -146,10 +177,6 @@ if ~isfile(specialFile)
         end
     end
 end
-
-% Decide on the command for running NEURON
-% TODO: Option to use nrniv or nrngui
-runNeuronCommand = specialFile;
 
 % Start a timer
 if debugFlag
@@ -183,7 +210,7 @@ parfor iSim = 1:nSims
     [simStatus(iSim), simStdOut{iSim}] = ...
         unix(sprintf(['%s\n', '%s %s - << here\n', ...
                       '%s\n', 'print "%s"\n', 'here'], ...
-                     moduleLoadCommands, runNeuronCommand, ...
+                     moduleLoadCommands, runCommand, ...
                      hocFile, simCommandsStr{iSim}, noErrorsStr));
 
     % End the timer
