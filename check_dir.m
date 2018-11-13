@@ -31,6 +31,7 @@ function check_dir (directories, varargin)
 %       cd/plot_traces_abf.m
 %       /media/adamX/m3ha/data_dclamp/initial_slopes.m
 %       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
+%       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting42.m
 %       /home/Matlab/function_template.m
 
 % File History:

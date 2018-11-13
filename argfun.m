@@ -22,6 +22,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/construct_fullpath.m
 %       cd/find_window_endpoints.m
 %       cd/m3ha_create_initial_neuronparams.m
+%       cd/m3ha_create_simulation_params.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/m3ha_run_neuron_once.m
 %       cd/match_format_vectors.m

@@ -96,10 +96,11 @@ function [simParamsTable, simParamsPath] = ...
 %                   default == 0 nA
 %
 % Requires:
+%       cd/argfun.m
 %       cd/create_simulation_output_filenames.m
-%       cd/force_column_numeric.m
 %       cd/force_string_end.m
 %       cd/isnumericvector.m
+%       cd/match_row_count.m
 %       cd/transpose_table.m
 %
 % Used by:    
@@ -107,6 +108,8 @@ function [simParamsTable, simParamsPath] = ...
 
 % File History:
 % 2018-10-22 Adapted from code in run_neuron_once_4compgabab.m
+% 2018-11-12 Now set the default gababAmp for passive fits to be 0, 
+%               but retain the other gabab parameters
 % TODO: Remove the Cpr parameters and decide on them before
 % 
 
@@ -145,11 +148,11 @@ currentPulseAmplitudeDefault = -0.050;                          % (nA)
 
 %% Default values for GABAB parameters
 gIncr = [100; 200; 400] / 100;
-gababAmpTemplate = [16.00, 24.00, 8.88, 6.32] / 1000;           % (uS)
-gababTriseTemplate = [52.00, 52.00, 38.63, 39.88];              % (ms)
-gababTfallFastTemplate = [90.10, 90.10, 273.40, 65.80];         % (ms)
-gababTfallSlowTemplate = [1073.20, 1073.20, 1022.00, 2600.00];  % (ms)
-gababWeightTemplate = [0.952, 0.952, 0.775, 0.629];
+gababAmpTemplate = [16.00; 24.00; 8.88; 6.32] / 1000;           % (uS)
+gababTriseTemplate = [52.00; 52.00; 38.63; 39.88];              % (ms)
+gababTfallFastTemplate = [90.10; 90.10; 273.40; 65.80];         % (ms)
+gababTfallSlowTemplate = [1073.20; 1073.20; 1022.00; 2600.00];  % (ms)
+gababWeightTemplate = [0.952; 0.952; 0.775; 0.629];
 gababAmpDefault = [];           % set later
 gababTriseDefault = [];         % set later
 gababTfallFastDefault = [];     % set later
@@ -273,51 +276,48 @@ end
 
 % Decide on GABAB parameters
 if isempty(gababAmp)
+    % Set the amplitude based on whether passiveFlag is on
     if passiveFlag
+        % Set to zero
         gababAmp = 0;
-        gababTrise = 0;
-        gababTfallFast = 0;
-        gababTfallSlow = 0;
-        gababWeight = 0;
     else
-        gababAmp = force_column_numeric(gIncr * gababAmpTemplate);
-        gababTrise = force_column_numeric(gIncr * gababTriseTemplate);
-        gababTfallFast = force_column_numeric(gIncr * gababTfallFastTemplate);
-        gababTfallSlow = force_column_numeric(gIncr * gababTfallSlowTemplate);
-        gababWeight = force_column_numeric(gIncr * gababWeightTemplate);
+        % Use all possible combinations from the template
+        gababAmp = gIncr * gababAmpTemplate';
     end
+
+    % Use all possible combinations from the templates
+    gababTrise = gIncr * gababTriseTemplate';
+    gababTfallFast = gIncr * gababTfallFastTemplate';
+    gababTfallSlow = gIncr * gababTfallSlowTemplate';
+    gababWeight = gIncr * gababWeightTemplate';
 end
+
+% Force as a column vector
+[gababAmp, gababTrise, gababTfallFast, gababTfallSlow, gababWeight] = ...
+    argfun(@(x) reshape(x, [], 1), ...
+            gababAmp, gababTrise, gababTfallFast, gababTfallSlow, gababWeight);
 
 % Decide on the number of simulations
 %   and modify gabab parameters if necessary
 if ~isempty(nSims)
-    % If simulating IPSC responses, make sure the length of gababAmp
+    % Count the number of GABAB IPSC inputs
+    nGababInputs = length(gababAmp);
+
+    % Make sure the length of gababAmp
     %   match up with the number of simulations
-    if ~passiveFlag
-        % Count the number of GABAB IPSC inputs
-        nGababInputs = length(gababAmp);
-        if mod(nGababInputs, nSims)
-            % If nGababInputs is divisible by nSims,
-            %   extract the first of every group
-            gababAmp = ...
-                gababAmp((1:nSims)' * (nGababInputs/nSims) + 1);
-            gababTrise = ...
-                gababTrise((1:nSims)' * (nGababInputs/nSims) + 1);
-            gababTfallFast = ...
-                gababTfallFast((1:nSims)' * (nGababInputs/nSims) + 1);
-            gababTfallSlow = ...
-                gababTfallSlow((1:nSims)' * (nGababInputs/nSims) + 1);
-            gababWeight = ...
-                gababWeight((1:nSims)' * (nGababInputs/nSims) + 1);
-        elseif mod(nSims, nGababInputs)
-            % If nGababInputs is divisible by nSims,
-            %   repeat nSims/nGababInputs times
-            gababAmp = repmat(gababAmp, nSims/nGababInputs, 1);
-            gababTrise = repmat(gababTrise, nSims/nGababInputs, 1);
-            gababTfallFast = repmat(gababTfallFast, nSims/nGababInputs, 1);
-            gababTfallSlow = repmat(gababTfallSlow, nSims/nGababInputs, 1);
-            gababWeight = repmat(gababWeight, nSims/nGababInputs, 1);
-        end
+    if mod(nGababInputs, nSims) == 0
+        % If nGababInputs is divisible by nSims,
+        %   extract the first of every group
+        [gababAmp, gababTrise, gababTfallFast, gababTfallSlow, gababWeight] = ...
+            argfun(@(x) x((1:nSims)' * (nGababInputs/nSims) + 1), ...
+                    gababAmp, gababTrise, gababTfallFast, ...
+                    gababTfallSlow, gababWeight);
+    else
+        % Use match_row_count.m
+        [gababAmp, gababTrise, gababTfallFast, gababTfallSlow, gababWeight] = ...
+            argfun(@(x) match_row_count(x, nSims), ...
+                    gababAmp, gababTrise, gababTfallFast, ...
+                    gababTfallSlow, gababWeight);
     end
 else
     % Use the length of either currentPulseAmplitude or gababAmp
@@ -594,6 +594,43 @@ if nOld > 1 && nOld ~= nSims
 elseif nOld == 1 && nSims > 1
     eval(sprintf('%s = repmat(%s, %d, 1);', thisParam, thisParam, nSims));
 end
+
+gababTrise = 0;
+gababTfallFast = 0;
+gababTfallSlow = 0;
+gababWeight = 0;
+
+% If simulating IPSC responses, make sure the length of gababAmp
+%   match up with the number of simulations
+if ~passiveFlag
+
+%       cd/force_column_numeric.m
+gababAmp = force_column_numeric(gIncr * gababAmpTemplate');
+gababTrise = force_column_numeric(gIncr * gababTriseTemplate');
+gababTfallFast = force_column_numeric(gIncr * gababTfallFastTemplate');
+gababTfallSlow = force_column_numeric(gIncr * gababTfallSlowTemplate');
+gababWeight = force_column_numeric(gIncr * gababWeightTemplate');
+
+elseif mod(nSims, nGababInputs) == 0
+    % If nSims is divisible by nGababInputs,
+    %   repeat nSims/nGababInputs times
+    gababAmp = repmat(gababAmp, nSims/nGababInputs, 1);
+    gababTrise = repmat(gababTrise, nSims/nGababInputs, 1);
+    gababTfallFast = repmat(gababTfallFast, nSims/nGababInputs, 1);
+    gababTfallSlow = repmat(gababTfallSlow, nSims/nGababInputs, 1);
+    gababWeight = repmat(gababWeight, nSims/nGababInputs, 1);
+
+gababAmp = gababAmp((1:nSims)' * (nGababInputs/nSims) + 1);
+gababTrise = gababTrise((1:nSims)' * (nGababInputs/nSims) + 1);
+gababTfallFast = gababTfallFast((1:nSims)' * (nGababInputs/nSims) + 1);
+gababTfallSlow = gababTfallSlow((1:nSims)' * (nGababInputs/nSims) + 1);
+gababWeight = gababWeight((1:nSims)' * (nGababInputs/nSims) + 1);
+
+gababAmp = match_dimensions(gababAmp, nSims, 1);
+gababTrise = match_dimensions(gababTrise, nSims, 1);
+gababTfallFast = match_dimensions(gababTfallFast, nSims, 1);
+gababTfallSlow = match_dimensions(gababTfallSlow, nSims, 1);
+gababWeight = match_dimensions(gababWeight, nSims, 1);
 
 %}
 

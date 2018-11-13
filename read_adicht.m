@@ -1,9 +1,14 @@
 function [data, file, dataAll] = read_adicht(fileName)
 
-% fileName = 'C:\Users\Pinn Analysis\Desktop\Shinnosuke\data\cobalt multi 07192018.adicht';
+%% If not compiled, add directories to search path for required functions
+if ~isdeployed
+    % Locate the functions directory
+    functionsDirectory = locate_functionsdir;
 
-%% Add the path to the adi functions
-addpath('C:\Users\Pinn Analysis\Desktop\Shinnosuke\JimHokanson-adinstruments_sdk_matlab-393033f')
+    % Add path for adi.m
+    addpath(fullfile(functionsDirectory, 'Dowloaded_Functions', ...
+                    'adinstruments_sdk_matlab')); 
+end
 
 %% Read the .adicht file
 file = adi.readFile(fileName);
@@ -73,6 +78,10 @@ end
 
 %{
 OLD CODE:
+
+% fileName = 'C:\Users\Pinn Analysis\Desktop\Shinnosuke\data\cobalt multi 07192018.adicht';
+% %% Add the path to the adi functions
+% addpath('C:\Users\Pinn Analysis\Desktop\Shinnosuke\JimHokanson-adinstruments_sdk_matlab-393033f')
 
 %}
 
