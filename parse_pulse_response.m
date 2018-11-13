@@ -8,7 +8,8 @@ function [parsedParams, parsedData] = ...
 % Example(s):
 %       TODO
 % Outputs:
-%       parsedParams    - a table containing the parsed parameters, with fields:
+%       parsedParams    - a table containing the parsed parameters, 
+%                           each row corresponding to a vector, with fields:
 %                           nSamples
 %                           responseWidthSamples
 %                           responseWidthMs
@@ -53,6 +54,10 @@ function [parsedParams, parsedData] = ...
 %                                       the current pulse endpoints
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'MeanValueWindowMs': window in ms for 
+%                                           calculating mean values
+%                   must be a positive scalar
+%                   default == 0.5 ms
 %
 % Requires:
 %       cd/count_samples.m
@@ -67,15 +72,14 @@ function [parsedParams, parsedData] = ...
 % File History:
 % 2018-10-10 Adapted from parse_pulse.m
 % 2018-10-11 Fixed tvecRising so that it starts from 0
-% 
-% TODO: Make meanValueWindow an optional argument and use it in find_passive_params.m
+% 2018-11-13 Added 'MeanValueWindowMs' as an optional argument
 
 %% Hard-coded parameters
-meanValueWindow = 0.5;          % width in ms for calculating mean values
 
 %% Default values for optional arguments
 pulseVectorsDefault = [];       % don't use pulse vectors by default
 sameAsPulseDefault = true;      % use pulse endpoints by default
+meanValueWindowMsDefault = 0.5; % calculating mean values over 0.5 ms by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -103,11 +107,14 @@ addParameter(iP, 'PulseVectors', pulseVectorsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'SameAsPulse', sameAsPulseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'MeanValueWindowMs', meanValueWindowMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
 
 % Read from the Input Parser
 parse(iP, vectors, siMs, varargin{:});
 pulseVectors = iP.Results.PulseVectors;
 sameAsPulse = iP.Results.SameAsPulse;
+meanValueWindowMs = iP.Results.MeanValueWindowMs;
 
 %% Preparation
 % Force vectors to be a column cell array

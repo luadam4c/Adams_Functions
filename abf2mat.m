@@ -48,10 +48,11 @@ function abf2mat(abfFileOrDir, varargin)
 %                   - 'OutFolder': directory to output csv file, 
 %                                   e.g. 'output'
 %                   must be a string scalar or a character vector
-%                   default == 'fullfile(abfDir, matfiles)'
+%                   default == 'matfiles'
 % Requires:
 %       /home/Matlab/Adams_Functions/print_or_show_message.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m
+%       cd/check_dir.m
 
 
 % File History:
@@ -87,7 +88,7 @@ channelsPerAnimalDefault = [];  % default number of channels per animal
 animalStrDefault = '_animal';   % string in file names that separate animals
 channelStrDefault = '_channel'; % string in file names that separate channels
 pieceStrDefault = '_piece';     % string in file names that separate pieces
-outFolderDefault = '';          % default directory to output mat file
+outFolderDefault = 'matfiles';  % default directory to output mat file
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -197,17 +198,8 @@ else
     return;
 end
 
-% Set dependent argument defaults
-if isempty(outFolder)
-    % Default output directory is matfiles under the data directory
-    outFolder = fullfile(abfDir, 'matfiles');
-end
-
-% Make sure the output directory exists
-if exist(outFolder, 'dir') ~= 7
-    mkdir(outFolder);
-    fprintf('New directory is made: %s\n\n', outFolder);
-end
+% Check if output directory exists
+check_dir(outFolder);
 
 % Find all .abf files to convert
 if multipleFiles
@@ -218,6 +210,7 @@ if multipleFiles
     nAbfFiles = length(allAbfFiles);
 
     % Loop through all files
+%    for iFile = 1:nAbfFiles
     parfor iFile = 1:nAbfFiles
         abfFileName = allAbfFiles(iFile).name;
         convert_abf2mat(abfDir, abfFileName, outFolder, ...
@@ -441,6 +434,17 @@ abfFullFileName = abfFileOrDir;
     %   Get full path to file and directory
 abfFullFileName = fullfile(pwd, abfFileOrDir);
 
+% Set dependent argument defaults
+if isempty(outFolder)
+    % Default output directory is matfiles under the data directory
+    outFolder = fullfile(abfDir, 'matfiles');
+end
+
+% Make sure the output directory exists
+if exist(outFolder, 'dir') ~= 7
+    mkdir(outFolder);
+    fprintf('New directory is made: %s\n\n', outFolder);
+end
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

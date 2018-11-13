@@ -47,6 +47,9 @@ function [passiveParams, fitResults, fitObject, ...
 %       varargin    - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'HoldCurrent': holding current (pA) applied for each trace
+%                   must be a numeric vector
+%                   default == []
 %                   - 'PulseWindow': window (ms) in which the current 
 %                                       pulse would lie, e.g. [95, 115]
 %                   must be within range of [timeBase timeFinal]
@@ -78,8 +81,10 @@ function [passiveParams, fitResults, fitObject, ...
 % Requires:
 %       cd/check_subdir.m
 %       cd/compute_average_trace.m
+%       cd/estimate_resting_potential.m
 %       cd/find_window_endpoints.m
 %       cd/fit_and_estimate_passive_params.m
+%       cd/isnumericvector.m
 %       cd/locate_functionsdir.m
 %       cd/nearest_odd.m
 %       cd/parse_pulse.m
@@ -134,10 +139,10 @@ function [passiveParams, fitResults, fitObject, ...
 % 2018-10-14 - Added the combined phase
 % 2018-10-15 - Removed dependence to fitMode and added Suffix and TitleMod
 %               as optional arguments instead
+% 2018-11-13 - Updated usage of parse_pulse_response.m
 %  
 
 %% Flags
-% TODO: Use this and make meanResponseWindow an optional argument in parse_pulse_response
 meanVoltageWindow = 0.5;    % width in ms for calculating mean voltage 
                             %   for input resistance calculations
 
@@ -184,6 +189,7 @@ directories = {'cprRising', 'cprFalling', 'cprCombined', 'passive'};
 
 %% Default values for optional arguments
 verboseDefault = false;             % don't print to standard output by default
+holdCurrentDefault = [];            % no holding current supplied by default
 pulseWindowDefault = [];            % set later
 pulseResponseWindowDefault = [];    % set later
 plotFlagDefault = false;
@@ -226,6 +232,8 @@ addRequired(iP, 'vvec0s', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'HoldCurrent', holdCurrentDefault, ...
+    @(x) assert(isnumericvector(x), 'HoldCurrent must be a numeric vector!'));
 addParameter(iP, 'PulseWindow', pulseWindowDefault, ...
     @(x) isempty(x) || isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'PulseResponseWindow', pulseResponseWindowDefault, ...
@@ -246,6 +254,7 @@ addParameter(iP, 'TitleMod', titleModDefault, ...
 % Read from the Input Parser
 parse(iP, tvec0, ivec0s, vvec0s, varargin{:});
 verbose = iP.Results.Verbose;
+holdCurrent = iP.Results.HoldCurrent;
 pulseWindow = iP.Results.PulseWindow;
 pulseResponseWindow = iP.Results.PulseResponseWindow;
 plotFlag = iP.Results.PlotFlag;
@@ -360,11 +369,17 @@ pulseAmplitude = pulseParams.pulseAmplitude;
 % Parse the pulse response, using the indices from the pulse
 [responseParams, responseData] = ...
     parse_pulse_response(vvecsCpr, siMs, 'PulseVector', ivecsCpr, ...
-                                        'SameAsPulse', true);
+                            'SameAsPulse', true, ...
+                            'MeanValueWindowMs', meanVoltageWindow);
 
-% Extract the response changes
-voltageChange = responseParams.steadyAmplitude;
+% Extract the holding potentials (mV)
+holdPotential = responseParams.baseValue;
+
+% Extract the maximum voltage values (mV)
 maxVoltage = responseParams.maxValue;
+
+% Extract the voltage changes (mV)
+voltageChange = responseParams.steadyAmplitude;
 
 % Decide whether each trace will be used
 toUse = pulseWidth >= 0 & ...
@@ -416,6 +431,14 @@ tvecsFallingToUse = tvecsFalling(toUse);
 vvecsFallingToUse = vvecsFalling(toUse);
 tvecsCombinedToUse = tvecsCombined(toUse);
 vvecsCombinedToUse = vvecsCombined(toUse);
+
+% Restrict holding currents (pA) and holding potentials (mV) to vectors to use
+holdCurrent = holdCurrent(toUse);
+holdPotential = holdPotential(toUse);
+
+%% Estimate the resting membrane potential
+[epasEstimate, RinEstimate] = ...
+    estimate_resting_potential(holdPotential, holdCurrent);
 
 %% Put data from all current pulse responses together in two different ways
 % Method 1: Put all data points together
@@ -824,8 +847,9 @@ algorithmInfo.pulseResponseWindow = pulseResponseWindow;
 % Store other measured outputs in allResults
 allResults.pulseAmplitude = pulseAmplitude;
 allResults.pulseWidth = pulseWidth;
-allResults.voltageChange = voltageChange;
+allResults.holdPotential = holdPotential;
 allResults.maxVoltage = maxVoltage;
+allResults.voltageChange = voltageChange;
 allResults.toUse = toUse;
 allResults.paramsAvgFalling = paramsAvgFalling;
 allResults.fitResultsAvgFalling = fitResultsAvgFalling;

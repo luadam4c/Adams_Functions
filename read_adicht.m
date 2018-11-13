@@ -1,4 +1,38 @@
 function [data, file, dataAll] = read_adicht(fileName)
+%% Reads in a .adicht file (from LabChart)
+% Usage: [data, file, dataAll] = read_adicht(fileName)
+% Explanation:
+%       TODO
+%       Note: This function only works under Windows!!
+% Example(s):
+%       TODO
+% Outputs:
+%       output1     - TODO: Description of output1
+%                   specified as a TODO
+% Arguments:
+%       reqarg1     - TODO: Description of reqarg1
+%                   must be a TODO
+%       varargin    - 'param1': TODO: Description of param1
+%                   must be a TODO
+%                   default == TODO
+%
+% Requires:
+%       /TODO:dir/TODO:file
+%
+% Used by:
+%       /TODO:dir/TODO:file
+
+% File History:
+% 2018-09-XX Created by Adam Lu
+% 2018-11-13 Changed functions path
+% TODO: Input parser
+% 
+
+%% Hard-coded parameters
+
+%% Default values for optional arguments
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% If not compiled, add directories to search path for required functions
 if ~isdeployed
@@ -6,7 +40,7 @@ if ~isdeployed
     functionsDirectory = locate_functionsdir;
 
     % Add path for adi.m
-    addpath(fullfile(functionsDirectory, 'Dowloaded_Functions', ...
+    addpath(fullfile(functionsDirectory, 'Downloaded_Functions', ...
                     'adinstruments_sdk_matlab')); 
 end
 

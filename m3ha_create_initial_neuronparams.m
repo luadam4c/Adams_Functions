@@ -228,7 +228,6 @@ neuronParamsTableDefault = ...
             UseAcrossTrials, UseAcrossCells, 'RowNames', neuronParamNames);
 
 %% Do the job
-
 % Read in the passive parameters table
 passiveTable = readtable(passiveFileName);
 
