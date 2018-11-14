@@ -15,16 +15,21 @@ function paramsTable = update_param_values (paramsTable, varargin)
 %       varargin    - name-value pairs that matches row names in the table
 %                   must be a list of string-numeric pairs
 %
+% Requires:
+%       cd/check_membership.m
+%
 % Used by:    
 %       cd/m3ha_create_initial_neuronparams.m
 
 % File History:
 % 2018-10-31 Created by Adam Lu
-% TODO: Check if parameter exist in rownames
-% TODO: Check bounds if 'UpperBound' and 'LowerBound' fields exist
+% 2018-11-14 Now checks if each parameter exists in rownames
+% 2018-11-14 Now check bounds if 'UpperBound' and 'LowerBound' fields exist
 % 
 
 %% Hard-coded parameters
+upperBoundStr = 'UpperBound';
+lowerBoundStr = 'LowerBound';
 
 %% Default values for optional arguments
 % param1Default   = [];                   % default TODO: Description of param1
@@ -61,15 +66,46 @@ parse(iP, paramsTable, varargin{:});
 %   These will be name-value pairs for the parameters
 allParamValuePairs = iP.Unmatched;
 
+%% Preparation
+% Get all parameter names from the table
+paramsTableRowNames = paramsTable.Properties.RowNames;
+
+% Get all variable names from the table
+paramsTableVariableNames = paramsTable.Properties.VariableNames;
+
 %% Do the job
 % Get all parameter names in a cell array
 paramNames = fieldnames(allParamValuePairs);
 
+% Check if all parameter names exist in the table
+if ~check_membership(paramNames, paramsTableRowNames)
+    fprintf('Original parameters table returned!\n');
+    return
+end
+
 % Get all parameter values in a cell array
-paramValues = struct2cell(allParamValuePairs);
+paramValuesCell = struct2cell(allParamValuePairs);
+
+% If upper bounds and lower bounds exist, 
+%   check whether the values are within bounds
+if check_membership({upperBoundStr, lowerBoundStr}, ...
+                    paramsTableVariableNames, 'SuppressOutput', true)
+    % Convert to a numeric array if poss
+    paramValues = cell2mat(paramValuesCell);
+
+    % Extract the upper and lower bounds for each parameter
+    upperBounds = paramsTable{paramNames, upperBoundStr};
+    lowerBounds = paramsTable{paramNames, lowerBoundStr};
+
+    % Check if all values are within bounds
+    if ~check_within_bounds(paramValues, lowerBounds, upperBounds)
+        fprintf('Original parameters table returned!\n');
+        return
+    end
+end
 
 % Replace all parameters with new values
-paramsTable(paramNames, {'Value'}) = paramValues;
+paramsTable(paramNames, {'Value'}) = paramValuesCell;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

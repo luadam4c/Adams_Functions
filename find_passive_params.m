@@ -9,6 +9,10 @@ function [passiveParams, fitResults, fitObject, ...
 %       passiveParams   - passive parameters returned by 
 %                           fit_and_estimate_passive_params.m
 %                           for the phase given by decision
+%                         as well as the following estimates 
+%                           from I-V relationships:
+%                           epasEstimate: resting membrane potential (mV)
+%                           RinEstimate: input resistance (MOhm)
 %       fitResults      - fitting results returned by 
 %                           fit_and_estimate_passive_params.m
 %                           for the phase given by decision
