@@ -432,13 +432,16 @@ vvecsFallingToUse = vvecsFalling(toUse);
 tvecsCombinedToUse = tvecsCombined(toUse);
 vvecsCombinedToUse = vvecsCombined(toUse);
 
-% Restrict holding currents (pA) and holding potentials (mV) to vectors to use
-holdCurrent = holdCurrent(toUse);
-holdPotential = holdPotential(toUse);
-
 %% Estimate the resting membrane potential
-[epasEstimate, RinEstimate] = ...
-    estimate_resting_potential(holdPotential, holdCurrent);
+if ~isempty(holdCurrent)
+    % Restrict computed values to vectors to use
+    holdCurrentToUse = holdCurrent(toUse);
+    holdPotentialToUse = holdPotential(toUse);
+
+    % Estimate the resting membrane potential
+    [epasEstimate, RinEstimate] = ...
+        estimate_resting_potential(holdPotentialToUse, holdCurrentToUse);
+end
 
 %% Put data from all current pulse responses together in two different ways
 % Method 1: Put all data points together
@@ -645,6 +648,12 @@ elseif isstruct(paramsAllRising)
     algorithmInfo = algInfoAllRising;
     decision = 'rising phase of pooled data';
 end    
+
+% Add estimates of epas and Rin if holding currents provided
+if ~isempty(holdCurrent)
+    passiveParams.epasEstimate = epasEstimate;
+    passiveParams.RinEstimate = RinEstimate;
+end
 
 %% Find a goodness-of-fit measure (root-mean-squared error) for each sweep
 %{

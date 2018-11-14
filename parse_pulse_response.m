@@ -124,7 +124,7 @@ vectors = force_column_cell(vectors);
 nSamples = count_samples(vectors);
 
 % Calculate the mean value calculation window in samples
-meanValueWindowSamples = round(meanValueWindow / siMs);
+meanValueWindowSamples = round(meanValueWindowMs / siMs);
 
 %% Do the job
 % Find indices for all the pulse response endpoints
