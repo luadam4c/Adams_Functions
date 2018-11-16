@@ -36,7 +36,7 @@ function hfig = m3ha_plot_individual_traces (tVecs, data, varargin)
 %                   default == ['Traces for ', figName]
 %                               or [yLabel, ' over time']
 %                   - 'FigNumber': figure number for creating figure
-%                   must be a positive integer scalar
+%                   must be empty or a positive integer scalar
 %                   default == 104
 %                   - 'FigName': figure name for saving
 %                   must be a string scalar or a character vector
@@ -74,6 +74,7 @@ function hfig = m3ha_plot_individual_traces (tVecs, data, varargin)
 %       cd/isbinaryscalar.m
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
+%       cd/ispositiveintegerscalar.m
 %       cd/match_format_vectors.m
 %       cd/match_row_count.m
 %       cd/plot_traces.m
@@ -142,7 +143,8 @@ addParameter(iP, 'ColorMap', colorMapDefault, ...
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigNumber', figNumberDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                'FigNumber must be a empty or a positive integer scalar!'));
 addParameter(iP, 'FigName', figNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'BaseWindow', baseWindowDefault, ...

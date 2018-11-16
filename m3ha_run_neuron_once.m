@@ -1,13 +1,16 @@
-function [err, hfig, simData] = ...
+function [err, hFig, simData] = ...
                 m3ha_run_neuron_once (neuronParamsTable, varargin)
 %% Runs "one iteration" of NEURON (once for each of the sweeps)
-% Usage: [err, hfig, simData] = ...
+% Usage: [err, hFig, simData] = ...
 %               m3ha_run_neuron_once (neuronParamsTable, varargin)
 % Explanation:
 %       TODO
 % 
 % Outputs: 
 %       TODO
+%       simData     - simulated data
+%                   specified as a numeric array
+%                       or a cell array of numeric arrays
 % Arguments:
 %       neuronParamsTable   
 %                   - table(s) of single neuron parameters with 
@@ -20,7 +23,8 @@ function [err, hfig, simData] = ...
 %                                   to be varied on a log scale
 %                   must be a 2d table or a cell array of 2d tables
 %       varargin    - 'RealData': recorded data to compare against
-%                   must be a numeric 2-d array
+%                   must be a numeric array
+%                       or a cell array of numeric arrays
 %                   default == []
 %                   - 'Hfig': handles structure for figures
 %                   must be a TODO
@@ -52,6 +56,10 @@ function [err, hfig, simData] = ...
 %                   default == false
 %                   - 'AverageCprFlag': whether to average current pulse 
 %                                       responses according to vHold
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'Normalize2InitErrFlag': whether to normalize errors
+%                                               to initial errors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'SaveParamsFlag': whether to save simulation parameters
@@ -126,7 +134,10 @@ function [err, hfig, simData] = ...
 %                                           current pulse response
 %                   must be a numeric vector
 %                   default == -70 mV
-%                   - 'CurrentPulseAmplitude': current pulse amplitude (nA)
+%                   - 'CurrentPulseAmplitudeIpscr': current pulse amplitude (nA)
+%                   must be a numeric vector
+%                   default == -0.050 nA
+%                   - 'CurrentPulseAmplitudeCpr': current pulse amplitude (nA)
 %                   must be a numeric vector
 %                   default == -0.050 nA
 %                   - 'GababAmp': GABA-B IPSC amplitude (uS)
@@ -251,7 +262,7 @@ function [err, hfig, simData] = ...
 % 2016-10-06 - Removed err_stats2_sim{bi} & err_stats2_real{bi}
 % 2016-10-06 - Changed swpreg to fitreg
 % 2016-10-06 - Renamed figure handles so that they are now all in a structure 
-%               hfig that is passed to and from functions
+%               hFig that is passed to and from functions
 % 2016-10-07 - outparams.currpulse(iSwp) is now already in nA
 % 2016-10-07 - Added cprflag, findLtsFlag, ltsBurstStatsFlag, ltsErrorFlag
 % 2016-10-14 - Updated outputs for find_IPSC_peak & find_LTS
@@ -348,7 +359,7 @@ CURR_COL_SIM = 9;
 
 %% Default values for optional arguments
 realDataDefault = [];           % no data to compare against by default
-hfigDefault = '';               % no prior hfig structure by default
+hFigDefault = '';               % no prior hFig structure by default
 simModeDefault = 'passive';     % simulate a current pulse response by default
 nSweepsDefault = [];            % set later
 prefixDefault = '';             % prepend nothing to file names by default
@@ -360,6 +371,7 @@ onHpcFlagDefault = false;       % not on a high performance computing
                                 %   server by default
 averageCprFlagDefault = false;  % don't average current pulse responses 
                                 %   according to vHold by default
+normalize2InitErrFlagDefault = false;
 saveParamsFlagDefault = true;   % save simulation parameters by default
 saveSimCmdsFlagDefault = true;  % save simulation commands by default
 saveStdOutFlagDefault = true;   % save standard outputs by default
@@ -382,7 +394,8 @@ outFilePathDefault = 'auto';    % set later
 tstopDefault = [];              % set later
 holdPotentialIpscrDefault = -70;% (mV)
 holdPotentialCprDefault = -70;  % (mV)
-currentPulseAmplitudeDefault = -0.050;  % (nA)
+currentPulseAmplitudeIpscrDefault = -0.050;  % (nA)
+currentPulseAmplitudeCprDefault = -0.050;  % (nA)
 gababAmpDefault = [];           % set later
 gababTriseDefault = [];         % set later
 gababTfallFastDefault = [];     % set later
@@ -422,8 +435,10 @@ addRequired(iP, 'neuronParamsTable', ...
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'RealData', realDataDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'HFig', hfigDefault);
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['RealData must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
+addParameter(iP, 'HFig', hFigDefault);
 addParameter(iP, 'SimMode', simModeDefault, ...
     @(x) any(validatestring(x, validSimModes)));
 addParameter(iP, 'NSweeps', nSweepsDefault, ...
@@ -439,6 +454,8 @@ addParameter(iP, 'CustomHoldCurrentFlag', customHoldCurrentFlagDefault, ...
 addParameter(iP, 'OnHpcFlag', onHpcFlagDefault, ...   
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'AverageCprFlag', averageCprFlagDefault, ...   
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Normalize2InitErrFlag', normalize2InitErrFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SaveParamsFlag', saveParamsFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -484,7 +501,9 @@ addParameter(iP, 'HoldPotentialIpscr', holdPotentialIpscrDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'HoldPotentialCpr', holdPotentialCprDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
-addParameter(iP, 'CurrentPulseAmplitude', currentPulseAmplitudeDefault, ...
+addParameter(iP, 'CurrentPulseAmplitudeIpscr', currentPulseAmplitudeIpscrDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'CurrentPulseAmplitudeCpr', currentPulseAmplitudeCprDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'GababAmp', gababAmpDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
@@ -528,7 +547,7 @@ addParameter(iP, 'SweepWeightsIpscr', sweepWeightsIpscrDefault, ...
 % Read from the Input Parser
 parse(iP, neuronParamsTable, varargin{:});
 realData = iP.Results.RealData;
-hfig = iP.Results.HFig;
+hFig = iP.Results.HFig;
 simMode = validatestring(iP.Results.SimMode, validSimModes);
 nSweepsUser = iP.Results.NSweeps;
 prefix = iP.Results.Prefix;
@@ -537,6 +556,7 @@ debugFlag = iP.Results.DebugFlag;
 customHoldCurrentFlag = iP.Results.CustomHoldCurrentFlag;
 onHpcFlag = iP.Results.OnHpcFlag;
 averageCprFlag = iP.Results.AverageCprFlag;
+normalize2InitErrFlag = iP.Results.Normalize2InitErrFlag;
 saveParamsFlag = iP.Results.SaveParamsFlag;
 saveSimCmdsFlag = iP.Results.SaveSimCmdsFlag;
 saveStdOutFlag = iP.Results.SaveStdOutFlag;
@@ -559,7 +579,8 @@ outFilePath = iP.Results.OutFilePath;
 tstop = iP.Results.Tstop;
 holdPotentialIpscr = iP.Results.HoldPotentialIpscr;
 holdPotentialCpr = iP.Results.HoldPotentialCpr;
-currentPulseAmplitude = iP.Results.CurrentPulseAmplitude;
+currentPulseAmplitudeIpscr = iP.Results.CurrentPulseAmplitudeIpscr;
+currentPulseAmplitudeCpr = iP.Results.CurrentPulseAmplitudeCpr;
 gababAmp = iP.Results.GababAmp;
 gababTrise = iP.Results.GababTrise;
 gababTfallFast = iP.Results.GababTfallFast;
@@ -588,6 +609,7 @@ sweepWeightsIpscr = iP.Results.SweepWeightsIpscr;
 %% Preparation
 % Decide on simulation-mode-dependent variables
 if strcmpi(simMode, 'passive')
+    currentPulseAmplitude = currentPulseAmplitudeCpr;
     holdPotential = holdPotentialCpr;
     holdCurrent = holdCurrentCpr;
     holdCurrentNoise = holdCurrentNoiseCpr;
@@ -598,6 +620,7 @@ if strcmpi(simMode, 'passive')
     sweepWeights = sweepWeightsCpr;
     errorMode = 'SweepOnly';
 elseif strcmpi(simMode, 'active')
+    currentPulseAmplitude = currentPulseAmplitudeIpscr;
     holdPotential = holdPotentialIpscr;
     holdCurrent = holdCurrentIpscr;
     holdCurrentNoise = holdCurrentNoiseIpscr;
@@ -684,8 +707,9 @@ run_neuron(hocFile, 'SimCommands', simCommands, ...
                     'DebugFlag', debugFlag, 'OnHpcFlag', onHpcFlag, ...
                     'SaveStdOutFlag', saveStdOutFlag);
 
+%% TODO: Break the function here into two
+
 %% Analyze results
-% TODO: Break the function here into two
 % Load .out files created by NEURON
 simDataOrig = load_neuron_outputs('FileNames', outFilePath, ...
                                 'RemoveAfterLoad', ~saveSimOutFlag);
@@ -737,15 +761,18 @@ if ~isempty(realData)
     % Calculate voltage residuals (simulated - recorded)
     residuals = compute_residuals(vvecsSim, vvecsReal);
 
+    % TODO: Fix this
+    initSwpError = 1;
+
     % Calculate sweep errors
     swpErrorStruct = compute_single_neuron_errors(vvecsSim, vvecsReal, ...
                     'ErrorMode', errorMode, 'TimeVecs', timeVecs, ...
                     'IvecsSim', ivecsSim, 'IvecsReal', ivecsReal, ...
                     'FitWindow', fitWindow, 'SweepWeights', sweepWeights, ...
                     'BaseWindow', baseWindow, 'BaseNoise', baseNoise, ...
-                    'NormalizeError', normalizeError, ...
+                    'NormalizeError', normalize2InitErrFlag, ...
                     'InitSwpError', initSwpError);
-                
+
     % Extract just the sweep errors
     swpErrors = swpErrorStruct.swpErrors;
 else
@@ -783,7 +810,7 @@ if plotFlag
         figName = fullfile(outFolder, [prefix, '_alltraces_zoom.png']);
 
         % Plot the individual traces
-        hfig.individual = ...
+        hFig.individual = ...
             m3ha_plot_individual_traces(timeVecs, vvecsSim, ...
                     'DataToCompare', vvecsReal, ...
                     'ColorMap', colorMap, 'XLimits', xLimits, ...
@@ -795,20 +822,20 @@ if plotFlag
     end
 
     % if plotResidualsFlag
-    %     hfig.residuals = ...
-    %         plot_voltage_residuals(timeVecs, residuals, outparams, err, hfig, nSweeps, colorMap, ncg, npercg, xLimits);
+    %     hFig.residuals = ...
+    %         plot_voltage_residuals(timeVecs, residuals, outparams, err, hFig, nSweeps, colorMap, ncg, npercg, xLimits);
     % end    
     % if plotOverlappedFlag
-    %     hfig.overlapped = ...
-    %         plot_overlapped_traces(realData, simData, outparams, hfig, nSweeps, colorMap, ncg, npercg, xlimitsMax);
+    %     hFig.overlapped = ...
+    %         plot_overlapped_traces(realData, simData, outparams, hFig, nSweeps, colorMap, ncg, npercg, xlimitsMax);
     % end
     % if plotConductanceFlag
-    %     hfig.conductance = ...
-    %         plot_conductance_traces(realData, simData, outparams, hfig, nSweeps, colorMap, ncg, npercg, xlimitsMax);
+    %     hFig.conductance = ...
+    %         plot_conductance_traces(realData, simData, outparams, hFig, nSweeps, colorMap, ncg, npercg, xlimitsMax);
     % end
     % if plotCurrentFlag
-    %     hfig.current = ...
-    %         plot_current_traces(realData, simData, outparams, hfig, nSweeps, colorMap, ncg, npercg, xlimitsMax);
+    %     hFig.current = ...
+    %         plot_current_traces(realData, simData, outparams, hFig, nSweeps, colorMap, ncg, npercg, xlimitsMax);
     % end
 
     % Print an empty line
@@ -1455,29 +1482,29 @@ if plotStatisticsFlag
     % Plot bar graph comparing LTS probabilities
     fprintf('Plotting bar graph comparing LTS probabilities ...\n');
     if outparams.showStatisticsFlag
-        hfig.ltstp_bar = figure(201);
+        hFig.ltstp_bar = figure(201);
     else
-        hfig.ltstp_bar = figure('Visible', 'off');
+        hFig.ltstp_bar = figure('Visible', 'off');
     end
-    set(hfig.ltstp_bar, 'Name', 'Low threshold spike probability');
-    clf(hfig.ltstp_bar);
+    set(hFig.ltstp_bar, 'Name', 'Low threshold spike probability');
+    clf(hFig.ltstp_bar);
     bar(1:size(colorMap, 1), ltsp);
     legend('Real data', 'Simulated data');
     xlabel('Pharm condition #');
     ylabel('LTS probability');
     title('Low threshold spike probability');
     figName = fullfile(outFolder, [prefix, '_ltstp_bar.png']);
-    save_all_figtypes(hfig.ltstp_bar, figName);
+    save_all_figtypes(hFig.ltstp_bar, figName);
 
     % Plot scatter plot of LTS onset times, don't save yet (axes not fixed)
     fprintf('Plotting scatter plot of LTS onset times ...\n');
     if outparams.showStatisticsFlag
-        hfig.ltstcorr = figure(202);
+        hFig.ltstcorr = figure(202);
     else
-        hfig.ltstcorr = figure('Visible', 'off');
+        hFig.ltstcorr = figure('Visible', 'off');
     end
-    set(hfig.ltstcorr, 'Name', 'LTS onset times (ms)');
-    clf(hfig.ltstcorr);
+    set(hFig.ltstcorr, 'Name', 'LTS onset times (ms)');
+    clf(hFig.ltstcorr);
     for cgn = 1:size(colorMap, 1)            % color group number
         if both_has_lts_ct(cgn) > 0
             if ncg == 4
@@ -1498,12 +1525,12 @@ if plotStatisticsFlag
     % Plot scatter plot of LTS max slopes, don't save yet (axes not fixed)
     fprintf('Plotting scatter plot of LTS max slopes ...\n');
     if outparams.showStatisticsFlag
-        hfig.ltsdvdtvcorr = figure(203);
+        hFig.ltsdvdtvcorr = figure(203);
     else
-        hfig.ltsdvdtvcorr = figure('Visible', 'off');
+        hFig.ltsdvdtvcorr = figure('Visible', 'off');
     end
-    set(hfig.ltsdvdtvcorr, 'Name', 'LTS max slopes (mV/ms)');
-    clf(hfig.ltsdvdtvcorr);
+    set(hFig.ltsdvdtvcorr, 'Name', 'LTS max slopes (mV/ms)');
+    clf(hFig.ltsdvdtvcorr);
     for cgn = 1:size(colorMap, 1)            % color group number
         if both_has_lts_ct(cgn) > 0
             if ncg == 4
@@ -1537,7 +1564,7 @@ if plotStatisticsFlag
             width = 0.1;
         end
 
-        set(0, 'CurrentFigure', hfig.ltstcorr);
+        set(0, 'CurrentFigure', hFig.ltstcorr);
         for cgn = 1:ncg            % color group number
             if both_has_lts_ct(cgn) > 0
                 if ncg == 4
@@ -1553,7 +1580,7 @@ if plotStatisticsFlag
             end
         end
         figName = fullfile(outFolder, [prefix, '_ltstcorr.png']);
-        save_all_figtypes(hfig.ltstcorr, figName);
+        save_all_figtypes(hFig.ltstcorr, figName);
 
         ltsdvdtv_max_dev_all_max = max(ltsdvdtv_max_dev_all);
         ltsdvdtv_std_all_max = max(ltsdvdtv_std_all);
@@ -1568,7 +1595,7 @@ if plotStatisticsFlag
             width = 0.1;
         end
 
-        set(0, 'CurrentFigure' , hfig.ltsdvdtvcorr);
+        set(0, 'CurrentFigure' , hFig.ltsdvdtvcorr);
         for cgn = 1:ncg            % color group number
             if both_has_lts_ct(cgn) > 0
                 if ncg == 4
@@ -1584,7 +1611,7 @@ if plotStatisticsFlag
             end
         end
         figName = fullfile(outFolder, [prefix, '_ltsdvdtvcorr.png']);
-        save_all_figtypes(hfig.ltsdvdtvcorr, figName);
+        save_all_figtypes(hFig.ltsdvdtvcorr, figName);
     end
 
     %% Create 2D bar graphs for LTS/burst statistics
@@ -1625,12 +1652,12 @@ if plotStatisticsFlag
     end
 
     fprintf('\n');
-    hfig.ltsburst_stats = ltsburst_stats;
+    hFig.ltsburst_stats = ltsburst_stats;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function hfig = plot_overlapped_traces (realData, simData, outparams, hfig, nSweeps, colorMap, ncg, npercg, xlimitsMax)
+function hFig = plot_overlapped_traces (realData, simData, outparams, hFig, nSweeps, colorMap, ncg, npercg, xlimitsMax)
 %% Update figure of all traces overlapped
 
 %% Decide on the number of subplots
@@ -1644,15 +1671,15 @@ end
 fprintf('Plotting figure of all traces overlapping for %s ...\n', outparams.prefix);
 if outparams.showSweepsFlag
     if outparams.cprflag
-        hfig.overlapped_traces = figure(101);
+        hFig.overlapped_traces = figure(101);
     else
-        hfig.overlapped_traces = figure(111);
+        hFig.overlapped_traces = figure(111);
     end
 else
-    hfig.overlapped_traces = figure('Visible', 'off');
+    hFig.overlapped_traces = figure('Visible', 'off');
 end
-set(hfig.overlapped_traces, 'Name', 'Overlapped traces');
-clf(hfig.overlapped_traces);
+set(hFig.overlapped_traces, 'Name', 'Overlapped traces');
+clf(hFig.overlapped_traces);
 for iSwp = 1:nSweeps  
     % Find color group number
     cgn = ceil(iSwp/npercg);
@@ -1749,34 +1776,34 @@ end
 
 % Save figure
 figName = fullfile(outparams.outFolder, [outparams.prefix, '_overlapped_traces']);
-% save_all_figtypes(hfig.overlapped_traces, figName, {'png', 'fig'});
-save_all_figtypes(hfig.overlapped_traces, figName, {'png'});
+% save_all_figtypes(hFig.overlapped_traces, figName, {'png', 'fig'});
+save_all_figtypes(hFig.overlapped_traces, figName, {'png'});
 % Rename figure handle so it won't be overwritten
 if outparams.cprflag
-    hfig.cpr_overlapped_traces = hfig.overlapped_traces;
+    hFig.cpr_overlapped_traces = hFig.overlapped_traces;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-function hfig = plot_conductance_traces (realData, simData, outparams, hfig, nSweeps, colorMap, ncg, npercg, xlimitsMax)
+function hFig = plot_conductance_traces (realData, simData, outparams, hFig, nSweeps, colorMap, ncg, npercg, xlimitsMax)
 %% Update figure comparing current traces between real data and simulations
 
 % See vMat of singleneuron4compgabab.hoc for simData columns
 fprintf('Plotting figure comparing current traces between real data and simulations for %s ...\n', outparams.prefix);
 if outparams.showSweepsFlag
     if outparams.cprflag
-        hfig.GABABi_comparison = figure(102);
+        hFig.GABABi_comparison = figure(102);
     else
-        hfig.GABABi_comparison = figure(112);
+        hFig.GABABi_comparison = figure(112);
     end
 else
-    hfig.GABABi_comparison = figure('Visible', 'off');
+    hFig.GABABi_comparison = figure('Visible', 'off');
 end
-set(hfig.GABABi_comparison, 'Name', 'GABAB currents');
+set(hFig.GABABi_comparison, 'Name', 'GABAB currents');
 
 % Plot GABAB IPSC current traces from experiments
-clf(hfig.GABABi_comparison);
+clf(hFig.GABABi_comparison);
 subplot(2,1,1); hold on;
 for iSwp = 1:nSweeps  
     cgn = ceil(iSwp/npercg);        % color group number
@@ -1822,31 +1849,31 @@ if outparams.cprflag
 else
     figName = fullfile(outparams.outFolder, [outparams.prefix, '_GABABi_comparison.png']);
 end
-save_all_figtypes(hfig.GABABi_comparison, figName);
+save_all_figtypes(hFig.GABABi_comparison, figName);
 % Copy figure handle so it won't be overwritten
 if outparams.cprflag
-    hfig.cpr_GABABi_comparison = hfig.GABABi_comparison;
+    hFig.cpr_GABABi_comparison = hFig.GABABi_comparison;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-function hfig = plot_current_traces (realData, simData, outparams, hfig, nSweeps, colorMap, ncg, npercg, xlimitsMax)
+function hFig = plot_current_traces (realData, simData, outparams, hFig, nSweeps, colorMap, ncg, npercg, xlimitsMax)
 %% Update figure comparing current traces between real data and simulations
 
 % See vMat of singleneuron4compgabab.hoc for simData columns
 fprintf('Plotting figure comparing current traces between real data and simulations for %s ...\n', outparams.prefix);
 if outparams.showSweepsFlag
     if outparams.cprflag
-        hfig.GABABg_comparison = figure(103);
+        hFig.GABABg_comparison = figure(103);
     else
-        hfig.GABABg_comparison = figure(113);
+        hFig.GABABg_comparison = figure(113);
     end
 else
-    hfig.GABABg_comparison = figure('Visible', 'off');
+    hFig.GABABg_comparison = figure('Visible', 'off');
 end
-set(hfig.GABABg_comparison, 'Name', 'GABAB conductances');
-clf(hfig.GABABg_comparison);
+set(hFig.GABABg_comparison, 'Name', 'GABAB conductances');
+clf(hFig.GABABg_comparison);
 subplot(2,1,1); hold on;
 for iSwp = 1:nSweeps
     cgn = ceil(iSwp/npercg);        % color group number
@@ -1884,15 +1911,15 @@ if outparams.cprflag
 else
     figName = fullfile(outparams.outFolder, [outparams.prefix, '_GABABg_comparison.png']);
 end
-save_all_figtypes(hfig.GABABg_comparison, figName);
+save_all_figtypes(hFig.GABABg_comparison, figName);
 % Copy figure handle so it won't be overwritten
 if outparams.cprflag
-    hfig.cpr_GABABg_comparison = hfig.GABABg_comparison;
+    hFig.cpr_GABABg_comparison = hFig.GABABg_comparison;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function hfig = plot_voltage_residuals (timeVecs, residuals, outparams, err, hfig, nSweeps, colorMap, ncg, npercg, xLimits)
+function hFig = plot_voltage_residuals (timeVecs, residuals, outparams, err, hFig, nSweeps, colorMap, ncg, npercg, xLimits)
 %% Update figure of all residuals zoomed over fit region
 
 if outparams.cprflag
@@ -1907,15 +1934,15 @@ swperr = err.swperr;
 fprintf('Plotting figure of all residuals over fit region for %s ...\n', outparams.prefix);
 if outparams.showSweepsFlag
     if outparams.cprflag
-        hfig.alltraces_residuals = figure(105);
+        hFig.alltraces_residuals = figure(105);
     else
-        hfig.alltraces_residuals = figure(115);
+        hFig.alltraces_residuals = figure(115);
     end
 else
-    hfig.alltraces_residuals = figure('Visible', 'off');
+    hFig.alltraces_residuals = figure('Visible', 'off');
 end
-set(hfig.alltraces_residuals, 'Name', 'All traces zoomed');
-clf(hfig.alltraces_residuals);
+set(hFig.alltraces_residuals, 'Name', 'All traces zoomed');
+clf(hFig.alltraces_residuals);
 for iSwp = 1:nSweeps
     axesAll(iSwp) = subplot(ncg, npercg, iSwp); hold on;
 
@@ -1968,22 +1995,22 @@ end
 linkaxes(axesAll, 'xy');
 
 % For suptitle
-set(0, 'CurrentFigure', hfig.alltraces_residuals);
+set(0, 'CurrentFigure', hFig.alltraces_residuals);
 
 % If nSweeps > 20, expand all subplots by 1.2
 % subplotsqueeze.m is in /home/Matlab/Downloaded_Functions
 if nSweeps > 20
-    subplotsqueeze(hfig.alltraces_residuals, 1.2);
+    subplotsqueeze(hFig.alltraces_residuals, 1.2);
 end
 suptitle(sprintf('All residuals for Experiment %s', strrep(outparams.prefix, '_', '\_')));        
                     % This is from the bioinformatics toolbox
 % suplabel(sprintf('All traces for Experiment %s', strrep(outparams.prefix, '_', '\_')), 't');    
                     % This is in /home/Matlab/Downloaded_Functions
 figName = fullfile(outparams.outFolder, [outparams.prefix, '_alltraces_residuals.png']);
-save_all_figtypes(hfig.alltraces_residuals, figName);
+save_all_figtypes(hFig.alltraces_residuals, figName);
 % Copy figure handle so it won't be overwritten
 if outparams.cprflag
-    hfig.cpr_alltraces_residuals = hfig.alltraces_residuals;
+    hFig.cpr_alltraces_residuals = hFig.alltraces_residuals;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2266,7 +2293,7 @@ a = zeros(1, nSweeps);
     err.avgltsdvdtverr = sqrt(sum((sweepWeights .* err.ltsdvdtverr.^2) ./ totalSweepWeights));
 
 if outparams.plotsweepsflag
-    hfig = update_sweeps_figures(realData, simData, outparams, err, hfig);
+    hFig = update_sweeps_figures(realData, simData, outparams, err, hFig);
 end
 
 if strcmp(outparams.modeselected,'modebutton_jitter') == 1
@@ -2308,7 +2335,7 @@ err.swperr = abs(rmse/mean(holdpotential));     % use root-mean-squared error
 %        figName = fullfile(outFolder, [prefix, '_', statsfilename{bi}, '.png']);
 %        figName = fullfile(outFolder, [prefix, '_', statsfilename{bi}, '.fig']);
 %        saveas(ltsburst_stats{bi}, figName);
-saveas(hfig.overlapped_traces, figName);
+saveas(hFig.overlapped_traces, figName);
 
         % Plot means
         bar((1:ncg)', [mean_stats_real{bi} mean_stats_sim{bi}]); hold on;
@@ -2319,16 +2346,16 @@ saveas(hfig.overlapped_traces, figName);
 
         legend('Real data', 'Simulated data');
 
-set(hfig.ltstcorr, 'Visible', 'off');
+set(hFig.ltstcorr, 'Visible', 'off');
 set(ltsburst_stats{bi}, 'Visible', 'off');
-set(hfig.alltraces_zoom, 'Visible', 'off');
-set(hfig.GABABg_comparison, 'Visible', 'off');
-set(hfig.GABABi_comparison, 'Visible', 'off');
-set(hfig.overlapped_traces, 'Visible', 'off');
+set(hFig.alltraces_zoom, 'Visible', 'off');
+set(hFig.GABABg_comparison, 'Visible', 'off');
+set(hFig.GABABi_comparison, 'Visible', 'off');
+set(hFig.overlapped_traces, 'Visible', 'off');
 
-figure(hfig.alltraces_zoom);        % for suptitle
-        figure(hfig.ltstcorr);
-        figure(hfig.ltsdvdtvcorr);
+figure(hFig.alltraces_zoom);        % for suptitle
+        figure(hFig.ltstcorr);
+        figure(hFig.ltsdvdtvcorr);
 
 % err.swperr = rmse./maxNoise';
 % slopeUncertainty = (2*maxNoise ./ peakprom + 2*ioffset ./ peakwidth) ...
@@ -2873,9 +2900,9 @@ end
 swperr = err.swperr;
 
 if outparams.cprflag
-    hfig.alltraces_zoom = figure(104);
+    hFig.alltraces_zoom = figure(104);
 else
-    hfig.alltraces_zoom = figure(114);
+    hFig.alltraces_zoom = figure(114);
 end
 
 % Plot traces
@@ -2913,7 +2940,7 @@ suptitle();
 
 % Copy figure handle so it won't be overwritten
 if outparams.cprflag
-    hfig.cpr_alltraces_zoom = hfig.alltraces_zoom;
+    hFig.cpr_alltraces_zoom = hFig.alltraces_zoom;
 end
 
 % Get the y-axis limits
@@ -2935,5 +2962,7 @@ baseNoiseCprDefault = 1;        % (mV)
 baseNoiseIpscrDefault = 1;      % (mV)
 sweepWeightsCprDefault = 1;     % equal weights by default
 sweepWeightsIpscrDefault = 1;   % equal weights by default
+
+@(x) validateattributes(x, {'numeric'}, {'2d'}));
 
 %}

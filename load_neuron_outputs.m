@@ -9,11 +9,12 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 %       outputs     - a cell array of outputs
 %                   specified as a cell array
 % Arguments:
-%       varargin    - 'Directory': the name of the directory containing 
+%       varargin    - 'Directories': the name of the directories(ies) containing 
 %                                   the .out files, e.g. '20161216'
-%                   must be a string scalar or a character vector
+%                   must be a characeter vector, a string array 
+%                       or a cell array of character arrays
 %                   default == pwd
-%                   - 'FileNames': names of .abf files to detect
+%                   - 'FileNames': names of .out files to load
 %                   must be a characeter vector, a string array 
 %                       or a cell array of character arrays
 %                   default == detect from pwd
@@ -35,13 +36,13 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 % File History:
 % 2018-10-23 Adapted from code in run_neuron_once_4compgabab.m
 % 2018-10-31 Went back to using parfor for loading
+% 2018-11-16 Fixed directories and allowed it to be a cell array
 
 %% Hard-coded parameters
 outputExtension = '.out';
 
 %% Default values for optional arguments
-directoryDefault = pwd;             % look for .abf files in 
-                                    %   the present working directory by default
+directoriesDefault = '';            % set later
 fileNamesDefault = {};              % detect from pwd by default
 verboseDefault = false;             % print to standard output by default
 removeAfterLoadDefault = false;     % don't remove .out files by default
@@ -54,9 +55,8 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'Directory', directoryDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-                                                % introduced after R2016b
+addParameter(iP, 'Directories', directoriesDefault, ...
+    @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'FileNames', fileNamesDefault, ...
     @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'Verbose', verboseDefault, ...
@@ -66,7 +66,7 @@ addParameter(iP, 'RemoveAfterLoad', removeAfterLoadDefault, ...
 
 % Read from the Input Parser
 parse(iP, varargin{:});
-directory = iP.Results.Directory;
+directories = iP.Results.Directories;
 fileNames = iP.Results.FileNames;
 verbose = iP.Results.Verbose;
 removeAfterLoad = iP.Results.RemoveAfterLoad;
@@ -74,8 +74,8 @@ removeAfterLoad = iP.Results.RemoveAfterLoad;
 %% Preparation
 % Decide on the files to use
 if isempty(fileNames)
-    % Find all .out files in the directory
-    [~, fileNames] = all_files('Directory', directory, ...
+    % Find all .out files in the directories
+    [~, fileNames] = all_files('Directories', directories, ...
                                 'Extension', outputExtension, ...
                                 'Verbose', verbose);
 
@@ -90,10 +90,22 @@ elseif ischar(fileNames)
     fileNames = {fileNames};
 end
 
+% Decide on the directories
+if isempty(directories)
+    if ~isempty(fileNames)
+        % Use the directories associated with the file names
+        directories = cellfun(@fileparts, fileNames, 'UniformOutput', false);
+    else
+        % Use the present working directory
+        directories = pwd;
+    end
+end
+
 % Construct full paths and check whether the files exist
 %   TODO: Expand to accept optional Suffix', etc.
-[fullPaths, pathExists] = construct_and_check_fullpath(fileNames, ...
-                                                        'Directory', directory);
+%   TODO: Allow directories to be passed
+[fullPaths, pathExists] = ...
+    construct_and_check_fullpath(fileNames, 'Directory', directories{1});
 
 % Return if not all paths exist
 if ~all(pathExists)

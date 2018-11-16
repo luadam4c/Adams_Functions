@@ -144,7 +144,7 @@ if isempty(baseNoise)
         % Compute the number of sweeps
         nSweeps = numel(tVecs);
 
-        % Assum a noise of 1
+        % Assume a noise of 1
         baseNoise = ones(nSweeps, 1);
     end
 end

@@ -45,6 +45,7 @@ function vectors = force_column_numeric (vectors, varargin)
 %       cd/match_reciprocals.m
 %       cd/m3ha_create_initial_neuronparams.m
 %       cd/m3ha_create_simulation_params.m
+%       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/plot_cfit_pulse_response.m
 

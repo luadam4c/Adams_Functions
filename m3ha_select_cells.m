@@ -1,7 +1,8 @@
 function [cellIds, cellNames, swpIndGincrPcondAllCells] = ...
-            m3ha_select_cells (swpIdxSCPGV, swpIndToFit, fileNames)
+                m3ha_select_cells (swpIdxSCPGV, swpIndToFit, fileNames)
 %% Select the cells that will be used for fitting
-% Usage: 
+% Usage: [cellIds, cellNames, swpIndGincrPcondAllCells] = ...
+%               m3ha_select_cells (swpIdxSCPGV, swpIndToFit, fileNames)
 % Explanation: 
 %   Finds cells with traces present in swpIndToFit
 %       for all g_incr - pharm condition pairs
@@ -19,7 +20,7 @@ function [cellIds, cellNames, swpIndGincrPcondAllCells] = ...
 %
 % Used by:
 %       cd/singleneuronfitting42.m and later versions
-%
+
 % File History:
 % 2017-05-20 Moved from singleneuronfitting2.m
 % 2017-05-22 Changed line width and indentation
@@ -27,6 +28,7 @@ function [cellIds, cellNames, swpIndGincrPcondAllCells] = ...
 % 2018-11-15 Moved to Adams_Functions
 % 2018-11-15 Now uses print_cellstr.m
 % 2018-11-15 Improved documentation
+% 2018-11-15 CellIds is now a numeric array
 
 %% Hard-coded parameters
 % The following must be consistent with dclampDataExtractor.m
@@ -76,7 +78,7 @@ for iCell = 1:nCells
     end
 
     % If any pharm-g incr pair has no trace found, don't use this cell
-    if any(cellfun(@isempty, swpIndThisCell))
+    if any(any(cellfun(@isempty, swpIndThisCell)))
         toUse = false;
     end
 
@@ -86,7 +88,7 @@ for iCell = 1:nCells
         ctSelected = ctSelected + 1;
 
         % Store cell ID #
-        cellIds{ctSelected} = iCell;             
+        cellIds(ctSelected) = iCell;             
 
         % Store cell name
         %   Note: This takes the first 7 characters of the first sweep's name

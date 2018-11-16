@@ -1,10 +1,20 @@
-function [dCpr, dIpscr, thisInd, dCprAll] = m3ha_import_raw_traces (dataDir, nrows, nprow, g200pInd, pInd, rowInd, fnrow, vrow, cpstartwin, cprwinOrig, currentPulseAmplitudeOrig, mvw, actVhold, ipscTimeOrig, ipscDur, initialSlopes)
+function [dCpr, dIpscr, sweepInfoCpr, sweepInfoIpscr, dCprAll] = ...
+                m3ha_import_raw_traces (dataDir, outFolderName, ...
+                    nRows, nColumns, ...
+                    swpIndG200P, swpIndPCond, swpIndRow, ...
+                    cpStartWindowOrig, cprWinOrig, timeToStabilize, ...
+                    fnrow, vrow, currentPulseAmplitudeOrig, mvw, actVhold, ...
+                    ipscTimeOrig, ipscDur, initialSlopes, ...
+                    epasEstimate, RinEstimate, ...
+                    correctDcStepsFlag, oldAverageCprFlag, generateDataFlag)
 %% Import raw traces
+% Usage: 
 %
 % Requires:
 %       cd/compute_rms_error.m
 %       cd/correct_unbalanced_bridge.m
 %       cd/find_ind_str_in_cell.m
+%       cd/force_column_numeric.m
 %       cd/print_cellstr.m
 %
 % Used by:
@@ -20,7 +30,7 @@ function [dCpr, dIpscr, thisInd, dCprAll] = m3ha_import_raw_traces (dataDir, nro
 % 2018-06-20 Now uses initialSlopes to take 
 %               out cpr traces with out-of-balance bridges
 % 2018-06-21 Fixed bugs
-% 2018-07-09 Added numswpsCpr as output
+% 2018-07-09 Added nSwpsCpr as output
 % 2018-07-09 Now uses compute_rms_error() instead of rms_Gaussian()
 % 2018-07-31 Use correct_unbalanced_bridge.m to correct for out-of-balance bridges
 % 2018-08-09 Now computes sweep weights here
@@ -30,8 +40,6 @@ function [dCpr, dIpscr, thisInd, dCprAll] = m3ha_import_raw_traces (dataDir, nro
 
 % Hard-coded constants
 PA_PER_NA = 1000;
-
-global outparams
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -46,53 +54,72 @@ if ~isdeployed
 end
 
 %% Prepare
-% Find total number of sweeps to import
-numswps = nrows * nprow;                        % total number of traces used
+% Count the total number of sweeps to import
+nSweeps = nRows * nColumns;
 
 % Find the expected current pulse start time
-cpstartExpected = mean(cpstartwin);
+cpstartExpected = mean(cpStartWindowOrig);
 
-% Read from initialStopes
+% Compute desired window in which the current pulse response would lie (ms)
+cprWindow = cprWinOrig + timeToStabilize;
+
+% Compute desired time of IPSC application (ms)
+timeIPSC = ipscTimeOrig + timeToStabilize;
+
+% Read from initialSlopes
 initialSlopeFilenames = initialSlopes.filenamesSorted;
 initialSlopeThreshold1IndexBalanced = initialSlopes.iThreshold1Balanced;
 initialSlopeThreshold2IndexBalanced = initialSlopes.iThreshold2Balanced;
 
 % Create log file name
-logFileName = fullfile(outparams.outFolderName, sprintf('%s.log', mfilename));
+logFileName = fullfile(outFolderName, sprintf('%s.log', mfilename));
 fid = fopen(logFileName, 'w');
 
 %% Import sweeps
 % Initialize output variables
-dCpr = cell(numswps, 1);                        % stores current pulse response traces for fitting
-dIpscr = cell(numswps, 1);                      % stores IPSC response traces for fitting
-baseNoiseIpscr = zeros(numswps, 1);             % stores baseline noise in voltage recordings
-filenames = cell(numswps, 1);                   % stores file names of traces used
-currentPulseAmplitude = zeros(numswps, 1);      % stores the current pulse amplitude (nA)
-% outparams.cpstart = zeros(numswps, 1);        % stores the time of current pulse application (ms)
-holdPotentialIpscr = zeros(numswps, 1);         % stores the holding potentials right before IPSC application (mV)
+dCpr = cell(nSweeps, 1);                        % stores current pulse response traces for fitting
+dIpscr = cell(nSweeps, 1);                      % stores IPSC response traces for fitting
+fileNames = cell(nSweeps, 1);                   % stores file names of traces used
+swpIdxIpscr = zeros(nSweeps, 1);                % stores the sweep index for each trace used
+currentPulseAmplitude = zeros(nSweeps, 1);      % stores the current pulse amplitude (nA)
+% cpstart = zeros(nSweeps, 1);                  % stores the time of current pulse application (ms)
+baseNoiseIpscr = zeros(nSweeps, 1);             % stores baseline noise in voltage recordings
+holdCurrentIpscr = zeros(nSweeps, 1);           % stores estimated holding currents
+holdPotentialIpscr = zeros(nSweeps, 1);         % stores the holding potentials right before IPSC application (mV)
 ct = 0;                                         % counts number of raw traces imported
-for rowi = 1:nrows
-    for k = 1:nprow
+for iRow = 1:nRows
+    for iCol = 1:nColumns
+        % Increment the sweep count
         ct = ct + 1;
-        if ~isempty(g200pInd{1})
-            thisInd(ct) = g200pInd{rowi}(k);
-        elseif ~isempty(pInd{1})
-            thisInd(ct) = pInd{rowi}(k);
-        elseif ~isempty(rowInd{1})
-            thisInd(ct) = rowInd{rowi}(k);
+
+        % Decide on the sweep index to import
+        if ~isempty(swpIndG200P{1})
+            swpIdx = swpIndG200P{iRow}(iCol);
+        elseif ~isempty(swpIndPCond{1})
+            swpIdx = swpIndPCond{iRow}(iCol);
+        elseif ~isempty(swpIndRow{1})
+            swpIdx = swpIndRow{iRow}(iCol);
         end
-        filenames{ct} = fnrow{thisInd(ct)};
-        m = matfile(fullfile(dataDir, '/matfiles/', filenames{ct}));
-        fprintf('Using trace %s\n', filenames{ct});
+
+        % Get the current file name
+        fileName = fnrow{swpIdx};
+
+        % Print message
+        fprintf('Using trace %s ... \n', fileName);
+
+        % Open the matfile
+        m = matfile(fullfile(dataDir, 'matfiles', fileName));
 
         % Use original data
         tvecOrig = m.d_orig(:, 1);
 
+% TODO: fix below
+
         % Find current pulse response window
-        %   Must be sure to include current pulse start and cpstartwinLength adjustment
-        acprwinBegin = find(tvecOrig >= cprwinOrig(1), 1);
-        cpstartwinLength = cpstartwin(2) - cpstartwin(1);
-        acprwinEnd = find(tvecOrig <= cprwinOrig(2) + cpstartwinLength, 1, 'last');
+        %   Must be sure to include current pulse start and cpStartWindowOrigLength adjustment
+        acprwinBegin = find(tvecOrig >= cprWinOrig(1), 1);
+        cpStartWindowOrigLength = cpStartWindowOrig(2) - cpStartWindowOrig(1);
+        acprwinEnd = find(tvecOrig <= cprWinOrig(2) + cpStartWindowOrigLength, 1, 'last');
         acprwinInd = acprwinBegin:acprwinEnd;       % indices corresponding to approximate cpr window
 
         % Use original data for current pulse response
@@ -105,13 +132,13 @@ for rowi = 1:nrows
         vvecCpr = m.d_orig(acprwinInd, 4);          % voltage vector of original data in mV
 
         % Find the expected baseline window length in samples
-        cprbasewinLength = round((cpstartExpected - cprwinOrig(1))/simsCpr);
+        cprbasewinLength = round((cpstartExpected - cprWinOrig(1))/simsCpr);
 
         % Find current pulse amplitude (convert to nA) and start of current pulse application
-        currentPulseAmplitude(ct, 1) = currentPulseAmplitudeOrig(thisInd(ct)) / PA_PER_NA;
-        cpstartwinEnd = find(tvecCpr <= cpstartwin(2), 1, 'last');
-        cpstartInd = find(ivecCpr(1:cpstartwinEnd) > currentPulseAmplitude(ct, 1) * 0.25, 1, 'last');
-%         outparams.cpstart(ct, 1) = tvecCpr(cpstartInd);                 % current pulse start in ms
+        currentPulseAmplitude(ct, 1) = currentPulseAmplitudeOrig(swpIdx) / PA_PER_NA;
+        cpStartWindowOrigEnd = find(tvecCpr <= cpStartWindowOrig(2), 1, 'last');
+        cpstartInd = find(ivecCpr(1:cpStartWindowOrigEnd) > currentPulseAmplitude(ct, 1) * 0.25, 1, 'last');
+%         cpstart(ct, 1) = tvecCpr(cpstartInd);                 % current pulse start in ms
 
         % Find the number of indices to pad before current pulse response data
         cprstartInd = cpstartInd - cprbasewinLength;
@@ -122,7 +149,7 @@ for rowi = 1:nrows
         end
 
         % Find indices for current pulse response relative to tvecCpr
-        cprwinLength = round((cprwinOrig(2) - cprwinOrig(1))/simsCpr);
+        cprwinLength = round((cprWinOrig(2) - cprWinOrig(1))/simsCpr);
         cprendInd = cprstartInd + cprwinLength - 1;
         if cprstartInd < 1
             cprInd = 1:cprendInd;
@@ -131,12 +158,12 @@ for rowi = 1:nrows
         end
 
         % Get full time vector of current pulse response
-        tvecCprLength = round(outparams.cprWindow(2)/simsCpr);
+        tvecCprLength = round(cprWindow(2)/simsCpr);
         tvecCprFull = simsCpr * (1:tvecCprLength)';
         dCpr{ct}(:, 1) = tvecCprFull;                           % time vector of current pulse response
 
         % Pad raw traces so that current pulses lie at 2100-2110 ms
-        nIndToPadBeforeCpr = round(outparams.cprWindow(1)/simsCpr);
+        nIndToPadBeforeCpr = round(cprWindow(1)/simsCpr);
         nIndToPad = nIndToPadCprBase + nIndToPadBeforeCpr;
         vvectopad = NaN * ones(1, nIndToPad)';
         ivectopad = zeros(1, nIndToPad)';
@@ -154,12 +181,17 @@ for rowi = 1:nrows
         vvec = m.d_mfrs(:, 4);  % voltage vector of median-filtered then resampled data in mV
 
         % Holding potential was already extracted during data analysis
-        holdPotentialIpscr(ct, 1) = actVhold(thisInd(ct));    
+        holdPotentialIpscr(ct, 1) = actVhold(swpIdx);    
 
-        % Pad raw traces so that IPSCs begin at 3000 ms (outparams.timeIPSC) 
+        % Estimate the holding currents (nA) based on estimated
+        %   input resistance and resting membrane potential
+        %   I = (V - epas) / R
+        holdCurrentIpscr = (holdPotentialIpscr - epasEstimate) / RinEstimate;
+
+        % Pad raw traces so that IPSCs begin at 3000 ms (timeIPSC) 
         %            and goes on for 7000 ms (ipscDur)
         sims = tvec(2) - tvec(1);       % Should be 1 ms
-        about3000 = round(outparams.timeIPSC/sims)*sims;
+        about3000 = round(timeIPSC/sims)*sims;
         tvectopad = (sims:sims:about3000)';
         vvectopad = holdPotentialIpscr(ct, 1) * ones(1, length(tvectopad))';
         ivectopad = zeros(1, length(tvectopad))';
@@ -179,16 +211,30 @@ for rowi = 1:nrows
         indBaseline = 1:indofipsc-1;
         baseline = vvec(indBaseline);
         baseNoiseIpscr(ct) = compute_rms_error(baseline);
+
+% TODO: fix above
+
+        % Store in arrays
+        swpIdxIpscr(ct) = swpIdx;
+        fileNames{ct} = fileName;
     end
 end
-if ct ~= numswps
+if ct ~= nSweeps
     error('Number of traces imported incorrect!!');
 else
     fprintf('\n');
 end
 
+% Store the file names
+fileNamesIpscr = fileNames;
+fileNamesCpr = fileNames;
+
+% Store the current pulse amplitudes
+currentPulseAmplitudeIpscr = currentPulseAmplitude;
+currentPulseAmplitudeCpr = currentPulseAmplitude;
+
 %% Fix current pulse response traces that may have out-of-balance bridges
-if outparams.correctDcStepsFlag
+if correctDcStepsFlag
     % Find the index of file in all files sorted by initial slope
     %   in descending order
     ftemp = @(x) find_ind_str_in_cell(x, initialSlopeFilenames);
@@ -198,13 +244,13 @@ if outparams.correctDcStepsFlag
     isOutOfBalance = ...
         cellfun(@(x) ftemp(x) < initialSlopeThreshold2IndexBalanced || ...
                     ftemp(x) > initialSlopeThreshold1IndexBalanced, ...
-                    filenames);
+                    fileNames);
 
     % Print out an appropriate message
     if any(isOutOfBalance)
         fprintf(fid, ['The following current pulse responses will be ', ...
                         'corrected due to out-of-balance bridges:\n']);
-        print_cellstr(filenames(isOutOfBalance), ...
+        print_cellstr(fileNames(isOutOfBalance), ...
                       'FileID', fid, 'OmitBraces', true, ...
                       'OmitQuotes', true, 'Delimiter', '\n');
     else
@@ -213,7 +259,7 @@ if outparams.correctDcStepsFlag
     end
 
     % Correct for traces that may have out-of-balance bridges
-    parfor iSwp = 1:numswps
+    parfor iSwp = 1:nSweeps
         if isOutOfBalance(iSwp)
             % Get the old trace
             vvecOld = dCpr{iSwp}(:, 2);
@@ -228,16 +274,19 @@ if outparams.correctDcStepsFlag
     end
 end
 
+% Save all the data
+dCprAll = dCpr;
+
 %% Average the current pulse responses according to vHold
-if outparams.oldAverageCprFlag
+if oldAverageCprFlag
     % Find the holding voltage assigned for each sweep
-    vholdThis = vrow(thisInd);
+    vholdThis = vrow(swpIdxIpscr);
 
     % Get the number of data points for the current pulse response
     ndpCpr = size(dCpr{1}, 1);
 
     % Find unique vHold values
-    vUnique = sort(unique(vholdThis));
+    vUnique = force_column_numeric(sort(unique(vholdThis)));
     nVhold = length(vUnique);
 
     % Group the traces by unique vHold values, then average the grouped traces
@@ -269,21 +318,33 @@ if outparams.oldAverageCprFlag
         dataCprGrouped{iVhold} = dCprGroupedThisVhold;
         dataCprAveraged{iVhold} = dCprAveragedThisVhold;
     end
-else
-    dataCprAveraged = dCpr;
+
+    % Rename as new dCpr
+    dCpr = dataCprAveraged;
+
+    % Count the number of sweeps for the current pulse response
+    nSwpsCpr = numel(dCpr);
+
+    % Define file names by the vhold level
+    fileNamesCpr = arrayfun(@(x) strcat(fileNames{1}(1:7), ...
+                            '_vhold', num2str(x)), vUnique, ...
+                            'UniformOutput', false);
+
+    % Use an averaged current pulse amplitude
+    currentPulseAmplitudeCpr = mean(currentPulseAmplitude) * ones(nSwpsCpr, 1);
 end
 
 %% Find the holding potential, holding current and baseline noise
 % Count the number of sweeps for the current pulse response
-numswpsCpr = numel(dataCprAveraged);
+nSwpsCpr = numel(dCpr);
 
 % Find the holding potential, holding current and baseline noise
-baseNoiseCpr = zeros(numswpsCpr, 1);
-holdCurrentCpr = zeros(numswpsCpr, 1);
-holdPotentialCpr = zeros(numswpsCpr, 1);
-for iSwp = 1:numswpsCpr
+baseNoiseCpr = zeros(nSwpsCpr, 1);
+holdCurrentCpr = zeros(nSwpsCpr, 1);
+holdPotentialCpr = zeros(nSwpsCpr, 1);
+for iSwp = 1:nSwpsCpr
     % Get the current voltage trace
-    vCprAveragedThis = dataCprAveraged{iSwp}(:, 2);
+    vCprAveragedThis = dCpr{iSwp}(:, 2);
 
     % Find the baseline noise
     indBaselineCpr = nIndToPadBeforeCpr + (1:cprbasewinLength);
@@ -307,7 +368,7 @@ for iSwp = 1:numswpsCpr
     baseNoiseCpr(iSwp) = cprBaselineNoise;
 end
 
-if outparams.generateDataFlag
+if generateDataFlag
     % Estimate the corresponding variations in holding current (nA)
     holdCurrentNoiseIpscr = (baseNoiseIpscr / RinEstimate) * 5;
     holdCurrentNoiseCpr = (baseNoiseCpr / RinEstimate) * 5;
@@ -320,26 +381,14 @@ end
 sweepWeightsCpr = 1 ./ baseNoiseCpr;
 sweepWeightsIpscr = 1 ./ baseNoiseIpscr;
 
-%% Wrap up
-% Rename as new dCpr
-dCprAll = dCpr;
-dCpr = dataCprAveraged;
-
-% Save in outparams
-outparams.filenames = filenames;
-outparams.currentPulseAmplitude = currentPulseAmplitude;
-
-outparams.holdPotentialCpr = holdPotentialCpr;
-outparams.holdCurrentCpr = holdCurrentCpr;
-outparams.baseNoiseCpr = baseNoiseCpr;
-outparams.holdCurrentNoiseCpr = holdCurrentNoiseCpr;
-outparams.sweepWeightsCpr = sweepWeightsCpr;
-
-outparams.holdPotentialIpscr = holdPotentialIpscr;
-outparams.holdCurrentIpscr = holdCurrentIpscr;
-outparams.baseNoiseIpscr = baseNoiseIpscr;
-outparams.holdCurrentNoiseIpscr = holdCurrentNoiseIpscr;
-outparams.sweepWeightsIpscr = sweepWeightsIpscr;
+%% Save results
+% Save in sweepInfo tables
+sweepInfoCpr = table(fileNamesCpr, currentPulseAmplitudeCpr, ...
+                    holdPotentialCpr, holdCurrentCpr, baseNoiseCpr, ...
+                    holdCurrentNoiseCpr, sweepWeightsCpr);
+sweepInfoIpscr = table(fileNamesIpscr, swpIdxIpscr, currentPulseAmplitudeIpscr, ...
+                    holdPotentialIpscr, holdCurrentIpscr, baseNoiseIpscr, ...
+                    holdCurrentNoiseIpscr, sweepWeightsIpscr);
 
 % Close log file
 fclose(fid);
@@ -351,14 +400,14 @@ OLD CODE:
 
 % Find approximate current pulse response window
 % Must be sure to include current pulse start and at least 500 ms after current pulse start
-acprwinBegin = find(m.d_orig(:, 1) >= cpstartwin(1), 1);
-cpstartwinLength = cpstartwin(2) - cpstartwin(1);
-acprwinEnd = find(m.d_orig(:, 1) <= cprwinOrig(2) + cpstartwinLength/2, 1, 'last');
+acprwinBegin = find(m.d_orig(:, 1) >= cpStartWindowOrig(1), 1);
+cpStartWindowOrigLength = cpStartWindowOrig(2) - cpStartWindowOrig(1);
+acprwinEnd = find(m.d_orig(:, 1) <= cprWinOrig(2) + cpStartWindowOrigLength/2, 1, 'last');
 acprwinInd = acprwinBegin:acprwinEnd;       % indices corresponding to approximate cpr window
 
 % Find indices for current pulse response relative to tvecCpr
 cprstartInd = cpstartInd;
-cprwinLength = cprwinOrig(2) - cprwinOrig(1);
+cprwinLength = cprWinOrig(2) - cprWinOrig(1);
 cprendInd = cprstartInd + round(cprwinLength/simsCpr);
 cprInd = (cprstartInd + 1):cprendInd;       % since we are padding later, we need the +1
 
@@ -384,7 +433,7 @@ dCpr{ct}(:, 2) = vertcat(vvectopad, vvec_shifted);    % voltage vector of curren
 dCpr{ct}(:, 3) = vertcat(ivectopad, ivec_shifted);    % current vector of current pulse response
 dCpr{ct}(:, 4) = vertcat(gvectopad, gvec_shifted);    % conductance vector of current pulse response
 
-holdPotentialCpr = zeros(numswps, 1);          % stores the holding potentials right before cp application (mV)
+holdPotentialCpr = zeros(nSweeps, 1);          % stores the holding potentials right before cp application (mV)
 
 %       /home/Matlab/Kojis_Functions/rms_Gaussian.m
     addpath(fullfile(functionsDirectory, 'Kojis_Functions')); 
@@ -420,14 +469,14 @@ end
 
 initialSlopeThresholdIndexToInclude = initialSlopes.iThreshold1Balanced;
 
-holdCurrentIpscr = zeros(numswps, 1);                % stores the holding currents recorded in Christine's Excel sheet (nA)
+holdCurrentIpscr = zeros(nSweeps, 1);                % stores the holding currents recorded in Christine's Excel sheet (nA)
 
 % Average the holding currents
 holdCurrentThisVhold = mean(holdCurrentIpscr(vholdThis == vnow));
 
 baseNoiseCpr = zeros(1, nVhold);
 
-baseNoiseIpscr = zeros(1, numswps);                  % stores baseline noise in voltage recordings
+baseNoiseIpscr = zeros(1, nSweeps);                  % stores baseline noise in voltage recordings
 
 isOutOfBalance = ...
     cellfun(@(x) ftemp(x) < initialSlopeThreshold2IndexBalanced || ...
@@ -453,12 +502,12 @@ print_cellstr(fileNamesThisVhold(isOutOfBalance), ...
               'FileID', fid, 'OmitBraces', true, ...
               'OmitQuotes', true, 'Delimiter', '\n');
 
-% Get the corresponding filenames
-fileNamesThisVhold = filenames(vholdThis == vnow);
+% Get the corresponding fileNames
+fileNamesThisVhold = fileNames(vholdThis == vnow);
 
 
 % Number of current pulse response traces to fit
-numswpsCpr = nVhold;
+nSwpsCpr = nVhold;
 
 % Find the number of traces
 nTracesThisVhold = numel(dCprGroupedThisVhold);
@@ -466,7 +515,7 @@ nTracesThisVhold = numel(dCprGroupedThisVhold);
 %% Get other information for each sweep
 % Find the holding current used by Christine for each sweep, 
 %   converting from pA to nA
-holdCurrentIpscr = actIhold(thisInd)' / 1000;
+holdCurrentIpscr = actIhold(swpIdxIpscr)' / 1000;
 
 % Compute the regression coefficient
 % RinRegression = (holdCurrentIpscr - mean(holdCurrentIpscr)) \ ...
@@ -477,7 +526,7 @@ holdCurrentIpscr = actIhold(thisInd)' / 1000;
 % Ohm's Law: IR + epas = V
 %     units: [nA] * [MOhm] + [mV] = [mV]
 % X * w = V
-X = ones(numswps, 2);
+X = ones(nSweeps, 2);
 X(:, 1) = holdCurrentIpscr;
 V = holdPotentialIpscr;
 
@@ -490,7 +539,7 @@ epasEstimate = w(2);                % resting membrane potential (mV)
 if RinEstimate <= 0
     colorRin = 'r';
 else
-    colorRin = 'k';
+    colorRin = 'iCol';
 end
 
 % Construct a vector of holding currents
@@ -508,7 +557,7 @@ plot(holdCurrentToPlot, holdPotentialPredicted, 'r')
 text(0.1, 0.9, ['Rin = ', num2str(RinEstimate), ' MOhm'], ...
     'Units', 'normalized', 'Color', colorRin);
 text(0.1, 0.85, ['epas = ', num2str(epasEstimate), ' mV'], ...
-    'Units', 'normalized', 'Color', 'k');
+    'Units', 'normalized', 'Color', 'iCol');
 % text(0.1, 0.8, ['Slope = ', num2str(RinRegression), ' MOhm'], ...
 %     'Units', 'normalized', 'Color', 'r');
 title(['Voltage-Current relationship for ', outparams.cellName]);
@@ -520,6 +569,23 @@ figName = fullfile(outparams.outFolderName, ...
 saveas(h, figName);
 close(h)
 
+global outparams
+
+outparams.fileNames = fileNames;
+outparams.swpIdxIpscr = swpIdxIpscr;
+outparams.currentPulseAmplitude = currentPulseAmplitude;
+
+outparams.holdPotentialCpr = holdPotentialCpr;
+outparams.holdCurrentCpr = holdCurrentCpr;
+outparams.baseNoiseCpr = baseNoiseCpr;
+outparams.holdCurrentNoiseCpr = holdCurrentNoiseCpr;
+outparams.sweepWeightsCpr = sweepWeightsCpr;
+
+outparams.holdPotentialIpscr = holdPotentialIpscr;
+outparams.holdCurrentIpscr = holdCurrentIpscr;
+outparams.baseNoiseIpscr = baseNoiseIpscr;
+outparams.holdCurrentNoiseIpscr = holdCurrentNoiseIpscr;
+outparams.sweepWeightsIpscr = sweepWeightsIpscr;
 
 %}
 

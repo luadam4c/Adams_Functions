@@ -19,6 +19,7 @@ function structNew = merge_structs (struct1, struct2, varargin)
 %
 % Used by:    
 %       cd/fit_and_estimate_passive_params.m
+%       ~/m3ha/optimizer4gabab/singleneuronfitting42.m
 
 % File History:
 % 2018-10-15 Created by Adam Lu
