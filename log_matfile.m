@@ -6,7 +6,7 @@ function log_matfile(fullmatfilepath)
 % TODO: annotate
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/print_next_in_csv.m
+%       cd/print_next_in_csv.m
 %
 % Used by:
 %       /media/adamX/m3ha/data_dclamp/remediate_dclampdatalog_take4_20171227.m

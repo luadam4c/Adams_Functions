@@ -26,6 +26,7 @@ function check_dir (directories, varargin)
 %       cd/check_subdir.m
 %       cd/compute_and_plot_evoked_LFP.m
 %       cd/create_input_file.m
+%       cd/log_arraytext.m
 %       cd/m3ha_create_initial_neuronparams.m
 %       cd/parse_all_abfs.m
 %       cd/plot_all_abfs.m
