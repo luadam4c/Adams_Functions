@@ -16,8 +16,8 @@ function vvecNew = correct_unbalanced_bridge (vvecOld, ivecOld, varargin)
 %
 % Used by:
 %       cd/m3ha_correct_unbalanced_bridge.m
+%       cd/m3ha_import_raw_traces.m
 %       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
-%       /media/adamX/m3ha/optimizer4gabab/import_rawtraces.m
 %
 % File History:
 % 2018-07-25 BT - Created by Brian

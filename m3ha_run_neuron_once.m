@@ -212,6 +212,7 @@ function [err, hfig, simData] = ...
 %       cd/bar_w_CI.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_residuals.m
+%       cd/compute_rms_error.m
 %       cd/create_colormap.m
 %       cd/extract_columns.m
 %       cd/extract_subvectors.m

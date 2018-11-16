@@ -140,11 +140,15 @@ Last Updated 2018-11-15 by Adam Lu
 - [**m3ha_create_initial_neuronparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_create_initial_neuronparams.m): Creates initial NEURON parameters for each cell
 - [**m3ha_create_simulation_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_create_simulation_params.m): Generates a table of simulation parameters from table(s) of neuron parameters
 - [**m3ha_create_single_neuron_commands.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_create_single_neuron_commands.m): Generates simulation commands to be read by NEURON from a table of simulation parameters
+- [**m3ha_determine_row_conditions.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_determine_row_conditions.m): Determine what each row would be
 - [**m3ha_find_ind_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ind_to_fit.m): Find indices of fnrow in dclampdatalog_take4.mat that will be used for fitting
+- [**m3ha_import_raw_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_import_raw_traces.m): Import raw traces
 - [**m3ha_locate_homedir.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_locate_homedir.m): Locate the first home directory that exists for the GAT blockade project
 - [**m3ha_parse_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_parse_mat.m): Parses and loads a set of matfiles for the GAT blockade project
 - [**m3ha_plot_individual_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_individual_traces.m): Plots individual voltage traces
 - [**m3ha_run_neuron_once.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_run_neuron_once.m): Runs "one iteration" of NEURON (once for each of the sweeps)
+- [**m3ha_select_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_cells.m): Select the cells that will be used for fitting
+- [**m3ha_select_raw_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_raw_traces.m): Select raw traces to import
 - [**m3ha_specs_for_fitmode.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_specs_for_fitmode.m): Specifications depending on fitMode for the GAT blockade project
 - [**make_loopedparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/make_loopedparams.m): Construct parameters to change for each trial from loopmode, pnames, pislog, pmin, pmax, pinc 
 - [**mat2sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/mat2sheet.m): Converts .mat files to a spreadsheet file(s) (type specified by the 'SheetType' argument)

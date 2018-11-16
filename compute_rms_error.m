@@ -39,8 +39,8 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 % Used by:
 %       cd/compute_baseline_noise.m
 %       cd/compute_sweep_errors.m
-%       ~/m3ha/optimizer4gabab/import_rawtraces.m
-%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
+%       cd/m3ha_import_raw_traces.m
+%       cd/m3ha_run_neuron_once.m
 %
 % File History:
 % 2018-07-09 Modified from the built-in rms.m

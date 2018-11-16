@@ -37,7 +37,7 @@ function string = print_cellstr (cellStr, varargin)
 %                   - 'OmitNewline': whether to omit the newline character
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'ToPrint' - whether to actually print the string
+%                   - 'ToPrint': whether to actually print the string
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %                   - 'FileID': file ID returned by fopen()
@@ -47,11 +47,12 @@ function string = print_cellstr (cellStr, varargin)
 % Requires:
 %
 % Used by:
+%       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_parse_mat.m
+%       cd/m3ha_select_cells.m
 %       cd/print_or_show_message.m
 %       cd/print_and_show_message.m
 %       cd/print_structure.m
-%       /media/adamX/m3ha/optimizer4gabab/import_rawtraces.m
 %
 % File History:
 % 2018-01-31 Modified from code in find_data_files.m by Mira
