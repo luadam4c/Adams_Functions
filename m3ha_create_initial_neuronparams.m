@@ -239,6 +239,9 @@ neuronParamsTableDefault = ...
             'RowNames', neuronParamNames, 'VariableNames', columnNames);
 
 %% Do the job
+% Print message
+fprintf('Creating initial set of NEURON parameters for all cells ... \n');
+
 % Read in the passive parameters table
 passiveTable = readtable(passiveFileName);
 

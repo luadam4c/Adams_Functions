@@ -1,13 +1,13 @@
 function [nColumns, fileNames] = ...
                 m3ha_select_raw_traces (columnMode, rowConditions, ...
                     attemptNumber, iCellToFit, swpIdxSCPGV, swpIndToFit, ...
-                    swpIndGincrPcondAllCells, cellNames, ...
+                    swpIndByCondition, cellNamesToFit, ...
                     fnrow, bursttime, ltspeaktime, maxnoise)
 %% Select raw traces to import
 % Usage: [nColumns, swpIndG200P, swpIndPCond, swpIndRow] = ...
 %               m3ha_select_raw_traces (columnMode, rowConditions, ...
 %                   attemptNumber, iCellToFit, swpIdxSCPGV, swpIndToFit, ...
-%                   swpIndGincrPcondAllCells, cellNames, ...
+%                   swpIndByCondition, cellNamesToFit, ...
 %                    fnrow, bursttime, ltspeaktime, maxnoise)
 %
 % Used by:
@@ -69,13 +69,10 @@ end
 % Initialize nColumns
 nColumns = 0;
 
-% Get the current cell name
-cellName = cellNames{iCellToFit};
-
-% Get the sweep indices for each g incr-pharm condition
-swpIndGincrPcond = swpIndGincrPcondAllCells{iCellToFit};
-
 %% Do the job
+% Print message
+fprintf('Selecting the traces for this cell to fit ... \n');
+
 % Find all sweep indices with bursts
 swpIndHasBursts = find(bursttime > 0);
 
@@ -98,6 +95,12 @@ swpIndTemp5 = cell(nGIncr, nPCond);
 % Decide on the sweeps to use for each condition
 switch columnMode
 case 1
+    % Get the current cell name
+    cellName = cellNamesToFit{iCellToFit};
+
+    % Get the sweep indices for each g incr-pharm condition
+    swpIndGincrPcond = swpIndByCondition{iCellToFit};
+
     if attemptNumber < 3
         fprintf('Fitting across trials of cell E091710 ... \n');
     else
@@ -144,22 +147,17 @@ case 1
         nColumns = min(cellfun(@length, swpIndPCond));
     case 3
         % Attempt #3: Use all traces of each cell to fit @ 100%, 200%, 400% g_incr
-        fprintf('Attempt #3: Use all traces of ');
-        fprintf('%s @ 100p, 200p, 400p g_incr ... \n', ...
-                    cellName);
+        fprintf(['Attempt #3: Use all traces of ', ...
+                    '%s @ 100p, 200p, 400p g_incr ... \n'], cellName);
+
+        % Use all data already filtered
         if strcmpi(rowType, 'pharm')
-            for iRow = 1:nRows
-                swpIndRow{iRow} = [];
-                for iG = 1:nGIncr
-                    swpIndRow{iRow} = [swpIndRow{iRow}; ...
-                                swpIndGincrPcond{iG, iPEachRow(iRow)}];
-                end
-            end
+            swpIndRow = arrayfun(@(x) reshape([swpIndGincrPcond{:, x}], [], 1), ...
+                                transpose(1:nRows), 'UniformOutput', false);
+
         elseif strcmpi(rowType, 'pharm-gincr') 
-            for iRow = 1:nRows
-                swpIndRow{iRow} = ...
-                    swpIndGincrPcond{iGEachRow(iRow), iPEachRow(iRow)};
-            end
+            swpIndRow = arrayfun(@(x, y) swpIndGincrPcond{x, y}, ...
+                                iGEachRow, iPEachRow, 'UniformOutput', false);
         end
 
         % Make sure each row has the same number of traces
@@ -168,24 +166,23 @@ case 1
         % Attempt #4: Use 12 traces of each cell to fit 
         %   (one "best trial" for each of 4 pharm conditions X 100%, 200%, 400% g_incr)
         fprintf('Attempt #4: Use 12 traces (one "best trial" for each condition)');
-        fprintf(' of %s @ 100p, 200p, 400p g_incr ... \n', ...
-                    cellName);
+        fprintf(' of %s @ 100p, 200p, 400p g_incr ... \n', cellName);
         if strcmpi(rowType, 'pharm')
             % Take only the first trace from each condition
             for iRow = 1:nRows
                 swpIndRow{iRow} = [];
                 for iG = 1:nGIncr
                     % Select "most representative trace"
-                    idxSelected = select_trace(swpIndGincrPcond, ...
+                    swpIdxSelected = select_trace(swpIndGincrPcond, ...
                                                 iG, iPEachRow(iRow), ...
                                                 swpIndHasLts, swpIndHasBursts, ...
                                                 maxnoise);
-                    if isempty(idxSelected)
+                    if isempty(swpIdxSelected)
                         error(['Most representative trace not found', ...
                                 ' for iG == %d, iP == %d!'], ...
                                 iG, iPEachRow(iRow));
                     else
-                        swpIndRow{iRow} = [swpIndRow{iRow}; idxSelected];
+                        swpIndRow{iRow} = [swpIndRow{iRow}; swpIdxSelected];
                     end
                 end
             end
@@ -195,16 +192,16 @@ case 1
             % Take only the first trace from each condition
             for iRow = 1:nRows
                 % Select "most representative trace"
-                idxSelected = select_trace(swpIndGincrPcond, ...
+                swpIdxSelected = select_trace(swpIndGincrPcond, ...
                                             iGEachRow(iRow), ...
                                             iPEachRow(iRow), ...
                                             swpIndHasLts, swpIndHasBursts, maxnoise);
-                if isempty(idxSelected)
+                if isempty(swpIdxSelected)
                     error(['Most representative trace not found', ...
                             ' for iG == %d, iP == %d!'], ...
                             iGEachRow(iRow), iPEachRow(iRow));
                 else
-                    swpIndRow{iRow} = idxSelected;
+                    swpIndRow{iRow} = swpIdxSelected;
                 end
             end
             % Number of traces per row
@@ -355,12 +352,12 @@ case 2
                 for iG = 1:nGIncr   % for each g incr
                     for iFit = iCellToFit             % for each cell to fit
                         % Select "most representative trace"
-                        idxSelected = select_trace(swpIndGincrPcondAllCells{iFit}, ...
+                        swpIdxSelected = select_trace(swpIndByCondition{iFit}, ...
                                                     iG, ...
                                                     iPEachRow(iRow), ...
                                                     swpIndHasLts, swpIndHasBursts, ...
                                                     maxnoise);
-                        swpIndRow{iRow} = [swpIndRow{iRow}; idxSelected];
+                        swpIndRow{iRow} = [swpIndRow{iRow}; swpIdxSelected];
                     end
                 end
 
@@ -382,12 +379,12 @@ case 2
                 % Build swpIndRow
                 for iFit = iCellToFit             % for each cell to fit
                     % Select "most representative trace"
-                    idxSelected = select_trace(swpIndGincrPcondAllCells{iFit}, ...
+                    swpIdxSelected = select_trace(swpIndByCondition{iFit}, ...
                                                 iGEachRow(iRow), ...
                                                 iPEachRow(iRow), ...
                                                 swpIndHasLts, swpIndHasBursts, ...
                                                 maxnoise);
-                    swpIndRow{iRow} = [swpIndRow{iRow}; idxSelected];
+                    swpIndRow{iRow} = [swpIndRow{iRow}; swpIdxSelected];
                 end
 
                 % Verify length of swpIndRow{iRow}
@@ -426,7 +423,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function idxSelected = select_trace(allIndices, iG, iP, swpIndHasLts, swpIndHasBursts, maxnoise)
+function swpIdxSelected = select_trace(allIndices, iG, iP, swpIndHasLts, swpIndHasBursts, maxnoise)
 
 % Find all indices for this condition for this cell
 indThisCond = allIndices{iG, iP};
@@ -456,15 +453,15 @@ nIndThisCondHasBurst = length(indThisCondHasBurst);
 if nIndThisCondHasNoLts > nIndThisCond / 2
     % Look for the trial with minimum noise in all trials with no LTS
     [~, iTemp] = min(maxnoise(indThisCondHasNoLts));
-    idxSelected = indThisCondHasNoLts(iTemp);
+    swpIdxSelected = indThisCondHasNoLts(iTemp);
 elseif nIndThisCondHasLtsOnly > nIndThisCondHasBurst
     % Look for the trial with minimum noise in all trials with LTS but no burst
     [~, iTemp] = min(maxnoise(indThisCondHasLtsOnly));
-    idxSelected = indThisCondHasLtsOnly(iTemp);
+    swpIdxSelected = indThisCondHasLtsOnly(iTemp);
 elseif nIndThisCondHasBurst >= nIndThisCondHasLtsOnly
     % Look for the trial with minimum noise in all trials with burst
     [~, iTemp] = min(maxnoise(indThisCondHasBurst));
-    idxSelected = indThisCondHasBurst(iTemp);
+    swpIdxSelected = indThisCondHasBurst(iTemp);
 else
     % Something is wrong 
     error('Error in LTS or burst data??\n');   
@@ -490,15 +487,15 @@ swpIndRow{iRow} = [swpIndRow{iRow}; ...
 % Select one trace with the priority given to 
 %   bursts, then to LTSs
 if ~isempty(indThisCondHasBurst)
-    idxSelected = indThisCondHasBurst(1);
+    swpIdxSelected = indThisCondHasBurst(1);
 elseif ~isempty(indThisCondHasLts)
-    idxSelected = indThisCondHasLts(1);
+    swpIdxSelected = indThisCondHasLts(1);
 else
-    idxSelected = indThisCond(1);
+    swpIdxSelected = indThisCond(1);
 end
 
 % Find all indices for this cell
-indThisCell = swpIndGincrPcondAllCells{iFit};
+indThisCell = swpIndByCondition{iFit};
 
 % Find all indices for this condition for this cell
 indThisCond = indThisCell{iGEachRow(iRow), iPEachRow(iRow)};
@@ -514,12 +511,30 @@ indThisCondHasBurst = ...
 % Select one trace with the priority given to 
 %   bursts, then LTSs
 if ~isempty(indThisCondHasBurst)
-    idxSelected = indThisCondHasBurst(1);
+    swpIdxSelected = indThisCondHasBurst(1);
 elseif ~isempty(indThisCondHasLts)
-    idxSelected = indThisCondHasLts(1);
+    swpIdxSelected = indThisCondHasLts(1);
 else
-    idxSelected = indThisCond(1);
+    swpIdxSelected = indThisCond(1);
 end
+
+for iRow = 1:nRows
+    swpIndRow{iRow} = [];
+    for iG = 1:nGIncr
+        swpIndRow{iRow} = [swpIndRow{iRow}; ...
+                    swpIndGincrPcond{iG, iPEachRow(iRow)}];
+    end
+end
+
+for iRow = 1:nRows
+    swpIndRow{iRow} = transpose([swpIndGincrPcond{:, iRow}]);
+end
+
+for iRow = 1:nRows
+    swpIndRow{iRow} = ...
+        swpIndGincrPcond{iGEachRow(iRow), iPEachRow(iRow)};
+end
+
 
 %}
 

@@ -115,7 +115,7 @@ function [err, hFig, simData] = ...
 %                   - 'IpscrWindow': IPSC response window in ms
 %                   must be a numeric vector with 2 elements
 %                   default == [2000, 10000]
-%                   - 'OutFilePath': path to output file(s)
+%                   - 'OutFilePath': path to NEURON output file(s)
 %                   must be a characeter vector, a string array 
 %                       or a cell array of character arrays
 %                   default == 'auto'
@@ -675,9 +675,11 @@ end
 % Decide on the colors for each row in the plots
 colorMap = create_colormap(nRows);
 
-% Create output file paths
-outFilePath = create_simulation_output_filenames(nSweeps, ...
-                        'OutFolder', outFolder, 'Prefix', prefix);
+% Create output file paths if not provided
+if strcmpi(outFilePath, 'auto')
+    outFilePath = create_simulation_output_filenames(nSweeps, ...
+                            'OutFolder', outFolder, 'Prefix', prefix);
+end
 
 % Create a table of simulation parameters
 simParamsTable = m3ha_create_simulation_params(neuronParamsTable, ...

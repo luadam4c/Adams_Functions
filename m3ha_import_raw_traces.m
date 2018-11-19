@@ -70,6 +70,9 @@ logFileName = fullfile(outFolderName, sprintf('%s.log', mfilename));
 fid = fopen(logFileName, 'w');
 
 %% Import sweeps
+% Print message
+fprintf('Importing raw traces for this cell ... \n');
+
 % Initialize output variables
 dCpr = cell(nSweeps, 1);                        % stores current pulse response traces for fitting
 dIpscr = cell(nSweeps, 1);                      % stores IPSC response traces for fitting

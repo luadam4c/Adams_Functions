@@ -145,13 +145,15 @@ Last Updated 2018-11-19 by Adam Lu
 - [**m3ha_find_files_to_take_out.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_files_to_take_out.m): Returns all the file names of files to take out from .png files in 'TAKE_OUT_*' folders of a special cases directory
 - [**m3ha_find_ind_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ind_to_fit.m): Find indices of fnrow in dclampdatalog_take4.mat that will be used for fitting
 - [**m3ha_fminsearch3.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_fminsearch3.m): Applies the Nelder-Mead simplex algorithm to optimize parameters (modified version of fminsearch for the m3ha project)
+- [**m3ha_generate_cell_info.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_generate_cell_info.m): TODO: A summary of what the function does (must be a single unbreaked line)
 - [**m3ha_import_raw_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_import_raw_traces.m): Import raw traces
 - [**m3ha_locate_homedir.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_locate_homedir.m): Locate the first home directory that exists for the GAT blockade project
 - [**m3ha_log_errors_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_log_errors_params.m): Log errors and parameter values
+- [**m3ha_organize_sweep_indices.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_organize_sweep_indices.m): Organize sweep indices by g incr, pharm conditions for each cell
 - [**m3ha_parse_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_parse_mat.m): Parses and loads a set of matfiles for the GAT blockade project
 - [**m3ha_plot_individual_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_individual_traces.m): Plots individual voltage traces
 - [**m3ha_run_neuron_once.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_run_neuron_once.m): Runs "one iteration" of NEURON (once for each of the sweeps)
-- [**m3ha_select_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_cells.m): Select the cells that will be used for fitting
+- [**m3ha_select_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_cells.m): Select the cells that will be used for fitting from the sweeps to fit
 - [**m3ha_select_raw_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_raw_traces.m): Select raw traces to import
 - [**m3ha_select_sweeps_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_sweeps_to_fit.m): Find file names and row indices in swpInfo that will be used for fitting
 - [**m3ha_specs_for_fitmode.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_specs_for_fitmode.m): Specifications depending on fitMode for the GAT blockade project

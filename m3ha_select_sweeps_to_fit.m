@@ -92,6 +92,9 @@ fileNames = swpInfo.Properties.RowNames;
 gIncr = swpInfo.grow;
 
 %% Do the job
+% Print message
+fprintf('Selecting the sweeps to fit ... \n');
+
 % Find the sweep indices for 
 %   conductance amplitudes with 100%, 200% or 400% scaling 
 %   (these are present in all experiments)
