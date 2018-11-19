@@ -22,11 +22,7 @@ function [err, hFig, simData] = ...
 %                       'IsLog': whether the parameter is 
 %                                   to be varied on a log scale
 %                   must be a 2d table or a cell array of 2d tables
-%       varargin    - 'RealData': recorded data to compare against
-%                   must be a numeric array
-%                       or a cell array of numeric arrays
-%                   default == []
-%                   - 'Hfig': handles structure for figures
+%       varargin    - 'Hfig': handles structure for figures
 %                   must be a TODO
 %                   default == TODO
 %                   - 'SimMode': simulation mode
@@ -126,6 +122,14 @@ function [err, hFig, simData] = ...
 %                   - 'Tstop': simulation end time
 %                   must be a numeric vector
 %                   default == based on simMode, cprWindow(2) & ipscrWindow(2)
+%                   - 'RealDataIpscr': recorded data to compare against
+%                   must be a numeric array
+%                       or a cell array of numeric arrays
+%                   default == []
+%                   - 'RealDataCpr': recorded data to compare against
+%                   must be a numeric array
+%                       or a cell array of numeric arrays
+%                   default == []
 %                   - 'HoldPotentialIpscr': holding potential for (mV)
 %                                           IPSC response
 %                   must be a numeric vector
@@ -241,8 +245,8 @@ function [err, hFig, simData] = ...
 %       cd/save_params.m TODO
 %
 % Used by:    
+%       cd/m3ha_fminsearch3.m
 %       ~/m3ha/optimizer4gabab/optimizer_4compgabab.m
-%       ~/m3ha/optimizer4gabab/fminsearch3_4compgabab.m
 
 % File History:
 % 2014-04-XX - Created by Christine
@@ -340,6 +344,7 @@ function [err, hFig, simData] = ...
 % 2018-10-15 - Updated usage of TC3
 % 2018-10-16 - Now uses save_params.m
 % 2018-10-19 - Made 'RealData' an optional parameter
+% 2018-11-16 - Separated 'RealDataCpr' from 'RealDataIpscr'
 % TODO: 2018-10-16 - Reorganize code so that one can run a single simulation easily
 %                   from a set of parameters
 
@@ -358,7 +363,6 @@ VOLT_COL_SIM = 2;
 CURR_COL_SIM = 9;
 
 %% Default values for optional arguments
-realDataDefault = [];           % no data to compare against by default
 hFigDefault = '';               % no prior hFig structure by default
 simModeDefault = 'passive';     % simulate a current pulse response by default
 nSweepsDefault = [];            % set later
@@ -392,6 +396,8 @@ cprWindowDefault = [0, 360] + timeToStabilize;      % (ms)
 ipscrWindowDefault = [0, 8000] + timeToStabilize;   % (ms)
 outFilePathDefault = 'auto';    % set later
 tstopDefault = [];              % set later
+realDataIpscrDefault = [];      % no data to compare against by default
+realDataCprDefault = [];        % no data to compare against by default
 holdPotentialIpscrDefault = -70;% (mV)
 holdPotentialCprDefault = -70;  % (mV)
 currentPulseAmplitudeIpscrDefault = -0.050;  % (nA)
@@ -434,10 +440,6 @@ addRequired(iP, 'neuronParamsTable', ...
     @(x) validateattributes(x, {'table', 'cell'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'RealData', realDataDefault, ...
-    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['RealData must be either a numeric array', ...
-                    'or a cell array of numeric arrays!']));
 addParameter(iP, 'HFig', hFigDefault);
 addParameter(iP, 'SimMode', simModeDefault, ...
     @(x) any(validatestring(x, validSimModes)));
@@ -497,6 +499,14 @@ addParameter(iP, 'OutFilePath', outFilePathDefault, ...
     @(x) ischar(x) || isstring(x) || iscellstr(x));
 addParameter(iP, 'Tstop', tstopDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'RealDataIpscr', realDataIpscrDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['RealDataIpscr must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
+addParameter(iP, 'RealDataCpr', realDataCprDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['RealDataCpr must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
 addParameter(iP, 'HoldPotentialIpscr', holdPotentialIpscrDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'HoldPotentialCpr', holdPotentialCprDefault, ...
@@ -546,7 +556,6 @@ addParameter(iP, 'SweepWeightsIpscr', sweepWeightsIpscrDefault, ...
 
 % Read from the Input Parser
 parse(iP, neuronParamsTable, varargin{:});
-realData = iP.Results.RealData;
 hFig = iP.Results.HFig;
 simMode = validatestring(iP.Results.SimMode, validSimModes);
 nSweepsUser = iP.Results.NSweeps;
@@ -577,6 +586,8 @@ cprWindow = iP.Results.CprWindow;
 ipscrWindow = iP.Results.IpscrWindow;
 outFilePath = iP.Results.OutFilePath;
 tstop = iP.Results.Tstop;
+realDataIpscr = iP.Results.RealDataIpscr;
+realDataCpr = iP.Results.RealDataCpr;
 holdPotentialIpscr = iP.Results.HoldPotentialIpscr;
 holdPotentialCpr = iP.Results.HoldPotentialCpr;
 currentPulseAmplitudeIpscr = iP.Results.CurrentPulseAmplitudeIpscr;
@@ -609,6 +620,7 @@ sweepWeightsIpscr = iP.Results.SweepWeightsIpscr;
 %% Preparation
 % Decide on simulation-mode-dependent variables
 if strcmpi(simMode, 'passive')
+    realData = realDataCpr;
     currentPulseAmplitude = currentPulseAmplitudeCpr;
     holdPotential = holdPotentialCpr;
     holdCurrent = holdCurrentCpr;
@@ -620,6 +632,7 @@ if strcmpi(simMode, 'passive')
     sweepWeights = sweepWeightsCpr;
     errorMode = 'SweepOnly';
 elseif strcmpi(simMode, 'active')
+    realData = realDataIpscr;
     currentPulseAmplitude = currentPulseAmplitudeIpscr;
     holdPotential = holdPotentialIpscr;
     holdCurrent = holdCurrentIpscr;
@@ -1186,7 +1199,7 @@ if cprflag
 else
     fieldnameIniterr = 'avgswperr0';
 end
-[err.avgswperr, outparams] = ...
+[err.avgSwpError, outparams] = ...
     compute_avgerror (fieldnameIniterr, err.swperr, outparams, ...
                         sweepWeights, totalSweepWeights);
 
@@ -1202,43 +1215,43 @@ if ~cprflag && findLtsFlag && ltsErrorFlag
     err.sim_ltsdvdtv = sim_ltsdvdtv;
 
     % Compute dimensionless LTS errors for each sweep
-    [err.ltsverr, outparams.ltsSwpw] = ...
+    [err.ltsAmpErrors, outparams.ltsSwpw] = ...
         compute_ltsdata_error (real_ltsv, sim_ltsv, baseNoise, isLtsError, sweepWeights);
-    [err.ltsterr, ~] = ...
+    [err.ltsDelayErrors, ~] = ...
         compute_ltsdata_error (real_ltst, sim_ltst, peakwidth, isLtsError, sweepWeights);
     slopeUncertainty = (2*baseNoise ./ peakprom + 2*ioffset ./ peakwidth) ...
                             .* real_ltsdvdtv;
-    [err.ltsdvdtverr, ~] = ...
+    [err.ltsSlopeErrors, ~] = ...
         compute_ltsdata_error (real_ltsdvdtv, sim_ltsdvdtv, ...
                                 slopeUncertainty, isLtsError, sweepWeights);
 
     % Compute weighted-root-mean-squared-averaged LTS errors (dimensionless)
     ltsSwpw = outparams.ltsSwpw;
     lts_totalsweepWeights = sum(outparams.ltsSwpw);
-    [err.avgltsverr, outparams] = ...
-        compute_avgerror ('avgltsverr0', err.ltsverr, outparams, ltsSwpw, lts_totalsweepWeights);
-    [err.avgltsterr, outparams] = ...
-        compute_avgerror ('avgltsterr0', err.ltsterr, outparams, ltsSwpw, lts_totalsweepWeights);
-    [err.avgltsdvdtverr, outparams] = ...
-        compute_avgerror ('avgltsdvdtverr0', err.ltsdvdtverr, outparams, ltsSwpw, lts_totalsweepWeights);
+    [err.avgLtsAmpError, outparams] = ...
+        compute_avgerror ('avgltsverr0', err.ltsAmpErrors, outparams, ltsSwpw, lts_totalsweepWeights);
+    [err.avgLtsDelayError, outparams] = ...
+        compute_avgerror ('avgltsterr0', err.ltsDelayErrors, outparams, ltsSwpw, lts_totalsweepWeights);
+    [err.avgLtsSlopeError, outparams] = ...
+        compute_avgerror ('avgltsdvdtverr0', err.ltsSlopeErrors, outparams, ltsSwpw, lts_totalsweepWeights);
     
     % Average LTS error (dimensionless) is the weighted average of sweep error and lts error, 
     %        weighted by outparams.ltsWeights (set by user)
-    err.avgltserr = (ltsWeights' * [err.avgltsverr; err.avgltsterr; err.avgltsdvdtverr]) / totalltsw;
+    err.avgLtsError = (ltsWeights' * [err.avgLtsAmpError; err.avgLtsDelayError; err.avgLtsSlopeError]) / totalltsw;
 
     % Total error (dimensionless) is the weighted average of sweep error and lts error, 
     %        weighted by outparams.lts2SweepErrorRatio (set by user)
-    err.toterr = (err.avgswperr + lts2SweepErrorRatio * err.avgltserr) / (1 + lts2SweepErrorRatio);
+    err.toterr = (err.avgSwpError + lts2SweepErrorRatio * err.avgLtsError) / (1 + lts2SweepErrorRatio);
 
 else
     % Total error (dimensionless) is just the weighted-root-mean-squared average of sweep error
-    err.toterr = err.avgswperr;            
+    err.toterr = err.avgSwpError;            
 
     % Set other errors to -999 for debug
-    err.avgltsverr = -999;
-    err.avgltsterr = -999;
-    err.avgltsdvdtverr = -999;
-    err.avgltserr = -999;
+    err.avgLtsAmpError = -999;
+    err.avgLtsDelayError = -999;
+    err.avgLtsSlopeError = -999;
+    err.avgLtsError = -999;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2272,25 +2285,25 @@ err.unweightedtotswperr = sum(err.swperr);    % unweighted total sweep error    
 
 a = zeros(1, nSweeps);
 
-    err.ltsverr = real_ltsv - sim_ltsv;                % in mV
-    err.ltsterr = (real_ltst - sim_ltst)/1000;            % in seconds
-    err.ltsdvdtverr = real_ltsdvdtv - sim_ltsdvdtv;            % in V/s
+    err.ltsAmpErrors = real_ltsv - sim_ltsv;                % in mV
+    err.ltsDelayErrors = (real_ltst - sim_ltst)/1000;            % in seconds
+    err.ltsSlopeErrors = real_ltsdvdtv - sim_ltsdvdtv;            % in V/s
     rmse(iSwp) = sqrt(sum(((vreal - vsim)./vreal).^2) / length(indFitWin));    % root-mean-squared error for each sweep
 
     % Compute dimensionless LTS errors for each sweep
-    err.ltsverr = (real_ltsv - sim_ltsv)./real_ltsv;
-    err.ltsterr = (real_ltst - sim_ltst)./real_ltst;
-    err.ltsdvdtverr = (real_ltsdvdtv - sim_ltsdvdtv)./real_ltsdvdtv;
+    err.ltsAmpErrors = (real_ltsv - sim_ltsv)./real_ltsv;
+    err.ltsDelayErrors = (real_ltst - sim_ltst)./real_ltst;
+    err.ltsSlopeErrors = (real_ltsdvdtv - sim_ltsdvdtv)./real_ltsdvdtv;
 
     % Convert NaN errors to outparams.isLtsError
-    err.ltsverr(isnan(err.ltsverr)) = outparams.isLtsError;
-    err.ltsterr(isnan(err.ltsterr)) = outparams.isLtsError;
-    err.ltsdvdtverr(isnan(err.ltsdvdtverr)) = outparams.isLtsError;
+    err.ltsAmpErrors(isnan(err.ltsAmpErrors)) = outparams.isLtsError;
+    err.ltsDelayErrors(isnan(err.ltsDelayErrors)) = outparams.isLtsError;
+    err.ltsSlopeErrors(isnan(err.ltsSlopeErrors)) = outparams.isLtsError;
 
     % Compute weighted-root-mean-squared average LTS errors
-    err.avgltsverr = sqrt(sum((sweepWeights .* err.ltsverr.^2) ./ totalSweepWeights));
-    err.avgltsterr = sqrt(sum((sweepWeights .* err.ltsterr.^2) ./ totalSweepWeights));
-    err.avgltsdvdtverr = sqrt(sum((sweepWeights .* err.ltsdvdtverr.^2) ./ totalSweepWeights));
+    err.avgLtsAmpError = sqrt(sum((sweepWeights .* err.ltsAmpErrors.^2) ./ totalSweepWeights));
+    err.avgLtsDelayError = sqrt(sum((sweepWeights .* err.ltsDelayErrors.^2) ./ totalSweepWeights));
+    err.avgLtsSlopeError = sqrt(sum((sweepWeights .* err.ltsSlopeErrors.^2) ./ totalSweepWeights));
 
 if outparams.plotsweepsflag
     hFig = update_sweeps_figures(realData, simData, outparams, err, hFig);
@@ -2313,10 +2326,10 @@ err.swperr = rmse;                        % use root-mean-squared errors [mV]
         legend('Real data', 'Simulated data');
 if cprflag
     % weighted-root-mean-squared-averaged cpr sweep error [mV] or [1]
-    [err.avgswperr, outparams] = compute_avgerror ('cpr_avgswperr0', err.swperr, outparams, sweepWeights, totalSweepWeights);
+    [err.avgSwpError, outparams] = compute_avgerror ('cpr_avgswperr0', err.swperr, outparams, sweepWeights, totalSweepWeights);
 else
     % weighted-root-mean-squared-averaged sweep error [mV] or [1]
-    [err.avgswperr, outparams] = compute_avgerror ('avgswperr0', err.swperr, outparams, sweepWeights, totalSweepWeights);
+    [err.avgSwpError, outparams] = compute_avgerror ('avgswperr0', err.swperr, outparams, sweepWeights, totalSweepWeights);
 end
 
 %% Compute sweep errors; make dimensionless by dividing by the holding potential
@@ -2329,7 +2342,7 @@ err.swperr = abs(rmse/mean(holdpotential));     % use root-mean-squared error
     if isnan(real_ltsdata(iSwp)) && isnan(sim_ltsdata(iSwp))          % LTS does not exist in both cases
         % Do nothing (zero error)
 
-    [err.ltsterr, ~] = ...
+    [err.ltsDelayErrors, ~] = ...
         compute_ltsdata_error (real_ltst, sim_ltst, ioffset, isLtsError, sweepWeights);
 
 %        figName = fullfile(outFolder, [prefix, '_', statsfilename{bi}, '.png']);
@@ -2360,12 +2373,12 @@ figure(hFig.alltraces_zoom);        % for suptitle
 % err.swperr = rmse./maxNoise';
 % slopeUncertainty = (2*maxNoise ./ peakprom + 2*ioffset ./ peakwidth) ...
 %                         .* real_ltsdvdtv';
-% [err.ltsverr, outparams.lts_sweepWeights] = ...
+% [err.ltsAmpErrors, outparams.lts_sweepWeights] = ...
 %     compute_ltsdata_error (real_ltsv, sim_ltsv, maxNoise, isLtsError, sweepWeights);
 
 % rmse(iSwp) = sqrt(sum((vreal - vsim).^2) / length(indFitWin));
 
-% [err.avgswperr, outparams] = ...
+% [err.avgSwpError, outparams] = ...
 %     compute_avgerror ('cpr_avgswperr0', err.swperr, outparams, sweepWeights, totalSweepWeights);
 
 squaredError = (vreal - vsim).^2;
@@ -2408,7 +2421,7 @@ if cprflag
     err.swperr = rmse ./ baseNoiseCpr;
 
     % weighted-root-mean-squared-averaged cpr sweep error (dimensionless)
-    [err.avgswperr, outparams] = ...
+    [err.avgSwpError, outparams] = ...
         compute_avgerror ('cpr_avgswperr0', err.swperr, outparams, ...
                             ones(nSweeps, 1), nSweeps);
 else
@@ -2416,7 +2429,7 @@ else
     err.swperr = rmse ./ baseNoise';
 
     % weighted-root-mean-squared-averaged sweep error (dimensionless)
-    [err.avgswperr, outparams] = ...
+    [err.avgSwpError, outparams] = ...
         compute_avgerror ('avgswperr0', err.swperr, outparams, sweepWeights, totalSweepWeights);
 end
 

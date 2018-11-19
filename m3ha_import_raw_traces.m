@@ -1,7 +1,6 @@
 function [dCpr, dIpscr, sweepInfoCpr, sweepInfoIpscr, dCprAll] = ...
                 m3ha_import_raw_traces (dataDir, outFolderName, ...
-                    nRows, nColumns, ...
-                    swpIndG200P, swpIndPCond, swpIndRow, ...
+                    nRows, nColumns, fileNamesRowCol, ...
                     cpStartWindowOrig, cprWinOrig, timeToStabilize, ...
                     fnrow, vrow, currentPulseAmplitudeOrig, mvw, actVhold, ...
                     ipscTimeOrig, ipscDur, initialSlopes, ...
@@ -58,18 +57,13 @@ end
 nSweeps = nRows * nColumns;
 
 % Find the expected current pulse start time
-cpstartExpected = mean(cpStartWindowOrig);
+cpStartExpected = mean(cpStartWindowOrig);
 
 % Compute desired window in which the current pulse response would lie (ms)
 cprWindow = cprWinOrig + timeToStabilize;
 
 % Compute desired time of IPSC application (ms)
 timeIPSC = ipscTimeOrig + timeToStabilize;
-
-% Read from initialSlopes
-initialSlopeFilenames = initialSlopes.filenamesSorted;
-initialSlopeThreshold1IndexBalanced = initialSlopes.iThreshold1Balanced;
-initialSlopeThreshold2IndexBalanced = initialSlopes.iThreshold2Balanced;
 
 % Create log file name
 logFileName = fullfile(outFolderName, sprintf('%s.log', mfilename));
@@ -92,17 +86,11 @@ for iRow = 1:nRows
         % Increment the sweep count
         ct = ct + 1;
 
-        % Decide on the sweep index to import
-        if ~isempty(swpIndG200P{1})
-            swpIdx = swpIndG200P{iRow}(iCol);
-        elseif ~isempty(swpIndPCond{1})
-            swpIdx = swpIndPCond{iRow}(iCol);
-        elseif ~isempty(swpIndRow{1})
-            swpIdx = swpIndRow{iRow}(iCol);
-        end
-
         % Get the current file name
-        fileName = fnrow{swpIdx};
+        fileName = fileNamesRowCol{iRow, iCol};
+
+        % Get the swpIdx from the file name
+        swpIdx = find_ind_str_in_cell(fileName, fnrow);
 
         % Print message
         fprintf('Using trace %s ... \n', fileName);
@@ -132,7 +120,7 @@ for iRow = 1:nRows
         vvecCpr = m.d_orig(acprwinInd, 4);          % voltage vector of original data in mV
 
         % Find the expected baseline window length in samples
-        cprbasewinLength = round((cpstartExpected - cprWinOrig(1))/simsCpr);
+        cprbasewinLength = round((cpStartExpected - cprWinOrig(1))/simsCpr);
 
         % Find current pulse amplitude (convert to nA) and start of current pulse application
         currentPulseAmplitude(ct, 1) = currentPulseAmplitudeOrig(swpIdx) / PA_PER_NA;
@@ -235,6 +223,11 @@ currentPulseAmplitudeCpr = currentPulseAmplitude;
 
 %% Fix current pulse response traces that may have out-of-balance bridges
 if correctDcStepsFlag
+    % Read from initialSlopes
+    initialSlopeFilenames = initialSlopes.filenamesSorted;
+    initialSlopeThreshold1IndexBalanced = initialSlopes.iThreshold1Balanced;
+    initialSlopeThreshold2IndexBalanced = initialSlopes.iThreshold2Balanced;
+
     % Find the index of file in all files sorted by initial slope
     %   in descending order
     ftemp = @(x) find_ind_str_in_cell(x, initialSlopeFilenames);
@@ -586,6 +579,17 @@ outparams.holdCurrentIpscr = holdCurrentIpscr;
 outparams.baseNoiseIpscr = baseNoiseIpscr;
 outparams.holdCurrentNoiseIpscr = holdCurrentNoiseIpscr;
 outparams.sweepWeightsIpscr = sweepWeightsIpscr;
+
+if ~isempty(swpIndG200P{1})
+    swpIdx = swpIndG200P{iRow}(iCol);
+elseif ~isempty(swpIndPCond{1})
+    swpIdx = swpIndPCond{iRow}(iCol);
+elseif ~isempty(swpIndRow{1})
+    swpIdx = swpIndRow{iRow}(iCol);
+end
+
+% Get the current file name
+fileName = fnrow{swpIdx};
 
 %}
 

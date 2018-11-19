@@ -25,8 +25,8 @@ function fileName = save_params (paramsTable, varargin)
 % Used by:
 %       cd/m3ha_create_initial_neuronparams.m
 %       cd/m3ha_log_errors_params.m
+%       cd/m3ha_fminsearch3.m
 %       cd/m3ha_run_neuron_once.m TODO
-%       ~/m3ha/optimizer4gabab/fminsearch3_4compgabab.m TODO
 
 % File History:
 % 2018-10-16 Created by Adam Lu

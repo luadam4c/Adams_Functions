@@ -6,9 +6,9 @@ function [structure] = set_fields_zero (structure, varargin)
 %               must be character arrays corresponding to numerical field values in structure
 %
 % Used by:
+%       cd/m3ha_fminsearch3.m
 %       /media/adamX/m3ha/optimizer4gabab/optimizergui_4compgabab.m
 %       /media/adamX/m3ha/optimizer4gabab/optimizer_4compgabab.m
-%       /media/adamX/m3ha/optimizer4gabab/fminsearch3_4compgabab.m
 %       /home/Matlab/minEASE.m
 %
 % File History:

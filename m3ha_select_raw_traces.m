@@ -1,4 +1,4 @@
-function [nColumns, swpIndG200P, swpIndPCond, swpIndRow] = ...
+function [nColumns, fileNames] = ...
                 m3ha_select_raw_traces (columnMode, rowConditions, ...
                     attemptNumber, iCellToFit, swpIdxSCPGV, swpIndToFit, ...
                     swpIndGincrPcondAllCells, cellNames, ...
@@ -31,6 +31,7 @@ pCondAll = [1; 2; 3; 4];    % possible pharm conditions
                             %   2 - GAT1 Block
                             %   3 - GAT3 Block
                             %   4 - Dual Block
+cellIdAll = 1:1:49;         % possible cell ID #s
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -218,11 +219,11 @@ case 2
         fprintf('Attempt #1: Find cells with LTSs present ');
         fprintf('for all pharm conditions @ 200p g_incr ... \n');
         ct = 0;                 % counts cells with an lts for all pharm conditions
-        for ci = 1:length(cc)
+        for iC = 1:length(cellIdAll)
             toUse = true;
             for iP = 1:nPCond       % for each pharmacological condition @ 200% g_incr
                 swpIndTemp1{iP} = ...
-                    intersect(swpIdxSCPGV(:, ci, iP, 4, :), swpIndHasLts, 'sorted');
+                    intersect(swpIdxSCPGV(:, iC, iP, 4, :), swpIndHasLts, 'sorted');
                 if isempty(swpIndTemp1{iP})
                     toUse = false;
                     break;
@@ -241,11 +242,11 @@ case 2
         fprintf('Attempt #2: Find cells with bursts present ');
         fprintf('for all pharm conditions @ 200p g_incr ... \n');
         ct = 0;                % counts cells with an lts for all pharm conditions
-        for ci = 1:length(cc)
+        for iC = 1:length(cellIdAll)
             toUse = true;
             for iP = 1:nPCond       % for each pharmacological condition @ 200% g_incr
                 swpIndTemp1{iP} = ...
-                    intersect(swpIdxSCPGV(:, ci, iP, 4, :), swpIndHasBursts, 'sorted');
+                    intersect(swpIdxSCPGV(:, iC, iP, 4, :), swpIndHasBursts, 'sorted');
                 if isempty(swpIndTemp1{iP})
                     toUse = false;
                     break;
@@ -266,18 +267,18 @@ case 2
         fprintf('for 3 out of 4 pharm conditions @ 200p g_incr, \n'); 
         fprintf('        and choose the "best" sweep for each cell ... \n');
         ct = 0;             % counts cells with a burst for 3 out of 4 pharm conditions
-        for ci = 1:length(cc)
+        for iC = 1:length(cellIdAll)
             toUse = true;
             ngoodb = 0;
             for iP = 1:nPCond       % for each pharmacological condition @ 200% g_incr
                 swpIndTemp2{iP} = ...
-                    intersect(swpIdxSCPGV(:, ci, iP, 4, :), ...
+                    intersect(swpIdxSCPGV(:, iC, iP, 4, :), ...
                                 swpIndHasBursts, 'sorted');
                 swpIndTemp3{iP} = ...
-                    intersect(swpIdxSCPGV(:, ci, iP, 4, :), ...
+                    intersect(swpIdxSCPGV(:, iC, iP, 4, :), ...
                                 swpIndHasLts, 'sorted');
                 swpIndTemp4{iP} = ...
-                    setdiff(swpIdxSCPGV(:, ci, iP, 4, :), 0);
+                    setdiff(swpIdxSCPGV(:, iC, iP, 4, :), 0);
                 if ~isempty(swpIndTemp2{iP})
                     ngoodb = ngoodb + 1;
                 end
@@ -307,12 +308,12 @@ case 2
         fprintf('Attempt #4: Find cells within indices to fit present \n');
         fprintf('        for all pharm conditions and all g_incr ... \n');
         ct = 0;                % counts cells
-        for ci = 1:length(cc)
+        for iC = 1:length(cellIdAll)
             toUse = true;
             for iP = 1:nPCond       % for each pharmacological condition
                 for iG = 1:nGIncr    % for each g_incr
                     swpIndTemp5{iG, iP} = ...
-                        intersect(swpIdxSCPGV(:, ci, iP, iG + 2, :), ...
+                        intersect(swpIdxSCPGV(:, iC, iP, iG + 2, :), ...
                                     swpIndToFit, 'sorted');
                     if isempty(swpIndTemp5{iG, iP})
                         toUse = false;
@@ -403,6 +404,24 @@ otherwise
 end
 if nColumns == 0
     error('No traces found!')
+end
+
+% Get the file names
+fileNames = cell(nRows, nColumns);
+for iRow = 1:nRows
+    for iCol = 1:nColumns
+        % Get the current sweep index
+        if ~isempty(swpIndG200P{1})
+            swpIdx = swpIndG200P{iRow}(iCol);
+        elseif ~isempty(swpIndPCond{1})
+            swpIdx = swpIndPCond{iRow}(iCol);
+        elseif ~isempty(swpIndRow{1})
+            swpIdx = swpIndRow{iRow}(iCol);
+        end
+
+        % TODO
+        fileNames{iRow, iCol} = fnrow{swpIdx};
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

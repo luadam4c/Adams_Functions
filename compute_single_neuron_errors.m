@@ -7,7 +7,8 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %       TODO
 % Outputs:
 %       errors      - a structure of all the errors computed, with fields:
-%                       see compute_sweep_errors.m
+%                       totalError
+%                       fields returned by compute_sweep_errors.m
 %                   specified as a scalar structure
 % Arguments:    
 %       vSim        - simulated voltage traces
@@ -207,15 +208,38 @@ swpErrors = compute_sweep_errors(vSim, vReal, 'TimeVecs', tBoth, ...
                                 'NormalizeError', normalizeError, ...
                                 'InitSwpError', initSwpError);
 
-%% Store in output errors structure
+% Compute LTS errors
 switch errorMode
     case 'SweepOnly'
-        errors = swpErrors;
+        % Set as NaN for other errors
+        ltsErrors.ltsAmpErrors = NaN;
+        ltsErrors.ltsDelayErrors = NaN;
+        ltsErrors.ltsSlopeErrors = NaN;
+        ltsErrors.avgLtsAmpError = NaN;
+        ltsErrors.avgLtsDelayError = NaN;
+        ltsErrors.avgLtsSlopeError = NaN;
+        ltsErrors.avgLtsError = NaN;
     case 'Sweep&LTS'
 %     errors = merge_structs(swpErrors, )
     otherwise
         error('code logic error!');
 end
+
+% Combine errors
+switch errorMode
+    case 'SweepOnly'
+        % Use the average sweep error as the total error
+        totalError = swpErrors.avgSwpError;
+    case 'Sweep&LTS'
+%     errors = merge_structs(swpErrors, )
+    otherwise
+        error('code logic error!');
+end
+
+%% Store in output errors structure
+errors.totalError = totalError;
+errors = merge_structs(errors, swpErrors);
+errors = merge_structs(errors, ltsErrors);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

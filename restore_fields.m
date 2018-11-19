@@ -7,11 +7,11 @@ function [structure] = restore_fields (structure, varargin)
 %              must be character arrays corresponding to numerical field values in structure
 %
 % Used by:
+%       cd/m3ha_fminsearch3.m
 %       /media/adamX/m3ha/optimizer4gabab/optimizergui_4compgabab.m
 %       /media/adamX/m3ha/optimizer4gabab/optimizer_4compgabab.m
-%       /media/adamX/m3ha/optimizer4gabab/fminsearch3_4compgabab.m
 %       /home/Matlab/minEASE.m
-% 
+
 % File History:
 % 2016-10-06 Created
 % 
@@ -30,17 +30,17 @@ end
 %% Perform task
 for f = 1:numel(varargin)
     field = varargin{f};
-    field_prev = strcat(field, '_prev');
+    fieldPrev = strcat(field, '_prev');
 
     % Check if field and its previous value exist in structure
     if ~isfield(structure, field)
         error('The field ''%s'' doesn''t exist in the given structure!\n', field);
-    elseif ~isfield(structure, field_prev)
-        error('The field ''%s'' doesn''t exist in the given structure!\n', field_prev);
+    elseif ~isfield(structure, fieldPrev)
+        error('The field ''%s'' doesn''t exist in the given structure!\n', fieldPrev);
     end
 
     % Restore field to previous value
-    structure.(field) = structure.(field_prev);
+    structure.(field) = structure.(fieldPrev);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
