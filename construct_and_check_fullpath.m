@@ -11,7 +11,7 @@ function [fullPath, pathExists] = construct_and_check_fullpath (pathName, vararg
 %       fullPath    - the full path(s) to file(s) or directory(s) constructed
 %                   specified as a character vector 
 %                       or a column cell array or character vectors
-%       pathExists  - whether a path or paths exists
+%       pathExists  - whether the path(s) exists
 %                   specified as a column logical array
 % Arguments:
 %       pathName    - file or directory name(s)
@@ -47,9 +47,7 @@ function [fullPath, pathExists] = construct_and_check_fullpath (pathName, vararg
 %       cd/all_subdirs.m
 %       cd/load_neuron_outputs.m
 %       cd/load_params.m
-%       cd/parse_abf.m
-%       cd/parse_mat_m3ha.m
-%       cd/plot_FI.m
+%       cd/m3ha_parse_mat.m
 
 % File History: 
 % 2017-04-11 - Moved from plot_traces_abf.m
@@ -59,6 +57,7 @@ function [fullPath, pathExists] = construct_and_check_fullpath (pathName, vararg
 % 2018-10-03 - Now uses isfile()
 % 2018-10-03 - Renamed construct_and_check_fullfilename -> 
 %                   construct_and_check_fullpath
+% 2018-11-21 - Updated Used by
 % 
 
 %% Default values for optional arguments

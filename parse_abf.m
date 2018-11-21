@@ -14,19 +14,26 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %           parse_abf('20180914C_0001');
 % Outputs:
 %       parsedParams    - a structure containing the following fields:
+%                           abfFullFileName
+%                           expMode
+%                           nDimensions
+%                           nSamples
+%                           nChannels
+%                           nSweeps
 %                           siUs
 %                           siMs
 %                           siSeconds
 %                           siPlot
 %                           timeUnits
+%                           channelTypesStr
+%                           channelUnitsStr
+%                           channelLabelsStr
+%                           isCI
+%                           isEvokedLfp
 %                           channelTypes
 %                           channelUnits
 %                           channelLabels
-%                           nDimensions
-%                           nSamples
-%                           nChannels
-%                           nSweeps%                                   (Note: 2nd dimension: sweep; 
-
+%                           fileInfo
 %       parsedData      - a structure containing the following fields:
 %                           data: full data as returned by abf2load.m
 %                           tVec: a constructed time vector with units 
@@ -83,7 +90,7 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 
 %
 % Requires:
-%       cd/construct_and_check_fullpath
+%       cd/construct_and_check_abfpath.m
 %       cd/identify_channels.m
 %       cd/identify_CI.m
 %       cd/identify_eLFP.m
@@ -92,6 +99,7 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %
 % Used by:
 %       cd/parse_all_abfs.m
+%       cd/plot_EEG.m
 %       cd/plot_traces_abf.m
 %       cd/compute_and_plot_evoked_LFP.m
 %       cd/identify_CI.m
@@ -193,12 +201,11 @@ end
 
 %% Do the job
 % Create the full path to .abf file robustly and check for existence
-[abfFullFileName, fileExists] = ...
-    construct_and_check_fullpath(fileName, 'Extension', '.abf');
+[abfFullFileName, fileExists] = construct_and_check_abfpath(fileName);
 if ~fileExists
     parsedParams = [];
     parsedData = [];
-    return 
+    return
 end
 
 % Load abf file, si is in us
@@ -683,6 +690,9 @@ end
 
 % Add path for identify_channels.m, identify_CI.m
 addpath(fullfile(functionsDirectory, 'Brians_Functions'));
+
+[abfFullFileName, fileExists] = ...
+    construct_and_check_fullpath(fileName, 'Extension', '.abf');
 
 %}
 

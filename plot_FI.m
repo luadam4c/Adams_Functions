@@ -12,7 +12,7 @@ function plot_FI (fileName, alldata, sius, outfolder)
 %                   default == a subdirectory named by {fileName}_traces
 %
 % Requires:
-%       cd/construct_and_check_fullpath.m
+%       cd/construct_and_check_abfpath.m
 %       cd/identify_channels.m
 %       cd/identify_CI.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
@@ -51,8 +51,7 @@ end
 %% Set defaults for optional arguments
 if nargin < 2
     % Creates and checks full path to abf file robustly
-    [abfFullFileName, fileExists] = ...
-        construct_and_check_fullpath(fileName, 'Extension', '.abf');
+    [abfFullFileName, fileExists] = construct_and_check_abfpath(fileName);
     if ~fileExists
         return 
     end

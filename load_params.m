@@ -20,7 +20,7 @@ function paramTables = load_params (fileNames, varargin)
 %                       or a cell array of character vectors
 %
 % Requires:
-%       cd/construct_fullpath.m
+%       cd/construct_and_check_fullpath.m
 %       cd/issheettype.m
 %
 % Used by:    

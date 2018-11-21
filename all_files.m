@@ -20,7 +20,19 @@ function [files, fullPaths] = all_files(varargin)
 %                   - 'Directory': the directory to search in
 %                   must be a string scalar or a character vector
 %                   default == pwd
+%                   - 'Prefix': prefix the file name must have
+%                   must be a string scalar or a character vector
+%                   default == no limits
+%                   - 'Keyword': keyword the file name must contain
+%                   must be a string scalar or a character vector
+%                   default == no limits
+%                   - 'Suffix': suffix the file name must have
+%                   must be a string scalar or a character vector
+%                   default == no limits
 %                   - 'Extension': file extension to limit to
+%                   must be a string scalar or a character vector
+%                   default == no limits
+%                   - 'RegExp': regular expression to limit to
 %                   must be a string scalar or a character vector
 %                   default == no limits
 %
@@ -35,11 +47,16 @@ function [files, fullPaths] = all_files(varargin)
 
 % File History:
 % 2018-10-04 Modified from all_subdirs.m
+% 2018-11-21 Added 'Prefix', 'Keyword', 'Suffix', 'RegExp' as optional arguments
 
 %% Default values for optional arguments
 verboseDefault = false;             % don't print to standard output by default
 directoryDefault = '';              % construct_and_check_fullpath('') == pwd
+prefixDefault = '';                 % set later
+keywordDefault = '';                % set later
+suffixDefault = '';                 % set later
 extensionDefault = '';              % set later
+regExpDefault = '';                 % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -53,16 +70,26 @@ addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-                                                % introduced after R2016b
+addParameter(iP, 'Prefix', prefixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'Keyword', keywordDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'Suffix', suffixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'Extension', extensionDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-                                                    % introduced after R2016B
+addParameter(iP, 'RegExp', regExpDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 verbose = iP.Results.Verbose;
 directory = iP.Results.Directory;
+prefix = iP.Results.Prefix;
+keyword = iP.Results.Keyword;
+suffix = iP.Results.Suffix;
 extension = iP.Results.Extension;
+regExp = iP.Results.RegExp;
 
 % Make sure the directory is an existing full path
 [directory, dirExists] = construct_and_check_fullpath(directory);
@@ -73,11 +100,26 @@ if ~dirExists
 end
 
 %% Find files
-% Get the regular expression to match
-if ~isempty(extension)
-    regExp = sprintf('%s$', extension);
+% Get or check the regular expression to match
+if isempty(regExp)
+    % Match the suffix and extension
+    if ~isempty(extension)
+        regExp = sprintf('%s.*%s.*%s%s$', prefix, keyword, suffix, extension);
+    end
 else
-    regExp = '';
+    % Display warning if an extension is provided
+    if ~isempty(prefix)
+        fprintf('Warning: A regular expression will override the prefix!\n');
+    end
+    if ~isempty(keyword)
+        fprintf('Warning: A regular expression will override the keyword!\n');
+    end
+    if ~isempty(suffix)
+        fprintf('Warning: A regular expression will override the suffix!\n');
+    end
+    if ~isempty(extension)
+        fprintf('Warning: A regular expression will override the extension!\n');
+    end
 end
 
 % Get a list of all files and folders in this folder
@@ -94,6 +136,7 @@ if ~isempty(regExp)
     % Test whether each matches the regular expression
     isMatch = cellfun(@any, regexpi(names, regExp));
 else
+    % All files will be considered matched
     isMatch = true(size(filesOrDirs));
 end
 

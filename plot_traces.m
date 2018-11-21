@@ -224,7 +224,8 @@ end
 
 % Match the number of vectors between data and dataToCompare
 %   and make sure boths are column cell arrays of column vectors
-[data, dataToCompare] = match_format_vectors(data, dataToCompare);
+[data, dataToCompare] = ...
+    match_format_vectors(data, dataToCompare, 'ForceCellOutputs', true);
 
 % Extract number of traces
 nTraces = count_vectors(data);

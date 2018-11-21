@@ -29,6 +29,9 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 %                   - 'Individually': whether sweeps are plotted individually
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'OverWrite': whether to overwrite existing output
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'OutFolder': the name of the directory that 
 %                                       plots will be placed
 %                   must be a string scalar or a character vector
@@ -76,12 +79,14 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 %
 % Requires:
 %       cd/check_dir.m
+%       cd/check_fullpath.m
 %       cd/parse_abf.m
 %       cd/plot_traces.m
 %       cd/isfigtype.m
 %
 % Used by:
 %       cd/plot_all_abfs.m
+%       cd/plot_EEG.m
 %       /media/shareX/share/Adam/Sample_files_from_Katie/test_sweeps.m TODO: update this file
 
 % File history: 
@@ -104,6 +109,7 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 % 2018-09-25 - Added figTypes as an argument
 % 2018-10-03 - Updated usage of parse_abf.m
 % 2018-10-03 - Added ParsedData, ParsedParams as optional arguments
+% 2018-11-21 - Added 'OverWrite' as an optional argument
 % TODO: Change the outputs to a cell array of figure handles
 % TODO: (Not sure) Improve code legibility with usage of dataReordered instead of data
 %
@@ -111,12 +117,13 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 %% Hard-coded parameters
 validExpModes = {'EEG', 'patch', ''};
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
-validPlotModes = {'overlapped', 'parallel'};
+validPlotModes = {'', 'overlapped', 'parallel'};
 
 %% Default values for optional arguments
 expModeDefault = 'patch';       % assume traces are patching data by default
-plotModeDefault = 'overlapped'; % plot traces overlapped by default
+plotModeDefault = '';           % plot traces overlapped by default
 individuallyDefault = false;    % plot all sweeps together by default
+overWriteDefault = true;        % pverwrite previous plots by default
 outFolderDefault = '';          % set later
 timeUnitsDefault = '';          % set later
 timeStartDefault = [];          % set later
@@ -153,6 +160,8 @@ addParameter(iP, 'PlotMode', plotModeDefault, ...
     @(x) any(validatestring(x, validPlotModes)));
 addParameter(iP, 'Individually', individuallyDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'OverWrite', overWriteDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
@@ -181,6 +190,7 @@ parse(iP, fileName, varargin{:});
 expMode = validatestring(iP.Results.ExpMode, validExpModes);
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
 individually = iP.Results.Individually;
+overWrite = iP.Results.OverWrite;
 outFolder = iP.Results.OutFolder;
 timeUnits = iP.Results.TimeUnits;
 timeStart = iP.Results.TimeStart;
@@ -203,7 +213,7 @@ end
 % Load and parse the abf file if parsedParams and parsedData not both provided
 if isempty(parsedParams) || isempty(parsedData)
     [parsedParams, parsedData] = ...
-        parse_abf(fileName, 'Verbose', false, ...
+        parse_abf(fileName, 'Verbose', verbose, ...
                   'ExpMode', expMode, 'TimeUnits', timeUnits, ...
                   'ChannelTypes', channelTypes, ...
                   'ChannelUnits', channelUnits, ...
@@ -252,17 +262,31 @@ timeVec = parsedData.tVec;
 data = parsedData.data;
 
 %% Prepare for plotting
-% Set default x-axis limits
+% Find the start and end times
 if isempty(timeStart)
     timeStart = 0;
 end
 if isempty(timeEnd)
     timeEnd = timeVec(end);
 end
+
+% Set the default x-axis limits
 if verbose
-    fprintf('Interval to show = [%g %g]\n', timeStart, timeEnd);
+    fprintf('Interval to show = [%g, %g]\n', timeStart, timeEnd);
 end
 xlimits = [timeStart, timeEnd];
+
+% If not provided, decide on plotMode based on expMode
+if isempty(plotMode)
+    switch expMode
+    case 'EEG'
+        plotMode = 'parallel';
+    case 'patch'
+        plotMode = 'overlapped';
+    otherwise
+        error('Expmode unrecognized!');
+    end
+end
 
 % Set up labels for each trace based on experiment mode
 switch expMode
@@ -302,8 +326,14 @@ if ~individually && strcmpi(expMode, 'EEG')
     figName = fullfile(outFolder, sprintf('%s_all.png', fileIdentifier));
     figNum = 1;
 
+    % Check if the figure already exists
+    if ~overWrite && check_fullpath(figName, 'Verbose', true)
+        return;
+    end
+
     % Do the plotting
-    h = plot_traces(timeVec, vecAll, 'XLimits', xlimits, ...
+    h = plot_traces(timeVec, vecAll, 'PlotMode', plotMode, ...
+                    'XLimits', xlimits, ...
                     'XLabel', xLabel, 'YLabel', yLabel, ...
                     'TraceLabels', traceLabels, ...
                     'FigTitle', figTitle, 'FigName', figName, ...
@@ -334,16 +364,22 @@ elseif ~individually && strcmpi(expMode, 'patch') || ...
                                             fileIdentifier, iChannel));
         figNum = 100 * iChannel;
 
-        % Do the plotting
-        h = plot_traces(timeVec, vecAll, 'XLimits', xlimits, ...
-                        'XLabel', xLabel, 'YLabel', yLabel, ...
-                        'TraceLabels', traceLabels, ...
-                        'FigTitle', figTitle, 'FigName', figName, ...
-                        'FigNumber', figNum, 'FigTypes', figTypes);
+        % Check if the figure already exists
+        if ~overWrite && check_fullpath(figName, 'Verbose', true)
+            % Do nothing
+        else
+            % Do the plotting
+            h = plot_traces(timeVec, vecAll, 'PlotMode', plotMode, ...
+                            'XLimits', xlimits, ...
+                            'XLabel', xLabel, 'YLabel', yLabel, ...
+                            'TraceLabels', traceLabels, ...
+                            'FigTitle', figTitle, 'FigName', figName, ...
+                            'FigNumber', figNum, 'FigTypes', figTypes);
 
-        % Hold off and close figure
-        hold off;
-        close(h);
+            % Hold off and close figure
+            hold off;
+            close(h);
+        end
     end
 elseif individually && strcmpi(expMode, 'patch')
     % Plot each channel and sweep individually
@@ -369,16 +405,22 @@ elseif individually && strcmpi(expMode, 'patch')
                                         fileIdentifier, iChannel, iSwp));
             figNum = 100 * iChannel + iSwp;
 
-            % Do the plotting
-            h = plot_traces(timeVec, vecAll, 'XLimits', xlimits, ...
-                            'XLabel', xLabel, 'YLabel', yLabel, ...
-                            'TraceLabels', traceLabels, ...
-                            'FigTitle', figTitle, 'FigName', figName, ...
-                            'FigNumber', figNum, 'FigTypes', figTypes);
+            % Check if the figure already exists
+            if ~overWrite && check_fullpath(figName, 'Verbose', true)
+                % Do nothing
+            else
+                % Do the plotting
+                h = plot_traces(timeVec, vecAll, 'PlotMode', plotMode, ...
+                                'XLimits', xlimits, ...
+                                'XLabel', xLabel, 'YLabel', yLabel, ...
+                                'TraceLabels', traceLabels, ...
+                                'FigTitle', figTitle, 'FigName', figName, ...
+                                'FigNumber', figNum, 'FigTypes', figTypes);
 
-            % Hold off and close figure
-            hold off;
-            close(h);
+                % Hold off and close figure
+                hold off;
+                close(h);
+            end
         end
     end
 else

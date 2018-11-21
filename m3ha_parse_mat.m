@@ -89,7 +89,8 @@ if isempty(matfiles)
 end
 
 % Check whether matfiles exist
-[fullPaths, fileExists] = construct_and_check_fullpath(matfiles);
+[fullPaths, fileExists] = ...
+    construct_and_check_fullpath(matfiles, 'Extension', '.mat');
 
 % If there are files missing, print them out and return
 if ~all(fileExists)

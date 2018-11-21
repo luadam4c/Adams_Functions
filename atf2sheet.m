@@ -3,12 +3,12 @@ function [tablesAll, sheetFullFileNames] = atf2sheet (atfFileOrDir, varargin)
 % Usage: [tablesAll, sheetFullFileNames] = atf2sheet (atfFileOrDir, varargin)
 % Explanation:
 %       Converts .atf text file(s) to a spreadsheet file(s) 
-%           Default file type to convert is xlsx, 
+%           Default file type to convert is csv, 
 %               but this can be changed by the 'SheetType' argument)
 %
 % Example(s):
 %       atf2sheet(pwd);
-%       atf2sheet(pwd, 'SheetType', 'csv');
+%       atf2sheet(pwd, 'SheetType', 'xlsx');
 % Outputs:
 %       tablesAll           - data from the atf file(s)
 %                           specified as a table or a cell array of tables
@@ -21,10 +21,10 @@ function [tablesAll, sheetFullFileNames] = atf2sheet (atfFileOrDir, varargin)
 %       atfFileOrDir    - .atf file name or directory name
 %                       must be a string scalar or a character vector
 %       varargin    - 'SheetType': sheet type; 
-%                       e.g., 'xlsx', 'csv', etc.
+%                       e.g., 'csv', 'xlsx', etc.
 %                   could be anything recognised by the readtable() function 
 %                   (see issheettype.m under Adams_Functions)
-%                   default == 'xlsx'
+%                   default == 'csv'
 %                   - 'OutFolder': directory to output csv file, 
 %                                   e.g. 'output'
 %                   must be a string scalar or a character vector
@@ -40,16 +40,18 @@ function [tablesAll, sheetFullFileNames] = atf2sheet (atfFileOrDir, varargin)
 %                   default == 'ISO-8859-15'
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/issheettype.m
-%       /home/Matlab/Adams_Functions/print_or_show_message.m
+%       cd/issheettype.m
+%       cd/print_or_show_message.m
 %
 % Used by:
+%       cd/parse_swd_manual.m
 %       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
 
 % File History:
 % 2018-05-16 Created by Adam Lu, some code from abf2mat.m
 % 2018-05-17 Changed default OutFolder to atfDir
 % 2018-05-23 Now has tablesAll as the first output
+% 2018-11-21 Changed default sheetType xlsx -> csv
 % TODO: isdelimiter.m
 % 
 
@@ -57,7 +59,7 @@ function [tablesAll, sheetFullFileNames] = atf2sheet (atfFileOrDir, varargin)
 N_LINES_TO_SKIP = 2;            % atf files all seem to have two irrelevant lines
 
 %% Default values for optional arguments
-sheetTypeDefault = 'xlsx';      % default spreadsheet type
+sheetTypeDefault = 'csv';       % save as a comma-separated value file by default
 outFolderDefault = '';          % default directory to output spreadsheet file
 nLinesToSkipDefault = N_LINES_TO_SKIP;  % default number of lines to skip
 delimiterDefault = '\t';        % default delimiter
@@ -209,6 +211,8 @@ writetable(table, sheetFullFileName);
 
 %{
 OLD CODE:
+
+sheetTypeDefault = 'xlsx';      % default spreadsheet type
 
 %}
 
