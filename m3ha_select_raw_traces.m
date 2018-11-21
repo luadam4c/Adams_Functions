@@ -1,14 +1,12 @@
-function [nColumns, fileNames] = ...
+function [figurePositions, swpIndices, fileNames] = ...
                 m3ha_select_raw_traces (columnMode, rowConditions, ...
                     attemptNumber, iCellToFit, swpIdxSCPGV, swpIndToFit, ...
-                    swpIndByCondition, cellNamesToFit, ...
-                    fnrow, bursttime, ltspeaktime, maxnoise)
+                    swpIndByCondition, cellNamesToFit, swpInfo)
 %% Select raw traces to import
-% Usage: [nColumns, swpIndG200P, swpIndPCond, swpIndRow] = ...
+% Usage: [figurePositions, swpIndices, fileNames] = ...
 %               m3ha_select_raw_traces (columnMode, rowConditions, ...
 %                   attemptNumber, iCellToFit, swpIdxSCPGV, swpIndToFit, ...
-%                   swpIndByCondition, cellNamesToFit, ...
-%                    fnrow, bursttime, ltspeaktime, maxnoise)
+%                   swpIndByCondition, cellNamesToFit, swpInfo)
 %
 % Used by:
 %       cd/singleneuronfitting42.m and later versions
@@ -68,6 +66,12 @@ end
 
 % Initialize nColumns
 nColumns = 0;
+
+% Extract from swpInfo
+fnrow = swpInfo.fnrow;
+bursttime = swpInfo.bursttime;
+ltspeaktime = swpInfo.ltspeaktime;
+maxnoise = swpInfo.maxnoise;
 
 %% Do the job
 % Print message
@@ -403,23 +407,31 @@ if nColumns == 0
     error('No traces found!')
 end
 
-% Get the file names
-fileNames = cell(nRows, nColumns);
+% Count the number of traces
+nSweeps = nRows * nColumns;
+
+% Get the figure positions and sweep indices for each trace
+figurePositions = cell(nSweeps, 1);
+swpIndices = zeros(nSweeps, 1);
+ct = 0;
 for iRow = 1:nRows
     for iCol = 1:nColumns
+        % Get the current figure position
+        figurePositions{ct} = [iRow, iCol];
+
         % Get the current sweep index
         if ~isempty(swpIndG200P{1})
-            swpIdx = swpIndG200P{iRow}(iCol);
+            swpIndices(ct) = swpIndG200P{iRow}(iCol);
         elseif ~isempty(swpIndPCond{1})
-            swpIdx = swpIndPCond{iRow}(iCol);
+            swpIndices(ct) = swpIndPCond{iRow}(iCol);
         elseif ~isempty(swpIndRow{1})
-            swpIdx = swpIndRow{iRow}(iCol);
+            swpIndices(ct) = swpIndRow{iRow}(iCol);
         end
-
-        % TODO
-        fileNames{iRow, iCol} = fnrow{swpIdx};
     end
 end
+
+% Get the file names
+fileNames = fnrow(swpIndices);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -535,6 +547,24 @@ for iRow = 1:nRows
         swpIndGincrPcond{iGEachRow(iRow), iPEachRow(iRow)};
 end
 
+
+% Get the file names
+fileNames = cell(nRows, nColumns);
+for iRow = 1:nRows
+    for iCol = 1:nColumns
+        % Get the current sweep index
+        if ~isempty(swpIndG200P{1})
+            swpIdx = swpIndG200P{iRow}(iCol);
+        elseif ~isempty(swpIndPCond{1})
+            swpIdx = swpIndPCond{iRow}(iCol);
+        elseif ~isempty(swpIndRow{1})
+            swpIdx = swpIndRow{iRow}(iCol);
+        end
+
+        % TODO
+        fileNames{iRow, iCol} = fnrow{swpIdx};
+    end
+end
 
 %}
 

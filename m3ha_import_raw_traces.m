@@ -1,8 +1,7 @@
-function [dCpr, dIpscr, sweepInfoCpr, sweepInfoIpscr, dCprAll] = ...
+function [dataCpr, dataIpscr, sweepInfoCpr, sweepInfoIpscr, dataCprAll] = ...
                 m3ha_import_raw_traces (dataDir, outFolderName, ...
-                    nRows, nColumns, fileNamesRowCol, ...
+                    figurePositions, fileNames, swpInfo, ...
                     cpStartWindowOrig, cprWinOrig, timeToStabilize, ...
-                    fnrow, vrow, currentPulseAmplitudeOrig, mvw, actVhold, ...
                     ipscTimeOrig, ipscDur, initialSlopes, ...
                     epasEstimate, RinEstimate, ...
                     correctDcStepsFlag, oldAverageCprFlag, generateDataFlag)
@@ -39,6 +38,8 @@ function [dCpr, dIpscr, sweepInfoCpr, sweepInfoIpscr, dCprAll] = ...
 
 % Hard-coded constants
 PA_PER_NA = 1000;
+mvw = 0.5;                          % width in ms for calculating mean voltage 
+                                    %   for input resistance calculations
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -69,151 +70,135 @@ timeIPSC = ipscTimeOrig + timeToStabilize;
 logFileName = fullfile(outFolderName, sprintf('%s.log', mfilename));
 fid = fopen(logFileName, 'w');
 
+% Extract from swpInfo
+vrow = swpInfo.vrow;
+currpulse = swpInfo.currpulse;
+actVhold = swpInfo.actVhold;
+
 %% Import sweeps
 % Print message
 fprintf('Importing raw traces for this cell ... \n');
 
 % Initialize output variables
-dCpr = cell(nSweeps, 1);                        % stores current pulse response traces for fitting
-dIpscr = cell(nSweeps, 1);                      % stores IPSC response traces for fitting
-fileNames = cell(nSweeps, 1);                   % stores file names of traces used
-swpIdxIpscr = zeros(nSweeps, 1);                % stores the sweep index for each trace used
+dataCpr = cell(nSweeps, 1);                        % stores current pulse response traces for fitting
+dataIpscr = cell(nSweeps, 1);                      % stores IPSC response traces for fitting
 currentPulseAmplitude = zeros(nSweeps, 1);      % stores the current pulse amplitude (nA)
 % cpstart = zeros(nSweeps, 1);                  % stores the time of current pulse application (ms)
 baseNoiseIpscr = zeros(nSweeps, 1);             % stores baseline noise in voltage recordings
 holdCurrentIpscr = zeros(nSweeps, 1);           % stores estimated holding currents
 holdPotentialIpscr = zeros(nSweeps, 1);         % stores the holding potentials right before IPSC application (mV)
 ct = 0;                                         % counts number of raw traces imported
-for iRow = 1:nRows
-    for iCol = 1:nColumns
-        % Increment the sweep count
-        ct = ct + 1;
 
-        % Get the current file name
-        fileName = fileNamesRowCol{iRow, iCol};
+for iSwp = 1:nSweeps
+    fileName = fileNames{iSwp};
 
-        % Get the swpIdx from the file name
-        swpIdx = find_ind_str_in_cell(fileName, fnrow);
+    % Print message
+    fprintf('Using trace %s ... \n', fileName);
 
-        % Print message
-        fprintf('Using trace %s ... \n', fileName);
+    % Open the matfile
+    m = matfile(fullfile(dataDir, 'matfiles', fileName));
 
-        % Open the matfile
-        m = matfile(fullfile(dataDir, 'matfiles', fileName));
-
-        % Use original data
-        tvecOrig = m.d_orig(:, 1);
+    % Use original data
+    tvecOrig = m.d_orig(:, 1);
 
 % TODO: fix below
 
-        % Find current pulse response window
-        %   Must be sure to include current pulse start and cpStartWindowOrigLength adjustment
-        acprwinBegin = find(tvecOrig >= cprWinOrig(1), 1);
-        cpStartWindowOrigLength = cpStartWindowOrig(2) - cpStartWindowOrig(1);
-        acprwinEnd = find(tvecOrig <= cprWinOrig(2) + cpStartWindowOrigLength, 1, 'last');
-        acprwinInd = acprwinBegin:acprwinEnd;       % indices corresponding to approximate cpr window
+    % Find current pulse response window
+    %   Must be sure to include current pulse start and cpStartWindowOrigLength adjustment
+    acprwinBegin = find(tvecOrig >= cprWinOrig(1), 1);
+    cpStartWindowOrigLength = cpStartWindowOrig(2) - cpStartWindowOrig(1);
+    acprwinEnd = find(tvecOrig <= cprWinOrig(2) + cpStartWindowOrigLength, 1, 'last');
+    acprwinInd = acprwinBegin:acprwinEnd;       % indices corresponding to approximate cpr window
 
-        % Use original data for current pulse response
-        simsCpr = tvecOrig(2) - tvecOrig(1);        % sampling interval in ms
-        tvecCpr = tvecOrig(acprwinInd);             % time vector of original data in ms
-        gvecCpr = m.d_orig(acprwinInd, 2);          % conductance vector of original data in nS
-        gvecCpr = gvecCpr / 1000;                   % conductance vector in uS
-        ivecCpr = m.d_orig(acprwinInd, 3);          % current vector of original data in pA
-        ivecCpr = ivecCpr / 1000;                   % current vector in nA
-        vvecCpr = m.d_orig(acprwinInd, 4);          % voltage vector of original data in mV
+    % Use original data for current pulse response
+    simsCpr = tvecOrig(2) - tvecOrig(1);        % sampling interval in ms
+    tvecCpr = tvecOrig(acprwinInd);             % time vector of original data in ms
+    gvecCpr = m.d_orig(acprwinInd, 2);          % conductance vector of original data in nS
+    gvecCpr = gvecCpr / 1000;                   % conductance vector in uS
+    ivecCpr = m.d_orig(acprwinInd, 3);          % current vector of original data in pA
+    ivecCpr = ivecCpr / 1000;                   % current vector in nA
+    vvecCpr = m.d_orig(acprwinInd, 4);          % voltage vector of original data in mV
 
-        % Find the expected baseline window length in samples
-        cprbasewinLength = round((cpStartExpected - cprWinOrig(1))/simsCpr);
+    % Find the expected baseline window length in samples
+    cprbasewinLength = round((cpStartExpected - cprWinOrig(1))/simsCpr);
 
-        % Find current pulse amplitude (convert to nA) and start of current pulse application
-        currentPulseAmplitude(ct, 1) = currentPulseAmplitudeOrig(swpIdx) / PA_PER_NA;
-        cpStartWindowOrigEnd = find(tvecCpr <= cpStartWindowOrig(2), 1, 'last');
-        cpstartInd = find(ivecCpr(1:cpStartWindowOrigEnd) > currentPulseAmplitude(ct, 1) * 0.25, 1, 'last');
+    % Find current pulse amplitude (convert to nA) and start of current pulse application
+    currentPulseAmplitude(ct, 1) = currpulse(swpIdx) / PA_PER_NA;
+    cpStartWindowOrigEnd = find(tvecCpr <= cpStartWindowOrig(2), 1, 'last');
+    cpstartInd = find(ivecCpr(1:cpStartWindowOrigEnd) > currentPulseAmplitude(ct, 1) * 0.25, 1, 'last');
 %         cpstart(ct, 1) = tvecCpr(cpstartInd);                 % current pulse start in ms
 
-        % Find the number of indices to pad before current pulse response data
-        cprstartInd = cpstartInd - cprbasewinLength;
-        if cprstartInd < 1
-            nIndToPadCprBase = 1 - cprstartInd;
-        else
-            nIndToPadCprBase = 0;
-        end
-
-        % Find indices for current pulse response relative to tvecCpr
-        cprwinLength = round((cprWinOrig(2) - cprWinOrig(1))/simsCpr);
-        cprendInd = cprstartInd + cprwinLength - 1;
-        if cprstartInd < 1
-            cprInd = 1:cprendInd;
-        else
-            cprInd = cprstartInd:cprendInd;
-        end
-
-        % Get full time vector of current pulse response
-        tvecCprLength = round(cprWindow(2)/simsCpr);
-        tvecCprFull = simsCpr * (1:tvecCprLength)';
-        dCpr{ct}(:, 1) = tvecCprFull;                           % time vector of current pulse response
-
-        % Pad raw traces so that current pulses lie at 2100-2110 ms
-        nIndToPadBeforeCpr = round(cprWindow(1)/simsCpr);
-        nIndToPad = nIndToPadCprBase + nIndToPadBeforeCpr;
-        vvectopad = NaN * ones(1, nIndToPad)';
-        ivectopad = zeros(1, nIndToPad)';
-        gvectopad = zeros(1, nIndToPad)';
-        dCpr{ct}(:, 2) = vertcat(vvectopad, vvecCpr(cprInd));   % voltage vector of current pulse response
-        dCpr{ct}(:, 3) = vertcat(ivectopad, ivecCpr(cprInd));   % current vector of current pulse response
-        dCpr{ct}(:, 4) = vertcat(gvectopad, gvecCpr(cprInd));   % conductance vector of current pulse response
-
-        % Use median-filtered & resampled data for IPSC response
-        tvec = m.d_mfrs(:, 1);  % time vector of median-filtered then resampled data in ms
-        gvec = m.d_mfrs(:, 2);  % conductance vector of median-filtered then resampled data in nS
-        gvec = gvec / 1000;     % conductance vector in uS
-        ivec = m.d_mfrs(:, 3);  % current vector of median-filtered then resampled data in pA
-        ivec = ivec / 1000;     % current vector in nA
-        vvec = m.d_mfrs(:, 4);  % voltage vector of median-filtered then resampled data in mV
-
-        % Holding potential was already extracted during data analysis
-        holdPotentialIpscr(ct, 1) = actVhold(swpIdx);    
-
-        % Estimate the holding currents (nA) based on estimated
-        %   input resistance and resting membrane potential
-        %   I = (V - epas) / R
-        holdCurrentIpscr = (holdPotentialIpscr - epasEstimate) / RinEstimate;
-
-        % Pad raw traces so that IPSCs begin at 3000 ms (timeIPSC) 
-        %            and goes on for 7000 ms (ipscDur)
-        sims = tvec(2) - tvec(1);       % Should be 1 ms
-        about3000 = round(timeIPSC/sims)*sims;
-        tvectopad = (sims:sims:about3000)';
-        vvectopad = holdPotentialIpscr(ct, 1) * ones(1, length(tvectopad))';
-        ivectopad = zeros(1, length(tvectopad))';
-        gvectopad = zeros(1, length(tvectopad))';
-        indofipsc = round(ipscTimeOrig/sims);
-        indofend = round((ipscTimeOrig + ipscDur)/sims);
-        tvec_shifted = tvec(indofipsc:indofend) - tvec(indofipsc - 1) + about3000;
-        vvec_shifted = vvec(indofipsc:indofend);
-        ivec_shifted = ivec(indofipsc:indofend);
-        gvec_shifted = gvec(indofipsc:indofend);
-        dIpscr{ct}(:, 1) = vertcat(tvectopad, tvec_shifted);        % time vector of IPSC response
-        dIpscr{ct}(:, 2) = vertcat(vvectopad, vvec_shifted);        % voltage vector of IPSC response
-        dIpscr{ct}(:, 3) = vertcat(ivectopad, ivec_shifted);        % current vector of IPSC response
-        dIpscr{ct}(:, 4) = vertcat(gvectopad, gvec_shifted);        % conductance vector of IPSC response
-
-        % Find the baseline noise
-        indBaseline = 1:indofipsc-1;
-        baseline = vvec(indBaseline);
-        baseNoiseIpscr(ct) = compute_rms_error(baseline);
-
-% TODO: fix above
-
-        % Store in arrays
-        swpIdxIpscr(ct) = swpIdx;
-        fileNames{ct} = fileName;
+    % Find the number of indices to pad before current pulse response data
+    cprstartInd = cpstartInd - cprbasewinLength;
+    if cprstartInd < 1
+        nIndToPadCprBase = 1 - cprstartInd;
+    else
+        nIndToPadCprBase = 0;
     end
-end
-if ct ~= nSweeps
-    error('Number of traces imported incorrect!!');
-else
-    fprintf('\n');
+
+    % Find indices for current pulse response relative to tvecCpr
+    cprwinLength = round((cprWinOrig(2) - cprWinOrig(1))/simsCpr);
+    cprendInd = cprstartInd + cprwinLength - 1;
+    if cprstartInd < 1
+        cprInd = 1:cprendInd;
+    else
+        cprInd = cprstartInd:cprendInd;
+    end
+
+    % Get full time vector of current pulse response
+    tvecCprLength = round(cprWindow(2)/simsCpr);
+    tvecCprFull = simsCpr * (1:tvecCprLength)';
+    dataCpr{ct}(:, 1) = tvecCprFull;                           % time vector of current pulse response
+
+    % Pad raw traces so that current pulses lie at 2100-2110 ms
+    nIndToPadBeforeCpr = round(cprWindow(1)/simsCpr);
+    nIndToPad = nIndToPadCprBase + nIndToPadBeforeCpr;
+    vvectopad = NaN * ones(1, nIndToPad)';
+    ivectopad = zeros(1, nIndToPad)';
+    gvectopad = zeros(1, nIndToPad)';
+    dataCpr{ct}(:, 2) = vertcat(vvectopad, vvecCpr(cprInd));   % voltage vector of current pulse response
+    dataCpr{ct}(:, 3) = vertcat(ivectopad, ivecCpr(cprInd));   % current vector of current pulse response
+    dataCpr{ct}(:, 4) = vertcat(gvectopad, gvecCpr(cprInd));   % conductance vector of current pulse response
+
+    % Use median-filtered & resampled data for IPSC response
+    tvec = m.d_mfrs(:, 1);  % time vector of median-filtered then resampled data in ms
+    gvec = m.d_mfrs(:, 2);  % conductance vector of median-filtered then resampled data in nS
+    gvec = gvec / 1000;     % conductance vector in uS
+    ivec = m.d_mfrs(:, 3);  % current vector of median-filtered then resampled data in pA
+    ivec = ivec / 1000;     % current vector in nA
+    vvec = m.d_mfrs(:, 4);  % voltage vector of median-filtered then resampled data in mV
+
+    % Holding potential was already extracted during data analysis
+    holdPotentialIpscr(ct, 1) = actVhold(swpIdx);    
+
+    % Estimate the holding currents (nA) based on estimated
+    %   input resistance and resting membrane potential
+    %   I = (V - epas) / R
+    holdCurrentIpscr = (holdPotentialIpscr - epasEstimate) / RinEstimate;
+
+    % Pad raw traces so that IPSCs begin at 3000 ms (timeIPSC) 
+    %            and goes on for 7000 ms (ipscDur)
+    sims = tvec(2) - tvec(1);       % Should be 1 ms
+    about3000 = round(timeIPSC/sims)*sims;
+    tvectopad = (sims:sims:about3000)';
+    vvectopad = holdPotentialIpscr(ct, 1) * ones(1, length(tvectopad))';
+    ivectopad = zeros(1, length(tvectopad))';
+    gvectopad = zeros(1, length(tvectopad))';
+    indofipsc = round(ipscTimeOrig/sims);
+    indofend = round((ipscTimeOrig + ipscDur)/sims);
+    tvec_shifted = tvec(indofipsc:indofend) - tvec(indofipsc - 1) + about3000;
+    vvec_shifted = vvec(indofipsc:indofend);
+    ivec_shifted = ivec(indofipsc:indofend);
+    gvec_shifted = gvec(indofipsc:indofend);
+    dataIpscr{ct}(:, 1) = vertcat(tvectopad, tvec_shifted);        % time vector of IPSC response
+    dataIpscr{ct}(:, 2) = vertcat(vvectopad, vvec_shifted);        % voltage vector of IPSC response
+    dataIpscr{ct}(:, 3) = vertcat(ivectopad, ivec_shifted);        % current vector of IPSC response
+    dataIpscr{ct}(:, 4) = vertcat(gvectopad, gvec_shifted);        % conductance vector of IPSC response
+
+    % Find the baseline noise
+    indBaseline = 1:indofipsc-1;
+    baseline = vvec(indBaseline);
+    baseNoiseIpscr(ct) = compute_rms_error(baseline);
 end
 
 % Store the file names
@@ -258,20 +243,20 @@ if correctDcStepsFlag
     parfor iSwp = 1:nSweeps
         if isOutOfBalance(iSwp)
             % Get the old trace
-            vvecOld = dCpr{iSwp}(:, 2);
-            ivecOld = dCpr{iSwp}(:, 3);
+            vvecOld = dataCpr{iSwp}(:, 2);
+            ivecOld = dataCpr{iSwp}(:, 3);
 
             % Correct any unbalanced bridge in the trace
             vvecNew = correct_unbalanced_bridge(vvecOld, ivecOld);
 
             % Store the new trace
-            dCpr{iSwp}(:, 2) = vvecNew;
+            dataCpr{iSwp}(:, 2) = vvecNew;
         end
     end
 end
 
 % Save all the data
-dCprAll = dCpr;
+dataCprAll = dataCpr;
 
 %% Average the current pulse responses according to vHold
 if oldAverageCprFlag
@@ -279,7 +264,7 @@ if oldAverageCprFlag
     vholdThis = vrow(swpIdxIpscr);
 
     % Get the number of data points for the current pulse response
-    ndpCpr = size(dCpr{1}, 1);
+    ndpCpr = size(dataCpr{1}, 1);
 
     % Find unique vHold values
     vUnique = force_column_numeric(sort(unique(vholdThis)));
@@ -293,7 +278,7 @@ if oldAverageCprFlag
         vnow = vUnique(iVhold);
 
         % Collect all cpr traces with this vHold value
-        dCprGroupedThisVhold = dCpr(vholdThis == vnow);
+        dCprGroupedThisVhold = dataCpr(vholdThis == vnow);
 
         % Preallocate
         dCprAveragedThisVhold = zeros(ndpCpr, 4);
@@ -315,11 +300,11 @@ if oldAverageCprFlag
         dataCprAveraged{iVhold} = dCprAveragedThisVhold;
     end
 
-    % Rename as new dCpr
-    dCpr = dataCprAveraged;
+    % Rename as new dataCpr
+    dataCpr = dataCprAveraged;
 
     % Count the number of sweeps for the current pulse response
-    nSwpsCpr = numel(dCpr);
+    nSwpsCpr = numel(dataCpr);
 
     % Define file names by the vhold level
     fileNamesCpr = arrayfun(@(x) strcat(fileNames{1}(1:7), ...
@@ -332,7 +317,7 @@ end
 
 %% Find the holding potential, holding current and baseline noise
 % Count the number of sweeps for the current pulse response
-nSwpsCpr = numel(dCpr);
+nSwpsCpr = numel(dataCpr);
 
 % Find the holding potential, holding current and baseline noise
 baseNoiseCpr = zeros(nSwpsCpr, 1);
@@ -340,7 +325,7 @@ holdCurrentCpr = zeros(nSwpsCpr, 1);
 holdPotentialCpr = zeros(nSwpsCpr, 1);
 for iSwp = 1:nSwpsCpr
     % Get the current voltage trace
-    vCprAveragedThis = dCpr{iSwp}(:, 2);
+    vCprAveragedThis = dataCpr{iSwp}(:, 2);
 
     % Find the baseline noise
     indBaselineCpr = nIndToPadBeforeCpr + (1:cprbasewinLength);
@@ -424,10 +409,10 @@ tvec_shifted = tvecCpr(cprInd) - tvecCpr(cprstartInd - 1) + about2100;
 vvec_shifted = vvecCpr(cprInd);
 ivec_shifted = ivecCpr(cprInd);
 gvec_shifted = gvecCpr(cprInd);
-dCpr{ct}(:, 1) = vertcat(tvectopad, tvec_shifted);    % time vector of current pulse response
-dCpr{ct}(:, 2) = vertcat(vvectopad, vvec_shifted);    % voltage vector of current pulse response
-dCpr{ct}(:, 3) = vertcat(ivectopad, ivec_shifted);    % current vector of current pulse response
-dCpr{ct}(:, 4) = vertcat(gvectopad, gvec_shifted);    % conductance vector of current pulse response
+dataCpr{ct}(:, 1) = vertcat(tvectopad, tvec_shifted);    % time vector of current pulse response
+dataCpr{ct}(:, 2) = vertcat(vvectopad, vvec_shifted);    % voltage vector of current pulse response
+dataCpr{ct}(:, 3) = vertcat(ivectopad, ivec_shifted);    % current vector of current pulse response
+dataCpr{ct}(:, 4) = vertcat(gvectopad, gvec_shifted);    % conductance vector of current pulse response
 
 holdPotentialCpr = zeros(nSweeps, 1);          % stores the holding potentials right before cp application (mV)
 
@@ -593,6 +578,37 @@ end
 
 % Get the current file name
 fileName = fnrow{swpIdx};
+
+fileNames = cell(nSweeps, 1);                   % stores file names of traces used
+
+% Store in arrays
+swpIdxIpscr(ct) = swpIdx;
+fileNames{ct} = fileName;
+
+swpIdxIpscr = zeros(nSweeps, 1);                % stores the sweep index for each trace used
+
+for iRow = 1:nRows
+    for iCol = 1:nColumns
+        % Increment the sweep count
+        ct = ct + 1;
+
+        % Get the current file name
+        fileName = fileNamesRowCol{iRow, iCol};
+
+    end
+end
+
+if ct ~= nSweeps
+    error('Number of traces imported incorrect!!');
+else
+    fprintf('\n');
+end
+
+
+% Get the swpIdx from the file name
+swpIdx = find_ind_str_in_cell(fileName, fnrow);
+
+fnrow = swpInfo.fnrow;
 
 %}
 
