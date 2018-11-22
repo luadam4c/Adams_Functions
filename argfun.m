@@ -27,6 +27,8 @@ function varargout = argfun (myFunction, varargin)
 %       cd/m3ha_run_neuron_once.m
 %       cd/match_format_vectors.m
 %       cd/match_reciprocals.m
+%       cd/parse_assyst_swd.m
+%       cd/parse_atf_swd.m
 %       cd/plot_cfit_pulse_response.m
 %       cd/plot_traces.m
 %       cd/plot_traces_abf.m

@@ -23,10 +23,12 @@ function [swdAssystTable, swdAssystCsvFile] = ...
 %                   default == same as location of originalEventFile
 %
 % Requires:
-%       /TODO:dir/TODO:file
+%       cd/argfun.m
+%       cd/construct_and_check_abfpath.m
+%       cd/match_dimensions.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/plot_EEG.m
 
 % File History:
 % 2018-11-22 Created by Adam Lu

@@ -21,7 +21,10 @@ function plot_EEG(abfFileName, varargin)
 %                                       plots will be placed
 %                   must be a string scalar or a character vector
 %                   default == a subdirectory named by {fileName}_traces in pwd
-%                   - 'SwdManualFile': TODO: Description of atfPathName
+%                   - 'AtfPath': path to .atf file
+%                   must be a TODO
+%                   default == TODO
+%                   - 'AssystPath': path to Assyst.txt file
 %                   must be a TODO
 %                   default == TODO
 %                   
@@ -29,6 +32,7 @@ function plot_EEG(abfFileName, varargin)
 %       cd/all_files.m
 %       cd/check_dir.m
 %       cd/parse_abf.m
+%       cd/parse_assyst_swd.m
 %       cd/parse_atf_swd.m
 %       cd/plot_traces_abf.m
 %
@@ -43,8 +47,9 @@ function plot_EEG(abfFileName, varargin)
 
 %% Default values for optional arguments
 verboseDefault = true;
-outFolderDefault = '';          % set later
-atfPathDefault = '';      % set later
+outFolderDefault = '';      % set later
+atfPathDefault = '';        % set later
+assystPathDefault = '';     % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -68,14 +73,17 @@ addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'SwdManualFile', atfPathDefault, ...
+addParameter(iP, 'AtfPath', atfPathDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'AssystPath', assystPathDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, abfFileName, varargin{:});
 verbose = iP.Results.Verbose;
 outFolder = iP.Results.OutFolder;
-atfPath = iP.Results.SwdManualFile;
+atfPath = iP.Results.AtfPath;
+assystPath = iP.Results.AssystPath;
 
 %% Preparation
 % Parse the abf file
@@ -128,7 +136,7 @@ if isempty(atfPath)
 end
 
 % Look for Assyst SWD files if not provided
-if isempty(atfPath)
+if isempty(assystPath)
     % Try to look for a Assyst.txt file containing the file base in the same directory
     [~, assystPaths] = all_files('Directory', fileDir, 'Keyword', fileBase, ...
                                 'Suffix', 'Assyst', 'Extension', '.txt');

@@ -24,8 +24,10 @@ function [swdManualTable, swdManualCsvFile] = ...
 %                   default == same as location of originalEventFile
 %
 % Requires:
+%       cd/argfun.m
 %       cd/atf2sheet.m
 %       cd/construct_and_check_abfpath.m
+%       cd/match_dimensions.m
 %
 % Used by:
 %       cd/plot_EEG.m
