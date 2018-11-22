@@ -43,6 +43,7 @@ function [files, fullPaths] = all_files(varargin)
 % Used by: 
 %       cd/parse_all_abfs.m
 %       cd/plot_all_abfs.m
+%       cd/plot_swd_raster.m
 %       
 
 % File History:

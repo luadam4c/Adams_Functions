@@ -160,7 +160,7 @@ plot_traces_abf(abfPath, 'Verbose', verbose, 'OverWrite', false, ...
 % Plot manual SWD regions if an atf file exists
 if isfile(atfPath)
     % Parse the SWDs from the .atf file
-    swdManualTable = parse_atf_swd(atfPath, 'OutFolder', outFolder);
+    swdManualTable = parse_atf_swd(atfPath);
 
     % TODO: Pull out to function plot_swds.m
     % Create an output folder for manual SWD traces
@@ -186,7 +186,7 @@ end
 % Plot Assyst SWD regions if an Assyst.txt file exists
 if isfile(assystPath)
     % Parse the SWDs from the Assyst.txt file
-    swdAssystTable = parse_assyst_swd(assystPath, 'OutFolder', outFolder);
+    swdAssystTable = parse_assyst_swd(assystPath);
 
     % TODO: Pull out to function plot_swds.m
     % Create an output folder for Assyst SWD traces
@@ -260,6 +260,9 @@ end
 atfPath = replace(abfPath, '.abf', '_Manual_SWDs.csv');
 
 atfPath = fullfile(fileDir, [fileBase, '_Manual_SWDs.csv']);
+
+swdAssystTable = parse_assyst_swd(assystPath, 'OutFolder', outFolder);
+swdManualTable = parse_atf_swd(atfPath, 'OutFolder', outFolder);
 
 %}
 

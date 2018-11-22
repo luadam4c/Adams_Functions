@@ -46,11 +46,12 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 %       cd/intersect_over_cells.m
 %
 % Used by:    
-%       cd/validate_string.m
-%       cd/update_params.m
 %       cd/increment_editbox.m
 %       cd/m3ha_correct_unbalanced_bridge.m
 %       cd/m3ha_import_raw_traces.m
+%       cd/plot_swd_raster.m
+%       cd/update_params.m
+%       cd/validate_string.m
 %       cd/ZG_extract_all_IEIs.m
 %       cd/ZG_extract_all_data.m
 %       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m

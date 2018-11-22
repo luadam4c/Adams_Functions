@@ -52,6 +52,7 @@ function print_or_show_message (message, varargin)
 %       cd/create_pulse_train_series.m
 %       cd/create_waveform_train.m
 %       cd/match_time_points.m
+%       cd/plot_swd_raster.m
 %       /home/Matlab/minEASE/minEASE.m
 %       /home/Matlab/minEASE/combine_eventInfo.m
 %       /home/Matlab/minEASE/compute_plot_average_PSC_traces.m

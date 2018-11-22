@@ -33,6 +33,7 @@ function [results, linestyles] = islinestyle (candidates, varargin)
 % Used by:
 %       cd/plot_ellipse.m
 %       cd/plot_raster.m
+%       cd/plot_swd_raster.m
 %       /home/Matlab/EEG_gui/combine_EEG_gui_outputs.m
 %
 % File History:
