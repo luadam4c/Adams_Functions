@@ -50,6 +50,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %       cd/extract_subvectors.m
 %       cd/find_passive_params.m
 %       cd/m3ha_run_neuron_once.m
+%       cd/plot_traces.m
 
 % File History:
 % 2018-10-09 Created by Adam Lu

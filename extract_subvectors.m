@@ -36,6 +36,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/m3ha_run_neuron_once.m
+%       cd/plot_traces.m
 
 % File History:
 % 2018-10-28 Created by Adam Lu

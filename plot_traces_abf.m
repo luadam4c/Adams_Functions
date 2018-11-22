@@ -15,7 +15,10 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 %                       a relative path in current directory
 %                       .abf is not needed (e.g. 'B20160908_0004')
 %                   must be a string scalar or a character vector
-%       varargin    - 'ExpMode': experiment mode
+%       varargin    - 'Verbose': whether to write to standard output
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'ExpMode': experiment mode
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'EEG'   - EEG data; x axis in seconds; y-axis in uV
 %                       'patch' - patch data; x axis in ms; y-axis in mV
@@ -32,7 +35,7 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 %                   - 'OverWrite': whether to overwrite existing output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
-%                   - 'OutFolder': the name of the directory that 
+%                   - 'OutFolder': the name of the directory in which 
 %                                       plots will be placed
 %                   must be a string scalar or a character vector
 %                   default == a subdirectory named by {fileName}_traces in pwd
@@ -41,11 +44,11 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 %                   default == 's' for EEG data and 'ms' for patch data
 %                   - 'TimeStart': the start of the time interval of interest 
 %                                   (in units set by TimeUnits)
-%                   must be a numeric nonnegative scalar
+%                   must be a numeric nonnegative vector
 %                   default == 0
 %                   - 'TimeEnd': the end of the time interval of interest 
 %                                   (in units set by TimeUnits)
-%                   must be a numeric nonnegative scalar
+%                   must be a numeric nonnegative vector
 %                   default == timeVec(end)
 %                   - 'ChannelTypes': the channel types
 %                   must be a cellstr with nChannels elements
@@ -61,9 +64,6 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 %                   - 'ChannelLabels': the channel labels
 %                   must be a cellstr with nChannels elements
 %                   default == detected with identify_channels()
-%                   - 'Verbose': whether to write to standard output
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
 %                   - 'FigTypes': figure type(s) for saving; 
 %                               e.g., 'png', 'fig', or {'png', 'fig'}, etc.
 %                   could be anything recognised by 
@@ -78,6 +78,8 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 %                   default == what the file provides
 %
 % Requires:
+%       cd/argfun.m
+%       cd/match_dimensions.m
 %       cd/check_dir.m
 %       cd/check_fullpath.m
 %       cd/parse_abf.m
@@ -110,6 +112,7 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 % 2018-10-03 - Updated usage of parse_abf.m
 % 2018-10-03 - Added ParsedData, ParsedParams as optional arguments
 % 2018-11-21 - Added 'OverWrite' as an optional argument
+% 2018-11-22 - Now plots 
 % TODO: Change the outputs to a cell array of figure handles
 % TODO: (Not sure) Improve code legibility with usage of dataReordered instead of data
 %
@@ -120,6 +123,7 @@ validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
 validPlotModes = {'', 'overlapped', 'parallel'};
 
 %% Default values for optional arguments
+verboseDefault = true;
 expModeDefault = 'patch';       % assume traces are patching data by default
 plotModeDefault = '';           % plot traces overlapped by default
 individuallyDefault = false;    % plot all sweeps together by default
@@ -133,7 +137,6 @@ channelUnitsDefault = {};       % set later
 channelLabelsDefault = {};      % set later
 parsedParamsDefault = [];       % set later
 parsedDataDefault = [];         % set later
-verboseDefault = true;
 figTypesDefault = 'png';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -154,6 +157,8 @@ addRequired(iP, 'fileName', ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'Verbose', verboseDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ExpMode', expModeDefault, ...
     @(x) any(validatestring(x, validExpModes)));
 addParameter(iP, 'PlotMode', plotModeDefault, ...
@@ -167,9 +172,9 @@ addParameter(iP, 'OutFolder', outFolderDefault, ...
 addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'TimeStart', timeStartDefault, ...
-    @(x) isempty(x) || isnumeric(x) && isscalar(x) && x >= 0);
+    @(x) isempty(x) || all(isnumeric(x) & x >= 0));
 addParameter(iP, 'TimeEnd', timeEndDefault, ...
-    @(x) isempty(x) || isnumeric(x) && isscalar(x) && x >= 0);
+    @(x) isempty(x) || all(isnumeric(x) & x >= 0));
 addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
     @(x) isempty(x) || iscellstr(x));
 addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
@@ -180,13 +185,12 @@ addParameter(iP, 'ParsedParams', parsedParamsDefault, ...
     @(x) validateattributes(x, {'struct'}, {'scalar'}));
 addParameter(iP, 'ParsedData', parsedDataDefault, ...
     @(x) validateattributes(x, {'struct'}, {'scalar'}));
-addParameter(iP, 'Verbose', verboseDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, fileName, varargin{:});
+verbose = iP.Results.Verbose;
 expMode = validatestring(iP.Results.ExpMode, validExpModes);
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
 individually = iP.Results.Individually;
@@ -200,7 +204,6 @@ channelUnits = iP.Results.ChannelUnits;
 channelLabels = iP.Results.ChannelLabels;
 parsedParams = iP.Results.ParsedParams;
 parsedData = iP.Results.ParsedData;
-verbose = iP.Results.Verbose;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Validate channel types
@@ -270,12 +273,6 @@ if isempty(timeEnd)
     timeEnd = timeVec(end);
 end
 
-% Set the default x-axis limits
-if verbose
-    fprintf('Interval to show = [%g, %g]\n', timeStart, timeEnd);
-end
-xlimits = [timeStart, timeEnd];
-
 % If not provided, decide on plotMode based on expMode
 if isempty(plotMode)
     switch expMode
@@ -304,13 +301,40 @@ otherwise
     error('Expmode unrecognized!');
 end
 
-% Set up the time axis label
-xLabel = ['Time (', timeUnits, ')'];
+% Set up the x axis units
+xUnits = timeUnits;
+
+% Set up the x axis label
+xLabel = ['Time (', xUnits, ')'];
+
+% Set the x-axis limits
+if isscalar(timeStart) && isscalar(timeEnd)
+    % Just put it together into a 2-element vector
+    xLimits = [timeStart, timeEnd];
+else
+    % Get the largest dimension
+    nIntervals = max(length(timeStart), length(timeEnd));
+
+    % Match the dimensions
+    [timeStart, timeEnd] = ...
+        argfun(@(x) match_dimensions(x, [nIntervals, 1]), timeStart, timeEnd);
+
+    % xLimits is a cell array
+    xLimits = arrayfun(@(x, y) [x, y], timeStart, timeEnd, ...
+                        'UniformOutput', false);
+end
 
 %% Do the plotting
-% Construct a file identifier
-fileIdentifier = sprintf('%s_%g%s_%g%s', fileBase, xlimits(1), timeUnits, ...
-                                        xlimits(2), timeUnits);
+plot_traces_abf_helper(timeVec, data, verbose, overWrite, individually, ...
+            expMode, plotMode, figTypes, fileBase, outFolder, ...
+            xLimits, xUnits, xLabel, traceLabels, channelLabels);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function plot_traces_abf_helper(timeVec, data, ...
+                verbose, overWrite, individually, ...
+                expMode, plotMode, figTypes, fileBase, outFolder, ...
+                xLimits, xUnits, xLabel, traceLabels, channelLabels)
 
 % Plot data
 if ~individually && strcmpi(expMode, 'EEG')
@@ -322,8 +346,8 @@ if ~individually && strcmpi(expMode, 'EEG')
     % Decide on figure name and title
     vecAll = data;
     yLabel = channelLabels{1};
-    figTitle = sprintf('All channels for %s', fileIdentifier);
-    figName = fullfile(outFolder, sprintf('%s_all.png', fileIdentifier));
+    figTitle = sprintf('All channels for %s', fileBase);
+    figName = fullfile(outFolder, sprintf('%s_all.png', fileBase));
     figNum = 1;
 
     % Check if the figure already exists
@@ -332,8 +356,9 @@ if ~individually && strcmpi(expMode, 'EEG')
     end
 
     % Do the plotting
-    h = plot_traces(timeVec, vecAll, 'PlotMode', plotMode, ...
-                    'XLimits', xlimits, ...
+    h = plot_traces(timeVec, vecAll, 'Verbose', verbose, ...
+                    'PlotMode', plotMode, ...
+                    'XLimits', xLimits, 'XUnits', xUnits, ...
                     'XLabel', xLabel, 'YLabel', yLabel, ...
                     'TraceLabels', traceLabels, ...
                     'FigTitle', figTitle, 'FigName', figName, ...
@@ -359,9 +384,9 @@ elseif ~individually && strcmpi(expMode, 'patch') || ...
         end
         yLabel = channelLabels{iChannel};
         figTitle = sprintf('Data for Channel #%d of %s', ...
-                            iChannel, fileIdentifier);
+                            iChannel, fileBase);
         figName = fullfile(outFolder, sprintf('%s_Channel%d_all.png', ...
-                                            fileIdentifier, iChannel));
+                                            fileBase, iChannel));
         figNum = 100 * iChannel;
 
         % Check if the figure already exists
@@ -369,8 +394,9 @@ elseif ~individually && strcmpi(expMode, 'patch') || ...
             % Do nothing
         else
             % Do the plotting
-            h = plot_traces(timeVec, vecAll, 'PlotMode', plotMode, ...
-                            'XLimits', xlimits, ...
+            h = plot_traces(timeVec, vecAll, 'Verbose', verbose, ...
+                            'PlotMode', plotMode, ...
+                            'XLimits', xLimits, 'XUnits', xUnits, ...
                             'XLabel', xLabel, 'YLabel', yLabel, ...
                             'TraceLabels', traceLabels, ...
                             'FigTitle', figTitle, 'FigName', figName, ...
@@ -396,13 +422,15 @@ elseif individually && strcmpi(expMode, 'patch')
                 vecAll = data(:, iChannel);
             elseif nDimensions == 3
                 vecAll = data(:, iChannel, iSwp);
+            else
+                vecAll = [];
             end
             yLabel = channelLabels{iChannel};
             figTitle = sprintf('Data for Channel #%d, Sweep #%d of %s', ...
-                                iChannel, iSwp, fileIdentifier);
+                                iChannel, iSwp, fileBase);
             figName = fullfile(outFolder, ...
                                 sprintf('%s_Channel%d_Sweep%d.png', ...
-                                        fileIdentifier, iChannel, iSwp));
+                                        fileBase, iChannel, iSwp));
             figNum = 100 * iChannel + iSwp;
 
             % Check if the figure already exists
@@ -410,8 +438,9 @@ elseif individually && strcmpi(expMode, 'patch')
                 % Do nothing
             else
                 % Do the plotting
-                h = plot_traces(timeVec, vecAll, 'PlotMode', plotMode, ...
-                                'XLimits', xlimits, ...
+                h = plot_traces(timeVec, vecAll, 'Verbose', verbose, ...
+                                'PlotMode', plotMode, ...
+                                'XLimits', xLimits, 'XUnits', xUnits, ...
                                 'XLabel', xLabel, 'YLabel', yLabel, ...
                                 'TraceLabels', traceLabels, ...
                                 'FigTitle', figTitle, 'FigName', figName, ...
@@ -693,7 +722,7 @@ plot(timeVec, dataVec(:, iTrace), ...
 
 legend(traceLabels);
 
-fileIdentifier = sprintf('%s_%.1f_%.1f', fileBase, xlimits(1), xlimits(2));
+fileIdentifier = sprintf('%s_%.1f_%.1f', fileBase, xLimits(1), xLimits(2));
 title(sprintf('Data for all channels between %.1f %s and %.1f %s', timeStart, timeUnits, timeEnd, timeUnits));
 
 %    timeUnits  - units of time
@@ -714,7 +743,7 @@ if nDimensions == 2 && individually        % could be EEG or patch clamp
         vvec = data(:, iChannel);
         figNum = 1+iChannel;
         h = plot_traces(figNum, timeVec, vvec, ...
-                                    xlimits, xLabel, yLabel, ...
+                                    xLimits, xLabel, yLabel, ...
                                     traceLabels, figTitle, figName);
         title(sprintf('Data for %s between %.1f %s and %.1f %s', traceLabels{iChannel}, timeStart, timeUnits, timeEnd, timeUnits));
         ylabel(channelLabels);
@@ -734,7 +763,7 @@ elseif nDimensions == 3 && individually    % usually Patch clamp        %%% Need
             vec = data(:, iChannel, iSwp);
             figNum = 100*iChannel+iSwp;
             h = plot_traces(figNum, timeVec, vec, ...
-                                       xlimits, xLabel, yLabel, ...
+                                       xLimits, xLabel, yLabel, ...
                                        traceLabels, figTitle, figName);
             title(sprintf('Data for %s between %.1f %s and %.1f %s', ...
                     traceLabels{iSwp}, timeStart, timeUnits, timeEnd, timeUnits));
@@ -746,7 +775,7 @@ elseif nDimensions == 3 && individually    % usually Patch clamp        %%% Need
     end
 end
 
-h = plot_traces(timeVec, vecAll, xlimits, xLabel, yLabel, ...
+h = plot_traces(timeVec, vecAll, xLimits, xLabel, yLabel, ...
                 traceLabels, figTitle, figName, figNum);
 
 [parsedParams, data, timeVec, ~, ~, ~, dataReordered] = ...
@@ -802,6 +831,16 @@ end
 
 % 2018-10-03 - The first argument can now be data,
 %               in which case parsedParams and timeVec must be provided
+
+parfor iInterval = 1:nIntervals
+    plot_traces_abf_helper(timeStart(iInterval), timeEnd(iInterval), ...
+                timeVec, data, verbose, overWrite, individually, ...
+                expMode, plotMode, figTypes, fileBase, outFolder, ...
+                timeUnits, xLabel, traceLabels, channelLabels);
+end
+
+% Set the x-axis limits
+xLimits = [timeStart, timeEnd];
 
 %}
 

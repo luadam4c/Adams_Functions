@@ -7,10 +7,10 @@ function arrayNew = match_dimensions (arrayOld, dimNew, varargin)
 %       TODO
 % Outputs:
 %       arrayNew    - array matched
-%                   specified as a numeric, cell or struct array
+%                   specified as a numeric, logical, cell or struct array
 % Arguments:    
 %       arrayOld    - array to match
-%                   must be a numeric, cell or struct array
+%                   must be a numeric, logical, cell or struct array
 %       dimNew      - new dimensions
 %                   must be a positive integer vector
 %
@@ -24,6 +24,7 @@ function arrayNew = match_dimensions (arrayOld, dimNew, varargin)
 %       cd/match_format_vectors.m
 %       cd/match_array_counts.m
 %       cd/normalize_by_initial_value.m
+%       cd/plot_traces_abf.m
 
 % File History:
 % 2018-10-24 Created by Adam Lu
@@ -49,7 +50,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'arrayOld', ...
-    @(x) validateattributes(x, {'numeric', 'cell', 'struct'}, {'3d'}));
+    @(x) validateattributes(x, {'numeric', 'logical', 'cell', 'struct'}, {'3d'}));
 addRequired(iP, 'dimNew', ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'vector'}));
 

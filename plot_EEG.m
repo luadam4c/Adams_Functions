@@ -4,7 +4,7 @@ function plot_EEG(abfFileName, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       TODO
+%       plot_EEG('WAGS04_30_2018_cage1.abf');
 % Outputs:
 %       output1     - TODO: Description of output1
 %                   specified as a TODO
@@ -17,14 +17,19 @@ function plot_EEG(abfFileName, varargin)
 %       varargin    - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
-%                   - 'SwdManualFile': TODO: Description of swdManualFileName
+%                   - 'OutFolder': the name of the directory in which 
+%                                       plots will be placed
+%                   must be a string scalar or a character vector
+%                   default == a subdirectory named by {fileName}_traces in pwd
+%                   - 'SwdManualFile': TODO: Description of atfPathName
 %                   must be a TODO
 %                   default == TODO
 %                   
 % Requires:
 %       cd/all_files.m
+%       cd/check_dir.m
 %       cd/parse_abf.m
-%       cd/parse_swd_manual.m
+%       cd/parse_atf_swd.m
 %       cd/plot_traces_abf.m
 %
 % Used by:
@@ -38,7 +43,8 @@ function plot_EEG(abfFileName, varargin)
 
 %% Default values for optional arguments
 verboseDefault = true;
-swdManualFileDefault = '';  % set later
+outFolderDefault = '';          % set later
+atfPathDefault = '';      % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -60,13 +66,16 @@ addRequired(iP, 'abfFileName', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'SwdManualFile', swdManualFileDefault, ...
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'SwdManualFile', atfPathDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, abfFileName, varargin{:});
 verbose = iP.Results.Verbose;
-swdManualFile = iP.Results.SwdManualFile;
+outFolder = iP.Results.OutFolder;
+atfPath = iP.Results.SwdManualFile;
 
 %% Preparation
 % Parse the abf file
@@ -84,46 +93,71 @@ end
 % Extract the file base
 [fileDir, fileBase, ~] = fileparts(abfPath);
 
+% Decide on the output folder
+if isempty(outFolder)
+    outFolder = fullfile(fileDir, strcat(fileBase, '_traces'));
+end
+if verbose
+    fprintf('Outfolder is %s ...\n', outFolder);
+end
+
+% Check if needed output directories exist
+check_dir(outFolder, 'Verbose', verbose);
+
 % Look for manual SWD files if not provided
-if isempty(swdManualFile)
+if isempty(atfPath)
     % Try to look for a .atf file containing the file base in the same directory
-    [~, swdManualFullPaths] = all_files('Directory', fileDir, ...
+    [~, atfPaths] = all_files('Directory', fileDir, ...
                                         'Keyword', fileBase, ...
                                         'Extension', '.atf');
 
     % If not successful, try to look for a _Manual_SWDs.csv file containing 
     %   the file base in the same directory
-    if isempty(swdManualFullPaths)
-        [~, swdManualFullPaths] = all_files('Directory', fileDir, ...
+    if isempty(atfPaths)
+        [~, atfPaths] = all_files('Directory', fileDir, ...
                                             'Keyword', fileBase, ...
-                                            'Suffix', '_Manual_SWDs', ...
                                             'Extension', '.csv');
     end
 
     % If there is more than one file, one choose the first one
-    if isempty(swdManualFullPaths)
-        swdManualFile = '';
-    elseif iscell(swdManualFullPaths)
-        swdManualFile = swdManualFullPaths{1};
+    if isempty(atfPaths)
+        atfPath = '';
+    elseif iscell(atfPaths)
+        atfPath = atfPaths{1};
     else
-        swdManualFile = swdManualFullPaths;
+        atfPath = atfPaths;
     end
 end
 
 %% Do the job
 % Plot full traces if not already done so
 plot_traces_abf(abfPath, 'Verbose', verbose, 'OverWrite', false, ...
-                'ParsedParams', parsedParams, 'ParsedData', parsedData);
+                'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
+                'OutFolder', outFolder);
 
-% Plot SWD regions if an SWD file(s) exists
-if isfile(swdManualFile)
-    % Parse the SWDs from the manual results
-    SWDs = parse_swd_manual(swdManualFile);
+% Plot manual SWD regions if an atf file exists
+if isfile(atfPath)
+    % Parse the SWDs from the .atf file
+    swdManualTable = parse_atf_swd(atfPath, 'OutFolder', outFolder);
 
-    % Plot each detected SWD separately
-    plot_traces_abf(SWDs.abfPath, 'Verbose', verbose, 'OverWrite', false, ...
-            'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
-            'TimeStart', SWDs.startTimes, 'TimeEnd', SWDs.endTimes);
+    % Create an output folder for SWD traces
+    outFolderSWD = fullfile(outFolder, 'Manual_SWDs');
+
+    % Get the recorded .abf path
+    abfPathRecorded = swdManualTable{1, 'abfPath'};
+
+    % Check if the abfPaths are the same as the provided abfPath
+    if ~strcmp(abfPath, abfPathRecorded)
+        fprintf('The recorded path %s does not match %s!!\n', ...
+                abfPathRecorded, abfPath);
+    else
+        % Plot each detected SWD separately
+        plot_traces_abf(abfPath, 'Verbose', verbose, 'OverWrite', false, ...
+                'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
+                'TimeStart', swdManualTable.startTimes, ...
+                'TimeEnd', swdManualTable.endTimes, ...
+                'OutFolder', outFolderSWD);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -164,8 +198,8 @@ end
 nRows = height(swdManualTableOfInterest);
 
 % Construct file names for results 
-if isempty(swdManualFile)
-    swdManualFile = replace(abfPath, '.abf', '_Manual_SWDs.csv');
+if isempty(atfPath)
+    atfPath = replace(abfPath, '.abf', '_Manual_SWDs.csv');
 end
 
 % Construct full path to abf file
@@ -174,9 +208,9 @@ if ~pathExists
     return
 end
 
-swdManualFile = replace(abfPath, '.abf', '_Manual_SWDs.csv');
+atfPath = replace(abfPath, '.abf', '_Manual_SWDs.csv');
 
-swdManualFile = fullfile(fileDir, [fileBase, '_Manual_SWDs.csv']);
+atfPath = fullfile(fileDir, [fileBase, '_Manual_SWDs.csv']);
 
 %}
 

@@ -44,7 +44,7 @@ function [tablesAll, sheetFullFileNames] = atf2sheet (atfFileOrDir, varargin)
 %       cd/print_or_show_message.m
 %
 % Used by:
-%       cd/parse_swd_manual.m
+%       cd/parse_atf_swd.m
 %       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
 
 % File History:

@@ -28,6 +28,8 @@ function varargout = argfun (myFunction, varargin)
 %       cd/match_format_vectors.m
 %       cd/match_reciprocals.m
 %       cd/plot_cfit_pulse_response.m
+%       cd/plot_traces.m
+%       cd/plot_traces_abf.m
 
 % File History:
 % 2019-10-25 Created by Adam Lu

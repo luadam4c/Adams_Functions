@@ -16,7 +16,10 @@ function [h, subPlots] = plot_traces (tVecs, data, varargin)
 %                   Note: If a cell array, each element must be a vector
 %                         If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array of numeric arrays
-%       varargin    - 'PlotMode': plotting mode for multiple traces
+%       varargin    - 'Verbose': whether to write to standard output
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'PlotMode': plotting mode for multiple traces
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'overlapped'    - overlapped in a single plot
 %                       'parallel'      - in parallel in subPlots
@@ -44,11 +47,15 @@ function [h, subPlots] = plot_traces (tVecs, data, varargin)
 %                       'off'  - unlink axes
 %                   must be consistent with linkaxes()
 %                   default == 'none'
+%                   - 'XUnits': x-axis units
+%                   must be a string scalar or a character vector 
+%                       or a cell array of strings or character vectors
+%                   default == 'unit'
 %                   - 'XLabel': label for the time axis, 
 %                               suppress by setting value to 'suppress'
 %                   must be a string scalar or a character vector 
 %                       or a cell array of strings or character vectors
-%                   default == 'Time'
+%                   default == ['Time (', xUnits, ')']
 %                   - 'YLabel': label(s) for the y axis, 
 %                               suppress by setting value to 'suppress'
 %                   must be a string scalar or a character vector
@@ -91,8 +98,11 @@ function [h, subPlots] = plot_traces (tVecs, data, varargin)
 %                   default == 'png'
 %
 % Requires:
+%       cd/argfun.m
 %       cd/count_vectors.m
 %       cd/create_colormap.m
+%       cd/extract_subvectors.m
+%       cd/find_window_endpoints.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
 %       cd/match_format_vectors.m
@@ -114,6 +124,8 @@ function [h, subPlots] = plot_traces (tVecs, data, varargin)
 % 2018-10-29 Added 'DataToCompare' as an optional parameter
 % 2018-10-31 Now uses match_format_vectors.m
 % 2018-11-01 Now returns axes handles for subplots
+% 2018-11-22 Now accepts xLimits as a cell array
+% 2018-11-22 Added 'XUnits' as an optional parameter
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel'};
@@ -124,12 +136,14 @@ maxNTracesForLegends = 12;
 subPlotSqeezeFactor = 1.2;
 
 %% Default values for optional arguments
+verboseDefault = true;
 plotModeDefault = 'overlapped'; % plot traces overlapped by default
 dataToCompareDefault = [];      % no data to compare against by default
 xLimitsDefault = [];            % set later
 yLimitsDefault = [];            % set later
 linkAxesOptionDefault = 'none'; % don't force link axes by default
-xLabelDefault = 'Time';         % the default x-axis label
+xUnitsDefault = 'unit';         % the default x-axis units
+xLabelDefault = '';             % set later
 yLabelDefault = '';             % set later
 colorMapDefault = [];           % set later
 traceLabelsDefault = '';        % set later
@@ -163,6 +177,8 @@ addRequired(iP, 'data', ...
                     'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'Verbose', verboseDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotMode', plotModeDefault, ...
     @(x) any(validatestring(x, validPlotModes)));
 addParameter(iP, 'DataToCompare', dataToCompareDefault, ...
@@ -170,13 +186,15 @@ addParameter(iP, 'DataToCompare', dataToCompareDefault, ...
                 ['vec1s must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'XLimits', xLimitsDefault, ...
-    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+    @(x) isempty(x) || iscell(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'YLimits', yLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'LinkAxesOption', linkAxesOptionDefault, ...
     @(x) any(validatestring(x, validLinkAxesOptions)));
+addParameter(iP, 'XUnits', xUnitsDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'XLabel', xLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'YLabel', yLabelDefault, ...
@@ -198,8 +216,10 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 
 % Read from the Input Parser
 parse(iP, tVecs, data, varargin{:});
+verbose = iP.Results.Verbose;
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
 dataToCompare = iP.Results.DataToCompare;
+xUnits = iP.Results.XUnits;
 xLimits = iP.Results.XLimits;
 yLimits = iP.Results.YLimits;
 linkAxesOption = validatestring(iP.Results.LinkAxesOption, ...
@@ -265,6 +285,11 @@ end
 % Set the default y-axis limits
 if isempty(yLimits) && ~strcmpi(plotMode, 'parallel') && rangeY ~= 0
     yLimits = [minY - 0.2 * rangeY, maxY + 0.2 * rangeY];
+end
+
+% Set the default x-axis labels
+if isempty(xLabel)
+    xLabel = ['Time (', xUnits, ')'];
 end
 
 % Set the default y-axis labels
@@ -341,14 +366,96 @@ if strcmpi(legendLocation, 'auto')
     end
 end
 
+%% Plot data over all possible intervals
+if iscell(xLimits)
+    % Count the number of intervals
+    nIntervals = numel(xLimits);
+
+    % Run through all intervals
+    parfor iInterval = 1:nIntervals
+        % Get the current x-axis limits
+        xLimitsThis = xLimits{iInterval};
+
+        % Find the corresponding index endpoints
+        endPoints = find_window_endpoints(xLimitsThis, tVecs, ...
+                                            'BoundaryMode', 'inclusive');
+
+        % Truncate all traces
+        [tVecsThis, dataThis, dataToCompareThis] = ...
+            argfun(@(x) extract_subvectors(x, 'EndPoints', endPoints), ...
+                    tVecs, data, dataToCompare);
+
+        % Create a string for the interval
+        intervalStrThis = sprintf('%.0f-%.0f%s', ...
+                            xLimitsThis(1), xLimitsThis(2), xUnits);
+
+        % Print to standard output
+        if verbose
+            fprintf('Interval to show = %s\n', intervalStrThis);
+        end
+        
+        % Create a new figure title
+        if ~strcmpi(figTitle, 'suppress')
+            figTitleThis = [figTitle, ' (', intervalStrThis, ')'];
+        else
+            figTitleThis = 'suppress';
+        end
+
+        % Construct a file suffix
+        suffixThis = sprintf('_%s.png', intervalStrThis);
+
+        % Create a new figure name
+        figNameThis = replace(figName, '.png', suffixThis);
+
+        % Plot all traces
+        h = plot_traces_helper(verbose, plotMode, ...
+                        tVecsThis, dataThis, dataToCompareThis, ...
+                        xUnits, xLimitsThis, yLimits, linkAxesOption, ...
+                        xLabel, yLabel, traceLabels, colorMap, ...
+                        legendLocation, figTitleThis, ...
+                        figNumber, figNameThis, figTypes, ...
+                        nTraces, nRows, nTracesPerRow, ...
+                        maxNTracesForAnnotations);
+        
+        % Hold off and close figure
+        hold off;
+        close(h)
+    end
+
+    % Return nothing
+    h = [];
+    subPlots = [];
+else
+    % Plot all traces
+    [h, subPlots] = plot_traces_helper(verbose, plotMode, ...
+                        tVecs, data, dataToCompare, ...
+                        xUnits, xLimits, yLimits, linkAxesOption, ...
+                        xLabel, yLabel, traceLabels, colorMap, ...
+                        legendLocation, figTitle, ...
+                        figNumber, figName, figTypes, ...
+                        nTraces, nRows, nTracesPerRow, ...
+                        maxNTracesForAnnotations);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [h, subPlots] = ...
+                plot_traces_helper (verbose, plotMode, ...
+                        tVecs, data, dataToCompare, ...
+                        xUnits, xLimits, yLimits, linkAxesOption, ...
+                        xLabel, yLabel, traceLabels, colorMap, ...
+                        legendLocation, figTitle, ...
+                        figNumber, figName, figTypes, ...
+                        nTraces, nRows, nTracesPerRow, maxNTracesForAnnotations)
+
 % Decide on the figure to plot on
 if ~isempty(figName)
     % Create an invisible figure and clear it
     if ~isempty(figNumber)
         h = figure(figNumber);
-        set(h, 'Visible', 'Off');
+        set(h, 'Visible', 'off');
     else
-        h = figure('Visible', 'Off');
+        h = figure('Visible', 'off');
     end
     clf(h);
 else
@@ -356,8 +463,6 @@ else
     h = gcf;
 end
 
-%% Plot
-% Plot all traces
 switch plotMode
 case 'overlapped'
     % Hold on
@@ -385,7 +490,7 @@ case 'overlapped'
     end
     
     % Set time axis limits
-    if ~strcmpi(xLimits, 'suppress')
+    if ~iscell(xLimits) && ~strcmpi(xLimits, 'suppress')
         xlim(xLimits);
     end
 
@@ -451,7 +556,7 @@ case 'parallel'
         end
 
         % Set time axis limits
-        if ~strcmpi(xLimits, 'suppress')
+        if ~iscell(xLimits) && ~strcmpi(xLimits, 'suppress')
             xlim(xLimits);
         end
 
@@ -481,8 +586,8 @@ case 'parallel'
         end
 
         % Create a title for the first subplot
-        if ~strcmpi(figTitle, 'suppress') && nTracesPerRow == 1 && ...
-            iTrace == 1
+        if ~strcmpi(figTitle, 'suppress') && ...
+            nTracesPerRow == 1 && iTrace == 1
             title(figTitle, 'Interpreter', 'none');
         end
 
@@ -522,7 +627,79 @@ end
 %% Save
 % Save figure
 if ~isempty(figName)
-    save_all_figtypes(h, figName, figTypes);
+    % TODO: Save figure with other varying attributes
+    if iscell(xLimits)
+        % TODO: Pull out to function save_all_intervals.m
+        %   Note: this part is very slow for large data
+
+        % Count the number of intervals
+        nIntervals = numel(xLimits);
+
+        % Run through all intervals
+        for iInterval = 1:nIntervals
+            % Get the current x-axis limits
+            xLimitsThis = xLimits{iInterval};
+
+            % Create a string for the interval
+            intervalStrThis = sprintf('%.0f-%.0f%s', ...
+                                xLimitsThis(1), xLimitsThis(2), xUnits);
+
+            % Print to standard output
+            if verbose
+                fprintf('Interval to show = %s\n', intervalStrThis);
+            end
+            
+            % Create a new figure title
+            if ~strcmpi(figTitle, 'suppress')
+                figTitleThis = [figTitle, ' (', intervalStrThis, ')'];
+            else
+                figTitleThis = 'suppress';
+            end
+
+            % Change the x-axis limits
+            switch plotMode
+            case 'overlapped'
+                % Change the figure title
+                if ~strcmpi(figTitleThis, 'suppress')
+                    title(figTitleThis, 'Interpreter', 'none');
+                end
+
+                % Change the x-axis limits
+                xlim(xLimitsThis);
+            case 'parallel'
+                for iTrace = 1:nTraces
+                    % Go to the subplot
+                    axes(subPlots(iTrace));
+
+                    % Create a title for the first subplot
+                    if ~strcmpi(figTitleThis, 'suppress') && ...
+                        nTracesPerRow == 1 && iTrace == 1
+                        title(figTitleThis, 'Interpreter', 'none');
+                    end
+
+                    % Change x-axis limits
+                    xlim(xLimitsThis);
+                end
+
+                % Create an overarching title
+                if ~strcmpi(figTitleThis, 'suppress') && nTracesPerRow > 1
+                    suptitle(figTitleThis);
+                end
+            end
+
+            % Construct a file suffix
+            suffixThis = sprintf('_%s.png', intervalStrThis);
+
+            % Create a new figure name
+            figNameThis = replace(figName, '.png', suffixThis);
+
+            % Save the new figure
+            save_all_figtypes(h, figNameThis, figTypes);
+        end
+    else
+        % Save the new figure
+        save_all_figtypes(h, figName, figTypes);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -639,6 +816,16 @@ hold off
 
 % Hold off
 hold off
+
+if ~strcmpi(xLimitsThis, 'suppress')
+end
+
+% Create a new figure number
+if ~isempty(figNumber)
+    figNumberThis = figNumber + rand(1) * 1000;
+else
+    figNumberThis = [];
+end
 
 %}
 

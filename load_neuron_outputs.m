@@ -15,7 +15,7 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 %                       or a cell array of character arrays
 %                   default == pwd
 %                   - 'FileNames': names of .out files to load
-%                   must be a characeter vector, a string array 
+%                   must be empty, a characeter vector, a string array 
 %                       or a cell array of character arrays
 %                   default == detect from pwd
 %                   - 'Verbose': whether to output parsed results
