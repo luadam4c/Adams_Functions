@@ -121,8 +121,8 @@ if isempty(atfPath)
     % If not successful, try to look for a _Manual_SWDs.csv file containing 
     %   the file base in the same directory
     if isempty(atfPaths)
-        [~, atfPaths] = all_files('Directory', fileDir, 'Keyword', fileBase, ...
-                                    'Extension', '.csv');
+        [~, atfPaths] = all_files('Directory', fileDir, ...'Keyword', fileBase, ...
+                                    'Suffix', '_Manual_SWDs', 'Extension', '.csv');
     end
 
     % If there is more than one file, one choose the first one
