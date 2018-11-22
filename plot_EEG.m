@@ -107,16 +107,14 @@ check_dir(outFolder, 'Verbose', verbose);
 % Look for manual SWD files if not provided
 if isempty(atfPath)
     % Try to look for a .atf file containing the file base in the same directory
-    [~, atfPaths] = all_files('Directory', fileDir, ...
-                                        'Keyword', fileBase, ...
-                                        'Extension', '.atf');
+    [~, atfPaths] = all_files('Directory', fileDir, 'Keyword', fileBase, ...
+                                'Extension', '.atf');
 
     % If not successful, try to look for a _Manual_SWDs.csv file containing 
     %   the file base in the same directory
     if isempty(atfPaths)
-        [~, atfPaths] = all_files('Directory', fileDir, ...
-                                            'Keyword', fileBase, ...
-                                            'Extension', '.csv');
+        [~, atfPaths] = all_files('Directory', fileDir, 'Keyword', fileBase, ...
+                                    'Extension', '.csv');
     end
 
     % If there is more than one file, one choose the first one
@@ -126,6 +124,22 @@ if isempty(atfPath)
         atfPath = atfPaths{1};
     else
         atfPath = atfPaths;
+    end
+end
+
+% Look for Assyst SWD files if not provided
+if isempty(atfPath)
+    % Try to look for a Assyst.txt file containing the file base in the same directory
+    [~, assystPaths] = all_files('Directory', fileDir, 'Keyword', fileBase, ...
+                                'Suffix', 'Assyst', 'Extension', '.txt');
+
+    % If there is more than one file, one choose the first one
+    if isempty(assystPaths)
+        assystPath = '';
+    elseif iscell(assystPaths)
+        assystPath = assystPaths{1};
+    else
+        assystPath = assystPaths;
     end
 end
 
@@ -140,7 +154,8 @@ if isfile(atfPath)
     % Parse the SWDs from the .atf file
     swdManualTable = parse_atf_swd(atfPath, 'OutFolder', outFolder);
 
-    % Create an output folder for SWD traces
+    % TODO: Pull out to function plot_swds.m
+    % Create an output folder for manual SWD traces
     outFolderSWD = fullfile(outFolder, 'Manual_SWDs');
 
     % Get the recorded .abf path
@@ -154,8 +169,34 @@ if isfile(atfPath)
         % Plot each detected SWD separately
         plot_traces_abf(abfPath, 'Verbose', verbose, 'OverWrite', false, ...
                 'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
-                'TimeStart', swdManualTable.startTimes, ...
-                'TimeEnd', swdManualTable.endTimes, ...
+                'TimeStart', swdManualTable.startTime, ...
+                'TimeEnd', swdManualTable.endTime, ...
+                'OutFolder', outFolderSWD);
+    end
+end
+
+% Plot Assyst SWD regions if an Assyst.txt file exists
+if isfile(assystPath)
+    % Parse the SWDs from the Assyst.txt file
+    swdAssystTable = parse_assyst_swd(assystPath, 'OutFolder', outFolder);
+
+    % TODO: Pull out to function plot_swds.m
+    % Create an output folder for Assyst SWD traces
+    outFolderSWD = fullfile(outFolder, 'Assyst_SWDs');
+
+    % Get the recorded .abf path
+    abfPathRecorded = swdAssystTable{1, 'abfPath'};
+
+    % Check if the abfPaths are the same as the provided abfPath
+    if ~strcmp(abfPath, abfPathRecorded)
+        fprintf('The recorded path %s does not match %s!!\n', ...
+                abfPathRecorded, abfPath);
+    else
+        % Plot each detected SWD separately
+        plot_traces_abf(abfPath, 'Verbose', verbose, 'OverWrite', false, ...
+                'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
+                'TimeStart', swdAssystTable.startTime, ...
+                'TimeEnd', swdAssystTable.endTime, ...
                 'OutFolder', outFolderSWD);
     end
 end

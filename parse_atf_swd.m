@@ -1,6 +1,6 @@
 function [swdManualTable, swdManualCsvFile] = ...
                 parse_atf_swd (originalEventFile, varargin)
-%% Parse spike-wave-discharge (SWD) event info from manual file
+%% Parse spike-wave-discharge (SWD) event info from .atf file or converted .csv file
 % Usage: [swdManualTable, swdManualCsvFile] = ...
 %               parse_atf_swd (originalEventFile, varargin)
 % Explanation:
@@ -38,6 +38,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 MS_PER_S = 1000;
 
 %% Hard-coded parameters
+varNames = {'startTime', 'endTime', 'duration', 'abfPath', 'pathExists'};
 
 %% Default values for optional arguments
 abfFileNameDefault = '';        % set later
@@ -136,11 +137,11 @@ startTimesMs = swdManualTableOfInterest.Time1_ms_;
 endTimesMs = swdManualTableOfInterest.Time2_ms_;
 
 % Convert to seconds
-startTimes = startTimesMs / MS_PER_S;
-endTimes = endTimesMs / MS_PER_S;
+startTime = startTimesMs / MS_PER_S;
+endTime = endTimesMs / MS_PER_S;
 
-% Compute durations
-durations = endTimes - startTimes;
+% Compute duration
+duration = endTime - startTime;
 
 % If not provided, read in the .abf file names
 if isempty(abfFileName)
@@ -153,11 +154,12 @@ end
 
 % Make sure the dimensions match up
 [abfPath, pathExists] = ...
-    argfun(@(x) match_dimensions(x, size(startTimes)), abfPath, pathExists);
+    argfun(@(x) match_dimensions(x, size(startTime)), abfPath, pathExists);
 
 %% Output results
 % Create a table for the parsed SWDs
-swdManualTable = table(startTimes, endTimes, durations, abfPath, pathExists);
+swdManualTable = table(startTime, endTime, duration, abfPath, pathExists, ...
+                        'VariableNames', varNames);
 
 % Write the table to a file
 writetable(swdManualTable, swdManualCsvFile);

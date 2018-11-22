@@ -10,7 +10,8 @@ function arrayNew = match_dimensions (arrayOld, dimNew, varargin)
 %                   specified as a numeric, logical, cell or struct array
 % Arguments:    
 %       arrayOld    - array to match
-%                   must be a numeric, logical, cell or struct array
+%                       if a character array, put in a cell
+%                   must be a numeric, logical, char, cell or struct array
 %       dimNew      - new dimensions
 %                   must be a positive integer vector
 %
@@ -50,7 +51,8 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'arrayOld', ...
-    @(x) validateattributes(x, {'numeric', 'logical', 'cell', 'struct'}, {'3d'}));
+    @(x) validateattributes(x, ...
+        {'numeric', 'logical', 'char', 'cell', 'struct'}, {'3d'}));
 addRequired(iP, 'dimNew', ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'vector'}));
 
@@ -58,6 +60,11 @@ addRequired(iP, 'dimNew', ...
 parse(iP, arrayOld, dimNew, varargin{:});
 
 %% Preparation
+% Place character arrays in a cell array
+if ischar(arrayOld)
+    arrayOld = {arrayOld};
+end
+
 % Query the old dimensions
 dimOld = size(arrayOld);
 

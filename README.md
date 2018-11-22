@@ -173,7 +173,8 @@ Last Updated 2018-11-22 by Adam Lu
 - [**normalize_by_initial_value.m**](https://github.com/blabuva/Adams_Functions/blob/master/normalize_by_initial_value.m): Normalize value(s) by the initial value(s) provided, or store initial value(s) if the latter is empty
 - [**parse_abf.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_abf.m): Loads and parses an abf file
 - [**parse_all_abfs.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_all_abfs.m): Parses all abf files in the directory
-- [**parse_atf_swd.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_atf_swd.m): Parse spike-wave-discharge (SWD) event info from manual file
+- [**parse_assyst_swd.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_assyst_swd.m): Parse spike-wave-discharge (SWD) event info from an Assyst.txt file
+- [**parse_atf_swd.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_atf_swd.m): Parse spike-wave-discharge (SWD) event info from .atf file or converted .csv file
 - [**parse_fitobject.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_fitobject.m): Extract information from a cfit or sfit object
 - [**parse_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_pulse.m): Parses pulse widths, endpoints, amplitudes for vector(s) containing a pulse
 - [**parse_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_pulse_response.m): Parses pulse response widths, endpoints, amplitudes for vector(s) containing a pulse response
