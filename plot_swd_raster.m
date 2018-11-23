@@ -63,6 +63,7 @@ function plot_swd_raster (varargin)
 %       cd/print_or_show_message.m
 %
 % Used by:
+%       cd/plot_EEG.m
 %
 
 % File History:
@@ -235,12 +236,16 @@ if ~isempty(swdSheetPaths)
     %   This will be the original data file bases
     dataFileBases = swdSheetBases;
     for iSuffix = 1:numel(possibleSuffices)
-        % Get this suffix
+        % Get the current suffix
         thisSuffix = possibleSuffices{iSuffix};
 
-        % Read all strings up to before the suffix
-        dataFileBases = cellfun(@(x) strtok(x, thisSuffix), ...
-                                dataFileBases, 'UniformOutput', false);
+        % Split the file bases by the current suffix
+        tempCells = cellfun(@(x) strsplit(x, thisSuffix, ...
+                            'DelimiterType', 'RegularExpression'), ...
+                        dataFileBases, 'UniformOutput', false);
+
+        % Read all strings up to before the suffix and make them new file bases
+        dataFileBases = cellfun(@(x) x{1}, tempCells, 'UniformOutput', false);
     end
 else
     % Count the number of tables
@@ -272,25 +277,25 @@ parfor iBase = 1:nDataFileBases
 
     % Use data file base as label
     %   Add escape character for underscores in the labels
-    labels{iBase} = strrep(dataFileBase, '_', '\_');
+    labels{iBase} = replace(dataFileBase, '_', '\_');
 
     % Look for all SWD spreadsheets for this file base
-    indSheetsThis = find_ind_str_in_cell(dataFileBase, swdSheetBases, ...
-                                         'SearchMode', 'substrings');
+    indSheetsThisBase = find_ind_str_in_cell(dataFileBase, swdSheetBases, ...
+                                            'SearchMode', 'substrings');
 
     % Get the number of SWD spreadsheets for this file base
-    nSheetsThis = length(indSheetsThis);
+    nSheetsThisBase = length(indSheetsThisBase);
 
     % Store in a vector
-    nSheets(iBase) = nSheetsThis;
+    nSheets(iBase) = nSheetsThisBase;
 
     % Extract the yLabels, eventTimes & timeLimits for each SWD spreadsheet
-    yLabelsThis = cell(nSheetsThis, 1);
-    eventTimesThis = cell(nSheetsThis, 1);
-    timeLimitsThis = zeros(nSheetsThis, 2);
-    for iSheet = 1:length(indSheetsThis)
+    yLabelsThisBase = cell(nSheetsThisBase, 1);
+    eventTimesThisBase = cell(nSheetsThisBase, 1);
+    timeLimitsThisBase = zeros(nSheetsThisBase, 2);
+    for iSheet = 1:length(indSheetsThisBase)
         % Get the original index of this sheet
-        idxSheetThis = indSheetsThis(iSheet);
+        idxSheetThis = indSheetsThisBase(iSheet);
 
         % Get the current SWD full file name
         swdsPath = swdSheetPaths{idxSheetThis};
@@ -300,17 +305,18 @@ parfor iBase = 1:nDataFileBases
 
         % Get everything in between the data file base and swdStr
         %   and make it the Y Tick Label
-        tempCell = textscan(swdSheetBaseThis, [dataFileBase, '_%s', swdStr]);
-        yLabelsThis{iSheet} = tempCell{1};
+        yLabelsThisBase{iSheet} = replace(swdSheetBaseThis, ...
+                                    {[dataFileBase, '_'], swdStr, '_'}, ...
+                                    {'', '', '\_'});
 
         % Read in the table for this SWD file
         swdsTable = readtable(swdsPath);
 
         % Extract the event start times and place in cell array
         if any(strcmp(startTimeStr1, fieldnames(swdsTable)))
-            eventTimesThis{iSheet} = swdsTable.(startTimeStr1);
+            eventTimesThisSheet = swdsTable.(startTimeStr1);
         elseif any(strcmp(startTimeStr2, fieldnames(swdsTable)))
-            eventTimesThis{iSheet} = swdsTable.(startTimeStr2);
+            eventTimesThisSheet = swdsTable.(startTimeStr2);
         else 
             message = sprintf('No %s field or %s field found for %s!', ...
                         startTimeStr1, startTimeStr2, swdsPath);
@@ -320,31 +326,45 @@ parfor iBase = 1:nDataFileBases
                                     'MessageMode', 'show', 'Verbose', true);
             continue;
         end
+
+        eventTimesThisBase{iSheet} = eventTimesThisSheet;
+
+        % Get the time limits from the original data file
+        %   or from user input or just use minimum and maximum start time
+        % TODO
+        timeLimitsThisBase(iSheet, :) = [min(eventTimesThisSheet), ...
+                                    max(eventTimesThisSheet)];
     end
 
     % Summarize the Y tick labels for this file base
-    yLabels{iBase} = yLabelsThis;
+    yLabels{iBase} = yLabelsThisBase;
 
     % Find the number of events for each SWD spreadsheet
-    nEventsThis = cellfun(@length, eventTimesThis);
+    nEventsThisBase = cellfun(@length, eventTimesThisBase);
 
     % Find the maximum number of events
-    maxNEvents = max(nEventsThis);
+    maxNEvents = max(nEventsThisBase);
 
     % Put the event start times for this file base in the same array
+    %   (those from each spreadsheet in a separate column)
     %   and pad the shorter vectors with NaN
-    eventTimesArray = ones(maxNEvents, nSheetsThis) * NaN;
-    for iSheet = 1:nSheetsThis
-        eventTimesArray(1:nEventsThis(iSheet), iSheet) = eventTimesThis{iSheet};
+    eventTimesArray = ones(maxNEvents, nSheetsThisBase) * NaN;
+    for iSheet = 1:nSheetsThisBase
+        % Get the number of events in this spreadsheet
+        nEventsThisSheet = nEventsThisBase(iSheet);
+
+        % Copy over the event times for this spreadsheet
+        eventTimesArray(1:nEventsThisSheet, iSheet) = ...
+            eventTimesThisBase{iSheet};
     end
 
     % Store in the eventTimes cell array
     eventTimes{iBase} = eventTimesArray;
 
     % Summarize the time limits for this file base
-    if ~all(isnan(timeLimitsThis))
-        timeLimits(iBase, :) = [min(timeLimitsThis(:, 1)), ...
-                                max(timeLimitsThis(:, 2))];
+    if ~all(isnan(timeLimitsThisBase))
+        timeLimits(iBase, :) = [min(timeLimitsThisBase(:, 1)), ...
+                                max(timeLimitsThisBase(:, 2))];
     else
         timeLimits(iBase, :) = [NaN, NaN];
     end
@@ -410,7 +430,7 @@ end
 ylim(yLimits);
 xlabel('Time (s)');
 ylabel('Sweep #');
-title(['Event start times for ', strrep(folderName, '_', '\_')]);
+title(['Event start times for ', replace(outFolderName, '_', '\_')]);
 legend(hFirstLines, labelsToShow, 'Location', 'SouthOutside');
 saveas(h, figName);
 
@@ -422,5 +442,8 @@ OLD CODE:
 % Get the folder name one level above
 temp = strsplit(swdFolder, filesep);
 folderName = temp{end-1};
+
+tempCell = textscan(swdSheetBaseThis, [dataFileBase, '_%s', swdStr]);
+yLabelsThisBase{iSheet} = tempCell{1};
 
 %}

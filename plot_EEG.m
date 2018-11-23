@@ -34,6 +34,7 @@ function plot_EEG(abfFileName, varargin)
 %       cd/parse_abf.m
 %       cd/parse_assyst_swd.m
 %       cd/parse_atf_swd.m
+%       cd/plot_swd_raster.m
 %       cd/plot_traces_abf.m
 %
 % Used by:
@@ -43,6 +44,7 @@ function plot_EEG(abfFileName, varargin)
 %   2016-09-XX - Created
 %   2018-11-21 - Renamed spikewavedetection -> plot_EEG
 %   2018-11-21 - Updated to use plot_traces_abf.m
+% TODO: Remove first argument and detect in current directory
 % 
 
 %% Default values for optional arguments
@@ -208,6 +210,11 @@ if isfile(assystPath)
                 'OutFolder', outFolderSWD);
     end
 end
+
+% Plot a raster plot for all SWD files
+% TODO: Pass in tables
+% TODO: Pass in time limits detected from data files
+plot_swd_raster;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
