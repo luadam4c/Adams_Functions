@@ -16,7 +16,7 @@ function [swdAssystTable, swdAssystCsvFile] = ...
 %       varargin    - 'AbfFileName': Name of the corresponding .abf file(s)
 %                   must be empty, a characeter vector, a string array 
 %                       or a cell array of character arrays
-%                   default == ''
+%                   default == [fileBase, '.abf']
 %                   - 'OutFolder': directory to output swd table file, 
 %                                   e.g. 'output'
 %                   must be a string scalar or a character vector
@@ -28,7 +28,7 @@ function [swdAssystTable, swdAssystCsvFile] = ...
 %       cd/match_dimensions.m
 %
 % Used by:
-%       cd/plot_EEG.m
+%       cd/plot_traces_EEG.m
 
 % File History:
 % 2018-11-22 Created by Adam Lu
@@ -97,11 +97,18 @@ swdAssystCsvFile = fullfile(outFolder, [fileBase, '_Assyst_SWDs.csv']);
 
 % Set default .abf file name
 if isempty(abfFileName)
-    abfFileName = fullfile(fileDir, [fileBase, '.abf']);
+    abfFileName = [fileBase, '.abf'];
 end
 
 % Construct full path to abf file
-[abfPath, pathExists] = construct_and_check_abfpath(abfFileName);
+[abfPath, pathExists] = construct_and_check_abfpath(abfFileName, ...
+                                                    'Directory', pwd);
+
+% Try again one level up if path doesn't exist
+if ~pathExists
+    [abfPath, pathExists] = construct_and_check_abfpath(abfFileName, ...
+                                                'Directory', fileparts(pwd));
+end
 
 % Construct the date time format specifier
 dateTimeFormatSpec = ['%{', dateTimePattern, '}D'];
@@ -199,6 +206,8 @@ writetable(swdAssystTable, swdAssystCsvFile);
 
 %{
 OLD CODE:
+
+abfFileName = fullfile(fileDir, [fileBase, '.abf']);
 
 %}
 

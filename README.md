@@ -8,7 +8,7 @@ Last Updated 2018-11-26 by Adam Lu
 
 - [**abf2mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/abf2mat.m): Converts .abf files to .mat files with time vector (in ms) included
 - [**adjust_peaks.m**](https://github.com/blabuva/Adams_Functions/blob/master/adjust_peaks.m): Adjusts peak indices and values given approximate peak indices
-- [**all_files.m**](https://github.com/blabuva/Adams_Functions/blob/master/all_files.m): Get all the files (but not subdirectories) in a given directory
+- [**all_files.m**](https://github.com/blabuva/Adams_Functions/blob/master/all_files.m): Get all the files in a given directory (optionally recursive) that matches a prefix, keyword, suffix or extension
 - [**all_ordered_pairs.m**](https://github.com/blabuva/Adams_Functions/blob/master/all_ordered_pairs.m): Generates a cell array of all ordered pairs of elements/indices, one from each vector
 - [**all_subdirs.m**](https://github.com/blabuva/Adams_Functions/blob/master/all_subdirs.m): Get all the subdirectories in a given directory
 - [**analyze_adicht.m**](https://github.com/blabuva/Adams_Functions/blob/master/analyze_adicht.m): Read in the data from the .adicht file
@@ -184,7 +184,7 @@ Last Updated 2018-11-26 by Adam Lu
 - [**plot_and_save_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_and_save_histogram.m): Plots and saves a stacked histogram for a vector and color code according to class
 - [**plot_ball_stick.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_ball_stick.m): Plots a ball-and-stick model
 - [**plot_cfit_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_cfit_pulse_response.m): Plots data along with the fitted curve
-- [**plot_EEG.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_EEG.m): Plots EEG traces from a .abf file and 
+- [**plot_EEG.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_EEG.m): Plots EEG traces from .abf file(s) or all .abf files in a directory 
 - [**plot_ellipse.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_ellipse.m): Plot an ellipse that may be oblique
 - [**plot_fields.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_fields.m): Plot all fields from a structure array as tuning curves
 - [**plot_FI.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_FI.m): From a current injection protocol, detect spikes for each sweep and make an F-I plot
@@ -197,6 +197,7 @@ Last Updated 2018-11-26 by Adam Lu
 - [**plot_signals.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_signals.m): Default values for optional arguments
 - [**plot_swd_raster.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_swd_raster.m): Plot SWDs for each channel in the current directory
 - [**plot_traces_abf.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_abf.m): Takes an abf file and plots all traces
+- [**plot_traces_EEG.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_EEG.m): Plots EEG traces from a .abf file
 - [**plot_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces.m): Plots traces all in one place, overlapped or in parallel
 - [**plot_traces_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_mat.m): Plot traces from mat file
 - [**plot_tuning_curve.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_curve.m): Plot a 1-dimensional tuning curve

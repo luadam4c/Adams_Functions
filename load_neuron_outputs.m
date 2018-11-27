@@ -9,7 +9,7 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 %       outputs     - a cell array of outputs
 %                   specified as a cell array
 % Arguments:
-%       varargin    - 'Directories': the name of the directories(ies) containing 
+%       varargin    - 'Directories': the name of the directory(ies) containing 
 %                                   the .out files, e.g. '20161216'
 %                   must be a characeter vector, a string array 
 %                       or a cell array of character arrays
@@ -36,7 +36,7 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 % File History:
 % 2018-10-23 Adapted from code in run_neuron_once_4compgabab.m
 % 2018-10-31 Went back to using parfor for loading
-% 2018-11-16 Fixed directories and allowed it to be a cell array
+% 2018-11-16 Fixed directories and allowed it to be a cell array TODO: fix all_files?
 
 %% Hard-coded parameters
 outputExtension = '.out';
@@ -75,7 +75,7 @@ removeAfterLoad = iP.Results.RemoveAfterLoad;
 % Decide on the files to use
 if isempty(fileNames)
     % Find all .out files in the directories
-    [~, fileNames] = all_files('Directories', directories, ...
+    [~, fileNames] = all_files('Directory', directories, ...
                                 'Extension', outputExtension, ...
                                 'Verbose', verbose);
 

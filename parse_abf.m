@@ -99,8 +99,8 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %
 % Used by:
 %       cd/parse_all_abfs.m
-%       cd/plot_EEG.m
 %       cd/plot_traces_abf.m
+%       cd/plot_traces_EEG.m
 %       cd/compute_and_plot_evoked_LFP.m
 %       cd/identify_CI.m
 %       cd/identify_eLFP.m

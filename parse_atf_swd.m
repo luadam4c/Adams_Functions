@@ -17,7 +17,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 %       varargin    - 'AbfFileName': Name of the corresponding .abf file(s)
 %                   must be empty, a characeter vector, a string array 
 %                       or a cell array of character arrays
-%                   default == ''
+%                   default == [fileBase, '.abf']
 %                   - 'OutFolder': directory to output swd table file, 
 %                                   e.g. 'output'
 %                   must be a string scalar or a character vector
@@ -30,7 +30,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 %       cd/match_dimensions.m
 %
 % Used by:
-%       cd/plot_EEG.m
+%       cd/plot_traces_EEG.m
 
 % File History:
 % 2018-11-21 Created by Adam Lu
@@ -77,13 +77,13 @@ outFolder = iP.Results.OutFolder;
 %% Preparation
 % Decide what file type the first input is
 if regexpi(originalEventFile, '.atf$')
-    aftFile = originalEventFile;
+    atfFile = originalEventFile;
     atfCsvFile = '';
 elseif regexpi(originalEventFile, '.csv$')
-    aftFile = '';
+    atfFile = '';
     atfCsvFile = originalEventFile;
 else
-    aftFile = '';
+    atfFile = '';
     atfCsvFile = '';
 end
 
@@ -100,22 +100,23 @@ swdManualCsvFile = fullfile(outFolder, [fileBase, '_Manual_SWDs.csv']);
 
 %% Do the job
 % Read the table from the file
-if ~isfile(aftFile) && ~isfile(atfCsvFile)
+if ~isfile(atfFile) && ~isfile(atfCsvFile)
     % Do nothing
-    atfTable = [];
+    swdManualTable = [];
+    swdManualCsvFile = '';
     return
 elseif isfile(atfCsvFile)
     % Display warning if atf file also provided
-    if isfile(aftFile)
+    if isfile(atfFile)
         fprintf(['Table with be read from the csv file ', ...
                 'instead of the atf file!\n']);
     end
 
     % Read in the SWD manual table from the converted csv file
     atfTable = readtable(atfCsvFile);
-elseif isfile(aftFile)
+elseif isfile(atfFile)
     % Read in the SWD manual table and print to a csv file
-    [atfTable, atfCsvFile] = atf2sheet(aftFile, 'SheetType', 'csv');
+    [atfTable, atfCsvFile] = atf2sheet(atfFile, 'SheetType', 'csv');
 end
 
 % Make sure there is an event recorded

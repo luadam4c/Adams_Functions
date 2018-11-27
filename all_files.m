@@ -1,5 +1,5 @@
 function [files, fullPaths] = all_files(varargin)
-%% Get all the files (but not subdirectories) in a given directory
+%% Get all the files in a given directory (optionally recursive) that matches a prefix, keyword, suffix or extension
 % Usage: [files, fullPaths] = all_files(varargin)
 %
 % Outputs:
@@ -15,6 +15,9 @@ function [files, fullPaths] = all_files(varargin)
 %                   specified as a column cell array of character vectors
 % Arguments:
 %       varargin    - 'Verbose': whether to write to standard output
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'Recursive': whether to search recursively
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'Directory': the directory to search in
@@ -44,14 +47,17 @@ function [files, fullPaths] = all_files(varargin)
 %       cd/parse_all_abfs.m
 %       cd/plot_all_abfs.m
 %       cd/plot_swd_raster.m
+%       cd/plot_traces_EEG.m
 %       
 
 % File History:
 % 2018-10-04 Modified from all_subdirs.m
 % 2018-11-21 Added 'Prefix', 'Keyword', 'Suffix', 'RegExp' as optional arguments
+% 2018-11-26 Added 'Recursive' as an optional flag
 
 %% Default values for optional arguments
 verboseDefault = false;             % don't print to standard output by default
+recursiveDefault = false;           % don't search recursively by default
 directoryDefault = '';              % construct_and_check_fullpath('') == pwd
 prefixDefault = '';                 % set later
 keywordDefault = '';                % set later
@@ -69,6 +75,8 @@ iP.FunctionName = mfilename;
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Recursive', recursiveDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'Prefix', prefixDefault, ...
@@ -85,6 +93,7 @@ addParameter(iP, 'RegExp', regExpDefault, ...
 % Read from the Input Parser
 parse(iP, varargin{:});
 verbose = iP.Results.Verbose;
+recursive = iP.Results.Recursive;
 directory = iP.Results.Directory;
 prefix = iP.Results.Prefix;
 keyword = iP.Results.Keyword;
@@ -123,8 +132,14 @@ else
     end
 end
 
-% Get a list of all files and folders in this folder
-filesOrDirs = dir(directory);
+if recursive
+    % Get a list of all files and subdirectories in this directory 
+    %   and all subdirectories
+    filesOrDirs = dir(fullfile(directory, '**'));
+else
+    % Get a list of all files and subdirectories in this directory only
+    filesOrDirs = dir(directory);
+end
 
 % Get a logical vector that tells which entries are directories
 isDir = transpose([filesOrDirs.isdir]);
@@ -156,7 +171,8 @@ nFiles = numel(files);
 if nFiles == 0
     fprintf('No files with pattern %s found in %s!!\n', regExp, directory);
 elseif verbose
-    fprintf('%d files with pattern %s found in %s!\n', nFiles, regExp, directory);
+    fprintf('%d files with pattern %s found in %s!\n', ...
+            nFiles, regExp, directory);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

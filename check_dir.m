@@ -30,8 +30,8 @@ function check_dir (directories, varargin)
 %       cd/m3ha_create_initial_neuronparams.m
 %       cd/parse_all_abfs.m
 %       cd/plot_all_abfs.m
-%       cd/plot_EEG.m
 %       cd/plot_traces_abf.m
+%       cd/plot_traces_EEG.m
 %       /media/adamX/m3ha/data_dclamp/initial_slopes.m
 %       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
 %       /media/adamX/m3ha/optimizer4gabab/optimizer_4compgabab.m

@@ -52,7 +52,7 @@ addRequired(iP, 'abfFileName', ...
                     'or a cell array of strings/character arrays!']));
 
 % Read from the Input Parser
-parse(iP, abfFileName, varargin{:});
+parse(iP, abfFileName);
 
 %% Do the job
 [abfPath, pathExists] = ...
