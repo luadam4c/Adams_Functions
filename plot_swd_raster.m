@@ -185,7 +185,8 @@ if isempty(swdSheetPaths)
 
     %% Find all files ending with '_SWDs.csv' under the SWD folder recursively
     [~, swdSheetPaths] = all_swd_sheets('Verbose', verbose, ...
-                            'Directory', swdFolder, 'SheetType', sheetType);
+                                        'Directory', swdFolder, ...
+                                        'SheetType', sheetType);
 
     % Exit function if no spreadsheet files are found
     if isempty(swdSheetPaths)
@@ -294,6 +295,9 @@ parfor iBase = 1:nDataFileBases
         % Get the current SWD full file name
         swdsPath = swdSheetPaths{idxSheetThis};
 
+        % Get the current SWD table
+        swdsTable = swdTables{idxSheetThis};
+
         % Get the current SWD file base
         swdSheetBaseThis = swdSheetBases{idxSheetThis};
 
@@ -302,9 +306,6 @@ parfor iBase = 1:nDataFileBases
         yLabelsThisBase{iSheet} = replace(swdSheetBaseThis, ...
                                     {[dataFileBase, '_'], swdStr, '_'}, ...
                                     {'', '', '\_'});
-
-        % Read in the table for this SWD file
-        swdsTable = readtable(swdsPath);
 
         % Extract the event start times and place in cell array
         if any(strcmp(startTimeStr1, fieldnames(swdsTable)))
@@ -441,5 +442,8 @@ tempCell = textscan(swdSheetBaseThis, [dataFileBase, '_%s', swdStr]);
 yLabelsThisBase{iSheet} = tempCell{1};
 
 swdFolder = fileparts(swdSheetPaths{1});
+
+% Read in the table for this SWD file
+swdsTable = readtable(swdsPath);
 
 %}

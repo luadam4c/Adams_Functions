@@ -83,6 +83,7 @@ if isempty(fileNames)
     if isempty(fileNames)
         fprintf('Type ''help %s'' for usage\n', mfilename);
         outputs = {};
+        fullPaths = {};
         return
     end
 elseif ischar(fileNames)

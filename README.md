@@ -135,6 +135,7 @@ Last Updated 2018-11-27 by Adam Lu
 - [**load_examples.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_examples.m): Loads example data structures for testing
 - [**load_neuron_outputs.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_neuron_outputs.m): Loads .out files created by NEURON into a cell array
 - [**load_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_params.m): Loads parameters from file(s) into a table
+- [**load_swd_sheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_swd_sheets.m): TODO: A summary of what the function does (must be a single unbreaked line)
 - [**locate_dir.m**](https://github.com/blabuva/Adams_Functions/blob/master/locate_dir.m): Locate the first directory that exists out of a list of candidates
 - [**locate_functionsdir.m**](https://github.com/blabuva/Adams_Functions/blob/master/locate_functionsdir.m): Locate the first shared functions directory that exists
 - [**log_arraytext.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_arraytext.m): Create a text file that logs the array information
@@ -210,6 +211,7 @@ Last Updated 2018-11-27 by Adam Lu
 - [**print_or_show_message.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_or_show_message.m): Either print a message in standard output or show a message box
 - [**print_structure.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_structure.m): Display all fields of a structure recursively
 - [**read_adicht.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_adicht.m): Reads in a .adicht file (from LabChart)
+- [**read_swd_sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_swd_sheet.m): Read in an SWD table from a spreadsheet file
 - [**remove_outliers.m**](https://github.com/blabuva/Adams_Functions/blob/master/remove_outliers.m): Removes outliers from a data matrix and return a new matrix
 - [**rescale_vec.m**](https://github.com/blabuva/Adams_Functions/blob/master/rescale_vec.m): Rescale a vector (vec1) to be in the same ballpark as another vector (vec2),
 - [**restore_fields.m**](https://github.com/blabuva/Adams_Functions/blob/master/restore_fields.m): Set each field specified in varargin to previous values from the field strcat(field, '_prev')

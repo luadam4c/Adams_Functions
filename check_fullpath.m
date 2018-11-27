@@ -110,16 +110,24 @@ otherwise
 end
 
 % Print message if it doesn't exist
-if ~pathExists
-    fprintf('The %s %s doesn''t exist!!\n', pathType, fullPath);
-elseif verbose
-    fprintf('The %s %s already exists!!\n', pathType, fullPath);
+if verbose
+    if ~pathExists
+        fprintf('The %s %s doesn''t exist!!\n', pathType, fullPath);
+    else
+        fprintf('The %s %s already exists!!\n', pathType, fullPath);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+if ~pathExists
+    fprintf('The %s %s doesn''t exist!!\n', pathType, fullPath);
+elseif verbose
+    fprintf('The %s %s already exists!!\n', pathType, fullPath);
+end
 
 %}
 

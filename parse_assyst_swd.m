@@ -32,14 +32,14 @@ function [swdAssystTable, swdAssystCsvFile] = ...
 
 % File History:
 % 2018-11-22 Created by Adam Lu
+% 2018-11-27 Now reads durationOrig as a duration array 
+%               rather than a datetime array
 % 
 
 %% Hard-coded parameters
 varNamesOrig = {'swdNumber', 'startTimeOrig', 'endTimeOrig', ...
                 'durationOrig', 'comment'};
 varNames = {'startTime', 'endTime', 'duration', 'abfPath', 'pathExists'};
-dateTimePattern = 'M/d/yyyy HH:mm:ss.SSS';
-timePattern = 'HH:mm:ss.SSS';
 startTimePattern = '^Record Start time';
 samplingRatePattern = '^Sampling rate';
 timeStepPattern = '^Time step';
@@ -47,6 +47,10 @@ swdPattern1 = '^Event Category: SWD';
 swdPattern2 = '^Event Category: Seizures';
 nEventsPattern = '^Number of events';
 headerPattern = '^#';
+
+% Must be consistent with read_swd_sheet.m
+dateTimePattern = 'M/d/yyyy HH:mm:ss.SSS';
+durationPattern = 'hh:mm:ss.SSS';
 
 %% Default values for optional arguments
 abfFileNameDefault = '';        % set later
@@ -101,18 +105,20 @@ if isempty(abfFileName)
 end
 
 % Construct full path to abf file
-[abfPath, pathExists] = construct_and_check_abfpath(abfFileName, ...
-                                                    'Directory', pwd);
+[abfPath, pathExists] = ...
+    construct_and_check_abfpath(abfFileName, ...
+                                'Directory', pwd, 'Verbose', false);
 
 % Try again one level up if path doesn't exist
 if ~pathExists
-    [abfPath, pathExists] = construct_and_check_abfpath(abfFileName, ...
-                                                'Directory', fileparts(pwd));
+    [abfPath, pathExists] = ...
+        construct_and_check_abfpath(abfFileName, ...
+                                'Directory', fileparts(pwd), 'Verbose', false);
 end
 
-% Construct the date time format specifier
+% Construct the date time format specifier for textscan()
 dateTimeFormatSpec = ['%{', dateTimePattern, '}D'];
-timeFormatSpec = ['%{', timePattern, '}D'];
+timeFormatSpec = ['%{', durationPattern, '}T'];
 
 %% Do the job
 % Open the file
@@ -124,6 +130,10 @@ thisLine = '';
 % Read line(s) excluding newline character until reaching startTimePattern
 while isempty(regexpi(thisLine, startTimePattern))
     thisLine = fgetl(fid);
+    if ~ischar(thisLine)
+        fprintf('%s is not found!', startTimePattern);
+        return
+    end
 end
 
 % Store the recording start time
@@ -133,6 +143,10 @@ recordingStartTime = tempCell1{2};
 % Read line(s) excluding newline character until reaching samplingRatePattern
 while isempty(regexpi(thisLine, samplingRatePattern))
     thisLine = fgetl(fid);
+    if ~ischar(thisLine)
+        fprintf('%s is not found!', samplingRatePattern);
+        return
+    end
 end
 
 % Store the sampling rate in Hz
@@ -152,11 +166,19 @@ siSeconds = tempCell3{2};
 while isempty(regexpi(thisLine, swdPattern1)) && ...
         isempty(regexpi(thisLine, swdPattern2))
     thisLine = fgetl(fid);
+    if ~ischar(thisLine)
+        fprintf('%s or %s is not found!', swdPattern1, swdPattern2);
+        return
+    end
 end
 
 % Read line(s) excluding newline character until reaching nEventsPattern
 while isempty(regexpi(thisLine, nEventsPattern))
     thisLine = fgetl(fid);
+    if ~ischar(thisLine)
+        fprintf('%s is not found!', nEventsPattern);
+        return
+    end
 end
 
 % Store the number of SWDs
@@ -166,6 +188,10 @@ nSWDs = tempCell4{2};
 % Read in the header
 while isempty(regexpi(thisLine, headerPattern))
     thisLine = fgetl(fid);
+    if ~ischar(thisLine)
+        fprintf('%s is not found!', headerPattern);
+        return
+    end
 end
 
 % Read in the SWDs
@@ -184,7 +210,7 @@ startTime = seconds(swdAssystTable.startTimeOrig - recordingStartTime);
 endTime = seconds(swdAssystTable.endTimeOrig - recordingStartTime);
 
 % Convert the duration to seconds
-duration = second(swdAssystTable.durationOrig);
+duration = seconds(swdAssystTable.durationOrig);
 
 % Close the file
 fclose(fid);
@@ -208,6 +234,11 @@ writetable(swdAssystTable, swdAssystCsvFile);
 OLD CODE:
 
 abfFileName = fullfile(fileDir, [fileBase, '.abf']);
+
+timePattern = 'HH:mm:ss.SSS';
+timeFormatSpec = ['%{', timePattern, '}D'];
+
+duration = second(swdAssystTable.durationOrig);
 
 %}
 

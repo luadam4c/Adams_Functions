@@ -32,7 +32,8 @@ function [subDirs, fullPaths] = all_subdirs(varargin)
 
 % File History:
 % 2018-09-27 Adapted from the web by Adam Lu
-%               https://www.mathworks.com/matlabcentral/answers/166629-is-there-any-way-to-list-all-folders-only-in-the-level-directly-below-a-selected-directory
+%               https://www.mathworks.com/matlabcentral/answers/
+%                   166629-is-there-any-way-to-list-all-folders-only-in-the-level-directly-below-a-selected-directory
 % 2018-10-04 Renamed subdirs() -> all_subdirs()
 
 %% Default values for optional arguments
