@@ -35,6 +35,7 @@ function [swdSheetFiles, swdSheetPaths] = all_swd_sheets (varargin)
 %       cd/print_or_show_message.m
 %
 % Used by:
+%       cd/load_swd_sheets.m
 %       cd/plot_swd_raster.m
 
 % File History:

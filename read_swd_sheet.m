@@ -11,12 +11,6 @@ function swdTable = read_swd_sheet(filePath)
 % Arguments:
 %       filePath    - SWD spreadsheet file to read
 %                   must be a string scalar or a character vector
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
-%
-% Requires:
-%       /TODO:dir/TODO:file
 %
 % Used by:
 %       cd/load_swd_sheets.m

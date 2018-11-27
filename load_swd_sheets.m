@@ -1,5 +1,5 @@
 function [swdTables, filePaths] = load_swd_sheets (varargin)
-%% TODO: A summary of what the function does (must be a single unbreaked line)
+%% Loads SWD tables from SWD spreadsheets
 % Usage: [swdTables, filePaths] = load_swd_sheets (varargin)
 % Explanation:
 %       TODO
@@ -27,14 +27,14 @@ function [swdTables, filePaths] = load_swd_sheets (varargin)
 %                   (see issheettype.m under Adams_Functions)
 %                   default == 'csv'
 %                   
-% Requires: TODO
+% Requires:
 %       cd/all_swd_sheets.m
 %       cd/check_fullpath.m
 %       cd/issheettype.m
 %       cd/read_swd_sheet.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/plot_swd_raster.m
 
 % File History:
 % 2018-11-27 Created by Adam Lu
@@ -74,14 +74,14 @@ verbose = iP.Results.Verbose;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 
 %% Preparation
-% Decide on the directory
-if isempty(directory)
-    % Use the present working directory
-    directory = pwd;
-end
-
 % Decide on the files to use
 if isempty(filePaths)
+    % Decide on the directory if not provided
+    if isempty(directory)
+        % Use the present working directory
+        directory = pwd;
+    end
+
     % Find all '_SWDs.csv' sheets in the directory recursively
     [~, filePaths] = all_swd_sheets('Verbose', verbose, ...
                                     'Directory', directory, ...

@@ -176,46 +176,36 @@ if isempty(assystFolder)
 end
 
 %% Preparation
-% Make sure swdSheetPaths and swdFolder are defined
-if isempty(swdSheetPaths)
-    % Decide on the SWD folder to look in if not provided
-    if isempty(swdFolder)
-        swdFolder = pwd;
-    end
-
-    %% Find all files ending with '_SWDs.csv' under the SWD folder recursively
-    [~, swdSheetPaths] = all_swd_sheets('Verbose', verbose, ...
-                                        'Directory', swdFolder, ...
-                                        'SheetType', sheetType);
-
-    % Exit function if no spreadsheet files are found
-    if isempty(swdSheetPaths)
-        return;
-    end
-else
-    % Read in the SWD folder if not provided
-    if isempty(swdFolder)
-        if iscell(swdSheetPaths)
-            swdFolder = fileparts(swdSheetPaths{1});
-            % TODO: Consider the case where the immediate folders are different
-        else
-            swdFolder = fileparts(swdSheetPaths);
-        end
-    end
-end
-
 % Read in SWD tables if not provided
 if isempty(swdTables)
-    % Read in the tables from the files
-    swdTables = cellfun(@readtable, swdSheetPaths, 'UniformOutput', false);
+    if ~isempty(swdSheetPaths)
+        % Use full paths if provided
+        [swdTables, swdSheetPaths] = ...
+            load_swd_sheets('Verbose', verbose, 'FilePaths', swdSheetPaths, ...
+                            'SheetType', sheetType);
+    else
+        % Otherwise look in the swdFolder
+        [swdTables, swdSheetPaths] = ...
+            load_swd_sheets('Verbose', verbose, 'Directory', swdFolder, ...
+                            'SheetType', sheetType);
+    end
 else
     % Display warning message?
     % TODO
 end
 
-% Decide on the output folder
+% Decide on the output folder based on swdSheetPaths
 if isempty(outFolder)
-    outFolder = swdFolder;
+    if ~isempty(swdSheetPaths)
+        if iscell(swdSheetPaths)
+            outFolder = fileparts(swdSheetPaths{1});
+            % TODO: Make function get_parent_folder.m
+        else
+            outFolder = fileparts(swdSheetPaths);
+        end
+    else
+        outFolder = pwd;
+    end
 end
 if verbose
     fprintf('Outfolder is %s ...\n', outFolder);
@@ -292,9 +282,6 @@ parfor iBase = 1:nDataFileBases
         % Get the original index of this sheet
         idxSheetThis = indSheetsThisBase(iSheet);
 
-        % Get the current SWD full file name
-        swdsPath = swdSheetPaths{idxSheetThis};
-
         % Get the current SWD table
         swdsTable = swdTables{idxSheetThis};
 
@@ -314,7 +301,7 @@ parfor iBase = 1:nDataFileBases
             eventTimesThisSheet = swdsTable.(startTimeStr2);
         else 
             message = sprintf('No %s field or %s field found for %s!', ...
-                        startTimeStr1, startTimeStr2, swdsPath);
+                        startTimeStr1, startTimeStr2, swdSheetBaseThis);
             mTitle = 'Missing field warning';
             icon = 'warn';
             print_or_show_message(message, 'MTitle', mTitle, 'Icon', icon, ...
@@ -445,5 +432,41 @@ swdFolder = fileparts(swdSheetPaths{1});
 
 % Read in the table for this SWD file
 swdsTable = readtable(swdsPath);
+
+% Read in the tables from the files
+swdTables = cellfun(@readtable, swdSheetPaths, 'UniformOutput', false);
+
+% Make sure swdSheetPaths and swdFolder are defined
+if isempty(swdSheetPaths)
+    %% Find all files ending with '_SWDs.csv' under the SWD folder recursively
+    [~, swdSheetPaths] = all_swd_sheets('Verbose', verbose, ...
+                                        'Directory', swdFolder, ...
+                                        'SheetType', sheetType);
+
+    % Exit function if no spreadsheet files are found
+    if isempty(swdSheetPaths)
+        return;
+    end
+end
+
+% Decide on the SWD folder to look in if not provided
+if isempty(swdFolder)
+    if ~isempty(swdSheetPaths)
+        if iscell(swdSheetPaths)
+            swdFolder = fileparts(swdSheetPaths{1});
+            % TODO: Consider the case where the immediate folders are different
+        else
+            swdFolder = fileparts(swdSheetPaths);
+        end
+    else
+        swdFolder = pwd;
+    end
+end
+
+% Get the current SWD spreadsheet name
+swdsPath = swdSheetPaths{idxSheetThis};
+
+message = sprintf('No %s field or %s field found for %s!', ...
+            startTimeStr1, startTimeStr2, swdsPath);
 
 %}
