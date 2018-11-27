@@ -74,6 +74,8 @@ function plot_swd_raster (varargin)
 % 2018-11-22 Changed default sheettype to .csv
 % 2018-11-22 Changed startTimeStr to 'startTime'
 % 2018-11-22 Changed default ManualFolder to pwd
+% 2018-11-27 Now looks for SWDs.csv files recursively in SwdFolder
+% TODO: If there is only one group, make each trace a different color
 % TODO: Reanalyze data from ManualFolder, SayliFolder, AssystFolder
 %           if provided
 % TODO: Make the function plot_event_raster by replacing 'SWD' with 'event'

@@ -104,7 +104,7 @@ regExp = iP.Results.RegExp;
 % Make sure the directory is an existing full path
 [directory, dirExists] = construct_and_check_fullpath(directory);
 if ~dirExists
-    subDirs = [];
+    files = [];
     fullPaths = {};
     return
 end
