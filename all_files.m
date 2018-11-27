@@ -3,7 +3,7 @@ function [files, fullPaths] = all_files(varargin)
 % Usage: [files, fullPaths] = all_files(varargin)
 %
 % Outputs:
-%       files       - a files structure for the files
+%       files       - file structure(s) for the files
 %                   specified as a structure array with fields:
 %                       name
 %                       folder
@@ -11,7 +11,7 @@ function [files, fullPaths] = all_files(varargin)
 %                       bytes
 %                       isdir
 %                       datenum
-%       fullPaths   - the full paths to the files
+%       fullPaths   - full path(s) to the files
 %                   specified as a column cell array of character vectors
 % Arguments:
 %       varargin    - 'Verbose': whether to write to standard output
@@ -44,9 +44,9 @@ function [files, fullPaths] = all_files(varargin)
 %       cd/extract_fullpaths.m
 %
 % Used by: 
+%       cd/all_swd_sheets.m
 %       cd/parse_all_abfs.m
 %       cd/plot_all_abfs.m
-%       cd/plot_swd_raster.m
 %       cd/plot_traces_EEG.m
 %       
 

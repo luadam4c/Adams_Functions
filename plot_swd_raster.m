@@ -55,7 +55,7 @@ function plot_swd_raster (varargin)
 %                   default == 2
 %
 % Requires:
-%       cd/all_files.m
+%       cd/all_swd_sheets.m
 %       cd/find_ind_str_in_cell.m
 %       cd/islinestyle.m
 %       cd/issheettype.m
@@ -183,22 +183,12 @@ if isempty(swdSheetPaths)
         swdFolder = pwd;
     end
 
-    % Find all SWD spreadsheet files in swdFolder
-    [~, swdSheetPaths] = ...
-        all_files('Verbose', true, 'Recursive', true, ...
-                    'Directory', swdFolder, ...
-                    'Suffix', swdStr, 'Extension', ['.', sheetType]);
+    %% Find all files ending with '_SWDs.csv' under the SWD folder recursively
+    [~, swdSheetPaths] = all_swd_sheets('Verbose', verbose, ...
+                            'Directory', swdFolder, 'SheetType', sheetType);
 
     % Exit function if no spreadsheet files are found
     if isempty(swdSheetPaths)
-        message = sprintf(['There are no SWD spreadsheets of the', ...
-                            ' ending %s.%s in the directory: %s'], ...
-                            swdStr, sheetType, swdFolder);
-        mTitle = 'No SWD spreadsheets found warning';
-        icon = 'warn';
-        print_or_show_message(message, 'MTitle', mTitle, 'Icon', icon, ...
-                                'MessageMode', 'show', 'Verbose', true, ...
-                                'CreateMode', 'replace');
         return;
     end
 else

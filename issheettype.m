@@ -31,6 +31,7 @@ function [results, sheettypes] = issheettype (candidates, varargin)
 %       cd/istype.m
 %
 % Used by:
+%       cd/all_swd_sheets.m
 %       cd/atf2sheet.m
 %       cd/create_waveform_train.m
 %       cd/create_pulse_train_series.m
