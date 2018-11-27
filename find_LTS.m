@@ -44,7 +44,7 @@ function [actVhold, maxnoise, peaktime, peak2ndder, peakprom, peakwidth, peakcla
 %
 % Requires:    
 %        cd/check_subdir.m
-%        cd/find_filebases.m
+%        cd/all_filebases.m
 %        cd/find_ind_str_in_cell.m
 %
 % Used by:
@@ -254,7 +254,7 @@ for k = 1:ndirs
     traces_to_override_subdirs{k} = ['/OVERRIDE_', traces_to_override_strs{k}, '/'];
 end
 dir_special_cases_full = fullfile(homedirectory, dir_special_cases);    % full file path to special_cases directory
-traces_to_override = find_filebases(dir_special_cases_full, traces_to_override_subdirs, 'png');
+traces_to_override = all_filebases(dir_special_cases_full, traces_to_override_subdirs, 'png');
 
 % Remove '_scaled' from base names
 for k = 1:ndirs

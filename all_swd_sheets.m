@@ -36,7 +36,6 @@ function [swdSheetFiles, swdSheetPaths] = all_swd_sheets (varargin)
 %
 % Used by:
 %       cd/load_swd_sheets.m
-%       cd/plot_swd_raster.m
 
 % File History:
 % 2018-11-27 Moved from plot_swd_raster.m

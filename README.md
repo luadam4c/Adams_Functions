@@ -8,6 +8,8 @@ Last Updated 2018-11-27 by Adam Lu
 
 - [**abf2mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/abf2mat.m): Converts .abf files to .mat files with time vector (in ms) included
 - [**adjust_peaks.m**](https://github.com/blabuva/Adams_Functions/blob/master/adjust_peaks.m): Adjusts peak indices and values given approximate peak indices
+- [**all_data_files.m**](https://github.com/blabuva/Adams_Functions/blob/master/all_data_files.m): Looks for data files in a dataDirectory according to either dataTypeUser or going through a list of possibleDataTypes
+- [**all_filebases.m**](https://github.com/blabuva/Adams_Functions/blob/master/all_filebases.m): Finds base names for files in infolder/subdir and return as a cell array or cell arrays of strings
 - [**all_files.m**](https://github.com/blabuva/Adams_Functions/blob/master/all_files.m): Get all the files in a given directory (optionally recursive) that matches a prefix, keyword, suffix or extension
 - [**all_ordered_pairs.m**](https://github.com/blabuva/Adams_Functions/blob/master/all_ordered_pairs.m): Generates a cell array of all ordered pairs of elements/indices, one from each vector
 - [**all_subdirs.m**](https://github.com/blabuva/Adams_Functions/blob/master/all_subdirs.m): Get all the subdirectories in a given directory
@@ -74,12 +76,11 @@ Last Updated 2018-11-27 by Adam Lu
 - [**estimate_passive_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/estimate_passive_params.m): Estimates passive parameters from fitted coefficients, current pulse amplitude and some constants
 - [**estimate_resting_potential.m**](https://github.com/blabuva/Adams_Functions/blob/master/estimate_resting_potential.m): Estimates the resting membrane potential and the input resistance from holding potentials and holding currents
 - [**extract_columns.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_columns.m): Extracts columns from arrays
+- [**extract_common_parent.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_common_parent.m): TODO: A summary of what the function does (must be a single unbreaked line)
 - [**extract_fullpaths.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fullpaths.m): Extracts full paths from a files structure array
 - [**extract_subvectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_subvectors.m): Extracts subvectors from vectors, given either endpoints or value windows
 - [**files2contents.m**](https://github.com/blabuva/Adams_Functions/blob/master/files2contents.m): Replaces file names with file contents in a cell array of strings
 - [**find_custom.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_custom.m): Same as find() but takes custom parameter-value pairs
-- [**find_data_files.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_data_files.m): Looks for data files in a dataDirectory according to either dataTypeUser or going through a list of possibleDataTypes
-- [**find_filebases.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_filebases.m): Finds base names for files in infolder/subdir and return as a cell array or cell arrays of strings
 - [**find_first_deviant.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_first_deviant.m): Finds the index of the first deviant from preceding peers in a time series
 - [**find_first_jump.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_first_jump.m): Finds the index of the first jump in a time series
 - [**find_ind_str_in_cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_ind_str_in_cell.m): Find all indices of a particular string in a cell array

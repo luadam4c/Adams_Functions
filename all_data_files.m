@@ -1,6 +1,6 @@
-function [dataType, allDataFiles, nDataFiles, message] = find_data_files (dataTypeUser, dataDirectory, possibleDataTypes, varargin)
+function [dataType, allDataFiles, nDataFiles, message] = all_data_files (dataTypeUser, dataDirectory, possibleDataTypes, varargin)
 %% Looks for data files in a dataDirectory according to either dataTypeUser or going through a list of possibleDataTypes
-% Usage: [dataType, allDataFiles, nDataFiles, message] = find_data_files (dataTypeUser, dataDirectory, possibleDataTypes, varargin)
+% Usage: [dataType, allDataFiles, nDataFiles, message] = all_data_files (dataTypeUser, dataDirectory, possibleDataTypes, varargin)
 %
 % Arguments:
 %       TODO    
@@ -21,6 +21,7 @@ function [dataType, allDataFiles, nDataFiles, message] = find_data_files (dataTy
 %   2018-01-29 Added FileIdentifier as an optional argument
 %   2018-02-14 Added ExcludedStrings as an optional argument
 %   TODO: Make possibleDataTypes an optional argument? Default?
+%   TODO: Use all_files.m?
 %
 
 %% Default values for optional arguments
@@ -33,12 +34,12 @@ excludedStringsDefault = {};    % no excluded strings by default
 % Check number of required arguments
 if nargin < 3
     error(['Not enough input arguments, ', ...
-            'type ''help find_data_files'' for usage']);
+            'type ''help %s'' for usage'], mfilename);
 end
 
 % Set up Input Parser Scheme
 iP = inputParser;         
-iP.FunctionName = 'find_data_files';
+iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'FileIdentifier', fileIdentifierDefault, ...

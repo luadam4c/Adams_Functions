@@ -50,7 +50,7 @@ function [allData, timeVec] = combine_sweeps(varargin)
 %
 % Requires:
 %       cd/identify_channels.m
-%       cd/find_data_files.m
+%       cd/all_data_files.m
 %       cd/locate_functionsdir.m
 %       cd/print_or_show_message.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m
@@ -64,7 +64,7 @@ function [allData, timeVec] = combine_sweeps(varargin)
 % 2017-07-25 Created by AL
 % 2017-10-15 Added success message
 % 2018-01-24 Added isdeployed
-% 2018-01-29 Now uses find_data_files.m
+% 2018-01-29 Now uses all_data_files.m
 % 2018-01-29 Added dataType as an optional parameter-value pair argument
 % 2018-02-02 Added showMessage as an optional parameter-value pair argument
 % 2018-02-02 Now uses print_or_show_message.m for output
@@ -158,7 +158,7 @@ end
 % Determine data type, list all .abf, .mat or .txt files from 
 %   data subdirectory
 [dataType, allDataFiles, nDataFiles, message] = ...
-    find_data_files (dataTypeUser, dataDirectory, possibleDataTypes, ...
+    all_data_files (dataTypeUser, dataDirectory, possibleDataTypes, ...
                         'FileIdentifier', fileIdentifier);
 
 % Check if files are found
@@ -391,7 +391,7 @@ showMessage = iP.Results.ShowMessage;
 addpath(fullfile(functionsDirectory, '/Brians_Functions/'));
                                             % for identify_channels.m
 addpath(fullfile(functionsDirectory, '/Adams_Functions/'));
-                                            % for find_data_files.m
+                                            % for all_data_files.m
 
 %}
 
