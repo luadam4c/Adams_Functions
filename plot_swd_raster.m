@@ -183,7 +183,8 @@ if isempty(swdSheetPaths)
 
     % Find all SWD spreadsheet files in swdFolder
     [~, swdSheetPaths] = ...
-        all_files('Verbose', true, 'Directory', swdFolder, ...
+        all_files('Verbose', true, 'Recursive', true, ...
+                    'Directory', swdFolder, ...
                     'Suffix', swdStr, 'Extension', ['.', sheetType]);
 
     % Exit function if no spreadsheet files are found
@@ -203,6 +204,7 @@ else
     if isempty(swdFolder)
         if iscell(swdSheetPaths)
             swdFolder = fileparts(swdSheetPaths{1});
+            % TODO: Consider the case where the immediate folders are different
         else
             swdFolder = fileparts(swdSheetPaths);
         end
@@ -445,5 +447,7 @@ folderName = temp{end-1};
 
 tempCell = textscan(swdSheetBaseThis, [dataFileBase, '_%s', swdStr]);
 yLabelsThisBase{iSheet} = tempCell{1};
+
+swdFolder = fileparts(swdSheetPaths{1});
 
 %}
