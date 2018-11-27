@@ -27,6 +27,9 @@ function plot_EEG(abfFileName, varargin)
 %                   - 'AssystPath': path to Assyst.txt file
 %                   must be a TODO
 %                   default == TODO
+%                   - 'SayliPath': path to Sayli_SWDs.csv file
+%                   must be a TODO
+%                   default == TODO
 %                   
 % Requires:
 %       cd/all_files.m
@@ -52,6 +55,7 @@ verboseDefault = true;
 outFolderDefault = '';      % set later
 atfPathDefault = '';        % set later
 assystPathDefault = '';     % set later
+sayliPathDefault = '';      % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -79,6 +83,8 @@ addParameter(iP, 'AtfPath', atfPathDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'AssystPath', assystPathDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'SayliPath', sayliPathDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, abfFileName, varargin{:});
@@ -86,6 +92,7 @@ verbose = iP.Results.Verbose;
 outFolder = iP.Results.OutFolder;
 atfPath = iP.Results.AtfPath;
 assystPath = iP.Results.AssystPath;
+sayliPath = iP.Results.SayliPath;
 
 %% Preparation
 % Parse the abf file
@@ -114,7 +121,7 @@ end
 % Check if needed output directories exist
 check_dir(outFolder, 'Verbose', verbose);
 
-% Look for manual SWD files if not provided
+% Look for .atf files if not provided
 if isempty(atfPath)
     % Try to look for a .atf file containing the file base in the same directory
     [~, atfPaths] = all_files('Directory', fileDir, 'Keyword', fileBase, ...
@@ -137,7 +144,7 @@ if isempty(atfPath)
     end
 end
 
-% Look for Assyst SWD files if not provided
+% Look for Assyst .txt files if not provided
 if isempty(assystPath)
     % Try to look for a Assyst.txt file containing the file base in the same directory
     [~, assystPaths] = all_files('Directory', fileDir, 'Keyword', fileBase, ...
@@ -153,6 +160,23 @@ if isempty(assystPath)
     end
 end
 
+% Look for Sayli SWD files if not provided
+if isempty(sayliPath)
+    % Try to look for a Sayli_SWDs.csv file containing 
+    %   the file base in the same directory
+    [~, sayliPaths] = all_files('Directory', fileDir, 'Keyword', fileBase, ...
+                                'Suffix', 'Sayli_SWDs', 'Extension', '.csv');
+
+    % If there is more than one file, one choose the first one
+    if isempty(sayliPaths)
+        sayliPath = '';
+    elseif iscell(sayliPaths)
+        sayliPath = sayliPaths{1};
+    else
+        sayliPath = sayliPaths;
+    end
+end
+
 %% Do the job
 % Plot full traces if not already done so
 plot_traces_abf(abfPath, 'Verbose', verbose, 'OverWrite', false, ...
@@ -164,10 +188,6 @@ if isfile(atfPath)
     % Parse the SWDs from the .atf file
     swdManualTable = parse_atf_swd(atfPath);
 
-    % TODO: Pull out to function plot_swds.m
-    % Create an output folder for manual SWD traces
-    outFolderSWD = fullfile(outFolder, 'Manual_SWDs');
-
     % Get the recorded .abf path
     abfPathRecorded = swdManualTable{1, 'abfPath'};
 
@@ -176,6 +196,10 @@ if isfile(atfPath)
         fprintf('The recorded path %s does not match %s!!\n', ...
                 abfPathRecorded, abfPath);
     else
+        % TODO: Pull out to function plot_swds.m
+        % Create an output folder for manual SWD traces
+        outFolderSWD = fullfile(outFolder, 'Manual_SWDs');
+
         % Plot each detected SWD separately
         plot_traces_abf(abfPath, 'Verbose', verbose, 'OverWrite', false, ...
                 'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
@@ -190,10 +214,6 @@ if isfile(assystPath)
     % Parse the SWDs from the Assyst.txt file
     swdAssystTable = parse_assyst_swd(assystPath);
 
-    % TODO: Pull out to function plot_swds.m
-    % Create an output folder for Assyst SWD traces
-    outFolderSWD = fullfile(outFolder, 'Assyst_SWDs');
-
     % Get the recorded .abf path
     abfPathRecorded = swdAssystTable{1, 'abfPath'};
 
@@ -202,6 +222,10 @@ if isfile(assystPath)
         fprintf('The recorded path %s does not match %s!!\n', ...
                 abfPathRecorded, abfPath);
     else
+        % TODO: Pull out to function plot_swds.m
+        % Create an output folder for Assyst SWD traces
+        outFolderSWD = fullfile(outFolder, 'Assyst_SWDs');
+
         % Plot each detected SWD separately
         plot_traces_abf(abfPath, 'Verbose', verbose, 'OverWrite', false, ...
                 'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
@@ -211,6 +235,22 @@ if isfile(assystPath)
     end
 end
 
+% Plot Sayli SWD regions if an Sayli_SWDs.csv file exists
+if isfile(sayliPath)
+    % Parse the SWDs from the Assyst.txt file
+    swdSayliTable = readtable(sayliPath);
+
+    % TODO: Pull out to function plot_swds.m
+    % Create an output folder for Sayli SWD traces
+    outFolderSWD = fullfile(outFolder, 'Sayli_SWDs');
+
+    % Plot each detected SWD separately
+    plot_traces_abf(abfPath, 'Verbose', verbose, 'OverWrite', false, ...
+            'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
+            'TimeStart', swdSayliTable.startTimes, ...
+            'TimeEnd', swdSayliTable.finishTimes, ...
+            'OutFolder', outFolderSWD);
+end
 % Plot a raster plot for all SWD files
 % TODO: Pass in tables
 % TODO: Pass in time limits detected from data files

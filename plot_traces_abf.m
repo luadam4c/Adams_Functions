@@ -127,7 +127,7 @@ verboseDefault = true;
 expModeDefault = 'patch';       % assume traces are patching data by default
 plotModeDefault = '';           % plot traces overlapped by default
 individuallyDefault = false;    % plot all sweeps together by default
-overWriteDefault = true;        % pverwrite previous plots by default
+overWriteDefault = true;        % overwrite previous plots by default
 outFolderDefault = '';          % set later
 timeUnitsDefault = '';          % set later
 timeStartDefault = [];          % set later
@@ -343,21 +343,25 @@ if ~individually && strcmpi(expMode, 'EEG')
         fprintf('Plotting all channels ...\n');
     end
 
-    % Decide on figure name and title
-    vecAll = data;
-    yLabel = channelLabels{1};
-    figTitle = sprintf('All channels for %s', fileBase);
+    % Decide on figure name
     figName = fullfile(outFolder, sprintf('%s_all.png', fileBase));
-    figNum = 1;
 
-    % Check if the figure already exists
+    % If not to overwrite, check if the figure already exists
     if ~overWrite && check_fullpath(figName, 'Verbose', true)
+        % Skip this figure
+        fprintf('%s skipped!\n', figName);
         return;
     end
 
+    % Decide on other channel-dependent variables
+    vecAll = data;
+    yLabel = channelLabels{1};
+    figTitle = sprintf('All channels for %s', fileBase);
+    figNum = 1;
+
     % Do the plotting
     h = plot_traces(timeVec, vecAll, 'Verbose', verbose, ...
-                    'PlotMode', plotMode, ...
+                    'OverWrite', overWrite, 'PlotMode', plotMode, ...
                     'XLimits', xLimits, 'XUnits', xUnits, ...
                     'XLabel', xLabel, 'YLabel', yLabel, ...
                     'TraceLabels', traceLabels, ...
@@ -376,26 +380,29 @@ elseif ~individually && strcmpi(expMode, 'patch') || ...
             fprintf('Plotting all sweeps of Channel #%d ...\n', iChannel);
         end
 
-        % Decide on figure name and title
-        if nDimensions == 2
-            vecAll = data(:, iChannel);
-        else
-            vecAll = squeeze(data(:, iChannel, :));
-        end
-        yLabel = channelLabels{iChannel};
-        figTitle = sprintf('Data for Channel #%d of %s', ...
-                            iChannel, fileBase);
+        % Decide on figure name
         figName = fullfile(outFolder, sprintf('%s_Channel%d_all.png', ...
                                             fileBase, iChannel));
-        figNum = 100 * iChannel;
 
-        % Check if the figure already exists
+        % If not to overwrite, check if the figure already exists
         if ~overWrite && check_fullpath(figName, 'Verbose', true)
-            % Do nothing
+            % Skip this figure
+            fprintf('%s skipped!\n', figName);
         else
+            % Decide on other channel-dependent variables
+            yLabel = channelLabels{iChannel};
+            figTitle = sprintf('Data for Channel #%d of %s', ...
+                                iChannel, fileBase);
+            figNum = 100 * iChannel;
+            if nDimensions == 2
+                vecAll = data(:, iChannel);
+            else
+                vecAll = squeeze(data(:, iChannel, :));
+            end
+
             % Do the plotting
             h = plot_traces(timeVec, vecAll, 'Verbose', verbose, ...
-                            'PlotMode', plotMode, ...
+                            'OverWrite', overWrite, 'PlotMode', plotMode, ...
                             'XLimits', xLimits, 'XUnits', xUnits, ...
                             'XLabel', xLabel, 'YLabel', yLabel, ...
                             'TraceLabels', traceLabels, ...
@@ -417,29 +424,32 @@ elseif individually && strcmpi(expMode, 'patch')
                             iChannel, iSwp);
             end
 
-            % Decide on figure name and title
-            if nDimensions == 2
-                vecAll = data(:, iChannel);
-            elseif nDimensions == 3
-                vecAll = data(:, iChannel, iSwp);
-            else
-                vecAll = [];
-            end
-            yLabel = channelLabels{iChannel};
-            figTitle = sprintf('Data for Channel #%d, Sweep #%d of %s', ...
-                                iChannel, iSwp, fileBase);
+            % Decide on figure name
             figName = fullfile(outFolder, ...
                                 sprintf('%s_Channel%d_Sweep%d.png', ...
                                         fileBase, iChannel, iSwp));
-            figNum = 100 * iChannel + iSwp;
 
-            % Check if the figure already exists
+            % If not to overwrite, check if the figure already exists
             if ~overWrite && check_fullpath(figName, 'Verbose', true)
-                % Do nothing
+                % Skip this figure
+                fprintf('%s skipped!\n', figName);
             else
+                % Decide on other channel-dependent variables
+                if nDimensions == 2
+                    vecAll = data(:, iChannel);
+                elseif nDimensions == 3
+                    vecAll = data(:, iChannel, iSwp);
+                else
+                    vecAll = [];
+                end
+                yLabel = channelLabels{iChannel};
+                figTitle = sprintf('Data for Channel #%d, Sweep #%d of %s', ...
+                                    iChannel, iSwp, fileBase);
+                figNum = 100 * iChannel + iSwp;
+
                 % Do the plotting
                 h = plot_traces(timeVec, vecAll, 'Verbose', verbose, ...
-                                'PlotMode', plotMode, ...
+                                'OverWrite', overWrite, 'PlotMode', plotMode, ...
                                 'XLimits', xLimits, 'XUnits', xUnits, ...
                                 'XLabel', xLabel, 'YLabel', yLabel, ...
                                 'TraceLabels', traceLabels, ...

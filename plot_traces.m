@@ -19,6 +19,9 @@ function [h, subPlots] = plot_traces (tVecs, data, varargin)
 %       varargin    - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'OverWrite': whether to overwrite existing output
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'PlotMode': plotting mode for multiple traces
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'overlapped'    - overlapped in a single plot
@@ -137,6 +140,7 @@ subPlotSqeezeFactor = 1.2;
 
 %% Default values for optional arguments
 verboseDefault = true;
+overWriteDefault = true;        % overwrite previous plots by default
 plotModeDefault = 'overlapped'; % plot traces overlapped by default
 dataToCompareDefault = [];      % no data to compare against by default
 xLimitsDefault = [];            % set later
@@ -179,6 +183,8 @@ addRequired(iP, 'data', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'OverWrite', overWriteDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotMode', plotModeDefault, ...
     @(x) any(validatestring(x, validPlotModes)));
 addParameter(iP, 'DataToCompare', dataToCompareDefault, ...
@@ -217,6 +223,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 % Read from the Input Parser
 parse(iP, tVecs, data, varargin{:});
 verbose = iP.Results.Verbose;
+overWrite = iP.Results.OverWrite;
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
 dataToCompare = iP.Results.DataToCompare;
 xUnits = iP.Results.XUnits;
@@ -240,6 +247,13 @@ figName = iP.Results.FigName;
 if isempty(data) || iscell(data) && all(cellfun(@isempty, data))
     fprintf('Nothing to plot!\n');
     return
+end
+
+% If not to overwrite, check if the figure already exists
+if ~overWrite && check_fullpath(figName, 'Verbose', verbose)
+    % Skip this figure
+    fprintf('%s skipped!\n', figName);
+    return;
 end
 
 % Match the number of vectors between data and dataToCompare
@@ -376,30 +390,9 @@ if iscell(xLimits)
         % Get the current x-axis limits
         xLimitsThis = xLimits{iInterval};
 
-        % Find the corresponding index endpoints
-        endPoints = find_window_endpoints(xLimitsThis, tVecs, ...
-                                            'BoundaryMode', 'inclusive');
-
-        % Truncate all traces
-        [tVecsThis, dataThis, dataToCompareThis] = ...
-            argfun(@(x) extract_subvectors(x, 'EndPoints', endPoints), ...
-                    tVecs, data, dataToCompare);
-
         % Create a string for the interval
         intervalStrThis = sprintf('%.0f-%.0f%s', ...
                             xLimitsThis(1), xLimitsThis(2), xUnits);
-
-        % Print to standard output
-        if verbose
-            fprintf('Interval to show = %s\n', intervalStrThis);
-        end
-        
-        % Create a new figure title
-        if ~strcmpi(figTitle, 'suppress')
-            figTitleThis = [figTitle, ' (', intervalStrThis, ')'];
-        else
-            figTitleThis = 'suppress';
-        end
 
         % Construct a file suffix
         suffixThis = sprintf('_%s.png', intervalStrThis);
@@ -407,19 +400,46 @@ if iscell(xLimits)
         % Create a new figure name
         figNameThis = replace(figName, '.png', suffixThis);
 
-        % Plot all traces
-        h = plot_traces_helper(verbose, plotMode, ...
-                        tVecsThis, dataThis, dataToCompareThis, ...
-                        xUnits, xLimitsThis, yLimits, linkAxesOption, ...
-                        xLabel, yLabel, traceLabels, colorMap, ...
-                        legendLocation, figTitleThis, ...
-                        figNumber, figNameThis, figTypes, ...
-                        nTraces, nRows, nTracesPerRow, ...
-                        maxNTracesForAnnotations);
-        
-        % Hold off and close figure
-        hold off;
-        close(h)
+        % If not to overwrite, check if the figure already exists
+        if ~overWrite && check_fullpath(figNameThis, 'Verbose', verbose)
+            % Skip this figure
+            fprintf('%s skipped!\n', figNameThis);
+        else
+            % Print to standard output
+            if verbose
+                fprintf('Interval to show = %s\n', intervalStrThis);
+            end
+            
+            % Create a new figure title
+            if ~strcmpi(figTitle, 'suppress')
+                figTitleThis = [figTitle, ' (', intervalStrThis, ')'];
+            else
+                figTitleThis = 'suppress';
+            end
+
+            % Find the corresponding index endpoints
+            endPoints = find_window_endpoints(xLimitsThis, tVecs, ...
+                                                'BoundaryMode', 'inclusive');
+
+            % Truncate all traces
+            [tVecsThis, dataThis, dataToCompareThis] = ...
+                argfun(@(x) extract_subvectors(x, 'EndPoints', endPoints), ...
+                        tVecs, data, dataToCompare);
+
+            % Plot all traces
+            h = plot_traces_helper(verbose, plotMode, ...
+                            tVecsThis, dataThis, dataToCompareThis, ...
+                            xUnits, xLimitsThis, yLimits, linkAxesOption, ...
+                            xLabel, yLabel, traceLabels, colorMap, ...
+                            legendLocation, figTitleThis, ...
+                            figNumber, figNameThis, figTypes, ...
+                            nTraces, nRows, nTracesPerRow, ...
+                            maxNTracesForAnnotations);
+            
+            % Hold off and close figure
+            hold off;
+            close(h)
+        end
     end
 
     % Return nothing

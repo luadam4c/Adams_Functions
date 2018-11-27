@@ -43,7 +43,8 @@ timePattern = 'HH:mm:ss.SSS';
 startTimePattern = '^Record Start time';
 samplingRatePattern = '^Sampling rate';
 timeStepPattern = '^Time step';
-swdPattern = '^Event Category: SWD';
+swdPattern1 = '^Event Category: SWD';
+swdPattern2 = '^Event Category: Seizures';
 nEventsPattern = '^Number of events';
 headerPattern = '^#';
 
@@ -141,7 +142,8 @@ tempCell3 = textscan(thisLine, '%s %f', 'Delimiter', '=');
 siSeconds = tempCell3{2};
 
 % Read line(s) excluding newline character until reaching swdPattern
-while isempty(regexpi(thisLine, swdPattern))
+while isempty(regexpi(thisLine, swdPattern1)) && ...
+        isempty(regexpi(thisLine, swdPattern2))
     thisLine = fgetl(fid);
 end
 
