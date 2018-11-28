@@ -76,7 +76,7 @@ Last Updated 2018-11-27 by Adam Lu
 - [**estimate_passive_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/estimate_passive_params.m): Estimates passive parameters from fitted coefficients, current pulse amplitude and some constants
 - [**estimate_resting_potential.m**](https://github.com/blabuva/Adams_Functions/blob/master/estimate_resting_potential.m): Estimates the resting membrane potential and the input resistance from holding potentials and holding currents
 - [**extract_columns.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_columns.m): Extracts columns from arrays
-- [**extract_common_parent.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_common_parent.m): TODO: A summary of what the function does (must be a single unbreaked line)
+- [**extract_common_parent.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_common_parent.m): Extracts the common parent directory of a cell array of file paths
 - [**extract_fullpaths.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fullpaths.m): Extracts full paths from a files structure array
 - [**extract_subvectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_subvectors.m): Extracts subvectors from vectors, given either endpoints or value windows
 - [**files2contents.m**](https://github.com/blabuva/Adams_Functions/blob/master/files2contents.m): Replaces file names with file contents in a cell array of strings

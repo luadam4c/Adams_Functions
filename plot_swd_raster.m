@@ -55,6 +55,7 @@ function plot_swd_raster (varargin)
 %                   default == 2
 %
 % Requires:
+%       cd/extract_common_parent.m
 %       cd/find_ind_str_in_cell.m
 %       cd/islinestyle.m
 %       cd/issheettype.m
@@ -197,8 +198,7 @@ end
 if isempty(outFolder)
     if ~isempty(swdSheetPaths)
         if iscell(swdSheetPaths)
-            outFolder = fileparts(swdSheetPaths{1});
-            % TODO: Make function extract_common_parent.m
+            outFolder = extract_common_parent(swdSheetPaths);
         else
             outFolder = fileparts(swdSheetPaths);
         end
