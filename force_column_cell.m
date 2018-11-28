@@ -34,6 +34,7 @@ function vectorsCell = force_column_cell (vectorsOrig)
 %       cd/construct_fullpath.m
 %       cd/force_column_numeric.m
 %       cd/force_row_numeric.m
+%       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/match_format_vectors.m
 %       cd/parse_pulse.m

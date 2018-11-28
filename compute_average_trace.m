@@ -25,9 +25,10 @@ function [avgTrace, paramsUsed] = compute_average_trace (traces, varargin)
 % Requires:
 %       cd/iscellnumeric.m
 %
-% Used by:    
+% Used by:
 %       cd/find_passive_params.m
 %       cd/force_column_numeric.m
+%       cd/m3ha_import_raw_traces.m
 
 % File History:
 % 2018-10-11 Created by Adam Lu
@@ -72,19 +73,29 @@ nSamples = iP.Results.NSamples;
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 
 %% Preparation
-% Set default number of samples
+% Force any row vector to be a column vector
+%   but do not transform arrays
+traces = force_column_numeric(traces, 'IgnoreNonVectors', true);
+
+% Compute the number of samples for each trace
+if iscell(traces)
+    % Apply length() to each element
+    nSamplesEachTrace = cellfun(@length, traces);
+else
+    % Whether multiple vectors or not, nSamplesEachTrace is the number of rows
+    nSamplesEachTrace = size(traces, 1);
+end
+
+% Set default number of samples for the averaged trace
 if isempty(nSamples)
     if iscell(traces)
         % Use the minimum length of all traces
-        nSamples = min(cellfun(@length, traces));
+        nSamples = min(nSamplesEachTrace);
     else
         % Use the number of rows
-        nSamples = size(traces, 1);
+        nSamples = nSamplesEachTrace;
     end
 end
-
-% If in a cell array, force each trace to be a column vector
-traces = force_column_numeric(traces);
 
 %% Do the job
 % Return if there are no samples
@@ -93,34 +104,39 @@ if nSamples == 0
     return
 end
 
-% Align and truncate traces to the desired number of samples
-switch alignMethod
-case 'leftadjust'
-    % Always start from 1
-    if iscell(traces)
-        tracesTruncated = cellfun(@(x) x(1:nSamples), traces, ...
-                                    'UniformOutput', false);
-    else
-        tracesTruncated = traces(1:nSamples, :);
+% If the number of samples for each trace are not all equal,
+%   align and truncate traces to the desired number of samples
+if iscell(traces) && length(unique(nSamplesEachTrace)) ~= 1
+    switch alignMethod
+    case 'leftadjust'
+        % Always start from 1
+        if iscell(traces)
+            tracesTruncated = cellfun(@(x) x(1:nSamples), traces, ...
+                                        'UniformOutput', false);
+        else
+            tracesTruncated = traces(1:nSamples, :);
+        end
+    case 'rightadjust'
+        % Always end at end
+        if iscell(traces)
+            tracesTruncated = cellfun(@(x) x((end-nSamples+1):end), traces, ...
+                                        'UniformOutput', false);
+        else
+            tracesTruncated = traces((end-nSamples+1):end, :);
+        end
+    otherwise
+        error('The align method %s is not implemented yet!!', alignMethod);
     end
-case 'rightadjust'
-    % Always end at end
-    if iscell(traces)
-        tracesTruncated = cellfun(@(x) x((end-nSamples+1):end), traces, ...
-                                    'UniformOutput', false);
-    else
-        tracesTruncated = traces((end-nSamples+1):end, :);
-    end
-otherwise
-    error('The align method %s is not implemented yet!!', alignMethod);
-end        
+else
+    tracesTruncated = traces;
+end
 
-% Combine into a numeric array
-if iscell(traces)
+% Combine into a numeric array with the columns being vectors to be averaged
+if iscell(tracesTruncated)
     % Place each column vector into a column of an array
     tracesArray = horzcat(tracesTruncated{:});
 else
-    % Already a numeric array
+    % Already a numeric array with the columns being vectors to be averaged
     tracesArray = tracesTruncated;
 end
 

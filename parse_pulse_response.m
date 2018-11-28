@@ -46,7 +46,7 @@ function [parsedParams, parsedData] = ...
 %                         If an array, each column is a vector
 %                   must be a numeric array or a cell array of numeric vectors
 %       siMs        - sampling interval in ms
-%                   must be a positive scalar
+%                   must be a positive vector
 %       varargin    - 'PulseVectors': vector that contains the pulse itself
 %                   must be a numeric vector
 %                   default == [] (not used)
@@ -73,6 +73,7 @@ function [parsedParams, parsedData] = ...
 % 2018-10-10 Adapted from parse_pulse.m
 % 2018-10-11 Fixed tvecRising so that it starts from 0
 % 2018-11-13 Added 'MeanValueWindowMs' as an optional argument
+% 2018-11-28 Now allows siMs to be a vector
 
 %% Hard-coded parameters
 
@@ -100,7 +101,7 @@ addRequired(iP, 'vectors', ...                   % vectors
                 ['vectors must be either a numeric array', ...
                     'or a cell array of numeric arrays!']));
 addRequired(iP, 'siMs', ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'vector'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'PulseVectors', pulseVectorsDefault, ...
@@ -124,7 +125,7 @@ vectors = force_column_cell(vectors);
 nSamples = count_samples(vectors);
 
 % Calculate the mean value calculation window in samples
-meanValueWindowSamples = round(meanValueWindowMs / siMs);
+meanValueWindowSamples = round(meanValueWindowMs ./ siMs);
 
 %% Do the job
 % Find indices for all the pulse response endpoints

@@ -39,7 +39,6 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 % Used by:
 %       cd/compute_baseline_noise.m
 %       cd/compute_sweep_errors.m
-%       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_run_neuron_once.m
 %
 % File History:

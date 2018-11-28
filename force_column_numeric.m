@@ -35,6 +35,7 @@ function vectors = force_column_numeric (vectors, varargin)
 %   TODO: Check if some of these can use 
 %           match_format_cell or force_column_cell instead
 %       cd/compute_average_trace.m
+%       cd/compute_default_sweep_info.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/count_samples.m

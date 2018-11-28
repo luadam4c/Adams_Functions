@@ -49,6 +49,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %       cd/compute_sweep_errors.m
 %       cd/extract_subvectors.m
 %       cd/find_passive_params.m
+%       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_run_neuron_once.m
 %       cd/plot_traces.m
 

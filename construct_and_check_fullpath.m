@@ -5,7 +5,7 @@ function [fullPath, pathExists] = construct_and_check_fullpath (pathName, vararg
 %       [abfFullfilename, fileExists] = ...
 %           construct_and_check_fullpath(pathName, 'Extension', '.abf');
 %       if ~fileExists
-%           return 
+%           return
 %       end
 % Outputs:
 %       fullPath    - the full path(s) to file(s) or directory(s) constructed
@@ -47,6 +47,7 @@ function [fullPath, pathExists] = construct_and_check_fullpath (pathName, vararg
 %       cd/all_subdirs.m
 %       cd/load_neuron_outputs.m
 %       cd/load_params.m
+%       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_parse_mat.m
 
 % File History: 

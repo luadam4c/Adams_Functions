@@ -39,18 +39,22 @@ function [baseWindow, fitWindow, baseNoise, sweepWeights] = ...
 %                   default == 1 ./ baseNoise
 %
 % Requires:
+%       cd/argfun.m
+%       cd/compute_baseline_noise.m
+%       cd/force_column_numeric.m
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
-%       cd/compute_baseline_noise.m
 %       cd/match_format_vectors.m
 %
 % Used by:
 %       cd/compute_single_neuron_errors.m
+%       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/m3ha_run_neuron_once.m
 
 % File History:
 % 2018-11-01 Moved from m3ha_plot_individual_traces.m
+% 2018-11-28 Default window(s) for fitting must now be after baseline window(s)
 % 
 
 %% Default values for optional arguments
@@ -109,6 +113,11 @@ if isempty(tVecs) && isempty(data)
     return
 end
 
+% Makes sure any numeric vector is a column
+[baseWindow, fitWindow, baseNoise, sweepWeights] = ...
+    argfun(@force_column_numeric, baseWindow, fitWindow, ...
+            baseNoise, sweepWeights, 'IgnoreNonVectors', true);
+
 % Matches tVecs and data so that they are both cell arrays 
 %   of the same number of column vectors
 [tVecs, data] = match_format_vectors(tVecs, data);
@@ -131,9 +140,16 @@ if isempty(baseWindow)
     baseWindow = transpose([minTimes, centerTimes]);
 end
 
-% Set default window(s) for fitting
+% Get the maximum time for each baseline window
+if iscell(baseWindow)
+    maxBaseTimes = cellfun(@max, baseWindow);
+else
+    maxBaseTimes = max(baseWindow, [], 1);
+end
+
+% Set default window(s) for fitting (must be after baseline window)
 if isempty(fitWindow)
-    fitWindow = transpose([centerTimes, maxTimes]);
+    fitWindow = transpose([maxBaseTimes, maxTimes]);
 end
 
 % Re-compute baseline noise if not provided
@@ -162,6 +178,8 @@ end
 
 %{
 OLD CODE:
+
+fitWindow = transpose([centerTimes, maxTimes]);
 
 %}
 

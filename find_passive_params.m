@@ -83,9 +83,11 @@ function [passiveParams, fitResults, fitObject, ...
 %                   default == ''
 %
 % Requires:
+%       cd/argfun.m
 %       cd/check_subdir.m
 %       cd/compute_average_trace.m
 %       cd/estimate_resting_potential.m
+%       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/fit_and_estimate_passive_params.m
 %       cd/isnumericvector.m
@@ -147,13 +149,16 @@ function [passiveParams, fitResults, fitObject, ...
 %  
 
 %% Flags
-meanVoltageWindow = 0.5;    % width in ms for calculating mean voltage 
-                            %   for input resistance calculations
 
 % TODO: Make optional argument
 printFieldsFlag = 0; %1;
 
-%% Parameters used for data analysis
+%% Hard-coded parameters
+% Parameters to be consistent with m3ha_import_raw_traces.m
+meanVoltageWindow = 0.5;    % width in ms for calculating mean voltage 
+                            %   for input resistance calculations
+
+% Parameters used for data analysis
 medianFilterWindow2 = 10;   % width in ms for the median filter for corrupted data 
                             %   (current traces)
 spikeThresholdInit = -45;   % initial amplitude threshold (mV) for detecting a spike
@@ -355,12 +360,11 @@ end
 %% Restrict the original vectors to the current pulse response window for speed
 % Find the indices for the current pulse response
 endPoints = find_window_endpoints(pulseResponseWindow, tvec0);
-indCpr = transpose(endPoints(1):endPoints(2));
 
-% Restrict the vectors to the current pulse response window
-tvecCpr = tvec0(indCpr);
-vvecsCpr = vvec0s(indCpr, :);
-ivecsCpr = ivec1s(indCpr, :);
+% Extract the regions to fit
+[tvecCpr, vvecsCpr, ivecsCpr] = ...
+    argfun(@(x) extract_subvectors(x, 'Endpoints', endPoints), ...
+            tvec0, vvec0s, ivec1s);
 
 %% Parse the pulses and pulse responses
 % Parse the pulse
@@ -442,7 +446,8 @@ if ~isempty(holdCurrent)
     holdCurrentToUse = holdCurrent(toUse);
     holdPotentialToUse = holdPotential(toUse);
 
-    % Estimate the resting membrane potential
+    % Estimate the resting membrane potential (mV) 
+    %   and the input resistance (MOhm)
     [epasEstimate, RinEstimate] = ...
         estimate_resting_potential(holdPotentialToUse, holdCurrentToUse);
 end
@@ -1600,6 +1605,13 @@ elseif fitMode ~= 0 && fitMode ~= 1 && fitMode ~= 2
 
 [idxStart, idxEnd] = find_window_endpoints(pulseResponseWindow, tvec0);
 indCpr = transpose(idxStart:idxEnd);
+
+indCpr = transpose(endPoints(1):endPoints(2));
+
+% Restrict the vectors to the current pulse response window
+tvecCpr = tvec0(indCpr);
+vvecsCpr = vvec0s(indCpr, :);
+ivecsCpr = ivec1s(indCpr, :);
 
 %} 
 

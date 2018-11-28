@@ -1,9 +1,9 @@
-function [figurePositions, swpIndices, fileNames] = ...
+function [fileNames, swpIndices, figurePositions] = ...
                 m3ha_select_raw_traces (columnMode, rowConditions, ...
                     attemptNumber, iCellToFit, swpIdxSCPGV, swpIndToFit, ...
                     swpIndByCondition, cellNamesToFit, swpInfo)
 %% Select raw traces to import
-% Usage: [figurePositions, swpIndices, fileNames] = ...
+% Usage: [fileNames, swpIndices, figurePositions] = ...
 %               m3ha_select_raw_traces (columnMode, rowConditions, ...
 %                   attemptNumber, iCellToFit, swpIdxSCPGV, swpIndToFit, ...
 %                   swpIndByCondition, cellNamesToFit, swpInfo)
@@ -411,13 +411,12 @@ end
 nSweeps = nRows * nColumns;
 
 % Get the figure positions and sweep indices for each trace
-figurePositions = cell(nSweeps, 1);
 swpIndices = zeros(nSweeps, 1);
 ct = 0;
 for iRow = 1:nRows
     for iCol = 1:nColumns
-        % Get the current figure position
-        figurePositions{ct} = [iRow, iCol];
+        % Increment count
+        ct = ct + 1;
 
         % Get the current sweep index
         if ~isempty(swpIndG200P{1})
@@ -432,6 +431,20 @@ end
 
 % Get the file names
 fileNames = fnrow(swpIndices);
+
+% Get the figure positions for each trace
+% TODO: Do we need figurePositions here?
+figurePositions = cell(nSweeps, 1);
+ct = 0;
+for iRow = 1:nRows
+    for iCol = 1:nColumns
+        % Increment count
+        ct = ct + 1;
+
+        % Get the current figure position
+        figurePositions{ct} = [iRow, iCol];
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -1,5 +1,5 @@
 function [epas, Rin] = estimate_resting_potential (holdPotential, holdCurrentPa, varargin)
-%% Estimates the resting membrane potential and the input resistance from holding potentials and holding currents
+%% Estimates the resting membrane potential (mV) and the input resistance (MOhm) from holding potentials and holding currents
 % Usage: [epas, Rin] = estimate_resting_potential (holdPotential, holdCurrentPa, varargin)
 % Explanation:
 %       TODO
