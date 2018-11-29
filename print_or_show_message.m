@@ -46,13 +46,13 @@ function print_or_show_message (message, varargin)
 % Used by:
 %       cd/abf2mat.m
 %       cd/all_swd_sheets.m
-%       cd/atf2sheet.m
 %       cd/check_dir.m
 %       cd/combine_sweeps.m
 %       cd/create_input_file.m
 %       cd/create_pulse_train_series.m
 %       cd/create_waveform_train.m
 %       cd/match_time_points.m
+%       cd/parse_file_or_directory.m
 %       cd/plot_swd_raster.m
 %       /home/Matlab/minEASE/minEASE.m
 %       /home/Matlab/minEASE/combine_eventInfo.m

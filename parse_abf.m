@@ -216,8 +216,11 @@ if exist('abf2load', 'file') == 2
         try
             [data, siUs, fileInfo] = abfload(abfFullFileName);
         catch ME
-            fprintf('The file %s cannot be read!\n', abfFullFileName);
-            rethrow(ME)    
+            fprintf('The file %s cannot be read by either %s or %s!\n', ...
+                    abfFullFileName, 'abf2load', 'abfload');
+            parsedParams = [];
+            parsedData = [];
+            return
         end
     end
 elseif exist('abfload', 'file') == 2
@@ -693,6 +696,8 @@ addpath(fullfile(functionsDirectory, 'Brians_Functions'));
 
 [abfFullFileName, fileExists] = ...
     construct_and_check_fullpath(fileName, 'Extension', '.abf');
+
+rethrow(ME);
 
 %}
 

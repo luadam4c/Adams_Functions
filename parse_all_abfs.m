@@ -218,7 +218,11 @@ parfor iFile = 1:nFiles
                     'IdentifyProtocols', identifyProtocols);
 end
 
+% Log all entries that are empty
+% TODO
+
 % Convert to a struct array
+%   Note: This removes all entries that are empty
 allParsedParamsStruct = [allParsedParamsCell{:}];
 allParsedDataStruct = [allParsedDataCell{:}];
 

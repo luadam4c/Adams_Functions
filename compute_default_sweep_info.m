@@ -115,8 +115,8 @@ end
 
 % Makes sure any numeric vector is a column
 [baseWindow, fitWindow, baseNoise, sweepWeights] = ...
-    argfun(@force_column_numeric, baseWindow, fitWindow, ...
-            baseNoise, sweepWeights, 'IgnoreNonVectors', true);
+    argfun(@(x) force_column_numeric(x, 'IgnoreNonVectors', true), ...
+            baseWindow, fitWindow, baseNoise, sweepWeights);
 
 % Matches tVecs and data so that they are both cell arrays 
 %   of the same number of column vectors
@@ -129,7 +129,7 @@ if isempty(baseWindow) || isempty(fitWindow)
     minTimes = cellfun(@min, tVecs);
 
     % Find the maximum times as a column vector
-    maxTimes = cellfun(@min, tVecs);
+    maxTimes = cellfun(@max, tVecs);
 
     % Find the center times as a column vector
     centerTimes = (minTimes + maxTimes) / 2;
@@ -140,15 +140,19 @@ if isempty(baseWindow)
     baseWindow = transpose([minTimes, centerTimes]);
 end
 
-% Get the maximum time for each baseline window
-if iscell(baseWindow)
-    maxBaseTimes = cellfun(@max, baseWindow);
-else
-    maxBaseTimes = max(baseWindow, [], 1);
-end
-
 % Set default window(s) for fitting (must be after baseline window)
 if isempty(fitWindow)
+    % Get the maximum time for each baseline window
+    if iscell(baseWindow)
+        maxBaseTimes = cellfun(@max, baseWindow);
+    else
+        maxBaseTimes = transpose(max(baseWindow, [], 1));
+    end
+
+    % Match maxBaseTimes with maxTimes
+    maxBaseTimes = match_row_count(maxBaseTimes, length(maxTimes));
+
+    % Get the default fit window(s)
     fitWindow = transpose([maxBaseTimes, maxTimes]);
 end
 

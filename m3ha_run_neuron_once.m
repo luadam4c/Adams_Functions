@@ -1025,8 +1025,8 @@ peakwidth = peakwidth(:);
 
 % Needed no matter what because of parfor
 filenames = outparams.filenames;            
-timeIPSC = outparams.timeIPSC;
-ipscpwin = outparams.ipscpwin;
+timeIPSC = outparams.ipscTime;
+ipscpwin = outparams.ipscpWindow;
 ltsWindow = outparams.ltsWindow;
 if cprflag
     baseNoise = outparams.baseNoiseCpr;

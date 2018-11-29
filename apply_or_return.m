@@ -21,6 +21,7 @@ function varargout = apply_or_return (toApply, myFunction, varargin)
 %
 % Used by:    
 %       cd/match_format_vectors.m
+%       cd/m3ha_import_raw_traces.m
 
 % File History:
 % 2018-10-31 Created by Adam Lu

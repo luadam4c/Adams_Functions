@@ -29,6 +29,7 @@ function [dataCpr, dataIpscr, sweepInfoCpr, sweepInfoIpscr, dataCprAll] = ...
 %                   default == pwd
 %
 % Requires:
+%       cd/apply_or_return.m
 %       cd/argfun.m
 %       cd/compute_average_trace.m
 %       cd/compute_default_sweep_info.m
@@ -166,7 +167,7 @@ baseWindowCpr = timeToStabilizeMs + [0, cpStartExpectedOrig];
 logFileName = fullfile(outFolder, sprintf('%s.log', mfilename));
 fid = fopen(logFileName, 'w');
 
-%% Import sweeps
+%% Import raw traces
 % Print message
 fprintf('Importing raw traces for this cell ... \n');
 
@@ -256,6 +257,47 @@ nToUse = sum(toUse);
 
 %}
 
+%% Fix current pulse response traces that may have out-of-balance bridges
+if correctDcStepsFlag
+% TODO: Fix initial_slopes to output a lookup table and use it here
+    % Print message
+    fprintf('Fixing current pulse response traces that may have out-of-balance bridges ... \n');
+
+    % Read from initialSlopes
+    initialSlopeFilenames = initialSlopes.filenamesSorted;
+    initialSlopeThreshold1IndexBalanced = initialSlopes.iThreshold1Balanced;
+    initialSlopeThreshold2IndexBalanced = initialSlopes.iThreshold2Balanced;
+
+    % Find the index of file in all files sorted by initial slope
+    %   in descending order
+    ftemp = @(x) find_ind_str_in_cell(x, initialSlopeFilenames);
+
+    % Determine whether the initial slopes exceed threshold
+    %   Note: These may have out-of-balance bridges
+    isOutOfBalance = ...
+        cellfun(@(x) ftemp(x) < initialSlopeThreshold2IndexBalanced || ...
+                    ftemp(x) > initialSlopeThreshold1IndexBalanced, fileNames);
+
+    % Print out an appropriate message
+    if any(isOutOfBalance)
+        fprintf(fid, ['The following current pulse responses will be ', ...
+                        'corrected due to out-of-balance bridges:\n']);
+        print_cellstr(fileNames(isOutOfBalance), ...
+                      'FileID', fid, 'OmitBraces', true, ...
+                      'OmitQuotes', true, 'Delimiter', '\n');
+    else
+        fprintf(fid, ['There are no current pulse response traces ', ...
+                        'with out-of-balance bridges!\n']);
+    end
+
+    % Correct for traces that may have out-of-balance bridges
+    vvecsApproxCpr = ...
+        cellfun(@(x, y, z) ...
+                apply_or_return(x, @correct_unbalanced_bridge, y, z), ...
+                num2cell(isOutOfBalance), vvecsApproxCpr, ivecsApproxCpr, ...
+                'UniformOutput', false);
+end
+
 %% Construct current pulse response vectors to be compared with simulations
 % Print message
 fprintf('Constructing current pulse response vectors to be compared with simulations ... \n');
@@ -326,59 +368,11 @@ dataCpr = cellfun(@(x, y, z, w) horzcat(x, y, z, w), ...
                     tvecsCpr, vvecsCpr, ivecsCpr, gvecsCpr, ...
                     'UniformOutput', false);
 
-%% Fix current pulse response traces that may have out-of-balance bridges
-if correctDcStepsFlag
-    % Print message
-    fprintf('Fixing current pulse response traces that may have out-of-balance bridges ... \n');
-
-    % Read from initialSlopes
-    initialSlopeFilenames = initialSlopes.filenamesSorted;
-    initialSlopeThreshold1IndexBalanced = initialSlopes.iThreshold1Balanced;
-    initialSlopeThreshold2IndexBalanced = initialSlopes.iThreshold2Balanced;
-
-    % Find the index of file in all files sorted by initial slope
-    %   in descending order
-    ftemp = @(x) find_ind_str_in_cell(x, initialSlopeFilenames);
-
-    % Determine whether the initial slopes exceed threshold
-    %   Note: These may have out-of-balance bridges
-    isOutOfBalance = ...
-        cellfun(@(x) ftemp(x) < initialSlopeThreshold2IndexBalanced || ...
-                    ftemp(x) > initialSlopeThreshold1IndexBalanced, ...
-                    fileNames);
-
-    % Print out an appropriate message
-    if any(isOutOfBalance)
-        fprintf(fid, ['The following current pulse responses will be ', ...
-                        'corrected due to out-of-balance bridges:\n']);
-        print_cellstr(fileNames(isOutOfBalance), ...
-                      'FileID', fid, 'OmitBraces', true, ...
-                      'OmitQuotes', true, 'Delimiter', '\n');
-    else
-        fprintf(fid, ['There are no current pulse response traces ', ...
-                        'with out-of-balance bridges!\n']);
-    end
-
-    % Correct for traces that may have out-of-balance bridges
-    parfor iSwp = 1:nSwpsIpscr
-        if isOutOfBalance(iSwp)
-            % Get the old trace
-            vvecOld = dataCpr{iSwp}(:, 2);
-            ivecOld = dataCpr{iSwp}(:, 3);
-
-            % Correct any unbalanced bridge in the trace
-            vvecNew = correct_unbalanced_bridge(vvecOld, ivecOld);
-
-            % Store the new trace
-            dataCpr{iSwp}(:, 2) = vvecNew;
-        end
-    end
-end
-
 % Save all the data
 dataCprAll = dataCpr;
 
 %% Average the current pulse responses according to vHold
+% TODO: Pull out to its own function and use in m3ha_run_neuron_once.m
 if oldAverageCprFlag
     % Print message
     fprintf('Averaging the current pulse responses according to vHold ... \n');
@@ -386,8 +380,8 @@ if oldAverageCprFlag
     % Extract holding voltage conditions for each file from swpInfo
     vHoldCond = swpInfo{fileNames, 'vrow'};
 
-    % Get the number of data points for the current pulse response
-    ndpCpr = size(dataCpr{1}, 1);
+    % Unpack individual data vectors
+    [tvecsCpr, vvecsCpr, ivecsCpr, gvecsCpr] = extract_columns(dataCpr, 1:4);
 
     % Find unique vHold values
     vUnique = unique(vHoldCond, 'sorted');
@@ -500,8 +494,12 @@ fileNamesIpscr = fileNames;
 % Print message
 fprintf('Computing the actual holding potentials ... \n');
 
+% Temporary measure before parse_pulse_response is fixed
+% TODO:
+siMsOrigTemp = mean(siMsOrig);
+
 % Parse the (may be averaged) current pulse responses
-responseParams = parse_pulse_response(vvecsCpr, siMsOrig, ...
+responseParams = parse_pulse_response(vvecsCpr, siMsOrigTemp, ...
                                     'PulseVector', ivecsCpr, ...
                                     'SameAsPulse', true, ...
                                     'MeanValueWindowMs', meanVoltageWindow);
@@ -1058,6 +1056,24 @@ end
 % Print message
 fprintf(['Processing IPSC responses from ', ...
             'the median-filtered & resampled data vectors ... \n']);
+
+% Get the number of data points for the current pulse response
+ndpCpr = size(dataCpr{1}, 1);
+
+% Correct for traces that may have out-of-balance bridges
+parfor iSwp = 1:nSwpsIpscr
+    if isOutOfBalance(iSwp)
+        % Get the old trace
+        vvecOld = dataCpr{iSwp}(:, 2);
+        ivecOld = dataCpr{iSwp}(:, 3);
+
+        % Correct any unbalanced bridge in the trace
+        vvecNew = correct_unbalanced_bridge(vvecOld, ivecOld);
+
+        % Store the new trace
+        dataCpr{iSwp}(:, 2) = vvecNew;
+    end
+end
 
 %}
 

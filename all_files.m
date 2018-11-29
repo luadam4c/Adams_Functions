@@ -45,6 +45,7 @@ function [files, fullPaths] = all_files(varargin)
 %
 % Used by: 
 %       cd/all_swd_sheets.m
+%       cd/atf2sheet.m
 %       cd/parse_all_abfs.m
 %       cd/plot_all_abfs.m
 %       cd/plot_traces_EEG.m
