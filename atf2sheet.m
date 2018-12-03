@@ -122,45 +122,40 @@ if multipleFiles
     [~, allAtfPaths] = ...
         all_files('Directory', atfDir, 'Extension', '.atf');
 
-    % Separate the file parts
-    [allAtfDirs, allAtfBases, allAtfExts] = ...
-        cellfun(@fileparts, allAtfPaths, 'UniformOutput', false);
-
-    % Put together the file names
-    allAtfFileNames = ...
-        cellfun(@(x, y) [x, y], allAtfBases, allAtfExts, 'UniformOutput', false);
+    % If there are no files, return
+    if isempty(allAtfPaths)
+        tablesAll = {};
+        sheetFullFileNames = {};
+        return
+    end
+    
+    % Generate new sets of arguments
+    if nargin >= 1
+        vararginNew = cellfun(@(x) {x, varargin{2:end}}, allAtfPaths, ...
+                                'UniformOutput', false);
+    else
+        vararginNew = cellfun(@(x) {x}, allAtfPaths, 'UniformOutput', false);
+    end
 
     % Convert all files
-    [tablesAll, sheetFullFileNames]  = ...
-        cellfun(@(x, y) convert_atf2sheet(x, y, outFolder, sheetType, ...
-                                        delimiter, nLinesToSkip, encoding), ...
-                allAtfDirs, allAtfFileNames, 'UniformOutput', false);
+    [tablesAll, sheetFullFileNames] = ...
+        cellfun(@(x) atf2sheet(x{:}), vararginNew, 'UniformOutput', false);
 else
-    % Convert this file
-    [tablesAll, sheetFullFileNames]  = ...
-        convert_atf2sheet(atfDir, atfFileName, outFolder, ...
-                                sheetType, delimiter, nLinesToSkip, encoding);
+    % Get the full file name of the .atf file
+    atfFullFileName = fullfile(atfDir, atfFileName);
+
+    % Construct the full file name for the sheet file
+    sheetFullFileNames = fullfile(outFolder, ...
+                                strrep(atfFileName, '.atf', ['.', sheetType]));
+
+    % Read in the .atf file, ignoring the first two lines
+    tablesAll = readtable(atfFullFileName, 'FileType', 'text', ...
+                        'Delimiter', delimiter, 'HeaderLines', nLinesToSkip, ...
+                        'Encoding', encoding);
+
+    % Write to a spreadsheet file
+    writetable(tablesAll, sheetFullFileNames);
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [table, sheetFullFileName] = convert_atf2sheet (atfDir, atfFileName, outFolder, sheetType, delimiter, nLinesToSkip, encoding)
-%% Convert an .aft file to a spreadsheet file
-
-% Get the full file name of the .atf file
-atfFullFileName = fullfile(atfDir, atfFileName);
-
-% Construct the full file name for the sheet file
-sheetFullFileName = fullfile(outFolder, ...
-                            strrep(atfFileName, '.atf', ['.', sheetType]));
-
-% Read in the .atf file, ignoring the first two lines
-table = readtable(atfFullFileName, 'FileType', 'text', ...
-                  'Delimiter', delimiter, 'HeaderLines', nLinesToSkip, ...
-                  'Encoding', encoding);
-
-% Write to a spreadsheet file
-writetable(table, sheetFullFileName);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -241,6 +236,31 @@ parfor iFile = 1:nAtfFiles
         convert_atf2sheet(atfDir, atfFileName, outFolder, ...
                             sheetType, delimiter, nLinesToSkip, encoding);
 end
+
+% Separate the file parts
+[allAtfDirs, allAtfBases, allAtfExts] = ...
+    cellfun(@fileparts, allAtfPaths, 'UniformOutput', false);
+
+% Put together the file names
+allAtfFileNames = ...
+    cellfun(@(x, y) [x, y], allAtfBases, allAtfExts, 'UniformOutput', false);
+
+% Convert all files
+[tablesAll, sheetFullFileNames]  = ...
+    cellfun(@(x, y) convert_atf2sheet(x, y, outFolder, sheetType, ...
+                                    delimiter, nLinesToSkip, encoding), ...
+            allAtfDirs, allAtfFileNames, 'UniformOutput', false);
+
+% Convert this file
+[tablesAll, sheetFullFileNames]  = ...
+    convert_atf2sheet(atfDir, atfFileName, outFolder, ...
+                            sheetType, delimiter, nLinesToSkip, encoding);
+
+function [table, sheetFullFileName] = ...
+                convert_atf2sheet (atfDir, atfFileName, outFolder, ...
+                                sheetType, delimiter, nLinesToSkip, encoding)
+%% Convert an .aft file to a spreadsheet file
+
 
 %}
 

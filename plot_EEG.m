@@ -9,11 +9,6 @@ function plot_EEG(varargin)
 %       output1     - TODO: Description of output1
 %                   specified as a TODO
 % Arguments:
-%       abfFileName - file name of the abf file
-%                       could be either the full path or 
-%                       a relative path in current directory
-%                       .abf is not needed (e.g. 'B20160908_0004')
-%                   must be a string scalar or a character vector
 %       varargin    - 'Directory': the name of the directory containing 
 %                                   the .abf files
 %                   must be a string scalar or a character vector
@@ -139,6 +134,13 @@ plot_swd_raster;
 %{
 OLD CODE:
 
+%       abfFileName - file name of the abf file
+%                       could be either the full path or 
+%                       a relative path in current directory
+%                       .abf is not needed (e.g. 'B20160908_0004')
+%                   must be a string scalar or a character vector
+
 %}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

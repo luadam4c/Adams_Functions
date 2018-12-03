@@ -21,6 +21,7 @@ function parentDir = extract_common_parent (filePaths, varargin)
 
 % File History:
 % 2018-11-27 Created by Adam Lu
+% TODO: Fix
 % 
 
 %% Hard-coded parameters
@@ -77,9 +78,10 @@ for iNPart = 1:minNParts
     nUniqueParts = numel(unique(thisPart));
 
     % If the number of unique parts is not one, make the previous part the last
-    %   common part
+    %   common part and exit the loop
     if nUniqueParts ~= 1
         ctLastCommon = iNPart - 1;
+        break
     end
 end
 
