@@ -1,12 +1,12 @@
 function [fileNames, swpIndices, figurePositions] = ...
                 m3ha_select_raw_traces (columnMode, rowConditions, ...
                     attemptNumber, iCellToFit, swpIdxSCPGV, swpIndToFit, ...
-                    swpIndByCondition, cellNamesToFit, swpInfo)
+                    swpIndByConditionAllCells, cellNamesToFit, swpInfo)
 %% Select raw traces to import
 % Usage: [fileNames, swpIndices, figurePositions] = ...
 %               m3ha_select_raw_traces (columnMode, rowConditions, ...
 %                   attemptNumber, iCellToFit, swpIdxSCPGV, swpIndToFit, ...
-%                   swpIndByCondition, cellNamesToFit, swpInfo)
+%                   swpIndByConditionAllCells, cellNamesToFit, swpInfo)
 %
 % Used by:
 %       cd/singleneuronfitting42.m and later versions
@@ -20,6 +20,7 @@ function [fileNames, swpIndices, figurePositions] = ...
 % 2017-08-21 Added maxnoise as an argument
 % 2018-11-15 Moved to Adams_Functions
 % 2018-11-15 Improved documentation and code clarity
+% 2018-12-05 Now uses 
 
 %% Hard-coded parameters
 % The following must be consistent with dclampDataExtractor.m
@@ -29,7 +30,6 @@ pCondAll = [1; 2; 3; 4];    % possible pharm conditions
                             %   2 - GAT1 Block
                             %   3 - GAT3 Block
                             %   4 - Dual Block
-cellIdAll = 1:1:49;         % possible cell ID #s
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -84,7 +84,7 @@ swpIndHasBursts = find(bursttime > 0);
 swpIndHasLts = find(ltspeaktime > 0);
 
 % Find all sweeps for the cell E091710
-swpIndE091710 = find(~cellfun(@isempty, strfind(fnrow, 'E091710')));
+swpIndE091710 = find(contains(fnrow, 'E091710'));
 
 % Initialize various schemes
 swpIndG200P = cell(1, nPCond);
@@ -102,8 +102,11 @@ case 1
     % Get the current cell name
     cellName = cellNamesToFit{iCellToFit};
 
+    % Get the current cell ID
+    cellName = cellNamesToFit{iCellToFit};
+
     % Get the sweep indices for each g incr-pharm condition
-    swpIndGincrPcond = swpIndByCondition{iCellToFit};
+    swpIndGincrPcond = swpIndByConditionAllCells{iCellToFit};
 
     if attemptNumber < 3
         fprintf('Fitting across trials of cell E091710 ... \n');
@@ -578,6 +581,18 @@ for iRow = 1:nRows
         fileNames{iRow, iCol} = fnrow{swpIdx};
     end
 end
+
+swpIndE091710 = find(~cellfun(@isempty, strfind(fnrow, 'E091710')));
+
+% Get the sweep indices for each g incr-pharm condition
+swpIndGincrPcond = swpIndByCondition{iCellToFit};
+
+[fileNames, swpIndices, figurePositions] = ...
+                m3ha_select_raw_traces (columnMode, rowConditions, ...
+                    attemptNumber, iCellToFit, swpIdxSCPGV, swpIndToFit, ...
+                    swpIndByConditionAllCells, cellNamesToFit, swpInfo)
+
+cellIdAll = 1:1:49;         % possible cell ID #s
 
 %}
 

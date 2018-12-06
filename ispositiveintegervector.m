@@ -20,6 +20,7 @@ function isPositiveIntegerVector = ispositiveintegervector (x)
 % Used by:
 %       cd/extract_columns.m
 %       cd/match_dimensions.m
+%       cd/m3ha_select_cells.m
 
 % File History:
 % 2018-10-24 Created by Adam Lu

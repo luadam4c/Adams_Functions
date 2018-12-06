@@ -1,8 +1,6 @@
-function [fileNamesToFit, swpIndicesToFit] = ...
-                m3ha_select_sweeps_to_fit (swpInfo, varargin)
+function [fileNamesToFit, swpIndicesToFit] = m3ha_select_sweeps_to_fit (varargin)
 %% Find file names and row indices in swpInfo that will be used for fitting
-% Usage: [fileNamesToFit, swpIndicesToFit] = ...
-%               m3ha_select_sweeps_to_fit (swpInfo, varargin)
+% Usage: [fileNamesToFit, swpIndicesToFit] = m3ha_select_sweeps_to_fit (varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -13,14 +11,16 @@ function [fileNamesToFit, swpIndicesToFit] = ...
 %       swpIndicesToFit - row indices in swpInfo of sweeps to fit
 %                       specified as a positive integer vector
 % Arguments:
-%       swpInfo     - a table of sweep info, with each row named by 
-%                       the matfile name containing the raw data
-%                   must be a 2D table with row names being file names
+%       varargin    - 'SwpInfo': a table of sweep info, with each row named by 
+%                               the matfile name containing the raw data
+%                   must a 2D table with row names being file names
 %                       and with the fields:
 %                       cellidrow - cell ID
 %                       prow      - pharmacological condition
 %                       grow      - conductance amplitude scaling (%)
-%       varargin    - 'DataMode': data mode
+%                   default == loaded from 
+%                       ~/m3ha/data_dclamp/take4/dclampdatalog_take4.csv
+%                   - 'DataMode': data mode
 %                   must be a one of:
 %                       1 - all of g incr = 100%, 200%, 400%
 %                       2 - all of g incr = 100%, 200%, 400% 
@@ -35,9 +35,10 @@ function [fileNamesToFit, swpIndicesToFit] = ...
 % Requires:
 %       cd/find_rows_with_same_attributes.m
 %       cd/m3ha_find_files_to_take_out.m
+%       cd/m3ha_load_sweep_info.m
 %
 % Used by:
-%       ~/m3ha/optimizer4gabab/singleneuronfitting42.m 
+%       cd/m3ha_select_cells.m
 
 % TODO:
 %       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
@@ -53,38 +54,37 @@ function [fileNamesToFit, swpIndicesToFit] = ...
 attributesToMatch = {'cellidrow', 'prow', 'grow'};
 
 %% Default values for optional arguments
+swpInfoDefault = [];
 dataModeDefault = 2;
 casesDirDefault = '~/m3ha/data_dclamp/take4/special_cases';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
-% Check number of required arguments
-if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
-end
-
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
 
-% Add required inputs to the Input Parser
-addRequired(iP, 'swpInfo', ...
-    @(x) validateattributes(x, {'table'}, {'2d'}));
-
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'SwpInfo', swpInfoDefault, ...
+    @(x) validateattributes(x, {'table'}, {'2d'}));
 addParameter(iP, 'DataMode', dataModeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer'}));
 addParameter(iP, 'CasesDir', casesDirDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));    
 
 % Read from the Input Parser
-parse(iP, swpInfo, varargin{:});
+parse(iP, varargin{:});
+swpInfo = iP.Results.SwpInfo;
 dataMode = iP.Results.DataMode;
 casesDir = iP.Results.CasesDir;
 
 %% Preparation
+% Read in swpInfo if not provided
+if isempty(swpInfo)
+    swpInfo = m3ha_load_sweep_info;
+end
+
 % Extract all the row names
 fileNames = swpInfo.Properties.RowNames;
 

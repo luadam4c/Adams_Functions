@@ -1,6 +1,6 @@
-function cellInfo = m3ha_generate_cell_info (swpInfo, varargin)
-%% TODO: A summary of what the function does (must be a single unbreaked line)
-% Usage: cellInfo = m3ha_generate_cell_info (swpInfo, varargin)
+function cellInfo = m3ha_generate_cell_info (varargin)
+%% Generates a table of cell information from the sweep information table
+% Usage: cellInfo = m3ha_generate_cell_info (varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -9,19 +9,29 @@ function cellInfo = m3ha_generate_cell_info (swpInfo, varargin)
 %       cellInfo    - a table of cell info
 %                   specified as a 2D table with row indices being cell IDs 
 %                       and with fields:
-%                       cellName  - cell names
+%                       cellName   - cell names
+%                       TODO? swpIndices - sweep indices in original swpInfo
+%                                       organized by pharm-gincr-vhold-sweep
+%                                       conditions
 % Arguments:
-%       swpInfo     - a table of sweep info, with each row named by 
+%       varargin    - 'SwpInfo': a table of sweep info, with each row named by 
 %                       the matfile name containing the raw data
 %                   must be a 2D table with row names being file names
 %                       and with the fields:
-%                       cellidrow - cell ID
-%       varargin    - 'param1': TODO: Description of param1
+%                       cellidrow   - cell ID
+%                       TODO?
+%                       prow        - pharmacological condition
+%                       grow        - conductance amplitude scaling
+%                       vrow        - holding voltage level (mV)
+%                       swpnrow     - sweep number
+%                   default == loaded from 
+%                       ~/m3ha/data_dclamp/take4/dclampdatalog_take4.csv
+%                   - 'param1': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
 %
 % Requires:
-%       /TODO:dir/TODO:file
+%       cd/m3ha_load_sweep_info.m
 %
 % Used by:
 %       cd/m3ha_select_cells.m
@@ -34,30 +44,32 @@ function cellInfo = m3ha_generate_cell_info (swpInfo, varargin)
 cellNameStr = 'cellName';
 
 %% Default values for optional arguments
+swpInfoDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
-% Check number of required arguments
-if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
-end
-
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
 
-% Add required inputs to the Input Parser
-addRequired(iP, 'swpInfo', ...
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'SwpInfo', swpInfoDefault, ...
     @(x) validateattributes(x, {'table'}, {'2d'}));
 
 % Read from the Input Parser
-parse(iP, swpInfo, varargin{:});
+parse(iP, varargin{:});
+swpInfo = iP.Results.SwpInfo;
 
-%% Do the job
+%% Preparation
+% Read in swpInfo if not provided
+if isempty(swpInfo)
+    swpInfo = m3ha_load_sweep_info;
+end
+
+%% Generate cell name info
 % Print message
-fprintf('Generating cell info ... \n');
+fprintf('Generating cell name info ... \n');
 
 % Extract all cell IDs
 cellIdAllRows = swpInfo{:, 'cellidrow'};
@@ -78,6 +90,11 @@ cellNames = cellfun(@(x) find_cell_name(x, fileNames), indFirstRow, ...
 
 % Put in a table
 cellInfo = table(cellNames, 'VariableName', {cellNameStr});
+
+%% Organize sweep indices by pharm, g incr, vHold, sweep # for each cell
+% TODO?
+fprintf('Organizing sweep indices ... \n');
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -1,34 +1,63 @@
-function [cellIdsSelected, cellNamesSelected] = ...
-                m3ha_select_cells (rowsToFit, swpInfo, varargin)
-%% Select the cells that will be used for fitting from the sweeps to fit
-% Usage: [cellIdsSelected, cellNamesSelected] = ...
-%               m3ha_select_cells (rowsToFit, swpInfo, varargin)
+function [cellIdsSelected, swpIndByCondAllCells, ...
+            rowsToFit, cellInfo, swpInfo] = m3ha_select_cells (varargin)
+%% Selects cells with sweeps to fit for all pharm-gIncr pairs
+% Usage: [cellIdsSelected, swpIndByCondAllCells, ...
+%           rowsToFit, cellInfo, swpInfo] = m3ha_select_cells (varargin)
 % Explanation: 
-%   Finds all cell ID and cell names for the rows rowsToFit in swpInfo
+%   Finds all cell IDs and cell names (from 'CellInfo') for the rows 
+%       restricted by 'RowsToFit' in 'SwpInfo'
 %
+
+
+
+
+
+
 % Outputs:
 %       TODO
 %
 % Arguments:
-%       rowsToFit - row indices in swpInfo of sweeps to fit
-%                   must be a positive integer vector
-%       swpInfo     - a table of sweep info, with each row named by 
-%                       the matfile name containing the raw data
-%                   must be a 2D table with row names being file names
+%       varargin    - 'DataMode': data mode
+%                   must be a one of:
+%                       1 - all of g incr = 100%, 200%, 400%
+%                       2 - all of g incr = 100%, 200%, 400% 
+%                           but exclude cell-pharm-g_incr sets 
+%                           containing problematic sweeps
+%                   default == 2
+%                   - 'SwpInfo': a table of sweep info, with each row named by 
+%                               the matfile name containing the raw data
+%                   must a 2D table with row names being file names
 %                       and with the fields:
-%                       cellidrow - cell ID
-%       varargin    - 'CellInfo': data mode
+%                       cellidrow   - cell ID
+%                       prow        - pharmacological condition
+%                       grow        - conductance amplitude scaling
+%                   default == loaded from 
+%                       ~/m3ha/data_dclamp/take4/dclampdatalog_take4.csv
+%                   - 'CellInfo': cell name info
 %                   must a 2D table with row indices being cell IDs 
 %                       and with fields:
 %                       cellName - cell names
+%                   default == detected from swpInfo
+%                   - 'RowsToFit' - row indices or row names in swpInfo 
+%                                       of sweeps to fit
+%                   must be a positive integer vector, a string array 
+%                       or a cell array of character vectors
 %                   default == []
+%                   - 'CasesDir' - the directory that contains 
+%                                   'TAKE_OUT_*' folders with special cases
+%                   must be a directory
+%                   default == ~/m3ha/data_dclamp/take4/special_cases
 %
 % Requires:
+%       cd/ispositiveintegervector.m
 %       cd/m3ha_generate_cell_info.m
+%       cd/m3ha_load_sweep_info.m
+%       cd/m3ha_organize_sweep_indices.m
+%       cd/m3ha_select_sweeps_to_fit.m
 %       cd/print_cellstr.m
 %
 % Used by:
-%       cd/singleneuronfitting42.m and later versions
+%       ~/m3ha/optimizer4gabab/singleneuronfitting42.m and beyond
 
 % File History:
 % 2017-05-20 Moved from singleneuronfitting2.m
@@ -39,58 +68,91 @@ function [cellIdsSelected, cellNamesSelected] = ...
 % 2018-11-15 Improved documentation
 % 2018-11-15 CellIds is now a numeric array
 % 2018-11-19 Moved code out to m3ha_organize_sweep_indices.m
+% 2018-12-05 Now allows rowsToFit to be a cellstr
+% 2018-12-05 Made everything optional arguments
+% 2018-12-05 Now selects cells that have sweeps for all conditions
+
+%% Hard-coded parameters
+cellNameStr = 'cellName';
 
 %% Default values for optional arguments
+dataModeDefault = 2;
+swpInfoDefault = [];
 cellInfoDefault = [];
+rowsToFitDefault = [];
+casesDirDefault = '~/m3ha/data_dclamp/take4/special_cases';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
-% Check number of required arguments
-if nargin < 2
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
-end
-
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
 
-% Add required inputs to the Input Parser
-addRequired(iP, 'rowsToFit', ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'vector'}));
-addRequired(iP, 'swpInfo', ...
-    @(x) validateattributes(x, {'table'}, {'2d'}));
-
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'DataMode', dataModeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer'}));
+addParameter(iP, 'SwpInfo', swpInfoDefault, ...
+    @(x) validateattributes(x, {'table'}, {'2d'}));
 addParameter(iP, 'CellInfo', cellInfoDefault, ...
     @(x) validateattributes(x, {'table'}, {'2d'}));
+addParameter(iP, 'RowsToFit', rowsToFitDefault, ...
+    @(x) assert(ispositiveintegervector(x) || iscellstr(x) || isstring(x), ...
+                ['strs5 must be either a positive integer vector, ', ...
+                    'a string array or a cell array of character arrays!']));
+addParameter(iP, 'CasesDir', casesDirDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));    
 
 % Read from the Input Parser
-parse(iP, rowsToFit, swpInfo, varargin{:});
+parse(iP, varargin{:});
+dataMode = iP.Results.DataMode;
+swpInfo = iP.Results.SwpInfo;
 cellInfo = iP.Results.CellInfo;
+rowsToFit = iP.Results.RowsToFit;
+casesDir = iP.Results.CasesDir;
 
 %% Preparation
-% Generate cellInfo from swpInfo if not provided
-if isempty(cellInfo)
-    cellInfo = m3ha_generate_cell_info(swpInfo);
+% Load sweep information if not provided
+%   Note: the file names are read in as row names
+if isempty(swpInfo)
+    swpInfo = m3ha_load_sweep_info;
+    % TODO swpInfo = m3ha_load_sweep_info('HomeDirectory', homeDirectory);
 end
 
-%% Do the job
+% Generate a table of cell names from swpInfo if not provided
+%   TODO? and sweep indices organized by pharm-gIncr-vHold-sweepNumber
+if isempty(cellInfo)
+    cellInfo = m3ha_generate_cell_info('SwpInfo', swpInfo);
+end
+
+% Generate rowsToFit using m3ha_select_sweeps_to_fit if not provided
+if isempty(rowsToFit)
+    % Select the sweep indices that will be fitted
+    %   Remove gIncr == 15%, 50%, 800% and problematic traces
+    rowsToFit = m3ha_select_sweeps_to_fit('SwpInfo', swpInfo, ...
+                                            'DataMode', dataMode, ...
+                                            'CasesDir', casesDir);
+end
+
+%% Organize sweep indices by g incr, pharm conditions for each cell
+swpIndByCondAllCells = ...
+    m3ha_organize_sweep_indices('SwpInfo', swpInfo, 'RowsToFit', rowsToFit);
+
+%% Select cell IDs to fit
 % Print message
 fprintf('Selecting the cells to fit ... \n');
 
-% Extract just the cell IDs for the sweeps to fit
-cellIdAllRows = swpInfo{rowsToFit, 'cellidrow'};
+% Decide whether each cell is to be selected (has sweeps for all conditions)
+toBeSelected = cellfun(@(x) ~any(cellfun(@isempty, x(:))), swpIndByCondAllCells);
 
-% Get the sorted unique cell IDs
-cellIdsSelected = sort(unique(cellIdAllRows));
+% Find the cell IDs to be selected
+cellIdsSelected = find(toBeSelected);
 
 % Count the number of selected cells
 nSelected = length(cellIdsSelected);
 
 % Get the corresponding cell names
-cellNamesSelected = cellInfo{cellIdsSelected, 'cellName'};
+cellNamesSelected = cellInfo{cellIdsSelected, cellNameStr};
 
 %% Print results to standard output
 % Print the number of cells to fit
@@ -159,11 +221,53 @@ for iCell = 1:nCells
         cellNamesSelected{ctSelected} = fileNames{swpIndThisCell{1, 1}(1)}(1:7);
 
         % Store sweep indices for all pharm-g incr pairs of this cell
-        swpIndGincrPcondAllCells{ctSelected} = swpIndThisCell; 
+        swpIndByCondAllCells{ctSelected} = swpIndThisCell; 
     end
 end
 
 nSelected = ctSelected;
+
+@(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'vector'}));
+
+if ~isempty(rowsToFit)
+    % Extract just the cell IDs for the sweeps to fit
+    cellIdAllRows = swpInfoToFit{rowsToFit, cellidrowStr};
+
+    % Get the sorted unique cell IDs
+    cellIdsSelected = sort(unique(cellIdAllRows));
+else
+    % Select all cells by default
+    cellIdsSelected = transpose(1:nCells);
+end
+
+% Count the number of gIncr conditions to fit
+nGrowToFit = length(growToFit);
+
+% Count the number of pharm conditions to fit
+nProwToFit = length(prowToFit);
+
+% Possible conductance amplitude scaling percentages for fitting
+growToFit = [100; 200; 400]; 
+
+% Possible pharm conditions for fitting
+%   1 - Control
+%   2 - GAT1 Block
+%   3 - GAT3 Block
+%   4 - Dual Block
+prowToFit = [1; 2; 3; 4];
+
+% Restrict table to rows to fit
+if ~isempty(rowsToFit)
+    swpInfoToFit = swpInfo{rowsToFit, :};
+else
+    swpInfoToFit = swpInfo;
+end
+
+% Count the number of cells
+nCells = height(cellInfo);
+
+
+[cellIdsSelected, cellNamesSelected] = m3ha_select_cells (varargin)
 
 %}
 
