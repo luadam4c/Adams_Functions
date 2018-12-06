@@ -4,7 +4,7 @@ function product = outer_product (X, Y)
 % Explanation:
 %       TODO
 % Example(s):
-%       TODO
+%       outer_product({'a', 'b'}, {'1', '2', '3'})
 % Outputs:
 %       product     - TODO: Description of product
 %                   specified as a TODO
@@ -59,7 +59,7 @@ iP.FunctionName = mfilename;
 % TODO
 
 %% Do the job
-if iscell(X) && iscell(Y)
+if iscellstr(X) && iscellstr(Y)
     % Count the number of elements
     nX = numel(X);
     nY = numel(Y);
