@@ -1,8 +1,8 @@
-function rowConditions = ...
-                m3ha_determine_row_conditions (rowMode, colMode, attemptNumber)
+function rowConditions = m3ha_determine_row_conditions (rowMode, colMode, ...
+                                        attemptNumber, gCondToFit, pCondToFit)
 %% Determine the conditions for each row
-% Usage: rowConditions = ...
-%               m3ha_determine_row_conditions (rowMode, colMode, attemptNumber)
+% Usage: rowConditions = m3ha_determine_row_conditions (rowMode, colMode, ...
+%                                       attemptNumber, gCondToFit, pCondToFit)
 % 
 % Explanation: 
 %       TODO
@@ -17,7 +17,7 @@ function rowConditions = ...
 % Requires:
 %
 % Used by:
-%       cd/singleneuronfitting42.m and later versions
+%       cd/m3ha_select_raw_traces.m
 
 % File History:
 % 2017-05-20 Moved from singleneuronfitting2.m
@@ -26,29 +26,22 @@ function rowConditions = ...
 % 2018-11-15 Improved documentation
 
 %% Hard-coded parameters
-% The following must be consistent with dclampDataExtractor.m
-gIncrAll = [100; 200; 400]; % possible conductance amplitude scaling percentages
-pCondAll = [1; 2; 3; 4];    % possible pharm conditions 
-                            %   1 - Control
-                            %   2 - GAT1 Block
-                            %   3 - GAT3 Block
-                            %   4 - Dual Block
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Preparation
 % Count the number of possible conductance amplitude scaling percentages
-nGIncr = length(gIncrAll);
+nGIncr = length(gCondToFit);
 
 % Count the number of possible pharm conditions 
-nPCond = length(pCondAll);
+nPCond = length(pCondToFit);
 
 %% Do the job
 if rowMode == 1 || ...
     (colMode == 1 && attemptNumber <= 2) || ...
     (colMode == 2 && attemptNumber <= 3)
     % Each row is one pharm condition
-    rowConditions = pCondAll;            % pharm condition of each row
+    rowConditions = pCondToFit;
 elseif rowMode == 2
     % Each row is a pharm condition paired with a g incr
     nRows = nPCond * nGIncr;
@@ -56,10 +49,10 @@ elseif rowMode == 2
     % Find each row condition
     rowConditions = zeros(nRows, 2);
     for iRow = 1:nRows
-        % Find pharm condition of each row (index in pCondAll)
+        % Find pharm condition of each row (index in pCondToFit)
         rowConditions(iRow, 1) = floor((iRow-1) / nGIncr) + 1;    
 
-        % Find g-incr condition of each row (index in gIncrAll)
+        % Find g-incr condition of each row (index in gCondToFit)
         rowConditions(iRow, 2) = mod(iRow - 1, nGIncr) + 1;        
     end
 else
@@ -75,6 +68,16 @@ global outparams
 rowMode = 1;
 
     nRows = nPCond;
+
+% The following must be consistent with dclampDataExtractor.m
+gCondToFit = [100; 200; 400]; % possible conductance amplitude scaling percentages
+pCondToFit = [1; 2; 3; 4];    % possible pharm conditions 
+                            %   1 - Control
+                            %   2 - GAT1 Block
+                            %   3 - GAT3 Block
+                            %   4 - Dual Block
+
+%       cd/singleneuronfitting42.m and later versions
 
 %}
 

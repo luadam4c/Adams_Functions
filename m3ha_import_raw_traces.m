@@ -163,9 +163,17 @@ baseWindowIpscrOrig = [0, ipscTimeOrig];
 % Baseline window for the current pulse response in simulation time
 baseWindowCpr = timeToStabilizeMs + [0, cpStartExpectedOrig];
 
+% Get the name of the output folder
+[~, outFolderName] = fileparts(outFolder);
+
 % Create log file name
-logFileName = fullfile(outFolder, sprintf('%s.log', mfilename));
-fid = fopen(logFileName, 'w');
+logFileName = sprintf('%s_%s.log', outFolderName, mfilename);
+
+% Create log file path
+logPath = fullfile(outFolder, logFileName);
+
+% Open the log file
+fid = fopen(logPath, 'w');
 
 %% Import raw traces
 % Print message

@@ -38,11 +38,13 @@ function [swpIndByCondAllCells, conditions] = m3ha_organize_sweep_indices (varar
 % 2018-11-19 Moved from m3ha_select_cells.m
 % 2018-12-05 Now returns indices grouped for all possible cells
 % 2018-12-05 Now uses SwpInfo and RowsToFit
+% 2018-12-06 Now uses a toFit column in SwpInfo
 
 %% Hard-coded parameters
 cellidrowStr = 'cellidrow';
 prowStr = 'prow';
 growStr = 'grow';
+toFitStr = 'toFit';
 
 %% Default values for optional arguments
 swpInfoDefault = [];
@@ -83,11 +85,11 @@ nRows = height(swpInfo);
 
 % Decide whether to fit each sweep if not provided
 if isempty(toFit)
-    % Decide based on whether rowsToFit is provided
-    if isempty(rowsToFit)
-        % All rows will fitted
-        toFit = true(nRows, 1);
-    else
+    % Decide based on whether swpInfo contains a toFit column
+    %   then whether rowsToFit is provided
+    if ismember(toFitStr, swpInfo.Properties.VariableNames)
+        toFit = swpInfo{:, toFitStr};
+    elseif ~isempty(rowsToFit)
         % Initialize all rows to not be fitted
         toFit = false(nRows, 1);
 
@@ -95,10 +97,13 @@ if isempty(toFit)
         swpInfo = addvars(swpInfo, toFit);
 
         % If rowsToFit is not empty, turn toFit on for those to fit
-        swpInfo{rowsToFit, 'toFit'} = true;
+        swpInfo{rowsToFit, toFitStr} = true;
 
         % Extract from swpInfo
-        toFit = swpInfo{:, 'toFit'};
+        toFit = swpInfo{:, toFitStr};
+    else
+        % All rows will fitted
+        toFit = true(nRows, 1);
     end
 end
 
@@ -114,16 +119,16 @@ grow = swpInfo{:, growStr};
 prow = swpInfo{:, prowStr};
 
 % Get all unique conductance amplitude scaling percentages to fit
-gCondsToFit = unique(swpInfo{toFit, growStr});
+gCondToFit = unique(swpInfo{toFit, growStr});
 
 % Get all unique pharmacological conditions to fit
-pCondsToFit = unique(swpInfo{toFit, prowStr});
+pCondToFit = unique(swpInfo{toFit, prowStr});
 
 % Count the number of distinct conductance amplitude scaling percentages
-nGcondToFit = length(gCondsToFit);
+nGCondToFit = length(gCondToFit);
 
 % Count the number of distinct pharmacological conditions 
-nPCondToFit = length(pCondsToFit);
+nPCondToFit = length(pCondToFit);
 
 % Initialize a cell array to store sweep indices for each cell
 swpIndByCondAllCells = cell(maxCellId, 1);
@@ -133,25 +138,25 @@ swpIndByCondAllCells = cell(maxCellId, 1);
 fprintf('Organizing sweep indices for all cells ... \n');
 
 % Generate strings for the conditions
-gCondsToFitStrs = insertBefore(cellstr(num2str(gCondsToFit)), 1, ...
+gCondToFitStrs = insertBefore(cellstr(num2str(gCondToFit)), 1, ...
                                 'Conductance amplitude % = ');
-pCondsToFitStrs = insertBefore(cellstr(num2str(pCondsToFit)), 1, ...
+pCondToFitStrs = insertBefore(cellstr(num2str(pCondToFit)), 1, ...
                                 'Pharm condition = ');
 
 % Store the conditions used
-conditions = outer_product(gCondsToFitStrs, pCondsToFitStrs);
+conditions = outer_product(gCondToFitStrs, pCondToFitStrs);
 
 % Loop through all possible cells
 for cellIdThis = 1:maxCellId
     % Initialize a cell array to store sweep indices for each condition
-    swpIndThisCell = cell(nGcondToFit, nPCondToFit);
+    swpIndThisCell = cell(nGCondToFit, nPCondToFit);
 
     % Loop through each pharm-gIncr pair
-    for iG = 1:nGcondToFit
+    for iG = 1:nGCondToFit
         for iP = 1:nPCondToFit
             % Get the current pharm and gIncr conditions
-            gThis = gCondsToFit(iG);
-            pThis = pCondsToFit(iP);
+            gThis = gCondToFit(iG);
+            pThis = pCondToFit(iP);
 
             % Find the sweep indices that match 
             %   this cell, pharm and gIncr condition

@@ -1,15 +1,15 @@
-function [fileNamesToFit, swpIndicesToFit] = m3ha_select_sweeps_to_fit (varargin)
+function [swpInfo, fileNamesToFit] = m3ha_select_sweeps_to_fit (varargin)
 %% Find file names and row indices in swpInfo that will be used for fitting
-% Usage: [fileNamesToFit, swpIndicesToFit] = m3ha_select_sweeps_to_fit (varargin)
+% Usage: [swpInfo, fileNamesToFit] = m3ha_select_sweeps_to_fit (varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
+%       swpInfo     - same as input swpInfo table but with the additional field:
+%                       toFit   - whether the sweep is to be fitted
 %       fileNamesToFit  - file names of sweeps to fit
 %                       specified as a cell array
-%       swpIndicesToFit - row indices in swpInfo of sweeps to fit
-%                       specified as a positive integer vector
 % Arguments:
 %       varargin    - 'SwpInfo': a table of sweep info, with each row named by 
 %                               the matfile name containing the raw data
@@ -33,7 +33,7 @@ function [fileNamesToFit, swpIndicesToFit] = m3ha_select_sweeps_to_fit (varargin
 %                   default == ~/m3ha/data_dclamp/take4/special_cases
 %
 % Requires:
-%       cd/find_rows_with_same_attributes.m
+%       cd/has_same_attributes.m
 %       cd/m3ha_find_files_to_take_out.m
 %       cd/m3ha_load_sweep_info.m
 %
@@ -48,6 +48,7 @@ function [fileNamesToFit, swpIndicesToFit] = m3ha_select_sweeps_to_fit (varargin
 
 % File History:
 % 2018-11-18 Adapted from m3ha_find_ind_to_fit()
+% 2018-12-06 Now adds a toFit column to sweep info
 % 
 
 %% Hard-coded parameters
@@ -85,20 +86,17 @@ if isempty(swpInfo)
     swpInfo = m3ha_load_sweep_info;
 end
 
-% Extract all the row names
-fileNames = swpInfo.Properties.RowNames;
-
 % Extract the conductance amplitude scaling percentages
-gIncr = swpInfo.grow;
+grow = swpInfo.grow;
 
 %% Do the job
 % Print message
 fprintf('Selecting the sweeps to fit ... \n');
 
-% Find the sweep indices for 
+% Determine whether each sweep has
 %   conductance amplitudes with 100%, 200% or 400% scaling 
 %   (these are present in all experiments)
-swpIndGIncrToFit = find(gIncr == 100 | gIncr == 200 | gIncr == 400);
+isGcondToFit = grow == 100 | grow == 200 | grow == 400;
 
 % Get the file names of files to take out from specialCasesDir
 %   Note: these are labelled with 'TAKE_OUT_*' and were
@@ -114,23 +112,29 @@ if dataMode == 2
         swpIndicesToFit = [];
         return
     end
-        
-    % Find all the sweep indices with the same cell ID, pharm condition
-    %   and conductance amplitude scaling as the files to take out
-    swpIndNotToFit = ...
-        find_rows_with_same_attributes(swpInfo, fileNamesToTakeOut, ...
+
+    % Determine whether each sweep as the same cell ID, pharm condition
+    %   and conductance amplitude scaling as any of the files to take out
+    isNotToFit = has_same_attributes(swpInfo, fileNamesToTakeOut, ...
                                         attributesToMatch);
 end
 
 % Find the sweep indices to fit
 if dataMode == 1
-    swpIndicesToFit = swpIndGIncrToFit;
+    toFit = isGcondToFit;
 elseif dataMode == 2
-    swpIndicesToFit = setdiff(swpIndGIncrToFit, swpIndNotToFit);
+    toFit = isGcondToFit & ~isNotToFit;
 end
 
+%% Output results
+% Place in swpInfo
+swpInfo = addvars(swpInfo, toFit);
+
+% Extract all the row names
+fileNames = swpInfo.Properties.RowNames;
+
 % Find the file names to fit
-fileNamesToFit = fileNames(swpIndicesToFit);
+fileNamesToFit = fileNames(toFit);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -140,7 +144,7 @@ OLD CODE:
 % Find the indices of all sweeps of the same cell-pharm-g incr group
 indSameCellId = find(cellId == cellId(iSwp));
 indSamePharm = find(pharm == pharm(iSwp));
-indSameGIncr = find(gIncr == gIncr(iSwp));
+indSameGIncr = find(grow == grow(iSwp));
 indSameGroup = intersect(indSameCellId, ...
                 intersect(indSamePharm, indSameGIncr));
 
@@ -152,7 +156,7 @@ parfor iSwp = 1:nSweeps
         %   of the same cell-pharm-g incr group
         swpIndSameGroup{iSwp} = ...
             find(cellId == cellId(iSwp) & pharm == pharm(iSwp) & ...
-                gIncr == gIncr(iSwp));
+                grow == grow(iSwp));
     else
         % Otherwise, return nothing
         swpIndSameGroup{iSwp} = [];
@@ -170,7 +174,30 @@ swpIndNotToFit = sort(swpIndNotToFit);
 % Extract from table
 cellId = table.cellidrow;
 pharm = table.prow;
-gIncr = table.grow;
+grow = table.grow;
+
+[fileNamesToFit, swpIndicesToFit] = m3ha_select_sweeps_to_fit (varargin)
+%       swpIndicesToFit - row indices in swpInfo of sweeps to fit
+%                       specified as a positive integer vector
+
+% Find all the sweep indices with the same cell ID, pharm condition
+%   and conductance amplitude scaling as the files to take out
+swpIndNotToFit = find_rows_with_same_attributes(swpInfo, fileNamesToTakeOut, ...
+                                    attributesToMatch);
+
+if dataMode == 1
+    swpIndicesToFit = swpIndGIncrToFit;
+elseif dataMode == 2
+    swpIndicesToFit = setdiff(swpIndGIncrToFit, swpIndNotToFit);
+end
+
+% Find the sweep indices for 
+%   conductance amplitudes with 100%, 200% or 400% scaling 
+%   (these are present in all experiments)
+swpIndGIncrToFit = find(isGcondToFit);
+
+% Find the file names to fit
+fileNamesToFit = fileNames(swpIndicesToFit);
 
 %}
 

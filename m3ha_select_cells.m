@@ -1,18 +1,10 @@
-function [cellIdsSelected, swpIndByCondAllCells, ...
-            rowsToFit, cellInfo, swpInfo] = m3ha_select_cells (varargin)
+function [cellIdsSelected, cellInfo, swpInfo] = m3ha_select_cells (varargin)
 %% Selects cells with sweeps to fit for all pharm-gIncr pairs
-% Usage: [cellIdsSelected, swpIndByCondAllCells, ...
-%           rowsToFit, cellInfo, swpInfo] = m3ha_select_cells (varargin)
+% Usage: [cellIdsSelected, cellInfo, swpInfo] = m3ha_select_cells (varargin)
 % Explanation: 
 %   Finds all cell IDs and cell names (from 'CellInfo') for the rows 
 %       restricted by 'RowsToFit' in 'SwpInfo'
 %
-
-
-
-
-
-
 % Outputs:
 %       TODO
 %
@@ -125,36 +117,55 @@ if isempty(cellInfo)
     cellInfo = m3ha_generate_cell_info('SwpInfo', swpInfo);
 end
 
-% Generate rowsToFit using m3ha_select_sweeps_to_fit if not provided
-if isempty(rowsToFit)
+%% Select cell IDs to fit
+% Update swpInfo so that there is a toFit column
+%   using m3ha_select_sweeps_to_fit if rowsToFit not provided
+if ~isempty(rowsToFit)
+    if ismember('toFit', swpInfo.Properties.VariableNames)
+        % Print message
+        fprintf('Warning: toFit column already exists in swpInfo.\n');
+        fprintf('RowsToFit will be ignored!\n');
+    else
+        % Initialize all rows to not be fitted
+        toFit = false(nRows, 1);
+
+        % Add this to swpInfo
+        swpInfo = addvars(swpInfo, toFit);
+
+        % If rowsToFit is not empty, turn toFit on for those to fit
+        swpInfo{rowsToFit, 'toFit'} = true;
+    end
+else
     % Select the sweep indices that will be fitted
     %   Remove gIncr == 15%, 50%, 800% and problematic traces
-    rowsToFit = m3ha_select_sweeps_to_fit('SwpInfo', swpInfo, ...
+    swpInfo = m3ha_select_sweeps_to_fit('SwpInfo', swpInfo, ...
                                             'DataMode', dataMode, ...
                                             'CasesDir', casesDir);
 end
 
-%% Organize sweep indices by g incr, pharm conditions for each cell
-swpIndByCondAllCells = ...
-    m3ha_organize_sweep_indices('SwpInfo', swpInfo, 'RowsToFit', rowsToFit);
+% Organize sweep indices by g incr, pharm conditions for each cell
+sweepIndicesByCondition = m3ha_organize_sweep_indices('SwpInfo', swpInfo);
 
-%% Select cell IDs to fit
 % Print message
 fprintf('Selecting the cells to fit ... \n');
 
 % Decide whether each cell is to be selected (has sweeps for all conditions)
-toBeSelected = cellfun(@(x) ~any(cellfun(@isempty, x(:))), swpIndByCondAllCells);
+isSelected = cellfun(@(x) ~any(cellfun(@isempty, x(:))), ...
+                    sweepIndicesByCondition);
+
+% Store in cellInfo
+cellInfo = addvars(cellInfo, sweepIndicesByCondition, isSelected);
 
 % Find the cell IDs to be selected
-cellIdsSelected = find(toBeSelected);
+cellIdsSelected = find(isSelected);
 
+%% Print results to standard output
 % Count the number of selected cells
 nSelected = length(cellIdsSelected);
 
 % Get the corresponding cell names
 cellNamesSelected = cellInfo{cellIdsSelected, cellNameStr};
 
-%% Print results to standard output
 % Print the number of cells to fit
 fprintf('There are %d cells that will be fitted: \n', nSelected);
 
@@ -221,7 +232,7 @@ for iCell = 1:nCells
         cellNamesSelected{ctSelected} = fileNames{swpIndThisCell{1, 1}(1)}(1:7);
 
         % Store sweep indices for all pharm-g incr pairs of this cell
-        swpIndByCondAllCells{ctSelected} = swpIndThisCell; 
+        sweepIndicesByCondition{ctSelected} = swpIndThisCell; 
     end
 end
 
@@ -268,6 +279,16 @@ nCells = height(cellInfo);
 
 
 [cellIdsSelected, cellNamesSelected] = m3ha_select_cells (varargin)
+
+% Compute the number of rows
+nRows = height(swpInfo);
+
+% Generate a logical vector
+toFit = false(nRows, 1);
+toFit(rowsToFit) = true;
+
+% Add the logical vector as a column to the table
+swpInfo = addvars(swpInfo, toFit);
 
 %}
 

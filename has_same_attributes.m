@@ -1,12 +1,16 @@
-function rowIndices = find_rows_with_same_attributes (table, rowNames, attributes, varargin)
+function [hasSameAttributes, rowIndices] = ...
+                has_same_attributes (table, rowNames, attributes, varargin)
 %% Returns all row indices that have the same attributes (column values) combination as a given set of row names
-% Usage: rowIndices = find_rows_with_same_attributes (table, rowNames, attributes, varargin)
+% Usage: [hasSameAttributes, rowIndices] = ...
+%               has_same_attributes (table, rowNames, attributes, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       rowIndices  - matched row indices
+%       hasSameAttributes   - whether each row has matching attributes
+%                           specified as a logical vector
+%       rowIndices  - row indices with matching attributes
 %                   specified as a positive integer vector
 % Arguments:
 %       table       - a table
@@ -25,6 +29,8 @@ function rowIndices = find_rows_with_same_attributes (table, rowNames, attribute
 
 % File History:
 % 2018-11-19 Adapted from code in m3ha_select_sweeps_to_fit.m
+% 2018-12-06 Changed find_rows_with_same_attributes() -> has_same_attributes()
+% 2018-12-06 Now outputs a logical vector
 % 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -65,37 +71,38 @@ allRowNames = table.Properties.RowNames;
 % Extract just the attributes of interest
 attributesOfInterest = table{:, attributes};
 
-% Initialize a vector for storing row indices
-rowIndices = [];
+% Initialize all rows to not have the same attributes
+hasSameAttributes = false(nRows, 1);
 
 %% Do the job
 % Loop through all rows but only doing any detection if needed
 for iRow = 1:nRows
-    % If this row is already included in rowIndices, skip it
-    if ismember(iRow, rowIndices)
+    % If this row is already included, skip it
+    if hasSameAttributes(iRow)
         continue
     end
 
     % Get the current row name
     rowNameThis = allRowNames(iRow);
 
-    % If this sweep is not within files to take out, skip it
+    % If this row is not one to match attributes for, skip it
     if ~ismember(rowNameThis, rowNames)
         continue
     end
 
-    % Get the attribute values
+    % Get the attribute values for this row
     attributesThis = attributesOfInterest(iRow, :);
 
-    % Test whether each row has the same attribute values
-    hasSameAttributes = ismember(attributesOfInterest, attributesThis, 'rows');
+    % Test whether each row has the same attribute values as this row
+    hasSameAttributesToThisRow = ...
+        ismember(attributesOfInterest, attributesThis, 'rows');
 
-    % Find the rows with the same attribute values
-    indSameAttributes = find(hasSameAttributes);
-
-    % Add to rowIndices
-    rowIndices = [rowIndices; indSameAttributes];
+    % Update all rows with the same attributes values as this row
+    hasSameAttributes = hasSameAttributes | hasSameAttributesToThisRow;
 end
+
+% Find the corresponding row indices
+rowIndices = find(hasSameAttributes);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -109,6 +116,19 @@ tableOfInterest = table(:, attributes);
 attributesThis = tableOfInterest{rowNameThis, :};
 
 rowfun(@(x) isequal(x, attributesThis), tableOfInterest);
+
+% Initialize a vector for storing row indices
+rowIndices = [];
+
+if ismember(iRow, rowIndices)
+    continue
+end
+
+% Find the rows with the same attribute values
+indSameAttributes = find(hasSameAttributesToThisRow);
+
+% Add to rowIndices
+rowIndices = [rowIndices; indSameAttributes];
 
 %}
 
