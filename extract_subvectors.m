@@ -14,7 +14,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                       or a cell array of numeric vectors
 % Arguments:
 %       vecs        - vectors to extract
-%                   must be a numeric vector or a cell array of numeric vectors
+%                   must be a numeric array or a cell array of numeric arrays
 %       varargin    - 'Endpoints': endpoints for the subvectors to extract 
 %                   must be a numeric vector with 2 elements
 %                       or a cell array of numeric vectors with 2 elements
@@ -43,6 +43,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 % File History:
 % 2018-10-28 Created by Adam Lu
 % 2018-10-29 Now returns empty if input is empty
+% 2018-12-07 Now allows vecs to be a numeric array
 % 
 
 %% Hard-coded parameters
@@ -66,9 +67,9 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vecs', ...                  % vectors to extract
-    @(x) assert(isnumericvector(x) || iscellnumericvector(x), ...
-                ['vecs must be either a numeric vector ', ...
-                    'or a cell array of numeric vectors!']));
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['vecs must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'EndPoints', endPointsDefault, ...
@@ -108,9 +109,12 @@ if isempty(endPoints)
     endPoints = find_window_endpoints(windows, vecs);
 end
 
-% Match the formats of endPoints and timeVecs so that cellfun can be used
-[endPoints, vecs] = ...
-    match_format_vectors(endPoints, vecs, 'ForceCellOutputs', false);
+% If there are multiple endpoints, match the formats of endPoints and 
+%   timeVecs so that cellfun can be used
+if iscell(endPoints) || numel(endPoints) > 2
+    [endPoints, vecs] = ...
+        match_format_vectors(endPoints, vecs, 'ForceCellOutputs', false);
+end
 
 %% Do the job
 if iscell(vecs)
@@ -123,12 +127,12 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function subVec = extract_subvectors_helper (vec, endPoints)
-%% Extract a subvector from a vector if not empty
+%% Extract a subvector from vector(s) if not empty
 
 if isempty(vec)
     subVec = vec;
 else
-    subVec = vec(endPoints(1):endPoints(2));
+    subVec = vec(endPoints(1):endPoints(2), :);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

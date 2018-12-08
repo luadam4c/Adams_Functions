@@ -66,6 +66,7 @@ function [params, algorithmInfo] = ...
 
 % File History:
 % 2018-10-11 Moved code from find_passive_params.m
+% 2018-12-07 Changed the ranges to look for (version 15-2)
 % 
 
 %% Hard-coded constants
@@ -77,8 +78,8 @@ F_PER_UF = 1e-6;
 UM_PER_CM = 1e4;
 
 %% Hard-coded parameters
-minL = 0;
-maxLs = [0.5; 1; 1.5; 2; 2.5; 3; 3.5; 4; 4.5; 5; Inf];
+minLs = [1; 0.5; 1.5; 0; 2; 2.5; 3; 3.5; 4; 4.5; 5];
+maxLs = [1.5; 1; 2; 0.5; 2.5; 3; 3.5; 4; 4.5; 5; Inf];
 minRho = 0;
 
 %% Default values for optional arguments
@@ -159,7 +160,7 @@ fprintf('alpha1 == %g\n', alpha1);
 % Compute the electrotonic length (L) 
 %   and the dendritic-to-somatic conductance ratio (rho)
 [L, rho, LInit, h, finalMaxL, f, x, maxLOfInterest] = ...
-    compute_L_and_rho(C0, C1, tau0, tau1, alpha1, minL, maxLs, minRho);
+    compute_L_and_rho(C0, C1, tau0, tau1, alpha1, minLs, maxLs, minRho);
 
 %% Compute geometric parameters based on Rinput, rho, L, Cm, Ra, Rs
 % Compute the input resistance of the cell membrane (MOhm)
@@ -214,7 +215,7 @@ lengthDendrite = L * lambda;
 
 %% Store outputs
 % Output algorithm info
-algorithmInfo.minL = minL;
+algorithmInfo.minLs = minLs;
 algorithmInfo.maxLs = maxLs;
 algorithmInfo.minRho = minRho;
 algorithmInfo.f = f;
@@ -258,19 +259,27 @@ close(h)
 
 function [L, rho, LInit, h, finalMaxL, f, x, maxLOfInterest] = ...
                 compute_L_and_rho (C0, C1, tau0, tau1, alpha1, ...
-                                    minL, maxLs, minRho)
+                                    minLs, maxLs, minRho)
 %% Computes the electrotonic length (L) and the dendritic-to-somatic conductance ratio (rho)
 
 % Hard-coded parameters
 nTrialsPerRange = 5;
 
 % Count the number of ranges to try
+nMinLs = length(minLs);
 nMaxLs = length(maxLs);
+if nMinLs ~= nMaxLs
+    error('Number of minimums and maximums do not match!');
+else
+    nRanges = nMaxLs;
+end
 
 % Count the total number of trials to try
-nTrials = nMaxLs * nTrialsPerRange;
+nTrials = nRanges * nTrialsPerRange;
 
-% All maxLs to try
+% All minLs and maxLs to try
+minLsRepeated = reshape(transpose(repmat(minLs, 1, nTrialsPerRange)), ...
+                        nTrials, 1);
 maxLsRepeated = reshape(transpose(repmat(maxLs, 1, nTrialsPerRange)), ...
                         nTrials, 1);
 
@@ -295,10 +304,11 @@ else
 
     % Plot it
     h = figure; clf(h); hold on
-%    fplot(f, [minL, maxL]);
+    minLOfInterest = min(minLs(~isinf(minLs)));
     maxLOfInterest = max(maxLs(~isinf(maxLs)));
-    fplot(f, [0, maxLOfInterest]);
-    line([0, maxLOfInterest], [0, 0], 'Color', 'r', 'LineStyle', '--');
+    fplot(f, [minLOfInterest, maxLOfInterest]);
+    line([minLOfInterest, maxLOfInterest], [0, 0], ...
+            'Color', 'r', 'LineStyle', '--');
     xlabel('x');
     ylabel('f(x)');
     title('Electrotonic length f(L) == 0')
@@ -317,6 +327,7 @@ else
     fprintf('rho == %g\n', rho);
 
     % Start with the first range
+    minL = minLsRepeated(ctTrial);
     maxL = maxLsRepeated(ctTrial);
 
     % Find another solution if L or rho is out of range
@@ -339,14 +350,16 @@ else
         L = double(vpasolve(f(x) == 0, x, LInit));
         rho = compute_rho(alpha1, L);
 
-        % Get the next maxL
+        % Get the next minL and maxL
+        minL = minLsRepeated(ctTrial);
         maxL = maxLsRepeated(ctTrial);
 
         fprintf('L == %g\n', L);
         fprintf('rho == %g\n', rho);
     end
 
-    % Update the final maxL
+    % Update the final minL and maxL
+    finalMinL = minL;
     finalMaxL = maxL;
 end
 
@@ -380,6 +393,22 @@ function eqnForL = generate_equation_for_L (C0, C1, tau0, tau1, alpha1, x)
 eqnForL = abs(C1/(2*C0*tau1/tau0-C1)) - ...
             cot(alpha1*x)*(cot(alpha1*x)-1/(alpha1*x));
 L = double(vpasolve(eqnForL, x, LInit)); 
+
+minL = 0;
+
+[L, rho, LInit, h, finalMaxL, f, x, maxLOfInterest] = ...
+    compute_L_and_rho(C0, C1, tau0, tau1, alpha1, minL, maxLs, minRho);
+
+algorithmInfo.minL = minL;
+
+%    fplot(f, [minL, maxL]);
+
+% Version 15-1
+minL = 0;
+maxLs = [0.5; 1; 1.5; 2; 2.5; 3; 3.5; 4; 4.5; 5; Inf];
+
+minLs = [0; 0.5; 1; 1.5; 2; 2.5; 3; 3.5; 4; 4.5; 5];
+maxLs = [0.5; 1; 1.5; 2; 2.5; 3; 3.5; 4; 4.5; 5; Inf];
 
 %}
 

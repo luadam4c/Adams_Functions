@@ -824,18 +824,19 @@ if plotFlag
                             'PassiveParams', paramsAvgFalling, ...
                             'LegendLocation', 'suppress');
     subplot(3,2,5);
-    % plot_geometry_and_passive_params(paramsAllCombined, paramsAllFalling);
-    plot_geometry_and_passive_params(paramsAllCombined, []);
+    plot_geometry_and_passive_params(paramsAllCombined, paramsAllFalling);
+    % plot_geometry_and_passive_params(paramsAllCombined, []);
     subplot(3,2,6);
-    % plot_geometry_and_passive_params(paramsAvgCombined, paramsAvgFalling);
-    plot_geometry_and_passive_params(paramsAvgCombined, []);
-    % figname = fullfile(outFolder, directories{4}, [fileBase, '_passive', suffix, '.png']);
-    figname_nopng = fullfile(outFolder, directories{4}, ...
+    plot_geometry_and_passive_params(paramsAvgCombined, paramsAvgFalling);
+    % plot_geometry_and_passive_params(paramsAvgCombined, []);
+    % figname = fullfile(outFolder, directories{4}, ...
+    %                       [fileBase, '_passive', suffix, '.png']);
+    figNameNoPng = fullfile(outFolder, directories{4}, ...
                             [strrep(fileBase, '.', 'p'), '_passive', suffix]);
     % subplotsqueeze(h, 1.1);
-    % suptitle(sprintf('Passive parameter fitting for %s %s\n', ...
-    %                     strrep(fileBase, '_', '\_'), titleMod));
-    print(h, figname_nopng, '-dpng', '-r0');
+    suptitle(sprintf('Passive parameter fitting for %s %s\n', ...
+                        strrep(fileBase, '_', '\_'), titleMod));
+    print(h, figNameNoPng, '-dpng', '-r0');
     % saveas(h, figname);
     % close(h);
 end
@@ -953,7 +954,6 @@ ax = gca;
 xLimits = get(ax, 'Xlim');
 yLimits = get(ax, 'Ylim');
 
-%{
 % Get axes ranges
 xRange = xLimits(2) - xLimits(1);
 yRange = yLimits(2) - yLimits(1);
@@ -999,7 +999,6 @@ text(xpos, ypos - (13/15) * yRange, ...
 text(xpos, ypos - (14/15) * yRange, ...
     ['Rm_2 = ', num2str(params2.Rm), ' Ohm-cm^2'], ...
     'FontSize', 8, 'Color', 'm');
-%}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

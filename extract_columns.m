@@ -18,8 +18,7 @@ function varargout = extract_columns (arrays, varargin)
 %                       or a cell array of cell arrays of numeric column vectors
 % Arguments:    
 %       arrays      - arrays to extract columns from
-%                   must be a numeric array
-%                       or a cell array of numeric arrays
+%                   must be a numeric array or a cell array of numeric arrays
 %       colNumbers  - (opt) column number(s) to extract instead of 1, 2, 3, ...
 %                   must be either 'all' or a positive integer vector
 %                       or a cell array of positive integer vectors
