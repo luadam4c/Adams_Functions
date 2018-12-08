@@ -47,6 +47,8 @@ function plot_traces_EEG (abfFileName, varargin)
 %   2018-11-21 - Renamed spikewavedetection -> plot_EEG
 %   2018-11-21 - Updated to use plot_traces_abf.m
 %   2018-11-26 - Removed first argument and detect in current directory
+% TODO: Plot flags for different types of plots
+% TODO: Save SWD figures with the width proportional to the duration
 % 
 
 %% Default values for optional arguments
@@ -202,7 +204,7 @@ end
 plot_traces_abf(abfPath, 'Verbose', verbose, 'OverWrite', false, ...
                 'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
                 'OutFolder', outFolder);
-
+   
 % Plot manual SWD regions if an atf file exists
 if isfile(atfPath)
     % Parse the SWDs from the .atf file

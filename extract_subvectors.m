@@ -44,6 +44,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2018-10-28 Created by Adam Lu
 % 2018-10-29 Now returns empty if input is empty
 % 2018-12-07 Now allows vecs to be a numeric array
+% 2018-12-07 Now allows endPoints to be empty
 % 
 
 %% Hard-coded parameters
@@ -129,8 +130,10 @@ end
 function subVec = extract_subvectors_helper (vec, endPoints)
 %% Extract a subvector from vector(s) if not empty
 
-if isempty(vec)
-    subVec = vec;
+% If the time window is out of range, or if the vector is empty, 
+%   return an empty vector
+if isempty(endPoints) || isempty(vec)
+    subVec = [];
 else
     subVec = vec(endPoints(1):endPoints(2), :);
 end

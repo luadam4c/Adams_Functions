@@ -387,7 +387,7 @@ if iscell(xLimits)
 
     % Run through all intervals
     parfor iInterval = 1:nIntervals
-        % Get the current x-axis limits
+    % Get the current x-axis limits
         xLimitsThis = xLimits{iInterval};
 
         % Create a string for the interval
