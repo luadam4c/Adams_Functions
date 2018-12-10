@@ -20,6 +20,7 @@ function isPositiveIntegerScalar = ispositiveintegerscalar (x)
 % Used by:
 %       cd/compute_weighted_average.m
 %       cd/m3ha_plot_individual_tracesm
+%       ~/m3ha/optimizer4gabab/singleneuronfitting42.m and beyond
 
 % File History:
 % 2018-10-26 Adapted from ispositiveintegervector.m
