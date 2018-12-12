@@ -153,7 +153,7 @@ Last Updated 2018-12-12 by Adam Lu
 - [**m3ha_create_new_initial_neuronparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_create_new_initial_neuronparams.m): Creates a new set of NEURON parameters based on information in the previous parameters table
 - [**m3ha_create_simulation_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_create_simulation_params.m): Generates a table of simulation parameters from table(s) of neuron parameters
 - [**m3ha_create_single_neuron_commands.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_create_single_neuron_commands.m): Generates simulation commands to be read by NEURON from a table of simulation parameters
-- [**m3ha_create_xolotl_neuron.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_create_xolotl_neuron.m): function [output1] = m3ha_create_xolotl_neuron (neuronParamsTable, varargin)
+- [**m3ha_create_xolotl_neuron.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_create_xolotl_neuron.m): Creates a xolotl object for a neuron based on a parameters table
 - [**m3ha_determine_row_conditions.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_determine_row_conditions.m): Determine the conditions for each row
 - [**m3ha_find_files_to_take_out.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_files_to_take_out.m): Returns all the file names of files to take out from .png files in 'TAKE_OUT_*' folders of a special cases directory
 - [**m3ha_find_ind_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ind_to_fit.m): Find indices of fnrow in dclampdatalog_take4.mat that will be used for fitting
