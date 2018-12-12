@@ -37,6 +37,7 @@ function table = renamevars (table, prevNames, newNames, varargin)
 % Requires:
 %       cd/find_ind_str_in_cell.m
 %       cd/ispositiveintegerscalar.m
+%       cd/match_format_vectors.m
 %
 % Used by:
 %       cd/load_params.m
@@ -121,7 +122,7 @@ for iVar = 1:numel(prevNames)
         newName = newNames{iVar};
 
         % Count the number of matching variables
-        nMatches = length(varNumber)
+        nMatches = length(varNumber);
 
         % Construct variable names
         if nMatches > 1

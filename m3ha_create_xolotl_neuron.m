@@ -33,7 +33,12 @@
 % 201X-XX-XX Created by TODO or Adapted from TODO
 % 
 
+%% Hard-coded constants
+UM_PER_MM = 1e3;
+
 %% Hard-coded parameters
+valueStr = 'Value';
+neuronParamsFile = '/media/adamX/m3ha/optimizer4gabab/initial_params/initial_params_D091710.csv';
 
 %% Default values for optional arguments
 % param1Default   = [];                   % default TODO: Description of param1
@@ -68,15 +73,35 @@
 
 %% Preparation
 % TODO
+neuronParamsTable = load_params(neuronParamsFile);
 
-neuronParamsTable = load_params('')
+% Extract geometric parameters from parameters table in um
+diamSoma = neuronParamsTable{'diamSoma', valueStr};
+lengthDendrite = neuronParamsTable{'LDend', valueStr};
+diamDendrite = neuronParamsTable{'diamDend', valueStr};
+
+%% Convert to xolotl units
+% length and radius in mm
+radiusSoma = (diamSoma / 2) / UM_PER_MM;
+lengthSoma = diamSoma / UM_PER_MM;
+radiusDendrite = (diamDendrite / 2) / UM_PER_MM;
+lengthDendrite = lengthDendrite / UM_PER_MM;
 
 %% Do the job
 % Create a xolotl object
 m3ha = xolotl;
 
-% 
-m3ha.add('compartment', 'soma', 'radius', .01);
+% Add soma
+m3ha.add('compartment', 'soma', ...
+            'radius', radiusSoma, 'len', lengthSoma);
+
+% Add dend1
+m3ha.add('compartment', 'dend1', ...
+            'radius', radiusDendrite, 'len', lengthDendrite/2);
+
+% Add dend2
+m3ha.add('compartment', 'dend2', ...
+            'radius', radiusDendrite, 'len', lengthDendrite/2);
 
 %% Output results
 % TODO

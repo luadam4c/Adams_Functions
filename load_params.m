@@ -140,6 +140,7 @@ end
 % Convert any binary numeric column to a logical column
 paramTableTemp = varfun(@force_logical, paramTable);
 paramTableTemp.Properties.VariableNames = paramTable.Properties.VariableNames;
+paramTableTemp.Properties.RowNames = paramTable.Properties.RowNames;
 paramTable = paramTableTemp;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
