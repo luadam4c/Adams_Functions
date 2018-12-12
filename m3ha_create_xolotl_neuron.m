@@ -1,6 +1,6 @@
-function m3ha = m3ha_create_xolotl_neuron (neuronParamsTable, varargin)
+function m3ha = m3ha_create_xolotl_neuron (neuronParamsTableOrFile, varargin)
 %% Creates a xolotl object for a neuron based on a parameters table
-% Usage: m3ha = m3ha_create_xolotl_neuron (neuronParamsTable, varargin)
+% Usage: m3ha = m3ha_create_xolotl_neuron (neuronParamsTableOrFile, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -19,6 +19,10 @@ function m3ha = m3ha_create_xolotl_neuron (neuronParamsTable, varargin)
 %                       'IsLog': whether the parameter is 
 %                                   to be varied on a log scale
 %                   must be a 2d table or a cell array of 2d tables
+%       neuronParamsFile
+%                   - file(s) containing single neuron parameter table(s)
+%                   must be a character array, a string array 
+%                       or a cell array of character arrays
 %       varargin    - 'param1': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
@@ -42,7 +46,6 @@ S_PER_US = 1e-6;
 
 %% Hard-coded parameters
 valueStr = 'Value';
-neuronParamsFile = '/media/adamX/m3ha/optimizer4gabab/initial_params/initial_params_D091710.csv';
 
 % Shell depth in mm
 shellDepth = 1e-4;      % 0.1 um used in TC3.tem
@@ -56,35 +59,44 @@ caOut = 2000;           % 2 mM used in NEURON by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% %% Deal with arguments
-% % Check number of required arguments
-% if nargin < 1    % TODO: 1 might need to be changed
-%     error(['Not enough input arguments, ', ...
-%             'type ''help %s'' for usage'], mfilename);
-% end
+%% Deal with arguments
+% Check number of required arguments
+if nargin < 1
+    error(['Not enough input arguments, ', ...
+            'type ''help %s'' for usage'], mfilename);
+end
 
-% % Set up Input Parser Scheme
-% iP = inputParser;
-% iP.FunctionName = mfilename;
+% Set up Input Parser Scheme
+iP = inputParser;
+iP.FunctionName = mfilename;
 
-% % Add required inputs to the Input Parser
-% addRequired(iP, 'neuronParamsTable', ...                  % TODO: Description of neuronParamsTable
-%     % TODO: validation function %);
+% Add required inputs to the Input Parser
+addRequired(iP, 'neuronParamsTableOrFile', ...
+    @(x) validateattributes(x, {'table', 'cell', 'string', 'char'}, {'2d'}));
 
-% % Add parameter-value pairs to the Input Parser
+% Add parameter-value pairs to the Input Parser
 % addParameter(iP, 'param1', param1Default, ...
 %     % TODO: validation function %);
 
-% % Read from the Input Parser
-% parse(iP, neuronParamsTable, varargin{:});
+% Read from the Input Parser
+parse(iP, neuronParamsTableOrFile, varargin{:});
 % param1 = iP.Results.param1;
 
 % Check relationships between arguments
 % TODO
 
+%% Preparation
+% Decipher the first argument
+
 %% Load parameters from NEURON parameter files
-% Load the parameters table
-neuronParamsTable = load_params(neuronParamsFile);
+if ischar(neuronParamsTableOrFile) || iscell(neuronParamsTableOrFile) || ...
+    iscellstr(neuronParamsTableOrFile)
+    % Load the parameters table
+    neuronParamsTable = load_params(neuronParamsTableOrFile);
+else
+    % Already the parameters table
+    neuronParamsTable = neuronParamsTableOrFile;
+end
 
 % Extract the geometric parameters in um
 diamSoma = neuronParamsTable{'diamSoma', valueStr};
@@ -165,6 +177,8 @@ m3ha.dend2.add('conductance', 'Leak', 'gbar', gLeak, 'E', eLeak);
 
 %{
 OLD CODE:
+
+neuronParamsFile = '/media/adamX/m3ha/optimizer4gabab/initial_params/initial_params_D091710.csv';
 
 %}
 
