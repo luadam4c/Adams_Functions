@@ -178,7 +178,7 @@ onHpcFlagDefault = false;       % whether on a high performance computing
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 2
+if nargin < 1
     error(['Not enough input arguments, ', ...
             'type ''help %s'' for usage'], mfilename);
 end
@@ -218,6 +218,7 @@ neuronParamsTableInit = outparams.neuronParamsTable;
 
 %% Preparation
 % Extract from neuronParamsTableInit
+pNames = neuronParamsTableInit.Properties.RowNames;
 initValues = neuronParamsTableInit.Value;
 pIsLog = neuronParamsTableInit.IsLog;
 pInUse = neuronParamsTableInit.InUse;
@@ -276,6 +277,9 @@ simplexOut.rho = rho;
 simplexOut.chi = chi;
 simplexOut.psi = psi;
 simplexOut.sigma = sigma;
+
+% Initialize the NEURON parameters table in simplexOut
+simplexOut.neuronParamsTable = outparams.neuronParamsTable;
 
 %% Determine parameter bounds
 % Type of parameter bounding (cf. D'Errico)
@@ -349,7 +353,7 @@ for i = 1:nParams
         ct = ct + 1;
 
         % Record parameter name
-        simplexOut.paramsInUseNames{ct} = outparams.neuronparamnames{i};
+        simplexOut.paramsInUseNames{ct} = pNames{i};
 
         % First transform [LB UB] or [log(LB) log(UB)] linearly to [-1 1]
         if pIsLog(i)
@@ -375,7 +379,6 @@ end
 
 % If all variables were fixed, there is no need to perform simplex
 if ct == 0        % all variables were fixed
-    simplexOut.neuronParamsTable = outparams.neuronParamsTable;
     simplexOut.lastHow = '';
     simplexOut.ctEvals = 0;
     simplexOut.ctIterations = 0;
@@ -395,7 +398,7 @@ fv = zeros(1, n + 1);   % the total errors corresponding to each set of paramete
 errv = cell(1, n + 1);  % the error structures corresponding to each set of parameters of the simplex
 
 % Compute initial total error and plot sweeps if user requests so
-[err0, ctEvals] = eval_with_plots('_bef', p0, bounds, pIsLog, ctEvals, outparams)
+[err0, ctEvals] = eval_with_plots('_bef', p0, bounds, pIsLog, ctEvals, outparams);
 
 % Update simplex performance figure
 update_errorhistory(simplexfigure, ctIterations, err0, cm, ...
@@ -728,10 +731,18 @@ if ctIterations == 1
     simplexOut.firstMaxParamChange = simplexOut.maxParamChange;
 end
 
-% Undo the variable transformations
-[simplexOut.neuronParamsTable, simplexOut.paramsInUseValues] = ...
-    xtransform(v(:, 1), bounds, pIsLog);
+% Read from simplexOut
+neuronParamsTable = simplexOut.neuronParamsTable;
 
+% Undo the variable transformations
+[newParamValues, paramsInUseValues] = xtransform(v(:, 1), bounds, pIsLog);
+
+% Place new values in the new neuronParamsTable
+neuronParamsTable{:, 'Value'} = newParamValues;
+
+% Update simplexOut
+simplexOut.neuronParamsTable = neuronParamsTable;
+simplexOut.paramsInUseValues = paramsInUseValues;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -883,9 +894,9 @@ LB = bounds.LB;
 % Initialize variables
 numinuse = numel(p);        % number of parameters in use
 nParams = numel(LB);      % number of original parameters
-p_01 = zeros(1, numinuse);    % stores parameters transformed to [0 1]
-xpart = zeros(1, numinuse);    % stores transformed parameters
-x = zeros(1, nParams);    % stores transformed parameters and original parameters
+p_01 = zeros(numinuse, 1);    % stores parameters transformed to [0 1]
+xpart = zeros(numinuse, 1);    % stores transformed parameters
+x = zeros(nParams, 1);    % stores transformed parameters and original parameters
 
 ct = 0;                        % counts unfixed parameters that were not dropped from optimization
 for i = 1:numel(bounds.LB)
@@ -1456,5 +1467,17 @@ prefix = prefixOrig;                        % restore original prefix
 [outparams] = set_fields_zero(outparams, 'plotIndividualFlag', 'plotOverlappedFlag');    % do not plot sweeps for other function evaluations
 
 nParams = numel(outparams.neuronparams);
+
+simplexOut.paramsInUseNames{ct} = outparams.neuronparamnames{i};
+
+% Determine indices of parameters in use
+indInUse = neuronParamsTable{:, 'InUse'};
+
+p_01 = zeros(1, numinuse);    % stores parameters transformed to [0 1]
+xpart = zeros(1, numinuse);    % stores transformed parameters
+x = zeros(1, nParams);    % stores transformed parameters and original parameters
+
+[simplexOut.neuronParamsTable, simplexOut.paramsInUseValues] = ...
+    xtransform(v(:, 1), bounds, pIsLog);
 
 %}

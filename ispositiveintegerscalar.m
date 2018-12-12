@@ -19,7 +19,9 @@ function isPositiveIntegerScalar = ispositiveintegerscalar (x)
 %
 % Used by:
 %       cd/compute_weighted_average.m
-%       cd/m3ha_plot_individual_tracesm
+%       cd/find_ind_str_in_cell.m
+%       cd/m3ha_plot_individual_traces.m
+%       cd/renamevars.m
 %       ~/m3ha/optimizer4gabab/singleneuronfitting42.m and beyond
 
 % File History:

@@ -15,6 +15,9 @@ function isBinaryScalar = isbinaryscalar (x)
 % Arguments:    
 %       x               - an input to check
 %
+% Required:
+%       cd/isbinaryarray.m
+%
 % Used by:
 %       cd/m3ha_plot_individual_traces.m
 
@@ -32,9 +35,9 @@ end
 
 %% Do the job
 % TODO: Place in own function
-isBinary = @(x) islogical(x) || isnumeric(x) && all(x == 0 || x == 1);
+isbinary = @(x) islogical(x) || isnumeric(x) && all(x == 0 | x == 1);
 
-isBinaryScalar = isempty(x) || isscalar(x) && isBinary(x);
+isBinaryScalar = isempty(x) || isscalar(x) && isbinary(x);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

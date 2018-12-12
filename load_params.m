@@ -21,10 +21,12 @@ function paramTables = load_params (fileNames, varargin)
 %
 % Requires:
 %       cd/construct_and_check_fullpath.m
+%       cd/force_logical.m
 %       cd/issheettype.m
+%       cd/renamevars.m
 %
 % Used by:    
-%       /TODO:dir/TODO:file
+%       cd/m3ha_create_xolotl_neuron.m
 
 % File History:
 % 2018-10-16 Created by Adam Lu
@@ -98,25 +100,11 @@ if issheettype(fileExt)
     % Get all variable names
     variableNames = paramTable.Properties.VariableNames;
 
-    % Replace the variable names
-    idxVal = find_ind_str_in_cell('val', variableNames, ...
-                                  'SearchMode', 'substrings', ...
-                                  'IgnoreCase', true, 'MaxNum', 1);
-    if ~isempty(idxVal)
-        paramTable.Properties.VariableNames{idxVal} = 'Value';
-    end
-    idxMin = find_ind_str_in_cell('min', variableNames, ...
-                                  'SearchMode', 'substrings', ...
-                                  'IgnoreCase', true, 'MaxNum', 1);
-    if ~isempty(idxMin)
-        paramTable.Properties.VariableNames{idxMin} = 'LowerBound';
-    end
-    idxMax = find_ind_str_in_cell('max', variableNames, ...
-                                  'SearchMode', 'substrings', ...
-                                  'IgnoreCase', true, 'MaxNum', 1);
-    if ~isempty(idxMax)
-        paramTable.Properties.VariableNames{idxMax} = 'UpperBound';
-    end
+    % Replace the variable names if needed
+    paramTable = renamevars(paramTable, {'val', 'min', 'max'}, ...
+                            {'Value', 'LowerBound', 'UpperBound'}, ...
+                            'SearchMode', 'substrings', 'IgnoreCase', true, ...
+                            'MaxNum', 1);
 else
     % Import the data as a cell array
     paramsCell = importdata(fullPath);
@@ -148,6 +136,11 @@ else
     paramTable = cell2table(paramsCellRest, ...
                             'RowNames', rowNames, 'VariableNames', header);
 end
+
+% Convert any binary numeric column to a logical column
+paramTableTemp = varfun(@force_logical, paramTable);
+paramTableTemp.Properties.VariableNames = paramTable.Properties.VariableNames;
+paramTable = paramTableTemp;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -181,6 +174,32 @@ paramsCell = mFile.(varNames{1});
 paramTable = cell(size(fullPath));
 parfor iFile = 1:numel(fullPath)
     paramTable{iFile} = load_params_helper(fullPath{iFile});
+end
+
+paramTable = renamevars(paramTable, 'val', 'Value', ...
+                        'SearchMode', 'substrings', 'IgnoreCase', true);
+paramTable = renamevars(paramTable, 'min', 'LowerBound', ...
+                        'SearchMode', 'substrings', 'IgnoreCase', true);
+paramTable = renamevars(paramTable, 'max', 'UpperBound', ...
+                        'SearchMode', 'substrings', 'IgnoreCase', true);
+
+idxVal = find_ind_str_in_cell('val', variableNames, ...
+                              'SearchMode', 'substrings', ...
+                              'IgnoreCase', true, 'MaxNum', 1);
+if ~isempty(idxVal)
+    paramTable.Properties.VariableNames{idxVal} = 'Value';
+end
+idxMin = find_ind_str_in_cell('min', variableNames, ...
+                              'SearchMode', 'substrings', ...
+                              'IgnoreCase', true, 'MaxNum', 1);
+if ~isempty(idxMin)
+    paramTable.Properties.VariableNames{idxMin} = 'LowerBound';
+end
+idxMax = find_ind_str_in_cell('max', variableNames, ...
+                              'SearchMode', 'substrings', ...
+                              'IgnoreCase', true, 'MaxNum', 1);
+if ~isempty(idxMax)
+    paramTable.Properties.VariableNames{idxMax} = 'UpperBound';
 end
 
 %}

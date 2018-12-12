@@ -67,6 +67,8 @@ function [params, algorithmInfo] = ...
 % File History:
 % 2018-10-11 Moved code from find_passive_params.m
 % 2018-12-07 Changed the ranges to look for (version 15-2)
+% 2018-12-10 Changed the ranges to look for (version 15-3)
+% 2018-12-10 Changed the ranges to look for (version 15-4)
 % 
 
 %% Hard-coded constants
@@ -78,8 +80,8 @@ F_PER_UF = 1e-6;
 UM_PER_CM = 1e4;
 
 %% Hard-coded parameters
-minLs = [1; 0.5; 1.5; 0; 2; 2.5; 3; 3.5; 4; 4.5; 5];
-maxLs = [1.5; 1; 2; 0.5; 2.5; 3; 3.5; 4; 4.5; 5; Inf];
+minLs = transpose(0:0.5:5);
+maxLs = transpose(0.5:0.5:5.5); maxLs(end) = Inf;
 minRho = 0;
 
 %% Default values for optional arguments
@@ -409,6 +411,18 @@ maxLs = [0.5; 1; 1.5; 2; 2.5; 3; 3.5; 4; 4.5; 5; Inf];
 
 minLs = [0; 0.5; 1; 1.5; 2; 2.5; 3; 3.5; 4; 4.5; 5];
 maxLs = [0.5; 1; 1.5; 2; 2.5; 3; 3.5; 4; 4.5; 5; Inf];
+
+% Version 15-2
+minLs = [1; 0.5; 1.5; 0; 2; 2.5; 3; 3.5; 4; 4.5; 5];
+maxLs = [1.5; 1; 2; 0.5; 2.5; 3; 3.5; 4; 4.5; 5; Inf];
+
+% Version 15-3
+minLs = transpose(5:0.5:0.5);
+maxLs = transpose(5.5:0.5:1); maxLs(1) = Inf;
+
+% Version 15-4
+minLs = transpose(0:0.5:5);
+maxLs = transpose(0.5:0.5:5.5); maxLs(end) = Inf;
 
 %}
 

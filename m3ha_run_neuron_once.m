@@ -434,6 +434,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;         
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'neuronParamsTable', ...

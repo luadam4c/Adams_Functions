@@ -53,6 +53,7 @@ function vectors = force_column_numeric (vectors, varargin)
 % File History:
 % 2018-10-12 Created by Adam Lu
 % 2018-10-27 Added 'IgnoreNonVectors' as an optional argument
+% 2018-12-11 Now accepts logical arrays
 % TODO: Deal with 3D arrays
 % 
 
@@ -74,7 +75,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vectors', ...                   % vectors
-    @(x) assert(isempty(x) || isnumeric(x) || iscellnumeric(x), ...
+    @(x) assert(isempty(x) || isnumeric(x) || islogical(x) || iscellnumeric(x), ...
                 ['vectors must be either empty or a numeric array', ...
                     'or a cell array of numeric arrays!']));
 
@@ -87,7 +88,7 @@ parse(iP, vectors, varargin{:});
 ignoreNonVectors = iP.Results.IgnoreNonVectors;
 
 %% Do the job
-if isnumeric(vectors) && ~iscolumn(vectors)
+if (isnumeric(vectors) || islogical(vectors)) && ~iscolumn(vectors)
     if isempty(vectors)
         % Do nothing
     elseif isvector(vectors)
