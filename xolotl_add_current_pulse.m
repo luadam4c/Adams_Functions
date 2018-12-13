@@ -1,5 +1,5 @@
 function xolotlObject = xolotl_add_current_pulse (xolotlObject, varargin)
-%% Adds a current clamp to a xolotl object
+%% Adds a current pulse to the first compartment of a xolotl object
 % Usage: xolotlObject = xolotl_add_current_pulse (xolotlObject, varargin)
 % Explanation:
 %       TODO
@@ -29,6 +29,8 @@ function xolotlObject = xolotl_add_current_pulse (xolotlObject, varargin)
 
 % File History:
 % 2018-12-12 Created by Adam Lu
+% TODO: Make more general by adding a 'Compartments' parameter,
+%       with only the first compartment by default
 % 
 
 %% Hard-coded parameters
@@ -75,10 +77,22 @@ amplitude = iP.Results.Amplitude;
 % Extract the sampling interval in ms
 siMs = xolotlObject.dt;
 
-% Create a pulse
+% Extract the total duration of the simulation in ms
+totalDuration = xolotlObject.t_end;
+
+% Extract the number of neurons from the size of the default I_ext
+nCompartments = size(xolotlObject.I_ext, 2);
+
+% Get the number of samples
+nSamples = floor(totalDuration / siMs);
+
+% Create a pulse for the first compartment
 pulse = create_pulse('SamplingInterval', siMs, 'PulseDelay', delay, ...
-                    'PulseDuration', duration, ...
-                    'PulseAmplitude', amplitude);
+                    'PulseDuration', duration, 'PulseAmplitude', amplitude, ...
+                    'TotalDuration', totalDuration);
+
+% Match zeros for the other compartments
+pulse = [pulse, zeros(nSamples, nCompartments - 1)];
 
 %% Do the job
 xolotlObject.I_ext = pulse;

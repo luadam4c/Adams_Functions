@@ -11,7 +11,7 @@
 % 2018-12-12 Created by Adam Lu
 
 % Hard-coded parameters
-neuronParamsFile = fullfile('/media/adamX/xolotlObject/optimizer4gabab', ...
+neuronParamsFile = fullfile('/media/adamX/m3ha/optimizer4gabab', ...
                             'initial_params/initial_params_D091710.csv');
 cpDelay = 1100;        % current pulse delay in ms
 cpDuration = 10;       % current pulse duration in ms
@@ -39,13 +39,16 @@ m3ha = xolotl_add_current_pulse(m3ha, 'Delay', cpDelay, ...
                             'Duration', cpDuration, 'Amplitude', cpAmplitude);
 
 % Simulate and plot
-m3ha.plot;
+%m3ha.plot;
 
 % Simulate only
 % vVecs = m3ha.integrate;
 
 % Plot
 % m3ha = m3ha_xolotl_plot(m3ha, vVecs);
+
+% Save the xolotl object
+% xolotl_save(m3ha, fileName);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

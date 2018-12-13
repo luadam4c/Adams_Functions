@@ -34,6 +34,7 @@ function xolotlObject = xolotl_set_simparams (xolotlObject, varargin)
 % File History:
 % 2018-12-12 Created by Adam Lu
 % TODO: Set temperatures
+% TODO: Set initial voltage value
 % 
 
 %% Hard-coded parameters
