@@ -12,7 +12,8 @@ function [parsedParams] = parse_xolotl_object (xolotlObject)
 %                           compartments: compartment names
 %                           siMs: sampling interval in ms
 %                           totalDuration: total duration in ms
-%                           externalCurrents: previous current injections
+%                           clampedVoltages: clamped voltages
+%                           externalCurrents: injected currents
 %                       TODO
 %                       specified as a structure
 % Arguments:
@@ -68,7 +69,10 @@ siMs = xolotlObject.dt;
 % Extract the total duration of the simulation in ms
 totalDuration = xolotlObject.t_end;
 
-% Extract any previously set current injections
+% Extract any set voltage clamps
+clampedVoltages = xolotlObject.V_clamp;
+
+% Extract any set injected currents
 externalCurrents = xolotlObject.I_ext;
 
 % Get the number of samples
@@ -86,6 +90,7 @@ parsedParams.nCompartments = nCompartments;
 parsedParams.compartments = compartments;
 parsedParams.siMs = siMs;
 parsedParams.totalDuration = totalDuration;
+parsedParams.clampedVoltages = clampedVoltages;
 parsedParams.externalCurrents = externalCurrents;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

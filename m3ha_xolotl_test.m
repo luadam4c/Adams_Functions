@@ -31,6 +31,7 @@ closedLoop = false;     % whether to use the final state as the initial
 solverOrder = 0;        % uses the implicit Crank-Nicholson scheme
                         %   for multi-compartment models
 temperature = 33;       % temperature of 33 degrees Celsius used by Christine
+compToPatch = 'soma';   % compartment to be patched
 holdingPotential = -60; % holding potential in mV
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -50,10 +51,13 @@ m3ha = xolotl_set_simparams(m3ha, 'InitialVoltage', initialVoltageVc, ...
                             'TimeEnd', timeEndVc);
 
 % Add a voltage clamp
-m3haTest = xolotl_add_voltage_clamp(m3ha, 'Amplitude', holdingPotential);
+m3haTest = xolotl_add_voltage_clamp(m3ha, 'Compartment', compToPatch, ...
+                                    'Amplitude', holdingPotential);
+
+% Simulate the voltage clamp experiment
+% TODO: holdingCurrent = xolotl_simulate_voltage_clamp(m3haTest);
 
 % Find the holding current necessary to match the holding potential
-% TODO: holdingCurrent = xolotl_simulate_voltage_clamp(m3haTest);
 holdingCurrent = 0;
 
 %% Simulate the current pulse protocol
@@ -62,11 +66,13 @@ m3ha = xolotl_set_simparams(m3ha, 'InitialVoltage', initialVoltageCpr, ...
                             'TimeEnd', timeEndCpr);
 
 % Add a holding current
-m3ha = xolotl_add_holding_current(m3ha, 'Amplitude', holdingCurrent);
+m3ha = xolotl_add_holding_current(m3ha, 'Compartment', compToPatch, ...
+                                    'Amplitude', holdingCurrent);
 
 % Add a current pulse protocol
-m3ha = xolotl_add_current_pulse(m3ha, 'Delay', cpDelay, ...
-                            'Duration', cpDuration, 'Amplitude', cpAmplitude);
+m3ha = xolotl_add_current_pulse(m3ha, 'Compartment', compToPatch, ...
+                                'Delay', cpDelay, 'Duration', cpDuration, ...
+                                'Amplitude', cpAmplitude);
 
 % Simulate and plot
 % m3ha.plot;

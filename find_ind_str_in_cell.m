@@ -54,6 +54,7 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 %       cd/renamevars.m
 %       cd/update_params.m
 %       cd/validate_string.m
+%       cd/xolotl_compartment_index.m
 %       cd/ZG_extract_all_IEIs.m
 %       cd/ZG_extract_all_data.m
 %       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m

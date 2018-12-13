@@ -19,7 +19,7 @@ function newTable = m3ha_create_new_initial_neuronparams (prevTable, varargin)
 %       cd/choose_random_values.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       ~/m3ha/optimizer4gabab/optimizer_4compgabab.m
 
 % File History:
 % 2018-12-11 Created by Adam Lu
@@ -34,7 +34,7 @@ isLogStr = 'IsLog';
 inUseStr = 'InUse';
 
 %% Default values for optional arguments
-param1Default   = [];                   % default TODO: Description of param1
+% param1Default   = [];                   % default TODO: Description of param1
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -50,16 +50,16 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'prevTable', ...                  % TODO: Description of prevTable
-    % TODO: validation function %);
+addRequired(iP, 'prevTable', ...
+    @(x) validateattributes(x, {'table', 'cell'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'param1', param1Default, ...
-    % TODO: validation function %);
+% addParameter(iP, 'param1', param1Default, ...
+%     % TODO: validation function %);
 
 % Read from the Input Parser
 parse(iP, prevTable, varargin{:});
-param1 = iP.Results.param1;
+% param1 = iP.Results.param1;
 
 % Check relationships between arguments
 % TODO
