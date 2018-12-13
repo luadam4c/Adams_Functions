@@ -1,23 +1,19 @@
-function m3ha = m3ha_create_xolotl_neuron (neuronParamsTableOrFile, varargin)
-%% Creates a xolotl object for a neuron based on a parameters table
-% Usage: m3ha = m3ha_create_xolotl_neuron (neuronParamsTableOrFile, varargin)
+function xolotlObject = m3ha_xolotl_create_neuron (neuronParamsTableOrFile, varargin)
+%% Creates a xolotl object for a 3-compartment neuron based on a parameters table
+% Usage: xolotlObject = m3ha_xolotl_create_neuron (neuronParamsTableOrFile, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       m3ha        - the created neuron
-%                   specified as a xolotl object
+%       xolotlObject    - the created neuron
+%                       specified as a xolotl object
 % Arguments:
 %       neuronParamsTable   
 %                   - table(s) of single neuron parameters with 
-%                       parameter names as 'RowNames' and with variables:
+%                       parameter names as row names and with 
+%                       at least the variable:
 %                       'Value': value of the parameter
-%                       'LowerBound': lower bound of the parameter
-%                       'UpperBound': upper bound of the parameter
-%                       'JitterPercentage': jitter percentage of the parameter
-%                       'IsLog': whether the parameter is 
-%                                   to be varied on a log scale
 %                   must be a 2d table or a cell array of 2d tables
 %       neuronParamsFile
 %                   - file(s) containing single neuron parameter table(s)
@@ -31,10 +27,11 @@ function m3ha = m3ha_create_xolotl_neuron (neuronParamsTableOrFile, varargin)
 %       cd/load_params.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/m3ha_xolotl_test.m
 
 % File History:
 % 2018-12-12 Created by Adam Lu
+%   TODO: Implement a cell array of tables or files
 % 
 
 %% Hard-coded constants
@@ -46,6 +43,13 @@ S_PER_US = 1e-6;
 
 %% Hard-coded parameters
 valueStr = 'Value';
+diamSomaStr = 'diamSoma';
+LDendStr = 'LDend';
+diamDendStr = 'diamDend';
+cmStr = 'cm';
+RaStr = 'Ra';
+gpasStr = 'gpas';
+epasStr = 'epas';
 
 % Shell depth in mm
 shellDepth = 1e-4;      % 0.1 um used in TC3.tem
@@ -82,15 +86,19 @@ addRequired(iP, 'neuronParamsTableOrFile', ...
 parse(iP, neuronParamsTableOrFile, varargin{:});
 % param1 = iP.Results.param1;
 
-% Check relationships between arguments
-% TODO
-
 %% Preparation
 % Decipher the first argument
 
 %% Load parameters from NEURON parameter files
-if ischar(neuronParamsTableOrFile) || iscell(neuronParamsTableOrFile) || ...
+if ischar(neuronParamsTableOrFile) || isstring(neuronParamsTableOrFile) || ...
     iscellstr(neuronParamsTableOrFile)
+    % Check if the file exists
+    if ~isfile(neuronParamsTableOrFile)
+        fprintf('The file %s does not exist!!\n', neuronParamsTableOrFile);
+        xolotlObject = [];
+        return
+    end
+
     % Load the parameters table
     neuronParamsTable = load_params(neuronParamsTableOrFile);
 else
@@ -99,21 +107,21 @@ else
 end
 
 % Extract the geometric parameters in um
-diamSoma = neuronParamsTable{'diamSoma', valueStr};
-LDend = neuronParamsTable{'LDend', valueStr};
-diamDend = neuronParamsTable{'diamDend', valueStr};
+diamSoma = neuronParamsTable{diamSomaStr, valueStr};
+LDend = neuronParamsTable{LDendStr, valueStr};
+diamDend = neuronParamsTable{diamDendStr, valueStr};
 
 % Extract the specific membrane capacitance in uF/cm^2
-cm = neuronParamsTable{'cm', valueStr};
+cm = neuronParamsTable{cmStr, valueStr};
 
 % Extract the axial resistivity in Ω cm
-Ra = neuronParamsTable{'Ra', valueStr};
+Ra = neuronParamsTable{RaStr, valueStr};
 
 % Extract the leak conductance in S/cm^2
-gpas = neuronParamsTable{'gpas', valueStr};
+gpas = neuronParamsTable{gpasStr, valueStr};
 
 % Extract the leak reversal potential in mV
-epas = neuronParamsTable{'epas', valueStr};
+epas = neuronParamsTable{epasStr, valueStr};
 
 %% Convert to xolotl units
 % Compute the lengths and radii in mm
@@ -136,49 +144,46 @@ eLeak = epas;
 
 %% Do the job
 % Create a xolotl object
-m3ha = xolotl;
+xolotlObject = xolotl;
 
 % Add soma
-m3ha.add('compartment', 'soma', ...
+xolotlObject.add('compartment', 'soma', ...
             'radius', radiusSoma, 'len', lengthSoma, ...
             'Cm', specificMembraneCapacitance, ...
             'shell_thickness', shellDepth, ...
             'Ca', caIn, 'Ca_out', caOut);
 
 % Add dend1
-m3ha.add('compartment', 'dend1', ...
+xolotlObject.add('compartment', 'dend1', ...
             'radius', radiusDendrite, 'len', lengthDendrite/2, ...
             'Cm', specificMembraneCapacitance, ...
             'shell_thickness', shellDepth, ...
             'Ca', caIn, 'Ca_out', caOut);
 
 % Add dend2
-m3ha.add('compartment', 'dend2', ...
+xolotlObject.add('compartment', 'dend2', ...
             'radius', radiusDendrite, 'len', lengthDendrite/2, ...
             'Cm', specificMembraneCapacitance, ...
             'shell_thickness', shellDepth, ...
             'Ca', caIn, 'Ca_out', caOut);
 
 % Connect the compartments
-% TODO: set axial resistivity
-m3ha.connect('soma', 'dend1');
-% m3ha.connect('soma', 'dend1', 'gbar', axialConductance);
-m3ha.connect('dend1', 'dend2');
+xolotlObject.connect('soma', 'dend1', 'Axial', ...
+                        'resistivity', axialResistivity);
+xolotlObject.connect('dend1', 'dend2', 'Axial', ...
+                        'resistivity', axialResistivity);
 
 % Add passive conductances
-m3ha.soma.add('conductance', 'Leak', 'gbar', gLeak, 'E', eLeak);
-m3ha.dend1.add('conductance', 'Leak', 'gbar', gLeak, 'E', eLeak);
-m3ha.dend2.add('conductance', 'Leak', 'gbar', gLeak, 'E', eLeak);
-
-%% Output results
-% TODO
+xolotlObject.soma.add('conductance', 'Leak', 'gbar', gLeak, 'E', eLeak);
+xolotlObject.dend1.add('conductance', 'Leak', 'gbar', gLeak, 'E', eLeak);
+xolotlObject.dend2.add('conductance', 'Leak', 'gbar', gLeak, 'E', eLeak);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
 
-neuronParamsFile = '/media/adamX/m3ha/optimizer4gabab/initial_params/initial_params_D091710.csv';
+xolotlObject.connect('soma', 'dend1', 'gbar', axialConductance);
 
 %}
 

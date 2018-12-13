@@ -24,6 +24,7 @@ function nSamples = count_samples (vectors)
 % Used by:    
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
+%       cd/m3ha_xolotl_plot.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 

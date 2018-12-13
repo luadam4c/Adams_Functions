@@ -26,7 +26,7 @@ function paramTables = load_params (fileNames, varargin)
 %       cd/renamevars.m
 %
 % Used by:    
-%       cd/m3ha_create_xolotl_neuron.m
+%       cd/m3ha_xolotl_create_neuron.m
 
 % File History:
 % 2018-10-16 Created by Adam Lu

@@ -80,6 +80,7 @@ function waveform = create_pulse_train_series (varargin)
 %                   
 %
 % Requires:
+%       cd/create_pulse.m
 %       cd/create_waveform_train.m
 %       cd/isfigtype.m
 %       cd/issheettype.m
@@ -91,6 +92,7 @@ function waveform = create_pulse_train_series (varargin)
 % 2018-08-09 Added seriesDelay and NSweeps
 % 2018-08-09 Now defaults the pulse amplitude to 5
 % 2018-08-10 Added an input dialog box
+% 2018-12-13 Pulled code out to create_pulse.m
 
 % Hard-coded constants
 MS_PER_S = 1000;                % 1000 ms per second
@@ -301,11 +303,10 @@ fileBase = ['pulseTrainSeries', '_', num2str(pulseAmplitude), 'V', ...
 
 
 %% Create a pulse train
-% Convert pulse duration to samples
-pulseDurationSamples = floor(pulseDuration / siMs);
-
 % Create a pulse
-pulse = ones(pulseDurationSamples, 1) * pulseAmplitude;
+pulse = create_pulse('SamplingInterval', siMs, 'PulseDelay', 0, ...
+                    'PulseDuration', pulseDuration, ...
+                    'PulseAmplitude', pulseAmplitude);
 
 % Create a pulse train from the pulse
 pulseTrain = create_waveform_train(pulse, pulseFrequency, trainDuration, ...
@@ -405,6 +406,12 @@ singleRepeat(1:trainDurationSamples) = pulseTrain;
 
 % Create all repeats
 allRepeats = repmat(singleRepeat, nRepeats, 1);
+
+% Convert pulse duration to samples
+pulseDurationSamples = floor(pulseDuration / siMs);
+
+% Create a pulse
+pulse = ones(pulseDurationSamples, 1) * pulseAmplitude;
 
 %}
 

@@ -48,6 +48,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/m3ha_import_raw_traces.m
+%       cd/m3ha_xolotl_plot.m
 
 % File History:
 % 2018-10-25 Adapted from make_time_column.m in Marks_Functions
