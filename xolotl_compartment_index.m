@@ -23,6 +23,8 @@ function idxCompartment = xolotl_compartment_index (xolotlObject, varargin)
 %       cd/find_ind_str_in_cell.m
 %
 % Used by:
+%       cd/xolotl_add_current_pulse.m
+%       cd/xolotl_add_holding_current.m
 %       cd/xolotl_add_voltage_clamp.m
 
 % File History:

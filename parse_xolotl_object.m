@@ -31,6 +31,7 @@ function [parsedParams] = parse_xolotl_object (xolotlObject)
 
 % File History:
 % 2018-12-13 Created by Adam Lu
+% 2018-12-13 Now does not match row counts here
 % 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -78,12 +79,6 @@ externalCurrents = xolotlObject.I_ext;
 % Get the number of samples
 nSamples = floor(totalDuration / siMs);
 
-% Match the number of rows with nSamples
-if size(externalCurrents, 1) == 1
-    externalCurrents = ...
-        match_row_count(externalCurrents, nSamples);
-end
-
 %% Save in output
 parsedParams.nSamples = nSamples;
 parsedParams.nCompartments = nCompartments;
@@ -100,6 +95,12 @@ OLD CODE:
 
 % Extract the number of compartments from the size of externalCurrents
 nCompartments = size(externalCurrents, 2);
+
+% Match the number of rows with nSamples
+if size(externalCurrents, 1) == 1
+    externalCurrents = ...
+        match_row_count(externalCurrents, nSamples);
+end
 
 %}
 

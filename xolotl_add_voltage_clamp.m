@@ -76,25 +76,29 @@ parsedParams = parse_xolotl_object(xolotlObject);
 % Extract parameters
 nSamples = parsedParams.nSamples;
 nCompartments = parsedParams.nCompartments;
-prevClampedVoltage = parsedParmas.clampedVoltage;
+prevClampedVoltages = parsedParams.clampedVoltages;
 
 % Find the index of the compartment to patch
 idxCompartment = xolotl_compartment_index(xolotlObject, compartment);
 
 % Find the number of rows for prevClampedVoltage
-nRows = size(prevClampedVoltage, 1);
+nRowsPrev = size(prevClampedVoltages, 1);
 
 %% Create clamped voltage(s)
-% Decide on the clamped voltage
+% Initialize with prevClampedVoltage
+newClampedVoltages = prevClampedVoltages;
+
+% Decide on the clamped voltage for the compartment to patch
 clampedVoltage = amplitude;
 
-% Match the row count
+% Match the row count with prevClampedVoltages
+clampedVoltage = match_row_count(clampedVoltage, nRowsPrev);
 
-% Match NaNs for the other compartments
-clampedVoltage = [clampedVoltage, NaN(nSamples, nCompartments - 1)];
+% Replace the corresponding column in prevClampedVoltage 
+newClampedVoltages(:, idxCompartment) = clampedVoltage;
 
-%% Replace any voltage clamp with the new voltage clamp traces
-xolotlObject.V_clamp = clampedVoltage;
+%% Replace voltage clamp with the new voltage clamp traces
+xolotlObject.V_clamp = newClampedVoltages;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
 
@@ -103,6 +107,9 @@ OLD CODE:
 
 % Create clamped voltage vector for the compartment to patch
 clampedVoltage = amplitude * ones(nSamples, 1);
+
+% Match NaNs for the other compartments
+clampedVoltage = [clampedVoltage, NaN(nSamples, nCompartments - 1)];
 
 %}
 

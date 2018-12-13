@@ -11,12 +11,16 @@ function xolotlObject = xolotl_add_holding_current (xolotlObject, varargin)
 % Arguments:
 %       xolotlObject    - a created neuron with simulation parameters
 %                       must be a xolotl object
-%       varargin    - 'Amplitude': amplitude in nA 
+%       varargin    - 'Compartment': the compartment name to add clamp
+%                   must be a string scalar or a character vector
+%                   default == set in xolotl_compartment_index.m
+%                   - 'Amplitude': amplitude in nA 
 %                   must be a numeric scalar
 %                   default == 0 nA
 %
 % Requires:
 %       cd/parse_xolotl_object.m
+%       cd/xolotl_compartment_index.m
 %
 % Used by:
 %       cd/m3ha_xolotl_test.m
@@ -30,6 +34,7 @@ function xolotlObject = xolotl_add_holding_current (xolotlObject, varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
+compartmentDefault = '';    % set later
 amplitudeDefault = 0;       % default amplitude in nA
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -49,11 +54,14 @@ iP.FunctionName = mfilename;
 addRequired(iP, 'xolotlObject');
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'Compartment', compartmentDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'Amplitude', amplitudeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 
 % Read from the Input Parser
 parse(iP, xolotlObject, varargin{:});
+compartment = iP.Results.Compartment;
 amplitude = iP.Results.Amplitude;
 
 %% Preparation
@@ -65,20 +73,38 @@ nSamples = parsedParams.nSamples;
 nCompartments = parsedParams.nCompartments;
 previousCurrentInjections = parsedParams.externalCurrents;
 
-%% Create holding current(s)
-% Create holding current vector for the first compartment
-holdingCurrent = amplitude * ones(nSamples, 1);
+% Find the index of the compartment to patch
+idxCompartment = xolotl_compartment_index(xolotlObject, compartment);
 
-% Match zeros for the other compartments
-holdingCurrent = [holdingCurrent, zeros(nSamples, nCompartments - 1)];
+% Find the number of rows for previousCurrentInjections
+nRowsPrev = size(previousCurrentInjections, 1);
+
+%% Create holding current(s)
+% Initialize as zeros
+newHoldingCurrents = zeros(nRowsPrev, nCompartments);
+
+% Decide on a holding current for the compartment to patch
+holdingCurrent = amplitude;
+
+% Match the row count with previousCurrentInjections
+holdingCurrent = match_row_count(holdingCurrent, nRowsPrev);
+
+% Replace the corresponding column in prevClampedVoltage 
+newHoldingCurrents(:, idxCompartment) = holdingCurrent;
 
 %% Add the holding current vectors to the previously set current injections
-xolotlObject.I_ext = previousCurrentInjections + holdingCurrent;
+xolotlObject.I_ext = previousCurrentInjections + newHoldingCurrents;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
 
 %{
 OLD CODE:
+
+% Create holding current vector for the compartment to patch
+holdingCurrent = amplitude * ones(nSamples, 1);
+
+% Match zeros for the other compartments
+holdingCurrent = [holdingCurrent, zeros(nSamples, nCompartments - 1)];
 
 %}
 
