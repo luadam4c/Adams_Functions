@@ -6,29 +6,31 @@ function xolotlObject = xolotl_add_current_pulse (xolotlObject, varargin)
 % Example(s):
 %       TODO
 % Outputs:
-%       xolotlObject    - the created neuron with current pulse mechanism added
+%       xolotlObject    - a created neuron with simulation parameters set
 %                       specified as a xolotl object
 % Arguments:
-%       xolotlObject    - the created neuron with simulation parameters set
+%       xolotlObject    - a created neuron with simulation parameters set
 %                       must be a xolotl object
 %       varargin    - 'Delay': delay in ms
-%                   must be a TODO
-%                   default == TODO
+%                   must be a nonnegative scalar
+%                   default == 1100 ms
 %                   - 'Duration': duration in ms
-%                   must be a TODO
-%                   default == TODO
+%                   must be a nonnegative scalar
+%                   default == 10 ms
 %                   - 'Amplitude': amplitude in nA 
-%                   must be a TODO
-%                   default == TODO
+%                   must be a numeric scalar
+%                   default == -0.050 nA
 %
 % Requires:
 %       cd/create_pulse.m
+%       cd/parse_xolotl_object.m
 %
 % Used by:
 %       cd/m3ha_xolotl_test.m
 
 % File History:
 % 2018-12-12 Created by Adam Lu
+% 2018-12-12 Now builds upon previous I_ext
 % TODO: Make more general by adding a 'Compartments' parameter,
 %       with only the first compartment by default
 % 
@@ -58,9 +60,9 @@ addRequired(iP, 'xolotlObject');
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Delay', delayDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
 addParameter(iP, 'Duration', durationDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
 addParameter(iP, 'Amplitude', amplitudeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 
@@ -70,22 +72,18 @@ delay = iP.Results.Delay;
 duration = iP.Results.Duration;
 amplitude = iP.Results.Amplitude;
 
-% Check relationships between arguments
-% TODO
-
 %% Preparation
-% Extract the sampling interval in ms
-siMs = xolotlObject.dt;
+% Parse the xolotl object
+parsedParams = parse_xolotl_object(xolotlObject);
 
-% Extract the total duration of the simulation in ms
-totalDuration = xolotlObject.t_end;
+% Extract parameters
+nSamples = parsedParams.nSamples;
+nCompartments = parsedParams.nCompartments;
+siMs = parsedParams.siMs;
+totalDuration = parsedParams.totalDuration;
+previousCurrentInjections = parsedParams.externalCurrents;
 
-% Extract the number of neurons from the size of the default I_ext
-nCompartments = size(xolotlObject.I_ext, 2);
-
-% Get the number of samples
-nSamples = floor(totalDuration / siMs);
-
+%% Create pulse vector(s)
 % Create a pulse for the first compartment
 pulse = create_pulse('SamplingInterval', siMs, 'PulseDelay', delay, ...
                     'PulseDuration', duration, 'PulseAmplitude', amplitude, ...
@@ -94,10 +92,11 @@ pulse = create_pulse('SamplingInterval', siMs, 'PulseDelay', delay, ...
 % Match zeros for the other compartments
 pulse = [pulse, zeros(nSamples, nCompartments - 1)];
 
-%% Do the job
-xolotlObject.I_ext = pulse;
+%% Add the pulse vectors to the previously set current injections
+xolotlObject.I_ext = previousCurrentInjections + pulse;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+
 %{
 OLD CODE:
 
@@ -112,6 +111,11 @@ MS_PER_S = 1000;
 siSeconds = siMs / MS_PER_S;
 
 samplingRateHz = 1 / siSeconds;
+
+compartments = xolotlObject.find('compartment');
+nCompartments = length(compartments);
+
+xolotlObject.I_ext = pulse;
 
 %}
 

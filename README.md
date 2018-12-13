@@ -173,7 +173,7 @@ Last Updated 2018-12-13 by Adam Lu
 - [**m3ha_specs_for_fitmode.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_specs_for_fitmode.m): Specifications depending on fitMode for the GAT blockade project
 - [**m3ha_xolotl_create_neuron.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_xolotl_create_neuron.m): Creates a xolotl object for a 3-compartment neuron based on a parameters table
 - [**m3ha_xolotl_plot.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_xolotl_plot.m): Plots the simulation results from a xolotl object
-- [**m3ha_xolotl_test.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_xolotl_test.m): m3ha_xolotl_plot
+- [**m3ha_xolotl_test.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_xolotl_test.m): m3ha_xolotl_test
 - [**make_loopedparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/make_loopedparams.m): Construct parameters to change for each trial from loopmode, pnames, pislog, pmin, pmax, pinc 
 - [**mat2sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/mat2sheet.m): Converts .mat files to a spreadsheet file(s) (type specified by the 'SheetType' argument)
 - [**match_array_counts.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_array_counts.m): Matches a set of arrays to another set of arrays so that they have equal number of arrays
@@ -196,6 +196,7 @@ Last Updated 2018-12-13 by Adam Lu
 - [**parse_fitobject.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_fitobject.m): Extract information from a cfit or sfit object
 - [**parse_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_pulse.m): Parses pulse widths, endpoints, amplitudes for vector(s) containing a pulse
 - [**parse_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_pulse_response.m): Parses pulse response widths, endpoints, amplitudes for vector(s) containing a pulse response
+- [**parse_xolotl_object.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_xolotl_object.m): Parses a xolotl object
 - [**piecelinspace.m**](https://github.com/blabuva/Adams_Functions/blob/master/piecelinspace.m): Generates a piece-wise linear row vector from nodes and number of points
 - [**plot_all_abfs.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_all_abfs.m): Plots all abf files in a directory
 - [**plot_and_save_boxplot.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_and_save_boxplot.m): Plots a box plot from a grouped vector according to group
@@ -253,6 +254,8 @@ Last Updated 2018-12-13 by Adam Lu
 - [**vec2cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/vec2cell.m): Reorganize a vector or array into a cell array of partial vectors/arrays according to class
 - [**vertcat_spreadsheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/vertcat_spreadsheets.m): Combine spreadsheets using readtable, vertcat, then writetable
 - [**xolotl_add_current_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_current_pulse.m): Adds a current pulse to the first compartment of a xolotl object
+- [**xolotl_add_holding_current.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_holding_current.m): Adds a holding current to the first compartment of a xolotl object
+- [**xolotl_add_voltage_clamp.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_voltage_clamp.m): Adds a voltage clamp to the first compartment of a xolotl object
 - [**xolotl_set_simparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_set_simparams.m): Runs a simulation on a xolotl object
 - [**ZG_compute_IEI_thresholds.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_compute_IEI_thresholds.m): Compute all possible inter-event interval thresholds from the data within an all_output directory
 - [**ZG_extract_all_data.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_all_data.m): Extract each cell and concatenate sweeps into a single file under a subdirectory of its own

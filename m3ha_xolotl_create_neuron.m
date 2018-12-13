@@ -6,7 +6,7 @@ function xolotlObject = m3ha_xolotl_create_neuron (neuronParamsTableOrFile, vara
 % Example(s):
 %       TODO
 % Outputs:
-%       xolotlObject    - the created neuron
+%       xolotlObject    - a created neuron
 %                       specified as a xolotl object
 % Arguments:
 %       neuronParamsTable   
@@ -25,6 +25,7 @@ function xolotlObject = m3ha_xolotl_create_neuron (neuronParamsTableOrFile, vara
 %
 % Requires:
 %       cd/load_params.m
+%       cd/print_cellstr.m
 %
 % Used by:
 %       cd/m3ha_xolotl_test.m
@@ -177,6 +178,14 @@ xolotlObject.connect('dend1', 'dend2', 'Axial', ...
 xolotlObject.soma.add('conductance', 'Leak', 'gbar', gLeak, 'E', eLeak);
 xolotlObject.dend1.add('conductance', 'Leak', 'gbar', gLeak, 'E', eLeak);
 xolotlObject.dend2.add('conductance', 'Leak', 'gbar', gLeak, 'E', eLeak);
+
+%% Print to standard output
+% This returns a column cell array of compartments in alphabetical order
+compartments = xolotlObject.find('compartment');
+
+% Print the
+disp('These compartments have been made:');
+print_cellstr(compartments, 'OmitBraces', true, 'Delimiter', ',');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

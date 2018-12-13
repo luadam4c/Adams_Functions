@@ -6,66 +6,71 @@ function xolotlObject = xolotl_set_simparams (xolotlObject, varargin)
 % Example(s):
 %       TODO
 % Outputs:
-%       xolotlObject    - the created neuron with simulation parameters
+%       xolotlObject    - a created neuron with simulation parameters
 %                       specified as a xolotl object
 % Arguments:
-%       xolotlObject    - the created neuron
+% Note: Defaults are for xolotl version 12-Dec-2018
+%       xolotlObject    - a created neuron
 %                       must be a xolotl object
-%       varargin    - 'TimeStep': output integration time step in ms
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'TimeStep': output time step in ms
+%                   must be a positive scalar
+%                   default == 0.05 ms
 %                   - 'TimeEnd': time end in ms
-%                   must be a TODO
-%                   default == TODO
+%                   must be a nonnegative scalar
+%                   default == 5000 ms
 %                   - 'SimTimeStep': simulation integration time step in ms
-%                   must be a TODO
+%                   must be a positive scalar
 %                   default == same as 'TimeStep'
+%                   - 'Temperature': temperature of the experiment 
+%                                   in degrees Celsius
+%                   must be a numeric scalar
+%                   default == 11
+%                   - 'InitialVoltage': initial voltage values (mV)
+%                                       for each compartment
+%                   must be a numeric vector
+%                   default == -60 mV for all compartments
 %                   - 'ClosedLoop': whether the final condition is used as the 
 %                                   initial condition for the next simulation
-%                   must be a TODO
-%                   default == false
+%                   must be a logical or numeric binary scalar
+%                   default == true
+%                   - 'SolverOrder': order of numerical integration method
+%                   must be one of:
+%                       0 - standard solvers are used 
+%                           (the Exponential Euler method 
+%                               for single-compartment models 
+%                               and the implicit Crank-Nicholson method
+%                               for multi-compartment models)
+%                       4 - Runge-Kutta method
+%                   default == 0
 %
 % Requires:
-%       TODO
+%       cd/force_column_numeric.m
+%       cd/match_row_count.m
+%       cd/parse_xolotl_object.m
 %
 % Used by:
 %       cd/m3ha_xolotl_test.m
 
 % File History:
 % 2018-12-12 Created by Adam Lu
-% TODO: Set temperatures
-% TODO: Set initial voltage value
+% 2018-12-13 Now sets the temperature
+% 2018-12-13 Added solverOrder
+% 2018-12-13 Updated to use xolotl defaults
+% 2018-12-13 Now sets initial voltage value
+% TODO: approx_channels: whether approximations to computing gating functions should be used
+% TODO: output_type:  separate matrices (0) or organized in a structure (1), or organized in a structure and enable spike-detection in C++ code (2). The 0 option is useful when you only want a few outputs or don't care about lots of variable names. The latter options are useful when it's important to keep all the output data organized. In addition, the 2 option saves memory at the expense of detail.
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-timeStepDefault = 0.1;      % sample at 10 kHz by default
-timeEndDefault = 1350;      % simulate for 1350 ms by default
-simTimeStepDefault = [];    % same as timeStep by default
-closedLoopDefault = false;  % don't use the final condition as the initial
-                            %   condition for the next simulation by default
-
-%{
-celsius = 33            // Temperature: Christine probably incubated her slices 
-                        //    at 33 degrees Celsius
-                        // Note: Desteshe used 36 degrees Celsius
-ipscTimeOrig = 1000     // Time of IPSC application in the experiments (ms), 
-                        //    original value
-cpStart = 100           // Current pulse start time (ms)
-                        // This is only approximate in the experiments, 
-                        //  but the data trace is realigned 
-                        //  in singleneuronfitting.m
-timeToStabilize = 2000  // Time to ensure that state variables 
-                        //  for all channels are stabilized
-                        //  2011-07-20 to allow sim to settle
-ipscDur = 7000          // Duration of IPSC application (ms), for fitting
-                        // This is probably shorter what was applied 
-                        //  in some of the sweeps, but IPSC duration in 
-                        //  all sweeps should be longer than this
-vcRs = 0.01             // Voltage clamp series resistance in MOhm
-secondorder = 0         // Backward Euler (default)
-%}
+timeStepDefault = [];       % set later
+timeEndDefault = [];        % set later
+simTimeStepDefault = [];    % set later
+temperatureDefault = [];    % set later
+initialVoltageDefault = []; % set later
+closedLoopDefault = [];     % set later
+solverOrderDefault = [];    % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -87,45 +92,99 @@ addRequired(iP, 'xolotlObject');
 addParameter(iP, 'TimeStep', timeStepDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'TimeEnd', timeEndDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
 addParameter(iP, 'SimTimeStep', simTimeStepDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'Temperature', temperatureDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'InitialVoltage', initialVoltageDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'ClosedLoop', closedLoopDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary', 'scalar'}));
+addParameter(iP, 'SolverOrder', solverOrderDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative', 'integer'}));
 
 % Read from the Input Parser
 parse(iP, xolotlObject, varargin{:});
 timeStep = iP.Results.TimeStep;
 timeEnd = iP.Results.TimeEnd;
 simTimeStep = iP.Results.SimTimeStep;
+temperature = iP.Results.Temperature;
+initialVoltage = iP.Results.InitialVoltage;
 closedLoop = iP.Results.ClosedLoop;
-
-% Check relationships between arguments
-% TODO
+solverOrder = iP.Results.SolverOrder;
 
 %% Preparation
-% Set default simulation time step
-if isempty(simTimeStep)
-    simTimeStep = timeStep;
-end
+% Parse the xolotl object
+parsedParams = parse_xolotl_object(xolotlObject);
+
+% Extract the number of compartments
+compartments = parsedParams.compartments;
+nCompartments = parsedParams.nCompartments;
 
 %% Set simulation parameters
-% Define the time step in ms
-xolotlObject.dt = timeStep;
+% Set the time step in ms
+if ~isempty(timeStep)
+    xolotlObject.dt = timeStep;
+end
 
-% Define the end time in ms
-xolotlObject.t_end = timeEnd;
+% Set the end time in ms
+if ~isempty(timeEnd)
+    xolotlObject.t_end = timeEnd;
+end
 
-% Define the simulation time step in ms
-xolotlObject.sim_dt = simTimeStep;
+% Set the simulation time step in ms
+%   also if timeStep is newly set
+if ~isempty(simTimeStep)
+    xolotlObject.sim_dt = simTimeStep;
+elseif ~isempty(timeStep)
+    xolotlObject.sim_dt = timeStep;
+end
 
-% Define whether to simulate in a closed loop
-xolotlObject.closed_loop = closedLoop;
+% Set the temperature
+if ~isempty(temperature)
+    xolotlObject.temperature = temperature;
+end
+
+% Set whether to simulate in a closed loop
+if ~isempty(closedLoop)
+    xolotlObject.closed_loop = closedLoop;
+end
+
+% Set the method for numerical integration
+if ~isempty(solverOrder)
+    xolotlObject.solver_order = solverOrder;
+end
+
+%% Set initial voltages
+if ~isempty(initialVoltage)
+    % Force as a numeric column
+    initialVoltage = force_column_numeric(initialVoltage);
+
+    % Match the number of voltages to the number of compartments
+    initialVoltage = match_row_count(initialVoltage, nCompartments);
+
+    % Set initial voltages
+    for iCompartment = 1:nCompartments
+        % Get the current compartment name
+        compartmentName = compartments{iCompartment};
+
+        % Set the initial voltage for the current compartment
+        xolotlObject.(compartmentName).V = initialVoltage(iCompartment);
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+timeStep = 0.05;
+timeEnd = 5000;
+simTimeStep = timeStep;
+temperature = 11;
+closedLoop = true;
+solverOrder = 0;
 
 %}
 

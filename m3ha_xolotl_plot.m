@@ -6,10 +6,10 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 % Example(s):
 %       TODO
 % Outputs:
-%       xolotlObject    - the created neuron with simulation parameters
+%       xolotlObject    - a created neuron with simulation parameters
 %                       specified as a xolotl object
 % Arguments:
-%       xolotlObject    - the created neuron with simulation parameters
+%       xolotlObject    - a created neuron with simulation parameters
 %                       must be a xolotl object
 %       varargin    - 'param1': TODO: Description of param1
 %                   must be a TODO
@@ -35,7 +35,7 @@ param1Default   = [];                   % default TODO: Description of param1
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 1    % TODO: 1 might need to be changed
+if nargin < 1
     error(['Not enough input arguments, ', ...
             'type ''help %s'' for usage'], mfilename);
 end

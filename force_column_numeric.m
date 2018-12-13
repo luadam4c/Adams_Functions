@@ -49,6 +49,7 @@ function vectors = force_column_numeric (vectors, varargin)
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/plot_cfit_pulse_response.m
+%       cd/xolotl_set_simparams.m
 
 % File History:
 % 2018-10-12 Created by Adam Lu
