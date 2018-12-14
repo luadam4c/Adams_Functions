@@ -1,5 +1,5 @@
 function [files, fullPaths] = all_files(varargin)
-%% Get all the files in a given directory (optionally recursive) that matches a prefix, keyword, suffix or extension
+%% Returns all the files in a given directory (optionally recursive) that matches a prefix, keyword, suffix or extension
 % Usage: [files, fullPaths] = all_files(varargin)
 %
 % Outputs:

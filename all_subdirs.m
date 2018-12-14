@@ -1,5 +1,5 @@
 function [subDirs, fullPaths] = all_subdirs(varargin)
-%% Get all the subdirectories in a given directory
+%% Returns all the subdirectories in a given directory
 % Usage: [subDirs, fullPaths] = all_subdirs(varargin)
 %
 % Outputs:
