@@ -25,7 +25,7 @@ function varargout = xolotl_simulate (xolotlObject, varargin)
 %                   default == 0
 %
 % Used by:
-%       cd/m3ha_xolotl_test.m
+%       cd/xolotl_estimate_holding_current.m
 
 % File History:
 % 2018-12-13 Created by Adam Lu

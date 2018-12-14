@@ -28,7 +28,7 @@ function [xolotlObject, clampedVoltage] = ...
 %       cd/xolotl_compartment_index.m
 %
 % Used by:
-%       cd/m3ha_xolotl_test.m
+%       cd/xolotl_estimate_holding_current.m
 
 % File History:
 % 2018-12-13 Modified from xolotl_add_voltage_clamp.m

@@ -1,6 +1,6 @@
-function idxCompartment = xolotl_compartment_index (xolotlObject, varargin)
+function [idxCompartment, compartment] = xolotl_compartment_index (xolotlObject, varargin)
 %% Returns the index of the compartment or the default
-% Usage: idxCompartment = xolotl_compartment_index (xolotlObject, varargin)
+% Usage: [idxCompartment, compartment] = xolotl_compartment_index (xolotlObject, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -26,9 +26,11 @@ function idxCompartment = xolotl_compartment_index (xolotlObject, varargin)
 %       cd/xolotl_add_current_pulse.m
 %       cd/xolotl_add_holding_current.m
 %       cd/xolotl_add_voltage_clamp.m
+%       cd/xolotl_estimate_holding_current.m
 
 % File History:
 % 2018-12-13 Created by Adam Lu
+% 2018-12-13 Now returns the compartment name
 % 
 
 %% Hard-coded parameters
@@ -54,32 +56,32 @@ iP.FunctionName = mfilename;
 addRequired(iP, 'xolotlObject');
 
 % Add optional inputs to the Input Parser
-addOptional(iP, 'Compartment', compartmentDefault, ...
+addOptional(iP, 'compartment', compartmentDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, xolotlObject, varargin{:});
-compartment = iP.Results.Compartment;
+compartment = iP.Results.compartment;
 % param1 = iP.Results.param1;
 
 %% Preparation
-% Parse the xolotl object
-parsedParams = parse_xolotl_object(xolotlObject);
-
 % Extract the compartments
-compartments = parsedParams.compartments;
+allCompartments = xolotlObject.Children;
 
 %% Do the job
 if isempty(compartment)
     % Match the first (in alphabetical order) compartment by default
     idxCompartment = 1;
+
+    % Return this compartment name
+    compartment = allCompartments{1};
 else
+    % Find the index for the compartment with given name
     idxCompartment = ...
-        find_ind_str_in_cell(compartment, compartments, ...
+        find_ind_str_in_cell(compartment, allCompartments, ...
                             'SearchMode', 'substrings', 'IgnoreCase', true, ...
                             'MaxNum', 1);
 end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
