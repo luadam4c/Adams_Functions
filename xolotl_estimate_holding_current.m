@@ -79,7 +79,8 @@ timeToStabilize = iP.Results.TimeToStabilize;
     xolotl_compartment_index(xolotlObject, compToPatch);
 
 % Get the leak reversal potential for the compartment to patch
-leakReversal = xolotlObject.(compToPatch).get('Leak.E');
+% leakReversal = xolotlObject.(compToPatch).get('Leak.E');
+leakReversal = xolotlObject.(compToPatch).get('conductance.E');
 
 % Decide on the initial voltage
 if ~isempty(leakReversal)
