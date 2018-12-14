@@ -58,7 +58,6 @@ function xolotlObject = xolotl_set_simparams (xolotlObject, varargin)
 % 2018-12-13 Updated to use xolotl defaults
 % 2018-12-13 Now sets initial voltage value
 % TODO: approx_channels: whether approximations to computing gating functions should be used
-% TODO: output_type:  separate matrices (0) or organized in a structure (1), or organized in a structure and enable spike-detection in C++ code (2). The 0 option is useful when you only want a few outputs or don't care about lots of variable names. The latter options are useful when it's important to keep all the output data organized. In addition, the 2 option saves memory at the expense of detail.
 % 
 
 %% Hard-coded parameters

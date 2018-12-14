@@ -26,6 +26,7 @@ function xolotlObject = xolotl_add_current_pulse (xolotlObject, varargin)
 %
 % Requires:
 %       cd/create_pulse.m
+%       cd/match_row_count.m
 %       cd/parse_xolotl_object.m
 %       cd/xolotl_compartment_index.m
 %
@@ -99,6 +100,9 @@ nRowsPrev = size(previousCurrentInjections, 1);
 
 % Find the number of rows needed to accommodate both previous and new currents
 nRowsNeeded = max(nRowsPrev, nSamples);
+
+% Match the row count of previousCurrentInjections with nRowsNeeded
+previousCurrentInjections = match_row_count(previousCurrentInjections, nRowsNeeded);
 
 %% Create pulse vector(s)
 % Initialize as zeros

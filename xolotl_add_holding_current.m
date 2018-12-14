@@ -19,6 +19,7 @@ function xolotlObject = xolotl_add_holding_current (xolotlObject, varargin)
 %                   default == 0 nA
 %
 % Requires:
+%       cd/match_row_count.m
 %       cd/parse_xolotl_object.m
 %       cd/xolotl_compartment_index.m
 %

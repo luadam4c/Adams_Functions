@@ -17,35 +17,42 @@
 % Hard-coded parameters
 neuronParamsFile = fullfile('/media/adamX/m3ha/optimizer4gabab', ...
                             'initial_params/initial_params_D091710.csv');
-cpDelay = 1100;         % current pulse delay in ms
-cpDuration = 10;        % current pulse duration in ms
-cpAmplitude = -0.050;   % current pulse amplitude in nA
-timeStep = 0.1;         % output time step in ms
-initialVoltageVc = -70; % initial voltage level for voltage clamp
-initialVoltageCpr = -60;% initial voltage level for current pulse response
-timeEndVc = 1000;       % simulation end time in ms for voltage clamp
-timeEndCpr = 1350;      % simulation end time in ms for current pulse response
-simTimeStep = 0.1;      % simulation time step in ms
 closedLoop = false;     % whether to use the final state as the initial
                         %   condition for the next simulation
 solverOrder = 0;        % uses the implicit Crank-Nicholson scheme
                         %   for multi-compartment models
 temperature = 33;       % temperature of 33 degrees Celsius used by Christine
+timeStep = 0.1;         % output time step in ms
+simTimeStep = 0.1;      % simulation time step in ms
+
+initialVoltageVc = -70; % initial voltage level for voltage clamp
+timeEndVc = 1000;       % simulation end time in ms for voltage clamp
+
+initialVoltageCpr = -60;% initial voltage level for current pulse response
+timeEndCpr = 1350;      % simulation end time in ms for current pulse response
 compToPatch = 'soma';   % compartment to be patched
-holdingPotential = -60; % holding potential in mV
+holdingPotential = -65; % holding potential in mV
+cpDelay = 1100;         % current pulse delay in ms
+cpDuration = 10;        % current pulse duration in ms
+cpAmplitude = -0.050;   % current pulse amplitude in nA
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Preparation
-% Create a xolotl object based on a parameters file
+%% Create a xolotl object based on a parameters file
 m3ha = m3ha_xolotl_create_neuron(neuronParamsFile);
 
-% Set simulation parameters
-m3ha = xolotl_set_simparams(m3ha, 'TimeStep', timeStep, ...
-                    'SimTimeStep', simTimeStep, 'ClosedLoop', closedLoop, ...
-                    'Temperature', temperature, 'SolverOrder', solverOrder);
+%% Set general simulation parameters
+m3ha = xolotl_set_simparams(m3ha, 'ClosedLoop', closedLoop, ...
+                    'SolverOrder', solverOrder, 'Temperature', temperature, ...
+                    'TimeStep', timeStep, 'SimTimeStep', simTimeStep);
 
-%% Find the holding current
+%% Find the holding current necessary to match the holding potential
+holdingCurrent = xolotl_find_holding_current(m3ha, holdingPotential);
+
+function holdingCurrent = xolotl_find_holding_current(m3ha, holdingPotential);
+%% Finds the holding current necessary to match a certain holding potential
+
+
 % Set simulation parameters for voltage clamp
 m3ha = xolotl_set_simparams(m3ha, 'InitialVoltage', initialVoltageVc, ...
                             'TimeEnd', timeEndVc);
@@ -55,10 +62,13 @@ m3haTest = xolotl_add_voltage_clamp(m3ha, 'Compartment', compToPatch, ...
                                     'Amplitude', holdingPotential);
 
 % Simulate the voltage clamp experiment
-% TODO: holdingCurrent = xolotl_simulate_voltage_clamp(m3haTest);
+% TODO: holdingCurrents = xolotl_simulate(m3haTest, 'OutputType', 0);
+
+% Find the index for the compartment to patch
+idxCompToPatch = xolotl_compartment_index(m3ha, compToPatch);
 
 % Find the holding current necessary to match the holding potential
-holdingCurrent = 0;
+holdingCurrent = holdingCurrents(end, idxCompToPatch);
 
 %% Simulate the current pulse protocol
 % Set simulation parameters for current pulse response

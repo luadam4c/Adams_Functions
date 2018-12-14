@@ -23,6 +23,7 @@ function [xolotlObject, clampedVoltage] = ...
 %                   default == -70 mV
 %
 % Requires:
+%       cd/match_row_count.m
 %       cd/parse_xolotl_object.m
 %       cd/xolotl_compartment_index.m
 %
