@@ -111,7 +111,7 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %       cd/plot_traces_abf.m
 %       cd/plot_traces_EEG.m
 %       cd/compute_and_plot_evoked_LFP.m
-%       cd/extract_current_vectors.m
+%       cd/extract_channel.m
 %       cd/identify_CI.m
 
 % File history: 

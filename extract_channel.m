@@ -1,6 +1,6 @@
-function iVecs = extract_current_vectors (abfFileName, varargin)
+function iVecs = extract_channel (abfFileName, varargin)
 %% Extracts current vectors from a .abf file
-% Usage: iVecs = extract_current_vectors (abfFileName, varargin)
+% Usage: iVecs = extract_channel (abfFileName, varargin)
 % Explanation:
 %       TODO
 % Example(s):

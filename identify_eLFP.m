@@ -26,7 +26,7 @@ function isEvokedLfp = identify_eLFP (iVecsORfileName, varargin)
 %                   default == 2
 %
 % Requires:
-%       cd/extract_current_vectors.m
+%       cd/extract_channel.m
 %       cd/identify_repetitive_pulses.m
 %
 % Used by:    
@@ -39,7 +39,7 @@ function isEvokedLfp = identify_eLFP (iVecsORfileName, varargin)
 % 2018-10-03 - Updated usage of parse_abf.m
 % 2018-12-15 - Made 'MinSweeps' an optional parameter with default 2
 % 2018-12-15 - Moved code to identify_repetitive_pulses.m
-% 2018-12-15 - Moved code to extract_current_vectors.m
+% 2018-12-15 - Moved code to extract_channel.m
 % 
 
 %% Hard-coded parameters
@@ -89,7 +89,7 @@ if ischar(iVecsORfileName) || isstring(iVecsORfileName)
     fileName = iVecsORfileName;
 
     % Extract the current vectors
-    iVecs = extract_current_vectors(fileName, 'ChannelTypes', channelTypes);
+    iVecs = extract_channel(fileName, 'ChannelTypes', channelTypes);
 else
     % The first argument are the current vectors
     iVecs = iVecsORfileName;
