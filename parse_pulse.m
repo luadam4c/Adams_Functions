@@ -44,6 +44,7 @@ function [parsedParams, parsedData] = parse_pulse (vectors, varargin)
 
 % File History:
 % 2018-10-10 Created by Adam Lu
+% 2018-12-15 Now allows vectors to have no pulse (will return NaNs)
 % 
 
 %% Hard-coded parameters
@@ -93,18 +94,19 @@ idxMidpoint = round((idxAfterStart + idxBeforeEnd) ./ 2);
 pulseWidthSamples = idxBeforeEnd - idxBeforeStart;
 
 % Find the baseline indices
-indBase = arrayfun(@(x, y, z) [1:x, y:z], ...
+indBase = arrayfun(@(x, y, z) find_baseline_indices(x, y, z), ...
                     idxBeforeStart, idxAfterEnd, nSamples, ...
                     'UniformOutput', false);
 
-% Find the average baseline value
+% Find the average baseline value (could be NaN)
 baseValue = cellfun(@(x, y) mean(x(y)), vectors, indBase);
 
 % Find the pulse indices
-indPulse = arrayfun(@(x, y) [x:y], idxAfterStart, idxBeforeEnd, ...
+indPulse = arrayfun(@(x, y) find_pulse_indices(x, y), ...
+                    idxAfterStart, idxBeforeEnd, ...
                     'UniformOutput', false);
 
-% Find the average pulse value
+% Find the average pulse value (could be NaN)
 pulseValue = cellfun(@(x, y) mean(x(y)), vectors, indPulse);
 
 % Find the pulse amplitudes
@@ -116,6 +118,34 @@ parsedParams = table(nSamples, pulseWidthSamples, ...
                     idxAfterStart, idxAfterEnd, idxMidpoint, ...
                     baseValue, pulseValue, pulseAmplitude);
 parsedData = table(vectors, indBase, indPulse);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function indBase = find_baseline_indices(idxBeforeStart, idxAfterEnd, nSamples)
+%% Returns the baseline indices
+
+% Decide on the baseline indices based on whether a pulse was found
+if isnan(idxBeforeStart) || isnan(idxAfterEnd) || isnan(nSamples)
+    % No pulse is found, the entire trace is baseline
+    indBase = 1:nSamples;
+else
+    % Everything outside the pulse is baseline
+    indBase = [1:idxBeforeStart, idxAfterEnd:nSamples];
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function indPulse = find_pulse_indices(idxAfterStart, idxBeforeEnd)
+%% Returns the pulse indices
+
+% Decide on the pulse indices based on whether a pulse was found
+if isnan(idxBeforeStart) || isnan(idxAfterEnd) || isnan(nSamples)
+    % No pulse is found
+    indPulse = [];
+else
+    % Use the restrictive pulse endpoints
+    indPulse = idxAfterStart:idxBeforeEnd;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

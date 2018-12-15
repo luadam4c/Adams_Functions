@@ -204,8 +204,7 @@ nFiles = numel(fileNames);
 %% Loop through all .abf files
 allParsedParamsCell = cell(nFiles, 1);
 allParsedDataCell = cell(nFiles, 1);
-%parfor iFile = 1:nFiles
-for iFile = 1:nFiles
+parfor iFile = 1:nFiles
     % Parse the abf file
     [allParsedParamsCell{iFile}, allParsedDataCell{iFile}] = ...
         parse_abf(fileNames{iFile}, 'Verbose', verbose, ...

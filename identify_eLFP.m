@@ -19,6 +19,7 @@ function [isEvokedLfp] = identify_eLFP (iVecsORfileName, varargin)
 %
 % Requires:
 %       cd/parse_abf.m
+%       cd/parse_pulse.m
 %
 % Used by:    
 %       cd/parse_abf.m
@@ -115,13 +116,43 @@ if nSweeps < minSweeps
     return;
 end
 
+% Parse the current pulse(s)
+parsedParams = parse_pulse(iVecs);
+
+% Extract the current pulse response endpoints, midpoints and amplitudes
+idxCpStarts = parsedParams.idxBeforeStart;
+idxCpEnds = parsedParams.idxBeforeEnd;
+idxCpMids = parsedParams.idxMidpoint;
+ampCps = parsedParams.pulseAmplitude;
+
+% Check whether the variation of amplitudes and starting indices
+%   are small enough
+if nanstd(ampCps) / abs(nanmean(ampCps)) < coeffVarThreshold && ...
+    nanstd(idxCpStarts) / abs(nanmean(idxCpStarts)) < coeffVarThreshold
+    isEvokedLfp = true;
+else
+    isEvokedLfp = false;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%{
+OLD CODE:
+
+ampCp = iVecs(idxCpMid, iSwp);
+
+disp('done');
+
+[~, ~, ~, ~, iVecs, ~] = ...
+    parse_abf(fileName, 'Verbose', false, ...
+                'ChannelTypes', channelTypes);
+
 % Identify the current pulse response endpoints and midpoints
 idxCpStarts = zeros(nSweeps, 1);
 idxCpEnds = zeros(nSweeps, 1);
 idxCpMids = zeros(nSweeps, 1);
 ampCps = zeros(nSweeps, 1);
-%parfor iSwp = 1:nSweeps
-for iSwp = 1:nSweeps
+parfor iSwp = 1:nSweeps
     % Identify the current pulse endpoints
     [idxCpStart, idxCpEnd] = ...
         find_pulse_endpoints(iVecs(:, iSwp));
@@ -146,27 +177,11 @@ for iSwp = 1:nSweeps
     ampCps(iSwp) = ampCp;
 end
 
-% Check whether the variation of amplitudes and starting indices
-%   are small enough
-if nanstd(ampCps) / abs(nanmean(ampCps)) < coeffVarThreshold && ...
-    nanstd(idxCpStarts) / abs(nanmean(idxCpStarts)) < coeffVarThreshold
-    isEvokedLfp = true;
-else
-    isEvokedLfp = false;
-end
+% Identify the current pulse response endpoints and midpoints
+[idxCpStarts, idxCpEnds] = find_pulse_endpoints(iVecs);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%{
-OLD CODE:
-
-ampCp = iVecs(idxCpMid, iSwp);
-
-disp('done');
-
-[~, ~, ~, ~, iVecs, ~] = ...
-    parse_abf(fileName, 'Verbose', false, ...
-                'ChannelTypes', channelTypes);
+% Identify the current pulse response midpoints
+idxCpMids = ceil(mean([idxCpStarts, idxCpEnds]), 2);
 
 %}
 
