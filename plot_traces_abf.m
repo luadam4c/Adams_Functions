@@ -27,7 +27,6 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'overlapped'    - overlapped in a single plot
 %                       'parallel'      - in parallel in subplots
-%                   must be consistent with plot_traces_abf.m
 %                   default == 'overlapped'
 %                   - 'Individually': whether sweeps are plotted individually
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -88,6 +87,7 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 %
 % Used by:
 %       cd/plot_all_abfs.m
+%       cd/plot_protocols.m
 %       cd/plot_traces_EEG.m
 %       /media/shareX/share/Adam/Sample_files_from_Katie/test_sweeps.m TODO: update this file
 

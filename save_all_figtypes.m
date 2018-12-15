@@ -17,6 +17,7 @@ function save_all_figtypes (fig, filename, varargin)
 %       cd/isfigtype.m
 %
 % Used by:
+%       cd/compute_and_plot_average_response.m
 %       cd/create_waveform_train.m
 %       cd/create_pulse_train_series.m
 %       cd/m3ha_plot_individual_traces.m
@@ -24,7 +25,6 @@ function save_all_figtypes (fig, filename, varargin)
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_tuning_map.m
-%       cd/compute_and_plot_evoked_LFP.m
 %       ~/minEASE/compute_plot_average_PSC_traces.m
 %       ~/minEASE/detect_gapfree_events.m
 %       ~/RTCl/raster_plot.m

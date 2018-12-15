@@ -22,13 +22,13 @@ function h = plot_fields (structArray, varargin)
 %                   - 'YLimits': limits of y axis
 %                   must be a 2-element increasing numeric vector
 %                   default == []
-%                   - 'PTicks': x tick values for the parameter values
+%                   - 'XTicks': x tick values for the parameter values
 %                   must be a numeric vector
 %                   default == []
-%                   - 'PTickLabels': x tick labels in place of parameter values
+%                   - 'XTickLabels': x tick labels in place of parameter values
 %                   must be a cell array of character vectors/strings
 %                   default == {}
-%                   - 'PLabel': label for the parameter
+%                   - 'XLabel': label for the parameter
 %                   must be a string scalar or a character vector
 %                   default == 'Parameter'
 %                   - 'FieldLabels': label for the field
@@ -42,6 +42,9 @@ function h = plot_fields (structArray, varargin)
 %                   - 'FigNumber': figure number for creating figure
 %                   must be a positive integer scalar
 %                   default == []
+%                   - 'OutFolder': output folder if FigNames not set
+%                   must be a string scalar or a character vector
+%                   default == 'Parameter'
 %                   - 'FigNames': figure names for saving
 %                   must be a cell array of character vectors/strings
 %                   default == {}
@@ -57,11 +60,10 @@ function h = plot_fields (structArray, varargin)
 %       cd/isfigtype.m
 %
 % Used by:    
-%       cd/plot_all_abfs.m
+%       cd/plot_protocols.m
 
 % File History:
 % 2018-09-26 Created by Adam Lu
-% TODO: Add 'XTickLabel' and 'XLabel' as optional arguments
 % 
 
 %% Hard-coded parameters
@@ -77,6 +79,7 @@ fieldLabelsDefault = {};
 singleColorDefault = [0, 0, 1];
 figTitlesDefault = {};          % set later
 figNumberDefault = [];          % invisible figure by default
+outFolderDefault = pwd;
 figNamesDefault = {};
 figTypesDefault = 'png';
 
@@ -120,6 +123,8 @@ addParameter(iP, 'FigTitles', figTitlesDefault, ...
     @(x) iscellstr(x) || isstring(x));
 addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigNames', figNamesDefault, ...
     @(x) iscellstr(x) || isstring(x));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
@@ -137,6 +142,7 @@ fieldLabels = iP.Results.FieldLabels;
 singlecolor = iP.Results.SingleColor;
 figTitles = iP.Results.FigTitles;
 figNumber = iP.Results.FigNumber;
+outFolder = iP.Results.OutFolder;
 figNames = iP.Results.FigNames;
 [~, figtypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
@@ -171,6 +177,12 @@ end
 
 % Get all the fields of the structArray as a cell array
 allFields = fieldnames(structArray);
+
+% Create figure names if not provided
+if isempty(figNames)
+    figNames = cellfun(@(x) fullfile(outFolder, [x, '_vs_', xLabel]), ...
+                        allFields, 'UniformOutput', false);
+end
 
 % Count the number of fields
 nFieldsOrig = numel(allFields);
@@ -245,10 +257,10 @@ for iField = 1:nFields
     end
     
     % Create a figure
-    h = figure;
+    h(iField) = figure;
     
     % Plot the tuning curve
-    h = plot_tuning_curve(xValues, field, 'PisLog', xIsLog, ...
+    h(iField) = plot_tuning_curve(xValues, field, 'PisLog', xIsLog, ...
                         'XLimits', xLimits, 'YLimits', yLimits, ...
                         'PTicks', xTicks, 'PTickLabels', xTickLabels, ...
                         'PLabel', 'suppress', ...

@@ -30,14 +30,15 @@ Last Updated 2018-12-15 by Adam Lu
 - [**check_subdir.m**](https://github.com/blabuva/Adams_Functions/blob/master/check_subdir.m): Checks if needed subdirectory(ies) exist in parentDirectory
 - [**check_within_bounds.m**](https://github.com/blabuva/Adams_Functions/blob/master/check_within_bounds.m): Checks whether all values are within bounds and print the ones that aren't
 - [**choose_random_values.m**](https://github.com/blabuva/Adams_Functions/blob/master/choose_random_values.m): Chooses random values from bounds
+- [**choose_stimulation_type.m**](https://github.com/blabuva/Adams_Functions/blob/master/choose_stimulation_type.m): Chooses the stimulation type based on the response type
 - [**clcf.m**](https://github.com/blabuva/Adams_Functions/blob/master/clcf.m): clcf.m
 - [**color_index.m**](https://github.com/blabuva/Adams_Functions/blob/master/color_index.m): Find the colormap index for a given value with boundaries set by edges
 - [**combine_loopedparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_loopedparams.m): TODO
 - [**combine_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_sweeps.m): Combines sweeps that begin with expLabel in dataDirectory under dataMode
-- [**compute_and_plot_average_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_and_plot_average_pulse_response.m): Computes and plots an average pulse response with its stimulus
+- [**compute_all_pulse_responses.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_all_pulse_responses.m): Filter and extract all pulse response and compute features
+- [**compute_and_plot_average_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_and_plot_average_response.m): Computes and plots an average pulse response with its stimulus
 - [**compute_and_plot_concatenated_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_and_plot_concatenated_trace.m): Computes and plots concatenated traces from parsed ABF file results
-- [**compute_and_plot_evoked_LFP.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_and_plot_evoked_LFP.m): Computes and plots an evoked local field potential with its stimulus
-- [**compute_average_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_average_pulse_response.m): Computes an average pulse response
+- [**compute_average_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_average_pulse_response.m): Computes an average pulse response as well as its features
 - [**compute_average_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_average_trace.m): Computes the average of traces that are not necessarily the same length
 - [**compute_baseline_noise.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_baseline_noise.m): Computes the baseline noise from a set of data vectors, time vectors and baseline windows
 - [**compute_conductance.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_conductance.m): Compute theoretical conductance curve for the GABA_B IPSC used by dynamic clamp
@@ -66,6 +67,7 @@ Last Updated 2018-12-15 by Adam Lu
 - [**correct_unbalanced_bridge.m**](https://github.com/blabuva/Adams_Functions/blob/master/correct_unbalanced_bridge.m): Shifts a current pulse response to correct the unbalanced bridge
 - [**count_samples.m**](https://github.com/blabuva/Adams_Functions/blob/master/count_samples.m): Counts the number of samples whether given an array or a cell array
 - [**count_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/count_vectors.m): Counts the number of vectors whether given an array or a cell array
+- [**create_average_time_vector.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_average_time_vector.m): Creates an average time vector from a set of time vectors
 - [**create_colormap.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_colormap.m): Returns colorMap based on the number of colors requested
 - [**create_input_file.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_input_file.m): Create an input spreadsheet file from data file names in a directory based on default parameters
 - [**create_latex_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_latex_string.m): Creates a LaTeX string from an equation used for fitting
@@ -89,6 +91,7 @@ Last Updated 2018-12-15 by Adam Lu
 - [**extract_fullpaths.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fullpaths.m): Extracts full paths from a files structure array
 - [**extract_subvectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_subvectors.m): Extracts subvectors from vectors, given either endpoints or value windows
 - [**files2contents.m**](https://github.com/blabuva/Adams_Functions/blob/master/files2contents.m): Replaces file names with file contents in a cell array of strings
+- [**filter_and_extract_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/filter_and_extract_pulse_response.m): Filters and extracts pulse response(s) from a .abf file
 - [**find_custom.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_custom.m): Same as find() but takes custom parameter-value pairs
 - [**find_first_deviant.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_first_deviant.m): Finds the index of the first deviant from preceding peers in a time series
 - [**find_first_jump.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_first_jump.m): Finds the index of the first jump in a time series
@@ -216,6 +219,7 @@ Last Updated 2018-12-15 by Adam Lu
 - [**plot_grouped_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_grouped_histogram.m): Plot a grouped histogram
 - [**plot_grouped_scatter.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_grouped_scatter.m): Plot and save a grouped scatter plot with 95% confidence ellipses
 - [**plot_pdf.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pdf.m): Plots scaled pdf fit of data X and return vectors for the plots
+- [**plot_protocols.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_protocols.m): Computes features for each file according to protocol type
 - [**plot_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pulse.m): Plots pulses, marks the parsed endpoints and displays total number of sweeps
 - [**plot_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pulse_response.m): Plots pulse responses, marks the parsed baseline and steady state bounds
 - [**plot_pulse_response_with_stimulus.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pulse_response_with_stimulus.m): Plots a pulse response with its stimulus

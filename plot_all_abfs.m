@@ -74,10 +74,9 @@ function [abfParamsTable, abfDataTable, abfParamsStruct, ...
 %
 % Requires:
 %       cd/all_files.m
-%       cd/compute_and_plot_evoked_LFP.m
 %       cd/compute_and_plot_concatenated_trace.m
 %       cd/parse_all_abfs.m
-%       cd/plot_fields.m
+%       cd/plot_protocols.m
 %       cd/plot_traces_abf.m
 %       cd/plot_FI.m
 %       cd/isfigtype.m
@@ -291,114 +290,19 @@ parfor iFile = 1:nFiles
     end
 end
 
-%% Deal with LFP protocols
-% TODO: Make this part its own function:
-% [lfpFeaturesStruct, lfpFileNames, xTickLabels, lfpFigNames] = 
-%       compute_and_plot_LFP_features(fileNames, 'AbfParams', abfParams ...
-%                                       'OutFolder', outFolder)
+%% Deal with special protocols
+% Plot all graphs associated with GABA-B IPSC protocols
+featuresTableGabab = ...
+    plot_protocols('EvokedGABAB', ...
+                    'FileNames', fileNames, 'OutFolder', outFolder, ...
+                    'AbfParamsCell', abfParamsCell, 'AbfDataCell', abfDataCell);
 
-% Set the outFolder for LFP results
-outFolderLfp = fullfile(outFolder, 'LFPs');
+% Plot all graphs associated with LFP protocols
+featuresTableLfp = ...
+    plot_protocols('EvokedLFP', ...
+                    'FileNames', fileNames, 'OutFolder', outFolder, ...
+                    'AbfParamsCell', abfParamsCell, 'AbfDataCell', abfDataCell);
 
-% Compute LFP features and plot averaged LFP traces
-featuresLfpAll = cell(nFiles, 1);
-parfor iFile = 1:nFiles
-    % Extract from cell arrays
-    abfParams = abfParamsCell{iFile};
-
-    % Extract some parameters
-    isEvokedLfp = abfParams.isEvokedLfp;
-
-    % Only do anything for evoked LFP protocols
-    if isEvokedLfp
-        % Extract from cell arrays
-        fileName = fileNames{iFile};
-        abfData = abfDataCell{iFile};
-
-        % Extract some more parameters
-        timeUnits = abfParams.timeUnits;
-        channelTypes = abfParams.channelTypes;
-        channelUnits = abfParams.channelUnits;
-        channelLabels = abfParams.channelLabels;
-
-        % Compute the averaged evoked LFP and plot it
-        [tVecLfp, ~, ~, featuresLfp] = ...
-            compute_and_plot_evoked_LFP(fileName, ...
-                'ParsedParams', abfParams, 'ParsedData', abfData, ...                
-                'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
-                'ChannelLabels', channelLabels, 'OutFolder', outFolderLfp, ...
-                'PlotFlag', true, 'SaveFlag', true);
-
-        % Set the time endpoints for individual traces
-        if isEvokedLfp
-            timeStart = min(tVecLfp);
-            timeEnd = max(tVecLfp);
-        else
-            timeStart = timeStartUser;
-            timeEnd = timeEndUser;
-        end
-
-        % Plot individual traces
-        %   Note: Must make outFolder empty so that outputs
-        %           be plotted in subdirectories
-        plot_traces_abf(fileName, ...
-            'ParsedParams', abfParams, 'ParsedData', abfData, ...
-            'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
-            'ChannelLabels', channelLabels, ...
-            'Verbose', false, 'ExpMode', expMode, ...
-            'PlotMode', plotMode, 'Individually', individually, ...
-            'OutFolder', '', 'TimeUnits', timeUnits, ...
-            'TimeStart', timeStart, 'TimeEnd', timeEnd, ...
-            'FigTypes', figTypes);        
-        
-    else
-        % Make outputs empty
-        featuresLfp = [];
-    end
-
-    % Save in cell arrays
-    featuresLfpAll{iFile} = featuresLfp;
-end
-
-% If any LFPs were computed, plot a time series for the features
-% Remove empty entries
-isEmpty = cellfun(@isempty, featuresLfpAll);
-lfpFeaturesCell = featuresLfpAll(~isEmpty);
-lfpFileNames = fileNames(~isEmpty);
-
-% Convert to a structure array
-lfpFeaturesStruct = [lfpFeaturesCell{:}];
-
-% Plot each field of the structure as its own time series
-if ~isempty(lfpFeaturesStruct)    
-    % Check if output directory exists
-    check_dir(outFolderLfp);
-
-    % Set an x label
-    xLabel = 'fileNames';
-    
-    % Get all field names
-    lfpFieldNames = fieldnames(lfpFeaturesStruct);
-    
-    % Get the file bases
-    [~, lfpFileBases, ~] = ...
-        cellfun(@(x) fileparts(x), lfpFileNames, 'UniformOutput', false);
-
-    % Create x tick labels
-    xTickLabels = cellfun(@(x) strrep(x, '_', '\_'), lfpFileBases, ...
-                            'UniformOutput', false);
-
-    % Create figure names
-    lfpFigNames = ...
-        cellfun(@(x) fullfile(outFolderLfp, [x, '_vs_', xLabel]), ...
-                lfpFieldNames, 'UniformOutput', false);
-
-    % Plot fields
-    plot_fields(lfpFeaturesStruct, ...
-                    'XTickLabels', xTickLabels, ...
-                    'XLabel', xLabel, ...
-                    'FigNames', lfpFigNames);
-end
 
 %% Plot individual traces
 parfor iFile = 1:nFiles
@@ -409,11 +313,12 @@ parfor iFile = 1:nFiles
     % Extract some parameters
     isCI = abfParams.isCI;
     isEvokedLfp = abfParams.isEvokedLfp;
+    isEvokedGabab = abfParams.isEvokedGabab;
 
     % Don't do this for current injection protocols 
-    %   and evoked LFP protocols
+    %   or evoked GABA-B IPSC protocols or evoked LFP protocols
     %   because individual traces are already plotted
-    if ~isCI && ~isEvokedLfp
+    if ~isCI && ~isEvokedLfp && ~isEvokedGabab
         % Extract from cell arrays
         fileName = fileNames{iFile};
 
@@ -720,6 +625,36 @@ if isempty(fileNames)
     fileNames = extract_fullpath(files);
 end
 
+if isEvokedLfp
+    timeStart = min(tVecLfp);
+    timeEnd = max(tVecLfp);
+else
+    timeStart = timeStartUser;
+    timeEnd = timeEndUser;
+end
+
+plot_fields(lfpFeaturesStruct, ...
+                'XTickLabels', xTickLabels, ...
+                'XLabel', xLabel, ...
+                'FigNames', lfpFigNames);
+
+
+% Get all field names
+lfpFieldNames = fieldnames(lfpFeaturesStruct);
+
+% Create figure names
+lfpFigNames = ...
+    cellfun(@(x) fullfile(outFolderLfp, [x, '_vs_', xLabel]), ...
+            lfpFieldNames, 'UniformOutput', false);
+
+% Remove empty entries
+isEmpty = cellfun(@isempty, featuresLfpCell);
+lfpFeaturesCell = featuresLfpCell(~isEmpty);
+lfpFileNames = fileNames(~isEmpty);
+
+if ~isempty(lfpFeaturesStruct)
+
+outFolderLfp = fullfile(outFolder, 'LFPs');
 
 %}
 

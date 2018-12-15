@@ -30,7 +30,7 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %                           channelLabelsStr
 %                           isCI
 %                           isEvokedLfp
-%                           isGabab
+%                           isEvokedGabab
 %                           channelTypes
 %                           channelUnits
 %                           channelLabels
@@ -138,7 +138,7 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %               so that abf2load does not have to be called
 % 2018-12-15 - Added otherVecs in parsedData
 % 2018-12-15 - Added the 'ExtractChannels' flag
-% 2018-12-15 - Added isGabab to parsedParams
+% 2018-12-15 - Added isEvokedGabab to parsedParams
 
 %% Hard-coded constants
 US_PER_MS = 1e3;            % number of microseconds per millisecond
@@ -453,11 +453,13 @@ if identifyProtocols
     isCI = identify_CI_protocol(iVecs, siUs);
 
     % Identify whether this is an evoked LFP protocol
-    isEvokedLfp = identify_eLFP_protocol(iVecs, 'ChannelTypes', channelTypes, ...
+    isEvokedLfp = ...
+        identify_eLFP_protocol(iVecs, 'ChannelTypes', channelTypes, ...
                                         'MinSweeps', minSweepsElfp);
 
     % Identify whether this is a GABA-B IPSC protocol
-    isGabab = identify_gabab_protocol(vVecs, 'ChannelTypes', channelTypes, ...
+    isEvokedGabab = ...
+        identify_gabab_protocol(vVecs, 'ChannelTypes', channelTypes, ...
                                         'MinSweeps', minSweepsGabab);
 end
 
@@ -476,7 +478,7 @@ if verbose
     if identifyProtocols
         fprintf('Is a current injection protocol = %s\n', num2str(isCI));
         fprintf('Is an evoked LFP protocol = %s\n', num2str(isEvokedLfp));
-        fprintf('Is an evoked GABA-B IPSC protocol = %s\n', num2str(isGabab));
+        fprintf('Is an evoked GABA-B IPSC protocol = %s\n', num2str(isEvokedGabab));
     end
 end
 
@@ -500,7 +502,7 @@ if nargout >= 1
     if identifyProtocols
         parsedParams.isCI = isCI;
         parsedParams.isEvokedLfp = isEvokedLfp;
-        parsedParams.isGabab = isGabab;
+        parsedParams.isEvokedGabab = isEvokedGabab;
     end
     parsedParams.channelTypes = channelTypes;
     parsedParams.channelUnits = channelUnits;

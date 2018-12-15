@@ -1,25 +1,23 @@
-function [tVec, respVec, stimVec, features, h] = ...
-                compute_and_plot_average_pulse_response (fileName, ...
-                                                    responseType, varargin)
+function [tVecAvg, respAvg, stimAvg, featuresAvg, h] = ...
+            compute_and_plot_average_response (fileName, responseType, varargin)
 %% Computes and plots an average pulse response with its stimulus
-% Usage: [tVec, respVec, stimVec, features, h] = ...
-%               compute_and_plot_average_pulse_response (fileName, ...
-%                                                   responseType, varargin)
+% Usage: [tVecAvg, respAvg, stimAvg, featuresAvg, h] = ...
+%           compute_and_plot_average_response (fileName, responseType, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       [tVec, respVec, stimVec, features, h] = ...
-%               compute_and_plot_average_pulse_response('20180914C_0001', 'Voltage');
+%       [tVecAvg, respAvg, stimAvg, featuresAvg, h] = ...
+%               compute_and_plot_average_response('20180914C_0001', 'Voltage');
 % Outputs:
-%       tVecLfp     - time vector for evoked local field potential
+%       tVecAvg     - time vector for average response
 %                   specified as a numeric column vector
-%       vVecLfp     - voltage trace of evoked local field potential
+%       respAvg     - average pulse response vector
 %                   specified as a numeric column vector
-%       iVecStim    - current trace of stimulation current pulse
+%       stimAvg     - average stimulation pulse vector
 %                   specified as a numeric column vector
-%       features    - computed LFP features, a table
-%                       peakAmplitude
-%                       peakSlope
+%       featuresAvg - computed features of the average pulse response, 
+%                       returned by compute_average_pulse_response.m
+%                   specified as a table of 1 row
 %       h           - handle to figure
 %                   specified as a figure handle
 % Arguments:    
@@ -85,10 +83,12 @@ function [tVec, respVec, stimVec, features, h] = ...
 %       cd/save_all_figtypes.m
 %
 % Used by:
-%       cd/compute_and_plot_evoked_LFP.m
+%       cd/plot_protocols.m
 
 % File History:
 % 2018-12-15 - Moved from compute_and_plot_evoked_LFP.m
+% 2018-12-15 - Now used directly in plot_protocols.m
+% 2018-12-15 - Now uses the file name as the row name for the feature table
 
 %% Hard-coded parameters
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
@@ -192,7 +192,7 @@ if isempty(outFolder)
 end
 
 %% Average the pulse and pulse responses
-[tVec, respVec, stimVec, labels] = ...
+[tVecAvg, respAvg, stimAvg, featuresAvg] = ...
     compute_average_pulse_response(fileName, responseType, ...
         'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
         'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
@@ -201,23 +201,10 @@ end
         'BaselineLengthMs', baselineLengthMs, ...
         'ResponseLengthMs', responseLengthMs);
 
-%% Compute features of the average pulse response
-% Compute the sampling interval
-siMs = tVec(2) - tVec(1);
-
-% Parse the average pulse response vector
-features = parse_pulse_response(respVec, siMs, ...
-                                'PulseVectors', stimVec, ...
-                                'SameAsPulse', true, ...
-                                'MeanValueWindowMs', baselineLengthMs);
-
-% Add labels to features
-features.labels = labels;
-
 %% Plot the evoked local field potential with the stimulation pulse
 if plotFlag
     % Save in a single params structure
-    params = table2struct(features);
+    params = table2struct(featuresAvg);
     params.OutFolder = outFolder;
     params.SaveFlag = saveFlag;
     params.FigTypes = figTypes;
@@ -226,7 +213,7 @@ if plotFlag
     params.ResponseName = responseName;
 
     % Plot the pulse response with the stimulation pulse
-    h = plot_pulse_response_with_stimulus(tVec, respVec, stimVec, params);
+    h = plot_pulse_response_with_stimulus(tVecAvg, respAvg, stimAvg, params);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

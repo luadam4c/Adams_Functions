@@ -39,20 +39,25 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %                   - 'SamplingIntervalMs': sampling interval in ms
 %                   must be a positive vector
 %                   default == 1e3 ms (1 second)
+%                   - 'TimeStart': start time in ms
+%                   must be a positive vector
+%                   default == 0
 %
 % Requires:
 %       cd/match_dimensions.m
 %       cd/match_reciprocals.m
 %
-% Used by:    
+% Used by:
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
+%       cd/create_average_time_vector.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_xolotl_plot.m
 
 % File History:
 % 2018-10-25 Adapted from make_time_column.m in Marks_Functions
 % 2018-11-28 Added 'TimeUnits' and 'SamplingIntervalMs' as optional arguments
+% 2018-12-15 Added 'TimeStart' as an optional argument
 % 
 
 %% Hard-coded constants
@@ -69,6 +74,7 @@ timeUnitsDefault = 's';                 % return seconds by default
 samplingRateHzDefault = [];             % set by match_reciprocals.m
 samplingIntervalUsDefault = [];         % set by match_reciprocals.m
 samplingIntervalMsDefault = [];         % set by match_reciprocals.m
+timeStartDefault = 0;                   % start at 0 by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -98,6 +104,10 @@ addParameter(iP, 'SamplingIntervalUs', samplingIntervalUsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'positive'}));
 addParameter(iP, 'SamplingIntervalMs', samplingIntervalMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'positive'}));
+addParameter(iP, 'SamplingIntervalMs', samplingIntervalMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector', 'positive'}));
+addParameter(iP, 'TimeStart', timeStartDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
 
 % Read from the Input Parser
 parse(iP, nSamples, varargin{:});
@@ -106,6 +116,7 @@ timeUnits = validatestring(iP.Results.TimeUnits, validTimeUnits);
 samplingRateHz = iP.Results.SamplingRateHz;
 samplingIntervalUs = iP.Results.SamplingIntervalUs;
 samplingIntervalMs = iP.Results.SamplingIntervalMs;
+tStart = iP.Results.TimeStart;
 
 %% Preparation
 % Count the number of vectors to build
@@ -132,20 +143,23 @@ siSeconds = match_reciprocals(siSeconds, samplingRateHz);
 % Match the dimensions of siSeconds to that of nSamples
 siSeconds = match_dimensions(siSeconds, dimOutput);
 
+% Match the dimensions of tStart to that of nSamples
+tStart = match_dimensions(tStart, dimOutput);
+
 %% Do the job
 if nVectors == 1
-    timeVecs = create_time_vectors_helper(nSamples, siSeconds, ...
-                                            boundaryMode, timeUnits, mfilename);
+    timeVecs = create_time_vectors_helper(nSamples, siSeconds, tStart, ...
+                                        boundaryMode, timeUnits, mfilename);
 else
     timeVecs = ...
-        arrayfun(@(x, y) create_time_vectors_helper(x, y, ...
-                                                boundaryMode, timeUnits, mfilename), ...
-                nSamples, siSeconds, 'UniformOutput', false);
+        arrayfun(@(x, y, z) create_time_vectors_helper(x, y, z, ...
+                                        boundaryMode, timeUnits, mfilename), ...
+                nSamples, siSeconds, tStart, 'UniformOutput', false);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function tVec = create_time_vectors_helper (nSamples, siSeconds, ...
+function tVec = create_time_vectors_helper (nSamples, siSeconds, tStart, ...
                                     boundaryMode, timeUnits, functionName)
 %% Create a time vector with target units
 
@@ -170,13 +184,13 @@ end
 switch boundaryMode
     case 'span'
         % Include both endpoints
-        tVec = transpose(linspace(0, nSamples * siUnits, nSamples));
+        tVec = tStart + transpose(linspace(0, nSamples * siUnits, nSamples));
     case 'leftadjust'
         % Include the left but not right endpoint
-        tVec = transpose(0:(nSamples - 1)) * siUnits;
+        tVec = tStart + transpose(0:(nSamples - 1)) * siUnits;
     case 'rightadjust'
         % Include the right but not left endpoint
-        tVec = transpose(1:nSamples) * siUnits;
+        tVec = tStart + transpose(1:nSamples) * siUnits;
     otherwise
         error(['BoundaryMode %s unrecognized!\n', ...
                 'Type ''help %s'' for usage'], boundaryMode, functionName);

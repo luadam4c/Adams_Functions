@@ -207,7 +207,7 @@ if isempty(columnLabels)
 end
 
 % Set legend location based on number of traces
-if isempty(legendLocation)
+if strcmpi(legendLocation, 'auto')
     if nCols > 1 && nCols < 10
         legendLocation = 'northeast';
     elseif nCols >= 10

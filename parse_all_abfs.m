@@ -76,8 +76,9 @@ function [allParsedParamsTable, allParsedDataTable, ...
 %       cd/parse_abf.m
 %       cd/issheettype.m
 %
-% Used by:    
+% Used by:
 %       cd/plot_all_abfs.m
+%       cd/plot_protocols.m
 
 % File History:
 % 2018-09-27 - Pulled code from plot_all_abfs.m

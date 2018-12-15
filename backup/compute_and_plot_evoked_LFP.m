@@ -15,7 +15,7 @@ function [tVecLfp, vVecLfp, iVecStim, features, h] = ...
 %                   specified as a numeric column vector
 %       iVecStim    - current trace of stimulation current pulse
 %                   specified as a numeric column vector
-%       features    - computed LFP features, a table
+%       features    - computed LFP features, a table with fields:
 %                       peakAmplitude
 %                       peakSlope
 %       h           - handle to figure
@@ -51,13 +51,12 @@ function [tVecLfp, vVecLfp, iVecStim, features, h] = ...
 %                   default == what the file provides
 %
 % Requires:
-%       cd/compute_average_pulse_response.m
+%       cd/compute_and_plot_average_pulse_response.m
 %       cd/isfigtype.m
-%       cd/plot_pulse_response_with_stimulus.m
 %       cd/save_all_figtypes.m
 %
 % Used by:    
-%       cd/plot_all_abfs.m
+%       cd/plot_protocols.m
 
 % File History:
 % 2018-09-17 - Created by Adam Lu

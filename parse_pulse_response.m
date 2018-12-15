@@ -66,6 +66,7 @@ function [parsedParams, parsedData] = ...
 %       cd/iscellnumeric.m
 %
 % Used by:
+%       cd/compute_average_pulse_response.m
 %       cd/find_passive_params.m
 %       cd/plot_pulse_response.m
 

@@ -1,24 +1,21 @@
-function [tVecAvg, respAvg, stimAvg, featuresAvg] = ...
-                compute_average_pulse_response (fileName, responseType, varargin)
-%% Computes an average pulse response as well as its features
-% Usage: [tVecAvg, respAvg, stimAvg, featuresAvg] = ...
-%               compute_average_pulse_response (fileName, responseType, varargin)
+function [tVecsResponse, respVecsResponse, stimVecsResponse, labels] = ...
+            filter_and_extract_pulse_response (fileName, responseType, varargin)
+%% Filters and extracts pulse response(s) from a .abf file
+% Usage: [tVecsResponse, respVecsResponse, stimVecsResponse] = ...
+%           filter_and_extract_pulse_response (fileName, responseType, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       tVecAvg     - time vector for average response
-%                   specified as a numeric column vector
-%       respAvg     - average pulse response vector
-%                   specified as a numeric column vector
-%       stimAvg     - average stimulation pulse vector
-%                   specified as a numeric column vector
-%       featuresAvg - computed features of the average pulse response, 
-%                       a table with variables:
-%                           those returned by parse_pulse_response.m, 
-%                           labels: labels for respAvg and stimAvg, respectively
-%                   specified as a table of 1 row
+%       tVecsResponse       - time vector(s) for average response
+%                           specified as cell array of numeric column vectors
+%       respVecsResponse    - average pulse response vector(s)
+%                           specified as cell array of numeric column vectors
+%       stimVecsResponse    - average stimulation pulse vector(s)
+%                           specified as cell array of numeric column vectors
+%       labels              - labels for response and stimulation, respectively
+%                           specified as 2-element cell array of char vectors
 % Arguments:
 %       fileName    - file name could be either the full path or 
 %                       a relative path in current directory
@@ -59,23 +56,19 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg] = ...
 % Requires:
 %       cd/argfun.m
 %       cd/choose_stimulation_type.m
-%       cd/compute_average_trace.m
-%       cd/create_average_time_vector.m
 %       cd/extract_channel.m
 %       cd/extract_subvectors.m
 %       cd/find_pulse_response_endpoints.m
 %       cd/force_column_cell.m
 %       cd/freqfilter.m
 %       cd/parse_abf.m
-%       cd/parse_pulse_response.m
 %
 % Used by:
-%       cd/compute_and_plot_average_response.m
+%       cd/compute_all_pulse_responses.m
+%       cd/compute_average_pulse_response.m
 
 % File History:
-% 2018-12-15 Moved from compute_and_plot_evoked_LFP.m
-% 2018-12-15 Made baselineLengthMs and responseLengthMs optional parameters
-% 2018-12-15 Now lowpass filters each trace first
+% 2018-12-15 Moved from compute_average_pulse_response.m
 % 
 
 %% Hard-coded parameters
@@ -139,49 +132,101 @@ channelLabels = iP.Results.ChannelLabels;
 parsedParams = iP.Results.ParsedParams;
 parsedData = iP.Results.ParsedData;
 
-%% Filter and extract pulse response(s)
-[tVecsResponse, respVecsResponse, stimVecsResponse, labels] = ...
-    filter_and_extract_pulse_response(fileName, responseType, varargin{:});
+% Validate the channel type
+responseType = validatestring(responseType, validChannelTypes);
 
-%% Average the pulse response
-% Create a new time vector starting from the average start time
-[tVecAvg, nSamplesAvg] = create_average_time_vector(tVecsResponse);
+%% Preparation
+% Load and parse the abf file if parsedParams and parsedData not both provided
+if isempty(parsedParams) || isempty(parsedData)
+    [parsedParams, parsedData] = ...
+        parse_abf(fileName, 'Verbose', false, ...
+                  'ChannelTypes', channelTypes, ...
+                  'ChannelUnits', channelUnits, ...
+                  'ChannelLabels', channelLabels, ...
+                  'ExtractChannels', true);
+end
 
-% Average the stimulation pulses and pulse responses
-[respAvg, stimAvg] = ...
-    argfun(@(x) compute_average_trace(x, 'AlignMethod', 'LeftAdjust', ...
-                                        'NSamples', nSamplesAvg), ...
-            respVecsResponse, stimVecsResponse);
+% Extract the parsed parameters
+siMs = parsedParams.siMs;
+siSeconds = parsedParams.siSeconds;
+channelTypes = parsedParams.channelTypes;
+channelUnits = parsedParams.channelUnits;
+channelLabels = parsedParams.channelLabels;
 
+% Extract the time vector
+tVec = parsedData.tVec;
 
-%% Compute features of the average pulse response
-% Compute the sampling interval
-siMs = tVecAvg(2) - tVecAvg(1);
+% Initialize labels
+labels = cell(1, 2);
 
-% Parse the average pulse response vector
-featuresAvg = parse_pulse_response(respAvg, siMs, ...
-                                'PulseVectors', stimAvg, ...
-                                'SameAsPulse', true, ...
-                                'MeanValueWindowMs', baselineLengthMs);
+% Decide on the stimulation type based on the response type
+stimType = choose_stimulation_type(responseType);
 
-% Add labels to features
-featuresAvg.labels = labels;
+% Extract the vectors containing pulses
+[stimVecs, labels{1}] = ...
+    extract_channel(fileName, stimType, ...
+            'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
+            'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
+            'ChannelLabels', channelLabels);
 
-% Use the file name as the row name
-featuresAvg.Properties.RowNames = {fileName};
+% Extract the vectors containing pulse responses
+[respVecs, labels{2}] = ...
+    extract_channel(fileName, responseType, ...
+            'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
+            'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
+            'ChannelLabels', channelLabels);
+
+%% Filter and extract the pulse responses
+% Low-pass filter if requested
+if ~isempty(lowPassFrequency)
+    respVecs = freqfilter(respVecs, lowPassFrequency, ...
+                            'FilterType', 'low', 'si', siSeconds);
+end
+
+% Force as a cell array of vectors
+[respVecs, stimVecs] = argfun(@force_column_cell, respVecs, stimVecs);
+
+% Identify the pulse response endpoints
+[idxResponseStarts, idxResponseEnds] = ...
+    find_pulse_response_endpoints(respVecs, siMs, ...
+                                'PulseVectors', stimVecs, ...
+                                'BaselineLengthMs', baselineLengthMs, ...
+                                'ResponseLengthMs', responseLengthMs);
+
+% Compute the number of samples in each pulse response
+nSamplesEachResponse = idxResponseEnds - idxResponseStarts + 1;
+
+% Determine number of samples in the shortest pulse response
+%   This will be the length of the average response
+nSamplesAvgResponse = min(nSamplesEachResponse);
+
+% Place endpoints together as a matrix, with each column corresponding
+%   to each vector
+endPointsResponse = transpose([idxResponseStarts, idxResponseEnds]);
+
+% Extract the pulse responses
+[tVecsResponse, respVecsResponse, stimVecsResponse] = ...
+    argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsResponse), ...
+            tVec, respVecs, stimVecs);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
 
-% Get the minimum number of samples
-nSamples = count_samples(tVecsResponse)
+% Extract the vectors containing pulses responses and pulses, respectively
+[respVecs, stimVecs] = ...
+    argfun(@(x) extract_channel(fileName, x, ...
+                'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
+                'ChannelTypes', channelTypes), stimType, responseType);
 
-% Find the minimum number of samples
+% Compute the baseline length in samples
+baselineLengthSamples = floor(baselineLengthMs / siMs);
+
+% Extract the time vector using the average starting index
 idxStartAveraged = max(1, round(mean(idxResponseStarts)));
-idxEndAveraged = (idxStartAveraged - 1) + minNSamples;
-tVecResponse = tVec(idxStartAveraged:idxEndAveraged);
+idxEndAveraged = (idxStartAveraged - 1) + nSamplesAvgResponse;
+tVecsResponse = tVec(idxStartAveraged:idxEndAveraged);
 
 %}
 

@@ -1,23 +1,25 @@
-function [tVecAvg, respAvg, stimAvg, featuresAvg] = ...
-                compute_average_pulse_response (fileName, responseType, varargin)
-%% Computes an average pulse response as well as its features
-% Usage: [tVecAvg, respAvg, stimAvg, featuresAvg] = ...
-%               compute_average_pulse_response (fileName, responseType, varargin)
+function [tVecAll, respAll, stimAll, featuresAll] = ...
+                compute_all_pulse_responses (fileName, responseType, varargin)
+%% Filter and extract all pulse response and compute features
+% Usage: [tVecAll, respAll, stimAll, featuresAll] = ...
+%               compute_all_pulse_responses (fileName, responseType, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       tVecAvg     - time vector for average response
+%       tVecAll     - time vector for each response
 %                   specified as a numeric column vector
-%       respAvg     - average pulse response vector
+%       respAll     - pulse response vector(s)
 %                   specified as a numeric column vector
-%       stimAvg     - average stimulation pulse vector
+%                       or a cell array of column vectors
+%       stimAll     - stimulation pulse vector(s)
 %                   specified as a numeric column vector
-%       featuresAvg - computed features of the average pulse response, 
+%                       or a cell array of column vectors
+%       featuresAll - computed features of the average pulse response, 
 %                       a table with variables:
 %                           those returned by parse_pulse_response.m, 
-%                           labels: labels for respAvg and stimAvg, respectively
+%                           labels: labels for respAll and stimAll, respectively
 %                   specified as a table of 1 row
 % Arguments:
 %       fileName    - file name could be either the full path or 
@@ -60,7 +62,6 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg] = ...
 %       cd/argfun.m
 %       cd/choose_stimulation_type.m
 %       cd/compute_average_trace.m
-%       cd/create_average_time_vector.m
 %       cd/extract_channel.m
 %       cd/extract_subvectors.m
 %       cd/find_pulse_response_endpoints.m
@@ -70,12 +71,10 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg] = ...
 %       cd/parse_pulse_response.m
 %
 % Used by:
-%       cd/compute_and_plot_average_response.m
+%       cd/compute_and_plot_all_responses.m
 
 % File History:
-% 2018-12-15 Moved from compute_and_plot_evoked_LFP.m
-% 2018-12-15 Made baselineLengthMs and responseLengthMs optional parameters
-% 2018-12-15 Now lowpass filters each trace first
+% 2018-12-15 Modified from compute_average_pulse_response.m
 % 
 
 %% Hard-coded parameters
@@ -144,44 +143,31 @@ parsedData = iP.Results.ParsedData;
     filter_and_extract_pulse_response(fileName, responseType, varargin{:});
 
 %% Average the pulse response
-% Create a new time vector starting from the average start time
-[tVecAvg, nSamplesAvg] = create_average_time_vector(tVecsResponse);
-
 % Average the stimulation pulses and pulse responses
-[respAvg, stimAvg] = ...
-    argfun(@(x) compute_average_trace(x, 'AlignMethod', 'LeftAdjust', ...
-                                        'NSamples', nSamplesAvg), ...
+[respAll, stimAll] = ...
+    argfun(@(x) compute_average_trace(x, 'AlignMethod', 'LeftAdjust'), ...
             respVecsResponse, stimVecsResponse);
-
 
 %% Compute features of the average pulse response
 % Compute the sampling interval
-siMs = tVecAvg(2) - tVecAvg(1);
+siMs = tVecAll(2) - tVecAll(1);
 
 % Parse the average pulse response vector
-featuresAvg = parse_pulse_response(respAvg, siMs, ...
-                                'PulseVectors', stimAvg, ...
+featuresAll = parse_pulse_response(respAll, siMs, ...
+                                'PulseVectors', stimAll, ...
                                 'SameAsPulse', true, ...
                                 'MeanValueWindowMs', baselineLengthMs);
 
 % Add labels to features
-featuresAvg.labels = labels;
+featuresAll.labels = labels;
 
 % Use the file name as the row name
-featuresAvg.Properties.RowNames = {fileName};
+featuresAll.Properties.RowNames = {fileName};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
-
-% Get the minimum number of samples
-nSamples = count_samples(tVecsResponse)
-
-% Find the minimum number of samples
-idxStartAveraged = max(1, round(mean(idxResponseStarts)));
-idxEndAveraged = (idxStartAveraged - 1) + minNSamples;
-tVecResponse = tVec(idxStartAveraged:idxEndAveraged);
 
 %}
 

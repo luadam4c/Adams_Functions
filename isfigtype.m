@@ -30,6 +30,7 @@ function [results, figtypes] = isfigtype (candidates, varargin)
 %       cd/istype.m
 %
 % Used by:
+%       cd/compute_and_plot_average_response.m
 %       cd/create_waveform_train.m
 %       cd/create_pulse_train_series.m
 %       cd/plot_all_abfs.m
@@ -38,7 +39,6 @@ function [results, figtypes] = isfigtype (candidates, varargin)
 %       cd/plot_traces_abf.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_tuning_map.m
-%       cd/compute_and_plot_evoked_LFP.m
 %       /home/Matlab/minEASE/compute_plot_average_PSC_traces.m
 %       /home/Matlab/minEASE/detect_gapfree_events.m
 %       /media/adamX/RTCl/raster_plot.m
