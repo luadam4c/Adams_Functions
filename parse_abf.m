@@ -46,6 +46,9 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %                           gVecs: any identified conductance vector(s)
 %                                   (Note: 2nd dimension: sweep; 
 %                                       optional 3rd dimension: channel)
+%                           otherVecs: any un-identified vector(s)
+%                                   (Note: 2nd dimension: sweep; 
+%                                       optional 3rd dimension: channel)
 %                           dataReordered: data reordered so that 
 %                                       the 2nd dimension is sweep
 %                                        and 3rd dimension is channel
@@ -62,6 +65,9 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %                           channel labels and units over identify_channels()
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'ExtractChannels': whether to extract channels
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'ExpMode': experiment mode
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'EEG'   - EEG data; x axis in seconds; y-axis in uV
@@ -73,10 +79,10 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %                   - 'ChannelTypes': the channel types
 %                   must be a cellstr with nChannels elements
 %                       each being one of the following:
-%                           'Voltage'
-%                           'Current'
-%                           'Conductance'
-%                           'Undefined'
+%                           'Voltage'       - voltage
+%                           'Current'       - current
+%                           'Conductance'   - conductance
+%                           'Other'         - other un-identified types
 %                   default == detected with identify_channels()
 %                   - 'ChannelUnits': the channel units
 %                   must be a cellstr with nChannels elements
@@ -128,6 +134,8 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 % 2018-10-03 - Added nargout
 % 2018-12-15 - Now allows Data, SiUs, FileInfo to be passed in 
 %               so that abf2load does not have to be called
+% 2018-12-15 - Added otherVecs in parsedData
+% 2018-12-15 - Added the 'ExtractChannels' flag
 
 %% Hard-coded constants
 US_PER_MS = 1e3;            % number of microseconds per millisecond
@@ -135,7 +143,7 @@ US_PER_S = 1e6;             % number of microseconds per second
 
 %% Hard-coded parameters
 validExpModes = {'EEG', 'patch', ''};
-validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
+validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 minSweepsElfp = 2;          % minimum number of sweeps 
                             %   for an evoked LFP protocol
 
@@ -143,6 +151,7 @@ minSweepsElfp = 2;          % minimum number of sweeps
 verboseDefault = true;              % print to standard output by default
 useOriginalDefault = false;         % use identify_channels.m instead
                                     % of the original channel labels by default
+extractChannelsDefault = true;      % extract channels by default
 expModeDefault = '';                % set later
 timeUnitsDefault = '';              % set later
 channelTypesDefault = {};           % set later
@@ -176,6 +185,8 @@ addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'UseOriginal', useOriginalDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ExtractChannels', extractChannelsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ExpMode', expModeDefault, ...
     @(x) isempty(x) || any(validatestring(x, validExpModes)));
 addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
@@ -199,6 +210,7 @@ addParameter(iP, 'FileInfo', fileInfoDefault, ...
 parse(iP, fileName, varargin{:});
 verbose = iP.Results.Verbose;
 useOriginal = iP.Results.UseOriginal;
+extractChannels = iP.Results.ExtractChannels;
 expMode = validatestring(iP.Results.ExpMode, validExpModes);
 timeUnits = iP.Results.TimeUnits;
 channelTypes = iP.Results.ChannelTypes;
@@ -386,13 +398,15 @@ if nargout >= 2
 end
 
 %% Extract data vectors by type
-if nargout >= 2
+if nargout >= 2 && extractChannels
     indVoltage = find_ind_str_in_cell('Voltage', channelTypes, ...
                                         'IgnoreCase', true);
     indCurrent = find_ind_str_in_cell('Current', channelTypes, ...
                                         'IgnoreCase', true);
     indConductance = find_ind_str_in_cell('Conductance', channelTypes, ...
                                         'IgnoreCase', true);
+    indOther = find_ind_str_in_cell('Other', channelTypes, ...
+                                    'IgnoreCase', true);
 
     if nDimensions == 2
         % Extract voltage vectors if any
@@ -403,6 +417,9 @@ if nargout >= 2
 
         % Extract conductance vectors if any
         gVecs = data(:, indConductance);
+
+        % Extract other vectors if any
+        otherVecs = data(:, indOther);
 
         % The data doesn't have to be reordered in this case
         dataReordered = data;
@@ -419,6 +436,9 @@ if nargout >= 2
 
         % Extract conductance vectors if any
         gVecs = squeeze(dataReordered(:, :, indConductance));
+
+        % Extract other vectors if any
+        otherVecs = squeeze(dataReordered(:, :, indOther));
     end
 end
 
@@ -479,12 +499,18 @@ end
 
 % Store arrays and vectors in parsedData
 if nargout >= 2
+    % The following are always returned
     parsedData.data = data;
     parsedData.tVec = tVec;
-    parsedData.vVecs = vVecs;
-    parsedData.iVecs = iVecs;
-    parsedData.gVecs = gVecs;
-    parsedData.dataReordered = dataReordered;
+
+    % The following are only returned if extractChannels is true
+    if extractChannels
+        parsedData.vVecs = vVecs;
+        parsedData.iVecs = iVecs;
+        parsedData.gVecs = gVecs;
+        parsedData.otherVecs = otherVecs;
+        parsedData.dataReordered = dataReordered;
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -539,7 +565,7 @@ parfor iChannel = 1:nChannels
         channelTypes{iChannel} = 'Conductance';
     else
         % The channel unit is not recognized
-        channelTypes{iChannel} = 'Undefined';
+        channelTypes{iChannel} = 'Other';
     end
 end
 

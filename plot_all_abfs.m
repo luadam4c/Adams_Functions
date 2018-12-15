@@ -57,7 +57,7 @@ function [abfParamsTable, abfDataTable, abfParamsStruct, ...
 %                           'Voltage'
 %                           'Current'
 %                           'Conductance'
-%                           'Undefined'
+%                           'Other'
 %                   default == detected with identify_channels()
 %                   - 'ChannelUnits': the channel units
 %                   must be a cellstr with nChannels elements
@@ -117,7 +117,7 @@ function [abfParamsTable, abfDataTable, abfParamsStruct, ...
 
 %% Hard-coded parameters
 validExpModes = {'EEG', 'patch', ''};
-validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
+validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 validPlotModes = {'overlapped', 'parallel'};
 
 %% Default values for optional arguments

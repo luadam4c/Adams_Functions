@@ -54,7 +54,7 @@ function [allParsedParamsTable, allParsedDataTable, ...
 %                           'Voltage'
 %                           'Current'
 %                           'Conductance'
-%                           'Undefined'
+%                           'Other'
 %                   default == detected with identify_channels()
 %                   - 'ChannelUnits': the channel units
 %                   must be a cellstr with nChannels elements
@@ -93,7 +93,7 @@ function [allParsedParamsTable, allParsedDataTable, ...
 %% Hard-coded parameters
 tableSuffix = '_abfParams';
 validExpModes = {'EEG', 'patch', ''};
-validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
+validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 
 %% Default values for optional arguments
 directoryDefault = pwd;             % look for .abf files in 

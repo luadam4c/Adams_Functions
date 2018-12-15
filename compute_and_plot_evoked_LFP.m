@@ -36,7 +36,7 @@ function [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (f
 %                           'Voltage'
 %                           'Current'
 %                           'Conductance'
-%                           'Undefined'
+%                           'Other'
 %                   default == detected with identify_channels()
 %                   - 'ParsedParams': parsed parameters returned by parse_abf.m
 %                   must be a scalar structure
@@ -74,7 +74,7 @@ function [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (f
 % 
 
 %% Hard-coded parameters
-validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
+validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 baselineLengthMs = 5;           % baseline length in ms
 responseLengthMs - 20;          % response length in ms
 colorAnnotations = 'r';

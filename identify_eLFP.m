@@ -89,7 +89,7 @@ if ischar(iVecsORfileName) || isstring(iVecsORfileName)
     fileName = iVecsORfileName;
 
     % Extract the current vectors
-    iVecs = extract_channel(fileName, 'ChannelTypes', channelTypes);
+    iVecs = extract_channel(fileName, 'current', 'ChannelTypes', channelTypes);
 else
     % The first argument are the current vectors
     iVecs = iVecsORfileName;

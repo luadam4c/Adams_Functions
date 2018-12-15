@@ -10,7 +10,7 @@ function [channelTypes, channelUnits, channelLabels] = ...
 %
 % Outputs:
 %       channelTypes    - type assigned to each channel, possibly:
-%                           'Voltage', 'Current' or 'Conductance'
+%                           'Voltage', 'Current', 'Conductance' or 'Other'
 %                       specified as a row cell array with the
 %                           number of elements same as the length of the 
 %                           2nd dimension of abfdata
