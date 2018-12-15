@@ -112,7 +112,8 @@ if iscell(vectors)
 end
 
 % If vectors is 3-D, use the first two dimensions 
-if ~ismatrix(vectors)
+%   Note: ismatrix is false if one of the dimensions is zero
+if ~ismatrix(vectors) && min(size(vectors)) > 0
     vectors = squeeze(vectors(:, :, 1));
 end
 
