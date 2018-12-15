@@ -64,15 +64,16 @@ minNSamples = min(nSamples);
 % Get all start times
 startTimes = cellfun(@(x) x(1), tVecs);
 
-% Get the sampling interval
-siMs = tVecs(2) - tVecs(1);
+% Get a sampling interval
+siMs = tVecs{1}(2) - tVecs{1}(1);
 
 % Compute the average start time
 averageStartTime = mean(startTimes);
 
 % Construct a new time vector starting from the average start time
 tVecAvg = create_time_vectors(minNSamples, 'SamplingIntervalMs', siMs, ...
-                                'TimeStart', averageStartTime);
+                                'TimeStart', averageStartTime, ...
+                                'TimeUnits', 'ms');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

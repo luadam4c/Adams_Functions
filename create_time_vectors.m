@@ -39,7 +39,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %                   - 'SamplingIntervalMs': sampling interval in ms
 %                   must be a positive vector
 %                   default == 1e3 ms (1 second)
-%                   - 'TimeStart': start time in ms
+%                   - 'TimeStart': start time(s) in ms
 %                   must be a positive vector
 %                   default == 0
 %
@@ -101,8 +101,6 @@ addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
 addParameter(iP, 'SamplingRateHz', samplingRateHzDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'positive'}));
 addParameter(iP, 'SamplingIntervalUs', samplingIntervalUsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'vector', 'positive'}));
-addParameter(iP, 'SamplingIntervalMs', samplingIntervalMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'positive'}));
 addParameter(iP, 'SamplingIntervalMs', samplingIntervalMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'positive'}));

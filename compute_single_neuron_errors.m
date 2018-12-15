@@ -168,7 +168,7 @@ nSamples = count_samples(vSim);
 
 % Set default time vector(s)
 if isempty(tBoth)
-    tBoth = create_time_vectors(nSamples);
+    tBoth = create_time_vectors(nSamples, 'TimeUnits', 'ms');
 end
 
 % Compute default windows, noise and weights

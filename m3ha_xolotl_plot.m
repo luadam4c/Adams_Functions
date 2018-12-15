@@ -69,9 +69,9 @@ vVecs = xolotlObject.integrate;
 % Get the number of samples
 nSamples = count_samples(vVecs);
 
-% Create a time vector in seconds
+% Create a time vector in milliseconds
 tVec = create_time_vectors(nSamples, 'SamplingIntervalMs', timeStep, ...
-                            'TimeUnits', 's');
+                            'TimeUnits', 'ms');
 
 % Create figure
 figure('Outerposition', [300, 300, 1200, 600], ...
