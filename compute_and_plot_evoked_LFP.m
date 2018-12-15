@@ -1,12 +1,12 @@
-function [tVecLfp, vVecLfp, iVecStim, features] = ...
+function [tVecLfp, vVecLfp, iVecStim, features, h] = ...
                 compute_and_plot_evoked_LFP (fileName, varargin)
 %% Computes and plots an evoked local field potential with its stimulus
-% Usage: [tVecLfp, vVecLfp, iVecStim, features] = ...
+% Usage: [tVecLfp, vVecLfp, iVecStim, features, h] = ...
 %               compute_and_plot_evoked_LFP (fileName, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       [tVecLfp, vVecLfp, iVecStim, features] = ...
+%       [tVecLfp, vVecLfp, iVecStim, features, h] = ...
 %           compute_and_plot_evoked_LFP('20180914C_0001');
 % Outputs:
 %       tVecLfp     - time vector for evoked local field potential
@@ -18,6 +18,8 @@ function [tVecLfp, vVecLfp, iVecStim, features] = ...
 %       features    - computed LFP features, a table
 %                       peakAmplitude
 %                       peakSlope
+%       h           - handle to figure
+%                   specified as a figure handle
 % Arguments:    
 %       fileName    - file name could be either the full path or 
 %                       a relative path in current directory
@@ -69,7 +71,7 @@ function [tVecLfp, vVecLfp, iVecStim, features] = ...
 % 2018-12-15 - Updated usage of find_pulse_response_endpoints.m
 % 2018-12-15 - Now uses argfun.m, compute_average_trace.m, 
 %               extract_subvectors.m, force_column_cell.m
-% 2018-12-15 Moved code to compute_and_plot_evoked_LFP.m
+% 2018-12-15 Moved code to compute_and_plot_average_pulse_response.m
 % TODO: add timeUnits as a parameter with default 'ms'
 % 
 
@@ -132,9 +134,9 @@ addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
 addParameter(iP, 'ChannelLabels', channelLabelsDefault, ...
     @(x) isempty(x) || isstring(x) || iscellstr(x));
 addParameter(iP, 'ParsedParams', parsedParamsDefault, ...
-    @(x) validateattributes(x, {'struct'}, {'scalar'}));
+    @(x) isempty(x) || isstruct(x));
 addParameter(iP, 'ParsedData', parsedDataDefault, ...
-    @(x) validateattributes(x, {'struct'}, {'scalar'}));
+    @(x) isempty(x) || isstruct(x));
 
 % Read from the Input Parser
 parse(iP, fileName, varargin{:});
@@ -154,54 +156,18 @@ if ~isempty(channelTypes)
                             channelTypes, 'UniformOutput', false);
 end
 
-% Set (some) dependent argument defaults
-[fileDir, fileBase, ~] = fileparts(fileName);
-if isempty(outFolder)
-    outFolder = fullfile(fileDir, outFolderName);
-end
-
-%% Average the pulse and pulse responses
-[tVec, respVec, stimVec, labels] = ...
-    compute_average_pulse_response(fileName, responseType, ...
-        'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
-        'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
-        'ChannelLabels', channelLabels, ...
+%% Rename outputs
+[tVecLfp, vVecLfp, iVecStim, features, h] = ...
+    compute_and_plot_average_pulse_response (fileName, responseType, ...
         'LowPassFrequency', lowPassFrequency, ...
         'BaselineLengthMs', baselineLengthMs, ...
-        'ResponseLengthMs', responseLengthMs);
-
-%% Compute features of the average pulse response
-% Compute the sampling interval
-siMs = tVec(2) - tVec(1);
-
-% Parse the average pulse response vector
-features = parse_pulse_response(respVec, siMs, ...
-                                'PulseVectors', stimVec, ...
-                                'SameAsPulse', true, ...
-                                'MeanValueWindowMs', baselineLengthMs);
-
-% Add labels to features
-features.labels = labels;
-
-%% Plot the evoked local field potential with the stimulation pulse
-if plotFlag
-    % Save in a single params structure
-    params = table2struct(features);
-    params.OutFolder = outFolder;
-    params.SaveFlag = saveFlag;
-    params.FigTypes = figTypes;
-    params.FileBase = fileBase;
-    params.FileSuffix = fileSuffix;
-    params.ResponseName = responseName;
-
-    % Plot the pulse response with the stimulation pulse
-    plot_pulse_response_with_stimulus(tVec, respVec, stimVec, params);
-end
-
-%% Rename outputs
-tVecLfp = tVec;
-vVecLfp = respVec;
-iVecStim = stimVec;
+        'ResponseLengthMs', responseLengthMs, ...
+        'OutFolder', outFolder, 'OutFolderName', outFolderName, ...
+        'FileSuffix', fileSuffix, 'ResponseName', responseName, ...
+        'PlotFlag', plotFlag, 'SaveFlag', saveFlag, 'FigTypes', figTypes, ...
+        'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
+        'ChannelLabels', channelLabels, ...
+        'ParsedParams', parsedParams, 'ParsedData', parsedData);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

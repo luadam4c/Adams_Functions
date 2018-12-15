@@ -37,7 +37,7 @@ function [tVecResp, vecResp, vecStim, labels] = ...
 %                   - 'BaselineLengthMs': length of the pulse response
 %                                           before pulse start in ms
 %                   must be a nonnegative scalar
-%                   default = 0 ms
+%                   default = 5 ms
 %                   - 'ChannelTypes': the channel types
 %                   must be a cellstr with nChannels elements
 %                       each being one of the following:
@@ -78,7 +78,7 @@ validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 %% Default values for optional arguments
 lowPassFrequencyDefault = [];   % do not lowpass filter by default
 responseLengthMsDefault = 20;   % a response of 20 ms by default
-baselineLengthMsDefault = 5;    % a baseline of 20 ms by default
+baselineLengthMsDefault = 5;    % a baseline of 5 ms by default
 channelTypesDefault = {};       % set later
 channelUnitsDefault = {};       % set later
 channelLabelsDefault = {};      % set later

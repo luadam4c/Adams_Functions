@@ -1,40 +1,120 @@
-function [output1] = compute_and_plot_average_pulse_response (reqarg1, varargin)
-%% TODO: A summary of what the function does (must be a single unbreaked line)
-% Usage: [output1] = compute_and_plot_average_pulse_response (reqarg1, varargin)
+function [tVec, respVec, stimVec, features, h] = ...
+                compute_and_plot_average_pulse_response (fileName, ...
+                                                    responseType, varargin)
+%% Computes and plots an average pulse response with its stimulus
+% Usage: [tVec, respVec, stimVec, features, h] = ...
+%               compute_and_plot_average_pulse_response (fileName, ...
+%                                                   responseType, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       TODO
+%       [tVec, respVec, stimVec, features, h] = ...
+%               compute_and_plot_average_pulse_response('20180914C_0001', 'Voltage');
 % Outputs:
-%       output1     - TODO: Description of output1
-%                   specified as a TODO
-% Arguments:
-%       reqarg1     - TODO: Description of reqarg1
-%                   must be a TODO
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       tVecLfp     - time vector for evoked local field potential
+%                   specified as a numeric column vector
+%       vVecLfp     - voltage trace of evoked local field potential
+%                   specified as a numeric column vector
+%       iVecStim    - current trace of stimulation current pulse
+%                   specified as a numeric column vector
+%       features    - computed LFP features, a table
+%                       peakAmplitude
+%                       peakSlope
+%       h           - handle to figure
+%                   specified as a figure handle
+% Arguments:    
+%       fileName    - file name could be either the full path or 
+%                       a relative path in current directory
+%                       .abf is not needed (e.g. 'B20160908_0004')
+%                   must be a string scalar or a character vector
+%       responseType- the channel type for the pulse response
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'Voltage'       - voltage
+%                       'Current'       - current
+%                       'Conductance'   - conductance
+%                       'Other'         - other un-identified types
+%       varargin    - 'LowPassFrequency': frequency of lowpass filter in Hz
+%                   must be a nonnegative scalar
+%                   default = []
+%                   - 'ResponseLengthMs': length of the pulse response
+%                                           after pulse endpoint in ms
+%                   must be a nonnegative scalar
+%                   default = 20 ms
+%                   - 'BaselineLengthMs': length of the pulse response
+%                                           before pulse start in ms
+%                   must be a nonnegative scalar
+%                   default = 5 ms
+%                   - 'OutFolder': the name of the directory for plots
+%                   must be a string scalar or a character vector
+%                   default == a subdirectory named by outFolderName
+%                               in the same directory as fileName
+%                   - 'OutFolderName': the name of the default output directory
+%                   must be a string scalar or a character vector
+%                   default == 'Pulse_Response'
+%                   - 'FileSuffix': file suffix
+%                   must be a string scalar or a character vector
+%                   default == '_pulse_response'
+%                   - 'ResponseName': name of current pulse response
+%                   must be a string scalar or a character vector
+%                   default == 'Pulse Response'
+%                   - 'PlotFlag': whether to plot the pulse train series
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'SaveFlag': whether to save the pulse train series
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'ChannelTypes': the channel types
+%                   must be a cellstr with nChannels elements
+%                       each being one of the following:
+%                           'Voltage'
+%                           'Current'
+%                           'Conductance'
+%                           'Other'
+%                   default == detected with identify_channels()
+%                   - 'ParsedParams': parsed parameters returned by parse_abf.m
+%                   must be a scalar structure
+%                   default == what the file provides
+%                   - 'ParsedData': parsed data returned by parse_abf.m
+%                   must be a scalar structure
+%                   default == what the file provides
 %
 % Requires:
-%       /TODO:dir/TODO:file
+%       cd/compute_average_pulse_response.m
+%       cd/isfigtype.m
+%       cd/plot_pulse_response_with_stimulus.m
+%       cd/save_all_figtypes.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/compute_and_plot_evoked_LFP.m
 
 % File History:
-% 201X-XX-XX Created by TODO or Adapted from TODO
-% 
+% 2018-12-15 - Moved from compute_and_plot_evoked_LFP.m
 
 %% Hard-coded parameters
+validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 
 %% Default values for optional arguments
-param1Default   = [];                   % default TODO: Description of param1
+lowPassFrequencyDefault = [];   % do not lowpass filter by default
+responseLengthMsDefault = 20;   % a response of 20 ms by default
+baselineLengthMsDefault = 5;    % a baseline of 5 ms by default
+outFolderDefault = '';          % set later
+outFolderNameDefault = 'Pulse_Response';
+fileSuffixDefault = '_pulse_response';
+responseNameDefault = 'Pulse Response';
+plotFlagDefault = true;         % plot the evoked LFP with stim by default
+saveFlagDefault = true;         % save the pulse train series by default
+figTypesDefault = 'png';        % default figure type(s) for saving
+channelTypesDefault = {};       % set later
+channelUnitsDefault = {};       % set later
+channelLabelsDefault = {};      % set later
+parsedParamsDefault = [];       % set later
+parsedDataDefault = [];         % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 1    % TODO: 1 might need to be changed
+if nargin < 1
     error(['Not enough input arguments, ', ...
             'type ''help %s'' for usage'], mfilename);
 end
@@ -44,28 +124,110 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'reqarg1', ...                  % TODO: Description of reqarg1
-    % TODO: validation function %);
+addRequired(iP, 'fileName', ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addRequired(iP, 'responseType', ...
+    @(x) any(validatestring(x, validChannelTypes)));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'param1', param1Default, ...
-    % TODO: validation function %);
+addParameter(iP, 'LowPassFrequency', lowPassFrequencyDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+addParameter(iP, 'ResponseLengthMs', responseLengthMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+addParameter(iP, 'BaselineLengthMs', baselineLengthMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'OutFolderName', outFolderNameDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FileSuffix', fileSuffixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'ResponseName', responseNameDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'PlotFlag', plotFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveFlag', saveFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'FigTypes', figTypesDefault, ...
+    @(x) all(isfigtype(x, 'ValidateMode', true)));
+addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
+    @(x) isempty(x) || isstring(x) || iscellstr(x));
+addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
+    @(x) isempty(x) || isstring(x) || iscellstr(x));
+addParameter(iP, 'ChannelLabels', channelLabelsDefault, ...
+    @(x) isempty(x) || isstring(x) || iscellstr(x));
+addParameter(iP, 'ParsedParams', parsedParamsDefault, ...
+    @(x) isempty(x) || isstruct(x));
+addParameter(iP, 'ParsedData', parsedDataDefault, ...
+    @(x) isempty(x) || isstruct(x));
 
 % Read from the Input Parser
-parse(iP, reqarg1, varargin{:});
-param1 = iP.Results.param1;
+parse(iP, fileName, responseType, varargin{:});
+lowPassFrequency = iP.Results.LowPassFrequency;
+responseLengthMs = iP.Results.ResponseLengthMs;
+baselineLengthMs = iP.Results.BaselineLengthMs;
+outFolder = iP.Results.OutFolder;
+outFolderName = iP.Results.OutFolderName;
+fileSuffix = iP.Results.FileSuffix;
+responseName = iP.Results.ResponseName;
+plotFlag = iP.Results.PlotFlag;
+saveFlag = iP.Results.SaveFlag;
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
+channelTypes = iP.Results.ChannelTypes;
+channelUnits = iP.Results.ChannelUnits;
+channelLabels = iP.Results.ChannelLabels;
+parsedParams = iP.Results.ParsedParams;
+parsedData = iP.Results.ParsedData;
 
-% Check relationships between arguments
-% TODO
+% Validate channel types
+if ~isempty(channelTypes)
+    channelTypes = cellfun(@(x) validatestring(x, validChannelTypes), ...
+                            channelTypes, 'UniformOutput', false);
+end
 
-%% Preparation
-% TODO
+% Set (some) dependent argument defaults
+[fileDir, fileBase, ~] = fileparts(fileName);
+if isempty(outFolder)
+    outFolder = fullfile(fileDir, outFolderName);
+end
 
-%% Do the job
-% TODO
+%% Average the pulse and pulse responses
+[tVec, respVec, stimVec, labels] = ...
+    compute_average_pulse_response(fileName, responseType, ...
+        'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
+        'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
+        'ChannelLabels', channelLabels, ...
+        'LowPassFrequency', lowPassFrequency, ...
+        'BaselineLengthMs', baselineLengthMs, ...
+        'ResponseLengthMs', responseLengthMs);
 
-%% Output results
-% TODO
+%% Compute features of the average pulse response
+% Compute the sampling interval
+siMs = tVec(2) - tVec(1);
+
+% Parse the average pulse response vector
+features = parse_pulse_response(respVec, siMs, ...
+                                'PulseVectors', stimVec, ...
+                                'SameAsPulse', true, ...
+                                'MeanValueWindowMs', baselineLengthMs);
+
+% Add labels to features
+features.labels = labels;
+
+%% Plot the evoked local field potential with the stimulation pulse
+if plotFlag
+    % Save in a single params structure
+    params = table2struct(features);
+    params.OutFolder = outFolder;
+    params.SaveFlag = saveFlag;
+    params.FigTypes = figTypes;
+    params.FileBase = fileBase;
+    params.FileSuffix = fileSuffix;
+    params.ResponseName = responseName;
+
+    % Plot the pulse response with the stimulation pulse
+    h = plot_pulse_response_with_stimulus(tVec, respVec, stimVec, params);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
