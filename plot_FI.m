@@ -14,7 +14,7 @@ function plot_FI (fileName, alldata, sius, outfolder)
 % Requires:
 %       cd/construct_and_check_abfpath.m
 %       cd/identify_channels.m
-%       cd/identify_CI.m
+%       cd/identify_CI_protocol.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
 %
 % Used by:
@@ -30,7 +30,7 @@ function plot_FI (fileName, alldata, sius, outfolder)
 % 2017-04-11 - Changed the color map to lines
 % 2017-04-13 - BT - Marked on plot spike frequency time interval
 % 2017-04-13 - Added alldata, sius as optional arguments
-% 2017-05-01 - BT - Converted spif_time to use identify_CI.m
+% 2017-05-01 - BT - Converted spif_time to use identify_CI_protocol.m
 % 2017-06-16 - AL - Updated 
 % 2018-01-24 - Added isdeployed
 % TODO: Change the arguments structure
@@ -146,7 +146,7 @@ close(h);
 % Compute spike frequency for each sweep
 spike_freq = zeros(1,nsweeps);
 iVecs = squeeze(alldata(:, 2, :));
-[~, spif_time] = identify_CI(iVecs, sius);    % time range to take spike frequency (10^-4 s)
+[~, spif_time] = identify_CI_protocol(iVecs, sius);    % time range to take spike frequency (10^-4 s)
 parfor i = 1:nsweeps
     cdata = alldata(:,1,i);
     spike_indices = find(is_spike(:,1,i));
@@ -194,7 +194,7 @@ channelTypes = identify_channels(alldata, 'ExpMode', 'patch');
 ind_cur = strcmpi('Current', channelTypes);
 currents = zeros(1, nsweeps);
 parfor i = 1:nsweeps
-    currents(i) = mean(alldata(spif_time(1):spif_time(2), ind_cur, i));    %%%TODO: after identify_CI.m is finished, use to find injection range
+    currents(i) = mean(alldata(spif_time(1):spif_time(2), ind_cur, i));    %%%TODO: after identify_CI_protocol.m is finished, use to find injection range
 end
 h = figure(999);
 set(h, 'Visible', 'off');

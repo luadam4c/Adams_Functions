@@ -1,6 +1,6 @@
-function [isCI, rangeCI] = identify_CI (iVecs, siUs)
+function [isCI, rangeCI] = identify_CI_protocol (iVecs, siUs)
 %% Identifies whether a set of current vectors is a current injection protocol, and if so, what the range of the current injection is
-% Usage: [isCI, rangeCI] = identify_CI (iVecs, siUs)
+% Usage: [isCI, rangeCI] = identify_CI_protocol (iVecs, siUs)
 % Explanation:
 %       TODO: Explain strategy
 %
@@ -223,7 +223,7 @@ else
     isCI = false;
 end
 
-function [isCI, rangeCI] = identify_CI (abfdata, siUs)
+function [isCI, rangeCI] = identify_CI_protocol (abfdata, siUs)
 
 %       /home/Matlab/Brians_Functions/identify_channels.m
 

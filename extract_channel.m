@@ -34,10 +34,11 @@ function vectors = extract_channel (abfFileName, channelType, varargin)
 %       cd/parse_abf.m
 %
 % Used by:
-%       cd/identify_eLFP.m
+%       cd/identify_eLFP_protocol.m
+%       cd/identify_gabab_protocol.m
 
 % File History:
-% 2018-12-15 Moved from identify_eLFP.m
+% 2018-12-15 Moved from identify_eLFP_protocol.m
 % 2018-12-15 Added 'ParsedData' as an optional parameter
 % 2018-12-15 Now uses ismatrix() per MATLAB's suggestion
 % TODO: Generalize to other file types

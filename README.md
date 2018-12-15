@@ -124,8 +124,9 @@ Last Updated 2018-12-15 by Adam Lu
 - [**histogram_include_outofrange.m**](https://github.com/blabuva/Adams_Functions/blob/master/histogram_include_outofrange.m): Plots a histogram including out of range values
 - [**histproperties.m**](https://github.com/blabuva/Adams_Functions/blob/master/histproperties.m): Computes the area, edges of the histogram for given data array
 - [**identify_channels.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_channels.m): Assigns voltage, current or conductance to each channel (2nd dim) in abfdata
-- [**identify_CI.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_CI.m): Identifies whether a set of current vectors is a current injection protocol, and if so, what the range of the current injection is
-- [**identify_eLFP.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_eLFP.m): Identifies whether an abf file follows an eLFP protocol
+- [**identify_CI_protocol.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_CI_protocol.m): Identifies whether a set of current vectors is a current injection protocol, and if so, what the range of the current injection is
+- [**identify_eLFP_protocol.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_eLFP_protocol.m): Identifies whether a .abf file or a set of current vectors follows an eLFP protocol
+- [**identify_gabab_protocol.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_gabab_protocol.m): Identifies whether a .abf file or a set of voltage vectors follows a GABA-B IPSC protocol
 - [**identify_repetitive_pulses.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_repetitive_pulses.m): Identifies whether a set of vectors are repetitive pulses
 - [**increment_editbox.m**](https://github.com/blabuva/Adams_Functions/blob/master/increment_editbox.m): Increment or decrement editbox value based on direction
 - [**intersect_over_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/intersect_over_cells.m): Apply the intersect function over all contents of a cell array

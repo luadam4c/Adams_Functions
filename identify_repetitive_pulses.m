@@ -23,10 +23,11 @@ function isRepetitivePulse = identify_repetitive_pulses (vectors, varargin)
 %       cd/relative_std.m
 %
 % Used by:
-%       cd/identify_eLFP.m
+%       cd/identify_eLFP_protocol.m
+%       cd/identify_gabab_protocol.m
 
 % File History:
-% 2018-12-15 Moved from identify_eLFP.m
+% 2018-12-15 Moved from identify_eLFP_protocol.m
 % 2018-12-15 Now uses count_vectors.m
 % 2018-12-15 Now uses a relative standard deviation (%) threshold
 
@@ -70,7 +71,7 @@ nVectors = count_vectors(vectors);
 %% Do the job
 % Not repetitive pulses if there are too few vectors
 if nVectors < minSweeps
-    isEvokedLfp = false;
+    isRepetitivePulse = false;
     return
 end
 
@@ -85,9 +86,9 @@ ampCps = parsedParams.pulseAmplitude;
 %   are small enough by the relative standard deviation measure
 if relative_std(idxCpStarts) < rsdThreshold && ...
     relative_std(ampCps) < rsdThreshold
-    isEvokedLfp = true;
+    isRepetitivePulse = true;
 else
-    isEvokedLfp = false;
+    isRepetitivePulse = false;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -144,13 +145,13 @@ nVectors = size(vectors, 2);
 % If there are no sweeps, this is not an evoked local field potential
 %   protocol
 if nVectors == 0
-    isEvokedLfp = false;
+    isRepetitivePulse = false;
     return
 end
 
 % Not repetitive pulses if there are no vectors recorded
 if isempty(vectors)
-    isEvokedLfp = false;
+    isRepetitivePulse = false;
     return;
 end
 

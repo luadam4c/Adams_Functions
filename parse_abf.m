@@ -30,6 +30,7 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %                           channelLabelsStr
 %                           isCI
 %                           isEvokedLfp
+%                           isGabab
 %                           channelTypes
 %                           channelUnits
 %                           channelLabels
@@ -107,8 +108,9 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 % Requires:
 %       cd/construct_and_check_abfpath.m
 %       cd/identify_channels.m
-%       cd/identify_CI.m
-%       cd/identify_eLFP.m
+%       cd/identify_CI_protocol.m
+%       cd/identify_eLFP_protocol.m
+%       cd/identify_gabab_protocol.m
 %       cd/locate_functionsdir.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
 %
@@ -118,7 +120,7 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %       cd/plot_traces_EEG.m
 %       cd/compute_and_plot_evoked_LFP.m
 %       cd/extract_channel.m
-%       cd/identify_CI.m
+%       cd/identify_CI_protocol.m
 
 % File history: 
 % 2018-09-17 - Moved from plot_traces_abf.m
@@ -136,6 +138,7 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %               so that abf2load does not have to be called
 % 2018-12-15 - Added otherVecs in parsedData
 % 2018-12-15 - Added the 'ExtractChannels' flag
+% 2018-12-15 - Added isGabab to parsedParams
 
 %% Hard-coded constants
 US_PER_MS = 1e3;            % number of microseconds per millisecond
@@ -146,6 +149,8 @@ validExpModes = {'EEG', 'patch', ''};
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 minSweepsElfp = 2;          % minimum number of sweeps 
                             %   for an evoked LFP protocol
+minSweepsGabab = 5;         % minimum number of sweeps 
+                            %   for a GABA-B IPSC protocol
 
 %% Default values for optional arguments
 verboseDefault = true;              % print to standard output by default
@@ -445,11 +450,15 @@ end
 %% Identify protocols
 if identifyProtocols
     % Identify whether this is a current injection protocol
-    isCI = identify_CI(iVecs, siUs);
+    isCI = identify_CI_protocol(iVecs, siUs);
 
     % Identify whether this is an evoked LFP protocol
-    isEvokedLfp = identify_eLFP(iVecs, 'ChannelTypes', channelTypes, ...
-                                'MinSweeps', minSweepsElfp);
+    isEvokedLfp = identify_eLFP_protocol(iVecs, 'ChannelTypes', channelTypes, ...
+                                        'MinSweeps', minSweepsElfp);
+
+    % Identify whether this is a GABA-B IPSC protocol
+    isGabab = identify_gabab_protocol(vVecs, 'ChannelTypes', channelTypes, ...
+                                        'MinSweeps', minSweepsGabab);
 end
 
 %% Write results to standard output
@@ -467,6 +476,7 @@ if verbose
     if identifyProtocols
         fprintf('Is a current injection protocol = %s\n', num2str(isCI));
         fprintf('Is an evoked LFP protocol = %s\n', num2str(isEvokedLfp));
+        fprintf('Is an evoked GABA-B IPSC protocol = %s\n', num2str(isGabab));
     end
 end
 
@@ -490,6 +500,7 @@ if nargout >= 1
     if identifyProtocols
         parsedParams.isCI = isCI;
         parsedParams.isEvokedLfp = isEvokedLfp;
+        parsedParams.isGabab = isGabab;
     end
     parsedParams.channelTypes = channelTypes;
     parsedParams.channelUnits = channelUnits;
@@ -744,7 +755,7 @@ if isempty(abfFullFileName)
     return 
 end
 
-% Add path for identify_channels.m, identify_CI.m
+% Add path for identify_channels.m, identify_CI_protocol.m
 addpath(fullfile(functionsDirectory, 'Brians_Functions'));
 
 [abfFullFileName, fileExists] = ...

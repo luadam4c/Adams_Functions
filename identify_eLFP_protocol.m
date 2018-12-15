@@ -1,6 +1,6 @@
-function isEvokedLfp = identify_eLFP (iVecsORfileName, varargin)
-%% Identifies whether an abf file follows an eLFP protocol
-% Usage: isEvokedLfp = identify_eLFP (iVecsORfileName, varargin)
+function isEvokedLfp = identify_eLFP_protocol (iVecsORfileName, varargin)
+%% Identifies whether a .abf file or a set of current vectors follows an eLFP protocol
+% Usage: isEvokedLfp = identify_eLFP_protocol (iVecsORfileName, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -11,13 +11,14 @@ function isEvokedLfp = identify_eLFP (iVecsORfileName, varargin)
 %
 % Arguments:    
 %       iVecsORfileName
-%                   - current vector(s) from a .abf file OR
+%                   - current vector(s) OR
 %                       .abf file name (could be either the full path or 
 %                       a relative path in current directory
 %                       .abf is not needed (e.g. 'B20160908_0004'))
-%                   must be a numeric array
+%                   must be a numeric array 
+%                       or a string scalar or a character vector
 %       varargin    - 'ChannelTypes': type assigned to each channel, possibly:
-%                           'Voltage', 'Current' or 'Conductance'
+%                           'Voltage', 'Current', 'Conductance' or 'Other'
 %                   must as a row cell array with the
 %                        number of elements same as the length of the 
 %                        2nd dimension of abfdata
