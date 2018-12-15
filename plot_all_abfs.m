@@ -74,6 +74,7 @@ function [abfParamsTable, abfDataTable, abfParamsStruct, ...
 %
 % Requires:
 %       cd/all_files.m
+%       cd/force_column_cell.m
 %       cd/compute_and_plot_concatenated_trace.m
 %       cd/parse_all_abfs.m
 %       cd/plot_protocols.m
@@ -112,6 +113,7 @@ function [abfParamsTable, abfDataTable, abfParamsStruct, ...
 %               changed outputs to allParsedParamsTable, allParsedDataTable, 
 %                   abfParamsCell
 % 2018-12-15 - Added 'Verbose' as a parameter
+% 2018-12-15 - Fixed the case of having only one .abf file
 % TODO: Restructure code so that each type of plot is its own subfunction
 
 %% Hard-coded parameters
@@ -243,6 +245,9 @@ if isempty(fileNames)
         return
     end
 end
+
+% Force as a cell array
+fileNames = force_column_cell(fileNames);
 
 % Count the number of files
 nFiles = numel(fileNames);
