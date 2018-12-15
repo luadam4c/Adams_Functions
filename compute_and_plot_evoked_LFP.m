@@ -76,7 +76,7 @@ function [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (f
 %% Hard-coded parameters
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 baselineLengthMs = 5;           % baseline length in ms
-responseLengthMs - 20;          % response length in ms
+responseLengthMs = 20;          % response length in ms
 colorAnnotations = 'r';
 
 %% Default values for optional arguments
@@ -200,7 +200,7 @@ baselineLengthSamples = floor(baselineLengthMs / siMs);
 
 %% Average the current pulse responses
 % Identify the current pulse response endpoints
-[idxCprStarts, idxCprEnds] = ...
+[idxCprStarts, idxCprEnds, ~, ~, idxCpEnds] = ...
     find_pulse_response_endpoints(vVecs, siMs, ...
                                 'PulseVectors', iVecs, ...
                                 'BaselineLengthMs', baselineLengthMs, ...
@@ -236,7 +236,7 @@ endPointsCpr = transpose([idxCprStarts, idxCprEnds]);
 baseVal = mean(vVecLfp(1:baselineLengthSamples));
 
 % Assume the current pulses all end at the same index
-idxCpEnd = idxCpEnds(1) - idxCprStartFirst + 1;
+idxCpEnd = idxCpEnds(1) - idxCprStartAveraged + 1;
 
 % Compute the peak voltage value of the averaged trace
 [peakVal, temp1] = max(vVecLfp((idxCpEnd + 1):end));
@@ -380,6 +380,8 @@ iVecStim = mean(iVecCprs, 2);
 
 % Average the current pulse responses to get the evoked local field potential
 vVecLfp = mean(vVecCprs, 2);
+
+idxCpEnd = idxCpEnds(1) - idxCprStartFirst + 1;
 
 %}
 

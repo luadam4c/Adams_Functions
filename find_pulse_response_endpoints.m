@@ -201,9 +201,6 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if ~isempty(idxTemp1) && ~sameAsPulse
-if ~isempty(idxTemp2) && ~sameAsPulse
-
 %{
 OLD CODE:
 
@@ -279,6 +276,9 @@ if isempty(idxPulseStart) || isempty(idxPulseEnd)
     idxPulseStart = [];
     idxPulseEnd = [];
 end
+
+if ~isempty(idxTemp1) && ~sameAsPulse
+if ~isempty(idxTemp2) && ~sameAsPulse
 
 %}
 
