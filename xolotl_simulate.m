@@ -60,20 +60,26 @@ parse(iP, xolotlObject, varargin{:});
 outputType = iP.Results.OutputType;
 
 %% Preparation
+% Prevent a MATLAB warning on gcc version (works for R2018b and beyond)
+warning('off', 'MATLAB:mex:GccVersion');
 
 %% Do the job
 % Decide on the output type
 if ~isempty(outputType)
+    % Set the output type
     xolotlObject.output_type = outputType;
 else
+    % Read the current output type
     outputType = xolotlObject.output_type;
 end
 
-% Simulate
+% Simulate and return output based on output type
 switch outputType
     case 0
+        % Arguments are in separate matrices
         [varargout{1}, varargout{2}] = xolotlObject.integrate;
     case {1, 2}
+        % Arguments are in one single structure
         varargout{1} = xolotlObject.integrate;
     otherwise
         error('The output type %s is unrecognized!', outputType);

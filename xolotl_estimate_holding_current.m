@@ -1,6 +1,8 @@
-function holdingCurrent = xolotl_estimate_holding_current (xolotlObject, varargin)
+function [holdingCurrent, testObject] = ...
+                xolotl_estimate_holding_current (xolotlObject, varargin)
 %% Estimates the holding current necessary to match a certain holding potential
-% Usage: holdingCurrent = xolotl_estimate_holding_current (xolotlObject, varargin)
+% Usage: [holdingCurrent, testObject] = ...
+%               xolotl_estimate_holding_current (xolotlObject, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -32,6 +34,7 @@ function holdingCurrent = xolotl_estimate_holding_current (xolotlObject, varargi
 
 % File History:
 % 2018-12-13 Created by Adam Lu
+% 2018-12-14 Now returns testObject as the second output
 % 
 
 %% Hard-coded parameters
@@ -79,8 +82,7 @@ timeToStabilize = iP.Results.TimeToStabilize;
     xolotl_compartment_index(xolotlObject, compToPatch);
 
 % Get the leak reversal potential for the compartment to patch
-% leakReversal = xolotlObject.(compToPatch).get('Leak.E');
-leakReversal = xolotlObject.(compToPatch).get('conductance.E');
+leakReversal = xolotlObject.(compToPatch).get('Leak.E');
 
 % Decide on the initial voltage
 if ~isempty(leakReversal)
@@ -91,10 +93,14 @@ else
     initialVoltage = holdingPotential;
 end
 
+% Initialize a test object
+testObject = xolotlObject;
+% testObject = copy(xolotlObject);
+
 %% Do the job
 % Set simulation parameters for voltage clamp
 testObject = ...
-    xolotl_set_simparams(xolotlObject, 'InitialVoltage', initialVoltage, ...
+    xolotl_set_simparams(testObject, 'InitialVoltage', initialVoltage, ...
                                         'TimeEnd', timeToStabilize);
 
 % Add a voltage clamp
@@ -118,6 +124,8 @@ leakReversals = xolotlObject.get('*Leak.E*']);
 if ~isempty(leakReversals)
 % Use the first leak channel reversal potential if any
 initialVoltage = leakReversals(1);
+
+leakReversal = xolotlObject.(compToPatch).get('conductance.E');
 
 %}
 

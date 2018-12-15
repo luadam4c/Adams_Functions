@@ -175,18 +175,15 @@ xolotlObject.connect('dend1', 'dend2', 'Axial', ...
                         'resistivity', axialResistivity);
 
 % TODO: May not be needed in the future
-% xolotlObject.connect('dend1', 'soma', 'Axial', ...
-%                         'resistivity', axialResistivity);
-% xolotlObject.connect('dend2', 'dend1', 'Axial', ...
-%                         'resistivity', axialResistivity);
+xolotlObject.connect('dend1', 'soma', 'Axial', ...
+                        'resistivity', axialResistivity);
+xolotlObject.connect('dend2', 'dend1', 'Axial', ...
+                        'resistivity', axialResistivity);
 
 % Add passive conductances
-% xolotlObject.soma.add('Leak', 'gbar', gLeak, 'E', eLeak);
-% xolotlObject.dend1.add('Leak', 'gbar', gLeak, 'E', eLeak);
-% xolotlObject.dend2.add('Leak', 'gbar', gLeak, 'E', eLeak);
-xolotlObject.soma.add('conductance', 'Leak', 'gbar', gLeak, 'E', eLeak);
-xolotlObject.dend1.add('conductance', 'Leak', 'gbar', gLeak, 'E', eLeak);
-xolotlObject.dend2.add('conductance', 'Leak', 'gbar', gLeak, 'E', eLeak);
+xolotlObject.soma.add('Leak', 'gbar', gLeak, 'E', eLeak);
+xolotlObject.dend1.add('Leak', 'gbar', gLeak, 'E', eLeak);
+xolotlObject.dend2.add('Leak', 'gbar', gLeak, 'E', eLeak);
 
 %% Print to standard output
 % This returns a column cell array of compartments in alphabetical order
