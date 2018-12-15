@@ -19,8 +19,7 @@ function stimType = choose_stimulation_type (responseType)
 %                       'Other'         - other un-identified types
 %
 % Used by:
-%       cd/compute_all_pulse_responses.m
-%       cd/compute_average_pulse_response.m
+%       cd/filter_and_extract_pulse_response.m
 
 % File History:
 % 2018-12-15 Created by Adam Lu

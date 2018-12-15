@@ -41,7 +41,7 @@ function [vectors, label] = extract_channel (abfFileName, channelType, varargin)
 %       cd/parse_abf.m
 %
 % Used by:
-%       cd/compute_average_pulse_response.m
+%       cd/filter_and_extract_pulse_response.m
 %       cd/identify_eLFP_protocol.m
 %       cd/identify_gabab_protocol.m
 

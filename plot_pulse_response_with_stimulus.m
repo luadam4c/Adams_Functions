@@ -52,6 +52,7 @@ function h = plot_pulse_response_with_stimulus (tVec, respVec, stimVec, varargin
 %
 % Used by:
 %       cd/compute_and_plot_average_response.m
+%       cd/plot_protocols.m
 
 % File History:
 % 2018-12-15 Moved from compute_and_plot_evoked_LFP.m

@@ -115,10 +115,10 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %       /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
 %
 % Used by:
+%       cd/filter_and_extract_pulse_response.m
 %       cd/parse_all_abfs.m
 %       cd/plot_traces_abf.m
 %       cd/plot_traces_EEG.m
-%       cd/compute_average_pulse_response.m
 %       cd/extract_channel.m
 %       cd/identify_CI_protocol.m
 

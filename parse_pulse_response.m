@@ -61,11 +61,13 @@ function [parsedParams, parsedData] = ...
 %
 % Requires:
 %       cd/count_samples.m
+%       cd/count_vectors.m
 %       cd/find_pulse_response_endpoints.m
 %       cd/force_column_cell.m
 %       cd/iscellnumeric.m
 %
 % Used by:
+%       cd/compute_all_pulse_responses.m
 %       cd/compute_average_pulse_response.m
 %       cd/find_passive_params.m
 %       cd/plot_pulse_response.m
@@ -129,8 +131,14 @@ vectors = force_column_cell(vectors);
 % Count the number of samples for each vector
 nSamples = count_samples(vectors);
 
+% Count the number of vectors
+nVectors = count_vectors(vectors);
+
 % Calculate the mean value calculation window in samples
 meanValueWindowSamples = round(meanValueWindowMs ./ siMs);
+
+% For clarity, define a column vector of ones
+allOnes = ones(nVectors, 1);
 
 %% Do the job
 % Find indices for all the pulse response endpoints
@@ -152,13 +160,16 @@ responseWidthMs = responseWidthSamples * siMs;
 
 % Compute the endpoints of the baseline
 %   Note: this cannot be smaller than 1
-idxBaseStart = max([1, idxResponseStart - meanValueWindowSamples]);
+idxBaseStart = max([allOnes, idxResponseStart - meanValueWindowSamples], [], 2);
 idxBaseEnd = idxResponseStart - 1;
 
 % Compute the endpoints of the steady state
 %   Note: this cannot be smaller than idxResponseStart
-idxSteadyStart = max([idxResponseStart, idxResponseEnd - meanValueWindowSamples]);
-idxSteadyEnd = max([idxResponseStart, idxResponseEnd - 1]);
+allRespStart = idxResponseStart .* allOnes;
+idxSteadyStartIdeal = idxResponseEnd - meanValueWindowSamples;
+idxSteadyEndIdeal = idxResponseEnd - 1;
+idxSteadyStart = max([allRespStart, idxSteadyStartIdeal], [], 2);
+idxSteadyEnd = max([allRespStart, idxSteadyStart], [], 2);
 
 % Construct a vector that goes from -n:-1
 indBefore = (-1) * transpose(fliplr(1:meanValueWindowSamples));
@@ -186,7 +197,7 @@ maxValue = cellfun(@max, vectors);
 
 % Find the index for each vector after pulse ends
 %   Note: this cannot be greater than nSamples
-idxAfterPulseEnd = arrayfun(@(x) min([idxPulseEnd + 1, x]), nSamples);
+idxAfterPulseEnd = arrayfun(@(x, y) min([x + 1, y]), idxPulseEnd, nSamples);
 
 % Find the minimum and maximum values after the pulse ends
 [minValueAfterPulse, idxMinValueAfterPulseRel] = ...
@@ -251,7 +262,7 @@ vvecsCombined = cellfun(@(x, y, z) x(y) - z, ...
 
 %% Store results in output
 parsedParams = table(nSamples, responseWidthSamples, responseWidthMs, ...
-                        nSamplesRising, nSamplesFalling, ...
+                        nSamplesRising, nSamplesFalling, nSamplesCombined, ...
                         idxResponseStart, idxResponseEnd, idxResponseMid, ...
                         idxPulseStart, idxPulseEnd, ...
                         idxBaseStart, idxBaseEnd, ...

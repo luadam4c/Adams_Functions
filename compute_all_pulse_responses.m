@@ -32,7 +32,10 @@ function [tVecAll, respAll, stimAll, featuresAll] = ...
 %                       'Current'       - current
 %                       'Conductance'   - conductance
 %                       'Other'         - other un-identified types
-%       varargin    - 'LowPassFrequency': frequency of lowpass filter in Hz
+%       varargin    - 'MinRowNumber': minimum row number for featuresAll
+%                   must be a positive integer scalar
+%                   default = 1
+%                   - 'LowPassFrequency': frequency of lowpass filter in Hz
 %                   must be a nonnegative scalar
 %                   default = []
 %                   - 'ResponseLengthMs': length of the pulse response
@@ -59,19 +62,10 @@ function [tVecAll, respAll, stimAll, featuresAll] = ...
 %                   default == what the file provides
 %
 % Requires:
-%       cd/argfun.m
-%       cd/choose_stimulation_type.m
-%       cd/compute_average_trace.m
-%       cd/extract_channel.m
-%       cd/extract_subvectors.m
-%       cd/find_pulse_response_endpoints.m
-%       cd/force_column_cell.m
-%       cd/freqfilter.m
-%       cd/parse_abf.m
 %       cd/parse_pulse_response.m
 %
 % Used by:
-%       cd/compute_and_plot_all_responses.m
+%       cd/plot_protocols.m
 
 % File History:
 % 2018-12-15 Modified from compute_average_pulse_response.m
@@ -81,6 +75,7 @@ function [tVecAll, respAll, stimAll, featuresAll] = ...
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 
 %% Default values for optional arguments
+minRowNumberDefault = 1;        % row number to start counting at is 1
 lowPassFrequencyDefault = [];   % do not lowpass filter by default
 responseLengthMsDefault = 20;   % a response of 20 ms by default
 baselineLengthMsDefault = 5;    % a baseline of 5 ms by default
@@ -110,6 +105,8 @@ addRequired(iP, 'responseType', ...
     @(x) any(validatestring(x, validChannelTypes)));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'MinRowNumber', minRowNumberDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
 addParameter(iP, 'LowPassFrequency', lowPassFrequencyDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'ResponseLengthMs', responseLengthMsDefault, ...
@@ -129,28 +126,19 @@ addParameter(iP, 'ParsedData', parsedDataDefault, ...
 
 % Read from the Input Parser
 parse(iP, fileName, responseType, varargin{:});
-lowPassFrequency = iP.Results.LowPassFrequency;
-responseLengthMs = iP.Results.ResponseLengthMs;
+minRowNumber = iP.Results.MinRowNumber;
 baselineLengthMs = iP.Results.BaselineLengthMs;
-channelTypes = iP.Results.ChannelTypes;
-channelUnits = iP.Results.ChannelUnits;
-channelLabels = iP.Results.ChannelLabels;
-parsedParams = iP.Results.ParsedParams;
-parsedData = iP.Results.ParsedData;
 
 %% Filter and extract pulse response(s)
-[tVecsResponse, respVecsResponse, stimVecsResponse, labels] = ...
+[tVecAll, respAll, stimAll, labels] = ...
     filter_and_extract_pulse_response(fileName, responseType, varargin{:});
-
-%% Average the pulse response
-% Average the stimulation pulses and pulse responses
-[respAll, stimAll] = ...
-    argfun(@(x) compute_average_trace(x, 'AlignMethod', 'LeftAdjust'), ...
-            respVecsResponse, stimVecsResponse);
 
 %% Compute features of the average pulse response
 % Compute the sampling interval
-siMs = tVecAll(2) - tVecAll(1);
+siMs = tVecAll{1}(2) - tVecAll{1}(1);
+
+% Count the number of vectors
+nVectors = numel(tVecAll);
 
 % Parse the average pulse response vector
 featuresAll = parse_pulse_response(respAll, siMs, ...
@@ -158,16 +146,29 @@ featuresAll = parse_pulse_response(respAll, siMs, ...
                                 'SameAsPulse', true, ...
                                 'MeanValueWindowMs', baselineLengthMs);
 
-% Add labels to features
-featuresAll.labels = labels;
+% Add labels to each row
+labels = repmat({labels}, size(tVecAll));
+featuresAll = addvars(featuresAll, labels);
 
-% Use the file name as the row name
-featuresAll.Properties.RowNames = {fileName};
+% Construct sweep names
+% TODO: Make this a function create_sweep_names.m
+sweepName = arrayfun(@(x) ['Swp', num2str(x)], ...
+                    transpose(1:nVectors), 'UniformOutput', false);
+
+% Repeat the file names
+filePath = repmat({fileName}, size(tVecAll));
+
+% Insert before the first column of featuresAll the sweep name
+featuresAll = addvars(featuresAll, sweepName, 'Before', 1);
+featuresAll = addvars(featuresAll, filePath, 'Before', 1);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+% Insert before the second column of featuresAll the median time
 
 %}
 

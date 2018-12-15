@@ -84,8 +84,11 @@ function [featuresFileTable, featuresSweepTable] = ...
 % Requires:
 %       cd/all_files.m
 %       cd/compute_and_plot_average_response.m
+%       cd/compute_all_pulse_responses.m
+%       cd/count_vectors.m
 %       cd/parse_all_abfs.m
 %       cd/plot_fields.m
+%       cd/plot_pulse_response_with_stimulus.m
 %       cd/plot_traces_abf.m
 %
 % Used by:
@@ -95,13 +98,22 @@ function [featuresFileTable, featuresSweepTable] = ...
 % 2018-12-15 Created by Adam Lu
 % 
 
+%% TODO: Make these parameters
+plotSeparateFlag = false;
+plotAltogetherFlag = false;
+plotAverageFlag = true;
+saveFlag = true;
+
 %% Hard-coded parameters
 validProtocolTypes = {'EvokedLFP', 'EvokedGABAB'};
 validExpModes = {'EEG', 'patch', ''};
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 validPlotModes = {'overlapped', 'parallel'};
-plotFlag = true;
-saveFlag = true;
+featuresFileSheetName = 'features_table_by_file.xlsx';
+featuresSweepSheetName = 'features_table_by_sweep.xlsx';
+xLabelFile = 'fileName';
+xLabelSweep = 'sweepNumber';
+
 
 %% Default values for optional arguments
 directoryDefault = pwd;         % look for .abf files in 
@@ -223,6 +235,9 @@ end
 % Count the number of files
 nFiles = numel(fileNames);
 
+% Get outFolder name
+[~, outFolderName] = fileparts(outFolder);
+
 %% Parse and identify protocols from each file in the directory
 % Parse all .abf files if not already done 
 if isempty(abfParamsCell) || isempty(abfDataCell)
@@ -249,11 +264,10 @@ switch protocolType
         responseLengthMs = 20;          % response length in ms
 
         % For plotting
-        outFolderName = 'LFPs';
+        outFolderProtocolName = 'LFPs';
         varToPlot = {'peakAmplitude'};
         fileSuffix = '_LFP';
         responseName = 'Evoked potential';
-        xLabel = 'File Name';
     case 'EvokedGABAB'
         % General
         isProtocolStr = 'isEvokedGabab';
@@ -265,23 +279,22 @@ switch protocolType
         responseLengthMs = 20;          % response length in ms
 
         % For plotting
-        outFolderName = 'GABAB-IPSCs';
+        outFolderProtocolName = 'GABAB-IPSCs';
         varToPlot = {'peakAmplitude'};
         fileSuffix = '_GABAB';
         responseName = 'GABA-B IPSC';
-        xLabel = 'File Name';
     otherwise
         body
 end
 
 % Set the output folder
-outFolderProtocol = fullfile(outFolder, outFolderName);
+outFolderProtocol = fullfile(outFolder, outFolderProtocolName);
 
 %% Do the job
-% Compute LFP features and plot averaged LFP traces
+% Compute features and plot protocol traces
 featuresPerFileCell = cell(nFiles, 1);
 featuresPerSweepCell = cell(nFiles, 1);
-parfor iFile = 1:nFiles
+for iFile = 1:nFiles
     % Extract from cell arrays
     abfParams = abfParamsCell{iFile};
 
@@ -308,74 +321,74 @@ parfor iFile = 1:nFiles
                 'ResponseLengthMs', responseLengthMs, ...
                 'OutFolder', outFolderProtocol, ...
                 'FileSuffix', fileSuffix, 'ResponseName', responseName, ...
-                'PlotFlag', plotFlag, 'SaveFlag', saveFlag, ...
+                'PlotFlag', plotAverageFlag, 'SaveFlag', saveFlag, ...
                 'FigTypes', figTypes, ...
                 'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
                 'ChannelLabels', channelLabels, ...
                 'ParsedParams', abfParams, 'ParsedData', abfData);
 
-        [tVecAll, respAll, stimAll, featuresAll, h2] = ...
-            compute_and_plot_all_responses(fileName, responseType, ...
+        % Compute features for individual protocol traces
+        [tVecAll, respAll, stimAll, featuresAll] = ...
+            compute_all_pulse_responses (fileName, responseType, ...
                 'LowPassFrequency', lowPassFrequency, ...
-                 'BaselineLengthMs', baselineLengthMs, ...
-                 )
+                'BaselineLengthMs', baselineLengthMs, ...
+                'ResponseLengthMs', responseLengthMs, ...
+                'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
+                'ChannelLabels', channelLabels, ...
+                'ParsedParams', abfParams, 'ParsedData', abfData);
 
-        % Decide on the stimulation type based on the response type
-        stimType = choose_stimulation_type(responseType);
+        % Count the number of vectors
+        nVectors = count_vectors(tVecAll);
 
-        % Extract the sampling interval
-        siMs = abfParams.siMs;
+        % Set the time endpoints for individual protocol traces
+        timeStart = cellfun(@min, tVecAll);
+        timeEnd = cellfun(@max, tVecAll);
 
-        % Extract the time vector
-        tVecAll = abfData.tVec;
+        % Get the file directory and file base
+        [fileDir, fileBase, ~] = fileparts(fileName);
 
-        % Initialize labels
-        labels = cell(1, 2);
+        % Plot individual protocol traces with stimulus separately
+        if plotSeparateFlag
+            parfor iVec = 1:nVectors
+                % Save in a single params structure
+                params = table2struct(featuresAll(iVec, :));
+                params.OutFolder = fullfile(fileDir, [fileBase, '_traces']);
+                params.SaveFlag = saveFlag;
+                params.FigTypes = 'png'; % figTypes TODO: specific figTypes
+                params.FileBase = [fileBase, '_Swp', num2str(iVec)];
+                params.FileSuffix = fileSuffix;
+                params.ResponseName = responseName;
 
-        % Extract the vectors containing responses
-        [respAll, labels{1}] = ...
-            extract_channel(fileName, responseType, ...
-                    'ParsedParams', abfParams, 'ParsedData', abfData);
+                % Plot the pulse response with the stimulation pulse
+                h = plot_pulse_response_with_stimulus(tVecAll{iVec}, ...
+                        respAll{iVec}, stimAll{iVec}, params);
+            end
+        end
 
-        % Extract the vectors containing responses
-        [stimAll, labels{2}] = ...
-            extract_channel(fileName, stimType, ...
-                    'ParsedParams', abfParams, 'ParsedData', abfData);
-
-        % Compute individual protocol features
-        featuresAll = parse_pulse_response(respAvg, siMs, ...
-                                    'PulseVectors', stimAvg, ...
-                                    'SameAsPulse', true, ...
-                                    'MeanValueWindowMs', baselineLengthMs);
-
-        % Insert at the first column of featuresAll the actual time
-        % TODO: Make a timetable
-
-        % Set the time endpoints for protocol traces, averaged or not
-        timeStart = min(tVecAll);
-        timeEnd = max(tVecAll);
-
-        % Plot individual protocol traces
+        % Plot individual protocol traces, stimulus and response separate
         %   Note: Must make outFolder empty so that outputs
         %           be plotted in subdirectories
-        plot_traces_abf(fileName, ...
-            'ParsedParams', abfParams, 'ParsedData', abfData, ...
-            'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
-            'ChannelLabels', channelLabels, ...
-            'Verbose', verbose, 'ExpMode', expMode, ...
-            'PlotMode', plotMode, 'Individually', individually, ...
-            'OutFolder', '', 'TimeUnits', timeUnits, ...
-            'TimeStart', timeStart, 'TimeEnd', timeEnd, ...
-            'FigTypes', figTypes);
+        if plotAltogetherFlag
+            plot_traces_abf(fileName, ...
+                'ParsedParams', abfParams, 'ParsedData', abfData, ...
+                'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
+                'ChannelLabels', channelLabels, ...
+                'Verbose', verbose, 'ExpMode', expMode, ...
+                'PlotMode', plotMode, 'Individually', individually, ...
+                'OutFolder', '', 'TimeUnits', timeUnits, ...
+                'TimeStart', timeStart, 'TimeEnd', timeEnd, ...
+                'FigTypes', 'jpeg'); % figTypes TODO: specific figTypes
+        end
     else
         % Make outputs an empty table
         featuresAvg = [];
         featuresAll = [];
     end
 
+
     % Save feature table in cell array
     featuresPerFileCell{iFile} = featuresAvg;
-    featuresPerSweepCell(iFile} = featuresAll;
+    featuresPerSweepCell{iFile} = featuresAll;
 
     % Close figures before exiting parfor loop
     close all force hidden
@@ -385,46 +398,67 @@ end
 isEmpty = cellfun(@isempty, featuresPerFileCell);
 featuresFileProtocol = featuresPerFileCell(~isEmpty);
 featuresSweepProtocol = featuresPerSweepCell(~isEmpty);
-fileNamesProtocol = fileNames(~isEmpty);
 
 % Join the tables together
 featuresFileTable = vertcat(featuresFileProtocol{:});
 featuresSweepTable = vertcat(featuresSweepProtocol{:});
 
+% Create file paths for the tables
+featuresFilePath = fullfile(outFolder, [outFolderName, '_', ...
+                        outFolderProtocolName, '_', featuresFileSheetName]);
+featuresSweepPath = fullfile(outFolder, [outFolderName, '_', ...
+                        outFolderProtocolName, '_', featuresSweepSheetName]);
+
+
 % If any features were computed, 
 %   plot each column of the feature table as its own time series
 if ~isempty(featuresFileTable) && istable(featuresFileTable)
-    plot_table(featuresFileTable, varToPlot, outFolderProtocol, xLabel);
+    % Save the table
+    writetable(featuresFileTable, featuresFilePath, 'WriteRowNames', true);
+
+    % Plot each variable of the table
+    plot_table(featuresFileTable, varToPlot, outFolderProtocol, xLabelFile);
 end
 if ~isempty(featuresSweepTable) && istable(featuresSweepTable)
-    plot_table(featuresSweepTable, varToPlot, outFolderProtocol, xLabel);
+    % Save the table
+    writetable(featuresSweepTable, featuresSweepPath, 'WriteRowNames', false);
+
+    % Plot each variable of the table
+    plot_table(featuresSweepTable, varToPlot, outFolderProtocol, xLabelSweep);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_table (fileTable, varToPlot, outFolder, xLabel)
+function plot_table (table, varToPlot, outFolder, xLabel)
 %% Plots all variables of a table against the row names, which are files
 % TODO: Pull out as plot_table
 %       plot_table(table, 'VariableNames', varToPlot, ...
 %                   'OutFolder', outFolder, 'XLabel', 'fileNames')
 
 % Restrict to variables to plot
-fileTable = fileTable(:, varToPlot);
-
-% Convert to a structure array
-fileStruct = table2struct(fileTable);
-fileNames = fileTable.Properties.RowNames;
+table = table(:, varToPlot);
 
 % Check if output directory exists
 check_dir(outFolder);
 
-% Get the file bases
-[~, fileBases, ~] = ...
-    cellfun(@(x) fileparts(x), fileNames, 'UniformOutput', false);
+% Convert to a structure array
+fileStruct = table2struct(table);
 
-% Create x tick labels
-xTickLabels = cellfun(@(x) strrep(x, '_', '\_'), fileBases, ...
-                        'UniformOutput', false);
+% Decide on xTickLabels
+if iscell(table.Properties.RowNames)
+    % Get the file names
+    fileNames = table.Properties.RowNames;
+
+    % Get the file bases
+    [~, fileBases, ~] = ...
+        cellfun(@(x) fileparts(x), fileNames, 'UniformOutput', false);
+
+    % Create x tick labels
+    xTickLabels = cellfun(@(x) strrep(x, '_', '\_'), fileBases, ...
+                            'UniformOutput', false);
+else
+    xTickLabels = {};
+end
 
 % Plot fields
 plot_fields(fileStruct, 'OutFolder', outFolder, ...
@@ -445,6 +479,18 @@ OLD CODE:
 
 % Use file names as row names
 featuresFileTable.Properties.RowNames = fileNamesProtocol;
+
+% Set the time endpoints for protocol traces, averaged or not
+timeStart = min(tVecAll);
+timeEnd = max(tVecAll);
+
+fileNamesProtocol = fileNames(~isEmpty);
+
+nSweepsPreviousFiles = 0;   % counts the number of sweeps in previous files
+'MinRowNumber', nSweepsPreviousFiles + 1, ...
+% Update number of sweeps in previous files
+nSweepsPreviousFiles = nSweepsPreviousFiles + nVectors;
+
 
 %}
 

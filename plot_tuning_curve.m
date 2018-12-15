@@ -12,6 +12,9 @@ function h = plot_tuning_curve (pValues, readout, varargin)
 %       varargin    - 'ColsToPlot': columns of the readout matrix to plot
 %                   must be a numeric vector
 %                   default == 1:size(readout, 2);
+%                   - 'LineSpec': line specification
+%                   must be a character array
+%                   default == '-'
 %                   - 'PisLog': whether parameter values are to be plotted 
 %                               log-scaled
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -83,6 +86,7 @@ function h = plot_tuning_curve (pValues, readout, varargin)
 % 2017-05-09 Added 'FigTypes' as a parameter-value pair argument
 % 2018-05-08 Changed tabs to spaces and limited width to 80
 % 2018-09-25 Made almost all arguments parameter-value pairs
+% 2018-12-15 Added 'LineSpec' as a parameter-value pair argument
 %
 
 %% Hard-coded parameters
@@ -91,6 +95,7 @@ lineWidth = 2;
                     
 %% Default values for optional arguments
 colsToPlotDefault = [];         % set later
+lineSpecDefault = '-';
 pislogDefault = [false, false];
 xlimitsDefault = [];
 ylimitsDefault = [];
@@ -128,6 +133,8 @@ addRequired(iP, 'readout', ...              % a readout matrix
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ColsToPlot', colsToPlotDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'LineSpec', lineSpecDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'PisLog', pislogDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'XLimits', xlimitsDefault, ...
@@ -162,6 +169,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 % Read from the Input Parser
 parse(iP, pValues, readout, varargin{:});
 colsToPlot = iP.Results.ColsToPlot;
+lineSpec = iP.Results.LineSpec;
 pIsLog = iP.Results.PisLog;
 xlimits = iP.Results.XLimits;
 ylimits = iP.Results.YLimits;
@@ -267,9 +275,11 @@ for c = 1:nColsToPlot
     % Plot curve
     if pIsLog
         % Note: can't have hold on before semilogx
-        p = semilogx(pValues, readout(:, col), 'LineWidth', lineWidth);
+        p = semilogx(pValues, readout(:, col), lineSpec, ...
+                        'LineWidth', lineWidth);
     else
-        p = plot(pValues, readout(:, col), 'LineWidth', lineWidth);
+        p = plot(pValues, readout(:, col), lineSpec, ...
+                        'LineWidth', lineWidth);
     end
     
     % Set color

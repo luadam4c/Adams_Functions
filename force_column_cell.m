@@ -30,9 +30,9 @@ function vectorsCell = force_column_cell (vectorsOrig)
 %       cd/force_column_numeric.m
 %
 % Used by:
-%       cd/compute_average_pulse_response.m
 %       cd/compute_rms_error.m
 %       cd/construct_fullpath.m
+%       cd/filter_and_extract_pulse_response.m
 %       cd/find_pulse_endpoints.m
 %       cd/force_column_numeric.m
 %       cd/force_row_numeric.m

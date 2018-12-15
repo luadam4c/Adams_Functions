@@ -58,15 +58,8 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg] = ...
 %
 % Requires:
 %       cd/argfun.m
-%       cd/choose_stimulation_type.m
 %       cd/compute_average_trace.m
 %       cd/create_average_time_vector.m
-%       cd/extract_channel.m
-%       cd/extract_subvectors.m
-%       cd/find_pulse_response_endpoints.m
-%       cd/force_column_cell.m
-%       cd/freqfilter.m
-%       cd/parse_abf.m
 %       cd/parse_pulse_response.m
 %
 % Used by:

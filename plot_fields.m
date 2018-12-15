@@ -64,9 +64,12 @@ function h = plot_fields (structArray, varargin)
 
 % File History:
 % 2018-09-26 Created by Adam Lu
+% 2018-12-15 Updated XTicks so that it is dependent on nEntries
 % 
 
 %% Hard-coded parameters
+lineSpec = 'o';
+maxNXTicks = 10;
 
 %% Default values for optional arguments
 xislogDefault = [false, false];
@@ -104,29 +107,29 @@ addRequired(iP, 'structArray', ...
 addParameter(iP, 'XisLog', xislogDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'XLimits', xlimitsDefault, ...
-    @(x) ischar(x) && strcmpi(x, 'suppress') || ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'YLimits', ylimitsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, ...
-                            {'increasing', 'vector', 'numel', 2}));
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'XTicks', xTicksDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+    @(x) isempty(x) || isnumericvector(x));
 addParameter(iP, 'XTickLabels', xTickLabelsDefault, ...
-    @(x) iscellstr(x) || isstring(x));
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'XLabel', xLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FieldLabels', fieldLabelsDefault, ...
-    @(x) iscellstr(x) || isstring(x));
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'SingleColor', singleColorDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 3}));
 addParameter(iP, 'FigTitles', figTitlesDefault, ...
-    @(x) iscellstr(x) || isstring(x));
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'FigNumber', figNumberDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+    @(x) isempty(x) || ispositiveintegerscalar(x));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigNames', figNamesDefault, ...
-    @(x) iscellstr(x) || isstring(x));
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
 
@@ -165,13 +168,19 @@ if nEntries == 0
     return;
 end
 
-% Create an vector for the parameter values
-xValues = 1:nEntries;
+% Create a vector for the parameter values
+xValues = transpose(1:nEntries);
+
+% Decide on the number of parameter values to actually show
 if isempty(xTicks)
-    xTicks = xValues;
+    % Decide on the number of parameter values to show
+    nXTicks = min(maxNXTicks, nEntries);
+
+    % Evenly space them out starting with the first parameter
+    xTicks = (1:nXTicks) * floor(nEntries/nXTicks);
 end
 if isempty(xTickLabels)
-    xTickLabels = arrayfun(@(x) num2str(x), xValues, ...
+    xTickLabels = arrayfun(@(x) num2str(x), xTicks, ...
                             'UniformOutput', false);
 end
 
@@ -267,13 +276,17 @@ for iField = 1:nFields
                         'ReadoutLabel', fieldLabel, ...
                         'SingleColor', singlecolor, ...
                         'FigTitle', figTitle, 'FigNumber', figNumber, ...
-                        'FigName', figName, 'FigTypes', figtypes);
+                        'FigName', figName, 'FigTypes', figtypes, ...
+                        'LineSpec', lineSpec);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+    @(x) validateattributes(x, {'numeric'}, ...
+                            {'increasing', 'vector', 'numel', 2}));
 
 %}
 

@@ -25,6 +25,8 @@ function nVectors = count_vectors (vectors)
 %       cd/compute_sweep_errors.m
 %       cd/force_column_cell.m
 %       cd/identify_repetitive_pulses.m
+%       cd/parse_pulse_response.m
+%       cd/plot_protocols.m
 %       cd/plot_traces.m
 
 % File History:
