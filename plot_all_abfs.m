@@ -300,9 +300,6 @@ end
 % Set the outFolder for LFP results
 outFolderLfp = fullfile(outFolder, 'LFPs');
 
-% Check if it exists
-check_dir(outFolderLfp);
-
 % Compute LFP features and plot averaged LFP traces
 featuresLfpAll = cell(nFiles, 1);
 parfor iFile = 1:nFiles
@@ -377,6 +374,9 @@ lfpFeaturesStruct = [lfpFeaturesCell{:}];
 
 % Plot each field of the structure as its own time series
 if ~isempty(lfpFeaturesStruct)    
+    % Check if output directory exists
+    check_dir(outFolderLfp);
+
     % Set an x label
     xLabel = 'fileNames';
     
@@ -722,6 +722,7 @@ if isempty(fileNames)
     % Construct the full file names
     fileNames = extract_fullpath(files);
 end
+
 
 %}
 

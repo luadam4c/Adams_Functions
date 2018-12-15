@@ -129,6 +129,9 @@ function [h, subPlots] = plot_traces (tVecs, data, varargin)
 % 2018-11-01 Now returns axes handles for subplots
 % 2018-11-22 Now accepts xLimits as a cell array
 % 2018-11-22 Added 'XUnits' as an optional parameter
+% 2018-12-15 Fixed the passing of parameters to the helper function
+% 2018-12-15 Now returns the axes handle as the second output
+%               for overlapped plots
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel'};
@@ -538,6 +541,9 @@ case 'overlapped'
     if ~strcmpi(legendLocation, 'suppress')
         legend(p1, 'location', legendLocation);
     end
+
+    % Save current axes handle
+    subPlots = gca;
 case 'parallel'
     if ~strcmpi(legendLocation, 'suppress')
         % Set a legend location differently    

@@ -40,6 +40,7 @@ function [parsedParams, parsedData] = parse_pulse (vectors, varargin)
 %
 % Used by:    
 %       cd/find_passive_params.m
+%       cd/identify_repetitive_pulses.m
 %       cd/plot_pulse.m
 
 % File History:
@@ -139,7 +140,7 @@ function indPulse = find_pulse_indices(idxAfterStart, idxBeforeEnd)
 %% Returns the pulse indices
 
 % Decide on the pulse indices based on whether a pulse was found
-if isnan(idxBeforeStart) || isnan(idxAfterEnd) || isnan(nSamples)
+if isnan(idxAfterStart) || isnan(idxBeforeEnd)
     % No pulse is found
     indPulse = [];
 else

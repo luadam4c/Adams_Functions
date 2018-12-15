@@ -125,6 +125,8 @@ US_PER_S = 1e6;             % number of microseconds per second
 %% Hard-coded parameters
 validExpModes = {'EEG', 'patch', ''};
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
+minSweepsElfp = 2;          % minimum number of sweeps 
+                            %   for an evoked LFP protocol
 
 %% Default values for optional arguments
 verboseDefault = true;              % print to standard output by default
@@ -212,15 +214,13 @@ end
 if exist('abf2load', 'file') == 2
     try
         [data, siUs, fileInfo] = abf2load(abfFullFileName);
-    catch ME
+    catch
         try
             [data, siUs, fileInfo] = abfload(abfFullFileName);
         catch ME
             fprintf('The file %s cannot be read by either %s or %s!\n', ...
                     abfFullFileName, 'abf2load', 'abfload');
-            parsedParams = [];
-            parsedData = [];
-            return
+            rethrow(ME);
         end
     end
 elseif exist('abfload', 'file') == 2
@@ -402,7 +402,8 @@ if identifyProtocols
     isCI = identify_CI(iVecs, siUs);
 
     % Identify whether this is an evoked LFP protocol
-    isEvokedLfp = identify_eLFP(iVecs);
+    isEvokedLfp = identify_eLFP(iVecs, 'ChannelTypes', channelTypes, ...
+                                'MinSweeps', minSweepsElfp);
 end
 
 %% Write results to standard output
@@ -696,6 +697,10 @@ addpath(fullfile(functionsDirectory, 'Brians_Functions'));
 
 [abfFullFileName, fileExists] = ...
     construct_and_check_fullpath(fileName, 'Extension', '.abf');
+
+parsedParams = [];
+parsedData = [];
+return
 
 rethrow(ME);
 

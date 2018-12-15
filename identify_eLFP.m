@@ -16,10 +16,18 @@ function [isEvokedLfp] = identify_eLFP (iVecsORfileName, varargin)
 %                       a relative path in current directory
 %                       .abf is not needed (e.g. 'B20160908_0004'))
 %                   must be a numeric array
+%       varargin    - 'ChannelTypes': type assigned to each channel, possibly:
+%                           'Voltage', 'Current' or 'Conductance'
+%                   must as a row cell array with the
+%                        number of elements same as the length of the 
+%                        2nd dimension of abfdata
+%                   - 'MinSweeps': minimum number of sweeps 
+%                   must be a positive integer scalar
+%                   default == 2
 %
 % Requires:
+%       cd/identify_repetitive_pulses.m
 %       cd/parse_abf.m
-%       cd/parse_pulse.m
 %
 % Used by:    
 %       cd/parse_abf.m
@@ -29,15 +37,16 @@ function [isEvokedLfp] = identify_eLFP (iVecsORfileName, varargin)
 % 2018-09-21 - Considered the case when iVecs is a cellarray
 % 2018-09-21 - Considered the case when iVecs is 3-D
 % 2018-10-03 - Updated usage of parse_abf.m
+% 2018-12-15 - Made 'MinSweeps' an optional parameter with default 2
+% 2018-12-15 - Moved code to identify_repetitive_pulses.m
 % 
 
 %% Hard-coded parameters
-coeffVarThreshold = 0.01;       % coefficient of variation threshold
-minSweeps = 2;                  % must have at least 2 sweeps
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
 
 %% Default values for optional arguments
 channelTypesDefault = {};       % set later
+minSweepsDefault = 2;           % must have at least 2 sweeps by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -58,10 +67,13 @@ addRequired(iP, 'iVecsORfileName');
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
     @(x) validateattributes(x, {'cell'}, {'nonempty'}));
+addParameter(iP, 'MinSweeps', minSweepsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
 
 % Read from the Input Parser
 parse(iP, iVecsORfileName, varargin{:});
 channelTypes = iP.Results.ChannelTypes;
+minSweeps = iP.Results.MinSweeps;
 
 % Validate channel types
 if ~isempty(channelTypes)
@@ -93,46 +105,9 @@ else
     iVecs = iVecsORfileName;
 end
 
-% Count the number of sweeps
-nSweeps = size(iVecs, 2);
-
-% If there are no sweeps, this is not an evoked local field potential
-%   protocol
-if nSweeps == 0
-    isEvokedLfp = false;
-    return
-end
 
 %% Do the job
-% Not an evoked LFP protocol if there are no current vectors recorded
-if isempty(iVecs)
-    isEvokedLfp = false;
-    return;
-end
-
-% Not an evoked LFP protocol if there are too few current vectors
-if nSweeps < minSweeps
-    isEvokedLfp = false;
-    return;
-end
-
-% Parse the current pulse(s)
-parsedParams = parse_pulse(iVecs);
-
-% Extract the current pulse response endpoints, midpoints and amplitudes
-idxCpStarts = parsedParams.idxBeforeStart;
-idxCpEnds = parsedParams.idxBeforeEnd;
-idxCpMids = parsedParams.idxMidpoint;
-ampCps = parsedParams.pulseAmplitude;
-
-% Check whether the variation of amplitudes and starting indices
-%   are small enough
-if nanstd(ampCps) / abs(nanmean(ampCps)) < coeffVarThreshold && ...
-    nanstd(idxCpStarts) / abs(nanmean(idxCpStarts)) < coeffVarThreshold
-    isEvokedLfp = true;
-else
-    isEvokedLfp = false;
-end
+isEvokedLfp = identify_repetitive_pulses(iVecs, 'MinSweeps', minSweeps);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -146,42 +121,6 @@ disp('done');
 [~, ~, ~, ~, iVecs, ~] = ...
     parse_abf(fileName, 'Verbose', false, ...
                 'ChannelTypes', channelTypes);
-
-% Identify the current pulse response endpoints and midpoints
-idxCpStarts = zeros(nSweeps, 1);
-idxCpEnds = zeros(nSweeps, 1);
-idxCpMids = zeros(nSweeps, 1);
-ampCps = zeros(nSweeps, 1);
-parfor iSwp = 1:nSweeps
-    % Identify the current pulse endpoints
-    [idxCpStart, idxCpEnd] = ...
-        find_pulse_endpoints(iVecs(:, iSwp));
-
-    if isempty(idxCpStart) || isempty(idxCpEnd)
-        idxCpStart = NaN;
-        idxCpEnd = NaN;
-        idxCpMid = NaN;
-        ampCp = NaN;
-    else
-        % Identify the current pulse midpoints
-        idxCpMid = ceil(mean([idxCpStart, idxCpEnd]));
-
-        % Identify the current pulse amplitudes
-        ampCp = max(abs(iVecs(:, iSwp)));
-    end
-    
-    % Store in arrays
-    idxCpEnds(iSwp) = idxCpEnd;
-    idxCpStarts(iSwp) = idxCpStart;
-    idxCpMids(iSwp) = idxCpMid;
-    ampCps(iSwp) = ampCp;
-end
-
-% Identify the current pulse response endpoints and midpoints
-[idxCpStarts, idxCpEnds] = find_pulse_endpoints(iVecs);
-
-% Identify the current pulse response midpoints
-idxCpMids = ceil(mean([idxCpStarts, idxCpEnds]), 2);
 
 %}
 

@@ -125,6 +125,7 @@ Last Updated 2018-12-15 by Adam Lu
 - [**identify_channels.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_channels.m): Assigns voltage, current or conductance to each channel (2nd dim) in abfdata
 - [**identify_CI.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_CI.m): Identifies whether a set of current vectors is a current injection protocol, and if so, what the range of the current injection is
 - [**identify_eLFP.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_eLFP.m): Identifies whether an abf file follows an eLFP protocol
+- [**identify_repetitive_pulses.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_repetitive_pulses.m): Identifies whether a set of vectors are repetitive pulses
 - [**increment_editbox.m**](https://github.com/blabuva/Adams_Functions/blob/master/increment_editbox.m): Increment or decrement editbox value based on direction
 - [**intersect_over_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/intersect_over_cells.m): Apply the intersect function over all contents of a cell array
 - [**isaninteger.m**](https://github.com/blabuva/Adams_Functions/blob/master/isaninteger.m): Returns whether each element of an array is an integer
@@ -229,6 +230,7 @@ Last Updated 2018-12-15 by Adam Lu
 - [**print_structure.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_structure.m): Display all fields of a structure recursively
 - [**read_adicht.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_adicht.m): Reads in a .adicht file (from LabChart)
 - [**read_swd_sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_swd_sheet.m): Read in an SWD table from a spreadsheet file
+- [**relative_std.m**](https://github.com/blabuva/Adams_Functions/blob/master/relative_std.m): Computes the relative standard deviation (%)
 - [**remove_outliers.m**](https://github.com/blabuva/Adams_Functions/blob/master/remove_outliers.m): Removes outliers from a data matrix and return a new matrix
 - [**renamevars.m**](https://github.com/blabuva/Adams_Functions/blob/master/renamevars.m): Rename variable(s) in a table
 - [**rescale_vec.m**](https://github.com/blabuva/Adams_Functions/blob/master/rescale_vec.m): Rescale a vector (vec1) to be in the same ballpark as another vector (vec2),
