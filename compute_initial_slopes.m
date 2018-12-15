@@ -6,13 +6,13 @@ function [avgSlope, startSlope, endSlope, indsUsed, hasJump] = ...
 %
 % Outputs:
 %       avgSlope    - the average initial slope
-%                   specified as a numeric scalar
+%                   specified as a numeric scalar or NaN
 %       startSlope  - the initial slope at pulse response start
-%                   specified as a numeric scalar
+%                   specified as a numeric scalar or NaN
 %       endSlope    - the initial slope at pulse response end
-%                   specified as a numeric scalar
+%                   specified as a numeric scalar or NaN
 %       indsUsed    - indices for computing slopes
-%                   specified as a 4-element positive integer row vector
+%                   specified as a 4-element positive integer (or NaN) row vector
 %       hasJump     - whether there was a significant "jump" detected
 %                   specified as a logical scalar
 %
@@ -38,15 +38,16 @@ function [avgSlope, startSlope, endSlope, indsUsed, hasJump] = ...
 
 % File History:
 % 2018-07-25 BT - Adapted from find_initial_slopes.m
-% 2018-08-10 AL - Now checks number of arguments
-% 2018-08-11 AL - Made IvecCpr and NSamples optional parameters
-% 2018-08-12 AL - Now uses the current pulse start/end points
+% 2018-08-10 Now checks number of arguments
+% 2018-08-11 Made IvecCpr and NSamples optional parameters
+% 2018-08-12 Now uses the current pulse start/end points
 %                   to define a region of interest
-% 2018-08-12 AL - Changed signal2Noise to 10
-% 2018-08-13 AL - Moved code to find_pulse_response_endpoints.m
-% 2018-09-17 AL - Updated usage of find_pulse_response_endpoints.m
-% 2018-10-09 AL - Improved documentation
-% 2018-10-09 AL - Updated usage of find_pulse_response_endpoints.m
+% 2018-08-12 Changed signal2Noise to 10
+% 2018-08-13 Moved code to find_pulse_response_endpoints.m
+% 2018-09-17 Updated usage of find_pulse_response_endpoints.m
+% 2018-10-09 Improved documentation
+% 2018-10-09 Updated usage of find_pulse_response_endpoints.m
+% 2018-12-15 Now returns NaN if no pulse is found
 
 %% Hard-coded parameters
 sameAsPulse = false;
@@ -97,6 +98,15 @@ siMs = tvecCpr(2) - tvecCpr(1);
                                     'SameAsPulse', sameAsPulse, ...
                                     'ResponseLengthMs', responseLengthMs, ...
                                     'BaselineLengthMs', baselineLengthMs);
+
+% Check if there is a pulse found
+if isnan(idxCprStart) || isnan(idxCprEnd)
+    avgSlope = NaN;
+    startSlope = NaN;
+    endSlope = NaN;
+    indsUsed = NaN * ones(1, 4);
+    return
+end
 
 %% Compute the average slope
 % Compute slope right after current pulse start

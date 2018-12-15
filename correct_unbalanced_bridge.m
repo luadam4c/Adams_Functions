@@ -62,28 +62,34 @@ parse(iP, vvecOld, ivecOld, varargin{:});
 useCurrentFlag = iP.Results.UseCurrentFlag;
 
 %% Do the job
+% Initialize the new voltage vector as the old one
+vvecNew = vvecOld;
+
 % Create an artificial time vector
 tvecOld = 1:length(ivecOld);
 
-% Get average initial slope
+% Get the average initial slope
 if useCurrentFlag
-    [avgSlope, startSlope, endSlope, indsUsed] = ...
+    [avgSlope, ~, ~, indsUsed] = ...
         compute_initial_slopes(tvecOld, vvecOld, ...
                                'IvecCpr', ivecOld, ...
                                'NSamples', nSamples);
 else
-    [avgSlope, startSlope, endSlope, indsUsed] = ...
+    [avgSlope, ~, ~, indsUsed] = ...
         compute_initial_slopes(tvecOld, vvecOld, ...
                                'NSamples', nSamples);
+end
+
+% Return if there is no pulse or average slope computed
+if isnan(avgSlope)
+    fprintf('There is no pulse or average slope computed!!\n');
+    return
 end
 
 % Get the indices for the region to shift
 idxLast1 = indsUsed(2);
 idxFirst2 = indsUsed(3);
 indToShift = idxLast1:idxFirst2;
-
-% Initialize the new voltage vector as the old one
-vvecNew = vvecOld;
 
 % Calculate the time difference that the average slope was computed for
 deltaTime = tvecOld(nSamples) - tvecOld(1);

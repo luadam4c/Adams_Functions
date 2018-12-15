@@ -23,7 +23,6 @@ function isCellNumericVector = iscellnumericvector (x)
 %       cd/compute_sweep_errors.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
-%       cd/extract_subvectors.m
 
 % File History:
 % 2018-10-25 Created by Adam Lu

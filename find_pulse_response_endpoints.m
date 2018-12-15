@@ -1,20 +1,20 @@
-function [idxResponseStart, idxResponseEnd, hasJump, idxPulseStart, idxPulseEnd] = ...
+function [indResponseStart, indResponseEnd, hasJump, indPulseStart, indPulseEnd] = ...
             find_pulse_response_endpoints (vectors, siMs, varargin)
 %% Returns the start and end indices of the first pulse response (from pulse start to 20 ms after pulse ends by default) from vector(s)
-% Usage: [idxResponseStart, idxResponseEnd, hasJump, idxPulseStart, idxPulseEnd] = ...
+% Usage: [indResponseStart, indResponseEnd, hasJump, indPulseStart, indPulseEnd] = ...
 %           find_pulse_response_endpoints (vectors, siMs, varargin)
 %
 % Outputs:
-%       idxResponseStart    - index of pulse response start
-%                           specified as a positive integer vector
-%       idxResponseEnd      - index of pulse response end
-%                           specified as a positive integer vector
+%       indResponseStart    - indices of pulse response start
+%                           specified as a positive integer (or NaN) vector
+%       indResponseEnd      - indices of pulse response end
+%                           specified as a positive integer (or NaN) vector
 %       hasJump             - whether there was a significant "jump" detected
 %                           specified as a logical vector
-%       idxPulseStart       - index of pulse start
-%                           specified as a positive integer vector
-%       idxPulseEnd         - index of pulse end
-%                           specified as a positive integer vector
+%       indPulseStart       - indices of pulse start
+%                           specified as a positive integer (or NaN) vector
+%       indPulseEnd         - indices of pulse end
+%                           specified as a positive integer (or NaN) vector
 %
 % Arguments:
 %       vectors     - vector(s) containing a pulse response
@@ -47,17 +47,18 @@ function [idxResponseStart, idxResponseEnd, hasJump, idxPulseStart, idxPulseEnd]
 %       cd/iscellnumeric.m
 %       cd/match_format_vectors.m
 %
-% Used by:    
+% Used by:
 %       cd/compute_initial_slopes.m
 %       cd/compute_and_plot_evoked_LFP.m
 %       cd/parse_pulse_response.m
 
 % File History:
-% 2018-08-13 AL - Adapted from compute_average_initial_slopes.m
-% 2018-09-17 AL - Changed required arguement tVecCpr to siMs
-% 2018-09-17 AL - Added optional parameters SameAsPulse and ResponseLengthMs
-% 2018-09-23 AL - Added the optional parameter baselineLengthSamples
-% 2018-10-09 AL - Renamed isUnbalanced -> hasJump and improved documentation
+% 2018-08-13 Adapted from compute_average_initial_slopes.m
+% 2018-09-17 Changed required arguement tVecCpr to siMs
+% 2018-09-17 Added optional parameters SameAsPulse and ResponseLengthMs
+% 2018-09-23 Added the optional parameter baselineLengthSamples
+% 2018-10-09 Renamed isUnbalanced -> hasJump and improved documentation
+% 2018-12-15 Now returns NaN if there is no pulse
 
 %% Hard-coded parameters
 nSamplesPerJump = 2;            % number of samples apart for calculating jump
@@ -114,7 +115,7 @@ baselineLengthMs = iP.Results.BaselineLengthMs;
     match_format_vectors(pulseVectors, vectors, 'ForceCellOutputs', true);
 
 %% Do the job
-[idxResponseStart, idxResponseEnd, hasJump, idxPulseStart, idxPulseEnd] = ...
+[indResponseStart, indResponseEnd, hasJump, indPulseStart, indPulseEnd] = ...
     cellfun(@(x, y) fpre_helper(x, siMs, y, sameAsPulse, responseLengthMs, ...
         baselineLengthMs, nSamplesPerJump, signal2Noise, noiseWindowSize), ...
         vectors, pulseVectors);
@@ -139,13 +140,13 @@ if ~isempty(pulseVector)
     [idxPulseStart, idxPulseEnd] = find_pulse_endpoints(pulseVector);
 
     % If an index is not detected, return warning message
-    if isempty(idxPulseStart) || isempty(idxPulseEnd)
+    if isnan(idxPulseStart) || isnan(idxPulseEnd)
         fprintf('The pulse could not be detected!\n');
-        idxResponseStart = [];
-        idxResponseEnd = [];
-        hasJump = [];
-        idxPulseStart = [];
-        idxPulseEnd = [];
+        idxResponseStart = NaN;
+        idxResponseEnd = NaN;
+        hasJump = false;
+        idxPulseStart = NaN;
+        idxPulseEnd = NaN;
         return
     end
 else
@@ -199,6 +200,9 @@ else
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+if ~isempty(idxTemp1) && ~sameAsPulse
+if ~isempty(idxTemp2) && ~sameAsPulse
 
 %{
 OLD CODE:
@@ -267,6 +271,14 @@ idxPulseEnd = zeros(nVectors, 1);
 %       cd/match_array_counts.m
 [pulseVectors, vectors] = ...
     match_array_counts(pulseVectors, vectors, 'ForceCellOutputs', true);
+
+if isempty(idxPulseStart) || isempty(idxPulseEnd)
+    idxResponseStart = [];
+    idxResponseEnd = [];
+    hasJump = [];
+    idxPulseStart = [];
+    idxPulseEnd = [];
+end
 
 %}
 

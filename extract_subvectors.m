@@ -17,6 +17,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                   must be a numeric array or a cell array of numeric arrays
 %       varargin    - 'Endpoints': endpoints for the subvectors to extract 
 %                   must be a numeric vector with 2 elements
+%                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
 %                   default == find_window_endpoints([], vecs)
 %                   - 'Windows': value windows to extract 
@@ -28,10 +29,10 @@ function subVecs = extract_subvectors (vecs, varargin)
 %
 % Requires:
 %       cd/isnumericvector.m
-%       cd/iscellnumericvector.m
 %       cd/find_window_endpoints.m
 %
 % Used by:
+%       cd/compute_and_plot_evoked_LFP.m
 %       cd/compute_rms_error.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
@@ -74,9 +75,9 @@ addRequired(iP, 'vecs', ...                  % vectors to extract
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'EndPoints', endPointsDefault, ...
-    @(x) assert(isnumericvector(x) || iscellnumericvector(x), ...
-                ['EndPoints must be either a numeric vector ', ...
-                    'or a cell array of numeric vectors!']));
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['Windows must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
 addParameter(iP, 'Windows', windowsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['Windows must be either a numeric array ', ...
@@ -110,8 +111,8 @@ if isempty(endPoints)
     endPoints = find_window_endpoints(windows, vecs);
 end
 
-% If there are multiple endpoints, match the formats of endPoints and 
-%   timeVecs so that cellfun can be used
+% If there are multiple endpoints, match the formats of 
+%   endPoints and vecs so that cellfun can be used
 if iscell(endPoints) || numel(endPoints) > 2
     [endPoints, vecs] = ...
         match_format_vectors(endPoints, vecs, 'ForceCellOutputs', false);
@@ -142,6 +143,11 @@ end
 
 %{
 OLD CODE:
+
+addParameter(iP, 'EndPoints', endPointsDefault, ...
+    @(x) assert(isnumericvector(x) || iscellnumericvector(x), ...
+                ['EndPoints must be either a numeric vector ', ...
+                    'or a cell array of numeric vectors!']));
 
 %}
 

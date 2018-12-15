@@ -30,8 +30,10 @@ function vectorsCell = force_column_cell (vectorsOrig)
 %       cd/force_column_numeric.m
 %
 % Used by:
+%       cd/compute_and_plot_evoked_LFP.m
 %       cd/compute_rms_error.m
 %       cd/construct_fullpath.m
+%       cd/find_pulse_endpoints.m
 %       cd/force_column_numeric.m
 %       cd/force_row_numeric.m
 %       cd/m3ha_import_raw_traces.m

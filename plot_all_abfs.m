@@ -14,6 +14,9 @@ function [abfParamsTable, abfDataTable, abfParamsStruct, ...
 %                   - 'FileNames': names of .abf files to detect
 %                   must be a cell array of character arrays or strings
 %                   default == detect from pwd
+%                   - 'Verbose': whether to write to standard output
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'UseOriginal': whether to use original 
 %                           channel labels and units over identify_channels()
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -109,6 +112,7 @@ function [abfParamsTable, abfDataTable, abfParamsStruct, ...
 % 2018-10-03 - Updated usage of parse_all_abfs.m
 %               changed outputs to allParsedParamsTable, allParsedDataTable, 
 %                   abfParamsCell
+% 2018-12-15 - Added 'Verbose' as a parameter
 % TODO: Restructure code so that each type of plot is its own subfunction
 
 %% Hard-coded parameters
@@ -119,7 +123,8 @@ validPlotModes = {'overlapped', 'parallel'};
 %% Default values for optional arguments
 directoryDefault = pwd;         % look for .abf files in 
                                 %   the present working directory by default
-fileNamesDefault = {};              % detect from pwd by default
+fileNamesDefault = {};          % detect from pwd by default
+verboseDefault = false;         % don't print to standard output by default
 useOriginalDefault = false;     % use identify_channels.m instead
                                 % of the original channel labels by default
 expModeDefault = 'patch';       % assume traces are patching data by default
@@ -160,6 +165,8 @@ addParameter(iP, 'Directory', directoryDefault, ...
                                                 % introduced after R2016b
 addParameter(iP, 'FileNames', fileNamesDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'Verbose', verboseDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'UseOriginal', useOriginalDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ExpMode', expModeDefault, ...
@@ -189,6 +196,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 parse(iP, varargin{:});
 directory = iP.Results.Directory;
 fileNames = iP.Results.FileNames;
+verbose = iP.Results.Verbose;
 useOriginal = iP.Results.UseOriginal;
 expMode = validatestring(iP.Results.ExpMode, validExpModes);
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);

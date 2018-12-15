@@ -120,8 +120,8 @@ idxCpStarts = zeros(nSweeps, 1);
 idxCpEnds = zeros(nSweeps, 1);
 idxCpMids = zeros(nSweeps, 1);
 ampCps = zeros(nSweeps, 1);
-parfor iSwp = 1:nSweeps
-%for iSwp = 1:nSweeps
+%parfor iSwp = 1:nSweeps
+for iSwp = 1:nSweeps
     % Identify the current pulse endpoints
     [idxCpStart, idxCpEnd] = ...
         find_pulse_endpoints(iVecs(:, iSwp));

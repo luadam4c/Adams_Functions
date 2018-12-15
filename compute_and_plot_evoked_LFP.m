@@ -46,6 +46,11 @@ function [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (f
 %                   default == what the file provides
 %
 % Requires:
+%       cd/argfun.m
+%       cd/compute_average_trace.m
+%       cd/extract_subvectors.m
+%       cd/find_pulse_response_endpoints.m
+%       cd/force_column_cell.m
 %       cd/parse_abf.m
 %       cd/isfigtype.m
 %       cd/save_all_figtypes.m
@@ -62,6 +67,9 @@ function [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (f
 % 2018-10-03 - Updated usage of parse_abf.m
 % 2018-10-03 - Added ParsedData, ParsedParams as optional arguments
 % 2018-10-09 - Updated usage of find_pulse_response_endpoints.m
+% 2018-12-15 - Updated usage of find_pulse_response_endpoints.m
+% 2018-12-15 - Now uses argfun.m, compute_average_trace.m, 
+%               extract_subvectors.m, force_column_cell.m
 % TODO: add timeUnits as a parameter with default 'ms'
 % 
 
@@ -163,6 +171,7 @@ vVecs = parsedData.vVecs;
 iVecs = parsedData.iVecs;
 
 % If vVecs or iVecs is a cellarray, use the first element
+% TODO: Is this still needed?
 if iscell(vVecs)
     vVecs = vVecs{1};
 end
@@ -186,25 +195,16 @@ siMs = parsedParams.siMs;
 % Compute the baseline length in samples
 baselineLengthSamples = floor(baselineLengthMs / siMs);
 
-%% Average the voltage responses
-% Identify the current pulse response endpoints
-idxCprStarts = zeros(nSweeps, 1);
-idxCprEnds = zeros(nSweeps, 1);
-idxCpStarts = zeros(nSweeps, 1);
-idxCpEnds = zeros(nSweeps, 1);
-parfor iSwp = 1:nSweeps
-    % Extract the voltage and current vectors for this sweep
-    vVecCpr = vVecs(:, iSwp);
-    iVecCpr = iVecs(:, iSwp);
+% Force as a cell array of vectors
+[vVecs, iVecs] = argfun(@force_column_cell, vVecs, iVecs);
 
-    % Identify the current pulse and current pulse response endpoints
-    [idxCprStarts(iSwp), idxCprEnds(iSwp), ~, ...
-        idxCpStarts(iSwp), idxCpEnds(iSwp)] = ...
-        find_pulse_response_endpoints(vVecCpr, siMs, ...
-                                        'PulseVectors', iVecCpr, ...
-                                        'BaselineLengthMs', baselineLengthMs, ...
-                                        'ResponseLengthMs', responseLengthMs);
-end
+%% Average the current pulse responses
+% Identify the current pulse response endpoints
+[idxCprStarts, idxCprEnds] = ...
+    find_pulse_response_endpoints(vVecs, siMs, ...
+                                'PulseVectors', iVecs, ...
+                                'BaselineLengthMs', baselineLengthMs, ...
+                                'ResponseLengthMs', responseLengthMs);
 
 % Compute the number of samples in each current pulse response
 nSamplesEachCpr = idxCprEnds - idxCprStarts + 1;
@@ -212,31 +212,24 @@ nSamplesEachCpr = idxCprEnds - idxCprStarts + 1;
 % Determine number of samples in the shortest current pulse response
 nSamplesCpr = min(nSamplesEachCpr);
 
-% Extract the time vector using the starting index from the first sweep
-idxCprStartFirst = idxCprStarts(1);
-idxCprStartEnd = (idxCprStartFirst - 1) + nSamplesCpr;
-tVecLfp = tVec(idxCprStartFirst:idxCprStartEnd);
+% Extract the time vector using the average starting index
+idxCprStartAveraged = mean(idxCprStarts);
+idxCprEndAveraged = (idxCprStartAveraged - 1) + nSamplesCpr;
+tVecLfp = tVec(idxCprStartAveraged:idxCprEndAveraged);
 
-% Place the current pulses and current pulse responses in the same matrix
-iVecCprs = zeros(nSamplesCpr, nSweeps);
-vVecCprs = zeros(nSamplesCpr, nSweeps);
-parfor iSwp = 1:nSweeps
-    % Get the starting index of the current pulse response for this sweep
-    idxCprStart = idxCprStarts(iSwp);
+% Place endpoints together as a matrix, with each column corresponding
+%   to each vector
+endPointsCpr = transpose([idxCprStarts, idxCprEnds]);
 
-    % Get the ending index of the current pulse response for this sweep
-    idxCprEnd = (idxCprStart - 1) + nSamplesCpr;
-
-    % Extract the current pulse and current pulse responses
-    iVecCprs(:, iSwp) = iVecs(idxCprStart:idxCprEnd, iSwp);
-    vVecCprs(:, iSwp) = vVecs(idxCprStart:idxCprEnd, iSwp);
-end
-
-% Average the current pulses to get the stimulation pulse
-iVecStim = mean(iVecCprs, 2);
+% Extract the pulse responses
+[vVecCprs, iVecCprs] = ...
+    argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsCpr), vVecs, iVecs);
 
 % Average the current pulse responses to get the evoked local field potential
-vVecLfp = mean(vVecCprs, 2);
+%   and average the current pulses to get the stimulation pulse
+[vVecLfp, iVecStim] = ...
+    argfun(@(x) compute_average_trace(x, 'AlignMethod', 'LeftAdjust'), ...
+            vVecCprs, iVecCprs);
 
 %% Extract the amplitude of the evoked local field potential
 % Compute the baseline voltage value of the averaged trace
@@ -336,6 +329,57 @@ outFolder = fullfile(fileDir, strcat(fileBase, '_traces'));
               'ChannelTypes', channelTypes, ...
               'ChannelUnits', channelUnits, ...
               'ChannelLabels', channelLabels);
+
+% Identify the current pulse response endpoints
+idxCprStarts = zeros(nSweeps, 1);
+idxCprEnds = zeros(nSweeps, 1);
+idxCpStarts = zeros(nSweeps, 1);
+idxCpEnds = zeros(nSweeps, 1);
+parfor iSwp = 1:nSweeps
+    % Extract the voltage and current vectors for this sweep
+    vVecCpr = vVecs(:, iSwp);
+    iVecCpr = iVecs(:, iSwp);
+
+    % Identify the current pulse and current pulse response endpoints
+    [idxCprStarts(iSwp), idxCprEnds(iSwp), ~, ...
+        idxCpStarts(iSwp), idxCpEnds(iSwp)] = ...
+        find_pulse_response_endpoints(vVecCpr, siMs, ...
+                                        'PulseVectors', iVecCpr, ...
+                                        'BaselineLengthMs', baselineLengthMs, ...
+                                        'ResponseLengthMs', responseLengthMs);
+end
+
+% Compute the number of samples in each current pulse response
+nSamplesEachCpr = idxCprEnds - idxCprStarts + 1;
+
+% Determine number of samples in the shortest current pulse response
+nSamplesCpr = min(nSamplesEachCpr);
+
+% Extract the time vector using the starting index from the first sweep
+idxCprStartFirst = idxCprStarts(1);
+idxCprEndFirst = (idxCprStartFirst - 1) + nSamplesCpr;
+tVecLfp = tVec(idxCprStartFirst:idxCprEndFirst);
+
+% Place the current pulses and current pulse responses in the same matrix
+iVecCprs = zeros(nSamplesCpr, nSweeps);
+vVecCprs = zeros(nSamplesCpr, nSweeps);
+parfor iSwp = 1:nSweeps
+    % Get the starting index of the current pulse response for this sweep
+    idxCprStart = idxCprStarts(iSwp);
+
+    % Get the ending index of the current pulse response for this sweep
+    idxCprEnd = (idxCprStart - 1) + nSamplesCpr;
+
+    % Extract the current pulse and current pulse responses
+    iVecCprs(:, iSwp) = iVecs(idxCprStart:idxCprEnd, iSwp);
+    vVecCprs(:, iSwp) = vVecs(idxCprStart:idxCprEnd, iSwp);
+end
+
+% Average the current pulses to get the stimulation pulse
+iVecStim = mean(iVecCprs, 2);
+
+% Average the current pulse responses to get the evoked local field potential
+vVecLfp = mean(vVecCprs, 2);
 
 %}
 

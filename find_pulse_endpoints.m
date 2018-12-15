@@ -1,17 +1,17 @@
-function [idxStartAll, idxEndAll, idxStart2All, idxEnd2All] = ...
+function [indStart1, indEnd1, indStart2, indEnd2] = ...
             find_pulse_endpoints (vectors)
 %% Returns the start and end indices of the first pulse from vector(s)
-% Usage: [idxStartAll, idxEndAll, idxStart2All, idxEnd2All] = ...
+% Usage: [indStart1, indEnd1, indStart2, indEnd2] = ...
 %           find_pulse_endpoints (vectors)
 % Outputs:
-%       idxStartAll - indices of pulse start (right before pulse start)
-%                   specified as a positive integer column vector
-%       idxEndAll   - indices of pulse end (right before pulse end)
-%                   specified as a positive integer column vector
-%       idxStart2All- indices of pulse start (right after pulse start)
-%                   specified as a positive integer column vector
-%       idxEnd2All  - indices of pulse end (right after pulse end)
-%                   specified as a positive integer column vector
+%       indStart1    - indices of pulse start (right before pulse start)
+%                       specified as a positive integer (or NaN) vector
+%       indEnd1      - indices of pulse end (right before pulse end)
+%                       specified as a positive integer (or NaN) vector
+%       indStart2    - indices of pulse start (right after pulse start)
+%                       specified as a positive integer (or NaN) vector
+%       indEnd2      - indices of pulse end (right after pulse end)
+%                       specified as a positive integer (or NaN) vector
 % Arguments:
 %       vectors     - vectors containing a pulse
 %                   Note: If a cell array, each element must be a vector
@@ -19,7 +19,7 @@ function [idxStartAll, idxEndAll, idxStart2All, idxEnd2All] = ...
 %                   must be a numeric array or a cell array of numeric vectors
 %
 % Requires:
-%       cd/count_vectors.m
+%       cd/force_column_cell.m
 %       cd/iscellnumeric.m
 %       
 % Used by:
@@ -28,13 +28,15 @@ function [idxStartAll, idxEndAll, idxStart2All, idxEnd2All] = ...
 %
 % File History:
 % 2018-07-25 BT - Adapted from find_initial_slopes.m
-% 2018-08-10 AL - Change the amplitude to take the value from pulseShifted
+% 2018-08-10 Change the amplitude to take the value from pulseShifted
 %                   rather than from pulse
-% 2018-08-10 AL - Now checks number of arguments
-% 2018-09-17 AL - Now returns empty indices if there is no pulse
-% 2018-10-09 AL - Improved documentation
-% 2018-10-09 AL - Now accepts multiple vectors an array or a cell array
-% 2018-10-10 AL - Added idxStart2All and idxEnd2All
+% 2018-08-10 Now checks number of arguments
+% 2018-09-17 Now returns empty indices if there is no pulse
+% 2018-10-09 Improved documentation
+% 2018-10-09 Now accepts multiple vectors an array or a cell array
+% 2018-10-10 Added indStart2 and indEnd2
+% 2018-12-15 Now uses force_column_cell.m
+% 2018-12-15 Now returns NaN if there is no pulse
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -59,34 +61,16 @@ addRequired(iP, 'vectors', ...                   % vectors
 parse(iP, vectors);
 
 %% Preparation
-% Count the number of vectors
-nVectors = count_vectors(vectors);
+% Force vectors as a cell array of numeric vectors
+vectors = force_column_cell(vectors);
 
 %% Do the job
-idxStartAll = zeros(nVectors, 1);
-idxEndAll = zeros(nVectors, 1);
-idxStart2All = zeros(nVectors, 1);
-idxEnd2All = zeros(nVectors, 1);
-if iscell(vectors)
-    %parfor iVec = 1:nVectors
-    for iVec = 1:nVectors
-        [idxStartAll(iVec), idxEndAll(iVec), ...
-            idxStart2All(iVec), idxEnd2All(iVec)] = ...
-            find_pulse_endpoints_helper(vectors{iVec});
-    end
-elseif isnumeric(vectors)
-    parfor iVec = 1:nVectors
-        [idxStartAll(iVec), idxEndAll(iVec), ...
-            idxStart2All(iVec), idxEnd2All(iVec)] = ...
-            find_pulse_endpoints_helper(vectors(:, iVec));
-    end
-else
-    error('vectors is not the right type!');
-end
+[indStart1, indEnd1, indStart2, indEnd2] = ...
+    cellfun(@find_pulse_endpoints_helper, vectors);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [idxStart, idxEnd, idxStart2, idxEnd2] = ...
+function [idxStart1, idxEnd1, idxStart2, idxEnd2] = ...
                 find_pulse_endpoints_helper(vector)
 %% Finds pulse endpoints from a single vector
 
@@ -111,39 +95,54 @@ indHalf2 = idxAbsMax:nSamples;
 %   Note: Change search direction based on positive or negative pulse
 if signAmplitude == 1
     % Find the last point less than 1/4 of the amplitude in the first half
-    idxStart = find(vectorShifted(indHalf1) < amplitude * 0.25, 1, 'last');
+    idxStart1 = find(vectorShifted(indHalf1) < amplitude * 0.25, 1, 'last');
 
     % Find the first point greater than 3/4 of the amplitude in the first half
     idxStart2 = find(vectorShifted(indHalf1) > amplitude * 0.75, 1);
 
     % Find the last point greater than 3/4 of the amplitude in the second half
-    idxEndRel = find(vectorShifted(indHalf2) > amplitude * 0.75, 1, 'last');
+    idxEnd1Rel = find(vectorShifted(indHalf2) > amplitude * 0.75, 1, 'last');
 
     % Find the first point less than 1/4 of the amplitude in the second half
     idxEnd2Rel = find(vectorShifted(indHalf2) < amplitude * 0.25, 1);
 elseif signAmplitude == -1
     % Find the last point greater than 1/4 of the amplitude in the first half
-    idxStart = find(vectorShifted(indHalf1) > amplitude * 0.25, 1, 'last');
+    idxStart1 = find(vectorShifted(indHalf1) > amplitude * 0.25, 1, 'last');
 
     % Find the first point less than 3/4 of the amplitude in the first half
     idxStart2 = find(vectorShifted(indHalf1) < amplitude * 0.75, 1);
 
     % Find the last point less than 3/4 of the amplitude in the second half
-    idxEndRel = find(vectorShifted(indHalf2) < amplitude * 0.75, 1, 'last');
+    idxEnd1Rel = find(vectorShifted(indHalf2) < amplitude * 0.75, 1, 'last');
 
     % Find the first point greater than 1/4 of the amplitude in the second half
     idxEnd2Rel = find(vectorShifted(indHalf2) > amplitude * 0.25, 1);
 else
-    idxStart = [];
+    idxStart1 = [];
     idxStart2 = [];
-    idxEnd = [];
-    idxEnd2 = [];
-    return;
+    idxEnd1Rel = [];
+    idxEnd2Rel = [];
+    
 end
 
-% Shift the indices to correspond to entire vector
-idxEnd = idxEndRel + idxAbsMax - 1;
-idxEnd2 = idxEnd2Rel + idxAbsMax - 1;
+% Either shift the indices to correspond to entire vector, 
+%   or if not found, return as NaN
+if isempty(idxStart1)
+    idxStart1 = NaN;
+end
+if isempty(idxStart2)
+    idxStart2 = NaN;
+end
+if isempty(idxEnd1Rel)
+    idxEnd1 = NaN;
+else
+    idxEnd1 = idxEnd1Rel + idxAbsMax - 1;
+end
+if isempty(idxEnd2Rel)
+    idxEnd2 = NaN;
+else
+    idxEnd2 = idxEnd2Rel + idxAbsMax - 1;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -157,6 +156,38 @@ amplitude = pulse(idxAbsMax);
 if iscell(vectors)
     vectors = vectors(:);
 end
+
+% Count the number of vectors
+nVectors = count_vectors(vectors);
+
+%% Do the job
+indStart1 = zeros(nVectors, 1);
+indEnd1 = zeros(nVectors, 1);
+indStart2 = zeros(nVectors, 1);
+indEnd2 = zeros(nVectors, 1);
+if iscell(vectors)
+    %parfor iVec = 1:nVectors
+    for iVec = 1:nVectors
+        [indStart1(iVec), indEnd1(iVec), ...
+            indStart2(iVec), indEnd2(iVec)] = ...
+            find_pulse_endpoints_helper(vectors{iVec});
+    end
+elseif isnumeric(vectors)
+    for iVec = 1:nVectors
+%    parfor iVec = 1:nVectors
+        [indStart1(iVec), indEnd1(iVec), ...
+            indStart2(iVec), indEnd2(iVec)] = ...
+            find_pulse_endpoints_helper(vectors(:, iVec));
+    end
+else
+    error('vectors is not the right type!');
+end
+
+idxStart1 = [];
+idxStart2 = [];
+idxEnd1 = [];
+idxEnd2 = [];
+return;
 
 %}
 
