@@ -35,10 +35,11 @@ function filteredData = freqfilter (data, fc, varargin)
 %                   must be a numeric scalar that is a positive integer
 %                   consistent with the documentation for butter()
 %
-% Used by:    
-%        /home/Matlab/minEASE/minEASE.m
-%        /home/Matlab/Brians_Functions/identify_CI.m
-%        many others; apply this command in a LINUX terminal to find them:
+% Used by:
+%       cd/compute_average_pulse_response.m
+%       cd/identify_CI_protocol.m
+%       /home/Matlab/minEASE/minEASE.m
+%           many others; apply this command in a LINUX terminal to find them:
 %             grep --include=*.m -rlw '/home/Matlab/' -e "freqfilter"
 %
 % File History:

@@ -27,7 +27,18 @@ function [tVecResp, vecResp, vecStim, labels] = ...
 %                       'Current'       - current
 %                       'Conductance'   - conductance
 %                       'Other'         - other un-identified types
-%       varargin    - 'ChannelTypes': the channel types
+%       varargin    - 'LowPassFrequency': frequency of lowpass filter in Hz
+%                   must be a nonnegative scalar
+%                   default = []
+%                   - 'ResponseLengthMs': length of the pulse response
+%                                           after pulse endpoint in ms
+%                   must be a nonnegative scalar
+%                   default = 20 ms
+%                   - 'BaselineLengthMs': length of the pulse response
+%                                           before pulse start in ms
+%                   must be a nonnegative scalar
+%                   default = 0 ms
+%                   - 'ChannelTypes': the channel types
 %                   must be a cellstr with nChannels elements
 %                       each being one of the following:
 %                           'Voltage'
@@ -49,6 +60,7 @@ function [tVecResp, vecResp, vecStim, labels] = ...
 %       cd/extract_subvectors.m
 %       cd/find_pulse_response_endpoints.m
 %       cd/force_column_cell.m
+%       cd/freqfilter.m
 %       cd/parse_abf.m
 %
 % Used by:
@@ -56,15 +68,17 @@ function [tVecResp, vecResp, vecStim, labels] = ...
 
 % File History:
 % 2018-12-15 Moved from compute_and_plot_evoked_LFP.m
-% TODO: Make baselineLengthMs and responseLengthMs optional parameters
+% 2018-12-15 Made baselineLengthMs and responseLengthMs optional parameters
+% 2018-12-15 Now lowpass filters each trace first
 % 
 
 %% Hard-coded parameters
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
-baselineLengthMs = 5;           % baseline length in ms
-responseLengthMs = 20;          % response length in ms
 
 %% Default values for optional arguments
+lowPassFrequencyDefault = [];   % do not lowpass filter by default
+responseLengthMsDefault = 20;   % a response of 20 ms by default
+baselineLengthMsDefault = 5;    % a baseline of 20 ms by default
 channelTypesDefault = {};       % set later
 channelUnitsDefault = {};       % set later
 channelLabelsDefault = {};      % set later
@@ -91,6 +105,12 @@ addRequired(iP, 'responseType', ...
     @(x) any(validatestring(x, validChannelTypes)));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'LowPassFrequency', lowPassFrequencyDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+addParameter(iP, 'ResponseLengthMs', responseLengthMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+addParameter(iP, 'BaselineLengthMs', baselineLengthMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
     @(x) isempty(x) || isstring(x) || iscellstr(x));
 addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
@@ -98,12 +118,15 @@ addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
 addParameter(iP, 'ChannelLabels', channelLabelsDefault, ...
     @(x) isempty(x) || isstring(x) || iscellstr(x));
 addParameter(iP, 'ParsedParams', parsedParamsDefault, ...
-    @(x) validateattributes(x, {'struct'}, {'scalar'}));
+    @(x) isempty(x) || isstruct(x));
 addParameter(iP, 'ParsedData', parsedDataDefault, ...
-    @(x) validateattributes(x, {'struct'}, {'scalar'}));
+    @(x) isempty(x) || isstruct(x));
 
 % Read from the Input Parser
 parse(iP, fileName, responseType, varargin{:});
+lowPassFrequency = iP.Results.LowPassFrequency;
+responseLengthMs = iP.Results.ResponseLengthMs;
+baselineLengthMs = iP.Results.BaselineLengthMs;
 channelTypes = iP.Results.ChannelTypes;
 channelUnits = iP.Results.ChannelUnits;
 channelLabels = iP.Results.ChannelLabels;
@@ -136,6 +159,9 @@ end
 
 % Extract the parsed parameters
 siMs = parsedParams.siMs;
+siSeconds = parsedParams.siSeconds;
+channelTypes = parsedParams.channelTypes;
+channelUnits = parsedParams.channelUnits;
 channelLabels = parsedParams.channelLabels;
 
 % Extract the time vector
@@ -147,24 +173,29 @@ labels = cell(1, 2);
 % Extract the vectors containing pulses
 [stimVecs, labels{1}] = ...
     extract_channel(fileName, stimType, ...
-                'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
-                'ChannelTypes', channelTypes);
+            'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
+            'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
+            'ChannelLabels', channelLabels);
 
 % Extract the vectors containing pulse responses
 [respVecs, labels{2}] = ...
     extract_channel(fileName, responseType, ...
-                'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
-                'ChannelTypes', channelTypes);
+            'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
+            'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
+            'ChannelLabels', channelLabels);
 
 %% Do the job
+% Low-pass filter if requested
+if ~isempty(lowPassFrequency)
+    respVecs = freqfilter(respVecs, lowPassFrequency, ...
+                            'FilterType', 'low', 'si', siSeconds);
+end
+
 % Force as a cell array of vectors
 [respVecs, stimVecs] = argfun(@force_column_cell, respVecs, stimVecs);
 
-% Compute the baseline length in samples
-baselineLengthSamples = floor(baselineLengthMs / siMs);
-
 % Identify the pulse response endpoints
-[idxResponseStarts, idxResponseEnds, ~, ~, idxStimEnds] = ...
+[idxResponseStarts, idxResponseEnds] = ...
     find_pulse_response_endpoints(respVecs, siMs, ...
                                 'PulseVectors', stimVecs, ...
                                 'BaselineLengthMs', baselineLengthMs, ...
@@ -208,6 +239,10 @@ OLD CODE:
                 'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
                 'ChannelTypes', channelTypes), stimType, responseType);
 
+% Compute the baseline length in samples
+baselineLengthSamples = floor(baselineLengthMs / siMs);
+
+[idxResponseStarts, idxResponseEnds, ~, ~, idxStimEnds] = ...
 
 %}
 

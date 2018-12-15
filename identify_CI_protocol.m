@@ -12,6 +12,7 @@ function [isCI, rangeCI] = identify_CI_protocol (iVecs, siUs)
 %       siUs        - sampling interval in microseconds
 %
 % Requires:
+%       cd/freqfilter.m
 %       cd/parse_abf.m
 %
 % Used by:

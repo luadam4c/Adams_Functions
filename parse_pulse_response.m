@@ -73,7 +73,9 @@ function [parsedParams, parsedData] = ...
 % 2018-10-10 Adapted from parse_pulse.m
 % 2018-10-11 Fixed tvecRising so that it starts from 0
 % 2018-11-13 Added 'MeanValueWindowMs' as an optional argument
+% 2018-12-15 Added 'peakValue', 'idxPeak', 'peakAmplitude' in parsedParams
 % TODO: 2018-11-28 Now allows siMs to be a vector
+% TODO: Compute the slope of the peak
 
 %% Hard-coded parameters
 
@@ -131,7 +133,7 @@ meanValueWindowSamples = round(meanValueWindowMs ./ siMs);
 
 %% Do the job
 % Find indices for all the pulse response endpoints
-[idxResponseStart, idxResponseEnd, hasJump] = ...
+[idxResponseStart, idxResponseEnd, hasJump, idxPulseStart, idxPulseEnd] = ...
     find_pulse_response_endpoints(vectors, siMs, ...
                                     'PulseVectors', pulseVectors, ...
                                     'SameAsPulse', sameAsPulse, ...
@@ -148,12 +150,14 @@ responseWidthSamples = idxResponseEnd - idxResponseStart;
 responseWidthMs = responseWidthSamples * siMs;
 
 % Compute the endpoints of the baseline
-idxBaseStart = idxResponseStart - meanValueWindowSamples;
+%   Note: this cannot be smaller than 1
+idxBaseStart = max([1, idxResponseStart - meanValueWindowSamples]);
 idxBaseEnd = idxResponseStart - 1;
 
 % Compute the endpoints of the steady state
-idxSteadyStart = idxResponseEnd - meanValueWindowSamples;
-idxSteadyEnd = idxResponseEnd - 1;
+%   Note: this cannot be smaller than idxResponseStart
+idxSteadyStart = max([idxResponseStart, idxResponseEnd - meanValueWindowSamples]);
+idxSteadyEnd = max([idxResponseStart, idxResponseEnd - 1]);
 
 % Construct a vector that goes from -n:-1
 indBefore = (-1) * transpose(fliplr(1:meanValueWindowSamples));
@@ -178,6 +182,30 @@ steadyAmplitude = steadyValue - baseValue;
 % Find the minimum and maximum values
 minValue = cellfun(@min, vectors);
 maxValue = cellfun(@max, vectors);
+
+% Find the index for each vector after pulse ends
+%   Note: this cannot be greater than nSamples
+idxAfterPulseEnd = arrayfun(@(x) min([idxPulseEnd + 1, x]), nSamples);
+
+% Find the minimum and maximum values after the pulse ends
+[minValueAfterPulse, idxMinValueAfterPulseRel] = ...
+    cellfun(@(x, y) min(x(y:end)), vectors, num2cell(idxAfterPulseEnd));
+[maxValueAfterPulse, idxMaxValueAfterPulseRel] = ...
+    cellfun(@(x, y) max(x(y:end)), vectors, num2cell(idxAfterPulseEnd));
+
+% Record the corresponding indices
+idxMinValueAfterPulse = idxMinValueAfterPulseRel + (idxAfterPulseEnd - 1);
+idxMaxValueAfterPulse = idxMaxValueAfterPulseRel + (idxAfterPulseEnd - 1);
+
+% Find the peak values (the minimum or maximum value after pulse end
+%   with largest magnitude)
+[peakValue, idxPeak] = ...
+    arrayfun(@(x, y, z, w) choose_peak_value(x, y, z, w), ...
+            minValueAfterPulse, maxValueAfterPulse, ...
+            idxMinValueAfterPulse, idxMaxValueAfterPulse);
+
+% Compute the relative peak amplitude
+peakAmplitude = peakValue - baseValue;
 
 % Find the indices for the rising and falling phases, respectively
 indRising = arrayfun(@(x, y) transpose(x:y), ...
@@ -224,14 +252,37 @@ vvecsCombined = cellfun(@(x, y, z) x(y) - z, ...
 parsedParams = table(nSamples, responseWidthSamples, responseWidthMs, ...
                         nSamplesRising, nSamplesFalling, ...
                         idxResponseStart, idxResponseEnd, idxResponseMid, ...
+                        idxPulseStart, idxPulseEnd, ...
                         idxBaseStart, idxBaseEnd, ...
                         idxSteadyStart, idxSteadyEnd, ...
                         baseValue, steadyValue, steadyAmplitude, ...
-                        minValue, maxValue, hasJump);
+                        minValue, maxValue, ...
+                        minValueAfterPulse, idxMinValueAfterPulse, ...
+                        maxValueAfterPulse, idxMaxValueAfterPulse, ...
+                        peakValue, idxPeak, peakAmplitude, hasJump);
 parsedData = table(vectors, indBase, indSteady, ...
                     indRising, indFalling, indCombined, ...
                     tvecsRising, vvecsRising, tvecsFalling, vvecsFalling, ...
                     tvecsCombined, vvecsCombined);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [peakValue, idxPeak] = ...
+                choose_peak_value (minValueAfterPulse, maxValueAfterPulse, ...
+                                idxMinValueAfterPulse, idxMaxValueAfterPulse)
+%% Chooses the peak value from minimum and maximum
+
+% Find the larger magnitude of the two extrema
+[~, iPeak] = max(abs([minValueAfterPulse, maxValueAfterPulse]));
+
+% Get the actual index and value for the peak
+if iPeak == 1
+    idxPeak = idxMinValueAfterPulse;
+    peakValue = minValueAfterPulse;
+elseif iPeak == 2
+    idxPeak = idxMaxValueAfterPulse;
+    peakValue = maxValueAfterPulse;
+end    
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -242,6 +293,10 @@ tvecsRising = arrayfun(@(x) transpose(1:x) * siMs, nSamplesRising, ...
                         'UniformOutput', false);
 tvecsFalling = arrayfun(@(x) transpose(1:x) * siMs, nSamplesFalling, ...
                         'UniformOutput', false);
+
+idxBaseStart = idxResponseStart - meanValueWindowSamples;
+idxSteadyStart = idxResponseEnd - meanValueWindowSamples;
+
 
 %}
 

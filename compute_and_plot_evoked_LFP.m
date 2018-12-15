@@ -1,6 +1,8 @@
-function [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (fileName, varargin)
+function [tVecLfp, vVecLfp, iVecStim, features] = ...
+                compute_and_plot_evoked_LFP (fileName, varargin)
 %% Computes and plots an evoked local field potential with its stimulus
-% Usage: [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (fileName, varargin)
+% Usage: [tVecLfp, vVecLfp, iVecStim, features] = ...
+%               compute_and_plot_evoked_LFP (fileName, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -13,8 +15,8 @@ function [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (f
 %                   specified as a numeric column vector
 %       iVecStim    - current trace of stimulation current pulse
 %                   specified as a numeric column vector
-%       features    - computed LFP features
-%                       peakAmp
+%       features    - computed LFP features, a table
+%                       peakAmplitude
 %                       peakSlope
 % Arguments:    
 %       fileName    - file name could be either the full path or 
@@ -23,7 +25,8 @@ function [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (f
 %                   must be a string scalar or a character vector
 %       varargin    - 'OutFolder': the name of the directory for plots
 %                   must be a string scalar or a character vector
-%                   default == a subdirectory named by {fileName}_traces in pwd
+%                   default == a subdirectory named by outFolderName
+%                               in the same directory as fileName
 %                   - 'PlotFlag': whether to plot the pulse train series
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
@@ -48,6 +51,7 @@ function [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (f
 % Requires:
 %       cd/compute_average_pulse_response.m
 %       cd/isfigtype.m
+%       cd/plot_pulse_response_with_stimulus.m
 %       cd/save_all_figtypes.m
 %
 % Used by:    
@@ -71,8 +75,17 @@ function [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (f
 
 %% Hard-coded parameters
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
+
+% For computing
 responseType = 'Voltage';
-colorAnnotations = 'r';
+lowPassFrequency = 1000;        % lowpass filter frequency in Hz
+baselineLengthMs = 5;           % baseline length in ms
+responseLengthMs = 20;          % response length in ms
+
+% For plotting
+outFolderName = 'LFPs';
+fileSuffix = '_LFP';
+responseName = 'Evoked potential';
 
 %% Default values for optional arguments
 outFolderDefault = '';          % set later
@@ -144,105 +157,51 @@ end
 % Set (some) dependent argument defaults
 [fileDir, fileBase, ~] = fileparts(fileName);
 if isempty(outFolder)
-    outFolder = fullfile(fileDir, 'LFPs');
+    outFolder = fullfile(fileDir, outFolderName);
 end
 
-%% Preparation
-% Check if needed output directories exist
-check_dir(outFolder);
-
-%% Average the current pulse responses
-% TODO:
-[tVecLfp, vVecLfp, iVecStim, channelLabels] = ...
-    compute_average_pulse_response(fileName, 'ResponseType', responseType, ...
+%% Average the pulse and pulse responses
+[tVec, respVec, stimVec, labels] = ...
+    compute_average_pulse_response(fileName, responseType, ...
         'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
         'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
-        'ChannelLabels', channelLabels);
+        'ChannelLabels', channelLabels, ...
+        'LowPassFrequency', lowPassFrequency, ...
+        'BaselineLengthMs', baselineLengthMs, ...
+        'ResponseLengthMs', responseLengthMs);
 
-%% Extract the amplitude of the evoked local field potential
-% TODO: Modify parse_pulse_response()
+%% Compute features of the average pulse response
+% Compute the sampling interval
+siMs = tVec(2) - tVec(1);
 
-% Compute the baseline voltage value of the averaged trace
-baseVal = mean(vVecLfp(1:baselineLengthSamples));
+% Parse the average pulse response vector
+features = parse_pulse_response(respVec, siMs, ...
+                                'PulseVectors', stimVec, ...
+                                'SameAsPulse', true, ...
+                                'MeanValueWindowMs', baselineLengthMs);
 
-% Get the index of pulse end for the restricted trace
-%   Note: Assume the pulses all end at the same index
-idxCpEndLfp = idxCpEnds(1) - idxCprStartAveraged + 1;
-
-% Compute the peak voltage value of the averaged pulse response trace
-%   after the pulse ends
-[peakVal, temp1] = max(vVecLfp((idxCpEndLfp + 1):end));
-idxPeak = temp1 + idxCpEndLfp;
-
-% Compute the relative peak amplitude
-peakAmp = peakVal - baseVal;
-
-%% Extract the slope of the evoked local field potential
-% TODO
-
-%% Preparation for plotting
-% TODO: 
+% Add labels to features
+features.labels = labels;
 
 %% Plot the evoked local field potential with the stimulation pulse
 if plotFlag
-    % Open and clear figure
-    if saveFlag
-        h = figure('Visible', 'off');
-        figName = fullfile(outFolder, [fileBase, '_LFP']);
-        clf(h);
-    else
-        figure;
-    end
+    % Save in a single params structure
+    params = table2struct(features);
+    params.OutFolder = outFolder;
+    params.SaveFlag = saveFlag;
+    params.FigTypes = figTypes;
+    params.FileBase = fileBase;
+    params.FileSuffix = fileSuffix;
+    params.ResponseName = responseName;
 
-    % Compute the x axis limits
-    left = min(tVecLfp);
-    right = max(tVecLfp);
-    xlimits = [left, right];
-    
-    % Find the time of the peak relative to the x limits
-    width = right - left;
-    timePeakRel = (tVecLfp(idxPeak) - left) / width;
-
-    % Generate a subplot for the evoked local field potential
-    %   Annotations:
-    %       red double arrow for peak amplitude
-    ax1 = subplot(3, 1, 1:2);
-    hold on;
-    plot(tVecLfp, vVecLfp);
-    xlim(xlimits);
-    ylimits = get(gca, 'YLim');
-    pos = get(gca, 'Position');
-    height = ylimits(2) - ylimits(1);
-    bottom = ylimits(1);
-    annotation('doublearrow', pos(1) + pos(3) * timePeakRel * ones(1, 2), ...
-                pos(2) + pos(4) * ([baseVal, peakVal] - bottom) / height, ...
-                'Color', colorAnnotations);
-    text(tVecLfp(idxPeak) + 1, mean([baseVal, peakVal]), ...
-            ['peak amp = ', num2str(peakAmp), ' (mV)']);
-    ylabel(channelLabels{1});
-    title(['Evoked potential for ', fileBase], 'Interpreter', 'none');
-
-    % Generate a subplot for the stimulation pulse
-    ax2 = subplot(3, 1, 3);
-    hold on;
-    plot(tVecLfp, iVecStim);
-    xlim(xlimits);    
-    ylabel(channelLabels{2});
-    xlabel('Time (ms)');
-    title(['Stimulus for ', fileBase], 'Interpreter', 'none');
-
-    % Link the axes
-    linkaxes([ax1, ax2], 'x');
-
-    % Save and close figure
-    if saveFlag
-        save_all_figtypes(h, figName, figTypes);
-        close(h)
-    end
+    % Plot the pulse response with the stimulation pulse
+    plot_pulse_response_with_stimulus(tVec, respVec, stimVec, params);
 end
 
-% Output features in the features structure
-features.peakAmp = peakAmp;
+%% Rename outputs
+tVecLfp = tVec;
+vVecLfp = respVec;
+iVecStim = stimVec;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -335,6 +294,24 @@ if ndims(iVecs) > 2
 end
 
 nSweeps = parsedParams.nSweeps;
+
+% Compute the baseline voltage value of the averaged trace
+baseValue = mean(vVecLfp(1:baselineLengthSamples));
+
+% Get the index of pulse end for the restricted trace
+%   Note: Assume the pulses all end at the same index
+idxResponseEnd = idxCpEnds(1) - idxCprStartAveraged + 1;
+
+% Compute the peak voltage value of the averaged pulse response trace
+%   after the pulse ends
+[peakValue, temp1] = max(vVecLfp((idxResponseEnd + 1):end));
+idxPeak = temp1 + idxResponseEnd;
+
+% Compute the relative peak amplitude
+peakAmplitude = peakValue - baseValue;
+
+% Output features in the features structure
+features.peakAmplitude = peakAmplitude;
 
 %}
 
