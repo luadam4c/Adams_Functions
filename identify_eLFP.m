@@ -1,6 +1,6 @@
-function [isEvokedLfp] = identify_eLFP (iVecsORfileName, varargin)
+function isEvokedLfp = identify_eLFP (iVecsORfileName, varargin)
 %% Identifies whether an abf file follows an eLFP protocol
-% Usage: [isEvokedLfp] = identify_eLFP (iVecsORfileName, varargin)
+% Usage: isEvokedLfp = identify_eLFP (iVecsORfileName, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -26,8 +26,8 @@ function [isEvokedLfp] = identify_eLFP (iVecsORfileName, varargin)
 %                   default == 2
 %
 % Requires:
+%       cd/extract_current_vectors.m
 %       cd/identify_repetitive_pulses.m
-%       cd/parse_abf.m
 %
 % Used by:    
 %       cd/parse_abf.m
@@ -39,6 +39,7 @@ function [isEvokedLfp] = identify_eLFP (iVecsORfileName, varargin)
 % 2018-10-03 - Updated usage of parse_abf.m
 % 2018-12-15 - Made 'MinSweeps' an optional parameter with default 2
 % 2018-12-15 - Moved code to identify_repetitive_pulses.m
+% 2018-12-15 - Moved code to extract_current_vectors.m
 % 
 
 %% Hard-coded parameters
@@ -82,31 +83,20 @@ if ~isempty(channelTypes)
 end
 
 %% Preparation
+% Parse the first argument and extract the current vectors if needed
 if ischar(iVecsORfileName) || isstring(iVecsORfileName)
     % The first argument is a file name
     fileName = iVecsORfileName;
 
-    % Parse the abf file to get the current vectors
-    [~, parsedData] = parse_abf(fileName, 'Verbose', false, ...
-                                'ChannelTypes', channelTypes);
-    iVecs = parsedData.iVecs;
-
-    % If iVecs is a cellarray, use the first element
-    if iscell(iVecs)
-        iVecs = iVecs{1};
-    end
-
-    % If iVecs is 3-D, use the first two dimensions 
-    if ndims(iVecs) > 2
-        iVecs = squeeze(iVecs(:, :, 1));
-    end
+    % Extract the current vectors
+    iVecs = extract_current_vectors(fileName, 'ChannelTypes', channelTypes);
 else
     % The first argument are the current vectors
     iVecs = iVecsORfileName;
 end
 
-
 %% Do the job
+% Identify whether the current vectors are repetitive pulses
 isEvokedLfp = identify_repetitive_pulses(iVecs, 'MinSweeps', minSweeps);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -117,10 +107,6 @@ OLD CODE:
 ampCp = iVecs(idxCpMid, iSwp);
 
 disp('done');
-
-[~, ~, ~, ~, iVecs, ~] = ...
-    parse_abf(fileName, 'Verbose', false, ...
-                'ChannelTypes', channelTypes);
 
 %}
 

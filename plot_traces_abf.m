@@ -110,7 +110,7 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 % 2018-09-25 - Updated usage of plot_traces.m
 % 2018-09-25 - Added figTypes as an argument
 % 2018-10-03 - Updated usage of parse_abf.m
-% 2018-10-03 - Added ParsedData, ParsedParams as optional arguments
+% 2018-10-03 - Added 'ParsedData', 'ParsedParams' as optional arguments
 % 2018-11-21 - Added 'OverWrite' as an optional argument
 % 2018-11-22 - Now plots 
 % TODO: Change the outputs to a cell array of figure handles

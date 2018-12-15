@@ -87,6 +87,15 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %                   - 'IdentifyProtocols': whether to identify protocols
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'Data': data
+%                   must be a numeric array
+%                   default == returned by abf2load.m or abfload.m
+%                   - 'SiUs': sampling interval (us)
+%                   must be a positive scalar
+%                   default == returned by abf2load.m or abfload.m
+%                   - 'FileInfo': file info
+%                   must be a structure
+%                   default == returned by abf2load.m or abfload.m
 
 %
 % Requires:
@@ -102,8 +111,8 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %       cd/plot_traces_abf.m
 %       cd/plot_traces_EEG.m
 %       cd/compute_and_plot_evoked_LFP.m
+%       cd/extract_current_vectors.m
 %       cd/identify_CI.m
-%       cd/identify_eLFP.m
 
 % File history: 
 % 2018-09-17 - Moved from plot_traces_abf.m
@@ -117,6 +126,8 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 % 2018-10-03 - Renamed abfParams -> parsedParams
 %               and placed all other outputs in a structure called parsedData
 % 2018-10-03 - Added nargout
+% 2018-12-15 - Now allows Data, SiUs, FileInfo to be passed in 
+%               so that abf2load does not have to be called
 
 %% Hard-coded constants
 US_PER_MS = 1e3;            % number of microseconds per millisecond
@@ -138,17 +149,11 @@ channelTypesDefault = {};           % set later
 channelUnitsDefault = {};           % set later
 channelLabelsDefault = {};          % set later
 identifyProtocolsDefault = false;   % don't identify protocols by default
+dataDefault = [];                   % set later
+siUsDefault = [];                   % set later
+fileInfoDefault = [];               % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% If not compiled, add directories to search path for required functions
-if ~isdeployed
-    % Locate the functions directory
-    functionsDirectory = locate_functionsdir;
-
-    % Add path for abf2load.m, abfload.m
-    addpath(fullfile(functionsDirectory, 'Downloaded_Functions'));
-end
 
 %% Deal with arguments
 % Check number of required arguments
@@ -183,6 +188,12 @@ addParameter(iP, 'ChannelLabels', channelLabelsDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'IdentifyProtocols', identifyProtocolsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Data', dataDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'3d'}));
+addParameter(iP, 'SiUs', siUsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
+addParameter(iP, 'FileInfo', fileInfoDefault, ...
+    @(x) validateattributes(x, {'struct'}, {'2d'}));
 
 % Read from the Input Parser
 parse(iP, fileName, varargin{:});
@@ -194,6 +205,9 @@ channelTypes = iP.Results.ChannelTypes;
 channelUnits = iP.Results.ChannelUnits;
 channelLabels = iP.Results.ChannelLabels;
 identifyProtocols = iP.Results.IdentifyProtocols;
+data = iP.Results.Data;
+siUs = iP.Results.SiUs;
+fileInfo = iP.Results.FileInfo;
 
 % Validate channel types
 if ~isempty(channelTypes)
@@ -210,21 +224,33 @@ if ~fileExists
     return
 end
 
-% Load abf file, si is in us
-if exist('abf2load', 'file') == 2
-    try
-        [data, siUs, fileInfo] = abf2load(abfFullFileName);
-    catch
-        try
-            [data, siUs, fileInfo] = abfload(abfFullFileName);
-        catch ME
-            fprintf('The file %s cannot be read by either %s or %s!\n', ...
-                    abfFullFileName, 'abf2load', 'abfload');
-            rethrow(ME);
-        end
+% Load abf data if not provided
+if isempty(data) || isempty(siUs) || isempty(fileInfo)
+    % If not compiled, add directories to search path for required functions
+    if ~isdeployed
+        % Locate the functions directory
+        functionsDirectory = locate_functionsdir;
+
+        % Add path for abf2load.m, abfload.m
+        addpath(fullfile(functionsDirectory, 'Downloaded_Functions'));
     end
-elseif exist('abfload', 'file') == 2
-    [data, siUs, fileInfo] = abfload(abfFullFileName);
+
+    % Load abf file, si is in us
+    if exist('abf2load', 'file') == 2
+        try
+            [data, siUs, fileInfo] = abf2load(abfFullFileName);
+        catch
+            try
+                [data, siUs, fileInfo] = abfload(abfFullFileName);
+            catch ME
+                fprintf('The file %s cannot be read by either %s or %s!\n', ...
+                        abfFullFileName, 'abf2load', 'abfload');
+                rethrow(ME);
+            end
+        end
+    elseif exist('abfload', 'file') == 2
+        [data, siUs, fileInfo] = abfload(abfFullFileName);
+    end
 end
 
 % Find data dimensions and make sure it is <= 3

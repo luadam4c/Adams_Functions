@@ -34,7 +34,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'x', ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+    @(x) validateattributes(x, {'numeric'}, {'3d'}));
 
 % Read from the Input Parser
 parse(iP, x);

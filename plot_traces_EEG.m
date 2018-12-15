@@ -30,6 +30,12 @@ function plot_traces_EEG (abfFileName, varargin)
 %                   - 'SayliPath': path to Sayli_SWDs.csv file
 %                   must be a TODO
 %                   default == TODO
+%                   - 'ParsedParams': parsed parameters returned by parse_abf.m
+%                   must be a scalar structure
+%                   default == what the file provides
+%                   - 'ParsedData': parsed data returned by parse_abf.m
+%                   must be a scalar structure
+%                   default == what the file provides
 %                   
 % Requires:
 %       cd/all_files.m
@@ -47,16 +53,19 @@ function plot_traces_EEG (abfFileName, varargin)
 %   2018-11-21 - Renamed spikewavedetection -> plot_EEG
 %   2018-11-21 - Updated to use plot_traces_abf.m
 %   2018-11-26 - Removed first argument and detect in current directory
+%   2018-12-15 - Added 'ParsedData', 'ParsedParams' as optional arguments
 % TODO: Plot flags for different types of plots
 % TODO: Save SWD figures with the width proportional to the duration
 % 
 
 %% Default values for optional arguments
 verboseDefault = true;
-outFolderDefault = '';      % set later
-atfPathDefault = '';        % set later
-assystPathDefault = '';     % set later
-sayliPathDefault = '';      % set later
+outFolderDefault = '';          % set later
+atfPathDefault = '';            % set later
+assystPathDefault = '';         % set later
+sayliPathDefault = '';          % set later
+parsedParamsDefault = [];       % set later
+parsedDataDefault = [];         % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -86,6 +95,10 @@ addParameter(iP, 'AssystPath', assystPathDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SayliPath', sayliPathDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'ParsedParams', parsedParamsDefault, ...
+    @(x) validateattributes(x, {'struct'}, {'scalar'}));
+addParameter(iP, 'ParsedData', parsedDataDefault, ...
+    @(x) validateattributes(x, {'struct'}, {'scalar'}));
 
 % Read from the Input Parser
 parse(iP, abfFileName, varargin{:});
@@ -94,11 +107,15 @@ outFolder = iP.Results.OutFolder;
 atfPath = iP.Results.AtfPath;
 assystPath = iP.Results.AssystPath;
 sayliPath = iP.Results.SayliPath;
+parsedParams = iP.Results.ParsedParams;
+parsedData = iP.Results.ParsedData;
 
 %% Preparation
-% Parse the abf file
-[parsedParams, parsedData] = ...
-    parse_abf(abfFileName, 'Verbose', verbose, 'ExpMode', 'EEG');
+% Parse the abf file if not already done
+if isempty(parsedParams) || isempty(parsedData)
+    [parsedParams, parsedData] = ...
+        parse_abf(abfFileName, 'Verbose', verbose, 'ExpMode', 'EEG');
+end
 
 % Extract parsed results if there is anything parsed
 if isempty(parsedParams)
