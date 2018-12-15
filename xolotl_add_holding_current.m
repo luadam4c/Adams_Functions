@@ -70,7 +70,6 @@ amplitude = iP.Results.Amplitude;
 parsedParams = parse_xolotl_object(xolotlObject);
 
 % Extract parameters
-nSamples = parsedParams.nSamples;
 nCompartments = parsedParams.nCompartments;
 previousCurrentInjections = parsedParams.externalCurrents;
 
@@ -106,6 +105,8 @@ holdingCurrent = amplitude * ones(nSamples, 1);
 
 % Match zeros for the other compartments
 holdingCurrent = [holdingCurrent, zeros(nSamples, nCompartments - 1)];
+
+nSamples = parsedParams.nSamples;
 
 %}
 

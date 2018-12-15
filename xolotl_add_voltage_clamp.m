@@ -75,8 +75,6 @@ amplitude = iP.Results.Amplitude;
 parsedParams = parse_xolotl_object(xolotlObject);
 
 % Extract parameters
-nSamples = parsedParams.nSamples;
-nCompartments = parsedParams.nCompartments;
 prevClampedVoltages = parsedParams.clampedVoltages;
 
 % Find the index of the compartment to patch
@@ -111,6 +109,9 @@ clampedVoltage = amplitude * ones(nSamples, 1);
 
 % Match NaNs for the other compartments
 clampedVoltage = [clampedVoltage, NaN(nSamples, nCompartments - 1)];
+
+nSamples = parsedParams.nSamples;
+nCompartments = parsedParams.nCompartments;
 
 %}
 

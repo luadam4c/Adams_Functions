@@ -36,8 +36,8 @@ function xolotlObject = xolotl_add_current_pulse (xolotlObject, varargin)
 % File History:
 % 2018-12-12 Created by Adam Lu
 % 2018-12-12 Now builds upon previous I_ext
-% TODO: Make more general by adding a 'Compartments' parameter,
-%       with only the first compartment by default
+% 2018-12-13 Added 'Compartment' as an optional parameter
+% 2018-12-14 Fixed addition of newHoldingCurrents
 % 
 
 %% Hard-coded parameters
@@ -117,7 +117,7 @@ pulse = create_pulse('SamplingInterval', siMs, 'PulseDelay', delay, ...
 newHoldingCurrents(:, idxCompartment) = pulse;
 
 %% Add the pulse vectors to the previously set current injections
-xolotlObject.I_ext = previousCurrentInjections + pulse;
+xolotlObject.I_ext = previousCurrentInjections + newHoldingCurrents;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
 
