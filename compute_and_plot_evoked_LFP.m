@@ -46,12 +46,7 @@ function [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (f
 %                   default == what the file provides
 %
 % Requires:
-%       cd/argfun.m
-%       cd/compute_average_trace.m
-%       cd/extract_subvectors.m
-%       cd/find_pulse_response_endpoints.m
-%       cd/force_column_cell.m
-%       cd/parse_abf.m
+%       cd/compute_average_pulse_response.m
 %       cd/isfigtype.m
 %       cd/save_all_figtypes.m
 %
@@ -70,13 +65,13 @@ function [tVecLfp, vVecLfp, iVecStim, features] = compute_and_plot_evoked_LFP (f
 % 2018-12-15 - Updated usage of find_pulse_response_endpoints.m
 % 2018-12-15 - Now uses argfun.m, compute_average_trace.m, 
 %               extract_subvectors.m, force_column_cell.m
+% 2018-12-15 Moved code to compute_and_plot_evoked_LFP.m
 % TODO: add timeUnits as a parameter with default 'ms'
 % 
 
 %% Hard-coded parameters
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
-baselineLengthMs = 5;           % baseline length in ms
-responseLengthMs = 20;          % response length in ms
+responseType = 'Voltage';
 colorAnnotations = 'r';
 
 %% Default values for optional arguments
@@ -152,101 +147,41 @@ if isempty(outFolder)
     outFolder = fullfile(fileDir, 'LFPs');
 end
 
-%% Check if needed output directories exist
+%% Preparation
+% Check if needed output directories exist
 check_dir(outFolder);
 
-%% Load data and prepare for plotting
-% Load and parse the abf file if parsedParams and parsedData not both provided
-if isempty(parsedParams) || isempty(parsedData)
-    [parsedParams, parsedData] = ...
-        parse_abf(fileName, 'Verbose', false, ...
-                  'ChannelTypes', channelTypes, ...
-                  'ChannelUnits', channelUnits, ...
-                  'ChannelLabels', channelLabels);
-end
-
-% Extract vectors
-tVec = parsedData.tVec;
-vVecs = parsedData.vVecs;
-iVecs = parsedData.iVecs;
-
-% If vVecs or iVecs is a cellarray, use the first element
-% TODO: Is this still needed?
-if iscell(vVecs)
-    vVecs = vVecs{1};
-end
-if iscell(iVecs)
-    iVecs = iVecs{1};
-end
-
-% If vVecs or iVecs is 3-D, use the first two dimensions 
-if ndims(vVecs) > 2
-    vVecs = squeeze(vVecs(:, :, 1));
-end
-if ndims(iVecs) > 2
-    iVecs = squeeze(iVecs(:, :, 1));
-end
-
-% Extract the parsed parameters
-channelLabels = parsedParams.channelLabels;
-nSweeps = parsedParams.nSweeps;
-siMs = parsedParams.siMs;
-
-% Compute the baseline length in samples
-baselineLengthSamples = floor(baselineLengthMs / siMs);
-
-% Force as a cell array of vectors
-[vVecs, iVecs] = argfun(@force_column_cell, vVecs, iVecs);
-
 %% Average the current pulse responses
-% Identify the current pulse response endpoints
-[idxCprStarts, idxCprEnds, ~, ~, idxCpEnds] = ...
-    find_pulse_response_endpoints(vVecs, siMs, ...
-                                'PulseVectors', iVecs, ...
-                                'BaselineLengthMs', baselineLengthMs, ...
-                                'ResponseLengthMs', responseLengthMs);
-
-% Compute the number of samples in each current pulse response
-nSamplesEachCpr = idxCprEnds - idxCprStarts + 1;
-
-% Determine number of samples in the shortest current pulse response
-nSamplesCpr = min(nSamplesEachCpr);
-
-% Extract the time vector using the average starting index
-idxCprStartAveraged = mean(idxCprStarts);
-idxCprEndAveraged = (idxCprStartAveraged - 1) + nSamplesCpr;
-tVecLfp = tVec(idxCprStartAveraged:idxCprEndAveraged);
-
-% Place endpoints together as a matrix, with each column corresponding
-%   to each vector
-endPointsCpr = transpose([idxCprStarts, idxCprEnds]);
-
-% Extract the pulse responses
-[vVecCprs, iVecCprs] = ...
-    argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsCpr), vVecs, iVecs);
-
-% Average the current pulse responses to get the evoked local field potential
-%   and average the current pulses to get the stimulation pulse
-[vVecLfp, iVecStim] = ...
-    argfun(@(x) compute_average_trace(x, 'AlignMethod', 'LeftAdjust'), ...
-            vVecCprs, iVecCprs);
+% TODO:
+[tVecLfp, vVecLfp, iVecStim, channelLabels] = ...
+    compute_average_pulse_response(fileName, 'ResponseType', responseType, ...
+        'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
+        'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
+        'ChannelLabels', channelLabels);
 
 %% Extract the amplitude of the evoked local field potential
+% TODO: Modify parse_pulse_response()
+
 % Compute the baseline voltage value of the averaged trace
 baseVal = mean(vVecLfp(1:baselineLengthSamples));
 
-% Assume the current pulses all end at the same index
-idxCpEnd = idxCpEnds(1) - idxCprStartAveraged + 1;
+% Get the index of pulse end for the restricted trace
+%   Note: Assume the pulses all end at the same index
+idxCpEndLfp = idxCpEnds(1) - idxCprStartAveraged + 1;
 
-% Compute the peak voltage value of the averaged trace
-[peakVal, temp1] = max(vVecLfp((idxCpEnd + 1):end));
-idxPeak = temp1 + idxCpEnd;
+% Compute the peak voltage value of the averaged pulse response trace
+%   after the pulse ends
+[peakVal, temp1] = max(vVecLfp((idxCpEndLfp + 1):end));
+idxPeak = temp1 + idxCpEndLfp;
 
 % Compute the relative peak amplitude
 peakAmp = peakVal - baseVal;
 
 %% Extract the slope of the evoked local field potential
 % TODO
+
+%% Preparation for plotting
+% TODO: 
 
 %% Plot the evoked local field potential with the stimulation pulse
 if plotFlag
@@ -382,6 +317,24 @@ iVecStim = mean(iVecCprs, 2);
 vVecLfp = mean(vVecCprs, 2);
 
 idxCpEnd = idxCpEnds(1) - idxCprStartFirst + 1;
+
+% If vVecs or iVecs is a cellarray, use the first element
+if iscell(vVecs)
+    vVecs = vVecs{1};
+end
+if iscell(iVecs)
+    iVecs = iVecs{1};
+end
+
+% If vVecs or iVecs is 3-D, use the first two dimensions 
+if ndims(vVecs) > 2
+    vVecs = squeeze(vVecs(:, :, 1));
+end
+if ndims(iVecs) > 2
+    iVecs = squeeze(iVecs(:, :, 1));
+end
+
+nSweeps = parsedParams.nSweeps;
 
 %}
 

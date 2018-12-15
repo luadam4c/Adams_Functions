@@ -32,7 +32,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/find_window_endpoints.m
 %
 % Used by:
-%       cd/compute_and_plot_evoked_LFP.m
+%       cd/compute_average_pulse_response.m
 %       cd/compute_rms_error.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m

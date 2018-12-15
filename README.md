@@ -36,6 +36,7 @@ Last Updated 2018-12-15 by Adam Lu
 - [**combine_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_sweeps.m): Combines sweeps that begin with expLabel in dataDirectory under dataMode
 - [**compute_and_plot_concatenated_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_and_plot_concatenated_trace.m): Computes and plots concatenated traces from parsed ABF file results
 - [**compute_and_plot_evoked_LFP.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_and_plot_evoked_LFP.m): Computes and plots an evoked local field potential with its stimulus
+- [**compute_average_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_average_pulse_response.m): Computes an average pulse response
 - [**compute_average_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_average_trace.m): Computes the average of traces that are not necessarily the same length
 - [**compute_baseline_noise.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_baseline_noise.m): Computes the baseline noise from a set of data vectors, time vectors and baseline windows
 - [**compute_conductance.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_conductance.m): Compute theoretical conductance curve for the GABA_B IPSC used by dynamic clamp
@@ -182,6 +183,7 @@ Last Updated 2018-12-15 by Adam Lu
 - [**match_array_counts.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_array_counts.m): Matches a set of arrays to another set of arrays so that they have equal number of arrays
 - [**match_dimensions.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_dimensions.m): Reshapes or expands an array to match given dimensions
 - [**match_format_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_format_vectors.m): Matches two sets of vectors so that they are both cell arrays of the same number of column vectors
+- [**match_positions.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_positions.m): Finds element(s) of a cell array that matches the positions of elements of another cell array containing specified string(s)
 - [**match_reciprocals.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_reciprocals.m): Check reciprocals, make them column vectors and generate the reciprocal if empty
 - [**match_row_count.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_row_count.m): Expands or truncates an array to match a given number of rows (dimension #1)
 - [**match_time_points.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_time_points.m): Interpolates data (containing a time column) to match the time points of a new time vector

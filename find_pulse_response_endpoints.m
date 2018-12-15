@@ -49,7 +49,7 @@ function [indResponseStart, indResponseEnd, hasJump, indPulseStart, indPulseEnd]
 %
 % Used by:
 %       cd/compute_initial_slopes.m
-%       cd/compute_and_plot_evoked_LFP.m
+%       cd/compute_average_pulse_response.m
 %       cd/parse_pulse_response.m
 
 % File History:

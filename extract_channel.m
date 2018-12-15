@@ -1,6 +1,6 @@
-function vectors = extract_channel (abfFileName, channelType, varargin)
+function [vectors, label] = extract_channel (abfFileName, channelType, varargin)
 %% Extracts vectors of a given type from a .abf file
-% Usage: vectors = extract_channel (abfFileName, channelType, varargin)
+% Usage: [vectors, label] = extract_channel (abfFileName, channelType, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -10,6 +10,9 @@ function vectors = extract_channel (abfFileName, channelType, varargin)
 %                       (Note: 2nd dimension: sweep; 
 %                           optional 3rd dimension: channel)
 %                   specified as a numeric array
+%       label       - label(s) for the channel to extract
+%                   specified as a character vector 
+%                       or a cell array of character vectors
 % Arguments:
 %       abfFileName - file name could be either the full path or 
 %                       a relative path in current directory
@@ -26,14 +29,19 @@ function vectors = extract_channel (abfFileName, channelType, varargin)
 %                   must as a row cell array with the
 %                        number of elements same as the length of the 
 %                        2nd dimension of abfdata
+%                   - 'ParsedParams': parsed parameters returned by parse_abf.m
+%                   must be a scalar structure
+%                   default == what the file provides
 %                   - 'ParsedData': parsed data returned by parse_abf.m
 %                   must be a scalar structure
 %                   default == what the file provides
 %
 % Requires:
+%       cd/match_positions.m
 %       cd/parse_abf.m
 %
 % Used by:
+%       cd/compute_average_pulse_response.m
 %       cd/identify_eLFP_protocol.m
 %       cd/identify_gabab_protocol.m
 
@@ -41,6 +49,7 @@ function vectors = extract_channel (abfFileName, channelType, varargin)
 % 2018-12-15 Moved from identify_eLFP_protocol.m
 % 2018-12-15 Added 'ParsedData' as an optional parameter
 % 2018-12-15 Now uses ismatrix() per MATLAB's suggestion
+% 2018-12-15 Now returns the corresponding label(s)
 % TODO: Generalize to other file types
 % 
 
@@ -49,6 +58,9 @@ validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 
 %% Default values for optional arguments
 channelTypesDefault = {};       % set later
+channelUnitsDefault = {};       % set later
+channelLabelsDefault = {};      % set later
+parsedParamsDefault = [];       % set later
 parsedDataDefault = [];         % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -73,12 +85,21 @@ addRequired(iP, 'channelType', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
     @(x) validateattributes(x, {'cell'}, {'nonempty'}));
+addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
+    @(x) isempty(x) || iscellstr(x));
+addParameter(iP, 'ChannelLabels', channelLabelsDefault, ...
+    @(x) isempty(x) || iscellstr(x));
+addParameter(iP, 'ParsedParams', parsedParamsDefault, ...
+    @(x) validateattributes(x, {'struct'}, {'scalar'}));
 addParameter(iP, 'ParsedData', parsedDataDefault, ...
     @(x) validateattributes(x, {'struct'}, {'2d'}));
 
 % Read from the Input Parser
 parse(iP, abfFileName, channelType, varargin{:});
 channelTypes = iP.Results.ChannelTypes;
+channelUnits = iP.Results.ChannelUnits;
+channelLabels = iP.Results.ChannelLabels;
+parsedParams = iP.Results.ParsedParams;
 parsedData = iP.Results.ParsedData;
 
 % Validate the channel type
@@ -86,10 +107,22 @@ channelType = validatestring(channelType, validChannelTypes);
 
 %% Preparation
 % Parse the abf file if parsedData not provided
-if isempty(parsedData)
-    [~, parsedData] = parse_abf(abfFileName, 'Verbose', false, ...
-                                'ChannelTypes', channelTypes, ...
-                                'ExtractChannels', true);
+if isempty(parsedParams) || isempty(parsedData)
+    [parsedParams, parsedData] = parse_abf(abfFileName, 'Verbose', false, ...
+                                            'ChannelTypes', channelTypes, ...
+                                            'ChannelUnits', channelUnits, ...
+                                            'ChannelLabels', channelLabels, ...
+                                            'ExtractChannels', true);
+end
+
+% Extract the channel types if needed
+if isempty(channelTypes)
+    channelTypes = parsedParams.channelTypes;
+end
+
+% Extract the channel label if needed
+if isempty(channelLabels)
+    channelLabels = parsedParams.channelLabels;
 end
 
 %% Do the job
@@ -117,6 +150,9 @@ end
 if ~ismatrix(vectors) && min(size(vectors)) > 0
     vectors = squeeze(vectors(:, :, 1));
 end
+
+% Find the corresponding channel label(s)
+label = match_positions(channelLabels, channelType, channelTypes);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
