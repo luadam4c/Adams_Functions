@@ -84,11 +84,11 @@ addRequired(iP, 'channelType', ...
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
-    @(x) validateattributes(x, {'cell'}, {'nonempty'}));
+    @(x) isempty(x) || isstring(x) || iscellstr(x));
 addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
-    @(x) isempty(x) || iscellstr(x));
+    @(x) isempty(x) || isstring(x) || iscellstr(x));
 addParameter(iP, 'ChannelLabels', channelLabelsDefault, ...
-    @(x) isempty(x) || iscellstr(x));
+    @(x) isempty(x) || isstring(x) || iscellstr(x));
 addParameter(iP, 'ParsedParams', parsedParamsDefault, ...
     @(x) validateattributes(x, {'struct'}, {'scalar'}));
 addParameter(iP, 'ParsedData', parsedDataDefault, ...
@@ -152,7 +152,7 @@ if ~ismatrix(vectors) && min(size(vectors)) > 0
 end
 
 % Find the corresponding channel label(s)
-label = match_positions(channelLabels, channelType, channelTypes);
+label = match_positions(channelLabels, channelTypes, channelType);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
