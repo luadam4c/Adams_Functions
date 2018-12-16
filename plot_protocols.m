@@ -276,7 +276,7 @@ switch protocolType
         responseType = 'Current';
         lowPassFrequency = 1000;        % lowpass filter frequency in Hz
         baselineLengthMs = 5;           % baseline length in ms
-        responseLengthMs = 20;          % response length in ms
+        responseLengthMs = 300;          % response length in ms
 
         % For plotting
         outFolderProtocolName = 'GABAB-IPSCs';

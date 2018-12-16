@@ -149,8 +149,10 @@ validExpModes = {'EEG', 'patch', ''};
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 minSweepsElfp = 2;          % minimum number of sweeps 
                             %   for an evoked LFP protocol
-minSweepsGabab = 5;         % minimum number of sweeps 
+minSweepsGabab = 1;         % minimum number of sweeps 
                             %   for a GABA-B IPSC protocol
+                            %   Note: In 2018_12_11_A for instance 
+                            %       there is only one sweep
 
 %% Default values for optional arguments
 verboseDefault = true;              % print to standard output by default
@@ -243,6 +245,11 @@ end
 
 % Load abf data if not provided
 if isempty(data) || isempty(siUs) || isempty(fileInfo)
+    % If the file doesn't exist, return
+    if ~isfile(abfFullFileName)
+        return
+    end
+    
     % If not compiled, add directories to search path for required functions
     if ~isdeployed
         % Locate the functions directory
@@ -403,7 +410,7 @@ if nargout >= 2
 end
 
 %% Extract data vectors by type
-if nargout >= 2 && extractChannels
+if (nargout >= 2 && extractChannels) || identifyProtocols
     indVoltage = find_ind_str_in_cell('Voltage', channelTypes, ...
                                         'IgnoreCase', true);
     indCurrent = find_ind_str_in_cell('Current', channelTypes, ...

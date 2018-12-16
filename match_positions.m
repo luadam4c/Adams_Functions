@@ -1,6 +1,6 @@
-function element = match_positions(cellArray, cellStr, strToMatch)
+function element = match_positions(cellArray, cellStr, strToMatch, varargin)
 %% Finds element(s) of a cell array that matches the positions of elements of another cell array containing specified string(s)
-% Usage: element = match_positions(cellArray, cellStr, strToMatch)
+% Usage: element = match_positions(cellArray, cellStr, strToMatch, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -16,6 +16,9 @@ function element = match_positions(cellArray, cellStr, strToMatch)
 %       strToMatch  - string(s) to match in the second cell array
 %                   must be a string/character array or 
 %                       a cell array of strings/character arrays
+%       varargin    - 'MaxNum': maximum number of positions to match
+%                   must be a positive integer scalar or Inf
+%                   default == Inf
 %
 % Used by:
 %       cd/extract_channel.m
@@ -23,6 +26,9 @@ function element = match_positions(cellArray, cellStr, strToMatch)
 % File History:
 % 2018-12-15 Created by Adam Lu
 % 
+
+%% Default values for optional arguments
+maxNumDefault = Inf;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -48,8 +54,13 @@ addRequired(iP, 'strToMatch', ...
                 ['strToMatch must be either a string/character array ', ...
                     'or a cell array of strings/character arrays!']));
 
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'MaxNum', maxNumDefault, ...
+    @(x) isinf(x) || ispositiveintegerscalar(x));
+
 % Read from the Input Parser
 parse(iP, cellArray, cellStr, strToMatch);
+maxNum = iP.Results.MaxNum;
 
 %% Do the job
 % Determine whether each position in cellStr matches one of strToMatch
@@ -57,6 +68,11 @@ isMatched = contains(cellStr, strToMatch);
 
 % Get all the strings of cellArray in this position
 element = cellArray(isMatched);
+
+% Restrict to the maximum number of elements
+if numel(cellArray) > maxNum
+    element = cellArray(1:maxNum);
+end
 
 % Return as a character array if there is only one element
 if iscell(element) && numel(element) == 1

@@ -35,6 +35,7 @@ function isGababProt = identify_gabab_protocol (vVecsORfileName, varargin)
 
 % File History:
 % 2018-12-15 - Adapted from identify_eLFP_protocol.m
+% 2018-12-15 - Changed minSweepsDefault to 1
 % 
 
 %% Hard-coded parameters
@@ -42,7 +43,9 @@ validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Undefined'};
 
 %% Default values for optional arguments
 channelTypesDefault = {};       % set later
-minSweepsDefault = 5;           % must have at least 5 sweeps by default
+minSweepsDefault = 1;           % must have at least 1 sweep by default
+                                %   Note: In 2018_12_11_A for instance 
+                                %       there is only one sweep
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -84,10 +87,18 @@ if ischar(vVecsORfileName) || isstring(vVecsORfileName)
     fileName = vVecsORfileName;
 
     % Extract the voltage vectors
-    vVecs = extract_channel(fileName, 'voltage', 'ChannelTypes', channelTypes);
+    vVecs = extract_channel(fileName, 'voltage', 'MaxNum', 1, ...
+                            'ChannelTypes', channelTypes);
 else
     % The first argument are the voltage vectors
     vVecs = vVecsORfileName;
+
+    % Restrict
+    if iscell(vVecs) && numel(vVecs) > 1
+        vVecs = vVecs{1};
+    else
+        vVecs = vVecs(:, 1);
+    end
 end
 
 %% Do the job
