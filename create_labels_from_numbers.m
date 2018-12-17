@@ -25,7 +25,6 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %                   default == ''
 %
 % Used by:
-%       cd/argfun.m
 %       cd/compute_all_pulse_responses.m
 %       cd/create_simulation_output_filenames.m
 %       cd/plot_fields.m

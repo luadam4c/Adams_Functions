@@ -16,7 +16,6 @@ function varargout = argfun (myFunction, varargin)
 %       varargin    - input arguments
 %
 % Requires:
-%       cd/create_labels_from_numbers.m
 %
 % Used by:
 %       cd/compute_average_pulse_response.m
@@ -44,6 +43,7 @@ function varargout = argfun (myFunction, varargin)
 % File History:
 % 2018-10-25 Created by Adam Lu
 % 2018-12-17 Now uses create_labels_from_numbers.m
+% 2018-12-17 Now uses cellfun instead of structfun
 % 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -51,8 +51,8 @@ function varargout = argfun (myFunction, varargin)
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    print_help(mfilename);
+    return
 end
 
 % Set up Input Parser Scheme
@@ -76,11 +76,28 @@ if nargout > nInputs
 end
 
 %% Do the job
-% Generate field names for the input arguments
+% Extract all fields from the structure
+varargout = cellfun(myFunction, varargin, 'UniformOutput', false);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%{
+OLD CODE:
+
+myFieldNames = arrayfun(@(x) ['Arg', num2str(x)], 1:nInputs, ...
+                        'UniformOutput', false);
+myFieldNames = create_labels_from_numbers(1:nInputs, 'Prefix', 'Arg');
 myFieldNames = create_labels_from_numbers(1:nInputs);
 
+%       cd/create_labels_from_numbers.m
+
+% Generate field names for the input arguments
+%   Note: field names cannot start with a number, so a prefix is necessary
+myFieldNames = create_labels_from_numbers(1:nInputs, 'Prefix', 'a');
+
 % Place all arguments in an input structure
-%   Note: varargin is a row cell array
+%   Note: varargin is a row cell array, so operate along dimension 2
+%           to make each element a field
 myStructInputs = cell2struct(varargin, myFieldNames, 2);
 
 % Pass the function to all fields in the input structure
@@ -90,15 +107,7 @@ myStructOutputs = structfun(myFunction, myStructInputs, ...
 % Extract all fields from the structure
 varargout = struct2cell(myStructOutputs);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%{
-OLD CODE:
-
-myFieldNames = arrayfun(@(x) ['Arg', num2str(x)], 1:nInputs, ...
-                        'UniformOutput', false);
-
-myFieldNames = create_labels_from_numbers(1:nInputs, 'Prefix', 'Arg');
+eval(sprintf('help %s', mfilename));
 
 %}
 

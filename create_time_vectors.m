@@ -82,7 +82,7 @@ timeStartDefault = 0;                   % start at 0 by default
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    eval(sprintf('help %s', mfilename));
+    print_help(mfilename);
     return
 end
 
