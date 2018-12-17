@@ -55,6 +55,7 @@ function plot_swd_raster (varargin)
 %                   default == 2
 %
 % Requires:
+%       cd/create_labels_from_numbers.m
 %       cd/extract_common_parent.m
 %       cd/find_ind_str_in_cell.m
 %       cd/islinestyle.m
@@ -75,6 +76,7 @@ function plot_swd_raster (varargin)
 % 2018-11-22 Changed startTimeStr to 'startTime'
 % 2018-11-22 Changed default ManualFolder to pwd
 % 2018-11-27 Now looks for SWDs.csv files recursively in SwdFolder
+% 2018-12-17 Now uses create_labels_from_numbers.m
 % TODO: If there is only one group, make each trace a different color
 % TODO: Reanalyze data from ManualFolder, SayliFolder, AssystFolder
 %           if provided
@@ -236,8 +238,8 @@ else
     nTables = numel(swdTables);
 
     % Construct swdSheetBases
-    swdSheetBases = arrayfun(@(x) ['unnamed_sweep', num2str(x), '_SWDs'], ...
-                            transpose(1:nTables), 'UniformOutput', false);
+    swdSheetBases = create_labels_from_numbers(1:nTables, ...
+                            'Prefix', 'unnamed_sweep', 'Suffix', '_SWDs');
 
     % Construct dataFileBases
     dataFileBases = repmat({'unnamed'}, nTables, 1);
@@ -467,5 +469,8 @@ swdsPath = swdSheetPaths{idxSheetThis};
 
 message = sprintf('No %s field or %s field found for %s!', ...
             startTimeStr1, startTimeStr2, swdsPath);
+
+    swdSheetBases = arrayfun(@(x) ['unnamed_sweep', num2str(x), '_SWDs'], ...
+                            transpose(1:nTables), 'UniformOutput', false);
 
 %}

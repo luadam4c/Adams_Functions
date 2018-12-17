@@ -58,6 +58,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 % 2018-10-25 Adapted from make_time_column.m in Marks_Functions
 % 2018-11-28 Added 'TimeUnits' and 'SamplingIntervalMs' as optional arguments
 % 2018-12-15 Added 'TimeStart' as an optional argument
+% 2018-12-17 Now uses TODO
 % 
 
 %% Hard-coded constants
@@ -81,8 +82,8 @@ timeStartDefault = 0;                   % start at 0 by default
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    eval(sprintf('help %s', mfilename));
+    return
 end
 
 % Set up Input Parser Scheme
@@ -168,18 +169,18 @@ nVectors = max([nRowsNSamples, nRowsSiUnits, nRowsTStart]);
 
 %% Create the time vector(s)
 if nVectors == 1
-    timeVecs = create_time_vector(nSamples, siSeconds, tStart, ...
+    timeVecs = create_time_vector(nSamples, siUnits, tStart, ...
                                         boundaryMode, mfilename);
 else
     timeVecs = ...
         arrayfun(@(x, y, z) create_time_vector(x, y, z, ...
                                         boundaryMode, mfilename), ...
-                nSamples, siSeconds, tStart, 'UniformOutput', false);
+                nSamples, siUnits, tStart, 'UniformOutput', false);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function tVec = create_time_vector (nSamples, siSeconds, tStart, ...
+function tVec = create_time_vector (nSamples, siUnits, tStart, ...
                                     boundaryMode, functionName)
 %% Create a time vector with target units
 

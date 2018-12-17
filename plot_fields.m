@@ -56,6 +56,7 @@ function h = plot_fields (structArray, varargin)
 %                   default == 'png'
 %
 % Requires:
+%       cd/create_labels_from_numbers.m
 %       cd/force_column_cell.m
 %       cd/match_row_count.m
 %       cd/plot_tuning_curve.m
@@ -67,6 +68,7 @@ function h = plot_fields (structArray, varargin)
 % File History:
 % 2018-09-26 Created by Adam Lu
 % 2018-12-15 Updated XTicks so that it is dependent on nEntries
+% 2018-12-17 Now uses create_labels_from_numbers.m
 % 
 
 %% Hard-coded parameters
@@ -193,8 +195,7 @@ if ~isempty(xTickLabels)
     xTickLabels = match_row_count(xTickLabels, nXTicks);
 elseif isempty(xTickLabels)
     % Generate xTickLabels from xTicks
-    xTickLabels = arrayfun(@(x) num2str(x), xTicks, ...
-                            'UniformOutput', false);
+    xTickLabels = create_labels_from_numbers(xTicks);
 end
 
 % Get all the fields of the structArray as a cell array
@@ -298,8 +299,11 @@ end
 %{
 OLD CODE:
 
-    @(x) validateattributes(x, {'numeric'}, ...
-                            {'increasing', 'vector', 'numel', 2}));
+@(x) validateattributes(x, {'numeric'}, ...
+                        {'increasing', 'vector', 'numel', 2}));
+
+xTickLabels = arrayfun(@(x) num2str(x), xTicks, ...
+                        'UniformOutput', false);
 
 %}
 

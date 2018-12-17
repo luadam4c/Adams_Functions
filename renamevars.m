@@ -35,6 +35,7 @@ function table = renamevars (table, prevNames, newNames, varargin)
 %                   default == numel(cellArray)
 %
 % Requires:
+%       cd/create_labels_from_numbers.m
 %       cd/find_ind_str_in_cell.m
 %       cd/ispositiveintegerscalar.m
 %       cd/match_format_vector_sets.m
@@ -44,6 +45,7 @@ function table = renamevars (table, prevNames, newNames, varargin)
 
 % File History:
 % 2018-12-12 Created by Adam Lu
+% 2018-12-17 Now uses create_labels_from_numbers.m
 
 %% Hard-coded constants
 validSearchModes = {'exact', 'substrings', 'regexp'};
@@ -128,9 +130,8 @@ for iVar = 1:numel(prevNames)
         if nMatches > 1
             % If there are more than one matching variables
             %   append an iteration to avoid columns with the same names
-            newNameCell = arrayfun(@(x) [newName, '_', num2str(x)], ...
-                                    transpose(1:nMatches), ...
-                                    'UniformOutput', false);
+            newNameCell = ...
+                create_labels_from_numbers(1:nMatches, 'Prefix', [newName, '_']);
         else
             % Just use the new variable name
             newNameCell = {newName};
@@ -151,6 +152,10 @@ OLD CODE:
     argfun(@force_column_cell, prevNames, newNames);
 
 newNameCell = newNames(iVar);
+
+newNameCell = arrayfun(@(x) [newName, '_', num2str(x)], ...
+                        transpose(1:nMatches), ...
+                        'UniformOutput', false);
 
 %}
 

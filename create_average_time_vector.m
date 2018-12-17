@@ -28,18 +28,13 @@ function [tVecAvg, minNSamples] = create_average_time_vector (tVecs)
 % 2018-12-15 Created by Adam Lu
 % 
 
-%% Hard-coded parameters
-
-%% Default values for optional arguments
-param1Default   = [];                   % default TODO: Description of param1
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 1    % TODO: 1 might need to be changed
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+if nargin < 1
+    eval(sprintf('help %s', mfilename));
+    return
 end
 
 % Set up Input Parser Scheme

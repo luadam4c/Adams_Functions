@@ -104,6 +104,7 @@ function [h, subPlots] = plot_traces (tVecs, data, varargin)
 %       cd/argfun.m
 %       cd/count_vectors.m
 %       cd/create_colormap.m
+%       cd/create_labels_from_numbers.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/isfigtype.m
@@ -132,6 +133,7 @@ function [h, subPlots] = plot_traces (tVecs, data, varargin)
 % 2018-12-15 Fixed the passing of parameters to the helper function
 % 2018-12-15 Now returns the axes handle as the second output
 %               for overlapped plots
+% 2018-12-17 Now uses create_labels_from_numbers.m
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel'};
@@ -316,8 +318,7 @@ if isempty(yLabel)
         yLabel = 'Data';
     case 'parallel'
         if nTraces > 1
-            yLabel = arrayfun(@(x) ['Trace #', num2str(x)], ...
-                                transpose(1:nTraces), 'UniformOutput', false);
+            yLabel = create_labels_from_numbers(1:nTraces, 'Prefix', 'Trace #');
         else
             yLabel = {'Data'};
         end
@@ -342,8 +343,7 @@ end
 
 % Set the default trace labels
 if isempty(traceLabels)
-    traceLabels = arrayfun(@(x) ['Trace #', num2str(x)], ...
-                            transpose(1:nTraces), 'UniformOutput', false);
+    traceLabels = create_labels_from_numbers(1:nTraces, 'Prefix', 'Trace #');
 end
 
 % Make sure trace labels are cell arrays
@@ -852,6 +852,11 @@ if ~isempty(figNumber)
 else
     figNumberThis = [];
 end
+
+yLabel = arrayfun(@(x) ['Trace #', num2str(x)], ...
+                    transpose(1:nTraces), 'UniformOutput', false);
+traceLabels = arrayfun(@(x) ['Trace #', num2str(x)], ...
+                        transpose(1:nTraces), 'UniformOutput', false);
 
 %}
 

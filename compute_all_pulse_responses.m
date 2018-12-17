@@ -68,6 +68,7 @@ function [tVecAll, respAll, stimAll, featuresAll] = ...
 % Requires:
 %       cd/compute_sampling_interval.m
 %       cd/count_vectors.m
+%       cd/create_labels_from_numbers.m
 %       cd/parse_pulse_response.m
 %
 % Used by:
@@ -75,6 +76,7 @@ function [tVecAll, respAll, stimAll, featuresAll] = ...
 
 % File History:
 % 2018-12-15 Modified from compute_average_pulse_response.m
+% 2018-12-17 Now uses create_labels_from_numbers.m
 % 
 
 %% Hard-coded parameters
@@ -162,9 +164,8 @@ labels = repmat({labels}, [nVectors, 1]);
 featuresAll = addvars(featuresAll, labels);
 
 % Construct sweep names
-% TODO: Make this a function create_sweep_names.m
-sweepName = arrayfun(@(x) ['Swp', num2str(x)], ...
-                    transpose(1:nVectors), 'UniformOutput', false);
+sweepName = create_labels_from_numbers(1:nVectors, 'Prefix', 'Swp', ...
+                                    'ForceColumnOutput', true);
 
 % Repeat the file names
 filePath = repmat({fileName}, [nVectors, 1]);
@@ -172,7 +173,6 @@ filePath = repmat({fileName}, [nVectors, 1]);
 % Insert before the first column of featuresAll the sweep name
 featuresAll = addvars(featuresAll, sweepName, 'Before', 1);
 featuresAll = addvars(featuresAll, filePath, 'Before', 1);
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -186,6 +186,9 @@ if iscell(tVecAll)
 else
     siMs = tVecAll(2) - tVecAll(1);
 end
+
+sweepName = arrayfun(@(x) ['Swp', num2str(x)], ...
+                    transpose(1:nVectors), 'UniformOutput', false);
 
 %}
 

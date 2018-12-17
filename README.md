@@ -70,11 +70,11 @@ Last Updated 2018-12-17 by Adam Lu
 - [**create_average_time_vector.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_average_time_vector.m): Creates an average time vector from a set of time vectors
 - [**create_colormap.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_colormap.m): Returns colorMap based on the number of colors requested
 - [**create_input_file.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_input_file.m): Create an input spreadsheet file from data file names in a directory based on default parameters
-- [**create_iterative_labels.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_iterative_labels.m): Creates iterative labels (1 through nLabels) with optional prefix or suffix
+- [**create_labels_from_numbers.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_labels_from_numbers.m): Creates a cell array of labels from an array of numbers with an optional prefix or suffix
 - [**create_latex_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_latex_string.m): Creates a LaTeX string from an equation used for fitting
 - [**create_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pulse.m): Creates a pulse vector
 - [**create_pulse_train_series.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pulse_train_series.m): Creates a pulse train series (a theta burst stimulation by default)
-- [**create_simulation_output_filenames.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_simulation_output_filenames.m): TODO: A summary of what the function does (must be a single unbreaked line)
+- [**create_simulation_output_filenames.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_simulation_output_filenames.m): Creates simulation output file names
 - [**create_subdir_copy_files.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_subdir_copy_files.m): Create subdirectory and copy figure files
 - [**create_time_stamp.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_time_stamp.m): Creates a time stamp (default format yyyymmddTHHMM)
 - [**create_time_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_time_vectors.m): Creates time vector(s) in seconds from number(s) of samples and other optional arguments

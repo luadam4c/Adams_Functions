@@ -16,7 +16,7 @@ function varargout = argfun (myFunction, varargin)
 %       varargin    - input arguments
 %
 % Requires:
-%       cd/create_iterative_labels.m
+%       cd/create_labels_from_numbers.m
 %
 % Used by:
 %       cd/compute_average_pulse_response.m
@@ -43,7 +43,7 @@ function varargout = argfun (myFunction, varargin)
 
 % File History:
 % 2018-10-25 Created by Adam Lu
-% 2018-12-17 Now uses create_iterative_labels.m
+% 2018-12-17 Now uses create_labels_from_numbers.m
 % 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -77,7 +77,7 @@ end
 
 %% Do the job
 % Generate field names for the input arguments
-myFieldNames = create_iterative_labels(nInputs, 'Prefix', 'Arg');
+myFieldNames = create_labels_from_numbers(1:nInputs);
 
 % Place all arguments in an input structure
 %   Note: varargin is a row cell array
@@ -97,6 +97,8 @@ OLD CODE:
 
 myFieldNames = arrayfun(@(x) ['Arg', num2str(x)], 1:nInputs, ...
                         'UniformOutput', false);
+
+myFieldNames = create_labels_from_numbers(1:nInputs, 'Prefix', 'Arg');
 
 %}
 
