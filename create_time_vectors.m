@@ -117,13 +117,16 @@ samplingIntervalMs = iP.Results.SamplingIntervalMs;
 tStart = iP.Results.TimeStart;
 
 %% Preparation
+% TODO: Display warning if more than one sampleing rate/interval is provided
+%   esp. that samplingIntervalUs overrides samplingIntervalMs
+
 % Convert any provided sampling interval(s) to seconds
+%   Note: if not provided, keep empty as default 
+%           will be set with match_reciprocals.m
 if ~isempty(samplingIntervalUs)
     siSeconds = samplingIntervalUs / US_PER_S;
 elseif ~isempty(samplingIntervalMs)
     siSeconds = samplingIntervalMs / MS_PER_S;
-
-    % TODO: Display warning if samplingIntervalUs also provided
 else
     siSeconds = [];
 end

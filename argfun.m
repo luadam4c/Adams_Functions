@@ -15,6 +15,9 @@ function varargout = argfun (myFunction, varargin)
 %                   must be a function handle
 %       varargin    - input arguments
 %
+% Requires:
+%       cd/create_iterative_labels.m
+%
 % Used by:
 %       cd/compute_average_pulse_response.m
 %       cd/compute_default_sweep_info.m
@@ -39,7 +42,8 @@ function varargout = argfun (myFunction, varargin)
 %       cd/plot_traces_abf.m
 
 % File History:
-% 2019-10-25 Created by Adam Lu
+% 2018-10-25 Created by Adam Lu
+% 2018-12-17 Now uses create_iterative_labels.m
 % 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -62,7 +66,6 @@ addRequired(iP, 'myFunction', ...                  % a custom function
 % Read from the Input Parser
 parse(iP, myFunction);
 
-%% Preparation
 % Count the number of inputs (number of arguments excluding the function handle)
 nInputs = nargin - 1;
 
@@ -74,8 +77,7 @@ end
 
 %% Do the job
 % Generate field names for the input arguments
-myFieldNames = arrayfun(@(x) ['Arg', num2str(x)], 1:nInputs, ...
-                        'UniformOutput', false);
+myFieldNames = create_iterative_labels(nInputs, 'Prefix', 'Arg');
 
 % Place all arguments in an input structure
 %   Note: varargin is a row cell array
@@ -92,6 +94,9 @@ varargout = struct2cell(myStructOutputs);
 
 %{
 OLD CODE:
+
+myFieldNames = arrayfun(@(x) ['Arg', num2str(x)], 1:nInputs, ...
+                        'UniformOutput', false);
 
 %}
 
