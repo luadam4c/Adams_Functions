@@ -16,6 +16,7 @@ function varargout = argfun (myFunction, varargin)
 %       varargin    - input arguments
 %
 % Requires:
+%       cd/create_error_for_nargin.m
 %
 % Used by:
 %       cd/compute_average_pulse_response.m
@@ -51,8 +52,7 @@ function varargout = argfun (myFunction, varargin)
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    print_help(mfilename);
-    return
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
@@ -70,9 +70,9 @@ parse(iP, myFunction);
 nInputs = nargin - 1;
 
 % If there are more outputs requested than inputs, return error
-if nargout > nInputs
-    error(['Cannot request more outputs than provided inputs, ', ...
-            'type ''help %s'' for usage'], mfilename);
+if nInputs < nargout
+    disp('Cannot request more ''outputs'' than provided ''inputs''!!');
+    error(create_error_for_nargin(mfilename));
 end
 
 %% Do the job
@@ -108,6 +108,20 @@ myStructOutputs = structfun(myFunction, myStructInputs, ...
 varargout = struct2cell(myStructOutputs);
 
 eval(sprintf('help %s', mfilename));
+
+print_help(mfilename);
+return
+
+function check_nargin(nArgInTarget, nArgInActual, functionName)
+    
+if nArgInActual < nArgInTarget
+    error(create_error_for_nargin(functionName));
+end
+
+if nargout > nInputs
+    error(['Cannot request more outputs than provided inputs, ', ...
+            'type ''help %s'' for usage'], mfilename);
+end
 
 %}
 

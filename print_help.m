@@ -1,23 +1,25 @@
-function print_help (functionName, varargin)
-%% Prints the documentation for a specific function
-% Usage: print_help (functionName, varargin)
+function helpText = print_help (functionName, varargin)
+%% Prints and returns the documentation for a specific function
+% Usage: helpText = print_help (functionName, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       output1     - TODO: Description of output1
-%                   specified as a TODO
+%       helpText    - documentation text
+%                   specified as a character array
 % Arguments:
 %       functionName    - the function name to look for documentation for
 %                       must be a string scalar or a character vector
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'ToPrint': whether to actually print the string
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%
+% Requires:
+%       cd/create_error_for_nargin.m
 %
 % Used by:
-%       ~/Settings_Matlab/function_template.m
-%       any .m file with a number of arguments check
+%       cd/create_error_for_nargin.m
 
 % File History:
 % 2018-12-17 Created by Adam Lu
@@ -26,15 +28,14 @@ function print_help (functionName, varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-% param1Default   = [];                   % default TODO: Description of param1
+toPrintDefault = true;                  % default: print the string
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    print_help(mfilename);
-    return
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
@@ -46,15 +47,21 @@ addRequired(iP, 'functionName', ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default, ...
-%     % TODO: validation function %);
+addParameter(iP, 'ToPrint', toPrintDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, functionName, varargin{:});
-% param1 = iP.Results.param1;
+toPrint = iP.Results.ToPrint;
 
 %% Do the job
-eval(sprintf('help %s', functionName));
+% Return the help text
+helpText = evalc(sprintf('help %s', functionName));
+
+% Print the help text
+if toPrint
+    disp(helpText)
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

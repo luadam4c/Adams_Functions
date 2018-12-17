@@ -18,6 +18,7 @@ function [tVecAvg, minNSamples] = create_average_time_vector (tVecs)
 % Requires:
 %       cd/compute_sampling_interval.m
 %       cd/count_samples.m
+%       cd/create_error_for_nargin.m
 %       cd/create_time_vectors.m
 %       cd/iscellnumericvector.m
 %
@@ -33,8 +34,7 @@ function [tVecAvg, minNSamples] = create_average_time_vector (tVecs)
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    print_help(mfilename);
-    return
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme

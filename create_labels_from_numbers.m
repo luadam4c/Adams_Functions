@@ -26,6 +26,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %
 % Used by:
 %       cd/compute_all_pulse_responses.m
+%       cd/create_error_for_nargin.m
 %       cd/create_simulation_output_filenames.m
 %       cd/plot_fields.m
 %       cd/plot_swd_raster.m
@@ -48,8 +49,7 @@ suffixDefault = '';     % no string to place after each number by default
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme

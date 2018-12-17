@@ -1,25 +1,22 @@
-function [output1] = match_format_vectors (varargin)
+function varargout = match_format_vectors (varargin)
 %% Match the format of individual vectors by making them all column vectors with the same length
-% Usage: [output1] = match_format_vectors (varargin)
+% Usage: varargout = match_format_vectors (varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       output1     - TODO: Description of output1
-%                   specified as a TODO
+%       varargout   - matched outputs
 % Arguments:
-%       vec1     - TODO: Description of vec1
-%                   must be a TODO
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - vectors to be matched
 %
 % Requires:
-%       /TODO:dir/TODO:file
+%       cd/create_error_for_nargin.m
+%       cd/force_column_numeric.m
+%       cd/match_row_count.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/create_time_vectors.m
 
 % File History:
 % 2018-12-16 Created by Adam Lu
@@ -27,24 +24,26 @@ function [output1] = match_format_vectors (varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
-% If there are more outputs requested than inputs, return error
-if nargout > nargin
-    error(['Cannot request more outputs than provided inputs, ', ...
-            'type ''help %s'' for usage'], mfilename);
+% Check number of required arguments
+if nargin < nargout
+    disp('Cannot request more outputs than provided inputs!!');
+    error(create_error_for_nargin(mfilename));
 end
 
-
-%% Preparation
-
-
 %% Do the job
-% Place all arguments in an input structure
-%   Note: varargin is a row cell array
-myStructInputs = cell2struct(varargin, myFieldNames, 2);
+% Force as column vectors
+vararginTransformed = cellfun(@force_column_numeric, varargin, ...
+                                'UniformOutput', false);
 
-%% Output results
-% 
+% Count the number of values in each vector
+nValues = cellfun(@numel, varargin);
 
+% Compute the maximum number of values
+maxNValues = max(nValues);
+
+% Match the number of rows to maxNValues for each vector
+varargout = cellfun(@(x) match_row_count(x, maxNValues), ...
+                    vararginTransformed, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

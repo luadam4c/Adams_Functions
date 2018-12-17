@@ -86,6 +86,7 @@ function [featuresFileTable, featuresSweepTable] = ...
 %       cd/compute_and_plot_average_response.m
 %       cd/compute_all_pulse_responses.m
 %       cd/count_vectors.m
+%       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
 %       cd/parse_all_abfs.m
 %       cd/plot_fields.m
@@ -140,8 +141,7 @@ abfDataCellDefault = {};        % set later
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme

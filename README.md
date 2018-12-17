@@ -69,6 +69,7 @@ Last Updated 2018-12-17 by Adam Lu
 - [**count_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/count_vectors.m): Counts the number of vectors whether given an array or a cell array
 - [**create_average_time_vector.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_average_time_vector.m): Creates an average time vector from a set of time vectors
 - [**create_colormap.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_colormap.m): Returns colorMap based on the number of colors requested
+- [**create_error_for_nargin.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_error_for_nargin.m): Creates an error text for not having enough input arguments
 - [**create_input_file.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_input_file.m): Create an input spreadsheet file from data file names in a directory based on default parameters
 - [**create_labels_from_numbers.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_labels_from_numbers.m): Creates a cell array of labels from an array of numbers with an optional prefix or suffix
 - [**create_latex_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_latex_string.m): Creates a LaTeX string from an equation used for fitting
@@ -238,7 +239,7 @@ Last Updated 2018-12-17 by Adam Lu
 - [**plot_window_boundaries.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_window_boundaries.m): TODO: A summary of what the function does (must be a single unbreaked line)
 - [**print_and_show_message.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_and_show_message.m): Print to standard output and show message box at the same time
 - [**print_cellstr.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_cellstr.m): Prints and returns a string for the contents stored in a cell array
-- [**print_help.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_help.m): Prints the documentation for a specific function
+- [**print_help.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_help.m): Prints and returns the documentation for a specific function
 - [**print_next_in_csv.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_next_in_csv.m): What to print next in a csv file
 - [**print_or_show_message.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_or_show_message.m): Either print a message in standard output or show a message box
 - [**print_structure.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_structure.m): Display all fields of a structure recursively

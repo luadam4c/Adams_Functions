@@ -185,6 +185,8 @@ idxStartAveraged = max(1, round(mean(idxResponseStarts)));
 idxEndAveraged = (idxStartAveraged - 1) + minNSamples;
 tVecResponse = tVec(idxStartAveraged:idxEndAveraged);
 
+siMs = tVecAvg(2) - tVecAvg(1);
+
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

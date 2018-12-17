@@ -44,7 +44,8 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %                   default == 0
 %
 % Requires:
-%       cd/match_dimensions.m
+%       cd/create_error_for_nargin.m
+%       cd/match_format_vectors.m
 %       cd/match_reciprocals.m
 %
 % Used by:
@@ -58,7 +59,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 % 2018-10-25 Adapted from make_time_column.m in Marks_Functions
 % 2018-11-28 Added 'TimeUnits' and 'SamplingIntervalMs' as optional arguments
 % 2018-12-15 Added 'TimeStart' as an optional argument
-% 2018-12-17 Now uses TODO
+% 2018-12-17 Now uses match_format_vectors.m
 % 
 
 %% Hard-coded constants
@@ -82,8 +83,7 @@ timeStartDefault = 0;                   % start at 0 by default
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    print_help(mfilename);
-    return
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
@@ -118,7 +118,7 @@ samplingIntervalMs = iP.Results.SamplingIntervalMs;
 tStart = iP.Results.TimeStart;
 
 %% Preparation
-% TODO: Display warning if more than one sampleing rate/interval is provided
+% TODO: Display warning if more than one sampling rate/interval is provided
 %   esp. that samplingIntervalUs overrides samplingIntervalMs
 
 % Convert any provided sampling interval(s) to seconds
@@ -151,21 +151,11 @@ switch timeUnits
                 'Type ''help %s'' for usage'], timeUnits, mfilename);
 end
 
-% Force as column vectors
-[nSamples, siUnits, tStart] = ...
-    argfun(@force_column_numeric, nSamples, siUnits, tStart);
+% Match the formats of vectors
+[nSamples, siUnits, tStart] = match_format_vectors(nSamples, siUnits, tStart);
 
-% Query the number of values provided for each parameter
-nRowsNSamples = length(nSamples);
-nRowsSiUnits = length(siUnits);
-nRowsTStart = length(tStart);
-
-% Decide on the number of vectors to build
-nVectors = max([nRowsNSamples, nRowsSiUnits, nRowsTStart]);
-
-% Match the number of rows of each parameter to nVectors
-[nSamples, siUnits, tStart] = ...
-    argfun(@(x) match_row_count(x, nVectors), nSamples, siUnits, tStart);
+% Count the number of vectors
+nVectors = numel(nSamples);
 
 %% Create the time vector(s)
 if nVectors == 1
@@ -219,6 +209,22 @@ if ~isempty(x)
 end
 
 nVectors = length(nSamples);
+
+% Force as column vectors
+[nSamples, siUnits, tStart] = ...
+    argfun(@force_column_numeric, nSamples, siUnits, tStart);
+
+% Query the number of values provided for each parameter
+nRowsNSamples = length(nSamples);
+nRowsSiUnits = length(siUnits);
+nRowsTStart = length(tStart);
+
+% Decide on the number of vectors to build
+nVectors = max([nRowsNSamples, nRowsSiUnits, nRowsTStart]);
+
+% Match the number of rows of each parameter to nVectors
+[nSamples, siUnits, tStart] = ...
+    argfun(@(x) match_row_count(x, nVectors), nSamples, siUnits, tStart);
 
 %}
 
