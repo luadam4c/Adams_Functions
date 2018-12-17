@@ -27,6 +27,7 @@ function arrayNew = match_dimensions (arrayOld, dimNew, varargin)
 %       cd/normalize_by_initial_value.m
 %       cd/parse_assyst_swd.m
 %       cd/parse_atf_swd.m
+%       cd/parse_pulse_response.m
 %       cd/plot_traces_abf.m
 
 % File History:

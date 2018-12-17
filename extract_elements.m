@@ -28,6 +28,7 @@ function elements = extract_elements (vecs, extractMode, varargin)
 
 % File History:
 % 2018-12-15 Created by Adam Lu
+% TODO: Add 'MaxNum' as an optional argument with default Inf
 % 
 
 %% Hard-coded parameters

@@ -27,7 +27,12 @@ function [parsedParams, parsedData] = ...
 %                           steadyAmplitude
 %                           minValue
 %                           maxValue
+%                           idxPeakSearchBegin
+%                           idxPeak
+%                           peakValue
+%                           peakAmplitude
 %                           hasJump
+%                           siMs
 %                       specified as a table
 %       parsedData      - a table containing the parsed data, with fields:
 %                           vectors
@@ -69,6 +74,7 @@ function [parsedParams, parsedData] = ...
 %       cd/find_pulse_response_endpoints.m
 %       cd/force_column_cell.m
 %       cd/iscellnumeric.m
+%       cd/match_dimensions.m
 %
 % Used by:
 %       cd/compute_all_pulse_responses.m
@@ -80,10 +86,12 @@ function [parsedParams, parsedData] = ...
 % 2018-10-10 Adapted from parse_pulse.m
 % 2018-10-11 Fixed tvecRising so that it starts from 0
 % 2018-11-13 Added 'MeanValueWindowMs' as an optional argument
-% 2018-11-28 Now allows siMs to be a vector
 % 2018-12-15 Added 'peakValue', 'idxPeak', 'peakAmplitude' in parsedParams
 % 2018-12-15 Added 'MinPeakDelayMs' as an optional argument
-% TODO: Compute the slope of the peak
+% 2018-12-17 Now allows siMs to be a vector
+% TODO: Compute peakDelaySamples and peakDelayMs
+% TODO: Compute maxSlope, halfWidthSamples, halfWidthMs, 
+% TODO: Compute timeConstantSamples, timeConstantMs
 
 %% Hard-coded parameters
 
@@ -143,6 +151,9 @@ nSamples = count_samples(vectors);
 % Count the number of vectors
 nVectors = count_vectors(vectors);
 
+% Make sure siMs is a column vector
+siMs = match_dimensions(siMs, [nVectors, 1]);
+
 % Convert time parameters to samples
 meanValueWindowSamples = round(meanValueWindowMs ./ siMs);
 minPeakDelaySamples = round(minPeakDelayMs ./ siMs);
@@ -175,6 +186,7 @@ idxBaseEnd = idxResponseStart - 1;
 
 % Compute the endpoints of the steady state
 %   Note: this cannot be smaller than idxResponseStart
+% TODO: Use argfun.m
 allRespStart = idxResponseStart .* allOnes;
 idxSteadyStartIdeal = idxResponseEnd - meanValueWindowSamples;
 idxSteadyEndIdeal = idxResponseEnd - 1;
@@ -197,6 +209,7 @@ indBase = cellfun(@(x) x(x >= 1), indBase, 'UniformOutput', false);
 indSteady = cellfun(@(x, y) x(x <= y), indSteady, num2cell(nSamples), ...
                     'UniformOutput', false);
 
+% TODO: Use argfun.m
 % Find the average baseline value
 baseValue = cellfun(@(x, y) mean(x(y)), vectors, indBase);
 
@@ -207,6 +220,8 @@ steadyValue = cellfun(@(x, y) mean(x(y)), vectors, indSteady);
 steadyAmplitude = steadyValue - baseValue;
 
 % Find the minimum and maximum values
+% TODO: Use extract_elements(vectors, 'min', 'MaxNum', 1)
+% TODO: Use extract_elements(vectors, 'max', 'MaxNum', 1)
 minValue = cellfun(@min, vectors);
 maxValue = cellfun(@max, vectors);
 
@@ -215,7 +230,8 @@ maxValue = cellfun(@max, vectors);
 idxPeakSearchBegin = arrayfun(@(x, y, z) min([x + y, z]), ...
                                 idxPulseEnd, minPeakDelaySamples, nSamples);
 
-% Find the minimum and maximum values after the pulse ends + minPeakDelaySamples
+% Find the minimum and maximum values after the peak search begins
+% TODO: Use argfun.m
 [minValueAfterPulse, idxMinValueAfterPulseRel] = ...
     cellfun(@(x, y) min(x(y:end)), vectors, num2cell(idxPeakSearchBegin));
 [maxValueAfterPulse, idxMaxValueAfterPulseRel] = ...
@@ -236,6 +252,8 @@ idxMaxValueAfterPulse = idxMaxValueAfterPulseRel + (idxPeakSearchBegin - 1);
 peakAmplitude = peakValue - baseValue;
 
 % Find the indices for the rising and falling phases, respectively
+% TODO: Use argfun and make a function create_indices.m
+%   indices = create_indices(idxStart, idxEnd)
 indRising = arrayfun(@(x, y) transpose(x:y), ...
                     idxResponseStart, idxResponseEnd, ...
                     'UniformOutput', false);
@@ -247,9 +265,8 @@ indCombined = arrayfun(@(x, y) transpose(x:y), ...
                     'UniformOutput', false);
 
 % Count the number of samples in the rising and falling phases, respectively
-nSamplesRising = count_samples(indRising);
-nSamplesFalling = count_samples(indFalling);
-nSamplesCombined = count_samples(indCombined);
+[nSamplesRising, nSamplesFalling, nSamplesCombined] = ...
+    argfun(@count_samples, indRising, indFalling, indCombined);
 
 % Convert base values to a cell array
 baseValueCell = num2cell(baseValue);
@@ -257,6 +274,7 @@ baseValueCell = num2cell(baseValue);
 % Generate shifted rising/falling phase vectors so that time starts at zero
 %   and steady state value is zero
 % Note: This will make curve fitting easier
+% TODO: Use argfun
 tvecsRising = arrayfun(@(x, y) transpose((1:x) - 1) * y, ...
                         nSamplesRising, siMs, 'UniformOutput', false);
 vvecsRising = cellfun(@(x, y, z) x(y) - z, ...
@@ -277,17 +295,18 @@ vvecsCombined = cellfun(@(x, y, z) x(y) - z, ...
                         'UniformOutput', false);
 
 %% Store results in output
-parsedParams = table(nSamples, responseWidthSamples, responseWidthMs, ...
+parsedParams = table(nSamples, siMs, responseWidthSamples, responseWidthMs, ...
                         nSamplesRising, nSamplesFalling, nSamplesCombined, ...
                         idxResponseStart, idxResponseEnd, idxResponseMid, ...
-                        idxPulseStart, idxPulseEnd, idxPeakSearchBegin, ...
+                        idxPulseStart, idxPulseEnd, ...
                         idxBaseStart, idxBaseEnd, ...
                         idxSteadyStart, idxSteadyEnd, ...
                         baseValue, steadyValue, steadyAmplitude, ...
                         minValue, maxValue, ...
                         minValueAfterPulse, idxMinValueAfterPulse, ...
                         maxValueAfterPulse, idxMaxValueAfterPulse, ...
-                        peakValue, idxPeak, peakAmplitude, hasJump);
+                        idxPeakSearchBegin, idxPeak, ...
+                        peakValue, peakAmplitude, hasJump);
 parsedData = table(vectors, indBase, indSteady, ...
                     indRising, indFalling, indCombined, ...
                     tvecsRising, vvecsRising, tvecsFalling, vvecsFalling, ...
@@ -328,6 +347,9 @@ idxSteadyStart = idxResponseEnd - meanValueWindowSamples;
 % Find the index for each vector after pulse ends
 idxAfterPulseEnd = arrayfun(@(x, y) min([x + 1, y]), idxPulseEnd, nSamples);
 
+nSamplesRising = count_samples(indRising);
+nSamplesFalling = count_samples(indFalling);
+nSamplesCombined = count_samples(indCombined);
 
 %}
 
