@@ -23,6 +23,7 @@ function elements = extract_elements (vecs, extractMode, varargin)
 %                   default == TODO
 %
 % Used by:
+%       cd/create_average_time_vector.m
 %       cd/plot_protocols.m
 
 % File History:

@@ -21,8 +21,8 @@ function [indResponseStart, indResponseEnd, hasJump, indPulseStart, indPulseEnd]
 %                   Note: If a cell array, each element must be a vector
 %                         If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array of numeric vectors
-%       siMs        - sampling interval in ms
-%                   must be a positive scalar
+%       siMs        - sampling interval(s) in ms
+%                   must be a positive vector
 %       varargin    - 'PulseVectors': vectors that contains the pulse itself
 %                   Note: If a cell array, each element must be a vector
 %                         If a non-vector array, each column is a vector
@@ -60,6 +60,7 @@ function [indResponseStart, indResponseEnd, hasJump, indPulseStart, indPulseEnd]
 % 2018-10-09 Renamed isUnbalanced -> hasJump and improved documentation
 % 2018-12-15 Now returns NaN if there is no pulse
 % 2018-12-15 Now prevents the endpoints from exceeding bounds
+% 2018-12-17 Now allows siMs to be a vector
 
 %% Hard-coded parameters
 nSamplesPerJump = 2;            % number of samples apart for calculating jump
@@ -91,7 +92,7 @@ addRequired(iP, 'vectors', ...                   % vectors
                 ['vectors must be either a numeric array', ...
                     'or a cell array of numeric arrays!']));
 addRequired(iP, 'siMs', ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'vector'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'PulseVectors', pulseVectorsDefault, ...
@@ -115,11 +116,20 @@ baselineLengthMs = iP.Results.BaselineLengthMs;
 [pulseVectors, vectors] = ...
     match_format_vector_sets(pulseVectors, vectors, 'ForceCellOutputs', true);
 
+% Make sure numel(siMs) is not greater than numel(vectors)
+if numel(siMs) > numel(vectors)
+    error('Number of sampling intervals cannot exceeed the number of vectors!');
+end
+
+% Convert siMs to a cell array and match up size with vectors
+[siMs, vectors] = ...
+    match_format_vector_sets(num2cell(siMs), vectors);
+
 %% Do the job
 [indResponseStart, indResponseEnd, hasJump, indPulseStart, indPulseEnd] = ...
-    cellfun(@(x, y) fpre_helper(x, siMs, y, sameAsPulse, responseLengthMs, ...
+    cellfun(@(x, y, z) fpre_helper(x, y, z, sameAsPulse, responseLengthMs, ...
         baselineLengthMs, nSamplesPerJump, signal2Noise, noiseWindowSize), ...
-        vectors, pulseVectors);
+        vectors, siMs, pulseVectors);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

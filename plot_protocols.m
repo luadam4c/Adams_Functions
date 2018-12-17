@@ -297,8 +297,7 @@ outFolderProtocol = fullfile(outFolder, outFolderProtocolName);
 % Compute features and plot protocol traces
 featuresPerFileCell = cell(nFiles, 1);
 featuresPerSweepCell = cell(nFiles, 1);
-%parfor iFile = 1:nFiles
-for iFile = 1:nFiles
+parfor iFile = 1:nFiles
     % Extract from cell arrays
     abfParams = abfParamsCell{iFile};
 
@@ -343,39 +342,22 @@ for iFile = 1:nFiles
                 'ChannelLabels', channelLabels, ...
                 'ParsedParams', abfParams, 'ParsedData', abfData);
 
-        % Count the number of vectors
-        nVectors = count_vectors(respAll);
-
-        % Set the time endpoints for individual protocol traces
-        timeStart = extract_elements(tVecAll, 'first');
-        timeEnd = extract_elements(tVecAll, 'last');
-
-        % Get the file directory and file base
-        [fileDir, fileBase, ~] = fileparts(fileName);
-
         % Plot individual protocol traces with stimulus separately
         if plotSeparateFlag
-%            parfor iVec = 1:nVectors
-            for iVec = 1:nVectors
-                % Save in a single params structure
-                params = table2struct(featuresAll(iVec, :));
-                params.OutFolder = fullfile(fileDir, [fileBase, '_traces']);
-                params.SaveFlag = saveFlag;
-                params.FigTypes = 'png'; % figTypes TODO: specific figTypes
-                params.FileBase = [fileBase, '_Swp', num2str(iVec)];
-                params.FileSuffix = fileSuffix;
-                params.ResponseName = responseName;
-
-                % Plot the pulse response with the stimulation pulse
-                h = plot_pulse_response_with_stimulus(tVecAll{iVec}, ...
-                        respAll{iVec}, stimAll{iVec}, params);
-            end
+            plot_all_pulse_response_with_stimulus(fileName, ...
+                            tVecAll, respAll, stimAll, featuresAll, ...
+                            fileSuffix, responseName, saveFlag, figTypes)
         end
 
         % Plot individual protocol traces, stimulus and response separate
         %   Note: Must make outFolder empty so that outputs
         %           be plotted in subdirectories
         if plotAltogetherFlag
+            % Set the time endpoints for individual protocol traces
+            timeStart = extract_elements(tVecAll, 'first');
+            timeEnd = extract_elements(tVecAll, 'last');
+
+            % Plot individual traces
             plot_traces_abf(fileName, ...
                 'ParsedParams', abfParams, 'ParsedData', abfData, ...
                 'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
@@ -473,6 +455,43 @@ plot_fields(fileStruct, 'OutFolder', outFolder, ...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function plot_all_pulse_response_with_stimulus(fileName, ...
+                tVecAll, respAll, stimAll, featuresAll, ...
+                fileSuffix, responseName, saveFlag, figTypes)
+%% Plots all pulse response with stimulus figures
+% TODO: Pull out to its own function and make all arguments except file name optional
+
+% Get the file directory and file base
+[fileDir, fileBase, ~] = fileparts(fileName);
+
+% Create the default output folder
+outFolder = fullfile(fileDir, [fileBase, '_traces']);
+
+% Count the number of vectors
+nVectors = count_vectors(respAll);
+
+% Create new file bases
+newFileBases = ...
+    create_labels_from_numbers(1:nVectors, 'Prefix', [fileBase, '_Swp']);
+
+% Loop through all vectors
+parfor iVec = 1:nVectors
+    % Save in a single params structure
+    params = table2struct(featuresAll(iVec, :));
+    params.OutFolder = outFolder;
+    params.SaveFlag = saveFlag;
+    params.FigTypes = 'png'; % figTypes TODO: specific figTypes
+    params.FileBase = newFileBases{iVec};
+    params.FileSuffix = fileSuffix;
+    params.ResponseName = responseName;
+
+    % Plot the pulse response with the stimulation pulse
+    h = plot_pulse_response_with_stimulus(tVecAll{iVec}, ...
+            respAll{iVec}, stimAll{iVec}, params);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %{
 OLD CODE:
 
@@ -502,6 +521,8 @@ timeStart = cellfun(@min, tVecAll);
 timeEnd = cellfun(@max, tVecAll);
 
 nVectors = count_vectors(tVecAll);
+
+params.FileBase = [fileBase, '_Swp', num2str(iVec)];
 
 %}
 

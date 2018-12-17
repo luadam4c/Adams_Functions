@@ -166,7 +166,7 @@ idxResponseMid = round((idxResponseStart + idxResponseEnd) ./ 2);
 responseWidthSamples = idxResponseEnd - idxResponseStart;
 
 % Convert pulse widths to milliseconds
-responseWidthMs = responseWidthSamples * siMs;
+responseWidthMs = responseWidthSamples .* siMs;
 
 % Compute the endpoints of the baseline
 %   Note: this cannot be smaller than 1
@@ -193,8 +193,9 @@ indSteady = arrayfun(@(x) x + indBefore, ...
                     idxResponseEnd, 'UniformOutput', false);
 
 % Make sure nothing is out of bounds
-indBase = cellfun(@(x) x(x >= 1) , indBase, 'UniformOutput', false);
-indSteady = cellfun(@(x) x(x <= nSamples) , indSteady, 'UniformOutput', false);
+indBase = cellfun(@(x) x(x >= 1), indBase, 'UniformOutput', false);
+indSteady = cellfun(@(x, y) x(x <= y), indSteady, num2cell(nSamples), ...
+                    'UniformOutput', false);
 
 % Find the average baseline value
 baseValue = cellfun(@(x, y) mean(x(y)), vectors, indBase);
@@ -211,8 +212,8 @@ maxValue = cellfun(@max, vectors);
 
 % Find the index to begin searching for the peak
 %   Note: this cannot be greater than nSamples
-idxPeakSearchBegin = arrayfun(@(x, y) min([x + minPeakDelaySamples, y]), ...
-                                idxPulseEnd, nSamples);
+idxPeakSearchBegin = arrayfun(@(x, y, z) min([x + y, z]), ...
+                                idxPulseEnd, minPeakDelaySamples, nSamples);
 
 % Find the minimum and maximum values after the pulse ends + minPeakDelaySamples
 [minValueAfterPulse, idxMinValueAfterPulseRel] = ...
@@ -256,21 +257,21 @@ baseValueCell = num2cell(baseValue);
 % Generate shifted rising/falling phase vectors so that time starts at zero
 %   and steady state value is zero
 % Note: This will make curve fitting easier
-tvecsRising = arrayfun(@(x) transpose((1:x) - 1) * siMs, nSamplesRising, ...
-                        'UniformOutput', false);
+tvecsRising = arrayfun(@(x, y) transpose((1:x) - 1) * y, ...
+                        nSamplesRising, siMs, 'UniformOutput', false);
 vvecsRising = cellfun(@(x, y, z) x(y) - z, ...
                         vectors, indRising, baseValueCell, ...
                         'UniformOutput', false);
-tvecsFalling = arrayfun(@(x) transpose((1:x) - 1) * siMs, nSamplesFalling, ...
-                        'UniformOutput', false);
+tvecsFalling = arrayfun(@(x, y) transpose((1:x) - 1) * y, ...
+                        nSamplesRising, siMs, 'UniformOutput', false);
 vvecsFalling = cellfun(@(x, y, z) x(y) - z, ...
                         vectors, indFalling, baseValueCell, ...
                         'UniformOutput', false);
 
 % Generate shifted pulse response vectors so that time starts at zero
 %   and steady state value is zero
-tvecsCombined = arrayfun(@(x) transpose((1:x) - 1) * siMs, nSamplesCombined, ...
-                        'UniformOutput', false);
+tvecsCombined = arrayfun(@(x, y) transpose((1:x) - 1) * y, ...
+                        nSamplesCombined, siMs, 'UniformOutput', false);
 vvecsCombined = cellfun(@(x, y, z) x(y) - z, ...
                         vectors, indCombined, baseValueCell, ...
                         'UniformOutput', false);

@@ -63,6 +63,7 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg] = ...
 % Requires:
 %       cd/argfun.m
 %       cd/compute_average_trace.m
+%       cd/compute_sampling_interval.m
 %       cd/create_average_time_vector.m
 %       cd/parse_pulse_response.m
 %
@@ -130,15 +131,8 @@ addParameter(iP, 'ParsedData', parsedDataDefault, ...
 
 % Read from the Input Parser
 parse(iP, fileName, responseType, varargin{:});
-lowPassFrequency = iP.Results.LowPassFrequency;
-responseLengthMs = iP.Results.ResponseLengthMs;
 baselineLengthMs = iP.Results.BaselineLengthMs;
 minPeakDelayMs = iP.Results.MinPeakDelayMs;
-channelTypes = iP.Results.ChannelTypes;
-channelUnits = iP.Results.ChannelUnits;
-channelLabels = iP.Results.ChannelLabels;
-parsedParams = iP.Results.ParsedParams;
-parsedData = iP.Results.ParsedData;
 
 %% Filter and extract pulse response(s)
 [tVecsResponse, respVecsResponse, stimVecsResponse, labels] = ...
@@ -157,7 +151,7 @@ parsedData = iP.Results.ParsedData;
 
 %% Compute features of the average pulse response
 % Compute the sampling interval
-siMs = tVecAvg(2) - tVecAvg(1);
+siMs = compute_sampling_interval(tVecAvg);
 
 % Parse the average pulse response vector
 featuresAvg = parse_pulse_response(respAvg, siMs, ...

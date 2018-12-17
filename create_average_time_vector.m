@@ -16,10 +16,12 @@ function [tVecAvg, minNSamples] = create_average_time_vector (tVecs)
 %                   must be a numeric array or a cell array of numeric vectors
 %
 % Requires:
+%       cd/argfun.m
 %       cd/compute_sampling_interval.m
 %       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/create_time_vectors.m
+%       cd/extract_elements.m
 %       cd/iscellnumericvector.m
 %
 % Used by:
@@ -62,18 +64,19 @@ nSamples = count_samples(tVecs);
 minNSamples = min(nSamples);
 
 % Get all start times
-startTimes = cellfun(@(x) x(1), tVecs);
+startTimes = extract_elements(tVecs, 'first');
 
-% Get a sampling interval
+% Get all sampling intervals
 siMs = compute_sampling_interval(tVecs);
 
-% Compute the average start time
-averageStartTime = mean(startTimes);
+% Compute averages
+[averageStartTime, averageSiMs] = argfun(@mean, startTimes, siMs);
 
 % Construct a new time vector starting from the average start time
-tVecAvg = create_time_vectors(minNSamples, 'SamplingIntervalMs', siMs, ...
+%   Note: if SamplingIntervalMs is used, 'ms' must be used for time units
+tVecAvg = create_time_vectors(minNSamples, 'TimeUnits', 'ms', ...
                                 'TimeStart', averageStartTime, ...
-                                'TimeUnits', 'ms');
+                                'SamplingIntervalMs', averageSiMs);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -81,6 +84,8 @@ tVecAvg = create_time_vectors(minNSamples, 'SamplingIntervalMs', siMs, ...
 OLD CODE:
 
 siMs = tVecs{1}(2) - tVecs{1}(1);
+
+startTimes = cellfun(@(x) x(1), tVecs);
 
 %}
 

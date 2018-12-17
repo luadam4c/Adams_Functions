@@ -119,6 +119,7 @@ Last Updated 2018-12-17 by Adam Lu
 - [**fit_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_pulse_response.m): Estimate short and long pulse response parameters from a double exponential fit to the rising/falling phase of a pulse response
 - [**fit_setup_2exp.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_setup_2exp.m): Constructs a fittype object and set initial conditions and bounds for a double exponential equation form
 - [**force_column_cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_column_cell.m): Transforms a row cell array or a numeric array to a column cell array
+- [**force_column.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_column.m): Forces an array as a column
 - [**force_column_numeric.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_column_numeric.m): Transform row numeric vector(s) or numeric array(s) to column numeric vector(s)
 - [**force_logical.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_logical.m): Forces any numeric binary array to become a logical array
 - [**force_row_numeric.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_row_numeric.m): Transform column numeric vector(s) or numeric array(s) to row numeric vector(s)
