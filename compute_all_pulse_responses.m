@@ -46,6 +46,10 @@ function [tVecAll, respAll, stimAll, featuresAll] = ...
 %                                           before pulse start in ms
 %                   must be a nonnegative scalar
 %                   default = 5 ms
+%                   - 'MinPeakDelayMs': minimum peak delay (ms)
+%                               after the end of the pulse
+%                   must be a positive scalar
+%                   default == 0 ms
 %                   - 'ChannelTypes': the channel types
 %                   must be a cellstr with nChannels elements
 %                       each being one of the following:
@@ -62,6 +66,8 @@ function [tVecAll, respAll, stimAll, featuresAll] = ...
 %                   default == what the file provides
 %
 % Requires:
+%       cd/compute_sampling_interval.m
+%       cd/count_vectors.m
 %       cd/parse_pulse_response.m
 %
 % Used by:
@@ -79,6 +85,7 @@ minRowNumberDefault = 1;        % row number to start counting at is 1
 lowPassFrequencyDefault = [];   % do not lowpass filter by default
 responseLengthMsDefault = 20;   % a response of 20 ms by default
 baselineLengthMsDefault = 5;    % a baseline of 5 ms by default
+minPeakDelayMsDefault = 0;      % no minimum peak delay by default
 channelTypesDefault = {};       % set later
 channelUnitsDefault = {};       % set later
 channelLabelsDefault = {};      % set later
@@ -113,6 +120,8 @@ addParameter(iP, 'ResponseLengthMs', responseLengthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'BaselineLengthMs', baselineLengthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+addParameter(iP, 'MinPeakDelayMs', minPeakDelayMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
 addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
     @(x) isempty(x) || isstring(x) || iscellstr(x));
 addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
@@ -128,26 +137,28 @@ addParameter(iP, 'ParsedData', parsedDataDefault, ...
 parse(iP, fileName, responseType, varargin{:});
 minRowNumber = iP.Results.MinRowNumber;
 baselineLengthMs = iP.Results.BaselineLengthMs;
+minPeakDelayMs = iP.Results.MinPeakDelayMs;
 
 %% Filter and extract pulse response(s)
 [tVecAll, respAll, stimAll, labels] = ...
     filter_and_extract_pulse_response(fileName, responseType, varargin{:});
 
 %% Compute features of the average pulse response
-% Compute the sampling interval
-siMs = tVecAll{1}(2) - tVecAll{1}(1);
+% Compute the sampling interval(s)
+siMs = compute_sampling_interval(tVecAll);
 
 % Count the number of vectors
-nVectors = numel(tVecAll);
+nVectors = count_vectors(tVecAll);
 
 % Parse the average pulse response vector
 featuresAll = parse_pulse_response(respAll, siMs, ...
                                 'PulseVectors', stimAll, ...
                                 'SameAsPulse', true, ...
-                                'MeanValueWindowMs', baselineLengthMs);
+                                'MeanValueWindowMs', baselineLengthMs, ...
+                                'MinPeakDelayMs', minPeakDelayMs);
 
 % Add labels to each row
-labels = repmat({labels}, size(tVecAll));
+labels = repmat({labels}, [nVectors, 1]);
 featuresAll = addvars(featuresAll, labels);
 
 % Construct sweep names
@@ -156,7 +167,7 @@ sweepName = arrayfun(@(x) ['Swp', num2str(x)], ...
                     transpose(1:nVectors), 'UniformOutput', false);
 
 % Repeat the file names
-filePath = repmat({fileName}, size(tVecAll));
+filePath = repmat({fileName}, [nVectors, 1]);
 
 % Insert before the first column of featuresAll the sweep name
 featuresAll = addvars(featuresAll, sweepName, 'Before', 1);
@@ -169,6 +180,12 @@ featuresAll = addvars(featuresAll, filePath, 'Before', 1);
 OLD CODE:
 
 % Insert before the second column of featuresAll the median time
+
+if iscell(tVecAll)
+    siMs = tVecAll{1}(2) - tVecAll{1}(1);
+else
+    siMs = tVecAll(2) - tVecAll(1);
+end
 
 %}
 

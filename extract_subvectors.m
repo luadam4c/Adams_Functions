@@ -111,11 +111,11 @@ if isempty(endPoints)
     endPoints = find_window_endpoints(windows, vecs);
 end
 
-% If there are multiple endpoints, match the formats of 
+% If one of endPoints and vecs is a cell function, match the formats of 
 %   endPoints and vecs so that cellfun can be used
-if iscell(endPoints) || numel(endPoints) > 2
+if iscell(endPoints) || iscell(vecs)
     [endPoints, vecs] = ...
-        match_format_vectors(endPoints, vecs, 'ForceCellOutputs', false);
+        match_format_vector_sets(endPoints, vecs, 'ForceCellOutputs', true);
 end
 
 %% Do the job
@@ -148,6 +148,9 @@ addParameter(iP, 'EndPoints', endPointsDefault, ...
     @(x) assert(isnumericvector(x) || iscellnumericvector(x), ...
                 ['EndPoints must be either a numeric vector ', ...
                     'or a cell array of numeric vectors!']));
+
+[endPoints, vecs] = ...
+    match_format_vector_sets(endPoints, vecs, 'ForceCellOutputs', false);
 
 %}
 

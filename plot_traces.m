@@ -108,7 +108,7 @@ function [h, subPlots] = plot_traces (tVecs, data, varargin)
 %       cd/find_window_endpoints.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
-%       cd/match_format_vectors.m
+%       cd/match_format_vector_sets.m
 %       cd/save_all_figtypes.m
 %       ~/Downloaded_Function/suplabel.m
 %       ~/Downloaded_Function/subplotsqueeze.m
@@ -125,7 +125,7 @@ function [h, subPlots] = plot_traces (tVecs, data, varargin)
 % 2018-10-29 Number of rows in parallel mode is now dependent on the 
 %               number of rows in the colorMap provided
 % 2018-10-29 Added 'DataToCompare' as an optional parameter
-% 2018-10-31 Now uses match_format_vectors.m
+% 2018-10-31 Now uses match_format_vector_sets.m
 % 2018-11-01 Now returns axes handles for subplots
 % 2018-11-22 Now accepts xLimits as a cell array
 % 2018-11-22 Added 'XUnits' as an optional parameter
@@ -262,7 +262,7 @@ end
 % Match the number of vectors between data and dataToCompare
 %   and make sure boths are column cell arrays of column vectors
 [data, dataToCompare] = ...
-    match_format_vectors(data, dataToCompare, 'ForceCellOutputs', true);
+    match_format_vector_sets(data, dataToCompare, 'ForceCellOutputs', true);
 
 % Extract number of traces
 nTraces = count_vectors(data);
@@ -287,7 +287,7 @@ maxY = max(cellfun(@max, data));
 rangeY = maxY - minY;
 
 % Force as column cell array and match up to nTraces elements 
-tVecs = match_format_vectors(tVecs, data);
+tVecs = match_format_vector_sets(tVecs, data);
 
 % Set the default time axis limits
 if isempty(xLimits)
@@ -335,7 +335,7 @@ case 'overlapped'
     end
 case 'parallel'
     % Force as column cell array and match up to nTraces elements
-    yLabel = match_format_vectors(yLabel, data);
+    yLabel = match_format_vector_sets(yLabel, data);
 otherwise
     error(['The plot mode ', plotMode, ' has not been implemented yet!']);
 end

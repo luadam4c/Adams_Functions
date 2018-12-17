@@ -86,6 +86,7 @@ function [featuresFileTable, featuresSweepTable] = ...
 %       cd/compute_and_plot_average_response.m
 %       cd/compute_all_pulse_responses.m
 %       cd/count_vectors.m
+%       cd/extract_elements.m
 %       cd/parse_all_abfs.m
 %       cd/plot_fields.m
 %       cd/plot_pulse_response_with_stimulus.m
@@ -99,8 +100,8 @@ function [featuresFileTable, featuresSweepTable] = ...
 % 
 
 %% TODO: Make these parameters
-plotSeparateFlag = false;
-plotAltogetherFlag = false;
+plotSeparateFlag = true;
+plotAltogetherFlag = true;
 plotAverageFlag = true;
 saveFlag = true;
 
@@ -262,6 +263,7 @@ switch protocolType
         lowPassFrequency = 1000;        % lowpass filter frequency in Hz
         baselineLengthMs = 5;           % baseline length in ms
         responseLengthMs = 20;          % response length in ms
+        minPeakDelayMs = 1;             % min peak delay after pulse end in ms
 
         % For plotting
         outFolderProtocolName = 'LFPs';
@@ -276,7 +278,8 @@ switch protocolType
         responseType = 'Current';
         lowPassFrequency = 1000;        % lowpass filter frequency in Hz
         baselineLengthMs = 5;           % baseline length in ms
-        responseLengthMs = 300;          % response length in ms
+        responseLengthMs = 500;         % response length in ms
+        minPeakDelayMs = 50;            % min peak delay after pulse end in ms
 
         % For plotting
         outFolderProtocolName = 'GABAB-IPSCs';
@@ -284,7 +287,7 @@ switch protocolType
         fileSuffix = '_GABAB';
         responseName = 'GABA-B IPSC';
     otherwise
-        body
+        error('Code logic error!!\n');
 end
 
 % Set the output folder
@@ -294,6 +297,7 @@ outFolderProtocol = fullfile(outFolder, outFolderProtocolName);
 % Compute features and plot protocol traces
 featuresPerFileCell = cell(nFiles, 1);
 featuresPerSweepCell = cell(nFiles, 1);
+%parfor iFile = 1:nFiles
 for iFile = 1:nFiles
     % Extract from cell arrays
     abfParams = abfParamsCell{iFile};
@@ -319,6 +323,7 @@ for iFile = 1:nFiles
                 'LowPassFrequency', lowPassFrequency, ...
                 'BaselineLengthMs', baselineLengthMs, ...
                 'ResponseLengthMs', responseLengthMs, ...
+                'MinPeakDelayMs', minPeakDelayMs, ...
                 'OutFolder', outFolderProtocol, ...
                 'FileSuffix', fileSuffix, 'ResponseName', responseName, ...
                 'PlotFlag', plotAverageFlag, 'SaveFlag', saveFlag, ...
@@ -333,23 +338,25 @@ for iFile = 1:nFiles
                 'LowPassFrequency', lowPassFrequency, ...
                 'BaselineLengthMs', baselineLengthMs, ...
                 'ResponseLengthMs', responseLengthMs, ...
+                'MinPeakDelayMs', minPeakDelayMs, ...
                 'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
                 'ChannelLabels', channelLabels, ...
                 'ParsedParams', abfParams, 'ParsedData', abfData);
 
         % Count the number of vectors
-        nVectors = count_vectors(tVecAll);
+        nVectors = count_vectors(respAll);
 
         % Set the time endpoints for individual protocol traces
-        timeStart = cellfun(@min, tVecAll);
-        timeEnd = cellfun(@max, tVecAll);
+        timeStart = extract_elements(tVecAll, 'first');
+        timeEnd = extract_elements(tVecAll, 'last');
 
         % Get the file directory and file base
         [fileDir, fileBase, ~] = fileparts(fileName);
 
         % Plot individual protocol traces with stimulus separately
         if plotSeparateFlag
-            parfor iVec = 1:nVectors
+%            parfor iVec = 1:nVectors
+            for iVec = 1:nVectors
                 % Save in a single params structure
                 params = table2struct(featuresAll(iVec, :));
                 params.OutFolder = fullfile(fileDir, [fileBase, '_traces']);
@@ -491,6 +498,10 @@ nSweepsPreviousFiles = 0;   % counts the number of sweeps in previous files
 % Update number of sweeps in previous files
 nSweepsPreviousFiles = nSweepsPreviousFiles + nVectors;
 
+timeStart = cellfun(@min, tVecAll);
+timeEnd = cellfun(@max, tVecAll);
+
+nVectors = count_vectors(tVecAll);
 
 %}
 

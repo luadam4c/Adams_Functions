@@ -37,7 +37,7 @@ function table = renamevars (table, prevNames, newNames, varargin)
 % Requires:
 %       cd/find_ind_str_in_cell.m
 %       cd/ispositiveintegerscalar.m
-%       cd/match_format_vectors.m
+%       cd/match_format_vector_sets.m
 %
 % Used by:
 %       cd/load_params.m
@@ -100,7 +100,7 @@ maxNum = iP.Results.MaxNum;
 % Match the row counts of prevNames and newNames
 %   and force them into column cell arrays
 [prevNames, newNames] = ...
-    match_format_vectors(prevNames, newNames, 'ForceCellOutputs', true);
+    match_format_vector_sets(prevNames, newNames, 'ForceCellOutputs', true);
 
 %% Do the job
 % Get all the variable names

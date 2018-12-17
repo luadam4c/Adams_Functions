@@ -22,6 +22,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %       cd/compute_sweep_errors.m
 %       cd/m3ha_create_simulation_params.m
 %       cd/m3ha_plot_individual_traces.m
+%       cd/plot_fields.m
 %       cd/xolotl_add_current_pulse.m
 %       cd/xolotl_add_holding_current.m
 %       cd/xolotl_add_voltage_clamp.m
@@ -99,9 +100,9 @@ if nRowsNew > nRowsOld
 elseif nRowsNew < nRowsOld
     % Truncate array
     if nDims == 2
-        arrayNew = arrayOld(nRowsNew, :);
+        arrayNew = arrayOld(1:nRowsNew, :);
     elseif nDims == 3
-        arrayNew = arrayOld(nRowsNew, :, :);
+        arrayNew = arrayOld(1:nRowsNew, :, :);
     end
 end
 

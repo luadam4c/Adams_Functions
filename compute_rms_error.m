@@ -34,7 +34,7 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 %       cd/isnumericvector.m
 %       cd/extract_subvectors.m
 %       cd/force_column_cell.m
-%       cd/match_format_vectors.m
+%       cd/match_format_vector_sets.m
 %
 % Used by:
 %       cd/compute_baseline_noise.m
@@ -92,7 +92,7 @@ endPoints = iP.Results.EndPoints;
 
 % Make sure vec1s and vec2s are both column cell arrays
 %   with the same number of vectors
-[vec1s, vec2s] = match_format_vectors(vec1s, vec2s);
+[vec1s, vec2s] = match_format_vector_sets(vec1s, vec2s);
 
 % Restrict to the given end points
 %   Note: default is first and last indices
@@ -170,7 +170,7 @@ else
     vec2s = extract_subvectors(vec2s, 'Endpoints', endPoints);
 end
 
-[vec1s, vec2s] = match_format_vectors(vec1s, vec2s, 'ForceCellOutputs', true);
+[vec1s, vec2s] = match_format_vector_sets(vec1s, vec2s, 'ForceCellOutputs', true);
 
 %}
 

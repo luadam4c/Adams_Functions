@@ -90,7 +90,8 @@ if ischar(iVecsORfileName) || isstring(iVecsORfileName)
     fileName = iVecsORfileName;
 
     % Extract the current vectors
-    iVecs = extract_channel(fileName, 'current', 'ChannelTypes', channelTypes);
+    iVecs = extract_channel(fileName, 'current', 'MaxNChannels', 1, ...
+                            'ChannelTypes', channelTypes);
 else
     % The first argument are the current vectors
     iVecs = iVecsORfileName;
@@ -108,6 +109,8 @@ OLD CODE:
 ampCp = iVecs(idxCpMid, iSwp);
 
 disp('done');
+
+iVecs = extract_channel(fileName, 'current', 'ChannelTypes', channelTypes);
 
 %}
 

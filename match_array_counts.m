@@ -3,7 +3,7 @@ function [arrays1, arrays2] = match_array_counts (arrays1, arrays2, varargin)
 % Usage: [arrays1, arrays2] = match_array_counts (arrays1, arrays2, varargin)
 % Explanation:
 %       TODO
-%       cf. match_format_vectors.m
+%       cf. match_format_vector_sets.m
 % Example(s):
 %       [a, b] = match_array_counts({1:5, 2:6}, 1:5)
 %       [a, b] = match_array_counts({1:5, [2:6]'}, 1:5)

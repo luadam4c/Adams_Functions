@@ -166,14 +166,14 @@ stimType = choose_stimulation_type(responseType);
 
 % Extract the vectors containing pulse responses
 [respVecs, labels{1}] = ...
-    extract_channel(fileName, responseType, ...
+    extract_channel(fileName, responseType, 'MaxNChannels', 1, ...
             'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
             'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
             'ChannelLabels', channelLabels);
 
 % Extract the vectors containing pulses
 [stimVecs, labels{2}] = ...
-    extract_channel(fileName, stimType, ...
+    extract_channel(fileName, stimType, 'MaxNChannels', 1, ...
             'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
             'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
             'ChannelLabels', channelLabels);
@@ -186,7 +186,8 @@ if ~isempty(lowPassFrequency)
 end
 
 % Force as a cell array of vectors
-[respVecs, stimVecs] = argfun(@force_column_cell, respVecs, stimVecs);
+[tVec, respVecs, stimVecs] = ...
+    argfun(@force_column_cell, tVec, respVecs, stimVecs);
 
 % Identify the pulse response endpoints
 [idxResponseStarts, idxResponseEnds] = ...
@@ -194,13 +195,6 @@ end
                                 'PulseVectors', stimVecs, ...
                                 'BaselineLengthMs', baselineLengthMs, ...
                                 'ResponseLengthMs', responseLengthMs);
-
-% Compute the number of samples in each pulse response
-nSamplesEachResponse = idxResponseEnds - idxResponseStarts + 1;
-
-% Determine number of samples in the shortest pulse response
-%   This will be the length of the average response
-nSamplesAvgResponse = min(nSamplesEachResponse);
 
 % Place endpoints together as a matrix, with each column corresponding
 %   to each vector
@@ -229,6 +223,14 @@ baselineLengthSamples = floor(baselineLengthMs / siMs);
 idxStartAveraged = max(1, round(mean(idxResponseStarts)));
 idxEndAveraged = (idxStartAveraged - 1) + nSamplesAvgResponse;
 tVecsResponse = tVec(idxStartAveraged:idxEndAveraged);
+
+% Determine number of samples in the shortest pulse response
+%   This will be the length of the average response
+nSamplesAvgResponse = min(nSamplesEachResponse);
+
+% Compute the number of samples in each pulse response
+nSamplesEachResponse = idxResponseEnds - idxResponseStarts + 1;
+
 
 %}
 

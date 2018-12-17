@@ -23,7 +23,7 @@ function isNumericVector = isnumericvector (x)
 %       cd/iscellnumericvector.m
 %       cd/m3ha_create_simulation_params.m
 %       cd/m3ha_plot_individual_traces.m
-%       cd/match_format_vectors.m
+%       cd/match_format_vector_sets.m
 %       cd/plot_fields.m
 
 % File History:

@@ -16,6 +16,8 @@ function samplingIntervals = compute_sampling_interval (timeVecs, varargin)
 %                   default == TODO
 %
 % Used by:
+%       cd/compute_all_pulse_responses.m
+%       cd/create_average_time_vector.m
 %       cd/m3ha_import_raw_traces.m
 
 % File History:

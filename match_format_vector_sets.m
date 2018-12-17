@@ -1,6 +1,6 @@
-function [vecs1, vecs2] = match_format_vectors (vecs1, vecs2, varargin)
+function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %% Matches two sets of vectors so that they are both cell arrays of the same number of column vectors
-% Usage: [vecs1, vecs2] = match_format_vectors (vecs1, vecs2, varargin)
+% Usage: [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 % Explanation:
 %       This function takes two sets of vectors as input arguments
 %       If there is more than one vector in one of the sets, 
@@ -11,11 +11,11 @@ function [vecs1, vecs2] = match_format_vectors (vecs1, vecs2, varargin)
 %       cf. match_array_counts.m
 %
 % Example(s):
-%       [a, b] = match_format_vectors({1:5, 2:6}, 1:5)
-%       [a, b] = match_format_vectors({1:5, [2:6]'}, 1:5)
-%       [a, b] = match_format_vectors([[1:5]', [2:6]'], [1:5]')
-%       [a, b] = match_format_vectors('yes', 1:5)
-%       [a, b] = match_format_vectors('yes', magic(3))
+%       [a, b] = match_format_vector_sets({1:5, 2:6}, 1:5)
+%       [a, b] = match_format_vector_sets({1:5, [2:6]'}, 1:5)
+%       [a, b] = match_format_vector_sets([[1:5]', [2:6]'], [1:5]')
+%       [a, b] = match_format_vector_sets('yes', 1:5)
+%       [a, b] = match_format_vector_sets('yes', magic(3))
 %
 % Outputs:
 %       vecs1       - new first set of vectors

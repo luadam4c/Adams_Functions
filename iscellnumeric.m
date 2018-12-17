@@ -25,7 +25,7 @@ function isCellNumeric = iscellnumeric (x)
 %       cd/extract_columns.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/match_array_counts.m
-%       cd/match_format_vectors.m
+%       cd/match_format_vector_sets.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 %       cd/plot_raster.m

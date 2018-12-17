@@ -44,7 +44,7 @@ function [baseWindow, fitWindow, baseNoise, sweepWeights] = ...
 %       cd/force_column_numeric.m
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
-%       cd/match_format_vectors.m
+%       cd/match_format_vector_sets.m
 %
 % Used by:
 %       cd/compute_single_neuron_errors.m
@@ -120,7 +120,7 @@ end
 
 % Matches tVecs and data so that they are both cell arrays 
 %   of the same number of column vectors
-[tVecs, data] = match_format_vectors(tVecs, data);
+[tVecs, data] = match_format_vector_sets(tVecs, data);
 
 %% Do the job
 % Find the minimum and maximum times and center times

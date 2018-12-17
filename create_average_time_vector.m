@@ -16,6 +16,7 @@ function [tVecAvg, minNSamples] = create_average_time_vector (tVecs)
 %                   must be a numeric array or a cell array of numeric vectors
 %
 % Requires:
+%       cd/compute_sampling_interval.m
 %       cd/count_samples.m
 %       cd/create_time_vectors.m
 %       cd/iscellnumericvector.m
@@ -54,6 +55,10 @@ addRequired(iP, 'tVecs', ...
 % Read from the Input Parser
 parse(iP, tVecs);
 
+%% Preparation
+% Force as a cell array
+tVecs = force_column_cell(tVecs);
+
 %% Do the job
 % Count the number of samples of each time vector
 nSamples = count_samples(tVecs);
@@ -65,7 +70,7 @@ minNSamples = min(nSamples);
 startTimes = cellfun(@(x) x(1), tVecs);
 
 % Get a sampling interval
-siMs = tVecs{1}(2) - tVecs{1}(1);
+siMs = compute_sampling_interval(tVecs);
 
 % Compute the average start time
 averageStartTime = mean(startTimes);
@@ -79,6 +84,8 @@ tVecAvg = create_time_vectors(minNSamples, 'SamplingIntervalMs', siMs, ...
 
 %{
 OLD CODE:
+
+siMs = tVecs{1}(2) - tVecs{1}(1);
 
 %}
 

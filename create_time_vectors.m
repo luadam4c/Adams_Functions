@@ -117,13 +117,7 @@ samplingIntervalMs = iP.Results.SamplingIntervalMs;
 tStart = iP.Results.TimeStart;
 
 %% Preparation
-% Count the number of vectors to build
-nVectors = length(nSamples);
-
-% Query the dimensions of nSamples
-dimOutput = size(nSamples);
-
-% Convert sampling interval(s) to seconds
+% Convert any provided sampling interval(s) to seconds
 if ~isempty(samplingIntervalUs)
     siSeconds = samplingIntervalUs / US_PER_S;
 elseif ~isempty(samplingIntervalMs)
@@ -134,38 +128,13 @@ else
     siSeconds = [];
 end
 
-% Decide on the sampling interval(s)
+% Decide on the sampling interval(s) by either using the 
+%   provided sampling interval(s) or sampling rate(s)
 %   Note: match_reciprocals returns 1 if both arguments are empty
+%           Therefore, the default sampling interval is 1 second (1 Hz)
 siSeconds = match_reciprocals(siSeconds, samplingRateHz);
 
-% Match the dimensions of siSeconds to that of nSamples
-siSeconds = match_dimensions(siSeconds, dimOutput);
-
-% Match the dimensions of tStart to that of nSamples
-tStart = match_dimensions(tStart, dimOutput);
-
-%% Do the job
-if nVectors == 1
-    timeVecs = create_time_vectors_helper(nSamples, siSeconds, tStart, ...
-                                        boundaryMode, timeUnits, mfilename);
-else
-    timeVecs = ...
-        arrayfun(@(x, y, z) create_time_vectors_helper(x, y, z, ...
-                                        boundaryMode, timeUnits, mfilename), ...
-                nSamples, siSeconds, tStart, 'UniformOutput', false);
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function tVec = create_time_vectors_helper (nSamples, siSeconds, tStart, ...
-                                    boundaryMode, timeUnits, functionName)
-%% Create a time vector with target units
-
-%% Hard-coded constants
-US_PER_S = 1e6;
-MS_PER_S = 1e3;
-
-% Compute the sampling interval in the correct units
+% Compute the sampling interval(s) in the desired time units
 switch timeUnits
     case 's'
         siUnits = siSeconds;
@@ -175,8 +144,41 @@ switch timeUnits
         siUnits = siSeconds * US_PER_S;
     otherwise
         error(['TimeUnits %s unrecognized!\n', ...
-                'Type ''help %s'' for usage'], timeUnits, functionName);
+                'Type ''help %s'' for usage'], timeUnits, mfilename);
 end
+
+% Force as column vectors
+[nSamples, siUnits, tStart] = ...
+    argfun(@force_column_numeric, nSamples, siUnits, tStart);
+
+% Query the number of values provided for each parameter
+nRowsNSamples = length(nSamples);
+nRowsSiUnits = length(siUnits);
+nRowsTStart = length(tStart);
+
+% Decide on the number of vectors to build
+nVectors = max([nRowsNSamples, nRowsSiUnits, nRowsTStart]);
+
+% Match the number of rows of each parameter to nVectors
+[nSamples, siUnits, tStart] = ...
+    argfun(@(x) match_row_count(x, nVectors), nSamples, siUnits, tStart);
+
+%% Create the time vector(s)
+if nVectors == 1
+    timeVecs = create_time_vector(nSamples, siSeconds, tStart, ...
+                                        boundaryMode, mfilename);
+else
+    timeVecs = ...
+        arrayfun(@(x, y, z) create_time_vector(x, y, z, ...
+                                        boundaryMode, mfilename), ...
+                nSamples, siSeconds, tStart, 'UniformOutput', false);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function tVec = create_time_vector (nSamples, siSeconds, tStart, ...
+                                    boundaryMode, functionName)
+%% Create a time vector with target units
 
 % Create the time vector based the boundary mode
 switch boundaryMode
@@ -211,6 +213,8 @@ function x = match_dimensions_if_not_empty(x, varargin)
 if ~isempty(x)
     x = match_dimensions(x, varargin{:});
 end
+
+nVectors = length(nSamples);
 
 %}
 

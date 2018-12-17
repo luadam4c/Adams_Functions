@@ -58,6 +58,10 @@ function [parsedParams, parsedData] = ...
 %                                           calculating mean values
 %                   must be a positive scalar
 %                   default == 0.5 ms
+%                   - 'MinPeakDelayMs': minimum peak delay (ms)
+%                               after the end of the pulse
+%                   must be a positive scalar
+%                   default == 0 ms
 %
 % Requires:
 %       cd/count_samples.m
@@ -76,8 +80,9 @@ function [parsedParams, parsedData] = ...
 % 2018-10-10 Adapted from parse_pulse.m
 % 2018-10-11 Fixed tvecRising so that it starts from 0
 % 2018-11-13 Added 'MeanValueWindowMs' as an optional argument
+% 2018-11-28 Now allows siMs to be a vector
 % 2018-12-15 Added 'peakValue', 'idxPeak', 'peakAmplitude' in parsedParams
-% TODO: 2018-11-28 Now allows siMs to be a vector
+% 2018-12-15 Added 'MinPeakDelayMs' as an optional argument
 % TODO: Compute the slope of the peak
 
 %% Hard-coded parameters
@@ -86,6 +91,7 @@ function [parsedParams, parsedData] = ...
 pulseVectorsDefault = [];       % don't use pulse vectors by default
 sameAsPulseDefault = true;      % use pulse endpoints by default
 meanValueWindowMsDefault = 0.5; % calculating mean values over 0.5 ms by default
+minPeakDelayMsDefault = 0;      % no minimum peak delay by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -117,12 +123,15 @@ addParameter(iP, 'SameAsPulse', sameAsPulseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'MeanValueWindowMs', meanValueWindowMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
+addParameter(iP, 'MinPeakDelayMs', minPeakDelayMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
 
 % Read from the Input Parser
 parse(iP, vectors, siMs, varargin{:});
 pulseVectors = iP.Results.PulseVectors;
 sameAsPulse = iP.Results.SameAsPulse;
 meanValueWindowMs = iP.Results.MeanValueWindowMs;
+minPeakDelayMs = iP.Results.MinPeakDelayMs;
 
 %% Preparation
 % Force vectors to be a column cell array
@@ -134,8 +143,9 @@ nSamples = count_samples(vectors);
 % Count the number of vectors
 nVectors = count_vectors(vectors);
 
-% Calculate the mean value calculation window in samples
+% Convert time parameters to samples
 meanValueWindowSamples = round(meanValueWindowMs ./ siMs);
+minPeakDelaySamples = round(minPeakDelayMs ./ siMs);
 
 % For clarity, define a column vector of ones
 allOnes = ones(nVectors, 1);
@@ -178,12 +188,16 @@ indBefore = (-1) * transpose(fliplr(1:meanValueWindowSamples));
 indBase = arrayfun(@(x) x + indBefore, ...
                     idxResponseStart, 'UniformOutput', false);
 
-% Find the average baseline value
-baseValue = cellfun(@(x, y) mean(x(y)), vectors, indBase);
-
 % Find the steady state indices using a window before response end
 indSteady = arrayfun(@(x) x + indBefore, ...
                     idxResponseEnd, 'UniformOutput', false);
+
+% Make sure nothing is out of bounds
+indBase = cellfun(@(x) x(x >= 1) , indBase, 'UniformOutput', false);
+indSteady = cellfun(@(x) x(x <= nSamples) , indSteady, 'UniformOutput', false);
+
+% Find the average baseline value
+baseValue = cellfun(@(x, y) mean(x(y)), vectors, indBase);
 
 % Find the average steady state value
 steadyValue = cellfun(@(x, y) mean(x(y)), vectors, indSteady);
@@ -195,22 +209,23 @@ steadyAmplitude = steadyValue - baseValue;
 minValue = cellfun(@min, vectors);
 maxValue = cellfun(@max, vectors);
 
-% Find the index for each vector after pulse ends
+% Find the index to begin searching for the peak
 %   Note: this cannot be greater than nSamples
-idxAfterPulseEnd = arrayfun(@(x, y) min([x + 1, y]), idxPulseEnd, nSamples);
+idxPeakSearchBegin = arrayfun(@(x, y) min([x + minPeakDelaySamples, y]), ...
+                                idxPulseEnd, nSamples);
 
-% Find the minimum and maximum values after the pulse ends
+% Find the minimum and maximum values after the pulse ends + minPeakDelaySamples
 [minValueAfterPulse, idxMinValueAfterPulseRel] = ...
-    cellfun(@(x, y) min(x(y:end)), vectors, num2cell(idxAfterPulseEnd));
+    cellfun(@(x, y) min(x(y:end)), vectors, num2cell(idxPeakSearchBegin));
 [maxValueAfterPulse, idxMaxValueAfterPulseRel] = ...
-    cellfun(@(x, y) max(x(y:end)), vectors, num2cell(idxAfterPulseEnd));
+    cellfun(@(x, y) max(x(y:end)), vectors, num2cell(idxPeakSearchBegin));
 
 % Record the corresponding indices
-idxMinValueAfterPulse = idxMinValueAfterPulseRel + (idxAfterPulseEnd - 1);
-idxMaxValueAfterPulse = idxMaxValueAfterPulseRel + (idxAfterPulseEnd - 1);
+idxMinValueAfterPulse = idxMinValueAfterPulseRel + (idxPeakSearchBegin - 1);
+idxMaxValueAfterPulse = idxMaxValueAfterPulseRel + (idxPeakSearchBegin - 1);
 
-% Find the peak values (the minimum or maximum value after pulse end
-%   with largest magnitude)
+% Find the peak values (the minimum or maximum value after pulse end 
+%   + minPeakDelaySamples with largest magnitude)
 [peakValue, idxPeak] = ...
     arrayfun(@(x, y, z, w) choose_peak_value(x, y, z, w), ...
             minValueAfterPulse, maxValueAfterPulse, ...
@@ -264,7 +279,7 @@ vvecsCombined = cellfun(@(x, y, z) x(y) - z, ...
 parsedParams = table(nSamples, responseWidthSamples, responseWidthMs, ...
                         nSamplesRising, nSamplesFalling, nSamplesCombined, ...
                         idxResponseStart, idxResponseEnd, idxResponseMid, ...
-                        idxPulseStart, idxPulseEnd, ...
+                        idxPulseStart, idxPulseEnd, idxPeakSearchBegin, ...
                         idxBaseStart, idxBaseEnd, ...
                         idxSteadyStart, idxSteadyEnd, ...
                         baseValue, steadyValue, steadyAmplitude, ...
@@ -308,6 +323,9 @@ tvecsFalling = arrayfun(@(x) transpose(1:x) * siMs, nSamplesFalling, ...
 
 idxBaseStart = idxResponseStart - meanValueWindowSamples;
 idxSteadyStart = idxResponseEnd - meanValueWindowSamples;
+
+% Find the index for each vector after pulse ends
+idxAfterPulseEnd = arrayfun(@(x, y) min([x + 1, y]), idxPulseEnd, nSamples);
 
 
 %}

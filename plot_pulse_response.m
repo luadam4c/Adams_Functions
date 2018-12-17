@@ -20,6 +20,14 @@ function h = plot_pulse_response (timeVec, responseVecs, varargin)
 %                                       the current pulse endpoints
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'MeanValueWindowMs': window in ms for 
+%                                           calculating mean values
+%                   must be a positive scalar
+%                   default == 0.5 ms
+%                   - 'MinPeakDelayMs': minimum peak delay (ms)
+%                               after the end of the pulse
+%                   must be a positive scalar
+%                   default == 0 ms
 %                   - 'ResponseParams': a table containing the parsed parameters
 %                   must be a table containing at least the fields:
 %                       baseValue
@@ -58,6 +66,8 @@ yCoverage = 80;                 % coverage of y axis (%)
 %% Default values for optional arguments
 pulseVectorsDefault = [];       % don't use pulse vectors by default
 sameAsPulseDefault = true;      % use pulse endpoints by default
+meanValueWindowMsDefault = 0.5; % calculating mean values over 0.5 ms by default
+minPeakDelayMsDefault = 0;      % no minimum peak delay by default
 responseParamsDefault = [];     % set later
 toUseDefault = [];              % set later
 xLimitsDefault = [];            % set later
@@ -87,6 +97,10 @@ addParameter(iP, 'PulseVectors', pulseVectorsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'SameAsPulse', sameAsPulseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'MeanValueWindowMs', meanValueWindowMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
+addParameter(iP, 'MinPeakDelayMs', minPeakDelayMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
 addParameter(iP, 'ResponseParams', responseParamsDefault, ...
     @(x) validateattributes(x, {'table'}, {'2d'}));
 addParameter(iP, 'ToUse', toUseDefault, ...
@@ -102,6 +116,8 @@ addParameter(iP, 'YLimits', yLimitsDefault, ...
 parse(iP, timeVec, responseVecs, varargin{:});
 pulseVectors = iP.Results.PulseVectors;
 sameAsPulse = iP.Results.SameAsPulse;
+meanValueWindowMs = iP.Results.MeanValueWindowMs;
+minPeakDelayMs = iP.Results.MinPeakDelayMs;
 responseParams = iP.Results.ResponseParams;
 toUse = iP.Results.ToUse;
 xLimits = iP.Results.XLimits;
@@ -118,8 +134,10 @@ if isempty(responseParams)
 
     % Parse the pulse response
     responseParams = parse_pulse_response(responseVecs, siMs, ...
-                                            'PulseVectors', pulseVectors, ...
-                                            'SameAsPulse', sameAsPulse);
+                                'PulseVectors', pulseVectors, ...
+                                'SameAsPulse', sameAsPulse, ...
+                                'MeanValueWindowMs', baselineLengthMs, ...
+                                'MinPeakDelayMs', minPeakDelayMs);
 end
 
 % Use all vectors by default

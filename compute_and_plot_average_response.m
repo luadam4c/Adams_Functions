@@ -42,6 +42,10 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg, h] = ...
 %                                           before pulse start in ms
 %                   must be a nonnegative scalar
 %                   default = 5 ms
+%                   - 'MinPeakDelayMs': minimum peak delay (ms)
+%                               after the end of the pulse
+%                   must be a positive scalar
+%                   default == 0 ms
 %                   - 'OutFolder': the name of the directory for plots
 %                   must be a string scalar or a character vector
 %                   default == a subdirectory named by outFolderName
@@ -97,6 +101,7 @@ validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 lowPassFrequencyDefault = [];   % do not lowpass filter by default
 responseLengthMsDefault = 20;   % a response of 20 ms by default
 baselineLengthMsDefault = 5;    % a baseline of 5 ms by default
+minPeakDelayMsDefault = 0;      % no minimum peak delay by default
 outFolderDefault = '';          % set later
 outFolderNameDefault = 'Pulse_Response';
 fileSuffixDefault = '_pulse_response';
@@ -136,6 +141,8 @@ addParameter(iP, 'ResponseLengthMs', responseLengthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'BaselineLengthMs', baselineLengthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+addParameter(iP, 'MinPeakDelayMs', minPeakDelayMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolderName', outFolderNameDefault, ...
@@ -166,6 +173,7 @@ parse(iP, fileName, responseType, varargin{:});
 lowPassFrequency = iP.Results.LowPassFrequency;
 responseLengthMs = iP.Results.ResponseLengthMs;
 baselineLengthMs = iP.Results.BaselineLengthMs;
+minPeakDelayMs = iP.Results.MinPeakDelayMs;
 outFolder = iP.Results.OutFolder;
 outFolderName = iP.Results.OutFolderName;
 fileSuffix = iP.Results.FileSuffix;
@@ -199,7 +207,8 @@ end
         'ChannelLabels', channelLabels, ...
         'LowPassFrequency', lowPassFrequency, ...
         'BaselineLengthMs', baselineLengthMs, ...
-        'ResponseLengthMs', responseLengthMs);
+        'ResponseLengthMs', responseLengthMs, ...
+        'MinPeakDelayMs', minPeakDelayMs);
 
 %% Plot the evoked local field potential with the stimulation pulse
 if plotFlag

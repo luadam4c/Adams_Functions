@@ -21,6 +21,7 @@ function nVectors = count_vectors (vectors)
 %       cd/iscellnumericvector.m
 %
 % Used by:
+%       cd/compute_all_pulse_responses.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/extract_channel.m

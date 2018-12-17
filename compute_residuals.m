@@ -21,14 +21,14 @@ function residuals = compute_residuals (simVectors, realVectors, varargin)
 %
 % Requires:
 %       cd/iscellnumeric.m
-%       cd/match_format_vectors.m
+%       cd/match_format_vector_sets.m
 %
 % Used by:    
 %       cd/m3ha_run_neuron_once.m
 
 % File History:
 % 2018-10-23 Created by Adam Lu
-% 2018-10-28 Now uses match_format_vectors.m and accepts numeric arrays
+% 2018-10-28 Now uses match_format_vector_sets.m and accepts numeric arrays
 %               with multiple columns
 % 
 
@@ -68,7 +68,7 @@ parse(iP, simVectors, realVectors, varargin{:});
 % Make sure simVectors and realVectors are both cell arrays of the same length
 %   if one of them has multiple vectors
 [simVectors, realVectors] = ...
-    match_format_vectors(simVectors, realVectors, 'ForceCellOutputs', false);
+    match_format_vector_sets(simVectors, realVectors, 'ForceCellOutputs', false);
 
 %% Compute residuals
 if iscell(simVectors) && iscell(realVectors)

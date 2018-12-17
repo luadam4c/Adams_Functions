@@ -41,7 +41,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 % Requires:
 %       cd/iscellnumeric.m
 %       cd/iscellnumericvector.m
-%       cd/match_format_vectors.m
+%       cd/match_format_vector_sets.m
 %
 % Used by:
 %       cd/compute_baseline_noise.m
@@ -101,7 +101,7 @@ boundaryMode = validatestring(iP.Results.BoundaryMode, validBoundaryModes);
 %% Preparation
 % Match the formats of timeWindows and timeVecs so that cellfun can be used
 [timeWindows, timeVecs] = ...
-    match_format_vectors(timeWindows, timeVecs, 'ForceCellOutputs', false);
+    match_format_vector_sets(timeWindows, timeVecs, 'ForceCellOutputs', false);
 
 % If the time window is a nonempty numeric array, make sure it has two rows
 if ~isempty(timeWindows) && isnumeric(timeWindows) && ...

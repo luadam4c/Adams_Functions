@@ -41,6 +41,10 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg] = ...
 %                                           before pulse start in ms
 %                   must be a nonnegative scalar
 %                   default = 5 ms
+%                   - 'MinPeakDelayMs': minimum peak delay (ms)
+%                               after the end of the pulse
+%                   must be a positive scalar
+%                   default == 0 ms
 %                   - 'ChannelTypes': the channel types
 %                   must be a cellstr with nChannels elements
 %                       each being one of the following:
@@ -78,6 +82,7 @@ validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 lowPassFrequencyDefault = [];   % do not lowpass filter by default
 responseLengthMsDefault = 20;   % a response of 20 ms by default
 baselineLengthMsDefault = 5;    % a baseline of 5 ms by default
+minPeakDelayMsDefault = 0;      % no minimum peak delay by default
 channelTypesDefault = {};       % set later
 channelUnitsDefault = {};       % set later
 channelLabelsDefault = {};      % set later
@@ -110,6 +115,8 @@ addParameter(iP, 'ResponseLengthMs', responseLengthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'BaselineLengthMs', baselineLengthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+addParameter(iP, 'MinPeakDelayMs', minPeakDelayMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
 addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
     @(x) isempty(x) || isstring(x) || iscellstr(x));
 addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
@@ -126,6 +133,7 @@ parse(iP, fileName, responseType, varargin{:});
 lowPassFrequency = iP.Results.LowPassFrequency;
 responseLengthMs = iP.Results.ResponseLengthMs;
 baselineLengthMs = iP.Results.BaselineLengthMs;
+minPeakDelayMs = iP.Results.MinPeakDelayMs;
 channelTypes = iP.Results.ChannelTypes;
 channelUnits = iP.Results.ChannelUnits;
 channelLabels = iP.Results.ChannelLabels;
@@ -155,7 +163,8 @@ siMs = tVecAvg(2) - tVecAvg(1);
 featuresAvg = parse_pulse_response(respAvg, siMs, ...
                                 'PulseVectors', stimAvg, ...
                                 'SameAsPulse', true, ...
-                                'MeanValueWindowMs', baselineLengthMs);
+                                'MeanValueWindowMs', baselineLengthMs, ...
+                                'MinPeakDelayMs', minPeakDelayMs);
 
 % Add labels to features
 featuresAvg.labels = labels;

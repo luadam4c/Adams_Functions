@@ -87,7 +87,7 @@ if ischar(vVecsORfileName) || isstring(vVecsORfileName)
     fileName = vVecsORfileName;
 
     % Extract the voltage vectors
-    vVecs = extract_channel(fileName, 'voltage', 'MaxNum', 1, ...
+    vVecs = extract_channel(fileName, 'voltage', 'MaxNChannels', 1, ...
                             'ChannelTypes', channelTypes);
 else
     % The first argument are the voltage vectors

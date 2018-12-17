@@ -56,6 +56,8 @@ function h = plot_fields (structArray, varargin)
 %                   default == 'png'
 %
 % Requires:
+%       cd/force_column_cell.m
+%       cd/match_row_count.m
 %       cd/plot_tuning_curve.m
 %       cd/isfigtype.m
 %
@@ -178,8 +180,19 @@ if isempty(xTicks)
 
     % Evenly space them out starting with the first parameter
     xTicks = (1:nXTicks) * floor(nEntries/nXTicks);
+else
+    nXTicks = length(xTicks);
 end
-if isempty(xTickLabels)
+
+% Generate corresponding parameter value labels
+if ~isempty(xTickLabels) 
+    % Force as a column cell array
+    xTickLabels = force_column_cell(xTickLabels);
+    
+    % Match the row counts
+    xTickLabels = match_row_count(xTickLabels, nXTicks);
+elseif isempty(xTickLabels)
+    % Generate xTickLabels from xTicks
     xTickLabels = arrayfun(@(x) num2str(x), xTicks, ...
                             'UniformOutput', false);
 end
@@ -272,7 +285,7 @@ for iField = 1:nFields
     h(iField) = plot_tuning_curve(xValues, field, 'PisLog', xIsLog, ...
                         'XLimits', xLimits, 'YLimits', yLimits, ...
                         'PTicks', xTicks, 'PTickLabels', xTickLabels, ...
-                        'PLabel', 'suppress', ...
+                        'PLabel', xLabel, ...
                         'ReadoutLabel', fieldLabel, ...
                         'SingleColor', singlecolor, ...
                         'FigTitle', figTitle, 'FigNumber', figNumber, ...

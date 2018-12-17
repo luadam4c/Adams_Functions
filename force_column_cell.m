@@ -32,16 +32,18 @@ function vectorsCell = force_column_cell (vectorsOrig)
 % Used by:
 %       cd/compute_rms_error.m
 %       cd/construct_fullpath.m
+%       cd/create_average_time_vector.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/find_pulse_endpoints.m
 %       cd/force_column_numeric.m
 %       cd/force_row_numeric.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
-%       cd/match_format_vectors.m
+%       cd/match_format_vector_sets.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 %       cd/plot_all_abfs.m
+%       cd/plot_fields.m
 %       cd/run_neuron.m
 
 % File History:

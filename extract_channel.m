@@ -24,7 +24,10 @@ function [vectors, label] = extract_channel (abfFileName, channelType, varargin)
 %                       'Current'       - current
 %                       'Conductance'   - conductance
 %                       'Other'         - other un-identified types
-%       varargin    - 'MaxNum': maximum number of channels to extract
+%       varargin    - 'MaxNChannels': maximum number of channels to extract
+%                   must be a positive integer scalar or Inf
+%                   default == Inf
+%                   - 'MaxNVectors': maximum number of vectors to extract
 %                   must be a positive integer scalar or Inf
 %                   default == Inf
 %                   - 'ChannelTypes': type assigned to each channel, possibly:
@@ -53,6 +56,7 @@ function [vectors, label] = extract_channel (abfFileName, channelType, varargin)
 % 2018-12-15 Added 'ParsedData' as an optional parameter
 % 2018-12-15 Now uses ismatrix() per MATLAB's suggestion
 % 2018-12-15 Now returns the corresponding label(s)
+% 2018-12-16 Fixed usage of maxNChannels and added maxNVectors
 % TODO: Generalize to other file types
 % 
 
@@ -60,7 +64,8 @@ function [vectors, label] = extract_channel (abfFileName, channelType, varargin)
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 
 %% Default values for optional arguments
-maxNumDefault = Inf;
+maxNChannelsDefault = Inf;      % set later
+maxNVectorsDefault = Inf;       % set later
 channelTypesDefault = {};       % set later
 channelUnitsDefault = {};       % set later
 channelLabelsDefault = {};      % set later
@@ -87,7 +92,9 @@ addRequired(iP, 'channelType', ...
     @(x) any(validatestring(x, validChannelTypes)));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'MaxNum', maxNumDefault, ...
+addParameter(iP, 'MaxNChannels', maxNChannelsDefault, ...
+    @(x) isinf(x) || ispositiveintegerscalar(x));
+addParameter(iP, 'MaxNVectors', maxNVectorsDefault, ...
     @(x) isinf(x) || ispositiveintegerscalar(x));
 addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
     @(x) isempty(x) || isstring(x) || iscellstr(x));
@@ -102,7 +109,8 @@ addParameter(iP, 'ParsedData', parsedDataDefault, ...
 
 % Read from the Input Parser
 parse(iP, abfFileName, channelType, varargin{:});
-maxNum = iP.Results.MaxNum;
+maxNChannels = iP.Results.MaxNChannels;
+maxNVectors = iP.Results.MaxNVectors;
 channelTypes = iP.Results.ChannelTypes;
 channelUnits = iP.Results.ChannelUnits;
 channelLabels = iP.Results.ChannelLabels;
@@ -147,29 +155,30 @@ switch channelType
         error('Logic error!');
 end
 
+% Restrict to the desired maximum number of channels
 % If vectors is 3-D, use the first two dimensions 
 %   Note: ismatrix is false if one of the dimensions is zero
 if ~ismatrix(vectors) && min(size(vectors)) > 0
-    vectors = squeeze(vectors(:, :, 1));
+    vectors = squeeze(vectors(:, :, 1:maxNChannels));
 end
 
 % Count the number of vectors
 nVectors = count_vectors(vectors);
 
-% Restrict to the desired maximum number of channels
-if ~isinf(maxNum) && nVectors > maxNum
+% Restrict to the desired maximum number of vectors
+if ~isinf(maxNVectors) && nVectors > maxNVectors
     if iscell(vectors)
-        % If vectors is a cellarray, use the first maxNum elements
-        vectors = vectors(1:maxNum);
+        % If vectors is a cellarray, use the first maxNVectors elements
+        vectors = vectors(1:maxNVectors);
     else
-        % If vectors is a numeric array, use the first maxNum columns
-        vectors = vectors(:, 1:maxNum);
+        % If vectors is a numeric array, use the first maxNVectors columns
+        vectors = vectors(:, 1:maxNVectors);
     end
 end
 
 % Find the corresponding channel label(s)
 label = match_positions(channelLabels, channelTypes, channelType, ...
-                        'MaxNum', maxNum);
+                        'maxNChannels', maxNChannels);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -182,6 +191,8 @@ OLD CODE:
 
 if ndims(vectors) > 2
 
+vectors = squeeze(vectors(:, :, 1));
+
 %}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -75,7 +75,7 @@ function hfig = m3ha_plot_individual_traces (tVecs, data, varargin)
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
 %       cd/ispositiveintegerscalar.m
-%       cd/match_format_vectors.m
+%       cd/match_format_vector_sets.m
 %       cd/match_row_count.m
 %       cd/plot_traces.m
 %       cd/plot_window_boundaries.m
@@ -222,7 +222,7 @@ end
 
 % Match vectors format and numbers of sweep-dependent vectors with data
 [tVecs, dataToCompare, fitWindow] = ...
-    argfun(@(x) match_format_vectors(x, data), ...
+    argfun(@(x) match_format_vector_sets(x, data), ...
             tVecs, dataToCompare, fitWindow);
 
 % Make sure vectors are columns

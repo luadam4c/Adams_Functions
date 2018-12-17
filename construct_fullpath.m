@@ -45,7 +45,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %       cd/argfun.m
 %       cd/construct_suffix.m
 %       cd/force_column_cell.m
-%       cd/match_format_vectors.m
+%       cd/match_format_vector_sets.m
 %
 % Used by:
 %       cd/check_dir.m
@@ -67,7 +67,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 % 2018-10-03 Rename construct_fullfilename -> construct_fullpath
 % 2018-10-03 Added pathType as an output
 % 2018-10-03 Now accepts a cell array of paths as input
-% 2018-11-01 Now uses argfun.m, force_column_cell.m, match_format_vectors.m
+% 2018-11-01 Now uses argfun.m, force_column_cell.m, match_format_vector_sets.m
 
 %% Default values for optional arguments
 verboseDefault = false;             % don't print to standard output by default
@@ -126,8 +126,8 @@ suffixNameValuePairs = iP.Results.NameValuePairs;
 
 %% Preparation
 % Match the number of pathNames to directory and extension
-pathName = match_format_vectors(pathName, directory, 'ForceCellOutputs', false);
-pathName = match_format_vectors(pathName, extension, 'ForceCellOutputs', false);
+pathName = match_format_vector_sets(pathName, directory, 'ForceCellOutputs', false);
+pathName = match_format_vector_sets(pathName, extension, 'ForceCellOutputs', false);
 
 %% Do the job for all paths
 if iscell(pathName)
@@ -136,7 +136,7 @@ if iscell(pathName)
     
     % Match the number of directories and extensions to pathName
     [directory, extension] = ...
-        argfun(@(x) match_format_vectors(x, pathName, 'ForceCellOutputs', true), ...
+        argfun(@(x) match_format_vector_sets(x, pathName, 'ForceCellOutputs', true), ...
         directory, extension);
 
     % Do for each path

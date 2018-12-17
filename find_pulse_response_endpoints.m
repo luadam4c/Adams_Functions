@@ -45,7 +45,7 @@ function [indResponseStart, indResponseEnd, hasJump, indPulseStart, indPulseEnd]
 %       cd/find_first_jump.m
 %       cd/find_pulse_endpoints.m
 %       cd/iscellnumeric.m
-%       cd/match_format_vectors.m
+%       cd/match_format_vector_sets.m
 %
 % Used by:
 %       cd/compute_initial_slopes.m
@@ -59,6 +59,7 @@ function [indResponseStart, indResponseEnd, hasJump, indPulseStart, indPulseEnd]
 % 2018-09-23 Added the optional parameter baselineLengthSamples
 % 2018-10-09 Renamed isUnbalanced -> hasJump and improved documentation
 % 2018-12-15 Now returns NaN if there is no pulse
+% 2018-12-15 Now prevents the endpoints from exceeding bounds
 
 %% Hard-coded parameters
 nSamplesPerJump = 2;            % number of samples apart for calculating jump
@@ -112,7 +113,7 @@ baselineLengthMs = iP.Results.BaselineLengthMs;
 %% Preparation
 % Match up pulseVectors with vectors and make sure they are both cell arrays
 [pulseVectors, vectors] = ...
-    match_format_vectors(pulseVectors, vectors, 'ForceCellOutputs', true);
+    match_format_vector_sets(pulseVectors, vectors, 'ForceCellOutputs', true);
 
 %% Do the job
 [indResponseStart, indResponseEnd, hasJump, indPulseStart, indPulseEnd] = ...
@@ -124,9 +125,12 @@ baselineLengthMs = iP.Results.BaselineLengthMs;
 
 function [idxResponseStart, idxResponseEnd, hasJump, ...
             idxPulseStart, idxPulseEnd] = ...
-                fpre_helper (vectors, siMs, pulseVector, sameAsPulse, ...
+                fpre_helper (vector, siMs, pulseVector, sameAsPulse, ...
                                 responseLengthMs, baselineLengthMs, ...
                                 nSamplesPerJump, signal2Noise, noiseWindowSize)
+
+% Compute the total number of samples
+nSamples = length(vector);
 
 % Compute the length of the pulse response in samples
 cprLengthSamples = floor(responseLengthMs / siMs);
@@ -159,13 +163,13 @@ end
 %   as regions for finding the start/end points of the current pulse response
 %   Note: this will always cause idxPulseStart/idxPulseEnd to be the first
 %           index for checking, and will check noiseWindowSize more points
-idxRegion1Start = idxPulseStart - noiseWindowSize;
-idxRegion1End = idxPulseStart + noiseWindowSize;
-responseRegion1 = vectors(idxRegion1Start:idxRegion1End);
+idxRegion1Start = max([idxPulseStart - noiseWindowSize, 1]);
+idxRegion1End = min([idxPulseStart + noiseWindowSize, nSamples]);
+responseRegion1 = vector(idxRegion1Start:idxRegion1End);
 
-idxRegion2Start = idxPulseEnd - noiseWindowSize;
-idxRegion2End = idxPulseEnd + noiseWindowSize;
-responseRegion2 = vectors(idxRegion2Start:idxRegion2End);
+idxRegion2Start = max([idxPulseEnd - noiseWindowSize, 1]);
+idxRegion2End = min([idxPulseEnd + noiseWindowSize, nSamples]);
+responseRegion2 = vector(idxRegion2Start:idxRegion2End);
 
 % Initialize hasJump as false
 hasJump = false;
@@ -198,6 +202,10 @@ if ~isempty(idxTemp2) && ~sameAsPulse
 else
     idxResponseEnd = idxPulseEnd + cprLengthSamples;
 end
+
+% Make sure the indices are within bounds
+idxResponseStart = max([idxResponseStart, 1]);
+idxResponseEnd = min([idxResponseEnd, nSamples]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
