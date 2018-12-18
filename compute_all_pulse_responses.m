@@ -36,7 +36,13 @@ function [tVecAll, respAll, stimAll, featuresAll] = ...
 %                   must be a positive integer scalar
 %                   default = 1
 %                   - 'LowPassFrequency': frequency of lowpass filter in Hz
-%                   must be a nonnegative scalar
+%                   must be empty or a positive scalar
+%                   default = []
+%                   - 'MedFiltWindow': window of median filter in ms
+%                   must be empty or a positive scalar
+%                   default = []
+%                   - 'SmoothWindow': window of moving average filter in ms
+%                   must be empty or a positive scalar
 %                   default = []
 %                   - 'ResponseLengthMs': length of the pulse response
 %                                           after pulse endpoint in ms
@@ -89,6 +95,8 @@ validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 %% Default values for optional arguments
 minRowNumberDefault = 1;        % row number to start counting at is 1
 lowPassFrequencyDefault = [];   % do not lowpass filter by default
+medFiltWindowDefault = [];      % do not median filter by default
+smoothWindowDefault = [];       % do not moving average filter by default
 responseLengthMsDefault = 20;   % a response of 20 ms by default
 baselineLengthMsDefault = 5;    % a baseline of 5 ms by default
 minPeakDelayMsDefault = 0;      % no minimum peak delay by default
@@ -123,7 +131,11 @@ addRequired(iP, 'responseType', ...
 addParameter(iP, 'MinRowNumber', minRowNumberDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
 addParameter(iP, 'LowPassFrequency', lowPassFrequencyDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+    @(x) isempty(x) || ispositivescalar(x));
+addParameter(iP, 'MedFiltWindow', medFiltWindowDefault, ...
+    @(x) isempty(x) || ispositivescalar(x));
+addParameter(iP, 'SmoothWindow', smoothWindowDefault, ...
+    @(x) isempty(x) || ispositivescalar(x));
 addParameter(iP, 'ResponseLengthMs', responseLengthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'BaselineLengthMs', baselineLengthMsDefault, ...

@@ -47,6 +47,8 @@ function filteredData = freqfilter (data, fc, varargin)
 % 2018-08-03 Made npoles an optional parameter 'FilterOrder'
 % 2018-08-03 Made si an optional parameter
 % TODO: Check lower and upper bounds for fc (0, Nyquist frequency)
+% TODO: Allow data to be a cell array but attempt to concatenate
+%           into array 
 
 %% Hard-coded parameters
 validFilterTypes = {'low', 'high', 'bandpass', 'stop', 'auto'};

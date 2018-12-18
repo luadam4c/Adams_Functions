@@ -28,7 +28,13 @@ function [tVecsResponse, respVecsResponse, stimVecsResponse, labels] = ...
 %                       'Conductance'   - conductance
 %                       'Other'         - other un-identified types
 %       varargin    - 'LowPassFrequency': frequency of lowpass filter in Hz
-%                   must be a nonnegative scalar
+%                   must be empty or a positive scalar
+%                   default = []
+%                   - 'MedFiltWindow': window of median filter in ms
+%                   must be empty or a positive scalar
+%                   default = []
+%                   - 'SmoothWindow': window of moving average filter in ms
+%                   must be empty or a positive scalar
 %                   default = []
 %                   - 'ResponseLengthMs': length of the pulse response
 %                                           after pulse endpoint in ms
@@ -77,6 +83,8 @@ validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 
 %% Default values for optional arguments
 lowPassFrequencyDefault = [];   % do not lowpass filter by default
+medFiltWindowDefault = [];      % do not median filter by default
+smoothWindowDefault = [];       % do not moving average filter by default
 responseLengthMsDefault = 20;   % a response of 20 ms by default
 baselineLengthMsDefault = 5;    % a baseline of 5 ms by default
 channelTypesDefault = {};       % set later
@@ -107,7 +115,11 @@ addRequired(iP, 'responseType', ...
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'LowPassFrequency', lowPassFrequencyDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+    @(x) isempty(x) || ispositivescalar(x));
+addParameter(iP, 'MedFiltWindow', medFiltWindowDefault, ...
+    @(x) isempty(x) || ispositivescalar(x));
+addParameter(iP, 'SmoothWindow', smoothWindowDefault, ...
+    @(x) isempty(x) || ispositivescalar(x));
 addParameter(iP, 'ResponseLengthMs', responseLengthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'BaselineLengthMs', baselineLengthMsDefault, ...
@@ -126,6 +138,8 @@ addParameter(iP, 'ParsedData', parsedDataDefault, ...
 % Read from the Input Parser
 parse(iP, fileName, responseType, varargin{:});
 lowPassFrequency = iP.Results.LowPassFrequency;
+medFiltWindow = iP.Results.MedFiltWindow;
+smoothWindow = iP.Results.SmoothWindow;
 responseLengthMs = iP.Results.ResponseLengthMs;
 baselineLengthMs = iP.Results.BaselineLengthMs;
 channelTypes = iP.Results.ChannelTypes;
@@ -136,6 +150,12 @@ parsedData = iP.Results.ParsedData;
 
 % Validate the channel type
 responseType = validatestring(responseType, validChannelTypes);
+
+% Validate channel types
+if ~isempty(channelTypes)
+    channelTypes = cellfun(@(x) validatestring(x, validChannelTypes), ...
+                            channelTypes, 'UniformOutput', false);
+end
 
 %% Preparation
 % Load and parse the abf file if parsedParams and parsedData not both provided
@@ -178,10 +198,6 @@ stimType = choose_stimulation_type(responseType);
             'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
             'ChannelLabels', channelLabels);
 
-% Force as a cell array of vectors
-[tVec, respVecs, stimVecs] = ...
-    argfun(@force_column_cell, tVec, respVecs, stimVecs);
-
 %% Filter and extract the pulse responses
 % Low-pass filter if requested
 if ~isempty(lowPassFrequency)
@@ -190,20 +206,38 @@ if ~isempty(lowPassFrequency)
 end
 
 % Median-filter if requested
-% TODO: medianfilter(data, windowMs)
+% TODO: medianfilter(data, windowMs) but improve freqfilter.m first
 if ~isempty(medFiltWindow)
     medFiltWindowSamples = find_nearest_odd(medFiltWindow ./ siMs);
 
-    respVecs = cellfun(@(x, y) medfilt1(x, medFiltWindowSamples);
+    uniqueMedFiltWindowSamples = unique(medFiltWindowSamples);
+
+    if numel(uniqueMedFiltWindowSamples) == 1
+        respVecs = medfilt1(respVecs, uniqueMedFiltWindowSamples);
+    else
+        respVecs = cellfun(@(x, y) medfilt1(x, y), respVecs, ...
+                    num2cell(medFiltWindowSamples), 'UniformOutput', false);
+    end
 end
 
 % Moving-average-filter if requested
-% TODO: movingaveragefilter(data, windowMs)
+% TODO: movingaveragefilter(data, windowMs) but improve freqfilter.m first
 if ~isempty(smoothWindow)
     smoothWindowSamples = find_nearest_odd(smoothWindow ./ siMs);
 
-    respVecs = cellfun(smooth(respVecs, smoothWindowSamples);
+    uniqueSmoothWindowSamples = unique(smoothWindowSamples);
+
+    if numel(uniqueSmoothWindowSamples) == 1
+        respVecs = medfilt1(respVecs, uniqueSmoothWindowSamples);
+    else
+        respVecs = cellfun(@(x, y) smooth(x, y), respVecs, ...
+                        num2cell(smoothWindowSamples), 'UniformOutput', false);
+    end
 end
+
+% Force as a cell array of vectors
+[tVec, respVecs, stimVecs] = ...
+    argfun(@force_column_cell, tVec, respVecs, stimVecs);
 
 % Identify the pulse response endpoints
 [idxResponseStarts, idxResponseEnds] = ...

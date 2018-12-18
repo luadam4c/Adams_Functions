@@ -10,7 +10,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       subVecs4 = extract_subvectors({1:5, 2:6}, 'Windows', [2.5, 6.5])
 % Outputs:
 %       subVecs     - subvectors extracted
-%                   specified as a numeric vector 
+%                   specified as a numeric array 
 %                       or a cell array of numeric vectors
 % Arguments:
 %       vecs        - vectors to extract

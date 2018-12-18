@@ -32,7 +32,13 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg, h] = ...
 %                       'Conductance'   - conductance
 %                       'Other'         - other un-identified types
 %       varargin    - 'LowPassFrequency': frequency of lowpass filter in Hz
-%                   must be a nonnegative scalar
+%                   must be empty or a positive scalar
+%                   default = []
+%                   - 'MedFiltWindow': window of median filter in ms
+%                   must be empty or a positive scalar
+%                   default = []
+%                   - 'SmoothWindow': window of moving average filter in ms
+%                   must be empty or a positive scalar
 %                   default = []
 %                   - 'ResponseLengthMs': length of the pulse response
 %                                           after pulse endpoint in ms
@@ -104,6 +110,8 @@ validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 
 %% Default values for optional arguments
 lowPassFrequencyDefault = [];   % do not lowpass filter by default
+medFiltWindowDefault = [];      % do not median filter by default
+smoothWindowDefault = [];       % do not moving average filter by default
 responseLengthMsDefault = 20;   % a response of 20 ms by default
 baselineLengthMsDefault = 5;    % a baseline of 5 ms by default
 minPeakDelayMsDefault = 0;      % no minimum peak delay by default
@@ -143,7 +151,11 @@ addRequired(iP, 'responseType', ...
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'LowPassFrequency', lowPassFrequencyDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+    @(x) isempty(x) || ispositivescalar(x));
+addParameter(iP, 'MedFiltWindow', medFiltWindowDefault, ...
+    @(x) isempty(x) || ispositivescalar(x));
+addParameter(iP, 'SmoothWindow', smoothWindowDefault, ...
+    @(x) isempty(x) || ispositivescalar(x));
 addParameter(iP, 'ResponseLengthMs', responseLengthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'BaselineLengthMs', baselineLengthMsDefault, ...
@@ -179,10 +191,6 @@ addParameter(iP, 'ParsedData', parsedDataDefault, ...
 
 % Read from the Input Parser
 parse(iP, fileName, responseType, varargin{:});
-lowPassFrequency = iP.Results.LowPassFrequency;
-responseLengthMs = iP.Results.ResponseLengthMs;
-baselineLengthMs = iP.Results.BaselineLengthMs;
-minPeakDelayMs = iP.Results.MinPeakDelayMs;
 outFolder = iP.Results.OutFolder;
 outFolderName = iP.Results.OutFolderName;
 fileSuffix = iP.Results.FileSuffix;
@@ -191,20 +199,9 @@ plotFlag = iP.Results.PlotFlag;
 savePlotsFlag = iP.Results.SavePlotsFlag;
 saveTablesFlag = iP.Results.SaveTablesFlag;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
-channelTypes = iP.Results.ChannelTypes;
-channelUnits = iP.Results.ChannelUnits;
-channelLabels = iP.Results.ChannelLabels;
-parsedParams = iP.Results.ParsedParams;
-parsedData = iP.Results.ParsedData;
 
 % Keep unmatched arguments for the plot() function
 otherArguments = iP.Unmatched;
-
-% Validate channel types
-if ~isempty(channelTypes)
-    channelTypes = cellfun(@(x) validatestring(x, validChannelTypes), ...
-                            channelTypes, 'UniformOutput', false);
-end
 
 % Set (some) dependent argument defaults
 [fileDir, fileBase, ~] = fileparts(fileName);
@@ -215,14 +212,7 @@ end
 %% Average the pulse and pulse responses
 [tVecAvg, respAvg, stimAvg, featuresAvg] = ...
     compute_average_pulse_response(fileName, responseType, ...
-        'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
-        'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
-        'ChannelLabels', channelLabels, ...
-        'LowPassFrequency', lowPassFrequency, ...
-        'BaselineLengthMs', baselineLengthMs, ...
-        'ResponseLengthMs', responseLengthMs, ...
-        'MinPeakDelayMs', minPeakDelayMs, ...
-        'SaveFlag', saveTablesFlag);
+                                'SaveFlag', saveTablesFlag, varargin{:});
 
 %% Plot the evoked local field potential with the stimulation pulse
 if plotFlag
@@ -242,6 +232,26 @@ OLD CODE:
 
 % Save in a single params structure
 params = table2struct(featuresAvg);
+
+        'ParsedParams', parsedParams, 'ParsedData', parsedData, ...
+        'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
+        'ChannelLabels', channelLabels, ...
+        'LowPassFrequency', lowPassFrequency, ...
+        'MedFiltWindow', medFiltWindow, ...
+        'SmoothWindow', smoothWindow, ...
+        'BaselineLengthMs', baselineLengthMs, ...
+        'ResponseLengthMs', responseLengthMs, ...
+        'MinPeakDelayMs', minPeakDelayMs);
+
+lowPassFrequency = iP.Results.LowPassFrequency;
+responseLengthMs = iP.Results.ResponseLengthMs;
+baselineLengthMs = iP.Results.BaselineLengthMs;
+minPeakDelayMs = iP.Results.MinPeakDelayMs;
+channelTypes = iP.Results.ChannelTypes;
+channelUnits = iP.Results.ChannelUnits;
+channelLabels = iP.Results.ChannelLabels;
+parsedParams = iP.Results.ParsedParams;
+parsedData = iP.Results.ParsedData;
 
 %}
 

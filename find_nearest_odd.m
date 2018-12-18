@@ -18,8 +18,10 @@ function nearestOdd = compute_nearest_odd (realNumber, varargin)
 %                       'up'  - always round up
 %                   default == 'round'
 %
-% Used by:    
+% Used by:
 %       cd/find_passive_params.m
+%       TODO cd/medianfilter.m
+%       TODO cd/movingaveragefilter.m
 
 % File History:
 % 2018-10-12 Created by Adam Lu & ShinShin Nien

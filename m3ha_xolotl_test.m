@@ -44,7 +44,7 @@ xLimits = [1000, 1250];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Import data to compare against
-% TODO: Make this () its own function
+% TODO: Make this its own function
 %   [realVoltageData, realStimPulse] = m3ha_load_single_sweep(matFile)
 
 % Open the matfile
@@ -56,8 +56,9 @@ dataOrig = m.d_orig;
 % Extract original data vectors
 [tvecOrig, ivecOrig, vvecOrig] = extract_columns(dataOrig, [1, 3, 4]);
 
-% Convert to nA TODO
-ivecOrig = ivecOrig/1000;
+% Convert to nA
+PA_PER_NA = 1000;
+ivecOrig = ivecOrig/PA_PER_NA;
 
 % Compute the sampling intervals in ms
 siMsOrig = compute_sampling_interval(tvecOrig);

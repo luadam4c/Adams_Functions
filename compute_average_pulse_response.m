@@ -31,7 +31,13 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg] = ...
 %                       'Conductance'   - conductance
 %                       'Other'         - other un-identified types
 %       varargin    - 'LowPassFrequency': frequency of lowpass filter in Hz
-%                   must be a nonnegative scalar
+%                   must be empty or a positive scalar
+%                   default = []
+%                   - 'MedFiltWindow': window of median filter in ms
+%                   must be empty or a positive scalar
+%                   default = []
+%                   - 'SmoothWindow': window of moving average filter in ms
+%                   must be empty or a positive scalar
 %                   default = []
 %                   - 'ResponseLengthMs': length of the pulse response
 %                                           after pulse endpoint in ms
@@ -85,6 +91,8 @@ validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 
 %% Default values for optional arguments
 lowPassFrequencyDefault = [];   % do not lowpass filter by default
+medFiltWindowDefault = [];      % do not median filter by default
+smoothWindowDefault = [];       % do not moving average filter by default
 responseLengthMsDefault = 20;   % a response of 20 ms by default
 baselineLengthMsDefault = 5;    % a baseline of 5 ms by default
 minPeakDelayMsDefault = 0;      % no minimum peak delay by default
@@ -107,6 +115,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'fileName', ...
@@ -116,7 +125,11 @@ addRequired(iP, 'responseType', ...
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'LowPassFrequency', lowPassFrequencyDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+    @(x) isempty(x) || ispositivescalar(x));
+addParameter(iP, 'MedFiltWindow', medFiltWindowDefault, ...
+    @(x) isempty(x) || ispositivescalar(x));
+addParameter(iP, 'SmoothWindow', smoothWindowDefault, ...
+    @(x) isempty(x) || ispositivescalar(x));
 addParameter(iP, 'ResponseLengthMs', responseLengthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'BaselineLengthMs', baselineLengthMsDefault, ...

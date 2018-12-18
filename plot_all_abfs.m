@@ -140,7 +140,8 @@ timeEndDefault = [];            % set later
 channelTypesDefault = {};       % set later
 channelUnitsDefault = {};       % set later
 channelLabelsDefault = {};      % set later
-figTypesDefault = {'png', 'fig'};
+figTypesDefault = 'png';
+% figTypesDefault = {'png', 'fig'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

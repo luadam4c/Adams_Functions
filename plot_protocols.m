@@ -128,6 +128,22 @@ featuresSweepSheetName = 'features_table_by_sweep.xlsx';
 xLabelFile = 'fileName';
 xLabelSweep = 'sweepNumber';
 
+% For Evoked GABA-B IPSC
+lowPassFrequencyGabab = 1000;       % lowpass filter frequency in Hz
+medFiltWindowGabab = [];            % median filter window in ms
+smoothWindowGabab = 100;            % moving average filter window in ms
+baselineLengthMsGabab = 50;         % baseline length in ms
+responseLengthMsGabab = 500;        % response length in ms
+minPeakDelayMsGabab = 50;           % min peak delay after pulse end in ms
+
+% For Evoked LFP
+lowPassFrequencyLfp = 1000;         % lowpass filter frequency in Hz
+medFiltWindowLfp = [];              % median filter window in ms
+smoothWindowLfp = [];               % moving average filter window in ms
+baselineLengthMsLfp = 50;           % baseline length in ms
+responseLengthMsLfp = 20;           % response length in ms
+minPeakDelayMsLfp = 1;              % min peak delay after pulse end in ms
+
 
 %% Default values for optional arguments
 directoryDefault = pwd;         % look for .abf files in 
@@ -242,6 +258,48 @@ if isempty(outFolder)
     outFolder = directory;
 end
 
+%% Set parameters based on protocol type
+switch protocolType
+    case 'EvokedLFP'
+        % General
+        isProtocolStr = 'isEvokedLfp';
+
+        % For computing
+        responseType = 'Voltage';
+        lowPassFrequency = lowPassFrequencyLfp;
+        medFiltWindow = medFiltWindowLfp;
+        smoothWindow = smoothWindowLfp;
+        baselineLengthMs = baselineLengthMsLfp;
+        responseLengthMs = responseLengthMsLfp;
+        minPeakDelayMs = minPeakDelayMsLfp;
+
+        % For plotting
+        outFolderProtocolName = 'LFPs';
+        varToPlot = {'peakAmplitude', 'peakDelayMs'};
+        fileSuffix = '_LFP';
+        responseName = 'Evoked potential';
+    case 'EvokedGABAB'
+        % General
+        isProtocolStr = 'isEvokedGabab';
+
+        % For computing
+        responseType = 'Current';
+        lowPassFrequency = lowPassFrequencyGabab;
+        medFiltWindow = medFiltWindowGabab;
+        smoothWindow = smoothWindowGabab;
+        baselineLengthMs = baselineLengthMsGabab;
+        responseLengthMs = responseLengthMsGabab;
+        minPeakDelayMs = minPeakDelayMsGabab;
+
+        % For plotting
+        outFolderProtocolName = 'GABAB-IPSCs';
+        varToPlot = {'peakAmplitude', 'peakDelayMs'};
+        fileSuffix = '_GABAB';
+        responseName = 'GABA-B IPSC';
+    otherwise
+        error('Code logic error!!\n');
+end
+
 %% Get file names
 % Decide on the files to use
 if isempty(fileNames)
@@ -275,48 +333,6 @@ if isempty(abfParamsCell) || isempty(abfDataCell)
                         'ChannelUnits', channelUnitsUser, ...
                         'ChannelLabels', channelLabelsUser, ...
                         'IdentifyProtocols', true);
-end
-
-% Set parameters based on protocol type
-switch protocolType
-    case 'EvokedLFP'
-        % General
-        isProtocolStr = 'isEvokedLfp';
-
-        % For computing
-        responseType = 'Voltage';
-        lowPassFrequency = 500;         % lowpass filter frequency in Hz
-        medFiltWindow = 30;             % median filter window in ms
-        smoothWindow = 30;              % moving average filter window in ms
-        baselineLengthMs = 50;          % baseline length in ms
-        responseLengthMs = 20;          % response length in ms
-        minPeakDelayMs = 1;             % min peak delay after pulse end in ms
-
-        % For plotting
-        outFolderProtocolName = 'LFPs';
-        varToPlot = {'peakAmplitude', 'peakDelayMs'};
-        fileSuffix = '_LFP';
-        responseName = 'Evoked potential';
-    case 'EvokedGABAB'
-        % General
-        isProtocolStr = 'isEvokedGabab';
-
-        % For computing
-        responseType = 'Current';
-        lowPassFrequency = 1000;        % lowpass filter frequency in Hz
-        medFiltWindow = 30;             % median filter window in ms
-        smoothWindow = 30;              % moving average filter window in ms
-        baselineLengthMs = 50;          % baseline length in ms
-        responseLengthMs = 500;         % response length in ms
-        minPeakDelayMs = 50;            % min peak delay after pulse end in ms
-
-        % For plotting
-        outFolderProtocolName = 'GABAB-IPSCs';
-        varToPlot = {'peakAmplitude', 'peakDelayMs'};
-        fileSuffix = '_GABAB';
-        responseName = 'GABA-B IPSC';
-    otherwise
-        error('Code logic error!!\n');
 end
 
 % Set the output folder
@@ -512,8 +528,8 @@ newFileBases = ...
     create_labels_from_numbers(1:nVectors, 'Prefix', [fileBase, '_Swp']);
 
 % Loop through all vectors
-%parfor iVec = 1:nVectors
-for iVec = 1:nVectors
+parfor iVec = 1:nVectors
+%for iVec = 1:nVectors
     % Plot the pulse response with the stimulation pulse
     h = plot_pulse_response_with_stimulus(tVecAll{iVec}, ...
             respAll{iVec}, stimAll{iVec}, ...

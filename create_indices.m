@@ -14,6 +14,9 @@ function indices = create_indices (endPoints, varargin)
 %                   must be a numeric vector with 2 elements
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
+%       varargin    - 'ForceCellOutput': whether to force output as a cell array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -25,12 +28,13 @@ function indices = create_indices (endPoints, varargin)
 
 % File History:
 % 2018-12-17 Created by Adam Lu
+% 2018-12-18 Added 'ForceCellOutput' as an optional argument
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+forceCellOutputDefault = false;  % don't force output as a cell array by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -51,12 +55,12 @@ addRequired(iP, 'endPoints', ...
                     'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default, ...
-%     % TODO: validation function %);
+addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, endPoints, varargin{:});
-% param1 = iP.Results.param1;
+forceCellOutput = iP.Results.ForceCellOutput;
 
 %% Do the job
 % Extract the starting and ending indices
@@ -64,8 +68,12 @@ parse(iP, endPoints, varargin{:});
     argfun(@(x) extract_elements(endPoints, x), 'first', 'last');
 
 % Construct vectors of indices
-indices = arrayfun(@(x, y) transpose(x:y), idxStart, idxEnd, ...
+if numel(idxStart) > 1 || numel(idxEnd) > 1
+    indices = arrayfun(@(x, y) transpose(x:y), idxStart, idxEnd, ...
                     'UniformOutput', false);
+else
+    indices = transpose(idxStart:idxEnd);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
