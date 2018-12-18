@@ -107,6 +107,9 @@ function [featuresFileTable, featuresSweepTable] = ...
 % 2018-12-15 Created by Adam Lu
 % 2018-12-17 Added savePlotsFlag and saveTablesFlag
 % TODO: Make plot flags for each type of plot optional arguments
+% TODO: Decide on whether to use parfor across files
+%       based on the total number of sweeps versus the total number of files
+%       cf. m3ha
 % 
 
 %% TODO: Make these parameters
@@ -276,7 +279,7 @@ switch protocolType
 
         % For computing
         responseType = 'Voltage';
-        lowPassFrequency = 1000;        % lowpass filter frequency in Hz
+        lowPassFrequency = 500;         % lowpass filter frequency in Hz
         baselineLengthMs = 5;           % baseline length in ms
         responseLengthMs = 20;          % response length in ms
         minPeakDelayMs = 1;             % min peak delay after pulse end in ms
@@ -292,7 +295,7 @@ switch protocolType
 
         % For computing
         responseType = 'Current';
-        lowPassFrequency = 2000;        % lowpass filter frequency in Hz
+        lowPassFrequency = 500;         % lowpass filter frequency in Hz
         baselineLengthMs = 5;           % baseline length in ms
         responseLengthMs = 500;         % response length in ms
         minPeakDelayMs = 50;            % min peak delay after pulse end in ms

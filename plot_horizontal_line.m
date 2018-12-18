@@ -9,11 +9,12 @@ function [output1] = plot_horizontal_line (yValue, varargin)
 %       output1     - TODO: Description of output1
 %                   specified as a TODO
 % Arguments:
-%       yValue     - TODO: Description of yValue
+%       yValue      - TODO: Description of yValue
 %                   must be a TODO
-%       varargin    - 'XLimits': TODO: Description of XLimits
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'XLimits': limits of x axis
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == [min(tVec), max(tVec)]
 %                   - Any other parameter-value pair for the line() function
 %
 % Requires:
@@ -24,7 +25,7 @@ function [output1] = plot_horizontal_line (yValue, varargin)
 %       /TODO:dir/TODO:file
 
 % File History:
-% 201X-XX-XX Created by TODO or Adapted from TODO
+% 2018-12-18 Created by Adam Lu
 % TODO: Use unMatched varargin parts as parameters for line()
 % 
 

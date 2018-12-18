@@ -8,13 +8,14 @@ function [yLimits, yRange] = compute_ylimits (minValue, maxValue, varargin)
 % Outputs:
 %       yLimits     - computed y axis limits
 %                   specified as a 2-element numeric vector
+%                       or a cell array of them
 %       yRange      - computed y axis range
-%                   specified as a numeric scalar
+%                   specified as a numeric vector
 % Arguments:    
 %       minValue    - minimum value of important data
-%                   must be a numeric scalar
+%                   must be a numeric vector
 %       maxValue    - maximum value of important data
-%                   must be a numeric scalar
+%                   must be a numeric vector
 %       varargin    - 'Coverage': percent coverage of y axis
 %                   must be a numeric scalar between 0 and 100
 %                   default == 80%
@@ -30,6 +31,7 @@ function [yLimits, yRange] = compute_ylimits (minValue, maxValue, varargin)
 
 % File History:
 % 2018-10-12 Created by Adam Lu
+% 2018-12-18 Now accepts vectors as arguments
 % 
 
 %% Hard-coded parameters
@@ -64,7 +66,7 @@ parse(iP, minValue, maxValue, varargin{:});
 coverage = iP.Results.Coverage;
 
 % Check relationships between arguments
-if minValue > maxValue
+if any(minValue > maxValue)
     error('minValue can''t be greater than maxValue!!');
 end
 
@@ -73,7 +75,7 @@ end
 dataRange = maxValue - minValue;
 
 % Compute the yLimits range
-yRange = dataRange / (coverage / 100);
+yRange = dataRange ./ (coverage ./ 100);
 
 % Compute the padding size
 yPadSize = (yRange - dataRange) / 2;
@@ -83,7 +85,11 @@ yLower = minValue - yPadSize;
 yUpper = maxValue + yPadSize;
 
 % Set the y axis limits
-yLimits = [yLower, yUpper];
+if isscalar(yLower) && isscalar(yUpper)
+    yLimits = [yLower, yUpper];
+else
+    yLimits = arrayfun(@(x, y) [x, y], yLower, yUpper, 'UniformOutput', false);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

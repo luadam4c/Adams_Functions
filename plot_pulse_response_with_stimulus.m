@@ -164,13 +164,17 @@ saveFlag = iP.Results.SaveFlag;
 % Check if needed output directories exist
 check_dir(outFolder);
 
+% Find the minimum and maximum values of interest
+minValueOfInterest = min([minValueAfterMinDelay, baseValue]);
+maxValueOfInterest = max([maxValueAfterMinDelay, baseValue]);
+
 % Compute appropriate y axis limits from the range of values 
 %   after minimum peak delay
 [yLimitsResp, yRangeResp] = ...
-    compute_ylimits(minValueAfterMinDelay, maxValueAfterMinDelay);
+    compute_ylimits(minValueOfInterest, maxValueOfInterest, 'Coverage', 80);
 
 % Compute the x axis limits
-[xLimits, xRange] = compute_xlimits(tVec);
+[xLimits, xRange] = compute_xlimits(tVec, 'Coverage', 100);
 
 % Compute the time of the peak relative to the minimum x value
 timePeakRel = (tVec(idxPeak) - xLimits(1)) / xRange;
@@ -178,7 +182,7 @@ timePeakRel = (tVec(idxPeak) - xLimits(1)) / xRange;
 % Compute the peak amplitude double array x and y values 
 %   in normalized units relative to the subplot
 peakAmpXValues = timePeakRel * ones(1, 2);
-peakAmpYValues = ([baseValue, peakValue] - yLimitsResp(1)) / yRangeResp;
+peakAmpYValues = (sort([baseValue, peakValue]) - yLimitsResp(1)) / yRangeResp;
 
 % Create a label for the peak amplitude
 peakAmpLabel = ['peak amp = ', num2str(peakAmplitude), ' (mV)'];
@@ -213,12 +217,12 @@ peakAmpYPositions = pos(2) + pos(4) * peakAmpYValues;
 
 % Plot a dashed line for baseline
 % Use plot_horizontal_line.m
-line(tVec, xLimits, baseValue * ones(size(xLimits)), ...
+line(xLimits, baseValue * ones(size(xLimits)), ...
     'LineStyle', '--', 'Color', colorLines);
 
 % Plot a dashed line for minPeakDelay
 % Use plot_vertical_line.m
-line(tVec, minPeakDelayMs * ones(size(yLimitsResp)), yLimitsResp, ...
+line(minPeakDelayMs * ones(size(yLimitsResp)), yLimitsResp, ...
     'LineStyle', '--', 'Color', colorLines);
 
 % Draw a doublearrow spanning the peak amplitude

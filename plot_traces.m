@@ -36,11 +36,11 @@ function [h, subPlots] = plot_traces (tVecs, data, varargin)
 %                   - 'XLimits': limits of x axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
-%                   default == [min(tVec), max(tVec)]
+%                   default == uses compute_xlimits.m
 %                   - 'YLimits': limits of y axis, 
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
-%                   default == expand by a little bit
+%                   default == uses compute_ylimits.m
 %                   - 'LinkAxesOption': option for the linkaxes()
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'none' - don't apply the function
@@ -103,6 +103,8 @@ function [h, subPlots] = plot_traces (tVecs, data, varargin)
 %
 % Requires:
 %       cd/argfun.m
+%       cd/compute_xlimits.m
+%       cd/compute_ylimits.m
 %       cd/count_vectors.m
 %       cd/create_colormap.m
 %       cd/create_error_for_nargin.m
@@ -137,6 +139,7 @@ function [h, subPlots] = plot_traces (tVecs, data, varargin)
 %               for overlapped plots
 % 2018-12-17 Now uses create_labels_from_numbers.m
 % 2018-12-17 Now uses iP.Unmatched
+% 2018-12-17 Now uses compute_xlimits.m and compute_ylimits.m
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel'};
@@ -299,17 +302,13 @@ tVecs = match_format_vector_sets(tVecs, data);
 
 % Set the default time axis limits
 if isempty(xLimits)
-    % Compute minimum and maximum time values
-    minT = min(cellfun(@min, tVecs));
-    maxT = max(cellfun(@max, tVecs));
-
-    % Compute x limits
-    xLimits = [minT, maxT];
+    [xLimits, xRange] = compute_xlimits(tVec, 'Coverage', 100);
 end
 
 % Set the default y-axis limits
 if isempty(yLimits) && ~strcmpi(plotMode, 'parallel') && rangeY ~= 0
-    yLimits = [minY - 0.2 * rangeY, maxY + 0.2 * rangeY];
+    % TODO: yLimits as a cell array
+    [yLimits, yRange] = compute_ylimits(minY, maxY, 'Coverage', 80);
 end
 
 % Set the default x-axis labels
@@ -864,6 +863,15 @@ yLabel = arrayfun(@(x) ['Trace #', num2str(x)], ...
                     transpose(1:nTraces), 'UniformOutput', false);
 traceLabels = arrayfun(@(x) ['Trace #', num2str(x)], ...
                         transpose(1:nTraces), 'UniformOutput', false);
+
+% Compute minimum and maximum time values
+minT = min(cellfun(@min, tVecs));
+maxT = max(cellfun(@max, tVecs));
+
+% Compute x limits
+xLimits = [minT, maxT];
+
+yLimits = [minY - 0.2 * rangeY, maxY + 0.2 * rangeY];
 
 %}
 
