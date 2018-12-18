@@ -36,6 +36,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % 2018-12-15 Created by Adam Lu
 % 2018-12-17 Now returns idxElement as well
 % TODO: Add 'MaxNum' as an optional argument with default Inf
+% TODO: Add 'Endpoints' as an optional argument
 % 
 
 %% Hard-coded parameters

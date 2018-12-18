@@ -86,6 +86,7 @@ function [featuresFileTable, featuresSweepTable] = ...
 %                   - 'AbfDataCell': parsed .abf file data
 %                   must be a cell array of structures or tables
 %                   default == loaded from fileNames
+%                   - Any other parameter-value pair for the plot() function
 %                   
 % Requires:
 %       cd/all_files.m
@@ -145,7 +146,8 @@ timeUnitsDefault = '';          % set later
 channelTypesDefault = {};       % set later
 channelUnitsDefault = {};       % set later
 channelLabelsDefault = {};      % set later
-figTypesDefault = {'png', 'fig'};
+figTypesDefault = {'png'};
+% figTypesDefault = {'png', 'fig'};
 abfParamsCellDefault = {};      % set later
 abfDataCellDefault = {};        % set later
 
@@ -160,6 +162,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'protocolType', ...
@@ -222,6 +225,9 @@ channelLabelsUser = iP.Results.ChannelLabels;
 abfParamsCell = iP.Results.AbfParamsCell;
 abfDataCell = iP.Results.AbfDataCell;
 
+% Keep unmatched arguments for the plot() function
+otherArguments = iP.Unmatched;
+
 % Validate Protocol type
 protocolType = validatestring(protocolType, validProtocolTypes);
 
@@ -280,7 +286,9 @@ switch protocolType
         % For computing
         responseType = 'Voltage';
         lowPassFrequency = 500;         % lowpass filter frequency in Hz
-        baselineLengthMs = 5;           % baseline length in ms
+        medFiltWindow = 30;             % median filter window in ms
+        smoothWindow = 30;              % moving average filter window in ms
+        baselineLengthMs = 50;          % baseline length in ms
         responseLengthMs = 20;          % response length in ms
         minPeakDelayMs = 1;             % min peak delay after pulse end in ms
 
@@ -295,8 +303,10 @@ switch protocolType
 
         % For computing
         responseType = 'Current';
-        lowPassFrequency = 500;         % lowpass filter frequency in Hz
-        baselineLengthMs = 5;           % baseline length in ms
+        lowPassFrequency = 1000;        % lowpass filter frequency in Hz
+        medFiltWindow = 30;             % median filter window in ms
+        smoothWindow = 30;              % moving average filter window in ms
+        baselineLengthMs = 50;          % baseline length in ms
         responseLengthMs = 500;         % response length in ms
         minPeakDelayMs = 50;            % min peak delay after pulse end in ms
 
@@ -340,6 +350,8 @@ for iFile = 1:nFiles
         [tVecAvg, respAvg, stimAvg, featuresAvg, h1] = ...
             compute_and_plot_average_response(fileName, responseType, ...
                 'LowPassFrequency', lowPassFrequency, ...
+                'MedFiltWindow', medFiltWindow, ...
+                'SmoothWindow', smoothWindow, ...
                 'BaselineLengthMs', baselineLengthMs, ...
                 'ResponseLengthMs', responseLengthMs, ...
                 'MinPeakDelayMs', minPeakDelayMs, ...
@@ -349,12 +361,15 @@ for iFile = 1:nFiles
                 'SaveTablesFlag', saveTablesFlag, 'FigTypes', figTypes, ...
                 'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
                 'ChannelLabels', channelLabels, ...
-                'ParsedParams', abfParams, 'ParsedData', abfData);
+                'ParsedParams', abfParams, 'ParsedData', abfData, ...
+                otherArguments);
 
         % Compute features for individual protocol traces
         [tVecAll, respAll, stimAll, featuresAll] = ...
             compute_all_pulse_responses (fileName, responseType, ...
                 'LowPassFrequency', lowPassFrequency, ...
+                'MedFiltWindow', medFiltWindow, ...
+                'SmoothWindow', smoothWindow, ...
                 'BaselineLengthMs', baselineLengthMs, ...
                 'ResponseLengthMs', responseLengthMs, ...
                 'MinPeakDelayMs', minPeakDelayMs, ...
@@ -367,7 +382,8 @@ for iFile = 1:nFiles
         if plotSeparateFlag
             plot_all_pulse_response_with_stimulus(fileName, ...
                             tVecAll, respAll, stimAll, featuresAll, ...
-                            fileSuffix, responseName, savePlotsFlag, figTypes)
+                            fileSuffix, responseName, savePlotsFlag, ...
+                            figTypes, otherArguments);
         end
 
         % Plot individual protocol traces, stimulus and response separate
@@ -387,7 +403,7 @@ for iFile = 1:nFiles
                 'PlotMode', plotMode, 'Individually', individually, ...
                 'OutFolder', '', 'TimeUnits', timeUnits, ...
                 'TimeStart', timeStart, 'TimeEnd', timeEnd, ...
-                'FigTypes', 'jpeg'); % figTypes TODO: specific figTypes
+                'FigTypes', figTypes);
         end
     else
         % Make outputs an empty table
@@ -477,7 +493,8 @@ plot_struct(fileStruct, 'OutFolder', outFolder, ...
 
 function plot_all_pulse_response_with_stimulus(fileName, ...
                 tVecAll, respAll, stimAll, featuresAll, ...
-                fileSuffix, responseName, savePlotsFlag, figTypes)
+                fileSuffix, responseName, savePlotsFlag, figTypes, ...
+                otherArguments)
 %% Plots all pulse response with stimulus figures
 % TODO: Pull out to its own function and make all arguments except file name optional
 
@@ -495,19 +512,16 @@ newFileBases = ...
     create_labels_from_numbers(1:nVectors, 'Prefix', [fileBase, '_Swp']);
 
 % Loop through all vectors
-parfor iVec = 1:nVectors
-    % Save in a single params structure
-    params = table2struct(featuresAll(iVec, :));
-    params.OutFolder = outFolder;
-    params.SaveFlag = savePlotsFlag;
-    params.FigTypes = 'png';    % figTypes TODO: specific figTypes
-    params.FileBase = newFileBases{iVec};
-    params.FileSuffix = fileSuffix;
-    params.ResponseName = responseName;
-
+%parfor iVec = 1:nVectors
+for iVec = 1:nVectors
     % Plot the pulse response with the stimulation pulse
     h = plot_pulse_response_with_stimulus(tVecAll{iVec}, ...
-            respAll{iVec}, stimAll{iVec}, params);
+            respAll{iVec}, stimAll{iVec}, ...
+            'ResponseParams', featuresAll(iVec, :), ...
+            'OutFolder', outFolder, 'SaveFlag', savePlotsFlag, ...
+            'FigTypes', figTypes, 'FileBase', newFileBases{iVec}, ...
+            'FileSuffix', fileSuffix, 'ResponseName', responseName, ...
+            otherArguments);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -547,6 +561,14 @@ params.FileBase = [fileBase, '_Swp', num2str(iVec)];
 timeStart = extract_elements(tVecAll, 'first');
 timeEnd = extract_elements(tVecAll, 'last');
 
+% Save in a single params structure
+params = table2struct(featuresAll(iVec, :));
+params.OutFolder = outFolder;
+params.SaveFlag = savePlotsFlag;
+params.FigTypes = 'png';
+params.FileBase = newFileBases{iVec};
+params.FileSuffix = fileSuffix;
+params.ResponseName = responseName;
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

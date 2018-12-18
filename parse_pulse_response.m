@@ -23,6 +23,8 @@ function [parsedParams, parsedData] = ...
 %                           idxResponseStart
 %                           idxResponseEnd
 %                           idxResponseMid
+%                           idxBeforePulseStart
+%                           idxBeforePulseEnd
 %                           idxBaseStart
 %                           idxBaseEnd
 %                           idxSteadyStart
@@ -39,11 +41,16 @@ function [parsedParams, parsedData] = ...
 %                           idxMinPeakTime
 %                           idxPeak
 %                           peakValue
+%                           halfPeakValue
 %                           peakAmplitude
 %                           peakDelaySamples
 %                           peakDelayMs
 %                           hasJump
-%                           siMs
+%                           nSamplesPulse
+%                           idxAfterPulseStart
+%                           idxAfterPulseEnd
+%                           idxPulseMidpoint
+%                           pulseBaseValue
 %                       specified as a table
 %       parsedData      - a table containing the parsed data, with fields:
 %                           vectors
@@ -55,6 +62,8 @@ function [parsedParams, parsedData] = ...
 %                           vvecsRising
 %                           tvecsFalling
 %                           vvecsFalling
+%                           pulseVectors
+%                           indPulseBase
 %                       specified as a table
 % Arguments:
 %       vectors     - vectors containing a pulse response
@@ -119,6 +128,7 @@ function [parsedParams, parsedData] = ...
 % 2018-12-17 Now allows siMs to be a vector
 % 2018-12-17 Now computes peakDelaySamples and peakDelayMs
 % 2018-12-17 Added all detected results of parse_pulse.m
+% 2018-12-18 Added halfPeakValue
 % TODO: Compute maxSlope, halfWidthSamples, halfWidthMs, 
 % TODO: Compute timeConstantSamples, timeConstantMs
 
@@ -311,6 +321,9 @@ vecsPeakSearch = extract_subvectors(vectors, 'Endpoints', endPointsPeakSearch);
             minValueAfterMinDelay, maxValueAfterMinDelay, ...
             idxMinValueAfterMinDelay, idxMaxValueAfterMinDelay);
 
+% Compute the half peak value
+halfPeakValue = mean([peakValue, baseValue], 2);
+
 % Compute the relative peak amplitude
 peakAmplitude = peakValue - baseValue;
 
@@ -376,7 +389,8 @@ parsedParams = table(siMs, meanValueWindowMs, minPeakDelayMs, ...
                         minValue, maxValue, ...
                         minValueAfterMinDelay, idxMinValueAfterMinDelay, ...
                         maxValueAfterMinDelay, idxMaxValueAfterMinDelay, ...
-                        idxMinPeakTime, idxPeak, peakValue, peakAmplitude, ...
+                        idxMinPeakTime, idxPeak, ...
+                        peakValue, halfPeakValue, peakAmplitude, ...
                         peakDelaySamples, peakDelayMs, hasJump);
 
 % Put together the pulse response data

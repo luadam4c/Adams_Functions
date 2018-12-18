@@ -178,6 +178,10 @@ stimType = choose_stimulation_type(responseType);
             'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
             'ChannelLabels', channelLabels);
 
+% Force as a cell array of vectors
+[tVec, respVecs, stimVecs] = ...
+    argfun(@force_column_cell, tVec, respVecs, stimVecs);
+
 %% Filter and extract the pulse responses
 % Low-pass filter if requested
 if ~isempty(lowPassFrequency)
@@ -185,9 +189,21 @@ if ~isempty(lowPassFrequency)
                             'FilterType', 'low', 'si', siSeconds);
 end
 
-% Force as a cell array of vectors
-[tVec, respVecs, stimVecs] = ...
-    argfun(@force_column_cell, tVec, respVecs, stimVecs);
+% Median-filter if requested
+% TODO: medianfilter(data, windowMs)
+if ~isempty(medFiltWindow)
+    medFiltWindowSamples = compute_nearest_odd(medFiltWindow ./ siMs);
+
+    respVecs = cellfun(@(x, y) medfilt1(x, medFiltWindowSamples);
+end
+
+% Moving-average-filter if requested
+% TODO: movingaveragefilter(data, windowMs)
+if ~isempty(smoothWindow)
+    smoothWindowSamples = compute_nearest_odd(smoothWindow ./ siMs);
+
+    respVecs = cellfun(smooth(respVecs, smoothWindowSamples);
+end
 
 % Identify the pulse response endpoints
 [idxResponseStarts, idxResponseEnds] = ...

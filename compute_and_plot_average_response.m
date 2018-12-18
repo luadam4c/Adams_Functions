@@ -82,6 +82,7 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg, h] = ...
 %                   - 'ParsedData': parsed data returned by parse_abf.m
 %                   must be a scalar structure
 %                   default == what the file provides
+%                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
 %       cd/compute_average_pulse_response.m
@@ -96,6 +97,7 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg, h] = ...
 % 2018-12-15 - Moved from compute_and_plot_evoked_LFP.m
 % 2018-12-15 - Now used directly in plot_protocols.m
 % 2018-12-15 - Now uses the file name as the row name for the feature table
+% 2018-12-18 - Updated usage of plot_pulse_response_with_stimulus.m
 
 %% Hard-coded parameters
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
@@ -131,6 +133,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'fileName', ...
@@ -194,6 +197,9 @@ channelLabels = iP.Results.ChannelLabels;
 parsedParams = iP.Results.ParsedParams;
 parsedData = iP.Results.ParsedData;
 
+% Keep unmatched arguments for the plot() function
+otherArguments = iP.Unmatched;
+
 % Validate channel types
 if ~isempty(channelTypes)
     channelTypes = cellfun(@(x) validatestring(x, validChannelTypes), ...
@@ -220,23 +226,22 @@ end
 
 %% Plot the evoked local field potential with the stimulation pulse
 if plotFlag
-    % Save in a single params structure
-    params = table2struct(featuresAvg);
-    params.OutFolder = outFolder;
-    params.SaveFlag = savePlotsFlag;
-    params.FigTypes = figTypes;
-    params.FileBase = fileBase;
-    params.FileSuffix = fileSuffix;
-    params.ResponseName = responseName;
-
     % Plot the pulse response with the stimulation pulse
-    h = plot_pulse_response_with_stimulus(tVecAvg, respAvg, stimAvg, params);
+    h = plot_pulse_response_with_stimulus(tVecAvg, respAvg, stimAvg, ...
+            'ResponseParams', featuresAvg, ...
+            'OutFolder', outFolder, 'SaveFlag', savePlotsFlag, ...
+            'FigTypes', figTypes, 'FileBase', fileBase, ...
+            'FileSuffix', fileSuffix, 'ResponseName', responseName, ...
+            otherArguments);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+% Save in a single params structure
+params = table2struct(featuresAvg);
 
 %}
 

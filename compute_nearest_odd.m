@@ -1,6 +1,6 @@
-function nearestOdd = nearest_odd (realNumber, varargin)
-%% Returns the nearest odd integer of a real number
-% Usage: nearestOdd = nearest_odd (realNumber, varargin)
+function nearestOdd = compute_nearest_odd (realNumber, varargin)
+%% Computes the nearest odd integer(s) of real number(s)
+% Usage: nearestOdd = compute_nearest_odd (realNumber, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -9,8 +9,8 @@ function nearestOdd = nearest_odd (realNumber, varargin)
 %       nearestOdd  - the nearest odd integer returned
 %                   specified as an odd integer
 % Arguments:    
-%       realNumber  - a real number
-%                   must be a number
+%       realNumber  - real number(s)
+%                   must be a numeric vector
 %       varargin    - 'Direction': rounding direction
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'nearest' - round to 'nearest'
@@ -22,7 +22,8 @@ function nearestOdd = nearest_odd (realNumber, varargin)
 %       cd/find_passive_params.m
 
 % File History:
-% 2018-10-12 Created by ShinShin Nien
+% 2018-10-12 Created by Adam Lu
+% TODO: Accept a vector as an argument
 % 
 
 %% Hard-coded parameters
@@ -46,7 +47,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'realNumber', ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Direction', directionDefault, ...

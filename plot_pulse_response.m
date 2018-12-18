@@ -50,6 +50,7 @@ function h = plot_pulse_response (timeVec, responseVecs, varargin)
 %                   default == expand by a little bit
 %
 % Requires:
+%       cd/compute_sampling_interval.m
 %       cd/compute_ylimits.m
 %       cd/parse_pulse_response.m
 %
@@ -130,7 +131,7 @@ nVectors = size(responseVecs, 2);
 % Parse responseParams if not provided
 if isempty(responseParams)
     % Compute the sampling interval
-    siMs = timeVec(2) - timeVec(1);
+    siMs = compute_sampling_interval(timeVec);
 
     % Parse the pulse response
     responseParams = parse_pulse_response(responseVecs, siMs, ...
