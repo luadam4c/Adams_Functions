@@ -97,7 +97,7 @@ function [featuresFileTable, featuresSweepTable] = ...
 %       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
 %       cd/parse_all_abfs.m
-%       cd/plot_struct.m
+%       cd/plot_table.m
 %       cd/plot_pulse_response_with_stimulus.m
 %       cd/plot_traces_abf.m
 %
@@ -107,6 +107,7 @@ function [featuresFileTable, featuresSweepTable] = ...
 % File History:
 % 2018-12-15 Created by Adam Lu
 % 2018-12-17 Added savePlotsFlag and saveTablesFlag
+% 2018-12-18 Moved code to plot_table.m
 % TODO: Make plot flags for each type of plot optional arguments
 % TODO: Decide on whether to use parfor across files
 %       based on the total number of sweeps versus the total number of files
@@ -143,7 +144,7 @@ smoothWindowLfp = [];               % moving average filter window in ms
 baselineLengthMsLfp = 50;           % baseline length in ms
 responseLengthMsLfp = 20;           % response length in ms
 minPeakDelayMsLfp = 1;              % min peak delay after pulse end in ms
-
+peakDirectionLfp = 'upward';
 
 %% Default values for optional arguments
 directoryDefault = pwd;         % look for .abf files in 
@@ -266,6 +267,7 @@ switch protocolType
 
         % For computing
         responseType = 'Voltage';
+        peakDirection = peakDirectionLfp;
         lowPassFrequency = lowPassFrequencyLfp;
         medFiltWindow = medFiltWindowLfp;
         smoothWindow = smoothWindowLfp;
@@ -284,6 +286,7 @@ switch protocolType
 
         % For computing
         responseType = 'Current';
+        peakDirection = 'upward';
         lowPassFrequency = lowPassFrequencyGabab;
         medFiltWindow = medFiltWindowGabab;
         smoothWindow = smoothWindowGabab;
@@ -342,8 +345,8 @@ outFolderProtocol = fullfile(outFolder, outFolderProtocolName);
 % Compute features and plot protocol traces
 featuresPerFileCell = cell(nFiles, 1);
 featuresPerSweepCell = cell(nFiles, 1);
-for iFile = 1:nFiles
-%parfor iFile = 1:nFiles
+%for iFile = 1:nFiles
+parfor iFile = 1:nFiles
     % Extract from cell arrays
     abfParams = abfParamsCell{iFile};
 
@@ -371,6 +374,7 @@ for iFile = 1:nFiles
                 'BaselineLengthMs', baselineLengthMs, ...
                 'ResponseLengthMs', responseLengthMs, ...
                 'MinPeakDelayMs', minPeakDelayMs, ...
+                'PeakDirection', peakDirection, ...
                 'OutFolder', outFolderProtocol, ...
                 'FileSuffix', fileSuffix, 'ResponseName', responseName, ...
                 'PlotFlag', plotAverageFlag, 'SavePlotsFlag', savePlotsFlag, ...
@@ -389,6 +393,7 @@ for iFile = 1:nFiles
                 'BaselineLengthMs', baselineLengthMs, ...
                 'ResponseLengthMs', responseLengthMs, ...
                 'MinPeakDelayMs', minPeakDelayMs, ...
+                'PeakDirection', peakDirection, ...
                 'SaveFlag', saveTablesFlag, ...
                 'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
                 'ChannelLabels', channelLabels, ...
@@ -458,52 +463,17 @@ if ~isempty(featuresFileTable) && istable(featuresFileTable)
     writetable(featuresFileTable, featuresFilePath, 'WriteRowNames', true);
 
     % Plot each variable of the table
-    plot_table(featuresFileTable, varToPlot, outFolderProtocol, xLabelFile);
+    plot_table(featuresFileTable, 'VariableNames', varToPlot, ...
+               'OutFolder', outFolderProtocol, 'XLabel', xLabelFile);
 end
 if ~isempty(featuresSweepTable) && istable(featuresSweepTable)
     % Save the table
     writetable(featuresSweepTable, featuresSweepPath, 'WriteRowNames', false);
 
     % Plot each variable of the table
-    plot_table(featuresSweepTable, varToPlot, outFolderProtocol, xLabelSweep);
+    plot_table(featuresSweepTable, 'VariableNames', varToPlot, ...
+               'OutFolder', outFolderProtocol, 'XLabel', xLabelSweep);
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function plot_table (table, varToPlot, outFolder, xLabel)
-%% Plots all variables of a table against the row names, which are files
-% TODO: Pull out as plot_table
-%       plot_table(table, 'VariableNames', varToPlot, ...
-%                   'OutFolder', outFolder, 'XLabel', 'fileNames')
-
-% Restrict to variables to plot
-table = table(:, varToPlot);
-
-% Check if output directory exists
-check_dir(outFolder);
-
-% Convert to a structure array
-fileStruct = table2struct(table);
-
-% Decide on xTickLabels
-if iscell(table.Properties.RowNames)
-    % Get the file names
-    fileNames = table.Properties.RowNames;
-
-    % Get the file bases
-    [~, fileBases, ~] = ...
-        cellfun(@(x) fileparts(x), fileNames, 'UniformOutput', false);
-
-    % Create x tick labels
-    xTickLabels = cellfun(@(x) strrep(x, '_', '\_'), fileBases, ...
-                            'UniformOutput', false);
-else
-    xTickLabels = {};
-end
-
-% Plot fields
-plot_struct(fileStruct, 'OutFolder', outFolder, ...
-            'XTickLabels', xTickLabels, 'XLabel', xLabel);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -585,6 +555,10 @@ params.FigTypes = 'png';
 params.FileBase = newFileBases{iVec};
 params.FileSuffix = fileSuffix;
 params.ResponseName = responseName;
+
+plot_table(featuresFileTable, varToPlot, outFolderProtocol, xLabelFile);
+plot_table(featuresSweepTable, varToPlot, outFolderProtocol, xLabelSweep);
+
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

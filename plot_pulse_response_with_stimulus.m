@@ -215,33 +215,33 @@ maxValueOfInterest = max([maxValueAfterMinDelay, baseValue]);
 % Compute the x axis limits
 [xLimits, xRange] = compute_xlimits(tVec, 'Coverage', 100);
 
-% Compute the times relative to the minimum x value
-[timePeakRel, timePulseEndRel] = ...
-    argfun(@(x) (tVec(x) - xLimits(1)) / xRange, idxPeak, idxBeforePulseEnd);
-
 % Compute times from delays
 minPeakTime = xLimits(1) + minPeakDelayMs;
 
-% Compute the values relative to the minimum y value
-[baseValueRel, peakValueRel] = ...
-    argfun(@(x) (x - yLimitsResp(1)) / yRangeResp, baseValue, peakValue);
+% If a peak exists, compute peak-related values
+if ~isnan(idxPeak)
+    % Compute the times relative to the minimum x value
+    [timePeakRel, timePulseEndRel] = ...
+        argfun(@(x) (tVec(x) - xLimits(1)) / xRange, idxPeak, idxBeforePulseEnd);
 
-% Compute the peak amplitude double arrow x and y values 
-%   in normalized units relative to the axes
-peakAmpXValues = timePeakRel * ones(1, 2);
-peakAmpYValues = sort([baseValueRel, peakValueRel]);
+    % Compute the values relative to the minimum y value
+    [baseValueRel, peakValueRel] = ...
+        argfun(@(x) (x - yLimitsResp(1)) / yRangeResp, baseValue, peakValue);
 
-% Compute the peak delay double arrow x and y values 
-%   in normalized units relative to the axes
-peakDelayXValues = [timePulseEndRel, timePeakRel];
-peakDelayYValues = baseValueRel * ones(1, 2);
+    % Compute the peak amplitude double arrow x and y values 
+    %   in normalized units relative to the axes
+    peakAmpXValues = timePeakRel * ones(1, 2);
+    peakAmpYValues = sort([baseValueRel, peakValueRel]);
 
-% Create a label for the peak amplitude
-peakAmpLabel = ['peak amp = ', num2str(peakAmplitude), ' mV'];
+    % Compute the peak delay double arrow x and y values 
+    %   in normalized units relative to the axes
+    peakDelayXValues = [timePulseEndRel, timePeakRel];
+    peakDelayYValues = baseValueRel * ones(1, 2);
 
-% Create a label for the peak delay
-% TODO: use
-peakDelayLabel = ['peak delay = ', num2str(peakDelayMs), ' ms'];
+    % Create a labels for the peak amplitude and delay
+    peakAmpLabel = ['peak amp = ', num2str(peakAmplitude), ' mV'];
+    peakDelayLabel = ['peak delay = ', num2str(peakDelayMs), ' ms'];
+end
 
 %% Do the job
 % Open and clear figure
@@ -275,33 +275,35 @@ line(xLimits, baseValue * ones(size(xLimits)), ...
 line(minPeakTime * ones(size(yLimitsResp)), yLimitsResp, ...
     'LineStyle', '--', 'Color', colorLines);
 
-% TODO: Make this a wrapper function annotation_in_plot.m
-% Compute the peak amplitude double arrow x and y values 
-%   in normalized units relative to the figure
-pos = get(gca, 'Position');
-peakAmpXPositions = pos(1) + pos(3) * peakAmpXValues;
-peakAmpYPositions = pos(2) + pos(4) * peakAmpYValues;
+if ~isnan(idxPeak)
+    % TODO: Make this a wrapper function annotation_in_plot.m
+    % Compute the peak amplitude double arrow x and y values 
+    %   in normalized units relative to the figure
+    pos = get(gca, 'Position');
+    peakAmpXPositions = pos(1) + pos(3) * peakAmpXValues;
+    peakAmpYPositions = pos(2) + pos(4) * peakAmpYValues;
 
-% Draw a double arrow spanning the peak amplitude
-annotation('doublearrow', peakAmpXPositions, peakAmpYPositions, ...
-            'Color', colorAnnotations);
+    % Draw a double arrow spanning the peak amplitude
+    annotation('doublearrow', peakAmpXPositions, peakAmpYPositions, ...
+                'Color', colorAnnotations);
 
-% Compute the peak delay double arrow x and y values 
-%   in normalized units relative to the figure
-peakDelayXPositions = pos(1) + pos(3) * peakDelayXValues;
-peakDelayYPositions = pos(2) + pos(4) * peakDelayYValues;
+    % Compute the peak delay double arrow x and y values 
+    %   in normalized units relative to the figure
+    peakDelayXPositions = pos(1) + pos(3) * peakDelayXValues;
+    peakDelayYPositions = pos(2) + pos(4) * peakDelayYValues;
 
-% Draw a double arrow spanning the peak delay
-annotation('doublearrow', peakDelayXPositions, peakDelayYPositions, ...
-            'Color', colorAnnotations);
+    % Draw a double arrow spanning the peak delay
+    annotation('doublearrow', peakDelayXPositions, peakDelayYPositions, ...
+                'Color', colorAnnotations);
 
-% Show a text for the value of the peak amplitude
-text(tVec(idxPeak) + peakDelayMs * 1/8, halfPeakValue, peakAmpLabel);
+    % Show a text for the value of the peak amplitude
+    text(tVec(idxPeak) + peakDelayMs * 1/16, halfPeakValue, peakAmpLabel);
 
-% Show a text for the value of the peak delay
-% TODO: use extract_elements(tVec, 'mid', 'Endpoints', [idxBeforePulseEnd, idxPeak])
-text(tVec(round(idxBeforePulseEnd * 3/4 + idxPeak * 1/4)), ...
-        baseValue - peakAmplitude * 1/8, peakDelayLabel);
+    % Show a text for the value of the peak delay
+    % TODO: use extract_elements(tVec, 'mid', 'Endpoints', [idxBeforePulseEnd, idxPeak])
+    text(tVec(round(idxBeforePulseEnd * 3/4 + idxPeak * 1/4)), ...
+            baseValue - peakAmplitude * 1/16, peakDelayLabel);
+end
 
 % Generate a y-axis label
 ylabel(labels{1});

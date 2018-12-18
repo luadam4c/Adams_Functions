@@ -95,6 +95,13 @@ function [parsedParams, parsedData] = ...
 %                                           before pulse start in ms
 %                   must be a nonnegative scalar
 %                   default = 0 ms
+%                   - 'PeakDirection': direction of expected peak
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'Downward'  - downward peaks (e.g., EPSCs)
+%                       'Upward'    - upward peaks (e.g., IPSCs)
+%                       'Auto'      - no preference (whichever is largest)
+%                   default = 'Auto'
+%                   
 %
 % Requires:
 %       cd/argfun.m
@@ -129,10 +136,16 @@ function [parsedParams, parsedData] = ...
 % 2018-12-17 Now computes peakDelaySamples and peakDelayMs
 % 2018-12-17 Added all detected results of parse_pulse.m
 % 2018-12-18 Added halfPeakValue
+% 2018-12-18 Fixed choose_peak_value so that it uses amplitude
+% 2018-12-18 Added 'PeakDirection' as an optional argument
+% TODO: Use PeakDirection in all instances and set it for GABAB
 % TODO: Compute maxSlope, halfWidthSamples, halfWidthMs, 
 % TODO: Compute timeConstantSamples, timeConstantMs
 
 %% Hard-coded parameters
+% For arguments
+validPeakDirections = {'upward', 'downward', 'auto'};
+
 % Pulse parameter names to change or remove
 %   Note: must be consistent with parse_pulse.m
 pulseParamsToRemove = {'idxBeforeStart', 'idxBeforeEnd'};
@@ -150,6 +163,7 @@ meanValueWindowMsDefault = 0.5; % calculating mean values over 0.5 ms by default
 minPeakDelayMsDefault = 0;      % no minimum peak delay by default
 responseLengthMsDefault = 0;    % 0 ms after pulse end by default
 baselineLengthMsDefault = 0;    % don't include a baseline by default
+peakDirectionDefault = 'auto';  % automatically detect largest peak by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -186,6 +200,8 @@ addParameter(iP, 'ResponseLengthMs', responseLengthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'BaselineLengthMs', baselineLengthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+addParameter(iP, 'PeakDirection', peakDirectionDefault, ...
+    @(x) any(validatestring(x, validPeakDirections)));
 
 % Read from the Input Parser
 parse(iP, vectors, siMs, varargin{:});
@@ -195,6 +211,7 @@ meanValueWindowMs = iP.Results.MeanValueWindowMs;
 minPeakDelayMs = iP.Results.MinPeakDelayMs;
 responseLengthMs = iP.Results.ResponseLengthMs;
 baselineLengthMs = iP.Results.BaselineLengthMs;
+peakDirection = validatestring(iP.Results.PeakDirection, validPeakDirections);
 
 %% Preparation
 % Force vectors to be a column cell array
@@ -317,8 +334,8 @@ vecsPeakSearch = extract_subvectors(vectors, 'Endpoints', endPointsPeakSearch);
 % Find the peak values (the minimum or maximum value after pulse end 
 %   + minPeakDelaySamples with largest magnitude)
 [peakValue, idxPeak] = ...
-    arrayfun(@(x, y, z, w) choose_peak_value(x, y, z, w), ...
-            minValueAfterMinDelay, maxValueAfterMinDelay, ...
+    arrayfun(@(x, y, z, w, v) choose_peak_value(peakDirection, x, y, z, w, v), ...
+            minValueAfterMinDelay, maxValueAfterMinDelay, baseValue, ...
             idxMinValueAfterMinDelay, idxMaxValueAfterMinDelay);
 
 % Compute the half peak value
@@ -409,20 +426,46 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [peakValue, idxPeak] = ...
-                choose_peak_value (minValueAfterMinDelay, maxValueAfterMinDelay, ...
-                                idxMinValueAfterMinDelay, idxMaxValueAfterMinDelay)
+                choose_peak_value (peakDirection, ...
+                    minValueAfterMinDelay, maxValueAfterMinDelay, baseValue, ...
+                    idxMinValueAfterMinDelay, idxMaxValueAfterMinDelay)
 %% Chooses the peak value from minimum and maximum
 
-% Find the larger magnitude of the two extrema
-[~, iPeak] = max(abs([minValueAfterMinDelay, maxValueAfterMinDelay]));
+% Compute the relative amplitude from baseValue
+minAmp = minValueAfterMinDelay - baseValue;
+maxAmp = maxValueAfterMinDelay - baseValue;
 
-% Get the actual index and value for the peak
-if iPeak == 1
-    idxPeak = idxMinValueAfterMinDelay;
-    peakValue = minValueAfterMinDelay;
-elseif iPeak == 2
-    idxPeak = idxMaxValueAfterMinDelay;
-    peakValue = maxValueAfterMinDelay;
+switch peakDirection
+    case 'upward'
+        if maxAmp >= 0
+            idxPeak = idxMaxValueAfterMinDelay;
+            peakValue = maxValueAfterMinDelay;
+        else
+            idxPeak = NaN;
+            peakValue = NaN;
+        end
+    case 'downward'
+        if minAmp <= 0
+            idxPeak = idxMinValueAfterMinDelay;
+            peakValue = minValueAfterMinDelay;
+        else
+            idxPeak = NaN;
+            peakValue = NaN;
+        end
+    case 'auto'
+        % Find the larger magnitude of the two amplitudes
+        [~, iPeak] = max(abs([minAmp, maxAmp]));
+
+        % Get the actual index and value for the peak
+        if iPeak == 1
+            idxPeak = idxMinValueAfterMinDelay;
+            peakValue = minValueAfterMinDelay;
+        elseif iPeak == 2
+            idxPeak = idxMaxValueAfterMinDelay;
+            peakValue = maxValueAfterMinDelay;
+        end
+    otherwise
+        error('peakDirection not recognized!!');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

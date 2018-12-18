@@ -1,5 +1,5 @@
 function h = plot_struct (structArray, varargin)
-%% Plot all fields from a structure array as tuning curves
+%% Plot all fields in a structure array as tuning curves
 % Usage: h = plot_struct (structArray, varargin)
 % Explanation:
 %       TODO
@@ -44,7 +44,7 @@ function h = plot_struct (structArray, varargin)
 %                   default == []
 %                   - 'OutFolder': output folder if FigNames not set
 %                   must be a string scalar or a character vector
-%                   default == 'Parameter'
+%                   default == pwd
 %                   - 'FigNames': figure names for saving
 %                   must be a cell array of character vectors/strings
 %                   default == {}
@@ -54,8 +54,10 @@ function h = plot_struct (structArray, varargin)
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
+%                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
+%       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/force_column_cell.m
 %       cd/match_row_count.m
@@ -63,12 +65,13 @@ function h = plot_struct (structArray, varargin)
 %       cd/isfigtype.m
 %
 % Used by:    
-%       cd/plot_protocols.m
+%       cd/plot_table.m
 
 % File History:
 % 2018-09-26 Created by Adam Lu
 % 2018-12-15 Updated XTicks so that it is dependent on nEntries
 % 2018-12-17 Now uses create_labels_from_numbers.m
+% 2018-12-18 Now uses iP.KeepUnmatched
 % 
 
 %% Hard-coded parameters
@@ -95,13 +98,13 @@ figTypesDefault = 'png';
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'structArray', ...
@@ -152,6 +155,9 @@ figNumber = iP.Results.FigNumber;
 outFolder = iP.Results.OutFolder;
 figNames = iP.Results.FigNames;
 [~, figtypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
+
+% Keep unmatched arguments for the line() function
+otherArguments = iP.Unmatched;
 
 % Check relationships between arguments
 if ~isempty(xTicks) && ~isempty(xTickLabels) && ...
@@ -291,7 +297,7 @@ for iField = 1:nFields
                         'SingleColor', singlecolor, ...
                         'FigTitle', figTitle, 'FigNumber', figNumber, ...
                         'FigName', figName, 'FigTypes', figtypes, ...
-                        'LineSpec', lineSpec);
+                        'LineSpec', lineSpec, otherArguments);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

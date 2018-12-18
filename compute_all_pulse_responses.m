@@ -56,6 +56,12 @@ function [tVecAll, respAll, stimAll, featuresAll] = ...
 %                               after the end of the pulse
 %                   must be a positive scalar
 %                   default == 0 ms
+%                   - 'PeakDirection': direction of expected peak
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'Downward'  - downward peaks (e.g., EPSCs)
+%                       'Upward'    - upward peaks (e.g., IPSCs)
+%                       'Auto'      - no preference (whichever is largest)
+%                   default = 'Auto'
 %                   - 'ChannelTypes': the channel types
 %                   must be a cellstr with nChannels elements
 %                       each being one of the following:
@@ -91,6 +97,7 @@ function [tVecAll, respAll, stimAll, featuresAll] = ...
 
 %% Hard-coded parameters
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
+validPeakDirections = {'upward', 'downward', 'auto'};
 
 %% Default values for optional arguments
 minRowNumberDefault = 1;        % row number to start counting at is 1
@@ -106,6 +113,7 @@ channelLabelsDefault = {};      % set later
 parsedParamsDefault = [];       % set later
 parsedDataDefault = [];         % set later
 saveFlagDefault = true;         % save the pulse train series by default
+peakDirectionDefault = 'auto';  % automatically detect largest peak by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -154,12 +162,15 @@ addParameter(iP, 'ParsedData', parsedDataDefault, ...
     @(x) isempty(x) || isstruct(x));
 addParameter(iP, 'SaveFlag', saveFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PeakDirection', peakDirectionDefault, ...
+    @(x) any(validatestring(x, validPeakDirections)));
 
 % Read from the Input Parser
 parse(iP, fileName, responseType, varargin{:});
 minRowNumber = iP.Results.MinRowNumber;
 baselineLengthMs = iP.Results.BaselineLengthMs;
 minPeakDelayMs = iP.Results.MinPeakDelayMs;
+peakDirection = validatestring(iP.Results.PeakDirection, validPeakDirections);
 saveFlag = iP.Results.SaveFlag;
 
 %% Filter and extract pulse response(s)
@@ -178,7 +189,8 @@ featuresAll = parse_pulse_response(respAll, siMs, ...
                                 'PulseVectors', stimAll, ...
                                 'SameAsPulse', true, ...
                                 'MeanValueWindowMs', baselineLengthMs, ...
-                                'MinPeakDelayMs', minPeakDelayMs);
+                                'MinPeakDelayMs', minPeakDelayMs, ...
+                                'PeakDirection', peakDirection);
 
 % Add labels to each row
 labels = repmat({labels}, [nVectors, 1]);
@@ -198,7 +210,9 @@ featuresAll = addvars(featuresAll, sweepName, 'Before', 1);
 featuresAll = addvars(featuresAll, filePath, 'Before', 1);
 
 %% Save the features table
-% writetable(featuresAll, sheetPath);
+% if saveFlag
+%     writetable(featuresAll, sheetPath);
+% end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

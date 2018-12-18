@@ -52,6 +52,12 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg, h] = ...
 %                               after the end of the pulse
 %                   must be a positive scalar
 %                   default == 0 ms
+%                   - 'PeakDirection': direction of expected peak
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'Downward'  - downward peaks (e.g., EPSCs)
+%                       'Upward'    - upward peaks (e.g., IPSCs)
+%                       'Auto'      - no preference (whichever is largest)
+%                   default = 'Auto'
 %                   - 'OutFolder': the name of the directory for plots
 %                   must be a string scalar or a character vector
 %                   default == a subdirectory named by outFolderName
@@ -107,6 +113,7 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg, h] = ...
 
 %% Hard-coded parameters
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
+validPeakDirections = {'upward', 'downward', 'auto'};
 
 %% Default values for optional arguments
 lowPassFrequencyDefault = [];   % do not lowpass filter by default
@@ -115,6 +122,7 @@ smoothWindowDefault = [];       % do not moving average filter by default
 responseLengthMsDefault = 20;   % a response of 20 ms by default
 baselineLengthMsDefault = 5;    % a baseline of 5 ms by default
 minPeakDelayMsDefault = 0;      % no minimum peak delay by default
+peakDirectionDefault = 'auto';  % automatically detect largest peak by default
 outFolderDefault = '';          % set later
 outFolderNameDefault = 'Pulse_Response';
 fileSuffixDefault = '_pulse_response';
@@ -162,6 +170,8 @@ addParameter(iP, 'BaselineLengthMs', baselineLengthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'MinPeakDelayMs', minPeakDelayMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
+addParameter(iP, 'PeakDirection', peakDirectionDefault, ...
+    @(x) any(validatestring(x, validPeakDirections)));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolderName', outFolderNameDefault, ...

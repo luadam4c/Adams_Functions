@@ -69,8 +69,10 @@ function h = plot_tuning_curve (pValues, readout, varargin)
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
+%                   - Any other parameter-value pair for the line() function
 %
 % Requires:
+%       cd/create_error_for_nargin.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
 %       cd/save_all_figtypes.m
@@ -87,6 +89,7 @@ function h = plot_tuning_curve (pValues, readout, varargin)
 % 2018-05-08 Changed tabs to spaces and limited width to 80
 % 2018-09-25 Made almost all arguments parameter-value pairs
 % 2018-12-15 Added 'LineSpec' as a parameter-value pair argument
+% 2018-12-18 Now uses iP.KeepUnmatched
 %
 
 %% Hard-coded parameters
@@ -116,13 +119,13 @@ figTypesDefault = 'png';
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 2
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to an Input Parser
 addRequired(iP, 'pValues', ...              % vector of parameter values
@@ -185,6 +188,9 @@ figTitle = iP.Results.FigTitle;
 figNumber = iP.Results.FigNumber;
 figName = iP.Results.FigName;
 [~, figtypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
+
+% Keep unmatched arguments for the line() function
+otherArguments = iP.Unmatched;
 
 % Check relationships between arguments
 if ~isempty(pTicks) && ~isempty(pTickLabels) && ...
@@ -276,10 +282,10 @@ for c = 1:nColsToPlot
     if pIsLog
         % Note: can't have hold on before semilogx
         p = semilogx(pValues, readout(:, col), lineSpec, ...
-                        'LineWidth', lineWidth);
+                        'LineWidth', lineWidth, otherArguments);
     else
         p = plot(pValues, readout(:, col), lineSpec, ...
-                        'LineWidth', lineWidth);
+                        'LineWidth', lineWidth, otherArguments);
     end
     
     % Set color
