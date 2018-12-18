@@ -1,6 +1,6 @@
-function h = plot_fields (structArray, varargin)
+function h = plot_struct (structArray, varargin)
 %% Plot all fields from a structure array as tuning curves
-% Usage: h = plot_fields (structArray, varargin)
+% Usage: h = plot_struct (structArray, varargin)
 % Explanation:
 %       TODO
 % Example(s):

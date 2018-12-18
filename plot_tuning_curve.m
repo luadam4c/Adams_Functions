@@ -76,7 +76,7 @@ function h = plot_tuning_curve (pValues, readout, varargin)
 %       cd/save_all_figtypes.m
 %
 % Used by:
-%       cd/plot_fields.m
+%       cd/plot_struct.m
 %       /media/adamX/RTCl/tuning_curves.m
 %
 % 2017-04-17 Moved from tuning_curves.m

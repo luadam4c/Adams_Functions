@@ -96,7 +96,7 @@ function [featuresFileTable, featuresSweepTable] = ...
 %       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
 %       cd/parse_all_abfs.m
-%       cd/plot_fields.m
+%       cd/plot_struct.m
 %       cd/plot_pulse_response_with_stimulus.m
 %       cd/plot_traces_abf.m
 %
@@ -467,7 +467,7 @@ else
 end
 
 % Plot fields
-plot_fields(fileStruct, 'OutFolder', outFolder, ...
+plot_struct(fileStruct, 'OutFolder', outFolder, ...
             'XTickLabels', xTickLabels, 'XLabel', xLabel);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

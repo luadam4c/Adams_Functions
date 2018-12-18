@@ -28,7 +28,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/compute_all_pulse_responses.m
 %       cd/create_error_for_nargin.m
 %       cd/create_simulation_output_filenames.m
-%       cd/plot_fields.m
+%       cd/plot_struct.m
 %       cd/plot_swd_raster.m
 %       cd/plot_traces.m
 %       cd/renamevars.m

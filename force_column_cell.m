@@ -43,7 +43,7 @@ function vectorsCell = force_column_cell (vectorsOrig)
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 %       cd/plot_all_abfs.m
-%       cd/plot_fields.m
+%       cd/plot_struct.m
 %       cd/run_neuron.m
 
 % File History:
