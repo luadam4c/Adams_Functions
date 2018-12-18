@@ -104,6 +104,7 @@ function [h, subPlots] = plot_traces (tVecs, data, varargin)
 %       cd/argfun.m
 %       cd/count_vectors.m
 %       cd/create_colormap.m
+%       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
@@ -167,8 +168,7 @@ figTypesDefault = 'png';        % save as png file by default
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 2
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme

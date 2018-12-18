@@ -1,6 +1,6 @@
-function [output1] = plot_horizontal_line (reqarg1, varargin)
+function [output1] = plot_horizontal_line (yValue, varargin)
 %% Plots a horizontal line
-% Usage: [output1] = plot_horizontal_line (reqarg1, varargin)
+% Usage: [output1] = plot_horizontal_line (yValue, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -9,14 +9,14 @@ function [output1] = plot_horizontal_line (reqarg1, varargin)
 %       output1     - TODO: Description of output1
 %                   specified as a TODO
 % Arguments:
-%       reqarg1     - TODO: Description of reqarg1
+%       yValue     - TODO: Description of yValue
 %                   must be a TODO
-%       varargin    - 'param1': TODO: Description of param1
+%       varargin    - 'XLimits': TODO: Description of XLimits
 %                   must be a TODO
 %                   default == TODO
 %
 % Requires:
-%       ~/Adams_Functions/create_error_for_nargin.m
+%       cd/create_error_for_nargin.m
 %       /TODO:dir/TODO:file
 %
 % Used by:
@@ -24,18 +24,19 @@ function [output1] = plot_horizontal_line (reqarg1, varargin)
 
 % File History:
 % 201X-XX-XX Created by TODO or Adapted from TODO
+% TODO: Use unMatched varargin parts as parameters for line()
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-param1Default = [];             % default TODO: Description of param1
+param1Default = [];             % default TODO: Description of XLimits
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 1    % TODO: 1 might need to be changed
+if nargin < 1
     error(create_error_for_nargin(mfilename));
 end
 
@@ -44,16 +45,16 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'reqarg1', ...                  % TODO: Description of reqarg1
+addRequired(iP, 'yValue', ...                  % TODO: Description of yValue
     % TODO: validation function %);
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'param1', param1Default, ...
+addParameter(iP, 'XLimits', param1Default, ...
     % TODO: validation function %);
 
 % Read from the Input Parser
-parse(iP, reqarg1, varargin{:});
-param1 = iP.Results.param1;
+parse(iP, yValue, varargin{:});
+XLimits = iP.Results.XLimits;
 
 % Check relationships between arguments
 % TODO

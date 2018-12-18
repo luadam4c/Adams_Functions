@@ -42,23 +42,12 @@ function plot_swd_raster (varargin)
 %                   - 'BarWidth': bar width relative to y value increments (0~1)
 %                   must be a positive scalar between 0 and 1
 %                   default == 0.6
-%                   - 'LineStyle': line style of bars
-%                   must be an unambiguous, case-insensitive match to one of: 
-%                       '-'     - solid line
-%                       '--'    - dashed line
-%                       ':'     - dotted line
-%                       '-.'    - dash-dotted line
-%                       'none'  - no line
-%                   default == '-'
-%                   - 'LineWidth': line width of bars
-%                   must be a positive scalar
-%                   default == 2
+%                   - Any other parameter-value pair for the line() function
 %
 % Requires:
 %       cd/create_labels_from_numbers.m
 %       cd/extract_common_parent.m
 %       cd/find_ind_str_in_cell.m
-%       cd/islinestyle.m
 %       cd/issheettype.m
 %       cd/plot_raster.m
 %       cd/print_or_show_message.m
@@ -121,6 +110,7 @@ lineWidthDefault = 2;           % default line width of bars
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
@@ -146,10 +136,6 @@ addParameter(iP, 'SheetType', sheetTypeDefault, ...
     @(x) all(issheettype(x, 'ValidateMode', true)));
 addParameter(iP, 'BarWidth', barWidthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', '>=', 0, '<=', 1}));
-addParameter(iP, 'LineStyle', lineStyleDefault, ...
-    @(x) all(islinestyle(x, 'ValidateMode', true)));
-addParameter(iP, 'LineWidth', lineWidthDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -163,8 +149,9 @@ sayliFolder = iP.Results.SayliFolder;
 assystFolder = iP.Results.AssystFolder;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 barWidth = iP.Results.BarWidth;
-[~, lineStyle] = islinestyle(iP.Results.LineStyle, 'ValidateMode', true);
-lineWidth = iP.Results.LineWidth;
+
+% Keep unmatched arguments for the line() function
+otherArguments = iP.Unmatched;
 
 % Set dependent argument defaults
 if isempty(manualFolder)
@@ -390,8 +377,10 @@ clf;
 % Plot the raster plot
 [hLines, eventTimes, yEnds, yTicksTable] = ...
     plot_raster(eventTimes, 'BarWidth', barWidth, ...
-                'LineStyle', lineStyle, 'LineWidth', lineWidth, ...
-                'Labels', labels, 'YTickLabels', yTickLabels);
+                'LineStyle', lineStyleDefault, ...
+                'LineWidth', lineWidthDefault, ...
+                'Labels', labels, 'YTickLabels', yTickLabels, ...
+                otherArguments);
 
 % Compute y axis limits
 yLimits = [min(yTicksTable.locs) - 1, max(yTicksTable.locs) + 1];
@@ -472,5 +461,25 @@ message = sprintf('No %s field or %s field found for %s!', ...
 
     swdSheetBases = arrayfun(@(x) ['unnamed_sweep', num2str(x), '_SWDs'], ...
                             transpose(1:nTables), 'UniformOutput', false);
+
+%                   - 'LineStyle': line style of bars
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       '-'     - solid line
+%                       '--'    - dashed line
+%                       ':'     - dotted line
+%                       '-.'    - dash-dotted line
+%                       'none'  - no line
+%                   default == '-'
+%                   - 'LineWidth': line width of bars
+%                   must be a positive scalar
+%                   default == 2
+%       cd/islinestyle.m
+
+addParameter(iP, 'LineStyle', lineStyleDefault, ...
+    @(x) all(islinestyle(x, 'ValidateMode', true)));
+addParameter(iP, 'LineWidth', lineWidthDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+[~, lineStyle] = islinestyle(iP.Results.LineStyle, 'ValidateMode', true);
+lineWidth = iP.Results.LineWidth;
 
 %}

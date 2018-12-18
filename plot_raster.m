@@ -25,22 +25,11 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 % Side Effects:
 %       Plots a raster plot colored by groups.
 % Arguments:    
-%       data        - a cell array of event time arrays
-%                   must be a cell array of numeric arrays
+%       data        - event time arrays
+%                   must be a numeric array or a cell array of numeric arrays
 %       varargin    - 'BarWidth': bar width relative to y value increments (0~1)
 %                   must be a positive scalar between 0 and 1
 %                   default == 0.6
-%                   - 'LineStyle': line style of bars
-%                   must be an unambiguous, case-insensitive match to one of: 
-%                       '-'     - solid line
-%                       '--'    - dashed line
-%                       ':'     - dotted line
-%                       '-.'    - dash-dotted line
-%                       'none'  - no line
-%                   default == '-'
-%                   - 'LineWidth': line width of bars
-%                   must be a positive scalar
-%                   default == 2
 %                   - 'Colors': colors for each array
 %                   must be a cell array of character/string arrays
 %                   default == equal samples from the parula map
@@ -53,51 +42,51 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 %                   - 'YTickLabels': labels for each raster
 %                   must be a cell array of character/string arrays
 %                   default == trial numbers
+%                   - Any other parameter-value pair for the line() function
 %
 % Requires:
 %       /home/Matlab/Downloaded_Functions/rgb.m
+%       cd/create_error_for_nargin.m
+%       cd/force_column_numeric.m
 %       cd/iscellnumeric.m
-%       cd/islinestyle.m
 %
 % Used by:    
 %       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
 %
 % File History:
 % 2018-05-16 Created by Adam Lu
+% 2018-12-18 Now uses iP.KeepUnmatched
 % 
 
 %% Default values for optional arguments
 barWidthDefault = 0.6;      % default bar width relative to y value increments
-lineStyleDefault = '-';     % default line style of bars
-lineWidthDefault = 2;       % default line width of bars
 colorsDefault = {};         % default colors to use for each array
 labelsDefault = {};         % default labels to use for each array
+lineStyleDefault = '-';     % default line style of bars
+lineWidthDefault = 2;       % default line width of bars
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'data', ...             % a cell array of event time arrays
-    @(x) assert(iscellnumeric(x), ...
-        'data must be a cell array of numeric arrays!'));
+    @(x) assert(isempty(x) || isnumeric(x) || iscellnumeric(x), ...
+                ['data must be either empty or a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'BarWidth', barWidthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', '>=', 0, '<=', 1}));
-addParameter(iP, 'LineStyle', lineStyleDefault, ...
-    @(x) all(islinestyle(x, 'ValidateMode', true)));
-addParameter(iP, 'LineWidth', lineWidthDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'Colors', colorsDefault, ...
     @(x) assert(iscell(x) && all(cellfun(@(x) ischar(x) || isstring(x), x)), ...
         'data must be a cell array of character/string arrays!'));
@@ -113,16 +102,34 @@ addParameter(iP, 'YTickLabels', {}, ...
 % Read from the Input Parser
 parse(iP, data, varargin{:});
 barWidth = iP.Results.BarWidth;
-[~, lineStyle] = islinestyle(iP.Results.LineStyle, 'ValidateMode', true);
-lineWidth = iP.Results.LineWidth;
 colors = iP.Results.Colors;
 labels = iP.Results.Labels;
 yTickLocs = iP.Results.YTickLocs;
 yTickLabels = iP.Results.YTickLabels;
 
+% Keep unmatched arguments for the line() function
+otherArguments = iP.Unmatched;
+
 %% Prepare for plotting
+% If numeric, force as a column cell array of column vectors
+%   Note: if data is already a cell array, don't use this 
+%           function or else elements can't be non-vectors!
+if isnumeric(data)
+    data = force_column_numeric(data, 'IgnoreNonVectors', false);
+end
+
 % Get the number of event time arrays to plot
 nArrays = numel(data);
+
+% If there is nothing to plot, return
+if nArrays == 0
+    fprintf('Threre is nothing to plot!!\n');
+    hLines = [];
+    eventTimes = [];
+    yEnds = [];
+    yTicksTable = [];
+    return
+end
 
 % Create a color map for the arrays based on either the rgb function
 %   if the colors are provided, or based on the built-in parula map if not
@@ -265,10 +272,10 @@ for iArray = 1:nArrays
 
     % Plot the event times with the color for this array
     hLines{iArray} = line(eventTimesThis, yEndsThis, ...
-                            'LineStyle', lineStyle, ...
-                            'LineWidth', lineWidth, ...
+                            'LineStyle', lineStyleDefault, ...
+                            'LineWidth', lineWidthDefault, ...
                             'Color', colorThis, ...
-                            'DisplayName', labelThis);
+                            'DisplayName', labelThis, otherArguments);
 end
 
 % Change the y tick values and labels
@@ -283,6 +290,27 @@ OLD CODE:
 % The following doesn't work!
 data = cellfun(@(x) if isvector(x); x = x(:); end, ...
                 data, 'UniformOutput', false); 
+
+%                   - 'LineStyle': line style of bars
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       '-'     - solid line
+%                       '--'    - dashed line
+%                       ':'     - dotted line
+%                       '-.'    - dash-dotted line
+%                       'none'  - no line
+%                   default == '-'
+%                   - 'LineWidth': line width of bars
+%                   must be a positive scalar
+%                   default == 2
+addParameter(iP, 'LineStyle', lineStyleDefault, ...
+    @(x) all(islinestyle(x, 'ValidateMode', true)));
+addParameter(iP, 'LineWidth', lineWidthDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+[~, lineStyle] = islinestyle(iP.Results.LineStyle, 'ValidateMode', true);
+lineWidth = iP.Results.LineWidth;
+                            'LineStyle', lineStyle, ...
+                            'LineWidth', lineWidth, ...
+%       cd/islinestyle.m
 
 %}
 

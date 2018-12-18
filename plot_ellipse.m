@@ -3,7 +3,8 @@ function [h, xValues, yValues] = plot_ellipse (center, halflengths, theta0, vara
 % Usage: [h, xValues, yValues] = plot_ellipse (center, halflengths, theta0, varargin)
 % Explanation:
 %       Plots an ellipse with a given center, half-axis lengths 
-%           and rotation angle (radians). Example:
+%           and rotation angle (radians). 
+% Example:
 %               plot_ellipse([2, 3], [3, 2], pi/6);
 % Outputs:
 %       h           - the ellipse
@@ -18,52 +19,39 @@ function [h, xValues, yValues] = plot_ellipse (center, halflengths, theta0, vara
 %       theta0      - angle between x axis and 
 %                       the first axis of ellipse (radians)
 %                   must be a numeric scalar
-%       varargin    - 'LineColor': color of ellipse
-%                   must be recognized by the plot() function
-%                   default == 'r'
+%       varargin    - 'ToPlot': whether to plot
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'NPoints': number of points to plot
 %                   must be a positive integer scalar
 %                   default == 1000
-%                   - 'LineStyle': line style of ellipse
-%                   must be an unambiguous, case-insensitive match to one of: 
-%                       '-'     - solid line
-%                       '--'    - dashed line
-%                       ':'     - dotted line
-%                       '-.'    - dash-dotted line
-%                       'none'  - no line
-%                   default == '-'
-%                   - 'LineWidth': line width of ellipse
-%                   must be a positive scalar
-%                   default == 1
-%                   - 'ToPlot': whether to plot
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
-%       cd/islinestyle.m
+%       cd/create_error_for_nargin.m
 %
 % Used by:
 %       cd/plot_grouped_scatter.m
-%
+
 % File History:
 % 2017-12-15 Created by Adam Lu
 % 2018-05-16 Now uses islinestyle.m
+% 2018-12-18 Now uses iP.Unmatched
 % 
 
 %% Default values for optional arguments
+toPlotDefault = true;                   % whether to plot
 nPointsDefault = 1000;                  % default number of points to plot
 lineColorDefault = 'r';                 % default line color of ellipse
 lineStyleDefault = '-';                 % default line style of ellipse
 lineWidthDefault = 1;                   % default line width of ellipse
-toPlotDefault = true;                   % whether to plot
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 3
-    error(['Not enough input arguments, ', ...
-            'type ''help plot_ellipse'' for usage']);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
@@ -80,29 +68,18 @@ addRequired(iP, 'theta0', ...                   % angle of ellipse
     @(x) validateattributes(x, {'numeric'}, {'nonempty'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'LineColor', lineColorDefault);
-addParameter(iP, 'NPoints', nPointsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
-addParameter(iP, 'LineStyle', lineStyleDefault, ...
-    @(x) all(islinestyle(x, 'ValidateMode', true)));
-addParameter(iP, 'LineWidth', lineWidthDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'ToPlot', toPlotDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'NPoints', nPointsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 
 % Read from the Input Parser
 parse(iP, center, halflengths, theta0, varargin{:});
 nPoints = iP.Results.NPoints;
-lineColor = iP.Results.LineColor;
-[~, lineStyle] = islinestyle(iP.Results.LineStyle, 'ValidateMode', true);
-lineWidth = iP.Results.LineWidth;
 toPlot = iP.Results.ToPlot;
 
-% Display warning message if some inputs are unmatched
-if ~isempty(fieldnames(iP.Unmatched))
-    fprintf('WARNING: The following name-value pairs could not be parsed: \n');
-    disp(iP.Unmatched);
-end
+% Keep unmatched arguments for the plot() function
+otherArguments = iP.Unmatched;
 
 %% Prepare ellipse
 % Parametric variable
@@ -132,8 +109,8 @@ xValues = shifted(1, :);
 yValues = shifted(2, :);
 if toPlot
     h = plot(xValues, yValues, ...
-            'LineStyle', lineStyle, 'Color', lineColor, ...
-            'LineWidth', lineWidth);
+            'LineStyle', lineStyleDefault, 'Color', lineColorDefault, ...
+            'LineWidth', lineWidthDefault, otherArguments);
 else 
     h = [];
 end
@@ -148,6 +125,46 @@ validLineStyles = {'-', '--', ':', '-.', 'none'};
 
 addParameter(iP, 'LineStyle', lineStyleDefault, ...
     @(x) any(validatestring(x, validLineStyles)));
+
+% Display warning message if some inputs are unmatched
+if ~isempty(fieldnames(iP.Unmatched))
+    fprintf('WARNING: The following name-value pairs could not be parsed: \n');
+    disp(iP.Unmatched);
+end
+
+% Display warning message if some inputs are unmatched
+if ~isempty(fieldnames(iP.Unmatched))
+    fprintf('WARNING: The following name-value pairs could not be parsed: \n');
+    disp(iP.Unmatched);
+end
+
+addParameter(iP, 'LineColor', lineColorDefault);
+addParameter(iP, 'LineStyle', lineStyleDefault, ...
+    @(x) all(islinestyle(x, 'ValidateMode', true)));
+addParameter(iP, 'LineWidth', lineWidthDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+lineColor = iP.Results.LineColor;
+[~, lineStyle] = islinestyle(iP.Results.LineStyle, 'ValidateMode', true);
+lineWidth = iP.Results.LineWidth;
+%                   - 'LineColor': color of ellipse
+%                   must be recognized by the plot() function
+%                   default == 'r'
+%                   - 'LineStyle': line style of ellipse
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       '-'     - solid line
+%                       '--'    - dashed line
+%                       ':'     - dotted line
+%                       '-.'    - dash-dotted line
+%                       'none'  - no line
+%                   default == '-'
+%                   - 'LineWidth': line width of ellipse
+%                   must be a positive scalar
+%                   default == 1
+%       cd/islinestyle.m
+
+    h = plot(xValues, yValues, ...
+            'LineStyle', lineStyle, 'Color', lineColor, ...
+            'LineWidth', lineWidth);
 
 %}
 
