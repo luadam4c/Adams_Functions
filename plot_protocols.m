@@ -283,7 +283,7 @@ switch protocolType
 
         % For plotting
         outFolderProtocolName = 'LFPs';
-        varToPlot = {'peakAmplitude'};
+        varToPlot = {'peakAmplitude', 'peakDelayMs'};
         fileSuffix = '_LFP';
         responseName = 'Evoked potential';
     case 'EvokedGABAB'
@@ -292,14 +292,14 @@ switch protocolType
 
         % For computing
         responseType = 'Current';
-        lowPassFrequency = 1000;        % lowpass filter frequency in Hz
+        lowPassFrequency = 2000;        % lowpass filter frequency in Hz
         baselineLengthMs = 5;           % baseline length in ms
         responseLengthMs = 500;         % response length in ms
         minPeakDelayMs = 50;            % min peak delay after pulse end in ms
 
         % For plotting
         outFolderProtocolName = 'GABAB-IPSCs';
-        varToPlot = {'peakAmplitude'};
+        varToPlot = {'peakAmplitude', 'peakDelayMs'};
         fileSuffix = '_GABAB';
         responseName = 'GABA-B IPSC';
     otherwise

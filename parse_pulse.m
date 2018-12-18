@@ -17,6 +17,13 @@ function [parsedParams, parsedData] = parse_pulse (vectors, varargin)
 %                           baseValue
 %                           pulseValue
 %                           pulseAmplitude
+%                       if siMs is provided, also:
+%                           pulseWidthMs
+%                           timeBeforeStartMs
+%                           timeBeforeEndMs
+%                           timeAfterStartMs
+%                           timeAfterEndMs
+%                           timeMidpointMs
 %                       specified as a table
 %       parsedData      - a table containing the parsed data, including:
 %                           vectors
@@ -28,7 +35,7 @@ function [parsedParams, parsedData] = parse_pulse (vectors, varargin)
 %                   Note: If a cell array, each element must be a vector
 %                         If an array, each column is a vector
 %                   must be a numeric array or a cell array of numeric vectors
-%       varargin    - 'SiMs': sampling interval(s) in ms
+%       varargin    - 'SamplingIntervalMs': sampling interval(s) in ms
 %                   must be a positive vector
 %                   default == []
 %
@@ -42,17 +49,19 @@ function [parsedParams, parsedData] = parse_pulse (vectors, varargin)
 % Used by:    
 %       cd/find_passive_params.m
 %       cd/identify_repetitive_pulses.m
+%       cd/parse_pulse_response.m
 %       cd/plot_pulse.m
 
 % File History:
 % 2018-10-10 Created by Adam Lu
 % 2018-12-15 Now allows vectors to have no pulse (will return NaNs)
+% 2018-12-17 Now computes times if SamplingIntervalMs is provided
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-siMsDefault = [];           % no time information by default
+samplingIntervalMsDefault = []; % no time information by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -74,11 +83,12 @@ addRequired(iP, 'vectors', ...                   % vectors
                     'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'siMs', siMsDefault, ...
+addParameter(iP, 'SamplingIntervalMs', samplingIntervalMsDefault, ...
     @(x) isempty(x) || ispositivevector(x));
 
 % Read from the Input Parser
 parse(iP, vectors, varargin{:});
+siMs = iP.Results.SamplingIntervalMs;
 
 %% Preparation
 % Force vectors to be a column cell array
@@ -112,6 +122,7 @@ indPulse = arrayfun(@(x, y) find_pulse_indices(x, y), ...
                     'UniformOutput', false);
 
 % Find the average pulse value (could be NaN)
+%   TODO: use compute_means.m
 pulseValue = cellfun(@(x, y) mean(x(y)), vectors, indPulse);
 
 % Find the pulse amplitudes
@@ -123,6 +134,24 @@ parsedParams = table(nSamples, pulseWidthSamples, ...
                     idxAfterStart, idxAfterEnd, idxMidpoint, ...
                     baseValue, pulseValue, pulseAmplitude);
 parsedData = table(vectors, indBase, indPulse);
+
+%% Optional extra parameters
+% If siMs provided, add the corresponding times
+if ~isempty(siMs)
+    % Compute the corresponding times
+    [pulseWidthMs, timeBeforeStartMs, timeBeforeEndMs, ...
+        timeAfterStartMs, timeAfterEndMs, timeMidpointMs] = ...
+        argfun(@(x) x * siMs, ...
+            pulseWidthSamples, idxBeforeStart, idxBeforeEnd, ...
+            idxAfterStart, idxAfterEnd, idxMidpoint);
+
+    % Place in table
+    timeParams = table(pulseWidthMs, timeBeforeStartMs, timeBeforeEndMs, ...
+                        timeAfterStartMs, timeAfterEndMs, timeMidpointMs);
+
+    % Join to parsedParams
+    parsedParams = horzcat(parsedParams, timeParams);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -39,6 +39,7 @@ function table = renamevars (table, prevNames, newNames, varargin)
 %       cd/find_ind_str_in_cell.m
 %       cd/ispositiveintegerscalar.m
 %       cd/match_format_vector_sets.m
+%       cd/parse_pulse_response.m
 %
 % Used by:
 %       cd/load_params.m

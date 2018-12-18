@@ -71,6 +71,14 @@ function [parsedParams, parsedData] = ...
 %                               after the end of the pulse
 %                   must be a positive scalar
 %                   default == 0 ms
+%                   - 'ResponseLengthMs': length of the pulse response
+%                                           after pulse endpoint in ms
+%                   must be a nonnegative scalar
+%                   default = 20 ms
+%                   - 'BaselineLengthMs': length of the pulse response
+%                                           before pulse start in ms
+%                   must be a nonnegative scalar
+%                   default = 0 ms
 %
 % Requires:
 %       cd/argfun.m
@@ -83,6 +91,8 @@ function [parsedParams, parsedData] = ...
 %       cd/force_column_cell.m
 %       cd/iscellnumeric.m
 %       cd/match_dimensions.m
+%       cd/parse_pulse.m
+%       cd/renamevars.m
 %
 % Used by:
 %       cd/compute_all_pulse_responses.m
@@ -97,17 +107,29 @@ function [parsedParams, parsedData] = ...
 % 2018-12-15 Added 'peakValue', 'idxPeak', 'peakAmplitude' in parsedParams
 % 2018-12-15 Added 'MinPeakDelayMs' as an optional argument
 % 2018-12-17 Now allows siMs to be a vector
-% TODO: Compute peakDelaySamples and peakDelayMs
+% 2018-12-17 Now computes peakDelaySamples and peakDelayMs
+% 2018-12-17 Added all detected results of parse_pulse.m
 % TODO: Compute maxSlope, halfWidthSamples, halfWidthMs, 
 % TODO: Compute timeConstantSamples, timeConstantMs
 
 %% Hard-coded parameters
+% Pulse parameter names to change or remove
+%   Note: must be consistent with parse_pulse.m
+pulseParamsToRemove = {'idxBeforeStart', 'idxBeforeEnd'};
+pulseParamNamesOld = {'nSamples', 'idxAfterStart', ...
+                        'idxAfterEnd', 'idxMidpoint', 'baseValue'};
+pulseParamNamesNew = {'nSamplesPulse', 'idxAfterPulseStart', ...
+                    'idxAfterPulseEnd', 'idxPulseMidpoint', 'pulseBaseValue'};
+pulseDataNamesOld = {'vectors', 'indBase'};
+pulseDataNamesNew = {'pulseVectors', 'indPulseBase'};
 
 %% Default values for optional arguments
 pulseVectorsDefault = [];       % don't use pulse vectors by default
 sameAsPulseDefault = true;      % use pulse endpoints by default
 meanValueWindowMsDefault = 0.5; % calculating mean values over 0.5 ms by default
 minPeakDelayMsDefault = 0;      % no minimum peak delay by default
+responseLengthMsDefault = 0;    % 0 ms after pulse end by default
+baselineLengthMsDefault = 0;    % don't include a baseline by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -141,6 +163,10 @@ addParameter(iP, 'MeanValueWindowMs', meanValueWindowMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
 addParameter(iP, 'MinPeakDelayMs', minPeakDelayMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
+addParameter(iP, 'ResponseLengthMs', responseLengthMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+addParameter(iP, 'BaselineLengthMs', baselineLengthMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 
 % Read from the Input Parser
 parse(iP, vectors, siMs, varargin{:});
@@ -148,6 +174,8 @@ pulseVectors = iP.Results.PulseVectors;
 sameAsPulse = iP.Results.SameAsPulse;
 meanValueWindowMs = iP.Results.MeanValueWindowMs;
 minPeakDelayMs = iP.Results.MinPeakDelayMs;
+responseLengthMs = iP.Results.ResponseLengthMs;
+baselineLengthMs = iP.Results.BaselineLengthMs;
 
 %% Preparation
 % Force vectors to be a column cell array
@@ -174,14 +202,26 @@ allOnes = ones(nVectors, 1);
 %% Do the job
 % If not empty, parse the pulse vectors with a given sampling interval
 if ~isempty(pulseVectors)
-    [pulseParams, pulseData] = parse_pulse(pulseVectors, 'SiMs', siMs);
+    [pulseParams, pulseData] = ...
+        parse_pulse(pulseVectors, 'SamplingIntervalMs', siMs);
+
+    % Remove variables in pulseParams
+    pulseParams = removevars(pulseParams, pulseParamsToRemove);
+
+    % Rename variables in pulseParams
+    pulseParams = renamevars(pulseParams, pulseParamNamesOld, pulseParamNamesNew);
+
+    % Rename variables in pulseData
+    pulseData = renamevars(pulseData, pulseDataNamesOld, pulseDataNamesNew);
 end
 
 % Find indices for all the pulse response endpoints
-[idxResponseStart, idxResponseEnd, hasJump, idxPulseStart, idxPulseEnd] = ...
+[idxResponseStart, idxResponseEnd, hasJump, ...
+    idxBeforePulseStart, idxBeforePulseEnd] = ...
     find_pulse_response_endpoints(vectors, siMs, ...
-        'PulseVectors', pulseVectors, 'SameAsPulse', sameAsPulse, ...
-        'ResponseLengthMs', 0, 'BaselineLengthMs', 0);
+                'PulseVectors', pulseVectors, 'SameAsPulse', sameAsPulse, ...
+                'ResponseLengthMs', responseLengthMs, ...
+                'BaselineLengthMs', baselineLengthMs);
 
 % Find indices for all the pulse response midpoints
 idxResponseMid = round((idxResponseStart + idxResponseEnd) ./ 2);
@@ -237,7 +277,7 @@ steadyAmplitude = steadyValue - baseValue;
 % Find the index to begin searching for the peak (the minimum peak time)
 %   Note: this cannot be greater than nSamples
 idxMinPeakTime = arrayfun(@(x, y, z) min([x + y, z]), ...
-                                idxPulseEnd, minPeakDelaySamples, nSamples);
+                            idxBeforePulseEnd, minPeakDelaySamples, nSamples);
 
 % Find the endpoints for the peak search
 endPointsPeakSearch = [idxMinPeakTime, nSamples];
@@ -266,8 +306,11 @@ vecsPeakSearch = extract_subvectors(vectors, 'Endpoints', endPointsPeakSearch);
 % Compute the relative peak amplitude
 peakAmplitude = peakValue - baseValue;
 
-% Compute the peak delay in samples
-peakDelaySamples = idxPeak - idxResponseEnd;
+% Compute the peak delay (pulse end to peak) in samples
+peakDelaySamples = idxPeak - idxBeforePulseEnd;
+
+% Compute the peak delay (pulse end to peak) in ms
+peakDelayMs = peakDelaySamples * siMs;
 
 % Find the indices for the rising and falling phases, respectively
 % TODO: Use argfun and make a function create_indices.m
@@ -318,15 +361,15 @@ parsedParams = table(siMs, meanValueWindowMs, minPeakDelayMs, ...
                         nSamples, responseWidthSamples, responseWidthMs, ...
                         nSamplesRising, nSamplesFalling, nSamplesCombined, ...
                         idxResponseStart, idxResponseEnd, idxResponseMid, ...
-                        idxPulseStart, idxPulseEnd, ...
+                        idxBeforePulseStart, idxBeforePulseEnd, ...
                         idxBaseStart, idxBaseEnd, ...
                         idxSteadyStart, idxSteadyEnd, ...
                         baseValue, steadyValue, steadyAmplitude, ...
                         minValue, maxValue, ...
                         minValueAfterMinDelay, idxMinValueAfterMinDelay, ...
                         maxValueAfterMinDelay, idxMaxValueAfterMinDelay, ...
-                        idxMinPeakTime, idxPeak, ...
-                        peakValue, peakAmplitude, hasJump);
+                        idxMinPeakTime, idxPeak, peakValue, peakAmplitude, ...
+                        peakDelaySamples, peakDelayMs, hasJump);
 
 % Put together the pulse response data
 parsedData = table(vectors, indBase, indSteady, ...
@@ -373,7 +416,7 @@ idxBaseStart = idxResponseStart - meanValueWindowSamples;
 idxSteadyStart = idxResponseEnd - meanValueWindowSamples;
 
 % Find the index for each vector after pulse ends
-idxAfterMinDelayEnd = arrayfun(@(x, y) min([x + 1, y]), idxPulseEnd, nSamples);
+idxAfterMinDelayEnd = arrayfun(@(x, y) min([x + 1, y]), idxBeforePulseEnd, nSamples);
 
 nSamplesRising = count_samples(indRising);
 nSamplesFalling = count_samples(indFalling);

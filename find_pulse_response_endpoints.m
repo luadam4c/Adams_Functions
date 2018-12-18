@@ -1,8 +1,10 @@
-function [indResponseStart, indResponseEnd, hasJump, indPulseStart, indPulseEnd] = ...
-            find_pulse_response_endpoints (vectors, siMs, varargin)
+function [indResponseStart, indResponseEnd, hasJump, ...
+                indBeforePulseStart, indBeforePulseEnd] = ...
+                find_pulse_response_endpoints (vectors, siMs, varargin)
 %% Returns the start and end indices of the first pulse response (from pulse start to 20 ms after pulse ends by default) from vector(s)
-% Usage: [indResponseStart, indResponseEnd, hasJump, indPulseStart, indPulseEnd] = ...
-%           find_pulse_response_endpoints (vectors, siMs, varargin)
+% Usage: [indResponseStart, indResponseEnd, hasJump, ...
+%               indBeforePulseStart, indBeforePulseEnd] = ...
+%               find_pulse_response_endpoints (vectors, siMs, varargin)
 %
 % Outputs:
 %       indResponseStart    - indices of pulse response start
@@ -11,9 +13,9 @@ function [indResponseStart, indResponseEnd, hasJump, indPulseStart, indPulseEnd]
 %                           specified as a positive integer (or NaN) vector
 %       hasJump             - whether there was a significant "jump" detected
 %                           specified as a logical vector
-%       indPulseStart       - indices of pulse start
+%       indBeforePulseStart       - indices of pulse start
 %                           specified as a positive integer (or NaN) vector
-%       indPulseEnd         - indices of pulse end
+%       indBeforePulseEnd         - indices of pulse end
 %                           specified as a positive integer (or NaN) vector
 %
 % Arguments:
@@ -126,7 +128,7 @@ end
     match_format_vector_sets(num2cell(siMs), vectors);
 
 %% Do the job
-[indResponseStart, indResponseEnd, hasJump, indPulseStart, indPulseEnd] = ...
+[indResponseStart, indResponseEnd, hasJump, indBeforePulseStart, indBeforePulseEnd] = ...
     cellfun(@(x, y, z) fpre_helper(x, y, z, sameAsPulse, responseLengthMs, ...
         baselineLengthMs, nSamplesPerJump, signal2Noise, noiseWindowSize), ...
         vectors, siMs, pulseVectors);
