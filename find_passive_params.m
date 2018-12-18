@@ -92,7 +92,7 @@ function [passiveParams, fitResults, fitObject, ...
 %       cd/fit_and_estimate_passive_params.m
 %       cd/isnumericvector.m
 %       cd/locate_functionsdir.m
-%       cd/compute_nearest_odd.m
+%       cd/find_nearest_odd.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 %       cd/plot_cfit_pulse_response.m
@@ -341,7 +341,7 @@ if isempty(ivec1s)
     %   Note: Round down to the nearest odd integer to preserve values!!
     %           However, must be >= 1
     medianFilterWindowSamples = ...
-        compute_nearest_odd(medianFilterWindow2/siMs, 'Direction', 'down');
+        find_nearest_odd(medianFilterWindow2/siMs, 'Direction', 'down');
 
     % Median filter current vectors
     ivec1s = medfilt1(ivec0s, medianFilterWindowSamples);

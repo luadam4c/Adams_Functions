@@ -26,7 +26,7 @@ function timeInSamples = ...
 % File History:
 % 2018-11-28 Created by Adam Lu
 % TODO: Add 'RoundMode' as an optional argument with 'round' as default
-%       cf. compute_nearest_odd.m
+%       cf. find_nearest_odd.m
 % 
 
 %% Hard-coded parameters

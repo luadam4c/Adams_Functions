@@ -192,7 +192,7 @@ end
 % Median-filter if requested
 % TODO: medianfilter(data, windowMs)
 if ~isempty(medFiltWindow)
-    medFiltWindowSamples = compute_nearest_odd(medFiltWindow ./ siMs);
+    medFiltWindowSamples = find_nearest_odd(medFiltWindow ./ siMs);
 
     respVecs = cellfun(@(x, y) medfilt1(x, medFiltWindowSamples);
 end
@@ -200,7 +200,7 @@ end
 % Moving-average-filter if requested
 % TODO: movingaveragefilter(data, windowMs)
 if ~isempty(smoothWindow)
-    smoothWindowSamples = compute_nearest_odd(smoothWindow ./ siMs);
+    smoothWindowSamples = find_nearest_odd(smoothWindow ./ siMs);
 
     respVecs = cellfun(smooth(respVecs, smoothWindowSamples);
 end

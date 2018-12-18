@@ -1,5 +1,5 @@
 function nearestOdd = compute_nearest_odd (realNumber, varargin)
-%% Computes the nearest odd integer(s) of real number(s)
+%% Returns the nearest odd integer to real number(s)
 % Usage: nearestOdd = compute_nearest_odd (realNumber, varargin)
 % Explanation:
 %       TODO
@@ -7,7 +7,7 @@ function nearestOdd = compute_nearest_odd (realNumber, varargin)
 %       TODO
 % Outputs:
 %       nearestOdd  - the nearest odd integer returned
-%                   specified as an odd integer
+%                   specified as an odd integer vector
 % Arguments:    
 %       realNumber  - real number(s)
 %                   must be a numeric vector
@@ -22,8 +22,8 @@ function nearestOdd = compute_nearest_odd (realNumber, varargin)
 %       cd/find_passive_params.m
 
 % File History:
-% 2018-10-12 Created by Adam Lu
-% TODO: Accept a vector as an argument
+% 2018-10-12 Created by Adam Lu & ShinShin Nien
+% 2018-12-18 Now accepts a vector as an argument
 % 
 
 %% Hard-coded parameters
@@ -58,11 +58,22 @@ parse(iP, realNumber, varargin{:});
 direction = validatestring(iP.Results.Direction, validDirections);
 
 %% Do the job
-% Get the sign of the real number
+% Get the sign(s) of the real number(s)
 sgn = sign(realNumber);
 
 % Take the absolute value
 absValue = abs(realNumber);
+
+% Find the nearest positive odd number
+absOdd = arrayfun(@(x) find_nearest_positive_odd(x, direction), absValue);
+
+% Restore the sign
+nearestOdd = sgn * absOdd;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function absOdd = find_nearest_positive_odd (absValue, direction)
+%% Returns the nearest positive odd number
 
 if absValue < 1
     % If less than 1, use 1
@@ -80,9 +91,6 @@ else
         error('direction unrecognized!!');
     end
 end
-
-% Restore the sign
-nearestOdd = sgn * absOdd;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
