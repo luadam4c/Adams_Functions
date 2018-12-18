@@ -99,6 +99,7 @@ function [h, subPlots] = plot_traces (tVecs, data, varargin)
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
+%                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
 %       cd/argfun.m
@@ -135,6 +136,7 @@ function [h, subPlots] = plot_traces (tVecs, data, varargin)
 % 2018-12-15 Now returns the axes handle as the second output
 %               for overlapped plots
 % 2018-12-17 Now uses create_labels_from_numbers.m
+% 2018-12-17 Now uses iP.Unmatched
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel'};
@@ -174,6 +176,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to an Input Parser
 addRequired(iP, 'tVecs', ...
@@ -246,6 +249,9 @@ figTitle = iP.Results.FigTitle;
 figNumber = iP.Results.FigNumber;
 figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
+
+% Keep unmatched arguments for the plot() function
+otherArguments = iP.Unmatched;
 
 %% Preparation
 % If data is empty, return
@@ -437,7 +443,7 @@ if iscell(xLimits)
                             legendLocation, figTitleThis, ...
                             figNumber, figNameThis, figTypes, ...
                             nTraces, nRows, nTracesPerRow, ...
-                            maxNTracesForAnnotations);
+                            maxNTracesForAnnotations, otherArguments);
             
             % Hold off and close figure
             hold off;
@@ -457,7 +463,7 @@ else
                         legendLocation, figTitle, ...
                         figNumber, figName, figTypes, ...
                         nTraces, nRows, nTracesPerRow, ...
-                        maxNTracesForAnnotations);
+                        maxNTracesForAnnotations, otherArguments);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -469,7 +475,8 @@ function [h, subPlots] = ...
                         xLabel, yLabel, traceLabels, colorMap, ...
                         legendLocation, figTitle, ...
                         figNumber, figName, figTypes, ...
-                        nTraces, nRows, nTracesPerRow, maxNTracesForAnnotations)
+                        nTraces, nRows, nTracesPerRow, ...
+                        maxNTracesForAnnotations, otherArguments)
 
 % Decide on the figure to plot on
 if ~isempty(figName)
@@ -499,12 +506,12 @@ case 'overlapped'
         % Plot data to compare against as a black trace
         if ~isempty(dataToCompare{iTrace})
             p2(iTrace) = plot(tVecs{iTrace}, dataToCompare{iTrace}, ...
-                'Color', 'k');
+                                'Color', 'k', otherArguments);
         end
         
         % Plot the data using the color map
         p1(iTrace) = plot(tVecs{iTrace}, data{iTrace}, ...
-            'Color', colorMap(thisRowNumber, :));
+                        'Color', colorMap(thisRowNumber, :), otherArguments);
 
         % Set the legend label as the trace label if provided
         if ~strcmpi(traceLabels, 'suppress')
@@ -569,12 +576,12 @@ case 'parallel'
         % Plot data to compare against as a black trace
         if ~isempty(dataToCompare{iTrace})
             p2 = plot(tVecs{iTrace}, dataToCompare{iTrace}, ...
-                'Color', 'k');
+                        'Color', 'k', otherArguments);
         end
 
         % Plot the data using the color map
         p1 = plot(tVecs{iTrace}, data{iTrace}, ...
-                'Color', colorMap(thisRowNumber, :));
+                    'Color', colorMap(thisRowNumber, :), otherArguments);
 
         % Set the legend label as the trace label if provided
         if ~strcmpi(traceLabels, 'suppress')

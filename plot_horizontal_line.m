@@ -14,6 +14,7 @@ function [output1] = plot_horizontal_line (yValue, varargin)
 %       varargin    - 'XLimits': TODO: Description of XLimits
 %                   must be a TODO
 %                   default == TODO
+%                   - Any other parameter-value pair for the line() function
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -43,6 +44,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'yValue', ...                  % TODO: Description of yValue
@@ -54,7 +56,10 @@ addParameter(iP, 'XLimits', param1Default, ...
 
 % Read from the Input Parser
 parse(iP, yValue, varargin{:});
-XLimits = iP.Results.XLimits;
+xLimits = iP.Results.XLimits;
+
+% Keep unmatched arguments for the line() function
+otherArguments = iP.Unmatched;
 
 % Check relationships between arguments
 % TODO
