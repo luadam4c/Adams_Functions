@@ -106,13 +106,13 @@ function [featuresFileTable, featuresSweepTable] = ...
 % File History:
 % 2018-12-15 Created by Adam Lu
 % 2018-12-17 Added savePlotsFlag and saveTablesFlag
+% TODO: Make plot flags for each type of plot optional arguments
 % 
 
 %% TODO: Make these parameters
 plotSeparateFlag = true;
 plotAltogetherFlag = true;
 plotAverageFlag = true;
-savePlotsFlag = true;
 
 %% Hard-coded parameters
 validProtocolTypes = {'EvokedLFP', 'EvokedGABAB'};
@@ -372,7 +372,7 @@ parfor iFile = 1:nFiles
         if plotAltogetherFlag
             % Set the time endpoints for individual protocol traces
             [timeStart, timeEnd] = ...
-                argfun(@(x), extract_elements(tVecAll, x), 'first', 'last');
+                argfun(@(x) extract_elements(tVecAll, x), 'first', 'last');
 
             % Plot individual traces
             plot_traces_abf(fileName, ...

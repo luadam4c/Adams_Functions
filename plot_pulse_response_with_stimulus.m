@@ -47,6 +47,7 @@ function h = plot_pulse_response_with_stimulus (tVec, respVec, stimVec, varargin
 %                   default == TODO
 %
 % Requires:
+%       cd/compute_ylimits.m
 %       cd/isfigtype.m
 %       cd/save_all_figtypes.m
 %
@@ -56,17 +57,21 @@ function h = plot_pulse_response_with_stimulus (tVec, respVec, stimVec, varargin
 
 % File History:
 % 2018-12-15 Moved from compute_and_plot_evoked_LFP.m
+% TODO: Deal with default behavior for parameters
+% TODO: Read values from a sheetFile
 % 
 
 %% Hard-coded parameters
 colorAnnotations = 'r';
 
 %% Default values for optional arguments
-baseValueDefault = [];          % set later
-peakValueDefault = [];          % set later
-idxPeakDefault = [];            % set later
-peakAmplitudeDefault = [];      % set later
-labelsDefault = [];             % set later
+baseValueDefault = [];              % set later
+minValueAfterMinDelayDefault = [];  % set later
+maxValueAfterMinDelayDefault = [];  % set later
+peakValueDefault = [];              % set later
+idxPeakDefault = [];                % set later
+peakAmplitudeDefault = [];          % set later
+labelsDefault = [];                 % set later
 outFolderDefault = pwd;         % save in present working directory by default
 fileBaseDefault = 'Unnamed';
 fileSuffixDefault = '_pulse_response';
@@ -99,10 +104,14 @@ addRequired(iP, 'stimVec', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'BaseValue', baseValueDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
-addParameter(iP, 'PeakValue', peakValueDefault, ...
+addParameter(iP, 'MinValueAfterMinDelay', minValueAfterMinDelayDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'MaxValueAfterMinDelay', maxValueAfterMinDelayDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'IdxPeak', idxPeakDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'PeakValue', peakValueDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'PeakAmplitude', peakAmplitudeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'Labels', labelsDefault, ...
@@ -123,8 +132,10 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 % Read from the Input Parser
 parse(iP, tVec, respVec, stimVec, varargin{:});
 baseValue = iP.Results.BaseValue;
-peakValue = iP.Results.PeakValue;
+minValueAfterMinDelay = iP.Results.MinValueAfterMinDelay;
+maxValueAfterMinDelay = iP.Results.MaxValueAfterMinDelay;
 idxPeak = iP.Results.IdxPeak;
+peakValue = iP.Results.PeakValue;
 peakAmplitude = iP.Results.PeakAmplitude;
 labels = iP.Results.Labels;
 outFolder = iP.Results.OutFolder;
@@ -138,6 +149,30 @@ saveFlag = iP.Results.SaveFlag;
 % Check if needed output directories exist
 check_dir(outFolder);
 
+% Compute appropriate y axis limits from the range of values 
+%   after minimum peak delay
+[yLimitsResp, yRangeResp] = ...
+    compute_ylimits(minValueAfterMinDelay, maxValueAfterMinDelay);
+
+% Compute the x axis limits
+% TODO: Make this a function compute_xlimits.m
+left = min(tVec);
+right = max(tVec);
+xLimits = [left, right];
+
+% Compute the time range
+timeRange = right - left;
+
+% Compute the time of the peak relative to the minimum x value
+timePeakRel = (tVec(idxPeak) - left) / timeRange;
+
+% Compute the peak amplitude double array x and y values (normalized units)
+peakAmpXValues = timePeakRel * ones(1, 2);
+peakAmpYValues = ([baseValue, peakValue] - yLimitsResp(1)) / yRangeResp;
+
+% Create a label for the peak amplitude
+peakAmpLabel = ['peak amp = ', num2str(peakAmplitude), ' (mV)'];
+
 %% Do the job
 % Open and clear figure
 if saveFlag
@@ -148,47 +183,54 @@ else
     figure;
 end
 
-% Compute the x axis limits
-left = min(tVec);
-right = max(tVec);
-xLimits = [left, right];
-
-% Find the time of the peak relative to the x limits
-timeRange = right - left;
-timePeakRel = (tVec(idxPeak) - left) / timeRange;
-
-% Generate a subplot for the pulse response
+%% Generate a subplot for the pulse response
 %   Annotations:
 %       red double arrow for peak amplitude
-ax1 = subplot(3, 1, 1:2);
-hold on;
+ax1 = subplot(3, 1, 1:2); hold on;
+
+% Plot the pulse response
 plot(tVec, respVec);
+
+% Update x-axis and y-axis limits
 xlim(xLimits);
-ylimits = get(gca, 'YLim');
-pos = get(gca, 'Position');
-height = ylimits(2) - ylimits(1);
-bottom = ylimits(1);
-annotation('doublearrow', pos(1) + pos(3) * timePeakRel * ones(1, 2), ...
-            pos(2) + pos(4) * ([baseValue, peakValue] - bottom) / height, ...
+ylim(yLimitsResp);
+
+% Draw a doublearrow spanning the peak amplitude
+annotation('doublearrow', peakAmpXValues, peakAmpYValues, ...
             'Color', colorAnnotations);
-text(tVec(idxPeak) + 1, mean([baseValue, peakValue]), ...
-        ['peak amp = ', num2str(peakAmplitude), ' (mV)']);
+
+% Show a text for the value of the peak amplitude
+text(tVec(idxPeak) + 1, mean([baseValue, peakValue]), peakAmpLabel);
+
+% Generate a y-axis label
 ylabel(labels{1});
+
+% Generate a title for the pulse response
 title([responseName, ' for ', fileBase], 'Interpreter', 'none');
 
-% Generate a subplot for the stimulation pulse
-ax2 = subplot(3, 1, 3);
-hold on;
+%% Generate a subplot for the stimulation pulse
+ax2 = subplot(3, 1, 3); hold on;
+
+% Plot the stimulation pulse
 plot(tVec, stimVec);
+
+% Update x-axis limits
 xlim(xLimits);    
+
+% Generate a y-axis label
 ylabel(labels{2});
+
+% Generate an x-axis label
 xlabel('Time (ms)');
+
+% Generate a title for the stimulation pulse
 title(['Stimulus for ', fileBase], 'Interpreter', 'none');
 
-% Link the axes
+%% Finish up figure
+% Link the axes on the subplots
 linkaxes([ax1, ax2], 'x');
 
-% Save and close figure
+%% Save and close figure
 if saveFlag
     save_all_figtypes(h, figName, figTypes);
     close(h)
@@ -198,6 +240,13 @@ end
 
 %{
 OLD CODE:
+
+yLimitsResp = get(gca, 'YLim');
+
+pos = get(gca, 'Position');
+annotation('doublearrow', pos(1) + pos(3) * timePeakRel * ones(1, 2), ...
+            pos(2) + pos(4) * ([baseValue, peakValue] - yLimitsResp(1)) / yRangeResp, ...
+            'Color', colorAnnotations);
 
 %}
 

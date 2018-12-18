@@ -27,7 +27,11 @@ function [parsedParams, parsedData] = ...
 %                           steadyAmplitude
 %                           minValue
 %                           maxValue
-%                           idxPeakSearchBegin
+%                           minValueAfterMinDelay
+%                           idxMinValueAfterMinDelay
+%                           maxValueAfterMinDelay
+%                           idxMaxValueAfterMinDelay
+%                           idxMinPeakTime
 %                           idxPeak
 %                           peakValue
 %                           peakAmplitude
@@ -69,8 +73,12 @@ function [parsedParams, parsedData] = ...
 %                   default == 0 ms
 %
 % Requires:
+%       cd/argfun.m
+%       cd/convert_to_samples.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
+%       cd/extract_elements.m
+%       cd/extract_subvectors.m
 %       cd/find_pulse_response_endpoints.m
 %       cd/force_column_cell.m
 %       cd/iscellnumeric.m
@@ -151,50 +159,54 @@ nSamples = count_samples(vectors);
 % Count the number of vectors
 nVectors = count_vectors(vectors);
 
-% Make sure siMs is a column vector
-siMs = match_dimensions(siMs, [nVectors, 1]);
-
 % Convert time parameters to samples
-meanValueWindowSamples = round(meanValueWindowMs ./ siMs);
-minPeakDelaySamples = round(minPeakDelayMs ./ siMs);
+[meanValueWindowSamples, minPeakDelaySamples] = ...
+    argfun(@(x) convert_to_samples(x, siMs), meanValueWindowMs, minPeakDelayMs);
+
+% Make sure parameters are column vectors
+[siMs, meanValueWindowSamples, minPeakDelaySamples] = ...
+    argfun(@(x) match_dimensions(x, [nVectors, 1]), ...
+            siMs, meanValueWindowSamples, minPeakDelaySamples);
 
 % For clarity, define a column vector of ones
 allOnes = ones(nVectors, 1);
 
 %% Do the job
+% If not empty, parse the pulse vectors with a given sampling interval
+if ~isempty(pulseVectors)
+    [pulseParams, pulseData] = parse_pulse(pulseVectors, 'SiMs', siMs);
+end
+
 % Find indices for all the pulse response endpoints
 [idxResponseStart, idxResponseEnd, hasJump, idxPulseStart, idxPulseEnd] = ...
     find_pulse_response_endpoints(vectors, siMs, ...
-                                    'PulseVectors', pulseVectors, ...
-                                    'SameAsPulse', sameAsPulse, ...
-                                    'ResponseLengthMs', 0, ...
-                                    'BaselineLengthMs', 0);
+        'PulseVectors', pulseVectors, 'SameAsPulse', sameAsPulse, ...
+        'ResponseLengthMs', 0, 'BaselineLengthMs', 0);
 
 % Find indices for all the pulse response midpoints
 idxResponseMid = round((idxResponseStart + idxResponseEnd) ./ 2);
 
-% Find all pulse widths in samples
+% Find all response widths in samples
 responseWidthSamples = idxResponseEnd - idxResponseStart;
 
-% Convert pulse widths to milliseconds
+% Convert response widths to milliseconds
 responseWidthMs = responseWidthSamples .* siMs;
 
 % Compute the endpoints of the baseline
 %   Note: this cannot be smaller than 1
-idxBaseStart = max([allOnes, idxResponseStart - meanValueWindowSamples], [], 2);
-idxBaseEnd = idxResponseStart - 1;
+[idxBaseStart, idxBaseEnd] = ...
+    argfun(@(x) max([allOnes, idxResponseStart - x], [], 2), ...
+            meanValueWindowSamples, 1);
 
 % Compute the endpoints of the steady state
 %   Note: this cannot be smaller than idxResponseStart
-% TODO: Use argfun.m
 allRespStart = idxResponseStart .* allOnes;
-idxSteadyStartIdeal = idxResponseEnd - meanValueWindowSamples;
-idxSteadyEndIdeal = idxResponseEnd - 1;
-idxSteadyStart = max([allRespStart, idxSteadyStartIdeal], [], 2);
-idxSteadyEnd = max([allRespStart, idxSteadyStart], [], 2);
+[idxSteadyStart, idxSteadyEnd] = ...
+    argfun(@(x) max([allRespStart, idxResponseEnd - x], [], 2), ...
+            meanValueWindowSamples, 1);
 
 % Construct a vector that goes from -n:-1
-indBefore = (-1) * transpose(fliplr(1:meanValueWindowSamples));
+indBefore = transpose(-meanValueWindowSamples:-1);
 
 % Find the baseline indices using a window before response start
 indBase = arrayfun(@(x) x + indBefore, ...
@@ -209,7 +221,7 @@ indBase = cellfun(@(x) x(x >= 1), indBase, 'UniformOutput', false);
 indSteady = cellfun(@(x, y) x(x <= y), indSteady, num2cell(nSamples), ...
                     'UniformOutput', false);
 
-% TODO: Use argfun.m
+% TODO: Use argfun.m and compute_means.m
 % Find the average baseline value
 baseValue = cellfun(@(x, y) mean(x(y)), vectors, indBase);
 
@@ -220,36 +232,42 @@ steadyValue = cellfun(@(x, y) mean(x(y)), vectors, indSteady);
 steadyAmplitude = steadyValue - baseValue;
 
 % Find the minimum and maximum values
-% TODO: Use extract_elements(vectors, 'min', 'MaxNum', 1)
-% TODO: Use extract_elements(vectors, 'max', 'MaxNum', 1)
-minValue = cellfun(@min, vectors);
-maxValue = cellfun(@max, vectors);
+[minValue, maxValue] = argfun(@(x) extract_elements(vectors, x), 'min', 'max');
 
-% Find the index to begin searching for the peak
+% Find the index to begin searching for the peak (the minimum peak time)
 %   Note: this cannot be greater than nSamples
-idxPeakSearchBegin = arrayfun(@(x, y, z) min([x + y, z]), ...
+idxMinPeakTime = arrayfun(@(x, y, z) min([x + y, z]), ...
                                 idxPulseEnd, minPeakDelaySamples, nSamples);
 
-% Find the minimum and maximum values after the peak search begins
-% TODO: Use argfun.m
-[minValueAfterPulse, idxMinValueAfterPulseRel] = ...
-    cellfun(@(x, y) min(x(y:end)), vectors, num2cell(idxPeakSearchBegin));
-[maxValueAfterPulse, idxMaxValueAfterPulseRel] = ...
-    cellfun(@(x, y) max(x(y:end)), vectors, num2cell(idxPeakSearchBegin));
+% Find the endpoints for the peak search
+endPointsPeakSearch = [idxMinPeakTime, nSamples];
+
+% Extract the parts of the vector after the minimum peak time(s)
+vecsPeakSearch = extract_subvectors(vectors, 'Endpoints', endPointsPeakSearch);
+
+% Find the minimum and maximum values after the minimum peak time(s)\
+[minValueAfterMinDelay, idxMinValueAfterMinDelayRel] = ...
+    extract_elements(vecsPeakSearch, 'min');
+[maxValueAfterMinDelay, idxMaxValueAfterMinDelayRel] = ...
+    extract_elements(vecsPeakSearch, 'max');
 
 % Record the corresponding indices
-idxMinValueAfterPulse = idxMinValueAfterPulseRel + (idxPeakSearchBegin - 1);
-idxMaxValueAfterPulse = idxMaxValueAfterPulseRel + (idxPeakSearchBegin - 1);
+[idxMinValueAfterMinDelay, idxMaxValueAfterMinDelay] = ...
+    argfun(@(x) x + idxMinPeakTime - 1, ...
+            idxMinValueAfterMinDelayRel, idxMaxValueAfterMinDelayRel);
 
 % Find the peak values (the minimum or maximum value after pulse end 
 %   + minPeakDelaySamples with largest magnitude)
 [peakValue, idxPeak] = ...
     arrayfun(@(x, y, z, w) choose_peak_value(x, y, z, w), ...
-            minValueAfterPulse, maxValueAfterPulse, ...
-            idxMinValueAfterPulse, idxMaxValueAfterPulse);
+            minValueAfterMinDelay, maxValueAfterMinDelay, ...
+            idxMinValueAfterMinDelay, idxMaxValueAfterMinDelay);
 
 % Compute the relative peak amplitude
 peakAmplitude = peakValue - baseValue;
+
+% Compute the peak delay in samples
+peakDelaySamples = idxPeak - idxResponseEnd;
 
 % Find the indices for the rising and falling phases, respectively
 % TODO: Use argfun and make a function create_indices.m
@@ -274,7 +292,7 @@ baseValueCell = num2cell(baseValue);
 % Generate shifted rising/falling phase vectors so that time starts at zero
 %   and steady state value is zero
 % Note: This will make curve fitting easier
-% TODO: Use argfun
+% TODO: Use argfun.m and create_time_vectors.m
 tvecsRising = arrayfun(@(x, y) transpose((1:x) - 1) * y, ...
                         nSamplesRising, siMs, 'UniformOutput', false);
 vvecsRising = cellfun(@(x, y, z) x(y) - z, ...
@@ -295,7 +313,9 @@ vvecsCombined = cellfun(@(x, y, z) x(y) - z, ...
                         'UniformOutput', false);
 
 %% Store results in output
-parsedParams = table(nSamples, siMs, responseWidthSamples, responseWidthMs, ...
+% Put together the pulse response parameters
+parsedParams = table(siMs, meanValueWindowMs, minPeakDelayMs, ...
+                        nSamples, responseWidthSamples, responseWidthMs, ...
                         nSamplesRising, nSamplesFalling, nSamplesCombined, ...
                         idxResponseStart, idxResponseEnd, idxResponseMid, ...
                         idxPulseStart, idxPulseEnd, ...
@@ -303,32 +323,40 @@ parsedParams = table(nSamples, siMs, responseWidthSamples, responseWidthMs, ...
                         idxSteadyStart, idxSteadyEnd, ...
                         baseValue, steadyValue, steadyAmplitude, ...
                         minValue, maxValue, ...
-                        minValueAfterPulse, idxMinValueAfterPulse, ...
-                        maxValueAfterPulse, idxMaxValueAfterPulse, ...
-                        idxPeakSearchBegin, idxPeak, ...
+                        minValueAfterMinDelay, idxMinValueAfterMinDelay, ...
+                        maxValueAfterMinDelay, idxMaxValueAfterMinDelay, ...
+                        idxMinPeakTime, idxPeak, ...
                         peakValue, peakAmplitude, hasJump);
+
+% Put together the pulse response data
 parsedData = table(vectors, indBase, indSteady, ...
                     indRising, indFalling, indCombined, ...
                     tvecsRising, vvecsRising, tvecsFalling, vvecsFalling, ...
                     tvecsCombined, vvecsCombined);
 
+% Append pulse params and data to the table if provided
+if ~isempty(pulseVectors)
+    parsedParams = horzcat(parsedParams, pulseParams);
+    parsedData = horzcat(parsedData, pulseData);
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [peakValue, idxPeak] = ...
-                choose_peak_value (minValueAfterPulse, maxValueAfterPulse, ...
-                                idxMinValueAfterPulse, idxMaxValueAfterPulse)
+                choose_peak_value (minValueAfterMinDelay, maxValueAfterMinDelay, ...
+                                idxMinValueAfterMinDelay, idxMaxValueAfterMinDelay)
 %% Chooses the peak value from minimum and maximum
 
 % Find the larger magnitude of the two extrema
-[~, iPeak] = max(abs([minValueAfterPulse, maxValueAfterPulse]));
+[~, iPeak] = max(abs([minValueAfterMinDelay, maxValueAfterMinDelay]));
 
 % Get the actual index and value for the peak
 if iPeak == 1
-    idxPeak = idxMinValueAfterPulse;
-    peakValue = minValueAfterPulse;
+    idxPeak = idxMinValueAfterMinDelay;
+    peakValue = minValueAfterMinDelay;
 elseif iPeak == 2
-    idxPeak = idxMaxValueAfterPulse;
-    peakValue = maxValueAfterPulse;
+    idxPeak = idxMaxValueAfterMinDelay;
+    peakValue = maxValueAfterMinDelay;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -345,11 +373,36 @@ idxBaseStart = idxResponseStart - meanValueWindowSamples;
 idxSteadyStart = idxResponseEnd - meanValueWindowSamples;
 
 % Find the index for each vector after pulse ends
-idxAfterPulseEnd = arrayfun(@(x, y) min([x + 1, y]), idxPulseEnd, nSamples);
+idxAfterMinDelayEnd = arrayfun(@(x, y) min([x + 1, y]), idxPulseEnd, nSamples);
 
 nSamplesRising = count_samples(indRising);
 nSamplesFalling = count_samples(indFalling);
 nSamplesCombined = count_samples(indCombined);
+
+siMs = match_dimensions(siMs, [nVectors, 1]);
+
+meanValueWindowSamples = round(meanValueWindowMs ./ siMs);
+minPeakDelaySamples = round(minPeakDelayMs ./ siMs);
+
+indBefore = (-1) * transpose(fliplr(1:meanValueWindowSamples));
+
+minValue = cellfun(@min, vectors);
+maxValue = cellfun(@max, vectors);
+
+idxBaseStart = max([allOnes, idxResponseStart - meanValueWindowSamples], [], 2);
+idxBaseEnd = max([allOnes, idxResponseStart - 1], [], 2);
+idxSteadyStartIdeal = idxResponseEnd - meanValueWindowSamples;
+idxSteadyEndIdeal = idxResponseEnd - 1;
+idxSteadyStart = max([allRespStart, idxSteadyStartIdeal], [], 2);
+idxSteadyEnd = max([allRespStart, idxSteadyEndIdeal], [], 2);
+
+idxMinValueAfterMinDelay = idxMinValueAfterMinDelayRel + (idxMinPeakTime - 1);
+idxMaxValueAfterMinDelay = idxMaxValueAfterMinDelayRel + (idxMinPeakTime - 1);
+
+[minValueAfterMinDelay, idxMinValueAfterMinDelayRel] = ...
+    cellfun(@(x, y) min(x(y:end)), vectors, num2cell(idxMinPeakTime));
+[maxValueAfterMinDelay, idxMaxValueAfterMinDelayRel] = ...
+    cellfun(@(x, y) max(x(y:end)), vectors, num2cell(idxMinPeakTime));
 
 %}
 

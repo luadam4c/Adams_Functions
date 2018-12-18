@@ -1,12 +1,15 @@
-function elements = extract_elements (vecs, extractMode, varargin)
+function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %% Extracts elements from vectors using a certain mode ('first', 'last', 'min', 'max')
-% Usage: elements = extract_elements (vecs, extractMode, varargin)
+% Usage: [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
 %       elements    - element(s) from each vector extracted
+%                   specified as a numeric vector 
+%                       or a cell array of column numeric vectors
+%       idxElement  - indices(s) of elements extracted
 %                   specified as a numeric vector 
 %                       or a cell array of column numeric vectors
 % Arguments:
@@ -24,10 +27,12 @@ function elements = extract_elements (vecs, extractMode, varargin)
 %
 % Used by:
 %       cd/create_average_time_vector.m
+%       cd/parse_pulse_response.m
 %       cd/plot_protocols.m
 
 % File History:
 % 2018-12-15 Created by Adam Lu
+% 2018-12-17 Now returns idxElement as well
 % TODO: Add 'MaxNum' as an optional argument with default Inf
 % 
 
@@ -71,25 +76,29 @@ extractMode = validatestring(extractMode, validExtractModes);
 
 %% Do the job
 if iscell(vecs)
-    elements = cellfun(@(x) extract_element(x, extractMode), vecs);
+    [elements, idxElement] = ...
+        cellfun(@(x) extract_element(x, extractMode), vecs);
 else
-    elements = arrayfun(@(x) extract_element(vecs(:, x), extractMode), ...
-                        transpose(1:size(vecs, 2)));
+    [elements, idxElement] = ...
+        arrayfun(@(x) extract_element(vecs(:, x), extractMode), ...
+                transpose(1:size(vecs, 2)));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function element = extract_element (x, extractMode)
+function [element, idxElement] = extract_element (x, extractMode)
 
 switch extractMode
     case 'first'
         element = x(1);
+        idxElement = 1;
     case 'last'
         element = x(end);
+        idxElement = length(x);
     case 'min'
-        element = min(x);
+        [element, idxElement] = min(x);
     case 'max'
-        element = max(x);
+        [element, idxElement] = max(x);
     otherwise
         error('Code logic error!!\n');
 end

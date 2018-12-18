@@ -8,11 +8,11 @@ function timeInSamples = ...
 % Example(s):
 %       TODO
 % Outputs:
-%       timeInSamples - time(s) in samples
+%       timeInSamples       - time(s) in samples
 %                           specified as a numeric vector
 % Arguments:
-%       timeLength    - time(s) in time units
-%                       must be a numeric vector
+%       timeLength          - time(s) in time units
+%                           must be a numeric vector
 %       samplingInterval    - sampling interval(s) in time units
 %                           must be a numeric vector
 %       varargin    - 'param1': TODO: Description of param1
@@ -21,6 +21,7 @@ function timeInSamples = ...
 %
 % Used by:
 %       cd/m3ha_import_raw_traces.m
+%       cd/parse_pulse_response.m
 
 % File History:
 % 2018-11-28 Created by Adam Lu

@@ -1,13 +1,15 @@
-function ylimits = compute_ylimits(minValue, maxValue, varargin)
+function [yLimits, yRange] = compute_ylimits (minValue, maxValue, varargin)
 %% Computes y-axis limits from a minimum and maximum value
-% Usage: ylimits = compute_ylimits(minValue, maxValue, varargin)
+% Usage: [yLimits, yRange] = compute_ylimits (minValue, maxValue, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       ylimits     - computed y axis limits
+%       yLimits     - computed y axis limits
 %                   specified as a 2-element numeric vector
+%       yRange      - computed y axis range
+%                   specified as a numeric scalar
 % Arguments:    
 %       minValue    - minimum value of important data
 %                   must be a numeric scalar
@@ -21,6 +23,7 @@ function ylimits = compute_ylimits(minValue, maxValue, varargin)
 %       cd/plot_cfit_pulse_response.m
 %       cd/plot_pulse.m
 %       cd/plot_pulse_response.m
+%       cd/plot_pulse_response_with_stimulus.m
 
 % File History:
 % 2018-10-12 Created by Adam Lu
@@ -67,7 +70,7 @@ end
 % Compute the range
 dataRange = maxValue - minValue;
 
-% Compute the ylimits range
+% Compute the yLimits range
 yRange = dataRange / (coverage / 100);
 
 % Compute the padding size
@@ -78,7 +81,7 @@ yLower = minValue - yPadSize;
 yUpper = maxValue + yPadSize;
 
 % Set the y axis limits
-ylimits = [yLower, yUpper];
+yLimits = [yLower, yUpper];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

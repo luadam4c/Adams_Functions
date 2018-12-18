@@ -39,6 +39,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/filter_and_extract_pulse_response.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_run_neuron_once.m
+%       cd/parse_pulse_response.m
 %       cd/plot_traces.m
 
 % File History:

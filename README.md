@@ -151,6 +151,7 @@ Last Updated 2018-12-17 by Adam Lu
 - [**isnumericvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/isnumericvector.m): Returns whether an input is a numeric vector (may be empty)
 - [**ispositiveintegerscalar.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositiveintegerscalar.m): Returns whether an input is a positive integer scalar
 - [**ispositiveintegervector.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositiveintegervector.m): Returns whether an input is a positive integer vector
+- [**ispositivevector.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositivevector.m): Returns whether an input is a positive vector
 - [**issheettype.m**](https://github.com/blabuva/Adams_Functions/blob/master/issheettype.m): Check whether a string or each string in a cell array is a valid spreadsheet type accepted by readtable()
 - [**istype.m**](https://github.com/blabuva/Adams_Functions/blob/master/istype.m): Check whether a string or each string in a cell array is a valid type specified by validTypes
 - [**load_examples.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_examples.m): Loads example data structures for testing

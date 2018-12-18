@@ -178,8 +178,10 @@ sweepName = create_labels_from_numbers(1:nVectors, 'Prefix', 'Swp', ...
 % Repeat the file names
 filePath = repmat({fileName}, [nVectors, 1]);
 
-% Insert before the first column of featuresAll the sweep name
+% Insert the sweep name before the first column of featuresAll
 featuresAll = addvars(featuresAll, sweepName, 'Before', 1);
+
+% Insert the file path before the sweep name of featuresAll
 featuresAll = addvars(featuresAll, filePath, 'Before', 1);
 
 %% Save the features table

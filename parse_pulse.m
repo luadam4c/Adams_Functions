@@ -28,15 +28,16 @@ function [parsedParams, parsedData] = parse_pulse (vectors, varargin)
 %                   Note: If a cell array, each element must be a vector
 %                         If an array, each column is a vector
 %                   must be a numeric array or a cell array of numeric vectors
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'SiMs': sampling interval(s) in ms
+%                   must be a positive vector
+%                   default == []
 %
 % Requires:
 %       cd/count_samples.m
 %       cd/find_pulse_endpoints.m
 %       cd/force_column_cell.m
 %       cd/iscellnumeric.m
+%       cd/ispositivevector.m
 %
 % Used by:    
 %       cd/find_passive_params.m
@@ -51,6 +52,7 @@ function [parsedParams, parsedData] = parse_pulse (vectors, varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
+siMsDefault = [];           % no time information by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -72,6 +74,8 @@ addRequired(iP, 'vectors', ...                   % vectors
                     'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'siMs', siMsDefault, ...
+    @(x) isempty(x) || ispositivevector(x));
 
 % Read from the Input Parser
 parse(iP, vectors, varargin{:});
