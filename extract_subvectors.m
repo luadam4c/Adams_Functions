@@ -33,9 +33,11 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                   default == []
 %
 % Requires:
+%       cd/argfun.m
 %       cd/create_error_for_nargin.m
 %       cd/create_indices.m
 %       cd/find_window_endpoints.m
+%       cd/force_column_numeric.m
 %
 % Used by:
 %       cd/compute_rms_error.m
@@ -121,6 +123,11 @@ if isempty(vecs)
     subVecs = vecs;
     return
 end
+
+% Force as column vectors
+[endPoints, windows] = ...
+    argfun(@(x) force_column_numeric(x, 'IgnoreNonVectors', true), ...
+            endPoints, windows);
 
 % Find end points if not provided
 % TODO: check if vecs are nondecreasing

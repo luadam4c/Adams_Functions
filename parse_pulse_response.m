@@ -10,6 +10,11 @@ function [parsedParams, parsedData] = ...
 % Outputs:
 %       parsedParams    - a table containing the parsed parameters, 
 %                           each row corresponding to a vector, with fields:
+%                           siMs
+%                           meanValueWindowMs
+%                           minPeakDelayMs
+%                           meanValueWindowSamples
+%                           minPeakDelaySamples
 %                           nSamples
 %                           responseWidthSamples
 %                           responseWidthMs
@@ -35,6 +40,8 @@ function [parsedParams, parsedData] = ...
 %                           idxPeak
 %                           peakValue
 %                           peakAmplitude
+%                           peakDelaySamples
+%                           peakDelayMs
 %                           hasJump
 %                           siMs
 %                       specified as a table
@@ -86,6 +93,7 @@ function [parsedParams, parsedData] = ...
 %       cd/convert_to_samples.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
+%       cd/create_error_for_nargin.m
 %       cd/create_indices.m
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
@@ -138,8 +146,7 @@ baselineLengthMsDefault = 0;    % don't include a baseline by default
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 2
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
@@ -194,9 +201,11 @@ nVectors = count_vectors(vectors);
     argfun(@(x) convert_to_samples(x, siMs), meanValueWindowMs, minPeakDelayMs);
 
 % Make sure parameters are column vectors
-[siMs, meanValueWindowSamples, minPeakDelaySamples] = ...
+[siMs, meanValueWindowMs, minPeakDelayMs, ...
+    meanValueWindowSamples, minPeakDelaySamples] = ...
     argfun(@(x) match_dimensions(x, [nVectors, 1]), ...
-            siMs, meanValueWindowSamples, minPeakDelaySamples);
+            siMs, meanValueWindowMs, minPeakDelayMs, ...
+            meanValueWindowSamples, minPeakDelaySamples);
 
 % For clarity, define a column vector of ones
 allOnes = ones(nVectors, 1);
@@ -279,7 +288,7 @@ idxMinPeakTime = arrayfun(@(x, y, z) min([x + y, z]), ...
                             idxBeforePulseEnd, minPeakDelaySamples, nSamples);
 
 % Find the endpoints for the peak search
-endPointsPeakSearch = [idxMinPeakTime, nSamples];
+endPointsPeakSearch = transpose([idxMinPeakTime, nSamples]);
 
 % Extract the parts of the vector after the minimum peak time(s)
 vecsPeakSearch = extract_subvectors(vectors, 'Endpoints', endPointsPeakSearch);
@@ -309,7 +318,8 @@ peakAmplitude = peakValue - baseValue;
 peakDelaySamples = idxPeak - idxBeforePulseEnd;
 
 % Compute the peak delay (pulse end to peak) in ms
-peakDelayMs = peakDelaySamples * siMs;
+% Use convert_to_time.m
+peakDelayMs = peakDelaySamples .* siMs;
 
 % Find the endpoint for the different phases
 endPointsRising = transpose([idxResponseStart, idxResponseEnd]);
@@ -355,6 +365,7 @@ vvecsCombined = cellfun(@(x, y, z) x(y) - z, ...
 %% Store results in output
 % Put together the pulse response parameters
 parsedParams = table(siMs, meanValueWindowMs, minPeakDelayMs, ...
+                        meanValueWindowSamples, minPeakDelaySamples, ...
                         nSamples, responseWidthSamples, responseWidthMs, ...
                         nSamplesRising, nSamplesFalling, nSamplesCombined, ...
                         idxResponseStart, idxResponseEnd, idxResponseMid, ...

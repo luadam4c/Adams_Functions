@@ -19,6 +19,9 @@ function [yLimits, yRange] = compute_ylimits (minValue, maxValue, varargin)
 %                   must be a numeric scalar between 0 and 100
 %                   default == 80%
 %
+% Requires:
+%       cd/create_error_for_nargin.m
+%
 % Used by:
 %       cd/plot_cfit_pulse_response.m
 %       cd/plot_pulse.m
@@ -39,8 +42,7 @@ coverageDefault = 80;           % data has 80% coverage of y axis by default
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 2
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme

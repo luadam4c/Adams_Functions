@@ -23,6 +23,9 @@ function [fitResults] = parse_fitObject (fitObject, varargin)
 %                   must be a TODO
 %                   default == TODO
 %
+% Requires:
+%       cd/create_error_for_nargin.m
+%
 % Used by:    
 %       cd/fit_2exp.m
 
@@ -41,8 +44,7 @@ nSigFig = 2;    % maximum number of significant figures in the equation string
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme

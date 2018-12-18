@@ -69,6 +69,7 @@ function [fitResults, fitObject, goodnessOfFit, algorithmInfo] = ...
 %                   default == [0, Inf]
 %
 % Requires:
+%       cd/create_error_for_nargin.m
 %       cd/fit_2exp.m
 %
 % Used by:    
@@ -102,8 +103,7 @@ tau2RangeDefault = [0, Inf];
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 3
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme

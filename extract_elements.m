@@ -27,6 +27,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %
 % Used by:
 %       cd/create_average_time_vector.m
+%       cd/create_error_for_nargin.m
 %       cd/create_indices.m
 %       cd/parse_pulse_response.m
 %       cd/plot_protocols.m
@@ -48,8 +49,7 @@ validExtractModes = {'first', 'last', 'min', 'max'};
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 2
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
