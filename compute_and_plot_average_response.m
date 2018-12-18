@@ -62,7 +62,10 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg, h] = ...
 %                   - 'PlotFlag': whether to plot the pulse train series
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
-%                   - 'SaveFlag': whether to save the pulse train series
+%                   - 'SavePlotsFlag': whether to save plots
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'SaveTablesFlag': whether to save tables
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %                   - 'ChannelTypes': the channel types
@@ -107,7 +110,8 @@ outFolderNameDefault = 'Pulse_Response';
 fileSuffixDefault = '_pulse_response';
 responseNameDefault = 'Pulse Response';
 plotFlagDefault = true;         % plot the evoked LFP with stim by default
-saveFlagDefault = true;         % save the pulse train series by default
+savePlotsFlagDefault = true;    % save all plots by default
+saveTablesFlagDefault = true;   % save all tables by default
 figTypesDefault = 'png';        % default figure type(s) for saving
 channelTypesDefault = {};       % set later
 channelUnitsDefault = {};       % set later
@@ -153,7 +157,9 @@ addParameter(iP, 'ResponseName', responseNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'PlotFlag', plotFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'SaveFlag', saveFlagDefault, ...
+addParameter(iP, 'SavePlotsFlag', savePlotsFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveTablesFlag', saveTablesFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
@@ -179,7 +185,8 @@ outFolderName = iP.Results.OutFolderName;
 fileSuffix = iP.Results.FileSuffix;
 responseName = iP.Results.ResponseName;
 plotFlag = iP.Results.PlotFlag;
-saveFlag = iP.Results.SaveFlag;
+savePlotsFlag = iP.Results.SavePlotsFlag;
+saveTablesFlag = iP.Results.SaveTablesFlag;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 channelTypes = iP.Results.ChannelTypes;
 channelUnits = iP.Results.ChannelUnits;
@@ -208,14 +215,15 @@ end
         'LowPassFrequency', lowPassFrequency, ...
         'BaselineLengthMs', baselineLengthMs, ...
         'ResponseLengthMs', responseLengthMs, ...
-        'MinPeakDelayMs', minPeakDelayMs);
+        'MinPeakDelayMs', minPeakDelayMs, ...
+        'SaveFlag', saveTablesFlag);
 
 %% Plot the evoked local field potential with the stimulation pulse
 if plotFlag
     % Save in a single params structure
     params = table2struct(featuresAvg);
     params.OutFolder = outFolder;
-    params.SaveFlag = saveFlag;
+    params.SaveFlag = savePlotsFlag;
     params.FigTypes = figTypes;
     params.FileBase = fileBase;
     params.FileSuffix = fileSuffix;

@@ -71,7 +71,7 @@ outFolderDefault = pwd;         % save in present working directory by default
 fileBaseDefault = 'Unnamed';
 fileSuffixDefault = '_pulse_response';
 responseNameDefault = 'Pulse Response';
-saveFlagDefault = true;         % save the pulse train series by default
+saveFlagDefault = true;         % save the plot by default
 figTypesDefault = 'png';        % default figure type(s) for saving
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

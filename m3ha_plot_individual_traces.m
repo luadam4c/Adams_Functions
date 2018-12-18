@@ -83,6 +83,7 @@ function hfig = m3ha_plot_individual_traces (tVecs, data, varargin)
 %
 % Used by:    
 %       cd/m3ha_run_neuron_once.m
+%       cd/m3ha_xolotl_plot.m
 
 % File History:
 % 2018-10-29 Created by Adam Lu
@@ -92,6 +93,9 @@ function hfig = m3ha_plot_individual_traces (tVecs, data, varargin)
 maxNTracesForAnnotations = 8;
 nSigFig = 3;
 fontSize = 8;
+plotMode = 'parallel';
+% linkAxesOption = 'xy';
+linkAxesOption = 'x';
 
 %% Default values for optional arguments
 dataToCompareDefault = [];      % no data to compare against by default
@@ -251,7 +255,7 @@ clf(hfig);
 [hfig, subPlots] = plot_traces(tVecs, data, 'DataToCompare', dataToCompare, ...
                         'ColorMap', colorMap, 'XLimits', xLimits, ...
                         'YLabel', 'suppress', 'LegendLocation', 'suppress', ...
-                        'PlotMode', 'parallel', 'LinkAxesOption', 'xy');
+                        'PlotMode', plotMode, 'LinkAxesOption', linkAxesOption);
 
 % Plot annotations
 for iSwp = 1:nSweeps
@@ -297,7 +301,9 @@ suptitle(figTitle);
 
 %% Output results
 % Save figure
-save_all_figtypes(hfig, figName);
+if ~isempty(figName)
+    save_all_figtypes(hfig, figName);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

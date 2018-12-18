@@ -2,6 +2,7 @@
 %% Tests xolotl
 %
 % Requires:
+% TODO
 %       cd/m3ha_xolotl_create_neuron.m
 %       cd/xolotl_add_current_pulse.m
 %       cd/xolotl_add_holding_current.m
@@ -13,8 +14,12 @@
 % 2018-12-13 Added voltage clamp
 
 % Hard-coded parameters
-neuronParamsFile = fullfile('/media/adamX/m3ha/optimizer4gabab', ...
-                            'initial_params/initial_params_D091710.csv');
+projectDir = '/media/adamX/m3ha';
+realDataDir = fullfile(projectDir, 'data_dclamp');
+matFilesDir = fullfile(realDataDir, 'take4/matfiles');
+matFile = fullfile(matFilesDir, 'D091710_0012_15');
+simDir = fullfile(projectDir, 'optimizer4gabab');
+neuronParamsFile = fullfile(simDir, 'initial_params/initial_params_D091710.csv');
 closedLoop = false;     % whether to use the final state as the initial
                         %   condition for the next simulation
 solverOrder = 0;        % uses the implicit Crank-Nicholson scheme
@@ -24,14 +29,61 @@ timeStep = 0.1;         % output time step in ms
 simTimeStep = 0.1;      % simulation time step in ms
 
 compToPatch = 'soma';   % compartment to be patched
-holdingPotential = -65; % holding potential in mV
+holdingPotential = -60; % holding potential in mV
 timeToStabilize = 1000; % time for state variables to stabilize in ms
+
+% TODO
+cprWindow = [0, 350];
 timeEndCpr = 1350;      % simulation end time in ms for current pulse response
+
 cpDelay = 1100;         % current pulse delay in ms
 cpDuration = 10;        % current pulse duration in ms
 cpAmplitude = -0.050;   % current pulse amplitude in nA
+xLimits = [1000, 1250];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Import data to compare against
+% TODO: Make this () its own function
+%   [realVoltageData, realStimPulse] = m3ha_load_single_sweep(matFile)
+
+% Open the matfile
+m = matfile(matFile);
+
+% Use the original, non-filtered traces
+dataOrig = m.d_orig;
+
+% Extract original data vectors
+[tvecOrig, ivecOrig, vvecOrig] = extract_columns(dataOrig, [1, 3, 4]);
+
+% Convert to nA TODO
+ivecOrig = ivecOrig/1000;
+
+% Compute the sampling intervals in ms
+siMsOrig = compute_sampling_interval(tvecOrig);
+
+% Convert times to samples
+[nSamplesToPadForStabilization] = ...
+    argfun(@(x) convert_to_samples(x, siMsOrig), timeToStabilize);
+
+% Find the time to stabilize
+endPointsCpr = find_window_endpoints(cprWindow, tvecOrig);
+
+% Extract the current pulse response window
+[vvecCpr, ivecCpr] = ...
+    argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsCpr), ...
+            vvecOrig, ivecOrig);
+
+% Construct 
+vvecToPadCpr = ones(nSamplesToPadForStabilization, 1) * holdingPotential;
+ivecToPadCpr = zeros(nSamplesToPadForStabilization, 1);
+
+% Extract needed data
+realVoltageData = [vvecToPadCpr; vvecCpr];
+realStimPulse = [ivecToPadCpr; ivecCpr];
+
+% Put together as data to compare
+dataToCompare = [realVoltageData, realVoltageData, realVoltageData, realStimPulse];
 
 %% Preparation
 % Create a xolotl object based on a parameters file
@@ -48,7 +100,8 @@ m3ha = xolotl_set_simparams(m3ha, 'ClosedLoop', closedLoop, ...
 %                                     'CompToPatch', compToPatch, ...
 %                                     'TimeToStabilize', timeToStabilize);
 % holdingCurrent = 0.0743;
-holdingCurrent = 0;
+holdingCurrent = 0.1125;
+% holdingCurrent = 0;
 
 %% Simulate the current pulse protocol
 % Set simulation parameters for current pulse response
@@ -67,11 +120,9 @@ m3ha = xolotl_add_current_pulse(m3ha, 'Compartment', compToPatch, ...
 % Simulate and plot
 % m3ha.plot;
 
-% Simulate only
-% vVecs = m3ha.integrate;
-
-% Plot
-% m3ha = m3ha_xolotl_plot(m3ha, vVecs);
+% Simulate and plot against data
+m3ha = m3ha_xolotl_plot(m3ha, 'DataToCompare', dataToCompare, ...
+                        'XLimits', xLimits);
 
 % Save the xolotl object
 % xolotl_save(m3ha, fileName);

@@ -59,6 +59,9 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg] = ...
 %                   - 'ParsedData': parsed data returned by parse_abf.m
 %                   must be a scalar structure
 %                   default == what the file provides
+%                   - 'SaveFlag': whether to save the pulse train series
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %
 % Requires:
 %       cd/argfun.m
@@ -74,6 +77,7 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg] = ...
 % 2018-12-15 Moved from compute_and_plot_evoked_LFP.m
 % 2018-12-15 Made baselineLengthMs and responseLengthMs optional parameters
 % 2018-12-15 Now lowpass filters each trace first
+% TODO: save table if SaveFlag is true
 % 
 
 %% Hard-coded parameters
@@ -89,6 +93,7 @@ channelUnitsDefault = {};       % set later
 channelLabelsDefault = {};      % set later
 parsedParamsDefault = [];       % set later
 parsedDataDefault = [];         % set later
+saveFlagDefault = true;         % save the pulse train series by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -128,11 +133,14 @@ addParameter(iP, 'ParsedParams', parsedParamsDefault, ...
     @(x) isempty(x) || isstruct(x));
 addParameter(iP, 'ParsedData', parsedDataDefault, ...
     @(x) isempty(x) || isstruct(x));
+addParameter(iP, 'SaveFlag', saveFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, fileName, responseType, varargin{:});
 baselineLengthMs = iP.Results.BaselineLengthMs;
 minPeakDelayMs = iP.Results.MinPeakDelayMs;
+saveFlag = iP.Results.SaveFlag;
 
 %% Filter and extract pulse response(s)
 [tVecsResponse, respVecsResponse, stimVecsResponse, labels] = ...
@@ -165,6 +173,9 @@ featuresAvg.labels = labels;
 
 % Use the file name as the row name
 featuresAvg.Properties.RowNames = {fileName};
+
+%% Save the features table
+% writetable(featuresAvg, sheetPath);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

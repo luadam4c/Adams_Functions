@@ -329,7 +329,7 @@ if iPeak == 1
 elseif iPeak == 2
     idxPeak = idxMaxValueAfterPulse;
     peakValue = maxValueAfterPulse;
-end    
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

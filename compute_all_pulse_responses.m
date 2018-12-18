@@ -64,6 +64,9 @@ function [tVecAll, respAll, stimAll, featuresAll] = ...
 %                   - 'ParsedData': parsed data returned by parse_abf.m
 %                   must be a scalar structure
 %                   default == what the file provides
+%                   - 'SaveFlag': whether to save the pulse train series
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %
 % Requires:
 %       cd/compute_sampling_interval.m
@@ -77,6 +80,7 @@ function [tVecAll, respAll, stimAll, featuresAll] = ...
 % File History:
 % 2018-12-15 Modified from compute_average_pulse_response.m
 % 2018-12-17 Now uses create_labels_from_numbers.m
+% TODO: save table if SaveFlag is true
 % 
 
 %% Hard-coded parameters
@@ -93,6 +97,7 @@ channelUnitsDefault = {};       % set later
 channelLabelsDefault = {};      % set later
 parsedParamsDefault = [];       % set later
 parsedDataDefault = [];         % set later
+saveFlagDefault = true;         % save the pulse train series by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -134,12 +139,15 @@ addParameter(iP, 'ParsedParams', parsedParamsDefault, ...
     @(x) isempty(x) || isstruct(x));
 addParameter(iP, 'ParsedData', parsedDataDefault, ...
     @(x) isempty(x) || isstruct(x));
+addParameter(iP, 'SaveFlag', saveFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, fileName, responseType, varargin{:});
 minRowNumber = iP.Results.MinRowNumber;
 baselineLengthMs = iP.Results.BaselineLengthMs;
 minPeakDelayMs = iP.Results.MinPeakDelayMs;
+saveFlag = iP.Results.SaveFlag;
 
 %% Filter and extract pulse response(s)
 [tVecAll, respAll, stimAll, labels] = ...
@@ -173,6 +181,9 @@ filePath = repmat({fileName}, [nVectors, 1]);
 % Insert before the first column of featuresAll the sweep name
 featuresAll = addvars(featuresAll, sweepName, 'Before', 1);
 featuresAll = addvars(featuresAll, filePath, 'Before', 1);
+
+%% Save the features table
+% writetable(featuresAll, sheetPath);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

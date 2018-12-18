@@ -47,6 +47,12 @@ function [featuresFileTable, featuresSweepTable] = ...
 %                   - 'Individually': whether sweeps are plotted individually
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'SavePlotsFlag': whether to save plots
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'SaveTablesFlag': whether to save tables
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'OutFolder': the name of the directory that 
 %                                       plots will be placed
 %                   must be a string scalar or a character vector
@@ -83,6 +89,7 @@ function [featuresFileTable, featuresSweepTable] = ...
 %                   
 % Requires:
 %       cd/all_files.m
+%       cd/argfun.m
 %       cd/compute_and_plot_average_response.m
 %       cd/compute_all_pulse_responses.m
 %       cd/count_vectors.m
@@ -98,13 +105,14 @@ function [featuresFileTable, featuresSweepTable] = ...
 
 % File History:
 % 2018-12-15 Created by Adam Lu
+% 2018-12-17 Added savePlotsFlag and saveTablesFlag
 % 
 
 %% TODO: Make these parameters
 plotSeparateFlag = true;
 plotAltogetherFlag = true;
 plotAverageFlag = true;
-saveFlag = true;
+savePlotsFlag = true;
 
 %% Hard-coded parameters
 validProtocolTypes = {'EvokedLFP', 'EvokedGABAB'};
@@ -127,6 +135,8 @@ useOriginalDefault = false;     % use identify_channels.m instead
 expModeDefault = 'patch';       % assume traces are patching data by default
 plotModeDefault = 'overlapped'; % plot traces overlapped by default
 individuallyDefault = false;    % plot all sweeps together by default
+savePlotsFlagDefault = true;    % save all plots by default
+saveTablesFlagDefault = true;   % save all tables by default
 outFolderDefault = '';          % set later
 timeUnitsDefault = '';          % set later
 channelTypesDefault = {};       % set later
@@ -168,6 +178,10 @@ addParameter(iP, 'PlotMode', plotModeDefault, ...
     @(x) any(validatestring(x, validPlotModes)));
 addParameter(iP, 'Individually', individuallyDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SavePlotsFlag', savePlotsFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveTablesFlag', saveTablesFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
@@ -194,6 +208,8 @@ useOriginal = iP.Results.UseOriginal;
 expMode = validatestring(iP.Results.ExpMode, validExpModes);
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
 individually = iP.Results.Individually;
+savePlotsFlag = iP.Results.SavePlotsFlag;
+saveTablesFlag = iP.Results.SaveTablesFlag;
 outFolder = iP.Results.OutFolder;
 timeUnits = iP.Results.TimeUnits;
 channelTypesUser = iP.Results.ChannelTypes;
@@ -325,8 +341,8 @@ parfor iFile = 1:nFiles
                 'MinPeakDelayMs', minPeakDelayMs, ...
                 'OutFolder', outFolderProtocol, ...
                 'FileSuffix', fileSuffix, 'ResponseName', responseName, ...
-                'PlotFlag', plotAverageFlag, 'SaveFlag', saveFlag, ...
-                'FigTypes', figTypes, ...
+                'PlotFlag', plotAverageFlag, 'SavePlotsFlag', savePlotsFlag, ...
+                'SaveTablesFlag', saveTablesFlag, 'FigTypes', figTypes, ...
                 'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
                 'ChannelLabels', channelLabels, ...
                 'ParsedParams', abfParams, 'ParsedData', abfData);
@@ -338,6 +354,7 @@ parfor iFile = 1:nFiles
                 'BaselineLengthMs', baselineLengthMs, ...
                 'ResponseLengthMs', responseLengthMs, ...
                 'MinPeakDelayMs', minPeakDelayMs, ...
+                'SaveFlag', saveTablesFlag, ...
                 'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
                 'ChannelLabels', channelLabels, ...
                 'ParsedParams', abfParams, 'ParsedData', abfData);
@@ -346,7 +363,7 @@ parfor iFile = 1:nFiles
         if plotSeparateFlag
             plot_all_pulse_response_with_stimulus(fileName, ...
                             tVecAll, respAll, stimAll, featuresAll, ...
-                            fileSuffix, responseName, saveFlag, figTypes)
+                            fileSuffix, responseName, savePlotsFlag, figTypes)
         end
 
         % Plot individual protocol traces, stimulus and response separate
@@ -354,8 +371,8 @@ parfor iFile = 1:nFiles
         %           be plotted in subdirectories
         if plotAltogetherFlag
             % Set the time endpoints for individual protocol traces
-            timeStart = extract_elements(tVecAll, 'first');
-            timeEnd = extract_elements(tVecAll, 'last');
+            [timeStart, timeEnd] = ...
+                argfun(@(x), extract_elements(tVecAll, x), 'first', 'last');
 
             % Plot individual traces
             plot_traces_abf(fileName, ...
@@ -397,7 +414,6 @@ featuresFilePath = fullfile(outFolder, [outFolderName, '_', ...
                         outFolderProtocolName, '_', featuresFileSheetName]);
 featuresSweepPath = fullfile(outFolder, [outFolderName, '_', ...
                         outFolderProtocolName, '_', featuresSweepSheetName]);
-
 
 % If any features were computed, 
 %   plot each column of the feature table as its own time series
@@ -457,7 +473,7 @@ plot_fields(fileStruct, 'OutFolder', outFolder, ...
 
 function plot_all_pulse_response_with_stimulus(fileName, ...
                 tVecAll, respAll, stimAll, featuresAll, ...
-                fileSuffix, responseName, saveFlag, figTypes)
+                fileSuffix, responseName, savePlotsFlag, figTypes)
 %% Plots all pulse response with stimulus figures
 % TODO: Pull out to its own function and make all arguments except file name optional
 
@@ -479,8 +495,8 @@ parfor iVec = 1:nVectors
     % Save in a single params structure
     params = table2struct(featuresAll(iVec, :));
     params.OutFolder = outFolder;
-    params.SaveFlag = saveFlag;
-    params.FigTypes = 'png'; % figTypes TODO: specific figTypes
+    params.SaveFlag = savePlotsFlag;
+    params.FigTypes = 'png';    % figTypes TODO: specific figTypes
     params.FileBase = newFileBases{iVec};
     params.FileSuffix = fileSuffix;
     params.ResponseName = responseName;
@@ -501,7 +517,7 @@ OLD CODE:
         'ParsedParams', abfParams, 'ParsedData', abfData, ...                
         'ChannelTypes', channelTypes, 'ChannelUnits', channelUnits, ...
         'ChannelLabels', channelLabels, 'OutFolder', outFolderProtocol, ...
-        'PlotFlag', true, 'SaveFlag', true);
+        'PlotFlag', true, 'SavePlotsFlag', true);
 
 % Use file names as row names
 featuresFileTable.Properties.RowNames = fileNamesProtocol;
@@ -523,6 +539,9 @@ timeEnd = cellfun(@max, tVecAll);
 nVectors = count_vectors(tVecAll);
 
 params.FileBase = [fileBase, '_Swp', num2str(iVec)];
+
+timeStart = extract_elements(tVecAll, 'first');
+timeEnd = extract_elements(tVecAll, 'last');
 
 %}
 

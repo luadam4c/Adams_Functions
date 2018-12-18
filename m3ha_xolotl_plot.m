@@ -11,25 +11,80 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 % Arguments:
 %       xolotlObject    - a created neuron with simulation parameters
 %                       must be a xolotl object
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'DataToCompare': data vector(s) to compare against
+%                   Note: If a cell array, each element must be a vector
+%                         If a non-vector array, each column is a vector
+%                   must be a numeric array or a cell array of numeric arrays
+%                   default == []
+%                   - 'XLimits': limits of x axis
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == [min(tVec), max(tVec)]
+%                   - 'ColorMap': a color map that also groups traces
+%                                   each set of traces will be on the same row
+%                                   if plot mode is 'parallel'
+%                   must be a numeric array with 3 columns
+%                   default == colormap(jet(nTraces))
+%                   - 'FigTitle': title for the figure
+%                   must be a string scalar or a character vector
+%                   default == ['Traces for ', figName]
+%                               or [yLabel, ' over time']
+%                   - 'FigNumber': figure number for creating figure
+%                   must be empty or a positive integer scalar
+%                   default == 104
+%                   - 'FigName': figure name for saving
+%                   must be a string scalar or a character vector
+%                   default == ''
+%                   - 'BaseWindow': baseline window for each trace
+%                   must be empty or a numeric vector with 2 elements,
+%                       or a numeric array with 2 rows
+%                       or a cell array of numeric vectors with 2 elements
+%                   default == first half of the trace
+%                   - 'FitWindow': time window to fit for each trace
+%                   must be a numeric vector with 2 elements,
+%                       or a numeric array with 2 rows
+%                       or a cell array of numeric vectors with 2 elements
+%                   default == second half of the trace
+%                   - 'BaseNoise': baseline noise value(s)
+%                   must be a numeric vector
+%                   default == apply compute_default_sweep_info.m
+%                   - 'SweepWeights': sweep weights for averaging
+%                   must be empty or a numeric vector with length == nSweeps
+%                   default == 1 ./ baseNoise
+%                   - 'SweepErrors': sweep errors
+%                   must be a numeric vector
+%                   default == apply compute_sweep_errors.m
+%                   - 'PlotSwpWeightsFlag': whether to plot sweep weights
+%                   must be numeric/logical 1 (true) or 0 (false) or 'auto'
+%                   default == 'auto'
 %
 % Requires:
 %       cd/count_samples.m
 %       cd/create_time_vectors.m
+%       cd/m3ha_plot_individual_traces.m
 %
 % Used by:
 %       cd/m3ha_xolotl_test.m
 
 % File History:
-% 201X-XX-XX Created by TODO or Adapted from TODO
+% 2018-12-17 Created by Adam Lu
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-param1Default   = [];                   % default TODO: Description of param1
+dataToCompareDefault = [];      % no data to compare against by default
+xLimitsDefault = [];            % for current pulse
+colorMapDefault = [];           % set in m3ha_plot_individual_traces.m
+figTitleDefault = 'Simulation by xolotl';
+figNumberDefault = 104;         % set in m3ha_plot_individual_traces.m
+figNameDefault = '';            % don't save figure by default
+baseWindowDefault = [];         % set in m3ha_plot_individual_traces.m
+fitWindowDefault = [];          % set in m3ha_plot_individual_traces.m
+baseNoiseDefault = [];          % set in m3ha_plot_individual_traces.m
+sweepWeightsDefault = [];       % set in m3ha_plot_individual_traces.m
+sweepErrorsDefault = [];        % set in m3ha_plot_individual_traces.m
+plotSwpWeightsFlagDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -45,59 +100,103 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'xolotlObject', ...                  % TODO: Description of xolotlObject
-    % TODO: validation function %);
+addRequired(iP, 'xolotlObject');
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'param1', param1Default, ...
-    % TODO: validation function %);
+addParameter(iP, 'DataToCompare', dataToCompareDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['vec1s must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
+addParameter(iP, 'XLimits', xLimitsDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
+addParameter(iP, 'ColorMap', colorMapDefault, ...
+    @(x) isempty(x) || isnumeric(x) && size(x, 2) == 3);
+addParameter(iP, 'FigTitle', figTitleDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigNumber', figNumberDefault, ...
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                'FigNumber must be a empty or a positive integer scalar!'));
+addParameter(iP, 'FigName', figNameDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'BaseWindow', baseWindowDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['BaseWindow must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
+addParameter(iP, 'FitWindow', fitWindowDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['FitWindow must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
+addParameter(iP, 'BaseNoise', baseNoiseDefault, ...
+    @(x) assert(isnumericvector(x), 'BaseNoise must be a numeric vector!'));
+addParameter(iP, 'SweepWeights', sweepWeightsDefault, ...
+    @(x) assert(isnumericvector(x), 'SweepWeights must be a numeric vector!'));
+addParameter(iP, 'SweepErrors', sweepErrorsDefault, ...
+    @(x) assert(isnumericvector(x), 'SweepErrors must be a numeric vector!'));
+addParameter(iP, 'PlotSwpWeightsFlag', plotSwpWeightsFlagDefault, ...
+    @(x) assert(isbinaryscalar(x) || ischar(x) && strcmpi(x, 'auto'), ...
+                'PlotSwpWeightsFlag must be a binary scalar or ''auto''!'));
 
 % Read from the Input Parser
 parse(iP, xolotlObject, varargin{:});
-param1 = iP.Results.param1;
-
-% Check relationships between arguments
-% TODO
+dataToCompare = iP.Results.DataToCompare;
+xLimits = iP.Results.XLimits;
+colorMap = iP.Results.ColorMap;
+figTitle = iP.Results.FigTitle;
+figNumber = iP.Results.FigNumber;
+figName = iP.Results.FigName;
+baseWindow = iP.Results.BaseWindow;
+fitWindow = iP.Results.FitWindow;
+baseNoise = iP.Results.BaseNoise;
+sweepWeights = iP.Results.SweepWeights;
+sweepErrors = iP.Results.SweepErrors;
+plotSwpWeightsFlag = iP.Results.PlotSwpWeightsFlag;
 
 %% Preparation
-% TODO
+% Extract the time step in ms
+timeStep = xolotlObject.dt;
 
+% Save the stimulation pulse
+% TODO: Use Children to find the right column
+iStim = xolotlObject.I_ext(:, 3);
+
+%% Simulate
 % Get voltage traces for all compartments
 vVecs = xolotlObject.integrate;
 
+% Extract the voltage traces
+% TODO: Use Children to find the right column
+vVecDendrite1 = vVecs(:, 1);
+vVecDendrite2 = vVecs(:, 2);
+vVecSoma = vVecs(:, 3);
+
+% Place all traces into a data array
+data = [vVecDendrite2, vVecDendrite1, vVecSoma, iStim];
+
 %% Plot results
-% Get the number of samples
-nSamples = count_samples(vVecs);
+% Get the number of samples for each trace
+nSamples = count_samples(data);
 
 % Create a time vector in milliseconds
-tVec = create_time_vectors(nSamples, 'SamplingIntervalMs', timeStep, ...
+tVecs = create_time_vectors(nSamples, 'SamplingIntervalMs', timeStep, ...
                             'TimeUnits', 'ms');
 
-% Create figure
-figure('Outerposition', [300, 300, 1200, 600], ...
-        'PaperUnits', 'points', 'PaperSize', [1200, 600]);
-hold on
+% Plot the traces
+% TODO: Add 'DataToCompare'
+hfig = m3ha_plot_individual_traces(tVecs, data, ...
+                                'DataToCompare', dataToCompare, ...
+                                'XLimits', xLimits, ...
+                                'ColorMap', colorMap, ...
+                                'FigTitle', figTitle, ...
+                                'FigNumber', figNumber, ...
+                                'FigName', figName, ...
+                                'BaseWindow', baseWindow, ...
+                                'FitWindow', fitWindow, ...
+                                'BaseNoise', baseNoise, ...
+                                'SweepWeights', sweepWeights, ...
+                                'SweepErrors', sweepErrors, ...
+                                'PlotSwpWeightsFlag', plotSwpWeightsFlag);
 
-% Create first subplot
-subplot(3, 1, 1); hold on
-plot(tVec, vVecs(:, 1), 'k')
-xlabel('Time (s)')
-ylabel('Voltage in soma (mV)')
-set(gca, 'YLim', [-80 50])
-
-% Create second subplot
-subplot(3, 1, 2); hold on
-plot(tVec, vVecs(:, 2),'k')
-xlabel('Time (s)')
-ylabel('Voltage in dendrite 1 (mV)')
-set(gca, 'YLim', [-80 50])
-
-% Create third subplot
-subplot(3, 1, 3); hold on
-plot(tVec, vVecs(:, 3),'k')
-xlabel('Time (s)')
-ylabel('Voltage in dendrite 1 (mV)')
-set(gca, 'YLim', [-80 50])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -105,6 +204,51 @@ set(gca, 'YLim', [-80 50])
 OLD CODE:
 
 tVec = (1:length(vVecs)) * xolotlObject.dt * 1e-3;
+
+set(gca, 'YLim', [-80 50])
+
+nSamples = count_samples(vVecs);
+
+% Create figure
+figure('Outerposition', [300, 300, 1200, 600], ...
+        'PaperUnits', 'points', 'PaperSize', [1200, 600]);
+hold on
+
+% Create first subplot
+subplot(4, 1, 1); hold on
+plot(tVec, vVecDendrite2, 'r')
+ylabel('Voltage in dendrite 2 (mV)')
+set(gca, 'XLim', xLimits)
+
+% Create second subplot
+subplot(4, 1, 2); hold on
+plot(tVec, vVecDendrite1, 'r')
+ylabel('Voltage in dendrite 1 (mV)')
+set(gca, 'XLim', xLimits)
+
+% Create third subplot
+subplot(4, 1, 3); hold on
+plot(tVec, vVecSoma, 'r')
+ylabel('Voltage in soma (mV)')
+set(gca, 'XLim', xLimits)
+
+% Create fourth subplot
+subplot(4, 1, 4); hold on
+plot(tVec, iVec, 'r')
+xlabel('Time (s)')
+ylabel('Stimulation Pulse (nA)')
+set(gca, 'XLim', xLimits)
+
+xolotlObject.plot;
+
+subplot(3, 1, 1); hold on
+xlim(xLimits)
+
+subplot(3, 1, 2); hold on
+xlim(xLimits)
+
+subplot(3, 1, 3); hold on
+xlim(xLimits)
 
 %}
 
