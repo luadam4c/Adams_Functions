@@ -75,6 +75,11 @@ else
     indices = transpose(idxStart:idxEnd);
 end
 
+% Force as cell array output if requested
+if forceCellOutput && ~iscell(indices)
+    indices = {indices};
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
