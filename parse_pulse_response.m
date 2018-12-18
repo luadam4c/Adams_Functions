@@ -82,9 +82,11 @@ function [parsedParams, parsedData] = ...
 %
 % Requires:
 %       cd/argfun.m
+%       cd/compute_means.m
 %       cd/convert_to_samples.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
+%       cd/create_indices.m
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
 %       cd/find_pulse_response_endpoints.m
@@ -261,12 +263,9 @@ indBase = cellfun(@(x) x(x >= 1), indBase, 'UniformOutput', false);
 indSteady = cellfun(@(x, y) x(x <= y), indSteady, num2cell(nSamples), ...
                     'UniformOutput', false);
 
-% TODO: Use argfun.m and compute_means.m
-% Find the average baseline value
-baseValue = cellfun(@(x, y) mean(x(y)), vectors, indBase);
-
-% Find the average steady state value
-steadyValue = cellfun(@(x, y) mean(x(y)), vectors, indSteady);
+% Find the average baseline and steady state value
+[baseValue, steadyValue] = ...
+    argfun(@(x) compute_means(vectors, 'Indices', x), indBase, indSteady);
 
 % Find the steady state amplitudes
 steadyAmplitude = steadyValue - baseValue;
@@ -312,18 +311,16 @@ peakDelaySamples = idxPeak - idxBeforePulseEnd;
 % Compute the peak delay (pulse end to peak) in ms
 peakDelayMs = peakDelaySamples * siMs;
 
-% Find the indices for the rising and falling phases, respectively
+% Find the endpoint for the different phases
+endPointsRising = transpose([idxResponseStart, idxResponseEnd]);
+endPointsFalling = transpose([idxResponseEnd, nSamples]);
+endPointsCombined = transpose([idxResponseStart, nSamples]);
+
+% Construct the corresponding indices
 % TODO: Use argfun and make a function create_indices.m
-%   indices = create_indices(idxStart, idxEnd)
-indRising = arrayfun(@(x, y) transpose(x:y), ...
-                    idxResponseStart, idxResponseEnd, ...
-                    'UniformOutput', false);
-indFalling = arrayfun(@(x, y) transpose(x:y), ...
-                    idxResponseEnd, nSamples, ...
-                    'UniformOutput', false);
-indCombined = arrayfun(@(x, y) transpose(x:y), ...
-                    idxResponseStart, nSamples, ...
-                    'UniformOutput', false);
+[indRising, indFalling, indCombined] = ...
+    argfun(@create_indices, endPointsRising, ...
+            endPointsFalling, endPointsCombined);
 
 % Count the number of samples in the rising and falling phases, respectively
 [nSamplesRising, nSamplesFalling, nSamplesCombined] = ...
@@ -374,6 +371,7 @@ parsedParams = table(siMs, meanValueWindowMs, minPeakDelayMs, ...
 % Put together the pulse response data
 parsedData = table(vectors, indBase, indSteady, ...
                     indRising, indFalling, indCombined, ...
+                    vecsPeakSearch, ...
                     tvecsRising, vvecsRising, tvecsFalling, vvecsFalling, ...
                     tvecsCombined, vvecsCombined);
 
@@ -446,6 +444,21 @@ idxMaxValueAfterMinDelay = idxMaxValueAfterMinDelayRel + (idxMinPeakTime - 1);
     cellfun(@(x, y) min(x(y:end)), vectors, num2cell(idxMinPeakTime));
 [maxValueAfterMinDelay, idxMaxValueAfterMinDelayRel] = ...
     cellfun(@(x, y) max(x(y:end)), vectors, num2cell(idxMinPeakTime));
+
+% Find the average baseline value
+baseValue = cellfun(@(x, y) mean(x(y)), vectors, indBase);
+% Find the average steady state value
+steadyValue = cellfun(@(x, y) mean(x(y)), vectors, indSteady);
+
+indRising = arrayfun(@(x, y) transpose(x:y), ...
+                    idxResponseStart, idxResponseEnd, ...
+                    'UniformOutput', false);
+indFalling = arrayfun(@(x, y) transpose(x:y), ...
+                    idxResponseEnd, nSamples, ...
+                    'UniformOutput', false);
+indCombined = arrayfun(@(x, y) transpose(x:y), ...
+                    idxResponseStart, nSamples, ...
+                    'UniformOutput', false);
 
 %}
 

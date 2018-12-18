@@ -40,6 +40,7 @@ function [parsedParams, parsedData] = parse_pulse (vectors, varargin)
 %                   default == []
 %
 % Requires:
+%       cd/compute_means.m
 %       cd/count_samples.m
 %       cd/find_pulse_endpoints.m
 %       cd/force_column_cell.m
@@ -122,8 +123,7 @@ indPulse = arrayfun(@(x, y) find_pulse_indices(x, y), ...
                     'UniformOutput', false);
 
 % Find the average pulse value (could be NaN)
-%   TODO: use compute_means.m
-pulseValue = cellfun(@(x, y) mean(x(y)), vectors, indPulse);
+pulseValue = compute_means(vectors, 'Indices', indPulse);
 
 % Find the pulse amplitudes
 pulseAmplitude = pulseValue - baseValue;
@@ -139,9 +139,10 @@ parsedData = table(vectors, indBase, indPulse);
 % If siMs provided, add the corresponding times
 if ~isempty(siMs)
     % Compute the corresponding times
+    % TODO: Use convert_to_time.m
     [pulseWidthMs, timeBeforeStartMs, timeBeforeEndMs, ...
         timeAfterStartMs, timeAfterEndMs, timeMidpointMs] = ...
-        argfun(@(x) x * siMs, ...
+        argfun(@(x) x .* siMs, ...
             pulseWidthSamples, idxBeforeStart, idxBeforeEnd, ...
             idxAfterStart, idxAfterEnd, idxMidpoint);
 
@@ -185,6 +186,8 @@ end
 
 %{
 OLD CODE:
+
+pulseValue = cellfun(@(x, y) mean(x(y)), vectors, indPulse);
 
 %}
 

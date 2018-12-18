@@ -27,6 +27,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %
 % Used by:
 %       cd/create_average_time_vector.m
+%       cd/create_indices.m
 %       cd/parse_pulse_response.m
 %       cd/plot_protocols.m
 
@@ -76,9 +77,11 @@ extractMode = validatestring(extractMode, validExtractModes);
 
 %% Do the job
 if iscell(vecs)
+    % Do for all elements
     [elements, idxElement] = ...
         cellfun(@(x) extract_element(x, extractMode), vecs);
 else
+    % Do for all columns
     [elements, idxElement] = ...
         arrayfun(@(x) extract_element(vecs(:, x), extractMode), ...
                 transpose(1:size(vecs, 2)));

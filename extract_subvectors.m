@@ -4,9 +4,9 @@ function subVecs = extract_subvectors (vecs, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       subVecs1 = extract_subvectors({1:5, 2:6}, 'Endpoints', [1, 3])
-%       subVecs2 = extract_subvectors({1:5, 2:6}, 'Endpoints', {[1, 3], [2, 4]})
-%       subVecs3 = extract_subvectors(1:5, 'Endpoints', {[1, 3], [2, 4]})
+%       subVecs1 = extract_subvectors({1:5, 2:6}, 'EndPoints', [1, 3])
+%       subVecs2 = extract_subvectors({1:5, 2:6}, 'EndPoints', {[1, 3], [2, 4]})
+%       subVecs3 = extract_subvectors(1:5, 'EndPoints', {[1, 3], [2, 4]})
 %       subVecs4 = extract_subvectors({1:5, 2:6}, 'Windows', [2.5, 6.5])
 % Outputs:
 %       subVecs     - subvectors extracted
@@ -15,7 +15,12 @@ function subVecs = extract_subvectors (vecs, varargin)
 % Arguments:
 %       vecs        - vectors to extract
 %                   must be a numeric array or a cell array of numeric arrays
-%       varargin    - 'Endpoints': endpoints for the subvectors to extract 
+%       varargin    - 'Indices': indices for the subvectors to extract 
+%                   must be a numeric vector with 2 elements
+%                       or a numeric array with 2 rows
+%                       or a cell array of numeric vectors with 2 elements
+%                   default == create_indices(endPoints)
+%                   - 'EndPoints': endpoints for the subvectors to extract 
 %                   must be a numeric vector with 2 elements
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
@@ -28,7 +33,8 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                   default == []
 %
 % Requires:
-%       cd/isnumericvector.m
+%       cd/create_error_for_nargin.m
+%       cd/create_indices.m
 %       cd/find_window_endpoints.m
 %
 % Used by:
@@ -47,11 +53,14 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2018-10-29 Now returns empty if input is empty
 % 2018-12-07 Now allows vecs to be a numeric array
 % 2018-12-07 Now allows endPoints to be empty
+% 2018-12-17 Now allows subvectors to be extracted from arbitrary indices
+% TODO: check if all endpoints have 2 elements
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
+indicesDefault = [];            % set later
 endPointsDefault = [];          % set later
 windowsDefault = [];            % extract entire trace(s) by default
 
@@ -60,8 +69,7 @@ windowsDefault = [];            % extract entire trace(s) by default
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
@@ -75,9 +83,13 @@ addRequired(iP, 'vecs', ...                  % vectors to extract
                     'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'Indices', indicesDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['Indices must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
 addParameter(iP, 'EndPoints', endPointsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['Windows must be either a numeric array ', ...
+                ['EndPoints must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'Windows', windowsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
@@ -86,10 +98,17 @@ addParameter(iP, 'Windows', windowsDefault, ...
 
 % Read from the Input Parser
 parse(iP, vecs, varargin{:});
+indices = iP.Results.Indices;
 endPoints = iP.Results.EndPoints;
 windows = iP.Results.Windows;
 
-% If endPoints provided and windows also provided, display warning
+% If indices is provided and endPoints or windows is also provided, 
+%   display warning
+if ~isempty(indices) && (~isempty(endPoints) || ~isempty(windows))
+    fprintf('Windows will be ignored because end points are provided!\n');
+end
+
+% If endPoints is provided and windows is also provided, display warning
 if ~isempty(endPoints) && ~isempty(windows)
     fprintf('Windows will be ignored because end points are provided!\n');
 end
@@ -103,7 +122,7 @@ if isempty(vecs)
     return
 end
 
-% Find default end points if not provided
+% Find end points if not provided
 % TODO: check if vecs are nondecreasing
 if isempty(endPoints)
     % Extract the start and end indices of the vectors for fitting
@@ -112,32 +131,37 @@ if isempty(endPoints)
     endPoints = find_window_endpoints(windows, vecs);
 end
 
-% If one of endPoints and vecs is a cell function, match the formats of 
-%   endPoints and vecs so that cellfun can be used
-if iscell(endPoints) || iscell(vecs)
-    [endPoints, vecs] = ...
-        match_format_vector_sets(endPoints, vecs, 'ForceCellOutputs', true);
+% Create indices if not provided
+if isempty(indices)
+    indices = create_indices(endPoints);
+end
+
+% If one of indices and vecs is a cell function, match the formats of 
+%   indices and vecs so that cellfun can be used
+if iscell(indices) || iscell(vecs)
+    [indices, vecs] = ...
+        match_format_vector_sets(indices, vecs, 'ForceCellOutputs', true);
 end
 
 %% Do the job
 if iscell(vecs)
     subVecs = cellfun(@(x, y) extract_subvectors_helper(x, y), ...
-                        vecs, endPoints, 'UniformOutput', false);
+                        vecs, indices, 'UniformOutput', false);
 else
-    subVecs = extract_subvectors_helper(vecs, endPoints);
+    subVecs = extract_subvectors_helper(vecs, indices);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function subVec = extract_subvectors_helper (vec, endPoints)
+function subVec = extract_subvectors_helper (vec, indices)
 %% Extract a subvector from vector(s) if not empty
 
 % If the time window is out of range, or if the vector is empty, 
 %   return an empty vector
-if isempty(endPoints) || isempty(vec)
+if isempty(indices) || isempty(vec)
     subVec = [];
 else
-    subVec = vec(endPoints(1):endPoints(2), :);
+    subVec = vec(indices, :);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -153,6 +177,25 @@ addParameter(iP, 'EndPoints', endPointsDefault, ...
 [endPoints, vecs] = ...
     match_format_vector_sets(endPoints, vecs, 'ForceCellOutputs', false);
 
+% If one of endPoints and vecs is a cell function, match the formats of 
+%   endPoints and vecs so that cellfun can be used
+if iscell(endPoints) || iscell(vecs)
+    [endPoints, vecs] = ...
+        match_format_vector_sets(endPoints, vecs, 'ForceCellOutputs', true);
+end
+
+if iscell(vecs)
+    subVecs = cellfun(@(x, y) extract_subvectors_helper(x, y), ...
+                        vecs, endPoints, 'UniformOutput', false);
+else
+    subVecs = extract_subvectors_helper(vecs, endPoints);
+end
+
+if isempty(endPoints) || isempty(vec)
+    subVec = [];
+else
+    subVec = vec(endPoints(1):endPoints(2), :);
+end
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

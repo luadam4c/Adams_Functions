@@ -166,7 +166,8 @@ timeRange = right - left;
 % Compute the time of the peak relative to the minimum x value
 timePeakRel = (tVec(idxPeak) - left) / timeRange;
 
-% Compute the peak amplitude double array x and y values (normalized units)
+% Compute the peak amplitude double array x and y values 
+%   in normalized units relative to the subplot
 peakAmpXValues = timePeakRel * ones(1, 2);
 peakAmpYValues = ([baseValue, peakValue] - yLimitsResp(1)) / yRangeResp;
 
@@ -195,8 +196,14 @@ plot(tVec, respVec);
 xlim(xLimits);
 ylim(yLimitsResp);
 
+% Compute the peak amplitude double array x and y values 
+%   in normalized units relative to the figure
+pos = get(gca, 'Position');
+peakAmpXPositions = pos(1) + pos(3) * peakAmpXValues;
+peakAmpYPositions = pos(2) + pos(4) * peakAmpYValues;
+
 % Draw a doublearrow spanning the peak amplitude
-annotation('doublearrow', peakAmpXValues, peakAmpYValues, ...
+annotation('doublearrow', peakAmpXPositions, peakAmpYPositions, ...
             'Color', colorAnnotations);
 
 % Show a text for the value of the peak amplitude
