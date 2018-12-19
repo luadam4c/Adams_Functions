@@ -57,6 +57,7 @@ function h = plot_struct (structArray, varargin)
 %                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
+%       ~/Downloaded_Functions/rgb.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/force_column_cell.m
@@ -72,6 +73,7 @@ function h = plot_struct (structArray, varargin)
 % 2018-12-15 Updated XTicks so that it is dependent on nEntries
 % 2018-12-17 Now uses create_labels_from_numbers.m
 % 2018-12-18 Now uses iP.KeepUnmatched
+% 2018-12-18 Changed lineSpec default to o and singleColorDefault to SkyBlue
 % 
 
 %% Hard-coded parameters
@@ -79,6 +81,7 @@ lineSpec = 'o';
 maxNXTicks = 10;
 
 %% Default values for optional arguments
+lineSpecDefault = 'o';
 xislogDefault = [false, false];
 xlimitsDefault = [];
 ylimitsDefault = [];
@@ -86,7 +89,7 @@ xTicksDefault = [];
 xTickLabelsDefault = {};
 xLabelDefault = 'Parameter';
 fieldLabelsDefault = {};
-singleColorDefault = [0, 0, 1];
+singleColorDefault = rgb('SkyBlue');
 figTitlesDefault = {};          % set later
 figNumberDefault = [];          % invisible figure by default
 outFolderDefault = pwd;
@@ -310,6 +313,8 @@ OLD CODE:
 
 xTickLabels = arrayfun(@(x) num2str(x), xTicks, ...
                         'UniformOutput', false);
+
+singleColorDefault = [0, 0, 1];
 
 %}
 

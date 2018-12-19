@@ -92,8 +92,9 @@ Last Updated 2018-12-18 by Adam Lu
 - [**estimate_resting_potential.m**](https://github.com/blabuva/Adams_Functions/blob/master/estimate_resting_potential.m): Estimates the resting membrane potential (mV) and the input resistance (MOhm) from holding potentials and holding currents
 - [**extract_channel.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_channel.m): Extracts vectors of a given type from a .abf file
 - [**extract_columns.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_columns.m): Extracts columns from arrays
-- [**extract_common_parent.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_common_parent.m): Extracts the common parent directory of a cell array of file paths
+- [**extract_common_directory.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_common_directory.m): Extracts the common parent directory of a cell array of file paths
 - [**extract_elements.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_elements.m): Extracts elements from vectors using a certain mode ('first', 'last', 'min', 'max')
+- [**extract_fileparts.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fileparts.m): Extracts directories, bases or extensions from file paths, treating any path without an extension as a directory
 - [**extract_fullpaths.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fullpaths.m): Extracts full paths from a files structure array
 - [**extract_subvectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_subvectors.m): Extracts subvectors from vectors, given either endpoints or value windows
 - [**files2contents.m**](https://github.com/blabuva/Adams_Functions/blob/master/files2contents.m): Replaces file names with file contents in a cell array of strings

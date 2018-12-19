@@ -19,7 +19,10 @@ realDataDir = fullfile(projectDir, 'data_dclamp');
 matFilesDir = fullfile(realDataDir, 'take4/matfiles');
 matFile = fullfile(matFilesDir, 'D091710_0012_15');
 simDir = fullfile(projectDir, 'optimizer4gabab');
-neuronParamsFile = fullfile(simDir, 'initial_params/initial_params_D091710.csv');
+outFolder = '/media/adamX/xolotl_test';
+outFileName = 'xolotl_test.mat';
+neuronParamsDir = fullfile(simDir, 'initial_params');
+neuronParamsFileName = 'initial_params_D091710.csv';
 closedLoop = false;     % whether to use the final state as the initial
                         %   condition for the next simulation
 solverOrder = 0;        % uses the implicit Crank-Nicholson scheme
@@ -42,6 +45,11 @@ cpAmplitude = -0.050;   % current pulse amplitude in nA
 xLimits = [1000, 1250];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Preparation
+% Generte full file paths
+neuronParamsPath = fullfile(neuronParamsDir, neuronParamsFileName);
+outPath = fullfile(outFolder, outFileName);
 
 %% Import data to compare against
 % TODO: Make this its own function
@@ -86,9 +94,9 @@ realStimPulse = [ivecToPadCpr; ivecCpr];
 % Put together as data to compare
 dataToCompare = [realVoltageData, realVoltageData, realVoltageData, realStimPulse];
 
-%% Preparation
+%% Create the neuron
 % Create a xolotl object based on a parameters file
-m3ha = m3ha_xolotl_create_neuron(neuronParamsFile);
+m3ha = m3ha_xolotl_create_neuron(neuronParamsPath);
 
 % Set general simulation parameters
 m3ha = xolotl_set_simparams(m3ha, 'ClosedLoop', closedLoop, ...
@@ -125,8 +133,13 @@ m3ha = xolotl_add_current_pulse(m3ha, 'Compartment', compToPatch, ...
 m3ha = m3ha_xolotl_plot(m3ha, 'DataToCompare', dataToCompare, ...
                         'XLimits', xLimits);
 
+
 % Save the xolotl object
-% xolotl_save(m3ha, fileName);
+% TODO: xolotl_save(xolotlObject, 'OutFolder', outFolder, 'FileBase', fileBase);
+save(outPath, 'm3ha');
+
+% Manipulate leak channel parameters
+m3ha.manipulate({'*Leak*', '*length*'})
 
 % Displays a list of properties
 % properties(xolotl)

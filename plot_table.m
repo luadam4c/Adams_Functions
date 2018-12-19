@@ -11,9 +11,10 @@ function h = plot_table (table, varargin)
 % Arguments:
 %       table       - a table with variables to plot
 %                   must be a table
-%       varargin    - 'VariableNames': TODO: Description of VariableNames
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'VariableNames': variable (column) names of the table
+%                   must be empty or a character vector or a string vector
+%                       or a cell array of character vectors
+%                   default == {}
 %                   - 'XLabel': label for the parameter
 %                   must be a string scalar or a character vector
 %                   default == none ('suppress')
@@ -24,6 +25,8 @@ function h = plot_table (table, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/extract_common_directory.m
+%       cd/extract_fileparts.m
 %       cd/plot_struct.m
 %
 % Used by:
@@ -32,6 +35,8 @@ function h = plot_table (table, varargin)
 % File History:
 % 2018-12-18 Moved from plot_protocols.m
 % 2018-12-18 Now uses iP.KeepUnmatched
+% 2018-12-18 Now uses extract_common_directory.m
+% 2018-12-18 Now uses row names without processing if not file names
 % 
 
 %% Hard-coded parameters
@@ -60,9 +65,9 @@ addRequired(iP, 'table', ...
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'VariableNames', variableNamesDefault, ...
-    @(x) assert(iscellstr(x) || isstring(x), ...
-                ['VariableNames must be a cell array of character arrays ', ...
-                'or a string array!']));
+    @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
+        ['VariableNames must be empty or a character array or a string array ', ...
+            'or cell array of character arrays!']));
 addParameter(iP, 'XLabel', xLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
@@ -88,17 +93,36 @@ end
 
 % Decide on xTickLabels
 if iscell(table.Properties.RowNames)
-    % Get the file names
-    fileNames = table.Properties.RowNames;
+    % Get the row names
+    rowNames = table.Properties.RowNames;
 
-    % Get the file bases
-    [~, fileBases, ~] = ...
-        cellfun(@(x) fileparts(x), fileNames, 'UniformOutput', false);
+    % If all row names are file names, process them
+    %   Otherwise, just use the row names as the x tick labels
+    if all(isfile(rowNames))
+        % Extract the common file bases
+        fileExt = extract_fileparts(relativePaths, 'commonbase');
 
-    % Create x tick labels
-    xTickLabels = cellfun(@(x) strrep(x, '_', '\_'), fileBases, ...
-                            'UniformOutput', false);
+
+        % Extract the common parent path
+        parentPath = extract_common_directory(rowNames);
+
+        % Extract everything after the common parent path
+        relativePaths = extractAfter(rowNames, parentPath)
+
+        % Extract the file extensions
+        fileExt = extract_fileparts(relativePaths, 'extension');
+
+        % Remove the file extensions
+        xTickLabels = extractBefore(relativePaths, fileExt);
+
+        % Replace all instances of '_' with '\_'
+        xTickLabels = replace(xTickLabels, '_', '\_');
+    else
+        % Just use the row names
+        xTickLabels = rowNames;
+    end
 else
+    % Use default x tick labels
     xTickLabels = {};
 end
 
@@ -115,6 +139,14 @@ h = plot_struct(fileStruct, 'OutFolder', outFolder, ...
 
 %{
 OLD CODE:
+
+% Get the file bases
+[~, fileBases, ~] = ...
+    cellfun(@(x) fileparts(x), newPaths, 'UniformOutput', false);
+
+% Create x tick labels
+xTickLabels = cellfun(@(x) strrep(x, '_', '\_'), fileBases, ...
+                        'UniformOutput', false);
 
 %}
 

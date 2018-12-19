@@ -1,6 +1,6 @@
-function parentDir = extract_common_parent (filePaths, varargin)
+function parentDir = extract_common_directory (paths, varargin)
 %% Extracts the common parent directory of a cell array of file paths
-% Usage: parentDir = extract_common_parent (filePaths, varargin)
+% Usage: parentDir = extract_common_directory (paths, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -9,19 +9,25 @@ function parentDir = extract_common_parent (filePaths, varargin)
 %       parentDir   - the common parent directory
 %                   specified as a character vector
 % Arguments:
-%       filePaths   - file paths
-%                   must be a cell array of character vectors or a string array
+%       paths       - file paths
+%                   must be a character vector or a string vector
+%                       or a cell array of character vectors
 %       varargin    - 'param1': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
 %
+% Requires:
+%       cd/create_error_for_nargin.m
+%       cd/extract_fileparts.m
 %
 % Used by:
+%       cd/extract_fileparts.m
 %       cd/plot_swd_raster.m
+%       cd/plot_table.m
 
 % File History:
 % 2018-11-27 Created by Adam Lu
-% TODO: Fix
+% 2018-12-18 Now accepts a character array as the input
 % 
 
 %% Hard-coded parameters
@@ -34,8 +40,7 @@ function parentDir = extract_common_parent (filePaths, varargin)
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
@@ -43,9 +48,9 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'filePaths', ...
-    @(x) assert(isempty(x) || iscellstr(x) || isstring(x), ...
-        ['filePaths must be a a a string array ', ...
+addRequired(iP, 'paths', ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['paths must be a character array or a string array ', ...
         'or cell array of character arrays!']));
 
 % Add parameter-value pairs to the Input Parser
@@ -53,12 +58,24 @@ addRequired(iP, 'filePaths', ...
 %     % TODO: validation function %);
 
 % Read from the Input Parser
-parse(iP, filePaths, varargin{:});
+parse(iP, paths, varargin{:});
 % param1 = iP.Results.param1;
 
 %% Do the job
+% If empty, just return
+if isempty(paths)
+    parentDir = paths;
+    return
+end
+
+% If a character array, use the directory it is contained in
+if ischar(paths)
+    parentDir = extract_fileparts(paths, 'directory');
+    return
+end
+
 % Split all paths by filesep to get path parts
-pathParts = cellfun(@(x) split(x, filesep), filePaths, 'UniformOutput', false);
+pathParts = cellfun(@(x) split(x, filesep), paths, 'UniformOutput', false);
 
 % Count the number of parts from all paths
 nParts = cellfun(@numel, pathParts);

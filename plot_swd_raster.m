@@ -46,7 +46,7 @@ function plot_swd_raster (varargin)
 %
 % Requires:
 %       cd/create_labels_from_numbers.m
-%       cd/extract_common_parent.m
+%       cd/extract_common_directory.m
 %       cd/find_ind_str_in_cell.m
 %       cd/issheettype.m
 %       cd/plot_raster.m
@@ -187,7 +187,7 @@ end
 if isempty(outFolder)
     if ~isempty(swdSheetPaths)
         if iscell(swdSheetPaths)
-            outFolder = extract_common_parent(swdSheetPaths);
+            outFolder = extract_common_directory(swdSheetPaths);
         else
             outFolder = fileparts(swdSheetPaths);
         end

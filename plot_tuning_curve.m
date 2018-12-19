@@ -72,6 +72,7 @@ function h = plot_tuning_curve (pValues, readout, varargin)
 %                   - Any other parameter-value pair for the line() function
 %
 % Requires:
+%       ~/Downloaded_Functions/rgb.m
 %       cd/create_error_for_nargin.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
@@ -90,6 +91,8 @@ function h = plot_tuning_curve (pValues, readout, varargin)
 % 2018-09-25 Made almost all arguments parameter-value pairs
 % 2018-12-15 Added 'LineSpec' as a parameter-value pair argument
 % 2018-12-18 Now uses iP.KeepUnmatched
+% 2018-12-18 Changed lineSpec default to o and singleColorDefault to SkyBlue
+% TODO: Make 'ColorMap' and optional argument
 %
 
 %% Hard-coded parameters
@@ -98,7 +101,7 @@ lineWidth = 2;
                     
 %% Default values for optional arguments
 colsToPlotDefault = [];         % set later
-lineSpecDefault = '-';
+lineSpecDefault = 'o';
 pislogDefault = [false, false];
 xlimitsDefault = [];
 ylimitsDefault = [];
@@ -107,7 +110,7 @@ pTickLabelsDefault = {};
 pLabelDefault = 'Parameter';
 readoutLabelDefault = 'Readout';
 columnLabelsDefault = '';       % set later
-singleColorDefault = [0, 0, 1];
+singleColorDefault = rgb('SkyBlue');
 legendLocationDefault = 'auto'; % set later
 figTitleDefault = '';           % set later
 figNumberDefault = [];          % invisible figure by default
@@ -378,6 +381,9 @@ if isequal(xlimits, -1)
 if ~isequal(pLabel, 'suppress')
 if ~isequal(readoutLabel, 'suppress')
 if ~isequal(pLabel, 'suppress') && ~isequal(readoutLabel, 'suppress')
+
+singleColorDefault = [0, 0, 1];
+lineSpecDefault = '-';
 
 %}
 
