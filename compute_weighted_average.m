@@ -35,7 +35,7 @@ function avgValues = compute_weighted_average (values, varargin)
 %
 % Requires:
 %       cd/error_unrecognized.m
-%       cd/get_variable_name.m
+%       cd/get_var_name.m
 %       cd/ispositiveintegerscalar.m
 %       cd/match_dimensions.m
 %
@@ -184,7 +184,7 @@ switch averageMethod
             end
         end
     otherwise
-        error_unrecognized(get_variable_name(averageMethod), ...
+        error_unrecognized(get_var_name(averageMethod), ...
                             averageMethod, mfilename);
 end
 

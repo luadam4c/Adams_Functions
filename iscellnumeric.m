@@ -32,6 +32,7 @@ function isCellNumeric = iscellnumeric (x)
 
 % File History:
 % 2018-10-24 Created by Adam Lu
+% 2018-12-18 Now accepts 2D arrays as input
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -43,7 +44,7 @@ if nargin < 1
 end
 
 %% Do the job
-isCellNumeric = iscell(x) && all(cellfun(@isnumeric, x));
+isCellNumeric = iscell(x) && all(all(cellfun(@isnumeric, x)));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

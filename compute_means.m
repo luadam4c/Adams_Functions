@@ -15,18 +15,18 @@ function means = compute_means (vecs, varargin)
 %                   must be a numeric vector with 2 elements
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
-%                   default == create_indices(endPoints)
+%                   default == set by extract_subvectors.m
 %                   - 'Endpoints': endpoints for the subvectors to extract 
 %                   must be a numeric vector with 2 elements
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
-%                   default == find_window_endpoints([], vecs)
+%                   default == set by extract_subvectors.m
 %                   - 'Windows': value windows to extract 
 %                       Note: this assumes that the values are nondecreasing
 %                   must be empty or a numeric vector with 2 elements,
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric arrays
-%                   default == []
+%                   default == set by extract_subvectors.m
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -41,6 +41,7 @@ function means = compute_means (vecs, varargin)
 
 % File History:
 % 2018-12-17 Created by Adam Lu
+% TODO: Combine with compute_weighted_average.m
 % 
 
 %% Hard-coded parameters

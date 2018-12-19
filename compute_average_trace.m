@@ -23,6 +23,7 @@ function [avgTrace, paramsUsed] = compute_average_trace (traces, varargin)
 %                   default == 'leftAdjust'
 %                   
 % Requires:
+%       cd/extract_subvectors.m
 %       cd/iscellnumeric.m
 %
 % Used by:
@@ -33,6 +34,7 @@ function [avgTrace, paramsUsed] = compute_average_trace (traces, varargin)
 
 % File History:
 % 2018-10-11 Created by Adam Lu
+% 2018-12-18 Now uses extract_subvectors.m
 % 
 
 %% Hard-coded parameters
@@ -107,39 +109,15 @@ end
 
 % If the number of samples for each trace are not all equal,
 %   align and truncate traces to the desired number of samples
-if iscell(traces) && length(unique(nSamplesEachTrace)) ~= 1
-    switch alignMethod
-    case 'leftadjust'
-        % Always start from 1
-        if iscell(traces)
-            tracesTruncated = cellfun(@(x) x(1:nSamples), traces, ...
-                                        'UniformOutput', false);
-        else
-            tracesTruncated = traces(1:nSamples, :);
-        end
-    case 'rightadjust'
-        % Always end at end
-        if iscell(traces)
-            tracesTruncated = cellfun(@(x) x((end-nSamples+1):end), traces, ...
-                                        'UniformOutput', false);
-        else
-            tracesTruncated = traces((end-nSamples+1):end, :);
-        end
-    otherwise
-        error_unrecognized(get_variable_name(alignMethod), ...
-                            alignMethod, mfilename);
-    end
-else
-    tracesTruncated = traces;
-end
+tracesAligned = extract_subvectors(traces, 'AlignMethod', alignMethod);
 
 % Combine into a numeric array with the columns being vectors to be averaged
-if iscell(tracesTruncated)
+if iscell(tracesAligned)
     % Place each column vector into a column of an array
-    tracesArray = horzcat(tracesTruncated{:});
+    tracesArray = horzcat(tracesAligned{:});
 else
     % Already a numeric array with the columns being vectors to be averaged
-    tracesArray = tracesTruncated;
+    tracesArray = tracesAligned;
 end
 
 % The average trace is the mean of all truncated traces (all columns)
@@ -159,6 +137,28 @@ if iscell(traces) && ~all(cellfun(@iscolumn, traces))
 end
 
 error('The align method %s is not implemented yet!!', alignMethod);
+
+switch alignMethod
+case 'leftadjust'
+    % Always start from 1
+    if iscell(traces)
+        tracesAligned = cellfun(@(x) x(1:nSamples), traces, ...
+                                    'UniformOutput', false);
+    else
+        tracesAligned = traces(1:nSamples, :);
+    end
+case 'rightadjust'
+    % Always end at end
+    if iscell(traces)
+        tracesAligned = cellfun(@(x) x((end-nSamples+1):end), traces, ...
+                                    'UniformOutput', false);
+    else
+        tracesAligned = traces((end-nSamples+1):end, :);
+    end
+otherwise
+    error_unrecognized(get_var_name(alignMethod), alignMethod, mfilename);
+end
+
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

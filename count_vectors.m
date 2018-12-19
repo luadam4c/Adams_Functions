@@ -25,7 +25,6 @@ function nVectors = count_vectors (vectors)
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/extract_channel.m
-%       cd/force_column_cell.m
 %       cd/identify_repetitive_pulses.m
 %       cd/parse_pulse_response.m
 %       cd/plot_protocols.m

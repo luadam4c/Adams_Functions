@@ -13,8 +13,9 @@ function error_unrecognized (stringVar, string, funcName)
 %       funcName    - the function name
 %                   must be a string scalar or a character vector
 %
-% Used by:    
+% Used by:
 %       cd/compute_weighted_average.m
+%       cd/extract_subvectors.m
 
 % File History:
 % 2018-10-26 Created by Adam Lu

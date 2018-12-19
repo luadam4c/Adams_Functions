@@ -22,7 +22,7 @@ function vectors = force_column_numeric (vectors, varargin)
 %
 % Arguments:
 %       vectors     - original vectors
-%                   must be a numeric array or a cell array of numeric arrays
+%                   must be a numeric array or a cell array
 %       varargin    - 'IgnoreNonVectors': whether to ignore non-vectors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -39,7 +39,6 @@ function vectors = force_column_numeric (vectors, varargin)
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/count_samples.m
-%       cd/extract_columns.m
 %       cd/extract_subvectors.m
 %       cd/fit_2exp.m
 %       cd/force_column_cell.m
@@ -79,9 +78,9 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vectors', ...                   % vectors
-    @(x) assert(isempty(x) || isnumeric(x) || islogical(x) || iscellnumeric(x), ...
+    @(x) assert(isempty(x) || isnumeric(x) || islogical(x) || iscell(x), ...
                 ['vectors must be either empty or a numeric array ', ...
-                    'or a cell array of numeric arrays!']));
+                    'or a cell array!']));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'IgnoreNonVectors', ignoreNonVectorsDefault, ...
@@ -127,6 +126,12 @@ addRequired(iP, 'vectors', ...
 addRequired(iP, 'vectors', ...
     @(x) isnumeric(x) || ...
         iscell(x) && all(cellfun(@(x) isnumeric(x) && isvector(x), x)) );
+
+@(x) assert(isempty(x) || isnumeric(x) || islogical(x) || iscellnumeric(x), ...
+            ['vectors must be either empty or a numeric array ', ...
+                'or a cell array of numeric arrays!']));
+
+%                   must be a numeric array or a cell array of numeric arrays
 
 %}
 

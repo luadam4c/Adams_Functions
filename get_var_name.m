@@ -1,10 +1,10 @@
-function variableName = get_variable_name (variable)
+function variableName = get_var_name (variable)
 %% Returns a variable's name as a string
-% Usage: variableName = get_variable_name (variable)
+% Usage: variableName = get_var_name (variable)
 % Explanation:
-%       get_variable_name (myVar) == 'myVar'
+%       get_var_name (myVar) == 'myVar'
 % Example(s):
-%       get_variable_name (myVar)
+%       get_var_name (myVar)
 % Outputs:
 %       variableName    - name of variable
 %                       specified as a character vector

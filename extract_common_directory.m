@@ -18,6 +18,7 @@ function parentDir = extract_common_directory (paths, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/extract_subvectors.m
 %       cd/extract_fileparts.m
 %
 % Used by:
@@ -79,22 +80,74 @@ end
 
 % Split all directories by filesep to get parts
 %   Note: split() can take both a cell and a string as the argument
-pathParts = arrayfun(@(x) split(x, filesep), directories, ...
+%           and returns a column cell array
+partsByFile = arrayfun(@(x) split(x, filesep), directories, ...
                     'UniformOutput', false);
 
 % Extract the first minNParts elements
-pathPartsAligned = extract_subvectors(pathParts, 'AlignMethod', 'leftadjust');
+partsByFileAligned = extract_subvectors(partsByFile, 'AlignMethod', 'leftadjust');
 
-% Place all parts together in a 2-D array
+% Place all parts together in a 2-D cell array
 %   Each column is a path
 %   Each row is a level
-pathPartsArray = horzcat(pathPartsAligned{:});
+partsArray = horzcat(partsByFileAligned{:});
+
+% Separate parts by level
+partsByLevel = extract_rows(partsArray);
 
 % Find the number of unique elements in each row
+nUniqueEachLevel = count_unique_elements(partsByLevel);
 
 % Find the first row that has more than one unique element
+levelFirstDifference = find(nUnique > 1, 1, 'first');
 
 % Use the previous row number
+if isempty(levelFirstDifference)
+    levelLastCommon = numel(nUniqueEachLevel);
+else
+    levelLastCommon = levelFirstDifference - 1;
+end
+
+% Construct the common parent directory
+tempCell = join(partsByFile{1}(1:levelLastCommon), filesep);
+parentDir = tempCell{1};
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function rowsExtracted = extract_rows(cellArray)
+%% Extracts rows from a 2D cell array
+% TODO: Pull out to its own function
+% TODO: Think about how to make a extract_columns work the same way
+%       with an optional argument
+
+% Count the number of levels
+nRows = size(cellArray, 1);
+
+% Separate parts by level
+rowsExtracted = arrayfun(@(x) cellArray(x, :), transpose(1:nRows), ...
+                            'UniformOutput', false);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function nUnique = count_unique_elements(vecs)
+%% Counts the number of unique elements in each vector
+% TODO: Pull out to its own function
+% TODO: Use extract_subvectors with a 'Unique' option
+
+% Extract unique elements
+uniqueElements = cellfun(@unique, vecs, 'UniformOutput', false);
+
+% Count the numbers
+nUnique = count_samples(uniqueElements);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%{
+OLD CODE:
+
+pathParts = cellfun(@(x) split(x, filesep), directories, 'UniformOutput', false);
+
+nParts = cellfun(@numel, pathParts);
 
 % Initialize the last common part to minNParts
 ctLastCommon = minNParts;
@@ -115,18 +168,8 @@ for iNPart = 1:minNParts
     end
 end
 
-% Construct the common parent directory
 tempCell = join(pathParts{1}(1:ctLastCommon), filesep);
 parentDir = tempCell{1};
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%{
-OLD CODE:
-
-pathParts = cellfun(@(x) split(x, filesep), directories, 'UniformOutput', false);
-
-nParts = cellfun(@numel, pathParts);
 
 %}
 

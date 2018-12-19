@@ -1,19 +1,28 @@
-function vectorsCell = force_column_cell (vectorsOrig)
-%% Transforms a row cell array or a numeric array to a column cell array
-% Usage: vectorsCell = force_column_cell (vectorsOrig)
+function vectorsCell = force_column_cell (vectorsOrig, varargin)
+%% Transforms a row cell array or nonvector to a column cell array of vectors
+% Usage: vectorsCell = force_column_cell (vectorsOrig, varargin)
 % Explanation:
 %       This is an attempt to standardize the way multiple vectors are stored
-%           -- always as column cell arrays
-%       1. Row cell arrays are converted to column cell arrays
-%       2. Empty numeric arrays and character arrays are placed in a cell array
-%       3. Numeric vector arrays are forced as a column vector
+%           -- always as column cell vectors
+%       1. A row cell vector is converted to a column cell vector
+%       2. A non-vector cell array is transformed to a column cell vector
+%           of column cell arrays
+%           However, if 'ToLinear' is true, it will simply be linearized 
+%           as a column cell vector
+%       3. An empty numeric array or a character array are placed in a cell array
+%       4. A numeric vector is forced as a column vector
 %           (force_column_numeric.m is used), then placed in a cell array
-%       4. Numeric non-vector arrays are transformed to a column cell array
-%           of column numeric vectors based on the original columns
+%       5. A numeric non-vector array is transformed to a column cell vector
+%           of column numeric vectors based on the first dimension
 %
 % Example(s):
-%       vectors = force_column_cell(data);
-%       vectors = force_column_cell(vectors);
+%       load_examples;
+%       force_column_cell(myCellNumeric2D)
+%       force_column_cell(myCellRowVecs)
+%       force_column_cell(myCellStr2D)
+%       force_column_cell(myCellStr2D, 'ToLinear', true)
+%       force_column_cell(myNumeric2D)
+%       force_column_cell(myNumeric3D)
 %
 % Outputs:
 %       vectorsCell - vectors as a column cell array
@@ -25,14 +34,18 @@ function vectorsCell = force_column_cell (vectorsOrig)
 %                           to be placed in a cell
 %                   must be a numeric array or a cell array 
 %                       or a character vector
+%       varargin    - 'ToLinearize': whether to linearize a cell array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 % Requires:
-%       cd/count_vectors.m
+%       cd/extract_columns.m
 %       cd/force_column_numeric.m
 %
 % Used by:
 %       cd/compute_rms_error.m
 %       cd/construct_fullpath.m
 %       cd/create_average_time_vector.m
+%       cd/extract_columns.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/find_pulse_endpoints.m
 %       cd/force_column_numeric.m
@@ -50,7 +63,13 @@ function vectorsCell = force_column_cell (vectorsOrig)
 % 2018-10-10 Created by Adam Lu
 % 2018-10-19 Now accepts character vectors
 % 2018-10-27 Now places empty numeric arrays in a cell array
+% 2018-12-18 Now defaults 2D cell arrays to be separated by columns
+%               added 'ToLinearize' (default == 'false')
+% 2018-12-19 Now uses extract_columns.m
 % 
+
+%% Default values for optional arguments
+toLinearizeDefault = false;     % whether to linearize a nonvector cell array
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -69,33 +88,33 @@ iP.FunctionName = mfilename;
 addRequired(iP, 'vectorsOrig', ...
     @(x) isnumeric(x) || iscell(x) || ischar(x));
 
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'ToLinearize', toLinearizeDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+
 % Read from the Input Parser
-parse(iP, vectorsOrig);
+parse(iP, vectorsOrig, varargin{:});
+toLinearize = iP.Results.ToLinearize;
 
 %% Do the job
-if iscell(vectorsOrig) && ~iscolumn(vectorsOrig)
+if iscell(vectorsOrig) && ...
+        (isempty(vectorsOrig) || isrow(vectorsOrig) || toLinearize)
     % Reassign as a column
     vectorsCell = vectorsOrig(:);
-elseif ischar(vectorsOrig)
+elseif ischar(vectorsOrig) || isnumeric(vectorsOrig) && isempty(vectorsOrig)
     % Place in a cell array
     vectorsCell = {vectorsOrig};
-elseif isnumeric(vectorsOrig)
-    if isempty(vectorsOrig)
-        % Place in a cell array
-        vectorsCell = {vectorsOrig};
-    else
-        % Force any numeric vector as a column vector
-        vectorsOrig = force_column_numeric(vectorsOrig, ...
-                                            'IgnoreNonVectors', true);
-
-        % Count the number of vectors
-        nVectors = count_vectors(vectorsOrig);
-
-        % Extract as a cell array
-        vectorsCell = arrayfun(@(x) vectorsOrig(:, x), ...
-                                transpose(1:nVectors), ...
-                                'UniformOutput', false);
+elseif isnumeric(vectorsOrig) || ...
+        iscell(vectorsOrig) && ~isvector(vectorsOrig) && ~toLinearize
+    % Force any numeric vector as a column vector
+    if isnumeric(vectorsOrig)
+        vectorsOrig = force_column_numeric(vectorsOrig, 'IgnoreNonVectors', true);
     end
+
+    % Extract as a cell array
+    vectorsCell = ...
+        extract_columns(vectorsOrig, 'all', 'OutputMode', 'single', ...
+                        'TreatCellAsArray', true);
 else
     % Do nothing
     vectorsCell = vectorsOrig;
@@ -111,6 +130,16 @@ nVectors = size(vectorsOrig, 2);
 % Reassign as a column
 vectorsCell = vectorsCell(:);
 
+if iscell(vectorsOrig) && ~iscolumn(vectorsOrig)
+
+%       cd/count_vectors.m
+% Count the number of vectors
+nVectors = count_vectors(vectorsOrig);
+
+% Extract as a cell array
+vectorsCell = arrayfun(@(x) vectorsOrig(:, x), ...
+                        transpose(1:nVectors), ...
+                        'UniformOutput', false);
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
