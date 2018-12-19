@@ -1,5 +1,5 @@
 function subVecs = extract_subvectors (vecs, varargin)
-%% Extracts subvectors from vectors, given either endpoints or value windows
+%% Extracts subvectors from vectors, given either endpoints, value windows or a certain align mode ('leftadjust', 'rightadjust')
 % Usage: subVecs = extract_subvectors (vecs, varargin)
 % Explanation:
 %       TODO
@@ -31,9 +31,16 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric arrays
 %                   default == []
+%                   - 'AlignMethod': method for alignment/truncation
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'leftAdjust'  - equal number of elements from the left
+%                       'rightAdjust' - equal number of elements from the right
+%                       'none'        - no alignment/truncation
+%                   default == 'leftAdjust'
 %
 % Requires:
 %       cd/argfun.m
+%       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/create_indices.m
 %       cd/find_window_endpoints.m
@@ -56,15 +63,18 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2018-12-07 Now allows vecs to be a numeric array
 % 2018-12-07 Now allows endPoints to be empty
 % 2018-12-17 Now allows subvectors to be extracted from arbitrary indices
+% 2018-12-17 Now allows subvectors to be extracted from an align mode
 % TODO: check if all endpoints have 2 elements
 % 
 
 %% Hard-coded parameters
+validAlignMethods = {'leftadjust', 'rightadjust', 'none'};
 
 %% Default values for optional arguments
 indicesDefault = [];            % set later
 endPointsDefault = [];          % set later
 windowsDefault = [];            % extract entire trace(s) by default
+alignMethodDefault  = 'none';   % no alignment/truncation by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -97,12 +107,15 @@ addParameter(iP, 'Windows', windowsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['Windows must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
+addParameter(iP, 'AlignMethod', alignMethodDefault, ...
+    @(x) any(validatestring(x, validAlignMethods)));
 
 % Read from the Input Parser
 parse(iP, vecs, varargin{:});
 indices = iP.Results.Indices;
 endPoints = iP.Results.EndPoints;
 windows = iP.Results.Windows;
+alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 
 % If indices is provided and endPoints or windows is also provided, 
 %   display warning
@@ -142,6 +155,28 @@ end
 if isempty(indices)
     indices = create_indices(endPoints);
 end
+
+% If there is an align/truncation method used, apply it to indices
+switch alignMethod
+case {'leftadjust', 'rightadjust'}
+    % Count the number of elements in each vector
+    nSamples = count_samples(indices);
+
+    % Get the minimum number of samples
+    minNSamples = min(nSamples);
+
+    switch alignMethod
+    case 'leftadjust'
+        body
+    case 'rightadjust'
+    otherwise
+        body
+    end
+case 'none'
+otherwise
+    body
+end
+% case 'leftadjust'
 
 % If one of indices and vecs is a cell function, match the formats of 
 %   indices and vecs so that cellfun can be used

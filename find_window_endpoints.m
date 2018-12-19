@@ -28,9 +28,9 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %                   must be a numeric array or a cell array of numeric vectors
 %       varargin    - 'BoundaryMode': boundary mode
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'inclusive'   - the time endPoints approximates
+%                       'inclusive'   - the time endPoints 
 %                                           must include the time window
-%                       'leftadjust'  - the time endPoints 
+%                       'leftadjust'  - the time endPoints approximates
 %                                           the time window to the left
 %                       'rightadjust' - the time endPoints approximates
 %                                           the time window to the right

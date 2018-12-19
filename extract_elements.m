@@ -14,7 +14,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %                       or a cell array of column numeric vectors
 % Arguments:
 %       vecs        - vector(s)
-%                   must be a numeric array or a cell array of numeric arrays
+%                   must be a numeric array or a cell array
 %       extractMode - mode of extraction
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'first' - first element of each vector
@@ -36,7 +36,8 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % 2018-12-15 Created by Adam Lu
 % 2018-12-17 Now returns idxElement as well
 % TODO: Add 'MaxNum' as an optional argument with default Inf
-% TODO: Add 'Endpoints' as an optional argument
+% TODO: Add 'Indices', 'Endpoints' and 'Windows' as optional arguments
+%           and use extract_subvectors.m
 % 
 
 %% Hard-coded parameters
@@ -59,9 +60,9 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vecs', ...                  % vectors to extract
-    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+    @(x) assert(isnumeric(x) || iscell(x), ...
                 ['vecs must be either a numeric array', ...
-                    'or a cell array of numeric arrays!']));
+                    'or a cell array of vectors!']));
 addRequired(iP, 'extractMode', ...
     @(x) any(validatestring(x, validExtractModes)));
 
@@ -77,20 +78,25 @@ parse(iP, vecs, extractMode, varargin{:});
 extractMode = validatestring(extractMode, validExtractModes);
 
 %% Do the job
-if iscell(vecs)
-    % Do for all elements
-    [elements, idxElement] = ...
-        cellfun(@(x) extract_element(x, extractMode), vecs);
-else
-    % Do for all columns
-    [elements, idxElement] = ...
-        arrayfun(@(x) extract_element(vecs(:, x), extractMode), ...
-                transpose(1:size(vecs, 2)));
+switch extractMode
+case {'first', 'last', 'min', 'max'}
+    if iscell(vecs)
+        % Do for all elements
+        [elements, idxElement] = ...
+            cellfun(@(x) extract_single_element(x, extractMode), vecs);
+    else
+        % Do for all columns
+        [elements, idxElement] = ...
+            arrayfun(@(x) extract_single_element(vecs(:, x), extractMode), ...
+                    transpose(1:size(vecs, 2)));
+    end
+otherwise
+    error('Code logic error!!\n');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [element, idxElement] = extract_element (x, extractMode)
+function [element, idxElement] = extract_single_element (x, extractMode)
 
 switch extractMode
     case 'first'
@@ -111,6 +117,10 @@ end
 
 %{
 OLD CODE:
+
+@(x) assert(isnumeric(x) || iscellnumeric(x), ...
+            ['vecs must be either a numeric array', ...
+                'or a cell array of numeric arrays!']));
 
 %}
 

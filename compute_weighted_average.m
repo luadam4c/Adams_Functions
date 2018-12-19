@@ -41,10 +41,16 @@ function avgValues = compute_weighted_average (values, varargin)
 %
 % Used by:    
 %       cd/compute_sweep_errors.m
+%
+% Related functions:
+%       cd/compute_means.m
+%       cd/compute_rms_error.m
 
 % File History:
 % 2018-10-26 Created by Adam Lu
 % 2018-10-28 Fixed the case when values has less than one element
+% TODO: Simply math if the weights are all the same 
+%       and use this function in compute_means.m and compute_rms_error.m
 % 
 
 %% Hard-coded parameters
@@ -161,8 +167,7 @@ switch averageMethod
                         totalWeight);
     case {'linear', 'arithmetic'}
         % Compute the weighted linear average
-        avgValues = sum(valueWeights .* values, dimToOperate) ./ ...
-                        totalWeight;
+        avgValues = sum(valueWeights .* values, dimToOperate) ./ totalWeight;
     case {'exponential'}
         % Compute the reciprocal of temperature T 
         %   Note: T == 1/(1-EWF), so w = 1/T == 1-EWF
@@ -179,7 +184,6 @@ switch averageMethod
             end
         end
     otherwise
-        % Throw error
         error_unrecognized(get_variable_name(averageMethod), ...
                             averageMethod, mfilename);
 end

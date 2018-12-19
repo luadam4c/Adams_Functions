@@ -35,6 +35,9 @@ function means = compute_means (vecs, varargin)
 % Used by:
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
+%
+% Related functions:
+%       cd/compute_weighted_average.m
 
 % File History:
 % 2018-12-17 Created by Adam Lu

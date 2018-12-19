@@ -4,7 +4,7 @@ function parentDir = extract_common_directory (paths, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       TODO
+%       extract_common_directory({'a/b/c', 'a/b/c.m', 'a/b/c/d.m'})
 % Outputs:
 %       parentDir   - the common parent directory
 %                   specified as a character vector
@@ -68,20 +68,33 @@ if isempty(paths)
     return
 end
 
+% Extract only the directory part of each path
+directories = extract_fileparts(paths, 'directory');
+
 % If a character array, use the directory it is contained in
 if ischar(paths)
-    parentDir = extract_fileparts(paths, 'directory');
+    parentDir = directories;
     return
 end
 
-% Split all paths by filesep to get path parts
-pathParts = cellfun(@(x) split(x, filesep), paths, 'UniformOutput', false);
+% Split all directories by filesep to get parts
+%   Note: split() can take both a cell and a string as the argument
+pathParts = arrayfun(@(x) split(x, filesep), directories, ...
+                    'UniformOutput', false);
 
-% Count the number of parts from all paths
-nParts = cellfun(@numel, pathParts);
+% Extract the first minNParts elements
+pathPartsAligned = extract_subvectors(pathParts, 'AlignMethod', 'leftadjust');
 
-% Get the minimum number of parts
-minNParts = min(nParts);
+% Place all parts together in a 2-D array
+%   Each column is a path
+%   Each row is a level
+pathPartsArray = horzcat(pathPartsAligned{:});
+
+% Find the number of unique elements in each row
+
+% Find the first row that has more than one unique element
+
+% Use the previous row number
 
 % Initialize the last common part to minNParts
 ctLastCommon = minNParts;
@@ -110,6 +123,10 @@ parentDir = tempCell{1};
 
 %{
 OLD CODE:
+
+pathParts = cellfun(@(x) split(x, filesep), directories, 'UniformOutput', false);
+
+nParts = cellfun(@numel, pathParts);
 
 %}
 

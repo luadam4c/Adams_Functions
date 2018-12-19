@@ -18,9 +18,9 @@ function [avgTrace, paramsUsed] = compute_average_trace (traces, varargin)
 %                   default == minimum of the lengths of all traces
 %                   - 'AlignMethod': method for alignment
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'LeftAdjust'  - Align to the left
-%                       'RightAdjust' - Align to the right
-%                   default == 'LeftAdjust'
+%                       'leftAdjust'  - align to the left
+%                       'rightAdjust' - align to the right
+%                   default == 'leftAdjust'
 %                   
 % Requires:
 %       cd/iscellnumeric.m
@@ -126,7 +126,8 @@ if iscell(traces) && length(unique(nSamplesEachTrace)) ~= 1
             tracesTruncated = traces((end-nSamples+1):end, :);
         end
     otherwise
-        error('The align method %s is not implemented yet!!', alignMethod);
+        error_unrecognized(get_variable_name(alignMethod), ...
+                            alignMethod, mfilename);
     end
 else
     tracesTruncated = traces;
@@ -157,6 +158,7 @@ if iscell(traces) && ~all(cellfun(@iscolumn, traces))
     traces = cellfun(@(x) x(:), traces, 'UniformOutput', false);
 end
 
+error('The align method %s is not implemented yet!!', alignMethod);
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,10 +1,10 @@
-function nSamples = count_samples (vectors)
+function nSamples = count_samples (vectors, varargin)
 %% Counts the number of samples whether given an array or a cell array
-% Usage: nSamples = count_samples (vectors)
+% Usage: nSamples = count_samples (vectors, varargin)
 % Explanation:
-%       Uses either length(x) for vectors, 
+%       Uses either numel(x) for vectors, 
 %           size(x, 1) for arrays,
-%           or cellfun(@length, x) for cell arrays
+%           or cellfun(@numel, x) for cell arrays
 % Example(s):
 %       nSamples = count_samples(data)
 % Outputs:
@@ -16,31 +16,39 @@ function nSamples = count_samples (vectors)
 %                   Note: If a cell array, each element must be a vector
 %                         If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array of numeric vectors
+%       varargin    - 'ForceColumnOutput': whether to force output as a column
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %
 % Requires:
+%       cd/create_error_for_nargin.m
 %       cd/iscellnumericvector.m
 %       cd/force_column_numeric.m
+%       cd/match_row_count.m
 %
 % Used by:    
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/create_average_time_vector.m
+%       cd/extract_common_directory.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 
 % File History:
 % 2018-10-10 Created by Adam Lu
-% 2018-10-27 
+% 2018-12-18 Now not longers forces nSamples to be a column vector
 % 
+
+%% Default values for optional arguments
+forceColumnOutputDefault = true;  % force output as a column by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
@@ -52,31 +60,40 @@ addRequired(iP, 'vectors', ...                   % vectors
     @(x) assert(isnumeric(x) || iscellnumericvector(x), ...
                 ['vectors must be either a numeric array', ...
                     'or a cell array of numeric vectors!']));
+addParameter(iP, 'ForceColumnOutput', forceColumnOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
-parse(iP, vectors);
+parse(iP, vectors, varargin{:});
+forceColumnOutput = iP.Results.ForceColumnOutput;
 
 %% Do the job
+% Decide based on input type
 if iscell(vectors)
-    % Count for each vector
-    nSamples = cellfun(@length, vectors);
+    % Count the number of elements for each vector
+    nSamples = cellfun(@numel, vectors);
 elseif isnumeric(vectors)
     if isvector(vectors)
-        nSamples = length(vectors);
+        % Count the number of elements
+        nSamples = numel(vectors);
     else
         % All the vectors have the same number of samples
         nSamplesScalar = size(vectors, 1);
 
-        % Repeat for the number of vectors
+        % Count the number of vectors
         nVectors = size(vectors, 2);
-        nSamples = ones(nVectors, 1) * nSamplesScalar;
+
+        % Repeat to make a column vector
+        nSamples = match_row_count(nSamplesScalar, nVectors);
     end
 else
     error('vectors is not the right type!');
 end
 
-% Force nSamples to be a column vector
-nSamples = force_column_numeric(nSamples);
+% Force nSamples to be a column vector unless requested not to
+if forceColumnOutput
+    nSamples = force_column_numeric(nSamples);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -93,6 +110,10 @@ end
 if iscell(vectors)
     vectors = force_column_cell(vectors);
 end
+
+nSamples = cellfun(@length, vectors);
+nSamples = length(vectors);
+nSamples = ones(nVectors, 1) * nSamplesScalar;
 
 %}
 

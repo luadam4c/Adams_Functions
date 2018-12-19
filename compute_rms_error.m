@@ -41,11 +41,15 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 %       cd/compute_sweep_errors.m
 %       cd/m3ha_run_neuron_once.m
 %
+% Related functions:
+%       cd/compute_weighted_average.m
+
 % File History:
 % 2018-07-09 Modified from the built-in rms.m
 % 2018-10-28 Now vectors do not need to have equal lengths
 % 2018-10-28 Now takes multiple vectors as arguments
 % 2018-10-28 Added 'Endpoints' as an optional argument
+% TODO: Use compute_weighted_average.m and add 'Weights' as an optional argument
 % 
 
 %% Default values for optional arguments
@@ -124,6 +128,8 @@ function rmsError = compute_rms_error_helper (vec1, vec2)
 
 % Compute errors at every sample point
 errors = vec1 - vec2;
+
+% TODO: Use compute_weighted_average(errors, 'AverageMethod', 'rms')
 
 % Compute the squared error
 squaredError = (errors) .* conj(errors);
