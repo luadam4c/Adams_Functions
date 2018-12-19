@@ -57,6 +57,7 @@ function h = plot_pulse_response_with_stimulus (tVec, respVec, stimVec, varargin
 %                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
+%       cd/annotation_in_plot.m
 %       cd/compute_sampling_interval.m
 %       cd/compute_xlimits.m
 %       cd/compute_ylimits.m
@@ -276,25 +277,13 @@ p(3) = plot_vertical_line(minPeakTime, 'YLimits', yLimitsResp, ...
         'LineStyle', '--', 'Color', colorLines);
 
 if ~isnan(idxPeak)
-    % TODO: Make this a wrapper function annotation_in_plot.m
-    % Compute the peak amplitude double arrow x and y values 
-    %   in normalized units relative to the figure
-    pos = get(gca, 'Position');
-    peakAmpXPositions = pos(1) + pos(3) * peakAmpXValues;
-    peakAmpYPositions = pos(2) + pos(4) * peakAmpYValues;
-
     % Draw a double arrow spanning the peak amplitude
-    annotation('doublearrow', peakAmpXPositions, peakAmpYPositions, ...
-                'Color', colorAnnotations);
-
-    % Compute the peak delay double arrow x and y values 
-    %   in normalized units relative to the figure
-    peakDelayXPositions = pos(1) + pos(3) * peakDelayXValues;
-    peakDelayYPositions = pos(2) + pos(4) * peakDelayYValues;
+    p(4) = annotation_in_plot('doublearrow', peakAmpXValues, peakAmpYValues, ...
+                            'Color', colorAnnotations);
 
     % Draw a double arrow spanning the peak delay
-    annotation('doublearrow', peakDelayXPositions, peakDelayYPositions, ...
-                'Color', colorAnnotations);
+    p(5) = annotation_in_plot('doublearrow', peakDelayXValues, peakDelayYValues, ...
+                            'Color', colorAnnotations);
 
     % Show a text for the value of the peak amplitude
     text(tVec(idxPeak) + peakDelayMs * 1/16, halfPeakValue, peakAmpLabel);
