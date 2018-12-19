@@ -1,32 +1,30 @@
-function [output1] = plot_horizontal_line (yValue, varargin)
+function h = plot_horizontal_line (yValue, varargin)
 %% Plots a horizontal line
-% Usage: [output1] = plot_horizontal_line (yValue, varargin)
+% Usage: h = plot_horizontal_line (yValue, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       TODO
+%       h = plot_horizontal_line(yValue)
+%       h = plot_horizontal_line(yValue, 'XLimits', xLimits)
 % Outputs:
-%       output1     - TODO: Description of output1
-%                   specified as a TODO
+%       h           - handle to the line
+%                   specified as a line object handle
 % Arguments:
-%       yValue      - TODO: Description of yValue
-%                   must be a TODO
-%       varargin    - 'XLimits': limits of x axis
-%                               suppress by setting value to 'suppress'
-%                   must be 'suppress' or a 2-element increasing numeric vector
-%                   default == [min(tVec), max(tVec)]
+%       yValue      - the y value for the horizontal line
+%                   must be a numeric scalar
+%       varargin    - 'XLimits': x value limits for the line
+%                   must be empty or a numeric vector of 2 elements
+%                   default == get(gca, 'XLim')
 %                   - Any other parameter-value pair for the line() function
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       /TODO:dir/TODO:file
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/plot_pulse_response_with_stimulus.m
 
 % File History:
-% 2018-12-18 Created by Adam Lu
-% TODO: Use unMatched varargin parts as parameters for line()
+% 2018-12-19 Created by Adam Lu
 % 
 
 %% Hard-coded parameters
@@ -48,12 +46,12 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'yValue', ...                  % TODO: Description of yValue
-    % TODO: validation function %);
+addRequired(iP, 'yValue', ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'XLimits', param1Default, ...
-    % TODO: validation function %);
+    @(x) isempty(x) || isnumeric(x) && isvector(x) && length(x) == 2);
 
 % Read from the Input Parser
 parse(iP, yValue, varargin{:});
@@ -62,17 +60,15 @@ xLimits = iP.Results.XLimits;
 % Keep unmatched arguments for the line() function
 otherArguments = iP.Unmatched;
 
-% Check relationships between arguments
-% TODO
-
 %% Preparation
-% TODO
+% Set default x value limits
+if isempty(xLimits)
+    xLimits = get(gca, 'XLim');
+end
 
 %% Do the job
-% TODO
+h = line(xLimits, yValue * ones(size(xLimits)), otherArguments);
 
-%% Output results
-% TODO
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

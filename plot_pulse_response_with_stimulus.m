@@ -239,8 +239,8 @@ if ~isnan(idxPeak)
     peakDelayYValues = baseValueRel * ones(1, 2);
 
     % Create a labels for the peak amplitude and delay
-    peakAmpLabel = ['peak amp = ', num2str(peakAmplitude), ' mV'];
-    peakDelayLabel = ['peak delay = ', num2str(peakDelayMs), ' ms'];
+    peakAmpLabel = ['peak amp = ', num2str(peakAmplitude)];
+    peakDelayLabel = ['peak delay = ', num2str(peakDelayMs)];
 end
 
 %% Do the job
@@ -259,21 +259,19 @@ end
 ax1 = subplot(3, 1, 1:2); hold on;
 
 % Plot the pulse response
-plot(tVec, respVec, otherArguments);
+p(1) = plot(tVec, respVec, otherArguments);
 
 % Update x-axis and y-axis limits
 xlim(xLimits);
 ylim(yLimitsResp);
 
-% Plot a dashed line for baseline
-% Use plot_horizontal_line.m
-line(xLimits, baseValue * ones(size(xLimits)), ...
-    'LineStyle', '--', 'Color', colorLines);
+% Plot a dashed horizontal line for baseValue
+p(2) = plot_horizontal_line(baseValue, 'XLimits', xLimits, ...
+        'LineStyle', '--', 'Color', colorLines)
 
-% Plot a dashed line for minPeakDelay
-% Use plot_vertical_line.m
-line(minPeakTime * ones(size(yLimitsResp)), yLimitsResp, ...
-    'LineStyle', '--', 'Color', colorLines);
+% Plot a dashed vertical line for minPeakTime
+p(3) = plot_vertical_line(minPeakTime, 'YLimits', yLimitsResp, ...
+        'LineStyle', '--', 'Color', colorLines)
 
 if ~isnan(idxPeak)
     % TODO: Make this a wrapper function annotation_in_plot.m
@@ -397,6 +395,16 @@ peakValue = iP.Results.PeakValue;
 halfPeakValue = iP.Results.HalfPeakValue;
 peakAmplitude = iP.Results.PeakAmplitude;
 peakDelayMs = iP.Results.PeakDelayMs;
+
+peakAmpLabel = ['peak amp = ', num2str(peakAmplitude), ' mV'];
+peakDelayLabel = ['peak delay = ', num2str(peakDelayMs), ' ms'];
+
+p(2) = line(xLimits, baseValue * ones(size(xLimits)), ...
+            'LineStyle', '--', 'Color', colorLines);
+
+% Use plot_vertical_line.m
+line(minPeakTime * ones(size(yLimitsResp)), yLimitsResp, ...
+    'LineStyle', '--', 'Color', colorLines);
 
 %}
 
