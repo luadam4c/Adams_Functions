@@ -99,21 +99,8 @@ if iscell(table.Properties.RowNames)
     % If all row names are file names, process them
     %   Otherwise, just use the row names as the x tick labels
     if all(isfile(rowNames))
-        % Extract the common file bases
-        fileExt = extract_fileparts(relativePaths, 'commonbase');
-
-
-        % Extract the common parent path
-        parentPath = extract_common_directory(rowNames);
-
-        % Extract everything after the common parent path
-        relativePaths = extractAfter(rowNames, parentPath)
-
-        % Extract the file extensions
-        fileExt = extract_fileparts(relativePaths, 'extension');
-
-        % Remove the file extensions
-        xTickLabels = extractBefore(relativePaths, fileExt);
+        % Extract the distinct file bases
+        xTickLabels = extract_fileparts(relativePaths, 'distinct');
 
         % Replace all instances of '_' with '\_'
         xTickLabels = replace(xTickLabels, '_', '\_');

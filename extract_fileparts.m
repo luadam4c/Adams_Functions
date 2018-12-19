@@ -1,5 +1,5 @@
 function parts = extract_fileparts (paths, partType, varargin)
-%% Extracts directories, bases or extensions from file paths, treating any path without an extension as a directory
+%% Extracts directories, bases, extensions, distinct parts or the common directory from file paths, treating any path without an extension as a directory
 % Usage: parts = extract_fileparts (paths, partType, varargin)
 % Explanation:
 %       TODO
@@ -77,27 +77,11 @@ partType = validatestring(partType, validPartTypes);
 %% Do the job
 switch partType
 case {'directory', 'base', 'extension'}
-    % Separate the paths with fileparts_custom()
-    if iscell(paths)
-        [fileDirs, fileBases, fileExtensions] = ...
-            cellfun(@(x) fileparts_custom(x), paths, 'UniformOutput', false);
-    else
-        [fileDirs, fileBases, fileExtensions] = fileparts_custom(paths);
-    end
-
-    % Return results
-    switch partType
-        case 'directory'
-            parts = fileDirs;
-        case 'base'
-            parts = fileBases;
-        case 'extension'
-            parts = fileExtensions;
-    end
+    parts = extract_simple_fileparts(paths, partType);
 case 'commondirectory'
-    % Use extract_common_directory.m
     parts = extract_common_directory(paths, varargin{:});
 case 'distinct'
+    parts = extract_distinct_parts(paths);
 otherwise
     error('partType unrecognized!!');
 end
@@ -120,6 +104,45 @@ else
     fileDir = fileDirTentative;
     fileBase = fileBaseTentative;
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function parts = extract_simple_fileparts(paths, partType)
+% Separate the paths with fileparts_custom()
+
+if iscell(paths)
+    [fileDirs, fileBases, fileExtensions] = ...
+        cellfun(@(x) fileparts_custom(x), paths, 'UniformOutput', false);
+else
+    [fileDirs, fileBases, fileExtensions] = fileparts_custom(paths);
+end
+
+% Return results
+switch partType
+    case 'directory'
+        parts = fileDirs;
+    case 'base'
+        parts = fileBases;
+    case 'extension'
+        parts = fileExtensions;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function distinctParts = extract_distinct_parts(paths)
+% Extract the distinct parts from a set of file paths
+
+% Extract the common parent directory
+commonParent = extract_common_directory(paths);
+
+% Extract everything after the common parent directory
+relativePaths = extractAfter(paths, commonParent)
+
+% Extract the file extensions
+fileExt = extract_fileparts(relativePaths, 'extension');
+
+% Remove the file extensions
+parts = extractBefore(relativePaths, fileExt);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
