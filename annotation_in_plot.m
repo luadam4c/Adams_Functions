@@ -48,7 +48,7 @@ addRequired(iP, 'yInAxes', ...
     @(x) isempty(x) || isnumeric(x) && isvector(x) && length(x) == 2);
 
 % Read from the Input Parser
-parse(iP, annotationType, varargin{:});
+parse(iP, annotationType, xInAxes, yInAxes, varargin{:});
 
 % Keep unmatched arguments for the line() function
 otherArguments = iP.Unmatched;
@@ -62,8 +62,16 @@ xInFigure = posInFigure(1) + posInFigure(3) * xInAxes;
 yInFigure = posInFigure(2) + posInFigure(4) * yInAxes;
 
 %% Do the job
+
+% TODO: make a function struct2arglist.m
+names = fieldnames(otherArguments);
+
+values = struct2cell(otherArguments);
+
+params = force_column_cell(transpose([names, values]), 'ToLinearize', true);
+
 % Draw the annotation
-annotation(annotationType, xInFigure, yInFigure, otherArguments);
+an = annotation(annotationType, xInFigure, yInFigure, params{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

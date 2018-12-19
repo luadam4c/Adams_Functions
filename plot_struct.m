@@ -11,6 +11,9 @@ function h = plot_struct (structArray, varargin)
 % Arguments:    
 %       structArray - a structure array containing scalar fields
 %                   must be a 2-D structure array
+%       varargin    - 'LineSpec': line specification
+%                   must be a character array
+%                   default == '-'
 %                   - 'PisLog': whether parameter values are to be plotted 
 %                               log-scaled
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -77,7 +80,6 @@ function h = plot_struct (structArray, varargin)
 % 
 
 %% Hard-coded parameters
-lineSpec = 'o';
 maxNXTicks = 10;
 
 %% Default values for optional arguments
@@ -114,6 +116,8 @@ addRequired(iP, 'structArray', ...
     @(x) validateattributes(x, {'struct'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'LineSpec', lineSpecDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'XisLog', xislogDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'XLimits', xlimitsDefault, ...
@@ -145,6 +149,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 
 % Read from the Input Parser
 parse(iP, structArray, varargin{:});
+lineSpec = iP.Results.LineSpec;
 xIsLog = iP.Results.XisLog;
 xLimits = iP.Results.XLimits;
 yLimits = iP.Results.YLimits;

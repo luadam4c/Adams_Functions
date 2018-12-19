@@ -42,6 +42,10 @@ function h = plot_table (table, varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
+lineSpecDefault = 'o';
+lineWidthDefault = 1;
+markerEdgeColorDefault = rgb('DarkOrchid');
+markerFaceColorDefault = rgb('LightSkyBlue');
 variableNamesDefault = {};  % plot all variables by default
 xLabelDefault = 'suppress'; % No x label by default
 outFolderDefault = pwd;
@@ -64,6 +68,11 @@ addRequired(iP, 'table', ...
     @(x) validateattributes(x, {'table'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'LineSpec', lineSpecDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'LineWidth', lineWidthDefault);
+addParameter(iP, 'MarkerEdgeColor', markerEdgeColorDefault);
+addParameter(iP, 'MarkerFaceColor', markerFaceColorDefault);
 addParameter(iP, 'VariableNames', variableNamesDefault, ...
     @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
         ['VariableNames must be empty or a character array or a string array ', ...
@@ -75,6 +84,10 @@ addParameter(iP, 'OutFolder', outFolderDefault, ...
 
 % Read from the Input Parser
 parse(iP, table, varargin{:});
+lineSpec = iP.Results.LineSpec;
+lineWidth = iP.Results.LineWidth;
+markerEdgeColor = iP.Results.MarkerEdgeColor;
+markerFaceColor = iP.Results.MarkerFaceColor;
 varToPlot = iP.Results.VariableNames;
 xLabel = iP.Results.XLabel;
 outFolder = iP.Results.OutFolder;
@@ -100,7 +113,7 @@ if iscell(table.Properties.RowNames)
     %   Otherwise, just use the row names as the x tick labels
     if all(isfile(rowNames))
         % Extract the distinct file bases
-        xTickLabels = extract_fileparts(relativePaths, 'distinct');
+        xTickLabels = extract_fileparts(rowNames, 'distinct');
 
         % Replace all instances of '_' with '\_'
         xTickLabels = replace(xTickLabels, '_', '\_');
@@ -119,7 +132,11 @@ fileStruct = table2struct(table);
 
 % Plot fields
 h = plot_struct(fileStruct, 'OutFolder', outFolder, ...
-            'XTickLabels', xTickLabels, 'XLabel', xLabel, otherArguments);
+            'XTickLabels', xTickLabels, 'XLabel', xLabel, ...
+            'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
+            'MarkerEdgeColor', markerEdgeColor, ...
+            'MarkerFaceColor', markerFaceColor, ...
+            otherArguments);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

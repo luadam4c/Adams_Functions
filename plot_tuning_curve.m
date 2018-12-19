@@ -97,11 +97,11 @@ function h = plot_tuning_curve (pValues, readout, varargin)
 
 %% Hard-coded parameters
 pTickAngle = 60;                % x tick angle in degrees
-lineWidth = 2;
-                    
+
 %% Default values for optional arguments
 colsToPlotDefault = [];         % set later
-lineSpecDefault = 'o';
+lineSpecDefault = '-';
+lineWidthDefault = 2;
 pislogDefault = [false, false];
 xlimitsDefault = [];
 ylimitsDefault = [];
@@ -141,6 +141,7 @@ addParameter(iP, 'ColsToPlot', colsToPlotDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'LineSpec', lineSpecDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'LineWidth', lineWidthDefault);
 addParameter(iP, 'PisLog', pislogDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'XLimits', xlimitsDefault, ...
@@ -176,6 +177,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 parse(iP, pValues, readout, varargin{:});
 colsToPlot = iP.Results.ColsToPlot;
 lineSpec = iP.Results.LineSpec;
+lineWidth = iP.Results.LineWidth;
 pIsLog = iP.Results.PisLog;
 xlimits = iP.Results.XLimits;
 ylimits = iP.Results.YLimits;

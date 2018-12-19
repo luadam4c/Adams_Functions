@@ -87,7 +87,7 @@ function [tVecAll, respAll, stimAll, featuresAll] = ...
 %       cd/parse_pulse_response.m
 %
 % Used by:
-%       cd/plot_protocols.m
+%       cd/compute_and_plot_all_responses.m
 
 % File History:
 % 2018-12-15 Modified from compute_average_pulse_response.m

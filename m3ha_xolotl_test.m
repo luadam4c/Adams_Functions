@@ -47,7 +47,7 @@ xLimits = [1000, 1250];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Preparation
-% Generte full file paths
+% Generate full file paths
 neuronParamsPath = fullfile(neuronParamsDir, neuronParamsFileName);
 outPath = fullfile(outFolder, outFileName);
 
@@ -138,8 +138,13 @@ m3ha = m3ha_xolotl_plot(m3ha, 'DataToCompare', dataToCompare, ...
 % TODO: xolotl_save(xolotlObject, 'OutFolder', outFolder, 'FileBase', fileBase);
 save(outPath, 'm3ha');
 
+mh3a.manipulate_plot_func{2} = @m3ha_xolotl_plot;
+
 % Manipulate leak channel parameters
-m3ha.manipulate({'*Leak*', '*length*'})
+% m3ha.manipulate('*Leak*')
+m3ha.manipulate('*gbar')
+% m3ha.manipulate('*E')
+% m3ha.manipulate({'*Leak*', '*length*'})
 
 % Displays a list of properties
 % properties(xolotl)

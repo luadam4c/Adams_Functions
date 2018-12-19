@@ -31,6 +31,7 @@ function [results, figtypes] = isfigtype (candidates, varargin)
 %
 % Used by:
 %       cd/compute_and_plot_average_response.m
+%       cd/compute_and_plot_all_responses.m
 %       cd/create_waveform_train.m
 %       cd/create_pulse_train_series.m
 %       cd/plot_all_abfs.m

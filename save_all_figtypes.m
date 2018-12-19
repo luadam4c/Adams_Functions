@@ -17,6 +17,7 @@ function save_all_figtypes (fig, filename, varargin)
 %       cd/isfigtype.m
 %
 % Used by:
+%       cd/compute_and_plot_all_responses.m
 %       cd/compute_and_plot_average_response.m
 %       cd/create_waveform_train.m
 %       cd/create_pulse_train_series.m

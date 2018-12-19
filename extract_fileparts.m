@@ -136,13 +136,13 @@ function distinctParts = extract_distinct_parts(paths)
 commonParent = extract_common_directory(paths);
 
 % Extract everything after the common parent directory
-relativePaths = extractAfter(paths, commonParent)
+relativePaths = extractAfter(paths, commonParent);
 
 % Extract the file extensions
 fileExt = extract_fileparts(relativePaths, 'extension');
 
 % Remove the file extensions
-parts = extractBefore(relativePaths, fileExt);
+distinctParts = extractBefore(relativePaths, fileExt);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

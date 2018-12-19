@@ -156,9 +156,58 @@ plotSwpWeightsFlag = iP.Results.PlotSwpWeightsFlag;
 % Extract the time step in ms
 timeStep = xolotlObject.dt;
 
+% Extract the external current injection protocol
+currentProtocol = xolotlObject.I_ext;
+
 % Save the stimulation pulse
-% TODO: Use Children to find the right column
-iStim = xolotlObject.I_ext(:, 3);
+% TODO: Use Children to find the soma column
+iStim = currentProtocol(:, 3);
+
+% Retrieve all parameter values in the object tree
+paramValues = xolotlObject.serialize;
+
+% Get the number of samples for each trace
+nSamples = count_samples(currentProtocol);
+
+% Create a time vector in milliseconds
+tVecs = create_time_vectors(nSamples, 'SamplingIntervalMs', timeStep, ...
+                            'TimeUnits', 'ms');
+
+% Initialize handles to the plot if not already done so
+if isempty(xolotlObject.handles) || ...
+        ~isfield(xolotlObject.handles, 'myFig') || ...
+        ~isvalid(xolotlObject.handles.myFig)
+    % Necessary for initializing an object in cpplab
+    xolotlObject.handles.myFig = [];
+
+    % Make the figure
+    xolotlObject.handles.myFig = ...
+        figure('Outerposition', [100 100 600 600], ...
+                'PaperUnits', 'points', 'PaperSize', [1200 600]); hold on
+
+    % Initialize the plot by using NaNs
+    xolotlObject.handles.myPlot = m3ha_plot_individual_traces(NaN, NaN, ...
+                                    'DataToCompare', dataToCompare, ...
+                                    'XLimits', xLimits, ...
+                                    'ColorMap', colorMap, ...
+                                    'FigTitle', figTitle, ...
+                                    'FigNumber', figNumber, ...
+                                    'FigName', figName, ...
+                                    'BaseWindow', baseWindow, ...
+                                    'FitWindow', fitWindow, ...
+                                    'BaseNoise', baseNoise, ...
+                                    'SweepWeights', sweepWeights, ...
+                                    'SweepErrors', sweepErrors, ...
+                                    'PlotSwpWeightsFlag', plotSwpWeightsFlag);
+
+    % Store the NaN data for the plot
+    xolotlObject.handles.myPlot.XData = tVecs;
+    xolotlObject.handles.myPlot.YData = NaN * tVecs;
+
+    % Attach figure to puppeteer
+    xolotlObject.handles.puppeteer_object.attachFigure(xolotlObject.handles.myFig);
+end
+
 
 %% Simulate
 % Get voltage traces for all compartments
@@ -170,20 +219,17 @@ vVecDendrite1 = vVecs(:, 1);
 vVecDendrite2 = vVecs(:, 2);
 vVecSoma = vVecs(:, 3);
 
+%% Reorganize results
 % Place all traces into a data array
 data = [vVecDendrite2, vVecDendrite1, vVecSoma, iStim];
 
+% Update results in the plot
+x.handles.myPlot.YData = data;
+
 %% Plot results
-% Get the number of samples for each trace
-nSamples = count_samples(data);
-
-% Create a time vector in milliseconds
-tVecs = create_time_vectors(nSamples, 'SamplingIntervalMs', timeStep, ...
-                            'TimeUnits', 'ms');
-
 % Plot the traces
-% TODO: Add 'DataToCompare'
-hfig = m3ha_plot_individual_traces(tVecs, data, ...
+xolotlObject.handles.figfI = ...
+    m3ha_plot_individual_traces(tVecs, data, ...
                                 'DataToCompare', dataToCompare, ...
                                 'XLimits', xLimits, ...
                                 'ColorMap', colorMap, ...
@@ -197,6 +243,11 @@ hfig = m3ha_plot_individual_traces(tVecs, data, ...
                                 'SweepErrors', sweepErrors, ...
                                 'PlotSwpWeightsFlag', plotSwpWeightsFlag);
 
+% Restore the xolotl object to its original state
+xolotlObject.deserialize(paramValues);
+
+% Update figure
+drawnow;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
