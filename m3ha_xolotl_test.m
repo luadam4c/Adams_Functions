@@ -138,7 +138,7 @@ m3ha = m3ha_xolotl_plot(m3ha, 'DataToCompare', dataToCompare, ...
 % TODO: xolotl_save(xolotlObject, 'OutFolder', outFolder, 'FileBase', fileBase);
 save(outPath, 'm3ha');
 
-mh3a.manipulate_plot_func{2} = @m3ha_xolotl_plot;
+mh3a.manipulate_plot_func = {@m3ha_xolotl_plot};
 
 % Manipulate leak channel parameters
 % m3ha.manipulate('*Leak*')

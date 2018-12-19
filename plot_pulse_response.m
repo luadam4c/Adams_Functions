@@ -48,6 +48,7 @@ function h = plot_pulse_response (timeVec, responseVecs, varargin)
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
 %                   default == expand by a little bit
+%                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
 %       cd/compute_sampling_interval.m
@@ -59,6 +60,7 @@ function h = plot_pulse_response (timeVec, responseVecs, varargin)
 
 % File History:
 % 2018-10-12 Adapted from code in plot_pulse.m
+% 2018-12-19 Now uses unmatched varargin parts as parameters for plot()
 % TODO: Use improved version of match_vector_numbers.m
 
 %% Hard-coded parameters
@@ -86,6 +88,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'timeVec', ...
@@ -123,6 +126,9 @@ responseParams = iP.Results.ResponseParams;
 toUse = iP.Results.ToUse;
 xLimits = iP.Results.XLimits;
 yLimits = iP.Results.YLimits;
+
+% Keep unmatched arguments for the plot() function
+otherArguments = iP.Unmatched;
 
 %% Preparation
 % Count the number of vectors
@@ -203,21 +209,21 @@ hold on;
 % Plot vectors
 if nToUse == nVectors
     % Plot all vectors at once
-    plot(timeVec, responseVecs, '-');
+    plot(timeVec, responseVecs, '-', otherArguments);
 else
     % Plot vectors as dotted line if not used
     parfor iVec = 1:nVectors
         if toUse(iVec)
-            plot(timeVec, responseVecs(:, iVec), '-');
+            plot(timeVec, responseVecs(:, iVec), '-', otherArguments);
         else
-            plot(timeVec, responseVecs(:, iVec), '--');
+            plot(timeVec, responseVecs(:, iVec), '--', otherArguments);
         end
     end
 end
 
 % Plot detected endpoints
-plot(xLeftTriangles, yLeftTriangles, '<');
-plot(xRightTriangles, yRightTriangles, '>');
+plot(xLeftTriangles, yLeftTriangles, '<', otherArguments);
+plot(xRightTriangles, yRightTriangles, '>', otherArguments);
 
 % Set time axis limits
 if ~strcmpi(xLimits, 'suppress')
