@@ -96,7 +96,7 @@ case {'directory', 'base', 'extension'}
     end
 case 'commondirectory'
     % Use extract_common_directory.m
-    parts = extract_common_directory(paths, varargin{:})
+    parts = extract_common_directory(paths, varargin{:});
 case 'distinct'
 otherwise
     error('partType unrecognized!!');

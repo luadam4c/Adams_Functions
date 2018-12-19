@@ -56,9 +56,9 @@ function varargout = extract_columns (arrays, varargin)
 validOutputModes = {'multiple', 'single'};
 
 %% Default values for optional arguments
-colNumberDefault  = 'all';          % extract all columns by default
-outputModeDefault = 'multiple';     % separate outputs by default
-treatCellAsArrayDefault = false;    % treat cell arrays as many arrays by default
+colNumberDefault  = 'all';      % extract all columns by default
+outputModeDefault = 'multiple'; % separate outputs by default
+treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

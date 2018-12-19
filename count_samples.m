@@ -15,7 +15,7 @@ function nSamples = count_samples (vectors, varargin)
 %       vectors     - vectors to count samples from
 %                   Note: If a cell array, each element must be a vector
 %                         If a non-vector array, each column is a vector
-%                   must be a numeric array or a cell array of numeric vectors
+%                   must be a numeric array or a cell array
 %       varargin    - 'ForceColumnOutput': whether to force output as a column
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
@@ -58,9 +58,9 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vectors', ...                   % vectors
-    @(x) assert(isnumeric(x) || iscellnumericvector(x), ...
+    @(x) assert(isnumeric(x) || iscell(x), ...
                 ['vectors must be either a numeric array', ...
-                    'or a cell array of numeric vectors!']));
+                    'or a cell array!']));
 addParameter(iP, 'ForceColumnOutput', forceColumnOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
@@ -115,6 +115,12 @@ end
 nSamples = cellfun(@length, vectors);
 nSamples = length(vectors);
 nSamples = ones(nVectors, 1) * nSamplesScalar;
+
+%                   must be a numeric array or a cell array of numeric vectors
+
+@(x) assert(isnumeric(x) || iscellnumericvector(x), ...
+            ['vectors must be either a numeric array', ...
+                'or a cell array of numeric vectors!']));
 
 %}
 

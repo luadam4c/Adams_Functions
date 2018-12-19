@@ -14,7 +14,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                       or a cell array of numeric vectors
 % Arguments:
 %       vecs        - vectors to extract
-%                   must be a numeric array or a cell array of numeric arrays
+%                   must be an array
 %       varargin    - 'Indices': indices for the subvectors to extract 
 %                   must be a numeric vector with 2 elements
 %                       or a numeric array with 2 rows
@@ -44,7 +44,6 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/create_indices.m
 %       cd/find_window_endpoints.m
-%       cd/force_column_numeric.m
 %       cd/match_format_vector_sets.m
 %
 % Used by:
@@ -92,10 +91,7 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'vecs', ...                  % vectors to extract
-    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['vecs must be either a numeric array ', ...
-                    'or a cell array of numeric arrays!']));
+addRequired(iP, 'vecs');
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Indices', indicesDefault, ...
@@ -140,20 +136,26 @@ if isempty(vecs)
     return
 end
 
-% Force as column vectors
-[endPoints, windows] = ...
-    argfun(@(x) force_column_numeric(x, 'IgnoreNonVectors', true), ...
-            endPoints, windows);
-
 % Find end points if not provided
 if isempty(endPoints)
-    % TODO: Check if vecs are nondecreasing. 
-    %   If not, ask for endPoints or indices to be passed
+    if ~isempty(windows)
+        % Check if the input has the right type
+        if ~isnumeric(vecs) && ~iscellnumeric(vecs)
+            error('Input expected to be numeric when windows are provided!\n');
+        end
 
-    % Extract the start and end indices of the vectors for fitting
-    %   Note: If first argument is empty, 
-    %           the first and last indices will be returned
-    endPoints = find_window_endpoints(windows, vecs);
+        % TODO: Also check if vecs are nondecreasing. 
+        %   If not, ask for endPoints or indices to be passed
+
+        % Extract the start and end indices of the vectors for fitting
+        endPoints = find_window_endpoints(windows, vecs);
+    else
+        % Count the number of elements in each vector
+        nSamples = count_samples(vecs);
+
+        % Construct end points
+        endPoints = transpose([ones(size(nSamples)), nSamples]);
+    end
 end
 
 % Create indices if not provided
@@ -271,6 +273,23 @@ else
 end
 
 newEndPoints = repmat({[1, minNSamples]}, size(indices));
+
+% Force row vectors as column vectors
+[endPoints, windows] = ...
+    argfun(@(x) force_column_numeric(x, 'IgnoreNonVectors', true), ...
+            endPoints, windows);
+
+%       cd/force_column_numeric.m
+
+
+%                   must be a numeric array or a cell array of numeric arrays
+
+@(x) assert(isnumeric(x) || iscellnumeric(x), ...
+            ['vecs must be either a numeric array ', ...
+                'or a cell array of numeric arrays!']));
+
+%   Note: If first argument is empty, 
+%           the first and last indices will be returned
 
 %}
 

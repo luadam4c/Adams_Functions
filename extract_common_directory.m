@@ -85,7 +85,8 @@ partsByFile = arrayfun(@(x) split(x, filesep), directories, ...
                     'UniformOutput', false);
 
 % Extract the first minNParts elements
-partsByFileAligned = extract_subvectors(partsByFile, 'AlignMethod', 'leftadjust');
+partsByFileAligned = ...
+    extract_subvectors(partsByFile, 'AlignMethod', 'leftadjust');
 
 % Place all parts together in a 2-D cell array
 %   Each column is a path
@@ -99,7 +100,7 @@ partsByLevel = extract_rows(partsArray);
 nUniqueEachLevel = count_unique_elements(partsByLevel);
 
 % Find the first row that has more than one unique element
-levelFirstDifference = find(nUnique > 1, 1, 'first');
+levelFirstDifference = find(nUniqueEachLevel > 1, 1, 'first');
 
 % Use the previous row number
 if isempty(levelFirstDifference)
