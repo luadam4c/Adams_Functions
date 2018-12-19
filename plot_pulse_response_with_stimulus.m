@@ -54,6 +54,9 @@ function h = plot_pulse_response_with_stimulus (tVec, respVec, stimVec, varargin
 %                       idxSteadyStart
 %                       idxSteadyEnd
 %                   default == returned by parse_pulse_response.m
+%                   - 'ParamsFile': a spreadsheet containing parsed parameters
+%                   must be empty or a string scalar or a character vector
+%                   default == ''
 %                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
@@ -77,8 +80,11 @@ function h = plot_pulse_response_with_stimulus (tVec, respVec, stimVec, varargin
 % 2018-12-17 Now plots dashed lines for baseValue and minPeakDelay
 % 2018-12-17 Now uses unmatched varargin parts as parameters for plot()
 % 2018-12-17 Now uses halfPeakValue and draws a double arrow for peak delay
-% TODO: Optionally read values from a sheetFile
-% TODO: Apply parse_pulse_response.m for defaults
+% 2018-12-17 Now applies parse_pulse_response.m for defaults
+%               if responseParams is not provided
+% 2018-12-18 Now uses annotation_in_plot.m, plot_horizontal_line, 
+%               plot_vertical_line.m
+% 2018-12-18 Now can optionally read values from a 'ParamsFile'
 % 
 
 %% Hard-coded parameters
@@ -98,6 +104,7 @@ sameAsPulseDefault = true;      % use pulse endpoints by default
 meanValueWindowMsDefault = 0.5; % calculating mean values over 0.5 ms by default
 minPeakDelayMsDefault = 0;      % no minimum peak delay by default
 responseParamsDefault = [];     % set later
+paramsFileDefault = '';         % no parameters file by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -143,6 +150,8 @@ addParameter(iP, 'MinPeakDelayMs', minPeakDelayMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
 addParameter(iP, 'ResponseParams', responseParamsDefault, ...
     @(x) validateattributes(x, {'table'}, {'2d'}));
+addParameter(iP, 'ParamsFile', paramsFileDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, tVec, respVec, stimVec, varargin{:});
@@ -157,6 +166,7 @@ sameAsPulse = iP.Results.SameAsPulse;
 meanValueWindowMs = iP.Results.MeanValueWindowMs;
 minPeakDelayMs = iP.Results.MinPeakDelayMs;
 responseParams = iP.Results.ResponseParams;
+paramsFile = iP.Results.ParamsFile;
 
 % Keep unmatched arguments for the plot() function
 otherArguments = iP.Unmatched;
@@ -164,15 +174,19 @@ otherArguments = iP.Unmatched;
 %% Preparation
 % Parse responseParams if not provided
 if isempty(responseParams)
-    % Compute the sampling interval
-    siMs = compute_sampling_interval(tVec);
+    if ~isempty(paramsFile)
+        responseParams = readtable(paramsFile);
+    else
+        % Compute the sampling interval
+        siMs = compute_sampling_interval(tVec);
 
-    % Parse the pulse response
-    responseParams = parse_pulse_response(responseVecs, siMs, ...
-                                'PulseVector', pulseVector, ...
-                                'SameAsPulse', sameAsPulse, ...
-                                'MeanValueWindowMs', meanValueWindowMs, ...
-                                'MinPeakDelayMs', minPeakDelayMs);
+        % Parse the pulse response
+        responseParams = parse_pulse_response(responseVecs, siMs, ...
+                                    'PulseVector', pulseVector, ...
+                                    'SameAsPulse', sameAsPulse, ...
+                                    'MeanValueWindowMs', meanValueWindowMs, ...
+                                    'MinPeakDelayMs', minPeakDelayMs);
+    end
 end
 
 % Extract from responseParams
