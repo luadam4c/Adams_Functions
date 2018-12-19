@@ -62,6 +62,8 @@ function h = plot_pulse_response_with_stimulus (tVec, respVec, stimVec, varargin
 %       cd/compute_ylimits.m
 %       cd/create_error_for_nargin.m
 %       cd/isfigtype.m
+%       cd/plot_horizontal_line.m
+%       cd/plot_vertical_line.m
 %       cd/save_all_figtypes.m
 %
 % Used by:
@@ -267,11 +269,11 @@ ylim(yLimitsResp);
 
 % Plot a dashed horizontal line for baseValue
 p(2) = plot_horizontal_line(baseValue, 'XLimits', xLimits, ...
-        'LineStyle', '--', 'Color', colorLines)
+        'LineStyle', '--', 'Color', colorLines);
 
 % Plot a dashed vertical line for minPeakTime
 p(3) = plot_vertical_line(minPeakTime, 'YLimits', yLimitsResp, ...
-        'LineStyle', '--', 'Color', colorLines)
+        'LineStyle', '--', 'Color', colorLines);
 
 if ~isnan(idxPeak)
     % TODO: Make this a wrapper function annotation_in_plot.m
