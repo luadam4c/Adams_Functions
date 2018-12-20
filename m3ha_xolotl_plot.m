@@ -226,18 +226,25 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
                                     'SweepErrors', sweepErrors, ...
                                     'PlotSwpWeightsFlag', plotSwpWeightsFlag);
 
-    % If using x.manipulate, do the following
+    % Extract y axis limits
+    yLimits = zeros(3, 2);
+    for iTrace = 1:3
+        % Use the limits from the left boundary line
+        yLimits(iTrace, :) = individual.boundaries(iTrace, 1).YData;
+    end
+
+    % If using x.manipulate
     if isfield(xHandles, 'puppeteer_object')
         % Attach figure to puppeteer so that 
         %   "the figure can be closed automatically"
         xHandles.puppeteer_object.attachFigure(individual.fig);
-
-        % Prevent the time axis limits from automatically updating
-
     end
 
     % Store endpoints
     individual.endPoints = endPoints;
+
+    % Store y axis limits
+    individual.yLimits = yLimits;
 
     % Store the figure handle in the xolotl object
     xHandles.individual = individual;
@@ -256,6 +263,11 @@ vVecSoma = vVecs(:, idxSoma);
 vVecDendrite1 = vVecs(:, idxDend1);
 vVecDendrite2 = vVecs(:, idxDend2);
 
+% Compute new y limits
+minY = apply_iteratively(@min, {data; yLimits});
+maxY = apply_iteratively(@max, {data; yLimits});
+rangeY = maxY - minY;
+
 %% Update plots
 % Update data in the corresponding line object
 xHandles.individual.plotsData(1).YData = vVecDendrite2;
@@ -263,9 +275,12 @@ xHandles.individual.plotsData(2).YData = vVecDendrite1;
 xHandles.individual.plotsData(3).YData = vVecSoma;
 
 % Update the 
-xHandles.individual.boundaries(1, :).YData = 
-xHandles.individual.boundaries(2, :).YData = 
-xHandles.individual.boundaries(3, :).YData = 
+xHandles.individual.boundaries(1, 1).YData = 
+xHandles.individual.boundaries(1, 2).YData = 
+xHandles.individual.boundaries(2, 1).YData = 
+xHandles.individual.boundaries(2, 2).YData = 
+xHandles.individual.boundaries(3, 1).YData = 
+xHandles.individual.boundaries(3, 2).YData = 
 
 %% Save handles in xolotl object
 xolotlObject.handles = xHandles;

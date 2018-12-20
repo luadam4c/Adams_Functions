@@ -31,6 +31,9 @@ function [channelTypes, channelUnits, channelLabels] = ...
 %                       'EEG'   - EEG data; x axis in seconds; y-axis in uV
 %                       'patch' - patch data; x axis in ms; y-axis in mV
 %                   default == 'EEG' for 2d data 'patch' for 3d data
+% Requires:
+%       cd/apply_iteratively.m
+%
 % Used by:
 %       cd/parse_abf.m
 %       TODO: use parse_abf instead for the following:
@@ -133,18 +136,22 @@ end
 ranges = zeros(1, nChannels);
 
 % Maximum values for each channel
-peakValues = zeros(1, nChannels);
+maxValues = zeros(1, nChannels);
+minValues = zeros(1, nChannels);
 
 % Loop through each channel
 parfor j = 1:nChannels
     % Extract all traces in this channel
     vecAll = squeeze(abfdata(:, j, :));
     
-    % Compute the maximum range over all traces for this channel
-    ranges(j) = abs(max(max(vecAll)) - min(min(vecAll)));
-
     % Compute the maximum value over all traces for this channel
-    peakValues(j) = max(max(vecAll));
+    maxValues(j) = apply_iteratively(@max, vecAll);
+
+    % Compute the minimum value over all traces for this channel
+    minValues(j) = apply_iteratively(@min, vecAll);
+
+    % Compute the maximum range over all traces for this channel
+    ranges(j) = abs(maxValues(j) - minValues(j));
 end
 
 % Compute mean values for each channel
@@ -212,7 +219,7 @@ elseif strcmpi(expMode, 'patch') && nChannels == 3
             channelTypes{idxConductance} = channelTypePatchConductance;
 
             % Conductance usually exceeds 2000 when picoSiemens
-            if peakValues(idxConductance) > minConductancePs    
+            if maxValues(idxConductance) > minConductancePs    
                 channelUnits{idxConductance} = 'pS';
                 channelLabels{idxConductance} = 'Conductance (pS)';
             else
@@ -376,6 +383,9 @@ idxVoltage = 3 - idxCurrent;
 
 ranges(idxConductance) = -Inf;
 ranges(idxStimCopy) = -Inf;
+
+maxValues(j) = max(max(vecAll));
+ranges(j) = abs(max(max(vecAll)) - min(min(vecAll)));
 
 %}
 

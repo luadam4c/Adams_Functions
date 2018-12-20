@@ -154,6 +154,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % 2018-12-19 Now returns line object handles for the plots
 % 2018-12-19 Added 'FigHandle' as an optional argument
 % 2018-12-19 Now restricts vectors to x limits first
+% 2018-12-19 Now considers dataToCompare range too when computing y axis limits
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel'};
@@ -321,7 +322,6 @@ nRows = size(colorMap, 1);
 nTracesPerRow = ceil(nTraces / nRows);
 
 % Compute minimum and maximum Y values
-% TODO: Consider dataToCompare range too
 minY = apply_iteratively(@min, [data; dataToCompare]);
 maxY = apply_iteratively(@max, [data; dataToCompare]);
 rangeY = maxY - minY;

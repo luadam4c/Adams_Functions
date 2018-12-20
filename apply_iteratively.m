@@ -1,6 +1,6 @@
-function varargout = apply_iteratively (myFunction, array, varargin)
-%% Applies a function iteratively to the first argument
-% Usage: varargout = apply_iteratively (myFunction, array, varargin)
+function scalar = apply_iteratively (myFunction, array, varargin)
+%% Applies a function iteratively to an array until it becomes a non-cell array scalar
+% Usage: scalar = apply_iteratively (myFunction, array, varargin)
 % Explanation:
 %       Applies a function iteratively to an array.
 %           The function must be able to take elements of the array as an argument
@@ -10,8 +10,8 @@ function varargout = apply_iteratively (myFunction, array, varargin)
 %       b = apply_iteratively(@min, {1:10, -10:5, 5:30})
 %       c = apply_iteratively(@max, {1:10, -10:5, 5:30})
 % Outputs:
-%       varargout     - TODO: Description of varargout
-%                   specified as a TODO
+%       scalar      - the resulting scalar
+%                   specified as a scalar
 % Arguments:
 %       myFunction  - a custom function
 %                   must be a function handle
@@ -25,11 +25,12 @@ function varargout = apply_iteratively (myFunction, array, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/identify_channels.m
 %       cd/plot_traces.m
 
 % File History:
 % 2018-12-19 Created by Adam Lu
-% TODO: Does this work for more than one output?
+% TODO: Add 'TreatCellAsArray' as an optional argument
 % 
 % 
 
@@ -66,25 +67,15 @@ parse(iP, myFunction, array, varargin{:});
 % Check relationships between arguments
 % TODO
 
-%% Preparation
-% Get the number of output arguments that will be returned by the function
-nOutputsPossible = nargout(myFunction);
-
-% Check the number of outputs requested
-nargoutchk(0, nOutputsPossible);
-
-% Get the number of outputs requested
-nOutputsRequested = nargout;
-
-% Initialize a cell array with the requested number of outputs
-varargout = cell(nOutputsRequested, 1);
-
 %% Do the job
-if iscell(array)
-    [varargout{:}] = myFunction(cellfun(myFunction, array));
-else
-    [varargout{:}] = myFunction(myFunction(array));
+while ~isscalar(array)
+    if iscell(array)
+        array = cellfun(myFunction, array);
+    else
+        array = myFunction(array);
+    end
 end
+scalar = array;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
