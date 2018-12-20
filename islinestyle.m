@@ -32,6 +32,7 @@ function [results, linestyles] = islinestyle (candidates, varargin)
 %
 % Used by:
 %       /home/Matlab/EEG_gui/combine_EEG_gui_outputs.m
+%       cd/plot_window_boundaries.m
 %
 % File History:
 % 2018-05-16 Modified from issheettype.m

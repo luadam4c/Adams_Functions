@@ -1,11 +1,17 @@
-function [h, subPlots] = plot_traces (tVecs, data, varargin)
+function [fig, subPlots, plotsData, plotsDataToCompare] = ...
+                plot_traces (tVecs, data, varargin)
 %% Plots traces all in one place, overlapped or in parallel
-% Usage: [h, subPlots] = plot_traces (tVecs, data, varargin)
+% Usage: [fig, subPlots, plotsData, plotsDataToCompare] = ...
+%               plot_traces (tVecs, data, varargin)
 % Outputs:
-%       h           - figure handle for the created figure
-%                   specified as a figure handle
+%       fig         - figure handle for the created figure
+%                   specified as a figure object handle
 %       subPlots    - axes handles for the subplots
-%                   specified as a vector of axes handles
+%                   specified as a vector of axes object handles
+%       plotsData   - line handles for the data plots
+%                   specified as a vector of chart line object handles
+%       plotsDataToCompare  - line handles for the data to compare plots
+%                   specified as a vector of chart line object handles
 %
 % Arguments:
 %       tVecs       - time vector(s) for plotting
@@ -140,6 +146,7 @@ function [h, subPlots] = plot_traces (tVecs, data, varargin)
 % 2018-12-17 Now uses create_labels_from_numbers.m
 % 2018-12-17 Now uses iP.Unmatched
 % 2018-12-17 Now uses compute_xlimits.m and compute_ylimits.m
+% 2018-12-19 Now returns line object handles for the plots
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel'};
@@ -307,7 +314,7 @@ end
 
 % Set the default y-axis limits
 if isempty(yLimits) && ~strcmpi(plotMode, 'parallel') && rangeY ~= 0
-    % TODO: yLimits as a cell array
+    % TODO: Deal with yLimits if it is a cell array
     [yLimits, yRange] = compute_ylimits(minY, maxY, 'Coverage', 80);
 end
 
@@ -435,7 +442,7 @@ if iscell(xLimits)
                         tVecs, data, dataToCompare);
 
             % Plot all traces
-            h = plot_traces_helper(verbose, plotMode, ...
+            fig = plot_traces_helper(verbose, plotMode, ...
                             tVecsThis, dataThis, dataToCompareThis, ...
                             xUnits, xLimitsThis, yLimits, linkAxesOption, ...
                             xLabel, yLabel, traceLabels, colorMap, ...
@@ -446,16 +453,19 @@ if iscell(xLimits)
             
             % Hold off and close figure
             hold off;
-            close(h)
+            close(fig)
         end
     end
 
     % Return nothing
-    h = [];
-    subPlots = [];
+    fig = gobjects(1);
+    subPlots = gobjects(1);
+    plotsData = gobjects(1);
+    plotsDataToCompare = gobjects(1);
 else
     % Plot all traces
-    [h, subPlots] = plot_traces_helper(verbose, plotMode, ...
+    [fig, subPlots, plotsData, plotsDataToCompare] = ...
+        plot_traces_helper(verbose, plotMode, ...
                         tVecs, data, dataToCompare, ...
                         xUnits, xLimits, yLimits, linkAxesOption, ...
                         xLabel, yLabel, traceLabels, colorMap, ...
@@ -467,7 +477,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [h, subPlots] = ...
+function [fig, subPlots, plotsData, plotsDataToCompare] = ...
                 plot_traces_helper (verbose, plotMode, ...
                         tVecs, data, dataToCompare, ...
                         xUnits, xLimits, yLimits, linkAxesOption, ...
@@ -478,19 +488,18 @@ function [h, subPlots] = ...
                         maxNTracesForAnnotations, otherArguments)
 
 % Decide on the figure to plot on
-if ~isempty(figName)
-    % Create an invisible figure and clear it
-    if ~isempty(figNumber)
-        h = figure(figNumber);
-        set(h, 'Visible', 'off');
-    else
-        h = figure('Visible', 'off');
-    end
-    clf(h);
+if ~isempty(figNumber)
+    fig = figure(figNumber);
 else
-    % Get the current figure
-    h = gcf;
+    fig = gcf;
 end
+
+% Clear the figure
+clf(fig);
+
+% Initialize graphics object arrays for plots
+plotsData = gobjects(nTraces, 1);
+plotsDataToCompare = gobjects(nTraces, 1);
 
 switch plotMode
 case 'overlapped'
@@ -504,18 +513,22 @@ case 'overlapped'
 
         % Plot data to compare against as a black trace
         if ~isempty(dataToCompare{iTrace})
-            p2(iTrace) = plot(tVecs{iTrace}, dataToCompare{iTrace}, ...
+            plotsDataToCompare(iTrace) = ...
+                plot(tVecs{iTrace}, dataToCompare{iTrace}, ...
                                 'Color', 'k', otherArguments);
         end
         
         % Plot the data using the color map
-        p1(iTrace) = plot(tVecs{iTrace}, data{iTrace}, ...
-                        'Color', colorMap(thisRowNumber, :), otherArguments);
+        p = plot(tVecs{iTrace}, data{iTrace}, ...
+                'Color', colorMap(thisRowNumber, :), otherArguments);
 
         % Set the legend label as the trace label if provided
         if ~strcmpi(traceLabels, 'suppress')
-            set(p1(iTrace), 'DisplayName', traceLabels{iTrace});
+            set(p, 'DisplayName', traceLabels{iTrace});
         end
+
+        % Store handles in array
+        plotsData(iTrace) = p;
     end
     
     % Set time axis limits
@@ -556,6 +569,9 @@ case 'parallel'
         legendLocation = 'northeast';
     end
 
+    % Initialize graphics object arrays for subplots
+    subPlots = gobjects(nTraces, 1);
+
     % Plot each trace as a different subplot
     %   Note: the number of rows is based on the number of rows in the color map
     for iTrace = 1:nTraces
@@ -574,17 +590,18 @@ case 'parallel'
         
         % Plot data to compare against as a black trace
         if ~isempty(dataToCompare{iTrace})
-            p2 = plot(tVecs{iTrace}, dataToCompare{iTrace}, ...
+            plotsDataToCompare(iTrace) = ...
+                plot(tVecs{iTrace}, dataToCompare{iTrace}, ...
                         'Color', 'k', otherArguments);
         end
 
         % Plot the data using the color map
-        p1 = plot(tVecs{iTrace}, data{iTrace}, ...
+        p = plot(tVecs{iTrace}, data{iTrace}, ...
                     'Color', colorMap(thisRowNumber, :), otherArguments);
 
         % Set the legend label as the trace label if provided
         if ~strcmpi(traceLabels, 'suppress')
-            set(p1, 'DisplayName', traceLabels{iTrace});
+            set(p, 'DisplayName', traceLabels{iTrace});
         end
 
         % Set time axis limits
@@ -629,8 +646,9 @@ case 'parallel'
             xlabel(xLabel);
         end
 
-        % Save axes in array
+        % Store handles in array
         subPlots(iTrace) = ax;
+        plotsData(iTrace) = p;
     end
 
     % If requested, link or unlink axes of subPlots
@@ -640,7 +658,7 @@ case 'parallel'
 
     % If nTraces > maxNTracesForAnnotations, expand all subPlots by 1.2
     if nTraces > maxNTracesForAnnotations
-        subplotsqueeze(h, subPlotSqeezeFactor);
+        subplotsqueeze(fig, subPlotSqeezeFactor);
     end
     
     % Create an overarching title
@@ -726,11 +744,11 @@ if ~isempty(figName)
             figNameThis = replace(figName, '.png', suffixThis);
 
             % Save the new figure
-            save_all_figtypes(h, figNameThis, figTypes);
+            save_all_figtypes(fig, figNameThis, figTypes);
         end
     else
         % Save the new figure
-        save_all_figtypes(h, figName, figTypes);
+        save_all_figtypes(fig, figName, figTypes);
     end
 end
 
@@ -739,7 +757,7 @@ end
 %{ 
 OLD CODE:
 
-function h = plot_traces(tVec, data, xLimits, xLabel, yLabel, ...
+function fig = plot_traces(tVec, data, xLimits, xLabel, yLabel, ...
                             traceLabels, figTitle, figName, figNum)
 %       xLimits     - x-axis limits
 %       xLabel      - x-axis label
@@ -751,12 +769,12 @@ function h = plot_traces(tVec, data, xLimits, xLabel, yLabel, ...
 
 % Hold off and close figure
 hold off;
-close(h);
+close(fig);
 
-saveas(h, figName, 'png');
+saveas(fig, figName, 'png');
 
-h = figure(figNum);
-set(h, 'Visible', 'Off');
+fig = figure(figNum);
+set(fig, 'Visible', 'Off');
 
 % Determine the appropriate time axis limits
 if ~isempty(xLimits)
@@ -872,6 +890,22 @@ maxT = max(cellfun(@max, tVecs));
 xLimits = [minT, maxT];
 
 yLimits = [minY - 0.2 * rangeY, maxY + 0.2 * rangeY];
+
+if ~isempty(figName)
+    % Create an invisible figure and clear it
+    if ~isempty(figNumber)
+        fig = figure(figNumber);
+        set(fig, 'Visible', 'off');
+    else
+        fig = figure('Visible', 'off');
+    end
+    clf(fig);
+else
+    % Get the current figure
+    fig = gcf;
+end
+
+set(fig, 'Visible', 'off');
 
 %}
 

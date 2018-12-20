@@ -59,8 +59,10 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 %                   default == 'auto'
 %
 % Requires:
+%       cd/argfun.m
 %       cd/count_samples.m
 %       cd/create_time_vectors.m
+%       cd/find_ind_str_in_cell.m
 %       cd/m3ha_plot_individual_traces.m
 %
 % Used by:
@@ -68,6 +70,8 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 
 % File History:
 % 2018-12-17 Created by Adam Lu
+% 2018-12-19 Now uses Children to find the soma column
+% 2018-12-19 Now updates plots by changing the data values
 % 
 
 %% Hard-coded parameters
@@ -84,7 +88,7 @@ fitWindowDefault = [];          % set in m3ha_plot_individual_traces.m
 baseNoiseDefault = [];          % set in m3ha_plot_individual_traces.m
 sweepWeightsDefault = [];       % set in m3ha_plot_individual_traces.m
 sweepErrorsDefault = [];        % set in m3ha_plot_individual_traces.m
-plotSwpWeightsFlagDefault = false;
+plotSwpWeightsFlagDefault = false;      % will not update yet if true
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -153,46 +157,55 @@ sweepErrors = iP.Results.SweepErrors;
 plotSwpWeightsFlag = iP.Results.PlotSwpWeightsFlag;
 
 %% Preparation
-% Extract the time step in ms
-timeStep = xolotlObject.dt;
+% Extract the compartment names
+compNames = xolotlObject.Children;
 
-% Extract the external current injection protocol
-currentProtocol = xolotlObject.I_ext;
+% Find the idx for soma
+[idxSoma, idxDend1, idxDend2] = ...
+    argfun(@(x) find_ind_str_in_cell(x, compNames, 'IgnoreCase', true, ...
+                                'SearchMode', 'substrings', 'MaxNum', 1), ...
+            'soma', 'dend1', 'dend2');
 
-% Save the stimulation pulse
-% TODO: Use Children to find the soma column
-iStim = currentProtocol(:, 3);
+% Rename handle
+xHandles = xolotlObject.handles;
 
-% Retrieve all parameter values in the object tree
-paramValues = xolotlObject.serialize;
+%% Initialize a plot if not already done
+% TODO: Make this a function?
+if isempty(xHandles) || ~isfield(xHandles, 'myFig') || ...
+        ~isvalid(xHandles.individual)
+    % % Necessary for initializing an object in cpplab
+    % xHandles.m3ha = [];
 
-% Get the number of samples for each trace
-nSamples = count_samples(currentProtocol);
+    % Extract the time step in ms
+    timeStep = xolotlObject.dt;
 
-% Create a time vector in milliseconds
-tVecs = create_time_vectors(nSamples, 'SamplingIntervalMs', timeStep, ...
-                            'TimeUnits', 'ms');
+    % Extract the external current injection protocol
+    currentProtocol = xolotlObject.I_ext;
 
-% Initialize handles to the plot if not already done so
-if isempty(xolotlObject.handles) || ...
-        ~isfield(xolotlObject.handles, 'myFig') || ...
-        ~isvalid(xolotlObject.handles.myFig)
-    % Necessary for initializing an object in cpplab
-    xolotlObject.handles.myFig = [];
+    % Save the stimulation pulse
+    iStim = currentProtocol(:, idxSoma);
 
-    % Make the figure
-    xolotlObject.handles.myFig = ...
-        figure('Outerposition', [100 100 600 600], ...
-                'PaperUnits', 'points', 'PaperSize', [1200 600]); hold on
+    % Get the number of samples for each trace
+    nSamples = count_samples(iStim);
+
+    % Create a time vector in milliseconds
+    tVecs = create_time_vectors(nSamples, 'SamplingIntervalMs', timeStep, ...
+                                'TimeUnits', 'ms');
+
+    % Create NaN data for the initial plot
+    nanVoltageData = NaN * tVecs;
+    nanData = [nanVoltageData, nanVoltageData, nanVoltageData, iStim];
+
+    % Make a figure
+    figure('Outerposition', [100, 100, 600, 600], ...
+            'PaperUnits', 'points', 'PaperSize', [1200, 600]); hold on
 
     % Initialize the plot by using NaNs
-    xolotlObject.handles.myPlot = m3ha_plot_individual_traces(NaN, NaN, ...
+    individual = m3ha_plot_individual_traces(tVecs, nanData, ...
                                     'DataToCompare', dataToCompare, ...
                                     'XLimits', xLimits, ...
                                     'ColorMap', colorMap, ...
                                     'FigTitle', figTitle, ...
-                                    'FigNumber', figNumber, ...
-                                    'FigName', figName, ...
                                     'BaseWindow', baseWindow, ...
                                     'FitWindow', fitWindow, ...
                                     'BaseNoise', baseNoise, ...
@@ -200,51 +213,28 @@ if isempty(xolotlObject.handles) || ...
                                     'SweepErrors', sweepErrors, ...
                                     'PlotSwpWeightsFlag', plotSwpWeightsFlag);
 
-    % Store the NaN data for the plot
-    xolotlObject.handles.myPlot.XData = tVecs;
-    xolotlObject.handles.myPlot.YData = NaN * tVecs;
+    % Attach figure to puppeteer so that the figure can be closed automatically
+%     xHandles.puppeteer_object.attachFigure(individual.fig);
 
-    % Attach figure to puppeteer
-    xolotlObject.handles.puppeteer_object.attachFigure(xolotlObject.handles.myFig);
+    % Store the figure handle in the xolotl object
+    xolotlObject.handles.individual = individual;
 end
-
 
 %% Simulate
 % Get voltage traces for all compartments
 vVecs = xolotlObject.integrate;
 
-% Extract the voltage traces
-% TODO: Use Children to find the right column
-vVecDendrite1 = vVecs(:, 1);
-vVecDendrite2 = vVecs(:, 2);
-vVecSoma = vVecs(:, 3);
-
-%% Reorganize results
-% Place all traces into a data array
-data = [vVecDendrite2, vVecDendrite1, vVecSoma, iStim];
-
-% Update results in the plot
-x.handles.myPlot.YData = data;
+%% Extract data
+% Extract the voltage traces for each compartment
+vVecSoma = vVecs(:, idxSoma);
+vVecDendrite1 = vVecs(:, idxDend1);
+vVecDendrite2 = vVecs(:, idxDend2);
 
 %% Plot results
-% Plot the traces
-xolotlObject.handles.figfI = ...
-    m3ha_plot_individual_traces(tVecs, data, ...
-                                'DataToCompare', dataToCompare, ...
-                                'XLimits', xLimits, ...
-                                'ColorMap', colorMap, ...
-                                'FigTitle', figTitle, ...
-                                'FigNumber', figNumber, ...
-                                'FigName', figName, ...
-                                'BaseWindow', baseWindow, ...
-                                'FitWindow', fitWindow, ...
-                                'BaseNoise', baseNoise, ...
-                                'SweepWeights', sweepWeights, ...
-                                'SweepErrors', sweepErrors, ...
-                                'PlotSwpWeightsFlag', plotSwpWeightsFlag);
-
-% Restore the xolotl object to its original state
-xolotlObject.deserialize(paramValues);
+% Update data in the corresponding line object
+xolotlObject.handles.individual.plotsData(1).YData = vVecDendrite2;
+xolotlObject.handles.individual.plotsData(2).YData = vVecDendrite1;
+xolotlObject.handles.individual.plotsData(3).YData = vVecSoma;
 
 % Update figure
 drawnow;
@@ -300,6 +290,33 @@ xlim(xLimits)
 
 subplot(3, 1, 3); hold on
 xlim(xLimits)
+
+'FigNumber', figNumber, ...
+'FigName', figName, ...
+
+% Plot the traces
+    m3ha_plot_individual_traces(tVecs, data, ...
+                                'DataToCompare', dataToCompare, ...
+                                'XLimits', xLimits, ...
+                                'ColorMap', colorMap, ...
+                                'FigTitle', figTitle, ...
+                                'FigNumber', figNumber, ...
+                                'FigName', figName, ...
+                                'BaseWindow', baseWindow, ...
+                                'FitWindow', fitWindow, ...
+                                'BaseNoise', baseNoise, ...
+                                'SweepWeights', sweepWeights, ...
+                                'SweepErrors', sweepErrors, ...
+                                'PlotSwpWeightsFlag', plotSwpWeightsFlag);
+
+% Retrieve all parameter values in the object tree
+paramValues = xolotlObject.serialize;
+
+% Restore the xolotl object to its original state
+xolotlObject.deserialize(paramValues);
+
+% Place all traces into a data array
+data = [vVecDendrite2, vVecDendrite1, vVecSoma, iStim];
 
 %}
 

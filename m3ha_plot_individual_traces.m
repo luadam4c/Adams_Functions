@@ -1,13 +1,18 @@
-function hfig = m3ha_plot_individual_traces (tVecs, data, varargin)
+function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 %% Plots individual voltage traces
-% Usage: hfig = m3ha_plot_individual_traces (tVecs, data, varargin)
+% Usage: handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       hfig        - handle to figure
-%                   specified as a TODO
+%       handles     - a handles structure with fields:
+%                   fig
+%                   subPlots
+%                   plotsData
+%                   plotsDataToCompare
+%                   boundaries
+%                   specified as a scalar structure
 % Arguments:
 %       tVecs       - time vector(s) for plotting
 %                   Note: If a cell array, each element must be a vector
@@ -63,6 +68,7 @@ function hfig = m3ha_plot_individual_traces (tVecs, data, varargin)
 %                   - 'PlotSwpWeightsFlag': whether to plot sweep weights
 %                   must be numeric/logical 1 (true) or 0 (false) or 'auto'
 %                   default == 'auto'
+%                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
 %       ~/Downloaded_Functions.m/rgb.m
@@ -87,6 +93,9 @@ function hfig = m3ha_plot_individual_traces (tVecs, data, varargin)
 
 % File History:
 % 2018-10-29 Created by Adam Lu
+% 2018-12-19 Now uses unmatched varargin parts as parameters for plot()
+% 2018-12-19 Now returns all object handles in a structure
+% 2018-12-19 Now does not create new figure if figNumber is not provided
 % 
 
 %% Hard-coded parameters
@@ -102,7 +111,7 @@ dataToCompareDefault = [];      % no data to compare against by default
 xLimitsDefault = [];            % set later
 colorMapDefault = [];           % set later
 figTitleDefault = '';           % set later
-figNumberDefault = 104;         % figure 104 by default
+figNumberDefault = [];          % use current figure by default
 figNameDefault = '';            % don't save figure by default
 baseWindowDefault = [];         % set later
 fitWindowDefault = [];          % set later
@@ -123,6 +132,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'tVecs', ...
@@ -184,11 +194,16 @@ sweepWeights = iP.Results.SweepWeights;
 sweepErrors = iP.Results.SweepErrors;
 plotSwpWeightsFlag = iP.Results.PlotSwpWeightsFlag;
 
+% Keep unmatched arguments for the plot() function
+otherArguments = iP.Unmatched;
+
 %% Preparation
+% Initialize output structure
+handles = struct;
+
 % If data is empty, return
 if isempty(data) || iscell(data) && all(cellfun(@isempty, data))
     fprintf('Nothing to plot!\n');
-    hfig = [];
     return
 end
 
@@ -216,7 +231,7 @@ end
 % Re-compute sweep errors if not provided
 if isempty(sweepErrors)
     % Compute sweep errors
-    errorStructTemp = compute_sweep_errors (data, dataToCompare, ...
+    errorStructTemp = compute_sweep_errors(data, dataToCompare, ...
                         'TimeVecs', tVecs, 'FitWindow', fitWindow, ...
                         'SweepWeights', sweepWeights, 'NormalizeError', false);
 
@@ -241,21 +256,26 @@ end
 nRows = size(colorMap, 1);
 nTracesPerRow = ceil(nSweeps / nRows);
 
+% Initialize graphics object arrays
+boundaries = gobjects(nSweeps, 2);
+
 %% Do the job
 % Create and clear figure
 if ~isempty(figNumber)
-    hfig = figure(figNumber);
+    fig = figure(figNumber);
 else
-    hfig = figure('Visible', 'off');
+    fig = gcf;
 end
-set(hfig, 'Name', 'All individual voltage traces');
-clf(hfig);
+set(fig, 'Name', 'All individual voltage traces');
+clf(fig);
 
 % Plot traces
-[hfig, subPlots] = plot_traces(tVecs, data, 'DataToCompare', dataToCompare, ...
-                        'ColorMap', colorMap, 'XLimits', xLimits, ...
-                        'YLabel', 'suppress', 'LegendLocation', 'suppress', ...
-                        'PlotMode', plotMode, 'LinkAxesOption', linkAxesOption);
+[~, subPlots, plotsData, plotsDataToCompare] = ...
+    plot_traces(tVecs, data, 'DataToCompare', dataToCompare, ...
+                'ColorMap', colorMap, 'XLimits', xLimits, ...
+                'YLabel', 'suppress', 'LegendLocation', 'suppress', ...
+                'PlotMode', plotMode, 'LinkAxesOption', linkAxesOption, ...
+                otherArguments);
 
 % Plot annotations
 for iSwp = 1:nSweeps
@@ -291,8 +311,9 @@ for iSwp = 1:nSweeps
 
     % Plot fitWindow only if nSweeps <= maxNTracesForAnnotations
     if nSweeps <= maxNTracesForAnnotations
-        plot_window_boundaries(fitWindow{iSwp}, ...
-                                'LineColor', 'g', 'LineStyle', '--');
+        handles.boundaries(iSwp, :) = ...
+            plot_window_boundaries(fitWindow{iSwp}, ...
+                                    'Color', 'g', 'LineStyle', '--');
     end
 end
 
@@ -302,8 +323,15 @@ suptitle(figTitle);
 %% Output results
 % Save figure
 if ~isempty(figName)
-    save_all_figtypes(hfig, figName);
+    save_all_figtypes(fig, figName);
 end
+
+% Store in handles structure
+handles.fig = fig;
+handles.subPlots = subPlots;
+handles.plotsData = plotsData;
+handles.plotsDataToCompare = plotsDataToCompare;
+handles.boundaries = boundaries;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -328,6 +356,15 @@ text('String', ['\color{', colorText, '} \bf ', ...
 subplot(nRows, nTracesPerRow, iSwp); hold on;
 
 'FigTitle', figTitle, 
+
+plot_window_boundaries(fitWindow{iSwp}, ...
+                        'LineColor', 'g', 'LineStyle', '--');
+
+fig = figure('Visible', 'off');
+
+fig = [];
+
+figNumberDefault = 104;         % figure 104 by default
 
 %}
 

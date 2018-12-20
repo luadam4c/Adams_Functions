@@ -7,12 +7,12 @@ function h = plot_vertical_line (xValue, varargin)
 %       h = plot_vertical_line(xValue)
 %       h = plot_vertical_line(xValue, 'YLimits', yLimits)
 % Outputs:
-%       h           - handle to the line
+%       h           - handle to the line object created
 %                   specified as a line object handle
 % Arguments:
 %       xValue      - the y value for the vertical line
 %                   must be a numeric scalar
-%       varargin    - 'YLimits': x value limits for the line
+%       varargin    - 'YLimits': y value limits for the line
 %                   must be empty or a numeric vector of 2 elements
 %                   default == get(gca, 'YLim')
 %                   - Any other parameter-value pair for the line() function
@@ -22,6 +22,7 @@ function h = plot_vertical_line (xValue, varargin)
 %
 % Used by:
 %       cd/plot_pulse_response_with_stimulus.m
+%       cd/plot_window_boundaries.m
 
 % File History:
 % 2018-12-19 Created by Adam Lu
@@ -61,7 +62,7 @@ yLimits = iP.Results.YLimits;
 otherArguments = iP.Unmatched;
 
 %% Preparation
-% Set default x value limits
+% Set default y value limits
 if isempty(yLimits)
     yLimits = get(gca, 'YLim');
 end

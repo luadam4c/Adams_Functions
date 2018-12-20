@@ -248,7 +248,7 @@ Last Updated 2018-12-19 by Adam Lu
 - [**plot_tuning_curve.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_curve.m): Plot a 1-dimensional tuning curve
 - [**plot_tuning_map.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_map.m): Plot a 2-dimensional tuning map
 - [**plot_vertical_line.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_vertical_line.m): Plots a vertical line
-- [**plot_window_boundaries.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_window_boundaries.m): TODO: A summary of what the function does (must be a single unbreaked line)
+- [**plot_window_boundaries.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_window_boundaries.m): Plots window boundaries as vertical lines
 - [**print_and_show_message.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_and_show_message.m): Print to standard output and show message box at the same time
 - [**print_cellstr.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_cellstr.m): Prints and returns a string for the contents stored in a cell array
 - [**print_help.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_help.m): Prints and returns the documentation for a specific function

@@ -35,6 +35,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/m3ha_run_neuron_once.m
+%       cd/m3ha_xolotl_plot.m
 %       cd/match_format_vector_sets.m
 %       cd/match_reciprocals.m
 %       cd/parse_assyst_swd.m
