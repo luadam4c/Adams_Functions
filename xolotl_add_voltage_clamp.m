@@ -19,7 +19,7 @@ function [xolotlObject, clampedVoltage] = ...
 %                   must be a string scalar or a character vector
 %                   default == set in xolotl_compartment_index.m
 %                   - 'Amplitude': amplitude in mV 
-%                   must be a numeric scalar
+%                   must be a numeric vector
 %                   default == -70 mV
 %
 % Requires:
@@ -63,7 +63,7 @@ addRequired(iP, 'xolotlObject');
 addParameter(iP, 'Compartment', compartmentDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'Amplitude', amplitudeDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
 
 % Read from the Input Parser
 parse(iP, xolotlObject, varargin{:});
@@ -94,7 +94,7 @@ clampedVoltage = amplitude;
 clampedVoltage = match_row_count(clampedVoltage, nRowsPrev);
 
 % Replace the corresponding column in prevClampedVoltage 
-newClampedVoltages(:, idxCompartment) = clampedVoltage;
+newClampedVoltages(:, idxCompartment) = clampedVoltage(idxCompartment);
 
 %% Replace voltage clamp with the new voltage clamp traces
 xolotlObject.V_clamp = newClampedVoltages;

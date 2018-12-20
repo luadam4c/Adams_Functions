@@ -7,6 +7,11 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 %       TODO
 % Outputs:
 %       handles     - a handles structure with fields:
+%                       endPointsToPlot
+%                       baseWindow
+%                       fitWindow
+%                       baseNoise
+%                       sweepWeights
 %                       fig
 %                       subPlots
 %                       plotsData
@@ -95,6 +100,7 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 % Requires:
 %       ~/Downloaded_Functions.m/rgb.m
 %       cd/argfun.m
+%       cd/compute_baseline_noise.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_sweep_errors.m
 %       cd/extract_subvectors.m
@@ -254,16 +260,6 @@ if isempty(data) || iscell(data) && all(cellfun(@isempty, data))
     return
 end
 
-% Restrict to x limits for faster processing
-if ~isempty(xLimits) && isnumeric(xLimits)
-    % Find the end points
-    endPoints = find_window_endpoints(xLimits, tVecs);
-
-    % Restrict to these end points
-    [tVecs, data] = ...
-        argfun(@(x) extract_subvectors(x, 'EndPoints', endPoints), tVecs, data);
-end
-
 % Force time and data vectors as column cell arrays of column vectors
 [tVecs, data] = argfun(@force_column_cell, tVecs, data);
 
@@ -311,7 +307,7 @@ if isempty(baseErrors)
         % Compute sweep errors over the baseline window
         errorStructTemp = compute_sweep_errors(data, dataToCompare, ...
                             'TimeVecs', tVecs, 'FitWindow', baseWindow, ...
-                            'SweepWeights', sweepWeights, 'NormalizeError', false);
+                            'NormalizeError', false);
 
         % Extract baseline errors for each trace
         baseErrors = errorStructTemp.swpErrors;
@@ -327,7 +323,7 @@ if isempty(sweepErrors)
         % Compute sweep errors over the fitting window
         errorStructTemp = compute_sweep_errors(data, dataToCompare, ...
                             'TimeVecs', tVecs, 'FitWindow', fitWindow, ...
-                            'SweepWeights', sweepWeights, 'NormalizeError', false);
+                            'NormalizeError', false);
 
         % Extract sweep errors for each trace
         sweepErrors = errorStructTemp.swpErrors;
@@ -335,9 +331,9 @@ if isempty(sweepErrors)
 end
 
 % Match vectors format and numbers of sweep-dependent vectors with data
-[tVecs, dataToCompare, fitWindow] = ...
+[tVecs, dataToCompare, baseWindow, fitWindow] = ...
     argfun(@(x) match_format_vector_sets(x, data), ...
-            tVecs, dataToCompare, fitWindow);
+            tVecs, dataToCompare, baseWindow, fitWindow);
 
 % Make sure vectors are columns
 [baseNoise, sweepErrors] = ...
@@ -356,6 +352,21 @@ subTitles = gobjects(nSweeps, 1);
 boundaries = gobjects(nSweeps, 2);
 
 %% Do the job
+% Restrict to x limits for faster processing
+%   Note: this should only be done after the errors are computed
+if ~isempty(xLimits) && isnumeric(xLimits)
+    % Find the end points
+    endPointsToPlot = find_window_endpoints(xLimits, tVecs);
+
+    % Restrict to these end points
+    [tVecs, data, dataToCompare] = ...
+        argfun(@(x) extract_subvectors(x, 'EndPoints', endPointsToPlot), ...
+                tVecs, data, dataToCompare);
+else
+    % Use the first and last indices
+    endPointsToPlot = find_window_endpoints([], tVec);
+end
+
 % Plot traces
 [fig, subPlots, plotsData, plotsDataToCompare] = ...
     plot_traces(tVecs, data, 'DataToCompare', dataToCompare, ...
@@ -434,6 +445,12 @@ for iSwp = 1:nSweeps
     axis 'auto y'
 end
 
+% Extract y axis limits
+yLimits = zeros(nSweeps, 2);
+for iSwp = 1:nSweeps
+    yLimits(iSwp, :) = get(subPlots(iSwp), 'YLim');
+end
+
 % Create a title
 suptitle(figTitle);
 
@@ -444,12 +461,18 @@ if ~isempty(figName)
 end
 
 % Store in handles structure
+handles.endPointsToPlot = endPointsToPlot;
+handles.baseWindow = baseWindow;
+handles.fitWindow = fitWindow;
+handles.baseNoise = baseNoise;
+handles.sweepWeights = sweepWeights;
 handles.fig = fig;
 handles.subPlots = subPlots;
 handles.plotsData = plotsData;
 handles.plotsDataToCompare = plotsDataToCompare;
 handles.subTitles = subTitles;
 handles.boundaries = boundaries;
+handles.yLimits = yLimits;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -492,6 +515,22 @@ else
 end
 set(fig, 'Name', 'All individual voltage traces');
 clf(fig);
+
+% Extract y axis limits and store in individual structure
+yLimits = zeros(nSweeps, 2);
+for iSwp = 1:nSweeps
+    % Use the limits from the left boundary line
+    yLimits(iTrace, :) = boundaries(iSwp, 1).YData;
+end
+individual.yLimits = yLimits;
+
+% Compute sweep errors over the fitting window
+errorStructTemp = compute_sweep_errors(data, dataToCompare, ...
+                    'TimeVecs', tVecs, 'FitWindow', fitWindow, ...
+                    'SweepWeights', sweepWeights, 'NormalizeError', false);
+
+% Extract sweep errors for each trace
+sweepErrors = errorStructTemp.swpErrors;
 
 %}
 

@@ -24,6 +24,7 @@ function [parsedParams] = parse_xolotl_object (xolotlObject)
 %       cd/match_row_count.m
 %
 % Used by:
+%       cd/m3ha_xolotl_plot.m
 %       cd/xolotl_add_current_pulse.m
 %       cd/xolotl_add_holding_current.m
 %       cd/xolotl_add_voltage_clamp.m

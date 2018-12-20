@@ -51,7 +51,7 @@ function [baseWindow, fitWindow, baseNoise, sweepWeights] = ...
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/m3ha_run_neuron_once.m
-%       cd/m3ha_xolotl_plot.m
+%       cd/m3ha_xolotl_test.m
 
 % File History:
 % 2018-11-01 Moved from m3ha_plot_individual_traces.m
@@ -121,7 +121,7 @@ end
 
 % Matches tVecs and data so that they are both cell arrays 
 %   of the same number of column vectors
-[tVecs, data] = match_format_vector_sets(tVecs, data);
+[tVecs, data] = match_format_vector_sets(tVecs, data, 'ForceCellOutputs', true);
 
 %% Do the job
 % Find the minimum and maximum times and center times

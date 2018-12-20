@@ -16,6 +16,15 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 %                         If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array of numeric arrays
 %                   default == []
+%                   - 'HoldingPotential': holding potential
+%                   must be a numeric vector
+%                   default == baseline of dataToCompare
+%                   - 'CompToPatch': compartment name to patch
+%                   must be a string scalar or a character vector
+%                   default == set in xolotl_compartment_index.m
+%                   - 'TimeToStabilize': time to stabilize in ms
+%                   must be a nonnegative scalar
+%                   default == 1000 ms
 %                   - 'XLimits': limits of x axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
@@ -61,12 +70,13 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 % Requires:
 %       cd/argfun.m
 %       cd/compute_axis_limits.m
-%       cd/compute_default_sweep_info.m
+%       cd/compute_baseline_noise.m
 %       cd/compute_sweep_errors.m
 %       cd/count_samples.m
 %       cd/create_time_vectors.m
 %       cd/find_ind_str_in_cell.m
-%       cd/m3ha_plot_individual_traces.m
+%       cd/m3ha_plot_individual_traces.
+%       cd/parse_xolotl_object.m
 %
 % Used by:
 %       cd/m3ha_xolotl_test.m
@@ -79,15 +89,20 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 % 2018-12-19 Now updates the y limits for the boundaries
 % 2018-12-20 Added x and y labels
 % 2018-12-20 Now updates error strings
+% 2018-12-20 Now updates holding current here
 % 
 
 %% Hard-coded parameters
 compsToLabel = {'dend2', 'dend1', 'soma'};
 yLabels = {'Dendrite 2 (mV)', 'Dendrite 1 (mV)', 'Soma (mV)', 'Stim (nA)'};
 nSigFig = 3;
+xUnits = 'ms';
 
 %% Default values for optional arguments
 dataToCompareDefault = [];      % no data to compare against by default
+compToPatchDefault = '';        % set later
+timeToStabilizeDefault = 1000;  % simulate for 1000 ms by default
+holdingPotentialDefault = [];   % set later
 xLimitsDefault = [];            % for current pulse
 colorMapDefault = [];           % set in m3ha_plot_individual_traces.m
 figTitleDefault = 'Simulation by xolotl';
@@ -122,6 +137,12 @@ addParameter(iP, 'DataToCompare', dataToCompareDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['vec1s must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
+addParameter(iP, 'HoldingPotential', holdingPotentialDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'CompToPatch', compToPatchDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'TimeToStabilize', timeToStabilizeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
 addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
@@ -157,6 +178,9 @@ addParameter(iP, 'PlotSwpWeightsFlag', plotSwpWeightsFlagDefault, ...
 % Read from the Input Parser
 parse(iP, xolotlObject, varargin{:});
 dataToCompare = iP.Results.DataToCompare;
+holdingPotential = iP.Results.HoldingPotential;
+compToPatch = iP.Results.CompToPatch;
+timeToStabilize = iP.Results.TimeToStabilize;
 xLimits = iP.Results.XLimits;
 colorMap = iP.Results.ColorMap;
 figTitle = iP.Results.FigTitle;
@@ -171,12 +195,15 @@ sweepErrors = iP.Results.SweepErrors;
 plotSwpWeightsFlag = iP.Results.PlotSwpWeightsFlag;
 
 %% Preparation
-% Extract the compartment names
-compNames = xolotlObject.Children;
+% Extract all compartments
+compartments = xolotlObject.Children;
+
+% Count the number of compartments
+nCompartments = numel(compartments);
 
 % Find the indices for compartments to label in xolotl
 idxInXolotl = ...
-    cellfun(@(x) find_ind_str_in_cell(x, compNames, 'IgnoreCase', true, ...
+    cellfun(@(x) find_ind_str_in_cell(x, compartments, 'IgnoreCase', true, ...
                                 'SearchMode', 'substrings', 'MaxNum', 1), ...
             compsToLabel);
 
@@ -192,12 +219,13 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
     % Extract the external current injection protocol
     currentProtocol = xolotlObject.I_ext;
 
-    % Find the idx for soma
-    idxSoma = find_ind_str_in_cell('soma', compNames, 'IgnoreCase', true, ...
-                                    'SearchMode', 'substrings', 'MaxNum', 1);
+    % Find the idx for the compartment to patch
+    idxCompToPatch = ...
+        find_ind_str_in_cell(compToPatch, compartments, 'MaxNum', 1, ...
+                            'SearchMode', 'substrings', 'IgnoreCase', true);
 
     % Save the stimulation protocol
-    iStim = currentProtocol(:, idxSoma);
+    iStim = currentProtocol(:, idxCompToPatch);
 
     % Get the number of samples for the stimulation protocol
     nSamples = count_samples(iStim);
@@ -205,20 +233,6 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
     % Create a time vector in milliseconds
     tVec = create_time_vectors(nSamples, 'SamplingIntervalMs', timeStep, ...
                                 'TimeUnits', 'ms');
-
-    % Restrict to x limits for faster processing
-    if ~isempty(xLimits) && isnumeric(xLimits)
-        % Find the end points
-        endPointsToPlot = find_window_endpoints(xLimits, tVec);
-
-        % Restrict to these end points
-        [tVec, iStim, dataToCompare] = ...
-            argfun(@(x) extract_subvectors(x, 'EndPoints', endPointsToPlot), ...
-                    tVec, iStim, dataToCompare);
-    else
-        % Use the first and last indices
-        endPointsToPlot = find_window_endpoints([], tVec);
-    end
 
     % Create NaN data for the initial plot
     nanVoltageData = NaN * tVec;
@@ -233,7 +247,7 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
     individual = m3ha_plot_individual_traces(tVec, nanData, ...
                                     'DataToCompare', dataToCompare, ...
                                     'XLimits', xLimits, ...
-                                    'XUnits', 'ms', ...
+                                    'XUnits', xUnits, ...
                                     'YLabel', yLabels, ...
                                     'ColorMap', colorMap, ...
                                     'FigTitle', figTitle, ...
@@ -247,13 +261,6 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
                                     'SweepErrors', sweepErrors, ...
                                     'PlotSwpWeightsFlag', plotSwpWeightsFlag);
 
-    % Extract y axis limits
-    yLimits = zeros(3, 2);
-    for iTrace = 1:4
-        % Use the limits from the left boundary line
-        yLimits(iTrace, :) = individual.boundaries(iTrace, 1).YData;
-    end
-
     % If using x.manipulate
     if isfield(xHandles, 'puppeteer_object')
         % Attach figure to puppeteer so that 
@@ -261,11 +268,22 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
         xHandles.puppeteer_object.attachFigure(individual.fig);
     end
 
-    % Store information in individual structure
-    individual.endPointsToPlot = endPointsToPlot;
-    individual.baseWindow = baseWindow;
-    individual.fitWindow = fitWindow;
-    individual.yLimits = yLimits;
+    % If not provided, compute the holding potential(s) needed for simulations
+    if isempty(holdingPotential)
+        holdingPotential = ...
+            compute_means(dataToCompare, 'Windows', individual.baseWindow);
+    end
+
+    % Retrieve the original external current
+    externalCurrentOrig = xolotlObject.I_ext;
+    
+    % Store arguments in handles structure 
+    %   (so that they can be used by x.manipulate)
+    xHandles.dataToCompare = dataToCompare;
+    xHandles.compToPatch = compToPatch;
+    xHandles.timeToStabilize = timeToStabilize;
+    xHandles.holdingPotential = holdingPotential;
+    xHandles.externalCurrentOrig = externalCurrentOrig;
 
     % Store the figure handle in the xolotl object
     xHandles.individual = individual;
@@ -273,39 +291,56 @@ else
     % Extract the individual structure from the xolotl object
     individual = xHandles.individual;
 
-    % Extract information from the individual structure
-    endPointsToPlot = individual.endPointsToPlot;
-    baseWindow = individual.baseWindow;
-    fitWindow = individual.fitWindow;
-    yLimits = individual.yLimits;
-
     % Extract tVec from the first plot
     tVec = individual.plotsData(1).XData;
 
-    % Recompute the number of samples
-    nSamples = count_samples(tVec);
-
-    % Extract dataToCompare
-    dataToCompare = zeros(nSamples, 3);
-    for iTrace = 1:3    
-        dataToCompare(:, iTrace) = individual.plotsDataToCompare(iTrace).YData;
-    end
+    % Retrieve from the handles structure
+    %   Note: dataToCompare must be retrieved in full (not just what's plotted)
+    dataToCompare = xHandles.dataToCompare;
+    compToPatch = xHandles.compToPatch;
+    timeToStabilize = xHandles.timeToStabilize;
+    holdingPotential = xHandles.holdingPotential;
+    externalCurrentOrig = xHandles.externalCurrentOrig;
 end
+
+% Extract information from the individual structure
+yLimits = individual.yLimits;
+baseWindow = individual.baseWindow;
+fitWindow = individual.fitWindow;
+endPointsToPlot = individual.endPointsToPlot;
+
+%% Set up simulation
+% Reset to the original external current
+xolotlObject.I_ext = externalCurrentOrig;
+
+% Find the holding current (nA) necessary to match the holding potential
+holdingCurrent = ...
+    xolotl_estimate_holding_current(xolotlObject, holdingPotential, ...
+                                    'CompToPatch', compToPatch, ...
+                                    'TimeToStabilize', timeToStabilize);
+
+% Add the holding current (nA)
+xolotl_add_holding_current(xolotlObject, 'Compartment', compToPatch, ...
+                            'Amplitude', holdingCurrent);
 
 %% Simulate
 % Get voltage traces for all compartments
 vVecs = xolotlObject.integrate;
 
-% Restrict to same end points to be consistent with the default plot
-vVecs = extract_subvectors(vVecs, 'EndPoints', endPointsToPlot);
-
 %% Computed updated data for plots
 % Reorganize voltage traces to match plots
 vVecPlots = vVecs(:, idxInXolotl);
 
+% Use just the first nCompartments vectors
+vVecToCompare = dataToCompare(:, 1:nCompartments);
+
+% Use just the first nCompartments windows or end points
+[baseWindow, fitWindow, endPointsToPlot] = ...
+    argfun(@(x) x(1:nCompartments), baseWindow, fitWindow, endPointsToPlot);
+
 % Compute new y limits
-newYLimits = zeros(3, 2);
-parfor iTrace = 1:3
+newYLimits = zeros(nCompartments, 2);
+parfor iTrace = 1:nCompartments
     % Put the new data and old y limits together
     newDataForLimits = {vVecPlots(:, iTrace); yLimits(iTrace, :)};
     
@@ -313,22 +348,16 @@ parfor iTrace = 1:3
     newYLimits(iTrace, :) = compute_axis_limits(newDataForLimits, 'y');
 end
 
-% Re-compute default windows, noise and weights
-[baseWindow, fitWindow, baseNoise, sweepWeights] = ...
-    compute_default_sweep_info(tVec, vVecPlots, ...
-            'BaseWindow', baseWindow, 'FitWindow', fitWindow, ...
-            'BaseNoise', baseNoise, 'SweepWeights', sweepWeights);
-
 % Re-compute baseline errors if not provided
 if isempty(baseErrors)
-    if isempty(dataToCompare)
+    if isempty(vVecToCompare)
         % Just use the baseline noise
         baseErrors = baseNoise;
     else
         % Compute sweep errors over the baseline window
-        errorStructTemp = compute_sweep_errors(vVecPlots, dataToCompare, ...
-                            'TimeVecs', tVec, 'FitWindow', baseWindow, ...
-                            'SweepWeights', sweepWeights, 'NormalizeError', false);
+        errorStructTemp = compute_sweep_errors(vVecPlots, vVecToCompare, ...
+                                'TimeVecs', tVec, 'FitWindow', baseWindow, ...
+                                'NormalizeError', false);
 
         % Extract baseline errors for each trace
         baseErrors = errorStructTemp.swpErrors;
@@ -337,14 +366,14 @@ end
 
 % compute sweep errors if not provided
 if isempty(sweepErrors)
-    if isempty(dataToCompare)
+    if isempty(vVecToCompare)
         % Compute the baseline noise over the fitting window
         sweepErrors = compute_baseline_noise(dataForWeights, tVecs, fitWindow);
     else
         % Compute sweep errors over the fitting window
-        errorStructTemp = compute_sweep_errors(vVecPlots, dataToCompare, ...
-                            'TimeVecs', tVec, 'FitWindow', fitWindow, ...
-                            'SweepWeights', sweepWeights, 'NormalizeError', false);
+        errorStructTemp = compute_sweep_errors(vVecPlots, vVecToCompare, ...
+                                'TimeVecs', tVec, 'FitWindow', fitWindow, ...
+                                'NormalizeError', false);
 
         % Extract sweep errors for each trace
         sweepErrors = errorStructTemp.swpErrors;
@@ -354,26 +383,29 @@ end
 % Re-generate the error strings
 errorStrings = ...
     arrayfun(@(x) ['Noise = ', num2str(baseErrors(x), nSigFig), '; ', ...
-                    'RMSE = ', num2str(sweepErrors(x), nSigFig)], 1:3, ...
-                'UniformOutput', false);
+                    'RMSE = ', num2str(sweepErrors(x), nSigFig)], ...
+                1:nCompartments, 'UniformOutput', false);
 
 %% Update plots
+% Restrict to same end points to be consistent with the default plot
+%   Note: this should only be done after the errors are computed
+vVecPlots = extract_subvectors(vVecPlots, 'EndPoints', endPointsToPlot);
+
 % Update data in the chart line objects
-for iTrace = 1:3    
-    individual.plotsData(iTrace).YData = vVecPlots(:, iTrace);
+for iTrace = 1:nCompartments   
+    individual.plotsData(iTrace).YData = vVecPlots{iTrace};
 end
 
 % Update data in the primitive line objects
-for iTrace = 1:3
+for iTrace = 1:nCompartments
     individual.boundaries(iTrace, 1).YData = newYLimits(iTrace, :);
     individual.boundaries(iTrace, 2).YData = newYLimits(iTrace, :);
 end
 
 % Update subplot titles
-for iTrace = 1:3
+for iTrace = 1:nCompartments
     individual.subTitles(iTrace).String = errorStrings{iTrace};
 end
-
 
 %% Save handles in xolotl object
 xolotlObject.handles = xHandles;
@@ -469,7 +501,7 @@ xolotlObject.handles.individual.plotsData(3).YData = vVecSoma;
 % Extract the voltage traces for each compartment
 vVecDendrite2 = vVecs(:, idxDend2);
 vVecDendrite1 = vVecs(:, idxDend1);
-vVecSoma = vVecs(:, idxSoma);
+vVecSoma = vVecs(:, idxCompToPatch);
 
 individual.plotsData(1).YData = vVecDendrite2;
 individual.plotsData(2).YData = vVecDendrite1;
@@ -484,6 +516,71 @@ newMaxY = apply_iteratively(@max, {vVecPlots(:, iTrace); oldMaxY});
 
 % Update y limits
 newYLimits(iTrace, :) = compute_ylimits(newMinY, newMaxY, 'Coverage', 80);
+
+% Extract dataToCompare
+dataToCompare = zeros(nSamples, nCompartments);
+for iTrace = 1:nCompartments   
+    dataToCompare(:, iTrace) = individual.plotsDataToCompare(iTrace).YData;
+end
+
+% Restrict to x limits for faster processing
+if ~isempty(xLimits) && isnumeric(xLimits)
+    % Find the end points
+    endPointsToPlot = find_window_endpoints(xLimits, tVec);
+
+    % Restrict to these end points
+    [tVec, iStim, dataToCompare] = ...
+        argfun(@(x) extract_subvectors(x, 'EndPoints', endPointsToPlot), ...
+                tVec, iStim, dataToCompare);
+else
+    % Use the first and last indices
+    endPointsToPlot = find_window_endpoints([], tVec);
+end
+
+sweepWeights = individual.sweepWeights;
+
+% holdingCurrent = 0.0743;
+% holdingCurrent = 0.1125;
+% holdingCurrent = 0;
+
+%                   - 'CpDelay': current pulse delay (ms)
+%                   must be a numeric scalar
+%                   default == 
+%                   - 'CpDuration': current pulse duration (ms)
+%                   must be a numeric scalar
+%                   default == 
+%                   - 'CpAmplitude': current pulse amplitude (nA)
+%                   must be a numeric scalar
+%                   default == 
+%                   - 'TimeEndCpr': time end of current pulse response (ms)
+%                   must be a numeric scalar
+%                   default == 
+cpDelayDefault = [];            % set later
+cpDurationDefault = [];         % set later
+cpAmplitudeDefault = [];        % set later
+timeEndCprDefault = [];         % set later
+addParameter(iP, 'CpDelay', cpDelayDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'CpDuration', cpDurationDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'CpAmplitude', cpAmplitudeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'TimeEndCpr', timeEndCprDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+cpDelay = iP.Results.CpDelay;
+cpDuration = iP.Results.CpDuration;
+cpAmplitude = iP.Results.CpAmplitude;
+timeEndCpr = iP.Results.TimeEndCpr;
+
+% Recompute the number of samples
+nSamples = count_samples(tVec);
+
+% Parse the xolotl object
+parsedParams = parse_xolotl_object(xolotlObject);
+
+% Extract the compartments
+compartments = parsedParams.compartments;
+nCompartments = parsedParams.nCompartments;
 
 %}
 

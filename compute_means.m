@@ -91,7 +91,11 @@ parse(iP, vecs, varargin{:});
 subVecs = extract_subvectors(vecs, varargin{:});
 
 % Compute the mean(s)
-means = cellfun(@mean, subVecs);
+if iscell(subVecs)
+    means = cellfun(@mean, subVecs);
+else
+    means = mean(subVecs, 1);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
