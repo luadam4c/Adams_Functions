@@ -9,6 +9,7 @@ function scalar = apply_iteratively (myFunction, array, varargin)
 %       a = apply_iteratively(@max, magic(3))
 %       b = apply_iteratively(@min, {1:10, -10:5, 5:30})
 %       c = apply_iteratively(@max, {1:10, -10:5, 5:30})
+%       c = apply_iteratively(@max, {1:10, -10:5, 5:30})
 % Outputs:
 %       scalar      - the resulting scalar
 %                   specified as a scalar
@@ -70,7 +71,11 @@ parse(iP, myFunction, array, varargin{:});
 %% Do the job
 while ~isscalar(array)
     if iscell(array)
-        array = cellfun(myFunction, array);
+        try
+            array = cellfun(myFunction, array);
+        catch
+            array = cellfun(myFunction, array, 'UniformOutput', false);
+        end
     else
         array = myFunction(array);
     end
