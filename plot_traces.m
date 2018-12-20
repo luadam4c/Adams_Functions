@@ -111,6 +111,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
+%       cd/apply_iteratively.m
 %       cd/argfun.m
 %       cd/compute_xlimits.m
 %       cd/compute_ylimits.m
@@ -321,8 +322,8 @@ nTracesPerRow = ceil(nTraces / nRows);
 
 % Compute minimum and maximum Y values
 % TODO: Consider dataToCompare range too
-minY = min([cellfun(@min, data), cellfun(@min, dataToCompare)]);
-maxY = max([cellfun(@max, data), cellfun(@max, dataToCompare)]);
+minY = apply_iteratively(@min, [data; dataToCompare]);
+maxY = apply_iteratively(@max, [data; dataToCompare]);
 rangeY = maxY - minY;
 
 % Force as column cell array and match up to nTraces elements 
@@ -943,6 +944,9 @@ set(fig, 'Visible', 'off');
 axes(subPlots(iTrace));
 
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+
+minY = min([cellfun(@min, data), cellfun(@min, dataToCompare)]);
+maxY = max([cellfun(@max, data), cellfun(@max, dataToCompare)]);
 
 %}
 
