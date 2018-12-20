@@ -26,6 +26,7 @@ function scalar = apply_iteratively (myFunction, array, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/compute_axis_limits.m
 %       cd/identify_channels.m
 %       cd/plot_traces.m
 

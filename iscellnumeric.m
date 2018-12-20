@@ -14,6 +14,7 @@ function isCellNumeric = iscellnumeric (x)
 %
 % Used by:
 %       cd/compute_average_trace.m
+%       cd/compute_axis_limits.m
 %       cd/compute_baseline_noise.m
 %       cd/compute_residuals.m
 %       cd/compute_rms_error.m

@@ -62,7 +62,7 @@ function h = plot_cfit_pulse_response (xVec, yVec, varargin)
 %
 % Requires:
 %       cd/argfun.m
-%       cd/compute_ylimits.m
+%       cd/compute_axis_limits.m
 %       cd/create_latex_string.m
 %       cd/fit_and_estimate_passive_params.m
 %       cd/force_column_numeric.m
@@ -261,7 +261,7 @@ end
 % Set default y limits using the responseAmplitude
 if isempty(yLimits)
     % Compute the y limits
-    yLimits = compute_ylimits(minY, maxY, 'Coverage', yCoverage);
+    yLimits = compute_axis_limits([minY, maxY], 'y', 'Coverage', yCoverage);
 end
 
 % Break up the equation for the combined phase
@@ -599,6 +599,8 @@ case 'falling'
     yposNow = ypos;
 otherwise
 end
+
+yLimits = compute_ylimits(minY, maxY, 'Coverage', yCoverage);
 
 %}
 

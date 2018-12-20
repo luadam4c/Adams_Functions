@@ -232,9 +232,16 @@ end
 % Count the number of sweeps
 nSweeps = numel(data);
 
+% Decide whether to annotate at all
+if nSweeps <= maxNTracesForAnnotations
+    toAnnotate = true;
+else
+    toAnnotate = false;
+end
+
 % Decide whether to plot sweep weights
 if plotSwpWeightsFlag == 'auto'
-    if nSweeps > 1 && nSweeps <= maxNTracesForAnnotations
+    if nSweeps > 1 && toAnnotate
         plotSwpWeightsFlag = true;
     else
         plotSwpWeightsFlag = false;
@@ -275,7 +282,7 @@ end
 nRows = size(colorMap, 1);
 nTracesPerRow = ceil(nSweeps / nRows);
 
-% Initialize graphics object arrays
+% Initialize graphics object arrays for boundaries
 boundaries = gobjects(nSweeps, 2);
 
 %% Do the job
@@ -288,16 +295,28 @@ boundaries = gobjects(nSweeps, 2);
                 'FigHandle', figHandle, 'FigNumber', figNumber, ...
                 otherArguments);
 
-% Plot annotations
-for iSwp = 1:nSweeps
-    % Get the subplot of interest
-    subplot(subPlots(iSwp));
+% Show sweep info and error as a subplot title 
+%   TODO: make a function plot_title(subPlots, titles)
+if toAnnotate
+    for iSwp = 1:nSweeps
+        % Get the subplot of interest
+        subplot(subPlots(iSwp));
 
-    % Hold on
-    hold on
+        % Show title
+        title(['Noise = ', num2str(baseNoise(iSwp), nSigFig), '; ', ...
+                'RMSE = ', num2str(sweepErrors(iSwp), nSigFig)]);
+    end
+end
 
-    % Plot sweep weights
-    if plotSwpWeightsFlag
+% Plot sweep weights
+if plotSwpWeightsFlag
+    for iSwp = 1:nSweeps
+        % Get the subplot of interest
+        subplot(subPlots(iSwp));
+
+        % Hold on
+        hold on
+
         % Get the current sweep weight
         sweepWeight = sweepWeights(iSwp);
 
@@ -313,19 +332,32 @@ for iSwp = 1:nSweeps
             'Color', colorText, 'FontSize', fontSize, ...
             'Position', [0.1 0.9], 'Units', 'normalized');
     end
+end
 
-    % Show sweep info and error only if nSweeps <= maxNTracesForAnnotations
-    if nSweeps <= maxNTracesForAnnotations
-        title(['Noise = ', num2str(baseNoise(iSwp), nSigFig), '; ', ...
-                'RMSE = ', num2str(sweepErrors(iSwp), nSigFig)]);
-    end
+% Plot fit windows as vertical lines
+if toAnnotate
+    for iSwp = 1:nSweeps
+        % Get the subplot of interest
+        subplot(subPlots(iSwp));
 
-    % Plot fitWindow only if nSweeps <= maxNTracesForAnnotations
-    if nSweeps <= maxNTracesForAnnotations
-        handles.boundaries(iSwp, :) = ...
+        % Hold on
+        hold on
+
+        % Plot fit window
+        boundaries(iSwp, :) = ...
             plot_window_boundaries(fitWindow{iSwp}, ...
                                     'Color', 'g', 'LineStyle', '--');
     end
+end
+
+% Change settings for each subplot
+%   Note: must do this after plotting vertical lines
+for iSwp = 1:nSweeps
+    % Get the subplot of interest
+    subplot(subPlots(iSwp));
+
+    % Make y axis automatically update
+    axis 'auto y'
 end
 
 % Create a title

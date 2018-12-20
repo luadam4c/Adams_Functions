@@ -42,11 +42,11 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                   - 'XLimits': limits of x axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
-%                   default == uses compute_xlimits.m
+%                   default == uses compute_axis_limits.m
 %                   - 'YLimits': limits of y axis, 
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
-%                   default == uses compute_ylimits.m
+%                   default == uses compute_axis_limits.m
 %                   - 'LinkAxesOption': option for the linkaxes()
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'none' - don't apply the function
@@ -113,8 +113,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % Requires:
 %       cd/apply_iteratively.m
 %       cd/argfun.m
-%       cd/compute_xlimits.m
-%       cd/compute_ylimits.m
+%       cd/compute_axis_limits.m
 %       cd/count_vectors.m
 %       cd/create_colormap.m
 %       cd/create_error_for_nargin.m
@@ -321,30 +320,8 @@ end
 nRows = size(colorMap, 1);
 nTracesPerRow = ceil(nTraces / nRows);
 
-% Compute minimum and maximum Y values
-minY = apply_iteratively(@min, [data; dataToCompare]);
-maxY = apply_iteratively(@max, [data; dataToCompare]);
-
 % Force as column cell array and match up to nTraces elements 
 tVecs = match_format_vector_sets(tVecs, data);
-
-% Set the default time axis limits
-if isempty(xLimits)
-    % TODO: Use extract_element.m 'first' for cell arrays?
-    if iscell(tVecs)
-        tVec = tVecs{1};
-    else
-        tVec = tVecs;
-    end
-
-    xLimits = compute_xlimits(tVec, 'Coverage', 100);
-end
-
-% Set the default y-axis limits
-if isempty(yLimits) && ~strcmpi(plotMode, 'parallel')
-    % TODO: Deal with yLimits if it is a cell array
-    yLimits = compute_ylimits(minY, maxY, 'Coverage', 80);
-end
 
 % Set the default x-axis labels
 if isempty(xLabel)
@@ -527,6 +504,11 @@ else
     fig = gcf;
 end
 
+% Set the default time axis limits
+if isempty(xLimits)
+    xLimits = compute_axis_limits(tVec, 'x');
+end
+
 % Clear the figure
 clf(fig);
 
@@ -538,6 +520,14 @@ switch plotMode
 case 'overlapped'
     % Hold on
     hold on
+
+    % Set the default y-axis limits
+    if isempty(yLimits)
+        % Compute the y limits from both data and dataToCompare
+        yLimits = compute_axis_limits({data, dataToCompare}, 'y');
+    elseif iscell(yLimits)
+        % TODO: Deal with yLimits if it is a cell array
+    end
 
     % Plot all traces together
     for iTrace = 1:nTraces
@@ -611,6 +601,17 @@ case 'parallel'
         % Create a subplot and hold on
         ax = subplot(nRows, nTracesPerRow, iTrace); hold on
 
+        % Set the default y-axis limits
+        if isempty(yLimits)
+            % Compute the y limits from both data and dataToCompare
+            yLimitsThis = ...
+                compute_axis_limits({data{iTrace}, dataToCompare{iTrace}}, 'y');
+        elseif iscell(yLimits)
+            yLimitsThis = yLimits{iTrace};
+        else
+            yLimitsThis = yLimits;
+        end
+
         % Get the current row number
         thisRowNumber = ceil(iTrace/nTracesPerRow);
 
@@ -643,8 +644,8 @@ case 'parallel'
         end
 
         % Set y axis limits
-        if ~isempty(yLimits) && ~strcmpi(yLimits, 'suppress')
-            ylim(yLimits);
+        if ~isempty(yLimitsThis) && ~strcmpi(yLimitsThis, 'suppress')
+            ylim(yLimitsThis);
         end
 
         % Generate a y-axis label
@@ -949,6 +950,39 @@ maxY = max([cellfun(@max, data), cellfun(@max, dataToCompare)]);
 
 if isempty(yLimits) && ~strcmpi(plotMode, 'parallel') && rangeY ~= 0
 rangeY = maxY - minY;
+
+if isempty(yLimits) && ~strcmpi(plotMode, 'parallel')
+
+%       cd/compute_xlimits.m
+%       cd/compute_ylimits.m
+
+if iscell(tVecs)
+    tVec = tVecs{1};
+else
+    tVec = tVecs;
+end
+
+xLimits = compute_xlimits(tVec, 'Coverage', 100);
+
+% Put all data together
+allData = [data; dataToCompare];
+
+% Compute minimum and maximum Y values
+minY = apply_iteratively(@min, allData);
+maxY = apply_iteratively(@max, allData);
+
+% Compute the y limits
+yLimits = compute_ylimits(minY, maxY, 'Coverage', 80);
+
+% Put all data together
+allData = [data{iTrace}; dataToCompare{iTrace}];
+
+% Compute minimum and maximum Y values
+minY = apply_iteratively(@min, allData);
+maxY = apply_iteratively(@max, allData);
+
+% Compute the y limits for this subplot
+yLimitsThis = compute_axis_limits(minY, maxY, 'Coverage', 80);
 
 %}
 

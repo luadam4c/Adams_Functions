@@ -36,7 +36,7 @@ function h = plot_pulse (timeVec, pulseVecs, varargin)
 %                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
-%       cd/compute_ylimits.m
+%       cd/compute_axis_limits.m
 %       cd/parse_pulse.m
 %
 % Used by:    
@@ -130,12 +130,9 @@ if isempty(yLimits)
     baseValue = baseValue(toUse);
     pulseValue = pulseValue(toUse);
 
-    % Find the extremes
-    maxValue = max([baseValue; pulseValue]);
-    minValue = min([baseValue; pulseValue]);
-
     % Compute the y limits
-    yLimits = compute_ylimits(minValue, maxValue, 'Coverage', yCoverage);
+    yLimits = compute_axis_limits([baseValue; pulseValue], 'y', ...
+                                    'Coverage', yCoverage);
 end
 
 % Extract from params
@@ -246,6 +243,13 @@ if ~isempty(firstDipPoint{iVec})
     plot(timeVec(indSteady(iVec, 1)), pulseVecs(indSteady(iVec, 1), iVec), '>');
     plot(timeVec(indSteady(iVec, end)), pulseVecs(indSteady(iVec, end), iVec), '<');
 end
+
+% Find the extremes
+maxValue = max([baseValue; pulseValue]);
+minValue = min([baseValue; pulseValue]);
+
+% Compute the y limits
+yLimits = compute_ylimits(minValue, maxValue, 'Coverage', yCoverage);
 
 %}
 

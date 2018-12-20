@@ -13,7 +13,8 @@
 % 2018-12-12 Created by Adam Lu
 % 2018-12-13 Added voltage clamp
 
-% Hard-coded parameters
+%% Hard-coded parameters
+% Files
 projectDir = '/media/adamX/m3ha';
 realDataDir = fullfile(projectDir, 'data_dclamp');
 matFilesDir = fullfile(realDataDir, 'take4/matfiles');
@@ -23,26 +24,31 @@ outFolder = '/media/adamX/xolotl_test';
 outFileName = 'xolotl_test.mat';
 neuronParamsDir = fullfile(simDir, 'initial_params');
 neuronParamsFileName = 'initial_params_D091710.csv';
+
+% Parameters that should be consistent with the experiment
+temperature = 33;       % temperature of 33 degrees Celsius used by Christine
+compToPatch = 'soma';   % compartment to be patched
+holdingPotential = -60; % holding potential in mV
+cprWindowOrig = [0, 350];   % original current pulse window in ms
+cpDelayOrig = 100;      % original current pulse delay in ms
+cpDuration = 10;        % current pulse duration in ms
+cpAmplitude = -0.050;   % current pulse amplitude in nA
+
+% Parameters for simulations
 closedLoop = false;     % whether to use the final state as the initial
                         %   condition for the next simulation
 solverOrder = 0;        % uses the implicit Crank-Nicholson scheme
                         %   for multi-compartment models
-temperature = 33;       % temperature of 33 degrees Celsius used by Christine
 timeStep = 0.1;         % output time step in ms
 simTimeStep = 0.1;      % simulation time step in ms
-
-compToPatch = 'soma';   % compartment to be patched
-holdingPotential = -60; % holding potential in mV
 timeToStabilize = 1000; % time for state variables to stabilize in ms
 
-% TODO
-cprWindow = [0, 350];
-timeEndCpr = 1350;      % simulation end time in ms for current pulse response
+% Parameters for calculations
+fitWindowOrig = [cpDelayOrig, cprWindowOrig(2)];
+                        % from current pulse start to current pulse response end
 
-cpDelay = 1100;         % current pulse delay in ms
-cpDuration = 10;        % current pulse duration in ms
-cpAmplitude = -0.050;   % current pulse amplitude in nA
-xLimits = [1000, 1250];
+% Parameters for plotting
+xLimitsOrig = [cpDelayOrig - 10, cpDelayOrig + 40];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -50,6 +56,15 @@ xLimits = [1000, 1250];
 % Generate full file paths
 neuronParamsPath = fullfile(neuronParamsDir, neuronParamsFileName);
 outPath = fullfile(outFolder, outFileName);
+
+% Shift original times by timeToStabilize
+cprWindow = cprWindowOrig + timeToStabilize;
+cpDelay = cpDelayOrig + timeToStabilize;
+fitWindow = fitWindowOrig + timeToStabilize;
+xLimits = xLimitsOrig + timeToStabilize;
+
+% Obtain the simulation end time in ms for current pulse response
+timeEndCpr = cprWindow(2);
 
 %% Import data to compare against
 % TODO: Make this its own function
@@ -76,7 +91,7 @@ siMsOrig = compute_sampling_interval(tvecOrig);
     argfun(@(x) convert_to_samples(x, siMsOrig), timeToStabilize);
 
 % Find the time to stabilize
-endPointsCpr = find_window_endpoints(cprWindow, tvecOrig);
+endPointsCpr = find_window_endpoints(cprWindowOrig, tvecOrig);
 
 % Extract the current pulse response window
 [vvecCpr, ivecCpr] = ...
@@ -129,14 +144,15 @@ m3ha = xolotl_add_current_pulse(m3ha, 'Compartment', compToPatch, ...
 % Save the xolotl object before simulations
 save(outPath, 'm3ha');
 
-% Simulate and plot
+% Simulate and use default plot
 % m3ha.plot;
 
-% Simulate and plot against data
+% Simulate and plot individual traces against data
 m3ha = m3ha_xolotl_plot(m3ha, 'DataToCompare', dataToCompare, ...
-                        'XLimits', xLimits);
+                        'XLimits', xLimits, 'FitWindow', fitWindow);
 
 
+% Set up the plots to manipulate
 m3ha.manipulate_plot_func = {@m3ha_xolotl_plot};
 
 % Manipulate leak channel parameters

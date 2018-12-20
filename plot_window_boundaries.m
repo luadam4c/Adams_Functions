@@ -1,6 +1,6 @@
-function h = plot_window_boundaries (win, varargin)
+function [h, yLimits] = plot_window_boundaries (win, varargin)
 %% Plots window boundaries as vertical lines
-% Usage: h = plot_window_boundaries (win, varargin)
+% Usage: [h, yLimits] = plot_window_boundaries (win, varargin)
 % Explanation:
 %       TODO
 % Example(s):

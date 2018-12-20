@@ -52,7 +52,7 @@ function h = plot_pulse_response (timeVec, responseVecs, varargin)
 %
 % Requires:
 %       cd/compute_sampling_interval.m
-%       cd/compute_ylimits.m
+%       cd/compute_axis_limits.m
 %       cd/parse_pulse_response.m
 %
 % Used by:    
@@ -170,12 +170,9 @@ if isempty(yLimits)
     baseValue = baseValue(toUse);
     steadyValue = steadyValue(toUse);
 
-    % Find the extremes
-    maxValue = max([baseValue; steadyValue]);
-    minValue = min([baseValue; steadyValue]);
-
     % Compute the y limits
-    yLimits = compute_ylimits(minValue, maxValue, 'Coverage', yCoverage);
+    yLimits = compute_axis_limits([baseValue; steadyValue], 'y', ...
+                                    'Coverage', yCoverage);
 end
 
 % Extract from params
@@ -275,6 +272,13 @@ if ~isempty(firstDipPoint{iVec})
     plot(timeVec(indSteady(iVec, 1)), responseVecs(indSteady(iVec, 1), iVec), '>');
     plot(timeVec(indSteady(iVec, end)), responseVecs(indSteady(iVec, end), iVec), '<');
 end
+
+% Find the extremes
+maxValue = max([baseValue; steadyValue]);
+minValue = min([baseValue; steadyValue]);
+
+% Compute the y limits
+yLimits = compute_ylimits(minValue, maxValue, 'Coverage', yCoverage);
 
 %}
 

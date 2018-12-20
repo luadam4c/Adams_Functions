@@ -60,7 +60,7 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 %
 % Requires:
 %       cd/argfun.m
-%       cd/compute_ylimits.m
+%       cd/compute_axis_limits.m
 %       cd/count_samples.m
 %       cd/create_time_vectors.m
 %       cd/find_ind_str_in_cell.m
@@ -74,6 +74,7 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 % 2018-12-19 Now uses Children to find the soma column
 % 2018-12-19 Now updates plots by changing the data values
 % 2018-12-19 Now restricts vectors to x limits first
+% 2018-12-19 Now updates the y limits for the boundaries
 % 
 
 %% Hard-coded parameters
@@ -83,7 +84,7 @@ dataToCompareDefault = [];      % no data to compare against by default
 xLimitsDefault = [];            % for current pulse
 colorMapDefault = [];           % set in m3ha_plot_individual_traces.m
 figTitleDefault = 'Simulation by xolotl';
-figNumberDefault = 104;         % set in m3ha_plot_individual_traces.m
+figNumberDefault = [];          % set in m3ha_plot_individual_traces.m
 figNameDefault = '';            % don't save figure by default
 baseWindowDefault = [];         % set in m3ha_plot_individual_traces.m
 fitWindowDefault = [];          % set in m3ha_plot_individual_traces.m
@@ -210,16 +211,18 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
 
     % Make a figure
     figHandle = ...
-        figure('Outerposition', [100, 100, 600, 600], ...
+        figure('Outerposition', [100, 100, 800, 800], ...
             'PaperUnits', 'points', 'PaperSize', [1200, 600]); hold on
 
-    % Initialize the plot by using NaNs
+    % Initialize the plot by using NaN data
     individual = m3ha_plot_individual_traces(tVecs, nanData, ...
                                     'DataToCompare', dataToCompare, ...
                                     'XLimits', xLimits, ...
                                     'ColorMap', colorMap, ...
                                     'FigTitle', figTitle, ...
                                     'FigHandle', figHandle, ...
+                                    'FigNumber', figNumber, ...
+                                    'FigName', figName, ...
                                     'BaseWindow', baseWindow, ...
                                     'FitWindow', fitWindow, ...
                                     'BaseNoise', baseNoise, ...
@@ -229,7 +232,7 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
 
     % Extract y axis limits
     yLimits = zeros(3, 2);
-    for iTrace = 1:3
+    for iTrace = 1:4
         % Use the limits from the left boundary line
         yLimits(iTrace, :) = individual.boundaries(iTrace, 1).YData;
     end
@@ -266,32 +269,27 @@ vVecs = extract_subvectors(vVecs, 'EndPoints', individual.endPoints);
 vVecPlots = vVecs(:, [idxDend2, idxDend1, idxSoma]);
 
 % Compute new y limits
-yLimits = zeros(3, 2);
+oldYLimits = individual.yLimits;
+newYLimits = zeros(3, 2);
 parfor iTrace = 1:3
-    % Extract the old minimums and maximums
-    [oldMinY, oldMaxY] = argfun(@(x) individual.yLimits(iTrace, x), 1, 2);
-
-    % Compute the minimum of new data and old y limits
-    newMinY = apply_iteratively(@min, {vVecPlots(:, iTrace); oldMinY});
-    newMaxY = apply_iteratively(@max, {vVecPlots(:, iTrace); oldMaxY});
-
+    % Put the new data and old y limits together
+    newDataForLimits = {vVecPlots(:, iTrace); oldYLimits(iTrace, :)};
+    
     % Update y limits
-    yLimits(iTrace, :) = compute_ylimits(newMinY, newMaxY);
+    newYLimits(iTrace, :) = compute_axis_limits(newDataForLimits, 'y');
 end
 
 %% Update plots
-% Update data in the corresponding line object
-individual.plotsData(1).YData = vVecDendrite2;
-individual.plotsData(2).YData = vVecDendrite1;
-individual.plotsData(3).YData = vVecSoma;
+% Update data in the chart line objects
+for iTrace = 1:3    
+    individual.plotsData(iTrace).YData = vVecPlots(:, iTrace);
+end
 
-% Update the 
-individual.boundaries(1, 1).YData = yLimits(1, )
-individual.boundaries(1, 2).YData = 
-individual.boundaries(2, 1).YData = 
-individual.boundaries(2, 2).YData = 
-individual.boundaries(3, 1).YData = 
-individual.boundaries(3, 2).YData = 
+% Update data in the primitive line objects
+for iTrace = 1:3
+    individual.boundaries(iTrace, 1).YData = newYLimits(iTrace, :);
+    individual.boundaries(iTrace, 2).YData = newYLimits(iTrace, :);
+end
 
 %% Save handles in xolotl object
 xolotlObject.handles = xHandles;
@@ -388,6 +386,20 @@ xolotlObject.handles.individual.plotsData(3).YData = vVecSoma;
 vVecDendrite2 = vVecs(:, idxDend2);
 vVecDendrite1 = vVecs(:, idxDend1);
 vVecSoma = vVecs(:, idxSoma);
+
+individual.plotsData(1).YData = vVecDendrite2;
+individual.plotsData(2).YData = vVecDendrite1;
+individual.plotsData(3).YData = vVecSoma;
+
+% Extract the old minimums and maximums
+[oldMinY, oldMaxY] = argfun(@(x) oldYLimits(iTrace, x), 1, 2);
+
+% Compute the minimum of new data and old y limits
+newMinY = apply_iteratively(@min, {vVecPlots(:, iTrace); oldMinY});
+newMaxY = apply_iteratively(@max, {vVecPlots(:, iTrace); oldMaxY});
+
+% Update y limits
+newYLimits(iTrace, :) = compute_ylimits(newMinY, newMaxY, 'Coverage', 80);
 
 %}
 

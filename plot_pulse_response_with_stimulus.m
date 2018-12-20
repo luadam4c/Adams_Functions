@@ -62,8 +62,7 @@ function h = plot_pulse_response_with_stimulus (tVec, respVec, stimVec, varargin
 % Requires:
 %       cd/annotation_in_plot.m
 %       cd/compute_sampling_interval.m
-%       cd/compute_xlimits.m
-%       cd/compute_ylimits.m
+%       cd/compute_axis_limits.m
 %       cd/create_error_for_nargin.m
 %       cd/isfigtype.m
 %       cd/plot_horizontal_line.m
@@ -220,17 +219,13 @@ end
 % Check if needed output directories exist
 check_dir(outFolder);
 
-% Find the minimum and maximum values of interest,
-%   including the baseline value and the trace after the minimum delay
-minValueOfInterest = min([minValueAfterMinDelay, baseValue]);
-maxValueOfInterest = max([maxValueAfterMinDelay, baseValue]);
-
-% Compute appropriate y axis limits from the range of values of interest
+% Compute the y axis limits based on
+%   the baseline value and the maximum value after the minimum delay
 [yLimitsResp, yRangeResp] = ...
-    compute_ylimits(minValueOfInterest, maxValueOfInterest, 'Coverage', 80);
+    compute_axis_limits([maxValueAfterMinDelay, baseValue], 'y');
 
 % Compute the x axis limits
-[xLimits, xRange] = compute_xlimits(tVec, 'Coverage', 100);
+[xLimits, xRange] = compute_axis_limits(tVec, 'x');
 
 % Compute times from delays
 minPeakTime = xLimits(1) + minPeakDelayMs;
@@ -410,6 +405,20 @@ p(2) = line(xLimits, baseValue * ones(size(xLimits)), ...
 % Use plot_vertical_line.m
 line(minPeakTime * ones(size(yLimitsResp)), yLimitsResp, ...
     'LineStyle', '--', 'Color', colorLines);
+
+% Find the minimum and maximum values of interest,
+%   including the baseline value and the trace after the minimum delay
+minValueOfInterest = min([minValueAfterMinDelay, baseValue]);
+maxValueOfInterest = max([maxValueAfterMinDelay, baseValue]);
+
+%       cd/compute_xlimits.m
+%       cd/compute_ylimits.m
+
+% Compute appropriate y axis limits from the range of values of interest
+[yLimitsResp, yRangeResp] = ...
+    compute_ylimits(minValueOfInterest, maxValueOfInterest, 'Coverage', 80);
+
+[xLimits, xRange] = compute_xlimits(tVec, 'Coverage', 100);
 
 %}
 
