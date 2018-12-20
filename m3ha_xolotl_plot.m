@@ -60,6 +60,7 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 %
 % Requires:
 %       cd/argfun.m
+%       cd/compute_ylimits.m
 %       cd/count_samples.m
 %       cd/create_time_vectors.m
 %       cd/find_ind_str_in_cell.m
@@ -167,10 +168,10 @@ compNames = xolotlObject.Children;
                                 'SearchMode', 'substrings', 'MaxNum', 1), ...
             'soma', 'dend1', 'dend2');
 
-%% Retrieve handles from xolotl object
+%% Initialize a plot or retrieve plot
+% Retrieve handles from xolotl object
 xHandles = xolotlObject.handles;
 
-%% Initialize a plot if not already done
 % TODO: Make this a function?
 if isempty(xHandles) || ~isfield(xHandles, 'individual')
     % Extract the time step in ms
@@ -248,6 +249,9 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
 
     % Store the figure handle in the xolotl object
     xHandles.individual = individual;
+else
+    % Extract the figure handle from the xolotl object
+    individual = xHandles.individual;
 end
 
 %% Simulate
@@ -255,32 +259,39 @@ end
 vVecs = xolotlObject.integrate;
 
 % Restrict to same end points to be consistent with the default plot
-vVecs = extract_subvectors(vVecs, 'EndPoints', xHandles.individual.endPoints);
+vVecs = extract_subvectors(vVecs, 'EndPoints', individual.endPoints);
 
 %% Computed updated data for plots
-% Extract the voltage traces for each compartment
-vVecSoma = vVecs(:, idxSoma);
-vVecDendrite1 = vVecs(:, idxDend1);
-vVecDendrite2 = vVecs(:, idxDend2);
+% Reorganize voltage traces to match plots
+vVecPlots = vVecs(:, [idxDend2, idxDend1, idxSoma]);
 
 % Compute new y limits
-minY = apply_iteratively(@min, {data; yLimits});
-maxY = apply_iteratively(@max, {data; yLimits});
-rangeY = maxY - minY;
+yLimits = zeros(3, 2);
+parfor iTrace = 1:3
+    % Extract the old minimums and maximums
+    [oldMinY, oldMaxY] = argfun(@(x) individual.yLimits(iTrace, x), 1, 2);
+
+    % Compute the minimum of new data and old y limits
+    newMinY = apply_iteratively(@min, {vVecPlots(:, iTrace); oldMinY});
+    newMaxY = apply_iteratively(@max, {vVecPlots(:, iTrace); oldMaxY});
+
+    % Update y limits
+    yLimits(iTrace, :) = compute_ylimits(newMinY, newMaxY);
+end
 
 %% Update plots
 % Update data in the corresponding line object
-xHandles.individual.plotsData(1).YData = vVecDendrite2;
-xHandles.individual.plotsData(2).YData = vVecDendrite1;
-xHandles.individual.plotsData(3).YData = vVecSoma;
+individual.plotsData(1).YData = vVecDendrite2;
+individual.plotsData(2).YData = vVecDendrite1;
+individual.plotsData(3).YData = vVecSoma;
 
 % Update the 
-xHandles.individual.boundaries(1, 1).YData = 
-xHandles.individual.boundaries(1, 2).YData = 
-xHandles.individual.boundaries(2, 1).YData = 
-xHandles.individual.boundaries(2, 2).YData = 
-xHandles.individual.boundaries(3, 1).YData = 
-xHandles.individual.boundaries(3, 2).YData = 
+individual.boundaries(1, 1).YData = yLimits(1, )
+individual.boundaries(1, 2).YData = 
+individual.boundaries(2, 1).YData = 
+individual.boundaries(2, 2).YData = 
+individual.boundaries(3, 1).YData = 
+individual.boundaries(3, 2).YData = 
 
 %% Save handles in xolotl object
 xolotlObject.handles = xHandles;
@@ -372,6 +383,11 @@ xolotlObject.handles.individual = individual;
 xolotlObject.handles.individual.plotsData(1).YData = vVecDendrite2;
 xolotlObject.handles.individual.plotsData(2).YData = vVecDendrite1;
 xolotlObject.handles.individual.plotsData(3).YData = vVecSoma;
+
+% Extract the voltage traces for each compartment
+vVecDendrite2 = vVecs(:, idxDend2);
+vVecDendrite1 = vVecs(:, idxDend1);
+vVecSoma = vVecs(:, idxSoma);
 
 %}
 

@@ -324,7 +324,6 @@ nTracesPerRow = ceil(nTraces / nRows);
 % Compute minimum and maximum Y values
 minY = apply_iteratively(@min, [data; dataToCompare]);
 maxY = apply_iteratively(@max, [data; dataToCompare]);
-rangeY = maxY - minY;
 
 % Force as column cell array and match up to nTraces elements 
 tVecs = match_format_vector_sets(tVecs, data);
@@ -342,7 +341,7 @@ if isempty(xLimits)
 end
 
 % Set the default y-axis limits
-if isempty(yLimits) && ~strcmpi(plotMode, 'parallel') && rangeY ~= 0
+if isempty(yLimits) && ~strcmpi(plotMode, 'parallel')
     % TODO: Deal with yLimits if it is a cell array
     yLimits = compute_ylimits(minY, maxY, 'Coverage', 80);
 end
@@ -947,6 +946,9 @@ axes(subPlots(iTrace));
 
 minY = min([cellfun(@min, data), cellfun(@min, dataToCompare)]);
 maxY = max([cellfun(@max, data), cellfun(@max, dataToCompare)]);
+
+if isempty(yLimits) && ~strcmpi(plotMode, 'parallel') && rangeY ~= 0
+rangeY = maxY - minY;
 
 %}
 

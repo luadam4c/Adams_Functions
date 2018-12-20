@@ -24,6 +24,7 @@ function [yLimits, yRange] = compute_ylimits (minValue, maxValue, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/m3ha_xolotl_plot.m
 %       cd/plot_cfit_pulse_response.m
 %       cd/plot_pulse.m
 %       cd/plot_pulse_response.m
@@ -32,7 +33,7 @@ function [yLimits, yRange] = compute_ylimits (minValue, maxValue, varargin)
 % File History:
 % 2018-10-12 Created by Adam Lu
 % 2018-12-18 Now accepts vectors as arguments
-% 
+% 2018-12-19 Now returns an empty array if there is no range
 
 %% Hard-coded parameters
 
@@ -71,6 +72,13 @@ if any(minValue > maxValue)
 end
 
 %% Do the job
+% Return an empty matrix if there is no range
+%   Note: this makes functions like plot_traces.m not use ylim()
+if minValue == maxValue
+    yLimits = []
+    return
+end
+
 % Compute the range
 dataRange = maxValue - minValue;
 

@@ -9,7 +9,7 @@ function scalar = apply_iteratively (myFunction, array, varargin)
 %       a = apply_iteratively(@max, magic(3))
 %       b = apply_iteratively(@min, {1:10, -10:5, 5:30})
 %       c = apply_iteratively(@max, {1:10, -10:5, 5:30})
-%       c = apply_iteratively(@max, {1:10, -10:5, 5:30})
+%       c = apply_iteratively(@max, {magic(3), -10:5})
 % Outputs:
 %       scalar      - the resulting scalar
 %                   specified as a scalar
