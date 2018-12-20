@@ -8,7 +8,7 @@ function h = plot_horizontal_line (yValue, varargin)
 %       h = plot_horizontal_line(yValue, 'XLimits', xLimits)
 % Outputs:
 %       h           - handle to the line object created
-%                   specified as a line object handle
+%                   specified as a primitive line object handle
 % Arguments:
 %       yValue      - the y value for the horizontal line
 %                   must be a numeric scalar

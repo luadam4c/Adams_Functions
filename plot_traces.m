@@ -93,6 +93,9 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                   must be a string scalar or a character vector
 %                   default == ['Traces for ', figName]
 %                               or [yLabel, ' over time']
+%                   - 'FigHandle': figure handle for created figure
+%                   must be a empty or a figure object handle
+%                   default == []
 %                   - 'FigNumber': figure number for creating figure
 %                   must be a positive integer scalar
 %                   default == []
@@ -119,6 +122,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       cd/find_window_endpoints.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
+%       cd/ispositiveintegerscalar.m
 %       cd/match_format_vector_sets.m
 %       cd/save_all_figtypes.m
 %       ~/Downloaded_Function/suplabel.m
@@ -147,6 +151,8 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % 2018-12-17 Now uses iP.Unmatched
 % 2018-12-17 Now uses compute_xlimits.m and compute_ylimits.m
 % 2018-12-19 Now returns line object handles for the plots
+% 2018-12-19 Added 'FigHandle' as an optional argument
+% 2018-12-19 Now restricts vectors to x limits first
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel'};
@@ -171,7 +177,8 @@ colorMapDefault = [];           % set later
 traceLabelsDefault = '';        % set later
 legendLocationDefault = 'auto'; % set later
 figTitleDefault = '';           % set later
-figNumberDefault = [];          % invisible figure by default
+figHandleDefault = [];          % no existing figure by default
+figNumberDefault = [];          % no figure number by default
 figNameDefault = '';            % don't save figure by default
 figTypesDefault = 'png';        % save as png file by default
 
@@ -231,8 +238,10 @@ addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigHandle', figHandleDefault);
 addParameter(iP, 'FigNumber', figNumberDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                'FigNumber must be a empty or a positive integer scalar!'));
 addParameter(iP, 'FigName', figNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
@@ -256,6 +265,7 @@ colorMap = iP.Results.ColorMap;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
 figTitle = iP.Results.FigTitle;
+figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
 figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
@@ -275,6 +285,17 @@ if ~overWrite && check_fullpath(figName, 'Verbose', verbose)
     % Skip this figure
     fprintf('%s skipped!\n', figName);
     return;
+end
+
+% Restrict to x limits for faster processing
+if ~isempty(xLimits) && isnumeric(xLimits)
+    % Find the end points
+    endPoints = find_window_endpoints(xLimits, tVecs);
+
+    % Restrict to these end points
+    [tVecs, data, dataToCompare] = ...
+        argfun(@(x) extract_subvectors(x, 'EndPoints', endPoints), ...
+                tVecs, data, dataToCompare);
 end
 
 % Match the number of vectors between data and dataToCompare
@@ -300,8 +321,8 @@ nTracesPerRow = ceil(nTraces / nRows);
 
 % Compute minimum and maximum Y values
 % TODO: Consider dataToCompare range too
-minY = min(cellfun(@min, data));
-maxY = max(cellfun(@max, data));
+minY = min([cellfun(@min, data), cellfun(@min, dataToCompare)]);
+maxY = max([cellfun(@max, data), cellfun(@max, dataToCompare)]);
 rangeY = maxY - minY;
 
 % Force as column cell array and match up to nTraces elements 
@@ -309,13 +330,20 @@ tVecs = match_format_vector_sets(tVecs, data);
 
 % Set the default time axis limits
 if isempty(xLimits)
-    [xLimits, xRange] = compute_xlimits(tVec, 'Coverage', 100);
+    % TODO: Use extract_element.m 'first' for cell arrays?
+    if iscell(tVecs)
+        tVec = tVecs{1};
+    else
+        tVec = tVecs;
+    end
+
+    xLimits = compute_xlimits(tVec, 'Coverage', 100);
 end
 
 % Set the default y-axis limits
 if isempty(yLimits) && ~strcmpi(plotMode, 'parallel') && rangeY ~= 0
     % TODO: Deal with yLimits if it is a cell array
-    [yLimits, yRange] = compute_ylimits(minY, maxY, 'Coverage', 80);
+    yLimits = compute_ylimits(minY, maxY, 'Coverage', 80);
 end
 
 % Set the default x-axis labels
@@ -447,9 +475,10 @@ if iscell(xLimits)
                             xUnits, xLimitsThis, yLimits, linkAxesOption, ...
                             xLabel, yLabel, traceLabels, colorMap, ...
                             legendLocation, figTitleThis, ...
-                            figNumber, figNameThis, figTypes, ...
+                            figHandle, figNumber, figNameThis, figTypes, ...
                             nTraces, nRows, nTracesPerRow, ...
-                            maxNTracesForAnnotations, otherArguments);
+                            maxNTracesForAnnotations, subPlotSqeezeFactor, ...
+                            otherArguments);
             
             % Hold off and close figure
             hold off;
@@ -470,9 +499,10 @@ else
                         xUnits, xLimits, yLimits, linkAxesOption, ...
                         xLabel, yLabel, traceLabels, colorMap, ...
                         legendLocation, figTitle, ...
-                        figNumber, figName, figTypes, ...
+                        figHandle, figNumber, figName, figTypes, ...
                         nTraces, nRows, nTracesPerRow, ...
-                        maxNTracesForAnnotations, otherArguments);
+                        maxNTracesForAnnotations, subPlotSqeezeFactor, ...
+                        otherArguments);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -483,12 +513,15 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
                         xUnits, xLimits, yLimits, linkAxesOption, ...
                         xLabel, yLabel, traceLabels, colorMap, ...
                         legendLocation, figTitle, ...
-                        figNumber, figName, figTypes, ...
+                        figHandle, figNumber, figName, figTypes, ...
                         nTraces, nRows, nTracesPerRow, ...
-                        maxNTracesForAnnotations, otherArguments)
+                        maxNTracesForAnnotations, subPlotSqeezeFactor, ...
+                        otherArguments)
 
 % Decide on the figure to plot on
-if ~isempty(figNumber)
+if ~isempty(figHandle)
+    fig = figure(figHandle);
+elseif ~isempty(figNumber)
     fig = figure(figNumber);
 else
     fig = gcf;
@@ -719,7 +752,7 @@ if ~isempty(figName)
             case 'parallel'
                 for iTrace = 1:nTraces
                     % Go to the subplot
-                    axes(subPlots(iTrace));
+                    subplot(subPlots(iTrace));
 
                     % Create a title for the first subplot
                     if ~strcmpi(figTitleThis, 'suppress') && ...
@@ -906,6 +939,10 @@ else
 end
 
 set(fig, 'Visible', 'off');
+
+axes(subPlots(iTrace));
+
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 
 %}
 

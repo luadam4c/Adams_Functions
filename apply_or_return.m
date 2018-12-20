@@ -1,5 +1,5 @@
 function varargout = apply_or_return (toApply, myFunction, varargin)
-%% Apply a function if a condition is true, or return the original argument(s)
+%% Applies a function if a condition is true, or return the original argument(s)
 % Usage: varargout = apply_or_return (toApply, myFunction, varargin)
 % Explanation:
 %       This function applies a function to arguments only

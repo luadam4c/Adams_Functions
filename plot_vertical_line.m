@@ -8,7 +8,7 @@ function h = plot_vertical_line (xValue, varargin)
 %       h = plot_vertical_line(xValue, 'YLimits', yLimits)
 % Outputs:
 %       h           - handle to the line object created
-%                   specified as a line object handle
+%                   specified as a primitive line object handle
 % Arguments:
 %       xValue      - the y value for the vertical line
 %                   must be a numeric scalar

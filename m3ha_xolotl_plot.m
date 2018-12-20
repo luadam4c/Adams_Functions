@@ -72,6 +72,7 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 % 2018-12-17 Created by Adam Lu
 % 2018-12-19 Now uses Children to find the soma column
 % 2018-12-19 Now updates plots by changing the data values
+% 2018-12-19 Now restricts vectors to x limits first
 % 
 
 %% Hard-coded parameters
@@ -166,16 +167,12 @@ compNames = xolotlObject.Children;
                                 'SearchMode', 'substrings', 'MaxNum', 1), ...
             'soma', 'dend1', 'dend2');
 
-% Rename handle
+%% Retrieve handles from xolotl object
 xHandles = xolotlObject.handles;
 
 %% Initialize a plot if not already done
 % TODO: Make this a function?
-if isempty(xHandles) || ~isfield(xHandles, 'myFig') || ...
-        ~isvalid(xHandles.individual)
-    % % Necessary for initializing an object in cpplab
-    % xHandles.m3ha = [];
-
+if isempty(xHandles) || ~isfield(xHandles, 'individual')
     % Extract the time step in ms
     timeStep = xolotlObject.dt;
 
@@ -192,12 +189,27 @@ if isempty(xHandles) || ~isfield(xHandles, 'myFig') || ...
     tVecs = create_time_vectors(nSamples, 'SamplingIntervalMs', timeStep, ...
                                 'TimeUnits', 'ms');
 
+    % Restrict to x limits for faster processing
+    if ~isempty(xLimits) && isnumeric(xLimits)
+        % Find the end points
+        endPoints = find_window_endpoints(xLimits, tVecs);
+
+        % Restrict to these end points
+        [tVecs, iStim, dataToCompare] = ...
+            argfun(@(x) extract_subvectors(x, 'EndPoints', endPoints), ...
+                    tVecs, iStim, dataToCompare);
+    else
+        % Use the first and last end point
+        endPoints = find_window_endpoints([], tVecs);
+    end
+
     % Create NaN data for the initial plot
     nanVoltageData = NaN * tVecs;
     nanData = [nanVoltageData, nanVoltageData, nanVoltageData, iStim];
 
     % Make a figure
-    figure('Outerposition', [100, 100, 600, 600], ...
+    figHandle = ...
+        figure('Outerposition', [100, 100, 600, 600], ...
             'PaperUnits', 'points', 'PaperSize', [1200, 600]); hold on
 
     % Initialize the plot by using NaNs
@@ -206,6 +218,7 @@ if isempty(xHandles) || ~isfield(xHandles, 'myFig') || ...
                                     'XLimits', xLimits, ...
                                     'ColorMap', colorMap, ...
                                     'FigTitle', figTitle, ...
+                                    'FigHandle', figHandle, ...
                                     'BaseWindow', baseWindow, ...
                                     'FitWindow', fitWindow, ...
                                     'BaseNoise', baseNoise, ...
@@ -213,31 +226,49 @@ if isempty(xHandles) || ~isfield(xHandles, 'myFig') || ...
                                     'SweepErrors', sweepErrors, ...
                                     'PlotSwpWeightsFlag', plotSwpWeightsFlag);
 
-    % Attach figure to puppeteer so that the figure can be closed automatically
-%     xHandles.puppeteer_object.attachFigure(individual.fig);
+    % If using x.manipulate, do the following
+    if isfield(xHandles, 'puppeteer_object')
+        % Attach figure to puppeteer so that 
+        %   "the figure can be closed automatically"
+        xHandles.puppeteer_object.attachFigure(individual.fig);
+
+        % Prevent the time axis limits from automatically updating
+
+    end
+
+    % Store endpoints
+    individual.endPoints = endPoints;
 
     % Store the figure handle in the xolotl object
-    xolotlObject.handles.individual = individual;
+    xHandles.individual = individual;
 end
 
 %% Simulate
 % Get voltage traces for all compartments
 vVecs = xolotlObject.integrate;
 
-%% Extract data
+% Restrict to same end points to be consistent with the default plot
+vVecs = extract_subvectors(vVecs, 'EndPoints', xHandles.individual.endPoints);
+
+%% Computed updated data for plots
 % Extract the voltage traces for each compartment
 vVecSoma = vVecs(:, idxSoma);
 vVecDendrite1 = vVecs(:, idxDend1);
 vVecDendrite2 = vVecs(:, idxDend2);
 
-%% Plot results
+%% Update plots
 % Update data in the corresponding line object
-xolotlObject.handles.individual.plotsData(1).YData = vVecDendrite2;
-xolotlObject.handles.individual.plotsData(2).YData = vVecDendrite1;
-xolotlObject.handles.individual.plotsData(3).YData = vVecSoma;
+xHandles.individual.plotsData(1).YData = vVecDendrite2;
+xHandles.individual.plotsData(2).YData = vVecDendrite1;
+xHandles.individual.plotsData(3).YData = vVecSoma;
 
-% Update figure
-drawnow;
+% Update the 
+xHandles.individual.boundaries(1, :).YData = 
+xHandles.individual.boundaries(2, :).YData = 
+xHandles.individual.boundaries(3, :).YData = 
+
+%% Save handles in xolotl object
+xolotlObject.handles = xHandles;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -317,6 +348,15 @@ xolotlObject.deserialize(paramValues);
 
 % Place all traces into a data array
 data = [vVecDendrite2, vVecDendrite1, vVecSoma, iStim];
+
+% Update figure
+drawnow;
+
+xolotlObject.handles.puppeteer_object.attachFigure(individual.fig);
+xolotlObject.handles.individual = individual;
+xolotlObject.handles.individual.plotsData(1).YData = vVecDendrite2;
+xolotlObject.handles.individual.plotsData(2).YData = vVecDendrite1;
+xolotlObject.handles.individual.plotsData(3).YData = vVecSoma;
 
 %}
 

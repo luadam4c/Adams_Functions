@@ -22,6 +22,7 @@ function isPositiveIntegerScalar = ispositiveintegerscalar (x)
 %       cd/find_ind_str_in_cell.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/plot_struct.m
+%       cd/plot_traces.m
 %       cd/renamevars.m
 %       ~/m3ha/optimizer4gabab/singleneuronfitting42.m and beyond
 

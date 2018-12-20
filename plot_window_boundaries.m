@@ -7,7 +7,8 @@ function h = plot_window_boundaries (win, varargin)
 %       TODO
 % Outputs:
 %       h           - handles to each line object (left, right)
-%                   specified as a 2-element column array of line object handles
+%                   specified as a 2-element column array 
+%                       of primitive line object handles
 % Arguments:
 %       win         - window to plot boundaries for
 %                   must be a 2-element numeric vector

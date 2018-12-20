@@ -126,6 +126,9 @@ m3ha = xolotl_add_current_pulse(m3ha, 'Compartment', compToPatch, ...
                                 'Delay', cpDelay, 'Duration', cpDuration, ...
                                 'Amplitude', cpAmplitude);
 
+% Save the xolotl object before simulations
+save(outPath, 'm3ha');
+
 % Simulate and plot
 % m3ha.plot;
 
@@ -134,11 +137,7 @@ m3ha = m3ha_xolotl_plot(m3ha, 'DataToCompare', dataToCompare, ...
                         'XLimits', xLimits);
 
 
-% Save the xolotl object
-% TODO: xolotl_save(xolotlObject, 'OutFolder', outFolder, 'FileBase', fileBase);
-save(outPath, 'm3ha');
-
-mh3a.manipulate_plot_func = {@m3ha_xolotl_plot};
+m3ha.manipulate_plot_func = {@m3ha_xolotl_plot};
 
 % Manipulate leak channel parameters
 % m3ha.manipulate('*Leak*')
@@ -162,6 +161,8 @@ m3ha = xolotl_set_simparams(m3ha, 'InitialVoltage', initialVoltageCpr, ...
                             'TimeEnd', timeEndCpr);
 
 [holdingCurrent, testObject] = ...
+
+% TODO: xolotl_save(xolotlObject, 'OutFolder', outFolder, 'FileBase', fileBase);
 
 %}
 

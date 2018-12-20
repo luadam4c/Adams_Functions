@@ -7,11 +7,11 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 %       TODO
 % Outputs:
 %       handles     - a handles structure with fields:
-%                   fig
-%                   subPlots
-%                   plotsData
-%                   plotsDataToCompare
-%                   boundaries
+%                       fig
+%                       subPlots
+%                       plotsData
+%                       plotsDataToCompare
+%                       boundaries
 %                   specified as a scalar structure
 % Arguments:
 %       tVecs       - time vector(s) for plotting
@@ -40,9 +40,12 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 %                   must be a string scalar or a character vector
 %                   default == ['Traces for ', figName]
 %                               or [yLabel, ' over time']
+%                   - 'FigHandle': figure handle for created figure
+%                   must be a empty or a figure object handle
+%                   default == []
 %                   - 'FigNumber': figure number for creating figure
 %                   must be empty or a positive integer scalar
-%                   default == 104
+%                   default == []
 %                   - 'FigName': figure name for saving
 %                   must be a string scalar or a character vector
 %                   default == ''
@@ -75,6 +78,8 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 %       cd/argfun.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_sweep_errors.m
+%       cd/extract_subvectors.m
+%       cd/find_window_endpoints.m
 %       cd/force_column_cell.m
 %       cd/force_column_numeric.m
 %       cd/isbinaryscalar.m
@@ -96,6 +101,7 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 % 2018-12-19 Now uses unmatched varargin parts as parameters for plot()
 % 2018-12-19 Now returns all object handles in a structure
 % 2018-12-19 Now does not create new figure if figNumber is not provided
+% 2018-12-19 Now restricts vectors to x limits first
 % 
 
 %% Hard-coded parameters
@@ -111,7 +117,8 @@ dataToCompareDefault = [];      % no data to compare against by default
 xLimitsDefault = [];            % set later
 colorMapDefault = [];           % set later
 figTitleDefault = '';           % set later
-figNumberDefault = [];          % use current figure by default
+figHandleDefault = [];          % no existing figure by default
+figNumberDefault = [];          % no figure number by default
 figNameDefault = '';            % don't save figure by default
 baseWindowDefault = [];         % set later
 fitWindowDefault = [];          % set later
@@ -156,6 +163,7 @@ addParameter(iP, 'ColorMap', colorMapDefault, ...
     @(x) isempty(x) || isnumeric(x) && size(x, 2) == 3);
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigHandle', figHandleDefault);
 addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
                 'FigNumber must be a empty or a positive integer scalar!'));
@@ -185,6 +193,7 @@ dataToCompare = iP.Results.DataToCompare;
 xLimits = iP.Results.XLimits;
 colorMap = iP.Results.ColorMap;
 figTitle = iP.Results.FigTitle;
+figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
 figName = iP.Results.FigName;
 baseWindow = iP.Results.BaseWindow;
@@ -205,6 +214,16 @@ handles = struct;
 if isempty(data) || iscell(data) && all(cellfun(@isempty, data))
     fprintf('Nothing to plot!\n');
     return
+end
+
+% Restrict to x limits for faster processing
+if ~isempty(xLimits) && isnumeric(xLimits)
+    % Find the end points
+    endPoints = find_window_endpoints(xLimits, tVecs);
+
+    % Restrict to these end points
+    [tVecs, data] = ...
+        argfun(@(x) extract_subvectors(x, 'EndPoints', endPoints), tVecs, data);
 end
 
 % Force time and data vectors as column cell arrays of column vectors
@@ -260,21 +279,13 @@ nTracesPerRow = ceil(nSweeps / nRows);
 boundaries = gobjects(nSweeps, 2);
 
 %% Do the job
-% Create and clear figure
-if ~isempty(figNumber)
-    fig = figure(figNumber);
-else
-    fig = gcf;
-end
-set(fig, 'Name', 'All individual voltage traces');
-clf(fig);
-
 % Plot traces
-[~, subPlots, plotsData, plotsDataToCompare] = ...
+[fig, subPlots, plotsData, plotsDataToCompare] = ...
     plot_traces(tVecs, data, 'DataToCompare', dataToCompare, ...
                 'ColorMap', colorMap, 'XLimits', xLimits, ...
                 'YLabel', 'suppress', 'LegendLocation', 'suppress', ...
                 'PlotMode', plotMode, 'LinkAxesOption', linkAxesOption, ...
+                'FigHandle', figHandle, 'FigNumber', figNumber, ...
                 otherArguments);
 
 % Plot annotations
@@ -365,6 +376,15 @@ fig = figure('Visible', 'off');
 fig = [];
 
 figNumberDefault = 104;         % figure 104 by default
+
+% Create and clear figure
+if ~isempty(figNumber)
+    fig = figure(figNumber);
+else
+    fig = gcf;
+end
+set(fig, 'Name', 'All individual voltage traces');
+clf(fig);
 
 %}
 
