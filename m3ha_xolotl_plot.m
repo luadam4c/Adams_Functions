@@ -61,6 +61,8 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 % Requires:
 %       cd/argfun.m
 %       cd/compute_axis_limits.m
+%       cd/compute_default_sweep_info.m
+%       cd/compute_sweep_errors.m
 %       cd/count_samples.m
 %       cd/create_time_vectors.m
 %       cd/find_ind_str_in_cell.m
@@ -75,9 +77,14 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 % 2018-12-19 Now updates plots by changing the data values
 % 2018-12-19 Now restricts vectors to x limits first
 % 2018-12-19 Now updates the y limits for the boundaries
+% 2018-12-20 Added x and y labels
+% 2018-12-20 Now updates error strings
 % 
 
 %% Hard-coded parameters
+compsToLabel = {'dend2', 'dend1', 'soma'};
+yLabels = {'Dendrite 2 (mV)', 'Dendrite 1 (mV)', 'Soma (mV)', 'Stim (nA)'};
+nSigFig = 3;
 
 %% Default values for optional arguments
 dataToCompareDefault = [];      % no data to compare against by default
@@ -86,11 +93,12 @@ colorMapDefault = [];           % set in m3ha_plot_individual_traces.m
 figTitleDefault = 'Simulation by xolotl';
 figNumberDefault = [];          % set in m3ha_plot_individual_traces.m
 figNameDefault = '';            % don't save figure by default
-baseWindowDefault = [];         % set in m3ha_plot_individual_traces.m
-fitWindowDefault = [];          % set in m3ha_plot_individual_traces.m
-baseNoiseDefault = [];          % set in m3ha_plot_individual_traces.m
-sweepWeightsDefault = [];       % set in m3ha_plot_individual_traces.m
-sweepErrorsDefault = [];        % set in m3ha_plot_individual_traces.m
+baseWindowDefault = [];         % set later
+fitWindowDefault = [];          % set later
+baseNoiseDefault = [];          % set later
+sweepWeightsDefault = [];       % set later
+baseErrorsDefault = [];         % set later
+sweepErrorsDefault = [];        % set later
 plotSwpWeightsFlagDefault = false;      % will not update yet if true
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -138,6 +146,8 @@ addParameter(iP, 'BaseNoise', baseNoiseDefault, ...
     @(x) assert(isnumericvector(x), 'BaseNoise must be a numeric vector!'));
 addParameter(iP, 'SweepWeights', sweepWeightsDefault, ...
     @(x) assert(isnumericvector(x), 'SweepWeights must be a numeric vector!'));
+addParameter(iP, 'BaseErrors', baseErrorsDefault, ...
+    @(x) assert(isnumericvector(x), 'SweepErrors must be a numeric vector!'));
 addParameter(iP, 'SweepErrors', sweepErrorsDefault, ...
     @(x) assert(isnumericvector(x), 'SweepErrors must be a numeric vector!'));
 addParameter(iP, 'PlotSwpWeightsFlag', plotSwpWeightsFlagDefault, ...
@@ -156,6 +166,7 @@ baseWindow = iP.Results.BaseWindow;
 fitWindow = iP.Results.FitWindow;
 baseNoise = iP.Results.BaseNoise;
 sweepWeights = iP.Results.SweepWeights;
+baseErrors = iP.Results.BaseErrors;
 sweepErrors = iP.Results.SweepErrors;
 plotSwpWeightsFlag = iP.Results.PlotSwpWeightsFlag;
 
@@ -163,11 +174,11 @@ plotSwpWeightsFlag = iP.Results.PlotSwpWeightsFlag;
 % Extract the compartment names
 compNames = xolotlObject.Children;
 
-% Find the idx for soma
-[idxSoma, idxDend1, idxDend2] = ...
-    argfun(@(x) find_ind_str_in_cell(x, compNames, 'IgnoreCase', true, ...
+% Find the indices for compartments to label in xolotl
+idxInXolotl = ...
+    cellfun(@(x) find_ind_str_in_cell(x, compNames, 'IgnoreCase', true, ...
                                 'SearchMode', 'substrings', 'MaxNum', 1), ...
-            'soma', 'dend1', 'dend2');
+            compsToLabel);
 
 %% Initialize a plot or retrieve plot
 % Retrieve handles from xolotl object
@@ -181,32 +192,36 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
     % Extract the external current injection protocol
     currentProtocol = xolotlObject.I_ext;
 
-    % Save the stimulation pulse
+    % Find the idx for soma
+    idxSoma = find_ind_str_in_cell('soma', compNames, 'IgnoreCase', true, ...
+                                    'SearchMode', 'substrings', 'MaxNum', 1);
+
+    % Save the stimulation protocol
     iStim = currentProtocol(:, idxSoma);
 
-    % Get the number of samples for each trace
+    % Get the number of samples for the stimulation protocol
     nSamples = count_samples(iStim);
 
     % Create a time vector in milliseconds
-    tVecs = create_time_vectors(nSamples, 'SamplingIntervalMs', timeStep, ...
+    tVec = create_time_vectors(nSamples, 'SamplingIntervalMs', timeStep, ...
                                 'TimeUnits', 'ms');
 
     % Restrict to x limits for faster processing
     if ~isempty(xLimits) && isnumeric(xLimits)
         % Find the end points
-        endPoints = find_window_endpoints(xLimits, tVecs);
+        endPointsToPlot = find_window_endpoints(xLimits, tVec);
 
         % Restrict to these end points
-        [tVecs, iStim, dataToCompare] = ...
-            argfun(@(x) extract_subvectors(x, 'EndPoints', endPoints), ...
-                    tVecs, iStim, dataToCompare);
+        [tVec, iStim, dataToCompare] = ...
+            argfun(@(x) extract_subvectors(x, 'EndPoints', endPointsToPlot), ...
+                    tVec, iStim, dataToCompare);
     else
-        % Use the first and last end point
-        endPoints = find_window_endpoints([], tVecs);
+        % Use the first and last indices
+        endPointsToPlot = find_window_endpoints([], tVec);
     end
 
     % Create NaN data for the initial plot
-    nanVoltageData = NaN * tVecs;
+    nanVoltageData = NaN * tVec;
     nanData = [nanVoltageData, nanVoltageData, nanVoltageData, iStim];
 
     % Make a figure
@@ -215,9 +230,11 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
             'PaperUnits', 'points', 'PaperSize', [1200, 600]); hold on
 
     % Initialize the plot by using NaN data
-    individual = m3ha_plot_individual_traces(tVecs, nanData, ...
+    individual = m3ha_plot_individual_traces(tVec, nanData, ...
                                     'DataToCompare', dataToCompare, ...
                                     'XLimits', xLimits, ...
+                                    'XUnits', 'ms', ...
+                                    'YLabel', yLabels, ...
                                     'ColorMap', colorMap, ...
                                     'FigTitle', figTitle, ...
                                     'FigHandle', figHandle, ...
@@ -244,17 +261,35 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
         xHandles.puppeteer_object.attachFigure(individual.fig);
     end
 
-    % Store endpoints
-    individual.endPoints = endPoints;
-
-    % Store y axis limits
+    % Store information in individual structure
+    individual.endPointsToPlot = endPointsToPlot;
+    individual.baseWindow = baseWindow;
+    individual.fitWindow = fitWindow;
     individual.yLimits = yLimits;
 
     % Store the figure handle in the xolotl object
     xHandles.individual = individual;
 else
-    % Extract the figure handle from the xolotl object
+    % Extract the individual structure from the xolotl object
     individual = xHandles.individual;
+
+    % Extract information from the individual structure
+    endPointsToPlot = individual.endPointsToPlot;
+    baseWindow = individual.baseWindow;
+    fitWindow = individual.fitWindow;
+    yLimits = individual.yLimits;
+
+    % Extract tVec from the first plot
+    tVec = individual.plotsData(1).XData;
+
+    % Recompute the number of samples
+    nSamples = count_samples(tVec);
+
+    % Extract dataToCompare
+    dataToCompare = zeros(nSamples, 3);
+    for iTrace = 1:3    
+        dataToCompare(:, iTrace) = individual.plotsDataToCompare(iTrace).YData;
+    end
 end
 
 %% Simulate
@@ -262,22 +297,65 @@ end
 vVecs = xolotlObject.integrate;
 
 % Restrict to same end points to be consistent with the default plot
-vVecs = extract_subvectors(vVecs, 'EndPoints', individual.endPoints);
+vVecs = extract_subvectors(vVecs, 'EndPoints', endPointsToPlot);
 
 %% Computed updated data for plots
 % Reorganize voltage traces to match plots
-vVecPlots = vVecs(:, [idxDend2, idxDend1, idxSoma]);
+vVecPlots = vVecs(:, idxInXolotl);
 
 % Compute new y limits
-oldYLimits = individual.yLimits;
 newYLimits = zeros(3, 2);
 parfor iTrace = 1:3
     % Put the new data and old y limits together
-    newDataForLimits = {vVecPlots(:, iTrace); oldYLimits(iTrace, :)};
+    newDataForLimits = {vVecPlots(:, iTrace); yLimits(iTrace, :)};
     
     % Update y limits
     newYLimits(iTrace, :) = compute_axis_limits(newDataForLimits, 'y');
 end
+
+% Re-compute default windows, noise and weights
+[baseWindow, fitWindow, baseNoise, sweepWeights] = ...
+    compute_default_sweep_info(tVec, vVecPlots, ...
+            'BaseWindow', baseWindow, 'FitWindow', fitWindow, ...
+            'BaseNoise', baseNoise, 'SweepWeights', sweepWeights);
+
+% Re-compute baseline errors if not provided
+if isempty(baseErrors)
+    if isempty(dataToCompare)
+        % Just use the baseline noise
+        baseErrors = baseNoise;
+    else
+        % Compute sweep errors over the baseline window
+        errorStructTemp = compute_sweep_errors(vVecPlots, dataToCompare, ...
+                            'TimeVecs', tVec, 'FitWindow', baseWindow, ...
+                            'SweepWeights', sweepWeights, 'NormalizeError', false);
+
+        % Extract baseline errors for each trace
+        baseErrors = errorStructTemp.swpErrors;
+    end
+end
+
+% compute sweep errors if not provided
+if isempty(sweepErrors)
+    if isempty(dataToCompare)
+        % Compute the baseline noise over the fitting window
+        sweepErrors = compute_baseline_noise(dataForWeights, tVecs, fitWindow);
+    else
+        % Compute sweep errors over the fitting window
+        errorStructTemp = compute_sweep_errors(vVecPlots, dataToCompare, ...
+                            'TimeVecs', tVec, 'FitWindow', fitWindow, ...
+                            'SweepWeights', sweepWeights, 'NormalizeError', false);
+
+        % Extract sweep errors for each trace
+        sweepErrors = errorStructTemp.swpErrors;
+    end
+end
+
+% Re-generate the error strings
+errorStrings = ...
+    arrayfun(@(x) ['Noise = ', num2str(baseErrors(x), nSigFig), '; ', ...
+                    'RMSE = ', num2str(sweepErrors(x), nSigFig)], 1:3, ...
+                'UniformOutput', false);
 
 %% Update plots
 % Update data in the chart line objects
@@ -290,6 +368,12 @@ for iTrace = 1:3
     individual.boundaries(iTrace, 1).YData = newYLimits(iTrace, :);
     individual.boundaries(iTrace, 2).YData = newYLimits(iTrace, :);
 end
+
+% Update subplot titles
+for iTrace = 1:3
+    individual.subTitles(iTrace).String = errorStrings{iTrace};
+end
+
 
 %% Save handles in xolotl object
 xolotlObject.handles = xHandles;
@@ -350,7 +434,7 @@ xlim(xLimits)
 'FigName', figName, ...
 
 % Plot the traces
-    m3ha_plot_individual_traces(tVecs, data, ...
+    m3ha_plot_individual_traces(tVec, data, ...
                                 'DataToCompare', dataToCompare, ...
                                 'XLimits', xLimits, ...
                                 'ColorMap', colorMap, ...

@@ -51,6 +51,7 @@ function [baseWindow, fitWindow, baseNoise, sweepWeights] = ...
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/m3ha_run_neuron_once.m
+%       cd/m3ha_xolotl_plot.m
 
 % File History:
 % 2018-11-01 Moved from m3ha_plot_individual_traces.m
@@ -137,10 +138,27 @@ end
 
 % Set default baseline window(s)
 if isempty(baseWindow)
-    baseWindow = transpose([minTimes, centerTimes]);
+    % See if fitWindow is provided
+    if isempty(fitWindow)
+        baseWindow = transpose([minTimes, centerTimes]);
+    else
+        % Get the minimum time for each fitting window
+        if iscell(fitWindow)
+            minFitTimes = cellfun(@min, fitWindow);
+        else
+            minFitTimes = transpose(min(fitWindow, [], 1));
+        end
+
+        % Match minFitTimes with minTimes
+        minFitTimes = match_row_count(minFitTimes, length(minTimes));
+
+        % Get the default baseline window(s)
+        baseWindow = transpose([minTimes, minFitTimes]);
+    end
 end
 
-% Set default window(s) for fitting (must be after baseline window)
+% Set default window(s) for fitting 
+%   Note: assumes baseline window already set before
 if isempty(fitWindow)
     % Get the maximum time for each baseline window
     if iscell(baseWindow)
@@ -184,6 +202,13 @@ end
 OLD CODE:
 
 fitWindow = transpose([centerTimes, maxTimes]);
+
+% Set default window(s) for fitting (must be after baseline window)
+
+% Set default baseline window(s)
+if isempty(baseWindow)
+    baseWindow = transpose([minTimes, centerTimes]);
+end
 
 %}
 

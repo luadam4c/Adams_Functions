@@ -11,6 +11,7 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 %                       subPlots
 %                       plotsData
 %                       plotsDataToCompare
+%                       subTitles
 %                       boundaries
 %                   specified as a scalar structure
 % Arguments:
@@ -31,6 +32,21 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
 %                   default == [min(tVec), max(tVec)]
+%                   - 'XUnits': x-axis units
+%                   must be a string scalar or a character vector 
+%                       or a cell array of strings or character vectors
+%                   default == 'unit'
+%                   - 'XLabel': label for the time axis, 
+%                               suppress by setting value to 'suppress'
+%                   must be a string scalar or a character vector 
+%                       or a cell array of strings or character vectors
+%                   default == ['Time (', xUnits, ')']
+%                   - 'YLabel': label(s) for the y axis, 
+%                               suppress by setting value to 'suppress'
+%                   must be a string scalar or a character vector
+%                   default == 'Data' if plotMode is 'overlapped'
+%                               {'Trace #1', 'Trace #2', ...}
+%                                   if plotMode is 'parallel'
 %                   - 'ColorMap': a color map that also groups traces
 %                                   each set of traces will be on the same row
 %                                   if plot mode is 'parallel'
@@ -65,7 +81,10 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 %                   - 'SweepWeights': sweep weights for averaging
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == 1 ./ baseNoise
-%                   - 'SweepErrors': sweep errors
+%                   - 'BaseErrors': sweep errors in baseline window
+%                   must be a numeric vector
+%                   default == apply compute_sweep_errors.m
+%                   - 'SweepErrors': sweep errors in fitting window
 %                   must be a numeric vector
 %                   default == apply compute_sweep_errors.m
 %                   - 'PlotSwpWeightsFlag': whether to plot sweep weights
@@ -102,6 +121,9 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 % 2018-12-19 Now returns all object handles in a structure
 % 2018-12-19 Now does not create new figure if figNumber is not provided
 % 2018-12-19 Now restricts vectors to x limits first
+% 2018-12-20 Added 'XUnits', 'XLabel', 'YLabel' as parameters
+% 2018-12-20 Now returns subTitles in handles
+% 2018-12-20 Now computes baseErrors and sweepErrors
 % 
 
 %% Hard-coded parameters
@@ -115,6 +137,9 @@ linkAxesOption = 'x';
 %% Default values for optional arguments
 dataToCompareDefault = [];      % no data to compare against by default
 xLimitsDefault = [];            % set later
+xUnitsDefault = 'ms';           % time in ms by default
+xLabelDefault = '';             % set later
+yLabelDefault = 'suppress';     % no y axis labels by default
 colorMapDefault = [];           % set later
 figTitleDefault = '';           % set later
 figHandleDefault = [];          % no existing figure by default
@@ -124,6 +149,7 @@ baseWindowDefault = [];         % set later
 fitWindowDefault = [];          % set later
 baseNoiseDefault = [];          % set later
 sweepWeightsDefault = [];       % set later
+baseErrorsDefault = [];         % set later
 sweepErrorsDefault = [];        % set later
 plotSwpWeightsFlagDefault = 'auto'; % set later
 
@@ -159,6 +185,12 @@ addParameter(iP, 'DataToCompare', dataToCompareDefault, ...
 addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
+addParameter(iP, 'XUnits', xUnitsDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'XLabel', xLabelDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'YLabel', yLabelDefault, ...
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'ColorMap', colorMapDefault, ...
     @(x) isempty(x) || isnumeric(x) && size(x, 2) == 3);
 addParameter(iP, 'FigTitle', figTitleDefault, ...
@@ -181,6 +213,8 @@ addParameter(iP, 'BaseNoise', baseNoiseDefault, ...
     @(x) assert(isnumericvector(x), 'BaseNoise must be a numeric vector!'));
 addParameter(iP, 'SweepWeights', sweepWeightsDefault, ...
     @(x) assert(isnumericvector(x), 'SweepWeights must be a numeric vector!'));
+addParameter(iP, 'BaseErrors', baseErrorsDefault, ...
+    @(x) assert(isnumericvector(x), 'SweepErrors must be a numeric vector!'));
 addParameter(iP, 'SweepErrors', sweepErrorsDefault, ...
     @(x) assert(isnumericvector(x), 'SweepErrors must be a numeric vector!'));
 addParameter(iP, 'PlotSwpWeightsFlag', plotSwpWeightsFlagDefault, ...
@@ -191,6 +225,9 @@ addParameter(iP, 'PlotSwpWeightsFlag', plotSwpWeightsFlagDefault, ...
 parse(iP, tVecs, data, varargin{:});
 dataToCompare = iP.Results.DataToCompare;
 xLimits = iP.Results.XLimits;
+xUnits = iP.Results.XUnits;
+xLabel = iP.Results.XLabel;
+yLabel = iP.Results.YLabel;
 colorMap = iP.Results.ColorMap;
 figTitle = iP.Results.FigTitle;
 figHandle = iP.Results.FigHandle;
@@ -200,6 +237,7 @@ baseWindow = iP.Results.BaseWindow;
 fitWindow = iP.Results.FitWindow;
 baseNoise = iP.Results.BaseNoise;
 sweepWeights = iP.Results.SweepWeights;
+baseErrors = iP.Results.BaseErrors;
 sweepErrors = iP.Results.SweepErrors;
 plotSwpWeightsFlag = iP.Results.PlotSwpWeightsFlag;
 
@@ -248,21 +286,52 @@ if plotSwpWeightsFlag == 'auto'
     end
 end
 
-% Compute default windows, noise and weights
+% Decide on the data for baseline noise and sweep weights
+if isempty(dataToCompare)
+    % Compute default windows, noise and weights from data
+    dataForWeights = data;
+else
+    % Compute default windows, noise and weights from dataToCompare
+    dataForWeights = dataToCompare;
+end
+
+% Compute default windows, noise and weights from dataForWeights
 [baseWindow, fitWindow, baseNoise, sweepWeights] = ...
-    compute_default_sweep_info(tVecs, data, ...
+    compute_default_sweep_info(tVecs, dataForWeights, ...
             'BaseWindow', baseWindow, 'FitWindow', fitWindow, ...
             'BaseNoise', baseNoise, 'SweepWeights', sweepWeights);
 
-% Re-compute sweep errors if not provided
-if isempty(sweepErrors)
-    % Compute sweep errors
-    errorStructTemp = compute_sweep_errors(data, dataToCompare, ...
-                        'TimeVecs', tVecs, 'FitWindow', fitWindow, ...
-                        'SweepWeights', sweepWeights, 'NormalizeError', false);
+% TODO: Merge below into a function and use it in m3ha_xolotl_plot.m as well
+% Compute baseline errors if not provided
+if isempty(baseErrors)
+    if isempty(dataToCompare)
+        % Just use the baseline noise
+        baseErrors = baseNoise;
+    else
+        % Compute sweep errors over the baseline window
+        errorStructTemp = compute_sweep_errors(data, dataToCompare, ...
+                            'TimeVecs', tVecs, 'FitWindow', baseWindow, ...
+                            'SweepWeights', sweepWeights, 'NormalizeError', false);
 
-    % Extract sweep errors for each trace
-    sweepErrors = errorStructTemp.swpErrors;
+        % Extract baseline errors for each trace
+        baseErrors = errorStructTemp.swpErrors;
+    end
+end
+
+% Compute sweep errors if not provided
+if isempty(sweepErrors)
+    if isempty(dataToCompare)
+        % Compute the baseline noise over the fitting window
+        sweepErrors = compute_baseline_noise(dataForWeights, tVecs, fitWindow);
+    else
+        % Compute sweep errors over the fitting window
+        errorStructTemp = compute_sweep_errors(data, dataToCompare, ...
+                            'TimeVecs', tVecs, 'FitWindow', fitWindow, ...
+                            'SweepWeights', sweepWeights, 'NormalizeError', false);
+
+        % Extract sweep errors for each trace
+        sweepErrors = errorStructTemp.swpErrors;
+    end
 end
 
 % Match vectors format and numbers of sweep-dependent vectors with data
@@ -283,6 +352,7 @@ nRows = size(colorMap, 1);
 nTracesPerRow = ceil(nSweeps / nRows);
 
 % Initialize graphics object arrays for boundaries
+subTitles = gobjects(nSweeps, 1);
 boundaries = gobjects(nSweeps, 2);
 
 %% Do the job
@@ -290,7 +360,8 @@ boundaries = gobjects(nSweeps, 2);
 [fig, subPlots, plotsData, plotsDataToCompare] = ...
     plot_traces(tVecs, data, 'DataToCompare', dataToCompare, ...
                 'ColorMap', colorMap, 'XLimits', xLimits, ...
-                'YLabel', 'suppress', 'LegendLocation', 'suppress', ...
+                'XUnits', xUnits, 'XLabel', xLabel, 'YLabel', yLabel, ...
+                'LegendLocation', 'suppress', ...
                 'PlotMode', plotMode, 'LinkAxesOption', linkAxesOption, ...
                 'FigHandle', figHandle, 'FigNumber', figNumber, ...
                 otherArguments);
@@ -299,12 +370,15 @@ boundaries = gobjects(nSweeps, 2);
 %   TODO: make a function plot_title(subPlots, titles)
 if toAnnotate
     for iSwp = 1:nSweeps
+        % Generate the error string
+        errorString = ['Noise = ', num2str(baseErrors(iSwp), nSigFig), '; ', ...
+                        'RMSE = ', num2str(sweepErrors(iSwp), nSigFig)];
+
         % Get the subplot of interest
         subplot(subPlots(iSwp));
 
-        % Show title
-        title(['Noise = ', num2str(baseNoise(iSwp), nSigFig), '; ', ...
-                'RMSE = ', num2str(sweepErrors(iSwp), nSigFig)]);
+        % Show the error string as the subplot title
+        subTitles(iSwp) = title(errorString);
     end
 end
 
@@ -374,6 +448,7 @@ handles.fig = fig;
 handles.subPlots = subPlots;
 handles.plotsData = plotsData;
 handles.plotsDataToCompare = plotsDataToCompare;
+handles.subTitles = subTitles;
 handles.boundaries = boundaries;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

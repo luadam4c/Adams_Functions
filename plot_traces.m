@@ -254,11 +254,11 @@ verbose = iP.Results.Verbose;
 overWrite = iP.Results.OverWrite;
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
 dataToCompare = iP.Results.DataToCompare;
-xUnits = iP.Results.XUnits;
 xLimits = iP.Results.XLimits;
 yLimits = iP.Results.YLimits;
 linkAxesOption = validatestring(iP.Results.LinkAxesOption, ...
                                 validLinkAxesOptions);
+xUnits = iP.Results.XUnits;
 xLabel = iP.Results.XLabel;
 yLabel = iP.Results.YLabel;
 traceLabels = iP.Results.TraceLabels;

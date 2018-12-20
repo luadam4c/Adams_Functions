@@ -15,15 +15,18 @@
 
 %% Hard-coded parameters
 % Files
+sweepName = 'D091710_0012_15';
+cellName = sweepName(1:7);
 projectDir = '/media/adamX/m3ha';
 realDataDir = fullfile(projectDir, 'data_dclamp');
 matFilesDir = fullfile(realDataDir, 'take4/matfiles');
-matFile = fullfile(matFilesDir, 'D091710_0012_15');
+matFile = fullfile(matFilesDir, [sweepName, '.mat']);
 simDir = fullfile(projectDir, 'optimizer4gabab');
 outFolder = '/media/adamX/xolotl_test';
 outFileName = 'xolotl_test.mat';
 neuronParamsDir = fullfile(simDir, 'initial_params');
-neuronParamsFileName = 'initial_params_D091710.csv';
+neuronParamsFileName = ['initial_params_', cellName, '.csv'];
+figTitle = ['Simulation for ', replace(sweepName, '_', '\_')];
 
 % Parameters that should be consistent with the experiment
 temperature = 33;       % temperature of 33 degrees Celsius used by Christine
@@ -149,15 +152,16 @@ save(outPath, 'm3ha');
 
 % Simulate and plot individual traces against data
 m3ha = m3ha_xolotl_plot(m3ha, 'DataToCompare', dataToCompare, ...
-                        'XLimits', xLimits, 'FitWindow', fitWindow);
+                        'XLimits', xLimits, 'FitWindow', fitWindow, ...
+                        'FigTitle', figTitle);
 
 
-% Set up the plots to manipulate
+% Set up the plots to be manipulated
 m3ha.manipulate_plot_func = {@m3ha_xolotl_plot};
 
 % Manipulate leak channel parameters
-% m3ha.manipulate('*Leak*')
 m3ha.manipulate('*gbar')
+% m3ha.manipulate('*Leak*')
 % m3ha.manipulate('*E')
 % m3ha.manipulate({'*Leak*', '*length*'})
 

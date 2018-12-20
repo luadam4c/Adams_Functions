@@ -64,6 +64,7 @@ function errorStruct = compute_sweep_errors (vSim, vReal, varargin)
 % Used by:
 %       cd/compute_single_neuron_errors.m
 %       cd/m3ha_plot_individual_traces.m
+%       cd/m3ha_xolotl_plot.m
 %       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
 
 % File History:
