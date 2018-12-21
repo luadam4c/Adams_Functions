@@ -108,8 +108,7 @@ leakCurrents = totalLeakConductanceAll .* ...
                     (holdingPotentialToPatch - leakReversalAll);
 
 % The holding current should compensate for all leak currents
-% holdingCurrent = sum(leakCurrents);
-holdingCurrent = leakCurrents(idxCompToPatch);
+holdingCurrent = sum(leakCurrents);
 
 %{
 %% Save original parameters
@@ -136,9 +135,9 @@ end
 
 %% Estimate holding current with a voltage clamp simulation
 % Decide on the initial voltage
-if ~isempty(leakReversal)
+if ~isempty(leakReversalAll(idxCompToPatch))
     % Use the leak channel reversal potential
-    initialVoltage = leakReversal;
+    initialVoltage = leakReversalAll(idxCompToPatch);
 else
     % Otherwise, initialize at the holding potential
     initialVoltage = holdingPotential;
@@ -172,6 +171,7 @@ else
     xolotlObject.V_clamp = vClampOrig;
 end
 %}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -207,6 +207,8 @@ surfaceArea = xolotlObject.(compToPatch).get('A');
 
 holdingCurrent = leakConductance * surfaceArea * ...
                     (holdingPotentialToPatch - leakReversal);
+
+holdingCurrent = leakCurrents(idxCompToPatch);
 
 %}
 

@@ -201,11 +201,19 @@ compartments = xolotlObject.Children;
 % Count the number of compartments
 nCompartments = numel(compartments);
 
+% Count the number of vectors
+nTraces = nCompartments + 1;
+
 % Find the indices for compartments to label in xolotl
 idxInXolotl = ...
     cellfun(@(x) find_ind_str_in_cell(x, compartments, 'IgnoreCase', true, ...
                                 'SearchMode', 'substrings', 'MaxNum', 1), ...
             compsToLabel);
+
+% Find the idx for the compartment to patch
+idxCompToPatch = ...
+    find_ind_str_in_cell(compToPatch, compartments, 'MaxNum', 1, ...
+                        'SearchMode', 'substrings', 'IgnoreCase', true);
 
 %% Initialize a plot or retrieve plot
 % Retrieve handles from xolotl object
@@ -218,11 +226,6 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
 
     % Extract the external current injection protocol
     currentProtocol = xolotlObject.I_ext;
-
-    % Find the idx for the compartment to patch
-    idxCompToPatch = ...
-        find_ind_str_in_cell(compToPatch, compartments, 'MaxNum', 1, ...
-                            'SearchMode', 'substrings', 'IgnoreCase', true);
 
     % Save the stimulation protocol
     iStim = currentProtocol(:, idxCompToPatch);
@@ -323,6 +326,9 @@ holdingCurrent = ...
 xolotl_add_holding_current(xolotlObject, 'Compartment', compToPatch, ...
                             'Amplitude', holdingCurrent);
 
+% Retrieve the new external current
+externalCurrent = xolotlObject.I_ext;
+
 %% Simulate
 % Get voltage traces for all compartments
 vVecs = xolotlObject.integrate;
@@ -331,18 +337,14 @@ vVecs = xolotlObject.integrate;
 % Reorganize voltage traces to match plots
 vVecPlots = vVecs(:, idxInXolotl);
 
-% Use just the first nCompartments vectors
-vVecToCompare = dataToCompare(:, 1:nCompartments);
-
-% Use just the first nCompartments windows or end points
-[baseWindow, fitWindow, endPointsToPlot] = ...
-    argfun(@(x) x(1:nCompartments), baseWindow, fitWindow, endPointsToPlot);
+% Put together into a data array
+dataPlots = [vVecPlots, externalCurrent(:, idxCompToPatch)];
 
 % Compute new y limits
-newYLimits = zeros(nCompartments, 2);
-parfor iTrace = 1:nCompartments
+newYLimits = zeros(nTraces, 2);
+for iTrace = 1:nTraces
     % Put the new data and old y limits together
-    newDataForLimits = {vVecPlots(:, iTrace); yLimits(iTrace, :)};
+    newDataForLimits = {dataPlots(:, iTrace); yLimits(iTrace, :)};
     
     % Update y limits
     newYLimits(iTrace, :) = compute_axis_limits(newDataForLimits, 'y');
@@ -350,12 +352,12 @@ end
 
 % Re-compute baseline errors if not provided
 if isempty(baseErrors)
-    if isempty(vVecToCompare)
+    if isempty(dataToCompare)
         % Just use the baseline noise
         baseErrors = baseNoise;
     else
         % Compute sweep errors over the baseline window
-        errorStructTemp = compute_sweep_errors(vVecPlots, vVecToCompare, ...
+        errorStructTemp = compute_sweep_errors(dataPlots, dataToCompare, ...
                                 'TimeVecs', tVec, 'FitWindow', baseWindow, ...
                                 'NormalizeError', false);
 
@@ -366,12 +368,12 @@ end
 
 % compute sweep errors if not provided
 if isempty(sweepErrors)
-    if isempty(vVecToCompare)
+    if isempty(dataToCompare)
         % Compute the baseline noise over the fitting window
-        sweepErrors = compute_baseline_noise(dataForWeights, tVecs, fitWindow);
+        sweepErrors = compute_baseline_noise(dataPlots, tVecs, fitWindow);
     else
         % Compute sweep errors over the fitting window
-        errorStructTemp = compute_sweep_errors(vVecPlots, vVecToCompare, ...
+        errorStructTemp = compute_sweep_errors(dataPlots, dataToCompare, ...
                                 'TimeVecs', tVec, 'FitWindow', fitWindow, ...
                                 'NormalizeError', false);
 
@@ -384,26 +386,26 @@ end
 errorStrings = ...
     arrayfun(@(x) ['Noise = ', num2str(baseErrors(x), nSigFig), '; ', ...
                     'RMSE = ', num2str(sweepErrors(x), nSigFig)], ...
-                1:nCompartments, 'UniformOutput', false);
+                1:nTraces, 'UniformOutput', false);
 
 %% Update plots
 % Restrict to same end points to be consistent with the default plot
 %   Note: this should only be done after the errors are computed
-vVecPlots = extract_subvectors(vVecPlots, 'EndPoints', endPointsToPlot);
+dataPlots = extract_subvectors(dataPlots, 'EndPoints', endPointsToPlot);
 
 % Update data in the chart line objects
-for iTrace = 1:nCompartments   
-    individual.plotsData(iTrace).YData = vVecPlots{iTrace};
+for iTrace = 1:nTraces
+    individual.plotsData(iTrace).YData = dataPlots{iTrace};
 end
 
 % Update data in the primitive line objects
-for iTrace = 1:nCompartments
+for iTrace = 1:nTraces
     individual.boundaries(iTrace, 1).YData = newYLimits(iTrace, :);
     individual.boundaries(iTrace, 2).YData = newYLimits(iTrace, :);
 end
 
 % Update subplot titles
-for iTrace = 1:nCompartments
+for iTrace = 1:nTraces
     individual.subTitles(iTrace).String = errorStrings{iTrace};
 end
 
@@ -581,6 +583,13 @@ parsedParams = parse_xolotl_object(xolotlObject);
 % Extract the compartments
 compartments = parsedParams.compartments;
 nCompartments = parsedParams.nCompartments;
+
+% Use just the first nCompartments vectors
+vVecToCompare = dataToCompare(:, 1:nCompartments);
+
+% Use just the first nCompartments windows or end points
+[baseWindow, fitWindow, endPointsToPlot] = ...
+    argfun(@(x) x(1:nCompartments), baseWindow, fitWindow, endPointsToPlot);
 
 %}
 
