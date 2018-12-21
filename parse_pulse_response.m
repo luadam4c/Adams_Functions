@@ -136,11 +136,11 @@ function [parsedParams, parsedData] = ...
 % 2018-12-17 Now computes peakDelaySamples and peakDelayMs
 % 2018-12-17 Added all detected results of parse_pulse.m
 % 2018-12-18 Added halfPeakValue
-% 2018-12-18 Fixed choose_peak_value so that it uses amplitude
+% 2018-12-18 Fixed choose_peak so that it uses amplitude
 % 2018-12-18 Added 'PeakDirection' as an optional argument
-% TODO: Use PeakDirection in all instances and set it for GABAB
-% TODO: Compute maxSlope, halfWidthSamples, halfWidthMs, 
+% TODO: Compute peakHalfWidthSamples, peakHalfWidthMs, 
 % TODO: Compute timeConstantSamples, timeConstantMs
+% TODO: Compute maxSlope, halfWidthSamples, halfWidthMs, 
 
 %% Hard-coded parameters
 % For arguments
@@ -309,6 +309,7 @@ steadyAmplitude = steadyValue - baseValue;
 % Find the minimum and maximum values
 [minValue, maxValue] = argfun(@(x) extract_elements(vectors, x), 'min', 'max');
 
+%% Search for a 'peak'
 % Find the index to begin searching for the peak (the minimum peak time)
 %   Note: this cannot be greater than nSamples
 idxMinPeakTime = arrayfun(@(x, y, z) min([x + y, z]), ...
@@ -334,7 +335,7 @@ vecsPeakSearch = extract_subvectors(vectors, 'Endpoints', endPointsPeakSearch);
 % Find the peak values (the minimum or maximum value after pulse end 
 %   + minPeakDelaySamples with largest magnitude)
 [peakValue, idxPeak] = ...
-    arrayfun(@(x, y, z, w, v) choose_peak_value(peakDirection, x, y, z, w, v), ...
+    arrayfun(@(x, y, z, w, v) choose_peak(peakDirection, x, y, z, w, v), ...
             minValueAfterMinDelay, maxValueAfterMinDelay, baseValue, ...
             idxMinValueAfterMinDelay, idxMaxValueAfterMinDelay);
 
@@ -347,17 +348,37 @@ peakAmplitude = peakValue - baseValue;
 % Compute the peak delay (pulse end to peak) in samples
 peakDelaySamples = idxPeak - idxBeforePulseEnd;
 
-% Compute the peak delay (pulse end to peak) in ms
-% Use convert_to_time.m
-peakDelayMs = peakDelaySamples .* siMs;
+% Compute the half peak width in samples
+% TODO: compute_peak_halfwidth.m
+% [peakHalfWidthSamples, halfPeakValue, indPeakHalfWidth] = ...
+%     compute_peak_halfwidth(vectors, idxPeak, baseValue);
 
+% Compute the decay time constant in samples
+% TODO: compute_peak_decay.m
+% [peakTimeConstantSamples, idxPeakTimeConstant] = ...
+%     compute_peak_decay(vectors, idxPeak, baseValue, 'exponential');
+
+% Compute the 90% decay time in samples
+% TODO: compute_peak_decay.m
+% [peak90DecaySamples, idxPeak90Decay] = ...
+%     compute_peak_decay(vectors, idxPeak, baseValue, '90%');
+
+% TODO: combine to compute_peak_properties.m
+
+% Convert time values to ms
+% TODO: Use convert_to_time.m
+peakDelayMs = peakDelaySamples .* siMs;
+% peakHalfWidthMs = peakHalfWidthSamples .* siMs;
+% peakTimeConstantMs = peakTimeConstantSamples .* siMs;
+% peak90DecayMs = peak90DecaySamples .* siMs;
+
+%% Extract phases
 % Find the endpoint for the different phases
 endPointsRising = transpose([idxResponseStart, idxResponseEnd]);
 endPointsFalling = transpose([idxResponseEnd, nSamples]);
 endPointsCombined = transpose([idxResponseStart, nSamples]);
 
 % Construct the corresponding indices
-% TODO: Use argfun and make a function create_indices.m
 [indRising, indFalling, indCombined] = ...
     argfun(@(x) create_indices(x, 'ForceCellOutput', true), ...
             endPointsRising, endPointsFalling, endPointsCombined);
@@ -426,7 +447,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [peakValue, idxPeak] = ...
-                choose_peak_value (peakDirection, ...
+                choose_peak (peakDirection, ...
                     minValueAfterMinDelay, maxValueAfterMinDelay, baseValue, ...
                     idxMinValueAfterMinDelay, idxMaxValueAfterMinDelay)
 %% Chooses the peak value from minimum and maximum

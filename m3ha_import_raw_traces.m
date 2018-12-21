@@ -1,12 +1,10 @@
 function [dataCpr, dataIpscr, sweepInfoCpr, sweepInfoIpscr, dataCprAll] = ...
                 m3ha_import_raw_traces (fileNames, swpInfo, initialSlopes, ...
-                    cpStartWindowOrig, cprWinOrig, timeToStabilizeMs, ...
+                    cpStartWindowOrig, cprWinOrig, ...
                     ipscTimeOrig, ipscDur, ...
-                    epasEstimate, RinEstimate, ...
-                    correctDcStepsFlag, oldAverageCprFlag, generateDataFlag, ...
-                    varargin)
-%% Import raw traces
-% Usage: 
+                    epasEstimate, RinEstimate, varargin)
+%% Imports raw traces from .mat files in the m3ha format
+% Usage:
 % Examples:
 %       TODO
 % Outputs:
@@ -27,6 +25,25 @@ function [dataCpr, dataIpscr, sweepInfoCpr, sweepInfoIpscr, dataCprAll] = ...
 %                   - 'OutFolder': directory to place outputs
 %                   must be a string scalar or a character vector
 %                   default == pwd
+%                   - 'CorrectDcStepsFlag': whether to correct 
+%                                           unbalanced bridges in the traces
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'AverageByVholdFlag': whether to average responses 
+%                                           according to VHold
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'TimeToPad': time to pad in the beginning of the trace
+%                                   (same units as the sampling interval 
+%                                       in the time data)
+%                   must be a nonnegative scalar
+%                   default == 0
+%                   - 'Windows': windows to extract 
+%                       Note: this assumes that the values are nondecreasing
+%                   must be empty or a numeric vector with 2 elements,
+%                       or a numeric array with 2 rows
+%                       or a cell array of numeric arrays
+%                   default == []
 %
 % Requires:
 %       cd/apply_or_return.m
@@ -47,7 +64,7 @@ function [dataCpr, dataIpscr, sweepInfoCpr, sweepInfoIpscr, dataCprAll] = ...
 %       cd/print_cellstr.m
 %
 % Used by:
-%       cd/singleneuronfitting42.m and later versions
+%       cd/singleneuronfitting47.m and later versions
 %
 % File History:
 % 2017-05-20 Moved from singleneuronfitting2.m
@@ -64,7 +81,7 @@ function [dataCpr, dataIpscr, sweepInfoCpr, sweepInfoIpscr, dataCprAll] = ...
 % 2018-07-31 Use correct_unbalanced_bridge.m to correct for out-of-balance bridges
 % 2018-08-09 Now computes sweep weights here
 % 2018-08-10 baseNoiseIpscr and baseNoiseCpr are now column vectors
-% 2018-09-12 Added outparams.oldAverageCprFlag
+% 2018-09-12 Added outparams.AverageByVholdFlag
 % 2018-11-15 Moved to Adams_Functions
 % 2018-11-28 Now pads vvecsIpscr with NaN instead of with holdPotentialIpscr
 
@@ -81,6 +98,10 @@ meanVoltageWindow = 0.5;    % width in ms for calculating mean voltage
 verboseDefault = false;             % don't print to standard output by default
 directoryDefault = '';
 outFolderDefault = pwd;
+correctDcStepsFlagDefault = true;
+averageByVholdFlagDefault = true;
+timeToPadDefault = 0;
+windowsDefault = [];            % extract entire trace(s) by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -108,12 +129,26 @@ addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'CorrectDcStepsFlag', correctDcStepsFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AverageByVholdFlag', averageByVholdFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TimeToPad', timeToPadDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+addParameter(iP, 'Windows', windowsDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['Windows must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
 
 % Read from the input Parser
 parse(iP, fileNames, varargin{:});
 verbose = iP.Results.Verbose;
 matFilesDir = iP.Results.Directory;
 outFolder = iP.Results.OutFolder;
+correctDcStepsFlag = iP.Results.CorrectDcStepsFlag;
+averageByVholdFlag = iP.Results.AverageByVholdFlag;
+timeToPad = iP.Results.TimeToPad;
+windows = iP.Results.Windows;
 
 %% Prepare
 % Print message
@@ -161,7 +196,7 @@ approxCprWindow = [cprWinOrig(1); cprWinOrig(2) + cpStartWindowOrigLength];
 baseWindowIpscrOrig = [0, ipscTimeOrig];
 
 % Baseline window for the current pulse response in simulation time
-baseWindowCpr = timeToStabilizeMs + [0, cpStartExpectedOrig];
+baseWindowCpr = timeToPad + [0, cpStartExpectedOrig];
 
 % Get the name of the output folder
 [~, outFolderName] = fileparts(outFolder);
@@ -314,7 +349,7 @@ fprintf('Constructing current pulse response vectors to be compared with simulat
 [cprBaseLengthSamples, cprResponseLengthSamples, ...
     nSamplesToPadForStabilization] = ...
     argfun(@(x) convert_to_samples(x, siMsOrig), ...
-            cprBaseLengthMs, cprResponseLengthMs, timeToStabilizeMs);
+            cprBaseLengthMs, cprResponseLengthMs, timeToPad);
 
 % Compute the index to start the current pulse response for each vector
 %   Note: this might be less than 1
@@ -381,7 +416,7 @@ dataCprAll = dataCpr;
 
 %% Average the current pulse responses according to vHold
 % TODO: Pull out to its own function and use in m3ha_run_neuron_once.m
-if oldAverageCprFlag
+if AverageByVholdFlag
     % Print message
     fprintf('Averaging the current pulse responses according to vHold ... \n');
 
@@ -453,7 +488,7 @@ fprintf('Constructing IPSC response vectors to be compared with simulations ... 
 % Convert times to samples
 [ipscTimeOrigSamples, ipscDurSamples, nSamplesToPadIpscr] = ...
     argfun(@(x) convert_to_samples(x, siMsMfrs), ...
-            ipscTimeOrig, ipscDur, timeToStabilizeMs);
+            ipscTimeOrig, ipscDur, timeToPad);
 
 % Generate vectors to pad
 vvecsToPadIpscr = arrayfun(@(x) NaN * ones(x, 1), nSamplesToPadIpscr, ...
@@ -546,13 +581,8 @@ holdCurrentIpscr = (holdPotentialIpscr - epasEstimate) / RinEstimate;
 holdCurrentCpr = (holdPotentialCpr - epasEstimate) / RinEstimate;
 
 % Estimate the corresponding variations in holding current (nA)
-if generateDataFlag
-    holdCurrentNoiseIpscr = (baseNoiseIpscr / RinEstimate) * 5;
-    holdCurrentNoiseCpr = (baseNoiseCpr / RinEstimate) * 5;
-else
-    holdCurrentNoiseIpscr = (baseNoiseIpscr / RinEstimate) * 0;
-    holdCurrentNoiseCpr = (baseNoiseCpr / RinEstimate) * 0;
-end
+holdCurrentNoiseIpscr = (baseNoiseIpscr / RinEstimate) * 5;
+holdCurrentNoiseCpr = (baseNoiseCpr / RinEstimate) * 5;
 
 %% Save results
 % Print message
@@ -1083,6 +1113,22 @@ parfor iSwp = 1:nSwpsIpscr
     end
 end
 
+function [dataCpr, dataIpscr, sweepInfoCpr, sweepInfoIpscr, dataCprAll] = ...
+                m3ha_import_raw_traces (fileNames, swpInfo, initialSlopes, ...
+                    cpStartWindowOrig, cprWinOrig, timeToStabilizeMs, ...
+                    ipscTimeOrig, ipscDur, ...
+                    epasEstimate, RinEstimate, ...
+                    correctDcStepsFlag, oldAverageCprFlag, generateDataFlag, ...
+                    varargin)
+
+% Estimate the corresponding variations in holding current (nA)
+if generateDataFlag
+    holdCurrentNoiseIpscr = (baseNoiseIpscr / RinEstimate) * 5;
+    holdCurrentNoiseCpr = (baseNoiseCpr / RinEstimate) * 5;
+else
+    holdCurrentNoiseIpscr = (baseNoiseIpscr / RinEstimate) * 0;
+    holdCurrentNoiseCpr = (baseNoiseCpr / RinEstimate) * 0;
+end
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

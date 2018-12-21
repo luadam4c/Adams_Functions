@@ -180,7 +180,7 @@ Last Updated 2018-12-21 by Adam Lu
 - [**m3ha_find_ind_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ind_to_fit.m): Find indices of fnrow in dclampdatalog_take4.mat that will be used for fitting
 - [**m3ha_fminsearch3.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_fminsearch3.m): Applies the Nelder-Mead simplex algorithm to optimize parameters (modified version of fminsearch for the m3ha project)
 - [**m3ha_generate_cell_info.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_generate_cell_info.m): Generates a table of cell information from the sweep information table
-- [**m3ha_import_raw_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_import_raw_traces.m): Import raw traces
+- [**m3ha_import_raw_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_import_raw_traces.m): Imports raw traces from .mat files in the m3ha format
 - [**m3ha_load_sweep_info.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_load_sweep_info.m): Loads sweep info (default is homeDirectory/data_dclamp/take4/dclampdatalog_take4.csv)
 - [**m3ha_locate_homedir.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_locate_homedir.m): Locate the first home directory that exists for the GAT blockade project
 - [**m3ha_log_errors_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_log_errors_params.m): Log errors and parameter values

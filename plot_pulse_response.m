@@ -48,6 +48,12 @@ function h = plot_pulse_response (timeVec, responseVecs, varargin)
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
 %                   default == expand by a little bit
+%                   - 'PeakDirection': direction of expected peak
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'Downward'  - downward peaks (e.g., EPSCs)
+%                       'Upward'    - upward peaks (e.g., IPSCs)
+%                       'Auto'      - no preference (whichever is largest)
+%                   default = 'Auto'
 %                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
@@ -61,6 +67,7 @@ function h = plot_pulse_response (timeVec, responseVecs, varargin)
 % File History:
 % 2018-10-12 Adapted from code in plot_pulse.m
 % 2018-12-19 Now uses unmatched varargin parts as parameters for plot()
+% 2018-12-21 Add 'PeakDirection' as a parameter
 % TODO: Use improved version of match_vector_numbers.m
 
 %% Hard-coded parameters
@@ -75,6 +82,7 @@ responseParamsDefault = [];     % set later
 toUseDefault = [];              % set later
 xLimitsDefault = [];            % set later
 yLimitsDefault = [];            % set later
+peakDirectionDefault = 'auto';  % automatically detect largest peak by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -115,6 +123,8 @@ addParameter(iP, 'XLimits', xLimitsDefault, ...
 addParameter(iP, 'YLimits', yLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
+addParameter(iP, 'PeakDirection', peakDirectionDefault, ...
+    @(x) any(validatestring(x, validPeakDirections)));
 
 % Read from the Input Parser
 parse(iP, timeVec, responseVecs, varargin{:});
@@ -126,6 +136,7 @@ responseParams = iP.Results.ResponseParams;
 toUse = iP.Results.ToUse;
 xLimits = iP.Results.XLimits;
 yLimits = iP.Results.YLimits;
+peakDirection = validatestring(iP.Results.PeakDirection, validPeakDirections);
 
 % Keep unmatched arguments for the plot() function
 otherArguments = iP.Unmatched;
@@ -144,7 +155,8 @@ if isempty(responseParams)
                                 'PulseVectors', pulseVectors, ...
                                 'SameAsPulse', sameAsPulse, ...
                                 'MeanValueWindowMs', baselineLengthMs, ...
-                                'MinPeakDelayMs', minPeakDelayMs);
+                                'MinPeakDelayMs', minPeakDelayMs, ...
+                                'PeakDirection', peakDirection);
 end
 
 % Use all vectors by default

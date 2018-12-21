@@ -71,8 +71,7 @@ xLimits = xLimitsOrig + timeToStabilize;
 timeEndCpr = cprWindow(2);
 
 %% Import data to compare against
-% TODO: Make this its own function
-%   [realVoltageData, realStimPulse] = m3ha_load_single_sweep(matFile)
+% TODO: Use m3ha_import_raw_traces.m
 
 % Open the matfile
 m = matfile(matFile);
@@ -163,7 +162,7 @@ m3ha_xolotl_plot(m3ha, 'DataToCompare', dataToCompare, ...
                         'TimeToStabilize', timeToStabilize, ...
                         'HoldingPotential', holdingPotential);
 
-
+%{
 % Set up the plots to be manipulated
 m3ha.manipulate_plot_func = {@m3ha_xolotl_plot};
 
@@ -174,7 +173,7 @@ m3ha.manipulate('*gbar')
 % m3ha.manipulate({'*Leak*', '*length*'})
 manip = gcf;
 manip.Position(2) = manip.Position(2) - 200;
-
+%}
 % Displays a list of properties
 % properties(xolotl)
 
