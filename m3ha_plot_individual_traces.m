@@ -355,7 +355,7 @@ boundaries = gobjects(nSweeps, 2);
 % Restrict to x limits for faster processing
 %   Note: this should only be done after the errors are computed
 if ~isempty(xLimits) && isnumeric(xLimits)
-    % Find the end points
+    % Find the end points to plot
     endPointsToPlot = find_window_endpoints(xLimits, tVecs);
 
     % Restrict to these end points

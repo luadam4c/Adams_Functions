@@ -48,6 +48,7 @@ simTimeStep = 0.1;      % simulation time step in ms
 timeToStabilize = 1000; % time for state variables to stabilize in ms
 
 % Parameters for calculations
+baseWindowOrig = [0, cpDelayOrig];
 fitWindowOrig = [cpDelayOrig, cprWindowOrig(2)];
                         % from current pulse start to current pulse response end
 
@@ -65,6 +66,7 @@ outPath = fullfile(outFolder, outFileName);
 cprWindow = cprWindowOrig + timeToStabilize;
 cpDelay = cpDelayOrig + timeToStabilize;
 fitWindow = fitWindowOrig + timeToStabilize;
+baseWindow = baseWindowOrig + timeToStabilize;
 xLimits = xLimitsOrig + timeToStabilize;
 
 % Obtain the simulation end time in ms for current pulse response
@@ -97,19 +99,15 @@ siMsOrig = compute_sampling_interval(tvecOrig);
 endPointsCpr = find_window_endpoints(cprWindowOrig, tvecOrig);
 
 % Extract the current pulse response window
-[vvecCpr, ivecCpr] = ...
+[tvecCpr, vvecCpr, ivecCpr] = ...
     argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsCpr), ...
-            vvecOrig, ivecOrig);
-
-% Compute baseline window
-baseWindow = compute_default_sweep_info(tvecOrig, vvecCpr, ...
-                                        'FitWindow', fitWindowOrig);
+            tvecOrig, vvecOrig, ivecOrig);
 
 % Find the end points for the baseline window
-endPointsBase = find_window_endpoints(baseWindow, tvecOrig);
+endPointsBase = find_window_endpoints(baseWindowOrig, tvecOrig);
                                     
 % Compute the holding potential
-holdingPotential = compute_means(vvecCpr, 'EndPoints', endPointsBase);
+holdingPotential = compute_means(vvecOrig, 'EndPoints', endPointsBase);
 
 % Make sure holdingPotential has the correct dimensions
 holdingPotential = match_dimensions(holdingPotential, [1, nCompartments]);
@@ -157,12 +155,13 @@ save(outPath, 'm3ha');
 
 % Simulate and plot individual traces against data
 m3ha_xolotl_plot(m3ha, 'DataToCompare', dataToCompare, ...
-                        'XLimits', xLimits, 'FitWindow', fitWindow, ...
+                        'XLimits', xLimits, ...
+                        'BaseWindow', baseWindow, 'FitWindow', fitWindow, ...
                         'FigTitle', figTitle, 'CompToPatch', compToPatch, ...
                         'TimeToStabilize', timeToStabilize, ...
                         'HoldingPotential', holdingPotential);
 
-%{
+
 % Set up the plots to be manipulated
 m3ha.manipulate_plot_func = {@m3ha_xolotl_plot};
 
@@ -173,7 +172,7 @@ m3ha.manipulate('*gbar')
 % m3ha.manipulate({'*Leak*', '*length*'})
 manip = gcf;
 manip.Position(2) = manip.Position(2) - 200;
-%}
+
 % Displays a list of properties
 % properties(xolotl)
 
@@ -194,6 +193,12 @@ m3ha = xolotl_set_simparams(m3ha, 'InitialVoltage', initialVoltageCpr, ...
 % TODO: xolotl_save(xolotlObject, 'OutFolder', outFolder, 'FileBase', fileBase);
 
 holdingPotential = -60; % holding potential in mV
+
+% Compute baseline window
+if isempty(baseWindowOrig)
+    baseWindowOrig = compute_default_sweep_info(tvecOrig, vvecCpr, ...
+                                            'FitWindow', fitWindowOrig);
+end
 
 %}
 

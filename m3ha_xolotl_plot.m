@@ -210,11 +210,6 @@ idxInXolotl = ...
                                 'SearchMode', 'substrings', 'MaxNum', 1), ...
             compsToLabel);
 
-% Find the idx for the compartment to patch
-idxCompToPatch = ...
-    find_ind_str_in_cell(compToPatch, compartments, 'MaxNum', 1, ...
-                        'SearchMode', 'substrings', 'IgnoreCase', true);
-
 %% Initialize a plot or retrieve plot
 % Retrieve handles from xolotl object
 xHandles = xolotlObject.handles;
@@ -226,6 +221,11 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
 
     % Extract the external current injection protocol
     currentProtocol = xolotlObject.I_ext;
+
+    % Find the idx for the compartment to patch
+    idxCompToPatch = ...
+        find_ind_str_in_cell(compToPatch, compartments, 'MaxNum', 1, ...
+                            'SearchMode', 'substrings', 'IgnoreCase', true);
 
     % Save the stimulation protocol
     iStim = currentProtocol(:, idxCompToPatch);
@@ -282,8 +282,10 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
     
     % Store arguments in handles structure 
     %   (so that they can be used by x.manipulate)
+    xHandles.tVec = tVec;
     xHandles.dataToCompare = dataToCompare;
     xHandles.compToPatch = compToPatch;
+    xHandles.idxCompToPatch = idxCompToPatch;
     xHandles.timeToStabilize = timeToStabilize;
     xHandles.holdingPotential = holdingPotential;
     xHandles.externalCurrentOrig = externalCurrentOrig;
@@ -294,13 +296,13 @@ else
     % Extract the individual structure from the xolotl object
     individual = xHandles.individual;
 
-    % Extract tVec from the first plot
-    tVec = individual.plotsData(1).XData;
-
     % Retrieve from the handles structure
-    %   Note: dataToCompare must be retrieved in full (not just what's plotted)
+    %   Note: tVec & dataToCompare must be retrieved in full 
+    %           (not just what's plotted)
+    tVec = xHandles.tVec;
     dataToCompare = xHandles.dataToCompare;
     compToPatch = xHandles.compToPatch;
+    idxCompToPatch = xHandles.idxCompToPatch;
     timeToStabilize = xHandles.timeToStabilize;
     holdingPotential = xHandles.holdingPotential;
     externalCurrentOrig = xHandles.externalCurrentOrig;
@@ -317,11 +319,11 @@ endPointsToPlot = individual.endPointsToPlot;
 xolotlObject.I_ext = externalCurrentOrig;
 
 % Find the holding current (nA) necessary to match the holding potential
-% holdingCurrent = ...
-%     xolotl_estimate_holding_current(xolotlObject, holdingPotential, ...
-%                                     'CompToPatch', compToPatch, ...
-%                                     'TimeToStabilize', timeToStabilize);
-holdingCurrent = 0.095;
+holdingCurrent = ...
+    xolotl_estimate_holding_current(xolotlObject, holdingPotential, ...
+                                    'CompToPatch', compToPatch, ...
+                                    'TimeToStabilize', timeToStabilize);
+% holdingCurrent = 0.095;
 
 % Add the holding current (nA)
 xolotl_add_holding_current(xolotlObject, 'Compartment', compToPatch, ...
@@ -591,6 +593,9 @@ vVecToCompare = dataToCompare(:, 1:nCompartments);
 % Use just the first nCompartments windows or end points
 [baseWindow, fitWindow, endPointsToPlot] = ...
     argfun(@(x) x(1:nCompartments), baseWindow, fitWindow, endPointsToPlot);
+
+% Extract tVec from the first plot
+tVec = transpose(individual.plotsData(1).XData);
 
 %}
 

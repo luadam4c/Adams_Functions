@@ -95,6 +95,7 @@ radiusAll = xolotlObject.get('*radius');
 % Get the length (mm) for all compartments
 lengthAll = xolotlObject.get('*len');
 
+%{
 %% Estimate holding current (nA) by calculation
 % Compute the surface area for each compartment
 surfaceAreaAll = 2 * pi * radiusAll .* lengthAll;
@@ -109,8 +110,8 @@ leakCurrents = totalLeakConductanceAll .* ...
 
 % The holding current should compensate for all leak currents
 holdingCurrent = sum(leakCurrents);
+%}
 
-%{
 %% Save original parameters
 % Retrieve original simulation parameters
 vClampOrig = xolotlObject.V_clamp;
@@ -170,7 +171,7 @@ if all(all(isnan(vClampOrig)))
 else
     xolotlObject.V_clamp = vClampOrig;
 end
-%}
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
