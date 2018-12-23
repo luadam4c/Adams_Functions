@@ -8,6 +8,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       subVecs2 = extract_subvectors({1:5, 2:6}, 'EndPoints', {[1, 3], [2, 4]})
 %       subVecs3 = extract_subvectors(1:5, 'EndPoints', {[1, 3], [2, 4]})
 %       subVecs4 = extract_subvectors({1:5, 2:6}, 'Windows', [2.5, 6.5])
+%       subVecs5 = extract_subvectors(magic(3), 'EndPoints', {[1,Inf], [2,Inf], [3,Inf]})
 % Outputs:
 %       subVecs     - subvectors extracted
 %                   specified as a numeric array 
@@ -161,7 +162,7 @@ end
 
 % Create indices if not provided
 if isempty(indices)
-    indices = create_indices(endPoints);
+    indices = create_indices(endPoints, 'Vectors', vecs);
 end
 
 % If there is an align/truncation method used, apply it to indices

@@ -18,6 +18,7 @@ function isPositiveIntegerVector = ispositiveintegervector (x)
 %       cd/isaninteger.m
 %
 % Used by:
+%       cd/compute_peak_halfwidth.m
 %       cd/extract_columns.m
 %       cd/match_dimensions.m
 %       cd/m3ha_select_cells.m

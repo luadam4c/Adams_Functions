@@ -26,6 +26,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/compute_sweep_errors.m
 %       cd/construct_fullpath.m
 %       cd/create_average_time_vector.m
+%       cd/create_indices.m
 %       cd/extract_subvectors.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/find_passive_params.m

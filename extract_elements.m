@@ -25,9 +25,12 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %                   must be a TODO
 %                   default == TODO
 %
-% Used by:
-%       cd/create_average_time_vector.m
+% Requires:
 %       cd/create_error_for_nargin.m
+%
+% Used by:
+%       cd/compute_peak_halfwidth.m
+%       cd/create_average_time_vector.m
 %       cd/create_indices.m
 %       cd/parse_pulse_response.m
 %       cd/plot_protocols.m

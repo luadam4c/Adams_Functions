@@ -30,6 +30,7 @@ function nSamples = count_samples (vectors, varargin)
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/create_average_time_vector.m
+%       cd/create_indices.m
 %       cd/extract_columns.m
 %       cd/extract_subvectors.m
 %       cd/m3ha_xolotl_plot.m
