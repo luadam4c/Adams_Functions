@@ -47,6 +47,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %       cd/compute_residuals.m
 %       cd/compute_rms_error.m
 %       cd/construct_fullpath.m
+%       cd/extract_elements.m
 %       cd/extract_subvectors.m
 %       cd/find_pulse_response_endpoints.m
 %       cd/find_window_endpoints.m

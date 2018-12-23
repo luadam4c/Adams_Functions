@@ -114,9 +114,9 @@ function [featuresFileTable, featuresSweepTable] = ...
 % 
 
 %% TODO: Make these parameters
-plotSeparateFlag = true;
-plotAltogetherFlag = true;
-plotAverageFlag = true;
+plotSeparateFlag = false; %true;
+plotAltogetherFlag = false; %true;
+plotAverageFlag = false; %true;
 
 %% Hard-coded parameters
 validProtocolTypes = {'EvokedLFP', 'EvokedGABAB'};

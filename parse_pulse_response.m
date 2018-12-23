@@ -40,11 +40,14 @@ function [parsedParams, parsedData] = ...
 %                           idxMaxValueAfterMinDelay
 %                           idxMinPeakTime
 %                           idxPeak
+%                           endPointsHalfWidth
 %                           peakValue
 %                           halfPeakValue
 %                           peakAmplitude
 %                           peakDelaySamples
 %                           peakDelayMs
+%                           peakHalfWidthSamples
+%                           peakHalfWidthMs
 %                           hasJump
 %                           nSamplesPulse
 %                           idxAfterPulseStart
@@ -106,6 +109,8 @@ function [parsedParams, parsedData] = ...
 % Requires:
 %       cd/argfun.m
 %       cd/compute_means.m
+%       cd/compute_peak_decay.m
+%       cd/compute_peak_halfwidth.m
 %       cd/convert_to_samples.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
@@ -138,6 +143,7 @@ function [parsedParams, parsedData] = ...
 % 2018-12-18 Added halfPeakValue
 % 2018-12-18 Fixed choose_peak so that it uses amplitude
 % 2018-12-18 Added 'PeakDirection' as an optional argument
+% 2018-12-22 Added indPeakHalfWidth, peakHalfWidthSamples, peakHalfWidthMs
 % TODO: Compute peakHalfWidthSamples, peakHalfWidthMs, 
 % TODO: Compute timeConstantSamples, timeConstantMs
 % TODO: Compute maxSlope, halfWidthSamples, halfWidthMs, 
@@ -339,9 +345,6 @@ vecsPeakSearch = extract_subvectors(vectors, 'Endpoints', endPointsPeakSearch);
             minValueAfterMinDelay, maxValueAfterMinDelay, baseValue, ...
             idxMinValueAfterMinDelay, idxMaxValueAfterMinDelay);
 
-% Compute the half peak value
-halfPeakValue = mean([peakValue, baseValue], 2);
-
 % Compute the relative peak amplitude
 peakAmplitude = peakValue - baseValue;
 
@@ -349,26 +352,27 @@ peakAmplitude = peakValue - baseValue;
 peakDelaySamples = idxPeak - idxBeforePulseEnd;
 
 % Compute the half peak width in samples
-% TODO: compute_peak_halfwidth.m
-% [peakHalfWidthSamples, halfPeakValue, indPeakHalfWidth] = ...
-%     compute_peak_halfwidth(vectors, idxPeak, baseValue);
+[peakHalfWidthSamples, halfPeakValue, endPointsHalfWidth] = ...
+    compute_peak_halfwidth(vectors, idxPeak, 'BaseValue', baseValue);
 
 % Compute the decay time constant in samples
 % TODO: compute_peak_decay.m
-% [peakTimeConstantSamples, idxPeakTimeConstant] = ...
-%     compute_peak_decay(vectors, idxPeak, baseValue, 'exponential');
+[peakTimeConstantSamples, idxPeakTimeConstant] = ...
+    compute_peak_decay(vectors, idxPeak, 'BaseValue', baseValue, ...
+                        'DecayMethod', 'exponential');
 
 % Compute the 90% decay time in samples
 % TODO: compute_peak_decay.m
-% [peak90DecaySamples, idxPeak90Decay] = ...
-%     compute_peak_decay(vectors, idxPeak, baseValue, '90%');
+[peak90DecaySamples, idxPeak90Decay] = ...
+    compute_peak_decay(vectors, idxPeak, 'BaseValue', baseValue, ...
+                        'DecayMethod', '90%');
 
 % TODO: combine to compute_peak_properties.m
 
 % Convert time values to ms
 % TODO: Use convert_to_time.m
 peakDelayMs = peakDelaySamples .* siMs;
-% peakHalfWidthMs = peakHalfWidthSamples .* siMs;
+peakHalfWidthMs = peakHalfWidthSamples .* siMs;
 % peakTimeConstantMs = peakTimeConstantSamples .* siMs;
 % peak90DecayMs = peak90DecaySamples .* siMs;
 
@@ -427,9 +431,11 @@ parsedParams = table(siMs, meanValueWindowMs, minPeakDelayMs, ...
                         minValue, maxValue, ...
                         minValueAfterMinDelay, idxMinValueAfterMinDelay, ...
                         maxValueAfterMinDelay, idxMaxValueAfterMinDelay, ...
-                        idxMinPeakTime, idxPeak, ...
+                        idxMinPeakTime, idxPeak, endPointsHalfWidth, ...
                         peakValue, halfPeakValue, peakAmplitude, ...
-                        peakDelaySamples, peakDelayMs, hasJump);
+                        peakDelaySamples, peakDelayMs, ...
+                        peakHalfWidthSamples, peakHalfWidthMs, ...
+                        hasJump);
 
 % Put together the pulse response data
 parsedData = table(vectors, indBase, indSteady, ...
@@ -548,6 +554,9 @@ indFalling = arrayfun(@(x, y) transpose(x:y), ...
 indCombined = arrayfun(@(x, y) transpose(x:y), ...
                     idxResponseStart, nSamples, ...
                     'UniformOutput', false);
+
+% Compute the half peak value
+halfPeakValue = mean([peakValue, baseValue], 2);
 
 %}
 

@@ -217,8 +217,14 @@ end
     compute_all_pulse_responses (fileName, responseType, ...
                                 'SaveFlag', saveTablesFlag, varargin{:});
 
+% Count the number of vectors
+nVectors = count_vectors(respAll);
 
 %% Plot individual protocol traces with stimulus separately
+% Initialize graphics object array
+h = gobjects(nVectors, 1);
+
+% Plot 
 if plotFlag
     h = plot_all_pulse_response_with_stimulus(fileName, ...
                     tVecAll, respAll, stimAll, featuresAll, ...
@@ -247,7 +253,6 @@ newFileBases = ...
     create_labels_from_numbers(1:nVectors, 'Prefix', [fileBase, '_Swp']);
 
 % Loop through all vectors
-h = gobjects(nVectors);
 parfor iVec = 1:nVectors
 %for iVec = 1:nVectors
     % Plot the pulse response with the stimulation pulse

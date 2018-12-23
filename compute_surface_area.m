@@ -1,5 +1,5 @@
 function surfaceArea = compute_surface_area (lengths, diameters, varargin)
-%% Computes the surface area of a cylindrical compartmental model cell based on lengths and diamters
+%% Computes the surface area of a cylindrical compartmental model cell based on lengths and diameters
 % Usage: surfaceArea = compute_surface_area (lengths, diameters, varargin)
 % Explanation:
 %       TODO

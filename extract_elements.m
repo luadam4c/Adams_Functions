@@ -21,12 +21,17 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %                       'last'  - last element of each vector
 %                       'min'   - minimum-valued element of each vector
 %                       'max'   - maximum-valued element of each vector
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%                       'specific' - at a a specific index
+%       varargin    - 'Index': index of the element from each vector
+%                   must be a positive numeric vector
+%                   default == []
 %
 % Requires:
+%       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
+%       cd/isnumericvector.m
+%       cd/match_dimensions.m
+%       cd/match_format_vector_sets.m
 %
 % Used by:
 %       cd/compute_peak_halfwidth.m
@@ -44,10 +49,10 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % 
 
 %% Hard-coded parameters
-validExtractModes = {'first', 'last', 'min', 'max'};
+validExtractModes = {'first', 'last', 'min', 'max', 'specific'};
 
 %% Default values for optional arguments
-% param1Default   = [];                   % default TODO: Description of param1
+indexDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -70,12 +75,13 @@ addRequired(iP, 'extractMode', ...
     @(x) any(validatestring(x, validExtractModes)));
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default, ...
-%     % TODO: validation function %);
+addParameter(iP, 'Index', indexDefault, ...
+    @(x) assert(isnumericvector(x), 'Index must be a numeric vector!'));
+
 
 % Read from the Input Parser
 parse(iP, vecs, extractMode, varargin{:});
-% param1 = iP.Results.param1;
+index = iP.Results.Index;
 
 % Validate extractMode
 extractMode = validatestring(extractMode, validExtractModes);
@@ -83,15 +89,46 @@ extractMode = validatestring(extractMode, validExtractModes);
 %% Do the job
 switch extractMode
 case {'first', 'last', 'min', 'max'}
+    % Extract from a position
     if iscell(vecs)
-        % Do for all elements
         [elements, idxElement] = ...
-            cellfun(@(x) extract_single_element(x, extractMode), vecs);
+            cellfun(@(x) extract_by_position(x, extractMode), vecs);
     else
-        % Do for all columns
         [elements, idxElement] = ...
-            arrayfun(@(x) extract_single_element(vecs(:, x), extractMode), ...
+            arrayfun(@(x) extract_by_position(vecs(:, x), extractMode), ...
                     transpose(1:size(vecs, 2)));
+    end
+case 'specific'
+    % Check if index is provided
+    if isempty(index)
+        error(['The index for each vector must be provided ', ...
+                'under the ''specific'' extract mode!!']);
+    end
+
+    % Extract from a specific index
+    if iscell(vecs)
+        % Force as a cell array
+        if isnumeric(index)
+            index = num2cell(index);
+        end
+
+        % Match the vector counts
+        [vecs, index] = match_format_vector_sets(vecs, index);
+
+        % Extract by index on each vector
+        [elements, idxElement] = ...
+            cellfun(@(x, y) extract_by_index(x, y), vecs, index);
+    else
+        % Count the number of vectors
+        nVectors = count_vectors(vecs);
+
+        % Match the dimensions
+        index = match_dimensions(vecs, [nVectors, 1]);
+
+        % Extract by index on each comlumn
+        [elements, idxElement] = ...
+            arrayfun(@(x, y) extract_by_index(vecs(:, x), y), ...
+                    transpose(1:nVectors), index);
     end
 otherwise
     error('Code logic error!!\n');
@@ -99,7 +136,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [element, idxElement] = extract_single_element (x, extractMode)
+function [element, idxElement] = extract_by_position (x, extractMode)
 
 switch extractMode
     case 'first'
@@ -107,13 +144,33 @@ switch extractMode
         idxElement = 1;
     case 'last'
         element = x(end);
-        idxElement = length(x);
+        idxElement = numel(x);
     case 'min'
         [element, idxElement] = min(x);
     case 'max'
         [element, idxElement] = max(x);
     otherwise
         error('Code logic error!!\n');
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [element, idxElement] = extract_by_index (x, index)
+
+if isnan(index)
+    element = NaN;
+    idxElement = NaN;
+elseif index == Inf
+    element = x(end);
+    idxElement = numel(x);
+elseif index == -Inf
+    element = x(1);
+    idxElement = 1;
+elseif index >= 1 && index <= numel(x)
+    element = x(index);
+    idxElement = index;
+else
+    error('The index %g is out of bounds!', index);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

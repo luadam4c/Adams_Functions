@@ -15,9 +15,11 @@ function isNumericVector = isnumericvector (x)
 %       x               - an input to check
 %
 % Used by:
+%       cd/compute_peak_halfwidth.m
 %       cd/compute_rms_error.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
+%       cd/extract_elements.m
 %       cd/find_passive_params.m
 %       cd/iscellnumericvector.m
 %       cd/m3ha_create_simulation_params.m

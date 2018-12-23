@@ -23,6 +23,7 @@ function arrayNew = match_dimensions (arrayOld, dimNew, varargin)
 %       cd/create_indices.m
 %       cd/create_time_vectors.m
 %       cd/extract_columns.m
+%       cd/extract_elements.m
 %       cd/match_format_vector_sets.m
 %       cd/match_array_counts.m
 %       cd/normalize_by_initial_value.m

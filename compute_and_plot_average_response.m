@@ -225,6 +225,7 @@ end
                                 'SaveFlag', saveTablesFlag, varargin{:});
 
 %% Plot the evoked local field potential with the stimulation pulse
+h = gobjects(1);
 if plotFlag
     % Plot the pulse response with the stimulation pulse
     h = plot_pulse_response_with_stimulus(tVecAvg, respAvg, stimAvg, ...

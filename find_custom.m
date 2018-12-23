@@ -1,6 +1,6 @@
-function [varargout] = find_custom (X, varargin)
+function varargout = find_custom (X, varargin)
 %% Same as find() but takes custom parameter-value pairs
-% Usage: [varargout] = find_custom (X, varargin)
+% Usage: varargout = find_custom (X, varargin)
 % Explanation:
 %       TODO
 % Outputs:
@@ -22,7 +22,8 @@ function [varargout] = find_custom (X, varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %
-% Used by:    
+% Used by:
+%       cd/compute_peak_halfwidth.m
 %       /home/Matlab/Kojis_Functions/find_directional_events.m
 %       /home/Matlab/minEASE/gui_examine_events.m
 %

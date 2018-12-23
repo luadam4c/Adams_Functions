@@ -1,19 +1,17 @@
-function [halfWidthSamples, halfPeakValue, endPointsHalfWidth] = ...
-                compute_peak_halfwidth (vectors, idxPeak, varargin)
-%% Computes the half widths for peaks
-% Usage: [halfWidthSamples, halfPeakValue, endPointsHalfWidth] = ...
-%               compute_peak_halfwidth (vectors, idxPeak, varargin)
+function [peakDecaySamples, idxPeakDecay] = ...
+                compute_peak_decay (vectors, idxPeak, varargin)
+%% Computes the peak decays
+% Usage: [peakDecaySamples, idxPeakDecay] = ...
+%               compute_peak_decay (vectors, idxPeak, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       halfWidthSamples    - peak half widths in samples
+%       peakDecaySamples    - peak half widths in samples
 %                           specified as a nonnegative vector
-%       halfPeakValue       - value at half peak
-%                           specified as a numeric vector
-%       endPointsHalfWidth  - indices of start and end of half widths
-%                           specified as a cell array of 2-element vectors
+%       idxPeakDecay        - indices of start and end of half widths
+%                           specified as a positive integer vector
 % Arguments:
 %       vectors     - vectors with peaks
 %                   Note: If a cell array, each element must be a vector
@@ -38,7 +36,7 @@ function [halfWidthSamples, halfPeakValue, endPointsHalfWidth] = ...
 %       cd/parse_pulse_response.m
 
 % File History:
-% 2018-12-22 Created by Adam Lu
+% 2018-12-23 Modified from compute_peak_halfwidth.m
 % 
 
 %% Hard-coded parameters
@@ -131,10 +129,10 @@ idxHalfWidthStart = idxPeak - idxTemp1;
 idxHalfWidthEnd = idxPeak + idxTemp2;
 
 % Compute the half width in samples
-halfWidthSamples = idxHalfWidthEnd - idxHalfWidthStart;
+peakDecaySamples = idxHalfWidthEnd - idxHalfWidthStart;
 
 % Output the endpoints for the half width
-endPointsHalfWidth = ...
+idxPeakDecay = ...
     arrayfun(@(x, y) [x; y], idxHalfWidthStart, idxHalfWidthEnd, ...
                 'UniformOutput', false);
 
@@ -151,7 +149,7 @@ peakValue = extract_subvectors(vectors, ...
     argfun(@(x) force_column_numeric(x, 'IgnoreNonVectors', true), ...
             vectors, idxPeak, baseValue);
 
-halfWidthSamples = cellfun(@(x) x(2) - x(1), indHalfWidth);
+peakDecaySamples = cellfun(@(x) x(2) - x(1), indHalfWidth);
 
 peakValue = cellfun(@(x, y) x(y), vectors, num2cell(idxPeak));
 
