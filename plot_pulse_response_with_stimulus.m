@@ -84,6 +84,8 @@ function h = plot_pulse_response_with_stimulus (tVec, respVec, stimVec, varargin
 % 2018-12-18 Now uses annotation_in_plot.m, plot_horizontal_line, 
 %               plot_vertical_line.m
 % 2018-12-18 Now can optionally read values from a 'ParamsFile'
+% TODO: Plot peak half width, peak 33% decay by double-exp fit
+%       and peak 90% decay
 % 
 
 %% Hard-coded parameters
