@@ -23,6 +23,7 @@ function varargout = find_custom (X, varargin)
 %                   default == false
 %
 % Used by:
+%       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
 %       /home/Matlab/Kojis_Functions/find_directional_events.m
 %       /home/Matlab/minEASE/gui_examine_events.m

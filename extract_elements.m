@@ -34,6 +34,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/match_format_vector_sets.m
 %
 % Used by:
+%       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
 %       cd/create_average_time_vector.m
 %       cd/create_indices.m

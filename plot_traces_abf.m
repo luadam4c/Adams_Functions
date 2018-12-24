@@ -115,6 +115,8 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 % 2018-11-22 - Now plots 
 % TODO: Change the outputs to a cell array of figure handles
 % TODO: (Not sure) Improve code legibility with usage of dataReordered instead of data
+% TODO: Add a parameter to allow the figure position
+%       to be set proportional to the number of samples
 %
 
 %% Hard-coded parameters

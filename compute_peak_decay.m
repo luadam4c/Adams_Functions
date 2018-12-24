@@ -1,4 +1,4 @@
-function [peakDecaySamples, idxPeakDecay] = ...
+function [peakDecaySamples, idxPeakDecay, peakDecayValue] = ...
                 compute_peak_decay (vectors, idxPeak, varargin)
 %% Computes the peak decays
 % Usage: [peakDecaySamples, idxPeakDecay] = ...
@@ -22,6 +22,12 @@ function [peakDecaySamples, idxPeakDecay] = ...
 %       varargin    - 'BaseValue': baseline value of each vector
 %                   must be empty or a numeric vector
 %                   default == first value of each vector
+%                   - 'DecayMethod': method for alignment/truncation
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'exp'  - exponential decay to one time constant
+%                       '2exp' - double exponential decay to exp(-1)
+%                       '90%'  - decay to 90% of original
+%                   default == 'exponential'
 %
 % Requires:
 %       cd/argfun.m
@@ -29,8 +35,10 @@ function [peakDecaySamples, idxPeakDecay] = ...
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
 %       cd/find_custom.m
+%       cd/fit_2exp.m
 %       cd/force_column_numeric.m
 %       cd/isnumericvector.m
+%       cd/match_positions.m
 %
 % Used by:
 %       cd/parse_pulse_response.m
@@ -40,9 +48,11 @@ function [peakDecaySamples, idxPeakDecay] = ...
 % 
 
 %% Hard-coded parameters
+validDecayMethods = {'exp', '2exp', '90%'};
 
 %% Default values for optional arguments
 baseValueDefault = [];             % set later
+decayMethodDefault = '2exp';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -65,13 +75,16 @@ addRequired(iP, 'idxPeak', ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'vector'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'baseValue', baseValueDefault, ...
+addParameter(iP, 'BaseValue', baseValueDefault, ...
     @(x) assert(isnumericvector(x), ...
-                'baseValue must be either empty or a numeric vector!'));
+                'BaseValue must be either empty or a numeric vector!'));
+addParameter(iP, 'DecayMethod', decayMethodDefault, ...
+    @(x) any(validatestring(x, validDecayMethods)));
 
 % Read from the Input Parser
 parse(iP, vectors, idxPeak, varargin{:});
-baseValue = iP.Results.baseValue;
+baseValue = iP.Results.BaseValue;
+decayMethod = validatestring(iP.Results.DecayMethod, validDecayMethods);
 
 %% Preparation
 % Set default baseline value
@@ -93,49 +106,84 @@ nPeaks = length(idxPeak);
     argfun(@(x) match_dimensions(x, [nPeaks, 1]), vectors, baseValue);
 
 %% Do the job
+% Extract the parts of each vector starting from idxPeak
+afterPeak = extract_subvectors(vectors, 'IndexStart', idxPeak);
+
 % Extract the peak value
 peakValue = extract_elements(vectors, 'specific', 'Index', idxPeak);
 
-% Compute the value at half peak
-halfPeakValue = mean([baseValue, peakValue], 2);
+switch decayMethod
+    case {'2exp', 'exp'}
+        % Compute the peak amplitude
+        peakAmplitude = peakValue - baseValue;
 
-% Decide on the directionFactor
-directionFactor = sign(peakValue - halfPeakValue);
+        % Compute the expected peak amplitude at one time constant 
+        peakDecayAmp = peakAmplitude .* exp(-1);
 
-% Compute the end points of each vector before idxPeak
-endPointsBeforePeak = transpose([ones(nPeaks, 1), idxPeak]);
+        % Compute the expected value at one time constant 
+        peakDecayValue = baseValue + peakDecayAmp;
 
-% Extract the parts of each vector before idxPeak
-beforePeak = extract_subvectors(vectors, 'EndPoints', endPointsBeforePeak);
+        % Shift each afterPeak vector relative to baseline
+        % TODO: Make function add_to_vectors.m
+        afterPeakShifted = cellfun(@(x, y) x - y, afterPeak, ...
+                                num2cell(baseValue), 'UniformOutput', false);
 
-% Reverse beforePeak
-beforePeakReversed = cellfun(@fliplr, beforePeak, 'UniformOutput', false);
+        % Fit each shifted trace after the peak to a double exponential
+        %   to extract a decay time constant
+        nTraces = numel(afterPeak);
+        peakDecaySamples = nan(nTraces, 1);
+%        parfor iTrace = 1:nTraces
+        for iTrace = 1:nTraces
+            % Extract things for this trace
+            traceToFit = afterPeakShifted{iTrace};
+            peakAmplitudeThis = peakAmplitude(iTrace);
+            peakDecayAmpThis = peakDecayAmp(iTrace);
 
-% Compute the end points of each vector after idxPeak
-endPointsAfterPeak = transpose([idxPeak, Inf(nPeaks, 1)]);
+            % Fit the trace
+            switch decayMethod
+            case '2exp'
+                % Fit this trace to a double exponential
+                fitParams = fit_2exp(traceToFit, 'Direction', 'falling', ...
+                                    'AmplitudeEstimate', peakAmplitudeThis);
+            case 'exp'
+                % Fit this trace to a single exponential
+                fitParams = fit_exp(traceToFit, 'Direction', 'falling', ...
+                                    'AmplitudeEstimate', peakAmplitudeThis);
+            end
 
-% Extract the parts of each vector after idxPeak
-afterPeak = extract_subvectors(vectors, 'EndPoints', endPointsAfterPeak);
+            % Extract coefficient names and values
+            equationStr = fitParams.equationStr;
 
-% Find the first index that reaches the value at half peak
-[idxTemp1, idxTemp2] = ...
-    argfun(@(w) cellfun(@(x, y, z) find_custom(x * y >= z * y, 1, 'first', ...
-                                                'ReturnNaN', true), ...
-            w, num2cell(directionFactor), num2cell(halfPeakValue)), ...
-            beforePeakReversed, afterPeak);
+            % Solve for the peak decay in samples (may not be an integer)
+            peakDecayTemp = ...
+                solve_function_at_value(equationStr, peakDecayAmpThis);
 
-% Compute the endpoints for the half width
-idxHalfWidthStart = idxPeak - idxTemp1;
-idxHalfWidthEnd = idxPeak + idxTemp2;
+            % Round to nearest samples
+            peakDecaySamples(iTrace) = round(peakDecayTemp);
+        end
 
-% Compute the half width in samples
-peakDecaySamples = idxHalfWidthEnd - idxHalfWidthStart;
+        % Compute the index at peak decay
+        idxPeakDecay = idxPeak + peakDecaySamples;
+    case '90%'
+        % Compute the expected value at 90% decay
+        peakDecayValue = baseValue * 0.9 + peakValue * 0.1;
 
-% Output the endpoints for the half width
-idxPeakDecay = ...
-    arrayfun(@(x, y) [x; y], idxHalfWidthStart, idxHalfWidthEnd, ...
-                'UniformOutput', false);
+        % Decide on the directionFactor
+        directionFactor = sign(peakValue - baseValue);
 
+        % Find the first index that reaches the value at 90% decay
+        idxTemp = cellfun(@(x, y, z) find_custom(x * z <= y * z, 1, 'first', ...
+                                                        'ReturnNaN', true), ...
+                afterPeak, num2cell(peakDecayValue), num2cell(directionFactor));
+
+        % Compute the endpoints for the half width
+        idxPeakDecay = idxPeak + idxTemp - 1;
+
+        % Compute the half width in samples
+        peakDecaySamples = idxPeakDecay - idxPeak;
+    otherwise
+        error('Code logic error!!')
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -157,6 +205,29 @@ peakValue = cellfun(@(x, y) x(y), vectors, num2cell(idxPeak));
     argfun(@(w) cellfun(@(x, y, z) find(x * y >= z * y, 1, 'first'), ...
                     w, num2cell(directionFactor), num2cell(halfPeakValue)), ...
             beforePeakReversed, afterPeak);
+
+% Find the value of that decay
+peakDecayValue(iTrace) = 
+peakDecayValue = nan(nTraces, 1);
+
+peakShortTimeConstantSamples = nan(nTraces, 1);
+peakLongTimeConstantSamples = nan(nTraces, 1);
+
+% Extract coefficient names and values
+coeffNames = fitParams.coeffNames;
+coeffValues = fitParams.coeffValues;
+
+% Extract the time constants in samples
+tau1 = match_positions(coeffValues, coeffNames, 'b'); 
+tau2 = match_positions(coeffValues, coeffNames, 'd'); 
+
+% Compute the time constants in samples
+peakLongTimeConstantSamples(iTrace) = round(max([tau1, tau2]));
+peakShortTimeConstantSamples(iTrace) = round(min([tau1, tau2]));
+
+% Solve for the peak decay in samples (may not be an integer)
+peakDecayTemp = ...
+    solve_function_at_value(equationStr, peakDecayAmpThis);
 
 %}
 

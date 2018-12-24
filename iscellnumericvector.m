@@ -24,6 +24,7 @@ function isCellNumericVector = iscellnumericvector (x)
 %       cd/count_samples.m
 %       cd/count_vectors.m
 %       cd/create_average_time_vector.m
+%       cd/extract_subvectors.m
 
 % File History:
 % 2018-10-25 Created by Adam Lu

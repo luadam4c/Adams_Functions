@@ -41,6 +41,8 @@ function [parsedParams, parsedData] = ...
 %                           idxMinPeakTime
 %                           idxPeak
 %                           endPointsHalfWidth
+%                           idxPeakTimeConstant
+%                           idxPeak90Decay
 %                           peakValue
 %                           halfPeakValue
 %                           peakAmplitude
@@ -48,6 +50,10 @@ function [parsedParams, parsedData] = ...
 %                           peakDelayMs
 %                           peakHalfWidthSamples
 %                           peakHalfWidthMs
+%                           peakTimeConstantSamples
+%                           peakTimeConstantMs
+%                           peak90DecaySamples
+%                           peak90DecayMs
 %                           hasJump
 %                           nSamplesPulse
 %                           idxAfterPulseStart
@@ -352,17 +358,15 @@ peakAmplitude = peakValue - baseValue;
 peakDelaySamples = idxPeak - idxBeforePulseEnd;
 
 % Compute the half peak width in samples
-[peakHalfWidthSamples, halfPeakValue, endPointsHalfWidth] = ...
+[peakHalfWidthSamples, endPointsHalfWidth, halfPeakValue] = ...
     compute_peak_halfwidth(vectors, idxPeak, 'BaseValue', baseValue);
 
 % Compute the decay time constant in samples
-% TODO: compute_peak_decay.m
 [peakTimeConstantSamples, idxPeakTimeConstant] = ...
     compute_peak_decay(vectors, idxPeak, 'BaseValue', baseValue, ...
-                        'DecayMethod', 'exponential');
+                        'DecayMethod', '2exp');
 
 % Compute the 90% decay time in samples
-% TODO: compute_peak_decay.m
 [peak90DecaySamples, idxPeak90Decay] = ...
     compute_peak_decay(vectors, idxPeak, 'BaseValue', baseValue, ...
                         'DecayMethod', '90%');
@@ -371,10 +375,10 @@ peakDelaySamples = idxPeak - idxBeforePulseEnd;
 
 % Convert time values to ms
 % TODO: Use convert_to_time.m
-peakDelayMs = peakDelaySamples .* siMs;
-peakHalfWidthMs = peakHalfWidthSamples .* siMs;
-% peakTimeConstantMs = peakTimeConstantSamples .* siMs;
-% peak90DecayMs = peak90DecaySamples .* siMs;
+%   convert_to_time(x, 'Units', 'ms', 'SamplingIntervalMs', siMs);
+[peakDelayMs, peakHalfWidthMs, peakTimeConstantMs, peak90DecayMs] = ...
+    argfun(@(x) x .* siMs, peakDelaySamples, peakHalfWidthSamples, ...
+            peakTimeConstantSamples, peak90DecaySamples);
 
 %% Extract phases
 % Find the endpoint for the different phases
@@ -432,9 +436,12 @@ parsedParams = table(siMs, meanValueWindowMs, minPeakDelayMs, ...
                         minValueAfterMinDelay, idxMinValueAfterMinDelay, ...
                         maxValueAfterMinDelay, idxMaxValueAfterMinDelay, ...
                         idxMinPeakTime, idxPeak, endPointsHalfWidth, ...
+                        idxPeakTimeConstant, idxPeak90Decay, ...
                         peakValue, halfPeakValue, peakAmplitude, ...
                         peakDelaySamples, peakDelayMs, ...
                         peakHalfWidthSamples, peakHalfWidthMs, ...
+                        peakTimeConstantSamples, peakTimeConstantMs, ...
+                        peak90DecaySamples, peak90DecayMs, ...
                         hasJump);
 
 % Put together the pulse response data

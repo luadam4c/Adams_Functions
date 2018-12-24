@@ -26,6 +26,12 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
 %                   default == find_window_endpoints([], vecs)
+%                   - 'IndexStart': first index to extract
+%                   must be empty or a numeric vector
+%                   default == ones(nVectors, 1)
+%                   - 'IndexEnd': last index to extract
+%                   must be empty or a numeric vector
+%                   default == numel(vector) * ones(nVectors, 1)
 %                   - 'Windows': value windows to extract 
 %                       Note: this assumes that the values are nondecreasing
 %                   must be empty or a numeric vector with 2 elements,
@@ -45,10 +51,13 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/create_indices.m
 %       cd/find_window_endpoints.m
+%       cd/iscellnumeric.m
+%       cd/isnumericvector.m
 %       cd/match_format_vector_sets.m
 %
 % Used by:
 %       cd/compute_average_trace.m
+%       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
 %       cd/compute_rms_error.m
 %       cd/compute_single_neuron_errors.m
@@ -69,6 +78,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2018-12-07 Now allows endPoints to be empty
 % 2018-12-17 Now allows subvectors to be extracted from arbitrary indices
 % 2018-12-17 Now allows subvectors to be extracted from an align mode
+% 2018-12-24 Added 'IndexStart', 'IndexEnd' as arguments
 % TODO: check if all endpoints have 2 elements
 % 
 
@@ -78,6 +88,8 @@ validAlignMethods = {'leftadjust', 'rightadjust', 'none'};
 %% Default values for optional arguments
 indicesDefault = [];            % set later
 endPointsDefault = [];          % set later
+indexEndDefault = [];           % set later
+indexStartDefault = [];         % set later
 windowsDefault = [];            % extract entire trace(s) by default
 alignMethodDefault  = 'none';   % no alignment/truncation by default
 
@@ -105,6 +117,12 @@ addParameter(iP, 'EndPoints', endPointsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['EndPoints must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
+addParameter(iP, 'IndexStart', indexStartDefault, ...
+    @(x) assert(isnumericvector(x), ...
+                'IndexStart must be either empty or a numeric vector!'));
+addParameter(iP, 'IndexEnd', indexEndDefault, ...
+    @(x) assert(isnumericvector(x), ...
+                'IndexEnd must be either empty or a numeric vector!'));
 addParameter(iP, 'Windows', windowsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['Windows must be either a numeric array ', ...
@@ -116,6 +134,8 @@ addParameter(iP, 'AlignMethod', alignMethodDefault, ...
 parse(iP, vecs, varargin{:});
 indices = iP.Results.Indices;
 endPoints = iP.Results.EndPoints;
+indexStart = iP.Results.IndexStart;
+indexEnd = iP.Results.IndexEnd;
 windows = iP.Results.Windows;
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 
@@ -163,7 +183,8 @@ end
 
 % Create indices if not provided
 if isempty(indices)
-    indices = create_indices(endPoints, 'Vectors', vecs);
+    indices = create_indices(endPoints, 'Vectors', vecs, ...
+                            'IndexStart', indexStart, 'IndexEnd', indexEnd);
 end
 
 % If there is an align/truncation method used, apply it to indices

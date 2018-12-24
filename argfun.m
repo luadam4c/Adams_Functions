@@ -21,6 +21,7 @@ function varargout = argfun (myFunction, varargin)
 % Used by:
 %       cd/compute_average_pulse_response.m
 %       cd/compute_default_sweep_info.m
+%       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
 %       cd/compute_rms_error.m
 %       cd/compute_single_neuron_errors.m

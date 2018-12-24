@@ -1,4 +1,4 @@
-function [halfWidthSamples, halfPeakValue, endPointsHalfWidth] = ...
+function [halfWidthSamples, endPointsHalfWidth, halfPeakValue] = ...
                 compute_peak_halfwidth (vectors, idxPeak, varargin)
 %% Computes the half widths for peaks
 % Usage: [halfWidthSamples, halfPeakValue, endPointsHalfWidth] = ...
@@ -67,13 +67,13 @@ addRequired(iP, 'idxPeak', ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'vector'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'baseValue', baseValueDefault, ...
+addParameter(iP, 'BaseValue', baseValueDefault, ...
     @(x) assert(isnumericvector(x), ...
-                'baseValue must be either empty or a numeric vector!'));
+                'BaseValue must be either empty or a numeric vector!'));
 
 % Read from the Input Parser
 parse(iP, vectors, idxPeak, varargin{:});
-baseValue = iP.Results.baseValue;
+baseValue = iP.Results.BaseValue;
 
 %% Preparation
 % Set default baseline value
@@ -95,6 +95,15 @@ nPeaks = length(idxPeak);
     argfun(@(x) match_dimensions(x, [nPeaks, 1]), vectors, baseValue);
 
 %% Do the job
+% Extract the parts of each vector ending in idxPeak
+beforePeak = extract_subvectors(vectors, 'IndexEnd', idxPeak);
+
+% Reverse beforePeak
+beforePeakReversed = cellfun(@fliplr, beforePeak, 'UniformOutput', false);
+
+% Extract the parts of each vector starting from idxPeak
+afterPeak = extract_subvectors(vectors, 'IndexStart', idxPeak);
+
 % Extract the peak value
 peakValue = extract_elements(vectors, 'specific', 'Index', idxPeak);
 
@@ -104,31 +113,16 @@ halfPeakValue = mean([baseValue, peakValue], 2);
 % Decide on the directionFactor
 directionFactor = sign(peakValue - halfPeakValue);
 
-% Compute the end points of each vector before idxPeak
-endPointsBeforePeak = transpose([ones(nPeaks, 1), idxPeak]);
-
-% Extract the parts of each vector before idxPeak
-beforePeak = extract_subvectors(vectors, 'EndPoints', endPointsBeforePeak);
-
-% Reverse beforePeak
-beforePeakReversed = cellfun(@fliplr, beforePeak, 'UniformOutput', false);
-
-% Compute the end points of each vector after idxPeak
-endPointsAfterPeak = transpose([idxPeak, Inf(nPeaks, 1)]);
-
-% Extract the parts of each vector after idxPeak
-afterPeak = extract_subvectors(vectors, 'EndPoints', endPointsAfterPeak);
-
 % Find the first index that reaches the value at half peak
 [idxTemp1, idxTemp2] = ...
-    argfun(@(w) cellfun(@(x, y, z) find_custom(x * y >= z * y, 1, 'first', ...
-                                                'ReturnNaN', true), ...
-            w, num2cell(directionFactor), num2cell(halfPeakValue)), ...
+    argfun(@(w) cellfun(@(x, y, z) find_custom(x * z <= y * z, ...
+                                            1, 'first', 'ReturnNaN', true), ...
+            w, num2cell(halfPeakValue), num2cell(directionFactor)), ...
             beforePeakReversed, afterPeak);
 
 % Compute the endpoints for the half width
-idxHalfWidthStart = idxPeak - idxTemp1;
-idxHalfWidthEnd = idxPeak + idxTemp2;
+idxHalfWidthStart = idxPeak - idxTemp1 + 1;
+idxHalfWidthEnd = idxPeak + idxTemp2 - 1;
 
 % Compute the half width in samples
 halfWidthSamples = idxHalfWidthEnd - idxHalfWidthStart;
@@ -137,7 +131,6 @@ halfWidthSamples = idxHalfWidthEnd - idxHalfWidthStart;
 endPointsHalfWidth = ...
     arrayfun(@(x, y) [x; y], idxHalfWidthStart, idxHalfWidthEnd, ...
                 'UniformOutput', false);
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -159,6 +152,18 @@ peakValue = cellfun(@(x, y) x(y), vectors, num2cell(idxPeak));
     argfun(@(w) cellfun(@(x, y, z) find(x * y >= z * y, 1, 'first'), ...
                     w, num2cell(directionFactor), num2cell(halfPeakValue)), ...
             beforePeakReversed, afterPeak);
+
+% Compute the end points of each vector ending in idxPeak
+endPointsBeforePeak = transpose([ones(nPeaks, 1), idxPeak]);
+
+% Extract the parts of each vector ending in idxPeak
+beforePeak = extract_subvectors(vectors, 'EndPoints', endPointsBeforePeak);
+
+% Compute the end points of each vector starting from idxPeak
+endPointsAfterPeak = transpose([idxPeak, Inf(nPeaks, 1)]);
+
+% Extract the parts of each vector starting from idxPeak
+afterPeak = extract_subvectors(vectors, 'EndPoints', endPointsAfterPeak);
 
 %}
 

@@ -276,7 +276,8 @@ switch protocolType
 
         % For plotting
         outFolderProtocolName = 'LFPs';
-        varToPlot = {'peakAmplitude', 'peakDelayMs'};
+        varToPlot = {'peakAmplitude', 'peakDelayMs', ...
+                    'peakHalfWidthMs', 'peakTimeConstantMs', 'peak90DecayMs'};
         fileSuffix = '_LFP';
         responseName = 'Evoked potential';
     case 'EvokedGABAB'
@@ -295,7 +296,8 @@ switch protocolType
 
         % For plotting
         outFolderProtocolName = 'GABAB-IPSCs';
-        varToPlot = {'peakAmplitude', 'peakDelayMs'};
+        varToPlot = {'peakAmplitude', 'peakDelayMs', ...
+                    'peakHalfWidthMs', 'peakTimeConstantMs', 'peak90DecayMs'};
         fileSuffix = '_GABAB';
         responseName = 'GABA_B IPSC';
     otherwise
@@ -344,8 +346,8 @@ outFolderProtocol = fullfile(outFolder, outFolderProtocolName);
 % Compute features and plot protocol traces
 featuresPerFileCell = cell(nFiles, 1);
 featuresPerSweepCell = cell(nFiles, 1);
-%for iFile = 1:nFiles
-parfor iFile = 1:nFiles
+for iFile = 1:nFiles
+%parfor iFile = 1:nFiles
     % Extract from cell arrays
     abfParams = abfParamsCell{iFile};
 

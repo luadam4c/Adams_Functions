@@ -21,30 +21,41 @@ function indices = create_indices (endPoints, varargin)
 %                   Note: If a cell array, each element must be a vector
 %                         If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array
-%%
+%                   - 'IndexStart': first index to extract
+%                   must be empty or a numeric vector
+%                   default == ones(nVectors, 1)
+%                   - 'IndexEnd': last index to extract
+%                   must be empty or a numeric vector
+%                   default == numel(vector) * ones(nVectors, 1)
+%
 % Requires:
 %       cd/argfun.m
 %       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
 %       cd/force_column_numeric.m
+%       cd/isnumericvector.m
 %       cd/match_dimensions.m
 %
 % Used by:
 %       cd/extract_subvectors.m
+%       cd/fit_2exp.m
 %       cd/parse_pulse_response.m
 
 % File History:
 % 2018-12-17 Created by Adam Lu
 % 2018-12-18 Added 'ForceCellOutput' as an optional argument
 % 2018-12-22 Now replaces out of range values with the actual endpoints
+% 2018-12-24 Added 'IndexStart' and 'IndexEnd' as optional arguments
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-forceCellOutputDefault = false;  % don't force output as a cell array by default
+forceCellOutputDefault = false; % don't force output as a cell array by default
 vectorsDefault = [];
+indexEndDefault = [];           % set later
+indexStartDefault = [];         % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -60,7 +71,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'endPoints', ...
-    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+    @(x) assert(isempty(x) || isnumeric(x) || iscellnumeric(x), ...
                 ['EndPoints must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
 
@@ -71,20 +82,44 @@ addParameter(iP, 'Vectors', vectorsDefault, ...
     @(x) assert(isnumeric(x) || iscell(x), ...
                 ['Vectors must be either a numeric array', ...
                     'or a cell array!']));
+addParameter(iP, 'IndexStart', indexStartDefault, ...
+    @(x) assert(isnumericvector(x), ...
+                'IndexStart must be either empty or a numeric vector!'));
+addParameter(iP, 'IndexEnd', indexEndDefault, ...
+    @(x) assert(isnumericvector(x), ...
+                'IndexEnd must be either empty or a numeric vector!'));
 
 % Read from the Input Parser
 parse(iP, endPoints, varargin{:});
 forceCellOutput = iP.Results.ForceCellOutput;
 vectors = iP.Results.Vectors;
+indexStartUser = iP.Results.IndexStart;
+indexEndUser = iP.Results.IndexEnd;
+
+% TODO: warn if EndPoints provided and IndexStart and IndexEnd provided
 
 %% Preparation
-% % Make sure endPoints are a column
-% endPoints = force_column_numeric(endPoints, 'IgnoreNonVectors', true);
+% Make sure endPoints are a column
+endPoints = force_column_numeric(endPoints, 'IgnoreNonVectors', true);
 
 %% Do the job
-% Extract the starting and ending indices requested
-[idxStart, idxEnd] = ...
+% Extract the starting and ending indices from provided end points
+[idxStartFromEndPoints, idxEndFromEndPoints] = ...
     argfun(@(x) extract_elements(endPoints, x), 'first', 'last');
+
+% Replace with indexStartUser if provided
+if ~isempty(indexStartUser)
+    idxStart = indexStartUser;
+else
+    idxStart = idxStartFromEndPoints;
+end
+
+% Replace with indexEndUser if provided
+if ~isempty(indexEndUser)
+    idxEnd = indexEndUser;
+else
+    idxEnd = idxEndFromEndPoints;
+end
 
 % If original vectors are provided, 
 %   fix indices if they are out of range

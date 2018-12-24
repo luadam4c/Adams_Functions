@@ -1,8 +1,8 @@
 function [fitParams, fitObject, goodnessOfFit, algorithmInfo] = ...
-                fit_2exp (xVec, yVec, varargin)
+                fit_2exp (yVec, varargin)
 %% Fits a double exponential curve to data
 % Usage: [fitParams, fitObject, goodnessOfFit, algorithmInfo] = ...
-%               fit_2exp (xVec, yVec, varargin)
+%               fit_2exp (yVec, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -25,12 +25,13 @@ function [fitParams, fitObject, goodnessOfFit, algorithmInfo] = ...
 %                               coeffUpper
 %                               amplitudeEstimate
 %                       specified as a gof structure 
-% Arguments:    
-%       xVec        - x vector
-%                   must be a numeric vector
+% Arguments:
 %       yVec        - y vector
 %                   must be a numeric vector
-%       varargin    - 'Direction': the direction of the curve
+%       varargin    - 'XVector': x vector
+%                   must be empty or a numeric vector
+%                   default == create_indices([1, numel(yVec)])
+%                   - 'Direction': the direction of the curve
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'rising'  - rising curve
 %                       'falling' - falling curve
@@ -62,16 +63,20 @@ function [fitParams, fitObject, goodnessOfFit, algorithmInfo] = ...
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/create_indices.m
 %       cd/fit_setup_2exp.m
+%       cd/force_column_numeric.m
 %       cd/parse_fitobject.m
 %
-% Used by:    
+% Used by:
+%       cd/compute_peak_decay.m
 %       cd/fit_pulse_response.m
 
-% File History:
+% File History
 % 2018-10-10 Created by Adam Lu
 % 2018-10-11 Made the first argument fitParams
 % 2018-10-14 Added the possibility of providing a custom equation form
+% 2018-12-24 Made 'XVector' an optional argument
 % 
 
 %% Hard-coded parameters
@@ -79,6 +84,7 @@ validDirections = {'rising', 'falling', 'custom', 'auto'};
 tauRatio = 10;                      % default tau1 / tau2
 
 %% Default values for optional arguments
+xVectorDefault = [];                % set later
 directionDefault = 'auto';          % set later
 amplitudeEstimateDefault = [];      % set later
 maxScalingFactorDefault = 10;
@@ -101,12 +107,12 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'xVec', ...
-    @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addRequired(iP, 'yVec', ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'XVector', xVectorDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'Direction', directionDefault, ...
     @(x) any(validatestring(x, validDirections)));
 addParameter(iP, 'AmplitudeEstimate', amplitudeEstimateDefault, ...
@@ -125,7 +131,8 @@ addParameter(iP, 'EquationForm', eqFormDefault, ...
     @(x) validateattributes(x, {'char'}, {'2d'}));
 
 % Read from the Input Parser
-parse(iP, xVec, yVec, varargin{:});
+parse(iP, yVec, varargin{:});
+xVec = iP.Results.XVector;
 direction = validatestring(iP.Results.Direction, validDirections);
 amplitudeEstimate = iP.Results.AmplitudeEstimate;
 maxScalingFactor = iP.Results.MaxScalingFactor;
@@ -134,11 +141,6 @@ tau2Init = iP.Results.Tau2Init;
 tau1Range = iP.Results.Tau1Range;
 tau2Range = iP.Results.Tau2Range;
 eqFormCustom = iP.Results.EquationForm;
-
-% Check relationships between arguments
-if length(xVec) ~= length(yVec)
-    error('xVec and yVec must have the same length!!');
-end
 
 % Custom equation form will be ignored if direction is not 'custom'
 if ~isempty(eqFormCustom) && ~strcmpi(direction, 'custom')
@@ -156,6 +158,16 @@ if strcmpi(direction, 'custom')
 end
 
 %% Preparation
+% Create an x vector if not provided
+if isempty(xVec)
+    xVec = create_indices([1, numel(yVec)]);
+end
+
+% Check relationships between arguments
+if numel(xVec) ~= numel(yVec)
+    error('xVec and yVec must have the same number of elements!!');
+end
+
 % Force xVec and yVec to be columns
 xVec = force_column_numeric(xVec);
 yVec = force_column_numeric(yVec);
@@ -226,7 +238,7 @@ end
 % Fit data to the fitting type
 [fitObject, goodnessOfFit, algorithmInfo] = ...
     fit(xVec, yVec, aFittype, 'StartPoint', coeffInit, ...
-        'Lower', coeffLower, 'Upper', coeffUpper); 
+        'Lower', coeffLower, 'Upper', coeffUpper);
 
 %% Store outputs
 % Parse from the fit object
