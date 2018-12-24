@@ -38,6 +38,7 @@ function indices = create_indices (endPoints, varargin)
 %       cd/match_dimensions.m
 %
 % Used by:
+%       cd/compute_peak_decay.m
 %       cd/extract_subvectors.m
 %       cd/fit_2exp.m
 %       cd/parse_pulse_response.m

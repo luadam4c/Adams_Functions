@@ -133,7 +133,7 @@ lowPassFrequencyGabab = 1000;       % lowpass filter frequency in Hz
 medFiltWindowGabab = [];            % median filter window in ms
 smoothWindowGabab = 100;            % moving average filter window in ms
 baselineLengthMsGabab = 50;         % baseline length in ms
-responseLengthMsGabab = 500;        % response length in ms
+responseLengthMsGabab = 1000;       % response length in ms
 minPeakDelayMsGabab = 50;           % min peak delay after pulse end in ms
 
 % For Evoked LFP
@@ -346,8 +346,8 @@ outFolderProtocol = fullfile(outFolder, outFolderProtocolName);
 % Compute features and plot protocol traces
 featuresPerFileCell = cell(nFiles, 1);
 featuresPerSweepCell = cell(nFiles, 1);
-for iFile = 1:nFiles
-%parfor iFile = 1:nFiles
+%for iFile = 1:nFiles
+parfor iFile = 1:nFiles
     % Extract from cell arrays
     abfParams = abfParamsCell{iFile};
 
