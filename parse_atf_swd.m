@@ -22,18 +22,26 @@ function [swdManualTable, swdManualCsvFile] = ...
 %                                   e.g. 'output'
 %                   must be a string scalar or a character vector
 %                   default == same as location of originalEventFile
+%                   - 'SheetType': sheet type;
+%                       e.g., 'xlsx', 'csv', etc.
+%                   could be anything recognised by the readtable() function 
+%                   (see issheettype.m under Adams_Functions)
+%                   default == 'csv'
 %
 % Requires:
 %       cd/argfun.m
 %       cd/atf2sheet.m
 %       cd/construct_and_check_abfpath.m
+%       cd/issheettype.m
 %       cd/match_dimensions.m
 %
 % Used by:
+%       cd/parse_all_swds.m
 %       cd/plot_traces_EEG.m
 
 % File History:
 % 2018-11-21 Created by Adam Lu
+% 2018-12-26 Added 'SheetType' as an optional argument
 % 
 
 %% Hard-coded constants
@@ -45,6 +53,7 @@ varNames = {'startTime', 'endTime', 'duration', 'abfPath', 'pathExists'};
 %% Default values for optional arguments
 abfFileNameDefault = '';        % set later
 outFolderDefault = '';          % set later
+sheetTypeDefault = 'csv';       % default spreadsheet type
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -68,11 +77,14 @@ addParameter(iP, 'AbfFileName', abfFileNameDefault, ...
     @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'SheetType', sheetTypeDefault, ...
+    @(x) all(issheettype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, originalEventFile, varargin{:});
 abfFileName = iP.Results.AbfFileName;
 outFolder = iP.Results.OutFolder;
+[~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 
 %% Preparation
 % Decide what file type the first input is
@@ -96,7 +108,7 @@ if isempty(outFolder)
 end
 
 % Construct manual SWD table csv file
-swdManualCsvFile = fullfile(outFolder, [fileBase, '_Manual_SWDs.csv']);
+swdManualCsvFile = fullfile(outFolder, [fileBase, '_Manual_SWDs.', sheetType]);
 
 %% Do the job
 % Read the table from the file
@@ -116,7 +128,7 @@ elseif isfile(atfCsvFile)
     atfTable = readtable(atfCsvFile);
 elseif isfile(atfFile)
     % Read in the SWD manual table and print to a csv file
-    [atfTable, atfCsvFile] = atf2sheet(atfFile, 'SheetType', 'csv');
+    [atfTable, atfCsvFile] = atf2sheet(atfFile, 'SheetType', sheetType);
 end
 
 % Make sure there is an event recorded

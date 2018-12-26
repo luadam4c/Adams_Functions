@@ -38,6 +38,9 @@ function [results, sheettypes] = issheettype (candidates, varargin)
 %       cd/load_params.m
 %       cd/load_swd_sheets.m
 %       cd/parse_all_abfs.m
+%       cd/parse_all_swds.m
+%       cd/parse_assyst_swd.m
+%       cd/parse_atf_swd.m
 %       cd/plot_swd_raster.m
 %       cd/save_params.m
 %       cd/ZG_extract_all_IEIs.m

@@ -1,12 +1,17 @@
-function plot_swd_raster (varargin)
+function [fig, lines] = plot_swd_raster (varargin)
 %% Plot SWDs for each channel in the current directory
-% Usage: plot_swd_raster (varargin)
+% Usage: [fig, lines] = plot_swd_raster (varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Side Effects:
 %       TODO
+% Outputs:
+%       fig         - handle to created figure
+%                   specified as a figure object handle   
+%       lines       - handles to the lines for each group
+%                   specified as cell array of vectors of primitive line objects
 % Arguments:
 %       varargin    - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -43,12 +48,26 @@ function plot_swd_raster (varargin)
 %                   must be a positive scalar between 0 and 1
 %                   default == 0.6
 %                   - Any other parameter-value pair for the line() function
+%                   - 'LineStyle': line style of bars
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       '-'     - solid line
+%                       '--'    - dashed line
+%                       ':'     - dotted line
+%                       '-.'    - dash-dotted line
+%                       'none'  - no line
+%                   default == '-'
+%                   - 'LineWidth': line width of bars
+%                   must be a positive scalar
+%                   default == 2
 %
 % Requires:
 %       cd/create_labels_from_numbers.m
 %       cd/extract_common_directory.m
 %       cd/find_ind_str_in_cell.m
+%       cd/islinestyle.m
 %       cd/issheettype.m
+%       cd/load_swd_sheets.m
+%       cd/parse_all_swds.m
 %       cd/plot_raster.m
 %       cd/print_or_show_message.m
 %
@@ -73,6 +92,8 @@ function plot_swd_raster (varargin)
 % 
 
 %% Hard-coded constants
+% TODO: Make these optional arguments
+parseAllFlag = true; %false;
 
 %% Hard-coded parameters that must be consistent with abf2mat.m
 % TODO: Make these default values for optional arguments
@@ -83,11 +104,12 @@ startTimeStr2 = 'startTimes';
 manualStr = '_Manual';          % string in file names for manual files
 assystStr = '_Assyst';          % string in file names for Assyst files
 sayliStr = '_Sayli';            % string in file names for Sayli files
+autoStr = '_Auto';              % string in file names for auto Assyst files
 animalStr = '_rat'; %'_animal'  % string in file names for animals
 channelStr = '_channel';        % string in file names that separate channels
 pieceStr = '_piece';            % string in file names that separate pieces
 sweepStr = '_sweep';            % string in file names that separate sweeps
-possibleSuffices = {manualStr, assystStr, sayliStr, ...
+possibleSuffices = {manualStr, assystStr, sayliStr, autoStr, ...
                     animalStr, channelStr, pieceStr, sweepStr};
 
 %% Default values for optional arguments
@@ -136,6 +158,10 @@ addParameter(iP, 'SheetType', sheetTypeDefault, ...
     @(x) all(issheettype(x, 'ValidateMode', true)));
 addParameter(iP, 'BarWidth', barWidthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', '>=', 0, '<=', 1}));
+addParameter(iP, 'LineStyle', lineStyleDefault, ...
+    @(x) all(islinestyle(x, 'ValidateMode', true)));
+addParameter(iP, 'LineWidth', lineWidthDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -149,24 +175,22 @@ sayliFolder = iP.Results.SayliFolder;
 assystFolder = iP.Results.AssystFolder;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 barWidth = iP.Results.BarWidth;
+[~, lineStyle] = islinestyle(iP.Results.LineStyle, 'ValidateMode', true);
+lineWidth = iP.Results.LineWidth;
 
 % Keep unmatched arguments for the line() function
 otherArguments = iP.Unmatched;
 
-% Set dependent argument defaults
-if isempty(manualFolder)
-    manualFolder = pwd;
-end
-if isempty(sayliFolder)
-    sayliFolder = pwd;
-end
-if isempty(assystFolder)
-    assystFolder = pwd;
-end
-
 %% Preparation
 % Read in SWD tables if not provided
 if isempty(swdTables)
+    % Optionally, convert all output files into SWD tables
+    if parseAllFlag
+        parse_all_swds('Verbose', verbose, 'SwdFolder', swdFolder, ...
+                    'ManualFolder', manualFolder, 'SayliFolder', sayliFolder, ...
+                    'AssystFolder', assystFolder, 'SheetType', sheetType);
+    end
+
     if ~isempty(swdSheetPaths)
         % Use full paths if provided
         [swdTables, swdSheetPaths] = ...
@@ -245,6 +269,10 @@ yLabels = cell(nDataFileBases, 1);
 eventTimes = cell(nDataFileBases, 1);
 timeLimits = zeros(nDataFileBases, 2);
 parfor iBase = 1:nDataFileBases
+%for iBase = 1:nDataFileBases
+    % Initialize for parfor
+    eventTimesThisSheet = [];
+    
     % Get the current file base
     dataFileBase = uniqueDataFileBases{iBase};
 
@@ -302,8 +330,12 @@ parfor iBase = 1:nDataFileBases
         % Get the time limits from the original data file
         %   or from user input or just use minimum and maximum start time
         % TODO
-        timeLimitsThisBase(iSheet, :) = [min(eventTimesThisSheet), ...
-                                    max(eventTimesThisSheet)];
+        if ~isempty(eventTimesThisSheet)
+            timeLimitsThisBase(iSheet, :) = [min(eventTimesThisSheet), ...
+                                        max(eventTimesThisSheet)];
+        else
+            timeLimitsThisBase(iSheet, :) = [NaN, NaN];
+        end
     end
 
     % Summarize the Y tick labels for this file base
@@ -371,14 +403,14 @@ figName = fullfile(outFolder, [outFolderName, '_SWDs_raster.png']);
 
 %% Plot the raster plot
 % Create and clear figure
-h = figure(15342);
+fig = figure(15342);
 clf;
 
 % Plot the raster plot
-[hLines, eventTimes, yEnds, yTicksTable] = ...
+[lines, eventTimes, yEnds, yTicksTable] = ...
     plot_raster(eventTimes, 'BarWidth', barWidth, ...
-                'LineStyle', lineStyleDefault, ...
-                'LineWidth', lineWidthDefault, ...
+                'LineStyle', lineStyle, ...
+                'LineWidth', lineWidth, ...
                 'Labels', labels, 'YTickLabels', yTickLabels, ...
                 otherArguments);
 
@@ -386,11 +418,11 @@ clf;
 yLimits = [min(yTicksTable.locs) - 1, max(yTicksTable.locs) + 1];
 
 % Get the handles to the first line objects for each group
-hFirstLines = [];
+firstLines = [];
 labelsToShow = cell(0, 1);
 for iBase = 1:nDataFileBases
-    if ~isempty(hLines{iBase})
-        hFirstLines = [hFirstLines, hLines{iBase}(1)];
+    if ~isempty(lines{iBase})
+        firstLines = [firstLines, lines{iBase}(1)];
         labelsToShow = [labelsToShow, labels{iBase}];
     end
 end
@@ -403,8 +435,8 @@ ylim(yLimits);
 xlabel('Time (s)');
 ylabel('Sweep #');
 title(['Event start times for ', replace(outFolderName, '_', '\_')]);
-legend(hFirstLines, labelsToShow, 'Location', 'SouthOutside');
-saveas(h, figName);
+legend(firstLines, labelsToShow, 'Location', 'SouthOutside');
+saveas(fig, figName);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -459,27 +491,18 @@ swdsPath = swdSheetPaths{idxSheetThis};
 message = sprintf('No %s field or %s field found for %s!', ...
             startTimeStr1, startTimeStr2, swdsPath);
 
-    swdSheetBases = arrayfun(@(x) ['unnamed_sweep', num2str(x), '_SWDs'], ...
-                            transpose(1:nTables), 'UniformOutput', false);
+swdSheetBases = arrayfun(@(x) ['unnamed_sweep', num2str(x), '_SWDs'], ...
+                        transpose(1:nTables), 'UniformOutput', false);
 
-%                   - 'LineStyle': line style of bars
-%                   must be an unambiguous, case-insensitive match to one of: 
-%                       '-'     - solid line
-%                       '--'    - dashed line
-%                       ':'     - dotted line
-%                       '-.'    - dash-dotted line
-%                       'none'  - no line
-%                   default == '-'
-%                   - 'LineWidth': line width of bars
-%                   must be a positive scalar
-%                   default == 2
-%       cd/islinestyle.m
-
-addParameter(iP, 'LineStyle', lineStyleDefault, ...
-    @(x) all(islinestyle(x, 'ValidateMode', true)));
-addParameter(iP, 'LineWidth', lineWidthDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
-[~, lineStyle] = islinestyle(iP.Results.LineStyle, 'ValidateMode', true);
-lineWidth = iP.Results.LineWidth;
+% Set dependent argument defaults
+if isempty(manualFolder)
+    manualFolder = pwd;
+end
+if isempty(sayliFolder)
+    sayliFolder = pwd;
+end
+if isempty(assystFolder)
+    assystFolder = pwd;
+end
 
 %}

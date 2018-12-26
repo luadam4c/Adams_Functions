@@ -54,14 +54,17 @@ swdTable = readtable(filePath);
 % Get all variables
 varNames = swdTable.Properties.VariableNames;
 
-% Convert strings to datetime
-if any(strcmpi(varNames, 'startTimeOrig'))
-    swdTable.startTimeOrig = ...
-        datetime(swdTable.startTimeOrig, 'InputFormat', dateTimePattern);    
-end
-if any(strcmpi(varNames, 'endTimeOrig'))
-    swdTable.endTimeOrig = ...
-        datetime(swdTable.endTimeOrig, 'InputFormat', dateTimePattern);
+% Process further if there is data
+if height(swdTable) ~= 0
+    % Convert strings to datetime
+    if any(strcmpi(varNames, 'startTimeOrig'))
+        swdTable.startTimeOrig = ...
+            datetime(swdTable.startTimeOrig, 'InputFormat', dateTimePattern);    
+    end
+    if any(strcmpi(varNames, 'endTimeOrig'))
+        swdTable.endTimeOrig = ...
+            datetime(swdTable.endTimeOrig, 'InputFormat', dateTimePattern);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

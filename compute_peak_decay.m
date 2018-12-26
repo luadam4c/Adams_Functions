@@ -152,34 +152,37 @@ switch decayMethod
                 % Count the number of samples
                 nSamples = numel(traceToFit);
 
-                % Create an x vector
-                xVec = create_indices([1, nSamples]);
+                % Make sure there are enough samples for the fit
+                if nSamples > 4
+                    % Create an x vector
+                    xVec = create_indices([1, nSamples]);
 
-                % Fit the trace
-                switch decayMethod
-                case '2exp'
-                    % Fit this trace to a double exponential
-                    [~, fitObject] = ...
-                        fit_2exp(traceToFit, 'XVector', xVec, ...
-                                'Direction', 'falling', ...
-                                'AmplitudeEstimate', peakAmplitudeThis);
-                case 'exp'
-                    % Fit this trace to a single exponential
-                    [~, fitObject] = ...
-                        fit_exp(traceToFit, 'XVector', xVec, ...
-                                'Direction', 'falling', ...
-                                'AmplitudeEstimate', peakAmplitudeThis);
-                otherwise
+                    % Fit the trace
+                    switch decayMethod
+                        case '2exp'
+                            % Fit this trace to a double exponential
+                            [~, fitObject] = ...
+                                fit_2exp(traceToFit, 'XVector', xVec, ...
+                                        'Direction', 'falling', ...
+                                        'AmplitudeEstimate', peakAmplitudeThis);
+                        case 'exp'
+                            % Fit this trace to a single exponential
+                            [~, fitObject] = ...
+                                fit_exp(traceToFit, 'XVector', xVec, ...
+                                        'Direction', 'falling', ...
+                                        'AmplitudeEstimate', peakAmplitudeThis);
+                        otherwise
+                    end
+
+                    % Evaluate the fit at all points
+                    fitVec = fitObject(xVec);
+
+                    % Find the first index that reaches peakDecayAmpThis
+                    peakDecaySamples(iTrace) = ...
+                        find_custom(fitVec .* directionFactorThis <= ...
+                                    peakDecayAmpThis .* directionFactorThis, ...
+                                    1, 'first', 'ReturnNaN', true) - 1;
                 end
-
-                % Evaluate the fit at all points
-                fitVec = fitObject(xVec);
-
-                % Find the first index that reaches peakDecayAmpThis
-                peakDecaySamples(iTrace) = ...
-                    find_custom(fitVec .* directionFactorThis <= ...
-                                peakDecayAmpThis .* directionFactorThis, ...
-                                1, 'first', 'ReturnNaN', true) - 1;
             end
         end
     case '90%'

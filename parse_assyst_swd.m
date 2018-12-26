@@ -14,29 +14,39 @@ function [swdAssystTable, swdAssystCsvFile] = ...
 %       assystFile  - Assyst output file, must have the ending 'Assyst.txt'
 %                   must be a string scalar or a character vector
 %       varargin    - 'AbfFileName': Name of the corresponding .abf file(s)
-%                   must be empty, a characeter vector, a string array 
+%                   must be empty, a character vector, a string array 
 %                       or a cell array of character arrays
 %                   default == [fileBase, '.abf']
 %                   - 'OutFolder': directory to output swd table file, 
 %                                   e.g. 'output'
 %                   must be a string scalar or a character vector
-%                   default == same as location of originalEventFile
+%                   default == same as location of assystFile
+%                   - 'SheetType': sheet type;
+%                       e.g., 'xlsx', 'csv', etc.
+%                   could be anything recognised by the readtable() function 
+%                   (see issheettype.m under Adams_Functions)
+%                   default == 'csv'
 %
 % Requires:
 %       cd/argfun.m
 %       cd/construct_and_check_abfpath.m
+%       cd/issheettype.m
 %       cd/match_dimensions.m
 %
 % Used by:
+%       cd/parse_all_swds.m
 %       cd/plot_traces_EEG.m
 
 % File History:
 % 2018-11-22 Created by Adam Lu
 % 2018-11-27 Now reads durationOrig as a duration array 
 %               rather than a datetime array
+% 2018-12-26 Updated definition of filebase
+% 2018-12-26 Added 'SheetType' as an optional argument
 % 
 
 %% Hard-coded parameters
+strsForIdentification = {'_Auto', '_channel[0-9]*'};
 varNamesOrig = {'swdNumber', 'startTimeOrig', 'endTimeOrig', ...
                 'durationOrig', 'comment'};
 varNames = {'startTime', 'endTime', 'duration', 'abfPath', 'pathExists'};
@@ -55,6 +65,7 @@ durationPattern = 'hh:mm:ss.SSS';
 %% Default values for optional arguments
 abfFileNameDefault = '';        % set later
 outFolderDefault = '';          % set later
+sheetTypeDefault = 'csv';       % default spreadsheet type
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -78,11 +89,14 @@ addParameter(iP, 'AbfFileName', abfFileNameDefault, ...
     @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'SheetType', sheetTypeDefault, ...
+    @(x) all(issheettype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, assystFile, varargin{:});
 abfFileName = iP.Results.AbfFileName;
 outFolder = iP.Results.OutFolder;
+[~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 
 %% Preparation
 % Get the fileDir and fileBaseAssyst
@@ -97,11 +111,15 @@ if isempty(outFolder)
 end
 
 % Construct Assyst SWD table csv file
-swdAssystCsvFile = fullfile(outFolder, [fileBase, '_Assyst_SWDs.csv']);
+swdAssystCsvFile = fullfile(outFolder, [fileBase, '_Assyst_SWDs.', sheetType]);
 
 % Set default .abf file name
 if isempty(abfFileName)
-    abfFileName = [fileBase, '.abf'];
+    % Remove strings for identification
+    abfFileBase = regexprep(fileBase, strsForIdentification, '');
+
+    % Add '.abf' extension
+    abfFileName = [abfFileBase, '.abf'];
 end
 
 % Construct full path to abf file
@@ -114,6 +132,11 @@ if ~pathExists
     [abfPath, pathExists] = ...
         construct_and_check_abfpath(abfFileName, ...
                                 'Directory', fileparts(pwd), 'Verbose', false);
+
+    % Return error if the file is missing
+    if ~pathExists
+        error('The file %s is missing!\n', abfFileName);
+    end   
 end
 
 % Construct the date time format specifier for textscan()
@@ -239,6 +262,14 @@ timePattern = 'HH:mm:ss.SSS';
 timeFormatSpec = ['%{', timePattern, '}D'];
 
 duration = second(swdAssystTable.durationOrig);
+
+% Replace '_Assyst' with '' and '_Auto' with '' to get fileBase
+fileBase = replace(fileBaseAssyst, {'_Assyst', '_Auto'}, {'', ''});
+
+% Set default .abf file name
+if isempty(abfFileName)
+    abfFileName = [fileBase, '.abf'];
+end
 
 %}
 

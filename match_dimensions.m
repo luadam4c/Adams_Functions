@@ -35,6 +35,7 @@ function arrayNew = match_dimensions (arrayOld, dimNew, varargin)
 % File History:
 % 2018-10-24 Created by Adam Lu
 % 2018-10-25 Changed the second argument to dimNew
+% 2018-12-26 Now allows dimNew to contain zero
 % 
 
 %% Hard-coded parameters
@@ -59,7 +60,7 @@ addRequired(iP, 'arrayOld', ...
     @(x) validateattributes(x, ...
         {'numeric', 'logical', 'char', 'cell', 'struct'}, {'3d'}));
 addRequired(iP, 'dimNew', ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'vector'}));
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'integer', 'vector'}));
 
 % Read from the Input Parser
 parse(iP, arrayOld, dimNew, varargin{:});
@@ -91,7 +92,7 @@ nElementsNew = prod(dimNew);
 
 %% Do the job
 % Decide based on the relative number of elements
-if nElementsOld == nElementsNew
+if nElementsNew == nElementsOld
     % Match dimensions by reshaping if there are equal number of elements
     if nDimsOld == nDimsNew
         % Reshape arrayOld to match dimNew
@@ -119,7 +120,7 @@ if nElementsOld == nElementsNew
     else
         error('Code logic error!');
     end
-elseif nElementsOld < nElementsNew
+elseif nElementsNew > nElementsOld
     % If there are fewer elements in the array than required, 
     %   try expanding it
     if nDimsOld == nDimsNew
@@ -137,6 +138,17 @@ elseif nElementsOld < nElementsNew
         end
     else
         error('Not implemented yet!');
+    end
+elseif nElementsNew == 0
+    % TODO: Make function create_empty_array_of_same_type.m
+    if iscell(arrayOld)
+        arrayNew = cell(dimNew);
+    elseif isnumeric(arrayOld)
+        arrayNew = [];
+    elseif isstruct(arrayOld)
+        arrayNew = struct;
+    else
+        arrayNew = [];
     end
 else
     error(['There are more elements in the array ', ...
@@ -156,6 +168,9 @@ addRequired(iP, 'array2', ...
 parse(iP, arrayOld, array2, varargin{:});
 
 dimNew = size(array2);
+
+addRequired(iP, 'dimNew', ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'vector'}));
 
 %}
 

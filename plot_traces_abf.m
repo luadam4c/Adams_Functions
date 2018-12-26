@@ -361,20 +361,16 @@ if ~individually && strcmpi(expMode, 'EEG')
     vecAll = data;
     yLabel = channelLabels{1};
     figTitle = sprintf('All channels for %s', fileBase);
-    figNum = 1;
 
     % Do the plotting
-    h = plot_traces(timeVec, vecAll, 'Verbose', verbose, ...
+    fig = plot_traces(timeVec, vecAll, 'Verbose', verbose, ...
                     'OverWrite', overWrite, 'PlotMode', plotMode, ...
                     'XLimits', xLimits, 'XUnits', xUnits, ...
                     'XLabel', xLabel, 'YLabel', yLabel, ...
                     'TraceLabels', traceLabels, ...
                     'FigTitle', figTitle, 'FigName', figName, ...
-                    'FigNumber', figNum, 'FigTypes', figTypes);
+                    'FigTypes', figTypes);
 
-    % Hold off and close figure
-    hold off;
-    close(h);
 elseif ~individually && strcmpi(expMode, 'patch') || ...
         individually && strcmpi(expMode, 'EEG')
     % Loop through all channels
@@ -411,11 +407,7 @@ elseif ~individually && strcmpi(expMode, 'patch') || ...
                             'XLabel', xLabel, 'YLabel', yLabel, ...
                             'TraceLabels', traceLabels, ...
                             'FigTitle', figTitle, 'FigName', figName, ...
-                            'FigNumber', figNum, 'FigTypes', figTypes);
-
-            % Hold off and close figure
-            hold off;
-            close(h);
+                            'FigTypes', figTypes);
         end
     end
 elseif individually && strcmpi(expMode, 'patch')
@@ -458,11 +450,7 @@ elseif individually && strcmpi(expMode, 'patch')
                                 'XLabel', xLabel, 'YLabel', yLabel, ...
                                 'TraceLabels', traceLabels, ...
                                 'FigTitle', figTitle, 'FigName', figName, ...
-                                'FigNumber', figNum, 'FigTypes', figTypes);
-
-                % Hold off and close figure
-                hold off;
-                close(h);
+                                'FigTypes', figTypes);
             end
         end
     end
@@ -855,6 +843,21 @@ end
 
 % Set the x-axis limits
 xLimits = [timeStart, timeEnd];
+
+figNum = 1;
+% Hold off and close figure
+hold off;
+close(fig);
+'FigNumber', figNum, 
+
+'FigNumber', figNum, 
+% Hold off and close figure
+hold off;
+close(h);
+'FigNumber', figNum, 
+% Hold off and close figure
+hold off;
+close(h);
 
 %}
 
