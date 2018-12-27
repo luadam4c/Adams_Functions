@@ -19,16 +19,16 @@ function fitsGrouped = ZG_fit_IEI_distributions (ieisGrouped, varargin)
 %                   default == 'fitsGrouped'
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/fit_IEI.m
-%       /home/Matlab/Adams_Functions/fit_logIEI.m
-%       /home/Matlab/Adams_Functions/nanstderr.m
-%       /home/Matlab/Adams_Functions/color_index.m
-%       /home/Matlab/Adams_Functions/bar_w_CI.m
-%       /home/Matlab/Adams_Functions/plot_grouped_histogram.m
-%       /home/Matlab/Adams_Functions/plot_grouped_scatter.m
+%       cd/fit_IEI.m
+%       cd/fit_logIEI.m
+%       cd/nanstderr.m
+%       cd/color_index.m
+%       cd/bar_w_CI.m
+%       cd/plot_grouped_histogram.m
+%       cd/plot_grouped_scatter.m
 %
 % Used by:
-%       /home/Matlab/Adams_Functions/ZG_compute_IEI_thresholds.m
+%       cd/ZG_compute_IEI_thresholds.m
 %
 % File History:
 % 2018-07-25 Adapted code from zgPeriodStats.m, 

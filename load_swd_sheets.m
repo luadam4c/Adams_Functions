@@ -21,6 +21,9 @@ function [swdTables, filePaths] = load_swd_sheets (varargin)
 %                   - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'Suffix': suffix the file name must have
+%                   must be a string scalar or a character vector
+%                   default == '_SWDs'
 %                   - 'SheetType': sheet type;
 %                       e.g., 'xlsx', 'csv', etc.
 %                   could be anything recognised by the readtable() function 
@@ -34,6 +37,7 @@ function [swdTables, filePaths] = load_swd_sheets (varargin)
 %       cd/read_swd_sheet.m
 %
 % Used by:
+%       cd/plot_swd_histogram.m
 %       cd/plot_swd_raster.m
 
 % File History:
@@ -46,6 +50,7 @@ function [swdTables, filePaths] = load_swd_sheets (varargin)
 directoryDefault = '';        % set later
 filePathsDefault = {};          % detect from pwd by default
 verboseDefault = false;         % print to standard output by default
+suffixDefault = '';             % set in all_swd_sheets.m
 sheetTypeDefault = 'csv';       % default spreadsheet type
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -63,6 +68,8 @@ addParameter(iP, 'FilePaths', filePathsDefault, ...
     @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Suffix', suffixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SheetType', sheetTypeDefault, ...
     @(x) all(issheettype(x, 'ValidateMode', true)));
 
@@ -71,6 +78,7 @@ parse(iP, varargin{:});
 directory = iP.Results.Directory;
 filePaths = iP.Results.FilePaths;
 verbose = iP.Results.Verbose;
+suffix = iP.Results.Suffix;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 
 %% Preparation
@@ -85,6 +93,7 @@ if isempty(filePaths)
     % Find all '_SWDs.csv' sheets in the directory recursively
     [~, filePaths] = all_swd_sheets('Verbose', verbose, ...
                                     'Directory', directory, ...
+                                    'Suffix', suffix, ...
                                     'SheetType', sheetType);
 
     % Return usage message if no .out files found

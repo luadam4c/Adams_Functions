@@ -29,6 +29,7 @@ function scalar = apply_iteratively (myFunction, array, varargin)
 %       cd/compute_axis_limits.m
 %       cd/identify_channels.m
 %       cd/plot_traces.m
+%       cd/plot_swd_histogram.m
 
 % File History:
 % 2018-12-19 Created by Adam Lu

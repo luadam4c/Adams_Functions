@@ -1,5 +1,5 @@
 function [fig, lines] = plot_swd_raster (varargin)
-%% Plot SWDs for each channel in the current directory
+%% Compares all SWD start times in a directory as a raster plot
 % Usage: [fig, lines] = plot_swd_raster (varargin)
 % Explanation:
 %       TODO
@@ -191,17 +191,10 @@ if isempty(swdTables)
                 'AssystFolder', assystFolder, 'SheetType', sheetType);
     end
 
-    if ~isempty(swdSheetPaths)
-        % Use full paths if provided
-        [swdTables, swdSheetPaths] = ...
-            load_swd_sheets('Verbose', verbose, 'FilePaths', swdSheetPaths, ...
-                            'SheetType', sheetType);
-    else
-        % Otherwise look in the swdFolder
-        [swdTables, swdSheetPaths] = ...
-            load_swd_sheets('Verbose', verbose, 'Directory', swdFolder, ...
-                            'SheetType', sheetType);
-    end
+    % Load all tables from either paths or folder
+    [swdTables, swdSheetPaths] = ...
+        load_swd_sheets('Verbose', verbose, 'FilePaths', swdSheetPaths, ...
+                        'Directory', swdFolder, 'SheetType', sheetType);
 else
     % Display warning message?
     % TODO
@@ -210,11 +203,7 @@ end
 % Decide on the output folder based on swdSheetPaths
 if isempty(outFolder)
     if ~isempty(swdSheetPaths)
-        if iscell(swdSheetPaths)
-            outFolder = extract_common_directory(swdSheetPaths);
-        else
-            outFolder = fileparts(swdSheetPaths);
-        end
+        outFolder = extract_common_directory(swdSheetPaths);
     else
         outFolder = pwd;
     end
@@ -507,5 +496,23 @@ if isempty(assystFolder)
 end
 
 fig = figure(15342);
+
+if ~isempty(swdSheetPaths)
+    % Use full paths if provided
+    [swdTables, swdSheetPaths] = ...
+        load_swd_sheets('Verbose', verbose, 'FilePaths', swdSheetPaths, ...
+                        'SheetType', sheetType);
+else
+    % Otherwise look in the swdFolder
+    [swdTables, swdSheetPaths] = ...
+        load_swd_sheets('Verbose', verbose, 'Directory', swdFolder, ...
+                        'SheetType', sheetType);
+end
+
+if iscell(swdSheetPaths)
+    outFolder = extract_common_directory(swdSheetPaths);
+else
+    outFolder = fileparts(swdSheetPaths);
+end
 
 %}

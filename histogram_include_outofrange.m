@@ -17,7 +17,7 @@ function [h, h1, h2] = histogram_include_outofrange(X, varargin)
 %                   specified as a Histogram object
 % Side Effects:
 %       Plots a histogram
-% Arguments:    
+% Arguments:
 %       X           - data to distribute among bins
 %                   must be an array of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
@@ -44,7 +44,9 @@ function [h, h1, h2] = histogram_include_outofrange(X, varargin)
 %                   default == 'isoutlier'
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/remove_outliers.m
+%       cd/create_error_for_nargin.m
+%       cd/remove_outliers.m
+%
 % Used by:    
 %       /home/Matlab/Marks_Functions/paula/Oct2017/zgRasterFigureMaker.m
 %       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
@@ -69,8 +71,7 @@ outlierMethodDefault = 'isoutlier';     % use built-in isoutlier function
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme

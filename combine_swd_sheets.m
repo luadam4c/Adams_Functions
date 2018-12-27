@@ -1,16 +1,15 @@
-function [combinedTables, combinedPaths] = combine_swd_sheets (varargin)
+function [combinedTable, combinedPath] = combine_swd_sheets (varargin)
 %% Combines all files ending with '_SWDs.csv' under a directory
-% Usage: [combinedTables, combinedPaths] = combine_swd_sheets (varargin)
+% Usage: [combinedTable, combinedPath] = combine_swd_sheets (varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       swdSheetFiles   - combined SWD table(s)
-%                       specified as a 2-D table or a cell array of 2-D tables
-%       combinedPaths   - full path(s) to the combined SWD spreadheet file
-%                       specified as a character vector 
-%                           or a cell array of character vectors
+%       combinedTable   - combined SWD table
+%                       specified as a 2-D table
+%       combinedPath    - full path to the combined SWD spreadheet file
+%                       specified as a character vector
 % Arguments:
 %       varargin    - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -79,7 +78,7 @@ directory = iP.Results.Directory;
 dirName = fileparts(directory);
 
 % Extract a common suffix across all files
-commonSuffix = extract_fileparts(paths, 'commonsuffix');
+commonSuffix = extract_fileparts(swdSheetPaths, 'commonsuffix');
 
 % Create a suffix for the combined SWD file
 combinedSuffix = [commonSuffix, combinedStr];

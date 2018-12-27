@@ -23,6 +23,9 @@ function [swdSheetFiles, swdSheetPaths] = all_swd_sheets (varargin)
 %                   - 'Directory': directory to look for SWD table files
 %                   must be a string scalar or a character vector
 %                   default == pwd
+%                   - 'Suffix': suffix the file name must have
+%                   must be a string scalar or a character vector
+%                   default == '_SWDs'
 %                   - 'SheetType': sheet type;
 %                       e.g., 'xlsx', 'csv', etc.
 %                   could be anything recognised by the readtable() function 
@@ -40,6 +43,7 @@ function [swdSheetFiles, swdSheetPaths] = all_swd_sheets (varargin)
 
 % File History:
 % 2018-11-27 Moved from plot_swd_raster.m
+% 2018-12-27 Added 'Suffix' as an optional argument
 % 
 
 %% Hard-coded parameters
@@ -48,6 +52,7 @@ swdStr = '_SWDs';               % string in file names for SWD spreadsheets
 %% Default values for optional arguments
 verboseDefault = true;
 directoryDefault = '';          % set later
+suffixDefault = '';             % set later
 sheetTypeDefault = 'csv';       % default spreadsheet type
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -62,6 +67,8 @@ addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'Suffix', suffixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SheetType', sheetTypeDefault, ...
     @(x) all(issheettype(x, 'ValidateMode', true)));
 
@@ -69,20 +76,26 @@ addParameter(iP, 'SheetType', sheetTypeDefault, ...
 parse(iP, varargin{:});
 verbose = iP.Results.Verbose;
 directory = iP.Results.Directory;
+suffix = iP.Results.Suffix;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 
 %% Do the job
+% Set default string to recognize SWD spreadsheets
+if isempty(suffix)
+    suffix = swdStr;
+end
+
 % Find all SWD spreadsheet files in the directory
 [swdSheetFiles, swdSheetPaths] = ...
     all_files('Verbose', verbose, 'Recursive', true, ...
                 'Directory', directory, ...
-                'Suffix', swdStr, 'Extension', ['.', sheetType]);
+                'Suffix', suffix, 'Extension', ['.', sheetType]);
 
 % Exit function if no spreadsheet files are found
 if isempty(swdSheetPaths)
     message = sprintf(['There are no SWD spreadsheets of the', ...
                         ' ending %s.%s in the directory: %s'], ...
-                        swdStr, sheetType, directory);
+                        suffix, sheetType, directory);
     mTitle = 'No SWD spreadsheets found warning';
     icon = 'warn';
     print_or_show_message(message, 'MTitle', mTitle, 'Icon', icon, ...

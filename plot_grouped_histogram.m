@@ -1,18 +1,33 @@
-function plot_grouped_histogram(figname, stats, grouping, grouping_labels, xLabel, xUnits, titleStr, varargin)
+function h = plot_grouped_histogram(figName, stats, grouping, grouping_labels, xLabel, xUnits, titleStr, varargin)
 %% Plot a grouped histogram
-% Usage: plot_grouped_histogram(figname, stats, grouping, grouping_labels, xLabel, xUnits, titleStr, varargin)
+% Usage: h = plot_grouped_histogram(figName, stats, grouping, grouping_labels, xLabel, xUnits, titleStr, varargin)
+% Explanation:
+%       TODO
+%       Note: The bar() function is actually used for the main histogram
+% Example(s):
+%       TODO
+% Outputs:
+%       h           - the histogram returned as a Bar object
+%                   specified as a Patch (R2015a) or Bar (R2017a) object
 %
 % Arguments: TODO
-%       varargin    - 'OutFolder': directory to output csv file, 
+%       stats       - data to distribute among bins
+%                   must be an array of one the following types:
+%                       'numeric', 'logical', 'datetime', 'duration'
+%       varargin    - 'OutFolder': directory to save figure, 
 %                                   e.g. 'output'
 %                   must be a string scalar or a character vector
 %                   default == pwd
 % Requires:
-%		/home/Matlab/Adams_Functions/histg.m
+%       cd/create_error_for_nargin.m
+%       cd/histg.m
 %
 % Used by:
-%       /home/Matlab/Adams_Functions/ZG_fit_IEI_distributions.m
-%		/media/adamX/Paula_IEIs/paula_iei4.m
+% TODO:
+%       cd/ZG_fit_IEI_distributions.m
+%
+% TODO:
+%        /media/adamX/Paula_IEIs/paula_iei4.m
 %       /home/Matlab/Marks_Functions/paula/Oct2017/freqsPostJustinPartTwo.m
 %
 % 2017-12-11 Created by Adam Lu
@@ -22,9 +37,15 @@ function plot_grouped_histogram(figname, stats, grouping, grouping_labels, xLabe
 %% Default values for optional arguments
 yLabelDefault = 'Count';
 xLimitsDefault = [];
-outFolderDefault = '';          % default directory to output spreadsheet file
+outFolderDefault = '';          % default directory to save figure
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Deal with arguments
+% Check number of required arguments
+if nargin < 2
+    error(create_error_for_nargin(mfilename));
+end
 
 % Set up Input Parser Scheme
 iP = inputParser;         
@@ -47,15 +68,16 @@ yLabel = iP.Results.YLabel;
 xLimits = iP.Results.XLimits;
 outFolder = iP.Results.OutFolder;
 
-% Set dependent argument defaults
-if isempty(outFolder)
-    % Default output directory is present working directory
-    outFolder = pwd;
-end
-
 % If the figure name is not a full path, create full path
-if ~any(strfind(figname, filesep))
-    figname = fullfile(outFolder, figname);
+if ~isempty(figName) && ~any(strfind(figName, filesep))
+    % Set dependent argument defaults
+    if isempty(outFolder)
+        % Default output directory is present working directory
+        outFolder = pwd;
+    end
+
+    % Create full figure file name
+    figName = fullfile(outFolder, figName);
 end
 
 %% Plot and save histogram
@@ -75,13 +97,15 @@ else
 end
 ylabel(yLabel);
 title(titleStr, 'Interpreter', 'none');
-saveas(h, figname, 'png');
+saveas(h, figName, 'png');
 close(h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+histg(stats, grouping);
 
 %}
 

@@ -1,5 +1,5 @@
 function subVecs = extract_subvectors (vecs, varargin)
-%% Extracts subvectors from vectors, given either endpoints, value windows or a certain align mode ('leftadjust', 'rightadjust')
+%% Extracts subvectors from vectors, given either endpoints, value windows or a certain align mode ('leftAdjust', 'rightAdjust')
 % Usage: subVecs = extract_subvectors (vecs, varargin)
 % Explanation:
 %       TODO
@@ -38,10 +38,12 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric arrays
 %                   default == []
-%                   - 'AlignMethod': method for alignment/truncation
+%                   - 'AlignMethod': method for truncation or padding
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'leftAdjust'  - equal number of elements from the left
-%                       'rightAdjust' - equal number of elements from the right
+%                       'leftAdjust'  - align to the left and truncate
+%                       'rightAdjust' - align to the right and truncate
+%                       'leftAdjustPad'  - align to the left and pad
+%                       'rightAdjustPad' - align to the right and pad
 %                       'none'        - no alignment/truncation
 %                   default == 'leftAdjust'
 %
@@ -79,11 +81,13 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2018-12-17 Now allows subvectors to be extracted from arbitrary indices
 % 2018-12-17 Now allows subvectors to be extracted from an align mode
 % 2018-12-24 Added 'IndexStart', 'IndexEnd' as arguments
+% 2018-12-27 Added the align methods 'leftAdjustPad', 'rightAdjustPad'
 % TODO: check if all endpoints have 2 elements
 % 
 
 %% Hard-coded parameters
-validAlignMethods = {'leftadjust', 'rightadjust', 'none'};
+validAlignMethods = {'leftAdjust', 'rightAdjust', ...
+                    'leftAdjustPad', 'rightAdjustPad', 'none'};
 
 %% Default values for optional arguments
 indicesDefault = [];            % set later
@@ -187,7 +191,7 @@ if isempty(indices)
                             'IndexStart', indexStart, 'IndexEnd', indexEnd);
 end
 
-% If there is an align/truncation method used, apply it to indices
+% If there is a alignment method used, apply it to indices
 indices = align_subvectors(indices, alignMethod);
 
 % If one of indices and vecs is a cell function, match the formats of 
@@ -210,12 +214,34 @@ end
 function subVec = extract_subvectors_helper (vec, indices)
 %% Extract a subvector from vector(s) if not empty
 
+% Count the desired number of rows
+nRows = length(indices);
+
+% Count the desired number of columns
+nColumns = size(vec, 2);
+
+% Initialize subVec with NaNs
+% TODO: make function create_empty.m
+%   subVec = create_empty(nRows, nColumns, 'ExampleArray', vec)
+if isnumeric(vec)
+    subVec = NaN(nRows, nColumns);
+elseif iscell(vec)
+    subVec = cell(nRows, nColumns);
+elseif isstruct(vec)
+    subVec = struct(nRows, nColumns);
+elseif isdatetime(vec)
+    subVec = NaT(nRows, nColumns);
+end
+
+% Find the parts of indices without NaNs
+withoutNaNs = find(~isnan(indices));
+
 % If the time window is out of range, or if the vector is empty, 
 %   return an empty vector
 if isempty(indices) || isempty(vec)
     subVec = [];
 else
-    subVec = vec(indices, :);
+    subVec(withoutNaNs, :) = vec(indices(withoutNaNs), :);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -223,7 +249,7 @@ end
 function indices = align_subvectors(indices, alignMethod)
 
 switch alignMethod
-case {'leftadjust', 'rightadjust'}
+case {'leftAdjust', 'rightAdjust', 'leftAdjustPad', 'rightAdjustPad'}
     % Count the number of elements in each vector
     nSamples = count_samples(indices, 'ForceColumnOutput', true);
 
@@ -237,18 +263,25 @@ case {'leftadjust', 'rightadjust'}
     if nUniqueNSamples == 1
         return
     end
+case 'none'
+    % Do nothing
+otherwise
+    error_unrecognized(get_var_name(alignMethod), alignMethod, mfilename);
+end
 
+switch alignMethod
+case {'leftAdjust', 'rightAdjust'}
     % Get the minimum number of samples
-    minNSamples = min(uniqueNSamples);
+    nSamplesTarget = min(uniqueNSamples);
 
     % Create new endpoints
     switch alignMethod
-    case 'leftadjust'
+    case 'leftAdjust'
         % Create new endpoints by repetition
-        newEndPoints = match_format_vector_sets([1, minNSamples], indices);
-    case 'rightadjust'
+        newEndPoints = match_format_vector_sets([1, nSamplesTarget], indices);
+    case 'rightAdjust'
         % Get the new starting positions 
-        newStarts = nSamples - minNSamples + 1;
+        newStarts = nSamples - nSamplesTarget + 1;
 
         % Create new endpoints
         newEndPoints = transpose([newStarts, nSamples]);
@@ -257,8 +290,32 @@ case {'leftadjust', 'rightadjust'}
     % Extract indices from new endpoints
     indices = extract_subvectors(indices, 'EndPoints', newEndPoints, ...
                                 'AlignMethod', 'none');
+case {'leftAdjustPad', 'rightAdjustPad'}
+    % Get the maximum number of samples
+    nSamplesTarget = max(uniqueNSamples);
+
+    % Count the number of rows to pad for each vector
+    nRowsToPad = nSamplesTarget - nSamples;
+
+    % Create new endpoints
+    switch alignMethod
+    case 'leftAdjustPad'
+        padDirection = 'post';
+    case 'rightAdjustPad'
+        padDirection = 'pre';
+    end
+
+    % Add NaNs to indices
+    if iscell(indices)
+        indices = cellfun(@(x, y) padarray(x, y, NaN, padDirection), ...
+                            indices, num2cell(nRowsToPad), ...
+                            'UniformOutput', false);
+    else
+        indices = padarray(indices, nRowsToPad, NaN, padDirection);
+    end
 case 'none'
     % Do nothing
+    nSamplesTarget = NaN;
 otherwise
     error_unrecognized(get_var_name(alignMethod), alignMethod, mfilename);
 end

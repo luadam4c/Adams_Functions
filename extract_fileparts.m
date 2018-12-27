@@ -21,9 +21,9 @@ function parts = extract_fileparts (paths, partType, varargin)
 %                       'directory' - directory containing the file(s)
 %                       'base'      - file base name without the extension
 %                       'extension' - file extension including the leading '.'
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'Delimiter': delimiter used for file suffices
+%                   must be a string scalar or a character vector
+%                   default == '_'
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -35,6 +35,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 
 % File History:
 % 2018-12-18 Created by Adam Lu
+% 2018-12-26 Added 'commonsuffix' as a part type
 % TODO: Make the first argument accept a files structure array too
 % 
 
@@ -43,7 +44,7 @@ validPartTypes = {'commondirectory', 'commonsuffix', 'distinct', ...
                     'directory', 'base', 'extension'};
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+delimiterDefault = '_';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -66,12 +67,12 @@ addRequired(iP, 'partType', ...
     @(x) any(validatestring(x, validPartTypes)));
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default, ...
-%     % TODO: validation function %);
+addParameter(iP, 'Delimiter', delimiterDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, paths, partType, varargin{:});
-% param1 = iP.Results.param1;
+delimiter = iP.Results.Delimiter;
 
 % Validate partType
 partType = validatestring(partType, validPartTypes);
@@ -82,6 +83,12 @@ case {'directory', 'base', 'extension'}
     parts = extract_simple_fileparts(paths, partType);
 case 'commondirectory'
     parts = extract_common_directory(paths, varargin{:});
+case 'commonsuffix'
+    % First, extract file bases
+    fileBases = extract_simple_fileparts(paths, 'base');
+
+    % Next, extract file suffices
+    parts = extract_common_suffix(fileBases, 'Delimiter', delimiter);
 case 'distinct'
     parts = extract_distinct_parts(paths);
 otherwise

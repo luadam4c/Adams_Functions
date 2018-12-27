@@ -39,7 +39,7 @@ outputFileNameDefault = '';
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 2
+if nargin < 1
     error(create_error_for_nargin(mfilename));
 end
 
