@@ -12,9 +12,9 @@ function parentDir = extract_common_directory (paths, varargin)
 %       paths       - file paths
 %                   must be a character vector or a string vector
 %                       or a cell array of character vectors
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'KeepFileSep': whether to keep the final filesep
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -22,6 +22,7 @@ function parentDir = extract_common_directory (paths, varargin)
 %       cd/extract_fileparts.m
 %
 % Used by:
+%       cd/extract_distinct_fileparts.m
 %       cd/extract_fileparts.m
 %       cd/plot_swd_histogram.m
 %       cd/plot_swd_raster.m
@@ -31,12 +32,13 @@ function parentDir = extract_common_directory (paths, varargin)
 % 2018-11-27 Created by Adam Lu
 % 2018-12-18 Now accepts a character array as the input
 % 2018-12-26 Moved code to extract_common_prefix.m
+% 2018-12-27 Added 'KeepFileSep' as an optional argument
 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-% param1Default   = [];                   % default TODO: Description of param1
+keepFileSepDefault = false;   % don't keep the final filesep by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -57,12 +59,12 @@ addRequired(iP, 'paths', ...
         'or cell array of character arrays!']));
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default, ...
-%     % TODO: validation function %);
+addParameter(iP, 'KeepFileSep', keepFileSepDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, paths, varargin{:});
-% param1 = iP.Results.param1;
+keepFileSep = iP.Results.KeepFileSep;
 
 %% Do the job
 % If empty, just return rempty
@@ -80,7 +82,8 @@ if ischar(paths)
     parentDir = directories;
 else
     % Otherwise, extract the common prefix using filesep as the delimiter
-    parentDir = extract_common_prefix(directories, 'Delimiter', filesep);
+    parentDir = extract_common_prefix(directories, 'Delimiter', filesep, ...
+                                        'KeepDelimiter', keepFileSep);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

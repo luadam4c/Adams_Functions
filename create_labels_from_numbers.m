@@ -13,7 +13,8 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %                   specified as a cell array of character vectors
 % Arguments:
 %       numbers     - numbers
-%                   must be a numeric array
+%                   must be an array of one the following types:
+%                       'numeric', 'logical', 'datetime', 'duration'
 %       varargin    - 'ForceColumnOutput': whether to force output as a column
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
@@ -24,9 +25,13 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %                   must be a string scalar or a character vector
 %                   default == ''
 %
+%
+% Requires:
+%       cd/create_error_for_nargin.m
+%       cd/convert_to_char.m
+%
 % Used by:
 %       cd/compute_all_pulse_responses.m
-%       cd/create_error_for_nargin.m
 %       cd/create_simulation_output_filenames.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_struct.m
@@ -59,7 +64,8 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'numbers', ...
-    @(x) validateattributes(x, {'numeric'}, {'3d'}));
+    @(x) validateattributes(x, {'numeric', 'logical', ...
+                                'datetime', 'duration'}, {'3d'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ForceColumnOutput', forceColumnOutputDefault, ...
@@ -83,8 +89,8 @@ end
 
 %% Do the job
 % Create the labels
-labels = arrayfun(@(x) [prefix, num2str(x), suffix], numbers, ...
-                    'UniformOutput', false);
+labels = arrayfun(@(x) strcat(prefix, convert_to_char(x), suffix), ...
+                    numbers, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

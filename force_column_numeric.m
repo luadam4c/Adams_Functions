@@ -52,6 +52,7 @@ function vectors = force_column_numeric (vectors, varargin)
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/plot_cfit_pulse_response.m
+%       cd/plot_grouped_histogram.m
 %       cd/plot_raster.m
 %       cd/plot_window_boundaries.m
 %       cd/xolotl_set_simparams.m
@@ -81,7 +82,8 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vectors', ...                   % vectors
-    @(x) assert(isempty(x) || isnumeric(x) || islogical(x) || iscell(x), ...
+    @(x) assert(isempty(x) || isnumeric(x) || islogical(x) || ...
+                isdatetime(x) || iscell(x), ...
                 ['vectors must be either empty or a numeric array ', ...
                     'or a cell array!']));
 
@@ -94,7 +96,8 @@ parse(iP, vectors, varargin{:});
 ignoreNonVectors = iP.Results.IgnoreNonVectors;
 
 %% Do the job
-if (isnumeric(vectors) || islogical(vectors)) && ~iscolumn(vectors)
+if (isnumeric(vectors) || islogical(vectors) || isdatetime(vectors)) && ...
+        ~iscolumn(vectors)
     if isempty(vectors)
         % Do nothing
     elseif isvector(vectors)

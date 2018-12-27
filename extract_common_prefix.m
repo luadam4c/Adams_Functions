@@ -15,6 +15,9 @@ function prefix = extract_common_prefix (strs, varargin)
 %       varargin    - 'Delimiter': delimiter used
 %                   must be a string scalar or a character vector
 %                   default == '_'
+%                   - 'KeepDelimiter': whether to keep the preceding delimiter
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'SuffixInstead': extract common suffix instead
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -30,12 +33,14 @@ function prefix = extract_common_prefix (strs, varargin)
 % File History:
 % 2018-12-26 Moved from extract_common_directory.m
 % 2018-12-26 Added 'Delimiter' and 'SuffixInstead' as optional arguments
+% 2018-12-27 Added 'KeepDelimiter' as an optional argument
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
 delimiterDefault = '_';
+keepDelimiterDefault = false;   % don't keep the preceding delimiter by default
 suffixInsteadDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -59,12 +64,15 @@ addRequired(iP, 'strs', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Delimiter', delimiterDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'KeepDelimiter', keepDelimiterDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SuffixInstead', suffixInsteadDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, strs, varargin{:});
 delimiter = iP.Results.Delimiter;
+keepDelimiter = iP.Results.KeepDelimiter;
 suffixInstead = iP.Results.SuffixInstead;
 
 %% Preparation
@@ -121,6 +129,11 @@ if suffixInstead
     % Construct the common suffix
     tempCell = join(partsAligned{1}(levelFirstCommon:end), delimiter);
     prefix = tempCell{1};
+
+    % Add the delimiter if requested
+    if keepDelimiter
+        prefix = [delimiter, prefix];
+    end
 else
     % Find the first row that has more than one unique element
     levelFirstDifference = find(nUniqueEachLevel > 1, 1, 'first');
@@ -142,6 +155,11 @@ else
     % Construct the common prefix
     tempCell = join(partsAligned{1}(1:levelLastCommon), delimiter);
     prefix = tempCell{1};
+
+    % Add the delimiter if requested
+    if keepDelimiter
+        prefix = [prefix, delimiter];
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -29,7 +29,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/extract_common_directory.m
 %       cd/extract_common_suffix.m
-%       cd/extract_distinct_parts.m
+%       cd/extract_distinct_fileparts.m
 %
 % Used by:
 %       cd/extract_common_directory.m
@@ -39,6 +39,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 % File History:
 % 2018-12-18 Created by Adam Lu
 % 2018-12-26 Added 'commonsuffix' as a part type
+% 2018-12-27 Moved code to extract_distinct_fileparts.m
 % TODO: Make the first argument accept a files structure array too
 % 
 
@@ -93,7 +94,7 @@ case 'commonsuffix'
     % Next, extract file suffices
     parts = extract_common_suffix(fileBases, 'Delimiter', delimiter);
 case 'distinct'
-    parts = extract_distinct_parts(paths);
+    parts = extract_distinct_fileparts(paths);
 otherwise
     error('partType unrecognized!!');
 end
@@ -138,29 +139,6 @@ switch partType
     case 'extension'
         parts = fileExtensions;
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function distinctParts = extract_distinct_parts(paths)
-% Extract the distinct parts from a set of file paths
-
-% Extract the common parent directory
-commonParent = extract_common_directory(paths);
-
-% Extract the common suffix
-commonSuffix = extract_common_suffix(paths);
-
-% Extract everything after the common parent directory
-relativePaths = extractAfter(paths, commonParent);
-
-% Extract everything before the common suffix
-relativePaths = extractBefore(paths, commonParent);
-
-% Extract the file extensions
-fileExt = extract_fileparts(relativePaths, 'extension');
-
-% Remove the file extensions
-distinctParts = extractBefore(relativePaths, fileExt);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

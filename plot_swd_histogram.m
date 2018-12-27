@@ -47,7 +47,8 @@ function [his, fig] = plot_swd_histogram (varargin)
 % Requires:
 %       cd/apply_iteratively.m
 %       cd/extract_common_directory.m
-%       cd/extract_fileparts.m
+%       cd/extract_common_suffix.m
+%       cd/extract_distinct_fileparts.m
 %       cd/load_swd_sheets.m
 %       cd/plot_grouped_histogram.m
 %
@@ -148,23 +149,31 @@ end
 
 %% Plot all SWD tables
 if iscell(swdTables) && individually
-    [his, fig] = cellfun(@(x) plot_swd_histogram_helper(x, absoluteTime, ...
-                                outFolder, swdSheetPaths, otherArguments), ...
-                        swdTables);
+    [his, fig] = cellfun(@(x, y) plot_swd_histogram_helper(x, y, ...
+                                outFolder, absoluteTime, otherArguments), ...
+                        swdTables, swdSheetPaths);
 else
-    [his, fig] = plot_swd_histogram_helper(swdTables, absoluteTime, ...
-                                outFolder, swdSheetPaths, otherArguments);
+    [his, fig] = plot_swd_histogram_helper(swdTables, swdSheetPaths, ...
+                                outFolder, absoluteTime, otherArguments);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [his, fig] = plot_swd_histogram_helper(swdTables, absoluteTime, ...
-                                    outFolder, swdSheetPaths, otherArguments)
+function [his, fig] = plot_swd_histogram_helper(swdTables, swdSheetPaths, ...
+                                    outFolder, absoluteTime, otherArguments)
 %% Plots a histogram from an SWD table
 
 %% Preparation
 % Extract the start times in hours (or absolute datetime)
 startTimes = extract_start_times(swdTables, absoluteTime);
+
+% Create grouping for the start times
+if isdatetime(startTimes)
+    % Use the date
+    grouping = 
+else
+    % Use the column number
+end
 
 % Find the minimum and maximum times
 minTime = apply_iteratively(@min, startTimes);
@@ -181,35 +190,54 @@ end
 
 % Create bin edges
 if isdatetime(minHour)
-    binEdges = minHour:hours(1):maxHour;
+    binEdges = transpose(minHour:hours(1):maxHour);
 else
-    binEdges = minHour:1:maxHour;
+    binEdges = transpose(minHour:1:maxHour);
 end
 
+% Choose the histogram style
+if isdatetime(minHour)
+    style = 'stacked';
+else
+    style = 'side-by-side';
+end
+
+% Set x axis limits
+xLimits = [minHour, maxHour];
+
+% Set x axis label
+if isdatetime(minHour)
+    xLabel = 'Date-time binned by hour';
+else
+    xLabel = 'Hour since start of recording';
+end
+
+% Set y axis label
+yLabel = 'SWD Count';
+
 % Extract distinct file parts
-distinctParts = extract_fileparts(swdSheetPaths, 'distinct');
+distinctParts = extract_distinct_fileparts(swdSheetPaths);
 
 % Extract common suffix
-commonSuffix = extract_fileparts(swdSheetPaths, 'commonsuffix');
+commonSuffix = extract_common_suffix(swdSheetPaths);
+
+% Set grouping labels
+groupingLabels = distinctParts;
+
+% Set figure title
+figTitle = sprintf('SWD start times for %s', commonSuffix);
 
 %% Plot the histogram
 % Create and clear figure
 fig = figure('WindowState','maximized');
 clf;
 
-% Set other plot properties
-xLimits = [minHour, maxHour];
-xLabel = 'Hour';
-yLabel = 'SWD Count';
-groupingLabels = distinctParts;
-figTitle = sprintf('SWD start times for %s', commonSuffix);
-
 % Plot the histogram
-[his, fig] = plot_grouped_histogram(startTimes, 'Edges', binEdges, ...
-                            'XLimits', xLimits, ...
+[his, fig] = plot_grouped_histogram(startTimes, grouping, 'Edges', binEdges, ...
+                            'Style', style, 'XLimits', xLimits, ...
                             'XLabel', xLabel, 'YLabel', yLabel, ...
                             'GroupingLabels', groupingLabels, ...
-                            'FigHandle', fig, ...
+                            'FigTitle', figTitle, 'FigHandle', fig, ...
                             otherArguments);
 
 % Save figure
@@ -237,10 +265,10 @@ if iscell(swdTables)
     startTimes = cellfun(@(x) x.(startTimeStr), swdTables, ...
                             'UniformOutput', false);
 else
-    startTimes = swdTable.(startTimeStr);
+    startTimes = swdTables.(startTimeStr);
 end
 
-% Convert cell arrays to arrays filled with NaN
+% Convert cell arrays to arrays padded with NaNs
 % TODO: Make this a function force_matrix.m
 if iscell(startTimes)
     % Extract vectors padded on the right

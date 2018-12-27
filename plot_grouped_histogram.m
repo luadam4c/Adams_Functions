@@ -17,7 +17,8 @@ function [h, fig] = plot_grouped_histogram(stats, varargin)
 %                   must be an array of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
 %       grouping    - (opt) group assignment for each data point
-%                   must be a numeric array the same numel as stats
+%                   must be an array of one the following types:
+%                       'numeric', 'logical', 'datetime', 'duration'
 %                   default == the column number for a 2D array
 %       varargin    - 'Edges': bin edges
 %                   must be a vector of one the following types:
@@ -88,8 +89,10 @@ function [h, fig] = plot_grouped_histogram(stats, varargin)
 %                   - Any other parameter-value pair for the bar() function
 %
 % Requires:
+%       cd/argfun.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
+%       cd/force_column_numeric.m
 %       cd/islegendlocation.m
 %       cd/ispositiveintegerscalar.m
 %
@@ -110,6 +113,9 @@ function [h, fig] = plot_grouped_histogram(stats, varargin)
 barWidth = 1;
 maxInFigure = 8;
 validStyles = {'side-by-side', 'stacked'};
+
+% TODO: Make these optional arguments
+groupingLabelPrefix = '';
 
 %% Default values for optional arguments
 groupingDefault = [];           % set later
@@ -149,7 +155,8 @@ addRequired(iP, 'stats', ...
 
 % Add optional inputs to the Input Parser
 addOptional(iP, 'grouping', groupingDefault, ...
-    @(x) validateattributes(x, {'numeric', 'logical'}, {'2d'}));
+    @(x) validateattributes(x, {'numeric', 'logical', ...
+                                'datetime', 'duration'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Edges', edgesDefault, ...
@@ -229,14 +236,14 @@ nGroups = numel(groupValues);
 %% Compute the bin counts
 % Compute default bin edges for all data if not provided
 if isempty(edges)
-    [~, edges] = histcounts(stats);
+    [~, edges] = compute_bin_counts(stats, edges);
 end
 
 % Count the number of bins
 nBins = numel(edges) - 1;
 
 % Compute the bin centers
-binCenters = (edges(1:end-1) + edges(2:end)) / 2;
+binCenters = mean([edges(1:end-1), edges(2:end)], 2);
 
 % Compute the bin counts for each group based on these edges
 counts = zeros(nBins, nGroups);
@@ -293,7 +300,8 @@ clf(fig);
 
 % Set the default grouping labels
 if isempty(groupingLabels)
-    groupingLabels = create_labels_from_numbers(1:nGroups, 'Prefix', 'Group #');
+    groupingLabels = create_labels_from_numbers(groupValues, ...
+                                                'Prefix', groupingLabelPrefix);
 end
 
 % Set legend location based on number of groups
@@ -354,8 +362,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [counts, edges] = compute_bin_counts (stats, edges)
-%% Compute bin counts from vectors
+%% Computes bin counts from vectors
 
+% Compute bin counts and edges
 if isempty(edges)
     % Use default bin edges
     [counts, edges] = histcounts(stats);
@@ -363,6 +372,9 @@ else
     % Use provided bin edges
     [counts, edges] = histcounts(stats, edges);
 end
+
+% Force output as column vectors
+[counts, edges] = argfun(@force_column_numeric, counts, edges);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -386,6 +398,12 @@ addParameter(iP, 'XLimits', xLimitsDefault, ...
 if ~isempty(xUnits)
     xlabel([xLabel, ' (', xUnits, ')']);
 end
+
+% Does not work for datetime arrays
+binCenters = (edges(1:end-1) + edges(2:end)) / 2;
+
+groupingLabels = create_labels_from_numbers(groupValues, ...
+                                            'Prefix', 'Group #');
 
 %}
 
