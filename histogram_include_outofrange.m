@@ -62,7 +62,8 @@ validOutlierMethods = {'boxplot', 'isoutlier', ...
                         'fiveStds', 'threeStds', 'twoStds'};
 
 %% Default values for optional arguments
-xLimitsDefault = [];
+edgesDefault = [];                      % set later
+xLimitsDefault = [];                    % set later
 specialColorDefault = [0, 0.8, 0.8];    % light blue
 outlierMethodDefault = 'isoutlier';     % use built-in isoutlier function
 
@@ -81,12 +82,12 @@ iP.FunctionName = mfilename;
 % Add required inputs to the Input Parser
 addRequired(iP, 'X', ...                        % data to distribute among bins
     @(x) validateattributes(x, {'numeric', 'logical', ...
-                                'datetime', 'duration'}, {'nonempty'}));
+                                'datetime', 'duration'}, {'2d'}));
 
 % Add optional inputs to the Input Parser
-addOptional(iP, 'edges', [], ...                % bin edges
+addOptional(iP, 'edges', edgesDefault, ...      % bin edges
     @(x) validateattributes(x, {'numeric', 'logical', ...
-                                'datetime', 'duration'}, {'vector'}));
+                                'datetime', 'duration'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'SpecialColor', specialColorDefault, ...

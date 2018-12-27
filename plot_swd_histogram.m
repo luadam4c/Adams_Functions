@@ -46,8 +46,10 @@ function [his, fig] = plot_swd_histogram (varargin)
 %
 % Requires:
 %       cd/apply_iteratively.m
-%       cd/load_swd_sheets.m
 %       cd/extract_common_directory.m
+%       cd/extract_fileparts.m
+%       cd/load_swd_sheets.m
+%       cd/plot_grouped_histogram.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -67,7 +69,6 @@ individuallyDefault = false;    % plot all tables together by default
 swdTablesDefault = '';          % set later
 swdSheetPathsDefault = '';      % set later
 swdFolderDefault = '';          % set later
-outFolderDefault = '';          % set later
 outFolderDefault = '';          % set later
 suffixDefault = '';             % set later
 sheetTypeDefault = 'csv';       % default spreadsheet type
@@ -185,21 +186,33 @@ else
     binEdges = minHour:1:maxHour;
 end
 
+% Extract distinct file parts
+distinctParts = extract_fileparts(swdSheetPaths, 'distinct');
+
+% Extract common suffix
+commonSuffix = extract_fileparts(swdSheetPaths, 'commonsuffix');
+
 %% Plot the histogram
 % Create and clear figure
 fig = figure('WindowState','maximized');
 clf;
 
-% Plot the histogram
-% his = histogram(startTimes, binEdges, otherArguments);
-his = histogram(startTimes, binEdges);
-
 % Set other plot properties
-xlim([minHour, maxHour])
-% title('SWD start times for %s', swdSheetPaths)
+xLimits = [minHour, maxHour];
+xLabel = 'Hour';
+yLabel = 'SWD Count';
+groupingLabels = distinctParts;
+figTitle = sprintf('SWD start times for %s', commonSuffix);
+
+% Plot the histogram
+[his, fig] = plot_grouped_histogram(startTimes, 'Edges', binEdges, ...
+                            'XLimits', xLimits, ...
+                            'XLabel', xLabel, 'YLabel', yLabel, ...
+                            'GroupingLabels', groupingLabels, ...
+                            'FigHandle', fig, ...
+                            otherArguments);
 
 % Save figure
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -260,6 +273,11 @@ end
 function startTimes = extract_start_times_helper (swdTable, startTimeStr)
 % Extract the start times
 startTimes = swdTable.(startTimeStr);
+
+% his = histogram(startTimes, binEdges, otherArguments);
+his = histogram(startTimes, binEdges);
+
+xlim([minHour, maxHour])
 
 %}
 

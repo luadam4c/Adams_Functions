@@ -28,9 +28,12 @@ function parts = extract_fileparts (paths, partType, varargin)
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/extract_common_directory.m
+%       cd/extract_common_suffix.m
+%       cd/extract_distinct_parts.m
 %
 % Used by:
 %       cd/extract_common_directory.m
+%       cd/plot_swd_histogram.m
 %       cd/plot_table.m
 
 % File History:
@@ -144,8 +147,14 @@ function distinctParts = extract_distinct_parts(paths)
 % Extract the common parent directory
 commonParent = extract_common_directory(paths);
 
+% Extract the common suffix
+commonSuffix = extract_common_suffix(paths);
+
 % Extract everything after the common parent directory
 relativePaths = extractAfter(paths, commonParent);
+
+% Extract everything before the common suffix
+relativePaths = extractBefore(paths, commonParent);
 
 % Extract the file extensions
 fileExt = extract_fileparts(relativePaths, 'extension');
