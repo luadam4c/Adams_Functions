@@ -93,7 +93,7 @@ function [fig, lines] = plot_swd_raster (varargin)
 
 %% Hard-coded constants
 % TODO: Make these optional arguments
-parseAllFlag = true; %false;
+parseAllFlag = false;
 
 %% Hard-coded parameters that must be consistent with abf2mat.m
 % TODO: Make these default values for optional arguments
@@ -187,8 +187,8 @@ if isempty(swdTables)
     % Optionally, convert all output files into SWD tables
     if parseAllFlag
         parse_all_swds('Verbose', verbose, 'SwdFolder', swdFolder, ...
-                    'ManualFolder', manualFolder, 'SayliFolder', sayliFolder, ...
-                    'AssystFolder', assystFolder, 'SheetType', sheetType);
+                'ManualFolder', manualFolder, 'SayliFolder', sayliFolder, ...
+                'AssystFolder', assystFolder, 'SheetType', sheetType);
     end
 
     if ~isempty(swdSheetPaths)
@@ -224,6 +224,7 @@ if verbose
 end
 
 % Extract the original data file bases and algorithm labels for each SWD table
+% TODO: Make this a function extract_swd_filebases.m
 if ~isempty(swdSheetPaths)
     % Get all file bases
     [~, swdSheetBases, ~] = cellfun(@fileparts, swdSheetPaths, ...
@@ -403,7 +404,7 @@ figName = fullfile(outFolder, [outFolderName, '_SWDs_raster.png']);
 
 %% Plot the raster plot
 % Create and clear figure
-fig = figure(15342);
+fig = figure('WindowState','maximized');
 clf;
 
 % Plot the raster plot
@@ -504,5 +505,7 @@ end
 if isempty(assystFolder)
     assystFolder = pwd;
 end
+
+fig = figure(15342);
 
 %}

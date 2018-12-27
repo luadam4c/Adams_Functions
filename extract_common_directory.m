@@ -18,7 +18,7 @@ function parentDir = extract_common_directory (paths, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/extract_subvectors.m
+%       cd/extract_common_prefix.m
 %       cd/extract_fileparts.m
 %
 % Used by:
@@ -29,7 +29,8 @@ function parentDir = extract_common_directory (paths, varargin)
 % File History:
 % 2018-11-27 Created by Adam Lu
 % 2018-12-18 Now accepts a character array as the input
-% 
+% 2018-12-26 Moved code to extract_common_prefix.m
+
 
 %% Hard-coded parameters
 
@@ -63,83 +64,23 @@ parse(iP, paths, varargin{:});
 % param1 = iP.Results.param1;
 
 %% Do the job
-% If empty, just return
+% If empty, just return rempty
 if isempty(paths)
-    parentDir = paths;
+    parentDir = '';
     return
 end
 
 % Extract only the directory part of each path
 directories = extract_fileparts(paths, 'directory');
 
-% If a character array, use the directory it is contained in
+% Extract the common directory across all directories
 if ischar(paths)
+    % If a character array, use the directory it is contained in
     parentDir = directories;
-    return
-end
-
-% Split all directories by filesep to get parts
-%   Note: split() can take both a cell and a string as the argument
-%           and returns a column cell array
-partsByFile = arrayfun(@(x) split(x, filesep), directories, ...
-                    'UniformOutput', false);
-
-% Extract the first minNParts elements
-partsByFileAligned = ...
-    extract_subvectors(partsByFile, 'AlignMethod', 'leftadjust');
-
-% Place all parts together in a 2-D cell array
-%   Each column is a path
-%   Each row is a level
-partsArray = horzcat(partsByFileAligned{:});
-
-% Separate parts by level
-partsByLevel = extract_rows(partsArray);
-
-% Find the number of unique elements in each row
-nUniqueEachLevel = count_unique_elements(partsByLevel);
-
-% Find the first row that has more than one unique element
-levelFirstDifference = find(nUniqueEachLevel > 1, 1, 'first');
-
-% Use the previous row number
-if isempty(levelFirstDifference)
-    levelLastCommon = numel(nUniqueEachLevel);
 else
-    levelLastCommon = levelFirstDifference - 1;
+    % Otherwise, extract the common prefix using filesep as the delimiter
+    parentDir = extract_common_prefix(directories, 'Delimiter', filesep);
 end
-
-% Construct the common parent directory
-tempCell = join(partsByFile{1}(1:levelLastCommon), filesep);
-parentDir = tempCell{1};
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function rowsExtracted = extract_rows(cellArray)
-%% Extracts rows from a 2D cell array
-% TODO: Pull out to its own function
-% TODO: Think about how to make a extract_columns work the same way
-%       with an optional argument
-
-% Count the number of levels
-nRows = size(cellArray, 1);
-
-% Separate parts by level
-rowsExtracted = arrayfun(@(x) cellArray(x, :), transpose(1:nRows), ...
-                            'UniformOutput', false);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function nUnique = count_unique_elements(vecs)
-%% Counts the number of unique elements in each vector
-% TODO: Pull out to its own function
-% TODO: Use extract_subvectors with a 'Unique' option
-
-% Extract unique elements
-uniqueElements = cellfun(@unique, vecs, 'UniformOutput', false);
-
-% Count the numbers
-nUnique = count_samples(uniqueElements);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

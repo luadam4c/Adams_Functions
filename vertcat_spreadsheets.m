@@ -1,34 +1,46 @@
-function vertcat_spreadsheets (inputFileNames, outputFileName, varargin)
+function outputTable = vertcat_spreadsheets (inputFileNames, varargin)
 %% Combine spreadsheets using readtable, vertcat, then writetable
-% Usage: vertcat_spreadsheets (inputFileNames, outputFileName, varargin)
+% Usage: outputTable = vertcat_spreadsheets (inputFileNames, varargin)
 % Explanation:
 %       TODO
 % Example:
 %       TODO
 % Side Effects:
 %       TODO
+% Outputs:
+%       outputTable - combined table
+%                   specified as a 2-D table
 % Arguments:    
 %       inputFileNames  - input spreadsheet file names
 %                       must be a cell array of strings or character arrays
-%       outputFileName  - output spreadsheet file name
-%                       must be a string scalar or a character vector
+%       varargin    - 'OutputFileName': output spreadsheet file name
+%                   must be a string scalar or a character vector
+%                   default == ''
 %
-% Used by:    
+% Requires:
+%       cd/create_error_for_nargin.m
+%
+% Used by:
+%       cd/combine_swd_sheets.m
+%       cd/parse_all_swds.m
 %       /home/Matlab/EEG_gui/combine_EEG_gui_outputs.m
 %
 % File History:
 % 2018-05-15 Created by Adam Lu
+% 2018-12-26 Turned 'OutputFileName' into an optional argument
 % 
 
 %% Hard-coded parameters
+
+%% Default values for optional arguments
+outputFileNameDefault = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 2
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
@@ -42,13 +54,15 @@ addRequired(iP, 'inputFileNames', ...
                 ['Second input must be a cell array ', ...
                 'of strings or character arrays!']));
 %    @(x) iscellstr(x) || isstring(x));
-addRequired(iP, 'outputFileName', ...
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'OutputFileName', outputFileNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
                                                 % introduced after R2016b
-%    @(x) validateattributes(x, {'char', 'string'}, {'nonempty'}));
 
 % Read from the Input Parser
-parse(iP, inputFileNames, outputFileName, varargin{:});
+parse(iP, inputFileNames, varargin{:});
+outputFileName = iP.Results.OutputFileName;
 
 %% Prepare
 % Get the number of spreadsheets to combine
@@ -71,7 +85,9 @@ for iTable = 1:nTables
 end
 
 %% Save output
-writetable(outputTable, outputFileName);
+if ~isempty(outputFileName)
+    writetable(outputTable, outputFileName);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

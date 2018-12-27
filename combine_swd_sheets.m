@@ -1,21 +1,16 @@
-function [swdSheetFiles, swdSheetPaths] = all_swd_sheets (varargin)
-%% Returns all files ending with '_SWDs.csv' under a directory recursively
-% Usage: [swdSheetFiles, swdSheetPaths] = all_swd_sheets (varargin)
+function [combinedTables, combinedPaths] = combine_swd_sheets (varargin)
+%% Combines all files ending with '_SWDs.csv' under a directory
+% Usage: [combinedTables, combinedPaths] = combine_swd_sheets (varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       swdSheetFiles   - file structure(s) for the SWD spreadheet files
-%                       specified as a structure array with fields:
-%                           name
-%                           folder
-%                           date
-%                           bytes
-%                           isdir
-%                           datenum
-%       swdSheetPaths   - full path(s) to the SWD spreadheet files
-%                       specified as a column cell array of character vectors
+%       swdSheetFiles   - combined SWD table(s)
+%                       specified as a 2-D table or a cell array of 2-D tables
+%       combinedPaths   - full path(s) to the combined SWD spreadheet file
+%                       specified as a character vector 
+%                           or a cell array of character vectors
 % Arguments:
 %       varargin    - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -30,20 +25,23 @@ function [swdSheetFiles, swdSheetPaths] = all_swd_sheets (varargin)
 %                   default == 'csv'
 %                   
 % Requires:
-%       cd/all_files.m
-%       cd/issheettype.m
-%       cd/print_or_show_message.m
+%       cd/all_swd_sheets.m
+%       cd/vertcat_spreadsheets.m
 %
 % Used by:
-%       cd/combine_swd_sheets.m
-%       cd/load_swd_sheets.m
+%       cd/parse_all_swds.m
 
 % File History:
-% 2018-11-27 Moved from plot_swd_raster.m
+% 2018-12-26 Modified from all_swd_sheets.m
+% TODO: Use 'startTimeOrig', 'endTimeOrig' & 'durationOrig'
+% TODO: Add sweepStartTime to 'startTime', 'endTime' & 'duration'
+% TODO: Make 'SweepStartTime' an optional argument 
+%       and detect from corresponding abfPath
+% TODO: Make 'OutFolder' an optional argument 
 % 
 
 %% Hard-coded parameters
-swdStr = '_SWDs';               % string in file names for SWD spreadsheets
+combinedStr = '_combined';
 
 %% Default values for optional arguments
 verboseDefault = true;
@@ -71,24 +69,37 @@ verbose = iP.Results.Verbose;
 directory = iP.Results.Directory;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 
-%% Do the job
+%% Preparation
 % Find all SWD spreadsheet files in the directory
-[swdSheetFiles, swdSheetPaths] = ...
-    all_files('Verbose', verbose, 'Recursive', true, ...
-                'Directory', directory, ...
-                'Suffix', swdStr, 'Extension', ['.', sheetType]);
+[~, swdSheetPaths] = ...
+    all_swd_sheets('Verbose', verbose, 'Directory', directory, ...
+                    'SheetType', sheetType);
 
-% Exit function if no spreadsheet files are found
-if isempty(swdSheetPaths)
-    message = sprintf(['There are no SWD spreadsheets of the', ...
-                        ' ending %s.%s in the directory: %s'], ...
-                        swdStr, sheetType, directory);
-    mTitle = 'No SWD spreadsheets found warning';
-    icon = 'warn';
-    print_or_show_message(message, 'MTitle', mTitle, 'Icon', icon, ...
-                            'MessageMode', 'show', 'Verbose', verbose, ...
-                            'CreateMode', 'replace');
-end
+% Get the directory name
+dirName = fileparts(directory);
+
+% Extract a common suffix across all files
+commonSuffix = extract_fileparts(paths, 'commonsuffix');
+
+% Create a suffix for the combined SWD file
+combinedSuffix = [commonSuffix, combinedStr];
+
+% Create a combined SWD file name
+combinedPath = fullfile(directory, [dirName, combinedSuffix, '.', sheetType]);
+
+% Find corresponding .abf file(s)
+% TODO: Use extract_swd_filebases.m
+% TODO: Remove common suffix and 
+
+%% Do the job
+% Concatenate the SWD sheets
+combinedTable = vertcat_spreadsheets(swdSheetPaths);
+
+% TODO: Add corresponding sweepStartTime to 'startTime', 'endTime' & 'duration'
+%       based on abfPath
+
+%% Save the table in a file
+writetable(combinedTable, combinedPath);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

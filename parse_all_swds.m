@@ -1,6 +1,8 @@
-function [swdTables, swdSheetPaths] = parse_all_swds (varargin)
+function [swdTables, swdSheetPaths, ...
+            swdCombinedTables, swdCombinedCsvFiles] = parse_all_swds (varargin)
 %% Parses all Assyst, Sayli and manual SWD files in the current directory
-% Usage: [swdTables, swdSheetPaths] = parse_all_swds (varargin)
+% Usage: [swdTables, swdSheetPaths, ...
+%           swdCombinedTables, swdCombinedCsvFiles] = parse_all_swds (varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -18,9 +20,6 @@ function [swdTables, swdSheetPaths] = parse_all_swds (varargin)
 %       varargin    - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
-%                   - 'SwdFolder': directory to look for SWD table files
-%                   must be a string scalar or a character vector
-%                   default == pwd
 %                   - 'OutFolder': the name of the directory in which 
 %                                       plots will be placed
 %                   must be a string scalar or a character vector
@@ -42,6 +41,7 @@ function [swdTables, swdSheetPaths] = parse_all_swds (varargin)
 %
 % Requires:
 %       cd/all_files.m
+%       cd/combine_swd_sheets.m
 %       cd/issheettype.m
 %       cd/parse_atf_swd.m
 %       cd/parse_assyst_swd.m
@@ -68,7 +68,6 @@ sweepStr = '_sweep';            % string in file names that separate sweeps
 
 %% Default values for optional arguments
 verboseDefault = true;
-swdFolderDefault = '';          % set later
 outFolderDefault = '';          % set later
 manualFolderDefault = '';       % set later
 sayliFolderDefault = '';        % set later
@@ -86,8 +85,6 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'SwdFolder', swdFolderDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ManualFolder', manualFolderDefault, ...
@@ -102,7 +99,6 @@ addParameter(iP, 'SheetType', sheetTypeDefault, ...
 % Read from the Input Parser
 parse(iP, varargin{:});
 verbose = iP.Results.Verbose;
-swdFolder = iP.Results.SwdFolder;
 outFolder = iP.Results.OutFolder;
 manualFolder = iP.Results.ManualFolder;
 sayliFolder = iP.Results.SayliFolder;
@@ -125,14 +121,16 @@ if isempty(assystFolder)
 end
 
 % Find all .atf files in the manualFolder
-[~, manualPaths] = all_files('Verbose', verbose, 'Recursive', true, ...
-                                'Directory', manualFolder, ...
-                                'Extension', '.atf');
+[manualFiles, manualPaths] = ...
+    all_files('Verbose', verbose, 'Recursive', true, ...
+                'ForceCellOutput', true, 'Directory', manualFolder, ...
+                'Extension', '.atf');
 
 % Find all Assyst output files in the assystFolder
-[~, assystPaths] = all_files('Verbose', verbose, 'Recursive', true, ...
-                                'Directory', assystFolder, ...
-                                'Suffix', assystStr, 'Extension', '.txt');
+[assystFiles, assystPaths] = ...
+    all_files('Verbose', verbose, 'Recursive', true, ...
+                'ForceCellOutput', true, 'Directory', assystFolder, ...
+                'Suffix', assystStr, 'Extension', '.txt');
 
 % Count the number of files
 nManualPaths = numel(manualPaths);
@@ -157,13 +155,40 @@ parfor iFile = 1:nAssystPaths
                         'SheetType', sheetType);
 end
 
+% Get all unique SWD folders
+allManualFolders = transpose(unique({manualFiles.folder}));
+allAssystFolders = transpose(unique({assystFiles.folder}));
+allSwdFolders = vertcat(allManualFolders, allAssystFolders);
+
+% Count the number of unique SWD folders
+nSwdFolders = numel(allSwdFolders);
+
+% Vertically concatenate all SWD files in the same SWD folders
+swdCombinedTables = cell(nCombinedPaths, 1);
+swdCombinedCsvFiles = cell(nCombinedPaths, 1);
+parfor iFolder = 1:nSwdFolders
+    [swdCombinedTables{iFolder}, swdCombinedCsvFiles{iFolder}] = ...
+        combine_swd_sheets('Directory', allSwdFolders{iFolder}, ...
+                            'Verbose', verbose, 'SheetType', sheetType);
+end
+
 % Put all SWD tables together 
 swdTables = vertcat(swdManualTables, swdAssystTables);
-swdFiles = vertcat(swdManualCsvFiles, swdAssystCsvFiles);
+swdSheetPaths = vertcat(swdManualCsvFiles, swdAssystCsvFiles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+% The following is slower:
+[swdManualTables, swdManualCsvFiles] = ...
+    cellfun(@(x) parse_atf_swd(x, 'OutFolder', outFolder, ...
+                                'SheetType', sheetType), ...
+            manualPaths, 'UniformOutput', false);
+[swdAssystTables, swdAssystCsvFiles] = ...
+    cellfun(@(x) parse_assyst_swd(x, 'OutFolder', outFolder, ...
+                                'SheetType', sheetType), ...
+            assystPaths, 'UniformOutput', false);
 
 %}

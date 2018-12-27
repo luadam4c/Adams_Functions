@@ -14,8 +14,9 @@ function parts = extract_fileparts (paths, partType, varargin)
 %                   must be a character vector or a string vector
 %                       or a cell array of character vectors
 %       partType    - type of the file part to extract
-%                   must be an unambiguous, case-insensitive match to one of: 
+%                   must be an unambiguous, case-insensitive match to one of:
 %                       'commondirectory' - common directory across file(s)
+%                       'commonsuffix'    - common suffix across file(s)
 %                       'distinct'  - distinct parts across file(s)
 %                       'directory' - directory containing the file(s)
 %                       'base'      - file base name without the extension
@@ -34,10 +35,11 @@ function parts = extract_fileparts (paths, partType, varargin)
 
 % File History:
 % 2018-12-18 Created by Adam Lu
+% TODO: Make the first argument accept a files structure array too
 % 
 
 %% Hard-coded parameters
-validPartTypes = {'commondirectory', 'distinct', ...
+validPartTypes = {'commondirectory', 'commonsuffix', 'distinct', ...
                     'directory', 'base', 'extension'};
 
 %% Default values for optional arguments

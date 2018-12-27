@@ -20,6 +20,9 @@ function [files, fullPaths] = all_files(varargin)
 %                   - 'Recursive': whether to search recursively
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'ForceCellOutput': whether to force output as a cell array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'Directory': the directory to search in
 %                   must be a string scalar or a character vector
 %                   default == pwd
@@ -57,16 +60,18 @@ function [files, fullPaths] = all_files(varargin)
 % 2018-10-04 Modified from all_subdirs.m
 % 2018-11-21 Added 'Prefix', 'Keyword', 'Suffix', 'RegExp' as optional arguments
 % 2018-11-26 Added 'Recursive' as an optional flag
+% 2018-12-26 Added 'ForceCellOutput' as an optional argument
 
 %% Default values for optional arguments
-verboseDefault = false;             % don't print to standard output by default
-recursiveDefault = false;           % don't search recursively by default
-directoryDefault = '';              % construct_and_check_fullpath('') == pwd
-prefixDefault = '';                 % set later
-keywordDefault = '';                % set later
-suffixDefault = '';                 % set later
-extensionDefault = '';              % set later
-regExpDefault = '';                 % set later
+verboseDefault = false;         % don't print to standard output by default
+recursiveDefault = false;       % don't search recursively by default
+forceCellOutputDefault = false; % don't force output as a cell array by default
+directoryDefault = '';          % construct_and_check_fullpath('') == pwd
+prefixDefault = '';             % set later
+keywordDefault = '';            % set later
+suffixDefault = '';             % set later
+extensionDefault = '';          % set later
+regExpDefault = '';             % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -79,6 +84,8 @@ iP.FunctionName = mfilename;
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Recursive', recursiveDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
@@ -97,6 +104,7 @@ addParameter(iP, 'RegExp', regExpDefault, ...
 parse(iP, varargin{:});
 verbose = iP.Results.Verbose;
 recursive = iP.Results.Recursive;
+forceCellOutput = iP.Results.ForceCellOutput;
 directory = iP.Results.Directory;
 prefix = iP.Results.Prefix;
 keyword = iP.Results.Keyword;
@@ -164,7 +172,7 @@ end
 files = filesOrDirs(~isDir & isMatch);
 
 % Extract the full paths
-fullPaths = extract_fullpaths(files);
+fullPaths = extract_fullpaths(files, 'ForceCellOutput', forceCellOutput);
 
 %% Print to standard output
 % Count the number of files
