@@ -25,6 +25,7 @@ function prefix = extract_common_prefix (strs, varargin)
 %
 % Used by:
 %       cd/extract_common_directory.m
+%       cd/extract_common_suffix.m
 
 % File History:
 % 2018-12-26 Moved from extract_common_directory.m
@@ -66,6 +67,13 @@ parse(iP, strs, varargin{:});
 delimiter = iP.Results.Delimiter;
 suffixInstead = iP.Results.SuffixInstead;
 
+%% Preparation
+if suffixInstead
+    alignMethod = 'rightadjust';
+else
+    alignMethod = 'leftadjust';
+end
+        
 %% Do the job
 % If empty, return empty
 if isempty(strs)
@@ -79,7 +87,7 @@ end
 parts = arrayfun(@(x) split(x, delimiter), strs, 'UniformOutput', false);
 
 % Extract the same number of elements from each cell array
-partsAligned = extract_subvectors(parts, 'AlignMethod', 'leftadjust');
+partsAligned = extract_subvectors(parts, 'AlignMethod', alignMethod);
 
 % Place all parts together in a 2-D cell array
 %   Each column is an original string
@@ -111,7 +119,7 @@ if suffixInstead
     end
 
     % Construct the common suffix
-    tempCell = join(parts{1}(levelFirstCommon:end), delimiter);
+    tempCell = join(partsAligned{1}(levelFirstCommon:end), delimiter);
     prefix = tempCell{1};
 else
     % Find the first row that has more than one unique element
@@ -132,7 +140,7 @@ else
     end
 
     % Construct the common prefix
-    tempCell = join(parts{1}(1:levelLastCommon), delimiter);
+    tempCell = join(partsAligned{1}(1:levelLastCommon), delimiter);
     prefix = tempCell{1};
 end
 

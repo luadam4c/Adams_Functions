@@ -87,32 +87,6 @@ end
 %{
 OLD CODE:
 
-pathParts = cellfun(@(x) split(x, filesep), directories, 'UniformOutput', false);
-
-nParts = cellfun(@numel, pathParts);
-
-% Initialize the last common part to minNParts
-ctLastCommon = minNParts;
-
-% Run through all path parts until they become different
-for iNPart = 1:minNParts
-    % Get this part from all paths
-    thisPart = cellfun(@(x) x{iNPart}, pathParts, 'UniformOutput', false);
-
-    % Count the number of unique parts
-    nUniqueParts = numel(unique(thisPart));
-
-    % If the number of unique parts is not one, make the previous part the last
-    %   common part and exit the loop
-    if nUniqueParts ~= 1
-        ctLastCommon = iNPart - 1;
-        break
-    end
-end
-
-tempCell = join(pathParts{1}(1:ctLastCommon), filesep);
-parentDir = tempCell{1};
-
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
