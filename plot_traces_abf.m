@@ -234,8 +234,7 @@ end
 if isempty(fileBase)
     % Get the current time stamp
     tempStamp = datestr(clock, 30);     % current time stamp
-    dateStamp = [tempStamp(1:8)];       % only use date
-    dateTimeStamp = [tempStamp(1:end-2)];  % take off seconds
+    dateTimeStamp = tempStamp(1:end-2);  % take off seconds
 
     % Construct a file base based on the time stamp
     fileBase = ['someData_', dateTimeStamp];
@@ -374,8 +373,7 @@ if ~individually && strcmpi(expMode, 'EEG')
 elseif ~individually && strcmpi(expMode, 'patch') || ...
         individually && strcmpi(expMode, 'EEG')
     % Loop through all channels
-    for iChannel = 1:nChannels
-    %parfor iChannel = 1:nChannels
+    parfor iChannel = 1:nChannels
         % Print message
         if verbose
             fprintf('Plotting all sweeps of Channel #%d ...\n', iChannel);
@@ -402,18 +400,21 @@ elseif ~individually && strcmpi(expMode, 'patch') || ...
             end
 
             % Do the plotting
-            h = plot_traces(timeVec, vecAll, 'Verbose', verbose, ...
+            fig = plot_traces(timeVec, vecAll, 'Verbose', verbose, ...
                             'OverWrite', overWrite, 'PlotMode', plotMode, ...
                             'XLimits', xLimits, 'XUnits', xUnits, ...
                             'XLabel', xLabel, 'YLabel', yLabel, ...
                             'TraceLabels', traceLabels, ...
                             'FigTitle', figTitle, 'FigName', figName, ...
-                            'FigTypes', figTypes);
+                            'FigNumber', figNum, 'FigTypes', figTypes);
         end
     end
 elseif individually && strcmpi(expMode, 'patch')
     % Plot each channel and sweep individually
     for iChannel = 1:nChannels
+        % Get the channel label for this channel
+        channelLabelThis = channelLabels{iChannel};
+        
         parfor iSwp = 1:nSweeps
             % Print message
             if verbose
@@ -439,19 +440,19 @@ elseif individually && strcmpi(expMode, 'patch')
                 else
                     vecAll = [];
                 end
-                yLabel = channelLabels{iChannel};
+                yLabel = channelLabelThis;
                 figTitle = sprintf('Data for Channel #%d, Sweep #%d of %s', ...
                                     iChannel, iSwp, fileBase);
                 figNum = 100 * iChannel + iSwp;
 
                 % Do the plotting
-                h = plot_traces(timeVec, vecAll, 'Verbose', verbose, ...
+                fig = plot_traces(timeVec, vecAll, 'Verbose', verbose, ...
                                 'OverWrite', overWrite, 'PlotMode', plotMode, ...
                                 'XLimits', xLimits, 'XUnits', xUnits, ...
                                 'XLabel', xLabel, 'YLabel', yLabel, ...
                                 'TraceLabels', traceLabels, ...
                                 'FigTitle', figTitle, 'FigName', figName, ...
-                                'FigTypes', figTypes);
+                                'FigNumber', figNum, 'FigTypes', figTypes);
             end
         end
     end
@@ -859,6 +860,8 @@ close(h);
 % Hold off and close figure
 hold off;
 close(h);
+
+dateStamp = [tempStamp(1:8)];       % only use date
 
 %}
 

@@ -73,11 +73,8 @@ parse(iP, myFunction, array, varargin{:});
 %% Do the job
 while ~isscalar(array)
     if iscell(array)
-        try
-            array = cellfun(myFunction, array);
-        catch
-            array = cellfun(myFunction, array, 'UniformOutput', false);
-        end
+        array = cellfun(@(x) apply_iteratively(myFunction, x), array, ...
+                        'UniformOutput', false);
     else
         array = myFunction(array);
     end
@@ -88,6 +85,12 @@ scalar = array;
 
 %{
 OLD CODE:
+
+try
+    array = cellfun(myFunction, array);
+catch
+    array = cellfun(myFunction, array, 'UniformOutput', false);
+end
 
 %}
 
