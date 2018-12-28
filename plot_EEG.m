@@ -32,6 +32,7 @@ function plot_EEG(varargin)
 
 % File History:
 %   2018-11-26 - Created
+% TODO: Use parse_all_swds.m and plot_swd_histogram.m
 % 
 
 %% Default values for optional arguments

@@ -1,13 +1,19 @@
-function h = plot_pulse_response_with_stimulus (tVec, respVec, stimVec, varargin)
+function [fig, subplots, plots] = ...
+                plot_pulse_response_with_stimulus (tVec, respVec, stimVec, varargin)
 %% Plots a pulse response with its stimulus
-% Usage: h = plot_pulse_response_with_stimulus (tVec, respVec, stimVec, varargin)
+% Usage: [fig, subplots, plots] = ...
+%               plot_pulse_response_with_stimulus (tVec, respVec, stimVec, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       h           - handle to figure
-%                   specified as a figure handle
+%       fig         - handle to figure
+%                   specified as a figure object handle
+%       subplots    - handles to subplots
+%                   specified as a axes object handle array
+%       plots       - handles to plots
+%                   specified as a graphics object handle array
 % Arguments:
 %       tVec        - TODO: Description of reqarg1
 %                   must be a numeric vector
@@ -84,8 +90,8 @@ function h = plot_pulse_response_with_stimulus (tVec, respVec, stimVec, varargin
 % 2018-12-18 Now uses annotation_in_plot.m, plot_horizontal_line, 
 %               plot_vertical_line.m
 % 2018-12-18 Now can optionally read values from a 'ParamsFile'
-% TODO: Plot peak half width, peak 33% decay by double-exp fit
-%       and peak 90% decay
+% 2018-12-28 Now plots peak half width, peak 33% decay by double-exp fit
+%               and peak 90% decay
 % 
 
 %% Hard-coded parameters
@@ -192,16 +198,25 @@ end
 
 % Extract from responseParams
 %   Note: must be consistent with parse_pulse_response.m
+%   Note: this function assumes responseParams has only one row
 minPeakDelayMs = responseParams.minPeakDelayMs;
 idxBeforePulseEnd = responseParams.idxBeforePulseEnd;
 baseValue = responseParams.baseValue;
 minValueAfterMinDelay = responseParams.minValueAfterMinDelay;
 maxValueAfterMinDelay = responseParams.maxValueAfterMinDelay;
 idxPeak = responseParams.idxPeak;
+indHalfWidthEnds = responseParams.indHalfWidthEnds;
+idxPeakTimeConstant = responseParams.idxPeakTimeConstant;
+idxPeak90Decay = responseParams.idxPeak90Decay;
 peakValue = responseParams.peakValue;
-halfPeakValue = responseParams.halfPeakValue;
 peakAmplitude = responseParams.peakAmplitude;
+halfPeakValue = responseParams.halfPeakValue;
+peakTimeConstantValue = responseParams.peakTimeConstantValue;
+peak90DecayValue = responseParams.peak90DecayValue;
 peakDelayMs = responseParams.peakDelayMs;
+
+% Extract from cell arrays
+indHalfWidthEnds = indHalfWidthEnds{1};
 
 % Decide on labels
 if isempty(labels)
@@ -222,25 +237,36 @@ end
 check_dir(outFolder);
 
 % Compute the y axis limits based on
-%   the baseline value and the maximum value after the minimum delay
+%   the baseline value and the extrema after the minimum delay
 [yLimitsResp, yRangeResp] = ...
-    compute_axis_limits([maxValueAfterMinDelay, baseValue], 'y');
+    compute_axis_limits([minValueAfterMinDelay, maxValueAfterMinDelay, ...
+                            baseValue], 'y');
 
 % Compute the x axis limits
 [xLimits, xRange] = compute_axis_limits(tVec, 'x');
 
+% Compute times from indices
+timePulseEnd = ...
+    argfun(@(x) tVec(x), idxBeforePulseEnd);
+
 % Compute times from delays
-minPeakTime = xLimits(1) + minPeakDelayMs;
+minPeakTime = timePulseEnd + minPeakDelayMs;
 
 % If a peak exists, compute peak-related values
 if ~isnan(idxPeak)
     % Compute the times relative to the minimum x value
-    [timePeakRel, timePulseEndRel] = ...
-        argfun(@(x) (tVec(x) - xLimits(1)) / xRange, idxPeak, idxBeforePulseEnd);
+    [timePeakRel, timePulseEndRel, timeHalfWidthEndsRel, ...
+        timePeakTimeConstantRel, timePeak90DecayRel] = ...
+        argfun(@(x) (tVec(x) - xLimits(1)) / xRange, ...
+                idxPeak, idxBeforePulseEnd, indHalfWidthEnds, ...
+                idxPeakTimeConstant, idxPeak90Decay);
 
     % Compute the values relative to the minimum y value
-    [baseValueRel, peakValueRel] = ...
-        argfun(@(x) (x - yLimitsResp(1)) / yRangeResp, baseValue, peakValue);
+    [baseValueRel, peakValueRel, halfPeakValueRel, ...
+        peakTimeConstantValueRel, peak90DecayValueRel] = ...
+        argfun(@(x) (x - yLimitsResp(1)) / yRangeResp, ...
+                baseValue, peakValue, halfPeakValue, ...
+                peakTimeConstantValue, peak90DecayValue);
 
     % Compute the peak amplitude double arrow x and y values 
     %   in normalized units relative to the axes
@@ -252,6 +278,21 @@ if ~isnan(idxPeak)
     peakDelayXValues = [timePulseEndRel, timePeakRel];
     peakDelayYValues = baseValueRel * ones(1, 2);
 
+    % Compute the peak half width double arrow x and y values 
+    %   in normalized units relative to the axes
+    peakHalfWidthXValues = timeHalfWidthEndsRel;
+    peakHalfWidthYValues = halfPeakValueRel * ones(1, 2);
+
+    % Compute the peak time constant double arrow x and y values 
+    %   in normalized units relative to the axes
+    peakTimeConstantXValues = [timePeakRel, timePeakTimeConstantRel];
+    peakTimeConstantYValues = peakTimeConstantValue * ones(1, 2);
+
+    % Compute the peak 90% decay double arrow x and y values 
+    %   in normalized units relative to the axes
+    peak90DecayXValues = [timePeakRel, timePeak90DecayRel];
+    peak90DecayYValues = peak90DecayValue * ones(1, 2);
+
     % Create a labels for the peak amplitude and delay
     peakAmpLabel = ['peak amp = ', num2str(peakAmplitude)];
     peakDelayLabel = ['peak delay = ', num2str(peakDelayMs)];
@@ -260,9 +301,9 @@ end
 %% Do the job
 % Open and clear figure
 if saveFlag
-    h = figure('Visible', 'off');
+    fig = figure('Visible', 'off');
     figName = fullfile(outFolder, [fileBase, fileSuffix]);
-    clf(h);
+    clf(fig);
 else
     figure;
 end
@@ -270,37 +311,54 @@ end
 %% Generate a subplot for the pulse response
 %   Annotations:
 %       red double arrow for peak amplitude
-ax1 = subplot(3, 1, 1:2); hold on;
+subplots(1) = subplot(3, 1, 1:2); hold on;
 
 % Plot the pulse response
-p(1) = plot(tVec, respVec, otherArguments);
+plots(1) = plot(tVec, respVec, otherArguments);
 
 % Update x-axis and y-axis limits
 xlim(xLimits);
 ylim(yLimitsResp);
 
 % Plot a dashed horizontal line for baseValue
-p(2) = plot_horizontal_line(baseValue, 'XLimits', xLimits, ...
+plots(2) = plot_horizontal_line(baseValue, 'XLimits', xLimits, ...
+        'LineStyle', '--', 'Color', colorLines);
+
+% Plot a dashed vertical line for timePulseEnd
+plots(3) = plot_vertical_line(timePulseEnd, 'YLimits', yLimitsResp, ...
         'LineStyle', '--', 'Color', colorLines);
 
 % Plot a dashed vertical line for minPeakTime
-p(3) = plot_vertical_line(minPeakTime, 'YLimits', yLimitsResp, ...
+plots(4) = plot_vertical_line(minPeakTime, 'YLimits', yLimitsResp, ...
         'LineStyle', '--', 'Color', colorLines);
 
 if ~isnan(idxPeak)
     % Draw a double arrow spanning the peak amplitude
-    p(4) = annotation_in_plot('doublearrow', peakAmpXValues, peakAmpYValues, ...
-                            'Color', colorAnnotations);
+    plots(5) = annotation_in_plot('doublearrow', peakAmpXValues, ...
+                                peakAmpYValues, 'Color', colorAnnotations);
 
     % Draw a double arrow spanning the peak delay
-    p(5) = annotation_in_plot('doublearrow', peakDelayXValues, peakDelayYValues, ...
-                            'Color', colorAnnotations);
+    plots(6) = annotation_in_plot('doublearrow', peakDelayXValues, ...
+                                peakDelayYValues, 'Color', colorAnnotations);
 
-    % Show a text for the value of the peak amplitude
-    text(tVec(idxPeak) + peakDelayMs * 1/16, halfPeakValue, peakAmpLabel);
+    % Draw a double arrow spanning the peak half width
+    plots(7) = annotation_in_plot('doublearrow', peakHalfWidthXValues, ...
+                            peakHalfWidthYValues, 'Color', colorAnnotations);
+
+    % Draw a double arrow spanning the peak time constant
+    plots(8) = annotation_in_plot('doublearrow', peakTimeConstantXValues, ...
+                            peakTimeConstantYValues, 'Color', colorAnnotations);
+
+    % Draw a double arrow spanning the peak 90% decay
+    plots(9) = annotation_in_plot('doublearrow', peak90DecayXValues, ...
+                            peak90DecayYValues, 'Color', colorAnnotations);
+
+    % Show a text for the value of the peak amplitude above the peak
+    text(tVec(idxPeak) - peakDelayMs * 1/4, ...
+            peakValue + peakAmplitude * 1/16, peakAmpLabel);
 
     % Show a text for the value of the peak delay
-    % TODO: use extract_elements(tVec, 'mid', 'Endpoints', [idxBeforePulseEnd, idxPeak])
+    % TODO: use extract_elements(tVec, '1q', 'Endpoints', [idxBeforePulseEnd, idxPeak])
     text(tVec(round(idxBeforePulseEnd * 3/4 + idxPeak * 1/4)), ...
             baseValue - peakAmplitude * 1/16, peakDelayLabel);
 end
@@ -312,7 +370,7 @@ ylabel(labels{1});
 title([responseName, ' for ', fileBase], 'Interpreter', 'none');
 
 %% Generate a subplot for the stimulation pulse
-ax2 = subplot(3, 1, 3); hold on;
+subplots(2) = subplot(3, 1, 3); hold on;
 
 % Plot the stimulation pulse
 plot(tVec, stimVec, otherArguments);
@@ -331,12 +389,12 @@ title(['Stimulus for ', fileBase], 'Interpreter', 'none');
 
 %% Finish up figure
 % Link the axes on the subplots
-linkaxes([ax1, ax2], 'x');
+linkaxes([subplots(1), subplots(2)], 'x');
 
 %% Save and close figure
 if saveFlag
-    save_all_figtypes(h, figName, figTypes);
-    close(h)
+    save_all_figtypes(fig, figName, figTypes);
+    close(fig)
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -401,7 +459,7 @@ peakDelayMs = iP.Results.PeakDelayMs;
 peakAmpLabel = ['peak amp = ', num2str(peakAmplitude), ' mV'];
 peakDelayLabel = ['peak delay = ', num2str(peakDelayMs), ' ms'];
 
-p(2) = line(xLimits, baseValue * ones(size(xLimits)), ...
+plots(2) = line(xLimits, baseValue * ones(size(xLimits)), ...
             'LineStyle', '--', 'Color', colorLines);
 
 % Use plot_vertical_line.m
@@ -421,6 +479,10 @@ maxValueOfInterest = max([maxValueAfterMinDelay, baseValue]);
     compute_ylimits(minValueOfInterest, maxValueOfInterest, 'Coverage', 80);
 
 [xLimits, xRange] = compute_xlimits(tVec, 'Coverage', 100);
+
+minPeakTime = xLimits(1) + minPeakDelayMs;
+
+compute_axis_limits([maxValueAfterMinDelay, baseValue], 'y');
 
 %}
 

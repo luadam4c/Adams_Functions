@@ -55,6 +55,7 @@ function plot_traces_EEG (abfFileName, varargin)
 %   2018-11-21 - Updated to use plot_traces_abf.m
 %   2018-11-26 - Removed first argument and detect in current directory
 %   2018-12-15 - Added 'ParsedData', 'ParsedParams' as optional arguments
+% TODO: Check if parsed results exist and load instead
 % TODO: Plot flags for different types of plots
 % TODO: Save SWD figures with the width proportional to the duration
 % 
@@ -278,7 +279,7 @@ end
 
 % Plot Sayli SWD regions if an Sayli_SWDs.csv file exists
 if isfile(sayliPath)
-    % Parse the SWDs from the Assyst.txt file
+    % Read from the Sayli_SWDs.csv file
     swdSayliTable = readtable(sayliPath);
 
     % TODO: Pull out to function plot_swds.m

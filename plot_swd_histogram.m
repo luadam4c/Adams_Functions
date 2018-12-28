@@ -326,6 +326,7 @@ end
 
 % Extract the start times
 % TODO: Make this a function extract_vars.m
+% TODO: Make this accept a partial match to startTimeStr
 if iscell(swdTables)
     startTimes = cellfun(@(x) x.(startTimeStr), swdTables, ...
                             'UniformOutput', false);

@@ -116,7 +116,7 @@ function [featuresFileTable, featuresSweepTable] = ...
 %% TODO: Make these parameters
 plotSeparateFlag = false; %true;
 plotAltogetherFlag = false; %true;
-plotAverageFlag = false; %true;
+plotAverageFlag = true;
 
 %% Hard-coded parameters
 validProtocolTypes = {'EvokedLFP', 'EvokedGABAB'};
@@ -346,8 +346,8 @@ outFolderProtocol = fullfile(outFolder, outFolderProtocolName);
 % Compute features and plot protocol traces
 featuresPerFileCell = cell(nFiles, 1);
 featuresPerSweepCell = cell(nFiles, 1);
-%for iFile = 1:nFiles
-parfor iFile = 1:nFiles
+for iFile = 1:nFiles
+%parfor iFile = 1:nFiles
     % Extract from cell arrays
     abfParams = abfParamsCell{iFile};
 
