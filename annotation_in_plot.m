@@ -26,7 +26,7 @@ function an = annotation_in_plot (annotationType, xInAxes, yInAxes, varargin)
 
 % File History:
 % 2018-12-19 Created by Adam Lu
-% 
+% 2018-12-28 Added usage of struct2arglist.m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -95,6 +95,7 @@ function [h, fig] = plot_grouped_histogram(stats, varargin)
 %       cd/create_labels_from_numbers.m
 %       cd/islegendlocation.m
 %       cd/ispositiveintegerscalar.m
+%       cd/struct2arglist.m
 %
 % Used by:
 %       cd/plot_swd_histogram.m
@@ -108,6 +109,7 @@ function [h, fig] = plot_grouped_histogram(stats, varargin)
 % 2018-05-18 Added outFolder as a parameter
 % 2018-05-25 Now doesn't plot if stats is empty
 % 2018-12-27 Made all except one arguments optional and added many more
+% 2018-12-28 Added usage of struct2arglist.m
 
 %% Hard-coded parameters
 barWidth = 1;
@@ -214,7 +216,7 @@ figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Keep unmatched arguments for the bar() function
-otherArguments = iP.Unmatched;
+otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Create a grouping if not provided
@@ -312,8 +314,7 @@ end
 
 %% Plot and save histogram
 if ~isempty(stats)
-    h = bar(binCenters, counts, barWidth, barStyle);
-%    h = bar(binCenters, counts, barWidth, barStyle, otherArguments);
+    h = bar(binCenters, counts, barWidth, barStyle, otherArguments{:});
 end
 
 % Set x axis limits
@@ -387,6 +388,8 @@ legend(groupingLabels, 'location', legendLocation, ...
         'Interpreter', 'none', 'AutoUpdate','off');
 
 title(figTitle, 'Interpreter', 'none');
+
+h = bar(binCenters, counts, barWidth, barStyle);
 
 %}
 

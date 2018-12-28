@@ -21,6 +21,9 @@ function argList = struct2arglist (structure, varargin)
 %
 % Used by:
 %       cd/annotation_in_plot.m
+%       cd/compute_bins.m
+%       cd/plot_grouped_histogram.m
+%       cd/solve_function_at_value.m
 
 % File History:
 % 2018-12-28 Moved from annotation_in_plot.m
@@ -57,10 +60,10 @@ parse(iP, structure, varargin{:});
 
 %% Do the job
 % Get all the parameter names
-names = fieldnames(otherArguments);
+names = fieldnames(structure);
 
 % Get all the parameter values
-values = struct2cell(otherArguments);
+values = struct2cell(structure);
 
 % Force as a column cell array
 argList = force_column_cell(transpose([names, values]), 'ToLinearize', true);

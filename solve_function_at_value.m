@@ -23,14 +23,15 @@ function xValue = solve_function_at_value (functionStr, varargin)
 %                   - Any other parameter-value pair for the solve() function
 %
 % Requires:
-%       ~/Adams_Functions/create_error_for_nargin.m
+%       cd/create_error_for_nargin.m
+%       cd/struct2arglist.m
 %
 % Used by:
 %       cd/compute_peak_decay.m
 
 % File History:
 % 2018-12-24 Created by Adam Lu
-% 
+% 2018-12-28 Added usage of struct2arglist.m
 
 %% Hard-coded parameters
 
@@ -69,7 +70,7 @@ fValue = iP.Results.FunctionValue;
 varStr = iP.Results.VarStr;
 
 % Keep unmatched arguments for the solve() function
-otherArguments = iP.Unmatched;
+otherArguments = struct2arglist(iP.Unmatched);
 
 %% Do the job
 % Make varStr a symbolic variable
@@ -80,8 +81,7 @@ x = sym(varStr);
 eqToSolve = str2sym([functionStr, ' == ', num2str(fValue)]);
 
 % Solve for x in the equation
-% TODO: xValueSymbolic = solve(eqToSolve, x, otherArguments);
-xValueSymbolic = solve(eqToSolve, x);
+xValueSymbolic = solve(eqToSolve, x, otherArguments);
 
 % Convert from symbolic to numeric
 xValue = double(xValueSymbolic);

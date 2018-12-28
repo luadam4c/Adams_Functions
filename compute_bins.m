@@ -22,6 +22,7 @@ function [counts, edges] = compute_bins (stats, varargin)
 %       cd/argfun.m
 %       cd/create_error_for_nargin.m
 %       cd/force_column_numeric.m
+%       cd/struct2arglist.m
 %
 % Used by:
 %       cd/plot_grouped_histogram.m
@@ -63,16 +64,16 @@ parse(iP, stats, varargin{:});
 edges = iP.Results.Edges;
 
 % Keep unmatched arguments for the histcounts() function
-otherArguments = iP.Unmatched;
+otherArguments = struct2arglist(iP.Unmatched);
 
 %% Do the job
 % Compute bin counts and edges
 if ~isempty(edges)
     % Use provided bin edges
-    [counts, edges] = histcounts(stats, edges);
+    [counts, edges] = histcounts(stats, edges, otherArguments{:});
 else
     % Use default bin edges
-    [counts, edges] = histcounts(stats);
+    [counts, edges] = histcounts(stats, otherArguments{:});
 end
 
 % Force output as column vectors
