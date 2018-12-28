@@ -91,6 +91,7 @@ function [h, fig] = plot_grouped_histogram(stats, varargin)
 % Requires:
 %       cd/argfun.m
 %       cd/create_error_for_nargin.m
+%       cd/create_grouping_by_columns.m
 %       cd/create_labels_from_numbers.m
 %       cd/force_column_numeric.m
 %       cd/islegendlocation.m
@@ -219,12 +220,7 @@ otherArguments = iP.Unmatched;
 %% Preparation
 % Create a grouping if not provided
 if isempty(grouping)
-    % Count the number of rows and columns
-    nRows = size(stats, 1);
-    nColumns = size(stats, 2);
-
-    % Use the column number
-    grouping = repmat(1:nColumns, [nRows, 1]);
+    grouping = create_grouping_by_columns(stats);
 end
 
 % Get all unique group values
@@ -333,7 +329,8 @@ end
 
 % Generate a legend if there is more than one group
 if ~strcmpi(legendLocation, 'suppress')
-    legend(groupingLabels, 'location', legendLocation, 'Interpreter', 'none');    
+    legend(groupingLabels, 'location', legendLocation, ...
+            'Interpreter', 'none', 'AutoUpdate','off');
 end
 
 % Generate an x-axis label

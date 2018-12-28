@@ -1,13 +1,15 @@
-function [his, fig] = plot_swd_histogram (varargin)
+function [his, lines, fig] = plot_swd_histogram (varargin)
 %% Plots SWD start times in a histogram
-% Usage: [his, fig] = plot_swd_histogram (varargin)
+% Usage: [his, lines, fig] = plot_swd_histogram (varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       his        - histogram object created
+%       his         - histogram object created
 %                   specified as a histogram object handle
+%       lines       - vertical lines for infusion start times
+%                   specified as a primitive line object handle array
 %       fig         - figure containing the histogram object
 %                   specified as a figure object handle
 % Arguments:
@@ -46,11 +48,13 @@ function [his, fig] = plot_swd_histogram (varargin)
 %
 % Requires:
 %       cd/apply_iteratively.m
+%       cd/create_grouping_by_columns.m
 %       cd/extract_common_directory.m
 %       cd/extract_common_suffix.m
 %       cd/extract_distinct_fileparts.m
 %       cd/load_swd_sheets.m
 %       cd/plot_grouped_histogram.m
+%       cd/plot_vertical_line.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -62,6 +66,10 @@ function [his, fig] = plot_swd_histogram (varargin)
 
 %% Hard-coded parameters
 combinedSwdStr = '_SWDs_combined';
+
+% TODO: Make these optional arguments
+recordingStartHrs = 16;         % time that recording started each day (hours)
+infusionStartHrs = 20;          % time that infusion started each day (hours)
 
 %% Default values for optional arguments
 verboseDefault = true;
@@ -149,18 +157,27 @@ end
 
 %% Plot all SWD tables
 if iscell(swdTables) && individually
-    [his, fig] = cellfun(@(x, y) plot_swd_histogram_helper(x, y, ...
-                                outFolder, absoluteTime, otherArguments), ...
-                        swdTables, swdSheetPaths);
+    [his, lines, fig] = ...
+        cellfun(@(x, y) plot_swd_histogram_helper(x, y, ...
+                                outFolder, absoluteTime, ...
+                                recordingStartHrs, infusionStartHrs, ...
+                                otherArguments), ...
+                swdTables, swdSheetPaths);
 else
-    [his, fig] = plot_swd_histogram_helper(swdTables, swdSheetPaths, ...
-                                outFolder, absoluteTime, otherArguments);
+    [his, lines, fig] = ...
+        plot_swd_histogram_helper(swdTables, swdSheetPaths, ...
+                                outFolder, absoluteTime, ...
+                                recordingStartHrs, infusionStartHrs, ...
+                                otherArguments);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [his, fig] = plot_swd_histogram_helper(swdTables, swdSheetPaths, ...
-                                    outFolder, absoluteTime, otherArguments)
+function [his, lines, fig] = ...
+                plot_swd_histogram_helper(swdTables, swdSheetPaths, ...
+                                        outFolder, absoluteTime, ...
+                                        recordingStartHrs, infusionStartHrs, ...
+                                        otherArguments)
 %% Plots a histogram from an SWD table
 
 %% Preparation
@@ -169,10 +186,17 @@ startTimes = extract_start_times(swdTables, absoluteTime);
 
 % Create grouping for the start times
 if isdatetime(startTimes)
-    % Use the date
-    grouping = 
+    % Shift all date times back by recordingStartHrs hours
+    startTimesForGrouping = startTimes - hours(recordingStartHrs);
+
+    % Find the date that the recording was started
+    dates = dateshift(startTimesForGrouping, 'start', 'day');
+
+    % Use the date as the group value
+    grouping = dates;
 else
     % Use the column number
+    grouping = create_grouping_by_columns(startTimes);
 end
 
 % Find the minimum and maximum times
@@ -218,14 +242,27 @@ yLabel = 'SWD Count';
 % Extract distinct file parts
 distinctParts = extract_distinct_fileparts(swdSheetPaths);
 
-% Extract common suffix
-commonSuffix = extract_common_suffix(swdSheetPaths);
-
 % Set grouping labels
 groupingLabels = distinctParts;
 
 % Set figure title
-figTitle = sprintf('SWD start times for %s', commonSuffix);
+if iscell(swdSheetPaths)
+    % Extract common suffix
+    commonSuffix = extract_common_suffix(swdSheetPaths);
+    figTitle = sprintf('SWD start times for %s', commonSuffix);
+else
+    % Extract file base
+    fileBase = extract_fileparts(swdSheetPaths, 'base');
+    figTitle = sprintf('SWD start times for %s', fileBase);
+end
+
+% Compute the infusion start times
+if isdatetime(minHour)
+    infusionStartTimes = unique(dates) + hours(infusionStartHrs);
+else
+    % Start time is relative to recording start in hours
+    infusionStartTimes = infusionStartHrs - recordingStartHrs;
+end
 
 %% Plot the histogram
 % Create and clear figure
@@ -239,6 +276,10 @@ clf;
                             'GroupingLabels', groupingLabels, ...
                             'FigTitle', figTitle, 'FigHandle', fig, ...
                             otherArguments);
+
+% Draw vertical lines for infusion start
+lines = plot_vertical_line(infusionStartTimes, 'LineStyle', '--', ...
+                            'Color', 'r', 'LineWidth', 1);
 
 % Save figure
 
@@ -306,6 +347,9 @@ startTimes = swdTable.(startTimeStr);
 his = histogram(startTimes, binEdges);
 
 xlim([minHour, maxHour])
+
+startTimesForGrouping = ...
+    arrayfun(@(x) addtodate(x, -recordingStartHrs, 'hour'), startTimes);
 
 %}
 
