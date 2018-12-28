@@ -16,7 +16,7 @@ function [counts, edges] = compute_bins (stats, varargin)
 %       varargin    - 'Edges': bin edges
 %                   must be a numeric, logical, datetime or duration vector
 %                   default == []
-%                   - Any other parameter-value pair for the TODO() function
+%                   - Any other parameter-value pair for histcounts()
 %
 % Requires:
 %       cd/argfun.m
@@ -62,7 +62,7 @@ addParameter(iP, 'Edges', edgesDefault, ...
 parse(iP, stats, varargin{:});
 edges = iP.Results.Edges;
 
-% Keep unmatched arguments for the TODO function
+% Keep unmatched arguments for the histcounts() function
 otherArguments = iP.Unmatched;
 
 %% Do the job

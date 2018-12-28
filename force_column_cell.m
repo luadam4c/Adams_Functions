@@ -58,6 +58,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/plot_all_abfs.m
 %       cd/plot_struct.m
 %       cd/run_neuron.m
+%       cd/struct2arglist.m
 
 % File History:
 % 2018-10-10 Created by Adam Lu

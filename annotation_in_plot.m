@@ -19,6 +19,7 @@ function an = annotation_in_plot (annotationType, xInAxes, yInAxes, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/struct2arglist.m
 %
 % Used by:
 %       cd/plot_pulse_response_with_stimulus.m
@@ -53,6 +54,9 @@ parse(iP, annotationType, xInAxes, yInAxes, varargin{:});
 % Keep unmatched arguments for the line() function
 otherArguments = iP.Unmatched;
 
+% Convert to a cell array
+params = struct2arglist(otherArguments);
+
 %% Preparation
 % Get the positions of the axes in normalized units relative to the figure
 posInFigure = get(gca, 'Position');
@@ -62,14 +66,6 @@ xInFigure = posInFigure(1) + posInFigure(3) * xInAxes;
 yInFigure = posInFigure(2) + posInFigure(4) * yInAxes;
 
 %% Do the job
-
-% TODO: make a function struct2arglist.m
-names = fieldnames(otherArguments);
-
-values = struct2cell(otherArguments);
-
-params = force_column_cell(transpose([names, values]), 'ToLinearize', true);
-
 % Draw the annotation
 an = annotation(annotationType, xInFigure, yInFigure, params{:});
 
