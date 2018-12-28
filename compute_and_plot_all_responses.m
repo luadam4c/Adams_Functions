@@ -253,8 +253,8 @@ newFileBases = ...
     create_labels_from_numbers(1:nVectors, 'Prefix', [fileBase, '_Swp']);
 
 % Loop through all vectors
-parfor iVec = 1:nVectors
-%for iVec = 1:nVectors
+%parfor iVec = 1:nVectors
+for iVec = 1:nVectors
     % Plot the pulse response with the stimulation pulse
     h(iVec) = plot_pulse_response_with_stimulus(tVecAll{iVec}, ...
             respAll{iVec}, stimAll{iVec}, ...

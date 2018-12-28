@@ -67,6 +67,8 @@ function [fig, subplots, plots] = ...
 %
 % Requires:
 %       cd/annotation_in_plot.m
+%       cd/compute_relative_time.m
+%       cd/compute_relative_value.m
 %       cd/compute_sampling_interval.m
 %       cd/compute_axis_limits.m
 %       cd/create_error_for_nargin.m
@@ -243,7 +245,7 @@ check_dir(outFolder);
                             baseValue], 'y');
 
 % Compute the x axis limits
-[xLimits, xRange] = compute_axis_limits(tVec, 'x');
+xLimits = compute_axis_limits(tVec, 'x');
 
 % Compute times from indices
 timePulseEnd = ...
@@ -257,14 +259,14 @@ if ~isnan(idxPeak)
     % Compute the times relative to the minimum x value
     [timePeakRel, timePulseEndRel, timeHalfWidthEndsRel, ...
         timePeakTimeConstantRel, timePeak90DecayRel] = ...
-        argfun(@(x) (tVec(x) - xLimits(1)) / xRange, ...
+        argfun(@(x) compute_relative_time(x, tVec, xLimits), ...
                 idxPeak, idxBeforePulseEnd, indHalfWidthEnds, ...
                 idxPeakTimeConstant, idxPeak90Decay);
 
     % Compute the values relative to the minimum y value
     [baseValueRel, peakValueRel, halfPeakValueRel, ...
         peakTimeConstantValueRel, peak90DecayValueRel] = ...
-        argfun(@(x) (x - yLimitsResp(1)) / yRangeResp, ...
+        argfun(@(x) compute_relative_value(x, yLimitsResp), ...
                 baseValue, peakValue, halfPeakValue, ...
                 peakTimeConstantValue, peak90DecayValue);
 
@@ -483,6 +485,10 @@ maxValueOfInterest = max([maxValueAfterMinDelay, baseValue]);
 minPeakTime = xLimits(1) + minPeakDelayMs;
 
 compute_axis_limits([maxValueAfterMinDelay, baseValue], 'y');
+
+[xLimits, xRange] = compute_axis_limits(tVec, 'x');
+
+argfun(@(x) (x - yLimitsResp(1)) / yRangeResp, ...
 
 %}
 
