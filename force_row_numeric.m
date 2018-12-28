@@ -17,14 +17,12 @@ function vectors = force_row_numeric (vectors, varargin)
 %
 % Arguments:
 %       vectors     - original vectors
-%                   must be a numeric vector or a cell array of numeric arrays
 %       varargin    - 'IgnoreNonVectors': whether to ignore non-vectors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %
 % Requires:
 %       cd/force_column_cell.m
-%       cd/iscellnumeric.m
 %
 % Used by:    
 
@@ -50,10 +48,7 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'vectors', ...                   % vectors
-    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['vectors must be either a numeric array', ...
-                    'or a cell array of numeric arrays!']));
+addRequired(iP, 'vectors');
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'IgnoreNonVectors', ignoreNonVectorsDefault, ...
@@ -64,7 +59,7 @@ parse(iP, vectors, varargin{:});
 ignoreNonVectors = iP.Results.IgnoreNonVectors;
 
 %% Do the job
-if isnumeric(vectors) && ~isrow(vectors)
+if ~iscell(vectors) && ~isrow(vectors)
     if isempty(vectors)
         % Do nothing
     elseif isvector(vectors)
@@ -95,6 +90,11 @@ end
 OLD CODE:
 
 vectors = reshape(vectors, 1, numel(vectors));
+
+%                   must be a numeric vector or a cell array of numeric arrays
+@(x) assert(isnum(x) || iscellnumeric(x), ...
+            ['vectors must be either a numeric array', ...
+                'or a cell array of numeric arrays!']));
 
 %}
 

@@ -38,7 +38,7 @@ function [limits, axisRange] = compute_axis_limits (dataOrRange, axisType, varar
 % Requires:
 %       cd/apply_iteratively.m
 %       cd/create_error_for_nargin.m
-%       cd/iscellnumeric.m
+%       cd/isnum.m
 %
 % Used by:
 %       cd/m3ha_xolotl_plot.m
@@ -74,9 +74,8 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'dataOrRange', ...
-    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['dataOrRange must be either a numeric array ', ...
-                    'or a cell array of numeric arrays!']));
+    @(x) assert(isnum(x) || iscell(x), ...
+                'dataOrRange must be either a numeric array or a cell array!'));
 addRequired(iP, 'axisType', ...
     @(x) any(validatestring(x, validAxisTypes)));
 

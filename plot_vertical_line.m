@@ -19,6 +19,7 @@ function h = plot_vertical_line (xValue, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/isnum.m
 %
 % Used by:
 %       cd/plot_pulse_response_with_stimulus.m
@@ -55,8 +56,7 @@ addRequired(iP, 'xValue', ...
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'YLimits', yLimitsDefault, ...
-    @(x) isempty(x) || (isnumeric(x) || isdatetime(x) || isduration(x)) && ...
-        isvector(x) && length(x) == 2);
+    @(x) isempty(x) || isnum(x) && isvector(x) && length(x) == 2);
 
 % Read from the Input Parser
 parse(iP, xValue, varargin{:});

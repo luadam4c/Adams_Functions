@@ -167,6 +167,7 @@ Last Updated 2018-12-28 by Adam Lu
 - [**islegendlocation.m**](https://github.com/blabuva/Adams_Functions/blob/master/islegendlocation.m): Check whether a string or each string in a cell array is a valid legend location or 'suppress' or 'auto'
 - [**islinestyle.m**](https://github.com/blabuva/Adams_Functions/blob/master/islinestyle.m): Check whether a string or each string in a cell array is a valid line style accepted by plot() or line()
 - [**isnumericvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/isnumericvector.m): Returns whether an input is a numeric vector (may be empty)
+- [**isnum.m**](https://github.com/blabuva/Adams_Functions/blob/master/isnum.m): Returns whether the input is numeric in the general sense (numeric, logical, datetime or duration)
 - [**is_out_of_range.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_out_of_range.m): Check if any of the value(s) are out of range
 - [**ispositiveintegerscalar.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositiveintegerscalar.m): Returns whether an input is a positive integer scalar
 - [**ispositiveintegervector.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositiveintegervector.m): Returns whether an input is a positive integer vector

@@ -27,6 +27,7 @@ function vectors = force_column_numeric (vectors, varargin)
 % Requires:
 %       cd/force_column_cell.m
 %       cd/iscellnumeric.m
+%       cd/isnum.m
 %
 % Used by:    
 %   TODO: Check if some of these can use 
