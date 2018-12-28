@@ -329,8 +329,7 @@ end
 
 % Generate a legend if there is more than one group
 if ~strcmpi(legendLocation, 'suppress')
-    legend(groupingLabels, 'location', legendLocation, ...
-            'Interpreter', 'none', 'AutoUpdate','off');
+    legend(groupingLabels, 'location', legendLocation, 'AutoUpdate','off');
 end
 
 % Generate an x-axis label
@@ -345,7 +344,7 @@ end
 
 % Generate a title
 if ~strcmpi(figTitle, 'suppress')
-    title(figTitle, 'Interpreter', 'none');
+    title(figTitle);
 end
 
 if ~isempty(figName)
@@ -401,6 +400,11 @@ binCenters = (edges(1:end-1) + edges(2:end)) / 2;
 
 groupingLabels = create_labels_from_numbers(groupValues, ...
                                             'Prefix', 'Group #');
+
+legend(groupingLabels, 'location', legendLocation, ...
+        'Interpreter', 'none', 'AutoUpdate','off');
+
+title(figTitle, 'Interpreter', 'none');
 
 %}
 

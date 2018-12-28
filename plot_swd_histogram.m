@@ -141,6 +141,14 @@ if isempty(swdTables)
         load_swd_sheets('Verbose', verbose, 'FilePaths', swdSheetPaths, ...
                         'Directory', swdFolder, 'SheetType', sheetType, ...
                         'Suffix', suffix);
+
+    % Exit if nothing is loaded
+    if isempty(swdTables)
+        his = gobjects(1);
+        lines = gobjects(1);
+        fig = gobjects(1);
+        return
+    end
 end
 
 % Decide on the output folder based on swdSheetPaths
@@ -179,6 +187,9 @@ function [his, lines, fig] = ...
                                         recordingStartHrs, infusionStartHrs, ...
                                         otherArguments)
 %% Plots a histogram from an SWD table
+
+%% TODO: Make optional argument
+figTypes = 'png';
 
 %% Preparation
 % Extract the start times in hours (or absolute datetime)
@@ -233,7 +244,7 @@ xLimits = [minHour, maxHour];
 if isdatetime(minHour)
     xLabel = 'Date-time binned by hour';
 else
-    xLabel = 'Hour since start of recording';
+    xLabel = 'Hours since start of recording';
 end
 
 % Set y axis label
@@ -243,18 +254,28 @@ yLabel = 'SWD Count';
 distinctParts = extract_distinct_fileparts(swdSheetPaths);
 
 % Set grouping labels
-groupingLabels = distinctParts;
+groupingLabels = replace(distinctParts, '_', '\_');
 
-% Set figure title
-if iscell(swdSheetPaths)
+% Set figure base name
+if iscell(swdSheetPaths) && numel(swdSheetPaths) > 1
     % Extract common suffix
     commonSuffix = extract_common_suffix(swdSheetPaths);
-    figTitle = sprintf('SWD start times for %s', commonSuffix);
+
+    % Extract just the figure base
+    figBase = extract_fileparts(commonSuffix, 'base');
+
+    % Add '_all'
+    figBase = [figBase, '_all'];
 else
     % Extract file base
-    fileBase = extract_fileparts(swdSheetPaths, 'base');
-    figTitle = sprintf('SWD start times for %s', fileBase);
+    figBase = extract_fileparts(swdSheetPaths, 'base');
 end
+
+% Set figure title
+figTitle = sprintf('SWD start times for %s', strrep(figBase, '_', '\_'));
+
+% Set figure name
+figName = fullfile(outFolder, [figBase, '_histogram']);
 
 % Compute the infusion start times
 if isdatetime(minHour)
@@ -281,8 +302,11 @@ clf;
 lines = plot_vertical_line(infusionStartTimes, 'LineStyle', '--', ...
                             'Color', 'r', 'LineWidth', 1);
 
-% Save figure
+% Save the new figure
+save_all_figtypes(fig, figName, figTypes);
 
+% Close figure
+% close(fig);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
