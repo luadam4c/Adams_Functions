@@ -89,11 +89,10 @@ function [h, fig] = plot_grouped_histogram(stats, varargin)
 %                   - Any other parameter-value pair for the bar() function
 %
 % Requires:
-%       cd/argfun.m
+%       cd/compute_bins.m
 %       cd/create_error_for_nargin.m
 %       cd/create_grouping_by_columns.m
 %       cd/create_labels_from_numbers.m
-%       cd/force_column_numeric.m
 %       cd/islegendlocation.m
 %       cd/ispositiveintegerscalar.m
 %
@@ -232,7 +231,7 @@ nGroups = numel(groupValues);
 %% Compute the bin counts
 % Compute default bin edges for all data if not provided
 if isempty(edges)
-    [~, edges] = compute_bin_counts(stats, edges);
+    [~, edges] = compute_bins(stats, 'Edges', edges);
 end
 
 % Count the number of bins
@@ -251,7 +250,7 @@ parfor iGroup = 1:nGroups
     statsThisGroup = stats(grouping == groupValueThis);
 
     % Compute the bin counts for this group
-    counts(:, iGroup) = compute_bin_counts(statsThisGroup, edges);
+    counts(:, iGroup) = compute_bins(statsThisGroup, 'Edges', edges);
 end
 
 %% Preparation for the plot
@@ -354,23 +353,6 @@ if ~isempty(figName)
     % Close figure
     close(fig);
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [counts, edges] = compute_bin_counts (stats, edges)
-%% Computes bin counts from vectors
-
-% Compute bin counts and edges
-if isempty(edges)
-    % Use default bin edges
-    [counts, edges] = histcounts(stats);
-else
-    % Use provided bin edges
-    [counts, edges] = histcounts(stats, edges);
-end
-
-% Force output as column vectors
-[counts, edges] = argfun(@force_column_numeric, counts, edges);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

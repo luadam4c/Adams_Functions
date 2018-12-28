@@ -20,6 +20,7 @@ function varargout = argfun (myFunction, varargin)
 %
 % Used by:
 %       cd/compute_average_pulse_response.m
+%       cd/compute_bins.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
@@ -45,7 +46,6 @@ function varargout = argfun (myFunction, varargin)
 %       cd/parse_atf_swd.m
 %       cd/parse_pulse_response.m
 %       cd/plot_cfit_pulse_response.m
-%       cd/plot_grouped_histogram.m
 %       cd/plot_protocols.m
 %       cd/plot_traces.m
 %       cd/plot_traces_abf.m

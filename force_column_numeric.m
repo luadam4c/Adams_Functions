@@ -17,12 +17,9 @@ function vectors = force_column_numeric (vectors, varargin)
 %
 % Outputs:
 %       vectors     - vectors transformed
-%                   specified as a numeric array 
-%                       or a cell array of numeric vectors
 %
 % Arguments:
 %       vectors     - original vectors
-%                   must be a numeric array or a cell array
 %       varargin    - 'IgnoreNonVectors': whether to ignore non-vectors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -35,6 +32,7 @@ function vectors = force_column_numeric (vectors, varargin)
 %   TODO: Check if some of these can use 
 %           match_format_cell or force_column_cell instead
 %       cd/compute_average_trace.m
+%       cd/compute_bins.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
@@ -52,7 +50,6 @@ function vectors = force_column_numeric (vectors, varargin)
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/plot_cfit_pulse_response.m
-%       cd/plot_grouped_histogram.m
 %       cd/plot_raster.m
 %       cd/plot_window_boundaries.m
 %       cd/xolotl_set_simparams.m
@@ -61,6 +58,7 @@ function vectors = force_column_numeric (vectors, varargin)
 % 2018-10-12 Created by Adam Lu
 % 2018-10-27 Added 'IgnoreNonVectors' as an optional argument
 % 2018-12-11 Now accepts logical arrays
+% 2018-12-28 Now accepts all types of arrays
 % TODO: Deal with 3D arrays
 % 
 
@@ -81,11 +79,7 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'vectors', ...                   % vectors
-    @(x) assert(isempty(x) || isnumeric(x) || islogical(x) || ...
-                isdatetime(x) || iscell(x), ...
-                ['vectors must be either empty or a numeric array ', ...
-                    'or a cell array!']));
+addRequired(iP, 'vectors');
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'IgnoreNonVectors', ignoreNonVectorsDefault, ...
@@ -96,8 +90,7 @@ parse(iP, vectors, varargin{:});
 ignoreNonVectors = iP.Results.IgnoreNonVectors;
 
 %% Do the job
-if (isnumeric(vectors) || islogical(vectors) || isdatetime(vectors)) && ...
-        ~iscolumn(vectors)
+if ~iscell(vectors) && ~iscolumn(vectors)
     if isempty(vectors)
         % Do nothing
     elseif isvector(vectors)
@@ -138,6 +131,19 @@ addRequired(iP, 'vectors', ...
                 'or a cell array of numeric arrays!']));
 
 %                   must be a numeric array or a cell array of numeric arrays
+
+addRequired(iP, 'vectors', ...                   % vectors
+    @(x) assert(isempty(x) || isnumeric(x) || islogical(x) || ...
+                isdatetime(x) || isduration(x) || iscell(x), ...
+                ['vectors must be either empty or a numeric array ', ...
+                    'or a cell array!']));
+
+if (isnumeric(vectors) || islogical(vectors) || ...
+        isdatetime(vectors) || isduration(vectors)) && ~iscolumn(vectors)
+
+%                   specified as a numeric array 
+%                       or a cell array of numeric vectors
+%                   must be a numeric array or a cell array
 
 %}
 

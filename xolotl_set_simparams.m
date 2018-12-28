@@ -174,6 +174,10 @@ if ~isempty(initialVoltage)
     end
 end
 
+%% Preference settings
+% Allow I_ext to be dynamically changed within x.manipulate()
+xolotlObject.pref.use_I_ext = false;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
