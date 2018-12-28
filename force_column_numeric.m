@@ -31,6 +31,7 @@ function vectors = force_column_numeric (vectors, varargin)
 % Used by:    
 %   TODO: Check if some of these can use 
 %           match_format_cell or force_column_cell instead
+%       cd/annotation_in_plot.m
 %       cd/compute_average_trace.m
 %       cd/compute_bins.m
 %       cd/compute_default_sweep_info.m

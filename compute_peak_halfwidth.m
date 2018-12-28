@@ -1,7 +1,7 @@
-function [halfWidthSamples, endPointsHalfWidth, halfPeakValue] = ...
+function [halfWidthSamples, indHalfWidthEnds, halfPeakValue] = ...
                 compute_peak_halfwidth (vectors, idxPeak, varargin)
 %% Computes the half widths for peaks
-% Usage: [halfWidthSamples, halfPeakValue, endPointsHalfWidth] = ...
+% Usage: [halfWidthSamples, halfPeakValue, indHalfWidthEnds] = ...
 %               compute_peak_halfwidth (vectors, idxPeak, varargin)
 % Explanation:
 %       TODO
@@ -12,7 +12,7 @@ function [halfWidthSamples, endPointsHalfWidth, halfPeakValue] = ...
 %                           specified as a nonnegative vector
 %       halfPeakValue       - value at half peak
 %                           specified as a numeric vector
-%       endPointsHalfWidth  - indices of start and end of half widths
+%       indHalfWidthEnds    - indices of start and end of half widths
 %                           specified as a cell array of 2-element vectors
 % Arguments:
 %       vectors     - vectors with peaks
@@ -99,7 +99,7 @@ nPeaks = length(idxPeak);
 beforePeak = extract_subvectors(vectors, 'IndexEnd', idxPeak);
 
 % Reverse beforePeak
-beforePeakReversed = cellfun(@fliplr, beforePeak, 'UniformOutput', false);
+beforePeakReversed = cellfun(@flipud, beforePeak, 'UniformOutput', false);
 
 % Extract the parts of each vector starting from idxPeak
 afterPeak = extract_subvectors(vectors, 'IndexStart', idxPeak);
@@ -128,9 +128,8 @@ idxHalfWidthEnd = idxPeak + idxTemp2 - 1;
 halfWidthSamples = idxHalfWidthEnd - idxHalfWidthStart;
 
 % Output the endpoints for the half width
-endPointsHalfWidth = ...
-    arrayfun(@(x, y) [x; y], idxHalfWidthStart, idxHalfWidthEnd, ...
-                'UniformOutput', false);
+indHalfWidthEnds = arrayfun(@(x, y) [x; y], idxHalfWidthStart, ...
+                            idxHalfWidthEnd, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

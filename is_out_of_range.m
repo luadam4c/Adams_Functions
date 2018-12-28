@@ -1,8 +1,8 @@
 function [isOutOfRangeAny, isOutOfRangeAll, isOutOfRangeEachElement] = ...
-                is_out_of_range (values, rangeToCheck)
+                is_out_of_range (values, rangeToCheck, varargin)
 %% Check if any of the value(s) are out of range
 % Usage: [isOutOfRangeAny, isOutOfRangeAll, isOutOfRangeEachElement] = ...
-%               is_out_of_range (values, rangeToCheck)
+%               is_out_of_range (values, rangeToCheck, varargin)
 % Explanation:
 %       TODO
 % Example(s):
