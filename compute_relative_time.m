@@ -64,9 +64,9 @@ parse(iP, ind, tVec, limits, varargin{:});
 % param1 = iP.Results.param1;
 
 %% Do the job
-if isnan(ind)
+if any(isnan(ind))
     % If not a number, return not a number
-    timeRel = NaN;
+    timeRel = NaN(size(ind));
 elseif all(isaninteger(ind) & ind > 0)
     % Compute the time relative to time axis start
     timeRel = compute_relative_value(tVec(ind), limits);

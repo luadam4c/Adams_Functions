@@ -31,6 +31,7 @@ function an = annotation_in_plot (annotationType, xInAxes, yInAxes, varargin)
 % 2018-12-19 Created by Adam Lu
 % 2018-12-28 Added usage of struct2arglist.m
 % 2018-12-28 Now deals with positions that are out of range
+% 2018-12-28 Now returns empty graphics object if any position is NaN
 
 %% Hard-coded parameters
 rangeToCheck = [0, 1];
@@ -65,6 +66,12 @@ otherArguments = iP.Unmatched;
 params = struct2arglist(otherArguments);
 
 %% Preparation
+% If there is any NaN values, return
+if any(isnan(xInAxes) | isnan(yInAxes))
+    an = gobjects(1);
+    return
+end
+
 % Force as column vectors
 %   Note: important if flipud() is used later
 [xInAxes, yInAxes] = argfun(@force_column_numeric, xInAxes, yInAxes);
