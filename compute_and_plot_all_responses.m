@@ -31,7 +31,10 @@ function [tVecAll, respAll, stimAll, featuresAll, h] = ...
 %                       'Current'       - current
 %                       'Conductance'   - conductance
 %                       'Other'         - other un-identified types
-%       varargin    - 'LowPassFrequency': frequency of lowpass filter in Hz
+%       varargin    - 'Verbose': whether to write to standard output
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'LowPassFrequency': frequency of lowpass filter in Hz
 %                   must be empty or a positive scalar
 %                   default = []
 %                   - 'MedFiltWindow': window of median filter in ms
@@ -107,12 +110,14 @@ function [tVecAll, respAll, stimAll, featuresAll, h] = ...
 
 % File History:
 % 2018-12-19 - Modified from compute_and_plot_average_response.m
+% 2018-12-28 - Added 'Verbose' as an optional argument
 
 %% Hard-coded parameters
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 validPeakDirections = {'upward', 'downward', 'auto'};
 
 %% Default values for optional arguments
+verboseDefault = true;
 lowPassFrequencyDefault = [];   % do not lowpass filter by default
 medFiltWindowDefault = [];      % do not median filter by default
 smoothWindowDefault = [];       % do not moving average filter by default
@@ -154,6 +159,8 @@ addRequired(iP, 'responseType', ...
     @(x) any(validatestring(x, validChannelTypes)));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'Verbose', verboseDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'LowPassFrequency', lowPassFrequencyDefault, ...
     @(x) isempty(x) || ispositivescalar(x));
 addParameter(iP, 'MedFiltWindow', medFiltWindowDefault, ...
@@ -195,6 +202,7 @@ addParameter(iP, 'ParsedData', parsedDataDefault, ...
 
 % Read from the Input Parser
 parse(iP, fileName, responseType, varargin{:});
+verbose = iP.Results.Verbose;
 outFolder = iP.Results.OutFolder;
 fileSuffix = iP.Results.FileSuffix;
 responseName = iP.Results.ResponseName;
@@ -214,7 +222,9 @@ end
 
 %% Compute features for individual protocol traces
 % Print message
-fprintf('Computing all pulse responses with stimulus for %s ...\n', fileBase);
+if verbose
+    fprintf('Computing all pulse responses for %s ...\n', fileBase);
+end
 
 [tVecAll, respAll, stimAll, featuresAll] = ...
     compute_all_pulse_responses (fileName, responseType, ...
@@ -230,7 +240,9 @@ h = gobjects(nVectors, 1);
 % Plot 
 if plotFlag
     % Print message
-    fprintf('Plotting all pulse responses with stimulus for %s ...\n', fileBase);
+    if verbose
+        fprintf('Plotting all pulse responsess for %s ...\n', fileBase);
+    end
 
     h = plot_all_pulse_response_with_stimulus(fileBase, ...
                     tVecAll, respAll, stimAll, featuresAll, ...

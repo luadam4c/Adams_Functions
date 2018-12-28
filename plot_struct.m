@@ -1,13 +1,13 @@
-function h = plot_struct (structArray, varargin)
+function figs = plot_struct (structArray, varargin)
 %% Plot all fields in a structure array as tuning curves
-% Usage: h = plot_struct (structArray, varargin)
+% Usage: figs = plot_struct (structArray, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       h           - figure handle for the created figure
-%                   specified as a figure handle
+%       figs        - figure handle(s) for the created figure(s)
+%                   specified as a figure object handle array
 % Arguments:    
 %       structArray - a structure array containing scalar fields
 %                   must be a 2-D structure array
@@ -77,6 +77,7 @@ function h = plot_struct (structArray, varargin)
 % 2018-12-17 Now uses create_labels_from_numbers.m
 % 2018-12-18 Now uses iP.KeepUnmatched
 % 2018-12-18 Changed lineSpec default to o and singleColorDefault to SkyBlue
+% TODO: Return handles to plots
 % 
 
 %% Hard-coded parameters
@@ -172,7 +173,7 @@ if ~isempty(xTicks) && ~isempty(xTickLabels) && ...
     numel(xTicks) ~= numel(xTickLabels)
     fprintf(['XTicks and XTickLabels must have ', ...
                 'the same number of elements!\n']);
-    h = [];
+    figs = gobjects(0);
     return
 end
 
@@ -182,7 +183,7 @@ nEntries = length(structArray);
 
 % Return if there are no entries
 if nEntries == 0
-    h = [];
+    figs = gobjects(0);
     return;
 end
 
@@ -250,7 +251,7 @@ nFields = numel(allScalarFields);
 
 % Return if there are no more fields
 if nFields == 0
-    h = [];
+    figs = gobjects(0);
     return;
 end
 
@@ -293,11 +294,8 @@ for iField = 1:nFields
         figName = '';
     end
     
-    % Create a figure
-    h(iField) = figure;
-    
     % Plot the tuning curve
-    h(iField) = plot_tuning_curve(xValues, field, 'PisLog', xIsLog, ...
+    figs(iField) = plot_tuning_curve(xValues, field, 'PisLog', xIsLog, ...
                         'XLimits', xLimits, 'YLimits', yLimits, ...
                         'PTicks', xTicks, 'PTickLabels', xTickLabels, ...
                         'PLabel', xLabel, ...
@@ -320,6 +318,9 @@ xTickLabels = arrayfun(@(x) num2str(x), xTicks, ...
                         'UniformOutput', false);
 
 singleColorDefault = [0, 0, 1];
+
+% Create a figure
+figs(iField) = figure;
 
 %}
 

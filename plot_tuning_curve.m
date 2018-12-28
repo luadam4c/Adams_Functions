@@ -1,9 +1,9 @@
-function h = plot_tuning_curve (pValues, readout, varargin)
+function fig = plot_tuning_curve (pValues, readout, varargin)
 %% Plot a 1-dimensional tuning curve
-% Usage: h = plot_tuning_curve (pValues, readout, varargin)
+% Usage: fig = plot_tuning_curve (pValues, readout, varargin)
 % Outputs:
-%       h           - figure handle for the created figure
-%                   specified as a figure handle
+%       fig         - figure handle for the created figure
+%                   specified as a figure object handle
 % Arguments:
 %       pValues     - column vector of parameter values
 %                   must be a numeric vector
@@ -69,7 +69,7 @@ function h = plot_tuning_curve (pValues, readout, varargin)
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
-%                   - Any other parameter-value pair for the line() function
+%                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
 %       ~/Downloaded_Functions/rgb.m
@@ -81,7 +81,7 @@ function h = plot_tuning_curve (pValues, readout, varargin)
 % Used by:
 %       cd/plot_struct.m
 %       /media/adamX/RTCl/tuning_curves.m
-%
+
 % 2017-04-17 Moved from tuning_curves.m
 % 2017-04-17 Simplified code
 % 2017-04-17 Set default arguments
@@ -93,6 +93,7 @@ function h = plot_tuning_curve (pValues, readout, varargin)
 % 2018-12-18 Now uses iP.KeepUnmatched
 % 2018-12-18 Changed lineSpec default to o and singleColorDefault to SkyBlue
 % TODO: Make 'ColorMap' and optional argument
+% TODO: Return handles to plots
 %
 
 %% Hard-coded parameters
@@ -194,14 +195,14 @@ figNumber = iP.Results.FigNumber;
 figName = iP.Results.FigName;
 [~, figtypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
-% Keep unmatched arguments for the line() function
+% Keep unmatched arguments for the plot() function
 otherArguments = iP.Unmatched;
 
 % Check relationships between arguments
 if ~isempty(pTicks) && ~isempty(pTickLabels) && ...
         numel(pTicks) ~= numel(pTickLabels)
     fprintf('PTicks and PTickLabels must have the same number of elements!\n');
-    h = [];
+    fig = [];
     return
 end
 
@@ -258,18 +259,21 @@ nColsToPlot = length(colsToPlot);
 cm = colormap(jet(nColsToPlot));
 
 if ~isempty(figName)
-    % Create an invisible figure and clear it
+    % Create a figure
     if ~isempty(figNumber)
-        h = figure(figNumber);
-        set(h, 'Visible', 'Off');
+        % Create an invisible figure
+        fig = figure(figNumber);
+        set(fig, 'Visible', 'Off');
     else
-        h = figure(floor(rand()*10^4)+1);
-        set(h, 'Visible', 'Off');
+        % Create a new figure
+        fig = figure;
     end
-    clf(h);
+
+    % Clear the figure
+    clf(fig);
 else
     % Get the current figure
-    h = gcf;
+    fig = gcf;
 end
 
 %% Plot tuning curve
@@ -366,7 +370,7 @@ xtickangle(pTickAngle);
 %% Post-plotting
 % Save figure if figName provided
 if ~isempty(figName)
-    save_all_figtypes(h, figName, figtypes);
+    save_all_figtypes(fig, figName, figtypes);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -386,6 +390,9 @@ if ~isequal(pLabel, 'suppress') && ~isequal(readoutLabel, 'suppress')
 
 singleColorDefault = [0, 0, 1];
 lineSpecDefault = '-';
+
+set(fig, 'Visible', 'Off');
+fig = figure(floor(rand()*10^4)+1);
 
 %}
 

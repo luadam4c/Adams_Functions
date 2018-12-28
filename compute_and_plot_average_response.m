@@ -31,7 +31,10 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg, h] = ...
 %                       'Current'       - current
 %                       'Conductance'   - conductance
 %                       'Other'         - other un-identified types
-%       varargin    - 'LowPassFrequency': frequency of lowpass filter in Hz
+%       varargin    - 'Verbose': whether to write to standard output
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'LowPassFrequency': frequency of lowpass filter in Hz
 %                   must be empty or a positive scalar
 %                   default = []
 %                   - 'MedFiltWindow': window of median filter in ms
@@ -110,12 +113,14 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg, h] = ...
 % 2018-12-15 - Now used directly in plot_protocols.m
 % 2018-12-15 - Now uses the file name as the row name for the feature table
 % 2018-12-18 - Updated usage of plot_pulse_response_with_stimulus.m
+% 2018-12-28 - Added 'Verbose' as an optional argument
 
 %% Hard-coded parameters
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 validPeakDirections = {'upward', 'downward', 'auto'};
 
 %% Default values for optional arguments
+verboseDefault = true;
 lowPassFrequencyDefault = [];   % do not lowpass filter by default
 medFiltWindowDefault = [];      % do not median filter by default
 smoothWindowDefault = [];       % do not moving average filter by default
@@ -158,6 +163,8 @@ addRequired(iP, 'responseType', ...
     @(x) any(validatestring(x, validChannelTypes)));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'Verbose', verboseDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'LowPassFrequency', lowPassFrequencyDefault, ...
     @(x) isempty(x) || ispositivescalar(x));
 addParameter(iP, 'MedFiltWindow', medFiltWindowDefault, ...
@@ -201,6 +208,7 @@ addParameter(iP, 'ParsedData', parsedDataDefault, ...
 
 % Read from the Input Parser
 parse(iP, fileName, responseType, varargin{:});
+verbose = iP.Results.Verbose;
 outFolder = iP.Results.OutFolder;
 outFolderName = iP.Results.OutFolderName;
 fileSuffix = iP.Results.FileSuffix;
@@ -221,7 +229,9 @@ end
 
 %% Average the pulse and pulse responses
 % Print message
-fprintf('Computing average pulse response for %s ...\n', fileBase);
+if verbose
+    fprintf('Computing average pulse response for %s ...\n', fileBase);
+end
 
 [tVecAvg, respAvg, stimAvg, featuresAvg] = ...
     compute_average_pulse_response(fileName, responseType, ...
@@ -231,7 +241,9 @@ fprintf('Computing average pulse response for %s ...\n', fileBase);
 h = gobjects(1);
 if plotFlag
     % Print message
-    fprintf('Plotting average pulse response for %s ...\n', fileBase);
+    if verbose
+        fprintf('Plotting average pulse response for %s ...\n', fileBase);
+    end
     
     % Plot the pulse response with the stimulation pulse
     h = plot_pulse_response_with_stimulus(tVecAvg, respAvg, stimAvg, ...

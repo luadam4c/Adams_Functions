@@ -1,13 +1,13 @@
-function h = plot_table (table, varargin)
+function figs = plot_table (table, varargin)
 %% Plots all variables in a table as tuning curves
-% Usage: h = plot_table (table, varargin)
+% Usage: figs = plot_table (table, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       h           - handle to created figure
-%                   specified as a figure handle
+%       figs        - figure handle(s) for the created figure(s)
+%                   specified as a figure object handle array
 % Arguments:
 %       table       - a table with variables to plot
 %                   must be a table
@@ -37,6 +37,7 @@ function h = plot_table (table, varargin)
 % 2018-12-18 Now uses iP.KeepUnmatched
 % 2018-12-18 Now uses extract_common_directory.m
 % 2018-12-18 Now uses row names without processing if not file names
+% TODO: Return handles to plots
 % 
 
 %% Hard-coded parameters
@@ -131,13 +132,12 @@ end
 fileStruct = table2struct(table);
 
 % Plot fields
-h = plot_struct(fileStruct, 'OutFolder', outFolder, ...
-            'XTickLabels', xTickLabels, 'XLabel', xLabel, ...
-            'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
-            'MarkerEdgeColor', markerEdgeColor, ...
-            'MarkerFaceColor', markerFaceColor, ...
-            otherArguments);
-
+figs = plot_struct(fileStruct, 'OutFolder', outFolder, ...
+                    'XTickLabels', xTickLabels, 'XLabel', xLabel, ...
+                    'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
+                    'MarkerEdgeColor', markerEdgeColor, ...
+                    'MarkerFaceColor', markerFaceColor, ...
+                    otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

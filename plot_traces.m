@@ -415,11 +415,15 @@ if iscell(xLimits)
         intervalStrThis = sprintf('%.0f-%.0f%s', ...
                             xLimitsThis(1), xLimitsThis(2), xUnits);
 
+        % Extract the file extension
+        % TODO: Make a function append_suffix_to_filename.m
+        fileExt = extract_fileparts(figName, 'extension');
+
         % Construct a file suffix
-        suffixThis = sprintf('_%s.png', intervalStrThis);
+        suffixThis = sprintf('_%s%s', intervalStrThis, fileExt);
 
         % Create a new figure name
-        figNameThis = replace(figName, '.png', suffixThis);
+        figNameThis = regexprep(figName, [fileExt, '$'], [suffixThis, '$']);
 
         % If not to overwrite, check if the figure already exists
         if ~overWrite && check_fullpath(figNameThis, 'Verbose', verbose)
@@ -582,7 +586,7 @@ case 'overlapped'
 
     % Generate a legend if there is more than one trace
     if ~strcmpi(legendLocation, 'suppress')
-        legend(p1, 'location', legendLocation);
+        legend(gca, 'location', legendLocation);
     end
 
     % Save current axes handle
@@ -656,7 +660,7 @@ case 'parallel'
 
         % Generate a legend
         if ~strcmpi(legendLocation, 'suppress')
-            legend(p1, 'location', legendLocation);
+            legend(ax, 'location', legendLocation);
         end
 
         % Remove x tick labels except for the last row
@@ -772,11 +776,15 @@ if ~isempty(figName)
                 end
             end
 
+            % Extract the file extension
+            % TODO: Make a function append_suffix_to_filename.m
+            fileExt = extract_fileparts(figName, 'extension');
+
             % Construct a file suffix
-            suffixThis = sprintf('_%s.png', intervalStrThis);
+            suffixThis = sprintf('_%s%s', intervalStrThis, fileExt);
 
             % Create a new figure name
-            figNameThis = replace(figName, '.png', suffixThis);
+            figNameThis = regexprep(figName, [fileExt, '$'], [suffixThis, '$']);
 
             % Save the new figure
             save_all_figtypes(fig, figNameThis, figTypes);
@@ -989,6 +997,12 @@ yLimitsThis = compute_axis_limits(minY, maxY, 'Coverage', 80);
 if numel(unique(tVecs)) == 1
     tVec = tVecs{1};
 end
+
+% Construct a file suffix
+suffixThis = sprintf('_%s.png', intervalStrThis);
+
+% Create a new figure name
+figNameThis = replace(figName, '.png', suffixThis);
 
 %}
 

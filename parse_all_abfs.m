@@ -196,7 +196,9 @@ if isempty(fileNames)
     end
     
     % Print message
-    fprintf('Parsing all .abf files in %s ...\n', directory);
+    if verbose
+        fprintf('Parsing all .abf files in %s ...\n', directory);
+    end
 else
     % Place in cell array
     if ischar(fileNames)
@@ -204,7 +206,9 @@ else
     end
 
     % Print message
-    fprintf('Parsing all .abf files ...\n');
+    if verbose
+        fprintf('Parsing all .abf files ...\n');
+    end
 end
 
 % Count the number of files
