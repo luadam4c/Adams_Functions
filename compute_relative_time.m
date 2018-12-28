@@ -1,12 +1,12 @@
-function valueRel = compute_relative_time(ind, tVec, limits, varargin)
+function timeRel = compute_relative_time(ind, tVec, limits, varargin)
 %% Computes time(s) relative to limits from indice(s)
-% Usage: valueRel = compute_relative_time(ind, tVec, limits, varargin)
+% Usage: timeRel = compute_relative_time(ind, tVec, limits, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       valueRel    - tVec(s) relative to limits
+%       timeRel     - time(s) relative to limits
 %                   specified as a TODO
 % Arguments:
 %       ind         - indice(s) of the time vector
@@ -66,10 +66,10 @@ parse(iP, ind, tVec, limits, varargin{:});
 %% Do the job
 if isnan(ind)
     % If not a number, return not a number
-    timeRelative = NaN;
+    timeRel = NaN;
 elseif all(isaninteger(ind) & ind > 0)
     % Compute the time relative to time axis start
-    timeRelative = compute_relative_value(tVec(ind), limits);
+    timeRel = compute_relative_value(tVec(ind), limits);
 else
     error('Need to check ind in input parser!');
 end
