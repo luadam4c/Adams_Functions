@@ -213,6 +213,9 @@ if isempty(outFolder)
 end
 
 %% Compute features for individual protocol traces
+% Print message
+fprintf('Computing all pulse responses with stimulus for %s ...\n', fileBase);
+
 [tVecAll, respAll, stimAll, featuresAll] = ...
     compute_all_pulse_responses (fileName, responseType, ...
                                 'SaveFlag', saveTablesFlag, varargin{:});
@@ -226,7 +229,10 @@ h = gobjects(nVectors, 1);
 
 % Plot 
 if plotFlag
-    h = plot_all_pulse_response_with_stimulus(fileName, ...
+    % Print message
+    fprintf('Plotting all pulse responses with stimulus for %s ...\n', fileBase);
+
+    h = plot_all_pulse_response_with_stimulus(fileBase, ...
                     tVecAll, respAll, stimAll, featuresAll, ...
                     fileSuffix, responseName, outFolder, savePlotsFlag, ...
                     figTypes, otherArguments);

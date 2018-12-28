@@ -20,7 +20,6 @@ function arrayNew = match_dimensions (arrayOld, dimNew, varargin)
 %
 % Used by:    
 %       cd/compute_weighted_average.m
-%       cd/create_indices.m
 %       cd/create_time_vectors.m
 %       cd/extract_columns.m
 %       cd/extract_elements.m

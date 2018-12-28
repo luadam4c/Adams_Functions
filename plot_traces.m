@@ -985,6 +985,11 @@ maxY = apply_iteratively(@max, allData);
 % Compute the y limits for this subplot
 yLimitsThis = compute_axis_limits(minY, maxY, 'Coverage', 80);
 
+% If all time vectors are the same, compress
+if numel(unique(tVecs)) == 1
+    tVec = tVecs{1};
+end
+
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

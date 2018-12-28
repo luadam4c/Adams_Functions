@@ -220,6 +220,9 @@ if isempty(outFolder)
 end
 
 %% Average the pulse and pulse responses
+% Print message
+fprintf('Computing average pulse response for %s ...\n', fileBase);
+
 [tVecAvg, respAvg, stimAvg, featuresAvg] = ...
     compute_average_pulse_response(fileName, responseType, ...
                                 'SaveFlag', saveTablesFlag, varargin{:});
@@ -227,6 +230,9 @@ end
 %% Plot the evoked local field potential with the stimulation pulse
 h = gobjects(1);
 if plotFlag
+    % Print message
+    fprintf('Plotting average pulse response for %s ...\n', fileBase);
+    
     % Plot the pulse response with the stimulation pulse
     h = plot_pulse_response_with_stimulus(tVecAvg, respAvg, stimAvg, ...
             'ResponseParams', featuresAvg, ...

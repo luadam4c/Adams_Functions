@@ -35,7 +35,7 @@ function indices = create_indices (endPoints, varargin)
 %       cd/extract_elements.m
 %       cd/force_column_numeric.m
 %       cd/isnumericvector.m
-%       cd/match_dimensions.m
+%       cd/match_format_vectors.m
 %
 % Used by:
 %       cd/compute_peak_decay.m
@@ -131,8 +131,9 @@ if ~isempty(vectors)
     % Count the number of samples in each vector
     nSamples = count_samples(vectors);
 
-    % Match the vector count
-    nSamples = match_dimensions(nSamples, size(idxStart));
+    % Match the vector counts
+    [nSamples, idxStart, idxEnd] = ...
+        match_format_vectors(nSamples, idxStart, idxEnd);
 
     % Create ones
     firsts = ones(size(idxStart));
@@ -159,6 +160,8 @@ end
 
 %{
 OLD CODE:
+
+nSamples = match_dimensions(nSamples, size(idxStart));
 
 %}
 

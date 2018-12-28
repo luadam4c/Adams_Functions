@@ -194,9 +194,17 @@ if isempty(fileNames)
         allParsedDataCell = cell;
         return
     end
-elseif ischar(fileNames)
+    
+    % Print message
+    fprintf('Parsing all .abf files in %s ...\n', directory);
+else
     % Place in cell array
-    fileNames = {fileNames};
+    if ischar(fileNames)
+        fileNames = {fileNames};
+    end
+
+    % Print message
+    fprintf('Parsing all .abf files ...\n');
 end
 
 % Count the number of files

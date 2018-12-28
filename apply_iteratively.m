@@ -9,7 +9,9 @@ function scalar = apply_iteratively (myFunction, array, varargin)
 %       a = apply_iteratively(@max, magic(3))
 %       b = apply_iteratively(@min, {1:10, -10:5, 5:30})
 %       c = apply_iteratively(@max, {1:10, -10:5, 5:30})
-%       c = apply_iteratively(@max, {magic(3), -10:5})
+%       d = apply_iteratively(@max, {magic(3), -10:5})
+%       e = apply_iteratively(@max, {{magic(3), magic(3)}, {magic(3)}})
+%       f = apply_iteratively(@max, {{magic(3), magic(3)}, {[], []}})
 % Outputs:
 %       scalar      - the resulting scalar
 %                   specified as a scalar
@@ -33,6 +35,7 @@ function scalar = apply_iteratively (myFunction, array, varargin)
 
 % File History:
 % 2018-12-19 Created by Adam Lu
+% 2018-12-28 Fixed code logic for case e in examples
 % TODO: Add 'TreatCellAsArray' as an optional argument
 % 
 % 
@@ -71,14 +74,32 @@ parse(iP, myFunction, array, varargin{:});
 % TODO
 
 %% Do the job
-while ~isscalar(array)
-    if iscell(array)
-        array = cellfun(@(x) apply_iteratively(myFunction, x), array, ...
-                        'UniformOutput', false);
+% Apply myFunction to array until it becomes a non-cell scalar
+while iscell(array) || ~isscalar(array)
+    if isempty(array)
+        % Change to NaN
+        array = NaN;
+    elseif iscell(array)
+        % If any element is empty, remove it
+        array = array(~cellfun(@isempty, array));
+
+        % Reduce the cell array to an ordinary array
+        try
+            % First try if one can reduce a cell array to an ordinary array
+            %   by applying myFunction to each cell
+            array = cellfun(myFunction, array);
+        catch
+            % If not, apply myFunction iteratively in each cell
+            array = cellfun(@(x) apply_iteratively(myFunction, x), array, ...
+                            'UniformOutput', false);
+        end
     else
+        % Apply myFunction to array until it becomes a scalar
         array = myFunction(array);
     end
 end
+
+% The final array should be a non-cell scalar
 scalar = array;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -86,11 +107,17 @@ scalar = array;
 %{
 OLD CODE:
 
-try
-    array = cellfun(myFunction, array);
-catch
-    array = cellfun(myFunction, array, 'UniformOutput', false);
+array = cellfun(myFunction, array, 'UniformOutput', false);
+
+% If the final array is empty, change it to NaN
+if isempty(array)
+    scalar = NaN;
+else
+    scalar = array;
 end
+
+% Apply myFunction to array until it becomes a non-cell scalar or empty
+while iscell(array) || ~(isscalar(array) || isempty(array))
 
 %}
 

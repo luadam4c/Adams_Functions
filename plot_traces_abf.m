@@ -308,6 +308,12 @@ xUnits = timeUnits;
 % Set up the x axis label
 xLabel = ['Time (', xUnits, ')'];
 
+% If timeStart or timeEnd are all the same, compress
+if numel(unique(timeStart)) == 1 && numel(unique(timeEnd)) == 1
+    timeStart = unique(timeStart);
+    timeEnd = unique(timeEnd);
+end
+
 % Set the x-axis limits
 if isscalar(timeStart) && isscalar(timeEnd)
     % Just put it together into a 2-element vector
@@ -374,6 +380,7 @@ elseif ~individually && strcmpi(expMode, 'patch') || ...
         individually && strcmpi(expMode, 'EEG')
     % Loop through all channels
     parfor iChannel = 1:nChannels
+%    for iChannel = 1:nChannels
         % Print message
         if verbose
             fprintf('Plotting all sweeps of Channel #%d ...\n', iChannel);

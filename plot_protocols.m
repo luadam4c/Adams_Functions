@@ -107,16 +107,15 @@ function [featuresFileTable, featuresSweepTable] = ...
 % 2018-12-15 Created by Adam Lu
 % 2018-12-17 Added savePlotsFlag and saveTablesFlag
 % 2018-12-18 Moved code to plot_table.m
+% 2018-12-28 Now decides on whether to use parfor across files
+%               based on the number of sweeps versus the number of files
 % TODO: Make plot flags for each type of plot optional arguments
-% TODO: Decide on whether to use parfor across files
-%       based on the total number of sweeps versus the total number of files
-%       cf. m3ha
 % 
 
 %% TODO: Make these parameters
-plotSeparateFlag = true;
+plotAverageFlag = false; %true;
+plotSeparateFlag = false; %true;
 plotAltogetherFlag = true;
-plotAverageFlag = true;
 
 %% Hard-coded parameters
 validProtocolTypes = {'EvokedLFP', 'EvokedGABAB'};
@@ -307,6 +306,9 @@ end
 %% Get file names
 % Decide on the files to use
 if isempty(fileNames)
+    % Print message
+    fprintf('Retrieving all .abf files in directory %s...\n', directory);
+
     % Find all .abf files in the directory
     [~, fileNames] = all_files('Directory', directory, ...
                                 'Extension', '.abf', ...
@@ -329,7 +331,7 @@ nFiles = numel(fileNames);
 %% Parse and identify protocols from each file in the directory
 % Parse all .abf files if not already done 
 if isempty(abfParamsCell) || isempty(abfDataCell)
-    [~, ~, ~, ~, abfParamsCell, abfDataCell] = ...
+    [abfParamsTable, ~, ~, ~, abfParamsCell, abfDataCell] = ...
         parse_all_abfs('FileNames', fileNames, 'OutFolder', outFolder, ...
                         'Verbose', false, 'UseOriginal', useOriginal, ...
                         'ExpMode', expMode, 'TimeUnits', timeUnits, ...
@@ -342,11 +344,26 @@ end
 % Set the output folder
 outFolderProtocol = fullfile(outFolder, outFolderProtocolName);
 
+%% Decide on whether to use parfor across files
+% Extract the number of sweeps for each file
+nSweeps = abfParamsTable.nSweeps;
+
+% Compute the maximum number of sweeps
+maxNSweeps = max(nSweeps);
+
+% If nFiles is larger than the maximum number of sweeps, use parfor
+if nFiles > maxNSweeps
+    p = gcp;
+    maxNumWorkers = p.NumWorkers;
+else
+    maxNumWorkers = 0;
+end
+
 %% Do the job
 % Compute features and plot protocol traces
 featuresPerFileCell = cell(nFiles, 1);
 featuresPerSweepCell = cell(nFiles, 1);
-parfor iFile = 1:nFiles
+parfor (iFile = 1:nFiles, maxNumWorkers)
 %for iFile = 1:nFiles
     % Extract from cell arrays
     abfParams = abfParamsCell{iFile};
@@ -407,6 +424,9 @@ parfor iFile = 1:nFiles
         %   Note: Must make outFolder empty so that outputs
         %           be plotted in subdirectories
         if plotAltogetherFlag
+            % Print message
+            fprintf('Plotting all traces for %s ...\n', fileName);
+
             % Set the time endpoints for individual protocol traces
             [timeStart, timeEnd] = ...
                 argfun(@(x) extract_elements(tVecAll, x), 'first', 'last');
@@ -458,6 +478,9 @@ if ~isempty(featuresFileTable) && istable(featuresFileTable)
     % Save the table
     writetable(featuresFileTable, featuresFilePath, 'WriteRowNames', true);
 
+    % Print message
+    fprintf('Plotting the table %s ...\n', featuresFilePath);
+
     % Plot each variable of the table
     plot_table(featuresFileTable, 'VariableNames', varToPlot, ...
                'OutFolder', outFolderProtocol, 'XLabel', xLabelFile);
@@ -465,6 +488,9 @@ end
 if ~isempty(featuresSweepTable) && istable(featuresSweepTable)
     % Save the table
     writetable(featuresSweepTable, featuresSweepPath, 'WriteRowNames', false);
+
+    % Print message
+    fprintf('Plotting the table %s ...\n', featuresSweepPath);
 
     % Plot each variable of the table
     plot_table(featuresSweepTable, 'VariableNames', varToPlot, ...
@@ -519,6 +545,12 @@ params.ResponseName = responseName;
 
 plot_table(featuresFileTable, varToPlot, outFolderProtocol, xLabelFile);
 plot_table(featuresSweepTable, varToPlot, outFolderProtocol, xLabelSweep);
+
+% If timeStart or timeEnd are all the same, compress
+if numel(unique(timeStart)) == 1 && numel(unique(timeEnd)) == 1
+    timeStart = unique(timeStart);
+    timeEnd = unique(timeEnd);
+end
 
 %}
 

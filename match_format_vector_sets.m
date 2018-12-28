@@ -60,6 +60,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 % 2018-10-31 Now uses isnumericvector.m and apply_or_return.m
 % TODO: Include the option to not force as column cell arrays
 %           i.e., match 2D cell arrays
+% TODO: Accept more than two vector sets
 % 
 
 %% Hard-coded parameters
