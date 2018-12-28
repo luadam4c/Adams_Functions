@@ -114,8 +114,8 @@ function [featuresFileTable, featuresSweepTable] = ...
 % 
 
 %% TODO: Make these parameters
-plotSeparateFlag = false; %true;
-plotAltogetherFlag = false; %true;
+plotSeparateFlag = true;
+plotAltogetherFlag = true;
 plotAverageFlag = true;
 
 %% Hard-coded parameters

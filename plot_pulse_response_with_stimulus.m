@@ -286,12 +286,12 @@ if ~isnan(idxPeak)
     % Compute the peak time constant double arrow x and y values 
     %   in normalized units relative to the axes
     peakTimeConstantXValues = [timePeakRel, timePeakTimeConstantRel];
-    peakTimeConstantYValues = peakTimeConstantValue * ones(1, 2);
+    peakTimeConstantYValues = peakTimeConstantValueRel * ones(1, 2);
 
     % Compute the peak 90% decay double arrow x and y values 
     %   in normalized units relative to the axes
     peak90DecayXValues = [timePeakRel, timePeak90DecayRel];
-    peak90DecayYValues = peak90DecayValue * ones(1, 2);
+    peak90DecayYValues = peak90DecayValueRel * ones(1, 2);
 
     % Create a labels for the peak amplitude and delay
     peakAmpLabel = ['peak amp = ', num2str(peakAmplitude)];

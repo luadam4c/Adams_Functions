@@ -39,6 +39,7 @@ function [halfWidthSamples, indHalfWidthEnds, halfPeakValue] = ...
 
 % File History:
 % 2018-12-22 Created by Adam Lu
+% 2018-12-28 Fixed fliplr() -> flipud()
 % 
 
 %% Hard-coded parameters
