@@ -18,6 +18,23 @@ function [dataCpr, dataIpscr, sweepInfoCpr, sweepInfoIpscr, dataCprAll] = ...
 %       varargin    - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'ToParsePulse': whether to parse pulses
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ToMedianFilter': whether to median filter data
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ToResample': whether to resample data
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ToCorrectDcSteps': whether to correct 
+%                                           unbalanced bridges in the traces
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'ToAverageByVhold': whether to average responses 
+%                                           according to VHold
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'Directory': a full directory path, 
 %                       e.g. '/media/shareX/share/'
 %                   must be a string scalar or a character vector
@@ -25,14 +42,6 @@ function [dataCpr, dataIpscr, sweepInfoCpr, sweepInfoIpscr, dataCprAll] = ...
 %                   - 'OutFolder': directory to place outputs
 %                   must be a string scalar or a character vector
 %                   default == pwd
-%                   - 'CorrectDcStepsFlag': whether to correct 
-%                                           unbalanced bridges in the traces
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
-%                   - 'AverageByVholdFlag': whether to average responses 
-%                                           according to VHold
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
 %                   - 'TimeToPad': time to pad in the beginning of the trace
 %                                   (same units as the sampling interval 
 %                                       in the time data)
@@ -81,7 +90,7 @@ function [dataCpr, dataIpscr, sweepInfoCpr, sweepInfoIpscr, dataCprAll] = ...
 % 2018-07-31 Use correct_unbalanced_bridge.m to correct for out-of-balance bridges
 % 2018-08-09 Now computes sweep weights here
 % 2018-08-10 baseNoiseIpscr and baseNoiseCpr are now column vectors
-% 2018-09-12 Added outparams.AverageByVholdFlag
+% 2018-09-12 Added outparams.ToAverageByVhold
 % 2018-11-15 Moved to Adams_Functions
 % 2018-11-28 Now pads vvecsIpscr with NaN instead of with holdPotentialIpscr
 
@@ -94,12 +103,22 @@ PA_PER_NA = 1000;
 meanVoltageWindow = 0.5;    % width in ms for calculating mean voltage 
                             %   for input resistance calculations
 
+% Parameters used for data reorganization
+%   Note: should be consistent with ResaveSweeps.m
+rsims = 1;  % resampling interval in ms (1 kHz)
+mfw1 = 2.5; % width in ms for the median filter for PClamp noise (conductance traces)
+mfw2 = 10;  % width in ms for the median filter for corrupted data (current traces)
+mfw3 = 30;  % width in ms for the median filter for spikes (voltage traces)
+
 %% Default values for optional arguments
-verboseDefault = false;             % don't print to standard output by default
+verboseDefault = true;          % print to standard output by default
+toParsePulseDefault = false;    % don't parse pulse by default
+toMedianFilterDefault = false;  % don't median filter data by default
+toResampleDefault = false;      % don't resample data by default
+toCorrectDcStepsDefault = true;
+toAverageByVholdDefault = true;
 directoryDefault = '';
 outFolderDefault = pwd;
-correctDcStepsFlagDefault = true;
-averageByVholdFlagDefault = true;
 timeToPadDefault = 0;
 windowsDefault = [];            % extract entire trace(s) by default
 
@@ -125,14 +144,20 @@ addRequired(iP, 'fileNames', ...
 % Add parameter-value pairs to the input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ToParsePulse', toParsePulseDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ToMedianFilter', toMedianFilterDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ToResample', toResampleDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ToCorrectDcSteps', toCorrectDcStepsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ToAverageByVhold', toAverageByVholdDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'CorrectDcStepsFlag', correctDcStepsFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'AverageByVholdFlag', averageByVholdFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TimeToPad', timeToPadDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'Windows', windowsDefault, ...
@@ -143,10 +168,13 @@ addParameter(iP, 'Windows', windowsDefault, ...
 % Read from the input Parser
 parse(iP, fileNames, varargin{:});
 verbose = iP.Results.Verbose;
+toParsePulse = iP.Results.ToParsePulse;
+toMedianFilter = iP.Results.ToMedianFilter;
+toResample = iP.Results.ToResample;
+toCorrectDcSteps = iP.Results.ToCorrectDcSteps;
+toAverageByVhold = iP.Results.ToAverageByVhold;
 matFilesDir = iP.Results.Directory;
 outFolder = iP.Results.OutFolder;
-correctDcStepsFlag = iP.Results.CorrectDcStepsFlag;
-averageByVholdFlag = iP.Results.AverageByVholdFlag;
 timeToPad = iP.Results.TimeToPad;
 windows = iP.Results.Windows;
 
@@ -222,86 +250,85 @@ end
 % Open the matfiles
 matFiles = cellfun(@matfile, filePaths, 'UniformOutput', false);
 
-% Extract original data
-dataOrig = cellfun(@(x) x.d_orig, matFiles, 'UniformOutput', false);
+if toMedianFilter && toResample
+    % Extract median-filtered & resampled data
+    data = cellfun(@(x) x.d_mfrs, matFiles, 'UniformOutput', false);
+else
+    % Extract original data
+    data = cellfun(@(x) x.d_orig, matFiles, 'UniformOutput', false);
+end
 
-% Extract median-filtered & resampled data
-dataMfrs = cellfun(@(x) x.d_mfrs, matFiles, 'UniformOutput', false);
-
-% Extract original data vectors
-[tvecsOrig, gvecsOrig, ivecsOrig, vvecsOrig] = extract_columns(dataOrig, 1:4);
-
-% Extract median-filtered & resampled data vectors
-[tvecsMfrs, gvecsMfrs, ivecsMfrs, vvecsMfrs] = extract_columns(dataMfrs, 1:4);
+% Extract data vectors
+[tVecs, gVecs, iVecs, vVecs] = extract_columns(data, 1:4);
 
 % Convert conductance vectors from nS to uS
 % TODO: Make function convert_units(data, oldUnits, newUnits)
-%       convert_units(gvecsOrig, 'nS', 'uS')
-gvecsOrig = cellfun(@(x) x / NS_PER_US, gvecsOrig, 'UniformOutput', false);
-gvecsMfrs = cellfun(@(x) x / NS_PER_US, gvecsMfrs, 'UniformOutput', false);
+%       convert_units(gVecs, 'nS', 'uS')
+gVecs = cellfun(@(x) x / NS_PER_US, gVecs, 'UniformOutput', false);
 
 % Convert current vectors from pA to nA
-ivecsOrig = cellfun(@(x) x / PA_PER_NA, ivecsOrig, 'UniformOutput', false);
-ivecsMfrs = cellfun(@(x) x / PA_PER_NA, ivecsMfrs, 'UniformOutput', false);
+%       TODO: convert_units(iVecs, 'pA', 'nA')
+iVecs = cellfun(@(x) x / PA_PER_NA, iVecs, 'UniformOutput', false);
 
 % Compute the sampling intervals in ms
-siMsOrig = compute_sampling_interval(tvecsOrig);
-siMsMfrs = compute_sampling_interval(tvecsMfrs);
+siMs = compute_sampling_interval(tVecs);
 
-%% Process current pulses from the original data vectors
-% Print message
-fprintf(['Processing current pulses from the original data vectors ... \n']);
+%% Process current pulses from the data vectors
+if toParsePulse
+    % Print message
+    fprintf(['Processing current pulses from the original data vectors ... \n']);
 
-% Find the indices for the approximate current pulse response
-endPointsApproxCpr = find_window_endpoints(approxCprWindow, tvecsOrig);
+    % Find the indices for the approximate current pulse response
+    endPointsApproxCpr = find_window_endpoints(approxCprWindow, tVecs);
 
-% Extract the approximate current pulse response regions
-[vvecsApproxCpr, ivecsApproxCpr, gvecsApproxCpr] = ...
-    argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsApproxCpr), ...
-            vvecsOrig, ivecsOrig, gvecsOrig);
+    % Extract the approximate current pulse response regions
+    [vvecsApproxCpr, ivecsApproxCpr, gvecsApproxCpr] = ...
+        argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsApproxCpr), ...
+                vVecs, iVecs, gVecs);
 
-% Parse the pulse vectors
-[pulseParams, ~] = parse_pulse(ivecsApproxCpr);
+    % Parse the pulse vectors
+    pulseParams = parse_pulse(ivecsApproxCpr);
 
-% Extract the index right after the start of the pulse for each vector
-idxCpStart = pulseParams.idxAfterStart;
+    % Extract the index right after the start of the pulse for each vector
+    idxCpStart = pulseParams.idxAfterStart;
 
-% Extract the current pulse widths and amplitudes
-pulseWidth = pulseParams.pulseWidthSamples .* siMsOrig;
-pulseAmplitude = pulseParams.pulseAmplitude;
+    % Extract the current pulse widths and amplitudes
+    pulseWidth = pulseParams.pulseWidthSamples .* siMs;
+    pulseAmplitude = pulseParams.pulseAmplitude;
 
-% Store these current pulse widths and amplitudes for the IPSC response
-currentPulseAmplitudeIpscr = pulseAmplitude;
+    % Store these current pulse widths and amplitudes for the IPSC response
+    currentPulseAmplitudeIpscr = pulseAmplitude;
 
-%{
-% Parse the pulse response, using the indices from the pulse
-[responseParams, responseData] = ...
-    parse_pulse_response(vvecsApproxCpr, siMsOrig, ...
-                            'PulseVector', ivecsApproxCpr, ...
-                            'SameAsPulse', true, ...
-                            'MeanValueWindowMs', meanVoltageWindow);
+    %{
+    % Parse the pulse response, using the indices from the pulse
+    [responseParams, responseData] = ...
+        parse_pulse_response(vvecsApproxCpr, siMs, ...
+                                'PulseVector', ivecsApproxCpr, ...
+                                'SameAsPulse', true, ...
+                                'MeanValueWindowMs', meanVoltageWindow);
 
-% Extract the holding potentials (mV)
-holdPotentialCpr = responseParams.baseValue;
+    % Extract the holding potentials (mV)
+    holdPotentialCpr = responseParams.baseValue;
 
-% Extract the maximum voltage values (mV)
-maxVoltageCpr = responseParams.maxValue;
+    % Extract the maximum voltage values (mV)
+    maxVoltageCpr = responseParams.maxValue;
 
-% Extract the voltage changes (mV)
-voltageChangeCpr = responseParams.steadyAmplitude;
+    % Extract the voltage changes (mV)
+    voltageChangeCpr = responseParams.steadyAmplitude;
 
-% Decide whether each trace will be used
-toUse = pulseWidth >= 0 & ...
-        sign(pulseAmplitude) == sign(voltageChange) & ...
-        maxVoltage <= spikeThresholdInit;
+    % Decide whether each trace will be used
+    toUse = pulseWidth >= 0 & ...
+            sign(pulseAmplitude) == sign(voltageChange) & ...
+            maxVoltage <= spikeThresholdInit;
 
-% Count the number of traces to be used
-nToUse = sum(toUse);
+    % Count the number of traces to be used
+    nToUse = sum(toUse);
 
-%}
+    %}
+end
 
 %% Fix current pulse response traces that may have out-of-balance bridges
-if correctDcStepsFlag
+if toParsePulse && toCorrectDcSteps
 % TODO: Fix initial_slopes to output a lookup table and use it here
     % Print message
     fprintf('Fixing current pulse response traces that may have out-of-balance bridges ... \n');
@@ -348,7 +375,7 @@ fprintf('Constructing current pulse response vectors to be compared with simulat
 % Convert times to samples
 [cprBaseLengthSamples, cprResponseLengthSamples, ...
     nSamplesToPadForStabilization] = ...
-    argfun(@(x) convert_to_samples(x, siMsOrig), ...
+    argfun(@(x) convert_to_samples(x, siMs), ...
             cprBaseLengthMs, cprResponseLengthMs, timeToPad);
 
 % Compute the index to start the current pulse response for each vector
@@ -416,7 +443,7 @@ dataCprAll = dataCpr;
 
 %% Average the current pulse responses according to vHold
 % TODO: Pull out to its own function and use in m3ha_run_neuron_once.m
-if AverageByVholdFlag
+if toParsePulse && toAverageByVhold
     % Print message
     fprintf('Averaging the current pulse responses according to vHold ... \n');
 
@@ -648,7 +675,7 @@ holdPotentialCpr = zeros(nSweeps, 1);          % stores the holding potentials r
     cprBaselineNoise = rms_Gaussian(baselineCprThis);
 
 % Take out traces that may have out-of-balance bridges if requested
-if outparams.correctDcStepsFlag
+if outparams.toCorrectDcSteps
     % Determine whether the initial slopes exceed threshold
     %   Note: These may have out-of-balance bridges
     isOutOfBalance = ...
@@ -1118,7 +1145,7 @@ function [dataCpr, dataIpscr, sweepInfoCpr, sweepInfoIpscr, dataCprAll] = ...
                     cpStartWindowOrig, cprWinOrig, timeToStabilizeMs, ...
                     ipscTimeOrig, ipscDur, ...
                     epasEstimate, RinEstimate, ...
-                    correctDcStepsFlag, oldAverageCprFlag, generateDataFlag, ...
+                    toCorrectDcSteps, oldAverageCprFlag, generateDataFlag, ...
                     varargin)
 
 % Estimate the corresponding variations in holding current (nA)
@@ -1129,6 +1156,36 @@ else
     holdCurrentNoiseIpscr = (baseNoiseIpscr / RinEstimate) * 0;
     holdCurrentNoiseCpr = (baseNoiseCpr / RinEstimate) * 0;
 end
+
+% Extract median-filtered & resampled data
+dataMfrs = cellfun(@(x) x.d_mfrs, matFiles, 'UniformOutput', false);
+% Extract original data
+dataOrig = cellfun(@(x) x.d_orig, matFiles, 'UniformOutput', false);
+% Extract median-filtered & resampled data vectors
+[tvecsMfrs, gvecsMfrs, ivecsMfrs, vvecsMfrs] = extract_columns(dataMfrs, 1:4);
+% Extract original data vectors
+[tvecsOrig, gvecsOrig, ivecsOrig, vvecsOrig] = extract_columns(dataOrig, 1:4);
+
+gvecsOrig = cellfun(@(x) x / NS_PER_US, gvecsOrig, 'UniformOutput', false);
+gvecsMfrs = cellfun(@(x) x / NS_PER_US, gvecsMfrs, 'UniformOutput', false);
+ivecsOrig = cellfun(@(x) x / PA_PER_NA, ivecsOrig, 'UniformOutput', false);
+ivecsMfrs = cellfun(@(x) x / PA_PER_NA, ivecsMfrs, 'UniformOutput', false);
+siMsOrig = compute_sampling_interval(tvecsOrig);
+siMsMfrs = compute_sampling_interval(tvecsMfrs);
+
+endPointsApproxCpr = find_window_endpoints(approxCprWindow, tvecsOrig);
+
+[vvecsApproxCpr, ivecsApproxCpr, gvecsApproxCpr] = ...
+    argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsApproxCpr), ...
+            vvecsOrig, ivecsOrig, gvecsOrig);
+
+pulseWidth = pulseParams.pulseWidthSamples .* siMsOrig;
+
+[cprBaseLengthSamples, cprResponseLengthSamples, ...
+    nSamplesToPadForStabilization] = ...
+    argfun(@(x) convert_to_samples(x, siMsOrig), ...
+            cprBaseLengthMs, cprResponseLengthMs, timeToPad);
+
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
