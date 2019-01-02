@@ -42,7 +42,10 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %                   - 'TimeStart': start time(s) in ms
 %                   must be a positive vector
 %                   default == 0
-%
+%                   - 'ForceCellOutput': whether to force output as a cell array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/match_format_vectors.m
@@ -60,6 +63,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 % 2018-11-28 Added 'TimeUnits' and 'SamplingIntervalMs' as optional arguments
 % 2018-12-15 Added 'TimeStart' as an optional argument
 % 2018-12-17 Now uses match_format_vectors.m
+% 2019-01-01 Added 'ForceCellOutput' as an optional argument
 % 
 
 %% Hard-coded constants
@@ -77,6 +81,7 @@ samplingRateHzDefault = [];             % set by match_reciprocals.m
 samplingIntervalUsDefault = [];         % set by match_reciprocals.m
 samplingIntervalMsDefault = [];         % set by match_reciprocals.m
 timeStartDefault = 0;                   % start at 0 by default
+forceCellOutputDefault = false; % don't force output as a cell array by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -107,6 +112,8 @@ addParameter(iP, 'SamplingIntervalMs', samplingIntervalMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'positive'}));
 addParameter(iP, 'TimeStart', timeStartDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, nSamples, varargin{:});
@@ -116,6 +123,7 @@ samplingRateHz = iP.Results.SamplingRateHz;
 samplingIntervalUs = iP.Results.SamplingIntervalUs;
 samplingIntervalMs = iP.Results.SamplingIntervalMs;
 tStart = iP.Results.TimeStart;
+forceCellOutput = iP.Results.ForceCellOutput;
 
 %% Preparation
 % TODO: Display warning if more than one sampling rate/interval is provided
@@ -166,6 +174,12 @@ else
         arrayfun(@(x, y, z) create_time_vector(x, y, z, ...
                                         boundaryMode, mfilename), ...
                 nSamples, siUnits, tStart, 'UniformOutput', false);
+end
+
+%% Output
+% Force as a cell array if requested
+if forceCellOutput && ~iscell(timeVecs)
+    timeVecs = {timeVecs};
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

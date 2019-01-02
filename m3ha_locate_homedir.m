@@ -10,6 +10,7 @@ function homeDirectory = m3ha_locate_homedir
 %       cd/locate_dir.m
 %
 % Used by:
+%       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_load_sweep_info.m
 %       ~/m3ha/data_dclamp/dclampDataExtractor.m
 %       ~/m3ha/data_dclamp/dclampdatalog_analyze.m

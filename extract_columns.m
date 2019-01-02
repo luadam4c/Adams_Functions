@@ -50,6 +50,7 @@ function varargout = extract_columns (arrays, varargin)
 % 2018-10-25 Updated usage of match_dimensions()
 % 2018-12-18 Allow the option to treat cell arrays as arrays;
 %               added 'TreatCellAsArray' (default == 'false')
+% 2019-01-01 Fixed bugs if a cell array has only one numeric array
 % 
 
 %% Hard-coded parameters
@@ -127,7 +128,7 @@ end
 
 % Count the number of columns for each array
 %   Note: Don't use count_vectors.m in case definition of vectors changes
-if nArrays == 1
+if isnumeric(arrays) || treatCellAsArray
     nColumns = size(arrays, 2);
 else
     nColumns = cellfun(@(x) size(x, 2), arrays);
@@ -167,7 +168,7 @@ end
 %   based on whether column numbers are provided
 if iscell(colNumbers) || isnumeric(colNumbers)
     % Only need to match dimensions if there are multiple arrays
-    if nArrays > 1
+    if iscell(arrays) && ~treatCellAsArray
         % Force as a cell array if not already so
         colNumbers = force_column_cell(colNumbers);
 
@@ -177,7 +178,7 @@ if iscell(colNumbers) || isnumeric(colNumbers)
 elseif ischar(colNumbers) || isstring(colNumbers)
     % Generate column numbers
     % TODO: Use a version of create_indices.m
-    if nArrays == 1
+    if isnumeric(arrays) || treatCellAsArray
         colNumbers = transpose(1:nColumns);
     else
         colNumbers = arrayfun(@(x) transpose(1:x), nColumns, ...
@@ -221,7 +222,7 @@ switch outputMode
         % Extract columns
         varargout = cell(1, nOutputs);
         for iOutput = 1:nOutputs
-            if nArrays == 1
+            if isnumeric(arrays) || treatCellAsArray
                 varargout{iOutput} = arrays(:, colNumbers(iOutput));
             else
                 varargout{iOutput} = ...
@@ -231,7 +232,7 @@ switch outputMode
         end
     case 'single'
         % Transform arrays into cell arrays of column vectors
-        if nArrays == 1
+        if isnumeric(arrays) || treatCellAsArray
             varargout{1} = extract_columns_helper(arrays, colNumbers);
         else
             varargout{1} = ...
@@ -299,6 +300,13 @@ else
     varargout{1} = ...
         cellfun(@(x, y) force_column_cell(x(:, y)), ...
                     arrays, colNumbers, 'UniformOutput', false);
+end
+
+% If arrays is a cell array with one element, pull it out
+%   Note: this will prevent cell arrays having numel == 1
+%           when it is not considered an array
+if ~treatCellAsArray && iscell(arrays) && numel(arrays) == 1
+    arrays = arrays{1};
 end
 
 %}

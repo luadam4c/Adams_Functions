@@ -26,11 +26,14 @@ function newStr = force_string_end (oldStr, subStr, varargin)
 % Used by:    
 %       cd/create_simulation_output_filenames.m
 %       cd/run_neuron.m
+%       cd/match_format_vector_sets.m
 %       cd/m3ha_create_simulation_params.m
 %       cd/m3ha_create_single_neuron_commands.m
+%       cd/m3ha_import_raw_traces.m
 
 % File History:
 % 2018-10-21 Created by Adam Lu
+% 2019-01-01 Now allows oldStr and subStr to be cell arrays
 % TODO: Deal with the case when substr is more than one character
 % 
 
@@ -54,9 +57,13 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'oldStr', ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['oldStr must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 addRequired(iP, 'subStr', ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['oldStr must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'OnlyIfNonempty', onlyIfNonemptyDefault, ...
@@ -66,15 +73,29 @@ addParameter(iP, 'OnlyIfNonempty', onlyIfNonemptyDefault, ...
 parse(iP, oldStr, subStr, varargin{:});
 onlyIfNonempty = iP.Results.OnlyIfNonempty;
 
+%% Preparation
+[oldStr, subStr] = match_format_vector_sets(oldStr, subStr);
+
 %% Do the job
+if iscell(oldStr)
+    newStr = cellfun(@(x, y) force_string_end_helper(x, y, onlyIfNonempty), ...
+                    oldStr, subStr, 'UniformOutput', false);
+else
+    newStr = force_string_end_helper(oldStr, subStr, onlyIfNonempty);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function newStr = force_string_end_helper (oldStr, subStr, onlyIfNonempty)
+
 % Return original string if empty and requested so
-if onlyIfNonempty && strcmp(oldStr, '')
+if onlyIfNonempty && any(strcmp(oldStr, {'', ""}))
     newStr = oldStr;
     return
 end
 
 % Look for the substring at the end of the old string
-startIndex = regexp(oldStr, strcat(subStr, '$'));
+startIndex = regexp(oldStr, strcat(subStr, '$'), 'ONCE');
 
 % If not found, append the substring to the old string
 if isempty(startIndex)
@@ -89,6 +110,8 @@ end
 OLD CODE:
 
 %   Note: One must use == '' if oldStr is a string type (in double quotes)
+
+strcmp(oldStr, '')
 
 %}
 

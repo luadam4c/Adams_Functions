@@ -87,7 +87,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vectorsOrig', ...
-    @(x) isnumeric(x) || iscell(x) || ischar(x));
+    @(x) isnumeric(x) || iscell(x) || ischar(x) || isstring(x));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ToLinearize', toLinearizeDefault, ...
