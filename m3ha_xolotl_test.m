@@ -3,8 +3,10 @@
 %
 % Requires:
 % TODO
-%   
+%       cd/extract_columns.m
+%       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_xolotl_create_neuron.m
+%       cd/m3ha_xolotl_plot.m
 %       cd/xolotl_add_current_pulse.m
 %       cd/xolotl_add_holding_current.m
 %       cd/xolotl_set_simparams.m
@@ -21,7 +23,6 @@ cellName = sweepName(1:7);
 projectDir = '/media/adamX/m3ha';
 realDataDir = fullfile(projectDir, 'data_dclamp');
 matFilesDir = fullfile(realDataDir, 'take4/matfiles');
-matFile = fullfile(matFilesDir, [sweepName, '.mat']);
 simDir = fullfile(projectDir, 'optimizer4gabab');
 outFolder = '/media/adamX/xolotl_test';
 outFileName = 'xolotl_test_before_simulations.mat';
@@ -33,6 +34,7 @@ figTitle = ['Simulation for ', replace(sweepName, '_', '\_')];
 temperature = 33;       % temperature of 33 degrees Celsius used by Christine
 compToPatch = 'soma';   % compartment to be patched
 cprWindowOrig = [0, 350];   % original current pulse window in ms
+cpStartWindowOrig = [95, 105];
 cpDelayOrig = 100;      % original current pulse delay in ms
 cpDuration = 10;        % current pulse duration in ms
 cpAmplitude = -0.050;   % current pulse amplitude in nA
@@ -74,57 +76,24 @@ timeEndCpr = cprWindow(2);
 
 %% Import data to compare against
 % TODO: Use m3ha_import_raw_traces.m
+[dataCpr, sweepInfo] = m3ha_import_raw_traces(sweepName, 'Directory', matFilesDir, ...
+                        'Verbose', true, 'CreateLog', true, ...
+                        'ToParsePulse', true, 'ToCorrectDcSteps', true, ...
+                        'ToAverageByVhold', true, 'OutFolder', outFolder, ...
+                        'TimeToPad', timeToStabilize, ...
+                        'ResponseWindow', cprWindowOrig, ...
+                        'StimStartWindow', cpStartWindowOrig);
 
-% Open the matfile
-m = matfile(matFile);
+% Extract needed data and information
+[realVoltageData, realStimPulse] = extract_columns(dataCpr, 2:3);
+holdingPotential = sweepInfo.holdPotential;
 
-% Use the original, non-filtered traces
-dataOrig = m.d_orig;
-
-% Extract original data vectors
-[tvecOrig, ivecOrig, vvecOrig] = extract_columns(dataOrig, [1, 3, 4]);
-
-% Convert to nA
-PA_PER_NA = 1000;
-ivecOrig = ivecOrig/PA_PER_NA;
-
-% Compute the sampling intervals in ms
-siMsOrig = compute_sampling_interval(tvecOrig);
-
-% Convert times to samples
-[nSamplesToPadForStabilization] = ...
-    argfun(@(x) convert_to_samples(x, siMsOrig), timeToStabilize);
-
-% Find the time to stabilize
-endPointsCpr = find_window_endpoints(cprWindowOrig, tvecOrig);
-
-% Extract the current pulse response window
-[tvecCpr, vvecCpr, ivecCpr] = ...
-    argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsCpr), ...
-            tvecOrig, vvecOrig, ivecOrig);
-
-% Find the end points for the baseline window
-endPointsBase = find_window_endpoints(baseWindowOrig, tvecOrig);
-                                    
-% Compute the holding potential
-holdingPotential = compute_means(vvecOrig, 'EndPoints', endPointsBase);
+% Put together as data to compare
+dataToCompare = [realVoltageData, realVoltageData, ...
+                 realVoltageData, realStimPulse];
 
 % Make sure holdingPotential has the correct dimensions
 holdingPotential = match_dimensions(holdingPotential, [1, nCompartments]);
-
-% Repeat the current pulse responses for each compartment for now
-vvecsCpr = repmat(vvecCpr, [1, nCompartments]);
-
-% Construct padding ones or zeros
-vvecsToPadCpr = ones(nSamplesToPadForStabilization, 1) * holdingPotential;
-ivecToPadCpr = zeros(nSamplesToPadForStabilization, 1);
-
-% Extract needed data
-realVoltageData = [vvecsToPadCpr; vvecsCpr];
-realStimPulse = [ivecToPadCpr; ivecCpr];
-
-% Put together as data to compare
-dataToCompare = [realVoltageData, realStimPulse];
 
 %% Create the neuron
 % Create a xolotl object based on a parameters file
@@ -199,6 +168,52 @@ if isempty(baseWindowOrig)
     baseWindowOrig = compute_default_sweep_info(tvecOrig, vvecCpr, ...
                                             'FitWindow', fitWindowOrig);
 end
+
+matFile = fullfile(matFilesDir, [sweepName, '.mat']);
+
+% Open the matfile
+m = matfile(matFile);
+
+% Use the original, non-filtered traces
+dataOrig = m.d_orig;
+
+% Extract original data vectors
+[tvecOrig, ivecOrig, vvecOrig] = extract_columns(dataOrig, [1, 3, 4]);
+
+% Convert to nA
+PA_PER_NA = 1000;
+ivecOrig = ivecOrig/PA_PER_NA;
+
+% Compute the sampling intervals in ms
+siMsOrig = compute_sampling_interval(tvecOrig);
+
+% Convert times to samples
+[nSamplesToPadForStabilization] = ...
+    argfun(@(x) convert_to_samples(x, siMsOrig), timeToStabilize);
+
+% Find the time to stabilize
+endPointsCpr = find_window_endpoints(cprWindowOrig, tvecOrig);
+
+% Extract the current pulse response window
+[tvecCpr, vvecCpr, ivecCpr] = ...
+    argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsCpr), ...
+            tvecOrig, vvecOrig, ivecOrig);
+
+% Find the end points for the baseline window
+endPointsBase = find_window_endpoints(baseWindowOrig, tvecOrig);
+                                    
+% Compute the holding potential
+holdingPotential = compute_means(vvecOrig, 'EndPoints', endPointsBase);
+
+% Repeat the current pulse responses for each compartment for now
+vvecsCpr = repmat(vvecCpr, [1, nCompartments]);
+
+% Construct padding ones or zeros
+vvecsToPadCpr = ones(nSamplesToPadForStabilization, 1) * holdingPotential;
+ivecToPadCpr = zeros(nSamplesToPadForStabilization, 1);
+
+realVoltageData = [vvecsToPadCpr; vvecsCpr];
+realStimPulse = [ivecToPadCpr; ivecCpr];
 
 %}
 

@@ -4,7 +4,18 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 % Examples:
 %       [data, sweepInfo, dataAll] = m3ha_import_raw_traces('D091710_0000_20');
 % Outputs:
-%       TODO
+%       data        - imported raw traces; 
+%                       Do this to extract:
+%                       [tVecs, vVecs, iVecs, gVecs] = extract_columns(data, 1:4);
+%       sweepInfo   - sweep info table, with fields:
+%                       fileNames
+%                       currentPulseAmplitude
+%                       holdPotential
+%                       holdCurrent
+%                       baseNoise
+%                       holdCurrentNoise
+%                       sweepWeights
+%       data        - all imported raw traces
 % Arguments:
 %       fileNames   - file or directory name(s)
 %                       e.g. 'A100110_0008_18.mat'
@@ -29,11 +40,11 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %                   - 'ToCorrectDcSteps': whether to correct 
 %                                           unbalanced bridges in the traces
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == true (only if ToParsePulse is also true)
 %                   - 'ToAverageByVhold': whether to average responses 
 %                                           according to VHold
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == true (only if ToParsePulse is also true)
 %                   - 'Directory': a full directory path, 
 %                       e.g. '/media/shareX/share/'
 %                   must be a string scalar or a character vector
@@ -307,7 +318,6 @@ baseWindow = timeToPad + [0, stimStartExpectedOrig];
 % Get the name of the output folder
 [~, outFolderName] = fileparts(outFolder);
 
-
 % Create log file if requested
 if createLog
     % Create log file name
@@ -382,20 +392,20 @@ if toParsePulse
 
     %{
     % Parse the pulse response, using the indices from the pulse
-    [responseParams, responseData] = ...
-        parse_pulse_response(vvecsApproxCpr, siMs, ...
+    responseParams = ...
+        parse_pulse_response(vVecsApprox, siMs, ...
                                 'PulseVector', ivecsApproxCpr, ...
                                 'SameAsPulse', true, ...
                                 'MeanValueWindowMs', meanVoltageWindow);
 
     % Extract the holding potentials (mV)
-    holdPotentialCpr = responseParams.baseValue;
+    holdPotential = responseParams.baseValue;
 
     % Extract the maximum voltage values (mV)
-    maxVoltageCpr = responseParams.maxValue;
+    maxVoltage = responseParams.maxValue;
 
     % Extract the voltage changes (mV)
-    voltageChangeCpr = responseParams.steadyAmplitude;
+    voltageChange = responseParams.steadyAmplitude;
 
     % Decide whether each trace will be used
     toUse = pulseWidth >= 0 & ...
@@ -592,8 +602,8 @@ fprintf('Computing the actual holding potentials ... \n');
 
 if toParsePulse
     % Parse the (may be averaged) current pulse responses
-    responseParams = parse_pulse_response(vvecsCpr, siMs, ...
-                                        'PulseVector', ivecsCpr, ...
+    responseParams = parse_pulse_response(vVecs, siMs, ...
+                                        'PulseVector', iVecs, ...
                                         'SameAsPulse', true, ...
                                         'MeanValueWindowMs', meanVoltageWindow);
 
