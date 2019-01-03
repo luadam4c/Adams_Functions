@@ -33,6 +33,7 @@ function nSamples = count_samples (vectors, varargin)
 %       cd/create_indices.m
 %       cd/extract_columns.m
 %       cd/extract_subvectors.m
+%       cd/find_window_endpoints.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m

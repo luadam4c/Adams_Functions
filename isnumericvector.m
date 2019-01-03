@@ -24,6 +24,7 @@ function isNumericVector = isnumericvector (x)
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
 %       cd/find_passive_params.m
+%       cd/find_window_endpoints.m
 %       cd/iscellnumericvector.m
 %       cd/m3ha_neuron_create_simulation_params.m
 %       cd/m3ha_plot_individual_traces.m

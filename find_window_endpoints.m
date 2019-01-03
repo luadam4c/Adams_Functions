@@ -12,6 +12,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %       endPoints6 = find_window_endpoints([0.5, 1.5; 2.5, 3.5], 0:6)
 %       endPoints7 = find_window_endpoints({[0.5, 1.5], [2.5; 3.5]}, 0:6)
 %       endPoints8 = find_window_endpoints({[], [2.5; 3.5]}, 0:6)
+%       endPoints9 = find_window_endpoints([0.5, 1.5; 2.5, 3.5], [(0:6)', (1:7)'])
 %
 % Outputs:
 %       endPoints   - index(ices) of window endpoints
@@ -37,8 +38,13 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %                       'restrictive' - the time endPoints 
 %                                           must be within the time window
 %                   default == 'restrictive'
+%                   - 'ForceMatrixOutput': whether to force output as a cell array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
+%       cd/count_samples.m
+%       cd/force_matrix.m
 %       cd/iscellnumeric.m
 %       cd/iscellnumericvector.m
 %       cd/match_format_vector_sets.m
@@ -60,6 +66,8 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 % 2018-10-27 Now returns first and last index if the window is empty
 % 2018-10-27 Now returns endPoints as a single output
 %               and is a cell array if multiple vectors are passed in
+% 2019-01-03 Now accepts a cell array of non-vector arrays and 
+%               added 'ForceMatrixOutput' as an optional argument
 % 
 
 %% Hard-coded parameters
@@ -67,6 +75,7 @@ validBoundaryModes = {'inclusive', 'leftadjust', 'rightadjust', 'restrictive'};
 
 %% Default values for optional arguments
 boundaryModeDefault = 'restrictive';
+forceMatrixOutputDefault = logical([]); % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -87,19 +96,30 @@ addRequired(iP, 'timeWindows', ...
                 ['timeWindows must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
 addRequired(iP, 'timeVecs', ...
-    @(x) assert(isnumeric(x) || iscellnumericvector(x), ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['timeVecs must be either a numeric array ', ...
                     'or a cell array of numeric vectors!']));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'BoundaryMode', boundaryModeDefault, ...
     @(x) any(validatestring(x, validBoundaryModes)));
+addParameter(iP, 'ForceMatrixOutput', forceMatrixOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, timeWindows, timeVecs, varargin{:});
 boundaryMode = validatestring(iP.Results.BoundaryMode, validBoundaryModes);
+forceMatrixOutput = iP.Results.ForceMatrixOutput;
 
 %% Preparation
+% Decide whether to force output as a matrix if not provided
+if isempty(forceMatrixOutput)
+    % Force output as a matrix only if the original formats
+    %   of both windows and vectors are matrices
+    forceMatrixOutput = ~iscell(timeWindows) && ismatrix(timeWindows) && ...
+                        ~iscell(timeVecs) && ismatrix(timeVecs);
+end
+
 % Match the formats of timeWindows and timeVecs so that cellfun can be used
 [timeWindows, timeVecs] = ...
     match_format_vector_sets(timeWindows, timeVecs, 'ForceCellOutputs', false);
@@ -111,9 +131,22 @@ if ~isempty(timeWindows) && isnumeric(timeWindows) && ...
 end
 
 %% Do the job
-if iscell(timeVecs)
+if iscellnumericvector(timeVecs)
+    % Find end points for each vector
     endPoints = ...
         cellfun(@(x, y) find_window_endpoints_helper(x, y, boundaryMode), ...
+                timeWindows, timeVecs, 'UniformOutput', false);
+
+    % Force as a matrix if requested
+    if forceMatrixOutput
+        endPoints = force_matrix(endPoints);
+    end
+elseif iscell(timeVecs)
+    % Find end points for each array
+    endPoints = ...
+        cellfun(@(x, y) find_window_endpoints(x, y, ...
+                        'BoundaryMode', boundaryMode, ...
+                        'ForceMatrixOutput', forceMatrixOutput), ...
                 timeWindows, timeVecs, 'UniformOutput', false);
 else
     endPoints = ...
@@ -209,6 +242,18 @@ idxEnd = [];
 %                   specified as a positive integer vector
 %       idxEnds     - index(ices) of window end
 %                   specified as a positive integer vector
+
+addRequired(iP, 'timeVecs', ...
+    @(x) assert(isnumeric(x) || iscellnumericvector(x), ...
+                ['timeVecs must be either a numeric array ', ...
+                    'or a cell array of numeric vectors!']));
+
+% Collapse columns if they are the same
+[timeWindow, timeVec] = argfun(@force_unique_vectors, timeWindow, timeVec);
+
+% Count the number of samples
+nSamples = count_samples(timeVec);
+endPoints = transpose([ones(size(nSamples)), nSamples]);
 
 %}
 
