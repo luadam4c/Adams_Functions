@@ -69,6 +69,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/find_passive_params.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/force_matrix.m
+%       cd/iscellnumericvector.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
@@ -205,8 +206,11 @@ if iscell(indices) || iscell(vecs)
 end
 
 %% Do the job
-if iscell(vecs)
+if iscellnumericvector(vecs)
     subVecs = cellfun(@(x, y) extract_subvectors_helper(x, y), ...
+                        vecs, indices, 'UniformOutput', false);
+elseif iscell(vecs)
+    subVecs = cellfun(@(x, y) extract_subvectors(x, 'Indices', y), ...
                         vecs, indices, 'UniformOutput', false);
 else
     subVecs = extract_subvectors_helper(vecs, indices);

@@ -100,7 +100,7 @@ indexEndUser = iP.Results.IndexEnd;
 % TODO: warn if EndPoints provided and IndexStart and IndexEnd provided
 
 %% Preparation
-% Make sure endPoints are a column
+% Make sure endPoints are in columns
 endPoints = force_column_numeric(endPoints, 'IgnoreNonVectors', true);
 
 %% Do the job

@@ -63,6 +63,7 @@ function vectors = force_column_numeric (vectors, varargin)
 % 2018-10-27 Added 'IgnoreNonVectors' as an optional argument
 % 2018-12-11 Now accepts logical arrays
 % 2018-12-28 Now accepts all types of arrays
+% 2019-01-03 Now adds ignoreNonVectors to recursive part
 % TODO: Deal with 3D arrays
 % 
 
@@ -110,7 +111,9 @@ if ~iscell(vectors) && ~iscolumn(vectors)
 elseif iscell(vectors)
     % Extract as a cell array
     %   Note: this will have a recursive effect
-    vectors = cellfun(@force_column_numeric, vectors, 'UniformOutput', false);
+    vectors = cellfun(@(x) force_column_numeric(x, ...
+                            'IgnoreNonVectors', ignoreNonVectors), ...
+                    vectors, 'UniformOutput', false);
 else
     % Do nothing
 end

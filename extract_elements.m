@@ -29,6 +29,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % Requires:
 %       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
+%       cd/iscellnumericvector.m
 %       cd/isnumericvector.m
 %       cd/match_dimensions.m
 %       cd/match_format_vector_sets.m
@@ -44,6 +45,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % File History:
 % 2018-12-15 Created by Adam Lu
 % 2018-12-17 Now returns idxElement as well
+% 2019-01-03 Now accepts cell arrays of non-vector arrays
 % TODO: Add 'MaxNum' as an optional argument with default Inf
 % TODO: Add 'Indices', 'Endpoints' and 'Windows' as optional arguments
 %           and use extract_subvectors.m
@@ -91,9 +93,13 @@ extractMode = validatestring(extractMode, validExtractModes);
 switch extractMode
 case {'first', 'last', 'min', 'max'}
     % Extract from a position
-    if iscell(vecs)
+    if iscellnumericvector(vecs)
         [elements, idxElement] = ...
             cellfun(@(x) extract_by_position(x, extractMode), vecs);
+    elseif iscell(vecs)
+        [elements, idxElement] = ...
+            cellfun(@(x) extract_elements(x, extractMode), vecs, ...
+                    'UniformOutput', false);
     else
         [elements, idxElement] = ...
             arrayfun(@(x) extract_by_position(vecs(:, x), extractMode), ...

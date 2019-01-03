@@ -109,15 +109,17 @@ addParameter(iP, 'ForceMatrixOutput', forceMatrixOutputDefault, ...
 % Read from the Input Parser
 parse(iP, timeWindows, timeVecs, varargin{:});
 boundaryMode = validatestring(iP.Results.BoundaryMode, validBoundaryModes);
-forceMatrixOutput = iP.Results.ForceMatrixOutput;
+forceMatrixOutputUser = iP.Results.ForceMatrixOutput;
 
 %% Preparation
 % Decide whether to force output as a matrix if not provided
-if isempty(forceMatrixOutput)
+if isempty(forceMatrixOutputUser)
     % Force output as a matrix only if the original formats
     %   of both windows and vectors are matrices
     forceMatrixOutput = ~iscell(timeWindows) && ismatrix(timeWindows) && ...
                         ~iscell(timeVecs) && ismatrix(timeVecs);
+else
+    forceMatrixOutput = forceMatrixOutputUser;
 end
 
 % Match the formats of timeWindows and timeVecs so that cellfun can be used
@@ -146,7 +148,7 @@ elseif iscell(timeVecs)
     endPoints = ...
         cellfun(@(x, y) find_window_endpoints(x, y, ...
                         'BoundaryMode', boundaryMode, ...
-                        'ForceMatrixOutput', forceMatrixOutput), ...
+                        'ForceMatrixOutput', forceMatrixOutputUser), ...
                 timeWindows, timeVecs, 'UniformOutput', false);
 else
     endPoints = ...
