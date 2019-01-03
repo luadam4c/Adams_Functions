@@ -49,6 +49,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %
 % Requires:
 %       cd/argfun.m
+%       cd/construct_default_endpoints.m
 %       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/create_indices.m
@@ -185,7 +186,7 @@ if isempty(endPoints)
         nSamples = count_samples(vecs);
 
         % Construct end points
-        endPoints = transpose([ones(size(nSamples)), nSamples]);
+        endPoints = construct_default_endpoints(nSamples);
     end
 end
 

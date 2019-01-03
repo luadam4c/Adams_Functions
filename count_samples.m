@@ -41,6 +41,7 @@ function nSamples = count_samples (vectors, varargin)
 % File History:
 % 2018-10-10 Created by Adam Lu
 % 2018-12-18 Now not longers forces nSamples to be a column vector
+% 2019-01-03 Now accepts cell arrays of non-vector arrays
 % 
 
 %% Default values for optional arguments
@@ -72,9 +73,14 @@ forceColumnOutput = iP.Results.ForceColumnOutput;
 
 %% Do the job
 % Decide based on input type
-if iscell(vectors)
+if iscellnumericvector(vectors)
     % Count the number of elements for each vector
     nSamples = cellfun(@numel, vectors);
+elseif iscell(vectors)
+    % Count the number of elements for each array
+    nSamples = cellfun(@(x) count_samples(x, ...
+                        'ForceColumnOutput', forceColumnOutput), ...
+                        vectors, 'UniformOutput', false);
 elseif isnumeric(vectors)
     if isvector(vectors)
         % Count the number of elements
