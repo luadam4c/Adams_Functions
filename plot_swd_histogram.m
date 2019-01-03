@@ -52,6 +52,7 @@ function [his, lines, fig] = plot_swd_histogram (varargin)
 %       cd/extract_common_directory.m
 %       cd/extract_common_suffix.m
 %       cd/extract_distinct_fileparts.m
+%       cd/force_matrix.m
 %       cd/load_swd_sheets.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_vertical_line.m
@@ -335,13 +336,9 @@ else
 end
 
 % Convert cell arrays to arrays padded with NaNs
-% TODO: Make this a function force_matrix.m
 if iscell(startTimes)
-    % Extract vectors padded on the right
-    startTimes = extract_subvectors(startTimes, 'AlignMethod', 'leftAdjustPad');
-
-    % Put together as an array
-    startTimes = horzcat(startTimes{:});
+    % Extract vectors padded on the right and put together as a matrix
+    startTimes = force_matrix(startTimes, 'AlignMethod', 'leftAdjustPad');
 end
 
 % Convert to hours if not a datetime array
@@ -375,6 +372,12 @@ xlim([minHour, maxHour])
 
 startTimesForGrouping = ...
     arrayfun(@(x) addtodate(x, -recordingStartHrs, 'hour'), startTimes);
+
+% Extract vectors padded on the right
+startTimes = extract_subvectors(startTimes, 'AlignMethod', 'leftAdjustPad');
+
+% Put together as an array
+startTimes = horzcat(startTimes{:});
 
 %}
 

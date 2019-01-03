@@ -234,6 +234,7 @@ function [err, hFig, simData] = ...
 %       cd/find_IPSC_peak.m
 %       cd/find_LTS.m
 %       cd/find_window_endpoints.m
+%       cd/force_matrix.m
 %       cd/load_neuron_outputs.m
 %       cd/match_time_points.m
 %       cd/compute_single_neuron_errors.m
@@ -360,6 +361,8 @@ VOLT_COL_REC = 2;
 CURR_COL_REC = 3;
 TIME_COL_SIM = 1;
 VOLT_COL_SIM = 2;
+DEND1_COL_SIM = 3;
+DEND2_COL_SIM = 4;
 CURR_COL_SIM = 9;
 
 %% Default values for optional arguments
@@ -707,12 +710,12 @@ simCommands = m3ha_create_single_neuron_commands(simParamsTable, ...
 
 % Extract vectors from recorded data
 %   Note: these will be empty if realData not provided
-[timeVecs, vvecsReal, ivecsReal] = ...
+[tVecs, vVecsReal, iVecsReal] = ...
     extract_columns(realData, [TIME_COL_REC, VOLT_COL_REC, CURR_COL_REC]);
 
 % Compute baseline noise and sweep weights if not provided
 [~, ~, baseNoise, sweepWeights] = ...
-    compute_default_sweep_info(timeVecs, vvecsReal, ...
+    compute_default_sweep_info(tVecs, vVecsReal, ...
             'BaseWindow', baseWindow, 'BaseNoise', baseNoise, ...
             'SweepWeights', sweepWeights);
 
@@ -730,13 +733,13 @@ run_neuron(hocFile, 'SimCommands', simCommands, ...
 simDataOrig = load_neuron_outputs('FileNames', outFilePath, ...
                                 'RemoveAfterLoad', ~saveSimOutFlag);
 
-% If recorded data provided (timeVecs not empty at this point), 
+% If recorded data provided (tVecs not empty at this point), 
 %   interpolate simulated data to match the time points of recorded data
 % Note: This is necessary because CVODE (variable time step method) 
 %       is applied in NEURON
-if ~isempty(timeVecs)
+if ~isempty(tVecs)
     simData = cellfun(@(x, y) match_time_points(x, y), ...
-                        simDataOrig, timeVecs, ...
+                        simDataOrig, tVecs, ...
                         'UniformOutput', false);
 else
     simData = simDataOrig;
@@ -745,8 +748,9 @@ end
 % Extract vectors from simulated data
 %   Note: these are arrays with 12 columns
 %   TODO: log column specs here
-[timeVecs, vvecsSim, ivecsSim] = ...
-    extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, CURR_COL_SIM]);
+[tVecs, vVecsSim, iVecsSim, vVecsDend1, vVecsDend2] = ...
+    extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, CURR_COL_SIM, ...
+                    DEND1_COL_SIM, DEND2_COL_SIM]);
 
 % Compare with recorded data
 if ~isempty(realData)
@@ -760,9 +764,9 @@ if ~isempty(realData)
                                 cpStartWindowOrig, cprWindow);
 
         % Re-extract columns
-        [vvecsReal, ivecsReal] = ...
+        [vVecsReal, iVecsReal] = ...
             extract_columns(realData, [VOLT_COL_SIM, CURR_COL_SIM]);
-        [timeVecs, vvecsSim, ivecsSim] = ...
+        [tVecs, vVecsSim, iVecsSim] = ...
             extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, CURR_COL_SIM]);
 
         % Re-compute number of sweeps
@@ -770,20 +774,20 @@ if ~isempty(realData)
 
         % Re-compute baseline noise and sweep weights
         [~, ~, baseNoise, sweepWeights] = ...
-            compute_default_sweep_info(timeVecs, vvecsReal, ...
+            compute_default_sweep_info(tVecs, vVecsReal, ...
                                         'BaseWindow', baseWindow);
     end
 
     % Calculate voltage residuals (simulated - recorded)
-    residuals = compute_residuals(vvecsSim, vvecsReal);
+    residuals = compute_residuals(vVecsSim, vVecsReal);
 
     % TODO: Fix this
     initSwpError = 1;
 
     % Calculate sweep errors
-    swpErrorStruct = compute_single_neuron_errors(vvecsSim, vvecsReal, ...
-                    'ErrorMode', errorMode, 'TimeVecs', timeVecs, ...
-                    'IvecsSim', ivecsSim, 'IvecsReal', ivecsReal, ...
+    swpErrorStruct = compute_single_neuron_errors(vVecsSim, vVecsReal, ...
+                    'ErrorMode', errorMode, 'TimeVecs', tVecs, ...
+                    'IvecsSim', iVecsSim, 'IvecsReal', iVecsReal, ...
                     'FitWindow', fitWindow, 'SweepWeights', sweepWeights, ...
                     'BaseWindow', baseWindow, 'BaseNoise', baseNoise, ...
                     'NormalizeError', normalize2InitErrFlag, ...
@@ -807,14 +811,20 @@ if plotFlag
     end
 
     % Find the indices of the x-axis limit endpoints
-    endPointsForPlots = find_window_endpoints(xLimits, timeVecs);
+    endPointsForPlots = find_window_endpoints(xLimits, tVecs);
 
     % Restrict vectors to xLimits to save time on plotting
-    [timeVecs, vvecsSim, vvecsReal, residuals] = ...
+    [tVecs, vVecsSim, vVecsReal, residuals] = ...
         argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsForPlots), ...
-                timeVecs, vvecsSim, vvecsReal, residuals);
+                tVecs, vVecsSim, vVecsReal, residuals);
+
+    % Combine vectors into matrices
+    [tVecs, vVecsReal, vVecsSim, vVecsDend1, vVecsDend2] = ...
+        argfun(@(x) force_matrix(x, 'AlignMethod', 'leftAdjustPad'), ...
+                tVecs, vVecsReal, vVecsSim, vVecsDend1, vVecsDend2);
 
     %% TODO TODO
+    % Plot individual simulated traces against recorded traces
     if plotIndividualFlag
         % Print to standard output
         fprintf('Plotting figure of individual voltage traces for %s ...\n', ...
@@ -827,8 +837,8 @@ if plotFlag
 
         % Plot the individual traces
         hFig.individual = ...
-            m3ha_plot_individual_traces(timeVecs, vvecsSim, ...
-                    'DataToCompare', vvecsReal, ...
+            m3ha_plot_individual_traces(tVecs, vVecsSim, ...
+                    'DataToCompare', vVecsReal, ...
                     'ColorMap', colorMap, 'XLimits', xLimits, ...
                     'FitWindow', fitWindow, 'BaseWindow', baseWindow, ...
                     'BaseNoise', baseNoise, 'SweepErrors', swpErrors, ...
@@ -837,9 +847,37 @@ if plotFlag
                     'PlotSwpWeightsFlag', plotSwpWeightsFlag);
     end
 
+    % Plot different types of traces with different conditions overlapped
+    if plotOverlappedFlag
+        % Print to standard output
+        fprintf('Plotting figure of individual voltage traces for %s ...\n', ...
+                prefix);
+
+        % Select data to plot
+        dataForOverlapped = {vVecsReal, vVecsSim, vVecsDend1, vVecsDend2};
+
+        % Construct matching time vectors
+        tVecsForOverlapped = repmat({tVecs}, size(dataForOverlapped));
+
+        % Decide on figure title and file name
+        figTitle = sprintf('Overlapped traces for Experiment %s', ...
+                            strrep(prefix, '_', '\_'));
+        figName = fullfile(outFolder, [prefix, '_overlapped.png']);
+
+        % Plot overlapped traces
+        hFig.overlapped = ...
+            plot_traces(tVecsForOverlapped, dataForOverlapped, ...
+                        'ColorMap', colorMap, 'XLimits', xLimits, ...
+                        'FigTitle', figTitle, 'FigName', figName);
+        % hFig.overlapped = ...
+        %     m3ha_plot_overlapped_traces(tVecs, dataForOverlapped, ...
+        %             'ColorMap', colorMap, 'XLimits', xLimits, ...
+        %             'FigTitle', figTitle, 'FigName', figName);
+    end
+
     % if plotResidualsFlag
     %     hFig.residuals = ...
-    %         plot_voltage_residuals(timeVecs, residuals, outparams, err, hFig, nSweeps, colorMap, ncg, npercg, xLimits);
+    %         plot_voltage_residuals(tVecs, residuals, outparams, err, hFig, nSweeps, colorMap, ncg, npercg, xLimits);
     % end    
     % if plotOverlappedFlag
     %     hFig.overlapped = ...
@@ -1935,7 +1973,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function hFig = plot_voltage_residuals (timeVecs, residuals, outparams, err, hFig, nSweeps, colorMap, ncg, npercg, xLimits)
+function hFig = plot_voltage_residuals (tVecs, residuals, outparams, err, hFig, nSweeps, colorMap, ncg, npercg, xLimits)
 %% Update figure of all residuals zoomed over fit region
 
 if outparams.cprflag
@@ -1963,7 +2001,7 @@ for iSwp = 1:nSweeps
     axesAll(iSwp) = subplot(ncg, npercg, iSwp); hold on;
 
     % Get vectors
-    timeVec = timeVecs{iSwp};
+    timeVec = tVecs{iSwp};
     residual = residuals{iSwp};
     
     % Plot traces
@@ -2775,24 +2813,24 @@ end
 residuals = cell(1, nSweeps);         % residuals (sim - real)
 parfor iSwp = 1:nSweeps
     % Get the voltage vector from the simulated data
-    vvecsSim = simData{iSwp}(:, 2);
+    vVecsSim = simData{iSwp}(:, 2);
 
     % Get the voltage vector from the real data
-    vvecsReal = realData{iSwp}(:, 2);
+    vVecsReal = realData{iSwp}(:, 2);
 
     % Compute the residual
-    residuals{iSwp} = vvecsSim - vvecsReal;
+    residuals{iSwp} = vVecsSim - vVecsReal;
 end
 
 %       ~/Adams_Functions/m3ha_extract_and_match_time_points.m
-[simData, timeVecs] = ...
+[simData, tVecs] = ...
     m3ha_extract_and_match_time_points(realData, simDataNeuron);
 % Get all time vectors from the real data
-timeVecs = cellfun(@(x) x(:, 1), realData, 'UniformOutput', false);
+tVecs = cellfun(@(x) x(:, 1), realData, 'UniformOutput', false);
 % Get the voltage vector from the real data
-vvecsReal = realData{iSwp}(:, 2);x
+vVecsReal = realData{iSwp}(:, 2);x
 % Get the voltage vector from the simulated data
-vvecsSim = simData{iSwp}(:, 2);
+vVecsSim = simData{iSwp}(:, 2);
 
 [colorMap, ncg, npercg] = define_color_groups(realData, outparams);
 
@@ -2969,7 +3007,7 @@ line([fitWindow(2), fitWindow(2)], yLimits, ...
         'Color', 'g', 'LineStyle', '--');
 
 % Re-compute baseline noise 
-baseNoise = compute_baseline_noise(vvecsReal, timeVecs, baseWindow);
+baseNoise = compute_baseline_noise(vVecsReal, tVecs, baseWindow);
 
 % Re-compute sweep weights based on baseline noise
 sweepWeights = 1 ./ baseNoise;

@@ -140,6 +140,7 @@ Last Updated 2019-01-03 by Adam Lu
 - [**force_column.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_column.m): Forces an array as a column
 - [**force_column_numeric.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_column_numeric.m): Transform row numeric vector(s) or numeric array(s) to column numeric vector(s)
 - [**force_logical.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_logical.m): Forces any numeric binary array to become a logical array
+- [**force_matrix.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_matrix.m): Forces vectors into a non-cell array matrix
 - [**force_row_numeric.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_row_numeric.m): Transform column numeric vector(s) or numeric array(s) to row numeric vector(s)
 - [**force_string_end.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_string_end.m): Force the string to end with a certain substring
 - [**freqfilter.m**](https://github.com/blabuva/Adams_Functions/blob/master/freqfilter.m): Uses a Butterworth filter twice to filter data by a frequency band (each column is a vector of samples)

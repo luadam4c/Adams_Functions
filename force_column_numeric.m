@@ -42,6 +42,7 @@ function vectors = force_column_numeric (vectors, varargin)
 %       cd/compute_sweep_errors.m
 %       cd/count_samples.m
 %       cd/create_indices.m
+%       cd/extract_subvectors.m
 %       cd/fit_2exp.m
 %       cd/force_column_cell.m
 %       cd/match_format_vectors.m

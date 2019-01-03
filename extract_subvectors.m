@@ -53,6 +53,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/create_indices.m
 %       cd/find_window_endpoints.m
+%       cd/force_column_numeric.m
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
 %       cd/match_format_vector_sets.m
@@ -67,6 +68,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/extract_common_directory.m
 %       cd/find_passive_params.m
 %       cd/filter_and_extract_pulse_response.m
+%       cd/force_matrix.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/m3ha_run_neuron_once.m
@@ -82,6 +84,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2018-12-17 Now allows subvectors to be extracted from an align mode
 % 2018-12-24 Added 'IndexStart', 'IndexEnd' as arguments
 % 2018-12-27 Added the align methods 'leftAdjustPad', 'rightAdjustPad'
+% 2019-01-03 Added usage of force_column_numeric.m
 % TODO: check if all endpoints have 2 elements
 % 
 
@@ -213,6 +216,9 @@ end
 
 function subVec = extract_subvectors_helper (vec, indices)
 %% Extract a subvector from vector(s) if not empty
+
+% Make sure inputs are column vectors
+[vec, indices] = argfun(@force_column_numeric, vec, indices);
 
 % Count the desired number of rows
 nRows = length(indices);
