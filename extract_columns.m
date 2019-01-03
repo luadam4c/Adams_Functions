@@ -44,6 +44,7 @@ function varargout = extract_columns (arrays, varargin)
 %       cd/force_column_cell.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_run_neuron_once.m
+%       cd/m3ha_xolotl_test.m
 
 % File History:
 % 2018-10-24 Created by Adam Lu

@@ -110,6 +110,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %       cd/m3ha_locate_homedir.m
 %
 % Used by:
+%       cd/m3ha_xolotl_plot.m
 %       cd/singleneuronfitting47.m and later versions
 
 % File History:
@@ -306,8 +307,12 @@ baseLengthMs = stimStartExpectedOrig - responseWindowOrig(1);
 responseLengthMs = responseWindowOrig(2) - stimStartExpectedOrig;
 
 % Find the length of the stimulation start time window
-stimStartWindowOrigLength = stimStartWindowOrig(2) - stimStartWindowOrig(1);
-
+if numel(stimStartWindowOrig) == 1
+    stimStartWindowOrigLength = 0;
+else
+    stimStartWindowOrigLength = diff(stimStartWindowOrig);
+end
+    
 % Expand by stimStartWindowOrigLength to get the approximate response window
 approxWindowOrig = [responseWindowOrig(1); ...
                     responseWindowOrig(2) + stimStartWindowOrigLength];
@@ -590,6 +595,9 @@ if toParsePulse && toAverageByVhold
 
     % Update the number of sweeps
     nSwps = numel(data);
+
+    % Update the sampling interval (esp. the number of rows)
+    siMs = compute_sampling_interval(tVecs);
 
     % Use an averaged current pulse amplitude for 
     %   the averaged current pulse response

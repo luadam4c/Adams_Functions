@@ -10,11 +10,11 @@
 %       cd/xolotl_add_current_pulse.m
 %       cd/xolotl_add_holding_current.m
 %       cd/xolotl_set_simparams.m
-%       cd/m3ha_xolotl_plot.m
 
 % File History:
 % 2018-12-12 Created by Adam Lu
 % 2018-12-13 Added voltage clamp
+% 2019-01-01 Now uses m3ha_import_raw_traces.m
 
 %% Hard-coded parameters
 % Files

@@ -80,11 +80,12 @@ timeToStabilize = iP.Results.TimeToStabilize;
 % Find the index for the compartment to patch
 idxCompToPatch = xolotl_compartment_index(xolotlObject, compToPatch);
 
-% Get the holding potential for the compartment to patch
-holdingPotentialToPatch = holdingPotential(idxCompToPatch);
-
 % Get the leak reversal potential (mV) for all compartments
 leakReversalAll = xolotlObject.get('*Leak.E');
+
+%{
+% Get the holding potential for the compartment to patch
+holdingPotentialToPatch = holdingPotential(idxCompToPatch);
 
 % Get the leak conductance (uS/mm^2) for all compartments
 leakConductanceAll = xolotlObject.get('*Leak.gbar');
@@ -95,7 +96,6 @@ radiusAll = xolotlObject.get('*radius');
 % Get the length (mm) for all compartments
 lengthAll = xolotlObject.get('*len');
 
-%{
 %% Estimate holding current (nA) by calculation
 % Compute the surface area for each compartment
 surfaceAreaAll = 2 * pi * radiusAll .* lengthAll;
