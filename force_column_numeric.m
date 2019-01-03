@@ -45,7 +45,7 @@ function vectors = force_column_numeric (vectors, varargin)
 %       cd/extract_subvectors.m
 %       cd/fit_2exp.m
 %       cd/force_column_cell.m
-%       cd/force_unique_vectors.m
+%       cd/collapse_identical_vectors.m
 %       cd/match_format_vectors.m
 %       cd/match_format_vector_sets.m
 %       cd/match_reciprocals.m

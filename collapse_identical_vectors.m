@@ -1,10 +1,13 @@
-function vectors = force_unique_vectors (vectors, varargin)
-%% Forces a vector set to have only distinct vectors
-% Usage: vectors = force_unique_vectors (vectors, varargin)
+function vectors = collapse_identical_vectors (vectors, varargin)
+%% Collapses identical vectors into a single one
+% Usage: vectors = collapse_identical_vectors (vectors, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       TODO
+%       collapse_identical_vectors(1:5)
+%       collapse_identical_vectors({(1:5)', (1:5)'})
+%       collapse_identical_vectors([(1:5)', (1:5)'])
+%       collapse_identical_vectors([(2:6)', (1:5)'])
 % Outputs:
 %       vectors     - collapsed set of vectors
 % Arguments:
@@ -14,9 +17,9 @@ function vectors = force_unique_vectors (vectors, varargin)
 %                   default == TODO
 %
 % Requires:
+%       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
 %       cd/force_column_numeric.m
-%       cd/force_matrix.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -54,25 +57,36 @@ parse(iP, vectors, varargin{:});
 % param1 = iP.Results.param1;
 
 %% Preparation
-% See if the vector set is a matrix
-isMatrix = ismatrix(vectors);
 
 %% Do the job
+% If there is just one vector, return
+if count_vectors(vectors) == 1
+    return
+end
+
 % Force as column cell arrays of column vectors
-vectors = force_column_numeric(vectors, 'IgnoreNonVectors', false);
+vectorsAll = force_column_numeric(vectors, 'IgnoreNonVectors', false);
 
-% Get unique vectors
-vectors = unique(vectors);
+% Get the first vector
+vectorTemplate = vectorsAll{1};
 
-% Recombine as a matrix if it was a matrix before
-if isMatrix
-    vectors = force_matrix(vectors);
+% If the same as all vectors, return it
+if all(cellfun(@(x) isequal(x, vectorTemplate), vectorsAll))
+    vectors = vectorTemplate;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+% See if the vector set is a matrix
+isMatrix = ismatrix(vectors);
+
+% Recombine as a matrix if it was a matrix before
+if isMatrix
+    vectors = force_matrix(vectors);
+end
 
 %}
 

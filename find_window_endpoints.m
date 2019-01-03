@@ -249,7 +249,7 @@ addRequired(iP, 'timeVecs', ...
                     'or a cell array of numeric vectors!']));
 
 % Collapse columns if they are the same
-[timeWindow, timeVec] = argfun(@force_unique_vectors, timeWindow, timeVec);
+[timeWindow, timeVec] = argfun(@collapse_identical_vectors, timeWindow, timeVec);
 
 % Count the number of samples
 nSamples = count_samples(timeVec);

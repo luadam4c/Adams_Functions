@@ -34,6 +34,7 @@ Last Updated 2019-01-03 by Adam Lu
 - [**choose_random_values.m**](https://github.com/blabuva/Adams_Functions/blob/master/choose_random_values.m): Chooses random values from bounds
 - [**choose_stimulation_type.m**](https://github.com/blabuva/Adams_Functions/blob/master/choose_stimulation_type.m): Chooses the stimulation type based on the response type
 - [**clcf.m**](https://github.com/blabuva/Adams_Functions/blob/master/clcf.m): clcf.m
+- [**collapse_identical_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/collapse_identical_vectors.m): Collapses identical vectors into a single one
 - [**color_index.m**](https://github.com/blabuva/Adams_Functions/blob/master/color_index.m): Find the colormap index for a given value with boundaries set by edges
 - [**combine_loopedparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_loopedparams.m): TODO
 - [**combine_swd_sheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_swd_sheets.m): Combines all files ending with '_SWDs.csv' under a directory
@@ -143,7 +144,6 @@ Last Updated 2019-01-03 by Adam Lu
 - [**force_matrix.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_matrix.m): Forces vectors into a non-cell array matrix
 - [**force_row_numeric.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_row_numeric.m): Transform column numeric vector(s) or numeric array(s) to row numeric vector(s)
 - [**force_string_end.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_string_end.m): Force the string to end with a certain substring
-- [**force_unique_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_unique_vectors.m): Forces a vector set to have only distinct vectors
 - [**freqfilter.m**](https://github.com/blabuva/Adams_Functions/blob/master/freqfilter.m): Uses a Butterworth filter twice to filter data by a frequency band (each column is a vector of samples)
 - [**get_idxEnd.m**](https://github.com/blabuva/Adams_Functions/blob/master/get_idxEnd.m): Get the index of the end of an event
 - [**get_loopedparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/get_loopedparams.m): Get parameters that were looped in the simulation from loopedparams.mat
