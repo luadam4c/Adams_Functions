@@ -1,10 +1,10 @@
 function [neuronParamsTables, neuronParamsFiles, ...
                 neuronParamsTableDefault, passiveParamsFile] = ...
-                m3ha_create_initial_neuronparams (varargin)
+                m3ha_neuron_create_initial_params (varargin)
 %% Creates initial NEURON parameters for each cell
 % Usage: [neuronParamsTables, neuronParamsFiles, ...
 %               neuronParamsTableDefault, passiveParamsFile] = ...
-%               m3ha_create_initial_neuronparams (varargin)
+%               m3ha_neuron_create_initial_params (varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -254,7 +254,7 @@ nCells = width(passiveTable);
 cellNameAllCells = passiveTable.cellName;
 
 % Extract the passive parameters needed
-%   cf. m3ha_create_single_neuron_commands.m
+%   cf. m3ha_neuron_create_TC_commands.m
 radiusSomaAllCells = passiveTable.radiusSoma;
 diamDendAllCells = passiveTable.diameterDendrite;
 LDendAllCells = passiveTable.lengthDendrite;

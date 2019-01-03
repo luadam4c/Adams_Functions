@@ -25,7 +25,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/extract_subvectors.m
 %
 % Used by:
-%       cd/m3ha_run_neuron_once.m
+%       cd/m3ha_neuron_run_and_analyze.m
 %       cd/plot_swd_histogram.m
 
 % File History:

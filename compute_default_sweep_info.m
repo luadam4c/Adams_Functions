@@ -50,7 +50,7 @@ function [baseWindow, fitWindow, baseNoise, sweepWeights] = ...
 %       cd/compute_single_neuron_errors.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
-%       cd/m3ha_run_neuron_once.m
+%       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_xolotl_test.m
 
 % File History:

@@ -1,9 +1,9 @@
 function [simCommands, simCmdsFilePath] = ...
-                m3ha_create_single_neuron_commands (simParamsTable, varargin)
+                m3ha_neuron_create_TC_commands (simParamsTable, varargin)
 %% Generates simulation commands to be read by NEURON from a table of simulation parameters
 
 % Usage: [simCommands, simCmdsFilePath] = ...
-%               m3ha_create_single_neuron_commands (simParamsTable, varargin)
+%               m3ha_neuron_create_TC_commands (simParamsTable, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -73,7 +73,7 @@ function [simCommands, simCmdsFilePath] = ...
 %       cd/force_string_end.m
 %
 % Used by:    
-%       cd/m3ha_run_neuron_once.m
+%       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:
 % 2018-10-22 Adapted from code in run_neuron_once_4compgabab.m

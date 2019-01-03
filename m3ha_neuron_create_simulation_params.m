@@ -1,8 +1,8 @@
 function [simParamsTable, simParamsPath] = ...
-                m3ha_create_simulation_params (neuronParamsTable, varargin)
+                m3ha_neuron_create_simulation_params (neuronParamsTable, varargin)
 %% Generates a table of simulation parameters from table(s) of neuron parameters
 % Usage: [simParamsTable, simParamsPath] = ...
-%               m3ha_create_simulation_params (neuronParamsTable, varargin)
+%               m3ha_neuron_create_simulation_params (neuronParamsTable, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -104,7 +104,7 @@ function [simParamsTable, simParamsPath] = ...
 %       cd/transpose_table.m
 %
 % Used by:    
-%       cd/m3ha_run_neuron_once.m
+%       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:
 % 2018-10-22 Adapted from code in run_neuron_once_4compgabab.m

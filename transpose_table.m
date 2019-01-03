@@ -22,7 +22,7 @@ function tableNew = transpose_table (tableOld, varargin)
 %                   default == old row names
 %
 % Used by:    
-%       cd/m3ha_create_simulation_params.m
+%       cd/m3ha_neuron_create_simulation_params.m
 
 % File History:
 % 2018-10-22 Created by Adam Lu

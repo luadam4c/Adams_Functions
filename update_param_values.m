@@ -19,7 +19,7 @@ function paramsTable = update_param_values (paramsTable, varargin)
 %       cd/check_membership.m
 %
 % Used by:    
-%       cd/m3ha_create_initial_neuronparams.m
+%       cd/m3ha_neuron_create_initial_params.m
 
 % File History:
 % 2018-10-31 Created by Adam Lu

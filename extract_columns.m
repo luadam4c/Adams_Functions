@@ -43,7 +43,7 @@ function varargout = extract_columns (arrays, varargin)
 % Used by:    
 %       cd/force_column_cell.m
 %       cd/m3ha_import_raw_traces.m
-%       cd/m3ha_run_neuron_once.m
+%       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_xolotl_test.m
 
 % File History:

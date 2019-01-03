@@ -68,7 +68,7 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %       cd/match_row_count.m
 %
 % Used by:
-%       cd/m3ha_run_neuron_once.m
+%       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:
 % 2018-10-24 Adapted from code in run_neuron_once_4compgabab.m

@@ -82,7 +82,7 @@ function [simplexOut, exitFlag] = m3ha_fminsearch3(outparams)
 %
 % Requires:
 %       cd/m3ha_log_errors_params.m
-%       cd/m3ha_run_neuron_once.m
+%       cd/m3ha_neuron_run_and_analyze.m
 %       cd/save_params.m
 %       cd/set_fields_zero.m
 %       cd/restore_fields.m
@@ -875,7 +875,7 @@ newParamValues = xtransform(p, bounds, pIsLog);
 neuronParamsTable{:, 'Value'} = newParamValues;
 
 % Evaluate error with the new parameters table
-err = m3ha_run_neuron_once(neuronParamsTable, fixedParams);
+err = m3ha_neuron_run_and_analyze(neuronParamsTable, fixedParams);
 
 % Update evaluation count
 ctEvals = funcEvalsOld + 1;
@@ -1441,7 +1441,7 @@ save_params(sheetPath, ...
 
 pIsLog = outparams.neuronparamislog;
 
-[err, ~, ~, ~] = m3ha_run_neuron_once(outparams, [], ...
+[err, ~, ~, ~] = m3ha_neuron_run_and_analyze(outparams, [], ...
                                         'RealData', realData, ...
                                         'SaveParamsFlag', false, ...
                                         'OnHpcFlag', onHpcFlag);

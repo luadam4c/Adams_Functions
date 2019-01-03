@@ -447,7 +447,7 @@ data = cellfun(@(x, y, z, w) horzcat(x, y, z, w), ...
 dataAll = data;
 
 %% Average the current pulse responses according to vHold
-% TODO: Pull out to its own function and use in m3ha_run_neuron_once.m
+% TODO: Pull out to its own function and use in m3ha_neuron_run_and_analyze.m
 if toParsePulse && toAverageByVhold
     % Print message
     fprintf('Averaging the current pulse responses according to vHold ... \n');

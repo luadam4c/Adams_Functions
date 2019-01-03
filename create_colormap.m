@@ -20,7 +20,7 @@ function colorMap = create_colormap (nColors, varargin);
 %       cd/locate_functionsdir.m
 %
 % Used by:
-%       cd/m3ha_run_neuron_once.m
+%       cd/m3ha_neuron_run_and_analyze.m
 %       cd/plot_traces.m   
 
 % File History:

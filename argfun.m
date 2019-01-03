@@ -35,11 +35,11 @@ function varargout = argfun (myFunction, varargin)
 %       cd/filter_and_extract_pulse_response.m
 %       cd/find_passive_params.m
 %       cd/find_window_endpoints.m
-%       cd/m3ha_create_initial_neuronparams.m
-%       cd/m3ha_create_simulation_params.m
+%       cd/m3ha_neuron_create_initial_params.m
+%       cd/m3ha_neuron_create_simulation_params.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
-%       cd/m3ha_run_neuron_once.m
+%       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/match_format_vector_sets.m
 %       cd/match_reciprocals.m

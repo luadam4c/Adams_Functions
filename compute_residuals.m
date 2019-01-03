@@ -24,7 +24,7 @@ function residuals = compute_residuals (simVectors, realVectors, varargin)
 %       cd/match_format_vector_sets.m
 %
 % Used by:    
-%       cd/m3ha_run_neuron_once.m
+%       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:
 % 2018-10-23 Created by Adam Lu

@@ -31,7 +31,7 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 %       cd/is_in_parallel.m
 %
 % Used by:    
-%       cd/m3ha_run_neuron_once.m
+%       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:
 % 2018-10-23 Adapted from code in run_neuron_once_4compgabab.m

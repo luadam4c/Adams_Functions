@@ -1,6 +1,6 @@
-function newTable = m3ha_create_new_initial_neuronparams (prevTable, varargin)
+function newTable = m3ha_neuron_create_new_initial_params (prevTable, varargin)
 %% Creates a new set of NEURON parameters based on information in the previous parameters table
-% Usage: newTable = m3ha_create_new_initial_neuronparams (prevTable, varargin)
+% Usage: newTable = m3ha_neuron_create_new_initial_params (prevTable, varargin)
 % Explanation:
 %       TODO
 % Example(s):

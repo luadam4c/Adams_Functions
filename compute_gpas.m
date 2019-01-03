@@ -18,7 +18,7 @@ function gpas = compute_gpas (inputResistance, surfaceArea, varargin)
 %                   default == TODO
 %
 % Used by:
-%       cd/m3ha_create_initial_neuronparams.m
+%       cd/m3ha_neuron_create_initial_params.m
 
 % File History:
 % 2018-11-13 Adapted from ~/m3ha/optimizer4gabab/singleneuronfitting41.m

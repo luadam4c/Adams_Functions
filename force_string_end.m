@@ -27,8 +27,8 @@ function newStr = force_string_end (oldStr, subStr, varargin)
 %       cd/create_simulation_output_filenames.m
 %       cd/run_neuron.m
 %       cd/match_format_vector_sets.m
-%       cd/m3ha_create_simulation_params.m
-%       cd/m3ha_create_single_neuron_commands.m
+%       cd/m3ha_neuron_create_simulation_params.m
+%       cd/m3ha_neuron_create_TC_commands.m
 %       cd/m3ha_import_raw_traces.m
 
 % File History:

@@ -18,7 +18,7 @@ function newValues = choose_random_values(lowerBounds, upperBounds, varargin)
 %                   default == false(nValues, 1)
 %
 % Used by:
-%       cd/m3ha_create_new_initial_neuronparams.m
+%       cd/m3ha_neuron_create_new_initial_params
 
 % File History:
 % 2018-12-11 Created by Adam Lu

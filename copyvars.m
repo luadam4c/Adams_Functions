@@ -16,7 +16,7 @@ function table = copyvars(table, var1, var2)
 %                   default == TODO
 %
 % Used by:
-%       cd/m3ha_create_initial_neuronparams.m
+%       cd/m3ha_neuron_create_initial_params.m
 
 % File History:
 % 2018-12-11 Created by Adam Lu
