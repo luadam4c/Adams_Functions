@@ -13,17 +13,10 @@ function [avgTrace, paramsUsed] = compute_average_trace (traces, varargin)
 %                   Note: If a cell array, each element must be a vector
 %                         If an array, each column is a vector
 %                   must be a numeric array or a cell array of numeric vectors
-%       varargin    - 'NSamples': number of samples in the average trace
-%                   must be a nonnegative integer scalar
-%                   default == minimum of the lengths of all traces
-%                   - 'AlignMethod': method for alignment
-%                   must be an unambiguous, case-insensitive match to one of: 
-%                       'leftAdjust'  - align to the left
-%                       'rightAdjust' - align to the right
-%                   default == 'leftAdjust'
+%       varargin    - any argument of compute_combined_trace.m
 %                   
 % Requires:
-%       cd/extract_subvectors.m
+%       cd/compute_combined_trace.m
 %       cd/iscellnumeric.m
 %
 % Used by:
@@ -35,14 +28,8 @@ function [avgTrace, paramsUsed] = compute_average_trace (traces, varargin)
 % File History:
 % 2018-10-11 Created by Adam Lu
 % 2018-12-18 Now uses extract_subvectors.m
+% 2019-01-03 Moved code to compute_combined_trace.m
 % 
-
-%% Hard-coded parameters
-validAlignMethods = {'leftadjust', 'rightadjust'};
-
-%% Default values for optional arguments
-nSamplesDefault = [];               % set later
-alignMethodDefault  = 'leftadjust'; % align to the left by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -58,106 +45,18 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'traces', ...                   % vectors
-    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['traces must be either a numeric array', ...
-                    'or a cell array of numeric arrays!']));
-
-% Add parameter-value pairs to the Input Parser
-addParameter(iP, 'NSamples', nSamplesDefault, ...
-    @(x) validateattributes(x, {'numeric'}, ...
-                                {'nonnegative', 'integer', 'scalar'}));
-addParameter(iP, 'AlignMethod', alignMethodDefault, ...
-    @(x) any(validatestring(x, validAlignMethods)));
+addRequired(iP, 'traces');
 
 % Read from the Input Parser
 parse(iP, traces, varargin{:});
-nSamples = iP.Results.NSamples;
-alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
-
-%% Preparation
-% Force any row vector to be a column vector
-%   but do not transform arrays
-traces = force_column_numeric(traces, 'IgnoreNonVectors', true);
-
-% Compute the number of samples for each trace
-if iscell(traces)
-    % Apply length() to each element
-    nSamplesEachTrace = cellfun(@length, traces);
-else
-    % Whether multiple vectors or not, nSamplesEachTrace is the number of rows
-    nSamplesEachTrace = size(traces, 1);
-end
-
-% Set default number of samples for the averaged trace
-if isempty(nSamples)
-    if iscell(traces)
-        % Use the minimum length of all traces
-        nSamples = min(nSamplesEachTrace);
-    else
-        % Use the number of rows
-        nSamples = nSamplesEachTrace;
-    end
-end
 
 %% Do the job
-% Return if there are no samples
-if nSamples == 0
-    avgTrace = [];
-    return
-end
-
-% If the number of samples for each trace are not all equal,
-%   align and truncate traces to the desired number of samples
-tracesAligned = extract_subvectors(traces, 'AlignMethod', alignMethod);
-
-% Combine into a numeric array with the columns being vectors to be averaged
-if iscell(tracesAligned)
-    % Place each column vector into a column of an array
-    tracesArray = horzcat(tracesAligned{:});
-else
-    % Already a numeric array with the columns being vectors to be averaged
-    tracesArray = tracesAligned;
-end
-
-% The average trace is the mean of all truncated traces (all columns)
-avgTrace = mean(tracesArray, 2);
-
-%% Output info
-paramsUsed.nSamples = nSamples;
-paramsUsed.alignMethod = alignMethod;
+[avgTrace, paramsUsed] = compute_combined_trace(traces, 'average', varargin{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
-
-if iscell(traces) && ~all(cellfun(@iscolumn, traces))
-    traces = cellfun(@(x) x(:), traces, 'UniformOutput', false);
-end
-
-error('The align method %s is not implemented yet!!', alignMethod);
-
-switch alignMethod
-case 'leftadjust'
-    % Always start from 1
-    if iscell(traces)
-        tracesAligned = cellfun(@(x) x(1:nSamples), traces, ...
-                                    'UniformOutput', false);
-    else
-        tracesAligned = traces(1:nSamples, :);
-    end
-case 'rightadjust'
-    % Always end at end
-    if iscell(traces)
-        tracesAligned = cellfun(@(x) x((end-nSamples+1):end), traces, ...
-                                    'UniformOutput', false);
-    else
-        tracesAligned = traces((end-nSamples+1):end, :);
-    end
-otherwise
-    error_unrecognized(get_var_name(alignMethod), alignMethod, mfilename);
-end
 
 %}
 

@@ -18,6 +18,7 @@ function isCellNumericVector = iscellnumericvector (x)
 %       cd/isnumericvector.m
 %
 % Used by:
+%       cd/compute_combined_trace.m
 %       cd/compute_rms_error.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m

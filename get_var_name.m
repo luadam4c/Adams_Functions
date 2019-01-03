@@ -12,7 +12,9 @@ function variableName = get_var_name (variable)
 %       variable        - variable in workspace
 %
 % Used by:    
+%       cd/compute_combined_trace.m
 %       cd/compute_weighted_average.m
+%       cd/extract_subvectors.m
 
 % File History:
 % 2018-10-26 Adapted from https://www.mathworks.com/matlabcentral/answers/

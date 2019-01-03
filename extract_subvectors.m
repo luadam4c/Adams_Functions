@@ -60,7 +60,6 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/match_format_vector_sets.m
 %
 % Used by:
-%       cd/compute_average_trace.m
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
 %       cd/compute_rms_error.m

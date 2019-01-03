@@ -14,6 +14,7 @@ function error_unrecognized (stringVar, string, funcName)
 %                   must be a string scalar or a character vector
 %
 % Used by:
+%       cd/compute_combined_trace.m
 %       cd/compute_weighted_average.m
 %       cd/extract_subvectors.m
 

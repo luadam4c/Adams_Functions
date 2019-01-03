@@ -48,6 +48,7 @@ Last Updated 2019-01-03 by Adam Lu
 - [**compute_axis_limits.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_axis_limits.m): Computes x or y axis limits from data (works also for a range [min(data), max(data)])
 - [**compute_baseline_noise.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_baseline_noise.m): Computes the baseline noise from a set of data vectors, time vectors and baseline windows
 - [**compute_bins.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_bins.m): Computes bin counts and edges from a vector
+- [**compute_combined_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_combined_trace.m): Computes a combined trace from a set of traces
 - [**compute_conductance.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_conductance.m): Compute theoretical conductance curve for the GABA_B IPSC used by dynamic clamp
 - [**compute_default_sweep_info.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_default_sweep_info.m): Computes default windows, noise, weights and errors
 - [**compute_elcurr.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_elcurr.m): Computes electrode current from conductance & voltage
