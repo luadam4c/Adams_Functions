@@ -50,6 +50,10 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                                           as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'TreatCellStrAsArray': whether to treat a cell array
+%                                       of character arrays as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %
 % Requires:
 %       cd/argfun.m
@@ -59,7 +63,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/create_indices.m
 %       cd/find_window_endpoints.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
 %       cd/match_format_vector_sets.m
@@ -74,7 +78,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/find_passive_params.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/force_matrix.m
-%       cd/iscellnumericvector.m
+%       cd/iscellvector.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
@@ -90,9 +94,11 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2018-12-17 Now allows subvectors to be extracted from an align mode
 % 2018-12-24 Added 'IndexStart', 'IndexEnd' as arguments
 % 2018-12-27 Added the align methods 'leftAdjustPad', 'rightAdjustPad'
-% 2019-01-03 Added usage of force_column_numeric.m
+% 2019-01-03 Added usage of force_column_vector.m
 % 2019-01-03 Moved code to create_empty_match.m
 % 2019-01-04 Added 'TreatCellAsArray' (default == 'false')
+% 2019-01-04 Added 'TreatCellStrAsArray' (default == 'true')
+% 2019-01-04 Fixed bugs for cellstrs
 % TODO: check if all endpoints have 2 elements
 % 
 
@@ -108,6 +114,8 @@ indexStartDefault = [];         % set later
 windowsDefault = [];            % extract entire trace(s) by default
 alignMethodDefault  = 'none';   % no alignment/truncation by default
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
+treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
+                                    %   as an array by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -147,6 +155,8 @@ addParameter(iP, 'AlignMethod', alignMethodDefault, ...
     @(x) any(validatestring(x, validAlignMethods)));
 addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vecs, varargin{:});
@@ -157,6 +167,7 @@ indexEnd = iP.Results.IndexEnd;
 windows = iP.Results.Windows;
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 treatCellAsArray = iP.Results.TreatCellAsArray;
+treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 
 % If indices is provided and endPoints or windows is also provided, 
 %   display warning
@@ -196,7 +207,8 @@ if isempty(endPoints)
         endPoints = find_window_endpoints(windows, vecs);
     else
         % Count the number of elements in each vector
-        nSamples = count_samples(vecs, 'TreatCellAsArray', treatCellAsArray);
+        nSamples = count_samples(vecs, 'TreatCellAsArray', treatCellAsArray, ...
+                                    'TreatCellStrAsArray', treatCellStrAsArray);
 
         % Construct end points
         endPoints = construct_default_endpoints(nSamples);
@@ -216,25 +228,28 @@ indices = align_subvectors(indices, alignMethod);
 %   indices and vecs so that cellfun can be used
 if iscell(indices) || iscell(vecs)
     [indices, vecs] = ...
-        match_format_vector_sets(indices, vecs, 'ForceCellOutputs', true);
+        match_format_vector_sets(indices, vecs, 'ForceCellOutputs', false, ...
+                                'TreatCellAsArray', treatCellAsArray, ...
+                                'TreatCellStrAsArray', treatCellStrAsArray);
 end
 
 %% Do the job
-if iscellnumericvector(vecs)
-    subVecs = cellfun(@(x, y) extract_subvectors_helper(x, y, ...
-                                                    treatCellAsArray), ...
+if iscellnumeric(vecs)
+    subVecs = cellfun(@(x, y) extract_subvectors_helper(x, y), ...
                         vecs, indices, 'UniformOutput', false);
-elseif iscell(vecs)
+elseif iscell(vecs) && ~treatCellAsArray && ...
+            ~(iscellstr(vecs) && treatCellStrAsArray)
     subVecs = cellfun(@(x, y) extract_subvectors(x, 'Indices', y, ...
-                            'TreatCellAsArray', treatCellAsArray), ...
+                                'TreatCellAsArray', treatCellAsArray, ...
+                                'TreatCellStrAsArray', treatCellStrAsArray), ...
                         vecs, indices, 'UniformOutput', false);
 else
-    subVecs = extract_subvectors_helper(vecs, indices, treatCellAsArray);
+    subVecs = extract_subvectors_helper(vecs, indices);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function subVec = extract_subvectors_helper (vec, indices, treatCellAsArray)
+function subVec = extract_subvectors_helper (vec, indices)
 %% Extract a subvector from vector(s) if not empty
 
 % If the time window is out of range, or if the vector is empty, 
@@ -245,8 +260,10 @@ if isempty(indices) || isempty(vec)
 end
 % Make sure vectors and indices are in columns
 [vec, indices] = ...
-    argfun(@(x) force_column_numeric(x, 'IgnoreNonVectors', true, ...
-                                'TreatCellAsArray', treatCellAsArray), ...
+    argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', true, ...
+                                        'TreatCharAsScalar', true, ...
+                                        'TreatCellAsArray', true, ...
+                                        'TreatCellStrAsArray', true), ...
             vec, indices);
 
 % Count the number of indices
@@ -406,10 +423,10 @@ newEndPoints = repmat({[1, minNSamples]}, size(indices));
 
 % Force row vectors as column vectors
 [endPoints, windows] = ...
-    argfun(@(x) force_column_numeric(x, 'IgnoreNonVectors', true), ...
+    argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', true), ...
             endPoints, windows);
 
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 
 
 %                   must be a numeric array or a cell array of numeric arrays
@@ -425,6 +442,9 @@ nRows = length(indices);
 
 % If vecs is empty, or if all options are empty, return vecs
 
+if iscellnumericvector(vecs)
+[indices, vecs] = ...
+        match_format_vector_sets(indices, vecs, 'ForceCellOutputs', true);
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

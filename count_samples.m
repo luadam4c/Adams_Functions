@@ -7,6 +7,8 @@ function nSamples = count_samples (vectors, varargin)
 %           or cellfun(@numel, x) for cell arrays
 % Example(s):
 %       nSamples = count_samples(data)
+%       count_samples(repmat({repmat({'sdf'}, 3, 1)}, 3, 1))
+%       count_samples(repmat({'sdf'}, 3, 4))
 % Outputs:
 %       nSamples    - number of samples for each vector
 %                   specified as a column vector 
@@ -31,11 +33,14 @@ function nSamples = count_samples (vectors, varargin)
 %                                           as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'TreatCellStrAsArray': whether to treat a cell array
+%                                       of character arrays as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/iscellnumericvector.m
-%       cd/isnum.m
+%       cd/iscellvector.m
 %       cd/force_column_vector.m
 %       cd/match_row_count.m
 %
@@ -60,13 +65,16 @@ function nSamples = count_samples (vectors, varargin)
 % 2019-01-03 Added 'TreatRowAsMatrix' as an optional argument
 % 2019-01-04 Now uses isnum.m
 % 2019-01-04 Added 'TreatCellAsArray' (default == 'false')
+% 2019-01-04 Added 'TreatCellStrAsArray' (default == 'true')
 % 
 
 %% Default values for optional arguments
 forceColumnOutputDefault = true;    % force output as a column by default
 treatMatrixAsVectorDefault = false; % treat a matrix as many vectors by default
 treatRowAsMatrixDefault = false;    % treat a row vector as a vector by default
-treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
+treatCellAsArrayDefault = false;    % treat cell arrays as many arrays by default
+treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
+                                    %   as an array by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -81,9 +89,7 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'vectors', ...                   % vectors
-    @(x) assert(isnum(x) || iscell(x), ...
-                'vectors must be either a numeric array or a cell array!'));
+addRequired(iP, 'vectors');
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ForceColumnOutput', forceColumnOutputDefault, ...
@@ -94,6 +100,8 @@ addParameter(iP, 'TreatRowAsMatrix', treatRowAsMatrixDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vectors, varargin{:});
@@ -101,21 +109,27 @@ forceColumnOutput = iP.Results.ForceColumnOutput;
 treatMatrixAsVector = iP.Results.TreatMatrixAsVector;
 treatRowAsMatrix = iP.Results.TreatRowAsMatrix;
 treatCellAsArray = iP.Results.TreatCellAsArray;
+treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 
 %% Do the job
 % Decide based on input type
 if iscell(vectors) && ~treatCellAsArray && ...
-        (treatMatrixAsVector || iscellnumericvector(vectors))
-    % Count the number of elements for each vector
-    nSamples = cellfun(@numel, vectors);
-elseif iscell(vectors) && ~treatCellAsArray
-    % Count the number of elements for each array
-    nSamples = cellfun(@(x) count_samples(x, ...
-                        'ForceColumnOutput', forceColumnOutput, ...
-                        'TreatCellAsArray', treatCellAsArray), ...
-                        vectors, 'UniformOutput', false);
-elseif isnum(vectors) || iscell(vectors) && treatCellAsArray
-    if isvector(vectors) && ~treatRowAsMatrix
+        ~(iscellstr(vectors) && treatCellStrAsArray)
+    % Count samples in each cell
+    if iscellvector(vectors) || treatMatrixAsVector || ...
+            iscellstr(vectors) && ~treatCellStrAsArray
+        % Count the number of elements for each vector in each cell
+        nSamples = cellfun(@numel, vectors);
+    else
+        % Count the number of elements for each array in each cell
+        nSamples = cellfun(@(x) count_samples(x, ...
+                            'ForceColumnOutput', forceColumnOutput, ...
+                            'TreatCellAsArray', treatCellAsArray, ...
+                            'TreatCellStrAsArray', treatCellStrAsArray), ...
+                            vectors, 'UniformOutput', false);
+    end
+else
+    if treatMatrixAsVector || isvector(vectors) && ~treatRowAsMatrix
         % Count the number of elements
         nSamples = numel(vectors);
     else
@@ -128,8 +142,6 @@ elseif isnum(vectors) || iscell(vectors) && treatCellAsArray
         % Repeat to make a column vector
         nSamples = match_row_count(nSamplesScalar, nVectors);
     end
-else
-    error('vectors is not the right type!');
 end
 
 % Force nSamples to be a column vector unless requested not to
@@ -162,6 +174,14 @@ nSamples = ones(nVectors, 1) * nSamplesScalar;
 @(x) assert(isnumeric(x) || iscellnumericvector(x), ...
             ['vectors must be either a numeric array', ...
                 'or a cell array of numeric vectors!']));
+
+elseif isnum(vectors) || iscell(vectors) && treatCellAsArray || ...
+        iscellstr(vectors) && treatCellStrAsArray
+else
+    error('vectors is not the right type!');
+
+@(x) assert(isnum(x) || iscell(x), ...
+            'vectors must be either a numeric array or a cell array!'));
 
 %}
 

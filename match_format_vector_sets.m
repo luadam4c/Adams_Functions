@@ -35,6 +35,19 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %                   - 'MatchVectors': whether to match vectors within sets
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'TreatCellAsArray': whether to treat a cell array
+%                                           as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'TreatCellStrAsArray': whether to treat a cell array
+%                                       of character arrays as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'TreatCharAsScalar': whether to treat character arrays 
+%                                           as scalars
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%
 % Requires:
 %       cd/apply_or_return.m
 %       cd/argfun.m
@@ -65,6 +78,9 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %               and match_vector_counts.m
 % 2018-10-31 Now uses isnumericvector.m and apply_or_return.m
 % 2019-01-03 Added 'MatchVectors' as an optional argument
+% 2019-01-04 Added 'TreatCellAsArray' (default == 'false')
+% 2019-01-04 Added 'TreatCellStrAsArray' (default == 'true')
+% 2019-01-04 Added 'TreatCharAsScalar' (default == 'true')
 % TODO: Include the option to not force as column cell arrays
 %           i.e., match 2D cell arrays
 % TODO: Accept more than two vector sets
@@ -75,6 +91,10 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %% Default values for optional arguments
 forceCellOutputsDefault = false;    % don't force as cell array by default
 matchVectorsDefault = false;        % don't match vectors by default
+treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
+treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
+                                    %   as an array by default
+treatCharAsScalarDefault = true;% treat character arrays as scalars by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -104,11 +124,20 @@ addParameter(iP, 'ForceCellOutputs', forceCellOutputsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'MatchVectors', matchVectorsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCharAsScalar', treatCharAsScalarDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vecs1, vecs2, varargin{:});
 forceCellOutputs = iP.Results.ForceCellOutputs;
 matchVectors = iP.Results.MatchVectors;
+treatCellAsArray = iP.Results.TreatCellAsArray;
+treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
+treatCharAsScalar = iP.Results.TreatCharAsScalar;
 
 %% Do the job
 % If the vecs1 or vecs2 is a numeric vector, make sure it is a column vector
@@ -119,8 +148,10 @@ matchVectors = iP.Results.MatchVectors;
 
 % If there are more than one vectors in either vecs1 or vecs2, 
 %   put things in a format so cellfun can be used
-if (isnumericvector(vecs1) || ischar(vecs1)) && ...
-    (isnumericvector(vecs2) || ischar(vecs2))
+if is_vector(vecs1, treatCellStrAsArray, ...
+                treatCellAsArray, treatCharAsScalar) && ...
+        is_vector(vecs2, treatCellStrAsArray, ...
+                    treatCellAsArray, treatCharAsScalar)
     % Match vectors if requested
     if matchVectors
         [vecs1, vecs2] = match_format_vectors(vecs1, vecs2);
@@ -129,12 +160,16 @@ if (isnumericvector(vecs1) || ischar(vecs1)) && ...
     % If both inputs are either a numeric vector (could be empty) 
     %   or a character array, force outputs to be cell arrays if requested
     if forceCellOutputs
-        vecs1 = {vecs1};
-        vecs2 = {vecs2};
+        if ~iscell(vecs1)
+            vecs1 = {vecs1};
+        end
+        if ~iscell(vecs2)
+            vecs2 = {vecs2};
+        end
     end
 else
     % Force vecs1/vecs2 to become 
-    %   column cell arrays of column numeric vectors
+    %   column cell arrays of column vectors
     [vecs1, vecs2] = argfun(@force_column_cell, vecs1, vecs2);
 
     % Find the maximum number of rows
@@ -151,6 +186,16 @@ else
                                 vecs1, vecs2, 'UniformOutput', false);
     end
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function isVector = is_vector(vecs1, treatCellStrAsArray, ...
+                                treatCellAsArray, treatCharAsScalar)
+
+isVector = isnumericvector(vecs1) || ...
+        ischar(vecs1) && treatCharAsScalar || ...
+        iscellstr(vecs1) && treatCellStrAsArray || ...
+        iscell(vecs1) && treatCellAsArray;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

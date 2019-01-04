@@ -95,7 +95,8 @@ end
 parts = arrayfun(@(x) split(x, delimiter), strs, 'UniformOutput', false);
 
 % Extract the same number of elements from each cell array
-partsAligned = extract_subvectors(parts, 'AlignMethod', alignMethod);
+partsAligned = extract_subvectors(parts, 'AlignMethod', alignMethod, ...
+                                    'TreatCellStrAsArray', true);
 
 % Place all parts together in a 2-D cell array
 %   Each column is an original string

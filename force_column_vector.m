@@ -27,6 +27,14 @@ function vectors = force_column_vector (vectors, varargin)
 %                                           as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'TreatCellStrAsArray': whether to treat a cell array
+%                                       of character arrays as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'TreatCharAsScalar': whether to treat character arrays 
+%                                           as scalars
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %
 % Requires:
 %       cd/force_column_cell.m
@@ -70,12 +78,18 @@ function vectors = force_column_vector (vectors, varargin)
 % 2018-12-28 Now accepts all types of arrays
 % 2019-01-03 Now adds ignoreNonVectors to recursive part
 % 2019-01-04 Added 'TreatCellAsArray' (default == 'false')
+% 2019-01-04 Added 'TreatCellStrAsArray' (default == 'true')
+% 2019-01-04 Added 'TreatCharAsScalar' (default == 'true')
+% 2019-01-04 Fixed bugs for cellstrs
 % TODO: Deal with 3D arrays
 % 
 
 %% Default values for optional arguments
 ignoreNonVectorsDefault = false;    % don't ignore non-vectors by default
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
+treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
+                                    %   as an array by default
+treatCharAsScalarDefault = true;% treat character arrays as scalars by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -98,15 +112,28 @@ addParameter(iP, 'IgnoreNonVectors', ignoreNonVectorsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCharAsScalar', treatCharAsScalarDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vectors, varargin{:});
 ignoreNonVectors = iP.Results.IgnoreNonVectors;
 treatCellAsArray = iP.Results.TreatCellAsArray;
+treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
+treatCharAsScalar = iP.Results.TreatCharAsScalar;
 
 %% Do the job
-if (~iscell(vectors) || treatCellAsArray) && ~iscolumn(vectors)
-    if isempty(vectors)
+if iscell(vectors) && ~treatCellAsArray && ...
+        ~(iscellstr(vectors) && treatCellStrAsArray)
+    % Extract as a cell array
+    %   Note: this will have a recursive effect
+    vectors = cellfun(@(x) force_column_vector(x, ...
+                            'IgnoreNonVectors', ignoreNonVectors), ...
+                    vectors, 'UniformOutput', false);
+elseif ~iscolumn(vectors)
+    if isempty(vectors) || ischar(vectors) && treatCharAsScalar
         % Do nothing
     elseif isvector(vectors)
         % Reassign as a column
@@ -118,12 +145,6 @@ if (~iscell(vectors) || treatCellAsArray) && ~iscolumn(vectors)
             vectors = force_column_cell(vectors, 'ToLinearize', false);
         end
     end
-elseif iscell(vectors) && ~treatCellAsArray
-    % Extract as a cell array
-    %   Note: this will have a recursive effect
-    vectors = cellfun(@(x) force_column_vector(x, ...
-                            'IgnoreNonVectors', ignoreNonVectors), ...
-                    vectors, 'UniformOutput', false);
 else
     % Do nothing
 end

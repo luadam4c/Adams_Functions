@@ -100,13 +100,13 @@ parse(iP, vectorsOrig, varargin{:});
 toLinearize = iP.Results.ToLinearize;
 
 %% Do the job
-if iscell(vectorsOrig) && ...
+if iscell(vectorsOrig) && iscolumn(vectorsOrig)
+    % Do nothing
+    vectorsCell = vectorsOrig;
+elseif iscell(vectorsOrig) && ...
         (isempty(vectorsOrig) || isrow(vectorsOrig) || toLinearize)
     % Reassign as a column
     vectorsCell = vectorsOrig(:);
-elseif ischar(vectorsOrig) || isnum(vectorsOrig) && isempty(vectorsOrig)
-    % Place in a cell array
-    vectorsCell = {vectorsOrig};
 elseif isnum(vectorsOrig) || ...
         iscell(vectorsOrig) && ~isvector(vectorsOrig) && ~toLinearize
     % Force any numeric vector as a column vector
@@ -115,12 +115,13 @@ elseif isnum(vectorsOrig) || ...
     end
 
     % Extract as a cell array
-    vectorsCell = ...
-        extract_columns(vectorsOrig, 'all', 'OutputMode', 'single', ...
-                        'TreatCellAsArray', true);
+    vectorsCell = extract_columns(vectorsOrig, 'all', ...
+                            'OutputMode', 'single', 'TreatCellAsArray', true);
+elseif ~iscell(vectorsOrig)
+    % Place in a cell array
+    vectorsCell = {vectorsOrig};
 else
-    % Do nothing
-    vectorsCell = vectorsOrig;
+    error('Code logic error!');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -143,6 +144,11 @@ nVectors = count_vectors(vectorsOrig);
 vectorsCell = arrayfun(@(x) vectorsOrig(:, x), ...
                         transpose(1:nVectors), ...
                         'UniformOutput', false);
+
+elseif ischar(vectorsOrig) || isnum(vectorsOrig) && isempty(vectorsOrig)
+    % Place in a cell array
+    vectorsCell = {vectorsOrig};
+
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
