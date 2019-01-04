@@ -20,6 +20,7 @@ function isEmpty = isemptycell (cellArray, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/all_data_files.m
 %       cd/distribute_balls_into_boxes.m
 %       cd/find_ind_str_in_cell.m
 %       cd/istype.m

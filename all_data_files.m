@@ -11,6 +11,9 @@ function [dataType, allDataFiles, nDataFiles, message] = all_data_files (dataTyp
 %                   must be a cell array of character vectors
 %                   default == {}
 %
+% Requires:
+%       cd/isemptycell.m
+%
 % Used by:
 %       /home/Matlab/minEASE/minEASE.m
 %       /home/Matlab/Adams_Functions/combine_sweeps.m
@@ -112,7 +115,7 @@ function allDataFiles = find_valid_files(dataDirectory, fileIdentifier, fileType
 allDataFiles = dir(fullfile(dataDirectory, [fileIdentifier, '*.', fileType]));
 
 % Exclude invalid entries by testing the date field
-allDataFiles = allDataFiles(~cellfun(@isempty, {allDataFiles.date}));
+allDataFiles = allDataFiles(~isemptycell({allDataFiles.date}));
 
 % Exclude entries with an excluded string in the name
 for iString = 1:numel(excludedStrings)

@@ -90,26 +90,6 @@ end
 %{
 OLD CODE:
 
-% Requires:
-%       /home/Matlab/Adams_Functions/validate_string.m
-
-%% Check strings and validate
-if iscell(strings)
-    linestyles = cellfun(@(x) validate_string(x, validLineStyles, ...
-                                            'ValidateMode', validateMode, ...
-                                            'MatchMode', matchMode), ...
-                                            strings, 'UniformOutput', false);
-    results = ~cellfun(@isempty, linestyles);
-elseif ischar(strings)
-    linestyles = validate_string(strings, validLineStyles, ...
-                                'ValidateMode', validateMode, ...
-                                'MatchMode', matchMode);
-    results = ~isempty(linestyles);
-else
-    error(['input argument is in the wrong format! ', ...
-            'Type ''help %s'' for usage'], mfilename);
-end
-
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
