@@ -269,7 +269,9 @@ if isempty(data) || isempty(siUs) || isempty(fileInfo)
             catch ME
                 fprintf('The file %s cannot be read by either %s or %s!\n', ...
                         abfFullFileName, 'abf2load', 'abfload');
-                rethrow(ME);
+                parsedParams = [];
+                parsedData = [];
+                return
             end
         end
     elseif exist('abfload', 'file') == 2
@@ -775,7 +777,6 @@ parsedData = [];
 return
 
 rethrow(ME);
-
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

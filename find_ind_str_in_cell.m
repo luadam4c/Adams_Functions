@@ -8,6 +8,16 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 %       and returns the corresponding elements.
 %   Also, default is 'SearchMode' == 'substrings', which allows str to be 
 %       a substring of a match in cellArray.
+% Example(s):
+%       cell = {'Mark''s fish', 'Peter''s fish', 'Katie''s sealion'};
+%       find_ind_str_in_cell('fish', cell)
+%       find_ind_str_in_cell('Peter', cell)
+%       find_ind_str_in_cell({'Katie', 'lion'}, cell)
+%       find_ind_str_in_cell('fish', cell, 1)
+%       find_ind_str_in_cell('Fish', cell, 'IgnoreCase', 1)
+%       find_ind_str_in_cell('Fish', cell, 'IgnoreCase', false)
+%       find_ind_str_in_cell('sealion', cell, 'SearchMode', 'ex')
+%       find_ind_str_in_cell('sealion', cell, 'SearchMode', 'sub')
 % Outputs:
 %       indices     - indices of the cell array containing that exact string
 %                       or containing a substring or all substrings provided; 
@@ -43,7 +53,7 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 %                   default == numel(cellArray)
 %
 % Requires:
-%       cd/intersect_over_cells.m
+%       cd/compute_combined_trace.m
 %
 % Used by:
 %       cd/ispositiveintegerscalar.m
@@ -77,7 +87,7 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 %       /home/Matlab/minEASE/gui_examine_events.m
 %       /home/Matlab/EEG_gui/EEG_gui.m
 %       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
-%
+
 % 2016-09--- Created
 % 2016-10-13 moved to Adams_Functions
 % 2016-11-30 Added searchMode
@@ -89,6 +99,8 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 % 2017-06-09 Fixed the returned element to be of original case
 % 2018-05-01 Added MaxNum as a parameter
 % 2018-08-02 Added 'regexp' as a SearchMode
+% 2019-01-04 Now uses compute_combined_trace.m instead of intersect_over_cells.m
+% 2019-01-04 Simplified code with contains()
 
 %% Hard-coded constants
 validSearchModes = {'exact', 'substrings', 'regexp'};
@@ -182,41 +194,26 @@ case 'substrings'   % String can be a substring or a cell array of substrings
 
     % Find indices that contain str in cellArrayMod
     if iscell(str)        % if str is a cell array of substrings
-        % Convert each substring to lower case if IgnoreCase is set to true
-        if ignoreCase
-            strMod = cellfun(@lower, str, 'UniformOutput', false);
+        % Test whether each element contains each substring
+        if iscell(str)
+            hasEachStr = cellfun(@(x) contains(cellArrayMod, x, ...
+                                        'IgnoreCase', ignoreCase), ...
+                                str, 'UniformOutput', false);
         else
-            strMod = str;
+            hasEachStr = arrayfun(@(x) contains(cellArrayMod, x, ...
+                                        'IgnoreCase', ignoreCase), ...
+                                str, 'UniformOutput', false);
         end
 
-        % Find the indices that contain each substring
-        numstrs = numel(strMod);
-        indicesEachStr = cell(1, numstrs);
-        for k = 1:numstrs
-            indicesarray = strfind(cellArrayMod, strMod(k));    
-            indicesEachStr{k} = find(~cellfun(@isempty, indicesarray));
-        end
-
-        % Find the indices that contain all substrings by intersection
-        indices = intersect_over_cells(indicesEachStr);
-
-        % If more than maxNum indices found, 
-        %   restrict to the first maxNum indices
-        if length(indices) > maxNum
-            indices = indices(1:maxNum);
-        end
+        % Test whether each element contains all substrings
+        hasStr = compute_combined_trace(hasEachStr, 'all');
     else                    % if str is a single substring
-        % Convert substring to lower case if IgnoreCase is set to true
-        if ignoreCase
-            strMod = lower(str);
-        else
-            strMod = str;
-        end
-
-        % Find the indices that contain the substring
-        indicesarray = strfind(cellArrayMod, strMod);
-        indices = find(~cellfun(@isempty, indicesarray), maxNum);
+        % Test whether each element of the cell array contain the substring
+        hasStr = contains(cellArrayMod, str, 'IgnoreCase', ignoreCase);    
     end
+
+    % Find the indices that contain the substring
+    indices = find(hasStr, maxNum);
 case 'regexp'   % String is considered a regular expression
     % Find all starting indices in the strings for the matches
     if ignoreCase
@@ -226,7 +223,7 @@ case 'regexp'   % String is considered a regular expression
     end
 
     % Find all indices in the cell array for the matches
-    indices = find(~cellfun(@isempty, startIndices), maxNum);
+    indices = find(~isemptycell(startIndices), maxNum);
 end
 
 %% Return the elements too
@@ -249,6 +246,51 @@ if strcmpi(searchMode, 'exact')             % String must be exact
 elseif strcmpi(searchMode, 'substrings')    % String can be a substring 
                                             % or a cell array of substrings
 end
+
+indicesEachStr = contains(cellArrayMod, strMod);
+
+% Find the indices that contain the substring
+indicesarray = strfind(cellArrayMod, strMod);
+indices = find(~cellfun(@isempty, indicesarray), maxNum);
+
+% Convert substring to lower case if IgnoreCase is set to true
+if ignoreCase
+    strMod = lower(str);
+else
+    strMod = str;
+end
+
+indicesarray = strfind(cellArrayMod, strMod(k));    
+indicesEachStr{k} = find(~cellfun(@isempty, indicesarray));
+
+% Convert each substring to lower case if IgnoreCase is set to true
+if ignoreCase
+    strMod = cellfun(@lower, str, 'UniformOutput', false);
+else
+    strMod = str;
+end
+
+nStrs = numel(str);
+indicesEachStr = cell(1, nStrs);
+for k = 1:nStrs
+    % Test whether each element of the cell array contain the substring
+    hasStr = contains(cellArrayMod, str(k), 'IgnoreCase', ignoreCase);
+
+    % 
+    indicesEachStr{k} = find(hasStr);
+end
+
+% Find the indices that contain all substrings by intersection
+indices = intersect_over_cells(indicesEachStr);
+%       cd/intersect_over_cells.m
+
+% If more than maxNum indices found, 
+%   restrict to the first maxNum indices
+if length(indices) > maxNum
+    indices = indices(1:maxNum);
+end
+
+indices = find(~cellfun(@isempty, startIndices), maxNum);
 
 %}
 

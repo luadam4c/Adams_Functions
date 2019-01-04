@@ -16,6 +16,7 @@ function isNum = isnum (x, varargin)
 %
 % Used by:
 %       cd/compute_axis_limits.m
+%       cd/compute_combined_trace.m
 %       cd/plot_horizontal_line.m
 %       cd/plot_vertical_line.m
 

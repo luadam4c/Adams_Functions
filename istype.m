@@ -1,6 +1,6 @@
-function [results, validatedTypes] = istype (strings, validTypes, varargin)
+function [results, validatedTypes] = istype (strs, validTypes, varargin)
 %% Check whether a string or each string in a cell array is a valid type specified by validTypes
-% Usage: [results, validatedTypes] = istype (strings, validTypes, varargin)
+% Usage: [results, validatedTypes] = istype (strs, validTypes, varargin)
 % Outputs:    
 %       results     - indication of whether the string is of a specified type
 %                   specified as a logical array
@@ -10,7 +10,7 @@ function [results, validatedTypes] = istype (strings, validTypes, varargin)
 %                   returns the shortest match if matchMode == 'substring' 
 %                       (sames as validatestring())
 % Arguments:
-%       strings     - string or strings to check
+%       strs        - string or strings to check
 %                   must be a string/char-vec or 
 %                       a cell array of strings/char-vecs
 %       varargin    - 'ValidateMode': whether to validate string and 
@@ -27,12 +27,13 @@ function [results, validatedTypes] = istype (strings, validTypes, varargin)
 %                   default == 'substring'
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/validate_string.m
+%       cd/isemptycell.m
+%       cd/validate_string.m
 %
 % Used by:
-%       /home/Matlab/Adams_Functions/isfigtype.m
-%       /home/Matlab/Adams_Functions/islinestyle.m
-%       /home/Matlab/Adams_Functions/issheettype.m
+%       cd/isfigtype.m
+%       cd/islinestyle.m
+%       cd/issheettype.m
 %
 % File History:
 % 2018-05-16 Modified from issheettype.m
@@ -53,11 +54,11 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to an Input Parser
-addRequired(iP, 'strings', ...                  % string or strings to check
+addRequired(iP, 'strs', ...                     % string or strings to check
     @(x) assert(ischar(x) || ...
                 iscell(x) && (min(cellfun(@ischar, x)) || ...
                 min(cellfun(@isstring, x))) || isstring(x) , ...
-                ['strings must be either a string/character array ', ...
+                ['strs must be either a string/character array ', ...
                 'or a cell array of strings/character arrays!']));
 
 % Add parameter-value pairs to the Input Parser
@@ -67,7 +68,7 @@ addParameter(iP, 'MatchMode', 'substring', ...  % the matching mode
     @(x) any(validatestring(x, {'exact', 'substring'})));
 
 % Read from the Input Parser
-parse(iP, strings, varargin{:});
+parse(iP, strs, varargin{:});
 validateMode = iP.Results.ValidateMode;
 matchMode = iP.Results.MatchMode;
 
@@ -78,14 +79,14 @@ if ~isempty(fieldnames(iP.Unmatched))
 end
 
 %% Check strings and validate
-if iscell(strings)
+if iscell(strs)
     validatedTypes = cellfun(@(x) validate_string(x, validTypes, ...
                                             'ValidateMode', validateMode, ...
                                             'MatchMode', matchMode), ...
-                                            strings, 'UniformOutput', false);
-    results = ~cellfun(@isempty, validatedTypes);
-elseif ischar(strings)
-    validatedTypes = validate_string(strings, validTypes, ...
+                                            strs, 'UniformOutput', false);
+    results = ~isemptycell(validatedTypes);
+elseif ischar(strs)
+    validatedTypes = validate_string(strs, validTypes, ...
                                 'ValidateMode', validateMode, ...
                                 'MatchMode', matchMode);
     results = ~isempty(validatedTypes);

@@ -116,26 +116,6 @@ candidates = replace(candidates, '.', '');
 %{
 OLD CODE:
 
-% Requires:
-%       /home/Matlab/Adams_Functions/validate_string.m
-
-%% Check strings and validate
-if iscell(strings)
-    sheettypes = cellfun(@(x) validate_string(x, validSheetTypes, ...
-                                            'ValidateMode', validateMode, ...
-                                            'MatchMode', matchMode), ...
-                                            strings, 'UniformOutput', false);
-    results = ~cellfun(@isempty, sheettypes);
-elseif ischar(strings)
-    sheettypes = validate_string(strings, validSheetTypes, ...
-                                'ValidateMode', validateMode, ...
-                                'MatchMode', matchMode);
-    results = ~isempty(sheettypes);
-else
-    error(['input argument is in the wrong format! ', ...
-            'Type ''help %s'' for usage'], mfilename);
-end
-
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

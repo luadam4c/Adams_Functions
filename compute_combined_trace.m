@@ -16,9 +16,11 @@ function [combTrace, paramsUsed] = ...
 %                       must be a numeric array or a cell array
 %       combineMethod   - method for combining traces
 %                       must be an unambiguous, case-insensitive match to one of: 
-%                           'average' - take the average
-%                           'maximum' - take the maximum
-%                           'minimum' - take the minimum
+%                           'average'   - take the average
+%                           'maximum'   - take the maximum
+%                           'minimum'   - take the minimum
+%                           'all'       - take the logical AND
+%                           'any'       - take the logical OR
 %       varargin    - 'NSamples': number of samples in the average trace
 %                   must be a nonnegative integer scalar
 %                   default == minimum of the lengths of all traces
@@ -34,6 +36,7 @@ function [combTrace, paramsUsed] = ...
 %                   
 % Requires:
 %       cd/count_samples.m
+%       cd/isnum.m
 %       cd/force_matrix.m
 %       cd/error_unrecognized.m
 %       cd/get_var_name.m
@@ -43,6 +46,7 @@ function [combTrace, paramsUsed] = ...
 %       cd/compute_average_trace.m
 %       cd/compute_maximum_trace.m
 %       cd/compute_minimum_trace.m
+%       cd/find_ind_str_in_cell.m
 
 % File History:
 % 2019-01-03 Moved from compute_average_trace
@@ -50,12 +54,14 @@ function [combTrace, paramsUsed] = ...
 % 2019-01-03 Now allows NaNs
 % 2019-01-03 Now uses count_samples.m
 % 2019-01-03 Added 'TreatRowAsMatrix' as an optional argument
+% 2019-01-04 Added 'all', 'any' as valid combind methods
+% 2019-01-04 Now uses isnum.m
 % 
 
 %% Hard-coded parameters
 validAlignMethods = {'leftAdjust', 'rightAdjust', ...
                     'leftAdjustPad', 'rightAdjustPad'};
-validCombineMethods = {'average', 'maximum', 'minimum'};
+validCombineMethods = {'average', 'maximum', 'minimum', 'all', 'any'};
 
 %% Default values for optional arguments
 nSamplesDefault = [];               % set later
@@ -77,7 +83,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'traces', ...                   % vectors
-    @(x) assert(isnumeric(x) || iscell(x), ...
+    @(x) assert(isnum(x) || iscell(x), ...
                 'traces must be either a numeric array or a cell array!'));
 addRequired(iP, 'CombineMethod', ...
     @(x) any(validatestring(x, validCombineMethods)));
@@ -143,6 +149,12 @@ switch combineMethod
     case 'minimum'
         % Take the minimum of all truncated traces (all columns)
         combTrace = min(tracesMatrix, [], 2);
+    case 'all'
+        % Take the logical AND of all truncated traces (all columns)
+        combTrace = all(tracesMatrix, 2);
+    case 'any'
+        % Take the logical OR of all truncated traces (all columns)
+        combTrace = any(tracesMatrix, 2);
     otherwise
         error_unrecognized(get_var_name(combineMethod), ...
                             combineMethod, mfilename);

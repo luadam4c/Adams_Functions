@@ -26,6 +26,9 @@ function [allWays, nWays] = distribute_balls_into_boxes (nBalls, varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %
+% Requires:
+%       cd/isemptycell.m
+%
 % Used by:
 %       cd/load_examples.m
 %       cd/piecelinspace.m
@@ -172,7 +175,7 @@ elseif ~distinctBalls && ~distinctBoxes
                                 indices, 'UniformOutput', false);
 
         % Determine whether each box has a ball to be moved
-        hasBallToMove = ~cellfun(@isempty, idxReceiveAll);
+        hasBallToMove = ~isemptycell(idxReceiveAll);
 
         % Determine whether each box's immediate right neighbor has
         %   the same number of balls

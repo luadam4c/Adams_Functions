@@ -10,8 +10,8 @@ function intersection = intersect_over_cells (cellArray)
 %                       must be a cell array of input arrays that 
 %                           can be recognized by the built-in intersect function
 %
-% Used by:    
-%       /home/Matlab/Adams_Functions/find_ind_str_in_cell.m
+% Used by:
+%       TODO
 %
 % File History:
 % 2018-01-10 Created
@@ -68,6 +68,8 @@ end
 
 %{
 OLD CODE:
+
+%       cd/find_ind_str_in_cell.m
 
 %}
 

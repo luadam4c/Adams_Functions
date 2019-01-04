@@ -73,7 +73,9 @@ function [allParsedParamsTable, allParsedDataTable, ...
 %                   
 % Requires:
 %       cd/all_files.m
+%       cd/argfun.m
 %       cd/parse_abf.m
+%       cd/remove_empty.m
 %       cd/issheettype.m
 %
 % Used by:
@@ -234,14 +236,18 @@ end
 % Log all entries that are empty
 % TODO
 
+% Remove all entries that are empty from the cell arrays
+[allParsedParamsCell, allParsedDataCell] = ...
+    argfun(@remove_empty, allParsedParamsCell, allParsedDataCell);
+
 % Convert to a struct array
 %   Note: This removes all entries that are empty
-allParsedParamsStruct = [allParsedParamsCell{:}];
-allParsedDataStruct = [allParsedDataCell{:}];
+[allParsedParamsStruct, allParsedDataStruct = 
+    argfun(@(x) [x{:}], allParsedParamsCell, allParsedDataCell);
 
 % Convert to a table
-allParsedParamsTable = struct2table(allParsedParamsStruct);
-allParsedDataTable = struct2table(allParsedDataStruct);
+[allParsedParamsTable, allParsedDataTable = 
+    argfun(@struct2table, allParsedParamsStruct, allParsedDataStruct);
 
 %% Print parameters to a file
 % Get the directory name
@@ -300,6 +306,14 @@ end
 fileNames = extract_fullpath(files);
 
 %       cd/extract_fullpath.m
+
+allParsedDataCell = allParsedDataCell(~cellfun(@isempty, allParsedDataCell));
+
+allParsedParamsStruct = [allParsedParamsCell{:}];
+allParsedDataStruct = [allParsedDataCell{:}];
+
+allParsedParamsTable = struct2table(allParsedParamsStruct);
+allParsedDataTable = struct2table(allParsedDataStruct);
 
 %}
 
