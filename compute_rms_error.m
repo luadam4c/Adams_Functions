@@ -31,6 +31,7 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 %       cd/argfun.m
 %       cd/iscellnumeric.m
 %       cd/iscellnumericvector.m
+%       cd/isemptycell.m
 %       cd/isnumericvector.m
 %       cd/extract_subvectors.m
 %       cd/force_column_cell.m
@@ -96,7 +97,7 @@ endPoints = iP.Results.EndPoints;
 
 % Make sure vec1s and vec2s are both column cell arrays
 %   with the same number of vectors
-[vec1s, vec2s] = match_format_vector_sets(vec1s, vec2s);
+[vec1s, vec2s] = match_format_vector_sets(vec1s, vec2s, 'ForceCellOutput', true);
 
 % Restrict to the given end points
 %   Note: default is first and last indices
@@ -117,7 +118,7 @@ rmsErrors = cellfun(@(x, y) compute_rms_error_helper(x, y), vec1s, vec2s);
 function vec2 = set_vec2_if_empty (vec1, vec2)
 %% Set the default second vector to be the mean values of the first vector
 
-if isempty(vec2)
+if isempty(vec2) || iscell(vec2) && all(all(isemptycell(vec2)))
     vec2 = nanmean(vec1) * ones(size(vec1));
 end
 

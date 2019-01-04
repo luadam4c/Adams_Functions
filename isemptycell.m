@@ -21,6 +21,8 @@ function isEmpty = isemptycell (cellArray, varargin)
 %
 % Used by:
 %       cd/all_data_files.m
+%       cd/compute_rms_error.m
+%       cd/create_indices.m
 %       cd/distribute_balls_into_boxes.m
 %       cd/find_ind_str_in_cell.m
 %       cd/istype.m

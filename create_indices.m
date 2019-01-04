@@ -38,6 +38,7 @@ function indices = create_indices (endPoints, varargin)
 %       cd/force_column_cell.m
 %       cd/force_column_vector.m
 %       cd/force_matrix.m
+%       cd/isemptycell.m
 %       cd/isnumericvector.m
 %       cd/match_and_combine_vectors.m
 %       cd/match_format_vector_sets.m
@@ -130,7 +131,7 @@ end
 
 % If original vectors are provided, 
 %   fix indices if they are out of range
-if ~isempty(vectors)
+if ~(isempty(vectors) || iscell(vectors) && all(all(isemptycell(vectors))))
     % Make sure indices are columns
     [idxStart, idxEnd] = argfun(@force_column_vector, idxStart, idxEnd);
 

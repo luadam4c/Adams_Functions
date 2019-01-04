@@ -74,7 +74,9 @@ parse(iP, oldStr, subStr, varargin{:});
 onlyIfNonempty = iP.Results.OnlyIfNonempty;
 
 %% Preparation
-[oldStr, subStr] = match_format_vector_sets(oldStr, subStr);
+[oldStr, subStr] = match_format_vector_sets(oldStr, subStr, ...
+                    'TreatCellStrAsArray', false, ...
+                    'TreatCellAsArray', false);
 
 %% Do the job
 if iscell(oldStr)

@@ -156,17 +156,6 @@ if is_vector(vecs1, treatCellStrAsArray, ...
     if matchVectors
         [vecs1, vecs2] = match_format_vectors(vecs1, vecs2);
     end
-
-    % If both inputs are either a numeric vector (could be empty) 
-    %   or a character array, force outputs to be cell arrays if requested
-    if forceCellOutputs
-        if ~iscell(vecs1)
-            vecs1 = {vecs1};
-        end
-        if ~iscell(vecs2)
-            vecs2 = {vecs2};
-        end
-    end
 else
     % Force vecs1/vecs2 to become 
     %   column cell arrays of column vectors
@@ -184,6 +173,16 @@ else
     if matchVectors
         [vecs1, vecs2] = cellfun(@(x, y) match_format_vectors(x, y), ...
                                 vecs1, vecs2, 'UniformOutput', false);
+    end
+end
+
+% Force outputs to be cell arrays if requested
+if forceCellOutputs
+    if ~iscell(vecs1)
+        vecs1 = {vecs1};
+    end
+    if ~iscell(vecs2)
+        vecs2 = {vecs2};
     end
 end
 

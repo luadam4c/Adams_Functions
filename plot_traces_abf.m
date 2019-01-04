@@ -380,8 +380,8 @@ if ~individually && strcmpi(expMode, 'EEG')
 elseif ~individually && strcmpi(expMode, 'patch') || ...
         individually && strcmpi(expMode, 'EEG')
     % Loop through all channels
-    parfor iChannel = 1:nChannels
-%    for iChannel = 1:nChannels
+%    parfor iChannel = 1:nChannels
+    for iChannel = 1:nChannels
         % Print message
         if verbose
             fprintf('Plotting all sweeps of Channel #%d ...\n', iChannel);

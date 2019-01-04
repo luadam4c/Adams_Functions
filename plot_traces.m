@@ -459,7 +459,8 @@ if iscell(xLimits)
 
     % Run through all intervals
     % TODO: Implement the updating data strategy instead
-    parfor iInterval = 1:nIntervals
+%    parfor iInterval = 1:nIntervals
+    for iInterval = 1:nIntervals
     % Get the current x-axis limits
         xLimitsThis = xLimits{iInterval};
 
