@@ -39,6 +39,7 @@ function indices = create_indices (endPoints, varargin)
 %       cd/force_matrix.m
 %       cd/isnumericvector.m
 %       cd/match_and_combine_vectors.m
+%       cd/match_format_vector_sets.m
 %       cd/match_format_vectors.m
 %
 % Used by:
@@ -137,7 +138,7 @@ if ~isempty(vectors)
 
     % Match the vector counts
     [idxStart, idxEnd] = ...
-        argfun(@(x) match_format_vector_sets(nSamples, x, 'MatchVectors', true), ...
+        argfun(@(x) match_format_vector_sets(x, nSamples, 'MatchVectors', true), ...
                 idxStart, idxEnd);
 
     % Make sure endpoint indices are in range
