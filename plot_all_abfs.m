@@ -116,6 +116,7 @@ function [abfParamsTable, abfDataTable, abfParamsStruct, ...
 %                   abfParamsCell
 % 2018-12-15 - Added 'Verbose' as a parameter
 % 2018-12-15 - Fixed the case of having only one .abf file
+% 2019-01-04 - Now omits the .abf files that cannot be read
 % TODO: Restructure code so that each type of plot is its own subfunction
 
 %% Hard-coded parameters
@@ -252,9 +253,6 @@ end
 % Force as a cell array
 fileNames = force_column_cell(fileNames);
 
-% Count the number of files
-nFiles = numel(fileNames);
-
 %% Parse and identify protocols from each file in the directory
 % Parse all .abf files in this directory
 [abfParamsTable, abfDataTable, abfParamsStruct, abfDataStruct, ...
@@ -269,12 +267,16 @@ nFiles = numel(fileNames);
                     'IdentifyProtocols', true);
 
 % Extract each column from the data table as cell arrays
+fileNames = abfParamsTable.abfFullFileName;
 dataAll = abfDataTable.data;
 tVecAll = abfDataTable.tVec;
 vVecsAll = abfDataTable.vVecs;
 iVecsAll = abfDataTable.iVecs;
 gVecsAll = abfDataTable.gVecs;
 dataReorderedAll = abfDataTable.dataReordered;
+
+% Count the number of files
+nFiles = numel(fileNames);
 
 %% Plot F-I plots
 parfor iFile = 1:nFiles

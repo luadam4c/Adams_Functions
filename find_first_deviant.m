@@ -65,7 +65,16 @@ peersWindowSize = iP.Results.PeersWindowSize;
 nDeviants = length(vector);
 
 % Get the starting index of the first deviant to test
-idxFirstDeviantToTest = peersWindowSize + 1;
+if nDeviants > peersWindowSize
+    idxFirstDeviantToTest = peersWindowSize + 1;
+elseif nDeviants > 1
+    idxFirstDeviantToTest = nDeviants;
+    peersWindowSize = nDeviants - 1;
+else
+    idxDeviant = [];
+    valDeviant = [];
+    return
+end
 
 % Iterate through all peers windows
 for idxDeviant = idxFirstDeviantToTest:nDeviants

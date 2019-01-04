@@ -166,7 +166,8 @@ end
 % If vecs is empty, or if all options are empty, return vecs
 if isempty(vecs) || ...
         isempty(indices) && isempty(endPoints) && isempty(windows) && ...
-            isempty(indexStart) && isempty(indexEnd)
+            isempty(indexStart) && isempty(indexEnd) && ...
+            strcmpi('AlignMethod', 'none')
     subVecs = vecs;
     return
 end
@@ -407,6 +408,8 @@ newEndPoints = repmat({[1, minNSamples]}, size(indices));
 %           the first and last indices will be returned
 
 nRows = length(indices);
+
+% If vecs is empty, or if all options are empty, return vecs
 
 %}
 

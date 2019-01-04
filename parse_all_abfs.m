@@ -242,11 +242,11 @@ end
 
 % Convert to a struct array
 %   Note: This removes all entries that are empty
-[allParsedParamsStruct, allParsedDataStruct = ...
+[allParsedParamsStruct, allParsedDataStruct] = ...
     argfun(@(x) [x{:}], allParsedParamsCell, allParsedDataCell);
 
 % Convert to a table
-[allParsedParamsTable, allParsedDataTable = ...
+[allParsedParamsTable, allParsedDataTable] = ...
     argfun(@struct2table, allParsedParamsStruct, allParsedDataStruct);
 
 %% Print parameters to a file
