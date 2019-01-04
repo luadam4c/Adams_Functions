@@ -3,6 +3,10 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %% Plots traces all in one place, overlapped or in parallel
 % Usage: [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %               plot_traces (tVecs, data, varargin)
+% Examples:
+%       plot_traces(1:3, magic(3))
+%       plot_traces(1:3, magic(3), 'PlotMode', 'parallel')
+%
 % Outputs:
 %       fig         - figure handle for the created figure
 %                   specified as a figure object handle
@@ -34,6 +38,20 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                       'parallel'      - in parallel in subPlots
 %                   must be consistent with plot_traces_abf.m
 %                   default == 'overlapped'
+%                   - 'SubplotOrder': ordering of subplots
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'auto'    - use default
+%                       'bycolor' - by the color map if it is provided
+%                       'square'  - as square as possible
+%                       'list'    - one column
+%                   default == 'auto'
+%                   - 'ColorMode': how to map colors
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'auto'          - use default
+%                       'byPlot'        - by each plot
+%                       'byRow'         - by each row
+%                       'byTraceInPlot' - by each trace in a plot
+%                   default == 'auto'
 %                   - 'DataToCompare': data vector(s) to compare against
 %                   Note: If a cell array, each element must be a vector
 %                         If a non-vector array, each column is a vector
@@ -78,17 +96,18 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                   default == {'Trace #1', 'Trace #2', ...}
 %                   - 'ColorMap': a color map that also groups traces
 %                                   each set of traces will be on the same row
-%                                   if plot mode is 'parallel'
+%                                   if the plot mode is 'parallel' and 
+%                                       the subplot order is 'bycolor'
 %                   must be a numeric array with 3 columns
-%                   default == colormap(jet(nTraces))
+%                   default == colormap(jet(nPlots))
 %                   - 'LegendLocation': location for legend
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'auto'      - use default
 %                       'suppress'  - no legend
 %                       anything else recognized by the legend() function
-%                   default == 'suppress' if nTraces == 1 
-%                               'northeast' if nTraces is 2~9
-%                               'eastoutside' if nTraces is 10+
+%                   default == 'suppress' if nPlots == 1 
+%                               'northeast' if nPlots is 2~9
+%                               'eastoutside' if nPlots is 10+
 %                   - 'FigTitle': title for the figure
 %                   must be a string scalar or a character vector
 %                   default == ['Traces for ', figName]
@@ -154,19 +173,27 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % 2018-12-19 Added 'FigHandle' as an optional argument
 % 2018-12-19 Now restricts vectors to x limits first
 % 2018-12-19 Now considers dataToCompare range too when computing y axis limits
+% 2019-01-03 Now allows multiple traces to be plotted on one subplot
+% 2019-01-03 Added 'SubplotOrder' as an optional argument
+% 2019-01-03 Added 'ColorMode' as an optional argument
+% 2019-01-03 Now allows TeX interpretation in titles
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel'};
+validSubplotOrders = {'bycolor', 'square', 'list', 'auto'};
+validColorModes = {'byPlot', 'byRow', 'byTraceInPlot', 'auto'};
 validLinkAxesOptions = {'none', 'x', 'y', 'xy', 'off'};
 maxRowsWithOneOnly = 8;
-maxNTracesForAnnotations = 8;
-maxNTracesForLegends = 12;
+maxNPlotsForAnnotations = 8;
+maxNPlotsForLegends = 12;
 subPlotSqeezeFactor = 1.2;
 
 %% Default values for optional arguments
 verboseDefault = true;
 overWriteDefault = true;        % overwrite previous plots by default
 plotModeDefault = 'overlapped'; % plot traces overlapped by default
+subplotOrderDefault = 'auto';   % set later
+colorModeDefault = 'auto';      % set later
 dataToCompareDefault = [];      % no data to compare against by default
 xLimitsDefault = [];            % set later
 yLimitsDefault = [];            % set later
@@ -213,6 +240,10 @@ addParameter(iP, 'OverWrite', overWriteDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotMode', plotModeDefault, ...
     @(x) any(validatestring(x, validPlotModes)));
+addParameter(iP, 'SubplotOrder', subplotOrderDefault, ...
+    @(x) any(validatestring(x, validSubplotOrders)));
+addParameter(iP, 'ColorMode', colorModeDefault, ...
+    @(x) any(validatestring(x, validColorModes)));
 addParameter(iP, 'DataToCompare', dataToCompareDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['vec1s must be either a numeric array ', ...
@@ -253,6 +284,8 @@ parse(iP, tVecs, data, varargin{:});
 verbose = iP.Results.Verbose;
 overWrite = iP.Results.OverWrite;
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
+subplotOrder = validatestring(iP.Results.SubplotOrder, validSubplotOrders);
+colorMode = validatestring(iP.Results.ColorMode, validColorModes);
 dataToCompare = iP.Results.DataToCompare;
 xLimits = iP.Results.XLimits;
 yLimits = iP.Results.YLimits;
@@ -304,23 +337,41 @@ end
 [data, dataToCompare] = ...
     match_format_vector_sets(data, dataToCompare, 'ForceCellOutputs', true);
 
-% Extract number of traces
-nTraces = count_vectors(data);
+% Extract number of subplots (under parallel mode)
+nPlots = count_vectors(data, 'TreatArrayAsVector', true);
 
-% Decide on the colormap
-if isempty(colorMap)
-    if nTraces <= maxRowsWithOneOnly
-        colorMap = create_colormap(nTraces);
+% Count the number of traces per subplot (under parallel mode)
+nTracesPerPlot = count_vectors(data, 'TreatArrayAsVector', false);
+
+% Determine the number of rows and the number of subplots per row
+[nRows, nPlotsPerRow] = ...
+    decide_on_subplot_placement(subplotOrder, nPlots, ...
+                                colorMap, maxRowsWithOneOnly);
+
+% Decide on a default colorMode if not provided
+if strcmpi(colorMode, 'auto')
+    if ~isempty(colorMap)
+        colorMode = 'byRow';
     else
-        colorMap = create_colormap(floor(sqrt(nTraces)));
+        colorMode = 'byPlot';
     end
 end
 
-% Determine the number of rows and the number of traces per row
-nRows = size(colorMap, 1);
-nTracesPerRow = ceil(nTraces / nRows);
+% Decide on a default colormap if not provided
+if isempty(colorMap)
+    switch colorMode
+        case 'byPlot'
+            colorMap = create_colormap(nPlots);
+        case 'byRow'
+            colorMap = create_colormap(nRows);
+        case 'byTraceInPlot'
+            colorMap = create_colormap(nTracesPerPlot);
+        otherwise
+            error('colorMode unrecognized!');
+    end
+end
 
-% Force as column cell array and match up to nTraces elements 
+% Force as column cell array and match up to nPlots elements 
 tVecs = match_format_vector_sets(tVecs, data);
 
 % Set the default x-axis labels
@@ -334,8 +385,8 @@ if isempty(yLabel)
     case 'overlapped'
         yLabel = 'Data';
     case 'parallel'
-        if nTraces > 1
-            yLabel = create_labels_from_numbers(1:nTraces, 'Prefix', 'Trace #');
+        if nPlots > 1
+            yLabel = create_labels_from_numbers(1:nPlots, 'Prefix', 'Trace #');
         else
             yLabel = {'Data'};
         end
@@ -352,7 +403,7 @@ case 'overlapped'
         yLabel = yLabel{1};
     end
 case 'parallel'
-    % Force as column cell array and match up to nTraces elements
+    % Force as column cell array and match up to nPlots elements
     yLabel = match_format_vector_sets(yLabel, data);
 otherwise
     error(['The plot mode ', plotMode, ' has not been implemented yet!']);
@@ -360,7 +411,7 @@ end
 
 % Set the default trace labels
 if isempty(traceLabels)
-    traceLabels = create_labels_from_numbers(1:nTraces, 'Prefix', 'Trace #');
+    traceLabels = create_labels_from_numbers(1:nPlots, 'Prefix', 'Trace #');
 end
 
 % Make sure trace labels are cell arrays
@@ -371,14 +422,14 @@ if ~isempty(traceLabels) && ...
 end
 
 % Check if traceLabels has the correct length
-if iscell(traceLabels) && numel(traceLabels) ~= nTraces
+if iscell(traceLabels) && numel(traceLabels) ~= nPlots
     error('traceLabels has %d elements instead of %d!!', ...
-            numel(traceLabels), nTraces);
+            numel(traceLabels), nPlots);
 end
 
 % Set the default figure title
 if isempty(figTitle)
-    if ~isempty(figName) && nTraces == 1
+    if ~isempty(figName) && nPlots == 1
         figTitle = ['Traces for ', traceLabels{1}];
     elseif ~isempty(figName)
         figTitle = ['Traces for ', figName];
@@ -389,11 +440,11 @@ if isempty(figTitle)
     end
 end
 
-% Set legend location based on number of traces
+% Set legend location based on number of subplots
 if strcmpi(legendLocation, 'auto')
-    if nTraces > 1 && nTraces <= maxNTracesForAnnotations
+    if nPlots > 1 && nPlots <= maxNPlotsForAnnotations
         legendLocation = 'northeast';
-    elseif nTraces > maxNTracesForAnnotations && nTraces <= maxNTracesForLegends
+    elseif nPlots > maxNPlotsForAnnotations && nPlots <= maxNPlotsForLegends
         legendLocation = 'eastoutside';
     else
         legendLocation = 'suppress';
@@ -452,14 +503,14 @@ if iscell(xLimits)
                         tVecs, data, dataToCompare);
 
             % Plot all traces
-            fig = plot_traces_helper(verbose, plotMode, ...
+            fig = plot_traces_helper(verbose, plotMode, colorMode, ...
                             tVecsThis, dataThis, dataToCompareThis, ...
                             xUnits, xLimitsThis, yLimits, linkAxesOption, ...
                             xLabel, yLabel, traceLabels, colorMap, ...
                             legendLocation, figTitleThis, ...
                             figHandle, figNumber, figNameThis, figTypes, ...
-                            nTraces, nRows, nTracesPerRow, ...
-                            maxNTracesForAnnotations, subPlotSqeezeFactor, ...
+                            nPlots, nRows, nPlotsPerRow, nTracesPerPlot, ...
+                            maxNPlotsForAnnotations, subPlotSqeezeFactor, ...
                             otherArguments);
             
             % Hold off and close figure
@@ -476,28 +527,28 @@ if iscell(xLimits)
 else
     % Plot all traces
     [fig, subPlots, plotsData, plotsDataToCompare] = ...
-        plot_traces_helper(verbose, plotMode, ...
+        plot_traces_helper(verbose, plotMode, colorMode, ...
                         tVecs, data, dataToCompare, ...
                         xUnits, xLimits, yLimits, linkAxesOption, ...
                         xLabel, yLabel, traceLabels, colorMap, ...
                         legendLocation, figTitle, ...
                         figHandle, figNumber, figName, figTypes, ...
-                        nTraces, nRows, nTracesPerRow, ...
-                        maxNTracesForAnnotations, subPlotSqeezeFactor, ...
+                        nPlots, nRows, nPlotsPerRow, nTracesPerPlot, ...
+                        maxNPlotsForAnnotations, subPlotSqeezeFactor, ...
                         otherArguments);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [fig, subPlots, plotsData, plotsDataToCompare] = ...
-                plot_traces_helper (verbose, plotMode, ...
+                plot_traces_helper (verbose, plotMode, colorMode, ...
                         tVecs, data, dataToCompare, ...
                         xUnits, xLimits, yLimits, linkAxesOption, ...
                         xLabel, yLabel, traceLabels, colorMap, ...
                         legendLocation, figTitle, ...
                         figHandle, figNumber, figName, figTypes, ...
-                        nTraces, nRows, nTracesPerRow, ...
-                        maxNTracesForAnnotations, subPlotSqeezeFactor, ...
+                        nPlots, nRows, nPlotsPerRow, nTracesPerPlot, ...
+                        maxNPlotsForAnnotations, subPlotSqeezeFactor, ...
                         otherArguments)
 
 % Decide on the figure to plot on
@@ -511,15 +562,20 @@ end
 
 % Set the default time axis limits
 if isempty(xLimits)
-    xLimits = compute_axis_limits(tVec, 'x');
+    xLimits = compute_axis_limits(tVecs, 'x');
 end
 
 % Clear the figure
 clf(fig);
 
 % Initialize graphics object arrays for plots
-plotsData = gobjects(nTraces, 1);
-plotsDataToCompare = gobjects(nTraces, 1);
+if numel(nTracesPerPlot) > 1
+    plotsData = cell(nPlots, 1);
+    plotsDataToCompare = cell(nPlots, 1);
+else
+    plotsData = gobjects(nPlots, 1);
+    plotsDataToCompare = gobjects(nPlots, 1);
+end
 
 switch plotMode
 case 'overlapped'
@@ -534,29 +590,56 @@ case 'overlapped'
         % TODO: Deal with yLimits if it is a cell array
     end
 
-    % Plot all traces together
-    for iTrace = 1:nTraces
-        % Get the current row (color) number
-        thisRowNumber = ceil(iTrace/nTracesPerRow);
+    % Plot all plots together
+    for iPlot = 1:nPlots
+        % Get the current tVecs and data
+        tVecsThis = tVecs{iPlot};
+        dataThis = data{iPlot};
+        dataToCompareThis = dataToCompare{iPlot};
+
+        % Get the current row number
+        thisRowNumber = ceil(iPlot/nPlotsPerRow);
+
+        % Decide on the color for this plot
+        colorThis = decide_on_this_color(colorMode, colorMap, ...
+                                        iPlot, thisRowNumber);
+
+        % Get the number of colors for this plot
+        nColorsThis = size(colorThis, 1);
 
         % Plot data to compare against as a black trace
-        if ~isempty(dataToCompare{iTrace})
-            plotsDataToCompare(iTrace) = ...
-                plot(tVecs{iTrace}, dataToCompare{iTrace}, ...
-                                'Color', 'k', otherArguments);
+        if ~isempty(dataToCompareThis)
+            p2 = plot(tVecsThis, dataToCompareThis, ...
+                        'Color', 'k', otherArguments);
         end
         
         % Plot the data using the color map
-        p = plot(tVecs{iTrace}, data{iTrace}, ...
-                'Color', colorMap(thisRowNumber, :), otherArguments);
+        if size(colorThis, 1) == 1
+            p1 = plot(tVecsThis, dataThis, 'Color', colorThis, otherArguments);
+        else
+            p1 = arrayfun(@(x) plot(tVecsThis(:, x), dataThis(:, x), ...
+                                'Color', colorThis(:, x), otherArguments), ...
+                            transpose(1:nColorsThis));
+        end
 
         % Set the legend label as the trace label if provided
         if ~strcmpi(traceLabels, 'suppress')
-            set(p, 'DisplayName', traceLabels{iTrace});
+            set(p1, 'DisplayName', traceLabels{iPlot});
         end
 
         % Store handles in array
-        plotsData(iTrace) = p;
+        if iscell(plotsData)
+            plotsData{iPlot} = p1;
+        else
+            plotsData(iPlot) = p1;
+        end
+        if ~isempty(dataToCompareThis)
+            if iscell(plotsDataToCompare)
+                plotsDataToCompare{iPlot} = p2;
+            else
+                plotsDataToCompare(iPlot) = p2;
+            end
+        end
     end
     
     % Set time axis limits
@@ -581,7 +664,7 @@ case 'overlapped'
 
     % Generate a title
     if ~strcmpi(figTitle, 'suppress')
-        title(figTitle, 'Interpreter', 'none');
+        title(figTitle);
     end
 
     % Generate a legend if there is more than one trace
@@ -598,49 +681,65 @@ case 'parallel'
     end
 
     % Initialize graphics object arrays for subplots
-    subPlots = gobjects(nTraces, 1);
+    subPlots = gobjects(nPlots, 1);
 
     % Plot each trace as a different subplot
     %   Note: the number of rows is based on the number of rows in the color map
-    for iTrace = 1:nTraces
+    for iPlot = 1:nPlots
         % Create a subplot and hold on
-        ax = subplot(nRows, nTracesPerRow, iTrace); hold on
+        ax = subplot(nRows, nPlotsPerRow, iPlot); hold on
+
+        % Get the current tVecs and data
+        tVecsThis = tVecs{iPlot};
+        dataThis = data{iPlot};
 
         % Set the default y-axis limits
         if isempty(yLimits)
             % Compute the y limits from both data and dataToCompare
             yLimitsThis = ...
-                compute_axis_limits({data{iTrace}, dataToCompare{iTrace}}, 'y');
+                compute_axis_limits({data{iPlot}, dataToCompare{iPlot}}, 'y');
         elseif iscell(yLimits)
-            yLimitsThis = yLimits{iTrace};
+            yLimitsThis = yLimits{iPlot};
         else
             yLimitsThis = yLimits;
         end
 
         % Get the current row number
-        thisRowNumber = ceil(iTrace/nTracesPerRow);
+        thisRowNumber = ceil(iPlot/nPlotsPerRow);
 
         % Get the current column number
-        if nTracesPerRow > 1
-            thisColNumber = mod(iTrace, nTracesPerRow);
+        if nPlotsPerRow > 1
+            thisColNumber = mod(iPlot, nPlotsPerRow);
         else
             thisColNumber = 1;
         end
         
+        % Decide on the color for this plot
+        colorThis = decide_on_this_color(colorMode, colorMap, ...
+                                        iPlot, thisRowNumber);
+
+        % Get the number of colors for this plot
+        nColorsThis = size(colorThis, 1);
+
         % Plot data to compare against as a black trace
-        if ~isempty(dataToCompare{iTrace})
-            plotsDataToCompare(iTrace) = ...
-                plot(tVecs{iTrace}, dataToCompare{iTrace}, ...
+        if ~isempty(dataToCompare{iPlot})
+            plotsDataToCompare(iPlot) = ...
+                plot(tVecs{iPlot}, dataToCompare{iPlot}, ...
                         'Color', 'k', otherArguments);
         end
 
         % Plot the data using the color map
-        p = plot(tVecs{iTrace}, data{iTrace}, ...
-                    'Color', colorMap(thisRowNumber, :), otherArguments);
+        if size(colorThis, 1) == 1
+            p = plot(tVecsThis, dataThis, 'Color', colorThis, otherArguments);
+        else
+            p = arrayfun(@(x) plot(tVecsThis(:, x), dataThis(:, x), ...
+                                'Color', colorThis(:, x), otherArguments), ...
+                            transpose(1:nColorsThis));
+        end
 
         % Set the legend label as the trace label if provided
         if ~strcmpi(traceLabels, 'suppress')
-            set(p, 'DisplayName', traceLabels{iTrace});
+            set(p, 'DisplayName', traceLabels{iPlot});
         end
 
         % Set time axis limits
@@ -654,8 +753,8 @@ case 'parallel'
         end
 
         % Generate a y-axis label
-        if ~strcmpi(yLabel{iTrace}, 'suppress')
-            ylabel(yLabel{iTrace});
+        if ~strcmpi(yLabel{iPlot}, 'suppress')
+            ylabel(yLabel{iPlot});
         end
 
         % Generate a legend
@@ -675,19 +774,23 @@ case 'parallel'
 
         % Create a title for the first subplot
         if ~strcmpi(figTitle, 'suppress') && ...
-            nTracesPerRow == 1 && iTrace == 1
-            title(figTitle, 'Interpreter', 'none');
+            nPlotsPerRow == 1 && iPlot == 1
+            title(figTitle);
         end
 
         % Create a label for the X axis only for the last row
-        if ~strcmpi(xLabel, 'suppress') && nTracesPerRow == 1 && ...
-            iTrace == nTraces
+        if ~strcmpi(xLabel, 'suppress') && nPlotsPerRow == 1 && ...
+            iPlot == nPlots
             xlabel(xLabel);
         end
 
         % Store handles in array
-        subPlots(iTrace) = ax;
-        plotsData(iTrace) = p;
+        subPlots(iPlot) = ax;
+        if iscell(plotsData)
+            plotsData{iPlot} = p;
+        else
+            plotsData(iPlot) = p;
+        end
     end
 
     % If requested, link or unlink axes of subPlots
@@ -695,18 +798,18 @@ case 'parallel'
         linkaxes(subPlots, linkAxesOption);
     end
 
-    % If nTraces > maxNTracesForAnnotations, expand all subPlots by 1.2
-    if nTraces > maxNTracesForAnnotations
+    % If nPlots > maxNPlotsForAnnotations, expand all subPlots by 1.2
+    if nPlots > maxNPlotsForAnnotations
         subplotsqueeze(fig, subPlotSqeezeFactor);
     end
     
     % Create an overarching title
-    if ~strcmpi(figTitle, 'suppress') && nTracesPerRow > 1
+    if ~strcmpi(figTitle, 'suppress') && nPlotsPerRow > 1
         suptitle(figTitle);
     end
 
     % Create an overarching x-axis label
-    if ~strcmpi(xLabel, 'suppress') && nTracesPerRow > 1
+    if ~strcmpi(xLabel, 'suppress') && nPlotsPerRow > 1
         suplabel(xLabel, 'x');
     end
 otherwise
@@ -750,20 +853,20 @@ if ~isempty(figName)
             case 'overlapped'
                 % Change the figure title
                 if ~strcmpi(figTitleThis, 'suppress')
-                    title(figTitleThis, 'Interpreter', 'none');
+                    title(figTitleThis);
                 end
 
                 % Change the x-axis limits
                 xlim(xLimitsThis);
             case 'parallel'
-                for iTrace = 1:nTraces
+                for iPlot = 1:nPlots
                     % Go to the subplot
-                    subplot(subPlots(iTrace));
+                    subplot(subPlots(iPlot));
 
                     % Create a title for the first subplot
                     if ~strcmpi(figTitleThis, 'suppress') && ...
-                        nTracesPerRow == 1 && iTrace == 1
-                        title(figTitleThis, 'Interpreter', 'none');
+                        nPlotsPerRow == 1 && iPlot == 1
+                        title(figTitleThis);
                     end
 
                     % Change x-axis limits
@@ -771,7 +874,7 @@ if ~isempty(figName)
                 end
 
                 % Create an overarching title
-                if ~strcmpi(figTitleThis, 'suppress') && nTracesPerRow > 1
+                if ~strcmpi(figTitleThis, 'suppress') && nPlotsPerRow > 1
                     suptitle(figTitleThis);
                 end
             end
@@ -793,6 +896,56 @@ if ~isempty(figName)
         % Save the new figure
         save_all_figtypes(fig, figName, figTypes);
     end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [nRows, nPlotsPerRow] = ...
+                decide_on_subplot_placement (subplotOrder, nPlots, ...
+                                            colorMap, maxRowsWithOneOnly)
+%% Decide on the subplot order
+% TODO: Pull out
+
+% Set default subplot order if not provided
+if strcmpi(subplotOrder, 'auto') || ...
+        strcmpi(subplotOrder, 'bycolor') && isempty(colorMap)
+    if nPlots <= maxRowsWithOneOnly
+        subplotOrder = 'list';
+    else
+        subplotOrder = 'square';
+    end
+end
+
+% Compute number of rows
+switch subplotOrder
+    case 'bycolor'
+        nRows = size(colorMap, 1);
+    case 'square'
+        nRows = ceil(sqrt(nPlots));
+    case 'list'
+        nRows = nPlots;
+    otherwise
+        error('subplotOrder unrecognized!');
+end
+
+% Compute number of subplots per row
+nPlotsPerRow = ceil(nPlots / nRows);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function colorThis = ...
+                decide_on_this_color (colorMode, colorMap, iPlot, thisRowNumber)
+%% Decides on the color for a plot
+
+switch colorMode
+    case 'byPlot'
+        colorThis = colorMap(iPlot, :);
+    case 'byRow'
+        colorThis = colorMap(thisRowNumber, :);
+    case 'byTraceInPlot'
+        colorThis = colorMap;
+    otherwise
+        error('colorMode unrecognized!');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -843,51 +996,51 @@ end
 legendLocation = validatestring(iP.Results.LegendLocation, ...
                                 validLegendLocations);
 
-subplot(nTraces, 1, iTrace);
+subplot(nPlots, 1, iPlot);
 
 if ~iscell(yLabel)
     yLabel = {yLabel};
 end
 if iscell(yLabel)
-    if numel(yLabel) > nTraces
+    if numel(yLabel) > nPlots
         fprintf('Too many y labels! Only some will be used!\n');
-    elseif numel(yLabel) < nTraces
+    elseif numel(yLabel) < nPlots
         fprintf('Not enough y labels!!\n');
         return;
     end
 end
 
-nTraces = size(data, 2);
+nPlots = size(data, 2);
 
 xLimits = cellfun(@(x), [min(x), max(x)], tVecs, 'UniformOutput', false);
 
 minY = min(min(data));
 maxY = max(max(data));
 
-yLabel = cell(1, nTraces);
-parfor iTrace = 1:nTraces
-    yLabel{iTrace} = ['Trace #', num2str(iTrace)];
+yLabel = cell(1, nPlots);
+parfor iPlot = 1:nPlots
+    yLabel{iPlot} = ['Trace #', num2str(iPlot)];
 end
 
-traceLabels = cell(1, nTraces);
-parfor iTrace = 1:nTraces
-    traceLabels{iTrace} = ['Trace #', num2str(iTrace)];
+traceLabels = cell(1, nPlots);
+parfor iPlot = 1:nPlots
+    traceLabels{iPlot} = ['Trace #', num2str(iPlot)];
 end
 
 % Hold on if more than one trace
-if nTraces > 1
+if nPlots > 1
     hold on
 end
 % Hold off if more than one trace
-if nTraces > 1
+if nPlots > 1
     hold off
 end
 
 % Force as column cell arrays
 yLabel = force_column_cell(yLabel);
 
-% Match up to nTraces elements
-yLabel = match_dimensions(yLabel, [nTraces, 1]);
+% Match up to nPlots elements
+yLabel = match_dimensions(yLabel, [nPlots, 1]);
 
 % Force data vectors as column cell arrays of column vectors
 [tVecs, data, dataToCompare] = ...
@@ -921,9 +1074,9 @@ else
 end
 
 yLabel = arrayfun(@(x) ['Trace #', num2str(x)], ...
-                    transpose(1:nTraces), 'UniformOutput', false);
+                    transpose(1:nPlots), 'UniformOutput', false);
 traceLabels = arrayfun(@(x) ['Trace #', num2str(x)], ...
-                        transpose(1:nTraces), 'UniformOutput', false);
+                        transpose(1:nPlots), 'UniformOutput', false);
 
 % Compute minimum and maximum time values
 minT = min(cellfun(@min, tVecs));
@@ -950,7 +1103,7 @@ end
 
 set(fig, 'Visible', 'off');
 
-axes(subPlots(iTrace));
+axes(subPlots(iPlot));
 
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 
@@ -984,7 +1137,7 @@ maxY = apply_iteratively(@max, allData);
 yLimits = compute_ylimits(minY, maxY, 'Coverage', 80);
 
 % Put all data together
-allData = [data{iTrace}; dataToCompare{iTrace}];
+allData = [data{iPlot}; dataToCompare{iPlot}];
 
 % Compute minimum and maximum Y values
 minY = apply_iteratively(@min, allData);
@@ -1003,6 +1156,24 @@ suffixThis = sprintf('_%s.png', intervalStrThis);
 
 % Create a new figure name
 figNameThis = replace(figName, '.png', suffixThis);
+
+%                   - 'ColorMap': a color map that also groups traces
+%                                   each set of traces will be on the same row
+%                                   if plot mode is 'parallel'
+
+if nPlots <= maxRowsWithOneOnly
+    colorMap = create_colormap(nPlots);
+else
+    colorMap = create_colormap(floor(sqrt(nPlots)));
+end
+
+% Plot the data using the color map
+p = plot(tVecs{iPlot}, data{iPlot}, ...
+            'Color', colorThis, otherArguments);
+
+title(figTitle, 'Interpreter', 'none');
+title(figTitleThis, 'Interpreter', 'none');
+title(figTitle, 'Interpreter', 'none');
 
 %}
 

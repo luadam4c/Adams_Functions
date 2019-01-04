@@ -1,6 +1,6 @@
-function nVectors = count_vectors (vectors)
+function nVectors = count_vectors (vectors, varargin)
 %% Counts the number of vectors whether given an array or a cell array
-% Usage: nVectors = count_vectors (vectors)
+% Usage: nVectors = count_vectors (vectors, varargin)
 % Explanation:
 %       Uses either 1 for vectors,
 %               size(x, 2) for arrays 
@@ -9,13 +9,16 @@ function nVectors = count_vectors (vectors)
 %       nVectors = count_vectors(data)
 % Outputs:
 %       nVectors    - number of vectors
-%                   specified as a nonnegative integer scalar
+%                   specified as a nonnegative integer vector
 %
 % Arguments:
 %       vectors     - vectors to count
-%                   Note: If a cell array, each element must be a vector
-%                         If a non-vector array, each column is a vector
-%                   must be a numeric array or a cell array of numeric vectors
+%                   Note: If a non-vector array, each column is a vector
+%                   must be a numeric array or a cell array
+%       varargin    - 'TreatArrayAsVector': whether to treat a non-vector array 
+%                                           as a single vector
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/iscellnumericvector.m
@@ -34,7 +37,11 @@ function nVectors = count_vectors (vectors)
 
 % File History:
 % 2018-10-10 Created by Adam Lu
+% 2019-01-03 Now returns a vector if input is a cell array of non-vectors
 % 
+
+%% Default values for optional arguments
+treatArrayAsVectorDefault = false;  % treat arrays as many vectors by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -51,16 +58,22 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vectors', ...                   % vectors
-    @(x) assert(isnumeric(x) || iscellnumericvector(x), ...
-                ['vectors must be either a numeric array', ...
-                    'or a cell array of numeric vectors!']));
+    @(x) assert(isnumeric(x) || iscell(x), ...
+                'vectors must be either a numeric array or a cell array!'));
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'TreatArrayAsVector', treatArrayAsVectorDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
-parse(iP, vectors);
+parse(iP, vectors, varargin{:});
+treatArrayAsVector = iP.Results.TreatArrayAsVector;
 
 %% Do the job
-if iscell(vectors)
+if iscell(vectors) && (treatArrayAsVector || iscellnumericvector(vectors))
     nVectors = numel(vectors);
+elseif iscell(vectors)
+    nVectors = cellfun(@count_vectors, vectors);
 elseif isnumeric(vectors)    
     if isvector(vectors)
         nVectors = 1;
@@ -75,6 +88,14 @@ end
 
 %{
 OLD CODE:
+
+%                   Note: If a cell array, each element must be a vector
+%                         If a non-vector array, each column is a vector
+%                   must be a numeric array or a cell array of numeric vectors
+
+    @(x) assert(isnumeric(x) || iscellnumericvector(x), ...
+                ['vectors must be either a numeric array', ...
+                    'or a cell array of numeric vectors!']));
 
 %}
 
