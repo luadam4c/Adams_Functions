@@ -36,6 +36,7 @@ function indices = create_indices (endPoints, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
 %       cd/force_column_numeric.m
+%       cd/force_matrix.m
 %       cd/isnumericvector.m
 %       cd/match_and_combine_vectors.m
 %       cd/match_format_vectors.m
@@ -135,8 +136,9 @@ if ~isempty(vectors)
     nSamples = count_samples(vectors);
 
     % Match the vector counts
-    [nSamples, idxStart, idxEnd] = ...
-        match_format_vectors(nSamples, idxStart, idxEnd);
+    [idxStart, idxEnd] = ...
+        argfun(@(x) match_format_vector_sets(nSamples, x, 'MatchVectors', true), ...
+                idxStart, idxEnd);
 
     % Make sure endpoint indices are in range
     candidatesStart = match_and_combine_vectors(idxStart, 1);
@@ -145,17 +147,45 @@ if ~isempty(vectors)
     idxEnd = compute_minimum_trace(candidatesEnd);
 end
 
-% Construct vectors of indices
-if numel(idxStart) > 1 || numel(idxEnd) > 1
-    indices = arrayfun(@(x, y) transpose(x:y), idxStart, idxEnd, ...
-                    'UniformOutput', false);
+% Create the indices
+if iscell(idxStart) && iscell(idxEnd)
+    indices = cellfun(@(x, y) create_indices_helper(x, y), ...
+                        idxStart, idxEnd, 'UniformOutput', false);
+elseif isnumeric(idxStart) && isnumeric(idxEnd)
+    indices = create_indices_helper(idxStart, idxEnd);
 else
-    indices = transpose(idxStart:idxEnd);
+    error('idxStart and idxEnd don''t match!!');
 end
 
 % Force as cell array output if requested
 if forceCellOutput && ~iscell(indices)
     indices = {indices};
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function indices = create_indices_helper (idxStart, idxEnd)
+
+% Match idxStart and idxEnd
+[idxStart, idxEnd] = match_format_vectors(idxStart, idxEnd);
+
+% Construct vectors of indices
+if numel(idxStart) == 1 && numel(idxEnd) == 1
+    % There is just one vector
+    indices = transpose(idxStart:idxEnd);
+else
+    % There are multiple vectors
+    indices = arrayfun(@(x, y) transpose(x:y), idxStart, idxEnd, ...
+                    'UniformOutput', false);
+
+    % Count the number of samples in each vector
+    nSamples = count_samples(indices);
+
+    % If the number of samples are all the same, combine the vectors
+    %   Note: 'AlignMethod' must be 'none' to prevent infinite loop
+    if numel(unique(nSamples)) == 1
+        indices = force_matrix(indices, 'AlignMethod', 'none');
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -171,6 +201,10 @@ firsts = ones(size(idxStart));
 % Make sure endpoint indices are in range
 idxStart = max([idxStart, firsts], [], 2);
 idxEnd = min([idxEnd, nSamples], [], 2);
+
+% Match the vector counts
+[nSamples, idxStart, idxEnd] = ...
+    match_format_vectors(nSamples, idxStart, idxEnd);
 
 %}
 

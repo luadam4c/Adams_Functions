@@ -51,6 +51,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/argfun.m
 %       cd/construct_default_endpoints.m
 %       cd/count_samples.m
+%       cd/create_empty_match.m
 %       cd/create_error_for_nargin.m
 %       cd/create_indices.m
 %       cd/find_window_endpoints.m
@@ -86,6 +87,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2018-12-24 Added 'IndexStart', 'IndexEnd' as arguments
 % 2018-12-27 Added the align methods 'leftAdjustPad', 'rightAdjustPad'
 % 2019-01-03 Added usage of force_column_numeric.m
+% 2019-01-03 Moved code to create_empty_match.m
 % TODO: check if all endpoints have 2 elements
 % 
 
@@ -161,8 +163,10 @@ end
 % TODO: check if all endpoints have 2 elements
 
 %% Preparation
-% If vecs is empty, return empty
-if isempty(vecs)
+% If vecs is empty, or if all options are empty, return vecs
+if isempty(vecs) || ...
+        isempty(indices) && isempty(endPoints) && isempty(windows) && ...
+            isempty(indexStart) && isempty(indexEnd)
     subVecs = vecs;
     return
 end
@@ -221,37 +225,57 @@ end
 function subVec = extract_subvectors_helper (vec, indices)
 %% Extract a subvector from vector(s) if not empty
 
-% Make sure inputs are column vectors
-[vec, indices] = argfun(@force_column_numeric, vec, indices);
-
-% Count the desired number of rows
-nRows = length(indices);
-
-% Count the desired number of columns
-nColumns = size(vec, 2);
-
-% Initialize subVec with NaNs
-% TODO: make function create_empty.m
-%   subVec = create_empty(nRows, nColumns, 'ExampleArray', vec)
-if isnumeric(vec)
-    subVec = NaN(nRows, nColumns);
-elseif iscell(vec)
-    subVec = cell(nRows, nColumns);
-elseif isstruct(vec)
-    subVec = struct(nRows, nColumns);
-elseif isdatetime(vec)
-    subVec = NaT(nRows, nColumns);
-end
-
-% Find the parts of indices without NaNs
-withoutNaNs = find(~isnan(indices));
-
 % If the time window is out of range, or if the vector is empty, 
 %   return an empty vector
 if isempty(indices) || isempty(vec)
     subVec = [];
+    return
+end
+% Make sure vectors and indices are in columns
+[vec, indices] = ...
+    argfun(@(x) force_column_numeric(x, 'IgnoreNonVectors', true), ...
+            vec, indices);
+
+% Count the number of indices
+nIndices = size(indices, 2);
+
+% Count the desired number of rows
+nRows = size(indices, 1);
+
+% Count the desired number of columns
+nColumns = size(vec, 2);
+
+% Make sure nIndices is either 1 or nColumns
+if nIndices ~= 1 && nIndices ~= nColumns
+    error('nIndices not correct!');
+end
+
+% Initialize subVec with NaNs
+subVec = create_empty_match(vec, 'NRows', nRows, 'NColumns', nColumns);
+
+% Find the parts of indices without NaNs
+if nIndices == 1
+    withoutNaNs = find(~isnan(indices));
 else
+    withoutNaNs = arrayfun(@(x) find(~isnan(indices(:, x))), ...
+                            transpose(1:nIndices), 'UniformOutput', false);
+end
+
+% Extract the subvectors
+if nIndices == 1
+    % Replace the parts that are not NaNs
     subVec(withoutNaNs, :) = vec(indices(withoutNaNs), :);
+else
+    for iCol = 1:nColumns
+        % Get the indices for this column
+        indicesThis = indices(:, iCol);
+
+        % Get the parts without NaNs for the indices of this column
+        withoutNaNsThis = withoutNaNs{iCol};
+
+        % Replace the parts of this column that are not NaNs
+        subVec(withoutNaNsThis, iCol) = vec(indicesThis(withoutNaNsThis), iCol);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -381,6 +405,8 @@ newEndPoints = repmat({[1, minNSamples]}, size(indices));
 
 %   Note: If first argument is empty, 
 %           the first and last indices will be returned
+
+nRows = length(indices);
 
 %}
 

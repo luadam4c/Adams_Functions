@@ -26,6 +26,7 @@ function vecs = force_matrix (vecs, varargin)
 %
 % Used by:
 %       cd/compute_combined_trace.m
+%       cd/create_indices.m
 %       cd/find_window_endpoints.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/plot_swd_histogram.m
@@ -36,7 +37,7 @@ function vecs = force_matrix (vecs, varargin)
 
 %% Hard-coded parameters
 validAlignMethods = {'leftAdjust', 'rightAdjust', ...
-                    'leftAdjustPad', 'rightAdjustPad'};
+                    'leftAdjustPad', 'rightAdjustPad', 'none'};
 
 %% Default values for optional arguments
 alignMethodDefault  = 'leftAdjustPad';   % pad on the right by default
@@ -71,7 +72,12 @@ if ~iscell(vecs) && ismatrix(vecs)
 end
 
 % Extract vectors padded on the right
-vecs = extract_subvectors(vecs, 'AlignMethod', alignMethod);
+%   Note: don't do this if alignMethod is set to none
+%           Otherwise, extract_subvectors.m uses create_indices.m,
+%         	which uses force_matrix.m and will enter infinite loop
+if ~strcmpi(alignMethod, 'none')
+    vecs = extract_subvectors(vecs, 'AlignMethod', alignMethod);
+end
 
 % Put together as an array
 vecs = horzcat(vecs{:});

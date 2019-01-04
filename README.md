@@ -85,6 +85,7 @@ Last Updated 2019-01-03 by Adam Lu
 - [**count_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/count_vectors.m): Counts the number of vectors whether given an array or a cell array
 - [**create_average_time_vector.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_average_time_vector.m): Creates an average time vector from a set of time vectors
 - [**create_colormap.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_colormap.m): Returns colorMap based on the number of colors requested
+- [**create_empty_match.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_empty_match.m): Creates an empty array that matches a given array
 - [**create_error_for_nargin.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_error_for_nargin.m): Creates an error text for not having enough input arguments
 - [**create_grouping_by_columns.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_grouping_by_columns.m): Creates a grouping array using column numbers
 - [**create_indices.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_indices.m): Creates indices from endpoints (starting and ending indices)
