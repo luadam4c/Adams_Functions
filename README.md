@@ -56,7 +56,9 @@ Last Updated 2019-01-03 by Adam Lu
 - [**compute_gpas.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_gpas.m): Computes the passive conductance (gpas, in S/cm^2) from input resistance and surface area
 - [**compute_IMax_GHK.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_IMax_GHK.m): Computes the maximum current [mA/cm^2] using the GHK current equation
 - [**compute_initial_slopes.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_initial_slopes.m): Computes the average initial slope from a current pulse response
+- [**compute_maximum_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_maximum_trace.m): Computes the maximum of traces that are not necessarily the same length
 - [**compute_means.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_means.m): Computes the mean(s) of vector(s) possibly restricted by endpoint(s)
+- [**compute_minimum_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_minimum_trace.m): Computes the minimum of traces that are not necessarily the same length
 - [**compute_peak_decay.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_peak_decay.m): Computes the peak decays
 - [**compute_peak_halfwidth.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_peak_halfwidth.m): Computes the half widths for peaks
 - [**compute_relative_time.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_relative_time.m): Computes time(s) relative to limits from indice(s)
@@ -214,6 +216,7 @@ Last Updated 2019-01-03 by Adam Lu
 - [**m3ha_xolotl_test.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_xolotl_test.m): m3ha_xolotl_test
 - [**make_loopedparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/make_loopedparams.m): Construct parameters to change for each trial from loopmode, pnames, pislog, pmin, pmax, pinc 
 - [**mat2sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/mat2sheet.m): Converts .mat files to a spreadsheet file(s) (type specified by the 'SheetType' argument)
+- [**match_and_combine_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_and_combine_vectors.m): Match vectors and combine into an array
 - [**match_array_counts.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_array_counts.m): Matches a set of arrays to another set of arrays so that they have equal number of arrays
 - [**match_dimensions.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_dimensions.m): Reshapes or expands an array to match given dimensions
 - [**match_format_vector_sets.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_format_vector_sets.m): Matches two sets of vectors so that they are both cell arrays of the same number of column vectors

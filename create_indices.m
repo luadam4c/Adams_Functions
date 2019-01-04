@@ -30,11 +30,14 @@ function indices = create_indices (endPoints, varargin)
 %
 % Requires:
 %       cd/argfun.m
+%       cd/compute_maximum_trace.m
+%       cd/compute_minimum_trace.m
 %       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
 %       cd/force_column_numeric.m
 %       cd/isnumericvector.m
+%       cd/match_and_combine_vectors.m
 %       cd/match_format_vectors.m
 %
 % Used by:
@@ -135,12 +138,11 @@ if ~isempty(vectors)
     [nSamples, idxStart, idxEnd] = ...
         match_format_vectors(nSamples, idxStart, idxEnd);
 
-    % Create ones
-    firsts = ones(size(idxStart));
-
     % Make sure endpoint indices are in range
-    idxStart = max([idxStart, firsts], [], 2);
-    idxEnd = min([idxEnd, nSamples], [], 2);
+    candidatesStart = match_and_combine_vectors(idxStart, 1);
+    candidatesEnd = match_and_combine_vectors(idxEnd, nSamples);
+    idxStart = compute_maximum_trace(candidatesStart);
+    idxEnd = compute_minimum_trace(candidatesEnd);
 end
 
 % Construct vectors of indices
@@ -162,6 +164,13 @@ end
 OLD CODE:
 
 nSamples = match_dimensions(nSamples, size(idxStart));
+
+% Create ones
+firsts = ones(size(idxStart));
+
+% Make sure endpoint indices are in range
+idxStart = max([idxStart, firsts], [], 2);
+idxEnd = min([idxEnd, nSamples], [], 2);
 
 %}
 

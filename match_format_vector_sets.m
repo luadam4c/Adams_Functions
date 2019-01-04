@@ -32,7 +32,9 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %                                           cell arrays
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%
+%                   - 'MatchVectors': whether to match vectors within sets
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 % Requires:
 %       cd/apply_or_return.m
 %       cd/argfun.m
@@ -42,6 +44,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
 %       cd/match_dimensions.m
+%       cd/match_format_vectors.m
 %
 % Used by:
 %       cd/compute_default_sweep_info.m
@@ -53,12 +56,14 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %       cd/find_pulse_response_endpoints.m
 %       cd/find_window_endpoints.m
 %       cd/m3ha_plot_individual_traces.m
+%       cd/match_and_combine_vectors.m
 %       cd/plot_traces.m
 
 % File History:
 % 2018-10-28 Adapted from code in find_window_endpoints.m 
 %               and match_vector_counts.m
 % 2018-10-31 Now uses isnumericvector.m and apply_or_return.m
+% 2019-01-03 Added 'MatchVectors' as an optional argument
 % TODO: Include the option to not force as column cell arrays
 %           i.e., match 2D cell arrays
 % TODO: Accept more than two vector sets
@@ -68,6 +73,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 
 %% Default values for optional arguments
 forceCellOutputsDefault = false;    % don't force as cell array by default
+matchVectorsDefault = false;        % don't match vectors by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -95,10 +101,13 @@ addRequired(iP, 'vecs2', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ForceCellOutputs', forceCellOutputsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'MatchVectors', matchVectorsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vecs1, vecs2, varargin{:});
 forceCellOutputs = iP.Results.ForceCellOutputs;
+matchVectors = iP.Results.MatchVectors;
 
 %% Do the job
 % If the vecs1 or vecs2 is a numeric vector, make sure it is a column vector
@@ -111,6 +120,11 @@ forceCellOutputs = iP.Results.ForceCellOutputs;
 %   put things in a format so cellfun can be used
 if (isnumericvector(vecs1) || ischar(vecs1)) && ...
     (isnumericvector(vecs2) || ischar(vecs2))
+    % Match vectors if requested
+    if matchVectors
+        [vecs1, vecs2] = match_format_vectors(vecs1, vecs2);
+    end
+
     % If both inputs are either a numeric vector (could be empty) 
     %   or a character array, force outputs to be cell arrays if requested
     if forceCellOutputs
@@ -129,6 +143,12 @@ else
     % TODO: Incorporate comparison into match_dimensions.m
     [vecs1, vecs2] = ...
         argfun(@(x) match_dimensions(x, [maxVecs, 1]), vecs1, vecs2);
+
+    % Match vectors if requested
+    if matchVectors
+        [vecs1, vecs2] = cellfun(@(x, y) match_format_vectors(x, y), ...
+                                vecs1, vecs2, 'UniformOutput', false);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

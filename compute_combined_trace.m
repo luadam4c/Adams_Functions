@@ -12,9 +12,8 @@ function [combTrace, paramsUsed] = ...
 %                   specified as a numeric column vector
 % Arguments:    
 %       traces          - traces to average
-%                       Note: If a cell array, each element must be a vector
-%                             If an array, each column is a vector
-%                       must be a numeric array or a cell array of numeric vectors
+%                       Note: If a non-vector array, each column is a vector
+%                       must be a numeric array or a cell array
 %       combineMethod   - method for combining traces
 %                       must be an unambiguous, case-insensitive match to one of: 
 %                           'average' - take the average
@@ -36,10 +35,9 @@ function [combTrace, paramsUsed] = ...
 %       cd/iscellnumericvector.m
 %
 % Used by:
-%       cd/compute_average_pulse_response.m
-%       cd/find_passive_params.m
-%       cd/force_column_numeric.m
-%       cd/m3ha_import_raw_traces.m
+%       cd/compute_average_trace.m
+%       cd/compute_maximum_trace.m
+%       cd/compute_minimum_trace.m
 
 % File History:
 % 2019-01-03 Moved from compute_average_trace

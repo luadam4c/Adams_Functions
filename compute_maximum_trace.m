@@ -1,14 +1,14 @@
-function [avgTrace, paramsUsed] = compute_average_trace (traces, varargin)
-%% Computes the average of traces that are not necessarily the same length
-% Usage: [avgTrace, paramsUsed] = compute_average_trace (traces, varargin)
+function [avgTrace, paramsUsed] = compute_maximum_trace (traces, varargin)
+%% Computes the maximum of traces that are not necessarily the same length
+% Usage: [avgTrace, paramsUsed] = compute_maximum_trace (traces, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       avgTrace    - the average trace
+%       avgTrace    - the maximum trace
 % Arguments:    
-%       traces      - traces to average
+%       traces      - traces to maximum
 %                   Note: If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array
 %       varargin    - any argument of compute_combined_trace.m
@@ -17,15 +17,10 @@ function [avgTrace, paramsUsed] = compute_average_trace (traces, varargin)
 %       cd/compute_combined_trace.m
 %
 % Used by:
-%       cd/compute_average_pulse_response.m
-%       cd/find_passive_params.m
-%       cd/force_column_numeric.m
-%       cd/m3ha_import_raw_traces.m
+%       cd/create_indices.m
 
 % File History:
-% 2018-10-11 Created by Adam Lu
-% 2018-12-18 Now uses extract_subvectors.m
-% 2019-01-03 Moved code to compute_combined_trace.m
+% 2019-01-03 Adapted from compute_average_trace.m
 % 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -48,7 +43,7 @@ addRequired(iP, 'traces');
 parse(iP, traces, varargin{:});
 
 %% Do the job
-[avgTrace, paramsUsed] = compute_combined_trace(traces, 'average', varargin{:});
+[avgTrace, paramsUsed] = compute_combined_trace(traces, 'maximum', varargin{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
