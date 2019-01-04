@@ -228,7 +228,9 @@ indices = align_subvectors(indices, alignMethod);
 %   indices and vecs so that cellfun can be used
 if iscell(indices) || iscell(vecs)
     [indices, vecs] = ...
-        match_format_vector_sets(indices, vecs, 'ForceCellOutputs', false);
+        match_format_vector_sets(indices, vecs, 'ForceCellOutputs', false, ...
+                                'TreatCellAsArray', treatCellAsArray, ...
+                                'TreatCellStrAsArray', treatCellStrAsArray);
 end
 
 %% Do the job
