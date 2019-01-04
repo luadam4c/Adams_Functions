@@ -145,8 +145,8 @@ if ~isempty(vectors)
     % Make sure endpoint indices are in range
     candidatesStart = match_and_combine_vectors(idxStart, 1);
     candidatesEnd = match_and_combine_vectors(idxEnd, nSamples);
-    idxStart = compute_maximum_trace(candidatesStart);
-    idxEnd = compute_minimum_trace(candidatesEnd);
+    idxStart = compute_maximum_trace(candidatesStart, 'TreatRowAsMatrix', true);
+    idxEnd = compute_minimum_trace(candidatesEnd, 'TreatRowAsMatrix', true);
 end
 
 % Create the indices

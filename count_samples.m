@@ -19,6 +19,14 @@ function nSamples = count_samples (vectors, varargin)
 %       varargin    - 'ForceColumnOutput': whether to force output as a column
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'TreatMatrixAsVector': whether to treat a non-vector array 
+%                                           as a single vector
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'TreatRowAsMatrix': whether to treat a row vector
+%                                           as many one-element vectors
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -27,6 +35,7 @@ function nSamples = count_samples (vectors, varargin)
 %       cd/match_row_count.m
 %
 % Used by:    
+%       cd/compute_combined_trace.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/create_average_time_vector.m
@@ -40,12 +49,16 @@ function nSamples = count_samples (vectors, varargin)
 
 % File History:
 % 2018-10-10 Created by Adam Lu
-% 2018-12-18 Now not longers forces nSamples to be a column vector
+% 2018-12-18 Now no longers forces nSamples to be a column vector
 % 2019-01-03 Now accepts cell arrays of non-vector arrays
+% 2019-01-03 Added 'TreatMatrixAsVector' as an optional argument
+% 2019-01-03 Added 'TreatRowAsMatrix' as an optional argument
 % 
 
 %% Default values for optional arguments
-forceColumnOutputDefault = true;  % force output as a column by default
+forceColumnOutputDefault = true;    % force output as a column by default
+treatMatrixAsVectorDefault = false; % treat a matrix as many vectors by default
+treatRowAsMatrixDefault = false;    % treat a row vector as a vector by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -67,14 +80,20 @@ addRequired(iP, 'vectors', ...                   % vectors
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ForceColumnOutput', forceColumnOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatMatrixAsVector', treatMatrixAsVectorDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatRowAsMatrix', treatRowAsMatrixDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vectors, varargin{:});
 forceColumnOutput = iP.Results.ForceColumnOutput;
+treatMatrixAsVector = iP.Results.TreatMatrixAsVector;
+treatRowAsMatrix = iP.Results.TreatRowAsMatrix;
 
 %% Do the job
 % Decide based on input type
-if iscellnumericvector(vectors)
+if iscell(vectors) && (treatMatrixAsVector || iscellnumericvector(vectors))
     % Count the number of elements for each vector
     nSamples = cellfun(@numel, vectors);
 elseif iscell(vectors)
@@ -83,7 +102,7 @@ elseif iscell(vectors)
                         'ForceColumnOutput', forceColumnOutput), ...
                         vectors, 'UniformOutput', false);
 elseif isnumeric(vectors)
-    if isvector(vectors)
+    if isvector(vectors) && ~treatRowAsMatrix
         % Count the number of elements
         nSamples = numel(vectors);
     else

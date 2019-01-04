@@ -15,13 +15,21 @@ function nVectors = count_vectors (vectors, varargin)
 %       vectors     - vectors to count
 %                   Note: If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array
-%       varargin    - 'TreatArrayAsVector': whether to treat a non-vector array 
+%       varargin    - 'ForceColumnOutput': whether to force output as a column
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'TreatMatrixAsVector': whether to treat a non-vector array 
 %                                           as a single vector
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'TreatRowAsMatrix': whether to treat a row vector
+%                                           as many one-element vectors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %
 % Requires:
 %       cd/iscellnumericvector.m
+%       cd/force_column_numeric.m
 %
 % Used by:
 %       cd/collapse_identical_vectors.m
@@ -38,10 +46,15 @@ function nVectors = count_vectors (vectors, varargin)
 % File History:
 % 2018-10-10 Created by Adam Lu
 % 2019-01-03 Now returns a vector if input is a cell array of non-vectors
+% 2019-01-03 Added 'TreatMatrixAsVector' as an optional argument
+% 2019-01-03 Added 'TreatRowAsMatrix' as an optional argument
+% 2018-01-03 Added 'ForceColumnOutput' as an optional argument with default true
 % 
 
 %% Default values for optional arguments
-treatArrayAsVectorDefault = false;  % treat arrays as many vectors by default
+forceColumnOutputDefault = true;    % force output as a column by default
+treatMatrixAsVectorDefault = false; % treat a matrix as many vectors by default
+treatRowAsMatrixDefault = false;    % treat a row vector as a vector by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -62,26 +75,38 @@ addRequired(iP, 'vectors', ...                   % vectors
                 'vectors must be either a numeric array or a cell array!'));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'TreatArrayAsVector', treatArrayAsVectorDefault, ...
+addParameter(iP, 'ForceColumnOutput', forceColumnOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatMatrixAsVector', treatMatrixAsVectorDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatRowAsMatrix', treatRowAsMatrixDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vectors, varargin{:});
-treatArrayAsVector = iP.Results.TreatArrayAsVector;
+forceColumnOutput = iP.Results.ForceColumnOutput;
+treatMatrixAsVector = iP.Results.TreatMatrixAsVector;
+treatRowAsMatrix = iP.Results.TreatRowAsMatrix;
 
 %% Do the job
-if iscell(vectors) && (treatArrayAsVector || iscellnumericvector(vectors))
+if iscell(vectors) && (treatMatrixAsVector || iscellnumericvector(vectors))
     nVectors = numel(vectors);
 elseif iscell(vectors)
+    % TODO: the case when not uniform output
     nVectors = cellfun(@count_vectors, vectors);
 elseif isnumeric(vectors)    
-    if isvector(vectors)
+    if isvector(vectors) && ~treatRowAsMatrix
         nVectors = 1;
     else
         nVectors = size(vectors, 2);
     end
 else
     error('vectors is not the right type!');
+end
+
+% Force nVectors to be a column vector unless requested not to
+if forceColumnOutput
+    nVectors = force_column_numeric(nVectors);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

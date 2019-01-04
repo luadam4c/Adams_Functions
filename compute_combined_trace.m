@@ -27,8 +27,13 @@ function [combTrace, paramsUsed] = ...
 %                       'leftAdjust'  - align to the left
 %                       'rightAdjust' - align to the right
 %                   default == 'leftAdjust'
+%                   - 'TreatRowAsMatrix': whether to treat a row vector
+%                                           as many one-element vectors
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   
 % Requires:
+%       cd/count_samples.m
 %       cd/force_matrix.m
 %       cd/error_unrecognized.m
 %       cd/get_var_name.m
@@ -43,6 +48,8 @@ function [combTrace, paramsUsed] = ...
 % 2019-01-03 Moved from compute_average_trace
 % 2019-01-03 Added 'CombineMethod' as an optional argument
 % 2019-01-03 Now allows NaNs
+% 2019-01-03 Now uses count_samples.m
+% 2019-01-03 Added 'TreatRowAsMatrix' as an optional argument
 % 
 
 %% Hard-coded parameters
@@ -53,6 +60,7 @@ validCombineMethods = {'average', 'maximum', 'minimum'};
 %% Default values for optional arguments
 nSamplesDefault = [];               % set later
 alignMethodDefault = 'leftadjust';  % align to the left by default
+treatRowAsMatrixDefault = false;    % treat a row vector as a vector by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -80,11 +88,14 @@ addParameter(iP, 'NSamples', nSamplesDefault, ...
                                 {'nonnegative', 'integer', 'scalar'}));
 addParameter(iP, 'AlignMethod', alignMethodDefault, ...
     @(x) any(validatestring(x, validAlignMethods)));
+addParameter(iP, 'TreatRowAsMatrix', treatRowAsMatrixDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, traces, combineMethod, varargin{:});
 nSamples = iP.Results.NSamples;
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
+treatRowAsMatrix = iP.Results.TreatRowAsMatrix;
 
 % Validate combine method
 combineMethod = validatestring(combineMethod, validCombineMethods);
@@ -93,51 +104,31 @@ combineMethod = validatestring(combineMethod, validCombineMethods);
 if iscellnumericvector(traces) || ~iscell(traces)
     [combTrace, paramsUsed] = ...
         compute_one_combined_trace(traces, nSamples, ...
-                                    alignMethod, combineMethod);
+                                alignMethod, combineMethod, treatRowAsMatrix);
 else
     [combTrace, paramsUsed] = ...
         cellfun(@(x) compute_one_combined_trace(x, nSamples, ...
-                    alignMethod, combineMethod), ...
+                    alignMethod, combineMethod, treatRowAsMatrix), ...
                 traces, 'UniformOutput', false);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [combTrace, paramsUsed] = ...
-        compute_one_combined_trace(traces, nSamples, alignMethod, combineMethod)
+        compute_one_combined_trace(traces, nSamples, alignMethod, ...
+                                    combineMethod, treatRowAsMatrix)
 
 %% Preparation
 % Force any row vector to be a column vector
 %   but do not transform arrays
-traces = force_column_numeric(traces, 'IgnoreNonVectors', true);
+if ~treatRowAsMatrix
+    traces = force_column_numeric(traces, 'IgnoreNonVectors', true);
+end
 
 % Compute the number of samples for each trace
-if iscell(traces)
-    % Apply length() to each element
-    nSamplesEachTrace = cellfun(@length, traces);
-else
-    % Whether multiple vectors or not, nSamplesEachTrace is the number of rows
-    nSamplesEachTrace = size(traces, 1);
-end
-
-% Set default number of samples for the averaged trace
-if isempty(nSamples)
-    if iscell(traces)
-        % Use the minimum length of all traces
-        nSamples = min(nSamplesEachTrace);
-    else
-        % Use the number of rows
-        nSamples = nSamplesEachTrace;
-    end
-end
+nSamplesEachTrace = count_samples(traces, 'TreatRowAsMatrix', treatRowAsMatrix);
 
 %% Do the job
-% Return if there are no samples
-if nSamples == 0
-    combTrace = [];
-    return
-end
-
 % Force traces as a matrix and align appropriately
 tracesMatrix = force_matrix(traces, 'AlignMethod', alignMethod);
 
@@ -157,10 +148,14 @@ switch combineMethod
                             combineMethod, mfilename);
 end
 
+% Count the number of samples
+nSamples = count_samples(combTrace);
+
 %% Output info
-paramsUsed.nSamples = nSamples;
+paramsUsed.nSamplesEachTrace = nSamplesEachTrace;
 paramsUsed.alignMethod = alignMethod;
 paramsUsed.combineMethod = combineMethod;
+paramsUsed.nSamples = nSamples;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -207,6 +202,35 @@ if iscell(tracesAligned)
 else
     % Already a numeric array with the columns being vectors to be averaged
     tracesMatrix = tracesAligned;
+end
+
+% Force any row vector to be a column vector
+%   but do not transform arrays
+traces = force_column_numeric(traces, 'IgnoreNonVectors', true);
+
+if iscell(traces)
+    % Apply length() to each element
+    nSamplesEachTrace = cellfun(@length, traces);
+else
+    % Whether multiple vectors or not, nSamplesEachTrace is the number of rows
+    nSamplesEachTrace = size(traces, 1);
+end
+
+% Set default number of samples for the averaged trace
+if isempty(nSamples)
+    if iscell(traces)
+        % Use the minimum length of all traces
+        nSamples = min(nSamplesEachTrace);
+    else
+        % Use the number of rows
+        nSamples = nSamplesEachTrace;
+    end
+end
+
+% Return if there are no samples
+if nSamples == 0
+    combTrace = [];
+    return
 end
 
 %}

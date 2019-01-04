@@ -338,10 +338,10 @@ end
     match_format_vector_sets(data, dataToCompare, 'ForceCellOutputs', true);
 
 % Extract number of subplots (under parallel mode)
-nPlots = count_vectors(data, 'TreatArrayAsVector', true);
+nPlots = count_vectors(data, 'TreatMatrixAsVector', true);
 
 % Count the number of traces per subplot (under parallel mode)
-nTracesPerPlot = count_vectors(data, 'TreatArrayAsVector', false);
+nTracesPerPlot = count_vectors(data, 'TreatMatrixAsVector', false);
 
 % Determine the number of rows and the number of subplots per row
 [nRows, nPlotsPerRow] = ...

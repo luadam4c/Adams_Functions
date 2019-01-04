@@ -41,6 +41,7 @@ function vectors = force_column_numeric (vectors, varargin)
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/count_samples.m
+%       cd/count_vectors.m
 %       cd/create_indices.m
 %       cd/extract_subvectors.m
 %       cd/fit_2exp.m
