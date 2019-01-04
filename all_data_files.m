@@ -127,7 +127,7 @@ for iString = 1:numel(excludedStrings)
         allNames = {allDataFiles.name};
         
         % Determine for each file whether you cannot find the string in the name
-        doesNotContainString = cellfun(@isempty, strfind(allNames, string));
+        doesNotContainString = isemptycell(strfind(allNames, string));
         
         % Restrict to those files 
         allDataFiles = allDataFiles(doesNotContainString);

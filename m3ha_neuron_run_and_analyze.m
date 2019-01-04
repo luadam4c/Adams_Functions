@@ -2622,7 +2622,7 @@ if outparams.debugflag
             timeTakenNeuron, nSweeps);
     fprintf('\n');
 end
-ranIntoErrors = cellfun(@isempty, strfind(results, 'No_Errors!'));
+ranIntoErrors = isemptycell(strfind(results, 'No_Errors!'));
 if sum(ranIntoErrors) == 0
     if outparams.debugflag
         fprintf('No Errors in NEURON!\n');

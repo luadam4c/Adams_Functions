@@ -467,19 +467,18 @@ parfor (iFile = 1:nFiles, maxNumWorkers)
 end
 
 % Remove empty entries
-isEmpty = cellfun(@isempty, featuresPerFileCell);
-featuresFileProtocol = featuresPerFileCell(~isEmpty);
-featuresSweepProtocol = featuresPerSweepCell(~isEmpty);
+[featuresFileProtocol, featuresSweepProtocol] = ...
+    argfun(@remove_empty, featuresPerFileCell, featuresPerSweepCell);
 
 % Join the tables together
-featuresFileTable = vertcat(featuresFileProtocol{:});
-featuresSweepTable = vertcat(featuresSweepProtocol{:});
+[featuresFileTable, featuresSweepTable] = ...
+    argfun(@(x) vertcat(x{:}), featuresFileProtocol, featuresSweepProtocol);
 
 % Create file paths for the tables
-featuresFilePath = fullfile(outFolder, [outFolderName, '_', ...
-                        outFolderProtocolName, '_', featuresFileSheetName]);
-featuresSweepPath = fullfile(outFolder, [outFolderName, '_', ...
-                        outFolderProtocolName, '_', featuresSweepSheetName]);
+[featuresFilePath, featuresSweepPath] = ...
+    argfun(@(x) fullfile(outFolder, [outFolderName, '_', ...
+                        outFolderProtocolName, '_', x]), ...
+            featuresFileSheetName, featuresSweepSheetName);
 
 % If any features were computed, 
 %   plot each column of the feature table as its own time series
@@ -564,6 +563,18 @@ if numel(unique(timeStart)) == 1 && numel(unique(timeEnd)) == 1
     timeStart = unique(timeStart);
     timeEnd = unique(timeEnd);
 end
+
+isEmpty = isemptycell(featuresPerFileCell);
+featuresFileProtocol = featuresPerFileCell(~isEmpty);
+featuresSweepProtocol = featuresPerSweepCell(~isEmpty);
+
+featuresFileTable = vertcat(featuresFileProtocol{:});
+featuresSweepTable = vertcat(featuresSweepProtocol{:});
+
+featuresFilePath = fullfile(outFolder, [outFolderName, '_', ...
+                        outFolderProtocolName, '_', featuresFileSheetName]);
+featuresSweepPath = fullfile(outFolder, [outFolderName, '_', ...
+                        outFolderProtocolName, '_', featuresSweepSheetName]);
 
 %}
 

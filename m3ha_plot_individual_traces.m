@@ -109,6 +109,7 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 %       cd/force_column_numeric.m
 %       cd/isbinaryscalar.m
 %       cd/iscellnumeric.m
+%       cd/isemptycell.m
 %       cd/isnumericvector.m
 %       cd/ispositiveintegerscalar.m
 %       cd/match_format_vector_sets.m
@@ -255,7 +256,7 @@ otherArguments = iP.Unmatched;
 handles = struct;
 
 % If data is empty, return
-if isempty(data) || iscell(data) && all(cellfun(@isempty, data))
+if isempty(data) || iscell(data) && all(isemptycell(data))
     fprintf('Nothing to plot!\n');
     return
 end

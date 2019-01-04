@@ -41,6 +41,7 @@ function [cellIdsSelected, cellInfo, swpInfo] = m3ha_select_cells (varargin)
 %                   default == ~/m3ha/data_dclamp/take4/special_cases
 %
 % Requires:
+%       cd/isemptycell.m
 %       cd/ispositiveintegervector.m
 %       cd/m3ha_generate_cell_info.m
 %       cd/m3ha_load_sweep_info.m
@@ -150,8 +151,7 @@ sweepIndicesByCondition = m3ha_organize_sweep_indices('SwpInfo', swpInfo);
 fprintf('Selecting the cells to fit ... \n');
 
 % Decide whether each cell is to be selected (has sweeps for all conditions)
-isSelected = cellfun(@(x) ~any(cellfun(@isempty, x(:))), ...
-                    sweepIndicesByCondition);
+isSelected = cellfun(@(x) ~any(isemptycell(x(:))), sweepIndicesByCondition);
 
 % Store in cellInfo
 cellInfo = addvars(cellInfo, sweepIndicesByCondition, isSelected);
@@ -214,7 +214,7 @@ for iCell = 1:nCells
     end
 
     % If any pharm-g incr pair has no trace found, don't use this cell
-    if any(any(cellfun(@isempty, swpIndThisCell)))
+    if any(any(isemptycell(swpIndThisCell)))
         toUse = false;
     end
 

@@ -24,6 +24,9 @@ function isEmpty = isemptycell (cellArray, varargin)
 %       cd/distribute_balls_into_boxes.m
 %       cd/find_ind_str_in_cell.m
 %       cd/istype.m
+%       cd/m3ha_plot_individual_traces.m
+%       cd/m3ha_select_cells.m
+%       cd/plot_traces.m
 %       cd/remove_empty.m
 
 % File History:

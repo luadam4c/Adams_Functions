@@ -139,6 +139,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       cd/create_labels_from_numbers.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
+%       cd/isemptycell.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
 %       cd/ispositiveintegerscalar.m
@@ -309,7 +310,7 @@ otherArguments = iP.Unmatched;
 
 %% Preparation
 % If data is empty, return
-if isempty(data) || iscell(data) && all(cellfun(@isempty, data))
+if isempty(data) || iscell(data) && all(isemptycell(data))
     fprintf('Nothing to plot!\n');
     return
 end

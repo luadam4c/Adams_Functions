@@ -294,7 +294,7 @@ indProblematic = find(hasError > 0, 1);
 
 if saveStdOutFlag || isempty(strfind(simStdOut{iSim}, 'No_Errors!'))
 
-hasError = cellfun(@isempty, strfind(simStdOut, 'No_Errors!'));
+hasError = isemptycell(strfind(simStdOut, 'No_Errors!'));
 
 if ~isempty(prefix) && prefix(end) ~= '_'
     prefix = [prefix, '_'];
