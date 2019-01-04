@@ -14,7 +14,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %       [a, b] = match_format_vector_sets({1:5, 2:6}, 1:5)
 %       [a, b] = match_format_vector_sets({1:5, [2:6]'}, 1:5)
 %       [a, b] = match_format_vector_sets([[1:5]', [2:6]'], [1:5]')
-%       [a, b] = match_format_vector_sets('yes', 1:5)
+%       [a, b] = match_format_vector_sets({'yes'}, 1:5)
 %       [a, b] = match_format_vector_sets('yes', magic(3))
 %
 % Outputs:
@@ -42,7 +42,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %                   - 'TreatCellStrAsArray': whether to treat a cell array
 %                                       of character arrays as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == false
 %                   - 'TreatCharAsScalar': whether to treat character arrays 
 %                                           as scalars
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -81,6 +81,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 % 2019-01-04 Added 'TreatCellAsArray' (default == 'false')
 % 2019-01-04 Added 'TreatCellStrAsArray' (default == 'true')
 % 2019-01-04 Added 'TreatCharAsScalar' (default == 'true')
+% 2019-01-04 Fixed bug
 % TODO: Include the option to not force as column cell arrays
 %           i.e., match 2D cell arrays
 % TODO: Accept more than two vector sets
@@ -91,8 +92,8 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %% Default values for optional arguments
 forceCellOutputsDefault = false;    % don't force as cell array by default
 matchVectorsDefault = false;        % don't match vectors by default
-treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
-treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
+treatCellAsArrayDefault = false;    % treat cell arrays as an array by default
+treatCellStrAsArrayDefault = false; % treat cell arrays of character arrays
                                     %   as an array by default
 treatCharAsScalarDefault = true;% treat character arrays as scalars by default
 
@@ -157,8 +158,7 @@ if is_vector(vecs1, treatCellStrAsArray, ...
         [vecs1, vecs2] = match_format_vectors(vecs1, vecs2);
     end
 else
-    % Force vecs1/vecs2 to become 
-    %   column cell arrays of column vectors
+    % Force vecs1/vecs2 to become column cell arrays of column vectors
     [vecs1, vecs2] = argfun(@force_column_cell, vecs1, vecs2);
 
     % Find the maximum number of rows
@@ -168,7 +168,7 @@ else
     % TODO: Incorporate comparison into match_dimensions.m
     [vecs1, vecs2] = ...
         argfun(@(x) match_dimensions(x, [maxVecs, 1]), vecs1, vecs2);
-
+    
     % Match vectors if requested
     if matchVectors
         [vecs1, vecs2] = cellfun(@(x, y) match_format_vectors(x, y), ...
@@ -201,9 +201,21 @@ isVector = isnumericvector(vecs1) || ...
 %{
 OLD CODE:
 
+% Force vecs1/vecs2 to become column vectors
 [vecs1, vecs2] = ...
-    argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', true), ...
+    argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', false), ...
             vecs1, vecs2);
+
+[vecs1, vecs2] = argfun(@force_column_cell, vecs1, vecs2);
+
+% Count the vectors
+[nVecs1, nVecs2] = ...
+    argfun(@(x) count_vectors(x, 'TreatCellAsArray', treatCellAsArray, ...
+                    'TreatCellStrAsArray', treatCellStrAsArray), ...
+            vecs1, vecs2);
+
+% Find the maximum number of vector counts
+maxVecs = max(nVecs1, nVecs2);
 
 %}
 

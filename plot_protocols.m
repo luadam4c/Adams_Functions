@@ -369,8 +369,8 @@ end
 % Compute features and plot protocol traces
 featuresPerFileCell = cell(nFiles, 1);
 featuresPerSweepCell = cell(nFiles, 1);
-%parfor (iFile = 1:nFiles, maxNumWorkers)
-for iFile = 1:nFiles
+parfor (iFile = 1:nFiles, maxNumWorkers)
+%for iFile = 1:nFiles
     % Extract from cell arrays
     abfParams = abfParamsCell{iFile};
 

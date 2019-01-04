@@ -69,6 +69,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 % 2018-12-18 Now defaults 2D cell arrays to be separated by columns
 %               added 'ToLinearize' (default == 'false')
 % 2018-12-19 Now uses extract_columns.m
+% 2019-01-04 Fixed bug
 % 
 
 %% Default values for optional arguments
@@ -117,11 +118,14 @@ elseif isnum(vectorsOrig) || ...
     % Extract as a cell array
     vectorsCell = extract_columns(vectorsOrig, 'all', ...
                             'OutputMode', 'single', 'TreatCellAsArray', true);
-elseif ~iscell(vectorsOrig)
-    % Place in a cell array
-    vectorsCell = {vectorsOrig};
 else
-    error('Code logic error!');
+    % Do nothing
+    vectorsCell = vectorsOrig;
+end
+
+% Place in a cell array if not already so
+if ~iscell(vectorsCell)
+    vectorsCell = {vectorsCell};
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

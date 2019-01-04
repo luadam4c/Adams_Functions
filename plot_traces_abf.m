@@ -345,6 +345,9 @@ function plot_traces_abf_helper(timeVec, data, ...
                 xLimits, xUnits, xLabel, traceLabels, channelLabels, ...
                 nChannels, nDimensions)
 
+% Construct file ID for titles
+fileId = replace(fileBase, '_', '\_');
+
 % Plot data
 if ~individually && strcmpi(expMode, 'EEG')
     % Print message
@@ -365,7 +368,7 @@ if ~individually && strcmpi(expMode, 'EEG')
     % Decide on other channel-dependent variables
     vecAll = data;
     yLabel = channelLabels{1};
-    figTitle = sprintf('All channels for %s', fileBase);
+    figTitle = sprintf('All channels for %s', fileId);
 
     % Do the plotting
     fig = plot_traces(timeVec, vecAll, 'Verbose', verbose, ...
@@ -380,8 +383,7 @@ if ~individually && strcmpi(expMode, 'EEG')
 elseif ~individually && strcmpi(expMode, 'patch') || ...
         individually && strcmpi(expMode, 'EEG')
     % Loop through all channels
-%    parfor iChannel = 1:nChannels
-    for iChannel = 1:nChannels
+    parfor iChannel = 1:nChannels
         % Print message
         if verbose
             fprintf('Plotting all sweeps of Channel #%d ...\n', iChannel);
@@ -399,7 +401,7 @@ elseif ~individually && strcmpi(expMode, 'patch') || ...
             % Decide on other channel-dependent variables
             yLabel = channelLabels{iChannel};
             figTitle = sprintf('Data for Channel #%d of %s', ...
-                                iChannel, fileBase);
+                                iChannel, fileId);
             figNum = 100 * iChannel;
             if nDimensions == 2
                 vecAll = data(:, iChannel);
@@ -451,7 +453,7 @@ elseif individually && strcmpi(expMode, 'patch')
                 end
                 yLabel = channelLabelThis;
                 figTitle = sprintf('Data for Channel #%d, Sweep #%d of %s', ...
-                                    iChannel, iSwp, fileBase);
+                                    iChannel, iSwp, fileId);
                 figNum = 100 * iChannel + iSwp;
 
                 % Do the plotting
