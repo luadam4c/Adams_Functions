@@ -19,6 +19,7 @@ function isNum = isnum (x, varargin)
 %       cd/compute_combined_trace.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
+%       cd/force_column_cell.m
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
 %       cd/plot_horizontal_line.m

@@ -1,19 +1,19 @@
-function vectors = force_column_numeric (vectors, varargin)
-%% Transform row numeric vector(s) or numeric array(s) to column numeric vector(s)
-% Usage: vectors = force_column_numeric (vectors, varargin)
+function vectors = force_column_vector (vectors, varargin)
+%% Transform row vector(s) or array(s) to column vector(s)
+% Usage: vectors = force_column_vector (vectors, varargin)
 % Explanation:
-%       Starting with a cell array of numeric vectors, 
+%       Starting with a cell array of vectors, 
 %           this function makes sure each vector is a column vector.
-%       If a single numeric vector (may be empty) is provided, 
+%       If a single vector (may be empty) is provided, 
 %           the function makes sure it's a column vector.
-%       If a numeric non-vector array is provided, the function 
+%       If a non-vector array is provided, the function 
 %           force_column_cell.m is applied 
 %           unless 'IgnoreNonVectors' is set to true
 %
 % Example(s):
-%       vector = force_column_numeric(vector);
-%       vectors = force_column_numeric(vectors);
-%       force_column_numeric({[3, 4], [5; 6], magic(3)})
+%       vector = force_column_vector(vector);
+%       vectors = force_column_vector(vectors);
+%       force_column_vector({[3, 4], [5; 6], magic(3)})
 %
 % Outputs:
 %       vectors     - vectors transformed
@@ -21,6 +21,10 @@ function vectors = force_column_numeric (vectors, varargin)
 % Arguments:
 %       vectors     - original vectors
 %       varargin    - 'IgnoreNonVectors': whether to ignore non-vectors
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'TreatCellAsArray': whether to treat a cell array
+%                                           as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %
@@ -65,11 +69,13 @@ function vectors = force_column_numeric (vectors, varargin)
 % 2018-12-11 Now accepts logical arrays
 % 2018-12-28 Now accepts all types of arrays
 % 2019-01-03 Now adds ignoreNonVectors to recursive part
+% 2019-01-04 Added 'TreatCellAsArray' (default == 'false')
 % TODO: Deal with 3D arrays
 % 
 
 %% Default values for optional arguments
 ignoreNonVectorsDefault = false;    % don't ignore non-vectors by default
+treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -90,13 +96,16 @@ addRequired(iP, 'vectors');
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'IgnoreNonVectors', ignoreNonVectorsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vectors, varargin{:});
 ignoreNonVectors = iP.Results.IgnoreNonVectors;
+treatCellAsArray = iP.Results.TreatCellAsArray;
 
 %% Do the job
-if ~iscell(vectors) && ~iscolumn(vectors)
+if (~iscell(vectors) || treatCellAsArray) && ~iscolumn(vectors)
     if isempty(vectors)
         % Do nothing
     elseif isvector(vectors)
@@ -106,13 +115,13 @@ if ~iscell(vectors) && ~iscolumn(vectors)
         % Must be a non-vector
         if ~ignoreNonVectors
             % Reassign as a column cell array of column vectors
-            vectors = force_column_cell(vectors);
+            vectors = force_column_cell(vectors, 'ToLinearize', false);
         end
     end
-elseif iscell(vectors)
+elseif iscell(vectors) && ~treatCellAsArray
     % Extract as a cell array
     %   Note: this will have a recursive effect
-    vectors = cellfun(@(x) force_column_numeric(x, ...
+    vectors = cellfun(@(x) force_column_vector(x, ...
                             'IgnoreNonVectors', ignoreNonVectors), ...
                     vectors, 'UniformOutput', false);
 else

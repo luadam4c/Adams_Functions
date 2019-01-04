@@ -284,13 +284,13 @@ if iscell(arrays) && ~treatCellAsArray
 if isnumeric(arrays) || treatCellAsArray
 if isnumeric(arrays) || treatCellAsArray
 
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 % Transform arrays into cell arrays of column vectors
 if nArrays == 1
-    varargout{1} = force_column_numeric(arrays(:, colNumbers));
+    varargout{1} = force_column_vector(arrays(:, colNumbers));
 else
     varargout{1} = ...
-        cellfun(@(x, y) force_column_numeric(x(:, y)), ...
+        cellfun(@(x, y) force_column_vector(x(:, y)), ...
                     arrays, colNumbers, ...
                     'UniformOutput', false);
 end

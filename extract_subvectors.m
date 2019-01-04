@@ -46,6 +46,10 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                       'rightAdjustPad' - align to the right and pad
 %                       'none'        - no alignment/truncation
 %                   default == 'leftAdjust'
+%                   - 'TreatCellAsArray': whether to treat a cell array
+%                                           as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/argfun.m
@@ -88,6 +92,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2018-12-27 Added the align methods 'leftAdjustPad', 'rightAdjustPad'
 % 2019-01-03 Added usage of force_column_numeric.m
 % 2019-01-03 Moved code to create_empty_match.m
+% 2019-01-04 Added 'TreatCellAsArray' (default == 'false')
 % TODO: check if all endpoints have 2 elements
 % 
 
@@ -102,6 +107,7 @@ indexEndDefault = [];           % set later
 indexStartDefault = [];         % set later
 windowsDefault = [];            % extract entire trace(s) by default
 alignMethodDefault  = 'none';   % no alignment/truncation by default
+treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -139,6 +145,8 @@ addParameter(iP, 'Windows', windowsDefault, ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'AlignMethod', alignMethodDefault, ...
     @(x) any(validatestring(x, validAlignMethods)));
+addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vecs, varargin{:});
@@ -148,6 +156,7 @@ indexStart = iP.Results.IndexStart;
 indexEnd = iP.Results.IndexEnd;
 windows = iP.Results.Windows;
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
+treatCellAsArray = iP.Results.TreatCellAsArray;
 
 % If indices is provided and endPoints or windows is also provided, 
 %   display warning
@@ -187,7 +196,7 @@ if isempty(endPoints)
         endPoints = find_window_endpoints(windows, vecs);
     else
         % Count the number of elements in each vector
-        nSamples = count_samples(vecs);
+        nSamples = count_samples(vecs, 'TreatCellAsArray', treatCellAsArray);
 
         % Construct end points
         endPoints = construct_default_endpoints(nSamples);
@@ -212,18 +221,20 @@ end
 
 %% Do the job
 if iscellnumericvector(vecs)
-    subVecs = cellfun(@(x, y) extract_subvectors_helper(x, y), ...
+    subVecs = cellfun(@(x, y) extract_subvectors_helper(x, y, ...
+                                                    treatCellAsArray), ...
                         vecs, indices, 'UniformOutput', false);
 elseif iscell(vecs)
-    subVecs = cellfun(@(x, y) extract_subvectors(x, 'Indices', y), ...
+    subVecs = cellfun(@(x, y) extract_subvectors(x, 'Indices', y, ...
+                            'TreatCellAsArray', treatCellAsArray), ...
                         vecs, indices, 'UniformOutput', false);
 else
-    subVecs = extract_subvectors_helper(vecs, indices);
+    subVecs = extract_subvectors_helper(vecs, indices, treatCellAsArray);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function subVec = extract_subvectors_helper (vec, indices)
+function subVec = extract_subvectors_helper (vec, indices, treatCellAsArray)
 %% Extract a subvector from vector(s) if not empty
 
 % If the time window is out of range, or if the vector is empty, 
@@ -234,7 +245,8 @@ if isempty(indices) || isempty(vec)
 end
 % Make sure vectors and indices are in columns
 [vec, indices] = ...
-    argfun(@(x) force_column_numeric(x, 'IgnoreNonVectors', true), ...
+    argfun(@(x) force_column_numeric(x, 'IgnoreNonVectors', true, ...
+                                'TreatCellAsArray', treatCellAsArray), ...
             vec, indices);
 
 % Count the number of indices
@@ -255,6 +267,8 @@ end
 subVec = create_empty_match(vec, 'NRows', nRows, 'NColumns', nColumns);
 
 % Find the parts of indices without NaNs
+% TODO: Make this a function find_nonempty_indices.m
+%       and return without NaTs if necessary
 if nIndices == 1
     withoutNaNs = find(~isnan(indices));
 else

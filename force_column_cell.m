@@ -11,7 +11,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %           as a column cell vector
 %       3. An empty numeric array or a character array are placed in a cell array
 %       4. A numeric vector is forced as a column vector
-%           (force_column_numeric.m is used), then placed in a cell array
+%           (force_column_vector.m is used), then placed in a cell array
 %       5. A numeric non-vector array is transformed to a column cell vector
 %           of column numeric vectors based on the first dimension
 %
@@ -39,7 +39,8 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %                   default == false
 % Requires:
 %       cd/extract_columns.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
+%       cd/isnum.m
 %
 % Used by:
 %       cd/compute_rms_error.m
@@ -49,8 +50,8 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/extract_columns.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/find_pulse_endpoints.m
-%       cd/force_column_numeric.m
-%       cd/force_row_numeric.m
+%       cd/force_column_vector.m
+%       cd/force_row_vector.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/match_format_vector_sets.m
@@ -88,7 +89,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vectorsOrig', ...
-    @(x) isnumeric(x) || iscell(x) || ischar(x) || isstring(x));
+    @(x) isnum(x) || iscell(x) || ischar(x) || isstring(x));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ToLinearize', toLinearizeDefault, ...
@@ -103,14 +104,14 @@ if iscell(vectorsOrig) && ...
         (isempty(vectorsOrig) || isrow(vectorsOrig) || toLinearize)
     % Reassign as a column
     vectorsCell = vectorsOrig(:);
-elseif ischar(vectorsOrig) || isnumeric(vectorsOrig) && isempty(vectorsOrig)
+elseif ischar(vectorsOrig) || isnum(vectorsOrig) && isempty(vectorsOrig)
     % Place in a cell array
     vectorsCell = {vectorsOrig};
-elseif isnumeric(vectorsOrig) || ...
+elseif isnum(vectorsOrig) || ...
         iscell(vectorsOrig) && ~isvector(vectorsOrig) && ~toLinearize
     % Force any numeric vector as a column vector
-    if isnumeric(vectorsOrig)
-        vectorsOrig = force_column_numeric(vectorsOrig, 'IgnoreNonVectors', true);
+    if isnum(vectorsOrig)
+        vectorsOrig = force_column_vector(vectorsOrig, 'IgnoreNonVectors', true);
     end
 
     % Extract as a cell array

@@ -103,7 +103,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %       cd/find_ind_str_in_cell.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_cell.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/force_string_end.m
 %       cd/print_cellstr.m
 %       cd/m3ha_load_sweep_info.m
@@ -508,7 +508,7 @@ idxStartToExtract(idxStart < 1) = 1;
 
 % Put the endpoints to extract in cell array form
 endPointsToExtract = ...
-    force_column_numeric(transpose([idxStartToExtract, idxEnd]), ...
+    force_column_vector(transpose([idxStartToExtract, idxEnd]), ...
                        'IgnoreNonVectors', false);
 
 % Extract the response regions from the approximate response regions

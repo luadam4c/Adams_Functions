@@ -19,7 +19,7 @@ function vectors = collapse_identical_vectors (vectors, varargin)
 % Requires:
 %       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -65,7 +65,7 @@ if count_vectors(vectors) == 1
 end
 
 % Force as column cell arrays of column vectors
-vectorsAll = force_column_numeric(vectors, 'IgnoreNonVectors', false);
+vectorsAll = force_column_vector(vectors, 'IgnoreNonVectors', false);
 
 % Get the first vector
 vectorTemplate = vectorsAll{1};

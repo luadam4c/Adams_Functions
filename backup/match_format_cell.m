@@ -71,7 +71,7 @@ OLD CODE:
 % Make sure numeric vectors are column vectors
 % Note: this is now done in force_column_cell.m as well
 if isnumeric(vectorsOrig)
-    force_column_numeric(vectorsOrig);
+    force_column_vector(vectorsOrig);
 end
 
 %}

@@ -12,7 +12,7 @@ function varargout = match_format_vectors (varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/match_row_count.m
 %
 % Used by:
@@ -33,7 +33,7 @@ end
 
 %% Do the job
 % Force as column vectors
-vararginTransformed = cellfun(@force_column_numeric, varargin, ...
+vararginTransformed = cellfun(@force_column_vector, varargin, ...
                                 'UniformOutput', false);
 
 % Count the number of values in each vector

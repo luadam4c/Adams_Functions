@@ -1,15 +1,15 @@
-function vectors = force_row_numeric (vectors, varargin)
-%% Transform column numeric vector(s) or numeric array(s) to row numeric vector(s)
-% Usage: vectors = force_row_numeric (vectors, varargin)
+function vectors = force_row_vector (vectors, varargin)
+%% Transform column vector(s) or array(s) to row vector(s)
+% Usage: vectors = force_row_vector (vectors, varargin)
 % Explanation:
 %       Starting with a cell array of mixed vectors, some row and some column,
 %           this function makes sure each vector is a row vector.
 %       If a single vector is provided, the function makes sure 
 %           it's a row vector.
 % Example(s):
-%       vector = force_row_numeric(vector);
-%       vectors = force_row_numeric(vectors);
-%       force_row_numeric({[3, 4], [5; 6], magic(3)})
+%       vector = force_row_vector(vector);
+%       vectors = force_row_vector(vectors);
+%       force_row_vector({[3, 4], [5; 6], magic(3)})
 % Outputs:
 %       vectors     - vectors transformed
 %                   specified as a numeric array 
@@ -27,7 +27,7 @@ function vectors = force_row_numeric (vectors, varargin)
 % Used by:    
 
 % File History:
-% 2018-10-25 Modified from force_column_numeric.m
+% 2018-10-25 Modified from force_column_vector.m
 % 2018-10-27 Added 'IgnoreNonVectors' as an optional argument
 % 
 
@@ -73,13 +73,13 @@ if ~iscell(vectors) && ~isrow(vectors)
             vectors = force_column_cell(vectors);
 
             % Change the column vectors to row vectors
-            vectors = force_row_numeric(vectors);
+            vectors = force_row_vector(vectors);
         end
     end
 elseif iscell(vectors)
     % Extract as a cell array
     %   Note: this will have a recursive effect
-    vectors = cellfun(@force_row_numeric, vectors, 'UniformOutput', false);
+    vectors = cellfun(@force_row_vector, vectors, 'UniformOutput', false);
 else
     % Do nothing
 end

@@ -65,7 +65,7 @@ function [fitParams, fitObject, goodnessOfFit, algorithmInfo] = ...
 %       cd/create_error_for_nargin.m
 %       cd/create_indices.m
 %       cd/fit_setup_2exp.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/parse_fitobject.m
 %
 % Used by:
@@ -169,8 +169,8 @@ if numel(xVec) ~= numel(yVec)
 end
 
 % Force xVec and yVec to be columns
-xVec = force_column_numeric(xVec);
-yVec = force_column_numeric(yVec);
+xVec = force_column_vector(xVec);
+yVec = force_column_vector(yVec);
 
 % Extract the first and last y value
 if isempty(amplitudeEstimate) || strcmpi(direction, 'auto')

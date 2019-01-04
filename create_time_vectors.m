@@ -226,7 +226,7 @@ nVectors = length(nSamples);
 
 % Force as column vectors
 [nSamples, siUnits, tStart] = ...
-    argfun(@force_column_numeric, nSamples, siUnits, tStart);
+    argfun(@force_column_vector, nSamples, siUnits, tStart);
 
 % Query the number of values provided for each parameter
 nRowsNSamples = length(nSamples);

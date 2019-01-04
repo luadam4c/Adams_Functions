@@ -36,7 +36,7 @@ function indices = create_indices (endPoints, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
 %       cd/force_column_cell.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/force_matrix.m
 %       cd/isnumericvector.m
 %       cd/match_and_combine_vectors.m
@@ -107,7 +107,7 @@ indexEndUser = iP.Results.IndexEnd;
 
 %% Preparation
 % Make sure endPoints are in columns
-endPoints = force_column_numeric(endPoints, 'IgnoreNonVectors', true);
+endPoints = force_column_vector(endPoints, 'IgnoreNonVectors', true);
 
 %% Do the job
 % Extract the starting and ending indices from provided end points
@@ -132,7 +132,7 @@ end
 %   fix indices if they are out of range
 if ~isempty(vectors)
     % Make sure indices are columns
-    [idxStart, idxEnd] = argfun(@force_column_numeric, idxStart, idxEnd);
+    [idxStart, idxEnd] = argfun(@force_column_vector, idxStart, idxEnd);
 
     % Count the number of samples in each vector
     nSamples = count_samples(vectors);

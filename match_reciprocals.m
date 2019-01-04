@@ -18,7 +18,7 @@ function [vec1, vec2] = match_reciprocals (vec1, vec2)
 %
 % Requires:
 %       cd/argfun.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %
 % Used by:    
 %       cd/create_time_vectors.m
@@ -51,7 +51,7 @@ parse(iP, vec1, vec2);
 
 %% Preparation
 % Force inputs to be column numeric vectors
-[vec1, vec2] = argfun(@force_column_numeric, vec1, vec2);
+[vec1, vec2] = argfun(@force_column_vector, vec1, vec2);
 
 %% Do the job
 % Match or check based on which one is empty

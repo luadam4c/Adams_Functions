@@ -21,7 +21,7 @@ function [counts, edges] = compute_bins (stats, varargin)
 % Requires:
 %       cd/argfun.m
 %       cd/create_error_for_nargin.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/struct2arglist.m
 %
 % Used by:
@@ -77,7 +77,7 @@ else
 end
 
 % Force output as column vectors
-[counts, edges] = argfun(@force_column_numeric, counts, edges);
+[counts, edges] = argfun(@force_column_vector, counts, edges);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

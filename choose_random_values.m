@@ -22,7 +22,7 @@ function newValues = choose_random_values(lowerBounds, upperBounds, varargin)
 
 % File History:
 % 2018-12-11 Created by Adam Lu
-% TODO: Use force_column_numeric.m ('IgnoreArrays', true) and match_row_count.m 
+% TODO: Use force_column_vector.m ('IgnoreArrays', true) and match_row_count.m 
 %           for the first two arguments
 % 
 

@@ -73,7 +73,7 @@ function [data, sweepInfo, dataCprAll] = ...
 %       cd/find_ind_str_in_cell.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_cell.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/print_cellstr.m
 %
 % Used by:
@@ -415,7 +415,7 @@ idxStartToExtract(idxStart < 1) = 1;
 
 % Put the endpoints to extract in cell array form
 endPointsToExtract = ...
-    force_column_numeric(transpose([idxStartToExtract, idxEnd]), ...
+    force_column_vector(transpose([idxStartToExtract, idxEnd]), ...
                        'IgnoreNonVectors', false);
 
 % Extract the response regions from the approximate response regions
@@ -959,7 +959,7 @@ endPointsToExtractIpscr = [1, ipscTimeOrigSamples + ipscDurSamples];
 endPointsToExtractIpscr = [ones(nSweeps, 1), ...
                             ipscTimeOrigSamples + ipscDurSamples];
 endPointsToExtractIpscr = ...
-    force_column_numeric(transpose(endPointsToExtractIpscr), ...
+    force_column_vector(transpose(endPointsToExtractIpscr), ...
                        'IgnoreNonVectors', false);
 
 % vvecsToPadIpscr = arrayfun(@(x) x * ones(nSamplesToPadIpscr, 1), ...
@@ -1017,7 +1017,7 @@ for iVhold = 1:nVHoldCond
 end
 
 % Find unique vHold values
-vUnique = force_column_numeric(sort(unique(vHoldCond)));
+vUnique = force_column_vector(sort(unique(vHoldCond)));
 
 % Rename as new dataCpr
 dataCpr = dataCprAveraged;
@@ -1262,7 +1262,7 @@ idxCprStartToExtract(idxCprStart < 1) = 1;
 
 % Put the endpoints to extract in cell array form
 endPointsToExtractCpr = ...
-    force_column_numeric(transpose([idxCprStartToExtract, idxCprEnd]), ...
+    force_column_vector(transpose([idxCprStartToExtract, idxCprEnd]), ...
                        'IgnoreNonVectors', false);
 
 % Extract the current pulse response regions from 

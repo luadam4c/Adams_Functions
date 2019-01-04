@@ -31,7 +31,7 @@ function [halfWidthSamples, indHalfWidthEnds, halfPeakValue] = ...
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
 %       cd/find_custom.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/isnumericvector.m
 %
 % Used by:
@@ -86,7 +86,7 @@ end
 
 % Make sure inputs are in the desired form
 [vectors, idxPeak, baseValue] = ...
-    argfun(@force_column_numeric, vectors, idxPeak, baseValue);
+    argfun(@force_column_vector, vectors, idxPeak, baseValue);
 
 % Count the number of peaks
 nPeaks = length(idxPeak);
@@ -141,7 +141,7 @@ peakValue = extract_subvectors(vectors, ...
                 'EndPoints', transpose([idxPeak, idxPeak]));
 
 [vectors, idxPeak, baseValue] = ...
-    argfun(@(x) force_column_numeric(x, 'IgnoreNonVectors', true), ...
+    argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', true), ...
             vectors, idxPeak, baseValue);
 
 halfWidthSamples = cellfun(@(x) x(2) - x(1), indHalfWidth);

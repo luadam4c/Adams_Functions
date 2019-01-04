@@ -161,7 +161,7 @@ else
 end
 
 % Make sure vec2s is either a column vector or a cell array of column vectors
-vec2s = force_column_numeric(vec2s);
+vec2s = force_column_vector(vec2s);
 
 if iscell(vec1s)
 else

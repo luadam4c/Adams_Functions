@@ -55,7 +55,7 @@ function errorStruct = compute_sweep_errors (vSim, vReal, varargin)
 %       cd/create_time_vectors.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/iscellnumericvector.m
 %       cd/isnumericvector.m
 %       cd/match_row_count.m
@@ -139,7 +139,7 @@ end
 
 % Force data vectors to become column numeric vectors
 [tBoth, vSim, vReal, fitWindow] = ...
-    argfun(@force_column_numeric, tBoth, vSim, vReal, fitWindow);
+    argfun(@force_column_vector, tBoth, vSim, vReal, fitWindow);
 
 % Force data arrays to become column cell arrays of column numeric vectors
 [tBoth, vSim, vReal, fitWindow] = ...
@@ -227,10 +227,10 @@ fitWindowUpperBounds = fitWindow(:, 2);
 
 swpErrors = cellfun(@(x, y) compute_rms_error(x, y), vSim, vReal);
 
-%       cd/force_row_numeric.m
+%       cd/force_row_vector.m
 % Make sure all windows, if a vector and not a matrix, are row vectors
 if isvector(fitWindow)
-    fitWindow = force_row_numeric(fitWindow);
+    fitWindow = force_row_vector(fitWindow);
 end
 endPoints = find_window_endpoints(transpose(fitWindow), tBoth);
 

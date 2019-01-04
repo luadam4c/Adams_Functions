@@ -65,7 +65,7 @@ function h = plot_cfit_pulse_response (xVec, yVec, varargin)
 %       cd/compute_axis_limits.m
 %       cd/create_latex_string.m
 %       cd/fit_and_estimate_passive_params.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/islegendlocation.m
 %       ~/Downloaded_Functions/rgb.m
 %
@@ -583,11 +583,11 @@ xVecRising = xVec;
 
 % The x vector is for the falling phase
 %   Note: make sure it is a column vector
-xVecFalling = force_column_numeric(xVec);
+xVecFalling = force_column_vector(xVec);
 
 % The x vector is already for the combined phases
 %   Note: make sure it is a column vector
-xVecCombined = force_column_numeric(xVec);
+xVecCombined = force_column_vector(xVec);
 
 ypos = 5/30;
 

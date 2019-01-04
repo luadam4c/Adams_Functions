@@ -98,7 +98,7 @@ OLD CODE:
 function save_params (fileName, paramNames, paramValues, ...
                                 paramLowerBounds, paramUpperBounds, varargin)
 %       cd/force_column_cell.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       paramNames  - parameter names
 %                   must be a cell vector of character vectors
 %       paramValues - parameter values
@@ -133,9 +133,9 @@ end
 
 % Force as a column and rename the variables for the header
 Name = force_column_cell(paramNames);
-Value = force_column_numeric(paramValues);
-LowerBound = force_column_numeric(paramLowerBounds);
-UpperBound = force_column_numeric(paramUpperBounds);
+Value = force_column_vector(paramValues);
+LowerBound = force_column_vector(paramLowerBounds);
+UpperBound = force_column_vector(paramUpperBounds);
 
 %}
 

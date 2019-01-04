@@ -44,7 +44,7 @@ function xolotlObject = xolotl_set_simparams (xolotlObject, varargin)
 %                   default == 0
 %
 % Requires:
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/match_row_count.m
 %       cd/parse_xolotl_object.m
 %
@@ -159,7 +159,7 @@ end
 %% Set initial voltages
 if ~isempty(initialVoltage)
     % Force as a numeric column
-    initialVoltage = force_column_numeric(initialVoltage);
+    initialVoltage = force_column_vector(initialVoltage);
 
     % Match the number of voltages to the number of compartments
     initialVoltage = match_row_count(initialVoltage, nCompartments);

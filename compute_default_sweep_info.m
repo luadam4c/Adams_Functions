@@ -41,7 +41,7 @@ function [baseWindow, fitWindow, baseNoise, sweepWeights] = ...
 % Requires:
 %       cd/argfun.m
 %       cd/compute_baseline_noise.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
 %       cd/match_format_vector_sets.m
@@ -116,7 +116,7 @@ end
 
 % Makes sure any numeric vector is a column
 [baseWindow, fitWindow, baseNoise, sweepWeights] = ...
-    argfun(@(x) force_column_numeric(x, 'IgnoreNonVectors', true), ...
+    argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', true), ...
             baseWindow, fitWindow, baseNoise, sweepWeights);
 
 % Matches tVecs and data so that they are both cell arrays 

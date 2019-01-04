@@ -24,7 +24,7 @@ function paramTable = save_params (sheetName, paramNames, paramValues, ...
 %
 % Requires:
 %       cd/force_column_cell.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       TODO cd/isequallength.m
 %
 % Used by:
@@ -85,9 +85,9 @@ end
 %% Do the job
 % Force as a column and rename the variables for the header
 Name = force_column_cell(paramNames);
-Value = force_column_numeric(paramValues);
-LowerBound = force_column_numeric(paramLowerBounds);
-UpperBound = force_column_numeric(paramUpperBounds);
+Value = force_column_vector(paramValues);
+LowerBound = force_column_vector(paramLowerBounds);
+UpperBound = force_column_vector(paramUpperBounds);
 
 % Construct a parameters table
 paramTable = table(Name, Value, LowerBound, UpperBound);

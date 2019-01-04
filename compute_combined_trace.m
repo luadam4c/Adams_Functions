@@ -128,7 +128,7 @@ function [combTrace, paramsUsed] = ...
 % Force any row vector to be a column vector
 %   but do not transform arrays
 if ~treatRowAsMatrix
-    traces = force_column_numeric(traces, 'IgnoreNonVectors', true);
+    traces = force_column_vector(traces, 'IgnoreNonVectors', true);
 end
 
 % Compute the number of samples for each trace
@@ -218,7 +218,7 @@ end
 
 % Force any row vector to be a column vector
 %   but do not transform arrays
-traces = force_column_numeric(traces, 'IgnoreNonVectors', true);
+traces = force_column_vector(traces, 'IgnoreNonVectors', true);
 
 if iscell(traces)
     % Apply length() to each element

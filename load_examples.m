@@ -106,9 +106,9 @@ myRandomSignal = rand(nSamples, 1);
 myRandomSignals1 = rand(nSamples, 3) + repmat(1:3, [nSamples, 1]);
 myRandomSignals2 = (-1 + rand(nSamples, 20) * 2) + ...
                     repmat(sin(myTimeVec), [1, 20]);
-myRandomSignals3 = force_column_numeric(myRandomSignals2);
+myRandomSignals3 = force_column_vector(myRandomSignals2);
 myRandomTruth2 = repmat(sin(myTimeVec), [1, 20]);
-myRandomTruth3 = force_column_numeric(myRandomTruth2);
+myRandomTruth3 = force_column_vector(myRandomTruth2);
 
 % Exponentials
 myRisingExponential = 5*(1-exp(-myTimeVec/2));

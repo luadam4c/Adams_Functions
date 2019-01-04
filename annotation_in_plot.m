@@ -20,7 +20,7 @@ function an = annotation_in_plot (annotationType, xInAxes, yInAxes, varargin)
 % Requires:
 %       cd/argfun.m
 %       cd/create_error_for_nargin.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/is_out_of_range.m
 %       cd/struct2arglist.m
 %
@@ -74,7 +74,7 @@ end
 
 % Force as column vectors
 %   Note: important if flipud() is used later
-[xInAxes, yInAxes] = argfun(@force_column_numeric, xInAxes, yInAxes);
+[xInAxes, yInAxes] = argfun(@force_column_vector, xInAxes, yInAxes);
 
 % Get the positions of the axes in normalized units relative to the figure
 posInFigure = get(gca, 'Position');

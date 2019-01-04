@@ -39,7 +39,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %       cd/apply_or_return.m
 %       cd/argfun.m
 %       cd/force_column_cell.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/force_string_end.m
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
@@ -114,7 +114,7 @@ matchVectors = iP.Results.MatchVectors;
 % If the vecs1 or vecs2 is a numeric vector, make sure it is a column vector
 [vecs1, vecs2] = ...
     argfun(@(x) apply_or_return(isnumericvector(x), ...
-                                @force_column_numeric, x), ...
+                                @force_column_vector, x), ...
             vecs1, vecs2);
 
 % If there are more than one vectors in either vecs1 or vecs2, 
@@ -158,7 +158,7 @@ end
 OLD CODE:
 
 [vecs1, vecs2] = ...
-    argfun(@(x) force_column_numeric(x, 'IgnoreNonVectors', true), ...
+    argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', true), ...
             vecs1, vecs2);
 
 %}

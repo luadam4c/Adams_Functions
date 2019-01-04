@@ -27,12 +27,16 @@ function nSamples = count_samples (vectors, varargin)
 %                                           as many one-element vectors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'TreatCellAsArray': whether to treat a cell array
+%                                           as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/iscellnumericvector.m
 %       cd/isnum.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/match_row_count.m
 %
 % Used by:    
@@ -55,12 +59,14 @@ function nSamples = count_samples (vectors, varargin)
 % 2019-01-03 Added 'TreatMatrixAsVector' as an optional argument
 % 2019-01-03 Added 'TreatRowAsMatrix' as an optional argument
 % 2019-01-04 Now uses isnum.m
+% 2019-01-04 Added 'TreatCellAsArray' (default == 'false')
 % 
 
 %% Default values for optional arguments
 forceColumnOutputDefault = true;    % force output as a column by default
 treatMatrixAsVectorDefault = false; % treat a matrix as many vectors by default
 treatRowAsMatrixDefault = false;    % treat a row vector as a vector by default
+treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -86,24 +92,29 @@ addParameter(iP, 'TreatMatrixAsVector', treatMatrixAsVectorDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatRowAsMatrix', treatRowAsMatrixDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vectors, varargin{:});
 forceColumnOutput = iP.Results.ForceColumnOutput;
 treatMatrixAsVector = iP.Results.TreatMatrixAsVector;
 treatRowAsMatrix = iP.Results.TreatRowAsMatrix;
+treatCellAsArray = iP.Results.TreatCellAsArray;
 
 %% Do the job
 % Decide based on input type
-if iscell(vectors) && (treatMatrixAsVector || iscellnumericvector(vectors))
+if iscell(vectors) && ~treatCellAsArray && ...
+        (treatMatrixAsVector || iscellnumericvector(vectors))
     % Count the number of elements for each vector
     nSamples = cellfun(@numel, vectors);
-elseif iscell(vectors)
+elseif iscell(vectors) && ~treatCellAsArray
     % Count the number of elements for each array
     nSamples = cellfun(@(x) count_samples(x, ...
-                        'ForceColumnOutput', forceColumnOutput), ...
+                        'ForceColumnOutput', forceColumnOutput, ...
+                        'TreatCellAsArray', treatCellAsArray), ...
                         vectors, 'UniformOutput', false);
-elseif isnum(vectors)
+elseif isnum(vectors) || iscell(vectors) && treatCellAsArray
     if isvector(vectors) && ~treatRowAsMatrix
         % Count the number of elements
         nSamples = numel(vectors);
@@ -123,7 +134,7 @@ end
 
 % Force nSamples to be a column vector unless requested not to
 if forceColumnOutput
-    nSamples = force_column_numeric(nSamples);
+    nSamples = force_column_vector(nSamples);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

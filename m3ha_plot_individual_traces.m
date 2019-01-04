@@ -106,7 +106,7 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_cell.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/isbinaryscalar.m
 %       cd/iscellnumeric.m
 %       cd/isemptycell.m
@@ -338,7 +338,7 @@ end
 
 % Make sure vectors are columns
 [baseNoise, sweepErrors] = ...
-    argfun(@force_column_numeric, baseNoise, sweepErrors);
+    argfun(@force_column_vector, baseNoise, sweepErrors);
 
 % Match numbers of sweep-dependent scalars with data
 [baseNoise, sweepErrors] = ...

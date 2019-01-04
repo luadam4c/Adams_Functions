@@ -604,12 +604,12 @@ gababWeight = 0;
 %   match up with the number of simulations
 if ~passiveFlag
 
-%       cd/force_column_numeric.m
-gababAmp = force_column_numeric(gIncr * gababAmpTemplate');
-gababTrise = force_column_numeric(gIncr * gababTriseTemplate');
-gababTfallFast = force_column_numeric(gIncr * gababTfallFastTemplate');
-gababTfallSlow = force_column_numeric(gIncr * gababTfallSlowTemplate');
-gababWeight = force_column_numeric(gIncr * gababWeightTemplate');
+%       cd/force_column_vector.m
+gababAmp = force_column_vector(gIncr * gababAmpTemplate');
+gababTrise = force_column_vector(gIncr * gababTriseTemplate');
+gababTfallFast = force_column_vector(gIncr * gababTfallFastTemplate');
+gababTfallSlow = force_column_vector(gIncr * gababTfallSlowTemplate');
+gababWeight = force_column_vector(gIncr * gababWeightTemplate');
 
 elseif mod(nSims, nGababInputs) == 0
     % If nSims is divisible by nGababInputs,

@@ -30,7 +30,7 @@ function [h, yLimits] = plot_window_boundaries (win, varargin)
 % 
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/islinestyle.m
 %       cd/plot_vertical_line.m
 %
@@ -88,7 +88,7 @@ if isempty(yLimits)
 end
 
 % Force as a column
-win = force_column_numeric(win);
+win = force_column_vector(win);
 
 %% Do the job
 % Plot lines

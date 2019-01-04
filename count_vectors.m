@@ -26,11 +26,15 @@ function nVectors = count_vectors (vectors, varargin)
 %                                           as many one-element vectors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'TreatCellAsArray': whether to treat a cell array
+%                                           as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/iscellnumericvector.m
 %       cd/isnum.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %
 % Used by:
 %       cd/collapse_identical_vectors.m
@@ -51,12 +55,14 @@ function nVectors = count_vectors (vectors, varargin)
 % 2019-01-03 Added 'TreatRowAsMatrix' as an optional argument
 % 2018-01-03 Added 'ForceColumnOutput' as an optional argument with default true
 % 2019-01-04 Now uses isnum.m
+% 2019-01-04 Added 'TreatCellAsArray' (default == 'false')
 % 
 
 %% Default values for optional arguments
 forceColumnOutputDefault = true;    % force output as a column by default
 treatMatrixAsVectorDefault = false; % treat a matrix as many vectors by default
 treatRowAsMatrixDefault = false;    % treat a row vector as a vector by default
+treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -83,20 +89,24 @@ addParameter(iP, 'TreatMatrixAsVector', treatMatrixAsVectorDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatRowAsMatrix', treatRowAsMatrixDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vectors, varargin{:});
 forceColumnOutput = iP.Results.ForceColumnOutput;
 treatMatrixAsVector = iP.Results.TreatMatrixAsVector;
 treatRowAsMatrix = iP.Results.TreatRowAsMatrix;
+treatCellAsArray = iP.Results.TreatCellAsArray;
 
 %% Do the job
-if iscell(vectors) && (treatMatrixAsVector || iscellnumericvector(vectors))
+if iscell(vectors) && ~treatCellAsArray && ...
+        (treatMatrixAsVector || iscellnumericvector(vectors))
     nVectors = numel(vectors);
-elseif iscell(vectors)
+elseif iscell(vectors) && ~treatCellAsArray
     % TODO: the case when not uniform output
     nVectors = cellfun(@count_vectors, vectors);
-elseif isnum(vectors)    
+elseif isnum(vectors) || iscell(vectors) && treatCellAsArray
     if isvector(vectors) && ~treatRowAsMatrix
         nVectors = 1;
     else
@@ -108,7 +118,7 @@ end
 
 % Force nVectors to be a column vector unless requested not to
 if forceColumnOutput
-    nVectors = force_column_numeric(nVectors);
+    nVectors = force_column_vector(nVectors);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

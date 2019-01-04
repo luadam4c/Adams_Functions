@@ -47,7 +47,7 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 % Requires:
 %       /home/Matlab/Downloaded_Functions/rgb.m
 %       cd/create_error_for_nargin.m
-%       cd/force_column_numeric.m
+%       cd/force_column_vector.m
 %       cd/iscellnumeric.m
 %
 % Used by:    
@@ -115,7 +115,7 @@ otherArguments = iP.Unmatched;
 %   Note: if data is already a cell array, don't use this 
 %           function or else elements can't be non-vectors!
 if isnumeric(data)
-    data = force_column_numeric(data, 'IgnoreNonVectors', false);
+    data = force_column_vector(data, 'IgnoreNonVectors', false);
 end
 
 % Get the number of event time arrays to plot
