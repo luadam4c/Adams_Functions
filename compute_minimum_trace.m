@@ -11,7 +11,7 @@ function [avgTrace, paramsUsed] = compute_minimum_trace (traces, varargin)
 %       traces      - traces to minimum
 %                   Note: If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array
-%       varargin    - any argument of compute_combined_trace.m
+%       varargin    - Any other parameter-value pair for compute_combined_trace()
 %                   
 % Requires:
 %       cd/compute_combined_trace.m
@@ -35,6 +35,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'traces');
@@ -42,8 +43,12 @@ addRequired(iP, 'traces');
 % Read from the Input Parser
 parse(iP, traces, varargin{:});
 
+% Keep unmatched arguments for compute_combined_trace()
+otherArguments = iP.Unmatched;
+
 %% Do the job
-[avgTrace, paramsUsed] = compute_combined_trace(traces, 'minimum', varargin{:});
+[avgTrace, paramsUsed] = ...
+    compute_combined_trace(traces, 'minimum', otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

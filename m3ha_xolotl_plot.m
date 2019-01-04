@@ -398,7 +398,7 @@ dataPlots = extract_subvectors(dataPlots, 'EndPoints', endPointsToPlot);
 
 % Update data in the chart line objects
 for iTrace = 1:nTraces
-    individual.plotsData(iTrace).YData = dataPlots{iTrace};
+    individual.plotsData(iTrace).YData = dataPlots(:, iTrace);
 end
 
 % Update data in the primitive line objects
@@ -536,7 +536,8 @@ if ~isempty(xLimits) && isnumeric(xLimits)
     % Restrict to these end points
     [tVec, iStim, dataToCompare] = ...
         argfun(@(x) extract_subvectors(x, 'EndPoints', endPointsToPlot), ...
-                tVec, iStim, dataToCompare);
+                tVindividual.plotsData(iTrace).YData = dataPlots{iTrace};
+ec, iStim, dataToCompare);
 else
     % Use the first and last indices
     endPointsToPlot = find_window_endpoints([], tVec);
@@ -596,6 +597,8 @@ vVecToCompare = dataToCompare(:, 1:nCompartments);
 
 % Extract tVec from the first plot
 tVec = transpose(individual.plotsData(1).XData);
+
+individual.plotsData(iTrace).YData = dataPlots{iTrace};
 
 %}
 
