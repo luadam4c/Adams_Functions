@@ -35,6 +35,7 @@ function indices = create_indices (endPoints, varargin)
 %       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
+%       cd/force_column_cell.m
 %       cd/force_column_numeric.m
 %       cd/force_matrix.m
 %       cd/isnumericvector.m
@@ -160,7 +161,7 @@ end
 
 % Force as cell array output if requested
 if forceCellOutput && ~iscell(indices)
-    indices = {indices};
+    indices = force_column_cell(indices);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -206,6 +207,8 @@ idxEnd = min([idxEnd, nSamples], [], 2);
 % Match the vector counts
 [nSamples, idxStart, idxEnd] = ...
     match_format_vectors(nSamples, idxStart, idxEnd);
+
+indices = {indices};
 
 %}
 

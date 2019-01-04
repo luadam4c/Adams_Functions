@@ -854,7 +854,7 @@ if plotFlag
                 prefix);
 
         % Select data to plot
-        dataForOverlapped = {vVecsReal, vVecsSim, vVecsDend1, vVecsDend2};
+        dataForOverlapped = {vVecsReal; vVecsSim; vVecsDend1; vVecsDend2};
 
         % Construct matching time vectors
         tVecsForOverlapped = repmat({tVecs}, size(dataForOverlapped));

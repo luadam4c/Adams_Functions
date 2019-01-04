@@ -45,6 +45,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/compute_rms_error.m
 %       cd/construct_fullpath.m
 %       cd/create_average_time_vector.m
+%       cd/create_indices.m
 %       cd/extract_columns.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/find_pulse_endpoints.m
