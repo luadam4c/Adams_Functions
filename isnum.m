@@ -17,6 +17,10 @@ function isNum = isnum (x, varargin)
 % Used by:
 %       cd/compute_axis_limits.m
 %       cd/compute_combined_trace.m
+%       cd/count_samples.m
+%       cd/count_vectors.m
+%       cd/iscellnumeric.m
+%       cd/isnumericvector.m
 %       cd/plot_horizontal_line.m
 %       cd/plot_vertical_line.m
 

@@ -29,6 +29,7 @@ function nVectors = count_vectors (vectors, varargin)
 %
 % Requires:
 %       cd/iscellnumericvector.m
+%       cd/isnum.m
 %       cd/force_column_numeric.m
 %
 % Used by:
@@ -49,6 +50,7 @@ function nVectors = count_vectors (vectors, varargin)
 % 2019-01-03 Added 'TreatMatrixAsVector' as an optional argument
 % 2019-01-03 Added 'TreatRowAsMatrix' as an optional argument
 % 2018-01-03 Added 'ForceColumnOutput' as an optional argument with default true
+% 2019-01-04 Now uses isnum.m
 % 
 
 %% Default values for optional arguments
@@ -71,7 +73,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vectors', ...                   % vectors
-    @(x) assert(isnumeric(x) || iscell(x), ...
+    @(x) assert(isnum(x) || iscell(x), ...
                 'vectors must be either a numeric array or a cell array!'));
 
 % Add parameter-value pairs to the Input Parser
@@ -94,7 +96,7 @@ if iscell(vectors) && (treatMatrixAsVector || iscellnumericvector(vectors))
 elseif iscell(vectors)
     % TODO: the case when not uniform output
     nVectors = cellfun(@count_vectors, vectors);
-elseif isnumeric(vectors)    
+elseif isnum(vectors)    
     if isvector(vectors) && ~treatRowAsMatrix
         nVectors = 1;
     else

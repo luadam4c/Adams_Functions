@@ -12,6 +12,9 @@ function isCellNumeric = iscellnumeric (x)
 % Arguments:    
 %       x               - an input to check
 %
+% Requires:
+%       cd/isnum.m
+%
 % Used by:
 %       cd/compute_baseline_noise.m
 %       cd/compute_residuals.m
@@ -33,6 +36,7 @@ function isCellNumeric = iscellnumeric (x)
 % File History:
 % 2018-10-24 Created by Adam Lu
 % 2018-12-18 Now accepts 2D arrays as input
+% 2019-01-04 Now uses isnum.m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -44,12 +48,14 @@ if nargin < 1
 end
 
 %% Do the job
-isCellNumeric = iscell(x) && all(all(cellfun(@isnumeric, x)));
+isCellNumeric = iscell(x) && all(all(all(cellfun(@isnum, x))));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+isCellNumeric = iscell(x) && all(all(cellfun(@isnumeric, x)));
 
 %}
 

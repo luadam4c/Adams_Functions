@@ -31,6 +31,7 @@ function nSamples = count_samples (vectors, varargin)
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/iscellnumericvector.m
+%       cd/isnum.m
 %       cd/force_column_numeric.m
 %       cd/match_row_count.m
 %
@@ -53,6 +54,7 @@ function nSamples = count_samples (vectors, varargin)
 % 2019-01-03 Now accepts cell arrays of non-vector arrays
 % 2019-01-03 Added 'TreatMatrixAsVector' as an optional argument
 % 2019-01-03 Added 'TreatRowAsMatrix' as an optional argument
+% 2019-01-04 Now uses isnum.m
 % 
 
 %% Default values for optional arguments
@@ -74,7 +76,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vectors', ...                   % vectors
-    @(x) assert(isnumeric(x) || iscell(x), ...
+    @(x) assert(isnum(x) || iscell(x), ...
                 'vectors must be either a numeric array or a cell array!'));
 
 % Add parameter-value pairs to the Input Parser
@@ -101,7 +103,7 @@ elseif iscell(vectors)
     nSamples = cellfun(@(x) count_samples(x, ...
                         'ForceColumnOutput', forceColumnOutput), ...
                         vectors, 'UniformOutput', false);
-elseif isnumeric(vectors)
+elseif isnum(vectors)
     if isvector(vectors) && ~treatRowAsMatrix
         % Count the number of elements
         nSamples = numel(vectors);

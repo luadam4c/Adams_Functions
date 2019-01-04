@@ -14,6 +14,9 @@ function isNumericVector = isnumericvector (x)
 % Arguments:    
 %       x               - an input to check
 %
+% Requires:
+%       cd/isnum.m
+%
 % Used by:
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
@@ -34,6 +37,7 @@ function isNumericVector = isnumericvector (x)
 % File History:
 % 2018-10-25 Created by Adam Lu
 % 2018-10-28 Vectors can now be empty
+% 2019-01-04 Now uses isnum.m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -45,12 +49,14 @@ if nargin < 1
 end
 
 %% Do the job
-isNumericVector = isnumeric(x) && (isempty(x) || isvector(x));
+isNumericVector = isnum(x) && (isempty(x) || isvector(x));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+isNumericVector = isnumeric(x) && (isempty(x) || isvector(x));
 
 %}
 
