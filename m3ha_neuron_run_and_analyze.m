@@ -355,15 +355,21 @@ hocFile = 'singleneuron4compgabab.hoc';
 timeToStabilize = 2000;
 maxRowsWithOneOnly = 8;
 
-%% Column numbers for recorded and simulated data
+%% Column numbers for recorded data
+%   Note: Must be consistent with ResaveSweeps.m
 TIME_COL_REC = 1;
 VOLT_COL_REC = 2;
 CURR_COL_REC = 3;
+
+%% Column numbers for simulated data
+%   Note: Must be consistent with singleneuron4compgabab.hoc
 TIME_COL_SIM = 1;
 VOLT_COL_SIM = 2;
 DEND1_COL_SIM = 3;
 DEND2_COL_SIM = 4;
-CURR_COL_SIM = 9;
+GABABI_COL_SIM = 9;
+CPI_COL_SIM = 11;
+IEXT_COL_SIM = 12;
 
 %% Default values for optional arguments
 hFigDefault = '';               % no prior hFig structure by default
@@ -623,6 +629,7 @@ sweepWeightsIpscr = iP.Results.SweepWeightsIpscr;
 
 %% Preparation
 % Decide on simulation-mode-dependent variables
+CURR_COL_SIM = IEXT_COL_SIM;
 if strcmpi(simMode, 'passive')
     realData = realDataCpr;
     currentPulseAmplitude = currentPulseAmplitudeCpr;
@@ -635,6 +642,7 @@ if strcmpi(simMode, 'passive')
     baseNoise = baseNoiseCpr;
     sweepWeights = sweepWeightsCpr;
     errorMode = 'SweepOnly';
+    % CURR_COL_SIM = CPI_COL_SIM;
 elseif strcmpi(simMode, 'active')
     realData = realDataIpscr;
     currentPulseAmplitude = currentPulseAmplitudeIpscr;
@@ -647,6 +655,7 @@ elseif strcmpi(simMode, 'active')
     baseNoise = baseNoiseIpscr;
     sweepWeights = sweepWeightsIpscr;
     errorMode = 'Sweep&LTS';
+    % CURR_COL_SIM = GABABI_COL_SIM;
 end
 
 % Decide whether to plot anything
@@ -749,8 +758,8 @@ end
 %   Note: these are arrays with 12 columns
 %   TODO: log column specs here
 [tVecs, vVecsSim, iVecsSim, vVecsDend1, vVecsDend2] = ...
-    extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, CURR_COL_SIM, ...
-                    DEND1_COL_SIM, DEND2_COL_SIM]);
+    extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
+                    CURR_COL_SIM, DEND1_COL_SIM, DEND2_COL_SIM]);
 
 % Compare with recorded data
 if ~isempty(realData)
@@ -758,16 +767,16 @@ if ~isempty(realData)
     %   according to the vHold condition recorded by Christine
     if averageCprFlag && strcmpi(simMode, 'passive')
         % Average both recorded and simulated responses 
-        % TODO: Pull this out to m3ha_average_by_vhold.m
         [realData, simData] = ...
             m3ha_average_by_vhold(realData, simData, vHold, ...
                                 cpStartWindowOrig, cprWindow);
 
         % Re-extract columns
         [vVecsReal, iVecsReal] = ...
-            extract_columns(realData, [VOLT_COL_SIM, CURR_COL_SIM]);
-        [tVecs, vVecsSim, iVecsSim] = ...
-            extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, CURR_COL_SIM]);
+            extract_columns(realData, [VOLT_COL_REC, CURR_COL_REC]);
+        [tVecs, vVecsSim, iVecsSim, vVecsDend1, vVecsDend2] = ...
+            extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
+                            CURR_COL_SIM, DEND1_COL_SIM, DEND2_COL_SIM]);
 
         % Re-compute number of sweeps
         nSweeps = numel(realData);
@@ -814,14 +823,18 @@ if plotFlag
     endPointsForPlots = find_window_endpoints(xLimits, tVecs);
 
     % Restrict vectors to xLimits to save time on plotting
-    [tVecs, vVecsSim, vVecsReal, residuals] = ...
+    [tVecs, vVecsSim, vVecsReal, residuals, ...
+        iVecsSim, vVecsDend1, vVecsDend2] = ...
         argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsForPlots), ...
-                tVecs, vVecsSim, vVecsReal, residuals);
+                tVecs, vVecsSim, vVecsReal, residuals, ...
+                iVecsSim, vVecsDend1, vVecsDend2);
 
     % Combine vectors into matrices
-    [tVecs, vVecsReal, vVecsSim, vVecsDend1, vVecsDend2] = ...
+    [tVecs, vVecsReal, vVecsSim, residuals, ...
+        iVecsSim, vVecsDend1, vVecsDend2] = ...
         argfun(@(x) force_matrix(x, 'AlignMethod', 'leftAdjustPad'), ...
-                tVecs, vVecsReal, vVecsSim, vVecsDend1, vVecsDend2);
+                tVecs, vVecsReal, vVecsSim, residuals, ...
+                iVecsSim, vVecsDend1, vVecsDend2);
 
     %% TODO TODO
     % Plot individual simulated traces against recorded traces
@@ -855,14 +868,20 @@ if plotFlag
                 prefix);
 
         % Select data to plot
-        dataForOverlapped = {vVecsReal; vVecsSim; vVecsDend1; vVecsDend2};
-
-        % Construct matching time vectors
-        tVecsForOverlapped = repmat({tVecs}, size(dataForOverlapped));
+        dataForOverlapped = {vVecsSim; vVecsDend1; vVecsDend2; iVecsSim};
 
         % Construct matching y labels
-        yLabelsOverlapped = {'V_{rec} (mV)', 'V_{soma} (mV)', ...
-                            'V_{dend1} (mV)', 'V_{dend2} (mV)'};
+        yLabelsOverlapped = {'V_{soma} (mV)'; 'V_{dend1} (mV)'; ...
+                            'V_{dend2} (mV)'; 'I_{stim} (nA)'};
+
+        % Add recorded voltage on the top if exists
+        if ~isempty(vVecsReal)
+            dataForOverlapped = [{vVecsReal}; dataForOverlapped];
+            yLabelsOverlapped = [{'V_{rec} (mV)'}; yLabelsOverlapped];
+        end
+            
+        % Construct matching time vectors
+        tVecsForOverlapped = repmat({tVecs}, size(dataForOverlapped));
 
         % Decide on figure title and file name
         figTitle = sprintf('Overlapped traces for Experiment %s', ...
@@ -3028,5 +3047,8 @@ sweepWeightsCprDefault = 1;     % equal weights by default
 sweepWeightsIpscrDefault = 1;   % equal weights by default
 
 @(x) validateattributes(x, {'numeric'}, {'2d'}));
+
+[tVecs, vVecsSim, iVecsSim] = ...
+    extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, CURR_COL_SIM]);
 
 %}

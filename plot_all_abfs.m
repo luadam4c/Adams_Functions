@@ -275,10 +275,16 @@ iVecsAll = abfDataTable.iVecs;
 gVecsAll = abfDataTable.gVecs;
 dataReorderedAll = abfDataTable.dataReordered;
 
+% Make sure file names are a cell array
+if ischar(fileNames)
+    fileNames = {fileNames};
+end
+
 % Count the number of files
 nFiles = numel(fileNames);
 
 %% Plot F-I plots
+%for iFile = 1:nFiles
 parfor iFile = 1:nFiles
     % Extract from cell arrays
     abfParams = abfParamsCell{iFile};

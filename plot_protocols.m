@@ -188,7 +188,7 @@ addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
                                                 % introduced after R2016b
 addParameter(iP, 'FileNames', fileNamesDefault, ...
-    @(x) isempty(x) || iscellstr(x) || isstring(x));
+    @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'UseOriginal', useOriginalDefault, ...
@@ -322,6 +322,11 @@ if isempty(fileNames)
         featuresFileTable = table;
         return
     end
+end
+
+% Make sure file names are a cell array
+if ischar(fileNames)
+    fileNames = {fileNames};
 end
 
 % Count the number of files

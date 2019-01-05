@@ -53,7 +53,7 @@ initialParamsFolderName = 'initial_params';
 % Must be consistent with find_passive_params.m
 % Default parameter values (most from Destexhe & Neubig 1997)
 cmInit = 0.88;          % specific membrane capacitance [uF/cm^2]
-RaInit = 173;           % axial resistivity [Ohm-cm]
+RaInit = 1730000; %173;           % axial resistivity [Ohm-cm]
 corrDInit = 1;          % dendritic surface area correction factor
 % corrDInit = 7.954;    % dendritic surface area correction factor
                         %   default value was estimated by fitting 
