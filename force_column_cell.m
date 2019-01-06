@@ -58,6 +58,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 %       cd/plot_all_abfs.m
+%       cd/plot_protocols.m
 %       cd/plot_struct.m
 %       cd/run_neuron.m
 %       cd/struct2arglist.m

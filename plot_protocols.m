@@ -96,6 +96,7 @@ function [featuresFileTable, featuresSweepTable] = ...
 %       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
+%       cd/force_column_cell.m
 %       cd/parse_all_abfs.m
 %       cd/plot_table.m
 %       cd/plot_traces_abf.m
@@ -324,10 +325,8 @@ if isempty(fileNames)
     end
 end
 
-% Make sure file names are a cell array
-if ischar(fileNames)
-    fileNames = {fileNames};
-end
+% Force as a cell array
+fileNames = force_column_cell(fileNames);
 
 % Count the number of files
 nFiles = numel(fileNames);
