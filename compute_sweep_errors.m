@@ -137,13 +137,10 @@ if isempty(tBoth)
     tBoth = create_time_vectors(nSamples, 'TimeUnits', 'ms');
 end
 
-% Force data vectors to become column numeric vectors
+% Force data vectors to become column cell arrays of column numeric vectors
 [tBoth, vSim, vReal, fitWindow] = ...
-    argfun(@force_column_vector, tBoth, vSim, vReal, fitWindow);
-
-% Force data arrays to become column cell arrays of column numeric vectors
-[tBoth, vSim, vReal, fitWindow] = ...
-    argfun(@force_column_cell, tBoth, vSim, vReal, fitWindow);
+    argfun(@(x) force_column_vector(x, 'ForceCellOutput', true), ...
+            tBoth, vSim, vReal, fitWindow);
 
 % Count the number of sweeps
 nSweeps = count_vectors(vSim);
@@ -162,8 +159,7 @@ endPoints = find_window_endpoints(fitWindow, tBoth);
 
 % Extract the regions to fit
 [vSim, vReal] = ...
-    argfun(@(x) extract_subvectors(x, 'Endpoints', endPoints), ...
-            vSim, vReal);
+    argfun(@(x) extract_subvectors(x, 'Endpoints', endPoints), vSim, vReal);
 
 %% Compute errors
 % Compute root-mean-square sweep errors over all sample points
@@ -232,6 +228,10 @@ if isvector(fitWindow)
     fitWindow = force_row_vector(fitWindow);
 end
 endPoints = find_window_endpoints(transpose(fitWindow), tBoth);
+
+% Force data arrays to become column cell arrays of column numeric vectors
+[tBoth, vSim, vReal, fitWindow] = ...
+    argfun(@force_column_cell, tBoth, vSim, vReal, fitWindow);
 
 %}
 

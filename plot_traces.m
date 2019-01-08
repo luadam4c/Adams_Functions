@@ -73,7 +73,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
 %                   default == uses compute_axis_limits.m
-%                   - 'LinkAxesOption': option for the linkaxes()
+%                   - 'LinkAxesOption': option for the linkaxes() function
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'none' - don't apply the function
 %                       'x'    - link x axes only
@@ -147,7 +147,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       cd/create_labels_from_numbers.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
-%       cd/isemptycell.m
+%       cd/isemptycell.mplot_traces
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
 %       cd/islinestyle.m
@@ -827,7 +827,8 @@ case 'parallel'
     end
 
     % Create an overarching x-axis label
-    if ~strcmpi(xLabel, 'suppress') && nPlotsPerRow > 1
+    if ~strcmpi(xLabel, 'suppress') && nPlotsPerRow > 1 && ...
+            nPlotsPerRow < maxNPlotsForAnnotations
         suplabel(xLabel, 'x');
     end
 otherwise

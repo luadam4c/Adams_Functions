@@ -45,6 +45,15 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
 %                   default == [min(tVec), max(tVec)]
+%                   - 'LinkAxesOption': option for the linkaxes() function
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'none' - don't apply the function
+%                       'x'    - link x axes only
+%                       'y'    - link y axes only
+%                       'xy'   - link x and y axes
+%                       'off'  - unlink axes
+%                   must be consistent with linkaxes()
+%                   default == 'x'
 %                   - 'XUnits': x-axis units
 %                   must be a string scalar or a character vector 
 %                       or a cell array of strings or character vectors
@@ -141,20 +150,21 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 % 2018-12-20 Now returns subTitles in handles
 % 2018-12-20 Now computes baseErrors and sweepErrors
 % 2019-01-08 Added 'residuals' as a possible plot mode
+% 2019-01-08 Added 'LinkAxesOption' as an optional parameter
 % 
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel', 'residuals'};
+validLinkAxesOptions = {'none', 'x', 'y', 'xy', 'off'};
 maxNTracesForAnnotations = 8;
 nSigFig = 3;
 fontSize = 8;
-% linkAxesOption = 'xy';
-linkAxesOption = 'x';
 
 %% Default values for optional arguments
 dataToCompareDefault = [];      % no data to compare against by default
 plotModeDefault = 'parallel';   % plot traces in parallel by default
 xLimitsDefault = [];            % set later
+linkAxesOptionDefault = 'x';    % link x axes by default
 xUnitsDefault = 'ms';           % time in ms by default
 xLabelDefault = '';             % set later
 yLabelDefault = 'suppress';     % no y axis labels by default
@@ -205,6 +215,8 @@ addParameter(iP, 'PlotMode', plotModeDefault, ...
 addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
+addParameter(iP, 'LinkAxesOption', linkAxesOptionDefault, ...
+    @(x) any(validatestring(x, validLinkAxesOptions)));
 addParameter(iP, 'XUnits', xUnitsDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'XLabel', xLabelDefault, ...
@@ -246,6 +258,8 @@ parse(iP, tVecs, data, varargin{:});
 dataToCompare = iP.Results.DataToCompare;
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
 xLimits = iP.Results.XLimits;
+linkAxesOption = validatestring(iP.Results.LinkAxesOption, ...
+                                validLinkAxesOptions);
 xUnits = iP.Results.XUnits;
 xLabel = iP.Results.XLabel;
 yLabel = iP.Results.YLabel;
@@ -293,7 +307,7 @@ else
 end
 
 % Decide whether to plot sweep weights
-if plotSwpWeightsFlag == 'auto'
+if ischar(plotSwpWeightsFlag) && strcmpi(plotSwpWeightsFlag, 'auto')
     if nSweeps > 1 && toAnnotate
         plotSwpWeightsFlag = true;
     else
@@ -377,10 +391,6 @@ end
 % Match numbers of sweep-dependent scalars with data
 [baseNoise, sweepErrors] = ...
     argfun(@(x) match_row_count(x, nSweeps), baseNoise, sweepErrors);
-
-% Determine the number of rows and the number of traces per row
-nRows = size(colorMap, 1);
-nTracesPerRow = ceil(nSweeps / nRows);
 
 % Initialize graphics object arrays for boundaries
 subTitles = gobjects(nSweeps, 1);
@@ -572,6 +582,13 @@ sweepErrors = errorStructTemp.swpErrors;
 
 % Count the number of sweeps
 nSweeps = numel(data);
+
+% Determine the number of rows and the number of traces per row
+nRows = size(colorMap, 1);
+nTracesPerRow = ceil(nSweeps / nRows);
+
+linkAxesOption = 'xy';
+linkAxesOption = 'x';
 
 %}
 

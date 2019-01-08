@@ -179,11 +179,8 @@ end
 
 % Force data vectors to become column numeric vectors
 [tBoth, vSim, vReal, iSim, iReal, fitWindow] = ...
-    argfun(@force_column_vector, tBoth, vSim, vReal, iSim, iReal, fitWindow);
-
-% Force data arrays to become column cell arrays of column numeric vectors
-[tBoth, vSim, vReal, iSim, iReal, fitWindow] = ...
-    argfun(@force_column_cell, tBoth, vSim, vReal, iSim, iReal, fitWindow);
+    argfun(@(x) force_column_vector(x, 'ForceCellOutput', true), ...
+            tBoth, vSim, vReal, iSim, iReal, fitWindow);
 
 % Count the number of sweeps
 nSweeps = count_vectors(vSim);
@@ -220,9 +217,25 @@ switch errorMode
         ltsErrors.avgLtsSlopeError = NaN;
         ltsErrors.avgLtsError = NaN;
     case 'Sweep&LTS'
-        ltsErrors = compute_lts_errors(vSim, vReal, 'TimeVecs', tBoth, ...
-                                        )
-%     errors = merge_structs(swpErrors, )
+        % Set as NaN for other errors
+        ltsErrors.ltsAmpErrors = NaN;
+        ltsErrors.ltsDelayErrors = NaN;
+        ltsErrors.ltsSlopeErrors = NaN;
+        ltsErrors.avgLtsAmpError = NaN;
+        ltsErrors.avgLtsDelayError = NaN;
+        ltsErrors.avgLtsSlopeError = NaN;
+        ltsErrors.avgLtsError = NaN;
+        % TODO: find the start and peak times of the IPSC
+
+        % TODO: find and compute low-threshold spikes features
+
+        % TODO: compute_lts_errors.m
+%         ltsErrors = compute_lts_errors(vSim, vReal, 'TimeVecs', tBoth, ...
+%                                         'TimeStim', timeIpscStart, ...                                        
+%                                         'TimePeak', timeIpscPeak, ...
+%                                         'SweepWeights', sweepWeights, ...
+%                                         'NormalizeError', normalizeError, ...
+%                                         'InitSwpError', initSwpError);
     otherwise
         error('code logic error!');
 end
@@ -233,7 +246,9 @@ switch errorMode
         % Use the average sweep error as the total error
         totalError = swpErrors.avgSwpError;
     case 'Sweep&LTS'
-%     errors = merge_structs(swpErrors, )
+        %% TODO: Combine sweep and LTS errors
+        totalError = swpErrors.avgSwpError;
+        % totalError = combine_sweep_lts_errors();
     otherwise
         error('code logic error!');
 end
@@ -262,6 +277,9 @@ if isempty(sweepWeights)
     sweepWeights = ones(nSweeps, 1);
 end
 
+% Force data arrays to become column cell arrays of column numeric vectors
+[tBoth, vSim, vReal, iSim, iReal, fitWindow] = ...
+    argfun(@force_column_cell, tBoth, vSim, vReal, iSim, iReal, fitWindow);
 
 %}
 

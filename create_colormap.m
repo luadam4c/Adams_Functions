@@ -10,7 +10,7 @@ function colorMap = create_colormap (nColors, varargin);
 %                   specified as a TODO
 % Arguments:
 %       nColors     - number of colors
-%                   must be a positive integer scalar
+%                   must be a positive integer vector
 %       varargin    - 'param1': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
@@ -25,6 +25,7 @@ function colorMap = create_colormap (nColors, varargin);
 
 % File History:
 % 2018-10-29 Adapted from code in run_neuron_once_4compgabab.m
+% 2019-01-08 Now returns a cell array if the input has more than one elements
 % 
 
 %% Hard-coded parameters
@@ -55,7 +56,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'nColors', ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'vector', 'positive', 'integer'}));
 
 % Add parameter-value pairs to the Input Parser
 
@@ -63,6 +64,19 @@ addRequired(iP, 'nColors', ...
 parse(iP, nColors, varargin{:});
 
 %% Do the job
+if numel(nColors) > 1
+    colorMap = arrayfun(@create_colormap_helper, nColors, ...
+                        'UniformOutput', false);
+else
+    colorMap = create_colormap_helper(nColors);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function colorMap = create_colormap_helper (nColors)
+%% Create a single color map 
+%   Note: this is an N by 3 array, where N is the number of colors
+
 if nColors == 3
     % Color groups correspond to 3 vHold conditions
     colorMap = [rgb('Blue'); rgb('Red'); rgb('Purple')];
