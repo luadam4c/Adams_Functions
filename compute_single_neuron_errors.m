@@ -220,6 +220,8 @@ switch errorMode
         ltsErrors.avgLtsSlopeError = NaN;
         ltsErrors.avgLtsError = NaN;
     case 'Sweep&LTS'
+        ltsErrors = compute_lts_errors(vSim, vReal, 'TimeVecs', tBoth, ...
+                                        )
 %     errors = merge_structs(swpErrors, )
     otherwise
         error('code logic error!');

@@ -150,8 +150,7 @@ nSweeps = count_vectors(vSim);
 
 % Match row counts for sweep-dependent variables with the number of sweeps
 [fitWindow, vReal, tBoth] = ...
-    argfun(@(x) match_row_count(x, nSweeps), ...
-            fitWindow, vReal, tBoth);
+    argfun(@(x) match_row_count(x, nSweeps), fitWindow, vReal, tBoth);
 
 % Set default sweep weights for averaging
 if isempty(sweepWeights)

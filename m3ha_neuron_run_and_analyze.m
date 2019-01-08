@@ -1,7 +1,7 @@
-function [err, hFig, simData] = ...
+function [errorStruct, hFig, simData] = ...
                 m3ha_neuron_run_and_analyze (neuronParamsTable, varargin)
 %% Runs "one iteration" of NEURON (once for each of the sweeps)
-% Usage: [err, hFig, simData] = ...
+% Usage: [errorStruct, hFig, simData] = ...
 %               m3ha_neuron_run_and_analyze (neuronParamsTable, varargin)
 % Explanation:
 %       TODO
@@ -367,13 +367,18 @@ TIME_COL_SIM = 1;
 VOLT_COL_SIM = 2;
 DEND1_COL_SIM = 3;
 DEND2_COL_SIM = 4;
-GABABI_COL_SIM = 9;
-CPI_COL_SIM = 11;
+ITM_COL_SIM = 5;
+ITH_COL_SIM = 6;
+ICA_COL_SIM = 7;
+IHM_COL_SIM = 8;
+IDCLAMP_COL_SIM = 9;
+GGABAB_COL_SIM = 10;
+iCP_COL_SIM = 11;
 IEXT_COL_SIM = 12;
 
 %% Default values for optional arguments
 hFigDefault = '';               % no prior hFig structure by default
-simModeDefault = 'passive';     % simulate a current pulse response by default
+simModeDefault = 'active'; %'passive';     % simulate a current pulse response by default
 nSweepsDefault = [];            % set later
 prefixDefault = '';             % prepend nothing to file names by default
 outFolderDefault = pwd;         % use the present working directory for outputs
@@ -642,7 +647,6 @@ if strcmpi(simMode, 'passive')
     baseNoise = baseNoiseCpr;
     sweepWeights = sweepWeightsCpr;
     errorMode = 'SweepOnly';
-    % CURR_COL_SIM = CPI_COL_SIM;
 elseif strcmpi(simMode, 'active')
     realData = realDataIpscr;
     currentPulseAmplitude = currentPulseAmplitudeIpscr;
@@ -655,7 +659,6 @@ elseif strcmpi(simMode, 'active')
     baseNoise = baseNoiseIpscr;
     sweepWeights = sweepWeightsIpscr;
     errorMode = 'Sweep&LTS';
-    % CURR_COL_SIM = GABABI_COL_SIM;
 end
 
 % Decide whether to plot anything
@@ -756,10 +759,17 @@ end
 
 % Extract vectors from simulated data
 %   Note: these are arrays with 12 columns
-%   TODO: log column specs here
-[tVecs, vVecsSim, iVecsSim, vVecsDend1, vVecsDend2] = ...
-    extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
-                    CURR_COL_SIM, DEND1_COL_SIM, DEND2_COL_SIM]);
+if strcmpi(simMode, 'passive')
+    [tVecs, vVecsSim, iVecsSim, vVecsDend1, vVecsDend2] = ...
+        extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
+                        CURR_COL_SIM, DEND1_COL_SIM, DEND2_COL_SIM]);
+elseif strcmpi(simMode, 'active')
+    [tVecs, vVecsSim, iVecsSim, itmVecsSim, ithVecsSim, ...
+            icaVecsSim, ihmVecsSim, gVecsSim] = ...
+        extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
+                        CURR_COL_SIM, ITM_COL_SIM, ITH_COL_SIM, ...
+                        ICA_COL_SIM, IHM_COL_SIM, GGABAB_COL_SIM]);
+end
 
 % Compare with recorded data
 if ~isempty(realData)
@@ -774,9 +784,17 @@ if ~isempty(realData)
         % Re-extract columns
         [vVecsReal, iVecsReal] = ...
             extract_columns(realData, [VOLT_COL_REC, CURR_COL_REC]);
-        [tVecs, vVecsSim, iVecsSim, vVecsDend1, vVecsDend2] = ...
-            extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
-                            CURR_COL_SIM, DEND1_COL_SIM, DEND2_COL_SIM]);
+        if strcmpi(simMode, 'passive')
+            [tVecs, vVecsSim, iVecsSim, vVecsDend1, vVecsDend2] = ...
+                extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
+                                CURR_COL_SIM, DEND1_COL_SIM, DEND2_COL_SIM]);
+        elseif strcmpi(simMode, 'active')
+            [tVecs, vVecsSim, iVecsSim, itmVecsSim, ithVecsSim, ...
+                    icaVecsSim, ihmVecsSim, gVecsSim] = ...
+                extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
+                                CURR_COL_SIM, ITM_COL_SIM, ITH_COL_SIM, ...
+                                ICA_COL_SIM, IHM_COL_SIM, GGABAB_COL_SIM]);
+        end
 
         % Re-compute number of sweeps
         nSweeps = numel(realData);
@@ -794,7 +812,7 @@ if ~isempty(realData)
     initSwpError = 1;
 
     % Calculate sweep errors
-    swpErrorStruct = compute_single_neuron_errors(vVecsSim, vVecsReal, ...
+    errorStruct = compute_single_neuron_errors(vVecsSim, vVecsReal, ...
                     'ErrorMode', errorMode, 'TimeVecs', tVecs, ...
                     'IvecsSim', iVecsSim, 'IvecsReal', iVecsReal, ...
                     'FitWindow', fitWindow, 'SweepWeights', sweepWeights, ...
@@ -803,10 +821,10 @@ if ~isempty(realData)
                     'InitSwpError', initSwpError);
 
     % Extract just the sweep errors
-    swpErrors = swpErrorStruct.swpErrors;
+    swpErrors = errorStruct.swpErrors;
 else
     residuals = [];
-    swpErrorStruct = [];
+    errorStruct = struct;
     swpErrors = [];
 end
 
@@ -822,31 +840,38 @@ if plotFlag
     % Find the indices of the x-axis limit endpoints
     endPointsForPlots = find_window_endpoints(xLimits, tVecs);
 
-    % Restrict vectors to xLimits to save time on plotting
-    [tVecs, vVecsSim, vVecsReal, residuals, ...
-        iVecsSim, vVecsDend1, vVecsDend2] = ...
-        argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsForPlots), ...
-                tVecs, vVecsSim, vVecsReal, residuals, ...
-                iVecsSim, vVecsDend1, vVecsDend2);
+    % Prepare vectors for plotting
+    if strcmpi(simMode, 'passive')
+        [tVecs, vVecsSim, vVecsReal, residuals, ...
+            iVecsSim, vVecsDend1, vVecsDend2] = ...
+            argfun(@(x) prepare_for_plotting(x, endPointsForPlots), ...
+                    tVecs, vVecsSim, vVecsReal, residuals, ...
+                    iVecsSim, vVecsDend1, vVecsDend2);
+    elseif strcmpi(simMode, 'active')
+        [tVecs, vVecsSim, vVecsReal, residuals, ...
+            iVecsSim, itmVecsSim, ithVecsSim, ...
+            icaVecsSim, ihmVecsSim, gVecsSim] = ...
+            argfun(@(x) prepare_for_plotting(x, endPointsForPlots), ...
+                    tVecs, vVecsSim, vVecsReal, residuals, ...
+                    iVecsSim, itmVecsSim, ithVecsSim, ...
+                    icaVecsSim, ihmVecsSim, gVecsSim);
+    end
 
-    % Combine vectors into matrices
-    [tVecs, vVecsReal, vVecsSim, residuals, ...
-        iVecsSim, vVecsDend1, vVecsDend2] = ...
-        argfun(@(x) force_matrix(x, 'AlignMethod', 'leftAdjustPad'), ...
-                tVecs, vVecsReal, vVecsSim, residuals, ...
-                iVecsSim, vVecsDend1, vVecsDend2);
+    % Create a trace identifier
+    traceStr = prefix;
 
-    %% TODO TODO
+    % Create a trace identifier for title
+    traceStrForTitle = strrep(traceStr, '_', '\_');
+
     % Plot individual simulated traces against recorded traces
     if plotIndividualFlag
         % Print to standard output
         fprintf('Plotting figure of individual voltage traces for %s ...\n', ...
-                prefix);
+                traceStr);
 
         % Decide on figure title and file name
-        figTitle = sprintf('All traces for Experiment %s', ...
-                            strrep(prefix, '_', '\_'));
-        figName = fullfile(outFolder, [prefix, '_alltraces_zoom.png']);
+        figTitle = sprintf('All traces for Experiment %s', traceStrForTitle);
+        figName = fullfile(outFolder, [traceStr, '_individual.png']);
 
         % Plot the individual traces
         hFig.individual = ...
@@ -861,18 +886,52 @@ if plotFlag
                     'PlotSwpWeightsFlag', plotSwpWeightsFlag);
     end
 
+    % Plot residuals
+    if plotResidualsFlag
+        % Print to standard output
+        fprintf('Plotting figure of residual traces for %s ...\n', ...
+                traceStr);
+
+        % Decide on figure title and file name
+        figTitle = sprintf('Residuals for Experiment %s', traceStrForTitle);
+        figName = fullfile(outFolder, [traceStr, '_residuals.png']);
+
+        % Plot the individual traces
+        hFig.residuals = ...
+            m3ha_plot_individual_traces(tVecs, residuals, ...
+                    'PlotMode', 'residuals', ...
+                    'SubplotOrder', 'bycolor', 'ColorMode', 'byRow', ...
+                    'ColorMap', colorMap, 'XLimits', xLimits, ...
+                    'FitWindow', fitWindow, 'BaseWindow', baseWindow, ...
+                    'BaseNoise', baseNoise, 'SweepErrors', swpErrors, ...
+                    'FigTitle', figTitle, 'FigName', figName, ...
+                    'FigNumber', figNumberIndividual, ...
+                    'PlotSwpWeightsFlag', plotSwpWeightsFlag);
+    end    
+
     % Plot different types of traces with different conditions overlapped
     if plotOverlappedFlag
         % Print to standard output
-        fprintf('Plotting figure of individual voltage traces for %s ...\n', ...
-                prefix);
+        fprintf('Plotting figure of overlapped traces for %s ...\n', ...
+                traceStr);
 
         % Select data to plot
-        dataForOverlapped = {vVecsSim; vVecsDend1; vVecsDend2; iVecsSim};
+        if strcmpi(simMode, 'passive')
+            dataForOverlapped = {vVecsSim; vVecsDend1; vVecsDend2; iVecsSim};
+        elseif strcmpi(simMode, 'active')
+            dataForOverlapped = {vVecsSim; iVecsSim; itmVecsSim; ithVecsSim; ...
+                                    ihmVecsSim; icaVecsSim; gVecsSim};
+        end
 
         % Construct matching y labels
-        yLabelsOverlapped = {'V_{soma} (mV)'; 'V_{dend1} (mV)'; ...
-                            'V_{dend2} (mV)'; 'I_{stim} (nA)'};
+        if strcmpi(simMode, 'passive')
+            yLabelsOverlapped = {'V_{soma} (mV)'; 'V_{dend1} (mV)'; ...
+                                'V_{dend2} (mV)'; 'I_{stim} (nA)'};
+        elseif strcmpi(simMode, 'active')
+            yLabelsOverlapped = {'V_{soma} (mV)'; 'I_{stim} (nA)'; ...
+                                'm_{I_T}'; 'h_{I_T}'; 'm_{I_h}'; ...
+                                'I_{Ca} (mA/cm^2)'; 'g_{GABA_B} (uS)'};
+        end
 
         % Add recorded voltage on the top if exists
         if ~isempty(vVecsReal)
@@ -885,8 +944,8 @@ if plotFlag
 
         % Decide on figure title and file name
         figTitle = sprintf('Overlapped traces for Experiment %s', ...
-                            strrep(prefix, '_', '\_'));
-        figName = fullfile(outFolder, [prefix, '_overlapped.png']);
+                            traceStrForTitle);
+        figName = fullfile(outFolder, [traceStr, '_overlapped.png']);
 
         % Plot overlapped traces
         hFig.overlapped = ...
@@ -898,20 +957,9 @@ if plotFlag
                         'LinkAxesOption', 'x', 'XUnits', 'ms', ...
                         'YLabel', yLabelsOverlapped, ...
                         'FigTitle', figTitle, 'FigName', figName);
-        % hFig.overlapped = ...
-        %     m3ha_plot_overlapped_traces(tVecs, dataForOverlapped, ...
-        %             'ColorMap', colorMap, 'XLimits', xLimits, ...
-        %             'FigTitle', figTitle, 'FigName', figName);
     end
 
-    % if plotResidualsFlag
-    %     hFig.residuals = ...
-    %         plot_voltage_residuals(tVecs, residuals, outparams, err, hFig, nSweeps, colorMap, ncg, npercg, xLimits);
-    % end    
-    % if plotOverlappedFlag
-    %     hFig.overlapped = ...
-    %         plot_overlapped_traces(realData, simData, outparams, hFig, nSweeps, colorMap, ncg, npercg, xlimitsMax);
-    % end
+    %% TODO TODO
     % if plotConductanceFlag
     %     hFig.conductance = ...
     %         plot_conductance_traces(realData, simData, outparams, hFig, nSweeps, colorMap, ncg, npercg, xlimitsMax);
@@ -924,15 +972,6 @@ if plotFlag
     % Print an empty line
     fprintf('\n');
 end
-
-%% Deal with outputs
-
-% Store in outparams
-% TODO
-
-% Store in err
-% TODO
-err = swpErrorStruct;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1061,8 +1100,20 @@ simData = simDataAveraged;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function vecs = prepare_for_plotting(vecs, endPointsForPlots)
+%% Prepare vectors for plotting
+
+% Restrict vectors to xLimits to save time on plotting
+vecs = extract_subvectors(vecs, 'Endpoints', endPointsForPlots);
+
+% Combine vectors into matrices
+vecs = force_matrix(vecs, 'AlignMethod', 'leftAdjustPad');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function [err, outparams] = errorcalc(realData, simData, outparams, nSweeps, colorMap, ncg, npercg)
 %% Error calculator
+%% TODO: Make functions out of this
 
 %% Extract info from outparams
 % Needed no matter what
@@ -1328,6 +1379,7 @@ end
 
 function [ltsswperr, ltsSwpw] = compute_ltsdata_error (real_ltsdata, sim_ltsdata, uncertainty, isLtsError, sweepWeights)
 % Compute LTS error for each sweep based on LTS existence
+%% TODO: Make functions out of this
 
 ltsswperr = zeros(size(real_ltsdata));
 ltsSwpw = sweepWeights;                        % initialize lts sweep weights to user-defined sweep weights
@@ -1348,6 +1400,7 @@ end
 
 function [avgerror, outparams] = compute_avgerror (fieldnameIniterr, allErrors, outparams, allWeights, totalWeights)
 % Compute averaged error over all sweeps and normalized to initial error if normalize2InitErrFlag is true
+%% TODO: Make functions out of this
 
 % Compute weighted-root-mean-squared-averaged error over all sweeps
 avgerror = sqrt(sum(allWeights .* allErrors .^ 2) / totalWeights);
@@ -1382,6 +1435,7 @@ function [ltst_all, ltst_mean_real, ltst_mean_sim, ltst_mean_all, ...
             sim_ipeakt, sim_ltsv, sim_ltst, sim_ltsdvdtv, sim_ltsdvdtt, ...
             sim_pkprom, sim_pkwidth, sim_pkclass, sim_np2der, sim_spp, sim_btime, sim_spb)
 %% Calculate statistics and plot those of simulated data against real data
+%% TODO: Make functions out of this
 
 %% Extract from outparams
 outFolder = outparams.outFolder;
@@ -1742,6 +1796,7 @@ end
 
 function hFig = plot_overlapped_traces (realData, simData, outparams, hFig, nSweeps, colorMap, ncg, npercg, xlimitsMax)
 %% Update figure of all traces overlapped
+%% TODO: Incorporate into plot_traces.m
 
 %% Decide on the number of subplots
 if outparams.cprflag
@@ -1871,6 +1926,7 @@ end
 
 function hFig = plot_conductance_traces (realData, simData, outparams, hFig, nSweeps, colorMap, ncg, npercg, xlimitsMax)
 %% Update figure comparing current traces between real data and simulations
+%% TODO: Incorporate into plot_traces.m
 
 % See vMat of singleneuron4compgabab.hoc for simData columns
 fprintf('Plotting figure comparing current traces between real data and simulations for %s ...\n', outparams.prefix);
@@ -1940,9 +1996,9 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
 function hFig = plot_current_traces (realData, simData, outparams, hFig, nSweeps, colorMap, ncg, npercg, xlimitsMax)
 %% Update figure comparing current traces between real data and simulations
+%% TODO: Incorporate into plot_traces.m
 
 % See vMat of singleneuron4compgabab.hoc for simData columns
 fprintf('Plotting figure comparing current traces between real data and simulations for %s ...\n', outparams.prefix);
@@ -2004,6 +2060,7 @@ end
 
 function hFig = plot_voltage_residuals (tVecs, residuals, outparams, err, hFig, nSweeps, colorMap, ncg, npercg, xLimits)
 %% Update figure of all residuals zoomed over fit region
+%% TODO: Incorporate into plot_traces.m
 
 if outparams.cprflag
     baseNoise = outparams.baseNoiseCpr;
@@ -3050,5 +3107,22 @@ sweepWeightsIpscrDefault = 1;   % equal weights by default
 
 [tVecs, vVecsSim, iVecsSim] = ...
     extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, CURR_COL_SIM]);
+
+% Restrict vectors to xLimits to save time on plotting
+[tVecs, vVecsSim, vVecsReal, residuals, ...
+    iVecsSim, vVecsDend1, vVecsDend2] = ...
+    argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsForPlots), ...
+            tVecs, vVecsSim, vVecsReal, residuals, ...
+            iVecsSim, vVecsDend1, vVecsDend2);
+
+% Combine vectors into matrices
+[tVecs, vVecsReal, vVecsSim, residuals, ...
+    iVecsSim, vVecsDend1, vVecsDend2] = ...
+    argfun(@(x) force_matrix(x, 'AlignMethod', 'leftAdjustPad'), ...
+            tVecs, vVecsReal, vVecsSim, residuals, ...
+            iVecsSim, vVecsDend1, vVecsDend2);
+
+% CURR_COL_SIM = iCP_COL_SIM;
+% CURR_COL_SIM = IDCLAMP_COL_SIM;
 
 %}

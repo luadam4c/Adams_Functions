@@ -27,7 +27,9 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'overlapped'    - overlapped in a single plot
 %                       'parallel'      - in parallel in subplots
-%                   default == 'overlapped'
+%                   must be consistent with plot_traces.m
+%                   default == 'parallel' if 'ExpMode' is 'EEG'
+%                               and 'overlapped' if 'ExpMode' is 'patch'
 %                   - 'Individually': whether sweeps are plotted individually
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false

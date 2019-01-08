@@ -23,6 +23,10 @@ function vectors = force_column_vector (vectors, varargin)
 %       varargin    - 'IgnoreNonVectors': whether to ignore non-vectors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'ForceCellOutput': whether to force output as 
+%                                           a cell array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'TreatCellAsArray': whether to treat a cell array
 %                                           as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -81,11 +85,13 @@ function vectors = force_column_vector (vectors, varargin)
 % 2019-01-04 Added 'TreatCellStrAsArray' (default == 'true')
 % 2019-01-04 Added 'TreatCharAsScalar' (default == 'true')
 % 2019-01-04 Fixed bugs for cellstrs
+% 2019-01-08 Added 'ForceCellOutput' as an optional argument
 % TODO: Deal with 3D arrays
 % 
 
 %% Default values for optional arguments
 ignoreNonVectorsDefault = false;    % don't ignore non-vectors by default
+forceCellOutputDefault = false;     % don't force as cell array by default
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
 treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
                                     %   as an array by default
@@ -110,6 +116,8 @@ addRequired(iP, 'vectors');
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'IgnoreNonVectors', ignoreNonVectorsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
@@ -120,6 +128,7 @@ addParameter(iP, 'TreatCharAsScalar', treatCharAsScalarDefault, ...
 % Read from the Input Parser
 parse(iP, vectors, varargin{:});
 ignoreNonVectors = iP.Results.IgnoreNonVectors;
+forceCellOutput = iP.Results.ForceCellOutput;
 treatCellAsArray = iP.Results.TreatCellAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 treatCharAsScalar = iP.Results.TreatCharAsScalar;
@@ -148,6 +157,12 @@ elseif ~iscolumn(vectors)
 else
     % Do nothing
 end
+
+%% Force output as a cell array if requested
+if forceCellOutput
+    % Reassign as a column cell array of column vectors
+    vectors = force_column_cell(vectors, 'ToLinearize', false);
+end    
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

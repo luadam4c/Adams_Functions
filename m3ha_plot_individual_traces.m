@@ -33,6 +33,14 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 %                         If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array of numeric arrays
 %                   default == []
+%                   - 'PlotMode': plotting mode for multiple traces
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'overlapped'    - overlapped in a single plot
+%                       'parallel'      - in parallel in subPlots
+%                       'residuals'     - in parallel in subPlots && 
+%                                               against a dotted zero line
+%                   must be consistent with plot_traces.m
+%                   default == 'parallel'
 %                   - 'XLimits': limits of x axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
@@ -103,6 +111,7 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 %       cd/compute_baseline_noise.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_sweep_errors.m
+%       cd/count_vectors.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_cell.m
@@ -131,18 +140,20 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 % 2018-12-20 Added 'XUnits', 'XLabel', 'YLabel' as parameters
 % 2018-12-20 Now returns subTitles in handles
 % 2018-12-20 Now computes baseErrors and sweepErrors
+% 2019-01-08 Added 'residuals' as a possible plot mode
 % 
 
 %% Hard-coded parameters
+validPlotModes = {'overlapped', 'parallel', 'residuals'};
 maxNTracesForAnnotations = 8;
 nSigFig = 3;
 fontSize = 8;
-plotMode = 'parallel';
 % linkAxesOption = 'xy';
 linkAxesOption = 'x';
 
 %% Default values for optional arguments
 dataToCompareDefault = [];      % no data to compare against by default
+plotModeDefault = 'parallel';   % plot traces in parallel by default
 xLimitsDefault = [];            % set later
 xUnitsDefault = 'ms';           % time in ms by default
 xLabelDefault = '';             % set later
@@ -189,6 +200,8 @@ addParameter(iP, 'DataToCompare', dataToCompareDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['vec1s must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
+addParameter(iP, 'PlotMode', plotModeDefault, ...
+    @(x) any(validatestring(x, validPlotModes)));
 addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
@@ -231,6 +244,7 @@ addParameter(iP, 'PlotSwpWeightsFlag', plotSwpWeightsFlagDefault, ...
 % Read from the Input Parser
 parse(iP, tVecs, data, varargin{:});
 dataToCompare = iP.Results.DataToCompare;
+plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
 xLimits = iP.Results.XLimits;
 xUnits = iP.Results.XUnits;
 xLabel = iP.Results.XLabel;
@@ -261,11 +275,15 @@ if isempty(data) || iscell(data) && all(isemptycell(data))
     return
 end
 
-% Force time and data vectors as column cell arrays of column vectors
-[tVecs, data] = argfun(@force_column_cell, tVecs, data);
-
 % Count the number of sweeps
-nSweeps = numel(data);
+nSweeps = count_vectors(data);
+
+% Decide on plot mode for plot_traces.m
+if strcmpi(plotMode, 'residuals')
+    plotModeTraces = 'parallel';
+else
+    plotModeTraces = plotMode;
+end
 
 % Decide whether to annotate at all
 if nSweeps <= maxNTracesForAnnotations
@@ -283,8 +301,21 @@ if plotSwpWeightsFlag == 'auto'
     end
 end
 
+% Decide on the line style for data to compare
+if strcmpi(plotMode, 'residuals')
+    lineStyleToCompare = '--';
+else
+    lineStyleToCompare = '-';
+end
+
+% Generate dataToCompare if plotting residuals
+% TODO: Make a function create_zero_vectors.m
+if isempty(dataToCompare) && strcmpi(plotMode, 'residuals')
+    dataToCompare = zeros(size(data));
+end
+
 % Decide on the data for baseline noise and sweep weights
-if isempty(dataToCompare)
+if isempty(dataToCompare) || strcmpi(plotMode, 'residuals')
     % Compute default windows, noise and weights from data
     dataForWeights = data;
 else
@@ -331,6 +362,9 @@ if isempty(sweepErrors)
     end
 end
 
+% Force time and data vectors as column cell arrays of column vectors
+[tVecs, data] = argfun(@force_column_cell, tVecs, data);
+
 % Match vectors format and numbers of sweep-dependent vectors with data
 [tVecs, dataToCompare, baseWindow, fitWindow] = ...
     argfun(@(x) match_format_vector_sets(x, data), ...
@@ -371,10 +405,11 @@ end
 % Plot traces
 [fig, subPlots, plotsData, plotsDataToCompare] = ...
     plot_traces(tVecs, data, 'DataToCompare', dataToCompare, ...
+                'LineStyleToCompare', lineStyleToCompare, ...
                 'ColorMap', colorMap, 'XLimits', xLimits, ...
                 'XUnits', xUnits, 'XLabel', xLabel, 'YLabel', yLabel, ...
                 'LegendLocation', 'suppress', ...
-                'PlotMode', plotMode, 'LinkAxesOption', linkAxesOption, ...
+                'PlotMode', plotModeTraces, 'LinkAxesOption', linkAxesOption, ...
                 'FigHandle', figHandle, 'FigNumber', figNumber, ...
                 otherArguments);
 
@@ -430,9 +465,8 @@ if toAnnotate
         hold on
 
         % Plot fit window
-        boundaries(iSwp, :) = ...
-            plot_window_boundaries(fitWindow{iSwp}, ...
-                                    'Color', 'g', 'LineStyle', '--');
+        boundaries(iSwp, :) = plot_window_boundaries(fitWindow{iSwp}, ...
+                                            'Color', 'g', 'LineStyle', '--');
     end
 end
 
@@ -532,6 +566,12 @@ errorStructTemp = compute_sweep_errors(data, dataToCompare, ...
 
 % Extract sweep errors for each trace
 sweepErrors = errorStructTemp.swpErrors;
+
+% Force time and data vectors as column cell arrays of column vectors
+[tVecs, data] = argfun(@force_column_cell, tVecs, data);
+
+% Count the number of sweeps
+nSweeps = numel(data);
 
 %}
 
