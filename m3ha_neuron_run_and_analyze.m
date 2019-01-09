@@ -787,48 +787,44 @@ elseif strcmpi(simMode, 'active')
                         ICA_COL_SIM, IHM_COL_SIM, GGABAB_COL_SIM]);
 end
 
-% Analyze the pulse responses
-if generateDataFlag && strcmpi(simMode, 'passive')
+% Analyze the responses and compare
+if generateDataFlag
     % Compute the sampling interval
     siMs = compute_sampling_interval(tVecs);
 
     % Decide on spreadsheet names
-    fileName = fullfile(outFolder, [expStr, '_cpr_features.csv']);
+    fileName = fullfile(outFolder, [expStr, '_features.csv']);
 
-    % Parse the simulated pulse responses
-    cprFeaturesSim = analyze_pulse_response(vVecsSim, iVecsSim, siMs, 'simulated');
+    % Parse the simulated responses
+    featuresSim = analyze_response(vVecsSim, iVecsSim, siMs, ...
+                                    simMode, 'simulated');
 
-    % Parse the recorded pulse responses
+    % Parse the recorded responses
     if ~isempty(realData)
-        cprFeaturesRec = analyze_pulse_response(vVecsRec, iVecsRec, siMs, 'recorded');
+        featuresRec = analyze_response(vVecsRec, iVecsRec, siMs, ...
+                                        simMode, 'recorded');
 
         % Combine the features tables
-        cprFeatures = vertcat(cprFeaturesSim, cprFeaturesRec);
+        featuresTable = vertcat(featuresSim, featuresRec);
     else
-        cprFeatures = cprFeaturesSim;
+        featuresTable = featuresSim;
     end
 
     % Save the results
-    writetable(cprFeatures, fileName);
+    writetable(featuresTable, fileName);
 
     % Do the appropriate comparison test
-    % featureNames = {'', ''};
+    if strcmpi(simMode, 'passive')
+        featuresToCompare = {'steadyAmplitude', ''};
+    elseif strcmpi(simMode, 'active')
+        featuresToCompare = {'TODO', 'TODO'};
+    end
+
     % variableName = 'dataType'
-    % TODO: [isDifferent, pValue] = test_difference(pulseFeatures, featureNames, variableName)
+    % [isDifferent, pValue] = test_difference(featuresTable, featuresToCompare, variableName)
     % TODO: Generate overlapped histograms
     % TODO: Test for normality
     % TODO: Perform the appropriate comparison test
-end
-
-% Analyze the IPSC responses
-if generateDataFlag && strcmpi(simMode, 'active')
-    % Analyze the simulated IPSC responses
-    % TODO
-
-    % Analyze the recorded IPSC responses
-    if ~isempty(realData)
-        % TODO
-    end
 end
 
 % If requested, average both recorded and simulated responses 
@@ -1111,22 +1107,34 @@ vecs = force_matrix(vecs, 'AlignMethod', 'leftAdjustPad');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function cprFeatures = analyze_pulse_response (vVecs, iVecs, siMs, dataType)
+function featuresTable = analyze_response (vVecs, iVecs, siMs, simMode, dataType)
 
 % Hard-coded parameters
 meanVoltageWindow = 0.5;    % width in ms for calculating mean voltage 
                             %   for input resistance calculations
 
 % Parse the response (generate statistics)
-cprFeatures = parse_pulse_response(vVecs, siMs, 'PulseVectors', iVecs, ...
-                                'SameAsPulse', true, ...
+if strcmpi(simMode, 'passive')
+    % Parse the pulse response
+    featuresTable = parse_pulse_response(vVecs, siMs, 'PulseVectors', iVecs, ...
+                                'SameAsPulse', true, 'FitResponse', true, ...
                                 'MeanValueWindowMs', meanVoltageWindow);
+elseif strcmpi(simMode, 'passive')
+    % Parse the IPSC current
+    % TODO
+    ipscTable = parse_ipsc(iVecs, siMs);
+
+    % Parse the IPSC response
+    % TODO
+    featuresTable = parse_lts(vVecs, siMs, ...
+                            'MeanValueWindowMs', meanVoltageWindow);
+end
 
 % Count the number of rows
-nRows = height(cprFeatures);
+nRows = height(featuresTable);
 
 % Add a column for dataType ('simulated' or 'recorded')
-cprFeatures.dataType = repmat({dataType}, nRows, 1);
+featuresTable.dataType = repmat({dataType}, nRows, 1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -548,7 +548,9 @@ if toParsePulse && toAverageByVhold
     % Extract holding voltage conditions for each file from swpInfoAll
     vHoldCond = swpInfoAll{fileNames, 'vrow'};
 
-    [data, vUnique] = m3ha_average_by_vhold(data, vHoldCond)
+    % Average the data by holding voltage conditions
+    % TODO: Use m3ha_average_by_vhold.m
+    %    [data, vUnique] = m3ha_average_by_vhold(data, vHoldCond);
 
     % Unpack individual data vectors
     [tVecs, vVecs, iVecs, gVecs] = extract_columns(data, 1:4);

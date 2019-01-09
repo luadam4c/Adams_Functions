@@ -74,6 +74,7 @@ function [fitResults, fitObject, goodnessOfFit, algorithmInfo] = ...
 %
 % Used by:    
 %       cd/fit_and_estimate_passive_params.m
+%       cd/parse_pulse_response.m
 
 % File History:
 % 2018-10-11 Moved code from find_passive_params.m
