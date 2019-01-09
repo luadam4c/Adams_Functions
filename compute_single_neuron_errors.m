@@ -205,7 +205,11 @@ swpErrors = compute_sweep_errors(vSim, vReal, 'TimeVecs', tBoth, ...
                                 'NormalizeError', normalizeError, ...
                                 'InitSwpError', initSwpError);
 
-% Compute LTS errors
+% Compute pulse response feature errors
+% TODO
+
+% Compute IPSC response feature errors
+% TODO
 switch errorMode
     case 'SweepOnly'
         % Set as NaN for other errors
@@ -225,17 +229,18 @@ switch errorMode
         ltsErrors.avgLtsDelayError = NaN;
         ltsErrors.avgLtsSlopeError = NaN;
         ltsErrors.avgLtsError = NaN;
-        % TODO: find the start and peak times of the IPSC
 
-        % TODO: find and compute low-threshold spikes features
+        % TODO: Find the start and peak times of the IPSC
+        % Make parse_ipsc.m
+
+        % TODO: Find and compute low-threshold spike features
+        % Make parse_lts.m
 
         % TODO: compute_lts_errors.m
-%         ltsErrors = compute_lts_errors(vSim, vReal, 'TimeVecs', tBoth, ...
-%                                         'TimeStim', timeIpscStart, ...                                        
-%                                         'TimePeak', timeIpscPeak, ...
-%                                         'SweepWeights', sweepWeights, ...
-%                                         'NormalizeError', normalizeError, ...
-%                                         'InitSwpError', initSwpError);
+        % ltsErrors = compute_lts_errors(ltsFeaturesSim, ltsFeaturesReal, ...
+        %                                 'SweepWeights', sweepWeights, ...
+        %                                 'NormalizeError', normalizeError, ...
+        %                                 'InitLtsError', initLtsError);
     otherwise
         error('code logic error!');
 end

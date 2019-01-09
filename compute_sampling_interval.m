@@ -20,6 +20,7 @@ function samplingIntervals = compute_sampling_interval (timeVecs, varargin)
 %       cd/compute_average_pulse_response.m
 %       cd/create_average_time_vector.m
 %       cd/m3ha_import_raw_traces.m
+%       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:
 % 2018-11-28 Created by Adam Lu

@@ -137,6 +137,7 @@ function [parsedParams, parsedData] = ...
 %       cd/compute_all_pulse_responses.m
 %       cd/compute_average_pulse_response.m
 %       cd/find_passive_params.m
+%       cd/m3ha_neuron_run_and_analyze.m
 %       cd/plot_pulse_response.m
 
 % File History:

@@ -358,8 +358,8 @@ nPlots = count_vectors(data, 'TreatMatrixAsVector', true);
 % Count the number of traces per subplot (under parallel mode)
 nTracesPerPlot = count_vectors(data, 'TreatMatrixAsVector', false);
 
-% Determine the number of rows and the number of subplots per row
-[nRows, nPlotsPerRow] = ...
+% Determine the number of rows and the number of columns
+[nRows, nColumns] = ...
     decide_on_subplot_placement(subplotOrder, nPlots, ...
                                 colorMap, maxRowsWithOneOnly);
 
@@ -372,13 +372,15 @@ if strcmpi(colorMode, 'auto')
     end
 end
 
-% Decide on a default colormap if not provided
+% Decide on a colormap
 if isempty(colorMap)
     switch colorMode
         case 'byPlot'
             colorMap = create_colormap(nPlots);
         case 'byRow'
             colorMap = create_colormap(nRows);
+        case 'byColumn'
+            colorMap = create_colormap(nColumns);
         case 'byTraceInPlot'
             colorMap = create_colormap(nTracesPerPlot);
         otherwise
@@ -525,7 +527,7 @@ if iscell(xLimits)
                             xLabel, yLabel, traceLabels, colorMap, ...
                             legendLocation, figTitleThis, ...
                             figHandle, figNumber, figNameThis, figTypes, ...
-                            nPlots, nRows, nPlotsPerRow, nTracesPerPlot, ...
+                            nPlots, nRows, nColumns, nTracesPerPlot, ...
                             maxNPlotsForAnnotations, subPlotSqeezeFactor, ...
                             otherArguments);
             
@@ -549,7 +551,7 @@ else
                         xLabel, yLabel, traceLabels, colorMap, ...
                         legendLocation, figTitle, ...
                         figHandle, figNumber, figName, figTypes, ...
-                        nPlots, nRows, nPlotsPerRow, nTracesPerPlot, ...
+                        nPlots, nRows, nColumns, nTracesPerPlot, ...
                         maxNPlotsForAnnotations, subPlotSqeezeFactor, ...
                         otherArguments);
 end
@@ -563,7 +565,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
                         xLabel, yLabel, traceLabels, colorMap, ...
                         legendLocation, figTitle, ...
                         figHandle, figNumber, figName, figTypes, ...
-                        nPlots, nRows, nPlotsPerRow, nTracesPerPlot, ...
+                        nPlots, nRows, nColumns, nTracesPerPlot, ...
                         maxNPlotsForAnnotations, subPlotSqeezeFactor, ...
                         otherArguments)
 
@@ -613,12 +615,9 @@ case 'overlapped'
         dataThis = data{iPlot};
         dataToCompareThis = dataToCompare{iPlot};
 
-        % Get the current row number
-        thisRowNumber = ceil(iPlot/nPlotsPerRow);
-
         % Decide on the color for this plot
         colorThis = decide_on_this_color(colorMode, colorMap, ...
-                                        iPlot, thisRowNumber);
+                                        iPlot, nColumns);
 
         % Get the number of colors for this plot
         nColorsThis = size(colorThis, 1);
@@ -703,7 +702,7 @@ case 'parallel'
     %   Note: the number of rows is based on the number of rows in the color map
     for iPlot = 1:nPlots
         % Create a subplot and hold on
-        ax = subplot(nRows, nPlotsPerRow, iPlot); hold on
+        ax = subplot(nRows, nColumns, iPlot); hold on
 
         % Get the current tVecs and data
         tVecsThis = tVecs{iPlot};
@@ -721,18 +720,18 @@ case 'parallel'
         end
 
         % Get the current row number
-        thisRowNumber = ceil(iPlot/nPlotsPerRow);
+        thisRowNumber = ceil(iPlot/nColumns);
 
         % Get the current column number
-        if nPlotsPerRow > 1
-            thisColNumber = mod(iPlot, nPlotsPerRow);
+        if nColumns > 1
+            thisColNumber = mod(iPlot, nColumns);
         else
             thisColNumber = 1;
         end
         
         % Decide on the color for this plot
         colorThis = decide_on_this_color(colorMode, colorMap, ...
-                                        iPlot, thisRowNumber);
+                                        iPlot, nColumns);
 
         % Get the number of colors for this plot
         nColorsThis = size(colorThis, 1);
@@ -749,7 +748,7 @@ case 'parallel'
             p = plot(tVecsThis, dataThis, 'Color', colorThis, otherArguments);
         else
             p = arrayfun(@(x) plot(tVecsThis(:, x), dataThis(:, x), ...
-                                'Color', colorThis(:, x), otherArguments), ...
+                                'Color', colorThis(x, :), otherArguments), ...
                             transpose(1:nColorsThis));
         end
 
@@ -792,12 +791,12 @@ case 'parallel'
 
         % Create a title for the first subplot
         if ~strcmpi(figTitle, 'suppress') && ...
-            nPlotsPerRow == 1 && iPlot == 1
+            nColumns == 1 && iPlot == 1
             title(figTitle);
         end
 
         % Create a label for the X axis only for the last row
-        if ~strcmpi(xLabel, 'suppress') && nPlotsPerRow == 1 && ...
+        if ~strcmpi(xLabel, 'suppress') && nColumns == 1 && ...
             iPlot == nPlots
             xlabel(xLabel);
         end
@@ -822,13 +821,13 @@ case 'parallel'
     end
     
     % Create an overarching title
-    if ~strcmpi(figTitle, 'suppress') && nPlotsPerRow > 1
+    if ~strcmpi(figTitle, 'suppress') && nColumns > 1
         suptitle(figTitle);
     end
 
     % Create an overarching x-axis label
-    if ~strcmpi(xLabel, 'suppress') && nPlotsPerRow > 1 && ...
-            nPlotsPerRow < maxNPlotsForAnnotations
+    if ~strcmpi(xLabel, 'suppress') && nColumns > 1 && ...
+            nColumns < maxNPlotsForAnnotations
         suplabel(xLabel, 'x');
     end
 otherwise
@@ -884,7 +883,7 @@ if ~isempty(figName)
 
                     % Create a title for the first subplot
                     if ~strcmpi(figTitleThis, 'suppress') && ...
-                        nPlotsPerRow == 1 && iPlot == 1
+                        nColumns == 1 && iPlot == 1
                         title(figTitleThis);
                     end
 
@@ -893,7 +892,7 @@ if ~isempty(figName)
                 end
 
                 % Create an overarching title
-                if ~strcmpi(figTitleThis, 'suppress') && nPlotsPerRow > 1
+                if ~strcmpi(figTitleThis, 'suppress') && nColumns > 1
                     suptitle(figTitleThis);
                 end
             end
@@ -919,7 +918,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [nRows, nPlotsPerRow] = ...
+function [nRows, nColumns] = ...
                 decide_on_subplot_placement (subplotOrder, nPlots, ...
                                             colorMap, maxRowsWithOneOnly)
 %% Decide on the subplot order
@@ -938,7 +937,11 @@ end
 % Compute number of rows
 switch subplotOrder
     case 'bycolor'
-        nRows = size(colorMap, 1);
+        if iscell(colorMap)
+            nRows = numel(colorMap);
+        else
+            nRows = size(colorMap, 1);
+        end
     case 'square'
         nRows = ceil(sqrt(nPlots));
     case 'list'
@@ -947,22 +950,42 @@ switch subplotOrder
         error('subplotOrder unrecognized!');
 end
 
-% Compute number of subplots per row
-nPlotsPerRow = ceil(nPlots / nRows);
+% Compute number of columns
+nColumns = ceil(nPlots / nRows);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function colorThis = ...
-                decide_on_this_color (colorMode, colorMap, iPlot, thisRowNumber)
+function colorThis = decide_on_this_color (colorMode, colorMap, ...
+                                            iPlot, nColumns)
 %% Decides on the color for a plot
 
 switch colorMode
-    case 'byPlot'
-        colorThis = colorMap(iPlot, :);
-    case 'byRow'
-        colorThis = colorMap(thisRowNumber, :);
+    case {'byPlot', 'byRow', 'byColumn'}
+        % Decide on iColor
+        switch colorMode
+            case 'byPlot'
+                % Use the plot number
+                iColor = iPlot;
+            case 'byRow'
+                % Use the current row number
+                iColor = ceil(iPlot / nColumns);
+            case 'byColumn'
+                % Use the current column number
+                iColor = mod((iPlot - 1)/nColumns) + 1;
+        end
+
+        % Get the color map
+        if iscell(colorMap)
+            colorThis = colorMap{iColor};
+        else
+            colorThis = colorMap(iColor, :);
+        end
     case 'byTraceInPlot'
-        colorThis = colorMap;
+        if iscell(colorMap)
+            colorThis = colorMap{iPlot};
+        else
+            colorThis = colorMap;
+        end
     otherwise
         error('colorMode unrecognized!');
 end
