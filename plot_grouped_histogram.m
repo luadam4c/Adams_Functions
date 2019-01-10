@@ -1,6 +1,6 @@
-function [h, fig] = plot_grouped_histogram(stats, varargin)
+function [h, fig] = plot_grouped_histogram (stats, varargin)
 %% Plot a grouped histogram
-% Usage: [h, fig] = plot_grouped_histogram(stats, grouping (opt), varargin)
+% Usage: [h, fig] = plot_grouped_histogram (stats, grouping (opt), varargin)
 % Explanation:
 %       TODO
 %       Note: The bar() function is actually used for the main histogram
@@ -90,6 +90,7 @@ function [h, fig] = plot_grouped_histogram(stats, varargin)
 %
 % Requires:
 %       cd/compute_bins.m
+%       cd/convert_to_rank.m
 %       cd/create_error_for_nargin.m
 %       cd/create_grouping_by_columns.m
 %       cd/create_labels_from_numbers.m
@@ -110,6 +111,7 @@ function [h, fig] = plot_grouped_histogram(stats, varargin)
 % 2018-05-25 Now doesn't plot if stats is empty
 % 2018-12-27 Made all except one arguments optional and added many more
 % 2018-12-28 Added usage of struct2arglist.m
+% 2019-01-09 Now allows grouping to be a cell array of character vectors
 
 %% Hard-coded parameters
 barWidth = 1;
@@ -157,7 +159,7 @@ addRequired(iP, 'stats', ...
 
 % Add optional inputs to the Input Parser
 addOptional(iP, 'grouping', groupingDefault, ...
-    @(x) validateattributes(x, {'numeric', 'logical', ...
+    @(x) validateattributes(x, {'cell', 'string', 'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
@@ -219,9 +221,19 @@ figName = iP.Results.FigName;
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
-% Create a grouping if not provided
+% Decide on the grouping vector
 if isempty(grouping)
+    % Create a grouping if not provided
     grouping = create_grouping_by_columns(stats);
+elseif iscellstr(grouping) || isstring(grouping) 
+    % Use these for grouping labels
+    if isempty(groupingLabels)
+        % Make unique strings the grouping labels
+        groupingLabels = unique(grouping);
+    end
+
+    % Create a numeric grouping vector based on the order in the grouping labels
+    grouping = convert_to_rank(grouping, 'RankedElements', groupingLabels);
 end
 
 % Get all unique group values

@@ -33,13 +33,15 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 %       /TODO:dir/TODO:file
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:
 % 2019-01-09 Created by Adam Lu
 % 
 
 %% Hard-coded parameters
+% TODO: Make this a parameter
+plotHistograms = true;
 
 %% Default values for optional arguments
 sheetNameDefault = '';
@@ -83,7 +85,6 @@ outFolder = iP.Results.OutFolder;
 % otherArguments = iP.Unmatched;
 % otherArguments = struct2arglist(iP.Unmatched);
 
-
 %% Preparation
 % Extract the x vector
 xData = dataTable{:, xVar};
@@ -98,7 +99,11 @@ end
 
 %% Do the job
 % Generate overlapped histograms
-% TODO
+if plotHistograms
+    % TODO
+    h = cellfun(@(x, y) plot_grouped_histogram(x, xData, 'FigName', y), ...
+                yData, yVars);
+end
 
 % Test for normality
 % TODO
@@ -108,12 +113,12 @@ end
 
 %% Output results
 % TODO: Place results in a table
-testResults = table(isDifferent, pValue);
+% testResults = table(isDifferent, pValue);
 
 % Save the table if requested
-if ~isempty(sheetPath)
-    writetable(testResults, sheetPath);
-end
+% if ~isempty(sheetPath)
+%     writetable(testResults, sheetPath);
+% end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

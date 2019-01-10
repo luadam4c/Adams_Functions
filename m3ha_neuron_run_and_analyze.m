@@ -248,6 +248,8 @@ function [errorStruct, hFig, simData] = ...
 %       cd/parse_pulse_response.m
 %       cd/run_neuron.m
 %       cd/save_all_figtypes.m
+%       cd/test_difference.m
+%
 %       cd/save_params.m TODO
 %
 % Used by:    

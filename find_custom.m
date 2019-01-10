@@ -22,9 +22,13 @@ function varargout = find_custom (X, varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %
+% Requires:
+%       cd/create_error_for_nargin.m
+%
 % Used by:
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
+%       cd/find_ind_str_in_cell.m
 %       /home/Matlab/Kojis_Functions/find_directional_events.m
 %       /home/Matlab/minEASE/gui_examine_events.m
 %
@@ -34,7 +38,7 @@ function varargout = find_custom (X, varargin)
 %% Default values for optional arguments
 nDefault  = [];             % default number of nonzero elements to find
 directionDefault = 'first'; % default search direction
-ReturnNanDefault = false;   % whether to return NaN instead of empty 
+returnNanDefault = false;   % whether to return NaN instead of empty 
                             %   if nothing found by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -42,13 +46,12 @@ ReturnNanDefault = false;   % whether to return NaN instead of empty
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help find_custom'' for usage']);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
 iP = inputParser;         
-iP.FunctionName = 'find_custom';
+iP.FunctionName = mfilename;
 
 % Add required inputs to an Input Parser
 addRequired(iP, 'X', ...                        % Input array
@@ -61,7 +64,7 @@ addOptional(iP, 'direction', directionDefault, ...
     @(x) any(validatestring(x, {'first', 'last'})));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'ReturnNan', ReturnNanDefault, ...
+addParameter(iP, 'ReturnNan', returnNanDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser

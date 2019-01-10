@@ -1,4 +1,4 @@
-function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
+function varargout = find_ind_str_in_cell(str, cellArray, varargin)
 %% Find all indices of a particular string in a cell array
 % Usage: [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 % Explanation:
@@ -51,9 +51,14 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 %                   - 'MaxNum': maximum number of indices to find
 %                   must be empty or a positive integer scalar
 %                   default == numel(cellArray)
+%                   - 'ReturnNan': Return NaN instead of empty if nothing found
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/compute_combined_trace.m
+%       cd/create_error_for_nargin.m
+%       cd/find_custom.m
 %
 % Used by:
 %       cd/ispositiveintegerscalar.m
@@ -101,6 +106,8 @@ function [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 % 2018-08-02 Added 'regexp' as a SearchMode
 % 2019-01-04 Now uses compute_combined_trace.m instead of intersect_over_cells.m
 % 2019-01-04 Simplified code with contains()
+% 2019-01-09 Added 'ReturnNan' as an optional argument
+% 2019-01-09 Now uses find_custom.m
 
 %% Hard-coded constants
 validSearchModes = {'exact', 'substrings', 'regexp'};
@@ -109,14 +116,15 @@ validSearchModes = {'exact', 'substrings', 'regexp'};
 searchModeDefault = 'substrings';       % default search mode
 ignoreCaseDefault = false;              % whether to ignore case by default
 maxNumDefault = [];                     % will be changed to numel(cellArray)
+returnNanDefault = false;   % whether to return NaN instead of empty 
+                            %   if nothing found by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 2
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
@@ -125,15 +133,13 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'str', ...              % a string/substrings of interest
-    @(x) assert(ischar(x) || iscell(x) && (min(cellfun(@ischar, x)) || ...
-                min(cellfun(@isstring, x))) || isstring(x), ...
-                ['First input must be either a string/character array ', ...
-                'or a cell array of strings/character arrays!']));
-addRequired(iP, 'cellArray', ...        % a cell array that contains strings
-    @(x) assert(iscell(x) && (min(cellfun(@ischar, x)) || ...
-                min(cellfun(@isstring, x))), ...
-                ['Second input must be a cell array ', ...
-                'of strings/character arrays!']));
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['str must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
+addRequired(iP, 'cellArray', ...        % template strings
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['cellArray must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'SearchMode', searchModeDefault, ...   % the search mode
@@ -143,12 +149,15 @@ addParameter(iP, 'IgnoreCase', ignoreCaseDefault, ...   % whether to ignore case
 addParameter(iP, 'MaxNum', maxNumDefault, ...       % maximum number of indices
     @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
                 'MaxNum must be either empty or a positive integer scalar!'));
+addParameter(iP, 'ReturnNan', returnNanDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, str, cellArray, varargin{:});
 searchMode = validatestring(iP.Results.SearchMode, validSearchModes);
 ignoreCase = iP.Results.IgnoreCase;
 maxNum = iP.Results.MaxNum;
+returnNan = iP.Results.ReturnNan;
 
 % Check relationships between arguments
 if iscell(str) && ...
@@ -180,9 +189,11 @@ case 'exact'        % String must be an exact match
     % Find indices that corresponds to str exactly in cellArray, 
     %   case-insensitive if IgnoreCase is set to true
     if ignoreCase
-        indices = find(cellfun(@strcmpi, cellArray, str_cell), maxNum);
+        indices = find_custom(cellfun(@strcmpi, cellArray, str_cell), ...
+                                maxNum, 'ReturnNan', returnNan);
     else
-        indices = find(cellfun(@strcmp, cellArray, str_cell), maxNum);
+        indices = find_custom(cellfun(@strcmp, cellArray, str_cell), ...
+                                maxNum, 'ReturnNan', returnNan);
     end
 case 'substrings'   % String can be a substring or a cell array of substrings
     % Convert each string to lower case if IgnoreCase is set to true
@@ -213,7 +224,7 @@ case 'substrings'   % String can be a substring or a cell array of substrings
     end
 
     % Find the indices that contain the substring
-    indices = find(hasStr, maxNum);
+    indices = find_custom(hasStr, maxNum, 'ReturnNan', returnNan);
 case 'regexp'   % String is considered a regular expression
     % Find all starting indices in the strings for the matches
     if ignoreCase
@@ -223,16 +234,29 @@ case 'regexp'   % String is considered a regular expression
     end
 
     % Find all indices in the cell array for the matches
-    indices = find(~isemptycell(startIndices), maxNum);
+    indices = find_custom(~isemptycell(startIndices), maxNum, ...
+                            'ReturnNan', returnNan);
 end
 
 %% Return the elements too
-if ~isempty(indices) && numel(indices) > 1
-    elements = cellArray(indices);
-elseif ~isempty(indices)
-    elements = cellArray{indices};
-else
-    elements = '';
+if nargout > 1
+    if ~isempty(indices) && any(isnan(indices))
+        elements = NaN;
+    elseif ~isempty(indices) 
+        if numel(indices) > 1
+            elements = cellArray(indices);
+        else
+            elements = cellArray{indices};
+        end
+    else
+        elements = '';
+    end
+end
+
+%% Outputs
+varargout{1} = indices;
+if nargout > 1
+    varargout{2} = elements;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -291,6 +315,15 @@ if length(indices) > maxNum
 end
 
 indices = find(~cellfun(@isempty, startIndices), maxNum);
+
+@(x) assert(ischar(x) || iscell(x) && (min(cellfun(@ischar, x)) || ...
+            min(cellfun(@isstring, x))) || isstring(x), ...
+            ['First input must be either a string/character array ', ...
+            'or a cell array of strings/character arrays!']));
+@(x) assert(iscell(x) && (min(cellfun(@ischar, x)) || ...
+            min(cellfun(@isstring, x))), ...
+            ['Second input must be a cell array ', ...
+            'of strings/character arrays!']));
 
 %}
 
