@@ -815,7 +815,7 @@ if generateDataFlag
 
     % Do the appropriate comparison test
     if strcmpi(simMode, 'passive')
-        featuresToCompare = {'steadyAmplitude', ''};
+        featuresToCompare = {'steadyAmplitude', 'tauSlow', 'tauFast'};
     elseif strcmpi(simMode, 'active')
         featuresToCompare = {'TODO', 'TODO'};
     end
@@ -1117,7 +1117,8 @@ meanVoltageWindow = 0.5;    % width in ms for calculating mean voltage
 if strcmpi(simMode, 'passive')
     % Parse the pulse response
     featuresTable = parse_pulse_response(vVecs, siMs, 'PulseVectors', iVecs, ...
-                                'SameAsPulse', true, 'FitResponse', true, ...
+                                'SameAsPulse', true, 'DetectPeak', false, ...
+                                'FitResponse', true, ...
                                 'MeanValueWindowMs', meanVoltageWindow);
 elseif strcmpi(simMode, 'passive')
     % Parse the IPSC current

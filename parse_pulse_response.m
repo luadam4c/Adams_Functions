@@ -1,8 +1,6 @@
-function [parsedParams, parsedData] = ...
-                parse_pulse_response (vectors, siMs, varargin)
+function varargout = parse_pulse_response (vectors, siMs, varargin)
 %% Parses pulse response widths, endpoints, amplitudes for vector(s) containing a pulse response
-% Usage: [parsedParams, parsedData] = ...
-%               parse_pulse_response (vectors, siMs, varargin)
+% Usage: varargout = parse_pulse_response (vectors, siMs, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -425,24 +423,28 @@ baseValueCell = num2cell(baseValue);
 %   and steady state value is zero
 % Note: This will make curve fitting easier
 % TODO: Use argfun.m and create_time_vectors.m
-tvecsRising = arrayfun(@(x, y) transpose((1:x) - 1) * y, ...
-                        nSamplesRising, siMs, 'UniformOutput', false);
-vvecsRising = cellfun(@(x, y, z) x(y) - z, ...
-                        vectors, indRising, baseValueCell, ...
-                        'UniformOutput', false);
-tvecsFalling = arrayfun(@(x, y) transpose((1:x) - 1) * y, ...
-                        nSamplesRising, siMs, 'UniformOutput', false);
-vvecsFalling = cellfun(@(x, y, z) x(y) - z, ...
-                        vectors, indFalling, baseValueCell, ...
-                        'UniformOutput', false);
+if nargout > 1
+    tvecsRising = arrayfun(@(x, y) transpose((1:x) - 1) * y, ...
+                            nSamplesRising, siMs, 'UniformOutput', false);
+    vvecsRising = cellfun(@(x, y, z) x(y) - z, ...
+                            vectors, indRising, baseValueCell, ...
+                            'UniformOutput', false);
+    tvecsFalling = arrayfun(@(x, y) transpose((1:x) - 1) * y, ...
+                            nSamplesRising, siMs, 'UniformOutput', false);
+    vvecsFalling = cellfun(@(x, y, z) x(y) - z, ...
+                            vectors, indFalling, baseValueCell, ...
+                            'UniformOutput', false);
+end
 
 % Generate shifted pulse response vectors so that time starts at zero
 %   and steady state value is zero
-tvecsCombined = arrayfun(@(x, y) transpose((1:x) - 1) * y, ...
-                        nSamplesCombined, siMs, 'UniformOutput', false);
-vvecsCombined = cellfun(@(x, y, z) x(y) - z, ...
-                        vectors, indCombined, baseValueCell, ...
-                        'UniformOutput', false);
+if nargout > 1 || fitResponse
+    tvecsCombined = arrayfun(@(x, y) transpose((1:x) - 1) * y, ...
+                            nSamplesCombined, siMs, 'UniformOutput', false);
+    vvecsCombined = cellfun(@(x, y, z) x(y) - z, ...
+                            vectors, indCombined, baseValueCell, ...
+                            'UniformOutput', false);
+end
 
 %% Fit the combined phase to a double exponential
 if fitResponse
@@ -462,9 +464,17 @@ if fitResponse
 
     % Convert structure array to a table
     fitTable = struct2table(fitResults);
+
+    % TODO: create a writetable.m that fixes these problems automatically
+    % Replace cell arrays with column character arrays
+    fitTable.coeffNames = cellfun(@char, fitTable.coeffNames, ...
+                                    'UniformOutput', false);
+
+    % Remove other cell arrays
+    fitTable = removevars(fitTable, {'coeffSprStr', 'coeffLprStr'});
 end
 
-%% Store results in output
+%% Organize results in tables
 % Put together the pulse response parameters
 parsedParams = table(siMs, meanValueWindowMs, meanValueWindowSamples, ...
                         nSamples, responseWidthSamples, responseWidthMs, ...
@@ -476,6 +486,16 @@ parsedParams = table(siMs, meanValueWindowMs, meanValueWindowSamples, ...
                         baseValue, steadyValue, steadyAmplitude, ...
                         minValue, maxValue, ...
                         hasJump);
+
+% Put together the pulse response data
+if nargout > 1
+    parsedData = table(vectors, indBase, indSteady, ...
+                        indRising, indFalling, indCombined, ...
+                        tvecsRising, vvecsRising, tvecsFalling, vvecsFalling, ...
+                        tvecsCombined, vvecsCombined);
+end
+
+% Append peak features and data
 if detectPeak
     parsedParams = addvars(parsedParams, ...
                             minPeakDelayMs, minPeakDelaySamples, ...
@@ -489,22 +509,28 @@ if detectPeak
                             peakHalfWidthSamples, peakHalfWidthMs, ...
                             peakTimeConstantSamples, peakTimeConstantMs, ...
                             peak90DecaySamples, peak90DecayMs);
+    if nargout > 1
+        parsedData = addvars(parsedData, vecsPeakSearch);
+    end
 end
+
+% Append fit response features
 if fitResponse
     parsedParams = horzcat(parsedParams, fitTable);
 end
 
-% Put together the pulse response data
-parsedData = table(vectors, indBase, indSteady, ...
-                    indRising, indFalling, indCombined, ...
-                    vecsPeakSearch, ...
-                    tvecsRising, vvecsRising, tvecsFalling, vvecsFalling, ...
-                    tvecsCombined, vvecsCombined);
-
 % Append pulse params and data to the tables if provided
 if ~isempty(pulseVectors)
     parsedParams = horzcat(parsedParams, pulseParams);
-    parsedData = horzcat(parsedData, pulseData);
+    if nargout > 1
+        parsedData = horzcat(parsedData, pulseData);
+    end
+end
+
+%% Store results in output
+varargout{1} = parsedParams;
+if nargout > 1
+    varargout{2} = parsedData;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
