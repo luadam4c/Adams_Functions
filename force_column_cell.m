@@ -62,6 +62,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/plot_struct.m
 %       cd/run_neuron.m
 %       cd/struct2arglist.m
+%       cd/test_difference.m
 
 % File History:
 % 2018-10-10 Created by Adam Lu
@@ -71,6 +72,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %               added 'ToLinearize' (default == 'false')
 % 2018-12-19 Now uses extract_columns.m
 % 2019-01-04 Fixed bug
+% 2019-01-09 Now forces string arrays to become cell arrays of character vectors
 % 
 
 %% Default values for optional arguments
@@ -119,6 +121,12 @@ elseif isnum(vectorsOrig) || ...
     % Extract as a cell array
     vectorsCell = extract_columns(vectorsOrig, 'all', ...
                             'OutputMode', 'single', 'TreatCellAsArray', true);
+elseif ischar(vectorsOrig) || isstring(vectorsOrig)
+    % Convert to a cell array of character arrays
+    vectorsCell = cellstr(vectorsOrig);
+
+    % Pass to this function again
+    vectorsCell = force_column_cell(vectorsCell, 'ToLinearize', toLinearize);
 else
     % Do nothing
     vectorsCell = vectorsOrig;

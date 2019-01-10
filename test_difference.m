@@ -10,6 +10,8 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 %                           and columns:
 %                       isDifferent - whether the groups are different 
 %                       pValue      - p value for each test
+%                       h           - cell array of handles to histograms
+%                       histFigNames- histogram file names
 %                   specified as a table
 % Arguments:
 %       dataTable   - data table
@@ -29,9 +31,9 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 % Requires:
 %       cd/construct_fullpath.m
 %       cd/create_error_for_nargin.m
+%       cd/force_column_cell.m
 %       cd/plot_grouped_histogram.m
 %       cd/struct2arglist.m
-%       /TODO:dir/TODO:file
 %
 % Used by:
 %       cd/m3ha_neuron_run_and_analyze.m
@@ -41,8 +43,10 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 % 
 
 %% Hard-coded parameters
-% TODO: Make this a parameter
+% TODO: Make these parameters
 plotHistograms = true;
+saveHistFlag = true;
+histFigNames = '';
 
 %% Default values for optional arguments
 sheetNameDefault = '';
@@ -63,7 +67,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'dataTable', ...
-    @(x) validateattributes(x, {'table'}, {'scalar'}));
+    @(x) validateattributes(x, {'table'}, {'3d'}));
 addRequired(iP, 'yVars', ...
     @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
         ['yVars must be a character array or a string array ', ...
@@ -90,6 +94,9 @@ outFolder = iP.Results.OutFolder;
 % Extract the x vector
 xData = dataTable{:, xVar};
 
+% Force as a column cell array of character vectors
+yVars = force_column_cell(yVars);
+
 % Extract the y vectors
 yData = cellfun(@(x) dataTable{:, x}, yVars, 'UniformOutput', false);
 
@@ -101,9 +108,16 @@ end
 %% Do the job
 % Generate overlapped histograms
 if plotHistograms
-    % TODO
-    h = cellfun(@(x, y) plot_grouped_histogram(x, xData, 'FigName', y), ...
-                yData, yVars);
+    % Create figure names if not provided
+    if saveHistFlag && isempty(histFigNames)
+        histFigNames = construct_fullpath(strcat('histogram_', yVars, '.png'), ...
+                                        'Directory', outFolder);
+    end
+
+    % Plot grouped histograms
+    h = cellfun(@(x, y, z) plot_grouped_histogram(x, xData, 'XLabel', y, ...
+                        'FigName', z, 'Style', 'overlapped'), ...
+                        yData, yVars, histFigNames, 'UniformOutput', false);
 end
 
 % Test for normality
@@ -115,16 +129,26 @@ end
 %% Output results
 % TODO: Place results in a table
 % testResults = table(isDifferent, pValue);
+testResults = table(histFigNames);
+if plotHistograms
+    testResults = addvars(testResults, histFigNames, h);
+end
 
 % Save the table if requested
-% if ~isempty(sheetPath)
-%     writetable(testResults, sheetPath);
-% end
+if ~isempty(sheetName)
+    writetable(testResults, sheetName);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+if isstring(yVars)
+    % Use arrayfun
+    yData = arrayfun(@(x) dataTable{:, x}, yVars, 'UniformOutput', false);
+else
+end
 
 %}
 
