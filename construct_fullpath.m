@@ -52,6 +52,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %       cd/locate_dir.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/save_params.m
+%       cd/test_difference.m
 %       ~/RTCl/neuronlaunch.m
 %       ~/m3ha/data_dclamp/dclampPassiveFitter.m
 % 

@@ -793,7 +793,8 @@ if generateDataFlag
     siMs = compute_sampling_interval(tVecs);
 
     % Decide on spreadsheet names
-    fileName = fullfile(outFolder, [expStr, '_features.csv']);
+    featuresFile = fullfile(outFolder, [expStr, '_features.csv']);
+    testResultsFile = fullfile(outFolder, [expStr, '_test_results.csv']);
 
     % Parse the simulated responses
     featuresSim = analyze_response(vVecsSim, iVecsSim, siMs, ...
@@ -811,7 +812,7 @@ if generateDataFlag
     end
 
     % Save the results
-    writetable(featuresTable, fileName);
+    writetable(featuresTable, featuresFile);
 
     % Do the appropriate comparison test
     if strcmpi(simMode, 'passive')
@@ -820,11 +821,10 @@ if generateDataFlag
         featuresToCompare = {'TODO', 'TODO'};
     end
 
-    % variableName = 'dataType'
-    % [isDifferent, pValue] = test_difference(featuresTable, featuresToCompare, variableName)
-    % TODO: Generate overlapped histograms
-    % TODO: Test for normality
-    % TODO: Perform the appropriate comparison test
+    % Test the difference of features between dataType
+    testResults = test_difference(featuresTable, featuresToCompare, 'dataType', ...
+                                    'SheetName', testResultsFile, ...
+                                    'OutFolder', outFolder);
 end
 
 % If requested, average both recorded and simulated responses 

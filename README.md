@@ -301,6 +301,7 @@ Last Updated 2019-01-09 by Adam Lu
 - [**struct2sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/struct2sheet.m): Converts a structure array into a table and write it to a spreadsheet
 - [**structs2vecs.m**](https://github.com/blabuva/Adams_Functions/blob/master/structs2vecs.m): Converts a cell array of structs with equal numbers of fields to a column cell array of row vectors or cell arrays
 - [**suptitle.m**](https://github.com/blabuva/Adams_Functions/blob/master/suptitle.m): SUPTITLE puts a title above all subplots.
+- [**test_difference.m**](https://github.com/blabuva/Adams_Functions/blob/master/test_difference.m): Tests whether groups are different for each measured variable
 - [**test_passive_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/test_passive_fit.m): Tests passive fitting 
 - [**transpose_table.m**](https://github.com/blabuva/Adams_Functions/blob/master/transpose_table.m): Transposes a table (make row names variable names and vice versa)
 - [**union_over_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/union_over_cells.m): Apply the union function over all contents of a cell array

@@ -13,6 +13,7 @@ function fileName = save_params (paramsTable, varargin)
 %                   specified as a 2-d table
 %       varargin    - 'FileName' - file name to use
 %                   must be a string scalar or a character vector
+%                   default == strcat(create_time_stamp, '_params.csv')
 %                   - 'OutFolder': directory to place parameters file
 %                   must be a string scalar or a character vector
 %                   default == pwd
@@ -36,9 +37,9 @@ function fileName = save_params (paramsTable, varargin)
 % 
 
 %% Hard-coded parameters
+suffixDefault = '_params.csv';
 
 %% Default values for optional arguments
-suffixDefault = '_params.csv';
 fileNameDefault = strcat(create_time_stamp, suffixDefault);
 outFolderDefault = '';      % set in construct_fullpath.m
 
