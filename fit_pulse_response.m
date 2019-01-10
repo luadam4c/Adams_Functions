@@ -81,6 +81,7 @@ function [fitResults, fitObject, goodnessOfFit, algorithmInfo] = ...
 % 2018-10-11 Renamed coefficients to be more descriptive
 % 2018-10-14 Added the combined phase
 % 2018-12-24 Updated usage of fit_2exp
+% 2019-01-10 Now allows fitting to fail and returns NaNs
 % 
 
 %% Hard-coded parameters
@@ -190,6 +191,7 @@ end
 
 
 %% Fit to a double exponential curve
+% Try fitting
 [fitResults, fitObject, goodnessOfFit, algorithmInfo] = ...
     fit_2exp(yVec, 'XVector', tVec, ...
             'Direction', direction, ...
@@ -200,6 +202,25 @@ end
             'Tau1Range', tau1Range, ...
             'Tau2Range', tau2Range, ...
             'EquationForm', eqFormCustom);
+
+if isempty(fitObject)
+    % If the fitting doesn't converge, return empty or NaN for all fields
+    fitResults.eqnShortPulseResponse = '';
+    fitResults.eqnLongPulseResponse = '';
+    fitResults.ampSlowSpr = NaN;
+    fitResults.tauSlow = NaN;
+    fitResults.ampFastSpr = NaN;
+    fitResults.tauFast = NaN;
+    fitResults.ampSlowLpr = NaN;
+    fitResults.ampFastLpr = NaN;
+    fitResults.coeffSpr = NaN;
+    fitResults.coeffLpr = NaN;
+    fitResults.coeffSprStr = '';
+    fitResults.coeffLprStr = '';
+    fitResults.phaseName = phaseName;
+    fitResults.pulseWidth = pulseWidth;
+    return
+end
 
 % Extract from fitResults
 fitFormula = fitResults.fitFormula;

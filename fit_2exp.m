@@ -1,14 +1,14 @@
-function [fitParams, fitObject, goodnessOfFit, algorithmInfo] = ...
+function [fitResults, fitObject, goodnessOfFit, algorithmInfo] = ...
                 fit_2exp (yVec, varargin)
 %% Fits a double exponential curve to data
-% Usage: [fitParams, fitObject, goodnessOfFit, algorithmInfo] = ...
+% Usage: [fitResults, fitObject, goodnessOfFit, algorithmInfo] = ...
 %               fit_2exp (yVec, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       fitParams       - fitted parameters returned by parse_fitobject.m,
+%       fitResults       - fitted parameters returned by parse_fitobject.m,
 %                           as well as added fields:
 %                               direction
 %                       specified as a structure 
@@ -74,9 +74,10 @@ function [fitParams, fitObject, goodnessOfFit, algorithmInfo] = ...
 
 % File History
 % 2018-10-10 Created by Adam Lu
-% 2018-10-11 Made the first argument fitParams
+% 2018-10-11 Made the first argument fitResults
 % 2018-10-14 Added the possibility of providing a custom equation form
 % 2018-12-24 Made 'XVector' an optional argument
+% 2019-01-10 Now allows fitting to fail and returns NaNs
 % 
 
 %% Hard-coded parameters
@@ -234,19 +235,6 @@ end
                     'Tau2Range', tau2Range, ...
                     'EquationForm', eqFormCustom);
 
-%% Do the job
-% Fit data to the fitting type
-[fitObject, goodnessOfFit, algorithmInfo] = ...
-    fit(xVec, yVec, aFittype, 'StartPoint', coeffInit, ...
-        'Lower', coeffLower, 'Upper', coeffUpper);
-
-%% Store outputs
-% Parse from the fit object
-fitParams = parse_fitobject(fitObject);
-
-% Store direction in fitparams
-fitParams.direction = direction;
-
 % Store all intermediates in algorithmInfo
 algorithmInfo.equationForm = equationForm;
 algorithmInfo.aFittype = aFittype;
@@ -254,6 +242,34 @@ algorithmInfo.coeffInit = coeffInit;
 algorithmInfo.coeffLower = coeffLower;
 algorithmInfo.coeffUpper = coeffUpper;
 algorithmInfo.amplitudeEstimate = amplitudeEstimate;
+
+%% Do the job
+% Fit data to the fitting type
+try
+    % Try fitting
+    [fitObject, goodnessOfFit, algorithmInfo] = ...
+        fit(xVec, yVec, aFittype, 'StartPoint', coeffInit, ...
+            'Lower', coeffLower, 'Upper', coeffUpper);
+catch
+    % If the fitting doesn't converge, return empty or NaN for all fields
+    fitResults.nCoeffs = 0;
+    fitResults.equationStr = '';
+    fitResults.fitFormula = equationForm;
+    fitResults.coeffNames = {'a'; 'b'; 'c'; 'd'};
+    fitResults.coeffValues = NaN(1, 4);
+    fitResults.confInt = NaN(2, 4);
+    fitResults.direction = direction;
+    fitObject = [];
+    goodnessOfFit = struct;
+    return
+end
+
+%% Store outputs
+% Parse from the fit object
+fitResults = parse_fitobject(fitObject);
+
+% Store direction in fitparams
+fitResults.direction = direction;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
