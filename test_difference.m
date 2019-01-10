@@ -29,6 +29,7 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 % Requires:
 %       cd/construct_fullpath.m
 %       cd/create_error_for_nargin.m
+%       cd/plot_grouped_histogram.m
 %       cd/struct2arglist.m
 %       /TODO:dir/TODO:file
 %

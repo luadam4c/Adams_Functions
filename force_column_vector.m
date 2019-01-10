@@ -39,6 +39,9 @@ function vectors = force_column_vector (vectors, varargin)
 %                                           as scalars
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'ToLinearize': whether to linearize a non-vector array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/force_column_cell.m
@@ -86,6 +89,7 @@ function vectors = force_column_vector (vectors, varargin)
 % 2019-01-04 Added 'TreatCharAsScalar' (default == 'true')
 % 2019-01-04 Fixed bugs for cellstrs
 % 2019-01-08 Added 'ForceCellOutput' as an optional argument
+% 2019-01-09 Added 'ToLinearize' as an optional argument
 % TODO: Deal with 3D arrays
 % 
 
@@ -96,6 +100,7 @@ treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
 treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
                                     %   as an array by default
 treatCharAsScalarDefault = true;% treat character arrays as scalars by default
+toLinearizeDefault = false;     % whether to linearize a nonvector array
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -124,6 +129,8 @@ addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCharAsScalar', treatCharAsScalarDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ToLinearize', toLinearizeDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vectors, varargin{:});
@@ -132,6 +139,7 @@ forceCellOutput = iP.Results.ForceCellOutput;
 treatCellAsArray = iP.Results.TreatCellAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 treatCharAsScalar = iP.Results.TreatCharAsScalar;
+toLinearize = iP.Results.ToLinearize;
 
 %% Do the job
 if iscell(vectors) && ~treatCellAsArray && ...
@@ -139,7 +147,8 @@ if iscell(vectors) && ~treatCellAsArray && ...
     % Extract as a cell array
     %   Note: this will have a recursive effect
     vectors = cellfun(@(x) force_column_vector(x, ...
-                            'IgnoreNonVectors', ignoreNonVectors), ...
+                            'IgnoreNonVectors', ignoreNonVectors, ...
+                            'ToLinearize', toLinearize), ...
                     vectors, 'UniformOutput', false);
 elseif ~iscolumn(vectors)
     if isempty(vectors) || ischar(vectors) && treatCharAsScalar
@@ -150,8 +159,13 @@ elseif ~iscolumn(vectors)
     else
         % Must be a non-vector
         if ~ignoreNonVectors
-            % Reassign as a column cell array of column vectors
-            vectors = force_column_cell(vectors, 'ToLinearize', false);
+            if toLinearize
+                % Linearize as a column vector
+                vectors = vectors(:);
+            else
+                % Transform to a column cell array of column vectors
+                vectors = force_column_cell(vectors, 'ToLinearize', false);
+            end
         end
     end
 else

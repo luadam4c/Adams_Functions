@@ -2,13 +2,18 @@ function [h, fig] = plot_grouped_histogram (stats, varargin)
 %% Plot a grouped histogram
 % Usage: [h, fig] = plot_grouped_histogram (stats, grouping (opt), varargin)
 % Explanation:
-%       TODO
+%       Plots a grouped histogram, placing bars from different groups
+%           side-by-side by default
 %       Note: The bar() function is actually used for the main histogram
 % Example(s):
-%       TODO
+%       randVec = randn(100, 1);
+%       stats = [randVec, randVec + 1, randVec - 1];
+%       plot_grouped_histogram(stats)
+%       plot_grouped_histogram(stats, 'Style', 'stacked')
+%       plot_grouped_histogram(stats, 'Style', 'overlapped')
 % Outputs:
-%       h           - the histogram returned as a Bar object
-%                   specified as a Patch (R2015a) or Bar (R2017a) object
+%       h           - the histogram(s) returned as a Bar object
+%                   specified as a bar object handle array
 %       fig         - figure handle for the created figure
 %                   specified as a figure object handle
 %
@@ -28,6 +33,7 @@ function [h, fig] = plot_grouped_histogram (stats, varargin)
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'side-by-side'  - same as 'grouped' bar graph
 %                       'stacked'       - same as 'stacked' bar graph
+%                       'overlapped'    - overlapped histograms
 %                   default == 'side-by-side'
 %                   - 'XLimits': limits of x axis
 %                               suppress by setting value to 'suppress'
@@ -100,8 +106,9 @@ function [h, fig] = plot_grouped_histogram (stats, varargin)
 %
 % Used by:
 %       cd/plot_swd_histogram.m
+%       cd/test_differencem
 %       cd/ZG_fit_IEI_distributions.m
-%
+
 % TODO:
 %       /media/adamX/Paula_IEIs/paula_iei4.m
 %       /home/Matlab/Marks_Functions/paula/Oct2017/freqsPostJustinPartTwo.m
@@ -112,11 +119,12 @@ function [h, fig] = plot_grouped_histogram (stats, varargin)
 % 2018-12-27 Made all except one arguments optional and added many more
 % 2018-12-28 Added usage of struct2arglist.m
 % 2019-01-09 Now allows grouping to be a cell array of character vectors
+% 2019-01-09 Added 'overlapped' as a style
 
 %% Hard-coded parameters
 barWidth = 1;
 maxInFigure = 8;
-validStyles = {'side-by-side', 'stacked'};
+validStyles = {'side-by-side', 'stacked', 'overlapped'};
 
 % TODO: Make these optional arguments
 groupingLabelPrefix = '';
@@ -143,7 +151,7 @@ figTypesDefault = 'png';        % save as png file by default
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 2
+if nargin < 1
     error(create_error_for_nargin(mfilename));
 end
 
@@ -248,29 +256,18 @@ if isempty(edges)
     [~, edges] = compute_bins(stats, 'Edges', edges);
 end
 
-% Count the number of bins
-nBins = numel(edges) - 1;
-
 % Compute the bin centers
 binCenters = mean([edges(1:end-1), edges(2:end)], 2);
 
 % Compute the bin counts for each group based on these edges
-counts = zeros(nBins, nGroups);
-parfor iGroup = 1:nGroups
-    % Get the value of this group
-    groupValueThis = groupValues(iGroup);
-
-    % Extract the stats for this group
-    statsThisGroup = stats(grouping == groupValueThis);
-
-    % Compute the bin counts for this group
-    counts(:, iGroup) = compute_bins(statsThisGroup, 'Edges', edges);
-end
+counts = arrayfun(@(x) compute_bins(stats(grouping == groupValues(x)), ...
+                    'Edges', edges), 1:nGroups, 'UniformOutput', false);
+counts = horzcat(counts{:});
 
 %% Preparation for the plot
 % Set the bar graph style
 switch style
-    case 'side-by-side'
+    case {'side-by-side', 'overlapped'}
         barStyle = 'grouped';
     case 'stacked'
         barStyle = 'stacked';
@@ -324,9 +321,23 @@ if strcmpi(legendLocation, 'auto')
     end
 end
 
+% Compute appropriate edge and face alpha
+if strcmpi(style, 'overlapped')
+    faceAlpha = 1/nGroups;
+    edgeAlpha = 1/nGroups;
+end
+
 %% Plot and save histogram
 if ~isempty(stats)
-    h = bar(binCenters, counts, barWidth, barStyle, otherArguments{:});
+    if strcmpi(style, 'overlapped')
+        hold on
+        h = arrayfun(@(x) bar(binCenters, counts(:, x), ...
+                            barWidth, barStyle, 'FaceAlpha', faceAlpha, ...
+                            'EdgeAlpha', edgeAlpha, otherArguments{:}), ...
+                    transpose(1:nGroups));
+    else
+        h = bar(binCenters, counts, barWidth, barStyle, otherArguments{:});
+    end
 end
 
 % Set x axis limits
@@ -402,6 +413,22 @@ legend(groupingLabels, 'location', legendLocation, ...
 title(figTitle, 'Interpreter', 'none');
 
 h = bar(binCenters, counts, barWidth, barStyle);
+
+% The following is slower:
+counts = zeros(nBins, nGroups);
+parfor iGroup = 1:nGroups
+    % Get the value of this group
+    groupValueThis = groupValues(iGroup);
+
+    % Extract the stats for this group
+    statsThisGroup = stats(grouping == groupValueThis);
+
+    % Compute the bin counts for this group
+    counts(:, iGroup) = compute_bins(statsThisGroup, 'Edges', edges);
+end
+
+% Count the number of bins
+nBins = numel(edges) - 1;
 
 %}
 
