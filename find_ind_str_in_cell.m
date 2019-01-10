@@ -61,6 +61,7 @@ function varargout = find_ind_str_in_cell(str, cellArray, varargin)
 %       cd/find_custom.m
 %
 % Used by:
+%       cd/find_index_in_array.m
 %       cd/ispositiveintegerscalar.m
 %       cd/increment_editbox.m
 %       cd/m3ha_correct_unbalanced_bridge.m
@@ -108,6 +109,7 @@ function varargout = find_ind_str_in_cell(str, cellArray, varargin)
 % 2019-01-04 Simplified code with contains()
 % 2019-01-09 Added 'ReturnNan' as an optional argument
 % 2019-01-09 Now uses find_custom.m
+% TODO: Create find_ind_in_array.m and use find_ind_str_in_cell.m
 
 %% Hard-coded constants
 validSearchModes = {'exact', 'substrings', 'regexp'};

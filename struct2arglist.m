@@ -22,6 +22,7 @@ function argList = struct2arglist (structure, varargin)
 % Used by:
 %       cd/annotation_in_plot.m
 %       cd/compute_bins.m
+%       cd/convert_to_rank.m
 %       cd/plot_grouped_histogram.m
 %       cd/solve_function_at_value.m
 

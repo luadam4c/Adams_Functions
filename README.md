@@ -122,6 +122,7 @@ Last Updated 2019-01-09 by Adam Lu
 - [**find_custom.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_custom.m): Same as find() but takes custom parameter-value pairs
 - [**find_first_deviant.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_first_deviant.m): Finds the index of the first deviant from preceding peers in a time series
 - [**find_first_jump.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_first_jump.m): Finds the index of the first jump in a time series
+- [**find_index_in_array.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_index_in_array.m): Returns the index for element(s) in an array
 - [**find_ind_str_in_cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_ind_str_in_cell.m): Find all indices of a particular string in a cell array
 - [**find_initial_slopes.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_initial_slopes.m): Find all initial slopes from a set of current pulse responses
 - [**find_IPSC_peak.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_IPSC_peak.m): Finds time of current peak from a an inhibitory current trace (must be negative current)

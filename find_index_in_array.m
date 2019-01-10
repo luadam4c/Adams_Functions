@@ -1,23 +1,18 @@
-function ranks = convert_to_rank (array, varargin)
-%% Creates a positive integer array from an array showing the ranks of each element
-% Usage: ranks = convert_to_rank (array, varargin)
+function index = find_index_in_array (element, array, varargin)
+%% Returns the index for element(s) in an array
+% Usage: index = find_index_in_array (element, array, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       convert_to_rank([20, 3, 3, 10, 10, 20, 3])
-%       convert_to_rank({'dog'; 'cat'; 'cat'; 'dog'})
-%       convert_to_rank(["dog", "cat", "cat", "dog"])
-%       convert_to_rank({'dog'; 'cat'}, 'Ranked', ["dog"; "fly"; "cat"])
-%       convert_to_rank(["dog", "fly", "cat"], 'Ranked', {'dog'; 'cat'})
+%       find_index_in_array({'dog'; 'cat'}, ["dog"; "fly"; "cat"])
+%       find_index_in_array(["dog", "fly", "cat"], {'dog'; 'cat'})
 % Outputs:
-%       ranks        - ranks of each element
+%       index       - the index in an array with matching element
 %                   specified as a positive integer array (may contain NaN)
 % Arguments:
-%       array       - an array that can be passed into unique()
-%       varargin    - 'RankedElements': ranked elements
-%                   must be an array of the same type as array
-%                   default == unique(array)
-%                   - 'SearchMode': the search mode
+%       element     - element(s) of an array
+%       array       - an array
+%       varargin    - 'SearchMode': the search mode
 %                   must be an unambiguous, case-insensitive match to one of:
 %                       'exact'         - str must be identical to 
 %                                           an element in cellArray
@@ -30,15 +25,13 @@ function ranks = convert_to_rank (array, varargin)
 %                   - 'IgnoreCase': whether to ignore differences in letter case
 %                   must be logical 1 (true) or 0 (false)
 %                   default == false
-%                   - Any other parameter-value pair for the unique() function
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/find_index_in_array.m
-%       cd/struct2arglist.m
+%       cd/find_ind_str_in_cell.m
 %
 % Used by:
-%       cd/plot_grouped_histogram.m
+%       cd/convert_to_rank.m
 
 % File History:
 % 2019-01-09 Created by Adam Lu
@@ -48,7 +41,6 @@ function ranks = convert_to_rank (array, varargin)
 validSearchModes = {'exact', 'substrings', 'regexp'};
 
 %% Default values for optional arguments
-rankedElementsDefault = [];         % set later
 searchModeDefault = 'exact';        % search exact matches by default
 ignoreCaseDefault = false;          % don't ignore case by default
 
@@ -56,7 +48,7 @@ ignoreCaseDefault = false;          % don't ignore case by default
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 1
+if nargin < 2
     error(create_error_for_nargin(mfilename));
 end
 
@@ -66,34 +58,56 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
+addRequired(iP, 'element');
 addRequired(iP, 'array');
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'RankedElements', rankedElementsDefault);
 addParameter(iP, 'SearchMode', searchModeDefault, ...   % the search mode
     @(x) any(validatestring(x, validSearchModes)));
 addParameter(iP, 'IgnoreCase', ignoreCaseDefault, ...   % whether to ignore case
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
-parse(iP, array, varargin{:});
-rankedElements = iP.Results.RankedElements;
+parse(iP, element, array, varargin{:});
 searchMode = validatestring(iP.Results.SearchMode, validSearchModes);
 ignoreCase = iP.Results.IgnoreCase;
 
-% Keep unmatched arguments for the unique() function
-otherArguments = struct2arglist(iP.Unmatched);
-
 %% Preparation
-% Set default ranks of elements
-if isempty(rankedElements)
-    rankedElements = unique(array, otherArguments{:});
-end
+% Check type compatibility of element and array
+% TODO: cellstr and string should be made compatible
+% if ~strcmp(class(element), class(array))
+%     error('element and array do not have the same type!!')
+% end
 
 %% Do the job
-% Find the rand for each element in array
-ranks = find_index_in_array(array, rankedElements, ...
-                            'SearchMode', searchMode, 'IgnoreCase', ignoreCase);
+if ischar(element) || iscellstr(element) || isstring(element)
+    % Make sure element is either a string or a cell array
+    if ischar(element)
+        element = {element};
+    end
+
+    % Use either cellfun or arrayfun
+    if iscell(element)
+        % Find the index in array for each element in element
+        index = cellfun(@(x) find_ind_str_in_cell(x, array, ...
+                                'MaxNum', 1, 'ReturnNan', true, ...
+                                'SearchMode', searchMode, ...
+                                'IgnoreCase', ignoreCase), element);
+    else
+        % Find the index in array for each element in element
+        index = arrayfun(@(x) find_ind_str_in_cell(x, array, ...
+                                'MaxNum', 1, 'ReturnNan', true, ...
+                                'SearchMode', searchMode, ...
+                                'IgnoreCase', ignoreCase), element);
+    end
+else
+    % Find the index in array for each element in element
+    %   Note: If not found, zero will be returned
+    [~, index] = ismember(element, array);
+
+    % Make all zeros NaNs instead
+    index(index == 0) = NaN;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
