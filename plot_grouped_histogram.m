@@ -1,6 +1,6 @@
-function [h, fig] = plot_grouped_histogram (stats, varargin)
+function [bars, fig] = plot_grouped_histogram (stats, varargin)
 %% Plot a grouped histogram
-% Usage: [h, fig] = plot_grouped_histogram (stats, grouping (opt), varargin)
+% Usage: [bars, fig] = plot_grouped_histogram (stats, grouping (opt), varargin)
 % Explanation:
 %       Plots a grouped histogram, placing bars from different groups
 %           side-by-side by default
@@ -12,7 +12,7 @@ function [h, fig] = plot_grouped_histogram (stats, varargin)
 %       plot_grouped_histogram(stats, 'Style', 'stacked')
 %       plot_grouped_histogram(stats, 'Style', 'overlapped')
 % Outputs:
-%       h           - the histogram(s) returned as a Bar object
+%       bars        - the histogram(s) returned as Bar object(s)
 %                   specified as a bar object handle array
 %       fig         - figure handle for the created figure
 %                   specified as a figure object handle
@@ -51,7 +51,7 @@ function [h, fig] = plot_grouped_histogram (stats, varargin)
 %                               suppress by setting value to 'suppress'
 %                   must be a string scalar or a character vector 
 %                       or a cell array of strings or character vectors
-%                   default == ['Value (', xUnits, ')']
+%                   default == strcat('Value (', xUnits, ')')
 %                   - 'YLabel': label(s) for the y axis, 
 %                               suppress by setting value to 'suppress'
 %                   must be a string scalar or a character vector
@@ -71,8 +71,7 @@ function [h, fig] = plot_grouped_histogram (stats, varargin)
 %                               'eastoutside' if nGroups is 10+
 %                   - 'FigTitle': title for the figure
 %                   must be a string scalar or a character vector
-%                   default == ['Traces for ', figName]
-%                               or [yLabel, ' over time']
+%                   default == strcat('Distribution of ', xLabel)
 %                   - 'FigHandle': figure handle for created figure
 %                   must be a empty or a figure object handle
 %                   default == []
@@ -120,6 +119,7 @@ function [h, fig] = plot_grouped_histogram (stats, varargin)
 % 2018-12-28 Added usage of struct2arglist.m
 % 2019-01-09 Now allows grouping to be a cell array of character vectors
 % 2019-01-09 Added 'overlapped' as a style
+% 2019-01-11 Improved default bin edges
 
 %% Hard-coded parameters
 barWidth = 1;
@@ -229,6 +229,13 @@ figName = iP.Results.FigName;
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
+% Return if there is nothing to plot
+if isempty(stats)
+    bars = gobjects(0);
+    fig = gobjects(0);
+    return
+end
+
 % Decide on the grouping vector
 if isempty(grouping)
     % Create a grouping if not provided
@@ -250,18 +257,40 @@ groupValues = unique(grouping);
 % Count the number of groups
 nGroups = numel(groupValues);
 
+% Break up stats into a cell array of vectors
+statsCell = arrayfun(@(x) stats(grouping == groupValues(x)), ...
+                    transpose(1:nGroups), 'UniformOutput', false);
+
 %% Compute the bin counts
 % Compute default bin edges for all data if not provided
 if isempty(edges)
-    [~, edges] = compute_bins(stats, 'Edges', edges);
+    % Compute bin edges for each group
+    [~, edgesAll] = cellfun(@(x) compute_bins(x, 'Edges', edges), ...
+                            statsCell, 'UniformOutput', false);
+
+    % Compute the minimum bin width across groups
+    minBinWidth = min(extract_elements(edgesAll, 'firstdiff'));
+
+    % Compute the minimum and maximum edges across groups
+    minEdges = min(extract_elements(edgesAll, 'first'));
+    maxEdges = max(extract_elements(edgesAll, 'last'));
+
+    % Compute the range of edges
+    rangeEdges = maxEdges - minEdges;
+
+    % Compute the number of bins
+    nBins = ceil(rangeEdges / minBinWidth);
+
+    % Create bin edges that works for all data
+    edges = transpose(linspace(minEdges, maxEdges, nBins));
 end
 
 % Compute the bin centers
 binCenters = mean([edges(1:end-1), edges(2:end)], 2);
 
 % Compute the bin counts for each group based on these edges
-counts = arrayfun(@(x) compute_bins(stats(grouping == groupValues(x)), ...
-                    'Edges', edges), 1:nGroups, 'UniformOutput', false);
+counts = cellfun(@(x) compute_bins(x, 'Edges', edges), ...
+                    statsCell, 'UniformOutput', false);
 counts = horzcat(counts{:});
 
 %% Preparation for the plot
@@ -277,7 +306,12 @@ end
 
 % Set the default x-axis labels
 if isempty(xLabel)
-    xLabel = ['Value (', xUnits, ')'];
+    xLabel = strcat('Value (', xUnits, ')');
+end
+
+% Set the default figure title
+if isempty(figTitle)
+    figTitle = ['Distribution of ', xLabel];
 end
 
 % If the figure name is not a full path, create full path
@@ -328,16 +362,14 @@ if strcmpi(style, 'overlapped')
 end
 
 %% Plot and save histogram
-if ~isempty(stats)
-    if strcmpi(style, 'overlapped')
-        hold on
-        h = arrayfun(@(x) bar(binCenters, counts(:, x), ...
-                            barWidth, barStyle, 'FaceAlpha', faceAlpha, ...
-                            'EdgeAlpha', edgeAlpha, otherArguments{:}), ...
-                    transpose(1:nGroups));
-    else
-        h = bar(binCenters, counts, barWidth, barStyle, otherArguments{:});
-    end
+if strcmpi(style, 'overlapped')
+    hold on
+    bars = arrayfun(@(x) bar(binCenters, counts(:, x), ...
+                        barWidth, barStyle, 'FaceAlpha', faceAlpha, ...
+                        'EdgeAlpha', edgeAlpha, otherArguments{:}), ...
+                transpose(1:nGroups));
+else
+    bars = bar(binCenters, counts, barWidth, barStyle, otherArguments{:});
 end
 
 % Set x axis limits
@@ -385,10 +417,10 @@ OLD CODE:
 
 histg(stats, grouping);
 
-h = figure('Visible', 'on');
+bars = figure('Visible', 'on');
 
-saveas(h, figName, 'png');
-close(h);
+saveas(bars, figName, 'png');
+close(bars);
 
 plot_grouped_histogram(figName, stats, grouping, groupingLabels, ...
                         xLabel, xUnits, figTitle, varargin)
@@ -412,7 +444,7 @@ legend(groupingLabels, 'location', legendLocation, ...
 
 title(figTitle, 'Interpreter', 'none');
 
-h = bar(binCenters, counts, barWidth, barStyle);
+bars = bar(binCenters, counts, barWidth, barStyle);
 
 % The following is slower:
 counts = zeros(nBins, nGroups);
@@ -429,6 +461,11 @@ end
 
 % Count the number of bins
 nBins = numel(edges) - 1;
+
+if ~isempty(stats)
+end
+
+[~, edges] = compute_bins(stats, 'Edges', edges);
 
 %}
 

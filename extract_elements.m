@@ -21,7 +21,8 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %                       'last'  - last element of each vector
 %                       'min'   - minimum-valued element of each vector
 %                       'max'   - maximum-valued element of each vector
-%                       'specific' - at a a specific index
+%                       'firstdiff' - first difference of each vector
+%                       'specific'  - at a a specific index
 %       varargin    - 'Index': index of the element from each vector
 %                   must be a positive numeric vector
 %                   default == []
@@ -52,7 +53,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % 
 
 %% Hard-coded parameters
-validExtractModes = {'first', 'last', 'min', 'max', 'specific'};
+validExtractModes = {'first', 'last', 'min', 'max', 'firstdiff', 'specific'};
 
 %% Default values for optional arguments
 indexDefault = [];
@@ -91,7 +92,7 @@ extractMode = validatestring(extractMode, validExtractModes);
 
 %% Do the job
 switch extractMode
-case {'first', 'last', 'min', 'max'}
+case {'first', 'last', 'min', 'max', 'firstdiff'}
     % Extract from a position
     if iscellnumericvector(vecs)
         [elements, idxElement] = ...
@@ -156,6 +157,9 @@ switch extractMode
         [element, idxElement] = min(x);
     case 'max'
         [element, idxElement] = max(x);
+    case 'firstdiff'
+        element = x(2) - x(1);
+        idxElement = NaN;
     otherwise
         error('Code logic error!!\n');
 end

@@ -69,11 +69,11 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 %% Hard-coded parameters
 % TODO: Make these parameters
 plotHistograms = true;
-saveHistFlag = false;
+saveHistFlag = true;    % default false
+toDisplay = true;       % whether to display ANOVA table
 histFigNames = '';
 alphaNormality = 0.05;  % significance level for normality test
 alphaTest = 0.05;       % significance level for hypothesis test
-toDisplay = true;      % whether to display ANOVA table
 
 %% Default values for optional arguments
 sheetNameDefault = '';
@@ -133,28 +133,15 @@ nParams = size(xData, 2);
 % Force as a column cell array of character vectors
 yVars = force_column_cell(yVars);
 
+% Count the number of readout variables
+nOut = numel(yVars);
+
 % Extract the y vectors
 yData = cellfun(@(x) dataTable{:, x}, yVars, 'UniformOutput', false);
 
 % Creat full path to spreadsheet file if requested
 if ~isempty(sheetName)
     sheetName = construct_fullpath(sheetName, 'Directory', outFolder);
-end
-
-%% Generate overlapped histograms
-if plotHistograms && nParams == 1
-    % Create figure names if not provided
-    if saveHistFlag && isempty(histFigNames)
-        histFigNames = strcat(prefix, '_histogram_', yVars, '.png');
-        histFigNames = construct_fullpath(histFigNames, 'Directory', outFolder);
-    else
-        histFigNames = match_format_vector_sets(histFigNames, yVars);
-    end
-
-    % Plot grouped histograms
-    h = cellfun(@(x, y, z) plot_grouped_histogram(x, xData, 'XLabel', y, ...
-                        'FigName', z, 'Style', 'overlapped'), ...
-                        yData, yVars, histFigNames, 'UniformOutput', false);
 end
 
 %% Perform the appropriate comparison test
@@ -165,11 +152,6 @@ if nParams == 1
 
     % Convert to a table
     testResults = struct2table(statsStructs);
-
-    % Add histograms if plotted
-    if plotHistograms
-        testResults = addvars(testResults, histFigNames, h);
-    end
 else
     % Create linear models
     models = cellfun(@(y) fitlm(xData, y), yData, 'UniformOutput', false);
@@ -199,6 +181,46 @@ xVarStr = convert_to_char(xVar, 'SingleOutput', true, 'Delimiter', '_and_');
 % Create row names
 testResults.Properties.RowNames = strcat(yVars, '_vs_', xVarStr);
 
+%% Generate overlapped histograms
+if plotHistograms && nParams == 1
+    % Create figure names if not provided
+    if saveHistFlag && isempty(histFigNames)
+        histFigNames = strcat(prefix, '_histogram_', yVars, '.png');
+        histFigNames = construct_fullpath(histFigNames, 'Directory', outFolder);
+    else
+        histFigNames = match_format_vector_sets(histFigNames, yVars);
+    end
+
+    % Create pNormAvgStrs
+    groupNamesRow = convert_to_char(transpose(unique(xData)));
+    pNormAvgStrs = strcat('pNormAvg_', groupNamesRow);
+
+    % Extract information for labelling
+    pValue = testResults.pValue;
+    pNormAvg = testResults{:, pNormAvgStrs};
+
+    % Extract information for labelling
+    pValueText = strcat("pValue = ", convert_to_char(pValue));
+    pNormAvgText = arrayfun(@(x) strcat(pNormAvgStrs, " = ", ...
+                            convert_to_char(pNormAvg(x, :))), ...
+                            transpose(1:nOut), 'UniformOutput', false);
+    
+    % Create a figure title with the relevant info
+    figTitles = cellfun(@(x, y) convert_to_char({x, y}, ...
+                        'SingleOutput', true, 'Delimiter', '; '), ...
+                        pValueText, pNormAvgText, 'UniformOutput', false);
+
+    % Plot grouped histograms
+    [bars, figures] = ...
+        cellfun(@(x, y, z, w) plot_grouped_histogram(x, xData, 'XLabel', y, ...
+                        'FigName', z, 'FigTitle', w, 'Style', 'overlapped'), ...
+                        yData, yVars, histFigNames, figTitles, ...
+                        'UniformOutput', false);  
+
+    % Append histogram to results
+    testResults = addvars(testResults, histFigNames, bars, figures);
+end
+
 %% Save the table if requested
 if ~isempty(sheetName)
     writetable(testResults, sheetName, 'WriteRowNames', true);
@@ -212,6 +234,9 @@ function statsStruct = test_for_one_variable(xData, yData, alphaNormality, ...
 
 % Get the unique x values
 uniqueX = unique(xData);
+
+% Get the unique group names
+groupNames = convert_to_char(uniqueX);
 
 % Count the number of groups
 nGroups = numel(uniqueX);
@@ -227,25 +252,25 @@ else
 end
 
 % Apply the Lilliefors test for normality to each group
-[~, pNormalityLill] = ...
+[~, pNormLill] = ...
     cellfun(@(x) lillietest(x, 'Alpha', alphaNormality), data);
 
 % Apply the Anderson-Darling test for normality to each group
-[~, pNormalityAd] = cellfun(@(x) adtest(x, 'Alpha', alphaNormality), data);
+[~, pNormAd] = cellfun(@(x) adtest(x, 'Alpha', alphaNormality), data);
 
 % Apply the Jarque-Bera test for normality to each group
-[~, pNormalityJb] = cellfun(@(x) jbtest(x, alphaNormality), data);
+[~, pNormJb] = cellfun(@(x) jbtest(x, alphaNormality), data);
 
 % Place all p values for normality together in a matrix
 %   Note: each row is a group; each column is a different test
-pNormalityMat = [pNormalityLill, pNormalityAd, pNormalityJb];
+pNormMat = [pNormLill, pNormAd, pNormJb];
 
 % Take the geometric mean of the p values from different tests
-pNormalityAvg = compute_weighted_average(pNormalityMat, 'DimToOperate', 2, ...
+pNormAvg = compute_weighted_average(pNormMat, 'DimToOperate', 2, ...
                                         'AverageMethod', 'geometric');
 
 % Normality is satified if all p values are greater than the significance level
-isNormal = all(pNormalityAvg >= alphaNormality);
+isNormal = all(pNormAvg >= alphaNormality);
 
 % Perform the correct test
 if nGroups == 1
@@ -302,7 +327,7 @@ if nGroups > 2
 
     % Create group name vectors
     [firstGroupNames, secondGroupNames] = ...
-        argfun(@(x) convert_to_char(uniqueX(otherStats(:, x))), 1, 2);
+        argfun(@(x) groupNames(otherStats(:, x)), 1, 2);
 
     % Create isDifferentStrs
     isDifferentStrs = strcat('isDifferent_', firstGroupNames, ...
@@ -333,10 +358,24 @@ end
 % Store other information
 statsStruct.testFunction = testFunction;
 statsStruct.isNormal = isNormal;
-statsStruct.pNormalityAvg = pNormalityAvg;
-statsStruct.pNormalityLill = pNormalityLill;
-statsStruct.pNormalityAd = pNormalityAd;
-statsStruct.pNormalityJb = pNormalityJb;
+statsStruct.pNormAvg = pNormAvg;
+statsStruct.pNormLill = pNormLill;
+statsStruct.pNormAd = pNormAd;
+statsStruct.pNormJb = pNormJb;
+
+% Create pNormStrs
+pNormAvgStrs = strcat('pNormAvg_', groupNames);
+pNormLillStrs = strcat('pNormLill_', groupNames);
+pNormAdStrs = strcat('pNormAd_', groupNames);
+pNormJbStrs = strcat('pNormJb_', groupNames);
+
+% Store normality test p values in statsStruct
+for iGroup = 1:nGroups
+    statsStruct.(pNormAvgStrs{iGroup}) = pNormAvg(iGroup);
+    statsStruct.(pNormLillStrs{iGroup}) = pNormLill(iGroup);
+    statsStruct.(pNormAdStrs{iGroup}) = pNormAd(iGroup);
+    statsStruct.(pNormJbStrs{iGroup}) = pNormJb(iGroup);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -359,12 +398,12 @@ if ~isdeployed
     addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions'));
 end
 % Apply the Shapiro-Wilk Test for normality
-[isNotNormal, pNormality] = cellfun(@(y) swtest(y, alphaNormality), yData);
+[isNotNormal, pNorm] = cellfun(@(y) swtest(y, alphaNormality), yData);
 
 % Apply the One-sample Kolmogorov-Smirnov test for normality to each group
-[~, pNormalityKs] = cellfun(@(x) kstest(x, 'Alpha', alphaNormality), data);
-statsStruct.pNormalityKs = pNormalityKs;
-pNormalityMat = [pNormalityLill, pNormalityAd, pNormalityJb, pNormalityKs];
+[~, pNormKs] = cellfun(@(x) kstest(x, 'Alpha', alphaNormality), data);
+statsStruct.pNormKs = pNormKs;
+pNormMat = [pNormLill, pNormAd, pNormJb, pNormKs];
 
 %}
 
