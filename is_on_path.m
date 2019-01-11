@@ -70,7 +70,7 @@ pathCell = split(path, pathsep);
 % Test whether the folder is in the path
 %   Note: Windows is not case-sensitive, but UNIX systems are
 if ispc
-    onPath = ismember_custom(folder, pathCell, 'SearchMode', 'exact', ...
+    onPath = ismember_custom(folder, pathCell, 'MatchMode', 'exact', ...
                             'IgnoreCase', true);
 else
     onPath = ismember(folder, pathCell);
@@ -85,7 +85,7 @@ if ispc
 else
     ignoreCase = false;
 end
-onPath = ismember_custom(folder, path, 'SearchMode', 'substring', ...
+onPath = ismember_custom(folder, path, 'MatchMode', 'parts', ...
                         'IgnoreCase', ignoreCase);
 toc;
 %}

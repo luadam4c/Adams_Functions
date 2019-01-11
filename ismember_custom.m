@@ -4,7 +4,7 @@ function varargout = ismember_custom (cand, list, varargin)
 % Explanation:
 %   This function is similar to ismember() but allows different search modes
 %       for strings
-%   There are three main search modes (parameter 'SearchMode'):
+%   There are three main search modes (parameter 'MatchMode'):
 %       'substrings': allows the candidate to be a substring or substrings 
 %                       of a match in list.
 %       'exact': candidate must be an exact match
@@ -23,10 +23,10 @@ function varargout = ismember_custom (cand, list, varargin)
 %       ismember_custom("fish", strs1, 'MaxNum', 1)
 %       ismember_custom("Fish", strs1, 'IgnoreCase', 1)
 %       ismember_custom('Fish', strs2, 'IgnoreCase', false)
-%       ismember_custom("sealion", strs1, 'SearchMode', 'exact')
-%       ismember_custom('sea', strs2, 'SearchMode', 'exact', 'ReturnNaN', true)
-%       ismember_custom("sea.*", strs1, 'SearchMode', 'reg')
-%       ismember_custom('sea.*', strs2, 'SearchMode', 'reg')
+%       ismember_custom("sealion", strs1, 'MatchMode', 'exact')
+%       ismember_custom('sea', strs2, 'MatchMode', 'exact', 'ReturnNaN', true)
+%       ismember_custom("sea.*", strs1, 'MatchMode', 'reg')
+%       ismember_custom('sea.*', strs2, 'MatchMode', 'reg')
 %
 % Outputs:
 %       isMember    - whether cand matches at least a member of list
@@ -37,23 +37,19 @@ function varargout = ismember_custom (cand, list, varargin)
 % Arguments:
 %       cand        - candidate(s)
 %       list        - a list
-%       varargin    - 'SearchMode': the search mode for strings
+%       varargin    - 'MatchMode': the matching mode
 %                   must be an unambiguous, case-insensitive match to one of:
-%                       'exact'         - cand must be identical to 
-%                                           an element in list
-%                       'substrings'    - cand can be a substring or 
-%                                           a list of substrings
-%                       'regexp'        - cand is considered a regular expression
-%                   if search mode is 'exact' or 'regexp', 
-%                       each cand cannot have more than one elements
-%                   default == 'substrings'
+%                       'exact'  - cand must be identical to the members
+%                       'parts'  - cand can be parts of the members
+%                       'regexp' - cand is a regular expression
+%                   default == 'parts'
 %                   - 'IgnoreCase': whether to ignore differences in letter case
 %                   must be logical 1 (true) or 0 (false)
 %                   default == false
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/is_matching_string.m
+%       cd/ismatch.m
 %
 % Used by:
 %       cd/find_index_in_array.m
@@ -63,11 +59,11 @@ function varargout = ismember_custom (cand, list, varargin)
 % 2019-01-10 Modified from find_in_strings.m
 
 %% Hard-coded constants
-validSearchModes = {'exact', 'substrings', 'regexp'};
+validMatchModes = {'exact', 'parts', 'regexp'};
 
 %% Default values for optional arguments
-searchModeDefault = 'substrings';       % default search mode
-ignoreCaseDefault = false;              % whether to ignore case by default
+matchModeDefault = 'parts';         % can be parts by default
+ignoreCaseDefault = false;          % whether to ignore case by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -92,20 +88,20 @@ addRequired(iP, 'list', ...          % a list of strings
             'or cell array of character arrays!']));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'SearchMode', searchModeDefault, ...   % the search mode
-    @(x) any(validatestring(x, validSearchModes)));
+addParameter(iP, 'MatchMode', matchModeDefault, ...   % the search mode
+    @(x) any(validatestring(x, validMatchModes)));
 addParameter(iP, 'IgnoreCase', ignoreCaseDefault, ...   % whether to ignore case
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, cand, list, varargin{:});
-searchMode = validatestring(iP.Results.SearchMode, validSearchModes);
+matchMode = validatestring(iP.Results.MatchMode, validMatchModes);
 ignoreCase = iP.Results.IgnoreCase;
 
 %% Do the job
 % Test whether each member of list matches cand
 if (ischar(cand) || iscellstr(cand) || isstring(cand)) && ...
-        (ignoreCase || ~strcmp(searchMode, 'exact'))
+        (ignoreCase || ~strcmp(matchMode, 'exact'))
     % Make sure cand is either a string or a cell array
     if ischar(cand)
         cand = {cand};
@@ -116,20 +112,20 @@ if (ischar(cand) || iscellstr(cand) || isstring(cand)) && ...
         % Find the first index of the matching element in list too
         if iscell(cand)
             [isMember, index] = ...
-                cellfun(@(x) is_in_strings(x, list, searchMode, ...
+                cellfun(@(x) is_in_strings(x, list, matchMode, ...
                                             ignoreCase), cand);
         else
             [isMember, index] = ...
-                arrayfun(@(x) is_in_strings(x, list, searchMode, ...
+                arrayfun(@(x) is_in_strings(x, list, matchMode, ...
                                             ignoreCase), cand);
         end
     else
         % Just test whether each member of cand has a match in list
         if iscell(cand)
-            isMember = cellfun(@(x) is_in_strings(x, list, searchMode, ...
+            isMember = cellfun(@(x) is_in_strings(x, list, matchMode, ...
                                                     ignoreCase), cand);
         else
-            isMember = arrayfun(@(x) is_in_strings(x, list, searchMode, ...
+            isMember = arrayfun(@(x) is_in_strings(x, list, matchMode, ...
                                                     ignoreCase), cand);
         end
     end
@@ -156,18 +152,18 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function varargout = is_in_strings (cand, list, searchMode, ignoreCase)
+function varargout = is_in_strings (cand, list, matchMode, ignoreCase)
 % Returns whether list contains a match of cand 
 %   and return the index of the first match
 
 % Test whether each member of list matches cand
 if nargout == 1
-    isMatch = is_matching_string(list, cand, 'MaxNum', 1, 'ReturnNan', true, ...
-                            'SearchMode', searchMode, 'IgnoreCase', ignoreCase);
+    isMatch = ismatch(list, cand, 'MaxNum', 1, 'ReturnNan', true, ...
+                            'MatchMode', matchMode, 'IgnoreCase', ignoreCase);
 elseif nargout == 2
     [isMatch, index] = ...
-        is_matching_string(list, cand, 'MaxNum', 1, 'ReturnNan', true, ...
-                            'SearchMode', searchMode, 'IgnoreCase', ignoreCase);
+        ismatch(list, cand, 'MaxNum', 1, 'ReturnNan', true, ...
+                            'MatchMode', matchMode, 'IgnoreCase', ignoreCase);
 end
 
 % See if any member is a match

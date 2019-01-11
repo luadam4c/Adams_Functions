@@ -57,7 +57,6 @@ function isMatch = is_matching_string (strList, cand, varargin)
 %
 % Used by:
 %       cd/ismatch.m
-%       cd/ismember_custom.m
 
 % File History:
 % 2019-01-10 Moved from find_in_strings.m

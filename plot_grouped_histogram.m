@@ -248,7 +248,8 @@ elseif iscellstr(grouping) || isstring(grouping)
     end
 
     % Create a numeric grouping vector based on the order in the grouping labels
-    grouping = convert_to_rank(grouping, 'RankedElements', groupingLabels);
+    grouping = convert_to_rank(grouping, 'RankedElements', groupingLabels, ...
+                                'SearchMode', 'substrings');
 end
 
 % Get all unique group values
@@ -364,12 +365,14 @@ end
 %% Plot and save histogram
 if strcmpi(style, 'overlapped')
     hold on
-    bars = arrayfun(@(x) bar(binCenters, counts(:, x), ...
+    bars = arrayfun(@(x, y) bar(binCenters, counts(:, x), ...
                         barWidth, barStyle, 'FaceAlpha', faceAlpha, ...
-                        'EdgeAlpha', edgeAlpha, otherArguments{:}), ...
-                transpose(1:nGroups));
+                        'EdgeAlpha', edgeAlpha, 'DisplayName', y, ...
+                        otherArguments{:}), ...
+                    transpose(1:nGroups), groupingLabels);
 else
-    bars = bar(binCenters, counts, barWidth, barStyle, otherArguments{:});
+    bars = bar(binCenters, counts, barWidth, barStyle, ...
+                'DisplayName', groupingLabels, otherArguments{:});
 end
 
 % Set x axis limits
@@ -384,7 +387,7 @@ end
 
 % Generate a legend if there is more than one group
 if ~strcmpi(legendLocation, 'suppress')
-    legend(groupingLabels, 'location', legendLocation, 'AutoUpdate','off');
+    legend('location', legendLocation, 'AutoUpdate','off');
 end
 
 % Generate an x-axis label
@@ -466,6 +469,8 @@ if ~isempty(stats)
 end
 
 [~, edges] = compute_bins(stats, 'Edges', edges);
+
+legend(groupingLabels, 'location', legendLocation, 'AutoUpdate','off');
 
 %}
 

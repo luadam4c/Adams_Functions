@@ -205,18 +205,20 @@ if plotHistograms && nParams == 1
     pNormAvgStrs = strcat('pNormAvg_', groupNames);
 
     % Extract information for labelling
+    isDifferent = testResults.isDifferent;
     pValue = testResults.pValue;
     pNormAvg = testResults{:, pNormAvgStrs};
 
     % Extract information for labelling
-    pValueText = strcat("pValue = ", convert_to_char(pValue));
+    pValueText = strcat("pValue = ", num2str(pValue, 1));
     pNormAvgText = arrayfun(@(x) strcat("pNorm = ", ...
-                            convert_to_char(transpose(pNormAvg(x, :)))), ...
+                            num2str(transpose(pNormAvg(x, :)), 1)), ...
                             transpose(1:nOut), 'UniformOutput', false);
     
     % Create titles with pValueText attached
-    figTitles = strcat("Distribution of ", yVars, ": ", pValueText);
+    figTitles = strcat(yVars, ": ", pValueText);
 
+    % Create grouping labels with pNorm values attached
     groupingLabels = cellfun(@(x) strcat(groupNames, ": ", x), ...
                             pNormAvgText, 'UniformOutput', false);
 

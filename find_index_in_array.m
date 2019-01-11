@@ -16,16 +16,12 @@ function varargout = find_index_in_array (candidates, array, varargin)
 % Arguments:
 %       candidates  - candidates to be matched
 %       array       - an array
-%       varargin    - 'SearchMode': the search mode for strings
+%       varargin    - 'MatchMode': the matching mode
 %                   must be an unambiguous, case-insensitive match to one of:
-%                       'exact'         - cand must be identical to 
-%                                           an element in list
-%                       'substrings'    - cand can be a substring or 
-%                                           a list of substrings
-%                       'regexp'        - cand is considered a regular expression
-%                   if search mode is 'exact' or 'regexp', 
-%                       each cand cannot have more than one elements
-%                   default == 'substrings'
+%                       'exact'  - cand must be identical to the members
+%                       'parts'  - cand can be parts of the members
+%                       'regexp' - cand is a regular expression
+%                   default == 'parts'
 %                   - 'IgnoreCase': whether to ignore differences in letter case
 %                   must be logical 1 (true) or 0 (false)
 %                   default == false
@@ -43,10 +39,10 @@ function varargout = find_index_in_array (candidates, array, varargin)
 % 
 
 %% Hard-coded parameters
-validSearchModes = {'exact', 'substrings', 'regexp'};
+validMatchModes = {'exact', 'parts', 'regexp'};
 
 %% Default values for optional arguments
-searchModeDefault = 'exact';        % search exact matches by default
+matchModeDefault = 'parts';         % can be parts by default
 ignoreCaseDefault = false;          % don't ignore case by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -67,21 +63,21 @@ addRequired(iP, 'candidates');
 addRequired(iP, 'array');
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'SearchMode', searchModeDefault, ...   % the search mode
-    @(x) any(validatestring(x, validSearchModes)));
+addParameter(iP, 'MatchMode', matchModeDefault, ...   % the search mode
+    @(x) any(validatestring(x, validMatchModes)));
 addParameter(iP, 'IgnoreCase', ignoreCaseDefault, ...   % whether to ignore case
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, candidates, array, varargin{:});
-searchMode = validatestring(iP.Results.SearchMode, validSearchModes);
+matchMode = validatestring(iP.Results.MatchMode, validMatchModes);
 ignoreCase = iP.Results.IgnoreCase;
 
 %% Do the job
 % Find the index in array for each element in candidates
 %   Note: If not found, zero will be returned
 [~, index] = ismember_custom(candidates, array, ...
-                            'SearchMode', searchMode, 'IgnoreCase', ignoreCase);
+                            'MatchMode', matchMode, 'IgnoreCase', ignoreCase);
 
 % Get all matched elements if requested
 if nargout >= 2

@@ -59,6 +59,7 @@ function varargout = ismatch (list, cand, varargin)
 %
 % Used by:
 %       cd/find_in_strings.m
+%       cd/ismember_custom.m
 
 % File History:
 % 2019-01-11 Modified from is_matching_strings.m
