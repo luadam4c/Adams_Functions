@@ -1,5 +1,5 @@
 function varargout = find_ind_str_in_cell(str, cellArray, varargin)
-%% Find all indices of a particular string in a cell array
+%% Returns all indices of a particular string (could be represented by substrings) in a list of strings
 % Usage: [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
 % Explanation:
 %   This works like the strcmp() or strcmpi function in Matlab, 
@@ -27,14 +27,14 @@ function varargout = find_ind_str_in_cell(str, cellArray, varargin)
 %                   specified as a cell array if more than one indices 
 %                       or the element if only one index; or an empty string
 % Arguments:
-%       str         - a string or a substring or 
-%                       a cell array of substrings of interest
+%       str         - string(s) or substring(s) of interest
 %                       If str is a cell array, all substrings must 
 %                           exist in the string to be matched
 %                   must be a string/character array or 
 %                       a cell array of strings/character arrays
 %       cellArray   - a cell array that contains strings
-%                   must be a cell array of strings/character arrays
+%                   must be a string/character array or 
+%                       a cell array of strings/character arrays
 %       varargin    - 'SearchMode': the search mode
 %                   must be an unambiguous, case-insensitive match to one of:
 %                       'exact'         - str must be identical to 
@@ -74,6 +74,13 @@ function varargout = find_ind_str_in_cell(str, cellArray, varargin)
 %       cd/xolotl_compartment_index.m
 %       cd/ZG_extract_all_IEIs.m
 %       cd/ZG_extract_all_data.m
+%       /home/Matlab/minEASE/minEASE.m
+%       /home/Matlab/minEASE/combine_eventInfo.m
+%       /home/Matlab/minEASE/extract_from_minEASE_output_filename.m
+%       /home/Matlab/minEASE/read_params.m
+%       /home/Matlab/minEASE/gui_examine_events.m
+%       /home/Matlab/EEG_gui/EEG_gui.m
+%       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
 %       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
 %       /media/adamX/m3ha/data_dclamp/PlotHistogramsRefineThreshold.m
 %       /media/adamX/m3ha/data_dclamp/test_sweep.m
@@ -86,13 +93,6 @@ function varargout = find_ind_str_in_cell(str, cellArray, varargin)
 %       /media/adamX/RTCl/raster_plot.m
 %       /media/adamX/RTCl/tuning_curves.m
 %       /media/adamX/RTCl/single_neuron.m
-%       /home/Matlab/minEASE/minEASE.m
-%       /home/Matlab/minEASE/combine_eventInfo.m
-%       /home/Matlab/minEASE/extract_from_minEASE_output_filename.m
-%       /home/Matlab/minEASE/read_params.m
-%       /home/Matlab/minEASE/gui_examine_events.m
-%       /home/Matlab/EEG_gui/EEG_gui.m
-%       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
 
 % 2016-09--- Created
 % 2016-10-13 moved to Adams_Functions
@@ -109,7 +109,6 @@ function varargout = find_ind_str_in_cell(str, cellArray, varargin)
 % 2019-01-04 Simplified code with contains()
 % 2019-01-09 Added 'ReturnNan' as an optional argument
 % 2019-01-09 Now uses find_custom.m
-% TODO: Create find_ind_in_array.m and use find_ind_str_in_cell.m
 
 %% Hard-coded constants
 validSearchModes = {'exact', 'substrings', 'regexp'};
@@ -235,9 +234,11 @@ case 'regexp'   % String is considered a regular expression
         startIndices = regexp(cellArray, str);
     end
 
+    % Test whether each str is in the cell array
+    isInCell = ~isemptycell(startIndices);
+
     % Find all indices in the cell array for the matches
-    indices = find_custom(~isemptycell(startIndices), maxNum, ...
-                            'ReturnNan', returnNan);
+    indices = find_custom(isInCell, maxNum, 'ReturnNan', returnNan);
 end
 
 %% Return the elements too

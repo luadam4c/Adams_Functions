@@ -826,7 +826,7 @@ if generateDataFlag
     % Test the difference of features between dataType
     testResults = test_difference(featuresTable, featuresToCompare, 'dataType', ...
                                     'SheetName', testResultsFile, ...
-                                    'OutFolder', outFolder);
+                                    'Prefix', expStr, 'OutFolder', outFolder);
 end
 
 % If requested, average both recorded and simulated responses 

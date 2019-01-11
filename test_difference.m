@@ -23,6 +23,9 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 %       varargin    - 'SheetName' - spreadsheet file name for saving
 %                   must be a string scalar or a character vector
 %                   default == ''
+%                   - 'Prefix': prefix to prepend to file names
+%                   must be a character array
+%                   default == ''
 %                   - 'OutFolder': directory to place spreadsheet file
 %                   must be a string scalar or a character vector
 %                   default == pwd
@@ -40,6 +43,7 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 
 % File History:
 % 2019-01-09 Created by Adam Lu
+% 2019-01-10 Added 'Prefix' as an optional argument
 % 
 
 %% Hard-coded parameters
@@ -50,6 +54,7 @@ histFigNames = '';
 
 %% Default values for optional arguments
 sheetNameDefault = '';
+prefixDefault = '';             % prepend nothing to file names by default
 outFolderDefault = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -78,12 +83,15 @@ addRequired(iP, 'xVar', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'SheetName', sheetNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'Prefix', prefixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));    
 
 % Read from the Input Parser
 parse(iP, dataTable, varargin{:});
 sheetName = iP.Results.SheetName;
+prefix = iP.Results.Prefix;
 outFolder = iP.Results.OutFolder;
 
 % Keep unmatched arguments for the TODO() function
@@ -110,8 +118,8 @@ end
 if plotHistograms
     % Create figure names if not provided
     if saveHistFlag && isempty(histFigNames)
-        histFigNames = construct_fullpath(strcat('histogram_', yVars, '.png'), ...
-                                        'Directory', outFolder);
+        histFigNames = strcat(prefix, '_histogram_', yVars, '.png');
+        histFigNames = construct_fullpath(histFigNames, 'Directory', outFolder);
     end
 
     % Plot grouped histograms

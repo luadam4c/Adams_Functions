@@ -133,7 +133,7 @@ lowPassFrequencyGabab = 1000;       % lowpass filter frequency in Hz
 medFiltWindowGabab = [];            % median filter window in ms
 smoothWindowGabab = 100;            % moving average filter window in ms
 baselineLengthMsGabab = 50;         % baseline length in ms
-responseLengthMsGabab = 1000;       % response length in ms
+responseLengthMsGabab = 10000;       % response length in ms
 minPeakDelayMsGabab = 50;           % min peak delay after pulse end in ms
 
 % For Evoked LFP

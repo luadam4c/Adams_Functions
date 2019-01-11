@@ -1,16 +1,16 @@
-function varargout = find_index_in_array (element, array, varargin)
-%% Returns the index for element(s) in an array, treating strings and character arrays as the same
-% Usage: [index, matched] = find_index_in_array (element, array, varargin)
+function varargout = is_in_array (element, array, varargin)
+%% Returns whether element(s) are in an array, treating strings and character arrays as the same
+% Usage: [isInArray, index] = is_in_array (element, array, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       find_index_in_array({'dog'; 'cat'}, ["dog"; "fly"; "cat"])
-%       find_index_in_array(["dog", "fly", "cat"], {'dog'; 'cat'})
+%       is_in_array({'dog'; 'cat'}, ["dog"; "fly"; "cat"])
+%       is_in_array(["dog", "fly", "cat"], {'dog'; 'cat'})
 % Outputs:
+%       isInArray - whether there is a matching element in the array
+%                   specified as a logical array
 %       index       - the index with matching element in the array
 %                   specified as a positive integer array (may contain NaN)
-%       matched     - matching element in the array
-%                   specified as an array of the same type as elements of array
 % Arguments:
 %       element     - element(s) of an array
 %       array       - an array
@@ -33,11 +33,10 @@ function varargout = find_index_in_array (element, array, varargin)
 %       cd/find_ind_str_in_cell.m
 %
 % Used by:
-%       cd/convert_to_rank.m
+%       cd/is_on_path.m
 
 % File History:
-% 2019-01-09 Created by Adam Lu
-% 2019-01-10 Now returns matched
+% 2019-01-10 Modified from find_index_in_array.m
 % 
 
 %% Hard-coded parameters
@@ -103,24 +102,28 @@ if ischar(element) || iscellstr(element) || isstring(element)
                                 'SearchMode', searchMode, ...
                                 'IgnoreCase', ignoreCase), element);
     end
+
+    % Return whether each element is found in the array
+    isInArray = ~isnan(index);
 else
-    % Find the index in array for each element in element
-    %   Note: If not found, zero will be returned
-    [~, index] = ismember(element, array);
+    % Test whether each element is in the array
+    if nargout > 1
+        % Find the index too
+        %   Note: If not found, zero will be returned
+        [isInArray, index] = ismember(element, array);
 
-    % Make all zeros NaNs instead
-    index(index == 0) = NaN;
-end
-
-% Get all matched elements if requested
-if nargout > 1
-    matched = array(index);
+        % Make all zeros NaNs instead
+        index(index == 0) = NaN;
+    else
+        % Just test whether in the array
+        isInArray = ismember(element, array);
+    end
 end
 
 %% Deal with outputs
-varargout{1} = index;
+varargout{1} = isInArray;
 if nargout > 1
-    varargout{2} = matched;
+    varargout{2} = index;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
