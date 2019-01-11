@@ -1,6 +1,6 @@
-function varargout = find_in_strings(cand, strList, varargin)
+function varargout = find_in_strings (cand, strList, varargin)
 %% Returns all indices of a particular string (could be represented by substrings) in a list of strings
-% Usage: [indices, matched] = find_in_strings(cand, strList, varargin)
+% Usage: [indices, matched] = find_in_strings (cand, strList, varargin)
 % Explanation:
 %   There are three main search modes (parameter 'SearchMode'):
 %       'substrings': allows the candidate to be a substring or substrings 
@@ -63,9 +63,8 @@ function varargout = find_in_strings(cand, strList, varargin)
 %                   default == false
 %
 % Requires:
-%       cd/compute_combined_trace.m
 %       cd/create_error_for_nargin.m
-%       cd/find_custom.m
+%       cd/is_matching_string.m
 %
 % Used by:
 %       cd/find_index_in_array.m
@@ -119,6 +118,7 @@ function varargout = find_in_strings(cand, strList, varargin)
 % 2019-01-10 Renamed find_ind_str_in_cell -> find_in_strings
 % 2019-01-10 Updated Explanation section
 % 2019-01-10 Now fully supports strings in double quotes
+% 2019-01-10 Moved code to is_matching_string.m
 
 %% Hard-coded constants
 validSearchModes = {'exact', 'substrings', 'regexp'};
@@ -171,92 +171,26 @@ maxNum = iP.Results.MaxNum;
 returnNan = iP.Results.ReturnNan;
 
 % Check relationships between arguments
-if iscell(cand) && ...
-    (strcmpi(searchMode, 'exact') || strcmpi(searchMode, 'regexp'))
-    error(['First input cannot be a cell array if ', ...
-            'SearchMode'' is ''exact'' or ''rexexp''!']);
+if ~ischar(cand) && numel(cand) > 1 && ...
+    (strcmp(searchMode, 'exact') || strcmp(searchMode, 'regexp'))
+    error(['First input cannot have more than one members if ', ...
+            '''SearchMode'' is ''exact'' or ''regexp''!']);
 end
 
-%% Prepare for the search
-% Make sure strList is not a character array
-if ischar(strList)
-    strList = {strList};
-end
-
-% Set the maximum number of indices if not provided
-if isempty(maxNum)
-    % Count the number of indices in strList
-    nIndices = numel(strList);
-
-    % Set maximum number to the total number of indices
-    maxNum = nIndices;
-end
-
-%% Find the indices
-switch searchMode
-case 'substrings'   % cand can be a substring or a list of substrings
-    % Find indices that contain cand in strList
-    if ischar(cand) || isstring(cand) && numel(cand) == 1
-        % Test whether each element of strList contain the substring
-        isMatch = contains(strList, cand, 'IgnoreCase', ignoreCase);    
-    else                % if cand is a list of substrings
-        % Test whether each element contains each substring
-        if iscell(cand)
-            hasEachCand = cellfun(@(x) contains(strList, x, ...
-                                        'IgnoreCase', ignoreCase), ...
-                                cand, 'UniformOutput', false);
-        elseif isstring(cand)
-            hasEachCand = arrayfun(@(x) contains(strList, x, ...
-                                        'IgnoreCase', ignoreCase), ...
-                                cand, 'UniformOutput', false);
-        else
-            error('cand is unrecognized!');
-        end
-
-        % Test whether each element contains all substrings
-        isMatch = compute_combined_trace(hasEachCand, 'all');
-    end
-case 'exact'        % cand must be an exact match
-    % Test whether each string in strList matches the candidate exactly
-    if ignoreCase
-        isMatch = strcmpi(strList, cand);
-    else
-        isMatch = strcmp(strList, cand);
-    end
-case 'regexp'       % cand is considered a regular expression
-    % Returns the starting index that matches the regular expression
-    %   for each string in strList
-    if ignoreCase
-        startIndices = regexpi(strList, cand);
-    else
-        startIndices = regexp(strList, cand);
-    end
-
-    % Test whether each string in strList matches the regular expression
-    isMatch = ~isemptycell(startIndices);
-end
-
-%% Find all indices of strings in strList that is a match
-indices = find_custom(isMatch, maxNum, 'ReturnNan', returnNan);
-
-%% Return the matched elements too
-if nargout > 1
-    if ~isempty(indices) && any(isnan(indices))
-        matched = NaN;
-    elseif ~isempty(indices) 
-        if numel(indices) > 1
-            matched = strList(indices);
-        else
-            matched = strList{indices};
-        end
-    else
-        matched = '';
-    end
+%% Use is_matching_string.m
+if nargout >= 2
+    [~, indices, matched] = is_matching_string (strList, cand, ...
+                        'SearchMode', searchMode, 'IgnoreCase', ignoreCase, ...
+                        'MaxNum', maxNum, 'ReturnNan', returnNan);
+else
+    [~, indices] = is_matching_string (strList, cand, ...
+                        'SearchMode', searchMode, 'IgnoreCase', ignoreCase, ...
+                        'MaxNum', maxNum, 'ReturnNan', returnNan);
 end
 
 %% Outputs
 varargout{1} = indices;
-if nargout > 1
+if nargout >= 2
     varargout{2} = matched;
 end
 
@@ -264,113 +198,6 @@ end
 
 %{
 OLD CODE:
-
-validSearchModes = {'exact', 'substrings'};
-
-if strcmpi(searchMode, 'exact')             % String must be exact
-elseif strcmpi(searchMode, 'substrings')    % String can be a substring 
-                                            % or a cell array of substrings
-end
-
-indicesEachStr = contains(strListMod, strMod);
-
-% Find the indices that contain the substring
-indicesarray = strfind(strListMod, strMod);
-indices = find(~cellfun(@isempty, indicesarray), maxNum);
-
-% Convert substring to lower case if IgnoreCase is set to true
-if ignoreCase
-    strMod = lower(cand);
-else
-    strMod = cand;
-end
-
-indicesarray = strfind(strListMod, strMod(k));    
-indicesEachStr{k} = find(~cellfun(@isempty, indicesarray));
-
-% Convert each substring to lower case if IgnoreCase is set to true
-if ignoreCase
-    strMod = cellfun(@lower, cand, 'UniformOutput', false);
-else
-    strMod = cand;
-end
-
-nStrs = numel(cand);
-indicesEachStr = cell(1, nStrs);
-for k = 1:nStrs
-    % Test whether each element of strList contain the substring
-    isMatch = contains(strListMod, cand(k), 'IgnoreCase', ignoreCase);
-
-    % 
-    indicesEachStr{k} = find(isMatch);
-end
-
-% Find the indices that contain all substrings by intersection
-indices = intersect_over_cells(indicesEachStr);
-%       cd/intersect_over_cells.m
-
-% If more than maxNum indices found, 
-%   restrict to the first maxNum indices
-if length(indices) > maxNum
-    indices = indices(1:maxNum);
-end
-
-indices = find(~cellfun(@isempty, startIndices), maxNum);
-
-@(x) assert(ischar(x) || iscell(x) && (min(cellfun(@ischar, x)) || ...
-            min(cellfun(@isstring, x))) || isstring(x), ...
-            ['First input must be either a string/character array ', ...
-            'or a cell array of strings/character arrays!']));
-@(x) assert(iscell(x) && (min(cellfun(@ischar, x)) || ...
-            min(cellfun(@isstring, x))), ...
-            ['Second input must be a cell array ', ...
-            'of strings/character arrays!']));
-
-% Construct a cell array with the same size as strList 
-%   but with cand duplicated throughout
-str_cell = cell(size(strList));    % a cell array to store copies of cand
-for k = 1:numel(strList)
-    % Make the kth element the same as cand
-    str_cell{k} = cand;
-end
-
-% Find indices that corresponds to cand exactly in strList, 
-%   case-insensitive if IgnoreCase is set to true
-if ignoreCase
-    indices = find_custom(cellfun(@strcmpi, strList, str_cell), ...
-                            maxNum, 'ReturnNan', returnNan);
-else
-    indices = find_custom(cellfun(@strcmp, strList, str_cell), ...
-                            maxNum, 'ReturnNan', returnNan);
-end
-
-strListMod = cellfun(@lower, strList, 'UniformOutput', false);
-
-% Convert each string to lower case if IgnoreCase is set to true
-if ignoreCase
-    strListMod = lower(strList);
-else
-    strListMod = strList;
-end
-
-if iscell(cand)        % if cand is a list of substrings
-    % Test whether each element contains each substring
-    if iscell(cand)
-        hasEachCand = cellfun(@(x) contains(strList, x, ...
-                                    'IgnoreCase', ignoreCase), ...
-                            cand, 'UniformOutput', false);
-    else
-        hasEachCand = arrayfun(@(x) contains(strList, x, ...
-                                    'IgnoreCase', ignoreCase), ...
-                            cand, 'UniformOutput', false);
-    end
-
-    % Test whether each element contains all substrings
-    isMatch = compute_combined_trace(hasEachCand, 'all');
-else                    % if cand is a single substring
-    % Test whether each element of strList contain the substring
-    isMatch = contains(strList, cand, 'IgnoreCase', ignoreCase);    
-end
 
 %}
 

@@ -114,13 +114,13 @@ else
 end
 
 % Get all matched elements if requested
-if nargout > 1
+if nargout >= 2
     matched = array(index);
 end
 
 %% Deal with outputs
 varargout{1} = index;
-if nargout > 1
+if nargout >= 2
     varargout{2} = matched;
 end
 

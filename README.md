@@ -178,6 +178,7 @@ Last Updated 2019-01-10 by Adam Lu
 - [**is_in_strings_temp.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_in_strings_temp.m): Returns whether a particular string (could be represented by substrings) is in a list of strings
 - [**islegendlocation.m**](https://github.com/blabuva/Adams_Functions/blob/master/islegendlocation.m): Check whether a string or each string in a cell array is a valid legend location or 'suppress' or 'auto'
 - [**islinestyle.m**](https://github.com/blabuva/Adams_Functions/blob/master/islinestyle.m): Check whether a string or each string in a cell array is a valid line style accepted by plot() or line()
+- [**is_matching_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_matching_string.m): Returns whether each element in a list of strings matches a candidate
 - [**isnumericvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/isnumericvector.m): Returns whether an input is a numeric vector (may be empty)
 - [**isnum.m**](https://github.com/blabuva/Adams_Functions/blob/master/isnum.m): Returns whether the input is numeric in the general sense (numeric, logical, datetime or duration)
 - [**is_on_path.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_on_path.m): Returns whether folder(s) are on the MATLAB path
