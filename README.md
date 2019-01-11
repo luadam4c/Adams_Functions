@@ -78,7 +78,7 @@ Last Updated 2019-01-11 by Adam Lu
 - [**construct_fullpath.m**](https://github.com/blabuva/Adams_Functions/blob/master/construct_fullpath.m): Constructs full path(s) based on file/directory name(s) and optional directory, suffices or extension
 - [**construct_suffix.m**](https://github.com/blabuva/Adams_Functions/blob/master/construct_suffix.m): Constructs final suffix based on optional suffices and/or Name-Value pairs
 - [**convert_sheettype.m**](https://github.com/blabuva/Adams_Functions/blob/master/convert_sheettype.m): Converts all spreadsheets to desired sheettype (all .xlsx and .xls files to .csv files by default)
-- [**convert_to_char.m**](https://github.com/blabuva/Adams_Functions/blob/master/convert_to_char.m): Converts other data types to character arrays
+- [**convert_to_char.m**](https://github.com/blabuva/Adams_Functions/blob/master/convert_to_char.m): Converts other data types to character arrays or a cell array of character arrays
 - [**convert_to_rank.m**](https://github.com/blabuva/Adams_Functions/blob/master/convert_to_rank.m): Creates a positive integer array from an array showing the ranks of each element
 - [**convert_to_samples.m**](https://github.com/blabuva/Adams_Functions/blob/master/convert_to_samples.m): Converts time(s) from a time unit to samples based on a sampling interval in the same time unit
 - [**copyvars.m**](https://github.com/blabuva/Adams_Functions/blob/master/copyvars.m): Copies variable 1 of a table to variable 2 of the same table

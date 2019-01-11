@@ -18,8 +18,8 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 %                   must be a table
 %       yVars       - name of measured variables
 %                   must be a string array or a cell array of character arrays
-%       xVar        - name of categorical variable to test difference on
-%                   must be a string or a character array
+%       xVar        - name of categorical variable(s) to test difference on
+%                   must be a string array or a cell array of character arrays
 %       varargin    - 'SheetName' - spreadsheet file name for saving
 %                   must be a string scalar or a character vector
 %                   default == ''
@@ -51,7 +51,9 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 plotHistograms = true;
 saveHistFlag = true;
 histFigNames = '';
-alphaNormality = 0.05;          % significance level for normality test
+alphaNormality = 0.05;  % significance level for normality test
+alphaTest = 0.05;       % significance level for hypothesis test
+toDisplay = false;      % whether to display ANOVA table
 
 %% Default values for optional arguments
 sheetNameDefault = '';
@@ -79,7 +81,9 @@ addRequired(iP, 'yVars', ...
         ['yVars must be a character array or a string array ', ...
             'or cell array of character arrays!']));
 addRequired(iP, 'xVar', ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['yVars must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'SheetName', sheetNameDefault, ...
@@ -100,8 +104,11 @@ outFolder = iP.Results.OutFolder;
 % otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
-% Extract the x vector
+% Extract the x vector(s)
 xData = dataTable{:, xVar};
+
+% Count the number of x vectors
+nParams = size(xData, 2);
 
 % Force as a column cell array of character vectors
 yVars = force_column_cell(yVars);
@@ -114,9 +121,8 @@ if ~isempty(sheetName)
     sheetName = construct_fullpath(sheetName, 'Directory', outFolder);
 end
 
-%% Do the job
-% Generate overlapped histograms
-if plotHistograms
+%% Generate overlapped histograms
+if plotHistograms && nParams == 1
     % Create figure names if not provided
     if saveHistFlag && isempty(histFigNames)
         histFigNames = strcat(prefix, '_histogram_', yVars, '.png');
@@ -129,27 +135,52 @@ if plotHistograms
                         yData, yVars, histFigNames, 'UniformOutput', false);
 end
 
-% Perform the appropriate comparison test
-[isDifferent, pValue] = ...
-    cellfun(@(x, y) test_difference_helper(x, y, alphaNormality), xData, yData);
+%% Perform the appropriate comparison test
+if nParams == 1
+    % Perform t test, rank sum test or ANOVA
+    statsStructs = cellfun(@(x, y) test_for_one_variable(xData, y, ...
+                        alphaNormality, alphaTest, toDisplay), yData);
 
-%% Output results
-% Place results in a table
-testResults = table(isDifferent, pValue);
-if plotHistograms
-    testResults = addvars(testResults, histFigNames, h);
+    % Convert to a table
+    testResults = struct2table(statsStructs);
+
+    % Add histograms if plotted
+    if plotHistograms
+        testResults = addvars(testResults, histFigNames, h);
+    end
+else
+    % Create linear models
+    models = cellfun(@(y) fitlm(xData, y), yData);
+
+    % Compute ANOVA statistics tables
+    results = arrayfun(@(x) anova(x), models, 'UniformOutput', false);
+
+    % Extract statistics from each table
+    sumOfSquares = cellfun(@(x) x.SumSq, results, 'UniformOutput', false);
+    degreeFreedom = cellfun(@(x) x.DF, results, 'UniformOutput', false);
+    meanSquares = cellfun(@(x) x.MeanSq, results, 'UniformOutput', false);
+    pValue = cellfun(@(x) x.pValue, results, 'UniformOutput', false);
+    fStatistic = cellfun(@(x) x.F, results, 'UniformOutput', false);
+
+    % Decide whether groups are different
+    isDifferent = cellfun(@(x) pValue(x) < alphaTest, 'UniformOutput', false);
+
+    % Place results in a table
+    % TODO: Better way of organizing
+    testResults = table(isDifferent, pValue, sumOfSquares, degreeFreedom, ...
+                        meanSquares, fStatistic);
 end
 
-% Save the table if requested
+%% Save the table if requested
 if ~isempty(sheetName)
     writetable(testResults, sheetName);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [isDifferent, pValue] = ...
-                test_difference_helper(xData, yData, alphaNormality)
-%% Tests
+function statsStruct = test_for_one_variable(xData, yData, alphaNormality, ...
+                                        alphaTest, toDisplay)
+%% Performs the appropriate test based on the normality
 
 % Get the unique x values
 uniqueX = unique(xData);
@@ -168,24 +199,76 @@ else
 end
 
 % Apply the Lilliefors test for normality to each group
-[isNotNormalLill, pNormalityLill] = ...
+[~, pNormalityLill] = ...
     cellfun(@(x) lillietest(x, 'Alpha', alphaNormality), data);
 
 % Apply the Anderson-Darling test for normality to each group
-[isNotNormalAd, pNormalityAd] = ...
-    cellfun(@(x) adtest(x, 'Alpha', alphaNormality), data);
+[~, pNormalityAd] = cellfun(@(x) adtest(x, 'Alpha', alphaNormality), data);
 
 % Apply the Jarque-Bera test for normality to each group
-[isNotNormalJb, pNormalityJb] = ...
-    cellfun(@(x) jbtest(x, alphaNormality), data);
+[~, pNormalityJb] = cellfun(@(x) jbtest(x, alphaNormality), data);
 
 % Apply the One-sample Kolmogorov-Smirnov test for normality to each group
-[isNotNormalKs, pNormalityKs] = ...
-    cellfun(@(x) kstest(x, 'Alpha', alphaNormality), data);
+[~, pNormalityKs] = cellfun(@(x) kstest(x, 'Alpha', alphaNormality), data);
 
-% Normality is satified if 
-% TODO: Use p-value?
-isNormal = isNotNormalLill | isNotNormalAd | isNotNormalJb | isNotNormalKs
+% Place all p values for normality together in a matrix
+%   Note: each row is a group; each column is a different test
+pNormalityMat = [pNormalityLill, pNormalityAd, pNormalityJb, pNormalityKs];
+
+% Take the geometric mean of the p values from different tests
+pNormality = compute_weighted_average(pNormalityMat, 'DimToOperate', 2, ...
+                                        'AverageMethod', 'geometric');
+
+% Normality is satified if all p values are greater than the significance level
+isNormal = all(pNormality >= alphaNormality);
+
+% Perform the correct test
+if nGroups == 1
+    % Perform a 1-sample t-test (tests difference of mean with 0)
+    [isDifferent, pValue] = ttest1(data{:}, 'Alpha', alphaTest);
+elseif nGroups == 2 && isNormal
+    % Perform a 2-sample t-test (tests difference between means)
+    [isDifferent, pValue] = ttest2(data{:}, 'Alpha', alphaTest);
+elseif nGroups == 2 && ~isNormal
+    % Perform a Wilcoxon rank-sum test (tests difference between medians)
+    [pValue, isDifferent] = ranksum(data{:}, 'Alpha', alphaTest);
+else
+    % Decide whether to display the ANOVA table
+    if toDisplay
+        displayOpt = 'on';
+    else
+        displayOpt = 'off';
+    end
+
+    % Perform a one-way ANOVA (tests difference among means)
+    [pValue, ~, stats] = anova1(yData, xData, displayOpt);
+
+    % Decide whether the group means are different
+    isDifferent = pValue < alphaTest;
+end
+
+% Store in statsStruct
+statsStruct.pValue = pValue;
+statsStruct.isDifferent = isDifferent;
+
+% Decide whether there is a difference between each pair of groups
+if nGroups > 2
+    % Apply multcompare()
+    %   Note: Each row is a pair. Columns:
+    %           1 - index of first group
+    %           2 - index of second group
+    %           3 - lower confidence interval of difference
+    %           4 - mean difference
+    %           5 - upper confidence interval of difference
+    %           6 - p value
+    otherStats = multcompare(stats);
+
+    % Create a vector of first groups
+    firstGroupNames = uniqueX(otherStats(:, 1));
+    secondGroupNames = uniqueX(otherStats(:, 2));
+
+    pValue uniqueX
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
