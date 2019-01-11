@@ -1,6 +1,6 @@
-function varargout = is_matching_string (strList, cand, varargin)
+function isMatch = is_matching_string (strList, cand, varargin)
 %% Returns whether each element in a list of strings matches a candidate
-% Usage: [isMatch, indices, matched] = is_matching_string(strList, cand, varargin)
+% Usage: isMatch = is_matching_string(strList, cand, varargin)
 % Explanation:
 %   There are three main search modes (parameter 'SearchMode'):
 %       'substrings': allows the candidate to be a substring or substrings 
@@ -8,8 +8,7 @@ function varargout = is_matching_string (strList, cand, varargin)
 %       'exact': candidate must be an exact match
 %       'regexp': candidate is a regular expression
 %   The latter two cases are similar to strcmp()/strcmpi() or regexp()/regexpi()
-%   However, this function optionally returns the indices as the second output
-%       and the matched elements as the third output.
+%   To return indices and matches, use ismatch.m or find_in_strings.m
 %
 % Example(s):
 %       strs1 = {'Mark''s fish', 'Peter''s fish', 'Katie''s sealion'};
@@ -29,11 +28,7 @@ function varargout = is_matching_string (strList, cand, varargin)
 %       isMatch     - whether each member of strList contains 
 %                       all parts of the candidate
 %                   specified as a logical array
-%       indices     - indices of strList matching the candidate
-%                       could be empty (or NaN if 'ReturnNan' is true)
-%       elements    - elements of strList corresponding to those indices
-%                   specified as a cell array if more than one indices 
-%                       or the element if only one index; or an empty string
+%
 % Arguments:
 %       strList     - a list of strings
 %                   must be a string/character array or 
@@ -43,24 +38,16 @@ function varargout = is_matching_string (strList, cand, varargin)
 %                           exist in the string to be matched
 %                   must be a string/character array or 
 %                       a cell array of strings/character arrays
-%       varargin    - 'SearchMode': the search mode
+%       varargin    - 'MatchMode': the search mode
 %                   must be an unambiguous, case-insensitive match to one of:
-%                       'exact'         - cand must be identical to 
-%                                           an element in strList
-%                       'substrings'    - cand can be a substring or 
-%                                           a list of substrings
-%                       'regexp'        - cand is considered a regular expression
+%                       'exact'  - cand must be identical to the members
+%                       'parts'  - cand can be parts of the members
+%                       'regexp' - cand is a regular expression
 %                   if search mode is 'exact' or 'regexp', 
 %                       cand cannot have more than one elements
-%                   default == 'substrings'
+%                   default == 'parts'
 %                   - 'IgnoreCase': whether to ignore differences in letter case
 %                   must be logical 1 (true) or 0 (false)
-%                   default == false
-%                   - 'MaxNum': maximum number of indices to find
-%                   must be empty or a positive integer scalar
-%                   default == numel(strList)
-%                   - 'ReturnNan': Return NaN instead of empty if nothing found
-%                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %
 % Requires:
@@ -69,21 +56,19 @@ function varargout = is_matching_string (strList, cand, varargin)
 %       cd/find_custom.m
 %
 % Used by:
-%       cd/find_in_strings.m
+%       cd/ismatch.m
 %       cd/ismember_custom.m
 
 % File History:
 % 2019-01-10 Moved from find_in_strings.m
+% 2019-01-11 Removed 2nd and 3rd outputs
 
 %% Hard-coded constants
-validSearchModes = {'exact', 'substrings', 'regexp'};
+validMatchModes = {'exact', 'parts', 'regexp'};
 
 %% Default values for optional arguments
-searchModeDefault = 'substrings';       % default search mode
-ignoreCaseDefault = false;              % whether to ignore case by default
-maxNumDefault = [];                     % will be changed to numel(strList)
-returnNanDefault = false;   % whether to return NaN instead of empty 
-                            %   if nothing found by default
+matchModeDefault = 'parts';     % match string parts by default
+ignoreCaseDefault = false;      % case-sensitive by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -108,48 +93,27 @@ addRequired(iP, 'cand', ...             % a string/substrings of interest
             'or cell array of character arrays!']));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'SearchMode', searchModeDefault, ...   % the search mode
-    @(x) any(validatestring(x, validSearchModes)));
-addParameter(iP, 'IgnoreCase', ignoreCaseDefault, ...   % whether to ignore case
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'MaxNum', maxNumDefault, ...       % maximum number of indices
-    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
-                'MaxNum must be either empty or a positive integer scalar!'));
-addParameter(iP, 'ReturnNan', returnNanDefault, ...
+addParameter(iP, 'MatchMode', matchModeDefault, ...
+    @(x) any(validatestring(x, validMatchModes)));
+addParameter(iP, 'IgnoreCase', ignoreCaseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, strList, cand, varargin{:});
-searchMode = validatestring(iP.Results.SearchMode, validSearchModes);
+matchMode = validatestring(iP.Results.MatchMode, validMatchModes);
 ignoreCase = iP.Results.IgnoreCase;
-maxNum = iP.Results.MaxNum;
-returnNan = iP.Results.ReturnNan;
 
+%% Preparation
 % Check relationships between arguments
 if ~ischar(cand) && numel(cand) > 1 && ...
-    (strcmp(searchMode, 'exact') || strcmp(searchMode, 'regexp'))
+    (strcmp(matchMode, 'exact') || strcmp(matchMode, 'regexp'))
     error(['Second input cannot have more than one members if ', ...
-            '''SearchMode'' is ''exact'' or ''regexp''!']);
-end
-
-%% Prepare for the search
-% Make sure strList is not a character array
-if ischar(strList)
-    strList = {strList};
-end
-
-% Set the maximum number of indices if not provided
-if nargout >= 2 && isempty(maxNum)
-    % Count the number of indices in strList
-    nIndices = numel(strList);
-
-    % Set maximum number to be the total number of indices
-    maxNum = nIndices;
+            '''MatchMode'' is ''exact'' or ''regexp''!']);
 end
 
 %% Find the indices
-switch searchMode
-case 'substrings'   % cand can be a substring or a list of substrings
+switch matchMode
+case 'parts'        % cand can be a substring or a list of substrings
     % Find indices that contain cand in strList
     if ischar(cand) || isstring(cand) && numel(cand) == 1
         % Test whether each element of strList contain the substring
@@ -191,44 +155,15 @@ case 'regexp'       % cand is considered a regular expression
     isMatch = ~isemptycell(startIndices);
 end
 
-%% Find all indices of strings in strList that is a match
-if nargout >= 2
-    indices = find_custom(isMatch, maxNum, 'ReturnNan', returnNan);
-end
-
-%% Return the matched elements too
-if nargout >= 3
-    if ~isempty(indices) && any(isnan(indices))
-        matched = NaN;
-    elseif ~isempty(indices) 
-        if numel(indices) > 1
-            matched = strList(indices);
-        else
-            matched = strList{indices};
-        end
-    else
-        matched = '';
-    end
-end
-
-%% Outputs
-varargout{1} = isMatch;
-if nargout >= 2
-    varargout{2} = indices;
-end
-if nargout >= 3
-    varargout{3} = matched;
-end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
 
-validSearchModes = {'exact', 'substrings'};
+validMatchModes = {'exact', 'substrings'};
 
-if strcmpi(searchMode, 'exact')             % String must be exact
-elseif strcmpi(searchMode, 'substrings')    % String can be a substring 
+if strcmpi(matchMode, 'exact')             % String must be exact
+elseif strcmpi(matchMode, 'substrings')    % String can be a substring 
                                             % or a cell array of substrings
 end
 
@@ -333,9 +268,14 @@ else                    % if cand is a single substring
 end
 
 if iscell(cand) && ...
-    (strcmpi(searchMode, 'exact') || strcmpi(searchMode, 'regexp'))
+    (strcmpi(matchMode, 'exact') || strcmpi(matchMode, 'regexp'))
     error(['Second input cannot be a cell array if ', ...
-            'SearchMode'' is ''exact'' or ''rexexp''!']);
+            'MatchMode'' is ''exact'' or ''rexexp''!']);
+end
+
+% Make sure strList is not a character array
+if ischar(strList)
+    strList = {strList};
 end
 
 %}

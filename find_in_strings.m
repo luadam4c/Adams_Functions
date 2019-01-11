@@ -64,7 +64,7 @@ function varargout = find_in_strings (cand, strList, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/is_matching_string.m
+%       cd/ismatch.m
 %
 % Used by:
 %       cd/ispositiveintegerscalar.m
@@ -170,6 +170,7 @@ ignoreCase = iP.Results.IgnoreCase;
 maxNum = iP.Results.MaxNum;
 returnNan = iP.Results.ReturnNan;
 
+%% Preparation
 % Check relationships between arguments
 if ~ischar(cand) && numel(cand) > 1 && ...
     (strcmp(searchMode, 'exact') || strcmp(searchMode, 'regexp'))
@@ -177,14 +178,21 @@ if ~ischar(cand) && numel(cand) > 1 && ...
             '''SearchMode'' is ''exact'' or ''regexp''!']);
 end
 
-%% Use is_matching_string.m
+% Translate search mode to match mode
+if strcmp(searchMode, 'substrings')
+    matchMode = 'parts';
+else
+    matchMode = searchMode;
+end
+
+%% Use ismatch.m
 if nargout >= 2
-    [~, indices, matched] = is_matching_string (strList, cand, ...
-                        'SearchMode', searchMode, 'IgnoreCase', ignoreCase, ...
+    [~, indices, matched] = ismatch(strList, cand, ...
+                        'MatchMode', matchMode, 'IgnoreCase', ignoreCase, ...
                         'MaxNum', maxNum, 'ReturnNan', returnNan);
 else
-    [~, indices] = is_matching_string (strList, cand, ...
-                        'SearchMode', searchMode, 'IgnoreCase', ignoreCase, ...
+    [~, indices] = ismatch(strList, cand, ...
+                        'MatchMode', matchMode, 'IgnoreCase', ignoreCase, ...
                         'MaxNum', maxNum, 'ReturnNan', returnNan);
 end
 

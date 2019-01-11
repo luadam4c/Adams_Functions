@@ -178,6 +178,7 @@ Last Updated 2019-01-11 by Adam Lu
 - [**islegendlocation.m**](https://github.com/blabuva/Adams_Functions/blob/master/islegendlocation.m): Check whether a string or each string in a cell array is a valid legend location or 'suppress' or 'auto'
 - [**islinestyle.m**](https://github.com/blabuva/Adams_Functions/blob/master/islinestyle.m): Check whether a string or each string in a cell array is a valid line style accepted by plot() or line()
 - [**is_matching_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_matching_string.m): Returns whether each element in a list of strings matches a candidate
+- [**ismatch.m**](https://github.com/blabuva/Adams_Functions/blob/master/ismatch.m): Returns whether each element in a list matches a candidate
 - [**ismember_custom.m**](https://github.com/blabuva/Adams_Functions/blob/master/ismember_custom.m): Returns whether a particular candidate is a member of a list
 - [**isnumericvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/isnumericvector.m): Returns whether an input is a numeric vector (may be empty)
 - [**isnum.m**](https://github.com/blabuva/Adams_Functions/blob/master/isnum.m): Returns whether the input is numeric in the general sense (numeric, logical, datetime or duration)
@@ -188,6 +189,7 @@ Last Updated 2019-01-11 by Adam Lu
 - [**ispositivescalar.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositivescalar.m): Returns whether an input is a positive scalar
 - [**ispositivevector.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositivevector.m): Returns whether an input is a positive vector
 - [**issheettype.m**](https://github.com/blabuva/Adams_Functions/blob/master/issheettype.m): Check whether a string or each string in a cell array is a valid spreadsheet type accepted by readtable()
+- [**istext.m**](https://github.com/blabuva/Adams_Functions/blob/master/istext.m): Returns whether the input is a character array, a string array or a cell array of character arrays
 - [**istype.m**](https://github.com/blabuva/Adams_Functions/blob/master/istype.m): Check whether a string or each string in a cell array is a valid type specified by validTypes
 - [**load_examples.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_examples.m): Loads example data structures for testing
 - [**load_neuron_outputs.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_neuron_outputs.m): Loads .out files created by NEURON into a cell array
