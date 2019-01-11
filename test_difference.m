@@ -12,12 +12,14 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 %       testResults1 = test_difference(tble1, 'data1', 'grps1')
 %       testResults2 = test_difference(tble1, {'data1', 'data2'}, 'grps2')
 %       testResults3 = test_difference(tble1, {'data1', 'data2'}, {'grps1', 'grps2'})
-%       data3 = [randn(60, 1); randn(60, 1) + 1; randn(60, 1) - 1];
-%       data4 = [rand(60, 1); rand(60, 1) + 1; rand(60, 1) - 1];
+%       data3 = [rand(60, 1); rand(60, 1) + 1; rand(60, 1) - 1];
+%       data4 = [randn(60, 1); randn(60, 1) + 1; randn(60, 1) - 1];
 %       grps3 = [2 * ones(60, 1); 1 * ones(60, 1); 3 * ones(60, 1)];
 %       grps4 = [7 * ones(60, 1); 8 * ones(60, 1); 6 * ones(60, 1)];
 %       tble3 = table(data3, data4, grps3, grps4);
-%       testResults4 = test_difference(tble3, {'data3', 'data4'}, {'grps3', 'grps4'})
+%       testResults4 = test_difference(tble3, {'data3', 'data4'}, 'grps3')
+%       testResults5 = test_difference(tble3, {'data3', 'data4'}, 'grps4')
+%       testResults6 = test_difference(tble3, {'data3', 'data4'}, {'grps3', 'grps4'})
 % Outputs:
 %       testResults - a table with each row corresponding to a measured variable
 %                           and columns:
@@ -71,7 +73,7 @@ saveHistFlag = false;
 histFigNames = '';
 alphaNormality = 0.05;  % significance level for normality test
 alphaTest = 0.05;       % significance level for hypothesis test
-toDisplay = false;      % whether to display ANOVA table
+toDisplay = true;      % whether to display ANOVA table
 
 %% Default values for optional arguments
 sheetNameDefault = '';
@@ -191,12 +193,15 @@ else
                         meanSquares, fStatistic);
 end
 
+% Combine all x variable strings into one string
+xVarStr = convert_to_char(xVar, 'SingleOutput', true, 'Delimiter', '_and_');
+
 % Create row names
-testResults.Properties.RowNames = strcat(yVars, '_vs_', char(strjoin(xVar, '_and_')));
+testResults.Properties.RowNames = strcat(yVars, '_vs_', xVarStr);
 
 %% Save the table if requested
 if ~isempty(sheetName)
-    writetable(testResults, sheetName);
+    writetable(testResults, sheetName, 'WriteRowNames', true);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -231,19 +236,16 @@ end
 % Apply the Jarque-Bera test for normality to each group
 [~, pNormalityJb] = cellfun(@(x) jbtest(x, alphaNormality), data);
 
-% Apply the One-sample Kolmogorov-Smirnov test for normality to each group
-[~, pNormalityKs] = cellfun(@(x) kstest(x, 'Alpha', alphaNormality), data);
-
 % Place all p values for normality together in a matrix
 %   Note: each row is a group; each column is a different test
-pNormalityMat = [pNormalityLill, pNormalityAd, pNormalityJb, pNormalityKs];
+pNormalityMat = [pNormalityLill, pNormalityAd, pNormalityJb];
 
 % Take the geometric mean of the p values from different tests
-pNormality = compute_weighted_average(pNormalityMat, 'DimToOperate', 2, ...
+pNormalityAvg = compute_weighted_average(pNormalityMat, 'DimToOperate', 2, ...
                                         'AverageMethod', 'geometric');
 
 % Normality is satified if all p values are greater than the significance level
-isNormal = all(pNormality >= alphaNormality);
+isNormal = all(pNormalityAvg >= alphaNormality);
 
 % Perform the correct test
 if nGroups == 1
@@ -265,7 +267,7 @@ elseif nGroups == 2 && ~isNormal
     % Store test function
     testFunction = 'ranksum';
 else
-    % Decide whether to display the ANOVA table
+    % Decide whether to display the ANOVA table and pairwise comparison graphs
     if toDisplay
         displayOpt = 'on';
     else
@@ -285,12 +287,6 @@ end
 % Store in statsStruct
 statsStruct.isDifferent = isDifferent;
 statsStruct.pValue = pValue;
-statsStruct.testFunction = testFunction;
-statsStruct.isNormal = isNormal;
-statsStruct.pNormalityLill = pNormalityLill;
-statsStruct.pNormalityAd = pNormalityAd;
-statsStruct.pNormalityJb = pNormalityJb;
-statsStruct.pNormalityKs = pNormalityKs;
 
 % Decide whether there is a difference between each pair of groups
 if nGroups > 2
@@ -302,11 +298,15 @@ if nGroups > 2
     %           4 - mean difference
     %           5 - upper confidence interval of difference
     %           6 - p value
-    otherStats = multcompare(stats);
+    otherStats = multcompare(stats, 'Display', displayOpt);
 
-    % Create a vector of first groups
+    % Create group name vectors
     [firstGroupNames, secondGroupNames] = ...
         argfun(@(x) convert_to_char(uniqueX(otherStats(:, x))), 1, 2);
+
+    % Create isDifferentStrs
+    isDifferentStrs = strcat('isDifferent_', firstGroupNames, ...
+                                '_', secondGroupNames);
 
     % Create pValueStrs
     pValueStrs = strcat('pValue_', firstGroupNames, '_', secondGroupNames);
@@ -316,9 +316,27 @@ if nGroups > 2
     
     % Store p values in statsStruct
     for iPair = 1:nPairs
-        statsStruct.(pValueStrs{iPair}) = otherStats(iPair, 6);
+        % Extract pvalue
+        pValueThis = otherStats(iPair, 6);
+
+        % Test whether there is a difference between this pair
+        isDifferentThis = pValueThis < alphaTest;
+
+        % Store isDifferent for this pair
+        statsStruct.(isDifferentStrs{iPair}) = isDifferentThis;
+
+        % Store p values
+        statsStruct.(pValueStrs{iPair}) = pValueThis;
     end
 end
+
+% Store other information
+statsStruct.testFunction = testFunction;
+statsStruct.isNormal = isNormal;
+statsStruct.pNormalityAvg = pNormalityAvg;
+statsStruct.pNormalityLill = pNormalityLill;
+statsStruct.pNormalityAd = pNormalityAd;
+statsStruct.pNormalityJb = pNormalityJb;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -342,6 +360,11 @@ if ~isdeployed
 end
 % Apply the Shapiro-Wilk Test for normality
 [isNotNormal, pNormality] = cellfun(@(y) swtest(y, alphaNormality), yData);
+
+% Apply the One-sample Kolmogorov-Smirnov test for normality to each group
+[~, pNormalityKs] = cellfun(@(x) kstest(x, 'Alpha', alphaNormality), data);
+statsStruct.pNormalityKs = pNormalityKs;
+pNormalityMat = [pNormalityLill, pNormalityAd, pNormalityJb, pNormalityKs];
 
 %}
 
