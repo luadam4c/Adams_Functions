@@ -147,12 +147,45 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-data
+function [isDifferent, pValue] = ...
+                test_difference_helper(xData, yData, alphaNormality)
+%% Tests
 
-% Apply the Lilliefors test for normality
-[isNotNormal1, pNormality1] = lillietest(data1, 'Alpha', alphaNormality);
+% Get the unique x values
+uniqueX = unique(xData);
 
-[isNotNormal2, pNormality2] = lillietest(data2, 'Alpha', alphaNormality);
+% Count the number of groups
+nGroups = numel(uniqueX);
+
+% Separate the data into groups
+%   Note: data will become a cell array
+if iscell(uniqueX)
+    data = cellfun(@(w) yData(ismatch(xData, w)), uniqueX, ...
+                    'UniformOutput', false);
+else
+    data = arrayfun(@(w) yData(ismatch(xData, w)), uniqueX, ...
+                    'UniformOutput', false);
+end
+
+% Apply the Lilliefors test for normality to each group
+[isNotNormalLill, pNormalityLill] = ...
+    cellfun(@(x) lillietest(x, 'Alpha', alphaNormality), data);
+
+% Apply the Anderson-Darling test for normality to each group
+[isNotNormalAd, pNormalityAd] = ...
+    cellfun(@(x) adtest(x, 'Alpha', alphaNormality), data);
+
+% Apply the Jarque-Bera test for normality to each group
+[isNotNormalJb, pNormalityJb] = ...
+    cellfun(@(x) jbtest(x, alphaNormality), data);
+
+% Apply the One-sample Kolmogorov-Smirnov test for normality to each group
+[isNotNormalKs, pNormalityKs] = ...
+    cellfun(@(x) kstest(x, 'Alpha', alphaNormality), data);
+
+% Normality is satified if 
+% TODO: Use p-value?
+isNormal = isNotNormalLill | isNotNormalAd | isNotNormalJb | isNotNormalKs
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

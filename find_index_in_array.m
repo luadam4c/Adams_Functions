@@ -3,6 +3,8 @@ function varargout = find_index_in_array (candidates, array, varargin)
 % Usage: [index, matched] = find_index_in_array (candidates, array, varargin)
 % Explanation:
 %       TODO
+%   Use find_in_strings.m to treat each element of cand
+%       as a part of a candidate
 % Example(s):
 %       find_index_in_array({'dog'; 'cat'}, ["dog"; "fly"; "cat"])
 %       find_index_in_array(["dog", "fly", "cat"], {'dog'; 'cat'})

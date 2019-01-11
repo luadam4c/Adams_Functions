@@ -6,7 +6,11 @@ function avgValues = compute_weighted_average (values, varargin)
 %           Averaging-types-What-s-the-difference/ta-p/364121
 %           for the explanation on different averaging methods
 % Example(s):
-%       TODO
+%       compute_weighted_average([1; 10; 100], 'AverageMethod', 'rms')
+%       compute_weighted_average([1; 10; 100], 'AverageMethod', 'linear')
+%       compute_weighted_average([1; 10; 100], 'AverageMethod', 'geometric')
+%       compute_weighted_average([1; 10; 100], 'AverageMethod', 'exponential')
+%       compute_weighted_average([100; 10; 1], 'AverageMethod', 'exponential')
 % Outputs:
 %       avgValues   - averaged value(s)
 %                   specified as a numeric vector
@@ -26,6 +30,7 @@ function avgValues = compute_weighted_average (values, varargin)
 %                                     - root-mean-square averaging
 %                       'linear', 'arithmetic' 
 %                                     - linear averaging
+%                       'geometric'   - geometric averaging
 %                       'exponential' - exponential averaging
 %                   default == 'rms'
 %                   - 'ExponentialWeightingFactor': weighting factor (%)
@@ -49,13 +54,14 @@ function avgValues = compute_weighted_average (values, varargin)
 % File History:
 % 2018-10-26 Created by Adam Lu
 % 2018-10-28 Fixed the case when values has less than one element
+% 2019-01-11 Added 'geometric' as an averaging method
 % TODO: Simply math if the weights are all the same 
 %       and use this function in compute_means.m and compute_rms_error.m
 % 
 
 %% Hard-coded parameters
 validAverageMethods = {'rms', 'root-mean-square', 'energy', ...
-                        'linear', 'arithmetic', 'exponential'};
+                        'linear', 'arithmetic', 'geometric', 'exponential'};
 
 %% Default values for optional arguments
 weightsDefault = [];            % set later
@@ -168,15 +174,19 @@ switch averageMethod
     case {'linear', 'arithmetic'}
         % Compute the weighted linear average
         avgValues = sum(valueWeights .* values, dimToOperate) ./ totalWeight;
+    case {'geometric'}
+        % Compute the weighted geometric average
+        avgValues = exp(sum(valueWeights .* log(values), dimToOperate) ...
+                        ./ totalWeight);
     case {'exponential'}
         % Compute the reciprocal of temperature T 
         %   Note: T == 1/(1-EWF), so w = 1/T == 1-EWF
-        w = 1 - exponentialWeightingFactor;
+        w = 1 - (exponentialWeightingFactor / 100);
 
         % Compute the weighted exponential average
         % TODO: deal with dimension not 1 and ndims not 2
         % TODO: make into a function
-        for iRow = 1:nRows
+        for iRow = 1:size(values, 1)
             if iRow == 1
                 avgValues = values(iRow, :);
             else
