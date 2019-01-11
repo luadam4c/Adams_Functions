@@ -71,12 +71,16 @@ end
 % Construct the empty array according to type
 if isnumeric(array)
     empty = NaN(nRows, nColumns);
+elseif islogical(array)
+    empty = false(nRows, nColumns);
 elseif iscell(array)
     empty = cell(nRows, nColumns);
 elseif isstruct(array)
     empty = struct(nRows, nColumns);
 elseif isdatetime(array)
     empty = NaT(nRows, nColumns);
+else
+    error('Not implemented yet!');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -92,9 +92,9 @@ toc
 
 tic
 if ispc
-    onPath = is_in_array(folder, pathCell, 'IgnoreCase', false);
+    onPath = is_in_array(folder, pathCell, 'SearchMode', 'exact', 'IgnoreCase', false);
 else
-    onPath = is_in_array(folder, pathCell, 'IgnoreCase', true);
+    onPath = is_in_array(folder, pathCell, 'SearchMode', 'exact', 'IgnoreCase', true);
 end
 toc
 

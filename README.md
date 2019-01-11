@@ -171,10 +171,11 @@ Last Updated 2019-01-10 by Adam Lu
 - [**iscellnumeric.m**](https://github.com/blabuva/Adams_Functions/blob/master/iscellnumeric.m): Returns whether an input is a cell array of numeric arrays
 - [**iscellnumericvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/iscellnumericvector.m): Returns whether an input is a cell array of numeric vectors (may be empty)
 - [**iscellvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/iscellvector.m): Returns whether an input is a cell array of vectors (may be empty)
-- [**isemptycell.m**](https://github.com/blabuva/Adams_Functions/blob/master/isemptycell.m): Returns whether each cell or a cell array is empty
+- [**isemptycell.m**](https://github.com/blabuva/Adams_Functions/blob/master/isemptycell.m): Returns whether each cell of a cell array is empty; if not a cell array, same as isempty()
 - [**isfigtype.m**](https://github.com/blabuva/Adams_Functions/blob/master/isfigtype.m): Check whether a string or each string in a cell array is a valid figure type accepted by saveas()
 - [**is_in_array.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_in_array.m): Returns whether element(s) are in an array, treating strings and character arrays as the same
 - [**is_in_parallel.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_in_parallel.m): Checks whether in a parfor loop
+- [**is_in_strings_temp.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_in_strings_temp.m): Returns whether a particular string (could be represented by substrings) is in a list of strings
 - [**islegendlocation.m**](https://github.com/blabuva/Adams_Functions/blob/master/islegendlocation.m): Check whether a string or each string in a cell array is a valid legend location or 'suppress' or 'auto'
 - [**islinestyle.m**](https://github.com/blabuva/Adams_Functions/blob/master/islinestyle.m): Check whether a string or each string in a cell array is a valid line style accepted by plot() or line()
 - [**isnumericvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/isnumericvector.m): Returns whether an input is a numeric vector (may be empty)
