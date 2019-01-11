@@ -130,6 +130,15 @@ xData = dataTable{:, xVar};
 % Count the number of x vectors
 nParams = size(xData, 2);
 
+% Get the unique x values
+uniqueX = unique(xData);
+
+% Get the unique group names as a cell array of character arrays
+groupNames = convert_to_char(uniqueX);
+if ischar(groupNames)
+    groupNames = {groupNames};
+end
+
 % Force as a column cell array of character vectors
 yVars = force_column_cell(yVars);
 
@@ -148,7 +157,8 @@ end
 if nParams == 1
     % Perform t test, rank sum test or ANOVA
     statsStructs = cellfun(@(y) test_for_one_variable(xData, y, ...
-                        alphaNormality, alphaTest, toDisplay), yData);
+                        uniqueX, groupNames, alphaNormality, ...
+                        alphaTest, toDisplay), yData);
 
     % Convert to a table
     testResults = struct2table(statsStructs);
@@ -192,8 +202,7 @@ if plotHistograms && nParams == 1
     end
 
     % Create pNormAvgStrs
-    groupNamesRow = convert_to_char(transpose(unique(xData)));
-    pNormAvgStrs = strcat('pNormAvg_', groupNamesRow);
+    pNormAvgStrs = strcat('pNormAvg_', groupNames);
 
     % Extract information for labelling
     pValue = testResults.pValue;
@@ -201,20 +210,22 @@ if plotHistograms && nParams == 1
 
     % Extract information for labelling
     pValueText = strcat("pValue = ", convert_to_char(pValue));
-    pNormAvgText = arrayfun(@(x) strcat(pNormAvgStrs, " = ", ...
-                            convert_to_char(pNormAvg(x, :))), ...
+    pNormAvgText = arrayfun(@(x) strcat("pNorm = ", ...
+                            convert_to_char(transpose(pNormAvg(x, :)))), ...
                             transpose(1:nOut), 'UniformOutput', false);
     
-    % Create a figure title with the relevant info
-    figTitles = cellfun(@(x, y) convert_to_char({x, y}, ...
-                        'SingleOutput', true, 'Delimiter', '; '), ...
-                        pValueText, pNormAvgText, 'UniformOutput', false);
+    % Create titles with pValueText attached
+    figTitles = strcat("Distribution of ", yVars, ": ", pValueText);
+
+    groupingLabels = cellfun(@(x) strcat(groupNames, ": ", x), ...
+                            pNormAvgText, 'UniformOutput', false);
 
     % Plot grouped histograms
     [bars, figures] = ...
-        cellfun(@(x, y, z, w) plot_grouped_histogram(x, xData, 'XLabel', y, ...
-                        'FigName', z, 'FigTitle', w, 'Style', 'overlapped'), ...
-                        yData, yVars, histFigNames, figTitles, ...
+        cellfun(@(x, y, z, w, v) plot_grouped_histogram(x, xData, ...
+                        'XLabel', y, 'GroupingLabels', z, 'FigName', w, ...
+                        'FigTitle', v, 'Style', 'overlapped'), ...
+                        yData, yVars, groupingLabels, histFigNames, figTitles, ...
                         'UniformOutput', false);  
 
     % Append histogram to results
@@ -228,15 +239,20 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function statsStruct = test_for_one_variable(xData, yData, alphaNormality, ...
+function statsStruct = test_for_one_variable(xData, yData, uniqueX, ...
+                                        groupNames, alphaNormality, ...
                                         alphaTest, toDisplay)
 %% Performs the appropriate test based on the normality
 
 % Get the unique x values
-uniqueX = unique(xData);
+if isempty(uniqueX)
+    uniqueX = unique(xData);
+end
 
 % Get the unique group names
-groupNames = convert_to_char(uniqueX);
+if isempty(groupNames)
+    groupNames = convert_to_char(uniqueX);
+end
 
 % Count the number of groups
 nGroups = numel(uniqueX);
