@@ -1,6 +1,6 @@
-function varargout = apply_or_return (toApply, myFunction, varargin)
+function varargout = apply_or_return (toApplyORtestFunc, myFunction, varargin)
 %% Applies a function if a condition is true, or return the original argument(s)
-% Usage: varargout = apply_or_return (toApply, myFunction, varargin)
+% Usage: varargout = apply_or_return (toApplyORtestFunc, myFunction, varargin)
 % Explanation:
 %       This function applies a function to arguments only
 %           if the first argument is true or 1.
@@ -13,8 +13,9 @@ function varargout = apply_or_return (toApply, myFunction, varargin)
 % Outputs:
 %       varargout   - whatever the function outputs
 % Arguments:
-%       toApply     - whether to apply the function
-%                   must be a function handle
+%       toApplyORtestFunc     
+%                   - whether to apply the function or a function for testing
+%                   must be a logical scalar or a function handle
 %       myFunction  - a custom function
 %                   must be a function handle
 %       varargin    - input arguments
@@ -25,6 +26,7 @@ function varargout = apply_or_return (toApply, myFunction, varargin)
 
 % File History:
 % 2018-10-31 Created by Adam Lu
+% 2019-01-10 Now allows the first argument to be a function
 % 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -41,15 +43,24 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'toApply', ...              % whether to apply the function
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addRequired(iP, 'toApplyORtestFunc', ...
+    @(x) validateattributes(x, {'function_handle', 'logical', 'numeric'}, ...
+                            {'scalar'}));
 addRequired(iP, 'myFunction', ...           % a custom function
     @(x) validateattributes(x, {'function_handle'}, {'scalar'}));
 
 % Read from the Input Parser
-parse(iP, toApply, myFunction);
+parse(iP, toApplyORtestFunc, myFunction);
 
 %% Do the job
+% Decide on whether to apply the function
+if islogical(toApplyORtestFunc) || isnumeric(toApplyORtestFunc)
+    toApply = toApplyORtestFunc;
+else
+    toApply = toApplyORtestFunc(varargin{:});
+end
+
+% Apply the function if requested
 if toApply
     % Get the number of output arguments that will be returned by the function
     nOutputsPossible = nargout(myFunction);

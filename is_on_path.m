@@ -19,13 +19,13 @@ function onPath = is_on_path (folder, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/is_in_array.m
+%       cd/ismember_custom.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
-
+%       cd/addpath_custom.m
+%
 % File History:
-% 2019-01-10 Copied from https://www.mathworks.com/matlabcentral/answers/
+% 2019-01-10 Adapted from https://www.mathworks.com/matlabcentral/answers/
 %               86740-how-can-i-determine-if-a-directory-is-on-the-matlab-path-programmatically
 % 
 
@@ -65,43 +65,37 @@ parse(iP, folder, varargin{:});
 % Get all paths in a cell array
 %   Note: path returns paths as a single character array delimited by pathsep
 %         pathsep is ':' on Linux
-pathCell = regexp(path, pathsep, 'split');
+pathCell = split(path, pathsep);
 
 % Test whether the folder is in the path
 %   Note: Windows is not case-sensitive, but UNIX systems are
-
-tic
 if ispc
-    if iscell(folder)
-        onPath = cellfun(@(x) any(strcmpi(x, pathCell)), folder);
-    elseif isstring(folder)
-        onPath = arrayfun(@(x) any(strcmpi(x, pathCell)), folder);
-    else
-        onPath = any(strcmpi(folder, pathCell));
-    end
+    onPath = ismember_custom(folder, pathCell, 'SearchMode', 'exact', ...
+                            'IgnoreCase', true);
 else
-    if iscell(folder)
-        onPath = cellfun(@(x) any(strcmp(x, pathCell)), folder);
-    elseif isstring(folder)
-        onPath = arrayfun(@(x) any(strcmp(x, pathCell)), folder);
-    else
-        onPath = any(strcmp(folder, pathCell));
-    end
+    onPath = ismember(folder, pathCell);
 end
-toc
 
+%{
+%% Alternative method
 tic
+folder = strcat(folder, pathsep);
 if ispc
-    onPath = is_in_array(folder, pathCell, 'SearchMode', 'exact', 'IgnoreCase', false);
+    ignoreCase = true;
 else
-    onPath = is_in_array(folder, pathCell, 'SearchMode', 'exact', 'IgnoreCase', true);
+    ignoreCase = false;
 end
-toc
+onPath = ismember_custom(folder, path, 'SearchMode', 'substring', ...
+                        'IgnoreCase', ignoreCase);
+toc;
+%}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+pathCell = regexp(path, pathsep, 'split');
 
 % This is faster, but code is cumbersome
 if ispc

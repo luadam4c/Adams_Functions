@@ -59,6 +59,15 @@ outFolderDefault = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%% If not compiled, add directories to search path for required functions
+if ~isdeployed
+    % Locate the functions directory
+    functionsDirectory = locate_functionsdir;
+
+    % Add path for TODO
+    addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions'));
+end
+
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 3

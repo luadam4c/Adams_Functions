@@ -29,10 +29,8 @@ function varargout = is_matching_string (strList, cand, varargin)
 %       isMatch     - whether each member of strList contains 
 %                       all parts of the candidate
 %                   specified as a logical array
-%       indices     - indices of strList containing the candidate
-%                       or containing a substring or all substrings provided; 
-%                       could be empty
-%                   specified as a numeric array
+%       indices     - indices of strList matching the candidate
+%                       could be empty (or NaN if 'ReturnNan' is true)
 %       elements    - elements of strList corresponding to those indices
 %                   specified as a cell array if more than one indices 
 %                       or the element if only one index; or an empty string
@@ -52,8 +50,8 @@ function varargout = is_matching_string (strList, cand, varargin)
 %                       'substrings'    - cand can be a substring or 
 %                                           a list of substrings
 %                       'regexp'        - cand is considered a regular expression
-%                   if searchMode is 'exact' or 'regexp', 
-%                       cand cannot be a cell array
+%                   if search mode is 'exact' or 'regexp', 
+%                       cand cannot have more than one elements
 %                   default == 'substrings'
 %                   - 'IgnoreCase': whether to ignore differences in letter case
 %                   must be logical 1 (true) or 0 (false)
@@ -72,8 +70,9 @@ function varargout = is_matching_string (strList, cand, varargin)
 %
 % Used by:
 %       cd/find_in_strings.m
+%       cd/ismember_custom.m
 
-% File History
+% File History:
 % 2019-01-10 Moved from find_in_strings.m
 
 %% Hard-coded constants
@@ -140,7 +139,7 @@ if ischar(strList)
 end
 
 % Set the maximum number of indices if not provided
-if isempty(maxNum)
+if nargout >= 2 && isempty(maxNum)
     % Count the number of indices in strList
     nIndices = numel(strList);
 

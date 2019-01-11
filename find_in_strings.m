@@ -10,6 +10,7 @@ function varargout = find_in_strings (cand, strList, varargin)
 %   The latter two cases are similar to strcmp()/strcmpi() or regexp()/regexpi()
 %   However, find_in_strings returns indices instead of logical arrays,
 %       and optionally returns the matched elements as the second output.
+%   Use ismember_custom.m to simply test whether cand is in strList
 %
 % Example(s):
 %       strs1 = {'Mark''s fish', 'Peter''s fish', 'Katie''s sealion'};
@@ -26,9 +27,8 @@ function varargout = find_in_strings (cand, strList, varargin)
 %       find_in_strings('sea.*', strs2, 'SearchMode', 'reg')
 %
 % Outputs:
-%       indices     - indices of strList containing the candidate
-%                       or containing a substring or all substrings provided; 
-%                       could be empty
+%       indices     - indices of strList matching the candidate
+%                       could be empty (or NaN if 'ReturnNan' is true)
 %                   specified as a numeric array
 %       elements    - elements of strList corresponding to those indices
 %                   specified as a cell array if more than one indices 
@@ -49,8 +49,8 @@ function varargout = find_in_strings (cand, strList, varargin)
 %                       'substrings'    - cand can be a substring or 
 %                                           a list of substrings
 %                       'regexp'        - cand is considered a regular expression
-%                   if searchMode is 'exact' or 'regexp', 
-%                       cand cannot be a cell array
+%                   if search mode is 'exact' or 'regexp', 
+%                       cand cannot have more than one elements
 %                   default == 'substrings'
 %                   - 'IgnoreCase': whether to ignore differences in letter case
 %                   must be logical 1 (true) or 0 (false)
@@ -67,7 +67,6 @@ function varargout = find_in_strings (cand, strList, varargin)
 %       cd/is_matching_string.m
 %
 % Used by:
-%       cd/find_index_in_array.m
 %       cd/ispositiveintegerscalar.m
 %       cd/increment_editbox.m
 %       cd/m3ha_correct_unbalanced_bridge.m
@@ -100,6 +99,7 @@ function varargout = find_in_strings (cand, strList, varargin)
 %       /media/adamX/RTCl/tuning_curves.m
 %       /media/adamX/RTCl/single_neuron.m
 
+% File History:
 % 2016-09--- Created
 % 2016-10-13 moved to Adams_Functions
 % 2016-11-30 Added searchMode
