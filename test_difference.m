@@ -51,6 +51,7 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 plotHistograms = true;
 saveHistFlag = true;
 histFigNames = '';
+alphaNormality = 0.05;          % significance level for normality test
 
 %% Default values for optional arguments
 sheetNameDefault = '';
@@ -58,15 +59,6 @@ prefixDefault = '';             % prepend nothing to file names by default
 outFolderDefault = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% If not compiled, add directories to search path for required functions
-if ~isdeployed
-    % Locate the functions directory
-    functionsDirectory = locate_functionsdir;
-
-    % Add path for TODO
-    addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions'));
-end
 
 %% Deal with arguments
 % Check number of required arguments
@@ -137,16 +129,13 @@ if plotHistograms
                         yData, yVars, histFigNames, 'UniformOutput', false);
 end
 
-% Test for normality
-% TODO
-
 % Perform the appropriate comparison test
-% TODO
+[isDifferent, pValue] = ...
+    cellfun(@(x, y) test_difference_helper(x, y, alphaNormality), xData, yData);
 
 %% Output results
-% TODO: Place results in a table
-% testResults = table(isDifferent, pValue);
-testResults = table(histFigNames);
+% Place results in a table
+testResults = table(isDifferent, pValue);
 if plotHistograms
     testResults = addvars(testResults, histFigNames, h);
 end
@@ -158,6 +147,15 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+data
+
+% Apply the Lilliefors test for normality
+[isNotNormal1, pNormality1] = lillietest(data1, 'Alpha', alphaNormality);
+
+[isNotNormal2, pNormality2] = lillietest(data2, 'Alpha', alphaNormality);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %{
 OLD CODE:
 
@@ -166,6 +164,18 @@ if isstring(yVars)
     yData = arrayfun(@(x) dataTable{:, x}, yVars, 'UniformOutput', false);
 else
 end
+
+%% If not compiled, add directories to search path for required functions
+%       /home/Matlab/Downloaded_Functions/swtest.m
+if ~isdeployed
+    % Locate the functions directory
+    functionsDirectory = locate_functionsdir;
+
+    % Add path for swtest.m
+    addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions'));
+end
+% Apply the Shapiro-Wilk Test for normality
+[isNotNormal, pNormality] = cellfun(@(y) swtest(y, alphaNormality), yData);
 
 %}
 
