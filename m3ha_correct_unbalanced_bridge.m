@@ -13,7 +13,7 @@ function vvecsNew = m3ha_correct_unbalanced_bridge(fileNames, vvecsOld, ivecsOld
 %
 % Requires:
 %       cd/correct_unbalanced_bridge.m
-%       cd/find_ind_str_in_cell.m
+%       cd/find_in_strings.m
 %
 % Used by:    
 %       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
@@ -44,7 +44,7 @@ initialSlopeThreshold2IndexBalanced = initialSlopes.iThreshold2Balanced;
 
 % Find the index of file in all files sorted by initial slope
 %   in descending order
-ftemp = @(x) find_ind_str_in_cell(x, initialSlopeFilenames);
+ftemp = @(x) find_in_strings(x, initialSlopeFilenames);
 
 % Determine whether the initial slopes exceed threshold
 %   Note: These may have out-of-balance bridges

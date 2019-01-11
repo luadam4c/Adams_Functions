@@ -1,6 +1,6 @@
-function [indices, elements] = find_ind_str_in_cell(str, cellarray, varargin)
+function [indices, elements] = find_in_strings(str, cellarray, varargin)
 %% Find all indices of a particular string in a cell array
-% Usage: [indices, elements] = find_ind_str_in_cell(str, cellarray, varargin)
+% Usage: [indices, elements] = find_in_strings(str, cellarray, varargin)
 % Outputs:
 %       indices     - indices of the cell array containing that exact string
 %                       or containing a substring or all substrings provided; 
@@ -60,7 +60,7 @@ function [indices, elements] = find_ind_str_in_cell(str, cellarray, varargin)
 %% Check number of arguments (better error message than inputParser)
 if nargin < 2
     error(['Not enough input arguments, ', ...
-            'type ''help find_ind_str_in_cell'' for usage']);
+            'type ''help find_in_strings'' for usage']);
 end
 
 %% Add required inputs to an input Parser
@@ -163,7 +163,7 @@ end
 %{
 OLD CODE:
 
-function indices = find_ind_str_in_cell(str, cellarray, searchmode, ignorecase)
+function indices = find_in_strings(str, cellarray, searchmode, ignorecase)
 
 elseif isempty(str) || isempty(cellarray)
     error('First two inputs cannot be empty!');

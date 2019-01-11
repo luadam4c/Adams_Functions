@@ -1,6 +1,6 @@
-function varargout = find_ind_str_in_cell(str, cellArray, varargin)
+function varargout = find_in_strings(str, cellArray, varargin)
 %% Returns all indices of a particular string (could be represented by substrings) in a list of strings
-% Usage: [indices, elements] = find_ind_str_in_cell(str, cellArray, varargin)
+% Usage: [indices, elements] = find_in_strings(str, cellArray, varargin)
 % Explanation:
 %   This works like the strcmp() or strcmpi function in Matlab, 
 %       especially when 'SearchMode' == 'exact'.
@@ -10,14 +10,14 @@ function varargout = find_ind_str_in_cell(str, cellArray, varargin)
 %       a substring of a match in cellArray.
 % Example(s):
 %       cell = {'Mark''s fish', 'Peter''s fish', 'Katie''s sealion'};
-%       find_ind_str_in_cell('fish', cell)
-%       find_ind_str_in_cell('Peter', cell)
-%       find_ind_str_in_cell({'Katie', 'lion'}, cell)
-%       find_ind_str_in_cell('fish', cell, 'MaxNum', 1)
-%       find_ind_str_in_cell('Fish', cell, 'IgnoreCase', 1)
-%       find_ind_str_in_cell('Fish', cell, 'IgnoreCase', false)
-%       find_ind_str_in_cell('sealion', cell, 'SearchMode', 'ex')
-%       find_ind_str_in_cell('sealion', cell, 'SearchMode', 'sub')
+%       find_in_strings('fish', cell)
+%       find_in_strings('Peter', cell)
+%       find_in_strings({'Katie', 'lion'}, cell)
+%       find_in_strings('fish', cell, 'MaxNum', 1)
+%       find_in_strings('Fish', cell, 'IgnoreCase', 1)
+%       find_in_strings('Fish', cell, 'IgnoreCase', false)
+%       find_in_strings('sealion', cell, 'SearchMode', 'ex')
+%       find_in_strings('sealion', cell, 'SearchMode', 'sub')
 % Outputs:
 %       indices     - indices of the cell array containing that exact string
 %                       or containing a substring or all substrings provided; 

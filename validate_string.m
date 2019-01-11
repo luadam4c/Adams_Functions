@@ -30,7 +30,7 @@ function strValidated = validate_string (str, validStrings, varargin)
 %                   default == true
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/find_ind_str_in_cell.m
+%       /home/Matlab/Adams_Functions/find_in_strings.m
 %
 % Used by:
 %       /home/Matlab/Adams_Functions/istype.m
@@ -96,7 +96,7 @@ if validateMode     % throws error if no match found
 else                % returns an empty string if no match found
     % Find all possible matches that contains string according to matchMode
     [~, strValidated] = ...
-        find_ind_str_in_cell(str, validStrings, ...
+        find_in_strings(str, validStrings, ...
                              'SearchMode', matchMode, ...
                              'IgnoreCase', ignoreCase);
 

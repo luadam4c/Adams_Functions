@@ -1,6 +1,6 @@
-function varargout = find_index_in_array (element, array, varargin)
-%% Returns the index for element(s) in an array, treating strings and character arrays as the same
-% Usage: [index, matched] = find_index_in_array (element, array, varargin)
+function varargout = find_index_in_array (candidates, array, varargin)
+%% Returns the index for candidate(s) in an array, treating strings and character arrays as the same
+% Usage: [index, matched] = find_index_in_array (candidates, array, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -12,15 +12,16 @@ function varargout = find_index_in_array (element, array, varargin)
 %       matched     - matching element in the array
 %                   specified as an array of the same type as elements of array
 % Arguments:
-%       element     - element(s) of an array
+%       candidates  - candidates to be matched
 %       array       - an array
-%       varargin    - 'SearchMode': the search mode for strings
+%       varargin    - 'SearchMode': the search mode if candidates are strings
 %                   must be an unambiguous, case-insensitive match to one of:
-%                       'exact'         - str must be identical to 
-%                                           an element in cellArray
-%                       'substrings'    - str can be a substring or 
+%                       'exact'         - candidate must be identical to 
+%                                           an element in array
+%                       'substrings'    - candidate can be a substring or 
 %                                           a cell array of substrings
-%                       'regexp'        - str is considered a regular expression
+%                       'regexp'        - candidate is considered 
+%                                           a regular expression
 %                   if searchMode is 'exact' or 'regexp', 
 %                       str cannot be a cell array
 %                   default == 'substrings'
@@ -30,7 +31,7 @@ function varargout = find_index_in_array (element, array, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/find_ind_str_in_cell.m
+%       cd/find_in_strings.m
 %
 % Used by:
 %       cd/convert_to_rank.m
@@ -61,7 +62,7 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'element');
+addRequired(iP, 'candidates');
 addRequired(iP, 'array');
 
 % Add parameter-value pairs to the Input Parser
@@ -71,42 +72,42 @@ addParameter(iP, 'IgnoreCase', ignoreCaseDefault, ...   % whether to ignore case
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
-parse(iP, element, array, varargin{:});
+parse(iP, candidates, array, varargin{:});
 searchMode = validatestring(iP.Results.SearchMode, validSearchModes);
 ignoreCase = iP.Results.IgnoreCase;
 
 %% Preparation
-% Check type compatibility of element and array
+% Check type compatibility of candidates and array
 % TODO: cellstr and string should be made compatible
-% if ~strcmp(class(element), class(array))
-%     error('element and array do not have the same type!!')
+% if ~strcmp(class(candidates), class(array))
+%     error('candidates and array do not have the same type!!')
 % end
 
 %% Do the job
-if ischar(element) || iscellstr(element) || isstring(element)
-    % Make sure element is either a string or a cell array
-    if ischar(element)
-        element = {element};
+if ischar(candidates) || iscellstr(candidates) || isstring(candidates)
+    % Make sure candidates is either a string or a cell array
+    if ischar(candidates)
+        candidates = {candidates};
     end
 
     % Use either cellfun or arrayfun
-    if iscell(element)
-        % Find the index in array for each element in element
-        index = cellfun(@(x) find_ind_str_in_cell(x, array, ...
+    if iscell(candidates)
+        % Find the index in array for each element in candidates
+        index = cellfun(@(x) find_in_strings(x, array, ...
                                 'MaxNum', 1, 'ReturnNan', true, ...
                                 'SearchMode', searchMode, ...
-                                'IgnoreCase', ignoreCase), element);
+                                'IgnoreCase', ignoreCase), candidates);
     else
-        % Find the index in array for each element in element
-        index = arrayfun(@(x) find_ind_str_in_cell(x, array, ...
+        % Find the index in array for each element in candidates
+        index = arrayfun(@(x) find_in_strings(x, array, ...
                                 'MaxNum', 1, 'ReturnNan', true, ...
                                 'SearchMode', searchMode, ...
-                                'IgnoreCase', ignoreCase), element);
+                                'IgnoreCase', ignoreCase), candidates);
     end
 else
-    % Find the index in array for each element in element
+    % Find the index in array for each element in candidates
     %   Note: If not found, zero will be returned
-    [~, index] = ismember(element, array);
+    [~, index] = ismember(candidates, array);
 
     % Make all zeros NaNs instead
     index(index == 0) = NaN;

@@ -19,7 +19,7 @@ function newStr = increment_editbox(hEditBox, minNo, maxNo, incr, strings, varar
 %
 % File History:
 % 2017-06-09 Moved from gui_examine_events.m
-% 2017-06-10 Now uses built-in strcmp() instead of find_ind_str_in_cell.m
+% 2017-06-10 Now uses built-in strcmp() instead of find_in_strings.m
 % 2017-06-12 Now allows incr to be nonzero and sets the direction 
 %               according to the sign of incr
 % 2017-07-31 Added newStr and return it as an output
@@ -283,7 +283,7 @@ end
 %{
 OLD CODE:
 
-idx = find_ind_str_in_cell(prevStr, strings, 'SearchMode', 'exact');
+idx = find_in_strings(prevStr, strings, 'SearchMode', 'exact');
 
 %}
 

@@ -24,7 +24,7 @@ function isEmpty = isemptycell (cellArray, varargin)
 %       cd/compute_rms_error.m
 %       cd/create_indices.m
 %       cd/distribute_balls_into_boxes.m
-%       cd/find_ind_str_in_cell.m
+%       cd/find_in_strings.m
 %       cd/istype.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/m3ha_select_cells.m

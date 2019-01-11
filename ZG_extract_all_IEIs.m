@@ -34,7 +34,7 @@ function [ieisGrouped, ieisTable, ieisListed, ieisHeader, sheetPath, groupedFile
 %
 % Requires:
 %       /home/barrettlab/holySheet/CaImagingExperiments_MasterList.xlsx
-%       /home/Matlab/Adams_Functions/find_ind_str_in_cell.m
+%       /home/Matlab/Adams_Functions/find_in_strings.m
 %       /home/Matlab/Adams_Functions/mat2sheet.m
 %       /home/Matlab/Adams_Functions/issheettype.m
 %       /home/Matlab/minEASE/filter_minEASE_output.m
@@ -176,7 +176,7 @@ for iGroup = 1:nGroups
     groupLabel = uniqueGroups{iGroup};
 
     % Find all unique slices in this group
-    indSlices = find_ind_str_in_cell(groupLabel, groupLabelAllCells);
+    indSlices = find_in_strings(groupLabel, groupLabelAllCells);
     sliceLabels = sliceLabelAllCells(indSlices);
     uniqueSlices = unique(sliceLabels);
 
@@ -190,7 +190,7 @@ for iGroup = 1:nGroups
         sliceLabel = uniqueSlices{iSlice};
 
         % Find all unique cells in this slice
-        indCells = find_ind_str_in_cell(sliceLabel, sliceLabelAllCells);
+        indCells = find_in_strings(sliceLabel, sliceLabelAllCells);
         cellLabels = cellLabelAllCells(indCells);
         uniqueCells = unique(cellLabels);
 
@@ -204,7 +204,7 @@ for iGroup = 1:nGroups
             cellLabel = uniqueCells{iCell};
 
             % Find the index of this cell in the cell arrays
-            idxCell = find_ind_str_in_cell(cellLabel, cellLabelAllCells);
+            idxCell = find_in_strings(cellLabel, cellLabelAllCells);
 
             % Get the inter-event intervals for this cell
             ieisThisCell = ieisAllCells{idxCell};

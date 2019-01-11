@@ -69,7 +69,7 @@ end
 %{
 OLD CODE:
 
-%       cd/find_ind_str_in_cell.m
+%       cd/find_in_strings.m
 
 %}
 

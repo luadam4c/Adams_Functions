@@ -100,7 +100,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %       cd/create_time_vectors.m
 %       cd/extract_columns.m
 %       cd/extract_subvectors.m
-%       cd/find_ind_str_in_cell.m
+%       cd/find_in_strings.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_cell.m
 %       cd/force_column_vector.m
@@ -441,7 +441,7 @@ if toParsePulse && toCorrectDcSteps
 
     % Find the index of file in all files sorted by initial slope
     %   in descending order
-    ftemp = @(x) find_ind_str_in_cell(x, filenamesSorted);
+    ftemp = @(x) find_in_strings(x, filenamesSorted);
 
     % Determine whether the initial slopes exceed threshold
     %   Note: These may have out-of-balance bridges

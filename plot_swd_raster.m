@@ -63,7 +63,7 @@ function [fig, lines] = plot_swd_raster (varargin)
 % Requires:
 %       cd/create_labels_from_numbers.m
 %       cd/extract_common_directory.m
-%       cd/find_ind_str_in_cell.m
+%       cd/find_in_strings.m
 %       cd/islinestyle.m
 %       cd/issheettype.m
 %       cd/load_swd_sheets.m
@@ -271,7 +271,7 @@ parfor iBase = 1:nDataFileBases
     labels{iBase} = replace(dataFileBase, '_', '\_');
 
     % Look for all SWD spreadsheets for this file base
-    indSheetsThisBase = find_ind_str_in_cell(dataFileBase, swdSheetBases, ...
+    indSheetsThisBase = find_in_strings(dataFileBase, swdSheetBases, ...
                                             'SearchMode', 'substrings');
 
     % Get the number of SWD spreadsheets for this file base

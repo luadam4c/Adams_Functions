@@ -3,7 +3,7 @@ function ZG_extract_all_data (varargin)
 % Usage: ZG_extract_all_data (varargin)
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/find_ind_str_in_cell.m
+%       /home/Matlab/Adams_Functions/find_in_strings.m
 %
 % Used by:
 %       /home/barrettlab/detect_with_minEASE/ZG_extract_all_data.sh
@@ -88,7 +88,7 @@ for iSubDir = 1:nSubDir
     % Find the matching slice label in the dataDirNames cell array
     %   Note: Must search for substrings and ignore case because 
     %           dataDirNames has elements of the form DataXXX_caltracer_ORAMA
-    idxSlice = find_ind_str_in_cell(sliceLabel, dataDirNames, ...
+    idxSlice = find_in_strings(sliceLabel, dataDirNames, ...
                                     'SearchMode', 'substrings', ...
                                     'IgnoreCase', true);
 

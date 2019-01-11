@@ -17,7 +17,7 @@ function [paramvals] = update_params(paramnames, paramvals, varargin)
 %                   default == 'noexp'
 %
 % Requires:    
-%        cd/find_ind_str_in_cell.m
+%        cd/find_in_strings.m
 %
 % Used by:    
 %        cd/change_params.m
@@ -85,14 +85,14 @@ end
 switch experimentname
 case {'RTCl', 'm3ha'}
     % Find indices of parameters that influence other parameters
-    indREdia = find_ind_str_in_cell('REdiam', paramnames);
-    indstimf = find_ind_str_in_cell('stim_freq', paramnames);
-    indstimd = find_ind_str_in_cell('stim_dur', paramnames);
+    indREdia = find_in_strings('REdiam', paramnames);
+    indstimf = find_in_strings('stim_freq', paramnames);
+    indstimd = find_in_strings('stim_dur', paramnames);
 
     % Find indices of parameters that are influenced by other parameters
-    indcpamp = find_ind_str_in_cell('cp_amp', paramnames);
-    indcpper = find_ind_str_in_cell('cp_per', paramnames);
-    indcpnum = find_ind_str_in_cell('cp_num', paramnames);
+    indcpamp = find_in_strings('cp_amp', paramnames);
+    indcpper = find_in_strings('cp_per', paramnames);
+    indcpnum = find_in_strings('cp_num', paramnames);
 
     % Update current pulse period (ms)
     paramvals(indcpper) = floor(1000/paramvals(indstimf));
@@ -117,16 +117,16 @@ end
 switch experimentname
 case 'm3ha'
     % Find indices of parameters that influence other parameters
-    indpCond = find_ind_str_in_cell('pCond', paramnames);
-    indgIncr = find_ind_str_in_cell('gIncr', paramnames);
+    indpCond = find_in_strings('pCond', paramnames);
+    indgIncr = find_in_strings('gIncr', paramnames);
 
     % Find indices of parameters that are influenced by other parameters
-    indgabaaGmax = find_ind_str_in_cell('TCgabaaGmax', paramnames);
-    indgababAmp = find_ind_str_in_cell('TCgababAmp', paramnames);
-    indgababTrise = find_ind_str_in_cell('TCgababTrise', paramnames);
-    indgababTfallFast = find_ind_str_in_cell('TCgababTfallFast', paramnames);
-    indgababTfallSlow = find_ind_str_in_cell('TCgababTfallSlow', paramnames);
-    indgababW = find_ind_str_in_cell('TCgababW', paramnames);
+    indgabaaGmax = find_in_strings('TCgabaaGmax', paramnames);
+    indgababAmp = find_in_strings('TCgababAmp', paramnames);
+    indgababTrise = find_in_strings('TCgababTrise', paramnames);
+    indgababTfallFast = find_in_strings('TCgababTfallFast', paramnames);
+    indgababTfallSlow = find_in_strings('TCgababTfallSlow', paramnames);
+    indgababW = find_in_strings('TCgababW', paramnames);
     
     % Update parameters that are influenced by other parameters
     pCond = paramvals(indpCond);

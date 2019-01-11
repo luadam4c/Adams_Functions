@@ -45,7 +45,7 @@ function [actVhold, maxnoise, peaktime, peak2ndder, peakprom, peakwidth, peakcla
 % Requires:    
 %        cd/check_subdir.m
 %        cd/all_filebases.m
-%        cd/find_ind_str_in_cell.m
+%        cd/find_in_strings.m
 %
 % Used by:
 %       cd/find_LTSs_many_sweeps.m
@@ -458,7 +458,7 @@ if isempty(ptemp1)        % Condition (3)
                 num2str(maxnoise), ' mV'];
     
     % Override the algorithm if 3/4 experts think it's an LTS
-    ind_LlLnbp = find_ind_str_in_cell('Looks_like_LTS_not_by_prominence', traces_to_override_strs);
+    ind_LlLnbp = find_in_strings('Looks_like_LTS_not_by_prominence', traces_to_override_strs);
     if ismember(filebase, traces_to_override{ind_LlLnbp})
         isoverridden = 1;
         peakclass = 5;
@@ -484,7 +484,7 @@ elseif isempty(ptemp3) ...    % Condition (2)
                 num2str(lts_thr), ' V^2/s^2'];
 
     % Override the algorithm if 3/4 experts think it's an LTS
-    ind_LlLnbn = find_ind_str_in_cell('Looks_like_LTS_not_by_narrowness', traces_to_override_strs);
+    ind_LlLnbn = find_in_strings('Looks_like_LTS_not_by_narrowness', traces_to_override_strs);
     if ismember(filebase, traces_to_override{ind_LlLnbn})
         isoverridden = 1;
         peakclass = 5;
@@ -495,7 +495,7 @@ elseif isempty(ptemp3) ...    % Condition (2)
     end
 
     % There were a few cases (see 'Looks_like_missed_LTS') where the correct LTS was missed by prominence %%% CHECK FOR MORE
-    ind_LlmL = find_ind_str_in_cell('Looks_like_missed_LTS', traces_to_override_strs);
+    ind_LlmL = find_in_strings('Looks_like_missed_LTS', traces_to_override_strs);
     if ismember(filebase, traces_to_override{ind_LlmL})
         psel3 = ptemp2(1);        % the first narrow peak regardless of prominence is the correct one in this case
         peak2ndder = vpeak_2der(psel3);    % update peak2ndder
@@ -509,7 +509,7 @@ elseif isempty(ptemp3) ...    % Condition (2)
 else                % Condition (1)
     % Select the first peak that is an LTS candidate by prominence & 2nd der
     % There is one case (see 'Missed_LTS_by_order') where the second peak is the correct LTS
-    ind_MLbo = find_ind_str_in_cell('Missed_LTS_by_order', traces_to_override_strs);
+    ind_MLbo = find_in_strings('Missed_LTS_by_order', traces_to_override_strs);
     if ismember(filebase, traces_to_override{ind_MLbo})
         psel3 = ptemp3(2);        % for F092710_0006_25
     else
@@ -524,7 +524,7 @@ else                % Condition (1)
     %             where the first spike occurred after the peak
     %     spontaneous spike:     first spike occurs after "LTS" peak on mfmaf trace)
     sp2pk_i = round(sp2pk_t/sims);    % obsolete: currently set to 0
-    ind_MLbs = find_ind_str_in_cell('Missed_LTS_by_shape', traces_to_override_strs);
+    ind_MLbs = find_in_strings('Missed_LTS_by_shape', traces_to_override_strs);
     if ~ismember(filebase, traces_to_override{ind_MLbs}) ...
         && sp1sti(psel3) ~= 0 ...
         && vpeak_i3(psel3) < sp1sti(psel3) + sp2pk_i
@@ -683,7 +683,7 @@ else
                         ' V^2/s^2'];
         end
 
-        ind_Spbi = find_ind_str_in_cell('Spikes_per_burst_incorrect', traces_to_override_strs);
+        ind_Spbi = find_in_strings('Spikes_per_burst_incorrect', traces_to_override_strs);
         if ~ismember(filebase, traces_to_override{ind_Spbi}) ...
             % Re-detect spikes by redefining peak bounds using maxnoise as MinPeakProminence
             % Update peak lower bounds
@@ -868,9 +868,9 @@ else
 end
 
 %% Deal with false positives
-ind_Nit = find_ind_str_in_cell('Noise_in_trace', traces_to_override_strs);
-ind_SLob = find_ind_str_in_cell('Spontaneous_LTSs_or_bursts', traces_to_override_strs);
-ind_WLcbn = find_ind_str_in_cell('Wide_LTS_could_be_noise', traces_to_override_strs);
+ind_Nit = find_in_strings('Noise_in_trace', traces_to_override_strs);
+ind_SLob = find_in_strings('Spontaneous_LTSs_or_bursts', traces_to_override_strs);
+ind_WLcbn = find_in_strings('Wide_LTS_could_be_noise', traces_to_override_strs);
 
 if ismember(filebase, traces_to_override{ind_Nit}) ...
     || ismember(filebase, traces_to_override{ind_SLob}) ...

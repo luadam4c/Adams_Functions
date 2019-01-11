@@ -70,7 +70,7 @@ function [data, sweepInfo, dataCprAll] = ...
 %       cd/create_time_vectors.m
 %       cd/extract_columns.m
 %       cd/extract_subvectors.m
-%       cd/find_ind_str_in_cell.m
+%       cd/find_in_strings.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_cell.m
 %       cd/force_column_vector.m
@@ -350,7 +350,7 @@ if toParsePulse && toCorrectDcSteps
 
     % Find the index of file in all files sorted by initial slope
     %   in descending order
-    ftemp = @(x) find_ind_str_in_cell(x, initialSlopeFilenames);
+    ftemp = @(x) find_in_strings(x, initialSlopeFilenames);
 
     % Determine whether the initial slopes exceed threshold
     %   Note: These may have out-of-balance bridges
@@ -618,7 +618,7 @@ if outparams.toCorrectDcSteps
     % Determine whether the initial slopes exceed threshold
     %   Note: These may have out-of-balance bridges
     isOutOfBalance = ...
-        cellfun(@(x) find_ind_str_in_cell(x, initialSlopeFilenames) < ...
+        cellfun(@(x) find_in_strings(x, initialSlopeFilenames) < ...
                                         initialSlopeThresholdIndexToInclude, ...
                     fileNamesThisVhold);
 
@@ -797,7 +797,7 @@ end
 
 
 % Get the swpIdx from the file name
-swpIdx = find_ind_str_in_cell(fileName, fnrow);
+swpIdx = find_in_strings(fileName, fnrow);
 
 fnrow = swpInfo.fnrow;
 
@@ -982,7 +982,7 @@ if ~isdeployed
     functionsDirectory = locate_functionsdir;
 
     % Add path for compute_rms_error.m, correct_unbalanced_bridge, 
-    %   find_ind_str_in_cell.m, print_cellstr.m
+    %   find_in_strings.m, print_cellstr.m
     addpath(fullfile(functionsDirectory, 'Adams_Functions')); 
 end
 

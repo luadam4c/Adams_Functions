@@ -74,7 +74,7 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 %       cd/compute_sweep_errors.m
 %       cd/count_samples.m
 %       cd/create_time_vectors.m
-%       cd/find_ind_str_in_cell.m
+%       cd/find_in_strings.m
 %       cd/m3ha_plot_individual_traces.
 %       cd/parse_xolotl_object.m
 %
@@ -206,7 +206,7 @@ nTraces = nCompartments + 1;
 
 % Find the indices for compartments to label in xolotl
 idxInXolotl = ...
-    cellfun(@(x) find_ind_str_in_cell(x, compartments, 'IgnoreCase', true, ...
+    cellfun(@(x) find_in_strings(x, compartments, 'IgnoreCase', true, ...
                                 'SearchMode', 'substrings', 'MaxNum', 1), ...
             compsToLabel);
 
@@ -224,7 +224,7 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
 
     % Find the idx for the compartment to patch
     idxCompToPatch = ...
-        find_ind_str_in_cell(compToPatch, compartments, 'MaxNum', 1, ...
+        find_in_strings(compToPatch, compartments, 'MaxNum', 1, ...
                             'SearchMode', 'substrings', 'IgnoreCase', true);
 
     % Save the stimulation protocol

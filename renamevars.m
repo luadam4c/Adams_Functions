@@ -36,7 +36,7 @@ function table = renamevars (table, prevNames, newNames, varargin)
 %
 % Requires:
 %       cd/create_labels_from_numbers.m
-%       cd/find_ind_str_in_cell.m
+%       cd/find_in_strings.m
 %       cd/ispositiveintegerscalar.m
 %       cd/match_format_vector_sets.m
 %       cd/parse_pulse_response.m
@@ -115,7 +115,7 @@ for iVar = 1:numel(prevNames)
     prevName = prevNames{iVar};
 
     % Find the matching variable number(s)
-    varNumber = find_ind_str_in_cell(prevName, variableNames, ...
+    varNumber = find_in_strings(prevName, variableNames, ...
                                   'SearchMode', searchMode, ...
                                   'IgnoreCase', ignoreCase, 'MaxNum', maxNum);
 

@@ -23,7 +23,7 @@ function [paramvals] = change_params(namesToChange, valsToChange, paramnames, pa
 %                   default == 'noexp'
 %
 % Requires:    
-%        /home/Matlab/Adams_Functions/find_ind_str_in_cell.m
+%        /home/Matlab/Adams_Functions/find_in_strings.m
 %        /home/Matlab/Adams_Functions/update_params.m
 %
 % Used by:    
@@ -81,12 +81,12 @@ if iscell(namesToChange)
     % One or more parameters to change
     ntochange = numel(namesToChange);    % number of parameters to change
     for p = 1:ntochange
-        indp = find_ind_str_in_cell(namesToChange{p}, paramnames);
+        indp = find_in_strings(namesToChange{p}, paramnames);
         paramvals(indp) = valsToChange(p);
     end
 else
     % Only one parameter to change
-    indp = find_ind_str_in_cell(namesToChange, paramnames);
+    indp = find_in_strings(namesToChange, paramnames);
     paramvals(indp) = valsToChange;
 end
 

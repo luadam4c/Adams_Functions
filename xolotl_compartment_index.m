@@ -20,7 +20,7 @@ function [idxCompartment, compartment] = xolotl_compartment_index (xolotlObject,
 %                   default == TODO
 %
 % Requires:
-%       cd/find_ind_str_in_cell.m
+%       cd/find_in_strings.m
 %
 % Used by:
 %       cd/xolotl_add_current_pulse.m
@@ -78,7 +78,7 @@ if isempty(compartment)
 else
     % Find the index for the compartment with given name
     idxCompartment = ...
-        find_ind_str_in_cell(compartment, allCompartments, ...
+        find_in_strings(compartment, allCompartments, ...
                             'SearchMode', 'substrings', 'IgnoreCase', true, ...
                             'MaxNum', 1);
 end
