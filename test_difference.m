@@ -4,12 +4,27 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       TODO
+%       data1 = [rand(60, 1); rand(60, 1) + 0.5];
+%       data2 = [randn(60, 1); randn(60, 1) + 1];
+%       grps1 = [2 * ones(60, 1); 1 * ones(60, 1)];
+%       grps2 = [10 * ones(60, 1); -8 * ones(60, 1)];
+%       tble1 = table(data1, data2, grps1, grps2);
+%       testResults1 = test_difference(tble1, 'data1', 'grps1')
+%       testResults2 = test_difference(tble1, {'data1', 'data2'}, 'grps2')
+%       testResults3 = test_difference(tble1, {'data1', 'data2'}, {'grps1', 'grps2'})
+%       data3 = [randn(60, 1); randn(60, 1) + 1; randn(60, 1) - 1];
+%       data4 = [rand(60, 1); rand(60, 1) + 1; rand(60, 1) - 1];
+%       grps3 = [2 * ones(60, 1); 1 * ones(60, 1); 3 * ones(60, 1)];
+%       grps4 = [7 * ones(60, 1); 8 * ones(60, 1); 6 * ones(60, 1)];
+%       tble3 = table(data3, data4, grps3, grps4);
+%       testResults4 = test_difference(tble3, {'data3', 'data4'}, {'grps3', 'grps4'})
 % Outputs:
 %       testResults - a table with each row corresponding to a measured variable
 %                           and columns:
-%                       isDifferent - whether the groups are different 
+%                       isDifferent - whether the groups are different
 %                       pValue      - p value for each test
+%                       testFunction- test function used
+%                       isNormal    - whether groups are normally distributed
 %                       h           - cell array of handles to histograms
 %                       histFigNames- histogram file names
 %                   specified as a table
@@ -32,9 +47,12 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 %                   - Any other parameter-value pair for the TODO() function
 %
 % Requires:
+%       cd/argfun.m
 %       cd/construct_fullpath.m
+%       cd/convert_to_char.m
 %       cd/create_error_for_nargin.m
 %       cd/force_column_cell.m
+%       cd/match_format_vector_sets.m
 %       cd/plot_grouped_histogram.m
 %       cd/struct2arglist.m
 %
@@ -49,7 +67,7 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 %% Hard-coded parameters
 % TODO: Make these parameters
 plotHistograms = true;
-saveHistFlag = true;
+saveHistFlag = false;
 histFigNames = '';
 alphaNormality = 0.05;  % significance level for normality test
 alphaTest = 0.05;       % significance level for hypothesis test
@@ -57,7 +75,7 @@ toDisplay = false;      % whether to display ANOVA table
 
 %% Default values for optional arguments
 sheetNameDefault = '';
-prefixDefault = '';             % prepend nothing to file names by default
+prefixDefault = '';   	% prepend nothing to file names by default
 outFolderDefault = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -94,7 +112,7 @@ addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));    
 
 % Read from the Input Parser
-parse(iP, dataTable, varargin{:});
+parse(iP, dataTable, yVars, xVar, varargin{:});
 sheetName = iP.Results.SheetName;
 prefix = iP.Results.Prefix;
 outFolder = iP.Results.OutFolder;
@@ -127,6 +145,8 @@ if plotHistograms && nParams == 1
     if saveHistFlag && isempty(histFigNames)
         histFigNames = strcat(prefix, '_histogram_', yVars, '.png');
         histFigNames = construct_fullpath(histFigNames, 'Directory', outFolder);
+    else
+        histFigNames = match_format_vector_sets(histFigNames, yVars);
     end
 
     % Plot grouped histograms
@@ -138,7 +158,7 @@ end
 %% Perform the appropriate comparison test
 if nParams == 1
     % Perform t test, rank sum test or ANOVA
-    statsStructs = cellfun(@(x, y) test_for_one_variable(xData, y, ...
+    statsStructs = cellfun(@(y) test_for_one_variable(xData, y, ...
                         alphaNormality, alphaTest, toDisplay), yData);
 
     % Convert to a table
@@ -150,10 +170,10 @@ if nParams == 1
     end
 else
     % Create linear models
-    models = cellfun(@(y) fitlm(xData, y), yData);
+    models = cellfun(@(y) fitlm(xData, y), yData, 'UniformOutput', false);
 
     % Compute ANOVA statistics tables
-    results = arrayfun(@(x) anova(x), models, 'UniformOutput', false);
+    results = cellfun(@(x) anova(x), models, 'UniformOutput', false);
 
     % Extract statistics from each table
     sumOfSquares = cellfun(@(x) x.SumSq, results, 'UniformOutput', false);
@@ -163,13 +183,16 @@ else
     fStatistic = cellfun(@(x) x.F, results, 'UniformOutput', false);
 
     % Decide whether groups are different
-    isDifferent = cellfun(@(x) pValue(x) < alphaTest, 'UniformOutput', false);
+    isDifferent = cellfun(@(x) x < alphaTest, pValue, 'UniformOutput', false);
 
     % Place results in a table
     % TODO: Better way of organizing
     testResults = table(isDifferent, pValue, sumOfSquares, degreeFreedom, ...
                         meanSquares, fStatistic);
 end
+
+% Create row names
+testResults.Properties.RowNames = strcat(yVars, '_vs_', char(strjoin(xVar, '_and_')));
 
 %% Save the table if requested
 if ~isempty(sheetName)
@@ -226,12 +249,21 @@ isNormal = all(pNormality >= alphaNormality);
 if nGroups == 1
     % Perform a 1-sample t-test (tests difference of mean with 0)
     [isDifferent, pValue] = ttest1(data{:}, 'Alpha', alphaTest);
+
+    % Store test function
+    testFunction = 'ttest1';
 elseif nGroups == 2 && isNormal
     % Perform a 2-sample t-test (tests difference between means)
     [isDifferent, pValue] = ttest2(data{:}, 'Alpha', alphaTest);
+
+    % Store test function
+    testFunction = 'ttest2';
 elseif nGroups == 2 && ~isNormal
     % Perform a Wilcoxon rank-sum test (tests difference between medians)
     [pValue, isDifferent] = ranksum(data{:}, 'Alpha', alphaTest);
+
+    % Store test function
+    testFunction = 'ranksum';
 else
     % Decide whether to display the ANOVA table
     if toDisplay
@@ -245,11 +277,20 @@ else
 
     % Decide whether the group means are different
     isDifferent = pValue < alphaTest;
+
+    % Store test function
+    testFunction = 'anova1';
 end
 
 % Store in statsStruct
-statsStruct.pValue = pValue;
 statsStruct.isDifferent = isDifferent;
+statsStruct.pValue = pValue;
+statsStruct.testFunction = testFunction;
+statsStruct.isNormal = isNormal;
+statsStruct.pNormalityLill = pNormalityLill;
+statsStruct.pNormalityAd = pNormalityAd;
+statsStruct.pNormalityJb = pNormalityJb;
+statsStruct.pNormalityKs = pNormalityKs;
 
 % Decide whether there is a difference between each pair of groups
 if nGroups > 2
@@ -264,10 +305,19 @@ if nGroups > 2
     otherStats = multcompare(stats);
 
     % Create a vector of first groups
-    firstGroupNames = uniqueX(otherStats(:, 1));
-    secondGroupNames = uniqueX(otherStats(:, 2));
+    [firstGroupNames, secondGroupNames] = ...
+        argfun(@(x) convert_to_char(uniqueX(otherStats(:, x))), 1, 2);
 
-    pValue uniqueX
+    % Create pValueStrs
+    pValueStrs = strcat('pValue_', firstGroupNames, '_', secondGroupNames);
+
+    % Count the number of pairs
+    nPairs = size(otherStats, 1);
+    
+    % Store p values in statsStruct
+    for iPair = 1:nPairs
+        statsStruct.(pValueStrs{iPair}) = otherStats(iPair, 6);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

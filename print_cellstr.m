@@ -15,7 +15,7 @@ function string = print_cellstr (cellStr, varargin)
 %                   must be a cell array of character arrays or a character array
 %       varargin    - 'Delimiter': used to delimit separate entries
 %                   must be a character array
-%                   default == []
+%                   default == ''
 %                   - 'ColDelimiter': used to delimit separate columns
 %                   must be a character array
 %                   default == ', '

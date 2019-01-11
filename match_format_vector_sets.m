@@ -72,6 +72,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %       cd/m3ha_plot_individual_traces.m
 %       cd/match_and_combine_vectors.m
 %       cd/plot_traces.m
+%       cd/test_difference.m
 
 % File History:
 % 2018-10-28 Adapted from code in find_window_endpoints.m 

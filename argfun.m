@@ -51,6 +51,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/plot_protocols.m
 %       cd/plot_traces.m
 %       cd/plot_traces_abf.m
+%       cd/test_difference.m
 
 % File History:
 % 2018-10-25 Created by Adam Lu
