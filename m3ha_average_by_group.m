@@ -65,13 +65,11 @@ parse(iP, dataOrig, varargin{:});
 vecNumberToAverage = iP.Results.VecNumberToAverage;
 
 %% Preparation
-% Count the number of vectors
-nVectors = count_vectors(dataOrig);
+% Count the number of columns for each sweep
+nColumns = count_vectors(dataOrig);
 
-%% Do the job
-% Separate each vector from the matrix
-%   Note: dataSeparated will be a cell array of cell arrays of column vectors
-dataSeparated = extract_columns(dataOrig, 1:nVectors, 'OutputMode', 'single');
+% Generate a vector of sweep numbers
+allColNums = transpose(1:nColumns);
 
 % Find unique grouping values
 groups = unique(grouping, 'sorted');
@@ -79,29 +77,44 @@ groups = unique(grouping, 'sorted');
 % Count the number of groups
 nGroups = length(groups);
 
-% Extract the vector of interest
+% Generate a vector of group numbers
+allGroupNums = transpose(1:nGroups);
 
-dataSeparated{vecNumberToAverage}
+%% Do the job
+% Separate each vector from the matrix
+%   Note: dataSeparated will be a cell array of cell arrays of column vectors
+dataSeparated = extract_columns(dataOrig, allColNums, 'OutputMode', 'single');
 
+% Initialize a cell array for the averaged data that's separated
+dataAvgSeparated = cell(size(dataSeparated));
 
-% Group the voltage traces by unique grouping values, 
-%   then average the grouped traces
-% TODO: Use compute_average_trace with modifications to pass group
-vVecsAveraged = cell(nGroups, 1);
-for iVhold = 1:nGroups
-    % Get the current grouping value
-    vnow = groups(iVhold);
+% Extract the vectors of interest
+vecs = dataSeparated{vecNumberToAverage};
 
-    % Collect all cpr traces with this grouping value
-    vVecsGroupedThisVhold = vVecs(grouping == vnow);
+% Average over traces from each group separately
+vecsAvg = compute_average_trace(vecs, 'Grouping', grouping);
 
-    % Average the voltage traces from this grouping group
-    vVecAveragedThis = compute_average_trace(vVecsGroupedThisVhold);
+% Store this in dataAvgSeparated
+dataAvgSeparated{vecNumberToAverage} = vecsAvg;
 
-    % Save in arrays
-    vVecsAveraged{iVhold} = vVecAveragedThis;
-end
-vVecs = vVecsAveraged;
+% Extract other vectors
+vecsOther = dataSeparated(allColNums ~= vecNumberToAverage);
+
+% For other vectors, extract the first vector and make nGroups copies
+vecsAvgOther = cellfun(@(x) repmat(x(1), nGroups, 1), vecsOther);
+
+% Store this in dataAvgSeparated
+dataAvgSeparated(allColNums ~= vecNumberToAverage) = vecsAvgOther;
+
+% Re-combine the vectors for output
+dataAvg = extract_columns(dataAvgSeparated, allColNums, 'OutputMode', 'single');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%{
+OLD CODE:
+
+[tVecs, vVecs, iVecs, gVecs] = extract_columns(dataOrig, 1:4);
 
 % For time, current and conductance, 
 %   take the first copy and repeat nGroups times
@@ -110,17 +123,9 @@ vVecs = vVecsAveraged;
 [tVecs, iVecs, gVecs] = ...
     argfun(@(x) repmat(x(1), nGroups, 1), tVecs, iVecs, gVecs);
 
-% Re-combine the vectors for output
 dataAvg = cellfun(@(x, y, z, w) horzcat(x, y, z, w), ...
                     tVecs, vVecs, iVecs, gVecs, ...
                     'UniformOutput', false);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%{
-OLD CODE:
-
-[tVecs, vVecs, iVecs, gVecs] = extract_columns(dataOrig, 1:4);
 
 %}
 

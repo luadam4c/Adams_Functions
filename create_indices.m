@@ -1,16 +1,18 @@
-function indices = create_indices (endPoints, varargin)
+function indices = create_indices (varargin)
 %% Creates indices from endpoints (starting and ending indices)
-% Usage: indices = create_indices (endPoints, varargin)
+% Usage: indices = create_indices (varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       TODO
+%       create_indices([2, 5])
+%       create_indices([1, ])
+%       create_indices('IndexEnd', [2, 3])
 % Outputs:
 %       indices     - indices for each pair of idxStart and idxEnd
 %                   specified as a numeric vector 
 %                       or a cell array of numeric vectors
 % Arguments:
-%       endPoints   - the starting and ending indices
+%       endPoints   - (opt) the starting and ending indices
 %                   must be a numeric vector with 2 elements
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
@@ -21,10 +23,10 @@ function indices = create_indices (endPoints, varargin)
 %                   Note: If a cell array, each element must be a vector
 %                         If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array
-%                   - 'IndexStart': first index to extract
+%                   - 'IndexStart': first index
 %                   must be empty or a numeric vector
 %                   default == ones(nVectors, 1)
-%                   - 'IndexEnd': last index to extract
+%                   - 'IndexEnd': last index
 %                   must be empty or a numeric vector
 %                   default == numel(vector) * ones(nVectors, 1)
 %
@@ -60,6 +62,7 @@ function indices = create_indices (endPoints, varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
+endPointsDefault = [];          % no endpoint by default
 forceCellOutputDefault = false; % don't force output as a cell array by default
 vectorsDefault = [];
 indexEndDefault = [];           % set later
@@ -68,17 +71,12 @@ indexStartDefault = [];         % set later
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
-% Check number of required arguments
-if nargin < 1
-    error(create_error_for_nargin(mfilename));
-end
-
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
 
-% Add required inputs to the Input Parser
-addRequired(iP, 'endPoints', ...
+% Add optional inputs to the Input Parser
+addOptional(iP, 'endPoints', endPointsDefault, ...
     @(x) assert(isempty(x) || isnumeric(x) || iscellnumeric(x), ...
                 ['EndPoints must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
@@ -98,17 +96,27 @@ addParameter(iP, 'IndexEnd', indexEndDefault, ...
                 'IndexEnd must be either empty or a numeric vector!'));
 
 % Read from the Input Parser
-parse(iP, endPoints, varargin{:});
+parse(iP, varargin{:});
+endPoints = iP.Results.endPoints;
 forceCellOutput = iP.Results.ForceCellOutput;
 vectors = iP.Results.Vectors;
 indexStartUser = iP.Results.IndexStart;
 indexEndUser = iP.Results.IndexEnd;
 
-% TODO: warn if EndPoints provided and IndexStart and IndexEnd provided
+% TODO: warn if EndPoints provided and IndexStart and IndexEnd also provided
 
 %% Preparation
-% Make sure endPoints are in columns
-endPoints = force_column_vector(endPoints, 'IgnoreNonVectors', true);
+% If nothing provided, return empty
+if isempty(endPoints) && isempty(vectors) && ...
+        isempty(indexStartUser) && isempty(indexEndUser)
+    indices = [];
+    return
+end
+
+% Make sure endPoints, indexStartUser, indexEndUser are in columns
+[endPoints, indexStartUser, indexEndUser] = ...
+    argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', true), ...
+            endPoints, indexStartUser, indexEndUser);
 
 %% Do the job
 % Extract the starting and ending indices from provided end points
@@ -129,12 +137,25 @@ else
     idxEnd = idxEndFromEndPoints;
 end
 
+% If one of idxStart and idxEnd is empty, create the other
+if isempty(idxStart) && ~isempty(idxEnd)
+    % Start the indices from 1
+    idxStart = ones(size(idxEnd));
+elseif ~isempty(idxStart) && isempty(idxEnd)
+    % Use the length of the vectors
+    idxEnd = count_samples(vectors);
+end
+
+% Make sure indices are columns
+[idxStart, idxEnd] = argfun(@force_column_vector, idxStart, idxEnd);
+
+% Match the formats of idxStart and idxEnd
+[idxStart, idxEnd] = ...
+    match_format_vector_sets(idxStart, idxEnd, 'MatchVectors', true);
+
 % If original vectors are provided, 
 %   fix indices if they are out of range
 if ~(isempty(vectors) || iscell(vectors) && all(all(isemptycell(vectors))))
-    % Make sure indices are columns
-    [idxStart, idxEnd] = argfun(@force_column_vector, idxStart, idxEnd);
-
     % Count the number of samples in each vector
     nSamples = count_samples(vectors);
 
@@ -210,6 +231,8 @@ idxEnd = min([idxEnd, nSamples], [], 2);
     match_format_vectors(nSamples, idxStart, idxEnd);
 
 indices = {indices};
+
+parse(iP, endPoints, varargin{:});
 
 %}
 
