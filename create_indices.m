@@ -48,9 +48,10 @@ function indices = create_indices (varargin)
 %
 % Used by:
 %       cd/compute_peak_decay.m
+%       cd/extract_columns.m
 %       cd/extract_subvectors.m
 %       cd/fit_2exp.m
-%       cd/m3ha_average_by_group.m
+%       cd/compute_average_data.m
 %       cd/parse_pulse_response.m
 
 % File History:

@@ -45,9 +45,10 @@ function nVectors = count_vectors (vectors, varargin)
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/extract_channel.m
+%       cd/extract_columns.m
 %       cd/extract_elements.m
 %       cd/identify_repetitive_pulses.m
-%       cd/m3ha_average_by_group.m
+%       cd/compute_average_data.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/parse_pulse_response.m
 %       cd/plot_protocols.m

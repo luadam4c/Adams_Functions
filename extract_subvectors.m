@@ -74,6 +74,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/compute_rms_error.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
+%       cd/extract_columns.m
 %       cd/extract_common_directory.m
 %       cd/find_passive_params.m
 %       cd/filter_and_extract_pulse_response.m

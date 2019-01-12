@@ -53,7 +53,7 @@ function [combTrace, paramsUsed] = ...
 %       cd/compute_maximum_trace.m
 %       cd/compute_minimum_trace.m
 %       cd/find_in_strings.m
-%       cd/m3ha_average_by_group.m
+%       cd/compute_average_data.m
 
 % File History:
 % 2019-01-03 Moved from compute_average_trace

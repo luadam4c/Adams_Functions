@@ -20,7 +20,7 @@ function isNum = isnum (x, varargin)
 %       cd/force_column_cell.m
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
-%       cd/m3ha_average_by_group.m
+%       cd/compute_average_data.m
 %       cd/plot_horizontal_line.m
 %       cd/plot_vertical_line.m
 

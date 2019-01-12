@@ -1,8 +1,9 @@
 function varargout = extract_columns (arrays, varargin)
-%% Extracts columns from numeric arrays or a cell array of numeric arrays
-% Usage: varargout = extract_columns (arrays, colNumbers (opt), varargin)
+%% Extracts columns from arrays or a cell array of arrays
+% Usage: varargout = extract_columns (arrays, colNums (opt), varargin)
 % Explanation:
 %       TODO
+%       By default, cell arrays are not considered as arrays
 % Example(s):
 %       [a, b] = extract_columns({magic(3); ones(4)}, [1:3])
 %       [a, b] = extract_columns({magic(3); ones(3); zeros(4)}, ...
@@ -13,13 +14,12 @@ function varargout = extract_columns (arrays, varargin)
 %       varargout   - extracted column #1s, column #2s, etc.
 %                       or extracted columns for each array 
 %                           if 'OutputMode' is 'single'
-%                   specified as a numeric column vector 
-%                       or a cell array of numeric column vectors
-%                       or a cell array of cell arrays of numeric column vectors
+%                   specified as a column vector 
+%                       or a cell array of column vectors
+%                       or a cell array of cell arrays of column vectors
 % Arguments:    
 %       arrays      - arrays to extract columns from
-%                   must be a numeric array or a cell array
-%       colNumbers  - (opt) column number(s) to extract instead of 1, 2, 3, ...
+%       colNums  - (opt) column number(s) to extract instead of 1, 2, 3, ...
 %                   must be either 'all' or a positive integer vector
 %                       or a cell array of positive integer vectors
 %                   default == 'all'
@@ -32,18 +32,28 @@ function varargout = extract_columns (arrays, varargin)
 %                                           as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'TreatCnvAsColumns': whether to treat a cell array
+%                                           of numeric vectors as columns
+%                                           of the same array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/count_samples.m
+%       cd/count_vectors.m
+%       cd/create_indices.m
+%       cd/extract_elements.m
+%       cd/extract_subvectors.m
 %       cd/force_column_cell.m
 %       cd/match_dimensions.m
-%       cd/ispositiveintegerarray.m
 %       cd/iscellnumeric.m
+%       cd/iscellvector.m
+%       cd/ispositiveintegerarray.m
 %
 % Used by:    
 %       cd/force_column_cell.m
 %       cd/force_column_vector.m
-%       cd/m3ha_average_by_group.m
+%       cd/compute_average_data.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
 
@@ -53,7 +63,9 @@ function varargout = extract_columns (arrays, varargin)
 % 2018-12-18 Allow the option to treat cell arrays as arrays;
 %               added 'TreatCellAsArray' (default == 'false')
 % 2019-01-01 Fixed bugs if a cell array has only one numeric array
-% 2019-01-12 Fixed bugs for single output and simplified code
+% 2019-01-12 Fixed bugs for single output and simplified 
+% 2019-01-12 Now considers cell arrays of numeric vectors 
+%               as a single array when 'TreatCnvAsColumns' is true
 % 
 
 %% Hard-coded parameters
@@ -63,6 +75,8 @@ validOutputModes = {'multiple', 'single'};
 colNumberDefault  = 'all';      % extract all columns by default
 outputModeDefault = 'multiple'; % separate outputs by default
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
+treatCnvAsColumnsDefault = false;   % treat cell arrays of numeric vectors as 
+                                    % many arrays by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -78,17 +92,14 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'arrays', ...
-    @(x) assert(isnumeric(x) || iscell(x), ...
-                ['arrays must be either a numeric array ', ...
-                    'or a cell array!']));
+addRequired(iP, 'arrays');
 
 % Add optional inputs to the Input Parser
-addOptional(iP, 'colNumbers', colNumberDefault, ...
+addOptional(iP, 'colNums', colNumberDefault, ...
     @(x) assert((ischar(x) || isstring(x)) && strcmpi(x, 'all') || ...
                 ispositiveintegerarray(x) || ...
                 iscell(x) && iscellnumeric(x), ...
-                ['colNumbers must be either ''all'', "all" ', ...
+                ['colNums must be either ''all'', "all" ', ...
                     'or a positive integer array ', ...
                     'or a cell array of positive integer vectors!']));
 
@@ -97,23 +108,28 @@ addParameter(iP, 'OutputMode', outputModeDefault, ...
     @(x) any(validatestring(x, validOutputModes)));
 addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCnvAsColumns', treatCnvAsColumnsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, arrays, varargin{:});
-colNumbers = iP.Results.colNumbers;
+colNums = iP.Results.colNums;
 outputMode = validatestring(iP.Results.OutputMode, validOutputModes);
 treatCellAsArray = iP.Results.TreatCellAsArray;
+treatCnvAsColumns = iP.Results.TreatCnvAsColumns;
 
-% Make sure colNumbers are column vectors
-colNumbers = force_column_vector(colNumbers);
+% Make sure colNums are column vectors
+if ~(ischar(colNums) || isstring(colNums))
+    colNums = force_column_vector(colNums);
+end
 
-% Check if colNumbers is compatible with arrays
-if iscell(colNumbers)
+% Check if colNums is compatible with arrays
+if iscell(colNums)
     if ~iscell(arrays) || treatCellAsArray
-        error(['colNumbers cannot be multiple vectors ', ...
+        error(['colNums cannot be multiple vectors ', ...
                 'if arrays is not a cell array!']);
-    elseif numel(arrays) ~= numel(colNumbers)
-        error(['If colNumbers are multiple vectors, it must have ', ...
+    elseif numel(arrays) ~= numel(colNums)
+        error(['If colNums are multiple vectors, it must have ', ...
                 'the same number of vectors as the number of arrays!'])
     end
 end
@@ -126,17 +142,18 @@ if isempty(arrays)
 end
 
 % Count the number of columns for each array
-%   Note: Don't use count_vectors.m in case definition of vectors changes
-if isnumeric(arrays) || treatCellAsArray
+if ~iscell(arrays) || treatCellAsArray
     nColumns = size(arrays, 2);
+elseif treatCnvAsColumns
+    nColumns = count_vectors(arrays);
 else
     nColumns = cellfun(@(x) size(x, 2), arrays);
 end
 
 % Make sure provided column numbers are within range
-if iscell(colNumbers)
+if iscell(colNums)
     % Get the maximum column numbers
-    maxColNumbers = cellfun(@max, colNumbers);
+    maxColNumbers = cellfun(@max, colNums);
 
     % If any maximum column number is greater than 
     %   the corresponding number of columns, return error
@@ -148,9 +165,9 @@ if iscell(colNumbers)
                     indProblematic(idx));
         end
     end    
-elseif isnumeric(colNumbers)
+elseif isnumeric(colNums)
     % Get the maximum column number
-    maxColNumber = max(colNumbers);
+    maxColNumber = max(colNums);
 
     % Get the minimum number of columns
     minNCols = min(nColumns);
@@ -163,30 +180,25 @@ elseif isnumeric(colNumbers)
     end
 end
 
-% Modify colNumbers to be compatible with arrays
+% Modify colNums to be compatible with arrays
 %   based on whether column numbers are provided
-if iscell(colNumbers) || isnumeric(colNumbers)
+if iscell(colNums) || isnumeric(colNums)
     % Only need to match dimensions if there are multiple arrays
-    if iscell(arrays) && ~treatCellAsArray
+    if iscell(arrays) && ~treatCellAsArray && ...
+            ~(treatCnvAsColumns && iscellvector(arrays))
         % Force as a cell array if not already so
-        colNumbers = force_column_cell(colNumbers);
+        colNums = force_column_cell(colNums);
 
         % Match the dimensions of the cell array with arrays
-        colNumbers = match_dimensions(colNumbers, size(arrays));
+        colNums = match_dimensions(colNums, size(arrays));
     end
-elseif ischar(colNumbers) || isstring(colNumbers)
+elseif ischar(colNums) || isstring(colNums)
     % Generate column numbers
-    % TODO: Use a version of create_indices.m
-    if isnumeric(arrays) || treatCellAsArray
-        colNumbers = transpose(1:nColumns);
-    else
-        colNumbers = arrayfun(@(x) transpose(1:x), nColumns, ...
-                            'UniformOutput', false);
-    end
+    colNums = create_indices('IndexEnd', nColumns);
 end
 
 % Count the number of columns requested
-nColNumbers = count_samples(colNumbers);
+nColNumbers = count_samples(colNums);
 
 % Count the number of output arguments requested
 % TODO: Pull this out to a function? Or just use nargoutchk?
@@ -218,38 +230,82 @@ end
 %% Extract columns
 switch outputMode
     case 'multiple'
-        % Extract nOutputs columns
-        varargout = extract_columns_helper(arrays, colNumbers, ...
-                                            nOutputs, treatCellAsArray);
-    case 'single'
-        % Extract nColNumbers columns
-        extracted = extract_columns_helper(arrays, colNumbers, ...
-                                            max(nColNumbers), treatCellAsArray);
+        % Restrict the column numbers to nOutputs
+        colNums = extract_subvectors(colNums, 'IndexEnd', nOutputs);
 
-        % Make that the first and only output
-        varargout{1} = extracted;
+        % Extract nOutputs columns
+        varargout = extract_columns_helper(colNums, arrays, ...
+                                treatCellAsArray, treatCnvAsColumns);
+    case 'single'
+        % Extract all columns
+        varargout{1} = extract_columns_helper(colNums, arrays, ...
+                                treatCellAsArray, treatCnvAsColumns);
     otherwise
         error('outputMode unrecognized!');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function colExtracted = extract_columns_helper(arrays, colNumbers, ...
-                                            nColsToExtract, treatCellAsArray)
-% Extract the columns for a single array
+function colExtracted = extract_columns_helper(colNums, arrays, ...
+                                        treatCellAsArray, treatCnvAsColumns)
+%% Extract the columns depending on the number of arrays
 
-if isnumeric(arrays) || treatCellAsArray
-    % Treat arrays as a non-cell array
-    colExtracted = arrayfun(@(x) arrays(:, x), colNumbers, ...
-                            'UniformOutput', false);
+if treatCellAsArray || ~iscell(arrays) || ...
+        (treatCnvAsColumns && iscellvector(arrays))
+    % Treat arrays as a single array
+    colExtracted = arrayfun(@(x) extract_from_one_array(x, arrays, ...
+                                    treatCellAsArray, treatCnvAsColumns), ...
+                            colNums, 'UniformOutput', false);
 else
-    % Treat arrays as a cell array
-    colExtracted = cell(nColsToExtract, 1);
-    for iCol = 1:nColsToExtract
-         colExtracted{iCol} = ...
-            cellfun(@(x, y) x(:, y(iCol)), arrays, colNumbers, ...
-                    'UniformOutput', false);
-    end
+    % Count the minimum number of columns requested
+    nColNumbers = count_samples(colNums);
+    nColsToExtract = min(nColNumbers);
+
+    % Treat each cell content as a different array
+    colExtracted = arrayfun(@(x) extract_specific_column(x, colNums, arrays, ...
+                                    treatCellAsArray, treatCnvAsColumns), ...
+                    transpose(1:nColsToExtract), 'UniformOutput', false);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function colExtracted = extract_specific_column(iCol, colNums, arrays, ...
+                                        treatCellAsArray, treatCnvAsColumns)
+%% Extract a specific column (may be different for each array)
+
+% Get the current column numbers to extract
+colNumsThis = extract_elements(colNums, 'specific', 'Index', iCol);
+
+% Match dimensions
+colNumsThis = match_dimensions(colNumsThis, size(arrays));
+
+% Extract this column from each array
+colExtracted = ...
+    cellfun(@(x, y) extract_from_one_array(x, y, ...
+                    treatCellAsArray, treatCnvAsColumns), ...
+            num2cell(colNumsThis), arrays, 'UniformOutput', false);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function colExtracted = extract_from_one_array(colNum, array, ...
+                                        treatCellAsArray, treatCnvAsColumns)
+%% Extract a specific column from a specific array
+
+if treatCellAsArray || ~iscell(array)
+    % Treat array as a non-cell array
+    colExtracted = array(:, colNum);
+elseif treatCnvAsColumns && iscellvector(array)
+    % Treat each cell content as a different column of the same array
+    colExtracted = array{colNum};
+else
+    % Count the minimum number of columns requested
+    nColNumbers = count_samples(colNum);
+    nColsToExtract = min(nColNumbers);
+
+    % Treat each cell content as a different array
+    colExtracted = arrayfun(@(x) extract_specific_column(x, colNum, array, ...
+                                    treatCellAsArray, treatCnvAsColumns), ...
+                    transpose(1:nColsToExtract), 'UniformOutput', false);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -257,19 +313,19 @@ end
 %{
 OLD CODE:
 
-if iscell(colNumbers)
+if iscell(colNums)
     % Match the dimensions of the cell array
-    colNumbers = match_dimensions(colNumbers, size(arrays));
-elseif isnumeric(colNumbers) || treatCellAsArray
-    % Place colNumbers in a cell and repmat it as many times as 
+    colNums = match_dimensions(colNums, size(arrays));
+elseif isnumeric(colNums) || treatCellAsArray
+    % Place colNums in a cell and repmat it as many times as 
     %   the number of arrays
-    colNumbers = repmat({colNumbers}, size(arrays));
+    colNums = repmat({colNums}, size(arrays));
 end
 
-if isnumeric(colNumbers)
-    nColNumbers = length(colNumbers);
-elseif iscell(colNumbers)
-    nColNumbers = cellfun(@length, colNumbers);
+if isnumeric(colNums)
+    nColNumbers = length(colNums);
+elseif iscell(colNums)
+    nColNumbers = cellfun(@length, colNums);
 end
 
 %                   must be a numeric array or a cell array of numeric arrays
@@ -286,20 +342,20 @@ if isnumeric(arrays) || treatCellAsArray
 %       cd/force_column_vector.m
 % Transform arrays into cell arrays of column vectors
 if nArrays == 1
-    varargout{1} = force_column_vector(arrays(:, colNumbers));
+    varargout{1} = force_column_vector(arrays(:, colNums));
 else
     varargout{1} = ...
         cellfun(@(x, y) force_column_vector(x(:, y)), ...
-                    arrays, colNumbers, ...
+                    arrays, colNums, ...
                     'UniformOutput', false);
 end
 
 if nArrays == 1
-    varargout{1} = force_column_cell(arrays(:, colNumbers));
+    varargout{1} = force_column_cell(arrays(:, colNums));
 else
     varargout{1} = ...
         cellfun(@(x, y) force_column_cell(x(:, y)), ...
-                    arrays, colNumbers, 'UniformOutput', false);
+                    arrays, colNums, 'UniformOutput', false);
 end
 
 % If arrays is a cell array with one element, pull it out
@@ -315,31 +371,31 @@ switch outputMode
         varargout = cell(1, nOutputs);
         for iOutput = 1:nOutputs
             if isnumeric(arrays) || treatCellAsArray
-                varargout{iOutput} = arrays(:, colNumbers(iOutput));
+                varargout{iOutput} = arrays(:, colNums(iOutput));
             else
                 varargout{iOutput} = ...
-                    cellfun(@(x, y) x(:, y(iOutput)), arrays, colNumbers, ...
+                    cellfun(@(x, y) x(:, y(iOutput)), arrays, colNums, ...
                             'UniformOutput', false);
             end
         end
     case 'single'
         % Transform arrays into cell arrays of column vectors
         if isnumeric(arrays) || treatCellAsArray
-            varargout{1} = extract_columns_helper(arrays, colNumbers);
+            varargout{1} = extract_columns_helper(arrays, colNums);
         else
             varargout{1} = ...
                 cellfun(@(x, y) extract_columns_helper(x, y), ...
-                            arrays, colNumbers, 'UniformOutput', false);
+                            arrays, colNums, 'UniformOutput', false);
         end
     otherwise
         error('outputMode unrecognized!');
 end
 
-function colExtracted = extract_columns_helper(array, colNumbers)
+function colExtracted = extract_columns_helper(array, colNums)
 % Extract the columns for a single array
 
 % Extract as a cell array
-colExtracted = arrayfun(@(x) array(:, x), colNumbers, 'UniformOutput', false);
+colExtracted = arrayfun(@(x) array(:, x), colNums, 'UniformOutput', false);
 
 % Force as a column cell array
 colExtracted{iCol} = force_column_cell(colExtractedThis);
@@ -350,6 +406,46 @@ if isnumeric(arrays) || treatCellAsArray
 else
     nArrays = numel(arrays);
 end
+
+if isnumeric(arrays) || treatCellAsArray
+    colNums = transpose(1:nColumns);
+else
+    colNums = arrayfun(@(x) transpose(1:x), nColumns, ...
+                        'UniformOutput', false);
+end
+
+colExtracted = cell(nColsToExtract, 1);
+for iCol = 1:nColsToExtract
+     colExtracted{iCol} = ...
+        cellfun(@(x, y) x(:, y(iCol)), arrays, colNums, ...
+                'UniformOutput', false);
+end
+
+function colExtracted = extract_columns_helper(arrays, colNums, ...
+                            nColsToExtract, treatCellAsArray, treatCnvAsColumns)
+
+
+colExtracted = cell(nColsToExtract, 1);
+for iCol = 1:nColsToExtract
+    % Get the current column numbers to extract
+    colNumsThis = extract_elements(colNums, 'specific', 'Index', iCol);
+
+    % Extract this column from each array
+    colExtracted{iCol} = ...
+        cellfun(@(x) extract_columns_helper(x, y, ...
+                        treatCellAsArray, treatCnvAsColumns)), ...
+                arrays, colNumsThis, 'UniformOutput', false);
+end
+
+% Treat arrays as a non-cell array
+colExtracted = arrayfun(@(x) arrays(:, x), colNums, ...
+                        'UniformOutput', false);
+
+addRequired(iP, 'arrays', ...
+    @(x) assert(isnumeric(x) || iscell(x), ...
+                ['arrays must be either a numeric array ', ...
+                    'or a cell array!']));
+
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -112,6 +112,9 @@ function [errorStruct, hFig, simData] = ...
 %                   - 'JitterFlag': whether to introduce noise in parameters
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'Grouping': a grouping vector used to group traces
+%                   must be a vector
+%                   default == []
 %                   - 'CprWindow': current pulse response window in ms
 %                   must be a numeric vector with 2 elements
 %                   default == [2000, 2360]
@@ -228,10 +231,12 @@ function [errorStruct, hFig, simData] = ...
 %       ~/m3ha/optimizer4gabab/singleneuron4compgabab.hoc
 %       cd/argfun.m
 %       cd/bar_w_CI.m
+%       cd/compute_average_data.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_residuals.m
 %       cd/compute_rms_error.m
 %       cd/compute_sampling_interval.m
+%       cd/compute_single_neuron_errors.m
 %       cd/create_colormap.m
 %       cd/extract_columns.m
 %       cd/extract_subvectors.m
@@ -241,8 +246,6 @@ function [errorStruct, hFig, simData] = ...
 %       cd/force_matrix.m
 %       cd/load_neuron_outputs.m
 %       cd/match_time_points.m
-%       cd/compute_single_neuron_errors.m
-%       cd/m3ha_average_by_group.m
 %       cd/m3ha_neuron_create_simulation_params.m
 %       cd/m3ha_neuron_create_TC_commands.m
 %       cd/m3ha_plot_individual_traces.m
@@ -415,7 +418,8 @@ plotStatisticsFlagDefault = true;   % LTS & burst statistics plotted by default
 plotSwpWeightsFlagDefault = 'auto'; % set in m3ha_plot_inidividual_traces.m
 plotMarkFlagDefault = true;         % the way Mark wants plots to look
 showSweepsFlagDefault = true;       % whether to show sweep figures
-jitterFlagDefault = false;      % no jitter by default
+jitterFlagDefault = false;          % no jitter by default
+groupingDefault = [];               % no grouping by default
 cprWindowDefault = [0, 360] + timeToStabilize;      % (ms)
 ipscrWindowDefault = [0, 8000] + timeToStabilize;   % (ms)
 outFilePathDefault = 'auto';    % set later
@@ -518,6 +522,7 @@ addParameter(iP, 'ShowSweepsFlag', showSweepsFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'JitterFlag', jitterFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Grouping', groupingDefault);
 addParameter(iP, 'CprWindow', cprWindowDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 2}));
 addParameter(iP, 'IpscrWindow', ipscrWindowDefault, ...
@@ -610,6 +615,7 @@ plotSwpWeightsFlag = iP.Results.PlotSwpWeightsFlag;
 plotMarkFlag = iP.Results.PlotMarkFlag;
 showSweepsFlag = iP.Results.ShowSweepsFlag;
 jitterFlag = iP.Results.JitterFlag;
+grouping = iP.Results.Grouping;
 cprWindow = iP.Results.CprWindow;
 ipscrWindow = iP.Results.IpscrWindow;
 outFilePath = iP.Results.OutFilePath;
@@ -639,11 +645,6 @@ baseNoiseCpr = iP.Results.BaseNoiseCpr;
 baseNoiseIpscr = iP.Results.BaseNoiseIpscr;
 sweepWeightsCpr = iP.Results.SweepWeightsCpr;
 sweepWeightsIpscr = iP.Results.SweepWeightsIpscr;
-
-% TODO
-% vHold
-% cpStartWindowOrig
-% cprWindow
 
 %% Preparation
 % Decide on simulation-mode-dependent variables
@@ -676,7 +677,7 @@ end
 
 % Decide whether to plot anything
 if plotOverlappedFlag || plotConductanceFlag || ...
-    plotCurrentFlag || plotIndividualFlag || plotResidualsFlag ...
+        plotCurrentFlag || plotIndividualFlag || plotResidualsFlag
     plotFlag = true;
 else
     plotFlag = false;
@@ -831,11 +832,13 @@ if generateDataFlag
 end
 
 % If requested, average both recorded and simulated responses 
-%   according to the vHold condition recorded by Christine
+%   according to a grouping condition
 if averageCprFlag && ~isempty(realData) && strcmpi(simMode, 'passive')
     % Average both recorded and simulated responses 
-    realData = m3ha_average_by_group(realData, vHold, 'ColNum', VOLT_COL_REC);
-    simData = m3ha_average_by_group(simData, vHold, 'ColNum', VOLT_COL_SIM);
+    realData = compute_average_data(realData, 'Grouping', grouping, ...
+                                    'ColNum', VOLT_COL_REC);
+    simData = compute_average_data(simData, 'Grouping', grouping, ...
+                                    'ColNum', VOLT_COL_SIM);
 
     % Re-extract columns
     [vVecsRec, iVecsRec] = ...
@@ -3158,7 +3161,7 @@ sweepWeightsIpscrDefault = 1;   % equal weights by default
     m3ha_average_by_vhold(realData, simData, vHold, ...
                         cpStartWindowOrig, cprWindow);
 [realData, simData] = ...
-    argfun(@(x) m3ha_average_by_group(data, vHold, 'ColNum', 2), ...
+    argfun(@(x) compute_average_data(data, vHold, 'ColNum', 2), ...
             realData, simData);
 
 function [realData, simData] = m3ha_average_by_vhold(realData, simData, vHold)

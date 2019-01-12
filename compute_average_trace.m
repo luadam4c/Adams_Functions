@@ -17,11 +17,10 @@ function [avgTrace, paramsUsed] = compute_average_trace (traces, varargin)
 %       cd/compute_combined_trace.m
 %
 % Used by:
+%       cd/compute_average_data.m
 %       cd/compute_average_pulse_response.m
 %       cd/find_passive_params.m
 %       cd/force_column_vector.m
-%       cd/m3ha_average_by_group.m
-%       cd/m3ha_import_raw_traces.m
 
 % File History:
 % 2018-10-11 Created by Adam Lu

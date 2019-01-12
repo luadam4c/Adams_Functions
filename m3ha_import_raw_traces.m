@@ -91,7 +91,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 % Requires:
 %       cd/apply_or_return.m
 %       cd/argfun.m
-%       cd/compute_average_trace.m
+%       cd/compute_average_data.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_sampling_interval.m
 %       cd/construct_and_check_fullpath.m
@@ -106,7 +106,6 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %       cd/force_column_vector.m
 %       cd/force_string_end.m
 %       cd/print_cellstr.m
-%       cd/m3ha_average_by_group.m
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_locate_homedir.m
 %
@@ -134,7 +133,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 % 2018-11-28 Now pads vvecsIpscr with NaN instead of with holdPotentialIpscr
 % 2019-01-01 Made all arguments optional except fileNames
 %               and consolidated the different types of responses
-% 2019-01-12 Now uses m3ha_average_by_group.m
+% 2019-01-12 Now uses compute_average_data.m
 
 %% Hard-coded constants
 NS_PER_US = 1000;
@@ -544,7 +543,8 @@ data = cellfun(@(x, y, z, w) horzcat(x, y, z, w), ...
 % Save all the data
 dataAll = data;
 
-%% Average the current pulse responses according to vHoldif toParsePulse && toAverageByVhold
+%% Average the current pulse responses according to vHold
+if toParsePulse && toAverageByVhold
     % Print message
     fprintf('Averaging the current pulse responses according to vHold ... \n');
 
@@ -552,7 +552,8 @@ dataAll = data;
     vHoldCond = swpInfoAll{fileNames, 'vrow'};
 
     % Average the data by holding voltage conditions
-    [data, vUnique] = m3ha_average_by_group(data, vHoldCond, 'ColNum', 2);
+    [data, vUnique] = compute_average_data(data, 'Grouping', vHoldCond, ...
+                                            'ColNumToAverage', 2);
 
     % Create a new file prefix
     filePrefix = strcat(cellName, '_vhold');

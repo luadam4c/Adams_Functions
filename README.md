@@ -44,6 +44,7 @@ Last Updated 2019-01-12 by Adam Lu
 - [**compute_and_plot_all_responses.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_and_plot_all_responses.m): Computes and plots all pulse responses with stimulus
 - [**compute_and_plot_average_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_and_plot_average_response.m): Computes and plots an average pulse response with its stimulus
 - [**compute_and_plot_concatenated_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_and_plot_concatenated_trace.m): Computes and plots concatenated traces from parsed ABF file results
+- [**compute_average_data.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_average_data.m): Average data according column numbers to average and to a grouping vector
 - [**compute_average_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_average_pulse_response.m): Computes an average pulse response as well as its features
 - [**compute_average_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_average_trace.m): Computes the average of traces that are not necessarily the same length
 - [**compute_axis_limits.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_axis_limits.m): Computes x or y axis limits from data (works also for a range [min(data), max(data)])
@@ -109,7 +110,7 @@ Last Updated 2019-01-12 by Adam Lu
 - [**estimate_passive_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/estimate_passive_params.m): Estimates passive parameters from fitted coefficients, current pulse amplitude and some constants
 - [**estimate_resting_potential.m**](https://github.com/blabuva/Adams_Functions/blob/master/estimate_resting_potential.m): Estimates the resting membrane potential (mV) and the input resistance (MOhm) from holding potentials and holding currents
 - [**extract_channel.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_channel.m): Extracts vectors of a given type from a .abf file
-- [**extract_columns.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_columns.m): Extracts columns from numeric arrays or a cell array of numeric arrays
+- [**extract_columns.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_columns.m): Extracts columns from arrays or a cell array of arrays
 - [**extract_common_directory.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_common_directory.m): Extracts the common parent directory of a cell array of file paths
 - [**extract_common_prefix.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_common_prefix.m): Extracts the common prefix of a cell array of strings
 - [**extract_common_suffix.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_common_suffix.m): Extracts the common suffix of a cell array of strings
@@ -171,7 +172,7 @@ Last Updated 2019-01-12 by Adam Lu
 - [**isbinaryscalar.m**](https://github.com/blabuva/Adams_Functions/blob/master/isbinaryscalar.m): Returns whether an input is a binary scalar (may be empty)
 - [**iscellnumeric.m**](https://github.com/blabuva/Adams_Functions/blob/master/iscellnumeric.m): Returns whether an input is a cell array of numeric arrays
 - [**iscellnumericvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/iscellnumericvector.m): Returns whether an input is a cell array of numeric vectors (may be empty)
-- [**iscellvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/iscellvector.m): Returns whether an input is a cell array of vectors (may be empty)
+- [**iscellvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/iscellvector.m): Returns whether an input is a cell array of non-cell vectors (may be empty)
 - [**isemptycell.m**](https://github.com/blabuva/Adams_Functions/blob/master/isemptycell.m): Returns whether each cell of a cell array is empty; if not a cell array, same as isempty()
 - [**isfigtype.m**](https://github.com/blabuva/Adams_Functions/blob/master/isfigtype.m): Check whether a string or each string in a cell array is a valid figure type accepted by saveas()
 - [**is_in_parallel.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_in_parallel.m): Checks whether in a parfor loop
@@ -200,7 +201,6 @@ Last Updated 2019-01-12 by Adam Lu
 - [**locate_functionsdir.m**](https://github.com/blabuva/Adams_Functions/blob/master/locate_functionsdir.m): Locate the first shared functions directory that exists
 - [**log_arraytext.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_arraytext.m): Create a text file that logs the array information
 - [**log_matfile.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_matfile.m): Print variables in a MATfile to a comma-separated-value file
-- [**m3ha_average_by_group.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_average_by_group.m): Average data according to a grouping vector
 - [**m3ha_correct_unbalanced_bridge.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_correct_unbalanced_bridge.m): Fix current pulse response traces that may have out-of-balance bridges
 - [**m3ha_determine_row_conditions.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_determine_row_conditions.m): Determine the conditions for each row
 - [**m3ha_find_files_to_take_out.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_files_to_take_out.m): Returns all the file names of files to take out from .png files in 'TAKE_OUT_*' folders of a special cases directory

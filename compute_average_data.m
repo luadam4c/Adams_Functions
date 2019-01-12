@@ -1,10 +1,16 @@
-function [dataAvg, groups] = m3ha_average_by_group (dataOrig, grouping, varargin)
-%% Average data according to a grouping vector
-% Usage: [dataAvg, groups] = m3ha_average_by_group (dataOrig, grouping, varargin)
+function [dataAvg, groups] = compute_average_data (dataOrig, varargin)
+%% Average data according column numbers to average and to a grouping vector
+% Usage: [dataAvg, groups] = compute_average_data (dataOrig, varargin)
 % Explanation:
-%       TODO
+%       Given data as a cell array of sweeps, with each
+%           sweep's data represented by many columns,
+%           this function allows the user to select specific columns
+%           to average and to average over specific groups of sweeps.
+%       For the columns that are not averaged, the first sweep
+%           out of each group is extracted
+%       By default, a single set of vectors is considered as one sweep
 % Example(s):
-%       m3ha_average_by_group({magic(3), magic(3) + 1, magic(3) + 2}, {'a', 'b', 'b'}, 'ColNumToAverage', 2:3)
+%       compute_average_data({magic(3), magic(3) + 1, magic(3) + 2}, 'Grouping', {'a', 'b', 'b'}, 'ColNumToAverage', 2:3)
 % Outputs:
 %       dataAvg     - data averaged
 %                   specified as a numeric array
@@ -13,11 +19,12 @@ function [dataAvg, groups] = m3ha_average_by_group (dataOrig, grouping, varargin
 % Arguments:
 %       dataOrig    - original data
 %                   must be a numeric array or a cell array of numeric arrays
-%       grouping   - holding voltages conditions
-%                   must be a numeric vector
 %       varargin    - 'ColNumToAverage': column number(s) to average
 %                   must be empty or a positive integer vector
 %                   default == transpose(1:min(nColumns))
+%                   - 'Grouping': a grouping vector used to group traces
+%                   must be a vector
+%                   default == []
 %
 % Requires:
 %       cd/compute_average_trace.m
@@ -27,6 +34,7 @@ function [dataAvg, groups] = m3ha_average_by_group (dataOrig, grouping, varargin
 %       cd/create_indices.m
 %       cd/extract_columns.m
 %       cd/isnum.m
+%       cd/iscellvector.m
 %
 % Used by:
 %       cd/m3ha_import_raw_traces.m
@@ -40,6 +48,7 @@ function [dataAvg, groups] = m3ha_average_by_group (dataOrig, grouping, varargin
 
 %% Default values for optional arguments
 colNumToAverageDefault = [];
+groupingDefault = [];               % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -64,20 +73,54 @@ addParameter(iP, 'ColNumToAverage', colNumToAverageDefault, ...
     @(x) assert(isempty(x) || ispositiveintegervector(x), ...
                 ['ColNumToAverage must be either empty or , ', ...
                     'a positive integer vector!']));
+addParameter(iP, 'Grouping', groupingDefault);
 
 % Read from the Input Parser
 parse(iP, dataOrig, varargin{:});
 colNumToAverage = iP.Results.ColNumToAverage;
+grouping = iP.Results.Grouping;
 
 %% Preparation
-% Count the number of columns for each sweep
-nColumns = count_vectors(dataOrig);
+% Set default grouping vector if not provided
+%   or use it to determine the number of sweeps
+if isempty(grouping)
+    if isnumeric(dataOrig) || iscellvector(dataOrig)
+        % By default, a single set of vectors is considered as one sweep
+        nSweeps = 1;
+    else
+        % Count the number of sweeps
+        nSweeps = numel(dataOrig);
+    end
+
+    % Make them all the same group
+    grouping = ones(nSweeps, 1);
+else
+    % Count the number of sweeps expected
+    nSweeps = numel(grouping);
+end
+
+% Count the number of vectors in dataOrig
+nVectors = count_vectors(dataOrig);
+
+% Decide on the number of columns for each sweep
+if nSweeps == numel(nVectors)
+    % Any single set of vectors is already considered as one sweep
+    %   so nVectors is indeed nColumns
+    nColumns = nVectors;
+    treatCnvAsColumns = true;
+elseif nSweeps == nVectors
+    % The single set of vectors is considered as multiple sweeps
+    %   with one column for each sweep
+    nColumns = 1;
+    treatCnvAsColumns = false;
+end
 
 % Generate a vector of column numbers
 allColNums = create_indices('IndexEnd', min(nColumns));
 
-% Average all columns by default
+% Set default column numbers to average
 if isempty(colNumToAverage)
+    % Average all columns by default
     colNumToAverage = allColNums;
 end
 
@@ -96,7 +139,8 @@ allGroupNums = create_indices('IndexEnd', nGroups);
 %% Do the job
 % Extract each column from all sweeps separately
 %   Note: dataSeparated will be a cell array of cell arrays of column vectors
-dataSeparated = extract_columns(dataOrig, allColNums, 'OutputMode', 'single');
+dataSeparated = extract_columns(dataOrig, allColNums, 'OutputMode', 'single', ...
+                                'TreatCnvAsColumns', treatCnvAsColumns);
 
 % Initialize a cell array for the processed data
 %   Note: each element corresponds to one original column
@@ -120,13 +164,11 @@ vecsFirst = compute_combined_trace(vecsOther, 'first', 'Grouping', grouping);
 % Store copied vectors in dataAvgSeparated
 dataAvgSeparated(colNumOther) = vecsFirst;
 
-% Concatenate the results from each group
-dataAvg = cellfun(@(x) horzcat(x{:}), dataAvgSeparated, ...
-                    'UniformOutput', false);
-
 % Reorganize the output so that each element of the cell array are
 %   the averaged columns from the same group
-dataAvg = extract_columns(dataAvg, allGroupNums, 'OutputMode', 'single');
+dataAvg = extract_columns(dataAvgSeparated, allGroupNums, ...
+                                'OutputMode', 'single', ...
+                                'TreatCnvAsColumns', true);
 dataAvg = cellfun(@(x) horzcat(x{:}), dataAvg, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -154,6 +196,11 @@ allColNums = create_indices('IndexEnd', nColumns);
 % For other vectors, extract the first vector and make nGroups copies
 vecsFirst = cellfun(@(x) repmat(x(1), nGroups, 1), vecsOther, ...
                         'UniformOutput', false);
+
+% Concatenate the results from each group
+dataAvg = cellfun(@(x) horzcat(x{:}), dataAvgSeparated, ...
+                    'UniformOutput', false);
+dataAvg = extract_columns(dataAvg, allGroupNums, 'OutputMode', 'single');
 
 %}
 

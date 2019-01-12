@@ -40,6 +40,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/compute_peak_halfwidth.m
 %       cd/create_average_time_vector.m
 %       cd/create_indices.m
+%       cd/extract_columns.m
 %       cd/parse_pulse_response.m
 %       cd/plot_protocols.m
 
