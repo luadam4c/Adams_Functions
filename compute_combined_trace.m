@@ -21,6 +21,8 @@ function [combTrace, paramsUsed] = ...
 %                           'minimum'   - take the minimum
 %                           'all'       - take the logical AND
 %                           'any'       - take the logical OR
+%                           'first'     - take the first trace
+%                           'last'      - take the last trace
 %       varargin    - 'NSamples': number of samples in the average trace
 %                   must be a nonnegative integer scalar
 %                   default == minimum of the lengths of all traces
@@ -39,6 +41,7 @@ function [combTrace, paramsUsed] = ...
 %                   
 % Requires:
 %       cd/count_samples.m
+%       cd/count_vectors.m
 %       cd/isnum.m
 %       cd/force_matrix.m
 %       cd/error_unrecognized.m
@@ -50,6 +53,7 @@ function [combTrace, paramsUsed] = ...
 %       cd/compute_maximum_trace.m
 %       cd/compute_minimum_trace.m
 %       cd/find_in_strings.m
+%       cd/m3ha_average_by_group.m
 
 % File History:
 % 2019-01-03 Moved from compute_average_trace
@@ -57,15 +61,17 @@ function [combTrace, paramsUsed] = ...
 % 2019-01-03 Now allows NaNs
 % 2019-01-03 Now uses count_samples.m
 % 2019-01-03 Added 'TreatRowAsMatrix' as an optional argument
-% 2019-01-04 Added 'all', 'any' as valid combind methods
+% 2019-01-04 Added 'all', 'any' as valid combine methods
 % 2019-01-04 Now uses isnum.m
 % 2019-01-12 Added 'Grouping' as an optional parameter
+% 2019-01-12 Added 'first', 'last' as valid combine methods
 % 
 
 %% Hard-coded parameters
 validAlignMethods = {'leftAdjust', 'rightAdjust', ...
                     'leftAdjustPad', 'rightAdjustPad'};
-validCombineMethods = {'average', 'maximum', 'minimum', 'all', 'any'};
+validCombineMethods = {'average', 'maximum', 'minimum', 'all', 'any', ...
+                        'first', 'last'};
 
 %% Default values for optional arguments
 nSamplesDefault = [];               % set later
@@ -145,7 +151,10 @@ nSamplesEachTrace = count_samples(traces, 'TreatRowAsMatrix', treatRowAsMatrix);
 
 %% Do the job
 % Force traces as a matrix and align appropriately
+% TODO: Restrict the number of samples if provided
 tracesMatrix = force_matrix(traces, 'AlignMethod', alignMethod);
+% tracesMatrix = force_matrix(traces, 'AlignMethod', alignMethod, ...
+%                               'NSamples', nSamples);
 
 % Combine traces
 if isempty(grouping)
@@ -179,14 +188,31 @@ groups = unique(grouping, 'sorted');
 % Count the number of groups
 nGroups = length(groups);
 
+count_vectors(traces);
+
+% The length of the grouping vector must match the number of traces
+if numel(grouping) ~= count_vectors(traces)
+    fprintf(['The length of the grouping vector ', ...
+                'does not match the number of traces!!\n']);
+    combTraceEachGroup = [];
+    return
+end
+
 % Combine traces from each group separately
 combTraceEachGroup = cell(nGroups, 1);
 for iGroup = 1:nGroups
     % Get the current grouping value
     groupValueThis = groups(iGroup);
 
+    % Get all indices with the current grouping value
+    if istext(groupValueThis)
+        indThisGroup = strcmp(grouping, groupValueThis);
+    else
+        indThisGroup = grouping == groupValueThis;
+    end
+    
     % Collect all traces with this grouping value
-    tracesThisGroup = traces(:, grouping == groupValueThis);
+    tracesThisGroup = traces(:, indThisGroup);
 
     % Combine the traces from this group
     combTraceThisGroup = ...
@@ -204,20 +230,26 @@ function combTrace = compute_single_combined_trace(traces, combineMethod)
 % Combine traces
 switch combineMethod
     case 'average'
-        % Take the mean of all truncated traces (all columns)
+        % Take the mean of all columns
         combTrace = nanmean(traces, 2);
     case 'maximum'
-        % Take the maximum of all truncated traces (all columns)
+        % Take the maximum of all columns
         combTrace = max(traces, [], 2);
     case 'minimum'
-        % Take the minimum of all truncated traces (all columns)
+        % Take the minimum of all columns
         combTrace = min(traces, [], 2);
     case 'all'
-        % Take the logical AND of all truncated traces (all columns)
+        % Take the logical AND of all columns
         combTrace = all(traces, 2);
     case 'any'
-        % Take the logical OR of all truncated traces (all columns)
+        % Take the logical OR of all columns
         combTrace = any(traces, 2);
+    case 'first'
+        % Take the first column
+        combTrace = traces(:, 1);
+    case 'last'
+        % Take the last column
+        combTrace = traces(:, end);
     otherwise
         error_unrecognized(get_var_name(combineMethod), ...
                             combineMethod, mfilename);

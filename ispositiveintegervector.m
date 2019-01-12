@@ -15,10 +15,10 @@ function isPositiveIntegerVector = ispositiveintegervector (x)
 %       x               - an input to check
 %
 % Requires: 
+%       cd/create_error_for_nargin.m
 %       cd/isaninteger.m
 %
 % Used by:
-%       cd/extract_columns.m
 %       cd/match_dimensions.m
 %       cd/m3ha_select_cells.m
 
@@ -30,8 +30,7 @@ function isPositiveIntegerVector = ispositiveintegervector (x)
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 %% Do the job

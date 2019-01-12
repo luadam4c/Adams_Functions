@@ -37,11 +37,12 @@ function varargout = extract_columns (arrays, varargin)
 %       cd/count_samples.m
 %       cd/force_column_cell.m
 %       cd/match_dimensions.m
-%       cd/ispositiveintegervector.m
+%       cd/ispositiveintegerarray.m
 %       cd/iscellnumeric.m
 %
 % Used by:    
 %       cd/force_column_cell.m
+%       cd/force_column_vector.m
 %       cd/m3ha_average_by_group.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
@@ -85,10 +86,10 @@ addRequired(iP, 'arrays', ...
 % Add optional inputs to the Input Parser
 addOptional(iP, 'colNumbers', colNumberDefault, ...
     @(x) assert((ischar(x) || isstring(x)) && strcmpi(x, 'all') || ...
-                ispositiveintegervector(x) || ...
+                ispositiveintegerarray(x) || ...
                 iscell(x) && iscellnumeric(x), ...
                 ['colNumbers must be either ''all'', "all" ', ...
-                    'or a positive integer vector ', ...
+                    'or a positive integer array ', ...
                     'or a cell array of positive integer vectors!']));
 
 % Add parameter-value pairs to the Input Parser
@@ -103,14 +104,17 @@ colNumbers = iP.Results.colNumbers;
 outputMode = validatestring(iP.Results.OutputMode, validOutputModes);
 treatCellAsArray = iP.Results.TreatCellAsArray;
 
+% Make sure colNumbers are column vectors
+colNumbers = force_column_vector(colNumbers);
+
 % Check if colNumbers is compatible with arrays
 if iscell(colNumbers)
     if ~iscell(arrays) || treatCellAsArray
-        error(['colNumbers cannot be a cell array ', ...
+        error(['colNumbers cannot be multiple vectors ', ...
                 'if arrays is not a cell array!']);
     elseif numel(arrays) ~= numel(colNumbers)
-        error(['If colNumbers is a cell array, ', ...
-                'it must have the same number of elements as arrays!'])
+        error(['If colNumbers are multiple vectors, it must have ', ...
+                'the same number of vectors as the number of arrays!'])
     end
 end
 
@@ -119,13 +123,6 @@ end
 if isempty(arrays)
     varargout = cell(1, nargout);
     return
-end
-
-% Count the number of arrays
-if isnumeric(arrays) || treatCellAsArray
-    nArrays = 1;
-else
-    nArrays = numel(arrays);
 end
 
 % Count the number of columns for each array
@@ -347,6 +344,12 @@ colExtracted = arrayfun(@(x) array(:, x), colNumbers, 'UniformOutput', false);
 % Force as a column cell array
 colExtracted{iCol} = force_column_cell(colExtractedThis);
 
+% Count the number of arrays
+if isnumeric(arrays) || treatCellAsArray
+    nArrays = 1;
+else
+    nArrays = numel(arrays);
+end
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -5,7 +5,7 @@ function indices = create_indices (varargin)
 %       TODO
 % Example(s):
 %       create_indices([2, 5])
-%       create_indices([1, ])
+%       create_indices('IndexEnd', 5)
 %       create_indices('IndexEnd', [2, 3])
 % Outputs:
 %       indices     - indices for each pair of idxStart and idxEnd
@@ -50,6 +50,7 @@ function indices = create_indices (varargin)
 %       cd/compute_peak_decay.m
 %       cd/extract_subvectors.m
 %       cd/fit_2exp.m
+%       cd/m3ha_average_by_group.m
 %       cd/parse_pulse_response.m
 
 % File History:

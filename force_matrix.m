@@ -33,6 +33,7 @@ function vecs = force_matrix (vecs, varargin)
 
 % File History:
 % 2019-01-03 Created by Adam Lu
+% TODO: Restrict the number of samples if provided
 % 
 
 %% Hard-coded parameters

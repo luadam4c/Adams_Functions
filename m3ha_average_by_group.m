@@ -4,7 +4,7 @@ function [dataAvg, groups] = m3ha_average_by_group (dataOrig, grouping, varargin
 % Explanation:
 %       TODO
 % Example(s):
-%       TODO
+%       m3ha_average_by_group({magic(3), magic(3) + 1, magic(3) + 2}, {'a', 'b', 'b'}, 'ColNumToAverage', 2:3)
 % Outputs:
 %       dataAvg     - data averaged
 %                   specified as a numeric array
@@ -15,14 +15,16 @@ function [dataAvg, groups] = m3ha_average_by_group (dataOrig, grouping, varargin
 %                   must be a numeric array or a cell array of numeric arrays
 %       grouping   - holding voltages conditions
 %                   must be a numeric vector
-%       varargin    - 'VecNumberToAverage': vector number to average over trace
-%                   must be a positive integer scalar
-%                   default == 2
+%       varargin    - 'ColNumToAverage': column number(s) to average
+%                   must be empty or a positive integer vector
+%                   default == transpose(1:min(nColumns))
 %
 % Requires:
 %       cd/compute_average_trace.m
+%       cd/compute_combined_trace.m
 %       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
+%       cd/create_indices.m
 %       cd/extract_columns.m
 %       cd/isnum.m
 %
@@ -36,7 +38,7 @@ function [dataAvg, groups] = m3ha_average_by_group (dataOrig, grouping, varargin
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-vecNumberToAverageDefault = 2;
+colNumToAverageDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -57,19 +59,29 @@ addRequired(iP, 'dataOrig', ...
                     'or a cell array!']));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'VecNumberToAverage', vecNumberToAverageDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+addParameter(iP, 'ColNumToAverage', colNumToAverageDefault, ...
+    @(x) assert(isempty(x) || ispositiveintegervector(x), ...
+                ['ColNumToAverage must be either empty or , ', ...
+                    'a positive integer vector!']));
 
 % Read from the Input Parser
 parse(iP, dataOrig, varargin{:});
-vecNumberToAverage = iP.Results.VecNumberToAverage;
+colNumToAverage = iP.Results.ColNumToAverage;
 
 %% Preparation
 % Count the number of columns for each sweep
 nColumns = count_vectors(dataOrig);
 
-% Generate a vector of sweep numbers
-allColNums = transpose(1:nColumns);
+% Generate a vector of column numbers
+allColNums = create_indices('IndexEnd', min(nColumns));
+
+% Average all columns by default
+if isempty(colNumToAverage)
+    colNumToAverage = allColNums;
+end
+
+% Compute other column numbers
+colNumOther = setdiff(allColNums, colNumToAverage);
 
 % Find unique grouping values
 groups = unique(grouping, 'sorted');
@@ -78,36 +90,43 @@ groups = unique(grouping, 'sorted');
 nGroups = length(groups);
 
 % Generate a vector of group numbers
-allGroupNums = transpose(1:nGroups);
+allGroupNums = create_indices('IndexEnd', nGroups);
 
 %% Do the job
-% Separate each vector from the matrix
+% Extract each column from all sweeps separately
 %   Note: dataSeparated will be a cell array of cell arrays of column vectors
 dataSeparated = extract_columns(dataOrig, allColNums, 'OutputMode', 'single');
 
-% Initialize a cell array for the averaged data that's separated
+% Initialize a cell array for the processed data
+%   Note: each element corresponds to one original column
 dataAvgSeparated = cell(size(dataSeparated));
 
-% Extract the vectors of interest
-vecs = dataSeparated{vecNumberToAverage};
+% Extract the column number of interest
+vecsOfInterest = dataSeparated(colNumToAverage);
 
 % Average over traces from each group separately
-vecsAvg = compute_average_trace(vecs, 'Grouping', grouping);
+vecsAvg = compute_average_trace(vecsOfInterest, 'Grouping', grouping);
 
-% Store this in dataAvgSeparated
-dataAvgSeparated{vecNumberToAverage} = vecsAvg;
+% Store averaged vectors in dataAvgSeparated
+dataAvgSeparated(colNumToAverage) = vecsAvg;
 
-% Extract other vectors
-vecsOther = dataSeparated(allColNums ~= vecNumberToAverage);
+% Extract other columns
+vecsOther = dataSeparated(colNumOther);
 
-% For other vectors, extract the first vector and make nGroups copies
-vecsAvgOther = cellfun(@(x) repmat(x(1), nGroups, 1), vecsOther);
+% For other vectors, extract the first vector from each group
+vecsFirst = compute_combined_trace(vecsOther, 'first', 'Grouping', grouping);
 
-% Store this in dataAvgSeparated
-dataAvgSeparated(allColNums ~= vecNumberToAverage) = vecsAvgOther;
+% Store copied vectors in dataAvgSeparated
+dataAvgSeparated(colNumOther) = vecsFirst;
 
-% Re-combine the vectors for output
-dataAvg = extract_columns(dataAvgSeparated, allColNums, 'OutputMode', 'single');
+% Concatenate the results from each group
+dataAvg = cellfun(@(x) horzcat(x{:}), dataAvgSeparated, ...
+                    'UniformOutput', false);
+
+% Reorganize the output so that each element of the cell array are
+%   the averaged columns from the same group
+dataAvg = extract_columns(dataAvg, allGroupNums, 'OutputMode', 'single');
+dataAvg = cellfun(@(x) horzcat(x{:}), dataAvg, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -126,6 +145,14 @@ OLD CODE:
 dataAvg = cellfun(@(x, y, z, w) horzcat(x, y, z, w), ...
                     tVecs, vVecs, iVecs, gVecs, ...
                     'UniformOutput', false);
+
+vecs = dataSeparated{colNumToAverage};
+
+allColNums = create_indices('IndexEnd', nColumns);
+
+% For other vectors, extract the first vector and make nGroups copies
+vecsFirst = cellfun(@(x) repmat(x(1), nGroups, 1), vecsOther, ...
+                        'UniformOutput', false);
 
 %}
 

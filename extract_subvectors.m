@@ -99,6 +99,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2019-01-04 Added 'TreatCellAsArray' (default == 'false')
 % 2019-01-04 Added 'TreatCellStrAsArray' (default == 'true')
 % 2019-01-04 Fixed bugs for cellstrs
+% TODO: Restrict the number of samples if provided
 % TODO: check if all endpoints have 2 elements
 % 
 

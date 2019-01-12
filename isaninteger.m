@@ -15,6 +15,7 @@ function isInteger = isaninteger (array)
 %       array       - an array to check
 %
 % Used by:
+%       cd/ispositiveintegerarray.m
 %       cd/ispositiveintegerscalar.m
 %       cd/ispositiveintegervector.m
 %       ~/Settings_Matlab/function_template.m

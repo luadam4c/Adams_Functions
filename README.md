@@ -184,6 +184,7 @@ Last Updated 2019-01-12 by Adam Lu
 - [**isnum.m**](https://github.com/blabuva/Adams_Functions/blob/master/isnum.m): Returns whether the input is numeric in the general sense (numeric, logical, datetime or duration)
 - [**is_on_path.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_on_path.m): Returns whether folder(s) are on the MATLAB path
 - [**is_out_of_range.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_out_of_range.m): Check if any of the value(s) are out of range
+- [**ispositiveintegerarray.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositiveintegerarray.m): Returns whether an input is a positive integer array
 - [**ispositiveintegerscalar.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositiveintegerscalar.m): Returns whether an input is a positive integer scalar
 - [**ispositiveintegervector.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositiveintegervector.m): Returns whether an input is a positive integer vector
 - [**ispositivescalar.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositivescalar.m): Returns whether an input is a positive scalar
