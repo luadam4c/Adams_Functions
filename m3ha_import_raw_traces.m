@@ -134,6 +134,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 % 2018-11-28 Now pads vvecsIpscr with NaN instead of with holdPotentialIpscr
 % 2019-01-01 Made all arguments optional except fileNames
 %               and consolidated the different types of responses
+% 2019-01-12 Now uses m3ha_average_by_group.m
 
 %% Hard-coded constants
 NS_PER_US = 1000;
@@ -288,6 +289,9 @@ nSwps = numel(fileNames);
 [filePaths, pathExists] = ...
     construct_and_check_fullpath(fileNames, 'Directory', matFilesDir, ...
                                     'Verbose', verbose);
+
+% Get the cell name
+cellName = fileNames{1}(1:7);
 
 % If a matfile does not exist, return
 if ~all(pathExists)
@@ -540,9 +544,7 @@ data = cellfun(@(x, y, z, w) horzcat(x, y, z, w), ...
 % Save all the data
 dataAll = data;
 
-%% Average the current pulse responses according to vHold
-% TODO: Pull out to its own function and use in m3ha_neuron_run_and_analyze.m
-if toParsePulse && toAverageByVhold
+%% Average the current pulse responses according to vHoldif toParsePulse && toAverageByVhold
     % Print message
     fprintf('Averaging the current pulse responses according to vHold ... \n');
 
@@ -550,53 +552,13 @@ if toParsePulse && toAverageByVhold
     vHoldCond = swpInfoAll{fileNames, 'vrow'};
 
     % Average the data by holding voltage conditions
-    % TODO: Use m3ha_average_by_group.m
-    %    [data, vUnique] = m3ha_average_by_group(data, vHoldCond, 'ColNumToAverage', 2);
+    [data, vUnique] = m3ha_average_by_group(data, vHoldCond, 'ColNum', 2);
 
-    % Unpack individual data vectors
-    [tVecs, vVecs, iVecs, gVecs] = extract_columns(data, 1:4);
-
-    % Find unique vHold values
-    vUnique = unique(vHoldCond, 'sorted');
-
-    % Count the number of unique holding voltage conditions
-    nVHoldCond = length(vUnique);
-
-    % Group the voltage traces by unique vHold values, 
-    %   then average the grouped traces
-    % TODO: Use compute_average_trace with modifications to pass group
-    vVecsAveraged = cell(nVHoldCond, 1);
-    for iVhold = 1:nVHoldCond
-        % Get the current vHoldCond value
-        vnow = vUnique(iVhold);
-
-        % Collect all cpr traces with this vHoldCond value
-        vVecsGroupedThisVhold = vVecs(vHoldCond == vnow);
-
-        % Average the voltage traces from this vHoldCond group
-        vVecAveragedThis = compute_average_trace(vVecsGroupedThisVhold);
-
-        % Save in arrays
-        vVecsAveraged{iVhold} = vVecAveragedThis;
-    end
-    vVecs = vVecsAveraged;
-
-    % For time, current and conductance, 
-    %   take the first copy and repeat nVHoldCond times
-    %   Note: Since pulse widths are not necessarily the same, 
-    %           current vectors should not be averaged
-    [tVecs, iVecs, gVecs] = ...
-        argfun(@(x) repmat(x(1), nVHoldCond, 1), tVecs, iVecs, gVecs);
-
-    % Re-combine the vectors for output
-    data = cellfun(@(x, y, z, w) horzcat(x, y, z, w), ...
-                        tVecs, vVecs, iVecs, gVecs, ...
-                        'UniformOutput', false);
+    % Create a new file prefix
+    filePrefix = strcat(cellName, '_vhold');
 
     % Define file names by the vhold level
-    fileNames = arrayfun(@(x) strcat(fileNames{1}(1:7), ...
-                            '_vhold', num2str(x)), vUnique, ...
-                            'UniformOutput', false);
+    fileNames = create_labels_from_numbers(vUnique, 'Prefix', filePrefix);
 
     % Update the number of sweeps
     nSwps = numel(data);
@@ -674,6 +636,49 @@ end
 %{
 OLD CODE:
 
+% Unpack individual data vectors
+[tVecs, vVecs, iVecs, gVecs] = extract_columns(data, 1:4);
+
+% Find unique vHold values
+vUnique = unique(vHoldCond, 'sorted');
+
+% Count the number of unique holding voltage conditions
+nVHoldCond = length(vUnique);
+
+% Group the voltage traces by unique vHold values, 
+%   then average the grouped traces
+% TODO: Use compute_average_trace with modifications to pass group
+vVecsAveraged = cell(nVHoldCond, 1);
+for iVhold = 1:nVHoldCond
+    % Get the current vHoldCond value
+    vnow = vUnique(iVhold);
+
+    % Collect all cpr traces with this vHoldCond value
+    vVecsGroupedThisVhold = vVecs(vHoldCond == vnow);
+
+    % Average the voltage traces from this vHoldCond group
+    vVecAveragedThis = compute_average_trace(vVecsGroupedThisVhold);
+
+    % Save in arrays
+    vVecsAveraged{iVhold} = vVecAveragedThis;
+end
+vVecs = vVecsAveraged;
+
+% For time, current and conductance, 
+%   take the first copy and repeat nVHoldCond times
+%   Note: Since pulse widths are not necessarily the same, 
+%           current vectors should not be averaged
+[tVecs, iVecs, gVecs] = ...
+    argfun(@(x) repmat(x(1), nVHoldCond, 1), tVecs, iVecs, gVecs);
+
+% Re-combine the vectors for output
+data = cellfun(@(x, y, z, w) horzcat(x, y, z, w), ...
+                    tVecs, vVecs, iVecs, gVecs, ...
+                    'UniformOutput', false);
+
+fileNames = arrayfun(@(x) strcat(fileNames{1}(1:7), ...
+                        '_vhold', num2str(x)), vUnique, ...
+                        'UniformOutput', false);
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

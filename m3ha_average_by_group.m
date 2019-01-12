@@ -30,6 +30,7 @@ function [dataAvg, groups] = m3ha_average_by_group (dataOrig, grouping, varargin
 %
 % Used by:
 %       cd/m3ha_import_raw_traces.m
+%       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:
 % 2019-01-12 Adapted from code in m3ha_import_raw_traces.m

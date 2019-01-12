@@ -242,6 +242,7 @@ function [errorStruct, hFig, simData] = ...
 %       cd/load_neuron_outputs.m
 %       cd/match_time_points.m
 %       cd/compute_single_neuron_errors.m
+%       cd/m3ha_average_by_group.m
 %       cd/m3ha_neuron_create_simulation_params.m
 %       cd/m3ha_neuron_create_TC_commands.m
 %       cd/m3ha_plot_individual_traces.m
@@ -831,12 +832,10 @@ end
 
 % If requested, average both recorded and simulated responses 
 %   according to the vHold condition recorded by Christine
-% TODO: Use m3ha_average_by_vhold from m3ha_import_raw_traces.m
 if averageCprFlag && ~isempty(realData) && strcmpi(simMode, 'passive')
     % Average both recorded and simulated responses 
-    [realData, simData] = ...
-        m3ha_average_by_vhold(realData, simData, vHold, ...
-                            cpStartWindowOrig, cprWindow);
+    realData = m3ha_average_by_group(realData, vHold, 'ColNum', VOLT_COL_REC);
+    simData = m3ha_average_by_group(simData, vHold, 'ColNum', VOLT_COL_SIM);
 
     % Re-extract columns
     [vVecsRec, iVecsRec] = ...
@@ -1138,74 +1137,6 @@ nRows = height(featuresTable);
 
 % Add a column for dataType ('simulated' or 'recorded')
 featuresTable.dataType = repmat({dataType}, nRows, 1);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [realData, simData] = m3ha_average_by_vhold(realData, simData, vHold)
-%% Average both recorded and simulated responses according to vHold
-%% TODO: don't hard-code column numbers
-%% TODO: pull out code into functions
-
-%% Average both recorded and simulated responses
-% Get the number of data points for the current pulse responses
-ndpReal = size(realData{1}, 1);
-ndpSim = size(simData{1}, 1);
-
-% Find unique vHold values
-vUnique = sort(unique(vHold));
-nVhold = length(vUnique);
-
-% Group the traces by unique vHold values, then average the grouped traces
-realDataGrouped = cell(nVhold, 1);
-simDataGrouped = cell(nVhold, 1);
-realDataAveraged = cell(nVhold, 1);
-simDataAveraged = cell(nVhold, 1);
-for iVhold = 1:nVhold
-    % Get the current vHold value
-    vnow = vUnique(iVhold);
-
-    % Collect all cpr traces with this vHold value
-    realDataGroupedThisVhold = realData(vHold == vnow);
-    simDataGroupedThisVhold = simData(vHold == vnow);
-
-    % Preallocate
-    realDataAveragedThisVhold = zeros(ndpReal, 4);
-    simDataAveragedThisVhold = zeros(ndpSim, 11);
-
-    % Take the time, current and conductance traces from the first trace
-    for iCol = [1, 3, 4]
-        realDataAveragedThisVhold(:, iCol) = ...
-            realDataGroupedThisVhold{1}(:, iCol);
-    end
-    for iCol = [1, 3:11]
-        simDataAveragedThisVhold(:, iCol) = ...
-            simDataGroupedThisVhold{1}(:, iCol);
-    end
-
-    % Average the recorded voltage traces
-    temp1 = cellfun(@(x) x(:, 2), realDataGroupedThisVhold, ...
-                    'UniformOutput', false);
-    vRealGroupedThisVhold = cell2mat(temp1');
-    vRealAveragedThis = nanmean(vRealGroupedThisVhold, 2);
-    realDataAveragedThisVhold(:, 2) = vRealAveragedThis;
-
-    % Average the simulated voltage traces
-    temp2 = cellfun(@(x) x(:, 2), simDataGroupedThisVhold, ...
-                    'UniformOutput', false);
-    vSimGroupedThisVhold = cell2mat(temp2');
-    vSimAveragedThis = nanmean(vSimGroupedThisVhold, 2);
-    simDataAveragedThisVhold(:, 2) = vSimAveragedThis;
-
-    % Save in arrays
-    realDataGrouped{iVhold} = realDataGroupedThisVhold;
-    realDataAveraged{iVhold} = realDataAveragedThisVhold;
-    simDataGrouped{iVhold} = simDataGroupedThisVhold;
-    simDataAveraged{iVhold} = simDataAveragedThisVhold;
-end
-
-% Replace with averaged data
-realData = realDataAveraged;
-simData = simDataAveraged;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -3226,5 +3157,75 @@ sweepWeightsIpscrDefault = 1;   % equal weights by default
 [realData, simData] = ...
     m3ha_average_by_vhold(realData, simData, vHold, ...
                         cpStartWindowOrig, cprWindow);
+[realData, simData] = ...
+    argfun(@(x) m3ha_average_by_group(data, vHold, 'ColNum', 2), ...
+            realData, simData);
+
+function [realData, simData] = m3ha_average_by_vhold(realData, simData, vHold)
+%% Average both recorded and simulated responses according to vHold
+%% TODO: don't hard-code column numbers
+%% TODO: pull out code into functions
+
+%% Average both recorded and simulated responses
+% Get the number of data points for the current pulse responses
+ndpReal = size(realData{1}, 1);
+ndpSim = size(simData{1}, 1);
+
+% Find unique vHold values
+vUnique = sort(unique(vHold));
+nVhold = length(vUnique);
+
+% Group the traces by unique vHold values, then average the grouped traces
+realDataGrouped = cell(nVhold, 1);
+simDataGrouped = cell(nVhold, 1);
+realDataAveraged = cell(nVhold, 1);
+simDataAveraged = cell(nVhold, 1);
+for iVhold = 1:nVhold
+    % Get the current vHold value
+    vnow = vUnique(iVhold);
+
+    % Collect all cpr traces with this vHold value
+    realDataGroupedThisVhold = realData(vHold == vnow);
+    simDataGroupedThisVhold = simData(vHold == vnow);
+
+    % Preallocate
+    realDataAveragedThisVhold = zeros(ndpReal, 4);
+    simDataAveragedThisVhold = zeros(ndpSim, 11);
+
+    % Take the time, current and conductance traces from the first trace
+    for iCol = [1, 3, 4]
+        realDataAveragedThisVhold(:, iCol) = ...
+            realDataGroupedThisVhold{1}(:, iCol);
+    end
+    for iCol = [1, 3:11]
+        simDataAveragedThisVhold(:, iCol) = ...
+            simDataGroupedThisVhold{1}(:, iCol);
+    end
+
+    % Average the recorded voltage traces
+    temp1 = cellfun(@(x) x(:, 2), realDataGroupedThisVhold, ...
+                    'UniformOutput', false);
+    vRealGroupedThisVhold = cell2mat(temp1');
+    vRealAveragedThis = nanmean(vRealGroupedThisVhold, 2);
+    realDataAveragedThisVhold(:, 2) = vRealAveragedThis;
+
+    % Average the simulated voltage traces
+    temp2 = cellfun(@(x) x(:, 2), simDataGroupedThisVhold, ...
+                    'UniformOutput', false);
+    vSimGroupedThisVhold = cell2mat(temp2');
+    vSimAveragedThis = nanmean(vSimGroupedThisVhold, 2);
+    simDataAveragedThisVhold(:, 2) = vSimAveragedThis;
+
+    % Save in arrays
+    realDataGrouped{iVhold} = realDataGroupedThisVhold;
+    realDataAveraged{iVhold} = realDataAveragedThisVhold;
+    simDataGrouped{iVhold} = simDataGroupedThisVhold;
+    simDataAveraged{iVhold} = simDataAveragedThisVhold;
+end
+
+% Replace with averaged data
+realData = realDataAveraged;
+simData = simDataAveraged;
+
 
 %}
