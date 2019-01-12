@@ -76,12 +76,17 @@ parsedParams = parse_xolotl_object(xolotlObject);
 
 % Extract parameters
 prevClampedVoltages = parsedParams.clampedVoltages;
+% siMs = parsedParams.siMs;
+% totalDuration = parsedParams.totalDuration;
 
 % Find the index of the compartment to patch
 idxCompartment = xolotl_compartment_index(xolotlObject, compartment);
 
 % Find the number of rows for prevClampedVoltage
 nRowsPrev = size(prevClampedVoltages, 1);
+
+% % Compute the desired number of rows
+% nRowsDesired = floor(totalDuration / siMs);
 
 %% Create clamped voltage(s)
 % Initialize with prevClampedVoltage
@@ -92,6 +97,10 @@ clampedVoltage = amplitude;
 
 % Match the row count with prevClampedVoltages
 clampedVoltage = match_row_count(clampedVoltage, nRowsPrev);
+
+% % Match the row counts with nRowsDesired
+% newClampedVoltages = match_row_count(newClampedVoltages, nRowsDesired);
+% clampedVoltage = match_row_count(clampedVoltage, nRowsDesired);
 
 % Replace the corresponding column in prevClampedVoltage 
 newClampedVoltages(:, idxCompartment) = clampedVoltage(idxCompartment);
@@ -112,6 +121,7 @@ clampedVoltage = [clampedVoltage, NaN(nSamples, nCompartments - 1)];
 
 nSamples = parsedParams.nSamples;
 nCompartments = parsedParams.nCompartments;
+
 
 %}
 

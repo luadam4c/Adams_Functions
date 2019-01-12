@@ -42,9 +42,9 @@ function varargout = extract_columns (arrays, varargin)
 %
 % Used by:    
 %       cd/force_column_cell.m
+%       cd/m3ha_average_by_group.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
-%       cd/m3ha_xolotl_test.m
 
 % File History:
 % 2018-10-24 Created by Adam Lu
@@ -52,6 +52,7 @@ function varargout = extract_columns (arrays, varargin)
 % 2018-12-18 Allow the option to treat cell arrays as arrays;
 %               added 'TreatCellAsArray' (default == 'false')
 % 2019-01-01 Fixed bugs if a cell array has only one numeric array
+% 2019-01-12 Fixed bugs for single output and simplified code
 % 
 
 %% Hard-coded parameters
@@ -220,38 +221,39 @@ end
 %% Extract columns
 switch outputMode
     case 'multiple'
-        % Extract columns
-        varargout = cell(1, nOutputs);
-        for iOutput = 1:nOutputs
-            if isnumeric(arrays) || treatCellAsArray
-                varargout{iOutput} = arrays(:, colNumbers(iOutput));
-            else
-                varargout{iOutput} = ...
-                    cellfun(@(x, y) x(:, y(iOutput)), arrays, colNumbers, ...
-                            'UniformOutput', false);
-            end
-        end
+        % Extract nOutputs columns
+        varargout = extract_columns_helper(arrays, colNumbers, ...
+                                            nOutputs, treatCellAsArray);
     case 'single'
-        % Transform arrays into cell arrays of column vectors
-        if isnumeric(arrays) || treatCellAsArray
-            varargout{1} = extract_columns_helper(arrays, colNumbers);
-        else
-            varargout{1} = ...
-                cellfun(@(x, y) extract_columns_helper(x, y), ...
-                            arrays, colNumbers, 'UniformOutput', false);
-        end
+        % Extract nColNumbers columns
+        extracted = extract_columns_helper(arrays, colNumbers, ...
+                                            max(nColNumbers), treatCellAsArray);
+
+        % Make that the first and only output
+        varargout{1} = extracted;
     otherwise
         error('outputMode unrecognized!');
 end
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function colExtracted = extract_columns_helper(array, colNumbers)
+function colExtracted = extract_columns_helper(arrays, colNumbers, ...
+                                            nColsToExtract, treatCellAsArray)
 % Extract the columns for a single array
 
-% Extract as a cell array
-colExtracted = arrayfun(@(x) array(:, x), colNumbers, 'UniformOutput', false);
+if isnumeric(arrays) || treatCellAsArray
+    % Treat arrays as a non-cell array
+    colExtracted = arrayfun(@(x) arrays(:, x), colNumbers, ...
+                            'UniformOutput', false);
+else
+    % Treat arrays as a cell array
+    colExtracted = cell(nColsToExtract, 1);
+    for iCol = 1:nColsToExtract
+         colExtracted{iCol} = ...
+            cellfun(@(x, y) x(:, y(iCol)), arrays, colNumbers, ...
+                    'UniformOutput', false);
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -309,6 +311,41 @@ end
 if ~treatCellAsArray && iscell(arrays) && numel(arrays) == 1
     arrays = arrays{1};
 end
+
+switch outputMode
+    case 'multiple'
+        % Extract columns
+        varargout = cell(1, nOutputs);
+        for iOutput = 1:nOutputs
+            if isnumeric(arrays) || treatCellAsArray
+                varargout{iOutput} = arrays(:, colNumbers(iOutput));
+            else
+                varargout{iOutput} = ...
+                    cellfun(@(x, y) x(:, y(iOutput)), arrays, colNumbers, ...
+                            'UniformOutput', false);
+            end
+        end
+    case 'single'
+        % Transform arrays into cell arrays of column vectors
+        if isnumeric(arrays) || treatCellAsArray
+            varargout{1} = extract_columns_helper(arrays, colNumbers);
+        else
+            varargout{1} = ...
+                cellfun(@(x, y) extract_columns_helper(x, y), ...
+                            arrays, colNumbers, 'UniformOutput', false);
+        end
+    otherwise
+        error('outputMode unrecognized!');
+end
+
+function colExtracted = extract_columns_helper(array, colNumbers)
+% Extract the columns for a single array
+
+% Extract as a cell array
+colExtracted = arrayfun(@(x) array(:, x), colNumbers, 'UniformOutput', false);
+
+% Force as a column cell array
+colExtracted{iCol} = force_column_cell(colExtractedThis);
 
 %}
 

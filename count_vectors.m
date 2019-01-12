@@ -46,6 +46,7 @@ function nVectors = count_vectors (vectors, varargin)
 %       cd/extract_channel.m
 %       cd/extract_elements.m
 %       cd/identify_repetitive_pulses.m
+%       cd/m3ha_average_by_group.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/parse_pulse_response.m
 %       cd/plot_protocols.m

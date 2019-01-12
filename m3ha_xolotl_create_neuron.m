@@ -24,6 +24,7 @@ function xolotlObject = m3ha_xolotl_create_neuron (neuronParamsTableOrFile, vara
 %                   default == TODO
 %
 % Requires:
+%       cd/create_error_for_nargin.m
 %       cd/load_params.m
 %       cd/print_cellstr.m
 %
@@ -67,8 +68,7 @@ caOut = 2000;           % 2 mM used in NEURON by default
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
@@ -154,8 +154,9 @@ xolotlObject.add('compartment', 'soma', ...
             'radius', radiusSoma, 'len', lengthSoma, ...
             'Cm', specificMembraneCapacitance, ...
             'shell_thickness', shellDepth, ...
-            'Ca', caIn, 'Ca_out', caOut); %, ...
-%            'tree_idx', 0);
+            'Ca', caIn, 'Ca_out', caOut, ...
+            'tree_idx', 0);
+%             'Ca', caIn, 'Ca_out', caOut);
 
 % Add dend1
 %   Note: tree_idx does not have to be set here as long as

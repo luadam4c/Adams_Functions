@@ -106,6 +106,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %       cd/force_column_vector.m
 %       cd/force_string_end.m
 %       cd/print_cellstr.m
+%       cd/m3ha_average_by_group.m
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_locate_homedir.m
 %
@@ -549,8 +550,8 @@ if toParsePulse && toAverageByVhold
     vHoldCond = swpInfoAll{fileNames, 'vrow'};
 
     % Average the data by holding voltage conditions
-    % TODO: Use m3ha_average_by_vhold.m
-    %    [data, vUnique] = m3ha_average_by_vhold(data, vHoldCond);
+    % TODO: Use m3ha_average_by_group.m
+    %    [data, vUnique] = m3ha_average_by_group(data, vHoldCond, 'VecNumberToAverage', 2);
 
     % Unpack individual data vectors
     [tVecs, vVecs, iVecs, gVecs] = extract_columns(data, 1:4);
