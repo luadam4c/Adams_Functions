@@ -836,9 +836,9 @@ end
 if averageCprFlag && ~isempty(realData) && strcmpi(simMode, 'passive')
     % Average both recorded and simulated responses 
     realData = compute_average_data(realData, 'Grouping', grouping, ...
-                                    'ColNum', VOLT_COL_REC);
+                                    'ColNum', [VOLT_COL_REC, CURR_COL_REC]);
     simData = compute_average_data(simData, 'Grouping', grouping, ...
-                                    'ColNum', VOLT_COL_SIM);
+                                    'ColNum', [VOLT_COL_SIM, CURR_COL_SIM]);
 
     % Re-extract columns
     [vVecsRec, iVecsRec] = ...

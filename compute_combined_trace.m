@@ -6,23 +6,32 @@ function [combTrace, paramsUsed] = ...
 % Explanation:
 %       TODO
 % Example(s):
-%       TODO
+%       vecs = {[1;3;4], [2;2;5], [6;6;6]};
+%       compute_combined_trace(vecs, 'mean', 'Group', {'a', 'a', 'b'})
+%       compute_combined_trace(vecs, 'max', 'Group', {'a', 'a', 'b'})
+%       compute_combined_trace(vecs, 'min', 'Group', {'a', 'a', 'b'})
+%       compute_combined_trace(vecs, 'bootmean', 'Group', {'a', 'a', 'b'})
 % Outputs:
-%       combTrace   - the combined trace
-%                   specified as a numeric column vector
+%       combTrace       - the combined trace(s)
+%                           If grouped, a cell array is returned
+%                               with the result from each group in each cell
+%                       specified as a numeric column vector
 % Arguments:    
 %       traces          - traces to average
 %                       Note: If a non-vector array, each column is a vector
 %                       must be a numeric array or a cell array
 %       combineMethod   - method for combining traces
 %                       must be an unambiguous, case-insensitive match to one of: 
-%                           'average'   - take the average
+%                           'average' or 'mean' - take the average
 %                           'maximum'   - take the maximum
 %                           'minimum'   - take the minimum
 %                           'all'       - take the logical AND
 %                           'any'       - take the logical OR
 %                           'first'     - take the first trace
 %                           'last'      - take the last trace
+%                           'bootmeans' - bootstrapped averages
+%                           'bootmax'   - bootstrapped maximums
+%                           'bootmin'   - bootstrapped minimums
 %       varargin    - 'NSamples': number of samples in the average trace
 %                   must be a nonnegative integer scalar
 %                   default == minimum of the lengths of all traces
@@ -65,13 +74,16 @@ function [combTrace, paramsUsed] = ...
 % 2019-01-04 Now uses isnum.m
 % 2019-01-12 Added 'Grouping' as an optional parameter
 % 2019-01-12 Added 'first', 'last' as valid combine methods
+% 2019-01-12 Added 'bootmeans', 'bootmax', 'bootmin as valid combine methods
+% TODO: Make 'Seeds' an optional argument
 % 
 
 %% Hard-coded parameters
 validAlignMethods = {'leftAdjust', 'rightAdjust', ...
                     'leftAdjustPad', 'rightAdjustPad'};
-validCombineMethods = {'average', 'maximum', 'minimum', 'all', 'any', ...
-                        'first', 'last'};
+validCombineMethods = {'average', 'mean', 'maximum', 'minimum', ...
+                        'all', 'any', 'first', 'last', ...
+                        'bootmeans', 'bootmax', 'bootmin'};
 
 %% Default values for optional arguments
 nSamplesDefault = [];               % set later
@@ -159,10 +171,11 @@ tracesMatrix = force_matrix(traces, 'AlignMethod', alignMethod);
 % Combine traces
 if isempty(grouping)
     % Combine all traces
-    combTrace = compute_single_combined_trace(tracesMatrix, combineMethod);
+    [combTrace, seeds] = ...
+        compute_single_combined_trace(tracesMatrix, combineMethod);
 else
     % Combine all traces from each group separately
-    combTrace = ...
+    [combTrace, seeds] = ...
         compute_combined_trace_each_group(tracesMatrix, grouping, combineMethod);
 end
 
@@ -174,11 +187,12 @@ paramsUsed.nSamplesEachTrace = nSamplesEachTrace;
 paramsUsed.alignMethod = alignMethod;
 paramsUsed.combineMethod = combineMethod;
 paramsUsed.grouping = grouping;
+paramsUsed.seeds = seeds;
 paramsUsed.nSamples = nSamples;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function combTraceEachGroup = ...
+function [combTraceEachGroup, seeds] = ...
                 compute_combined_trace_each_group(traces, grouping, combineMethod)
 %% Computes a combined trace for each group separately
 
@@ -187,8 +201,6 @@ groups = unique(grouping, 'sorted');
 
 % Count the number of groups
 nGroups = length(groups);
-
-count_vectors(traces);
 
 % The length of the grouping vector must match the number of traces
 if numel(grouping) ~= count_vectors(traces)
@@ -200,7 +212,8 @@ end
 
 % Combine traces from each group separately
 combTraceEachGroup = cell(nGroups, 1);
-for iGroup = 1:nGroups
+seeds = struct('Type', '', 'Seed', NaN, 'State', NaN);
+parfor iGroup = 1:nGroups
     % Get the current grouping value
     groupValueThis = groups(iGroup);
 
@@ -214,22 +227,29 @@ for iGroup = 1:nGroups
     % Collect all traces with this grouping value
     tracesThisGroup = traces(:, indThisGroup);
 
-    % Combine the traces from this group
-    combTraceThisGroup = ...
-        compute_single_combined_trace(tracesThisGroup, combineMethod);
+    % Save the current seed of the random number generator
+    s = rng;
 
-    % Save in arrays
-    combTraceEachGroup{iGroup} = combTraceThisGroup;
+    % Save in output
+    seeds(iGroup, 1) = s;
+
+    % Combine the traces from this group
+    combTraceEachGroup{iGroup} = ...
+        compute_single_combined_trace(tracesThisGroup, combineMethod, s);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function combTrace = compute_single_combined_trace(traces, combineMethod)
+function [combTrace, seed] = ...
+                compute_single_combined_trace(traces, combineMethod, seed)
 %% Computes a combined trace based on the combine method
+
+% Save the current seed of the random number generator
+seed = rng;
 
 % Combine traces
 switch combineMethod
-    case 'average'
+    case {'average', 'mean'}
         % Take the mean of all columns
         combTrace = nanmean(traces, 2);
     case 'maximum'
@@ -250,10 +270,41 @@ switch combineMethod
     case 'last'
         % Take the last column
         combTrace = traces(:, end);
+    case 'bootmeans'
+        % Take the bootstrapped averages
+        combTrace = compute_bootstrapped_combos(traces, 'mean', seed);
+    case 'bootmax'
+        % Take the bootstrapped maximums
+        combTrace = compute_bootstrapped_combos(traces, 'maximum', seed);
+    case 'bootmin'
+        % Take the bootstrapped minimums
+        combTrace = compute_bootstrapped_combos(traces, 'minimum', seed);
     otherwise
         error_unrecognized(get_var_name(combineMethod), ...
                             combineMethod, mfilename);
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function combTraces = compute_bootstrapped_combos (traces, method, seed)
+
+% Count the number of traces
+nTraces = size(traces, 2);
+
+% Seed the random number generator
+rng(seed);
+
+% Generate nTraces X nTraces samples of trace indices with replacement
+selections = randi(nTraces, nTraces);
+
+% Take the bootstrapped averages
+combTraceCell = ...
+    arrayfun(@(x) compute_single_combined_trace(...
+                        traces(:, selections(:, x)), method), ...
+                transpose(1:nTraces), 'UniformOutput', false);
+
+% Combine them to one 2-D non-cell array
+combTraces = horzcat(combTraceCell{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
