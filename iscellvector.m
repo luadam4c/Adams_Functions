@@ -17,7 +17,7 @@ function isCellVector = iscellvector (x)
 % Requires:
 %
 % Used by:
-%       cd/compute_average_data.m
+%       cd/compute_combined_data.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
 %       cd/extract_columns.m

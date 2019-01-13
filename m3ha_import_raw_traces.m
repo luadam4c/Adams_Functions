@@ -91,7 +91,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 % Requires:
 %       cd/apply_or_return.m
 %       cd/argfun.m
-%       cd/compute_average_data.m
+%       cd/compute_combined_data.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_sampling_interval.m
 %       cd/construct_and_check_fullpath.m
@@ -133,7 +133,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 % 2018-11-28 Now pads vvecsIpscr with NaN instead of with holdPotentialIpscr
 % 2019-01-01 Made all arguments optional except fileNames
 %               and consolidated the different types of responses
-% 2019-01-12 Now uses compute_average_data.m
+% 2019-01-12 Now uses compute_combined_data.m
 
 %% Hard-coded constants
 NS_PER_US = 1000;
@@ -552,8 +552,9 @@ if toParsePulse && toAverageByVhold
     vHoldCond = swpInfoAll{fileNames, 'vrow'};
 
     % Average the data by holding voltage conditions
-    [data, vUnique] = compute_average_data(data, 'Grouping', vHoldCond, ...
-                                            'ColNumToAverage', 2);
+    [data, vUnique] = ...
+        compute_combined_data(data, 'mean', 'Grouping', vHoldCond, ...
+                            'ColNumToAverage', 2);
 
     % Create a new file prefix
     filePrefix = strcat(cellName, '_vhold');

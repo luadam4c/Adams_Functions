@@ -58,11 +58,12 @@ function [combTrace, paramsUsed] = ...
 %       cd/iscellnumericvector.m
 %
 % Used by:
+%       cd/compute_combined_data.m
 %       cd/compute_average_trace.m
 %       cd/compute_maximum_trace.m
 %       cd/compute_minimum_trace.m
 %       cd/find_in_strings.m
-%       cd/compute_average_data.m
+%       cd/compute_combined_data.m
 
 % File History:
 % 2019-01-03 Moved from compute_average_trace

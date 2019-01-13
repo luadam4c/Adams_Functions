@@ -17,7 +17,6 @@ function [avgTrace, paramsUsed] = compute_average_trace (traces, varargin)
 %       cd/compute_combined_trace.m
 %
 % Used by:
-%       cd/compute_average_data.m
 %       cd/compute_average_pulse_response.m
 %       cd/find_passive_params.m
 %       cd/force_column_vector.m
@@ -53,7 +52,7 @@ otherArguments = iP.Unmatched;
 
 %% Do the job
 [avgTrace, paramsUsed] = ...
-    compute_combined_trace(traces, 'average', otherArguments);
+    compute_combined_trace(traces, 'mean', otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

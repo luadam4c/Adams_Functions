@@ -51,7 +51,7 @@ function indices = create_indices (varargin)
 %       cd/extract_columns.m
 %       cd/extract_subvectors.m
 %       cd/fit_2exp.m
-%       cd/compute_average_data.m
+%       cd/compute_combined_data.m
 %       cd/parse_pulse_response.m
 
 % File History:

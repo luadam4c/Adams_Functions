@@ -231,7 +231,7 @@ function [errorStruct, hFig, simData] = ...
 %       ~/m3ha/optimizer4gabab/singleneuron4compgabab.hoc
 %       cd/argfun.m
 %       cd/bar_w_CI.m
-%       cd/compute_average_data.m
+%       cd/compute_combined_data.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_residuals.m
 %       cd/compute_rms_error.m
@@ -835,9 +835,9 @@ end
 %   according to a grouping condition
 if averageCprFlag && ~isempty(realData) && strcmpi(simMode, 'passive')
     % Average both recorded and simulated responses 
-    realData = compute_average_data(realData, 'Grouping', grouping, ...
+    realData = compute_combined_data(realData, 'mean', 'Grouping', grouping, ...
                                     'ColNum', [VOLT_COL_REC, CURR_COL_REC]);
-    simData = compute_average_data(simData, 'Grouping', grouping, ...
+    simData = compute_combined_data(simData, 'mean', 'Grouping', grouping, ...
                                     'ColNum', [VOLT_COL_SIM, CURR_COL_SIM]);
 
     % Re-extract columns
@@ -3161,7 +3161,7 @@ sweepWeightsIpscrDefault = 1;   % equal weights by default
     m3ha_average_by_vhold(realData, simData, vHold, ...
                         cpStartWindowOrig, cprWindow);
 [realData, simData] = ...
-    argfun(@(x) compute_average_data(data, vHold, 'ColNum', 2), ...
+    argfun(@(x) compute_combined_data(data, vHold, 'ColNum', 2), ...
             realData, simData);
 
 function [realData, simData] = m3ha_average_by_vhold(realData, simData, vHold)

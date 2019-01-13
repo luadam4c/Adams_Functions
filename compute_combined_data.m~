@@ -1,6 +1,8 @@
-function [dataAvg, groups] = compute_average_data (dataOrig, varargin)
+function [dataAvg, groups] = ...
+                compute_average_data (dataOrig, combineMethod, varargin)
 %% Average data according column numbers to average and to a grouping vector
-% Usage: [dataAvg, groups] = compute_average_data (dataOrig, varargin)
+% Usage: [dataAvg, groups] = ...
+%               compute_average_data (dataOrig, combineMethod, varargin)
 % Explanation:
 %       Given data as a cell array of sweeps, with each
 %           sweep's data represented by many columns,
@@ -17,8 +19,10 @@ function [dataAvg, groups] = compute_average_data (dataOrig, varargin)
 %       groups      - unique grouping values
 %                   specified as a numeric vector
 % Arguments:
-%       dataOrig    - original data
-%                   must be a numeric array or a cell array of numeric arrays
+%       dataOrig        - original data
+%                       must be a numeric array or a cell array of numeric arrays
+%       combineMethod   - method for combining traces
+%                       see compute_combined_trace.m
 %       varargin    - 'ColNumToAverage': column number(s) to average
 %                   must be empty or a positive integer vector
 %                   default == transpose(1:min(nColumns))
@@ -27,7 +31,6 @@ function [dataAvg, groups] = compute_average_data (dataOrig, varargin)
 %                   default == []
 %
 % Requires:
-%       cd/compute_average_trace.m
 %       cd/compute_combined_trace.m
 %       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
@@ -67,6 +70,7 @@ addRequired(iP, 'dataOrig', ...
     @(x) assert(isnum(x) || iscell(x), ...
                 ['dataOrig must be either a numeric array ', ...
                     'or a cell array!']));
+addRequired(iP, 'combineMethod');
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ColNumToAverage', colNumToAverageDefault, ...
@@ -76,7 +80,7 @@ addParameter(iP, 'ColNumToAverage', colNumToAverageDefault, ...
 addParameter(iP, 'Grouping', groupingDefault);
 
 % Read from the Input Parser
-parse(iP, dataOrig, varargin{:});
+parse(iP, dataOrig, combineMethod, varargin{:});
 colNumToAverage = iP.Results.ColNumToAverage;
 grouping = iP.Results.Grouping;
 
@@ -150,7 +154,8 @@ dataAvgSeparated = cell(size(dataSeparated));
 vecsOfInterest = dataSeparated(colNumToAverage);
 
 % Average over traces from each group separately
-vecsAvg = compute_average_trace(vecsOfInterest, 'Grouping', grouping);
+vecsAvg = compute_combined_trace(vecsOfInterest, combineMethod, ...
+                                'Grouping', grouping);
 
 % Store averaged vectors in dataAvgSeparated
 dataAvgSeparated(colNumToAverage) = vecsAvg;
