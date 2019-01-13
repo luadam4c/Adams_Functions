@@ -564,29 +564,35 @@ if toParsePulse && (toAverageByVhold || toBootstrapByVhold)
         [data, vUnique] = ...
             compute_combined_data(data, 'mean', 'Grouping', vHoldCond, ...
                                 'ColNumToCombine', 2);
+
+        % Create a new file prefix
+        filePrefix = strcat(cellName, '_vhold');
+
+        % Define file names by the unique vhold level
+        fileNames = create_labels_from_numbers(vUnique, 'Prefix', filePrefix);
+
+        % Update the number of sweeps
+        nSwps = numel(data);
+
+        % Update the sampling interval (esp. the number of rows)
+        siMs = compute_sampling_interval(tVecs);
+
+        % Use an averaged current pulse amplitude for 
+        %   the averaged current pulse response
+        currentPulseAmplitude = mean(currentPulseAmplitude) * ones(nSwps, 1);
     elseif toBootstrapByVhold
         [data, vUnique] = ...
             compute_combined_data(data, 'bootmean', 'Grouping', vHoldCond, ...
                                 'ColNumToCombine', 2);
+
+        % Create a new file prefix
+        filePrefix = strcat(cellName, '_resampled_vhold_');
+
+        % Rename files by the vhold level for each file 
+        fileNames = create_labels_from_numbers(vHoldCond, 'Prefix', filePrefix);
     else
         error('Code logic error!');
     end
-
-    % Create a new file prefix
-    filePrefix = strcat(cellName, '_vhold');
-
-    % Define file names by the vhold level
-    fileNames = create_labels_from_numbers(vUnique, 'Prefix', filePrefix);
-
-    % Update the number of sweeps
-    nSwps = numel(data);
-
-    % Update the sampling interval (esp. the number of rows)
-    siMs = compute_sampling_interval(tVecs);
-
-    % Use an averaged current pulse amplitude for 
-    %   the averaged current pulse response
-    currentPulseAmplitude = mean(currentPulseAmplitude) * ones(nSwps, 1);
 end
 
 %% Compute the actual holding potentials 
