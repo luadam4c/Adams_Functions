@@ -12,7 +12,8 @@ function [dataAvg, groups] = ...
 %           out of each group is extracted
 %       By default, a single set of vectors is considered as one sweep
 % Example(s):
-%       compute_combined_data({magic(3), magic(3) + 1, magic(3) + 2}, 'mean', Grouping', {'a', 'b', 'b'}, 'ColNumToAverage', 2:3)
+%       compute_combined_data({magic(3), magic(3) + 1, magic(3) + 2}, 'mean', 'Grouping', {'a', 'b', 'b'}, 'ColNumToCombine', 2:3)
+%       compute_combined_data({magic(3), magic(3) + 1, magic(3) + 2}, 'bootmean', 'Grouping', {'a', 'b', 'b'}, 'ColNumToCombine', 2:3)
 % Outputs:
 %       dataAvg     - data averaged
 %                   specified as a numeric array
@@ -23,7 +24,7 @@ function [dataAvg, groups] = ...
 %                       must be a numeric array or a cell array of numeric arrays
 %       combineMethod   - method for combining traces
 %                       see compute_combined_trace.m
-%       varargin    - 'ColNumToAverage': column number(s) to average
+%       varargin    - 'ColNumToCombine': column number(s) to average
 %                   must be empty or a positive integer vector
 %                   default == transpose(1:min(nColumns))
 %                   - 'Grouping': a grouping vector used to group traces
@@ -50,7 +51,7 @@ function [dataAvg, groups] = ...
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-colNumToAverageDefault = [];
+colNumToCombineDefault = [];
 groupingDefault = [];               % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -73,15 +74,15 @@ addRequired(iP, 'dataOrig', ...
 addRequired(iP, 'combineMethod');
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'ColNumToAverage', colNumToAverageDefault, ...
+addParameter(iP, 'ColNumToCombine', colNumToCombineDefault, ...
     @(x) assert(isempty(x) || ispositiveintegervector(x), ...
-                ['ColNumToAverage must be either empty or , ', ...
+                ['ColNumToCombine must be either empty or , ', ...
                     'a positive integer vector!']));
 addParameter(iP, 'Grouping', groupingDefault);
 
 % Read from the Input Parser
 parse(iP, dataOrig, combineMethod, varargin{:});
-colNumToAverage = iP.Results.ColNumToAverage;
+colNumToCombine = iP.Results.ColNumToCombine;
 grouping = iP.Results.Grouping;
 
 %% Preparation
@@ -103,7 +104,7 @@ else
     nSweeps = numel(grouping);
 end
 
-% Count the number of vectors in dataOrig
+% Count the number of vectors in each cell of dataOrig
 nVectors = count_vectors(dataOrig);
 
 % Decide on the number of columns for each sweep
@@ -123,22 +124,16 @@ end
 allColNums = create_indices('IndexEnd', min(nColumns));
 
 % Set default column numbers to average
-if isempty(colNumToAverage)
+if isempty(colNumToCombine)
     % Average all columns by default
-    colNumToAverage = allColNums;
+    colNumToCombine = allColNums;
 end
 
 % Compute other column numbers
-colNumOther = setdiff(allColNums, colNumToAverage);
+colNumOther = setdiff(allColNums, colNumToCombine);
 
 % Find unique grouping values
 groups = unique(grouping, 'sorted');
-
-% Count the number of groups
-nGroups = length(groups);
-
-% Generate a vector of group numbers
-allGroupNums = create_indices('IndexEnd', nGroups);
 
 %% Do the job
 % Extract each column from all sweeps separately
@@ -151,27 +146,42 @@ dataSeparated = extract_columns(dataOrig, allColNums, 'OutputMode', 'single', ..
 dataAvgSeparated = cell(size(dataSeparated));
 
 % Extract the column number of interest
-vecsOfInterest = dataSeparated(colNumToAverage);
+vecsOfInterest = dataSeparated(colNumToCombine);
 
 % Average over traces from each group separately
 vecsAvg = compute_combined_trace(vecsOfInterest, combineMethod, ...
                                 'Grouping', grouping);
 
 % Store averaged vectors in dataAvgSeparated
-dataAvgSeparated(colNumToAverage) = vecsAvg;
+dataAvgSeparated(colNumToCombine) = vecsAvg;
 
 % Extract other columns
 vecsOther = dataSeparated(colNumOther);
 
 % For other vectors, extract the first vector from each group
-vecsFirst = compute_combined_trace(vecsOther, 'first', 'Grouping', grouping);
+switch combineMethod
+    case {'average', 'mean', 'maximum', 'minimum', ...
+            'all', 'any', 'first', 'last'}
+        vecsFirst = compute_combined_trace(vecsOther, 'first', ...
+                                            'Grouping', grouping);
+    case {'bootmean', 'bootmax', 'bootmin'}
+        vecsFirst = vecsOther;
+    otherwise
+        error('combineMethod unrecognized!');
+end
 
 % Store copied vectors in dataAvgSeparated
 dataAvgSeparated(colNumOther) = vecsFirst;
 
+%  Count the number of vectors in each cell of dataOrig
+nOutputs = count_vectors(dataAvgSeparated);
+
+% Generate a vector of output numbers
+allOutNums = create_indices('IndexEnd', min(nOutputs));
+
 % Reorganize the output so that each element of the cell array are
 %   the averaged columns from the same group
-dataAvg = extract_columns(dataAvgSeparated, allGroupNums, ...
+dataAvg = extract_columns(dataAvgSeparated, allOutNums, ...
                                 'OutputMode', 'single', ...
                                 'TreatCnvAsColumns', true);
 dataAvg = cellfun(@(x) horzcat(x{:}), dataAvg, 'UniformOutput', false);
@@ -194,7 +204,7 @@ dataAvg = cellfun(@(x, y, z, w) horzcat(x, y, z, w), ...
                     tVecs, vVecs, iVecs, gVecs, ...
                     'UniformOutput', false);
 
-vecs = dataSeparated{colNumToAverage};
+vecs = dataSeparated{colNumToCombine};
 
 allColNums = create_indices('IndexEnd', nColumns);
 

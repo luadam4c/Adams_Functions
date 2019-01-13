@@ -19,7 +19,6 @@ function [avgTrace, paramsUsed] = compute_average_trace (traces, varargin)
 % Used by:
 %       cd/compute_average_pulse_response.m
 %       cd/find_passive_params.m
-%       cd/force_column_vector.m
 
 % File History:
 % 2018-10-11 Created by Adam Lu

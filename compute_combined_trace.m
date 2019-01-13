@@ -7,10 +7,12 @@ function [combTrace, paramsUsed] = ...
 %       TODO
 % Example(s):
 %       vecs = {[1;3;4], [2;2;5], [6;6;6]};
+%       vecs2 = [[1;3;4], [2;2;5], [6;6;6]];
 %       compute_combined_trace(vecs, 'mean', 'Group', {'a', 'a', 'b'})
 %       compute_combined_trace(vecs, 'max', 'Group', {'a', 'a', 'b'})
 %       compute_combined_trace(vecs, 'min', 'Group', {'a', 'a', 'b'})
 %       compute_combined_trace(vecs, 'bootmean', 'Group', {'a', 'a', 'b'})
+%       compute_combined_trace(vecs2, 'bootmean', 'Group', {'a', 'a', 'b'})
 % Outputs:
 %       combTrace       - the combined trace(s)
 %                           If grouped, a cell array is returned
@@ -52,6 +54,7 @@ function [combTrace, paramsUsed] = ...
 %       cd/count_samples.m
 %       cd/count_vectors.m
 %       cd/isnum.m
+%       cd/force_column_vector.m
 %       cd/force_matrix.m
 %       cd/error_unrecognized.m
 %       cd/get_var_name.m
@@ -84,7 +87,7 @@ validAlignMethods = {'leftAdjust', 'rightAdjust', ...
                     'leftAdjustPad', 'rightAdjustPad'};
 validCombineMethods = {'average', 'mean', 'maximum', 'minimum', ...
                         'all', 'any', 'first', 'last', ...
-                        'bootmeans', 'bootmax', 'bootmin'};
+                        'bootmean', 'bootmax', 'bootmin'};
 
 %% Default values for optional arguments
 nSamplesDefault = [];               % set later
@@ -146,6 +149,13 @@ else
                 traces, 'UniformOutput', false);
 end
 
+%% Make the output the same data type as the input
+if ~iscell(traces) && iscell(combTrace)
+    combTrace = horzcat(combTrace{:});
+elseif iscellnumericvector(traces) && ~iscellnumericvector(combTrace)
+    combTrace = force_column_vector(combTrace);
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [combTrace, paramsUsed] = ...
@@ -191,9 +201,17 @@ paramsUsed.grouping = grouping;
 paramsUsed.seeds = seeds;
 paramsUsed.nSamples = nSamples;
 
+%% Make the output the same data type as the input
+if ~iscell(traces) && iscell(combTrace)
+    combTrace = horzcat(combTrace{:});
+elseif iscellnumericvector(traces) && ~iscellnumericvector(combTrace)
+    combTrace = force_column_vector(combTrace);
+    combTrace = match_dimensions(combTrace, size(traces));
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [combTraceEachGroup, seeds] = ...
+function [combTraces, seeds] = ...
                 compute_combined_trace_each_group(traces, grouping, combineMethod)
 %% Computes a combined trace for each group separately
 
@@ -239,6 +257,9 @@ parfor iGroup = 1:nGroups
         compute_single_combined_trace(tracesThisGroup, combineMethod, s);
 end
 
+% Concatenate into a single matrix
+combTraces = horzcat(combTraceEachGroup{:});
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [combTrace, seed] = ...
@@ -271,7 +292,7 @@ switch combineMethod
     case 'last'
         % Take the last column
         combTrace = traces(:, end);
-    case 'bootmeans'
+    case 'bootmean'
         % Take the bootstrapped averages
         combTrace = compute_bootstrapped_combos(traces, 'mean', seed);
     case 'bootmax'

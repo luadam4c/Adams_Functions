@@ -45,6 +45,10 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %                                           according to VHold
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true (only if ToParsePulse is also true)
+%                   - 'ToBootstrapByVhold': whether to bootstrap average 
+%                                           responses within each VHold
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true (only if ToParsePulse is also true)
 %                   - 'Directory': a full directory path, 
 %                       e.g. '/media/shareX/share/'
 %                   must be a string scalar or a character vector
@@ -162,6 +166,7 @@ toMedianFilterDefault = false;  % don't median filter data by default
 toResampleDefault = false;      % don't resample data by default
 toCorrectDcStepsDefault = true;
 toAverageByVholdDefault = true;
+toBootstrapByVholdDefault = true;
 directoryDefault = '';
 outFolderDefault = pwd;
 timeToPadDefault = 0;
@@ -206,6 +211,8 @@ addParameter(iP, 'ToCorrectDcSteps', toCorrectDcStepsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ToAverageByVhold', toAverageByVholdDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ToBootstrapByVhold', toBootstrapByVholdDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
@@ -238,6 +245,7 @@ toMedianFilter = iP.Results.ToMedianFilter;
 toResample = iP.Results.ToResample;
 toCorrectDcSteps = iP.Results.ToCorrectDcSteps;
 toAverageByVhold = iP.Results.ToAverageByVhold;
+toBootstrapByVhold = iP.Results.ToBootstrapByVhold;
 matFilesDir = iP.Results.Directory;
 outFolder = iP.Results.OutFolder;
 timeToPad = iP.Results.TimeToPad;
@@ -544,7 +552,7 @@ data = cellfun(@(x, y, z, w) horzcat(x, y, z, w), ...
 dataAll = data;
 
 %% Average the current pulse responses according to vHold
-if toParsePulse && toAverageByVhold
+if toParsePulse && (toAverageByVhold || toBootstrapByVhold)
     % Print message
     fprintf('Averaging the current pulse responses according to vHold ... \n');
 
@@ -552,9 +560,17 @@ if toParsePulse && toAverageByVhold
     vHoldCond = swpInfoAll{fileNames, 'vrow'};
 
     % Average the data by holding voltage conditions
-    [data, vUnique] = ...
-        compute_combined_data(data, 'mean', 'Grouping', vHoldCond, ...
-                            'ColNumToAverage', 2);
+    if toAverageByVhold
+        [data, vUnique] = ...
+            compute_combined_data(data, 'mean', 'Grouping', vHoldCond, ...
+                                'ColNumToCombine', 2);
+    elseif toBootstrapByVhold
+        [data, vUnique] = ...
+            compute_combined_data(data, 'bootmean', 'Grouping', vHoldCond, ...
+                                'ColNumToCombine', 2);
+    else
+        error('Code logic error!');
+    end
 
     % Create a new file prefix
     filePrefix = strcat(cellName, '_vhold');
