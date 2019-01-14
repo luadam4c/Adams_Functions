@@ -37,16 +37,16 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %                   - 'ToResample': whether to resample data
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'ToCorrectDcSteps': whether to correct 
-%                                           unbalanced bridges in the traces
+%                   - 'ToCorrectDcSteps': whether to correct unbalanced
+%                                            bridges in the pulse responses 
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true (only if ToParsePulse is also true)
-%                   - 'ToAverageByVhold': whether to average responses 
+%                   - 'ToAverageByVhold': whether to average pulse responses 
 %                                           according to VHold
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true (only if ToParsePulse is also true)
 %                   - 'ToBootstrapByVhold': whether to bootstrap average 
-%                                           responses within each VHold
+%                                           pulse responses within each VHold
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true (only if ToParsePulse is also true)
 %                   - 'Directory': a full directory path, 

@@ -46,6 +46,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/parse_all_abfs.m
 %       cd/parse_assyst_swd.m
 %       cd/parse_atf_swd.m
+%       cd/parse_LTS.m
 %       cd/parse_pulse_response.m
 %       cd/plot_cfit_pulse_response.m
 %       cd/plot_protocols.m

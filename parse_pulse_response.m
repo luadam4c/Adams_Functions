@@ -1,6 +1,6 @@
 function varargout = parse_pulse_response (vectors, siMs, varargin)
 %% Parses pulse response widths, endpoints, amplitudes for vector(s) containing a pulse response
-% Usage: varargout = parse_pulse_response (vectors, siMs, varargin)
+% Usage: [parsedParams, parsedData] = parse_pulse_response (vectors, siMs, varargin)
 % Explanation:
 %       TODO
 % Example(s):

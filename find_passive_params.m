@@ -74,7 +74,7 @@ function [passiveParams, fitResults, fitObject, ...
 %                   default == 'unnamed'
 %                   - 'Ivec1s': median-filtered current vector(s) in pA
 %                   must be a numeric array with the same # of rows as tvec0
-%                   default == medfilt1(ivec0s, round(medianFilterWindow2/siMs))
+%                   default == medfilt1(ivec0s, round(medFiltWindowMs/siMs))
 %                   - 'Suffix': suffix for file and directory names
 %                   must be a string scalar or a character vector
 %                   default == ''
@@ -92,7 +92,7 @@ function [passiveParams, fitResults, fitObject, ...
 %       cd/fit_and_estimate_passive_params.m
 %       cd/isnumericvector.m
 %       cd/locate_functionsdir.m
-%       cd/find_nearest_odd.m
+%       cd/medianfilter.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 %       cd/plot_cfit_pulse_response.m
@@ -159,7 +159,7 @@ meanVoltageWindow = 0.5;    % width in ms for calculating mean voltage
                             %   for input resistance calculations
 
 % Parameters used for data analysis
-medianFilterWindow2 = 10;   % width in ms for the median filter for corrupted data 
+medFiltWindowMs = 10;       % width in ms for the median filter for corrupted data 
                             %   (current traces)
 spikeThresholdInit = -45;   % initial amplitude threshold (mV) for detecting a spike
 maxScalingFactor = 10;      % maximum scaling factor from initial voltage 
@@ -337,14 +337,7 @@ end
 
 % If not provided, median filter current traces to get rid of corrupted data
 if isempty(ivec1s)
-    % Calculate the median filter window in samples
-    %   Note: Round down to the nearest odd integer to preserve values!!
-    %           However, must be >= 1
-    medianFilterWindowSamples = ...
-        find_nearest_odd(medianFilterWindow2/siMs, 'Direction', 'down');
-
-    % Median filter current vectors
-    ivec1s = medfilt1(ivec0s, medianFilterWindowSamples);
+    ivec1s = medianfilter(ivec0s, medianFilterWindowMs, siMs);
 end
 
 % Append suffix to directory names
@@ -843,7 +836,7 @@ end
 
 %% Output results
 % Store fixed parameters in algorithmInfo
-algorithmInfo.medianFilterWindow2 = medianFilterWindow2;
+algorithmInfo.medFiltWindowMs = medFiltWindowMs;
 algorithmInfo.spikeThresholdInit = spikeThresholdInit;
 algorithmInfo.maxScalingFactor = maxScalingFactor;
 algorithmInfo.tau1InitRising = tau1InitRising;
@@ -1547,7 +1540,7 @@ subplot(2,2,4);
     plot_cfit_pulse_response('falling', pulseResponseWindow, cfit_F2, tAvgFalling, vAvgFalling, params_L_F2, ...
             eqnS_F2, eqnL_F2, tau1_F2, tau2_F2, CL0_F2, CL1_F2, meanPulseWidth);
 
-medianFilterWindowSamples = round(medianFilterWindow2/siMs);
+medianFilterWindowSamples = round(medFiltWindowMs/siMs);
 
 subplot(3,2,1);
 plot_cfit_pulse_response(tAllRising, vAllRising, ...

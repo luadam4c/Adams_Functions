@@ -19,8 +19,7 @@ function nearestOdd = compute_nearest_odd (realNumber, varargin)
 %                   default == 'round'
 %
 % Used by:
-%       cd/find_passive_params.m
-%       TODO cd/medianfilter.m
+%       cd/medianfilter.m
 %       TODO cd/movingaveragefilter.m
 
 % File History:

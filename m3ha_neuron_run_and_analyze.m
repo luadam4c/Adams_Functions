@@ -57,6 +57,10 @@ function [errorStruct, hFig, simData] = ...
 %                                       responses according to vHold
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'BootstrapCprFlag': whether to bootstrap-average current  
+%                                       pulse responses according to vHold
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'Normalize2InitErrFlag': whether to normalize errors
 %                                               to initial errors
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -360,6 +364,7 @@ function [errorStruct, hFig, simData] = ...
 % 2019-01-08 - Reorganized code so that one can run a single simulation easily
 %                   from a set of parameters
 % 2019-01-09 - Added 'GenerateDataFlag' as an optional parameter
+% 2019-01-14 - Added 'BootstrapCprFlag' as an optional parameter
 
 %% Hard-coded parameters
 validSimModes = {'active', 'passive'};
@@ -402,6 +407,8 @@ onHpcFlagDefault = false;       % not on a high performance computing
 generateDataFlagDefault = false;% not generating surrogate data by default
 averageCprFlagDefault = false;  % don't average current pulse responses 
                                 %   according to vHold by default
+bootstrapCprFlagDefault = false;% don't bootstrap-average current pulse  
+                                %   responses according to vHold by default
 normalize2InitErrFlagDefault = false;
 saveParamsFlagDefault = true;   % save simulation parameters by default
 saveSimCmdsFlagDefault = true;  % save simulation commands by default
@@ -487,6 +494,8 @@ addParameter(iP, 'OnHpcFlag', onHpcFlagDefault, ...
 addParameter(iP, 'GenerateDataFlag', generateDataFlagDefault, ...   
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'AverageCprFlag', averageCprFlagDefault, ...   
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'BootstrapCprFlag', bootstrapCprFlagDefault, ...   
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Normalize2InitErrFlag', normalize2InitErrFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -598,6 +607,7 @@ customHoldCurrentFlag = iP.Results.CustomHoldCurrentFlag;
 onHpcFlag = iP.Results.OnHpcFlag;
 generateDataFlag = iP.Results.GenerateDataFlag;
 averageCprFlag = iP.Results.AverageCprFlag;
+bootstrapCprFlag = iP.Results.BootstrapCprFlag;
 normalize2InitErrFlag = iP.Results.Normalize2InitErrFlag;
 saveParamsFlag = iP.Results.SaveParamsFlag;
 saveSimCmdsFlag = iP.Results.SaveSimCmdsFlag;
@@ -791,6 +801,46 @@ elseif strcmpi(simMode, 'active')
                         ICA_COL_SIM, IHM_COL_SIM, GGABAB_COL_SIM]);
 end
 
+% If requested, bootstrap both recorded and simulated responses 
+%   according to a grouping condition
+if bootstrapCprFlag && ~isempty(realData) && strcmpi(simMode, 'passive')
+    % Decide on the combination method
+    if bootstrapCprFlag
+        method = 'bootmean';
+    else
+        error('Code logic error!');
+    end
+
+    % Combine both recorded and simulated responses 
+    realData = compute_combined_data(realData, method, 'Grouping', grouping, ...
+                                    'ColNum', [VOLT_COL_REC, CURR_COL_REC]);
+    simData = compute_combined_data(simData, method, 'Grouping', grouping, ...
+                                    'ColNum', [VOLT_COL_SIM, CURR_COL_SIM]);
+
+    % Re-extract columns
+    [vVecsRec, iVecsRec] = ...
+        extract_columns(realData, [VOLT_COL_REC, CURR_COL_REC]);
+    if strcmpi(simMode, 'passive')
+        [tVecs, vVecsSim, iVecsSim, vVecsDend1, vVecsDend2] = ...
+            extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
+                            CURR_COL_SIM, DEND1_COL_SIM, DEND2_COL_SIM]);
+    elseif strcmpi(simMode, 'active')
+        [tVecs, vVecsSim, iVecsSim, itmVecsSim, ithVecsSim, ...
+                icaVecsSim, ihmVecsSim, gVecsSim] = ...
+            extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
+                            CURR_COL_SIM, ITM_COL_SIM, ITH_COL_SIM, ...
+                            ICA_COL_SIM, IHM_COL_SIM, GGABAB_COL_SIM]);
+    end
+
+    % Re-compute number of sweeps
+    nSweeps = numel(realData);
+
+    % Re-compute baseline noise and sweep weights
+    [~, ~, baseNoise, sweepWeights] = ...
+        compute_default_sweep_info(tVecs, vVecsRec, ...
+                                    'BaseWindow', baseWindow);
+end
+
 % Analyze the responses and compare
 if generateDataFlag
     % Compute the sampling interval
@@ -831,13 +881,20 @@ if generateDataFlag
                                     'Prefix', expStr, 'OutFolder', outFolder);
 end
 
-% If requested, average both recorded and simulated responses 
+% If requested, combine both recorded and simulated responses 
 %   according to a grouping condition
 if averageCprFlag && ~isempty(realData) && strcmpi(simMode, 'passive')
-    % Average both recorded and simulated responses 
-    realData = compute_combined_data(realData, 'mean', 'Grouping', grouping, ...
+    % Decide on the combination method
+    if averageCprFlag
+        method = 'mean';
+    else
+        error('Code logic error!');
+    end
+
+    % Combine both recorded and simulated responses 
+    realData = compute_combined_data(realData, method, 'Grouping', grouping, ...
                                     'ColNum', [VOLT_COL_REC, CURR_COL_REC]);
-    simData = compute_combined_data(simData, 'mean', 'Grouping', grouping, ...
+    simData = compute_combined_data(simData, method, 'Grouping', grouping, ...
                                     'ColNum', [VOLT_COL_SIM, CURR_COL_SIM]);
 
     % Re-extract columns
