@@ -235,11 +235,6 @@ if iscell(indices) || iscell(vecs)
                                 'TreatCellStrAsArray', treatCellStrAsArray);
 end
 
-% For debugging
-if iscell(indices) && ~iscellnumericvector(indices)
-    error('STOP');
-end
-
 %% Do the job
 if iscellnumeric(vecs)
     subVecs = cellfun(@(x, y) extract_subvectors_helper(x, y), ...
