@@ -6,13 +6,13 @@ function [combTrace, paramsUsed] = ...
 % Explanation:
 %       TODO
 % Example(s):
-%       vecs = {[1;3;4], [2;2;5], [6;6;6]};
-%       vecs2 = [[1;3;4], [2;2;5], [6;6;6]];
-%       compute_combined_trace(vecs, 'mean', 'Group', {'a', 'a', 'b'})
-%       compute_combined_trace(vecs, 'max', 'Group', {'a', 'a', 'b'})
-%       compute_combined_trace(vecs, 'min', 'Group', {'a', 'a', 'b'})
-%       compute_combined_trace(vecs, 'bootmean', 'Group', {'a', 'a', 'b'})
-%       compute_combined_trace(vecs2, 'bootmean', 'Group', {'a', 'a', 'b'})
+%       vecs = {[1;3;4], [6;6;6], [2;2;5]};
+%       vecs2 = [[1;3;4], [6;6;6], [2;2;5]];
+%       compute_combined_trace(vecs, 'mean', 'Group', {'b', 'a', 'b'})
+%       compute_combined_trace(vecs, 'max', 'Group', {'b', 'a', 'b'})
+%       compute_combined_trace(vecs, 'min', 'Group', {'b', 'a', 'b'})
+%       compute_combined_trace(vecs, 'bootmean', 'Group', {'b', 'a', 'b'})
+%       compute_combined_trace(vecs2, 'bootmean', 'Group', {'b', 'a', 'b'})
 % Outputs:
 %       combTrace       - the combined trace(s)
 %                           If grouped, a cell array is returned
@@ -83,7 +83,7 @@ function [combTrace, paramsUsed] = ...
 % 2019-01-12 Added 'Grouping' as an optional parameter
 % 2019-01-12 Added 'first', 'last' as valid combine methods
 % 2019-01-12 Added 'bootmeans', 'bootmax', 'bootmin as valid combine methods
-% TODO: Make 'Seed' an optional argument
+% TODO: Make 'Seeds' an optional argument
 % 
 
 %% Hard-coded parameters
@@ -92,6 +92,7 @@ validAlignMethods = {'leftAdjust', 'rightAdjust', ...
 validCombineMethods = {'average', 'mean', 'maximum', 'minimum', ...
                         'all', 'any', 'first', 'last', ...
                         'bootmean', 'bootmax', 'bootmin'};
+seeds = [];
 
 %% Default values for optional arguments
 nSamplesDefault = [];               % set later
@@ -143,13 +144,13 @@ combineMethod = validatestring(combineMethod, validCombineMethods);
 if iscellnumericvector(traces) || ~iscell(traces)
     % Compute combined trace for a set of vectors
     [combTrace, paramsUsed] = ...
-        compute_combined_trace_helper(traces, nSamples, grouping, ...
+        compute_combined_trace_helper(traces, nSamples, grouping, seeds, ...
                                 alignMethod, combineMethod, treatRowAsMatrix);
 else
     % Compute combined traces for many sets of vectors
     [combTrace, paramsUsed] = ...
         cellfun(@(x) compute_combined_trace_helper(x, nSamples, grouping, ...
-                    alignMethod, combineMethod, treatRowAsMatrix), ...
+                    seeds, alignMethod, combineMethod, treatRowAsMatrix), ...
                 traces, 'UniformOutput', false);
 end
 
@@ -163,7 +164,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [combTrace, paramsUsed] = ...
-        compute_combined_trace_helper(traces, nSamples, grouping, ...
+        compute_combined_trace_helper(traces, nSamples, grouping, seeds, ...
                                 alignMethod, combineMethod, treatRowAsMatrix)
 
 %% Preparation
@@ -183,22 +184,24 @@ tracesMatrix = force_matrix(traces, 'AlignMethod', alignMethod);
 % tracesMatrix = force_matrix(traces, 'AlignMethod', alignMethod, ...
 %                               'NSamples', nSamples);
 
-% Store the seed of the current random number generator
-seed = rng;
-
 % Combine traces
 if isempty(grouping)
-    % No groups
+    % No groups or seeds
     groups = [];
 
+    % Initialize seeds if not provided
+    if isempty(seeds)
+        seeds = struct('Type', '', 'Seed', NaN, 'State', NaN);
+    end
+
     % Combine all traces
-    combTrace = ...
-        compute_single_combined_trace(tracesMatrix, combineMethod, seed);
+    [combTrace, seeds] = ...
+        compute_single_combined_trace(tracesMatrix, combineMethod, seeds);
 else
     % Combine all traces from each group separately
-    [combTrace, groups] = ...
+    [combTrace, groups, seeds] = ...
         compute_combined_trace_each_group(tracesMatrix, grouping, ...
-                                            combineMethod, seed);
+                                            combineMethod, seeds);
 end
 
 % Count the number of samples
@@ -210,15 +213,17 @@ paramsUsed.alignMethod = alignMethod;
 paramsUsed.combineMethod = combineMethod;
 paramsUsed.grouping = grouping;
 paramsUsed.nSamples = nSamples;
-paramsUsed.seed = seed;
+paramsUsed.seeds = seeds;
 paramsUsed.groups = groups;
 
 %% Make the output the same data type as the input
 if ~iscell(traces) && iscell(combTrace)
     combTrace = horzcat(combTrace{:});
 elseif iscellnumericvector(traces) && ~iscellnumericvector(combTrace)
+    % Force as column vectors
     combTrace = force_column_vector(combTrace);
     
+    % Force as column or row cell array
     if iscolumn(traces)
         combTrace = force_column_cell(combTrace);
     else
@@ -228,9 +233,9 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [combTraces, groups] = ...
+function [combTraces, groups, seedsOut] = ...
                 compute_combined_trace_each_group(traces, grouping, ...
-                                                    combineMethod, seed)
+                                                    combineMethod, seedsIn)
 %% Computes a combined trace for each group separately
 
 % Find unique grouping values
@@ -247,8 +252,15 @@ if numel(grouping) ~= count_vectors(traces)
     return
 end
 
+% Initialize seeds if not provided
+if isempty(seedsIn)
+    seedsIn = struct('Type', '', 'Seed', NaN, 'State', NaN);
+    seedsIn = repmat(seedsIn, [nGroups, 1]);
+end
+
 % Combine traces from each group separately
 combTraceEachGroup = cell(nGroups, 1);
+seedsOut = struct('Type', '', 'Seed', NaN, 'State', NaN);
 parfor iGroup = 1:nGroups    
     % Get all indices with the current grouping value
     indThisGroup = find_in_list(groups(iGroup), grouping, ...
@@ -258,8 +270,9 @@ parfor iGroup = 1:nGroups
     tracesThisGroup = traces(:, indThisGroup);
 
     % Combine the traces from this group
-    combTraceEachGroup{iGroup} = ...
-        compute_single_combined_trace(tracesThisGroup, combineMethod, seed);
+    [combTraceEachGroup{iGroup}, seedsOut(iGroup, 1)] = ...
+        compute_single_combined_trace(tracesThisGroup, combineMethod, ...
+                                        seedsIn(iGroup, 1));
 end
 
 % Concatenate into a single matrix
@@ -284,7 +297,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function combTrace = compute_single_combined_trace(traces, combineMethod, seed)
+function [combTrace, seed] = ...
+                compute_single_combined_trace(traces, combineMethod, seed)
 %% Computes a combined trace based on the combine method
 
 % Combine traces
@@ -310,15 +324,19 @@ switch combineMethod
     case 'last'
         % Take the last column
         combTrace = traces(:, end);
-    case 'bootmean'
-        % Take the bootstrapped averages
-        combTrace = compute_bootstrapped_combos(traces, 'mean', seed);
-    case 'bootmax'
-        % Take the bootstrapped maximums
-        combTrace = compute_bootstrapped_combos(traces, 'maximum', seed);
-    case 'bootmin'
-        % Take the bootstrapped minimums
-        combTrace = compute_bootstrapped_combos(traces, 'minimum', seed);
+    case {'bootmean', 'bootmax', 'bootmin'}
+        % Decide on the combination method
+        switch combineMethod
+            case 'bootmean'
+                method = 'mean';
+            case 'bootmax'
+                method = 'maximum';
+            case 'bootmin'
+                method = 'minimum';
+        end
+
+        % Compute the bootstrapped combinations and return the seed used
+        [combTrace, seed] = compute_bootstrapped_combos(traces, method, seed);
     otherwise
         error_unrecognized(get_var_name(combineMethod), ...
                             combineMethod, mfilename);
@@ -326,13 +344,18 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function combTraces = compute_bootstrapped_combos (traces, method, seed)
+function [combTraces, seed] = compute_bootstrapped_combos (traces, method, seed)
 
 % Count the number of traces
 nTraces = size(traces, 2);
 
-% Seed the random number generator
-rng(seed);
+% Seed the random number generator if provided
+if ~isnan(seed.Seed)
+    rng(seed);
+end
+
+% Save the current seed of the random number generator
+seed = rng;
 
 % Generate nTraces X nTraces samples of trace indices with replacement
 selections = randi(nTraces, nTraces);
@@ -340,7 +363,7 @@ selections = randi(nTraces, nTraces);
 % Take the bootstrapped averages
 combTraceCell = ...
     arrayfun(@(x) compute_single_combined_trace(...
-                        traces(:, selections(:, x)), method), ...
+                        traces(:, selections(:, x)), method, []), ...
                 transpose(1:nTraces), 'UniformOutput', false);
 
 % Combine them to one 2-D non-cell array
@@ -422,13 +445,6 @@ if nSamples == 0
     return
 end
 
-seeds = struct('Type', '', 'Seed', NaN, 'State', NaN);
-% Save the current seed of the random number generator
-s = rng;
-
-% Save in output
-seeds(iGroup, 1) = s;
-
 % Get the current grouping value
 groupValueThis = groups(iGroup);
 
@@ -438,6 +454,9 @@ if istext(groupValueThis)
 else
     indThisGroup = grouping == groupValueThis;
 end
+
+% Store the seed of the current random number generator
+seed = rng;
 
 %}
 
