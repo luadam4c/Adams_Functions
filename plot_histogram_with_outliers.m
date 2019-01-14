@@ -1,6 +1,6 @@
-function [h, h1, h2] = plot_histogram(X, varargin)
-%% Plots a histogram including out of range values
-% Usage: [h, h1, h2] = plot_histogram(X, varargin)
+function h = plot_histogram_with_outliers (X, varargin)
+%% Plots a histogram labelling out of range values differently
+% Usage: h = plot_histogram_with_outliers (X, varargin)
 % Explanation:
 %       Automatically combines the counts of X outside of the finite range 
 %           of edges on the left or on the right to a bin on the left or 
@@ -9,12 +9,11 @@ function [h, h1, h2] = plot_histogram(X, varargin)
 % Example(s):
 %       TODO
 % Outputs:
-%       h           - the histogram returned as a Bar object
-%                   specified as a Patch (R2015a) or Bar (R2017a) object
-%       h1          - the histogram for the isolated expanded left bar if exists
-%                   specified as a Histogram object
-%       h2          - the histogram for the isolated expanded right bar if exists
-%                   specified as a Histogram object
+%       h           - handles to histogram objects
+%                       h(1) - main histogram
+%                       h(2) - left out of range bar if any
+%                       h(3) - right out of range bar if any
+%                   specified as a Bar (R2015a) or Histogram (R2017a) object array
 % Side Effects:
 %       Plots a histogram
 % Arguments:
@@ -45,6 +44,7 @@ function [h, h1, h2] = plot_histogram(X, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       TODO: cd/plot_grouped_histogram.m
 %       cd/remove_outliers.m
 %
 % Used by:    
@@ -56,7 +56,9 @@ function [h, h1, h2] = plot_histogram(X, varargin)
 % 2018-06-05 Made edges an optional parameter and make the default dependent
 %               on the isoutlier() and histcounts() functions
 % 2018-06-11 Now uses the remove_outliers.m function
-% TODO: Use plot_grouped_histogram.m
+% TODO: Now uses plot_grouped_histogram.m by default
+% TODO: Make 'PlotOutliers' an optional parameter with default true
+%       and rename as just plot_histogram.m
 
 %% Hard-coded parameters
 validOutlierMethods = {'boxplot', 'isoutlier', ...
@@ -220,12 +222,12 @@ end
 % Plot histogram
 if matlabYear >= 2017
     % Plot histogram with histogram()
-    h = histogram('BinEdges', edgesPlot, 'BinCounts', counts, ...
+    h(1) = histogram('BinEdges', edgesPlot, 'BinCounts', counts, ...
                   'DisplayName', 'data');
                                     % available for R2017a and beyond
 else
     % Plot histogram by using the bar() function in the 'histc' style
-    h = bar(leftEdgesPlot, counts, 'histc', ...
+    h(1) = bar(leftEdgesPlot, counts, 'histc', ...
             'DisplayName', 'data');
 end
 
@@ -273,20 +275,20 @@ else
     wasHold = true;
 end
 if xTickLabelNums(1) == -Inf
-    h1 = histogram(edgesPlot(1) * ones(1, counts(1)), ...
+    h(2) = histogram(edgesPlot(1) * ones(1, counts(1)), ...
                     edgesPlot(1:2), ...
                     'FaceAlpha', 1, 'FaceColor', specialColor, ...
                     'DisplayName', 'data too small');
 else
-    h1 = [];
+    h(2) = gobjects(1);
 end
 if xTickLabelNums(end) == Inf
-    h2 = histogram(edgesPlot(end-1) * ones(1, counts(end)), ...
+    h(3) = histogram(edgesPlot(end-1) * ones(1, counts(end)), ...
                     edgesPlot(end-1:end), ...
                     'FaceAlpha', 1, 'FaceColor', specialColor, ...
                     'DisplayName', 'data too large');
 else
-    h2 = [];
+    h(3) = gobjects(1);
 end
 if ~wasHold
     hold off;
@@ -352,6 +354,13 @@ if matlabYear >= 2017
 end
 
 nStds = str2double(outlierMethod(1));
+
+%       h           - the histogram returned as a Bar object
+%                   specified as a Patch (R2015a) or Bar (R2017a) object
+%       h1          - the histogram for the isolated expanded left bar if exists
+%                   specified as a Histogram object
+%       h2          - the histogram for the isolated expanded right bar if exists
+%                   specified as a Histogram object
 
 %}
 

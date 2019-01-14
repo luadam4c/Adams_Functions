@@ -1,6 +1,6 @@
-function [bars, fig] = plot_grouped_histogram (stats, varargin)
+function [bars, fig, counts, edges] = plot_grouped_histogram (stats, varargin)
 %% Plot a grouped histogram
-% Usage: [bars, fig] = plot_grouped_histogram (stats, grouping (opt), varargin)
+% Usage: [bars, fig, counts, edges] = plot_grouped_histogram (stats, grouping (opt), varargin)
 % Explanation:
 %       Plots a grouped histogram, placing bars from different groups
 %           side-by-side by default
@@ -25,7 +25,11 @@ function [bars, fig] = plot_grouped_histogram (stats, varargin)
 %                   must be an array of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
 %                   default == the column number for a 2D array
-%       varargin    - 'Edges': bin edges
+%       varargin    TODO - 'Counts': bin counts
+%                   must be an array of one the following types:
+%                       'numeric', 'logical', 'datetime', 'duration'
+%                   default == returned by histcounts(stats)
+%                   - 'Edges': bin edges
 %                   must be a vector of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
 %                   default == returned by histcounts(stats)
@@ -120,6 +124,10 @@ function [bars, fig] = plot_grouped_histogram (stats, varargin)
 % 2019-01-09 Now allows grouping to be a cell array of character vectors
 % 2019-01-09 Added 'overlapped' as a style
 % 2019-01-11 Improved default bin edges
+% 2019-01-13 Now returns counts and edges as outputs
+% TODO: Add 'PlotFlag' as an optional parameter
+%       if false, work just like histcounts but return a matrix
+% TODO: Add 'Counts' as an optional parameter
 
 %% Hard-coded parameters
 barWidth = 1;
