@@ -208,7 +208,7 @@ if plotHistograms && nParams == 1
     isDifferent = testResults.isDifferent;
     pValue = testResults.pValue;
     pNormAvg = testResults{:, pNormAvgStrs};
-
+    
     % Extract information for labelling
     pValueText = strcat("pValue = ", num2str(pValue, 1));
     pNormAvgText = arrayfun(@(x) strcat("pNorm = ", ...
@@ -258,6 +258,31 @@ end
 
 % Count the number of groups
 nGroups = numel(uniqueX);
+
+% Create pNormStrs
+pNormAvgStrs = strcat('pNormAvg_', groupNames);
+pNormLillStrs = strcat('pNormLill_', groupNames);
+pNormAdStrs = strcat('pNormAd_', groupNames);
+pNormJbStrs = strcat('pNormJb_', groupNames);
+
+% If there are too many NaNs, return
+if sum(isnan(yData)) >= numel(yData) / 2
+    statsStruct.isDifferent = false;
+    statsStruct.pValue = NaN;
+    statsStruct.testFunction = 'none';
+    statsStruct.isNormal = false;
+    statsStruct.pNormAvg = NaN;
+    statsStruct.pNormLill = NaN;
+    statsStruct.pNormAd = NaN;
+    statsStruct.pNormJb = NaN;
+    for iGroup = 1:nGroups
+        statsStruct.(pNormAvgStrs{iGroup}) = NaN;
+        statsStruct.(pNormLillStrs{iGroup}) = NaN;
+        statsStruct.(pNormAdStrs{iGroup}) = NaN;
+        statsStruct.(pNormJbStrs{iGroup}) = NaN;
+    end
+    return
+end
 
 % Separate the data into groups
 %   Note: data will become a cell array
@@ -380,12 +405,6 @@ statsStruct.pNormAvg = pNormAvg;
 statsStruct.pNormLill = pNormLill;
 statsStruct.pNormAd = pNormAd;
 statsStruct.pNormJb = pNormJb;
-
-% Create pNormStrs
-pNormAvgStrs = strcat('pNormAvg_', groupNames);
-pNormLillStrs = strcat('pNormLill_', groupNames);
-pNormAdStrs = strcat('pNormAd_', groupNames);
-pNormJbStrs = strcat('pNormJb_', groupNames);
 
 % Store normality test p values in statsStruct
 for iGroup = 1:nGroups

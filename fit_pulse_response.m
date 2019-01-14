@@ -213,8 +213,8 @@ if isempty(fitObject)
     fitResults.tauFast = NaN;
     fitResults.ampSlowLpr = NaN;
     fitResults.ampFastLpr = NaN;
-    fitResults.coeffSpr = NaN;
-    fitResults.coeffLpr = NaN;
+    fitResults.coeffSpr = transpose(fitResults.coeffValues);
+    fitResults.coeffLpr = transpose(fitResults.coeffValues);
     fitResults.coeffSprStr = '';
     fitResults.coeffLprStr = '';
     fitResults.phaseName = phaseName;
