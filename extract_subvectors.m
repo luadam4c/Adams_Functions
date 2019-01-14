@@ -226,13 +226,18 @@ end
 % If there is a alignment method used, apply it to indices
 indices = align_subvectors(indices, alignMethod);
 
-% If one of indices and vecs is a cell function, match the formats of 
+% If one of indices and vecs is a cell array, match the formats of 
 %   indices and vecs so that cellfun can be used
 if iscell(indices) || iscell(vecs)
     [indices, vecs] = ...
         match_format_vector_sets(indices, vecs, 'ForceCellOutputs', false, ...
                                 'TreatCellAsArray', treatCellAsArray, ...
                                 'TreatCellStrAsArray', treatCellStrAsArray);
+end
+
+% For debugging
+if iscell(indices) && ~iscellnumericvector(indices)
+    error('STOP');
 end
 
 %% Do the job
@@ -260,6 +265,7 @@ if isempty(indices) || isempty(vec)
     subVec = [];
     return
 end
+
 % Make sure vectors and indices are in columns
 [vec, indices] = ...
     argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', true, ...

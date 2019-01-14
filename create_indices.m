@@ -205,8 +205,9 @@ if forceCellOutput && ~iscell(indices)
     indices = force_column_cell(indices, 'RowInstead', rowInstead);
 end
 
-% Make the 
-indices = force_column_vector(indices, 'RowInstead', rowInstead);
+% Make the output consistent with the input
+indices = force_column_vector(indices, 'RowInstead', rowInstead, ...
+                                'IgnoreNonVectors', true);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
