@@ -42,8 +42,12 @@ function vectors = force_column_vector (vectors, varargin)
 %                   - 'ToLinearize': whether to linearize a non-vector array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'RowInstead': whether to force as row vector instead
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
+%       cd/create_error_for_nargin.m
 %       cd/force_column_cell.m
 %       cd/iscellnumeric.m
 %       cd/isnum.m
@@ -66,6 +70,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/extract_subvectors.m
 %       cd/fit_2exp.m
 %       cd/force_column_cell.m
+%       cd/force_row_vector.m
 %       cd/collapse_identical_vectors.m
 %       cd/match_format_vectors.m
 %       cd/match_format_vector_sets.m
@@ -91,6 +96,7 @@ function vectors = force_column_vector (vectors, varargin)
 % 2019-01-04 Fixed bugs for cellstrs
 % 2019-01-08 Added 'ForceCellOutput' as an optional argument
 % 2019-01-09 Added 'ToLinearize' as an optional argument
+% 2019-01-13 Added 'RowInstead' as an optional argument
 % TODO: Deal with 3D arrays
 % 
 
@@ -102,14 +108,14 @@ treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
                                     %   as an array by default
 treatCharAsScalarDefault = true;% treat character arrays as scalars by default
 toLinearizeDefault = false;     % whether to linearize a nonvector array
+rowInsteadDefault = false;      % whether to force as row vector instead
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
@@ -132,6 +138,8 @@ addParameter(iP, 'TreatCharAsScalar', treatCharAsScalarDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ToLinearize', toLinearizeDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RowInstead', rowInsteadDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vectors, varargin{:});
@@ -141,6 +149,7 @@ treatCellAsArray = iP.Results.TreatCellAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 treatCharAsScalar = iP.Results.TreatCharAsScalar;
 toLinearize = iP.Results.ToLinearize;
+rowInstead = iP.Results.RowInstead;
 
 %% Do the job
 if iscell(vectors) && ~treatCellAsArray && ...
@@ -149,23 +158,31 @@ if iscell(vectors) && ~treatCellAsArray && ...
     %   Note: this will have a recursive effect
     vectors = cellfun(@(x) force_column_vector(x, ...
                             'IgnoreNonVectors', ignoreNonVectors, ...
-                            'ToLinearize', toLinearize), ...
+                            'ToLinearize', toLinearize, ...
+                            'RowInstead', rowInstead), ...
                     vectors, 'UniformOutput', false);
-elseif ~iscolumn(vectors)
+elseif rowInstead && ~isrow(vectors) || ~rowInstead && ~iscolumn(vectors)
     if isempty(vectors) || ischar(vectors) && treatCharAsScalar
         % Do nothing
     elseif isvector(vectors)
-        % Reassign as a column
-        vectors = vectors(:);
+        % Transpose it
+        vectors = transpose(vectors);
     else
         % Must be a non-vector
         if ~ignoreNonVectors
             if toLinearize
                 % Linearize as a column vector
                 vectors = vectors(:);
+
+                % Transpose to a row vector if requested 
+                if rowInstead
+                    vectors = transpose(vectors);
+                end
             else
                 % Transform to a column cell array of column vectors
-                vectors = force_column_cell(vectors, 'ToLinearize', false);
+                %   or a row cell array of row vectors
+                vectors = force_column_cell(vectors, 'ToLinearize', false, ...
+                                            'RowInstead', rowInstead);
             end
         end
     end
@@ -176,7 +193,9 @@ end
 %% Force output as a cell array if requested
 if forceCellOutput
     % Reassign as a column cell array of column vectors
-    vectors = force_column_cell(vectors, 'ToLinearize', false);
+    %   or a row cell array of row vectors
+    vectors = force_column_cell(vectors, 'ToLinearize', false, ...
+                                'RowInstead', rowInstead);
 end    
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -212,6 +231,9 @@ if (isnumeric(vectors) || islogical(vectors) || ...
 %                   specified as a numeric array 
 %                       or a cell array of numeric vectors
 %                   must be a numeric array or a cell array
+
+% Reassign as a column
+vectors = vectors(:);
 
 %}
 

@@ -1,6 +1,6 @@
-function [h, h1, h2] = histogram_include_outofrange(X, varargin)
+function [h, h1, h2] = plot_histogram(X, varargin)
 %% Plots a histogram including out of range values
-% Usage: [h, h1, h2] = histogram_include_outofrange(X, varargin)
+% Usage: [h, h1, h2] = plot_histogram(X, varargin)
 % Explanation:
 %       Automatically combines the counts of X outside of the finite range 
 %           of edges on the left or on the right to a bin on the left or 
@@ -49,13 +49,14 @@ function [h, h1, h2] = histogram_include_outofrange(X, varargin)
 %
 % Used by:    
 %       /home/Matlab/Marks_Functions/paula/Oct2017/zgRasterFigureMaker.m
-%       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
+%       /media/adamX/m3ha/data_dclamp/initial_slopes.m
 %
 % File History:
 % 2017-12-12 Created by Adam Lu
 % 2018-06-05 Made edges an optional parameter and make the default dependent
 %               on the isoutlier() and histcounts() functions
 % 2018-06-11 Now uses the remove_outliers.m function
+% TODO: Use plot_grouped_histogram.m
 
 %% Hard-coded parameters
 validOutlierMethods = {'boxplot', 'isoutlier', ...

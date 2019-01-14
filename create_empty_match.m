@@ -20,6 +20,7 @@ function empty = create_empty_match (array, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/compute_combined_trace.m
 %       cd/extract_subvectors.m
 
 % File History:

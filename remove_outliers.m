@@ -33,7 +33,7 @@ function [newData, origInd] = remove_outliers (oldData, varargin)
 %                   default == false
 %
 % Used by:    
-%       /home/Matlab/Adams_Functions/histogram_include_outofrange.m
+%       /home/Matlab/Adams_Functions/plot_histogram.m
 %       /media/adamX/m3ha/data_dclamp/compare_sse.m
 %       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
 %

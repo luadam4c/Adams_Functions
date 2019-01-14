@@ -12,12 +12,12 @@ function [dataAvg, groups] = ...
 %           out of each group is extracted
 %       By default, a single set of vectors is considered as one sweep
 % Example(s):
-%       compute_combined_data({magic(3), magic(3) + 1, magic(3) + 2}, 'mean', 'Grouping', {'a', 'b', 'b'}, 'ColNumToCombine', 2:3)
-%       compute_combined_data({magic(3), magic(3) + 1, magic(3) + 2}, 'bootmean', 'Grouping', {'a', 'b', 'b'}, 'ColNumToCombine', 2:3)
+%       compute_combined_data({magic(3) + 10, magic(3), magic(3) + 20}, 'mean', 'Grouping', {'b', 'a', 'b'}, 'ColNumToCombine', 2:3)
+%       compute_combined_data({magic(3) + 10, magic(3), magic(3) + 20}, 'bootmean', 'Grouping', {'b', 'a', 'b'}, 'ColNumToCombine', 2:3)
 % Outputs:
 %       dataAvg     - data averaged
 %                   specified as a numeric array
-%       groups      - unique grouping values
+%       groups      - unique grouping values in 'stable' order
 %                   specified as a numeric vector
 % Arguments:
 %       dataOrig        - original data
@@ -133,7 +133,7 @@ end
 colNumOther = setdiff(allColNums, colNumToCombine);
 
 % Find unique grouping values
-groups = unique(grouping, 'sorted');
+groups = unique(grouping, 'stable');
 
 %% Do the job
 % Extract each column from all sweeps separately

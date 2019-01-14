@@ -19,6 +19,9 @@ function indices = create_indices (varargin)
 %       varargin    - 'ForceCellOutput': whether to force output as a cell array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'ForceRowOutput': whether to force as row vector instead
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'Vectors': vectors to create indices from
 %                   Note: If a cell array, each element must be a vector
 %                         If a non-vector array, each column is a vector
@@ -59,13 +62,15 @@ function indices = create_indices (varargin)
 % 2018-12-18 Added 'ForceCellOutput' as an optional argument
 % 2018-12-22 Now replaces out of range values with the actual endpoints
 % 2018-12-24 Added 'IndexStart' and 'IndexEnd' as optional arguments
-% 
+% 2019-01-13 Added 'ForceRowOutput' as an optional argument
+ 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
 endPointsDefault = [];          % no endpoint by default
 forceCellOutputDefault = false; % don't force output as a cell array by default
+forceRowOutputDefault = false;  % return column vectors by default
 vectorsDefault = [];
 indexEndDefault = [];           % set later
 indexStartDefault = [];         % set later
@@ -86,6 +91,8 @@ addOptional(iP, 'endPoints', endPointsDefault, ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ForceRowOutput', forceRowOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Vectors', vectorsDefault, ...
     @(x) assert(isnumeric(x) || iscell(x), ...
                 ['Vectors must be either a numeric array', ...
@@ -101,6 +108,7 @@ addParameter(iP, 'IndexEnd', indexEndDefault, ...
 parse(iP, varargin{:});
 endPoints = iP.Results.endPoints;
 forceCellOutput = iP.Results.ForceCellOutput;
+forceRowOutput = iP.Results.ForceRowOutput;
 vectors = iP.Results.Vectors;
 indexStartUser = iP.Results.IndexStart;
 indexEndUser = iP.Results.IndexEnd;
@@ -113,6 +121,15 @@ if isempty(endPoints) && isempty(vectors) && ...
         isempty(indexStartUser) && isempty(indexEndUser)
     indices = [];
     return
+end
+
+% Decide whether to output row vectors
+if forceRowOutput || isvector(endPoints) && ~iscolumn(endPoints) || ...
+        isvector(indexStartUser) && ~iscolumn(indexStartUser) || ...
+        isvector(indexEndUser) && ~iscolumn(indexEndUser)
+    rowInstead = true;
+else
+    rowInstead = false;
 end
 
 % Make sure endPoints, indexStartUser, indexEndUser are in columns
@@ -185,8 +202,11 @@ end
 
 % Force as cell array output if requested
 if forceCellOutput && ~iscell(indices)
-    indices = force_column_cell(indices);
+    indices = force_column_cell(indices, 'RowInstead', rowInstead);
 end
+
+% Make the 
+indices = force_column_vector(indices, 'RowInstead', rowInstead);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

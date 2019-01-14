@@ -570,16 +570,6 @@ if toParsePulse && (toAverageByVhold || toBootstrapByVhold)
 
         % Define file names by the unique vhold level
         fileNames = create_labels_from_numbers(vUnique, 'Prefix', filePrefix);
-
-        % Update the number of sweeps
-        nSwps = numel(data);
-
-        % Update the sampling interval (esp. the number of rows)
-        siMs = compute_sampling_interval(tVecs);
-
-        % Use an averaged current pulse amplitude for 
-        %   the averaged current pulse response
-        currentPulseAmplitude = mean(currentPulseAmplitude) * ones(nSwps, 1);
     elseif toBootstrapByVhold
         [data, vUnique] = ...
             compute_combined_data(data, 'bootmean', 'Grouping', vHoldCond, ...
@@ -593,6 +583,19 @@ if toParsePulse && (toAverageByVhold || toBootstrapByVhold)
     else
         error('Code logic error!');
     end
+
+    % Update the number of sweeps
+    nSwps = numel(data);
+
+    % Extract data vectors
+    [tVecs, vVecs, iVecs, gVecs] = extract_columns(data, 1:4);
+
+    % Update the sampling interval (esp. the number of rows)
+    siMs = compute_sampling_interval(tVecs);
+
+    % Use an averaged current pulse amplitude for 
+    %   the new set of current pulse responses
+    currentPulseAmplitude = mean(currentPulseAmplitude) * ones(nSwps, 1);
 end
 
 %% Compute the actual holding potentials 

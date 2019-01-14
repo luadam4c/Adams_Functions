@@ -11,7 +11,7 @@ function varargout = find_in_strings (cand, strList, varargin)
 %   However, find_in_strings returns indices instead of logical arrays,
 %       and optionally returns the matched elements as the second output.
 %   Use ismember_custom.m to simply test whether cand is in strList
-%   Use find_index_in_array.m to treat each element of cand
+%   Use find_index_in_list.m to treat each element of cand
 %       as a different candidate
 %
 % Example(s):
@@ -31,8 +31,8 @@ function varargout = find_in_strings (cand, strList, varargin)
 % Outputs:
 %       indices     - indices of strList matching the candidate
 %                       could be empty (or NaN if 'ReturnNan' is true)
-%                   specified as a numeric array
-%       elements    - elements of strList corresponding to those indices
+%                   specified as a positive integer array
+%       matched     - matched elements of strList
 %                   specified as a cell array if more than one indices 
 %                       or the element if only one index; or an empty string
 % Arguments:

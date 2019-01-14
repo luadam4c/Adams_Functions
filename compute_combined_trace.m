@@ -53,8 +53,12 @@ function [combTrace, paramsUsed] = ...
 % Requires:
 %       cd/count_samples.m
 %       cd/count_vectors.m
+%       cd/create_empty_match.m
 %       cd/isnum.m
+%       cd/find_in_list.m
+%       cd/force_column_cell.m
 %       cd/force_column_vector.m
+%       cd/force_row_cell.m
 %       cd/force_matrix.m
 %       cd/error_unrecognized.m
 %       cd/get_var_name.m
@@ -79,7 +83,7 @@ function [combTrace, paramsUsed] = ...
 % 2019-01-12 Added 'Grouping' as an optional parameter
 % 2019-01-12 Added 'first', 'last' as valid combine methods
 % 2019-01-12 Added 'bootmeans', 'bootmax', 'bootmin as valid combine methods
-% TODO: Make 'Seeds' an optional argument
+% TODO: Make 'Seed' an optional argument
 % 
 
 %% Hard-coded parameters
@@ -179,15 +183,22 @@ tracesMatrix = force_matrix(traces, 'AlignMethod', alignMethod);
 % tracesMatrix = force_matrix(traces, 'AlignMethod', alignMethod, ...
 %                               'NSamples', nSamples);
 
+% Store the seed of the current random number generator
+seed = rng;
+
 % Combine traces
 if isempty(grouping)
+    % No groups
+    groups = [];
+
     % Combine all traces
-    [combTrace, seeds] = ...
-        compute_single_combined_trace(tracesMatrix, combineMethod);
+    combTrace = ...
+        compute_single_combined_trace(tracesMatrix, combineMethod, seed);
 else
     % Combine all traces from each group separately
-    [combTrace, seeds] = ...
-        compute_combined_trace_each_group(tracesMatrix, grouping, combineMethod);
+    [combTrace, groups] = ...
+        compute_combined_trace_each_group(tracesMatrix, grouping, ...
+                                            combineMethod, seed);
 end
 
 % Count the number of samples
@@ -198,25 +209,32 @@ paramsUsed.nSamplesEachTrace = nSamplesEachTrace;
 paramsUsed.alignMethod = alignMethod;
 paramsUsed.combineMethod = combineMethod;
 paramsUsed.grouping = grouping;
-paramsUsed.seeds = seeds;
 paramsUsed.nSamples = nSamples;
+paramsUsed.seed = seed;
+paramsUsed.groups = groups;
 
 %% Make the output the same data type as the input
 if ~iscell(traces) && iscell(combTrace)
     combTrace = horzcat(combTrace{:});
 elseif iscellnumericvector(traces) && ~iscellnumericvector(combTrace)
     combTrace = force_column_vector(combTrace);
-    combTrace = match_dimensions(combTrace, size(traces));
+    
+    if iscolumn(traces)
+        combTrace = force_column_cell(combTrace);
+    else
+        combTrace = force_row_cell(combTrace);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [combTraces, seeds] = ...
-                compute_combined_trace_each_group(traces, grouping, combineMethod)
+function [combTraces, groups] = ...
+                compute_combined_trace_each_group(traces, grouping, ...
+                                                    combineMethod, seed)
 %% Computes a combined trace for each group separately
 
 % Find unique grouping values
-groups = unique(grouping, 'sorted');
+groups = unique(grouping, 'stable');
 
 % Count the number of groups
 nGroups = length(groups);
@@ -225,49 +243,49 @@ nGroups = length(groups);
 if numel(grouping) ~= count_vectors(traces)
     fprintf(['The length of the grouping vector ', ...
                 'does not match the number of traces!!\n']);
-    combTraceEachGroup = [];
+    combTraces = [];
     return
 end
 
 % Combine traces from each group separately
 combTraceEachGroup = cell(nGroups, 1);
-seeds = struct('Type', '', 'Seed', NaN, 'State', NaN);
-parfor iGroup = 1:nGroups
-    % Get the current grouping value
-    groupValueThis = groups(iGroup);
-
+parfor iGroup = 1:nGroups    
     % Get all indices with the current grouping value
-    if istext(groupValueThis)
-        indThisGroup = strcmp(grouping, groupValueThis);
-    else
-        indThisGroup = grouping == groupValueThis;
-    end
-    
+    indThisGroup = find_in_list(groups(iGroup), grouping, ...
+                                'MatchMode', 'exact', 'ReturnNan', false);
+
     % Collect all traces with this grouping value
     tracesThisGroup = traces(:, indThisGroup);
 
-    % Save the current seed of the random number generator
-    s = rng;
-
-    % Save in output
-    seeds(iGroup, 1) = s;
-
     % Combine the traces from this group
     combTraceEachGroup{iGroup} = ...
-        compute_single_combined_trace(tracesThisGroup, combineMethod, s);
+        compute_single_combined_trace(tracesThisGroup, combineMethod, seed);
 end
 
 % Concatenate into a single matrix
-combTraces = horzcat(combTraceEachGroup{:});
+switch combineMethod
+    case {'average', 'mean', 'maximum', 'minimum', ...
+            'all', 'any', 'first', 'last'}
+        % Concatenate directly
+        combTraces = horzcat(combTraceEachGroup{:});
+    case {'bootmean', 'bootmax', 'bootmin'}
+        combTraces = create_empty_match(traces);
+        for iGroup = 1:nGroups
+            % Get all indices with the current grouping value
+            indThisGroup = find_in_list(groups(iGroup), grouping, ...
+                                'MatchMode', 'exact', 'ReturnNan', false);
+
+            % Store the processed traces in this group
+            combTraces(:, indThisGroup) = combTraceEachGroup{iGroup};
+        end
+    otherwise
+        error('combineMethod unrecognized!');
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [combTrace, seed] = ...
-                compute_single_combined_trace(traces, combineMethod, seed)
+function combTrace = compute_single_combined_trace(traces, combineMethod, seed)
 %% Computes a combined trace based on the combine method
-
-% Save the current seed of the random number generator
-seed = rng;
 
 % Combine traces
 switch combineMethod
@@ -402,6 +420,23 @@ end
 if nSamples == 0
     combTrace = [];
     return
+end
+
+seeds = struct('Type', '', 'Seed', NaN, 'State', NaN);
+% Save the current seed of the random number generator
+s = rng;
+
+% Save in output
+seeds(iGroup, 1) = s;
+
+% Get the current grouping value
+groupValueThis = groups(iGroup);
+
+% Get all indices with the current grouping value
+if istext(groupValueThis)
+    indThisGroup = strcmp(grouping, groupValueThis);
+else
+    indThisGroup = grouping == groupValueThis;
 end
 
 %}

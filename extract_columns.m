@@ -37,6 +37,9 @@ function varargout = extract_columns (arrays, varargin)
 %                                           of the same array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'AsRowVectors': whether to extract as row vectors
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/count_samples.m
@@ -66,7 +69,7 @@ function varargout = extract_columns (arrays, varargin)
 % 2019-01-12 Fixed bugs for single output and simplified 
 % 2019-01-12 Now considers cell arrays of numeric vectors 
 %               as a single array when 'TreatCnvAsColumns' is true
-% 
+% 2019-01-13 Added 'AsRowVectors' as an optional argument
 
 %% Hard-coded parameters
 validOutputModes = {'multiple', 'single'};
@@ -77,6 +80,7 @@ outputModeDefault = 'multiple'; % separate outputs by default
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
 treatCnvAsColumnsDefault = false;   % treat cell arrays of numeric vectors as 
                                     % many arrays by default
+asRowVectorsDefault = false;    % extract as column vectors by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -110,6 +114,8 @@ addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCnvAsColumns', treatCnvAsColumnsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AsRowVectors', asRowVectorsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, arrays, varargin{:});
@@ -117,6 +123,7 @@ colNums = iP.Results.colNums;
 outputMode = validatestring(iP.Results.OutputMode, validOutputModes);
 treatCellAsArray = iP.Results.TreatCellAsArray;
 treatCnvAsColumns = iP.Results.TreatCnvAsColumns;
+asRowVectors = iP.Results.AsRowVectors;
 
 % Make sure colNums are column vectors
 if ~(ischar(colNums) || isstring(colNums))
@@ -194,7 +201,8 @@ if iscell(colNums) || isnumeric(colNums)
     end
 elseif ischar(colNums) || isstring(colNums)
     % Generate column numbers
-    colNums = create_indices('IndexEnd', nColumns);
+    colNums = create_indices('IndexEnd', nColumns, ...
+                            'ForceRowOutput', asRowVectors);
 end
 
 % Count the number of columns requested
@@ -235,11 +243,11 @@ switch outputMode
 
         % Extract nOutputs columns
         varargout = extract_columns_helper(colNums, arrays, ...
-                                treatCellAsArray, treatCnvAsColumns);
+                        treatCellAsArray, treatCnvAsColumns, asRowVectors);
     case 'single'
         % Extract all columns
         varargout{1} = extract_columns_helper(colNums, arrays, ...
-                                treatCellAsArray, treatCnvAsColumns);
+                        treatCellAsArray, treatCnvAsColumns, asRowVectors);
     otherwise
         error('outputMode unrecognized!');
 end
@@ -247,30 +255,39 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function colExtracted = extract_columns_helper(colNums, arrays, ...
-                                        treatCellAsArray, treatCnvAsColumns)
+                            treatCellAsArray, treatCnvAsColumns, asRowVectors)
 %% Extract the columns depending on the number of arrays
 
 if treatCellAsArray || ~iscell(arrays) || ...
         (treatCnvAsColumns && iscellvector(arrays))
     % Treat arrays as a single array
     colExtracted = arrayfun(@(x) extract_from_one_array(x, arrays, ...
-                                    treatCellAsArray, treatCnvAsColumns), ...
+                                    treatCellAsArray, treatCnvAsColumns, ...
+                                    asRowVectors), ...
                             colNums, 'UniformOutput', false);
 else
     % Count the minimum number of columns requested
     nColNumbers = count_samples(colNums);
     nColsToExtract = min(nColNumbers);
 
+    % Create iColsToExtract
+    if asRowVectors
+        iColsToExtract = 1:nColsToExtract;
+    else
+        iColsToExtract = transpose(1:nColsToExtract);
+    end
+
     % Treat each cell content as a different array
     colExtracted = arrayfun(@(x) extract_specific_column(x, colNums, arrays, ...
-                                    treatCellAsArray, treatCnvAsColumns), ...
-                    transpose(1:nColsToExtract), 'UniformOutput', false);
+                                    treatCellAsArray, treatCnvAsColumns, ...
+                                    asRowVectors), ...
+                            iColsToExtract, 'UniformOutput', false);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function colExtracted = extract_specific_column(iCol, colNums, arrays, ...
-                                        treatCellAsArray, treatCnvAsColumns)
+                            treatCellAsArray, treatCnvAsColumns, asRowVectors)
 %% Extract a specific column (may be different for each array)
 
 % Get the current column numbers to extract
@@ -282,30 +299,34 @@ colNumsThis = match_dimensions(colNumsThis, size(arrays));
 % Extract this column from each array
 colExtracted = ...
     cellfun(@(x, y) extract_from_one_array(x, y, ...
-                    treatCellAsArray, treatCnvAsColumns), ...
+                    treatCellAsArray, treatCnvAsColumns, asRowVectors), ...
             num2cell(colNumsThis), arrays, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function colExtracted = extract_from_one_array(colNum, array, ...
-                                        treatCellAsArray, treatCnvAsColumns)
+                            treatCellAsArray, treatCnvAsColumns, asRowVectors)
 %% Extract a specific column from a specific array
 
-if treatCellAsArray || ~iscell(array)
-    % Treat array as a non-cell array
-    colExtracted = array(:, colNum);
-elseif treatCnvAsColumns && iscellvector(array)
-    % Treat each cell content as a different column of the same array
-    colExtracted = array{colNum};
-else
-    % Count the minimum number of columns requested
-    nColNumbers = count_samples(colNum);
-    nColsToExtract = min(nColNumbers);
+if treatCellAsArray || ~iscell(array) || ...
+        treatCnvAsColumns && iscellvector(array)
+    % Extract the column
+    if treatCellAsArray || ~iscell(array)
+        % Treat array as a non-cell array
+        colExtracted = array(:, colNum);
+    else
+        % Treat each cell content as a different column of the same array
+        colExtracted = array{colNum};
+    end
 
-    % Treat each cell content as a different array
-    colExtracted = arrayfun(@(x) extract_specific_column(x, colNum, array, ...
-                                    treatCellAsArray, treatCnvAsColumns), ...
-                    transpose(1:nColsToExtract), 'UniformOutput', false);
+    % Force as a row vector if requested
+    if asRowVectors
+        colExtracted = force_row_vector(colExtracted);
+    end
+else
+    % Pass to extract_columns_helper again
+    colExtracted = extract_columns_helper(colNum, array, ...
+                            treatCellAsArray, treatCnvAsColumns, asRowVectors);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -446,6 +467,22 @@ addRequired(iP, 'arrays', ...
                 ['arrays must be either a numeric array ', ...
                     'or a cell array!']));
 
+% Count the minimum number of columns requested
+nColNumbers = count_samples(colNum);
+nColsToExtract = min(nColNumbers);
+
+% Create iColsToExtract
+if asRowVectors
+    iColsToExtract = 1:nColsToExtract;
+else
+    iColsToExtract = transpose(1:nColsToExtract);
+end
+
+% Treat each cell content as a different array
+colExtracted = arrayfun(@(x) extract_specific_column(x, colNum, array, ...
+                                treatCellAsArray, treatCnvAsColumns, ...
+                                asRowVectors), ...
+                        iColsToExtract, 'UniformOutput', false);
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

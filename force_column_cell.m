@@ -1,5 +1,5 @@
 function vectorsCell = force_column_cell (vectorsOrig, varargin)
-%% Transforms a row cell array or nonvector to a column cell array of vectors
+%% Transforms a row cell array or a non-cell array to a column cell array of non-cell vectors
 % Usage: vectorsCell = force_column_cell (vectorsOrig, varargin)
 % Explanation:
 %       This is an attempt to standardize the way multiple vectors are stored
@@ -37,10 +37,14 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       varargin    - 'ToLinearize': whether to linearize a cell array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'RowInstead': whether to force as row vector instead
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%
 % Requires:
+%       cd/create_error_for_nargin.m
 %       cd/extract_columns.m
 %       cd/force_column_vector.m
-%       cd/isnum.m
 %
 % Used by:
 %       cd/compute_rms_error.m
@@ -50,8 +54,8 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/extract_columns.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/find_pulse_endpoints.m
+%       cd/force_row_cell.m
 %       cd/force_column_vector.m
-%       cd/force_row_vector.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/match_format_vector_sets.m
@@ -73,18 +77,19 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 % 2018-12-19 Now uses extract_columns.m
 % 2019-01-04 Fixed bug
 % 2019-01-09 Now forces string arrays to become cell arrays of character vectors
+% 2019-01-13 Added 'RowInstead' as an optional argument
 % 
 
 %% Default values for optional arguments
 toLinearizeDefault = false;     % whether to linearize a nonvector cell array
+rowInsteadDefault = false;      % whether to force as row vector instead
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
@@ -92,49 +97,62 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'vectorsOrig', ...
-    @(x) isnum(x) || iscell(x) || ischar(x) || isstring(x));
+addRequired(iP, 'vectorsOrig');
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ToLinearize', toLinearizeDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RowInstead', rowInsteadDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vectorsOrig, varargin{:});
 toLinearize = iP.Results.ToLinearize;
+rowInstead = iP.Results.RowInstead;
 
 %% Do the job
-if iscell(vectorsOrig) && iscolumn(vectorsOrig)
-    % Do nothing
-    vectorsCell = vectorsOrig;
-elseif iscell(vectorsOrig) && ...
-        (isempty(vectorsOrig) || isrow(vectorsOrig) || toLinearize)
-    % Reassign as a column
-    vectorsCell = vectorsOrig(:);
-elseif isnum(vectorsOrig) || ...
-        iscell(vectorsOrig) && ~isvector(vectorsOrig) && ~toLinearize
-    % Force any numeric vector as a column vector
-    if isnum(vectorsOrig)
-        vectorsOrig = force_column_vector(vectorsOrig, 'IgnoreNonVectors', true);
+if isempty(vectorsOrig) || iscell(vectorsOrig) && ...
+        (rowInstead && isrow(vectorsOrig) || ...
+        ~rowInstead && iscolumn(vectorsOrig))
+    % Place in a cell array if not already so
+    if ~iscell(vectorsOrig)
+        vectorsCell = {vectorsOrig};
+    else
+        vectorsCell = vectorsOrig;
     end
-
-    % Extract as a cell array
-    vectorsCell = extract_columns(vectorsOrig, 'all', ...
-                            'OutputMode', 'single', 'TreatCellAsArray', true);
 elseif ischar(vectorsOrig) || isstring(vectorsOrig)
     % Convert to a cell array of character arrays
     vectorsCell = cellstr(vectorsOrig);
 
     % Pass to this function again
-    vectorsCell = force_column_cell(vectorsCell, 'ToLinearize', toLinearize);
-else
-    % Do nothing
-    vectorsCell = vectorsOrig;
-end
+    vectorsCell = force_column_cell(vectorsCell, 'ToLinearize', toLinearize, ...
+                                    'RowInstead', rowInstead);
+elseif iscell(vectorsOrig) && (isvector(vectorsOrig) || toLinearize)
+    % Reassign as a column
+    vectorsCell = vectorsOrig(:);
 
-% Place in a cell array if not already so
-if ~iscell(vectorsCell)
-    vectorsCell = {vectorsCell};
+    % Transpose to a row if requested
+    if rowInstead
+        vectorsCell = transpose(vectorsCell);
+    end
+elseif ~iscell(vectorsOrig) || ...
+        iscell(vectorsOrig) && ~isvector(vectorsOrig) && ~toLinearize
+    % Force any non-cell vector as a column vector
+    if ~iscell(vectorsOrig)
+        vectorsOrig = force_column_vector(vectorsOrig, 'IgnoreNonVectors', true);
+    end
+
+    % Extract as a cell array
+    vectorsCell = extract_columns(vectorsOrig, 'all', ...
+                            'OutputMode', 'single', 'TreatCellAsArray', true, ...
+                            'AsRowVectors', rowInstead);
+
+    % Pass to this function again
+    vectorsCell = force_column_cell(vectorsCell, 'ToLinearize', toLinearize, ...
+                                    'RowInstead', rowInstead);
+else
+    % Should not occur
+    error('Code logic error!');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -161,6 +179,10 @@ vectorsCell = arrayfun(@(x) vectorsOrig(:, x), ...
 elseif ischar(vectorsOrig) || isnum(vectorsOrig) && isempty(vectorsOrig)
     % Place in a cell array
     vectorsCell = {vectorsOrig};
+
+%       cd/isnum.m
+addRequired(iP, 'vectorsOrig', ...
+    @(x) isnum(x) || iscell(x) || ischar(x) || isstring(x));
 
 %}
 
