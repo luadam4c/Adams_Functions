@@ -708,6 +708,9 @@ case 'parallel'
         tVecsThis = tVecs{iPlot};
         dataThis = data{iPlot};
 
+        % Compute the number of vectors in dataThis
+        nVectors = size(dataThis, 2);
+
         % Set the default y-axis limits
         if isempty(yLimits)
             % Compute the y limits from both data and dataToCompare
@@ -736,6 +739,11 @@ case 'parallel'
         % Get the number of colors for this plot
         nColorsThis = size(colorThis, 1);
 
+        % Make sure the color map is big enough
+        if nColorsThis < nVectors
+            colorThis = match_row_count(colorThis, nVectors);
+        end
+
         % Plot data to compare against as a black trace
         if ~isempty(dataToCompare{iPlot})
             plotsDataToCompare(iPlot) = ...
@@ -749,7 +757,7 @@ case 'parallel'
         else
             p = arrayfun(@(x) plot(tVecsThis(:, x), dataThis(:, x), ...
                                 'Color', colorThis(x, :), otherArguments), ...
-                            transpose(1:nColorsThis));
+                            transpose(1:nVectors));
         end
 
         % Set the legend label as the trace label if provided

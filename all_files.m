@@ -1,7 +1,11 @@
-function [files, fullPaths] = all_files(varargin)
+function [files, fullPaths] = all_files (varargin)
 %% Returns all the files in a given directory (optionally recursive) that matches a prefix, keyword, suffix or extension
-% Usage: [files, fullPaths] = all_files(varargin)
-%
+% Usage: [files, fullPaths] = all_files (varargin)
+% Explanation:
+%       TODO
+% Example(s):
+%       [files, fullPaths] = all_files;
+%       [files, fullPaths] = all_files('Recursive', true);
 % Outputs:
 %       files       - file structure(s) for the files
 %                   specified as a structure array with fields:

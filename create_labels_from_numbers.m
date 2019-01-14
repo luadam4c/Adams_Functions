@@ -33,6 +33,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 % Used by:
 %       cd/compute_all_pulse_responses.m
 %       cd/create_simulation_output_filenames.m
+%       cd/parse_lts.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_struct.m
 %       cd/plot_swd_raster.m

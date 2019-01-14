@@ -20,7 +20,7 @@ function nearestOdd = compute_nearest_odd (realNumber, varargin)
 %
 % Used by:
 %       cd/medianfilter.m
-%       TODO cd/movingaveragefilter.m
+%       cd/movingaveragefilter.m
 
 % File History:
 % 2018-10-12 Created by Adam Lu & ShinShin Nien

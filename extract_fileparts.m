@@ -32,6 +32,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/extract_distinct_fileparts.m
 %
 % Used by:
+%       cd/all_filebases.m
 %       cd/extract_common_directory.m
 %       cd/plot_swd_histogram.m
 %       cd/plot_table.m
@@ -80,6 +81,9 @@ delimiter = iP.Results.Delimiter;
 
 % Validate partType
 partType = validatestring(partType, validPartTypes);
+
+%% Preparation
+
 
 %% Do the job
 switch partType

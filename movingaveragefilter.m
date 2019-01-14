@@ -1,18 +1,18 @@
-function vecsFilt = medianfilter (vecs, varargin)
-%% Applies a median filter to vectors
-% Usage: vecsFilt = medianfilter (vecs, filtWidth, si, varargin)
+function vecsFilt = movingaveragefilter (vecs, varargin)
+%% Applies a moving average filter to vectors
+% Usage: vecsFilt = movingaveragefilter (vecs, filtWidth, si, varargin)
 % Explanation:
-%       Same as medfilt1() but with option of using a window in time units
+%       Same as smooth() but with option of using a window in time units
 % Example(s):
-%       medianfilter(magic(4))
-%       medianfilter(magic(4), 10, 10)
-%       medianfilter(magic(4), 10, 2)
-%       medianfilter(magic(4), 10, 1)
+%       movingaveragefilter(magic(4))
+%       movingaveragefilter(magic(4), 10, 10)
+%       movingaveragefilter(magic(4), 10, 2)
+%       movingaveragefilter(magic(4), 10, 1)
 % Outputs:
 %       vecsFilt    - filtered vector(s)
 %                   specified as a numeric array
 % Arguments:
-%       vecs        - vector(s) to median filter
+%       vecs        - vector(s) to moving average filter
 %                   must be a numeric array
 %       filtWidth   - (opt) filter window width in time units
 %                           must be a numeric scalar
@@ -21,7 +21,7 @@ function vecsFilt = medianfilter (vecs, varargin)
 %       varargin    - 'param1': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
-%                   - Any other parameter-value pair for the medfilt1() function
+%                   - Any other parameter-value pair for the smooth() function
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -29,7 +29,6 @@ function vecsFilt = medianfilter (vecs, varargin)
 %       cd/find_nearest_odd.m
 %
 % Used by:
-%       cd/find_passive_params.m
 %       cd/parse_LTS.m
 
 % File History:
@@ -76,17 +75,17 @@ filtWidth = iP.Results.filtWidth;
 si = iP.Results.si;
 % param1 = iP.Results.param1;
 
-% Keep unmatched arguments for the medfilt1() function
+% Keep unmatched arguments for the smooth() function
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Do the job
-% Calculate the median filter window width in samples
+% Calculate the moving average filter window width in samples
 %   Note: Round down to the nearest odd integer to preserve values!!
 %           However, must be >= 1
 filtWidthSamples = find_nearest_odd(filtWidth / si, 'Direction', 'down');
 
 % Median filter current vectors
-vecsFilt = medfilt1(vecs, filtWidthSamples, otherArguments);
+vecsFilt = smooth(vecs, filtWidthSamples, otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

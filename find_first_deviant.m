@@ -2,8 +2,7 @@ function [valDeviant, idxDeviant] = find_first_deviant (vector, varargin)
 %% Finds the index of the first deviant from preceding peers in a time series
 % Usage: [valDeviant, idxDeviant] = find_first_deviant (vector, varargin)
 % Outputs:
-%       valDeviant  - value of the deviant 
-%                       (large difference between consecutive points)
+%       valDeviant  - value of the deviant
 %                   specified as a numeric scalar
 %       idxDeviant  - starting index of the deviant
 %                   specified as a positive integer scalar
@@ -22,14 +21,14 @@ function [valDeviant, idxDeviant] = find_first_deviant (vector, varargin)
 % Requires:
 %       
 % Used by:
-%       /home/Matlab/Adams_Functions/find_first_jump.m
+%       cd/find_first_jump.m
 
 % File History:
 % 2018-08-11 Adapted from find_first_jump.m
 % 2018-08-12 Fixed bug: deviant2peers was never used XD
 
 %% Default values for optional arguments
-deviant2peersDefault = 2;        % default deviant to peers ratio
+deviant2peersDefault = 2;       % default deviant to peers ratio
 peersWindowSizeDefault = 5;     % default peers window in samples
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

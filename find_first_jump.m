@@ -22,10 +22,11 @@ function [valJump, idxJumpStart] = find_first_jump (vector, varargin)
 %
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/find_first_deviant.m
+%       cd/find_first_deviant.m
 %       
 % Used by:
-%       /home/Matlab/Adams_Functions/find_pulse_response_endpoints.m
+%       cd/find_pulse_response_endpoints.m
+%       cd/parse_lts.m
 
 % File History:
 % 2018-08-10 Created by Adam Lu
