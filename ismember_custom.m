@@ -52,7 +52,7 @@ function varargout = ismember_custom (cand, list, varargin)
 %       cd/ismatch.m
 %
 % Used by:
-%       cd/find_first_index_in_list.m
+%       cd/find_first_match.m
 %       cd/is_on_path.m
 
 % File History:

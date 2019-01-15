@@ -5,7 +5,7 @@ function varargout = find_in_list (cand, list, varargin)
 %   This is the same as find_in_strings.m for text
 %   If not text, this is the same as testing list == cand (for now)
 %   Use ismember_custom.m to simply test whether cand is in list
-%   Use find_first_index_in_list.m to treat each element of cand
+%   Use find_first_match.m to treat each element of cand
 %       as a different candidate
 %
 % Example(s):

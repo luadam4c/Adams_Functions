@@ -34,7 +34,7 @@ function ranks = convert_to_rank (array, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/find_first_index_in_list.m
+%       cd/find_first_match.m
 %       cd/struct2arglist.m
 %
 % Used by:
@@ -92,8 +92,8 @@ end
 
 %% Do the job
 % Find the rank for each element in array
-ranks = find_first_index_in_list(array, rankedElements, ...
-                            'SearchMode', searchMode, 'IgnoreCase', ignoreCase);
+ranks = find_first_match(array, rankedElements, ...
+                        'SearchMode', searchMode, 'IgnoreCase', ignoreCase);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
