@@ -1,13 +1,13 @@
-function varargout = find_index_in_list (candidates, array, varargin)
+function varargout = find_first_index_in_list (candidates, array, varargin)
 %% Returns the first matching index in an array for candidate(s)
-% Usage: [index, matched] = find_index_in_list (candidates, array, varargin)
+% Usage: [index, matched] = find_first_index_in_list (candidates, array, varargin)
 % Explanation:
 %       TODO
 %   Use find_in_strings.m to treat each element of cand
 %       as a part of a candidate
 % Example(s):
-%       find_index_in_list({'dog'; 'cat'}, ["dog"; "fly"; "cat"])
-%       find_index_in_list(["dog", "fly", "cat"], {'dog'; 'cat'})
+%       find_first_index_in_list({'dog'; 'cat'}, ["dog"; "fly"; "cat"])
+%       find_first_index_in_list(["dog", "fly", "cat"], {'dog'; 'cat'})
 % Outputs:
 %       index       - the index with matching element in the array
 %                   specified as a positive integer array (may contain NaN)
