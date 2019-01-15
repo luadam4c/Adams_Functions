@@ -4,7 +4,10 @@ function [bars, fig, counts, edges] = plot_grouped_histogram (stats, varargin)
 % Explanation:
 %       Plots a grouped histogram, placing bars from different groups
 %           side-by-side by default
-%       Note: The bar() function is actually used for the main histogram
+%       Notes: 
+%           1. The bar() function is actually used for the main histogram
+%           2. To compute just the histogram counts, 
+%               use compute_grouped_histcounts.m
 % Example(s):
 %       randVec = randn(100, 1);
 %       stats1 = [randVec, randVec + 1, randVec - 1];
@@ -132,8 +135,7 @@ function [bars, fig, counts, edges] = plot_grouped_histogram (stats, varargin)
 % 2019-01-11 Improved default bin edges
 % 2019-01-13 Now returns counts and edges as outputs
 % 2019-01-15 Added 'Counts' as an optional parameter
-% TODO: Add 'PlotFlag' as an optional parameter
-%       if false, work just like histcounts but return a matrix
+% 2019-01-15 Moved code to compute_grouped_histcounts.m
 
 %% Hard-coded parameters
 validStyles = {'side-by-side', 'stacked', 'overlapped'};

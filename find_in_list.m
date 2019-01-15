@@ -29,7 +29,7 @@ function varargout = find_in_list (cand, list, varargin)
 %                       'exact'  - cand must be identical to the members
 %                       'parts'  - cand can be parts of the members
 %                       'regexp' - cand is a regular expression
-%                   default == 'parts'
+%                   default == 'exact'
 %                   - 'IgnoreCase': whether to ignore differences in letter case
 %                   must be logical 1 (true) or 0 (false)
 %                   default == false
@@ -46,6 +46,7 @@ function varargout = find_in_list (cand, list, varargin)
 %
 % Used by:
 %       cd/compute_combined_trace.m
+%       cd/convert_to_rank.m
 
 % File History:
 % 2019-01-13 Modified from find_in_strings.m
@@ -54,7 +55,7 @@ function varargout = find_in_list (cand, list, varargin)
 validMatchModes = {'exact', 'parts', 'regexp'};
 
 %% Default values for optional arguments
-matchModeDefault = 'exact'; % can be parts by default
+matchModeDefault = 'exact'; % exact matches by default
 ignoreCaseDefault = false;  % whether to ignore case by default
 maxNumDefault = [];         % will be changed to numel(list)
 returnNanDefault = false;   % whether to return NaN instead of empty 

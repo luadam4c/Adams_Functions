@@ -85,6 +85,7 @@ elseif iscellstr(grouping) || isstring(grouping)
     % Create a numeric grouping vector based on the order in the grouping labels
     grouping = convert_to_rank(grouping, 'RankedElements', groupingLabels, ...
                                 'SearchMode', 'substrings');
+
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

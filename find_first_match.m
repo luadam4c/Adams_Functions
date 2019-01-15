@@ -31,7 +31,6 @@ function varargout = find_first_match (candidates, array, varargin)
 %       cd/ismember_custom.m
 %
 % Used by:
-%       cd/convert_to_rank.m
 
 % File History:
 % 2019-01-09 Created by Adam Lu
