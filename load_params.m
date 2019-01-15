@@ -27,6 +27,7 @@ function paramTables = load_params (fileNames, varargin)
 %
 % Used by:    
 %       cd/m3ha_xolotl_create_neuron.m
+%       ~/m3ha/optimizer4gabab/singleneuronfitting51.m and beyond
 
 % File History:
 % 2018-10-16 Created by Adam Lu
