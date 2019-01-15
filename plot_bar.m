@@ -1,9 +1,9 @@
-function h = bar_w_CI(h, data, low, high, varargin)
+function h = plot_bar(h, data, low, high, varargin)
 %% Plot bar graph (esp. grouped) with confidence intervals
-% Usage: h = bar_w_CI(h, data, low, high, varargin)
+% Usage: h = plot_bar(h, data, low, high, varargin)
 % Example:
 %       For a data mu with 2 rows and 7 columns, 
-%       h = bar_w_CI(h, mu, muLow, muHigh, ...
+%       h = plot_bar(h, mu, muLow, muHigh, ...
 %                       'BarSeparation', 0.115, ...
 %                       'CIBarWidth', 0.05, ...
 %                       'CILineWidth', 2, ...
@@ -40,12 +40,12 @@ cILineWidthDefault = 2;             % default line width for CIs
 % Check number of required arguments
 if nargin < 4
     error(['Not enough input arguments, ', ...
-            'type ''help bar_w_CI'' for usage']);
+            'type ''help plot_bar'' for usage']);
 end
 
 % Set up Input Parser Scheme
 iP = inputParser;         
-iP.FunctionName = 'bar_w_CI';
+iP.FunctionName = 'plot_bar';
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'h')                        % figure handle

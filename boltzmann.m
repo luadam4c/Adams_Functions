@@ -1,9 +1,11 @@
 function p = boltzmann(v, vHalf, k)
-% the sigmoidal Boltzmann function
+%% Computes the sigmoidal Boltzmann function
 % Usage: p = boltzmann(v, vHalf, k)
 %
+% Outputs:
+%       p       - the ordinate values
 % Arguments:
-%       v       - abscissa values
+%       v       - the abscissa values
 %               must be a numeric array
 %       vHalf   - half-maximum point
 %               must be a numeric scalar

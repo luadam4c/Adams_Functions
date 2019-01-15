@@ -234,7 +234,7 @@ function [errorStruct, hFig, simData] = ...
 % Requires:
 %       ~/m3ha/optimizer4gabab/singleneuron4compgabab.hoc
 %       cd/argfun.m
-%       cd/bar_w_CI.m
+%       cd/plot_bar.m
 %       cd/compute_combined_data.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_residuals.m
@@ -336,7 +336,7 @@ function [errorStruct, hFig, simData] = ...
 %               colorMap{cgn} -> colorMap(cgn, :)
 % 2017-08-29 - Removed dend0
 % 2017-11-09 - Replaced saveas with save_all_figtypes
-% 2017-11-09 - Now uses bar_w_CI.m instead of errorbar
+% 2017-11-09 - Now uses plot_bar.m instead of errorbar
 % 2017-12-21 - Added some more output ~s to find_LTS.m 
 % 2018-01-24 - Added isdeployed
 % 2018-03-02 - Added runNeuronCommand, moduleLoadCommands, moduleLoadCommandsHpc
@@ -1859,7 +1859,7 @@ if plotStatisticsFlag
         clf(ltsburst_stats{bi});
 
         % Plot means with 95% confidence intervals
-        bar_w_CI(ltsburst_stats{bi}, [mean_stats_real{bi} mean_stats_sim{bi}], ...
+        plot_bar(ltsburst_stats{bi}, [mean_stats_real{bi} mean_stats_sim{bi}], ...
                     [lowbar_stats_real{bi} lowbar_stats_sim{bi}], ...
                     [highbar_stats_real{bi} highbar_stats_sim{bi}], ...
                     'XValues', (1:ncg)');
