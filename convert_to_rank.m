@@ -38,7 +38,7 @@ function ranks = convert_to_rank (array, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       cd/plot_grouped_histogram.m
+%       cd/create_default_grouping.m
 
 % File History:
 % 2019-01-09 Created by Adam Lu
@@ -91,7 +91,7 @@ if isempty(rankedElements)
 end
 
 %% Do the job
-% Find the rand for each element in array
+% Find the rank for each element in array
 ranks = find_index_in_list(array, rankedElements, ...
                             'SearchMode', searchMode, 'IgnoreCase', ignoreCase);
 

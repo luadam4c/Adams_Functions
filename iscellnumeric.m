@@ -19,7 +19,7 @@ function isCellNumeric = iscellnumeric (x)
 %       cd/compute_baseline_noise.m
 %       cd/compute_residuals.m
 %       cd/compute_rms_error.m
-%       cd/construct_default_endpoints.m
+%       cd/create_default_endpoints.m
 %       cd/find_pulse_endpoints.m
 %       cd/find_pulse_response_endpoints.m
 %       cd/find_window_endpoints.m

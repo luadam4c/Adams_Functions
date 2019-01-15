@@ -16,10 +16,10 @@ function grouping = create_grouping_by_columns (array, varargin)
 %                   - Any other parameter-value pair for the TODO() function
 %
 % Requires:
-%       ~/Adams_Functions/create_error_for_nargin.m
+%       cd/create_error_for_nargin.m
 %
 % Used by:
-%       cd/plot_grouped_histogram.m
+%       cd/create_default_grouping.m
 %       cd/plot_swd_histogram.m
 
 % File History:

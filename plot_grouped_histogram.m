@@ -1,5 +1,5 @@
 function [bars, fig, counts, edges] = plot_grouped_histogram (stats, varargin)
-%% Plot a grouped histogram
+%% Plots a grouped histogram
 % Usage: [bars, fig, counts, edges] = plot_grouped_histogram (stats, grouping (opt), varargin)
 % Explanation:
 %       Plots a grouped histogram, placing bars from different groups
@@ -7,10 +7,15 @@ function [bars, fig, counts, edges] = plot_grouped_histogram (stats, varargin)
 %       Note: The bar() function is actually used for the main histogram
 % Example(s):
 %       randVec = randn(100, 1);
-%       stats = [randVec, randVec + 1, randVec - 1];
-%       plot_grouped_histogram(stats)
-%       plot_grouped_histogram(stats, 'Style', 'stacked')
-%       plot_grouped_histogram(stats, 'Style', 'overlapped')
+%       stats1 = [randVec, randVec + 1, randVec - 1];
+%       plot_grouped_histogram(stats1)
+%       plot_grouped_histogram(stats1, 'Style', 'stacked')
+%       plot_grouped_histogram(stats1, 'Style', 'overlapped')
+%       stats2 = [randVec; randVec + 1; randVec - 1];
+%       grouping2 = [repmat({'Mark'}, 100, 1); repmat({'Peter'}, 100, 1); repmat({'Katie'}, 100, 1)];
+%       plot_grouped_histogram(stats2, grouping2)
+%       plot_grouped_histogram(stats2, grouping2, 'Style', 'stacked')
+%       plot_grouped_histogram(stats2, grouping2, 'Style', 'overlapped')
 % Outputs:
 %       bars        - the histogram(s) returned as Bar object(s)
 %                   specified as a bar object handle array
@@ -23,16 +28,18 @@ function [bars, fig, counts, edges] = plot_grouped_histogram (stats, varargin)
 %                       'numeric', 'logical', 'datetime', 'duration'
 %       grouping    - (opt) group assignment for each data point
 %                   must be an array of one the following types:
-%                       'numeric', 'logical', 'datetime', 'duration'
+%                       'cell', 'string', numeric', 'logical', 
+%                           'datetime', 'duration'
 %                   default == the column number for a 2D array
-%       varargin    TODO - 'Counts': bin counts
+%       varargin    - 'Counts': bin counts, with each group 
+%                                   being a different column
 %                   must be an array of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
-%                   default == returned by histcounts(stats)
+%                   default == returned by compute_grouped_histcounts(stats)
 %                   - 'Edges': bin edges
 %                   must be a vector of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
-%                   default == returned by histcounts(stats)
+%                   default == returned by compute_grouped_histcounts(stats)
 %                   - 'Style': histogram style
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'side-by-side'  - same as 'grouped' bar graph
@@ -98,10 +105,9 @@ function [bars, fig, counts, edges] = plot_grouped_histogram (stats, varargin)
 %                   - Any other parameter-value pair for the bar() function
 %
 % Requires:
-%       cd/compute_bins.m
-%       cd/convert_to_rank.m
+%       cd/compute_grouped_histcounts.m
+%       cd/create_default_grouping.m
 %       cd/create_error_for_nargin.m
-%       cd/create_grouping_by_columns.m
 %       cd/create_labels_from_numbers.m
 %       cd/islegendlocation.m
 %       cd/ispositiveintegerscalar.m
@@ -125,20 +131,22 @@ function [bars, fig, counts, edges] = plot_grouped_histogram (stats, varargin)
 % 2019-01-09 Added 'overlapped' as a style
 % 2019-01-11 Improved default bin edges
 % 2019-01-13 Now returns counts and edges as outputs
+% 2019-01-15 Added 'Counts' as an optional parameter
 % TODO: Add 'PlotFlag' as an optional parameter
 %       if false, work just like histcounts but return a matrix
-% TODO: Add 'Counts' as an optional parameter
 
 %% Hard-coded parameters
-barWidth = 1;
-maxInFigure = 8;
 validStyles = {'side-by-side', 'stacked', 'overlapped'};
+barWidth = 1;                   % set this to 1 to make bars touch each other
+maxInFigure = 8;                % maximum number of groups to keep the legend
+                                %   inside the figure
 
 % TODO: Make these optional arguments
 groupingLabelPrefix = '';
 
 %% Default values for optional arguments
 groupingDefault = [];           % set later
+countsDefault = [];             % set later
 edgesDefault = [];              % set later
 styleDefault = 'side-by-side';  % plot bars side-by-side by default
 xLimitsDefault = 'suppress';    % set later
@@ -179,6 +187,9 @@ addOptional(iP, 'grouping', groupingDefault, ...
                                 'datetime', 'duration'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'Counts', countsDefault, ...
+    @(x) validateattributes(x, {'numeric', 'logical', ...
+                                'datetime', 'duration'}, {'2d'}));
 addParameter(iP, 'Edges', edgesDefault, ...
     @(x) validateattributes(x, {'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
@@ -216,6 +227,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 % Read from the Input Parser
 parse(iP, stats, varargin{:});
 grouping = iP.Results.grouping;
+counts = iP.Results.Counts;
 edges = iP.Results.Edges;
 style = validatestring(iP.Results.Style, validStyles);
 xLimits = iP.Results.XLimits;
@@ -244,21 +256,9 @@ if isempty(stats)
     return
 end
 
-% Decide on the grouping vector
-if isempty(grouping)
-    % Create a grouping if not provided
-    grouping = create_grouping_by_columns(stats);
-elseif iscellstr(grouping) || isstring(grouping) 
-    % Use these for grouping labels
-    if isempty(groupingLabels)
-        % Make unique strings the grouping labels
-        groupingLabels = unique(grouping);
-    end
-
-    % Create a numeric grouping vector based on the order in the grouping labels
-    grouping = convert_to_rank(grouping, 'RankedElements', groupingLabels, ...
-                                'SearchMode', 'substrings');
-end
+% Decide on the grouping vector and possibly labels
+[grouping, groupingLabels] = ...
+    create_default_grouping(stats, grouping, groupingLabels);
 
 % Get all unique group values
 groupValues = unique(grouping);
@@ -266,41 +266,9 @@ groupValues = unique(grouping);
 % Count the number of groups
 nGroups = numel(groupValues);
 
-% Break up stats into a cell array of vectors
-statsCell = arrayfun(@(x) stats(grouping == groupValues(x)), ...
-                    transpose(1:nGroups), 'UniformOutput', false);
-
-%% Compute the bin counts
-% Compute default bin edges for all data if not provided
-if isempty(edges)
-    % Compute bin edges for each group
-    [~, edgesAll] = cellfun(@(x) compute_bins(x, 'Edges', edges), ...
-                            statsCell, 'UniformOutput', false);
-
-    % Compute the minimum bin width across groups
-    minBinWidth = min(extract_elements(edgesAll, 'firstdiff'));
-
-    % Compute the minimum and maximum edges across groups
-    minEdges = min(extract_elements(edgesAll, 'first'));
-    maxEdges = max(extract_elements(edgesAll, 'last'));
-
-    % Compute the range of edges
-    rangeEdges = maxEdges - minEdges;
-
-    % Compute the number of bins
-    nBins = ceil(rangeEdges / minBinWidth);
-
-    % Create bin edges that works for all data
-    edges = transpose(linspace(minEdges, maxEdges, nBins));
-end
-
-% Compute the bin centers
-binCenters = mean([edges(1:end-1), edges(2:end)], 2);
-
-% Compute the bin counts for each group based on these edges
-counts = cellfun(@(x) compute_bins(x, 'Edges', edges), ...
-                    statsCell, 'UniformOutput', false);
-counts = horzcat(counts{:});
+% Compute the bin counts
+[counts, edges, binCenters] = ...
+    compute_grouped_histcounts(stats, grouping, 'Edges', edges);
 
 %% Preparation for the plot
 % Set the bar graph style
@@ -350,7 +318,7 @@ clf(fig);
 % Set the default grouping labels
 if isempty(groupingLabels)
     groupingLabels = create_labels_from_numbers(groupValues, ...
-                                                'Prefix', groupingLabelPrefix);
+                                        'Prefix', groupingLabelPrefix);
 end
 
 % Set legend location based on number of groups
@@ -375,12 +343,15 @@ if strcmpi(style, 'overlapped')
     hold on
     bars = arrayfun(@(x, y) bar(binCenters, counts(:, x), ...
                         barWidth, barStyle, 'FaceAlpha', faceAlpha, ...
-                        'EdgeAlpha', edgeAlpha, 'DisplayName', y, ...
-                        otherArguments{:}), ...
+                        'EdgeAlpha', edgeAlpha, otherArguments{:}), ...
                     transpose(1:nGroups), groupingLabels);
 else
-    bars = bar(binCenters, counts, barWidth, barStyle, ...
-                'DisplayName', groupingLabels, otherArguments{:});
+    bars = bar(binCenters, counts, barWidth, barStyle, otherArguments{:});
+end
+
+% Set the legend labels for each Bar object
+for iBar = 1:numel(bars)
+    set(bars(iBar), 'DisplayName', groupingLabels{iBar});
 end
 
 % Set x axis limits

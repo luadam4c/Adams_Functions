@@ -25,7 +25,7 @@ function [counts, edges] = compute_bins (stats, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       cd/plot_grouped_histogram.m
+%       cd/compute_grouped_histcounts.m
 
 % File History:
 % 2018-12-28 Moved from plot_grouped_histogram.m

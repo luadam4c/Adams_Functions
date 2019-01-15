@@ -57,7 +57,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %
 % Requires:
 %       cd/argfun.m
-%       cd/construct_default_endpoints.m
+%       cd/create_default_endpoints.m
 %       cd/count_samples.m
 %       cd/create_empty_match.m
 %       cd/create_error_for_nargin.m
@@ -213,7 +213,7 @@ if isempty(endPoints)
                                     'TreatCellStrAsArray', treatCellStrAsArray);
 
         % Construct end points
-        endPoints = construct_default_endpoints(nSamples);
+        endPoints = create_default_endpoints(nSamples);
     end
 end
 
