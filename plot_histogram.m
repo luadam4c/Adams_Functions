@@ -279,6 +279,9 @@ matlabRelease = version('-release');
 matlabYear = str2double(matlabRelease(1:4));
 
 % Force rows as columns
+X = force_column_vector(X, 'IgnoreNonVectors', true);
+grouping = force_column_vector(grouping, 'TreatCellAsArray', true, ...
+                                'IgnoreNonVectors', true);
 edgesUser = force_column_vector(edgesUser);
 
 % If the figure name is not a full path, create full path
@@ -305,12 +308,16 @@ if isempty(edgesUser)
 
         % Remove outliers if any
         XTrimmed = X(rowsToKeep, :);
-        grouping = grouping(rowsToKeep);
+        if ~isempty(grouping)
+            groupingTrimmed = grouping(rowsToKeep);
+        else
+            groupingTrimmed = grouping;
+        end
 
-        % Use compute_grouped_histcounts to find the proper bin edges
-        %   or use default
-        [~, edgesUser] = compute_grouped_histcounts(XTrimmed, grouping);
+        % Find the proper bin edges for trimmed data
+        [~, edgesUser] = compute_grouped_histcounts(XTrimmed, groupingTrimmed);
     else
+        % Find the bin edges for all data
         [~, edgesUser] = compute_grouped_histcounts(X, grouping);
     end
 end
@@ -329,12 +336,9 @@ if isempty(counts)
     counts = compute_grouped_histcounts(X, grouping, 'Edges', edgesExpanded);
 end
 
-% Decide whether the histogram will be expanded on the left
+% Decide whether the histogram will be expanded on the left and right
 %   Note: Either there is data out of range or the user decides to expand
 toExpandOnTheLeft = any(counts(1, :) > 0) || edgesUser(1) == -Inf;
-
-% Decide whether the histogram will be expanded on the right
-%   Note: Either there is data out of range or the user decides to expand
 toExpandOnTheRight = any(counts(end, :) > 0) || edgesUser(end) == Inf;
 
 % Check for out of range data and adjust the bincounts and edges

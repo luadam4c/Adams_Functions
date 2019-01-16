@@ -765,6 +765,9 @@ run_neuron(hocFile, 'SimCommands', simCommands, ...
 %% TODO: Break the function here into two
 
 %% Analyze results
+% Print to standard output
+fprintf('Analyzing results ... \n');
+
 % Create an experiment identifier
 expStr = prefix;
 
@@ -804,6 +807,9 @@ end
 % If requested, bootstrap both recorded and simulated responses 
 %   according to a grouping condition
 if bootstrapCprFlag && ~isempty(realData) && strcmpi(simMode, 'passive')
+    % Print to standard output
+    fprintf('Bootstrap-averaging results ... \n');
+
     % Decide on the combination method
     if bootstrapCprFlag
         method = 'bootmean';
@@ -843,6 +849,9 @@ end
 
 % Analyze the responses and compare
 if generateDataFlag
+    % Print to standard output
+    fprintf('Analyzing responses ... \n');
+
     % Compute the sampling interval
     siMs = compute_sampling_interval(tVecs);
 
@@ -867,6 +876,9 @@ if generateDataFlag
 
     % Save the results
     writetable(featuresTable, featuresFile);
+
+    % Print to standard output
+    fprintf('Comparing simulated versus recorded responses ... \n');
 
     % Do the appropriate comparison test
     if strcmpi(simMode, 'passive')
