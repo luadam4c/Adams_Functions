@@ -45,7 +45,7 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 %
 % Used by:
 %       cd/plot_grouped_histogram.m
-%       cd/plot_histogram_with_outliers.m
+%       cd/plot_histogram.m
 
 % File History:
 % 2019-01-15 Moved from plot_grouped_histogram.m

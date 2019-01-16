@@ -40,7 +40,7 @@ function [newData, origInd] = remove_outliers (oldData, varargin)
 %       cd/force_column_vector.m
 %
 % Used by:
-%       cd/plot_histogram_with_outliers.m
+%       cd/plot_histogram.m
 %       /media/adamX/m3ha/data_dclamp/compare_sse.m
 %       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
 %

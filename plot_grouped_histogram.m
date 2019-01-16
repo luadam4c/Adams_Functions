@@ -117,7 +117,7 @@ function [bars, fig, counts, edges] = plot_grouped_histogram (varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       cd/plot_histogram_with_outliers.m
+%       cd/plot_histogram.m
 %       cd/plot_swd_histogram.m
 %       cd/test_differencem
 %       cd/ZG_fit_IEI_distributions.m
