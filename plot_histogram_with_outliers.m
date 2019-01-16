@@ -90,6 +90,7 @@ function [bars, fig] = plot_histogram_with_outliers (X, varargin)
 %% Hard-coded parameters
 validOutlierMethods = {'boxplot', 'isoutlier', ...
                         'fiveStds', 'threeStds', 'twoStds'};
+barWidth = 1;                   % set this to 1 to make bars touch each other
 
 %% Default values for optional arguments
 plotOutliersDefault = true;             % plot outliers by default
@@ -163,7 +164,7 @@ otherArguments = struct2arglist(iP.Unmatched);
 matlabRelease = version('-release');
 
 % Get the current MATLAB release year
-matlabYear = str2num(matlabRelease(1:4));
+matlabYear = str2double(matlabRelease(1:4));
 
 %% Identify edges if not provided
 if isempty(edges)
@@ -193,7 +194,7 @@ end
 % Compute histogram bincounts with expanded edges
 %   Note: the first bin is always < the first non-Inf number in edges
 %   Note: the last bin is always >= the last non-Inf number in edges
-counts = compute_grouped_histcounts(X, edgesExpanded);
+counts = compute_grouped_histcounts(X, 'Edges', edgesExpanded);
 
 % Check for out of range data and adjust the bincounts and edges
 expandedOnTheLeft = false;  % whether histogram will be expanded on the left
@@ -348,7 +349,7 @@ if xTickLabelNums(1) == -Inf
                         'DisplayName', 'data too small', otherArguments{:});
     else
         bars(nGroups + 1) = ...
-            bar(mean(edgesPlot(1:2)), counts(1), ...
+            bar(mean(edgesPlot(1:2)), counts(1), barWidth, ...
                         'FaceAlpha', 1, 'FaceColor', specialColor, ...
                         'DisplayName', 'data too small', otherArguments{:});
     end
@@ -364,7 +365,7 @@ if xTickLabelNums(end) == Inf
                         'DisplayName', 'data too large', otherArguments{:});
     else
         bars(nGroups + 2) = ...
-            bar(mean(edgesPlot(end-1:end)), counts(end), ...
+            bar(mean(edgesPlot(end-1:end)), counts(end), barWidth, ...
                         'FaceAlpha', 1, 'FaceColor', specialColor, ...
                         'DisplayName', 'data too large', otherArguments{:});
     end

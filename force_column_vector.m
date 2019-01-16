@@ -66,6 +66,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/compute_sweep_errors.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
+%       cd/create_default_grouping.m
 %       cd/create_indices.m
 %       cd/extract_columns.m
 %       cd/extract_subvectors.m

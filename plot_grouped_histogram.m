@@ -112,7 +112,6 @@ function [bars, fig, counts, edges] = plot_grouped_histogram (varargin)
 %       cd/compute_grouped_histcounts.m
 %       cd/create_default_grouping.m
 %       cd/create_error_for_nargin.m
-%       cd/create_labels_from_numbers.m
 %       cd/islegendlocation.m
 %       cd/ispositiveintegerscalar.m
 %       cd/struct2arglist.m
@@ -144,9 +143,6 @@ validStyles = {'side-by-side', 'stacked', 'overlapped'};
 barWidth = 1;                   % set this to 1 to make bars touch each other
 maxInFigure = 8;                % maximum number of groups to keep the legend
                                 %   inside the figure
-
-% TODO: Make these optional arguments
-groupingLabelPrefix = '';
 
 %% Default values for optional arguments
 statsDefault = [];              % set later
@@ -268,7 +264,8 @@ end
 
 % Decide on the grouping vector and possibly labels
 [grouping, groupingLabels] = ...
-    create_default_grouping(stats, grouping, groupingLabels);
+    create_default_grouping('Stats', stats, 'Counts', counts, ...
+                        'Grouping', grouping, 'GroupingLabels', groupingLabels);
 
 % Get all unique group values
 groupValues = unique(grouping);
@@ -328,12 +325,6 @@ end
 
 % Clear figure
 clf(fig);
-
-% Set the default grouping labels
-if isempty(groupingLabels)
-    groupingLabels = create_labels_from_numbers(groupValues, ...
-                                        'Prefix', groupingLabelPrefix);
-end
 
 % Set legend location based on number of groups
 if strcmpi(legendLocation, 'auto')

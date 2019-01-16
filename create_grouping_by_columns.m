@@ -2,12 +2,16 @@ function grouping = create_grouping_by_columns (array, varargin)
 %% Creates a grouping array using column numbers
 % Usage: grouping = create_grouping_by_columns (array, varargin)
 % Explanation:
-%       TODO
+%       Creates an array with the same dimensions as the input array
+%           but with each entry replaced by the column number
+%
 % Example(s):
-%       TODO
+%       create_grouping_by_columns(magic(5))
+%
 % Outputs:
 %       grouping    - a grouping array with the same size as the input array
 %                   specified as a numeric array
+%
 % Arguments:
 %       array       - an array
 %       varargin    - 'param1': TODO: Description of param1
@@ -24,6 +28,7 @@ function grouping = create_grouping_by_columns (array, varargin)
 
 % File History:
 % 2018-12-27 Created by Adam Lu
+% 2019-01-15 Improved code performance
 % 
 
 %% Hard-coded parameters
@@ -61,12 +66,15 @@ nColumns = size(array, 2);
 
 %% Do the job
 % Use the column number
-grouping = repmat(1:nColumns, [nRows, 1]);
+grouping = ones(nRows, 1) * (1:nColumns);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+% This is two times slower:
+grouping = repmat(1:nColumns, [nRows, 1])
 
 %}
 

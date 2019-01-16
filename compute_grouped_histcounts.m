@@ -95,7 +95,7 @@ otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Decide on the grouping vector
-grouping = create_default_grouping(stats, grouping);
+grouping = create_default_grouping('Stats', stats, 'Grouping', grouping);
 
 % Get all unique group values
 groupValues = unique(grouping);
