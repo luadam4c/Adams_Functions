@@ -92,8 +92,8 @@ validOutlierMethods = {'boxplot', 'isoutlier', ...
                         'fiveStds', 'threeStds', 'twoStds'};
 
 %% Default values for optional arguments
-plotOutliersDefault = false;            % don't ignore case by default
-useBuiltInDefault = false;              % don't ignore case by default
+plotOutliersDefault = true;             % plot outliers by default
+useBuiltInDefault = false;              % use plot_grouped_histogram by default
 countsDefault = [];                     % set later
 edgesDefault = [];                      % set later
 groupingDefault = [];                   % set later
@@ -167,11 +167,16 @@ matlabYear = str2num(matlabRelease(1:4));
 
 %% Identify edges if not provided
 if isempty(edges)
-    % Remove outliers if any
-    XTrimmed = remove_outliers(X, 'OutlierMethod', outlierMethod);
+    if plotOutliers
+        % Remove outliers if any
+        XTrimmed = remove_outliers(X, 'OutlierMethod', outlierMethod);
 
-    % Use compute_grouped_histcounts to find the proper bin edges
-    [~, edges] = compute_grouped_histcounts(XTrimmed);
+        % Use compute_grouped_histcounts to find the proper bin edges
+        %   or use default
+        [~, edges] = compute_grouped_histcounts(XTrimmed);
+    else
+        [~, edges] = compute_grouped_histcounts(X);
+    end
 end
 
 %% Create histogram

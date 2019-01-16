@@ -1,5 +1,5 @@
 function [bars, lines, fig] = plot_bar(means, low, high, varargin)
-%% Plot bar graph (esp. grouped) with confidence intervals
+%% Plots a bar graph (grouped or not) with confidence intervals
 % Usage: [bars, lines, fig] = plot_bar(means, low, high, varargin)
 % Explanation:
 %       TODO
@@ -14,7 +14,7 @@ function [bars, lines, fig] = plot_bar(means, low, high, varargin)
 %                               'CILineWidth', 2, ...
 %                               'CIColor', 'k', ...
 %                               'XTickLabel', {'Mark', 'Peter', 'Katie'});
-% Arguments: TODO
+% Arguments:
 %       means   - mean values for the bar() function
 %                   each row is a different group
 %                   each column is a different sample number
@@ -54,11 +54,12 @@ function [bars, lines, fig] = plot_bar(means, low, high, varargin)
 % 2019-01-15 - Renamed bar_w_CI.m -> plot_bar.m
 % 2019-01-15 - Added otherArguments
 % 2019-01-15 - Made h -> 'FigHandle' an optional argument
+% TODO: Add 'BarColors' as an optional argument
 % TODO: Change usage in all functions using this
+% TODO: Update the code to use plot_horizontal_line.m and plot_vertical_line.m
 % 
 
-%% Parameters
-barColor = 'blue';
+%% Hard-coded parameters
 
 %% Default values for optional arguments
 cILineWidthDefault = 2;                 % default line width for CIs
@@ -78,7 +79,6 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'h')                        % figure handle
 addRequired(iP, 'means', ...                 % means
     @(x) validateattributes(x, {'numeric'}, {'nonempty'}));
 addRequired(iP, 'low', ...                  % low limit of CI
@@ -93,7 +93,7 @@ addParameter(iP, 'CIBarWidth', [], ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'CILineWidth', cILineWidthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
-addParameter(iP, 'CIColor', '');    % TODO: validation
+addParameter(iP, 'CIColor', '');
 addParameter(iP, 'XValues', [], ...
     @(x) validateattributes(x, {'numeric'}, {'nonempty'}));
 addParameter(iP, 'XTickLabel', '', ...
@@ -103,7 +103,7 @@ addParameter(iP, 'XTickAngle', '', ...
 addParameter(iP, 'FigHandle', figHandleDefault);
 
 % Read from the Input Parser
-parse(iP, h, means, low, high, varargin{:});
+parse(iP, means, low, high, varargin{:});
 barSeparation = iP.Results.BarSeparation;
 cIBarWidth = iP.Results.CIBarWidth;
 cILineWidth = iP.Results.CILineWidth;
@@ -169,6 +169,12 @@ else
     bars = bar(xValues, means, otherArguments{:});
 end
 
+% Set the color for each Bar object
+% TODO
+% for iBar = 1:numel(bars)
+%     set(bars(iBar), 'CData', barColors{iBar});
+% end
+
 % Change xTickLabel if provided
 if ~isempty(xTickLabel)
     set(gca, 'XTickLabel', xTickLabel);
@@ -180,20 +186,17 @@ xtickangle(xTickAngle);
 % Plot error bars
 hold on;
 if nRows == 1       % Data is not grouped
-    % Make each bar a different color 
-    %% b.CData = colormap(lines(nCols));    % TODO: Not working!
-    b.FaceColor = rgb(barColor);
        
     for iCol = 1:nCols              % for each column
         % Draw error bar
         xPos = iCol; 
-        lines(iCol, 1) = line(xPos * ones(1, 2), ...
+        lines(1, iCol) = line(xPos * ones(1, 2), ...
                         [low(iCol), high(iCol)], ...
                         'Color', cIColor, 'LineWidth', cILineWidth);
-        lines(iCol, 2) = line(xPos * ones(1, 2) + [-cIBarWidth/2, cIBarWidth/2], ...
+        lines(2, iCol) = line(xPos * ones(1, 2) + [-cIBarWidth/2, cIBarWidth/2], ...
                         [low(iCol), low(iCol)], ...
                         'Color', cIColor, 'LineWidth', cILineWidth);
-        lines(iCol, 3) = line(xPos * ones(1, 2) + [-cIBarWidth/2, cIBarWidth/2], ...
+        lines(3, iCol) = line(xPos * ones(1, 2) + [-cIBarWidth/2, cIBarWidth/2], ...
                         [high(iCol), high(iCol)], ...
                         'Color', cIColor, 'LineWidth', cILineWidth);
     end
@@ -202,15 +205,15 @@ else                % Data is grouped
         for iCol = 1:nCols              % for each column
             % Draw error bar
             xPos = iRow + (iCol - (nCols+1)/2) * barSeparation; 
-            lines(iRow, iCol, 1) = ...
+            lines(1, iCol, iRow) = ...
                 line(xPos * ones(1, 2), ...
                     [low(iRow, iCol), high(iRow, iCol)], ...
                     'Color', cIColor, 'LineWidth', cILineWidth);
-            lines(iRow, iCol, 2) = ...
+            lines(2, iCol, iRow) = ...
                 line(xPos * ones(1, 2) + [-cIBarWidth/2, cIBarWidth/2], ...
                     [low(iRow, iCol), low(iRow, iCol)], ...
                     'Color', cIColor, 'LineWidth', cILineWidth);
-            lines(iRow, iCol, 3) = ...
+            lines(3, iCol, iRow) = ...
                 line(xPos * ones(1, 2) + [-cIBarWidth/2, cIBarWidth/2], ...
                     [high(iRow, iCol), high(iRow, iCol)], ...
                     'Color', cIColor, 'LineWidth', cILineWidth);
@@ -224,6 +227,12 @@ end
 OLD CODE:
 
 figure(h);
+
+    % TODO: Make each bar a different color 
+barColor = 'blue';
+    %% bars.FaceColor = rgb(barColor);
+
+%% bars.CData = colormap(lines(nCols));    % TODO: Not working!
 
 %}
 

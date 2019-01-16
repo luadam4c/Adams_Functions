@@ -264,7 +264,7 @@ Last Updated 2019-01-15 by Adam Lu
 - [**plot_and_save_boxplot.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_and_save_boxplot.m): Plots a box plot from a grouped vector according to group
 - [**plot_and_save_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_and_save_histogram.m): Plots and saves a stacked histogram for a vector and color code according to class
 - [**plot_ball_stick.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_ball_stick.m): Plots a ball-and-stick model
-- [**plot_bar.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_bar.m): Plot bar graph (esp. grouped) with confidence intervals
+- [**plot_bar.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_bar.m): Plots a bar graph (grouped or not) with confidence intervals
 - [**plot_cfit_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_cfit_pulse_response.m): Plots data along with the fitted curve
 - [**plot_EEG.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_EEG.m): Plots EEG traces from .abf file(s) or all .abf files in a directory 
 - [**plot_ellipse.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_ellipse.m): Plot an ellipse that may be oblique
