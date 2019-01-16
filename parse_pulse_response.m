@@ -163,6 +163,7 @@ function varargout = parse_pulse_response (vectors, siMs, varargin)
 % 2018-12-30 Added peakTimeConstantSamples, peakTimeConstantMs
 % 2019-01-09 Added 'DetectPeak' as an optional argument
 % 2019-01-09 Added 'FitResponse' as an optional argument
+% 2019-01-16 Added maxTau2ResponseLengthRatio to constrain the 2exp fit
 % TODO: Compute maxSlope
 
 %% Hard-coded parameters
@@ -178,6 +179,9 @@ pulseParamNamesNew = {'nSamplesPulse', 'idxAfterPulseStart', ...
                     'idxAfterPulseEnd', 'idxPulseMidpoint', 'pulseBaseValue'};
 pulseDataNamesOld = {'vectors', 'indBase'};
 pulseDataNamesNew = {'pulseVectors', 'indPulseBase'};
+
+% For fitting curves
+maxTau2ResponseLengthRatio = 10;
 
 %% Default values for optional arguments
 pulseVectorsDefault = [];       % don't use pulse vectors by default
@@ -455,11 +459,17 @@ if fitResponse
         pulseWidthMs = pulseParams.responseWidthMs;
     end
 
+    % Compute the tau range to fit
+    % TODO: Improve this
+    tauRange = [0, mean(nSamples .* siMs) * maxTau2ResponseLengthRatio];
+
     % Fit the combined phase vector of each pulse response
     % TODO: Use parfor instead?
     fitResults = cellfun(@(x, y, z, w) fit_pulse_response (x, y, z, ...
-                                   'PhaseName', 'combined', ...
-                                   'AmplitudeEstimate', w), ...
+                                       'PhaseName', 'combined', ...
+                                       'Tau1Range', tauRange, ...
+                                       'Tau2Range', tauRange, ...
+                                       'AmplitudeEstimate', w), ...
                            tvecsCombined, vvecsCombined, ...
                            num2cell(pulseWidthMs), num2cell(steadyAmplitude));
 
