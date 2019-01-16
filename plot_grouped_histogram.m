@@ -1,6 +1,6 @@
-function [bars, fig, counts, edges] = plot_grouped_histogram (stats, varargin)
+function [bars, fig, counts, edges] = plot_grouped_histogram (varargin)
 %% Plots a grouped histogram
-% Usage: [bars, fig, counts, edges] = plot_grouped_histogram (stats, grouping (opt), varargin)
+% Usage: [bars, fig, counts, edges] = plot_grouped_histogram (stats (opt), grouping (opt), varargin)
 % Explanation:
 %       Plots a grouped histogram, placing bars from different groups
 %           side-by-side by default
@@ -26,7 +26,7 @@ function [bars, fig, counts, edges] = plot_grouped_histogram (stats, varargin)
 %                   specified as a figure object handle
 %
 % Arguments:
-%       stats       - data to distribute among bins
+%       stats       - (opt) data to distribute among bins
 %                   must be an array of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
 %       grouping    - (opt) group assignment for each data point
@@ -108,6 +108,7 @@ function [bars, fig, counts, edges] = plot_grouped_histogram (stats, varargin)
 %                   - Any other parameter-value pair for the bar() function
 %
 % Requires:
+%       cd/compute_centers_from_edges.m
 %       cd/compute_grouped_histcounts.m
 %       cd/create_default_grouping.m
 %       cd/create_error_for_nargin.m
@@ -117,6 +118,7 @@ function [bars, fig, counts, edges] = plot_grouped_histogram (stats, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/plot_histogram_with_outliers.m
 %       cd/plot_swd_histogram.m
 %       cd/test_differencem
 %       cd/ZG_fit_IEI_distributions.m
@@ -147,6 +149,7 @@ maxInFigure = 8;                % maximum number of groups to keep the legend
 groupingLabelPrefix = '';
 
 %% Default values for optional arguments
+statsDefault = [];              % set later
 groupingDefault = [];           % set later
 countsDefault = [];             % set later
 edgesDefault = [];              % set later
@@ -178,12 +181,10 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
-% Add required inputs to the Input Parser
-addRequired(iP, 'stats', ...
+% Add optional inputs to the Input Parser
+addOptional(iP, 'stats', statsDefault, ...
     @(x) validateattributes(x, {'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
-
-% Add optional inputs to the Input Parser
 addOptional(iP, 'grouping', groupingDefault, ...
     @(x) validateattributes(x, {'cell', 'string', 'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
@@ -227,7 +228,8 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
-parse(iP, stats, varargin{:});
+parse(iP, varargin{:});
+stats  = iP.Results.stats;
 grouping = iP.Results.grouping;
 counts = iP.Results.Counts;
 edges = iP.Results.Edges;
@@ -252,10 +254,16 @@ otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Return if there is nothing to plot
-if isempty(stats)
+if isempty(stats) && (isempty(counts) || isempty(edges))
+    fprintf('Both counts and edges must be provided if stats is empty!\n');
     bars = gobjects(0);
     fig = gobjects(0);
     return
+end
+
+% Return warning
+if ~isempty(stats) && ~isempty(counts)
+    fprintf('Warning: Custom counts are provided, stats will be ignored!\n');
 end
 
 % Decide on the grouping vector and possibly labels
@@ -268,9 +276,13 @@ groupValues = unique(grouping);
 % Count the number of groups
 nGroups = numel(groupValues);
 
-% Compute the bin counts
-[counts, edges, binCenters] = ...
-    compute_grouped_histcounts(stats, grouping, 'Edges', edges);
+% Compute the bin counts and bin edges
+if isempty(counts)
+    [counts, edges, binCenters] = ...
+        compute_grouped_histcounts(stats, grouping, 'Edges', edges);
+else
+    binCenters = compute_centers_from_edges(edges);
+end
 
 %% Preparation for the plot
 % Set the bar graph style

@@ -1,36 +1,32 @@
-function argList = struct2arglist (structure, varargin)
-%% Converts a scalar structure to an argument list
-% Usage: argList = struct2arglist (structure, varargin)
+function centers = compute_centers_from_edges (edges, varargin)
+%% Computes bin centers from bin edges
+% Usage: centers = compute_centers_from_edges (edges, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       TODO
+%       compute_centers_from_edges(1:5)
+%       compute_centers_from_edges((1:5)')
 % Outputs:
-%       argList     - argument list (parameter value pairs)
-%                   specified as a cell array of character vectors
+%       centers     - bin centers
+%                   specified as a column vector
 % Arguments:
-%       structure   - structure with field names as parameters
-%                   must be a scalar structure
+%       edges       - bin edges
+%                   must be accepted by the mean() function
 %       varargin    - 'param1': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/force_column_cell.m
+%       cd/force_column_vector.m
+%       cd/force_row_vector.m
 %
 % Used by:
-%       cd/annotation_in_plot.m
-%       cd/compute_bins.m
-%       cd/convert_to_rank.m
-%       cd/medianfilter.m
-%       cd/plot_bar.m
+%       cd/compute_grouped_histcounts.m
 %       cd/plot_grouped_histogram.m
-%       cd/plot_histogram.m
-%       cd/solve_function_at_value.m
 
 % File History:
-% 2018-12-28 Moved from annotation_in_plot.m
+% 2019-01-15 Created by Adam Lu
 % 
 
 %% Hard-coded parameters
@@ -49,28 +45,44 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'structure', ...
-    @(x) validateattributes(x, {'struct'}, {'scalar'}));
+addRequired(iP, 'edges');
 
 % Add parameter-value pairs to the Input Parser
 % addParameter(iP, 'param1', param1Default, ...
 %     % TODO: validation function %);
 
 % Read from the Input Parser
-parse(iP, structure, varargin{:});
+parse(iP, edges, varargin{:});
 % param1 = iP.Results.param1;
 
+%% Preparation
+% Record whether edges is a row vector
+if isrow(edges)
+    isRow = true;
+else
+    isRow = false;
+end
+
+% Force as a column vector
+edges = force_column_vector(edges);
+
 %% Do the job
-% Get all the parameter names
-names = fieldnames(structure);
+% Extract the left edges
+lefEdges = edges(1:end-1);
 
-% Get all the parameter values
-values = struct2cell(structure);
+% Extract the right edges
+rightEdges = edges(2:end);
 
-% Force as a column cell array
-argList = force_column_cell(transpose([names, values]), 'ToLinearize', true);
+% Compute the mean of each pair of edges
+centers = mean([lefEdges, rightEdges], 2);
+
+%% Output
+if isRow
+    centers = force_row_vector(centers);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

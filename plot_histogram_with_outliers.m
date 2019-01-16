@@ -1,29 +1,50 @@
-function h = plot_histogram_with_outliers (X, varargin)
+function [bars, fig] = plot_histogram_with_outliers (X, varargin)
 %% Plots a histogram labelling out of range values differently
-% Usage: h = plot_histogram_with_outliers (X, varargin)
+% Usage: [bars, fig] = plot_histogram_with_outliers (X, varargin)
 % Explanation:
 %       Automatically combines the counts of X outside of the finite range 
 %           of edges on the left or on the right to a bin on the left or 
 %           on the right, respectively.
-%       Note: The bar() function is actually used for the main histogram
+%       Note: The bar() function is used for the main histogram
+%               unless 'UseBuiltIn' is set to true
 % Example(s):
-%       TODO
+%       plot_histogram_with_outliers([0, 4, 5, 4, 5, 10])
 % Outputs:
-%       h           - handles to histogram objects
-%                       h(1) - main histogram
-%                       h(2) - left out of range bar if any
-%                       h(3) - right out of range bar if any
-%                   specified as a Bar (R2015a) or Histogram (R2017a) object array
+%       bars        - handles to Bar objects
+%                       bars(1:nGroups) - main histogram
+%                       bars(nGroups+1) - left out of range bar if any
+%                       bars(nGroups+2) - right out of range bar if any
+%                   specified as a Bar object array
+%       fig         - figure handle for the created figure
+%                   specified as a figure object handle
 % Side Effects:
 %       Plots a histogram
 % Arguments:
 %       X           - data to distribute among bins
 %                   must be an array of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
-%       edges       - (opt) bin edges
+%       varargin    - 'PlotOutliers': whether to plot outliers separately
+%                   must be logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'UseBuiltIn': whether to use built in histogram() function
+%                                   Note: this will not work if data is grouped
+%                   must be logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'Counts': bin counts, with each group 
+%                                   being a different column
+%                   must be an array of one the following types:
+%                       'numeric', 'logical', 'datetime', 'duration'
+%                   default == returned by compute_grouped_histcounts(stats)
+%                   - 'Edges': bin edges
 %                   must be a vector of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
-%       varargin    - 'SpecialColor': color of expanded bins
+%                   default == returned by compute_grouped_histcounts(stats)
+%                   - 'Grouping': group assignment for each data point
+%                   must be an array of one the following types:
+%                       'cell', 'string', numeric', 'logical', 
+%                           'datetime', 'duration'
+%                   default == the column number for a 2D array
+%                   - 'SpecialColor': color of expanded bins
 %                   must be a 3-element numeric vector:
 %                   default == [0 0.8 0.8] (light blue)
 %                   - 'XLimits': x-axis limits
@@ -41,23 +62,29 @@ function h = plot_histogram_with_outliers (X, varargin)
 %                       'twoStds'   - Take out data points 
 %                                       more than 2 standard deviations away
 %                   default == 'isoutlier'
+%                   - 'FigHandle': figure handle for created figure
+%                   must be a empty or a figure object handle
+%                   default == []
+%                   - Any other parameter-value pair for the bar() function
 %
 % Requires:
+%       cd/compute_grouped_histcounts.m
 %       cd/create_error_for_nargin.m
-%       TODO: cd/plot_grouped_histogram.m
+%       cd/plot_grouped_histogram.m
 %       cd/remove_outliers.m
 %
 % Used by:    
-%       /home/Matlab/Marks_Functions/paula/Oct2017/zgRasterFigureMaker.m
-%       /media/adamX/m3ha/data_dclamp/initial_slopes.m
+%       TODO /home/Matlab/Marks_Functions/paula/Oct2017/zgRasterFigureMaker.m
+%       TODO /media/adamX/m3ha/data_dclamp/initial_slopes.m
 %
 % File History:
 % 2017-12-12 Created by Adam Lu
 % 2018-06-05 Made edges an optional parameter and make the default dependent
 %               on the isoutlier() and histcounts() functions
 % 2018-06-11 Now uses the remove_outliers.m function
-% TODO: Now uses plot_grouped_histogram.m by default
-% TODO: Make 'PlotOutliers' an optional parameter with default true
+% 2019-01-15 Now uses plot_grouped_histogram.m by default
+%               and added 'UseBuiltIn' as an optional parameter (default false)
+% 2019-01-15 Made 'PlotOutliers' an optional parameter with default true
 %       and rename as just plot_histogram.m
 
 %% Hard-coded parameters
@@ -65,10 +92,15 @@ validOutlierMethods = {'boxplot', 'isoutlier', ...
                         'fiveStds', 'threeStds', 'twoStds'};
 
 %% Default values for optional arguments
+plotOutliersDefault = false;            % don't ignore case by default
+useBuiltInDefault = false;              % don't ignore case by default
+countsDefault = [];                     % set later
 edgesDefault = [];                      % set later
+groupingDefault = [];                   % set later
 xLimitsDefault = [];                    % set later
 specialColorDefault = [0, 0.8, 0.8];    % light blue
 outlierMethodDefault = 'isoutlier';     % use built-in isoutlier function
+figHandleDefault = [];                  % no existing figure by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -81,18 +113,27 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;         
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'X', ...                        % data to distribute among bins
     @(x) validateattributes(x, {'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
 
-% Add optional inputs to the Input Parser
-addOptional(iP, 'edges', edgesDefault, ...      % bin edges
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'Counts', countsDefault, ...
     @(x) validateattributes(x, {'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
-
-% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'Edges', edgesDefault, ...
+    @(x) validateattributes(x, {'numeric', 'logical', ...
+                                'datetime', 'duration'}, {'2d'}));
+addParameter(iP, 'Grouping', groupingDefault, ...
+    @(x) validateattributes(x, {'cell', 'string', 'numeric', 'logical', ...
+                                'datetime', 'duration'}, {'2d'}));
+addParameter(iP, 'PlotOutliers', plotOutliersDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'UseBuiltIn', useBuiltInDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SpecialColor', specialColorDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 3}));
 addParameter(iP, 'XLimits', xLimitsDefault, ...
@@ -100,13 +141,22 @@ addParameter(iP, 'XLimits', xLimitsDefault, ...
         'datetime', 'duration'}, {'vector', 'numel', 2}));
 addParameter(iP, 'OutlierMethod', outlierMethodDefault, ...
     @(x) any(validatestring(x, validOutlierMethods)));
+addParameter(iP, 'FigHandle', figHandleDefault);
 
 % Read from the Input Parser
 parse(iP, X, varargin{:});
-edges = iP.Results.edges;
+plotOutliers = iP.Results.PlotOutliers;
+useBuiltIn = iP.Results.UseBuiltIn;
+counts = iP.Results.Counts;
+edges = iP.Results.Edges;
+grouping = iP.Results.Grouping;
 xLimits = iP.Results.XLimits;
 specialColor = iP.Results.SpecialColor;
 outlierMethod = validatestring(iP.Results.OutlierMethod, validOutlierMethods);
+figHandle = iP.Results.FigHandle;
+
+% Keep unmatched arguments for the bar() or histogram() function
+otherArguments = struct2arglist(iP.Unmatched);
 
 %% Prepare
 % Get the current MATLAB release
@@ -120,8 +170,8 @@ if isempty(edges)
     % Remove outliers if any
     XTrimmed = remove_outliers(X, 'OutlierMethod', outlierMethod);
 
-    % Use the built-in histcounts function to find the proper bin edges
-    [~, edges] = histcounts(XTrimmed);
+    % Use compute_grouped_histcounts to find the proper bin edges
+    [~, edges] = compute_grouped_histcounts(XTrimmed);
 end
 
 %% Create histogram
@@ -138,7 +188,7 @@ end
 % Compute histogram bincounts with expanded edges
 %   Note: the first bin is always < the first non-Inf number in edges
 %   Note: the last bin is always >= the last non-Inf number in edges
-counts = histcounts(X, edgesExpanded);
+counts = compute_grouped_histcounts(X, edgesExpanded);
 
 % Check for out of range data and adjust the bincounts and edges
 expandedOnTheLeft = false;  % whether histogram will be expanded on the left
@@ -220,16 +270,26 @@ if isempty(xLimits)
 end
 
 % Plot histogram
-if matlabYear >= 2017
-    % Plot histogram with histogram()
-    h(1) = histogram('BinEdges', edgesPlot, 'BinCounts', counts, ...
-                  'DisplayName', 'data');
-                                    % available for R2017a and beyond
+if useBuiltIn
+    if matlabYear >= 2017
+        % Plot histogram with histogram()
+        bars = histogram('BinEdges', edgesPlot, 'BinCounts', counts, ...
+                      'DisplayName', 'data', otherArguments{:});
+                                        % available for R2017a and beyond
+    else
+        % Plot histogram by using the bar() function in the 'histc' style
+        bars = bar(leftEdgesPlot, counts, 'histc', ...
+                'DisplayName', 'data', otherArguments{:});
+    end
 else
-    % Plot histogram by using the bar() function in the 'histc' style
-    h(1) = bar(leftEdgesPlot, counts, 'histc', ...
-            'DisplayName', 'data');
+    % Allow the option to plot a grouped histogram
+    [bars, fig] = ...
+        plot_grouped_histogram('Counts', counts, 'Edges', edgesPlot, ...
+                                'FigHandle', figHandle, otherArguments{:});
 end
+
+% Count the number of bars plotted
+nGroups = numel(bars);
 
 % Initialize XTick locations with current locations
 xTicks = get(gca, 'XTick'); 
@@ -275,20 +335,36 @@ else
     wasHold = true;
 end
 if xTickLabelNums(1) == -Inf
-    h(2) = histogram(edgesPlot(1) * ones(1, counts(1)), ...
-                    edgesPlot(1:2), ...
-                    'FaceAlpha', 1, 'FaceColor', specialColor, ...
-                    'DisplayName', 'data too small');
+    if useBuiltIn
+        bars(nGroups + 1) = ...
+            histogram(edgesPlot(1) * ones(1, counts(1)), ...
+                        edgesPlot(1:2), ...
+                        'FaceAlpha', 1, 'FaceColor', specialColor, ...
+                        'DisplayName', 'data too small', otherArguments{:});
+    else
+        bars(nGroups + 1) = ...
+            bar(mean(edgesPlot(1:2)), counts(1), ...
+                        'FaceAlpha', 1, 'FaceColor', specialColor, ...
+                        'DisplayName', 'data too small', otherArguments{:});
+    end
 else
-    h(2) = gobjects(1);
+    bars(nGroups + 1) = gobjects(1);
 end
 if xTickLabelNums(end) == Inf
-    h(3) = histogram(edgesPlot(end-1) * ones(1, counts(end)), ...
-                    edgesPlot(end-1:end), ...
-                    'FaceAlpha', 1, 'FaceColor', specialColor, ...
-                    'DisplayName', 'data too large');
+    if useBuiltIn
+        bars(nGroups + 2) = ...
+            histogram(edgesPlot(end-1) * ones(1, counts(end)), ...
+                        edgesPlot(end-1:end), ...
+                        'FaceAlpha', 1, 'FaceColor', specialColor, ...
+                        'DisplayName', 'data too large', otherArguments{:});
+    else
+        bars(nGroups + 2) = ...
+            bar(mean(edgesPlot(end-1:end)), counts(end), ...
+                        'FaceAlpha', 1, 'FaceColor', specialColor, ...
+                        'DisplayName', 'data too large', otherArguments{:});
+    end
 else
-    h(3) = gobjects(1);
+    bars(nGroups + 2) = gobjects(1);
 end
 if ~wasHold
     hold off;
@@ -355,12 +431,16 @@ end
 
 nStds = str2double(outlierMethod(1));
 
-%       h           - the histogram returned as a Bar object
+%       bars           - the histogram returned as a Bar object
 %                   specified as a Patch (R2015a) or Bar (R2017a) object
 %       h1          - the histogram for the isolated expanded left bar if exists
 %                   specified as a Histogram object
 %       h2          - the histogram for the isolated expanded right bar if exists
 %                   specified as a Histogram object
+
+% Use the built-in histcounts function to find the proper bin edges
+[~, edges] = histcounts(XTrimmed);
+counts = histcounts(X, edgesExpanded);
 
 %}
 

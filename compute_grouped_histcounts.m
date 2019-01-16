@@ -7,10 +7,10 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 % Example(s):
 %       randVec = randn(100, 1);
 %       stats1 = [randVec, randVec + 1, randVec - 1];
-%       compute_grouped_histcounts(stats1)
+%       [counts, edges, centers] = compute_grouped_histcounts(stats1)
 %       stats2 = [randVec; randVec + 1; randVec - 1];
 %       grouping2 = [repmat({'Mark'}, 100, 1); repmat({'Peter'}, 100, 1); repmat({'Katie'}, 100, 1)];
-%       compute_grouped_histcounts(stats2, grouping2)
+%       [counts, edges, centers] = compute_grouped_histcounts(stats2, grouping2)
 % Outputs:
 %       counts      - bin counts, with each group being a different column
 %                   specified as a an array of one the following types:
@@ -38,12 +38,14 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 %
 % Requires:
 %       cd/compute_bins.m
+%       cd/compute_centers_from_edges.m
 %       cd/create_default_grouping.m
 %       cd/create_error_for_nargin.m
 %       cd/struct2arglist.m
 %
 % Used by:
 %       cd/plot_grouped_histogram.m
+%       cd/plot_histogram_with_outliers.m
 
 % File History:
 % 2019-01-15 Moved from plot_grouped_histogram.m
@@ -136,7 +138,7 @@ counts = horzcat(counts{:});
 
 %% Compute the bin centers
 if nargout >= 3
-    binCenters = mean([edges(1:end-1), edges(2:end)], 2);
+    binCenters = compute_centers_from_edges(edges);
 end
 
 %% Outputs
