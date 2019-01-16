@@ -319,3 +319,25 @@ Last Updated 2019-01-16 by Adam Lu
 - [**struct2sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/struct2sheet.m): Converts a structure array into a table and write it to a spreadsheet
 - [**structs2vecs.m**](https://github.com/blabuva/Adams_Functions/blob/master/structs2vecs.m): Converts a cell array of structs with equal numbers of fields to a column cell array of row vectors or cell arrays
 - [**suptitle.m**](https://github.com/blabuva/Adams_Functions/blob/master/suptitle.m): SUPTITLE puts a title above all subplots.
+- [**test_difference.m**](https://github.com/blabuva/Adams_Functions/blob/master/test_difference.m): Tests whether groups are different for each measured variable
+- [**test_passive_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/test_passive_fit.m): Tests passive fitting 
+- [**transpose_table.m**](https://github.com/blabuva/Adams_Functions/blob/master/transpose_table.m): Transposes a table (make row names variable names and vice versa)
+- [**union_over_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/union_over_cells.m): Apply the union function over all contents of a cell array
+- [**update_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/update_params.m): Update dependent parameters for particular experiments
+- [**update_param_values.m**](https://github.com/blabuva/Adams_Functions/blob/master/update_param_values.m): Updates a parameters table with new values
+- [**validate_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/validate_string.m): Validate whether a string is an element of a cell array of valid strings
+- [**vec2array.m**](https://github.com/blabuva/Adams_Functions/blob/master/vec2array.m): Convert a vector to an array with dimensions given by dims using linear indexing (obsolete, use reshape() instead)
+- [**vec2cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/vec2cell.m): Reorganize a vector or array into a cell array of partial vectors/arrays according to class
+- [**vertcat_spreadsheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/vertcat_spreadsheets.m): Combine spreadsheets using readtable, vertcat, then writetable
+- [**xolotl_add_current_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_current_pulse.m): Adds a current pulse to the first compartment of a xolotl object
+- [**xolotl_add_holding_current.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_holding_current.m): Adds a holding current to the first compartment of a xolotl object
+- [**xolotl_add_voltage_clamp.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_voltage_clamp.m): Adds a voltage clamp to the first compartment of a xolotl object
+- [**xolotl_compartment_index.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_compartment_index.m): Returns the index of the compartment or the default
+- [**xolotl_estimate_holding_current.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_estimate_holding_current.m): Estimates the holding current necessary to match a certain holding potential
+- [**xolotl_set_simparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_set_simparams.m): Runs a simulation on a xolotl object
+- [**xolotl_simulate.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_simulate.m): Simulates a voltage clamp experiment
+- [**ZG_compute_IEI_thresholds.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_compute_IEI_thresholds.m): Compute all possible inter-event interval thresholds from the data within an all_output directory
+- [**ZG_extract_all_data.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_all_data.m): Extract each cell and concatenate sweeps into a single file under a subdirectory of its own
+- [**ZG_extract_all_IEIs.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_all_IEIs.m): Extract all the inter-event intervals from a directory containing multiple minEASE output subdirectories
+- [**ZG_extract_IEI_thresholds.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_IEI_thresholds.m): Extract/compute inter-event-interval distribution thresholds, separating events from spikes
+- [**ZG_fit_IEI_distributions.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_fit_IEI_distributions.m): Fit inter-event-interval distributions and log distributions

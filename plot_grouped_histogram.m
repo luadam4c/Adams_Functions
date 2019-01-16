@@ -1,6 +1,6 @@
-function [bars, fig, counts, edges] = plot_grouped_histogram (varargin)
+function [bars, fig, outlines] = plot_grouped_histogram (varargin)
 %% Plots a grouped histogram
-% Usage: [bars, fig, counts, edges] = plot_grouped_histogram (stats (opt), grouping (opt), varargin)
+% Usage: [bars, fig, outlines] = plot_grouped_histogram (stats (opt), grouping (opt), varargin)
 % Explanation:
 %       Plots a grouped histogram, placing bars from different groups
 %           side-by-side by default
@@ -21,9 +21,11 @@ function [bars, fig, counts, edges] = plot_grouped_histogram (varargin)
 %       plot_grouped_histogram(stats2, grouping2, 'Style', 'overlapped')
 % Outputs:
 %       bars        - the histogram(s) returned as Bar object(s)
-%                   specified as a bar object handle array
+%                   specified as a Bar object handle array
 %       fig         - figure handle for the created figure
-%                   specified as a figure object handle
+%                   specified as a Figure object handle
+%       outlines    - outlines of the histogram
+%                   specified as a Stair object handle array
 %
 % Arguments:
 %       stats       - (opt) data to distribute among bins
@@ -110,6 +112,7 @@ function [bars, fig, counts, edges] = plot_grouped_histogram (varargin)
 % Requires:
 %       cd/compute_centers_from_edges.m
 %       cd/compute_grouped_histcounts.m
+%       cd/construct_fullpath.m
 %       cd/create_default_grouping.m
 %       cd/create_error_for_nargin.m
 %       cd/islegendlocation.m
@@ -119,7 +122,6 @@ function [bars, fig, counts, edges] = plot_grouped_histogram (varargin)
 % Used by:
 %       cd/plot_histogram.m
 %       cd/plot_swd_histogram.m
-%       cd/test_differencem
 %       cd/ZG_fit_IEI_distributions.m
 
 % TODO:
@@ -303,15 +305,8 @@ if isempty(figTitle)
 end
 
 % If the figure name is not a full path, create full path
-if ~isempty(figName) && ~any(strfind(figName, filesep))
-    % Set dependent argument defaults
-    if isempty(outFolder)
-        % Default output directory is present working directory
-        outFolder = pwd;
-    end
-
-    % Create full figure file name
-    figName = fullfile(outFolder, figName);
+if ~isempty(figName)
+    figName = construct_fullpath(figName, 'Directory', outFolder);
 end
 
 % Decide on the figure to plot on
@@ -319,12 +314,11 @@ if ~isempty(figHandle)
     fig = figure(figHandle);
 elseif ~isempty(figNumber)
     fig = figure(figNumber);
+elseif ~isempty(figName)
+    fig = figure;
 else
     fig = gcf;
 end
-
-% Clear figure
-clf(fig);
 
 % Set legend location based on number of groups
 if strcmpi(legendLocation, 'auto')
@@ -345,22 +339,32 @@ end
 
 %% Plot and save histogram
 if strcmpi(style, 'overlapped')
-    hold on
+    % Store hold status
+    wasHold = ishold;
+
+    % Hold on
+    hold on;
+
+    % Plot bars
     bars = arrayfun(@(x, y) bar(binCenters, counts(:, x), ...
                         barWidth, barStyle, 'FaceAlpha', faceAlpha, ...
                         'EdgeAlpha', edgeAlpha, otherArguments{:}), ...
                     transpose(1:nGroups), groupingLabels);
 else
+    % Plot bars
     bars = bar(binCenters, counts, barWidth, barStyle, otherArguments{:});
 end
 
+% Count the number of groups
+nGroups = numel(bars);
+
 % Set the legend labels for each Bar object
-for iBar = 1:numel(bars)
+for iBar = 1:nGroups
     set(bars(iBar), 'DisplayName', groupingLabels{iBar});
 end
 
 % Set x axis limits
-if ~iscell(xLimits) && ~strcmpi(xLimits, 'suppress')
+if ~strcmpi(xLimits, 'suppress')
     xlim(xLimits);
 end
 
@@ -371,7 +375,21 @@ end
 
 % Generate a legend if there is more than one group
 if ~strcmpi(legendLocation, 'suppress')
-    legend('location', legendLocation, 'AutoUpdate','off');
+    legend('location', legendLocation, 'AutoUpdate', 'off');
+end
+
+% Create staircase outlines if style is 'overlapped'
+if strcmpi(style, 'overlapped')
+    % Retrieve the colors used for the histograms
+    colorsUsed = arrayfun(@(x) get(x, 'FaceColor'), bars, 'UniformOutput', false);
+    colorsUsed = vertcat(colorsUsed{:});
+
+    % Create outlines
+    outlines = arrayfun(@(x, y) stairs(edges, [counts(:, x); 0], ...
+                                'LineWidth', 2, 'Color', colorsUsed(x, :)), ...
+                    transpose(1:nGroups), groupingLabels);
+else
+    outlines = gobjects(nGroups, 1);
 end
 
 % Generate an x-axis label
@@ -389,8 +407,14 @@ if ~strcmpi(figTitle, 'suppress')
     title(figTitle);
 end
 
+% Hold off if it was originally so
+if ~wasHold
+    hold off
+end
+
+% Save the figure
 if ~isempty(figName)
-    % Save the new figure
+    % Save the figure in all file types requested
     save_all_figtypes(fig, figName, figTypes);
 
     % Close figure
@@ -455,6 +479,21 @@ end
 [~, edges] = compute_bins(stats, 'Edges', edges);
 
 legend(groupingLabels, 'location', legendLocation, 'AutoUpdate','off');
+
+% If the figure name is not a full path, create full path
+if ~isempty(figName) && ~any(strfind(figName, filesep))
+    % Set dependent argument defaults
+    if isempty(outFolder)
+        % Default output directory is present working directory
+        outFolder = pwd;
+    end
+
+    % Create full figure file name
+    figName = fullfile(outFolder, figName);
+end
+
+% Clear figure
+clf(fig);
 
 %}
 

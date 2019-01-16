@@ -4,22 +4,24 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       data1 = [rand(60, 1); rand(60, 1) + 0.5];
-%       data2 = [randn(60, 1); randn(60, 1) + 1];
-%       grps1 = [2 * ones(60, 1); 1 * ones(60, 1)];
-%       grps2 = [10 * ones(60, 1); -8 * ones(60, 1)];
-%       tble1 = table(data1, data2, grps1, grps2);
+%       n = 180
+%       data1 = [rand(n, 1); rand(n, 1) + 0.5];
+%       data2 = [randn(n, 1); randn(n, 1) + 1];
+%       data3 = [randn(n, 1); randn(n, 1)];
+%       grps1 = [2 * ones(n, 1); 1 * ones(n, 1)];
+%       grps2 = [10 * ones(n, 1); -8 * ones(n, 1)];
+%       tble1 = table(data1, data2, data3, grps1, grps2);
 %       testResults1 = test_difference(tble1, 'data1', 'grps1')
-%       testResults2 = test_difference(tble1, {'data1', 'data2'}, 'grps2')
+%       testResults2 = test_difference(tble1, {'data1', 'data2', 'data3'}, 'grps2')
 %       testResults3 = test_difference(tble1, {'data1', 'data2'}, {'grps1', 'grps2'})
-%       data3 = [rand(60, 1); rand(60, 1) + 1; rand(60, 1) - 1];
-%       data4 = [randn(60, 1); randn(60, 1) + 1; randn(60, 1) - 1];
-%       grps3 = [2 * ones(60, 1); 1 * ones(60, 1); 3 * ones(60, 1)];
-%       grps4 = [7 * ones(60, 1); 8 * ones(60, 1); 6 * ones(60, 1)];
-%       tble3 = table(data3, data4, grps3, grps4);
-%       testResults4 = test_difference(tble3, {'data3', 'data4'}, 'grps3')
-%       testResults5 = test_difference(tble3, {'data3', 'data4'}, 'grps4')
-%       testResults6 = test_difference(tble3, {'data3', 'data4'}, {'grps3', 'grps4'})
+%       data4 = [randn(n, 1); randn(n, 1); randn(n, 1)];
+%       data5 = [randn(n, 1); randn(n, 1) + 1; randn(n, 1) - 1];
+%       grps4 = [2 * ones(n, 1); -1 * ones(n, 1); 3 * ones(n, 1)];
+%       grps5 = [7 * ones(n, 1); 8 * ones(n, 1); 6 * ones(n, 1)];
+%       tble4 = table(data3, data4, grps3, grps4);
+%       testResults4 = test_difference(tble4, {'data4', 'data5'}, 'grps4')
+%       testResults5 = test_difference(tble4, {'data4', 'data5'}, 'grps5')
+%       testResults6 = test_difference(tble4, {'data4', 'data5'}, {'grps4', 'grps5'})
 % Outputs:
 %       testResults - a table with each row corresponding to a measured variable
 %                           and columns:
@@ -54,8 +56,9 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 %       cd/convert_to_char.m
 %       cd/create_error_for_nargin.m
 %       cd/force_column_cell.m
+%       cd/force_string_end.m
 %       cd/match_format_vector_sets.m
-%       cd/plot_grouped_histogram.m
+%       cd/plot_histogram.m
 %       cd/struct2arglist.m
 %
 % Used by:
@@ -69,9 +72,10 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 %% Hard-coded parameters
 % TODO: Make these parameters
 plotHistograms = true;
-saveHistFlag = true;    % default false
+saveHistFlag = true; %false;    % default false
 toDisplay = true;       % whether to display ANOVA table
 histFigNames = '';
+histStyle = 'overlapped';
 alphaNormality = 0.05;  % significance level for normality test
 alphaTest = 0.05;       % significance level for hypothesis test
 
@@ -135,6 +139,7 @@ uniqueX = unique(xData);
 
 % Get the unique group names as a cell array of character arrays
 groupNames = convert_to_char(uniqueX);
+groupNames = replace(groupNames, '-', 'neg');
 if ischar(groupNames)
     groupNames = {groupNames};
 end
@@ -153,6 +158,9 @@ if ~isempty(sheetName)
     sheetName = construct_fullpath(sheetName, 'Directory', outFolder);
 end
 
+% Make sure the prefix ends in '_'
+prefix = force_string_end(prefix, '_', 'OnlyIfNonempty', true);
+
 %% Perform the appropriate comparison test
 if nParams == 1
     % Perform t test, rank sum test or ANOVA
@@ -161,7 +169,7 @@ if nParams == 1
                         alphaTest, toDisplay), yData);
 
     % Convert to a table
-    testResults = struct2table(statsStructs);
+    testResults = struct2table(statsStructs, 'AsArray', true);
 else
     % Create linear models
     models = cellfun(@(y) fitlm(xData, y), yData, 'UniformOutput', false);
@@ -188,14 +196,17 @@ end
 % Combine all x variable strings into one string
 xVarStr = convert_to_char(xVar, 'SingleOutput', true, 'Delimiter', '_and_');
 
-% Create row names
-testResults.Properties.RowNames = strcat(yVars, '_vs_', xVarStr);
+% Create relationship strings
+relationshipStrs = strcat(yVars, '_vs_', xVarStr);
+
+% Use relationship strings as row names
+testResults.Properties.RowNames = relationshipStrs;
 
 %% Generate overlapped histograms
 if plotHistograms && nParams == 1
     % Create figure names if not provided
     if saveHistFlag && isempty(histFigNames)
-        histFigNames = strcat(prefix, '_histogram_', yVars, '.png');
+        histFigNames = strcat(prefix, 'histogram_', relationshipStrs, '.png');
         histFigNames = construct_fullpath(histFigNames, 'Directory', outFolder);
     else
         histFigNames = match_format_vector_sets(histFigNames, yVars);
@@ -224,11 +235,13 @@ if plotHistograms && nParams == 1
 
     % Plot grouped histograms
     [bars, figures] = ...
-        cellfun(@(x, y, z, w, v) plot_grouped_histogram(x, xData, ...
-                        'XLabel', y, 'GroupingLabels', z, 'FigName', w, ...
-                        'FigTitle', v, 'Style', 'overlapped'), ...
-                        yData, yVars, groupingLabels, histFigNames, figTitles, ...
-                        'UniformOutput', false);  
+        cellfun(@(x, y, z, w, v) plot_histogram(x, 'Grouping', xData, ...
+                    'GroupedStyle', histStyle, ...
+                    'XLabel', y, 'GroupingLabels', z, ...
+                    'FigName', w, 'FigTitle', v), ...
+                    yData, yVars, groupingLabels, ...
+                    histFigNames, figTitles, ...
+                    'UniformOutput', false);  
 
     % Append histogram to results
     testResults = addvars(testResults, histFigNames, bars, figures);
@@ -251,19 +264,22 @@ if isempty(uniqueX)
     uniqueX = unique(xData);
 end
 
-% Get the unique group names
+% Get the unique group names, but 
 if isempty(groupNames)
     groupNames = convert_to_char(uniqueX);
 end
+
+% Replace '-' with 'neg'
+%   Note: Field names of structures cannot contain '-'
+groupNames = replace(groupNames, '-', 'neg');
 
 % Count the number of groups
 nGroups = numel(uniqueX);
 
 % Create pNormStrs
-pNormAvgStrs = strcat('pNormAvg_', groupNames);
-pNormLillStrs = strcat('pNormLill_', groupNames);
-pNormAdStrs = strcat('pNormAd_', groupNames);
-pNormJbStrs = strcat('pNormJb_', groupNames);
+[pNormAvgStrs, pNormLillStrs, pNormAdStrs, pNormJbStrs] = ...
+    argfun(@(x) strcat(x, groupNames), ...
+            'pNormAvg_', 'pNormLill_', 'pNormAd_', 'pNormJb_');
 
 % If there are too many NaNs, return
 if sum(isnan(yData)) >= numel(yData) / 2

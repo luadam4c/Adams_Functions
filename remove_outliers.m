@@ -1,6 +1,6 @@
-function [newData, origInd] = remove_outliers (oldData, varargin)
+function [newData, rowsToKeep] = remove_outliers (oldData, varargin)
 %% Removes outliers from a data matrix and return a new matrix
-% Usage: [newData, origInd] = remove_outliers (oldData, varargin)
+% Usage: [newData, rowsToKeep] = remove_outliers (oldData, varargin)
 % Explanation:
 %       TODO
 %
@@ -10,8 +10,7 @@ function [newData, origInd] = remove_outliers (oldData, varargin)
 % Outputs:
 %       newData     - data matrix with outlying data points removed
 %                   specified as a numeric array
-%       origInd     - row indices of original data matrix that 
-%                       were left in place
+%       rowsToKeep  - row indices of original data matrix to keep
 %                   specified as a positive integer array
 % Arguments:    
 %       oldData     - a data matrix with each column being a condition 
@@ -116,10 +115,10 @@ case 'boxplot'
     lowbar = q1 - wl2iqr * IQR;
 
     % Only include the points within the whiskers
-    origInd = find(all(oldData >= lowbar & oldData <= highbar, 2));
+    rowsToKeep = find(all(oldData >= lowbar & oldData <= highbar, 2));
 case 'isoutlier'
     % Take out values with the built-in isoutlier() function
-    origInd = find(all(~isoutlier(oldData), 2));
+    rowsToKeep = find(all(~isoutlier(oldData), 2));
 case {'fiveStds', 'threeStds', 'twoStds'}
     % Compute the mean of each column
     meanX = mean(oldData);
@@ -143,11 +142,11 @@ case {'fiveStds', 'threeStds', 'twoStds'}
     lowbar = meanX - nStds * stdX;
 
     % Only include the points within a nStds standard deviations of the mean
-    origInd = find(all(oldData >= lowbar & oldData <= highbar, 2));
+    rowsToKeep = find(all(oldData >= lowbar & oldData <= highbar, 2));
 end
 
 % Extract the new data
-newData = oldData(origInd, :);
+newData = oldData(rowsToKeep, :);
 
 %% Plot boxplots for verification
 if plotFlag
@@ -162,7 +161,7 @@ end
 %{
 OLD CODE:
 
-[newData, origInd] = remove_outliers (oldData, wl2iqr, plotFlag)
+[newData, rowsToKeep] = remove_outliers (oldData, wl2iqr, plotFlag)
 %% Check arguments
 if nargin < 1
     error('Not enough input arguments, type ''help remove_outliers'' for usage');
@@ -195,7 +194,7 @@ for iRow = 1:nRows
 end
 
 % Find the original indices that will remain
-origInd = find(toleave);
+rowsToKeep = find(toleave);
 
 % Get the total number of data points for each group
 nRows = size(oldData, 1);

@@ -54,10 +54,6 @@ function [bars, fig] = plot_histogram (X, varargin)
 %                   - 'SpecialColor': color of expanded bins
 %                   must be a 3-element numeric vector:
 %                   default == [0 0.8 0.8] (light blue)
-%                   - 'XLimits': x-axis limits
-%                   must be a two element vector of one the following types:
-%                       'numeric', 'logical''datetime', 'duration'
-%                   default == minimum and maximum edges of bins
 %                   - 'OutlierMethod': method for determining outliers
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'boxplot'   - same as the Matlab function boxplot()
@@ -69,23 +65,78 @@ function [bars, fig] = plot_histogram (X, varargin)
 %                       'twoStds'   - Take out data points 
 %                                       more than 2 standard deviations away
 %                   default == 'isoutlier'
+%                   - 'XLimits': x-axis limits
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == minimum and maximum edges of bins
+%                   - 'YLimits': limits of y axis, 
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == 'suppress'
+%                   - 'XUnits': x-axis units
+%                   must be a string scalar or a character vector 
+%                       or a cell array of strings or character vectors
+%                   default == 'unit'
+%                   - 'XLabel': label for the time axis, 
+%                               suppress by setting value to 'suppress'
+%                   must be a string scalar or a character vector 
+%                       or a cell array of strings or character vectors
+%                   default == strcat('Value (', xUnits, ')')
+%                   - 'YLabel': label(s) for the y axis, 
+%                               suppress by setting value to 'suppress'
+%                   must be a string scalar or a character vector
+%                   default == 'Count'
+%                   - 'GroupingLabels': labels for the groupings, 
+%                               suppress by setting value to 'suppress'
+%                   must be a string scalar or a character vector 
+%                       or a cell array of strings or character vectors
+%                   default == {'Group #1', 'Group #2', ...}
+%                   - 'LegendLocation': location for legend
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'auto'      - use default
+%                       'suppress'  - no legend
+%                       anything else recognized by the legend() function
+%                   default == 'suppress' if nGroups == 1 
+%                               'northeast' if nGroups is 2~9
+%                               'eastoutside' if nGroups is 10+
+%                   - 'FigTitle': title for the figure
+%                   must be a string scalar or a character vector
+%                   default == strcat('Distribution of ', xLabel)
 %                   - 'FigHandle': figure handle for created figure
 %                   must be a empty or a figure object handle
 %                   default == []
+%                   - 'FigNumber': figure number for creating figure
+%                   must be a positive integer scalar
+%                   default == []
+%                   - 'OutFolder': directory to save figure, 
+%                                   e.g. 'output'
+%                   must be a string scalar or a character vector
+%                   default == pwd
+%                   - 'FigName': figure name for saving
+%                   must be a string scalar or a character vector
+%                   default == ''
+%                   - 'FigTypes': figure type(s) for saving; 
+%                               e.g., 'png', 'fig', or {'png', 'fig'}, etc.
+%                   could be anything recognised by 
+%                       the built-in saveas() function
+%                   (see isfigtype.m under Adams_Functions)
+%                   default == 'png'
 %                   - Any other parameter-value pair for the bar() function
 %
 % Requires:
 %       cd/compute_centers_from_edges.m
 %       cd/compute_grouped_histcounts.m
+%       cd/construct_fullpath.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/force_column_vector.m
 %       cd/plot_grouped_histogram.m
 %       cd/remove_outliers.m
+%       cd/test_difference.m
 %
 % Used by:    
-%       TODO /home/Matlab/Marks_Functions/paula/Oct2017/zgRasterFigureMaker.m
-%       TODO /media/adamX/m3ha/data_dclamp/initial_slopes.m
+%       /home/Matlab/Marks_Functions/paula/Oct2017/zgRasterFigureMaker.m
+%       /media/adamX/m3ha/data_dclamp/initial_slopes.m
 %
 % File History:
 % 2017-12-12 Created by Adam Lu
@@ -108,11 +159,22 @@ useBuiltInDefault = false;              % use plot_grouped_histogram by default
 countsDefault = [];                     % set later
 edgesDefault = [];                      % set later
 groupingDefault = [];                   % set later
-groupedStyleDefault = 'overlapped';     % grouped bars overlapped by default
-xLimitsDefault = [];                    % set later
+groupedStyleDefault = 'stacked';        % grouped bars are stacked by default
 specialColorDefault = [0, 0.8, 0.8];    % light blue
 outlierMethodDefault = 'isoutlier';     % use built-in isoutlier function
+xLimitsDefault = [];                    % set later
+yLimitsDefault = 'suppress';            % set later
+xUnitsDefault = 'unit';                 % the default x-axis units
+xLabelDefault = '';                     % set later
+yLabelDefault = 'Count';                % set later
+groupingLabelsDefault = '';             % set later
+legendLocationDefault = 'auto';         % set later
+figTitleDefault = '';                   % set later
 figHandleDefault = [];                  % no existing figure by default
+figNumberDefault = [];                  % no figure number by default
+outFolderDefault = '';                  % default directory to save figure
+figNameDefault = '';                    % don't save figure by default
+figTypesDefault = 'png';                % save as png file by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -150,12 +212,36 @@ addParameter(iP, 'UseBuiltIn', useBuiltInDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SpecialColor', specialColorDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 3}));
-addParameter(iP, 'XLimits', xLimitsDefault, ...
-    @(x) validateattributes(x, {'numeric', 'categorical', ...
-        'datetime', 'duration'}, {'vector', 'numel', 2}));
 addParameter(iP, 'OutlierMethod', outlierMethodDefault, ...
     @(x) any(validatestring(x, validOutlierMethods)));
+addParameter(iP, 'XLimits', xLimitsDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isvector(x) && length(x) == 2);
+addParameter(iP, 'YLimits', yLimitsDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
+addParameter(iP, 'XUnits', xUnitsDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'XLabel', xLabelDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'YLabel', yLabelDefault, ...
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'GroupingLabels', groupingLabelsDefault, ...
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'LegendLocation', legendLocationDefault, ...
+    @(x) all(islegendlocation(x, 'ValidateMode', true)));
+addParameter(iP, 'FigTitle', figTitleDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigHandle', figHandleDefault);
+addParameter(iP, 'FigNumber', figNumberDefault, ...
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                'FigNumber must be a empty or a positive integer scalar!'));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigName', figNameDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigTypes', figTypesDefault, ...
+    @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, X, varargin{:});
@@ -165,15 +251,27 @@ counts = iP.Results.Counts;
 edgesUser = iP.Results.Edges;
 grouping = iP.Results.Grouping;
 groupedStyle = validatestring(iP.Results.GroupedStyle, validGroupedStyles);
-xLimits = iP.Results.XLimits;
 specialColor = iP.Results.SpecialColor;
 outlierMethod = validatestring(iP.Results.OutlierMethod, validOutlierMethods);
+xLimits = iP.Results.XLimits;
+yLimits = iP.Results.YLimits;
+xUnits = iP.Results.XUnits;
+xLabel = iP.Results.XLabel;
+yLabel = iP.Results.YLabel;
+groupingLabels = iP.Results.GroupingLabels;
+[~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
+                                        'ValidateMode', true);
+figTitle = iP.Results.FigTitle;
 figHandle = iP.Results.FigHandle;
+figNumber = iP.Results.FigNumber;
+outFolder = iP.Results.OutFolder;
+figName = iP.Results.FigName;
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Keep unmatched arguments for the bar() or histogram() function
 otherArguments = struct2arglist(iP.Unmatched);
 
-%% Prepare
+%% Preparation
 % Get the current MATLAB release
 matlabRelease = version('-release');
 
@@ -183,11 +281,31 @@ matlabYear = str2double(matlabRelease(1:4));
 % Force rows as columns
 edgesUser = force_column_vector(edgesUser);
 
+% If the figure name is not a full path, create full path
+if ~isempty(figName)
+    figName = construct_fullpath(figName, 'Directory', outFolder);
+end
+
+% Decide on the figure to plot on
+if ~isempty(figHandle)
+    fig = figure(figHandle);
+elseif ~isempty(figNumber)
+    fig = figure(figNumber);
+elseif ~isempty(figName)
+    fig = figure;
+else
+    fig = gcf;
+end
+
 %% Identify edges if not provided
 if isempty(edgesUser)
     if plotOutliers
+        % Find rows that contain outliers
+        [~, rowsToKeep] = remove_outliers(X, 'OutlierMethod', outlierMethod);
+
         % Remove outliers if any
-        XTrimmed = remove_outliers(X, 'OutlierMethod', outlierMethod);
+        XTrimmed = X(rowsToKeep, :);
+        grouping = grouping(rowsToKeep);
 
         % Use compute_grouped_histcounts to find the proper bin edges
         %   or use default
@@ -295,8 +413,13 @@ else
     % Allow the option to plot a grouped histogram
     [bars, fig] = ...
         plot_grouped_histogram('Counts', counts, 'Edges', edgesPlot, ...
-                            'Style', groupedStyle, 'FigHandle', figHandle, ...
-                            otherArguments{:});
+                    'Style', groupedStyle, 'YLimits', yLimits, ...
+                    'XUnits', xUnits, 'XLabel', xLabel, 'YLabel', yLabel, ...
+                    'GroupingLabels', groupingLabels, ...
+                    'LegendLocation', legendLocation, ...
+                    'FigTitle', figTitle, 'FigHandle', fig, ...
+                    'FigNumber', figNumber, ...
+                    otherArguments{:});
 end
 
 % Count the number of bars plotted
@@ -379,8 +502,19 @@ if ~wasHold
     hold off;
 end
 
-% Update x axis limits
-xlim(xLimits);
+% Set x axis limits
+if ~strcmpi(xLimits, 'suppress')
+    xlim(xLimits);
+end
+
+% Save the figure
+if ~isempty(figName)
+    % Save the figure in all file types requested
+    save_all_figtypes(fig, figName, figTypes);
+
+    % Close figure
+    close(fig);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

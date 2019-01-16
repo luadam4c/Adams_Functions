@@ -30,6 +30,7 @@ function newStr = force_string_end (oldStr, subStr, varargin)
 %       cd/m3ha_neuron_create_simulation_params.m
 %       cd/m3ha_neuron_create_TC_commands.m
 %       cd/m3ha_import_raw_traces.m
+%       cd/test_difference.m
 
 % File History:
 % 2018-10-21 Created by Adam Lu
