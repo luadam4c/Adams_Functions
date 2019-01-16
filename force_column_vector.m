@@ -82,8 +82,10 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/plot_cfit_pulse_response.m
+%       cd/plot_histogram_with_outliers.m
 %       cd/plot_raster.m
 %       cd/plot_window_boundaries.m
+%       cd/remove_outliers.m
 %       cd/xolotl_set_simparams.m
 
 % File History:

@@ -1,8 +1,12 @@
 function [newData, origInd] = remove_outliers (oldData, varargin)
 %% Removes outliers from a data matrix and return a new matrix
 % Usage: [newData, origInd] = remove_outliers (oldData, varargin)
-% Example(s):
+% Explanation:
 %       TODO
+%
+% Example(s):
+%       X = magic(5); remove_outliers(X); X(1) = 100; remove_outliers(X)
+%
 % Outputs:
 %       newData     - data matrix with outlying data points removed
 %                   specified as a numeric array
@@ -32,8 +36,11 @@ function [newData, origInd] = remove_outliers (oldData, varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %
-% Used by:    
-%       /home/Matlab/Adams_Functions/plot_histogram_with_outliers.m
+% Requires:
+%       cd/force_column_vector.m
+%
+% Used by:
+%       cd/plot_histogram_with_outliers.m
 %       /media/adamX/m3ha/data_dclamp/compare_sse.m
 %       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
 %
@@ -82,12 +89,13 @@ wl2iqr = iP.Results.WL2IQR;
 outlierMethod = validatestring(iP.Results.OutlierMethod, validOutlierMethods);
 plotFlag = iP.Results.PlotFlag;
 
+%% Preparation
+% Force row vectors as column vectors
+oldData = force_column_vector(oldData, 'IgnoreNonVectors', true);
+
 %% Remove outliers
 switch outlierMethod
 case 'boxplot'
-    % Get the total number of data points
-    ndp = size(oldData, 1);
-
     % Compute the quartiles for each column
     %   Note: each row corresponds to a quartile
     Q = quantile(oldData, [0.25; 0.5; 0.75]);
@@ -102,31 +110,21 @@ case 'boxplot'
     IQR = q3 - q1;
 
     % Compute the whisker maximum
-    highbar = q3 + wl2iqr * (q3 - q1);
+    highbar = q3 + wl2iqr * IQR;
 
     % Compute the whisker minimum
-    lowbar = q1 - wl2iqr * (q3 - q1);
+    lowbar = q1 - wl2iqr * IQR;
 
-    % Decide on whether to leave data point or not, initially all true
-    toleave = ones(1, ndp);
-    for k = 1:ndp
-        if sum([sum(oldData(k, :) > highbar), sum(oldData(k, :) < lowbar)])
-            toleave(k) = false;
-        else
-            toleave(k) = true;
-        end
-    end
-    origInd = find(toleave);
-    newData = oldData(origInd, :);
+    % Only include the points within the whiskers
+    origInd = find(all(oldData >= lowbar & oldData <= highbar, 2));
 case 'isoutlier'
     % Take out values with the built-in isoutlier() function
-    origInd = find(~isoutlier(oldData));
-    newData = oldData(origInd);
+    origInd = find(all(~isoutlier(oldData), 2));
 case {'fiveStds', 'threeStds', 'twoStds'}
-    % Compute the mean
+    % Compute the mean of each column
     meanX = mean(oldData);
 
-    % Compute the standard deviation
+    % Compute the standard deviation of each column
     stdX = std(oldData);
 
     % Get the number of standard deviations away from the mean
@@ -138,11 +136,18 @@ case {'fiveStds', 'threeStds', 'twoStds'}
         nStds = 2;
     end
 
+    % Compute the high threshold
+    highbar = meanX + nStds * stdX;
+
+    % Compute the low threshold
+    lowbar = meanX - nStds * stdX;
+
     % Only include the points within a nStds standard deviations of the mean
-    origInd = find(oldData >= meanX - nStds * stdX & ...
-                    oldData <= meanX + nStds * stdX);
-    newData = oldData(origInd);
+    origInd = find(all(oldData >= lowbar & oldData <= highbar, 2));
 end
+
+% Extract the new data
+newData = oldData(origInd, :);
 
 %% Plot boxplots for verification
 if plotFlag
@@ -176,6 +181,24 @@ end
 if nargin < 3
     plotFlag = 0;
 end
+
+% Decide on whether each row of data should remain, initially all true
+toleave = true(nRows, 1);
+
+% Take out any rows that contain at least an outlier
+for iRow = 1:nRows
+    if sum([sum(oldData(iRow, :) > highbar), sum(oldData(iRow, :) < lowbar)])
+        toleave(iRow) = false;
+    else
+        toleave(iRow) = true;
+    end
+end
+
+% Find the original indices that will remain
+origInd = find(toleave);
+
+% Get the total number of data points for each group
+nRows = size(oldData, 1);
 
 %}
 

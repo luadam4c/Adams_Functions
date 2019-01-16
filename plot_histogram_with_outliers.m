@@ -8,7 +8,8 @@ function [bars, fig] = plot_histogram_with_outliers (X, varargin)
 %       Note: The bar() function is used for the main histogram
 %               unless 'UseBuiltIn' is set to true
 % Example(s):
-%       plot_histogram_with_outliers([0, 4, 5, 4, 5, 10])
+%       plot_histogram_with_outliers([-100, randn(1, 100) + 4, 100])
+%       plot_histogram_with_outliers([randn(100, 3); [100, -200, 300]])
 % Outputs:
 %       bars        - handles to Bar objects
 %                       bars(1:nGroups) - main histogram
@@ -44,6 +45,12 @@ function [bars, fig] = plot_histogram_with_outliers (X, varargin)
 %                       'cell', 'string', numeric', 'logical', 
 %                           'datetime', 'duration'
 %                   default == the column number for a 2D array
+%                   - 'GroupedStyle': histogram groupedStyle
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'side-by-side'  - same as 'grouped' bar graph
+%                       'stacked'       - same as 'stacked' bar graph
+%                       'overlapped'    - overlapped histograms
+%                   default == 'side-by-side'
 %                   - 'SpecialColor': color of expanded bins
 %                   must be a 3-element numeric vector:
 %                   default == [0 0.8 0.8] (light blue)
@@ -68,8 +75,11 @@ function [bars, fig] = plot_histogram_with_outliers (X, varargin)
 %                   - Any other parameter-value pair for the bar() function
 %
 % Requires:
+%       cd/compute_centers_from_edges.m
 %       cd/compute_grouped_histcounts.m
 %       cd/create_error_for_nargin.m
+%       cd/create_labels_from_numbers.m
+%       cd/force_column_vector.m
 %       cd/plot_grouped_histogram.m
 %       cd/remove_outliers.m
 %
@@ -90,7 +100,7 @@ function [bars, fig] = plot_histogram_with_outliers (X, varargin)
 %% Hard-coded parameters
 validOutlierMethods = {'boxplot', 'isoutlier', ...
                         'fiveStds', 'threeStds', 'twoStds'};
-barWidth = 1;                   % set this to 1 to make bars touch each other
+validGroupedStyles = {'side-by-side', 'stacked', 'overlapped'};
 
 %% Default values for optional arguments
 plotOutliersDefault = true;             % plot outliers by default
@@ -98,6 +108,7 @@ useBuiltInDefault = false;              % use plot_grouped_histogram by default
 countsDefault = [];                     % set later
 edgesDefault = [];                      % set later
 groupingDefault = [];                   % set later
+groupedStyleDefault = 'overlapped';     % grouped bars overlapped by default
 xLimitsDefault = [];                    % set later
 specialColorDefault = [0, 0.8, 0.8];    % light blue
 outlierMethodDefault = 'isoutlier';     % use built-in isoutlier function
@@ -131,6 +142,8 @@ addParameter(iP, 'Edges', edgesDefault, ...
 addParameter(iP, 'Grouping', groupingDefault, ...
     @(x) validateattributes(x, {'cell', 'string', 'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
+addParameter(iP, 'GroupedStyle', groupedStyleDefault, ...
+    @(x) any(validatestring(x, validGroupedStyles)));
 addParameter(iP, 'PlotOutliers', plotOutliersDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'UseBuiltIn', useBuiltInDefault, ...
@@ -149,8 +162,9 @@ parse(iP, X, varargin{:});
 plotOutliers = iP.Results.PlotOutliers;
 useBuiltIn = iP.Results.UseBuiltIn;
 counts = iP.Results.Counts;
-edges = iP.Results.Edges;
+edgesUser = iP.Results.Edges;
 grouping = iP.Results.Grouping;
+groupedStyle = validatestring(iP.Results.GroupedStyle, validGroupedStyles);
 xLimits = iP.Results.XLimits;
 specialColor = iP.Results.SpecialColor;
 outlierMethod = validatestring(iP.Results.OutlierMethod, validOutlierMethods);
@@ -166,71 +180,65 @@ matlabRelease = version('-release');
 % Get the current MATLAB release year
 matlabYear = str2double(matlabRelease(1:4));
 
+% Force rows as columns
+edgesUser = force_column_vector(edgesUser);
+
 %% Identify edges if not provided
-if isempty(edges)
+if isempty(edgesUser)
     if plotOutliers
         % Remove outliers if any
         XTrimmed = remove_outliers(X, 'OutlierMethod', outlierMethod);
 
         % Use compute_grouped_histcounts to find the proper bin edges
         %   or use default
-        [~, edges] = compute_grouped_histcounts(XTrimmed);
+        [~, edgesUser] = compute_grouped_histcounts(XTrimmed, grouping);
     else
-        [~, edges] = compute_grouped_histcounts(X);
+        [~, edgesUser] = compute_grouped_histcounts(X, grouping);
     end
 end
 
 %% Create histogram
 % Extract finite part of edges
-edgesFinite = edges(isfinite(edges));
+edgesFinite = edgesUser(isfinite(edgesUser));
 
-% Expand edges
-if iscolumn(edgesFinite)
-    edgesExpanded = [-Inf; edgesFinite; Inf];
-else
-    edgesExpanded = [-Inf, edgesFinite, Inf];
-end
+% Expand edges for full histogram bin counts
+edgesExpanded = [-Inf; edgesFinite; Inf];
 
 % Compute histogram bincounts with expanded edges
 %   Note: the first bin is always < the first non-Inf number in edges
 %   Note: the last bin is always >= the last non-Inf number in edges
-counts = compute_grouped_histcounts(X, 'Edges', edgesExpanded);
+if isempty(counts)
+    counts = compute_grouped_histcounts(X, grouping, 'Edges', edgesExpanded);
+end
+
+% Decide whether the histogram will be expanded on the left
+%   Note: Either there is data out of range or the user decides to expand
+toExpandOnTheLeft = any(counts(1, :) > 0) || edgesUser(1) == -Inf;
+
+% Decide whether the histogram will be expanded on the right
+%   Note: Either there is data out of range or the user decides to expand
+toExpandOnTheRight = any(counts(end, :) > 0) || edgesUser(end) == Inf;
 
 % Check for out of range data and adjust the bincounts and edges
-expandedOnTheLeft = false;  % whether histogram will be expanded on the left
-expandedOnTheRight = false; % whether histogram will be expanded on the right
-if (counts(1) > 0 || edges(1) == -Inf) && (counts(end) > 0 || edges(end) == Inf)
-        % if data out of range or user specifies so on both sides
-    % Histogram will be expanded on both sides
-    expandedOnTheLeft = true;
-    expandedOnTheRight = true;
-
+if toExpandOnTheLeft && toExpandOnTheRight
     % The new edges are simply the expanded edges
     edgesNew = edgesExpanded;
-elseif counts(1) > 0 || edges(1) == -Inf
-        % if data out of range or user specifies so on the left side only
-    % Histogram will be expanded on the left
-    expandedOnTheLeft = true;
-
+elseif toExpandOnTheLeft && ~toExpandOnTheRight
     % Remove the last bin
-    counts(end) = [];
+    counts(end, :) = [];
 
     % The new edges excludes Inf
     edgesNew = edgesExpanded(1:end-1);
-elseif counts(end) > 0 || edges(end) == Inf
-        % if data out of range or user specifies so on the right side only
-    % Histogram will be expanded on the right
-    expandedOnTheRight = true;
-
+elseif ~toExpandOnTheLeft && toExpandOnTheRight
     % Remove the first bin
-    counts(1) = [];
+    counts(1, :) = [];
 
     % The new edges excludes -Inf
     edgesNew = edgesExpanded(2:end);
-else    % if no data out of range
+else
     % Remove the first and last bins
-    counts(1) = [];
-    counts(end) = [];
+    counts(1, :) = [];
+    counts(end, :) = [];
 
     % The new edges excludes -Inf and Inf
     edgesNew = edgesExpanded(2:end-1);
@@ -252,7 +260,7 @@ end
 
 % Determine the right edge of the histogram
 if edgesNew(end) == Inf             % data out of range on the right
-    % OBSERVATION: The right most finite bin width is used 
+    % Note: The right most finite bin width is used 
     %   by bar() to set the width for the last bin
     rightMostBinWidth = edgesNew(end-1) - edgesNew(end-2);
     
@@ -264,11 +272,7 @@ else                                % nothing out of range on the right
 end
 
 % Update edges for plotting
-if iscolumn(edgesNew)
-    edgesPlot = [leftEdgesPlot; rightMostEdgePlot];
-else
-    edgesPlot = [leftEdgesPlot, rightMostEdgePlot];
-end
+edgesPlot = [leftEdgesPlot; rightMostEdgePlot];
 
 % Set xLimits if not specified
 if isempty(xLimits)
@@ -283,7 +287,7 @@ if useBuiltIn
                       'DisplayName', 'data', otherArguments{:});
                                         % available for R2017a and beyond
     else
-        % Plot histogram by using the bar() function in the 'histc' style
+        % Plot histogram by using the bar() function in the 'histc' groupedStyle
         bars = bar(leftEdgesPlot, counts, 'histc', ...
                 'DisplayName', 'data', otherArguments{:});
     end
@@ -291,22 +295,23 @@ else
     % Allow the option to plot a grouped histogram
     [bars, fig] = ...
         plot_grouped_histogram('Counts', counts, 'Edges', edgesPlot, ...
-                                'FigHandle', figHandle, otherArguments{:});
+                            'Style', groupedStyle, 'FigHandle', figHandle, ...
+                            otherArguments{:});
 end
 
 % Count the number of bars plotted
 nGroups = numel(bars);
 
-% Initialize XTick locations with current locations
+% Initialize x tick locations with old locations
 xTicks = get(gca, 'XTick'); 
 
-% Remove XTicks that are beyond finite range of edges
-%   and initialize XTickLabels with these numbers
+% Remove x ticks that are beyond finite range of edges
+%   and initialize x tick labels with these numbers
 xTicks = xTicks(xTicks >= edgesFinite(1));
 xTicks = xTicks(xTicks <= edgesFinite(end));
 xTickLabelNums = xTicks;
 
-% Update xTicks to include where -Inf and Inf would be placed
+% Update x ticks to include where -Inf and Inf would be placed
 if edgesNew(1) == -Inf              % data out of range on the left
     % Add -Inf as first XTick at edgesPlot(1)
     xTicks = [edgesPlot(1), xTicks];
@@ -317,29 +322,23 @@ if edgesNew(end) == Inf              % data out of range on the right
     xTicks = [xTicks, edgesPlot(end)];
     xTickLabelNums = [xTickLabelNums, Inf];
 end
+
+% Update the x tick locations
 set(gca, 'XTick', xTicks);
-% xticks(xTicks);               % valid for R2016a and beyond
 
-% Update xTickLabels using xTickLabelNums
-if iscolumn(xTickLabelNums)
-    xTickLabels = cellfun(@num2str, mat2cell(xTickLabelNums, ...
-                    ones(1, length(xTickLabelNums), 1)), ...
-                    'UniformOutput', false);
-else
-    xTickLabels = cellfun(@num2str, mat2cell(xTickLabelNums, ...
-                    1, ones(1, length(xTickLabelNums))), ...
-                    'UniformOutput', false);
-end
+% Create x tick labels using xTickLabelNums
+xTickLabels = create_labels_from_numbers(xTickLabelNums);
+
+% Update x tick labels
 set(gca, 'XTickLabel', xTickLabels);
-% xticklabels(xTickLabels);     % valid for R2016a and beyond
 
-% Change bar color of expanded bins to special color
-if ~ishold
-    hold on;
-    wasHold = false;
-else
-    wasHold = true;
-end
+% Store hold status
+wasHold = ishold;
+
+% Hold on
+hold on;
+
+% Plot expanded bins
 if xTickLabelNums(1) == -Inf
     if useBuiltIn
         bars(nGroups + 1) = ...
@@ -349,7 +348,8 @@ if xTickLabelNums(1) == -Inf
                         'DisplayName', 'data too small', otherArguments{:});
     else
         bars(nGroups + 1) = ...
-            bar(mean(edgesPlot(1:2)), counts(1), barWidth, ...
+            bar(mean(edgesPlot(1:2)), sum(counts(1, :)), ...
+                        edgesPlot(2) - edgesPlot(1), ...
                         'FaceAlpha', 1, 'FaceColor', specialColor, ...
                         'DisplayName', 'data too small', otherArguments{:});
     end
@@ -365,13 +365,16 @@ if xTickLabelNums(end) == Inf
                         'DisplayName', 'data too large', otherArguments{:});
     else
         bars(nGroups + 2) = ...
-            bar(mean(edgesPlot(end-1:end)), counts(end), barWidth, ...
+            bar(mean(edgesPlot(end-1:end)), sum(counts(end, :)), ...
+                        edgesPlot(end) - edgesPlot(end-1), ...
                         'FaceAlpha', 1, 'FaceColor', specialColor, ...
                         'DisplayName', 'data too large', otherArguments{:});
     end
 else
     bars(nGroups + 2) = gobjects(1);
 end
+
+% Hold off if it was that way before
 if ~wasHold
     hold off;
 end
@@ -447,6 +450,41 @@ nStds = str2double(outlierMethod(1));
 % Use the built-in histcounts function to find the proper bin edges
 [~, edges] = histcounts(XTrimmed);
 counts = histcounts(X, edgesExpanded);
+
+if iscolumn(xTickLabelNums)
+    xTickLabels = cellfun(@num2str, mat2cell(xTickLabelNums, ...
+                    ones(1, length(xTickLabelNums), 1)), ...
+                    'UniformOutput', false);
+else
+    xTickLabels = cellfun(@num2str, mat2cell(xTickLabelNums, ...
+                    1, ones(1, length(xTickLabelNums))), ...
+                    'UniformOutput', false);
+end
+
+% Initialize x tick locations with bin centers of edgesPlot
+xTicks = compute_centers_from_edges(edgesPlot); 
+
+% Create xTickLabelNums that reflect true bin values
+xTickLabelNums = xTicks;
+if edgesNew(1) == -Inf
+    xTickLabelNums(1) = -Inf;
+end
+if edgesNew(end) == Inf
+    xTickLabelNums(end) = Inf;
+end
+
+barWidth = 1;                   % set this to 1 to make bars touch each other
+
+if iscolumn(edgesFinite)
+    edgesExpanded = [-Inf; edgesFinite; Inf];
+else
+    edgesExpanded = [-Inf, edgesFinite, Inf];
+end
+if iscolumn(edgesNew)
+    edgesPlot = [leftEdgesPlot; rightMostEdgePlot];
+else
+    edgesPlot = [leftEdgesPlot, rightMostEdgePlot];
+end
 
 %}
 

@@ -34,6 +34,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/compute_all_pulse_responses.m
 %       cd/create_default_grouping.m
 %       cd/create_simulation_output_filenames.m
+%       cd/plot_histogram_with_outliers.m
 %       cd/parse_lts.m
 %       cd/plot_struct.m
 %       cd/plot_swd_raster.m
