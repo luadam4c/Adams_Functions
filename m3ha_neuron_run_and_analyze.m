@@ -766,7 +766,7 @@ run_neuron(hocFile, 'SimCommands', simCommands, ...
 
 %% Analyze results
 % Print to standard output
-fprintf('Analyzing results ... \n');
+fprintf('Extracting simulation results ... \n');
 
 % Create an experiment identifier
 expStr = prefix;
