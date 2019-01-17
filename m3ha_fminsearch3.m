@@ -216,6 +216,10 @@ simplexParams = outparams.simplexParams;
 simplexParamNames = outparams.simplexParamNames;
 neuronParamsTableInit = outparams.neuronParamsTable;
 
+% Temporary measure
+% TODO: Change all instances of outFolderName to outFolder
+outparams.outFolder = outFolderName;
+
 %% Preparation
 % Extract from neuronParamsTableInit
 pNames = neuronParamsTableInit.Properties.RowNames;

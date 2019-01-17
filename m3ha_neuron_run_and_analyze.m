@@ -371,6 +371,7 @@ validSimModes = {'active', 'passive'};
 hocFile = 'singleneuron4compgabab.hoc';
 timeToStabilize = 2000;
 maxRowsWithOneOnly = 8;
+verbose = false;
 
 %% Column numbers for recorded data
 %   Note: Must be consistent with ResaveSweeps.m
@@ -766,7 +767,9 @@ run_neuron(hocFile, 'SimCommands', simCommands, ...
 
 %% Analyze results
 % Print to standard output
-fprintf('Extracting simulation results ... \n');
+if verbose
+    fprintf('Extracting simulation results ... \n');
+end
 
 % Create an experiment identifier
 expStr = prefix;
@@ -808,7 +811,9 @@ end
 %   according to a grouping condition
 if bootstrapCprFlag && ~isempty(realData) && strcmpi(simMode, 'passive')
     % Print to standard output
-    fprintf('Bootstrap-averaging results ... \n');
+    if verbose
+        fprintf('Bootstrap-averaging results ... \n');
+    end
 
     % Decide on the combination method
     if bootstrapCprFlag
@@ -850,7 +855,9 @@ end
 % Analyze the responses and compare
 if generateDataFlag
     % Print to standard output
-    fprintf('Analyzing responses ... \n');
+    if verbose
+        fprintf('Analyzing responses ... \n');
+    end
 
     % Compute the sampling interval
     siMs = compute_sampling_interval(tVecs);
@@ -878,7 +885,9 @@ if generateDataFlag
     writetable(featuresTable, featuresFile);
 
     % Print to standard output
-    fprintf('Comparing simulated versus recorded responses ... \n');
+    if verbose
+        fprintf('Comparing simulated versus recorded responses ... \n');
+    end
 
     % Do the appropriate comparison test
     if strcmpi(simMode, 'passive')
