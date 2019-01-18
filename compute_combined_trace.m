@@ -155,10 +155,12 @@ else
 end
 
 %% Make the output the same data type as the input
-if ~iscell(traces) && iscell(combTrace)
-    combTrace = horzcat(combTrace{:});
-elseif iscellnumericvector(traces) && ~iscellnumericvector(combTrace)
-    combTrace = force_column_vector(combTrace);
+if contains(combineMethod, 'boot')
+    if ~iscell(traces) && iscell(combTrace)
+        combTrace = horzcat(combTrace{:});
+    elseif iscellnumericvector(traces) && ~iscellnumericvector(combTrace)
+        combTrace = force_column_vector(combTrace);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -217,17 +219,19 @@ paramsUsed.seeds = seeds;
 paramsUsed.groups = groups;
 
 %% Make the output the same data type as the input
-if ~iscell(traces) && iscell(combTrace)
-    combTrace = horzcat(combTrace{:});
-elseif iscellnumericvector(traces) && ~iscellnumericvector(combTrace)
-    % Force as column vectors
-    combTrace = force_column_vector(combTrace);
-    
-    % Force as column or row cell array
-    if iscolumn(traces)
-        combTrace = force_column_cell(combTrace);
-    else
-        combTrace = force_row_cell(combTrace);
+if contains(combineMethod, 'boot')
+    if ~iscell(traces) && iscell(combTrace)
+        combTrace = horzcat(combTrace{:});
+    elseif iscellnumericvector(traces) && ~iscellnumericvector(combTrace)
+        % Force as column vectors
+        combTrace = force_column_vector(combTrace);
+
+        % Force as column or row cell array
+        if iscolumn(traces)
+            combTrace = force_column_cell(combTrace);
+        else
+            combTrace = force_row_cell(combTrace);
+        end
     end
 end
 

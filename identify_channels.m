@@ -172,6 +172,20 @@ if strcmpi(expMode, 'EEG')
         channelUnits{iChannel} = channelUnitsEEG;
         channelLabels{iChannel} = channelLabelEEG;
     end
+elseif strcmpi(expMode, 'patch') && nChannels == 1
+    % Assume that only PatchCurrent or PatchVoltage is present
+    idxVoltage = identify_voltage_or_current(minimums, maximums, ranges);
+
+    % Set channel types and units accordingly
+    if idxVoltage == 1
+        channelTypes{1} = channelTypePatchVoltage;
+        channelUnits{1} = channelUnitsPatchVoltage;
+        channelLabels{1} = channelLabelPatchVoltage;
+    else
+        channelTypes{1} = channelTypePatchCurrent;
+        channelUnits{1} = channelUnitsPatchCurrent;
+        channelLabels{1} = channelLabelPatchCurrent;
+    end
 elseif strcmpi(expMode, 'patch') && nChannels == 2
     % Assume that only PatchCurrent and PatchVoltage are present
     [idxVoltage, idxCurrent] = ...
