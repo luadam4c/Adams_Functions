@@ -1,22 +1,21 @@
-function [bars, lines, fig] = plot_bar(means, low, high, varargin)
+function [bars, lines, fig] = plot_bar(val, low, high, varargin)
 %% Plots a bar graph (grouped or not) with confidence intervals
-% Usage: [bars, lines, fig] = plot_bar(means, low, high, varargin)
+% Usage: [bars, lines, fig] = plot_bar(val, low, high, varargin)
 % Explanation:
 %       TODO
 % Example:
-%       means = [2 2 3; 2 5 6; 2 8 9; 2 11 12];
-%       low   = means - 1;
-%       high  = means + 1;
-%       [bars, lines] = plot_bar(means, low, high, 'XTickLabel', {'Mark', 'Ashley', 'Katie', 'Adam'});
+%       val = [2 2 3; 2 5 6; 2 8 9; 2 11 12]; low = val - 1; high = val + 1;
+%       [bars, lines, fig] = plot_bar(val, low, high);
+%       [bars, lines, fig] = plot_bar(val, low, high, 'XTickLabel', {'Mark', 'Ashley', 'Katie', 'Adam'});
 % Arguments:
-%       means   - mean values for the bar() function
+%       val   - mean values for the bar() function
 %                   each row is a different group
 %                   each column is a different sample number
 %               must be a numeric array accepted by the bar() function
 %       low     - lower limits of the confidence intervals
-%               must be a vector with numel same as the number of columns in means
+%               must be a vector with numel same as the number of columns in val
 %       high    - upper limits of the confidence intervals
-%               must be a vector with numel same as the number of columns in means
+%               must be a vector with numel same as the number of columns in val
 %       varargin    - 'BarSeparation': TODO
 %                   - 'CIBarWidth': TODO
 %                   - 'CILineWidth': TODO
@@ -31,6 +30,8 @@ function [bars, lines, fig] = plot_bar(means, low, high, varargin)
 %   
 %
 % Requires:
+%       cd/argfun.m
+%       cd/force_column_vector.m
 %       cd/struct2arglist.m
 %       /home/Matlab/Downloaded_Functions/rgb.m
 %
@@ -48,12 +49,15 @@ function [bars, lines, fig] = plot_bar(means, low, high, varargin)
 % 2019-01-15 - Renamed bar_w_CI.m -> plot_bar.m
 % 2019-01-15 - Added otherArguments
 % 2019-01-15 - Made h -> 'FigHandle' an optional argument
+% TODO: Update the code to use plot_horizontal_line.m and plot_vertical_line.m
+% TODO: If 'TreatVectorAsArray' is true, don't force all vectors as column vectors
 % TODO: Add 'BarColors' as an optional argument
 % TODO: Change usage in all functions using this
-% TODO: Update the code to use plot_horizontal_line.m and plot_vertical_line.m
 % 
 
 %% Hard-coded parameters
+% TODO: Make this an optional parameter
+treatVectorAsArray = false;
 
 %% Default values for optional arguments
 cILineWidthDefault = 2;                 % default line width for CIs
@@ -73,7 +77,7 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'means', ...                 % means
+addRequired(iP, 'val', ...                  % values
     @(x) validateattributes(x, {'numeric'}, {'nonempty'}));
 addRequired(iP, 'low', ...                  % low limit of CI
     @(x) validateattributes(x, {'numeric'}, {'nonempty'}));
@@ -97,7 +101,7 @@ addParameter(iP, 'XTickAngle', '', ...
 addParameter(iP, 'FigHandle', figHandleDefault);
 
 % Read from the Input Parser
-parse(iP, means, low, high, varargin{:});
+parse(iP, val, low, high, varargin{:});
 barSeparation = iP.Results.BarSeparation;
 cIBarWidth = iP.Results.CIBarWidth;
 cILineWidth = iP.Results.CILineWidth;
@@ -111,11 +115,26 @@ figHandle = iP.Results.FigHandle;
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
+% Force column vectors as column vectors
+%   Note: This will cause each value of a vector to be plotted as separately
+%           colored bars
+if ~treatVectorAsArray
+    [val, low, high] = ...
+        argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', true), ...
+                val, low, high);
+end
+
 % Count the number of rows (groups)
-nRows = size(means, 1);
+nRows = size(val, 1);
 
 % Count the number of columns (samples)
-nCols = size(means, 2);
+nCols = size(val, 2);
+
+% Decide whether there is only one group
+singleGroup = nRows == 1;
+
+% Decide whether there is one sample per group
+oneSamplePerGroup = nCols == 1;
 
 % Set the default bar separation
 if isempty(barSeparation)
@@ -131,20 +150,35 @@ if isempty(cIBarWidth)
     end
 end
 
-% Set the default confidence interval bar color
+% Set the default confidence interval line color
 if isempty(cIColor)
     if nRows == 1
+        % All bars are the same color, so use red
         cIColor = 'r';
     else
+        % All bars are different colors, so use black
         cIColor = 'k';
+    end
+end
+
+% Set the default x values
+if isempty(xValues)
+    if nCols == 1
+        % One sample per group, so use group numbers
+        xValues = 1:nRows;
+    else
+        % Many samples per group, so use sample numbers
+        xValues = 1:nCols;
     end
 end
 
 % Set the default x tick angle
 if isempty(xTickAngle)
-    if nRows == 1
+    if singleGroup
+        % One group only, so make the tick labels slanted
         xTickAngle = 75;
     else
+        % Multiple groups, so no need to slant tick labels
         xTickAngle = 0;
     end
 end
@@ -154,13 +188,17 @@ end
 if isempty(figHandle)
     set(0, 'CurrentFigure', figHandle);
 end
-fig = gcf
+fig = gcf;
 
 % Draw bar graph
-if isempty(xValues)
-    bars = bar(means, otherArguments{:});
+if oneSamplePerGroup
+    % One sample per group, but the bar() function
+    %   will automatically construe it as one group. 
+    %   Therefore, plot a stacked grouped bar graph to do the trick
+    bars = bar(xValues, diag(val), 'stacked', otherArguments{:});
 else
-    bars = bar(xValues, means, otherArguments{:});
+    % Just use the bar() function
+    bars = bar(xValues, val, otherArguments{:});
 end
 
 % Set the color for each Bar object
@@ -179,10 +217,10 @@ xtickangle(xTickAngle);
 
 % Plot error bars
 hold on;
-if nRows == 1       % Data is not grouped
-       
-    for iCol = 1:nCols              % for each column
+if singleGroup
+    for iCol = 1:nCols                  % for each sample
         % Draw error bar
+        % TODO: function plot_error_bar(x, yLow, yHigh, 'BarWidth', barWidth)
         xPos = iCol; 
         lines(1, iCol) = line(xPos * ones(1, 2), ...
                         [low(iCol), high(iCol)], ...
@@ -195,10 +233,10 @@ if nRows == 1       % Data is not grouped
                         'Color', cIColor, 'LineWidth', cILineWidth);
     end
 else                % Data is grouped
-    for iRow = 1:nRows                  % for each row
-        for iCol = 1:nCols              % for each column
+    for iRow = 1:nRows                  % for each group
+        for iCol = 1:nCols              % for each sample
             % Draw error bar
-            xPos = iRow + (iCol - (nCols+1)/2) * barSeparation; 
+            xPos = iRow + (iCol - (nCols + 1) / 2) * barSeparation; 
             lines(1, iCol, iRow) = ...
                 line(xPos * ones(1, 2), ...
                     [low(iRow, iCol), high(iRow, iCol)], ...
@@ -227,6 +265,15 @@ barColor = 'blue';
     %% bars.FaceColor = rgb(barColor);
 
 %% bars.CData = colormap(lines(nCols));    % TODO: Not working!
+
+% Set the default confidence interval bar color
+if isempty(cIColor)
+    if nRows == 1
+        cIColor = 'r';
+    else
+        cIColor = 'k';
+    end
+end
 
 %}
 

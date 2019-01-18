@@ -70,14 +70,14 @@ h = gcf;
 % Multiple plots
 hold on;
 
-% Plot soma
+% Plot soma as a circle
 objects(1) = rectangle('Position', radiusSoma * [-1, -1, 2, 2], ...
-                        'Curvature', [1 1], 'EdgeColor', edgeColor);
+                        'Curvature', [1, 1], 'EdgeColor', edgeColor);
 
-% Plot dendrite
+% Plot dendrite as a rectangle
 objects(2) = rectangle('Position', [radiusSoma, -radiusDend, ...
                         lengthDend, 2*radiusDend], ...
-                        'Curvature', [0 0], 'EdgeColor', edgeColor);
+                        'Curvature', [0, 0], 'EdgeColor', edgeColor);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
