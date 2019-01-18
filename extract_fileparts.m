@@ -4,7 +4,8 @@ function parts = extract_fileparts (paths, partType, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       TODO
+%       [~, paths] = all_files('Directory', pwd);
+%       extract_fileparts(paths, 'distinct')
 % Outputs:
 %       parts       - parts extracted
 %                   specified as a character array 

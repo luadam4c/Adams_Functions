@@ -1,8 +1,8 @@
 function isCellVector = iscellvector (x)
-%% Returns whether an input is a cell array of non-cell vectors (may be empty)
+%% Returns whether an input is a cell array of vectors (may be empty)
 % Usage: isCellVector = iscellvector (x)
 % Explanation:
-%       Tests whether the input is a cell array of non-cell vectors
+%       Tests whether the input is a cell array of vectors
 % Example(s):
 %       iscellvector({1:10, 2:20})
 %       iscellvector({magic(3), 2:20})
@@ -23,8 +23,7 @@ function isCellVector = iscellvector (x)
 %       cd/extract_columns.m
 
 % File History:
-% 2019-01-04 Adapted from iscellnumericvector.m
-% 2019-01-10 Updated definition so that cell arrays are not vectors
+% 2019-01-18 Adapted from iscellnonvector.m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -36,8 +35,7 @@ if nargin < 1
 end
 
 %% Do the job
-isCellVector = iscell(x) && ...
-                all(all(all(cellfun(@(x) isvector(x) && ~iscell(x), x))));
+isCellVector = iscell(x) && all(all(all(cellfun(@isvector, x))));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
