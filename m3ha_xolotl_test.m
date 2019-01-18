@@ -135,7 +135,9 @@ m3ha_xolotl_plot(m3ha, 'DataToCompare', dataToCompare, ...
 m3ha.manipulate_plot_func = {@m3ha_xolotl_plot};
 
 % Manipulate leak channel parameters
-m3ha.manipulate('*gbar')
+m3ha.manipulate({'soma.len', 'soma.radius', 'soma.Cm', ...
+                 'soma.Leak.gbar', 'soma.Leak.E'})
+% m3ha.manipulate('*gbar')
 % m3ha.manipulate('*Leak*')
 % m3ha.manipulate('*E')
 % m3ha.manipulate({'*Leak*', '*length*'})
