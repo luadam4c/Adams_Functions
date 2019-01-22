@@ -1,7 +1,10 @@
 function varargout = parse_lts (vVec0s, siMs, varargin)
-%% Find, plot and classify the most likely low-threshold spike (LTS) candidate in a voltage trace
+%% Finds, plots and classifies the most likely low-threshold spike (LTS) candidate in a voltage trace
 % Usage: [parsedParams, parsedData] = parse_lts (tVec0, vVec0, varargin)
-
+% Explanation:
+%       TODO
+% Examples:
+%       TODO
 % Outputs: 
 %       parsedParams    - a table containing the parsed parameters, 
 %                           each row corresponding to a vector, with fields:

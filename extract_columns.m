@@ -50,7 +50,7 @@ function varargout = extract_columns (arrays, varargin)
 %       cd/force_column_cell.m
 %       cd/match_dimensions.m
 %       cd/iscellnumeric.m
-%       cd/iscellvector.m
+%       cd/iscellnumericvector.m
 %       cd/ispositiveintegerarray.m
 %
 % Used by:    
@@ -70,6 +70,7 @@ function varargout = extract_columns (arrays, varargin)
 % 2019-01-12 Now considers cell arrays of numeric vectors 
 %               as a single array when 'TreatCnvAsColumns' is true
 % 2019-01-13 Added 'AsRowVectors' as an optional argument
+% 2019-01-22 Now uses iscellnumericvector instead of iscellvector
 
 %% Hard-coded parameters
 validOutputModes = {'multiple', 'single'};
@@ -192,7 +193,7 @@ end
 if iscell(colNums) || isnumeric(colNums)
     % Only need to match dimensions if there are multiple arrays
     if iscell(arrays) && ~treatCellAsArray && ...
-            ~(treatCnvAsColumns && iscellvector(arrays))
+            ~(treatCnvAsColumns && iscellnumericvector(arrays))
         % Force as a cell array if not already so
         colNums = force_column_cell(colNums);
 
@@ -259,7 +260,7 @@ function colExtracted = extract_columns_helper(colNums, arrays, ...
 %% Extract the columns depending on the number of arrays
 
 if treatCellAsArray || ~iscell(arrays) || ...
-        (treatCnvAsColumns && iscellvector(arrays))
+        (treatCnvAsColumns && iscellnumericvector(arrays))
     % Treat arrays as a single array
     colExtracted = arrayfun(@(x) extract_from_one_array(x, arrays, ...
                                     treatCellAsArray, treatCnvAsColumns, ...
@@ -309,7 +310,7 @@ function colExtracted = extract_from_one_array(colNum, array, ...
 %% Extract a specific column from a specific array
 
 if treatCellAsArray || ~iscell(array) || ...
-        treatCnvAsColumns && iscellvector(array)
+        treatCnvAsColumns && iscellnumericvector(array)
     % Extract the column
     if treatCellAsArray || ~iscell(array)
         % Treat array as a non-cell array

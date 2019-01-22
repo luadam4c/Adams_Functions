@@ -40,7 +40,7 @@ function nSamples = count_samples (vectors, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/iscellvector.m
+%       cd/iscellnumericvector.m
 %       cd/force_column_vector.m
 %       cd/match_row_count.m
 %
@@ -67,6 +67,7 @@ function nSamples = count_samples (vectors, varargin)
 % 2019-01-04 Now uses isnum.m
 % 2019-01-04 Added 'TreatCellAsArray' (default == 'false')
 % 2019-01-04 Added 'TreatCellStrAsArray' (default == 'true')
+% 2019-01-22 Now uses iscellnumericvector instead of iscellvector
 % 
 
 %% Default values for optional arguments
@@ -117,7 +118,7 @@ treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 if iscell(vectors) && ~treatCellAsArray && ...
         ~(iscellstr(vectors) && treatCellStrAsArray)
     % Count samples in each cell
-    if iscellvector(vectors) || treatMatrixAsVector || ...
+    if iscellnumericvector(vectors) || treatMatrixAsVector || ...
             iscellstr(vectors) && ~treatCellStrAsArray
         % Count the number of elements for each vector in each cell
         nSamples = cellfun(@numel, vectors);

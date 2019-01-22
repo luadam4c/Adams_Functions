@@ -35,7 +35,7 @@ function nVectors = count_vectors (vectors, varargin)
 %                   default == true
 %
 % Requires:
-%       cd/iscellvector.m
+%       cd/iscellnumericvector.m
 %       cd/force_column_vector.m
 %
 % Used by:
@@ -63,6 +63,7 @@ function nVectors = count_vectors (vectors, varargin)
 % 2018-01-03 Added 'ForceColumnOutput' as an optional argument with default true
 % 2019-01-04 Added 'TreatCellAsArray' (default == 'false')
 % 2019-01-04 Added 'TreatCellStrAsArray' (default == 'true')
+% 2019-01-22 Now uses iscellnumericvector instead of iscellvector
 % 
 
 %% Default values for optional arguments
@@ -113,7 +114,7 @@ treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 if iscell(vectors) && ~treatCellAsArray && ...
         ~(iscellstr(vectors) && treatCellStrAsArray)
     % Count number of vectors
-    if iscellvector(vectors) || treatMatrixAsVector || ...
+    if iscellnumericvector(vectors) || treatMatrixAsVector || ...
             iscellstr(vectors) && ~treatCellStrAsArray
         % Count number of cells
         nVectors = numel(vectors);

@@ -22,7 +22,10 @@ function isCellNumericVector = iscellnumericvector (x)
 %       cd/compute_rms_error.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
+%       cd/count_samples.m
+%       cd/count_vectors.m
 %       cd/create_average_time_vector.m
+%       cd/extract_columns.m
 %       cd/extract_elements.m
 
 % File History:

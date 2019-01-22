@@ -262,16 +262,20 @@ if isempty(data) || isempty(siUs) || isempty(fileInfo)
     % Load abf file, si is in us
     if exist('abf2load', 'file') == 2
         try
-            [data, siUs, fileInfo] = abf2load(abfFullFileName);
+            [data, siUs, fileInfo] = abf3load(abfFullFileName);
         catch
             try
-                [data, siUs, fileInfo] = abfload(abfFullFileName);
-            catch ME
-                fprintf('The file %s cannot be read by either %s or %s!\n', ...
-                        abfFullFileName, 'abf2load', 'abfload');
-                parsedParams = [];
-                parsedData = [];
-                return
+                [data, siUs, fileInfo] = abf2load(abfFullFileName);
+            catch
+                try
+                    [data, siUs, fileInfo] = abfload(abfFullFileName);
+                catch ME
+                    fprintf('The file %s cannot be read by either %s or %s or %s!\n', ...
+                            abfFullFileName, 'abf3load', 'abf2load', 'abfload');
+                    parsedParams = [];
+                    parsedData = [];
+                    return
+                end
             end
         end
     elseif exist('abfload', 'file') == 2
