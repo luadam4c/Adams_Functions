@@ -46,6 +46,10 @@ function [combTrace, paramsUsed] = ...
 %                                           as many one-element vectors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'ConsistentFormat': whether output format is consistent 
+%                                           with input format
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true for combineMethod 'boot*'
 %                   - 'Grouping': a grouping vector used to group traces
 %                   must be a vector
 %                   default == []
@@ -83,6 +87,7 @@ function [combTrace, paramsUsed] = ...
 % 2019-01-12 Added 'Grouping' as an optional parameter
 % 2019-01-12 Added 'first', 'last' as valid combine methods
 % 2019-01-12 Added 'bootmeans', 'bootmax', 'bootmin as valid combine methods
+% 2019-01-22 Added 'ConsistentFormat' as an optional parameter
 % TODO: Make 'Seeds' an optional argument
 % 
 
@@ -99,6 +104,7 @@ nSamplesDefault = [];               % set later
 alignMethodDefault = 'leftadjust';  % align to the left by default
 treatRowAsMatrixDefault = false;    % treat a row vector as a vector by default
 groupingDefault = [];               % no grouping by default
+consistentFormatDefault = [];       % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -128,6 +134,8 @@ addParameter(iP, 'AlignMethod', alignMethodDefault, ...
     @(x) any(validatestring(x, validAlignMethods)));
 addParameter(iP, 'TreatRowAsMatrix', treatRowAsMatrixDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ConsistentFormat', consistentFormatDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'2d'}));
 addParameter(iP, 'Grouping', groupingDefault);
 
 % Read from the Input Parser
@@ -135,27 +143,40 @@ parse(iP, traces, combineMethod, varargin{:});
 nSamples = iP.Results.NSamples;
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 treatRowAsMatrix = iP.Results.TreatRowAsMatrix;
+consistentFormat = iP.Results.ConsistentFormat;
 grouping = iP.Results.Grouping;
 
 % Validate combine method
 combineMethod = validatestring(combineMethod, validCombineMethods);
+
+%% Preparation
+% Decide whether to make the output the same format as the input
+if isempty(consistentFormat)
+    if contains(combineMethod, 'boot')
+        consistentFormat = true;
+    else
+        consistentFormat = false;
+    end
+end
 
 %% Do the job
 if iscellnumericvector(traces) || ~iscell(traces)
     % Compute combined trace for a set of vectors
     [combTrace, paramsUsed] = ...
         compute_combined_trace_helper(traces, nSamples, grouping, seeds, ...
-                                alignMethod, combineMethod, treatRowAsMatrix);
+                                alignMethod, combineMethod, ...
+                                treatRowAsMatrix, consistentFormat);
 else
     % Compute combined traces for many sets of vectors
     [combTrace, paramsUsed] = ...
         cellfun(@(x) compute_combined_trace_helper(x, nSamples, grouping, ...
-                    seeds, alignMethod, combineMethod, treatRowAsMatrix), ...
+                    seeds, alignMethod, combineMethod, ...
+                    treatRowAsMatrix, consistentFormat), ...
                 traces, 'UniformOutput', false);
 end
 
-%% Make the output the same data type as the input
-if contains(combineMethod, 'boot')
+%% Make the output the same format as the input
+if consistentFormat
     if ~iscell(traces) && iscell(combTrace)
         combTrace = horzcat(combTrace{:});
     elseif iscellnumericvector(traces) && ~iscellnumericvector(combTrace)
@@ -167,7 +188,8 @@ end
 
 function [combTrace, paramsUsed] = ...
         compute_combined_trace_helper(traces, nSamples, grouping, seeds, ...
-                                alignMethod, combineMethod, treatRowAsMatrix)
+                                    alignMethod, combineMethod, ...
+                                    treatRowAsMatrix, consistentFormat)
 
 %% Preparation
 % Force any row vector to be a column vector
@@ -218,8 +240,9 @@ paramsUsed.nSamples = nSamples;
 paramsUsed.seeds = seeds;
 paramsUsed.groups = groups;
 
-%% Make the output the same data type as the input
-if contains(combineMethod, 'boot')
+%% Make the output the same format as the input
+% TODO: Modify match_format_vector_sets.m
+if consistentFormat
     if ~iscell(traces) && iscell(combTrace)
         combTrace = horzcat(combTrace{:});
     elseif iscellnumericvector(traces) && ~iscellnumericvector(combTrace)
@@ -241,6 +264,9 @@ function [combTraces, groups, seedsOut] = ...
                 compute_combined_trace_each_group(traces, grouping, ...
                                                     combineMethod, seedsIn)
 %% Computes a combined trace for each group separately
+
+% Initialize seedsOut
+seedsOut = struct('Type', '', 'Seed', NaN, 'State', NaN);
 
 % Find unique grouping values
 groups = unique(grouping, 'stable');
@@ -264,7 +290,6 @@ end
 
 % Combine traces from each group separately
 combTraceEachGroup = cell(nGroups, 1);
-seedsOut = struct('Type', '', 'Seed', NaN, 'State', NaN);
 parfor iGroup = 1:nGroups    
     % Get all indices with the current grouping value
     indThisGroup = find_in_list(groups(iGroup), grouping, ...

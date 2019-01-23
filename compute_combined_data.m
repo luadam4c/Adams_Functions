@@ -12,8 +12,9 @@ function [dataAvg, groups] = ...
 %           out of each group is extracted
 %       By default, a single set of vectors is considered as one sweep
 % Example(s):
-%       compute_combined_data({magic(3) + 10, magic(3), magic(3) + 20}, 'mean', 'Grouping', {'b', 'a', 'b'}, 'ColNumToCombine', 2:3)
-%       compute_combined_data({magic(3) + 10, magic(3), magic(3) + 20}, 'bootmean', 'Grouping', {'b', 'a', 'b'}, 'ColNumToCombine', 2:3)
+%       compute_combined_data({randi(10, 10, 1) + 10, randi(10, 10, 1), randi(10, 10, 1) + 30}, 'mean', 'Grouping', {'b', 'a', 'b'}, 'ColNumToCombine', 1)
+%       compute_combined_data({magic(3) + 10, magic(3), magic(3) + 30}, 'mean', 'Grouping', {'b', 'a', 'b'}, 'ColNumToCombine', 2:3)
+%       compute_combined_data({magic(3) + 10, magic(3), magic(3) + 30}, 'bootmean', 'Grouping', {'b', 'a', 'b'}, 'ColNumToCombine', 2:3)
 % Outputs:
 %       dataAvg     - data averaged
 %                   specified as a numeric array
@@ -153,7 +154,7 @@ vecsOfInterest = dataSeparated(colNumToCombine);
 
 % Average over traces from each group separately
 vecsAvg = compute_combined_trace(vecsOfInterest, combineMethod, ...
-                                'Grouping', grouping);
+                                'Grouping', grouping, 'ConsistentFormat', true);
 
 % Store averaged vectors in dataAvgSeparated
 dataAvgSeparated(colNumToCombine) = vecsAvg;

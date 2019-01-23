@@ -6,6 +6,7 @@ function vectorsCell = force_row_cell (vectorsOrig, varargin)
 %
 % Example(s):
 %       load_examples;
+%       force_row_cell(1:5)
 %       force_row_cell(myCellNumeric2D)
 %       force_row_cell(myCellColumnVecs)
 %       force_row_cell(myCellRowVecs)

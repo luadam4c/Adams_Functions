@@ -40,6 +40,9 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %                   - 'RowInstead': whether to force as row vector instead
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'RowInstead': whether to force as row vector instead
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -78,6 +81,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 % 2019-01-04 Fixed bug
 % 2019-01-09 Now forces string arrays to become cell arrays of character vectors
 % 2019-01-13 Added 'RowInstead' as an optional argument
+% 2019-01-22 Now makes the vector format consistent
 % 
 
 %% Default values for optional arguments
@@ -139,13 +143,24 @@ elseif ~iscell(vectorsOrig) || ...
         iscell(vectorsOrig) && ~isvector(vectorsOrig) && ~toLinearize
     % Force any non-cell vector as a column vector
     if ~iscell(vectorsOrig)
+        % If vectorsOrig is a row vector, columns will be extract as row vectors
+        if isrow(vectorsOrig)
+            asRowVectors = true;
+        else
+            asRowVectors = false;
+        end
+        
+        % Force as a column vector
         vectorsOrig = force_column_vector(vectorsOrig, 'IgnoreNonVectors', true);
+    else
+        % Columns will be extract as column vectors
+        asRowVectors = false;
     end
 
     % Extract as a cell array
     vectorsCell = extract_columns(vectorsOrig, 'all', ...
                             'OutputMode', 'single', 'TreatCellAsArray', true, ...
-                            'AsRowVectors', rowInstead);
+                            'AsRowVectors', asRowVectors);
 
     % Pass to this function again
     vectorsCell = force_column_cell(vectorsCell, 'ToLinearize', toLinearize, ...
@@ -183,6 +198,11 @@ elseif ischar(vectorsOrig) || isnum(vectorsOrig) && isempty(vectorsOrig)
 %       cd/isnum.m
 addRequired(iP, 'vectorsOrig', ...
     @(x) isnum(x) || iscell(x) || ischar(x) || isstring(x));
+
+% Extract as a cell array
+vectorsCell = extract_columns(vectorsOrig, 'all', ...
+                        'OutputMode', 'single', 'TreatCellAsArray', true, ...
+                        'AsRowVectors', rowInstead);
 
 %}
 

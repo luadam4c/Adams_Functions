@@ -68,6 +68,7 @@ function nSamples = count_samples (vectors, varargin)
 % 2019-01-04 Added 'TreatCellAsArray' (default == 'false')
 % 2019-01-04 Added 'TreatCellStrAsArray' (default == 'true')
 % 2019-01-22 Now uses iscellnumericvector instead of iscellvector
+% 2019-01-22 Now returns 0 if vectors is empty
 % 
 
 %% Default values for optional arguments
@@ -115,7 +116,9 @@ treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 
 %% Do the job
 % Decide based on input type
-if iscell(vectors) && ~treatCellAsArray && ...
+if isempty(vectors)
+    nSamples = 0;
+elseif iscell(vectors) && ~treatCellAsArray && ...
         ~(iscellstr(vectors) && treatCellStrAsArray)
     % Count samples in each cell
     if iscellnumericvector(vectors) || treatMatrixAsVector || ...
