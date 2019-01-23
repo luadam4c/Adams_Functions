@@ -25,6 +25,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/extract_subvectors.m
 %
 % Used by:
+%       cd/compute_combined_data.m
 %       cd/compute_combined_trace.m
 %       cd/create_indices.m
 %       cd/find_window_endpoints.m
@@ -33,8 +34,15 @@ function vecs = force_matrix (vecs, varargin)
 
 % File History:
 % 2019-01-03 Created by Adam Lu
+% 2019-01-22 Added a quick return for performance
 % TODO: Restrict the number of samples if provided
 % 
+
+%% Quick return for performance
+% Do nothing if already a matrix
+if ~iscell(vecs) && ismatrix(vecs)
+    return
+end
 
 %% Hard-coded parameters
 validAlignMethods = {'leftAdjust', 'rightAdjust', ...
@@ -67,11 +75,6 @@ parse(iP, vecs, varargin{:});
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 
 %% Do the job
-% Do nothing if already a matrix
-if ~iscell(vecs) && ismatrix(vecs)
-    return
-end
-
 % Extract vectors padded on the right
 %   Note: don't do this if alignMethod is set to none
 %           Otherwise, extract_subvectors.m uses create_indices.m,

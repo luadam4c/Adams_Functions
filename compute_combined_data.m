@@ -37,6 +37,7 @@ function [dataAvg, groups] = ...
 %       cd/create_error_for_nargin.m
 %       cd/create_indices.m
 %       cd/extract_columns.m
+%       cd/force_matrix.m
 %       cd/isnum.m
 %       cd/iscellvector.m
 %
@@ -46,6 +47,8 @@ function [dataAvg, groups] = ...
 
 % File History:
 % 2019-01-12 Adapted from code in m3ha_import_raw_traces.m
+% 2019-01-22 Now uses force_matrix.m
+% 2019-01-22 Fixed bugs for counting vectors
 % 
 
 %% Hard-coded parameters
@@ -174,7 +177,7 @@ end
 dataAvgSeparated(colNumOther) = vecsFirst;
 
 %  Count the number of vectors in each cell of dataOrig
-nOutputs = count_vectors(dataAvgSeparated);
+nOutputs = cellfun(@count_vectors, dataAvgSeparated);
 
 % Generate a vector of output numbers
 allOutNums = create_indices('IndexEnd', min(nOutputs));
@@ -184,7 +187,8 @@ allOutNums = create_indices('IndexEnd', min(nOutputs));
 dataAvg = extract_columns(dataAvgSeparated, allOutNums, ...
                                 'OutputMode', 'single', ...
                                 'TreatCnvAsColumns', true);
-dataAvg = cellfun(@(x) horzcat(x{:}), dataAvg, 'UniformOutput', false);
+dataAvg = cellfun(@(x) force_matrix(x, 'AlignMethod', 'none'), ...
+                    dataAvg, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -216,6 +220,8 @@ vecsFirst = cellfun(@(x) repmat(x(1), nGroups, 1), vecsOther, ...
 dataAvg = cellfun(@(x) horzcat(x{:}), dataAvgSeparated, ...
                     'UniformOutput', false);
 dataAvg = extract_columns(dataAvg, allGroupNums, 'OutputMode', 'single');
+
+dataAvg = cellfun(@(x) horzcat(x{:}), dataAvg, 'UniformOutput', false);
 
 %}
 
