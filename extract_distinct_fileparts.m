@@ -30,6 +30,7 @@ function distinctParts = extract_distinct_fileparts (paths, varargin)
 
 % File History:
 % 2018-12-27 Moved from extract_fileparts.m
+% 2019-01-23 Fixed the case where commonSuffix is empty
 % 
 
 %% Hard-coded parameters
@@ -73,14 +74,18 @@ relativePaths = extractAfter(paths, commonParent);
 % Extract the file extensions
 fileExt = extract_fileparts(relativePaths, 'extension');
 
-% Remove the file extensions
-distinctParts = extractBefore(relativePaths, fileExt);
+% Remove the file extensions if not empty
+if ~isemptycell(fileExt)
+    distinctParts = extractBefore(relativePaths, fileExt);
+end
 
 % Extract the common suffix
 commonSuffix = extract_common_suffix(distinctParts, 'KeepDelimiter', true);
 
-% Remove the common suffix
-distinctParts = extractBefore(distinctParts, commonSuffix);
+% Remove the common suffix if not empty
+if ~isempty(commonSuffix)
+    distinctParts = extractBefore(distinctParts, commonSuffix);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -6,6 +6,7 @@ function indices = create_indices (varargin)
 % Example(s):
 %       create_indices([2, 5])
 %       create_indices([2; 5])
+%       create_indices([[2; 2], [3; 3]])
 %       create_indices({[2, 5], [2, 5]})
 %       create_indices({[2; 5]; [2; 5]})
 %       create_indices('IndexEnd', 5)
@@ -76,6 +77,8 @@ function indices = create_indices (varargin)
 % 2019-01-13 Added 'ForceRowOutput' as an optional argument
 % 2019-01-04 Added 'TreatCellAsArray' (default == 'false')
 % 2019-01-04 Added 'TreatCellStrAsArray' (default == 'true')
+% 2019-01-23 Now avoids putting indices together as a matrix if there is
+%               only one index per vector
 
 %% Hard-coded parameters
 
@@ -247,12 +250,16 @@ else
     indices = arrayfun(@(x, y) transpose(x:y), idxStart, idxEnd, ...
                     'UniformOutput', false);
 
-    % Count the number of samples in each vector
+    % Count the number of samples in each indices vector
     nSamples = count_samples(indices);
 
-    % If the number of samples are all the same, combine the vectors
+    % Extract unique number of samples
+    uniqueNSamples = unique(nSamples);
+    
+    % If the number of samples are all the same across all indices vectors
+    %   unless all nSamples is one
     %   Note: 'AlignMethod' must be 'none' to prevent infinite loop
-    if numel(unique(nSamples)) == 1
+    if numel(uniqueNSamples) == 1 && uniqueNSamples ~= 1
         indices = force_matrix(indices, 'AlignMethod', 'none');
     end
 end
