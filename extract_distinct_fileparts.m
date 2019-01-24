@@ -23,6 +23,7 @@ function distinctParts = extract_distinct_fileparts (paths, varargin)
 %       cd/extract_common_directory.m
 %       cd/extract_fileparts.m
 %       cd/extract_common_suffix.m
+%       cd/isemptycell.m
 %
 % Used by:
 %       cd/extract_fileparts.m
@@ -75,8 +76,10 @@ relativePaths = extractAfter(paths, commonParent);
 fileExt = extract_fileparts(relativePaths, 'extension');
 
 % Remove the file extensions if not empty
-if ~isemptycell(fileExt)
+if ~isempty(fileExt) && ~all(isemptycell(fileExt))
     distinctParts = extractBefore(relativePaths, fileExt);
+else
+    distinctParts = relativePaths;    
 end
 
 % Extract the common suffix

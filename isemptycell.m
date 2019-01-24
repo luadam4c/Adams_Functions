@@ -20,6 +20,7 @@ function isEmpty = isemptycell (cellArray)
 %       cd/compute_rms_error.m
 %       cd/create_indices.m
 %       cd/distribute_balls_into_boxes.m
+%       cd/extract_distinct_fileparts.m
 %       cd/find_in_strings.m
 %       cd/istype.m
 %       cd/m3ha_plot_individual_traces.m
