@@ -220,7 +220,9 @@ end
 % Create indices if not provided
 if isempty(indices)
     indices = create_indices(endPoints, 'Vectors', vecs, ...
-                            'IndexStart', indexStart, 'IndexEnd', indexEnd);
+                            'IndexStart', indexStart, 'IndexEnd', indexEnd, ...
+                            'TreatCellAsArray', treatCellAsArray, ...
+                            'TreatCellStrAsArray', treatCellStrAsArray);
 end
 
 % If there is a alignment method used, apply it to indices

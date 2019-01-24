@@ -64,7 +64,7 @@ function nVectors = count_vectors (vectors, varargin)
 % 2019-01-04 Added 'TreatCellAsArray' (default == 'false')
 % 2019-01-04 Added 'TreatCellStrAsArray' (default == 'true')
 % 2019-01-22 Now uses iscellnumericvector instead of iscellvector
-% 
+% 2019-01-23 Now maintains uniform output if possible
 
 %% Default values for optional arguments
 forceColumnOutputDefault = true;    % force output as a column by default
@@ -119,8 +119,15 @@ if iscell(vectors) && ~treatCellAsArray && ...
         % Count number of cells
         nVectors = numel(vectors);
     else
-        % TODO: the case when not uniform output
-        nVectors = cellfun(@count_vectors, vectors);
+        % Count the number of vectors in each cell,
+        %   maintaining uniform output if possible
+        try
+            nVectors = cellfun(@count_vectors, vectors, ...
+                                'UniformOutput', true);
+        catch
+            nVectors = cellfun(@count_vectors, vectors, ...
+                                'UniformOutput', false);
+        end
     end
 else
     if treatMatrixAsVector || isvector(vectors) && ~treatRowAsMatrix

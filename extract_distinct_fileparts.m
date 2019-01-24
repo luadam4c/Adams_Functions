@@ -4,7 +4,8 @@ function distinctParts = extract_distinct_fileparts (paths, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       TODO
+%       [~, paths] = all_files;
+%       extract_distinct_fileparts(paths)
 % Outputs:
 %       distinctParts   - distinct parts of the file paths
 %                       specified as a TODO

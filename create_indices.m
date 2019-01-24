@@ -5,6 +5,9 @@ function indices = create_indices (varargin)
 %       TODO
 % Example(s):
 %       create_indices([2, 5])
+%       create_indices([2; 5])
+%       create_indices({[2, 5], [2, 5]})
+%       create_indices({[2; 5]; [2; 5]})
 %       create_indices('IndexEnd', 5)
 %       create_indices('IndexEnd', [2, 3])
 % Outputs:
@@ -32,6 +35,14 @@ function indices = create_indices (varargin)
 %                   - 'IndexEnd': last index
 %                   must be empty or a numeric vector
 %                   default == numel(vector) * ones(nVectors, 1)
+%                   - 'TreatCellAsArray': whether to treat a cell array
+%                                           as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'TreatCellStrAsArray': whether to treat a cell array
+%                                       of character arrays as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %
 % Requires:
 %       cd/argfun.m
@@ -63,7 +74,8 @@ function indices = create_indices (varargin)
 % 2018-12-22 Now replaces out of range values with the actual endpoints
 % 2018-12-24 Added 'IndexStart' and 'IndexEnd' as optional arguments
 % 2019-01-13 Added 'ForceRowOutput' as an optional argument
- 
+% 2019-01-04 Added 'TreatCellAsArray' (default == 'false')
+% 2019-01-04 Added 'TreatCellStrAsArray' (default == 'true')
 
 %% Hard-coded parameters
 
@@ -74,6 +86,9 @@ forceRowOutputDefault = false;  % return column vectors by default
 vectorsDefault = [];
 indexEndDefault = [];           % set later
 indexStartDefault = [];         % set later
+treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
+treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
+                                    %   as an array by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -103,6 +118,10 @@ addParameter(iP, 'IndexStart', indexStartDefault, ...
 addParameter(iP, 'IndexEnd', indexEndDefault, ...
     @(x) assert(isnumericvector(x), ...
                 'IndexEnd must be either empty or a numeric vector!'));
+addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -112,6 +131,8 @@ forceRowOutput = iP.Results.ForceRowOutput;
 vectors = iP.Results.Vectors;
 indexStartUser = iP.Results.IndexStart;
 indexEndUser = iP.Results.IndexEnd;
+treatCellAsArray = iP.Results.TreatCellAsArray;
+treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 
 % TODO: warn if EndPoints provided and IndexStart and IndexEnd also provided
 
@@ -176,7 +197,8 @@ end
 %   fix indices if they are out of range
 if ~(isempty(vectors) || iscell(vectors) && all(all(isemptycell(vectors))))
     % Count the number of samples in each vector
-    nSamples = count_samples(vectors);
+    nSamples = count_samples(vectors, 'TreatCellAsArray', treatCellAsArray, ...
+                                    'TreatCellStrAsArray', treatCellStrAsArray);
 
     % Match the vector counts
     [idxStart, idxEnd] = ...
