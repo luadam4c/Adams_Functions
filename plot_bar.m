@@ -4,9 +4,10 @@ function [bars, lines, fig] = plot_bar(val, low, high, varargin)
 % Explanation:
 %       TODO
 % Example:
-%       val = [2 2 3; 2 5 6; 2 8 9; 2 11 12]; low = val - 1; high = val + 1;
-%       [bars, lines, fig] = plot_bar(val, low, high);
-%       [bars, lines, fig] = plot_bar(val, low, high, 'XTickLabel', {'Mark', 'Ashley', 'Katie', 'Adam'});
+%       val1 = [2, 5, 3, 13]; low = val1 - 1; high = val1 + 1;
+%       val2 = [2 2 3; 2 5 6; 2 8 9; 2 11 12]; low = val2 - 1; high = val2 + 1;
+%       [bars, lines, fig] = plot_bar(val1, low, high);
+%       [bars, lines, fig] = plot_bar(val2, low, high, 'XTickLabel', {'Mark', 'Ashley', 'Katie', 'Adam'});
 % Arguments:
 %       val   - mean values for the bar() function
 %                   each row is a different group
@@ -115,7 +116,13 @@ figHandle = iP.Results.FigHandle;
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
-% Force column vectors as column vectors
+% Count the number of rows (groups)
+nRows = size(val, 1);
+
+% Decide whether there is only one group before any change
+singleGroup = nRows == 1;
+
+% Force row vectors as column vectors
 %   Note: This will cause each value of a vector to be plotted as separately
 %           colored bars
 if ~treatVectorAsArray
@@ -124,14 +131,14 @@ if ~treatVectorAsArray
                 val, low, high);
 end
 
-% Count the number of rows (groups)
-nRows = size(val, 1);
-
 % Count the number of columns (samples)
 nCols = size(val, 2);
 
-% Decide whether there is only one group
-singleGroup = nRows == 1;
+% Count the number of rows (groups)
+nRows = size(val, 1);
+
+% Decide whether there is only one row
+singleRow = nRows == 1;
 
 % Decide whether there is one sample per group
 oneSamplePerGroup = nCols == 1;
@@ -143,7 +150,7 @@ end
 
 % Set the default confidence interval bar width
 if isempty(cIBarWidth)
-    if nRows == 1
+    if singleGroup
         cIBarWidth = 0.5;
     else
         cIBarWidth = 0.05;
@@ -152,7 +159,7 @@ end
 
 % Set the default confidence interval line color
 if isempty(cIColor)
-    if nRows == 1
+    if singleRow
         % All bars are the same color, so use red
         cIColor = 'r';
     else
@@ -163,13 +170,7 @@ end
 
 % Set the default x values
 if isempty(xValues)
-    if nCols == 1
-        % One sample per group, so use group numbers
-        xValues = 1:nRows;
-    else
-        % Many samples per group, so use sample numbers
-        xValues = 1:nCols;
-    end
+    xValues = 1:nRows;
 end
 
 % Set the default x tick angle
@@ -187,6 +188,8 @@ end
 % Set figure as current figure
 if isempty(figHandle)
     set(0, 'CurrentFigure', figHandle);
+else
+    figure(figHandle);
 end
 fig = gcf;
 
@@ -218,21 +221,10 @@ xtickangle(xTickAngle);
 % Plot error bars
 hold on;
 if singleGroup
-    for iCol = 1:nCols                  % for each sample
         % Draw error bar
-        % TODO: function plot_error_bar(x, yLow, yHigh, 'BarWidth', barWidth)
-        xPos = iCol; 
-        lines(1, iCol) = line(xPos * ones(1, 2), ...
-                        [low(iCol), high(iCol)], ...
-                        'Color', cIColor, 'LineWidth', cILineWidth);
-        lines(2, iCol) = line(xPos * ones(1, 2) + [-cIBarWidth/2, cIBarWidth/2], ...
-                        [low(iCol), low(iCol)], ...
-                        'Color', cIColor, 'LineWidth', cILineWidth);
-        lines(3, iCol) = line(xPos * ones(1, 2) + [-cIBarWidth/2, cIBarWidth/2], ...
-                        [high(iCol), high(iCol)], ...
-                        'Color', cIColor, 'LineWidth', cILineWidth);
-    end
+        plot_error_bar(xValues, low, high, 'BarWidth', cIBarWidth);
 else                % Data is grouped
+%{
     for iRow = 1:nRows                  % for each group
         for iCol = 1:nCols              % for each sample
             % Draw error bar
@@ -251,8 +243,9 @@ else                % Data is grouped
                     'Color', cIColor, 'LineWidth', cILineWidth);
         end
     end
+%}
 end
-
+lines= [];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
@@ -274,6 +267,40 @@ if isempty(cIColor)
         cIColor = 'k';
     end
 end
+
+if nCols == 1
+    % One sample per group, so use group numbers
+else
+    % Many samples per group, so use sample numbers
+    xValues = 1:nCols;
+end
+
+for iCol = 1:nCols                  % for each sample
+    xPos = iCol; 
+    lines(1, iCol) = line(xPos * ones(1, 2), ...
+                    [low(iCol), high(iCol)], ...
+                    'Color', cIColor, 'LineWidth', cILineWidth);
+    lines(2, iCol) = line(xPos * ones(1, 2) + [-cIBarWidth/2, cIBarWidth/2], ...
+                    [low(iCol), low(iCol)], ...
+                    'Color', cIColor, 'LineWidth', cILineWidth);
+    lines(3, iCol) = line(xPos * ones(1, 2) + [-cIBarWidth/2, cIBarWidth/2], ...
+                    [high(iCol), high(iCol)], ...
+                    'Color', cIColor, 'LineWidth', cILineWidth);
+end
+
+xPos = iRow + (iCol - (nCols + 1) / 2) * barSeparation; 
+lines(1, iCol, iRow) = ...
+    line(xPos * ones(1, 2), ...
+        [low(iRow, iCol), high(iRow, iCol)], ...
+        'Color', cIColor, 'LineWidth', cILineWidth);
+lines(2, iCol, iRow) = ...
+    line(xPos * ones(1, 2) + [-cIBarWidth/2, cIBarWidth/2], ...
+        [low(iRow, iCol), low(iRow, iCol)], ...
+        'Color', cIColor, 'LineWidth', cILineWidth);
+lines(3, iCol, iRow) = ...
+    line(xPos * ones(1, 2) + [-cIBarWidth/2, cIBarWidth/2], ...
+        [high(iRow, iCol), high(iRow, iCol)], ...
+        'Color', cIColor, 'LineWidth', cILineWidth);
 
 %}
 

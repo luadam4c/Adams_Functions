@@ -13,6 +13,7 @@ function csvwrite_with_header (filename, M, varargin)
 %       /home/Matlab/minEASE/combine_eventInfo.m
 %       /home/Matlab/minEASE/filter_minEASE_output.m
 %       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
+%       /home/Matlab/Adams_Functions/m3ha_autocorrelogram.m
 %
 % File History:
 % 2017-07-24 Moved from examine_gapfree_events.m

@@ -14,12 +14,14 @@ function h = plot_vertical_line (xValue, varargin)
 %                   must be a numeric, datetime or duration array
 %       varargin    - 'YLimits': y value limits for the line
 %                   must be empty or a numeric vector of 2 elements
+%                       or an array of 2 columns
 %                   default == get(gca, 'YLim')
 %                   - Any other parameter-value pair for the line() function
 %
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/isnum.m
+%       cd/match_format_vector_sets.m
 %
 % Used by:
 %       cd/plot_pulse_response_with_stimulus.m
@@ -30,6 +32,7 @@ function h = plot_vertical_line (xValue, varargin)
 % 2018-12-19 Created by Adam Lu
 % 2018-12-27 Now allows xValue to be an array
 % 2018-12-27 Now accepts datetime and duration arrays
+% 2019-01-24 Now accepts multiple y limits
 % 
 
 %% Hard-coded parameters
@@ -55,8 +58,7 @@ addRequired(iP, 'xValue', ...
     @(x) validateattributes(x, {'numeric', 'datetime', 'duration'}, {'3d'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'YLimits', yLimitsDefault, ...
-    @(x) isempty(x) || isnum(x) && isvector(x) && length(x) == 2);
+addParameter(iP, 'YLimits', yLimitsDefault);
 
 % Read from the Input Parser
 parse(iP, xValue, varargin{:});
@@ -71,14 +73,22 @@ if isempty(yLimits)
     yLimits = get(gca, 'YLim');
 end
 
+% Force as a cell array of column vectors and match vectors
+[xValue, yLimits] = match_format_vector_sets(num2cell(xValue), yLimits);
+
 %% Do the job
-h = arrayfun(@(x) line(repmat(x, size(yLimits)), yLimits, otherArguments), ...
-            xValue);
+h = cellfun(@(x, y) line(repmat(x, size(y)), y, otherArguments), ...
+            xValue, yLimits);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+h = arrayfun(@(x) line(repmat(x, size(yLimits)), yLimits, otherArguments), ...
+            xValue);
+addParameter(iP, 'YLimits', yLimitsDefault, ...
+    @(x) isempty(x) || isnum(x) && isvector(x) && length(x) == 2);
 
 %}
 

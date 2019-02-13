@@ -14,12 +14,14 @@ function h = plot_horizontal_line (yValue, varargin)
 %                   must be a numeric, datetime or duration array
 %       varargin    - 'XLimits': x value limits for the line
 %                   must be empty or a numeric vector of 2 elements
+%                       or an array of 2 columns
 %                   default == get(gca, 'XLim')
 %                   - Any other parameter-value pair for the line() function
 %
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/isnum.m
+%       cd/match_format_vector_sets.m
 %
 % Used by:
 %       cd/plot_pulse_response_with_stimulus.m
@@ -28,6 +30,7 @@ function h = plot_horizontal_line (yValue, varargin)
 % 2018-12-19 Created by Adam Lu
 % 2018-12-27 Now allows yValue to be an array
 % 2018-12-27 Now accepts datetime and duration arrays
+% 2019-01-24 Now accepts multiple x limits
 % 
 
 %% Hard-coded parameters
@@ -53,8 +56,7 @@ addRequired(iP, 'yValue', ...
     @(x) validateattributes(x, {'numeric', 'datetime', 'duration'}, {'3d'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'XLimits', xLimitsDefault, ...
-    @(x) isempty(x) || isnum(x) && isvector(x) && length(x) == 2);
+addParameter(iP, 'XLimits', xLimitsDefault);
 
 % Read from the Input Parser
 parse(iP, yValue, varargin{:});
@@ -69,9 +71,12 @@ if isempty(xLimits)
     xLimits = get(gca, 'XLim');
 end
 
+% Force as a cell array of column vectors and match vectors
+[yValue, xLimits] = match_format_vector_sets(num2cell(yValue), xLimits);
+
 %% Do the job
-h = arrayfun(@(y) line(xLimits, repmat(y, size(xLimits)), otherArguments), ...
-            yValue);
+h = cellfun(@(y, x) line(x, repmat(y, size(x)), otherArguments), ...
+            yValue, xLimits);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -79,6 +84,9 @@ h = arrayfun(@(y) line(xLimits, repmat(y, size(xLimits)), otherArguments), ...
 OLD CODE:
 
 @(x) isempty(x) || isnumeric(x) && isvector(x) && length(x) == 2);
+
+h = arrayfun(@(y) line(xLimits, repmat(y, size(xLimits)), otherArguments), ...
+            yValue);
 
 %}
 
