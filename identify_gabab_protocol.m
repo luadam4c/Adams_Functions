@@ -36,6 +36,7 @@ function isGababProt = identify_gabab_protocol (vVecsORfileName, varargin)
 % File History:
 % 2018-12-15 - Adapted from identify_eLFP_protocol.m
 % 2018-12-15 - Changed minSweepsDefault to 1
+% 2019-02-14 - Now returns if the first argument is empty
 % 
 
 %% Hard-coded parameters
@@ -81,6 +82,12 @@ if ~isempty(channelTypes)
 end
 
 %% Preparation
+% Return if the first argument is empty
+if isempty(vVecsORfileName)
+    isGababProt = false;
+    return
+end
+
 % Parse the first argument and extract the voltage vectors if needed
 if ischar(vVecsORfileName) || isstring(vVecsORfileName)
     % The first argument is a file name
