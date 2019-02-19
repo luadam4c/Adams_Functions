@@ -34,7 +34,9 @@ function varargout = parse_lts (vVec0s, siMs, varargin)
 % Arguments:
 %       vVec0s      - original voltage vector(s) in mV
 %                   must be a numeric array with same length as tVec0
-%       siMs        - sampling interval in ms
+%                       or a cell array of numeric arrays as such
+%       siMs        - (opt) sampling interval in ms
+%                           If not provided, 'tVec0s' must be provided
 %                   must be a positive vector
 %       varargin    - 'Verbose': whether to output parsed results
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -66,7 +68,7 @@ function varargout = parse_lts (vVec0s, siMs, varargin)
 %                   default == [sStimStartMs + minPeakDelayMs, 
 %                               tVec0(end) - medfiltWindowMs], where medfiltWindowMs is 30 ms
 %                   - 'tVec0s': original time vector(s)
-%                   must be a numeric array
+%                   must be a numeric array or a cell array of numeric arrays
 %                   - 'tVec2s': time vector(s) for resampling
 %                   must be a numeric array & within range of tVec0
 %                   default == siMsRes*(round(tVec0(1)/siMsRes):round(tVec0(end)/siMsRes))'
@@ -103,9 +105,11 @@ function varargout = parse_lts (vVec0s, siMs, varargin)
 
 % File History:
 % 2019-01-13 Adapted from find_LTS.m
+% 2019-02-19 Made siMs an optional argument
 
 %% Default values for optional arguments
-verboseDefault = true;              % print to standard output by default
+siMsDefault = [];               % set later
+verboseDefault = true;          % print to standard output by default
 plotFlagDefault = false;
 outFolderDefault = pwd;
 fileBaseDefault = {};           % set later
@@ -113,11 +117,11 @@ stimStartMsDefault = [];        % set later
 minPeakDelayMsDefault = 0;
 noiseWindowMsORmaxNoiseDefault = [];    % set later
 searchWindowDefault = [];       % set later
-tVec0sDefault = [];              % set later
-tVec2sDefault = [];              % set later
-vVec1sDefault = [];              % set later
-vVec2sDefault = [];              % set later
-vVec3sDefault = [];              % set later
+tVec0sDefault = [];             % set later
+tVec2sDefault = [];             % set later
+vVec1sDefault = [];             % set later
+vVec2sDefault = [];             % set later
+vVec3sDefault = [];             % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -136,7 +140,9 @@ addRequired(iP, 'vVec0s', ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['vVec0s must be either a numeric array', ...
                     'or a cell array of numeric arrays!']));
-addRequired(iP, 'siMs', ...
+
+% Add optional inputs to the Input Parser
+addOptional(iP, 'siMs', siMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'vector'}));
 
 % Add parameter-value pairs to the Input Parser
@@ -214,15 +220,16 @@ end
     idxNoiseInTrace, idxSpontLtsOrBurst, ...
     idxWideLtsCouldBeNoise] = m3ha_find_files_to_override;
 
-% Compute the sampling interval in ms if not provided
-if isempty(siMs)
+% Compute sampling interval(s) and create time vector(s)
+if isempty(siMs) && ~isempty(tVec0s)
+    % Compute sampling interval(s) in ms
     siMs = compute_sampling_interval(tVec0s);
-end
-
-% Create time vector(s) if not provided
-if isempty(tVec0s)
+elseif isempty(tVec0s) && ~isempty(siMs)
+    % Create time vector(s)
     tVec0s = create_time_vectors(nSamples, 'SamplingIntervalMs', siMs, ...
                                     'TimeUnits', 'ms');
+else
+    error('One of siMs and tVec0s must be provided!');
 end
 
 % Compute the base of the time vector(s)
