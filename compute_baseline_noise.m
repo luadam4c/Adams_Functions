@@ -32,6 +32,7 @@ function baseNoises = compute_baseline_noise (dataVecs, timeVecs, baseWindows)
 %       cd/compute_default_sweep_info.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/m3ha_xolotl_plot.m
+%       cd/parse_multiunit.m
 
 % File History:
 % 2018-10-28 Created by Adam Lu

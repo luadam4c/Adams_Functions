@@ -26,13 +26,12 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 %                   must be a numeric vector with 2 elements
 %                       or a cell array of numeric vectors with 2 elements
 %                   default == find_window_endpoints([], vec1s)
-%                   
+%
 % Requires:
 %       cd/argfun.m
 %       cd/iscellnumeric.m
 %       cd/iscellnumericvector.m
 %       cd/isemptycell.m
-%       cd/isnumericvector.m
 %       cd/extract_subvectors.m
 %       cd/force_column_cell.m
 %       cd/match_format_vector_sets.m
@@ -82,7 +81,7 @@ addOptional(iP, 'vec2s', vecs2Default, ...
                 ['vec2s must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'EndPoints', endPointsDefault, ...
-    @(x) assert(isnumericvector(x) || iscellnumericvector(x), ...
+    @(x) assert(isnumeric(x) || iscellnumericvector(x), ...
                 ['EndPoints must be either a numeric vector ', ...
                     'or a cell array of numeric vectors!']));
 

@@ -42,6 +42,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/create_indices.m
 %       cd/extract_columns.m
 %       cd/parse_lts.m
+%       cd/parse_multiunit.m
 %       cd/parse_pulse_response.m
 %       cd/plot_protocols.m
 
@@ -49,6 +50,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % 2018-12-15 Created by Adam Lu
 % 2018-12-17 Now returns idxElement as well
 % 2019-01-03 Now accepts cell arrays of non-vector arrays
+% 2019-02-20 Fixed bug when using match_dimensions
 % TODO: Add 'MaxNum' as an optional argument with default Inf
 % TODO: Add 'Indices', 'Endpoints' and 'Windows' as optional arguments
 %           and use extract_subvectors.m
@@ -132,8 +134,8 @@ case 'specific'
         % Count the number of vectors
         nVectors = count_vectors(vecs);
 
-        % Match the dimensions
-        index = match_dimensions(vecs, [nVectors, 1]);
+        % Match the number of indices
+        index = match_dimensions(index, [nVectors, 1]);
 
         % Extract by index on each comlumn
         [elements, idxElement] = ...
@@ -194,7 +196,6 @@ OLD CODE:
 @(x) assert(isnumeric(x) || iscellnumeric(x), ...
             ['vecs must be either a numeric array', ...
                 'or a cell array of numeric arrays!']));
-
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -15,7 +15,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %                   must be a positive vector
 %       varargin    - 'StimStartMs': time of stimulation start (ms)
 %                   must be a positive scalar
-%                   default == find_first_jump(vVec0s)
+%                   default == detect from pulse vector
 %                   - 'PulseVectors': vector that contains the pulse itself
 %                   must be a numeric vector
 %                   default == [] (not used)
@@ -27,8 +27,10 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/count_vectors.m TODO
 %       cd/iscellnumeric.m TODO
 %       cd/find_stim_start.m TODO
-%       cd/extract_elements.m TODO
-%       cd/compute_baseline_noise.m TODO
+%       cd/create_logical_array.m
+%       cd/extract_elements.m
+%       cd/force_column_cell.m
+%       cd/compute_baseline_noise.m
 %       cd/create_error_for_nargin.m
 %       cd/match_time_info.m
 %
@@ -94,7 +96,7 @@ nVectors = count_vectors(vVecs);
 nSamples = count_samples(vVecs);
 
 % Match time vector(s) with sampling interval(s) and number(s) of samples
-[tVecs, siMs] = match_time_info (tVecs, siMs, nSamples);
+[tVecs, siMs, nSamples] = match_time_info(tVecs, siMs, nSamples);
 
 %% Do the job
 % Detect stimulation start time if not provided
@@ -133,19 +135,23 @@ if isempty(baseWindows)
     timeStartMs = extract_elements(tVecs, 'first');
 
     % Use timeStartMs to stimStartMs by default
-    baseWindows = [timeStartMs, stimStartMs];
+    baseWindows = transpose([timeStartMs, stimStartMs]);
 end
 
 % Compute baseline rms noise from window
-baseNoises = compute_baseline_noise(vVec, tVecs, baseWindows);
+baseNoises = compute_baseline_noise(vVecs, tVecs, baseWindows);
+
+% Force as a cell array of vectors
+vVecs = force_column_cell(vVecs);
 
 % Parse all of them in a parfor loop
 parsedParamsCell = cell(nVectors, 1);
 parsedDataCell = cell(nVectors, 1);
 %parfor iVec = 1:nVectors
-for iVec = 1:nVectors
+for iVec = 1:1
     [parsedParamsCell{iVec}, parsedDataCell{iVec}] = ...
-        parse_multiunit_helper(vVecs{iVec}, idxStimStart(iVec), baseNoises(iVec));
+        parse_multiunit_helper(vVecs{iVec}, siMs(iVec), ...
+                                idxStimStart(iVec), baseNoises(iVec));
 end
 
 % Convert to a struct array
@@ -164,19 +170,62 @@ varargout{2} = parsedData;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [parsedParams, parsedData] = ...
-                parse_multiunit_helper(vVec, idxStimStart, baseNoise)
+                parse_multiunit_helper(vVec, siMs, idxStimStart, baseNoise)
 % Parse a single multiunit recording
 
 % Hard-coded parameters
-signal2Noise = 2; %3
+signal2Noise = 3; %2
+minDelaySamples = 2000;
 
-slopeThreshold = baseNoise * signal2Noise;
+% Compute a slope threshold
+slopeThreshold = (baseNoise / siMs) * signal2Noise;
+
+% Compute the number of samples
+nSamples = numel(vVec);
+
+% Compute all instantaneous slopes
+slopes = diff(vVec) / siMs;
+
+% Determine whether each slope is a local maximum
+[~, indPeakSlopes] = findpeaks(slopes);
+isPeakSlope = create_logical_array(indPeakSlopes, [nSamples, 1]);
+
+% Create all indices minus 1
+allIndices = transpose(1:nSamples);
+
+% Detect spikes after idxStimStart + minDelaySamples
+isSpike = [false; slopes > slopeThreshold] & ...
+            [false; isPeakSlope] & ...
+            allIndices > idxStimStart + minDelaySamples;
+idxSpikes = find(isSpike);
+
+figure(1); 
+clf; hold on
+plot(vVec, 'k');
+plot(idxSpikes, vVec(idxSpikes), 'rx');
+xlim([34100, 34700])
+%xlim([idxStimStart + minDelaySamples, idxStimStart + 1e4])
+
+figure(2); 
+clf; hold on
+plot(slopes, 'k');
+plot_horizontal_line(slopeThreshold, 'Color', 'b', 'LineStyle', '--');
+plot(idxSpikes, slopes(idxSpikes - 1), 'rx');
+xlim([34100, 34700])
+%xlim([idxStimStart + minDelaySamples, idxStimStart + 1e4])
 
 % Sufficiently steep positive deflections
 
 
 % Sufficiently steep negative deflections
 
+% Store in outputs
+parsedParams.signal2Noise = signal2Noise;
+parsedParams.minDelaySamples = minDelaySamples;
+parsedParams.idxStimStart = idxStimStart;
+parsedParams.baseNoise = baseNoise;
+parsedParams.slopeThreshold = slopeThreshold;
+parsedData.vVec = vVec;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -20,7 +20,6 @@ function isNumericVector = isnumericvector (x)
 % Used by:
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
-%       cd/compute_rms_error.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/create_indices.m
