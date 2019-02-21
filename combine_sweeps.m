@@ -189,6 +189,7 @@ if strcmpi(dataModeUser, 'auto')
 
         % Load it
         [data, siUs, ~] = abf2load(firstDataFileName);
+%         [data, siUs] = abfload(firstDataFileName);
 
         % Determine the dimensions of the data structure
         nDims = length(size(data));
