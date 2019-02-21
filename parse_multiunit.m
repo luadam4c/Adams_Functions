@@ -23,12 +23,14 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %                   must be a numeric array or a cell array of numeric arrays
 %                   
 % Requires:
+%       cd/count_samples.m TODO
 %       cd/count_vectors.m TODO
 %       cd/iscellnumeric.m TODO
 %       cd/find_stim_start.m TODO
 %       cd/extract_elements.m TODO
 %       cd/compute_baseline_noise.m TODO
 %       cd/create_error_for_nargin.m
+%       cd/match_time_info.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -88,9 +90,11 @@ tVecs = iP.Results.tVecs;
 % Count the number of vectors
 nVectors = count_vectors(vVecs);
 
-% TODO: Pull this out to match_time_info.m and use this in parse_lts.m too
-%   [tVecs, siMs] = match_time_info(tVecs, siMs);
+% Count the number of samples for each vector
+nSamples = count_samples(vVecs);
 
+% Match time vector(s) with sampling interval(s) and number(s) of samples
+[tVecs, siMs] = match_time_info (tVecs, siMs, nSamples);
 
 %% Do the job
 % Detect stimulation start time if not provided
@@ -106,7 +110,8 @@ if isempty(stimStartMs)
         idxStimStart = pulseParams{:, 'idxAfterStart'};
 
         % Use the time vectors 
-        stimStartMs = extract_elements(tVecs, 'specific', 'Index', idxStimStart);
+        stimStartMs = extract_elements(tVecs, 'specific', ...
+                                        'Index', idxStimStart);
     else
         error('One of stimStartMs and pulseVectors must be provided!');
     end
