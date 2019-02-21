@@ -188,7 +188,7 @@ slopes = diff(vVec) / siMs;
 
 % Determine whether each slope is a local maximum
 [~, indPeakSlopes] = findpeaks(slopes);
-isPeakSlope = create_logical_array(indPeakSlopes, [nSamples, 1]);
+isPeakSlope = create_logical_array(indPeakSlopes, [nSamples - 1, 1]);
 
 % Create all indices minus 1
 allIndices = transpose(1:nSamples);
