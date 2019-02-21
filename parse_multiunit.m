@@ -88,22 +88,9 @@ tVecs = iP.Results.tVecs;
 % Count the number of vectors
 nVectors = count_vectors(vVecs);
 
-% TODO: Pull this out to create_default_time_info.m and use this in parse_lts.m too
-%   [tVecs, siMs] = create_default_time_info(tVecs, siMs);
-% Compute sampling interval(s) and create time vector(s)
-if isempty(siMs) && ~isempty(tVecs)
-    % Compute sampling interval(s) in ms
-    siMs = compute_sampling_interval(tVecs);
-elseif isempty(tVecs) && ~isempty(siMs)
-    % Create time vector(s)
-    tVecs = create_time_vectors(nSamples, 'SamplingIntervalMs', siMs, ...
-                                    'TimeUnits', 'ms');
-elseif isempty(tVecs) && isempty(siMs)
-    error('One of siMs and tVec0s must be provided!');
-end
+% TODO: Pull this out to match_time_info.m and use this in parse_lts.m too
+%   [tVecs, siMs] = match_time_info(tVecs, siMs);
 
-% Make the number of vectors and 
-[tVecs, siMs] = match_dimensions(tVecs, siMs);
 
 %% Do the job
 % Detect stimulation start time if not provided
@@ -175,13 +162,16 @@ function [parsedParams, parsedData] = ...
                 parse_multiunit_helper(vVec, idxStimStart, baseNoise)
 % Parse a single multiunit recording
 
+% Hard-coded parameters
 signal2Noise = 2; %3
 
 slopeThreshold = baseNoise * signal2Noise;
 
 % Sufficiently steep positive deflections
 
+
 % Sufficiently steep negative deflections
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

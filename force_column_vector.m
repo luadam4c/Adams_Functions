@@ -77,6 +77,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/match_format_vectors.m
 %       cd/match_format_vector_sets.m
 %       cd/match_reciprocals.m
+%       cd/match_vector_count.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_neuron_create_simulation_params.m
 %       cd/m3ha_import_raw_traces.m

@@ -57,6 +57,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %       cd/create_average_time_vector.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_xolotl_plot.m
+%       cd/match_time_info.m
 %       cd/parse_lts.m
 
 % File History:

@@ -17,6 +17,9 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %       nRowsNew    - new number of rows
 %                   must be a positive integer scalar
 %
+% Requires:
+%       cd/create_error_for_nargin.m
+%
 % Used by:    
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
@@ -24,6 +27,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %       cd/m3ha_neuron_create_simulation_params.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/match_format_vectors.m
+%       cd/match_time_info.m
 %       cd/plot_struct.m
 %       cd/xolotl_add_current_pulse.m
 %       cd/xolotl_add_holding_current.m
@@ -32,6 +36,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 
 % File History:
 % 2018-10-25 Created by Adam Lu
+% 2019-02-20 Now uses create_error_for_nargin
 % 
 
 %% Hard-coded parameters
@@ -43,8 +48,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 2
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
@@ -83,7 +87,7 @@ if nRowsNew > nRowsOld
     factorToExpand = floor(nRowsNew / nRowsOld);
 
     % Compute the remaining number of rows to fill after expansion
-    remainingNrows = mod(nRowsNew, nRowsOld);
+    remainingNRows = mod(nRowsNew, nRowsOld);
 
     % Expand array
     if nDims == 2
@@ -91,13 +95,13 @@ if nRowsNew > nRowsOld
         arrayNew = repmat(arrayOld, [factorToExpand, 1]);
 
         % Fill in remaining rows by the first rows
-        arrayNew = vertcat(arrayNew, arrayOld(1:remainingNrows, :));
+        arrayNew = vertcat(arrayNew, arrayOld(1:remainingNRows, :));
     elseif nDims == 3
         % First expand by factorToExpand
         arrayNew = repmat(arrayOld, [factorToExpand, 1, 1]);
 
         % Fill in remaining rows by the first rows
-        arrayNew = vertcat(arrayNew, arrayOld(1:remainingNrows, :, :));
+        arrayNew = vertcat(arrayNew, arrayOld(1:remainingNRows, :, :));
     end
 elseif nRowsNew < nRowsOld
     % Truncate array
