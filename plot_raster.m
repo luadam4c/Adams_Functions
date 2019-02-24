@@ -27,7 +27,14 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 % Arguments:    
 %       data        - event time arrays
 %                   must be a numeric array or a cell array of numeric arrays
-%       varargin    - 'BarWidth': bar width relative to y value increments (0~1)
+%       varargin    - 'YMid': y value midpoints
+%                   must be a numeric vector
+%                   default == use trial numbers in reverse order
+%                   - 'YLimits': limits of y axis, 
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == uses 1 more than max and min of trialNos
+%                   - 'BarWidth': bar width relative to y value increments (0~1)
 %                   must be a positive scalar between 0 and 1
 %                   default == 0.6
 %                   - 'Colors': colors for each array
@@ -37,16 +44,19 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 %                   must be a cell array of character/string arrays
 %                   default == array numbers
 %                   - 'YTickLocs': locations of Y ticks
-%                   must be a numeric vector
+%                   must be 'suppress' or a numeric vector
 %                   default == ntrials:1
 %                   - 'YTickLabels': labels for each raster
-%                   must be a cell array of character/string arrays
+%                   must be 'suppress' or a cell array of character/string arrays
 %                   default == trial numbers
 %                   - Any other parameter-value pair for the line() function
 %
 % Requires:
 %       /home/Matlab/Downloaded_Functions/rgb.m
+%       cd/apply_iteratively.m
+%       cd/create_labels_from_numbers.m
 %       cd/create_error_for_nargin.m
+%       cd/count_vectors.m
 %       cd/force_column_vector.m
 %       cd/iscellnumeric.m
 %
@@ -56,9 +66,16 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 % File History:
 % 2018-05-16 Created by Adam Lu
 % 2018-12-18 Now uses iP.KeepUnmatched
+% 2019-02-23 Fixed bugs
+% 2019-02-23 Added 'YLimits' as an optional argument
 % 
 
+%% Hard-coded parameters
+maxYTicks = 20;             % maximum number of Y ticks
+
 %% Default values for optional arguments
+yMidDefault = [];           % set later
+yLimitsDefault = [];        % set later
 barWidthDefault = 0.6;      % default bar width relative to y value increments
 colorsDefault = {};         % default colors to use for each array
 labelsDefault = {};         % default labels to use for each array
@@ -66,6 +83,15 @@ lineStyleDefault = '-';     % default line style of bars
 lineWidthDefault = 2;       % default line width of bars
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% If not compiled, add directories to search path for required functions
+if ~isdeployed
+    % Locate the functions directory
+    functionsDirectory = locate_functionsdir;
+
+    % Add path for Downloaded_Functions
+    addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions'));
+end
 
 %% Deal with arguments
 % Check number of required arguments
@@ -85,6 +111,11 @@ addRequired(iP, 'data', ...             % a cell array of event time arrays
                     'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'YMid', yMidDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'YLimits', yLimitsDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'BarWidth', barWidthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', '>=', 0, '<=', 1}));
 addParameter(iP, 'Colors', colorsDefault, ...
@@ -92,15 +123,19 @@ addParameter(iP, 'Colors', colorsDefault, ...
         'data must be a cell array of character/string arrays!'));
 addParameter(iP, 'Labels', labelsDefault, ...
     @(x) assert(iscell(x) && all(cellfun(@(x) ischar(x) || isstring(x), x)), ...
-        'data must be a cell array of character/string arrays!'));
+        'Labels must be ''suppress'' or a cell array of character/string arrays!'));
 addParameter(iP, 'YTickLocs', [], ...
-    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || isnumericvector(x), ...
+        'YTickLocs must be ''suppress'' or a numeric vector!'));
 addParameter(iP, 'YTickLabels', {}, ...
-    @(x) assert(iscell(x) && all(cellfun(@(x) ischar(x) || isstring(x), x)), ...
-        'data must be a cell array of character/string arrays!'));
+    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || ...
+                iscell(x) && all(cellfun(@(x) ischar(x) || isstring(x), x)), ...
+        'YTickLabels must be ''suppress'' or a cell array of character/string arrays!'));
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
+yMidUser = iP.Results.YMid;
+yLimits = iP.Results.YLimits;
 barWidth = iP.Results.BarWidth;
 colors = iP.Results.Colors;
 labels = iP.Results.Labels;
@@ -115,7 +150,8 @@ otherArguments = iP.Unmatched;
 %   Note: if data is already a cell array, don't use this 
 %           function or else elements can't be non-vectors!
 if isnumeric(data)
-    data = force_column_vector(data, 'IgnoreNonVectors', false);
+    data = force_column_vector(data, 'IgnoreNonVectors', false, ...
+                                'ForceCellOutput', true);
 end
 
 % Get the number of event time arrays to plot
@@ -166,62 +202,98 @@ parfor iArray = 1:nArrays
 end
 
 % Get the number of vectors in each event time array
-nVectors = cellfun(@(x) size(x, 2), data);
+nVectors = cellfun(@count_vectors, data);
 
 % Get the total number of vectors
 nVectorsAll = sum(nVectors);
 
-% Assign trial numbers to each event time array 
-%   and save Y tick values and labels
+% Assign trial numbers grouped by each event time array 
 trialNos = cell(size(data));
-yMids = cell(size(data));
-yTicks.locs = zeros(nVectorsAll, 1);
-yTicks.labels = cell(nVectorsAll, 1);
 ct = 0;                                 % counts number of trials assigned
 for iArray = 1:nArrays
     % Get the number of vectors in this array
     nVectorThis = nVectors(iArray);
 
     % Assign the trial numbers in ascending order
-    trialNosThis = ct + (1:nVectorThis);
+    trialNosThis = ct + transpose(1:nVectorThis);
 
-    % Convert to strings for the Y tick labels
-    for iTrial = trialNosThis
-        yTicks.labels{iTrial} = num2str(iTrial);
-    end
-
-    % Convert trial numbers to y value midpoints
-    yMidsThis = nVectorsAll - trialNosThis + 1;
-
-    % Set the Y tick values at the midpoints
-    yTicks.locs(trialNosThis) = yMidsThis;
-
-    % Store the trial numbers and y midpoints for this event time array
+    % Store the trial numbers for this event time array
     trialNos{iArray} = trialNosThis;
-    yMids{iArray} = yMidsThis;
 
     % Update number of trials assigned
     ct = ct + nVectorThis;
 end
 
-% If provided, use custom Y tick values instead
-if ~isempty(yTickLocs)
-    yTicks.locs = yTickLocs;
+% Ungroup trial numbers
+trialNosAll = vertcat(trialNos{:});
+
+% Compute default y midpoints grouped by each event time array
+if isempty(yMidUser)
+    yMids = cellfun(@(x) nVectorsAll - x + 1, trialNos, ...
+                    'UniformOutput', false);
+    yMidsAll = vertcat(yMids{:});
+else
+    yMidsAll = yMidUser;
+    yMids = cellfun(@(x) yMidUser(x), trialNos, ...
+                    'UniformOutput', false);
 end
 
-% If provided, use custom Y tick labels instead
-if ~isempty(yTickLabels)
-    yTicks.labels = yTickLabels;
+% Compute y increment
+if numel(yMidsAll) == 1
+    yIncr = 1;
+else
+    yIncr = yMidsAll(2) - yMidsAll(1);
+end
+
+% Decide on indices for ticks if total number of vectors exceed maxYTicks
+if nVectorsAll > maxYTicks
+    indTicks = create_indices([1, nVectorsAll], 'MaxNum', maxYTicks);
+end
+
+% Decide on Y tick values
+if ~ischar(yTickLocs) || ~strcmpi(yTickLocs, 'suppress')
+    if ~isempty(yTickLocs)
+        % If provided, use custom Y tick values instead
+        yTicks.locs = yTickLocs;
+    else
+        % Set the Y tick values at the midpoints
+        if nVectorsAll <= maxYTicks
+            yTicks.locs = yMidsAll;
+        else
+            yTicks.locs = yMidsAll(indTicks);            
+        end
+    end
+end
+
+% Decide on Y tick labels
+if ~ischar(yTickLabels) || ~strcmpi(yTickLabels, 'suppress')
+    if ~isempty(yTickLabels)
+        % If provided, use custom Y tick labels instead
+        yTicks.labels = yTickLabels;
+    else
+        % Create trial labels from numbers
+        trialLabels = create_labels_from_numbers(trialNosAll);
+
+        % Use the trial numbers
+        if nVectorsAll <= maxYTicks
+            yTicks.labels = trialLabels;
+        else
+            yTicks.labels = trialLabels(indTicks);            
+        end
+    end
 end
 
 % Convert yTicks to a Y tick table
-yTicksTable = struct2table(yTicks);
+if ~ischar(yTickLabels) || ~strcmpi(yTickLabels, 'suppress')
+    % Convert yTicks to a Y tick table
+    yTicksTable = struct2table(yTicks);
 
-% Sort the Y tick table according to Y tick values
-yTicksTable = sortrows(yTicksTable, 'locs');
+    % Sort the Y tick table according to Y tick values
+    yTicksTable = sortrows(yTicksTable, 'locs');
+end
 
-% Get the half bar width
-halfBarWidth = barWidth / 2;
+% Get the half bar width in actual coordinates
+halfBarWidth = (barWidth / 2) * yIncr;
 
 % Assign y value endpoints to each event time
 eventTimes = cell(size(data));
@@ -257,6 +329,13 @@ parfor iArray = 1:nArrays
     yEnds{iArray} = yEndsThis;
 end
 
+% Compute y axis limits
+if isempty(yLimits)
+    maxTrialNo = apply_iteratively(@max, trialNos);
+    minTrialNo = apply_iteratively(@min, trialNos);
+    yLimits = [minTrialNo - 1, maxTrialNo + 1];
+end
+
 %% Plot the event time arrays
 hLines = cell(size(data));
 for iArray = 1:nArrays
@@ -279,8 +358,15 @@ for iArray = 1:nArrays
 end
 
 % Change the y tick values and labels
-set(gca, 'YTick', yTicksTable.locs);
-set(gca, 'YTickLabel', yTicksTable.labels);
+if ~ischar(yTickLabels) || ~strcmpi(yTickLabels, 'suppress')
+    set(gca, 'YTick', yTicksTable.locs);
+    set(gca, 'YTickLabel', yTicksTable.labels);
+end
+
+% Set y axis limits
+if ~ischar(yLimits) || ~strcmpi(yLimits, 'suppress')
+    ylim(yLimits);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -311,6 +397,26 @@ lineWidth = iP.Results.LineWidth;
                             'LineStyle', lineStyle, ...
                             'LineWidth', lineWidth, ...
 %       cd/islinestyle.m
+
+yMids = cell(size(data));
+% Store the y midpoints for this event time array
+yMids{iArray} = yMidsThis;
+
+% Assign trial numbers to each event time array 
+%   and save Y tick values and labels
+yTicks.locs = zeros(nVectorsAll, 1);
+yTicks.labels = cell(nVectorsAll, 1);
+for iArray = 1:nArrays
+    % Convert to strings for the Y tick labels
+    for iTrial = trialNosThis
+        yTicks.labels{iTrial} = num2str(iTrial);
+    end
+
+    % Set the Y tick values at the midpoints
+    yTicks.locs(trialNosThis) = yMidsThis;
+end
+
+trialLabels = arrayfun(@num2str, trialNosAll, 'UniformOutput', false);
 
 %}
 

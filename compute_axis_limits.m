@@ -42,6 +42,7 @@ function [limits, axisRange] = compute_axis_limits (dataOrRange, axisType, varar
 %
 % Used by:
 %       cd/m3ha_xolotl_plot.m
+%       cd/parse_multiunit.m
 %       cd/plot_cfit_pulse_response.m
 %       cd/plot_pulse.m
 %       cd/plot_pulse_response.m

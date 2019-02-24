@@ -36,6 +36,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/create_simulation_output_filenames.m
 %       cd/plot_histogram.m
 %       cd/parse_lts.m
+%       cd/plot_raster.m
 %       cd/plot_struct.m
 %       cd/plot_swd_raster.m
 %       cd/plot_traces.m

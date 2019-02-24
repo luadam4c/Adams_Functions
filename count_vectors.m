@@ -53,6 +53,7 @@ function nVectors = count_vectors (vectors, varargin)
 %       cd/parse_lts.m
 %       cd/parse_pulse_response.m
 %       cd/plot_protocols.m
+%       cd/plot_raster.m
 %       cd/plot_traces.m
 
 % File History:

@@ -30,6 +30,7 @@ function scalar = apply_iteratively (myFunction, array, varargin)
 % Used by:
 %       cd/compute_axis_limits.m
 %       cd/identify_channels.m
+%       cd/plot_raster.m
 %       cd/plot_traces.m
 %       cd/plot_swd_histogram.m
 

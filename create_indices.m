@@ -11,6 +11,7 @@ function indices = create_indices (varargin)
 %       create_indices({[2; 5]; [2; 5]})
 %       create_indices('IndexEnd', 5)
 %       create_indices('IndexEnd', [2, 3])
+%       create_indices([1, 50], 'MaxNum', 5)
 % Outputs:
 %       indices     - indices for each pair of idxStart and idxEnd
 %                   specified as a numeric vector 
@@ -36,6 +37,9 @@ function indices = create_indices (varargin)
 %                   - 'IndexEnd': last index
 %                   must be empty or a numeric vector
 %                   default == numel(vector) * ones(nVectors, 1)
+%                   - 'MaxNum': maximum number of indices
+%                   must be a positive integer scalar or Inf
+%                   default == Inf
 %                   - 'TreatCellAsArray': whether to treat a cell array
 %                                           as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -79,6 +83,7 @@ function indices = create_indices (varargin)
 % 2019-01-04 Added 'TreatCellStrAsArray' (default == 'true')
 % 2019-01-23 Now avoids putting indices together as a matrix if there is
 %               only one index per vector
+% 2019-02-24 Added 'MaxNum' as an optional parameter
 
 %% Hard-coded parameters
 
@@ -89,6 +94,7 @@ forceRowOutputDefault = false;  % return column vectors by default
 vectorsDefault = [];
 indexEndDefault = [];           % set later
 indexStartDefault = [];         % set later
+maxNumDefault = Inf;            % no limit by default
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
 treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
                                     %   as an array by default
@@ -121,6 +127,9 @@ addParameter(iP, 'IndexStart', indexStartDefault, ...
 addParameter(iP, 'IndexEnd', indexEndDefault, ...
     @(x) assert(isnumericvector(x), ...
                 'IndexEnd must be either empty or a numeric vector!'));
+addParameter(iP, 'MaxNum', maxNumDefault, ...
+    @(x) assert(isinf(x) || isaninteger(x), ...
+                'MaxNum must be either Inf or a positive integer scalar!'));
 addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
@@ -134,6 +143,7 @@ forceRowOutput = iP.Results.ForceRowOutput;
 vectors = iP.Results.Vectors;
 indexStartUser = iP.Results.IndexStart;
 indexEndUser = iP.Results.IndexEnd;
+maxNum = iP.Results.MaxNum;
 treatCellAsArray = iP.Results.TreatCellAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 
@@ -217,10 +227,10 @@ end
 
 % Create the indices
 if iscell(idxStart) && iscell(idxEnd)
-    indices = cellfun(@(x, y) create_indices_helper(x, y), ...
+    indices = cellfun(@(x, y) create_indices_helper(x, y, maxNum), ...
                         idxStart, idxEnd, 'UniformOutput', false);
 elseif isnumeric(idxStart) && isnumeric(idxEnd)
-    indices = create_indices_helper(idxStart, idxEnd);
+    indices = create_indices_helper(idxStart, idxEnd, maxNum);
 else
     error('idxStart and idxEnd don''t match!!');
 end
@@ -236,7 +246,7 @@ indices = force_column_vector(indices, 'RowInstead', rowInstead, ...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function indices = create_indices_helper (idxStart, idxEnd)
+function indices = create_indices_helper (idxStart, idxEnd, maxNum)
 
 % Match idxStart and idxEnd
 [idxStart, idxEnd] = match_format_vectors(idxStart, idxEnd);
@@ -244,11 +254,11 @@ function indices = create_indices_helper (idxStart, idxEnd)
 % Construct vectors of indices
 if numel(idxStart) == 1 && numel(idxEnd) == 1
     % There is just one vector
-    indices = transpose(idxStart:idxEnd);
+    indices = create_one_indices(idxStart, idxEnd, maxNum);
 else
     % There are multiple vectors
-    indices = arrayfun(@(x, y) transpose(x:y), idxStart, idxEnd, ...
-                    'UniformOutput', false);
+    indices = arrayfun(@(x, y) create_one_indices(x, y, maxNum), ...
+                        idxStart, idxEnd, 'UniformOutput', false);
 
     % Count the number of samples in each indices vector
     nSamples = count_samples(indices);
@@ -263,6 +273,35 @@ else
         indices = force_matrix(indices, 'AlignMethod', 'none');
     end
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function indices = create_one_indices (idxStart, idxEnd, maxNum)
+
+% Decide on the index increment
+if ~isinf(maxNum)
+    % Count the number of indices
+    nIndices = idxEnd - idxStart + 1;
+
+    % Decide on the index increment
+    if nIndices > maxNum
+        % Update index increment
+        idxIncr = ceil(nIndices / maxNum);
+
+        % Update new number of indices
+        nIndicesNew = ceil(nIndices / idxIncr);
+
+        % Update index start
+        idxStart = idxEnd - idxIncr * (nIndicesNew - 1);
+    else
+        idxIncr = 1;
+    end
+else
+    idxIncr = 1;
+end
+
+% Create the indices vector
+indices = transpose(idxStart:idxIncr:idxEnd);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -285,6 +324,9 @@ idxEnd = min([idxEnd, nSamples], [], 2);
 indices = {indices};
 
 parse(iP, endPoints, varargin{:});
+
+indices = arrayfun(@(x, y) transpose(x:y), idxStart, idxEnd, ...
+                'UniformOutput', false);
 
 %}
 
