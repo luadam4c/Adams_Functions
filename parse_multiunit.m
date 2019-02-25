@@ -57,6 +57,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 % 
 
 %% Hard-coded parameters
+MS_PER_S = 1000;
 
 %% Default values for optional arguments
 plotFlagDefault = false;
@@ -141,7 +142,7 @@ if isempty(stimStartMs)
     % TODO: Make this a function find_stim_start.m
     if ~isempty(pulseVectors)
         % Parse the pulse vectors
-        [pulseParams, pulseData] = ...
+        [pulseParams, ~] = ...
             parse_pulse(pulseVectors, 'SamplingIntervalMs', siMs);
 
         % Use the indices after pulse starts for stimulation start
@@ -182,6 +183,7 @@ end
 parsedParamsCell = cell(nVectors, 1);
 parsedDataCell = cell(nVectors, 1);
 parfor iVec = 1:nVectors
+%for iVec = 1:nVectors
 %for iVec = 1:1
     [parsedParamsCell{iVec}, parsedDataCell{iVec}, figs(iVec)] = ...
         parse_multiunit_helper(iVec, vVecs{iVec}, tVecs{iVec}, siMs(iVec), ...
@@ -210,20 +212,33 @@ if plotFlag
     stimStartMs = parsedParams.stimStartMs;
     detectStartMs = parsedParams.detectStartMs;
     firstSpikeMs = parsedParams.firstSpikeMs;
+    timeOscEndMs = parsedParams.timeOscEndMs;
+
+    % Convert to seconds
+    spikeTimesSec = cellfun(@(x) x/MS_PER_S, spikeTimesMs, 'UniformOutput', false);
+    stimStartSec = stimStartMs / MS_PER_S;
+    detectStartSec = detectStartMs / MS_PER_S;
+    firstSpikeSec = firstSpikeMs / MS_PER_S;
+    timeOscEndSec = timeOscEndMs / MS_PER_S;
+
+    % Oscillation window
+    oscWindow = transpose([stimStartSec, timeOscEndSec]);
 
     % Create figure and plot
     figs(nVectors + 1) = figure(2);
     clf
     [hLines, eventTimes, yEnds, yTicksTable] = ...
-        plot_raster(spikeTimesMs, 'LineWidth', 0.5);
-    vLines = plot_vertical_line(mean(stimStartMs), 'Color', 'g', 'LineStyle', '--');
-    xlabel('Time (ms)');
+        plot_raster(spikeTimesSec, 'DurationWindow', oscWindow, ...
+                    'LineWidth', 0.5);
+    vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
+                                    'LineStyle', '--');
+    xlabel('Time (s)');
     ylabel('Trace #');
     title(['Spike times for ', figTitleBase]);
 
     % Save the figure zoomed to several x limits
     save_all_zooms(figs(nVectors + 1), figPathBaseThis, ...
-                    mean(stimStartMs), mean(detectStartMs), mean(firstSpikeMs));
+                mean(stimStartSec), mean(detectStartSec), mean(firstSpikeSec));
 end
 
 %% Outputs
@@ -319,6 +334,9 @@ nBins = numel(spikeCounts);
 % Record the starting time of the histogram
 histLeftMs = edgesMs(1);
 
+% Record the delay for the autocorrelogram
+autoCorrDelayMs = histLeftMs - stimStartMs;
+
 % Compute the bin width in seconds
 binWidthSec = binWidthMs / MS_PER_S;
 
@@ -364,30 +382,60 @@ oscPeriodMs = idxPeak2 * binWidthMs;
 % Compute the minimum spikes per bin in the last burst
 minSpikesPerBinLastBurst = ceil(minSpikeRateLastBurstHz * binWidthSec);
 
-% Find the last bin with number of spikes greater than minSpikesPerBinLastBurst
-lastBinManyManySpikes = find(spikeCounts > minSpikesPerBinLastBurst, 1, 'last');
+% Find the bins with number of spikes greater than minSpikesPerBinLastBurst
+binsManyManySpikes = find(spikeCounts > minSpikesPerBinLastBurst);
 
-% Find all bins with number of spikes at least minSpikesPerBinLastBurst
-isManySpikes = (spikeCounts >= minSpikesPerBinLastBurst);
+% Find the time of oscillation end in ms
+if isempty(binsManyManySpikes)
+    timeOscEndMs = stimStartMs;
+else
+    iBin = numel(binsManyManySpikes) + 1;
+    lastBurstBin = [];
+    while isempty(lastBurstBin) && iBin > 1
+        % Decrement the bin number
+        iBin = iBin - 1;
 
-% Find consecutive bins with number of spikes greater than threshold
-isConsecutiveManySpikes = [0; isManySpikes(1:end-1)] & isManySpikes;
+        % Find the last bin left with 
+        %   number of spikes greater than minSpikesPerBinLastBurst
+        idxBinLast = binsManyManySpikes(iBin);
 
-% Compute the maximum number of bins between last two bursts
-maxInterBurstIntervalBins = floor(maxInterBurstIntervalMs / binWidthMs);
+        % Compute the maximum number of bins between last two bursts
+        maxIbiBins = floor(maxInterBurstIntervalMs / binWidthMs);
 
-find(isConsecutiveManySpikes)
+        % Compute the last bin index that is within maxIbiBins of 
+        %   the last bin with many many spikes
+        idxBinMax = min(idxBinLast + maxIbiBins, nBins);
 
-isManyManySpikes
+        % Determine whether each bin is within maxIbiBins of 
+        %   the last bin with many many spikes
+        withinIBI = false(nBins, 1);
+        withinIBI(idxBinLast:idxBinMax) = true;
 
-maxInterBurstIntervalBins
+        % Determine whether each bin has number of spikes at least a threshold
+        isManySpikes = (spikeCounts >= minSpikesPerBinLastBurst);
 
-spikeCounts * maxInterBurstIntervalBins
+        % Find the last consecutive bin with number of spikes greater than threshold
+        %   within maxIbiBins of the last bin with many many spikes
+        %   Note: First bin must be true
+        lastBurstBin = find([false; isManySpikes(1:end-1)] & isManySpikes & ...
+                            withinIBI, 1, 'last');
+    end
+    
+    % If still not found, the last burst bin is the one with many many spikes
+    if isempty(lastBurstBin)
+        lastBurstBin = idxBinLast;
+    end
 
+    % Compute the time of oscillation end in ms
+    timeOscEndMs = histLeftMs + lastBurstBin * binWidthMs;
+end
+
+% Compute the oscillation duration in ms and seconds
+oscDurationMs = timeOscEndMs - stimStartMs;
+oscDurationSec = oscDurationMs / MS_PER_S;
 
 %% Compute the average spikes per oscillation
 % TODO
-
 
 
 %% Store in outputs
@@ -416,6 +464,7 @@ parsedParams.slopeMax = slopeMax;
 parsedParams.slopeRange = slopeRange;
 parsedParams.nBins = nBins;
 parsedParams.histLeftMs = histLeftMs;
+parsedParams.autoCorrDelayMs = autoCorrDelayMs;
 parsedParams.binWidthSec = binWidthSec;
 parsedParams.ampPeak1 = ampPeak1;
 parsedParams.idxPeak2 = idxPeak2;
@@ -425,6 +474,9 @@ parsedParams.ampTrough1 = ampTrough1;
 parsedParams.ampPeak12 = ampPeak12;
 parsedParams.oscIndex = oscIndex;
 parsedParams.oscPeriodMs = oscPeriodMs;
+parsedParams.timeOscEndMs = timeOscEndMs;
+parsedParams.oscDurationMs = oscDurationMs;
+parsedParams.oscDurationSec = oscDurationSec;
 
 parsedData.tVec = tVec;
 parsedData.vVec = vVec;
@@ -451,18 +503,29 @@ if plotFlag && iVec == 1
     save_all_zooms(fig, figPathBaseThis, stimStartMs, detectStartMs, histLeftMs);
 
     %% Plot the spike histogram
+    % Compute things
     edgesSeconds = edgesMs / MS_PER_S;
     xLimitsHist = edgesSeconds(1) + [0, 7];
+    xLimitsOscDur = [histLeftMs, timeOscEndMs] / MS_PER_S;
+
+    % Plot figure
     histFig = figure;
+    hold on;
     [histBars, histFig] = ...
         plot_histogram([], 'Counts', spikeCounts, 'Edges', edgesSeconds, ...
                         'XLimits', xLimitsHist, 'XLabel', 'Time (seconds)', ...
                         'YLabel', 'Spike Count per 10 ms', ...
                         'FigTitle', ['Spike histogram for ', figTitleBaseThis], ...
                         'FigHandle', histFig);
+    text(0.5, 0.95, sprintf('Oscillation Duration = %.2g seconds', ...
+        oscDurationSec), 'Units', 'normalized');
+    text(0.5, 0.9, sprintf('Total number of spikes = %d', ...
+        spikeCountTotal), 'Units', 'normalized');
+    plot_horizontal_line(0, 'XLimits', xLimitsOscDur, ...
+                        'Color', 'r', 'LineStyle', '-', 'LineWidth', 2);
     saveas(histFig, [figPathBaseThis, '_spike_histogram'], 'png');
 
-    %% Plot the autocorrelogram
+    %% Plot the autocorrelograms
     % Create time values 
     tAcfTemp = create_time_vectors(nBins - 1, 'SamplingIntervalMs', binWidthMs, ...
                                 'TimeUnits', 's');
@@ -471,7 +534,13 @@ if plotFlag && iVec == 1
     timePeak1Sec = 0;
     timeTrough1Sec = idxTrough1 * binWidthSec;
     timePeak2Sec = idxPeak2 * binWidthSec;
-    yLimits = compute_axis_limits(acf(1:floor(7/binWidthSec)), 'y', 'Coverage', 90);
+
+    % Compute x and y limits
+    acfOfInterest = acf(1:floor(7/binWidthSec));
+    maxAcf = max(acfOfInterest);
+    yLimits = compute_axis_limits({acfOfInterest, 0}, 'y', 'Coverage', 90);
+    yOscDur = -(maxAcf * 0.025);
+    xLimitsOscDur = [0, oscDurationMs - autoCorrDelayMs] / MS_PER_S;
 
     % Plot the autocorrelogram
     acfFig = figure;
@@ -483,7 +552,7 @@ if plotFlag && iVec == 1
     title(['Autocorrelation for ', figTitleBaseThis]);
     saveas(acfFig, [figPathBaseThis, '_autocorrelogram'], 'png');
 
-    %% Plot the filtered autocorrelogram
+    % Plot the filtered autocorrelogram
     acfFilteredFig = figure;
     hold on;
     acfLine = plot(tAcf, acf, 'k');
@@ -491,10 +560,14 @@ if plotFlag && iVec == 1
     plot(timePeak1Sec, ampPeak1, 'ro', 'LineWidth', 2);
     plot(timeTrough1Sec, ampTrough1, 'bx', 'LineWidth', 2);
     plot(timePeak2Sec, ampPeak2, 'ro', 'LineWidth', 2);
+    plot_horizontal_line(yOscDur, 'XLimits', xLimitsOscDur, ...
+                        'Color', 'r', 'LineStyle', '-', 'LineWidth', 2);
     text(0.5, 0.95, sprintf('Oscillatory Index = %g', oscIndex), ...
         'Units', 'normalized');
     text(0.5, 0.9, sprintf('Oscillation Period = %g ms', oscPeriodMs), ...
         'Units', 'normalized');
+    text(0.5, 0.85, sprintf('Oscillation Duration = %.2g seconds', ...
+        oscDurationSec), 'Units', 'normalized');
     xlim([0, 7]);
     ylim(yLimits);
     xlabel('Lag (s)');
@@ -576,7 +649,7 @@ linkaxes(ax, 'x');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function save_all_zooms(fig, figPathBase, stimStartMs, detectStartMs, firstSpikeMs)
+function save_all_zooms(fig, figPathBase, stimStartSec, detectStartSec, firstSpikeSec)
 %% Save the figure as .fig and 4 zooms as .png
 % TODO: Make this more general
 
@@ -588,15 +661,15 @@ figure(fig)
 saveas(fig, [figPathBase, '_full'], 'png');
 
 % Zoom #1
-xlim([stimStartMs, stimStartMs + 1e4]);
+xlim(stimStartSec + [0, 10]);
 saveas(fig, [figPathBase, '_zoom1'], 'png');
 
 % Zoom #2
-xlim([detectStartMs, detectStartMs + 2e3]);
+xlim(detectStartSec + [0, 2]);
 saveas(fig, [figPathBase, '_zoom2'], 'png');
 
 % Zoom #3
-xlim([firstSpikeMs, firstSpikeMs + 60]);
+xlim(firstSpikeSec + [0, 0.06]);
 saveas(fig, [figPathBase, '_zoom3'], 'png');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -638,6 +711,31 @@ filterCutoffHz = 3;
 acfFiltered = freqfilter(acf, filterCutoffHz, binWidthMs / 1000);
 parsedParams.filterCutoffHz = filterCutoffHz;
 
+oscWindow = transpose([stimStartMs, timeOscEndMs]);
+[hLines, eventTimes, yEnds, yTicksTable] = ...
+    plot_raster(spikeTimesMs, 'DurationWindow', oscWindow, ...
+                'LineWidth', 0.5);
+vertLine = plot_vertical_line(mean(stimStartMs), 'Color', 'g', ...
+                                'LineStyle', '--');
+save_all_zooms(figs(nVectors + 1), figPathBaseThis, ...
+                mean(stimStartMs), mean(detectStartMs), mean(firstSpikeMs));
+
+function save_all_zooms(fig, figPathBase, stimStartMs, detectStartMs, firstSpikeMs)
+%% Save the figure as .fig and 4 zooms as .png
+% Get the figure
+figure(fig)
+% Save the full figure
+%save_all_figtypes(fig, [figPathBase, '_full'], {'png', 'fig'});
+saveas(fig, [figPathBase, '_full'], 'png');
+% Zoom #1
+xlim([stimStartMs, stimStartMs + 1e4]);
+saveas(fig, [figPathBase, '_zoom1'], 'png');
+% Zoom #2
+xlim([detectStartMs, detectStartMs + 2e3]);
+saveas(fig, [figPathBase, '_zoom2'], 'png');
+% Zoom #3
+xlim([firstSpikeMs, firstSpikeMs + 60]);
+saveas(fig, [figPathBase, '_zoom3'], 'png');
 
 %}
 

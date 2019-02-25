@@ -27,7 +27,12 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 % Arguments:    
 %       data        - event time arrays
 %                   must be a numeric array or a cell array of numeric arrays
-%       varargin    - 'YMid': y value midpoints
+%       varargin    - 'DurationWindow': time window for a duration line
+%                   must be empty or a numeric vector with 2 elements,
+%                       or a numeric array with 2 rows
+%                       or a cell array of numeric vectors with 2 elements
+%                   default == []
+%                   - 'YMid': y value midpoints
 %                   must be a numeric vector
 %                   default == use trial numbers in reverse order
 %                   - 'YLimits': limits of y axis, 
@@ -69,12 +74,14 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 % 2019-02-23 Fixed bugs
 % 2019-02-23 Added 'YLimits' as an optional argument
 % 2019-02-24 Added maxYTicks
+% 2019-02-25 Added 'DurationWindow' as an optional argument
 % 
 
 %% Hard-coded parameters
 maxYTicks = 20;             % maximum number of Y ticks
 
 %% Default values for optional arguments
+durationWindowDefault = []; % no duration line by default
 yMidDefault = [];           % set later
 yLimitsDefault = [];        % set later
 barWidthDefault = 0.6;      % default bar width relative to y value increments
@@ -112,6 +119,10 @@ addRequired(iP, 'data', ...             % a cell array of event time arrays
                     'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'DurationWindow', durationWindowDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['timeWindows must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
 addParameter(iP, 'YMid', yMidDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'YLimits', yLimitsDefault, ...
@@ -135,6 +146,7 @@ addParameter(iP, 'YTickLabels', {}, ...
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
+durationWindow = iP.Results.DurationWindow;
 yMidUser = iP.Results.YMid;
 yLimits = iP.Results.YLimits;
 barWidth = iP.Results.BarWidth;
@@ -153,6 +165,12 @@ otherArguments = iP.Unmatched;
 if isnumeric(data)
     data = force_column_vector(data, 'IgnoreNonVectors', false, ...
                                 'ForceCellOutput', true);
+end
+
+% Force any duration window to be a column vector
+if ~isempty(durationWindow)
+    durationWindow = force_column_vector(durationWindow, ...
+                        'IgnoreNonVectors', false, 'ForceCellOutput', true);
 end
 
 % Get the number of event time arrays to plot
@@ -243,7 +261,7 @@ end
 if numel(yMidsAll) == 1
     yIncr = 1;
 else
-    yIncr = yMidsAll(2) - yMidsAll(1);
+    yIncr = abs(yMidsAll(2) - yMidsAll(1));
 end
 
 % Decide on indices for ticks if total number of vectors exceed maxYTicks
@@ -295,6 +313,11 @@ end
 
 % Get the half bar width in actual coordinates
 halfBarWidth = (barWidth / 2) * yIncr;
+
+% Compute the y values for the horizontal lines
+if ~isempty(durationWindow)
+    yHorzLines = yMidsAll + halfBarWidth;
+end
 
 % Assign y value endpoints to each event time
 eventTimes = cell(size(data));
@@ -356,6 +379,13 @@ for iArray = 1:nArrays
                             'LineWidth', lineWidthDefault, ...
                             'Color', colorThis, ...
                             'DisplayName', labelThis, otherArguments);
+end
+
+% Plot horizontal line(s) for duration if provided
+if ~isempty(durationWindow)
+    horzLines = cellfun(@(x, y) plot_horizontal_line(x, 'XLimits', y, ...
+                        'Color', 'r', 'LineStyle', '-', 'LineWidth', 0.5), ...
+                        num2cell(yHorzLines), durationWindow);
 end
 
 % Change the y tick values and labels
