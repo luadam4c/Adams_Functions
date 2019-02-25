@@ -23,7 +23,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %                                           but not the right endpoint
 %                       'rightadjust' - the right endpoint is included
 %                                           but not the left endpoint
-%                   default == 'restrictive'
+%                   default == 'rightadjust'
 %                   - 'TimeUnits': output time units
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       's'     - seconds
@@ -39,8 +39,8 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %                   - 'SamplingIntervalMs': sampling interval in ms
 %                   must be a positive vector
 %                   default == 1e3 ms (1 second)
-%                   - 'TimeStart': start time(s) in ms
-%                   must be a positive vector
+%                   - 'TimeStart': start time(s) in output time units
+%                   must be a numeric vector
 %                   default == 0
 %                   - 'ForceCellOutput': whether to force output as a cell array
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -59,6 +59,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %       cd/m3ha_xolotl_plot.m
 %       cd/match_time_info.m
 %       cd/parse_lts.m
+%       cd/parse_multiunit.m
 
 % File History:
 % 2018-10-25 Adapted from make_time_column.m in Marks_Functions

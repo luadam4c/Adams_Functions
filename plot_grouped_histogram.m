@@ -338,10 +338,10 @@ if strcmpi(style, 'overlapped')
 end
 
 %% Plot and save histogram
-if strcmpi(style, 'overlapped')
-    % Store hold status
-    wasHold = ishold;
+% Store hold status
+wasHold = ishold;
 
+if strcmpi(style, 'overlapped')
     % Hold on
     hold on;
 

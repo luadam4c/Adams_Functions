@@ -29,7 +29,8 @@ function vecsFilt = movingaveragefilter (vecs, varargin)
 %       cd/find_nearest_odd.m
 %
 % Used by:
-%       cd/parse_LTS.m
+%       cd/parse_lts.m
+%       cd/parse_multiunit.m
 
 % File History:
 % 2019-01-14 Created by Adam Lu

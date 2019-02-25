@@ -40,12 +40,14 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/plot_raster.m TODO
 %       cd/plot_horizontal_line.m TODO
 %       cd/create_logical_array.m
+%       cd/create_time_vectors.m
 %       cd/extract_elements.m
 %       cd/force_column_cell.m
 %       cd/compute_axis_limits.m
 %       cd/compute_baseline_noise.m
 %       cd/create_error_for_nargin.m
 %       cd/match_time_info.m
+%       cd/movingaveragefilter.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -179,8 +181,8 @@ end
 % Parse all of them in a parfor loop
 parsedParamsCell = cell(nVectors, 1);
 parsedDataCell = cell(nVectors, 1);
-%parfor iVec = 1:nVectors
-for iVec = 1:1
+parfor iVec = 1:nVectors
+%for iVec = 1:1
     [parsedParamsCell{iVec}, parsedDataCell{iVec}, figs(iVec)] = ...
         parse_multiunit_helper(iVec, vVecs{iVec}, tVecs{iVec}, siMs(iVec), ...
                                 idxStimStart(iVec), stimStartMs(iVec), ...
@@ -204,15 +206,16 @@ if plotFlag
     figPathBaseThis = [figPathBase, '_raster'];
 
     % Extract the spike times
-    spikeTimes = parsedData.spikeTimes;
+    spikeTimesMs = parsedData.spikeTimesMs;
     stimStartMs = parsedParams.stimStartMs;
     detectStartMs = parsedParams.detectStartMs;
+    firstSpikeMs = parsedParams.firstSpikeMs;
 
     % Create figure and plot
     figs(nVectors + 1) = figure(2);
     clf
     [hLines, eventTimes, yEnds, yTicksTable] = ...
-        plot_raster(spikeTimes, 'LineWidth', 0.5);
+        plot_raster(spikeTimesMs, 'LineWidth', 0.5);
     vLines = plot_vertical_line(mean(stimStartMs), 'Color', 'g', 'LineStyle', '--');
     xlabel('Time (ms)');
     ylabel('Trace #');
@@ -220,7 +223,7 @@ if plotFlag
 
     % Save the figure zoomed to several x limits
     save_all_zooms(figs(nVectors + 1), figPathBaseThis, ...
-                    mean(stimStartMs), mean(detectStartMs));
+                    mean(stimStartMs), mean(detectStartMs), mean(firstSpikeMs));
 end
 
 %% Outputs
@@ -236,9 +239,14 @@ function [parsedParams, parsedData, fig] = ...
                                 plotFlag, figPathBase, figTitleBase)
 % Parse a single multiunit recording
 
+% Hard-coded constants
+MS_PER_S = 1000;
+
 % Hard-coded parameters
-signal2Noise = 4; %3
+signal2Noise = 4; %2.5
 minDelaySamples = 2000;
+binWidthMs = 10;
+filterWidthMs = 100;
 
 % Modify the figure base
 figPathBaseThis = [figPathBase, '_trace', num2str(iVec)];
@@ -274,22 +282,87 @@ isSpike = [false; slopes > slopeThreshold] & [false; isPeakSlope] & ...
             allIndices > idxDetectStart;
 idxSpikes = find(isSpike);
 
+% Compute the overall spike count
+spikeCountTotal = numel(idxSpikes);
+
+% Index of first spike
+idxFirstSpike = idxSpikes(1);
+
 % Store spike times
-spikeTimes = tVec(idxSpikes);
+spikeTimesMs = tVec(idxSpikes);
+firstSpikeMs = spikeTimesMs(1);
 
 % Query the maximum and range of vVec after detectStartMs
-vMin = min(vVec(idxDetectStart:end));
-vMax = max(vVec(idxDetectStart:end));
+vVecTrunc = vVec(idxDetectStart:idxDetectStart + 1e5);
+vMin = min(vVecTrunc);
+vMax = max(vVecTrunc);
 vRange = vMax - vMin;
 
 % Query the maximum and range of slope after detectStartMs
-slopeMin = min(slope(idxDetectStart:end));
-slopeMax = max(slope(idxDetectStart:end));
+slopesTrunc = slopes(idxDetectStart:idxDetectStart + 1e5);
+slopeMin = min(slopesTrunc);
+slopeMax = max(slopesTrunc);
 slopeRange = slopeMax - slopeMin;
+
+% Compute a spike histogram
+[spikeCounts, edgesMs] = compute_bins(spikeTimesMs, 'BinWidth', binWidthMs);
+
+% Compute the number of bins
+nBins = numel(spikeCounts);
+
+% Record the starting time of the histogram
+histLeftMs = edgesMs(1);
+
+% Compute the bin width in seconds
+binWidthSec = binWidthMs / MS_PER_S;
+
+% Compute an unnormalized autocorrelogram in Hz^2
+autoCorr = xcorr(spikeCounts, 'unbiased') / binWidthSec ^ 2;
+
+% Take just the positive side
+acf = autoCorr(nBins:end);
+
+% Compute a normalized autocorrelation function
+% autocorr(spikeCounts, nBins - 1);
+% acf = autocorr(spikeCounts, nBins - 1);
+
+% Smooth the autocorrelogram with a moving-average filter
+acfFiltered = movingaveragefilter(acf, filterWidthMs, binWidthMs);
+
+% Record the amplitude of the primary peak
+ampPeak1 = acfFiltered(1);
+
+% Find the index and amplitude of the secondary peak
+[peakAmp, peakInd] = findpeaks(acfFiltered, 'MinPeakProminence', 0.1 * ampPeak1);
+idxPeak2 = peakInd(1);
+ampPeak2 = peakAmp(1);
+
+% Find the amplitude of the first trough
+[troughNegAmp, troughInd] = findpeaks(-acfFiltered);
+idxTrough1 = troughInd(1);
+ampTrough1 = -troughNegAmp(1);
+
+% Compute the average amplitude of first two peaks
+ampPeak12 = mean([ampPeak1, ampPeak2]);
+
+% Compute the oscillatory index
+oscIndex = (ampPeak12 - ampTrough1) / ampPeak12;
+
+% Compute the oscillation duration
+% TODO
+
+% Compute the average spikes per oscillation
+% TODO
+
+% Compute the oscillation period
+oscPeriodMs = idxPeak2 * binWidthMs;
+
 
 % Store in outputs
 parsedParams.signal2Noise = signal2Noise;
 parsedParams.minDelaySamples = minDelaySamples;
+parsedParams.binWidthMs = binWidthMs;
+parsedParams.filterWidthMs = filterWidthMs;
 parsedParams.siMs = siMs;
 parsedParams.idxStimStart = idxStimStart;
 parsedParams.stimStartMs = stimStartMs;
@@ -298,21 +371,42 @@ parsedParams.baseSlopeNoise = baseSlopeNoise;
 parsedParams.slopeThreshold = slopeThreshold;
 parsedParams.idxDetectStart = idxDetectStart;
 parsedParams.detectStartMs = detectStartMs;
+parsedParams.spikeCountTotal = spikeCountTotal;
+parsedParams.idxFirstSpike = idxFirstSpike;
+parsedParams.firstSpikeMs = firstSpikeMs;
 parsedParams.vMin = vMin;
 parsedParams.vMax = vMax;
 parsedParams.vRange = vRange;
 parsedParams.slopeMin = slopeMin;
 parsedParams.slopeMax = slopeMax;
 parsedParams.slopeRange = slopeRange;
+parsedParams.nBins = nBins;
+parsedParams.histLeftMs = histLeftMs;
+parsedParams.binWidthSec = binWidthSec;
+parsedParams.ampPeak1 = ampPeak1;
+parsedParams.idxPeak2 = idxPeak2;
+parsedParams.ampPeak2 = ampPeak2;
+parsedParams.idxTrough1 = idxTrough1;
+parsedParams.ampTrough1 = ampTrough1;
+parsedParams.ampPeak12 = ampPeak12;
+parsedParams.oscIndex = oscIndex;
+parsedParams.oscPeriodMs = oscPeriodMs;
+
 parsedData.tVec = tVec;
 parsedData.vVec = vVec;
 parsedData.slopes = slopes;
 parsedData.idxSpikes = idxSpikes;
-parsedData.spikeTimes = spikeTimes;
+parsedData.spikeTimesMs = spikeTimesMs;
+parsedData.spikeCounts = spikeCounts;
+parsedData.edgesMs = edgesMs;
+parsedData.autoCorr = autoCorr;
+parsedData.acf = acf;
+parsedData.acfFiltered = acfFiltered;
 
-% Plots the spike detection
+%% Plots
+% if plotFlag
 if plotFlag && iVec == 1
-    % Plot spike detection
+    %% Plot spike detection
     [fig, ax, lines, markers, raster] = ...
         plot_spike_detection(tVec, vVec, slopes, idxSpikes, ...
                             baseSlopeNoise, slopeThreshold, ...
@@ -320,7 +414,59 @@ if plotFlag && iVec == 1
                             detectStartMs, figTitleBaseThis);
         
     % Save the figure zoomed to several x limits
-    save_all_zooms(fig, figPathBaseThis, stimStartMs, detectStartMs);
+    save_all_zooms(fig, figPathBaseThis, stimStartMs, detectStartMs, histLeftMs);
+
+    %% Plot the spike histogram
+    edgesSeconds = edgesMs / MS_PER_S;
+    xLimitsHist = edgesSeconds(1) + [0, 7];
+    histFig = figure;
+    [histBars, histFig] = ...
+        plot_histogram([], 'Counts', spikeCounts, 'Edges', edgesSeconds, ...
+                        'XLimits', xLimitsHist, 'XLabel', 'Time (seconds)', ...
+                        'YLabel', 'Spike Count per 10 ms', ...
+                        'FigTitle', ['Spike histogram for ', figTitleBaseThis], ...
+                        'FigHandle', histFig);
+    saveas(histFig, [figPathBaseThis, '_spike_histogram'], 'png');
+
+    %% Plot the autocorrelogram
+    % Create time values 
+    tAcfTemp = create_time_vectors(nBins - 1, 'SamplingIntervalMs', binWidthMs, ...
+                                'TimeUnits', 's');
+    tAcf = [0; tAcfTemp];
+    tAutoCorr = [-flipud(tAcfTemp); 0; tAcfTemp];
+    timePeak1Sec = 0;
+    timeTrough1Sec = idxTrough1 * binWidthSec;
+    timePeak2Sec = idxPeak2 * binWidthSec;
+    yLimits = compute_axis_limits(acf(1:floor(7/binWidthSec)), 'y', 'Coverage', 90);
+
+    % Plot the autocorrelogram
+    acfFig = figure;
+    acfLine = plot(tAutoCorr, autoCorr);
+    xlim([-7, 7]);
+    ylim(yLimits);
+    xlabel('Lag (s)');
+    ylabel('Spike rate squared (Hz^2)');
+    title(['Autocorrelation for ', figTitleBaseThis]);
+    saveas(acfFig, [figPathBaseThis, '_autocorrelogram'], 'png');
+
+    %% Plot the filtered autocorrelogram
+    acfFilteredFig = figure;
+    hold on;
+    acfLine = plot(tAcf, acf, 'k');
+    acfFilteredLine = plot(tAcf, acfFiltered, 'g', 'LineWidth', 1);
+    plot(timePeak1Sec, ampPeak1, 'ro', 'LineWidth', 2);
+    plot(timeTrough1Sec, ampTrough1, 'bx', 'LineWidth', 2);
+    plot(timePeak2Sec, ampPeak2, 'ro', 'LineWidth', 2);
+    text(0.5, 0.95, sprintf('Oscillatory Index = %g', oscIndex), ...
+        'Units', 'normalized');
+    text(0.5, 0.9, sprintf('Oscillation Period = %g ms', oscPeriodMs), ...
+        'Units', 'normalized');
+    xlim([0, 7]);
+    ylim(yLimits);
+    xlabel('Lag (s)');
+    ylabel('Spike rate squared (Hz^2)');
+    title(['Smoothed autocorrelation for ', figTitleBaseThis]);
+    saveas(acfFilteredFig, [figPathBaseThis, '_smoothed_autocorrelogram'], 'png');
 else
     fig = gobjects(1);
 end
@@ -396,7 +542,7 @@ linkaxes(ax, 'x');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function save_all_zooms(fig, figPathBase, stimStartMs, detectStartMs)
+function save_all_zooms(fig, figPathBase, stimStartMs, detectStartMs, firstSpikeMs)
 %% Save the figure as .fig and 4 zooms as .png
 % TODO: Make this more general
 
@@ -404,7 +550,8 @@ function save_all_zooms(fig, figPathBase, stimStartMs, detectStartMs)
 figure(fig)
 
 % Save the full figure
-save_all_figtypes(fig, [figPathBase, '_full'], {'png', 'fig'});
+%save_all_figtypes(fig, [figPathBase, '_full'], {'png', 'fig'});
+saveas(fig, [figPathBase, '_full'], 'png');
 
 % Zoom #1
 xlim([stimStartMs, stimStartMs + 1e4]);
@@ -415,7 +562,7 @@ xlim([detectStartMs, detectStartMs + 2e3]);
 saveas(fig, [figPathBase, '_zoom2'], 'png');
 
 % Zoom #3
-xlim([3410, 3470]);
+xlim([firstSpikeMs, firstSpikeMs + 60]);
 saveas(fig, [figPathBase, '_zoom3'], 'png');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -436,6 +583,27 @@ idxDetectStart = find(tVec > detectStartMs, 1);
 xlim([detectStartMs, detectStartMs + 1e4]);
 xlim([detectStartMs, detectStartMs + 2e3]);
 xlim([3410, 3470]);
+
+% Query the maximum and range of vVec after detectStartMs
+vVecTrunc = vVec(idxDetectStart:end);
+vMean = mean(vVecTrunc);
+vStd = std(vVecTrunc);
+vMin = vMean - 10 * vStd;
+vMax = vMean + 10 * vStd;
+vRange = vMax - vMin;
+
+% Query the maximum and range of slope after detectStartMs
+slopesTrunc = slopes(idxDetectStart:end);
+slopesMean = mean(slopesTrunc);
+slopesStd = std(slopesTrunc);
+slopeMin = slopesMean - 10 * slopesStd;
+slopeMax = slopesMean + 10 * slopesStd;
+slopeRange = slopeMax - slopeMin;
+
+filterCutoffHz = 3;
+acfFiltered = freqfilter(acf, filterCutoffHz, binWidthMs / 1000);
+parsedParams.filterCutoffHz = filterCutoffHz;
+
 
 %}
 

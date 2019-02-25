@@ -10,6 +10,7 @@ function [bars, fig] = plot_histogram (X, varargin)
 % Example(s):
 %       plot_histogram([-100, randn(1, 100) + 4, 100])
 %       plot_histogram([randn(100, 3); [100, -200, 300]])
+%       plot_histogram([], 'Counts', (1:5)', 'Edges', (1:6)')
 % Outputs:
 %       bars        - handles to Bar objects
 %                       bars(1:nGroups) - main histogram
@@ -147,7 +148,7 @@ function [bars, fig] = plot_histogram (X, varargin)
 %               and added 'UseBuiltIn' as an optional parameter (default false)
 % 2019-01-15 Made 'PlotOutliers' an optional parameter with default true
 %       and rename as just plot_histogram.m
-
+% 2019-02-24 Fixed bug when 'Counts' is passed in 
 %% Hard-coded parameters
 validOutlierMethods = {'boxplot', 'isoutlier', ...
                         'fiveStds', 'threeStds', 'twoStds'};
@@ -334,6 +335,8 @@ edgesExpanded = [-Inf; edgesFinite; Inf];
 %   Note: the last bin is always >= the last non-Inf number in edges
 if isempty(counts)
     counts = compute_grouped_histcounts(X, grouping, 'Edges', edgesExpanded);
+else
+    counts = [0; counts; 0];
 end
 
 % Decide whether the histogram will be expanded on the left and right

@@ -68,6 +68,7 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 % 2018-12-18 Now uses iP.KeepUnmatched
 % 2019-02-23 Fixed bugs
 % 2019-02-23 Added 'YLimits' as an optional argument
+% 2019-02-24 Added maxYTicks
 % 
 
 %% Hard-coded parameters
