@@ -247,11 +247,16 @@ signal2Noise = 4; %2.5
 minDelaySamples = 2000;
 binWidthMs = 10;
 filterWidthMs = 100;
+minRelProm = 0.02;
+minSpikeRateLastBurstHz = 100;
+maxInterBurstIntervalMs = 1000;
 
+%% Preparation
 % Modify the figure base
 figPathBaseThis = [figPathBase, '_trace', num2str(iVec)];
 figTitleBaseThis = [figTitleBase, '\_trace', num2str(iVec)];
 
+%% Detect spikes
 % Find the starting index for detecting a spike
 idxDetectStart = idxStimStart + minDelaySamples;
 
@@ -304,6 +309,7 @@ slopeMin = min(slopesTrunc);
 slopeMax = max(slopesTrunc);
 slopeRange = slopeMax - slopeMin;
 
+%% Compute the spike histogram
 % Compute a spike histogram
 [spikeCounts, edgesMs] = compute_bins(spikeTimesMs, 'BinWidth', binWidthMs);
 
@@ -316,6 +322,7 @@ histLeftMs = edgesMs(1);
 % Compute the bin width in seconds
 binWidthSec = binWidthMs / MS_PER_S;
 
+%% Compute the autocorrelogram
 % Compute an unnormalized autocorrelogram in Hz^2
 autoCorr = xcorr(spikeCounts, 'unbiased') / binWidthSec ^ 2;
 
@@ -329,11 +336,13 @@ acf = autoCorr(nBins:end);
 % Smooth the autocorrelogram with a moving-average filter
 acfFiltered = movingaveragefilter(acf, filterWidthMs, binWidthMs);
 
+%% Compute the oscillatory index
 % Record the amplitude of the primary peak
 ampPeak1 = acfFiltered(1);
 
 % Find the index and amplitude of the secondary peak
-[peakAmp, peakInd] = findpeaks(acfFiltered, 'MinPeakProminence', 0.1 * ampPeak1);
+[peakAmp, peakInd] = ...
+    findpeaks(acfFiltered, 'MinPeakProminence', minRelProm * ampPeak1);
 idxPeak2 = peakInd(1);
 ampPeak2 = peakAmp(1);
 
@@ -348,21 +357,46 @@ ampPeak12 = mean([ampPeak1, ampPeak2]);
 % Compute the oscillatory index
 oscIndex = (ampPeak12 - ampTrough1) / ampPeak12;
 
-% Compute the oscillation duration
-% TODO
-
-% Compute the average spikes per oscillation
-% TODO
-
-% Compute the oscillation period
+%% Compute the oscillation period
 oscPeriodMs = idxPeak2 * binWidthMs;
 
+%% Compute the oscillation duration
+% Compute the minimum spikes per bin in the last burst
+minSpikesPerBinLastBurst = ceil(minSpikeRateLastBurstHz * binWidthSec);
 
-% Store in outputs
+% Find the last bin with number of spikes greater than minSpikesPerBinLastBurst
+lastBinManyManySpikes = find(spikeCounts > minSpikesPerBinLastBurst, 1, 'last');
+
+% Find all bins with number of spikes at least minSpikesPerBinLastBurst
+isManySpikes = (spikeCounts >= minSpikesPerBinLastBurst);
+
+% Find consecutive bins with number of spikes greater than threshold
+isConsecutiveManySpikes = [0; isManySpikes(1:end-1)] & isManySpikes;
+
+% Compute the maximum number of bins between last two bursts
+maxInterBurstIntervalBins = floor(maxInterBurstIntervalMs / binWidthMs);
+
+find(isConsecutiveManySpikes)
+
+isManyManySpikes
+
+maxInterBurstIntervalBins
+
+spikeCounts * maxInterBurstIntervalBins
+
+
+%% Compute the average spikes per oscillation
+% TODO
+
+
+
+%% Store in outputs
 parsedParams.signal2Noise = signal2Noise;
 parsedParams.minDelaySamples = minDelaySamples;
 parsedParams.binWidthMs = binWidthMs;
 parsedParams.filterWidthMs = filterWidthMs;
+parsedParams.minRelProm = minRelProm;
+parsedParams.minSpikeRateLastBurstHz = minSpikeRateLastBurstHz;
 parsedParams.siMs = siMs;
 parsedParams.idxStimStart = idxStimStart;
 parsedParams.stimStartMs = stimStartMs;
