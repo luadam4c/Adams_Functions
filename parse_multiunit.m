@@ -270,7 +270,7 @@ binWidthMs = 10;
 filterWidthMs = 100;
 minRelProm = 0.02;
 minSpikeRateInBurstHz = 100;
-minBurstLengthMs = 30;
+minBurstLengthMs = 20;
 maxInterBurstIntervalMs = 1000;
 
 %% Preparation
