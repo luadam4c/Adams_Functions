@@ -237,8 +237,11 @@ if plotFlag
     title(['Spike times for ', figTitleBase]);
 
     % Save the figure zoomed to several x limits
+    zoomWin1 = mean(stimStartSec) + [0, 10];
+    zoomWin2 = mean(detectStartSec) + [0, 2];
+    zoomWin3 = mean(firstSpikeSec) + [0, 0.06];
     save_all_zooms(figs(nVectors + 1), figPathBaseThis, ...
-                mean(stimStartSec), mean(detectStartSec), mean(firstSpikeSec));
+                    zoomWin1, zoomWin2, zoomWin3);
 end
 
 %% Outputs
@@ -340,45 +343,6 @@ autoCorrDelayMs = histLeftMs - stimStartMs;
 % Compute the bin width in seconds
 binWidthSec = binWidthMs / MS_PER_S;
 
-%% Compute the autocorrelogram
-% Compute an unnormalized autocorrelogram in Hz^2
-autoCorr = xcorr(spikeCounts, 'unbiased') / binWidthSec ^ 2;
-
-% Take just the positive side
-acf = autoCorr(nBins:end);
-
-% Compute a normalized autocorrelation function
-% autocorr(spikeCounts, nBins - 1);
-% acf = autocorr(spikeCounts, nBins - 1);
-
-% Smooth the autocorrelogram with a moving-average filter
-acfFiltered = movingaveragefilter(acf, filterWidthMs, binWidthMs);
-
-%% Compute the oscillatory index
-% Record the amplitude of the primary peak
-ampPeak1 = acfFiltered(1);
-
-% Find the index and amplitude of the secondary peak
-[peakAmp, peakInd] = ...
-    findpeaks(acfFiltered, 'MinPeakProminence', minRelProm * ampPeak1);
-idxPeak2 = peakInd(1);
-ampPeak2 = peakAmp(1);
-
-% Find the amplitude of the first trough
-[troughNegAmp, troughInd] = findpeaks(-acfFiltered);
-idxTrough1 = troughInd(1);
-ampTrough1 = -troughNegAmp(1);
-
-% Compute the average amplitude of first two peaks
-ampPeak12 = mean([ampPeak1, ampPeak2]);
-
-% Compute the oscillatory index
-oscIndex = (ampPeak12 - ampTrough1) / ampPeak12;
-
-%% Compute the oscillation period
-oscPeriodMs = idxPeak2 * binWidthMs;
-
-%% Compute the oscillation duration
 % Compute the minimum spikes per bin in the last burst
 minSpikesPerBinLastBurst = ceil(minSpikeRateLastBurstHz * binWidthSec);
 
@@ -434,9 +398,45 @@ end
 oscDurationMs = timeOscEndMs - stimStartMs;
 oscDurationSec = oscDurationMs / MS_PER_S;
 
-%% Compute the average spikes per oscillation
+% Compute the average spikes per oscillation
 % TODO
 
+%% Compute the autocorrelogram
+% Compute an unnormalized autocorrelogram in Hz^2
+autoCorr = xcorr(spikeCounts, 'unbiased') / binWidthSec ^ 2;
+
+% Take just the positive side
+acf = autoCorr(nBins:end);
+
+% Compute a normalized autocorrelation function
+% autocorr(spikeCounts, nBins - 1);
+% acf = autocorr(spikeCounts, nBins - 1);
+
+% Smooth the autocorrelogram with a moving-average filter
+acfFiltered = movingaveragefilter(acf, filterWidthMs, binWidthMs);
+
+% Record the amplitude of the primary peak
+ampPeak1 = acfFiltered(1);
+
+% Find the index and amplitude of the secondary peak
+[peakAmp, peakInd] = ...
+    findpeaks(acfFiltered, 'MinPeakProminence', minRelProm * ampPeak1);
+idxPeak2 = peakInd(1);
+ampPeak2 = peakAmp(1);
+
+% Find the amplitude of the first trough
+[troughNegAmp, troughInd] = findpeaks(-acfFiltered);
+idxTrough1 = troughInd(1);
+ampTrough1 = -troughNegAmp(1);
+
+% Compute the average amplitude of first two peaks
+ampPeak12 = mean([ampPeak1, ampPeak2]);
+
+% Compute the oscillatory index
+oscIndex = (ampPeak12 - ampTrough1) / ampPeak12;
+
+% Compute the oscillation period
+oscPeriodMs = idxPeak2 * binWidthMs;
 
 %% Store in outputs
 parsedParams.signal2Noise = signal2Noise;
@@ -500,7 +500,10 @@ if plotFlag && iVec == 1
                             detectStartMs, figTitleBaseThis);
         
     % Save the figure zoomed to several x limits
-    save_all_zooms(fig, figPathBaseThis, stimStartMs, detectStartMs, histLeftMs);
+    zoomWin1 = stimStartMs + [0, 1e4];
+    zoomWin2 = detectStartMs + [0, 2e3];
+    zoomWin3 = firstSpikeMs + [0, 60];
+    save_all_zooms(fig, figPathBaseThis, zoomWin1, zoomWin2, zoomWin3);
 
     %% Plot the spike histogram
     % Compute things
@@ -649,7 +652,7 @@ linkaxes(ax, 'x');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function save_all_zooms(fig, figPathBase, stimStartSec, detectStartSec, firstSpikeSec)
+function save_all_zooms(fig, figPathBase, zoomWin1, zoomWin2, zoomWin3)
 %% Save the figure as .fig and 4 zooms as .png
 % TODO: Make this more general
 
@@ -661,15 +664,15 @@ figure(fig)
 saveas(fig, [figPathBase, '_full'], 'png');
 
 % Zoom #1
-xlim(stimStartSec + [0, 10]);
+xlim(zoomWin1);
 saveas(fig, [figPathBase, '_zoom1'], 'png');
 
 % Zoom #2
-xlim(detectStartSec + [0, 2]);
+xlim(zoomWin2);
 saveas(fig, [figPathBase, '_zoom2'], 'png');
 
 % Zoom #3
-xlim(firstSpikeSec + [0, 0.06]);
+xlim(zoomWin3);
 saveas(fig, [figPathBase, '_zoom3'], 'png');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
