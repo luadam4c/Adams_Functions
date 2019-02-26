@@ -271,7 +271,7 @@ filterWidthMs = 100;
 minRelProm = 0.02;
 minSpikeRateInBurstHz = 100;
 minBurstLengthMs = 20;
-maxInterBurstIntervalMs = 1000;
+maxInterBurstIntervalMs = 2000;
 
 %% Preparation
 % Modify the figure base
@@ -344,32 +344,35 @@ histLeftMs = edgesMs(1);
 % Compute the bin width in seconds
 binWidthSec = binWidthMs / MS_PER_S;
 
-% Compute the minimum spikes per bin in the last burst
-minSpikesPerBinInBurst = ceil(minSpikeRateInBurstHz * binWidthSec);
-
 % Compute the minimum number of bins in a burst
 minBinsInBurst = ceil(minBurstLengthMs / binWidthMs);
 
-% Compute the maximum number of bins between last two bursts
+% Compute the window length in seconds
+windowLengthSec = minBinsInBurst * binWidthSec;
+
+% Compute the minimum spikes per window if in a burst
+minSpikesPerWindowInBurst = ceil(minSpikeRateInBurstHz * windowLengthSec);
+
+% Compute the maximum number of bins between consecutive bursts
 maxIbiBins = floor(maxInterBurstIntervalMs / binWidthMs);
 
-% Determine whether each bin passes the number of spikes criterion
-isInBurst = spikeCounts >= minSpikesPerBinInBurst;
-
-% Determine whether each bin and its previous minBinsInBurst
-%   consecutive bins all pass the number of spikes criterion
-isLastBinInBurst = isInBurst;
-previousInBurst = isInBurst;
+% Count spikes for each sliding window
+spikeCountsWin = spikeCounts;
+spikeCountsPrev = spikeCounts;
 for i = 1:minBinsInBurst
-    % Whether the previous ith bin passes the number of spikes criterion
-    previousInBurst = [false; previousInBurst(1:(end-1))];
+    % Compute spike counts from the previous ith bin
+    spikeCountsPrev = [false; spikeCountsPrev(1:(end-1))];
 
-    % Whether the previous i bins all pass the number of spikes criterion
-    isLastBinInBurst = isLastBinInBurst & previousInBurst;
+    % Add the spike counts in the previous i bins
+    spikeCountsWin = spikeCountsWin + spikeCountsPrev;
 end
 
+% Determine whether each sliding window passes the number of spikes criterion
+isInBurst = spikeCountsWin >= minSpikesPerWindowInBurst;
+
 % Find the last bins of each burst
-iBinLastInBurst = find(isLastBinInBurst);
+%   Note: this sliding window in burst but the next sliding window not in burst
+iBinLastInBurst = find(isInBurst & [~isInBurst(2:end); true]);
 
 % Find the last bin of the last burst, using maxIbiBins
 if isempty(iBinLastInBurst)
@@ -795,6 +798,24 @@ else
     % Compute the time of oscillation end in ms
     timeOscEndMs = histLeftMs + lastBurstBin * binWidthMs;
 end
+
+% Compute the minimum spikes per bin in the last burst
+minSpikesPerBinInBurst = ceil(minSpikeRateInBurstHz * binWidthSec);
+% Determine whether each bin passes the number of spikes criterion
+isInBurst = spikeCounts >= minSpikesPerBinInBurst;
+% Determine whether each bin and its previous minBinsInBurst
+%   consecutive bins all pass the number of spikes criterion
+isLastBinInBurst = isInBurst;
+previousInBurst = isInBurst;
+for i = 1:minBinsInBurst
+    % Whether the previous ith bin passes the number of spikes criterion
+    previousInBurst = [false; previousInBurst(1:(end-1))];
+
+    % Whether the previous i bins all pass the number of spikes criterion
+    isLastBinInBurst = isLastBinInBurst & previousInBurst;
+end
+% Find the last bins of each burst
+iBinLastInBurst = find(isLastBinInBurst);
 
 %}
 
