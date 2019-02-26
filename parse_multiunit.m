@@ -54,6 +54,9 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 
 % File History:
 % 2019-02-19 Created by Adam Lu
+% 2019-02-24 Added computation of oscillation index and period
+% 2019-02-25 Added computation of oscillation duration
+% 2019-02-25 Updated computation of oscillation duration
 % 
 
 %% Hard-coded parameters
@@ -266,7 +269,8 @@ minDelaySamples = 2000;
 binWidthMs = 10;
 filterWidthMs = 100;
 minRelProm = 0.02;
-minSpikeRateLastBurstHz = 100;
+minSpikeRateInBurstHz = 100;
+minBurstLengthMs = 30;
 maxInterBurstIntervalMs = 1000;
 
 %% Preparation
@@ -337,61 +341,62 @@ nBins = numel(spikeCounts);
 % Record the starting time of the histogram
 histLeftMs = edgesMs(1);
 
-% Record the delay for the autocorrelogram
-autoCorrDelayMs = histLeftMs - stimStartMs;
-
 % Compute the bin width in seconds
 binWidthSec = binWidthMs / MS_PER_S;
 
 % Compute the minimum spikes per bin in the last burst
-minSpikesPerBinLastBurst = ceil(minSpikeRateLastBurstHz * binWidthSec);
+minSpikesPerBinInBurst = ceil(minSpikeRateInBurstHz * binWidthSec);
 
-% Find the bins with number of spikes greater than minSpikesPerBinLastBurst
-binsManyManySpikes = find(spikeCounts > minSpikesPerBinLastBurst);
+% Compute the minimum number of bins in a burst
+minBinsInBurst = ceil(minBurstLengthMs / binWidthMs);
+
+% Compute the maximum number of bins between last two bursts
+maxIbiBins = floor(maxInterBurstIntervalMs / binWidthMs);
+
+% Determine whether each bin passes the number of spikes criterion
+isInBurst = spikeCounts >= minSpikesPerBinInBurst;
+
+% Determine whether each bin and its previous minBinsInBurst
+%   consecutive bins all pass the number of spikes criterion
+isLastBinInBurst = isInBurst;
+previousInBurst = isInBurst;
+for i = 1:minBinsInBurst
+    % Whether the previous ith bin passes the number of spikes criterion
+    previousInBurst = [false; previousInBurst(1:(end-1))];
+
+    % Whether the previous i bins all pass the number of spikes criterion
+    isLastBinInBurst = isLastBinInBurst & previousInBurst;
+end
+
+% Find the last bins of each burst
+iBinLastInBurst = find(isLastBinInBurst);
+
+% Find the last bin of the last burst, using maxIbiBins
+if isempty(iBinLastInBurst)
+    iBinLastOfLastBurst = NaN;
+else
+    % Compute the inter-burst intervals in bins
+    ibiBins = diff(iBinLastInBurst);
+
+    % Find the first inter-burst interval greater than maxIbiBins
+    iBurstLast = find(ibiBins > maxIbiBins, 1, 'first');
+
+    % Determine the last bin of the last burst
+    if isempty(iBurstLast)
+        % All bursts are close enough together
+        iBinLastOfLastBurst = iBinLastInBurst(end);
+    else
+        % Actually (iBurstLast - 1) + 1
+        iBinLastOfLastBurst = iBinLastInBurst(iBurstLast);
+    end
+end
 
 % Find the time of oscillation end in ms
-if isempty(binsManyManySpikes)
+if isnan(iBinLastOfLastBurst)
     timeOscEndMs = stimStartMs;
 else
-    iBin = numel(binsManyManySpikes) + 1;
-    lastBurstBin = [];
-    while isempty(lastBurstBin) && iBin > 1
-        % Decrement the bin number
-        iBin = iBin - 1;
-
-        % Find the last bin left with 
-        %   number of spikes greater than minSpikesPerBinLastBurst
-        idxBinLast = binsManyManySpikes(iBin);
-
-        % Compute the maximum number of bins between last two bursts
-        maxIbiBins = floor(maxInterBurstIntervalMs / binWidthMs);
-
-        % Compute the last bin index that is within maxIbiBins of 
-        %   the last bin with many many spikes
-        idxBinMax = min(idxBinLast + maxIbiBins, nBins);
-
-        % Determine whether each bin is within maxIbiBins of 
-        %   the last bin with many many spikes
-        withinIBI = false(nBins, 1);
-        withinIBI(idxBinLast:idxBinMax) = true;
-
-        % Determine whether each bin has number of spikes at least a threshold
-        isManySpikes = (spikeCounts >= minSpikesPerBinLastBurst);
-
-        % Find the last consecutive bin with number of spikes greater than threshold
-        %   within maxIbiBins of the last bin with many many spikes
-        %   Note: First bin must be true
-        lastBurstBin = find([false; isManySpikes(1:end-1)] & isManySpikes & ...
-                            withinIBI, 1, 'last');
-    end
-    
-    % If still not found, the last burst bin is the one with many many spikes
-    if isempty(lastBurstBin)
-        lastBurstBin = idxBinLast;
-    end
-
     % Compute the time of oscillation end in ms
-    timeOscEndMs = histLeftMs + lastBurstBin * binWidthMs;
+    timeOscEndMs = histLeftMs + iBinLastOfLastBurst * binWidthMs;
 end
 
 % Compute the oscillation duration in ms and seconds
@@ -402,6 +407,9 @@ oscDurationSec = oscDurationMs / MS_PER_S;
 % TODO
 
 %% Compute the autocorrelogram
+% Record the delay for the autocorrelogram
+autoCorrDelayMs = histLeftMs - stimStartMs;
+
 % Compute an unnormalized autocorrelogram in Hz^2
 autoCorr = xcorr(spikeCounts, 'unbiased') / binWidthSec ^ 2;
 
@@ -419,6 +427,7 @@ acfFiltered = movingaveragefilter(acf, filterWidthMs, binWidthMs);
 ampPeak1 = acfFiltered(1);
 
 % Find the index and amplitude of the secondary peak
+% TODO: Use all peaks
 [peakAmp, peakInd] = ...
     findpeaks(acfFiltered, 'MinPeakProminence', minRelProm * ampPeak1);
 idxPeak2 = peakInd(1);
@@ -444,7 +453,9 @@ parsedParams.minDelaySamples = minDelaySamples;
 parsedParams.binWidthMs = binWidthMs;
 parsedParams.filterWidthMs = filterWidthMs;
 parsedParams.minRelProm = minRelProm;
-parsedParams.minSpikeRateLastBurstHz = minSpikeRateLastBurstHz;
+parsedParams.minSpikeRateInBurstHz = minSpikeRateInBurstHz;
+parsedParams.minBurstLengthMs = minBurstLengthMs;
+parsedParams.maxInterBurstIntervalMs = maxInterBurstIntervalMs;
 parsedParams.siMs = siMs;
 parsedParams.idxStimStart = idxStimStart;
 parsedParams.stimStartMs = stimStartMs;
@@ -464,8 +475,12 @@ parsedParams.slopeMax = slopeMax;
 parsedParams.slopeRange = slopeRange;
 parsedParams.nBins = nBins;
 parsedParams.histLeftMs = histLeftMs;
-parsedParams.autoCorrDelayMs = autoCorrDelayMs;
 parsedParams.binWidthSec = binWidthSec;
+parsedParams.iBinLastOfLastBurst = iBinLastOfLastBurst;
+parsedParams.timeOscEndMs = timeOscEndMs;
+parsedParams.oscDurationMs = oscDurationMs;
+parsedParams.oscDurationSec = oscDurationSec;
+parsedParams.autoCorrDelayMs = autoCorrDelayMs;
 parsedParams.ampPeak1 = ampPeak1;
 parsedParams.idxPeak2 = idxPeak2;
 parsedParams.ampPeak2 = ampPeak2;
@@ -474,9 +489,6 @@ parsedParams.ampTrough1 = ampTrough1;
 parsedParams.ampPeak12 = ampPeak12;
 parsedParams.oscIndex = oscIndex;
 parsedParams.oscPeriodMs = oscPeriodMs;
-parsedParams.timeOscEndMs = timeOscEndMs;
-parsedParams.oscDurationMs = oscDurationMs;
-parsedParams.oscDurationSec = oscDurationSec;
 
 parsedData.tVec = tVec;
 parsedData.vVec = vVec;
@@ -497,7 +509,7 @@ if plotFlag && iVec == 1
         plot_spike_detection(tVec, vVec, slopes, idxSpikes, ...
                             baseSlopeNoise, slopeThreshold, ...
                             vMin, vMax, vRange, slopeMin, slopeMax, ...
-                            detectStartMs, figTitleBaseThis);
+                            figTitleBaseThis);
         
     % Save the figure zoomed to several x limits
     zoomWin1 = stimStartMs + [0, 1e4];
@@ -508,8 +520,11 @@ if plotFlag && iVec == 1
     %% Plot the spike histogram
     % Compute things
     edgesSeconds = edgesMs / MS_PER_S;
-    xLimitsHist = edgesSeconds(1) + [0, 7];
-    xLimitsOscDur = [histLeftMs, timeOscEndMs] / MS_PER_S;
+    histLeftSec = histLeftMs / MS_PER_S;
+    timeOscEndSec = timeOscEndMs / MS_PER_S;
+    maxInterBurstIntervalSec = maxInterBurstIntervalMs / MS_PER_S;
+    xLimitsHist = [histLeftSec, timeOscEndSec + 1.5 * maxInterBurstIntervalSec];
+    xLimitsOscDur = [histLeftSec, timeOscEndSec];
 
     % Plot figure
     histFig = figure;
@@ -587,7 +602,7 @@ function [fig, ax, lines, markers, raster] = ...
                 plot_spike_detection(tVec, vVec, slopes, idxSpikes, ...
                                     baseSlopeNoise, slopeThreshold, ...
                                     vMin, vMax, vRange, slopeMin, slopeMax, ...
-                                    detectStartMs, figTitle)
+                                    figTitle)
 %% Plots the spike detection
 
 % Hard-coded constants
@@ -739,6 +754,47 @@ saveas(fig, [figPathBase, '_zoom2'], 'png');
 % Zoom #3
 xlim([firstSpikeMs, firstSpikeMs + 60]);
 saveas(fig, [figPathBase, '_zoom3'], 'png');
+
+% Compute the minimum spikes per bin in the last burst
+minSpikesPerBinLastBurst = ceil(minSpikeRateLastBurstHz * binWidthSec);
+% Find the bins with number of spikes greater than minSpikesPerBinLastBurst
+binsManyManySpikes = find(spikeCounts > minSpikesPerBinLastBurst);
+% Find the time of oscillation end in ms
+if isempty(binsManyManySpikes)
+    timeOscEndMs = stimStartMs;
+else
+    iBin = numel(binsManyManySpikes) + 1;
+    lastBurstBin = [];
+    while isempty(lastBurstBin) && iBin > 1
+        % Decrement the bin number
+        iBin = iBin - 1;
+        % Find the last bin left with 
+        %   number of spikes greater than minSpikesPerBinLastBurst
+        idxBinLast = binsManyManySpikes(iBin);
+        % Compute the maximum number of bins between last two bursts
+        maxIbiBins = floor(maxInterBurstIntervalMs / binWidthMs);
+        % Compute the last bin index that is within maxIbiBins of 
+        %   the last bin with many many spikes
+        idxBinMax = min(idxBinLast + maxIbiBins, nBins);
+        % Determine whether each bin is within maxIbiBins of 
+        %   the last bin with many many spikes
+        withinIBI = false(nBins, 1);
+        withinIBI(idxBinLast:idxBinMax) = true;
+        % Determine whether each bin has number of spikes at least a threshold
+        isManySpikes = (spikeCounts >= minSpikesPerBinLastBurst);
+        % Find the last consecutive bin with number of spikes greater than threshold
+        %   within maxIbiBins of the last bin with many many spikes
+        %   Note: First bin must be true
+        lastBurstBin = find([false; isManySpikes(1:end-1)] & isManySpikes & ...
+                            withinIBI, 1, 'last');
+    end
+    % If still not found, the last burst bin is the one with many many spikes
+    if isempty(lastBurstBin)
+        lastBurstBin = idxBinLast;
+    end
+    % Compute the time of oscillation end in ms
+    timeOscEndMs = histLeftMs + lastBurstBin * binWidthMs;
+end
 
 %}
 
