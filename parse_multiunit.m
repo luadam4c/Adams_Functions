@@ -455,6 +455,9 @@ ampPeak1 = acfFiltered(1);
 indPeaks = [1; peakInd];
 ampPeaks = [ampPeak1; peakAmp];
 
+% Compute the number of peaks
+nPeaks = numel(indPeaks);
+
 % Find the indices and amplitudes of the troughs in between each pair of peak
 [ampTroughs, indTroughs] = find_troughs_from_peaks(acfFiltered, indPeaks);
 
@@ -467,8 +470,12 @@ oscIndex = mean((ampAdjPeaks - ampTroughs) ./ ampAdjPeaks);
 % Compute the oscillation period
 % TODO: Set an oscillatory index threshold for each pair of peaks?
 %       Pair between the first peak and other peaks?
-oscPeriodMs = (indPeaks(2) - indPeaks(1)) * binWidthMs;
-
+if nPeaks > 1
+    oscPeriodMs = (indPeaks(2) - indPeaks(1)) * binWidthMs;
+else
+    oscPeriodMs = 0;
+end
+    
 %% Store in outputs
 parsedParams.signal2Noise = signal2Noise;
 parsedParams.minDelaySamples = minDelaySamples;
