@@ -56,7 +56,8 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 % 2019-02-19 Created by Adam Lu
 % 2019-02-24 Added computation of oscillation index and period
 % 2019-02-25 Added computation of oscillation duration
-% 2019-02-25 Updated computation of oscillation duration
+% 2019-02-26 Updated computation of oscillation duration
+% 2019-02-26 Updated computation of oscillation index
 % 
 
 %% Hard-coded parameters
@@ -185,8 +186,8 @@ end
 % Parse all of them in a parfor loop
 parsedParamsCell = cell(nVectors, 1);
 parsedDataCell = cell(nVectors, 1);
-parfor iVec = 1:nVectors
-%for iVec = 1:nVectors
+%parfor iVec = 1:nVectors
+for iVec = 1:nVectors
 %for iVec = 1:1
     [parsedParamsCell{iVec}, parsedDataCell{iVec}, figs(iVec)] = ...
         parse_multiunit_helper(iVec, vVecs{iVec}, tVecs{iVec}, siMs(iVec), ...
@@ -226,6 +227,9 @@ if plotFlag
 
     % Oscillation window
     oscWindow = transpose([stimStartSec, timeOscEndSec]);
+
+    % Burst windows
+    % TODO burstWindows = 
 
     % Create figure and plot
     figs(nVectors + 1) = figure(2);
@@ -347,16 +351,16 @@ binWidthSec = binWidthMs / MS_PER_S;
 % Compute the minimum number of bins in a burst
 minBinsInBurst = ceil(minBurstLengthMs / binWidthMs);
 
-% Compute the window length in seconds
-windowLengthSec = minBinsInBurst * binWidthSec;
+% Compute the sliding window length in seconds
+slidingWinSec = minBinsInBurst * binWidthSec;
 
-% Compute the minimum spikes per window if in a burst
-minSpikesPerWindowInBurst = ceil(minSpikeRateInBurstHz * windowLengthSec);
+% Compute the minimum spikes per sliding window if in a burst
+minSpikesPerWindowInBurst = ceil(minSpikeRateInBurstHz * slidingWinSec);
 
 % Compute the maximum number of bins between consecutive bursts
 maxIbiBins = floor(maxInterBurstIntervalMs / binWidthMs);
 
-% Count spikes for each sliding window
+% Count spikes for each sliding window (ending at each bin)
 spikeCountsWin = spikeCounts;
 spikeCountsPrev = spikeCounts;
 for i = 1:minBinsInBurst
@@ -406,8 +410,19 @@ end
 oscDurationMs = timeOscEndMs - stimStartMs;
 oscDurationSec = oscDurationMs / MS_PER_S;
 
-% Compute the average spikes per oscillation
+%% Compute the average spikes per burst
+% Compute the burst windows in bins
 % TODO
+
+% Compute the burst windows in ms
+% TODO
+
+% Compute the number of spikes in each burst window
+% TODO
+
+% Compute average number of spikes per burst
+% TODO
+
 
 %% Compute the autocorrelogram
 % Record the delay for the autocorrelogram
@@ -416,8 +431,11 @@ autoCorrDelayMs = histLeftMs - stimStartMs;
 % Compute an unnormalized autocorrelogram in Hz^2
 autoCorr = xcorr(spikeCounts, 'unbiased') / binWidthSec ^ 2;
 
-% Take just the positive side
-acf = autoCorr(nBins:end);
+% Compute the half number of bins
+halfNBins = ceil(nBins/2);
+
+% Take just half of the positive side
+acf = autoCorr(nBins:(nBins + halfNBins));
 
 % Compute a normalized autocorrelation function
 % autocorr(spikeCounts, nBins - 1);
@@ -429,26 +447,27 @@ acfFiltered = movingaveragefilter(acf, filterWidthMs, binWidthMs);
 % Record the amplitude of the primary peak
 ampPeak1 = acfFiltered(1);
 
-% Find the index and amplitude of the secondary peak
-% TODO: Use all peaks
+% Find the index and amplitude of the peaks
 [peakAmp, peakInd] = ...
     findpeaks(acfFiltered, 'MinPeakProminence', minRelProm * ampPeak1);
-idxPeak2 = peakInd(1);
-ampPeak2 = peakAmp(1);
 
-% Find the amplitude of the first trough
-[troughNegAmp, troughInd] = findpeaks(-acfFiltered);
-idxTrough1 = troughInd(1);
-ampTrough1 = -troughNegAmp(1);
+% Record all peak indices and amplitudes
+indPeaks = [1; peakInd];
+ampPeaks = [ampPeak1; peakAmp];
 
-% Compute the average amplitude of first two peaks
-ampPeak12 = mean([ampPeak1, ampPeak2]);
+% Find the indices and amplitudes of the troughs in between each pair of peak
+[ampTroughs, indTroughs] = find_troughs_from_peaks(acfFiltered, indPeaks);
+
+% Compute the average amplitudes between adjacent peaks
+ampAdjPeaks = mean([ampPeaks(1:(end-1)), ampPeaks(2:end)], 2);
 
 % Compute the oscillatory index
-oscIndex = (ampPeak12 - ampTrough1) / ampPeak12;
+oscIndex = mean((ampAdjPeaks - ampTroughs) ./ ampAdjPeaks);
 
 % Compute the oscillation period
-oscPeriodMs = idxPeak2 * binWidthMs;
+% TODO: Set an oscillatory index threshold for each pair of peaks?
+%       Pair between the first peak and other peaks?
+oscPeriodMs = (indPeaks(2) - indPeaks(1)) * binWidthMs;
 
 %% Store in outputs
 parsedParams.signal2Noise = signal2Noise;
@@ -484,12 +503,6 @@ parsedParams.timeOscEndMs = timeOscEndMs;
 parsedParams.oscDurationMs = oscDurationMs;
 parsedParams.oscDurationSec = oscDurationSec;
 parsedParams.autoCorrDelayMs = autoCorrDelayMs;
-parsedParams.ampPeak1 = ampPeak1;
-parsedParams.idxPeak2 = idxPeak2;
-parsedParams.ampPeak2 = ampPeak2;
-parsedParams.idxTrough1 = idxTrough1;
-parsedParams.ampTrough1 = ampTrough1;
-parsedParams.ampPeak12 = ampPeak12;
 parsedParams.oscIndex = oscIndex;
 parsedParams.oscPeriodMs = oscPeriodMs;
 
@@ -503,6 +516,10 @@ parsedData.edgesMs = edgesMs;
 parsedData.autoCorr = autoCorr;
 parsedData.acf = acf;
 parsedData.acfFiltered = acfFiltered;
+parsedData.indPeaks = indPeaks;
+parsedData.ampPeaks = ampPeaks;
+parsedData.ampTroughs = ampTroughs;
+parsedData.indTroughs = indTroughs;
 
 %% Plots
 % if plotFlag
@@ -550,11 +567,10 @@ if plotFlag && iVec == 1
     % Create time values 
     tAcfTemp = create_time_vectors(nBins - 1, 'SamplingIntervalMs', binWidthMs, ...
                                 'TimeUnits', 's');
-    tAcf = [0; tAcfTemp];
+    tAcf = [0; tAcfTemp(1:halfNBins)];
     tAutoCorr = [-flipud(tAcfTemp); 0; tAcfTemp];
-    timePeak1Sec = 0;
-    timeTrough1Sec = idxTrough1 * binWidthSec;
-    timePeak2Sec = idxPeak2 * binWidthSec;
+    timePeaksSec = (indPeaks - indPeaks(1)) * binWidthSec;
+    timeTroughsSec = (indTroughs - indPeaks(1)) * binWidthSec;
 
     % Compute x and y limits
     acfOfInterest = acf(1:floor(7/binWidthSec));
@@ -562,6 +578,7 @@ if plotFlag && iVec == 1
     yLimits = compute_axis_limits({acfOfInterest, 0}, 'y', 'Coverage', 90);
     yOscDur = -(maxAcf * 0.025);
     xLimitsOscDur = [0, oscDurationMs - autoCorrDelayMs] / MS_PER_S;
+    xLimitsAcfFiltered = [0, max(timePeaksSec(end), xLimitsOscDur(2)) + 1];
 
     % Plot the autocorrelogram
     acfFig = figure;
@@ -578,9 +595,8 @@ if plotFlag && iVec == 1
     hold on;
     acfLine = plot(tAcf, acf, 'k');
     acfFilteredLine = plot(tAcf, acfFiltered, 'g', 'LineWidth', 1);
-    plot(timePeak1Sec, ampPeak1, 'ro', 'LineWidth', 2);
-    plot(timeTrough1Sec, ampTrough1, 'bx', 'LineWidth', 2);
-    plot(timePeak2Sec, ampPeak2, 'ro', 'LineWidth', 2);
+    plot(timePeaksSec, ampPeaks, 'ro', 'LineWidth', 2);
+    plot(timeTroughsSec, ampTroughs, 'bx', 'LineWidth', 2);
     plot_horizontal_line(yOscDur, 'XLimits', xLimitsOscDur, ...
                         'Color', 'r', 'LineStyle', '-', 'LineWidth', 2);
     text(0.5, 0.95, sprintf('Oscillatory Index = %g', oscIndex), ...
@@ -589,7 +605,7 @@ if plotFlag && iVec == 1
         'Units', 'normalized');
     text(0.5, 0.85, sprintf('Oscillation Duration = %.2g seconds', ...
         oscDurationSec), 'Units', 'normalized');
-    xlim([0, 7]);
+    xlim(xLimitsAcfFiltered);
     ylim(yLimits);
     xlabel('Lag (s)');
     ylabel('Spike rate squared (Hz^2)');
@@ -692,6 +708,32 @@ saveas(fig, [figPathBase, '_zoom2'], 'png');
 % Zoom #3
 xlim(zoomWin3);
 saveas(fig, [figPathBase, '_zoom3'], 'png');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [ampTroughs, indTroughs] = find_troughs_from_peaks(vec, indPeaks)
+%% Finds troughs in between given peak indices
+
+nPeaks = numel(indPeaks);
+
+if nPeaks < 2
+    % No troughs
+    ampTroughs = [];
+    indTroughs = [];
+else
+    % Left peak indices
+    indLeftPeak = indPeaks(1:(end-1));
+
+    % Right peak indices
+    indRightPeak = indPeaks(2:end);
+
+    % Use the minimums in each interval
+    [ampTroughs, indTroughsRel] = ...
+        arrayfun(@(x, y) min(vec(x:y)), indLeftPeak, indRightPeak);
+
+    % Compute the original indices
+    indTroughs = arrayfun(@(x, y) x + y - 1, indTroughsRel, indLeftPeak);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -816,6 +858,41 @@ for i = 1:minBinsInBurst
 end
 % Find the last bins of each burst
 iBinLastInBurst = find(isLastBinInBurst);
+
+% Record the amplitude of the primary peak
+ampPeak1 = acfFiltered(1);
+% Find the index and amplitude of the secondary peak
+% TODO: Use all peaks
+[peakAmp, peakInd] = ...
+    findpeaks(acfFiltered, 'MinPeakProminence', minRelProm * ampPeak1);
+idxPeak2 = peakInd(1);
+ampPeak2 = peakAmp(1);
+% Find the amplitude of the first trough
+[troughNegAmp, troughInd] = findpeaks(-acfFiltered);
+idxTrough1 = troughInd(1);
+ampTrough1 = -troughNegAmp(1);
+% Compute the average amplitude of first two peaks
+ampPeak12 = mean([ampPeak1, ampPeak2]);
+% Compute the oscillatory index
+oscIndex = (ampPeak12 - ampTrough1) / ampPeak12;
+% Compute the oscillation period
+oscPeriodMs = idxPeak2 * binWidthMs;
+parsedParams.ampPeak1 = ampPeak1;
+parsedParams.idxPeak2 = idxPeak2;
+parsedParams.ampPeak2 = ampPeak2;
+parsedParams.idxTrough1 = idxTrough1;
+parsedParams.ampTrough1 = ampTrough1;
+parsedParams.ampPeak12 = ampPeak12;
+timePeak1Sec = 0;
+timeTrough1Sec = idxTrough1 * binWidthSec;
+timePeak2Sec = idxPeak2 * binWidthSec;
+plot(timePeak1Sec, ampPeak1, 'ro', 'LineWidth', 2);
+plot(timeTrough1Sec, ampTrough1, 'bx', 'LineWidth', 2);
+plot(timePeak2Sec, ampPeak2, 'ro', 'LineWidth', 2);
+xlim([0, 7]);
+
+% Take just the positive side
+acf = autoCorr(nBins:end);
 
 %}
 
