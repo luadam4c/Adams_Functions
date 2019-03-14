@@ -26,6 +26,9 @@ function stats = compute_stats (vecs, statName, varargin)
 %       varargin    - 'IgnoreNan': whether to ignore NaN entries
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'RemoveOutliers': whether to remove outliers
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'Indices': indices for the subvectors to extract 
 %                   must be a numeric vector with 2 elements
 %                       or a numeric array with 2 rows
@@ -60,6 +63,8 @@ function stats = compute_stats (vecs, statName, varargin)
 % 2018-12-17 Created by Adam Lu
 % 2019-03-14 compute_means -> compute_stats
 % 2019-03-14 Added statName as a required argument
+% 2019-03-14 Added 'IgnoreNan' as an optional argument
+% 2019-03-14 Added 'RemoveOutliers' as an optional argument
 % TODO: Combine with compute_weighted_average.m
 % 
 
@@ -68,6 +73,7 @@ validStatNames = {'mean', 'std', 'stderr', 'lower95', 'upper95'};
 
 %% Default values for optional arguments
 ignoreNanDefault = false;       % don't ignore NaN by default
+removeOutliersDefault = false;  % don't remove outliers by default
 indicesDefault = [];            % set later
 endPointsDefault = [];          % set later
 windowsDefault = [];            % extract entire trace(s) by default
@@ -95,6 +101,8 @@ addRequired(iP, 'statName', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'IgnoreNan', ignoreNanDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RemoveOutliers', removeOutliersDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Indices', indicesDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['Indices must be either a numeric array ', ...
@@ -111,6 +119,7 @@ addParameter(iP, 'Windows', windowsDefault, ...
 % Read from the Input Parser
 parse(iP, vecs, statName, varargin{:});
 ignoreNan = iP.Results.IgnoreNan;
+removeOutliers = iP.Results.RemoveOutliers;
 indices = iP.Results.Indices;
 endPoints = iP.Results.EndPoints;
 windows = iP.Results.Windows;
@@ -119,6 +128,16 @@ windows = iP.Results.Windows;
 % Extract subvectors
 subVecs = extract_subvectors(vecs, 'Indices', indices, ...
                             'EndPoints', endPoints, 'Windows', windows);
+
+% Remove outliers if requested
+if removeOutliers
+    if iscell(subVecs)
+        subVecs = cellfun(@remove_outliers, subVecs, ...
+                        'UniformOutput', false);
+    else
+        subVecs = remove_outliers(subVecs);
+    end
+end
 
 % Decide on the function to use on each vector
 switch statName
