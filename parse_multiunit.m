@@ -287,8 +287,8 @@ if plotFlag
 
     % Find appropriate x limits
     histLeft = min(histLeftSec);
-    histRight = mean(timeOscEndSec) + 2*std(timeOscEndSec) + ...
-                        1.5 * max(maxInterBurstIntervalSec);
+    histRight = nanmean(timeOscEndSec) + 1.96 * stderr(timeOscEndSec) + ...
+                    1.5 * max(maxInterBurstIntervalSec);
     xLimitsHist = [histLeft, histRight];
 
     % Find the last bin to show for all traces
@@ -344,7 +344,7 @@ if plotFlag
     allLastPeaksSec = allLastPeaksBins .* binWidthSec;
     allOscDur = oscDurationSec;
     bestRightForAll = max([allOscDur, allLastPeaksSec], [], 2) + 1;
-    acfFilteredRight = mean(bestRightForAll) + 2 * std(bestRightForAll);
+    acfFilteredRight = nanmean(bestRightForAll) + 1.96 * nanstderr(bestRightForAll);
     xLimitsAutoCorr = [-acfFilteredRight, acfFilteredRight];
     % xLimitsAutoCorr = [-7, 7];
     xLimitsAcfFiltered = [0, acfFilteredRight];
@@ -355,7 +355,8 @@ if plotFlag
     
     % Compute appropriate y limits
     acfOfInterest = extract_subvectors(acf, 'IndexEnd', lastIndexToShow);
-    largestAcfValue = apply_iteratively(@max, acfOfInterest);
+    largestAcfValues = cellfun(@max, acfOfInterest);
+    bestUpperLimit = nanmean(largestAcfValues) + 1.96 * nanstderr(largestAcfValues);
     yLimitsAutoCorr = compute_axis_limits([0, largestAcfValue], ...
                                             'y', 'Coverage', 95);
     yLimitsAcfFiltered = compute_axis_limits([0, largestAcfValue], ...
@@ -369,7 +370,7 @@ if plotFlag
     check_dir(outFolderAutoCorrFunc);
 
     parfor iVec = 1:nVectors
-        [acfFig, acfFilteredFig] = ...
+        [autoCorrFig, acfFig] = ...
             plot_autocorrelogram(autoCorr{iVec}, acf{iVec}, acfFiltered{iVec}, ...
                 indPeaks{iVec}, indTroughs{iVec}, ...
                 ampPeaks{iVec}, ampTroughs{iVec}, ...
@@ -379,9 +380,9 @@ if plotFlag
                 xLimitsAcfFiltered, yLimitsAcfFiltered, ...
                 yOscDur, figTitleBase{iVec});
 
-        saveas(acfFig, fullfile(outFolderAutoCorr, ...
+        saveas(autoCorrFig, fullfile(outFolderAutoCorr, ...
                 [figPathBase{iVec}, '_autocorrelogram']), 'png');
-        saveas(acfFilteredFig, fullfile(outFolderAutoCorrFunc, ...
+        saveas(acfFig, fullfile(outFolderAutoCorrFunc, ...
                 [figPathBase{iVec}, '_smoothed_autocorrelogram']), 'png');
 
         close all force hidden
@@ -427,7 +428,12 @@ if plotFlag
     % Save the figure zoomed to several x limits
     zoomWin1 = mean(stimStartSec) + [0, 10];
     zoomWin2 = mean(detectStartSec) + [0, 2];
-    zoomWin3 = mean(firstSpikeSec) + [0, 0.06];
+    meanFirstSpike = nanmean(firstSpikeSec);
+    if ~isnan(meanFirstSpike)
+        zoomWin3 = meanFirstSpike + [0, 0.06];
+    else
+        zoomWin3 = [0, 0.06];
+    end            
     save_all_zooms(figs(1), outFolderRaster, ...
                     figBaseRaster, zoomWin1, zoomWin2, zoomWin3);
 end
@@ -911,7 +917,7 @@ plot_horizontal_line(0, 'XLimits', xLimitsOscDur, ...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [acfFig, acfFilteredFig, acfLine1, acfLine2, acfFilteredLine] = ...
+function [autoCorrFig, acfFig, acfLine1, acfLine2, acfFilteredLine] = ...
                 plot_autocorrelogram(autoCorr, acf, acfFiltered, indPeaks, ...
                                     indTroughs, ampPeaks, ampTroughs, ...
                                     binWidthSec, nBins, halfNBins, ...
@@ -919,19 +925,26 @@ function [acfFig, acfFilteredFig, acfLine1, acfLine2, acfFilteredLine] = ...
                                     xLimitsAutoCorr, yLimitsAutoCorr, ...
                                     xLimitsAcfFiltered, yLimitsAcfFiltered, ...
                                     yOscDur, figTitleBase)
-
+                                
 % Create time values 
-tAcfTemp = create_time_vectors(nBins - 1, 'SamplingIntervalSec', binWidthSec, ...
-                            'TimeUnits', 's');
-tAcf = [0; tAcfTemp(1:halfNBins)];
-tAutoCorr = [-flipud(tAcfTemp); 0; tAcfTemp];
-timePeaksSec = (indPeaks - indPeaks(1)) * binWidthSec;
-timeTroughsSec = (indTroughs - indPeaks(1)) * binWidthSec;
+if nBins > 0
+    tAcfTemp = create_time_vectors(nBins - 1, 'SamplingIntervalSec', binWidthSec, ...
+                                'TimeUnits', 's');
+    tAcf = [0; tAcfTemp(1:halfNBins)];
+    tAutoCorr = [-flipud(tAcfTemp); 0; tAcfTemp];
+    timePeaksSec = (indPeaks - indPeaks(1)) * binWidthSec;
+    timeTroughsSec = (indTroughs - indPeaks(1)) * binWidthSec;
+else
+    tAcf = NaN(size(acf));
+    tAutoCorr = NaN(size(autoCorr));
+    timePeaksSec = NaN(size(ampPeaks));
+    timeTroughsSec = NaN(size(ampTroughs));
+end
 
 xLimitsOscDur = [0, oscDurationSec];
 
 % Plot the autocorrelogram
-acfFig = figure('Visible', 'off');
+autoCorrFig = figure('Visible', 'off');
 acfLine1 = plot(tAutoCorr, autoCorr);
 xlim(xLimitsAutoCorr);
 ylim(yLimitsAutoCorr);
@@ -939,8 +952,8 @@ xlabel('Lag (s)');
 ylabel('Spike rate squared (Hz^2)');
 title(['Autocorrelation for ', figTitleBase]);
 
-% Plot the filtered autocorrelogram
-acfFilteredFig = figure('Visible', 'off');
+% Plot the autocorrelation function
+acfFig = figure('Visible', 'off');
 hold on;
 acfLine2 = plot(tAcf, acf, 'k');
 acfFilteredLine = plot(tAcf, acfFiltered, 'g', 'LineWidth', 1);
@@ -958,7 +971,7 @@ xlim(xLimitsAcfFiltered);
 ylim(yLimitsAcfFiltered);
 xlabel('Lag (s)');
 ylabel('Spike rate squared (Hz^2)');
-title(['Smoothed autocorrelation for ', figTitleBase]);
+title(['Autocorrelation function for ', figTitleBase]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -75,6 +75,7 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 % 2019-02-23 Added 'YLimits' as an optional argument
 % 2019-02-24 Added maxYTicks
 % 2019-02-25 Added 'DurationWindow' as an optional argument
+% 2019-03-14 Fixed the case when there is a condition with no spikes
 % 
 
 %% Hard-coded parameters
@@ -222,6 +223,9 @@ end
 
 % Get the number of vectors in each event time array
 nVectors = cellfun(@count_vectors, data);
+
+% If there is an empty vector, consider it a vector
+nVectors(nVectors == 0) = 1;
 
 % Get the total number of vectors
 nVectorsAll = sum(nVectors);
