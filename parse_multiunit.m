@@ -143,7 +143,7 @@ nSamples = count_samples(vVecs);
 figs = gobjects(5);
 
 % Create a figure title base
-figTitleBase = replace(fileBase, '_', '\_');
+titleBase = replace(fileBase, '_', '\_');
 
 %% Do the job
 % Detect stimulation start time if not provided
@@ -198,7 +198,7 @@ parfor iVec = 1:nVectors
     [parsedParamsCell{iVec}, parsedDataCell{iVec}] = ...
         parse_multiunit_helper(iVec, vVecs{iVec}, tVecs{iVec}, siMs(iVec), ...
                                 idxStimStart(iVec), stimStartMs(iVec), ...
-                                baseWindows{iVec}, fileBase, figTitleBase);
+                                baseWindows{iVec}, fileBase, titleBase);
 end
 
 % Convert to a struct array
@@ -254,7 +254,11 @@ if plotFlag
         % Set zoom windows
         zoomWin1 = stimStartMs(iVec) + [0, 1e4];
         zoomWin2 = detectStartMs(iVec) + [0, 2e3];
-        zoomWin3 = firstSpikeMs(iVec) + [0, 60];
+        if ~isnan(firstSpikeMs(iVec))
+            zoomWin3 = firstSpikeMs(iVec) + [0, 60];
+        else
+            zoomWin3 = [0, 60];
+        end            
 
         % Save the figure zoomed to several x limits
         save_all_zooms(fig, outFolderSpikeDetection, ...
@@ -300,8 +304,7 @@ if plotFlag
     outFolderHist = fullfile(outFolder, spikeHistDir);
     check_dir(outFolderHist);
 
-%    parfor iVec = 1:nVectors
-    for iVec = 1:nVectors
+    parfor iVec = 1:nVectors
         [histBars, histFig] = ...
             plot_spike_histogram(spikeCounts{iVec}, edgesSec{iVec}, ...
                                 histLeftSec(iVec), timeOscEndSec(iVec), ...
@@ -419,7 +422,7 @@ if plotFlag
                                     'LineStyle', '--');
     xlabel('Time (s)');
     ylabel('Trace #');
-    title(['Spike times for ', figTitleBase]);
+    title(['Spike times for ', titleBase]);
 
     % Save the figure zoomed to several x limits
     zoomWin1 = mean(stimStartSec) + [0, 10];
@@ -537,6 +540,7 @@ if spikeCountTotal == 0
     spikeCounts = [];
     edgesMs = [];
     nBins = 0;
+    halfNBins = 0;
     histLeftMs = NaN;
     iBinLastOfLastBurst = NaN;
     timeOscEndMs = stimStartMs;
@@ -547,6 +551,9 @@ else
 
     % Compute the number of bins
     nBins = numel(spikeCounts);
+
+    % Compute the half number of bins
+    halfNBins = floor(nBins/2);
 
     % Record the starting time of the histogram
     histLeftMs = edgesMs(1);
@@ -640,9 +647,6 @@ if spikeCountTotal == 0
 else
     % Compute an unnormalized autocorrelogram in Hz^2
     autoCorr = xcorr(spikeCounts, 'unbiased') / binWidthSec ^ 2;
-
-    % Compute the half number of bins
-    halfNBins = floor(nBins/2);
 
     % Take just half of the positive side
     acf = autoCorr(nBins:(nBins + halfNBins));
@@ -836,7 +840,11 @@ cla; hold on
 lines(1) = plot(tVec(1:(end-1)), slopes, 'k');
 lines(4) = plot_horizontal_line(baseSlopeNoise, 'Color', 'b', 'LineStyle', '--');
 lines(5) = plot_horizontal_line(slopeThreshold, 'Color', 'g', 'LineStyle', '--');
-markers(1) = plot(tVec(idxSpikes - 1), slopes(idxSpikes - 1), 'rx', 'LineWidth', 2);
+if ~isempty(idxSpikes)
+    markers(1) = plot(tVec(idxSpikes - 1), slopes(idxSpikes - 1), 'rx', 'LineWidth', 2);
+else
+    markers(1) = gobjects(1);
+end
 ylim(yLimits1);
 ylabel('Slope (V/s)');
 title('Detection of peaks in the slope vector');
@@ -845,7 +853,11 @@ title('Detection of peaks in the slope vector');
 ax(2) = subplot(3, 1, 2);
 cla; hold on
 lines(2) = plot(tVec, vVec, 'k');
-markers(2) = plot(tVec(idxSpikes), vVec(idxSpikes), 'rx', 'LineWidth', 2);
+if ~isempty(idxSpikes)
+    markers(2) = plot(tVec(idxSpikes), vVec(idxSpikes), 'rx', 'LineWidth', 2);
+else
+    markers(2) = gobjects(1);
+end
 ylim(yLimits2);
 ylabel('Voltage (mV)');
 title('Corresponding positions in the voltage vector');

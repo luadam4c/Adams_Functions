@@ -51,6 +51,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % 2018-12-17 Now returns idxElement as well
 % 2019-01-03 Now accepts cell arrays of non-vector arrays
 % 2019-02-20 Fixed bug when using match_dimensions
+% 2019-03-14 Now returns NaN if the vector is not long enough
 % TODO: Add 'MaxNum' as an optional argument with default Inf
 % TODO: Add 'Indices', 'Endpoints' and 'Windows' as optional arguments
 %           and use extract_subvectors.m
@@ -85,7 +86,6 @@ addRequired(iP, 'extractMode', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Index', indexDefault, ...
     @(x) assert(isnumericvector(x), 'Index must be a numeric vector!'));
-
 
 % Read from the Input Parser
 parse(iP, vecs, extractMode, varargin{:});
@@ -150,6 +150,12 @@ end
 
 function [element, idxElement] = extract_by_position (x, extractMode)
 
+if numel(x) < 1
+    element = NaN;
+    idxElement = NaN;
+    return
+end
+
 switch extractMode
     case 'first'
         element = x(1);
@@ -171,6 +177,12 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [element, idxElement] = extract_by_index (x, index)
+
+if numel(x) < 1
+    element = NaN;
+    idxElement = NaN;
+    return
+end
 
 if isnan(index)
     element = NaN;

@@ -118,7 +118,7 @@ addParameter(iP, 'SamplingIntervalUs', samplingIntervalUsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'positive'}));
 addParameter(iP, 'SamplingIntervalMs', samplingIntervalMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'positive'}));
-addParameter(iP, 'SamplingIntervalSec', samplingIntervalSecDefault, ...
+addParameter(iP, 'SamplingIntervalSeconds', samplingIntervalSecDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'positive'}));
 addParameter(iP, 'TimeStart', timeStartDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
@@ -132,7 +132,7 @@ timeUnits = validatestring(iP.Results.TimeUnits, validTimeUnits);
 samplingRateHz = iP.Results.SamplingRateHz;
 samplingIntervalUs = iP.Results.SamplingIntervalUs;
 samplingIntervalMs = iP.Results.SamplingIntervalMs;
-samplingIntervalSec = iP.Results.SamplingIntervalSec;
+samplingIntervalSec = iP.Results.SamplingIntervalSeconds;
 tStart = iP.Results.TimeStart;
 forceCellOutput = iP.Results.ForceCellOutput;
 

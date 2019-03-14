@@ -149,6 +149,8 @@ function [bars, fig] = plot_histogram (X, varargin)
 % 2019-01-15 Made 'PlotOutliers' an optional parameter with default true
 %       and rename as just plot_histogram.m
 % 2019-02-24 Fixed bug when 'Counts' is passed in 
+% 2019-03-14 Now returns empty plot if there is no data
+
 %% Hard-coded parameters
 validOutlierMethods = {'boxplot', 'isoutlier', ...
                         'fiveStds', 'threeStds', 'twoStds'};

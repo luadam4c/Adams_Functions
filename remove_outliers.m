@@ -42,10 +42,11 @@ function [newData, rowsToKeep] = remove_outliers (oldData, varargin)
 %       cd/plot_histogram.m
 %       /media/adamX/m3ha/data_dclamp/compare_sse.m
 %       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
-%
+
+% File History:
 % 2016-12-08 Created
 % 2018-06-11 Modified to use various outlier methods
-% 
+% 2019-03-14 Return original data if empty
 
 %% Hard-coded parameters
 validOutlierMethods = {'boxplot', 'isoutlier', ...
@@ -91,6 +92,13 @@ plotFlag = iP.Results.PlotFlag;
 %% Preparation
 % Force row vectors as column vectors
 oldData = force_column_vector(oldData, 'IgnoreNonVectors', true);
+
+%% Check if there is data
+if isempty(oldData)
+    newData = oldData;
+    rowsToKeep = [];
+    return
+end
 
 %% Remove outliers
 switch outlierMethod
