@@ -47,6 +47,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/force_column_cell.m
 %       cd/compute_axis_limits.m
 %       cd/compute_baseline_noise.m
+%       cd/compute_stats.m
 %       cd/create_error_for_nargin.m
 %       cd/match_time_info.m
 %       cd/movingaveragefilter.m
@@ -344,7 +345,8 @@ if plotFlag
     allLastPeaksSec = allLastPeaksBins .* binWidthSec;
     allOscDur = oscDurationSec;
     bestRightForAll = max([allOscDur, allLastPeaksSec], [], 2) + 1;
-    acfFilteredRight = nanmean(bestRightForAll) + 1.96 * nanstderr(bestRightForAll);
+    acfFilteredRight = compute_stats(bestRightForAll, 'upper95', ...
+                                    'RemoveOutliers', true);
     xLimitsAutoCorr = [-acfFilteredRight, acfFilteredRight];
     % xLimitsAutoCorr = [-7, 7];
     xLimitsAcfFiltered = [0, acfFilteredRight];
@@ -356,7 +358,8 @@ if plotFlag
     % Compute appropriate y limits
     acfOfInterest = extract_subvectors(acf, 'IndexEnd', lastIndexToShow);
     largestAcfValues = cellfun(@max, acfOfInterest);
-    bestUpperLimit = nanmean(largestAcfValues) + 1.96 * nanstderr(largestAcfValues);
+    bestUpperLimit = compute_stats(largestAcfValues, 'upper95', ...
+                                    'RemoveOutliers', true);
     yLimitsAutoCorr = compute_axis_limits([0, largestAcfValue], ...
                                             'y', 'Coverage', 95);
     yLimitsAcfFiltered = compute_axis_limits([0, largestAcfValue], ...
@@ -1196,6 +1199,9 @@ acfOfInterest = acf(1:floor(7/binWidthSec));
 maxAcf = max(acfOfInterest);
 yLimits = compute_axis_limits({acfOfInterest, 0}, 'y', 'Coverage', 90);
 yOscDur = -(maxAcf * 0.025);
+
+acfFilteredRight = nanmean(bestRightForAll) + 1.96 * nanstderr(bestRightForAll);
+bestUpperLimit = nanmean(largestAcfValues) + 1.96 * nanstderr(largestAcfValues);
 
 %}
 
