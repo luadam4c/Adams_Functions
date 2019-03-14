@@ -70,8 +70,9 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 % 2019-03-14 Fixed plotting of oscillation duration in histograms
 % 2019-03-14 Redefined the oscillation period so that it is between the primary
 %               peak and the next largest-amplitude peak
-% 2019-03-14 Redefined the oscillatory index so that it is the coefficient
-%               of variation of the lag differences between consecutive peaks
+% 2019-03-14 Redefined the oscillatory index so that it is the reciprocal of 
+%               the coefficient of variation of the lag differences 
+%               between consecutive peaks
 % 
 
 %% Hard-coded parameters
@@ -343,7 +344,7 @@ if plotFlag
 end
 
 %% Plot autocorrelograms
-if plotFlag
+%if plotFlag
     fprintf('Plotting autocorrelograms for %s ...\n', fileBase);
 
     % Retrieve data for plotting
@@ -418,7 +419,7 @@ if plotFlag
 
         close all force hidden
     end
-end
+%end
 
 %% Plot raster plot
 if plotFlag
@@ -475,7 +476,7 @@ if plotFlag
 end
 
 %% Plot time series of measures
-if plotFlag
+%if plotFlag
     fprintf('Plotting time series of measures for %s ...\n', fileBase);    
 
     % Create output directory and subdirectories for each measure
@@ -497,7 +498,7 @@ if plotFlag
                     'FigTitles', figTitlesMeasures, ...
                     'XBoundaries', setBoundaries, ...
                     'RemoveOutliers', true);
-end
+%end
 
 %% Outputs
 varargout{1} = parsedParams;
@@ -761,7 +762,7 @@ else
     acfFilteredOfInterest = acfFiltered(1:(1+oscDurationBins));
 
     % Find the index and amplitude of peaks within oscillation duration
-    if numel(acfFiltered) > 3
+    if numel(acfFilteredOfInterest) > 3
         [peakAmp, peakInd] = ...
             findpeaks(acfFilteredOfInterest, ...
                         'MinPeakProminence', minRelProm * ampPeak1);
@@ -793,12 +794,12 @@ else
     lagsBetweenPeaksMs = diff(indPeaks) * binWidthMs;
 
     % Compute the oscillatory index 
-    %   Note: This is the coefficient of variation 
+    %   Note: This is one over the coefficient of variation 
     %           of the lag differences between adjacent peaks
     if numel(lagsBetweenPeaksMs) < 2
         oscIndex = NaN;
     else
-        oscIndex = compute_stats(lagsBetweenPeaksMs, 'cov');
+        oscIndex = 1 ./ compute_stats(lagsBetweenPeaksMs, 'cov');
     end
 
     % Compute the oscillation period

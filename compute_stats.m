@@ -11,6 +11,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       compute_stats(data, 'lower95')
 %       compute_stats(data, 'upper95')
 %       compute_stats(data, 'cov')
+%       compute_stats(data, 'zscore')
 % Outputs:
 %       stats       - the computed statistic for each vector
 %                   specified as a numeric vector 
@@ -25,6 +26,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %                       'lower95'   - lower bound of the 95% confidence interval
 %                       'upper95'   - upper bound of the 95% confidence interval
 %                       'cov'       - coefficient of variation
+%                       'zscore'    - z-score
 %       varargin    - 'IgnoreNan': whether to ignore NaN entries
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -74,7 +76,8 @@ function stats = compute_stats (vecs, statName, varargin)
 % 
 
 %% Hard-coded parameters
-validStatNames = {'mean', 'std', 'stderr', 'lower95', 'upper95', 'cov'};
+validStatNames = {'mean', 'std', 'stderr', 'lower95', 'upper95', ...
+                    'cov'};
 
 %% Default values for optional arguments
 ignoreNanDefault = false;       % don't ignore NaN by default
@@ -175,13 +178,13 @@ switch statName
             func = @(x) nanmean(x, 1) + 1.95 .* nanstderr(x, 1);
         else
             func = @(x) mean(x, 1) + 1.95 .* stderr(x, 1);
-        end            
+        end     
     case 'cov'
         if ignoreNan
-            func = @(x) nanmean(x, 1) ./ nanstd(x, 1);
+            func = @(x) nanstd(x, 1) ./ nanmean(x, 1);
         else
-            func = @(x) mean(x, 1) ./ std(x, 1);
-        end            
+            func = @(x) std(x, 1) ./ mean(x, 1);
+        end
     otherwise
         error('Code logic error!');
 end
