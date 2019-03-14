@@ -40,7 +40,7 @@ function [parsedParams, parsedData] = parse_pulse (vectors, varargin)
 %                   default == []
 %
 % Requires:
-%       cd/compute_means.m
+%       cd/compute_stats.m
 %       cd/count_samples.m
 %       cd/find_pulse_endpoints.m
 %       cd/force_column_cell.m
@@ -123,7 +123,7 @@ indPulse = arrayfun(@(x, y) find_pulse_indices(x, y), ...
                     'UniformOutput', false);
 
 % Find the average pulse value (could be NaN)
-pulseValue = compute_means(vectors, 'Indices', indPulse);
+pulseValue = compute_stats(vectors, 'mean', 'Indices', indPulse);
 
 % Find the pulse amplitudes
 pulseAmplitude = pulseValue - baseValue;

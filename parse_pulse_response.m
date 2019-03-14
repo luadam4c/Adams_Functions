@@ -121,7 +121,7 @@ function varargout = parse_pulse_response (vectors, siMs, varargin)
 %
 % Requires:
 %       cd/argfun.m
-%       cd/compute_means.m
+%       cd/compute_stats.m
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
 %       cd/convert_to_samples.m
@@ -336,7 +336,8 @@ indSteady = cellfun(@(x, y) x(x <= y), indSteady, num2cell(nSamples), ...
 
 % Find the average baseline and steady state value
 [baseValue, steadyValue] = ...
-    argfun(@(x) compute_means(vectors, 'Indices', x), indBase, indSteady);
+    argfun(@(x) compute_stats(vectors, 'mean', 'Indices', x), ...
+            indBase, indSteady);
 
 % Find the steady state amplitudes
 steadyAmplitude = steadyValue - baseValue;

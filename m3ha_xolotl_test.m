@@ -205,7 +205,7 @@ endPointsCpr = find_window_endpoints(cprWindowOrig, tvecOrig);
 endPointsBase = find_window_endpoints(baseWindowOrig, tvecOrig);
                                     
 % Compute the holding potential
-holdingPotential = compute_means(vvecOrig, 'EndPoints', endPointsBase);
+holdingPotential = compute_stats(vvecOrig, 'EndPoints', endPointsBase);
 
 % Repeat the current pulse responses for each compartment for now
 vvecsCpr = repmat(vvecCpr, [1, nCompartments]);

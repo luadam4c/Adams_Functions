@@ -48,7 +48,7 @@ function avgValues = compute_weighted_average (values, varargin)
 %       cd/compute_sweep_errors.m
 %
 % Related functions:
-%       cd/compute_means.m
+%       cd/compute_stats.m
 %       cd/compute_rms_error.m
 
 % File History:
@@ -56,7 +56,7 @@ function avgValues = compute_weighted_average (values, varargin)
 % 2018-10-28 Fixed the case when values has less than one element
 % 2019-01-11 Added 'geometric' as an averaging method
 % TODO: Simply math if the weights are all the same 
-%       and use this function in compute_means.m and compute_rms_error.m
+%       and use this function in compute_stats.m and compute_rms_error.m
 % 
 
 %% Hard-coded parameters

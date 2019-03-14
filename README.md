@@ -61,7 +61,6 @@ Last Updated 2019-03-14 by Adam Lu
 - [**compute_IMax_GHK.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_IMax_GHK.m): Computes the maximum current [mA/cm^2] using the GHK current equation
 - [**compute_initial_slopes.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_initial_slopes.m): Computes the average initial slope from a current pulse response
 - [**compute_maximum_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_maximum_trace.m): Computes the maximum of traces that are not necessarily the same length
-- [**compute_means.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_means.m): Computes the mean(s) of vector(s) possibly restricted by endpoint(s)
 - [**compute_minimum_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_minimum_trace.m): Computes the minimum of traces that are not necessarily the same length
 - [**compute_peak_decay.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_peak_decay.m): Computes the peak decays
 - [**compute_peak_halfwidth.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_peak_halfwidth.m): Computes the half widths for peaks
@@ -72,6 +71,7 @@ Last Updated 2019-03-14 by Adam Lu
 - [**compute_sampling_interval.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_sampling_interval.m): Computes sampling intervals from time vectors
 - [**compute_single_neuron_errors.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_single_neuron_errors.m): Computes all errors for single neuron data
 - [**compute_slope.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_slope.m): Computes the slope given two vectors and two indices
+- [**compute_stats.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_stats.m): Computes a stastic of vector(s) possibly restricted by endpoint(s)
 - [**compute_surface_area.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_surface_area.m): Computes the surface area of a cylindrical compartmental model cell based on lengths and diameters
 - [**compute_sweep_errors.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_sweep_errors.m): Computes all errors for single neuron data
 - [**compute_weighted_average.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_weighted_average.m): Computes a weighted average value (root-mean-square by default)

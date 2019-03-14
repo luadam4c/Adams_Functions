@@ -274,7 +274,7 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
     % If not provided, compute the holding potential(s) needed for simulations
     if isempty(holdingPotential)
         holdingPotential = ...
-            compute_means(dataToCompare, 'Windows', individual.baseWindow);
+            compute_stats(dataToCompare, 'Windows', individual.baseWindow);
     end
 
     % Retrieve the original external current
