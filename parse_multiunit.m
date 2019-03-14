@@ -224,6 +224,9 @@ end
 % Save the parameters table
 writetable(parsedParams, fullfile(outFolder, [fileBase, '_params.csv']));
 
+%% Plot spike detection
+% TODO
+
 %% Plot raster plot
 if plotFlag
     % Modify the figure base
@@ -268,6 +271,22 @@ if plotFlag
     save_all_zooms(figs(nVectors + 1), fullfile(outFolder, rasterDir), ...
                     figPathBase, zoomWin1, zoomWin2, zoomWin3);
 end
+
+%% Plot spike histograms
+% TODO
+
+%% Plot autocorrelograms
+% TODO
+
+%% Plot smoothed autocorrelograms
+% TODO
+
+%% Plot time series of measures
+% Extract columns to plot
+% TODO
+
+% Plot table
+% TODO
 
 %% Outputs
 varargout{1} = parsedParams;
@@ -342,11 +361,20 @@ idxSpikes = find(isSpike);
 spikeCountTotal = numel(idxSpikes);
 
 % Index of first spike
-idxFirstSpike = idxSpikes(1);
+if spikeCountTotal == 0
+    idxFirstSpike = NaN;
+else
+    idxFirstSpike = idxSpikes(1);
+end
 
 % Store spike times
-spikeTimesMs = tVec(idxSpikes);
-firstSpikeMs = spikeTimesMs(1);
+if spikeCountTotal == 0
+    spikeTimesMs = [];
+    firstSpikeMs = NaN;
+else
+    spikeTimesMs = tVec(idxSpikes);
+    firstSpikeMs = spikeTimesMs(1);    
+end
 
 % Query the maximum and range of vVec after detectStartMs
 vVecTrunc = vVec(idxDetectStart:idxDetectStart + 1e5);
@@ -361,79 +389,91 @@ slopeMax = max(slopesTrunc);
 slopeRange = slopeMax - slopeMin;
 
 %% Compute the spike histogram
-% Compute a spike histogram
-[spikeCounts, edgesMs] = compute_bins(spikeTimesMs, 'BinWidth', binWidthMs);
-
-% Compute the number of bins
-nBins = numel(spikeCounts);
-
-% Record the starting time of the histogram
-histLeftMs = edgesMs(1);
-
-% Compute the bin width in seconds
-binWidthSec = binWidthMs / MS_PER_S;
-
-% Compute the minimum number of bins in a burst
-minBinsInBurst = ceil(minBurstLengthMs / binWidthMs);
-
-% Compute the sliding window length in seconds
-slidingWinSec = minBinsInBurst * binWidthSec;
-
-% Compute the minimum spikes per sliding window if in a burst
-minSpikesPerWindowInBurst = ceil(minSpikeRateInBurstHz * slidingWinSec);
-
-% Compute the maximum number of bins between consecutive bursts
-maxIbiBins = floor(maxInterBurstIntervalMs / binWidthMs);
-
-% Count spikes for each sliding window (ending at each bin)
-spikeCountsWin = spikeCounts;
-spikeCountsPrev = spikeCounts;
-for i = 1:minBinsInBurst
-    % Compute spike counts from the previous ith bin
-    spikeCountsPrev = [false; spikeCountsPrev(1:(end-1))];
-
-    % Add the spike counts in the previous i bins
-    spikeCountsWin = spikeCountsWin + spikeCountsPrev;
-end
-
-% Determine whether each sliding window passes the number of spikes criterion
-isInBurst = spikeCountsWin >= minSpikesPerWindowInBurst;
-
-% Find the last bins of each burst
-%   Note: this sliding window in burst but the next sliding window not in burst
-iBinLastInBurst = find(isInBurst & [~isInBurst(2:end); true]);
-
-% Find the last bin of the last burst, using maxIbiBins
-if isempty(iBinLastInBurst)
+if spikeCountTotal == 0
+    spikeCounts = [];
+    edgesMs = [];
+    nBins = 0;
+    histLeftMs = NaN;
+    binWidthSec = NaN;
     iBinLastOfLastBurst = NaN;
-else
-    % Compute the inter-burst intervals in bins
-    ibiBins = diff(iBinLastInBurst);
-
-    % Find the first inter-burst interval greater than maxIbiBins
-    iBurstLast = find(ibiBins > maxIbiBins, 1, 'first');
-
-    % Determine the last bin of the last burst
-    if isempty(iBurstLast)
-        % All bursts are close enough together
-        iBinLastOfLastBurst = iBinLastInBurst(end);
-    else
-        % Actually (iBurstLast - 1) + 1
-        iBinLastOfLastBurst = iBinLastInBurst(iBurstLast);
-    end
-end
-
-% Find the time of oscillation end in ms
-if isnan(iBinLastOfLastBurst)
     timeOscEndMs = stimStartMs;
+    oscDurationMs = 0;
+    oscDurationSec = 0;
 else
-    % Compute the time of oscillation end in ms
-    timeOscEndMs = histLeftMs + iBinLastOfLastBurst * binWidthMs;
-end
+    % Compute a spike histogram
+    [spikeCounts, edgesMs] = compute_bins(spikeTimesMs, 'BinWidth', binWidthMs);
 
-% Compute the oscillation duration in ms and seconds
-oscDurationMs = timeOscEndMs - stimStartMs;
-oscDurationSec = oscDurationMs / MS_PER_S;
+    % Compute the number of bins
+    nBins = numel(spikeCounts);
+
+    % Record the starting time of the histogram
+    histLeftMs = edgesMs(1);
+
+    % Compute the bin width in seconds
+    binWidthSec = binWidthMs / MS_PER_S;
+
+    % Compute the minimum number of bins in a burst
+    minBinsInBurst = ceil(minBurstLengthMs / binWidthMs);
+
+    % Compute the sliding window length in seconds
+    slidingWinSec = minBinsInBurst * binWidthSec;
+
+    % Compute the minimum spikes per sliding window if in a burst
+    minSpikesPerWindowInBurst = ceil(minSpikeRateInBurstHz * slidingWinSec);
+
+    % Compute the maximum number of bins between consecutive bursts
+    maxIbiBins = floor(maxInterBurstIntervalMs / binWidthMs);
+
+    % Count spikes for each sliding window (ending at each bin)
+    spikeCountsWin = spikeCounts;
+    spikeCountsPrev = spikeCounts;
+    for i = 1:minBinsInBurst
+        % Compute spike counts from the previous ith bin
+        spikeCountsPrev = [false; spikeCountsPrev(1:(end-1))];
+
+        % Add the spike counts in the previous i bins
+        spikeCountsWin = spikeCountsWin + spikeCountsPrev;
+    end
+
+    % Determine whether each sliding window passes the number of spikes criterion
+    isInBurst = spikeCountsWin >= minSpikesPerWindowInBurst;
+
+    % Find the last bins of each burst
+    %   Note: this sliding window in burst but the next sliding window not in burst
+    iBinLastInBurst = find(isInBurst & [~isInBurst(2:end); true]);
+
+    % Find the last bin of the last burst, using maxIbiBins
+    if isempty(iBinLastInBurst)
+        iBinLastOfLastBurst = NaN;
+    else
+        % Compute the inter-burst intervals in bins
+        ibiBins = diff(iBinLastInBurst);
+
+        % Find the first inter-burst interval greater than maxIbiBins
+        iBurstLast = find(ibiBins > maxIbiBins, 1, 'first');
+
+        % Determine the last bin of the last burst
+        if isempty(iBurstLast)
+            % All bursts are close enough together
+            iBinLastOfLastBurst = iBinLastInBurst(end);
+        else
+            % Actually (iBurstLast - 1) + 1
+            iBinLastOfLastBurst = iBinLastInBurst(iBurstLast);
+        end
+    end
+
+    % Find the time of oscillation end in ms
+    if isnan(iBinLastOfLastBurst)
+        timeOscEndMs = stimStartMs;
+    else
+        % Compute the time of oscillation end in ms
+        timeOscEndMs = histLeftMs + iBinLastOfLastBurst * binWidthMs;
+    end
+
+    % Compute the oscillation duration in ms and seconds
+    oscDurationMs = timeOscEndMs - stimStartMs;
+    oscDurationSec = oscDurationMs / MS_PER_S;
+end
 
 %% Compute the average spikes per burst
 % Compute the burst windows in bins
@@ -450,62 +490,75 @@ oscDurationSec = oscDurationMs / MS_PER_S;
 
 
 %% Compute the autocorrelogram
-% Record the delay for the autocorrelogram
-autoCorrDelayMs = histLeftMs - stimStartMs;
-
-% Compute an unnormalized autocorrelogram in Hz^2
-autoCorr = xcorr(spikeCounts, 'unbiased') / binWidthSec ^ 2;
-
-% Compute the half number of bins
-halfNBins = floor(nBins/2);
-
-% Take just half of the positive side
-acf = autoCorr(nBins:(nBins + halfNBins));
-
-% Compute a normalized autocorrelation function
-% autocorr(spikeCounts, nBins - 1);
-% acf = autocorr(spikeCounts, nBins - 1);
-
-% Smooth the autocorrelogram with a moving-average filter
-acfFiltered = movingaveragefilter(acf, filterWidthMs, binWidthMs);
-
-% Record the amplitude of the primary peak
-ampPeak1 = acfFiltered(1);
-
-% Find the index and amplitude of the peaks
-if numel(acfFiltered) > 3
-    [peakAmp, peakInd] = ...
-        findpeaks(acfFiltered, 'MinPeakProminence', minRelProm * ampPeak1);
-
-    % Record all peak indices and amplitudes
-    indPeaks = [1; peakInd];
-    ampPeaks = [ampPeak1; peakAmp];
+if spikeCountTotal == 0
+    autoCorrDelayMs = NaN;
+    oscIndex = NaN;
+    oscPeriodMs = NaN;
+    autoCorr = [];
+    acf = [];
+    acfFiltered = [];
+    indPeaks = [];
+    ampPeaks = [];
+    ampTroughs = [];
+    indTroughs = [];
 else
-    indPeaks = 1;
-    ampPeaks = ampPeak1;
+    % Record the delay for the autocorrelogram
+    autoCorrDelayMs = histLeftMs - stimStartMs;
+
+    % Compute an unnormalized autocorrelogram in Hz^2
+    autoCorr = xcorr(spikeCounts, 'unbiased') / binWidthSec ^ 2;
+
+    % Compute the half number of bins
+    halfNBins = floor(nBins/2);
+
+    % Take just half of the positive side
+    acf = autoCorr(nBins:(nBins + halfNBins));
+
+    % Compute a normalized autocorrelation function
+    % autocorr(spikeCounts, nBins - 1);
+    % acf = autocorr(spikeCounts, nBins - 1);
+
+    % Smooth the autocorrelogram with a moving-average filter
+    acfFiltered = movingaveragefilter(acf, filterWidthMs, binWidthMs);
+
+    % Record the amplitude of the primary peak
+    ampPeak1 = acfFiltered(1);
+
+    % Find the index and amplitude of the peaks
+    if numel(acfFiltered) > 3
+        [peakAmp, peakInd] = ...
+            findpeaks(acfFiltered, 'MinPeakProminence', minRelProm * ampPeak1);
+
+        % Record all peak indices and amplitudes
+        indPeaks = [1; peakInd];
+        ampPeaks = [ampPeak1; peakAmp];
+    else
+        indPeaks = 1;
+        ampPeaks = ampPeak1;
+    end
+
+    % Compute the number of peaks
+    nPeaks = numel(indPeaks);
+
+    % Find the indices and amplitudes of the troughs in between each pair of peak
+    [ampTroughs, indTroughs] = find_troughs_from_peaks(acfFiltered, indPeaks);
+
+    % Compute the average amplitudes between adjacent peaks
+    ampAdjPeaks = mean([ampPeaks(1:(end-1)), ampPeaks(2:end)], 2);
+
+    % Compute the oscillatory index
+    oscIndex = mean((ampAdjPeaks - ampTroughs) ./ ampAdjPeaks);
+
+    % Compute the oscillation period
+    % TODO: Set an oscillatory index threshold for each pair of peaks?
+    %       Pair between the first peak and other peaks?
+    if nPeaks > 1
+        oscPeriodMs = (indPeaks(2) - indPeaks(1)) * binWidthMs;
+    else
+        oscPeriodMs = 0;
+    end
 end
 
-% Compute the number of peaks
-nPeaks = numel(indPeaks);
-
-% Find the indices and amplitudes of the troughs in between each pair of peak
-[ampTroughs, indTroughs] = find_troughs_from_peaks(acfFiltered, indPeaks);
-
-% Compute the average amplitudes between adjacent peaks
-ampAdjPeaks = mean([ampPeaks(1:(end-1)), ampPeaks(2:end)], 2);
-
-% Compute the oscillatory index
-oscIndex = mean((ampAdjPeaks - ampTroughs) ./ ampAdjPeaks);
-
-% Compute the oscillation period
-% TODO: Set an oscillatory index threshold for each pair of peaks?
-%       Pair between the first peak and other peaks?
-if nPeaks > 1
-    oscPeriodMs = (indPeaks(2) - indPeaks(1)) * binWidthMs;
-else
-    oscPeriodMs = 0;
-end
-    
 %% Store in outputs
 parsedParams.signal2Noise = signal2Noise;
 parsedParams.minDelaySamples = minDelaySamples;

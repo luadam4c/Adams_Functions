@@ -22,7 +22,8 @@ muData = cell(nFiles, 1);
 
 %%
 for iFile = 1:nFiles
+%parfor iFile = 1:nFiles
 %for iFile = 1    
-    [muParams{iFile}, muData{iFile}] = parse_multiunit(vVecs{iFile}, siMs(iFile), 'PulseVectors', iVecs{iFile}, 'tVecs', tVecs{iFile}, 'PlotFlag', true, 'OutFolder', pwd, 'FileBase', fileBases{iFile});
+    [muParams{iFile}, muData{iFile}] = parse_multiunit(vVecs{iFile}, siMs(iFile), 'PulseVectors', iVecs{iFile}, 'tVecs', tVecs{iFile}, 'PlotFlag', false, 'OutFolder', pwd, 'FileBase', fileBases{iFile});
     close all force hidden;
 end
