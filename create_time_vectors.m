@@ -39,6 +39,9 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %                   - 'SamplingIntervalMs': sampling interval in ms
 %                   must be a positive vector
 %                   default == 1e3 ms (1 second)
+%                   - 'SamplingIntervalSeconds': sampling interval in seconds
+%                   must be a positive vector
+%                   default == 1 second
 %                   - 'TimeStart': start time(s) in output time units
 %                   must be a numeric vector
 %                   default == 0
@@ -67,6 +70,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 % 2018-12-15 Added 'TimeStart' as an optional argument
 % 2018-12-17 Now uses match_format_vectors.m
 % 2019-01-01 Added 'ForceCellOutput' as an optional argument
+% 2019-03-14 Added 'SamplingIntervalSeconds' as an optional argument
 % 
 
 %% Hard-coded constants
@@ -83,6 +87,7 @@ timeUnitsDefault = 's';                 % return seconds by default
 samplingRateHzDefault = [];             % set by match_reciprocals.m
 samplingIntervalUsDefault = [];         % set by match_reciprocals.m
 samplingIntervalMsDefault = [];         % set by match_reciprocals.m
+samplingIntervalSecDefault = [];        % set by match_reciprocals.m
 timeStartDefault = 0;                   % start at 0 by default
 forceCellOutputDefault = false; % don't force output as a cell array by default
 
@@ -113,6 +118,8 @@ addParameter(iP, 'SamplingIntervalUs', samplingIntervalUsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'positive'}));
 addParameter(iP, 'SamplingIntervalMs', samplingIntervalMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'positive'}));
+addParameter(iP, 'SamplingIntervalSec', samplingIntervalSecDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector', 'positive'}));
 addParameter(iP, 'TimeStart', timeStartDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
@@ -125,12 +132,13 @@ timeUnits = validatestring(iP.Results.TimeUnits, validTimeUnits);
 samplingRateHz = iP.Results.SamplingRateHz;
 samplingIntervalUs = iP.Results.SamplingIntervalUs;
 samplingIntervalMs = iP.Results.SamplingIntervalMs;
+samplingIntervalSec = iP.Results.SamplingIntervalSec;
 tStart = iP.Results.TimeStart;
 forceCellOutput = iP.Results.ForceCellOutput;
 
 %% Preparation
 % TODO: Display warning if more than one sampling rate/interval is provided
-%   esp. that samplingIntervalUs overrides samplingIntervalMs
+%   esp. that samplingIntervalUs overrides samplingIntervalMs, etc.
 
 % Convert any provided sampling interval(s) to seconds
 %   Note: if not provided, keep empty as default 
@@ -139,6 +147,8 @@ if ~isempty(samplingIntervalUs)
     siSeconds = samplingIntervalUs / US_PER_S;
 elseif ~isempty(samplingIntervalMs)
     siSeconds = samplingIntervalMs / MS_PER_S;
+elseif ~isempty(samplingIntervalSec)
+    siSeconds = samplingIntervalSec;
 else
     siSeconds = [];
 end

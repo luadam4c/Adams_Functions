@@ -30,3 +30,5 @@ for iFile = 1:nFiles
     [muParams{iFile}, muData{iFile}] = parse_multiunit(vVecs{iFile}, siMs(iFile), 'PulseVectors', iVecs{iFile}, 'tVecs', tVecs{iFile}, 'PlotFlag', true, 'OutFolder', pwd, 'FileBase', fileBases{iFile});
     close all force hidden;
 end
+
+% for iFile = 1:nFiles; [muParams{iFile}, muData{iFile}] = parse_multiunit(vVecs{iFile}, siMs(iFile), 'PulseVectors', iVecs{iFile}, 'tVecs', tVecs{iFile}, 'PlotFlag', true, 'OutFolder', pwd, 'FileBase', fileBases{iFile}); end

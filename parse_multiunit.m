@@ -65,12 +65,9 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 % 
 
 %% Hard-coded parameters
-MS_PER_S = 1000;
-
-% Folders for output figures
 rasterDir = 'rasters';
 autoCorrDir = 'autocorrelograms';
-smoothAutoCorrDir = 'smoothed_autocorrelograms';
+acfDir = 'smoothed_autocorrelograms';
 spikeHistDir = 'spike_histograms';
 spikeDetectionDir = 'spike_detection';
 
@@ -202,8 +199,6 @@ parfor iVec = 1:nVectors
         parse_multiunit_helper(iVec, vVecs{iVec}, tVecs{iVec}, siMs(iVec), ...
                                 idxStimStart(iVec), stimStartMs(iVec), ...
                                 baseWindows{iVec}, fileBase, figTitleBase);
-
-    close all force hidden;
 end
 
 % Convert to a struct array
@@ -229,6 +224,9 @@ if plotFlag
     slopes = parsedData.slopes;
     idxSpikes = parsedData.idxSpikes;
 
+    stimStartMs = parsedParams.stimStartMs;
+    detectStartMs = parsedParams.detectStartMs;
+    firstSpikeMs = parsedParams.firstSpikeMs;
     baseSlopeNoise = parsedParams.baseSlopeNoise;
     slopeThreshold = parsedParams.slopeThreshold;
     vMin = parsedParams.vMin;
@@ -238,11 +236,6 @@ if plotFlag
     slopeMax = parsedParams.slopeMax;
     figTitleBase = parsedParams.figTitleBase;
     figPathBase = parsedParams.figPathBase;
-
-    % Set zoom windows
-    zoomWin1 = stimStartMs + [0, 1e4];
-    zoomWin2 = detectStartMs + [0, 2e3];
-    zoomWin3 = firstSpikeMs + [0, 60];
 
     % Create output directory
     outFolderSpikeDetection = fullfile(outFolder, spikeDetectionDir);
@@ -258,11 +251,16 @@ if plotFlag
                                 slopeMin(iVec), slopeMax(iVec), ...
                                 [], figTitleBase{iVec});
 
+        % Set zoom windows
+        zoomWin1 = stimStartMs(iVec) + [0, 1e4];
+        zoomWin2 = detectStartMs(iVec) + [0, 2e3];
+        zoomWin3 = firstSpikeMs(iVec) + [0, 60];
+
         % Save the figure zoomed to several x limits
         save_all_zooms(fig, outFolderSpikeDetection, ...
                         figPathBase{iVec}, zoomWin1, zoomWin2, zoomWin3);
 
-        close all
+        close all force hidden
     end
 end
 
@@ -272,44 +270,47 @@ if plotFlag
 
     % Retrieve data for plotting
     spikeCounts = parsedData.spikeCounts;
-    edgesMs = parsedData.edgesMs;
+    edgesSec = parsedData.edgesSec;
 
-    histLeftMs = parsedParams.histLeftMs;
-    timeOscEndMs = parsedParams.timeOscEndMs;
-    maxInterBurstIntervalMs = parsedParams.maxInterBurstIntervalMs;
+    binWidthSec = parsedParams.binWidthSec;
+    histLeftSec = parsedParams.histLeftSec;
+    timeOscEndSec = parsedParams.timeOscEndSec;
+    maxInterBurstIntervalSec = parsedParams.maxInterBurstIntervalSec;
     oscDurationSec = parsedParams.oscDurationSec;
     spikeCountTotal = parsedParams.spikeCountTotal;
     figTitleBase = parsedParams.figTitleBase;
     figPathBase = parsedParams.figPathBase;
 
-    % Convert to seconds
-    edgesSeconds = edgesMs / MS_PER_S;
-    histLeftSec = histLeftMs / MS_PER_S;
-    timeOscEndSec = timeOscEndMs / MS_PER_S;
-    maxInterBurstIntervalSec = maxInterBurstIntervalMs / MS_PER_S;
-
     % Find appropriate x limits
-    xLimitsHist = [histLeftSec, mean(timeOscEndSec) + 2*std(timeOscEndSec) + ...
-                                1.5 * max(maxInterBurstIntervalSec)];
+    histLeft = min(histLeftSec);
+    histRight = mean(timeOscEndSec) + 2*std(timeOscEndSec) + ...
+                        1.5 * max(maxInterBurstIntervalSec);
+    xLimitsHist = [histLeft, histRight];
 
+    % Find the last bin to show for all traces
+    lastBinToShow = floor((histRight - histLeft) / binWidthSec) + 1;
+    
     % Find appropriate y limits
-    largestSpikeCount = apply_iteratively(@max, spikeCounts);
+    spikeCountsOfInterest = extract_subvectors(spikeCounts, ...
+                            'IndexEnd', lastBinToShow);
+    largestSpikeCount = apply_iteratively(@max, spikeCountsOfInterest);
     yLimitsHist = [0, largestSpikeCount * 1.1];
 
     % Create output directory
     outFolderHist = fullfile(outFolder, spikeHistDir);
     check_dir(outFolderHist);
 
-    parfor iVec = 1:nVectors
+%    parfor iVec = 1:nVectors
+    for iVec = 1:nVectors
         [histBars, histFig] = ...
-            plot_spike_histogram(spikeCounts{iVec}, edgesSeconds{iVec}, ...
+            plot_spike_histogram(spikeCounts{iVec}, edgesSec{iVec}, ...
                                 histLeftSec(iVec), timeOscEndSec(iVec), ...
                                 oscDurationSec(iVec), spikeCountTotal(iVec), ...
                                 xLimitsHist, yLimitsHist, figTitleBase{iVec});
 
         saveas(histFig, fullfile(outFolderHist, ...
-                        [figPathBase, '_spike_histogram']), 'png');
-        close all
+                        [figPathBase{iVec}, '_spike_histogram']), 'png');
+        close all force hidden
     end
 end
 
@@ -318,66 +319,69 @@ if plotFlag
     fprintf('Plotting autocorrelograms for %s ...\n', fileBase);
 
     % Retrieve data for plotting
+    autoCorr = parsedData.autoCorr;
+    acf = parsedData.acf;
+    acfFiltered = parsedData.acfFiltered;
+    indPeaks = parsedData.indPeaks;
+    indTroughs = parsedData.indTroughs;
+    ampPeaks = parsedData.ampPeaks;
+    ampTroughs = parsedData.ampTroughs;
+
+    binWidthSec = parsedParams.binWidthSec;
+    nBins = parsedParams.nBins;
+    halfNBins = parsedParams.halfNBins;
+    oscIndex = parsedParams.oscIndex;
+    oscPeriodMs = parsedParams.oscPeriodMs;
+    oscDurationSec = parsedParams.oscDurationSec;
+    figTitleBase = parsedParams.figTitleBase;
+    figPathBase = parsedParams.figPathBase;
+
+    % Compute appropriate x limits
+    allLastPeaksBins = extract_elements(indPeaks, 'last');
+    allLastPeaksSec = allLastPeaksBins .* binWidthSec;
+    allOscDur = oscDurationSec;
+    bestRightForAll = max([allOscDur, allLastPeaksSec], [], 2) + 1;
+    acfFilteredRight = mean(bestRightForAll) + 2 * std(bestRightForAll);
+    xLimitsAutoCorr = [-acfFilteredRight, acfFilteredRight];
+    % xLimitsAutoCorr = [-7, 7];
+    xLimitsAcfFiltered = [0, acfFilteredRight];
+    % xLimitsAcfFiltered = [0, 7];
+
+    % Find the last index to show
+    lastIndexToShow = floor(acfFilteredRight / binWidthSec) + 1;
+    
+    % Compute appropriate y limits
+    acfOfInterest = extract_subvectors(acf, 'IndexEnd', lastIndexToShow);
+    largestAcfValue = apply_iteratively(@max, acfOfInterest);
+    yLimitsAutoCorr = compute_axis_limits([0, largestAcfValue], ...
+                                            'y', 'Coverage', 95);
+    yLimitsAcfFiltered = compute_axis_limits([0, largestAcfValue], ...
+                                            'y', 'Coverage', 90);
+    yOscDur = -(largestAcfValue * 0.025);
 
     % Create output directories
-    outFolderAcf = fullfile(outFolder, autoCorrDir);
-    check_dir(outFolderAcf);
-    outFolderSmoothAutoCorr = fullfile(outFolder, smoothAutoCorrDir);
-    check_dir(outFolderSmoothAutoCorr);
+    outFolderAutoCorr = fullfile(outFolder, autoCorrDir);
+    check_dir(outFolderAutoCorr);
+    outFolderAutoCorrFunc = fullfile(outFolder, acfDir);
+    check_dir(outFolderAutoCorrFunc);
 
     parfor iVec = 1:nVectors
-        % Create time values 
-        tAcfTemp = create_time_vectors(nBins - 1, 'SamplingIntervalMs', binWidthMs, ...
-                                    'TimeUnits', 's');
-        tAcf = [0; tAcfTemp(1:halfNBins)];
-        tAutoCorr = [-flipud(tAcfTemp); 0; tAcfTemp];
-        timePeaksSec = (indPeaks - indPeaks(1)) * binWidthSec;
-        timeTroughsSec = (indTroughs - indPeaks(1)) * binWidthSec;
+        [acfFig, acfFilteredFig] = ...
+            plot_autocorrelogram(autoCorr{iVec}, acf{iVec}, acfFiltered{iVec}, ...
+                indPeaks{iVec}, indTroughs{iVec}, ...
+                ampPeaks{iVec}, ampTroughs{iVec}, ...
+                binWidthSec(iVec), nBins(iVec), halfNBins(iVec), ...
+                oscIndex(iVec), oscPeriodMs(iVec), oscDurationSec(iVec), ...
+                xLimitsAutoCorr, yLimitsAutoCorr, ...
+                xLimitsAcfFiltered, yLimitsAcfFiltered, ...
+                yOscDur, figTitleBase{iVec});
 
-        % Compute x and y limits
-        acfOfInterest = acf(1:floor(7/binWidthSec));
-        maxAcf = max(acfOfInterest);
-        yLimits = compute_axis_limits({acfOfInterest, 0}, 'y', 'Coverage', 90);
-        yOscDur = -(maxAcf * 0.025);
-        xLimitsOscDur = [0, oscDurationMs - autoCorrDelayMs] / MS_PER_S;
-        xLimitsAcfFiltered = [0, max(timePeaksSec(end), xLimitsOscDur(2)) + 1];
-        % xLimitsAcfFiltered = [0, 7];
+        saveas(acfFig, fullfile(outFolderAutoCorr, ...
+                [figPathBase{iVec}, '_autocorrelogram']), 'png');
+        saveas(acfFilteredFig, fullfile(outFolderAutoCorrFunc, ...
+                [figPathBase{iVec}, '_smoothed_autocorrelogram']), 'png');
 
-        % Plot the autocorrelogram
-        acfFig = figure('Visible', 'off');
-        acfLine = plot(tAutoCorr, autoCorr);
-        xlim([-7, 7]);
-        ylim(yLimits);
-        xlabel('Lag (s)');
-        ylabel('Spike rate squared (Hz^2)');
-        title(['Autocorrelation for ', figTitleBaseThis]);
-        saveas(acfFig, fullfile(outFolderAcf, ...
-                        [figPathBaseThis, '_autocorrelogram']), 'png');
-
-        % Plot the filtered autocorrelogram
-        acfFilteredFig = figure('Visible', 'off');
-        hold on;
-        acfLine = plot(tAcf, acf, 'k');
-        acfFilteredLine = plot(tAcf, acfFiltered, 'g', 'LineWidth', 1);
-        plot(timePeaksSec, ampPeaks, 'ro', 'LineWidth', 2);
-        plot(timeTroughsSec, ampTroughs, 'bx', 'LineWidth', 2);
-        plot_horizontal_line(yOscDur, 'XLimits', xLimitsOscDur, ...
-                            'Color', 'r', 'LineStyle', '-', 'LineWidth', 2);
-        text(0.5, 0.95, sprintf('Oscillatory Index = %g', oscIndex), ...
-            'Units', 'normalized');
-        text(0.5, 0.9, sprintf('Oscillation Period = %g ms', oscPeriodMs), ...
-            'Units', 'normalized');
-        text(0.5, 0.85, sprintf('Oscillation Duration = %.2g seconds', ...
-            oscDurationSec), 'Units', 'normalized');
-        xlim(xLimitsAcfFiltered);
-        ylim(yLimits);
-        xlabel('Lag (s)');
-        ylabel('Spike rate squared (Hz^2)');
-        title(['Smoothed autocorrelation for ', figTitleBaseThis]);
-        saveas(acfFilteredFig, fullfile(outFolderSmoothAutoCorr, ...
-                        [figPathBaseThis, '_smoothed_autocorrelogram']), 'png');
-
-        close all
+        close all force hidden
     end
 end
 
@@ -386,22 +390,14 @@ if plotFlag
     fprintf('Plotting raster plot for %s ...\n', fileBase);
 
     % Modify the figure base
-    figPathBase = [fileBase, '_raster'];
+    figBaseRaster = [fileBase, '_raster'];
 
     % Extract the spike times
-    spikeTimesMs = parsedData.spikeTimesMs;
-    stimStartMs = parsedParams.stimStartMs;
-    detectStartMs = parsedParams.detectStartMs;
-    firstSpikeMs = parsedParams.firstSpikeMs;
-    timeOscEndMs = parsedParams.timeOscEndMs;
-
-    % Convert to seconds
-    spikeTimesSec = cellfun(@(x) x/MS_PER_S, spikeTimesMs, ...
-                            'UniformOutput', false);
-    stimStartSec = stimStartMs / MS_PER_S;
-    detectStartSec = detectStartMs / MS_PER_S;
-    firstSpikeSec = firstSpikeMs / MS_PER_S;
-    timeOscEndSec = timeOscEndMs / MS_PER_S;
+    spikeTimesSec = parsedData.spikeTimesSec;
+    stimStartSec = parsedParams.stimStartSec;
+    detectStartSec = parsedParams.detectStartSec;
+    firstSpikeSec = parsedParams.firstSpikeSec;
+    timeOscEndSec = parsedParams.timeOscEndSec;
 
     % Oscillation window
     oscWindow = transpose([stimStartSec, timeOscEndSec]);
@@ -430,7 +426,7 @@ if plotFlag
     zoomWin2 = mean(detectStartSec) + [0, 2];
     zoomWin3 = mean(firstSpikeSec) + [0, 0.06];
     save_all_zooms(figs(1), outFolderRaster, ...
-                    figPathBase, zoomWin1, zoomWin2, zoomWin3);
+                    figBaseRaster, zoomWin1, zoomWin2, zoomWin3);
 end
 
 %% Plot time series of measures
@@ -470,6 +466,9 @@ maxInterBurstIntervalMs = 2000;
 %% Preparation
 % Compute the minimum delay in samples
 minDelaySamples = ceil(minDelayMs / siMs);
+
+% Compute the bin width in seconds
+binWidthSec = binWidthMs / MS_PER_S;
 
 %% Detect spikes
 % Find the starting index for detecting a spike
@@ -539,11 +538,9 @@ if spikeCountTotal == 0
     edgesMs = [];
     nBins = 0;
     histLeftMs = NaN;
-    binWidthSec = NaN;
     iBinLastOfLastBurst = NaN;
     timeOscEndMs = stimStartMs;
     oscDurationMs = 0;
-    oscDurationSec = 0;
 else
     % Compute a spike histogram
     [spikeCounts, edgesMs] = compute_bins(spikeTimesMs, 'BinWidth', binWidthMs);
@@ -553,9 +550,6 @@ else
 
     % Record the starting time of the histogram
     histLeftMs = edgesMs(1);
-
-    % Compute the bin width in seconds
-    binWidthSec = binWidthMs / MS_PER_S;
 
     % Compute the minimum number of bins in a burst
     minBinsInBurst = ceil(minBurstLengthMs / binWidthMs);
@@ -615,9 +609,8 @@ else
         timeOscEndMs = histLeftMs + iBinLastOfLastBurst * binWidthMs;
     end
 
-    % Compute the oscillation duration in ms and seconds
+    % Compute the oscillation duration in ms
     oscDurationMs = timeOscEndMs - stimStartMs;
-    oscDurationSec = oscDurationMs / MS_PER_S;
 end
 
 %% Compute the average spikes per burst
@@ -635,20 +628,16 @@ end
 
 %% Compute the autocorrelogram
 if spikeCountTotal == 0
-    autoCorrDelayMs = NaN;
     oscIndex = NaN;
     oscPeriodMs = NaN;
     autoCorr = [];
     acf = [];
     acfFiltered = [];
     indPeaks = [];
+    indTroughs = [];
     ampPeaks = [];
     ampTroughs = [];
-    indTroughs = [];
 else
-    % Record the delay for the autocorrelogram
-    autoCorrDelayMs = histLeftMs - stimStartMs;
-
     % Compute an unnormalized autocorrelogram in Hz^2
     autoCorr = xcorr(spikeCounts, 'unbiased') / binWidthSec ^ 2;
 
@@ -708,26 +697,42 @@ end
 figPathBase = [fileBase, '_trace', num2str(iVec)];
 figTitleBase = [figTitleBase, '\_trace', num2str(iVec)];
 
+% Convert to seconds
+stimStartSec = stimStartMs / MS_PER_S;
+detectStartSec = detectStartMs / MS_PER_S;
+firstSpikeSec = firstSpikeMs / MS_PER_S;
+histLeftSec = histLeftMs / MS_PER_S;
+timeOscEndSec = timeOscEndMs / MS_PER_S;
+oscDurationSec = oscDurationMs / MS_PER_S;
+maxInterBurstIntervalSec = maxInterBurstIntervalMs / MS_PER_S;
+spikeTimesSec = spikeTimesMs / MS_PER_S;
+edgesSec = edgesMs / MS_PER_S;
+
 %% Store in outputs
 parsedParams.signal2Noise = signal2Noise;
 parsedParams.minDelaySamples = minDelaySamples;
 parsedParams.binWidthMs = binWidthMs;
+parsedParams.binWidthSec = binWidthSec;
 parsedParams.filterWidthMs = filterWidthMs;
 parsedParams.minRelProm = minRelProm;
 parsedParams.minSpikeRateInBurstHz = minSpikeRateInBurstHz;
 parsedParams.minBurstLengthMs = minBurstLengthMs;
 parsedParams.maxInterBurstIntervalMs = maxInterBurstIntervalMs;
+parsedParams.maxInterBurstIntervalSec = maxInterBurstIntervalSec;
 parsedParams.siMs = siMs;
 parsedParams.idxStimStart = idxStimStart;
 parsedParams.stimStartMs = stimStartMs;
+parsedParams.stimStartSec = stimStartSec;
 parsedParams.baseWindow = baseWindow;
 parsedParams.baseSlopeNoise = baseSlopeNoise;
 parsedParams.slopeThreshold = slopeThreshold;
 parsedParams.idxDetectStart = idxDetectStart;
 parsedParams.detectStartMs = detectStartMs;
+parsedParams.detectStartSec = detectStartSec;
 parsedParams.spikeCountTotal = spikeCountTotal;
 parsedParams.idxFirstSpike = idxFirstSpike;
 parsedParams.firstSpikeMs = firstSpikeMs;
+parsedParams.firstSpikeSec = firstSpikeSec;
 parsedParams.vMin = vMin;
 parsedParams.vMax = vMax;
 parsedParams.vRange = vRange;
@@ -735,13 +740,14 @@ parsedParams.slopeMin = slopeMin;
 parsedParams.slopeMax = slopeMax;
 parsedParams.slopeRange = slopeRange;
 parsedParams.nBins = nBins;
+parsedParams.halfNBins = halfNBins;
 parsedParams.histLeftMs = histLeftMs;
-parsedParams.binWidthSec = binWidthSec;
+parsedParams.histLeftSec = histLeftSec;
 parsedParams.iBinLastOfLastBurst = iBinLastOfLastBurst;
 parsedParams.timeOscEndMs = timeOscEndMs;
+parsedParams.timeOscEndSec = timeOscEndSec;
 parsedParams.oscDurationMs = oscDurationMs;
 parsedParams.oscDurationSec = oscDurationSec;
-parsedParams.autoCorrDelayMs = autoCorrDelayMs;
 parsedParams.oscIndex = oscIndex;
 parsedParams.oscPeriodMs = oscPeriodMs;
 parsedParams.figPathBase = figPathBase;
@@ -752,15 +758,17 @@ parsedData.vVec = vVec;
 parsedData.slopes = slopes;
 parsedData.idxSpikes = idxSpikes;
 parsedData.spikeTimesMs = spikeTimesMs;
+parsedData.spikeTimesSec = spikeTimesSec;
 parsedData.spikeCounts = spikeCounts;
 parsedData.edgesMs = edgesMs;
+parsedData.edgesSec = edgesSec;
 parsedData.autoCorr = autoCorr;
 parsedData.acf = acf;
 parsedData.acfFiltered = acfFiltered;
 parsedData.indPeaks = indPeaks;
+parsedData.indTroughs = indTroughs;
 parsedData.ampPeaks = ampPeaks;
 parsedData.ampTroughs = ampTroughs;
-parsedData.indTroughs = indTroughs;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -864,7 +872,7 @@ linkaxes(ax, 'x');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [histBars, histFig] = ...
-            plot_spike_histogram(spikeCounts, edgesSeconds, ...
+                plot_spike_histogram(spikeCounts, edgesSec, ...
                                 histLeftSec, timeOscEndSec, ...
                                 oscDurationSec, spikeCountTotal, ...
                                 xLimitsHist, yLimitsHist, figTitleBase)
@@ -876,7 +884,7 @@ xLimitsOscDur = [histLeftSec, timeOscEndSec];
 histFig = figure('Visible', 'off');
 hold on;
 [histBars, histFig] = ...
-    plot_histogram([], 'Counts', spikeCounts, 'Edges', edgesSeconds, ...
+    plot_histogram([], 'Counts', spikeCounts, 'Edges', edgesSec, ...
                     'XLimits', xLimitsHist, 'YLimits', yLimitsHist, ...
                     'XLabel', 'Time (seconds)', ...
                     'YLabel', 'Spike Count per 10 ms', ...
@@ -888,6 +896,57 @@ text(0.5, 0.9, sprintf('Total number of spikes = %d', ...
     spikeCountTotal), 'Units', 'normalized');
 plot_horizontal_line(0, 'XLimits', xLimitsOscDur, ...
                     'Color', 'r', 'LineStyle', '-', 'LineWidth', 2);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [acfFig, acfFilteredFig, acfLine1, acfLine2, acfFilteredLine] = ...
+                plot_autocorrelogram(autoCorr, acf, acfFiltered, indPeaks, ...
+                                    indTroughs, ampPeaks, ampTroughs, ...
+                                    binWidthSec, nBins, halfNBins, ...
+                                    oscIndex, oscPeriodMs, oscDurationSec, ...
+                                    xLimitsAutoCorr, yLimitsAutoCorr, ...
+                                    xLimitsAcfFiltered, yLimitsAcfFiltered, ...
+                                    yOscDur, figTitleBase)
+
+% Create time values 
+tAcfTemp = create_time_vectors(nBins - 1, 'SamplingIntervalSec', binWidthSec, ...
+                            'TimeUnits', 's');
+tAcf = [0; tAcfTemp(1:halfNBins)];
+tAutoCorr = [-flipud(tAcfTemp); 0; tAcfTemp];
+timePeaksSec = (indPeaks - indPeaks(1)) * binWidthSec;
+timeTroughsSec = (indTroughs - indPeaks(1)) * binWidthSec;
+
+xLimitsOscDur = [0, oscDurationSec];
+
+% Plot the autocorrelogram
+acfFig = figure('Visible', 'off');
+acfLine1 = plot(tAutoCorr, autoCorr);
+xlim(xLimitsAutoCorr);
+ylim(yLimitsAutoCorr);
+xlabel('Lag (s)');
+ylabel('Spike rate squared (Hz^2)');
+title(['Autocorrelation for ', figTitleBase]);
+
+% Plot the filtered autocorrelogram
+acfFilteredFig = figure('Visible', 'off');
+hold on;
+acfLine2 = plot(tAcf, acf, 'k');
+acfFilteredLine = plot(tAcf, acfFiltered, 'g', 'LineWidth', 1);
+plot(timePeaksSec, ampPeaks, 'ro', 'LineWidth', 2);
+plot(timeTroughsSec, ampTroughs, 'bx', 'LineWidth', 2);
+plot_horizontal_line(yOscDur, 'XLimits', xLimitsOscDur, ...
+                    'Color', 'r', 'LineStyle', '-', 'LineWidth', 2);
+text(0.5, 0.95, sprintf('Oscillatory Index = %g', oscIndex), ...
+    'Units', 'normalized');
+text(0.5, 0.9, sprintf('Oscillation Period = %g ms', oscPeriodMs), ...
+    'Units', 'normalized');
+text(0.5, 0.85, sprintf('Oscillation Duration = %.2g seconds', ...
+    oscDurationSec), 'Units', 'normalized');
+xlim(xLimitsAcfFiltered);
+ylim(yLimitsAcfFiltered);
+xlabel('Lag (s)');
+ylabel('Spike rate squared (Hz^2)');
+title(['Smoothed autocorrelation for ', figTitleBase]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1082,8 +1141,36 @@ figPathBase = [fileBase, '_spike_detection'];
 minDelaySamples = 2000;
 minDelayMs = 200;
 
-check_subdir(outFolder, {rasterDir, autoCorrDir, smoothAutoCorrDir, ...
+check_subdir(outFolder, {rasterDir, autoCorrDir, acfDir, ...
                 spikeHistDir, spikeDetectionDir});
+
+% Compute x and y limits
+acfOfInterest = acf(1:floor(7/binWidthSec));
+maxAcf = max(acfOfInterest);
+yLimits = compute_axis_limits({acfOfInterest, 0}, 'y', 'Coverage', 90);
+yOscDur = -(maxAcf * 0.025);
+xLimitsOscDur = [0, oscDurationMs - autoCorrDelayMs] / MS_PER_S;
+xLimitsAcfFiltered = [0, max(timePeaksSec(end), xLimitsOscDur(2)) + 1];
+% xLimitsAcfFiltered = [0, 7];
+
+% Convert to seconds
+spikeTimesSec = cellfun(@(x) x/MS_PER_S, spikeTimesMs, ...
+                        'UniformOutput', false);
+
+% Record the delay for the autocorrelogram
+autoCorrDelayMs = histLeftMs - stimStartMs;
+autoCorrDelaySec = autoCorrDelayMs / MS_PER_S;
+parsedParams.autoCorrDelayMs = autoCorrDelayMs;
+parsedParams.autoCorrDelaySec = autoCorrDelaySec;
+autoCorrDelayMs = NaN;
+xLimitsOscDur = [0, oscDurationSec - autoCorrDelaySec];
+
+xLimitsAcfFiltered = [0, max(timePeaksSec(end), xLimitsOscDur(2)) + 1];
+
+acfOfInterest = acf(1:floor(7/binWidthSec));
+maxAcf = max(acfOfInterest);
+yLimits = compute_axis_limits({acfOfInterest, 0}, 'y', 'Coverage', 90);
+yOscDur = -(maxAcf * 0.025);
 
 %}
 
