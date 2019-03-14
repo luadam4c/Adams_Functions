@@ -30,6 +30,7 @@ function check_dir (directories, varargin)
 %       cd/log_arraytext.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/parse_all_abfs.m
+%       cd/parse_multiunit.m
 %       cd/plot_all_abfs.m
 %       cd/plot_traces_abf.m
 %       cd/plot_traces_EEG.m

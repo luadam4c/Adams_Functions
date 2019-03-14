@@ -1,4 +1,8 @@
 %% Cleans up parallel cluster, removing all jobs that contain crash dump files
+
+% File History:
+% 2019-03-13 Created
+
 % Shutdown parallel pool
 delete(gcp('nocreate'));
 
