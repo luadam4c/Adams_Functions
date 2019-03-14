@@ -66,6 +66,7 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 %       cd/iscellnumeric.m
 %
 % Used by:    
+%       cd/parse_multiunit.m
 %       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
 %
 % File History:

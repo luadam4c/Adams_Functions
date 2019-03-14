@@ -55,6 +55,7 @@ function nSamples = count_samples (vectors, varargin)
 %       cd/find_window_endpoints.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_lts.m
+%       cd/parse_multiunit.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 

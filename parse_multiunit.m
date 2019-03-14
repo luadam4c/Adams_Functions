@@ -32,28 +32,29 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %                   must be a numeric array or a cell array of numeric arrays
 %                   
 % Requires:
-%       cd/argfun.m TODO
-%       cd/count_samples.m TODO
-%       cd/count_vectors.m TODO
-%       cd/iscellnumeric.m TODO
-%       cd/find_stim_start.m TODO
-%       cd/plot_raster.m TODO
-%       cd/plot_horizontal_line.m TODO
+%       TODO cd/find_stim_start.m
+%       cd/argfun.m
 %       cd/check_dir.m
 %       cd/check_subdir.m
-%       cd/create_logical_array.m
-%       cd/create_time_vectors.m
-%       cd/extract_elements.m
-%       cd/force_column_cell.m
 %       cd/compute_axis_limits.m
 %       cd/compute_baseline_noise.m
 %       cd/compute_stats.m
+%       cd/count_samples.m
+%       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
+%       cd/create_logical_array.m
+%       cd/create_time_vectors.m
+%       cd/extract_elements.m
+%       cd/extract_subvectors.m
+%       cd/force_column_cell.m
+%       cd/iscellnumeric.m
 %       cd/match_time_info.m
 %       cd/movingaveragefilter.m
+%       cd/plot_raster.m
+%       cd/plot_horizontal_line.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/parse_all_multiunit.m
 
 % File History:
 % 2019-02-19 Created by Adam Lu
@@ -293,7 +294,7 @@ if plotFlag
     xLimitsHist = [histLeft, histRight];
 
     % Find the last bin to show for all traces
-    lastBinToShow = floor((histRight - histLeft) / binWidthSec) + 1;
+    lastBinToShow = floor((histRight - histLeft) ./ binWidthSec) + 1;
     
     % Find appropriate y limits
     spikeCountsOfInterest = extract_subvectors(spikeCounts, ...
@@ -353,18 +354,18 @@ if plotFlag
     % xLimitsAcfFiltered = [0, 7];
 
     % Find the last index to show
-    lastIndexToShow = floor(acfFilteredRight / binWidthSec) + 1;
+    lastIndexToShow = floor(acfFilteredRight ./ binWidthSec) + 1;
     
     % Compute appropriate y limits
     acfOfInterest = extract_subvectors(acf, 'IndexEnd', lastIndexToShow);
-    largestAcfValues = cellfun(@max, acfOfInterest);
+    largestAcfValues = extract_elements(acfOfInterest, 'max');
     bestUpperLimit = compute_stats(largestAcfValues, 'upper95', ...
                                     'RemoveOutliers', true);
-    yLimitsAutoCorr = compute_axis_limits([0, largestAcfValue], ...
+    yLimitsAutoCorr = compute_axis_limits([0, bestUpperLimit], ...
                                             'y', 'Coverage', 95);
-    yLimitsAcfFiltered = compute_axis_limits([0, largestAcfValue], ...
+    yLimitsAcfFiltered = compute_axis_limits([0, bestUpperLimit], ...
                                             'y', 'Coverage', 90);
-    yOscDur = -(largestAcfValue * 0.025);
+    yOscDur = -(bestUpperLimit * 0.025);
 
     % Create output directories
     outFolderAutoCorr = fullfile(outFolder, autoCorrDir);
@@ -477,10 +478,10 @@ maxInterBurstIntervalMs = 2000;
 
 %% Preparation
 % Compute the minimum delay in samples
-minDelaySamples = ceil(minDelayMs / siMs);
+minDelaySamples = ceil(minDelayMs ./ siMs);
 
 % Compute the bin width in seconds
-binWidthSec = binWidthMs / MS_PER_S;
+binWidthSec = binWidthMs ./ MS_PER_S;
 
 %% Detect spikes
 % Find the starting index for detecting a spike
@@ -493,7 +494,7 @@ detectStartMs = tVec(idxDetectStart);
 nSamples = numel(vVec);
 
 % Compute all instantaneous slopes in V/s
-slopes = diff(vVec) / siMs;
+slopes = diff(vVec) ./ siMs;
 
 % Compute a baseline slope noise in V/s
 baseSlopeNoise = compute_baseline_noise(slopes, tVec(1:(end-1)), baseWindow);
@@ -568,7 +569,7 @@ else
     histLeftMs = edgesMs(1);
 
     % Compute the minimum number of bins in a burst
-    minBinsInBurst = ceil(minBurstLengthMs / binWidthMs);
+    minBinsInBurst = ceil(minBurstLengthMs ./ binWidthMs);
 
     % Compute the sliding window length in seconds
     slidingWinSec = minBinsInBurst * binWidthSec;
@@ -577,7 +578,7 @@ else
     minSpikesPerWindowInBurst = ceil(minSpikeRateInBurstHz * slidingWinSec);
 
     % Compute the maximum number of bins between consecutive bursts
-    maxIbiBins = floor(maxInterBurstIntervalMs / binWidthMs);
+    maxIbiBins = floor(maxInterBurstIntervalMs ./ binWidthMs);
 
     % Count spikes for each sliding window (ending at each bin)
     spikeCountsWin = spikeCounts;
@@ -655,7 +656,7 @@ if spikeCountTotal == 0
     ampTroughs = [];
 else
     % Compute an unnormalized autocorrelogram in Hz^2
-    autoCorr = xcorr(spikeCounts, 'unbiased') / binWidthSec ^ 2;
+    autoCorr = xcorr(spikeCounts, 'unbiased') ./ binWidthSec ^ 2;
 
     % Take just half of the positive side
     acf = autoCorr(nBins:(nBins + halfNBins));
@@ -711,15 +712,13 @@ figPathBase = [fileBase, '_trace', num2str(iVec)];
 figTitleBase = [figTitleBase, '\_trace', num2str(iVec)];
 
 % Convert to seconds
-stimStartSec = stimStartMs / MS_PER_S;
-detectStartSec = detectStartMs / MS_PER_S;
-firstSpikeSec = firstSpikeMs / MS_PER_S;
-histLeftSec = histLeftMs / MS_PER_S;
-timeOscEndSec = timeOscEndMs / MS_PER_S;
-oscDurationSec = oscDurationMs / MS_PER_S;
-maxInterBurstIntervalSec = maxInterBurstIntervalMs / MS_PER_S;
-spikeTimesSec = spikeTimesMs / MS_PER_S;
-edgesSec = edgesMs / MS_PER_S;
+[stimStartSec, detectStartSec, firstSpikeSec, ...
+    histLeftSec, timeOscEndSec, oscDurationSec, ...
+    maxInterBurstIntervalSec, spikeTimesSec, edgesSec] = ...
+    argfun(@(x) x ./ MS_PER_S, ...
+            stimStartMs, detectStartMs, firstSpikeMs, ...
+            histLeftMs, timeOscEndMs, oscDurationMs, ...
+            maxInterBurstIntervalMs, spikeTimesMs, edgesMs);
 
 %% Store in outputs
 parsedParams.signal2Noise = signal2Noise;

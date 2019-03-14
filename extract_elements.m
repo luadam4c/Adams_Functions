@@ -4,7 +4,11 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       TODO
+%       extract_elements({[3; 5; 4], [], [1, 2, -1]}, 'first')
+%       extract_elements({[3; 5; 4], [], [1, 2, -1]}, 'last')
+%       extract_elements({[3; 5; 4], [], [1, 2, -1]}, 'min')
+%       extract_elements({[3; 5; 4], [], [1, 2, -1]}, 'max')
+%       extract_elements({[3; 5; 4], [], [1, 2, -1]}, 'firstdiff')
 % Outputs:
 %       elements    - element(s) from each vector extracted
 %                   specified as a numeric vector 

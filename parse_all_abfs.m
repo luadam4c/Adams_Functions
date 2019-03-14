@@ -80,6 +80,7 @@ function [allParsedParamsTable, allParsedDataTable, ...
 %
 % Used by:
 %       cd/plot_all_abfs.m
+%       cd/parse_all_multiunit.m
 %       cd/plot_protocols.m
 
 % File History:

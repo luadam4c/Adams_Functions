@@ -24,6 +24,7 @@ function h = plot_horizontal_line (yValue, varargin)
 %       cd/match_format_vector_sets.m
 %
 % Used by:
+%       cd/parse_multiunit.m
 %       cd/plot_pulse_response_with_stimulus.m
 
 % File History:

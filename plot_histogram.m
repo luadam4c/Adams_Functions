@@ -138,7 +138,7 @@ function [bars, fig] = plot_histogram (X, varargin)
 % Used by:    
 %       /home/Matlab/Marks_Functions/paula/Oct2017/zgRasterFigureMaker.m
 %       /media/adamX/m3ha/data_dclamp/initial_slopes.m
-%
+
 % File History:
 % 2017-12-12 Created by Adam Lu
 % 2018-06-05 Made edges an optional parameter and make the default dependent
@@ -150,6 +150,7 @@ function [bars, fig] = plot_histogram (X, varargin)
 %       and rename as just plot_histogram.m
 % 2019-02-24 Fixed bug when 'Counts' is passed in 
 % 2019-03-14 Now returns empty plot if there is no data
+% 2019-03-14 Fixed bug when xTickLabelNums is empty
 
 %% Hard-coded parameters
 validOutlierMethods = {'boxplot', 'isoutlier', ...
@@ -471,7 +472,7 @@ wasHold = ishold;
 hold on;
 
 % Plot expanded bins
-if xTickLabelNums(1) == -Inf
+if ~isempty(xTickLabelNums) && xTickLabelNums(1) == -Inf
     if useBuiltIn
         bars(nGroups + 1) = ...
             histogram(edgesPlot(1) * ones(1, counts(1)), ...
@@ -488,7 +489,7 @@ if xTickLabelNums(1) == -Inf
 else
     bars(nGroups + 1) = gobjects(1);
 end
-if xTickLabelNums(end) == Inf
+if ~isempty(xTickLabelNums) && xTickLabelNums(end) == Inf
     if useBuiltIn
         bars(nGroups + 2) = ...
             histogram(edgesPlot(end-1) * ones(1, counts(end)), ...

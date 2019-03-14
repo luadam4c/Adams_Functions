@@ -51,6 +51,7 @@ function nVectors = count_vectors (vectors, varargin)
 %       cd/compute_combined_data.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/parse_lts.m
+%       cd/parse_multiunit.m
 %       cd/parse_pulse_response.m
 %       cd/plot_protocols.m
 %       cd/plot_raster.m

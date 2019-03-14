@@ -35,6 +35,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 % Used by:
 %       cd/all_filebases.m
 %       cd/extract_common_directory.m
+%       cd/parse_all_multiunit.m
 %       cd/plot_swd_histogram.m
 %       cd/plot_table.m
 

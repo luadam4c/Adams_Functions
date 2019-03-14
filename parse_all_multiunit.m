@@ -1,4 +1,10 @@
+% parse_all_multiunit.m
 %% Tests the parse_multiunit function on all files in the present working directory
+%
+% Requires:
+%       cd/extract_fileparts.m
+%       cd/parse_all_abfs.m
+%       cd/parse_multiunit.m
 
 % File History:
 % 2019-03-13 Created

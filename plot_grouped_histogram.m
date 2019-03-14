@@ -127,7 +127,8 @@ function [bars, fig, outlines] = plot_grouped_histogram (varargin)
 % TODO:
 %       /media/adamX/Paula_IEIs/paula_iei4.m
 %       /home/Matlab/Marks_Functions/paula/Oct2017/freqsPostJustinPartTwo.m
-%
+
+% File History:
 % 2017-12-11 Created by Adam Lu
 % 2018-05-18 Added outFolder as a parameter
 % 2018-05-25 Now doesn't plot if stats is empty
@@ -139,6 +140,7 @@ function [bars, fig, outlines] = plot_grouped_histogram (varargin)
 % 2019-01-13 Now returns counts and edges as outputs
 % 2019-01-15 Added 'Counts' as an optional parameter
 % 2019-01-15 Moved code to compute_grouped_histcounts.m
+% 2019-03-14 Now always returns a valid figure handle
 
 %% Hard-coded parameters
 validStyles = {'side-by-side', 'stacked', 'overlapped'};
@@ -251,11 +253,21 @@ figName = iP.Results.FigName;
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
+% Decide on the figure to plot on
+if ~isempty(figHandle)
+    fig = figure(figHandle);
+elseif ~isempty(figNumber)
+    fig = figure(figNumber);
+elseif ~isempty(figName)
+    fig = figure;
+else
+    fig = gcf;
+end
+
 % Return if there is nothing to plot
 if isempty(stats) && (isempty(counts) || isempty(edges))
     fprintf('Both counts and edges must be provided if stats is empty!\n');
     bars = gobjects(0);
-    fig = gobjects(0);
     return
 end
 
@@ -307,17 +319,6 @@ end
 % If the figure name is not a full path, create full path
 if ~isempty(figName)
     figName = construct_fullpath(figName, 'Directory', outFolder);
-end
-
-% Decide on the figure to plot on
-if ~isempty(figHandle)
-    fig = figure(figHandle);
-elseif ~isempty(figNumber)
-    fig = figure(figNumber);
-elseif ~isempty(figName)
-    fig = figure;
-else
-    fig = gcf;
 end
 
 % Set legend location based on number of groups
