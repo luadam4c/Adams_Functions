@@ -25,6 +25,7 @@ function h = plot_vertical_line (xValue, varargin)
 %
 % Used by:
 %       cd/plot_pulse_response_with_stimulus.m
+%       cd/plot_struct.m
 %       cd/plot_swd_histogram.m
 %       cd/plot_window_boundaries.m
 

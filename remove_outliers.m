@@ -31,6 +31,10 @@ function [newData, rowsToKeep] = remove_outliers (oldData, varargin)
 %                       'twoStds'   - Take out data points 
 %                                       more than 2 standard deviations away
 %                   default == 'isoutlier'
+%                   - 'ReplaceWithNans': whether to replace with NaNs
+%                                           instead of removal
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'PlotFlag': whether to plot box plots
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -39,7 +43,9 @@ function [newData, rowsToKeep] = remove_outliers (oldData, varargin)
 %       cd/force_column_vector.m
 %
 % Used by:
+%       cd/compute_stats.m
 %       cd/plot_histogram.m
+%       cd/plot_tuning_curve.m
 %       /media/adamX/m3ha/data_dclamp/compare_sse.m
 %       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
 
@@ -47,6 +53,7 @@ function [newData, rowsToKeep] = remove_outliers (oldData, varargin)
 % 2016-12-08 Created
 % 2018-06-11 Modified to use various outlier methods
 % 2019-03-14 Return original data if empty
+% 2019-03-14 Added 'ReplaceWithNans' as an optional argument
 
 %% Hard-coded parameters
 validOutlierMethods = {'boxplot', 'isoutlier', ...
@@ -55,7 +62,8 @@ validOutlierMethods = {'boxplot', 'isoutlier', ...
 %% Default values for optional arguments
 wl2iqrDefault = 1.5;                % same as the Matlab function boxplot()
 outlierMethodDefault = 'boxplot';   % use built-in isoutlier function
-plotFlagDefault = false;            % whether to plot box plots by default
+replaceWithNansDefault = false;     % remove by default
+plotFlagDefault = false;            % don't plot box plots by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -80,6 +88,8 @@ addParameter(iP, 'WL2IQR', wl2iqrDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'OutlierMethod', outlierMethodDefault, ...
     @(x) any(validatestring(x, validOutlierMethods)));
+addParameter(iP, 'ReplaceWithNans', replaceWithNansDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotFlag', plotFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
@@ -87,6 +97,7 @@ addParameter(iP, 'PlotFlag', plotFlagDefault, ...
 parse(iP, oldData, varargin{:});
 wl2iqr = iP.Results.WL2IQR;
 outlierMethod = validatestring(iP.Results.OutlierMethod, validOutlierMethods);
+replaceWithNans = iP.Results.ReplaceWithNans;
 plotFlag = iP.Results.PlotFlag;
 
 %% Preparation
@@ -98,9 +109,14 @@ if isempty(oldData)
     newData = oldData;
     rowsToKeep = [];
     return
+else
+    % Initialize rowsToKeep
+    nRows = size(oldData, 1)
+    rowsToKeep = transpose(1:nRows);
 end
 
 %% Remove outliers
+% Check whether each data point is within range
 switch outlierMethod
 case 'boxplot'
     % Compute the quartiles for each column
@@ -122,11 +138,11 @@ case 'boxplot'
     % Compute the whisker minimum
     lowbar = q1 - wl2iqr * IQR;
 
-    % Only include the points within the whiskers
-    rowsToKeep = find(all(oldData >= lowbar & oldData <= highbar, 2));
+    % Check whether each data point is within the whiskers
+    withinRange = oldData >= lowbar & oldData <= highbar;
 case 'isoutlier'
-    % Take out values with the built-in isoutlier() function
-    rowsToKeep = find(all(~isoutlier(oldData), 2));
+    % Use the built-in isoutlier() function
+    withinRange = ~isoutlier(oldData);
 case {'fiveStds', 'threeStds', 'twoStds'}
     % Compute the mean of each column
     meanX = mean(oldData);
@@ -149,12 +165,25 @@ case {'fiveStds', 'threeStds', 'twoStds'}
     % Compute the low threshold
     lowbar = meanX - nStds * stdX;
 
-    % Only include the points within a nStds standard deviations of the mean
-    rowsToKeep = find(all(oldData >= lowbar & oldData <= highbar, 2));
+    % Check whether each data point is within 
+    %   nStds standard deviations of the mean 
+    withinRange = oldData >= lowbar & oldData <= highbar;
 end
 
-% Extract the new data
-newData = oldData(rowsToKeep, :);
+% Remove outliers
+if replaceWithNans
+    % Initialize with old data
+    newData = oldData;
+
+    % Replace points not within range with NaN
+    oldData(~withinRange) = NaN;
+else
+    % Only include rows with all points within range
+    rowsToKeep = find(all(withinRange, 2));
+
+    % Extract the new data
+    newData = oldData(rowsToKeep, :);
+end
 
 %% Plot boxplots for verification
 if plotFlag

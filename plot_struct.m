@@ -1,17 +1,20 @@
-function figs = plot_struct (structArray, varargin)
+function [figs, lines] = plot_struct (structArray, varargin)
 %% Plot all fields in a structure array as tuning curves
-% Usage: figs = plot_struct (structArray, varargin)
+% Usage: [figs, lines] = plot_struct (structArray, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
 %       figs        - figure handle(s) for the created figure(s)
-%                   specified as a figure object handle array
+%                   specified as a figure object handle column vector
 % Arguments:    
 %       structArray - a structure array containing scalar fields
 %                   must be a 2-D structure array
-%       varargin    - 'LineSpec': line specification
+%       varargin    - 'XBoundaries': x boundary values
+%                   must be a numeric vector
+%                   default == []
+%                   - 'LineSpec': line specification
 %                   must be a character array
 %                   default == '-'
 %                   - 'PisLog': whether parameter values are to be plotted 
@@ -57,7 +60,7 @@ function figs = plot_struct (structArray, varargin)
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
-%                   - Any other parameter-value pair for the plot() function
+%                   - Any other parameter-value pair for the plot_tuning_curve() function
 %
 % Requires:
 %       ~/Downloaded_Functions/rgb.m
@@ -66,7 +69,9 @@ function figs = plot_struct (structArray, varargin)
 %       cd/force_column_cell.m
 %       cd/match_row_count.m
 %       cd/plot_tuning_curve.m
+%       cd/plot_vertical_line.m
 %       cd/isfigtype.m
+%       cd/save_all_figtypes.m
 %
 % Used by:    
 %       cd/plot_table.m
@@ -77,6 +82,7 @@ function figs = plot_struct (structArray, varargin)
 % 2018-12-17 Now uses create_labels_from_numbers.m
 % 2018-12-18 Now uses iP.KeepUnmatched
 % 2018-12-18 Changed lineSpec default to o and singleColorDefault to SkyBlue
+% 2019-03-14 Now saves the plots here
 % TODO: Return handles to plots
 % 
 
@@ -84,6 +90,7 @@ function figs = plot_struct (structArray, varargin)
 maxNXTicks = 10;
 
 %% Default values for optional arguments
+xBoundariesDefault = [];
 lineSpecDefault = 'o';
 xislogDefault = [false, false];
 xlimitsDefault = [];
@@ -117,6 +124,8 @@ addRequired(iP, 'structArray', ...
     @(x) validateattributes(x, {'struct'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'XBoundaries', xBoundariesDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'LineSpec', lineSpecDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'XisLog', xislogDefault, ...
@@ -150,6 +159,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 
 % Read from the Input Parser
 parse(iP, structArray, varargin{:});
+xBoundaries = iP.Results.XBoundaries;
 lineSpec = iP.Results.LineSpec;
 xIsLog = iP.Results.XisLog;
 xLimits = iP.Results.XLimits;
@@ -249,6 +259,9 @@ allScalarFields = fieldnames(scalarStructArray);
 % Count the number of fields
 nFields = numel(allScalarFields);
 
+% Count the number of boundaries
+nBoundaries = numel(xBoundaries);
+
 % Return if there are no more fields
 if nFields == 0
     figs = gobjects(0);
@@ -259,6 +272,8 @@ end
 fieldData = table2array(struct2table(scalarStructArray));
 
 %% Plot all fields
+figs = gobjects(nFields, 1);
+lines = gobjects(nFields, nBoundaries);
 for iField = 1:nFields
     % Get the field value vector for this field
     field = fieldData(:, iField);
@@ -294,16 +309,29 @@ for iField = 1:nFields
         figName = '';
     end
     
+    % Create a new figure
+    figs(iField, 1) = figure('Visible', 'off');
+
     % Plot the tuning curve
-    figs(iField) = plot_tuning_curve(xValues, field, 'PisLog', xIsLog, ...
+    plot_tuning_curve(xValues, field, 'PisLog', xIsLog, ...
                         'XLimits', xLimits, 'YLimits', yLimits, ...
                         'PTicks', xTicks, 'PTickLabels', xTickLabels, ...
                         'PLabel', xLabel, ...
                         'ReadoutLabel', fieldLabel, ...
                         'SingleColor', singlecolor, ...
                         'FigTitle', figTitle, 'FigNumber', figNumber, ...
-                        'FigName', figName, 'FigTypes', figtypes, ...
                         'LineSpec', lineSpec, otherArguments);
+
+    % Plot boundaries
+    if nBoundaries > 0
+        hold on
+        lines(iField, :) = plot_vertical_line(xBoundaries, 'LineWidth', 0.5, ...
+                                                'LineStyle', '--', 'Color', 'g');
+    end
+
+    if ~isempty(figName)
+        save_all_figtypes(figs(iField, 1), figName, figtypes);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -321,6 +349,8 @@ singleColorDefault = [0, 0, 1];
 
 % Create a figure
 figs(iField) = figure;
+
+'FigName', figName, 'FigTypes', figtypes, ...
 
 %}
 

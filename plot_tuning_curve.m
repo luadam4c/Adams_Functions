@@ -9,7 +9,10 @@ function fig = plot_tuning_curve (pValues, readout, varargin)
 %                   must be a numeric vector
 %       readout     - a readout matrix where each column is a readout vector
 %                   must be a numeric 2-D array
-%       varargin    - 'ColsToPlot': columns of the readout matrix to plot
+%       varargin    - 'RemoveOutliers': whether to remove outliers
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ColsToPlot': columns of the readout matrix to plot
 %                   must be a numeric vector
 %                   default == 1:size(readout, 2);
 %                   - 'LineSpec': line specification
@@ -76,6 +79,7 @@ function fig = plot_tuning_curve (pValues, readout, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
+%       cd/remove_outliers.m
 %       cd/save_all_figtypes.m
 %
 % Used by:
@@ -92,6 +96,7 @@ function fig = plot_tuning_curve (pValues, readout, varargin)
 % 2018-12-15 Added 'LineSpec' as a parameter-value pair argument
 % 2018-12-18 Now uses iP.KeepUnmatched
 % 2018-12-18 Changed lineSpec default to o and singleColorDefault to SkyBlue
+% 2019-03-14 Added 'RemoveOutliers' as an optional argument
 % TODO: Make 'ColorMap' and optional argument
 % TODO: Return handles to plots
 %
@@ -100,6 +105,7 @@ function fig = plot_tuning_curve (pValues, readout, varargin)
 pTickAngle = 60;                % x tick angle in degrees
 
 %% Default values for optional arguments
+removeOutliersDefault = false;  % don't remove outliers by default
 colsToPlotDefault = [];         % set later
 lineSpecDefault = '-';
 lineWidthDefault = 2;
@@ -138,6 +144,8 @@ addRequired(iP, 'readout', ...              % a readout matrix
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'RemoveOutliers', removeOutliersDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ColsToPlot', colsToPlotDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'LineSpec', lineSpecDefault, ...
@@ -176,6 +184,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 
 % Read from the Input Parser
 parse(iP, pValues, readout, varargin{:});
+removeOutliers = iP.Results.RemoveOutliers;
 colsToPlot = iP.Results.ColsToPlot;
 lineSpec = iP.Results.LineSpec;
 lineWidth = iP.Results.LineWidth;
@@ -212,6 +221,11 @@ nEntries = length(pValues);
 
 % Count number of columns
 nCols = size(readout, 2);
+
+% Remove outliers if requested
+if removeOutliers
+    readout = remove_outliers(readout, 'ReplaceWithNans', true);
+end
 
 % Set default columns to plot
 if isempty(colsToPlot)

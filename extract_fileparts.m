@@ -5,6 +5,9 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       TODO
 % Example(s):
 %       [~, paths] = all_files('Directory', pwd);
+%       extract_fileparts(paths, 'commondirectory')
+%       extract_fileparts(paths, 'commonprefix')
+%       extract_fileparts(paths, 'commonsuffix')
 %       extract_fileparts(paths, 'distinct')
 % Outputs:
 %       parts       - parts extracted
@@ -17,6 +20,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       partType    - type of the file part to extract
 %                   must be an unambiguous, case-insensitive match to one of:
 %                       'commondirectory' - common directory across file(s)
+%                       'commonprefix'    - common prefix across file(s)
 %                       'commonsuffix'    - common suffix across file(s)
 %                       'distinct'  - distinct parts across file(s)
 %                       'directory' - directory containing the file(s)
@@ -43,12 +47,13 @@ function parts = extract_fileparts (paths, partType, varargin)
 % 2018-12-18 Created by Adam Lu
 % 2018-12-26 Added 'commonsuffix' as a part type
 % 2018-12-27 Moved code to extract_distinct_fileparts.m
+% 2019-03-14 Added 'commonprefix' as a part type
 % TODO: Make the first argument accept a files structure array too
 % 
 
 %% Hard-coded parameters
-validPartTypes = {'commondirectory', 'commonsuffix', 'distinct', ...
-                    'directory', 'base', 'extension'};
+validPartTypes = {'commondirectory', 'commonprefix', 'commonsuffix', ...
+                    'distinct', 'directory', 'base', 'extension'};
 
 %% Default values for optional arguments
 delimiterDefault = '_';
@@ -93,12 +98,17 @@ case {'directory', 'base', 'extension'}
     parts = extract_simple_fileparts(paths, partType);
 case 'commondirectory'
     parts = extract_common_directory(paths, varargin{:});
-case 'commonsuffix'
+case {'commonprefix', 'commonsuffix'}
     % First, extract file bases
     fileBases = extract_simple_fileparts(paths, 'base');
 
-    % Next, extract file suffices
-    parts = extract_common_suffix(fileBases, 'Delimiter', delimiter);
+    % Next, extract file prefixes or suffices
+    switch partType
+        case 'commonprefix'
+            parts = extract_common_prefix(fileBases, 'Delimiter', delimiter);
+        case 'commonsuffix'
+            parts = extract_common_suffix(fileBases, 'Delimiter', delimiter);
+    end
 case 'distinct'
     parts = extract_distinct_fileparts(paths);
 otherwise

@@ -7,7 +7,7 @@ function figs = plot_table (table, varargin)
 %       TODO
 % Outputs:
 %       figs        - figure handle(s) for the created figure(s)
-%                   specified as a figure object handle array
+%                   specified as a figure object handle column vector
 % Arguments:
 %       table       - a table with variables to plot
 %                   must be a table
@@ -21,7 +21,7 @@ function figs = plot_table (table, varargin)
 %                   - 'OutFolder': output folder if FigNames not set
 %                   must be a string scalar or a character vector
 %                   default == pwd
-%                   - Any other parameter-value pair for the plot() function
+%                   - Any other parameter-value pair for the plot_struct() function
 %
 % Requires:
 %       cd/create_error_for_nargin.m

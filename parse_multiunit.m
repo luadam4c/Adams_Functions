@@ -28,6 +28,9 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %                   - 'PulseVectors': vector that contains the pulse itself
 %                   must be a numeric vector
 %                   default == [] (not used)
+%                   - 'SetBoundaries': vector of set boundaries
+%                   must be a numeric vector
+%                   default == [] (not used)
 %                   - 'tVecs': original time vector(s)
 %                   must be a numeric array or a cell array of numeric arrays
 %                   
@@ -72,6 +75,9 @@ autoCorrDir = 'autocorrelograms';
 acfDir = 'smoothed_autocorrelograms';
 spikeHistDir = 'spike_histograms';
 spikeDetectionDir = 'spike_detection';
+measuresDir = 'measures';
+measuresToPlot = {'oscIndex', 'oscDurationSec', ...
+                    'oscPeriodMs', 'spikeCountTotal'};
 
 %% Default values for optional arguments
 plotFlagDefault = false;
@@ -79,6 +85,7 @@ outFolderDefault = pwd;
 fileBaseDefault = {};           % set later
 stimStartMsDefault = [];        % set later
 pulseVectorsDefault = [];       % don't use pulse vectors by default
+setBoundariesDefault = [];      % no set boundaries by default
 tVecsDefault = [];              % set later
 
 % TODO
@@ -117,6 +124,8 @@ addParameter(iP, 'PulseVectors', pulseVectorsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['PulseVectors must be either a numeric array', ...
                     'or a cell array of numeric arrays!']));
+addParameter(iP, 'SetBoundaries', setBoundariesDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'tVecs', tVecsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['tVecs must be either a numeric array', ...
@@ -129,6 +138,7 @@ outFolder = iP.Results.OutFolder;
 fileBase = iP.Results.FileBase;
 stimStartMs = iP.Results.StimStartMs;
 pulseVectors = iP.Results.PulseVectors;
+setBoundaries = iP.Results.SetBoundaries;
 tVecs = iP.Results.tVecs;
 
 %% Preparation
@@ -141,8 +151,11 @@ nSamples = count_samples(vVecs);
 % Match time vector(s) with sampling interval(s) and number(s) of samples
 [tVecs, siMs, nSamples] = match_time_info(tVecs, siMs, nSamples);
 
+% Count the number of measures to plot
+nMeasures = numel(measuresToPlot);
+
 % Initialize figures array
-figs = gobjects(5);
+figs = gobjects(1 + nMeasures, 1);
 
 % Create a figure title base
 titleBase = replace(fileBase, '_', '\_');
@@ -150,6 +163,7 @@ titleBase = replace(fileBase, '_', '\_');
 %% Do the job
 % Detect stimulation start time if not provided
 %   Otherwise find the corresponding index in the time vector
+fprintf('Detecting stimulation start for %s ...\n', fileBase);
 if isempty(stimStartMs)
     % TODO: Make this a function find_stim_start.m
     if ~isempty(pulseVectors)
@@ -179,6 +193,7 @@ else
 end
 
 % Construct default baseline windows
+fprintf('Constructing baseline window for %s ...\n', fileBase);
 if isempty(baseWindows)
     % Get the starting time(s)
     timeStartMs = extract_elements(tVecs, 'first');
@@ -192,6 +207,7 @@ end
     argfun(@force_column_cell, vVecs, tVecs, baseWindows);
 
 % Parse all of them in a parfor loop
+fprintf('Parsing recording for %s ...\n', fileBase);
 parsedParamsCell = cell(nVectors, 1);
 parsedDataCell = cell(nVectors, 1);
 parfor iVec = 1:nVectors
@@ -200,7 +216,8 @@ parfor iVec = 1:nVectors
     [parsedParamsCell{iVec}, parsedDataCell{iVec}] = ...
         parse_multiunit_helper(iVec, vVecs{iVec}, tVecs{iVec}, siMs(iVec), ...
                                 idxStimStart(iVec), stimStartMs(iVec), ...
-                                baseWindows{iVec}, fileBase, titleBase);
+                                baseWindows{iVec}, ...
+                                fileBase, titleBase, setBoundaries);
 end
 
 % Convert to a struct array
@@ -289,8 +306,9 @@ if plotFlag
 
     % Find appropriate x limits
     histLeft = min(histLeftSec);
-    histRight = nanmean(timeOscEndSec) + 1.96 * stderr(timeOscEndSec) + ...
-                    1.5 * max(maxInterBurstIntervalSec);
+    % histRight = nanmean(timeOscEndSec) + 1.96 * stderr(timeOscEndSec) + ...
+    %                 1.5 * max(maxInterBurstIntervalSec);
+    histRight = 10;
     xLimitsHist = [histLeft, histRight];
 
     % Find the last bin to show for all traces
@@ -348,10 +366,10 @@ if plotFlag
     bestRightForAll = max([allOscDur, allLastPeaksSec], [], 2) + 1;
     acfFilteredRight = compute_stats(bestRightForAll, 'upper95', ...
                                     'RemoveOutliers', true);
-    xLimitsAutoCorr = [-acfFilteredRight, acfFilteredRight];
-    % xLimitsAutoCorr = [-7, 7];
-    xLimitsAcfFiltered = [0, acfFilteredRight];
-    % xLimitsAcfFiltered = [0, 7];
+    % xLimitsAutoCorr = [-acfFilteredRight, acfFilteredRight];
+    xLimitsAutoCorr = [-10, 10];
+    % xLimitsAcfFiltered = [0, acfFilteredRight];
+    xLimitsAcfFiltered = [0, 10];
 
     % Find the last index to show
     lastIndexToShow = floor(acfFilteredRight ./ binWidthSec) + 1;
@@ -418,13 +436,18 @@ if plotFlag
     check_dir(outFolderRaster);
 
     % Create figure and plot
-    figs(1) = figure(1);
+    figs(1) = figure('Visible', 'off');
     clf
     [hLines, eventTimes, yEnds, yTicksTable] = ...
         plot_raster(spikeTimesSec, 'DurationWindow', oscWindow, ...
                     'LineWidth', 0.5);
     vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
                                     'LineStyle', '--');
+    if ~isempty(setBoundaries)
+        yBoundaries = nVectors - setBoundaries + 1;
+        horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
+                                        'LineStyle', '--', 'LineWidth', 2);
+    end
     xlabel('Time (s)');
     ylabel('Trace #');
     title(['Spike times for ', titleBase]);
@@ -443,23 +466,43 @@ if plotFlag
 end
 
 %% Plot time series of measures
-% Extract columns to plot
-% TODO
+if plotFlag
+    fprintf('Plotting time series of measures for %s ...\n', fileBase);    
 
-% Plot table
-% TODO
+    % Create output directory and subdirectories for each measure
+    outFolderMeasures = fullfile(outFolder, measuresDir);
+    check_dir(outFolderMeasures);
+    check_subdir(outFolderMeasures, measuresToPlot);
+
+    % Create full figure paths
+    figPathsMeasures = fullfile(outFolderMeasures, measuresToPlot, ...
+                                strcat(fileBase, '_', measuresToPlot));
+
+    % Create custom figure titles
+    figTitlesMeasures = strcat(measuresToPlot, ' for ', titleBase);
+
+    % Plot table
+    figs(2:nMeasures + 1) = ...
+        plot_table(parsedParams, 'VariableNames', measuresToPlot, ...
+                    'XLabel', 'Time (min)', 'FigNames', figPathsMeasures, ...
+                    'FigTitles', figTitlesMeasures, ...
+                    'XBoundaries', setBoundaries, ...
+                    'RemoveOutliers', true);
+end
 
 %% Outputs
 varargout{1} = parsedParams;
 varargout{2} = parsedData;
 varargout{3} = figs;
 
+fprintf('%s analyzed! ...\n\n', fileBase);  
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [parsedParams, parsedData] = ...
                 parse_multiunit_helper(iVec, vVec, tVec, siMs, ...
                                 idxStimStart, stimStartMs, baseWindow, ...
-                                fileBase, figTitleBase)
+                                fileBase, figTitleBase, setBoundaries)
 
 % Parse a single multiunit recording
 
@@ -482,6 +525,35 @@ minDelaySamples = ceil(minDelayMs ./ siMs);
 
 % Compute the bin width in seconds
 binWidthSec = binWidthMs ./ MS_PER_S;
+
+% Compute the number of set boundaries
+nBoundaries = numel(setBoundaries);
+
+% Determine which set number this sweep belongs to
+if nBoundaries > 0
+    % For the first n - 1 sets, use find
+    setNumber = find(setBoundaries > iVec, 1, 'first');
+
+    % For the last set, use numel(setBoundaries) + 1
+    if isempty(setNumber)
+        setNumber = numel(setBoundaries) + 1;
+    end
+else
+    setNumber = NaN;
+end
+
+% Create set names
+if nBoundaries == 2
+    if setNumber == 1
+        setName = 'baseline';
+    elseif setNumber == 2
+        setName = 'washon';
+    elseif setNumber == 3
+        setName = 'washoff';
+    end
+else
+    setName = '';
+end
 
 %% Detect spikes
 % Find the starting index for detecting a spike
@@ -721,6 +793,8 @@ figTitleBase = [figTitleBase, '\_trace', num2str(iVec)];
             maxInterBurstIntervalMs, spikeTimesMs, edgesMs);
 
 %% Store in outputs
+parsedParams.setNumber = setNumber;
+parsedParams.setName = setName;
 parsedParams.signal2Noise = signal2Noise;
 parsedParams.minDelaySamples = minDelaySamples;
 parsedParams.binWidthMs = binWidthMs;
@@ -929,7 +1003,7 @@ function [autoCorrFig, acfFig, acfLine1, acfLine2, acfFilteredLine] = ...
                                     yOscDur, figTitleBase)
                                 
 % Create time values 
-if nBins > 0
+if nBins > 1
     tAcfTemp = create_time_vectors(nBins - 1, 'SamplingIntervalSec', binWidthSec, ...
                                 'TimeUnits', 's');
     tAcf = [0; tAcfTemp(1:halfNBins)];

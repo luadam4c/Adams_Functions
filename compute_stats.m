@@ -49,6 +49,7 @@ function stats = compute_stats (vecs, statName, varargin)
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/extract_subvectors.m
+%       cd/remove_outliers.m
 %       cd/stderr.m
 %       cd/nanstderr.m
 %
