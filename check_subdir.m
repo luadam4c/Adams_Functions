@@ -23,12 +23,13 @@ function check_subdir (parentDirectory, subDirectories, varargin)
 %       cd/check_dir.m
 %
 % Used by:    
+%       cd/create_subdir_copy_files.m
+%       cd/create_input_file.m
 %       cd/find_passive_params.m
 %       cd/find_istart.m
 %       cd/find_IPSC_peak.m
 %       cd/find_LTS.m
-%       cd/create_subdir_copy_files.m
-%       cd/create_input_file.m
+%       cd/parse_multiunit.m
 %       /media/adamX/m3ha/data_dclamp/take4/find_special_cases.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting22.m
 %       /home/Matlab/minEASE/minEASE.m

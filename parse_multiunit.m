@@ -39,6 +39,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/find_stim_start.m TODO
 %       cd/plot_raster.m TODO
 %       cd/plot_horizontal_line.m TODO
+%       cd/check_subdir.m
 %       cd/create_logical_array.m
 %       cd/create_time_vectors.m
 %       cd/extract_elements.m
@@ -63,6 +64,13 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %% Hard-coded parameters
 MS_PER_S = 1000;
 
+% Folders for output figures
+rasterDir = 'rasters';
+autoCorrDir = 'autocorrelograms';
+smoothAutoCorrDir = 'smoothed_autocorrelograms';
+spikeHistDir = 'spike_histograms';
+spikeDetectionDir = 'spike_detection';
+
 %% Default values for optional arguments
 plotFlagDefault = false;
 outFolderDefault = pwd;
@@ -73,6 +81,7 @@ tVecsDefault = [];              % set later
 
 % TODO
 baseWindows = [];
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
@@ -133,11 +142,12 @@ nSamples = count_samples(vVecs);
 % Initialize figures array
 figs = gobjects(nVectors + 1, 1);
 
-% Create figure path base
-figPathBase = fullfile(outFolder, [fileBase, '_spike_detection']);
-
 % Create a figure title base
 figTitleBase = replace(fileBase, '_', '\_');
+
+% Make sure subdirectories exist
+check_subdir(outFolder, {rasterDir, autoCorrDir, smoothAutoCorrDir, ...
+                spikeHistDir, spikeDetectionDir});
 
 %% Do the job
 % Detect stimulation start time if not provided
@@ -186,14 +196,19 @@ end
 % Parse all of them in a parfor loop
 parsedParamsCell = cell(nVectors, 1);
 parsedDataCell = cell(nVectors, 1);
-%parfor iVec = 1:nVectors
-for iVec = 1:nVectors
+parfor iVec = 1:nVectors
+%for iVec = 1:nVectors
 %for iVec = 1:1
     [parsedParamsCell{iVec}, parsedDataCell{iVec}, figs(iVec)] = ...
         parse_multiunit_helper(iVec, vVecs{iVec}, tVecs{iVec}, siMs(iVec), ...
                                 idxStimStart(iVec), stimStartMs(iVec), ...
                                 baseWindows{iVec}, ...
-                                plotFlag, figPathBase, figTitleBase);
+                                plotFlag, outFolder, ...
+                                autoCorrDir, smoothAutoCorrDir, ...
+                                spikeHistDir, spikeDetectionDir, ...
+                                fileBase, figTitleBase);
+
+    close all force hidden;
 end
 
 % Convert to a struct array
@@ -206,10 +221,13 @@ end
     argfun(@(x) struct2table(x, 'AsArray', true), ...
             parsedParamsStruct, parsedDataStruct);
 
+% Save the parameters table
+writetable(parsedParams, fullfile(outFolder, [fileBase, '_params.csv']));
+
 %% Plot raster plot
 if plotFlag
     % Modify the figure base
-    figPathBaseThis = [figPathBase, '_raster'];
+    figPathBase = [fileBase, '_raster'];
 
     % Extract the spike times
     spikeTimesMs = parsedData.spikeTimesMs;
@@ -247,8 +265,8 @@ if plotFlag
     zoomWin1 = mean(stimStartSec) + [0, 10];
     zoomWin2 = mean(detectStartSec) + [0, 2];
     zoomWin3 = mean(firstSpikeSec) + [0, 0.06];
-    save_all_zooms(figs(nVectors + 1), figPathBaseThis, ...
-                    zoomWin1, zoomWin2, zoomWin3);
+    save_all_zooms(figs(nVectors + 1), fullfile(outFolder, rasterDir), ...
+                    figPathBase, zoomWin1, zoomWin2, zoomWin3);
 end
 
 %% Outputs
@@ -261,7 +279,11 @@ varargout{3} = figs;
 function [parsedParams, parsedData, fig] = ...
                 parse_multiunit_helper(iVec, vVec, tVec, siMs, ...
                                 idxStimStart, stimStartMs, baseWindow, ...
-                                plotFlag, figPathBase, figTitleBase)
+                                plotFlag, outFolder, ...
+                                autoCorrDir, smoothAutoCorrDir, ...
+                                spikeHistDir, spikeDetectionDir, ...
+                                fileBase, figTitleBase)
+
 % Parse a single multiunit recording
 
 % Hard-coded constants
@@ -269,7 +291,7 @@ MS_PER_S = 1000;
 
 % Hard-coded parameters
 signal2Noise = 4; %2.5
-minDelaySamples = 2000;
+minDelayMs = 25;
 binWidthMs = 10;
 filterWidthMs = 100;
 minRelProm = 0.02;
@@ -279,8 +301,11 @@ maxInterBurstIntervalMs = 2000;
 
 %% Preparation
 % Modify the figure base
-figPathBaseThis = [figPathBase, '_trace', num2str(iVec)];
+figPathBaseThis = [fileBase, '_trace', num2str(iVec)];
 figTitleBaseThis = [figTitleBase, '\_trace', num2str(iVec)];
+
+% Compute the minimum delay in samples
+minDelaySamples = ceil(minDelayMs / siMs);
 
 %% Detect spikes
 % Find the starting index for detecting a spike
@@ -432,7 +457,7 @@ autoCorrDelayMs = histLeftMs - stimStartMs;
 autoCorr = xcorr(spikeCounts, 'unbiased') / binWidthSec ^ 2;
 
 % Compute the half number of bins
-halfNBins = ceil(nBins/2);
+halfNBins = floor(nBins/2);
 
 % Take just half of the positive side
 acf = autoCorr(nBins:(nBins + halfNBins));
@@ -448,12 +473,17 @@ acfFiltered = movingaveragefilter(acf, filterWidthMs, binWidthMs);
 ampPeak1 = acfFiltered(1);
 
 % Find the index and amplitude of the peaks
-[peakAmp, peakInd] = ...
-    findpeaks(acfFiltered, 'MinPeakProminence', minRelProm * ampPeak1);
+if numel(acfFiltered) > 3
+    [peakAmp, peakInd] = ...
+        findpeaks(acfFiltered, 'MinPeakProminence', minRelProm * ampPeak1);
 
-% Record all peak indices and amplitudes
-indPeaks = [1; peakInd];
-ampPeaks = [ampPeak1; peakAmp];
+    % Record all peak indices and amplitudes
+    indPeaks = [1; peakInd];
+    ampPeaks = [ampPeak1; peakAmp];
+else
+    indPeaks = 1;
+    ampPeaks = ampPeak1;
+end
 
 % Compute the number of peaks
 nPeaks = numel(indPeaks);
@@ -530,7 +560,8 @@ parsedData.indTroughs = indTroughs;
 
 %% Plots
 % if plotFlag
-if plotFlag && iVec == 1
+if plotFlag
+% if plotFlag && iVec == 1
     %% Plot spike detection
     [fig, ax, lines, markers, raster] = ...
         plot_spike_detection(tVec, vVec, slopes, idxSpikes, ...
@@ -542,7 +573,8 @@ if plotFlag && iVec == 1
     zoomWin1 = stimStartMs + [0, 1e4];
     zoomWin2 = detectStartMs + [0, 2e3];
     zoomWin3 = firstSpikeMs + [0, 60];
-    save_all_zooms(fig, figPathBaseThis, zoomWin1, zoomWin2, zoomWin3);
+    save_all_zooms(fig, fullfile(outFolder, spikeDetectionDir), ...
+                    figPathBaseThis, zoomWin1, zoomWin2, zoomWin3);
 
     %% Plot the spike histogram
     % Compute things
@@ -568,7 +600,8 @@ if plotFlag && iVec == 1
         spikeCountTotal), 'Units', 'normalized');
     plot_horizontal_line(0, 'XLimits', xLimitsOscDur, ...
                         'Color', 'r', 'LineStyle', '-', 'LineWidth', 2);
-    saveas(histFig, [figPathBaseThis, '_spike_histogram'], 'png');
+    saveas(histFig, fullfile(outFolder, spikeHistDir, ...
+                    [figPathBaseThis, '_spike_histogram']), 'png');
 
     %% Plot the autocorrelograms
     % Create time values 
@@ -586,6 +619,7 @@ if plotFlag && iVec == 1
     yOscDur = -(maxAcf * 0.025);
     xLimitsOscDur = [0, oscDurationMs - autoCorrDelayMs] / MS_PER_S;
     xLimitsAcfFiltered = [0, max(timePeaksSec(end), xLimitsOscDur(2)) + 1];
+    % xLimitsAcfFiltered = [0, 7];
 
     % Plot the autocorrelogram
     acfFig = figure;
@@ -595,7 +629,8 @@ if plotFlag && iVec == 1
     xlabel('Lag (s)');
     ylabel('Spike rate squared (Hz^2)');
     title(['Autocorrelation for ', figTitleBaseThis]);
-    saveas(acfFig, [figPathBaseThis, '_autocorrelogram'], 'png');
+    saveas(acfFig, fullfile(outFolder, autoCorrDir, ...
+                    [figPathBaseThis, '_autocorrelogram']), 'png');
 
     % Plot the filtered autocorrelogram
     acfFilteredFig = figure;
@@ -617,7 +652,8 @@ if plotFlag && iVec == 1
     xlabel('Lag (s)');
     ylabel('Spike rate squared (Hz^2)');
     title(['Smoothed autocorrelation for ', figTitleBaseThis]);
-    saveas(acfFilteredFig, [figPathBaseThis, '_smoothed_autocorrelogram'], 'png');
+    saveas(acfFilteredFig, fullfile(outFolder, smoothAutoCorrDir, ...
+                    [figPathBaseThis, '_smoothed_autocorrelogram']), 'png');
 else
     fig = gobjects(1);
 end
@@ -693,28 +729,30 @@ linkaxes(ax, 'x');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function save_all_zooms(fig, figPathBase, zoomWin1, zoomWin2, zoomWin3)
+function save_all_zooms(fig, outFolder, figPathBase, zoomWin1, zoomWin2, zoomWin3)
 %% Save the figure as .fig and 4 zooms as .png
 % TODO: Make this more general
 
 % Get the figure
-figure(fig)
+figure(fig);
+
+% Create subdirectories for different zooms
+check_subdir(outFolder, {'full', 'zoom1', 'zoom2', 'zoom3'});
 
 % Save the full figure
-%save_all_figtypes(fig, [figPathBase, '_full'], {'png', 'fig'});
-saveas(fig, [figPathBase, '_full'], 'png');
+saveas(fig, fullfile(outFolder, 'full', [figPathBase, '_full']), 'png');
 
 % Zoom #1
 xlim(zoomWin1);
-saveas(fig, [figPathBase, '_zoom1'], 'png');
+saveas(fig, fullfile(outFolder, 'zoom1', [figPathBase, '_zoom1']), 'png');
 
 % Zoom #2
 xlim(zoomWin2);
-saveas(fig, [figPathBase, '_zoom2'], 'png');
+saveas(fig, fullfile(outFolder, 'zoom2', [figPathBase, '_zoom2']), 'png');
 
 % Zoom #3
 xlim(zoomWin3);
-saveas(fig, [figPathBase, '_zoom3'], 'png');
+saveas(fig, fullfile(outFolder, 'zoom3', [figPathBase, '_zoom3']), 'png');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -900,6 +938,13 @@ xlim([0, 7]);
 
 % Take just the positive side
 acf = autoCorr(nBins:end);
+
+% Create figure path base
+figPathBase = fullfile(outFolder, [fileBase, '_spike_detection']);
+figPathBase = [fileBase, '_spike_detection'];
+
+minDelaySamples = 2000;
+minDelayMs = 200;
 
 %}
 

@@ -40,7 +40,7 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 %                   must be 'suppress' or a 2-element increasing numeric vector
 %                   default == uses 1 more than max and min of trialNos
 %                   - 'BarWidth': bar width relative to y value increments (0~1)
-%                   must be a positive scalar between 0 and 1
+%                   must be a positive scalar
 %                   default == 0.6
 %                   - 'Colors': colors for each array
 %                   must be a cell array of character/string arrays
@@ -129,7 +129,7 @@ addParameter(iP, 'YLimits', yLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'BarWidth', barWidthDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', '>=', 0, '<=', 1}));
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'Colors', colorsDefault, ...
     @(x) assert(iscell(x) && all(cellfun(@(x) ischar(x) || isstring(x), x)), ...
         'data must be a cell array of character/string arrays!'));
@@ -448,6 +448,9 @@ for iArray = 1:nArrays
 end
 
 trialLabels = arrayfun(@num2str, trialNosAll, 'UniformOutput', false);
+
+%                   must be a positive scalar between 0 and 1
+    @(x) validateattributes(x, {'numeric'}, {'scalar', '>=', 0, '<=', 1}));
 
 %}
 
