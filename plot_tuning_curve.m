@@ -224,7 +224,8 @@ nCols = size(readout, 2);
 
 % Remove outliers if requested
 if removeOutliers
-    readout = remove_outliers(readout, 'ReplaceWithNans', true);
+    readout = remove_outliers(readout, 'OutlierMethod', 'isoutlier', ...
+                                'ReplaceWithNans', true);
 end
 
 % Set default columns to plot

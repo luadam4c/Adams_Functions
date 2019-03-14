@@ -466,7 +466,7 @@ if plotFlag
 end
 
 %% Plot time series of measures
-if plotFlag
+%if plotFlag
     fprintf('Plotting time series of measures for %s ...\n', fileBase);    
 
     % Create output directory and subdirectories for each measure
@@ -488,7 +488,7 @@ if plotFlag
                     'FigTitles', figTitlesMeasures, ...
                     'XBoundaries', setBoundaries, ...
                     'RemoveOutliers', true);
-end
+%end
 
 %% Outputs
 varargout{1} = parsedParams;

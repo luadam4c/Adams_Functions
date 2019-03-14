@@ -111,7 +111,7 @@ if isempty(oldData)
     return
 else
     % Initialize rowsToKeep
-    nRows = size(oldData, 1)
+    nRows = size(oldData, 1);
     rowsToKeep = transpose(1:nRows);
 end
 
@@ -176,7 +176,7 @@ if replaceWithNans
     newData = oldData;
 
     % Replace points not within range with NaN
-    oldData(~withinRange) = NaN;
+    newData(~withinRange) = NaN;
 else
     % Only include rows with all points within range
     rowsToKeep = find(all(withinRange, 2));
