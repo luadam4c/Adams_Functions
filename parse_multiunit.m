@@ -358,9 +358,11 @@ if plotFlag
     binWidthSec = parsedParams.binWidthSec;
     nBins = parsedParams.nBins;
     halfNBins = parsedParams.halfNBins;
+    oscIndexOld = parsedParams.oscIndexOld;
     oscIndex = parsedParams.oscIndex;
     oscPeriodMs = parsedParams.oscPeriodMs;
     oscDurationSec = parsedParams.oscDurationSec;
+    spikeCountTotal = parsedParams.spikeCountTotal;
     figTitleBase = parsedParams.figTitleBase;
     figPathBase = parsedParams.figPathBase;
 
@@ -402,7 +404,9 @@ if plotFlag
                 indPeaks{iVec}, indTroughs{iVec}, ...
                 ampPeaks{iVec}, ampTroughs{iVec}, ...
                 binWidthSec(iVec), nBins(iVec), halfNBins(iVec), ...
-                oscIndex(iVec), oscPeriodMs(iVec), oscDurationSec(iVec), ...
+                oscIndexOld(iVec), oscIndex(iVec), ...
+                oscPeriodMs(iVec), oscDurationSec(iVec), ...
+                spikeCountTotal(iVec), ...
                 xLimitsAutoCorr, yLimitsAutoCorr, ...
                 xLimitsAcfFiltered, yLimitsAcfFiltered, ...
                 yOscDur, figTitleBase{iVec});
@@ -471,7 +475,7 @@ if plotFlag
 end
 
 %% Plot time series of measures
-%if plotFlag
+if plotFlag
     fprintf('Plotting time series of measures for %s ...\n', fileBase);    
 
     % Create output directory and subdirectories for each measure
@@ -493,7 +497,7 @@ end
                     'FigTitles', figTitlesMeasures, ...
                     'XBoundaries', setBoundaries, ...
                     'RemoveOutliers', true);
-%end
+end
 
 %% Outputs
 varargout{1} = parsedParams;
@@ -754,7 +758,7 @@ else
     oscDurationBins = floor(oscDurationMs ./ binWidthMs);
 
     % Restrict the autocorrelation function to oscillation duration
-    acfFilteredOfInterest = acfFiltered(1:(1+oscDurationBins);
+    acfFilteredOfInterest = acfFiltered(1:(1+oscDurationBins));
 
     % Find the index and amplitude of peaks within oscillation duration
     if numel(acfFiltered) > 3
@@ -791,7 +795,11 @@ else
     % Compute the oscillatory index 
     %   Note: This is the coefficient of variation 
     %           of the lag differences between adjacent peaks
-    oscIndex = compute_stats(lagsBetweenPeaksMs, 'cov');
+    if numel(lagsBetweenPeaksMs) < 2
+        oscIndex = NaN;
+    else
+        oscIndex = compute_stats(lagsBetweenPeaksMs, 'cov');
+    end
 
     % Compute the oscillation period
     %   Note: This is the period between the first peak 
@@ -860,7 +868,7 @@ parsedParams.timeOscEndMs = timeOscEndMs;
 parsedParams.timeOscEndSec = timeOscEndSec;
 parsedParams.oscDurationMs = oscDurationMs;
 parsedParams.oscDurationSec = oscDurationSec;
-oscIndexOld
+parsedParams.oscIndexOld = oscIndexOld;
 parsedParams.oscIndex = oscIndex;
 parsedParams.oscPeriodMs = oscPeriodMs;
 parsedParams.figPathBase = figPathBase;
@@ -883,7 +891,7 @@ parsedData.indPeaks = indPeaks;
 parsedData.indTroughs = indTroughs;
 parsedData.ampPeaks = ampPeaks;
 parsedData.ampTroughs = ampTroughs;
-lagsBetweenPeaksMs
+parsedData.lagsBetweenPeaksMs = lagsBetweenPeaksMs;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1026,7 +1034,8 @@ function [autoCorrFig, acfFig, acfLine1, acfLine2, acfFilteredLine] = ...
                 plot_autocorrelogram(autoCorr, acf, acfFiltered, indPeaks, ...
                                     indTroughs, ampPeaks, ampTroughs, ...
                                     binWidthSec, nBins, halfNBins, ...
-                                    oscIndex, oscPeriodMs, oscDurationSec, ...
+                                    oscIndexOld, oscIndex, oscPeriodMs, ...
+                                    oscDurationSec, spikeCountTotal, ...
                                     xLimitsAutoCorr, yLimitsAutoCorr, ...
                                     xLimitsAcfFiltered, yLimitsAcfFiltered, ...
                                     yOscDur, figTitleBase)
@@ -1068,9 +1077,13 @@ plot_horizontal_line(yOscDur, 'XLimits', xLimitsOscDur, ...
                     'Color', 'r', 'LineStyle', '-', 'LineWidth', 2);
 text(0.5, 0.95, sprintf('Oscillatory Index = %g', oscIndex), ...
     'Units', 'normalized');
-text(0.5, 0.9, sprintf('Oscillation Period = %g ms', oscPeriodMs), ...
+text(0.5, 0.91, sprintf('Old oscillatory Index = %g', oscIndexOld), ...
     'Units', 'normalized');
-text(0.5, 0.85, sprintf('Oscillation Duration = %.2g seconds', ...
+text(0.5, 0.87, sprintf('Total spike count = %g', spikeCountTotal), ...
+    'Units', 'normalized');
+text(0.5, 0.83, sprintf('Oscillation Period = %g ms', oscPeriodMs), ...
+    'Units', 'normalized');
+text(0.5, 0.79, sprintf('Oscillation Duration = %.2g seconds', ...
     oscDurationSec), 'Units', 'normalized');
 xlim(xLimitsAcfFiltered);
 ylim(yLimitsAcfFiltered);
