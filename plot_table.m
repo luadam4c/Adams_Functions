@@ -14,7 +14,7 @@ function figs = plot_table (table, varargin)
 %       varargin    - 'VariableNames': variable (column) names of the table
 %                   must be empty or a character vector or a string vector
 %                       or a cell array of character vectors
-%                   default == {}
+%                   default == plot all variables
 %                   - 'XLabel': label for the parameter
 %                   must be a string scalar or a character vector
 %                   default == none ('suppress')

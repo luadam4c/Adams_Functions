@@ -350,7 +350,7 @@ if plotFlag
 end
 
 %% Plot autocorrelograms
-% if plotFlag
+if plotFlag
     fprintf('Plotting autocorrelograms for %s ...\n', fileBase);
 
     % Retrieve data for plotting
@@ -429,7 +429,7 @@ end
 
         close all force hidden
     end
-% end
+end
 
 %% Plot raster plot
 if plotFlag
@@ -486,7 +486,7 @@ if plotFlag
 end
 
 %% Plot time series of measures
-% if plotFlag
+if plotFlag
     fprintf('Plotting time series of measures for %s ...\n', fileBase);    
 
     % Create output directory and subdirectories for each measure
@@ -508,7 +508,7 @@ end
                     'FigTitles', figTitlesMeasures, ...
                     'XBoundaries', setBoundaries, ...
                     'RemoveOutliers', true);
-% end
+end
 
 %% Outputs
 varargout{1} = parsedParams;

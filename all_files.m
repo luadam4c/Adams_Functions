@@ -65,6 +65,7 @@ function [files, fullPaths] = all_files (varargin)
 % 2018-11-21 Added 'Prefix', 'Keyword', 'Suffix', 'RegExp' as optional arguments
 % 2018-11-26 Added 'Recursive' as an optional flag
 % 2018-12-26 Added 'ForceCellOutput' as an optional argument
+% 2019-03-15 Fixed the case when extension is not provided
 
 %% Default values for optional arguments
 verboseDefault = false;         % don't print to standard output by default
@@ -127,9 +128,12 @@ end
 %% Find files
 % Get or check the regular expression to match
 if isempty(regExp)
-    % Match the suffix and extension
     if ~isempty(extension)
+        % Match the prefix, keyword, suffix and extension
         regExp = sprintf('%s.*%s.*%s%s$', prefix, keyword, suffix, extension);
+    else
+        % Match the prefix, keyword, suffix
+        regExp = sprintf('%s.*%s.*%s[.].*$', prefix, keyword, suffix);
     end
 else
     % Display warning if an extension is provided
@@ -194,6 +198,8 @@ end
 
 %{
 OLD CODE:
+
+
 
 %}
 
