@@ -87,8 +87,8 @@ acfDir = 'smoothed_autocorrelograms';
 spikeHistDir = 'spike_histograms';
 spikeDetectionDir = 'spike_detection';
 measuresDir = 'measures';
-measuresToPlot = {'oscIndex', 'oscDurationSec', ...
-                    'oscPeriodMs', 'spikeCountTotal'};
+measuresToPlot = {'oscIndex', 'oscIndexOld', 'oscDurationSec', ...
+                    'oscPeriodMs', 'oscPeriodOldMs', 'spikeCountTotal'};
 
 %% Default values for optional arguments
 plotFlagDefault = false;
@@ -338,8 +338,8 @@ if plotFlag
     parfor iVec = 1:nVectors
         [histBars, histFig] = ...
             plot_spike_histogram(spikeCounts{iVec}, edgesSec{iVec}, ...
-                                histLeftSec(iVec), timeOscEndSec(iVec), ...
-                                oscDurationSec(iVec), spikeCountTotal(iVec), ...
+                                timeOscEndSec(iVec), oscDurationSec(iVec), ...
+                                spikeCountTotal(iVec), ...
                                 xLimitsHist, yLimitsHist, figTitleBase{iVec});
 
         saveas(histFig, fullfile(outFolderHist, ...
@@ -364,9 +364,10 @@ end
     binWidthSec = parsedParams.binWidthSec;
     nBins = parsedParams.nBins;
     halfNBins = parsedParams.halfNBins;
-    oscIndexOld = parsedParams.oscIndexOld;
     oscIndex = parsedParams.oscIndex;
+    oscIndexOld = parsedParams.oscIndexOld;
     oscPeriodMs = parsedParams.oscPeriodMs;
+    oscPeriodOldMs = parsedParams.oscPeriodOldMs;
     oscDurationSec = parsedParams.oscDurationSec;
     spikeCountTotal = parsedParams.spikeCountTotal;
     figTitleBase = parsedParams.figTitleBase;
@@ -410,9 +411,9 @@ end
                 indPeaks{iVec}, indTroughs{iVec}, ...
                 ampPeaks{iVec}, ampTroughs{iVec}, ...
                 binWidthSec(iVec), nBins(iVec), halfNBins(iVec), ...
-                oscIndexOld(iVec), oscIndex(iVec), ...
-                oscPeriodMs(iVec), oscDurationSec(iVec), ...
-                spikeCountTotal(iVec), ...
+                oscIndex(iVec), oscIndexOld(iVec), ...
+                oscPeriodMs(iVec), oscPeriodOldMs(iVec), ...
+                oscDurationSec(iVec), spikeCountTotal(iVec), ...
                 xLimitsAutoCorr, yLimitsAutoCorr, ...
                 xLimitsAcfFiltered, yLimitsAcfFiltered, ...
                 yOscDur, figTitleBase{iVec});
@@ -732,17 +733,21 @@ end
 
 %% Compute the autocorrelogram
 if spikeCountTotal == 0
-    oscIndexOld = NaN;
     oscIndex = NaN;
-    oscPeriodMs = NaN;
+    oscIndexOld = NaN;
+    oscPeriodMs = 0;
+    oscPeriodOldMs = 0;
+    minOscPeriodBins = 0;
+    maxOscPeriodBins = 0;
     autoCorr = [];
     acf = [];
     acfFiltered = [];
+    acfFilteredOfInterest = [];
     indPeaks = [];
     indTroughs = [];
     ampPeaks = [];
     ampTroughs = [];
-    lagsBetweenPeaksMs = [];
+    halfPeriodsToMultiple = [];
 else
     % Compute an unnormalized autocorrelogram in Hz^2
     autoCorr = xcorr(spikeCounts, 'unbiased') ./ binWidthSec ^ 2;
@@ -786,32 +791,57 @@ else
     % Compute the number of peaks
     nPeaks = numel(indPeaks);
 
+    % Compute the lags of peaks in bins
+    if nPeaks <= 1
+        lagsPeaksBins = [];
+    else
+        lagsPeaksBins = indPeaks(2:end) - indPeaks(1);
+    end
+
     % Compute the oscillation period
-    %   Note: This is the period between the first peak 
-    %           and the next largest peak
+    %   Note: TODO
     % TODO: Try both:
     %   1. Use the largest peak in the frequency spectrum
     %   2. Use fminsearch on the function for oscillatory index
-    if nPeaks > 1
-        [~, iPeak] = max(ampPeaks(2:end));
-        oscPeriodBins = indPeaks(iPeak + 1) - indPeaks(1);
-    else
+    if nPeaks <= 1
+        oscPeriodOldBins = 0;
         oscPeriodBins = 0;
+        minOscPeriodBins = 0;
+        maxOscPeriodBins = 0;
+    else
+        % Compute the oscillation period the old way
+        %   Note: The lag between the primary peak and the second peak
+        oscPeriodOldBins = indPeaks(2) - indPeaks(1);
+
+        % Compute the oscillation period the new way:
+        %   Note: TODO
+        if nPeaks <= 2
+            % Just use the lag between first two peaks
+            oscPeriodBins = oscPeriodOldBins;
+            minOscPeriodBins = oscPeriodOldBins;
+            maxOscPeriodBins = oscPeriodOldBins;
+        else
+            % Create a function for computing the average distance
+            %   of each peak lag to a multiple of x
+            average_distance_for_a_period = ...
+                @(x) compute_average_distance_to_a_multiple(lagsPeaksBins, x);
+
+            % Define the range the actual oscillation period can lie in
+            minOscPeriodBins = oscPeriodOldBins * 2 / 3;
+            maxOscPeriodBins = oscPeriodOldBins * 3 / 2;
+
+            % Find the oscillation period in bins by looking for the 
+            %   value of x that minimizes myFun, using the range
+            %   oscPeriodOldBins / 3 to oscPeriodOldBins * 3
+            oscPeriodBins = ...
+                fminbnd(average_distance_for_a_period, ...
+                        minOscPeriodBins, maxOscPeriodBins);
+        end
     end
 
+    % Convert to ms
+    oscPeriodOldMs = oscPeriodOldBins .* binWidthMs;
     oscPeriodMs = oscPeriodBins .* binWidthMs;
-
-    % Find the indices and amplitudes of the troughs in between each pair of peak
-    [ampTroughs, indTroughs] = ...
-        find_troughs_from_peaks(acfFilteredOfInterest, indPeaks);
-
-    % Compute the average amplitudes between adjacent peaks
-    ampAdjPeaks = mean([ampPeaks(1:(end-1)), ampPeaks(2:end)], 2);
-
-    % Compute the old oscillatory index
-    %   Note: This is the average of all oscillatory indices as defined
-    %           by Sohal's paper between adjacent peaks
-    oscIndexOld = mean((ampAdjPeaks - ampTroughs) ./ ampAdjPeaks);
 
     % Compute the oscillatory index 
     %   Note: This is 1 minus the average of all distances 
@@ -820,19 +850,38 @@ else
     %           2nd and beyond. However, if there are less than two peaks,
     %           consider it non-oscillatory
     if numel(indPeaks) <= 2
-        % If there are no more than two peaks, consider it not oscillatory
-        oscIndex = 0;
+        % If there are no more than two peaks, don't compute
+        halfPeriodsToMultiple = [];
+        oscIndex = NaN;
     else
         % Compute the distance to the closest multiple of the oscillation period 
         %   for each peak from the 2nd and beyond,
         %   normalize by half the oscillation period
-        [~, halfPeriodsToMultiple] = ...
-            arrayfun(@(x) find_nearest_multiple(x, oscPeriodBins, ...
-                                            'RelativeToHalfBase', true), ...
-                            indPeaks(2:end) - 1);
+        [averageDistance, halfPeriodsToMultiple] = ...
+            compute_average_distance_to_a_multiple(lagsPeaksBins, ...
+                                                    oscPeriodBins);
 
         % Compute the oscillatory index 
-        oscIndex = 1 - mean(halfPeriodsToMultiple);
+        oscIndex = 1 - averageDistance;
+    end
+
+    % Compute the old oscillatory index
+    %   Note: This is the average of all oscillatory indices as defined
+    %           by Sohal's paper between adjacent peaks
+    if numel(indPeaks) <= 1
+        indTroughs = [];
+        ampTroughs = [];
+        oscIndexOld = NaN;
+    else
+        % Find the indices and amplitudes of the troughs in between each pair of peak
+        [ampTroughs, indTroughs] = ...
+            find_troughs_from_peaks(acfFilteredOfInterest, indPeaks);
+
+        % Compute the average amplitudes between adjacent peaks
+        ampAdjPeaks = mean([ampPeaks(1:(end-1)), ampPeaks(2:end)], 2);
+
+        % Take the average of oscillatory indices as defined by Sohal's paper
+        oscIndexOld = mean((ampAdjPeaks - ampTroughs) ./ ampAdjPeaks);
     end
 end
 
@@ -894,7 +943,10 @@ parsedParams.oscDurationMs = oscDurationMs;
 parsedParams.oscDurationSec = oscDurationSec;
 parsedParams.oscIndexOld = oscIndexOld;
 parsedParams.oscIndex = oscIndex;
+parsedParams.oscPeriodOldMs = oscPeriodOldMs;
 parsedParams.oscPeriodMs = oscPeriodMs;
+parsedParams.minOscPeriodBins = minOscPeriodBins;
+parsedParams.maxOscPeriodBins = maxOscPeriodBins;
 parsedParams.figPathBase = figPathBase;
 parsedParams.figTitleBase = figTitleBase;
 
@@ -915,7 +967,18 @@ parsedData.indPeaks = indPeaks;
 parsedData.indTroughs = indTroughs;
 parsedData.ampPeaks = ampPeaks;
 parsedData.ampTroughs = ampTroughs;
-parsedData.closestTimeToMultiple = closestTimeToMultiple;
+parsedData.halfPeriodsToMultiple = halfPeriodsToMultiple;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [averageDistance, halfPeriodsToMultiple] = ...
+                compute_average_distance_to_a_multiple(values, period)
+
+[~, halfPeriodsToMultiple] = ...
+    arrayfun(@(x) find_nearest_multiple(period, x, ...
+                                    'RelativeToHalfBase', true), values);
+
+averageDistance = mean(halfPeriodsToMultiple);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1027,8 +1090,7 @@ linkaxes(ax, 'x');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [histBars, histFig] = ...
-                plot_spike_histogram(spikeCounts, edgesSec, ...
-                                histLeftSec, timeOscEndSec, ...
+                plot_spike_histogram(spikeCounts, edgesSec, timeOscEndSec, ...
                                 oscDurationSec, spikeCountTotal, ...
                                 xLimitsHist, yLimitsHist, figTitleBase)
 
@@ -1058,7 +1120,8 @@ function [autoCorrFig, acfFig, acfLine1, acfLine2, acfFilteredLine] = ...
                 plot_autocorrelogram(autoCorr, acf, acfFiltered, indPeaks, ...
                                     indTroughs, ampPeaks, ampTroughs, ...
                                     binWidthSec, nBins, halfNBins, ...
-                                    oscIndexOld, oscIndex, oscPeriodMs, ...
+                                    oscIndex, oscIndexOld, ...
+                                    oscPeriodMs, oscPeriodOldMs, ...
                                     oscDurationSec, spikeCountTotal, ...
                                     xLimitsAutoCorr, yLimitsAutoCorr, ...
                                     xLimitsAcfFiltered, yLimitsAcfFiltered, ...
@@ -1103,11 +1166,13 @@ text(0.5, 0.95, sprintf('Oscillatory Index = %g', oscIndex), ...
     'Units', 'normalized');
 text(0.5, 0.91, sprintf('Old oscillatory Index = %g', oscIndexOld), ...
     'Units', 'normalized');
-text(0.5, 0.87, sprintf('Total spike count = %g', spikeCountTotal), ...
+text(0.5, 0.87, sprintf('Oscillation Period = %g ms', oscPeriodMs), ...
     'Units', 'normalized');
-text(0.5, 0.83, sprintf('Oscillation Period = %g ms', oscPeriodMs), ...
+text(0.5, 0.83, sprintf('Old oscillation Period = %g ms', oscPeriodOldMs), ...
     'Units', 'normalized');
-text(0.5, 0.79, sprintf('Oscillation Duration = %.2g seconds', ...
+text(0.5, 0.79, sprintf('Total spike count = %g', spikeCountTotal), ...
+    'Units', 'normalized');
+text(0.5, 0.75, sprintf('Oscillation Duration = %.2g seconds', ...
     oscDurationSec), 'Units', 'normalized');
 xlim(xLimitsAcfFiltered);
 ylim(yLimitsAcfFiltered);
@@ -1388,6 +1453,17 @@ else
 end
 
 parsedData.lagsBetweenPeaksMs = lagsBetweenPeaksMs;
+    lagsBetweenPeaksMs = [];
+
+if nPeaks > 1
+    [~, iPeak] = max(ampPeaks(2:end));
+    oscPeriodBins = indPeaks(iPeak + 1) - indPeaks(1);
+else
+    oscPeriodBins = 0;
+end
+
+[~, iPeak] = max(ampPeaks(2:end));
+oscPeriodOldBins = indPeaks(iPeak + 1) - indPeaks(1);
 
 %}
 

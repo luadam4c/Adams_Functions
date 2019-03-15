@@ -28,6 +28,7 @@ function figs = plot_table (table, varargin)
 %       cd/extract_common_directory.m
 %       cd/extract_fileparts.m
 %       cd/plot_struct.m
+%       ~/Downloaded_Functions/rgb.m
 %
 % Used by:
 %       cd/plot_protocols.m
@@ -39,6 +40,15 @@ function figs = plot_table (table, varargin)
 % 2018-12-18 Now uses row names without processing if not file names
 % TODO: Return handles to plots
 % 
+
+%% If not compiled, add directories to search path for required functions
+if ~isdeployed
+    % Locate the functions directory
+    functionsDirectory = locate_functionsdir;
+
+    % Add path for rgb.m
+    addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions'));
+end
 
 %% Hard-coded parameters
 
