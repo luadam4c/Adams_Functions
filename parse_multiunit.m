@@ -49,6 +49,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/create_time_vectors.m
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
+%       cd/find_nearest_multiple.m
 %       cd/force_column_cell.m
 %       cd/iscellnumeric.m
 %       cd/match_time_info.m
@@ -73,6 +74,10 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 % 2019-03-14 Redefined the oscillatory index so that it is the reciprocal of 
 %               the coefficient of variation of the lag differences 
 %               between consecutive peaks
+% 2019-03-15 Redefined the oscillatory index so that it is 
+%               1 minus the average of all distances 
+%               (normalized by half the oscillation period)
+%               to the closest multiple of the period over all peaks
 % 
 
 %% Hard-coded parameters
@@ -781,6 +786,21 @@ else
     % Compute the number of peaks
     nPeaks = numel(indPeaks);
 
+    % Compute the oscillation period
+    %   Note: This is the period between the first peak 
+    %           and the next largest peak
+    % TODO: Try both:
+    %   1. Use the largest peak in the frequency spectrum
+    %   2. Use fminsearch on the function for oscillatory index
+    if nPeaks > 1
+        [~, iPeak] = max(ampPeaks(2:end));
+        oscPeriodBins = indPeaks(iPeak + 1) - indPeaks(1);
+    else
+        oscPeriodBins = 0;
+    end
+
+    oscPeriodMs = oscPeriodBins .* binWidthMs;
+
     % Find the indices and amplitudes of the troughs in between each pair of peak
     [ampTroughs, indTroughs] = ...
         find_troughs_from_peaks(acfFilteredOfInterest, indPeaks);
@@ -793,26 +813,26 @@ else
     %           by Sohal's paper between adjacent peaks
     oscIndexOld = mean((ampAdjPeaks - ampTroughs) ./ ampAdjPeaks);
 
-    % Compute the lags between adjacent peaks in ms
-    lagsBetweenPeaksMs = diff(indPeaks) * binWidthMs;
-
     % Compute the oscillatory index 
-    %   Note: This is one over the coefficient of variation 
-    %           of the lag differences between adjacent peaks
-    if numel(lagsBetweenPeaksMs) < 2
-        oscIndex = NaN;
+    %   Note: This is 1 minus the average of all distances 
+    %           (normalized by half the oscillation period)
+    %           to the closest multiple of the period over all peaks from the
+    %           2nd and beyond. However, if there are less than two peaks,
+    %           consider it non-oscillatory
+    if numel(indPeaks) <= 2
+        % If there are no more than two peaks, consider it not oscillatory
+        oscIndex = 0;
     else
-        oscIndex = 1 ./ compute_stats(lagsBetweenPeaksMs, 'cov');
-    end
+        % Compute the distance to the closest multiple of the oscillation period 
+        %   for each peak from the 2nd and beyond,
+        %   normalize by half the oscillation period
+        [~, halfPeriodsToMultiple] = ...
+            arrayfun(@(x) find_nearest_multiple(x, oscPeriodBins, ...
+                                            'RelativeToHalfBase', true), ...
+                            indPeaks(2:end) - 1);
 
-    % Compute the oscillation period
-    %   Note: This is the period between the first peak 
-    %           and the next largest peak
-    if nPeaks > 1
-        [~, iPeak] = max(ampPeaks(2:end));
-        oscPeriodMs = (indPeaks(iPeak + 1) - indPeaks(1)) * binWidthMs;
-    else
-        oscPeriodMs = 0;
+        % Compute the oscillatory index 
+        oscIndex = 1 - mean(halfPeriodsToMultiple);
     end
 end
 
@@ -895,7 +915,7 @@ parsedData.indPeaks = indPeaks;
 parsedData.indTroughs = indTroughs;
 parsedData.ampPeaks = ampPeaks;
 parsedData.ampTroughs = ampTroughs;
-parsedData.lagsBetweenPeaksMs = lagsBetweenPeaksMs;
+parsedData.closestTimeToMultiple = closestTimeToMultiple;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1354,6 +1374,20 @@ if nPeaks > 1
 else
     oscPeriodMs = 0;
 end
+
+% Compute the lags between adjacent peaks in ms
+lagsBetweenPeaksMs = diff(indPeaks) * binWidthMs;
+
+% Compute the oscillatory index 
+%   Note: This is one over the coefficient of variation 
+%           of the lag differences between adjacent peaks
+if numel(lagsBetweenPeaksMs) < 2
+    oscIndex = NaN;
+else
+    oscIndex = 1 ./ compute_stats(lagsBetweenPeaksMs, 'cov');
+end
+
+parsedData.lagsBetweenPeaksMs = lagsBetweenPeaksMs;
 
 %}
 
