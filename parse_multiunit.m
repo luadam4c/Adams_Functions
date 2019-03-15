@@ -758,8 +758,11 @@ else
     % Compute the oscillation duration in bins
     oscDurationBins = floor(oscDurationMs ./ binWidthMs);
 
+    % Find the maximum bin of interest
+    maxBinOfInterest = min(1 + oscDurationBins, numel(acfFiltered));
+    
     % Restrict the autocorrelation function to oscillation duration
-    acfFilteredOfInterest = acfFiltered(1:(1+oscDurationBins));
+    acfFilteredOfInterest = acfFiltered(1:maxBinOfInterest);
 
     % Find the index and amplitude of peaks within oscillation duration
     if numel(acfFilteredOfInterest) > 3
