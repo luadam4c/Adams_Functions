@@ -1,5 +1,5 @@
 function distinctParts = extract_distinct_fileparts (paths, varargin)
-%% Extracts distinct file parts (removes common parent directory and common suffix)
+%% Extracts distinct file parts (removes common parent directory, common prefix and common suffix)
 % Usage: distinctParts = extract_distinct_fileparts (paths, varargin)
 % Explanation:
 %       TODO
@@ -32,6 +32,7 @@ function distinctParts = extract_distinct_fileparts (paths, varargin)
 % File History:
 % 2018-12-27 Moved from extract_fileparts.m
 % 2019-01-23 Fixed the case where commonSuffix is empty
+% 2019-03-17 Now removes common prefix as well
 % 
 
 %% Hard-coded parameters
@@ -88,6 +89,14 @@ commonSuffix = extract_common_suffix(distinctParts, 'KeepDelimiter', true);
 % Remove the common suffix if not empty
 if ~isempty(commonSuffix)
     distinctParts = extractBefore(distinctParts, commonSuffix);
+end
+
+% Extract the common prefix
+commonPrefix = extract_common_prefix(distinctParts, 'KeepDelimiter', true);
+
+% Remove the common prefix if not empty
+if ~isempty(commonPrefix)
+    distinctParts = extractAfter(distinctParts, commonPrefix);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

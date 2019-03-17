@@ -24,6 +24,11 @@ function [outTables, outSheetPaths] = ...
 %                   must be empty or a character vector or a string vector
 %                       or a cell array of character vectors
 %                   default == plot all variables
+%                   - 'InputNames': names of the input tables
+%                   must be empty or a character vector or a string vector
+%                       or a cell array of character vectors
+%                   default == use distinct parts of the file names
+%                               or Input1, Input2, ...
 %                   - 'Keys': variable(s) used as the joining key(s)
 %                   default == row names
 %                   - 'OutFolder': output folder if FigNames not set
@@ -44,19 +49,22 @@ function [outTables, outSheetPaths] = ...
 %       cd/create_labels_from_numbers.m
 %       cd/create_row_labels.m
 %       cd/extract_fileparts.m
+%       cd/force_column_cell.m
 %       cd/renamevars.m
+%       cd/struct2arglist.m
 %
 % Used by:
 %       cd/clc2_plot_measures.m
 
 % File History:
-% 2019-03-15 Created by Adam Lu
+% 2019-03-17 Created by Adam Lu
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
 variableNamesDefault = {};  % plot all variables by default
+inputNamesDefault = {};     % set later
 keysDefault = 'Row';        % use the row name by default
 outFolderDefault = pwd;
 omitVarNameDefault = false; % don't omit variable name by default
@@ -84,6 +92,10 @@ addParameter(iP, 'VariableNames', variableNamesDefault, ...
     @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
         ['VariableNames must be empty or a character array or a string array ', ...
             'or cell array of character arrays!']));
+addParameter(iP, 'InputNames', inputNamesDefault, ...
+    @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
+        ['VariableNames must be empty or a character array or a string array ', ...
+            'or cell array of character arrays!']));
 addParameter(iP, 'Keys', keysDefault, ...
     @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
         ['VariableNames must be empty or a character array or a string array ', ...
@@ -98,10 +110,14 @@ addParameter(iP, 'SaveFlag', saveFlagDefault, ...
 % Read from the Input Parser
 parse(iP, inputs, varargin{:});
 varNames = iP.Results.VariableNames;
+inNames = iP.Results.InputNames;
 keys = iP.Results.Keys;
 outFolder = iP.Results.OutFolder;
 omitVarName = iP.Results.OmitVarName;
 saveFlag = iP.Results.SaveFlag;
+
+% Keep unmatched arguments for the outerjoin() function
+otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Count the number of input tables
@@ -114,39 +130,6 @@ if iscellstr(inputs)
 else
     % Otherwise the inputs are tables
     inTables = inputs;
-end
-
-% Decide on input names
-if iscellstr(inputs)
-    % Use the distinct parts of the file names
-    inNames = extract_fileparts(inputs, 'distinct');
-else
-    % Use Input#
-    inNames = create_labels_from_numbers(1:nInputs, 'Prefix', 'Input');
-end
-
-% Decide on variable names to combine or restrict table
-if ~isempty(varNames)
-    % Restrict to provided variable names
-    inTables = cellfun(@(x) x(:, varNames), inTables, 'UniformOutput', false);
-else
-    % Collect all possible variable names
-    varNamesAll = cellfun(@(x) x.Properties.VariableNames, inTables, ...
-                        'UniformOutput', false);
-
-    % Take the union over all possible variable names
-    varNames = apply_over_cell(@union, varNamesAll);
-
-    % Omit key variables from the variable names
-    varNames = setdiff(varNames, keys);
-end
-
-% Count the number of variable names
-nVars = numel(varNames);
-
-% Create output spreadsheet paths
-if saveFlag
-    outSheetPaths = fullfile(outFolder, strcat(varNames, '_all.csv'));
 end
 
 % Check if row labels are provided
@@ -162,9 +145,49 @@ if strcmp(keys, 'Row')
     end
 end
 
+
+% Decide on input names
+if isempty(inNames)
+    if iscellstr(inputs)
+        % Use the distinct parts of the file names
+        inNames = extract_fileparts(inputs, 'distinct');
+    else
+        % Use Input#
+        inNames = create_labels_from_numbers(1:nInputs, 'Prefix', 'Input');
+    end
+end
+
+% Decide on variable names to combine or restrict table
+if ~isempty(varNames)
+    % Combine the variables except for 'Row'
+    allVars = all_except_row(keys, varNames);
+
+    % Restrict to provided variable names
+    inTables = cellfun(@(x) x(:, allVars), inTables, 'UniformOutput', false);
+else
+    % Collect all possible variable names
+    varNamesAll = cellfun(@(x) x.Properties.VariableNames, inTables, ...
+                        'UniformOutput', false);
+
+    % Take the union over all possible variable names
+    varNames = apply_over_cell(@union, varNamesAll);
+
+    % Omit key variables from the variable names
+    varNames = setdiff(varNames, keys);
+end
+
+% Force as a column cell array
+varNames = force_column_cell(varNames);
+
+% Create output spreadsheet paths
+if saveFlag
+    outSheetPaths = fullfile(outFolder, strcat(varNames, '_all.csv'));
+end
+
+
 %% Do the job
-outTables = cellfun(@(x) combine_variable_across_tables(x, ...
-                            inTables, inNames, keys, omitVarName), ...
+outTables = cellfun(@(x) combine_variable_across_tables(x, inTables, ...
+                            inNames, keys, omitVarName, otherArguments), ...
                     varNames, 'UniformOutput', false);
 
 %% Save results
@@ -175,18 +198,11 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function outTable = combine_variable_across_tables(varThis, inTables, ...
-                                                    inNames, keys, omitVarName)
+                                    inNames, keys, omitVarName, otherArguments)
 %% Combine all columns with this variable across tables
 
-% Combine the variables
-if ischar(keys) && ischar(varThis)
-    allVars = {keys, varThis};
-else
-    allVars = [keys, varThis];
-end
-
-% Remove 'Row' from the list of variables
-allVars = setdiff(allVars, 'Row');
+% Combine the variables except for 'Row'
+allVars = all_except_row(keys, varThis);
 
 % Count the number of columns to extract
 if ischar(allVars)
@@ -213,7 +229,21 @@ end
 
 % Join the tables by the key(s)
 outTable = apply_over_cell(@outerjoin, tablesToJoin, ...
-                            'Keys', keys, 'MergeKeys', true);
+                            'Keys', keys, 'MergeKeys', true, otherArguments{:});
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function allVars = all_except_row(keys, vars)
+
+% Combine the keys and variables
+if ischar(keys) && ischar(vars)
+    allVars = {keys, vars};
+else
+    allVars = [keys, vars];
+end
+
+% Remove 'Row' from the list of variables
+allVars = setdiff(allVars, 'Row');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -221,6 +251,8 @@ outTable = apply_over_cell(@outerjoin, tablesToJoin, ...
 OLD CODE:
 
 tic
+% Count the number of variable names
+nVars = numel(varNames);
 outTables = cell(nVars, 1);
 parfor iVar = 1:nVars
     % Get this variable

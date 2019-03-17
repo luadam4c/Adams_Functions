@@ -28,6 +28,7 @@ function figs = plot_table (table, varargin)
 %       cd/extract_common_directory.m
 %       cd/extract_fileparts.m
 %       cd/plot_struct.m
+%       cd/struct2arglist.m
 %       ~/Downloaded_Functions/rgb.m
 %
 % Used by:
@@ -38,6 +39,8 @@ function figs = plot_table (table, varargin)
 % 2018-12-18 Now uses iP.KeepUnmatched
 % 2018-12-18 Now uses extract_common_directory.m
 % 2018-12-18 Now uses row names without processing if not file names
+% 2019-03-17 Deal with timetables differently for RowNames
+% TODO: PlotTogether (use plot_tuning_curve directly)
 % TODO: Return handles to plots
 % 
 
@@ -51,6 +54,7 @@ if ~isdeployed
 end
 
 %% Hard-coded parameters
+plotTogether = false;
 
 %% Default values for optional arguments
 lineSpecDefault = 'o';
@@ -76,7 +80,7 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'table', ...
-    @(x) validateattributes(x, {'table'}, {'2d'}));
+    @(x) validateattributes(x, {'table', 'timetable'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'LineSpec', lineSpecDefault, ...
@@ -104,7 +108,7 @@ xLabel = iP.Results.XLabel;
 outFolder = iP.Results.OutFolder;
 
 % Keep unmatched arguments for the line() function
-otherArguments = iP.Unmatched;
+otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Check if output directory exists
@@ -116,7 +120,7 @@ if ~isempty(varToPlot)
 end
 
 % Decide on xTickLabels
-if iscell(table.Properties.RowNames)
+if isfield(table.Properties, 'RowNames') && iscell(table.Properties.RowNames)
     % Get the row names
     rowNames = table.Properties.RowNames;
 
@@ -132,22 +136,38 @@ if iscell(table.Properties.RowNames)
         % Just use the row names
         xTickLabels = rowNames;
     end
+elseif isfield(table.Properties, 'RowTimes')
+    xTickLabels = convert_to_char(table.Properties.RowTimes);
 else
     % Use default x tick labels
     xTickLabels = {};
 end
 
-%% Do the job
-% Convert to a structure array
-fileStruct = table2struct(table);
+% Extract the variable names
+varNames = table.Properties.VariableNames;
 
-% Plot fields
-figs = plot_struct(fileStruct, 'OutFolder', outFolder, ...
-                    'XTickLabels', xTickLabels, 'XLabel', xLabel, ...
-                    'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
-                    'MarkerEdgeColor', markerEdgeColor, ...
-                    'MarkerFaceColor', markerFaceColor, ...
-                    otherArguments);
+% TODO: extractDistinct
+
+%% Do the job
+if plotTogether
+    % TODO: Extract
+    % fileArray = table2array(table)
+
+    % 
+    % plot_tuning_curve(fileArray, 'ColumnLabels', varNames, otherArguments{:});
+else
+    % Convert to a structure array
+    fileStruct = table2struct(table);
+
+    % Plot fields
+    figs = plot_struct(fileStruct, 'OutFolder', outFolder, ...
+                        'FieldLabels', varNames, ...
+                        'XTickLabels', xTickLabels, 'XLabel', xLabel, ...
+                        'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
+                        'MarkerEdgeColor', markerEdgeColor, ...
+                        'MarkerFaceColor', markerFaceColor, ...
+                        otherArguments{:});
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
