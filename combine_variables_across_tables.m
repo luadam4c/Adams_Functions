@@ -29,15 +29,18 @@ function [outTables, outSheetPaths] = ...
 %                       or a cell array of character vectors
 %                   default == use distinct parts of the file names
 %                               or Input1, Input2, ...
+%                   - 'OmitVarName': whether to omit variable name 
+%                                       in output table
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'Keys': variable(s) used as the joining key(s)
 %                   default == row names
 %                   - 'OutFolder': output folder if FigNames not set
 %                   must be a string scalar or a character vector
 %                   default == pwd
-%                   - 'OmitVarName': whether to omit variable name 
-%                                       in output table
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   - 'Prefix': prefix for output files
+%                   must be a character array
+%                   default == ''
 %                   - 'SaveFlag': whether to save the output tables
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -64,10 +67,11 @@ function [outTables, outSheetPaths] = ...
 
 %% Default values for optional arguments
 variableNamesDefault = {};  % plot all variables by default
-inputNamesDefault = {};     % set later
 keysDefault = 'Row';        % use the row name by default
-outFolderDefault = pwd;
+inputNamesDefault = {};     % set later
 omitVarNameDefault = false; % don't omit variable name by default
+outFolderDefault = pwd;
+prefixDefault = '';                     % default: prepend nothing
 saveFlagDefault = false;    % don't save output tables by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -92,28 +96,31 @@ addParameter(iP, 'VariableNames', variableNamesDefault, ...
     @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
         ['VariableNames must be empty or a character array or a string array ', ...
             'or cell array of character arrays!']));
-addParameter(iP, 'InputNames', inputNamesDefault, ...
-    @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
-        ['VariableNames must be empty or a character array or a string array ', ...
-            'or cell array of character arrays!']));
 addParameter(iP, 'Keys', keysDefault, ...
     @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
         ['VariableNames must be empty or a character array or a string array ', ...
             'or cell array of character arrays!']));
-addParameter(iP, 'OutFolder', outFolderDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'InputNames', inputNamesDefault, ...
+    @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
+        ['VariableNames must be empty or a character array or a string array ', ...
+            'or cell array of character arrays!']));
 addParameter(iP, 'OmitVarName', omitVarNameDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'Prefix', prefixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SaveFlag', saveFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, inputs, varargin{:});
 varNames = iP.Results.VariableNames;
-inNames = iP.Results.InputNames;
 keys = iP.Results.Keys;
-outFolder = iP.Results.OutFolder;
+inNames = iP.Results.InputNames;
 omitVarName = iP.Results.OmitVarName;
+outFolder = iP.Results.OutFolder;
+prefix = iP.Results.Prefix;
 saveFlag = iP.Results.SaveFlag;
 
 % Keep unmatched arguments for the outerjoin() function
@@ -181,7 +188,8 @@ varNames = force_column_cell(varNames);
 
 % Create output spreadsheet paths
 if saveFlag
-    outSheetPaths = fullfile(outFolder, strcat(varNames, '_all.csv'));
+    outSheetPaths = fullfile(outFolder, ...
+                                strcat(prefix, '_', varNames, '_all.csv'));
 end
 
 
