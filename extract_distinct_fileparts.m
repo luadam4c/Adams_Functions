@@ -6,6 +6,7 @@ function distinctParts = extract_distinct_fileparts (paths, varargin)
 % Example(s):
 %       [~, paths] = all_files;
 %       extract_distinct_fileparts(paths)
+%       extract_distinct_fileparts({'a+b+c', 'a+d+c'}, 'Delimiter', '+')
 % Outputs:
 %       distinctParts   - distinct parts of the file paths
 %                       specified as a TODO
@@ -13,9 +14,9 @@ function distinctParts = extract_distinct_fileparts (paths, varargin)
 %       paths       - file paths
 %                   must be a character vector or a string vector
 %                       or a cell array of character vectors
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'Delimiter': delimiter used for prefix and/or suffix
+%                   must be a string scalar or a character vector
+%                   default == '_'
 %                   - Any other parameter-value pair for the TODO() function
 %
 % Requires:
@@ -33,12 +34,13 @@ function distinctParts = extract_distinct_fileparts (paths, varargin)
 % 2018-12-27 Moved from extract_fileparts.m
 % 2019-01-23 Fixed the case where commonSuffix is empty
 % 2019-03-17 Now removes common prefix as well
+% 2019-03-17 Added 'Delimiter' as an optional argument
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+delimiterDefault = '_';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -59,12 +61,12 @@ addRequired(iP, 'paths', ...
             'or cell array of character arrays!']));
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default, ...
-%     % TODO: validation function %);
+addParameter(iP, 'Delimiter', delimiterDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, paths, varargin{:});
-% param1 = iP.Results.param1;
+delimiter = iP.Results.Delimiter;
 
 %% Do the job
 % Extract the common parent directory
@@ -84,7 +86,8 @@ else
 end
 
 % Extract the common suffix
-commonSuffix = extract_common_suffix(distinctParts, 'KeepDelimiter', true);
+commonSuffix = extract_common_suffix(distinctParts, 'Delimiter', delimiter, ...
+                                     'KeepDelimiter', true);
 
 % Remove the common suffix if not empty
 if ~isempty(commonSuffix)
@@ -92,7 +95,8 @@ if ~isempty(commonSuffix)
 end
 
 % Extract the common prefix
-commonPrefix = extract_common_prefix(distinctParts, 'KeepDelimiter', true);
+commonPrefix = extract_common_prefix(distinctParts, 'Delimiter', delimiter, ...
+                                     'KeepDelimiter', true);
 
 % Remove the common prefix if not empty
 if ~isempty(commonPrefix)
