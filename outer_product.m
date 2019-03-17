@@ -1,5 +1,5 @@
 function product = outer_product (X, Y)
-%% Returns the outer product of two vectors (could be cell arrays)
+%% Returns the outer product of two vectors (could be cell arrays of character arrays)
 % Usage: product = outer_product (X, Y)
 % Explanation:
 %       TODO
@@ -20,6 +20,7 @@ function product = outer_product (X, Y)
 
 % File History:
 % 2018-12-06 Created by Adam Lu
+% TODO FOR UNDERGRAD: Similar inner_product.m
 % 
 
 %% Hard-coded parameters
@@ -79,6 +80,9 @@ if iscellstr(X) && iscellstr(Y)
     % Join the strings
     product = cellfun(@(x, y) [x, ', ', y], Xrepeated, Yrepeated, ...
                     'UniformOutput', false);
+else
+    % Use the cross function
+    product = cross(X, Y);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

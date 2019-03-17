@@ -31,7 +31,7 @@ function [result, distToTarget] = find_nearest_multiple (base, target, varargin)
 
 % File History:
 % 2019-03-15 Created by Adam Lu
-% 
+% 2019-03-17 Now uses dot()
 
 %% Hard-coded parameters
 
@@ -85,7 +85,7 @@ if isscalar(base)
     distToTarget = norm(result - target);
 else
     % Find the projection of target onto the base vector
-    projection = sum(target .* base) / baseNorm;
+    projection = dot(target, base) / baseNorm;
 
     % Find the two possible candidates
     cand1 = ceil(projection / baseNorm) * base;
@@ -118,6 +118,8 @@ end
 
 %{
 OLD CODE:
+
+projection = sum(target .* base) / baseNorm;
 
 %}
 

@@ -26,13 +26,9 @@ varsToPlot = {'oscIndex1', 'oscIndex2', 'oscIndex3', 'oscIndex4', ...
 % Find all files with the pattern *slice*_params in the file name
 [~, sliceParamSheets] = all_files('Keyword', 'slice', 'Suffix', 'params');
 
-% Read all slice parameter spreadsheets
-sliceParamsTables = cellfun(@readtable, sliceParamSheets, ...
-                            'UniformOutput', false);
-
 % Combine variables across tables
-% measureTables = combine_variables_across_tables(sliceParamsTables, ...
-%                                                 'VariableNames', varsToPlot);
+measureTables = combine_variables_across_tables(sliceParamSheets, ...
+                'KeyVariable', 'timeSinceDrugOn', 'VariableNames', varsToPlot);
 
 %% Do the job
 % TODO: Use plot_table in a different form: plot all columns together
@@ -42,6 +38,10 @@ sliceParamsTables = cellfun(@readtable, sliceParamSheets, ...
 
 %{
 OLD CODE:
+
+% Read all slice parameter spreadsheets
+sliceParamsTables = cellfun(@readtable, sliceParamSheets, ...
+                            'UniformOutput', false);
 
 %}
 
