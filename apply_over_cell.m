@@ -8,7 +8,8 @@ function output = apply_over_cell (myFunction, cellArray, varargin)
 %       apply_over_cell(@intersect, vecs1)
 %       apply_over_cell(@union, vecs1, 'OptArg', 'stable')
 %       load_examples;
-%       apply_over_cell(@outerjoin, myCellTable, 'MergeKeys', true);
+%       apply_over_cell(@outerjoin, myCellTable, 'MergeKeys', true)
+%       apply_over_cell(@outerjoin, myCellTable, 'MergeKeys', true, 'Keys', 'Key')
 % Outputs:
 %       output      - final output
 %

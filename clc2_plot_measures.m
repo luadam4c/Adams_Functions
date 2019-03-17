@@ -26,9 +26,14 @@ varsToPlot = {'oscIndex1', 'oscIndex2', 'oscIndex3', 'oscIndex4', ...
 % Find all files with the pattern *slice*_params in the file name
 [~, sliceParamSheets] = all_files('Keyword', 'slice', 'Suffix', 'params');
 
+% Create a time column (time in minutes since drug on)
+%   and convert to a timetable
+% TODO
+
 % Combine variables across tables
 measureTables = combine_variables_across_tables(sliceParamSheets, ...
-                'KeyVariable', 'timeSinceDrugOn', 'VariableNames', varsToPlot);
+                'Keys', 'Time', 'VariableNames', varsToPlot, ...
+                'OmitVarName', true, 'SaveFlag', true);
 
 %% Do the job
 % TODO: Use plot_table in a different form: plot all columns together

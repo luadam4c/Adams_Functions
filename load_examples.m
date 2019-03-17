@@ -174,11 +174,11 @@ myPulseResponse2b(indAfter2) = responseAmp2b(1)*(exp(-(shiftedTimeVec2)/tau1)) +
                             
 %% Tables
 myTable1 = table({'a'; 'b'; 'c'; 'e'; 'h'}, [1; 2; 3; 11; 17], ...
-                    'VariableNames', {'Key1', 'Var1'});
+                    'VariableNames', {'Key', 'Var'});
 myTable2 = table({'a'; 'b'; 'd'; 'e'}, [4; 5; 6; 7], ...
-                    'VariableNames', {'Key1', 'Var2'});
+                    'VariableNames', {'Key', 'Var'});
 myTable3 = table({'a'; 'b'; 'c'; 'h'}, [4; 5; 6; 7], ...
-                    'VariableNames', {'Key1', 'Var3'});
+                    'VariableNames', {'Key', 'Var'});
 myCellTable = {myTable1; myTable2; myTable3};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

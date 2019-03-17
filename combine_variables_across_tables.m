@@ -7,7 +7,8 @@ function [outTables, outSheetPaths] = ...
 %       TODO
 % Example(s):
 %       load_examples;
-%       combine_variables_across_tables(myCellTable, 'KeyVariable', 'Key')
+%       combine_variables_across_tables(myCellTable, 'Keys', 'Key')
+%       combine_variables_across_tables(myCellTable, 'Keys', 'Var')
 %       combine_variables_across_tables(myCellTable)
 % Outputs:
 %       outTables   - tables organized with each 
@@ -23,16 +24,27 @@ function [outTables, outSheetPaths] = ...
 %                   must be empty or a character vector or a string vector
 %                       or a cell array of character vectors
 %                   default == plot all variables
-%                   - 'KeyVariable': variable used as the joining key
+%                   - 'Keys': variable(s) used as the joining key(s)
 %                   default == row names
 %                   - 'OutFolder': output folder if FigNames not set
 %                   must be a string scalar or a character vector
 %                   default == pwd
-%                   - Any other parameter-value pair for the TODO() function
+%                   - 'OmitVarName': whether to omit variable name 
+%                                       in output table
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'SaveFlag': whether to save the output tables
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - Any other parameter-value pair for the outerjoin() function
 %
 % Requires:
 %       cd/apply_over_cell.m
 %       cd/create_error_for_nargin.m
+%       cd/create_labels_from_numbers.m
+%       cd/create_row_labels.m
+%       cd/extract_fileparts.m
+%       cd/renamevars.m
 %
 % Used by:
 %       cd/clc2_plot_measures.m
@@ -42,11 +54,13 @@ function [outTables, outSheetPaths] = ...
 % 
 
 %% Hard-coded parameters
-keyVar = 'setNumber';
 
 %% Default values for optional arguments
 variableNamesDefault = {};  % plot all variables by default
+keysDefault = 'Row';        % use the row name by default
 outFolderDefault = pwd;
+omitVarNameDefault = false; % don't omit variable name by default
+saveFlagDefault = false;    % don't save output tables by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -70,13 +84,24 @@ addParameter(iP, 'VariableNames', variableNamesDefault, ...
     @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
         ['VariableNames must be empty or a character array or a string array ', ...
             'or cell array of character arrays!']));
+addParameter(iP, 'Keys', keysDefault, ...
+    @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
+        ['VariableNames must be empty or a character array or a string array ', ...
+            'or cell array of character arrays!']));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'OmitVarName', omitVarNameDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveFlag', saveFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, inputs, varargin{:});
 varNames = iP.Results.VariableNames;
+keys = iP.Results.Keys;
 outFolder = iP.Results.OutFolder;
+omitVarName = iP.Results.OmitVarName;
+saveFlag = iP.Results.SaveFlag;
 
 %% Preparation
 % Count the number of input tables
@@ -91,57 +116,121 @@ else
     inTables = inputs;
 end
 
-% Decide on table names
+% Decide on input names
 if iscellstr(inputs)
+    % Use the distinct parts of the file names
+    inNames = extract_fileparts(inputs, 'distinct');
 else
-    % Use nInputs TODO
-    create_labels_from_numbers();
+    % Use Input#
+    inNames = create_labels_from_numbers(1:nInputs, 'Prefix', 'Input');
 end
 
-% Decide on variable names or restrict table
+% Decide on variable names to combine or restrict table
 if ~isempty(varNames)
     % Restrict to provided variable names
     inTables = cellfun(@(x) x(:, varNames), inTables, 'UniformOutput', false);
 else
-    % Use all variable names
-    varNames = cellfun(@(x) x.Properties.VariableNames, inTables, ...
+    % Collect all possible variable names
+    varNamesAll = cellfun(@(x) x.Properties.VariableNames, inTables, ...
                         'UniformOutput', false);
+
+    % Take the union over all possible variable names
+    varNames = apply_over_cell(@union, varNamesAll);
+
+    % Omit key variables from the variable names
+    varNames = setdiff(varNames, keys);
 end
 
 % Count the number of variable names
 nVars = numel(varNames);
 
 % Create output spreadsheet paths
-outSheetPaths = fullfile(outFolder, strcat(varNames, '_all.csv'));
-
-%% Do the job
-% TODO
-outTables = cell(nVars, 1);
-parfor iVar = 1:nVars
-    % Get this variable
-    varThis = varNames{iVar};
-
-    % Extract the key column and the readout column from each inTable
-    tablesToJoin = x(:, {keyVar, varThis}), inTables);
-
-    % Rename the variable by the original table's name
-
-
-    % Join the tables by the key column
-    if 
-    outTables{iVar} = apply_over_cell(@outerjoin, tablesToJoin, ...
-                                        'MergeKeys', true);
-
-
+if saveFlag
+    outSheetPaths = fullfile(outFolder, strcat(varNames, '_all.csv'));
 end
 
+% Check if row labels are provided
+if strcmp(keys, 'Row')
+    % Get row labels from each table
+    rowNamesAll = cellfun(@(x) x.Properties.RowNames, inTables, ...
+                            'UniformOutput', false);
+
+    % Supply row names if all are empty
+    if all(isemptycell(rowNamesAll))
+        inTables = cellfun(@create_row_labels, inTables, ...
+                                'UniformOutput', false);
+    end
+end
+
+%% Do the job
+outTables = cellfun(@(x) combine_variable_across_tables(x, ...
+                            inTables, inNames, keys, omitVarName), ...
+                    varNames, 'UniformOutput', false);
+
 %% Save results
-cellfun(@(x, y) writetable(x, y), outTables, outSheetPaths);
+if saveFlag
+    cellfun(@(x, y) writetable(x, y), outTables, outSheetPaths);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function outTable = combine_variable_across_tables(varThis, inTables, ...
+                                                    inNames, keys, omitVarName)
+%% Combine all columns with this variable across tables
+
+% Combine the variables
+if ischar(keys) && ischar(varThis)
+    allVars = {keys, varThis};
+else
+    allVars = [keys, varThis];
+end
+
+% Remove 'Row' from the list of variables
+allVars = setdiff(allVars, 'Row');
+
+% Count the number of columns to extract
+if ischar(allVars)
+    nCols = 1;
+else
+    nCols = numel(allVars);
+end
+
+% Extract the variables from each table as a table
+tablesToJoin = cellfun(@(x) x(:, allVars), inTables, 'UniformOutput', false);
+
+% Reorder so that the variable to combine is the last column
+tablesToJoin = cellfun(@(x) movevars(x, varThis, 'After', nCols), ...
+                        tablesToJoin, 'UniformOutput', false);
+
+% Rename the variable to combine by concatenating the input name
+if omitVarName
+    tablesToJoin = cellfun(@(x, y) renamevars(x, varThis, y), ...
+                            tablesToJoin, inNames, 'UniformOutput', false);
+else
+    tablesToJoin = cellfun(@(x, y) renamevars(x, varThis, [varThis, '_', y]), ...
+                            tablesToJoin, inNames, 'UniformOutput', false);
+end
+
+% Join the tables by the key(s)
+outTable = apply_over_cell(@outerjoin, tablesToJoin, ...
+                            'Keys', keys, 'MergeKeys', true);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+tic
+outTables = cell(nVars, 1);
+parfor iVar = 1:nVars
+    % Get this variable
+    varThis = varNames{iVar};
+
+    % Combine all columns with this variable
+    outTables{iVar} = ...
+        combine_variable_across_tables(varThis, inTables, inNames, keys);
+end
+toc
 
 %}
 

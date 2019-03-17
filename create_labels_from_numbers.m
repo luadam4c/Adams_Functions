@@ -31,8 +31,10 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/convert_to_char.m
 %
 % Used by:
+%       cd/combine_variables_across_tables.m
 %       cd/compute_all_pulse_responses.m
 %       cd/create_default_grouping.m
+%       cd/create_row_labels.m
 %       cd/create_simulation_output_filenames.m
 %       cd/plot_histogram.m
 %       cd/parse_lts.m
