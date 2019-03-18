@@ -301,7 +301,7 @@ if plotFlag
 end
 
 %% Plot spike histograms
-if plotFlag
+%if plotFlag
     fprintf('Plotting spike histograms for %s ...\n', fileBase);
 
     % Retrieve data for plotting
@@ -348,7 +348,7 @@ if plotFlag
                         [figPathBase{iVec}, '_spike_histogram']), 'png');
         close all force hidden
     end
-end
+%end
 
 %% Plot autocorrelograms
 if plotFlag
@@ -435,7 +435,7 @@ end
 %% Plot raster plot
 % TODO: Plot burst duration
 % TODO: Plot oscillatory index
-if plotFlag
+%if plotFlag
     fprintf('Plotting raster plot for %s ...\n', fileBase);
 
     % Modify the figure base
@@ -457,7 +457,7 @@ if plotFlag
     oscWindow = transpose([stimStartSec, timeOscEndSec]);
 
     % Burst windows
-    burstWindows = cellfun(@(x, y) reshape(transpose([x, y]), [], 1), ...
+    burstWindows = cellfun(@(x, y) prepare_for_plot_raster(x, y), ...
                             timeBurstStartsSec, timeBurstEndsSec, ...
                             'UniformOutput', false);
 
@@ -473,8 +473,11 @@ if plotFlag
     figs(1) = figure('Visible', 'off');
     clf
     [hLines, eventTimes, yEnds, yTicksTable] = ...
-        plot_raster(spikeTimesSec, 'DurationWindow', oscWindow, ...
+        plot_raster(spikeTimesSec, 'DurationWindow', burstWindows, ...
                     'LineWidth', 0.5, 'Colors', colorsRaster);
+    % [hLines, eventTimes, yEnds, yTicksTable] = ...
+    %     plot_raster(spikeTimesSec, 'DurationWindow', oscWindow, ...
+    %                 'LineWidth', 0.5, 'Colors', colorsRaster);
     vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
                                     'LineStyle', '--');
     if ~isempty(setBoundaries)
@@ -497,10 +500,10 @@ if plotFlag
     end            
     save_all_zooms(figs(1), outFolderRaster, ...
                     figBaseRaster, zoomWin1, zoomWin2, zoomWin3);
-end
+%end
 
 %% Plot time series of measures
-if plotFlag
+%if plotFlag
     fprintf('Plotting time series of measures for %s ...\n', fileBase);    
 
     % Create output directory and subdirectories for each measure
@@ -522,7 +525,7 @@ if plotFlag
                     'FigTitles', figTitlesMeasures, ...
                     'XBoundaries', setBoundaries, ...
                     'RemoveOutliers', true);
-end
+%end
 
 %% Outputs
 varargout{1} = parsedParams;
@@ -721,7 +724,8 @@ else
     %           is not in burst, then minus the number of bins in a window
     iWinFirstInBurst = find(isInBurst & [true; ~isInBurst(1:(end-1))]);
     iBinFirstInBurst = iWinFirstInBurst - minBinsInBurst + 1;
-
+    iBinFirstInBurst(iBinFirstInBurst < 1) = 1;
+    
     % Find the total number of bursts
     if numel(iBinLastInBurst) ~= numel(iBinFirstInBurst)
         error('Code logic error!');
@@ -735,6 +739,8 @@ else
         iBinBurstStarts = [];
         iBinBurstEnds = [];
         iBinLastOfLastBurst = NaN;
+        spikeCountsEachBurst = [];
+        nSpikesPerBurst = NaN;
     else
         % Compute the inter-burst intervals in bins
         ibiBins = diff(iBinLastInBurst);
@@ -743,7 +749,7 @@ else
         firstIbiTooLarge = find(ibiBins > maxIbiBins, 1, 'first');
 
         % Determine the number of bursts in oscillation
-        if isempty(iBurstLast)
+        if isempty(firstIbiTooLarge)
             % All bursts are close enough together
             nBurstsInOsc = nBurstsTotal;
         else
@@ -757,14 +763,14 @@ else
 
         % Determine the last bin of the last burst
         iBinLastOfLastBurst = iBinBurstEnds(end);
-    end
 
-    % Compute the number of spikes in each burst window
-    spikeCountsEachBurst = arrayfun(@(x) spikeCounts(x:y), ...
+        % Compute the number of spikes in each burst window
+        spikeCountsEachBurst = arrayfun(@(x, y) sum(spikeCounts(x:y)), ...
                                 iBinBurstStarts, iBinBurstEnds);
 
-    % Compute average number of spikes per burst
-    nSpikesPerBurst = mean(spikeCountsEachBurst);
+        % Compute average number of spikes per burst
+        nSpikesPerBurst = mean(spikeCountsEachBurst);
+    end
 
     % Compute the total number of spikes in the oscillation
     nSpikesInOsc = spikeCounts(1:iBinLastOfLastBurst);
@@ -1326,6 +1332,22 @@ saveas(fig, fullfile(outFolder, 'zoom2', [figPathBase, '_zoom2']), 'png');
 % Zoom #3
 xlim(zoomWin3);
 saveas(fig, fullfile(outFolder, 'zoom3', [figPathBase, '_zoom3']), 'png');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function vector = prepare_for_plot_raster(starts, ends)
+%% Put in the form [start1, end1, start2, end2, ..., startn, endn]
+
+if isempty(starts) || isempty(ends)
+    vector = [0; 0];
+end
+
+% Put in the form [start1, start2, ..., startn;
+%                   end1,   end2,  ...,  endn]
+form1 = transpose([x, y]);
+
+% Reshape as a column vector
+vector = reshape(form1, [], 1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
