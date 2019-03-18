@@ -4,6 +4,7 @@
 % Requires:
 %       cd/combine_variables_across_tables.m
 %       cd/extract_fileparts.m
+%       cd/plot_table.m
 
 % File History:
 % 2019-03-15 Created by Adam Lu

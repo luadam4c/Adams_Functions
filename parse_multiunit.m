@@ -54,8 +54,9 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/iscellnumeric.m
 %       cd/match_time_info.m
 %       cd/movingaveragefilter.m
-%       cd/plot_raster.m
 %       cd/plot_horizontal_line.m
+%       cd/plot_raster.m
+%       cd/plot_table.m
 %
 % Used by:
 %       cd/parse_all_multiunit.m
@@ -301,7 +302,7 @@ if plotFlag
 end
 
 %% Plot spike histograms
-%if plotFlag
+if plotFlag
     fprintf('Plotting spike histograms for %s ...\n', fileBase);
 
     % Retrieve data for plotting
@@ -349,7 +350,7 @@ end
                         [figPathBase{iVec}, '_spike_histogram']), 'png');
         close all force hidden
     end
-%end
+end
 
 %% Plot autocorrelograms
 if plotFlag
@@ -436,7 +437,7 @@ end
 %% Plot raster plot
 % TODO: Plot burst duration
 % TODO: Plot oscillatory index
-%if plotFlag
+if plotFlag
     fprintf('Plotting raster plot for %s ...\n', fileBase);
 
     % Modify the figure base
@@ -502,7 +503,7 @@ end
     end            
     save_all_zooms(figs(1), outFolderRaster, ...
                     figBaseRaster, zoomWin1, zoomWin2, zoomWin3);
-%end
+end
 
 %% Plot time series of measures
 %if plotFlag
@@ -526,7 +527,7 @@ end
                     'XLabel', 'Time (min)', 'FigNames', figPathsMeasures, ...
                     'FigTitles', figTitlesMeasures, ...
                     'XBoundaries', setBoundaries, ...
-                    'RemoveOutliers', true);
+                    'RemoveOutliers', true, 'PlotSeparately', true);
 %end
 
 %% Outputs
@@ -743,6 +744,7 @@ else
         iBinLastOfLastBurst = NaN;
         spikeCountsEachBurst = [];
         nSpikesPerBurst = NaN;
+        nSpikesInOsc = 0;
     else
         % Compute the inter-burst intervals in bins
         ibiBins = diff(iBinLastInBurst);
@@ -772,10 +774,10 @@ else
 
         % Compute average number of spikes per burst
         nSpikesPerBurst = mean(spikeCountsEachBurst);
-    end
 
-    % Compute the total number of spikes in the oscillation
-    nSpikesInOsc = sum(spikeCounts(1:iBinLastOfLastBurst));
+        % Compute the total number of spikes in the oscillation
+        nSpikesInOsc = sum(spikeCounts(1:iBinLastOfLastBurst));
+    end
 
     % Compute the burst start and ends in ms
     timeBurstStartsMs = histLeftMs + (iBinBurstStarts - 1) * binWidthMs;
