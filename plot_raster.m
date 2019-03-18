@@ -390,7 +390,8 @@ end
 if ~isempty(durationWindow)
     horzLines = cellfun(@(x, y) plot_horizontal_line(x, 'XLimits', y, ...
                         'Color', 'r', 'LineStyle', '-', 'LineWidth', 0.5), ...
-                        num2cell(yHorzLines), durationWindow);
+                        num2cell(yHorzLines), durationWindow, ...
+                        'UniformOutput', false);
 end
 
 % Change the y tick values and labels

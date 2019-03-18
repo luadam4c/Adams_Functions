@@ -338,6 +338,7 @@ end
     check_dir(outFolderHist);
 
     parfor iVec = 1:nVectors
+%     for iVec = 1:nVectors
         [histBars, histFig] = ...
             plot_spike_histogram(spikeCounts{iVec}, edgesSec{iVec}, ...
                                 timeOscEndSec(iVec), oscDurationSec(iVec), ...
@@ -443,12 +444,13 @@ end
 
     % Extract the spike times
     spikeTimesSec = parsedData.spikeTimesSec;
+    timeBurstStartsSec = parsedData.timeBurstStartsSec;
+    timeBurstEndsSec = parsedData.timeBurstEndsSec;
+
     stimStartSec = parsedParams.stimStartSec;
     detectStartSec = parsedParams.detectStartSec;
     firstSpikeSec = parsedParams.firstSpikeSec;
     timeOscEndSec = parsedParams.timeOscEndSec;
-    timeBurstStartsSec = parsedParams.timeBurstStartsSec;
-    timeBurstEndsSec = parsedParams.timeBurstEndsSec;
 
     % Convert oscillatory index to a window
     % TODO
@@ -773,7 +775,7 @@ else
     end
 
     % Compute the total number of spikes in the oscillation
-    nSpikesInOsc = spikeCounts(1:iBinLastOfLastBurst);
+    nSpikesInOsc = sum(spikeCounts(1:iBinLastOfLastBurst));
 
     % Compute the burst start and ends in ms
     timeBurstStartsMs = histLeftMs + (iBinBurstStarts - 1) * binWidthMs;
@@ -1231,7 +1233,7 @@ hold on;
                     'FigHandle', histFig);
 text(0.5, 0.95, sprintf('Oscillation Duration = %.2g seconds', ...
     oscDurationSec), 'Units', 'normalized');
-text(0.5, 0.9, sprintf('Total number of spikes = %d', ...
+text(0.5, 0.9, sprintf('Number of spikes in oscillation = %d', ...
     nSpikesInOsc), 'Units', 'normalized');
 plot_horizontal_line(0, 'XLimits', xLimitsOscDur, ...
                     'Color', 'r', 'LineStyle', '-', 'LineWidth', 2);
@@ -1344,7 +1346,7 @@ end
 
 % Put in the form [start1, start2, ..., startn;
 %                   end1,   end2,  ...,  endn]
-form1 = transpose([x, y]);
+form1 = transpose([starts, ends]);
 
 % Reshape as a column vector
 vector = reshape(form1, [], 1);
