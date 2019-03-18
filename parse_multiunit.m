@@ -447,12 +447,23 @@ if plotFlag
     detectStartSec = parsedParams.detectStartSec;
     firstSpikeSec = parsedParams.firstSpikeSec;
     timeOscEndSec = parsedParams.timeOscEndSec;
+    timeBurstStartsSec = parsedParams.timeBurstStartsSec;
+    timeBurstEndsSec = parsedParams.timeBurstEndsSec;
+
+    % Convert oscillatory index to a window
+    % TODO
 
     % Oscillation window
     oscWindow = transpose([stimStartSec, timeOscEndSec]);
 
     % Burst windows
-    % TODO burstWindows = 
+    burstWindows = cellfun(@(x, y) reshape(transpose([x, y]), [], 1), ...
+                            timeBurstStartsSec, timeBurstEndsSec, ...
+                            'UniformOutput', false);
+
+    % Create colors
+    nSweeps = numel(spikeTimesSec);
+    colorsRaster = repmat({'Black'}, nSweeps, 1);
 
     % Create output directory
     outFolderRaster = fullfile(outFolder, rasterDir);
@@ -463,7 +474,7 @@ if plotFlag
     clf
     [hLines, eventTimes, yEnds, yTicksTable] = ...
         plot_raster(spikeTimesSec, 'DurationWindow', oscWindow, ...
-                    'LineWidth', 0.5);
+                    'LineWidth', 0.5, 'Colors', colorsRaster);
     vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
                                     'LineStyle', '--');
     if ~isempty(setBoundaries)
@@ -983,11 +994,13 @@ figTitleBase = [figTitleBase, '\_trace', num2str(iVec)];
 % Convert to seconds
 [stimStartSec, detectStartSec, firstSpikeSec, ...
     histLeftSec, timeOscEndSec, oscDurationSec, ...
-    maxInterBurstIntervalSec, spikeTimesSec, edgesSec] = ...
+    maxInterBurstIntervalSec, spikeTimesSec, edgesSec, ...
+    timeBurstStartsSec, timeBurstEndsSec] = ...
     argfun(@(x) x ./ MS_PER_S, ...
             stimStartMs, detectStartMs, firstSpikeMs, ...
             histLeftMs, timeOscEndMs, oscDurationMs, ...
-            maxInterBurstIntervalMs, spikeTimesMs, edgesMs);
+            maxInterBurstIntervalMs, spikeTimesMs, edgesMs, ...
+            timeBurstStartsMs, timeBurstEndsMs);
 
 %% Store in outputs
 parsedParams.setNumber = setNumber;
@@ -1060,6 +1073,8 @@ parsedData.iBinBurstStarts = iBinBurstStarts;
 parsedData.iBinBurstEnds = iBinBurstEnds;
 parsedData.timeBurstStartsMs = timeBurstStartsMs;
 parsedData.timeBurstEndsMs = timeBurstEndsMs;
+parsedData.timeBurstStartsSec = timeBurstStartsSec;
+parsedData.timeBurstEndsSec = timeBurstEndsSec;
 parsedData.autoCorr = autoCorr;
 parsedData.acf = acf;
 parsedData.acfFiltered = acfFiltered;
