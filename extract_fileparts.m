@@ -33,6 +33,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/extract_common_directory.m
+%       cd/extract_common_prefix.m
 %       cd/extract_common_suffix.m
 %       cd/extract_distinct_fileparts.m
 %
@@ -112,7 +113,7 @@ case {'commonprefix', 'commonsuffix'}
             parts = extract_common_suffix(fileBases, 'Delimiter', delimiter);
     end
 case 'distinct'
-    parts = extract_distinct_fileparts(paths);
+    parts = extract_distinct_fileparts(paths, 'Delimiter', delimiter);
 otherwise
     error('partType unrecognized!!');
 end

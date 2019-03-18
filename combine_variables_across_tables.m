@@ -53,6 +53,7 @@ function [outTables, outSheetPaths] = ...
 %       cd/create_row_labels.m
 %       cd/extract_fileparts.m
 %       cd/force_column_cell.m
+%       cd/force_column_vector.m
 %       cd/renamevars.m
 %       cd/struct2arglist.m
 %
@@ -127,6 +128,10 @@ saveFlag = iP.Results.SaveFlag;
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
+% Force as a column cell array of column vectors
+[keys, varNames] = argfun(@force_column_cell, keys, varNames);
+[keys, varNames] = argfun(@force_column_vector, keys, varNames);
+
 % Count the number of input tables
 nInputs = numel(inputs);
 
@@ -182,9 +187,6 @@ else
     % Omit key variables from the variable names
     varNames = setdiff(varNames, keys);
 end
-
-% Force as a column cell array
-varNames = force_column_cell(varNames);
 
 % Create output spreadsheet paths
 if saveFlag
@@ -245,9 +247,9 @@ function allVars = all_except_row(keys, vars)
 
 % Combine the keys and variables
 if ischar(keys) && ischar(vars)
-    allVars = {keys, vars};
+    allVars = {keys; vars};
 else
-    allVars = [keys, vars];
+    allVars = [keys; vars];
 end
 
 % Remove 'Row' from the list of variables

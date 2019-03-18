@@ -497,7 +497,8 @@ if ~isempty(featuresFileTable) && istable(featuresFileTable)
         
     % Plot each variable of the table
     plot_table(featuresFileTable, 'VariableNames', varToPlot, ...
-               'OutFolder', outFolderProtocol, 'XLabel', xLabelFile);
+               'OutFolder', outFolderProtocol, 'XLabel', xLabelFile, ...
+               'PlotSeparately', true);
 end
 if ~isempty(featuresSweepTable) && istable(featuresSweepTable)
     % Save the table
@@ -510,7 +511,8 @@ if ~isempty(featuresSweepTable) && istable(featuresSweepTable)
 
     % Plot each variable of the table
     plot_table(featuresSweepTable, 'VariableNames', varToPlot, ...
-               'OutFolder', outFolderProtocol, 'XLabel', xLabelSweep);
+               'OutFolder', outFolderProtocol, 'XLabel', xLabelSweep, ...
+               'PlotSeparately', true);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

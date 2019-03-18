@@ -15,17 +15,40 @@ function figs = plot_table (table, varargin)
 %                   must be empty or a character vector or a string vector
 %                       or a cell array of character vectors
 %                   default == plot all variables
+%                   - 'VarLabels': variable labels
+%                   must be empty or a character vector or a string vector
+%                       or a cell array of character vectors
+%                   default == use distinct parts of variable names
+%                   - 'DistinctParts': whether to extract distinct parts
+%                                       or variable labels
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'Delimiter': delimiter used for extracting distinct parts
+%                   must be a string scalar or a character vector
+%                   default == '_'
+%                   - 'ReadoutLabel': label for the readout
+%                   must be a string scalar or a character vector
+%                   default == set by plot_tuning_curve.m
+%                   - 'TableLabel': label for the table
+%                   must be a string scalar or a character vector
+%                   default == either a common prefix from variable names
+%                               or the input table variable name
 %                   - 'XLabel': label for the parameter
 %                   must be a string scalar or a character vector
 %                   default == none ('suppress')
 %                   - 'OutFolder': output folder if FigNames not set
 %                   must be a string scalar or a character vector
 %                   default == pwd
+%                   - 'FigName': figure name for saving
+%                   must be a string scalar or a character vector
+%                   default == ''
 %                   - Any other parameter-value pair for the plot_struct() function
 %
 % Requires:
+%       cd/convert_to_char.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_common_directory.m
+%       cd/extract_common_prefix.m
 %       cd/extract_fileparts.m
 %       cd/plot_struct.m
 %       cd/struct2arglist.m
@@ -40,9 +63,40 @@ function figs = plot_table (table, varargin)
 % 2018-12-18 Now uses extract_common_directory.m
 % 2018-12-18 Now uses row names without processing if not file names
 % 2019-03-17 Deal with timetables differently for RowNames
-% TODO: PlotTogether (use plot_tuning_curve directly)
+% 2019-03-17 Implemented plotting together (use plot_tuning_curve directly)
+% 2019-03-17 Added 'PlotSeparately' as an optional argument
 % TODO: Return handles to plots
 % 
+
+%% Hard-coded parameters
+lineSpecSeparate = 'o';
+lineWidthSeparate = 1;
+markerEdgeColorSeparate = rgb('DarkOrchid');
+markerFaceColorSeparate = rgb('LightSkyBlue');
+
+lineSpecTogether = '-';
+lineWidthTogether = 1;
+markerEdgeColorTogether = rgb('DarkOrchid');
+markerFaceColorTogether = rgb('LightSkyBlue');
+
+%% Default values for optional arguments
+lineSpecDefault = '';
+lineWidthDefault = [];
+markerEdgeColorDefault = [];
+markerFaceColorDefault = [];
+variableNamesDefault = {};      % plot all variables by default
+plotSeparatelyDefault = false;  % plot variables together by default
+varLabelsDefault = {};          % set later
+distinctPartsDefault = true;    % extract distinct parts of variable names
+                                %   by default
+delimiterDefault = '_';         % use '_' as delimiter by default
+readoutLabelDefault = '';       % set later
+tableLabelDefault = '';         % set later
+xLabelDefault = 'suppress';     % No x label by default
+outFolderDefault = pwd;
+figNameDefault = '';
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% If not compiled, add directories to search path for required functions
 if ~isdeployed
@@ -52,20 +106,6 @@ if ~isdeployed
     % Add path for rgb.m
     addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions'));
 end
-
-%% Hard-coded parameters
-plotTogether = false;
-
-%% Default values for optional arguments
-lineSpecDefault = 'o';
-lineWidthDefault = 1;
-markerEdgeColorDefault = rgb('DarkOrchid');
-markerFaceColorDefault = rgb('LightSkyBlue');
-variableNamesDefault = {};  % plot all variables by default
-xLabelDefault = 'suppress'; % No x label by default
-outFolderDefault = pwd;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
@@ -92,9 +132,25 @@ addParameter(iP, 'VariableNames', variableNamesDefault, ...
     @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
         ['VariableNames must be empty or a character array or a string array ', ...
             'or cell array of character arrays!']));
+addParameter(iP, 'PlotSeparately', plotSeparatelyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'VarLabels', varLabelsDefault, ...
+    @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
+        ['VarLabels must be empty or a character array or a string array ', ...
+            'or cell array of character arrays!']));
+addParameter(iP, 'DistinctParts', distinctPartsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Delimiter', delimiterDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'ReadoutLabel', readoutLabelDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'TableLabel', tableLabelDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'XLabel', xLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigName', figNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
@@ -104,8 +160,15 @@ lineWidth = iP.Results.LineWidth;
 markerEdgeColor = iP.Results.MarkerEdgeColor;
 markerFaceColor = iP.Results.MarkerFaceColor;
 varToPlot = iP.Results.VariableNames;
+plotSeparately = iP.Results.PlotSeparately;
+varLabels = iP.Results.VarLabels;
+distinctParts = iP.Results.DistinctParts;
+delimiter = iP.Results.Delimiter;
+readoutLabel = iP.Results.ReadoutLabel;
+tableLabel = iP.Results.TableLabel;
 xLabel = iP.Results.XLabel;
 outFolder = iP.Results.OutFolder;
+figName = iP.Results.FigName;
 
 % Keep unmatched arguments for the line() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -114,9 +177,29 @@ otherArguments = struct2arglist(iP.Unmatched);
 % Check if output directory exists
 check_dir(outFolder);
 
-% Restrict to variables to plot
+% Restrict to variables to plot or extract the variable names
 if ~isempty(varToPlot)
     table = table(:, varToPlot);
+else
+    varToPlot = table.Properties.VariableNames;
+end
+
+% Extract distinct parts if requested
+if distinctParts
+    varLabels = extract_fileparts(varToPlot, 'distinct', 'Delimiter', delimiter);
+else
+    varLabels = varToPlot;
+end
+
+% Decide on table label
+if isempty(tableLabel)
+    % First try to extract a common prefix from the variables to plot
+    tableLabel = extract_common_prefix(varToPlot, 'Delimiter', delimiter);
+
+    % If no such prefix exists, use the table variable name
+    if isempty(tableLabel)
+        tableLabel = inputname(1);
+    end
 end
 
 % Decide on xTickLabels
@@ -137,36 +220,114 @@ if isfield(table.Properties, 'RowNames') && iscell(table.Properties.RowNames)
         xTickLabels = rowNames;
     end
 elseif isfield(table.Properties, 'RowTimes')
-    xTickLabels = convert_to_char(table.Properties.RowTimes);
+    % Convert time to minutes
+    timeVec = minutes(table.Properties.RowTimes);
+
+    % Convert to a cell array of character vectors
+    xTickLabels = convert_to_char(timeVec);
 else
     % Use default x tick labels
     xTickLabels = {};
 end
 
-% Extract the variable names
-varNames = table.Properties.VariableNames;
+% Decide on lineSpec
+if isempty(lineSpec)
+    if plotSeparately
+        lineSpec = lineSpecSeparate;
+    else
+        lineSpec = lineSpecTogether;
+    end
+end
 
-% TODO: extractDistinct
+% Decide on lineWidth
+if isempty(lineWidth)
+    if plotSeparately
+        lineWidth = lineWidthSeparate;
+    else
+        lineWidth = lineWidthTogether;
+    end
+end
+
+% Decide on markerEdgeColor
+if isempty(markerEdgeColor)
+    if plotSeparately
+        markerEdgeColor = markerEdgeColorSeparate;
+    else
+        markerEdgeColor = markerEdgeColorTogether;
+    end
+end
+
+% Decide on markerFaceColor
+if isempty(markerFaceColor)
+    if plotSeparately
+        markerFaceColor = markerFaceColorSeparate;
+    else
+        markerFaceColor = markerFaceColorTogether;
+    end
+end
 
 %% Do the job
-if plotTogether
-    % TODO: Extract
-    % fileArray = table2array(table)
-
-    % 
-    % plot_tuning_curve(fileArray, 'ColumnLabels', varNames, otherArguments{:});
-else
+if plotSeparately
     % Convert to a structure array
-    fileStruct = table2struct(table);
+    myStruct = table2struct(table);
 
     % Plot fields
-    figs = plot_struct(fileStruct, 'OutFolder', outFolder, ...
-                        'FieldLabels', varNames, ...
+    figs = plot_struct(myStruct, 'OutFolder', outFolder, ...
+                        'FieldLabels', varLabels, ...
                         'XTickLabels', xTickLabels, 'XLabel', xLabel, ...
                         'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
                         'MarkerEdgeColor', markerEdgeColor, ...
                         'MarkerFaceColor', markerFaceColor, ...
                         otherArguments{:});
+else
+    % Create a figure name if empty
+    if isempty(figName)
+        figName = fullfile(outFolder, [tableLabel, '.png']);
+    end
+
+    % Convert to an array
+    if istimetable(table)
+        % Extract variables
+        myArray = table.Variables;
+    else
+        % Use table2array
+        myArray = table2array(table);
+    end
+
+    % Decide on x values
+    if istimetable(table)
+        % Extract time
+        xValues = table.Properties.RowTimes;
+    else
+        % Count rows
+        nRows = height(table);
+
+        % Use row numbers
+        xValues = transpose(1:nRows);
+    end
+
+    % Decide on readout label
+    if isempty(readoutLabel)
+        readoutLabel = replace(tableLabel, '_', ' ');
+    end
+
+    % Decide on figure title
+    if istimetable(table)
+        figTitle = replace([tableLabel, ' over time'], '_', ' ');
+    else
+        figTitle = '';
+    end
+
+    % Plot a tuning curve
+    figs = plot_tuning_curve(xValues, myArray, 'FigName', figName, ...
+                    'PLabel', xLabel, ...
+                    'ReadoutLabel', readoutLabel, ...
+                    'ColumnLabels', varLabels, ...
+                    'FigTitle', figTitle, ...
+                    'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
+                    'MarkerEdgeColor', markerEdgeColor, ...
+                    'MarkerFaceColor', markerFaceColor, ...
+                    otherArguments{:});
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -29,6 +29,8 @@ function prefix = extract_common_prefix (strs, varargin)
 % Used by:
 %       cd/extract_common_directory.m
 %       cd/extract_common_suffix.m
+%       cd/extract_fileparts.m
+%       cd/plot_table.m
 
 % File History:
 % 2018-12-26 Moved from extract_common_directory.m

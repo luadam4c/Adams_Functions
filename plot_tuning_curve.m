@@ -139,9 +139,10 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to an Input Parser
 addRequired(iP, 'pValues', ...              % vector of parameter values
-    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+    @(x) validateattributes(x, {'numeric', 'datetime', 'duration'}, {'vector'}));
 addRequired(iP, 'readout', ...              % a readout matrix
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+    @(x) validateattributes(x, {'numeric', 'logical', ...
+                                'datetime', 'duration'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'RemoveOutliers', removeOutliersDefault, ...

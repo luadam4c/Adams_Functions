@@ -16,11 +16,16 @@ sweepLengthSec = 60;
 % File patterns
 sliceFilePattern = '.*slice.*';
 outFolder = pwd;
+timeLabel = 'Time';
 
 % Must be consistent with parse_multiunit.m
-varsToPlot = {'oscIndex1', 'oscIndex2', 'oscIndex3', 'oscIndex4', ...
-                'oscPeriod1Ms', 'oscPeriod2Ms', ...
-                'oscDurationSec', 'spikeCountTotal'};
+varsToPlot = {'oscIndex1'; 'oscIndex2'; 'oscIndex3'; 'oscIndex4'; ...
+                'oscPeriod1Ms'; 'oscPeriod2Ms'; ...
+                'oscDurationSec'; 'nSpikesTotal'};
+varLabels = {'Oscillatory Index 1'; 'Oscillatory Index 2'; ...
+                'Oscillatory Index 3'; 'Oscillatory Index 4'; ...
+                'Oscillation Period 1 (ms)'; 'Oscillation Period 2 (ms)'; ...
+                'Oscillation Duration (s)'; 'Total Spike Count'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -49,14 +54,24 @@ measureTables = combine_variables_across_tables(sliceParamsTables, ...
                 'InputNames', fileLabels, 'OmitVarName', false, ...
                 'OutFolder', outFolder, 'Prefix', prefix, 'SaveFlag', true);
 
+% Create table labels
+tableLabels = strcat(prefix, {': '}, varLabels);
+
+% Create figure names
+figNames = fullfile(outFolder, strcat(prefix, '_', varsToPlot, '.png'));
+
 %% Do the job
 % Convert to timetables
 measureTimeTables = cellfun(@table2timetable, ...
                             measureTables, 'UniformOutput', false);
 
-% TODO: Use plot_table in a different form: plot all columns together
-% fileLabels
-% figs = cellfun(@(x) plot_table(x, 'PlotTogether', true), measureTimeTables);
+% Plot all columns together
+% TODO: Plot drug onset and offset
+figs = cellfun(@(x, y, z, w) plot_table(x, 'PlotSeparately', false, ...
+                                'ReadoutLabel', y, 'TableLabel', z, ...
+                                'XLabel', timeLabel, 'FigName', w, ...
+                                'RemoveOutliers', true), ...
+                measureTimeTables, varLabels, tableLabels, figNames);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
