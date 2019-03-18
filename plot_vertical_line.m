@@ -14,7 +14,7 @@ function h = plot_vertical_line (xValue, varargin)
 %                   must be a numeric, datetime or duration array
 %       varargin    - 'YLimits': y value limits for the line
 %                   must be empty or a numeric vector of 2 elements
-%                       or an array of 2 columns
+%                       or an array of 2 rows
 %                   default == get(gca, 'YLim')
 %                   - Any other parameter-value pair for the line() function
 %

@@ -40,9 +40,6 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %                   - 'RowInstead': whether to force as row vector instead
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'RowInstead': whether to force as row vector instead
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -67,6 +64,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 %       cd/plot_all_abfs.m
+%       cd/plot_horizontal_line.m
 %       cd/plot_protocols.m
 %       cd/plot_struct.m
 %       cd/run_neuron.m
