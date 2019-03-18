@@ -78,7 +78,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %               1 minus the average of all distances 
 %               (normalized by half the oscillation period)
 %               to the closest multiple of the period over all peaks
-% 
+% 2019-03-17 Added nSpikesPerBurst, nSpikesInOsc, nBurstsInOsc, etc ...
 
 %% Hard-coded parameters
 rasterDir = 'rasters';
@@ -89,7 +89,8 @@ spikeDetectionDir = 'spike_detection';
 measuresDir = 'measures';
 measuresToPlot = {'oscIndex1', 'oscIndex2', 'oscIndex3', 'oscIndex4', ...
                     'oscPeriod1Ms', 'oscPeriod2Ms', ...
-                    'oscDurationSec', 'nSpikesTotal'};
+                    'oscDurationSec', 'nSpikesTotal', 'nSpikesInOsc', ...
+                    'nBurstsInOsc', 'nSpikesPerBurst'};
 
 %% Default values for optional arguments
 plotFlagDefault = false;
@@ -312,7 +313,7 @@ if plotFlag
     timeOscEndSec = parsedParams.timeOscEndSec;
     maxInterBurstIntervalSec = parsedParams.maxInterBurstIntervalSec;
     oscDurationSec = parsedParams.oscDurationSec;
-    nSpikesTotal = parsedParams.nSpikesTotal;
+    nSpikesInOsc = parsedParams.nSpikesInOsc;
     figTitleBase = parsedParams.figTitleBase;
     figPathBase = parsedParams.figPathBase;
 
@@ -340,7 +341,7 @@ if plotFlag
         [histBars, histFig] = ...
             plot_spike_histogram(spikeCounts{iVec}, edgesSec{iVec}, ...
                                 timeOscEndSec(iVec), oscDurationSec(iVec), ...
-                                nSpikesTotal(iVec), ...
+                                nSpikesInOsc(iVec), ...
                                 xLimitsHist, yLimitsHist, figTitleBase{iVec});
 
         saveas(histFig, fullfile(outFolderHist, ...
@@ -372,7 +373,7 @@ if plotFlag
     oscPeriod2Ms = parsedParams.oscPeriod2Ms;
     oscPeriod1Ms = parsedParams.oscPeriod1Ms;
     oscDurationSec = parsedParams.oscDurationSec;
-    nSpikesTotal = parsedParams.nSpikesTotal;
+    nSpikesInOsc = parsedParams.nSpikesInOsc;
     figTitleBase = parsedParams.figTitleBase;
     figPathBase = parsedParams.figPathBase;
 
@@ -417,7 +418,7 @@ if plotFlag
                 oscIndex1(iVec), oscIndex2(iVec), ...
                 oscIndex3(iVec), oscIndex4(iVec), ...
                 oscPeriod1Ms(iVec), oscPeriod2Ms(iVec), ...
-                oscDurationSec(iVec), nSpikesTotal(iVec), ...
+                oscDurationSec(iVec), nSpikesInOsc(iVec), ...
                 xLimitsAutoCorr, yLimitsAutoCorr, ...
                 xLimitsAcfFiltered, yLimitsAcfFiltered, ...
                 yOscDur, figTitleBase{iVec});
@@ -432,6 +433,8 @@ if plotFlag
 end
 
 %% Plot raster plot
+% TODO: Plot burst duration
+% TODO: Plot oscillatory index
 if plotFlag
     fprintf('Plotting raster plot for %s ...\n', fileBase);
 
@@ -499,7 +502,7 @@ if plotFlag
                                 strcat(fileBase, '_', measuresToPlot));
 
     % Create custom figure titles
-    figTitlesMeasures = strcat(measuresToPlot, ' for ', titleBase);
+    figTitlesMeasures = [measuresToPlot, ' for ', titleBase];
 
     % Plot table
     figs(2:nMeasures + 1) = ...
@@ -644,11 +647,16 @@ if nSpikesTotal == 0
     nBins = 0;
     halfNBins = 0;
     histLeftMs = NaN;
-    nBursts = 0;
+    nBurstsTotal = 0;
     nBurstsInOsc = 0;
     iBinBurstStarts = [];
     iBinBurstEnds = [];
     iBinLastOfLastBurst = NaN;
+    spikeCountsEachBurst = [];
+    nSpikesPerBurst = NaN;
+    nSpikesInOsc = 0;
+    timeBurstStartsMs = [];
+    timeBurstEndsMs = [];
     timeOscEndMs = stimStartMs;
     oscDurationMs = 0;    
 else
@@ -707,7 +715,7 @@ else
     if numel(iBinLastInBurst) ~= numel(iBinFirstInBurst)
         error('Code logic error!');
     else
-        nBursts = numel(iBinLastInBurst);
+        nBurstsTotal = numel(iBinLastInBurst);
     end
 
     % Find the last bin of the last burst, using maxIbiBins
@@ -726,7 +734,7 @@ else
         % Determine the number of bursts in oscillation
         if isempty(iBurstLast)
             % All bursts are close enough together
-            nBurstsInOsc = nBursts;
+            nBurstsInOsc = nBurstsTotal;
         else
             % Actually (firstIbiTooLarge - 1) + 1
             nBurstsInOsc = firstIbiTooLarge;
@@ -741,16 +749,18 @@ else
     end
 
     % Compute the number of spikes in each burst window
-    % TODO
-
-    % Compute the total number of spikes in the oscillation
-    % TODO
+    spikeCountsEachBurst = arrayfun(@(x) spikeCounts(x:y), ...
+                                iBinBurstStarts, iBinBurstEnds);
 
     % Compute average number of spikes per burst
-    % TODO
+    nSpikesPerBurst = mean(spikeCountsEachBurst);
 
-    % Compute the burst windows in ms
-    % TODO
+    % Compute the total number of spikes in the oscillation
+    nSpikesInOsc = spikeCounts(1:iBinLastOfLastBurst);
+
+    % Compute the burst start and ends in ms
+    timeBurstStartsMs = histLeftMs + (iBinBurstStarts - 1) * binWidthMs;
+    timeBurstEndsMs = histLeftMs + iBinBurstEnds * binWidthMs;
 
     % Find the time of oscillation end in ms
     if isnan(iBinLastOfLastBurst)
@@ -1016,8 +1026,10 @@ parsedParams.nBins = nBins;
 parsedParams.halfNBins = halfNBins;
 parsedParams.histLeftMs = histLeftMs;
 parsedParams.histLeftSec = histLeftSec;
-nBursts
-nBurstsInOsc
+parsedParams.nSpikesPerBurst = nSpikesPerBurst;
+parsedParams.nSpikesInOsc = nSpikesInOsc;
+parsedParams.nBurstsTotal = nBurstsTotal;
+parsedParams.nBurstsInOsc = nBurstsInOsc;
 parsedParams.iBinLastOfLastBurst = iBinLastOfLastBurst;
 parsedParams.timeOscEndMs = timeOscEndMs;
 parsedParams.timeOscEndSec = timeOscEndSec;
@@ -1043,8 +1055,11 @@ parsedData.spikeTimesSec = spikeTimesSec;
 parsedData.spikeCounts = spikeCounts;
 parsedData.edgesMs = edgesMs;
 parsedData.edgesSec = edgesSec;
-iBinBurstStarts
-iBinBurstEnds
+parsedData.spikeCountsEachBurst = spikeCountsEachBurst;
+parsedData.iBinBurstStarts = iBinBurstStarts;
+parsedData.iBinBurstEnds = iBinBurstEnds;
+parsedData.timeBurstStartsMs = timeBurstStartsMs;
+parsedData.timeBurstEndsMs = timeBurstEndsMs;
 parsedData.autoCorr = autoCorr;
 parsedData.acf = acf;
 parsedData.acfFiltered = acfFiltered;
@@ -1177,7 +1192,7 @@ linkaxes(ax, 'x');
 
 function [histBars, histFig] = ...
                 plot_spike_histogram(spikeCounts, edgesSec, timeOscEndSec, ...
-                                oscDurationSec, nSpikesTotal, ...
+                                oscDurationSec, nSpikesInOsc, ...
                                 xLimitsHist, yLimitsHist, figTitleBase)
 
 % Compute things
@@ -1196,7 +1211,7 @@ hold on;
 text(0.5, 0.95, sprintf('Oscillation Duration = %.2g seconds', ...
     oscDurationSec), 'Units', 'normalized');
 text(0.5, 0.9, sprintf('Total number of spikes = %d', ...
-    nSpikesTotal), 'Units', 'normalized');
+    nSpikesInOsc), 'Units', 'normalized');
 plot_horizontal_line(0, 'XLimits', xLimitsOscDur, ...
                     'Color', 'r', 'LineStyle', '-', 'LineWidth', 2);
 
@@ -1208,7 +1223,7 @@ function [autoCorrFig, acfFig, acfLine1, acfLine2, acfFilteredLine] = ...
                                     binWidthSec, nBins, halfNBins, ...
                                     oscIndex1, oscIndex2, oscIndex3, oscIndex4, ...
                                     oscPeriod1Ms, oscPeriod2Ms, ...
-                                    oscDurationSec, nSpikesTotal, ...
+                                    oscDurationSec, nSpikesInOsc, ...
                                     xLimitsAutoCorr, yLimitsAutoCorr, ...
                                     xLimitsAcfFiltered, yLimitsAcfFiltered, ...
                                     yOscDur, figTitleBase)
@@ -1260,7 +1275,7 @@ text(0.5, 0.82, sprintf('Oscillation Period 2 = %.3g ms', oscPeriod2Ms), ...
     'Units', 'normalized');
 text(0.5, 0.78, sprintf('Oscillation Period 1 = %.3g ms', oscPeriod1Ms), ...
     'Units', 'normalized');
-text(0.5, 0.74, sprintf('Total spike count = %g', nSpikesTotal), ...
+text(0.5, 0.74, sprintf('Total spike count = %g', nSpikesInOsc), ...
     'Units', 'normalized');
 text(0.5, 0.70, sprintf('Oscillation Duration = %.2g seconds', ...
     oscDurationSec), 'Units', 'normalized');
