@@ -6,6 +6,11 @@ function h = plot_horizontal_line (yValue, varargin)
 % Example(s):
 %       h = plot_horizontal_line(yValue)
 %       h = plot_horizontal_line(yValue, 'XLimits', xLimits)
+%       h = plot_horizontal_line(3)
+%       h = plot_horizontal_line(3, 'XLimits', [])
+%       h = plot_horizontal_line(3, 'XLimits', [0, 0])
+%       h = plot_horizontal_line(3, 'XLimits', [1, 2])
+%       h = plot_horizontal_line(3, 'XLimits', [1, 2, 4, 5])
 % Outputs:
 %       h           - handle to the line object created
 %                   specified as a primitive line object handle
