@@ -80,6 +80,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %               (normalized by half the oscillation period)
 %               to the closest multiple of the period over all peaks
 % 2019-03-17 Added nSpikesPerBurstInOsc, nSpikesInOsc, nBurstsInOsc, etc ...
+% 2019-03-19 Added nSpikesPerBurstIn10s, nSpikesIn10s, nBurstsIn10s, etc ...
 
 %% Hard-coded parameters
 rasterDir = 'rasters';
