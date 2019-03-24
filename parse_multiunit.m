@@ -449,7 +449,7 @@ end
 %% Plot raster plot
 % TODO: Plot burst duration
 % TODO: Plot oscillatory index
-if plotFlag
+%if plotFlag
     fprintf('Plotting raster plot for %s ...\n', fileBase);
 
     % Modify the figure base
@@ -515,7 +515,7 @@ if plotFlag
     end            
     save_all_zooms(figs(1), outFolderRaster, ...
                     figBaseRaster, zoomWin1, zoomWin2, zoomWin3);
-end
+%end
 
 %% Plot time series of measures
 % if plotFlag
@@ -1454,12 +1454,12 @@ function vector = prepare_for_plot_horizontal_line(starts, ends)
 %% Put in the form [start1, end1, start2, end2, ..., startn, endn]
 
 if isempty(starts) || isempty(ends)
-    vector = [0; 0];
+    form1 = [0; 0];
+else
+    % Put in the form [start1, start2, ..., startn;
+    %                   end1,   end2,  ...,  endn]
+    form1 = transpose([starts, ends]);
 end
-
-% Put in the form [start1, start2, ..., startn;
-%                   end1,   end2,  ...,  endn]
-form1 = transpose([starts, ends]);
 
 % Reshape as a column vector
 vector = reshape(form1, [], 1);
