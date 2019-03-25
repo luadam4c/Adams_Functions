@@ -364,7 +364,7 @@ for c = 1:nColsToPlot
         nPhasesThis = nPhases(c);
 
         % Get the distinct phase indices for this readout vector
-        phaseIndices = arrayfun(@(x) phaseVectorThis == x, ...
+        phaseIndices = arrayfun(@(x) find(phaseVectorThis == x), ...
                                 uniquePhasesThis, 'UniformOutput', false);
 
         % Get the last index for this readout vector
