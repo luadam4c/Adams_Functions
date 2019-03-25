@@ -57,16 +57,16 @@ sliceBases = arrayfun(@(x, y) extract_fileparts(abfFullFileName(x:y), ...
                             'commonprefix'), idxFileFirst, idxFileLast, ...
                     'UniformOutput', false);
 
-% Count the number of set boundaries
+% Count the number of phase boundaries
 nBoundaries = nFilesPerSlice - 1;
 
-% Create set boundaries if nFilesPerSlice is more than 1
+% Create phase boundaries if nFilesPerSlice is more than 1
 if nBoundaries > 0
-    setBoundaries = ...
+    phaseBoundaries = ...
         arrayfun(@(x, y) cumsum(nVectorsEachFile(x:(y - 1))) + 0.5, ...
                     idxFileFirst, idxFileLast, 'UniformOutput', false);
 else
-    setBoundaries = [];
+    phaseBoundaries = [];
 end
 
 % Concatenate vectors
@@ -88,12 +88,12 @@ for iSlice = 1:nSlices
                         'PulseVectors', iVecsSl{iSlice}, ...
                         'PlotFlag', plotFlag, 'OutFolder', outFolder, ...
                         'FileBase', sliceBases{iSlice}, ...
-                        'SetBoundaries', setBoundaries{iSlice});
+                        'PhaseBoundaries', phaseBoundaries{iSlice});
 
     close all force hidden;
 end
 
-% for iSlice = 1:nSlices; [muParams{iSlice}, muData{iSlice}] = parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), 'PulseVectors', iVecsSl{iSlice}, 'PlotFlag', plotFlag, 'OutFolder', outFolder, 'FileBase', sliceBases{iSlice}, 'SetBoundaries', setBoundaries{iSlice}); close all force hidden; end
+% for iSlice = 1:nSlices; [muParams{iSlice}, muData{iSlice}] = parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), 'PulseVectors', iVecsSl{iSlice}, 'PlotFlag', plotFlag, 'OutFolder', outFolder, 'FileBase', sliceBases{iSlice}, 'PhaseBoundaries', phaseBoundaries{iSlice}); close all force hidden; end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

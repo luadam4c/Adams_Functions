@@ -10,6 +10,10 @@ function [outTables, outSheetPaths] = ...
 %       combine_variables_across_tables(myCellTable, 'Keys', 'Key')
 %       combine_variables_across_tables(myCellTable, 'Keys', 'Var')
 %       combine_variables_across_tables(myCellTable)
+%       combine_variables_across_tables(myCellTable, 'VariableNames', {'Var'; 'Key'})
+%       combine_variables_across_tables(myCellTable, 'VariableNames', {'Key', 'Var'})
+%       combine_variables_across_tables(myCellTable, 'VariableNames', {'Var', 'Key'})
+%       combine_variables_across_tables(myCellTable, 'VariableNames', {'Var', 'Key'; 'Key', 'Var'})
 % Outputs:
 %       outTables   - tables organized with each 
 %                   specified as a cell array of tables
@@ -21,9 +25,11 @@ function [outTables, outSheetPaths] = ...
 %                   must be a cell array of tables
 %                       or a cell array of character vectors
 %       varargin    - 'VariableNames': variable (column) names of the table
+%                                       to combine; 
+%                       Note: each row results in a different table
 %                   must be empty or a character vector or a string vector
 %                       or a cell array of character vectors
-%                   default == plot all variables
+%                   default == plot all variables as separate tables
 %                   - 'InputNames': names of the input tables
 %                   must be empty or a character vector or a string vector
 %                       or a cell array of character vectors
@@ -62,6 +68,7 @@ function [outTables, outSheetPaths] = ...
 
 % File History:
 % 2019-03-17 Created by Adam Lu
+% 2019-03-24 Now allows variableNames to be 2 dimensional
 % 
 
 %% Hard-coded parameters
@@ -128,10 +135,6 @@ saveFlag = iP.Results.SaveFlag;
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
-% Force as a column cell array of column vectors
-[keys, varNames] = argfun(@force_column_cell, keys, varNames);
-[keys, varNames] = argfun(@force_column_vector, keys, varNames);
-
 % Count the number of input tables
 nInputs = numel(inputs);
 
@@ -157,14 +160,13 @@ if strcmp(keys, 'Row')
     end
 end
 
-
 % Decide on input names
 if isempty(inNames)
     if iscellstr(inputs)
         % Use the distinct parts of the file names
         inNames = extract_fileparts(inputs, 'distinct');
     else
-        % Use Input#
+        % Use Input #
         inNames = create_labels_from_numbers(1:nInputs, 'Prefix', 'Input');
     end
 end
@@ -172,7 +174,7 @@ end
 % Decide on variable names to combine or restrict table
 if ~isempty(varNames)
     % Combine the variables except for 'Row'
-    allVars = all_except_row(keys, varNames);
+    allVars = union_vars_to_extract(keys, varNames);
 
     % Restrict to provided variable names
     inTables = cellfun(@(x) x(:, allVars), inTables, 'UniformOutput', false);
@@ -184,6 +186,9 @@ else
     % Take the union over all possible variable names
     varNames = apply_over_cell(@union, varNamesAll);
 
+    % Force as a column cell array
+    varNames = force_column_vector(varNames);
+
     % Omit key variables from the variable names
     varNames = setdiff(varNames, keys);
 end
@@ -194,11 +199,13 @@ if saveFlag
                                 strcat(prefix, '_', varNames, '_all.csv'));
 end
 
+% Count the number of rows
+nRows = size(varNames, 1);
 
 %% Do the job
-outTables = cellfun(@(x) combine_variable_across_tables(x, inTables, ...
-                            inNames, keys, omitVarName, otherArguments), ...
-                    varNames, 'UniformOutput', false);
+outTables = arrayfun(@(x) combine_variable_across_tables(varNames(x, :), ...
+                    inTables, inNames, keys, omitVarName, otherArguments), ...
+                    transpose(1:nRows), 'UniformOutput', false);
 
 %% Save results
 if saveFlag
@@ -212,7 +219,7 @@ function outTable = combine_variable_across_tables(varThis, inTables, ...
 %% Combine all columns with this variable across tables
 
 % Combine the variables except for 'Row'
-allVars = all_except_row(keys, varThis);
+allVars = union_vars_to_extract(keys, varThis);
 
 % Count the number of columns to extract
 if ischar(allVars)
@@ -228,12 +235,15 @@ tablesToJoin = cellfun(@(x) x(:, allVars), inTables, 'UniformOutput', false);
 tablesToJoin = cellfun(@(x) movevars(x, varThis, 'After', nCols), ...
                         tablesToJoin, 'UniformOutput', false);
 
-% Rename the variable to combine by concatenating the input name
+% Rename the variables to combine
 if omitVarName
+    % Rename the variable(s) to combine by the input names
     tablesToJoin = cellfun(@(x, y) renamevars(x, varThis, y), ...
                             tablesToJoin, inNames, 'UniformOutput', false);
 else
-    tablesToJoin = cellfun(@(x, y) renamevars(x, varThis, [varThis, '_', y]), ...
+    % Rename the variable(s) to combine by concatenating the input name
+    tablesToJoin = cellfun(@(x, y) renamevars(x, varThis, ...
+                                            strcat(varThis, '_', y)), ...
                             tablesToJoin, inNames, 'UniformOutput', false);
 end
 
@@ -243,14 +253,13 @@ outTable = apply_over_cell(@outerjoin, tablesToJoin, ...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function allVars = all_except_row(keys, vars)
+function allVars = union_vars_to_extract(keys, vars)
+
+% Force as column cell arrays
+[keys, vars] = argfun(@(x) force_column_cell(x, 'ToLinearize', true), keys, vars);
 
 % Combine the keys and variables
-if ischar(keys) && ischar(vars)
-    allVars = {keys; vars};
-else
-    allVars = [keys; vars];
-end
+allVars = [keys; vars];
 
 % Remove 'Row' from the list of variables
 allVars = setdiff(allVars, 'Row');
@@ -274,6 +283,17 @@ parfor iVar = 1:nVars
 end
 toc
 
+% Force as a cell array if not already
+[keys, varNames] = argfun(@force_column_cell, keys, varNames);
+
+% Force as a column cell array of column vectors
+% [keys, varNames] = argfun(@force_column_cell, keys, varNames);
+[keys, varNames] = ...
+    argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', true, ...
+                                    'ForceCellOutput', true), ...
+            keys, varNames);
+
+
 %}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

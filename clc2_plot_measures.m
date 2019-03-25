@@ -60,9 +60,12 @@ sliceParamsTables = ...
     cellfun(@(x) create_time_rel_to_drugon(x, sweepLengthSec), ...
                 sliceParamsTables, 'UniformOutput', false);
 
+% Combine with phase number information
+variableNames = [varsToPlot, repmat({'phaseNumber'}, size(varsToPlot))];
+
 % Combine variables across tables
 measureTables = combine_variables_across_tables(sliceParamsTables, ...
-                'Keys', 'Time', 'VariableNames', varsToPlot, ...
+                'Keys', 'Time', 'VariableNames', variableNames, ...
                 'InputNames', fileLabels, 'OmitVarName', false, ...
                 'OutFolder', outFolder, 'Prefix', prefix, 'SaveFlag', true);
 
@@ -93,12 +96,12 @@ function myTable = create_time_rel_to_drugon(myTable, sweepLengthSec)
 % Count the number of rows
 nRows = height(myTable);
 
-% Get the set numbers
-setNum = myTable.setNumber;
+% Get the phase numbers
+phaseNum = myTable.phaseNumber;
 
 % Get the first row that is drug on
 %   Note: this is set #2
-rowDrugOn = find(setNum == 2, 1, 'first');
+rowDrugOn = find(phaseNum == 2, 1, 'first');
 
 % Compute time in sweeps relative to drug on
 timeSwps = transpose(1:nRows) - rowDrugOn;

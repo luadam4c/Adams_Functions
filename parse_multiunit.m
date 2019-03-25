@@ -28,7 +28,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %                   - 'PulseVectors': vector that contains the pulse itself
 %                   must be a numeric vector
 %                   default == [] (not used)
-%                   - 'SetBoundaries': vector of set boundaries
+%                   - 'PhaseBoundaries': vector of phase boundaries
 %                   must be a numeric vector
 %                   default == [] (not used)
 %                   - 'tVecs': original time vector(s)
@@ -81,13 +81,15 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %               to the closest multiple of the period over all peaks
 % 2019-03-17 Added nSpikesPerBurstInOsc, nSpikesInOsc, nBurstsInOsc, etc ...
 % 2019-03-19 Added nSpikesPerBurstIn10s, nSpikesIn10s, nBurstsIn10s, etc ...
+% 2019-03-24 Fixed bugs in prepare_for_plot_horizontal_line.m
+% 2019-03-24 Renamed setNumber -> phaseNumber, setName -> phaseName
 
 %% Hard-coded parameters
 rasterDir = 'rasters';
 autoCorrDir = 'autocorrelograms';
-acfDir = 'smoothed_autocorrelograms';
+acfDir = 'autocorrelation_functions';
 spikeHistDir = 'spike_histograms';
-spikeDetectionDir = 'spike_detection';
+spikeDetectionDir = 'spike_detections';
 measuresDir = 'measures';
 measuresToPlot = {'oscIndex1', 'oscIndex2', 'oscIndex3', 'oscIndex4', ...
                     'oscPeriod1Ms', 'oscPeriod2Ms', ...
@@ -142,7 +144,7 @@ addParameter(iP, 'PulseVectors', pulseVectorsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['PulseVectors must be either a numeric array', ...
                     'or a cell array of numeric arrays!']));
-addParameter(iP, 'SetBoundaries', setBoundariesDefault, ...
+addParameter(iP, 'PhaseBoundaries', setBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'tVecs', tVecsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
@@ -156,7 +158,7 @@ outFolder = iP.Results.OutFolder;
 fileBase = iP.Results.FileBase;
 stimStartMs = iP.Results.StimStartMs;
 pulseVectors = iP.Results.PulseVectors;
-setBoundaries = iP.Results.SetBoundaries;
+phaseBoundaries = iP.Results.PhaseBoundaries;
 tVecs = iP.Results.tVecs;
 
 %% Preparation
@@ -235,7 +237,7 @@ parfor iVec = 1:nVectors
         parse_multiunit_helper(iVec, vVecs{iVec}, tVecs{iVec}, siMs(iVec), ...
                                 idxStimStart(iVec), stimStartMs(iVec), ...
                                 baseWindows{iVec}, ...
-                                fileBase, titleBase, setBoundaries);
+                                fileBase, titleBase, phaseBoundaries);
 end
 
 % Convert to a struct array
@@ -420,8 +422,8 @@ if plotFlag
     % Create output directories
     outFolderAutoCorr = fullfile(outFolder, autoCorrDir);
     check_dir(outFolderAutoCorr);
-    outFolderAutoCorrFunc = fullfile(outFolder, acfDir);
-    check_dir(outFolderAutoCorrFunc);
+    outFolderAcf = fullfile(outFolder, acfDir);
+    check_dir(outFolderAcf);
 
     parfor iVec = 1:nVectors
         [autoCorrFig, acfFig] = ...
@@ -439,8 +441,8 @@ if plotFlag
 
         saveas(autoCorrFig, fullfile(outFolderAutoCorr, ...
                 [figPathBase{iVec}, '_autocorrelogram']), 'png');
-        saveas(acfFig, fullfile(outFolderAutoCorrFunc, ...
-                [figPathBase{iVec}, '_smoothed_autocorrelogram']), 'png');
+        saveas(acfFig, fullfile(outFolderAcf, ...
+                [figPathBase{iVec}, '_autocorrelation_function']), 'png');
 
         close all force hidden
     end
@@ -449,7 +451,7 @@ end
 %% Plot raster plot
 % TODO: Plot burst duration
 % TODO: Plot oscillatory index
-%if plotFlag
+if plotFlag
     fprintf('Plotting raster plot for %s ...\n', fileBase);
 
     % Modify the figure base
@@ -495,8 +497,8 @@ end
     %                 'LineWidth', 0.5, 'Colors', colorsRaster);
     vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
                                     'LineStyle', '--');
-    if ~isempty(setBoundaries)
-        yBoundaries = nVectors - setBoundaries + 1;
+    if ~isempty(phaseBoundaries)
+        yBoundaries = nVectors - phaseBoundaries + 1;
         horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
                                         'LineStyle', '--', 'LineWidth', 2);
     end
@@ -515,10 +517,10 @@ end
     end            
     save_all_zooms(figs(1), outFolderRaster, ...
                     figBaseRaster, zoomWin1, zoomWin2, zoomWin3);
-%end
+end
 
 %% Plot time series of measures
-% if plotFlag
+if plotFlag
     fprintf('Plotting time series of measures for %s ...\n', fileBase);    
 
     % Create output directory and subdirectories for each measure
@@ -538,9 +540,9 @@ end
         plot_table(parsedParams, 'VariableNames', measuresToPlot, ...
                     'XLabel', 'Time (min)', 'FigNames', figPathsMeasures, ...
                     'FigTitles', figTitlesMeasures, ...
-                    'XBoundaries', setBoundaries, ...
+                    'XBoundaries', phaseBoundaries, ...
                     'RemoveOutliers', true, 'PlotSeparately', true);
-%end
+end
 
 %% Outputs
 varargout{1} = parsedParams;
@@ -554,7 +556,7 @@ fprintf('%s analyzed! ...\n\n', fileBase);
 function [parsedParams, parsedData] = ...
                 parse_multiunit_helper(iVec, vVec, tVec, siMs, ...
                                 idxStimStart, stimStartMs, baseWindow, ...
-                                fileBase, figTitleBase, setBoundaries)
+                                fileBase, figTitleBase, phaseBoundaries)
 
 % Parse a single multiunit recording
 
@@ -578,33 +580,33 @@ minDelaySamples = ceil(minDelayMs ./ siMs);
 % Compute the bin width in seconds
 binWidthSec = binWidthMs ./ MS_PER_S;
 
-% Compute the number of set boundaries
-nBoundaries = numel(setBoundaries);
+% Compute the number of phase boundaries
+nBoundaries = numel(phaseBoundaries);
 
-% Determine which set number this sweep belongs to
+% Determine which phase number this sweep belongs to
 if nBoundaries > 0
     % For the first n - 1 sets, use find
-    setNumber = find(setBoundaries > iVec, 1, 'first');
+    phaseNumber = find(phaseBoundaries > iVec, 1, 'first');
 
-    % For the last set, use numel(setBoundaries) + 1
-    if isempty(setNumber)
-        setNumber = numel(setBoundaries) + 1;
+    % For the last phase, use numel(phaseBoundaries) + 1
+    if isempty(phaseNumber)
+        phaseNumber = numel(phaseBoundaries) + 1;
     end
 else
-    setNumber = NaN;
+    phaseNumber = NaN;
 end
 
-% Create set names
+% Create phase names
 if nBoundaries == 2
-    if setNumber == 1
-        setName = 'baseline';
-    elseif setNumber == 2
-        setName = 'washon';
-    elseif setNumber == 3
-        setName = 'washoff';
+    if phaseNumber == 1
+        phaseName = 'baseline';
+    elseif phaseNumber == 2
+        phaseName = 'washon';
+    elseif phaseNumber == 3
+        phaseName = 'washoff';
     end
 else
-    setName = '';
+    phaseName = '';
 end
 
 %% Detect spikes
@@ -1080,8 +1082,8 @@ figTitleBase = [figTitleBase, '\_trace', num2str(iVec)];
             timeBurstInOscStartsMs, timeBurstInOscEndsMs);
 
 %% Store in outputs
-parsedParams.setNumber = setNumber;
-parsedParams.setName = setName;
+parsedParams.phaseNumber = phaseNumber;
+parsedParams.phaseName = phaseName;
 parsedParams.signal2Noise = signal2Noise;
 parsedParams.minDelayMs = minDelayMs;
 parsedParams.minDelaySamples = minDelaySamples;
