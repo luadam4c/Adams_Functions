@@ -367,6 +367,13 @@ for c = 1:nColsToPlot
         phaseIndices = arrayfun(@(x) phaseVectorThis == x, ...
                                 uniquePhasesThis, 'UniformOutput', false);
 
+        % Get the last index for this readout vector
+        lastIndex = numel(phaseVectorThis);
+
+        % Add the next index
+        phaseIndices = cellfun(@(x) add_next_index(x, lastIndex), ...
+                                phaseIndices, 'UniformOutput', false);
+
         % Plot readout vector for all phases
         lines(c, 1:nPhasesThis) = ...
             cellfun(@(x) plot_one_line(pIsLog, pValues(x), readout(x, col), ...
@@ -482,6 +489,16 @@ if pIsLog
 else
     p = plot(pValues, readout, lineSpec, ...
                     'LineWidth', lineWidth, otherArguments);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function indices = add_next_index(indices, lastIndex)
+%% Add the next index if not the last
+% TODO: What if indices not contiguous?
+
+if indices(end) < lastIndex
+    indices = [indices; indices(end) + 1];
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
