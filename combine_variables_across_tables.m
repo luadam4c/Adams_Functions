@@ -69,7 +69,6 @@ function [outTables, outSheetPaths] = ...
 % File History:
 % 2019-03-17 Created by Adam Lu
 % 2019-03-24 Now allows variableNames to be 2 dimensional
-% 
 
 %% Hard-coded parameters
 
@@ -296,4 +295,4 @@ toc
 
 %}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

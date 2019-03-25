@@ -1,6 +1,12 @@
 function finalSuffix = construct_suffix (varargin)
 %% Constructs final suffix based on optional suffices and/or Name-Value pairs
 % Usage: finalSuffix = construct_suffix (varargin)
+% Explanation:
+%       TODO
+% Example(s):
+%       construct_suffix
+%       construct_suffix('Suffices', {'yes', 'no'})
+%       construct_suffix('NameValuePairs', {{'a', 'b'}, [1, 2]})
 % Outputs:
 %       finalSuffix    - a string (may be empty) that is a final suffix
 % Arguments:
@@ -40,37 +46,33 @@ addParameter(iP, 'Suffices', sufficesDefault, ...
                 ['Suffices must be either a string/character array ', ...
                     'or a cell array of strings/character arrays!']));
 addParameter(iP, 'NameValuePairs', nameValuePairsDefault, ...
-    @(x) assert(iscell(x) && numel(x) == 2 ...
-            && (ischar(x{1}) || iscell(x{1}) || isstring(x{1})) ...
-            && isnumeric(x{2}), ...
-        ['NameValuePairs must be a 2-element cell array whose ', ...
-            'first element is a string/char array or cell array ', ...
-            'and whose second element is a numeric array!']));
+    @(x) assert(iscell(x) && numel(x) == 2, ...
+                'NameValuePairs must be a 2-element cell array!'));
 
 % Read from the input Parser
 parse(iP, varargin{:});
 suffices = iP.Results.Suffices;
-namevaluepairs = iP.Results.NameValuePairs;
+nameValuePairs = iP.Results.NameValuePairs;
 
 %% Find all suffices
-if isempty(suffices) && isempty(namevaluepairs{1})
+if isempty(suffices) && isempty(nameValuePairs{1})
     allsuffices = '';
 else
     % Initialize a cell array for all suffices
-    numsuffices = 0;
+    numSuffices = 0;
     if iscell(suffices)
-        numsuffices = numsuffices + numel(suffices);
+        numSuffices = numSuffices + numel(suffices);
     elseif ~isempty(suffices)
-        numsuffices = numsuffices + 1;
+        numSuffices = numSuffices + 1;
     end
-    if iscell(namevaluepairs{1})
-        numsuffices = numsuffices + numel(namevaluepairs{1});
-    elseif ~isempty(namevaluepairs{1})
-        numsuffices = numsuffices + 1;
+    if iscell(nameValuePairs{1})
+        numSuffices = numSuffices + numel(nameValuePairs{1});
+    elseif ~isempty(nameValuePairs{1})
+        numSuffices = numSuffices + 1;
     end
-    allsuffices = cell(1, numsuffices);             % stores all suffices
+    allsuffices = cell(1, numSuffices);             % stores all suffices
     ct = 0;
-    
+
     % Add premade suffices if premade suffices are provided
     if ~isempty(suffices)
         if iscell(suffices)
@@ -86,21 +88,21 @@ else
 
     % Add premade Name-Value pairs if 
     %   Name-Value pairs that are changed are provided
-    if ~isempty(namevaluepairs{1})
-        if iscell(namevaluepairs{1})
+    if ~isempty(nameValuePairs{1})
+        if iscell(nameValuePairs{1})
             % If there might be more than one Name-Value pairs provided,
             %   add iteratively
-            for p = 1:numel(namevaluepairs{1})
+            for p = 1:numel(nameValuePairs{1})
                 ct = ct + 1;
-                allsuffices{ct} = [namevaluepairs{1}{p}, '_', ...
-                                    num2str(namevaluepairs{2}(p))];
+                allsuffices{ct} = [nameValuePairs{1}{p}, '_', ...
+                                    num2str(nameValuePairs{2}(p))];
             end
         else
             % If there is only one Name-Value pair provided,
             %   add the pair only
             ct = ct + 1;
-            allsuffices{ct} = [namevaluepairs{1}, '_', ...
-                                num2str(namevaluepairs{2})];
+            allsuffices{ct} = [nameValuePairs{1}, '_', ...
+                                num2str(nameValuePairs{2})];
         end
     end
 end
@@ -132,6 +134,14 @@ end
 
 %{
 OLD CODE:
+
+addParameter(iP, 'NameValuePairs', nameValuePairsDefault, ...
+    @(x) assert(iscell(x) && numel(x) == 2 ...
+            && (ischar(x{1}) || iscell(x{1}) || isstring(x{1})) ...
+            && isnumeric(x{2}), ...
+        ['NameValuePairs must be a 2-element cell array whose ', ...
+            'first element is a string/char array or cell array ', ...
+            'and whose second element is a numeric array!']));
 
 %}
 
