@@ -84,11 +84,14 @@ function indices = create_indices (varargin)
 % 2019-01-23 Now avoids putting indices together as a matrix if there is
 %               only one index per vector
 % 2019-02-24 Added 'MaxNum' as an optional parameter
+% 2019-03-25 Now prevents negative indices by default
+% TODO: Use argument 'ForcePositive' as false where necessary
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
 endPointsDefault = [];          % no endpoint by default
+forcePositiveDefault = true;    % force indices to be positive by default
 forceCellOutputDefault = false; % don't force output as a cell array by default
 forceRowOutputDefault = false;  % return column vectors by default
 vectorsDefault = [];
@@ -113,6 +116,8 @@ addOptional(iP, 'endPoints', endPointsDefault, ...
                     'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'ForcePositive', forcePositiveDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ForceRowOutput', forceRowOutputDefault, ...
@@ -138,6 +143,7 @@ addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
 % Read from the Input Parser
 parse(iP, varargin{:});
 endPoints = iP.Results.endPoints;
+forcePositive = iP.Results.ForcePositive;
 forceCellOutput = iP.Results.ForceCellOutput;
 forceRowOutput = iP.Results.ForceRowOutput;
 vectors = iP.Results.Vectors;
@@ -227,10 +233,10 @@ end
 
 % Create the indices
 if iscell(idxStart) && iscell(idxEnd)
-    indices = cellfun(@(x, y) create_indices_helper(x, y, maxNum), ...
+    indices = cellfun(@(x, y) create_indices_helper(x, y, maxNum, forcePositive), ...
                         idxStart, idxEnd, 'UniformOutput', false);
 elseif isnumeric(idxStart) && isnumeric(idxEnd)
-    indices = create_indices_helper(idxStart, idxEnd, maxNum);
+    indices = create_indices_helper(idxStart, idxEnd, maxNum, forcePositive);
 else
     error('idxStart and idxEnd don''t match!!');
 end
@@ -246,7 +252,7 @@ indices = force_column_vector(indices, 'RowInstead', rowInstead, ...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function indices = create_indices_helper (idxStart, idxEnd, maxNum)
+function indices = create_indices_helper (idxStart, idxEnd, maxNum, forcePositive)
 
 % Match idxStart and idxEnd
 [idxStart, idxEnd] = match_format_vectors(idxStart, idxEnd);
@@ -254,10 +260,10 @@ function indices = create_indices_helper (idxStart, idxEnd, maxNum)
 % Construct vectors of indices
 if numel(idxStart) == 1 && numel(idxEnd) == 1
     % There is just one vector
-    indices = create_one_indices(idxStart, idxEnd, maxNum);
+    indices = create_one_indices(idxStart, idxEnd, maxNum, forcePositive);
 else
     % There are multiple vectors
-    indices = arrayfun(@(x, y) create_one_indices(x, y, maxNum), ...
+    indices = arrayfun(@(x, y) create_one_indices(x, y, maxNum, forcePositive), ...
                         idxStart, idxEnd, 'UniformOutput', false);
 
     % Count the number of samples in each indices vector
@@ -276,7 +282,13 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function indices = create_one_indices (idxStart, idxEnd, maxNum)
+function indices = create_one_indices (idxStart, idxEnd, maxNum, forcePositive)
+%% Creates one set of indices
+
+% Force the starting index to be positive if requested
+if forcePositive && idxStart < 1
+    idxStart = 1;
+end
 
 % Decide on the index increment
 if ~isinf(maxNum)

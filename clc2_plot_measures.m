@@ -15,6 +15,9 @@
 % Protocol parameters
 sweepLengthSec = 60;
 
+% Analysis parameters
+nSweepsToAverage = 10;
+
 % File patterns
 sliceFilePattern = '.*slice.*';
 outFolder = pwd;
@@ -52,6 +55,16 @@ prefix = extract_fileparts(sliceParamSheets, 'commonprefix');
 % Extract the distinct parts of the file names
 fileLabels = extract_fileparts(sliceParamSheets, 'distinct');
 
+% Create table labels
+tableLabels = strcat(prefix, {': '}, varLabels);
+
+% Create figure names
+figNames = fullfile(outFolder, strcat(prefix, '_', varsToPlot, '.png'));
+figNamesByPhase = fullfile(outFolder, ...
+                        strcat(prefix, '_', varsToPlot, '_byphase.png'));
+figNamesChevron = fullfile(outFolder, ...
+                        strcat(prefix, '_', varsToPlot, '_chevron.png'));
+
 % Read all slice parameter spreadsheets
 sliceParamsTables = cellfun(@readtable, sliceParamSheets, ...
                             'UniformOutput', false);
@@ -73,13 +86,9 @@ measureTables = combine_variables_across_tables(sliceParamsTables, ...
                 'InputNames', fileLabels, 'OmitVarName', false, ...
                 'OutFolder', outFolder, 'Prefix', prefix, 'SaveFlag', true);
 
-% Create table labels
-tableLabels = strcat(prefix, {': '}, varLabels);
-
-% Create figure names
-figNames = fullfile(outFolder, strcat(prefix, '_', varsToPlot, '.png'));
-figNamesByPhase = fullfile(outFolder, ...
-                        strcat(prefix, '_', varsToPlot, '_byphase.png'));
+% Average over the last 10 sweeps
+chevronTables = cellfun(@(x) average_last_of_each_phase(x, nSweepsToAverage), ...
+                        measureTables, 'UniformOutput', false);
 
 %% Do the job
 % Convert to timetables
@@ -133,6 +142,68 @@ Time = minutes(timeMin);
 myTable = addvars(myTable, Time, 'Before', 1);
 
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function outTable = average_last_of_each_phase(inTable, nSweepsToAverage)
+%% Averages over the last nSweepsToAverage sweeps of each phase
+% Note: all distinct identifiers must have a matching phase variable column
+
+% Get all variable names
+allVarNames = inTable.Properties.VariableNames;
+
+% Remove the Time column if exists
+% TODO FOR UNDERGRAD: is_variable_of_table.m
+if ismember('Time', allVarNames)
+    inTable = removevars(inTable, 'Time');
+end
+
+% Get all variable names that are left
+allVarNames = inTable.Properties.VariableNames;
+
+% Find the phase variable names
+[~, phaseVars] = find_in_strings('phase.*', allVarNames, 'SearchMode', 'reg');
+
+% Collect the rest of the variable names
+readoutVars = setdiff(allVarNames, phaseVars);
+
+% Extract the unique identifiers
+uniqueIds = extract_distinct_fileparts(readoutVars, 'Delimiter', '_');
+
+% Count the number of unique identifiers
+nUniqueIds = numel(uniqueIds);
+
+% Find matching phase variables for each unique identifiers
+[~, phaseVars] = ...
+    cellfun(@(x) find_in_strings(x, phaseVars, 'SearchMode', 'substrings'), ...
+            uniqueIds, 'UniformOutput', false);
+
+% Find the row indices for the last nSweepsToAverage sweeps for each phase,
+%   for each unique phase ID
+indToAvg = cellfun(@(x) find_last_ind_each_phase(inTable.x, nSweepsToAverage), ...
+                    phaseVars, 'UniformOutput', false);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function indLastEachPhase = find_last_ind_each_phase(phaseVec, nLastIndices)
+%% Find the last nLastIndices indices for each phase in the phaseVec
+
+% Get the unique phases
+% TODO: use unique_custom.m
+phaseVecNoNaN = phaseVec(~isnan(phaseVec));
+uniquePhases = unique(phaseVecNoNaN, 'stable');
+
+% Count the number of unique phases
+nPhases = numel(uniquePhases);
+
+% Find the last index for each phase
+lastIndexEachPhase = cellfun(@(x) find(ismatch(phaseVec, x), 1, 'last'), ...
+                                uniquePhases);
+
+% Construct the last nLastIndices indices
+indLastEachPhase = cellfun(@(x) , ...
+                                lastIndexEachPhase, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

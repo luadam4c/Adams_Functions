@@ -506,7 +506,8 @@ end
 %{
 OLD CODE:
 
-% Usage: plot_tuning_curve(pValues, readout, colsToPlot, pIsLog, pLabel, readoutLabel, columnLabels, xlimits, ylimits, figName, varargin)
+% Usage: plot_tuning_curve(pValues, readout, colsToPlot, pIsLog, pLabel, ...
+            readoutLabel, columnLabels, xlimits, ylimits, figName, varargin)
 
 if ~isequal(columnLabels, {'suppress'})
 
