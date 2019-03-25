@@ -87,6 +87,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/plot_cfit_pulse_response.m
 %       cd/plot_histogram.m
 %       cd/plot_raster.m
+%       cd/plot_tuning_curve.m
 %       cd/plot_window_boundaries.m
 %       cd/remove_outliers.m
 %       cd/xolotl_set_simparams.m

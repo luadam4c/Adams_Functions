@@ -1,15 +1,20 @@
-function fig = plot_tuning_curve (pValues, readout, varargin)
+function [fig, lines] = plot_tuning_curve (pValues, readout, varargin)
 %% Plot a 1-dimensional tuning curve
-% Usage: fig = plot_tuning_curve (pValues, readout, varargin)
+% Usage: [fig, lines] = plot_tuning_curve (pValues, readout, varargin)
 % Outputs:
 %       fig         - figure handle for the created figure
 %                   specified as a figure object handle
+%       lines       - lines for the tuning curves
+%                   specified as a line object handle array
 % Arguments:
 %       pValues     - column vector of parameter values
 %                   must be a numeric vector
 %       readout     - a readout matrix where each column is a readout vector
 %                   must be a numeric 2-D array
-%       varargin    - 'RemoveOutliers': whether to remove outliers
+%       varargin    - 'PhaseVectors': phase information for each readout vector
+%                   must be a numeric matrix or a cell array of numeric vectors
+%                   default == {}
+%                   - 'RemoveOutliers': whether to remove outliers
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'ColsToPlot': columns of the readout matrix to plot
@@ -77,6 +82,8 @@ function fig = plot_tuning_curve (pValues, readout, varargin)
 % Requires:
 %       ~/Downloaded_Functions/rgb.m
 %       cd/create_error_for_nargin.m
+%       cd/create_labels_from_numbers.m
+%       cd/force_column_vector.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
 %       cd/remove_outliers.m
@@ -97,6 +104,7 @@ function fig = plot_tuning_curve (pValues, readout, varargin)
 % 2018-12-18 Now uses iP.KeepUnmatched
 % 2018-12-18 Changed lineSpec default to o and singleColorDefault to SkyBlue
 % 2019-03-14 Added 'RemoveOutliers' as an optional argument
+% TODO: 2019-03-25 Added 'PhaseVectors' as an optional argument
 % TODO: Make 'ColorMap' and optional argument
 % TODO: Return handles to plots
 %
@@ -105,6 +113,7 @@ function fig = plot_tuning_curve (pValues, readout, varargin)
 pTickAngle = 60;                % x tick angle in degrees
 
 %% Default values for optional arguments
+phaseVectorsDefault = {};       % no phase vectors by default
 removeOutliersDefault = false;  % don't remove outliers by default
 colsToPlotDefault = [];         % set later
 lineSpecDefault = '-';
@@ -145,6 +154,10 @@ addRequired(iP, 'readout', ...              % a readout matrix
                                 'datetime', 'duration'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'PhaseVectors', phaseVectorsDefault, ...
+    @(x) assert(isnum(x) || iscellnumericvector(x), ...
+                ['PhaseVectors must be a numeric array ', ...
+                    'or a cell array of numeric vectors!']));
 addParameter(iP, 'RemoveOutliers', removeOutliersDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ColsToPlot', colsToPlotDefault, ...
@@ -185,6 +198,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 
 % Read from the Input Parser
 parse(iP, pValues, readout, varargin{:});
+phaseVectors = iP.Results.PhaseVectors;
 removeOutliers = iP.Results.RemoveOutliers;
 colsToPlot = iP.Results.ColsToPlot;
 lineSpec = iP.Results.LineSpec;
@@ -222,6 +236,36 @@ nEntries = length(pValues);
 
 % Count number of columns
 nCols = size(readout, 2);
+
+% Deal with phase vectors
+if ~isempty(phaseVectors)
+    % Force as a cell array of column vectors
+    phaseVectors = force_column_vector(phaseVectors, 'ForceCellOutput', true);
+
+    % Make sure the number of phase vectors matchs the number of readout columns
+    phaseVectors = match_row_count(phaseVectors, nCols);
+
+    % Get the unique phases for each readout column
+    % TODO FOR UNDERGRAD: Create unique_custom.m with the option 'IgnoreNan'
+    phaseVectorsNoNaN = cellfun(@(x) x(~isnan(x)), phaseVectors, ...
+                                'UniformOutput', false);
+    uniquePhases = cellfun(@(x) unique(x, 'stable'), phaseVectorsNoNaN, ...
+                            'UniformOutput', false);
+
+    % Count the number of phases for each readout column
+    nPhases = count_samples(uniquePhases);
+
+    % Compute the maximum number of phases
+    maxNPhases = max(nPhases);
+
+    % Create phase labels
+    phaseLabels = create_labels_from_numbers(1:maxNPhases, 'Prefix', 'Phase #');
+else
+    uniquePhases = {};
+    nPhases = [];
+    maxNPhases = 1;   
+    phaseLabels = {};
+end
 
 % Remove outliers if requested
 if removeOutliers
@@ -272,7 +316,12 @@ nNonInf = sum(~isinf(readout), 1);
 nColsToPlot = length(colsToPlot);
 
 % Define the color map to use
-cm = colormap(jet(nColsToPlot));
+if isempty(phaseVectors)
+    cm = colormap(jet(nColsToPlot));
+else
+    % Create a color map
+    cm = colormap(hsv(maxNPhases));
+end
 
 if ~isempty(figName)
     % Create a figure
@@ -299,35 +348,63 @@ if nColsToPlot > 1
 end
 
 % Plot readout values against parameter values
+lines = gobjects(nColsToPlot, maxNPhases);
 for c = 1:nColsToPlot
     % Get the column to plot
     col = colsToPlot(c);
 
-    % Plot curve
-    if pIsLog
-        % Note: can't have hold on before semilogx
-        p = semilogx(pValues, readout(:, col), lineSpec, ...
-                        'LineWidth', lineWidth, otherArguments);
+    % Plot the tuning curve for this column
+    if isempty(phaseVectors)
+        lines(c, 1) = plot_one_line(pIsLog, pValues, readout(:, col), lineSpec, ...
+                            lineWidth, otherArguments);
     else
-        p = plot(pValues, readout(:, col), lineSpec, ...
-                        'LineWidth', lineWidth, otherArguments);
+        % Get the current phase vector
+        phaseVectorThis = phaseVectors{c};
+        uniquePhasesThis = uniquePhases{c};
+        nPhasesThis = nPhases(c);
+
+        % Get the distinct phase indices for this readout vector
+        phaseIndices = arrayfun(@(x) phaseVectorThis == x, ...
+                                uniquePhasesThis, 'UniformOutput', false);
+
+        % Plot readout vector for all phases
+        lines(c, 1:nPhasesThis) = ...
+            cellfun(@(x) plot_one_line(pIsLog, pValues(x), readout(x, col), ...
+                        lineSpec, lineWidth, otherArguments), phaseIndices);
     end
-    
+
     % Set color
-    if nColsToPlot > 1
-        set(p, 'Color', cm(c, :))
-    elseif nColsToPlot == 1
-        set(p, 'Color', singlecolor);
+    if isempty(phaseVectors)
+        % Set color by columns
+        if nColsToPlot > 1
+            set(lines(c, 1), 'Color', cm(c, :))
+        elseif nColsToPlot == 1
+            set(lines(c, 1), 'Color', singlecolor);
+        end
+    else
+        % Set color by phase
+        for iPhase = 1:nPhasesThis
+            set(lines(c, iPhase), 'Color', cm(iPhase, :));
+        end
     end
 
     % Set display name
-    if ~strcmpi(columnLabels, 'suppress')
-        set(p, 'DisplayName', strrep(columnLabels{col}, '_', '\_'));
+    if isempty(phaseVectors)
+        if ~strcmpi(columnLabels, 'suppress')
+            set(lines(c, 1), 'DisplayName', ...
+                replace(columnLabels{col}, '_', '\_'));
+        end
+    else
+        for iPhase = 1:nPhasesThis
+            set(lines(c, iPhase), 'DisplayName', ...
+                replace(phaseLabels{iPhase}, '_', '\_'));
+        end
     end
 
     % If there is only one value for this column, mark with a circle
+    % TODO: for ~isempty(phaseVectors)?
     if nNonInf(col) == 1
-        set(p, 'Marker', 'o');
+        set(lines(c, 1), 'Marker', 'o');
     end
 end
 
@@ -338,7 +415,11 @@ end
 
 % Generate a legend if there is more than one trace
 if ~strcmpi(legendLocation, 'suppress')
-    legend('location', legendLocation);
+    if isempty(phaseVectors)
+        legend('location', legendLocation);
+    else
+        legend(lines(1, :), 'location', legendLocation);
+    end
 end
 
 % Restrict x axis if xlimits provided; 
@@ -391,6 +472,20 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function p = plot_one_line(pIsLog, pValues, readout, lineSpec, ...
+                            lineWidth, otherArguments)
+
+if pIsLog
+    % Note: can't have hold on before semilogx
+    p = semilogx(pValues, readout, lineSpec, ...
+                    'LineWidth', lineWidth, otherArguments);
+else
+    p = plot(pValues, readout, lineSpec, ...
+                    'LineWidth', lineWidth, otherArguments);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %{
 OLD CODE:
 
@@ -409,6 +504,15 @@ lineSpecDefault = '-';
 
 set(fig, 'Visible', 'Off');
 fig = figure(floor(rand()*10^4)+1);
+
+if pIsLog
+    % Note: can't have hold on before semilogx
+    p = semilogx(pValues, readout(:, col), lineSpec, ...
+                    'LineWidth', lineWidth, otherArguments);
+else
+    p = plot(pValues, readout(:, col), lineSpec, ...
+                    'LineWidth', lineWidth, otherArguments);
+end
 
 %}
 

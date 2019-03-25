@@ -23,6 +23,10 @@ function figs = plot_table (table, varargin)
 %                                       or variable labels
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'PhaseVariables': variable (column) names for phases
+%                   must be empty or a character vector or a string vector
+%                       or a cell array of character vectors
+%                   default == none
 %                   - 'Delimiter': delimiter used for extracting distinct parts
 %                   must be a string scalar or a character vector
 %                   default == '_'
@@ -67,6 +71,7 @@ function figs = plot_table (table, varargin)
 % 2019-03-17 Deal with timetables differently for RowNames
 % 2019-03-17 Implemented plotting together (use plot_tuning_curve directly)
 % 2019-03-17 Added 'PlotSeparately' as an optional argument
+% 2019-03-25 Added 'PhaseVariables' as an optional argument
 % TODO: Return handles to plots
 % 
 
@@ -91,6 +96,7 @@ plotSeparatelyDefault = false;  % plot variables together by default
 varLabelsDefault = {};          % set later
 distinctPartsDefault = true;    % extract distinct parts of variable names
                                 %   by default
+phaseVariablesDefault = {};     % no phases by default
 delimiterDefault = '_';         % use '_' as delimiter by default
 readoutLabelDefault = '';       % set later
 tableLabelDefault = '';         % set later
@@ -142,6 +148,10 @@ addParameter(iP, 'VarLabels', varLabelsDefault, ...
             'or cell array of character arrays!']));
 addParameter(iP, 'DistinctParts', distinctPartsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PhaseVariables', phaseVariablesDefault, ...
+    @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
+        ['VariableNames must be empty or a character array or a string array ', ...
+            'or cell array of character arrays!']));
 addParameter(iP, 'Delimiter', delimiterDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ReadoutLabel', readoutLabelDefault, ...
@@ -165,6 +175,7 @@ varToPlot = iP.Results.VariableNames;
 plotSeparately = iP.Results.PlotSeparately;
 varLabels = iP.Results.VarLabels;
 distinctParts = iP.Results.DistinctParts;
+phaseVariables = iP.Results.PhaseVariables;
 delimiter = iP.Results.Delimiter;
 readoutLabel = iP.Results.ReadoutLabel;
 tableLabel = iP.Results.TableLabel;
@@ -181,9 +192,26 @@ check_dir(outFolder);
 
 % Restrict to variables to plot or extract the variable names
 if ~isempty(varToPlot)
-    table = table(:, varToPlot);
+    tableToPlot = table(:, varToPlot);
 else
+    tableToPlot = table;
     varToPlot = table.Properties.VariableNames;
+end
+
+% If provided, make sure there are an equal number of phase variables
+%   and extract the phase vectors for each variable
+if ~isempty(phaseVariables)
+    % Force as a column cell array
+    phaseVariables = force_column_cell(phaseVariables);
+
+    % Match the number of phase variables to the number of variables to plot
+    phaseVariables = match_row_count(phaseVariables, numel(varToPlot));
+
+    % Extract the phase vectors
+    phaseVectors = cellfun(@(x) table{:, x}, phaseVariables, ...
+                            'UniformOutput', false);
+else
+    phaseVectors = {};
 end
 
 % Extract distinct parts if requested
@@ -271,7 +299,7 @@ end
 %% Do the job
 if plotSeparately
     % Convert to a structure array
-    myStruct = table2struct(table);
+    myStruct = table2struct(tableToPlot);
 
     % Plot fields
     figs = plot_struct(myStruct, 'OutFolder', outFolder, ...
@@ -288,21 +316,21 @@ else
     end
 
     % Convert to an array
-    if istimetable(table)
+    if istimetable(tableToPlot)
         % Extract variables
-        myArray = table.Variables;
+        myArray = tableToPlot.Variables;
     else
         % Use table2array
-        myArray = table2array(table);
+        myArray = table2array(tableToPlot);
     end
 
     % Decide on x values
-    if istimetable(table)
+    if istimetable(tableToPlot)
         % Extract time
-        xValues = table.Properties.RowTimes;
+        xValues = tableToPlot.Properties.RowTimes;
     else
         % Count rows
-        nRows = height(table);
+        nRows = height(tableToPlot);
 
         % Use row numbers
         xValues = transpose(1:nRows);
@@ -314,7 +342,7 @@ else
     end
 
     % Decide on figure title
-    if istimetable(table)
+    if istimetable(tableToPlot)
         figTitle = replace([tableLabel, ' over time'], '_', ' ');
     else
         figTitle = '';
@@ -322,6 +350,7 @@ else
 
     % Plot a tuning curve
     figs = plot_tuning_curve(xValues, myArray, 'FigName', figName, ...
+                    'PhaseVectors', phaseVectors, ...
                     'PLabel', xLabel, ...
                     'ReadoutLabel', readoutLabel, ...
                     'ColumnLabels', varLabels, ...

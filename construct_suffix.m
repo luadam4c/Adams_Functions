@@ -7,26 +7,30 @@ function finalSuffix = construct_suffix (varargin)
 %       construct_suffix
 %       construct_suffix('Suffices', {'yes', 'no'})
 %       construct_suffix('NameValuePairs', {{'a', 'b'}, [1, 2]})
+%       construct_suffix('Suffices', {'yes', 'no'}, 'NameValuePairs', {{'a', 'b'}, [1, 2]})
 % Outputs:
 %       finalSuffix    - a string (may be empty) that is a final suffix
 % Arguments:
 %       varargin    - 'Suffices': suffix(ces) to add to filebase
 %                   must be a string/character array or a cell array 
 %                       of strings/character arrays
-%                   default == 'nosuffices'
+%                   default == none
 %                   - 'NameValuePairs': Name-Value pairs that are changed
 %                   must be a 2-element cell array whose first element 
 %                       is a string/char array or cell array 
 %                       and whose second element is a numeric array
-%                   default == {'nopairs', NaN}
+%                   default == none
 %        
 %
 % Used by:
 %       cd/construct_fullpath.m
 %       /media/adamX/RTCl/raster_plot.m
-% 
+
+% File History:
 % 2017-05-04 Moved from construct_fullfilename.m
 % 2018-05-08 Changed tabs to spaces and limited width to 80
+% TODO: Change specification of NameValuePairs to just one cell array
+%       or a structure and use struct2arglist.m
 
 %% Default values for optional arguments
 sufficesDefault = '';
@@ -112,17 +116,11 @@ if isempty(allsuffices)            % if nothing provided
     % Final suffix is empty too
     finalSuffix = allsuffices;
 elseif ~isempty(allsuffices)        % suffix(ces) is(are) provided
-    % Construct path based on directory, filebase, suffix(ces) and extension
-    if iscell(allsuffices)        
+    if iscell(allsuffices)
         % If there might be more than one suffices provided,
         %   construct final suffix by concatenating all suffices 
         %   together with '_'
-        finalSuffix = allsuffices{1};
-        if numel(allsuffices) > 1
-            for s = 2:numel(allsuffices)
-                finalSuffix = [finalSuffix, '_', allsuffices{s}];
-            end
-        end
+        finalSuffix = strjoin(allsuffices, '_');
     else
         % If there is only one suffix provided, 
         %   the final suffix is this suffix
@@ -142,6 +140,16 @@ addParameter(iP, 'NameValuePairs', nameValuePairsDefault, ...
         ['NameValuePairs must be a 2-element cell array whose ', ...
             'first element is a string/char array or cell array ', ...
             'and whose second element is a numeric array!']));
+
+% If there might be more than one suffices provided,
+%   construct final suffix by concatenating all suffices 
+%   together with '_'
+finalSuffix = allsuffices{1};
+if numel(allsuffices) > 1
+    for s = 2:numel(allsuffices)
+        finalSuffix = [finalSuffix, '_', allsuffices{s}];
+    end
+end
 
 %}
 

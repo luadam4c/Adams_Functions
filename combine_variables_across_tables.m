@@ -192,14 +192,21 @@ else
     varNames = setdiff(varNames, keys);
 end
 
-% Create output spreadsheet paths
-if saveFlag
-    outSheetPaths = fullfile(outFolder, ...
-                                strcat(prefix, '_', varNames, '_all.csv'));
-end
-
 % Count the number of rows
 nRows = size(varNames, 1);
+
+% Create output spreadsheet paths
+if saveFlag
+    % Combine all variable names that will be used for each file
+    %   as a single suffix
+    % TODO: Use construct_suffix.m
+    varNamesEachFile = arrayfun(@(x) strjoin(varNames(x, :), '_'), ...
+                                transpose(1:nRows), 'UniformOutput', false);
+
+    % Create output spreadsheet paths
+    outSheetPaths = fullfile(outFolder, ...
+                            strcat(prefix, '_', varNamesEachFile, '_all.csv'));
+end
 
 %% Do the job
 outTables = arrayfun(@(x) combine_variable_across_tables(varNames(x, :), ...

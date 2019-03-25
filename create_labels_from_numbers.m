@@ -42,6 +42,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/plot_struct.m
 %       cd/plot_swd_raster.m
 %       cd/plot_traces.m
+%       cd/plot_tuning_curve.m
 %       cd/renamevars.m
 
 % File History:
