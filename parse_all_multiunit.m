@@ -22,16 +22,18 @@ nFilesPerSlice = 3;
 %% Parse all abfs
 [allParams, allData] = parse_all_abfs('ChannelTypes', {'voltage', 'current'}, 'ChannelUnits', {'mV', 'arb'});
 
-%% Extract parameters
+%% Extract parameters and clear unused parameters
 siMs = allParams.siMs;
 abfFullFileName = allParams.abfFullFileName;
+clear allParams;
 
 % Count the number of files
 nFiles = numel(abfFullFileName);
 
-%% Extract data
+%% Extract data and clear unused data
 vVecs = allData.vVecs;
 iVecs = allData.iVecs;
+clear allData;
 
 % Count the number of vectors in each file
 nVectorsEachFile = count_vectors(vVecs);
@@ -93,6 +95,8 @@ for iSlice = 1:nSlices
     close all force hidden;
 end
 
+%% Plot tuning curves for all measures
+clc2_plot_measures;
 % for iSlice = 1:nSlices; [muParams{iSlice}, muData{iSlice}] = parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), 'PulseVectors', iVecsSl{iSlice}, 'PlotFlag', plotFlag, 'OutFolder', outFolder, 'FileBase', sliceBases{iSlice}, 'PhaseBoundaries', phaseBoundaries{iSlice}); close all force hidden; end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
