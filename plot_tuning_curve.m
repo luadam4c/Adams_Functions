@@ -104,7 +104,8 @@ function [fig, lines] = plot_tuning_curve (pValues, readout, varargin)
 % 2018-12-18 Now uses iP.KeepUnmatched
 % 2018-12-18 Changed lineSpec default to o and singleColorDefault to SkyBlue
 % 2019-03-14 Added 'RemoveOutliers' as an optional argument
-% TODO: 2019-03-25 Added 'PhaseVectors' as an optional argument
+% 2019-03-25 Added 'PhaseVectors' as an optional argument
+% 2019-03-25 Now expands the y limits by a little by default
 % TODO: Make 'ColorMap' and optional argument
 % TODO: Return handles to plots
 %

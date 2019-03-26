@@ -46,7 +46,8 @@ function figs = plot_table (table, varargin)
 %                   - 'FigName': figure name for saving
 %                   must be a string scalar or a character vector
 %                   default == ''
-%                   - Any other parameter-value pair for the plot_struct() function
+%                   - Any other parameter-value pair for the plot_struct() 
+%                       or the plot_tuning_curve() function
 %
 % Requires:
 %       cd/convert_to_char.m
