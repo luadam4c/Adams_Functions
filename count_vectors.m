@@ -39,6 +39,7 @@ function nVectors = count_vectors (vectors, varargin)
 %       cd/force_column_vector.m
 %
 % Used by:
+%       cd/clc2_plot_measures.m
 %       cd/collapse_identical_vectors.m
 %       cd/compute_all_pulse_responses.m
 %       cd/compute_combined_trace.m

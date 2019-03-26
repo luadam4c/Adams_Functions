@@ -3,7 +3,10 @@
 
 % Requires:
 %       cd/combine_variables_across_tables.m
+%       cd/count_vectors.m
+%       cd/create_indices.m
 %       cd/extract_fileparts.m
+%       cd/ismatch.m
 %       cd/plot_table.m
 
 % File History:
@@ -159,7 +162,7 @@ if ismember('Time', allVarNames)
 end
 
 % Get all variable names that are left
-allVarNames = inTable.Properties.VariableNames;
+allVarNames = transpose(inTable.Properties.VariableNames);
 
 % Find the phase variable names
 [~, phaseVars] = find_in_strings('phase.*', allVarNames, 'SearchMode', 'reg');
@@ -170,9 +173,6 @@ readoutVars = setdiff(allVarNames, phaseVars);
 % Extract the unique identifiers
 uniqueIds = extract_distinct_fileparts(readoutVars, 'Delimiter', '_');
 
-% Count the number of unique identifiers
-nUniqueIds = numel(uniqueIds);
-
 % Find matching phase variables for each unique identifiers
 [~, phaseVars] = ...
     cellfun(@(x) find_in_strings(x, phaseVars, 'SearchMode', 'substrings'), ...
@@ -180,9 +180,31 @@ nUniqueIds = numel(uniqueIds);
 
 % Find the row indices for the last nSweepsToAverage sweeps for each phase,
 %   for each unique phase ID
-indToAvg = cellfun(@(x) find_last_ind_each_phase(inTable.x, nSweepsToAverage), ...
+indToAvg = cellfun(@(x) find_last_ind_each_phase(inTable{:, x}, nSweepsToAverage), ...
                     phaseVars, 'UniformOutput', false);
 
+% Count the number of phases for each unique phase ID
+nPhases = count_vectors(indToAvg);
+
+% Compute the maximum number of phases
+maxNPhases = max(nPhases);
+
+% Creat a phase number column
+phaseNumber = transpose(1:maxNPhases);
+
+% Average the last nSweepsToAverage sweeps for each phase
+readoutAvg = cellfun(@(x, y) cellfun(@(z) nanmean(inTable{:, x}(z)), y), ...
+                    readoutVars, indToAvg, 'UniformOutput', false);
+
+% Force as a matrix, padding each vector with NaNs at the end if necessary
+readoutAvg = force_matrix(readoutAvg, 'AlignMethod', 'leftAdjustPad');
+
+% Create an averaged table
+outTable = array2table(readoutAvg);
+outTable = addvars(outTable, phaseNumber, 'Before', 1);
+outTable.Properties.VariableNames = vertcat({'phaseNumber'}, readoutVars);
+
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -198,12 +220,19 @@ uniquePhases = unique(phaseVecNoNaN, 'stable');
 nPhases = numel(uniquePhases);
 
 % Find the last index for each phase
-lastIndexEachPhase = cellfun(@(x) find(ismatch(phaseVec, x), 1, 'last'), ...
+lastIndexEachPhase = arrayfun(@(x) find(ismatch(phaseVec, x), 1, 'last'), ...
                                 uniquePhases);
 
+% Compute the first index for each phase
+firstIndexEachPhase = lastIndexEachPhase - nLastIndices + 1;
+
 % Construct the last nLastIndices indices
-indLastEachPhase = cellfun(@(x) , ...
-                                lastIndexEachPhase, 'UniformOutput', false);
+indLastEachPhase = create_indices('IndexStart', firstIndexEachPhase, ...
+                                    'IndexEnd', lastIndexEachPhase, ...
+                                    'MaxNum', nLastIndices, ...
+                                    'ForceCellOutput', true);
+
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

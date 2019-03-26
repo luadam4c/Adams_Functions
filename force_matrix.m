@@ -18,7 +18,7 @@ function vecs = force_matrix (vecs, varargin)
 %                       'leftAdjustPad'  - align to the left and pad
 %                       'rightAdjustPad' - align to the right and pad
 %                       'none'        - no alignment/truncation
-%                   default == 'leftAdjust'
+%                   default == 'leftAdjustPad'
 %
 % Requires:
 %       cd/create_error_for_nargin.m
