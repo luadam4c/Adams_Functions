@@ -204,8 +204,8 @@ colsToPlot = iP.Results.ColsToPlot;
 lineSpec = iP.Results.LineSpec;
 lineWidth = iP.Results.LineWidth;
 pIsLog = iP.Results.PisLog;
-xlimits = iP.Results.XLimits;
-ylimits = iP.Results.YLimits;
+xLimits = iP.Results.XLimits;
+yLimits = iP.Results.YLimits;
 pTicks = iP.Results.PTicks;
 pTickLabels = iP.Results.PTickLabels;
 pLabel = iP.Results.PLabel;
@@ -429,23 +429,28 @@ if ~strcmpi(legendLocation, 'suppress')
     end
 end
 
-% Restrict x axis if xlimits provided; 
+% Restrict x axis if xLimits provided; 
 %   otherwise expand the x axis by a little bit
-if ~isempty(xlimits)
-    if ~strcmpi(xlimits, 'suppress')
+if ~isempty(xLimits)
+    if ~strcmpi(xLimits, 'suppress')
         % Use x limits
-        xlim(xlimits);
+        xlim(xLimits);
     end
 else
-    if nEntries > 1
+    if nEntries > 1 && nEntries < 4
+        xlim(compute_axis_limits(pValues, 'x', 'Coverage', 90));
+    elseif nEntries >= 4
         xlim([pValues(1) - (pValues(2) - pValues(1)), ...
             pValues(end) + (pValues(end) - pValues(end-1))]);
     end
 end
 
-% Restrict y axis if ylimits provided
-if ~isempty(ylimits)
-    ylim(ylimits);
+% Restrict y axis if yLimits provided
+%   otherwise expand the y axis by a little bit
+if ~isempty(yLimits)
+    ylim(yLimits);
+else
+    ylim(compute_axis_limits(get(gca, 'YLim'), 'y', 'Coverage', 80));
 end
 
 % Set title and axes labels
@@ -507,11 +512,11 @@ end
 OLD CODE:
 
 % Usage: plot_tuning_curve(pValues, readout, colsToPlot, pIsLog, pLabel, ...
-            readoutLabel, columnLabels, xlimits, ylimits, figName, varargin)
+            readoutLabel, columnLabels, xLimits, yLimits, figName, varargin)
 
 if ~isequal(columnLabels, {'suppress'})
 
-if isequal(xlimits, -1)
+if isequal(xLimits, -1)
 
 if ~isequal(pLabel, 'suppress')
 if ~isequal(readoutLabel, 'suppress')

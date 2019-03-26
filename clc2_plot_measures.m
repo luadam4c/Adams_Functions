@@ -17,6 +17,9 @@
 %% Hard-coded parameters
 % Protocol parameters
 sweepLengthSec = 60;
+timeLabel = 'Time';
+phaseLabel = 'Phase';
+phaseStrs = {'Baseline', 'Wash-on', 'Wash-out'};
 
 % Analysis parameters
 nSweepsToAverage = 10;
@@ -24,7 +27,6 @@ nSweepsToAverage = 10;
 % File patterns
 sliceFilePattern = '.*slice.*';
 outFolder = pwd;
-timeLabel = 'Time';
 
 % Must be consistent with parse_multiunit.m
 varsToPlot = {'oscIndex1'; 'oscIndex2'; 'oscIndex3'; 'oscIndex4'; ...
@@ -61,12 +63,16 @@ fileLabels = extract_fileparts(sliceParamSheets, 'distinct');
 % Create table labels
 tableLabels = strcat(prefix, {': '}, varLabels);
 
+% Create table names
+tableNames = strcat(prefix, '_', varsToPlot);
+
 % Create figure names
-figNames = fullfile(outFolder, strcat(prefix, '_', varsToPlot, '.png'));
-figNamesByPhase = fullfile(outFolder, ...
-                        strcat(prefix, '_', varsToPlot, '_byphase.png'));
-figNamesChevron = fullfile(outFolder, ...
-                        strcat(prefix, '_', varsToPlot, '_chevron.png'));
+figNames = fullfile(outFolder, strcat(tableNames, '.png'));
+figNamesByPhase = fullfile(outFolder, strcat(tableNames, '_byphase.png'));
+figNamesAvgd = fullfile(outFolder, strcat(tableNames, '_averaged.png'));
+
+% Create paths for averaged tables
+avgdTablePaths = fullfile(outFolder, strcat(tableNames, '_averaged.csv'));
 
 % Read all slice parameter spreadsheets
 sliceParamsTables = cellfun(@readtable, sliceParamSheets, ...
@@ -90,13 +96,25 @@ measureTables = combine_variables_across_tables(sliceParamsTables, ...
                 'OutFolder', outFolder, 'Prefix', prefix, 'SaveFlag', true);
 
 % Average over the last 10 sweeps
-chevronTables = cellfun(@(x) average_last_of_each_phase(x, nSweepsToAverage), ...
-                        measureTables, 'UniformOutput', false);
+chevronTables = ...
+    cellfun(@(x, y) average_last_of_each_phase(x, nSweepsToAverage, y), ...
+                    measureTables, avgdTablePaths, 'UniformOutput', false);
 
 %% Do the job
 % Convert to timetables
 measureTimeTables = cellfun(@table2timetable, ...
                             measureTables, 'UniformOutput', false);
+
+% Plot Chevron plots
+figs = cellfun(@(x, y, z, w, v) plot_table(x, 'PlotSeparately', false, ...
+                                'VariableNames', strcat(y, '_', fileLabels), ...
+                                'XTicks', [1, 2, 3], 'XTickLabels', phaseStrs, ...
+                                'ReadoutLabel', z, 'TableLabel', w, ...
+                                'XLabel', phaseLabel, 'FigName', v, ...
+                                'RemoveOutliers', true), ...
+            chevronTables, varsToPlot, varLabels, tableLabels, figNamesAvgd);
+
+close all;
 
 % Plot all columns together
 figs = cellfun(@(x, y, z, w, v) plot_table(x, 'PlotSeparately', false, ...
@@ -148,7 +166,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function outTable = average_last_of_each_phase(inTable, nSweepsToAverage)
+function outTable = average_last_of_each_phase(inTable, nSweepsToAverage, ...
+                                                sheetPath)
 %% Averages over the last nSweepsToAverage sweeps of each phase
 % Note: all distinct identifiers must have a matching phase variable column
 
@@ -203,6 +222,9 @@ readoutAvg = force_matrix(readoutAvg, 'AlignMethod', 'leftAdjustPad');
 outTable = array2table(readoutAvg);
 outTable = addvars(outTable, phaseNumber, 'Before', 1);
 outTable.Properties.VariableNames = vertcat({'phaseNumber'}, readoutVars);
+
+% Save the table
+writetable(outTable, sheetPath);
 
 end
 
