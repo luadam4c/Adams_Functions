@@ -43,7 +43,7 @@ function [featuresFileTable, featuresSweepTable] = ...
 %                       'overlapped'    - overlapped in a single plot
 %                       'parallel'      - in parallel in subplots
 %                   must be consistent with plot_traces_abf.m
-%                   default == 'overlapped'
+%                   default == set in plot_traces_abf.m
 %                   - 'Individually': whether sweeps are plotted individually
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -122,7 +122,7 @@ plotAltogetherFlag = true;
 validProtocolTypes = {'EvokedLFP', 'EvokedGABAB'};
 validExpModes = {'EEG', 'patch', ''};
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
-validPlotModes = {'overlapped', 'parallel'};
+validPlotModes = {'overlapped', 'parallel', ''};
 featuresFileSheetName = 'features_table_by_file.xlsx';
 featuresSweepSheetName = 'features_table_by_sweep.xlsx';
 xLabelFile = 'fileName';
@@ -153,7 +153,7 @@ verboseDefault = false;         % don't print to standard output by default
 useOriginalDefault = false;     % use identify_channels.m instead
                                 % of the original channel labels by default
 expModeDefault = 'patch';       % assume traces are patching data by default
-plotModeDefault = 'overlapped'; % plot traces overlapped by default
+plotModeDefault = '';           % set later
 individuallyDefault = false;    % plot all sweeps together by default
 savePlotsFlagDefault = true;    % save all plots by default
 saveTablesFlagDefault = true;   % save all tables by default
@@ -195,9 +195,9 @@ addParameter(iP, 'Verbose', verboseDefault, ...
 addParameter(iP, 'UseOriginal', useOriginalDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ExpMode', expModeDefault, ...
-    @(x) any(validatestring(x, validExpModes)));
+    @(x) isempty(x) || any(validatestring(x, validExpModes)));
 addParameter(iP, 'PlotMode', plotModeDefault, ...
-    @(x) any(validatestring(x, validPlotModes)));
+    @(x) isempty(x) || any(validatestring(x, validPlotModes)));
 addParameter(iP, 'Individually', individuallyDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SavePlotsFlag', savePlotsFlagDefault, ...

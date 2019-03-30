@@ -77,6 +77,8 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 %                   - 'ParsedData': parsed data returned by parse_abf.m
 %                   must be a scalar structure
 %                   default == what the file provides
+%                   - Any other parameter-value pair for 
+%                       the plot_traces() function
 %
 % Requires:
 %       cd/argfun.m
@@ -114,7 +116,7 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 % 2018-10-03 - Updated usage of parse_abf.m
 % 2018-10-03 - Added 'ParsedData', 'ParsedParams' as optional arguments
 % 2018-11-21 - Added 'OverWrite' as an optional argument
-% 2018-11-22 - Now plots 
+% 2019-03-29 - Changed default plot mode to parallel
 % TODO: Change the outputs to a cell array of figure handles
 % TODO: (Not sure) Improve code legibility with usage of dataReordered instead of data
 % TODO: Add a parameter to allow the figure position
@@ -124,7 +126,7 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 %% Hard-coded parameters
 validExpModes = {'EEG', 'patch', ''};
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
-validPlotModes = {'', 'overlapped', 'parallel'};
+validPlotModes = {'overlapped', 'parallel', ''};
 
 %% Default values for optional arguments
 verboseDefault = true;
@@ -155,6 +157,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'fileName', ...
@@ -164,9 +167,9 @@ addRequired(iP, 'fileName', ...
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ExpMode', expModeDefault, ...
-    @(x) any(validatestring(x, validExpModes)));
+    @(x) isempty(x) || any(validatestring(x, validExpModes)));
 addParameter(iP, 'PlotMode', plotModeDefault, ...
-    @(x) any(validatestring(x, validPlotModes)));
+    @(x) isempty(x) || any(validatestring(x, validPlotModes)));
 addParameter(iP, 'Individually', individuallyDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OverWrite', overWriteDefault, ...
@@ -209,6 +212,9 @@ channelLabels = iP.Results.ChannelLabels;
 parsedParams = iP.Results.ParsedParams;
 parsedData = iP.Results.ParsedData;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
+
+% Keep unmatched arguments for the plot_traces() function
+otherArguments = struct2arglist(iP.Unmatched);
 
 % Validate channel types
 if ~isempty(channelTypes)
@@ -282,7 +288,7 @@ if isempty(plotMode)
     case 'EEG'
         plotMode = 'parallel';
     case 'patch'
-        plotMode = 'overlapped';
+        plotMode = 'parallel';
     otherwise
         error('Expmode unrecognized!');
     end
@@ -337,7 +343,7 @@ end
 plot_traces_abf_helper(timeVec, data, verbose, overWrite, individually, ...
             expMode, plotMode, figTypes, fileBase, outFolder, ...
             xLimits, xUnits, xLabel, traceLabels, channelLabels, ...
-            nChannels, nDimensions);
+            nChannels, nDimensions, otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -345,7 +351,7 @@ function plot_traces_abf_helper(timeVec, data, ...
                 verbose, overWrite, individually, ...
                 expMode, plotMode, figTypes, fileBase, outFolder, ...
                 xLimits, xUnits, xLabel, traceLabels, channelLabels, ...
-                nChannels, nDimensions)
+                nChannels, nDimensions, otherArguments)
 
 % Construct file ID for titles
 fileId = replace(fileBase, '_', '\_');
@@ -380,7 +386,7 @@ if ~individually && strcmpi(expMode, 'EEG')
                     'XLabel', xLabel, 'YLabel', yLabel, ...
                     'TraceLabels', traceLabels, ...
                     'FigTitle', figTitle, 'FigName', figName, ...
-                    'FigTypes', figTypes);
+                    'FigTypes', figTypes, otherArguments{:});
 
 elseif ~individually && strcmpi(expMode, 'patch') || ...
         individually && strcmpi(expMode, 'EEG')
@@ -419,7 +425,8 @@ elseif ~individually && strcmpi(expMode, 'patch') || ...
                             'XLabel', xLabel, 'YLabel', yLabel, ...
                             'TraceLabels', traceLabels, ...
                             'FigTitle', figTitle, 'FigName', figName, ...
-                            'FigNumber', figNum, 'FigTypes', figTypes);
+                            'FigNumber', figNum, 'FigTypes', figTypes, ...
+                            otherArguments{:});
         end
     end
 elseif individually && strcmpi(expMode, 'patch')
@@ -466,7 +473,8 @@ elseif individually && strcmpi(expMode, 'patch')
                                 'XLabel', xLabel, 'YLabel', yLabel, ...
                                 'TraceLabels', traceLabels, ...
                                 'FigTitle', figTitle, 'FigName', figName, ...
-                                'FigNumber', figNum, 'FigTypes', figTypes);
+                                'FigNumber', figNum, 'FigTypes', figTypes, ...
+                                otherArguments{:});
             end
         end
     end
@@ -876,6 +884,8 @@ hold off;
 close(h);
 
 dateStamp = [tempStamp(1:8)];       % only use date
+
+plotMode = 'overlapped';
 
 %}
 

@@ -34,10 +34,13 @@ function [abfParamsTable, abfDataTable, abfParamsStruct, ...
 %                       'overlapped'    - overlapped in a single plot
 %                       'parallel'      - in parallel in subplots
 %                   must be consistent with plot_traces_abf.m
-%                   default == 'overlapped'
+%                   default == set in plot_traces_abf.m
 %                   - 'Individually': whether sweeps are plotted individually
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'IdentifyProtocols': whether to identify protocols
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'OutFolder': the name of the directory that 
 %                                       plots will be placed
 %                   must be a string scalar or a character vector
@@ -73,6 +76,8 @@ function [abfParamsTable, abfDataTable, abfParamsStruct, ...
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
+%                   - Any other parameter-value pair for 
+%                       the plot_traces() function
 %
 % Requires:
 %       cd/all_files.m
@@ -122,7 +127,7 @@ function [abfParamsTable, abfDataTable, abfParamsStruct, ...
 %% Hard-coded parameters
 validExpModes = {'EEG', 'patch', ''};
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
-validPlotModes = {'overlapped', 'parallel'};
+validPlotModes = {'overlapped', 'parallel', ''};
 
 %% Default values for optional arguments
 directoryDefault = pwd;         % look for .abf files in 
@@ -132,8 +137,9 @@ verboseDefault = false;         % don't print to standard output by default
 useOriginalDefault = false;     % use identify_channels.m instead
                                 % of the original channel labels by default
 expModeDefault = 'patch';       % assume traces are patching data by default
-plotModeDefault = 'overlapped'; % plot traces overlapped by default
+plotModeDefault = '';           % set later
 individuallyDefault = false;    % plot all sweeps together by default
+identifyProtocolsDefault = true;% identify protocols by default
 outFolderDefault = '';          % set later
 timeUnitsDefault = '';          % set later
 timeStartDefault = [];          % set later
@@ -163,6 +169,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Directory', directoryDefault, ...
@@ -177,8 +184,10 @@ addParameter(iP, 'UseOriginal', useOriginalDefault, ...
 addParameter(iP, 'ExpMode', expModeDefault, ...
     @(x) isempty(x) || any(validatestring(x, validExpModes)));
 addParameter(iP, 'PlotMode', plotModeDefault, ...
-    @(x) any(validatestring(x, validPlotModes)));
+    @(x) isempty(x) || any(validatestring(x, validPlotModes)));
 addParameter(iP, 'Individually', individuallyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'IdentifyProtocols', identifyProtocolsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
@@ -206,6 +215,7 @@ useOriginal = iP.Results.UseOriginal;
 expMode = validatestring(iP.Results.ExpMode, validExpModes);
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
 individually = iP.Results.Individually;
+identifyProtocols = iP.Results.IdentifyProtocols;
 outFolder = iP.Results.OutFolder;
 timeUnits = iP.Results.TimeUnits;
 timeStartUser = iP.Results.TimeStart;
@@ -214,6 +224,9 @@ channelTypesUser = iP.Results.ChannelTypes;
 channelUnitsUser = iP.Results.ChannelUnits;
 channelLabelsUser = iP.Results.ChannelLabels;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
+
+% Keep unmatched arguments for the plot_traces() function
+otherArguments = struct2arglist(iP.Unmatched);
 
 % Validate channel types
 if ~isempty(channelTypesUser)
@@ -264,7 +277,7 @@ fileNames = force_column_cell(fileNames);
                     'ChannelTypes', channelTypesUser, ...
                     'ChannelUnits', channelUnitsUser, ...
                     'ChannelLabels', channelLabelsUser, ...
-                    'IdentifyProtocols', true);
+                    'IdentifyProtocols', identifyProtocols);
 
 % Extract each column from the data table as cell arrays
 fileNames = abfParamsTable.abfFullFileName;
@@ -282,54 +295,57 @@ fileNames = force_column_cell(fileNames);
 nFiles = numel(fileNames);
 
 %% Plot F-I plots
-parfor iFile = 1:nFiles
-    % Extract from cell arrays
-    abfParams = abfParamsCell{iFile};
-
-    % Extract some parameters
-    isCI = abfParams.isCI;
-
-    % Only do anything for current injection protocols
-    if isCI
+if identifyProtocols
+    parfor iFile = 1:nFiles
         % Extract from cell arrays
-        data = dataAll{iFile};
-        fileName = fileNames{iFile};
+        abfParams = abfParamsCell{iFile};
 
-        % Extract some more parameters
-        siUs = abfParams.siUs;
+        % Extract some parameters
+        isCI = abfParams.isCI;
 
-        % Detect spikes for each sweep and make an F-I plot
-        plot_FI(fileName, data, siUs);
+        % Only do anything for current injection protocols
+        if isCI
+            % Extract from cell arrays
+            data = dataAll{iFile};
+            fileName = fileNames{iFile};
+
+            % Extract some more parameters
+            siUs = abfParams.siUs;
+
+            % Detect spikes for each sweep and make an F-I plot
+            plot_FI(fileName, data, siUs);
+        end
     end
 end
 
 %% Deal with special protocols
-% Plot all graphs associated with GABA-B IPSC protocols
-[featuresFileTableGabab, featuresSweepTableGabab] = ...
-    plot_protocols('EvokedGABAB', ...
-                    'FileNames', fileNames, 'OutFolder', outFolder, ...
-                    'Verbose', verbose, 'UseOriginal', useOriginal, ...
-                    'ExpMode', expMode, 'PlotMode', plotMode, ...
-                    'Individually', individually, 'OutFolder', outFolder, ...
-                    'TimeUnits', timeUnits, 'FigTypes', figTypes, ...
-                    'ChannelTypes', channelTypesUser, ...
-                    'ChannelUnits', channelUnitsUser, ...
-                    'ChannelLabels', channelLabelsUser, ...
-                    'AbfParamsCell', abfParamsCell, 'AbfDataCell', abfDataCell);
+if identifyProtocols
+    % Plot all graphs associated with GABA-B IPSC protocols
+    [featuresFileTableGabab, featuresSweepTableGabab] = ...
+        plot_protocols('EvokedGABAB', ...
+                        'FileNames', fileNames, 'OutFolder', outFolder, ...
+                        'Verbose', verbose, 'UseOriginal', useOriginal, ...
+                        'ExpMode', expMode, 'PlotMode', plotMode, ...
+                        'Individually', individually, 'OutFolder', outFolder, ...
+                        'TimeUnits', timeUnits, 'FigTypes', figTypes, ...
+                        'ChannelTypes', channelTypesUser, ...
+                        'ChannelUnits', channelUnitsUser, ...
+                        'ChannelLabels', channelLabelsUser, ...
+                        'AbfParamsCell', abfParamsCell, 'AbfDataCell', abfDataCell);
 
-% Plot all graphs associated with LFP protocols
-[featuresFileTableLfp, featuresSweepTableLfp] = ...
-    plot_protocols('EvokedLFP', ...
-                    'FileNames', fileNames, 'OutFolder', outFolder, ...
-                    'Verbose', verbose, 'UseOriginal', useOriginal, ...
-                    'ExpMode', expMode, 'PlotMode', plotMode, ...
-                    'Individually', individually, 'OutFolder', outFolder, ...
-                    'TimeUnits', timeUnits, 'FigTypes', figTypes, ...
-                    'ChannelTypes', channelTypesUser, ...
-                    'ChannelUnits', channelUnitsUser, ...
-                    'ChannelLabels', channelLabelsUser, ...
-                    'AbfParamsCell', abfParamsCell, 'AbfDataCell', abfDataCell);
-
+    % Plot all graphs associated with LFP protocols
+    [featuresFileTableLfp, featuresSweepTableLfp] = ...
+        plot_protocols('EvokedLFP', ...
+                        'FileNames', fileNames, 'OutFolder', outFolder, ...
+                        'Verbose', verbose, 'UseOriginal', useOriginal, ...
+                        'ExpMode', expMode, 'PlotMode', plotMode, ...
+                        'Individually', individually, 'OutFolder', outFolder, ...
+                        'TimeUnits', timeUnits, 'FigTypes', figTypes, ...
+                        'ChannelTypes', channelTypesUser, ...
+                        'ChannelUnits', channelUnitsUser, ...
+                        'ChannelLabels', channelLabelsUser, ...
+                        'AbfParamsCell', abfParamsCell, 'AbfDataCell', abfDataCell);
+end
 
 %% Plot individual traces
 parfor iFile = 1:nFiles
@@ -338,14 +354,16 @@ parfor iFile = 1:nFiles
     abfData = abfDataCell{iFile};
 
     % Extract some parameters
-    isCI = abfParams.isCI;
-    isEvokedLfp = abfParams.isEvokedLfp;
-    isEvokedGabab = abfParams.isEvokedGabab;
-
-    % Don't do this for current injection protocols 
+    if identifyProtocols
+        isCI = abfParams.isCI;
+        isEvokedLfp = abfParams.isEvokedLfp;
+        isEvokedGabab = abfParams.isEvokedGabab;
+    end
+    
+    % Don't do this for current injection protocols
     %   or evoked GABA-B IPSC protocols or evoked LFP protocols
     %   because individual traces are already plotted
-    if ~isCI && ~isEvokedLfp && ~isEvokedGabab
+    if ~identifyProtocols || (~isCI && ~isEvokedLfp && ~isEvokedGabab)
         % Extract from cell arrays
         fileName = fileNames{iFile};
 
@@ -365,13 +383,14 @@ parfor iFile = 1:nFiles
         %           be plotted in subdirectories
         plot_traces_abf(fileName, 'Verbose', false, ...
             'ParsedParams', abfParams, 'ParsedData', abfData, ...
-            'ExpMode', expMode, 'Individually', individually, ...
+            'ExpMode', expMode, 'PlotMode', plotMode, ...
+            'Individually', individually, ...
             'OutFolder', '', 'TimeUnits', timeUnits, ...
             'TimeStart', timeStart, 'TimeEnd', timeEnd, ...
             'ChannelTypes', channelTypes, ...
             'ChannelUnits', channelUnits, ...
             'ChannelLabels', channelLabels, ...
-            'FigTypes', figTypes);
+            'FigTypes', figTypes, otherArguments{:});
     end
 end
 
@@ -379,7 +398,7 @@ end
 %       if the number of channels and channel types are all the same
 compute_and_plot_concatenated_trace(abfParamsStruct, dataReorderedAll, ...
                                     'SourceDirectory', directory, ...
-                                    'OutFolder', outFolder);
+                                    'OutFolder', outFolder, otherArguments{:});
 
 %% Copy similar figure types to its own directory
 % TODO

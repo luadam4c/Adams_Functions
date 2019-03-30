@@ -2,6 +2,8 @@ function compute_and_plot_concatenated_trace(abfParamsAllStruct, dataReorderedAl
 %% Computes and plots concatenated traces from parsed ABF file results
 % Usage: compute_and_plot_concatenated_trace(abfParamsAllStruct, dataReorderedAll, varargin)
 %
+%                   - Any other parameter-value pair for 
+%                       the plot_traces() function
 %
 % Used by:
 %       cd/plot_all_abfs.m
@@ -9,6 +11,7 @@ function compute_and_plot_concatenated_trace(abfParamsAllStruct, dataReorderedAl
 % File History:
 % 2018-09-21 - Moved from plot_all_abfs_dir.m 
 % TODO: make the width dependent on timeLength
+% TODO: Use plot_traces.m
 
 paperPosition = [0, 0, 80, 5];
 
@@ -22,6 +25,7 @@ outputLabelDefault = '';
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'SourceDirectory', sourceDirectoryDefault, ...
@@ -36,6 +40,9 @@ parse(iP, varargin{:});
 sourceDirectory = iP.Results.SourceDirectory;
 outFolder = iP.Results.OutFolder;
 outputLabel = iP.Results.OutputLabel;
+
+% Keep unmatched arguments for the plot_traces() function
+otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Decide on the outFolder
