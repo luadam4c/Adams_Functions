@@ -40,7 +40,7 @@ function [abfParamsTable, abfDataTable, abfParamsStruct, ...
 %                   default == false
 %                   - 'IdentifyProtocols': whether to identify protocols
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == false
 %                   - 'OutFolder': the name of the directory that 
 %                                       plots will be placed
 %                   must be a string scalar or a character vector
@@ -122,6 +122,7 @@ function [abfParamsTable, abfDataTable, abfParamsStruct, ...
 % 2018-12-15 - Added 'Verbose' as a parameter
 % 2018-12-15 - Fixed the case of having only one .abf file
 % 2019-01-04 - Now omits the .abf files that cannot be read
+% 2019-04-02 - Now does not identify protocols by default
 % TODO: Restructure code so that each type of plot is its own subfunction
 
 %% Hard-coded parameters
@@ -139,7 +140,7 @@ useOriginalDefault = false;     % use identify_channels.m instead
 expModeDefault = 'patch';       % assume traces are patching data by default
 plotModeDefault = '';           % set later
 individuallyDefault = false;    % plot all sweeps together by default
-identifyProtocolsDefault = true;% identify protocols by default
+identifyProtocolsDefault = false;% identify protocols by default
 outFolderDefault = '';          % set later
 timeUnitsDefault = '';          % set later
 timeStartDefault = [];          % set later
