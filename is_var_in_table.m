@@ -73,16 +73,42 @@ otherArguments = struct2arglist(iP.Unmatched);
 %% Do the job
 % TODO
 
+allVarNames = T.Properties.VariableName
+str= allVarNames
+ismatch(varName,allVarNames)
+A = [0.53 0.67 0.01 0.38 0.07 0.42 0.69];
+B = any()
+ 
 % data type: character arrays
-% data type: cell
-% data type: table
+%A character array is a sequence of characters
+% C= 'hello, world'
+%convert different type of data to character array: 
+%C= char (A)
 
-% T.Properties.VariableNames
+% data type: cell
+%cell array is a data type with indexed data containers called cells, 
+%where each cell can contain any type of data. 
+%Cell arrays commonly contain either lists of text, 
+%combinations of text and numbers, or numeric arrays of different sizes.
+%C= {x, y, z}
+
+% data type: table
+%table arrays store column-oriented or tabular data, 
+%such as columns from a text file or spreadsheet. 
+%Tables store each piece of column-oriented data in a variable.
+
+% T.Properties.VariableNames= {variable1, v2, v3,...}
 
 % ismatch()
+%Returns whether each element in a list matches a candidate
+%Usage: [isMatch, indices, matched] = ismatch(list, cand, varargin)
 
 % any()
-
+%True if any element of a vector is a nonzero number or is
+%    logical 1 (TRUE).  any ignores entries that are NaN (Not a Number).
+%  For vectors, any(V) returns logical 1 (TRUE) if any of the 
+%  elements of the vector is a nonzero number or is logical 1 (TRUE).
+%  Otherwise it returns logical 0 (FALSE).
 %% Output results
 % TODO
 

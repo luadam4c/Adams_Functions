@@ -1,9 +1,17 @@
 function compute_and_plot_concatenated_trace(abfParamsAllStruct, dataReorderedAll, varargin)
 %% Computes and plots concatenated traces from parsed ABF file results
 % Usage: compute_and_plot_concatenated_trace(abfParamsAllStruct, dataReorderedAll, varargin)
-%
-%                   - Any other parameter-value pair for 
-%                       the plot_traces() function
+% Explanation:
+%       TODO
+% Outputs:
+%       
+% Arguments:
+%       abfParamsAllStruct      - TODO
+%       dataReorderedAll        - TODO
+%       varargin                
+%                               - Any other parameter-value pair for 
+%                               the plot_traces() function
+% Requires:
 %
 % Used by:
 %       cd/plot_all_abfs.m
@@ -174,6 +182,25 @@ for iChannel = 1:nChannels
     ax(iChannel) = subplot(nChannels, 1, iChannel);
 
     % Plot the vector
+    % TODO: Use plot_traces.m instead
+    % Identify if arguments to plot_traces were passed
+    xlim_idx = find(strcmp(otherArguments, 'XLimits'));
+    xlabel_idx = find(strcmp(otherArguments, 'XLabel'));
+    ylabel_idx = find(strcmp(otherArguments, 'YLabel'));
+    % If no arguments passed, use default
+    if isempty(xlim_idx)
+        otherArguments{end+1} = 'XLimits'; otherArguments{end+1} = xlimits;
+    end
+    if isempty(xlabel_idx)
+        if iChannel == nChannels
+            otherArguments{end+1} = 'XLabel'; otherArguments{end+1} = 'Time (seconds)';
+        end
+    end
+    if isempty(ylabel_idx)
+        otherArguments{end+1} = 'YLabel'; otherArguments{end+1} = channelLabels{iChannel};
+    end
+    plot_traces(tVecCombined, dataCombined(:, iChannel), otherArguments{:});
+    %{
     plot(tVecCombined, dataCombined(:, iChannel));
 
     % Generate a y label
@@ -186,6 +213,7 @@ for iChannel = 1:nChannels
 
     % Define x limits
     xlim(xlimits);
+    %}
 end
 
 % Link the x axes
