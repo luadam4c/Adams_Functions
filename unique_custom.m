@@ -4,7 +4,14 @@ function [y, ia, ic] = unique_custom (x, varargin)
 % Explanation:
 %       This function removes NaN values not identified by the default unique() function.
 % Example(s):
-%       [y, ia, ic] = unique_custom(x, 'IgnoreNaN', true, 'SaveOneNaN', true);
+%       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN])
+%       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', true)
+%       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'SaveOneNaN', true)
+%       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', true, 'SaveOneNaN', true)
+%       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', false, 'SaveOneNaN', true)
+%       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', true, 'SaveOneNaN', false)
+%       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', false, 'SaveOneNaN', false)
+%       
 % Outputs:
 %       y           - All unique values in x
 %                   specified as a array
@@ -16,7 +23,7 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %                   default == false
 %                   - 'SaveOneNaN': If NaN is present, preserve one at the end
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   default == true
 %                   - Any other parameter-value pair for the unique() function
 %
 % Requires:
@@ -74,7 +81,7 @@ otherArguments = struct2arglist(iP.Unmatched);
 %% Do the job
 
 % Ignoring NaN
-if ignoreNaN
+if ignoreNaN || saveOneNaN
     % Preserving one NaN
     if saveOneNaN
         % NaN indices, does not include last NaN if present
