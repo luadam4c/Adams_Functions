@@ -66,7 +66,7 @@ function indices = create_indices (varargin)
 %       cd/match_format_vectors.m
 %
 % Used by:
-%       cd/clc2_plot_measures.m
+%       cd/plot_measures.m
 %       cd/compute_peak_decay.m
 %       cd/extract_columns.m
 %       cd/extract_subvectors.m

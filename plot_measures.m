@@ -1,4 +1,4 @@
-% clc2_plot_measures.m
+% plot_measures.m
 %% Plots all measures of interest across slices
 
 % Requires:
@@ -13,8 +13,8 @@
 % File History:
 % 2019-03-15 Created by Adam Lu
 % 2019-03-25 Now colors by phase number
-% TODO: Rename as plot_measures.m and extract specific usage to
-% clc2_analyze.m
+% 2019-04-08 Renamed as plot_measures.m
+% TODO: extract specific usage to clc2_analyze.m
 % 
 
 %% Hard-coded parameters

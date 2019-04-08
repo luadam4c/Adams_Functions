@@ -58,7 +58,7 @@ function varargout = ismatch (list, cand, varargin)
 %       cd/istext.m
 %
 % Used by:
-%       cd/clc2_plot_measures.m
+%       cd/plot_measures.m
 %       cd/find_in_strings.m
 %       cd/ismember_custom.m
 

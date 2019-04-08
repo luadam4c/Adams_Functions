@@ -40,7 +40,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %
 % Used by:
 %       cd/all_filebases.m
-%       cd/clc2_plot_measures.m
+%       cd/plot_measures.m
 %       cd/combine_variables_across_tables.m
 %       cd/extract_common_directory.m
 %       cd/parse_all_multiunit.m

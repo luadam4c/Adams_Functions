@@ -64,7 +64,7 @@ function [outTables, outSheetPaths] = ...
 %       cd/struct2arglist.m
 %
 % Used by:
-%       cd/clc2_plot_measures.m
+%       cd/plot_measures.m
 
 % File History:
 % 2019-03-17 Created by Adam Lu

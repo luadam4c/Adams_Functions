@@ -60,7 +60,7 @@ function figs = plot_table (table, varargin)
 %       ~/Downloaded_Functions/rgb.m
 %
 % Used by:
-%       cd/clc2_plot_measures.m
+%       cd/plot_measures.m
 %       cd/parse_multiunit.m
 %       cd/plot_protocols.m
 
