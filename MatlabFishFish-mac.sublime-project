@@ -1,0 +1,25 @@
+{
+	"folders":
+	[
+		{
+			"file_exclude_patterns":
+			[
+				"._.DS_Store",
+				"*-link",
+				"*.lnk",
+				".bash*",
+				".profile",
+				".vimrc"
+			],
+			"folder_exclude_patterns":
+			[
+				".*",
+				"Settings_*"
+			],
+			"path": "/Volumes/MatlabFishFish"
+		},
+		{
+			"path": "/Volumes/MatlabFishFish/\\\\128.143.61.71\\adamX\\Settings_Matlab"
+		}
+	]
+}

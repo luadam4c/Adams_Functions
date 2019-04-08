@@ -24,6 +24,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %                       'commonsuffix'    - common suffix across file(s)
 %                       'distinct'  - distinct parts across file(s)
 %                       'directory' - directory containing the file(s)
+%                       'dirbase'   - directory base containing the file(s)
 %                       'base'      - file base name without the extension
 %                       'extension' - file extension including the leading '.'
 %       varargin    - 'Delimiter': delimiter used for file suffices
@@ -51,12 +52,13 @@ function parts = extract_fileparts (paths, partType, varargin)
 % 2018-12-26 Added 'commonsuffix' as a part type
 % 2018-12-27 Moved code to extract_distinct_fileparts.m
 % 2019-03-14 Added 'commonprefix' as a part type
+% 2019-04-07 Added 'dirbase' as a part type
 % TODO: Make the first argument accept a files structure array too
 % 
 
 %% Hard-coded parameters
 validPartTypes = {'commondirectory', 'commonprefix', 'commonsuffix', ...
-                    'distinct', 'directory', 'base', 'extension'};
+                    'distinct', 'directory', 'dirbase', 'base', 'extension'};
 
 %% Default values for optional arguments
 delimiterDefault = '_';
@@ -97,7 +99,7 @@ partType = validatestring(partType, validPartTypes);
 
 %% Do the job
 switch partType
-case {'directory', 'base', 'extension'}
+case {'directory', 'dirbase', 'base', 'extension'}
     parts = extract_simple_fileparts(paths, partType);
 case 'commondirectory'
     parts = extract_common_directory(paths, varargin{:});
@@ -153,6 +155,8 @@ end
 switch partType
     case 'directory'
         parts = fileDirs;
+    case 'dirbase'
+        [~, parts] = fileparts(fileDirs);
     case 'base'
         parts = fileBases;
     case 'extension'

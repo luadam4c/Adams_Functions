@@ -178,8 +178,8 @@ clf(h)
 
 % Plot each channel in a subplot separately
 for iChannel = 1:nChannels
-    % Create the subplot
-    ax(iChannel) = subplot(nChannels, 1, iChannel);
+    % % Create the subplot
+    % ax(iChannel) = subplot(nChannels, 1, iChannel);
 
     % Plot the vector
     % TODO: Use plot_traces.m instead
@@ -199,7 +199,7 @@ for iChannel = 1:nChannels
     if isempty(ylabel_idx)
         otherArguments{end+1} = 'YLabel'; otherArguments{end+1} = channelLabels{iChannel};
     end
-    plot_traces(tVecCombined, dataCombined(:, iChannel), otherArguments{:});
+    [h, ax(iChannel)] = plot_traces(tVecCombined, dataCombined(:, iChannel), 'FigHandle', h, 'YLimits', [-0.1 0.1], otherArguments{:});
     %{
     plot(tVecCombined, dataCombined(:, iChannel));
 

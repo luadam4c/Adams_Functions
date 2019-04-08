@@ -5,6 +5,7 @@
 %       cd/combine_variables_across_tables.m
 %       cd/count_vectors.m
 %       cd/create_indices.m
+%       cd/extract_common_directory.m
 %       cd/extract_fileparts.m
 %       cd/ismatch.m
 %       cd/plot_table.m
@@ -12,6 +13,8 @@
 % File History:
 % 2019-03-15 Created by Adam Lu
 % 2019-03-25 Now colors by phase number
+% TODO: Rename as plot_measures.m and extract specific usage to
+% clc2_analyze.m
 % 
 
 %% Hard-coded parameters
@@ -56,6 +59,11 @@ varLabels = {'Oscillatory Index 1'; 'Oscillatory Index 2'; ...
 
 % Extract the common prefix
 prefix = extract_fileparts(sliceParamSheets, 'commonprefix');
+
+% If no common prefix, use the directory name as the prefix
+if isempty(prefix)
+    prefix = extract_common_directory(sliceParamSheets, 'BaseNameOnly', true);
+end
 
 % Extract the distinct parts of the file names
 fileLabels = extract_fileparts(sliceParamSheets, 'distinct');

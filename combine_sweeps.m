@@ -163,7 +163,11 @@ end
 
 % Check if files are found
 if nDataFiles <= 0
-    message = {message, 'Failed to combine sweeps!'};
+    if iscell(message)
+        message = [message, 'Failed to combine sweeps!'];
+    else
+        message = {message, 'Failed to combine sweeps!'};
+    end
     mTitle = 'Data files not found';
     % TODO: load custom icon
     icon = 'error';

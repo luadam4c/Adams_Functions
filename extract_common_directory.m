@@ -5,6 +5,7 @@ function parentDir = extract_common_directory (paths, varargin)
 %       TODO
 % Example(s):
 %       extract_common_directory({'a/b/c', 'a/b/c.m', 'a/b/c/d.m'})
+%       extract_common_directory({'a/b/c', 'a/b/c.m', 'a/b/c/d.m'}, 'BaseNameOnly', true)
 % Outputs:
 %       parentDir   - the common parent directory
 %                   specified as a character vector
@@ -15,6 +16,10 @@ function parentDir = extract_common_directory (paths, varargin)
 %       varargin    - 'KeepFileSep': whether to keep the final filesep
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'BaseNameOnly': whether to extract the basename 
+%                                       as opposed to the full path
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -22,6 +27,7 @@ function parentDir = extract_common_directory (paths, varargin)
 %       cd/extract_fileparts.m
 %
 % Used by:
+%       cd/clc2_plot_measures.m
 %       cd/extract_distinct_fileparts.m
 %       cd/extract_fileparts.m
 %       cd/plot_swd_histogram.m
@@ -38,7 +44,8 @@ function parentDir = extract_common_directory (paths, varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-keepFileSepDefault = false;   % don't keep the final filesep by default
+keepFileSepDefault = false;     % don't keep the final filesep by default
+baseNameOnlyDefault = false;    % extract the full path by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -61,10 +68,13 @@ addRequired(iP, 'paths', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'KeepFileSep', keepFileSepDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'BaseNameOnly', baseNameOnlyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, paths, varargin{:});
 keepFileSep = iP.Results.KeepFileSep;
+baseNameOnly = iP.Results.BaseNameOnly;
 
 %% Do the job
 % If empty, just return rempty
@@ -84,6 +94,11 @@ else
     % Otherwise, extract the common prefix using filesep as the delimiter
     parentDir = extract_common_prefix(directories, 'Delimiter', filesep, ...
                                         'KeepDelimiter', keepFileSep);
+end
+
+% Restrict to just the base name if requested
+if baseNameOnly
+    parentDir = extract_fileparts(parentDir, 'dirbase');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

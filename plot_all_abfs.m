@@ -316,6 +316,8 @@ if identifyProtocols
             % Detect spikes for each sweep and make an F-I plot
             plot_FI(fileName, data, siUs);
         end
+        
+        close all force hidden;
     end
 end
 
@@ -393,6 +395,8 @@ parfor iFile = 1:nFiles
             'ChannelLabels', channelLabels, ...
             'FigTypes', figTypes, otherArguments{:});
     end
+    
+    close all force hidden;
 end
 
 %% Compute and plot concatenated traces for each channel
