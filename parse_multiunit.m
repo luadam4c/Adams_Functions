@@ -85,6 +85,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 % 2019-03-24 Renamed setNumber -> phaseNumber, setName -> phaseName
 
 %% Hard-coded parameters
+rawDir = 'raw';
 rasterDir = 'rasters';
 autoCorrDir = 'autocorrelograms';
 acfDir = 'autocorrelation_functions';
@@ -175,7 +176,7 @@ nSamples = count_samples(vVecs);
 nMeasures = numel(measuresToPlot);
 
 % Initialize figures array
-figs = gobjects(1 + nMeasures, 1);
+figs = gobjects(nMeasures + 2, 1);
 
 % Create a figure title base
 titleBase = replace(fileBase, '_', '\_');
@@ -448,6 +449,59 @@ if plotFlag
     end
 end
 
+%% Plot raw traces
+% if plotFlag
+    fprintf('Plotting raw traces for %s ...\n', fileBase);
+
+    % Modify the figure base
+    figBaseRaw = [fileBase, '_raw'];
+
+    % Create output directory
+    outFolderRaw = fullfile(outFolder, rawDir);
+    check_dir(outFolderRaw);
+
+    % Extract parameters
+    stimStartSec = parsedParams.stimStartSec;
+    detectStartSec = parsedParams.detectStartSec;
+    firstSpikeSec = parsedParams.firstSpikeSec;
+    timeOscEndSec = parsedParams.timeOscEndSec;
+
+    % Prepare for the plot
+    xLabel = 'Time (s)';
+    figTitle = ['Raw traces for ', titleBase];
+
+    % Create figure and plot
+    figs(1) = figure('Visible', 'off');
+    clf
+    plot_traces(tVecs, vVecs, 'Verbose', false, ...
+                'PlotMode', 'parallel', 'SubplotOrder', 'list', ...
+                'YLimit', [-4, 4], ...
+                'XLabel', xLabel, 'LinkAxesOption', 'y', ...
+                'TraceLabels', 'suppress', ...
+                'FigTitle', figTitle, 'FigHandle', figs(1), ...
+                'Color', 'k');
+
+    vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
+                                    'LineStyle', '--');
+    if ~isempty(phaseBoundaries)
+        yBoundaries = nVectors - phaseBoundaries + 1;
+        horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
+                                        'LineStyle', '--', 'LineWidth', 2);
+    end
+
+    % Save the figure zoomed to several x limits
+    zoomWin1 = mean(stimStartSec) + [0, 10];
+    zoomWin2 = mean(detectStartSec) + [0, 2];
+    meanFirstSpike = nanmean(firstSpikeSec);
+    if ~isnan(meanFirstSpike)
+        zoomWin3 = meanFirstSpike + [0, 0.06];
+    else
+        zoomWin3 = [0, 0.06];
+    end            
+    save_all_zooms(figs(1), outFolderRaw, ...
+                    figBaseRaw, zoomWin1, zoomWin2, zoomWin3);
+% end
+
 %% Plot raster plot
 % TODO: Plot burst duration
 % TODO: Plot oscillatory index
@@ -456,6 +510,10 @@ if plotFlag
 
     % Modify the figure base
     figBaseRaster = [fileBase, '_raster'];
+
+    % Create output directory
+    outFolderRaster = fullfile(outFolder, rasterDir);
+    check_dir(outFolderRaster);
 
     % Extract the spike times
     spikeTimesSec = parsedData.spikeTimesSec;
@@ -482,12 +540,8 @@ if plotFlag
     nSweeps = numel(spikeTimesSec);
     colorsRaster = repmat({'Black'}, nSweeps, 1);
 
-    % Create output directory
-    outFolderRaster = fullfile(outFolder, rasterDir);
-    check_dir(outFolderRaster);
-
     % Create figure and plot
-    figs(1) = figure('Visible', 'off');
+    figs(2) = figure('Visible', 'off');
     clf
     [hLines, eventTimes, yEnds, yTicksTable] = ...
         plot_raster(spikeTimesSec, 'DurationWindow', burstWindows, ...
@@ -515,7 +569,7 @@ if plotFlag
     else
         zoomWin3 = [0, 0.06];
     end            
-    save_all_zooms(figs(1), outFolderRaster, ...
+    save_all_zooms(figs(2), outFolderRaster, ...
                     figBaseRaster, zoomWin1, zoomWin2, zoomWin3);
 end
 
@@ -536,7 +590,7 @@ if plotFlag
     figTitlesMeasures = [measuresToPlot, ' for ', titleBase];
 
     % Plot table
-    figs(2:(nMeasures + 1)) = ...
+    figs(3:(nMeasures + 2)) = ...
         plot_table(parsedParams, 'VariableNames', measuresToPlot, ...
                     'XLabel', 'Time (min)', 'FigNames', figPathsMeasures, ...
                     'FigTitles', figTitlesMeasures, ...

@@ -6,6 +6,9 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % Examples:
 %       plot_traces(1:3, magic(3))
 %       plot_traces(1:3, magic(3), 'PlotMode', 'parallel')
+%       plot_traces(1:3, magic(3), 'PlotMode', 'parallel', 'ReverseOrder', 'true')
+%       plot_traces(1:60, magic(60), 'PlotMode', 'parallel', 'LinkAxesOption', 'y')
+%       plot_traces(1:60, magic(60), 'PlotMode', 'parallel', 'SubplotOrder', 'list', 'LinkAxesOption', 'y')
 %
 % Outputs:
 %       fig         - figure handle for the created figure
@@ -32,10 +35,14 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                   - 'OverWrite': whether to overwrite existing output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'ReverseOrder': whether to reverse the order of the traces
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'PlotMode': plotting mode for multiple traces
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'overlapped'    - overlapped in a single plot
 %                       'parallel'      - in parallel in subPlots
+%                       'overlapped'    - overlapped in a single plot
+%                       'staggered'     - staggered in a single plot
 %                   default == 'overlapped'
 %                   - 'SubplotOrder': ordering of subplots
 %                   must be an unambiguous, case-insensitive match to one of: 
@@ -144,6 +151,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       cd/count_vectors.m
 %       cd/create_colormap.m
 %       cd/create_error_for_nargin.m
+%       cd/create_indices.m
 %       cd/create_labels_from_numbers.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
@@ -187,20 +195,31 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % 2019-01-03 Added 'SubplotOrder' as an optional argument
 % 2019-01-03 Added 'ColorMode' as an optional argument
 % 2019-01-03 Now allows TeX interpretation in titles
+% 2019-04-08 Added 'ReverseOrder' as an optional argument
+% TODO:　2019-04-08 Added 'staggered' as a valid plot mode
 
 %% Hard-coded parameters
-validPlotModes = {'overlapped', 'parallel'};
+validPlotModes = {'overlapped', 'parallel', 'staggered'};
 validSubplotOrders = {'bycolor', 'square', 'list', 'auto'};
 validColorModes = {'byPlot', 'byRow', 'byTraceInPlot', 'auto'};
 validLinkAxesOptions = {'none', 'x', 'y', 'xy', 'off'};
 maxRowsWithOneOnly = 8;
+maxNPlotsForTraceNum = 8;
 maxNPlotsForAnnotations = 8;
+maxNYLabels = 10;
 maxNPlotsForLegends = 12;
+maxNColsForTicks = 30;
+maxNColsForXTickLabels = 30;
+maxNRowsForTicks = 30;
+maxNRowsForYTickLabels = 30;
+maxNRowsForXAxis = 30;
+maxNColsForYAxis = 30;
 subPlotSqeezeFactor = 1.2;
 
 %% Default values for optional arguments
 verboseDefault = true;
 overWriteDefault = true;        % overwrite previous plots by default
+reverseOrderDefault = false;    % don't reverse order by default
 plotModeDefault = 'overlapped'; % plot traces overlapped by default
 subplotOrderDefault = 'auto';   % set later
 colorModeDefault = 'auto';      % set later
@@ -249,6 +268,8 @@ addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OverWrite', overWriteDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ReverseOrder', reverseOrderDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotMode', plotModeDefault, ...
     @(x) any(validatestring(x, validPlotModes)));
 addParameter(iP, 'SubplotOrder', subplotOrderDefault, ...
@@ -296,6 +317,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 parse(iP, tVecs, data, varargin{:});
 verbose = iP.Results.Verbose;
 overWrite = iP.Results.OverWrite;
+reverseOrder = iP.Results.ReverseOrder;
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
 subplotOrder = validatestring(iP.Results.SubplotOrder, validSubplotOrders);
 colorMode = validatestring(iP.Results.ColorMode, validColorModes);
@@ -391,6 +413,27 @@ end
 % Force as column cell array and match up to nPlots elements 
 tVecs = match_format_vector_sets(tVecs, data);
 
+% Reverse the order of the traces if requested
+if reverseOrder
+    [tVecs, data, dataToCompare] = ...
+        argfun(@flipud, tVecs, data, dataToCompare);
+end
+
+% Set the default trace numbers
+if reverseOrder
+    defaultTraceNumbers = nPlots:-1:1;
+else
+    defaultTraceNumbers = 1:nPlots;
+end
+
+% Set the default trace labels
+if nPlots > maxNPlotsForTraceNum
+    defaultTraceLabels = create_labels_from_numbers(defaultTraceNumbers);
+else
+    defaultTraceLabels = ...
+        create_labels_from_numbers(defaultTraceNumbers, 'Prefix', 'Trace #');
+end
+
 % Set the default x-axis labels
 if isempty(xLabel)
     xLabel = ['Time (', xUnits, ')'];
@@ -399,11 +442,11 @@ end
 % Set the default y-axis labels
 if isempty(yLabel)
     switch plotMode
-    case 'overlapped'
+    case {'overlapped', 'staggered'}
         yLabel = 'Data';
     case 'parallel'
         if nPlots > 1
-            yLabel = create_labels_from_numbers(1:nPlots, 'Prefix', 'Trace #');
+            yLabel = defaultTraceLabels;
         else
             yLabel = {'Data'};
         end
@@ -414,7 +457,7 @@ end
 
 % Make sure y-axis labels are consistent
 switch plotMode
-case 'overlapped'
+case {'overlapped', 'staggered'}
     if iscell(yLabel)
         fprintf('Only the first yLabel will be used!\n');
         yLabel = yLabel{1};
@@ -428,7 +471,7 @@ end
 
 % Set the default trace labels
 if isempty(traceLabels)
-    traceLabels = create_labels_from_numbers(1:nPlots, 'Prefix', 'Trace #');
+    traceLabels = defaultTraceLabels;
 end
 
 % Make sure trace labels are cell arrays
@@ -528,7 +571,11 @@ if iscell(xLimits)
                             legendLocation, figTitleThis, ...
                             figHandle, figNumber, figNameThis, figTypes, ...
                             nPlots, nRows, nColumns, nTracesPerPlot, ...
-                            maxNPlotsForAnnotations, subPlotSqeezeFactor, ...
+                            maxNPlotsForAnnotations, maxNYLabels, ...
+                            maxNColsForTicks, maxNColsForXTickLabels, ...
+                            maxNRowsForTicks, maxNRowsForYTickLabels, ...
+                            maxNRowsForXAxis, maxNColsForYAxis, ...
+                            subPlotSqeezeFactor, ...
                             otherArguments);
             
             % Hold off and close figure
@@ -552,7 +599,11 @@ else
                         legendLocation, figTitle, ...
                         figHandle, figNumber, figName, figTypes, ...
                         nPlots, nRows, nColumns, nTracesPerPlot, ...
-                        maxNPlotsForAnnotations, subPlotSqeezeFactor, ...
+                        maxNPlotsForAnnotations, maxNYLabels, ...
+                        maxNColsForTicks, maxNColsForXTickLabels, ...
+                        maxNRowsForTicks, maxNRowsForYTickLabels, ...
+                        maxNRowsForXAxis, maxNColsForYAxis, ...
+                        subPlotSqeezeFactor, ...
                         otherArguments);
 end
 
@@ -566,7 +617,11 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
                         legendLocation, figTitle, ...
                         figHandle, figNumber, figName, figTypes, ...
                         nPlots, nRows, nColumns, nTracesPerPlot, ...
-                        maxNPlotsForAnnotations, subPlotSqeezeFactor, ...
+                        maxNPlotsForAnnotations, maxNYLabels, ...
+                        maxNColsForTicks, maxNColsForXTickLabels, ...
+                        maxNRowsForTicks, maxNRowsForYTickLabels, ...
+                        maxNRowsForXAxis, maxNColsForYAxis, ...
+                        subPlotSqeezeFactor, ...
                         otherArguments)
 
 % Decide on the figure to plot on
@@ -596,7 +651,7 @@ else
 end
 
 switch plotMode
-case 'overlapped'
+case {'overlapped', 'staggered'}
     % Hold on
     hold on
 
@@ -698,6 +753,12 @@ case 'parallel'
     % Initialize graphics object arrays for subplots
     subPlots = gobjects(nPlots, 1);
 
+    % Find the rows that will have y labels
+    if nRows > maxNYLabels
+        rowsWithYLabels = ...
+            create_indices('IndexEnd', nRows, 'MaxNum', maxNYLabels);
+    end
+
     % Plot each trace as a different subplot
     %   Note: the number of rows is based on the number of rows in the color map
     for iPlot = 1:nPlots
@@ -777,9 +838,13 @@ case 'parallel'
 
         % Generate a y-axis label
         % TODO: Make it horizontal if more than 3? Center it?
-        % ylabel(yLabel{iPlot}, 'Rotation', 0);
-        if ~strcmpi(yLabel{iPlot}, 'suppress')
-            ylabel(yLabel{iPlot});
+        if ~strcmpi(yLabel{iPlot}, 'suppress') && ...
+                ismember(thisRowNumber, rowsWithYLabels)
+            % if nRows > 3
+            %     ylabel(yLabel{iPlot}, 'Rotation', 0);
+            % else
+                ylabel(yLabel{iPlot});
+            % end
         end
 
         % Generate a legend
@@ -787,14 +852,47 @@ case 'parallel'
             legend(ax, 'location', legendLocation);
         end
 
+        % Remove x ticks if too many columns
+        if nColumns > maxNColsForTicks
+            set(ax, 'XTick', []);
+            set(ax, 'TickLength', [0, 0]);
+        end
+
+        % Remove y ticks if too many rows
+        if nRows > maxNRowsForTicks
+            set(ax, 'YTick', []);
+            set(ax, 'TickLength', [0, 0]);
+        end
+
         % Remove x tick labels except for the last row
-        if thisRowNumber ~= nRows
+        %   or if too many columns
+        if thisRowNumber ~= nRows || nColumns > maxNColsForXTickLabels
             set(ax, 'XTickLabel', []);
         end
 
         % Remove x tick labels except for the first column
-        if thisColNumber ~= 1
+        %   or if too many rows
+        if thisColNumber ~= 1 || nRows > maxNRowsForYTickLabels
             set(ax, 'YTickLabel', []);
+        end
+
+        % TODO: Hide the X axis ruler if too many rows
+        if nRows > maxNRowsForXAxis
+            % ax.XRuler.Axle.Visible = 'off';
+            xTick = get(ax, 'XTick');
+            xTickLabel = get(ax, 'XTickLabel');
+            set(ax.XAxis, 'Color', 'none');
+            set(ax.XAxis.Label, 'Color', 'k');
+            set(ax.XAxis.Label, 'Visible', 'on');
+            set(ax, 'XTick', xTick);
+            set(ax, 'XTickLabel', xTickLabel);
+        end
+
+        % Hide the Y axis ruler if too many columns
+        if nColumns > maxNColsForYAxis
+            % set(ax.YAxis, 'Color', 'r');
+            % set(ax.YAxis.Label, 'Color', 'k');
+            % set(ax.YAxis.Label, 'Visible', 'on');
         end
 
         % Create a title for the first subplot
@@ -805,7 +903,7 @@ case 'parallel'
 
         % Create a label for the X axis only for the last row
         if ~strcmpi(xLabel, 'suppress') && nColumns == 1 && ...
-            iPlot == nPlots
+                iPlot == nPlots
             xlabel(xLabel);
         end
 
@@ -876,7 +974,7 @@ if ~isempty(figName)
 
             % Change the x-axis limits
             switch plotMode
-            case 'overlapped'
+            case {'overlapped', 'staggered'}
                 % Change the figure title
                 if ~strcmpi(figTitleThis, 'suppress')
                     title(figTitleThis);
@@ -1224,6 +1322,9 @@ p = plot(tVecs{iPlot}, data{iPlot}, ...
 title(figTitle, 'Interpreter', 'none');
 title(figTitleThis, 'Interpreter', 'none');
 title(figTitle, 'Interpreter', 'none');
+
+set(ax.XAxis, 'Visible', 'off');
+set(ax.YAxis, 'Visible', 'off');
 
 %}
 

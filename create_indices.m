@@ -73,6 +73,7 @@ function indices = create_indices (varargin)
 %       cd/fit_2exp.m
 %       cd/compute_combined_data.m
 %       cd/parse_pulse_response.m
+%       cd/plot_traces.m
 
 % File History:
 % 2018-12-17 Created by Adam Lu

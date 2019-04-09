@@ -9,6 +9,8 @@
 %       cd/extract_fileparts.m
 %       cd/ismatch.m
 %       cd/plot_table.m
+% Used by:
+%       cd/parse_all_multiunit.m
 
 % File History:
 % 2019-03-15 Created by Adam Lu

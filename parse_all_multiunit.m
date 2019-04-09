@@ -6,6 +6,7 @@
 %       cd/extract_fileparts.m
 %       cd/parse_all_abfs.m
 %       cd/parse_multiunit.m
+%       cd/plot_measures.m
 
 % File History:
 % 2019-03-13 Created
@@ -16,7 +17,7 @@
 
 %% Hard-coded parameters
 outFolder = pwd;
-plotFlag = true; %false; %true;
+plotFlag = false; %true;
 nFilesPerSlice = 3;
 
 %% Parse all abfs
@@ -83,7 +84,7 @@ horzcatcell = @(x) horzcat(x{:});
 muParams = cell(nSlices, 1);
 muData = cell(nSlices, 1);
 
-% 
+% Parse and plot recordings from each slice
 for iSlice = 1:nSlices
     [muParams{iSlice}, muData{iSlice}] = ...
         parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), ...
@@ -95,9 +96,10 @@ for iSlice = 1:nSlices
     close all force hidden;
 end
 
+% for iSlice = 1:nSlices; [muParams{iSlice}, muData{iSlice}] = parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), 'PulseVectors', iVecsSl{iSlice}, 'PlotFlag', plotFlag, 'OutFolder', outFolder, 'FileBase', sliceBases{iSlice}, 'PhaseBoundaries', phaseBoundaries{iSlice}); close all force hidden; end
+
 %% Plot tuning curves for all measures
 plot_measures;
-% for iSlice = 1:nSlices; [muParams{iSlice}, muData{iSlice}] = parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), 'PulseVectors', iVecsSl{iSlice}, 'PlotFlag', plotFlag, 'OutFolder', outFolder, 'FileBase', sliceBases{iSlice}, 'PhaseBoundaries', phaseBoundaries{iSlice}); close all force hidden; end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
