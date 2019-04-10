@@ -450,7 +450,7 @@ if plotFlag
 end
 
 %% Plot raw traces
-% if plotFlag
+if plotFlag
     fprintf('Plotting raw traces for %s ...\n', fileBase);
 
     % Modify the figure base
@@ -500,7 +500,7 @@ end
     end            
     save_all_zooms(figs(1), outFolderRaw, ...
                     figBaseRaw, zoomWin1, zoomWin2, zoomWin3);
-% end
+end
 
 %% Plot raster plot
 % TODO: Plot burst duration
@@ -625,7 +625,7 @@ filterWidthMs = 100;
 minRelProm = 0.02;
 minSpikeRateInBurstHz = 100;
 minBurstLengthMs = 20;
-maxInterBurstIntervalMs = 2000;
+maxInterBurstIntervalMs = 1000; %2000;
 
 %% Preparation
 % Compute the minimum delay in samples
