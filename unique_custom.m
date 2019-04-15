@@ -32,7 +32,7 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %       /TODO:dir/TODO:file
 
 % File History:
-% 2019-04-01 Adapted from https://www.mathworks.com/matlabcentral/answers/42561-treating-nan-as-a-unique-value-instead-of-as-a-distinct#answer_52371
+% 2019-04-01 BT - Adapted from https://www.mathworks.com/matlabcentral/answers/42561-treating-nan-as-a-unique-value-instead-of-as-a-distinct#answer_52371
 % 
 
 %% Hard-coded parameters

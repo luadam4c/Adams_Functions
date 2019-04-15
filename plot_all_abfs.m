@@ -401,9 +401,10 @@ end
 
 %% Compute and plot concatenated traces for each channel
 %       if the number of channels and channel types are all the same
-% compute_and_plot_concatenated_trace(abfParamsStruct, dataReorderedAll, ...
-%                                     'SourceDirectory', directory, ...
-%                                     'OutFolder', outFolder, otherArguments{:});
+
+compute_and_plot_concatenated_trace(abfParamsStruct, dataReorderedAll, ...
+                                    'SourceDirectory', directory, ...
+                                    'OutFolder', outFolder, otherArguments{:});
 
 %% Copy similar figure types to its own directory
 % TODO

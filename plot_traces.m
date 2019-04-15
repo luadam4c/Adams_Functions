@@ -754,7 +754,8 @@ case 'parallel'
     subPlots = gobjects(nPlots, 1);
 
     % Find the rows that will have y labels
-    if nRows > maxNYLabels
+    % if nRows > maxNYLabels
+    if nRows < maxNYLabels
         rowsWithYLabels = ...
             create_indices('IndexEnd', nRows, 'MaxNum', maxNYLabels);
     end
