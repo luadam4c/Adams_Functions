@@ -35,6 +35,10 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                   - 'OverWrite': whether to overwrite existing output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'AutoZoom': whether to zoom in on the y axis 
+%                                   to within 3 SDs of the mean
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'ReverseOrder': whether to reverse the order of the traces
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -196,6 +200,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % 2019-01-03 Added 'ColorMode' as an optional argument
 % 2019-01-03 Now allows TeX interpretation in titles
 % 2019-04-08 Added 'ReverseOrder' as an optional argument
+% 2019-04-24 Added 'AutoZoom' as an optional argument
 % TODO:　2019-04-08 Added 'staggered' as a valid plot mode
 
 %% Hard-coded parameters
@@ -219,6 +224,7 @@ subPlotSqeezeFactor = 1.2;
 %% Default values for optional arguments
 verboseDefault = true;
 overWriteDefault = true;        % overwrite previous plots by default
+autoZoomDefault = false;        % don't zoom in on y axis by default
 reverseOrderDefault = false;    % don't reverse order by default
 plotModeDefault = 'overlapped'; % plot traces overlapped by default
 subplotOrderDefault = 'auto';   % set later
@@ -267,6 +273,8 @@ addRequired(iP, 'data', ...
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OverWrite', overWriteDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AutoZoom', autoZoomDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ReverseOrder', reverseOrderDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -317,6 +325,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 parse(iP, tVecs, data, varargin{:});
 verbose = iP.Results.Verbose;
 overWrite = iP.Results.OverWrite;
+autoZoom = iP.Results.AutoZoom;
 reverseOrder = iP.Results.ReverseOrder;
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
 subplotOrder = validatestring(iP.Results.SubplotOrder, validSubplotOrders);
@@ -655,12 +664,25 @@ case {'overlapped', 'staggered'}
     % Hold on
     hold on
 
+    % Decide whether to stagger
+    if strcmp(plotMode, 'staggered')
+        toStagger = true;
+    else
+        toStagger = false;
+    end
+
     % Set the default y-axis limits
     if isempty(yLimits)
         % Compute the y limits from both data and dataToCompare
-        yLimits = compute_axis_limits({data, dataToCompare}, 'y');
+        yLimits = compute_axis_limits({data, dataToCompare}, 'y', ...
+                                        'AutoZoom', autoZoom);
     elseif iscell(yLimits)
         % TODO: Deal with yLimits if it is a cell array
+    end
+
+    % Decide on the amount in y axis units to stagger
+    if toStagger
+        % TODO: Use the 98% range by default
     end
 
     % Plot all plots together
@@ -778,7 +800,8 @@ case 'parallel'
         if isempty(yLimits)
             % Compute the y limits from both data and dataToCompare
             yLimitsThis = ...
-                compute_axis_limits({data{iPlot}, dataToCompare{iPlot}}, 'y');
+                compute_axis_limits({data{iPlot}, dataToCompare{iPlot}}, ...
+                                        'y', 'AutoZoom', autoZoom);
         elseif iscell(yLimits)
             yLimitsThis = yLimits{iPlot};
         else

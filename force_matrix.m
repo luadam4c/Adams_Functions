@@ -5,6 +5,7 @@ function vecs = force_matrix (vecs, varargin)
 %       TODO
 % Example(s):
 %       force_matrix({1:5, 1:3, 1:4})
+%       force_matrix({1:5, magic(3)})
 % Outputs:
 %       vecs        - vectors as a matrix
 %                   specified as a matrix

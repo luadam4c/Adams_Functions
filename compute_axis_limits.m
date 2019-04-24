@@ -27,11 +27,15 @@ function [limits, axisRange] = compute_axis_limits (dataOrRange, axisType, varar
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'x'- x axis
 %                       'y'- y axis
-%       varargin    - 'Coverage': percent coverage of y axis
+%       varargin    - 'Coverage': percent coverage of axis
 %                   must be empty or a numeric scalar between 0 and 100
 %                   default == 100% for x axis and 80% for y axis
-%                   - 'Separately': whether to compute y limits separately
+%                   - 'Separately': whether to compute axis limits separately
 %                                       for each vector
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'AutoZoom': whether to zoom in on the axis 
+%                                   to within 3 SDs of the mean of all values
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %
@@ -51,15 +55,19 @@ function [limits, axisRange] = compute_axis_limits (dataOrRange, axisType, varar
 
 % File History:
 % 2018-12-19 Combined compute_xlimits.m and compute_ylimits.m
+% 2019-04-24 Added 'AutoZoom' as an optional argument
 
 %% Hard-coded parameters
 validAxisTypes = {'x', 'y'};
 xCoverageDefault = 100;     % 100% coverage of x axis by default
 yCoverageDefault = 80;      % 80% coverage of x axis by default
-        
+maxNStdBeyondMean = 3;      % maximum number of standard deviations 
+                            %   beyond the mean
+
 %% Default values for optional arguments
 coverageDefault = [];       % set later
-separatelyDefault = false;  % Compute a single set of y axis limits by default
+separatelyDefault = false;  % compute a single set of axis limits by default
+autoZoomDefault = false;    % don't zoom in on axis by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -85,11 +93,14 @@ addParameter(iP, 'Coverage', coverageDefault, ...
     @(x) isempty(x) || isnumeric(x) && isscalar(x) && x >= 0 && x <= 100);
 addParameter(iP, 'Separately', separatelyDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AutoZoom', autoZoomDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, dataOrRange, axisType, varargin{:});
 coverage = iP.Results.Coverage;
 separately = iP.Results.Separately;
+autoZoom = iP.Results.AutoZoom;
 
 % Validate axisType
 axisType = validatestring(axisType, validAxisTypes);
@@ -108,17 +119,40 @@ if isempty(coverage)
 end
 
 % Compute the minimum and maximum values
-if separately
-    if iscell(dataOrRange)
-        minValue = cellfun(@min, dataOrRange);
-        maxValue = cellfun(@max, dataOrRange);
-    elseif isnumeric(dataOrRange)
-        minValue = min(dataOrRange, [], 1);
-        maxValue = max(dataOrRange, [], 1);
+if autoZoom
+    % Compute the mean and standard deviation of all values
+    if separately
+        if iscell(dataOrRange)
+            meanValue = cellfun(@mean, dataOrRange);
+            stdValue = cellfun(@std, dataOrRange);
+        elseif isnumeric(dataOrRange)
+            meanValue = mean(dataOrRange);
+            stdValue = std(dataOrRange);
+        end
+    else
+        dataLin = force_column_vector(dataOrRange, 'ToLinearize', true);
+        meanValue = mean(dataLin);
+        stdValue = std(dataLin);
     end
+
+    % Compute the "minimum" and "maximum" values
+    %   based on the mean and standard deviation of all values
+    minValue = meanValue - maxNStdBeyondMean * stdValue;
+    maxValue = meanValue + maxNStdBeyondMean * stdValue;
 else
-    minValue = apply_iteratively(@min, dataOrRange);
-    maxValue = apply_iteratively(@max, dataOrRange);
+    % Compute the minimum and maximum values
+    if separately
+        if iscell(dataOrRange)
+            minValue = cellfun(@min, dataOrRange);
+            maxValue = cellfun(@max, dataOrRange);
+        elseif isnumeric(dataOrRange)
+            minValue = min(dataOrRange, [], 1);
+            maxValue = max(dataOrRange, [], 1);
+        end
+    else
+        minValue = apply_iteratively(@min, dataOrRange);
+        maxValue = apply_iteratively(@max, dataOrRange);
+    end
 end
 
 % Check minimum and maximum values

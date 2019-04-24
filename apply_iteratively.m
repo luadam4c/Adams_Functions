@@ -1,6 +1,6 @@
-function scalar = apply_iteratively (myFunction, array, varargin)
-%% Applies a function iteratively to an array until it becomes a non-cell array scalar
-% Usage: scalar = apply_iteratively (myFunction, array, varargin)
+function result = apply_iteratively (myFunction, array, varargin)
+%% Applies a function iteratively to an array until it becomes a non-cell array result
+% Usage: result = apply_iteratively (myFunction, array, varargin)
 % Explanation:
 %       Applies a function iteratively to an array.
 %           The function must be able to take elements of the array as an argument
@@ -12,23 +12,27 @@ function scalar = apply_iteratively (myFunction, array, varargin)
 %       d = apply_iteratively(@max, {magic(3), -10:5})
 %       e = apply_iteratively(@max, {{magic(3), magic(3)}, {magic(3)}})
 %       f = apply_iteratively(@max, {{magic(3), magic(3)}, {[], []}})
+%       g = apply_iteratively(@unique, {{magic(3), magic(3)}, {[], []}})
+%       h = apply_iteratively(@unique_custom, {{magic(3), magic(3)}, {[], []}}, 'IgnoreNaN', true)
 % Outputs:
-%       scalar      - the resulting scalar
-%                   specified as a scalar
+%       result      - the resulting vector
+%                   specified as a vector
 % Arguments:
 %       myFunction  - a custom function
 %                   must be a function handle
 %       array       - an array to apply the function iteratively
 %                   must be an array
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'OptArg': optional argument that's 
+%                                   not a parameter-value pair 
+%                   default == []
+%                   - optional parameter-value pairs for myFunction
 %
 % Requires:
 %       cd/create_error_for_nargin.m
 %
 % Used by:
 %       cd/compute_axis_limits.m
+%       cd/extract_subvectors.m
 %       cd/identify_channels.m
 %       cd/plot_raster.m
 %       cd/plot_traces.m
@@ -37,14 +41,16 @@ function scalar = apply_iteratively (myFunction, array, varargin)
 % File History:
 % 2018-12-19 Created by Adam Lu
 % 2018-12-28 Fixed code logic for case e in examples
+% 2019-04-24 Allowed the result to be a non-scalar vector
 % TODO: Add 'TreatCellAsArray' as an optional argument
 % 
 % 
 
 %% Hard-coded parameters
+debugFlag = true;
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+optArgDefault = '';         % Not provided
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -57,6 +63,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'myFunction', ...           % a custom function
@@ -64,19 +71,25 @@ addRequired(iP, 'myFunction', ...           % a custom function
 addRequired(iP, 'array');
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default, ...
-%     % TODO: validation function %);
+addParameter(iP, 'OptArg', optArgDefault);
 
 % Read from the Input Parser
 parse(iP, myFunction, array, varargin{:});
-% param1 = iP.Results.param1;
+optArg = iP.Results.OptArg;
 
-% Check relationships between arguments
-% TODO
+% Keep unmatched arguments for myFunction
+otherArguments = struct2arglist(iP.Unmatched);
 
 %% Do the job
 % Apply myFunction to array until it becomes a non-cell scalar
-while iscell(array) || ~isscalar(array)
+%   or if it does not change from the previous iteration
+arrayOld = NaN;
+while iscell(array) || ...
+        ~(isscalar(array) || isequaln(array, arrayOld))
+    % Update arrayOld
+    arrayOld = array;
+
+    % Apply function to array
     if isempty(array)
         % Change to NaN
         array = NaN;
@@ -84,41 +97,67 @@ while iscell(array) || ~isscalar(array)
         % If any element is empty, remove it
         array = array(~cellfun(@isempty, array));
 
+        % Save the old array
+        arrayOld = array;
+
         % Reduce the cell array to an ordinary array
         try
             % First try if one can reduce a cell array to an ordinary array
             %   by applying myFunction to each cell
-            array = cellfun(myFunction, array);
+            if ~isempty(optArg)
+                array = cellfun(@(x) myFunction(x, optArg, ...
+                                                otherArguments{:}), array);
+            else
+                array = cellfun(@(x) myFunction(x, otherArguments{:}), array);
+            end
+            if debugFlag
+                disp('Applied to each cell')
+            end
         catch
             % If not, apply myFunction iteratively in each cell
-            array = cellfun(@(x) apply_iteratively(myFunction, x), array, ...
-                            'UniformOutput', false);
+            array = cellfun(@(x) apply_iteratively(myFunction, x, ...
+                                    'OptArg', optArg, otherArguments{:}), ...
+                            array, 'UniformOutput', false);
+            if debugFlag
+                disp('Applied iteratively to each cell')
+            end
+        end
+
+        % If the array still hasn't changed, concatenate the vectors
+        if isequaln(array, arrayOld)
+            try
+                array = horzcat(array{:});
+            catch
+                array = vertcat(array{:});
+            end
         end
     else
-        % Apply myFunction to array until it becomes a scalar
-        array = myFunction(array);
+        % Apply myFunction to array until it becomes a vector
+        if ~isempty(optArg)
+            array = myFunction(array, optArg, otherArguments{:});
+        else
+            array = myFunction(array, otherArguments{:});
+        end
+    end
+    
+    if debugFlag
+        disp('Old array: ');
+        disp(arrayOld);
+        disp('New array: ');
+        disp(array);
     end
 end
 
-% The final array should be a non-cell scalar
-scalar = array;
+% The final array should be a non-cell vector
+result = array;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
 
-array = cellfun(myFunction, array, 'UniformOutput', false);
-
-% If the final array is empty, change it to NaN
-if isempty(array)
-    scalar = NaN;
-else
-    scalar = array;
-end
-
-% Apply myFunction to array until it becomes a non-cell scalar or empty
-while iscell(array) || ~(isscalar(array) || isempty(array))
+while iscell(array) || ~isscalar(array)
+array = myFunction(array);
 
 %}
 

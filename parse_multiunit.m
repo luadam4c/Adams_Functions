@@ -450,7 +450,7 @@ if plotFlag
 end
 
 %% Plot raw traces
-if plotFlag
+%if plotFlag
     fprintf('Plotting raw traces for %s ...\n', fileBase);
 
     % Modify the figure base
@@ -500,7 +500,7 @@ if plotFlag
     end            
     save_all_zooms(figs(1), outFolderRaw, ...
                     figBaseRaw, zoomWin1, zoomWin2, zoomWin3);
-end
+%end
 
 %% Plot raster plot
 % TODO: Plot burst duration

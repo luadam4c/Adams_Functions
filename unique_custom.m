@@ -4,6 +4,7 @@ function [y, ia, ic] = unique_custom (x, varargin)
 % Explanation:
 %       This function removes NaN values not identified by the default unique() function.
 % Example(s):
+%       unique_custom([3, NaN, 3, 5, NaN], 'IgnoreNaN', true)
 %       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN])
 %       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', true)
 %       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'SaveOneNaN', true)
@@ -32,7 +33,9 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %       /TODO:dir/TODO:file
 
 % File History:
-% 2019-04-01 BT - Adapted from https://www.mathworks.com/matlabcentral/answers/42561-treating-nan-as-a-unique-value-instead-of-as-a-distinct#answer_52371
+% 2019-04-01 BT - Adapted from https://www.mathworks.com/matlabcentral/
+%                         answers/42561-treating-nan-as-a-
+%                         unique-value-instead-of-as-a-distinct#answer_52371
 % 
 
 %% Hard-coded parameters
@@ -85,20 +88,17 @@ if ignoreNaN || saveOneNaN
     % Preserving one NaN
     if saveOneNaN
         % NaN indices, does not include last NaN if present
-        NaN_idx = isnan(y(1:end-1));
+        indNaN = isnan(y(1:end-1));
     else
         % All NaN indices
-        NaN_idx = isnan(y(1:end));            
+        indNaN = isnan(y(1:end));            
     end
 
     % Delete all NaN elements in y, ia, and ic
-    y(NaN_idx) = [];
-    ia(NaN_idx) = [];
-    ic(NaN_idx) = [];
+    y(indNaN) = [];
+    ia(indNaN) = [];
+    ic(indNaN) = [];
 end
-
-%% Output results
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

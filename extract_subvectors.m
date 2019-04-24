@@ -56,6 +56,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                   default == true
 %
 % Requires:
+%       cd/apply_iteratively.m
 %       cd/argfun.m
 %       cd/create_default_endpoints.m
 %       cd/count_samples.m
@@ -326,7 +327,7 @@ case {'leftAdjust', 'rightAdjust', 'leftAdjustPad', 'rightAdjustPad'}
     nSamples = count_samples(indices, 'ForceColumnOutput', true);
 
     % Get unique nSamples
-    uniqueNSamples = unique(nSamples);
+    uniqueNSamples = apply_iteratively(@unique, nSamples);
 
     % Get the number of unique nSamples
     nUniqueNSamples = numel(uniqueNSamples);
@@ -451,6 +452,9 @@ nRows = length(indices);
 if iscellnumericvector(vecs)
 [indices, vecs] = ...
         match_format_vector_sets(indices, vecs, 'ForceCellOutputs', true);
+
+uniqueNSamples = unique(nSamples);
+
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -14,6 +14,8 @@ function vectors = force_column_vector (vectors, varargin)
 %       vector = force_column_vector(vector);
 %       vectors = force_column_vector(vectors);
 %       force_column_vector({[3, 4], [5; 6], magic(3)})
+%       force_column_vector({ones(2, 1), magic(3)}, 'ToLinearize', true)
+%       force_column_vector({ones(2, 1), magic(3)}, 'ToLinearize', true, 'CombineAcrossCells', true)
 %
 % Outputs:
 %       vectors     - vectors transformed
@@ -40,6 +42,9 @@ function vectors = force_column_vector (vectors, varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %                   - 'ToLinearize': whether to linearize a non-vector array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'CombineAcrossCells': whether to combine across cells
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'RowInstead': whether to force as row vector instead
@@ -105,6 +110,7 @@ function vectors = force_column_vector (vectors, varargin)
 % 2019-01-08 Added 'ForceCellOutput' as an optional argument
 % 2019-01-09 Added 'ToLinearize' as an optional argument
 % 2019-01-13 Added 'RowInstead' as an optional argument
+% 2019-04-24 Added 'CombineAcrossCells' as an optional argument
 % TODO: Deal with 3D arrays
 % 
 
@@ -116,6 +122,7 @@ treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
                                     %   as an array by default
 treatCharAsScalarDefault = true;% treat character arrays as scalars by default
 toLinearizeDefault = false;     % whether to linearize a nonvector array
+combineAcrossCellsDefault = false;  % whether to combine across cells
 rowInsteadDefault = false;      % whether to force as row vector instead
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -146,6 +153,8 @@ addParameter(iP, 'TreatCharAsScalar', treatCharAsScalarDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ToLinearize', toLinearizeDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'CombineAcrossCells', combineAcrossCellsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RowInstead', rowInsteadDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
@@ -157,18 +166,30 @@ treatCellAsArray = iP.Results.TreatCellAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 treatCharAsScalar = iP.Results.TreatCharAsScalar;
 toLinearize = iP.Results.ToLinearize;
+combineAcrossCells = iP.Results.CombineAcrossCells;
 rowInstead = iP.Results.RowInstead;
 
 %% Do the job
 if iscell(vectors) && ~treatCellAsArray && ...
         ~(iscellstr(vectors) && treatCellStrAsArray)
-    % Extract as a cell array
-    %   Note: this will have a recursive effect
-    vectors = cellfun(@(x) force_column_vector(x, ...
-                            'IgnoreNonVectors', ignoreNonVectors, ...
-                            'ToLinearize', toLinearize, ...
-                            'RowInstead', rowInstead), ...
-                    vectors, 'UniformOutput', false);
+    if combineAcrossCells
+        % Force as a matrix
+        vectors = force_matrix(vectors);
+
+        % Apply the function recursively on the horizontally-concatenated
+        %   vectors
+        vectors = force_column_vector(vectors, ...
+                                'IgnoreNonVectors', ignoreNonVectors, ...
+                                'ToLinearize', toLinearize, ...
+                                'RowInstead', rowInstead);
+    else
+        % Apply the function recursively on each cell
+        vectors = cellfun(@(x) force_column_vector(x, ...
+                                'IgnoreNonVectors', ignoreNonVectors, ...
+                                'ToLinearize', toLinearize, ...
+                                'RowInstead', rowInstead), ...
+                        vectors, 'UniformOutput', false);
+    end
 elseif rowInstead && ~isrow(vectors) || ~rowInstead && ~iscolumn(vectors)
     if isempty(vectors) || ischar(vectors) && treatCharAsScalar
         % Do nothing
