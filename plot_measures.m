@@ -7,6 +7,7 @@
 %       cd/create_indices.m
 %       cd/extract_common_directory.m
 %       cd/extract_fileparts.m
+%       cd/force_matrix.m
 %       cd/ismatch.m
 %       cd/plot_table.m
 % Used by:

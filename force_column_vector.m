@@ -15,6 +15,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       vectors = force_column_vector(vectors);
 %       force_column_vector({[3, 4], [5; 6], magic(3)})
 %       force_column_vector({ones(2, 1), magic(3)}, 'ToLinearize', true)
+%       force_column_vector({ones(2, 1), magic(3)}, 'CombineAcrossCells', true)
 %       force_column_vector({ones(2, 1), magic(3)}, 'ToLinearize', true, 'CombineAcrossCells', true)
 %
 % Outputs:
@@ -54,6 +55,7 @@ function vectors = force_column_vector (vectors, varargin)
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/force_column_cell.m
+%       cd/force_matrix.m
 %       cd/iscellnumeric.m
 %       cd/isnum.m
 %
@@ -182,6 +184,10 @@ if iscell(vectors) && ~treatCellAsArray && ...
                                 'IgnoreNonVectors', ignoreNonVectors, ...
                                 'ToLinearize', toLinearize, ...
                                 'RowInstead', rowInstead);
+        % If linearized, remove padded NaNs when forcing as a matrix
+        if toLinearize
+            vectors(isnan(vectors)) = [];
+        end
     else
         % Apply the function recursively on each cell
         vectors = cellfun(@(x) force_column_vector(x, ...

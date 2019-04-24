@@ -30,7 +30,9 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/compute_combined_trace.m
 %       cd/create_indices.m
 %       cd/find_window_endpoints.m
+%       cd/force_column_vector.m
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/plot_measures.m
 %       cd/plot_swd_histogram.m
 
 % File History:
