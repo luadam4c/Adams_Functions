@@ -7,12 +7,9 @@ function nSamples = count_samples (vectors, varargin)
 %           or cellfun(@numel, x) for cell arrays
 % Example(s):
 %       nSamples = count_samples(data)
-%       count_samples(magic(3))
-%       count_samples(magic(3), 'TreatMatrixAsVector', true)
-%       count_samples(magic(3), 'CountMethod', 'nrows')
-%       count_samples(rand(2, 3), 'CountMethod', 'length')
 %       count_samples(repmat({repmat({'sdf'}, 3, 1)}, 3, 1))
 %       count_samples(repmat({'sdf'}, 3, 4))
+%       count_samples(magic(3), 'TreatMatrixAsVector', true)
 % Outputs:
 %       nSamples    - number of samples for each vector
 %                   specified as a column vector 
@@ -43,11 +40,10 @@ function nSamples = count_samples (vectors, varargin)
 %                   default == true
 %                   - 'CountMethod': method for counting samples
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'veclength' - length of each vector
-%                       'length'    - largest dimension of each vector
-%                       'numel'     - number of elements
-%                       'nrows'     - number of rows
-%                       'ncols'     - number of columns
+%                       'length'    - length of each vector
+%                       'nElements' - count the number of elements
+%                       'nRows' - count the number of rows
+%                       'nCols' - count the number of columns
 %                       'nRowsEachCol' - number of rows for each column
 %                       'nColsEachRow' - number of columns for each row
 %                   default == 'nRowsEachCol'
@@ -86,10 +82,14 @@ function nSamples = count_samples (vectors, varargin)
 % 2019-01-22 Now returns 0 if vectors is empty
 % 2019-01-23 Now maintains uniform output if possible
 % 2019-04-24 Added 'CountMethod' as an optional argument
+% TODO: Implement the 'CountMethod': 'nCols'
+% TODO: Implement the 'CountMethod': 'nElements'
+% TODO: Implement the 'CountMethod': 'nRowsEachCol'
+% TODO: Implement the 'CountMethod': 'nColsEachRow'
 % 
 
 %% Hard-coded parameters
-validCountMethods = {'veclength', 'length', 'numel', 'nrows', 'ncols', ...
+validCountMethods = {'length', 'nElements', 'nRows', 'nCols', ...
                         'nRowsEachCol', 'nColsEachRow'};
 
 %% Default values for optional arguments
@@ -99,7 +99,7 @@ treatRowAsMatrixDefault = false;    % treat a row vector as a vector by default
 treatCellAsArrayDefault = false;    % treat cell arrays as many arrays by default
 treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
                                     %   as an array by default
-countMethodDefault = 'veclength';   % count the length of each vector by default
+countMethodDefault = 'length';      % count the length of each vector by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -145,73 +145,44 @@ if isempty(vectors)
     nSamples = 0;
 elseif iscell(vectors) && ~treatCellAsArray && ...
         ~(iscellstr(vectors) && treatCellStrAsArray)
-    % Count the number of elements for each array in each cell,
-    %   maintaining uniform output if possible
-    try
-        nSamples = cellfun(@(x) count_samples(x, ...
-                            'ForceColumnOutput', forceColumnOutput, ...
-                            'TreatCellAsArray', treatCellAsArray, ...
-                            'TreatCellStrAsArray', treatCellStrAsArray, ...
-                            'CountMethod', countMethod), ...
-                            vectors, 'UniformOutput', true);
-    catch
-        nSamples = cellfun(@(x) count_samples(x, ...
-                            'ForceColumnOutput', forceColumnOutput, ...
-                            'TreatCellAsArray', treatCellAsArray, ...
-                            'TreatCellStrAsArray', treatCellStrAsArray, ...
-                            'CountMethod', countMethod), ...
-                            vectors, 'UniformOutput', false);
+    % Count samples in each cell
+    if iscellnumericvector(vectors) || treatMatrixAsVector || ...
+            iscellstr(vectors) && ~treatCellStrAsArray
+        % Count the number of elements for each vector in each cell
+        nSamples = cellfun(@numel, vectors);
+    else
+        % Count the number of elements for each array in each cell,
+        %   maintaining uniform output if possible
+        try
+            nSamples = cellfun(@(x) count_samples(x, ...
+                                'ForceColumnOutput', forceColumnOutput, ...
+                                'TreatCellAsArray', treatCellAsArray, ...
+                                'TreatCellStrAsArray', treatCellStrAsArray, ...
+                                'CountMethod', countMethod), ...
+                                vectors, 'UniformOutput', true);
+        catch
+            nSamples = cellfun(@(x) count_samples(x, ...
+                                'ForceColumnOutput', forceColumnOutput, ...
+                                'TreatCellAsArray', treatCellAsArray, ...
+                                'TreatCellStrAsArray', treatCellStrAsArray, ...
+                                'CountMethod', countMethod), ...
+                                vectors, 'UniformOutput', false);
+        end
     end
 else
     % Either a non-cell array or a cell array treated as an array
-    %   or a cell array of strings treated as an array
-    switch countMethod
-        case 'veclength'
-            if treatMatrixAsVector || isvector(vectors) && ~treatRowAsMatrix
-                % Count the number of elements
-                nSamples = numel(vectors);
-            else
-                % All the vectors have the same number of samples
-                nSamplesScalar = size(vectors, 1);
+    if treatMatrixAsVector || isvector(vectors) && ~treatRowAsMatrix
+        % Count the number of elements
+        nSamples = numel(vectors);
+    else
+        % All the vectors have the same number of samples
+        nSamplesScalar = size(vectors, 1);
 
-                % Count the number of vectors
-                nVectors = size(vectors, 2);
+        % Count the number of vectors
+        nVectors = size(vectors, 2);
 
-                % Repeat to make a column vector
-                nSamples = match_row_count(nSamplesScalar, nVectors);
-            end
-        case 'length'
-            % Compute the largest dimension of each vector
-            nSamples = length(vectors);
-        case 'numel'
-            % Count the number of elements
-            nSamples = numel(vectors);
-        case 'nrows'
-            % Count the number of rows
-            nSamples = size(vectors, 1);
-        case 'ncols'
-            % Count the number of columns
-            nSamples = size(vectors, 2);
-        case 'nRowsEachCol'
-            % All the vectors have the same number of samples
-            nSamplesScalar = size(vectors, 1);
-
-            % Count the number of vectors
-            nVectors = size(vectors, 2);
-
-            % Repeat to make a column vector
-            nSamples = match_row_count(nSamplesScalar, nVectors);
-        case 'nColsEachRow'
-            % All the vectors have the same number of samples
-            nSamplesScalar = size(vectors, 2);
-
-            % Count the number of vectors
-            nVectors = size(vectors, 1);
-
-            % Repeat to make a column vector
-            nSamples = match_row_count(nSamplesScalar, nVectors);
-        otherwise
-            error('countMethod unrecognized!');
+        % Repeat to make a column vector
+        nSamples = match_row_count(nSamplesScalar, nVectors);
     end
 end
 
@@ -225,10 +196,34 @@ end
 %{
 OLD CODE:
 
-if iscellnumericvector(vectors) || treatMatrixAsVector || ...
-        iscellstr(vectors) && ~treatCellStrAsArray
-    % Count the number of elements for each vector in each cell
-    nSamples = cellfun(@numel, vectors);
+if iscell(vectors) && ~iscolumn(vectors)
+    vectors = vectors(:);
+end
+
+%       cd/force_column_cell.m
+% If vectors is a cell array, force vectors to be a column cell array
+%   Note: this will make nSamples a column vector
+if iscell(vectors)
+    vectors = force_column_cell(vectors);
+end
+
+nSamples = cellfun(@length, vectors);
+nSamples = length(vectors);
+nSamples = ones(nVectors, 1) * nSamplesScalar;
+
+%                   must be a numeric array or a cell array of numeric vectors
+
+@(x) assert(isnumeric(x) || iscellnumericvector(x), ...
+            ['vectors must be either a numeric array', ...
+                'or a cell array of numeric vectors!']));
+
+elseif isnum(vectors) || iscell(vectors) && treatCellAsArray || ...
+        iscellstr(vectors) && treatCellStrAsArray
+else
+    error('vectors is not the right type!');
+
+@(x) assert(isnum(x) || iscell(x), ...
+            'vectors must be either a numeric array or a cell array!'));
 
 %}
 

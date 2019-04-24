@@ -47,7 +47,7 @@ function result = apply_iteratively (myFunction, array, varargin)
 % 
 
 %% Hard-coded parameters
-debugFlag = true;
+debugFlag = false;
 
 %% Default values for optional arguments
 optArgDefault = '';         % Not provided

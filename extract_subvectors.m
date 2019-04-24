@@ -323,11 +323,16 @@ function indices = align_subvectors(indices, alignMethod)
 
 switch alignMethod
 case {'leftAdjust', 'rightAdjust', 'leftAdjustPad', 'rightAdjustPad'}
+    % Force as column vectors
+    indices = force_column_vector(indices, 'IgnoreNonVectors', true);
+    
     % Count the number of elements in each vector
-    nSamples = count_samples(indices, 'ForceColumnOutput', true);
+    nSamples = count_samples(indices, 'ForceColumnOutput', true, ...
+                                'CountMethod', 'nrows');
 
     % Get unique nSamples
-    uniqueNSamples = apply_iteratively(@unique, nSamples);
+    uniqueNSamples = apply_iteratively(@unique_custom, nSamples, ...
+                                        'IgnoreNaN', true);
 
     % Get the number of unique nSamples
     nUniqueNSamples = numel(uniqueNSamples);
