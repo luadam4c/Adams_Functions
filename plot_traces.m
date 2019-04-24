@@ -36,7 +36,9 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %                   - 'AutoZoom': whether to zoom in on the y axis 
-%                                   to within 3 SDs of the mean
+%                                   to within a certain number of SDs 
+%                                       of the mean
+%                                   cf. compute_axis_limits.m
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'ReverseOrder': whether to reverse the order of the traces
@@ -682,7 +684,8 @@ case {'overlapped', 'staggered'}
 
     % Decide on the amount in y axis units to stagger
     if toStagger
-        % TODO: Use the 98% range by default
+        % Use the original computed y axis limits from the data
+        range(yLimits)
     end
 
     % Plot all plots together

@@ -11,9 +11,10 @@ function [limits, axisRange] = compute_axis_limits (dataOrRange, axisType, varar
 %           and returned as a cell array
 %       
 % Example(s):
-%       limits = compute_axis_limits(xData, 'x');
-%       limits = compute_axis_limits(xRange, 'x');
-%       limits = compute_axis_limits(yData, 'y', 'Coverage', 70);
+%       limits = compute_axis_limits(xData, 'x')
+%       limits = compute_axis_limits(xRange, 'x')
+%       limits = compute_axis_limits(yData, 'y', 'Coverage', 70)
+%       compute_axis_limits([-10; 10; ones(100, 1); -1 * ones(100, 1)], 'y', 'AutoZoom', true)
 % Outputs:
 %       limits     - computed y axis limits
 %                   specified as a 2-element numeric vector
@@ -35,7 +36,7 @@ function [limits, axisRange] = compute_axis_limits (dataOrRange, axisType, varar
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'AutoZoom': whether to zoom in on the axis 
-%                                   to within 3 SDs of the mean of all values
+%                                   to within 7 SDs of the mean of all values
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %
@@ -61,7 +62,7 @@ function [limits, axisRange] = compute_axis_limits (dataOrRange, axisType, varar
 validAxisTypes = {'x', 'y'};
 xCoverageDefault = 100;     % 100% coverage of x axis by default
 yCoverageDefault = 80;      % 80% coverage of x axis by default
-maxNStdBeyondMean = 3;      % maximum number of standard deviations 
+maxNStdBeyondMean = 5;      % maximum number of standard deviations 
                             %   beyond the mean
 
 %% Default values for optional arguments
@@ -130,7 +131,8 @@ if autoZoom
             stdValue = std(dataOrRange);
         end
     else
-        dataLin = force_column_vector(dataOrRange, 'ToLinearize', true);
+        dataLin = force_column_vector(dataOrRange, 'ToLinearize', true, ...
+                                        'CombineAcrossCells', true);
         meanValue = mean(dataLin);
         stdValue = std(dataLin);
     end

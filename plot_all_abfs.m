@@ -351,7 +351,8 @@ if identifyProtocols
 end
 
 %% Plot individual traces
-parfor iFile = 1:nFiles
+%parfor iFile = 1:nFiles
+for iFile = 1:nFiles
     % Extract from cell arrays
     abfParams = abfParamsCell{iFile};
     abfData = abfDataCell{iFile};
