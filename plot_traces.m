@@ -697,8 +697,8 @@ case {'overlapped', 'staggered'}
         yOffsets = yAmountToStagger .* create_indices([nPlots; 1]);
 
         % Compute shifted traces
-        % TODO: compute_shifted_trace(data, yOffsets, 'add')
-        % TODO: compute_shifted_trace(dataToCompare, yOffsets, 'add')
+        % TODO: transform_vectors(data, yOffsets, 'add')
+        % TODO: transform_vectors(dataToCompare, yOffsets, 'add')
 
         % data = cellfun(@(x, y) x + y, data, num2cell(yOffsets));
         % dataToCompareThis = cellfun(@(x, y) x + y, dataToCompareThis, num2cell(yOffsets));

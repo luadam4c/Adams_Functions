@@ -6,12 +6,13 @@ function [y, ia, ic] = unique_custom (x, varargin)
 % Example(s):
 %       unique_custom([3, NaN, 3, 5, NaN], 'IgnoreNaN', true)
 %       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN])
+%               = unique([3 NaN 3 5 NaN])
+%               = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', false, 'SaveOneNaN', true)
+%               = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', false, 'SaveOneNaN', false)
+%               = unique_custom([3 NaN 3 5 NaN], 'SaveOneNaN', true)
 %       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', true)
-%       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'SaveOneNaN', true)
-%       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', true, 'SaveOneNaN', true)
-%       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', false, 'SaveOneNaN', true)
+%                   = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', true, 'SaveOneNaN', true)
 %       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', true, 'SaveOneNaN', false)
-%       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', false, 'SaveOneNaN', false)
 %       
 % Outputs:
 %       y           - All unique values in x
@@ -22,7 +23,9 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %       varargin    - 'IgnoreNaN': Whether to include NaN as distinct elements
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'SaveOneNaN': If NaN is present, preserve one at the end
+%                   - 'SaveOneNaN': If NaN is present, preserve one at the
+%                   end. If 'IgnoreNaN' == false, 'SaveOneNaN' has no
+%                   effect
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %                   - Any other parameter-value pair for the unique() function
@@ -84,7 +87,7 @@ otherArguments = struct2arglist(iP.Unmatched);
 %% Do the job
 
 % Ignoring NaN
-if ignoreNaN || saveOneNaN
+if ignoreNaN
     % Preserving one NaN
     if saveOneNaN
         % NaN indices, does not include last NaN if present
