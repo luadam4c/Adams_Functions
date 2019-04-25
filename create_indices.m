@@ -5,6 +5,7 @@ function indices = create_indices (varargin)
 %       TODO
 % Example(s):
 %       create_indices([2, 5])
+%       create_indices([5, 1])
 %       create_indices([2; 5])
 %       create_indices([[2; 2], [3; 3]])
 %       create_indices({[2, 5], [2, 5]})
@@ -12,6 +13,7 @@ function indices = create_indices (varargin)
 %       create_indices('IndexEnd', 5)
 %       create_indices('IndexEnd', [2, 3])
 %       create_indices([1, 50], 'MaxNum', 5)
+%       create_indices([5; 1], 'MaxNum', 2)
 % Outputs:
 %       indices     - indices for each pair of idxStart and idxEnd
 %                   specified as a numeric vector 
@@ -292,26 +294,29 @@ if forcePositive && idxStart < 1
     idxStart = 1;
 end
 
+% Get the sign of the index increment
+sgnIncr = sign(idxEnd - idxStart);
+
 % Decide on the index increment
 if ~isinf(maxNum)
     % Count the number of indices
-    nIndices = idxEnd - idxStart + 1;
+    nIndices = abs(idxEnd - idxStart) + 1;
 
     % Decide on the index increment
     if nIndices > maxNum
         % Update index increment
-        idxIncr = ceil(nIndices / maxNum);
+        idxIncr = sgnIncr * ceil(nIndices / maxNum);
 
         % Update new number of indices
-        nIndicesNew = ceil(nIndices / idxIncr);
+        nIndicesNew = ceil(nIndices / abs(idxIncr));
 
         % Update index start
         idxStart = idxEnd - idxIncr * (nIndicesNew - 1);
     else
-        idxIncr = 1;
+        idxIncr = sgnIncr * 1;
     end
 else
-    idxIncr = 1;
+    idxIncr = sgnIncr * 1;
 end
 
 % Create the indices vector

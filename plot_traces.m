@@ -683,9 +683,21 @@ case {'overlapped', 'staggered'}
     end
 
     % Decide on the amount in y axis units to stagger
+    %   and the new y-axis limits
     if toStagger
-        % Use the original computed y axis limits from the data
-        range(yLimits)
+        % Use the mean and range of the original computed y axis limits 
+        %   from the data
+        yMean = mean(yLimits);
+        yAmountToStagger = range(yLimits);
+
+        % Compute y offsets
+        yOffsets = yAmountToStagger .* create_indices([nPlots; 1]);
+
+
+        % Compute new y axis limits
+        yLimits = nPlots * yAmountToStagger;
+    else
+        yAmountToStagger = NaN;
     end
 
     % Plot all plots together
