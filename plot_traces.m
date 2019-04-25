@@ -690,14 +690,22 @@ case {'overlapped', 'staggered'}
         yMean = mean(yLimits);
         yAmountToStagger = range(yLimits);
 
-        % Compute y offsets
+        % Compute new y axis limits
+        yLimits = [0, nPlots * yAmountToStagger];
+
+        % Compute y offsets (where the means are placed)
         yOffsets = yAmountToStagger .* create_indices([nPlots; 1]);
 
+        % Compute shifted traces
+        % TODO: compute_shifted_trace(data, yOffsets, 'add')
+        % TODO: compute_shifted_trace(dataToCompare, yOffsets, 'add')
 
-        % Compute new y axis limits
-        yLimits = nPlots * yAmountToStagger;
+        % data = cellfun(@(x, y) x + y, data, num2cell(yOffsets));
+        % dataToCompareThis = cellfun(@(x, y) x + y, dataToCompareThis, num2cell(yOffsets));
+        %     dataToCompareThis = dataToCompare{iPlot};
     else
         yAmountToStagger = NaN;
+        yOffsets = [];
     end
 
     % Plot all plots together

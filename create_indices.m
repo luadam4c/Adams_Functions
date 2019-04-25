@@ -89,6 +89,7 @@ function indices = create_indices (varargin)
 %               only one index per vector
 % 2019-02-24 Added 'MaxNum' as an optional parameter
 % 2019-03-25 Now prevents negative indices by default
+% 2019-04-24 Now allows indices to decrement
 % TODO: Use argument 'ForcePositive' as false where necessary
 
 %% Hard-coded parameters
