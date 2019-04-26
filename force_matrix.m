@@ -26,6 +26,7 @@ function vecs = force_matrix (vecs, varargin)
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/extract_subvectors.m
+%       cd/force_column_vector.m
 %
 % Used by:
 %       cd/compute_combined_data.m
@@ -40,7 +41,7 @@ function vecs = force_matrix (vecs, varargin)
 % File History:
 % 2019-01-03 Created by Adam Lu
 % 2019-01-22 Added a quick return for performance
-% 2019-04-26 Now always extract subvectors
+% 2019-04-26 Fixed bug for 'AlignMethod' == 'none'
 % TODO: Restrict the number of samples if provided
 % 
 
@@ -85,18 +86,23 @@ alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 %   Note: don't do this if alignMethod is set to none
 %           Otherwise, extract_subvectors.m uses create_indices.m,
 %         	which uses force_matrix.m and will enter infinite loop
-vecs = extract_subvectors(vecs, 'AlignMethod', alignMethod);
+if ~strcmpi(alignMethod, 'none')
+    vecs = extract_subvectors(vecs, 'AlignMethod', alignMethod);
+else
+    vecs = force_column_vector(vecs);
+end
 
 % Put together as an array
-vecs = horzcat(vecs{:});
+try
+    vecs = horzcat(vecs{:});
+catch
+    disp('Warning: Vector lengths are not consistent, concatenation aborted!');
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
-
-if ~strcmpi(alignMethod, 'none')
-end
 
 %}
 

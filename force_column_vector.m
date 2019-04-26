@@ -80,6 +80,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/extract_subvectors.m
 %       cd/fit_2exp.m
 %       cd/force_column_cell.m
+%       cd/force_matrix.m
 %       cd/force_row_vector.m
 %       cd/collapse_identical_vectors.m
 %       cd/match_format_vectors.m
