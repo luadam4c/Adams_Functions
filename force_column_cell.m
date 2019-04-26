@@ -143,7 +143,7 @@ elseif ~iscell(vectorsOrig) || ...
         iscell(vectorsOrig) && ~isvector(vectorsOrig) && ~toLinearize
     % Force any non-cell vector as a column vector
     if ~iscell(vectorsOrig)
-        % If vectorsOrig is a row vector, columns will be extract as row vectors
+        % If vectorsOrig is a row vector, columns will be extracted as row vectors
         if isrow(vectorsOrig)
             asRowVectors = true;
         else

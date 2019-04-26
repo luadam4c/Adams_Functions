@@ -7,12 +7,12 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %       unique_custom([3, NaN, 3, 5, NaN], 'IgnoreNaN', true)
 %       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN])
 %               = unique([3 NaN 3 5 NaN])
-%               = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', false, 'SaveOneNaN', true)
-%               = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', false, 'SaveOneNaN', false)
-%               = unique_custom([3 NaN 3 5 NaN], 'SaveOneNaN', true)
+%               = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', false, 'TreatNanAsEqual', true)
+%               = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', false, 'TreatNanAsEqual', false)
+%               = unique_custom([3 NaN 3 5 NaN], 'TreatNanAsEqual', true)
 %       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', true)
-%                   = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', true, 'SaveOneNaN', true)
-%       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', true, 'SaveOneNaN', false)
+%                   = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', true, 'TreatNanAsEqual', true)
+%       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', true, 'TreatNanAsEqual', false)
 %       
 % Outputs:
 %       y           - All unique values in x
@@ -23,9 +23,8 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %       varargin    - 'IgnoreNaN': Whether to include NaN as distinct elements
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'SaveOneNaN': If NaN is present, preserve one at the
-%                   end. If 'IgnoreNaN' == false, 'SaveOneNaN' has no
-%                   effect
+%                   - 'TreatNanAsEqual': If NaN is present, preserve one at the
+%                   end. If 'IgnoreNaN' == false, 'TreatNanAsEqual' has no effect
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %                   - Any other parameter-value pair for the unique() function
@@ -45,7 +44,7 @@ function [y, ia, ic] = unique_custom (x, varargin)
 
 %% Default values for optional arguments
 ignoreNaNDefault = false;  	% default IgnoreNaN
-saveOneNaNDefault = true; 	% default SaveOneNaN
+treatNanAsEqualDefault = true; 	% default TreatNanAsEqual
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -67,13 +66,13 @@ addRequired(iP, 'x', ...                  % array to be operated on
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'IgnoreNaN', ignoreNaNDefault, ...
     @(z) validateattributes(z, {'logical'}, {'scalar'}));
-addParameter(iP, 'SaveOneNaN', saveOneNaNDefault, ...
+addParameter(iP, 'TreatNanAsEqual', treatNanAsEqualDefault, ...
     @(z) validateattributes(z, {'logical'}, {'scalar'}));
 
 % Read from the Input Parser
 parse(iP, x, varargin{:});
 ignoreNaN = iP.Results.IgnoreNaN;
-saveOneNaN = iP.Results.SaveOneNaN;
+treatNanAsEqual = iP.Results.TreatNanAsEqual;
 
 % Keep unmatched arguments for the unique_custom() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -89,7 +88,7 @@ otherArguments = struct2arglist(iP.Unmatched);
 % Ignoring NaN
 if ignoreNaN
     % Preserving one NaN
-    if saveOneNaN
+    if treatNanAsEqual
         % NaN indices, does not include last NaN if present
         indNaN = isnan(y(1:end-1));
     else

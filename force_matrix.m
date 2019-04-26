@@ -5,6 +5,8 @@ function vecs = force_matrix (vecs, varargin)
 %       TODO
 % Example(s):
 %       force_matrix({1:5, 1:3, 1:4})
+%       force_matrix({1:5, 1:3, 1:4}, 'AlignMethod', 'leftadjust')
+%       force_matrix({1:5, 1:3, 1:4}, 'AlignMethod', 'none')
 %       force_matrix({1:5, magic(3)})
 % Outputs:
 %       vecs        - vectors as a matrix
@@ -38,6 +40,7 @@ function vecs = force_matrix (vecs, varargin)
 % File History:
 % 2019-01-03 Created by Adam Lu
 % 2019-01-22 Added a quick return for performance
+% 2019-04-26 Now always extract subvectors
 % TODO: Restrict the number of samples if provided
 % 
 
@@ -82,9 +85,7 @@ alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 %   Note: don't do this if alignMethod is set to none
 %           Otherwise, extract_subvectors.m uses create_indices.m,
 %         	which uses force_matrix.m and will enter infinite loop
-if ~strcmpi(alignMethod, 'none')
-    vecs = extract_subvectors(vecs, 'AlignMethod', alignMethod);
-end
+vecs = extract_subvectors(vecs, 'AlignMethod', alignMethod);
 
 % Put together as an array
 vecs = horzcat(vecs{:});
@@ -93,6 +94,9 @@ vecs = horzcat(vecs{:});
 
 %{
 OLD CODE:
+
+if ~strcmpi(alignMethod, 'none')
+end
 
 %}
 

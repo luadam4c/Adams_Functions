@@ -10,6 +10,7 @@ function indices = create_indices (varargin)
 %       create_indices([[2; 2], [3; 3]])
 %       create_indices({[2, 5], [2, 5]})
 %       create_indices({[2; 5]; [2; 5]})
+%       create_indices('IndexEnd', 1)
 %       create_indices('IndexEnd', 5)
 %       create_indices('IndexEnd', [2, 3])
 %       create_indices([1, 50], 'MaxNum', 5)
@@ -90,6 +91,7 @@ function indices = create_indices (varargin)
 % 2019-02-24 Added 'MaxNum' as an optional parameter
 % 2019-03-25 Now prevents negative indices by default
 % 2019-04-24 Now allows indices to decrement
+% 2019-04-26 Fixed bug when start and end indices are the same
 % TODO: Use argument 'ForcePositive' as false where necessary
 
 %% Hard-coded parameters
@@ -321,7 +323,11 @@ else
 end
 
 % Create the indices vector
-indices = transpose(idxStart:idxIncr:idxEnd);
+if idxIncr == 0
+    indices = idxEnd;
+else
+    indices = transpose(idxStart:idxIncr:idxEnd);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

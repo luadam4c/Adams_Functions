@@ -19,7 +19,7 @@ function varargout = extract_columns (arrays, varargin)
 %                       or a cell array of cell arrays of column vectors
 % Arguments:    
 %       arrays      - arrays to extract columns from
-%       colNums  - (opt) column number(s) to extract instead of 1, 2, 3, ...
+%       colNums     - (opt) column number(s) to extract instead of 1, 2, 3, ...
 %                   must be either 'all' or a positive integer vector
 %                       or a cell array of positive integer vectors
 %                   default == 'all'
@@ -239,9 +239,11 @@ end
 %% Extract columns
 switch outputMode
     case 'multiple'
-        % Restrict the column numbers to nOutputs
-        colNums = extract_subvectors(colNums, 'IndexEnd', nOutputs);
-
+        if nargout > 0
+            % Restrict the column numbers to nOutputs
+            colNums = extract_subvectors(colNums, 'IndexEnd', nOutputs);
+        end
+        
         % Extract nOutputs columns
         varargout = extract_columns_helper(colNums, arrays, ...
                         treatCellAsArray, treatCnvAsColumns, asRowVectors);

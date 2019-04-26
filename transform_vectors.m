@@ -1,6 +1,6 @@
-function [vecs] = transform_vectors (vecs, amount, method, varargin)
+function vecs = transform_vectors (vecs, amount, method, varargin)
 %% Transform vectors by a binary operation
-% Usage: [vecs] = transform_vectors (vecs, amount, method, varargin)
+% Usage: vecs = transform_vectors (vecs, amount, method, varargin)
 % Explanation:
 %       TODO
 % Example(s):

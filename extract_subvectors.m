@@ -45,7 +45,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                       'leftAdjustPad'  - align to the left and pad
 %                       'rightAdjustPad' - align to the right and pad
 %                       'none'        - no alignment/truncation
-%                   default == 'leftAdjust'
+%                   default == 'none'
 %                   - 'TreatCellAsArray': whether to treat a cell array
 %                                           as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -356,7 +356,7 @@ case {'leftAdjust', 'rightAdjust'}
     switch alignMethod
     case 'leftAdjust'
         % Create new endpoints by repetition
-        newEndPoints = match_format_vector_sets([1, nSamplesTarget], indices);
+        newEndPoints = match_format_vector_sets([1; nSamplesTarget], indices);
     case 'rightAdjust'
         % Get the new starting positions 
         newStarts = nSamples - nSamplesTarget + 1;

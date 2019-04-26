@@ -6,6 +6,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % Examples:
 %       plot_traces(1:3, magic(3))
 %       plot_traces(1:3, magic(3), 'PlotMode', 'parallel')
+%       plot_traces(1:3, magic(3), 'PlotMode', 'staggered')
 %       plot_traces(1:3, magic(3), 'PlotMode', 'parallel', 'ReverseOrder', true)
 %       plot_traces(1:60, magic(60), 'PlotMode', 'parallel', 'LinkAxesOption', 'y')
 %       plot_traces(1:60, magic(60), 'PlotMode', 'parallel', 'SubplotOrder', 'list', 'LinkAxesOption', 'y')
@@ -698,12 +699,9 @@ case {'overlapped', 'staggered'}
         yOffsets = yAmountToStagger .* create_indices([nPlots; 1]);
 
         % Compute shifted traces
-        transform_vectors(data, yOffsets, 'add');
-        transform_vectors(dataToCompare, yOffsets, 'add');
-
-        % data = cellfun(@(x, y) x + y, data, num2cell(yOffsets));
-        % dataToCompareThis = cellfun(@(x, y) x + y, dataToCompareThis, num2cell(yOffsets));
-        %     dataToCompareThis = dataToCompare{iPlot};
+        [data, dataToCompare] = ....
+            argfun(@(x) transform_vectors(x, yOffsets, 'add'), ...
+                    data, dataToCompare);
     else
         yAmountToStagger = NaN;
         yOffsets = [];
