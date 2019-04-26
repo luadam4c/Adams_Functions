@@ -168,6 +168,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       cd/ispositiveintegerscalar.m
 %       cd/match_format_vector_sets.m
 %       cd/save_all_figtypes.m
+%       cd/transform_vectors.m
 %       ~/Downloaded_Function/suplabel.m
 %       ~/Downloaded_Function/subplotsqueeze.m
 %
@@ -697,8 +698,8 @@ case {'overlapped', 'staggered'}
         yOffsets = yAmountToStagger .* create_indices([nPlots; 1]);
 
         % Compute shifted traces
-        % TODO: transform_vectors(data, yOffsets, 'add')
-        % TODO: transform_vectors(dataToCompare, yOffsets, 'add')
+        transform_vectors(data, yOffsets, 'add');
+        transform_vectors(dataToCompare, yOffsets, 'add');
 
         % data = cellfun(@(x, y) x + y, data, num2cell(yOffsets));
         % dataToCompareThis = cellfun(@(x, y) x + y, dataToCompareThis, num2cell(yOffsets));
