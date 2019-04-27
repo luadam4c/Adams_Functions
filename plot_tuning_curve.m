@@ -359,6 +359,8 @@ for c = 1:nColsToPlot
         lines(c, 1) = plot_one_line(pIsLog, pValues, readout(:, col), lineSpec, ...
                             lineWidth, otherArguments);
     else
+        hold on;
+        
         % Get the current phase vector
         phaseVectorThis = phaseVectors{c};
         uniquePhasesThis = uniquePhases{c};
