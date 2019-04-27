@@ -57,6 +57,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/plot_horizontal_line.m
 %       cd/plot_raster.m
 %       cd/plot_table.m
+%       cd/transform_vectors.m
 %
 % Used by:
 %       cd/parse_all_multiunit.m
@@ -83,6 +84,9 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 % 2019-03-19 Added nSpikesPerBurstIn10s, nSpikesIn10s, nBurstsIn10s, etc ...
 % 2019-03-24 Fixed bugs in prepare_for_plot_horizontal_line.m
 % 2019-03-24 Renamed setNumber -> phaseNumber, setName -> phaseName
+
+% Hard-coded constants
+MS_PER_S = 1000;
 
 %% Hard-coded parameters
 rawDir = 'raw';
@@ -466,18 +470,27 @@ end
     firstSpikeSec = parsedParams.firstSpikeSec;
     timeOscEndSec = parsedParams.timeOscEndSec;
 
+    % Convert time vector to seconds
+    tVecsSec = transform_vectors(tVecs, MS_PER_S, 'divide');
+
     % Prepare for the plot
     xLabel = 'Time (s)';
     figTitle = ['Raw traces for ', titleBase];
 
+    % Compute the original y limits from data
+    yLimitsOrig = compute_axis_limits(vVecs, 'y', 'AutoZoom', autoZoom);
+
+    % Compute the amount of y to stagger
+    yAmountToStagger = range(yLimitsOrig);
+
     % Create figure and plot
     figs(1) = figure('Visible', 'off');
     clf
-    plot_traces(tVecs, vVecs, 'Verbose', false, ...
-                'PlotMode', 'parallel', 'SubplotOrder', 'list', ...
-                'YLimit', [-4, 4], ...
+    plot_traces(tVecsSec, vVecs, 'Verbose', false, ...
+                'PlotMode', 'staggered', 'SubplotOrder', 'list', ...
+                'YLimits', yLimitsOrig, 'YAmountToStagger', yAmountToStagger, ...
                 'XLabel', xLabel, 'LinkAxesOption', 'y', ...
-                'TraceLabels', 'suppress', ...
+                'YLabel', 'suppress', 'TraceLabels', 'suppress', ...
                 'FigTitle', figTitle, 'FigHandle', figs(1), ...
                 'Color', 'k');
 
@@ -1782,6 +1795,14 @@ oscPeriod1Bins = indPeaks(iPeak + 1) - indPeaks(1);
 if nSpikesTotal2 ~= nSpikesTotal
     error('Code logic error!');
 end
+
+plot_traces(tVecs, vVecs, 'Verbose', false, ...
+            'PlotMode', 'parallel', 'SubplotOrder', 'list', ...
+            'YLimit', [-4, 4], ...
+            'XLabel', xLabel, 'LinkAxesOption', 'y', ...
+            'TraceLabels', 'suppress', ...
+            'FigTitle', figTitle, 'FigHandle', figs(1), ...
+            'Color', 'k');
 
 %}
 

@@ -58,7 +58,8 @@ varLabels = {'Oscillatory Index 1'; 'Oscillatory Index 2'; ...
 
 %% Preparation
 % Find all files with the pattern *slice*_params in the file name
-[~, sliceParamSheets] = all_files('Keyword', 'slice', 'Suffix', 'params');
+[~, sliceParamSheets] = all_files('Keyword', 'slice', 'Suffix', 'params', ...
+                                    'ForceCellOutput', true);
 
 % Extract the common prefix
 prefix = extract_fileparts(sliceParamSheets, 'commonprefix');
@@ -126,6 +127,7 @@ figs = cellfun(@(x, y, z, w, v) plot_table(x, 'PlotSeparately', false, ...
                                 'RemoveOutliers', false), ...
             chevronTables, varsToPlot, varLabels, tableLabels, figNamesAvgd);
 
+pause(1);
 close all;
 
 % Plot all columns together
@@ -136,6 +138,7 @@ figs = cellfun(@(x, y, z, w, v) plot_table(x, 'PlotSeparately', false, ...
                                 'RemoveOutliers', false), ...
                 measureTimeTables, varsToPlot, varLabels, tableLabels, figNames);
 
+pause(1);
 close all;
 
 % Plot all columns together colored by phase

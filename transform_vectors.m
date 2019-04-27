@@ -37,6 +37,7 @@ function vecs = transform_vectors (vecs, amount, method, varargin)
 %       cd/match_format_vector_sets.m
 %
 % Used by:
+%       cd/parse_multiunit.m
 %       cd/plot_traces.m
 
 % File History:

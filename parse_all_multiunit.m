@@ -17,7 +17,7 @@
 
 %% Hard-coded parameters
 outFolder = pwd;
-plotFlag = true; %false;
+plotFlag = false;
 nFilesPerSlice = 3;
 
 %% Parse all abfs
