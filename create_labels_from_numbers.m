@@ -4,7 +4,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       labels = create_labels_from_numbers([3, 5, 7])
+%       labels = create_labels_from_numbers([3, 7, 5])
 %       labels = create_labels_from_numbers(1:3, 'Suffix', ' Mississippi')
 %       labels = create_labels_from_numbers(1:3, 'Prefix', 'Husband #')
 %       labels = create_labels_from_numbers(1:3, 'Prefix', 'Make ', 'Suffix', ' Wish')

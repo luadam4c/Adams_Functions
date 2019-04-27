@@ -20,11 +20,13 @@ function [y, ia, ic] = unique_custom (x, varargin)
 % Arguments:
 %       x           - Matrix to check unique values
 %                   must be a array
-%       varargin    - 'IgnoreNaN': Whether to include NaN as distinct elements
+%       varargin    - 'IgnoreNaN': whether to include NaN as distinct elements
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'TreatNanAsEqual': If NaN is present, preserve one at the
-%                   end. If 'IgnoreNaN' == false, 'TreatNanAsEqual' has no effect
+%                   - 'TreatNanAsEqual': whether to treat all NaN values
+%                                           as the same
+%                       Note: If 'IgnoreNaN' == false, 
+%                           'TreatNanAsEqual' has no effect
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %                   - Any other parameter-value pair for the unique() function
@@ -43,8 +45,8 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-ignoreNaNDefault = false;  	% default IgnoreNaN
-treatNanAsEqualDefault = true; 	% default TreatNanAsEqual
+ignoreNanDefault = false;  	    % ignore NaN by default
+treatNanAsEqualDefault = true; 	% treat all NaN values as equal by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -64,14 +66,14 @@ addRequired(iP, 'x', ...                  % array to be operated on
     @(z) validateattributes(z, {'char', 'string', 'cell', 'numeric'}, {'nonempty'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'IgnoreNaN', ignoreNaNDefault, ...
-    @(z) validateattributes(z, {'logical'}, {'scalar'}));
+addParameter(iP, 'IgnoreNaN', ignoreNanDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary', 'scalar'}));
 addParameter(iP, 'TreatNanAsEqual', treatNanAsEqualDefault, ...
-    @(z) validateattributes(z, {'logical'}, {'scalar'}));
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary', 'scalar'}));
 
 % Read from the Input Parser
 parse(iP, x, varargin{:});
-ignoreNaN = iP.Results.IgnoreNaN;
+ignoreNan = iP.Results.IgnoreNaN;
 treatNanAsEqual = iP.Results.TreatNanAsEqual;
 
 % Keep unmatched arguments for the unique_custom() function
@@ -86,7 +88,7 @@ otherArguments = struct2arglist(iP.Unmatched);
 %% Do the job
 
 % Ignoring NaN
-if ignoreNaN
+if ignoreNan
     % Preserving one NaN
     if treatNanAsEqual
         % NaN indices, does not include last NaN if present

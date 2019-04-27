@@ -8,6 +8,7 @@ function vecs = transform_vectors (vecs, amount, method, varargin)
 %       transform_vectors(1:10, 2*ones(10, 1), 'subtract')
 %       transform_vectors(1:10, 2*ones(10, 1), 'multiply')
 %       transform_vectors(1:10, 2*ones(10, 1), 'divide')
+%       transform_vectors({1:10, 3:3:30}, 2*ones(10, 1), 'add')
 % Outputs:
 %       vecs        - transformed vectors
 %                   specified as a numeric array 
@@ -31,7 +32,9 @@ function vecs = transform_vectors (vecs, amount, method, varargin)
 % Requires:
 %       cd/argfun.m
 %       cd/create_error_for_nargin.m
-%       cd/force_column_vector.m
+%       cd/force_matrix.m
+%       cd/isemptycell.m
+%       cd/match_format_vector_sets.m
 %
 % Used by:
 %       cd/plot_traces.m
@@ -81,14 +84,22 @@ method = validatestring(method, validMethods);
 
 %% Preparation
 % If empty, don't do anything
-if isempty(vecs)
+if isemptycell(vecs)
     return
 end
 
-% If empty, don't do anything
-[vecs, amount] = argfun(@force_column_vector, vecs, amount);
+% Store whether vecs was a cell array
+if iscell(vecs)
+    wasCell = true;
+else
+    wasCell = false;
+end
 
-% TODO: Match amount to vecs
+% Match amount to vecs
+[vecs, amount] = match_format_vector_sets (vecs, amount, 'MatchVectors', true);
+
+% Force as a matrix if possible
+[vecs, amount] = argfun(@force_matrix, vecs, amount);
 
 %% Do the job
 switch method
@@ -105,7 +116,9 @@ switch method
 end
 
 %% Output results
-% TODO
+if wasCell && ~iscell(vecs)
+    vecs = force_column_cell(vecs);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

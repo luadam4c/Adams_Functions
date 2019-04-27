@@ -25,6 +25,7 @@ function endPoints = create_default_endpoints (nSamples, varargin)
 
 % File History:
 % 2019-01-03 Created by Adam Lu
+% 2019-04-26 Now returns [NaN; NaN] when nSamples is 0
 % TODO: Make 'StartIndex' and optional argument with default == 1
 % 
 
@@ -66,7 +67,20 @@ elseif iscell(nSamples)
     endPoints = cellfun(@(x) create_default_endpoints(x), ...
                         nSamples, 'UniformOutput', false);
 else
-    endPoints = transpose([ones(size(nSamples)), nSamples]);
+    % Initialize start indices with a vector of ones
+    startIndices = ones(size(nSamples));
+    
+    % Replace start index with NaN if there are no samples
+    startIndices(nSamples == 0) = NaN;
+
+    % Initialize end indices with nSamples
+    endIndices = nSamples;
+
+    % Replace end index with NaN if there are no samples
+    endIndices(nSamples == 0) = NaN;
+
+    % Put them together into end points
+    endPoints = transpose([startIndices, endIndices]);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

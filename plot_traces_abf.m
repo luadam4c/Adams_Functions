@@ -116,7 +116,8 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 % 2018-10-03 - Updated usage of parse_abf.m
 % 2018-10-03 - Added 'ParsedData', 'ParsedParams' as optional arguments
 % 2018-11-21 - Added 'OverWrite' as an optional argument
-% 2019-03-29 - Changed default plot mode to parallel
+% 2019-03-29 - Changed default plot mode for 'patch' to 'parallel'
+% 2019-04-26 - Changed default plot mode for 'patch' to 'staggered'
 % TODO: Change the outputs to a cell array of figure handles
 % TODO: (Not sure) Improve code legibility with usage of dataReordered instead of data
 % TODO: Add a parameter to allow the figure position
@@ -126,7 +127,7 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 %% Hard-coded parameters
 validExpModes = {'EEG', 'patch', ''};
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
-validPlotModes = {'overlapped', 'parallel', ''};
+validPlotModes = {'overlapped', 'staggered', 'parallel', ''};
 
 %% Default values for optional arguments
 verboseDefault = true;
@@ -288,7 +289,7 @@ if isempty(plotMode)
     case 'EEG'
         plotMode = 'parallel';
     case 'patch'
-        plotMode = 'parallel';
+        plotMode = 'staggered';
     otherwise
         error('Expmode unrecognized!');
     end
@@ -391,7 +392,8 @@ if ~individually && strcmpi(expMode, 'EEG')
 elseif ~individually && strcmpi(expMode, 'patch') || ...
         individually && strcmpi(expMode, 'EEG')
     % Loop through all channels
-    parfor iChannel = 1:nChannels
+%    parfor iChannel = 1:nChannels
+    for iChannel = 1:nChannels
         % Print message
         if verbose
             fprintf('Plotting all sweeps of Channel #%d ...\n', iChannel);

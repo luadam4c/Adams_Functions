@@ -75,6 +75,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %       cd/plot_vertical_line.m
 %       cd/plot_traces.m
 %       cd/test_difference.m
+%       cd/transform_vectors.m
 
 % File History:
 % 2018-10-28 Adapted from code in find_window_endpoints.m 

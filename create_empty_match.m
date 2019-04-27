@@ -10,10 +10,10 @@ function empty = create_empty_match (array, varargin)
 % Arguments:
 %       array       - input array to match
 %       varargin    - 'NRows': number of rows
-%                   must be a positive integer scalar
+%                   must be a nonnegative integer scalar
 %                   default == size(array, 1)
 %                   - 'NColumns': number of columns
-%                   must be a positive integer scalar
+%                   must be a nonnegative integer scalar
 %                   default == size(array, 2)
 %
 % Requires:
@@ -50,9 +50,9 @@ addRequired(iP, 'array');
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'NRows', nRowsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative', 'integer'}));
 addParameter(iP, 'NColumns', nColumnsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative', 'integer'}));
 
 % Read from the Input Parser
 parse(iP, array, varargin{:});

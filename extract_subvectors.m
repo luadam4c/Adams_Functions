@@ -102,6 +102,8 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2019-01-04 Added 'TreatCellAsArray' (default == 'false')
 % 2019-01-04 Added 'TreatCellStrAsArray' (default == 'true')
 % 2019-01-04 Fixed bugs for cellstrs
+% 2019-04-26 Added padarray_custom
+% 2019-04-26 Fixed padding when there are empty vectors
 % TODO: Restrict the number of samples if provided
 % TODO: check if all endpoints have 2 elements
 % 
@@ -258,9 +260,12 @@ end
 function subVec = extract_subvectors_helper (vec, indices)
 %% Extract a subvector from vector(s) if not empty
 
-% If the time window is out of range, or if the vector is empty, 
-%   return an empty vector
-if isempty(indices) || isempty(vec)
+% If indices all NaNs, it is for padding, so return it as the subvector
+%   If the time window is out of range, return an empty vector
+if all(all(isnan(indices)))
+    subVec = indices;
+    return
+elseif isempty(indices) || isempty(vec)
     subVec = [];
     return
 end
@@ -385,17 +390,28 @@ case {'leftAdjustPad', 'rightAdjustPad'}
 
     % Add NaNs to indices
     if iscell(indices)
-        indices = cellfun(@(x, y) padarray(x, y, NaN, padDirection), ...
+        indices = cellfun(@(x, y) padarray_custom(x, y, NaN, padDirection), ...
                             indices, num2cell(nRowsToPad), ...
                             'UniformOutput', false);
     else
-        indices = padarray(indices, nRowsToPad, NaN, padDirection);
+        indices = padarray_custom(indices, nRowsToPad, NaN, padDirection);
     end
 case 'none'
     % Do nothing
     nSamplesTarget = NaN;
 otherwise
     error_unrecognized(get_var_name(alignMethod), alignMethod, mfilename);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function padded = padarray_custom(array, padSize, padValue, padDirection)
+%% Pads array with padValue and creates array with padValue if empty
+
+if isempty(array)
+    padded = padValue * ones(padSize, 1);
+else
+    padded = padarray(array, padSize, padValue, padDirection);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

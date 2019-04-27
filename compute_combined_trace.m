@@ -13,6 +13,7 @@ function [combTrace, paramsUsed] = ...
 %       compute_combined_trace(vecs, 'min', 'Group', {'b', 'a', 'b'})
 %       compute_combined_trace(vecs, 'bootmean', 'Group', {'b', 'a', 'b'})
 %       compute_combined_trace(vecs2, 'bootmean', 'Group', {'b', 'a', 'b'})
+%       compute_combined_trace({[1; NaN], [3; 4]}, 'max')
 % Outputs:
 %       combTrace       - the combined trace(s)
 %                           If grouped, a cell array is returned
@@ -46,6 +47,9 @@ function [combTrace, paramsUsed] = ...
 %                                           as many one-element vectors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'IgnoreNaN': whether to ignore NaN values
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'ConsistentFormat': whether output format is consistent 
 %                                           with input format
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -88,6 +92,7 @@ function [combTrace, paramsUsed] = ...
 % 2019-01-12 Added 'first', 'last' as valid combine methods
 % 2019-01-12 Added 'bootmeans', 'bootmax', 'bootmin as valid combine methods
 % 2019-01-22 Added 'ConsistentFormat' as an optional parameter
+% 2019-04-26 Added 'IgnoreNan' as an optional parameter
 % TODO: Make 'Seeds' an optional argument
 % 
 
@@ -103,6 +108,7 @@ seeds = [];
 nSamplesDefault = [];               % set later
 alignMethodDefault = 'leftadjust';  % align to the left by default
 treatRowAsMatrixDefault = false;    % treat a row vector as a vector by default
+ignoreNanDefault = true;            % ignore NaN values by default
 groupingDefault = [];               % no grouping by default
 consistentFormatDefault = [];       % set later
 
@@ -133,7 +139,9 @@ addParameter(iP, 'NSamples', nSamplesDefault, ...
 addParameter(iP, 'AlignMethod', alignMethodDefault, ...
     @(x) any(validatestring(x, validAlignMethods)));
 addParameter(iP, 'TreatRowAsMatrix', treatRowAsMatrixDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary', 'scalar'}));
+addParameter(iP, 'IgnoreNaN', ignoreNanDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary', 'scalar'}));
 addParameter(iP, 'ConsistentFormat', consistentFormatDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'2d'}));
 addParameter(iP, 'Grouping', groupingDefault);
@@ -143,6 +151,7 @@ parse(iP, traces, combineMethod, varargin{:});
 nSamples = iP.Results.NSamples;
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 treatRowAsMatrix = iP.Results.TreatRowAsMatrix;
+ignoreNan = iP.Results.IgnoreNaN;
 consistentFormat = iP.Results.ConsistentFormat;
 grouping = iP.Results.Grouping;
 
@@ -165,13 +174,13 @@ if iscellnumericvector(traces) || ~iscell(traces)
     [combTrace, paramsUsed] = ...
         compute_combined_trace_helper(traces, nSamples, grouping, seeds, ...
                                 alignMethod, combineMethod, ...
-                                treatRowAsMatrix, consistentFormat);
+                                treatRowAsMatrix, ignoreNan, consistentFormat);
 else
     % Compute combined traces for many sets of vectors
     [combTrace, paramsUsed] = ...
         cellfun(@(x) compute_combined_trace_helper(x, nSamples, grouping, ...
                     seeds, alignMethod, combineMethod, ...
-                    treatRowAsMatrix, consistentFormat), ...
+                    treatRowAsMatrix, ignoreNan, consistentFormat), ...
                 traces, 'UniformOutput', false);
 end
 
@@ -189,7 +198,7 @@ end
 function [combTrace, paramsUsed] = ...
         compute_combined_trace_helper(traces, nSamples, grouping, seeds, ...
                                     alignMethod, combineMethod, ...
-                                    treatRowAsMatrix, consistentFormat)
+                                    treatRowAsMatrix, ignoreNan, consistentFormat)
 
 %% Preparation
 % Force any row vector to be a column vector
@@ -220,12 +229,13 @@ if isempty(grouping)
 
     % Combine all traces
     [combTrace, seeds] = ...
-        compute_single_combined_trace(tracesMatrix, combineMethod, seeds);
+        compute_single_combined_trace(tracesMatrix, combineMethod, ...
+                                        ignoreNan, seeds);
 else
     % Combine all traces from each group separately
     [combTrace, groups, seeds] = ...
         compute_combined_trace_each_group(tracesMatrix, grouping, ...
-                                            combineMethod, seeds);
+                                            combineMethod, ignoreNan, seeds);
 end
 
 % Count the number of samples
@@ -262,7 +272,7 @@ end
 
 function [combTraces, groups, seedsOut] = ...
                 compute_combined_trace_each_group(traces, grouping, ...
-                                                    combineMethod, seedsIn)
+                                            combineMethod, ignoreNan, seedsIn)
 %% Computes a combined trace for each group separately
 
 % Initialize seedsOut
@@ -301,7 +311,7 @@ parfor iGroup = 1:nGroups
     % Combine the traces from this group
     [combTraceEachGroup{iGroup}, seedsOut(iGroup, 1)] = ...
         compute_single_combined_trace(tracesThisGroup, combineMethod, ...
-                                        seedsIn(iGroup, 1));
+                                        ignoreNan, seedsIn(iGroup, 1));
 end
 
 % Concatenate into a single matrix
@@ -327,20 +337,35 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [combTrace, seed] = ...
-                compute_single_combined_trace(traces, combineMethod, seed)
+                compute_single_combined_trace(traces, combineMethod, ...
+                                                ignoreNan, seed)
 %% Computes a combined trace based on the combine method
 
 % Combine traces
 switch combineMethod
     case {'average', 'mean'}
-        % Take the mean of all columns
-        combTrace = nanmean(traces, 2);
-    case 'maximum'
-        % Take the maximum of all columns
-        combTrace = max(traces, [], 2);
-    case 'minimum'
-        % Take the minimum of all columns
-        combTrace = min(traces, [], 2);
+        if ignoreNan
+            % Take the mean of all columns
+            combTrace = nanmean(traces, 2);
+        else
+            % Take the mean of all columns
+            combTrace = mean(traces, 2);
+        end
+    case {'maximum', 'minimum'}
+        if ignoreNan
+            nanFlag = 'omitnan';
+        else
+            nanFlag = 'includenan';
+        end
+        
+        switch combineMethod
+            case 'maximum'
+                % Take the maximum of all columns
+                combTrace = max(traces, [], 2, nanFlag);
+            case 'minimum'
+                % Take the minimum of all columns
+                combTrace = min(traces, [], 2, nanFlag);
+        end
     case 'all'
         % Take the logical AND of all columns
         combTrace = all(traces, 2);
@@ -365,7 +390,8 @@ switch combineMethod
         end
 
         % Compute the bootstrapped combinations and return the seed used
-        [combTrace, seed] = compute_bootstrapped_combos(traces, method, seed);
+        [combTrace, seed] = compute_bootstrapped_combos(traces, method, ...
+                                                        ignoreNan, seed);
     otherwise
         error_unrecognized(get_var_name(combineMethod), ...
                             combineMethod, mfilename);
@@ -373,7 +399,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [combTraces, seed] = compute_bootstrapped_combos (traces, method, seed)
+function [combTraces, seed] = ...
+                    compute_bootstrapped_combos (traces, method, ignoreNan, seed)
 
 % Count the number of traces
 nTraces = size(traces, 2);
@@ -392,7 +419,7 @@ selections = randi(nTraces, nTraces);
 % Take the bootstrapped averages
 combTraceCell = ...
     arrayfun(@(x) compute_single_combined_trace(...
-                        traces(:, selections(:, x)), method, []), ...
+                        traces(:, selections(:, x)), method, ignoreNan, []), ...
                 transpose(1:nTraces), 'UniformOutput', false);
 
 % Combine them to one 2-D non-cell array

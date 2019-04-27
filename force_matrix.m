@@ -8,6 +8,9 @@ function vecs = force_matrix (vecs, varargin)
 %       force_matrix({1:5, 1:3, 1:4}, 'AlignMethod', 'leftadjust')
 %       force_matrix({1:5, 1:3, 1:4}, 'AlignMethod', 'none')
 %       force_matrix({1:5, magic(3)})
+%       force_matrix({{1:3, 1:3}, {1:3, 1:3}})
+%       force_matrix({1:5, 1:3, []})
+%       TODO: force_matrix({{1:5, 1:3}, {1:2, 1:6}})
 % Outputs:
 %       vecs        - vectors as a matrix
 %                   specified as a matrix
@@ -37,6 +40,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/plot_measures.m
 %       cd/plot_swd_histogram.m
+%       cd/transform_vectors.m
 
 % File History:
 % 2019-01-03 Created by Adam Lu
@@ -83,7 +87,7 @@ alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 
 %% Do the job
 % Extract vectors padded on the right
-%   Note: don't do this if alignMethod is set to none
+%   Note: don't do this if alignMethod is set to 'none'
 %           Otherwise, extract_subvectors.m uses create_indices.m,
 %         	which uses force_matrix.m and will enter infinite loop
 if ~strcmpi(alignMethod, 'none')
@@ -92,10 +96,13 @@ else
     vecs = force_column_vector(vecs);
 end
 
+% Count the number of samples
+nUniqueSamples = numel(unique(cellfun(@numel, vecs)));
+
 % Put together as an array
-try
+if nUniqueSamples == 1
     vecs = horzcat(vecs{:});
-catch
+else
     disp('Warning: Vector lengths are not consistent, concatenation aborted!');
 end
 

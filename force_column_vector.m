@@ -17,6 +17,8 @@ function vectors = force_column_vector (vectors, varargin)
 %       force_column_vector({ones(2, 1), magic(3)}, 'ToLinearize', true)
 %       force_column_vector({ones(2, 1), magic(3)}, 'CombineAcrossCells', true)
 %       force_column_vector({ones(2, 1), magic(3)}, 'ToLinearize', true, 'CombineAcrossCells', true)
+%       force_column_vector({{ones(2, 1), ones(2, 1)}, {[], []}}, 'CombineAcrossCells', true)
+%       force_column_vector({{ones(2, 1), ones(2, 1)}, {[], []}}, 'ToLinearize', true, 'CombineAcrossCells', true)
 %
 % Outputs:
 %       vectors     - vectors transformed
@@ -98,7 +100,6 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/plot_tuning_curve.m
 %       cd/plot_window_boundaries.m
 %       cd/remove_outliers.m
-%       cd/transform_vectors.m
 %       cd/xolotl_set_simparams.m
 
 % File History:
@@ -115,6 +116,9 @@ function vectors = force_column_vector (vectors, varargin)
 % 2019-01-09 Added 'ToLinearize' as an optional argument
 % 2019-01-13 Added 'RowInstead' as an optional argument
 % 2019-04-24 Added 'CombineAcrossCells' as an optional argument
+% 2019-04-27 Fixed the case when 'ToLinearize' and 'CombineAcrossCells' are
+%               both true
+% 
 % TODO: Deal with 3D arrays
 % 
 
@@ -177,16 +181,27 @@ rowInstead = iP.Results.RowInstead;
 if iscell(vectors) && ~treatCellAsArray && ...
         ~(iscellstr(vectors) && treatCellStrAsArray)
     if combineAcrossCells
-        % Force as a matrix
-        vectors = force_matrix(vectors);
+        % Break up contents in cells
+        while iscell(vectors) && (toLinearize || ~iscellnumeric(vectors))
+            % Linearize the cell array
+            vectors = force_column_cell(vectors, 'ToLinearize', true);
 
-        % Apply the function recursively on the horizontally-concatenated
-        %   vectors
-        vectors = force_column_vector(vectors, ...
-                                'IgnoreNonVectors', ignoreNonVectors, ...
-                                'ToLinearize', toLinearize, ...
-                                'RowInstead', rowInstead);
-        % If linearized, remove padded NaNs when forcing as a matrix
+            % Force as a matrix (horizontally-concatenated vectors)
+            if toLinearize
+                vectors = force_matrix(vectors, 'AlignMethod', 'leftAdjustPad');
+            else
+                vectors = force_matrix(vectors, 'AlignMethod', 'none');
+            end
+            
+            % Apply the function recursively on the horizontally-concatenated
+            %   vectors
+            vectors = force_column_vector(vectors, ...
+                                    'IgnoreNonVectors', ignoreNonVectors, ...
+                                    'ToLinearize', toLinearize, ...
+                                    'RowInstead', rowInstead);
+        end
+
+        % If linearized, remove padded NaNs when forced as a matrix
         if toLinearize
             vectors(isnan(vectors)) = [];
         end

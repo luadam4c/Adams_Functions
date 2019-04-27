@@ -15,6 +15,7 @@ function [limits, axisRange] = compute_axis_limits (dataOrRange, axisType, varar
 %       limits = compute_axis_limits(xRange, 'x')
 %       limits = compute_axis_limits(yData, 'y', 'Coverage', 70)
 %       compute_axis_limits([-10; 10; ones(100, 1); -1 * ones(100, 1)], 'y', 'AutoZoom', true)
+%       compute_axis_limits({{ones(10, 1), ones(10, 1)}; -1 * ones(10, 1)}, 'y')
 % Outputs:
 %       limits     - computed y axis limits
 %                   specified as a 2-element numeric vector

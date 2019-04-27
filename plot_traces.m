@@ -6,7 +6,8 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % Examples:
 %       plot_traces(1:3, magic(3))
 %       plot_traces(1:3, magic(3), 'PlotMode', 'parallel')
-%       plot_traces(1:3, magic(3), 'PlotMode', 'staggered')
+%       plot_traces(1:100, rand(100, 3), 'PlotMode', 'staggered')
+%       plot_traces(1:100, rand(100, 3), 'PlotMode', 'staggered', 'YAmount', 1)
 %       plot_traces(1:3, magic(3), 'PlotMode', 'parallel', 'ReverseOrder', true)
 %       plot_traces(1:60, magic(60), 'PlotMode', 'parallel', 'LinkAxesOption', 'y')
 %       plot_traces(1:60, magic(60), 'PlotMode', 'parallel', 'SubplotOrder', 'list', 'LinkAxesOption', 'y')
@@ -79,6 +80,10 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                       '-.'    - dash-dotted line
 %                       'none'  - no line
 %                   default == '-'
+%                   - 'YAmountToStagger': amount to stagger 
+%                                           if 'plotmode' is 'stagger'
+%                   must be a positive scalar
+%                   default == uses the original y axis range
 %                   - 'XLimits': limits of x axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
@@ -116,6 +121,12 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                   must be a string scalar or a character vector 
 %                       or a cell array of strings or character vectors
 %                   default == {'Trace #1', 'Trace #2', ...}
+%                   - 'YTickLocs': locations of Y ticks
+%                   must be 'suppress' or a numeric vector
+%                   default == ntrials:1
+%                   - 'YTickLabels': labels for each raster
+%                   must be 'suppress' or a cell array of character/string arrays
+%                   default == trial numbers
 %                   - 'ColorMap': a color map that also groups traces
 %                                   each set of traces will be on the same row
 %                                   if the plot mode is 'parallel' and 
@@ -205,7 +216,8 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % 2019-01-03 Now allows TeX interpretation in titles
 % 2019-04-08 Added 'ReverseOrder' as an optional argument
 % 2019-04-24 Added 'AutoZoom' as an optional argument
-% TODO:　2019-04-08 Added 'staggered' as a valid plot mode
+% 2019-04-26 Added 'staggered' as a valid plot mode 
+%               and added 'YAmountToStagger' as an optional argument
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel', 'staggered'};
@@ -235,14 +247,17 @@ subplotOrderDefault = 'auto';   % set later
 colorModeDefault = 'auto';      % set later
 dataToCompareDefault = [];      % no data to compare against by default
 lineStyleToCompareDefault = '-';% data to compare are solid lines by default
+yAmountToStaggerDefault = [];   % set later  
 xLimitsDefault = [];            % set later
 yLimitsDefault = [];            % set later
 linkAxesOptionDefault = 'none'; % don't force link axes by default
 xUnitsDefault = 'unit';         % the default x-axis units
 xLabelDefault = '';             % set later
 yLabelDefault = '';             % set later
-colorMapDefault = [];           % set later
 traceLabelsDefault = '';        % set later
+yTickLocsDefault = [];          % set later
+yTickLabelsDefault = {};        % set later
+colorMapDefault = [];           % set later
 legendLocationDefault = 'auto'; % set later
 figTitleDefault = '';           % set later
 figHandleDefault = [];          % no existing figure by default
@@ -294,6 +309,8 @@ addParameter(iP, 'DataToCompare', dataToCompareDefault, ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'LineStyleToCompare', lineStyleToCompareDefault, ...
     @(x) all(islinestyle(x, 'ValidateMode', true)));
+addParameter(iP, 'YAmountToStagger', yAmountToStaggerDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
 addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) isempty(x) || iscell(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
@@ -310,6 +327,13 @@ addParameter(iP, 'YLabel', yLabelDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'TraceLabels', traceLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'YTickLocs', yTickLocsDefault, ...
+    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || isnumericvector(x), ...
+        'YTickLocs must be ''suppress'' or a numeric vector!'));
+addParameter(iP, 'YTickLabels', yTickLabelsDefault, ...
+    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || ...
+                iscell(x) && all(cellfun(@(x) ischar(x) || isstring(x), x)), ...
+        'YTickLabels must be ''suppress'' or a cell array of character/string arrays!'));
 addParameter(iP, 'ColorMap', colorMapDefault, ...
     @(x) isempty(x) || isnumeric(x) && size(x, 2) == 3);
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
@@ -337,6 +361,7 @@ colorMode = validatestring(iP.Results.ColorMode, validColorModes);
 dataToCompare = iP.Results.DataToCompare;
 [~, lineStyleToCompare] = ...
     islinestyle(iP.Results.LineStyleToCompare, 'ValidateMode', true);
+yAmountToStagger = iP.Results.YAmountToStagger;
 xLimits = iP.Results.XLimits;
 yLimits = iP.Results.YLimits;
 linkAxesOption = validatestring(iP.Results.LinkAxesOption, ...
@@ -345,6 +370,8 @@ xUnits = iP.Results.XUnits;
 xLabel = iP.Results.XLabel;
 yLabel = iP.Results.YLabel;
 traceLabels = iP.Results.TraceLabels;
+yTickLocs = iP.Results.YTickLocs;
+yTickLabels = iP.Results.YTickLabels;
 colorMap = iP.Results.ColorMap;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
@@ -455,8 +482,10 @@ end
 % Set the default y-axis labels
 if isempty(yLabel)
     switch plotMode
-    case {'overlapped', 'staggered'}
+    case 'overlapped'
         yLabel = 'Data';
+    case 'staggered'
+        yLabel = 'Trace #';
     case 'parallel'
         if nPlots > 1
             yLabel = defaultTraceLabels;
@@ -506,7 +535,7 @@ if isempty(figTitle)
         figTitle = ['Traces for ', traceLabels{1}];
     elseif ~isempty(figName)
         figTitle = ['Traces for ', figName];
-    elseif ischar(yLabel)
+    elseif ischar(yLabel) && ~strcmp(plotMode, 'staggered')
         figTitle = [yLabel, ' over ', xLabel];
     else
         figTitle = ['Data over ', xLabel];        
@@ -576,11 +605,13 @@ if iscell(xLimits)
                         tVecs, data, dataToCompare);
 
             % Plot all traces
-            fig = plot_traces_helper(verbose, plotMode, colorMode, autoZoom, ...
+            fig = plot_traces_helper(verbose, plotMode, colorMode, ...
+                            autoZoom, yAmountToStagger, ...
                             tVecsThis, dataThis, ...
                             dataToCompareThis, lineStyleToCompare, ...
                             xUnits, xLimitsThis, yLimits, linkAxesOption, ...
-                            xLabel, yLabel, traceLabels, colorMap, ...
+                            xLabel, yLabel, traceLabels, ...
+                            yTickLocs, yTickLabels, colorMap, ...
                             legendLocation, figTitleThis, ...
                             figHandle, figNumber, figNameThis, figTypes, ...
                             nPlots, nRows, nColumns, nTracesPerPlot, ...
@@ -605,10 +636,12 @@ if iscell(xLimits)
 else
     % Plot all traces
     [fig, subPlots, plotsData, plotsDataToCompare] = ...
-        plot_traces_helper(verbose, plotMode, colorMode, autoZoom, ...
+        plot_traces_helper(verbose, plotMode, colorMode, ...
+                        autoZoom, yAmountToStagger, ...
                         tVecs, data, dataToCompare, lineStyleToCompare, ...
                         xUnits, xLimits, yLimits, linkAxesOption, ...
-                        xLabel, yLabel, traceLabels, colorMap, ...
+                        xLabel, yLabel, traceLabels, ...
+                        yTickLocs, yTickLabels, colorMap, ...
                         legendLocation, figTitle, ...
                         figHandle, figNumber, figName, figTypes, ...
                         nPlots, nRows, nColumns, nTracesPerPlot, ...
@@ -623,10 +656,12 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [fig, subPlots, plotsData, plotsDataToCompare] = ...
-                plot_traces_helper (verbose, plotMode, colorMode, autoZoom, ...
+                plot_traces_helper (verbose, plotMode, colorMode, ...
+                        autoZoom, yAmountToStagger, ...
                         tVecs, data, dataToCompare, lineStyleToCompare, ...
                         xUnits, xLimits, yLimits, linkAxesOption, ...
-                        xLabel, yLabel, traceLabels, colorMap, ...
+                        xLabel, yLabel, traceLabels, ...
+                        yTickLocs, yTickLabels, colorMap, ...
                         legendLocation, figTitle, ...
                         figHandle, figNumber, figName, figTypes, ...
                         nPlots, nRows, nColumns, nTracesPerPlot, ...
@@ -690,21 +725,45 @@ case {'overlapped', 'staggered'}
         % Use the mean and range of the original computed y axis limits 
         %   from the data
         yMean = mean(yLimits);
-        yAmountToStagger = range(yLimits);
+        if isempty(yAmountToStagger)
+            yAmountToStagger = range(yLimits);
+        end
 
         % Compute new y axis limits
-        yLimits = [0, nPlots * yAmountToStagger];
+        yLimits = yAmountToStagger * ([0, nPlots]  + 0.5);
+
+        % Create indices in reverse
+        indRev = create_indices([nPlots; 1]);
 
         % Compute y offsets (where the means are placed)
-        yOffsets = yAmountToStagger .* create_indices([nPlots; 1]);
+        yOffsets = yAmountToStagger .* indRev;
 
-        % Compute shifted traces
-        [data, dataToCompare] = ....
-            argfun(@(x) transform_vectors(x, yOffsets, 'add'), ...
+        % Set y tick locations
+        %   Note: this must be increasing
+        if isempty(yTickLocs)
+            yTickLocs = flipud(yOffsets);
+        end
+
+        % Set y tick labels
+        %   Note: this must correspond to yTickLocs
+        if isempty(yTickLabels)
+            yTickLabels = create_labels_from_numbers(indRev);
+        end
+
+        % Subtract by the mean
+        [data, dataToCompare] = ...
+            argfun(@(x) transform_vectors(x, yMean, 'subtract'), ...
+                    data, dataToCompare);
+
+        % Add offsets
+        [data, dataToCompare] = ...
+            argfun(@(x) transform_vectors(x, num2cell(yOffsets), 'add'), ...
                     data, dataToCompare);
     else
         yAmountToStagger = NaN;
         yOffsets = [];
+        yTickLocs = [];
+        yTickLabels = {};
     end
 
     % Plot all plots together
@@ -774,6 +833,24 @@ case {'overlapped', 'staggered'}
     % Generate a y-axis label
     if ~strcmpi(yLabel, 'suppress')
         ylabel(yLabel);
+    end
+
+    % Decide on Y tick values
+    if ~isempty(yTickLocs)
+        if ischar(yTickLocs) && strcmpi(yTickLocs, 'suppress')
+            set(gca, 'YTick', []);
+        else
+            set(gca, 'YTick', yTickLocs);
+        end
+    end
+
+    % Decide on Y tick labels
+    if ~isempty(yTickLabels)
+        if ischar(yTickLabels) && strcmpi(yTickLabels, 'suppress')
+            set(gca, 'YTickLabel', {});
+        else
+            set(gca, 'YTickLabel', yTickLabels);
+        end
     end
 
     % Generate a title

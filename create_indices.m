@@ -15,6 +15,7 @@ function indices = create_indices (varargin)
 %       create_indices('IndexEnd', [2, 3])
 %       create_indices([1, 50], 'MaxNum', 5)
 %       create_indices([5; 1], 'MaxNum', 2)
+%       create_indices([0, 0])
 % Outputs:
 %       indices     - indices for each pair of idxStart and idxEnd
 %                   specified as a numeric vector 
@@ -92,6 +93,7 @@ function indices = create_indices (varargin)
 % 2019-03-25 Now prevents negative indices by default
 % 2019-04-24 Now allows indices to decrement
 % 2019-04-26 Fixed bug when start and end indices are the same
+% 2019-04-26 Now makes create_indices([NaN; NaN]) == []
 % TODO: Use argument 'ForcePositive' as false where necessary
 
 %% Hard-coded parameters
@@ -234,8 +236,10 @@ if ~(isempty(vectors) || iscell(vectors) && all(all(isemptycell(vectors))))
     % Make sure endpoint indices are in range
     candidatesStart = match_and_combine_vectors(idxStart, 1);
     candidatesEnd = match_and_combine_vectors(idxEnd, nSamples);
-    idxStart = compute_maximum_trace(candidatesStart, 'TreatRowAsMatrix', true);
-    idxEnd = compute_minimum_trace(candidatesEnd, 'TreatRowAsMatrix', true);
+    idxStart = compute_maximum_trace(candidatesStart, ...
+                            'TreatRowAsMatrix', true, 'IgnoreNaN', false);
+    idxEnd = compute_minimum_trace(candidatesEnd, ...
+                            'TreatRowAsMatrix', true, 'IgnoreNaN', false);
 end
 
 % Create the indices
@@ -293,18 +297,19 @@ function indices = create_one_indices (idxStart, idxEnd, maxNum, forcePositive)
 %% Creates one set of indices
 
 % Force the starting index to be positive if requested
-if forcePositive && idxStart < 1
+%   and not the special case where idxStart == idxEnd == 0
+if forcePositive && idxStart < 1 && ~(isnan(idxStart) && isnan(idxEnd == 0))
     idxStart = 1;
 end
 
 % Get the sign of the index increment
 sgnIncr = sign(idxEnd - idxStart);
 
+% Count the number of indices
+nIndices = abs(idxEnd - idxStart) + 1;
+
 % Decide on the index increment
 if ~isinf(maxNum)
-    % Count the number of indices
-    nIndices = abs(idxEnd - idxStart) + 1;
-
     % Decide on the index increment
     if nIndices > maxNum
         % Update index increment
@@ -323,7 +328,9 @@ else
 end
 
 % Create the indices vector
-if idxIncr == 0
+if isnan(nIndices)
+    indices = [];
+elseif nIndices == 1
     indices = idxEnd;
 else
     indices = transpose(idxStart:idxIncr:idxEnd);
