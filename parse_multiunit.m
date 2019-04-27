@@ -478,7 +478,7 @@ end
     figTitle = ['Raw traces for ', titleBase];
 
     % Compute the original y limits from data
-    yLimitsOrig = compute_axis_limits(vVecs, 'y', 'AutoZoom', autoZoom);
+    yLimitsOrig = compute_axis_limits(vVecs, 'y', 'AutoZoom', true);
 
     % Compute the amount of y to stagger
     yAmountToStagger = range(yLimitsOrig);
@@ -497,7 +497,7 @@ end
     vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
                                     'LineStyle', '--');
     if ~isempty(phaseBoundaries)
-        yBoundaries = nVectors - phaseBoundaries + 1;
+        yBoundaries = (nVectors - phaseBoundaries + 1) * yAmountToStagger;
         horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
                                         'LineStyle', '--', 'LineWidth', 2);
     end

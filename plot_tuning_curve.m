@@ -26,7 +26,7 @@ function [fig, lines] = plot_tuning_curve (pValues, readout, varargin)
 %                   - 'PisLog': whether parameter values are to be plotted 
 %                               log-scaled
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == [false, false];
+%                   default == false
 %                   - 'XLimits': limits of x axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
@@ -119,7 +119,7 @@ removeOutliersDefault = false;  % don't remove outliers by default
 colsToPlotDefault = [];         % set later
 lineSpecDefault = '-';
 lineWidthDefault = 2;
-pislogDefault = [false, false];
+pislogDefault = false;
 xlimitsDefault = [];
 ylimitsDefault = [];
 pTicksDefault = [];
