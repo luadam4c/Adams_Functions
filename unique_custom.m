@@ -5,14 +5,6 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %       This function removes NaN values not identified by the default unique() function.
 % Example(s):
 %       unique_custom([3, NaN, 3, 5, NaN], 'IgnoreNaN', true)
-%       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN])
-%               = unique([3 NaN 3 5 NaN])
-%               = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', false, 'TreatNanAsEqual', true)
-%               = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', false, 'TreatNanAsEqual', false)
-%               = unique_custom([3 NaN 3 5 NaN], 'TreatNanAsEqual', true)
-%       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', true)
-%                   = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', true, 'TreatNanAsEqual', true)
-%       [y, ia, ic] = unique_custom([3 NaN 3 5 NaN], 'IgnoreNaN', true, 'TreatNanAsEqual', false)
 %       
 % Outputs:
 %       y           - All unique values in x
@@ -25,7 +17,7 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %                   default == false
 %                   - 'TreatNanAsEqual': whether to treat all NaN values
 %                                           as the same
-%                       Note: If 'IgnoreNaN' == false, 
+%                       Note: If 'IgnoreNaN' == true, 
 %                           'TreatNanAsEqual' has no effect
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true

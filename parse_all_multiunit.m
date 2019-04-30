@@ -19,6 +19,7 @@ function parse_all_multiunit(varargin)
 %% Hard-coded parameters
 inFolder = pwd;
 outFolder = pwd;
+saveMatFlag = false;
 plotFlag = false;
 matFileSuffix = '_multiunit_data';
 varsNeeded = {'vVecsSl', 'siMsSl', 'iVecsSl', 'sliceBases', 'phaseBoundaries'};
@@ -34,23 +35,33 @@ matPath = fullfile(outFolder, [inFolderName, matFileSuffix, '.mat']);
 % Load or process data for each slice
 if isfile(matPath)
     % Load data for each slice
+    fprintf("Loading data for each slice ...\n");
     load(matPath, varsNeeded{:});
 else
     % Combine data from the same slice
+    fprintf("Combining data for each slice ...\n");
     [vVecsSl, siMsSl, iVecsSl, sliceBases, phaseBoundaries] = ...
         combine_data_from_same_slice(inFolder);
 
     % Save data for each slice
-    save(matPath, varsNeeded{:}, '-v7.3');
+    if saveMatFlag
+        save(matPath, varsNeeded{:}, '-v7.3');
+    end
 end
 
 %% Parse all slices
+% Count the number of slices
+nSlices = numel(vVecsSl);
+
 % Preallocate parsed parameters and data
 muParams = cell(nSlices, 1);
 muData = cell(nSlices, 1);
 
 % Parse and plot recordings from each slice
 for iSlice = 1:nSlices
+    % Print message
+    fprintf("Parsing slice #%d ...\n", iSlice);
+
     % Parse and plot multi-unit recordings from this slice
     [muParams{iSlice}, muData{iSlice}] = ...
         parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), ...
