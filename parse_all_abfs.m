@@ -32,6 +32,9 @@ function [allParsedParamsTable, allParsedDataTable, ...
 %                   - 'Verbose': whether to output parsed results
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'SaveMatFlag': whether to save data as mat file
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'UseOriginal': whether to use original 
 %                           channel labels and units over identify_channels()
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -92,6 +95,7 @@ function [allParsedParamsTable, allParsedDataTable, ...
 %                   allParsedParamsStruct, allParsedDataStruct, 
 %                   allParsedParamsCell, allParsedDataCell
 % 2018-10-23 - Allowed fileNames to be a character vector
+% 2019-04-29 - Added saveMatFlag as an optional parameter
 % 
 
 %% Hard-coded parameters
@@ -104,6 +108,7 @@ directoryDefault = pwd;             % look for .abf files in
                                     %   the present working directory by default
 fileNamesDefault = {};              % detect from pwd by default
 verboseDefault = false;             % print to standard output by default
+saveMatFlagDefault = false;         % save parsed data by default
 useOriginalDefault = false;         % use identify_channels.m instead
                                     % of the original channel labels by default
 expModeDefault = '';                % set later
@@ -130,6 +135,8 @@ addParameter(iP, 'FileNames', fileNamesDefault, ...
     @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveMatFlag', saveMatFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'UseOriginal', useOriginalDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ExpMode', expModeDefault, ...
@@ -154,6 +161,7 @@ parse(iP, varargin{:});
 directory = iP.Results.Directory;
 fileNames = iP.Results.FileNames;
 verbose = iP.Results.Verbose;
+saveMatFlag = iP.Results.SaveMatFlag;
 useOriginal = iP.Results.UseOriginal;
 expMode = validatestring(iP.Results.ExpMode, validExpModes);
 outFolder = iP.Results.OutFolder;
@@ -221,6 +229,7 @@ nFiles = numel(fileNames);
 % Parse all abf files
 [allParsedParamsCell, allParsedDataCell] = ...
     cellfun(@(x) parse_abf(x, 'Verbose', verbose, ...
+            'SaveMatFlag', saveMatFlag, ...
             'UseOriginal', useOriginal, ...
             'ExpMode', expMode, ...
             'TimeUnits', timeUnits, ...
@@ -246,14 +255,14 @@ nFiles = numel(fileNames);
 [allParsedParamsTable, allParsedDataTable] = ...
     argfun(@struct2table, allParsedParamsStruct, allParsedDataStruct);
 
-%% Print parameters to a file
+%% Save results
 % Get the directory name
 [~, directoryName, ~] = fileparts(directory);
 
 % Set a file name for the params table
 sheetName = fullfile(outFolder, [directoryName, tableSuffix, '.', sheetType]);
 
-% Print the table to a file
+% Print the parsed params as a table to a file
 writetable(allParsedParamsTable, sheetName);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

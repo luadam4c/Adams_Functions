@@ -17,10 +17,14 @@
 % 2019-03-15 Created by Adam Lu
 % 2019-03-25 Now colors by phase number
 % 2019-04-08 Renamed as plot_measures.m
+% TODO: Add normalizeToBaseline as an optional argument
 % TODO: extract specific usage to clc2_analyze.m
 % 
 
 %% Hard-coded parameters
+% Flags (to be made arguments later)
+normalizeToBaseline = true; %false;
+
 % Protocol parameters
 sweepLengthSec = 60;
 timeLabel = 'Time';
@@ -107,10 +111,17 @@ measureTables = combine_variables_across_tables(sliceParamsTables, ...
                 'InputNames', fileLabels, 'OmitVarName', false, ...
                 'OutFolder', outFolder, 'Prefix', prefix, 'SaveFlag', true);
 
-% Average over the last 10 sweeps
+% Average over the last nSweepsToAverage sweeps
 chevronTables = ...
     cellfun(@(x, y) average_last_of_each_phase(x, nSweepsToAverage, y), ...
                     measureTables, avgdTablePaths, 'UniformOutput', false);
+
+% Normalize to baseline if requested
+if normalizeToBaseline
+    chevronTables = ...
+        cellfun(@(x) normalize_to_first_row(x), ...
+                        chevronTables, 'UniformOutput', false);
+end
 
 %% Do the job
 % Convert to timetables
@@ -270,6 +281,13 @@ indLastEachPhase = create_indices('IndexStart', firstIndexEachPhase, ...
                                     'ForceCellOutput', true);
 
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function table = normalize_to_first_row(table)
+%% Normalizes all values to the first row
+
+% TODO
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

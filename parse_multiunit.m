@@ -89,6 +89,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 MS_PER_S = 1000;
 
 %% Hard-coded parameters
+yAmountToStagger = 10; %[]; % -5 to +5 mV
 rawDir = 'raw';
 rasterDir = 'rasters';
 autoCorrDir = 'autocorrelograms';
@@ -478,17 +479,19 @@ end
     figTitle = ['Raw traces for ', titleBase];
 
     % Compute the original y limits from data
-    yLimitsOrig = compute_axis_limits(vVecs, 'y', 'AutoZoom', true);
+    bestYLimits = compute_axis_limits(vVecs, 'y', 'AutoZoom', true);
 
     % Compute the amount of y to stagger
-    yAmountToStagger = range(yLimitsOrig);
-
+    if isempty(yAmountToStagger)
+        yAmountToStagger = range(bestYLimits);
+    end
+    
     % Create figure and plot
     figs(1) = figure('Visible', 'off');
     clf
     plot_traces(tVecsSec, vVecs, 'Verbose', false, ...
                 'PlotMode', 'staggered', 'SubplotOrder', 'list', ...
-                'YLimits', yLimitsOrig, 'YAmountToStagger', yAmountToStagger, ...
+                'YLimits', bestYLimits, 'YAmountToStagger', yAmountToStagger, ...
                 'XLabel', xLabel, 'LinkAxesOption', 'y', ...
                 'YLabel', 'suppress', 'TraceLabels', 'suppress', ...
                 'FigTitle', figTitle, 'FigHandle', figs(1), ...

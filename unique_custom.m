@@ -45,8 +45,8 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-ignoreNanDefault = false;  	    % ignore NaN by default
-treatNanAsEqualDefault = true; 	% treat all NaN values as equal by default
+ignoreNanDefault = false;  	    % do not ignore NaN by default
+treatNanAsEqualDefault = false; 	% do not treat all NaN values equal by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -89,14 +89,21 @@ otherArguments = struct2arglist(iP.Unmatched);
 
 % Ignoring NaN
 if ignoreNan
-    % Preserving one NaN
-    if treatNanAsEqual
-        % NaN indices, does not include last NaN if present
-        indNaN = isnan(y(1:end-1));
-    else
-        % All NaN indices
-        indNaN = isnan(y(1:end));            
-    end
+    % All NaN indices
+    indNaN = isnan(y(1:end));
+
+    % Delete all NaN elements in y, ia, and ic
+    y(indNaN) = [];
+    ia(indNaN) = [];
+    ic(indNaN) = [];
+
+    return;
+end
+
+% Preserving one NaN
+if treatNanAsEqual
+    % NaN indices, does not include last NaN if present
+    indNaN = isnan(y(1:end-1));
 
     % Delete all NaN elements in y, ia, and ic
     y(indNaN) = [];

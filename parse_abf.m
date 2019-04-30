@@ -62,6 +62,9 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %       varargin    - 'Verbose': whether to output parsed results
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'SaveMatFlag': whether to save data as mat file
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'UseOriginal': whether to use original 
 %                           channel labels and units over identify_channels()
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -139,6 +142,7 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 % 2018-12-15 - Added otherVecs in parsedData
 % 2018-12-15 - Added the 'ExtractChannels' flag
 % 2018-12-15 - Added isEvokedGabab to parsedParams
+% 2019-04-29 - Added saveMatFlag as an optional parameter
 
 %% Hard-coded constants
 US_PER_MS = 1e3;            % number of microseconds per millisecond
@@ -156,6 +160,7 @@ minSweepsGabab = 1;         % minimum number of sweeps
 
 %% Default values for optional arguments
 verboseDefault = true;              % print to standard output by default
+saveMatFlagDefault = false;            % don't save parsed data by default
 useOriginalDefault = false;         % use identify_channels.m instead
                                     % of the original channel labels by default
 extractChannelsDefault = true;      % extract channels by default
@@ -190,6 +195,8 @@ addRequired(iP, 'fileName', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveMatFlag', saveMatFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'UseOriginal', useOriginalDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ExtractChannels', extractChannelsDefault, ...
@@ -216,6 +223,7 @@ addParameter(iP, 'FileInfo', fileInfoDefault, ...
 % Read from the Input Parser
 parse(iP, fileName, varargin{:});
 verbose = iP.Results.Verbose;
+saveMatFlag = iP.Results.SaveMatFlag;
 useOriginal = iP.Results.UseOriginal;
 extractChannels = iP.Results.ExtractChannels;
 expMode = validatestring(iP.Results.ExpMode, validExpModes);
@@ -524,7 +532,7 @@ if nargout >= 1
 end
 
 % Store arrays and vectors in parsedData
-if nargout >= 2
+if nargout >= 2 || saveMatFlag
     % The following are always returned
     parsedData.data = data;
     parsedData.tVec = tVec;
@@ -537,6 +545,15 @@ if nargout >= 2
         parsedData.otherVecs = otherVecs;
         parsedData.dataReordered = dataReordered;
     end
+end
+
+% Save vectors as a matfile if requested
+if saveMatFlag
+    % Set a file name for the matfile
+    matfileName = replace(abfFullFileName, '.abf', '.mat');
+
+    % Save parsed data to a matfile
+    save(matfileName, '-struct', 'parsedData');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

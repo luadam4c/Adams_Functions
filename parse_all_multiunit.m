@@ -1,8 +1,9 @@
-% parse_all_multiunit.m
+function parse_all_multiunit(varargin)
 %% Tests the parse_multiunit function on all files in the present working directory
 %
 % Requires:
 %       cd/argfun.m
+%       cd/count_vectors.m
 %       cd/extract_fileparts.m
 %       cd/parse_all_abfs.m
 %       cd/parse_multiunit.m
@@ -11,17 +12,73 @@
 % File History:
 % 2019-03-13 Created
 % 2019-03-14 Now combines all files from the same slice
+% 2019-04-29 Now saves combined data as a matfile
+% TODO: Make outFolder, plotFlag optional parameters
 % TODO: Make combining optional
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Hard-coded parameters
 outFolder = pwd;
-plotFlag = true; %false;
+plotFlag = false;
+matFileSuffix = '_multiunit_data';
+varsNeeded = {'vVecsSl', 'siMsSl', 'iVecsSl', 'sliceBases', 'phaseBoundaries'};
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Generate and save data vectors for each slice
+% Create a file name for all multi-unit data
+matPath = fullfile(outFolder, [outFolder, matFileSuffix, '.mat']);
+
+% Load or process data for each slice
+if isfile(matPath)
+    % Load data for each slice
+    load(matPath, varsNeeded{:});
+else
+    % Combine data from the same slice
+    [vVecsSl, siMsSl, iVecsSl, sliceBases, phaseBoundaries] = ...
+        combine_data_from_same_slice;
+
+    % Save data for each slice
+    save(matPath, varsNeeded{:}, '-v7.3');
+end
+
+%% Parse all slices
+% Preallocate parsed parameters and data
+muParams = cell(nSlices, 1);
+muData = cell(nSlices, 1);
+
+% Parse and plot recordings from each slice
+for iSlice = 1:nSlices
+    % Parse and plot multi-unit recordings from this slice
+    [muParams{iSlice}, muData{iSlice}] = ...
+        parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), ...
+                        'PulseVectors', iVecsSl{iSlice}, ...
+                        'PlotFlag', plotFlag, 'OutFolder', outFolder, ...
+                        'FileBase', sliceBases{iSlice}, ...
+                        'PhaseBoundaries', phaseBoundaries{iSlice});
+
+    % Close all figures
+    close all force hidden;
+end
+
+% for iSlice = 1:nSlices; [muParams{iSlice}, muData{iSlice}] = parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), 'PulseVectors', iVecsSl{iSlice}, 'PlotFlag', plotFlag, 'OutFolder', outFolder, 'FileBase', sliceBases{iSlice}, 'PhaseBoundaries', phaseBoundaries{iSlice}); close all force hidden; end
+
+%% Plot tuning curves for all measures
+plot_measures;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [vVecsSl, siMsSl, iVecsSl, sliceBases, phaseBoundaries] = ...
+            combine_data_from_same_slice(varargin)
+%% Combines data from the same slice
+% TODO: What if not all slices have the same number of files?
+
+%% Hard-coded parameters
 nFilesPerSlice = 3;
 
 %% Parse all abfs
-[allParams, allData] = parse_all_abfs('ChannelTypes', {'voltage', 'current'}, 'ChannelUnits', {'mV', 'arb'});
+[allParams, allData] = ...
+    parse_all_abfs('ChannelTypes', {'voltage', 'current'}, ...
+                    'ChannelUnits', {'mV', 'arb'});
 
 %% Extract parameters and clear unused parameters
 siMs = allParams.siMs;
@@ -78,28 +135,6 @@ horzcatcell = @(x) horzcat(x{:});
     argfun(@(z) arrayfun(@(x, y) horzcatcell(z(x:y)), ...
                     idxFileFirst, idxFileLast, 'UniformOutput', false), ...
             vVecs, iVecs);
-
-%% Parse all slices
-% Preallocate parsed parameters and data
-muParams = cell(nSlices, 1);
-muData = cell(nSlices, 1);
-
-% Parse and plot recordings from each slice
-for iSlice = 1:nSlices
-    [muParams{iSlice}, muData{iSlice}] = ...
-        parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), ...
-                        'PulseVectors', iVecsSl{iSlice}, ...
-                        'PlotFlag', plotFlag, 'OutFolder', outFolder, ...
-                        'FileBase', sliceBases{iSlice}, ...
-                        'PhaseBoundaries', phaseBoundaries{iSlice});
-
-    close all force hidden;
-end
-
-% for iSlice = 1:nSlices; [muParams{iSlice}, muData{iSlice}] = parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), 'PulseVectors', iVecsSl{iSlice}, 'PlotFlag', plotFlag, 'OutFolder', outFolder, 'FileBase', sliceBases{iSlice}, 'PhaseBoundaries', phaseBoundaries{iSlice}); close all force hidden; end
-
-%% Plot tuning curves for all measures
-plot_measures;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -39,7 +39,6 @@ function nVectors = count_vectors (vectors, varargin)
 %       cd/force_column_vector.m
 %
 % Used by:
-%       cd/plot_measures.m
 %       cd/collapse_identical_vectors.m
 %       cd/compute_all_pulse_responses.m
 %       cd/compute_combined_trace.m
@@ -52,8 +51,10 @@ function nVectors = count_vectors (vectors, varargin)
 %       cd/compute_combined_data.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/parse_lts.m
+%       cd/parse_all_multiunit.m
 %       cd/parse_multiunit.m
 %       cd/parse_pulse_response.m
+%       cd/plot_measures.m
 %       cd/plot_protocols.m
 %       cd/plot_raster.m
 %       cd/plot_traces.m
