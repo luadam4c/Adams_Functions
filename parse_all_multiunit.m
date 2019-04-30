@@ -17,6 +17,7 @@ function parse_all_multiunit(varargin)
 % TODO: Make combining optional
 
 %% Hard-coded parameters
+inFolder = pwd;
 outFolder = pwd;
 plotFlag = false;
 matFileSuffix = '_multiunit_data';
@@ -25,8 +26,10 @@ varsNeeded = {'vVecsSl', 'siMsSl', 'iVecsSl', 'sliceBases', 'phaseBoundaries'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Generate and save data vectors for each slice
+inFolderName = extract_fileparts(inFolder, 'dirbase');
+
 % Create a file name for all multi-unit data
-matPath = fullfile(outFolder, [outFolder, matFileSuffix, '.mat']);
+matPath = fullfile(outFolder, [inFolderName, matFileSuffix, '.mat']);
 
 % Load or process data for each slice
 if isfile(matPath)
@@ -35,7 +38,7 @@ if isfile(matPath)
 else
     % Combine data from the same slice
     [vVecsSl, siMsSl, iVecsSl, sliceBases, phaseBoundaries] = ...
-        combine_data_from_same_slice;
+        combine_data_from_same_slice(inFolder);
 
     % Save data for each slice
     save(matPath, varsNeeded{:}, '-v7.3');
@@ -68,7 +71,7 @@ plot_measures;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [vVecsSl, siMsSl, iVecsSl, sliceBases, phaseBoundaries] = ...
-            combine_data_from_same_slice(varargin)
+            combine_data_from_same_slice(inFolder, varargin)
 %% Combines data from the same slice
 % TODO: What if not all slices have the same number of files?
 
@@ -77,7 +80,8 @@ nFilesPerSlice = 3;
 
 %% Parse all abfs
 [allParams, allData] = ...
-    parse_all_abfs('ChannelTypes', {'voltage', 'current'}, ...
+    parse_all_abfs('Directory', inFolder, ...
+                    'ChannelTypes', {'voltage', 'current'}, ...
                     'ChannelUnits', {'mV', 'arb'});
 
 %% Extract parameters and clear unused parameters
