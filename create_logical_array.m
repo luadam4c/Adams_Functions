@@ -23,7 +23,7 @@ function logicalArray = create_logical_array (indices, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
-%       cd/parse_multiunit.m
+%       cd/detect_spikes_multiunit.m
 
 % File History:
 % 2019-02-20 Created by Adam Lu

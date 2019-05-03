@@ -32,7 +32,7 @@ phaseLabel = 'Phase';
 phaseStrs = {'Baseline', 'Wash-on', 'Wash-out'};
 
 % Analysis parameters
-nSweepsToAverage = 5; %10;
+nSweepsToAverage = 10;
 
 % File patterns
 sliceFilePattern = '.*slice.*';
@@ -64,7 +64,7 @@ varLabels = {'Oscillatory Index 1'; 'Oscillatory Index 2'; ...
 % Find all files with the pattern *slice*_params in the file name
 [~, sliceParamSheets] = all_files('Keyword', 'slice', 'Suffix', 'params', ...
                                     'ForceCellOutput', true);
-
+                                
 % Extract the common prefix
 prefix = extract_fileparts(sliceParamSheets, 'commonprefix');
 
@@ -116,15 +116,19 @@ chevronTables = ...
     cellfun(@(x, y) average_last_of_each_phase(x, nSweepsToAverage, y), ...
                     measureTables, avgdTablePaths, 'UniformOutput', false);
 
+% Generate figure titles for Chevron plots
+figTitlesChevron = strcat(varLabels, [' avg over ', ...
+                            num2str(nSweepsToAverage), ' sweeps']);
+                
 % Normalize to baseline if requested
 if normalizeToBaseline
     chevronTables = ...
         cellfun(@(x) normalize_to_first_row(x), ...
                         chevronTables, 'UniformOutput', false);
 
-    yLabelsChevron = '% of baseline';
+    varLabelsChevron = repmat({'% of baseline'}, size(varLabels));
 else
-    yLabelsChevron = varLabels;
+    varLabelsChevron = varLabels;
 end
 
 %% Do the job
@@ -136,13 +140,13 @@ measureTimeTables = cellfun(@table2timetable, ...
 figs = cellfun(@(x, y, z, w, v, u) plot_table(x, 'PlotSeparately', false, ...
                                 'VariableNames', strcat(y, '_', fileLabels), ...
                                 'PTicks', [1, 2, 3], 'PTickLabels', phaseStrs, ...
-                                'ReadoutLabel', z, 'YLabel', w, ...
-                                'TableLabel', v, ...
-                                'XLabel', phaseLabel, 'FigName', u, ...
+                                'ReadoutLabel', z, 'TableLabel', w, ...
+                                'XLabel', phaseLabel, ...
+                                'FigTitle', v, 'FigName', u, ...
                                 'LegendLocation', 'eastoutside', ...
                                 'RemoveOutliers', false), ...
-            chevronTables, varsToPlot, varLabels, yLabelsChevron, ...
-            tableLabels, figNamesAvgd);
+            chevronTables, varsToPlot, varLabelsChevron, ...
+            tableLabels, figTitlesChevron, figNamesAvgd);
 
 close all;
 
@@ -290,17 +294,22 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function table = normalize_to_first_row(table)
+function normalizedTable = normalize_to_first_row(table)
 %% Normalizes all values to the first row
 
 % Extract the first row
-% TODO
+firstRow = table{1, :};
 
+% Count the number of rows
+nRows = height(table);
 
 % Divide each row by the first row and multiply by 100 %
-% TODO
+% normalizedTable = rowfun(@(x) x ./ firstRow, table);
+for iRow = 1:nRows
+    table{iRow, :} = (table{iRow, :} ./ firstRow) .* 100;
+end
 
-
+normalizedTable = table;
 
 end
 

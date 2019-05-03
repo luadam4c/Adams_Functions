@@ -1,10 +1,14 @@
 function [y, ia, ic] = unique_custom (x, varargin)
 %% Returns the unique values in x, optionally without NaN
-% Usage: [y] = unique_custom (x, varargin)
+% Usage: [y, ia, ic] = unique_custom (x, varargin)
 % Explanation:
-%       This function removes NaN values not identified by the default unique() function.
+%       This function is the same as the default unique() function
+%           but treats all NaN as equal by default (so there would
+%           be only one NaN if any in the output)
+%
 % Example(s):
 %       unique_custom([3, NaN, 3, 5, NaN], 'IgnoreNaN', true)
+%       unique_custom([3, NaN, 3, 5, NaN], 'TreatNanAsEqual', false)
 %       
 % Outputs:
 %       y           - All unique values in x
@@ -38,7 +42,7 @@ function [y, ia, ic] = unique_custom (x, varargin)
 
 %% Default values for optional arguments
 ignoreNanDefault = false;  	    % do not ignore NaN by default
-treatNanAsEqualDefault = false; 	% do not treat all NaN values equal by default
+treatNanAsEqualDefault = false; % do not treat all NaN values equal by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

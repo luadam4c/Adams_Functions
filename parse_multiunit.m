@@ -40,13 +40,12 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/check_dir.m
 %       cd/check_subdir.m
 %       cd/compute_axis_limits.m
-%       cd/compute_baseline_noise.m
 %       cd/compute_stats.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
-%       cd/create_logical_array.m
 %       cd/create_time_vectors.m
+%       cd/detect_spikes_multiunit.m
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
 %       cd/find_nearest_multiple.m
@@ -680,66 +679,27 @@ else
 end
 
 %% Detect spikes
-% Find the starting index for detecting a spike
-idxDetectStart = idxStimStart + minDelaySamples;
+[spikesParams, spikesData] = ...
+    detect_spikes_multiunit(vVec, tVec, ...
+                            siMs, idxStimStart, minDelaySamples, ...
+                            signal2Noise, baseWindow);
 
-% Find the corresponding time
-detectStartMs = tVec(idxDetectStart);
+detectStartMs = spikesParams.detectStartMs;
+baseSlopeNoise = spikesParams.baseSlopeNoise;
+slopeThreshold = spikesParams.slopeThreshold;
+nSpikesTotal = spikesParams.nSpikesTotal;
+idxFirstSpike = spikesParams.idxFirstSpike;
+firstSpikeMs = spikesParams.firstSpikeMs;
+vMin = spikesParams.vMin;
+vMax = spikesParams.vMax;
+vRange = spikesParams.vRange;
+slopeMin = spikesParams.slopeMin;
+slopeMax = spikesParams.slopeMax;
+slopeRange = spikesParams.slopeRange;
 
-% Compute the number of samples
-nSamples = numel(vVec);
-
-% Compute all instantaneous slopes in V/s
-slopes = diff(vVec) ./ siMs;
-
-% Compute a baseline slope noise in V/s
-baseSlopeNoise = compute_baseline_noise(slopes, tVec(1:(end-1)), baseWindow);
-
-% Compute a slope threshold in V/s
-slopeThreshold = baseSlopeNoise * signal2Noise;
-
-% Determine whether each slope is a local maximum
-[~, indPeakSlopes] = findpeaks(slopes);
-isPeakSlope = create_logical_array(indPeakSlopes, [nSamples - 1, 1]);
-
-% Create all indices minus 1
-allIndices = transpose(1:nSamples);
-
-% Detect spikes after idxStimStart + minDelaySamples
-isSpike = [false; slopes > slopeThreshold] & [false; isPeakSlope] & ...
-            allIndices > idxDetectStart;
-idxSpikes = find(isSpike);
-
-% Compute the overall spike count
-nSpikesTotal = numel(idxSpikes);
-
-% Index of first spike
-if nSpikesTotal == 0
-    idxFirstSpike = NaN;
-else
-    idxFirstSpike = idxSpikes(1);
-end
-
-% Store spike times
-if nSpikesTotal == 0
-    spikeTimesMs = [];
-    firstSpikeMs = NaN;
-else
-    spikeTimesMs = tVec(idxSpikes);
-    firstSpikeMs = spikeTimesMs(1);    
-end
-
-% Query the maximum and range of vVec after detectStartMs
-vVecTrunc = vVec(idxDetectStart:idxDetectStart + 1e5);
-vMin = min(vVecTrunc);
-vMax = max(vVecTrunc);
-vRange = vMax - vMin;
-
-% Query the maximum and range of slope after detectStartMs
-slopesTrunc = slopes(idxDetectStart:idxDetectStart + 1e5);
-slopeMin = min(slopesTrunc);
-slopeMax = max(slopesTrunc);
-slopeRange = slopeMax - slopeMin;
+slopes = spikesData.slopes;
+idxSpikes = spikesData.idxSpikes;
+spikeTimesMs = spikesData.spikeTimesMs;
 
 %% Compute the spike histogram, spikes per burst & oscillation duration
 if nSpikesTotal == 0
