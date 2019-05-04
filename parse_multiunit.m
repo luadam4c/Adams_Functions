@@ -83,6 +83,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 % 2019-03-19 Added nSpikesPerBurstIn10s, nSpikesIn10s, nBurstsIn10s, etc ...
 % 2019-03-24 Fixed bugs in prepare_for_plot_horizontal_line.m
 % 2019-03-24 Renamed setNumber -> phaseNumber, setName -> phaseName
+% 2019-05-03 Moved code to detect_spikes_multiunit.m
 
 % Hard-coded constants
 MS_PER_S = 1000;
@@ -679,11 +680,13 @@ else
 end
 
 %% Detect spikes
+% Detect spikes
 [spikesParams, spikesData] = ...
-    detect_spikes_multiunit(vVec, tVec, ...
-                            siMs, idxStimStart, minDelaySamples, ...
+    detect_spikes_multiunit(vVec, siMs, ...
+                            tVec, idxStimStart, minDelaySamples, ...
                             signal2Noise, baseWindow);
 
+idxDetectStart = spikesParams.idxDetectStart;
 detectStartMs = spikesParams.detectStartMs;
 baseSlopeNoise = spikesParams.baseSlopeNoise;
 slopeThreshold = spikesParams.slopeThreshold;

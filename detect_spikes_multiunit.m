@@ -1,11 +1,11 @@
 function [spikesParams, spikesData] = ...
-                detect_spikes_multiunit(vVec, tVec, ...
-                                    siMs, idxStimStart, minDelaySamples, ...
+                detect_spikes_multiunit(vVec, siMs, ...
+                                    tVec, idxStimStart, minDelaySamples, ...
                                     signal2Noise, baseWindow);
 %% Detects spikes from a multiunit recording
 % Usage: [spikesParams, spikesData] = ...
-%               detect_spikes_multiunit(vVec, tVec, ...
-%                                   siMs, idxStimStart, minDelaySamples, ...
+%               detect_spikes_multiunit(vVec, siMs, ...
+%                                   tVec, idxStimStart, minDelaySamples, ...
 %                                   signal2Noise, baseWindow);
 % Explanation:
 %       TODO
@@ -44,9 +44,11 @@ function [spikesParams, spikesData] = ...
 %                   must be a TODO
 %       vVec        - voltage vector
 %                   must be a TODO
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'BaseWindow': baseline window for each trace
+%                   must be empty or a numeric vector with 2 elements,
+%                       or a numeric array with 2 rows
+%                       or a cell array of numeric vectors with 2 elements
+%                   default == first half of the trace
 %
 % Requires:
 %       cd/compute_baseline_noise.m
@@ -57,15 +59,19 @@ function [spikesParams, spikesData] = ...
 %       cd/parse_multiunit.m
 
 % File History:
-% 2019-05-03 Created by Adam Lu
-% TODO: Input parser
+% 2019-05-03 Moved from parse_multiunit.m
+% 2019-05-04 Added input parser
 % TODO: Documentation
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-param1Default = [];             % default TODO: Description of param1
+tVecDefault = [];               % set later
+idxStimStartDefault = 1;    
+minDelaySamplesDefault = 0;
+signal2NoiseDefault = 3;        
+baseWindowDefault = [];         % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -84,19 +90,35 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 addRequired(iP, 'reqarg1');
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'param1', param1Default);
+addParameter(iP, 'tVec', tVecDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['tVec must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
+addParameter(iP, 'IdxStimStart', idxStimStartDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+addParameter(iP, 'MinDelaySamples', minDelaySamplesDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative', 'integer'}));
+addParameter(iP, 'Signal2Noise', signal2NoiseDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+addParameter(iP, 'BaseWindow', baseWindowDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['BaseWindow must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
 
 % Read from the Input Parser
-parse(iP, reqarg1, varargin{:});
-param1 = iP.Results.param1;
-
-% Check relationships between arguments
-% TODO
+parse(iP, vVec, siMs, varargin{:});
+tVec = iP.Results.tVec;
+idxStimStart = iP.Results.IdxStimStart;
+minDelaySamples = iP.Results.MinDelaySamples;
+signal2Noise = iP.Results.Signal2Noise;
+baseWindow = iP.Results.BaseWindow;
 
 %% Preparation
-% TODO
+% Create time vectors
+if isempty(tVec)
+    tVec = create_time_vectors(nSamples);
+end
 
-%% Do the job
 % Find the starting index for detecting a spike
 idxDetectStart = idxStimStart + minDelaySamples;
 
@@ -106,13 +128,14 @@ detectStartMs = tVec(idxDetectStart);
 % Compute the number of samples
 nSamples = numel(vVec);
 
-% Compute all instantaneous slopes in V/s
+%% Do the job
+% Compute all instantaneous slopes in uV/ms == mV/s
 slopes = diff(vVec) ./ siMs;
 
-% Compute a baseline slope noise in V/s
+% Compute a baseline slope noise in mV/s
 baseSlopeNoise = compute_baseline_noise(slopes, tVec(1:(end-1)), baseWindow);
 
-% Compute a slope threshold in V/s
+% Compute a slope threshold in mV/s
 slopeThreshold = baseSlopeNoise * signal2Noise;
 
 % Determine whether each slope is a local maximum
