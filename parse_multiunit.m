@@ -266,6 +266,7 @@ if plotFlag
     % Retrieve data for plotting
     tVec = parsedData.tVec;
     vVec = parsedData.vVec;
+    vVecFilt = parsedData.vVecFilt;
     slopes = parsedData.slopes;
     idxSpikes = parsedData.idxSpikes;
 
@@ -289,7 +290,7 @@ if plotFlag
     parfor iVec = 1:nVectors
         % Plot spike detection
         [fig, ax, lines, markers, raster] = ...
-            plot_spike_detection(tVec{iVec}, vVec{iVec}, ...
+            plot_spike_detection(tVec{iVec}, vVec{iVec}, vVecFilt{iVec}, ...
                                 slopes{iVec}, idxSpikes{iVec}, ...
                                 baseSlopeNoise(iVec), slopeThreshold(iVec), ...
                                 vMin(iVec), vMax(iVec), vRange(iVec), ...
@@ -634,6 +635,8 @@ function [parsedParams, parsedData] = ...
 MS_PER_S = 1000;
 
 % Hard-coded parameters
+MS_PER_S = 1000;
+cutoffFreq = [100, 1000];
 signal2Noise = 3; %4
 minDelayMs = 25;
 binWidthMs = 10;
@@ -644,6 +647,9 @@ minBurstLengthMs = 20;
 maxInterBurstIntervalMs = 1000; %2000;
 
 %% Preparation
+% Compute the sampling interval in seconds
+siSeconds = siMs / MS_PER_S;
+
 % Compute the minimum delay in samples
 minDelaySamples = ceil(minDelayMs ./ siMs);
 
@@ -679,12 +685,17 @@ else
     phaseName = '';
 end
 
+%% Bandpass filter
+vVecFilt = freqfilter(vVec, cutoffFreq, siSeconds, 'FilterType', 'band');
+
 %% Detect spikes
 % Detect spikes
 [spikesParams, spikesData] = ...
-    detect_spikes_multiunit(vVec, siMs, ...
-                            tVec, idxStimStart, minDelaySamples, ...
-                            signal2Noise, baseWindow);
+    detect_spikes_multiunit(vVecFilt, siMs, ...
+                            'tVec', tVec, 'IdxStimStart', idxStimStart, ...
+                            'BaseWindow', baseWindow, ...
+                            'MinDelayMs', minDelayMs, ...
+                            'Signal2Noise', signal2Noise);
 
 idxDetectStart = spikesParams.idxDetectStart;
 detectStartMs = spikesParams.detectStartMs;
@@ -1180,6 +1191,7 @@ parsedParams.figTitleBase = figTitleBase;
 
 parsedData.tVec = tVec;
 parsedData.vVec = vVec;
+parsedData.vVecFilt = vVecFilt;
 parsedData.slopes = slopes;
 parsedData.idxSpikes = idxSpikes;
 parsedData.spikeTimesMs = spikeTimesMs;
@@ -1283,7 +1295,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [fig, ax, lines, markers, raster] = ...
-                plot_spike_detection(tVec, vVec, slopes, idxSpikes, ...
+                plot_spike_detection(tVec, vVec, vVecFilt, ...
+                                    slopes, idxSpikes, ...
                                     baseSlopeNoise, slopeThreshold, ...
                                     vMin, vMax, vRange, slopeMin, slopeMax, ...
                                     figHandle, figTitle)
@@ -1298,8 +1311,11 @@ yMid = vMax + barWidth;
 
 % Compute y axis limits
 yLimits1 = compute_axis_limits([slopeMin, slopeMax], 'y', 'Coverage', 100);
+yLimits1 = [-15, 15];
 yLimits2 = compute_axis_limits([vMin, vMax], 'y', 'Coverage', 100);
+yLimits2 = [-10, 10];
 yLimits3 = compute_axis_limits([vMin, yMid], 'y', 'Coverage', 100);
+yLimits3 = [-10, 10];
 
 % Initialize graphics object handles
 ax = gobjects(3, 1);
@@ -1318,21 +1334,22 @@ clf;
 ax(1) = subplot(3, 1, 1);
 cla; hold on
 lines(1) = plot(tVec(1:(end-1)), slopes, 'k');
-lines(4) = plot_horizontal_line(baseSlopeNoise, 'Color', 'b', 'LineStyle', '--');
-lines(5) = plot_horizontal_line(slopeThreshold, 'Color', 'g', 'LineStyle', '--');
+lines(6) = plot_horizontal_line(baseSlopeNoise, 'Color', 'b', 'LineStyle', '--');
+lines(7) = plot_horizontal_line(slopeThreshold, 'Color', 'g', 'LineStyle', '--');
 if ~isempty(idxSpikes)
     markers(1) = plot(tVec(idxSpikes - 1), slopes(idxSpikes - 1), 'rx', 'LineWidth', 2);
 else
     markers(1) = gobjects(1);
 end
 ylim(yLimits1);
-ylabel('Slope (V/s)');
+ylabel('Slope (mV/s)');
 title('Detection of peaks in the slope vector');
 
 % Plot the original trace
 ax(2) = subplot(3, 1, 2);
 cla; hold on
 lines(2) = plot(tVec, vVec, 'k');
+lines(3) = plot(tVec, vVecFilt, 'b');
 if ~isempty(idxSpikes)
     markers(2) = plot(tVec(idxSpikes), vVec(idxSpikes), 'rx', 'LineWidth', 2);
 else
@@ -1345,7 +1362,8 @@ title('Corresponding positions in the voltage vector');
 % Plot the original trace
 ax(3) = subplot(3, 1, 3);
 cla; hold on
-lines(3) = plot(tVec, vVec, 'k');
+lines(4) = plot(tVec, vVec, 'k');
+lines(5) = plot(tVec, vVecFilt, 'b');
 raster = plot_raster(tVec(idxSpikes), 'YMid', yMid, 'BarWidth', barWidth, ...
                     'LineWidth', 0.5, 'Colors', {'Red'}, ...
                     'YLimits', 'suppress', 'YTickLocs', 'suppress', ...

@@ -1,12 +1,6 @@
-function [spikesParams, spikesData] = ...
-                detect_spikes_multiunit(vVec, siMs, ...
-                                    tVec, idxStimStart, minDelaySamples, ...
-                                    signal2Noise, baseWindow);
+function [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, varargin)
 %% Detects spikes from a multiunit recording
-% Usage: [spikesParams, spikesData] = ...
-%               detect_spikes_multiunit(vVec, siMs, ...
-%                                   tVec, idxStimStart, minDelaySamples, ...
-%                                   signal2Noise, baseWindow);
+% Usage: [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -15,9 +9,10 @@ function [spikesParams, spikesData] = ...
 %       spikesParams- Used and detected parameters, with fields:
 %                       siMs
 %                       idxStimStart
-%                       minDelaySamples
+%                       minDelayMs
 %                       signal2Noise
 %                       baseWindow
+%                       minDelaySamples
 %                       idxDetectStart
 %                       detectStartMs
 %                       baseSlopeNoise
@@ -69,7 +64,7 @@ function [spikesParams, spikesData] = ...
 %% Default values for optional arguments
 tVecDefault = [];               % set later
 idxStimStartDefault = 1;    
-minDelaySamplesDefault = 0;
+minDelayMsDefault = 25;
 signal2NoiseDefault = 3;        
 baseWindowDefault = [];         % set later
 
@@ -87,7 +82,12 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'reqarg1');
+addRequired(iP, 'vVec', ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['vVec must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
+addRequired(iP, 'siMs', ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'tVec', tVecDefault, ...
@@ -96,7 +96,7 @@ addParameter(iP, 'tVec', tVecDefault, ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'IdxStimStart', idxStimStartDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
-addParameter(iP, 'MinDelaySamples', minDelaySamplesDefault, ...
+addParameter(iP, 'MinDelayMs', minDelayMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative', 'integer'}));
 addParameter(iP, 'Signal2Noise', signal2NoiseDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
@@ -109,15 +109,20 @@ addParameter(iP, 'BaseWindow', baseWindowDefault, ...
 parse(iP, vVec, siMs, varargin{:});
 tVec = iP.Results.tVec;
 idxStimStart = iP.Results.IdxStimStart;
-minDelaySamples = iP.Results.MinDelaySamples;
+minDelayMs = iP.Results.MinDelayMs;
 signal2Noise = iP.Results.Signal2Noise;
 baseWindow = iP.Results.BaseWindow;
 
 %% Preparation
 % Create time vectors
 if isempty(tVec)
-    tVec = create_time_vectors(nSamples);
+    nSamples = count_samples(vVec);
+    
+    tVec = create_time_vectors(nSamples, 'SamplingIntervalMs', siMs);
 end
+
+% Compute the minimum delay in samples
+minDelaySamples = ceil(minDelayMs ./ siMs);
 
 % Find the starting index for detecting a spike
 idxDetectStart = idxStimStart + minDelaySamples;
@@ -184,9 +189,10 @@ slopeRange = slopeMax - slopeMin;
 %% Save in output
 spikesParams.siMs = siMs;
 spikesParams.idxStimStart = idxStimStart;
-spikesParams.minDelaySamples = minDelaySamples;
+spikesParams.minDelayMs = minDelayMs;
 spikesParams.signal2Noise = signal2Noise;
 spikesParams.baseWindow = baseWindow;
+spikesParams.minDelaySamples = minDelaySamples;
 spikesParams.idxDetectStart = idxDetectStart;
 spikesParams.detectStartMs = detectStartMs;
 spikesParams.baseSlopeNoise = baseSlopeNoise;
