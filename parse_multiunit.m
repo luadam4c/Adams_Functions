@@ -6,14 +6,132 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 % Example(s):
 %       TODO
 % Outputs:
-%       output1     - TODO: Description of output1
-%                   specified as a TODO
+%       parsedParams- parsed parameters, a table with columns:
+%                       phaseNumber
+%                       phaseName
+%                       signal2Noise
+%                       minDelayMs
+%                       minDelaySamples
+%                       binWidthMs
+%                       binWidthSec
+%                       filterWidthMs
+%                       minRelProm
+%                       minSpikeRateInBurstHz
+%                       minBurstLengthMs
+%                       maxInterBurstIntervalMs
+%                       maxInterBurstIntervalSec
+%                       siMs
+%                       idxStimStart
+%                       stimStartMs
+%                       stimStartSec
+%                       baseWindow
+%                       baseSlopeNoise
+%                       slopeThreshold
+%                       idxDetectStart
+%                       detectStartMs
+%                       detectStartSec
+%                       nSpikesTotal
+%                       idxFirstSpike
+%                       firstSpikeMs
+%                       firstSpikeSec
+%                       vMin
+%                       vMax
+%                       vRange
+%                       slopeMin
+%                       slopeMax
+%                       slopeRange
+%                       nBins
+%                       halfNBins
+%                       histLeftMs
+%                       histLeftSec
+%                       nSpikesPerBurst
+%                       nSpikesPerBurstIn10s
+%                       nSpikesPerBurstInOsc
+%                       nSpikesIn10s
+%                       nSpikesInOsc
+%                       nBurstsTotal
+%                       nBurstsIn10s
+%                       nBurstsInOsc
+%                       iBinLastOfLastBurst
+%                       iBinLastOfLastBurstIn10s
+%                       iBinLastOfLastBurstInOsc
+%                       timeOscEndMs
+%                       timeOscEndSec
+%                       oscDurationMs
+%                       oscDurationSec
+%                       oscIndex1
+%                       oscIndex2
+%                       oscIndex3
+%                       oscIndex4
+%                       oscPeriod1Ms
+%                       oscPeriod2Ms
+%                       minOscPeriod2Bins
+%                       maxOscPeriod2Bins
+%                       figPathBase
+%                       figTitleBase
+%                   specified as a table
+%       parsedData  - parsed parameters, a table with columns:
+%                       tVec
+%                       vVec
+%                       vVecFilt
+%                       slopes
+%                       idxSpikes
+%                       spikeTimesMs
+%                       spikeTimesSec
+%                       spikeCounts
+%                       edgesMs
+%                       edgesSec
+%                       spikeCountsEachBurst
+%                       spikeCountsEachBurstIn10s
+%                       spikeCountsEachBurstInOsc
+%                       iBinBurstStarts
+%                       iBinBurstEnds
+%                       iBinBurstIn10sStarts
+%                       iBinBurstIn10sEnds
+%                       iBinBurstInOscStarts
+%                       iBinBurstInOscEnds
+%                       timeBurstStartsMs
+%                       timeBurstEndsMs
+%                       timeBurstIn10sStartsMs
+%                       timeBurstIn10sEndsMs
+%                       timeBurstInOscStartsMs
+%                       timeBurstInOscEndsMs
+%                       timeBurstStartsSec
+%                       timeBurstEndsSec
+%                       autoCorr
+%                       acf
+%                       acfFiltered
+%                       acfFilteredOfInterest
+%                       indPeaks
+%                       indTroughs
+%                       ampPeaks
+%                       ampTroughs
+%                       halfPeriodsToMultiple
+%                   specified as a table
+%       figs        - figure handles
+%                   specified as a Figure object handle array
 % Arguments:
 %       vVecs       - original voltage vector(s) in mV
 %                   must be a numeric array or a cell array of numeric arrays
 %       siMs        - sampling interval in ms
 %                   must be a positive vector
-%       varargin    - 'PlotFlag': whether to plot traces
+%       varargin    - 'PlotSpikeDetectionFlag': whether to plot spike detection
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotSpikeHistogramFlag': whether to plot spike histograms
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotAutoCorrFlag': whether to plot autocorrelegrams
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotRawFlag': whether to plot raw traces
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotRasterFlag': whether to plot raster plots
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotMeasuresFlag': whether to plot time series 
+%                                           of measures
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'OutFolder': directory to place outputs
@@ -84,6 +202,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 % 2019-03-24 Fixed bugs in prepare_for_plot_horizontal_line.m
 % 2019-03-24 Renamed setNumber -> phaseNumber, setName -> phaseName
 % 2019-05-03 Moved code to detect_spikes_multiunit.m
+% 2019-05-06 Expanded plot flags
 
 % Hard-coded constants
 MS_PER_S = 1000;
@@ -106,7 +225,12 @@ measuresToPlot = {'oscIndex1', 'oscIndex2', 'oscIndex3', 'oscIndex4', ...
                     'nSpikesPerBurstInOsc'};
 
 %% Default values for optional arguments
-plotFlagDefault = false;
+plotSpikeDetectionFlagDefault = false;
+plotSpikeHistogramFlagDefault = false;
+plotAutoCorrFlagDefault = false;
+plotRawFlagDefault = false;
+plotRasterFlagDefault = false;
+plotMeasuresFlagDefault = false;
 outFolderDefault = pwd;
 fileBaseDefault = {};           % set later
 stimStartMsDefault = [];        % set later
@@ -138,7 +262,17 @@ addRequired(iP, 'siMs', ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'vector'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'PlotFlag', plotFlagDefault, ...
+addParameter(iP, 'PlotSpikeDetectionFlag', plotSpikeDetectionFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotSpikeHistogramFlag', plotSpikeHistogramFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotAutoCorrFlag', plotAutoCorrFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotRawFlag', plotRawFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotRasterFlag', plotRasterFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotMeasuresFlag', plotMeasuresFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
@@ -159,7 +293,12 @@ addParameter(iP, 'tVecs', tVecsDefault, ...
 
 % Read from the Input Parser
 parse(iP, vVecs, siMs, varargin{:});
-plotFlag = iP.Results.PlotFlag;
+plotSpikeDetectionFlag = iP.Results.PlotSpikeDetectionFlag;
+plotSpikeHistogramFlag = iP.Results.PlotSpikeHistogramFlag;
+plotAutoCorrFlag = iP.Results.PlotAutoCorrFlag;
+plotRawFlag = iP.Results.PlotRawFlag;
+plotRasterFlag = iP.Results.PlotRasterFlag;
+plotMeasuresFlag = iP.Results.PlotMeasuresFlag;
 outFolder = iP.Results.OutFolder;
 fileBase = iP.Results.FileBase;
 stimStartMs = iP.Results.StimStartMs;
@@ -260,7 +399,7 @@ end
 writetable(parsedParams, fullfile(outFolder, [fileBase, '_params.csv']));
 
 %% Plot spike detection
-if plotFlag
+if plotSpikeDetectionFlag
     fprintf('Plotting spike detection for %s ...\n', fileBase);
 
     % Retrieve data for plotting
@@ -315,7 +454,7 @@ if plotFlag
 end
 
 %% Plot spike histograms
-if plotFlag
+if plotSpikeHistogramFlag
     fprintf('Plotting spike histograms for %s ...\n', fileBase);
 
     % Retrieve data for plotting
@@ -374,7 +513,7 @@ if plotFlag
 end
 
 %% Plot autocorrelograms
-if plotFlag
+if plotAutoCorrFlag
     fprintf('Plotting autocorrelograms for %s ...\n', fileBase);
 
     % Retrieve data for plotting
@@ -456,7 +595,7 @@ if plotFlag
 end
 
 %% Plot raw traces
-%if plotFlag
+if plotRawFlag
     fprintf('Plotting raw traces for %s ...\n', fileBase);
 
     % Modify the figure base
@@ -528,12 +667,12 @@ end
     end            
     save_all_zooms(figs(1), outFolderRaw, ...
                     figBaseRaw, zoomWin1, zoomWin2, zoomWin3);
-%end
+end
 
 %% Plot raster plot
 % TODO: Plot burst duration
 % TODO: Plot oscillatory index
-if plotFlag
+if plotRasterFlag
     fprintf('Plotting raster plot for %s ...\n', fileBase);
 
     % Modify the figure base
@@ -602,7 +741,7 @@ if plotFlag
 end
 
 %% Plot time series of measures
-if plotFlag
+if plotMeasuresFlag
     fprintf('Plotting time series of measures for %s ...\n', fileBase);    
 
     % Create output directory and subdirectories for each measure
