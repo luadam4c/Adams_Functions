@@ -472,12 +472,16 @@ end
     firstSpikeSec = parsedParams.firstSpikeSec;
     timeOscEndSec = parsedParams.timeOscEndSec;
 
+    % Extract parameters
+    vVecs = parsedData.vVec;
+    vVecsFilt = parsedData.vVecFilt;
+
     % Convert time vector to seconds
     tVecsSec = transform_vectors(tVecs, MS_PER_S, 'divide');
 
     % Prepare for the plot
     xLabel = 'Time (s)';
-    figTitle = ['Raw traces for ', titleBase];
+    figTitle = ['Raw and Filtered traces for ', titleBase];
 
     % Compute the original y limits from data
     bestYLimits = compute_axis_limits(vVecs, 'y', 'AutoZoom', true);
@@ -497,6 +501,13 @@ end
                 'YLabel', 'suppress', 'TraceLabels', 'suppress', ...
                 'FigTitle', figTitle, 'FigHandle', figs(1), ...
                 'Color', 'k');
+    plot_traces(tVecsSec, vVecsFilt, 'Verbose', false, ...
+                'PlotMode', 'staggered', 'SubplotOrder', 'list', ...
+                'YLimits', bestYLimits, 'YAmountToStagger', yAmountToStagger, ...
+                'XLabel', xLabel, 'LinkAxesOption', 'y', ...
+                'YLabel', 'suppress', 'TraceLabels', 'suppress', ...
+                'FigTitle', figTitle, 'FigHandle', figs(1), ...
+                'Color', 'b');
 
     vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
                                     'LineStyle', '--');

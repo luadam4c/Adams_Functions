@@ -677,17 +677,16 @@ if ~isempty(figHandle)
     fig = figure(figHandle);
 elseif ~isempty(figNumber)
     fig = figure(figNumber);
+    clf(fig);
 else
     fig = gcf;
+    clf(fig);
 end
 
 % Set the default time axis limits
 if isempty(xLimits)
     xLimits = compute_axis_limits(tVecs, 'x');
 end
-
-% Clear the figure
-clf(fig);
 
 % Initialize graphics object arrays for plots
 if numel(nTracesPerPlot) > 1
