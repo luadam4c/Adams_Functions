@@ -115,7 +115,10 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %                   must be a numeric array or a cell array of numeric arrays
 %       siMs        - sampling interval in ms
 %                   must be a positive vector
-%       varargin    - 'PlotSpikeDetectionFlag': whether to plot spike detection
+%       varargin    - 'PlotAllFlag': whether to plot everything
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotSpikeDetectionFlag': whether to plot spike detection
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'PlotSpikeHistogramFlag': whether to plot spike histograms
@@ -225,6 +228,7 @@ measuresToPlot = {'oscIndex1', 'oscIndex2', 'oscIndex3', 'oscIndex4', ...
                     'nSpikesPerBurstInOsc'};
 
 %% Default values for optional arguments
+plotAllFlagDefault = false;
 plotSpikeDetectionFlagDefault = false;
 plotSpikeHistogramFlagDefault = false;
 plotAutoCorrFlagDefault = false;
@@ -232,10 +236,10 @@ plotRawFlagDefault = false;
 plotRasterFlagDefault = false;
 plotMeasuresFlagDefault = false;
 outFolderDefault = pwd;
-fileBaseDefault = {};           % set later
+fileBaseDefault = '';           % set later
 stimStartMsDefault = [];        % set later
 pulseVectorsDefault = [];       % don't use pulse vectors by default
-setBoundariesDefault = [];      % no set boundaries by default
+phaseBoundariesDefault = [];   	% no phase boundaries by default
 tVecsDefault = [];              % set later
 
 % TODO
@@ -262,6 +266,8 @@ addRequired(iP, 'siMs', ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'vector'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'PlotAllFlag', plotAllFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotSpikeDetectionFlag', plotSpikeDetectionFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotSpikeHistogramFlag', plotSpikeHistogramFlagDefault, ...
@@ -284,7 +290,7 @@ addParameter(iP, 'PulseVectors', pulseVectorsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['PulseVectors must be either a numeric array', ...
                     'or a cell array of numeric arrays!']));
-addParameter(iP, 'PhaseBoundaries', setBoundariesDefault, ...
+addParameter(iP, 'PhaseBoundaries', phaseBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'tVecs', tVecsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
@@ -293,6 +299,7 @@ addParameter(iP, 'tVecs', tVecsDefault, ...
 
 % Read from the Input Parser
 parse(iP, vVecs, siMs, varargin{:});
+plotAllFlag = iP.Results.PlotAllFlag;
 plotSpikeDetectionFlag = iP.Results.PlotSpikeDetectionFlag;
 plotSpikeHistogramFlag = iP.Results.PlotSpikeHistogramFlag;
 plotAutoCorrFlag = iP.Results.PlotAutoCorrFlag;
@@ -307,6 +314,30 @@ phaseBoundaries = iP.Results.PhaseBoundaries;
 tVecs = iP.Results.tVecs;
 
 %% Preparation
+% Updated plot flags
+if plotAllFlag
+    % TODO: Simplify with argfun.m
+
+    if ~plotSpikeDetectionFlag
+        plotSpikeDetectionFlag = true;
+    end
+    if ~plotSpikeHistogramFlag
+        plotSpikeHistogramFlag = true;
+    end
+    if ~plotAutoCorrFlag
+        plotAutoCorrFlag = true;
+    end
+    if ~plotRawFlag
+        plotRawFlag = true;
+    end
+    if ~plotRasterFlag
+        plotRasterFlag = true;
+    end
+    if ~plotMeasuresFlag
+        plotMeasuresFlag = true;
+    end
+end
+
 % Count the number of vectors
 nVectors = count_vectors(vVecs);
 
@@ -759,9 +790,9 @@ if plotMeasuresFlag
     % Plot table
     figs(3:(nMeasures + 2)) = ...
         plot_table(parsedParams, 'VariableNames', measuresToPlot, ...
-                    'XLabel', 'Time (min)', 'FigNames', figPathsMeasures, ...
+                    'PLabel', 'Time (min)', 'FigNames', figPathsMeasures, ...
                     'FigTitles', figTitlesMeasures, ...
-                    'XBoundaries', phaseBoundaries, ...
+                    'PBoundaries', phaseBoundaries, ...
                     'RemoveOutliers', true, 'PlotSeparately', true);
 end
 
@@ -864,6 +895,9 @@ slopeRange = spikesParams.slopeRange;
 slopes = spikesData.slopes;
 idxSpikes = spikesData.idxSpikes;
 spikeTimesMs = spikesData.spikeTimesMs;
+
+%% TODO: Compute the spike kernel distribution
+
 
 %% Compute the spike histogram, spikes per burst & oscillation duration
 if nSpikesTotal == 0
@@ -1456,15 +1490,17 @@ function [fig, ax, lines, markers, raster] = ...
 barWidth2Range = 1/10;
 
 % Compute the midpoint and bar width for the raster
-barWidth = vRange * barWidth2Range;
-yMid = vMax + barWidth;
+% barWidth = vRange * barWidth2Range;
+barWidth = 1;
+% yMid = vMax + barWidth;
+yMid = 9;
 
 % Compute y axis limits
-yLimits1 = compute_axis_limits([slopeMin, slopeMax], 'y', 'Coverage', 100);
+% yLimits1 = compute_axis_limits([slopeMin, slopeMax], 'y', 'Coverage', 100);
 yLimits1 = [-15, 15];
-yLimits2 = compute_axis_limits([vMin, vMax], 'y', 'Coverage', 100);
+% yLimits2 = compute_axis_limits([vMin, vMax], 'y', 'Coverage', 100);
 yLimits2 = [-10, 10];
-yLimits3 = compute_axis_limits([vMin, yMid], 'y', 'Coverage', 100);
+% yLimits3 = compute_axis_limits([vMin, yMid], 'y', 'Coverage', 100);
 yLimits3 = [-10, 10];
 
 % Initialize graphics object handles

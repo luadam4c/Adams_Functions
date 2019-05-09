@@ -11,7 +11,12 @@ function figs = plot_table (table, varargin)
 % Arguments:
 %       table       - a table with variables to plot
 %                   must be a table
-%       varargin    - 'VariableNames': variable (column) names of the table
+%       varargin    - 'PlotType': type of plot
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'tuning'    - circles
+%                       'bar'       - horizontal bars
+%                   default == 'tuning'
+%                   - 'VariableNames': variable (column) names of the table
 %                   must be empty or a character vector or a string vector
 %                       or a cell array of character vectors
 %                   default == plot all variables
@@ -37,7 +42,7 @@ function figs = plot_table (table, varargin)
 %                   must be a string scalar or a character vector
 %                   default == either a common prefix from variable names
 %                               or the input table variable name
-%                   - 'XLabel': label for the parameter
+%                   - 'PLabel': label for the parameter
 %                   must be a string scalar or a character vector
 %                   default == none ('suppress')
 %                   - 'OutFolder': output folder if FigNames not set
@@ -73,10 +78,12 @@ function figs = plot_table (table, varargin)
 % 2019-03-17 Implemented plotting together (use plot_tuning_curve directly)
 % 2019-03-17 Added 'PlotSeparately' as an optional argument
 % 2019-03-25 Added 'PhaseVariables' as an optional argument
+% 2019-05-08 Added 'PlotType' as an optional argument
 % TODO: Return handles to plots
 % 
 
 %% Hard-coded parameters
+validPlotTypes = {'tuning', 'bar'};
 lineSpecSeparate = 'o';
 lineWidthSeparate = 1;
 markerEdgeColorSeparate = rgb('DarkOrchid');
@@ -88,6 +95,7 @@ markerEdgeColorTogether = rgb('DarkOrchid');
 markerFaceColorTogether = rgb('LightSkyBlue');
 
 %% Default values for optional arguments
+plotTypeDefault = 'tuning';
 lineSpecDefault = '';
 lineWidthDefault = [];
 markerEdgeColorDefault = [];
@@ -101,7 +109,7 @@ phaseVariablesDefault = {};     % no phases by default
 delimiterDefault = '_';         % use '_' as delimiter by default
 readoutLabelDefault = '';       % set later
 tableLabelDefault = '';         % set later
-xLabelDefault = 'suppress';     % No x label by default
+pLabelDefault = 'suppress';     % No x label by default
 outFolderDefault = pwd;
 figNameDefault = '';
 
@@ -132,6 +140,8 @@ addRequired(iP, 'table', ...
     @(x) validateattributes(x, {'table', 'timetable'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'PlotType', plotTypeDefault, ...
+    @(x) any(validatestring(x, validPlotTypes)));
 addParameter(iP, 'LineSpec', lineSpecDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'LineWidth', lineWidthDefault);
@@ -159,7 +169,7 @@ addParameter(iP, 'ReadoutLabel', readoutLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'TableLabel', tableLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'XLabel', xLabelDefault, ...
+addParameter(iP, 'PLabel', pLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
@@ -168,6 +178,7 @@ addParameter(iP, 'FigName', figNameDefault, ...
 
 % Read from the Input Parser
 parse(iP, table, varargin{:});
+plotType = validatestring(iP.Results.PlotType, validPlotTypes);
 lineSpec = iP.Results.LineSpec;
 lineWidth = iP.Results.LineWidth;
 markerEdgeColor = iP.Results.MarkerEdgeColor;
@@ -180,7 +191,7 @@ phaseVariables = iP.Results.PhaseVariables;
 delimiter = iP.Results.Delimiter;
 readoutLabel = iP.Results.ReadoutLabel;
 tableLabel = iP.Results.TableLabel;
-xLabel = iP.Results.XLabel;
+pLabel = iP.Results.PLabel;
 outFolder = iP.Results.OutFolder;
 figName = iP.Results.FigName;
 
@@ -233,7 +244,7 @@ if isempty(tableLabel)
     end
 end
 
-% Decide on xTickLabels
+% Decide on pTickLabels
 if isfield(table.Properties, 'RowNames') && iscell(table.Properties.RowNames)
     % Get the row names
     rowNames = table.Properties.RowNames;
@@ -242,23 +253,23 @@ if isfield(table.Properties, 'RowNames') && iscell(table.Properties.RowNames)
     %   Otherwise, just use the row names as the x tick labels
     if all(isfile(rowNames))
         % Extract the distinct file bases
-        xTickLabels = extract_fileparts(rowNames, 'distinct');
+        pTickLabels = extract_fileparts(rowNames, 'distinct');
 
         % Replace all instances of '_' with '\_'
-        xTickLabels = replace(xTickLabels, '_', '\_');
+        pTickLabels = replace(pTickLabels, '_', '\_');
     else
         % Just use the row names
-        xTickLabels = rowNames;
+        pTickLabels = rowNames;
     end
 elseif isfield(table.Properties, 'RowTimes')
     % Convert time to minutes
     timeVec = minutes(table.Properties.RowTimes);
 
     % Convert to a cell array of character vectors
-    xTickLabels = convert_to_char(timeVec);
+    pTickLabels = convert_to_char(timeVec);
 else
     % Use default x tick labels
-    xTickLabels = {};
+    pTickLabels = {};
 end
 
 % Decide on lineSpec
@@ -304,12 +315,13 @@ if plotSeparately
 
     % Plot fields
     figs = plot_struct(myStruct, 'OutFolder', outFolder, ...
+                        'PlotType', plotType, ...
                         'FieldLabels', varLabels, ...
-                        'XTickLabels', xTickLabels, 'XLabel', xLabel, ...
+                        'PTickLabels', pTickLabels, 'PLabel', pLabel, ...
                         'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
                         'MarkerEdgeColor', markerEdgeColor, ...
                         'MarkerFaceColor', markerFaceColor, ...
-                        otherArguments{:});
+                         otherArguments{:});
 else
     % Create a figure name if empty
     if isempty(figName)
@@ -350,16 +362,23 @@ else
     end
 
     % Plot a tuning curve
-    figs = plot_tuning_curve(xValues, myArray, 'FigName', figName, ...
-                    'PhaseVectors', phaseVectors, ...
-                    'PLabel', xLabel, ...
-                    'ReadoutLabel', readoutLabel, ...
-                    'ColumnLabels', varLabels, ...
-                    'FigTitle', figTitle, ...
-                    'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
-                    'MarkerEdgeColor', markerEdgeColor, ...
-                    'MarkerFaceColor', markerFaceColor, ...
-                    otherArguments{:});
+    switch plotType
+        case 'tuning'
+            figs = plot_tuning_curve(xValues, myArray, 'FigName', figName, ...
+                            'PhaseVectors', phaseVectors, ...
+                            'PLabel', pLabel, ...
+                            'ReadoutLabel', readoutLabel, ...
+                            'ColumnLabels', varLabels, ...
+                            'FigTitle', figTitle, ...
+                            'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
+                            'MarkerEdgeColor', markerEdgeColor, ...
+                            'MarkerFaceColor', markerFaceColor, ...
+                            otherArguments{:});
+        case 'bar'
+            % TODO
+        otherwise
+            error('plotType unrecognized!')
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -372,7 +391,7 @@ OLD CODE:
     cellfun(@(x) fileparts(x), newPaths, 'UniformOutput', false);
 
 % Create x tick labels
-xTickLabels = cellfun(@(x) strrep(x, '_', '\_'), fileBases, ...
+pTickLabels = cellfun(@(x) strrep(x, '_', '\_'), fileBases, ...
                         'UniformOutput', false);
 
 %}

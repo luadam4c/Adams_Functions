@@ -11,7 +11,12 @@ function [figs, lines] = plot_struct (structArray, varargin)
 % Arguments:    
 %       structArray - a structure array containing scalar fields
 %                   must be a 2-D structure array
-%       varargin    - 'XBoundaries': x boundary values
+%       varargin    - 'PlotType': type of plot
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'tuning'    - circles
+%                       'bar'       - horizontal bars
+%                   default == 'tuning'
+%                   - 'PBoundaries': x boundary values
 %                   must be a numeric vector
 %                   default == []
 %                   - 'LineSpec': line specification
@@ -21,20 +26,13 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %                               log-scaled
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == [false, false];
-%                   - 'XLimits': limits of x axis
-%                               suppress by setting value to 'suppress'
-%                   must be 'suppress' or a 2-element increasing numeric vector
-%                   default == expand by a little bit
-%                   - 'YLimits': limits of y axis
-%                   must be a 2-element increasing numeric vector
-%                   default == []
-%                   - 'XTicks': x tick values for the parameter values
+%                   - 'PTicks': x tick values for the parameter values
 %                   must be a numeric vector
 %                   default == []
-%                   - 'XTickLabels': x tick labels in place of parameter values
+%                   - 'PTickLabels': x tick labels in place of parameter values
 %                   must be a cell array of character vectors/strings
 %                   default == {}
-%                   - 'XLabel': label for the parameter
+%                   - 'PLabel': label for the parameter
 %                   must be a string scalar or a character vector
 %                   default == 'Parameter'
 %                   - 'FieldLabels': label for the field
@@ -44,7 +42,7 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %                   must be a 3-element vector
 %                   - 'FigTitles': titles for each figure
 %                   must be a cell array of character vectors/strings
-%                   default == [fieldLabel, ' vs. ', xLabel]
+%                   default == [fieldLabel, ' vs. ', pLabel]
 %                   - 'FigNumber': figure number for creating figure
 %                   must be a positive integer scalar
 %                   default == []
@@ -69,6 +67,7 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %       cd/force_column_cell.m
 %       cd/match_row_count.m
 %       cd/plot_tuning_curve.m
+%       cd/plot_horizontal_line.m
 %       cd/plot_vertical_line.m
 %       cd/isfigtype.m
 %       cd/save_all_figtypes.m
@@ -78,26 +77,28 @@ function [figs, lines] = plot_struct (structArray, varargin)
 
 % File History:
 % 2018-09-26 Created by Adam Lu
-% 2018-12-15 Updated XTicks so that it is dependent on nEntries
+% 2018-12-15 Updated PTicks so that it is dependent on nEntries
 % 2018-12-17 Now uses create_labels_from_numbers.m
 % 2018-12-18 Now uses iP.KeepUnmatched
 % 2018-12-18 Changed lineSpec default to o and singleColorDefault to SkyBlue
 % 2019-03-14 Now saves the plots here
+% 2019-05-08 Added 'PlotType' as an optional argument
 % TODO: Return handles to plots
 % 
 
 %% Hard-coded parameters
-maxNXTicks = 10;
+validPlotTypes = {'tuning', 'bar'};
+maxNPTicks = 10;
+barDirectionDefault = 'horizontal';
 
 %% Default values for optional arguments
-xBoundariesDefault = [];
+plotTypeDefault = 'tuning';
+pBoundariesDefault = [];
 lineSpecDefault = 'o';
-xislogDefault = [false, false];
-xlimitsDefault = [];
-ylimitsDefault = [];
-xTicksDefault = [];
-xTickLabelsDefault = {};
-xLabelDefault = 'Parameter';
+pIsLogDefault = [false, false];
+pTicksDefault = [];
+pTickLabelsDefault = {};
+pLabelDefault = 'Parameter';
 fieldLabelsDefault = {};
 singleColorDefault = rgb('SkyBlue');
 figTitlesDefault = {};          % set later
@@ -124,23 +125,19 @@ addRequired(iP, 'structArray', ...
     @(x) validateattributes(x, {'struct'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'XBoundaries', xBoundariesDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'PlotType', plotTypeDefault, ...
+    @(x) any(validatestring(x, validPlotTypes)));
+addParameter(iP, 'PBoundaries', pBoundariesDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'LineSpec', lineSpecDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'XisLog', xislogDefault, ...
+addParameter(iP, 'PIsLog', pIsLogDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'XLimits', xlimitsDefault, ...
-    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
-        isnumeric(x) && isvector(x) && length(x) == 2);
-addParameter(iP, 'YLimits', ylimitsDefault, ...
-    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
-        isnumeric(x) && isvector(x) && length(x) == 2);
-addParameter(iP, 'XTicks', xTicksDefault, ...
+addParameter(iP, 'PTicks', pTicksDefault, ...
     @(x) isempty(x) || isnumericvector(x));
-addParameter(iP, 'XTickLabels', xTickLabelsDefault, ...
+addParameter(iP, 'PTickLabels', pTickLabelsDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
-addParameter(iP, 'XLabel', xLabelDefault, ...
+addParameter(iP, 'PLabel', pLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FieldLabels', fieldLabelsDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
@@ -159,14 +156,13 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 
 % Read from the Input Parser
 parse(iP, structArray, varargin{:});
-xBoundaries = iP.Results.XBoundaries;
+plotType = validatestring(iP.Results.PlotType, validPlotTypes);
+pBoundaries = iP.Results.PBoundaries;
 lineSpec = iP.Results.LineSpec;
-xIsLog = iP.Results.XisLog;
-xLimits = iP.Results.XLimits;
-yLimits = iP.Results.YLimits;
-xTicks = iP.Results.XTicks;
-xTickLabels = iP.Results.XTickLabels;
-xLabel = iP.Results.XLabel;
+pIsLog = iP.Results.PIsLog;
+pTicks = iP.Results.PTicks;
+pTickLabels = iP.Results.PTickLabels;
+pLabel = iP.Results.PLabel;
 fieldLabels = iP.Results.FieldLabels;
 singlecolor = iP.Results.SingleColor;
 figTitles = iP.Results.FigTitles;
@@ -179,9 +175,9 @@ figNames = iP.Results.FigNames;
 otherArguments = iP.Unmatched;
 
 % Check relationships between arguments
-if ~isempty(xTicks) && ~isempty(xTickLabels) && ...
-    numel(xTicks) ~= numel(xTickLabels)
-    fprintf(['XTicks and XTickLabels must have ', ...
+if ~isempty(pTicks) && ~isempty(pTickLabels) && ...
+    numel(pTicks) ~= numel(pTickLabels)
+    fprintf(['PTicks and PTickLabels must have ', ...
                 'the same number of elements!\n']);
     figs = gobjects(0);
     return
@@ -198,29 +194,29 @@ if nEntries == 0
 end
 
 % Create a vector for the parameter values
-xValues = transpose(1:nEntries);
+pValues = transpose(1:nEntries);
 
 % Decide on the number of parameter values to actually show
-if isempty(xTicks)
+if isempty(pTicks)
     % Decide on the number of parameter values to show
-    nXTicks = min(maxNXTicks, nEntries);
+    nPTicks = min(maxNPTicks, nEntries);
 
     % Evenly space them out starting with the first parameter
-    xTicks = (1:nXTicks) * floor(nEntries/nXTicks);
+    pTicks = (1:nPTicks) * floor(nEntries/nPTicks);
 else
-    nXTicks = length(xTicks);
+    nPTicks = length(pTicks);
 end
 
 % Generate corresponding parameter value labels
-if ~isempty(xTickLabels) 
+if ~isempty(pTickLabels) 
     % Force as a column cell array
-    xTickLabels = force_column_cell(xTickLabels);
+    pTickLabels = force_column_cell(pTickLabels);
     
     % Match the row counts
-    xTickLabels = match_row_count(xTickLabels, nXTicks);
-elseif isempty(xTickLabels)
-    % Generate xTickLabels from xTicks
-    xTickLabels = create_labels_from_numbers(xTicks);
+    pTickLabels = match_row_count(pTickLabels, nPTicks);
+elseif isempty(pTickLabels)
+    % Generate pTickLabels from pTicks
+    pTickLabels = create_labels_from_numbers(pTicks);
 end
 
 % Get all the fields of the structArray as a cell array
@@ -228,7 +224,7 @@ allFields = fieldnames(structArray);
 
 % Create figure names if not provided
 if isempty(figNames)
-    figNames = cellfun(@(x) fullfile(outFolder, [x, '_vs_', xLabel]), ...
+    figNames = cellfun(@(x) fullfile(outFolder, [x, '_vs_', pLabel]), ...
                         allFields, 'UniformOutput', false);
 end
 
@@ -260,7 +256,7 @@ allScalarFields = fieldnames(scalarStructArray);
 nFields = numel(allScalarFields);
 
 % Count the number of boundaries
-nBoundaries = numel(xBoundaries);
+nBoundaries = numel(pBoundaries);
 
 % Return if there are no more fields
 if nFields == 0
@@ -276,7 +272,7 @@ figs = gobjects(nFields, 1);
 lines = gobjects(nFields, nBoundaries);
 for iField = 1:nFields
     % Get the field value vector for this field
-    field = fieldData(:, iField);
+    fieldVals = fieldData(:, iField);
 
     % Set the field label for this field
     if ~isempty(fieldLabels)
@@ -293,8 +289,8 @@ for iField = 1:nFields
         figTitle = figTitles{iField};
     else
         % Use the default
-        if ~strcmpi(fieldLabel, 'suppress') && ~strcmpi(xLabel, 'suppress')
-            figTitle = strrep([fieldLabel, ' vs. ', xLabel], '_', '\_');
+        if ~strcmpi(fieldLabel, 'suppress') && ~strcmpi(pLabel, 'suppress')
+            figTitle = strrep([fieldLabel, ' vs. ', pLabel], '_', '\_');
         elseif ~strcmpi(fieldLabel, 'suppress')
             figTitle = strrep([fieldLabel, ' vs. parameter'], '_', '\_');
         else
@@ -312,21 +308,47 @@ for iField = 1:nFields
     % Create a new figure
     figs(iField, 1) = figure('Visible', 'off');
 
-    % Plot the tuning curve
-    plot_tuning_curve(xValues, field, 'PisLog', xIsLog, ...
-                        'XLimits', xLimits, 'YLimits', yLimits, ...
-                        'PTicks', xTicks, 'PTickLabels', xTickLabels, ...
-                        'PLabel', xLabel, ...
+    switch plotType
+    case 'tuning'
+        % Plot the tuning curve
+        plot_tuning_curve(pValues, fieldVals, 'PisLog', pIsLog, ...
+                        'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
+                        'PLabel', pLabel, ...
                         'ReadoutLabel', fieldLabel, ...
                         'SingleColor', singlecolor, ...
                         'FigTitle', figTitle, 'FigNumber', figNumber, ...
                         'LineSpec', lineSpec, otherArguments);
 
-    % Plot boundaries
-    if nBoundaries > 0
-        hold on
-        lines(iField, :) = plot_vertical_line(xBoundaries, 'LineWidth', 0.5, ...
-                                                'LineStyle', '--', 'Color', 'g');
+        % Plot boundaries
+        if nBoundaries > 0
+            hold on
+            lines(iField, :) = ...
+                plot_vertical_line(pBoundaries, 'LineWidth', 0.5, ...
+                                    'LineStyle', '--', 'Color', 'g');
+        end
+    case 'bar'
+        % Plot horizontal bars
+        % TODO: Deal with pIsLog
+        % TODO: Implement singlecolor
+        % TODO: Implement figTitle
+        % TODO: Implement figNumber
+        plot_bar(fieldVals, 'BarDirection', barDirectionDefault, ...
+                        'PValues', pValues, ...
+                        'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
+                        'PLabel', pLabel, ...
+                        'ReadoutLabel', fieldLabel, ...
+                        otherArguments);
+                        % 'FigTitle', figTitle, 'FigNumber', figNumber, ...
+
+        % Plot boundaries
+        if nBoundaries > 0
+            hold on
+            lines(iField, :) = ...
+                plot_horizontal_line(pBoundaries, 'LineWidth', 0.5, ...
+                                    'LineStyle', '--', 'Color', 'g');
+        end
+    otherwise
+        error('plotType unrecognized!')
     end
 
     if ~isempty(figName)
@@ -342,7 +364,7 @@ OLD CODE:
 @(x) validateattributes(x, {'numeric'}, ...
                         {'increasing', 'vector', 'numel', 2}));
 
-xTickLabels = arrayfun(@(x) num2str(x), xTicks, ...
+pTickLabels = arrayfun(@(x) num2str(x), pTicks, ...
                         'UniformOutput', false);
 
 singleColorDefault = [0, 0, 1];
@@ -351,6 +373,25 @@ singleColorDefault = [0, 0, 1];
 figs(iField) = figure;
 
 'FigName', figName, 'FigTypes', figtypes, ...
+
+%                   - 'XLimits': limits of x axis
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == expand by a little bit
+%                   - 'YLimits': limits of y axis
+%                   must be a 2-element increasing numeric vector
+%                   default == []
+xlimitsDefault = [];
+ylimitsDefault = [];
+addParameter(iP, 'XLimits', xlimitsDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
+addParameter(iP, 'YLimits', ylimitsDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
+'XLimits', xLimits, 'YLimits', yLimits, ...
+xLimits = iP.Results.XLimits;
+yLimits = iP.Results.YLimits;
 
 %}
 

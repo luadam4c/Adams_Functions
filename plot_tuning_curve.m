@@ -27,12 +27,13 @@ function [fig, lines] = plot_tuning_curve (pValues, readout, varargin)
 %                               log-scaled
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'XLimits': limits of x axis
+%                   - 'PLimits': limits of parameter axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
 %                   default == expand by a little bit
-%                   - 'YLimits': limits of y axis
-%                   must be a 2-element increasing numeric vector
+%                   - 'ReadoutLimits': limits of readout axis
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
 %                   default == []
 %                   - 'PTicks': x tick values for the parameter values
 %                   must be a numeric vector
@@ -120,8 +121,8 @@ colsToPlotDefault = [];         % set later
 lineSpecDefault = '-';
 lineWidthDefault = 2;
 pislogDefault = false;
-xlimitsDefault = [];
-ylimitsDefault = [];
+pLimitsDefault = [];
+readoutLimitsDefault = [];
 pTicksDefault = [];
 pTickLabelsDefault = {};
 pLabelDefault = 'Parameter';
@@ -168,16 +169,16 @@ addParameter(iP, 'LineSpec', lineSpecDefault, ...
 addParameter(iP, 'LineWidth', lineWidthDefault);
 addParameter(iP, 'PisLog', pislogDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'XLimits', xlimitsDefault, ...
+addParameter(iP, 'PLimits', pLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
-addParameter(iP, 'YLimits', ylimitsDefault, ...
+addParameter(iP, 'ReadoutLimits', readoutLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'PTicks', pTicksDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'PTickLabels', pTickLabelsDefault, ...
-    @(x) iscellstr(x) || isstring(x));
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'PLabel', pLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ReadoutLabel', readoutLabelDefault, ...
@@ -205,8 +206,8 @@ colsToPlot = iP.Results.ColsToPlot;
 lineSpec = iP.Results.LineSpec;
 lineWidth = iP.Results.LineWidth;
 pIsLog = iP.Results.PisLog;
-xLimits = iP.Results.XLimits;
-yLimits = iP.Results.YLimits;
+pLimits = iP.Results.PLimits;
+readoutLimits = iP.Results.ReadoutLimits;
 pTicks = iP.Results.PTicks;
 pTickLabels = iP.Results.PTickLabels;
 pLabel = iP.Results.PLabel;
@@ -432,12 +433,12 @@ if ~strcmpi(legendLocation, 'suppress')
     end
 end
 
-% Restrict x axis if xLimits provided; 
+% Restrict x axis if pLimits provided; 
 %   otherwise expand the x axis by a little bit
-if ~isempty(xLimits)
-    if ~strcmpi(xLimits, 'suppress')
+if ~isempty(pLimits)
+    if ~strcmpi(pLimits, 'suppress')
         % Use x limits
-        xlim(xLimits);
+        xlim(pLimits);
     end
 else
     if nEntries > 1 && nEntries < 4
@@ -448,10 +449,10 @@ else
     end
 end
 
-% Restrict y axis if yLimits provided
+% Restrict y axis if readoutLimits provided
 %   otherwise expand the y axis by a little bit
-if ~isempty(yLimits)
-    ylim(yLimits);
+if ~isempty(readoutLimits)
+    ylim(readoutLimits);
 else
     ylim(compute_axis_limits(get(gca, 'YLim'), 'y', 'Coverage', 80));
 end
@@ -515,11 +516,11 @@ end
 OLD CODE:
 
 % Usage: plot_tuning_curve(pValues, readout, colsToPlot, pIsLog, pLabel, ...
-            readoutLabel, columnLabels, xLimits, yLimits, figName, varargin)
+            readoutLabel, columnLabels, pLimits, readoutLimits, figName, varargin)
 
 if ~isequal(columnLabels, {'suppress'})
 
-if isequal(xLimits, -1)
+if isequal(pLimits, -1)
 
 if ~isequal(pLabel, 'suppress')
 if ~isequal(readoutLabel, 'suppress')

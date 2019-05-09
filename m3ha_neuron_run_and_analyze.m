@@ -234,7 +234,6 @@ function [errorStruct, hFig, simData] = ...
 % Requires:
 %       ~/m3ha/optimizer4gabab/singleneuron4compgabab.hoc
 %       cd/argfun.m
-%       cd/plot_bar.m
 %       cd/compute_combined_data.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_residuals.m
@@ -254,6 +253,7 @@ function [errorStruct, hFig, simData] = ...
 %       cd/m3ha_neuron_create_TC_commands.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/parse_pulse_response.m
+%       cd/plot_bar.m
 %       cd/run_neuron.m
 %       cd/save_all_figtypes.m
 %       cd/test_difference.m
@@ -365,6 +365,7 @@ function [errorStruct, hFig, simData] = ...
 %                   from a set of parameters
 % 2019-01-09 - Added 'GenerateDataFlag' as an optional parameter
 % 2019-01-14 - Added 'BootstrapCprFlag' as an optional parameter
+% 2019-05-08 - Updated usage of plot_bar.m
 
 %% Hard-coded parameters
 validSimModes = {'active', 'passive'};
@@ -1880,12 +1881,12 @@ if plotStatisticsFlag
         clf(ltsburst_stats{bi});
 
         % Plot means with 95% confidence intervals
-        plot_bar(ltsburst_stats{bi}, [mean_stats_real{bi} mean_stats_sim{bi}], ...
-                    [lowbar_stats_real{bi} lowbar_stats_sim{bi}], ...
-                    [highbar_stats_real{bi} highbar_stats_sim{bi}], ...
-                    'XValues', (1:ncg)');
+        plot_bar([mean_stats_real{bi}, mean_stats_sim{bi}], ...
+                    [lowbar_stats_real{bi}, lowbar_stats_sim{bi}], ...
+                    [highbar_stats_real{bi}, highbar_stats_sim{bi}], ...
+                    'PValues', (1:ncg)', 'PTickLabels', pplabel2, ...
+                    'FigHandle', ltsburst_stats{bi});
 
-        set(gca, 'XTickLabel', pplabel2);
         if bi == 1
 %            ylim([0 2500]);
         elseif bi == 2
@@ -3313,6 +3314,8 @@ end
 % Replace with averaged data
 realData = realDataAveraged;
 simData = simDataAveraged;
+
+set(gca, 'XTickLabel', pplabel2);
 
 
 %}

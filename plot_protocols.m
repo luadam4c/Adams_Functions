@@ -110,6 +110,7 @@ function [featuresFileTable, featuresSweepTable] = ...
 % 2018-12-18 Moved code to plot_table.m
 % 2018-12-28 Now decides on whether to use parfor across files
 %               based on the number of sweeps versus the number of files
+% 2019-05-08 Updated usage of plot_table
 % TODO: Make plot flags for each type of plot optional arguments
 % 
 
@@ -497,7 +498,7 @@ if ~isempty(featuresFileTable) && istable(featuresFileTable)
         
     % Plot each variable of the table
     plot_table(featuresFileTable, 'VariableNames', varToPlot, ...
-               'OutFolder', outFolderProtocol, 'XLabel', xLabelFile, ...
+               'OutFolder', outFolderProtocol, 'PLabel', xLabelFile, ...
                'PlotSeparately', true);
 end
 if ~isempty(featuresSweepTable) && istable(featuresSweepTable)
@@ -511,7 +512,7 @@ if ~isempty(featuresSweepTable) && istable(featuresSweepTable)
 
     % Plot each variable of the table
     plot_table(featuresSweepTable, 'VariableNames', varToPlot, ...
-               'OutFolder', outFolderProtocol, 'XLabel', xLabelSweep, ...
+               'OutFolder', outFolderProtocol, 'PLabel', xLabelSweep, ...
                'PlotSeparately', true);
 end
 
