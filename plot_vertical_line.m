@@ -24,6 +24,7 @@ function h = plot_vertical_line (xValue, varargin)
 %       cd/match_format_vector_sets.m
 %
 % Used by:
+%       cd/plot_error_bar.m
 %       cd/plot_pulse_response_with_stimulus.m
 %       cd/plot_struct.m
 %       cd/plot_swd_histogram.m

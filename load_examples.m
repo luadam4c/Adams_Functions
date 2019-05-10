@@ -37,6 +37,9 @@ myNumericCol = ones(nRows, 1);
 myNumericRow = ones(1, nCols);
 myNumeric2D = magic(nRows);
 myNumeric3D = floor(rand(3, 4, 2) * 100);
+val1 = [2; 5; 3; 13]; low1 = val1 - 1; high1 = val1 + 1;
+val2 = [2, 5, 3, 13]; low2 = val2 - 1; high2 = val2 + 1;
+val3 = [2 2 3; 2 5 6; 2 8 9; 2 11 12]; low3 = val3 - 1; high3 = val3 + 1;
 
 % Cell arrays of character arrays
 names = {'Adam', 'Ashley', 'Mark', 'Peter', 'Katie'};

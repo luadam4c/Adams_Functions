@@ -85,6 +85,7 @@ function [figs, lines] = plot_struct (structArray, varargin)
 % 2019-03-14 Now saves the plots here
 % 2019-05-08 Added 'PlotType' as an optional argument
 % TODO: Return handles to plots
+% TODO: Pass in figNames or figNumbers when plotting separately
 % 
 
 %% Hard-coded parameters
@@ -212,7 +213,7 @@ if isempty(pTicks)
     nPTicks = min(maxNPTicks, nEntries);
 
     % Evenly space them out starting with the first parameter
-    pTicks = (1:nPTicks) * floor(nEntries/nPTicks);
+    pTicks = transpose(1:nPTicks) .* floor(nEntries/nPTicks);
 else
     nPTicks = length(pTicks);
 end
@@ -292,7 +293,7 @@ for iField = 1:nFields
         % Use the field name
         fieldLabel = allScalarFields{iField};
     end
-        
+
     % Set the figure title
     if ~isempty(figTitles)
         % Use the user-provided figure title
@@ -316,7 +317,10 @@ for iField = 1:nFields
     end
     
     % Create a new figure
-    figs(iField, 1) = figure('Visible', 'off');
+    figThis = decide_on_fighandle('FigNumber', figNumber);
+
+    % Clear the figure
+    clf;
 
     switch plotType
     case 'tuning'
@@ -326,7 +330,7 @@ for iField = 1:nFields
                         'PLabel', pLabel, ...
                         'ReadoutLabel', fieldLabel, ...
                         'SingleColor', singlecolor, ...
-                        'FigTitle', figTitle, 'FigNumber', figNumber, ...
+                        'FigTitle', figTitle, 'FigHandle', figThis, ...
                         'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
                         'MarkerEdgeColor', markerEdgeColor, ...
                         'MarkerFaceColor', markerFaceColor, ...
@@ -345,13 +349,16 @@ for iField = 1:nFields
         % TODO: Implement singlecolor
         % TODO: Implement figTitle
         % TODO: Implement figNumber
-        plot_bar(fieldVals, 'BarDirection', barDirectionDefault, ...
+        plot_bar(fieldVals, 'ForceVectorAsRow', false, ...
+                        'ReverseOrder', true, ...
+                        'BarDirection', barDirectionDefault, ...
                         'PValues', pValues, ...
                         'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
                         'PLabel', pLabel, ...
                         'ReadoutLabel', fieldLabel, ...
+                        'FigHandle', figThis, ...
                         otherArguments);
-                        % 'FigTitle', figTitle, 'FigNumber', figNumber, ...
+                        % 'FigTitle', figTitle, ...
 
         % Plot boundaries
         if nBoundaries > 0
@@ -365,8 +372,10 @@ for iField = 1:nFields
     end
 
     if ~isempty(figName)
-        save_all_figtypes(figs(iField, 1), figName, figtypes);
+        save_all_figtypes(figThis, figName, figtypes);
     end
+
+    figs(iField, 1) = figThis;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

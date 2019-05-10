@@ -95,6 +95,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/m3ha_plot_individual_traces.m
 %       cd/plot_bar.m
 %       cd/plot_cfit_pulse_response.m
+%       cd/plot_error_bar.m
 %       cd/plot_histogram.m
 %       cd/plot_raster.m
 %       cd/plot_tuning_curve.m

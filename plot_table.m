@@ -80,6 +80,7 @@ function figs = plot_table (table, varargin)
 % 2019-03-25 Added 'PhaseVariables' as an optional argument
 % 2019-05-08 Added 'PlotType' as an optional argument
 % TODO: Return handles to plots
+% TODO: Pass in figNames or figNumbers when plotting separately
 % 
 
 %% Hard-coded parameters

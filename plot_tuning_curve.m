@@ -66,6 +66,9 @@ function [fig, lines] = plot_tuning_curve (pValues, readout, varargin)
 %                   must be a string scalar or a character vector
 %                   default == ['Traces for ', figName]
 %                               or [yLabel, ' over time']
+%                   - 'FigHandle': figure handle for created figure
+%                   must be a empty or a figure object handle
+%                   default == []
 %                   - 'FigNumber': figure number for creating figure
 %                   must be a positive integer scalar
 %                   default == []
@@ -84,6 +87,7 @@ function [fig, lines] = plot_tuning_curve (pValues, readout, varargin)
 %       ~/Downloaded_Functions/rgb.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
+%       cd/decide_on_fighandle.m
 %       cd/force_column_vector.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
@@ -107,6 +111,7 @@ function [fig, lines] = plot_tuning_curve (pValues, readout, varargin)
 % 2019-03-14 Added 'RemoveOutliers' as an optional argument
 % 2019-03-25 Added 'PhaseVectors' as an optional argument
 % 2019-03-25 Now expands the y limits by a little by default
+% 2019-05-10 Now uses decide_on_fighandle.m
 % TODO: Make 'ColorMap' and optional argument
 % TODO: Return handles to plots
 %
@@ -115,9 +120,9 @@ function [fig, lines] = plot_tuning_curve (pValues, readout, varargin)
 pTickAngle = 60;                % x tick angle in degrees
 
 %% Default values for optional arguments
-phaseVectorsDefault = {};       % no phase vectors by default
-removeOutliersDefault = false;  % don't remove outliers by default
-colsToPlotDefault = [];         % set later
+phaseVectorsDefault = {};           % no phase vectors by default
+removeOutliersDefault = false;      % don't remove outliers by default
+colsToPlotDefault = [];             % set later
 lineSpecDefault = '-';
 lineWidthDefault = 2;
 pislogDefault = false;
@@ -127,12 +132,13 @@ pTicksDefault = [];
 pTickLabelsDefault = {};
 pLabelDefault = 'Parameter';
 readoutLabelDefault = 'Readout';
-columnLabelsDefault = '';       % set later
+columnLabelsDefault = '';           % set later
 singleColorDefault = rgb('SkyBlue');
-legendLocationDefault = 'auto'; % set later
-figTitleDefault = '';           % set later
-figNumberDefault = [];          % invisible figure by default
-figNameDefault = '';
+legendLocationDefault = 'auto';     % set later
+figTitleDefault = '';               % set later
+figHandleDefault = [];              % no existing figure by default
+figNumberDefault = [];              % no figure number by default
+figNameDefault = '';                % don't save figure by default
 figTypesDefault = 'png';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -191,8 +197,10 @@ addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigHandle', figHandleDefault);
 addParameter(iP, 'FigNumber', figNumberDefault, ...
-    @(x) isempty(x) || isnumeric(x) && isscalar(x) && x > 0);
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                'FigNumber must be a empty or a positive integer scalar!'));
 addParameter(iP, 'FigName', figNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
@@ -217,6 +225,7 @@ singlecolor = iP.Results.SingleColor;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
 figTitle = iP.Results.FigTitle;
+figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
 figName = iP.Results.FigName;
 [~, figtypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
@@ -325,23 +334,8 @@ else
     cm = colormap(hsv(maxNPhases));
 end
 
-if ~isempty(figName)
-    % Create a figure
-    if ~isempty(figNumber)
-        % Create an invisible figure
-        fig = figure(figNumber);
-        set(fig, 'Visible', 'Off');
-    else
-        % Create a new figure
-        fig = figure;
-    end
-
-    % Clear the figure
-    clf(fig);
-else
-    % Get the current figure
-    fig = gcf;
-end
+% Decide on the figure to plot on
+fig = decide_on_fighandle('FigHandle', figHandle, 'FigNumber', figNumber);
 
 %% Plot tuning curve
 % Hold on if more than one column
@@ -539,6 +533,24 @@ if pIsLog
 else
     p = plot(pValues, readout(:, col), lineSpec, ...
                     'LineWidth', lineWidth, otherArguments);
+end
+
+if ~isempty(figName)
+    % Create a figure
+    if ~isempty(figNumber)
+        % Create an invisible figure
+        fig = figure(figNumber);
+        set(fig, 'Visible', 'Off');
+    else
+        % Create a new figure
+        fig = figure;
+    end
+
+    % Clear the figure
+    clf(fig);
+else
+    % Get the current figure
+    fig = gcf;
 end
 
 %}

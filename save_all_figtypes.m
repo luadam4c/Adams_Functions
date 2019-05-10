@@ -23,6 +23,7 @@ function save_all_figtypes (fig, filename, varargin)
 %       cd/create_pulse_train_series.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/plot_bar.m
 %       cd/plot_struct.m
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
