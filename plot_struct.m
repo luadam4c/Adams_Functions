@@ -66,6 +66,7 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %       cd/create_labels_from_numbers.m
 %       cd/force_column_cell.m
 %       cd/match_row_count.m
+%       cd/plot_bar.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_horizontal_line.m
 %       cd/plot_vertical_line.m
@@ -95,6 +96,9 @@ barDirectionDefault = 'horizontal';
 plotTypeDefault = 'tuning';
 pBoundariesDefault = [];
 lineSpecDefault = 'o';
+lineWidthDefault = [];
+markerEdgeColorDefault = [];
+markerFaceColorDefault = [];
 pIsLogDefault = [false, false];
 pTicksDefault = [];
 pTickLabelsDefault = {};
@@ -131,6 +135,9 @@ addParameter(iP, 'PBoundaries', pBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'LineSpec', lineSpecDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'LineWidth', lineWidthDefault);
+addParameter(iP, 'MarkerEdgeColor', markerEdgeColorDefault);
+addParameter(iP, 'MarkerFaceColor', markerFaceColorDefault);
 addParameter(iP, 'PIsLog', pIsLogDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PTicks', pTicksDefault, ...
@@ -159,6 +166,9 @@ parse(iP, structArray, varargin{:});
 plotType = validatestring(iP.Results.PlotType, validPlotTypes);
 pBoundaries = iP.Results.PBoundaries;
 lineSpec = iP.Results.LineSpec;
+lineWidth = iP.Results.LineWidth;
+markerEdgeColor = iP.Results.MarkerEdgeColor;
+markerFaceColor = iP.Results.MarkerFaceColor;
 pIsLog = iP.Results.PIsLog;
 pTicks = iP.Results.PTicks;
 pTickLabels = iP.Results.PTickLabels;
@@ -317,7 +327,10 @@ for iField = 1:nFields
                         'ReadoutLabel', fieldLabel, ...
                         'SingleColor', singlecolor, ...
                         'FigTitle', figTitle, 'FigNumber', figNumber, ...
-                        'LineSpec', lineSpec, otherArguments);
+                        'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
+                        'MarkerEdgeColor', markerEdgeColor, ...
+                        'MarkerFaceColor', markerFaceColor, ...
+                        otherArguments);
 
         % Plot boundaries
         if nBoundaries > 0

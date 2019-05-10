@@ -1,6 +1,6 @@
-function [bars, lines, fig] = plot_bar(val, low, high, varargin)
+function [bars, lines, fig] = plot_bar(val, varargin)
 %% Plots a bar graph (grouped or not) with or without confidence intervals
-% Usage: [bars, lines, fig] = plot_bar(val, low, high, varargin)
+% Usage: [bars, lines, fig] = plot_bar(val, varargin)
 % Explanation:
 %       TODO
 % Example:
@@ -63,6 +63,7 @@ function [bars, lines, fig] = plot_bar(val, low, high, varargin)
 %
 % Used by:
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/plot_struct.m
 %       cd/ZG_fit_IEI_distributions.m
 %       /media/adamX/Paula_IEIs/paula_iei3.m
 %
@@ -77,6 +78,7 @@ function [bars, lines, fig] = plot_bar(val, low, high, varargin)
 % 2019-01-15 - Made h -> 'FigHandle' an optional argument
 % 2019-05-08 - Added 'barDirection' as an optional argument
 % 2019-05-08 - Made low and high optional arguments
+% 2019-05-10 - Fixed bugs
 % TODO: Fix error bars when 'barDirection' is 'horizontal'
 % TODO: Update the code to use plot_horizontal_line.m and plot_vertical_line.m
 % TODO: If 'TreatVectorAsArray' is true, don't force all vectors as column vectors
@@ -301,7 +303,7 @@ switch barDirection
         if oneSamplePerGroup
             bars = barh(pValues, diag(val), 'stacked', otherArguments{:});
         else
-            % Just use the bar() function
+            % Just use the barh() function
             bars = barh(pValues, val, otherArguments{:});
         end
     otherwise
