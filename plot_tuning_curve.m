@@ -41,6 +41,9 @@ function [fig, lines] = plot_tuning_curve (pValues, readout, varargin)
 %                   - 'PTickLabels': x tick labels in place of parameter values
 %                   must be a cell array of character vectors/strings
 %                   default == {}
+%                   - 'PTickAngle': angle for parameter tick labels
+%                   must be a numeric scalar
+%                   default == 0
 %                   - 'PLabel': label for the parameter
 %                   must be a string scalar or a character vector
 %                   default == 'Parameter'
@@ -117,7 +120,6 @@ function [fig, lines] = plot_tuning_curve (pValues, readout, varargin)
 %
 
 %% Hard-coded parameters
-pTickAngle = 60;                % x tick angle in degrees
 
 %% Default values for optional arguments
 phaseVectorsDefault = {};           % no phase vectors by default
@@ -130,6 +132,7 @@ pLimitsDefault = [];
 readoutLimitsDefault = [];
 pTicksDefault = [];
 pTickLabelsDefault = {};
+pTickAngleDefault = [];             % set later
 pLabelDefault = 'Parameter';
 readoutLabelDefault = 'Readout';
 columnLabelsDefault = '';           % set later
@@ -185,6 +188,8 @@ addParameter(iP, 'PTicks', pTicksDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'PTickLabels', pTickLabelsDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'PTickAngle', pTickAngleDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'PLabel', pLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ReadoutLabel', readoutLabelDefault, ...
@@ -218,6 +223,7 @@ pLimits = iP.Results.PLimits;
 readoutLimits = iP.Results.ReadoutLimits;
 pTicks = iP.Results.PTicks;
 pTickLabels = iP.Results.PTickLabels;
+pTickAngle = iP.Results.PTickAngle;
 pLabel = iP.Results.PLabel;
 readoutLabel = iP.Results.ReadoutLabel;
 columnLabels = iP.Results.ColumnLabels;
@@ -337,6 +343,16 @@ end
 % Decide on the figure to plot on
 fig = decide_on_fighandle('FigHandle', figHandle, 'FigNumber', figNumber);
 
+% Set the default parameter tick angle
+if isempty(pTickAngle)
+    if ~isempty(pTickLabels)
+        % TODO: Rotate p tick labels only if too long
+        pTickAngle = 60;
+    else
+        pTickAngle = 0;
+    end
+end
+
 %% Plot tuning curve
 % Hold on if more than one column
 if nColsToPlot > 1
@@ -453,12 +469,10 @@ end
 
 % Set title and axes labels
 if ~isempty(pTicks)
-    set(gca, 'XTick', pTicks);
-    % xticks(pTicks);
+    xticks(pTicks);
 end
 if ~isempty(pTickLabels)
-    set(gca, 'XTickLabel', pTickLabels);
-    % xticklabels(pTicks);
+    xticklabels(pTicks);
 end
 if ~strcmpi(pLabel, 'suppress')
     xlabel(pLabel);
@@ -470,8 +484,7 @@ if ~strcmpi(figTitle, 'suppress')
     title(figTitle);
 end
 
-% Rotate p tick labels if too long
-% TODO
+% Set the angle for parameter ticks
 xtickangle(pTickAngle);
 
 %% Post-plotting
@@ -552,6 +565,10 @@ else
     % Get the current figure
     fig = gcf;
 end
+
+set(gca, 'XTick', pTicks);
+set(gca, 'XTickLabel', pTickLabels);
+pTickAngle = 60;                % x tick angle in degrees
 
 %}
 

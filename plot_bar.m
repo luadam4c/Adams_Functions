@@ -58,19 +58,25 @@ function [bars, lines, fig] = plot_bar (val, varargin)
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
 %                   default == []
-%                   - 'PTicks': x tick values for the parameter values
+%                   - 'PTicks': tick values for the parameter values
 %                   must be a numeric vector
 %                   default == []
-%                   - 'PTickLabels': x tick labels in place of parameter values
+%                   - 'PTickLabels': tick labels in place of parameter values
 %                   must be a cell array of character vectors/strings
 %                   default == {}
-%                   - 'PTickAngle': TODO
+%                   - 'PTickAngle': angle for parameter tick labels
+%                   must be a numeric scalar
+%                   default == 0
 %                   - 'PLabel': label for the parameter
 %                   must be a string scalar or a character vector
 %                   default == 'Parameter'
 %                   - 'ReadoutLabel': label for the readout
 %                   must be a string scalar or a character vector
 %                   default == 'Readout'
+%                   - 'FigTitle': title for the figure
+%                   must be a string scalar or a character vector
+%                   default == TODO: ['Bar graph for ', figName]
+%                               or [readoutLabel, ' across ', pLabel]
 %                   - 'FigHandle': figure handle for created figure
 %                   must be a empty or a figure object handle
 %                   default == []
@@ -122,6 +128,7 @@ function [bars, lines, fig] = plot_bar (val, varargin)
 % 2019-05-10 Now grabs XOffset or YOffset and uses it to plot error bars
 % 2019-05-10 Now uses decide_on_fighandle.m
 % 2019-05-11 Added 'ReverseOrder' as an optional argument
+% 2019-05-11 Added 'FigTitle' as an optional argument
 % TODO: Add 'BarColors' as an optional argument
 % TODO: Change usage in all functions using this
 % 
@@ -147,6 +154,7 @@ pTickLabelsDefault = {};
 pTickAngleDefault = [];
 pLabelDefault = 'Parameter';
 readoutLabelDefault = 'Readout';
+figTitleDefault = '';               % set later
 figHandleDefault = [];              % no existing figure by default
 figNumberDefault = [];              % no figure number by default
 figNameDefault = '';                % don't save figure by default
@@ -207,6 +215,8 @@ addParameter(iP, 'PLabel', pLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ReadoutLabel', readoutLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigTitle', figTitleDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigHandle', figHandleDefault);
 addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
@@ -235,6 +245,7 @@ pTickLabels = iP.Results.PTickLabels;
 pTickAngle = iP.Results.PTickAngle;
 pLabel = iP.Results.PLabel;
 readoutLabel = iP.Results.ReadoutLabel;
+figTitle = iP.Results.FigTitle;
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
 figName = iP.Results.FigName;
@@ -338,6 +349,17 @@ switch barDirection
         yLimits = pLimits;
         xLabel = readoutLabel;
         yLabel = pLabel;
+end
+
+% Set the default figure title
+if isempty(figTitle)
+    if ~strcmpi(readoutLabel, 'suppress') && ~strcmpi(pLabel, 'suppress')
+        figTitle = strrep([readoutLabel, ' vs. ', pLabel], '_', '\_');
+    elseif ~strcmpi(readoutLabel, 'suppress')
+        figTitle = strrep([readoutLabel, ' vs. parameter'], '_', '\_');
+    else
+        figTitle = 'Readout vs. parameter';
+    end
 end
 
 %% Plot bars
@@ -490,12 +512,15 @@ if ~isempty(yLimits) && ~strcmpi(yLimits, 'suppress')
     ylim(yLimits);
 end
 
-% Set axes labels
+% Set axes labels and title
 if ~strcmpi(xLabel, 'suppress')
     xlabel(xLabel);
 end
 if ~strcmpi(yLabel, 'suppress')
     ylabel(yLabel);
+end
+if ~strcmpi(figTitle, 'suppress')
+    title(figTitle);
 end
 
 %% Post-plotting
