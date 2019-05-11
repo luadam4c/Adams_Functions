@@ -5,14 +5,15 @@ function [bars, lines, fig] = plot_bar (val, varargin)
 %       TODO
 % Example:
 %       load_examples;
-%       [bars, lines, fig] = plot_bar(val2, low2, high2);
 %       [bars, lines, fig] = plot_bar(val1, low1, high1);
-%       [bars, lines, fig] = plot_bar(val1, low1, high1, 'ForceVectorAsRow', false);
+%       [bars, lines, fig] = plot_bar(val2, low2, high2);
+%       [bars, lines, fig] = plot_bar(val2, low2, high2, 'ForceVectorAsRow', true);
 %       [bars, lines, fig] = plot_bar(val2, low2, high2, 'BarDirection', 'horizontal');
 %       [bars, lines, fig] = plot_bar(val1, low1, high1, 'BarDirection', 'horizontal', 'ForceVectorAsRow', false);
 %       [bars, lines, fig] = plot_bar(val3, low3, high3, 'PTickLabels', {'Mark', 'Ashley', 'Katie', 'Adam'});
-%       [bars, lines, fig] = plot_bar(val3, low3, high3, 'PTickLabels', {'Mark', 'Ashley', 'Katie', 'Adam'}, 'ReverseOrder', true);
 %       [bars, lines, fig] = plot_bar(val3, low3, high3, 'BarDirection', 'horizontal', 'PTickLabels', {'Mark', 'Ashley', 'Katie', 'Adam'});
+%       [bars, lines, fig] = plot_bar(val3, low3, high3, 'ReverseOrder', true, 'PTickLabels', {'Mark', 'Ashley', 'Katie', 'Adam'});
+%       [bars, lines, fig] = plot_bar(val1, low1, high1, 'ReverseOrder', true, 'BarDirection', 'horizontal');
 % Outputs:
 %       bars    - bar objects (bars for each group or column is one bar object)
 %               specified as a vector of Bar object handles
@@ -120,6 +121,7 @@ function [bars, lines, fig] = plot_bar (val, varargin)
 % 2019-05-10 Now uses plot_error_bar.m
 % 2019-05-10 Now grabs XOffset or YOffset and uses it to plot error bars
 % 2019-05-10 Now uses decide_on_fighandle.m
+% 2019-05-11 Added 'ReverseOrder' as an optional argument
 % TODO: Add 'BarColors' as an optional argument
 % TODO: Change usage in all functions using this
 % 
@@ -304,16 +306,18 @@ if isempty(pValues)
     end
 end
 
-% Flip the sample order if requested
+% Reverse the order of pValues if requested
 if reverseOrder
-    % Reverse the order of pValues, pTicks and pTick labels
-    [pValues, pTickLabels] = ...
-        argfun(@flip, pValues, pTickLabels);
+    % Save the old parameter values
+    pValuesOld = pValues;
+
+    % Reverse the order of pValues
+    pValues = flip(pValuesOld);
 end
 
-% Set the default x tick angle
+% Set the default parameter tick angle
 if isempty(pTickAngle)
-    if singleGroup
+    if singleGroup && ~isempty(pTickLabels)
         % One group only, so make the tick labels slanted
         pTickAngle = 75;
     else
@@ -336,7 +340,7 @@ switch barDirection
         yLabel = pLabel;
 end
 
-%% Plot things
+%% Plot bars
 % Decide on the figure to plot on
 fig = decide_on_fighandle('FigHandle', figHandle, 'FigNumber', figNumber);
 
@@ -363,6 +367,65 @@ switch barDirection
         error('barDirection unrecognized!');
 end
 
+% Change pTicks if provided
+if ~isempty(pTicks)
+    switch barDirection
+        case 'vertical'
+            xticks(pTicks);
+        case 'horizontal'
+            yticks(pTicks);
+    end
+end
+
+% Change pTickLabels if provided
+if ~isempty(pTickLabels)
+    switch barDirection
+        case 'vertical'
+            xticklabels(pTickLabels);
+        case 'horizontal'
+            yticklabels(pTickLabels);
+    end
+end
+
+% Reverse pTicks and pTickLabels if requested
+if reverseOrder
+    switch barDirection
+        case 'vertical'
+            % Get current ticks and labels
+            xTicksOld = get(gca, 'XTick');
+            xTickLabelsOld = get(gca, 'XTickLabel');
+
+            % Flip the ticks and labels
+            xTicksNew = flip(pValuesOld(1) + (pValuesOld(end) - xTicksOld));
+            xTickLabelsNew = flip(xTickLabelsOld);
+
+            % Set new ticks and labels
+            xticks(xTicksNew);
+            xticklabels(xTickLabelsNew);
+        case 'horizontal'
+            % Get current ticks and labels
+            yTicksOld = get(gca, 'YTick');
+            yTickLabelsOld = get(gca, 'YTickLabel');
+
+            % Flip the ticks and labels
+            yTicksNew = flip(pValuesOld(1) + (pValuesOld(end) - yTicksOld));
+            yTickLabelsNew = flip(yTickLabelsOld);
+
+            % Set new ticks and labels
+            yticks(yTicksNew);
+            yticklabels(yTickLabelsNew);
+    end
+end
+
+% Change the parameter tick angle
+switch barDirection
+    case 'vertical'
+        xtickangle(pTickAngle);
+    case 'horizontal'
+        ytickangle(pTickAngle);
+end
+
+%% Plot error bars
 % Set the default confidence interval bar width
 if isempty(cIBarWidth)
     if singleGroup || oneSamplePerGroup
@@ -386,42 +449,15 @@ end
 %     set(bars(iBar), 'CData', barColors{iBar});
 % end
 
-% Change pTickLabels if provided
-if ~isempty(pTicks)
-    switch barDirection
-        case 'vertical'
-            set(gca, 'XTick', pTicks);
-            % xticks(pTicks);
-        case 'horizontal'
-            set(gca, 'YTick', pTicks);
-            % yticks(pTicks);
-    end
-end
-
-% Change pTickLabels if provided
-if ~isempty(pTickLabels)
-    switch barDirection
-        case 'vertical'
-            set(gca, 'XTickLabel', pTickLabels);
-            % xticklabels(pTickLabels);
-        case 'horizontal'
-            set(gca, 'YTickLabel', pTickLabels);
-            % yticklabels(pTickLabels);
-    end
-end
-
-% Change the X Tick Angle
-xtickangle(pTickAngle);
-
 % Plot error bars
 if ~isempty(low) || ~isempty(high)
     hold on;
     if singleGroup || oneSamplePerGroup
-            % Draw error bars
-            lines = plot_error_bar(pValues, low, high, ...
-                                    'BarDirection', barDirection, ...
-                                    'BarWidth', cIBarWidth, ...
-                                    'Color', cIColor, 'LineWidth', cILineWidth);
+        % Draw error bars
+        lines = plot_error_bar(pValues, low, high, ...
+                                'BarDirection', barDirection, ...
+                                'BarWidth', cIBarWidth, ...
+                                'Color', cIColor, 'LineWidth', cILineWidth);
     else                % Data is grouped
         lines = gobjects(3, nRows, nCols);
         for iCol = 1:nCols              % for each group
@@ -431,7 +467,7 @@ if ~isempty(low) || ~isempty(high)
 
             for iRow = 1:nRows                  % for each sample
                 % Compute parameter position
-                pPos = pValues(iRow) + pOffset; 
+                pPos = pValues(iRow) + pOffset;
 
                 % Draw error bar
                 lines(:, iRow, iCol) = ...
@@ -579,6 +615,19 @@ if oneSamplePerGroup
 else
     pValues = flipud(pValues);
 end
+
+% Reverse the order of pValues, pTicks and pTick labels
+[pValues, pTickLabels] = ...
+    argfun(@flip, pValues, pTickLabels);
+
+set(gca, 'XTick', pTicks);
+set(gca, 'YTick', pTicks);
+set(gca, 'XTickLabel', pTickLabels);
+set(gca, 'YTickLabel', pTickLabels);
+
+% Compute the minimum and maximum pValue
+minPValue = min(pValues);
+maxPValue = max(pValues);
 
 %}
 
