@@ -304,6 +304,13 @@ if isempty(pValues)
     end
 end
 
+% Flip the sample order if requested
+if reverseOrder
+    % Reverse the order of pValues, pTicks and pTick labels
+    [pValues, pTickLabels] = ...
+        argfun(@flip, pValues, pTickLabels);
+end
+
 % Set the default x tick angle
 if isempty(pTickAngle)
     if singleGroup
@@ -313,13 +320,6 @@ if isempty(pTickAngle)
         % Multiple groups, so no need to slant tick labels
         pTickAngle = 0;
     end
-end
-
-% Flip the sample order if requested
-if reverseOrder
-    [val, low, high] = argfun(@flipud, val, low, high);
-
-
 end
 
 % Set bar direction-dependent parameters
@@ -431,7 +431,7 @@ if ~isempty(low) || ~isempty(high)
 
             for iRow = 1:nRows                  % for each sample
                 % Compute parameter position
-                pPos = iRow + pOffset; 
+                pPos = pValues(iRow) + pOffset; 
 
                 % Draw error bar
                 lines(:, iRow, iCol) = ...
@@ -573,6 +573,12 @@ else
     figure(figHandle);
 end
 fig = gcf;
+
+if oneSamplePerGroup
+    pValues = fliplr(pValues);
+else
+    pValues = flipud(pValues);
+end
 
 %}
 
