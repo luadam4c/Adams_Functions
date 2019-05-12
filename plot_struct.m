@@ -16,7 +16,10 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %                       'tuning'    - circles
 %                       'bar'       - horizontal bars
 %                   default == 'tuning'
-%                   - 'PBoundaries': x boundary values
+%                   - 'PBoundaries': parameter boundary values
+%                   must be a numeric vector
+%                   default == []
+%                   - 'RBoundaries': readout boundary values
 %                   must be a numeric vector
 %                   default == []
 %                   - 'LineSpec': line specification
@@ -87,6 +90,7 @@ function [figs, lines] = plot_struct (structArray, varargin)
 % 2018-12-18 Changed lineSpec default to o and singleColorDefault to SkyBlue
 % 2019-03-14 Now saves the plots here
 % 2019-05-08 Added 'PlotType' as an optional argument
+% 2019-05-11 Added 'RBoundaries' as an optional argument
 % TODO: Return handles to plots
 % TODO: Pass in figNames or figNumbers when plotting separately
 % 
@@ -94,11 +98,13 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %% Hard-coded parameters
 validPlotTypes = {'tuning', 'bar'};
 maxNPTicks = 10;
-barDirectionDefault = 'horizontal';
+barDirection = 'horizontal';
+barReverseOrder = true;
 
 %% Default values for optional arguments
 plotTypeDefault = 'tuning';
 pBoundariesDefault = [];
+rBoundariesDefault = [];
 lineSpecDefault = 'o';
 lineWidthDefault = [];
 markerEdgeColorDefault = [];
@@ -138,6 +144,8 @@ addParameter(iP, 'PlotType', plotTypeDefault, ...
     @(x) any(validatestring(x, validPlotTypes)));
 addParameter(iP, 'PBoundaries', pBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'RBoundaries', rBoundariesDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'LineSpec', lineSpecDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'LineWidth', lineWidthDefault);
@@ -172,6 +180,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 parse(iP, structArray, varargin{:});
 plotType = validatestring(iP.Results.PlotType, validPlotTypes);
 pBoundaries = iP.Results.PBoundaries;
+rBoundaries = iP.Results.RBoundaries;
 lineSpec = iP.Results.LineSpec;
 lineWidth = iP.Results.LineWidth;
 markerEdgeColor = iP.Results.MarkerEdgeColor;
@@ -274,7 +283,9 @@ allScalarFields = fieldnames(scalarStructArray);
 nFields = numel(allScalarFields);
 
 % Count the number of boundaries
-nBoundaries = numel(pBoundaries);
+nPBoundaries = numel(pBoundaries);
+nRBoundaries = numel(rBoundaries);
+nBoundaries = nPBoundaries + nRBoundaries;
 
 % Return if there are no more fields
 if nFields == 0
@@ -284,6 +295,17 @@ end
 
 % Convert the data to a homogeneous array, with each column being a field
 fieldData = table2array(struct2table(scalarStructArray));
+
+% Compute baseline averages if not provided
+% TODO
+if isempty(rBoundaries)
+    rBoundaries = nan(nFields, 1);
+    for iField = 1:nFields
+        % TODO
+        rBoundaries(iField) = ...
+             compute_baseline_average(pValues, readout, pBoundaries);
+    end
+end
 
 %% Plot all fields
 figs = gobjects(nFields, 1);
@@ -344,21 +366,25 @@ for iField = 1:nFields
                         otherArguments);
 
         % Plot boundaries
-        if nBoundaries > 0
+        if nPBoundaries > 0
             hold on
-            lines(iField, :) = ...
-                plot_vertical_line(pBoundaries, 'LineWidth', 0.5, ...
-                                    'LineStyle', '--', 'Color', 'g');
+            pLines = plot_vertical_line(pBoundaries, 'LineWidth', 0.5, ...
+                                        'LineStyle', '--', 'Color', 'g');
         end
+        if nRBoundaries > 0
+            hold on
+            rLines = plot_horizontal_line(rBoundaries, 'LineWidth', 0.5, ...
+                                        'LineStyle', '--', 'Color', 'r');
+        end
+
+        lines(iField, :) = vertcat(pLines, rLines);
     case 'bar'
         % Plot horizontal bars
         % TODO: Deal with pIsLog
         % TODO: Implement singlecolor
-        % TODO: Implement figTitle
-        % TODO: Implement figNumber
         plot_bar(fieldVals, 'ForceVectorAsRow', false, ...
-                        'ReverseOrder', true, ...
-                        'BarDirection', barDirectionDefault, ...
+                        'ReverseOrder', barReverseOrder, ...
+                        'BarDirection', barDirection, ...
                         'PValues', pValues, ...
                         'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
                         'PTickAngle', pTickAngle, ...
@@ -367,12 +393,23 @@ for iField = 1:nFields
                         otherArguments);
 
         % Plot boundaries
-        if nBoundaries > 0
+        if nPBoundaries > 0
+            if barReverseOrder
+                % Compute flipped boundaries
+                pBoundaries = pValues(1) + pValues(end) - pBoundaries;
+            end
+
             hold on
-            lines(iField, :) = ...
-                plot_horizontal_line(pBoundaries, 'LineWidth', 0.5, ...
-                                    'LineStyle', '--', 'Color', 'g');
+            pLines = plot_horizontal_line(pBoundaries, 'LineWidth', 0.5, ...
+                                        'LineStyle', '--', 'Color', 'g');
         end
+        if nRBoundaries > 0
+            hold on
+            rLines = plot_vertical_line(rBoundaries, 'LineWidth', 0.5, ...
+                                        'LineStyle', '--', 'Color', 'r');
+        end
+
+        lines(iField, :) = vertcat(pLines, rLines);
     otherwise
         error('plotType unrecognized!')
     end

@@ -418,7 +418,7 @@ if reverseOrder
             xTickLabelsOld = get(gca, 'XTickLabel');
 
             % Flip the ticks and labels
-            xTicksNew = flip(pValuesOld(1) + (pValuesOld(end) - xTicksOld));
+            xTicksNew = flip(pValuesOld(1) + pValuesOld(end) - xTicksOld);
             xTickLabelsNew = flip(xTickLabelsOld);
 
             % Set new ticks and labels
@@ -430,7 +430,7 @@ if reverseOrder
             yTickLabelsOld = get(gca, 'YTickLabel');
 
             % Flip the ticks and labels
-            yTicksNew = flip(pValuesOld(1) + (pValuesOld(end) - yTicksOld));
+            yTicksNew = flip(pValuesOld(1) + pValuesOld(end) - yTicksOld);
             yTickLabelsNew = flip(yTickLabelsOld);
 
             % Set new ticks and labels
