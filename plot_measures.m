@@ -33,7 +33,7 @@ phaseLabel = 'Phase';
 phaseStrs = {'Baseline', 'Wash-on', 'Wash-out'};
 
 % Analysis parameters
-nSweepsToAverage = 10;
+nSweepsToAverage = 5;
 
 % File patterns
 sliceFilePattern = '.*slice.*';

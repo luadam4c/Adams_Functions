@@ -1,6 +1,6 @@
 function stats = compute_stats (vecs, statName, varargin)
-%% Computes a stastic of vector(s) possibly restricted by endpoint(s)
-% Usage: stats = compute_stats (vecs, statName, varargin)
+%% Computes a statistic of vector(s) possibly restricted by endpoint(s)
+% Usage: stats = compute_stats (vecs, statName, dim (opt), varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -12,6 +12,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       compute_stats(data, 'upper95')
 %       compute_stats(data, 'cov')
 %       compute_stats(data, 'zscore')
+%       compute_stats(data, 'mean', 2)
 % Outputs:
 %       stats       - the computed statistic for each vector
 %                   specified as a numeric vector 
@@ -27,6 +28,11 @@ function stats = compute_stats (vecs, statName, varargin)
 %                       'upper95'   - upper bound of the 95% confidence interval
 %                       'cov'       - coefficient of variation
 %                       'zscore'    - z-score
+%                       'range'     - range
+%                       'range2mean'- range over mean
+%       dim         - (opt) dimension to compute stats along
+%                   must be either 1, 2 or 3
+%                   default == 1
 %       varargin    - 'IgnoreNan': whether to ignore NaN entries
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -72,14 +78,17 @@ function stats = compute_stats (vecs, statName, varargin)
 % 2019-03-14 Added 'IgnoreNan' as an optional argument
 % 2019-03-14 Added 'RemoveOutliers' as an optional argument
 % 2019-03-14 Added 'cov' to validStatNames
+% 2019-05-12 Added 'zscore', 'range' and 'range2mean'
+% 2019-05-12 Added dim as an optional argument
 % TODO: Combine with compute_weighted_average.m
 % 
 
 %% Hard-coded parameters
 validStatNames = {'mean', 'std', 'stderr', 'lower95', 'upper95', ...
-                    'cov'};
+                    'cov', 'zscore', 'range', 'range2mean'};
 
 %% Default values for optional arguments
+dimDefault = 1;                 % compute across rows by default
 ignoreNanDefault = false;       % don't ignore NaN by default
 removeOutliersDefault = false;  % don't remove outliers by default
 indicesDefault = [];            % set later
@@ -106,6 +115,11 @@ addRequired(iP, 'vecs', ...                  % vectors to extract
 addRequired(iP, 'statName', ...
     @(x) any(validatestring(x, validStatNames)));
 
+% Add optional inputs to the Input Parser
+addOptional(iP, 'dim', dimDefault, ...
+    @(x) assert(isnumeric(x) && (x == 1 || x == 2 || x == 3), ...
+                'dim must be either 1, 2 or 3!'));
+
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'IgnoreNan', ignoreNanDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -126,6 +140,7 @@ addParameter(iP, 'Windows', windowsDefault, ...
 
 % Read from the Input Parser
 parse(iP, vecs, statName, varargin{:});
+dim = iP.Results.dim;
 ignoreNan = iP.Results.IgnoreNan;
 removeOutliers = iP.Results.RemoveOutliers;
 indices = iP.Results.Indices;
@@ -151,39 +166,53 @@ end
 switch statName
     case 'mean'
         if ignoreNan
-            func = @(x) nanmean(x, 1);
+            func = @(x) nanmean(x, dim);
         else
-            func = @(x) mean(x, 1);
+            func = @(x) mean(x, dim);
         end            
     case 'std'
         if ignoreNan
-            func = @(x) nanstd(x, 1);
+            func = @(x) nanstd(x, dim);
         else
-            func = @(x) std(x, 1);
+            func = @(x) std(x, dim);
         end            
     case 'stderr'
         if ignoreNan
-            func = @(x) nanstderr(x, 1);
+            func = @(x) nanstderr(x, dim);
         else
-            func = @(x) stderr(x, 1);
+            func = @(x) stderr(x, dim);
         end            
     case 'lower95'
         if ignoreNan
-            func = @(x) nanmean(x, 1) - 1.95 .* nanstderr(x, 1);
+            func = @(x) nanmean(x, dim) - 1.95 .* nanstderr(x, dim);
         else
-            func = @(x) mean(x, 1) - 1.95 .* stderr(x, 1);
+            func = @(x) mean(x, dim) - 1.95 .* stderr(x, dim);
         end            
     case 'upper95'
         if ignoreNan
-            func = @(x) nanmean(x, 1) + 1.95 .* nanstderr(x, 1);
+            func = @(x) nanmean(x, dim) + 1.95 .* nanstderr(x, dim);
         else
-            func = @(x) mean(x, 1) + 1.95 .* stderr(x, 1);
+            func = @(x) mean(x, dim) + 1.95 .* stderr(x, dim);
         end     
     case 'cov'
         if ignoreNan
-            func = @(x) nanstd(x, 1) ./ nanmean(x, 1);
+            func = @(x) nanstd(x, dim) ./ nanmean(x, dim);
         else
-            func = @(x) std(x, 1) ./ mean(x, 1);
+            func = @(x) std(x, dim) ./ mean(x, dim);
+        end
+    case 'zscore'
+        if ignoreNan
+            func = @(x) nanmean(x, dim) ./ nanstd(x, dim);
+        else
+            func = @(x) mean(x, dim) ./ std(x, dim);
+        end
+    case 'range'
+        func = @(x) range(x, dim);
+    case 'range2mean'
+        if ignoreNan
+            func = @(x) range(x, dim) ./ nanmean(x, dim);
+        else
+            func = @(x) range(x, dim) ./ mean(x, dim);
         end
     otherwise
         error('Code logic error!');

@@ -17,10 +17,12 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %                       'bar'       - horizontal bars
 %                   default == 'tuning'
 %                   - 'PBoundaries': parameter boundary values
-%                   must be a numeric vector
+%                       if a matrix, each row is for a different field
+%                   must be a numeric array
 %                   default == []
 %                   - 'RBoundaries': readout boundary values
-%                   must be a numeric vector
+%                       if a matrix, each row is for a different field
+%                   must be a numeric array
 %                   default == []
 %                   - 'LineSpec': line specification
 %                   must be a character array
@@ -71,6 +73,7 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/force_column_cell.m
+%       cd/force_row_vector.m
 %       cd/match_row_count.m
 %       cd/plot_bar.m
 %       cd/plot_tuning_curve.m
@@ -100,6 +103,9 @@ validPlotTypes = {'tuning', 'bar'};
 maxNPTicks = 10;
 barDirection = 'horizontal';
 barReverseOrder = true;
+
+% Analysis parameters
+nSweepsToAverage = 5;
 
 %% Default values for optional arguments
 plotTypeDefault = 'tuning';
@@ -282,11 +288,6 @@ allScalarFields = fieldnames(scalarStructArray);
 % Count the number of fields
 nFields = numel(allScalarFields);
 
-% Count the number of boundaries
-nPBoundaries = numel(pBoundaries);
-nRBoundaries = numel(rBoundaries);
-nBoundaries = nPBoundaries + nRBoundaries;
-
 % Return if there are no more fields
 if nFields == 0
     figs = gobjects(0);
@@ -296,16 +297,56 @@ end
 % Convert the data to a homogeneous array, with each column being a field
 fieldData = table2array(struct2table(scalarStructArray));
 
-% Compute baseline averages if not provided
+% Match the parameter boundaries
+pBoundaries = force_row_vector(pBoundaries);
+pBoundaries = match_row_count(pBoundaries);
+
+% Compute baseline averages if no readout boundaries provided
 % TODO
+%{
 if isempty(rBoundaries)
     rBoundaries = nan(nFields, 1);
     for iField = 1:nFields
-        % TODO
-        rBoundaries(iField) = ...
-             compute_baseline_average(pValues, readout, pBoundaries);
+        % Get the field value vector for this field
+        fieldVals = fieldData(:, iField);
+        pBoundariesThis = pBoundaries(iField, :);
+
+        % Find the last baseline index
+        lastBaseIndex = find(pValues < pBoundariesThis(1), 1, 'last');
+
+        % Compute the baseline average for this field
+        baselineAverage = compute_phase_average(fieldVals, ...
+                        'EndPoints', [1, lastBaseIndex], ...
+                        'NIndToAverage', nSweepsToAverage);
+
+        function baselineAverage = compute_phase_average(fieldVals, varargin)
+        %% Computes the average of values over the last of a phase
+
+        maxRange2Mean = 20;
+
+        % Select values similar to the last phase value
+        [valSelected, indSelected] = ...
+            select_similar_values(fieldVals, 'EndPoints', endPoints, ...
+                                    'NToSelect', nIndToAverage, ...
+                                    'Direction', 'backward', ...
+                                    'MaxRange2Mean', maxRange2Mean);
+
+        baselineAverage = mean(valSelected);
+        % baselineAverage = compute_stats(fieldVals, 'mean', 'Indices', indSelected);
+
+        % Compute the baseline average for this field
+        rBoundaries(iField, 1) = baselineAverage;
     end
 end
+%}
+% Match the readout boundaries
+rBoundaries = force_row_vector(rBoundaries);
+rBoundaries = match_row_count(rBoundaries);
+
+% Count the number of boundaries
+nPBoundaries = size(pBoundaries, 2);
+nRBoundaries = size(rBoundaries, 2);
+nBoundaries = nPBoundaries + nRBoundaries;
 
 %% Plot all fields
 figs = gobjects(nFields, 1);
@@ -313,6 +354,8 @@ lines = gobjects(nFields, nBoundaries);
 for iField = 1:nFields
     % Get the field value vector for this field
     fieldVals = fieldData(:, iField);
+    pBoundariesThis = pBoundaries(iField, :);
+    rBoundariesThis = rBoundaries(iField, :);
 
     % Set the field label for this field
     if ~isempty(fieldLabels)
@@ -368,16 +411,14 @@ for iField = 1:nFields
         % Plot boundaries
         if nPBoundaries > 0
             hold on
-            pLines = plot_vertical_line(pBoundaries, 'LineWidth', 0.5, ...
+            pLines = plot_vertical_line(pBoundariesThis, 'LineWidth', 0.5, ...
                                         'LineStyle', '--', 'Color', 'g');
         end
         if nRBoundaries > 0
             hold on
-            rLines = plot_horizontal_line(rBoundaries, 'LineWidth', 0.5, ...
+            rLines = plot_horizontal_line(rBoundariesThis, 'LineWidth', 0.5, ...
                                         'LineStyle', '--', 'Color', 'r');
         end
-
-        lines(iField, :) = vertcat(pLines, rLines);
     case 'bar'
         % Plot horizontal bars
         % TODO: Deal with pIsLog
@@ -396,20 +437,18 @@ for iField = 1:nFields
         if nPBoundaries > 0
             if barReverseOrder
                 % Compute flipped boundaries
-                pBoundaries = pValues(1) + pValues(end) - pBoundaries;
+                pBoundariesThis = pValues(1) + pValues(end) - pBoundariesThis;
             end
 
             hold on
-            pLines = plot_horizontal_line(pBoundaries, 'LineWidth', 0.5, ...
+            pLines = plot_horizontal_line(pBoundariesThis, 'LineWidth', 0.5, ...
                                         'LineStyle', '--', 'Color', 'g');
         end
         if nRBoundaries > 0
             hold on
-            rLines = plot_vertical_line(rBoundaries, 'LineWidth', 0.5, ...
+            rLines = plot_vertical_line(rBoundariesThis, 'LineWidth', 0.5, ...
                                         'LineStyle', '--', 'Color', 'r');
         end
-
-        lines(iField, :) = vertcat(pLines, rLines);
     otherwise
         error('plotType unrecognized!')
     end
@@ -418,6 +457,7 @@ for iField = 1:nFields
         save_all_figtypes(figThis, figName, figtypes);
     end
 
+    lines(iField, :) = transpose(vertcat(pLines, rLines));
     figs(iField, 1) = figThis;
 end
 

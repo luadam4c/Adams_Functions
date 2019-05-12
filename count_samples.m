@@ -72,6 +72,7 @@ function nSamples = count_samples (vectors, varargin)
 %       cd/parse_multiunit.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
+%       cd/select_similar_values.m
 
 % File History:
 % 2018-10-10 Created by Adam Lu

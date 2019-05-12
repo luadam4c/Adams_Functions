@@ -49,6 +49,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/parse_multiunit.m
 %       cd/parse_pulse_response.m
 %       cd/plot_protocols.m
+%       cd/select_similar_values.m
 
 % File History:
 % 2018-12-15 Created by Adam Lu

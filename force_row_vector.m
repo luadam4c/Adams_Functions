@@ -23,6 +23,7 @@ function vectors = force_row_vector (vectors, varargin)
 %
 % Used by:    
 %       cd/compute_centers_from_edges.m
+%       cd/plot_struct.m
 
 % File History:
 % 2018-10-25 Modified from force_column_vector.m
