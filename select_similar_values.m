@@ -23,7 +23,7 @@ function [valSelected, indSelected] = select_similar_values (values, varargin)
 %                   must be a numeric vector with 2 elements
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
-%                   default == find_window_endpoints([], vecs)
+%                   default == find_window_endpoints([], values)
 %                   - 'Direction': the selection direction
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'forward'   - select from the first indices

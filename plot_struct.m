@@ -70,6 +70,7 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %
 % Requires:
 %       ~/Downloaded_Functions/rgb.m
+%       cd/compute_phase_average.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/force_column_cell.m
@@ -105,6 +106,7 @@ barDirection = 'horizontal';
 barReverseOrder = true;
 
 % Analysis parameters
+nSweepsLastOfPhase = 10;
 nSweepsToAverage = 5;
 
 %% Default values for optional arguments
@@ -302,8 +304,6 @@ pBoundaries = force_row_vector(pBoundaries);
 pBoundaries = match_row_count(pBoundaries);
 
 % Compute baseline averages if no readout boundaries provided
-% TODO
-%{
 if isempty(rBoundaries)
     rBoundaries = nan(nFields, 1);
     for iField = 1:nFields
@@ -314,31 +314,20 @@ if isempty(rBoundaries)
         % Find the last baseline index
         lastBaseIndex = find(pValues < pBoundariesThis(1), 1, 'last');
 
+        % Find the first acceptable baseline index
+        firstBaseIndex = lastBaseIndex - nSweepsLastOfPhase + 1;
+
         % Compute the baseline average for this field
         baselineAverage = compute_phase_average(fieldVals, ...
-                        'EndPoints', [1, lastBaseIndex], ...
-                        'NIndToAverage', nSweepsToAverage);
-
-        function baselineAverage = compute_phase_average(fieldVals, varargin)
-        %% Computes the average of values over the last of a phase
-
-        maxRange2Mean = 20;
-
-        % Select values similar to the last phase value
-        [valSelected, indSelected] = ...
-            select_similar_values(fieldVals, 'EndPoints', endPoints, ...
-                                    'NToSelect', nIndToAverage, ...
-                                    'Direction', 'backward', ...
-                                    'MaxRange2Mean', maxRange2Mean);
-
-        baselineAverage = mean(valSelected);
-        % baselineAverage = compute_stats(fieldVals, 'mean', 'Indices', indSelected);
+                        'EndPoints', [firstBaseIndex, lastBaseIndex], ...
+                        'NToAverage', nSweepsToAverage, ...
+                        'MaxRange2Mean', maxRange2Mean);
 
         % Compute the baseline average for this field
         rBoundaries(iField, 1) = baselineAverage;
     end
 end
-%}
+
 % Match the readout boundaries
 rBoundaries = force_row_vector(rBoundaries);
 rBoundaries = match_row_count(rBoundaries);
