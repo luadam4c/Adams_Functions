@@ -29,7 +29,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %                       'cov'       - coefficient of variation
 %                       'zscore'    - z-score
 %                       'range'     - range
-%                       'range2mean'- range over mean
+%                       'range2mean'- percentage of range relative to mean
 %       dim         - (opt) dimension to compute stats along
 %                   must be either 1, 2 or 3
 %                   default == 1
@@ -67,6 +67,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       cd/parse_multiunit.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
+%       cd/select_similar_values.m
 %
 % Related functions:
 %       cd/compute_weighted_average.m
@@ -210,9 +211,9 @@ switch statName
         func = @(x) range(x, dim);
     case 'range2mean'
         if ignoreNan
-            func = @(x) range(x, dim) ./ nanmean(x, dim);
+            func = @(x) (range(x, dim) ./ nanmean(x, dim)) * 100;
         else
-            func = @(x) range(x, dim) ./ mean(x, dim);
+            func = @(x) (range(x, dim) ./ mean(x, dim)) * 100;
         end
     otherwise
         error('Code logic error!');
