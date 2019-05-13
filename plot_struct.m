@@ -108,6 +108,7 @@ barReverseOrder = true;
 % Analysis parameters
 nSweepsLastOfPhase = 10;
 nSweepsToAverage = 5;
+maxRange2Mean = 40;
 
 %% Default values for optional arguments
 plotTypeDefault = 'tuning';
@@ -301,7 +302,7 @@ fieldData = table2array(struct2table(scalarStructArray));
 
 % Match the parameter boundaries
 pBoundaries = force_row_vector(pBoundaries);
-pBoundaries = match_row_count(pBoundaries);
+pBoundaries = match_row_count(pBoundaries, nFields);
 
 % Compute baseline averages if no readout boundaries provided
 if isempty(rBoundaries)
@@ -332,7 +333,7 @@ end
 
 % Match the readout boundaries
 rBoundaries = force_row_vector(rBoundaries);
-rBoundaries = match_row_count(rBoundaries);
+rBoundaries = match_row_count(rBoundaries, nFields);
 
 % Count the number of boundaries
 nPBoundaries = size(pBoundaries, 2);
