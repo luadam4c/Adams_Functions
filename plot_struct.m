@@ -318,10 +318,12 @@ if isempty(rBoundaries)
         firstBaseIndex = lastBaseIndex - nSweepsLastOfPhase + 1;
 
         % Compute the baseline average for this field
-        baselineAverage = compute_phase_average(fieldVals, ...
+        [baselineAverage, indSelected] = compute_phase_average(fieldVals, ...
                         'EndPoints', [firstBaseIndex, lastBaseIndex], ...
                         'NToAverage', nSweepsToAverage, ...
                         'MaxRange2Mean', maxRange2Mean);
+
+        % TODO: Plot the selected indices
 
         % Compute the baseline average for this field
         rBoundaries(iField, 1) = baselineAverage;
