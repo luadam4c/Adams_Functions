@@ -41,6 +41,7 @@ function [valSelected, indSelected] = select_similar_values (values, varargin)
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
+%       cd/force_column_vector.m
 %       cd/struct2arglist.m
 %
 % Used by:
@@ -102,6 +103,8 @@ maxRange2Mean = iP.Results.MaxRange2Mean;
 % Find default end points if not provided
 if isempty(endPoints)
     endPoints = find_window_endpoints([], values);
+else
+    endPoints = force_column_vector(endPoints);
 end
 
 % Save first index

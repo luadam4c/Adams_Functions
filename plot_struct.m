@@ -301,7 +301,9 @@ end
 fieldData = table2array(struct2table(scalarStructArray));
 
 % Match the parameter boundaries
-pBoundaries = force_row_vector(pBoundaries);
+if iscolumn(pBoundaries) && numel(pBoundaries) ~= nFields
+    pBoundaries = force_row_vector(pBoundaries);
+end
 pBoundaries = match_row_count(pBoundaries, nFields);
 
 % Compute baseline averages if no readout boundaries provided
@@ -332,7 +334,9 @@ if isempty(rBoundaries)
 end
 
 % Match the readout boundaries
-rBoundaries = force_row_vector(rBoundaries);
+if iscolumn(rBoundaries) && numel(rBoundaries) ~= nFields
+    rBoundaries = force_row_vector(rBoundaries);
+end
 rBoundaries = match_row_count(rBoundaries, nFields);
 
 % Count the number of boundaries
