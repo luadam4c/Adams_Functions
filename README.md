@@ -64,6 +64,7 @@ Last Updated 2019-05-14 by Adam Lu
 - [**compute_initial_slopes.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_initial_slopes.m): Computes the average initial slope from a current pulse response
 - [**compute_maximum_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_maximum_trace.m): Computes the maximum of traces that are not necessarily the same length
 - [**compute_minimum_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_minimum_trace.m): Computes the minimum of traces that are not necessarily the same length
+- [**compute_oscillation_duration.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_oscillation_duration.m): Computes the oscillation duration from an interface recording abf file
 - [**compute_peak_decay.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_peak_decay.m): Computes the peak decays
 - [**compute_peak_halfwidth.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_peak_halfwidth.m): Computes the half widths for peaks
 - [**compute_phase_average.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_phase_average.m): Computes the average of values over the last of a phase

@@ -1,6 +1,6 @@
-function [stimParams, stimData] = parse_stim (pulseVecs, varargin)
+function [stimParams, pulseParams, pulseData] = parse_stim (pulseVecs, varargin)
 %% Detects the index and time of stimulation start from pulse vectors
-% Usage: [stimParams, stimData] = parse_stim (pulseVecs, varargin)
+% Usage: [stimParams, pulseParams, pulseData] = parse_stim (pulseVecs, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -11,8 +11,10 @@ function [stimParams, stimData] = parse_stim (pulseVecs, varargin)
 %                       stimStartMs
 %                       any other fields returned by parse_pulse.m
 %                   specified as a scalar structure
-%       stimParams  - stimulation data, see parse_pulse.m for fields
-%                   specified as a scalar structure
+%       pulseParams - see parse_pulse.m
+%                   specified as a table
+%       pulseData   - see parse_pulse.m
+%                   specified as a table
 % Arguments:
 %       pulseVecs   - vectors containing a stimulation pulse
 %                   Note: If a cell array, each element must be a vector
@@ -36,6 +38,7 @@ function [stimParams, stimData] = parse_stim (pulseVecs, varargin)
 %       cd/parse_pulse.m
 %
 % Used by:
+%       cd/compute_oscillation_duration.m
 %       cd/parse_multiunit.m
 
 % File History:
@@ -104,33 +107,35 @@ if ~isempty(stimStartMs)
 
     stimParams.idxStimStart = idxStimStart;
     stimParams.stimStartMs = stimStartMs;
-    stimData = struct;
+    pulseParams = [];
+    pulseData = [];
     return
 end
 
 % Detect stimulation start from the pulse vectors
-if ~isempty(pulseVectors)
+if ~isempty(pulseVecs)
     % Parse the pulse vectors
     [pulseParams, pulseData] = ...
-        parse_pulse(pulseVectors, 'SamplingIntervalMs', siMs, ...
+        parse_pulse(pulseVecs, 'SamplingIntervalMs', siMs, ...
                     otherArguments{:});
 
     % Use the indices after pulse starts for stimulation start
     idxStimStart = pulseParams{:, 'idxAfterStart'};
 
-    % Use the time vectors 
-    stimStartMs = extract_elements(tVecs, 'specific', ...
-                                    'Index', idxStimStart);
+    % Use the time vectors
+    if ~isempty(tVecs)
+        stimStartMs = extract_elements(tVecs, 'specific', ...
+                                        'Index', idxStimStart);
+    else
+        stimStartMs = idxStimStart * siMs;
+    end
 else
-    error('One of stimStartMs and pulseVectors must be provided!');
+    error('One of stimStartMs and pulseVecs must be provided!');
 end
 
 %% Output results
 stimParams.idxStimStart = idxStimStart;
 stimParams.stimStartMs = stimStartMs;
-stimParams = merge_structs(stimParams, pulseParams);
-
-stimData = pulseData;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

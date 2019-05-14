@@ -26,6 +26,7 @@ function colorMap = create_colormap (nColors, varargin);
 % File History:
 % 2018-10-29 Adapted from code in run_neuron_once_4compgabab.m
 % 2019-01-08 Now returns a cell array if the input has more than one elements
+% 2019-05-14 If nColors == 1, make it blue
 % 
 
 %% Hard-coded parameters
@@ -77,7 +78,9 @@ function colorMap = create_colormap_helper (nColors)
 %% Create a single color map 
 %   Note: this is an N by 3 array, where N is the number of colors
 
-if nColors == 3
+if nColors == 1
+    colorMap = rgb('Blue');    
+elseif nColors == 3
     % Color groups correspond to 3 vHold conditions
     colorMap = [rgb('Blue'); rgb('Red'); rgb('Purple')];
 elseif nColors == 4

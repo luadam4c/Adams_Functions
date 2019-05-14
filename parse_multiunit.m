@@ -157,7 +157,6 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %                   default == [] (not used)
 %                   
 % Requires:
-%       TODO cd/find_stim_start.m
 %       cd/argfun.m
 %       cd/check_dir.m
 %       cd/check_subdir.m
@@ -797,20 +796,17 @@ function [parsedParams, parsedData] = ...
 MS_PER_S = 1000;
 
 %% Hard-coded parameters
-cutoffFreq = [100, 1000];
-signal2Noise = 3; %4
+filtFreq = [100, 1000];
 minDelayMs = 25;
+signal2Noise = 3; %4
 binWidthMs = 10;
-minSpikeRateInBurstHz = 100;
 minBurstLengthMs = 20;
 maxInterBurstIntervalMs = 1000; %2000;
+minSpikeRateInBurstHz = 100;
 filterWidthMs = 100;
 minRelProm = 0.02;
 
 %% Preparation
-% Compute the sampling interval in seconds
-siSeconds = siMs / MS_PER_S;
-
 % Compute the minimum delay in samples
 minDelaySamples = ceil(minDelayMs ./ siMs);
 
@@ -846,14 +842,12 @@ else
     phaseName = '';
 end
 
-%% Bandpass filter
-vVecFilt = freqfilter(vVec, cutoffFreq, siSeconds, 'FilterType', 'band');
-
 %% Detect spikes
-% Detect spikes
+% Detect spikes (bandpass filter before detection)
 [spikesParams, spikesData] = ...
-    detect_spikes_multiunit(vVecFilt, siMs, ...
+    detect_spikes_multiunit(vVec, siMs, ...
                             'tVec', tVec, 'IdxStimStart', idxStimStart, ...
+                            'FiltFreq', filtFreq, ...
                             'BaseWindow', baseWindow, ...
                             'MinDelayMs', minDelayMs, ...
                             'Signal2Noise', signal2Noise);
@@ -872,6 +866,7 @@ slopeMin = spikesParams.slopeMin;
 slopeMax = spikesParams.slopeMax;
 slopeRange = spikesParams.slopeRange;
 
+vVecFilt = spikesData.vVecFilt;
 slopes = spikesData.slopes;
 idxSpikes = spikesData.idxSpikes;
 spikeTimesMs = spikesData.spikeTimesMs;
@@ -1142,6 +1137,7 @@ figTitleBase = [figTitleBase, '\_trace', num2str(iVec)];
 %% Store in outputs
 parsedParams.phaseNumber = phaseNumber;
 parsedParams.phaseName = phaseName;
+parsedParams.filtFreq = filtFreq;
 parsedParams.signal2Noise = signal2Noise;
 parsedParams.minDelayMs = minDelayMs;
 parsedParams.minDelaySamples = minDelaySamples;
@@ -1776,6 +1772,9 @@ plot_traces(tVecs, vVecs, 'Verbose', false, ...
             'Color', 'k');
 
 'RemoveOutliers', true, 'PlotSeparately', true);
+
+% Compute the sampling interval in seconds
+siSeconds = siMs / MS_PER_S;
 
 %}
 

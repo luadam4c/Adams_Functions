@@ -10,6 +10,7 @@ function [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, vararg
 %                       siMs
 %                       idxStimStart
 %                       minDelayMs
+%                       maxDelayMs
 %                       signal2Noise
 %                       baseWindow
 %                       minDelaySamples
@@ -35,15 +36,34 @@ function [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, vararg
 %                       spikeTimesMs
 %                   specified as a scalar structure
 % Arguments:
-%       tVec        - time vector
-%                   must be a TODO
 %       vVec        - voltage vector
 %                   must be a TODO
-%       varargin    - 'BaseWindow': baseline window for each trace
+%       siMs        - sampling interval in ms
+%                   must be a TODO
+%       varargin    - 'FiltFreq': cutoff frequency(ies) (Hz or normalized) 
+%                                   for a bandpass filter
+%                   must be a numeric a two-element vector
+%                   default == none
+%                   - 'BaseWindow': baseline window for each trace
 %                   must be empty or a numeric vector with 2 elements,
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
 %                   default == first half of the trace
+%                   - 'IdxStimStart': index of stimulation start
+%                   must be a positive scalar
+%                   default == 1
+%                   - 'MinDelayMs': minimum delay after stim start (ms)
+%                   must be a positive scalar
+%                   default == 25 ms
+%                   - 'MaxDelayMs': maximum delay after stim start (ms)
+%                   must be a positive scalar
+%                   default == 10000 ms
+%                   - 'Signal2Noise': signal-to-noise ratio
+%                   must be a positive scalar
+%                   default == 3
+%                   - 'tVec': original time vector
+%                   must be a numeric array or a cell array of numeric arrays
+%                   default == [] (not used)
 %
 % Requires:
 %       cd/compute_baseline_noise.m
@@ -51,22 +71,28 @@ function [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, vararg
 %       cd/create_logical_array.m
 %
 % Used by:
+%       cd/compute_oscillation_duration.m
 %       cd/parse_multiunit.m
 
 % File History:
 % 2019-05-03 Moved from parse_multiunit.m
 % 2019-05-04 Added input parser
-% TODO: Documentation
+% 2019-05-14 Added 'FiltFreq' as an optional argument
+% 2019-05-14 Added 'MaxDelayMs' as an optional argument
+% TODO: Finish documentation
 % 
 
 %% Hard-coded parameters
+MS_PER_S = 1000;
 
 %% Default values for optional arguments
-tVecDefault = [];               % set later
+filtFreqDefault = NaN;          % set later
+baseWindowDefault = [];         % set later
 idxStimStartDefault = 1;    
 minDelayMsDefault = 25;
+maxDelayMsDefault =10000;       % 1000 ms or 10 seconds
 signal2NoiseDefault = 3;        
-baseWindowDefault = [];         % set later
+tVecDefault = [];               % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -90,28 +116,34 @@ addRequired(iP, 'siMs', ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'tVec', tVecDefault, ...
+addParameter(iP, 'FiltFreq', filtFreqDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'BaseWindow', baseWindowDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['tVec must be either a numeric array ', ...
+                ['BaseWindow must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'IdxStimStart', idxStimStartDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 addParameter(iP, 'MinDelayMs', minDelayMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative', 'integer'}));
+addParameter(iP, 'MaxDelayMs', maxDelayMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative', 'integer'}));
 addParameter(iP, 'Signal2Noise', signal2NoiseDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
-addParameter(iP, 'BaseWindow', baseWindowDefault, ...
+addParameter(iP, 'tVec', tVecDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['BaseWindow must be either a numeric array ', ...
+                ['tVec must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
 
 % Read from the Input Parser
 parse(iP, vVec, siMs, varargin{:});
-tVec = iP.Results.tVec;
+filtFreq = iP.Results.FiltFreq;
+baseWindow = iP.Results.BaseWindow;
 idxStimStart = iP.Results.IdxStimStart;
 minDelayMs = iP.Results.MinDelayMs;
+maxDelayMs = iP.Results.MaxDelayMs;
 signal2Noise = iP.Results.Signal2Noise;
-baseWindow = iP.Results.BaseWindow;
+tVec = iP.Results.tVec;
 
 %% Preparation
 % Create time vectors
@@ -122,7 +154,10 @@ if isempty(tVec)
 end
 
 % Compute the minimum delay in samples
-minDelaySamples = ceil(minDelayMs ./ siMs);
+minDelaySamples = round(minDelayMs ./ siMs);
+
+% Compute the maximum delay in samples
+maxDelaySamples = round(maxDelayMs ./ siMs);
 
 % Find the starting index for detecting a spike
 idxDetectStart = idxStimStart + minDelaySamples;
@@ -133,9 +168,17 @@ detectStartMs = tVec(idxDetectStart);
 % Compute the number of samples
 nSamples = numel(vVec);
 
+% Bandpass filter if requested
+if ~isnan(filtFreq)
+    siSeconds = siMs / MS_PER_S;    
+    vVecFilt = freqfilter(vVec, filtFreq, siSeconds, 'FilterType', 'band');
+else
+    vVecFilt = vVec;
+end
+
 %% Do the job
 % Compute all instantaneous slopes in uV/ms == mV/s
-slopes = diff(vVec) ./ siMs;
+slopes = diff(vVecFilt) ./ siMs;
 
 % Compute a baseline slope noise in mV/s
 baseSlopeNoise = compute_baseline_noise(slopes, tVec(1:(end-1)), baseWindow);
@@ -174,14 +217,20 @@ else
     firstSpikeMs = spikeTimesMs(1);    
 end
 
+% Find the last index in the range of interest
+idxEndOfInterest1 = min(numel(vVecFilt), idxDetectStart + maxDelaySamples);
+
 % Query the maximum and range of vVec after detectStartMs
-vVecTrunc = vVec(idxDetectStart:idxDetectStart + 1e5);
+vVecTrunc = vVecFilt(idxDetectStart:idxEndOfInterest1);
 vMin = min(vVecTrunc);
 vMax = max(vVecTrunc);
 vRange = vMax - vMin;
 
+% Find the last index in the range of interest
+idxEndOfInterest2 = min(numel(slopes), idxDetectStart + maxDelaySamples);
+
 % Query the maximum and range of slope after detectStartMs
-slopesTrunc = slopes(idxDetectStart:idxDetectStart + 1e5);
+slopesTrunc = slopes(idxDetectStart:idxEndOfInterest2);
 slopeMin = min(slopesTrunc);
 slopeMax = max(slopesTrunc);
 slopeRange = slopeMax - slopeMin;
@@ -190,6 +239,8 @@ slopeRange = slopeMax - slopeMin;
 spikesParams.siMs = siMs;
 spikesParams.idxStimStart = idxStimStart;
 spikesParams.minDelayMs = minDelayMs;
+spikesParams.maxDelayMs = maxDelayMs;
+spikesParams.filtFreq = filtFreq;
 spikesParams.signal2Noise = signal2Noise;
 spikesParams.baseWindow = baseWindow;
 spikesParams.minDelaySamples = minDelaySamples;
@@ -207,6 +258,7 @@ spikesParams.slopeMin = slopeMin;
 spikesParams.slopeMax = slopeMax;
 spikesParams.slopeRange = slopeRange;
 
+spikesData.vVecFilt = vVecFilt;
 spikesData.slopes = slopes;
 spikesData.isPeakSlope = isPeakSlope;
 spikesData.isSpike = isSpike;

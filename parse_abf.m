@@ -118,6 +118,7 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %       /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
 %
 % Used by:
+%       cd/compute_oscillation_duration.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/parse_all_abfs.m
 %       cd/plot_traces_abf.m

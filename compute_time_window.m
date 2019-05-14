@@ -28,6 +28,7 @@ function windows = compute_time_window (timeVecs, varargin)
 %       cd/match_format_vectors.m
 %
 % Used by:
+%       cd/compute_oscillation_duration.m
 %       cd/parse_multiunit.m
 
 % File History:

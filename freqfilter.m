@@ -36,6 +36,7 @@ function filteredData = freqfilter (data, fc, varargin)
 %                   consistent with the documentation for butter()
 %
 % Used by:
+%       cd/detect_spikes_multiunit.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/identify_CI_protocol.m
 %       /home/Matlab/minEASE/minEASE.m
