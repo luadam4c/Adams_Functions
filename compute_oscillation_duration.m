@@ -13,7 +13,10 @@ function oscDurationMs = compute_oscillation_duration (abfFile, varargin)
 %                       a relative path in current directory
 %                       .abf is not needed (e.g. 'B20160908_0004')
 %                   must be a string scalar or a character vector
-%       varargin    - 'FiltFreq': cutoff frequency(ies) (Hz or normalized) 
+%       varargin    - 'Verbose': whether to output parsed results
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'FiltFreq': cutoff frequency(ies) (Hz or normalized) 
 %                                   for a bandpass filter
 %                   must be a numeric a two-element vector
 %                   default == [100, 1000]
@@ -60,6 +63,7 @@ function oscDurationMs = compute_oscillation_duration (abfFile, varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
+verboseDefault = false;             % don't print parsed results by default
 filtFreqDefault = [100, 1000];
 baseWindowDefault = [];             % set later
 minDelayMsDefault = 25;
@@ -89,6 +93,8 @@ addRequired(iP, 'abfFile', ...
                                                 % introduced after R2016b
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'Verbose', verboseDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'FiltFreq', filtFreqDefault, ...
     @(x) assert(isnan(x) || isnumeric(x), ...
                 ['FiltFreq must be either NaN ', ...
@@ -112,6 +118,7 @@ addParameter(iP, 'MinSpikeRateInBurstHz', minSpikeRateInBurstHzDefault, ...
 
 % Read from the Input Parser
 parse(iP, abfFile, varargin{:});
+verbose = iP.Results.Verbose;
 filtFreq = iP.Results.FiltFreq;
 baseWindow = iP.Results.BaseWindow;
 minDelayMs = iP.Results.MinDelayMs;
@@ -124,7 +131,8 @@ minSpikeRateInBurstHz = iP.Results.MinSpikeRateInBurstHz;
 %% Parse the abf file
 [abfParams, abfData] = parse_abf(abfFile, 'TimeUnits', 'ms', ...
                                 'ChannelTypes', {'voltage', 'current'}, ...
-                                'ChannelUnits', {'uV', 'arb'});
+                                'ChannelUnits', {'uV', 'arb'}, ...
+                                'Verbose', verbose);
 
 siMs = abfParams.siMs;
 tVec = abfData.tVec;
