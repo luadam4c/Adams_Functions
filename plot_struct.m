@@ -51,8 +51,8 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %                   - 'FigTitles': titles for each figure
 %                   must be a cell array of character vectors/strings
 %                   default == [fieldLabel, ' vs. ', pLabel]
-%                   - 'FigNumber': figure number for creating figure
-%                   must be a positive integer scalar
+%                   - 'FigNumber': figure number for creating figure(s)
+%                   must be a positive integer vector
 %                   default == []
 %                   - 'OutFolder': output folder if FigNames not set
 %                   must be a string scalar or a character vector
@@ -75,12 +75,13 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %       cd/create_labels_from_numbers.m
 %       cd/force_column_cell.m
 %       cd/force_row_vector.m
+%       cd/isfigtype.m
+%       cd/ispositiveintegervector.m
 %       cd/match_row_count.m
 %       cd/plot_bar.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_horizontal_line.m
 %       cd/plot_vertical_line.m
-%       cd/isfigtype.m
 %       cd/save_all_figtypes.m
 %
 % Used by:    
@@ -127,7 +128,7 @@ pLabelDefault = 'Parameter';
 fieldLabelsDefault = {};
 singleColorDefault = rgb('SkyBlue');
 figTitlesDefault = {};          % set later
-figNumberDefault = [];          % invisible figure by default
+figNumberDefault = [];          % use current figure by default
 outFolderDefault = pwd;
 figNamesDefault = {};
 figTypesDefault = 'png';
@@ -178,7 +179,7 @@ addParameter(iP, 'SingleColor', singleColorDefault, ...
 addParameter(iP, 'FigTitles', figTitlesDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'FigNumber', figNumberDefault, ...
-    @(x) isempty(x) || ispositiveintegerscalar(x));
+    @(x) isempty(x) || ispositiveintegervector(x));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigNames', figNamesDefault, ...
@@ -390,7 +391,7 @@ for iField = 1:nFields
     figThis = decide_on_fighandle('FigNumber', figNumber);
 
     % Clear the figure
-    clf;
+    clf(figThis);
 
     switch plotType
     case 'tuning'
@@ -517,6 +518,11 @@ addParameter(iP, 'YLimits', ylimitsDefault, ...
 'XLimits', xLimits, 'YLimits', yLimits, ...
 xLimits = iP.Results.XLimits;
 yLimits = iP.Results.YLimits;
+
+% Set a figure number if not provided
+if isempty(figNumber)
+    figNumber = 10000 + iField;
+end
 
 %}
 

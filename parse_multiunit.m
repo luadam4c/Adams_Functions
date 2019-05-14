@@ -374,7 +374,7 @@ stimStartMs = stimParams.stimStartMs;
 % Construct default baseline windows
 if isempty(baseWindows)
     fprintf('Constructing baseline window for %s ...\n', fileBase);
-    baseWindows = compute_time_window(tVecs, 'TimeEndMs', stimStartMs);
+    baseWindows = compute_time_window(tVecs, 'TimeEnd', stimStartMs);
 end
 
 % Force as a cell array of vectors

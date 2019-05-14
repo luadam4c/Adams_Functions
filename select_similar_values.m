@@ -46,8 +46,6 @@ function [valSelected, indSelected] = select_similar_values (values, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
-%       cd/find_window_endpoints.m
-%       cd/force_column_vector.m
 %       cd/struct2arglist.m
 %
 % Used by:
@@ -112,19 +110,17 @@ maxRange2Mean = iP.Results.MaxRange2Mean;
 % otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
-% Find default end points if not provided
-if isempty(endPoints)
-    endPoints = find_window_endpoints([], values);
-else
-    endPoints = force_column_vector(endPoints);
-end
-
-% Save first index
-idxFirst = extract_elements(endPoints, 'first');
-
 % Restrict to end points
 valuesRestricted = extract_subvectors(values, 'EndPoints', endPoints, ...
                                         'Indices', indices);
+% Save first index
+if ~isempty(indices)
+    idxFirst = indices(1);
+elseif ~isempty(endPoints)
+    idxFirst = extract_elements(endPoints, 'first');
+else
+    idxFirst = 1;
+end
 
 % Decide on the direction
 switch direction
@@ -238,6 +234,13 @@ indSelected(iMostExtreme) = [];
 % Add the next index
 indSelected = [indSelected; idxNext];
 valSelected = valuesOfInterest(isSelected);
+
+% Find default end points if not provided
+if isempty(endPoints)
+    endPoints = find_window_endpoints([], values);
+else
+    endPoints = force_column_vector(endPoints);
+end
 
 %}
 

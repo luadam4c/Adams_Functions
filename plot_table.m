@@ -362,6 +362,9 @@ else
         figTitle = '';
     end
 
+    % Clear the current figure
+    clf;
+
     % Plot a tuning curve
     switch plotType
         case 'tuning'
