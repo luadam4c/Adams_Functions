@@ -33,7 +33,10 @@ phaseLabel = 'Phase';
 phaseStrs = {'Baseline', 'Wash-on', 'Wash-out'};
 
 % Analysis parameters
+%   Note: must be consistent with plot_struct.m
+nSweepsLastOfPhase = 10;
 nSweepsToAverage = 5;
+maxRange2Mean = 40;
 
 % File patterns
 sliceFilePattern = '.*slice.*';
@@ -114,12 +117,14 @@ measureTables = combine_variables_across_tables(sliceParamsTables, ...
 
 % Average over the last nSweepsToAverage sweeps
 chevronTables = ...
-    cellfun(@(x, y) average_last_of_each_phase(x, nSweepsToAverage, y), ...
+    cellfun(@(x, y) average_last_of_each_phase(x, nSweepsLastOfPhase, ...
+                                nSweepsToAverage, maxRange2Mean, y), ...
                     measureTables, avgdTablePaths, 'UniformOutput', false);
 
 % Generate figure titles for Chevron plots
 figTitlesChevron = strcat(varLabels, [' avg over ', ...
-                            num2str(nSweepsToAverage), ' sweeps']);
+                            num2str(nSweepsToAverage), ' of last ', ...
+                            num2str(nSweepsLastOfPhase), ' sweeps']);
                 
 % Normalize to baseline if requested
 if normalizeToBaseline
@@ -206,10 +211,11 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function outTable = average_last_of_each_phase(inTable, nSweepsToAverage, ...
-                                                sheetPath)
+function outTable = average_last_of_each_phase(inTable, nSweepsLastOfPhase, ...
+                                nSweepsToAverage, maxRange2Mean, sheetPath)
 %% Averages over the last nSweepsToAverage sweeps of each phase
 % Note: all distinct identifiers must have a matching phase variable column
+% TODO: Fix
 
 % Get all variable names
 allVarNames = inTable.Properties.VariableNames;
@@ -237,13 +243,14 @@ uniqueIds = extract_distinct_fileparts(readoutVars, 'Delimiter', '_');
     cellfun(@(x) find_in_strings(x, phaseVars, 'SearchMode', 'substrings'), ...
             uniqueIds, 'UniformOutput', false);
 
-% Find the row indices for the last nSweepsToAverage sweeps for each phase,
+% Find the row indices for the last nSweepsLastOfPhase sweeps for each phase,
 %   for each unique phase ID
-indToAvg = cellfun(@(x) find_last_ind_each_phase(inTable{:, x}, nSweepsToAverage), ...
+indLastOfPhase = cellfun(@(x) find_last_ind_each_phase(inTable{:, x}, ...
+                                                nSweepsLastOfPhase), ...
                     phaseVars, 'UniformOutput', false);
 
 % Count the number of phases for each unique phase ID
-nPhases = count_vectors(indToAvg);
+nPhases = count_vectors(indLastOfPhase);
 
 % Compute the maximum number of phases
 maxNPhases = max(nPhases);
@@ -251,9 +258,15 @@ maxNPhases = max(nPhases);
 % Creat a phase number column
 phaseNumber = transpose(1:maxNPhases);
 
-% Average the last nSweepsToAverage sweeps for each phase
-readoutAvg = cellfun(@(x, y) cellfun(@(z) nanmean(inTable{:, x}(z)), y), ...
-                    readoutVars, indToAvg, 'UniformOutput', false);
+% Average the nSweepsToAverage sweeps within maxRange2Mean in
+%    the last nSweepsLastOfPhase sweeps of each phase
+readoutAvg = ...
+    cellfun(@(x, y) cellfun(@(z) compute_phase_average(inTable{:, x}, ...
+                                        'Indices', z, ...
+                                        'NToAverage', nSweepsToAverage, ...
+                                        'MaxRange2Mean', maxRange2Mean), ...
+                            y), ...
+            readoutVars, indLastOfPhase, 'UniformOutput', false);
 
 % Force as a matrix, padding each vector with NaNs at the end if necessary
 readoutAvg = force_matrix(readoutAvg, 'AlignMethod', 'leftAdjustPad');
@@ -277,9 +290,6 @@ function indLastEachPhase = find_last_ind_each_phase(phaseVec, nLastIndices)
 % TODO: use unique_custom.m
 phaseVecNoNaN = phaseVec(~isnan(phaseVec));
 uniquePhases = unique(phaseVecNoNaN, 'stable');
-
-% Count the number of unique phases
-nPhases = numel(uniquePhases);
 
 % Find the last index for each phase
 lastIndexEachPhase = arrayfun(@(x) find(ismatch(phaseVec, x), 1, 'last'), ...
@@ -321,6 +331,17 @@ end
 
 %{
 OLD CODE:
+
+% Find the row indices for the last nSweepsToAverage sweeps for each phase,
+%   for each unique phase ID
+indToAvg = cellfun(@(x) find_last_ind_each_phase(inTable{:, x}, nSweepsToAverage), ...
+                    phaseVars, 'UniformOutput', false);
+% Average the last nSweepsToAverage sweeps for each phase
+readoutAvg = cellfun(@(x, y) cellfun(@(z) nanmean(inTable{:, x}(z)), y), ...
+                    readoutVars, indToAvg, 'UniformOutput', false);
+
+% Count the number of unique phases
+nPhases = numel(uniquePhases);
 
 %}
 

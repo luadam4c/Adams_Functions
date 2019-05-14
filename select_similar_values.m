@@ -19,6 +19,12 @@ function [valSelected, indSelected] = select_similar_values (values, varargin)
 %       varargin    - 'NToSelect': number of values to select
 %                   must be a positive integer scalar
 %                   default == 5
+%                   - 'Indices': indices for the subvectors to extract 
+%                       Note: if provided, would override 'EndPoints'
+%                   must be a numeric vector with 2 elements
+%                       or a numeric array with 2 rows
+%                       or a cell array of numeric vectors with 2 elements
+%                   default == set in extract_subvectors.m
 %                   - 'EndPoints': endpoints for the subvectors to extract 
 %                   must be a numeric vector with 2 elements
 %                       or a numeric array with 2 rows
@@ -56,6 +62,7 @@ validDirections = {'forward', 'backward'};
 
 %% Default values for optional arguments
 nToSelectDefault = 5;           % select 5 values by default
+indicesDefault = [];            % set in extract_subvectors.m
 endPointsDefault = [];          % set later
 directionDefault = 'forward';   % select from the first indices by default
 maxRange2MeanDefault = 40;      % range is not more than 40% of mean by default
@@ -80,6 +87,10 @@ addRequired(iP, 'values', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'NToSelect', nToSelectDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'Indices', indicesDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['Indices must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
 addParameter(iP, 'EndPoints', endPointsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['EndPoints must be either a numeric array ', ...
@@ -92,6 +103,7 @@ addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
 % Read from the Input Parser
 parse(iP, values, varargin{:});
 nToSelect = iP.Results.NToSelect;
+indices = iP.Results.Indices;
 endPoints = iP.Results.EndPoints;
 direction = validatestring(iP.Results.Direction, validDirections);
 maxRange2Mean = iP.Results.MaxRange2Mean;
@@ -111,7 +123,8 @@ end
 idxFirst = extract_elements(endPoints, 'first');
 
 % Restrict to end points
-valuesRestricted = extract_subvectors(values, 'EndPoints', endPoints);
+valuesRestricted = extract_subvectors(values, 'EndPoints', endPoints, ...
+                                        'Indices', indices);
 
 % Decide on the direction
 switch direction

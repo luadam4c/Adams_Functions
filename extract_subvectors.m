@@ -17,6 +17,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       vecs        - vectors to extract
 %                   must be an array
 %       varargin    - 'Indices': indices for the subvectors to extract 
+%                       Note: if provided, would override 'EndPoints'
 %                   must be a numeric vector with 2 elements
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
@@ -179,7 +180,7 @@ treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 % If indices is provided and endPoints or windows is also provided, 
 %   display warning
 if ~isempty(indices) && (~isempty(endPoints) || ~isempty(windows))
-    fprintf('Windows will be ignored because end points are provided!\n');
+    fprintf('Endpoints will be ignored because indices are provided!\n');
 end
 
 % If endPoints is provided and windows is also provided, display warning

@@ -26,6 +26,7 @@ function [counts, edges] = compute_bins (stats, varargin)
 %
 % Used by:
 %       cd/compute_grouped_histcounts.m
+%       cd/compute_spike_histogram.m
 
 % File History:
 % 2018-12-28 Moved from plot_grouped_histogram.m

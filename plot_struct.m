@@ -106,6 +106,7 @@ barDirection = 'horizontal';
 barReverseOrder = true;
 
 % Analysis parameters
+%   Note: must be consistent with plot_measures.m
 nSweepsLastOfPhase = 10;
 nSweepsToAverage = 5;
 maxRange2Mean = 40;
@@ -307,6 +308,7 @@ end
 pBoundaries = match_row_count(pBoundaries, nFields);
 
 % Compute baseline averages if no readout boundaries provided
+indSelected = cell(nFields, 1);
 if isempty(rBoundaries)
     rBoundaries = nan(nFields, 1);
     for iField = 1:nFields
@@ -321,12 +323,11 @@ if isempty(rBoundaries)
         firstBaseIndex = lastBaseIndex - nSweepsLastOfPhase + 1;
 
         % Compute the baseline average for this field
-        [baselineAverage, indSelected] = compute_phase_average(fieldVals, ...
+        [baselineAverage, indSelected{iField}] = ...
+            compute_phase_average(fieldVals, ...
                         'EndPoints', [firstBaseIndex, lastBaseIndex], ...
                         'NToAverage', nSweepsToAverage, ...
                         'MaxRange2Mean', maxRange2Mean);
-
-        % TODO: Plot the selected indices
 
         % Compute the baseline average for this field
         rBoundaries(iField, 1) = baselineAverage;
@@ -352,6 +353,7 @@ for iField = 1:nFields
     fieldVals = fieldData(:, iField);
     pBoundariesThis = pBoundaries(iField, :);
     rBoundariesThis = rBoundaries(iField, :);
+    indSelectedThis = indSelected{iField};
 
     % Set the field label for this field
     if ~isempty(fieldLabels)
@@ -415,6 +417,11 @@ for iField = 1:nFields
             rLines = plot_horizontal_line(rBoundariesThis, 'LineWidth', 0.5, ...
                                         'LineStyle', '--', 'Color', 'r');
         end
+
+        % Plot selected values if any
+        if ~isempty(indSelectedThis)
+            % TODO
+        end
     case 'bar'
         % Plot horizontal bars
         % TODO: Deal with pIsLog
@@ -444,6 +451,23 @@ for iField = 1:nFields
             hold on
             rLines = plot_vertical_line(rBoundariesThis, 'LineWidth', 0.5, ...
                                         'LineStyle', '--', 'Color', 'r');
+        end
+
+        % Plot selected values if any
+        if ~isempty(indSelectedThis) && ~all(isnan(indSelectedThis))
+            % Get the selected values
+            valSelected = fieldVals(indSelectedThis);
+
+            % Reverse the order
+            if barReverseOrder
+                % Compute flipped boundaries
+                indSelectedThis = pValues(1) + pValues(end) - indSelectedThis;
+            end
+
+            % Plot red crosses
+            hold on
+            plot(valSelected, indSelectedThis, 'rx', ...
+                    'LineWidth', 2, 'MarkerSize', 6);
         end
     otherwise
         error('plotType unrecognized!')

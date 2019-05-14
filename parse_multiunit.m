@@ -161,6 +161,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/check_dir.m
 %       cd/check_subdir.m
 %       cd/compute_axis_limits.m
+%       cd/compute_spike_histogram.m
 %       cd/compute_stats.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
@@ -818,7 +819,6 @@ function [parsedParams, parsedData] = ...
 MS_PER_S = 1000;
 
 % Hard-coded parameters
-MS_PER_S = 1000;
 cutoffFreq = [100, 1000];
 signal2Noise = 3; %4
 minDelayMs = 25;
@@ -902,197 +902,47 @@ spikeTimesMs = spikesData.spikeTimesMs;
 
 
 %% Compute the spike histogram, spikes per burst & oscillation duration
-if nSpikesTotal == 0
-    spikeCounts = [];
-    edgesMs = [];
-    nBins = 0;
-    halfNBins = 0;
-    histLeftMs = NaN;
-    nBurstsTotal = 0;
-    nBurstsIn10s = 0;
-    nBurstsInOsc = 0;
-    iBinBurstStarts = [];
-    iBinBurstEnds = [];
-    iBinBurstIn10sStarts = [];
-    iBinBurstIn10sEnds = [];
-    iBinBurstInOscStarts = [];
-    iBinBurstInOscEnds = [];
-    iBinLastOfLastBurst = NaN;
-    iBinLastOfLastBurstIn10s = NaN;
-    iBinLastOfLastBurstInOsc = NaN;
-    spikeCountsEachBurst = [];
-    spikeCountsEachBurstIn10s = [];
-    spikeCountsEachBurstInOsc = [];
-    nSpikesPerBurst = NaN;
-    nSpikesPerBurstIn10s = NaN;
-    nSpikesPerBurstInOsc = NaN;
-    nSpikesIn10s = 0;
-    nSpikesInOsc = 0;
-    timeBurstStartsMs = [];
-    timeBurstEndsMs = [];
-    timeBurstIn10sStartsMs = [];
-    timeBurstIn10sEndsMs = [];
-    timeBurstInOscStartsMs = [];
-    timeBurstInOscEndsMs = [];
-    timeOscEndMs = stimStartMs;
-    oscDurationMs = 0;    
-else
-    % Compute a spike histogram
-    [spikeCounts, edgesMs] = compute_bins(spikeTimesMs, 'BinWidth', binWidthMs);
+[spHistParams, spHistData] = ...
+    compute_spike_histogram(spikeTimesMs, 'StimStartMs', stimStartMs, ...
+                            'BinWidthMs', binWidthMs, ...
+                            'MinBurstLengthMs', minBurstLengthMs, ...
+                            'MaxInterBurstIntervalMs', maxInterBurstIntervalMs, ...
+                            'MinSpikeRateInBurstHz', minSpikeRateInBurstHz);
 
-    % Compute the number of bins
-    nBins = numel(spikeCounts);
+nBins = spHistParams.nBins;
+halfNBins = spHistParams.halfNBins;
+histLeftMs = spHistParams.histLeftMs;
+nBurstsTotal = spHistParams.nBurstsTotal;
+nBurstsIn10s = spHistParams.nBurstsIn10s;
+nBurstsInOsc = spHistParams.nBurstsInOsc;
+iBinLastOfLastBurst = spHistParams.iBinLastOfLastBurst;
+iBinLastOfLastBurstIn10s = spHistParams.iBinLastOfLastBurstIn10s;
+iBinLastOfLastBurstInOsc = spHistParams.iBinLastOfLastBurstInOsc;
+nSpikesPerBurst = spHistParams.nSpikesPerBurst;
+nSpikesPerBurstIn10s = spHistParams.nSpikesPerBurstIn10s;
+nSpikesPerBurstInOsc = spHistParams.nSpikesPerBurstInOsc;
+nSpikesIn10s = spHistParams.nSpikesIn10s;
+nSpikesInOsc = spHistParams.nSpikesInOsc;
+timeOscEndMs = spHistParams.timeOscEndMs;
+oscDurationMs = spHistParams.oscDurationMs;
 
-    % Compute the half number of bins
-    halfNBins = floor(nBins/2);
-
-    % Record the starting time of the histogram
-    histLeftMs = edgesMs(1);
-
-    % Compute the minimum number of bins in a burst
-    minBinsInBurst = ceil(minBurstLengthMs ./ binWidthMs);
-
-    % Compute the sliding window length in seconds
-    slidingWinSec = minBinsInBurst * binWidthSec;
-
-    % Compute the minimum spikes per sliding window if in a burst
-    minSpikesPerWindowInBurst = ceil(minSpikeRateInBurstHz * slidingWinSec);
-
-    % Compute the maximum number of bins between consecutive bursts
-    maxIbiBins = floor(maxInterBurstIntervalMs ./ binWidthMs);
-
-    % Count spikes for each sliding window (ending at each bin)
-    spikeCountsWin = spikeCounts;
-    spikeCountsPrev = spikeCounts;
-    for i = 1:(minBinsInBurst - 1)
-        % Compute spike counts from the previous ith bin
-        spikeCountsPrev = [0; spikeCountsPrev(1:(end-1))];
-
-        % Add the spike counts in the previous i bins
-        spikeCountsWin = spikeCountsWin + spikeCountsPrev;
-    end
-
-    % Determine whether each sliding window passes 
-    %   the number of spikes criterion
-    isInBurst = spikeCountsWin >= minSpikesPerWindowInBurst;
-
-    % Find the last bins of each burst
-    %   Note: this sliding window is in burst but the next sliding window 
-    %           is not in burst
-    iWinLastInBurst = find(isInBurst & [~isInBurst(2:end); true]);
-    iBinBurstEnds = iWinLastInBurst;
-
-    % Find the first bins of each burst
-    %   Note: this sliding window is in burst but the previous sliding window 
-    %           is not in burst, then minus the number of bins in a window
-    iWinFirstInBurst = find(isInBurst & [true; ~isInBurst(1:(end-1))]);
-    iBinBurstStarts = iWinFirstInBurst - minBinsInBurst + 1;
-    iBinBurstStarts(iBinBurstStarts < 1) = 1;
-    
-    % Find the total number of bursts
-    if numel(iBinBurstEnds) ~= numel(iBinBurstStarts)
-        error('Code logic error!');
-    else
-        nBurstsTotal = numel(iBinBurstEnds);
-    end
-
-    % Count bursts within the first 10 seconds after stimulation start
-    if isempty(iBinBurstEnds)
-        nSpikesIn10s = 0;
-        nBurstsIn10s = 0;
-        iBinBurstIn10sStarts = [];
-        iBinBurstIn10sEnds = [];
-    else
-        timeAfterHistLeftFor10sMs = 10000 - (histLeftMs - stimStartMs);
-
-        % Find the last bin 10 secs after stimulation start
-        %   Note: cannot exceed nBins
-        iBin10s = min(nBins, ceil(timeAfterHistLeftFor10sMs ./ binWidthMs) + 1);
-
-        % Count the number of spikes within 10 secs after stimulation start
-        nSpikesIn10s = sum(spikeCounts(1:iBin10s));
-
-        % Count the number of bursts within 10 secs after stimulation start
-        nBurstsIn10s = find(iBinBurstEnds <= iBin10s, 1, 'last');
-
-        % Restrict the starting and ending bins vectors to ten seconds
-        %   after stimulation start
-        if isempty(nBurstsIn10s)
-            nBurstsIn10s = 0;
-            iBinBurstIn10sStarts = [];
-            iBinBurstIn10sEnds = [];
-        else
-            iBinBurstIn10sStarts = iBinBurstStarts(1:nBurstsIn10s);
-            iBinBurstIn10sEnds = iBinBurstEnds(1:nBurstsIn10s);
-        end
-    end
-
-    % Detect the oscillation end and count bursts within oscillation
-    %   Note: Find the last bin of the last burst, using maxIbiBins
-    if isempty(iBinBurstEnds)
-        nBurstsInOsc = 0;
-        iBinBurstInOscStarts = [];
-        iBinBurstInOscEnds = [];
-    else
-        % Compute the inter-burst intervals in bins
-        ibiBins = diff(iBinBurstEnds);
-
-        % Find the first inter-burst interval greater than maxIbiBins
-        firstIbiTooLarge = find(ibiBins > maxIbiBins, 1, 'first');
-
-        % Determine the number of bursts in oscillation
-        if isempty(firstIbiTooLarge)
-            % All bursts are close enough together
-            nBurstsInOsc = nBurstsTotal;
-        else
-            % Actually (firstIbiTooLarge - 1) + 1
-            nBurstsInOsc = firstIbiTooLarge;
-        end
-
-        % Restrict the starting and ending bins vectors
-        iBinBurstInOscStarts = iBinBurstStarts(1:nBurstsInOsc);
-        iBinBurstInOscEnds = iBinBurstEnds(1:nBurstsInOsc);
-    end
-
-    % Compute burst statistics
-    [iBinLastOfLastBurst, spikeCountsEachBurst, nSpikesPerBurst] = ...
-            compute_burst_statistics(spikeCounts, ...
-                                        iBinBurstStarts, iBinBurstEnds);
-    [iBinLastOfLastBurstIn10s, spikeCountsEachBurstIn10s, ...
-        nSpikesPerBurstIn10s] = ...
-            compute_burst_statistics(spikeCounts, ...
-                                iBinBurstIn10sStarts, iBinBurstIn10sEnds);
-    [iBinLastOfLastBurstInOsc, spikeCountsEachBurstInOsc, ...
-        nSpikesPerBurstInOsc] = ...
-            compute_burst_statistics(spikeCounts, ...
-                                iBinBurstInOscStarts, iBinBurstInOscEnds);
-
-    % Compute the total number of spikes in the oscillation
-    if ~isnan(iBinLastOfLastBurstInOsc)
-        nSpikesInOsc = sum(spikeCounts(1:iBinLastOfLastBurstInOsc));
-    else
-        nSpikesInOsc = 0;
-    end
-
-    % Compute the burst start and ends in ms
-    timeBurstStartsMs = histLeftMs + (iBinBurstStarts - 1) * binWidthMs;
-    timeBurstEndsMs = histLeftMs + iBinBurstEnds * binWidthMs;
-    timeBurstIn10sStartsMs = histLeftMs + (iBinBurstIn10sStarts - 1) * binWidthMs;
-    timeBurstIn10sEndsMs = histLeftMs + iBinBurstIn10sEnds * binWidthMs;
-    timeBurstInOscStartsMs = histLeftMs + (iBinBurstInOscStarts - 1) * binWidthMs;
-    timeBurstInOscEndsMs = histLeftMs + iBinBurstInOscEnds * binWidthMs;
-
-    % Find the time of oscillation end in ms
-    if isnan(iBinLastOfLastBurstInOsc)
-        timeOscEndMs = stimStartMs;
-    else
-        % Compute the time of oscillation end in ms
-        timeOscEndMs = histLeftMs + iBinLastOfLastBurstInOsc * binWidthMs;
-    end
-
-    % Compute the oscillation duration in ms
-    oscDurationMs = timeOscEndMs - stimStartMs;
-end
+spikeCounts = spHistData.spikeCounts;
+edgesMs = spHistData.edgesMs;
+iBinBurstStarts = spHistData.iBinBurstStarts;
+iBinBurstEnds = spHistData.iBinBurstEnds;
+iBinBurstIn10sStarts = spHistData.iBinBurstIn10sStarts;
+iBinBurstIn10sEnds = spHistData.iBinBurstIn10sEnds;
+iBinBurstInOscStarts = spHistData.iBinBurstInOscStarts;
+iBinBurstInOscEnds = spHistData.iBinBurstInOscEnds;
+spikeCountsEachBurst = spHistData.spikeCountsEachBurst;
+spikeCountsEachBurstIn10s = spHistData.spikeCountsEachBurstIn10s;
+spikeCountsEachBurstInOsc = spHistData.spikeCountsEachBurstInOsc;
+timeBurstStartsMs = spHistData.timeBurstStartsMs;
+timeBurstEndsMs = spHistData.timeBurstEndsMs;
+timeBurstIn10sStartsMs = spHistData.timeBurstIn10sStartsMs;
+timeBurstIn10sEndsMs = spHistData.timeBurstIn10sEndsMs;
+timeBurstInOscStartsMs = spHistData.timeBurstInOscStartsMs;
+timeBurstInOscEndsMs = spHistData.timeBurstInOscEndsMs;
 
 %% Compute the autocorrelogram, oscillation period & oscillatory index
 if nSpikesTotal == 0
@@ -1447,35 +1297,6 @@ else
 
     % Compute the original indices
     indTroughs = arrayfun(@(x, y) x + y - 1, indTroughsRel, indLeftPeak);
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [iBinLastOfLastBurst, spikeCountsEachBurst, ...
-                nSpikesPerBurst] = ...
-                compute_burst_statistics(spikeCounts, ...
-                                        iBinBurstStarts, iBinBurstEnds)
-
-% Determine the last bin of the last burst
-if ~isempty(iBinBurstEnds)
-    iBinLastOfLastBurst = iBinBurstEnds(end);
-else
-    iBinLastOfLastBurst = NaN;
-end
-
-% Compute the number of spikes in each burst window
-if ~isempty(iBinBurstStarts) && ~isempty(iBinBurstEnds)
-    spikeCountsEachBurst = arrayfun(@(x, y) sum(spikeCounts(x:y)), ...
-                            iBinBurstStarts, iBinBurstEnds);
-else
-    spikeCountsEachBurst = [];
-end
-
-% Compute average number of spikes per burst
-if ~isempty(spikeCountsEachBurst)
-    nSpikesPerBurst = mean(spikeCountsEachBurst);
-else
-    nSpikesPerBurst = NaN;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -14,11 +14,17 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 %       varargin    - 'NToAverage': number of values to average
 %                   must be a positive integer scalar
 %                   default == 5
+%                   - 'Indices': indices for the subvectors to extract 
+%                       Note: if provided, would override 'EndPoints'
+%                   must be a numeric vector with 2 elements
+%                       or a numeric array with 2 rows
+%                       or a cell array of numeric vectors with 2 elements
+%                   default == set in select_similar_values.m
 %                   - 'EndPoints': endpoints for the phase
 %                   must be a numeric vector with 2 elements
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
-%                   default == find_window_endpoints([], values)
+%                   default == set in select_similar_values.m
 %                   - 'MaxRange2Mean': maximum percentage of range versus mean
 %                   must be a nonnegative scalar
 %                   default == 40%
@@ -41,7 +47,8 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 
 %% Default values for optional arguments
 nToAverageDefault = 5;           % select 5 values by default
-endPointsDefault = [];          % set later
+indicesDefault = [];            % set in extract_subvectors.m
+endPointsDefault = [];          % set in select_similar_values.m
 maxRange2MeanDefault = 40;      % range is not more than 40% of mean by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -64,6 +71,10 @@ addRequired(iP, 'values', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'NToAverage', nToAverageDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'Indices', indicesDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['Indices must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
 addParameter(iP, 'EndPoints', endPointsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['EndPoints must be either a numeric array ', ...
@@ -74,6 +85,7 @@ addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
 % Read from the Input Parser
 parse(iP, values, varargin{:});
 nToAverage = iP.Results.NToAverage;
+indices = iP.Results.Indices;
 endPoints = iP.Results.EndPoints;
 maxRange2Mean = iP.Results.MaxRange2Mean;
 
@@ -84,6 +96,7 @@ otherArguments = struct2arglist(iP.Unmatched);
 % Select values similar to the last phase value
 [valSelected, indSelected] = ...
     select_similar_values(values, 'EndPoints', endPoints, ...
+                            'Indices', indices, ...
                             'NToSelect', nToAverage, ...
                             'Direction', 'backward', ...
                             'MaxRange2Mean', maxRange2Mean, ...
