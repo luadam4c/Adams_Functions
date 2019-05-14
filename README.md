@@ -78,6 +78,7 @@ Last Updated 2019-05-14 by Adam Lu
 - [**compute_stats.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_stats.m): Computes a statistic of vector(s) possibly restricted by endpoint(s)
 - [**compute_surface_area.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_surface_area.m): Computes the surface area of a cylindrical compartmental model cell based on lengths and diameters
 - [**compute_sweep_errors.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_sweep_errors.m): Computes all errors for single neuron data
+- [**compute_time_window.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_time_window.m): Computes time windows from time vectors and given time end points
 - [**compute_weighted_average.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_weighted_average.m): Computes a weighted average value (root-mean-square by default)
 - [**construct_and_check_abfpath.m**](https://github.com/blabuva/Adams_Functions/blob/master/construct_and_check_abfpath.m): Constructs the full path to a .abf file and checks whether it exists
 - [**construct_and_check_fullpath.m**](https://github.com/blabuva/Adams_Functions/blob/master/construct_and_check_fullpath.m): Constructs the full path to the file or directory and checks whether it exists
@@ -275,6 +276,7 @@ Last Updated 2019-05-14 by Adam Lu
 - [**parse_multiunit.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_multiunit.m): Parses multiunit recordings: detect spikes
 - [**parse_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_pulse.m): Parses pulse widths, endpoints, amplitudes for vector(s) containing a pulse
 - [**parse_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_pulse_response.m): Parses pulse response widths, endpoints, amplitudes for vector(s) containing a pulse response
+- [**parse_stim.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_stim.m): Detects the index and time of stimulation start from pulse vectors
 - [**parse_xolotl_object.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_xolotl_object.m): Parses a xolotl object
 - [**piecelinspace.m**](https://github.com/blabuva/Adams_Functions/blob/master/piecelinspace.m): Generates a piece-wise linear row vector from nodes and number of points
 - [**plot_all_abfs.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_all_abfs.m): Plots all abf files in a directory

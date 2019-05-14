@@ -154,6 +154,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %                   default == [] (not used)
 %                   - 'tVecs': original time vector(s)
 %                   must be a numeric array or a cell array of numeric arrays
+%                   default == [] (not used)
 %                   
 % Requires:
 %       TODO cd/find_stim_start.m
@@ -162,6 +163,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/check_subdir.m
 %       cd/compute_axis_limits.m
 %       cd/compute_spike_histogram.m
+%       cd/compute_time_window.m
 %       cd/compute_stats.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
@@ -175,6 +177,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/iscellnumeric.m
 %       cd/match_time_info.m
 %       cd/movingaveragefilter.m
+%       cd/parse_stim.m
 %       cd/plot_horizontal_line.m
 %       cd/plot_raster.m
 %       cd/plot_table.m
@@ -362,42 +365,17 @@ titleBase = replace(fileBase, '_', '\_');
 % Detect stimulation start time if not provided
 %   Otherwise find the corresponding index in the time vector
 fprintf('Detecting stimulation start for %s ...\n', fileBase);
-if isempty(stimStartMs)
-    % TODO: Make this a function find_stim_start.m
-    if ~isempty(pulseVectors)
-        % Parse the pulse vectors
-        [pulseParams, ~] = ...
-            parse_pulse(pulseVectors, 'SamplingIntervalMs', siMs);
+[stimParams, stimData] = ...
+    parse_stim(pulseVectors, 'SamplingIntervalMs', siMs, ...
+                    'StimStartMs', stimStartMs, 'tVecs', tVecs);
 
-        % Use the indices after pulse starts for stimulation start
-        idxStimStart = pulseParams{:, 'idxAfterStart'};
-
-        % Use the time vectors 
-        stimStartMs = extract_elements(tVecs, 'specific', ...
-                                        'Index', idxStimStart);
-    else
-        error('One of stimStartMs and pulseVectors must be provided!');
-    end
-else
-    % Find the indices of stimulation start
-    if ~isempty(tVecs)
-        % Use the indices of tVecs with values closest to stimStartMs
-        % TODO: find_closest.m
-        idxStimStart = find_closest(tVecs, stimStartMs);
-    else
-        % Assume tVecs start from 0 and use siMs
-        idxStimStart = round(stimStartMs ./ siMs);
-    end
-end
+idxStimStart = stimParams.idxStimStart;
+stimStartMs = stimParams.stimStartMs;
 
 % Construct default baseline windows
-fprintf('Constructing baseline window for %s ...\n', fileBase);
 if isempty(baseWindows)
-    % Get the starting time(s)
-    timeStartMs = extract_elements(tVecs, 'first');
-
-    % Use timeStartMs to stimStartMs by default
-    baseWindows = transpose([timeStartMs, stimStartMs]);
+    fprintf('Constructing baseline window for %s ...\n', fileBase);
+    baseWindows = compute_time_window(tVecs, 'TimeEndMs', stimStartMs);
 end
 
 % Force as a cell array of vectors
@@ -815,19 +793,19 @@ function [parsedParams, parsedData] = ...
 
 % Parse a single multiunit recording
 
-% Hard-coded constants
+%% Hard-coded constants
 MS_PER_S = 1000;
 
-% Hard-coded parameters
+%% Hard-coded parameters
 cutoffFreq = [100, 1000];
 signal2Noise = 3; %4
 minDelayMs = 25;
 binWidthMs = 10;
-filterWidthMs = 100;
-minRelProm = 0.02;
 minSpikeRateInBurstHz = 100;
 minBurstLengthMs = 20;
 maxInterBurstIntervalMs = 1000; %2000;
+filterWidthMs = 100;
+minRelProm = 0.02;
 
 %% Preparation
 % Compute the sampling interval in seconds

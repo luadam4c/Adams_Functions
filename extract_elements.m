@@ -42,12 +42,14 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % Used by:
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
+%       cd/compute_time_window.m
 %       cd/create_average_time_vector.m
 %       cd/create_indices.m
 %       cd/extract_columns.m
 %       cd/parse_lts.m
 %       cd/parse_multiunit.m
 %       cd/parse_pulse_response.m
+%       cd/parse_stim.m
 %       cd/plot_protocols.m
 %       cd/select_similar_values.m
 

@@ -16,6 +16,7 @@ function varargout = match_format_vectors (varargin)
 %       cd/match_row_count.m
 %
 % Used by:
+%       cd/compute_time_window.m
 %       cd/create_indices.m
 %       cd/create_time_vectors.m
 

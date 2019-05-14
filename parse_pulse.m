@@ -48,6 +48,7 @@ function [parsedParams, parsedData] = parse_pulse (vectors, varargin)
 %       cd/ispositivevector.m
 %
 % Used by:    
+%       cd/parse_stim.m
 %       cd/find_passive_params.m
 %       cd/identify_repetitive_pulses.m
 %       cd/parse_pulse_response.m
