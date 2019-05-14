@@ -26,8 +26,8 @@
 normalizeToBaseline = true; %false;
 plotType = 'tuning';
 plotChevronFlag = true;
-plotByFileFlag = false;
-plotByPhaseFlag = false;
+plotByFileFlag = true;
+plotByPhaseFlag = true;
 
 % Protocol parameters
 sweepLengthSec = 60;

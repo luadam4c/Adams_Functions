@@ -46,6 +46,7 @@ function [valSelected, indSelected] = select_similar_values (values, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
+%       cd/force_column_vector.m
 %       cd/struct2arglist.m
 %
 % Used by:
@@ -117,6 +118,7 @@ valuesRestricted = extract_subvectors(values, 'EndPoints', endPoints, ...
 if ~isempty(indices)
     idxFirst = indices(1);
 elseif ~isempty(endPoints)
+    endPoints = force_column_vector(endPoints);
     idxFirst = extract_elements(endPoints, 'first');
 else
     idxFirst = 1;
