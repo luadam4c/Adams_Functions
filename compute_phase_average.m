@@ -28,6 +28,13 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 %                   - 'MaxRange2Mean': maximum percentage of range versus mean
 %                   must be a nonnegative scalar
 %                   default == 40%
+%                   - 'SelectionMethod': the selection method
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'notNaN'        - select any non-NaN value
+%                       'maxRange2Mean' - select vales so that the maximum 
+%                                           range is within a percentage 
+%                                           of the mean
+%                   default == 'maxRange2Mean'
 %                   - Any other parameter-value pair for 
 %                       the select_similar_values() function
 %
@@ -41,16 +48,18 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 
 % File History:
 % 2019-05-13 Created by Adam Lu
-% TODO: Add 'SelectionMethod' as an optional argument
-%           with possible values 'notNaN', 'maxRange2Mean'
+% 2019-05-15 Add 'SelectionMethod' as an optional argument
 % 
 
 %% Hard-coded parameters
+validSelectionMethods = {'notNaN', 'maxRange2Mean'};
 
 %% Default values for optional arguments
 nToAverageDefault = 5;           % select 5 values by default
 indicesDefault = [];            % set in extract_subvectors.m
 endPointsDefault = [];          % set in select_similar_values.m
+selectionMethodDefault = 'maxRange2Mean';   
+                                % select using maxRange2Mean by default
 maxRange2MeanDefault = 40;      % range is not more than 40% of mean by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -81,6 +90,8 @@ addParameter(iP, 'EndPoints', endPointsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['EndPoints must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
+addParameter(iP, 'SelectionMethod', selectionMethodDefault, ...
+    @(x) any(validatestring(x, validSelectionMethods)));
 addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 
@@ -89,6 +100,8 @@ parse(iP, values, varargin{:});
 nToAverage = iP.Results.NToAverage;
 indices = iP.Results.Indices;
 endPoints = iP.Results.EndPoints;
+selectionMethod = validatestring(iP.Results.SelectionMethod, ...
+                                    validSelectionMethods);
 maxRange2Mean = iP.Results.MaxRange2Mean;
 
 % Keep unmatched arguments for the select_similar_values() function
@@ -101,6 +114,7 @@ otherArguments = struct2arglist(iP.Unmatched);
                             'Indices', indices, ...
                             'NToSelect', nToAverage, ...
                             'Direction', 'backward', ...
+                            'SelectionMethod', selectionMethod, ...
                             'MaxRange2Mean', maxRange2Mean, ...
                             otherArguments{:});
 
