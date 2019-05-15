@@ -112,7 +112,8 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                   default == ['Time (', xUnits, ')']
 %                   - 'YLabel': label(s) for the y axis, 
 %                               suppress by setting value to 'suppress'
-%                   must be a string scalar or a character vector
+%                   must be a string scalar or a character vector 
+%                       or a cell array of strings or character vectors
 %                   default == 'Data' if plotMode is 'overlapped'
 %                               {'Trace #1', 'Trace #2', ...}
 %                                   if plotMode is 'parallel'
@@ -324,7 +325,7 @@ addParameter(iP, 'LinkAxesOption', linkAxesOptionDefault, ...
 addParameter(iP, 'XUnits', xUnitsDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'XLabel', xLabelDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'YLabel', yLabelDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'TraceLabels', traceLabelsDefault, ...
@@ -809,12 +810,14 @@ case {'overlapped', 'staggered'}
     end
     
     % Set time axis limits
-    if ~iscell(xLimits) && ~strcmpi(xLimits, 'suppress')
+    if ~iscell(xLimits) && ...
+        ~(ischar(xLimits) && ~strcmpi(xLimits, 'suppress'))
         xlim(xLimits);
     end
 
     % Set y axis limits
-    if ~isempty(yLimits) && ~strcmpi(yLimits, 'suppress')
+    if ~isempty(yLimits) && ...
+        ~(ischar(yLimits) && strcmpi(yLimits, 'suppress'))
         ylim(yLimits);
     end
 
