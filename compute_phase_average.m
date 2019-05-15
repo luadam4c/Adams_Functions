@@ -25,9 +25,6 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
 %                   default == set in select_similar_values.m
-%                   - 'MaxRange2Mean': maximum percentage of range versus mean
-%                   must be a nonnegative scalar
-%                   default == 40%
 %                   - 'SelectionMethod': the selection method
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'notNaN'        - select any non-NaN value
@@ -35,6 +32,9 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 %                                           range is within a percentage 
 %                                           of the mean
 %                   default == 'maxRange2Mean'
+%                   - 'MaxRange2Mean': maximum percentage of range versus mean
+%                   must be a nonnegative scalar
+%                   default == 40%
 %                   - Any other parameter-value pair for 
 %                       the select_similar_values() function
 %

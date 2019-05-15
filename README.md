@@ -46,6 +46,7 @@ Last Updated 2019-05-15 by Adam Lu
 - [**compute_and_plot_all_responses.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_and_plot_all_responses.m): Computes and plots all pulse responses with stimulus
 - [**compute_and_plot_average_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_and_plot_average_response.m): Computes and plots an average pulse response with its stimulus
 - [**compute_and_plot_concatenated_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_and_plot_concatenated_trace.m): Computes and plots concatenated traces from parsed ABF file results
+- [**compute_and_plot_values_online.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_and_plot_values_online.m): Computes and plots a value whenever a new .abf file is completed
 - [**compute_average_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_average_pulse_response.m): Computes an average pulse response as well as its features
 - [**compute_average_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_average_trace.m): Computes the average of traces that are not necessarily the same length
 - [**compute_axis_limits.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_axis_limits.m): Computes x or y axis limits from data (works also for a range [min(data), max(data)])
