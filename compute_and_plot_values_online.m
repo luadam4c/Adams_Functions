@@ -347,6 +347,9 @@ hold on;
 % Initialize lines
 lines = gobjects(3, 1);
 
+% Initialize points used for the average
+pointsUsed = gobjects(1, 1);
+
 %% Analyze as long as the figure is open
 while ishandle(fig)
     % Get all .abf files from this directory
@@ -429,7 +432,10 @@ while ishandle(fig)
     lastValues = values(idxLastStart:idxLastEnd);
 
     % Compute a new average value of last values
-    newAvg = avgFunc(lastValues);
+    [newAvg, indSelectedTemp] = avgFunc(lastValues);
+
+    % Get the indices of the selected values
+    indSelected = (idxLastStart - 1) + indSelectedTemp;
 
     % Compute a new limits
     upperLimit = newAvg * (1 + maxRange2Mean / 200);
@@ -444,11 +450,6 @@ while ishandle(fig)
         plot(iFile, newValue, 'Color', valueColor, 'Marker', marker, ...
                 'MarkerSize', markerSize, 'LineWidth', lineWidth, ...
                 otherArguments{:});
-
-    % Delete previous horizontal line(s) if any
-    if any(ishandle(lines))
-        delete(lines)
-    end
 
     % Decide on x ticks
     indTicks = create_indices([1, iFile], 'MaxNum', maxXTicks);
@@ -465,6 +466,16 @@ while ishandle(fig)
     % Expand x limits
     xlim([0, iFile + 1]);
 
+    % Expand y limits
+    if ~isempty(yLimits)
+        ylim(compute_axis_limits(values, 'y'));
+    end
+
+    % Delete previous horizontal line(s) if any
+    if any(ishandle(lines))
+        delete(lines)
+    end
+
     % Plot horizontal line(s)
     %   Note: Do this after x limits is updated
     lines(1, 1) = ...
@@ -475,9 +486,16 @@ while ishandle(fig)
                                 'Color', 'r', 'LineStyle', '--', ...
                                 'LineWidth', 2);
 
-    % Expand y limits
-    if ~isempty(yLimits)
-        ylim(compute_axis_limits(values, 'y'));
+    % Delete previous crosses if any
+    if any(ishandle(pointsUsed))
+        delete(pointsUsed)
+    end
+
+    % Plot red crosses
+    if ~all(isnan(indSelected))
+        pointsUsed = ...
+            plot(indSelected, values(indSelected), 'rx', ...
+                    'MarkerSize', markerSize, 'LineWidth', lineWidth);
     end
 
     % Update plot
