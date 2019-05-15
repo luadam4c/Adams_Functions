@@ -161,6 +161,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/check_dir.m
 %       cd/check_subdir.m
 %       cd/compute_axis_limits.m
+%       cd/compute_spike_density.m
 %       cd/compute_spike_histogram.m
 %       cd/compute_time_window.m
 %       cd/compute_stats.m
@@ -246,7 +247,7 @@ pulseVectorsDefault = [];       % don't use pulse vectors by default
 phaseBoundariesDefault = [];   	% no phase boundaries by default
 tVecsDefault = [];              % set later
 
-% TODO
+% TODO: Make optional argument
 baseWindows = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -800,6 +801,7 @@ filtFreq = [100, 1000];
 minDelayMs = 25;
 signal2Noise = 3; %4
 binWidthMs = 10;
+resolutionMs = 5;
 minBurstLengthMs = 20;
 maxInterBurstIntervalMs = 1000; %2000;
 minSpikeRateInBurstHz = 100;
@@ -871,8 +873,14 @@ slopes = spikesData.slopes;
 idxSpikes = spikesData.idxSpikes;
 spikeTimesMs = spikesData.spikeTimesMs;
 
-%% TODO: Compute the spike kernel distribution
-
+%% Compute spike density
+%{
+[spikeDensityHz] = ...
+    compute_spike_density(spikeTimesMs, 'TimeWindow', [0, tVec(end)], ...
+                            'BinWidth', binWidthMs, ...
+                            'Resolution', resolutionMs, ...
+                            'TimeUnits', 'ms');
+%}
 
 %% Compute the spike histogram, spikes per burst & oscillation duration
 [spHistParams, spHistData] = ...
@@ -918,6 +926,7 @@ timeBurstInOscStartsMs = spHistData.timeBurstInOscStartsMs;
 timeBurstInOscEndsMs = spHistData.timeBurstInOscEndsMs;
 
 %% Compute the autocorrelogram, oscillation period & oscillatory index
+% TODO: compute_autocorrelogram.m
 if nSpikesTotal == 0
     oscIndex1 = 0;
     oscIndex2 = 0;

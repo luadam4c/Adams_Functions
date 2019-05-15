@@ -122,12 +122,13 @@ function valueTable = compute_and_plot_values_online (valueFunc, varargin)
 % File History:
 % 2019-05-14 Adapted from onlineOmight_interface.m
 % 2019-05-15 Finish input parser
+% 2019-05-15 Now plots crosses for points used for averaging
 
 %% Hard-coded parameters
 validSelectionMethods = {'notNaN', 'maxRange2Mean'};
 
 %% Default values for optional arguments
-valueStrDefault = 'Value (arb)';% default string for computed values
+valueStrDefault = 'valueUnits'; % default string for computed values
 inFolderDefault = '';           % set later
 inFileExtDefault = 'abf';       % read in .abf files by default
 pauseTimeDefault = 1;           % pause for 1 second when waiting by default

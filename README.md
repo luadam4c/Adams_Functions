@@ -76,6 +76,7 @@ Last Updated 2019-05-15 by Adam Lu
 - [**compute_sampling_interval.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_sampling_interval.m): Computes sampling intervals from time vectors
 - [**compute_single_neuron_errors.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_single_neuron_errors.m): Computes all errors for single neuron data
 - [**compute_slope.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_slope.m): Computes the slope given two vectors and two indices
+- [**compute_spike_density.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_spike_density.m): Computes the spike density from spike times and overlapping bins
 - [**compute_spike_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_spike_histogram.m): Computes a spike histogram, detect bursts and compute the oscillation duration
 - [**compute_stats.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_stats.m): Computes a statistic of vector(s) possibly restricted by endpoint(s)
 - [**compute_surface_area.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_surface_area.m): Computes the surface area of a cylindrical compartmental model cell based on lengths and diameters
