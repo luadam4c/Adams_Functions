@@ -1,12 +1,12 @@
-function oscDurationMs = compute_oscillation_duration (abfFile, varargin)
-%% Computes the oscillation duration from an interface recording abf file
-% Usage: oscDurationMs = compute_oscillation_duration (abfFile, varargin)
+function oscDurationSec = compute_oscillation_duration (abfFile, varargin)
+%% Computes the oscillation duration in seconds from an interface recording abf file
+% Usage: oscDurationSec = compute_oscillation_duration (abfFile, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       oscDurationMs   - oscillation duration in ms
+%       oscDurationSec  - oscillation duration in seconds
 %                       specified as a numeric scalar
 % Arguments:
 %       abfFile     - ABF file name; could be either the full path or 
@@ -61,6 +61,7 @@ function oscDurationMs = compute_oscillation_duration (abfFile, varargin)
 % 
 
 %% Hard-coded parameters
+MS_PER_S = 1000;
 
 %% Default values for optional arguments
 verboseDefault = false;             % don't print parsed results by default
@@ -169,7 +170,7 @@ spHistParams = ...
                             'MaxInterBurstIntervalMs', maxInterBurstIntervalMs, ...
                             'MinSpikeRateInBurstHz', minSpikeRateInBurstHz);
 
-oscDurationMs = spHistParams.oscDurationMs;
+oscDurationSec = spHistParams.oscDurationMs ./ MS_PER_S;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

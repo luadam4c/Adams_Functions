@@ -4,10 +4,12 @@ function [valSelected, indSelected] = select_similar_values (values, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       [v, i] = select_similar_values([10, 100, 12, 8, 90, 11, 9, 10])
-%       [v, i] = select_similar_values([10, 100, 12, 8, 90, 11, 9, 10], 'NToSelect', 3)
-%       [v, i] = select_similar_values([10, 100, 12, 8, 90, 11, 9, 10], 'Direction', 'backward')
-%       [v, i] = select_similar_values([10, 100, 12, 8, 90, 11, 9, 10], 'NToSelect', 3, 'MaxRange2Mean', 20)
+%       values = [10, NaN, 100, 12, 8, 90, 11, 9, 10]
+%       [v, i] = select_similar_values(values)
+%       [v, i] = select_similar_values(values, 'SelectionMethod', 'notNaN')
+%       [v, i] = select_similar_values(values, 'NToSelect', 3)
+%       [v, i] = select_similar_values(values, 'Direction', 'backward')
+%       [v, i] = select_similar_values(values, 'NToSelect', 3, 'MaxRange2Mean', 20)
 % Outputs:
 %       valSelected - selected values
 %                   specified as a numeric vector
@@ -30,6 +32,13 @@ function [valSelected, indSelected] = select_similar_values (values, varargin)
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
 %                   default == find_window_endpoints([], values)
+%                   - 'SelectionMethod': the selection method
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'notNaN'        - select any non-NaN value
+%                       'maxRange2Mean' - select vales so that the maximum 
+%                                           range is within a percentage 
+%                                           of the mean
+%                   default == 'maxRange2Mean'
 %                   - 'Direction': the selection direction
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'forward'   - select from the first indices
@@ -54,15 +63,20 @@ function [valSelected, indSelected] = select_similar_values (values, varargin)
 
 % File History:
 % 2019-05-12 Created by Adam Lu
+% 2019-05-15 Add 'SelectionMethod' as an optional argument
+%               with possible values 'notNaN', 'maxRange2Mean'
 % 
 
 %% Hard-coded parameters
+validSelectionMethods = {'notNaN', 'maxRange2Mean'};
 validDirections = {'forward', 'backward'};
 
 %% Default values for optional arguments
 nToSelectDefault = 5;           % select 5 values by default
 indicesDefault = [];            % set in extract_subvectors.m
 endPointsDefault = [];          % set later
+selectionMethodDefault = 'maxRange2Mean';   
+                                % select using maxRange2Mean by default
 directionDefault = 'forward';   % select from the first indices by default
 maxRange2MeanDefault = 40;      % range is not more than 40% of mean by default
 
@@ -94,6 +108,8 @@ addParameter(iP, 'EndPoints', endPointsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['EndPoints must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
+addParameter(iP, 'SelectionMethod', selectionMethodDefault, ...
+    @(x) any(validatestring(x, validSelectionMethods)));
 addParameter(iP, 'Direction', directionDefault, ...
     @(x) any(validatestring(x, validDirections)));
 addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
@@ -104,6 +120,8 @@ parse(iP, values, varargin{:});
 nToSelect = iP.Results.NToSelect;
 indices = iP.Results.Indices;
 endPoints = iP.Results.EndPoints;
+selectionMethod = validatestring(iP.Results.SelectionMethod, ...
+                                    validSelectionMethods);
 direction = validatestring(iP.Results.Direction, validDirections);
 maxRange2Mean = iP.Results.MaxRange2Mean;
 
@@ -151,18 +169,19 @@ end
 isSelectedOfInterest = false(size(valuesOfInterest));
 isSelectedOfInterest(1:nToSelect) = true;
 
-% Store the next index to use
-idxNext = nToSelect + 1;
-
-% Compute the initial percentage range relative to mean
-range2mean = compute_range2mean(valuesOfInterest, isSelectedOfInterest);
-
-% Get the selected values
+% Get the selected values and the corresponding indices in valuesOfInterest
 valSelected = valuesOfInterest(isSelectedOfInterest);
 indSelectedOfInterest = find(isSelectedOfInterest);
 
+% Store the next index to use
+idxNext = nToSelect + 1;
+
+% Determine whether valid values were selected
+success = test_success(selectionMethod, valuesOfInterest, ...
+                        isSelectedOfInterest, maxRange2Mean);
+
 % Perform similarity test 
-while range2mean > maxRange2Mean && idxNext <= nValues
+while ~success && idxNext <= nValues
     %   TODO: Make a function find_most_extreme.m
     % Find an NaN if any
     iMostExtreme = find(isnan(valSelected), 1);
@@ -181,34 +200,55 @@ while range2mean > maxRange2Mean && idxNext <= nValues
     % Update the next index to use
     idxNext = idxNext + 1;
 
-    % Update the percentage range relative to mean
-    range2mean = compute_range2mean(valuesOfInterest, isSelectedOfInterest);
-
     % Update the selected values
     valSelected = valuesOfInterest(isSelectedOfInterest);
     indSelectedOfInterest = find(isSelectedOfInterest);
+
+    % Update whether valid values were selected
+    success = test_success(selectionMethod, valuesOfInterest, ...
+                            isSelectedOfInterest, maxRange2Mean);
 end
 
 % If not found, return NaNs
-if range2mean > maxRange2Mean
+if ~success
     valSelected = nan(nToSelect, 1);
     indSelected = nan(nToSelect, 1);
     return    
 end
-
-% Get the selected indices in valuesOfInterest
-indSelectedOfInterest = find(isSelectedOfInterest);
 
 % Reconstruct original indices
 switch direction
     case 'forward'
         indSelected = (idxFirst - 1) + indSelectedOfInterest;
     case 'backward'
-        indSelected = (idxFirst - 1) + flip(nValues + 1 - indSelectedOfInterest);
+        indSelected = (idxFirst - 1) + ...
+                        flip(nValues + 1 - indSelectedOfInterest);
 end
 
 % Output original values
 valSelected = values(indSelected);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function success = test_success (selectionMethod, valuesOfInterest, ...
+                                isSelectedOfInterest, maxRange2Mean)
+% Test whether the selected values satify the selection criteria
+
+switch selectionMethod
+    case 'maxRange2Mean'
+        % Compute the initial percentage range relative to the mean
+        range2mean = compute_range2mean(valuesOfInterest, isSelectedOfInterest);
+
+        if range2mean > maxRange2Mean
+            success = false;
+        else
+            success = true;
+        end
+    case 'notNaN'
+        success = ~any(isnan(valuesOfInterest(isSelectedOfInterest)));
+    otherwise
+        error('selectionMethod unrecognized!')
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

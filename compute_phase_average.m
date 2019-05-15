@@ -41,6 +41,8 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 
 % File History:
 % 2019-05-13 Created by Adam Lu
+% TODO: Add 'SelectionMethod' as an optional argument
+%           with possible values 'notNaN', 'maxRange2Mean'
 % 
 
 %% Hard-coded parameters

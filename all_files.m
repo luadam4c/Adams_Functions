@@ -66,6 +66,7 @@ function [files, fullPaths] = all_files (varargin)
 % 2018-11-26 Added 'Recursive' as an optional flag
 % 2018-12-26 Added 'ForceCellOutput' as an optional argument
 % 2019-03-15 Fixed the case when extension is not provided
+% TODO: use force_string_start.m to make sure extension starts with a dot
 % TODO: Fix bug when a dot is in the folder name
 
 %% Default values for optional arguments
