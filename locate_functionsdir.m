@@ -22,12 +22,14 @@ function functionsDirectory = locate_functionsdir
 
 % File History:
 % 2018-10-04 Created by Adam Lu
+% 2019-05-16 Added MatlabFishFish to functions directory candidates
 % 
 
 %% Hard-coded parameters
 functionsDirectoryCandidates = {pwd, '/home/Matlab/', ...
                                 '/scratch/al4ng/Matlab/', ...
-                                '/sfs/lustre/scratch/al4ng/Matlab/'};
+                                '/sfs/lustre/scratch/al4ng/Matlab/', ...
+                                fullfile('\\128.143.61.71', 'MatlabFishFish')};
 directoryType = 'functions directory';
 containedSubdir = 'Adams_Functions';
 

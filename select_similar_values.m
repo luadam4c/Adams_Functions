@@ -18,7 +18,11 @@ function [valSelected, indSelected] = select_similar_values (values, varargin)
 % Arguments:
 %       values      - values to select from
 %                   must be a numeric vector
-%       varargin    - 'NToSelect': number of values to select
+%       varargin    - 'ReturnLastTrial': whether to return last attempt
+%                                           instead of NaNs if criteria not met
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'NToSelect': number of values to select
 %                   must be a positive integer scalar
 %                   default == 5
 %                   - 'Indices': indices for the subvectors to extract 
@@ -72,6 +76,7 @@ validSelectionMethods = {'notNaN', 'maxRange2Mean'};
 validDirections = {'forward', 'backward'};
 
 %% Default values for optional arguments
+returnLastTrialDefault = false;
 nToSelectDefault = 5;           % select 5 values by default
 indicesDefault = [];            % set in extract_subvectors.m
 endPointsDefault = [];          % set later
@@ -98,6 +103,8 @@ addRequired(iP, 'values', ...
     @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'ReturnLastTrial', returnLastTrialDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'NToSelect', nToSelectDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
 addParameter(iP, 'Indices', indicesDefault, ...
@@ -117,6 +124,7 @@ addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
 
 % Read from the Input Parser
 parse(iP, values, varargin{:});
+returnLastTrial = iP.Results.ReturnLastTrial;
 nToSelect = iP.Results.NToSelect;
 indices = iP.Results.Indices;
 endPoints = iP.Results.EndPoints;
@@ -210,7 +218,7 @@ while ~success && idxNext <= nValues
 end
 
 % If not found, return NaNs
-if ~success
+if ~success && ~returnLastTrial
     valSelected = nan(nToSelect, 1);
     indSelected = nan(nToSelect, 1);
     return    

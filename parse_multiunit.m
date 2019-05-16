@@ -213,6 +213,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 % 2019-03-24 Renamed setNumber -> phaseNumber, setName -> phaseName
 % 2019-05-03 Moved code to detect_spikes_multiunit.m
 % 2019-05-06 Expanded plot flags
+% 2019-05-16 Added spike density computation and plot
 
 % Hard-coded constants
 MS_PER_S = 1000;

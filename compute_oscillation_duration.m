@@ -58,6 +58,7 @@ function oscDurationSec = compute_oscillation_duration (abfFile, varargin)
 
 % File History:
 % 2019-05-14 Created by Adam Lu
+% TODO: Deal with files with multiple sweeps
 % 
 
 %% Hard-coded parameters
