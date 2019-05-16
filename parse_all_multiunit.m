@@ -13,6 +13,9 @@ function parse_all_multiunit(varargin)
 %                   - 'PlotSpikeDetectionFlag': whether to plot spike detection
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'PlotSpikeDensityFlag': whether to plot spike density
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'PlotSpikeHistogramFlag': whether to plot spike histograms
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -43,7 +46,7 @@ function parse_all_multiunit(varargin)
 % 2019-03-14 Now combines all files from the same slice
 % 2019-04-29 Now saves combined data as a matfile
 % 2019-05-06 Added input parser and plot flags
-% TODO: Make outFolder, plotFlag optional parameters
+% TODO: Make outFolder optional parameters
 % TODO: Make combining optional
 
 %% Hard-coded parameters
@@ -56,6 +59,7 @@ varsNeeded = {'vVecsSl', 'siMsSl', 'iVecsSl', 'sliceBases', 'phaseBoundaries'};
 %% Default values for optional arguments
 plotAllFlagDefault = false;
 plotSpikeDetectionFlagDefault = false;
+plotSpikeDensityFlagDefault = false;
 plotSpikeHistogramFlagDefault = false;
 plotAutoCorrFlagDefault = false;
 plotRawFlagDefault = false;
@@ -75,6 +79,8 @@ addParameter(iP, 'PlotAllFlag', plotAllFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotSpikeDetectionFlag', plotSpikeDetectionFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotSpikeDensityFlag', plotSpikeDensityFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotSpikeHistogramFlag', plotSpikeHistogramFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotAutoCorrFlag', plotAutoCorrFlagDefault, ...
@@ -90,35 +96,12 @@ addParameter(iP, 'PlotMeasuresFlag', plotMeasuresFlagDefault, ...
 parse(iP, varargin{:});
 plotAllFlag = iP.Results.PlotAllFlag;
 plotSpikeDetectionFlag = iP.Results.PlotSpikeDetectionFlag;
+plotSpikeDensityFlag = iP.Results.PlotSpikeDensityFlag;
 plotSpikeHistogramFlag = iP.Results.PlotSpikeHistogramFlag;
 plotAutoCorrFlag = iP.Results.PlotAutoCorrFlag;
 plotRawFlag = iP.Results.PlotRawFlag;
 plotRasterFlag = iP.Results.PlotRasterFlag;
 plotMeasuresFlag = iP.Results.PlotMeasuresFlag;
-
-%% Preparation
-if plotAllFlag
-    % TODO: Simplify with argfun.m
-
-    if ~plotSpikeDetectionFlag
-        plotSpikeDetectionFlag = true;
-    end
-    if ~plotSpikeHistogramFlag
-        plotSpikeHistogramFlag = true;
-    end
-    if ~plotAutoCorrFlag
-        plotAutoCorrFlag = true;
-    end
-    if ~plotRawFlag
-        plotRawFlag = true;
-    end
-    if ~plotRasterFlag
-        plotRasterFlag = true;
-    end
-    if ~plotMeasuresFlag
-        plotMeasuresFlag = true;
-    end
-end
 
 %% Generate and save data vectors for each slice
 inFolderName = extract_fileparts(inFolder, 'dirbase');
@@ -160,7 +143,9 @@ for iSlice = 1:nSlices
     [muParams{iSlice}, muData{iSlice}] = ...
         parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), ...
                         'PulseVectors', iVecsSl{iSlice}, ...
+                        'PlotAllFlag', plotAllFlag, ...
                         'PlotSpikeDetectionFlag', plotSpikeDetectionFlag, ...
+                        'PlotSpikeDensityFlag', plotSpikeDensityFlag, ...
                         'PlotSpikeHistogramFlag', plotSpikeHistogramFlag, ...
                         'PlotAutoCorrFlag', plotAutoCorrFlag, ...
                         'PlotRawFlag', plotRawFlag, ...

@@ -14,6 +14,8 @@ function indices = create_indices (varargin)
 %       create_indices('IndexEnd', 5)
 %       create_indices('IndexEnd', [2, 3])
 %       create_indices([1, 50], 'MaxNum', 5)
+%       create_indices([1, 50], 'MaxNum', 5, 'AlignMethod', 'left')
+%       create_indices([1, 50], 'MaxNum', 5, 'AlignMethod', 'center')
 %       create_indices([5; 1], 'MaxNum', 2)
 %       create_indices([0, 0])
 % Outputs:
@@ -52,6 +54,12 @@ function indices = create_indices (varargin)
 %                                       of character arrays as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'AlignMethod': method for aligning
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'left'   - always include indexStart
+%                       'right'  - always include indexEnd
+%                       'center' - center the indices as much as possible
+%                   default == 'right'
 %
 % Requires:
 %       cd/argfun.m
@@ -94,9 +102,11 @@ function indices = create_indices (varargin)
 % 2019-04-24 Now allows indices to decrement
 % 2019-04-26 Fixed bug when start and end indices are the same
 % 2019-04-26 Now makes create_indices([NaN; NaN]) == []
+% 2019-05-16 Added 'AlignMethod' as an optional argument
 % TODO: Use argument 'ForcePositive' as false where necessary
 
 %% Hard-coded parameters
+validAlignMethods = {'left', 'right', 'center'};
 
 %% Default values for optional arguments
 endPointsDefault = [];          % no endpoint by default
@@ -110,6 +120,7 @@ maxNumDefault = Inf;            % no limit by default
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
 treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
                                     %   as an array by default
+alignMethodDefault  = 'right';  % always include indexEnd by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -148,6 +159,8 @@ addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AlignMethod', alignMethodDefault, ...
+    @(x) any(validatestring(x, validAlignMethods)));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -161,6 +174,7 @@ indexEndUser = iP.Results.IndexEnd;
 maxNum = iP.Results.MaxNum;
 treatCellAsArray = iP.Results.TreatCellAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
+alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 
 % TODO: warn if EndPoints provided and IndexStart and IndexEnd also provided
 
@@ -244,10 +258,12 @@ end
 
 % Create the indices
 if iscell(idxStart) && iscell(idxEnd)
-    indices = cellfun(@(x, y) create_indices_helper(x, y, maxNum, forcePositive), ...
+    indices = cellfun(@(x, y) create_indices_helper(x, y, maxNum, ...
+                                                    forcePositive, alignMethod), ...
                         idxStart, idxEnd, 'UniformOutput', false);
 elseif isnumeric(idxStart) && isnumeric(idxEnd)
-    indices = create_indices_helper(idxStart, idxEnd, maxNum, forcePositive);
+    indices = create_indices_helper(idxStart, idxEnd, maxNum, ...
+                                    forcePositive, alignMethod);
 else
     error('idxStart and idxEnd don''t match!!');
 end
@@ -263,7 +279,8 @@ indices = force_column_vector(indices, 'RowInstead', rowInstead, ...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function indices = create_indices_helper (idxStart, idxEnd, maxNum, forcePositive)
+function indices = create_indices_helper (idxStart, idxEnd, maxNum, ...
+                                            forcePositive, alignMethod)
 
 % Match idxStart and idxEnd
 [idxStart, idxEnd] = match_format_vectors(idxStart, idxEnd);
@@ -271,10 +288,12 @@ function indices = create_indices_helper (idxStart, idxEnd, maxNum, forcePositiv
 % Construct vectors of indices
 if numel(idxStart) == 1 && numel(idxEnd) == 1
     % There is just one vector
-    indices = create_one_indices(idxStart, idxEnd, maxNum, forcePositive);
+    indices = create_one_indices(idxStart, idxEnd, maxNum, ...
+                                    forcePositive, alignMethod);
 else
     % There are multiple vectors
-    indices = arrayfun(@(x, y) create_one_indices(x, y, maxNum, forcePositive), ...
+    indices = arrayfun(@(x, y) create_one_indices(x, y, maxNum, ...
+                                                forcePositive, alignMethod), ...
                         idxStart, idxEnd, 'UniformOutput', false);
 
     % Count the number of samples in each indices vector
@@ -293,7 +312,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function indices = create_one_indices (idxStart, idxEnd, maxNum, forcePositive)
+function indices = create_one_indices (idxStart, idxEnd, maxNum, ...
+                                        forcePositive, alignMethod)
 %% Creates one set of indices
 
 % Force the starting index to be positive if requested
@@ -318,8 +338,20 @@ if ~isinf(maxNum)
         % Update new number of indices
         nIndicesNew = ceil(nIndices / abs(idxIncr));
 
-        % Update index start
-        idxStart = idxEnd - idxIncr * (nIndicesNew - 1);
+        switch alignMethod
+            case 'left'
+                % Update index end
+                idxEnd = idxStart + idxIncr * (nIndicesNew - 1);
+            case 'right'
+                % Update index start
+                idxStart = idxEnd - idxIncr * (nIndicesNew - 1);
+            case 'center'
+                % Update index start and end
+                idxStart = idxStart + floor(idxIncr / 2);
+                idxEnd = idxStart + idxIncr * (nIndicesNew - 1);
+            otherwise
+                error('alignMethod unrecognized!');
+        end
     else
         idxIncr = sgnIncr * 1;
     end

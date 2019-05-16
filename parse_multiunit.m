@@ -121,6 +121,9 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %                   - 'PlotSpikeDetectionFlag': whether to plot spike detection
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'PlotSpikeDensityFlag': whether to plot spike density
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'PlotSpikeHistogramFlag': whether to plot spike histograms
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -222,6 +225,7 @@ rasterDir = 'rasters';
 autoCorrDir = 'autocorrelograms';
 acfDir = 'autocorrelation_functions';
 spikeHistDir = 'spike_histograms';
+spikeDensityDir = 'spike_density';
 spikeDetectionDir = 'spike_detections';
 measuresDir = 'measures';
 measuresToPlot = {'oscIndex1', 'oscIndex2', 'oscIndex3', 'oscIndex4', ...
@@ -235,6 +239,7 @@ measuresToPlot = {'oscIndex1', 'oscIndex2', 'oscIndex3', 'oscIndex4', ...
 %% Default values for optional arguments
 plotAllFlagDefault = false;
 plotSpikeDetectionFlagDefault = false;
+plotSpikeDensityFlagDefault = false;
 plotSpikeHistogramFlagDefault = false;
 plotAutoCorrFlagDefault = false;
 plotRawFlagDefault = false;
@@ -275,6 +280,8 @@ addParameter(iP, 'PlotAllFlag', plotAllFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotSpikeDetectionFlag', plotSpikeDetectionFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotSpikeDensityFlag', plotSpikeDensityFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotSpikeHistogramFlag', plotSpikeHistogramFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotAutoCorrFlag', plotAutoCorrFlagDefault, ...
@@ -306,6 +313,7 @@ addParameter(iP, 'tVecs', tVecsDefault, ...
 parse(iP, vVecs, siMs, varargin{:});
 plotAllFlag = iP.Results.PlotAllFlag;
 plotSpikeDetectionFlag = iP.Results.PlotSpikeDetectionFlag;
+plotSpikeDensityFlag = iP.Results.PlotSpikeDensityFlag;
 plotSpikeHistogramFlag = iP.Results.PlotSpikeHistogramFlag;
 plotAutoCorrFlag = iP.Results.PlotAutoCorrFlag;
 plotRawFlag = iP.Results.PlotRawFlag;
@@ -325,6 +333,9 @@ if plotAllFlag
 
     if ~plotSpikeDetectionFlag
         plotSpikeDetectionFlag = true;
+    end
+    if ~plotSpikeDensityFlag
+        plotSpikeDensityFlag = true;
     end
     if ~plotSpikeHistogramFlag
         plotSpikeHistogramFlag = true;
@@ -356,7 +367,7 @@ nSamples = count_samples(vVecs);
 nMeasures = numel(measuresToPlot);
 
 % Initialize figures array
-figs = gobjects(nMeasures + 2, 1);
+figs = gobjects(nMeasures + 3, 1);
 
 % Create a figure title base
 titleBase = replace(fileBase, '_', '\_');
@@ -720,7 +731,7 @@ if plotRasterFlag
 
     % Create figure and plot
     figs(2) = figure('Visible', 'off');
-    clf
+    clf; hold on
     [hLines, eventTimes, yEnds, yTicksTable] = ...
         plot_raster(spikeTimesSec, 'DurationWindow', burstWindows, ...
                     'LineWidth', 0.5, 'Colors', colorsRaster);
@@ -746,9 +757,84 @@ if plotRasterFlag
         zoomWin3 = meanFirstSpike + [0, 0.06];
     else
         zoomWin3 = [0, 0.06];
-    end            
+    end
     save_all_zooms(figs(2), outFolderRaster, ...
                     figBaseRaster, zoomWin1, zoomWin2, zoomWin3);
+end
+
+%% Plot spike density
+if plotSpikeDensityFlag
+    fprintf('Plotting spike density plot for %s ...\n', fileBase);
+
+    % Modify the figure base
+    figBaseSpikeDensity = [fileBase, '_spike_density'];
+
+    % Create output directory
+    outFolderSpikeDensity = fullfile(outFolder, spikeDensityDir);
+    check_dir(outFolderSpikeDensity);
+
+    % Retrieve data for plotting
+    spikeDensityHz = parsedData.spikeDensityHz;
+
+    minTimeSec = parsedParams.minTimeSec;
+    maxTimeSec = parsedParams.maxTimeSec;
+    stimStartSec = parsedParams.stimStartSec;
+    detectStartSec = parsedParams.detectStartSec;
+    firstSpikeSec = parsedParams.firstSpikeSec;
+    timeOscEndSec = parsedParams.timeOscEndSec;
+
+    % Create figure and plot
+    figs(3) = figure('Visible', 'off');
+    clf; hold on
+
+    % Plot as a heatmap
+    % TODO: plot_heat_map(spikeDensityHz);
+
+    % Count traces
+    nSweeps = numel(spikeDensityHz);
+
+    % Set x and y limits
+    xLimits = [min(minTimeSec); max(maxTimeSec)];
+    yLimits = [0; nSweeps];
+
+    % Set y ticks and labels
+    yTicks = create_indices('IndexEnd', nSweeps, 'MaxNum', 10);
+    yTickLabels = create_labels_from_numbers(nSweeps - yTicks + 1);
+
+    % Force as a matrix and transpose it so that
+    %   each trace is a row
+    spikeDensityMatrix = transpose(force_matrix(spikeDensityHz));
+
+    colormap(flipud(gray));
+    imagesc(xLimits, flipud(yLimits), spikeDensityMatrix);
+    yticks(yTicks);
+    yticklabels(yTickLabels);
+    vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
+                                    'LineStyle', '--', 'LineWidth', 0.5, ...
+                                    'YLimits', yLimits);
+    if ~isempty(phaseBoundaries)
+        yBoundaries = nSweeps - phaseBoundaries + 1;
+        horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
+                                    'LineStyle', '--', 'LineWidth', 1, ...
+                                    'XLimits', xLimits);
+    end
+    xlim(xLimits);
+    ylim(yLimits);
+    xlabel('Time (s)');
+    ylabel('Trace #');
+    title(['Spike density (Hz) for ', titleBase]);
+
+    % Save the figure zoomed to several x limits
+    zoomWin1 = mean(stimStartSec) + [0, 10];
+    zoomWin2 = mean(detectStartSec) + [0, 2];
+    meanFirstSpike = nanmean(firstSpikeSec);
+    if ~isnan(meanFirstSpike)
+        zoomWin3 = meanFirstSpike + [0, 0.06];
+    else
+        zoomWin3 = [0, 0.06];
+    end
+    save_all_zooms(figs(3), outFolderSpikeDensity, ...
+                    figBaseSpikeDensity, zoomWin1, zoomWin2, zoomWin3);
 end
 
 %% Plot time series of measures
@@ -768,7 +854,7 @@ if plotMeasuresFlag
     figTitlesMeasures = [measuresToPlot, ' for ', titleBase];
 
     % Plot table
-    figs(3:(nMeasures + 2)) = ...
+    figs(4:(nMeasures + 3)) = ...
         plot_table(parsedParams, 'PlotType', plotTypeMeasures, ...
                     'VariableNames', measuresToPlot, ...
                     'PLabel', 'Time (min)', 'FigNames', figPathsMeasures, ...
@@ -844,6 +930,10 @@ else
     phaseName = '';
 end
 
+% Compute the maximum and minimum times
+maxTimeMs = tVec(end);
+minTimeMs = tVec(1);
+
 %% Detect spikes
 % Detect spikes (bandpass filter before detection)
 [spikesParams, spikesData] = ...
@@ -874,13 +964,11 @@ idxSpikes = spikesData.idxSpikes;
 spikeTimesMs = spikesData.spikeTimesMs;
 
 %% Compute spike density
-%{
-[spikeDensityHz] = ...
+spikeDensityHz = ...
     compute_spike_density(spikeTimesMs, 'TimeWindow', [0, tVec(end)], ...
                             'BinWidth', binWidthMs, ...
                             'Resolution', resolutionMs, ...
                             'TimeUnits', 'ms');
-%}
 
 %% Compute the spike histogram, spikes per burst & oscillation duration
 [spHistParams, spHistData] = ...
@@ -1133,11 +1221,13 @@ figPathBase = [fileBase, '_trace', num2str(iVec)];
 figTitleBase = [figTitleBase, '\_trace', num2str(iVec)];
 
 % Convert to seconds
-[stimStartSec, detectStartSec, firstSpikeSec, ...
+[maxTimeSec, minTimeSec, ...
+    stimStartSec, detectStartSec, firstSpikeSec, ...
     histLeftSec, timeOscEndSec, oscDurationSec, ...
     maxInterBurstIntervalSec, spikeTimesSec, edgesSec, ...
     timeBurstStartsSec, timeBurstEndsSec] = ...
     argfun(@(x) x ./ MS_PER_S, ...
+            maxTimeMs, minTimeMs, ...
             stimStartMs, detectStartMs, firstSpikeMs, ...
             histLeftMs, timeOscEndMs, oscDurationMs, ...
             maxInterBurstIntervalMs, spikeTimesMs, edgesMs, ...
@@ -1158,7 +1248,12 @@ parsedParams.minSpikeRateInBurstHz = minSpikeRateInBurstHz;
 parsedParams.minBurstLengthMs = minBurstLengthMs;
 parsedParams.maxInterBurstIntervalMs = maxInterBurstIntervalMs;
 parsedParams.maxInterBurstIntervalSec = maxInterBurstIntervalSec;
+parsedParams.resolutionMs = resolutionMs;
 parsedParams.siMs = siMs;
+parsedParams.minTimeMs = minTimeMs;
+parsedParams.maxTimeMs = maxTimeMs;
+parsedParams.minTimeSec = minTimeSec;
+parsedParams.maxTimeSec = maxTimeSec;
 parsedParams.idxStimStart = idxStimStart;
 parsedParams.stimStartMs = stimStartMs;
 parsedParams.stimStartSec = stimStartSec;
@@ -1215,6 +1310,7 @@ parsedData.slopes = slopes;
 parsedData.idxSpikes = idxSpikes;
 parsedData.spikeTimesMs = spikeTimesMs;
 parsedData.spikeTimesSec = spikeTimesSec;
+parsedData.spikeDensityHz = spikeDensityHz;
 parsedData.spikeCounts = spikeCounts;
 parsedData.edgesMs = edgesMs;
 parsedData.edgesSec = edgesSec;
@@ -1322,7 +1418,7 @@ else
 end
 clf; 
 
-% Plot the slope trace
+% Plot the slope trace with peaks
 ax(1) = subplot(3, 1, 1);
 cla; hold on
 lines(1) = plot(tVec(1:(end-1)), slopes, 'k');
@@ -1337,7 +1433,7 @@ ylim(yLimits1);
 ylabel('Slope (mV/s)');
 title('Detection of peaks in the slope vector');
 
-% Plot the original trace
+% Plot the original trace with maximum slope locations
 ax(2) = subplot(3, 1, 2);
 cla; hold on
 lines(2) = plot(tVec, vVec, 'k');
@@ -1351,7 +1447,7 @@ ylim(yLimits2);
 ylabel('Voltage (mV)');
 title('Corresponding positions in the voltage vector');
 
-% Plot the original trace
+% Plot the original trace with spike raster
 ax(3) = subplot(3, 1, 3);
 cla; hold on
 lines(4) = plot(tVec, vVec, 'k');
