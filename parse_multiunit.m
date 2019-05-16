@@ -776,6 +776,7 @@ if plotSpikeDensityFlag
     % Retrieve data for plotting
     spikeDensityHz = parsedData.spikeDensityHz;
 
+    siSeconds = parsedParams.siSeconds;
     minTimeSec = parsedParams.minTimeSec;
     maxTimeSec = parsedParams.maxTimeSec;
     stimStartSec = parsedParams.stimStartSec;
@@ -790,15 +791,26 @@ if plotSpikeDensityFlag
     % Plot as a heatmap
     % TODO: plot_heat_map(spikeDensityHz);
 
+    % Maximum number of y ticks
+    maxNYTicks = 20;
+
     % Count traces
     nSweeps = numel(spikeDensityHz);
 
+    % Get the average sampling interval in seconds
+    siSeconds = mean(siSeconds);
+
+    % Set x and y end points
+    xEnds = [min(minTimeSec); max(maxTimeSec)];
+    yEnds = [1; nSweeps];
+
     % Set x and y limits
-    xLimits = [min(minTimeSec); max(maxTimeSec)];
-    yLimits = [0; nSweeps];
+    xLimits = [xEnds(1) - 0.5 * siSeconds; xEnds(2) + 0.5 * siSeconds];
+    yLimits = [yEnds(1) - 0.5; yEnds(2) + 0.5];
 
     % Set y ticks and labels
-    yTicks = create_indices('IndexEnd', nSweeps, 'MaxNum', 10);
+    yTicks = create_indices('IndexEnd', nSweeps, 'MaxNum', maxNYTicks, ...
+                            'AlignMethod', 'left');
     yTickLabels = create_labels_from_numbers(nSweeps - yTicks + 1);
 
     % Force as a matrix and transpose it so that
@@ -806,7 +818,7 @@ if plotSpikeDensityFlag
     spikeDensityMatrix = transpose(force_matrix(spikeDensityHz));
 
     colormap(flipud(gray));
-    imagesc(xLimits, flipud(yLimits), spikeDensityMatrix);
+    imagesc(xEnds, flipud(yEnds), spikeDensityMatrix);
     yticks(yTicks);
     yticklabels(yTickLabels);
     vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
@@ -1221,13 +1233,13 @@ figPathBase = [fileBase, '_trace', num2str(iVec)];
 figTitleBase = [figTitleBase, '\_trace', num2str(iVec)];
 
 % Convert to seconds
-[maxTimeSec, minTimeSec, ...
+[siSeconds, maxTimeSec, minTimeSec, ...
     stimStartSec, detectStartSec, firstSpikeSec, ...
     histLeftSec, timeOscEndSec, oscDurationSec, ...
     maxInterBurstIntervalSec, spikeTimesSec, edgesSec, ...
     timeBurstStartsSec, timeBurstEndsSec] = ...
     argfun(@(x) x ./ MS_PER_S, ...
-            maxTimeMs, minTimeMs, ...
+            siMs, maxTimeMs, minTimeMs, ...
             stimStartMs, detectStartMs, firstSpikeMs, ...
             histLeftMs, timeOscEndMs, oscDurationMs, ...
             maxInterBurstIntervalMs, spikeTimesMs, edgesMs, ...
@@ -1252,6 +1264,7 @@ parsedParams.resolutionMs = resolutionMs;
 parsedParams.siMs = siMs;
 parsedParams.minTimeMs = minTimeMs;
 parsedParams.maxTimeMs = maxTimeMs;
+parsedParams.siSeconds = siSeconds;
 parsedParams.minTimeSec = minTimeSec;
 parsedParams.maxTimeSec = maxTimeSec;
 parsedParams.idxStimStart = idxStimStart;
