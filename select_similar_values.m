@@ -69,6 +69,7 @@ function [valSelected, indSelected] = select_similar_values (values, varargin)
 % 2019-05-12 Created by Adam Lu
 % 2019-05-15 Add 'SelectionMethod' as an optional argument
 %               with possible values 'notNaN', 'maxRange2Mean'
+% 2019-05-16 Add 'ReturnLastTrial' as an optional argument
 % 
 
 %% Hard-coded parameters
@@ -76,7 +77,7 @@ validSelectionMethods = {'notNaN', 'maxRange2Mean'};
 validDirections = {'forward', 'backward'};
 
 %% Default values for optional arguments
-returnLastTrialDefault = false;
+returnLastTrialDefault = false; % return NaN if criteria not met by default
 nToSelectDefault = 5;           % select 5 values by default
 indicesDefault = [];            % set in extract_subvectors.m
 endPointsDefault = [];          % set later

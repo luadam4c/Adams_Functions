@@ -11,7 +11,11 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 % Arguments:
 %       values      - values for a phase
 %                   must be a numeric vector
-%       varargin    - 'NToAverage': number of values to average
+%       varargin    - 'ReturnLastTrial': whether to return last attempt
+%                                           instead of NaNs if criteria not met
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'NToAverage': number of values to average
 %                   must be a positive integer scalar
 %                   default == 5
 %                   - 'Indices': indices for the subvectors to extract 
@@ -49,13 +53,15 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 % File History:
 % 2019-05-13 Created by Adam Lu
 % 2019-05-15 Add 'SelectionMethod' as an optional argument
+% 2019-05-16 Add 'ReturnLastTrial' as an optional argument
 % 
 
 %% Hard-coded parameters
 validSelectionMethods = {'notNaN', 'maxRange2Mean'};
 
 %% Default values for optional arguments
-nToAverageDefault = 5;           % select 5 values by default
+returnLastTrialDefault = false; % return NaN if criteria not met by default
+nToAverageDefault = 5;          % select 5 values by default
 indicesDefault = [];            % set in extract_subvectors.m
 endPointsDefault = [];          % set in select_similar_values.m
 selectionMethodDefault = 'maxRange2Mean';   
@@ -80,6 +86,8 @@ addRequired(iP, 'values', ...
     @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'ReturnLastTrial', returnLastTrialDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'NToAverage', nToAverageDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
 addParameter(iP, 'Indices', indicesDefault, ...
@@ -97,6 +105,7 @@ addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
 
 % Read from the Input Parser
 parse(iP, values, varargin{:});
+returnLastTrial = iP.Results.ReturnLastTrial;
 nToAverage = iP.Results.NToAverage;
 indices = iP.Results.Indices;
 endPoints = iP.Results.EndPoints;
@@ -110,13 +119,12 @@ otherArguments = struct2arglist(iP.Unmatched);
 %% Do the job
 % Select values similar to the last phase value
 [valSelected, indSelected] = ...
-    select_similar_values(values, 'EndPoints', endPoints, ...
-                            'Indices', indices, ...
-                            'NToSelect', nToAverage, ...
-                            'Direction', 'backward', ...
-                            'SelectionMethod', selectionMethod, ...
-                            'MaxRange2Mean', maxRange2Mean, ...
-                            otherArguments{:});
+    select_similar_values(values, 'ReturnLastTrial', returnLastTrial, ...
+                        'EndPoints', endPoints, 'Indices', indices, ...
+                        'NToSelect', nToAverage, 'Direction', 'backward', ...
+                        'SelectionMethod', selectionMethod, ...
+                        'MaxRange2Mean', maxRange2Mean, ...
+                        otherArguments{:});
 
 % Copmute the phase average
 phaseAverage = mean(valSelected);

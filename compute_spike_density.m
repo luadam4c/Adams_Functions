@@ -35,6 +35,7 @@ function spikeDensityHz = compute_spike_density (spikeTimes, varargin)
 
 % File History:
 % 2019-05-15 Created by Adam Lu
+% 2019-05-16 Now allows spikeTimes to be empty
 % 
 
 %% Hard-coded parameters
@@ -66,7 +67,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'spikeTimes', ...
-    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'TimeWindow', timeWindowDefault, ...

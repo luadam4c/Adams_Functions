@@ -127,6 +127,9 @@ function valueTable = compute_and_plot_values_online (valueFunc, varargin)
 %% Hard-coded parameters
 validSelectionMethods = {'notNaN', 'maxRange2Mean'};
 
+%% TODO: Make optional parameters
+acquisFileExt = 'rsv';
+
 %% Default values for optional arguments
 valueStrDefault = 'valueUnits'; % default string for computed values
 inFolderDefault = '';           % set later
@@ -136,9 +139,9 @@ minFileSizeBytesDefault = 10000;% analyze files > 10000 bytes by default
 avgFuncDefault = [];            % set later
 nLastDefault = 10;              % 10 values in last of phase by default
 nToAverageDefault = 5;          % average over 5 values by default
-selectionMethodDefault = 'notNaN';   
+selectionMethodDefault = 'maxRange2Mean';
                                 % select values to average using 
-                                %   notNaN by default
+                                %   maxRange2Mean by default
 maxRange2MeanDefault = 40;      % range is not more than 40% of mean by default
 valueColorDefault = 'b';        % plot blue markers by default
 markerDefault = 'o';            % plot circles by default
@@ -260,7 +263,8 @@ otherArguments = struct2arglist(iP.Unmatched);
 %% Preparation
 % Set default averaging function
 if isempty(avgFunc)
-    avgFunc = @(x) compute_phase_average(x, 'NToAverage', nToAverage, ...
+    avgFunc = @(x) compute_phase_average(x, 'ReturnLastTrial', true, ...
+                                    'NToAverage', nToAverage, ...
                                     'SelectionMethod', selectionMethod, ...
                                     'MaxRange2Mean', maxRange2Mean);
 end
@@ -353,45 +357,51 @@ pointsUsed = gobjects(1, 1);
 
 %% Analyze as long as the figure is open
 while ishandle(fig)
-    % Get all .abf files from this directory
+    % Get all input files from this directory
     [abfFiles, abfPaths] = ...
-        all_files('Directory', inFolder, 'Extension', inFileExt);
+        all_files('Directory', inFolder, 'Extension', inFileExt, ...
+                    'ForceCellOutput', true);
 
-    % Determine which files have not been analyzed
+    % Get all acquisition files from this directory
+    [~, acquisPaths] = ...
+        all_files('Directory', inFolder, 'Extension', acquisFileExt, ...
+                    'ForceCellOutput', true);
+
+    % Create the full path to the corresponding input file
+    inPathsUnderAcquis = replace(acquisPaths, acquisFileExt, inFileExt);
+
+    % Determine which files have not been analyzed and not under acquisition
     [abfPathsNotAnalyzed, iPathsNotAnalyzed] = ...
-        setdiff(abfPaths, abfPathsAnalyzed);
+        setdiff(abfPaths, union(abfPathsAnalyzed, inPathsUnderAcquis));
 
-    % Count the number of files not analyzed
-    nFilesNotAnalyzed = numel(abfPathsNotAnalyzed);
+    % Count the number of files to analyze
+    nFilesToAnalyze = numel(abfPathsNotAnalyzed);
 
     % If there are no files not analyzed, pause and continue
-    if nFilesNotAnalyzed == 0
-        pause(pauseTime); continue
-    end
-
-    % If there is only one file not analyzed, 
-    %   assume that it is under acquisition
-    if nFilesNotAnalyzed == 1
-        % Update the path under acquisition
-        pathUnderAcquis = abfPathsNotAnalyzed{1};
+    if nFilesToAnalyze == 0
+        % Update the path previously under acquisition
+        pathUnderAcquis = inPathsUnderAcquis{1};
 
         % Pause and continue
         pause(pauseTime); continue
     end
 
-    % Otherwise, there should be at least two files not analyzed
+    % Otherwise, there should be at least one file not analyzed
     %   Retrieve the corresponding file structures
     abfFilesNotAnalyzed = abfFiles(iPathsNotAnalyzed);
 
-    % Determine whether there is the file previously under acquisition
+    % Determine whether there is a file previously under acquisition
     idxToAnalyze = find_in_strings(pathUnderAcquis, abfPathsNotAnalyzed, ...
-                                    'ReturnNan', false);
+                                    'ReturnNan', false, 'MaxNum', 1);
 
-    % If the file is not found, assume that it has been deleted
-    %   and choose a new file to be under acquisition
+    % If the file is not found
     if isempty(idxToAnalyze)
-        % Update the path under acquisition
-        pathUnderAcquis = abfPathsNotAnalyzed{1};
+        % If there are no paths under acquisition, 
+        %   assume that it has been deleted
+        %   and choose a new file to be under acquisition
+        if isempty(inPathsUnderAcquis)
+            pathUnderAcquis = abfPathsNotAnalyzed{1};
+        end
 
         % Pause and continue
         pause(pauseTime); continue
@@ -404,9 +414,6 @@ while ishandle(fig)
 
     % Update the files not analyzed
     abfPathsNotAnalyzed = setdiff(abfPathsNotAnalyzed, {pathUnderAcquis});
-
-    % Choose a new file to be under acquisition
-    pathUnderAcquis = abfPathsNotAnalyzed{1};
 
     % Extract the file size
     abfFileSize = abfFileToAnalyze.bytes;
@@ -538,6 +545,23 @@ end
 
 %{
 OLD CODE:
+
+% If there is only one file not analyzed, 
+%   check if it is under acquisition 
+%   (if so, a corresponding .rsv file would exist)
+if nFilesToAnalyze == 1
+    % Get the full path to the file not analyzed
+    pathNotAnalyzed = abfPathToAnalyze{1};
+
+    % Update the path under acquisition
+    pathUnderAcquis = pathNotAnalyzed;
+
+    % Pause and continue
+    pause(pauseTime); continue
+end
+
+% Choose a new file to be under acquisition
+pathUnderAcquis = abfPathsNotAnalyzed{1};
 
 %}
 

@@ -16,6 +16,11 @@ function oscDurationSec = compute_oscillation_duration (abfFile, varargin)
 %       varargin    - 'Verbose': whether to output parsed results
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'BaseWindow': baseline window for each trace
+%                   must be empty or a numeric vector with 2 elements,
+%                       or a numeric array with 2 rows
+%                       or a cell array of numeric vectors with 2 elements
+%                   default == first half of the trace
 %                   - 'FiltFreq': cutoff frequency(ies) (Hz or normalized) 
 %                                   for a bandpass filter
 %                   must be a numeric a two-element vector
@@ -26,23 +31,18 @@ function oscDurationSec = compute_oscillation_duration (abfFile, varargin)
 %                   - 'Signal2Noise': signal-to-noise ratio
 %                   must be a positive scalar
 %                   default == 3
-%                   - 'BaseWindow': baseline window for each trace
-%                   must be empty or a numeric vector with 2 elements,
-%                       or a numeric array with 2 rows
-%                       or a cell array of numeric vectors with 2 elements
-%                   default == first half of the trace
 %                   - 'BinWidthMs': bin width (ms)
 %                   must be a positive scalar
 %                   default == 10 ms
 %                   - 'MinBurstLengthMs': minimum burst length (ms)
 %                   must be a positive scalar
-%                   default == 0 ms
+%                   default == 20 ms
 %                   - 'MaxInterBurstIntervalMs': maximum inter-burst interval (ms)
 %                   must be a positive scalar
-%                   default == 0 ms
+%                   default == 1500 ms
 %                   - 'MinSpikeRateInBurstHz': minimum spike rate in a burst (Hz)
 %                   must be a positive scalar
-%                   default == 0 ms
+%                   default == 100 Hz
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -65,15 +65,16 @@ function oscDurationSec = compute_oscillation_duration (abfFile, varargin)
 MS_PER_S = 1000;
 
 %% Default values for optional arguments
+% Must be consistent with parse_multiunit.m
 verboseDefault = false;             % don't print parsed results by default
-filtFreqDefault = [100, 1000];
 baseWindowDefault = [];             % set later
+filtFreqDefault = [100, 1000];
 minDelayMsDefault = 25;
 signal2NoiseDefault = 3;        
 binWidthMsDefault = 10;             % use a bin width of 10 ms by default
 minBurstLengthMsDefault = 20;       % bursts must be at least 20 ms by default
-maxInterBurstIntervalMsDefault = 1000;  % bursts are no more than 
-                                        %   1 second apart by default
+maxInterBurstIntervalMsDefault = 2000;  % bursts are no more than 
+                                        %   2 seconds apart by default
 minSpikeRateInBurstHzDefault = 100;     % bursts must have a spike rate of 
                                         %   at least 100 Hz by default
 
@@ -97,14 +98,14 @@ addRequired(iP, 'abfFile', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'FiltFreq', filtFreqDefault, ...
-    @(x) assert(isnan(x) || isnumeric(x), ...
-                ['FiltFreq must be either NaN ', ...
-                    'or a numeric array of 2 elements!']));
 addParameter(iP, 'BaseWindow', baseWindowDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['BaseWindow must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
+addParameter(iP, 'FiltFreq', filtFreqDefault, ...
+    @(x) assert(isnan(x) || isnumeric(x), ...
+                ['FiltFreq must be either NaN ', ...
+                    'or a numeric array of 2 elements!']));
 addParameter(iP, 'MinDelayMs', minDelayMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative', 'integer'}));
 addParameter(iP, 'Signal2Noise', signal2NoiseDefault, ...
@@ -121,8 +122,8 @@ addParameter(iP, 'MinSpikeRateInBurstHz', minSpikeRateInBurstHzDefault, ...
 % Read from the Input Parser
 parse(iP, abfFile, varargin{:});
 verbose = iP.Results.Verbose;
-filtFreq = iP.Results.FiltFreq;
 baseWindow = iP.Results.BaseWindow;
+filtFreq = iP.Results.FiltFreq;
 minDelayMs = iP.Results.MinDelayMs;
 signal2Noise = iP.Results.Signal2Noise;
 binWidthMs = iP.Results.BinWidthMs;

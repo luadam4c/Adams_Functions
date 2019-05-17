@@ -214,6 +214,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 % 2019-05-03 Moved code to detect_spikes_multiunit.m
 % 2019-05-06 Expanded plot flags
 % 2019-05-16 Added spike density computation and plot
+% 2019-05-16 Changed maxInterBurstIntervalMs to 1500
 
 % Hard-coded constants
 MS_PER_S = 1000;
@@ -896,21 +897,19 @@ function [parsedParams, parsedData] = ...
 MS_PER_S = 1000;
 
 %% Hard-coded parameters
+% Must be consistent with compute_oscillation_duration.m
 filtFreq = [100, 1000];
 minDelayMs = 25;
 signal2Noise = 3; %4
 binWidthMs = 10;
 resolutionMs = 5;
 minBurstLengthMs = 20;
-maxInterBurstIntervalMs = 1000; %2000;
+maxInterBurstIntervalMs = 2000;
 minSpikeRateInBurstHz = 100;
 filterWidthMs = 100;
 minRelProm = 0.02;
 
 %% Preparation
-% Compute the minimum delay in samples
-minDelaySamples = ceil(minDelayMs ./ siMs);
-
 % Compute the bin width in seconds
 binWidthSec = binWidthMs ./ MS_PER_S;
 
@@ -1252,7 +1251,6 @@ parsedParams.phaseName = phaseName;
 parsedParams.filtFreq = filtFreq;
 parsedParams.signal2Noise = signal2Noise;
 parsedParams.minDelayMs = minDelayMs;
-parsedParams.minDelaySamples = minDelaySamples;
 parsedParams.binWidthMs = binWidthMs;
 parsedParams.binWidthSec = binWidthSec;
 parsedParams.filterWidthMs = filterWidthMs;
@@ -1894,6 +1892,10 @@ plot_traces(tVecs, vVecs, 'Verbose', false, ...
 
 % Compute the sampling interval in seconds
 siSeconds = siMs / MS_PER_S;
+
+% Compute the minimum delay in samples
+minDelaySamples = ceil(minDelayMs ./ siMs);
+parsedParams.minDelaySamples = minDelaySamples;
 
 %}
 
