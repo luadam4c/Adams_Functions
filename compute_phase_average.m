@@ -54,6 +54,7 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 % 2019-05-13 Created by Adam Lu
 % 2019-05-15 Add 'SelectionMethod' as an optional argument
 % 2019-05-16 Add 'ReturnLastTrial' as an optional argument
+% 2019-05-16 Now uses nanmean() instead of mean()
 % 
 
 %% Hard-coded parameters
@@ -127,7 +128,7 @@ otherArguments = struct2arglist(iP.Unmatched);
                         otherArguments{:});
 
 % Copmute the phase average
-phaseAverage = mean(valSelected);
+phaseAverage = nanmean(valSelected);
 % phaseAverage = compute_stats(values, 'mean', 'Indices', indSelected);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

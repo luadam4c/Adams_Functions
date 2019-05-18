@@ -123,6 +123,7 @@ function valueTable = compute_and_plot_values_online (valueFunc, varargin)
 % 2019-05-14 Adapted from onlineOmight_interface.m
 % 2019-05-15 Finish input parser
 % 2019-05-15 Now plots crosses for points used for averaging
+% TODO: Save figure at the end saveFigFlag
 
 %% Hard-coded parameters
 validSelectionMethods = {'notNaN', 'maxRange2Mean'};
@@ -301,7 +302,7 @@ abfPathsAnalyzed = {};
 values = [];
 
 % The .abf file path previously under acquisition
-pathUnderAcquis = '';
+pathPrevUnderAcquis = '';
 
 % The last file number analyzed
 iFile = 0;
@@ -360,12 +361,12 @@ while ishandle(fig)
     % Get all input files from this directory
     [abfFiles, abfPaths] = ...
         all_files('Directory', inFolder, 'Extension', inFileExt, ...
-                    'ForceCellOutput', true);
+                    'ForceCellOutput', true, 'WarnFlag', false);
 
     % Get all acquisition files from this directory
     [~, acquisPaths] = ...
         all_files('Directory', inFolder, 'Extension', acquisFileExt, ...
-                    'ForceCellOutput', true);
+                    'ForceCellOutput', true, 'WarnFlag', false);
 
     % Create the full path to the corresponding input file
     inPathsUnderAcquis = replace(acquisPaths, acquisFileExt, inFileExt);
@@ -374,33 +375,37 @@ while ishandle(fig)
     [abfPathsNotAnalyzed, iPathsNotAnalyzed] = ...
         setdiff(abfPaths, union(abfPathsAnalyzed, inPathsUnderAcquis));
 
-    % Count the number of files to analyze
-    nFilesToAnalyze = numel(abfPathsNotAnalyzed);
+    %   Retrieve the corresponding file structures
+    abfFilesNotAnalyzed = abfFiles(iPathsNotAnalyzed);
 
-    % If there are no files not analyzed, pause and continue
-    if nFilesToAnalyze == 0
-        % Update the path previously under acquisition
-        pathUnderAcquis = inPathsUnderAcquis{1};
+    % Count the number of files not analyzed
+    nFilesNotAnalyzed = numel(abfPathsNotAnalyzed);
+
+    % If there are no files not analyzed and not under acquisition, 
+    %   pause and continue
+    if nFilesNotAnalyzed == 0
+        % If there is a file under acquisition, 
+        %   update the path previously under acquisition
+        if ~isempty(inPathsUnderAcquis)
+            pathPrevUnderAcquis = inPathsUnderAcquis{1};
+        end
 
         % Pause and continue
         pause(pauseTime); continue
     end
 
-    % Otherwise, there should be at least one file not analyzed
-    %   Retrieve the corresponding file structures
-    abfFilesNotAnalyzed = abfFiles(iPathsNotAnalyzed);
-
     % Determine whether there is a file previously under acquisition
-    idxToAnalyze = find_in_strings(pathUnderAcquis, abfPathsNotAnalyzed, ...
+    idxToAnalyze = find_in_strings(pathPrevUnderAcquis, abfPathsNotAnalyzed, ...
                                     'ReturnNan', false, 'MaxNum', 1);
 
     % If the file is not found
     if isempty(idxToAnalyze)
         % If there are no paths under acquisition, 
         %   assume that it has been deleted
-        %   and choose a new file to be under acquisition
+        %   and choose the first unanalyzed file to be 
+        %   "previously under acquisition"
         if isempty(inPathsUnderAcquis)
-            pathUnderAcquis = abfPathsNotAnalyzed{1};
+            pathPrevUnderAcquis = abfPathsNotAnalyzed{1};
         end
 
         % Pause and continue
@@ -412,9 +417,6 @@ while ishandle(fig)
     abfPathToAnalyze = abfPathsNotAnalyzed{idxToAnalyze};
     iFile = iFile + 1;
 
-    % Update the files not analyzed
-    abfPathsNotAnalyzed = setdiff(abfPathsNotAnalyzed, {pathUnderAcquis});
-
     % Extract the file size
     abfFileSize = abfFileToAnalyze.bytes;
     
@@ -423,6 +425,7 @@ while ishandle(fig)
         % Apply the analysis function
         newValue = valueFunc(abfPathToAnalyze);
     else
+        % TODO: Fix bug here?
         newValue = NaN;
     end
 
@@ -549,19 +552,22 @@ OLD CODE:
 % If there is only one file not analyzed, 
 %   check if it is under acquisition 
 %   (if so, a corresponding .rsv file would exist)
-if nFilesToAnalyze == 1
+if nFilesNotAnalyzed == 1
     % Get the full path to the file not analyzed
     pathNotAnalyzed = abfPathToAnalyze{1};
 
     % Update the path under acquisition
-    pathUnderAcquis = pathNotAnalyzed;
+    pathPrevUnderAcquis = pathNotAnalyzed;
 
     % Pause and continue
     pause(pauseTime); continue
 end
 
 % Choose a new file to be under acquisition
-pathUnderAcquis = abfPathsNotAnalyzed{1};
+pathPrevUnderAcquis = abfPathsNotAnalyzed{1};
+
+% Update the files not analyzed
+abfPathsNotAnalyzed = setdiff(abfPathsNotAnalyzed, {pathPrevUnderAcquis});
 
 %}
 

@@ -215,13 +215,14 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 % 2019-05-06 Expanded plot flags
 % 2019-05-16 Added spike density computation and plot
 % 2019-05-16 Changed maxInterBurstIntervalMs to 1500
+% 2019-05-16 Changed signal2Noise to 2.5 
 
 % Hard-coded constants
 MS_PER_S = 1000;
 
 %% Hard-coded parameters
 plotTypeMeasures = 'bar'; %'tuning';
-yAmountToStagger = 10; %[]; % -5 to +5 mV
+yAmountToStagger = 10;
 rawDir = 'raw';
 rasterDir = 'rasters';
 autoCorrDir = 'autocorrelograms';
@@ -900,7 +901,7 @@ MS_PER_S = 1000;
 % Must be consistent with compute_oscillation_duration.m
 filtFreq = [100, 1000];
 minDelayMs = 25;
-signal2Noise = 3; %4
+signal2Noise = 2.5;
 binWidthMs = 10;
 resolutionMs = 5;
 minBurstLengthMs = 20;

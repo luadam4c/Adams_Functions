@@ -50,13 +50,13 @@ function [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, vararg
 %                       or a cell array of numeric vectors with 2 elements
 %                   default == first half of the trace
 %                   - 'IdxStimStart': index of stimulation start
-%                   must be a positive scalar
+%                   must be a positive integer scalar
 %                   default == 1
 %                   - 'MinDelayMs': minimum delay after stim start (ms)
-%                   must be a positive scalar
+%                   must be a nonnegative scalar
 %                   default == 25 ms
 %                   - 'MaxDelayMs': maximum delay after stim start (ms)
-%                   must be a positive scalar
+%                   must be a nonnegative scalar
 %                   default == 10000 ms
 %                   - 'Signal2Noise': signal-to-noise ratio
 %                   must be a positive scalar
@@ -125,11 +125,11 @@ addParameter(iP, 'BaseWindow', baseWindowDefault, ...
 addParameter(iP, 'IdxStimStart', idxStimStartDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 addParameter(iP, 'MinDelayMs', minDelayMsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
 addParameter(iP, 'MaxDelayMs', maxDelayMsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
 addParameter(iP, 'Signal2Noise', signal2NoiseDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'tVec', tVecDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['tVec must be either a numeric array ', ...

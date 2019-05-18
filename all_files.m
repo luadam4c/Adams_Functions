@@ -21,6 +21,9 @@ function [files, fullPaths] = all_files (varargin)
 %       varargin    - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'WarnFlag': whether to warn if no files found
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'Recursive': whether to search recursively
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -66,11 +69,13 @@ function [files, fullPaths] = all_files (varargin)
 % 2018-11-26 Added 'Recursive' as an optional flag
 % 2018-12-26 Added 'ForceCellOutput' as an optional argument
 % 2019-03-15 Fixed the case when extension is not provided
+% 2019-05-16 Added 'WarnFlag' as an optional flag
 % TODO: use force_string_start.m to make sure extension starts with a dot
 % TODO: Fix bug when a dot is in the folder name
 
 %% Default values for optional arguments
 verboseDefault = false;         % don't print to standard output by default
+warnFlagDefault = true;         % warn if no files found by default
 recursiveDefault = false;       % don't search recursively by default
 forceCellOutputDefault = false; % don't force output as a cell array by default
 directoryDefault = '';          % construct_and_check_fullpath('') == pwd
@@ -89,6 +94,8 @@ iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'WarnFlag', warnFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Recursive', recursiveDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -110,6 +117,7 @@ addParameter(iP, 'RegExp', regExpDefault, ...
 % Read from the Input Parser
 parse(iP, varargin{:});
 verbose = iP.Results.Verbose;
+warnFlag = iP.Results.WarnFlag;
 recursive = iP.Results.Recursive;
 forceCellOutput = iP.Results.ForceCellOutput;
 directory = iP.Results.Directory;
@@ -189,7 +197,7 @@ fullPaths = extract_fullpaths(files, 'ForceCellOutput', forceCellOutput);
 nFiles = numel(files);
 
 % Print appropriate message
-if nFiles == 0
+if nFiles == 0 && warnFlag
     fprintf('No files with pattern %s found in %s!!\n', regExp, directory);
 elseif verbose
     fprintf('%d files with pattern %s found in %s!\n', ...

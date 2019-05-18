@@ -30,7 +30,7 @@ function oscDurationSec = compute_oscillation_duration (abfFile, varargin)
 %                   default == 25 ms
 %                   - 'Signal2Noise': signal-to-noise ratio
 %                   must be a positive scalar
-%                   default == 3
+%                   default == 2.5
 %                   - 'BinWidthMs': bin width (ms)
 %                   must be a positive scalar
 %                   default == 10 ms
@@ -39,7 +39,7 @@ function oscDurationSec = compute_oscillation_duration (abfFile, varargin)
 %                   default == 20 ms
 %                   - 'MaxInterBurstIntervalMs': maximum inter-burst interval (ms)
 %                   must be a positive scalar
-%                   default == 1500 ms
+%                   default == 2000 ms
 %                   - 'MinSpikeRateInBurstHz': minimum spike rate in a burst (Hz)
 %                   must be a positive scalar
 %                   default == 100 Hz
@@ -58,6 +58,8 @@ function oscDurationSec = compute_oscillation_duration (abfFile, varargin)
 
 % File History:
 % 2019-05-14 Created by Adam Lu
+% 2019-05-16 Changed maxInterBurstIntervalMsDefault to 2000 
+% 2019-05-16 Changed signal2NoiseDefault to 2.5 
 % TODO: Deal with files with multiple sweeps
 % 
 
@@ -70,7 +72,8 @@ verboseDefault = false;             % don't print parsed results by default
 baseWindowDefault = [];             % set later
 filtFreqDefault = [100, 1000];
 minDelayMsDefault = 25;
-signal2NoiseDefault = 3;        
+signal2NoiseDefault = 2.5;          % signal must be at least 2.5 times 
+                                    %   baseline noise by default       
 binWidthMsDefault = 10;             % use a bin width of 10 ms by default
 minBurstLengthMsDefault = 20;       % bursts must be at least 20 ms by default
 maxInterBurstIntervalMsDefault = 2000;  % bursts are no more than 
