@@ -96,7 +96,7 @@ function [allParsedParamsTable, allParsedDataTable, ...
 %                   allParsedParamsCell, allParsedDataCell
 % 2018-10-23 - Allowed fileNames to be a character vector
 % 2019-04-29 - Added saveMatFlag as an optional parameter
-% 
+% TODO: Use parfor instead of cellfun?
 
 %% Hard-coded parameters
 tableSuffix = '_abfParams';

@@ -170,9 +170,15 @@ function [vVecsSl, siMsSl, iVecsSl, sliceBases, phaseBoundaries] = ...
             combine_data_from_same_slice(inFolder, varargin)
 %% Combines data from the same slice
 % TODO: What if not all slices have the same number of files?
+% TODO: Use *phase* in the file name to detect phase boundaries
 
 %% Hard-coded parameters
 nFilesPerSlice = 3;
+sliceStr = 'slice';
+phaseStr = 'phase';
+
+%% Get all the abf file names
+all_files('Directory', inFolder, 'Extension', 'abf');
 
 %% Parse all abfs
 [allParams, allData] = ...
@@ -259,6 +265,9 @@ for iFile = 1:nFiles
 end
 
 plotFlag = false;
+
+%% Hard-coded parameters
+nFilesPerSlice = 3;
 
 %}
 
