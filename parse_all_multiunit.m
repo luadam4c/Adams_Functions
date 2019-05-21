@@ -251,17 +251,18 @@ vVecs = allData.vVecs;
 iVecs = allData.iVecs;
 clear allData;
 
-%% Order the data correctedly
-% Find the indices and paths for each phase
-[indEachPhase, pathsEachPhase] = ...
-    cellfun(@(x) find_in_strings(x, allFileNames), ...
-            phaseStrs, 'UniformOutput', false);
-
+%% Order the data correctedly (may not be needed)
+%{
 % Find the indices for each phase
+indEachPhase = cellfun(@(x) find_in_strings(x, allFileNames), ...
+                        phaseStrs, 'UniformOutput', false);
+
+% Put them all together
 sortOrder = vertcat(indEachPhase{:});
 
 % Reorder data
 [siMs, vVecs, iVecs] = argfun(@(x) x(sortOrder), siMs, vVecs, iVecs);
+%}
 
 %% Combine the data
 % Compute the new siMs
@@ -281,7 +282,7 @@ if nBoundaries == 0
     phaseBoundaries = [];
 else
     % Count the number of files for each phase
-    nFilesEachPhase = count_samples(indEachPhase);
+    nFilesEachPhase = cellfun(@count_samples, indEachPhase);
 
     % Get the index of the last file for each phase
     iFileLastEachPhase = cumsum(nFilesEachPhase);
@@ -290,7 +291,7 @@ else
     iFileFirstEachPhase = iFileLastEachPhase - nFilesEachPhase + 1;
 
     % Count the number of sweeps in each file
-    nSweepsEachFile = count_vectors(vVecs);
+    nSweepsEachFile = cellfun(@count_vectors, vVecs);
 
     % Count the number of sweeps in each phase
     nSweepsEachPhase = arrayfun(@(x, y) sum(nSweepsEachFile(x:y)), ...
