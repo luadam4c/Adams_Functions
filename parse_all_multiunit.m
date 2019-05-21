@@ -169,7 +169,9 @@ end
 % for iSlice = 1:nSlices; [muParams{iSlice}, muData{iSlice}] = parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), 'PulseVectors', iVecsSl{iSlice}, 'PlotFlag', plotFlag, 'OutFolder', outFolder, 'FileBase', sliceBases{iSlice}, 'PhaseBoundaries', phaseBoundaries{iSlice}); close all force hidden; end
 
 %% Plot tuning curves for all measures
-% plot_measures;
+if plotMeasuresFlag
+    plot_measures;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -251,18 +253,16 @@ vVecs = allData.vVecs;
 iVecs = allData.iVecs;
 clear allData;
 
-%% Order the data correctedly (may not be needed)
-%{
 % Find the indices for each phase
 indEachPhase = cellfun(@(x) find_in_strings(x, allFileNames), ...
                         phaseStrs, 'UniformOutput', false);
 
+%% Order the data correctedly (may not be needed)
 % Put them all together
 sortOrder = vertcat(indEachPhase{:});
 
 % Reorder data
 [siMs, vVecs, iVecs] = argfun(@(x) x(sortOrder), siMs, vVecs, iVecs);
-%}
 
 %% Combine the data
 % Compute the new siMs
