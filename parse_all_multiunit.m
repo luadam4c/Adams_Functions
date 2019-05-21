@@ -201,8 +201,8 @@ siMsSl = nan(nSlices, 1);
 iVecsSl = cell(nSlices, 1);
 phaseBoundaries = cell(nSlices, 1);
 phaseStrs = cell(nSlices, 1);
-%parfor iSlice = 1:nSlices
-for iSlice = 1:nSlices
+parfor iSlice = 1:nSlices
+%for iSlice = 1:nSlices
     [vVecsSl{iSlice}, siMsSl(iSlice), iVecsSl{iSlice}, ...
         phaseBoundaries{iSlice}, phaseStrs{iSlice}] = ...
         combine_data_from_one_slice(inFolder, sliceBases{iSlice}, varargin{:});
@@ -222,11 +222,11 @@ regexpPhaseStr = 'phase[a-zA-Z0-9]*';
 [~, allAbfPaths] = all_files('Directory', inFolder, 'Prefix', sliceBase, ...
                             'Extension', 'abf', 'SortBy', 'date');
 
-% Extract file bases
-allFileBases = extract_fileparts(allAbfPaths, 'base');
+% Extract file names
+allFileNames = extract_fileparts(allAbfPaths, 'name');
 
 % Extract phase strings
-allPhaseStrs = extract_fileparts(allFileBases, 'base', 'RegExp', regexpPhaseStr);
+allPhaseStrs = extract_fileparts(allFileNames, 'base', 'RegExp', regexpPhaseStr);
 
 % Get the unique phase strings in original order
 phaseStrs = unique(allPhaseStrs, 'stable');
@@ -254,7 +254,7 @@ clear allData;
 %% Order the data correctedly
 % Find the indices and paths for each phase
 [indEachPhase, pathsEachPhase] = ...
-    cellfun(@(x) find_in_strings(x, allFileBases), ...
+    cellfun(@(x) find_in_strings(x, allFileNames), ...
             phaseStrs, 'UniformOutput', false);
 
 % Find the indices for each phase

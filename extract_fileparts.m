@@ -5,6 +5,11 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       TODO
 % Example(s):
 %       [~, paths] = all_files('Directory', pwd);
+%       extract_fileparts(paths, 'directory')
+%       extract_fileparts(paths, 'dirbase')
+%       extract_fileparts(paths, 'name')
+%       extract_fileparts(paths, 'base')
+%       extract_fileparts(paths, 'ext')
 %       extract_fileparts(paths, 'commondirectory')
 %       extract_fileparts(paths, 'commonprefix')
 %       extract_fileparts(paths, 'commonsuffix')
@@ -15,7 +20,8 @@ function parts = extract_fileparts (paths, partType, varargin)
 %                   specified as a character array 
 %                       or a cell array of character arrays
 % Arguments:
-%       paths       - file paths
+%       paths       - file paths (absolute or relative)
+%                   Note: this must contain the extension if it is a file
 %                   must be a character vector or a string vector
 %                       or a cell array of character vectors
 %       partType    - type of the file part to extract
@@ -26,6 +32,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %                       'distinct'  - distinct parts across file(s)
 %                       'directory' - directory containing the file(s)
 %                       'dirbase'   - directory base containing the file(s)
+%                       'name'      - file name with the extension
 %                       'base'      - file base name without the extension
 %                       'extension' - file extension including the leading '.'
 %       varargin    - 'Delimiter': delimiter used for file suffices
@@ -58,12 +65,15 @@ function parts = extract_fileparts (paths, partType, varargin)
 % 2018-12-27 Moved code to extract_distinct_fileparts.m
 % 2019-03-14 Added 'commonprefix' as a part type
 % 2019-04-07 Added 'dirbase' as a part type
+% 2019-04-07 Added 'RegExp' as an optional argument
+% 2019-04-07 Added 'name' as a part type
 % TODO: Make the first argument accept a files structure array too
 % 
 
 %% Hard-coded parameters
 validPartTypes = {'commondirectory', 'commonprefix', 'commonsuffix', ...
-                    'distinct', 'directory', 'dirbase', 'base', 'extension'};
+                    'distinct', 'directory', 'dirbase', ...
+                    'name', 'base', 'extension'};
 
 %% Default values for optional arguments
 delimiterDefault = '_';
@@ -110,7 +120,7 @@ partType = validatestring(partType, validPartTypes);
 
 %% Do the job
 switch partType
-case {'directory', 'dirbase', 'base', 'extension'}
+case {'directory', 'dirbase', 'name', 'base', 'extension'}
     parts = extract_simple_fileparts(paths, partType);
 case 'commondirectory'
     parts = extract_common_directory(paths, varargin{:});
@@ -174,6 +184,8 @@ switch partType
         parts = fileDirs;
     case 'dirbase'
         [~, parts] = fileparts(fileDirs);
+    case 'name'
+        parts = strcat(fileBases, fileExtensions);
     case 'base'
         parts = fileBases;
     case 'extension'
