@@ -9,6 +9,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       extract_fileparts(paths, 'commonprefix')
 %       extract_fileparts(paths, 'commonsuffix')
 %       extract_fileparts(paths, 'distinct')
+%       sliceNames = extract_fileparts(paths, 'base', 'RegExp', '.*slice[0-9]*');
 % Outputs:
 %       parts       - parts extracted
 %                   specified as a character array 
@@ -30,6 +31,10 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       varargin    - 'Delimiter': delimiter used for file suffices
 %                   must be a string scalar or a character vector
 %                   default == '_'
+%                   - 'RegExp': regular expression to match
+%                   must be a character vector or a string vector
+%                       or a cell array of character vectors
+%                   default == none
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -62,6 +67,7 @@ validPartTypes = {'commondirectory', 'commonprefix', 'commonsuffix', ...
 
 %% Default values for optional arguments
 delimiterDefault = '_';
+regExpDefault = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -86,10 +92,15 @@ addRequired(iP, 'partType', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Delimiter', delimiterDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'RegExp', regExpDefault, ...
+    @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
+        ['regExp must be empty or a character array or a string array ', ...
+            'or cell array of character arrays!']));
 
 % Read from the Input Parser
 parse(iP, paths, partType, varargin{:});
 delimiter = iP.Results.Delimiter;
+regExp = iP.Results.RegExp;
 
 % Validate partType
 partType = validatestring(partType, validPartTypes);
@@ -118,6 +129,12 @@ case 'distinct'
     parts = extract_distinct_fileparts(paths, 'Delimiter', delimiter);
 otherwise
     error('partType unrecognized!!');
+end
+
+% Match regular expression if provided
+if ~isempty(regExp)
+    parts = regexp(parts, regExp, 'match', ...
+                    'once', 'ignorecase', 'emptymatch', 'dotexceptnewline');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

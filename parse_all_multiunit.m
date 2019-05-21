@@ -34,9 +34,12 @@ function parse_all_multiunit(varargin)
 %                   default == false
 %
 % Requires:
+%       cd/all_files.m
 %       cd/argfun.m
+%       cd/count_samples.m
 %       cd/count_vectors.m
 %       cd/extract_fileparts.m
+%       cd/force_matrix.m
 %       cd/parse_all_abfs.m
 %       cd/parse_multiunit.m
 %       cd/plot_measures.m
@@ -168,79 +171,130 @@ end
 
 function [vVecsSl, siMsSl, iVecsSl, sliceBases, phaseBoundaries] = ...
             combine_data_from_same_slice(inFolder, varargin)
-%% Combines data from the same slice
+%% Combines the data from the same slices
 % TODO: What if not all slices have the same number of files?
 % TODO: Use *phase* in the file name to detect phase boundaries
 
 %% Hard-coded parameters
-nFilesPerSlice = 3;
-sliceStr = 'slice';
-phaseStr = 'phase';
+regexpSliceName = '.*slice[0-9]*';
 
-%% Get all the abf file names
-all_files('Directory', inFolder, 'Extension', 'abf');
+%% Preparation
+% Get all the abf file names
+[~, allAbfPaths] = ...
+    all_files('Directory', inFolder, 'Extension', 'abf');
 
-%% Parse all abfs
+% Extract all slice names
+allSliceNames = extract_fileparts(allAbfPaths, 'base', ...
+                                    'RegExp', regexpSliceName);
+
+% Get unique slice names
+sliceBases = unique(allSliceNames);
+
+% Count the number of slices
+nSlices = numel(sliceBases);
+
+%% Do the job
+vVecsSl = cell(nSlices, 1);
+siMsSl = nan(nSlices, 1);
+iVecsSl = cell(nSlices, 1);
+phaseBoundaries = cell(nSlices, 1);
+parfor iSlice = 1:nSlices
+    [vVecsSl{iSlice}, siMsSl(iSlice), iVecsSl{iSlice}, phaseBoundaries{iSlice}] = ...
+        combine_data_from_one_slice(inFolder, sliceBases{iSlice}, varargin{:})
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [vVecsSl, siMsSl, iVecsSl, phaseBoundaries] = ...
+            combine_data_from_one_slice(inFolder, sliceBase, varargin)
+%% Combines the data for one slice
+
+%% Hard-coded parameters
+regexpPhaseStr = 'phase[a-zA-Z0-9]*';
+
+%% Count files and phases
+% Get all .abf files for this slice
+[~, allAbfPaths] = ...
+    all_files('Directory', inFolder, 'Prefix', sliceBase, 'Extension', 'abf');
+
+% Extract phase strings
+allPhaseStrs = extract_fileparts(allAbfPaths, 'base', 'RegExp', regexpPhaseStr);
+
+% Extract phase IDs
+allPhaseIDs = extractAfter(allPhaseStrs, 'phase');
+
+% Sort the unique phase IDs
+%   Note: This assumes the phase IDs are in correct alphanumeric order
+phaseIDs = unique(allPhaseIDs, 'sorted');
+
+% Count the number of phases
+nPhases = numel(phaseIDs);
+
+%% Extract data to combine
+% Parse all multi-unit recordings for this slice
 [allParams, allData] = ...
-    parse_all_abfs('Directory', inFolder, ...
+    parse_all_abfs('FileNames', allAbfPaths, ...
                     'ChannelTypes', {'voltage', 'current'}, ...
-                    'ChannelUnits', {'uV', 'arb'});
+                    'ChannelUnits', {'uV', 'arb'}, ...
+                    'SaveSheetFlag', false);
 
-%% Extract parameters and clear unused parameters
+% Extract parameters, then clear unused parameters
 siMs = allParams.siMs;
-abfFullFileName = allParams.abfFullFileName;
 clear allParams;
 
-% Count the number of files
-nFiles = numel(abfFullFileName);
-
-%% Extract data and clear unused data
+% Extract data, then clear unused data
 vVecs = allData.vVecs;
 iVecs = allData.iVecs;
 clear allData;
 
-% Count the number of vectors in each file
-nVectorsEachFile = count_vectors(vVecs);
+%% Order the data correctedly
+% Find the indices for each phase
+indEachPhase = cellfun(@(x) find_in_strings(x, allAbfPaths), ...
+                        phaseIDs, 'UniformOutput', false);
 
-%% Combine all files from the same slice
-% Count the number of slices
-nSlices = ceil(nFiles / nFilesPerSlice);
+% Find the indices for each phase
+sortOrder = vertcat(indEachPhase{:});
 
-% Create indices for the slices
-indSlices = transpose(1:nSlices);
+% Reorder data
+[siMs, vVecs, iVecs] = argfun(@(x) x(sortOrder), siMs, vVecs, iVecs);
 
-% Compute the index of the first file
-idxFileFirst = arrayfun(@(x) nFilesPerSlice * (x - 1) + 1, indSlices);
-
-% Compute the index of the last file
-idxFileLast = arrayfun(@(x) min(nFilesPerSlice * x, nFiles), indSlices);
-
+%% Combine the data
 % Compute the new siMs
-siMsSl = arrayfun(@(x, y) mean(siMs(x:y)), idxFileFirst, idxFileLast);
-
-% Compute the slice bases
-sliceBases = arrayfun(@(x, y) extract_fileparts(abfFullFileName(x:y), ...
-                            'commonprefix'), idxFileFirst, idxFileLast, ...
-                    'UniformOutput', false);
-
-% Count the number of phase boundaries
-nBoundaries = nFilesPerSlice - 1;
-
-% Create phase boundaries if nFilesPerSlice is more than 1
-if nBoundaries > 0
-    phaseBoundaries = ...
-        arrayfun(@(x, y) cumsum(nVectorsEachFile(x:(y - 1))) + 0.5, ...
-                    idxFileFirst, idxFileLast, 'UniformOutput', false);
-else
-    phaseBoundaries = [];
-end
+siMsSl = mean(siMs);
 
 % Concatenate vectors
-horzcatcell = @(x) horzcat(x{:});
-[vVecsSl, iVecsSl] = ...
-    argfun(@(z) arrayfun(@(x, y) horzcatcell(z(x:y)), ...
-                    idxFileFirst, idxFileLast, 'UniformOutput', false), ...
-            vVecs, iVecs);
+[vVecsSl, iVecsSl] = argfun(@force_matrix, vVecs, iVecs);
+
+%% Create phase boundaries
+% Count the number of phase boundaries
+nBoundaries = nPhases - 1;
+
+% Compute phase boundaries
+if nBoundaries == 0
+    phaseBoundaries = [];
+else
+    % Count the number of files for each phase
+    nFilesEachPhase = count_samples(indEachPhase);
+
+    % Get the index of the last file for each phase
+    iFileLastEachPhase = cumsum(nFilesEachPhase);
+
+    % Get the index of the first file for each phase
+    iFileFirstEachPhase = iFileLastEachPhase - nFilesEachPhase + 1;
+
+    % Count the number of sweeps in each file
+    nSweepsEachFile = count_vectors(vVecs);
+
+    % Count the number of sweeps in each phase
+    nSweepsEachPhase = arrayfun(@(x, y) sum(nSweepsEachFile(x:y)), ...
+                            iFileFirstEachPhase, iFileLastEachPhase);
+
+    % Get the index of the last sweep for each phase
+    iFileLastEachPhase = cumsum(nSweepsEachPhase);
+
+    % Compute the phase boundaries
+    phaseBoundaries = iFileLastEachPhase(1:nBoundaries) + 0.5;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -268,6 +322,47 @@ plotFlag = false;
 
 %% Hard-coded parameters
 nFilesPerSlice = 3;
+
+% Count the number of slices
+nSlices = ceil(nFiles / nFilesPerSlice);
+
+% Create indices for the slices
+indSlices = transpose(1:nSlices);
+
+% Compute the index of the first file
+idxFileFirst = arrayfun(@(x) nFilesPerSlice * (x - 1) + 1, indSlices);
+
+% Compute the index of the last file
+idxFileLast = arrayfun(@(x) min(nFilesPerSlice * x, nFiles), indSlices);
+
+% Compute the slice bases
+sliceBases = arrayfun(@(x, y) extract_fileparts(abfFullFileName(x:y), ...
+                            'commonprefix'), idxFileFirst, idxFileLast, ...
+                    'UniformOutput', false);
+
+abfFullFileName = allParams.abfFullFileName;
+
+% Count the number of files
+nFiles = numel(abfFullFileName);
+
+% Compute the new siMs
+siMsSl = arrayfun(@(x, y) mean(siMs(x:y)), idxFileFirst, idxFileLast);
+
+% Concatenate vectors
+horzcatcell = @(x) horzcat(x{:});
+[vVecsSl, iVecsSl] = ...
+    argfun(@(z) arrayfun(@(x, y) horzcatcell(z(x:y)), ...
+                    idxFileFirst, idxFileLast, 'UniformOutput', false), ...
+            vVecs, iVecs);
+
+% Create phase boundaries if nFilesPerSlice is more than 1
+if nBoundaries > 0
+    phaseBoundaries = ...
+        arrayfun(@(x, y) cumsum(nSweepsEachFile(x:(y - 1))) + 0.5, ...
+                    idxFileFirst, idxFileLast, 'UniformOutput', false);
+else
+    phaseBoundaries = [];
+end
 
 %}
 
