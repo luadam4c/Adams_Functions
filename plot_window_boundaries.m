@@ -39,8 +39,10 @@ function [h, yLimits] = plot_window_boundaries (win, varargin)
 
 % File History:
 % 2018-10-29 Created by Adam Lu
-% 2018-12-19 Now passes done extra arguments
+% 2018-12-19 Now passes extra arguments
 % 2018-12-19 Now returns object handles
+% TODO: Add 'PlotType' as an optional argument with values"
+%           'green-dotted' (default), 'gray-shade', 'horizontal-bar', etc.
 % 
 
 %% Default values for optional arguments

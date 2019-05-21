@@ -132,7 +132,9 @@ function [bars, fig] = plot_histogram (X, varargin)
 %       cd/create_labels_from_numbers.m
 %       cd/force_column_vector.m
 %       cd/plot_grouped_histogram.m
+%       cd/isfigtype.m
 %       cd/remove_outliers.m
+%       cd/save_all_figtypes.m
 %       cd/test_difference.m
 %
 % Used by:    

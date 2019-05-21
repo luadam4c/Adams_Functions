@@ -1,5 +1,5 @@
 function h = plot_vertical_line (xValue, varargin)
-%% Plots a vertical line
+%% Plots vertical line(s)
 % Usage: h = plot_vertical_line (xValue, varargin)
 % Explanation:
 %       TODO
@@ -7,12 +7,12 @@ function h = plot_vertical_line (xValue, varargin)
 %       h = plot_vertical_line(xValue)
 %       h = plot_vertical_line(xValue, 'YLimits', yLimits)
 % Outputs:
-%       h           - handle to the line object created
+%       h           - handle to the line object(s) created
 %                   specified as a primitive line object handle
 % Arguments:
-%       xValue      - the x value for the vertical line
+%       xValue      - the x value(s) for the vertical line(s)
 %                   must be a numeric, datetime or duration array
-%       varargin    - 'YLimits': y value limits for the line
+%       varargin    - 'YLimits': y value limits for the line(s)
 %                   must be empty or a numeric vector of 2 elements
 %                       or an array of 2 rows
 %                   default == get(gca, 'YLim')

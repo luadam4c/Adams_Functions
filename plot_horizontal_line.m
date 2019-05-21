@@ -1,5 +1,5 @@
 function h = plot_horizontal_line (yValue, varargin)
-%% Plots a horizontal line
+%% Plots horizontal line(s)
 % Usage: h = plot_horizontal_line (yValue, varargin)
 % Explanation:
 %       TODO
@@ -12,12 +12,12 @@ function h = plot_horizontal_line (yValue, varargin)
 %       h = plot_horizontal_line(3, 'XLimits', [1, 2])
 %       h = plot_horizontal_line(3, 'XLimits', [1, 2, 4, 5])
 % Outputs:
-%       h           - handle to the line object created
-%                   specified as a primitive line object handle
+%       h           - handle to the line object(s) created
+%                   specified as a primitive line object handle array
 % Arguments:
-%       yValue      - the y value for the horizontal line
+%       yValue      - the y value(s) for the horizontal line(s)
 %                   must be a numeric, datetime or duration array
-%       varargin    - 'XLimits': x value limits for the line
+%       varargin    - 'XLimits': x value limits for the line(s)
 %                   must be empty or a numeric vector of 2 elements
 %                       or an array of 2 rows
 %                   default == get(gca, 'XLim')

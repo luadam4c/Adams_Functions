@@ -93,6 +93,9 @@ function valueTable = compute_and_plot_values_online (valueFunc, varargin)
 %                   - 'SaveMatFlag': whether to save values in a .mat file
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'SaveFigFlag': whether to save figure
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'SheetType': sheet type; 
 %                       e.g., 'xlsx', 'csv', etc.
 %                   could be anything recognised by the readtable() function 
@@ -101,6 +104,16 @@ function valueTable = compute_and_plot_values_online (valueFunc, varargin)
 %                   - 'OutFolder': directory to place output files
 %                   must be a string scalar or a character vector
 %                   default == same as inFolder
+%                   - 'OutFileBase': output file base name for saving
+%                   must be a string scalar or a character vector
+%                   default == fullfile(outFolder, 
+%                               [timeStamp, '_online_values_', valueStr])
+%                   - 'FigTypes': figure type(s) for saving; 
+%                               e.g., 'png', 'fig', or {'png', 'fig'}, etc.
+%                   could be anything recognised by 
+%                       the built-in saveas() function
+%                   (see isfigtype.m under Adams_Functions)
+%                   default == {'png', 'fig'}
 %                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
@@ -123,7 +136,8 @@ function valueTable = compute_and_plot_values_online (valueFunc, varargin)
 % 2019-05-14 Adapted from onlineOmight_interface.m
 % 2019-05-15 Finish input parser
 % 2019-05-15 Now plots crosses for points used for averaging
-% TODO: Save figure at the end saveFigFlag
+% 2019-05-21 Now makes sure the values are plotted according to timestamp
+% 2019-05-21 Save figure at the end if saveFigFlag is true
 
 %% Hard-coded parameters
 validSelectionMethods = {'notNaN', 'maxRange2Mean'};
@@ -158,8 +172,11 @@ figTitleDefault = '';           % set later
 inPathVarStrDefault = 'inputFiles'; % default string for input files
 saveSheetFlagDefault = true;    % save values in a spreadsheet by default
 saveMatFlagDefault = false;     % don't save values in a .mat file by default
+saveFigFlagDefault = true;      % save figure by default
 sheetTypeDefault = 'csv';       % default spreadsheet type is csv
 outFolderDefault = '';          % set later
+outFileBaseDefault = '';            % set later
+figTypesDefault = {'png', 'fig'};   % save as both fig and png by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -223,10 +240,16 @@ addParameter(iP, 'SaveSheetFlag', saveSheetFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SaveMatFlag', saveMatFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveFigFlag', saveFigFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SheetType', sheetTypeDefault, ...
     @(x) all(issheettype(x, 'ValidateMode', true)));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'OutFileBase', outFileBaseDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigTypes', figTypesDefault, ...
+    @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, valueFunc, varargin{:});
@@ -255,8 +278,11 @@ figTitle = iP.Results.FigTitle;
 inPathVarStr = iP.Results.InPathVarStr;
 saveSheetFlag = iP.Results.SaveSheetFlag;
 saveMatFlag = iP.Results.SaveMatFlag;
+saveFigFlag = iP.Results.SaveFigFlag;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 outFolder = iP.Results.OutFolder;
+outFileBase = iP.Results.OutFileBase;
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Keep unmatched arguments for the plot() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -358,15 +384,19 @@ pointsUsed = gobjects(1, 1);
 
 %% Analyze as long as the figure is open
 while ishandle(fig)
-    % Get all input files from this directory
+    % Get all input files from this directory, sorted by timestamp
     [abfFiles, abfPaths] = ...
         all_files('Directory', inFolder, 'Extension', inFileExt, ...
-                    'ForceCellOutput', true, 'WarnFlag', false);
+                    'ForceCellOutput', true, 'WarnFlag', false, ...
+                    'SortBy', 'date');
 
-    % Get all acquisition files from this directory
+    % Get all acquisition files from this directory, sorted by reverse
+    %   timestamp
     [~, acquisPaths] = ...
         all_files('Directory', inFolder, 'Extension', acquisFileExt, ...
-                    'ForceCellOutput', true, 'WarnFlag', false);
+                    'ForceCellOutput', true, 'WarnFlag', false, ...
+                    'SortBy', 'date');
+    acquisPaths = flipud(acquisPaths);
 
     % Create the full path to the corresponding input file
     inPathsUnderAcquis = replace(acquisPaths, acquisFileExt, inFileExt);
@@ -519,29 +549,42 @@ valueTable = table(abfPathsAnalyzed, values, ...
                     'VariableNames', {inPathVarStr, valueStr});
 
 %% Save active data
-if saveSheetFlag || saveMatFlag
+if saveSheetFlag || saveMatFlag || saveFigFlag
     % Create a time stamp
     timeStamp = create_time_stamp('FormatOut', 'yyyymmddTHHMM');
 
-    % Create the file base for output files
-    valuesOutFileBase = ...
-        fullfile(outFolder, [timeStamp, '_online_values_', valueStr]);
+    % Create the file base for output files and figures
+    if isempty(outFileBase)
+        outFileBase = ...
+            fullfile(outFolder, [timeStamp, '_online_values_', valueStr]);
+    end
 end
 
+% Save the data in a spreadsheet
 if saveSheetFlag
     % Create a spreadsheet path
-    valuesSheetPath = [valuesOutFileBase, '.', sheetType];
+    valuesSheetPath = [outFileBase, '.', sheetType];
 
     % Save values
     writetable(valueTable, valuesSheetPath);
 end
 
+% Save the data in a .mat file
 if saveMatFlag
     % Create a matfile path
-    valuesMatFilePath = [valuesOutFileBase, '.mat'];
+    valuesMatFilePath = [outFileBase, '.mat'];
 
     % Save values
     save(valuesMatFilePath, 'values', '-v7.3');
+end
+
+% Save the figure
+if saveFigFlag
+    % Save the figure in all file types requested
+    save_all_figtypes(fig, outFileBase, figTypes);
+
+    % Close figure
+    close(fig);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

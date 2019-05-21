@@ -13,6 +13,7 @@ function plot_and_save_histogram (h, vec, veclabel, countlabel, outfolder, filen
 % 2016-12-01 Added countlabel
 % 2016-12-04 Removed legend for regular histograms
 % 2016-12-08 Changed argument from fitmode to title_mod
+% TODO: Combine with plot_histogram.m
 % 
 
 %% Check arguments
