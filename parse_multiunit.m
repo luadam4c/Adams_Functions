@@ -866,7 +866,7 @@ if plotMeasuresFlag
                                 strcat(fileBase, '_', measuresToPlot));
 
     % Create custom figure titles
-    figTitlesMeasures = [measuresToPlot, ' for ', titleBase];
+    figTitlesMeasures = strcat(measuresToPlot, [' for ', titleBase]);
 
     % Plot table
     figs(4:(nMeasures + 3)) = ...
