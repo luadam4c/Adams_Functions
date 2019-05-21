@@ -49,6 +49,10 @@ function parse_all_multiunit(varargin)
 % 2019-03-14 Now combines all files from the same slice
 % 2019-04-29 Now saves combined data as a matfile
 % 2019-05-06 Added input parser and plot flags
+% 2019-05-21 Now allows each slice to have different numbers of files
+% 2019-05-21 Now uses 'slice' or 'phase' in the file name 
+%               to detect sliceBase and phase boundaries
+
 % TODO: Make outFolder optional parameters
 % TODO: Make combining optional
 
@@ -120,7 +124,7 @@ if isfile(matPath)
 else
     % Combine data from the same slice
     fprintf("Combining data for each slice ...\n");
-    [vVecsSl, siMsSl, iVecsSl, sliceBases, phaseBoundaries] = ...
+    [vVecsSl, siMsSl, iVecsSl, sliceBases, phaseBoundaries, phaseStrs] = ...
         combine_data_from_same_slice(inFolder);
 
     % Save data for each slice
@@ -169,11 +173,9 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [vVecsSl, siMsSl, iVecsSl, sliceBases, phaseBoundaries] = ...
+function [vVecsSl, siMsSl, iVecsSl, sliceBases, phaseBoundaries, phaseStrs] = ...
             combine_data_from_same_slice(inFolder, varargin)
 %% Combines the data from the same slices
-% TODO: What if not all slices have the same number of files?
-% TODO: Use *phase* in the file name to detect phase boundaries
 
 %% Hard-coded parameters
 regexpSliceName = '.*slice[0-9]*';
@@ -181,7 +183,7 @@ regexpSliceName = '.*slice[0-9]*';
 %% Preparation
 % Get all the abf file names
 [~, allAbfPaths] = ...
-    all_files('Directory', inFolder, 'Extension', 'abf');
+    all_files('Directory', inFolder, 'Extension', 'abf', 'SortBy', 'date');
 
 % Extract all slice names
 allSliceNames = extract_fileparts(allAbfPaths, 'base', ...
@@ -198,14 +200,17 @@ vVecsSl = cell(nSlices, 1);
 siMsSl = nan(nSlices, 1);
 iVecsSl = cell(nSlices, 1);
 phaseBoundaries = cell(nSlices, 1);
-parfor iSlice = 1:nSlices
-    [vVecsSl{iSlice}, siMsSl(iSlice), iVecsSl{iSlice}, phaseBoundaries{iSlice}] = ...
-        combine_data_from_one_slice(inFolder, sliceBases{iSlice}, varargin{:})
+phaseStrs = cell(nSlices, 1);
+%parfor iSlice = 1:nSlices
+for iSlice = 1:nSlices
+    [vVecsSl{iSlice}, siMsSl(iSlice), iVecsSl{iSlice}, ...
+        phaseBoundaries{iSlice}, phaseStrs{iSlice}] = ...
+        combine_data_from_one_slice(inFolder, sliceBases{iSlice}, varargin{:});
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [vVecsSl, siMsSl, iVecsSl, phaseBoundaries] = ...
+function [vVecsSl, siMsSl, iVecsSl, phaseBoundaries, phaseStrs] = ...
             combine_data_from_one_slice(inFolder, sliceBase, varargin)
 %% Combines the data for one slice
 
@@ -213,22 +218,21 @@ function [vVecsSl, siMsSl, iVecsSl, phaseBoundaries] = ...
 regexpPhaseStr = 'phase[a-zA-Z0-9]*';
 
 %% Count files and phases
-% Get all .abf files for this slice
-[~, allAbfPaths] = ...
-    all_files('Directory', inFolder, 'Prefix', sliceBase, 'Extension', 'abf');
+% Get all .abf files for this slice ordered by time stamp
+[~, allAbfPaths] = all_files('Directory', inFolder, 'Prefix', sliceBase, ...
+                            'Extension', 'abf', 'SortBy', 'date');
+
+% Extract file bases
+allFileBases = extract_fileparts(allAbfPaths, 'base');
 
 % Extract phase strings
-allPhaseStrs = extract_fileparts(allAbfPaths, 'base', 'RegExp', regexpPhaseStr);
+allPhaseStrs = extract_fileparts(allFileBases, 'base', 'RegExp', regexpPhaseStr);
 
-% Extract phase IDs
-allPhaseIDs = extractAfter(allPhaseStrs, 'phase');
-
-% Sort the unique phase IDs
-%   Note: This assumes the phase IDs are in correct alphanumeric order
-phaseIDs = unique(allPhaseIDs, 'sorted');
+% Get the unique phase strings in original order
+phaseStrs = unique(allPhaseStrs, 'stable');
 
 % Count the number of phases
-nPhases = numel(phaseIDs);
+nPhases = numel(phaseStrs);
 
 %% Extract data to combine
 % Parse all multi-unit recordings for this slice
@@ -248,9 +252,10 @@ iVecs = allData.iVecs;
 clear allData;
 
 %% Order the data correctedly
-% Find the indices for each phase
-indEachPhase = cellfun(@(x) find_in_strings(x, allAbfPaths), ...
-                        phaseIDs, 'UniformOutput', false);
+% Find the indices and paths for each phase
+[indEachPhase, pathsEachPhase] = ...
+    cellfun(@(x) find_in_strings(x, allFileBases), ...
+            phaseStrs, 'UniformOutput', false);
 
 % Find the indices for each phase
 sortOrder = vertcat(indEachPhase{:});
@@ -263,7 +268,9 @@ sortOrder = vertcat(indEachPhase{:});
 siMsSl = mean(siMs);
 
 % Concatenate vectors
-[vVecsSl, iVecsSl] = argfun(@force_matrix, vVecs, iVecs);
+% TODO: Fix force_matrix
+% [vVecsSl, iVecsSl] = argfun(@force_matrix, vVecs, iVecs);
+[vVecsSl, iVecsSl] = argfun(@(x) horzcat(x{:}), vVecs, iVecs);
 
 %% Create phase boundaries
 % Count the number of phase boundaries
@@ -363,6 +370,17 @@ if nBoundaries > 0
 else
     phaseBoundaries = [];
 end
+
+% Extract phase IDs
+allPhaseIDs = extractAfter(allPhaseStrs, 'phase');
+
+% Sort the unique phase IDs
+%   Note: This assumes the phase IDs are in correct alphanumeric order
+phaseIDs = unique(allPhaseIDs, 'sorted');
+
+% Sort the unique phase strings
+%   Note: This assumes the phase strings are in correct alphanumeric order
+phaseStrs = unique(allPhaseStrs, 'sorted');
 
 %}
 

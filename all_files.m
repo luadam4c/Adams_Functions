@@ -1,10 +1,11 @@
-function [files, fullPaths] = all_files (varargin)
+function varargout = all_files (varargin)
 %% Returns all the files in a given directory (optionally recursive) that matches a prefix, keyword, suffix or extension
 % Usage: [files, fullPaths] = all_files (varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       [files, fullPaths] = all_files;
+%       [files, fullPaths] = all_files('SortBy', 'date');
 %       [files, fullPaths] = all_files('Recursive', true);
 % Outputs:
 %       files       - file structure(s) for the files
@@ -48,6 +49,12 @@ function [files, fullPaths] = all_files (varargin)
 %                   - 'RegExp': regular expression to limit to
 %                   must be a string scalar or a character vector
 %                   default == no limits
+%                   - 'SortBy': how to sort the files
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'name'  - by file name
+%                       'date'  - by modification date
+%                       'bytes' - by file size in bytes
+%                   default == 'name'
 %
 % Requires:
 %       cd/construct_and_check_fullpath.m
@@ -71,8 +78,12 @@ function [files, fullPaths] = all_files (varargin)
 % 2018-12-26 Added 'ForceCellOutput' as an optional argument
 % 2019-03-15 Fixed the case when extension is not provided
 % 2019-05-16 Added 'WarnFlag' as an optional flag
+% 2019-05-21 Added 'SortBy' as an optional argument
 % TODO: use force_string_start.m to make sure extension starts with a dot
 % TODO: Fix bug when a dot is in the folder name
+
+%% Hard-coded parameters
+validSortBys = {'name', 'date', 'bytes'};
 
 %% Default values for optional arguments
 verboseDefault = false;         % don't print to standard output by default
@@ -85,6 +96,7 @@ keywordDefault = '';            % set later
 suffixDefault = '';             % set later
 extensionDefault = '';          % set later
 regExpDefault = '';             % set later
+sortByDefault = 'name';         % sort by name by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -114,6 +126,8 @@ addParameter(iP, 'Extension', extensionDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'RegExp', regExpDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'SortBy', sortByDefault, ...
+    @(x) any(validatestring(x, validSortBys)));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -127,6 +141,7 @@ keyword = iP.Results.Keyword;
 suffix = iP.Results.Suffix;
 extension = iP.Results.Extension;
 regExp = iP.Results.RegExp;
+sortBy = validatestring(iP.Results.SortBy, validSortBys);
 
 % Make sure the directory is an existing full path
 [directory, dirExists] = construct_and_check_fullpath(directory);
@@ -190,8 +205,25 @@ end
 %   are matches to the regular expression
 files = filesOrDirs(~isDir & isMatch);
 
+% Sort by date or bytes if requested
+if ~strcmpi(sortBy, 'name')
+    % Convert the struct array to a table
+    filesTable = struct2table(files);
+
+    % Sort the table by the requested field
+    filesTableSorted = sortrows(filesTable, sortBy); 
+
+    % Change it back to a struct array
+    files = table2struct(filesTableSorted);
+end
+
+% Get first output
+varargout{1} = files;
+
 % Extract the full paths
-fullPaths = extract_fullpaths(files, 'ForceCellOutput', forceCellOutput);
+if nargout >= 2
+    varargout{2} = extract_fullpaths(files, 'ForceCellOutput', forceCellOutput);
+end
 
 %% Print to standard output
 % Count the number of files
