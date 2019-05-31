@@ -34,6 +34,7 @@ sweepLengthSec = 60;
 timeLabel = 'Time';
 phaseLabel = 'Phase';
 phaseStrs = {'Baseline', 'Wash-on', 'Wash-out'};
+% phaseStrs = {'baseline', 'washon', 'washoff'};
 
 % Analysis parameters
 %   Note: must be consistent with plot_struct.m

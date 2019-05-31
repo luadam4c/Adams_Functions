@@ -320,6 +320,17 @@ valueLabel = yLabel;
 avgValueLabel = ['Average ', valueLabel, ' over last ', ...
                 num2str(nToAverage), ' sweeps'];
 
+if saveSheetFlag || saveMatFlag || saveFigFlag
+    % Create a time stamp
+    timeStamp = create_time_stamp('FormatOut', 'yyyymmddTHHMM');
+
+    % Create the file base for output files and figures
+    if isempty(outFileBase)
+        outFileBase = ...
+            fullfile(outFolder, [timeStamp, '_online_values_', valueStr]);
+    end
+end
+
 %% Initialize variables
 % The .abf files already analyzed
 abfPathsAnalyzed = {};
@@ -541,6 +552,12 @@ while ishandle(fig)
 
     % Update plot
     drawnow;
+    
+    % Save the figure
+    if saveFigFlag
+        % Save the figure in all file types requested
+        save_all_figtypes(fig, outFileBase, figTypes);
+    end
 end
 
 %% Output
@@ -549,17 +566,6 @@ valueTable = table(abfPathsAnalyzed, values, ...
                     'VariableNames', {inPathVarStr, valueStr});
 
 %% Save active data
-if saveSheetFlag || saveMatFlag || saveFigFlag
-    % Create a time stamp
-    timeStamp = create_time_stamp('FormatOut', 'yyyymmddTHHMM');
-
-    % Create the file base for output files and figures
-    if isempty(outFileBase)
-        outFileBase = ...
-            fullfile(outFolder, [timeStamp, '_online_values_', valueStr]);
-    end
-end
-
 % Save the data in a spreadsheet
 if saveSheetFlag
     % Create a spreadsheet path
@@ -576,15 +582,6 @@ if saveMatFlag
 
     % Save values
     save(valuesMatFilePath, 'values', '-v7.3');
-end
-
-% Save the figure
-if saveFigFlag
-    % Save the figure in all file types requested
-    save_all_figtypes(fig, outFileBase, figTypes);
-
-    % Close figure
-    close(fig);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -611,6 +608,9 @@ pathPrevUnderAcquis = abfPathsNotAnalyzed{1};
 
 % Update the files not analyzed
 abfPathsNotAnalyzed = setdiff(abfPathsNotAnalyzed, {pathPrevUnderAcquis});
+
+% Close figure
+close(fig);
 
 %}
 

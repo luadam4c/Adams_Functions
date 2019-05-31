@@ -241,13 +241,13 @@ measuresToPlot = {'oscIndex1', 'oscIndex2', 'oscIndex3', 'oscIndex4', ...
 
 %% Default values for optional arguments
 plotAllFlagDefault = false;
-plotSpikeDetectionFlagDefault = false;
-plotSpikeDensityFlagDefault = false;
-plotSpikeHistogramFlagDefault = false;
-plotAutoCorrFlagDefault = false;
-plotRawFlagDefault = false;
-plotRasterFlagDefault = false;
-plotMeasuresFlagDefault = false;
+plotSpikeDetectionFlagDefault = [];
+plotSpikeDensityFlagDefault = [];
+plotSpikeHistogramFlagDefault = [];
+plotAutoCorrFlagDefault = [];
+plotRawFlagDefault = [];
+plotRasterFlagDefault = [];
+plotMeasuresFlagDefault = [];
 outFolderDefault = pwd;
 fileBaseDefault = '';           % set later
 stimStartMsDefault = [];        % set later
@@ -330,32 +330,14 @@ phaseBoundaries = iP.Results.PhaseBoundaries;
 tVecs = iP.Results.tVecs;
 
 %% Preparation
-% Updated plot flags
-if plotAllFlag
-    % TODO: Simplify with argfun.m
-
-    if ~plotSpikeDetectionFlag
-        plotSpikeDetectionFlag = true;
-    end
-    if ~plotSpikeDensityFlag
-        plotSpikeDensityFlag = true;
-    end
-    if ~plotSpikeHistogramFlag
-        plotSpikeHistogramFlag = true;
-    end
-    if ~plotAutoCorrFlag
-        plotAutoCorrFlag = true;
-    end
-    if ~plotRawFlag
-        plotRawFlag = true;
-    end
-    if ~plotRasterFlag
-        plotRasterFlag = true;
-    end
-    if ~plotMeasuresFlag
-        plotMeasuresFlag = true;
-    end
-end
+% Set default flags
+[plotSpikeDetectionFlag, plotSpikeDensityFlag, ...
+plotSpikeHistogramFlag, plotAutoCorrFlag, ...
+plotRawFlag, plotRasterFlag, plotMeasuresFlag] = ...
+    argfun(@(x) set_default_flag(x, plotAllFlag), ...
+                plotSpikeDetectionFlag, plotSpikeDensityFlag, ...
+                plotSpikeHistogramFlag, plotAutoCorrFlag, ...
+                plotRawFlag, plotRasterFlag, plotMeasuresFlag);
 
 % Count the number of vectors
 nVectors = count_vectors(vVecs);
@@ -901,7 +883,7 @@ MS_PER_S = 1000;
 % Must be consistent with compute_oscillation_duration.m
 filtFreq = [100, 1000];
 minDelayMs = 25;
-signal2Noise = 2.5;
+signal2Noise = []; %2.5;
 binWidthMs = 10;
 resolutionMs = 5;
 minBurstLengthMs = 20;
@@ -1353,6 +1335,21 @@ parsedData.indTroughs = indTroughs;
 parsedData.ampPeaks = ampPeaks;
 parsedData.ampTroughs = ampTroughs;
 parsedData.halfPeriodsToMultiple = halfPeriodsToMultiple;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function flag = set_default_flag(flag, auxFlag)
+% TODO: Input parser
+% TODO: Make auxFlag an optional argument
+% TODO: Pull out to its own function
+
+if isempty(flag)
+    if auxFlag
+        flag = true;
+    else
+        flag = false;
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1897,6 +1894,31 @@ siSeconds = siMs / MS_PER_S;
 % Compute the minimum delay in samples
 minDelaySamples = ceil(minDelayMs ./ siMs);
 parsedParams.minDelaySamples = minDelaySamples;
+
+% Updated plot flags
+if plotAllFlag
+    if isempty(plotSpikeDetectionFlag)
+        plotSpikeDetectionFlag = true;
+    end
+    if isempty(plotSpikeDensityFlag)
+        plotSpikeDensityFlag = true;
+    end
+    if isempty(plotSpikeHistogramFlag)
+        plotSpikeHistogramFlag = true;
+    end
+    if isempty(plotAutoCorrFlag)
+        plotAutoCorrFlag = true;
+    end
+    if isempty(plotRawFlag)
+        plotRawFlag = true;
+    end
+    if isempty(plotRasterFlag)
+        plotRasterFlag = true;
+    end
+    if isempty(plotMeasuresFlag)
+        plotMeasuresFlag = true;
+    end
+end
 
 %}
 

@@ -321,7 +321,7 @@ if isempty(rBoundaries)
         lastBaseIndex = find(pValues < pBoundariesThis(1), 1, 'last');
 
         % Find the first acceptable baseline index
-        firstBaseIndex = lastBaseIndex - nSweepsLastOfPhase + 1;
+        firstBaseIndex = max(1, lastBaseIndex - nSweepsLastOfPhase + 1);
 
         % Compute the baseline average for this field
         [baselineAverage, indSelected{iField}] = ...

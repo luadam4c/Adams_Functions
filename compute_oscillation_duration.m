@@ -30,7 +30,7 @@ function oscDurationSec = compute_oscillation_duration (abfFile, varargin)
 %                   default == 25 ms
 %                   - 'Signal2Noise': signal-to-noise ratio
 %                   must be a positive scalar
-%                   default == 2.5
+%                   default == set in detect_spikes_multiunit.m
 %                   - 'BinWidthMs': bin width (ms)
 %                   must be a positive scalar
 %                   default == 10 ms
@@ -72,8 +72,7 @@ verboseDefault = false;             % don't print parsed results by default
 baseWindowDefault = [];             % set later
 filtFreqDefault = [100, 1000];
 minDelayMsDefault = 25;
-signal2NoiseDefault = 2.5;          % signal must be at least 2.5 times 
-                                    %   baseline noise by default       
+signal2NoiseDefault = [2.0];           % set in detect_spikes_multiunit.m
 binWidthMsDefault = 10;             % use a bin width of 10 ms by default
 minBurstLengthMsDefault = 20;       % bursts must be at least 20 ms by default
 maxInterBurstIntervalMsDefault = 2000;  % bursts are no more than 
@@ -181,6 +180,10 @@ oscDurationSec = spHistParams.oscDurationMs ./ MS_PER_S;
 
 %{
 OLD CODE:
+
+signal2NoiseDefault = 2.5;          % signal must be at least 2.5 times 
+                                    %   baseline noise by default       
+
 
 %}
 

@@ -12,24 +12,28 @@ function parse_all_multiunit(varargin)
 %                   default == false
 %                   - 'PlotSpikeDetectionFlag': whether to plot spike detection
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   default == set in parse_multiunit.m
 %                   - 'PlotSpikeDensityFlag': whether to plot spike density
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   default == set in parse_multiunit.m
 %                   - 'PlotSpikeHistogramFlag': whether to plot spike histograms
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   default == set in parse_multiunit.m
 %                   - 'PlotAutoCorrFlag': whether to plot autocorrelegrams
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   default == set in parse_multiunit.m
 %                   - 'PlotRawFlag': whether to plot raw traces
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   default == set in parse_multiunit.m
 %                   - 'PlotRasterFlag': whether to plot raster plots
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   default == set in parse_multiunit.m
 %                   - 'PlotMeasuresFlag': whether to plot time series 
 %                                           of measures
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == set in parse_multiunit.m
+%                   - 'SaveMatFlag': whether to save combined data
+%                                           as matfiles
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %
@@ -52,6 +56,8 @@ function parse_all_multiunit(varargin)
 % 2019-05-21 Now allows each slice to have different numbers of files
 % 2019-05-21 Now uses 'slice' or 'phase' in the file name 
 %               to detect sliceBase and phase boundaries
+% 2019-05-30 Now saves combined vectors as mat files
+% 2019-05-31 Updated plot flags
 
 % TODO: Make outFolder optional parameters
 % TODO: Make combining optional
@@ -59,19 +65,21 @@ function parse_all_multiunit(varargin)
 %% Hard-coded parameters
 inFolder = pwd;
 outFolder = pwd;
-saveMatFlag = false;
 matFileSuffix = '_multiunit_data';
-varsNeeded = {'vVecsSl', 'siMsSl', 'iVecsSl', 'sliceBases', 'phaseBoundaries'};
+varsNeeded = {'sliceBase', 'vVecsSl', 'siMsSl', 'iVecsSl', ...
+                'phaseBoundaries', 'phaseStrs'};
+regexpSliceMatFile = '.*slice[0-9]*.mat';
 
 %% Default values for optional arguments
 plotAllFlagDefault = false;
-plotSpikeDetectionFlagDefault = false;
-plotSpikeDensityFlagDefault = false;
-plotSpikeHistogramFlagDefault = false;
-plotAutoCorrFlagDefault = false;
-plotRawFlagDefault = false;
-plotRasterFlagDefault = false;
-plotMeasuresFlagDefault = false;
+plotSpikeDetectionFlagDefault = [];     % set in parse_multiunit.m
+plotSpikeDensityFlagDefault = [];       % set in parse_multiunit.m
+plotSpikeHistogramFlagDefault = [];     % set in parse_multiunit.m
+plotAutoCorrFlagDefault = [];           % set in parse_multiunit.m
+plotRawFlagDefault = [];                % set in parse_multiunit.m
+plotRasterFlagDefault = [];             % set in parse_multiunit.m
+plotMeasuresFlagDefault = [];           % set in parse_multiunit.m
+saveMatFlagDefault = true;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -98,6 +106,8 @@ addParameter(iP, 'PlotRasterFlag', plotRasterFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotMeasuresFlag', plotMeasuresFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveMatFlag', saveMatFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -109,29 +119,36 @@ plotAutoCorrFlag = iP.Results.PlotAutoCorrFlag;
 plotRawFlag = iP.Results.PlotRawFlag;
 plotRasterFlag = iP.Results.PlotRasterFlag;
 plotMeasuresFlag = iP.Results.PlotMeasuresFlag;
+saveMatFlag = iP.Results.SaveMatFlag;
 
-%% Generate and save data vectors for each slice
-inFolderName = extract_fileparts(inFolder, 'dirbase');
+%% Preparation
+% Get all the mat file names
+[~, allMatPaths] = ...
+    all_files('Directory', inFolder, 'RegExp', regexpSliceMatFile, ...
+                'SortBy', 'date');
 
-% Create a file name for all multi-unit data
-matPath = fullfile(outFolder, [inFolderName, matFileSuffix, '.mat']);
-
-% Load or process data for each slice
-if isfile(matPath)
-    % Load data for each slice
+if ~isempty(allMatPaths)
+    % Load data for each slice as a structure array
     fprintf("Loading data for each slice ...\n");
-    load(matPath, varsNeeded{:});
+    allDataStruct = cellfun(@(x) load(x, varsNeeded{:}), allMatPaths);
+
+    % Convert to a table
+    allDataTable = struct2table(allDataStruct);
 else
     % Combine data from the same slice
     fprintf("Combining data for each slice ...\n");
-    [vVecsSl, siMsSl, iVecsSl, sliceBases, phaseBoundaries, phaseStrs] = ...
-        combine_data_from_same_slice(inFolder);
+    allDataTable = ...
+        combine_data_from_same_slice(inFolder, saveMatFlag, varsNeeded);
 
-    % Save data for each slice
-    if saveMatFlag
-        save(matPath, varsNeeded{:}, '-v7.3');
-    end
 end
+
+% Extract from the table
+sliceBases = allDataTable.sliceBase;
+vVecsSl = allDataTable.vVecsSl;
+siMsSl = allDataTable.siMsSl;
+iVecsSl = allDataTable.iVecsSl;
+phaseBoundaries = allDataTable.phaseBoundaries;
+phaseStrs = allDataTable.phaseStrs;
 
 %% Parse all slices
 % Count the number of slices
@@ -175,8 +192,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [vVecsSl, siMsSl, iVecsSl, sliceBases, phaseBoundaries, phaseStrs] = ...
-            combine_data_from_same_slice(inFolder, varargin)
+function allData = combine_data_from_same_slice(inFolder, ...
+                                            saveMatFlag, varsNeeded, varargin)
 %% Combines the data from the same slices
 
 %% Hard-coded parameters
@@ -192,10 +209,10 @@ allSliceNames = extract_fileparts(allAbfPaths, 'base', ...
                                     'RegExp', regexpSliceName);
 
 % Get unique slice names
-sliceBases = unique(allSliceNames);
+sliceBase = unique(allSliceNames);
 
 % Count the number of slices
-nSlices = numel(sliceBases);
+nSlices = numel(sliceBase);
 
 %% Do the job
 vVecsSl = cell(nSlices, 1);
@@ -207,13 +224,19 @@ parfor iSlice = 1:nSlices
 %for iSlice = 1:nSlices
     [vVecsSl{iSlice}, siMsSl(iSlice), iVecsSl{iSlice}, ...
         phaseBoundaries{iSlice}, phaseStrs{iSlice}] = ...
-        combine_data_from_one_slice(inFolder, sliceBases{iSlice}, varargin{:});
+        combine_data_from_one_slice(inFolder, sliceBase{iSlice}, ...
+                                    saveMatFlag, varsNeeded, varargin{:});
 end
+
+%% Output data
+allData = table(sliceBase, vVecsSl, siMsSl, ...
+                iVecsSl, phaseBoundaries, phaseStrs);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [vVecsSl, siMsSl, iVecsSl, phaseBoundaries, phaseStrs] = ...
-            combine_data_from_one_slice(inFolder, sliceBase, varargin)
+            combine_data_from_one_slice(inFolder, sliceBase, ...
+                                        saveMatFlag, varsNeeded, varargin)
 %% Combines the data for one slice
 
 %% Hard-coded parameters
@@ -304,6 +327,17 @@ else
     phaseBoundaries = iFileLastEachPhase(1:nBoundaries) + 0.5;
 end
 
+%% Save to a matfile if requested
+if saveMatFlag
+    % Create a matfile path
+    commonPrefix = extract_fileparts(allAbfPaths, 'commonprefix');
+    commonDir = extract_fileparts(allAbfPaths, 'commondirectory');
+    matPath = fullfile(commonDir, [commonPrefix, '.mat']);
+
+    % Save data for this slice
+    save(matPath, varsNeeded{:}, '-v7.3');
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
@@ -382,6 +416,15 @@ phaseIDs = unique(allPhaseIDs, 'sorted');
 % Sort the unique phase strings
 %   Note: This assumes the phase strings are in correct alphanumeric order
 phaseStrs = unique(allPhaseStrs, 'sorted');
+
+inFolderName = extract_fileparts(inFolder, 'dirbase');
+% Create a file name for all multi-unit data
+matPath = fullfile(outFolder, [inFolderName, matFileSuffix, '.mat']);
+% Save data for each slice
+if saveMatFlag
+    save(matPath, varsNeeded{:}, '-v7.3');
+end
+if isfile(matPath)
 
 %}
 

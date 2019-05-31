@@ -60,7 +60,8 @@ function [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, vararg
 %                   default == 10000 ms
 %                   - 'Signal2Noise': signal-to-noise ratio
 %                   must be a positive scalar
-%                   default == 3
+%                   default == 0.5 * (max(slopes(idxDetectStart:end)) 
+%                                       / baseSlopeNoise)
 %                   - 'tVec': original time vector
 %                   must be a numeric array or a cell array of numeric arrays
 %                   default == [] (not used)
@@ -79,11 +80,13 @@ function [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, vararg
 % 2019-05-04 Added input parser
 % 2019-05-14 Added 'FiltFreq' as an optional argument
 % 2019-05-14 Added 'MaxDelayMs' as an optional argument
+% 2019-05-30 Changed signal-to-noise default to be dependent on maximum slope
 % TODO: Finish documentation
 % 
 
 %% Hard-coded parameters
 MS_PER_S = 1000;
+thres2MaxSignal = 0.5;
 
 %% Default values for optional arguments
 filtFreqDefault = NaN;          % set later
@@ -91,7 +94,7 @@ baseWindowDefault = [];         % set later
 idxStimStartDefault = 1;    
 minDelayMsDefault = 25;
 maxDelayMsDefault =10000;       % 1000 ms or 10 seconds
-signal2NoiseDefault = 3;        
+signal2NoiseDefault = [];       % set later
 tVecDefault = [];               % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -129,7 +132,7 @@ addParameter(iP, 'MinDelayMs', minDelayMsDefault, ...
 addParameter(iP, 'MaxDelayMs', maxDelayMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
 addParameter(iP, 'Signal2Noise', signal2NoiseDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'tVec', tVecDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['tVec must be either a numeric array ', ...
@@ -182,6 +185,12 @@ slopes = diff(vVecFilt) ./ siMs;
 
 % Compute a baseline slope noise in mV/s
 baseSlopeNoise = compute_baseline_noise(slopes, tVec(1:(end-1)), baseWindow);
+
+% Compute a default signal-to-noise ratio
+if isempty(signal2Noise)
+    signal2Noise = thres2MaxSignal * (max(slopes(idxDetectStart:end)) ./ ...
+                                        baseSlopeNoise);
+end
 
 % Compute a slope threshold in mV/s
 slopeThreshold = baseSlopeNoise * signal2Noise;
@@ -269,6 +278,8 @@ spikesData.spikeTimesMs = spikeTimesMs;
 
 %{
 OLD CODE:
+
+signal2NoiseDefault = 3;        
 
 %}
 
