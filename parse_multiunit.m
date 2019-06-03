@@ -177,6 +177,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/extract_subvectors.m
 %       cd/find_nearest_multiple.m
 %       cd/force_column_cell.m
+%       cd/force_matrix.m
 %       cd/iscellnumeric.m
 %       cd/match_time_info.m
 %       cd/movingaveragefilter.m
@@ -216,6 +217,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 % 2019-05-16 Added spike density computation and plot
 % 2019-05-16 Changed maxInterBurstIntervalMs to 1500
 % 2019-05-16 Changed signal2Noise to 2.5 
+% 2019-06-02 Added compute_default_signal2noise.m
 
 % Hard-coded constants
 MS_PER_S = 1000;
@@ -257,6 +259,19 @@ tVecsDefault = [];              % set later
 
 % TODO: Make optional argument
 baseWindows = [];
+relSnrThres2Max = [];           % set in compute_default_signal2noise.m
+
+% Must be consistent with compute_oscillation_duration.m
+filtFreq = [100, 1000];
+minDelayMs = 25;
+binWidthMs = 10;
+resolutionMs = 5;
+signal2Noise = [];              % set later
+minBurstLengthMs = 20;
+maxInterBurstIntervalMs = 2000;
+minSpikeRateInBurstHz = 100;
+filterWidthMs = 100;
+minRelProm = 0.02;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -331,6 +346,7 @@ tVecs = iP.Results.tVecs;
 
 %% Preparation
 % Set default flags
+fprintf('Setting default flags for %s ...\n', fileBase);
 [plotSpikeDetectionFlag, plotSpikeDensityFlag, ...
 plotSpikeHistogramFlag, plotAutoCorrFlag, ...
 plotRawFlag, plotRasterFlag, plotMeasuresFlag] = ...
@@ -368,10 +384,27 @@ fprintf('Detecting stimulation start for %s ...\n', fileBase);
 idxStimStart = stimParams.idxStimStart;
 stimStartMs = stimParams.stimStartMs;
 
+% Compute the minimum delay in samples
+minDelaySamples = round(minDelayMs ./ siMs);
+
+% Find the starting index for detecting a spike
+idxDetectStart = idxStimStart + minDelaySamples;
+
 % Construct default baseline windows
 if isempty(baseWindows)
     fprintf('Constructing baseline window for %s ...\n', fileBase);
     baseWindows = compute_time_window(tVecs, 'TimeEnd', stimStartMs);
+end
+
+% Determine a signal-to-noise ratio if not provided
+% %   Note: This assumes all sweeps have the same protocol
+if isempty(signal2Noise)
+    fprintf('Determining signal-to-noise ratio for %s ...\n', fileBase);
+    signal2Noise = compute_default_signal2noise(vVecs, siMs, 'tVecs', tVecs, ...
+                        'IdxDetectStart', idxDetectStart, ...
+                        'BaseWindows', baseWindows, ...
+                        'FiltFreq', filtFreq, ...
+                        'RelSnrThres2Max', relSnrThres2Max);
 end
 
 % Force as a cell array of vectors
@@ -389,6 +422,11 @@ parfor iVec = 1:nVectors
         parse_multiunit_helper(iVec, vVecs{iVec}, tVecs{iVec}, siMs(iVec), ...
                                 idxStimStart(iVec), stimStartMs(iVec), ...
                                 baseWindows{iVec}, ...
+                                filtFreq, filterWidthMs, ...
+                                minDelayMs, binWidthMs, ...
+                                resolutionMs, signal2Noise, ...
+                                minBurstLengthMs, maxInterBurstIntervalMs, ...
+                                minSpikeRateInBurstHz, minRelProm, ...
                                 fileBase, titleBase, phaseBoundaries);
 end
 
@@ -869,28 +907,176 @@ fprintf('%s analyzed! ...\n\n', fileBase);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function signal2Noise = compute_default_signal2noise(vVecs, siMs, varargin)
+%% Computes a default signal-to-noise ratio
+% Usage: signal2Noise = compute_default_signal2noise(vVecs, siMs, tVecs (opt), varargin)
+% Requires:
+%       cd/compute_baseline_noise.m
+%       cd/compute_time_window.m
+%       cd/count_samples.m
+%       cd/extract_elements.m
+%       cd/extract_subvectors.m
+%       cd/force_matrix.m
+%       cd/freqfilter.m
+%       cd/match_time_info.m
+
+% File History:
+% 2019-06-02 Created by Adam Lu
+% TODO: Pull out to its own function and use in detect_spikes_multiunit.m
+
+%% Hard-coded constants
+MS_PER_S = 1000;
+
+% Must be consistent with detect_spikes_multiunit.m   
+artifactLengthMs = 25;
+defaultRelSnrThres2Max = 0.1;
+
+%% Default values for optional arguments
+idxStimStartDefault = 1;        % stim at first time point by default
+idxDetectStartDefault = [];     % set later
+baseWindowsDefault = [];        % set later
+filtFreqDefault = NaN;          % no bandpass filter by default 
+minDelayMsDefault = [];         % set later
+relSnrThres2MaxDefault = [];    % set later
+tVecsDefault = [];              % set later
+
+%% Deal with arguments
+% Check number of required arguments
+if nargin < 2
+    error(create_error_for_nargin(mfilename));
+end
+
+% Set up Input Parser Scheme
+iP = inputParser;
+iP.FunctionName = mfilename;
+
+% Add required inputs to the Input Parser
+addRequired(iP, 'vVecs', ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['vVecs must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
+addRequired(iP, 'siMs', ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'vector'}));
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'IdxStimStart', idxStimStartDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer'}));
+addParameter(iP, 'IdxDetectStart', idxDetectStartDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'BaseWindows', baseWindowsDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['baseWindows must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
+addParameter(iP, 'FiltFreq', filtFreqDefault, ...
+    @(x) isnumeric(x) && isvector(x) && numel(x) <= 2);
+addParameter(iP, 'MinDelayMs', minDelayMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'RelSnrThres2Max', relSnrThres2MaxDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'tVecs', tVecsDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['tVecs must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
+
+% Read from the Input Parser
+parse(iP, vVecs, siMs, varargin{:});
+idxStimStart = iP.Results.IdxStimStart;
+idxDetectStart = iP.Results.IdxDetectStart;
+baseWindows = iP.Results.BaseWindows;
+filtFreq = iP.Results.FiltFreq;
+minDelayMs = iP.Results.MinDelayMs;
+relSnrThres2Max = iP.Results.RelSnrThres2Max;
+tVecs = iP.Results.tVecs;
+
+%% Preparation
+% Count the number of samples for each vector
+nSamples = count_samples(vVecs);
+
+% Match time vector(s) with sampling interval(s) and number(s) of samples
+[tVecs, siMs, nSamples] = match_time_info(tVecs, siMs, nSamples);
+
+% Compute the average sampling interval in ms
+siMsAvg = mean(siMs);
+
+% Set default relative signal-2-noise ratio from threshold and maximum
+if isempty(relSnrThres2Max)
+    relSnrThres2Max = defaultRelSnrThres2Max;
+end
+
+% Set default minimum delay in ms
+if isempty(minDelayMs)
+    minDelayMs = artifactLengthMs;
+end
+
+% Find the starting index for detecting a spike
+if isempty(idxDetectStart)
+    % Compute the minimum delay in samples
+    minDelaySamples = round(minDelayMs ./ siMs);
+
+    % Find the starting index for detecting a spike
+    idxDetectStart = idxStimStart + minDelaySamples;
+end
+
+% Construct default baseline windows
+if isempty(baseWindows)
+    % Convert to the time of stimulation start
+    stimStartMs = extract_elements(tVecs, 'Index', idxStimStart);
+
+    % Compute baseline windows
+    baseWindows = compute_time_window(tVecs, 'TimeEnd', stimStartMs);
+end
+
+%% Do the job
+% Force as a matrix
+tVecs = force_matrix(tVecs);
+vVecs = force_matrix(vVecs);
+
+% Bandpass filter if requested
+if ~isnan(filtFreq)
+    siSeconds = siMsAvg / MS_PER_S;    
+    vVecsFilt = freqfilter(vVecs, filtFreq, siSeconds, 'FilterType', 'band');
+else
+    vVecsFilt = vVecs;
+end
+
+% Compute all instantaneous slopes in uV/ms == mV/s
+slopes = diff(vVecsFilt) ./ siMsAvg;
+
+% Compute baseline slope noise in mV/s
+baseSlopeNoise = compute_baseline_noise(slopes, tVecs(1:(end-1), :), ...
+                                        baseWindows);
+
+% Compute the average baseline slope noise
+avgBaseSlopeNoise = mean(baseSlopeNoise);
+
+% Extract slopes after detection start
+slopesAfterDetectStart = ...
+    extract_subvectors(slopes, 'IndexStart', idxDetectStart);
+
+% Compute the average maximum slope after detection start
+avgSlopeAfterDetectStart = ...
+    mean(extract_elements(slopesAfterDetectStart, 'max'));
+
+% Compute a default signal-to-noise ratio
+signal2Noise = 1 + relSnrThres2Max * ...
+                (avgSlopeAfterDetectStart / avgBaseSlopeNoise - 1);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function [parsedParams, parsedData] = ...
                 parse_multiunit_helper(iVec, vVec, tVec, siMs, ...
                                 idxStimStart, stimStartMs, baseWindow, ...
+                                filtFreq, filterWidthMs, ...
+                                minDelayMs, binWidthMs, ...
+                                resolutionMs, signal2Noise, ...
+                                minBurstLengthMs, maxInterBurstIntervalMs, ...
+                                minSpikeRateInBurstHz, minRelProm, ...
                                 fileBase, figTitleBase, phaseBoundaries)
 
 % Parse a single multiunit recording
 
 %% Hard-coded constants
 MS_PER_S = 1000;
-
-%% Hard-coded parameters
-% Must be consistent with compute_oscillation_duration.m
-filtFreq = [100, 1000];
-minDelayMs = 25;
-signal2Noise = []; %2.5;
-binWidthMs = 10;
-resolutionMs = 5;
-minBurstLengthMs = 20;
-maxInterBurstIntervalMs = 2000;
-minSpikeRateInBurstHz = 100;
-filterWidthMs = 100;
-minRelProm = 0.02;
 
 %% Preparation
 % Compute the bin width in seconds

@@ -79,7 +79,6 @@ addRequired(iP, 'data', ...     % vector of samples
 addRequired(iP, 'fc', ...       % the cutoff frequency(ies) (Hz or normalized)
     @(x) isnumeric(x) && isvector(x) && numel(x) <= 2);
 
-
 % Add optional inputs to the Input Parser
 addOptional(iP, 'si', defaultSamplingInterval, ... % sampling interval (seconds)
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));

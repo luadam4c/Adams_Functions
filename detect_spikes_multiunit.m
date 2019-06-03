@@ -58,6 +58,12 @@ function [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, vararg
 %                   - 'MaxDelayMs': maximum delay after stim start (ms)
 %                   must be a nonnegative scalar
 %                   default == 10000 ms
+%                   - 'IdxDetectStart': index of detection start
+%                   must be a positive integer scalar
+%                   default == idxStimStart + minDelayMs / siMs
+%                   - 'IdxDetectEnd': index of detection start
+%                   must be a positive integer scalar
+%                   default == idxStimStart + maxDelayMs / siMs
 %                   - 'Signal2Noise': signal-to-noise ratio
 %                   must be a positive scalar
 %                   default == 0.5 * (max(slopes(idxDetectStart:end)) 
@@ -86,14 +92,16 @@ function [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, vararg
 
 %% Hard-coded parameters
 MS_PER_S = 1000;
-thres2MaxSignal = 0.5;
+relSnrThres2Max = 0.1;
 
 %% Default values for optional arguments
 filtFreqDefault = NaN;          % set later
 baseWindowDefault = [];         % set later
-idxStimStartDefault = 1;    
+idxStimStartDefault = 1;
 minDelayMsDefault = 25;
-maxDelayMsDefault =10000;       % 1000 ms or 10 seconds
+maxDelayMsDefault = 10000;      % 1000 ms or 10 seconds
+idxDetectStartDefault = [];     % set later
+idxDetectEndDefault = [];       % set later
 signal2NoiseDefault = [];       % set later
 tVecDefault = [];               % set later
 
@@ -131,6 +139,10 @@ addParameter(iP, 'MinDelayMs', minDelayMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
 addParameter(iP, 'MaxDelayMs', maxDelayMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
+addParameter(iP, 'IdxDetectStart', idxDetectStartDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+addParameter(iP, 'IdxDetectEnd', idxDetectEndDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 addParameter(iP, 'Signal2Noise', signal2NoiseDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'tVec', tVecDefault, ...
@@ -145,32 +157,46 @@ baseWindow = iP.Results.BaseWindow;
 idxStimStart = iP.Results.IdxStimStart;
 minDelayMs = iP.Results.MinDelayMs;
 maxDelayMs = iP.Results.MaxDelayMs;
+idxDetectStart = iP.Results.IdxDetectStart;
+idxDetectEnd = iP.Results.IdxDetectEnd;
 signal2Noise = iP.Results.Signal2Noise;
 tVec = iP.Results.tVec;
 
 %% Preparation
 % Create time vectors
 if isempty(tVec)
+    % Count the number of samples
     nSamples = count_samples(vVec);
     
     tVec = create_time_vectors(nSamples, 'SamplingIntervalMs', siMs);
 end
 
-% Compute the minimum delay in samples
-minDelaySamples = round(minDelayMs ./ siMs);
-
-% Compute the maximum delay in samples
-maxDelaySamples = round(maxDelayMs ./ siMs);
-
 % Find the starting index for detecting a spike
-idxDetectStart = idxStimStart + minDelaySamples;
+if isempty(idxDetectStart)
+    % Compute the minimum delay in samples
+    minDelaySamples = round(minDelayMs ./ siMs);
 
-% Find the corresponding time
+    % Find the starting index for detecting a spike
+    idxDetectStart = max(1, idxStimStart + minDelaySamples);
+end
+
+% Find the ending index for detecting a spike
+if isempty(idxDetectEnd)
+    % Compute the maximum delay in samples
+    maxDelaySamples = round(maxDelayMs ./ siMs);
+
+    % Find the ending index for detecting a spike
+    idxDetectEnd = min(numel(tVec), idxStimStart + maxDelaySamples);
+end
+
+% Find the corresponding times
 detectStartMs = tVec(idxDetectStart);
+detectEndMs = tVec(idxDetectEnd);
 
 % Compute the number of samples
 nSamples = numel(vVec);
 
+%% Do the job
 % Bandpass filter if requested
 if ~isnan(filtFreq)
     siSeconds = siMs / MS_PER_S;    
@@ -179,7 +205,6 @@ else
     vVecFilt = vVec;
 end
 
-%% Do the job
 % Compute all instantaneous slopes in uV/ms == mV/s
 slopes = diff(vVecFilt) ./ siMs;
 
@@ -188,8 +213,8 @@ baseSlopeNoise = compute_baseline_noise(slopes, tVec(1:(end-1)), baseWindow);
 
 % Compute a default signal-to-noise ratio
 if isempty(signal2Noise)
-    signal2Noise = thres2MaxSignal * (max(slopes(idxDetectStart:end)) ./ ...
-                                        baseSlopeNoise);
+    signal2Noise = 1 + relSnrThres2Max * ...
+                        (max(slopes(idxDetectStart:end)) ./ baseSlopeNoise - 1);
 end
 
 % Compute a slope threshold in mV/s
@@ -202,7 +227,7 @@ isPeakSlope = create_logical_array(indPeakSlopes, [nSamples - 1, 1]);
 % Create all indices minus 1
 allIndices = transpose(1:nSamples);
 
-% Detect spikes after idxStimStart + minDelaySamples
+% Detect spikes after idxDetectStart
 isSpike = [false; slopes > slopeThreshold] & [false; isPeakSlope] & ...
             allIndices > idxDetectStart;
 idxSpikes = find(isSpike);
@@ -227,7 +252,7 @@ else
 end
 
 % Find the last index in the range of interest
-idxEndOfInterest1 = min(numel(vVecFilt), idxDetectStart + maxDelaySamples);
+idxEndOfInterest1 = min(numel(vVecFilt), idxDetectEnd);
 
 % Query the maximum and range of vVec after detectStartMs
 vVecTrunc = vVecFilt(idxDetectStart:idxEndOfInterest1);
@@ -236,7 +261,7 @@ vMax = max(vVecTrunc);
 vRange = vMax - vMin;
 
 % Find the last index in the range of interest
-idxEndOfInterest2 = min(numel(slopes), idxDetectStart + maxDelaySamples);
+idxEndOfInterest2 = min(numel(slopes), idxDetectEnd);
 
 % Query the maximum and range of slope after detectStartMs
 slopesTrunc = slopes(idxDetectStart:idxEndOfInterest2);
@@ -252,9 +277,10 @@ spikesParams.maxDelayMs = maxDelayMs;
 spikesParams.filtFreq = filtFreq;
 spikesParams.signal2Noise = signal2Noise;
 spikesParams.baseWindow = baseWindow;
-spikesParams.minDelaySamples = minDelaySamples;
 spikesParams.idxDetectStart = idxDetectStart;
+spikesParams.idxDetectEnd = idxDetectEnd;
 spikesParams.detectStartMs = detectStartMs;
+spikesParams.detectEndMs = detectEndMs;
 spikesParams.baseSlopeNoise = baseSlopeNoise;
 spikesParams.slopeThreshold = slopeThreshold;
 spikesParams.nSpikesTotal = nSpikesTotal;

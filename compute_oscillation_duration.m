@@ -29,8 +29,8 @@ function oscDurationSec = compute_oscillation_duration (abfFile, varargin)
 %                   must be a positive scalar
 %                   default == 25 ms
 %                   - 'Signal2Noise': signal-to-noise ratio
-%                   must be a positive scalar
-%                   default == set in detect_spikes_multiunit.m
+%                   must be a empty or a positive scalar
+%                   default == 2.5
 %                   - 'BinWidthMs': bin width (ms)
 %                   must be a positive scalar
 %                   default == 10 ms
@@ -72,7 +72,7 @@ verboseDefault = false;             % don't print parsed results by default
 baseWindowDefault = [];             % set later
 filtFreqDefault = [100, 1000];
 minDelayMsDefault = 25;
-signal2NoiseDefault = [2.0];           % set in detect_spikes_multiunit.m
+signal2NoiseDefault = 2.5;          % use 2.5 by default
 binWidthMsDefault = 10;             % use a bin width of 10 ms by default
 minBurstLengthMsDefault = 20;       % bursts must be at least 20 ms by default
 maxInterBurstIntervalMsDefault = 2000;  % bursts are no more than 
@@ -111,7 +111,7 @@ addParameter(iP, 'FiltFreq', filtFreqDefault, ...
 addParameter(iP, 'MinDelayMs', minDelayMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative', 'integer'}));
 addParameter(iP, 'Signal2Noise', signal2NoiseDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'BinWidthMs', binWidthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'MinBurstLengthMs', minBurstLengthMsDefault, ...
