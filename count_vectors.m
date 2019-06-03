@@ -58,6 +58,7 @@ function nVectors = count_vectors (vectors, varargin)
 %       cd/plot_protocols.m
 %       cd/plot_raster.m
 %       cd/plot_traces.m
+%       cd/save_all_zooms.m
 
 % File History:
 % 2018-10-10 Created by Adam Lu

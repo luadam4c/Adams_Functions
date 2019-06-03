@@ -68,6 +68,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/plot_protocols.m
 %       cd/plot_struct.m
 %       cd/run_neuron.m
+%       cd/save_all_zooms.m
 %       cd/struct2arglist.m
 %       cd/test_difference.m
 

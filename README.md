@@ -333,6 +333,7 @@ Last Updated 2019-06-03 by Adam Lu
 - [**restore_fields.m**](https://github.com/blabuva/Adams_Functions/blob/master/restore_fields.m): Set each field specified in varargin to previous values from the field strcat(field, '_prev')
 - [**run_neuron.m**](https://github.com/blabuva/Adams_Functions/blob/master/run_neuron.m): Runs NEURON using a .hoc file and a cell array of simulation commands/files
 - [**save_all_figtypes.m**](https://github.com/blabuva/Adams_Functions/blob/master/save_all_figtypes.m): Save figures using all figure types provided
+- [**save_all_zooms.m**](https://github.com/blabuva/Adams_Functions/blob/master/save_all_zooms.m): Save a figure in various zoom windows
 - [**save_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/save_params.m): Saves parameters to a file
 - [**select_similar_values.m**](https://github.com/blabuva/Adams_Functions/blob/master/select_similar_values.m): Selects values that are within a certain percentage range of the mean
 - [**set_fields_zero.m**](https://github.com/blabuva/Adams_Functions/blob/master/set_fields_zero.m): Set each field specified in varargin to zero and store previous values in a new field strcat(field, '_prev')

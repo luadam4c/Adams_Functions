@@ -185,6 +185,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/plot_horizontal_line.m
 %       cd/plot_raster.m
 %       cd/plot_table.m
+%       cd/save_all_zooms.m
 %       cd/transform_vectors.m
 %
 % Used by:
@@ -218,6 +219,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 % 2019-05-16 Changed maxInterBurstIntervalMs to 1500
 % 2019-05-16 Changed signal2Noise to 2.5 
 % 2019-06-02 Added compute_default_signal2noise.m
+% 2019-06-03 Moved code to save_all_zooms.m
 
 % Hard-coded constants
 MS_PER_S = 1000;
@@ -443,6 +445,28 @@ end
 % Save the parameters table
 writetable(parsedParams, fullfile(outFolder, [fileBase, '_params.csv']));
 
+%% Prepare for plotting
+% Determine zoom windows for multi-trace plots
+if plotRawFlag || plotRasterFlag || plotSpikeDensityFlag
+    % Retrieve params
+    stimStartSec = parsedParams.stimStartSec;
+    detectStartSec = parsedParams.detectStartSec;
+    firstSpikeSec = parsedParams.firstSpikeSec;
+
+    % Set zoom windows
+    zoomWin1 = mean(stimStartSec) + [0; 10];
+    zoomWin2 = mean(detectStartSec) + [0; 2];
+    meanFirstSpike = nanmean(firstSpikeSec);
+    if ~isnan(meanFirstSpike)
+        zoomWin3 = meanFirstSpike + [0; 0.1];
+    else
+        zoomWin3 = [0; 0.1];
+    end
+
+    % Combine zoom windows
+    zoomWinsMulti = [zoomWin1, zoomWin2, zoomWin3];
+end
+
 %% Plot spike detection
 if plotSpikeDetectionFlag
     fprintf('Plotting spike detection for %s ...\n', fileBase);
@@ -469,6 +493,8 @@ if plotSpikeDetectionFlag
 
     % Create output directory
     outFolderSpikeDetection = fullfile(outFolder, spikeDetectionDir);
+
+    % Check if output directory exists
     check_dir(outFolderSpikeDetection);
 
     parfor iVec = 1:nVectors
@@ -481,6 +507,9 @@ if plotSpikeDetectionFlag
                                 slopeMin(iVec), slopeMax(iVec), ...
                                 [], figTitleBase{iVec});
 
+        % Get the current figure path base
+        figBaseThis = fullfile(outFolderSpikeDetection, figPathBase{iVec});
+
         % Set zoom windows
         zoomWin1 = stimStartMs(iVec) + [0, 1e4];
         zoomWin2 = detectStartMs(iVec) + [0, 2e3];
@@ -490,10 +519,13 @@ if plotSpikeDetectionFlag
             zoomWin3 = [0, 60];
         end            
 
-        % Save the figure zoomed to several x limits
-        save_all_zooms(fig, outFolderSpikeDetection, ...
-                        figPathBase{iVec}, zoomWin1, zoomWin2, zoomWin3);
+        % Put zoom windows together
+        zoomWins = [zoomWin1, zoomWin2, zoomWin3];
 
+        % Save the figure zoomed to several x limits
+        save_all_zooms(fig, figBaseThis, zoomWins);
+
+        % Close all figures
         close all force hidden
     end
 end
@@ -541,6 +573,8 @@ if plotSpikeHistogramFlag
 
     % Create output directory
     outFolderHist = fullfile(outFolder, spikeHistDir);
+    
+    % Check if output directory exists
     check_dir(outFolderHist);
 
     % Plot histograms
@@ -612,8 +646,10 @@ if plotAutoCorrFlag
 
     % Create output directories
     outFolderAutoCorr = fullfile(outFolder, autoCorrDir);
-    check_dir(outFolderAutoCorr);
     outFolderAcf = fullfile(outFolder, acfDir);
+
+    % Check if output directory exists
+    check_dir(outFolderAutoCorr);
     check_dir(outFolderAcf);
 
     parfor iVec = 1:nVectors
@@ -643,12 +679,8 @@ end
 if plotRawFlag
     fprintf('Plotting raw traces for %s ...\n', fileBase);
 
-    % Modify the figure base
-    figBaseRaw = [fileBase, '_raw'];
-
-    % Create output directory
-    outFolderRaw = fullfile(outFolder, rawDir);
-    check_dir(outFolderRaw);
+    % Create a figure base
+    figBaseRaw = fullfile(outFolder, rawDir, [fileBase, '_raw']);
 
     % Extract parameters
     stimStartSec = parsedParams.stimStartSec;
@@ -702,174 +734,38 @@ if plotRawFlag
     end
 
     % Save the figure zoomed to several x limits
-    zoomWin1 = mean(stimStartSec) + [0, 10];
-    zoomWin2 = mean(detectStartSec) + [0, 2];
-    meanFirstSpike = nanmean(firstSpikeSec);
-    if ~isnan(meanFirstSpike)
-        zoomWin3 = meanFirstSpike + [0, 0.06];
-    else
-        zoomWin3 = [0, 0.06];
-    end            
-    save_all_zooms(figs(1), outFolderRaw, ...
-                    figBaseRaw, zoomWin1, zoomWin2, zoomWin3);
+    save_all_zooms(figs(1), figBaseRaw, zoomWinsMulti);
 end
 
 %% Plot raster plot
-% TODO: Plot burst duration
-% TODO: Plot oscillatory index
 if plotRasterFlag
     fprintf('Plotting raster plot for %s ...\n', fileBase);
 
-    % Modify the figure base
-    figBaseRaster = [fileBase, '_raster'];
+    % Create a figure base
+    figBaseRaster = fullfile(outFolder, rasterDir, [fileBase, '_raster']);
 
-    % Create output directory
-    outFolderRaster = fullfile(outFolder, rasterDir);
-    check_dir(outFolderRaster);
-
-    % Extract the spike times
-    spikeTimesSec = parsedData.spikeTimesSec;
-    timeBurstStartsSec = parsedData.timeBurstStartsSec;
-    timeBurstEndsSec = parsedData.timeBurstEndsSec;
-
-    stimStartSec = parsedParams.stimStartSec;
-    detectStartSec = parsedParams.detectStartSec;
-    firstSpikeSec = parsedParams.firstSpikeSec;
-    timeOscEndSec = parsedParams.timeOscEndSec;
-
-    % Convert oscillatory index to a window
-    % TODO
-
-    % Oscillation window
-    oscWindow = transpose([stimStartSec, timeOscEndSec]);
-
-    % Burst windows
-    burstWindows = cellfun(@(x, y) prepare_for_plot_horizontal_line(x, y), ...
-                            timeBurstStartsSec, timeBurstEndsSec, ...
-                            'UniformOutput', false);
-
-    % Create colors
-    nSweeps = numel(spikeTimesSec);
-    colorsRaster = repmat({'Black'}, nSweeps, 1);
-
-    % Create figure and plot
-    figs(2) = figure('Visible', 'off');
-    clf; hold on
-    [hLines, eventTimes, yEnds, yTicksTable] = ...
-        plot_raster(spikeTimesSec, 'DurationWindow', burstWindows, ...
-                    'LineWidth', 0.5, 'Colors', colorsRaster);
-    % [hLines, eventTimes, yEnds, yTicksTable] = ...
-    %     plot_raster(spikeTimesSec, 'DurationWindow', oscWindow, ...
-    %                 'LineWidth', 0.5, 'Colors', colorsRaster);
-    vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
-                                    'LineStyle', '--');
-    if ~isempty(phaseBoundaries)
-        yBoundaries = nVectors - phaseBoundaries + 1;
-        horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
-                                        'LineStyle', '--', 'LineWidth', 2);
-    end
-    xlabel('Time (s)');
-    ylabel('Trace #');
-    title(['Spike times for ', titleBase]);
+    % Plot figure
+    figs(2) = plot_raster_multiunit(parsedData, parsedParams, ...
+                                    phaseBoundaries, titleBase);
 
     % Save the figure zoomed to several x limits
-    zoomWin1 = mean(stimStartSec) + [0, 10];
-    zoomWin2 = mean(detectStartSec) + [0, 2];
-    meanFirstSpike = nanmean(firstSpikeSec);
-    if ~isnan(meanFirstSpike)
-        zoomWin3 = meanFirstSpike + [0, 0.06];
-    else
-        zoomWin3 = [0, 0.06];
-    end
-    save_all_zooms(figs(2), outFolderRaster, ...
-                    figBaseRaster, zoomWin1, zoomWin2, zoomWin3);
+    save_all_zooms(figs(2), figBaseRaster, zoomWinsMulti);
 end
 
 %% Plot spike density
 if plotSpikeDensityFlag
     fprintf('Plotting spike density plot for %s ...\n', fileBase);
 
-    % Modify the figure base
-    figBaseSpikeDensity = [fileBase, '_spike_density'];
+    % Create a figure base
+    figBaseSpikeDensity = fullfile(outFolder, spikeDensityDir, ...
+                                    [fileBase, '_spike_density']);
 
-    % Create output directory
-    outFolderSpikeDensity = fullfile(outFolder, spikeDensityDir);
-    check_dir(outFolderSpikeDensity);
-
-    % Retrieve data for plotting
-    spikeDensityHz = parsedData.spikeDensityHz;
-
-    siSeconds = parsedParams.siSeconds;
-    minTimeSec = parsedParams.minTimeSec;
-    maxTimeSec = parsedParams.maxTimeSec;
-    stimStartSec = parsedParams.stimStartSec;
-    detectStartSec = parsedParams.detectStartSec;
-    firstSpikeSec = parsedParams.firstSpikeSec;
-    timeOscEndSec = parsedParams.timeOscEndSec;
-
-    % Create figure and plot
-    figs(3) = figure('Visible', 'off');
-    clf; hold on
-
-    % Plot as a heatmap
-    % TODO: plot_heat_map(spikeDensityHz);
-
-    % Maximum number of y ticks
-    maxNYTicks = 20;
-
-    % Count traces
-    nSweeps = numel(spikeDensityHz);
-
-    % Get the average sampling interval in seconds
-    siSeconds = mean(siSeconds);
-
-    % Set x and y end points
-    xEnds = [min(minTimeSec); max(maxTimeSec)];
-    yEnds = [1; nSweeps];
-
-    % Set x and y limits
-    xLimits = [xEnds(1) - 0.5 * siSeconds; xEnds(2) + 0.5 * siSeconds];
-    yLimits = [yEnds(1) - 0.5; yEnds(2) + 0.5];
-
-    % Set y ticks and labels
-    yTicks = create_indices('IndexEnd', nSweeps, 'MaxNum', maxNYTicks, ...
-                            'AlignMethod', 'left');
-    yTickLabels = create_labels_from_numbers(nSweeps - yTicks + 1);
-
-    % Force as a matrix and transpose it so that
-    %   each trace is a row
-    spikeDensityMatrix = transpose(force_matrix(spikeDensityHz));
-
-    colormap(flipud(gray));
-    imagesc(xEnds, flipud(yEnds), spikeDensityMatrix);
-    yticks(yTicks);
-    yticklabels(yTickLabels);
-    vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
-                                    'LineStyle', '--', 'LineWidth', 0.5, ...
-                                    'YLimits', yLimits);
-    if ~isempty(phaseBoundaries)
-        yBoundaries = nSweeps - phaseBoundaries + 1;
-        horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
-                                    'LineStyle', '--', 'LineWidth', 1, ...
-                                    'XLimits', xLimits);
-    end
-    xlim(xLimits);
-    ylim(yLimits);
-    xlabel('Time (s)');
-    ylabel('Trace #');
-    title(['Spike density (Hz) for ', titleBase]);
+    % Plot figure
+    figs(3) = plot_spike_density_multiunit(parsedData, parsedParams, ...
+                                         phaseBoundaries, titleBase);
 
     % Save the figure zoomed to several x limits
-    zoomWin1 = mean(stimStartSec) + [0, 10];
-    zoomWin2 = mean(detectStartSec) + [0, 2];
-    meanFirstSpike = nanmean(firstSpikeSec);
-    if ~isnan(meanFirstSpike)
-        zoomWin3 = meanFirstSpike + [0, 0.06];
-    else
-        zoomWin3 = [0, 0.06];
-    end
-    save_all_zooms(figs(3), outFolderSpikeDensity, ...
-                    figBaseSpikeDensity, zoomWin1, zoomWin2, zoomWin3);
+    save_all_zooms(figs(3), figBaseSpikeDensity, zoomWinsMulti);
 end
 
 %% Plot time series of measures
@@ -878,6 +774,8 @@ if plotMeasuresFlag
 
     % Create output directory and subdirectories for each measure
     outFolderMeasures = fullfile(outFolder, measuresDir);
+
+    % Check if output directory exists
     check_dir(outFolderMeasures);
     check_subdir(outFolderMeasures, measuresToPlot);
 
@@ -888,7 +786,7 @@ if plotMeasuresFlag
     % Create custom figure titles
     figTitlesMeasures = strcat(measuresToPlot, [' for ', titleBase]);
 
-    % Plot table
+    % Plot table and save figures
     figs(4:(nMeasures + 3)) = ...
         plot_table(parsedParams, 'PlotType', plotTypeMeasures, ...
                     'VariableNames', measuresToPlot, ...
@@ -1576,6 +1474,22 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function vector = prepare_for_plot_horizontal_line(starts, ends)
+%% Put in the form [start1, end1, start2, end2, ..., startn, endn]
+
+if isempty(starts) || isempty(ends)
+    form1 = [0; 0];
+else
+    % Put in the form [start1, start2, ..., startn;
+    %                   end1,   end2,  ...,  endn]
+    form1 = transpose([starts, ends]);
+end
+
+% Reshape as a column vector
+vector = reshape(form1, [], 1);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function [fig, ax, lines, markers, raster] = ...
                 plot_spike_detection(tVec, vVec, vVecFilt, ...
                                     slopes, idxSpikes, ...
@@ -1760,46 +1674,120 @@ title(['Autocorrelation function for ', figTitleBase]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function save_all_zooms(fig, outFolder, figPathBase, zoomWin1, zoomWin2, zoomWin3)
-%% Save the figure as .fig and 4 zooms as .png
-% TODO: Make this more general
+function fig = plot_raster_multiunit(parsedData, parsedParams, ...
+                                        phaseBoundaries, titleBase)
+%% Plots a spike raster plot from parsed multiunit data
+% TODO: Plot burst duration
+% TODO: Plot oscillatory index
 
-% Get the figure
-figure(fig);
+% Extract the spike times
+spikeTimesSec = parsedData.spikeTimesSec;
+timeBurstStartsSec = parsedData.timeBurstStartsSec;
+timeBurstEndsSec = parsedData.timeBurstEndsSec;
 
-% Create subdirectories for different zooms
-check_subdir(outFolder, {'full', 'zoom1', 'zoom2', 'zoom3'});
+stimStartSec = parsedParams.stimStartSec;
+timeOscEndSec = parsedParams.timeOscEndSec;
 
-% Save the full figure
-saveas(fig, fullfile(outFolder, 'full', [figPathBase, '_full']), 'png');
+% Convert oscillatory index to a window
+% TODO
 
-% Zoom #1
-xlim(zoomWin1);
-saveas(fig, fullfile(outFolder, 'zoom1', [figPathBase, '_zoom1']), 'png');
+% Oscillation window
+oscWindow = transpose([stimStartSec, timeOscEndSec]);
 
-% Zoom #2
-xlim(zoomWin2);
-saveas(fig, fullfile(outFolder, 'zoom2', [figPathBase, '_zoom2']), 'png');
+% Burst windows
+burstWindows = cellfun(@(x, y) prepare_for_plot_horizontal_line(x, y), ...
+                        timeBurstStartsSec, timeBurstEndsSec, ...
+                        'UniformOutput', false);
 
-% Zoom #3
-xlim(zoomWin3);
-saveas(fig, fullfile(outFolder, 'zoom3', [figPathBase, '_zoom3']), 'png');
+% Create colors
+nSweeps = numel(spikeTimesSec);
+colorsRaster = repmat({'Black'}, nSweeps, 1);
+
+% Create figure and plot
+fig = figure('Visible', 'off');
+clf; hold on
+[hLines, eventTimes, yEnds, yTicksTable] = ...
+    plot_raster(spikeTimesSec, 'DurationWindow', burstWindows, ...
+                'LineWidth', 0.5, 'Colors', colorsRaster);
+% [hLines, eventTimes, yEnds, yTicksTable] = ...
+%     plot_raster(spikeTimesSec, 'DurationWindow', oscWindow, ...
+%                 'LineWidth', 0.5, 'Colors', colorsRaster);
+vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
+                                'LineStyle', '--');
+if ~isempty(phaseBoundaries)
+    yBoundaries = nVectors - phaseBoundaries + 1;
+    horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
+                                    'LineStyle', '--', 'LineWidth', 2);
+end
+xlabel('Time (s)');
+ylabel('Trace #');
+title(['Spike times for ', titleBase]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function vector = prepare_for_plot_horizontal_line(starts, ends)
-%% Put in the form [start1, end1, start2, end2, ..., startn, endn]
+function fig = plot_spike_density_multiunit(parsedData, parsedParams, ...
+                                    phaseBoundaries, titleBase)
+%% Plots a spike density plot from parsed multiunit data
 
-if isempty(starts) || isempty(ends)
-    form1 = [0; 0];
-else
-    % Put in the form [start1, start2, ..., startn;
-    %                   end1,   end2,  ...,  endn]
-    form1 = transpose([starts, ends]);
+% Retrieve data for plotting
+spikeDensityHz = parsedData.spikeDensityHz;
+
+siSeconds = parsedParams.siSeconds;
+minTimeSec = parsedParams.minTimeSec;
+maxTimeSec = parsedParams.maxTimeSec;
+stimStartSec = parsedParams.stimStartSec;
+
+% Create figure and plot
+fig = figure('Visible', 'off');
+clf; hold on
+
+% Plot as a heatmap
+% TODO: plot_heat_map(spikeDensityHz);
+
+% Maximum number of y ticks
+maxNYTicks = 20;
+
+% Count traces
+nSweeps = numel(spikeDensityHz);
+
+% Get the average sampling interval in seconds
+siSeconds = mean(siSeconds);
+
+% Set x and y end points
+xEnds = [min(minTimeSec); max(maxTimeSec)];
+yEnds = [1; nSweeps];
+
+% Set x and y limits
+xLimits = [xEnds(1) - 0.5 * siSeconds; xEnds(2) + 0.5 * siSeconds];
+yLimits = [yEnds(1) - 0.5; yEnds(2) + 0.5];
+
+% Set y ticks and labels
+yTicks = create_indices('IndexEnd', nSweeps, 'MaxNum', maxNYTicks, ...
+                        'AlignMethod', 'left');
+yTickLabels = create_labels_from_numbers(nSweeps - yTicks + 1);
+
+% Force as a matrix and transpose it so that
+%   each trace is a row
+spikeDensityMatrix = transpose(force_matrix(spikeDensityHz));
+
+colormap(flipud(gray));
+imagesc(xEnds, flipud(yEnds), spikeDensityMatrix);
+yticks(yTicks);
+yticklabels(yTickLabels);
+vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
+                                'LineStyle', '--', 'LineWidth', 0.5, ...
+                                'YLimits', yLimits);
+if ~isempty(phaseBoundaries)
+    yBoundaries = nSweeps - phaseBoundaries + 1;
+    horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
+                                'LineStyle', '--', 'LineWidth', 1, ...
+                                'XLimits', xLimits);
 end
-
-% Reshape as a column vector
-vector = reshape(form1, [], 1);
+xlim(xLimits);
+ylim(yLimits);
+xlabel('Time (s)');
+ylabel('Trace #');
+title(['Spike density (Hz) for ', titleBase]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -2105,6 +2093,9 @@ if plotAllFlag
         plotMeasuresFlag = true;
     end
 end
+
+function save_all_zooms(fig, outFolder, figBase, zoomWin1, zoomWin2, zoomWin3)
+%% Save the figure as .fig and 4 zooms as .png
 
 %}
 

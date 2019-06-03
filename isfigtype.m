@@ -41,6 +41,7 @@ function [results, figtypes] = isfigtype (candidates, varargin)
 %       cd/plot_traces_abf.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_tuning_map.m
+%       cd/save_all_zooms.m
 %       /home/Matlab/minEASE/compute_plot_average_PSC_traces.m
 %       /home/Matlab/minEASE/detect_gapfree_events.m
 %       /media/adamX/RTCl/raster_plot.m

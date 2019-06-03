@@ -28,6 +28,7 @@ function save_all_figtypes (fig, filename, varargin)
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_tuning_map.m
+%       cd/save_all_zooms.m
 %       ~/minEASE/compute_plot_average_PSC_traces.m
 %       ~/minEASE/detect_gapfree_events.m
 %       ~/RTCl/raster_plot.m
