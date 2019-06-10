@@ -323,7 +323,7 @@ addParameter(iP, 'PulseVectors', pulseVectorsDefault, ...
                 ['PulseVectors must be either a numeric array', ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'PhaseBoundaries', phaseBoundariesDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'tVecs', tVecsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['tVecs must be either a numeric array', ...
@@ -468,6 +468,7 @@ if plotRawFlag || plotRasterFlag || plotSpikeDensityFlag
 end
 
 %% Plot spike detection
+% TODO: Make this a function
 if plotSpikeDetectionFlag
     fprintf('Plotting spike detection for %s ...\n', fileBase);
 
@@ -511,12 +512,12 @@ if plotSpikeDetectionFlag
         figBaseThis = fullfile(outFolderSpikeDetection, figPathBase{iVec});
 
         % Set zoom windows
-        zoomWin1 = stimStartMs(iVec) + [0, 1e4];
-        zoomWin2 = detectStartMs(iVec) + [0, 2e3];
+        zoomWin1 = stimStartMs(iVec) + [0; 1e4];
+        zoomWin2 = detectStartMs(iVec) + [0; 2e3];
         if ~isnan(firstSpikeMs(iVec))
-            zoomWin3 = firstSpikeMs(iVec) + [0, 60];
+            zoomWin3 = firstSpikeMs(iVec) + [0; 60];
         else
-            zoomWin3 = [0, 60];
+            zoomWin3 = [0; 60];
         end            
 
         % Put zoom windows together
@@ -531,6 +532,7 @@ if plotSpikeDetectionFlag
 end
 
 %% Plot spike histograms
+% TODO: Make this a function
 if plotSpikeHistogramFlag
     fprintf('Plotting spike histograms for %s ...\n', fileBase);
 
@@ -592,6 +594,7 @@ if plotSpikeHistogramFlag
 end
 
 %% Plot autocorrelograms
+% TODO: Make this a function
 if plotAutoCorrFlag
     fprintf('Plotting autocorrelograms for %s ...\n', fileBase);
 
@@ -676,6 +679,7 @@ if plotAutoCorrFlag
 end
 
 %% Plot raw traces
+% TODO: Make this a function
 if plotRawFlag
     fprintf('Plotting raw traces for %s ...\n', fileBase);
 
@@ -1687,6 +1691,8 @@ timeBurstEndsSec = parsedData.timeBurstEndsSec;
 
 stimStartSec = parsedParams.stimStartSec;
 timeOscEndSec = parsedParams.timeOscEndSec;
+
+nVectors = height(parsedParams);
 
 % Convert oscillatory index to a window
 % TODO

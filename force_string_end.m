@@ -7,6 +7,7 @@ function newStr = force_string_end (oldStr, subStr, varargin)
 %       force_string_end('dog', '/')
 %       force_string_end("dog", "_")
 %       force_string_end("dog", '_')
+%       force_string_end(pwd, '.')
 %       force_string_end("", '!', 'OnlyIfNonempty', true)
 %       force_string_end("", "_", 'OnlyIfNonempty', true)
 %       prefix = force_string_end(prefix, "_", 'OnlyIfNonempty', true)
@@ -30,11 +31,14 @@ function newStr = force_string_end (oldStr, subStr, varargin)
 %       cd/m3ha_neuron_create_simulation_params.m
 %       cd/m3ha_neuron_create_TC_commands.m
 %       cd/m3ha_import_raw_traces.m
+%       cd/save_all_zooms.m
 %       cd/test_difference.m
 
 % File History:
 % 2018-10-21 Created by Adam Lu
 % 2019-01-01 Now allows oldStr and subStr to be cell arrays
+% 2019-06-03 Now escapes the metacharacter .
+% TODO: Escape all metacharacters for regexp
 % TODO: Deal with the case when substr is more than one character
 % 
 
@@ -97,8 +101,14 @@ if onlyIfNonempty && any(strcmp(oldStr, {'', ""}))
     return
 end
 
+% Excape special characters for regexp
+subStrRegExp = replace(subStr, '.', '\.');
+
+% Form the regular expression to match
+regExp = strcat(subStrRegExp, '$');
+
 % Look for the substring at the end of the old string
-startIndex = regexp(oldStr, strcat(subStr, '$'), 'ONCE');
+startIndex = regexp(oldStr, regExp, 'ONCE');
 
 % If not found, append the substring to the old string
 if isempty(startIndex)

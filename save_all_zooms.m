@@ -28,6 +28,7 @@ function save_all_zooms (fig, figPath, zoomWins, varargin)
 %       cd/create_labels_from_numbers.m
 %       cd/extract_fileparts.m
 %       cd/force_column_cell.m
+%       cd/force_string_end.m
 %       cd/isfigtype.m
 %       cd/save_all_figtypes.m
 %
@@ -80,6 +81,11 @@ outFolder = iP.Results.OutFolder;
 [~, figtypes] = isfigtype(iP.Results.Figtypes, 'ValidateMode', true);
 
 %% Preparation
+
+% Make sure figPath ends with the extension
+figExt = extract_fileparts(figPath, 'extension');
+figPath = force_string_end(figPath, ['.', figExt]);
+
 % Decide on the output directory
 if isempty(outFolder)
     outFolder = extract_fileparts(figPath, 'directory');
