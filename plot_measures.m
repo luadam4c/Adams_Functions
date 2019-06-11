@@ -17,15 +17,15 @@
 % 2019-03-15 Created by Adam Lu
 % 2019-03-25 Now colors by phase number
 % 2019-04-08 Renamed as plot_measures.m
-% TODO: Add normalizeToBaseline as an optional argument
+% 2019-06-11 Now plots both normalized and original versions of the Chevron Plot
 % TODO: extract specific usage to clc2_analyze.m
 % 
 
 %% Hard-coded parameters
 % Flags (to be made arguments later)
-normalizeToBaseline = true; %false;
 plotType = 'tuning';
 plotChevronFlag = true;
+plotNormalizedFlag = true;
 plotByFileFlag = true;
 plotByPhaseFlag = true;
 
@@ -95,9 +95,11 @@ tableNames = strcat(prefix, '_', varsToPlot);
 figNames = fullfile(outFolder, strcat(tableNames, '.png'));
 figNamesByPhase = fullfile(outFolder, strcat(tableNames, '_byphase.png'));
 figNamesAvgd = fullfile(outFolder, strcat(tableNames, '_averaged.png'));
+figNamesNormAvgd = fullfile(outFolder, strcat(tableNames, '_normaveraged.png'));
 
 % Create paths for averaged tables
 avgdTablePaths = fullfile(outFolder, strcat(tableNames, '_averaged.csv'));
+normAvgdTablePaths = fullfile(outFolder, strcat(tableNames, '_normaveraged.csv'));
 
 % Read all slice parameter spreadsheets
 fprintf('Reading measure spreadsheets ...\n');
@@ -136,21 +138,24 @@ if plotChevronFlag
                                 num2str(nSweepsToAverage), ' of last ', ...
                                 num2str(nSweepsLastOfPhase), ' sweeps']);
 
-    % Normalize to baseline if requested
-    if normalizeToBaseline
-        fprintf('Normalizing to baseline ...\n');
-        chevronTables = ...
-            cellfun(@(x) normalize_to_first_row(x), ...
-                            chevronTables, 'UniformOutput', false);
 
-        varLabelsChevron = repmat({'% of baseline'}, size(varLabels));
-    else
-        varLabelsChevron = varLabels;
-    end
+    % Generate variable labels
+    varLabelsChevron = varLabels;
 end
 
+% Normalize to baseline if requested
+if plotNormalizedFlag
+    fprintf('Normalizing to baseline ...\n');
+    normalizedChevronTables = ...
+        cellfun(@(x) normalize_to_first_row(x, y), ...
+                    chevronTables, normAvgdTablePaths, 'UniformOutput', false);
+
+    % Generate variable labels
+    varLabelsNormAvgd = repmat({'% of baseline'}, size(varLabels));
+end
+
+% Convert to timetables
 if plotByFileFlag || plotByPhaseFlag
-    % Convert to timetables
     fprintf('Converting measure tables to time tables ...\n');
     measureTimeTables = cellfun(@table2timetable, ...
                                 measureTables, 'UniformOutput', false);
@@ -158,8 +163,10 @@ end
 
 %% Do the job
 if plotChevronFlag
-    fprintf('Plotting Chevron plots ...\n');
+    close all;
+
     % Plot Chevron plots
+    fprintf('Plotting Chevron plots ...\n');
     figs = cellfun(@(x, y, z, w, v, u) plot_table(x, 'PlotSeparately', false, ...
                                     'PlotType', plotType, ...
                                     'VariableNames', strcat(y, '_', fileLabels), ...
@@ -171,6 +178,24 @@ if plotChevronFlag
                                     'RemoveOutliers', false), ...
                 chevronTables, varsToPlot, varLabelsChevron, ...
                 tableLabels, figTitlesChevron, figNamesAvgd);
+end
+
+if plotNormalizedFlag
+    close all;
+
+    % Plot Normalized Chevron plots
+    fprintf('Plotting Normalized Chevron plots ...\n');
+    figs = cellfun(@(x, y, z, w, v, u) plot_table(x, 'PlotSeparately', false, ...
+                                    'PlotType', plotType, ...
+                                    'VariableNames', strcat(y, '_', fileLabels), ...
+                                    'PTicks', [1, 2, 3], 'PTickLabels', phaseStrs, ...
+                                    'ReadoutLabel', z, 'TableLabel', w, ...
+                                    'PLabel', phaseLabel, ...
+                                    'FigTitle', v, 'FigName', u, ...
+                                    'LegendLocation', 'eastoutside', ...
+                                    'RemoveOutliers', false), ...
+                normalizedChevronTables, varsToPlot, varLabelsNormAvgd, ...
+                tableLabels, figTitlesChevron, figNamesNormAvgd);
 end
 
 if plotByFileFlag
@@ -332,7 +357,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function normalizedTable = normalize_to_first_row(table)
+function normalizedTable = normalize_to_first_row(table, sheetPath)
 %% Normalizes all values to the first row
 
 % Extract the first row
@@ -348,6 +373,8 @@ for iRow = 1:nRows
 end
 
 normalizedTable = table;
+
+writetable(normalizedTable, sheetPath);
 
 end
 
