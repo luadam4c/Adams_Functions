@@ -20,6 +20,9 @@ function figs = plot_table (table, varargin)
 %                   must be empty or a character vector or a string vector
 %                       or a cell array of character vectors
 %                   default == plot all variables
+%                   - 'PlotSeparately': whether to plot each column separately
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'VarLabels': variable labels
 %                   must be empty or a character vector or a string vector
 %                       or a cell array of character vectors

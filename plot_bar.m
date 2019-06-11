@@ -1,6 +1,6 @@
-function [bars, lines, fig] = plot_bar (val, varargin)
+function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 %% Plots a bar graph (grouped or not) with or without confidence intervals
-% Usage: [bars, lines, fig] = plot_bar (val, varargin)
+% Usage: [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 % Explanation:
 %       TODO
 % Example:
@@ -73,6 +73,15 @@ function [bars, lines, fig] = plot_bar (val, varargin)
 %                   - 'ReadoutLabel': label for the readout
 %                   must be a string scalar or a character vector
 %                   default == 'Readout'
+%                   - 'PBoundaries': parameter boundary values
+%                   must be a numeric vector
+%                   default == []
+%                   - 'RBoundaries': readout boundary values
+%                   must be a numeric vector
+%                   default == []
+%                   - 'IndSelected': selected indices to mark differently
+%                   must be a numeric vector
+%                   default == []
 %                   - 'FigTitle': title for the figure
 %                   must be a string scalar or a character vector
 %                   default == TODO: ['Bar graph for ', figName]
@@ -100,6 +109,8 @@ function [bars, lines, fig] = plot_bar (val, varargin)
 %       cd/decide_on_fighandle.m
 %       cd/force_column_vector.m
 %       cd/isfigtype.m
+%       cd/plot_horizontal_line.m
+%       cd/plot_vertical_line.m
 %       cd/save_all_figtypes.m
 %       cd/struct2arglist.m
 %       /home/Matlab/Downloaded_Functions/rgb.m
@@ -129,9 +140,9 @@ function [bars, lines, fig] = plot_bar (val, varargin)
 % 2019-05-10 Now uses decide_on_fighandle.m
 % 2019-05-11 Added 'ReverseOrder' as an optional argument
 % 2019-05-11 Added 'FigTitle' as an optional argument
+% 2019-06-10 Added 'PBoundaries' and 'RBoundaries' as optional arguments
 % TODO: Add 'BarColors' as an optional argument
 % TODO: Change usage in all functions using this
-% 
 
 %% Hard-coded parameters
 validBarDirections = {'vertical', 'horizontal'};
@@ -154,6 +165,9 @@ pTickLabelsDefault = {};
 pTickAngleDefault = [];
 pLabelDefault = 'Parameter';
 readoutLabelDefault = 'Readout';
+pBoundariesDefault = [];
+rBoundariesDefault = [];
+indSelectedDefault = [];
 figTitleDefault = '';               % set later
 figHandleDefault = [];              % no existing figure by default
 figNumberDefault = [];              % no figure number by default
@@ -215,6 +229,12 @@ addParameter(iP, 'PLabel', pLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ReadoutLabel', readoutLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'PBoundaries', pBoundariesDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'RBoundaries', rBoundariesDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'IndSelected', indSelectedDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigHandle', figHandleDefault);
@@ -245,6 +265,9 @@ pTickLabels = iP.Results.PTickLabels;
 pTickAngle = iP.Results.PTickAngle;
 pLabel = iP.Results.PLabel;
 readoutLabel = iP.Results.ReadoutLabel;
+pBoundaries = iP.Results.PBoundaries;
+rBoundaries = iP.Results.RBoundaries;
+indSelected = iP.Results.IndSelected;
 figTitle = iP.Results.FigTitle;
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
@@ -350,6 +373,11 @@ switch barDirection
         xLabel = readoutLabel;
         yLabel = pLabel;
 end
+
+% Count the number of boundaries
+nPBoundaries = size(pBoundaries, 2);
+nRBoundaries = size(rBoundaries, 2);
+nBoundaries = nPBoundaries + nRBoundaries;
 
 % Set the default figure title
 if isempty(figTitle)
@@ -523,7 +551,49 @@ if ~strcmpi(figTitle, 'suppress')
     title(figTitle);
 end
 
+% Plot parameter boundaries
+if nPBoundaries > 0
+    if reverseOrder
+        % Compute flipped boundaries
+        pBoundaries = pValues(1) + pValues(end) - pBoundaries;
+    end
+
+    hold on
+    pBoundaries = plot_horizontal_line(pBoundaries, 'LineWidth', 0.5, ...
+                                'LineStyle', '--', 'Color', 'g');
+else
+    pBoundaries = gobjects;
+end
+
+% Plot readout boundaries
+if nRBoundaries > 0
+    hold on
+    rBoundaries = plot_vertical_line(rBoundaries, 'LineWidth', 0.5, ...
+                                'LineStyle', '--', 'Color', 'r');
+else
+    rBoundaries = gobjects;
+end
+
+% Plot selected values if any
+if ~isempty(indSelected) && ~all(isnan(indSelected))
+    % Get the selected values
+    valSelected = val(indSelected);
+
+    % Reverse the order
+    if reverseOrder
+        % Compute flipped boundaries
+        indSelected = pValues(1) + pValues(end) - indSelected;
+    end
+
+    % Plot red crosses
+    hold on
+    plot(valSelected, indSelected, 'rx', 'LineWidth', 2, 'MarkerSize', 6);
+end
+
 %% Post-plotting
+% Return boundaries
+boundaries = transpose(vertcat(pBoundaries, rBoundaries));
+
 % Save figure if figName provided
 if ~isempty(figName)
     save_all_figtypes(fig, figName, figtypes);

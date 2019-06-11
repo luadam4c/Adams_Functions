@@ -80,8 +80,6 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %       cd/match_row_count.m
 %       cd/plot_bar.m
 %       cd/plot_tuning_curve.m
-%       cd/plot_horizontal_line.m
-%       cd/plot_vertical_line.m
 %       cd/save_all_figtypes.m
 %
 % Used by:    
@@ -96,6 +94,7 @@ function [figs, lines] = plot_struct (structArray, varargin)
 % 2019-03-14 Now saves the plots here
 % 2019-05-08 Added 'PlotType' as an optional argument
 % 2019-05-11 Added 'RBoundaries' as an optional argument
+% 2019-06-11 Moved boundary plotting code to plot_bar.m and plot_tuning_curve.m
 % TODO: Return handles to plots
 % TODO: Pass in figNames or figNumbers when plotting separately
 % 
@@ -396,7 +395,8 @@ for iField = 1:nFields
     switch plotType
     case 'tuning'
         % Plot the tuning curve
-        plot_tuning_curve(pValues, fieldVals, 'PisLog', pIsLog, ...
+        [figThis, ~, linesThis] = ...
+            plot_tuning_curve(pValues, fieldVals, 'PisLog', pIsLog, ...
                         'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
                         'PTickAngle', pTickAngle, ...
                         'PLabel', pLabel, 'ReadoutLabel', fieldLabel, ...
@@ -405,29 +405,16 @@ for iField = 1:nFields
                         'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
                         'MarkerEdgeColor', markerEdgeColor, ...
                         'MarkerFaceColor', markerFaceColor, ...
+                        'PBoundaries', pBoundariesThis, ...
+                        'RBoundaries', rBoundariesThis, ...
+                        'IndSelected', indSelectedThis, ...
                         otherArguments);
-
-        % Plot boundaries
-        if nPBoundaries > 0
-            hold on
-            pLines = plot_vertical_line(pBoundariesThis, 'LineWidth', 0.5, ...
-                                        'LineStyle', '--', 'Color', 'g');
-        end
-        if nRBoundaries > 0
-            hold on
-            rLines = plot_horizontal_line(rBoundariesThis, 'LineWidth', 0.5, ...
-                                        'LineStyle', '--', 'Color', 'r');
-        end
-
-        % Plot selected values if any
-        if ~isempty(indSelectedThis)
-            % TODO
-        end
     case 'bar'
         % Plot horizontal bars
         % TODO: Deal with pIsLog
         % TODO: Implement singlecolor
-        plot_bar(fieldVals, 'ForceVectorAsRow', false, ...
+        [~, ~, figThis, linesThis] = ...
+            plot_bar(fieldVals, 'ForceVectorAsRow', false, ...
                         'ReverseOrder', barReverseOrder, ...
                         'BarDirection', barDirection, ...
                         'PValues', pValues, ...
@@ -435,41 +422,10 @@ for iField = 1:nFields
                         'PTickAngle', pTickAngle, ...
                         'PLabel', pLabel, 'ReadoutLabel', fieldLabel, ...
                         'FigTitle', figTitle, 'FigHandle', figThis, ...
+                        'PBoundaries', pBoundariesThis, ...
+                        'RBoundaries', rBoundariesThis, ...
+                        'IndSelected', indSelectedThis, ...
                         otherArguments);
-
-        % Plot boundaries
-        if nPBoundaries > 0
-            if barReverseOrder
-                % Compute flipped boundaries
-                pBoundariesThis = pValues(1) + pValues(end) - pBoundariesThis;
-            end
-
-            hold on
-            pLines = plot_horizontal_line(pBoundariesThis, 'LineWidth', 0.5, ...
-                                        'LineStyle', '--', 'Color', 'g');
-        end
-        if nRBoundaries > 0
-            hold on
-            rLines = plot_vertical_line(rBoundariesThis, 'LineWidth', 0.5, ...
-                                        'LineStyle', '--', 'Color', 'r');
-        end
-
-        % Plot selected values if any
-        if ~isempty(indSelectedThis) && ~all(isnan(indSelectedThis))
-            % Get the selected values
-            valSelected = fieldVals(indSelectedThis);
-
-            % Reverse the order
-            if barReverseOrder
-                % Compute flipped boundaries
-                indSelectedThis = pValues(1) + pValues(end) - indSelectedThis;
-            end
-
-            % Plot red crosses
-            hold on
-            plot(valSelected, indSelectedThis, 'rx', ...
-                    'LineWidth', 2, 'MarkerSize', 6);
-        end
     otherwise
         error('plotType unrecognized!')
     end
@@ -478,7 +434,7 @@ for iField = 1:nFields
         save_all_figtypes(figThis, figName, figtypes);
     end
 
-    lines(iField, :) = transpose(vertcat(pLines, rLines));
+    lines(iField, :) = linesThis;
     figs(iField, 1) = figThis;
 end
 

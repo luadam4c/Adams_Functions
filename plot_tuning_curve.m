@@ -1,10 +1,12 @@
-function [fig, lines] = plot_tuning_curve (pValues, readout, varargin)
+function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargin)
 %% Plot a 1-dimensional tuning curve
-% Usage: [fig, lines] = plot_tuning_curve (pValues, readout, varargin)
+% Usage: [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargin)
 % Outputs:
 %       fig         - figure handle for the created figure
 %                   specified as a figure object handle
 %       lines       - lines for the tuning curves
+%                   specified as a line object handle array
+%       boundaries  - boundary lines
 %                   specified as a line object handle array
 % Arguments:
 %       pValues     - column vector of parameter values
@@ -65,6 +67,15 @@ function [fig, lines] = plot_tuning_curve (pValues, readout, varargin)
 %                   default == 'suppress' if nTraces == 1 
 %                               'northeast' if nTraces is 2~9
 %                               'eastoutside' if nTraces is 10+
+%                   - 'PBoundaries': parameter boundary values
+%                   must be a numeric vector
+%                   default == []
+%                   - 'RBoundaries': readout boundary values
+%                   must be a numeric vector
+%                   default == []
+%                   - 'IndSelected': selected indices to mark differently
+%                   must be a numeric vector
+%                   default == []
 %                   - 'FigTitle': title for the figure
 %                   must be a string scalar or a character vector
 %                   default == ['Traces for ', figName]
@@ -94,6 +105,8 @@ function [fig, lines] = plot_tuning_curve (pValues, readout, varargin)
 %       cd/force_column_vector.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
+%       cd/plot_horizontal_line.m
+%       cd/plot_vertical_line.m
 %       cd/remove_outliers.m
 %       cd/save_all_figtypes.m
 %
@@ -115,6 +128,7 @@ function [fig, lines] = plot_tuning_curve (pValues, readout, varargin)
 % 2019-03-25 Added 'PhaseVectors' as an optional argument
 % 2019-03-25 Now expands the y limits by a little by default
 % 2019-05-10 Now uses decide_on_fighandle.m
+% 2019-06-10 Added 'PBoundaries' and 'RBoundaries' as optional arguments
 % TODO: Make 'ColorMap' and optional argument
 % TODO: Return handles to plots
 %
@@ -138,6 +152,9 @@ readoutLabelDefault = 'Readout';
 columnLabelsDefault = '';           % set later
 singleColorDefault = rgb('SkyBlue');
 legendLocationDefault = 'auto';     % set later
+pBoundariesDefault = [];
+rBoundariesDefault = [];
+indSelectedDefault = [];
 figTitleDefault = '';               % set later
 figHandleDefault = [];              % no existing figure by default
 figNumberDefault = [];              % no figure number by default
@@ -200,6 +217,12 @@ addParameter(iP, 'SingleColor', singleColorDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 3}));
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
+addParameter(iP, 'PBoundaries', pBoundariesDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'RBoundaries', rBoundariesDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'IndSelected', indSelectedDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigHandle', figHandleDefault);
@@ -230,6 +253,9 @@ columnLabels = iP.Results.ColumnLabels;
 singlecolor = iP.Results.SingleColor;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
+pBoundaries = iP.Results.PBoundaries;
+rBoundaries = iP.Results.RBoundaries;
+indSelected = iP.Results.IndSelected;
 figTitle = iP.Results.FigTitle;
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
@@ -313,6 +339,11 @@ if strcmpi(legendLocation, 'auto')
         legendLocation = 'suppress';
     end
 end
+
+% Count the number of boundaries
+nPBoundaries = size(pBoundaries, 2);
+nRBoundaries = size(rBoundaries, 2);
+nBoundaries = nPBoundaries + nRBoundaries;
 
 % Set the default figure title
 if isempty(figTitle)
@@ -487,7 +518,33 @@ end
 % Set the angle for parameter ticks
 xtickangle(pTickAngle);
 
+% Plot parameter boundaries
+if nPBoundaries > 0
+    hold on
+    pLines = plot_vertical_line(pBoundaries, 'LineWidth', 0.5, ...
+                                'LineStyle', '--', 'Color', 'g');
+else
+    pBoundaries = gobjects;
+end
+
+% Plot readout boundaries
+if nRBoundaries > 0
+    hold on
+    rLines = plot_horizontal_line(rBoundaries, 'LineWidth', 0.5, ...
+                                'LineStyle', '--', 'Color', 'r');
+else
+    rBoundaries = gobjects;
+end
+
+% Plot selected values if any
+if ~isempty(indSelected)
+    % TODO
+end
+
 %% Post-plotting
+% Return boundaries
+boundaries = transpose(vertcat(pBoundaries, rBoundaries));
+
 % Save figure if figName provided
 if ~isempty(figName)
     save_all_figtypes(fig, figName, figtypes);

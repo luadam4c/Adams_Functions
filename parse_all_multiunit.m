@@ -10,6 +10,10 @@ function parse_all_multiunit(varargin)
 %       varargin    - 'PlotAllFlag': whether to plot everything
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'PlotCombinedFlag': whether to plot raw data, 
+%                           spike density and oscillation duration together
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'PlotSpikeDetectionFlag': whether to plot spike detection
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == set in parse_multiunit.m
@@ -58,6 +62,7 @@ function parse_all_multiunit(varargin)
 %               to detect sliceBase and phase boundaries
 % 2019-05-30 Now saves combined vectors as mat files
 % 2019-05-31 Updated plot flags
+% 2019-06-10 Added plotCombinedFlag
 
 % TODO: Make outFolder optional parameters
 % TODO: Make combining optional
@@ -72,6 +77,7 @@ regexpSliceMatFile = '.*slice[0-9]*.mat';
 
 %% Default values for optional arguments
 plotAllFlagDefault = false;
+plotCombinedFlagDefault = false;
 plotSpikeDetectionFlagDefault = [];     % set in parse_multiunit.m
 plotSpikeDensityFlagDefault = [];       % set in parse_multiunit.m
 plotSpikeHistogramFlagDefault = [];     % set in parse_multiunit.m
@@ -91,6 +97,8 @@ iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'PlotAllFlag', plotAllFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotCombinedFlag', plotCombinedFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotSpikeDetectionFlag', plotSpikeDetectionFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -112,6 +120,7 @@ addParameter(iP, 'SaveMatFlag', saveMatFlagDefault, ...
 % Read from the Input Parser
 parse(iP, varargin{:});
 plotAllFlag = iP.Results.PlotAllFlag;
+plotCombinedFlag = iP.Results.PlotCombinedFlag;
 plotSpikeDetectionFlag = iP.Results.PlotSpikeDetectionFlag;
 plotSpikeDensityFlag = iP.Results.PlotSpikeDensityFlag;
 plotSpikeHistogramFlag = iP.Results.PlotSpikeHistogramFlag;
@@ -125,7 +134,7 @@ saveMatFlag = iP.Results.SaveMatFlag;
 % Get all the mat file names
 [~, allMatPaths] = ...
     all_files('Directory', inFolder, 'RegExp', regexpSliceMatFile, ...
-                'SortBy', 'date');
+                'SortBy', 'date', 'ForceCellOutput', true);
 
 if ~isempty(allMatPaths)
     % Load data for each slice as a structure array
@@ -168,6 +177,7 @@ for iSlice = 1:nSlices
         parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), ...
                         'PulseVectors', iVecsSl{iSlice}, ...
                         'PlotAllFlag', plotAllFlag, ...
+                        'PlotCombinedFlag', plotCombinedFlag, ...
                         'PlotSpikeDetectionFlag', plotSpikeDetectionFlag, ...
                         'PlotSpikeDensityFlag', plotSpikeDensityFlag, ...
                         'PlotSpikeHistogramFlag', plotSpikeHistogramFlag, ...

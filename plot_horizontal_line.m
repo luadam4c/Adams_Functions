@@ -31,9 +31,11 @@ function h = plot_horizontal_line (yValue, varargin)
 %
 % Used by:
 %       cd/parse_multiunit.m
+%       cd/plot_bar.m
 %       cd/plot_error_bar.m
 %       cd/plot_pulse_response_with_stimulus.m
 %       cd/plot_struct.m
+%       cd/plot_tuning_curve.m
 
 % File History:
 % 2018-12-19 Created by Adam Lu
