@@ -600,13 +600,21 @@ if plotCombinedFlag
     figBaseCombined = fullfile(outFolderCombined, [fileBase, '_combined']);
 
     % Create a new figure
-    figure;
+    figCombined = figure;
+    
+    % Expand the position of the figure
+    % TODO: Make this a function
+    positionOrig = figCombined.Position;
+    positionNew = positionOrig;
+    positionNew(1) = positionOrig(1) - positionOrig(3);
+    positionNew(3) = 3 * positionOrig(3);
+    figCombined.Position = positionNew;
 
     % Plot raw data
     subplot(1, 3, 1);
     plot_raw_multiunit(parsedData, parsedParams, ...
-                                    phaseBoundaries, titleBase, ...
-                                    yAmountToStagger);
+                        phaseBoundaries, titleBase, ...
+                        yAmountToStagger);
 
     % Plot spike density
     subplot(1, 3, 2);
