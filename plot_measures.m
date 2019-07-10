@@ -41,6 +41,8 @@ phaseStrs = {'Baseline', 'Wash-on', 'Wash-out'};
 nSweepsLastOfPhase = 10;
 nSweepsToAverage = 5;
 maxRange2Mean = 40;
+% maxRange2Mean = 20;
+% maxRange2Mean = 110;
 
 % File patterns
 sliceFilePattern = '.*slice.*';
@@ -147,7 +149,7 @@ end
 if plotNormalizedFlag
     fprintf('Normalizing to baseline ...\n');
     normalizedChevronTables = ...
-        cellfun(@(x) normalize_to_first_row(x, y), ...
+        cellfun(@(x, y) normalize_to_first_row(x, y), ...
                     chevronTables, normAvgdTablePaths, 'UniformOutput', false);
 
     % Generate variable labels
@@ -160,6 +162,10 @@ if plotByFileFlag || plotByPhaseFlag
     measureTimeTables = cellfun(@table2timetable, ...
                                 measureTables, 'UniformOutput', false);
 end
+
+save('NormTable.mat','normalizedChevronTables', '-mat');
+save('Table.mat', 'chevronTables','-mat');
+save('measureTables.mat','measureTables','-mat');
 
 %% Do the job
 if plotChevronFlag
@@ -233,7 +239,6 @@ end
 
 function myTable = create_time_rel_to_drugon(myTable, sweepLengthSec)
 %% Creates a time column in minutes since drug onset
-
 % Count the number of rows
 nRows = height(myTable);
 
@@ -362,6 +367,7 @@ function normalizedTable = normalize_to_first_row(table, sheetPath)
 
 % Extract the first row
 firstRow = table{1, :};
+% firstRow = table{3, :};
 
 % Count the number of rows
 nRows = height(table);

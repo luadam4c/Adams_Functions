@@ -489,7 +489,7 @@ if plotSpikeDetectionFlag
     outFolderSpikeDetection = fullfile(outFolder, spikeDetectionDir);
 
     % Plot and save figures
-    plot_all_spike_detections(parsedData, parsedParams, outFolderSpikeDetection);
+    plot_all_spike_detections(parsedData, parsedParams, outFolderSpikeDetection, nVectors);
 end
 
 %% Plot spike histograms
@@ -499,7 +499,7 @@ if plotSpikeHistogramFlag
     outFolderHist = fullfile(outFolder, spikeHistDir);
 
     % Plot and save figures
-    plot_all_spike_histograms(parsedData, parsedParams, outFolderHist);
+    plot_all_spike_histograms(parsedData, parsedParams, outFolderHist, nVectors);
 end
 
 %% Plot autocorrelograms
@@ -511,7 +511,7 @@ if plotAutoCorrFlag
 
     % Plot and save figures
     plot_all_autocorrelograms(parsedData, parsedParams, ...
-                                outFolderAutoCorr, outFolderAcf);
+                                outFolderAutoCorr, outFolderAcf, nVectors);
 end
 
 %% Plot raw traces
@@ -524,7 +524,7 @@ if plotRawFlag
     % Plot figure
     figs(1) = plot_raw_multiunit(parsedData, parsedParams, ...
                                     phaseBoundaries, titleBase, ...
-                                    yAmountToStagger);
+                                    yAmountToStagger,nVectors);
 
     % Save the figure zoomed to several x limits
     save_all_zooms(figs(1), figBaseRaw, zoomWinsMulti);
@@ -545,7 +545,7 @@ if plotRasterFlag
     save_all_zooms(figs(2), figBaseRaster, zoomWinsMulti);
 end
 
-%% Plot spike density
+%% Plot spike den plot_all_spike_detectionssity
 if plotSpikeDensityFlag
     fprintf('Plotting spike density plot for %s ...\n', fileBase);
 
@@ -614,12 +614,12 @@ if plotCombinedFlag
     subplot(1, 3, 1);
     plot_raw_multiunit(parsedData, parsedParams, ...
                         phaseBoundaries, titleBase, ...
-                        yAmountToStagger);
+                        yAmountToStagger, nVectors);
 
     % Plot spike density
     subplot(1, 3, 2);
     plot_spike_density_multiunit(parsedData, parsedParams, ...
-                                 phaseBoundaries, titleBase);
+                                 phaseBoundaries, titleBase, nVectors);
 
     % Plot oscillation duration
     subplot(1, 3, 3);
@@ -1514,7 +1514,7 @@ title(['Autocorrelation function for ', figTitleBase]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_all_spike_detections(parsedData, parsedParams, outFolder)
+function plot_all_spike_detections(parsedData, parsedParams, outFolder, nVectors)
 
 % Retrieve data for plotting
 tVec = parsedData.tVec;
@@ -1573,7 +1573,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_all_spike_histograms(parsedData, parsedParams, outFolder)
+function plot_all_spike_histograms(parsedData, parsedParams, outFolder, nVectors)
 
 % Retrieve data for plotting
 spikeCounts = parsedData.spikeCounts;
@@ -1631,7 +1631,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_all_autocorrelograms(parsedData, parsedParams, ...
-                                    outFolderAutoCorr, outFolderAcf)
+                                    outFolderAutoCorr, outFolderAcf, nVectors)
 
 % Retrieve data for plotting
 autoCorr = parsedData.autoCorr;
@@ -1711,7 +1711,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function fig = plot_raw_multiunit(parsedData, parsedParams, ...
-                                phaseBoundaries, titleBase, yAmountToStagger)
+                                phaseBoundaries, titleBase, yAmountToStagger, nVectors)
 
 %% Hard-coded constants
 MS_PER_S = 1000;

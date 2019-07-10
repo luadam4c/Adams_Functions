@@ -142,7 +142,7 @@ if ~isempty(allMatPaths)
     allDataStruct = cellfun(@(x) load(x, varsNeeded{:}), allMatPaths);
 
     % Convert to a table
-    allDataTable = struct2table(allDataStruct);
+    allDataTable = struct2table(allDataStruct, 'AsArray', true);
 else
     % Combine data from the same slice
     fprintf("Combining data for each slice ...\n");
