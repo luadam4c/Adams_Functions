@@ -14,6 +14,7 @@ function functionsDirectory = locate_functionsdir
 %       cd/combine_sweeps.m
 %       cd/create_colormap.m
 %       cd/find_passive_params.m
+%       cd/minEASE.m
 %       cd/parse_abf.m
 %       ~/m3ha/data_dclamp/dclampPassiveFitter.m
 %       ~/m3ha/optimizer4gabab/singleneuronfitting42.m and beyond

@@ -61,7 +61,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/iscellnumeric.m
 %       cd/isnum.m
 %
-% Used by:    
+% Used by:
 %   TODO: Check if some of these can use 
 %           match_format_cell or force_column_cell instead
 %       cd/annotation_in_plot.m
