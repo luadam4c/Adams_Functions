@@ -1,11 +1,13 @@
-function parse_all_multiunit(varargin)
+function [muParams, muData] = parse_all_multiunit(varargin)
 %% Tests the parse_multiunit function on all files in the present working directory
-% Usage: parse_all_multiunit(varargin)
+% Usage: [muParams, muData] = parse_all_multiunit(varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
+%       muParams    - parsed multiunit parameters
+%       muData      - parsed multiunit data
 % Arguments:
 %       varargin    - 'PlotAllFlag': whether to plot everything
 %                   must be numeric/logical 1 (true) or 0 (false)
