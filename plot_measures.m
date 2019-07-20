@@ -40,9 +40,9 @@ phaseStrs = {'Baseline', 'Wash-on', 'Wash-out'};
 %   Note: must be consistent with plot_struct.m
 nSweepsLastOfPhase = 10;
 nSweepsToAverage = 5;
-maxRange2Mean = 40;
+% maxRange2Mean = 40;
 % maxRange2Mean = 20;
-% maxRange2Mean = 110;
+maxRange2Mean = 200;
 
 % File patterns
 sliceFilePattern = '.*slice.*';

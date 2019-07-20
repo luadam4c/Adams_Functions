@@ -1811,8 +1811,9 @@ nSweeps = numel(spikeTimesSec);
 colorsRaster = repmat({'Black'}, nSweeps, 1);
 
 % Create figure and plot
-fig = figure('Visible', 'off');
-clf; hold on
+fig = figure('Visible', 'on');
+% clf; 
+hold on
 [hLines, eventTimes, yEnds, yTicksTable] = ...
     plot_raster(spikeTimesSec, 'DurationWindow', burstWindows, ...
                 'LineWidth', 0.5, 'Colors', colorsRaster);

@@ -67,8 +67,8 @@ indicesDefault = [];            % set in extract_subvectors.m
 endPointsDefault = [];          % set in select_similar_values.m
 selectionMethodDefault = 'maxRange2Mean';   
                                 % select using maxRange2Mean by default
-maxRange2MeanDefault = 40;      % range is not more than 40% of mean by default
-% maxRange2MeanDefault = 110;      % range is not more than 40% of mean by default
+% maxRange2MeanDefault = 40;      % range is not more than 40% of mean by default
+maxRange2MeanDefault = 200;      % range is not more than 40% of mean by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
