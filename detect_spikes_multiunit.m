@@ -167,6 +167,7 @@ tVec = iP.Results.tVec;
 if isempty(tVec)
     % Count the number of samples
     nSamples = count_samples(vVec);
+       
     
     tVec = create_time_vectors(nSamples, 'SamplingIntervalMs', siMs);
 end

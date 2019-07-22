@@ -233,7 +233,8 @@ MS_PER_S = 1000;
 %% Hard-coded parameters
 plotTypeMeasures = 'bar'; %'tuning';
 yAmountToStagger = 10;
-zoomWinRelStimStartSec = [-1; 10];
+% zoomWinRelStimStartSec = [-1; 10];
+zoomWinRelStimStartSec = [-1; 20];
 zoomWinRelDetectStartSec = [-0.2; 2];
 zoomWinRelFirstSpikeSec = [0; 0.1];
 rawDir = 'raw';
@@ -1348,12 +1349,12 @@ barWidth = 1;
 yMid = 9;
 
 % Compute y axis limits
-% yLimits1 = compute_axis_limits([slopeMin, slopeMax], 'y', 'Coverage', 100);
-yLimits1 = [-15, 15];
-% yLimits2 = compute_axis_limits([vMin, vMax], 'y', 'Coverage', 100);
-yLimits2 = [-10, 10];
-% yLimits3 = compute_axis_limits([vMin, yMid], 'y', 'Coverage', 100);
-yLimits3 = [-10, 10];
+yLimits1 = compute_axis_limits([slopeMin, slopeMax], 'y', 'Coverage', 100);
+% yLimits1 = [-15, 15];
+yLimits2 = compute_axis_limits([vMin, vMax], 'y', 'Coverage', 100);
+% yLimits2 = [-10, 10];
+yLimits3 = compute_axis_limits([vMin, yMid], 'y', 'Coverage', 100);
+% yLimits3 = [-10, 10];
 
 % Initialize graphics object handles
 ax = gobjects(3, 1);
@@ -1554,6 +1555,7 @@ parfor iVec = 1:nVectors
 
     % Set zoom windows
     zoomWin1 = stimStartMs(iVec) + [0; 1e4];
+%       zoomWin1 = stimStartMs(iVec) + [0; 2e4];
     zoomWin2 = detectStartMs(iVec) + [0; 2e3];
     if ~isnan(firstSpikeMs(iVec))
         zoomWin3 = firstSpikeMs(iVec) + [0; 60];
@@ -1849,7 +1851,9 @@ maxTimeSec = parsedParams.maxTimeSec;
 stimStartSec = parsedParams.stimStartSec;
 
 % Create figure and plot
-fig = figure('Visible', 'off');
+% fig = figure('Visible', 'off');
+fig = figure('Visible', 'on');
+
 clf; hold on
 
 % Plot as a heatmap
@@ -1881,22 +1885,27 @@ yTickLabels = create_labels_from_numbers(nSweeps - yTicks + 1);
 %   each trace is a row
 spikeDensityMatrix = transpose(force_matrix(spikeDensityHz));
 
-colormap(flipud(gray));
+% colormap(flipud(gray));
+colormap(jet);
+
 imagesc(xEnds, flipud(yEnds), spikeDensityMatrix);
 yticks(yTicks);
 yticklabels(yTickLabels);
 
-% Plot stimulation start
-vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
-                                'LineStyle', '--', 'LineWidth', 0.5, ...
-                                'YLimits', yLimits);
-% Plot phase boundaries
-if ~isempty(phaseBoundaries)
-    yBoundaries = nSweeps - phaseBoundaries + 1;
-    horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
-                                'LineStyle', '--', 'LineWidth', 1, ...
-                                'XLimits', xLimits);
-end
+% % Plot stimulation start
+% vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
+%                                 'LineStyle', '--', 'LineWidth', 0.5, ...
+%                                 'YLimits', yLimits);
+  
+
+% % Plot phase boundaries
+% if ~isempty(phaseBoundaries)
+%     yBoundaries = nSweeps - phaseBoundaries + 1;
+%     horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
+%                                 'LineStyle', '--', 'LineWidth', 1, ...
+%                                 'XLimits', xLimits);
+% end
+
 xlim(xLimits);
 ylim(yLimits);
 xlabel('Time (s)');

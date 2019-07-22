@@ -161,6 +161,11 @@ iVecsSl = allDataTable.iVecsSl;
 phaseBoundaries = allDataTable.phaseBoundaries;
 phaseStrs = allDataTable.phaseStrs;
 
+% TODO: Make sure phaseBoundaries is a cell array
+if isnumeric(phaseBoundaries)
+    phaseBoundaries = num2cell(phaseBoundaries);
+end
+
 %% Parse all slices
 % Count the number of slices
 nSlices = numel(vVecsSl);
