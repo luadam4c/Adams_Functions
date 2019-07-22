@@ -2,9 +2,14 @@ function flag = set_default_flag(flag, varargin)
 %% Sets the default flag if empty according to an optional auxFlag
 % Usage: flag = set_default_flag(flag, auxFlag (opt))
 % Explanation:
-%       TODO
+%       If flag is already set, nothing is done
+%       If flag is empty, it is set to be true if auxFlag is true,
+%           but false if auxFlag is false.
+%       If auxFlag is not provided, it is false.
 % Example(s):
-%       TODO
+%       set_default_flag([], 0)
+%       set_default_flag([], true)
+%       set_default_flag([], [])
 % Outputs:
 %       flag        - flag that has been set
 %                   specified as a logical scalar
@@ -46,8 +51,8 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 % Add required inputs to the Input Parser
 addRequired(iP, 'flag');
 
-% Add parameter-value pairs to the Input Parser
-addParameter(iP, 'auxFlag', auxFlagDefault, ...
+% Add optional inputs to the Input Parser
+addOptional(iP, 'auxFlag', auxFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
