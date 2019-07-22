@@ -1881,12 +1881,13 @@ imagesc(xEnds, flipud(yEnds), spikeDensityMatrix);
 yticks(yTicks);
 yticklabels(yTickLabels);
 
+% TODO: Make this optional
 % % Plot stimulation start
 % vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
 %                                 'LineStyle', '--', 'LineWidth', 0.5, ...
 %                                 'YLimits', yLimits);
   
-
+% TODO: Make this optional
 % % Plot phase boundaries
 % if ~isempty(phaseBoundaries)
 %     yBoundaries = nSweeps - phaseBoundaries + 1;
