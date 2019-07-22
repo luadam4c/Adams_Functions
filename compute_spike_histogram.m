@@ -2,7 +2,13 @@ function [histParams, histData] = compute_spike_histogram (spikeTimesMs, varargi
 %% Computes a spike histogram, detect bursts and compute the oscillation duration
 % Usage: [histParams, histData] = compute_spike_histogram (spikeTimesMs, varargin)
 % Explanation:
-%       TODO
+%       1. Detected spikes are grouped into 10-ms bins
+%       2. 'Bursts' are detected by setting 
+%               i. a minimum burst length (minBurstLengthMs) 
+%           and ii. a minimum spike rate within a burst (minSpikeRateInBurstHz)
+%       3. 'Oscillation duration' is defined by the maximum contiguous stretch 
+%           of bursts starting from stimulation start, 
+%           with inter-burst intervals no greater than maxInterBurstIntervalMs.
 % Example(s):
 %       [histParams, histData] = compute_spike_histogram(1000*rand(100, 1));
 % Outputs:

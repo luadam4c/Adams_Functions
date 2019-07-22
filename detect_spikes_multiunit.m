@@ -11,8 +11,12 @@ function [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, vararg
 %                   or computed relative to the ratio of maximum slope 
 %                       over baseline slope
 %               iii. the slope threshold is signal-to-noise * baseline slope
-%           3. finds all the local maxima of the slope vector and 
-%               calls a local maximum a spike if it crosses the slope threshold 
+%           3. finds all the local maxima of the slope vector 
+%               (inflection points of the original signal) and 
+%               calls the index a spike if it matches 3 criteria:
+%                   i. occurs at least minDelayMs after stimulation start
+%                   ii. occurs no more than maxDelayMs after stimulation start
+%                   iii. slope value is >= the slope threshold 
 % Example(s):
 %       TODO
 % Outputs:
@@ -97,19 +101,22 @@ function [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, vararg
 % 2019-05-14 Added 'FiltFreq' as an optional argument
 % 2019-05-14 Added 'MaxDelayMs' as an optional argument
 % 2019-05-30 Changed signal-to-noise default to be dependent on maximum slope
+% 2019-07-22 Added maxRangeOfInterestMs and fixed MaxDelayMs
 % TODO: Finish documentation
 % 
 
 %% Hard-coded parameters
 MS_PER_S = 1000;
 relSnrThres2Max = 0.1;
+maxRangeOfInterestMs = 10000;   % 1000 ms or 10 seconds
+idxEndOfInterest = [];          % set later
 
 %% Default values for optional arguments
 filtFreqDefault = NaN;          % set later
 baseWindowDefault = [];         % set later
 idxStimStartDefault = 1;
-minDelayMsDefault = 25;
-maxDelayMsDefault = 10000;      % 1000 ms or 10 seconds
+minDelayMsDefault = 25;         % 25 ms
+maxDelayMsDefault = [];         % set later
 idxDetectStartDefault = [];     % set later
 idxDetectEndDefault = [];       % set later
 signal2NoiseDefault = [];       % set later
@@ -178,7 +185,7 @@ if isempty(tVec)
     % Count the number of samples
     nSamples = count_samples(vVec);
        
-    
+    % Create time vector(s)
     tVec = create_time_vectors(nSamples, 'SamplingIntervalMs', siMs);
 end
 
@@ -192,17 +199,38 @@ if isempty(idxDetectStart)
 end
 
 % Find the ending index for detecting a spike
-if isempty(idxDetectEnd)
+if isempty(idxDetectEnd) && ~isempty(maxDelayMs)
     % Compute the maximum delay in samples
     maxDelaySamples = round(maxDelayMs ./ siMs);
 
-    % Find the ending index for detecting a spike
+    % Find the ending index for computing slope and value ranges
     idxDetectEnd = min(numel(tVec), idxStimStart + maxDelaySamples);
+elseif ~isempty(idxDetectEnd) && isempty(maxDelayMs)
+    % Compute the maximum delay in samples and in ms
+    maxDelaySamples = idxDetectEnd - idxStimStart;
+    maxDelayMs = maxDelaySamples .* siMs;
+else
+    % The last index is idxDetectEnd
+    idxDetectEnd = numel(tVec);
+
+    % Compute the maximum delay in samples and in ms
+    maxDelaySamples = idxDetectEnd - idxStimStart;
+    maxDelayMs = maxDelaySamples .* siMs;
+end
+
+% Find the ending index for computing slope and value ranges
+if isempty(idxEndOfInterest)
+    % Compute the maximum range of interest in samples
+    maxRangeOfInterestSamples = round(maxRangeOfInterestMs ./ siMs);
+
+    % Find the ending index for computing slope and value ranges
+    idxEndOfInterest = max(1, idxStimStart + maxRangeOfInterestSamples);
 end
 
 % Find the corresponding times
 detectStartMs = tVec(idxDetectStart);
 detectEndMs = tVec(idxDetectEnd);
+rangeOfInterestEndMs = tVec(idxEndOfInterest);
 
 % Compute the number of samples
 nSamples = numel(vVec);
@@ -239,8 +267,8 @@ isPeakSlope = create_logical_array(indPeakSlopes, [nSamples - 1, 1]);
 allIndices = transpose(1:nSamples);
 
 % Detect spikes after idxDetectStart
-isSpike = [false; slopes > slopeThreshold] & [false; isPeakSlope] & ...
-            allIndices > idxDetectStart;
+isSpike = [false; slopes >= slopeThreshold] & [false; isPeakSlope] & ...
+            allIndices >= idxDetectStart & allIndices <= idxDetectEnd;
 idxSpikes = find(isSpike);
 
 % Compute the overall spike count
@@ -263,7 +291,7 @@ else
 end
 
 % Find the last index in the range of interest
-idxEndOfInterest1 = min(numel(vVecFilt), idxDetectEnd);
+idxEndOfInterest1 = min(numel(vVecFilt), idxEndOfInterest);
 
 % Query the maximum and range of vVec after detectStartMs
 vVecTrunc = vVecFilt(idxDetectStart:idxEndOfInterest1);
@@ -272,7 +300,7 @@ vMax = max(vVecTrunc);
 vRange = vMax - vMin;
 
 % Find the last index in the range of interest
-idxEndOfInterest2 = min(numel(slopes), idxDetectEnd);
+idxEndOfInterest2 = min(numel(slopes), idxEndOfInterest);
 
 % Query the maximum and range of slope after detectStartMs
 slopesTrunc = slopes(idxDetectStart:idxEndOfInterest2);
@@ -290,8 +318,10 @@ spikesParams.signal2Noise = signal2Noise;
 spikesParams.baseWindow = baseWindow;
 spikesParams.idxDetectStart = idxDetectStart;
 spikesParams.idxDetectEnd = idxDetectEnd;
+spikesParams.idxEndOfInterest = idxEndOfInterest;
 spikesParams.detectStartMs = detectStartMs;
 spikesParams.detectEndMs = detectEndMs;
+spikesParams.rangeOfInterestEndMs = rangeOfInterestEndMs;
 spikesParams.baseSlopeNoise = baseSlopeNoise;
 spikesParams.slopeThreshold = slopeThreshold;
 spikesParams.nSpikesTotal = nSpikesTotal;
