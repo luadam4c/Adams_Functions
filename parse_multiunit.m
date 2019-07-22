@@ -190,6 +190,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/plot_raster.m
 %       cd/plot_table.m
 %       cd/save_all_zooms.m
+%       cd/set_default_flag.m
 %       cd/transform_vectors.m
 %
 % Used by:
@@ -1263,21 +1264,6 @@ parsedData.indTroughs = indTroughs;
 parsedData.ampPeaks = ampPeaks;
 parsedData.ampTroughs = ampTroughs;
 parsedData.halfPeriodsToMultiple = halfPeriodsToMultiple;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function flag = set_default_flag(flag, auxFlag)
-% TODO: Input parser
-% TODO: Make auxFlag an optional argument
-% TODO: Pull out to its own function
-
-if isempty(flag)
-    if auxFlag
-        flag = true;
-    else
-        flag = false;
-    end
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

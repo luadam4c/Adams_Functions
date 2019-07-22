@@ -336,6 +336,7 @@ Last Updated 2019-07-22 by Katie Salvati
 - [**save_all_zooms.m**](https://github.com/blabuva/Adams_Functions/blob/master/save_all_zooms.m): Save a figure in various zoom windows
 - [**save_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/save_params.m): Saves parameters to a file
 - [**select_similar_values.m**](https://github.com/blabuva/Adams_Functions/blob/master/select_similar_values.m): Selects values that are within a certain percentage range of the mean
+- [**set_default_flag.m**](https://github.com/blabuva/Adams_Functions/blob/master/set_default_flag.m): Sets the default flag if empty according to an optional auxFlag
 - [**set_fields_zero.m**](https://github.com/blabuva/Adams_Functions/blob/master/set_fields_zero.m): Set each field specified in varargin to zero and store previous values in a new field strcat(field, '_prev')
 - [**sigfig.m**](https://github.com/blabuva/Adams_Functions/blob/master/sigfig.m): Returns the number of significant figures from a number (numeric or string)
 - [**solve_function_at_value.m**](https://github.com/blabuva/Adams_Functions/blob/master/solve_function_at_value.m): Solves x for f(x) at a specific value (default is zero)
