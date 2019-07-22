@@ -1,4 +1,4 @@
-function [subDirs, fullPaths] = all_subdirs(varargin)
+function varargout = all_subdirs(varargin)
 %% Returns all the subdirectories in a given directory
 % Usage: [subDirs, fullPaths] = all_subdirs(varargin)
 %
@@ -20,12 +20,16 @@ function [subDirs, fullPaths] = all_subdirs(varargin)
 %                   - 'Directory': the directory to search in
 %                   must be a string scalar or a character vector
 %                   default == pwd
+%                   - 'ForceCellOutput': whether to force output as a cell array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/construct_and_check_fullpath.m
 %       cd/extract_fullpaths.m
 %
 % Used by: 
+%       cd/apply_to_all_subdirs.m
 %       /media/ashleyX/Recordings/analyze_recordings.m TODO: Update this
 %       /home/zhongxiao/SCIDmiceLTP/Code/analyze_SCIDmiceLTP.m
 %       
@@ -35,10 +39,13 @@ function [subDirs, fullPaths] = all_subdirs(varargin)
 %               https://www.mathworks.com/matlabcentral/answers/
 %                   166629-is-there-any-way-to-list-all-folders-only-in-the-level-directly-below-a-selected-directory
 % 2018-10-04 Renamed subdirs() -> all_subdirs()
+% 2019-07-22 Added 'ForceCellOutput' as an optional argument
+% 2019-07-22 Now uses varargout
 
 %% Default values for optional arguments
 verboseDefault = false;             % don't print to standard output by default
 directoryDefault = '';              % construct_and_check_fullpath('') == pwd
+forceCellOutputDefault = false; % don't force output as a cell array by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -52,12 +59,14 @@ addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-                                                % introduced after R2016b
+addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 verbose = iP.Results.Verbose;
 directory = iP.Results.Directory;
+forceCellOutput = iP.Results.ForceCellOutput;
 
 % Make sure the directory is an existing full path
 [directory, dirExists] = construct_and_check_fullpath(directory);
@@ -80,8 +89,14 @@ isIrrelevant = cellfun(@(x) any(strcmp(x, {'.', '..'})), {files.name});
 % Keep only those that are relevant directories
 subDirs = files(isDir & ~isIrrelevant);
 
+% Get first output
+varargout{1} = subDirs;
+
 % Extract the full paths
-fullPaths = extract_fullpaths(subDirs);
+if nargout >= 2
+    varargout{2} = extract_fullpaths(subDirs, ...
+                                    'ForceCellOutput', forceCellOutput);
+end
 
 %% Print to standard output
 % Count the number of subdirectories

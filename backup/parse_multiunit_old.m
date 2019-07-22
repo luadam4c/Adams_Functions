@@ -1910,6 +1910,309 @@ colorbar;
 %{
 OLD CODE:
 
+% Compute baseline rms noise from window
+baseNoises = compute_baseline_noise(vVecs, tVec, baseWindow);
+
+% Compute a baseline slope noise in V/s
+baseSlopeNoise = baseNoise / siMs;
+
+parsedParams.baseNoise = baseNoise;
+
+idxDetectStart = find(tVec > detectStartMs, 1);
+
+xlim([detectStartMs, detectStartMs + 1e4]);
+xlim([detectStartMs, detectStartMs + 2e3]);
+xlim([3410, 3470]);
+
+% Query the maximum and range of vVec after detectStartMs
+vVecTrunc = vVec(idxDetectStart:end);
+vMean = mean(vVecTrunc);
+vStd = std(vVecTrunc);
+vMin = vMean - 10 * vStd;
+vMax = vMean + 10 * vStd;
+vRange = vMax - vMin;
+
+% Query the maximum and range of slope after detectStartMs
+slopesTrunc = slopes(idxDetectStart:end);
+slopesMean = mean(slopesTrunc);
+slopesStd = std(slopesTrunc);
+slopeMin = slopesMean - 10 * slopesStd;
+slopeMax = slopesMean + 10 * slopesStd;
+slopeRange = slopeMax - slopeMin;
+
+filterCutoffHz = 3;
+acfFiltered = freqfilter(acf, filterCutoffHz, binWidthMs / 1000);
+parsedParams.filterCutoffHz = filterCutoffHz;
+
+oscWindow = transpose([stimStartMs, timeOscEndMs]);
+[hLines, eventTimes, yEnds, yTicksTable] = ...
+    plot_raster(spikeTimesMs, 'DurationWindow', oscWindow, ...
+                'LineWidth', 0.5);
+vertLine = plot_vertical_line(mean(stimStartMs), 'Color', 'g', ...
+                                'LineStyle', '--');
+save_all_zooms(figs(nVectors + 1), figPathBaseThis, ...
+                mean(stimStartMs), mean(detectStartMs), mean(firstSpikeMs));
+
+function save_all_zooms(fig, figPathBase, stimStartMs, detectStartMs, firstSpikeMs)
+%% Save the figure as .fig and 4 zooms as .png
+% Get the figure
+figure(fig)
+% Save the full figure
+%save_all_figtypes(fig, [figPathBase, '_full'], {'png', 'fig'});
+saveas(fig, [figPathBase, '_full'], 'png');
+% Zoom #1
+xlim([stimStartMs, stimStartMs + 1e4]);
+saveas(fig, [figPathBase, '_zoom1'], 'png');
+% Zoom #2
+xlim([detectStartMs, detectStartMs + 2e3]);
+saveas(fig, [figPathBase, '_zoom2'], 'png');
+% Zoom #3
+xlim([firstSpikeMs, firstSpikeMs + 60]);
+saveas(fig, [figPathBase, '_zoom3'], 'png');
+
+% Compute the minimum spikes per bin in the last burst
+minSpikesPerBinLastBurst = ceil(minSpikeRateLastBurstHz * binWidthSec);
+% Find the bins with number of spikes greater than minSpikesPerBinLastBurst
+binsManyManySpikes = find(spikeCounts > minSpikesPerBinLastBurst);
+% Find the time of oscillation end in ms
+if isempty(binsManyManySpikes)
+    timeOscEndMs = stimStartMs;
+else
+    iBin = numel(binsManyManySpikes) + 1;
+    lastBurstBin = [];
+    while isempty(lastBurstBin) && iBin > 1
+        % Decrement the bin number
+        iBin = iBin - 1;
+        % Find the last bin left with 
+        %   number of spikes greater than minSpikesPerBinLastBurst
+        idxBinLast = binsManyManySpikes(iBin);
+        % Compute the maximum number of bins between last two bursts
+        maxIbiBins = floor(maxInterBurstIntervalMs / binWidthMs);
+        % Compute the last bin index that is within maxIbiBins of 
+        %   the last bin with many many spikes
+        idxBinMax = min(idxBinLast + maxIbiBins, nBins);
+        % Determine whether each bin is within maxIbiBins of 
+        %   the last bin with many many spikes
+        withinIBI = false(nBins, 1);
+        withinIBI(idxBinLast:idxBinMax) = true;
+        % Determine whether each bin has number of spikes at least a threshold
+        isManySpikes = (spikeCounts >= minSpikesPerBinLastBurst);
+        % Find the last consecutive bin with number of spikes greater than threshold
+        %   within maxIbiBins of the last bin with many many spikes
+        %   Note: First bin must be true
+        lastBurstBin = find([false; isManySpikes(1:end-1)] & isManySpikes & ...
+                            withinIBI, 1, 'last');
+    end
+    % If still not found, the last burst bin is the one with many many spikes
+    if isempty(lastBurstBin)
+        lastBurstBin = idxBinLast;
+    end
+    % Compute the time of oscillation end in ms
+    timeOscEndMs = histLeftMs + lastBurstBin * binWidthMs;
+end
+
+% Compute the minimum spikes per bin in the last burst
+minSpikesPerBinInBurst = ceil(minSpikeRateInBurstHz * binWidthSec);
+% Determine whether each bin passes the number of spikes criterion
+isInBurst = spikeCounts >= minSpikesPerBinInBurst;
+% Determine whether each bin and its previous minBinsInBurst
+%   consecutive bins all pass the number of spikes criterion
+isLastBinInBurst = isInBurst;
+previousInBurst = isInBurst;
+for i = 1:minBinsInBurst
+    % Whether the previous ith bin passes the number of spikes criterion
+    previousInBurst = [false; previousInBurst(1:(end-1))];
+
+    % Whether the previous i bins all pass the number of spikes criterion
+    isLastBinInBurst = isLastBinInBurst & previousInBurst;
+end
+% Find the last bins of each burst
+iBinBurstEnds = find(isLastBinInBurst);
+
+% Record the amplitude of the primary peak
+ampPeak1 = acfFiltered(1);
+% Find the index and amplitude of the secondary peak
+% TODO: Use all peaks
+[peakAmp, peakInd] = ...
+    findpeaks(acfFiltered, 'MinPeakProminence', minRelProm * ampPeak1);
+idxPeak2 = peakInd(1);
+ampPeak2 = peakAmp(1);
+% Find the amplitude of the first trough
+[troughNegAmp, troughInd] = findpeaks(-acfFiltered);
+idxTrough1 = troughInd(1);
+ampTrough1 = -troughNegAmp(1);
+% Compute the average amplitude of first two peaks
+ampPeak12 = mean([ampPeak1, ampPeak2]);
+% Compute the oscillatory index
+oscIndex3 = (ampPeak12 - ampTrough1) / ampPeak12;
+% Compute the oscillation period
+oscPeriod2Ms = idxPeak2 * binWidthMs;
+parsedParams.ampPeak1 = ampPeak1;
+parsedParams.idxPeak2 = idxPeak2;
+parsedParams.ampPeak2 = ampPeak2;
+parsedParams.idxTrough1 = idxTrough1;
+parsedParams.ampTrough1 = ampTrough1;
+parsedParams.ampPeak12 = ampPeak12;
+timePeak1Sec = 0;
+timeTrough1Sec = idxTrough1 * binWidthSec;
+timePeak2Sec = idxPeak2 * binWidthSec;
+plot(timePeak1Sec, ampPeak1, 'ro', 'LineWidth', 2);
+plot(timeTrough1Sec, ampTrough1, 'bx', 'LineWidth', 2);
+plot(timePeak2Sec, ampPeak2, 'ro', 'LineWidth', 2);
+xlim([0, 7]);
+
+% Take just the positive side
+acf = autoCorr(nBins:end);
+
+% Create figure path base
+figPathBase = fullfile(outFolder, [fileBase, '_spike_detection']);
+figPathBase = [fileBase, '_spike_detection'];
+
+minDelaySamples = 2000;
+minDelayMs = 200;
+
+check_subdir(outFolder, {rasterDir, autoCorrDir, acfDir, ...
+                spikeHistDir, spikeDetectionDir});
+
+% Compute x and y limits
+acfOfInterest = acf(1:floor(7/binWidthSec));
+maxAcf = max(acfOfInterest);
+yLimits = compute_axis_limits({acfOfInterest, 0}, 'y', 'Coverage', 90);
+yOscDur = -(maxAcf * 0.025);
+xLimitsOscDur = [0, oscDurationMs - autoCorrDelayMs] / MS_PER_S;
+xLimitsAcfFiltered = [0, max(timePeaksSec(end), xLimitsOscDur(2)) + 1];
+% xLimitsAcfFiltered = [0, 7];
+
+% Convert to seconds
+spikeTimesSec = cellfun(@(x) x/MS_PER_S, spikeTimesMs, ...
+                        'UniformOutput', false);
+
+% Record the delay for the autocorrelogram
+autoCorrDelayMs = histLeftMs - stimStartMs;
+autoCorrDelaySec = autoCorrDelayMs / MS_PER_S;
+parsedParams.autoCorrDelayMs = autoCorrDelayMs;
+parsedParams.autoCorrDelaySec = autoCorrDelaySec;
+autoCorrDelayMs = NaN;
+xLimitsOscDur = [0, oscDurationSec - autoCorrDelaySec];
+
+xLimitsAcfFiltered = [0, max(timePeaksSec(end), xLimitsOscDur(2)) + 1];
+
+acfOfInterest = acf(1:floor(7/binWidthSec));
+maxAcf = max(acfOfInterest);
+yLimits = compute_axis_limits({acfOfInterest, 0}, 'y', 'Coverage', 90);
+yOscDur = -(maxAcf * 0.025);
+
+acfFilteredRight = nanmean(bestRightForAll) + 1.96 * nanstderr(bestRightForAll);
+bestUpperLimit = nanmean(largestAcfValues) + 1.96 * nanstderr(largestAcfValues);
+
+xLimitsOscDur = [histLeftSec, timeOscEndSec];
+
+% Find the index and amplitude of the peaks
+if numel(acfFiltered) > 3
+    [peakAmp, peakInd] = ...
+        findpeaks(acfFiltered, 'MinPeakProminence', minRelProm * ampPeak1);
+
+    % Record all peak indices and amplitudes
+    indPeaks = [1; peakInd];
+    ampPeaks = [ampPeak1; peakAmp];
+else
+    indPeaks = 1;
+    ampPeaks = ampPeak1;
+end
+
+% Compute the number of peaks
+nPeaks = numel(indPeaks);
+
+% Find the indices and amplitudes of the troughs in between each pair of peak
+[ampTroughs, indTroughs] = find_troughs_from_peaks(acfFiltered, indPeaks);
+
+% Compute the average amplitudes between adjacent peaks
+ampAdjPeaks = mean([ampPeaks(1:(end-1)), ampPeaks(2:end)], 2);
+
+% Compute the oscillatory index
+oscIndex3 = mean((ampAdjPeaks - ampTroughs) ./ ampAdjPeaks);
+
+if nPeaks > 1
+    oscPeriod2Ms = (indPeaks(2) - indPeaks(1)) * binWidthMs;
+else
+    oscPeriod2Ms = 0;
+end
+
+% Compute the lags between adjacent peaks in ms
+lagsBetweenPeaksMs = diff(indPeaks) * binWidthMs;
+
+% Compute the oscillatory index 
+%   Note: This is one over the coefficient of variation 
+%           of the lag differences between adjacent peaks
+if numel(lagsBetweenPeaksMs) < 2
+    oscIndex3 = NaN;
+else
+    oscIndex3 = 1 ./ compute_stats(lagsBetweenPeaksMs, 'cov');
+end
+
+parsedData.lagsBetweenPeaksMs = lagsBetweenPeaksMs;
+    lagsBetweenPeaksMs = [];
+
+if nPeaks > 1
+    [~, iPeak] = max(ampPeaks(2:end));
+    oscPeriod2Bins = indPeaks(iPeak + 1) - indPeaks(1);
+else
+    oscPeriod2Bins = 0;
+end
+
+[~, iPeak] = max(ampPeaks(2:end));
+oscPeriod1Bins = indPeaks(iPeak + 1) - indPeaks(1);
+
+% Check if total spike count is correct
+if nSpikesTotal2 ~= nSpikesTotal
+    error('Code logic error!');
+end
+
+plot_traces(tVecs, vVecs, 'Verbose', false, ...
+            'PlotMode', 'parallel', 'SubplotOrder', 'list', ...
+            'YLimit', [-4, 4], ...
+            'XLabel', xLabel, 'LinkAxesOption', 'y', ...
+            'TraceLabels', 'suppress', ...
+            'FigTitle', figTitle, 'FigHandle', figs(1), ...
+            'Color', 'k');
+
+'RemoveOutliers', true, 'PlotSeparately', true);
+
+% Compute the sampling interval in seconds
+siSeconds = siMs / MS_PER_S;
+
+% Compute the minimum delay in samples
+minDelaySamples = ceil(minDelayMs ./ siMs);
+parsedParams.minDelaySamples = minDelaySamples;
+
+% Updated plot flags
+if plotAllFlag
+    if isempty(plotSpikeDetectionFlag)
+        plotSpikeDetectionFlag = true;
+    end
+    if isempty(plotSpikeDensityFlag)
+        plotSpikeDensityFlag = true;
+    end
+    if isempty(plotSpikeHistogramFlag)
+        plotSpikeHistogramFlag = true;
+    end
+    if isempty(plotAutoCorrFlag)
+        plotAutoCorrFlag = true;
+    end
+    if isempty(plotRawFlag)
+        plotRawFlag = true;
+    end
+    if isempty(plotRasterFlag)
+        plotRasterFlag = true;
+    end
+    if isempty(plotMeasuresFlag)
+        plotMeasuresFlag = true;
+    end
+end
+
+function save_all_zooms(fig, outFolder, figBase, zoomWin1, zoomWin2, zoomWin3)
+%% Save the figure as .fig and 4 zooms as .png
+
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

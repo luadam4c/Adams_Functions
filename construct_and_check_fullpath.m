@@ -43,6 +43,7 @@ function [fullPath, pathExists] = construct_and_check_fullpath (pathName, vararg
 %       cd/construct_fullpath.m
 %
 % Used by:
+%       cd/apply_to_all_subdirs.m
 %       cd/all_files.m
 %       cd/all_subdirs.m
 %       cd/load_neuron_outputs.m

@@ -22,6 +22,7 @@ Last Updated 2019-07-22 by Katie Salvati
 - [**apply_iteratively.m**](https://github.com/blabuva/Adams_Functions/blob/master/apply_iteratively.m): Applies a function iteratively to an array until it becomes a non-cell array result
 - [**apply_or_return.m**](https://github.com/blabuva/Adams_Functions/blob/master/apply_or_return.m): Applies a function if a condition is true, or return the original argument(s)
 - [**apply_over_cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/apply_over_cell.m): Apply a function that usually takes two equivalent arguments over all contents of a cell array
+- [**apply_to_all_subdirs.m**](https://github.com/blabuva/Adams_Functions/blob/master/apply_to_all_subdirs.m): Apply the same function to all subdirectories
 - [**argfun.m**](https://github.com/blabuva/Adams_Functions/blob/master/argfun.m): Applies a function to each input argument
 - [**atf2sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/atf2sheet.m): Converts .atf text file(s) to a spreadsheet file(s) (type specified by the 'SheetType' argument)
 - [**boltzmann.m**](https://github.com/blabuva/Adams_Functions/blob/master/boltzmann.m): Computes the sigmoidal Boltzmann function
