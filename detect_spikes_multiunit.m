@@ -2,7 +2,17 @@ function [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, vararg
 %% Detects spikes from a multiunit recording
 % Usage: [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, varargin)
 % Explanation:
-%       TODO
+%       Detects spikes from a multiunit recording via the following algorithm:
+%           1. (optional) bandpass filters signal at 'FiltFreq' Hz
+%           2. computes a slope threshold:
+%               i. a baseline slope noise is computed from 
+%                   the slope vector within 'BaseWindow'
+%               ii. a signal-to-noise ratio is either provided ('Signal2Noise')
+%                   or computed relative to the ratio of maximum slope 
+%                       over baseline slope
+%               iii. the slope threshold is signal-to-noise * baseline slope
+%           3. finds all the local maxima of the slope vector and 
+%               calls a local maximum a spike if it crosses the slope threshold 
 % Example(s):
 %       TODO
 % Outputs:

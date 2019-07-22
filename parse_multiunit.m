@@ -413,8 +413,8 @@ if isempty(baseWindows)
     baseWindows = compute_time_window(tVecs, 'TimeEnd', stimStartMs);
 end
 
-% Determine a signal-to-noise ratio if not provided
-% %   Note: This assumes all sweeps have the same protocol
+% Determine a slice-dependent signal-to-noise ratio if not provided
+%   Note: This assumes all sweeps have the same protocol
 if isempty(signal2Noise)
     fprintf('Determining signal-to-noise ratio for %s ...\n', fileBase);
     signal2Noise = compute_default_signal2noise(vVecs, siMs, 'tVecs', tVecs, ...
@@ -856,6 +856,9 @@ minTimeMs = tVec(1);
 
 %% Detect spikes
 % Detect spikes (bandpass filter before detection)
+%   Note: This checks whether each inflection point 
+%           crosses a sweep-dependent slope threshold, 
+%           given a slice-dependent signal-to-noise threshold
 [spikesParams, spikesData] = ...
     detect_spikes_multiunit(vVec, siMs, ...
                             'tVec', tVec, 'IdxStimStart', idxStimStart, ...
