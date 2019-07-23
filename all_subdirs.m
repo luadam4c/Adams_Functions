@@ -71,8 +71,8 @@ forceCellOutput = iP.Results.ForceCellOutput;
 % Make sure the directory is an existing full path
 [directory, dirExists] = construct_and_check_fullpath(directory);
 if ~dirExists
-    subDirs = [];
-    fullPaths = {};
+    varargout{1} = [];
+    varargout{2} = {};
     return
 end
 

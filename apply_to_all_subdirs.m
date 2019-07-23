@@ -1,13 +1,14 @@
-function outputs = apply_to_all_subdirs (myFunction, varargin)
-%% Apply the same function to all subdirectories
-% Usage: outputs = apply_to_all_subdirs (myFunction, varargin)
+function varargout = apply_to_all_subdirs (myFunction, varargin)
+%% Apply the same function (must have 'Directory' as a parameter) to all subdirectories
+% Usage: varargout = apply_to_all_subdirs (myFunction, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       filesAll = apply_to_all_subdirs(@all_files)
-%       TODO: contents = apply_to_all_subdirs(dir)
+%       filesAll = apply_to_all_subdirs(@all_files);
+%       [~, subDirPaths] = apply_to_all_subdirs(@all_subdirs);
+%       TODO: contents = apply_to_all_subdirs(@dir)
 % Outputs:
-%       outputs     - outputs from the application to each subdirectory
+%       varargout   - outputs from the application to each subdirectory
 %                   specified as a TODO
 % Arguments:
 %       myFunction  - a custom function that takes two equivalent arguments
@@ -28,7 +29,6 @@ function outputs = apply_to_all_subdirs (myFunction, varargin)
 
 % File History:
 % 2019-07-22 Created by Adam Lu
-% TODO: INCOMPLETE!
 % 
 
 %% Hard-coded parameters
@@ -61,27 +61,50 @@ directory = iP.Results.Directory;
 
 %% Preparation
 % Make sure the directory is an existing full path
-[directory, dirExists] = construct_and_check_fullpath(directory);
+directory = construct_and_check_fullpath(directory);
 
 %% Do the job
 % List all subdirectories
 [~, allSubDirPaths] = all_subdirs('Directory', directory);
 
-% Count the number of subdirectories
-nSubDirs = numel(allSubDirPaths);
-
 % Apply to all subdirectories
-outputs = cell(nSubDirs, 1);
-parfor iSubDir = 1:nSubDirs
-    outputs{iSubDir} = myFunction('Directory', directory);
+if nargout >= 3
+    [output1, output2, output3] = cellfun(@(x) myFunction('Directory', x), ...
+                                allSubDirPaths, 'UniformOutput', false);
+elseif nargout >= 2
+    [output1, output2] = cellfun(@(x) myFunction('Directory', x), ...
+                                allSubDirPaths, 'UniformOutput', false);
+elseif nargout >= 1
+    output1 = cellfun(@(x) myFunction('Directory', x), ...
+                        allSubDirPaths, 'UniformOutput', false);
+else
+    cellfun(@(x) myFunction('Directory', x), ...
+            allSubDirPaths, 'UniformOutput', false);
 end
 
 %% Output results
+if nargout >= 1
+    varargout{1} = output1;
+end
+if nargout >= 2
+    varargout{2} = output2;
+end
+if nargout >= 3
+    varargout{3} = output3;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+% Count the number of subdirectories
+nSubDirs = numel(allSubDirPaths);
+
+outputs = cell(nSubDirs, 1);
+parfor iSubDir = 1:nSubDirs
+    outputs{iSubDir} = myFunction('Directory', directory);
+end
 
 %}
 
