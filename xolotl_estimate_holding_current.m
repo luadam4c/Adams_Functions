@@ -30,7 +30,7 @@ function [holdingCurrent, xolotlObject] = ...
 %       cd/xolotl_compartment_index.m
 %
 % Used by:
-%       cd/xolotlObject_xolotl_test.m
+%       cd/m3ha_xolotl_test.m
 
 % File History:
 % 2018-12-13 Created by Adam Lu

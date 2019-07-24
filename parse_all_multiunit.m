@@ -4,7 +4,8 @@ function [muParams, muData] = parse_all_multiunit(varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       TODO
+%       parse_all_multiunit;
+%       apply_to_all_subdirs(@parse_all_multiunit);
 % Outputs:
 %       muParams    - parsed multiunit parameters
 %       muData      - parsed multiunit data
