@@ -9,7 +9,16 @@ function [muParams, muData] = parse_all_multiunit(varargin)
 %       muParams    - parsed multiunit parameters
 %       muData      - parsed multiunit data
 % Arguments:
-%       varargin    - 'PlotAllFlag': whether to plot everything
+%       varargin    - 'Directory': working directory
+%                   must be a string scalar or a character vector
+%                   default == pwd
+%                   - 'InFolder': directory to read files from
+%                   must be a string scalar or a character vector
+%                   default == same as directory
+%                   - 'OutFolder': directory to place output files
+%                   must be a string scalar or a character vector
+%                   default == same as inFolder
+%                   - 'PlotAllFlag': whether to plot everything
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'PlotCombinedFlag': whether to plot raw data, 
@@ -64,20 +73,22 @@ function [muParams, muData] = parse_all_multiunit(varargin)
 %               to detect sliceBase and phase boundaries
 % 2019-05-30 Now saves combined vectors as mat files
 % 2019-05-31 Updated plot flags
-% 2019-06-10 Added plotCombinedFlag
+% 2019-06-10 Added 'PlotCombinedFlag'
+% 2019-07-24 Added 'Directory', 'InFolder' & 'OutFolder'
 
 % TODO: Make outFolder optional parameters
 % TODO: Make combining optional
 
 %% Hard-coded parameters
-inFolder = pwd;
-outFolder = pwd;
 matFileSuffix = '_multiunit_data';
 varsNeeded = {'sliceBase', 'vVecsSl', 'siMsSl', 'iVecsSl', ...
                 'phaseBoundaries', 'phaseStrs'};
 regexpSliceMatFile = '.*slice[0-9]*.mat';
 
 %% Default values for optional arguments
+directoryDefault = pwd;
+inFolderDefault = '';                   % set later
+outFolderDefault = '';                  % set later
 plotAllFlagDefault = false;
 plotCombinedFlagDefault = false;
 plotSpikeDetectionFlagDefault = [];     % set in parse_multiunit.m
@@ -98,6 +109,12 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'Directory', directoryDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'InFolder', inFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'PlotAllFlag', plotAllFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotCombinedFlag', plotCombinedFlagDefault, ...
@@ -121,6 +138,9 @@ addParameter(iP, 'SaveMatFlag', saveMatFlagDefault, ...
 
 % Read from the Input Parser
 parse(iP, varargin{:});
+directory = iP.Results.Directory;
+inFolder = iP.Results.InFolder;
+outFolder = iP.Results.OutFolder;
 plotAllFlag = iP.Results.PlotAllFlag;
 plotCombinedFlag = iP.Results.PlotCombinedFlag;
 plotSpikeDetectionFlag = iP.Results.PlotSpikeDetectionFlag;
@@ -133,6 +153,16 @@ plotMeasuresFlag = iP.Results.PlotMeasuresFlag;
 saveMatFlag = iP.Results.SaveMatFlag;
 
 %% Preparation
+% Decide on the input directory
+if isempty(inFolder)
+    inFolder = directory;
+end
+
+% Decide on the output directory
+if isempty(outFolder)
+    outFolder = inFolder;
+end
+
 % Get all the mat file names
 [~, allMatPaths] = ...
     all_files('Directory', inFolder, 'RegExp', regexpSliceMatFile, ...
