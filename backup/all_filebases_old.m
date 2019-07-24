@@ -1,6 +1,6 @@
-function fileBases = all_filebases (infolder, subdirs, fileext)
+function fileBases = all_file_bases (infolder, subdirs, fileext)
 %% Finds base names for files in infolder/subdir and return as a cell array or cell arrays of strings
-% Usage: fileBases = all_filebases (infolder, subdirs, fileext)
+% Usage: fileBases = all_file_bases (infolder, subdirs, fileext)
 % Arguments:
 %       infolder    - the directory that contains the subdirectories which contains the special case files
 %       subdirs     - a cell array of subdirectory names within infolder
@@ -11,7 +11,7 @@ function fileBases = all_filebases (infolder, subdirs, fileext)
 %       /home/Matlab/Adams_Functions/find_LTS.m
 %
 % 2017-02-16 Created
-% 2018-11-27 Renamed find_filebases -> all_filebases
+% 2018-11-27 Renamed find_filebases -> all_file_bases
 % TODO: Use all_files.m?
 % TODO: Input parser
 

@@ -98,7 +98,7 @@ function varargout = parse_lts (vVec0s, siMs, varargin)
 %
 % TODO: Move 
 % Requires:
-%       cd/all_filebases.m
+%       cd/all_file_bases.m
 %       cd/find_in_strings.m
 %
 % Used by:
@@ -1572,7 +1572,7 @@ pathsToOverride = fullfile(m3ha_locate_homedir, specialCasesDir, ...
 
 % Find all file base names to override
 fileBasesToOverride = ...
-    cellfun(@(x) all_filebases('Directory', x, 'Extension', 'png'), ...
+    cellfun(@(x) all_file_bases('Directory', x, 'Extension', 'png'), ...
             pathsToOverride, 'UniformOutput', false);
 
 % Remove '_scaled' from base names

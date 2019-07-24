@@ -1,12 +1,12 @@
-function fileBases = all_filebases (varargin)
+function fileBases = all_file_bases (varargin)
 %% Returns all the file bases in a given directory (optionally recursive) that matches a prefix, keyword, suffix or extension
-% Usage: fileBases = all_filebases (varargin)
+% Usage: fileBases = all_file_bases (varargin)
 % Explanation:
 %       This function is the same as all_files.m but returns just the 
 %           file base names
 % Example(s):
-%       fileBases = all_filebases;
-%       fileBases = all_filebases('Recursive', true);
+%       fileBases = all_file_bases;
+%       fileBases = all_file_bases('Recursive', true);
 % Outputs:
 %       fileBases   - base names of files found
 %                   specified as a cell array of character arrays
@@ -23,7 +23,7 @@ function fileBases = all_filebases (varargin)
 
 % File History:
 % 2017-02-16 Created
-% 2018-11-27 Renamed find_filebases -> all_filebases
+% 2018-11-27 Renamed find_filebases -> all_file_bases
 % 2019-01-14 Now uses all_files.m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
