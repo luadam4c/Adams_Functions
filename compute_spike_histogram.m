@@ -81,6 +81,7 @@ function [histParams, histData] = compute_spike_histogram (spikeTimesMs, varargi
 %       cd/compute_bins.m
 %
 % Used by:
+%       cd/compute_autocorrelogram.m
 %       cd/compute_oscillation_duration.m
 %       cd/parse_multiunit.m
 

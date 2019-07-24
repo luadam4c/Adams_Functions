@@ -59,7 +59,7 @@ function [featuresFileTable, featuresSweepTable] = ...
 %                   default == same as directory
 %                   - 'TimeUnits': units for time
 %                   must be a string scalar or a character vector
-%                   default == 's' for 2-data data and 'ms' for 3-data data
+%            plot_protocols       default == 's' for 2-data data and 'ms' for 3-data data
 %                   - 'ChannelTypes': the channel types
 %                   must be a cellstr with nChannels elements
 %                       each being one of the following:
@@ -134,8 +134,8 @@ lowPassFrequencyGabab = 1000;       % lowpass filter frequency in Hz
 medFiltWindowGabab = 20; %[]          % median filter window in ms
 smoothWindowGabab = 500; %[];            % moving average filter window in ms
 baselineLengthMsGabab = 500;         % baseline length in ms
-responseLengthMsGabab = 5800; %1000;       % response length in ms
-minPeakDelayMsGabab = 50;           % min peak delay after pulse end in ms
+responseLengthMsGabab = 2500; %1000;       % response length in ms
+minPeakDelayMsGabab = 500;           % min peak delay after pulse end in ms
 
 % For Evoked LFP
 lowPassFrequencyLfp = 1000;         % lowpass filter frequency in Hz
@@ -495,26 +495,26 @@ if ~isempty(featuresFileTable) && istable(featuresFileTable)
     if verbose
         fprintf('Plotting the table %s ...\n', featuresFilePath);
     end
-        
-    % Plot each variable of the table
-    plot_table(featuresFileTable, 'VariableNames', varToPlot, ...
-               'OutFolder', outFolderProtocol, 'PLabel', xLabelFile, ...
-               'PlotSeparately', true);
-end
-if ~isempty(featuresSweepTable) && istable(featuresSweepTable)
-    % Save the table
-    writetable(featuresSweepTable, featuresSweepPath, 'WriteRowNames', false);
-
-    % Print message
-    if verbose
-        fprintf('Plotting the table %s ...\n', featuresSweepPath);
-    end
-
-    % Plot each variable of the table
-    plot_table(featuresSweepTable, 'VariableNames', varToPlot, ...
-               'OutFolder', outFolderProtocol, 'PLabel', xLabelSweep, ...
-               'PlotSeparately', true);
-end
+end      
+%     % Plot each variable of the table
+%     plot_table(featuresFileTable, 'VariableNames', varToPlot, ...
+%                'OutFolder', outFolderProtocol, 'PLabel', xLabelFile, ...
+%                'PlotSeparately', true);
+% end
+% if ~isempty(featuresSweepTable) && istable(featuresSweepTable)
+%     % Save the table
+%     writetable(featuresSweepTable, featuresSweepPath, 'WriteRowNames', false);
+% 
+%     % Print message
+%     if verbose
+%         fprintf('Plotting the table %s ...\n', featuresSweepPath);
+%     end
+% 
+%     % Plot each variable of the table
+%     plot_table(featuresSweepTable, 'VariableNames', varToPlot, ...
+%                'OutFolder', outFolderProtocol, 'PLabel', xLabelSweep, ...
+%                'PlotSeparately', true);
+% end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

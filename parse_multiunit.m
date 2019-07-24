@@ -167,6 +167,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/argfun.m
 %       cd/check_dir.m
 %       cd/check_subdir.m
+%       cd/compute_autocorrelogram.m
 %       cd/compute_axis_limits.m
 %       cd/compute_spike_density.m
 %       cd/compute_spike_histogram.m
@@ -184,7 +185,6 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/force_matrix.m
 %       cd/iscellnumeric.m
 %       cd/match_time_info.m
-%       cd/movingaveragefilter.m
 %       cd/parse_stim.m
 %       cd/plot_horizontal_line.m
 %       cd/plot_raster.m
@@ -939,205 +939,35 @@ timeBurstInOscEndsMs = spHistData.timeBurstInOscEndsMs;
 
 %% Compute the autocorrelogram, oscillation period & oscillatory index
 % TODO: compute_autocorrelogram.m
-if nSpikesTotal == 0
-    oscIndex1 = 0;
-    oscIndex2 = 0;
-    oscIndex3 = NaN;
-    oscIndex4 = 0;
-    oscPeriod1Ms = 0;
-    oscPeriod2Ms = 0;
-    minOscPeriod2Bins = 0;
-    maxOscPeriod2Bins = 0;
-    autoCorr = [];
-    acf = [];
-    acfFiltered = [];
-    acfFilteredOfInterest = [];
-    indPeaks = [];
-    indTroughs = [];
-    ampPeaks = [];
-    ampTroughs = [];
-    halfPeriodsToMultiple = [];
-else
-    % Compute an unnormalized autocorrelogram in Hz^2
-    autoCorr = xcorr(spikeCounts, 'unbiased') ./ binWidthSec ^ 2;
+[autoCorrParams, autoCorrData] = ...
+    compute_autocorrelogram(spikeTimesMs, ...
+                            'StimStartMs', stimStartMs, ...
+                            'BinWidthMs', binWidthMs, ...
+                            'MinBurstLengthMs', minBurstLengthMs, ...
+                            'MaxInterBurstIntervalMs', maxInterBurstIntervalMs, ...
+                            'MinSpikeRateInBurstHz', minSpikeRateInBurstHz, ...                            'FilterWidthMs', filterWidthMs, ...
+                            'MinRelProm', minRelProm, ...
+                            'SpikeHistParams', spHistParams, ...
+                            'SpikeHistData', spHistData);
+                            
+oscIndex1 = autoCorrParams.oscIndex1;
+oscIndex2 = autoCorrParams.oscIndex2;
+oscIndex3 =  autoCorrParams.oscIndex3;
+oscIndex4 = autoCorrParams.oscIndex4;
+oscPeriod1Ms = autoCorrParams.oscPeriod1Ms;
+oscPeriod2Ms = autoCorrParams.oscPeriod2Ms;
+minOscPeriod2Bins = autoCorrParams.minOscPeriod2Bins;
+maxOscPeriod2Bins = autoCorrParams.maxOscPeriod2Bins;
 
-    % Take just half of the positive side to get the autocorrelation function
-    acf = autoCorr(nBins:(nBins + halfNBins));
-
-    % Compute a normalized autocorrelation function
-    % autocorr(spikeCounts, nBins - 1);
-    % acf = autocorr(spikeCounts, nBins - 1);
-
-    % Smooth the autocorrelation function with a moving-average filter
-    acfFiltered = movingaveragefilter(acf, filterWidthMs, binWidthMs);
-
-    % Record the amplitude of the primary peak
-    ampPeak1 = acfFiltered(1);
-
-    % Compute the oscillation duration in bins
-    oscDurationBins = floor(oscDurationMs ./ binWidthMs);
-
-    % Find the maximum bin of interest
-    maxBinOfInterest = min(1 + oscDurationBins, numel(acfFiltered));
-    
-    % Restrict the autocorrelation function to oscillation duration
-    acfFilteredOfInterest = acfFiltered(1:maxBinOfInterest);
-
-    % Find the index and amplitude of peaks within oscillation duration
-    if numel(acfFilteredOfInterest) > 3
-        [peakAmp, peakInd] = ...
-            findpeaks(acfFilteredOfInterest, ...
-                        'MinPeakProminence', minRelProm * ampPeak1);
-
-        % Record all peak indices and amplitudes
-        indPeaks = [1; peakInd];
-        ampPeaks = [ampPeak1; peakAmp];
-    else
-        indPeaks = 1;
-        ampPeaks = ampPeak1;
-    end
-
-    % Compute the number of peaks
-    nPeaks = numel(indPeaks);
-
-    % Compute the lags of peaks in bins
-    if nPeaks <= 1
-        lagsPeaksBins = [];
-    else
-        lagsPeaksBins = indPeaks(2:end) - indPeaks(1);
-    end
-
-    % Compute the oscillation period
-    %   Note: TODO
-    % TODO: Try both:
-    %   1. Use fminsearch on the distance to multiples function
-    %   2. Use the largest peak in the frequency spectrum
-    if nPeaks <= 1
-        oscPeriod1Bins = 0;
-        oscPeriod2Bins = 0;
-        minOscPeriod2Bins = 0;
-        maxOscPeriod2Bins = 0;
-    else
-        % Compute the oscillation period version 1
-        %   Note: The lag between the primary peak and the second peak
-        oscPeriod1Bins = indPeaks(2) - indPeaks(1);
-
-        % Compute the oscillation period version 2
-        %   Note: TODO
-        if nPeaks <= 2
-            % Just use the lag between first two peaks
-            oscPeriod2Bins = oscPeriod1Bins;
-            minOscPeriod2Bins = oscPeriod1Bins;
-            maxOscPeriod2Bins = oscPeriod1Bins;
-        else
-            % Create a function for computing the average distance
-            %   of each peak lag to a multiple of x
-            average_distance_for_a_period = ...
-                @(x) compute_average_distance_to_a_multiple(lagsPeaksBins, x);
-
-            % Define the range the actual oscillation period can lie in
-            minOscPeriod2Bins = oscPeriod1Bins * 2 / 3;
-            maxOscPeriod2Bins = oscPeriod1Bins * 3 / 2;
-
-            % Find the oscillation period in bins by looking for the 
-            %   value of x that minimizes myFun, using the range
-            %   oscPeriod1Bins / 3 to oscPeriod1Bins * 3
-            oscPeriod2Bins = ...
-                fminbnd(average_distance_for_a_period, ...
-                        minOscPeriod2Bins, maxOscPeriod2Bins);
-        end
-    end
-
-    % Convert to ms
-    oscPeriod1Ms = oscPeriod1Bins .* binWidthMs;
-    oscPeriod2Ms = oscPeriod2Bins .* binWidthMs;
-
-    % Find the troughs
-    if numel(indPeaks) <= 1
-        indTroughs = [];
-        ampTroughs = [];
-    else
-        % Find the indices and amplitudes of the troughs in between 
-        %   each pair of peaks
-        [ampTroughs, indTroughs] = ...
-            find_troughs_from_peaks(acfFilteredOfInterest, indPeaks);
-    end
-
-    % Compute the oscillatory index version 1
-    %   Note: This is defined in Sohal's paper 
-    %           as the ratio of the difference between 
-    %           the average of first two peaks and the first trough
-    %           and the average of first two peaks
-    if numel(indPeaks) <= 1
-        oscIndex1 = 0;
-    else
-        % Compute the average amplitude of the first two peaks
-        ampAvgFirstTwoPeaks = mean(ampPeaks(1:2));
-
-        % Compute the oscillatory index
-        oscIndex1 = (ampAvgFirstTwoPeaks - ampTroughs(1)) / ampAvgFirstTwoPeaks;
-    end
-
-    % Compute the oscillatory index version 2
-    %   Note: This is the average of all oscillatory indices as defined
-    %           by Sohal's paper between adjacent peaks
-    if numel(indPeaks) <= 1
-        oscIndex2 = 0;
-    else
-        % Compute the average amplitudes between adjacent peaks
-        ampAdjPeaks = mean([ampPeaks(1:(end-1)), ampPeaks(2:end)], 2);
-
-        % Take the average of oscillatory indices as defined by Sohal's paper
-        oscIndex2 = mean((ampAdjPeaks - ampTroughs) ./ ampAdjPeaks);
-    end
-
-    % Compute the oscillatory index version 3
-    %   Note: This is 1 minus the average of all distances 
-    %           (normalized by half the oscillation period)
-    %           to the closest multiple of the period over all peaks from the
-    %           2nd and beyond. However, if there are less than two peaks,
-    %           consider it non-oscillatory
-    if numel(indPeaks) <= 2
-        % If there are no more than two peaks, don't compute
-        halfPeriodsToMultiple = [];
-        oscIndex3 = NaN;
-    else
-        % Compute the distance to the closest multiple of the oscillation period 
-        %   for each peak from the 2nd and beyond,
-        %   normalize by half the oscillation period
-        [averageDistance, halfPeriodsToMultiple] = ...
-            compute_average_distance_to_a_multiple(lagsPeaksBins, ...
-                                                    oscPeriod2Bins);
-
-        % Compute the oscillatory index 
-        oscIndex3 = 1 - averageDistance;
-    end
-
-    % Compute the oscillatory index version 4
-    %   Note: This is 
-    if numel(indPeaks) <= 1
-        oscIndex4 = 0;
-    else
-        % Get the amplitude of the primary peak
-        primaryPeakAmp = ampPeaks(1);
-
-        % Find the peak with maximum amplitude other than the primary peak
-        %   call this the "secondary peak"
-        [~, iSecPeak] = max(ampPeaks(2:end));
-
-        % Get the amplitude of the "secondary peak"
-        secPeakAmp = ampPeaks(iSecPeak + 1);
-
-        % Get the minimum trough amplitude between the primary peak
-        %   and the secondary peak
-        troughAmp = min(ampTroughs(1:iSecPeak));
-
-        % The oscillatory index is the ratio between 
-        %   the difference of maximum peak to trough in between
-        %   and the different of primary peak to trough in between
-        oscIndex4 = (secPeakAmp - troughAmp) / (primaryPeakAmp - troughAmp);
-    end
-end
+autoCorr = autoCorrData.autoCorr;
+acf = autoCorrData.acf;
+acfFiltered = autoCorrData.acfFiltered;
+acfFilteredOfInterest = autoCorrData.acfFilteredOfInterest;
+indPeaks = autoCorrData.indPeaks;
+indTroughs = autoCorrData.indTroughs;
+ampPeaks = autoCorrData.ampPeaks;
+ampTroughs = autoCorrData.ampTroughs;
+halfPeriodsToMultiple = autoCorrData.halfPeriodsToMultiple;
 
 %% For plotting later
 % Modify the figure base
@@ -1264,43 +1094,6 @@ parsedData.indTroughs = indTroughs;
 parsedData.ampPeaks = ampPeaks;
 parsedData.ampTroughs = ampTroughs;
 parsedData.halfPeriodsToMultiple = halfPeriodsToMultiple;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [averageDistance, halfPeriodsToMultiple] = ...
-                compute_average_distance_to_a_multiple(values, period)
-
-[~, halfPeriodsToMultiple] = ...
-    arrayfun(@(x) find_nearest_multiple(period, x, ...
-                                    'RelativeToHalfBase', true), values);
-
-averageDistance = mean(halfPeriodsToMultiple);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [ampTroughs, indTroughs] = find_troughs_from_peaks(vec, indPeaks)
-%% Finds troughs in between given peak indices
-
-nPeaks = numel(indPeaks);
-
-if nPeaks < 2
-    % No troughs
-    ampTroughs = [];
-    indTroughs = [];
-else
-    % Left peak indices
-    indLeftPeak = indPeaks(1:(end-1));
-
-    % Right peak indices
-    indRightPeak = indPeaks(2:end);
-
-    % Use the minimums in each interval
-    [ampTroughs, indTroughsRel] = ...
-        arrayfun(@(x, y) min(vec(x:y)), indLeftPeak, indRightPeak);
-
-    % Compute the original indices
-    indTroughs = arrayfun(@(x, y) x + y - 1, indTroughsRel, indLeftPeak);
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
