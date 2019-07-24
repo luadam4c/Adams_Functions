@@ -85,8 +85,8 @@ function [allParsedParamsTable, allParsedDataTable, ...
 %       cd/issheettype.m
 %
 % Used by:
+%       cd/combine_data_from_same_slice.m
 %       cd/plot_all_abfs.m
-%       cd/parse_all_multiunit.m
 %       cd/plot_protocols.m
 
 % File History:

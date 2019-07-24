@@ -32,13 +32,13 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/force_column_vector.m
 %
 % Used by:
+%       cd/combine_data_from_same_slice.m
 %       cd/compute_combined_data.m
 %       cd/compute_combined_trace.m
 %       cd/create_indices.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_vector.m
 %       cd/m3ha_neuron_run_and_analyze.m
-%       cd/parse_all_multiunit.m
 %       cd/parse_multiunit.m
 %       cd/plot_measures.m
 %       cd/plot_swd_histogram.m

@@ -63,6 +63,7 @@ function varargout = all_files (varargin)
 % Used by: 
 %       cd/all_swd_sheets.m
 %       cd/atf2sheet.m
+%       cd/combine_data_from_same_slice.m
 %       cd/parse_all_abfs.m
 %       cd/parse_all_multiunit.m
 %       cd/parse_all_swds.m

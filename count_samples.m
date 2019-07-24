@@ -59,6 +59,7 @@ function nSamples = count_samples (vectors, varargin)
 %       cd/match_row_count.m
 %
 % Used by:    
+%       cd/combine_data_from_same_slice.m
 %       cd/compute_combined_trace.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
@@ -68,7 +69,6 @@ function nSamples = count_samples (vectors, varargin)
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/m3ha_xolotl_plot.m
-%       cd/parse_all_multiunit.m
 %       cd/parse_lts.m
 %       cd/parse_multiunit.m
 %       cd/parse_pulse.m

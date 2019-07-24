@@ -20,6 +20,7 @@ function varargout = argfun (myFunction, varargin)
 %
 % Used by:
 %       cd/annotation_in_plot.m
+%       cd/combine_data_from_same_slice.m
 %       cd/compute_average_pulse_response.m
 %       cd/compute_bins.m
 %       cd/compute_default_sweep_info.m
@@ -44,7 +45,6 @@ function varargout = argfun (myFunction, varargin)
 %       cd/match_format_vector_sets.m
 %       cd/match_reciprocals.m
 %       cd/parse_all_abfs.m
-%       cd/parse_all_multiunit.m
 %       cd/parse_assyst_swd.m
 %       cd/parse_atf_swd.m
 %       cd/parse_LTS.m

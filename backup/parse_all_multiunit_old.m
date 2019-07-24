@@ -175,8 +175,7 @@ else
     % Combine data from the same slice
     fprintf("Combining data for each slice ...\n");
     allDataTable = ...
-        combine_data_from_same_slice('Directory', inFolder, ...
-                                    'SaveMatFlag', saveMatFlag, ...
+        combine_data_from_same_slice(inFolder, 'SaveMatFlag', saveMatFlag, ...
                                     'VarsToSave', varsNeeded);
 end
 
@@ -238,6 +237,92 @@ end
 
 %{
 OLD CODE:
+
+tVecs = allData.tVec;
+
+% Extract file bases
+fileBases = extract_fileparts(abfFullFileName, 'base');
+
+muParams = cell(nFiles, 1);
+muData = cell(nFiles, 1);
+for iFile = 1:nFiles
+    [muParams{iFile}, muData{iFile}] = ...
+        parse_multiunit(vVecs{iFile}, siMs(iFile), ...
+                        'PulseVectors', iVecs{iFile}, 'tVecs', tVecs{iFile}, ...
+                        'PlotFlag', plotFlag, 'OutFolder', outFolder, ...
+                        'FileBase', fileBases{iFile});
+
+    close all force hidden;
+end
+
+plotFlag = false;
+
+%% Hard-coded parameters
+nFilesPerSlice = 3;
+
+% Count the number of slices
+nSlices = ceil(nFiles / nFilesPerSlice);
+
+% Create indices for the slices
+indSlices = transpose(1:nSlices);
+
+% Compute the index of the first file
+idxFileFirst = arrayfun(@(x) nFilesPerSlice * (x - 1) + 1, indSlices);
+
+% Compute the index of the last file
+idxFileLast = arrayfun(@(x) min(nFilesPerSlice * x, nFiles), indSlices);
+
+% Compute the slice bases
+sliceBases = arrayfun(@(x, y) extract_fileparts(abfFullFileName(x:y), ...
+                            'commonprefix'), idxFileFirst, idxFileLast, ...
+                    'UniformOutput', false);
+
+abfFullFileName = allParams.abfFullFileName;
+
+% Count the number of files
+nFiles = numel(abfFullFileName);
+
+% Compute the new siMs
+siMsSl = arrayfun(@(x, y) mean(siMs(x:y)), idxFileFirst, idxFileLast);
+
+% Concatenate vectors
+horzcatcell = @(x) horzcat(x{:});
+[vVecsSl, iVecsSl] = ...
+    argfun(@(z) arrayfun(@(x, y) horzcatcell(z(x:y)), ...
+                    idxFileFirst, idxFileLast, 'UniformOutput', false), ...
+            vVecs, iVecs);
+
+% Create phase boundaries if nFilesPerSlice is more than 1
+if nBoundaries > 0
+    phaseBoundaries = ...
+        arrayfun(@(x, y) cumsum(nSweepsEachFile(x:(y - 1))) + 0.5, ...
+                    idxFileFirst, idxFileLast, 'UniformOutput', false);
+else
+    phaseBoundaries = [];
+end
+
+% Extract phase IDs
+allPhaseIDs = extractAfter(allPhaseStrs, 'phase');
+
+% Sort the unique phase IDs
+%   Note: This assumes the phase IDs are in correct alphanumeric order
+phaseIDs = unique(allPhaseIDs, 'sorted');
+
+% Sort the unique phase strings
+%   Note: This assumes the phase strings are in correct alphanumeric order
+phaseStrs = unique(allPhaseStrs, 'sorted');
+
+inFolderName = extract_fileparts(inFolder, 'dirbase');
+% Create a file name for all multi-unit data
+matPath = fullfile(outFolder, [inFolderName, matFileSuffix, '.mat']);
+% Save data for each slice
+if saveMatFlag
+    save(matPath, varsNeeded{:}, '-v7.3');
+end
+if isfile(matPath)
+
+function allData = combine_data_from_same_slice(inFolder, ...
+                                            saveMatFlag, varsNeeded, varargin)
 
 %}
 
