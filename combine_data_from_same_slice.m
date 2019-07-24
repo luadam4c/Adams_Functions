@@ -33,6 +33,7 @@ function allData = combine_data_from_same_slice (varargin)
 %
 % Requires:
 %       cd/all_files.m
+%       cd/all_slice_bases.m
 %       cd/argfun.m
 %       cd/create_error_for_nargin.m
 %       cd/count_samples.m
@@ -99,7 +100,9 @@ end
 
 % Decide on the unique slice bases
 if isempty(sliceBases)
-    sliceBases = all_slice_bases(inFolder);
+    sliceBases = all_slice_bases('Directory', inFolder, 'Extension', 'abf', ...
+                                'ForceCellOutput', true, 'SortBy', 'date', ...
+                                'RegExp', '.*slice[0-9]*');
 end
 
 % Make sure sliceBase is a cell array
@@ -143,26 +146,6 @@ else
     % Return empty
     allData = [];
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function sliceBases = all_slice_bases (directory)
-%% Retrieves all slice bases from the .abf files in the directory
-
-%% Hard-coded parameters
-regexpSliceName = '.*slice[0-9]*';
-
-% Get all the abf file names
-[~, allAbfPaths] = ...
-    all_files('Directory', directory, 'Extension', 'abf', ...
-              'SortBy', 'date', 'ForceCellOutput', true);
-
-% Extract all slice names
-allSliceNames = extract_fileparts(allAbfPaths, 'base', ...
-                                    'RegExp', regexpSliceName);
-
-% Get unique slice bases
-sliceBases = unique(allSliceNames);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
