@@ -266,7 +266,7 @@ plotRawFlagDefault = [];
 plotRasterFlagDefault = [];
 plotMeasuresFlagDefault = [];
 outFolderDefault = pwd;
-fileBaseDefault = '';           % set later
+fileBaseDefault = 'unnamed';    % set later
 stimStartMsDefault = [];        % set later
 pulseVectorsDefault = [];       % don't use pulse vectors by default
 phaseBoundariesDefault = [];   	% no phase boundaries by default
@@ -524,9 +524,10 @@ if plotRawFlag
     figBaseRaw = fullfile(outFolder, rawDir, [fileBase, '_raw']);
 
     % Plot figure
-    figs(1) = plot_raw_multiunit(parsedData, parsedParams, ...
-                                    phaseBoundaries, titleBase, ...
-                                    yAmountToStagger,nVectors);
+    figs(1) = figure('Visible', 'off'); clf
+    plot_raw_multiunit(parsedData, parsedParams, ...
+                        phaseBoundaries, titleBase, ...
+                        yAmountToStagger, nVectors);
 
     % Save the figure zoomed to several x limits
     save_all_zooms(figs(1), figBaseRaw, zoomWinsMulti);
@@ -540,8 +541,9 @@ if plotRasterFlag
     figBaseRaster = fullfile(outFolder, rasterDir, [fileBase, '_raster']);
 
     % Plot figure
-    figs(2) = plot_raster_multiunit(parsedData, parsedParams, ...
-                                    phaseBoundaries, titleBase);
+    figs(2) = figure('Visible', 'off'); clf
+    plot_raster_multiunit(parsedData, parsedParams, ...
+                            phaseBoundaries, titleBase);
 
     % Save the figure zoomed to several x limits
     save_all_zooms(figs(2), figBaseRaster, zoomWinsMulti);
@@ -556,8 +558,9 @@ if plotSpikeDensityFlag
                                     [fileBase, '_spike_density']);
 
     % Plot figure
-    figs(3) = plot_spike_density_multiunit(parsedData, parsedParams, ...
-                                         phaseBoundaries, titleBase);
+    figs(3) = figure('Visible', 'off'); clf
+    plot_spike_density_multiunit(parsedData, parsedParams, ...
+                                 phaseBoundaries, titleBase);
 
     % Save the figure zoomed to several x limits
     save_all_zooms(figs(3), figBaseSpikeDensity, zoomWinsMulti);
@@ -1494,8 +1497,9 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function fig = plot_raw_multiunit(parsedData, parsedParams, ...
-                                phaseBoundaries, titleBase, yAmountToStagger, nVectors)
+function plot_raw_multiunit (parsedData, parsedParams, ...
+                                phaseBoundaries, titleBase, ...
+                                yAmountToStagger, nVectors)
 
 %% Hard-coded constants
 MS_PER_S = 1000;
@@ -1531,9 +1535,7 @@ if isempty(yAmountToStagger)
 end
 
 %% Plot
-% Create figure and plot
-fig = figure('Visible', 'off');
-clf
+hold on
 plot_traces(tVecsSec, vVecs, 'Verbose', false, ...
             'PlotMode', 'staggered', 'SubplotOrder', 'list', ...
             'YLimits', bestYLimits, 'YAmountToStagger', yAmountToStagger, ...
@@ -1562,8 +1564,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function fig = plot_raster_multiunit(parsedData, parsedParams, ...
-                                        phaseBoundaries, titleBase)
+function plot_raster_multiunit (parsedData, parsedParams, ...
+                                phaseBoundaries, titleBase)
 %% Plots a spike raster plot from parsed multiunit data
 % TODO: Plot burst duration
 % TODO: Plot oscillatory index
@@ -1595,8 +1597,6 @@ nSweeps = numel(spikeTimesSec);
 colorsRaster = repmat({'Black'}, nSweeps, 1);
 
 % Create figure and plot
-fig = figure('Visible', 'on');
-% clf; 
 hold on
 [hLines, eventTimes, yEnds, yTicksTable] = ...
     plot_raster(spikeTimesSec, 'DurationWindow', burstWindows, ...
@@ -1620,8 +1620,8 @@ title(['Spike times for ', titleBase]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function fig = plot_spike_density_multiunit(parsedData, parsedParams, ...
-                                    phaseBoundaries, titleBase)
+function plot_spike_density_multiunit (parsedData, parsedParams, ...
+                                        phaseBoundaries, titleBase)
 %% Plots a spike density plot from parsed multiunit data
 
 % Retrieve data for plotting
@@ -1632,13 +1632,8 @@ minTimeSec = parsedParams.minTimeSec;
 maxTimeSec = parsedParams.maxTimeSec;
 stimStartSec = parsedParams.stimStartSec;
 
-% Create figure and plot
-% fig = figure('Visible', 'off');
-fig = figure('Visible', 'on');
-
-clf; hold on
-
 % Plot as a heatmap
+hold on
 % TODO: plot_heat_map(spikeDensityHz);
 
 % Maximum number of y ticks
