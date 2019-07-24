@@ -52,6 +52,9 @@ function [muParams, muData] = parse_all_multiunit(varargin)
 %                                           as matfiles
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'SaveResultsFlag': whether to save parsed results
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/all_files.m
@@ -71,6 +74,7 @@ function [muParams, muData] = parse_all_multiunit(varargin)
 % 2019-05-31 Updated plot flags
 % 2019-06-10 Added 'PlotCombinedFlag'
 % 2019-07-24 Added 'Directory', 'InFolder' & 'OutFolder'
+% 2019-07-24 Added saveResultsFlag
 
 % TODO: Make outFolder optional parameters
 % TODO: Make combining optional
@@ -95,6 +99,7 @@ plotRawFlagDefault = [];                % set in parse_multiunit.m
 plotRasterFlagDefault = [];             % set in parse_multiunit.m
 plotMeasuresFlagDefault = [];           % set in parse_multiunit.m
 saveMatFlagDefault = true;
+saveResultsFlagDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -131,6 +136,8 @@ addParameter(iP, 'PlotMeasuresFlag', plotMeasuresFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SaveMatFlag', saveMatFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveResultsFlag', saveResultsFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -147,6 +154,7 @@ plotRawFlag = iP.Results.PlotRawFlag;
 plotRasterFlag = iP.Results.PlotRasterFlag;
 plotMeasuresFlag = iP.Results.PlotMeasuresFlag;
 saveMatFlag = iP.Results.SaveMatFlag;
+saveResultsFlag = iP.Results.SaveResultsFlag;
 
 %% Preparation
 % Decide on the input directory
@@ -164,6 +172,8 @@ end
     all_files('Directory', inFolder, 'RegExp', regexpSliceMatFile, ...
                 'SortBy', 'date', 'ForceCellOutput', true);
 
+% Either load .mat files or combine data from .abf files
+% TODO: What if only some .abf files were converted?
 if ~isempty(allMatPaths)
     % Load data for each slice as a structure array
     fprintf("Loading data for each slice ...\n");
@@ -210,6 +220,8 @@ for iSlice = 1:nSlices
     [muParams{iSlice}, muData{iSlice}] = ...
         parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), ...
                         'PulseVectors', iVecsSl{iSlice}, ...
+                        'FileBase', sliceBases{iSlice}, ...
+                        'PhaseBoundaries', phaseBoundaries{iSlice}, ...
                         'PlotAllFlag', plotAllFlag, ...
                         'PlotCombinedFlag', plotCombinedFlag, ...
                         'PlotSpikeDetectionFlag', plotSpikeDetectionFlag, ...
@@ -219,9 +231,8 @@ for iSlice = 1:nSlices
                         'PlotRawFlag', plotRawFlag, ...
                         'PlotRasterFlag', plotRasterFlag, ...
                         'PlotMeasuresFlag', plotMeasuresFlag, ...
-                        'OutFolder', outFolder, ...
-                        'FileBase', sliceBases{iSlice}, ...
-                        'PhaseBoundaries', phaseBoundaries{iSlice});
+                        'SaveResultsFlag', saveResultsFlag, ...
+                        'OutFolder', outFolder);
 
     % Close all figures
     close all force hidden;

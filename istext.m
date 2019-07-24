@@ -15,6 +15,7 @@ function isText = istext (x, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/combine_data_from_same_slice.m
 %       cd/ismatch.m
 
 % File History:

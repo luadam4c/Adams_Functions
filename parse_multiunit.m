@@ -1,6 +1,6 @@
-function varargout = parse_multiunit (vVecs, siMs, varargin)
+function varargout = parse_multiunit (vVecsOrFile, varargin)
 %% Parses multiunit recordings: detect spikes, computes spike histograms and autocorrelograms
-% Usage: [parsedParams, parsedData, figs] = parse_multiunit (vVecs, siMs, varargin)
+% Usage: [parsedParams, parsedData, figs] = parse_multiunit (vVecsOrFile, siMs (opt), varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -111,9 +111,11 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       figs        - figure handles
 %                   specified as a Figure object handle array
 % Arguments:
-%       vVecs       - original voltage vector(s) in mV
+%       vVecsOrFile - original voltage vector(s) in mV
+%                       or the (.abf) file name
 %                   must be a numeric array or a cell array of numeric arrays
-%       siMs        - sampling interval in ms
+%                       or a string scalar or a character vector
+%       siMs        - (opt) sampling interval in ms
 %                   must be a positive vector
 %       varargin    - 'PlotAllFlag': whether to plot everything
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -144,6 +146,9 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %                                           of measures
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'SaveResultsFlag': whether to save parsed results
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'OutFolder': directory to place outputs
 %                   must be a string scalar or a character vector
 %                   default == pwd
@@ -167,6 +172,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 %       cd/argfun.m
 %       cd/check_dir.m
 %       cd/check_subdir.m
+%       cd/combine_data_from_same_slice.m
 %       cd/compute_autocorrelogram.m
 %       cd/compute_axis_limits.m
 %       cd/compute_spike_density.m
@@ -227,6 +233,7 @@ function varargout = parse_multiunit (vVecs, siMs, varargin)
 % 2019-06-03 Moved code to save_all_zooms.m
 % 2019-06-10 Compartmentalized plot code
 % 2019-06-10 Added plotCombinedFlag
+% 2019-07-24 Added saveResultsFlag
 
 % Hard-coded constants
 MS_PER_S = 1000;
@@ -254,6 +261,8 @@ measuresToPlot = {'oscIndex1', 'oscIndex2', 'oscIndex3', 'oscIndex4', ...
                     'nBurstsTotal', 'nBurstsIn10s', 'nBurstsInOsc', ...
                     'nSpikesPerBurst', 'nSpikesPerBurstIn10s', ...
                     'nSpikesPerBurstInOsc'};
+paramsSuffix = '_params.csv';
+resultsSuffix = '_parsed.mat';
 
 %% Default values for optional arguments
 plotAllFlagDefault = false;
@@ -265,6 +274,7 @@ plotAutoCorrFlagDefault = [];
 plotRawFlagDefault = [];
 plotRasterFlagDefault = [];
 plotMeasuresFlagDefault = [];
+saveResultsFlagDefault = false;
 outFolderDefault = pwd;
 fileBaseDefault = 'unnamed';    % set later
 stimStartMsDefault = [];        % set later
@@ -301,11 +311,15 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'vVecs', ...
-    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['vVecs must be either a numeric array', ...
-                    'or a cell array of numeric arrays!']));
-addRequired(iP, 'siMs', ...
+addRequired(iP, 'vVecsOrFile', ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x) || ...
+                isstring(x) || ischar(x), ...
+                ['vVecsOrFile must be either a numeric array, ', ...
+                    'a cell array of numeric arrays, ', ...
+                    'a string scalar or a character vector!']));
+
+% Add optional inputs to the Input Parser
+addOptional(iP, 'siMs', ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'vector'}));
 
 % Add parameter-value pairs to the Input Parser
@@ -327,6 +341,8 @@ addParameter(iP, 'PlotRasterFlag', plotRasterFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotMeasuresFlag', plotMeasuresFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveResultsFlag', saveResultsFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FileBase', fileBaseDefault, ...
@@ -345,7 +361,8 @@ addParameter(iP, 'tVecs', tVecsDefault, ...
                     'or a cell array of numeric arrays!']));
 
 % Read from the Input Parser
-parse(iP, vVecs, siMs, varargin{:});
+parse(iP, vVecsOrFile, varargin{:});
+siMs = iP.Results.siMs;
 plotAllFlag = iP.Results.PlotAllFlag;
 plotCombinedFlag = iP.Results.PlotCombinedFlag;
 plotSpikeDetectionFlag = iP.Results.PlotSpikeDetectionFlag;
@@ -355,6 +372,7 @@ plotAutoCorrFlag = iP.Results.PlotAutoCorrFlag;
 plotRawFlag = iP.Results.PlotRawFlag;
 plotRasterFlag = iP.Results.PlotRasterFlag;
 plotMeasuresFlag = iP.Results.PlotMeasuresFlag;
+saveResultsFlag = iP.Results.SaveResultsFlag;
 outFolder = iP.Results.OutFolder;
 fileBase = iP.Results.FileBase;
 stimStartMs = iP.Results.StimStartMs;
@@ -373,6 +391,16 @@ plotRawFlag, plotRasterFlag, plotMeasuresFlag] = ...
                 plotSpikeHistogramFlag, plotAutoCorrFlag, ...
                 plotRawFlag, plotRasterFlag, plotMeasuresFlag);
 
+% Deal with the required argument
+if ischar(vVecsOrFile) || isstring(vVecsOrFile)
+    allDataTable = ...
+        combine_data_from_same_slice('SliceBase', vVecsOrFile, ...
+                                    'SaveMatFlag', saveMatFlag, ...
+                                    'VarsToSave', varsNeeded);
+else
+    vVecs = vVecsOrFile;
+end
+
 % Count the number of vectors
 nVectors = count_vectors(vVecs);
 
@@ -386,80 +414,95 @@ nSamples = count_samples(vVecs);
 nMeasures = numel(measuresToPlot);
 
 % Initialize figures array
-figs = gobjects(nMeasures + 3, 1);
+figs = gobjects(nMeasures + 4, 1);
 
 % Create a figure title base
 titleBase = replace(fileBase, '_', '\_');
 
+% Create the full path to the parameters file
+paramsPath = fullfile(outFolder, [fileBase, paramsSuffix]);
+
+% Create the full path to the results file
+resultsPath = fullfile(outFolder, [fileBase, resultsSuffix]);
+
 %% Do the job
-% Detect stimulation start time if not provided
-%   Otherwise find the corresponding index in the time vector
-fprintf('Detecting stimulation start for %s ...\n', fileBase);
-[stimParams, stimData] = ...
-    parse_stim(pulseVectors, 'SamplingIntervalMs', siMs, ...
-                    'StimStartMs', stimStartMs, 'tVecs', tVecs);
+if isfile(resultsPath)
+    load(resultsPath, 'parsedParams', 'parsedData');
+else
+    % Detect stimulation start time if not provided
+    %   Otherwise find the corresponding index in the time vector
+    fprintf('Detecting stimulation start for %s ...\n', fileBase);
+    [stimParams, stimData] = ...
+        parse_stim(pulseVectors, 'SamplingIntervalMs', siMs, ...
+                        'StimStartMs', stimStartMs, 'tVecs', tVecs);
 
-idxStimStart = stimParams.idxStimStart;
-stimStartMs = stimParams.stimStartMs;
+    idxStimStart = stimParams.idxStimStart;
+    stimStartMs = stimParams.stimStartMs;
 
-% Compute the minimum delay in samples
-minDelaySamples = round(minDelayMs ./ siMs);
+    % Compute the minimum delay in samples
+    minDelaySamples = round(minDelayMs ./ siMs);
 
-% Find the starting index for detecting a spike
-idxDetectStart = idxStimStart + minDelaySamples;
+    % Find the starting index for detecting a spike
+    idxDetectStart = idxStimStart + minDelaySamples;
 
-% Construct default baseline windows
-if isempty(baseWindows)
-    fprintf('Constructing baseline window for %s ...\n', fileBase);
-    baseWindows = compute_time_window(tVecs, 'TimeEnd', stimStartMs);
+    % Construct default baseline windows
+    if isempty(baseWindows)
+        fprintf('Constructing baseline window for %s ...\n', fileBase);
+        baseWindows = compute_time_window(tVecs, 'TimeEnd', stimStartMs);
+    end
+
+    % Determine a slice-dependent signal-to-noise ratio if not provided
+    %   Note: This assumes all sweeps have the same protocol
+    if isempty(signal2Noise)
+        fprintf('Determining signal-to-noise ratio for %s ...\n', fileBase);
+        signal2Noise = compute_default_signal2noise(vVecs, siMs, 'tVecs', tVecs, ...
+                            'IdxDetectStart', idxDetectStart, ...
+                            'BaseWindows', baseWindows, ...
+                            'FiltFreq', filtFreq, ...
+                            'RelSnrThres2Max', relSnrThres2Max);
+    end
+
+    % Force as a cell array of vectors
+    [vVecs, tVecs, baseWindows] = ...
+        argfun(@force_column_cell, vVecs, tVecs, baseWindows);
+
+    % Parse all of them in a parfor loop
+    fprintf('Parsing recording for %s ...\n', fileBase);
+    parsedParamsCell = cell(nVectors, 1);
+    parsedDataCell = cell(nVectors, 1);
+    parfor iVec = 1:nVectors
+    %for iVec = 1:nVectors
+    %for iVec = 1:1
+        [parsedParamsCell{iVec}, parsedDataCell{iVec}] = ...
+            parse_multiunit_helper(iVec, vVecs{iVec}, tVecs{iVec}, siMs(iVec), ...
+                                    idxStimStart(iVec), stimStartMs(iVec), ...
+                                    baseWindows{iVec}, ...
+                                    filtFreq, filterWidthMs, ...
+                                    minDelayMs, binWidthMs, ...
+                                    resolutionMs, signal2Noise, ...
+                                    minBurstLengthMs, maxInterBurstIntervalMs, ...
+                                    minSpikeRateInBurstHz, minRelProm, ...
+                                    fileBase, titleBase, phaseBoundaries);
+    end
+
+    % Convert to a struct array
+    %   Note: This removes all entries that are empty
+    [parsedParamsStruct, parsedDataStruct] = ...
+        argfun(@(x) [x{:}], parsedParamsCell, parsedDataCell);
+
+    % Convert to a table
+    [parsedParams, parsedData] = ...
+        argfun(@(x) struct2table(x, 'AsArray', true), ...
+                parsedParamsStruct, parsedDataStruct);
+
+    % Save the parsed parameters table
+    writetable(parsedParams, paramsPath);
+
+    % Save the results
+    if saveResultsFlag
+        save(resultsPath, 'parsedParams', 'parsedData', '-v7.3');
+    end
 end
-
-% Determine a slice-dependent signal-to-noise ratio if not provided
-%   Note: This assumes all sweeps have the same protocol
-if isempty(signal2Noise)
-    fprintf('Determining signal-to-noise ratio for %s ...\n', fileBase);
-    signal2Noise = compute_default_signal2noise(vVecs, siMs, 'tVecs', tVecs, ...
-                        'IdxDetectStart', idxDetectStart, ...
-                        'BaseWindows', baseWindows, ...
-                        'FiltFreq', filtFreq, ...
-                        'RelSnrThres2Max', relSnrThres2Max);
-end
-
-% Force as a cell array of vectors
-[vVecs, tVecs, baseWindows] = ...
-    argfun(@force_column_cell, vVecs, tVecs, baseWindows);
-
-% Parse all of them in a parfor loop
-fprintf('Parsing recording for %s ...\n', fileBase);
-parsedParamsCell = cell(nVectors, 1);
-parsedDataCell = cell(nVectors, 1);
-parfor iVec = 1:nVectors
-%for iVec = 1:nVectors
-%for iVec = 1:1
-    [parsedParamsCell{iVec}, parsedDataCell{iVec}] = ...
-        parse_multiunit_helper(iVec, vVecs{iVec}, tVecs{iVec}, siMs(iVec), ...
-                                idxStimStart(iVec), stimStartMs(iVec), ...
-                                baseWindows{iVec}, ...
-                                filtFreq, filterWidthMs, ...
-                                minDelayMs, binWidthMs, ...
-                                resolutionMs, signal2Noise, ...
-                                minBurstLengthMs, maxInterBurstIntervalMs, ...
-                                minSpikeRateInBurstHz, minRelProm, ...
-                                fileBase, titleBase, phaseBoundaries);
-end
-
-% Convert to a struct array
-%   Note: This removes all entries that are empty
-[parsedParamsStruct, parsedDataStruct] = ...
-    argfun(@(x) [x{:}], parsedParamsCell, parsedDataCell);
-
-% Convert to a table
-[parsedParams, parsedData] = ...
-    argfun(@(x) struct2table(x, 'AsArray', true), ...
-            parsedParamsStruct, parsedDataStruct);
-
-% Save the parameters table
-writetable(parsedParams, fullfile(outFolder, [fileBase, '_params.csv']));
 
 %% Prepare for plotting
 % Determine zoom windows for multi-trace plots
@@ -524,10 +567,10 @@ if plotRawFlag
     figBaseRaw = fullfile(outFolder, rawDir, [fileBase, '_raw']);
 
     % Plot figure
-    figs(1) = figure('Visible', 'off'); clf
+    figs(1) = figure(1); clf
     plot_raw_multiunit(parsedData, parsedParams, ...
                         phaseBoundaries, titleBase, ...
-                        yAmountToStagger, nVectors);
+                        yAmountToStagger);
 
     % Save the figure zoomed to several x limits
     save_all_zooms(figs(1), figBaseRaw, zoomWinsMulti);
@@ -541,7 +584,7 @@ if plotRasterFlag
     figBaseRaster = fullfile(outFolder, rasterDir, [fileBase, '_raster']);
 
     % Plot figure
-    figs(2) = figure('Visible', 'off'); clf
+    figs(2) = figure(2); clf
     plot_raster_multiunit(parsedData, parsedParams, ...
                             phaseBoundaries, titleBase);
 
@@ -558,12 +601,61 @@ if plotSpikeDensityFlag
                                     [fileBase, '_spike_density']);
 
     % Plot figure
-    figs(3) = figure('Visible', 'off'); clf
+    figs(3) = figure(3); clf
     plot_spike_density_multiunit(parsedData, parsedParams, ...
                                  phaseBoundaries, titleBase);
 
     % Save the figure zoomed to several x limits
     save_all_zooms(figs(3), figBaseSpikeDensity, zoomWinsMulti);
+end
+
+%% Plot combined plots
+if plotCombinedFlag
+    fprintf('Plotting a combined plot for %s ...\n', fileBase);    
+
+    % Create output directory and subdirectories for each measure
+    outFolderCombined = fullfile(outFolder, combinedDir);
+
+    % Create a figure base
+    figBaseCombined = fullfile(outFolderCombined, [fileBase, '_combined']);
+
+    % Create a new figure
+    figCombined = figure(4); clf
+    
+    % Expand the position of the figure
+    % TODO: Make this a function
+    positionOrig = figCombined.Position;
+    positionNew = positionOrig;
+    positionNew(1) = positionOrig(1) - positionOrig(3);
+    positionNew(3) = 3 * positionOrig(3);
+    figCombined.Position = positionNew;
+
+    % Plot raw data
+    subplot(1, 3, 1);
+    plot_raw_multiunit(parsedData, parsedParams, ...
+                        phaseBoundaries, titleBase, ...
+                        yAmountToStagger);
+
+    % Plot spike density
+    subplot(1, 3, 2);
+    plot_spike_density_multiunit(parsedData, parsedParams, ...
+                                 phaseBoundaries, titleBase);
+
+    % Plot oscillation duration
+    subplot(1, 3, 3);
+    plot_bar(parsedParams.oscDurationMs, ...
+                'ForceVectorAsRow', false, ...
+                'ReverseOrder', true, ...
+                'BarDirection', 'horizontal', ...
+                'PValues', pValues, ...
+                'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
+                'PTickAngle', pTickAngle, ...
+                'PLabel', 'Time (min)', ...
+                'ReadoutLabel', 'Oscillation Duration (s)', ...
+                'PBoundaries', phaseBoundaries, ...
+                otherArguments)
+
+    figs(4) = figCombined;
 end
 
 %% Plot time series of measures
@@ -585,60 +677,13 @@ if plotMeasuresFlag
     figTitlesMeasures = strcat(measuresToPlot, [' for ', titleBase]);
 
     % Plot table and save figures
-    figs(4:(nMeasures + 3)) = ...
+    figs(4 + (1:nMeasures)) = ...
         plot_table(parsedParams, 'PlotType', plotTypeMeasures, ...
                     'VariableNames', measuresToPlot, ...
                     'PLabel', 'Time (min)', 'FigNames', figPathsMeasures, ...
                     'FigTitles', figTitlesMeasures, ...
                     'PBoundaries', phaseBoundaries, ...
                     'PlotSeparately', true);
-end
-
-%% Plot combined plots
-if plotCombinedFlag
-    fprintf('Plotting a combined plot for %s ...\n', fileBase);    
-
-    % Create output directory and subdirectories for each measure
-    outFolderCombined = fullfile(outFolder, combinedDir);
-
-    % Create a figure base
-    figBaseCombined = fullfile(outFolderCombined, [fileBase, '_combined']);
-
-    % Create a new figure
-    figCombined = figure;
-    
-    % Expand the position of the figure
-    % TODO: Make this a function
-    positionOrig = figCombined.Position;
-    positionNew = positionOrig;
-    positionNew(1) = positionOrig(1) - positionOrig(3);
-    positionNew(3) = 3 * positionOrig(3);
-    figCombined.Position = positionNew;
-
-    % Plot raw data
-    subplot(1, 3, 1);
-    plot_raw_multiunit(parsedData, parsedParams, ...
-                        phaseBoundaries, titleBase, ...
-                        yAmountToStagger, nVectors);
-
-    % Plot spike density
-    subplot(1, 3, 2);
-    plot_spike_density_multiunit(parsedData, parsedParams, ...
-                                 phaseBoundaries, titleBase, nVectors);
-
-    % Plot oscillation duration
-    subplot(1, 3, 3);
-    plot_bar(parsedParams.oscDurationMs, ...
-                'ForceVectorAsRow', false, ...
-                'ReverseOrder', true, ...
-                'BarDirection', 'horizontal', ...
-                'PValues', pValues, ...
-                'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
-                'PTickAngle', pTickAngle, ...
-                'PLabel', 'Time (min)', ...
-                'ReadoutLabel', 'Oscillation Duration (s)', ...
-                'PBoundaries', phaseBoundaries, ...
-                otherArguments)
 end
 
 %% Outputs
@@ -1499,7 +1544,7 @@ end
 
 function plot_raw_multiunit (parsedData, parsedParams, ...
                                 phaseBoundaries, titleBase, ...
-                                yAmountToStagger, nVectors)
+                                yAmountToStagger)
 
 %% Hard-coded constants
 MS_PER_S = 1000;
@@ -1536,6 +1581,7 @@ end
 
 %% Plot
 hold on
+fig = gcf;
 plot_traces(tVecsSec, vVecs, 'Verbose', false, ...
             'PlotMode', 'staggered', 'SubplotOrder', 'list', ...
             'YLimits', bestYLimits, 'YAmountToStagger', yAmountToStagger, ...
@@ -1662,27 +1708,26 @@ yTickLabels = create_labels_from_numbers(nSweeps - yTicks + 1);
 %   each trace is a row
 spikeDensityMatrix = transpose(force_matrix(spikeDensityHz));
 
-% colormap(flipud(gray));
-colormap(jet);
+% Set a gray-scale color map
+colormap(flipud(gray));
+% colormap(jet);
 
 imagesc(xEnds, flipud(yEnds), spikeDensityMatrix);
 yticks(yTicks);
 yticklabels(yTickLabels);
 
-% TODO: Make this optional
-% % Plot stimulation start
-% vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
-%                                 'LineStyle', '--', 'LineWidth', 0.5, ...
-%                                 'YLimits', yLimits);
+% Plot stimulation start
+vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
+                                'LineStyle', '--', 'LineWidth', 0.5, ...
+                                'YLimits', yLimits);
   
-% TODO: Make this optional
-% % Plot phase boundaries
-% if ~isempty(phaseBoundaries)
-%     yBoundaries = nSweeps - phaseBoundaries + 1;
-%     horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
-%                                 'LineStyle', '--', 'LineWidth', 1, ...
-%                                 'XLimits', xLimits);
-% end
+% Plot phase boundaries
+if ~isempty(phaseBoundaries)
+    yBoundaries = nSweeps - phaseBoundaries + 1;
+    horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
+                                'LineStyle', '--', 'LineWidth', 1, ...
+                                'XLimits', xLimits);
+end
 
 xlim(xLimits);
 ylim(yLimits);

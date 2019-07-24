@@ -1,13 +1,14 @@
 function allDataTable = combine_data_from_same_slice (varargin)
-%% Combines data across multiple .abf files for each slice in the input folder
+%% Combines data across multiple .abf files for each slice in the input folder (or for a particular slice)
 % Usage: allDataTable = combine_data_from_same_slice (varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       allDataTable = combine_data_from_same_slice;
+%       allDataTable = combine_data_from_same_slice('SliceBase', 'slice4');
 % Outputs:
-%       allDataTable    - combined data for each slice
-%                       specified as a table
+%       allDataTable     - combined data for each slice
+%                   specified as a table
 % Arguments:
 %       varargin    - 'Directory': working directory
 %                   must be a string scalar or a character vector
@@ -15,6 +16,10 @@ function allDataTable = combine_data_from_same_slice (varargin)
 %                   - 'InFolder': directory to read files from
 %                   must be a string scalar or a character vector
 %                   default == same as directory
+%                   - 'SliceBases': name of slice(s) to combine
+%                   must be a character vector, a string vector 
+%                       or a cell array of character vectors
+%                   default == detected from inFolder
 %                   - 'SaveMatFlag': whether to save combined data
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
@@ -31,15 +36,18 @@ function allDataTable = combine_data_from_same_slice (varargin)
 %       cd/count_vectors.m
 %       cd/extract_fileparts.m
 %       cd/force_matrix.m
+%       cd/istext.m
 %       cd/parse_all_abfs.m
 %
 % Used by:
 %       cd/parse_all_multiunit.m
+%       cd/parse_multiunit.m
 
 % File History:
 % 2019-07-24 Moved from parse_all_multiunit.m
 % 2019-07-24 Made 'Directory', 'InFolder', 'SaveMatFlag', 'VarsToSave'
 %               optional arguments
+% 2019-07-24 Added 'SliceName' as an optional argument
 
 %% Hard-coded parameters
 regexpSliceName = '.*slice[0-9]*';
@@ -47,6 +55,7 @@ regexpSliceName = '.*slice[0-9]*';
 %% Default values for optional arguments
 directoryDefault = pwd;
 inFolderDefault = '';                   % set later
+sliceBasesDefault = {};                 % set later
 saveMatFlagDefault = true;
 varsToSaveDefault = {'sliceBase', 'vVecsSl', 'siMsSl', 'iVecsSl', ...
                     'phaseBoundaries', 'phaseStrs'};
@@ -63,6 +72,8 @@ addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'InFolder', inFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'SliceBases', sliceBasesDefault, ...
+    @istext);
 addParameter(iP, 'SaveMatFlag', saveMatFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'VarsToSave', varsToSaveDefault, ...
@@ -72,6 +83,7 @@ addParameter(iP, 'VarsToSave', varsToSaveDefault, ...
 parse(iP, varargin{:});
 directory = iP.Results.Directory;
 inFolder = iP.Results.InFolder;
+sliceBases = iP.Results.SliceBases;
 saveMatFlag = iP.Results.SaveMatFlag;
 varsToSave = iP.Results.VarsToSave;
 
@@ -81,16 +93,24 @@ if isempty(inFolder)
     inFolder = directory;
 end
 
-% Get all the abf file names
-[~, allAbfPaths] = ...
-    all_files('Directory', inFolder, 'Extension', 'abf', 'SortBy', 'date');
+% Decide on the unique slice bases
+if isempty(sliceBases)
+    % Get all the abf file names
+    [~, allAbfPaths] = ...
+        all_files('Directory', inFolder, 'Extension', 'abf', ...
+                  'SortBy', 'date', 'ForceCellOutput', true);
 
-% Extract all slice names
-allSliceNames = extract_fileparts(allAbfPaths, 'base', ...
-                                    'RegExp', regexpSliceName);
+    % Extract all slice names
+    allSliceNames = extract_fileparts(allAbfPaths, 'base', ...
+                                        'RegExp', regexpSliceName);
 
-% Get unique slice names
-sliceBase = unique(allSliceNames);
+    % Get unique slice bases
+    sliceBase = unique(allSliceNames);
+else
+    % Make sure it's a cell array
+    % Note: The variable 'sliceBase' will be part of the table header
+    sliceBase = force_column_cell(sliceBases);
+end
 
 % Count the number of slices
 nSlices = numel(sliceBase);
@@ -106,7 +126,7 @@ parfor iSlice = 1:nSlices
     [vVecsSl{iSlice}, siMsSl(iSlice), iVecsSl{iSlice}, ...
         phaseBoundaries{iSlice}, phaseStrs{iSlice}] = ...
         combine_data_from_one_slice(inFolder, sliceBase{iSlice}, ...
-                                    saveMatFlag, varsToSave, varargin{:});
+                                    saveMatFlag, varsToSave);
 end
 
 %% Output data
@@ -117,7 +137,7 @@ allDataTable = table(sliceBase, vVecsSl, siMsSl, ...
 
 function [vVecsSl, siMsSl, iVecsSl, phaseBoundaries, phaseStrs] = ...
             combine_data_from_one_slice(inFolder, sliceBase, ...
-                                        saveMatFlag, varsToSave, varargin)
+                                        saveMatFlag, varsToSave)
 %% Combines the data for one slice
 
 %% Hard-coded parameters
@@ -127,6 +147,16 @@ regexpPhaseStr = 'phase[a-zA-Z0-9]*';
 % Get all .abf files for this slice ordered by time stamp
 [~, allAbfPaths] = all_files('Directory', inFolder, 'Prefix', sliceBase, ...
                             'Extension', 'abf', 'SortBy', 'date');
+
+% If no file found, return
+if isempty(allAbfPaths)
+    vVecsSl = [];
+    siMsSl = NaN;
+    iVecsSl = [];
+    phaseBoundaries = [];
+    phaseStrs = {};
+    return
+end
 
 % Extract file names
 allFileNames = extract_fileparts(allAbfPaths, 'name');
