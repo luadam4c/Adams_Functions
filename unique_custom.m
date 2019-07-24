@@ -1,14 +1,16 @@
 function [y, ia, ic] = unique_custom (x, varargin)
 %% Returns the unique values in x, optionally without NaN
-% Usage: [y, ia, ic] = unique_custom (x, varargin)
+% Usage: [y, ia, ic] = unique_custom (x, optArg (opt), varargin)
 % Explanation:
 %       This function is the same as the default unique() function
 %           but treats all NaN as equal by default (so there would
 %           be only one NaN if any in the output)
 %
 % Example(s):
-%       unique_custom([3, NaN, 3, 5, NaN], 'IgnoreNaN', true)
-%       unique_custom([3, NaN, 3, 5, NaN], 'TreatNanAsEqual', false)
+%       unique_custom([5, NaN, 3, 5, NaN])
+%       unique_custom([5, NaN, 3, 5, NaN], 'IgnoreNaN', true)
+%       unique_custom([5, NaN, 3, 5, NaN], 'stable', 'IgnoreNaN', true)
+%       unique_custom([5, NaN, 3, 5, NaN], 'TreatNanAsEqual', false)
 %       
 % Outputs:
 %       y           - All unique values in x
@@ -16,6 +18,15 @@ function [y, ia, ic] = unique_custom (x, varargin)
 % Arguments:
 %       x           - Matrix to check unique values
 %                   must be a array
+%       optArg      - (opt) either setOrder or occurrence 
+%                           for the unique() function
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       - ''
+%                       - 'sorted'
+%                       - 'stable'
+%                       - 'first'
+%                       - 'last'
+%                   default == ''
 %       varargin    - 'IgnoreNaN': whether to include NaN as distinct elements
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -28,21 +39,27 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %                   - Any other parameter-value pair for the unique() function
 %
 % Requires:
+%       cd/create_error_for_nargin.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/extract_subvectors.m
+%       cd/plot_measures.m
+%       cd/plot_tuning_curve.m
 
 % File History:
 % 2019-04-01 BT - Adapted from https://www.mathworks.com/matlabcentral/
 %                         answers/42561-treating-nan-as-a-
 %                         unique-value-instead-of-as-a-distinct#answer_52371
-% 
+% 2019-07-24 Added optArg
+% 2019-07-24 Improved algorithm
 
 %% Hard-coded parameters
+validOptArgs = {'', 'sorted', 'stable', 'first', 'last'};
 
 %% Default values for optional arguments
+optArgDefault = '';
 ignoreNanDefault = false;  	    % do not ignore NaN by default
-treatNanAsEqualDefault = false; % do not treat all NaN values equal by default
+treatNanAsEqualDefault = true;  % treat all NaN values equal by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -61,6 +78,10 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 addRequired(iP, 'x', ...                  % array to be operated on
     @(z) validateattributes(z, {'char', 'string', 'cell', 'numeric'}, {'nonempty'}));
 
+% Add optional inputs to the Input Parser
+addOptional(iP, 'optArg', optArgDefault, ...
+    @(x) any(validatestring(x, validOptArgs)));
+
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'IgnoreNaN', ignoreNanDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary', 'scalar'}));
@@ -69,6 +90,7 @@ addParameter(iP, 'TreatNanAsEqual', treatNanAsEqualDefault, ...
 
 % Read from the Input Parser
 parse(iP, x, varargin{:});
+optArg = validatestring(iP.Results.optArg, validOptArgs);
 ignoreNan = iP.Results.IgnoreNaN;
 treatNanAsEqual = iP.Results.TreatNanAsEqual;
 
@@ -78,40 +100,54 @@ otherArguments = struct2arglist(iP.Unmatched);
 % Check relationships between arguments
 
 %% Preparation
-% Initial unique matrix y of x
-[y, ia, ic] = unique(x, otherArguments{:});
+% Deal with NaNs
+if ignoreNan
+    % Remove NaNs from the data
+    x = x(~isnan(x));
+elseif treatNanAsEqual
+    % Decide if there is an NaN
+    if any(isnan(x))
+        % Remove NaNs from the data
+        x = x(~isnan(x));
+
+        % Place one at the end
+        if iscolumn(x)
+            x = [x; NaN];
+        else
+            x = [x, NaN];
+        end
+    end
+end
 
 %% Do the job
-
-% Ignoring NaN
-if ignoreNan
-    % All NaN indices
-    indNaN = isnan(y(1:end));
-
-    % Delete all NaN elements in y, ia, and ic
-    y(indNaN) = [];
-    ia(indNaN) = [];
-    ic(indNaN) = [];
-
-    return;
+% Initial unique matrix y of x
+if isempty(optArg)
+    [y, ia, ic] = unique(x, otherArguments{:});
+else
+    [y, ia, ic] = unique(x, optArg, otherArguments{:});
 end
 
-% Preserving one NaN
-if treatNanAsEqual
-    % NaN indices, does not include last NaN if present
-    indNaN = isnan(y(1:end-1));
-
-    % Delete all NaN elements in y, ia, and ic
-    y(indNaN) = [];
-    ia(indNaN) = [];
-    ic(indNaN) = [];
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
 
+% All NaN indices
+indNaN = isnan(y(1:end));
+
+% Delete all NaN elements in y, ia, and ic
+y(indNaN) = [];
+ia(indNaN) = [];
+ic(indNaN) = [];
+
+% NaN indices, does not include last NaN if present
+indNaN = isnan(y(1:end-1));
+
+% Delete all NaN elements in y, ia, and ic
+y(indNaN) = [];
+ia(indNaN) = [];
+ic(indNaN) = [];
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

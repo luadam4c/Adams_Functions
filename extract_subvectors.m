@@ -69,6 +69,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
 %       cd/match_format_vector_sets.m
+%       cd/unique_custom.m
 %
 % Used by:
 %       cd/compute_peak_decay.m

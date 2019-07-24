@@ -10,6 +10,8 @@
 %       cd/force_matrix.m
 %       cd/ismatch.m
 %       cd/plot_table.m
+%       cd/unique_custom.m
+%
 % Used by:
 %       cd/parse_all_multiunit.m
 
@@ -341,9 +343,7 @@ function indLastEachPhase = find_last_ind_each_phase(phaseVec, nLastIndices)
 %% Find the last nLastIndices indices for each phase in the phaseVec
 
 % Get the unique phases
-% TODO: use unique_custom.m
-phaseVecNoNaN = phaseVec(~isnan(phaseVec));
-uniquePhases = unique(phaseVecNoNaN, 'stable');
+uniquePhases = unique_custom(phaseVec, 'stable', 'IgnoreNaN', true);
 
 % Find the last index for each phase
 lastIndexEachPhase = arrayfun(@(x) find(ismatch(phaseVec, x), 1, 'last'), ...

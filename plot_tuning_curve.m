@@ -109,6 +109,7 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %       cd/plot_vertical_line.m
 %       cd/remove_outliers.m
 %       cd/save_all_figtypes.m
+%       cd/unique_custom.m
 %
 % Used by:
 %       cd/plot_struct.m
@@ -289,11 +290,9 @@ if ~isempty(phaseVectors)
     phaseVectors = match_row_count(phaseVectors, nCols);
 
     % Get the unique phases for each readout column
-    % TODO FOR UNDERGRAD: Create unique_custom.m with the option 'IgnoreNan'
-    phaseVectorsNoNaN = cellfun(@(x) x(~isnan(x)), phaseVectors, ...
-                                'UniformOutput', false);
-    uniquePhases = cellfun(@(x) unique(x, 'stable'), phaseVectorsNoNaN, ...
-                            'UniformOutput', false);
+    uniquePhases = cellfun(@(x) unique_custom(x, 'stable', ...
+                                                'IgnoreNaN', true), ...
+                            phaseVectors, 'UniformOutput', false);
 
     % Count the number of phases for each readout column
     nPhases = count_samples(uniquePhases);
@@ -626,6 +625,12 @@ end
 set(gca, 'XTick', pTicks);
 set(gca, 'XTickLabel', pTickLabels);
 pTickAngle = 60;                % x tick angle in degrees
+
+% TODO FOR UNDERGRAD: Create unique_custom.m with the option 'IgnoreNan'
+phaseVectorsNoNaN = cellfun(@(x) x(~isnan(x)), phaseVectors, ...
+                            'UniformOutput', false);
+uniquePhases = cellfun(@(x) unique(x, 'stable'), phaseVectorsNoNaN, ...
+                        'UniformOutput', false);
 
 %}
 
