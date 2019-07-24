@@ -99,7 +99,7 @@ end
 
 % Decide on the unique slice bases
 if isempty(sliceBases)
-    sliceBases = all_abf_slice_bases(inFolder);
+    sliceBases = all_slice_bases(inFolder);
 end
 
 % Make sure sliceBase is a cell array
@@ -146,7 +146,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function sliceBases = all_abf_slice_bases (directory)
+function sliceBases = all_slice_bases (directory)
 %% Retrieves all slice bases from the .abf files in the directory
 
 %% Hard-coded parameters
@@ -155,7 +155,7 @@ regexpSliceName = '.*slice[0-9]*';
 % Get all the abf file names
 [~, allAbfPaths] = ...
     all_files('Directory', directory, 'Extension', 'abf', ...
-              'SortBy', 'date', 'ForceTableOutput', true);
+              'SortBy', 'date', 'ForceCellOutput', true);
 
 % Extract all slice names
 allSliceNames = extract_fileparts(allAbfPaths, 'base', ...
