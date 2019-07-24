@@ -1,10 +1,10 @@
-function varargout = parse_multiunit (vVecsOrFile, varargin)
+function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %% Parses multiunit recordings: detect spikes, computes spike histograms and autocorrelograms
-% Usage: [parsedParams, parsedData, figs] = parse_multiunit (vVecsOrFile, siMs (opt), varargin)
+% Usage: [parsedParams, parsedData, figs] = parse_multiunit (vVecsOrSlice, siMs (opt), varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       TODO
+%       [parsedParams, parsedData] = parse_multiunit('20190217_slice3');
 % Outputs:
 %       parsedParams- parsed parameters, a table with columns:
 %                       phaseNumber
@@ -111,12 +111,13 @@ function varargout = parse_multiunit (vVecsOrFile, varargin)
 %       figs        - figure handles
 %                   specified as a Figure object handle array
 % Arguments:
-%       vVecsOrFile - original voltage vector(s) in mV
-%                       or the (.abf) file name
+%       vVecsOrSlice - original voltage vector(s) in mV
+%                       or the slice name
 %                   must be a numeric array or a cell array of numeric arrays
 %                       or a string scalar or a character vector
 %       siMs        - (opt) sampling interval in ms
 %                   must be a positive vector
+%                   default == 0.1 ms
 %       varargin    - 'PlotAllFlag': whether to plot everything
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -146,12 +147,22 @@ function varargout = parse_multiunit (vVecsOrFile, varargin)
 %                                           of measures
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'SaveMatFlag': whether to save combined data
+%                                           as matfiles
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'SaveResultsFlag': whether to save parsed results
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'OutFolder': directory to place outputs
+%                   - 'Directory': working directory
 %                   must be a string scalar or a character vector
 %                   default == pwd
+%                   - 'InFolder': directory to read files from
+%                   must be a string scalar or a character vector
+%                   default == same as directory
+%                   - 'OutFolder': directory to place output files
+%                   must be a string scalar or a character vector
+%                   default == same as inFolder
 %                   - 'FileBase': base of filename (without extension)
 %                   must be a string scalar or a character vector
 %                   default == 'unnamed'
@@ -235,9 +246,6 @@ function varargout = parse_multiunit (vVecsOrFile, varargin)
 % 2019-06-10 Added plotCombinedFlag
 % 2019-07-24 Added saveResultsFlag
 
-% Hard-coded constants
-MS_PER_S = 1000;
-
 %% Hard-coded parameters
 plotTypeMeasures = 'bar'; %'tuning';
 yAmountToStagger = 10;
@@ -263,8 +271,11 @@ measuresToPlot = {'oscIndex1', 'oscIndex2', 'oscIndex3', 'oscIndex4', ...
                     'nSpikesPerBurstInOsc'};
 paramsSuffix = '_params.csv';
 resultsSuffix = '_parsed.mat';
+varsNeeded = {'sliceBase', 'vVecsSl', 'siMsSl', 'iVecsSl', ...
+                'phaseBoundaries', 'phaseStrs'};
 
 %% Default values for optional arguments
+siMsDefault = 0.1;                      % 0.1 ms by default
 plotAllFlagDefault = false;
 plotCombinedFlagDefault = false;
 plotSpikeDetectionFlagDefault = [];
@@ -274,8 +285,11 @@ plotAutoCorrFlagDefault = [];
 plotRawFlagDefault = [];
 plotRasterFlagDefault = [];
 plotMeasuresFlagDefault = [];
-saveResultsFlagDefault = false;
-outFolderDefault = pwd;
+saveMatFlagDefault = true;
+saveResultsFlagDefault = true;
+directoryDefault = pwd;
+inFolderDefault = '';                   % set later
+outFolderDefault = '';                  % set later
 fileBaseDefault = 'unnamed';    % set later
 stimStartMsDefault = [];        % set later
 pulseVectorsDefault = [];       % don't use pulse vectors by default
@@ -311,15 +325,15 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'vVecsOrFile', ...
+addRequired(iP, 'vVecsOrSlice', ...
     @(x) assert(isnumeric(x) || iscellnumeric(x) || ...
                 isstring(x) || ischar(x), ...
-                ['vVecsOrFile must be either a numeric array, ', ...
+                ['vVecsOrSlice must be either a numeric array, ', ...
                     'a cell array of numeric arrays, ', ...
                     'a string scalar or a character vector!']));
 
 % Add optional inputs to the Input Parser
-addOptional(iP, 'siMs', ...
+addOptional(iP, 'siMs', siMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'vector'}));
 
 % Add parameter-value pairs to the Input Parser
@@ -341,8 +355,14 @@ addParameter(iP, 'PlotRasterFlag', plotRasterFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotMeasuresFlag', plotMeasuresFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveMatFlag', saveMatFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SaveResultsFlag', saveResultsFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Directory', directoryDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'InFolder', inFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FileBase', fileBaseDefault, ...
@@ -361,7 +381,7 @@ addParameter(iP, 'tVecs', tVecsDefault, ...
                     'or a cell array of numeric arrays!']));
 
 % Read from the Input Parser
-parse(iP, vVecsOrFile, varargin{:});
+parse(iP, vVecsOrSlice, varargin{:});
 siMs = iP.Results.siMs;
 plotAllFlag = iP.Results.PlotAllFlag;
 plotCombinedFlag = iP.Results.PlotCombinedFlag;
@@ -372,7 +392,10 @@ plotAutoCorrFlag = iP.Results.PlotAutoCorrFlag;
 plotRawFlag = iP.Results.PlotRawFlag;
 plotRasterFlag = iP.Results.PlotRasterFlag;
 plotMeasuresFlag = iP.Results.PlotMeasuresFlag;
+saveMatFlag = iP.Results.SaveMatFlag;
 saveResultsFlag = iP.Results.SaveResultsFlag;
+directory = iP.Results.Directory;
+inFolder = iP.Results.InFolder;
 outFolder = iP.Results.OutFolder;
 fileBase = iP.Results.FileBase;
 stimStartMs = iP.Results.StimStartMs;
@@ -381,6 +404,77 @@ phaseBoundaries = iP.Results.PhaseBoundaries;
 tVecs = iP.Results.tVecs;
 
 %% Preparation
+fprintf('Decide on the file base ...\n');
+
+% Decide on the input directory
+if isempty(inFolder)
+    inFolder = directory;
+end
+
+% Decide on the output directory
+if isempty(outFolder)
+    outFolder = inFolder;
+end
+
+% Deal with the first argument
+if ischar(vVecsOrSlice) || isstring(vVecsOrSlice)
+    % The first argument is the slice name
+    fileBase = vVecsOrSlice;
+
+    % Data to be extracted
+    toExtractData = true;
+else
+    % The first argument is the voltage vectors
+    vVecs = vVecsOrSlice;
+
+    % Data already provided
+    toExtractData = false;
+end
+
+% Create the full path to the parameters file
+paramsPath = fullfile(outFolder, [fileBase, paramsSuffix]);
+
+% Create the full path to the results file
+resultsPath = fullfile(outFolder, [fileBase, resultsSuffix]);
+
+% Extract data only if results not provided
+if toExtractData && ~isfile(resultsPath)
+    % Construct the .mat file expected to exist
+    regexpSliceMatFile = ['.*', fileBase, '.mat'];
+
+    % Construct the .mat file expected
+    [~, allMatPaths] = ...
+        all_files('Directory', inFolder, 'RegExp', regexpSliceMatFile, ...
+                    'SortBy', 'date', 'ForceCellOutput', true);
+
+    % Load or combine data
+    if numel(allMatPaths) > 1
+        fprintf('Too many .mat files matching %s!\n', regexpSliceMatFile);
+        varargout{1} = [];
+        varargout{2} = [];
+        varargout{3} = gobjects(1);
+        return;
+    elseif numel(allMatPaths) == 1
+        fprintf('Loading data for %s ...\n', fileBase);
+        % Load data for each slice as a structure array
+        allData = load(allMatPaths{1}, varsNeeded{:});
+    else
+        % Combine data from .abf files
+        fprintf('Combining data for %s ...\n', fileBase);
+        allData = ...
+            combine_data_from_same_slice('SliceBase', fileBase, ...
+                                        'SaveMatFlag', saveMatFlag, ...
+                                        'VarsToSave', varsNeeded);
+    end
+
+    % Extract from the table
+    %   Note: this will override whatever is provided in optional arguments
+    vVecs = allData.vVecsSl;
+    siMs = allData.siMsSl;
+    pulseVectors = allData.iVecsSl;
+    phaseBoundaries = allData.phaseBoundaries;
+end
+
 % Set default flags
 fprintf('Setting default flags for %s ...\n', fileBase);
 [plotSpikeDetectionFlag, plotSpikeDensityFlag, ...
@@ -391,25 +485,8 @@ plotRawFlag, plotRasterFlag, plotMeasuresFlag] = ...
                 plotSpikeHistogramFlag, plotAutoCorrFlag, ...
                 plotRawFlag, plotRasterFlag, plotMeasuresFlag);
 
-% Deal with the required argument
-if ischar(vVecsOrFile) || isstring(vVecsOrFile)
-    allDataTable = ...
-        combine_data_from_same_slice('SliceBase', vVecsOrFile, ...
-                                    'SaveMatFlag', saveMatFlag, ...
-                                    'VarsToSave', varsNeeded);
-else
-    vVecs = vVecsOrFile;
-end
 
-% Count the number of vectors
-nVectors = count_vectors(vVecs);
-
-% Count the number of samples for each vector
-nSamples = count_samples(vVecs);
-
-% Match time vector(s) with sampling interval(s) and number(s) of samples
-[tVecs, siMs, nSamples] = match_time_info(tVecs, siMs, nSamples);
-
+fprintf('Initialize plotting parameters for %s ...\n', fileBase);
 % Count the number of measures to plot
 nMeasures = numel(measuresToPlot);
 
@@ -419,14 +496,21 @@ figs = gobjects(nMeasures + 4, 1);
 % Create a figure title base
 titleBase = replace(fileBase, '_', '\_');
 
-% Create the full path to the parameters file
-paramsPath = fullfile(outFolder, [fileBase, paramsSuffix]);
+if ~isfile(resultsPath)
+    fprintf('Match time information for %s ...\n', fileBase);
+    % Count the number of vectors
+    nVectors = count_vectors(vVecs);
 
-% Create the full path to the results file
-resultsPath = fullfile(outFolder, [fileBase, resultsSuffix]);
+    % Count the number of samples for each vector
+    nSamples = count_samples(vVecs);
+
+    % Match time vector(s) with sampling interval(s) and number(s) of samples
+    [tVecs, siMs, ~] = match_time_info(tVecs, siMs, nSamples);
+end
 
 %% Do the job
 if isfile(resultsPath)
+    fprintf('Loading already parsed results for %s ...\n', fileBase);
     load(resultsPath, 'parsedParams', 'parsedData');
 else
     % Detect stimulation start time if not provided
@@ -534,7 +618,7 @@ if plotSpikeDetectionFlag
     outFolderSpikeDetection = fullfile(outFolder, spikeDetectionDir);
 
     % Plot and save figures
-    plot_all_spike_detections(parsedData, parsedParams, outFolderSpikeDetection, nVectors);
+    plot_all_spike_detections(parsedData, parsedParams, outFolderSpikeDetection);
 end
 
 %% Plot spike histograms
@@ -544,7 +628,7 @@ if plotSpikeHistogramFlag
     outFolderHist = fullfile(outFolder, spikeHistDir);
 
     % Plot and save figures
-    plot_all_spike_histograms(parsedData, parsedParams, outFolderHist, nVectors);
+    plot_all_spike_histograms(parsedData, parsedParams, outFolderHist);
 end
 
 %% Plot autocorrelograms
@@ -556,7 +640,7 @@ if plotAutoCorrFlag
 
     % Plot and save figures
     plot_all_autocorrelograms(parsedData, parsedParams, ...
-                                outFolderAutoCorr, outFolderAcf, nVectors);
+                                outFolderAutoCorr, outFolderAcf);
 end
 
 %% Plot raw traces
@@ -781,7 +865,7 @@ tVecs = iP.Results.tVecs;
 nSamples = count_samples(vVecs);
 
 % Match time vector(s) with sampling interval(s) and number(s) of samples
-[tVecs, siMs, nSamples] = match_time_info(tVecs, siMs, nSamples);
+[tVecs, siMs, ~] = match_time_info(tVecs, siMs, nSamples);
 
 % Compute the average sampling interval in ms
 siMsAvg = mean(siMs);
@@ -1345,7 +1429,7 @@ title(['Autocorrelation function for ', figTitleBase]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_all_spike_detections(parsedData, parsedParams, outFolder, nVectors)
+function plot_all_spike_detections(parsedData, parsedParams, outFolder)
 
 % Retrieve data for plotting
 tVec = parsedData.tVec;
@@ -1369,6 +1453,9 @@ figPathBase = parsedParams.figPathBase;
 
 % Check if output directory exists
 check_dir(outFolder);
+
+% Count the number of sweeps
+nVectors = height(parsedParams);
 
 parfor iVec = 1:nVectors
     % Plot spike detection
@@ -1405,7 +1492,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_all_spike_histograms(parsedData, parsedParams, outFolder, nVectors)
+function plot_all_spike_histograms(parsedData, parsedParams, outFolder)
 
 % Retrieve data for plotting
 spikeCounts = parsedData.spikeCounts;
@@ -1421,6 +1508,9 @@ oscDurationSec = parsedParams.oscDurationSec;
 nSpikesInOsc = parsedParams.nSpikesInOsc;
 figTitleBase = parsedParams.figTitleBase;
 figPathBase = parsedParams.figPathBase;
+
+% Count the number of sweeps
+nVectors = height(parsedParams);
 
 % Find appropriate x limits
 histLeft = min(histLeftSec);
@@ -1463,7 +1553,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_all_autocorrelograms(parsedData, parsedParams, ...
-                                    outFolderAutoCorr, outFolderAcf, nVectors)
+                                    outFolderAutoCorr, outFolderAcf)
 
 % Retrieve data for plotting
 autoCorr = parsedData.autoCorr;
@@ -1487,6 +1577,9 @@ oscDurationSec = parsedParams.oscDurationSec;
 nSpikesInOsc = parsedParams.nSpikesInOsc;
 figTitleBase = parsedParams.figTitleBase;
 figPathBase = parsedParams.figPathBase;
+
+% Count the number of sweeps
+nVectors = height(parsedParams);
 
 % Compute appropriate x limits
 allLastPeaksBins = extract_elements(indPeaks, 'last');

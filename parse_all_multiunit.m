@@ -99,7 +99,7 @@ plotRawFlagDefault = [];                % set in parse_multiunit.m
 plotRasterFlagDefault = [];             % set in parse_multiunit.m
 plotMeasuresFlagDefault = [];           % set in parse_multiunit.m
 saveMatFlagDefault = true;
-saveResultsFlagDefault = false;
+saveResultsFlagDefault = true;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -167,7 +167,8 @@ if isempty(outFolder)
     outFolder = inFolder;
 end
 
-% Get all the mat file names
+% Get all the slice data .mat file names available
+%   Note: .abf files will be ignored if these exist
 [~, allMatPaths] = ...
     all_files('Directory', inFolder, 'RegExp', regexpSliceMatFile, ...
                 'SortBy', 'date', 'ForceCellOutput', true);
@@ -176,14 +177,14 @@ end
 % TODO: What if only some .abf files were converted?
 if ~isempty(allMatPaths)
     % Load data for each slice as a structure array
-    fprintf("Loading data for each slice ...\n");
+    fprintf('Loading data for each slice ...\n');
     allDataStruct = cellfun(@(x) load(x, varsNeeded{:}), allMatPaths);
 
     % Convert to a table
     allDataTable = struct2table(allDataStruct, 'AsArray', true);
 else
     % Combine data from the same slice
-    fprintf("Combining data for each slice ...\n");
+    fprintf('Combining data for each slice ...\n');
     allDataTable = ...
         combine_data_from_same_slice('Directory', inFolder, ...
                                     'SaveMatFlag', saveMatFlag, ...
