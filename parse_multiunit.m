@@ -1,10 +1,11 @@
 function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %% Parses multiunit recordings: detect spikes, computes spike histograms and autocorrelograms
-% Usage: [parsedParams, parsedData, figs] = parse_multiunit (vVecsOrSlice, siMs (opt), varargin)
+% Usage: [parsedParams, parsedData, phaseBoundaries, fileBase, figs] = parse_multiunit (vVecsOrSlice, siMs (opt), varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       [parsedParams, parsedData] = parse_multiunit('20190217_slice3');
+%       [parsedParams, parsedData, phaseBoundaries, fileBase, figs] = parse_multiunit('20190217_slice3');
+%       parse_multiunit('20190217_slice3', 'SaveResults', true);
 % Outputs:
 %       parsedParams- parsed parameters, a table with columns:
 %                       phaseNumber
@@ -108,6 +109,11 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %                       ampTroughs
 %                       halfPeriodsToMultiple
 %                   specified as a table
+%       phaseBoundaries     
+%                   - phase boundaries
+%                   specified as a numeric vector
+%       fileBase    - file base
+%                   specified as a character vector
 %       figs        - figure handles
 %                   specified as a Figure object handle array
 % Arguments:
@@ -245,15 +251,16 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 % 2019-06-10 Compartmentalized plot code
 % 2019-06-10 Added plotCombinedFlag
 % 2019-07-24 Added saveResultsFlag
+% 2019-07-25 Now returns phaseBoundaries and fileBase as 3rd and 4th arguments
 
 %% Hard-coded parameters
 plotTypeMeasures = 'bar'; %'tuning';
-yAmountToStagger = [];
+yAmountToStagger = [];                  % y amount to stagger for the raw plots
 % yAmountToStagger = 10;
+zoomWinRelStimStartSec = [-1; 20];      % for zoom window 1
 % zoomWinRelStimStartSec = [-1; 10];
-zoomWinRelStimStartSec = [-1; 20];
-zoomWinRelDetectStartSec = [-0.2; 2];
-zoomWinRelFirstSpikeSec = [0; 0.1];
+zoomWinRelDetectStartSec = [-0.2; 2];   % for zoom window 2
+zoomWinRelFirstSpikeSec = [0; 0.1];     % for zoom window 3
 rawDir = 'raw';
 rasterDir = 'rasters';
 autoCorrDir = 'autocorrelograms';
@@ -289,13 +296,13 @@ plotMeasuresFlagDefault = [];
 saveMatFlagDefault = false;
 saveResultsFlagDefault = false;
 directoryDefault = pwd;
-inFolderDefault = '';           % set later
-outFolderDefault = '';          % set later
-fileBaseDefault = 'unnamed';    % set later
-stimStartMsDefault = [];        % set later
-pulseVectorsDefault = [];       % don't use pulse vectors by default
-phaseBoundariesDefault = [];   	% no phase boundaries by default
-tVecsDefault = [];              % set later
+inFolderDefault = '';                   % set later
+outFolderDefault = '';                  % set later
+fileBaseDefault = 'unnamed';            % set later
+stimStartMsDefault = [];                % set later
+pulseVectorsDefault = [];               % don't use pulse vectors by default
+phaseBoundariesDefault = [];   	        % no phase boundaries by default
+tVecsDefault = [];                      % set later
 
 % TODO: Make optional argument
 baseWindows = [];
@@ -494,9 +501,6 @@ nMeasures = numel(measuresToPlot);
 % Initialize figures array
 figs = gobjects(nMeasures + 4, 1);
 
-% Create a figure title base
-titleBase = replace(fileBase, '_', '\_');
-
 if ~isfile(resultsPath)
     fprintf('Match time information for %s ...\n', fileBase);
     % Count the number of vectors
@@ -568,7 +572,7 @@ else
                                     resolutionMs, signal2Noise, ...
                                     minBurstLengthMs, maxInterBurstIntervalMs, ...
                                     minSpikeRateInBurstHz, minRelProm, ...
-                                    fileBase, titleBase, phaseBoundaries);
+                                    fileBase, phaseBoundaries);
     end
 
     % Convert to a struct array
@@ -656,7 +660,7 @@ if plotRawFlag
     % Plot figure
     figs(1) = figure(1); clf
     plot_raw_multiunit(parsedData, parsedParams, ...
-                        phaseBoundaries, titleBase, ...
+                        phaseBoundaries, fileBase, ...
                         yAmountToStagger);
 
     % Save the figure zoomed to several x limits
@@ -673,7 +677,7 @@ if plotRasterFlag
     % Plot figure
     figs(2) = figure(2); clf
     plot_raster_multiunit(parsedData, parsedParams, ...
-                            phaseBoundaries, titleBase);
+                            phaseBoundaries, fileBase);
 
     % Save the figure zoomed to several x limits
     save_all_zooms(figs(2), figBaseRaster, zoomWinsMulti);
@@ -690,7 +694,7 @@ if plotSpikeDensityFlag
     % Plot figure
     figs(3) = figure(3); clf
     plot_spike_density_multiunit(parsedData, parsedParams, ...
-                                 phaseBoundaries, titleBase);
+                                 phaseBoundaries, fileBase);
 
     % Save the figure zoomed to several x limits
     save_all_zooms(figs(3), figBaseSpikeDensity, zoomWinsMulti);
@@ -718,16 +722,15 @@ if plotCombinedFlag
     figCombined.Position = positionNew;
 
     % Plot raw data
-    % TODO: Fix y ticks
     ax(1) = subplot(1, 3, 1);
     plot_raw_multiunit(parsedData, parsedParams, ...
-                        phaseBoundaries, titleBase, ...
+                        phaseBoundaries, fileBase, ...
                         yAmountToStagger);
 
     % Plot spike density
     ax(2) = subplot(1, 3, 2);
     plot_spike_density_multiunit(parsedData, parsedParams, ...
-                                 phaseBoundaries, titleBase);
+                                 phaseBoundaries, fileBase);
 
     % Plot oscillation duration
     % TODO: Add RBoundaries
@@ -766,6 +769,7 @@ if plotMeasuresFlag
                                 strcat(fileBase, '_', measuresToPlot));
 
     % Create custom figure titles
+    titleBase = replace(fileBase, '_', '\_');
     figTitlesMeasures = strcat(measuresToPlot, [' for ', titleBase]);
 
     % Plot table and save figures
@@ -781,7 +785,9 @@ end
 %% Outputs
 varargout{1} = parsedParams;
 varargout{2} = parsedData;
-varargout{3} = figs;
+varargout{3} = phaseBoundaries;
+varargout{4} = fileBase;
+varargout{5} = figs;
 
 fprintf('%s analyzed! ...\n\n', fileBase);  
 
@@ -951,7 +957,7 @@ function [parsedParams, parsedData] = ...
                                 resolutionMs, signal2Noise, ...
                                 minBurstLengthMs, maxInterBurstIntervalMs, ...
                                 minSpikeRateInBurstHz, minRelProm, ...
-                                fileBase, figTitleBase, phaseBoundaries)
+                                fileBase, phaseBoundaries)
 
 % Parse a single multiunit recording
 
@@ -1110,9 +1116,12 @@ ampTroughs = autoCorrData.ampTroughs;
 halfPeriodsToMultiple = autoCorrData.halfPeriodsToMultiple;
 
 %% For plotting later
-% Modify the figure base
+% Create a figure title base
+titleBase = replace(fileBase, '_', '\_');
+
+% Modify the figure base and title base
 figPathBase = [fileBase, '_trace', num2str(iVec)];
-figTitleBase = [figTitleBase, '\_trace', num2str(iVec)];
+figTitleBase = [titleBase, '\_trace', num2str(iVec)];
 
 % Convert to seconds
 [siSeconds, maxTimeSec, minTimeSec, ...
@@ -1644,7 +1653,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_raw_multiunit (parsedData, parsedParams, ...
-                                phaseBoundaries, titleBase, ...
+                                phaseBoundaries, fileBase, ...
                                 yAmountToStagger)
 
 %% Hard-coded constants
@@ -1670,6 +1679,7 @@ tVecsSec = transform_vectors(tVecs, MS_PER_S, 'divide');
 
 % Prepare for the plot
 xLabel = 'Time (s)';
+titleBase = replace(fileBase, '_', '\_');
 figTitle = ['Raw and Filtered traces for ', titleBase];
 
 % Compute the original y limits from data
@@ -1712,7 +1722,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_raster_multiunit (parsedData, parsedParams, ...
-                                phaseBoundaries, titleBase)
+                                phaseBoundaries, fileBase)
 %% Plots a spike raster plot from parsed multiunit data
 % TODO: Plot burst duration
 % TODO: Plot oscillatory index
@@ -1743,6 +1753,9 @@ burstWindows = cellfun(@(x, y) prepare_for_plot_horizontal_line(x, y), ...
 nSweeps = numel(spikeTimesSec);
 colorsRaster = repmat({'Black'}, nSweeps, 1);
 
+% Create a figure title base
+titleBase = replace(fileBase, '_', '\_');
+
 % Create figure and plot
 hold on
 [hLines, eventTimes, yEnds, yTicksTable] = ...
@@ -1768,7 +1781,7 @@ title(['Spike times for ', titleBase]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_spike_density_multiunit (parsedData, parsedParams, ...
-                                        phaseBoundaries, titleBase)
+                                        phaseBoundaries, fileBase)
 %% Plots a spike density plot from parsed multiunit data
 
 % Retrieve data for plotting
@@ -1778,6 +1791,9 @@ siSeconds = parsedParams.siSeconds;
 minTimeSec = parsedParams.minTimeSec;
 maxTimeSec = parsedParams.maxTimeSec;
 stimStartSec = parsedParams.stimStartSec;
+
+% Create a figure title base
+titleBase = replace(fileBase, '_', '\_');
 
 % Plot as a heatmap
 hold on
