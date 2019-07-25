@@ -18,6 +18,8 @@ function isPositiveScalar = ispositivescalar (x)
 %
 % Used by:
 %       cd/compute_and_plot_average_response.m
+%       cd/parse_multiunit.m
+%       cd/plot_traces.m
 
 % File History:
 % 2018-12-18 Modified from ispositivevector.m

@@ -6,6 +6,9 @@ function [muParams, muData] = parse_all_multiunit(varargin)
 % Example(s):
 %       parse_all_multiunit;
 %       apply_to_all_subdirs(@parse_all_multiunit);
+%       [muParams, muData] = parse_all_multiunit;
+%       parse_all_multiunit('PlotRaw', true);
+%       parse_all_multiunit('PlotAll', true);
 % Outputs:
 %       muParams    - parsed multiunit parameters
 %       muData      - parsed multiunit data

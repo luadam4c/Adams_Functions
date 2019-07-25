@@ -6,6 +6,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 % Example(s):
 %       [parsedParams, parsedData, phaseBoundaries, fileBase, figs] = parse_multiunit('20190217_slice3');
 %       parse_multiunit('20190217_slice3', 'SaveResults', true);
+%       parse_multiunit('20190217_slice3', 'PlotRaw', true);
 % Outputs:
 %       parsedParams- parsed parameters, a table with columns:
 %                       phaseNumber
@@ -192,6 +193,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %       cd/combine_data_from_same_slice.m
 %       cd/compute_autocorrelogram.m
 %       cd/compute_axis_limits.m
+%       cd/compute_default_signal2noise.m
 %       cd/compute_spike_density.m
 %       cd/compute_spike_histogram.m
 %       cd/compute_time_window.m
@@ -207,6 +209,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %       cd/force_column_cell.m
 %       cd/force_matrix.m
 %       cd/iscellnumeric.m
+%       cd/ispositivescalar.m
 %       cd/match_time_info.m
 %       cd/parse_stim.m
 %       cd/plot_horizontal_line.m
@@ -261,6 +264,7 @@ zoomWinRelStimStartSec = [-1; 20];      % for zoom window 1
 % zoomWinRelStimStartSec = [-1; 10];
 zoomWinRelDetectStartSec = [-0.2; 2];   % for zoom window 2
 zoomWinRelFirstSpikeSec = [0; 0.1];     % for zoom window 3
+sweepDurationSec = 60;                  % sweep duration in seconds
 rawDir = 'raw';
 rasterDir = 'rasters';
 autoCorrDir = 'autocorrelograms';
@@ -304,7 +308,7 @@ pulseVectorsDefault = [];               % don't use pulse vectors by default
 phaseBoundariesDefault = [];   	        % no phase boundaries by default
 tVecsDefault = [];                      % set later
 
-% TODO: Make optional argument
+% TODO: Make optional arguments
 baseWindows = [];
 relSnrThres2Max = [];           % set in compute_default_signal2noise.m
 
@@ -460,7 +464,9 @@ if toExtractData && ~isfile(resultsPath)
         fprintf('Too many .mat files matching %s!\n', regexpSliceMatFile);
         varargout{1} = [];
         varargout{2} = [];
-        varargout{3} = gobjects(1);
+        varargout{3} = [];
+        varargout{4} = fileBase;
+        varargout{5} = gobjects(1);
         return;
     elseif numel(allMatPaths) == 1
         fprintf('Loading data for %s ...\n', fileBase);
@@ -545,7 +551,8 @@ else
     %   Note: This assumes all sweeps have the same protocol
     if isempty(signal2Noise)
         fprintf('Determining signal-to-noise ratio for %s ...\n', fileBase);
-        signal2Noise = compute_default_signal2noise(vVecs, siMs, 'tVecs', tVecs, ...
+        signal2Noise = compute_default_signal2noise(vVecs, ...
+                            'siMs', siMs, 'tVecs', tVecs, ...
                             'IdxDetectStart', idxDetectStart, ...
                             'BaseWindows', baseWindows, ...
                             'FiltFreq', filtFreq, ...
@@ -661,7 +668,7 @@ if plotRawFlag
     figs(1) = figure(1); clf
     plot_raw_multiunit(parsedData, parsedParams, ...
                         phaseBoundaries, fileBase, ...
-                        yAmountToStagger);
+                        'YAmountToStagger', yAmountToStagger);
 
     % Save the figure zoomed to several x limits
     save_all_zooms(figs(1), figBaseRaw, zoomWinsMulti);
@@ -725,7 +732,7 @@ if plotCombinedFlag
     ax(1) = subplot(1, 3, 1);
     plot_raw_multiunit(parsedData, parsedParams, ...
                         phaseBoundaries, fileBase, ...
-                        yAmountToStagger);
+                        'YAmountToStagger', yAmountToStagger);
 
     % Plot spike density
     ax(2) = subplot(1, 3, 2);
@@ -742,6 +749,7 @@ if plotCombinedFlag
                 'BarDirection', 'horizontal', ...
                 'PLabel', 'Time (min)', ...
                 'ReadoutLabel', 'Oscillation Duration (s)', ...
+                'ReadoutLimits', [0, sweepDurationSec], ...
                 'PBoundaries', phaseBoundaries);
 
     % Link x axes
@@ -790,162 +798,6 @@ varargout{4} = fileBase;
 varargout{5} = figs;
 
 fprintf('%s analyzed! ...\n\n', fileBase);  
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function signal2Noise = compute_default_signal2noise(vVecs, siMs, varargin)
-%% Computes a default signal-to-noise ratio
-% Usage: signal2Noise = compute_default_signal2noise(vVecs, siMs, tVecs (opt), varargin)
-% Requires:
-%       cd/compute_baseline_noise.m
-%       cd/compute_time_window.m
-%       cd/count_samples.m
-%       cd/extract_elements.m
-%       cd/extract_subvectors.m
-%       cd/force_matrix.m
-%       cd/freqfilter.m
-%       cd/match_time_info.m
-
-% File History:
-% 2019-06-02 Created by Adam Lu
-% TODO: Pull out to its own function and use in detect_spikes_multiunit.m
-
-%% Hard-coded constants
-MS_PER_S = 1000;
-
-% Must be consistent with detect_spikes_multiunit.m   
-artifactLengthMs = 25;
-defaultRelSnrThres2Max = 0.1;
-
-%% Default values for optional arguments
-idxStimStartDefault = 1;        % stim at first time point by default
-idxDetectStartDefault = [];     % set later
-baseWindowsDefault = [];        % set later
-filtFreqDefault = NaN;          % no bandpass filter by default 
-minDelayMsDefault = [];         % set later
-relSnrThres2MaxDefault = [];    % set later
-tVecsDefault = [];              % set later
-
-%% Deal with arguments
-% Check number of required arguments
-if nargin < 2
-    error(create_error_for_nargin(mfilename));
-end
-
-% Set up Input Parser Scheme
-iP = inputParser;
-iP.FunctionName = mfilename;
-
-% Add required inputs to the Input Parser
-addRequired(iP, 'vVecs', ...
-    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['vVecs must be either a numeric array', ...
-                    'or a cell array of numeric arrays!']));
-addRequired(iP, 'siMs', ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'vector'}));
-
-% Add parameter-value pairs to the Input Parser
-addParameter(iP, 'IdxStimStart', idxStimStartDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer'}));
-addParameter(iP, 'IdxDetectStart', idxDetectStartDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'BaseWindows', baseWindowsDefault, ...
-    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['baseWindows must be either a numeric array ', ...
-                    'or a cell array of numeric arrays!']));
-addParameter(iP, 'FiltFreq', filtFreqDefault, ...
-    @(x) isnumeric(x) && isvector(x) && numel(x) <= 2);
-addParameter(iP, 'MinDelayMs', minDelayMsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'RelSnrThres2Max', relSnrThres2MaxDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'tVecs', tVecsDefault, ...
-    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['tVecs must be either a numeric array', ...
-                    'or a cell array of numeric arrays!']));
-
-% Read from the Input Parser
-parse(iP, vVecs, siMs, varargin{:});
-idxStimStart = iP.Results.IdxStimStart;
-idxDetectStart = iP.Results.IdxDetectStart;
-baseWindows = iP.Results.BaseWindows;
-filtFreq = iP.Results.FiltFreq;
-minDelayMs = iP.Results.MinDelayMs;
-relSnrThres2Max = iP.Results.RelSnrThres2Max;
-tVecs = iP.Results.tVecs;
-
-%% Preparation
-% Count the number of samples for each vector
-nSamples = count_samples(vVecs);
-
-% Match time vector(s) with sampling interval(s) and number(s) of samples
-[tVecs, siMs, ~] = match_time_info(tVecs, siMs, nSamples);
-
-% Compute the average sampling interval in ms
-siMsAvg = mean(siMs);
-
-% Set default relative signal-2-noise ratio from threshold and maximum
-if isempty(relSnrThres2Max)
-    relSnrThres2Max = defaultRelSnrThres2Max;
-end
-
-% Set default minimum delay in ms
-if isempty(minDelayMs)
-    minDelayMs = artifactLengthMs;
-end
-
-% Find the starting index for detecting a spike
-if isempty(idxDetectStart)
-    % Compute the minimum delay in samples
-    minDelaySamples = round(minDelayMs ./ siMs);
-
-    % Find the starting index for detecting a spike
-    idxDetectStart = idxStimStart + minDelaySamples;
-end
-
-% Construct default baseline windows
-if isempty(baseWindows)
-    % Convert to the time of stimulation start
-    stimStartMs = extract_elements(tVecs, 'Index', idxStimStart);
-
-    % Compute baseline windows
-    baseWindows = compute_time_window(tVecs, 'TimeEnd', stimStartMs);
-end
-
-%% Do the job
-% Force as a matrix
-tVecs = force_matrix(tVecs);
-vVecs = force_matrix(vVecs);
-
-% Bandpass filter if requested
-if ~isnan(filtFreq)
-    siSeconds = siMsAvg / MS_PER_S;    
-    vVecsFilt = freqfilter(vVecs, filtFreq, siSeconds, 'FilterType', 'band');
-else
-    vVecsFilt = vVecs;
-end
-
-% Compute all instantaneous slopes in uV/ms == mV/s
-slopes = diff(vVecsFilt) ./ siMsAvg;
-
-% Compute baseline slope noise in mV/s
-baseSlopeNoise = compute_baseline_noise(slopes, tVecs(1:(end-1), :), ...
-                                        baseWindows);
-
-% Compute the average baseline slope noise
-avgBaseSlopeNoise = mean(baseSlopeNoise);
-
-% Extract slopes after detection start
-slopesAfterDetectStart = ...
-    extract_subvectors(slopes, 'IndexStart', idxDetectStart);
-
-% Compute the average maximum slope after detection start
-avgSlopeAfterDetectStart = ...
-    mean(extract_elements(slopesAfterDetectStart, 'max'));
-
-% Compute a default signal-to-noise ratio
-signal2Noise = 1 + relSnrThres2Max * ...
-                (avgSlopeAfterDetectStart / avgBaseSlopeNoise - 1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1654,10 +1506,42 @@ end
 
 function plot_raw_multiunit (parsedData, parsedParams, ...
                                 phaseBoundaries, fileBase, ...
-                                yAmountToStagger)
+                                varargin)
+
+%       varargin    - 'YAmountToStagger': amount to stagger 
+%                                           if 'plotmode' is 'stagger'
+%                   must be a positive scalar
+%                   default == uses the original y axis range
 
 %% Hard-coded constants
 MS_PER_S = 1000;
+
+%% Default values for optional arguments
+yAmountToStaggerDefault = [];   % set later  
+
+%% Deal with arguments
+% Check number of required arguments
+if nargin < 4
+    error(create_error_for_nargin(mfilename));
+end
+
+% Set up Input Parser Scheme
+iP = inputParser;
+iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
+
+% Add required inputs to an Input Parser
+% TODO
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'YAmountToStagger', yAmountToStaggerDefault, ...
+    @(x) assert(isempty(x) || ispositivescalar(x), ...
+                ['YAmountToStagger must be either a empty ', ...
+                    'or a positive scalar!']));
+
+% Read from the Input Parser
+parse(iP, varargin{:});
+yAmountToStagger = iP.Results.YAmountToStagger;
 
 %% Preparation
 % Extract parameters
@@ -1685,7 +1569,7 @@ figTitle = ['Raw and Filtered traces for ', titleBase];
 % Compute the original y limits from data
 bestYLimits = compute_axis_limits(vVecs, 'y', 'AutoZoom', true);
 
-% Compute the amount of y to stagger
+% Compute a default amount of y to stagger if not provided
 if isempty(yAmountToStagger)
     yAmountToStagger = range(bestYLimits);
 end
@@ -1718,6 +1602,11 @@ if ~isempty(phaseBoundaries)
     horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
                                     'LineStyle', '--', 'LineWidth', 2);
 end
+
+%{
+OLD CODE:
+
+%}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -37,6 +37,7 @@ function save_all_zooms (fig, figPath, zoomWins, varargin)
 
 % File History:
 % 2019-06-03 Pulled from parse_multiunit.m
+% 2019-07-25 Now restores figure to original x limits at the end
 % 
 
 %% Hard-coded parameters
@@ -81,7 +82,6 @@ outFolder = iP.Results.OutFolder;
 [~, figtypes] = isfigtype(iP.Results.Figtypes, 'ValidateMode', true);
 
 %% Preparation
-
 % Make sure figPath ends with the extension
 figExt = extract_fileparts(figPath, 'extension');
 figPath = force_string_end(figPath, ['.', figExt]);
@@ -114,6 +114,9 @@ check_subdir(outFolder, {fullLabel, zoomLabels{:}});
 % Get the figure
 figure(fig);
 
+% Record the original x limits
+xLimitsOrig = get(fig, 'XLim');
+
 % Save the full figure
 figPathFull = fullfile(outFolder, fullLabel, [figBase, '_', fullLabel]);
 save_all_figtypes(fig, figPathFull, 'png');
@@ -132,6 +135,9 @@ for iWin = 1:nWins
     % Save figure
     save_all_figtypes(fig, figPath, 'png');
 end
+
+% Restore to original x limits
+xlim(xLimitsOrig);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
