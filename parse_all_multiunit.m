@@ -76,9 +76,8 @@ function [muParams, muData] = parse_all_multiunit(varargin)
 % 2019-06-10 Added 'PlotCombinedFlag'
 % 2019-07-24 Added 'Directory', 'InFolder' & 'OutFolder'
 % 2019-07-24 Added saveResultsFlag
-
-% TODO: Make outFolder optional parameters
-% TODO: Make combining optional
+% 2019-07-25 Now combines slice data if .abf files present 
+%               but .mat file not present
 
 %% Hard-coded parameters
 matFileSuffix = '_multiunit_data';
@@ -100,8 +99,8 @@ plotAutoCorrFlagDefault = [];           % set in parse_multiunit.m
 plotRawFlagDefault = [];                % set in parse_multiunit.m
 plotRasterFlagDefault = [];             % set in parse_multiunit.m
 plotMeasuresFlagDefault = [];           % set in parse_multiunit.m
-saveMatFlagDefault = true;
-saveResultsFlagDefault = true;
+saveMatFlagDefault = false;
+saveResultsFlagDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -285,11 +285,11 @@ plotAutoCorrFlagDefault = [];
 plotRawFlagDefault = [];
 plotRasterFlagDefault = [];
 plotMeasuresFlagDefault = [];
-saveMatFlagDefault = true;
-saveResultsFlagDefault = true;
+saveMatFlagDefault = false;
+saveResultsFlagDefault = false;
 directoryDefault = pwd;
-inFolderDefault = '';                   % set later
-outFolderDefault = '';                  % set later
+inFolderDefault = '';           % set later
+outFolderDefault = '';          % set later
 fileBaseDefault = 'unnamed';    % set later
 stimStartMsDefault = [];        % set later
 pulseVectorsDefault = [];       % don't use pulse vectors by default
@@ -510,8 +510,9 @@ end
 
 %% Do the job
 if isfile(resultsPath)
-    fprintf('Loading already parsed results for %s ...\n', fileBase);
-    load(resultsPath, 'parsedParams', 'parsedData');
+    fprintf('Loading already parsed results from %s ...\n', resultsPath);
+    load(resultsPath, 'parsedParams', 'parsedData', ...
+                      'phaseBoundaries', 'fileBase');
 else
     % Detect stimulation start time if not provided
     %   Otherwise find the corresponding index in the time vector
@@ -584,7 +585,8 @@ else
 
     % Save the results
     if saveResultsFlag
-        save(resultsPath, 'parsedParams', 'parsedData', '-v7.3');
+        save(resultsPath, 'parsedParams', 'parsedData', ...
+                          'phaseBoundaries', 'fileBase', '-v7.3');
     end
 end
 
@@ -676,7 +678,7 @@ if plotRasterFlag
     save_all_zooms(figs(2), figBaseRaster, zoomWinsMulti);
 end
 
-%% Plot spike den plot_all_spike_detectionssity
+%% Plot spike density plot
 if plotSpikeDensityFlag
     fprintf('Plotting spike density plot for %s ...\n', fileBase);
 
@@ -715,31 +717,37 @@ if plotCombinedFlag
     figCombined.Position = positionNew;
 
     % Plot raw data
-    subplot(1, 3, 1);
+    % TODO: Fix y ticks
+    ax(1) = subplot(1, 3, 1);
     plot_raw_multiunit(parsedData, parsedParams, ...
                         phaseBoundaries, titleBase, ...
                         yAmountToStagger);
 
     % Plot spike density
-    subplot(1, 3, 2);
+    ax(2) = subplot(1, 3, 2);
     plot_spike_density_multiunit(parsedData, parsedParams, ...
                                  phaseBoundaries, titleBase);
 
     % Plot oscillation duration
-    subplot(1, 3, 3);
-    plot_bar(parsedParams.oscDurationMs, ...
+    % TODO: Add RBoundaries
+    % TODO: Fix phase boundaries width
+    ax(3) = subplot(1, 3, 3);
+
+    plot_bar(parsedParams.oscDurationSec, ...
                 'ForceVectorAsRow', false, ...
                 'ReverseOrder', true, ...
                 'BarDirection', 'horizontal', ...
-                'PValues', pValues, ...
-                'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
-                'PTickAngle', pTickAngle, ...
                 'PLabel', 'Time (min)', ...
                 'ReadoutLabel', 'Oscillation Duration (s)', ...
-                'PBoundaries', phaseBoundaries, ...
-                otherArguments)
+                'PBoundaries', phaseBoundaries);
 
+    % Link x axes
+    linkaxes(ax, 'x');
+            
     figs(4) = figCombined;
+
+    % Save the figure zoomed to several x limits
+    save_all_zooms(figs(4), figBaseCombined, zoomWinsMulti);
 end
 
 %% Plot time series of measures
