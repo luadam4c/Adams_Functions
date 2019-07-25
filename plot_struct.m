@@ -316,6 +316,12 @@ if isempty(rBoundaries)
         fieldVals = fieldData(:, iField);
         pBoundariesThis = pBoundaries(iField, :);
 
+        % TODO: Make this a function
+        % (pValues, fieldVals, pBoundariesThis, ...
+        %   'EndPoints', nSweepsLastOfPhase, ...
+        %   'NToAverage', nSweepsToAverage, ...
+        %   'MaxRange2Mean', maxRange2Mean)
+
         % Find the last baseline index
         lastBaseIndex = find(pValues < pBoundariesThis(1), 1, 'last');
 

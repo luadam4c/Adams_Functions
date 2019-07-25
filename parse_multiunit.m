@@ -257,6 +257,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 % 2019-06-10 Added plotCombinedFlag
 % 2019-07-24 Added saveResultsFlag
 % 2019-07-25 Now returns phaseBoundaries and fileBase as 3rd and 4th arguments
+% TODO: Make parameters optional arguments
 
 %% Hard-coded parameters
 plotTypeMeasures = 'bar'; %'tuning';
