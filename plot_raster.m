@@ -74,13 +74,13 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 % 2018-12-18 Now uses iP.KeepUnmatched
 % 2019-02-23 Fixed bugs
 % 2019-02-23 Added 'YLimits' as an optional argument
-% 2019-02-24 Added maxYTicks
+% 2019-02-24 Added maxNYTicks
 % 2019-02-25 Added 'DurationWindow' as an optional argument
 % 2019-03-14 Fixed the case when there is a condition with no spikes
 % 
 
 %% Hard-coded parameters
-maxYTicks = 20;             % maximum number of Y ticks
+maxNYTicks = 20;             % maximum number of Y ticks
 
 %% Default values for optional arguments
 durationWindowDefault = []; % no duration line by default
@@ -271,9 +271,9 @@ else
     yIncr = abs(yMidsAll(2) - yMidsAll(1));
 end
 
-% Decide on indices for ticks if total number of vectors exceed maxYTicks
-if nVectorsAll > maxYTicks
-    indTicks = create_indices([1, nVectorsAll], 'MaxNum', maxYTicks);
+% Decide on indices for ticks if total number of vectors exceed maxNYTicks
+if nVectorsAll > maxNYTicks
+    indTicks = create_indices([1, nVectorsAll], 'MaxNum', maxNYTicks);
 end
 
 % Decide on Y tick values
@@ -283,7 +283,7 @@ if ~ischar(yTickLocs) || ~strcmpi(yTickLocs, 'suppress')
         yTicks.locs = yTickLocs;
     else
         % Set the Y tick values at the midpoints
-        if nVectorsAll <= maxYTicks
+        if nVectorsAll <= maxNYTicks
             yTicks.locs = yMidsAll;
         else
             yTicks.locs = yMidsAll(indTicks);            
@@ -301,7 +301,7 @@ if ~ischar(yTickLabels) || ~strcmpi(yTickLabels, 'suppress')
         trialLabels = create_labels_from_numbers(trialNosAll);
 
         % Use the trial numbers
-        if nVectorsAll <= maxYTicks
+        if nVectorsAll <= maxNYTicks
             yTicks.labels = trialLabels;
         else
             yTicks.labels = trialLabels(indTicks);            

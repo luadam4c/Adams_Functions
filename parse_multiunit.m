@@ -248,7 +248,8 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 
 %% Hard-coded parameters
 plotTypeMeasures = 'bar'; %'tuning';
-yAmountToStagger = 10;
+yAmountToStagger = [];
+% yAmountToStagger = 10;
 % zoomWinRelStimStartSec = [-1; 10];
 zoomWinRelStimStartSec = [-1; 20];
 zoomWinRelDetectStartSec = [-0.2; 2];
@@ -732,7 +733,6 @@ if plotCombinedFlag
     % TODO: Add RBoundaries
     % TODO: Fix phase boundaries width
     ax(3) = subplot(1, 3, 3);
-
     plot_bar(parsedParams.oscDurationSec, ...
                 'ForceVectorAsRow', false, ...
                 'ReverseOrder', true, ...

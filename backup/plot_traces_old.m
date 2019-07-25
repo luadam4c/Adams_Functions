@@ -1231,6 +1231,231 @@ end
 %{ 
 OLD CODE:
 
+function fig = plot_traces(tVec, data, xLimits, xLabel, yLabel, ...
+                            traceLabels, figTitle, figName, figNum)
+%       xLimits     - x-axis limits
+%       xLabel      - x-axis label
+%       yLabel      - y-axis label
+%       traceLabels - legend labels for each trace
+%       figTitle    - figure title
+%       figName     - figure name
+%       figNum      - figure number
+
+% Hold off and close figure
+hold off;
+close(fig);
+
+saveas(fig, figName, 'png');
+
+fig = figure(figNum);
+set(fig, 'Visible', 'Off');
+
+% Determine the appropriate time axis limits
+if ~isempty(xLimits)
+    if ~strcmpi(xLimits, 'suppress')
+        xlim(xLimits);
+    end
+else
+    xlim([min(tVec), max(tVec)]);
+end
+
+% Determine the appropriate y axis limits
+if ~isempty(yLimits)
+    if ~strcmpi(yLimits, 'suppress')
+        ylim(yLimits);
+    end
+else
+    if rangeY ~= 0
+        ylim([minY - 0.2 * rangeY, maxY + 0.2 * rangeY]);
+    end
+end
+
+    @(x) any(validatestring(x, validLegendLocations)));
+legendLocation = validatestring(iP.Results.LegendLocation, ...
+                                validLegendLocations);
+
+subplot(nPlots, 1, iPlot);
+
+if ~iscell(yLabel)
+    yLabel = {yLabel};
+end
+if iscell(yLabel)
+    if numel(yLabel) > nPlots
+        fprintf('Too many y labels! Only some will be used!\n');
+    elseif numel(yLabel) < nPlots
+        fprintf('Not enough y labels!!\n');
+        return;
+    end
+end
+
+nPlots = size(data, 2);
+
+xLimits = cellfun(@(x), [min(x), max(x)], tVecs, 'UniformOutput', false);
+
+minY = min(min(data));
+maxY = max(max(data));
+
+yLabel = cell(1, nPlots);
+parfor iPlot = 1:nPlots
+    yLabel{iPlot} = ['Trace #', num2str(iPlot)];
+end
+
+traceLabels = cell(1, nPlots);
+parfor iPlot = 1:nPlots
+    traceLabels{iPlot} = ['Trace #', num2str(iPlot)];
+end
+
+% Hold on if more than one trace
+if nPlots > 1
+    hold on
+end
+% Hold off if more than one trace
+if nPlots > 1
+    hold off
+end
+
+% Force as column cell arrays
+yLabel = force_column_cell(yLabel);
+
+% Match up to nPlots elements
+yLabel = match_dimensions(yLabel, [nPlots, 1]);
+
+% Force data vectors as column cell arrays of column vectors
+[tVecs, data, dataToCompare] = ...
+    argfun(@force_column_cell, tVecs, data, dataToCompare);
+
+% Match the number of vectors between data and dataToCompare
+[data, dataToCompare] = match_array_counts(data, dataToCompare);
+
+% Match the dimensions of tVecs to data
+tVecs = match_dimensions(tVecs, size(data));
+
+%       cd/argfun.m
+%       cd/force_column_cell.m
+%       cd/match_dimensions.m
+%       cd/match_array_counts.m
+
+% Hold off
+hold off
+
+% Hold off
+hold off
+
+if ~strcmpi(xLimitsThis, 'suppress')
+end
+
+% Create a new figure number
+if ~isempty(figNumber)
+    figNumberThis = figNumber + rand(1) * 1000;
+else
+    figNumberThis = [];
+end
+
+yLabel = arrayfun(@(x) ['Trace #', num2str(x)], ...
+                    transpose(1:nPlots), 'UniformOutput', false);
+traceLabels = arrayfun(@(x) ['Trace #', num2str(x)], ...
+                        transpose(1:nPlots), 'UniformOutput', false);
+
+% Compute minimum and maximum time values
+minT = min(cellfun(@min, tVecs));
+maxT = max(cellfun(@max, tVecs));
+
+% Compute x limits
+xLimits = [minT, maxT];
+
+yLimits = [minY - 0.2 * rangeY, maxY + 0.2 * rangeY];
+
+if ~isempty(figName)
+    % Create an invisible figure and clear it
+    if ~isempty(figNumber)
+        fig = figure(figNumber);
+        set(fig, 'Visible', 'off');
+    else
+        fig = figure('Visible', 'off');
+    end
+    clf(fig);
+else
+    % Get the current figure
+    fig = gcf;
+end
+
+set(fig, 'Visible', 'off');
+
+axes(subPlots(iPlot));
+
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+
+minY = min([cellfun(@min, data), cellfun(@min, dataToCompare)]);
+maxY = max([cellfun(@max, data), cellfun(@max, dataToCompare)]);
+
+if isempty(yLimits) && ~strcmpi(plotMode, 'parallel') && rangeY ~= 0
+rangeY = maxY - minY;
+
+if isempty(yLimits) && ~strcmpi(plotMode, 'parallel')
+
+%       cd/compute_xlimits.m
+%       cd/compute_ylimits.m
+
+if iscell(tVecs)
+    tVec = tVecs{1};
+else
+    tVec = tVecs;
+end
+
+xLimits = compute_xlimits(tVec, 'Coverage', 100);
+
+% Put all data together
+allData = [data; dataToCompare];
+
+% Compute minimum and maximum Y values
+minY = apply_iteratively(@min, allData);
+maxY = apply_iteratively(@max, allData);
+
+% Compute the y limits
+yLimits = compute_ylimits(minY, maxY, 'Coverage', 80);
+
+% Put all data together
+allData = [data{iPlot}; dataToCompare{iPlot}];
+
+% Compute minimum and maximum Y values
+minY = apply_iteratively(@min, allData);
+maxY = apply_iteratively(@max, allData);
+
+% Compute the y limits for this subplot
+yLimitsThis = compute_axis_limits(minY, maxY, 'Coverage', 80);
+
+% If all time vectors are the same, compress
+if numel(unique(tVecs)) == 1
+    tVec = tVecs{1};
+end
+
+% Construct a file suffix
+suffixThis = sprintf('_%s.png', intervalStrThis);
+
+% Create a new figure name
+figNameThis = replace(figName, '.png', suffixThis);
+
+%                   - 'ColorMap': a color map that also groups traces
+%                                   each set of traces will be on the same row
+%                                   if plot mode is 'parallel'
+
+if nPlots <= maxRowsWithOneOnly
+    colorMap = create_colormap(nPlots);
+else
+    colorMap = create_colormap(floor(sqrt(nPlots)));
+end
+
+% Plot the data using the color map
+p = plot(tVecs{iPlot}, data{iPlot}, ...
+            'Color', colorThis, otherArguments);
+
+title(figTitle, 'Interpreter', 'none');
+title(figTitleThis, 'Interpreter', 'none');
+title(figTitle, 'Interpreter', 'none');
+
+set(ax.XAxis, 'Visible', 'off');
+set(ax.YAxis, 'Visible', 'off');
+
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
