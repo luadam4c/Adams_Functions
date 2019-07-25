@@ -115,10 +115,11 @@ check_subdir(outFolder, {fullLabel, zoomLabels{:}});
 figure(fig);
 
 % Record the original x limits
-xLimitsOrig = get(fig, 'XLim');
+xLimitsOrig = get(gca, 'XLim');
 
 % Save the full figure
 figPathFull = fullfile(outFolder, fullLabel, [figBase, '_', fullLabel]);
+fprintf('Saving the full figure to %s ...\n', figPathFull);
 save_all_figtypes(fig, figPathFull, 'png');
 
 % Save zoomed figures
@@ -133,6 +134,7 @@ for iWin = 1:nWins
     figPath = fullfile(outFolder, zoomLabelThis, [figBase, '_', zoomLabelThis]);
 
     % Save figure
+    fprintf('Saving zoom window #%d to %s ...\n', iWin, figPath);
     save_all_figtypes(fig, figPath, 'png');
 end
 
