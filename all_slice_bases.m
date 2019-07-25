@@ -15,7 +15,10 @@ function sliceBases = all_slice_bases (varargin)
 %                   default == pwd
 %                   - 'Extension': file extension to limit to
 %                   must be a string scalar or a character vector
-%                   default == abf
+%                   default == ''
+%                   - 'RegExpFile': regular expression for files
+%                   must be a string scalar or a character vector
+%                   default == ''
 %                   - 'ForceCellOutput': whether to force output as a cell array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
@@ -25,7 +28,7 @@ function sliceBases = all_slice_bases (varargin)
 %                       'date'  - by modification date
 %                       'bytes' - by file size in bytes
 %                   default == 'date'
-%                   - 'RegExp': regular expression to extract
+%                   - 'RegExpBase': regular expression for slice base
 %                   must be a string scalar or a character vector
 %                   default == '.*slice[0-9]*'
 %                   - Any other parameter-value pair for the all_files() function
@@ -35,6 +38,7 @@ function sliceBases = all_slice_bases (varargin)
 %
 % Used by:
 %       cd/combine_data_from_same_slice.m
+%       cd/parse_all_multiunit.m
 
 % File History:
 % 2019-07-24 Moved from combine_data_from_same_slice.m
@@ -45,10 +49,11 @@ validSortBys = {'name', 'date', 'bytes'};
 
 %% Default values for optional arguments
 directoryDefault = pwd;
-extensionDefault = 'abf';           % look in .abf file names by default
+extensionDefault = '';
+regExpFileDefault = '';
 forceCellOutputDefault = true;      % force output as a cell array by default
 sortByDefault = 'date';             % sort by date by default
-regExpDefault = '.*slice[0-9]*';
+regExpBaseDefault = '.*slice[0-9]*';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -63,20 +68,23 @@ addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'Extension', extensionDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'RegExpFile', regExpFileDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SortBy', sortByDefault, ...
     @(x) any(validatestring(x, validSortBys)));
-addParameter(iP, 'RegExp', regExpDefault, ...
+addParameter(iP, 'RegExpBase', regExpBaseDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 directory = iP.Results.Directory;
 extension = iP.Results.Extension;
+regExpFile = iP.Results.RegExpFile;
 forceCellOutput = iP.Results.ForceCellOutput;
 sortBy = validatestring(iP.Results.SortBy, validSortBys);
-regExp = iP.Results.RegExp;
+regExpBase = iP.Results.RegExpBase;
 
 % Keep unmatched arguments for the all_files() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -85,11 +93,13 @@ otherArguments = struct2arglist(iP.Unmatched);
 % Get all the abf file names
 [~, allAbfPaths] = ...
     all_files('Directory', directory, 'Extension', extension, ...
-              'SortBy', sortBy, 'ForceCellOutput', forceCellOutput, ...
-              otherArguments{:});
+                'RegExp', regExpFile, 'SortBy', sortBy, ...
+                'ForceCellOutput', forceCellOutput, ...
+                otherArguments{:});
 
 % Extract all slice names
-allSliceNames = extract_fileparts(allAbfPaths, 'base', 'RegExp', regExp);
+allSliceNames = extract_fileparts(allAbfPaths, 'base', ...
+                                    'RegExp', regExpBase);
 
 % Get unique slice bases
 sliceBases = unique(allSliceNames);

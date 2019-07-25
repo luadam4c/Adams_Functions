@@ -58,6 +58,7 @@ function [muParams, muData] = parse_all_multiunit(varargin)
 %
 % Requires:
 %       cd/all_files.m
+%       cd/all_slice_bases.m
 %       cd/combine_data_from_same_slice.m
 %       cd/parse_multiunit.m
 %       cd/plot_measures.m
@@ -84,6 +85,7 @@ matFileSuffix = '_multiunit_data';
 varsNeeded = {'sliceBase', 'vVecsSl', 'siMsSl', 'iVecsSl', ...
                 'phaseBoundaries', 'phaseStrs'};
 regexpSliceMatFile = '.*slice[0-9]*.mat';
+regexpSliceAbfFile = '.*slice[0-9]*.*.abf';
 
 %% Default values for optional arguments
 directoryDefault = pwd;
@@ -167,28 +169,48 @@ if isempty(outFolder)
     outFolder = inFolder;
 end
 
-% Get all the slice data .mat file names available
-%   Note: .abf files will be ignored if these exist
-[~, allMatPaths] = ...
-    all_files('Directory', inFolder, 'RegExp', regexpSliceMatFile, ...
-                'SortBy', 'date', 'ForceCellOutput', true);
+% Get all the slice bases with .mat data
+sliceBasesMat = all_slice_bases('Directory', inFolder, ...
+                                'RegExpFile', regexpSliceMatFile, ...
+                                'ForceCellOutput', true, 'SortBy', 'date', ...
+                                'RegExpBase', '.*slice[0-9]*');
+
+% Get all the slice bases with .abf data
+sliceBasesAbf = all_slice_bases('Directory', inFolder, ...
+                                'RegExpFile', regexpSliceAbfFile, ...
+                                'ForceCellOutput', true, 'SortBy', 'date', ...
+                                'RegExpBase', '.*slice[0-9]*');
+
 
 % Either load .mat files or combine data from .abf files
-% TODO: What if only some .abf files were converted?
-if ~isempty(allMatPaths)
-    % Load data for each slice as a structure array
-    fprintf('Loading data for each slice ...\n');
-    allDataStruct = cellfun(@(x) load(x, varsNeeded{:}), allMatPaths);
-
-    % Convert to a table
-    allDataTable = struct2table(allDataStruct, 'AsArray', true);
-else
+if isempty(sliceBasesMat)
     % Combine data from the same slice
     fprintf('Combining data for each slice ...\n');
     allDataTable = ...
         combine_data_from_same_slice('Directory', inFolder, ...
                                     'SaveMatFlag', saveMatFlag, ...
                                     'VarsToSave', varsNeeded);
+else
+    % See if there are any slice data yet to be combined
+    sliceToCombine = setdiff(sliceBasesAbf, sliceBasesMat);
+
+    % Combine data from each slice that has not been combined
+    cellfun(@(x) combine_data_from_same_slice('SliceBase', x, ...
+                                            'SaveMatFlag', true, ...
+                                            'VarsToSave', varsNeeded), ...
+            sliceToCombine);
+
+    % Get all the slice data .mat file names available
+    [~, allMatPaths] = ...
+        all_files('Directory', inFolder, 'RegExp', regexpSliceMatFile, ...
+                    'SortBy', 'date', 'ForceCellOutput', true);
+
+    % Load data for each slice as a structure array
+    fprintf('Loading data for each slice ...\n');
+    allDataStruct = cellfun(@(x) load(x, varsNeeded{:}), allMatPaths);
+
+    % Convert to a table
+    allDataTable = struct2table(allDataStruct, 'AsArray', true);
 end
 
 % Extract from the table

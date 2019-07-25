@@ -100,9 +100,10 @@ end
 
 % Decide on the unique slice bases
 if isempty(sliceBases)
+    % Look for unique slice bases that have .abf files
     sliceBases = all_slice_bases('Directory', inFolder, 'Extension', 'abf', ...
                                 'ForceCellOutput', true, 'SortBy', 'date', ...
-                                'RegExp', '.*slice[0-9]*');
+                                'RegExpBase', '.*slice[0-9]*');
 end
 
 % Make sure sliceBase is a cell array
