@@ -4,9 +4,11 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       [parsedParams, parsedData, phaseBoundaries, fileBase, figs] = parse_multiunit('20190217_slice3');
+%       parse_multiunit(vVecs, siMs, 'PulseVectors', iVecs);
+%       parse_multiunit('20190217_slice3');
 %       parse_multiunit('20190217_slice3', 'SaveResults', true);
 %       parse_multiunit('20190217_slice3', 'PlotRaw', true);
+%       [parsedParams, parsedData, phaseBoundaries, fileBase, figs] = parse_multiunit('20190217_slice3');
 % Outputs:
 %       parsedParams- parsed parameters, a table with columns:
 %                       phaseNumber
@@ -493,11 +495,13 @@ end
 fprintf('Setting default flags for %s ...\n', fileBase);
 [plotSpikeDetectionFlag, plotSpikeDensityFlag, ...
 plotSpikeHistogramFlag, plotAutoCorrFlag, ...
-plotRawFlag, plotRasterFlag, plotMeasuresFlag] = ...
+plotRawFlag, plotRasterFlag, plotMeasuresFlag, ...
+plotCombinedFlag] = ...
     argfun(@(x) set_default_flag(x, plotAllFlag), ...
                 plotSpikeDetectionFlag, plotSpikeDensityFlag, ...
                 plotSpikeHistogramFlag, plotAutoCorrFlag, ...
-                plotRawFlag, plotRasterFlag, plotMeasuresFlag);
+                plotRawFlag, plotRasterFlag, plotMeasuresFlag, ...
+                plotCombinedFlag);
 
 
 fprintf('Initialize plotting parameters for %s ...\n', fileBase);
@@ -740,10 +744,10 @@ if plotCombinedFlag
                                  phaseBoundaries, fileBase);
 
     % Plot oscillation duration
-    % TODO: Add RBoundaries
-    % TODO: Fix phase boundaries width
+    % TODO: Add RBoundaries & IndSelected
     ax(3) = subplot(1, 3, 3);
-    plot_bar(parsedParams.oscDurationSec, ...
+    oscDurationSec = parsedParams.oscDurationSec;
+    plot_bar(oscDurationSec, ...
                 'ForceVectorAsRow', false, ...
                 'ReverseOrder', true, ...
                 'BarDirection', 'horizontal', ...
@@ -751,10 +755,20 @@ if plotCombinedFlag
                 'ReadoutLabel', 'Oscillation Duration (s)', ...
                 'ReadoutLimits', [0, sweepDurationSec], ...
                 'PBoundaries', phaseBoundaries);
+    % 'RBoundaries', 'auto'
+    % 'IndSelected', 'auto'
+
+    % plot_horizontal_line(phaseBoundaries, 'LineWidth', 2, ...
+    %                     'LineStyle', '--', 'Color', 'g');
+    % plot_vertical_line(rBoundaries, 'LineWidth', 2, ...
+    %                     'LineStyle', '--', 'Color', 'r');
+    % indSelected = 
+    % valSelected = 
+    % plot(valSelected, indSelected, 'rx', 'LineWidth', 2, 'MarkerSize', 6);
 
     % Link x axes
     linkaxes(ax, 'x');
-            
+
     figs(4) = figCombined;
 
     % Save the figure zoomed to several x limits
@@ -1594,7 +1608,7 @@ plot_traces(tVecsSec, vVecsFilt, 'Verbose', false, ...
 
 % Plot stimulation start
 vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
-                                'LineStyle', '--');
+                                'LineStyle', '--', 'LineWidth', 0.5);
 
 % Plot phase boundaries
 if ~isempty(phaseBoundaries)
@@ -1656,7 +1670,7 @@ hold on
 
 % Plot stimulation start
 vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
-                                'LineStyle', '--');
+                                'LineStyle', '--', 'LineWidth', 0.5);
 % Plot phase boundaries
 if ~isempty(phaseBoundaries)
     yBoundaries = nVectors - phaseBoundaries + 1;
@@ -1731,7 +1745,7 @@ vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
 if ~isempty(phaseBoundaries)
     yBoundaries = nSweeps - phaseBoundaries + 1;
     horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
-                                'LineStyle', '--', 'LineWidth', 1, ...
+                                'LineStyle', '--', 'LineWidth', 2, ...
                                 'XLimits', xLimits);
 end
 
