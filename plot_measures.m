@@ -3,6 +3,7 @@
 
 % Requires:
 %       cd/combine_variables_across_tables.m
+%       cd/compute_phase_average.m
 %       cd/count_vectors.m
 %       cd/create_indices.m
 %       cd/extract_common_directory.m
@@ -39,12 +40,12 @@ phaseStrs = {'Baseline', 'Wash-on', 'Wash-out'};
 % phaseStrs = {'baseline', 'washon', 'washoff'};
 
 % Analysis parameters
-%   Note: must be consistent with plot_struct.m
+%   Note: must be consistent with parse_multiunit.m
 nSweepsLastOfPhase = 10;
 nSweepsToAverage = 5;
-% maxRange2Mean = 40;
+maxRange2Mean = 40;
 % maxRange2Mean = 20;
-maxRange2Mean = 200;
+% maxRange2Mean = 200;
 
 % File patterns
 sliceFilePattern = '.*slice.*';

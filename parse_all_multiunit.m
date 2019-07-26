@@ -54,7 +54,7 @@ function [muParams, muData] = parse_all_multiunit(varargin)
 %                   - 'SaveMatFlag': whether to save combined data
 %                                           as matfiles
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   default == true
 %                   - 'SaveResultsFlag': whether to save parsed results
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -102,7 +102,7 @@ plotAutoCorrFlagDefault = [];           % set in parse_multiunit.m
 plotRawFlagDefault = [];                % set in parse_multiunit.m
 plotRasterFlagDefault = [];             % set in parse_multiunit.m
 plotMeasuresFlagDefault = [];           % set in parse_multiunit.m
-saveMatFlagDefault = false;
+saveMatFlagDefault = true;
 saveResultsFlagDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

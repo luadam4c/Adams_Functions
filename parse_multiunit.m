@@ -159,7 +159,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %                   - 'SaveMatFlag': whether to save combined data
 %                                           as matfiles
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   default == true
 %                   - 'SaveResultsFlag': whether to save parsed results
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -300,7 +300,7 @@ plotAutoCorrFlagDefault = [];
 plotRawFlagDefault = [];
 plotRasterFlagDefault = [];
 plotMeasuresFlagDefault = [];
-saveMatFlagDefault = false;
+saveMatFlagDefault = true;
 saveResultsFlagDefault = false;
 directoryDefault = pwd;
 inFolderDefault = '';                   % set later
@@ -326,6 +326,12 @@ maxInterBurstIntervalMs = 2000;
 minSpikeRateInBurstHz = 100;
 filterWidthMs = 100;
 minRelProm = 0.02;
+
+% Analysis parameters
+%   Note: must be consistent with plot_measures.m
+nSweepsLastOfPhase = 10;
+nSweepsToAverage = 5;
+maxRange2Mean = 40;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -722,6 +728,18 @@ if plotCombinedFlag
     % Create a figure base
     figBaseCombined = fullfile(outFolderCombined, [fileBase, '_combined']);
 
+    % Extract the oscillation duration
+    oscDurationSec = parsedParams.oscDurationSec;
+
+    % Compute the baseline average and indices selected for this field
+    [baselineAverage, indSelected] = ...
+        compute_phase_average(oscDurationSec, ...
+                    'PhaseBoundaries', phaseBoundaries, ...
+                    'PhaseNumber', 1, ...
+                    'NLastOfPhase', nSweepsLastOfPhase, ...
+                    'NToAverage', nSweepsToAverage, ...
+                    'MaxRange2Mean', maxRange2Mean);
+
     % Create a new figure
     figCombined = figure(4); clf
     
@@ -745,9 +763,7 @@ if plotCombinedFlag
                                  phaseBoundaries, fileBase);
 
     % Plot oscillation duration
-    % TODO: Add RBoundaries & IndSelected
     ax(3) = subplot(1, 3, 3);
-    oscDurationSec = parsedParams.oscDurationSec;
     plot_bar(oscDurationSec, ...
                 'ForceVectorAsRow', false, ...
                 'ReverseOrder', true, ...
@@ -755,17 +771,9 @@ if plotCombinedFlag
                 'PLabel', 'Time (min)', ...
                 'ReadoutLabel', 'Oscillation Duration (s)', ...
                 'ReadoutLimits', [0, sweepDurationSec], ...
-                'PBoundaries', phaseBoundaries);
-    % 'RBoundaries', 'auto'
-    % 'IndSelected', 'auto'
-
-    % plot_horizontal_line(phaseBoundaries, 'LineWidth', 2, ...
-    %                     'LineStyle', '--', 'Color', 'g');
-    % plot_vertical_line(rBoundaries, 'LineWidth', 2, ...
-    %                     'LineStyle', '--', 'Color', 'r');
-    % indSelected = 
-    % valSelected = 
-    % plot(valSelected, indSelected, 'rx', 'LineWidth', 2, 'MarkerSize', 6);
+                'PBoundaries', phaseBoundaries, ...
+                'RBoundaries', baselineAverage, ...
+                'IndSelected', indSelected);
 
     % Link x axes
     linkaxes(ax, 'x');
@@ -802,7 +810,10 @@ if plotMeasuresFlag
                     'PLabel', 'Time (min)', 'FigNames', figPathsMeasures, ...
                     'FigTitles', figTitlesMeasures, ...
                     'PBoundaries', phaseBoundaries, ...
-                    'PlotSeparately', true);
+                    'PlotSeparately', true, ...
+                    'NLastOfPhase', nSweepsLastOfPhase, ...
+                    'NToAverage', nSweepsToAverage, ...
+                    'MaxRange2Mean', maxRange2Mean);
 end
 
 %% Outputs

@@ -24,6 +24,15 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %                       if a matrix, each row is for a different field
 %                   must be a numeric array
 %                   default == []
+%                   - 'NLastOfPhase': number of values at the last of a phase
+%                   must be a positive integer scalar
+%                   default == 10
+%                   - 'NToAverage': number of values to average
+%                   must be a positive integer scalar
+%                   default == 5
+%                   - 'MaxRange2Mean': maximum percentage of range versus mean
+%                   must be a nonnegative scalar
+%                   default == 40%
 %                   - 'LineSpec': line specification
 %                   must be a character array
 %                   default == '-'
@@ -66,7 +75,8 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
-%                   - Any other parameter-value pair for the plot_tuning_curve() function
+%                   - Any other parameter-value pair for the 
+%                       plot_tuning_curve() or plot_bar() function
 %
 % Requires:
 %       ~/Downloaded_Functions/rgb.m
@@ -105,16 +115,13 @@ maxNPTicks = 10;
 barDirection = 'horizontal';
 barReverseOrder = true;
 
-% Analysis parameters
-%   Note: must be consistent with plot_measures.m
-nSweepsLastOfPhase = 10;
-nSweepsToAverage = 5;
-maxRange2Mean = 40;
-
 %% Default values for optional arguments
 plotTypeDefault = 'tuning';
 pBoundariesDefault = [];
 rBoundariesDefault = [];
+nLastOfPhaseDefault = 10;       % select from last 10 values by default
+nToAverageDefault = 5;          % select 5 values by default
+maxRange2MeanDefault = 40;      % range is not more than 40% of mean by default
 lineSpecDefault = 'o';
 lineWidthDefault = [];
 markerEdgeColorDefault = [];
@@ -156,6 +163,12 @@ addParameter(iP, 'PBoundaries', pBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'RBoundaries', rBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'NLastOfPhase', nLastOfPhaseDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'NToAverage', nToAverageDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'LineSpec', lineSpecDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'LineWidth', lineWidthDefault);
@@ -191,6 +204,9 @@ parse(iP, structArray, varargin{:});
 plotType = validatestring(iP.Results.PlotType, validPlotTypes);
 pBoundaries = iP.Results.PBoundaries;
 rBoundaries = iP.Results.RBoundaries;
+nLastOfPhase = iP.Results.NLastOfPhase;
+nToAverage = iP.Results.NToAverage;
+maxRange2Mean = iP.Results.MaxRange2Mean;
 lineSpec = iP.Results.LineSpec;
 lineWidth = iP.Results.LineWidth;
 markerEdgeColor = iP.Results.MarkerEdgeColor;
@@ -208,7 +224,7 @@ outFolder = iP.Results.OutFolder;
 figNames = iP.Results.FigNames;
 [~, figtypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
-% Keep unmatched arguments for the line() function
+% Keep unmatched arguments for the plot_tuning_curve() or plot_bar() function
 otherArguments = iP.Unmatched;
 
 % Check relationships between arguments
@@ -312,31 +328,14 @@ indSelected = cell(nFields, 1);
 if isempty(rBoundaries)
     rBoundaries = nan(nFields, 1);
     for iField = 1:nFields
-        % Get the field value vector for this field
-        fieldVals = fieldData(:, iField);
-        pBoundariesThis = pBoundaries(iField, :);
-
-        % TODO: Make this a function
-        % (pValues, fieldVals, pBoundariesThis, ...
-        %   'EndPoints', nSweepsLastOfPhase, ...
-        %   'NToAverage', nSweepsToAverage, ...
-        %   'MaxRange2Mean', maxRange2Mean)
-
-        % Find the last baseline index
-        lastBaseIndex = find(pValues < pBoundariesThis(1), 1, 'last');
-
-        % Find the first acceptable baseline index
-        firstBaseIndex = max(1, lastBaseIndex - nSweepsLastOfPhase + 1);
-
-        % Compute the baseline average for this field
-        [baselineAverage, indSelected{iField}] = ...
-            compute_phase_average(fieldVals, ...
-                        'EndPoints', [firstBaseIndex, lastBaseIndex], ...
+        % Compute the baseline average and indices selected for this field
+        [rBoundaries(iField, 1), indSelected{iField}] = ...
+            compute_phase_average(fieldData(:, iField), ...
+                        'PhaseBoundaries', pBoundaries(iField, :), ...
+                        'PhaseNumber', 1, ...
+                        'NLastOfPhase', nSweepsLastOfPhase, ...
                         'NToAverage', nSweepsToAverage, ...
                         'MaxRange2Mean', maxRange2Mean);
-
-        % Compute the baseline average for this field
-        rBoundaries(iField, 1) = baselineAverage;
     end
 end
 
