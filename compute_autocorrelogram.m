@@ -70,6 +70,7 @@ function [autoCorrParams, autoCorrData] = compute_autocorrelogram (spikeTimesMs,
 
 % File History:
 % 2019-07-23 Moved from parse_multiunit.m
+% 2019-08-01 Fixed missing return
 % 
 
 % Hard-coded constants
@@ -182,6 +183,7 @@ if isempty(spikeTimesMs)
     autoCorrData.ampPeaks = [];
     autoCorrData.ampTroughs = [];
     autoCorrData.halfPeriodsToMultiple = [];
+    return
 end
 
 % Compute an unnormalized autocorrelogram in Hz^2
