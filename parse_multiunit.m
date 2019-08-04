@@ -740,30 +740,39 @@ if plotCombinedFlag
                     'NToAverage', nSweepsToAverage, ...
                     'MaxRange2Mean', maxRange2Mean);
 
-    % Create a new figure
-    figCombined = figure(4); clf
-    
-    % Expand the position of the figure
-    % TODO: Make this a function
+    % Create a new figure with 1 x 3 subplots
+    % TODO: Make a function create_subplots.m
+    % Arguments:
+    nSubPlots = 3;
+    figNumber = 4;
+
+    % Hard-Coded parameters
+    close(figure(figNumber));
+    figCombined = figure(figNumber); clf;
     positionOrig = figCombined.Position;
     positionNew = positionOrig;
     positionNew(1) = positionOrig(1) - positionOrig(3);
-    positionNew(3) = 3 * positionOrig(3);
+    positionNew(3) = nSubPlots * positionOrig(3);
     figCombined.Position = positionNew;
+    for iSubplot = 1:nSubPlots
+        ax(iSubplot) = subplot(1, nSubPlots, iSubplot);
+        ax(iSubplot).OuterPosition = [(iSubplot - 1)/nSubPlots, 0, ...
+                                      1/nSubPlots, 1];
+    end
 
     % Plot raw data
-    ax(1) = subplot(1, 3, 1);
+    axes(ax(1));
     plot_raw_multiunit(parsedData, parsedParams, ...
                         phaseBoundaries, fileBase, ...
                         'YAmountToStagger', yAmountToStagger);
 
     % Plot spike density
-    ax(2) = subplot(1, 3, 2);
+    axes(ax(2));
     plot_spike_density_multiunit(parsedData, parsedParams, ...
                                  phaseBoundaries, fileBase);
 
     % Plot oscillation duration
-    ax(3) = subplot(1, 3, 3);
+    axes(ax(3));
     plot_bar(oscDurationSec, ...
                 'ForceVectorAsRow', false, ...
                 'ReverseOrder', true, ...
