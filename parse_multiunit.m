@@ -203,6 +203,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %       cd/count_samples.m
 %       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
+%       cd/create_subplots.m
 %       cd/create_time_vectors.m
 %       cd/detect_spikes_multiunit.m
 %       cd/extract_elements.m
@@ -257,6 +258,8 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 % 2019-06-10 Added plotCombinedFlag
 % 2019-07-24 Added saveResultsFlag
 % 2019-07-25 Now returns phaseBoundaries and fileBase as 3rd and 4th arguments
+% 2019-08-04 Now makes subplots maximally fit the figure
+% 2019-08-04 Now makes 'Trace #' the y label for raw plots
 % TODO: Make parameters optional arguments
 
 %% Hard-coded parameters
@@ -741,38 +744,22 @@ if plotCombinedFlag
                     'MaxRange2Mean', maxRange2Mean);
 
     % Create a new figure with 1 x 3 subplots
-    % TODO: Make a function create_subplots.m
-    % Arguments:
-    nSubPlots = 3;
-    figNumber = 4;
-
-    % Hard-Coded parameters
-    close(figure(figNumber));
-    figCombined = figure(figNumber); clf;
-    positionOrig = figCombined.Position;
-    positionNew = positionOrig;
-    positionNew(1) = positionOrig(1) - positionOrig(3);
-    positionNew(3) = nSubPlots * positionOrig(3);
-    figCombined.Position = positionNew;
-    for iSubplot = 1:nSubPlots
-        ax(iSubplot) = subplot(1, nSubPlots, iSubplot);
-        ax(iSubplot).OuterPosition = [(iSubplot - 1)/nSubPlots, 0, ...
-                                      1/nSubPlots, 1];
-    end
+    close(figure(4));
+    [figCombined, axCombined] = create_subplots(1, 3, 'FigNumber', 4);
 
     % Plot raw data
-    axes(ax(1));
+    axes(axCombined(1));
     plot_raw_multiunit(parsedData, parsedParams, ...
                         phaseBoundaries, fileBase, ...
                         'YAmountToStagger', yAmountToStagger);
 
     % Plot spike density
-    axes(ax(2));
+    axes(axCombined(2));
     plot_spike_density_multiunit(parsedData, parsedParams, ...
                                  phaseBoundaries, fileBase);
 
     % Plot oscillation duration
-    axes(ax(3));
+    axes(axCombined(3));
     plot_bar(oscDurationSec, ...
                 'ForceVectorAsRow', false, ...
                 'ReverseOrder', true, ...
@@ -785,8 +772,7 @@ if plotCombinedFlag
                 'IndSelected', indSelected);
 
     % Link x axes
-    linkaxes(ax, 'x');
-
+    linkaxes(axCombined, 'x');
     figs(4) = figCombined;
 
     % Save the figure zoomed to several x limits
@@ -1616,14 +1602,14 @@ plot_traces(tVecsSec, vVecs, 'Verbose', false, ...
             'PlotMode', 'staggered', 'SubplotOrder', 'list', ...
             'YLimits', bestYLimits, 'YAmountToStagger', yAmountToStagger, ...
             'XLabel', xLabel, 'LinkAxesOption', 'y', ...
-            'YLabel', 'suppress', 'TraceLabels', 'suppress', ...
+            'YLabel', 'Trace #', 'TraceLabels', 'suppress', ...
             'FigTitle', figTitle, 'FigHandle', fig, ...
             'Color', 'k');
 plot_traces(tVecsSec, vVecsFilt, 'Verbose', false, ...
             'PlotMode', 'staggered', 'SubplotOrder', 'list', ...
             'YLimits', bestYLimits, 'YAmountToStagger', yAmountToStagger, ...
             'XLabel', xLabel, 'LinkAxesOption', 'y', ...
-            'YLabel', 'suppress', 'TraceLabels', 'suppress', ...
+            'YLabel', 'Trace #', 'TraceLabels', 'suppress', ...
             'FigTitle', figTitle, 'FigHandle', fig, ...
             'Color', 'b');
 

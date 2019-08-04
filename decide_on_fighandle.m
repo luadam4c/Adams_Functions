@@ -22,6 +22,7 @@ function fig = decide_on_fighandle (varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/create_subplots.m
 %       cd/plot_bar.m
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
