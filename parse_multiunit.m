@@ -1726,7 +1726,7 @@ yEnds = [1; nSweeps];
 xLimits = [xEnds(1) - 0.5 * siSeconds; xEnds(2) + 0.5 * siSeconds];
 yLimits = [yEnds(1) - 0.5; yEnds(2) + 0.5];
 
-% Set y ticks and labels
+% Decide on y ticks and labels
 yTicks = create_indices('IndexEnd', nSweeps, 'MaxNum', maxNYTicks, ...
                         'AlignMethod', 'left');
 yTickLabels = create_labels_from_numbers(nSweeps - yTicks + 1);
@@ -1736,10 +1736,16 @@ yTickLabels = create_labels_from_numbers(nSweeps - yTicks + 1);
 spikeDensityMatrix = transpose(force_matrix(spikeDensityHz));
 
 % Set a gray-scale color map
-colormap(flipud(gray));
+% colormap(flipud(gray));
 % colormap(jet);
+cm = create_colormap('ColorMapFunc', @gray, 'ReverseOrder', true, ...
+                     'HighContrast', true);
+colormap(cm);
 
+% Generate plot
 imagesc(xEnds, flipud(yEnds), spikeDensityMatrix);
+
+% Set the y ticks and labels
 yticks(yTicks);
 yticklabels(yTickLabels);
 
