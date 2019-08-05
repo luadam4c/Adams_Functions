@@ -409,7 +409,7 @@ if ~isempty(xLimits) && isnumeric(xLimits)
                 tVecs, data, dataToCompare);
 else
     % Use the first and last indices
-    endPointsToPlot = find_window_endpoints([], tVec);
+    endPointsToPlot = find_window_endpoints([], tVecs);
 end
 
 % Plot traces

@@ -911,7 +911,7 @@ case 'parallel'
             % Compute the y limits from both data and dataToCompare
             yLimitsThis = ...
                 compute_axis_limits({data{iPlot}, dataToCompare{iPlot}}, ...
-                                        'y', 'AutoZoom', autoZoom);
+                                        'y', 'AutoZoom', autoZoom);                
         elseif iscell(yLimits)
             yLimitsThis = yLimits{iPlot};
         else
@@ -967,7 +967,8 @@ case 'parallel'
         end
 
         % Set y axis limits
-        if ~isempty(yLimitsThis) && ~strcmpi(yLimitsThis, 'suppress')
+        if ~isempty(yLimitsThis) && ~any(isnan(yLimitsThis)) && ...
+                ~strcmpi(yLimitsThis, 'suppress')
             ylim(yLimitsThis);
         end
 

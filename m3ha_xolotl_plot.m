@@ -274,7 +274,7 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
     % If not provided, compute the holding potential(s) needed for simulations
     if isempty(holdingPotential)
         holdingPotential = ...
-            compute_stats(dataToCompare, 'Windows', individual.baseWindow);
+            compute_stats(dataToCompare, 'mean', 'Windows', individual.baseWindow);
     end
 
     % Retrieve the original external current
@@ -319,10 +319,14 @@ endPointsToPlot = individual.endPointsToPlot;
 xolotlObject.I_ext = externalCurrentOrig;
 
 % Find the holding current (nA) necessary to match the holding potential
-holdingCurrent = ...
-    xolotl_estimate_holding_current(xolotlObject, holdingPotential, ...
-                                    'CompToPatch', compToPatch, ...
-                                    'TimeToStabilize', timeToStabilize);
+if ~isempty(holdingPotential)
+    holdingCurrent = ...
+        xolotl_estimate_holding_current(xolotlObject, holdingPotential, ...
+                                        'CompToPatch', compToPatch, ...
+                                        'TimeToStabilize', timeToStabilize);
+else
+    holdingCurrent = 0;
+end
 % holdingCurrent = 0.095;
 % holdingCurrent = 0.8;
 
@@ -374,7 +378,7 @@ end
 if isempty(sweepErrors)
     if isempty(dataToCompare)
         % Compute the baseline noise over the fitting window
-        sweepErrors = compute_baseline_noise(dataPlots, tVecs, fitWindow);
+        sweepErrors = compute_baseline_noise(dataPlots, tVec, fitWindow);
     else
         % Compute sweep errors over the fitting window
         errorStructTemp = compute_sweep_errors(dataPlots, dataToCompare, ...
@@ -387,10 +391,17 @@ if isempty(sweepErrors)
 end
 
 % Re-generate the error strings
-errorStrings = ...
-    arrayfun(@(x) ['Noise = ', num2str(baseErrors(x), nSigFig), '; ', ...
-                    'RMSE = ', num2str(sweepErrors(x), nSigFig)], ...
-                1:nTraces, 'UniformOutput', false);
+if ~isempty(baseErrors)
+    errorStrings = ...
+        arrayfun(@(x) ['Noise = ', num2str(baseErrors(x), nSigFig), '; ', ...
+                        'RMSE = ', num2str(sweepErrors(x), nSigFig)], ...
+                    1:nTraces, 'UniformOutput', false);
+else
+    errorStrings = ...
+        arrayfun(@(x) ['Noise = NaN; ', ...
+                        'RMSE = ', num2str(sweepErrors(x), nSigFig)], ...
+                    1:nTraces, 'UniformOutput', false);
+end
 
 %% Update plots
 % Restrict to same end points to be consistent with the default plot
@@ -413,8 +424,10 @@ for iTrace = 1:nTraces
     individual.subTitles(iTrace).String = errorStrings{iTrace};
 end
 
-%% Save handles in xolotl object
-xolotlObject.handles = xHandles;
+%% Save handles in xolotl object if under x.manipulate
+if isstruct(xolotlObject.handles)
+    xolotlObject.handles = xHandles;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
