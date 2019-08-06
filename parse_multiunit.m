@@ -1112,6 +1112,8 @@ figTitleBase = [titleBase, '\_trace', num2str(iVec)];
             timeBurstInOscStartsMs, timeBurstInOscEndsMs);
 
 %% Store in outputs
+parsedParams.fileBase = fileBase;
+parsedParams.sweepNumber = iVec;
 parsedParams.phaseNumber = phaseNumber;
 parsedParams.phaseName = phaseName;
 parsedParams.filtFreq = filtFreq;
