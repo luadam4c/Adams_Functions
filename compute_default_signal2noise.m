@@ -18,6 +18,26 @@ function signal2Noise = compute_default_signal2noise(data, varargin)
 %                   must be empty or 
 %                       a numeric array or a cell array of numeric arrays
 %                   default == []
+%                   - 'IdxStimStart': index of stimulation start
+%                   must be empty or a numeric vector
+%                   default == 1
+%                   - 'IdxDetectStart': index of detection start
+%                   must be empty or a numeric vector
+%                   default == idxStimStart + minDelaySamples
+%                   - 'BaseWindows': baseline window(s)
+%                   must be a numeric array or a cell array of numeric arrays
+%                   default == start to stimStart
+%                   - 'FiltFreq': the cutoff frequency(ies) (Hz or normalized) 
+%                                   for the bandpass filter
+%                   must be a two-element numeric vector
+%                   default == [NaN, NaN]
+%                   - 'MinDelayMs': minimum delay from stimulation start in ms
+%                   must be empty or a numeric vector
+%                   default == artifactLengthMs == 25 ms
+%                   - 'RelSnrThres2Max': relative signal to noise threshold
+%                                           as a proportion of maximum
+%                   must be empty or a numeric vector
+%                   default == 0.1
 %
 % Requires:
 %       cd/compute_baseline_noise.m
@@ -50,7 +70,7 @@ tVecsDefault = [];              % set later
 idxStimStartDefault = 1;        % stim at first time point by default
 idxDetectStartDefault = [];     % set later
 baseWindowsDefault = [];        % set later
-filtFreqDefault = NaN;          % no bandpass filter by default 
+filtFreqDefault = [NaN, NaN];   % no bandpass filter by default 
 minDelayMsDefault = [];         % set later
 relSnrThres2MaxDefault = [];    % set later
 
@@ -80,7 +100,7 @@ addParameter(iP, 'tVecs', tVecsDefault, ...
                 ['tVecs must be either a numeric array', ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'IdxStimStart', idxStimStartDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'IdxDetectStart', idxDetectStartDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'BaseWindows', baseWindowsDefault, ...
@@ -149,7 +169,7 @@ tVecs = force_matrix(tVecs);
 data = force_matrix(data);
 
 % Bandpass filter if requested
-if ~isnan(filtFreq)
+if ~any(isnan(filtFreq))
     siSeconds = siMsAvg / MS_PER_S;    
     vVecsFilt = freqfilter(data, filtFreq, siSeconds, 'FilterType', 'band');
 else
