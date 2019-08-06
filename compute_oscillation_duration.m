@@ -21,6 +21,9 @@ function oscDurationSec = compute_oscillation_duration (abfFile, varargin)
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
 %                   default == first half of the trace
+%                   - 'Signal2Noise': signal-to-noise ratio
+%                   must be a empty or a positive scalar
+%                   default == 2.5
 %                   - 'FiltFreq': cutoff frequency(ies) (Hz or normalized) 
 %                                   for a bandpass filter
 %                   must be a numeric a two-element vector
@@ -28,9 +31,6 @@ function oscDurationSec = compute_oscillation_duration (abfFile, varargin)
 %                   - 'MinDelayMs': minimum delay after stim start (ms)
 %                   must be a positive scalar
 %                   default == 25 ms
-%                   - 'Signal2Noise': signal-to-noise ratio
-%                   must be a empty or a positive scalar
-%                   default == 2.5
 %                   - 'BinWidthMs': bin width (ms)
 %                   must be a positive scalar
 %                   default == 10 ms
@@ -39,7 +39,7 @@ function oscDurationSec = compute_oscillation_duration (abfFile, varargin)
 %                   default == 20 ms
 %                   - 'MaxInterBurstIntervalMs': maximum inter-burst interval (ms)
 %                   must be a positive scalar
-%                   default == 2000 ms
+%                   default == 1000 ms
 %                   - 'MinSpikeRateInBurstHz': minimum spike rate in a burst (Hz)
 %                   must be a positive scalar
 %                   default == 100 Hz
@@ -67,16 +67,17 @@ function oscDurationSec = compute_oscillation_duration (abfFile, varargin)
 MS_PER_S = 1000;
 
 %% Default values for optional arguments
-% Must be consistent with parse_multiunit.m
 verboseDefault = false;             % don't print parsed results by default
 baseWindowDefault = [];             % set later
+signal2NoiseDefault = 2.5;          % use 2.5 by default
+
+% Must be consistent with parse_multiunit.m
 filtFreqDefault = [100, 1000];
 minDelayMsDefault = 25;
-signal2NoiseDefault = 2.5;          % use 2.5 by default
 binWidthMsDefault = 10;             % use a bin width of 10 ms by default
 minBurstLengthMsDefault = 20;       % bursts must be at least 20 ms by default
-maxInterBurstIntervalMsDefault = 2000;  % bursts are no more than 
-                                        %   2 seconds apart by default
+maxInterBurstIntervalMsDefault = 1000;  % bursts are no more than 
+                                        %   1 second apart by default
 minSpikeRateInBurstHzDefault = 100;     % bursts must have a spike rate of 
                                         %   at least 100 Hz by default
 
@@ -104,14 +105,14 @@ addParameter(iP, 'BaseWindow', baseWindowDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['BaseWindow must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
+addParameter(iP, 'Signal2Noise', signal2NoiseDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'FiltFreq', filtFreqDefault, ...
     @(x) assert(isnan(x) || isnumeric(x), ...
                 ['FiltFreq must be either NaN ', ...
                     'or a numeric array of 2 elements!']));
 addParameter(iP, 'MinDelayMs', minDelayMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative', 'integer'}));
-addParameter(iP, 'Signal2Noise', signal2NoiseDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'BinWidthMs', binWidthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'MinBurstLengthMs', minBurstLengthMsDefault, ...
@@ -125,9 +126,9 @@ addParameter(iP, 'MinSpikeRateInBurstHz', minSpikeRateInBurstHzDefault, ...
 parse(iP, abfFile, varargin{:});
 verbose = iP.Results.Verbose;
 baseWindow = iP.Results.BaseWindow;
+signal2Noise = iP.Results.Signal2Noise;
 filtFreq = iP.Results.FiltFreq;
 minDelayMs = iP.Results.MinDelayMs;
-signal2Noise = iP.Results.Signal2Noise;
 binWidthMs = iP.Results.BinWidthMs;
 minBurstLengthMs = iP.Results.MinBurstLengthMs;
 maxInterBurstIntervalMs = iP.Results.MaxInterBurstIntervalMs;

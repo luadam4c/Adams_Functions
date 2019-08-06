@@ -10,7 +10,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %       parse_multiunit('20190217_slice3', 'PlotRaw', true);
 %       [parsedParams, parsedData, phaseBoundaries, fileBase, figs] = parse_multiunit('20190217_slice3');
 % Outputs:
-%       parsedParams- parsed parameters, a table with columns:
+%       parsedParams - parsed parameters, a table with columns:
 %                       phaseNumber
 %                       phaseName
 %                       signal2Noise
@@ -187,7 +187,58 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %                   - 'tVecs': original time vector(s)
 %                   must be a numeric array or a cell array of numeric arrays
 %                   default == [] (not used)
-%                   
+%                   - 'BaseWindows': baseline window(s)
+%                   must be a numeric array or a cell array of numeric arrays
+%                   default == start to stimStart
+%                   - 'RelSnrThres2Max': relative signal to noise threshold
+%                                           as a proportion of maximum
+%                   must be empty or a numeric vector
+%                   default == 0.1
+%                   - 'Signal2Noise': signal-to-noise ratio
+%                   must be a empty or a positive scalar
+%                   default == use compute_default_signal2noise.m
+%                   - 'ResolutionMs': time difference between each data point
+%                                       for the spike density plot
+%                   must be a positive scalar
+%                   default == 5 ms
+%                   - 'FiltFreq': cutoff frequency(ies) (Hz or normalized) 
+%                                   for a bandpass filter
+%                   must be a numeric a two-element vector
+%                   default == [100, 1000]
+%                   - 'MinDelayMs': minimum delay after stim start (ms)
+%                   must be a positive scalar
+%                   default == 25 ms
+%                   - 'BinWidthMs': bin width (ms)
+%                   must be a positive scalar
+%                   default == 10 ms
+%                   - 'MinBurstLengthMs': minimum burst length (ms)
+%                   must be a positive scalar
+%                   default == 20 ms
+%                   - 'MaxInterBurstIntervalMs': maximum inter-burst interval (ms)
+%                   must be a positive scalar
+%                   default == 1000 ms
+%                   - 'MinSpikeRateInBurstHz': minimum spike rate in a burst (Hz)
+%                   must be a positive scalar
+%                   default == 100 Hz
+%                   - 'FilterWidthMs': filter width (ms) for 
+%                                       moving average filter when computing
+%                                       smoothed autocorrelogram
+%                   must be a positive scalar
+%                   default == 100 ms
+%                   - 'MinRelProm': minimum relative prominence
+%                   must be a positive scalar
+%                   default == 0.02
+%                   - 'NSweepsLastOfPhase': number of sweeps at 
+%                                           the last of a phase
+%                   must be a positive integer scalar
+%                   default == 10
+%                   - 'NSweepsToAverage': number of sweeps to average
+%                   must be a positive integer scalar
+%                   default == 5
+%                   - 'MaxRange2Mean': maximum percentage of range versus mean
+%                   must be a nonnegative scalar
+%                   default == 40%
+%
 % Requires:
 %       cd/argfun.m
 %       cd/check_dir.m
@@ -260,7 +311,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 % 2019-07-25 Now returns phaseBoundaries and fileBase as 3rd and 4th arguments
 % 2019-08-04 Now makes subplots maximally fit the figure
 % 2019-08-04 Now makes 'Trace #' the y label for raw plots
-% TODO: Make parameters optional arguments
+% 2019-08-06 Made parameters optional arguments
 
 %% Hard-coded parameters
 plotTypeMeasures = 'bar'; %'tuning';
@@ -313,28 +364,29 @@ stimStartMsDefault = [];                % set later
 pulseVectorsDefault = [];               % don't use pulse vectors by default
 phaseBoundariesDefault = [];   	        % no phase boundaries by default
 tVecsDefault = [];                      % set later
+baseWindowsDefault = [];                % set later
+relSnrThres2MaxDefault = [];            % set in compute_default_signal2noise.m
+signal2NoiseDefault = [];               % set later
+resolutionMsDefault = 5;                % 5 ms resolution by default
 
-% TODO: Make optional arguments
-baseWindows = [];
-relSnrThres2Max = [];           % set in compute_default_signal2noise.m
+% Note: Must be consistent with compute_oscillation_duration.m
+filtFreqDefault = [100, 1000];
+minDelayMsDefault = 25;
+binWidthMsDefault = 10;                 % use a bin width of 10 ms by default
+minBurstLengthMsDefault = 20;           % bursts must be at least 20 ms by default
+maxInterBurstIntervalMsDefault = 1000;  % bursts are no more than 
+                                        %   1 second apart by default
+minSpikeRateInBurstHzDefault = 100;     % bursts must have a spike rate of 
+                                        %   at least 100 Hz by default
 
-% Must be consistent with compute_oscillation_duration.m
-filtFreq = [100, 1000];
-minDelayMs = 25;
-binWidthMs = 10;
-resolutionMs = 5;
-signal2Noise = [];              % set later
-minBurstLengthMs = 20;
-maxInterBurstIntervalMs = 2000;
-minSpikeRateInBurstHz = 100;
-filterWidthMs = 100;
-minRelProm = 0.02;
+filterWidthMsDefault = 100;
+minRelPromDefault = 0.02;
 
-% Analysis parameters
-%   Note: must be consistent with plot_measures.m
-nSweepsLastOfPhase = 10;
-nSweepsToAverage = 5;
-maxRange2Mean = 40;
+% Note: must be consistent with plot_measures.m
+nSweepsLastOfPhaseDefault = 10;         % select from last 10 values by default
+nSweepsToAverageDefault = 5;            % select 5 values by default
+maxRange2MeanDefault = 40;              % range is not more than 40% of mean 
+                                        %   by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -403,6 +455,40 @@ addParameter(iP, 'tVecs', tVecsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['tVecs must be either a numeric array', ...
                     'or a cell array of numeric arrays!']));
+addParameter(iP, 'BaseWindows', baseWindowsDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['baseWindows must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
+addParameter(iP, 'RelSnrThres2Max', relSnrThres2MaxDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'Signal2Noise', signal2NoiseDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'ResolutionMs', resolutionMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'FiltFreq', filtFreqDefault, ...
+    @(x) assert(isnan(x) || isnumeric(x), ...
+                ['FiltFreq must be either NaN ', ...
+                    'or a numeric array of 2 elements!']));
+addParameter(iP, 'MinDelayMs', minDelayMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative', 'integer'}));
+addParameter(iP, 'BinWidthMs', binWidthMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'MinBurstLengthMs', minBurstLengthMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'MaxInterBurstIntervalMs', maxInterBurstIntervalMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'MinSpikeRateInBurstHz', minSpikeRateInBurstHzDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'FilterWidthMs', filterWidthMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'MinRelProm', minRelPromDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'NSweepsLastOfPhase', nSweepsLastOfPhaseDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'NSweepsToAverage', nSweepsToAverageDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 
 % Read from the Input Parser
 parse(iP, vVecsOrSlice, varargin{:});
@@ -426,6 +512,21 @@ stimStartMs = iP.Results.StimStartMs;
 pulseVectors = iP.Results.PulseVectors;
 phaseBoundaries = iP.Results.PhaseBoundaries;
 tVecs = iP.Results.tVecs;
+baseWindows = iP.Results.BaseWindows;
+relSnrThres2Max = iP.Results.RelSnrThres2Max;
+signal2Noise = iP.Results.Signal2Noise;
+resolutionMs = iP.Results.ResolutionMs;
+filtFreq = iP.Results.FiltFreq;
+minDelayMs = iP.Results.MinDelayMs;
+binWidthMs = iP.Results.BinWidthMs;
+minBurstLengthMs = iP.Results.MinBurstLengthMs;
+maxInterBurstIntervalMs = iP.Results.MaxInterBurstIntervalMs;
+minSpikeRateInBurstHz = iP.Results.MinSpikeRateInBurstHz;
+filterWidthMs = iP.Results.FilterWidthMs;
+minRelProm = iP.Results.MinRelProm;
+nSweepsLastOfPhase = iP.Results.NSweepsLastOfPhase;
+nSweepsToAverage = iP.Results.NSweepsToAverage;
+maxRange2Mean = iP.Results.MaxRange2Mean;
 
 %% Preparation
 fprintf('Decide on the file base ...\n');
@@ -908,7 +1009,7 @@ spikeTimesMs = spikesData.spikeTimesMs;
 
 %% Compute spike density
 spikeDensityHz = ...
-    compute_spike_density(spikeTimesMs, 'TimeWindow', [0, tVec(end)], ...
+    compute_spike_density(spikeTimesMs, 'TimeWindow', [0, maxTimeMs], ...
                             'BinWidth', binWidthMs, ...
                             'Resolution', resolutionMs, ...
                             'TimeUnits', 'ms');
@@ -964,7 +1065,8 @@ timeBurstInOscEndsMs = spHistData.timeBurstInOscEndsMs;
                             'BinWidthMs', binWidthMs, ...
                             'MinBurstLengthMs', minBurstLengthMs, ...
                             'MaxInterBurstIntervalMs', maxInterBurstIntervalMs, ...
-                            'MinSpikeRateInBurstHz', minSpikeRateInBurstHz, ...                            'FilterWidthMs', filterWidthMs, ...
+                            'MinSpikeRateInBurstHz', minSpikeRateInBurstHz, ...
+                            'FilterWidthMs', filterWidthMs, ...
                             'MinRelProm', minRelProm, ...
                             'SpikeHistParams', spHistParams, ...
                             'SpikeHistData', spHistData);

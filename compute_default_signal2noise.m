@@ -8,6 +8,7 @@ function signal2Noise = compute_default_signal2noise(data, varargin)
 % Outputs:
 %       signal2Noise    - computed signal to noise ratio
 %                       specified as a numeric scalar
+%
 % Arguments:
 %       data        - data where each column is a vector of samples
 %                   must be a numeric array or a cell array of numeric arrays

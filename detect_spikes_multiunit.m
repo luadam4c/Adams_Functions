@@ -71,7 +71,7 @@ function [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, vararg
 %                   default == 25 ms
 %                   - 'MaxDelayMs': maximum delay after stim start (ms)
 %                   must be a nonnegative scalar
-%                   default == 10000 ms
+%                   default == none
 %                   - 'IdxDetectStart': index of detection start
 %                   must be a positive integer scalar
 %                   default == idxStimStart + minDelayMs / siMs

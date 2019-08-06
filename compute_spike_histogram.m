@@ -65,13 +65,13 @@ function [histParams, histData] = compute_spike_histogram (spikeTimesMs, varargi
 %                   default == 10 ms
 %                   - 'MinBurstLengthMs': minimum burst length (ms)
 %                   must be a positive scalar
-%                   default == 0 ms
+%                   default == 20 ms
 %                   - 'MaxInterBurstIntervalMs': maximum inter-burst interval (ms)
 %                   must be a positive scalar
-%                   default == 0 ms
+%                   default == 1000 ms
 %                   - 'MinSpikeRateInBurstHz': minimum spike rate in a burst (Hz)
 %                   must be a positive scalar
-%                   default == 0 ms
+%                   default == 100 ms
 %                   - Any other parameter-value pair for 
 %                       the histcounts() function
 %

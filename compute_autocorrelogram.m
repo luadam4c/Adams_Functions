@@ -45,7 +45,7 @@ function [autoCorrParams, autoCorrData] = compute_autocorrelogram (spikeTimesMs,
 %                   - 'MinSpikeRateInBurstHz': minimum spike rate in a burst (Hz)
 %                   must be a positive scalar
 %                   default == 0 ms
-%                   - 'FilterWidthMs': filter width (ms)
+%                   - 'FilterWidthMs': filter width (ms) for moving average filter
 %                   must be a positive scalar
 %                   default == 100 ms
 %                   - 'MinRelProm': minimum relative prominence
