@@ -1,5 +1,5 @@
 function [muParams, muData] = parse_all_multiunit(varargin)
-%% Tests the parse_multiunit function on all files in the present working directory
+%% Runs the parse_multiunit function on all slices in the present working directory
 % Usage: [muParams, muData] = parse_all_multiunit(varargin)
 % Explanation:
 %       TODO
@@ -22,42 +22,7 @@ function [muParams, muData] = parse_all_multiunit(varargin)
 %                   - 'OutFolder': directory to place output files
 %                   must be a string scalar or a character vector
 %                   default == same as inFolder
-%                   - 'PlotAllFlag': whether to plot everything
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
-%                   - 'PlotCombinedFlag': whether to plot raw data, 
-%                           spike density and oscillation duration together
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
-%                   - 'PlotSpikeDetectionFlag': whether to plot spike detection
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == set in parse_multiunit.m
-%                   - 'PlotSpikeDensityFlag': whether to plot spike density
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == set in parse_multiunit.m
-%                   - 'PlotSpikeHistogramFlag': whether to plot spike histograms
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == set in parse_multiunit.m
-%                   - 'PlotAutoCorrFlag': whether to plot autocorrelegrams
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == set in parse_multiunit.m
-%                   - 'PlotRawFlag': whether to plot raw traces
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == set in parse_multiunit.m
-%                   - 'PlotRasterFlag': whether to plot raster plots
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == set in parse_multiunit.m
-%                   - 'PlotMeasuresFlag': whether to plot time series 
-%                                           of measures
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == set in parse_multiunit.m
-%                   - 'SaveMatFlag': whether to save combined data
-%                                           as matfiles
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
-%                   - 'SaveResultsFlag': whether to save parsed results
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   - Any other parameter-value pair for the parse_multiunit() function
 %
 % Requires:
 %       cd/all_files.m
@@ -81,6 +46,7 @@ function [muParams, muData] = parse_all_multiunit(varargin)
 % 2019-07-24 Added saveResultsFlag
 % 2019-07-25 Now combines slice data if .abf files present 
 %               but .mat file not present
+% 2019-08-06 Now accepts any parameter-value pair for parse_multiunit.m
 
 %% Hard-coded parameters
 matFileSuffix = '_multiunit_data';
@@ -93,17 +59,6 @@ regexpSliceAbfFile = '.*slice[0-9]*.*.abf';
 directoryDefault = pwd;
 inFolderDefault = '';                   % set later
 outFolderDefault = '';                  % set later
-plotAllFlagDefault = false;
-plotCombinedFlagDefault = false;
-plotSpikeDetectionFlagDefault = [];     % set in parse_multiunit.m
-plotSpikeDensityFlagDefault = [];       % set in parse_multiunit.m
-plotSpikeHistogramFlagDefault = [];     % set in parse_multiunit.m
-plotAutoCorrFlagDefault = [];           % set in parse_multiunit.m
-plotRawFlagDefault = [];                % set in parse_multiunit.m
-plotRasterFlagDefault = [];             % set in parse_multiunit.m
-plotMeasuresFlagDefault = [];           % set in parse_multiunit.m
-saveMatFlagDefault = true;
-saveResultsFlagDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -112,6 +67,7 @@ saveResultsFlagDefault = false;
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Directory', directoryDefault, ...
@@ -120,45 +76,15 @@ addParameter(iP, 'InFolder', inFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'PlotAllFlag', plotAllFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'PlotCombinedFlag', plotCombinedFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'PlotSpikeDetectionFlag', plotSpikeDetectionFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'PlotSpikeDensityFlag', plotSpikeDensityFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'PlotSpikeHistogramFlag', plotSpikeHistogramFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'PlotAutoCorrFlag', plotAutoCorrFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'PlotRawFlag', plotRawFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'PlotRasterFlag', plotRasterFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'PlotMeasuresFlag', plotMeasuresFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'SaveMatFlag', saveMatFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'SaveResultsFlag', saveResultsFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 directory = iP.Results.Directory;
 inFolder = iP.Results.InFolder;
 outFolder = iP.Results.OutFolder;
-plotAllFlag = iP.Results.PlotAllFlag;
-plotCombinedFlag = iP.Results.PlotCombinedFlag;
-plotSpikeDetectionFlag = iP.Results.PlotSpikeDetectionFlag;
-plotSpikeDensityFlag = iP.Results.PlotSpikeDensityFlag;
-plotSpikeHistogramFlag = iP.Results.PlotSpikeHistogramFlag;
-plotAutoCorrFlag = iP.Results.PlotAutoCorrFlag;
-plotRawFlag = iP.Results.PlotRawFlag;
-plotRasterFlag = iP.Results.PlotRasterFlag;
-plotMeasuresFlag = iP.Results.PlotMeasuresFlag;
-saveMatFlag = iP.Results.SaveMatFlag;
-saveResultsFlag = iP.Results.SaveResultsFlag;
+
+% Keep unmatched arguments for the parse_multiunit() function
+otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Decide on the input directory
@@ -247,17 +173,7 @@ for iSlice = 1:nSlices
                         'PulseVectors', iVecsSl{iSlice}, ...
                         'FileBase', sliceBases{iSlice}, ...
                         'PhaseBoundaries', phaseBoundaries{iSlice}, ...
-                        'PlotAllFlag', plotAllFlag, ...
-                        'PlotCombinedFlag', plotCombinedFlag, ...
-                        'PlotSpikeDetectionFlag', plotSpikeDetectionFlag, ...
-                        'PlotSpikeDensityFlag', plotSpikeDensityFlag, ...
-                        'PlotSpikeHistogramFlag', plotSpikeHistogramFlag, ...
-                        'PlotAutoCorrFlag', plotAutoCorrFlag, ...
-                        'PlotRawFlag', plotRawFlag, ...
-                        'PlotRasterFlag', plotRasterFlag, ...
-                        'PlotMeasuresFlag', plotMeasuresFlag, ...
-                        'SaveResultsFlag', saveResultsFlag, ...
-                        'OutFolder', outFolder);
+                        'OutFolder', outFolder, otherArguments{:});
 
     % Close all figures
     close all force hidden;
