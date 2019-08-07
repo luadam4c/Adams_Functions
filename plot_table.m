@@ -48,6 +48,9 @@ function figs = plot_table (table, varargin)
 %                   - 'PLabel': label for the parameter
 %                   must be a string scalar or a character vector
 %                   default == none ('suppress')
+%                   - 'PTickLabels': x tick labels
+%                   must be a cell array of character vectors/strings
+%                   default == row names or times if provided
 %                   - 'OutFolder': output folder if FigNames not set
 %                   must be a string scalar or a character vector
 %                   default == pwd
@@ -82,6 +85,7 @@ function figs = plot_table (table, varargin)
 % 2019-03-17 Added 'PlotSeparately' as an optional argument
 % 2019-03-25 Added 'PhaseVariables' as an optional argument
 % 2019-05-08 Added 'PlotType' as an optional argument
+% 2019-08-07 Added 'PTickLabels' as an optional argument
 % TODO: Return handles to plots
 % TODO: Pass in figNames or figNumbers when plotting separately
 % 
@@ -114,6 +118,7 @@ delimiterDefault = '_';         % use '_' as delimiter by default
 readoutLabelDefault = '';       % set later
 tableLabelDefault = '';         % set later
 pLabelDefault = 'suppress';     % No x label by default
+pTickLabelsDefault = {};
 outFolderDefault = pwd;
 figNameDefault = '';
 
@@ -175,6 +180,8 @@ addParameter(iP, 'TableLabel', tableLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'PLabel', pLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'PTickLabels', pTickLabelsDefault, ...
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigName', figNameDefault, ...
@@ -196,6 +203,7 @@ delimiter = iP.Results.Delimiter;
 readoutLabel = iP.Results.ReadoutLabel;
 tableLabel = iP.Results.TableLabel;
 pLabel = iP.Results.PLabel;
+pTickLabels = iP.Results.PTickLabels;
 outFolder = iP.Results.OutFolder;
 figName = iP.Results.FigName;
 
@@ -249,31 +257,34 @@ if isempty(tableLabel)
 end
 
 % Decide on pTickLabels
-if isfield(table.Properties, 'RowNames') && iscell(table.Properties.RowNames)
-    % Get the row names
-    rowNames = table.Properties.RowNames;
+if isempty(pTickLabels)
+    if isfield(table.Properties, 'RowNames') && ...
+            iscell(table.Properties.RowNames)
+        % Get the row names
+        rowNames = table.Properties.RowNames;
 
-    % If all row names are file names, process them
-    %   Otherwise, just use the row names as the x tick labels
-    if all(isfile(rowNames))
-        % Extract the distinct file bases
-        pTickLabels = extract_fileparts(rowNames, 'distinct');
+        % If all row names are file names, process them
+        %   Otherwise, just use the row names as the x tick labels
+        if all(isfile(rowNames))
+            % Extract the distinct file bases
+            pTickLabels = extract_fileparts(rowNames, 'distinct');
 
-        % Replace all instances of '_' with '\_'
-        pTickLabels = replace(pTickLabels, '_', '\_');
+            % Replace all instances of '_' with '\_'
+            pTickLabels = replace(pTickLabels, '_', '\_');
+        else
+            % Just use the row names
+            pTickLabels = rowNames;
+        end
+    elseif isfield(table.Properties, 'RowTimes')
+        % Convert time to minutes
+        timeVec = minutes(table.Properties.RowTimes);
+
+        % Convert to a cell array of character vectors
+        pTickLabels = convert_to_char(timeVec);
     else
-        % Just use the row names
-        pTickLabels = rowNames;
+        % Use default x tick labels
+        pTickLabels = {};
     end
-elseif isfield(table.Properties, 'RowTimes')
-    % Convert time to minutes
-    timeVec = minutes(table.Properties.RowTimes);
-
-    % Convert to a cell array of character vectors
-    pTickLabels = convert_to_char(timeVec);
-else
-    % Use default x tick labels
-    pTickLabels = {};
 end
 
 % Decide on lineSpec

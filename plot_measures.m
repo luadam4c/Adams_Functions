@@ -21,6 +21,8 @@
 % 2019-03-25 Now colors by phase number
 % 2019-04-08 Renamed as plot_measures.m
 % 2019-06-11 Now plots both normalized and original versions of the Chevron Plot
+% 2019-08-06 Now plots markers for the Chevron plots
+% 2019-08-06 Added phaseNumbers
 % TODO: extract specific usage to clc2_analyze.m
 % 
 
@@ -37,9 +39,11 @@ sweepLengthSec = 60;
 timeLabel = 'Time';
 phaseLabel = 'Phase';
 phaseStrs = {'Baseline', 'Wash-on', 'Wash-out'};
-% phaseStrs = {'baseline', 'washon', 'washoff'};
 
 % Analysis parameters
+phaseNumbers = [1, 2];
+% phaseNumbers = [];
+
 %   Note: must be consistent with parse_multiunit.m
 nSweepsLastOfPhase = 10;
 nSweepsToAverage = 5;
@@ -87,6 +91,15 @@ if isempty(prefix)
     prefix = extract_common_directory(sliceParamSheets, 'BaseNameOnly', true);
 end
 
+% Modify prefix if necessary
+if ~isempty(phaseNumbers)
+    % Concatenate phase numbers into a string
+    phaseNumbersString = num2str(phaseNumbers, '%d');
+
+    % Append the phase numbers to the prefix
+    prefix = [prefix, '_phase', phaseNumbersString];
+end
+
 % Extract the distinct parts of the file names
 fileLabels = extract_fileparts(sliceParamSheets, 'distinct');
 
@@ -106,6 +119,7 @@ figNamesNormAvgd = fullfile(outFolder, strcat(tableNames, '_normaveraged.png'));
 avgdTablePaths = fullfile(outFolder, strcat(tableNames, '_averaged.csv'));
 normAvgdTablePaths = fullfile(outFolder, strcat(tableNames, '_normaveraged.csv'));
 
+%% Read in data and preprocess
 % Read all slice parameter spreadsheets
 fprintf('Reading measure spreadsheets ...\n');
 sliceParamsTables = cellfun(@readtable, sliceParamSheets, ...
@@ -118,10 +132,27 @@ sliceParamsTables = ...
                 sliceParamsTables, 'UniformOutput', false);
 
 % Combine with phase number information
+%   Note: each row results in a different table
 varsToCombine = [varsToPlot, repmat({'phaseNumber'}, size(varsToPlot))];
 
 % Create the phaseNumber variables for the combined tables
 phaseVars = strcat('phaseNumber_', fileLabels);
+
+% Restrict to certain phases if requested
+if ~isempty(phaseNumbers)
+    fprintf('Restricting to phases %s ...\n', num2str(phaseNumbers, '%d, '));
+    sliceParamsTables = ...
+        cellfun(@(x) x(ismember(x.phaseNumber, phaseNumbers), :), ...
+                sliceParamsTables, 'UniformOutput', false);
+end
+
+% Generate phase tick locations
+if isempty(phaseNumbers)
+    phaseTickLocs = 1:3;
+else
+    phaseTickLocs = 1:numel(phaseNumbers);
+    phaseStrs = phaseStrs(phaseNumbers);
+end
 
 % Combine variables across tables
 fprintf('Combining variables across tables ...\n');
@@ -130,6 +161,7 @@ measureTables = combine_variables_across_tables(sliceParamsTables, ...
                 'InputNames', fileLabels, 'OmitVarName', false, ...
                 'OutFolder', outFolder, 'Prefix', prefix, 'SaveFlag', true);
 
+%% Compute population data
 if plotChevronFlag
     % Average over the last nSweepsToAverage sweeps
     fprintf('Creating Chevron tables ...\n');
@@ -166,10 +198,6 @@ if plotByFileFlag || plotByPhaseFlag
                                 measureTables, 'UniformOutput', false);
 end
 
-save('NormTable.mat','normalizedChevronTables', '-mat');
-save('Table.mat', 'chevronTables','-mat');
-save('measureTables.mat','measureTables','-mat');
-
 %% Do the job
 if plotChevronFlag
     close all;
@@ -179,12 +207,14 @@ if plotChevronFlag
     figs = cellfun(@(x, y, z, w, v, u) plot_table(x, 'PlotSeparately', false, ...
                                     'PlotType', plotType, ...
                                     'VariableNames', strcat(y, '_', fileLabels), ...
-                                    'PTicks', [1, 2, 3], 'PTickLabels', phaseStrs, ...
+                                    'PTicks', phaseTickLocs, ...
+                                    'PTickLabels', phaseStrs, ...
                                     'ReadoutLabel', z, 'TableLabel', w, ...
                                     'PLabel', phaseLabel, ...
                                     'FigTitle', v, 'FigName', u, ...
                                     'LegendLocation', 'eastoutside', ...
-                                    'RemoveOutliers', false), ...
+                                    'RemoveOutliers', false, ...
+                                    'Marker', 'o', 'MarkerFaceColor', 'auto'), ...
                 chevronTables, varsToPlot, varLabelsChevron, ...
                 tableLabels, figTitlesChevron, figNamesAvgd);
 end
@@ -197,12 +227,14 @@ if plotNormalizedFlag
     figs = cellfun(@(x, y, z, w, v, u) plot_table(x, 'PlotSeparately', false, ...
                                     'PlotType', plotType, ...
                                     'VariableNames', strcat(y, '_', fileLabels), ...
-                                    'PTicks', [1, 2, 3], 'PTickLabels', phaseStrs, ...
+                                    'PTicks', phaseTickLocs, ...
+                                    'PTickLabels', phaseStrs, ...
                                     'ReadoutLabel', z, 'TableLabel', w, ...
                                     'PLabel', phaseLabel, ...
                                     'FigTitle', v, 'FigName', u, ...
                                     'LegendLocation', 'eastoutside', ...
-                                    'RemoveOutliers', false), ...
+                                    'RemoveOutliers', false, ...
+                                    'Marker', 'o', 'MarkerFaceColor', 'auto'), ...
                 normalizedChevronTables, varsToPlot, varLabelsNormAvgd, ...
                 tableLabels, figTitlesChevron, figNamesNormAvgd);
 end
@@ -237,6 +269,14 @@ if plotByPhaseFlag
 
     %                                 'PhaseLabels', phaseStrs, ...
 end
+
+%% Save tables together
+measureTablesMatPath = fullfile(outFolder, [prefix, '_', 'measureTables.mat']);
+chevronTablesMatPath = fullfile(outFolder, [prefix, '_', 'chevronTables.mat']);
+normalizedChevronTablesMatPath = fullfile(outFolder, [prefix, '_', 'normalizedChevronTables.mat']);
+save(measureTablesMatPath, 'measureTables', '-mat');
+save(chevronTablesMatPath, 'chevronTables', '-mat');
+save(normalizedChevronTablesMatPath, 'normalizedChevronTables', '-mat');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -400,6 +440,8 @@ readoutAvg = cellfun(@(x, y) cellfun(@(z) nanmean(inTable{:, x}(z)), y), ...
 
 % Count the number of unique phases
 nPhases = numel(uniquePhases);
+
+phaseStrs = {'baseline', 'washon', 'washoff'};
 
 %}
 

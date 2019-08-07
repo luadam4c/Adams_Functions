@@ -188,7 +188,7 @@ else
     % Force as a column cell array
     varNames = force_column_vector(varNames);
 
-    % Omit key variables from the variable names
+    % Omit keys from the variable names
     varNames = setdiff(varNames, keys);
 end
 
