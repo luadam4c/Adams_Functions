@@ -13,7 +13,13 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %                   must be a numeric vector
 %       readout     - a readout matrix where each column is a readout vector
 %                   must be a numeric 2-D array
-%       varargin    - 'PhaseVectors': phase information for each readout vector
+%       varargin    - 'LowerCI': lower bounds of confidence intervals
+%                   must be a numeric 2-D array
+%                   default == []
+%                   - 'UpperCI': upper bounds of confidence intervals
+%                   must be a numeric 2-D array
+%                   default == []
+%                   - 'PhaseVectors': phase information for each readout vector
 %                   must be a numeric matrix or a cell array of numeric vectors
 %                   default == {}
 %                   - 'RemoveOutliers': whether to remove outliers
@@ -94,6 +100,9 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %                   - 'FigNumber': figure number for creating figure
 %                   must be a positive integer scalar
 %                   default == []
+%                   - 'ClearFigure': whether to clear figure
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'FigName': figure name for saving
 %                   must be a string scalar or a character vector
 %                   default == ''
@@ -142,12 +151,16 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 % 2019-08-07 Now changes the pTickAngle only if the labels are too long
 % 2019-08-07 Added 'PhaseLabels' as an optional argument
 % 2019-08-07 Added 'ColorMap' as an optional argument
+% 2019-08-07 Added 'ClearFig' as an optional argument
+% 2019-08-07 Now accepts infinite values for readout limits
 % TODO: Return handles to plots
 %
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
+lowerCIDefault = [];
+upperCIDefault = [];
 phaseVectorsDefault = {};           % no phase vectors by default
 removeOutliersDefault = false;      % don't remove outliers by default
 colsToPlotDefault = [];             % set later
@@ -172,6 +185,7 @@ indSelectedDefault = [];
 figTitleDefault = '';               % set later
 figHandleDefault = [];              % no existing figure by default
 figNumberDefault = [];              % no figure number by default
+clearFigureDefault = false;         % don't clear figure by default
 figNameDefault = '';                % don't save figure by default
 figTypesDefault = 'png';
 
@@ -196,6 +210,12 @@ addRequired(iP, 'readout', ...              % a readout matrix
                                 'datetime', 'duration'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'LowerCI', lowerCIDefault, ...
+    @(x) validateattributes(x, {'numeric', 'logical', ...
+                                'datetime', 'duration'}, {'2d'}));
+addParameter(iP, 'UpperCI', upperCIDefault, ...
+    @(x) validateattributes(x, {'numeric', 'logical', ...
+                                'datetime', 'duration'}, {'2d'}));
 addParameter(iP, 'PhaseVectors', phaseVectorsDefault, ...
     @(x) assert(isnum(x) || iscellnumericvector(x), ...
                 ['PhaseVectors must be a numeric array ', ...
@@ -247,6 +267,8 @@ addParameter(iP, 'FigHandle', figHandleDefault);
 addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
                 'FigNumber must be a empty or a positive integer scalar!'));
+addParameter(iP, 'ClearFigure', clearFigureDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'FigName', figNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
@@ -254,6 +276,8 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 
 % Read from the Input Parser
 parse(iP, pValues, readout, varargin{:});
+lowerCI = iP.Results.LowerCI;
+upperCI = iP.Results.UpperCI;
 phaseVectors = iP.Results.PhaseVectors;
 removeOutliers = iP.Results.RemoveOutliers;
 colsToPlot = iP.Results.ColsToPlot;
@@ -279,6 +303,7 @@ indSelected = iP.Results.IndSelected;
 figTitle = iP.Results.FigTitle;
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
+clearFigure = iP.Results.ClearFigure;
 figName = iP.Results.FigName;
 [~, figtypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
@@ -395,6 +420,11 @@ end
 % Decide on the figure to plot on
 fig = decide_on_fighandle('FigHandle', figHandle, 'FigNumber', figNumber);
 
+% Clear figure if requested
+if clearFigure
+    clf;
+end
+
 % Set the default parameter tick angle
 if isempty(pTickAngle)
     if ~isempty(pTickLabels)
@@ -420,13 +450,15 @@ end
 
 % Plot readout values against parameter values
 lines = gobjects(nColsToPlot, maxNPhases);
+areas = gobjects(nColsToPlot, 2);
 for c = 1:nColsToPlot
     % Get the column to plot
     col = colsToPlot(c);
+    readoutThis = readout(:, col);
 
     % Plot the tuning curve for this column
     if isempty(phaseVectors)
-        lines(c, 1) = plot_one_line(pIsLog, pValues, readout(:, col), lineSpec, ...
+        lines(c, 1) = plot_one_line(pIsLog, pValues, readoutThis, lineSpec, ...
                             lineWidth, otherArguments);
     else
         hold on;
@@ -451,6 +483,53 @@ for c = 1:nColsToPlot
         lines(c, 1:nPhasesThis) = ...
             cellfun(@(x) plot_one_line(pIsLog, pValues(x), readout(x, col), ...
                         lineSpec, lineWidth, otherArguments), phaseIndices);
+    end
+
+    % If provided, plot a confidence interval for this column
+    %   as a light-gray-shaded area
+    if ~isempty(lowerCI) || ~isempty(upperCI)
+        if ~isempty(lowerCI)
+            lowerCIThis = lowerCI(:, col);
+        else
+            lowerCIThis = readoutThis;
+        end
+        if ~isempty(upperCI)
+            upperCIThis = upperCI(:, col);
+        else
+            upperCIThis = readoutThis;
+        end
+
+        % Plot the confidence interval
+        if ~isempty(phaseVectors) || pIsLog
+            fprintf('Not Supported Yet!\n');
+        else
+            hold on;
+
+            % Get the current Y limits
+            yLimits = get(gca, 'YLim');
+
+            % Compute the minimum y limits
+            %TODO
+            minY = apply_iteratively(@min, {yLimits, readoutLimits});
+
+            % Remove tuning curve
+            delete(lines(c, 1));
+
+            % Make the area under upperCIThis light gray
+            areas(c, 1) = area(pValues, upperCIThis, minY, ...
+                                'LineStyle', 'none', 'FaceColor', [0.9, 0.9, 0.9]);
+
+            % Make the area under lowerCIThis white
+            areas(c, 2) = area(pValues, lowerCIThis, minY, ...
+                                'LineStyle', 'none', 'FaceColor', [1, 1, 1]);
+
+            % Plot tuning curve again
+            lines(c, 1) = plot_one_line(pIsLog, pValues, readoutThis, lineSpec, ...
+                                lineWidth, otherArguments);
+
+            % Display tick marks and grid lines over graphics objects.
+            set(gca, 'Layer', 'top');
+        end
     end
 
     % Set color
@@ -521,6 +600,13 @@ end
 % Restrict y axis if readoutLimits provided
 %   otherwise expand the y axis by a little bit
 if ~isempty(readoutLimits)
+    yLimitsOrig = get(gca, 'YLim');
+    if isinf(readoutLimits(1))
+        readoutLimits(1) = yLimitsOrig(1);
+    end
+    if isinf(readoutLimits(2))
+        readoutLimits(2) = yLimitsOrig(2);
+    end
     ylim(readoutLimits);
 else
     ylim(compute_axis_limits(get(gca, 'YLim'), 'y', 'Coverage', 80));

@@ -187,7 +187,7 @@ else
     phaseStrs = phaseStrs(phaseNumbers);
 end
 
-% Combine variables across tables
+%% Combine variables across tables
 fprintf('Combining variables across tables ...\n');
 measureTables = combine_variables_across_tables(sliceParamsTables, ...
                 'Keys', 'Time', 'VariableNames', varsToCombine, ...
@@ -195,7 +195,6 @@ measureTables = combine_variables_across_tables(sliceParamsTables, ...
                 'OutFolder', outFolder, 'Prefix', prefix, 'SaveFlag', true);
 save(measureTablesMatPath, 'measureTables', '-mat');
 
-%% Compute population data
 %% Average over each phase
 if computeChevronFlag
     % Average over the last nSweepsToAverage sweeps
@@ -204,15 +203,6 @@ if computeChevronFlag
         cellfun(@(x, y) average_last_of_each_phase(x, nSweepsLastOfPhase, ...
                                     nSweepsToAverage, maxRange2Mean, y), ...
                         measureTables, chevronTablePaths, 'UniformOutput', false);
-
-    % Generate figure titles for Chevron plots
-    figTitlesChevron = strcat(varLabels, [' avg over ', ...
-                                num2str(nSweepsToAverage), ' of last ', ...
-                                num2str(nSweepsLastOfPhase), ' sweeps']);
-
-
-    % Generate variable labels
-    varLabelsChevron = varLabels;
 
     save(chevronTablesMatPath, 'chevronTables', '-mat');
 end
@@ -223,9 +213,6 @@ if computeNormalizedFlag
     normalizedChevronTables = ...
         cellfun(@(x, y) normalize_to_first_row(x, y), ...
                     chevronTables, normChevronTablePaths, 'UniformOutput', false);
-
-    % Generate variable labels
-    varLabelsNormAvgd = repmat({'% of baseline'}, size(varLabels));
 
     save(normalizedChevronTablesMatPath, 'normalizedChevronTables', '-mat');
 end
@@ -249,11 +236,18 @@ if computePopAverageFlag
     save(popAvgTablesMatPath, 'popAvgTables', '-mat');
 end
 
-%% Do the job
+%% Plot Chevron plots
 if plotChevronFlag
-    close all;
+    % Generate figure titles for Chevron plots
+    figTitlesChevron = strcat(varLabels, [' avg over ', ...
+                                num2str(nSweepsToAverage), ' of last ', ...
+                                num2str(nSweepsLastOfPhase), ' sweeps']);
 
-    % Plot Chevron plots
+    % Generate variable labels
+    varLabelsChevron = varLabels;
+
+
+    close all;
     fprintf('Plotting Chevron plots ...\n');
     figs = cellfun(@(x, y, z, w, v, u) plot_table(x, 'PlotSeparately', false, ...
                                     'PlotType', plotType, ...
@@ -270,11 +264,12 @@ if plotChevronFlag
                 tableLabels, figTitlesChevron, figNamesAvgd);
 end
 
-%%
+%% Plot Normalized Chevron plots
 if plotNormalizedFlag
-    close all;
+    % Generate variable labels
+    varLabelsNormAvgd = repmat({'% of baseline'}, size(varLabels));
 
-    % Plot Normalized Chevron plots
+    close all;
     fprintf('Plotting Normalized Chevron plots ...\n');
     figs = cellfun(@(x, y, z, w, v, u) plot_table(x, 'PlotSeparately', false, ...
                                     'PlotType', plotType, ...
@@ -291,11 +286,9 @@ if plotNormalizedFlag
                 tableLabels, figTitlesChevron, figNamesNormAvgd);
 end
 
-%%
+%% Plot each column separately
 if plotByFileFlag
     close all;
-
-    % Plot each column separately
     fprintf('Plotting each column with a different color ...\n');
     figs = cellfun(@(x, y, z, w, v) plot_table(x, 'PlotSeparately', false, ...
                                     'PlotType', plotType, ...
@@ -306,23 +299,41 @@ if plotByFileFlag
                     measureTimeTables, varsToPlot, varLabels, tableLabels, figNames);
 end
 
-%%
+%% Plot all columns together colored by phase
 if plotByPhaseFlag
     close all;
-
-    % Plot all columns together colored by phase
     fprintf('Plotting each phase with a different color ...\n');
     figs = cellfun(@(x, y, z, w, v) plot_table(x, 'PlotSeparately', false, ...
                                     'PlotType', plotType, ...
                                     'VariableNames', strcat(y, '_', fileLabels), ...
                                     'PhaseVariables', phaseVars, ...
                                     'PhaseLabels', phaseStrs, ...
+                                    'ReadoutLimits', [0, Inf], ...
                                     'ReadoutLabel', z, 'TableLabel', w, ...
                                     'PLabel', timeLabel, 'FigName', v, ...
                                     'RemoveOutliers', false), ...
             measureTimeTables, varsToPlot, varLabels, tableLabels, figNamesByPhase);
 
     %                                 'PhaseLabels', phaseStrs, ...
+end
+
+%% Plot population averages
+if plotPopAverageFlag
+    % Create titles
+    figTitlesPopAvg = strcat(replace(tableLabels, '_', '\_'), ' over time');
+
+    close all;
+    fprintf('Plotting population averages ...\n');
+    figs = cellfun(@(x, y, z, w) ...
+                    plot_tuning_curve(x.Properties.RowTimes, x.Mean, ...
+                                    'ClearFigure', true, ...
+                                    'LowerCI', x.Lower95, ...
+                                    'UpperCI', x.Upper95, ...
+                                    'ReadoutLimits', [0, Inf], ...
+                                    'PLabel', timeLabel, 'ReadoutLabel', y, ...
+                                    'FigTitle', z, 'FigName', w), ...
+                    popAvgTables, varLabels, figTitlesPopAvg, figNamesPopAvg);
+
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
