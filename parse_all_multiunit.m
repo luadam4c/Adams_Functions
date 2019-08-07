@@ -33,7 +33,6 @@ function [muParams, muData] = parse_all_multiunit(varargin)
 %       cd/all_slice_bases.m
 %       cd/combine_data_from_same_slice.m
 %       cd/parse_multiunit.m
-%       cd/plot_measures.m
 %
 % Used by:
 %       cd/clc2_analyze.m

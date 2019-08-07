@@ -304,7 +304,7 @@ Last Updated 2019-08-07 by Adam Lu
 - [**plot_grouped_scatter.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_grouped_scatter.m): Plot and save a grouped scatter plot with 95% confidence ellipses
 - [**plot_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_histogram.m): Plots a histogram labelling out of range values differently
 - [**plot_horizontal_line.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_horizontal_line.m): Plots horizontal line(s)
-- [**plot_measures.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_measures.m): plot_measures.m
+- [**plot_measures.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_measures.m): Plots all measures of interest across slices
 - [**plot_pdf.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pdf.m): Plots scaled pdf fit of data X and return vectors for the plots
 - [**plot_protocols.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_protocols.m): Computes features for each file according to protocol type
 - [**plot_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pulse.m): Plots pulses, marks the parsed endpoints and displays total number of sweeps

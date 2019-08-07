@@ -351,7 +351,7 @@ varsNeeded = {'sliceBase', 'vVecsSl', 'siMsSl', 'iVecsSl', ...
 %% Default values for optional arguments
 siMsDefault = 0.1;                      % 0.1 ms by default
 plotAllFlagDefault = false;
-plotCombinedFlagDefault = false;
+plotCombinedFlagDefault = [];
 plotSpikeDetectionFlagDefault = [];
 plotSpikeDensityFlagDefault = [];
 plotContourFlagDefault = [];
@@ -944,6 +944,9 @@ if plotMeasuresFlag
     % Create custom figure titles
     titleBase = replace(fileBase, '_', '\_');
     figTitlesMeasures = strcat(measuresToPlot, [' for ', titleBase]);
+
+    % Create new figure
+    figure(6);
 
     % Plot table and save figures
     figs(5 + (1:nMeasures)) = ...

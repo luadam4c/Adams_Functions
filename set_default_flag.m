@@ -25,6 +25,7 @@ function flag = set_default_flag(flag, varargin)
 %
 % Used by:
 %       cd/parse_multiunit.m
+%       cd/plot_measures.m
 
 % File History:
 % 2019-07-22 Pulled from parse_multiunit.m

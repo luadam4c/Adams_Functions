@@ -25,6 +25,9 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %                   - 'RemoveOutliers': whether to remove outliers
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'RunTTest': whether to run paired t-test
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'ColsToPlot': columns of the readout matrix to plot
 %                   must be a numeric vector
 %                   default == 1:size(readout, 2);
@@ -153,16 +156,19 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 % 2019-08-07 Added 'ColorMap' as an optional argument
 % 2019-08-07 Added 'ClearFig' as an optional argument
 % 2019-08-07 Now accepts infinite values for readout limits
+% 2019-08-07 Added 'RunTTest' as an optional argument
 % TODO: Return handles to plots
 %
 
 %% Hard-coded parameters
+alphaValue = 0.05;
 
 %% Default values for optional arguments
 lowerCIDefault = [];
 upperCIDefault = [];
 phaseVectorsDefault = {};           % no phase vectors by default
 removeOutliersDefault = false;      % don't remove outliers by default
+runTTestDefault = false;            % don't run paired t-test by default
 colsToPlotDefault = [];             % set later
 lineSpecDefault = '-';
 lineWidthDefault = 2;
@@ -222,6 +228,8 @@ addParameter(iP, 'PhaseVectors', phaseVectorsDefault, ...
                     'or a cell array of numeric vectors!']));
 addParameter(iP, 'RemoveOutliers', removeOutliersDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RunTTest', runTTestDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ColsToPlot', colsToPlotDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'LineSpec', lineSpecDefault, ...
@@ -280,6 +288,7 @@ lowerCI = iP.Results.LowerCI;
 upperCI = iP.Results.UpperCI;
 phaseVectors = iP.Results.PhaseVectors;
 removeOutliers = iP.Results.RemoveOutliers;
+runTTest = iP.Results.RunTTest;
 colsToPlot = iP.Results.ColsToPlot;
 lineSpec = iP.Results.LineSpec;
 lineWidth = iP.Results.LineWidth;
@@ -359,6 +368,24 @@ end
 if removeOutliers
     readout = remove_outliers(readout, 'OutlierMethod', 'isoutlier', ...
                                 'ReplaceWithNans', true);
+end
+
+% Run paired t-tests if requested
+if runTTest && size(readout, 1) > 1
+    % Transpose the readout matrix
+    readoutTransposed = transpose(readout);
+
+    % Extract the before columns
+    befores = readoutTransposed(:, 1:end-1);
+
+    % Extract the after columns
+    afters = readoutTransposed(:, 2:end);
+
+    % Run t-tests on each pair of columns
+    [testResults, testPValues] = ttest(afters, befores);
+else
+    testResults = [];
+    testPValues = [];
 end
 
 % Set default columns to plot
@@ -653,6 +680,37 @@ end
 % Plot selected values if any
 if ~isempty(indSelected)
     % TODO
+end
+
+% Plot t-test p values if any
+if ~isempty(testPValues)
+    hold on
+
+    % Get the x locations
+    xLocs = pValues(1:end-1) + (pValues(2) - pValues(1)) * 0.25;
+    
+    % Get current y axis limits
+    yLimitsNow = get(gca, 'YLim');
+
+    % Get y location
+    yLoc = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * 0.1;
+
+    % Plot texts
+    for iValue =  1:numel(testPValues)
+        % Get the current values
+        testPValueThis = testPValues(iValue);
+        xLocThis = xLocs(iValue);
+
+        % Create a p value string to 2 significant digits
+        pString = ['p = ', num2str(testPValueThis, 2)];
+
+        % Plot red if significant
+        if testPValueThis < alphaValue
+            text(xLocThis, yLoc, pString, 'Color', 'r');
+        else
+            text(xLocThis, yLoc, pString, 'Color', 'k');
+        end
+    end
 end
 
 %% Post-plotting

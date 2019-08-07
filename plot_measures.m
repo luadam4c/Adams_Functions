@@ -1,6 +1,87 @@
-% plot_measures.m
+function plot_measures (varargin)
 %% Plots all measures of interest across slices
-
+% Usage: plot_measures (varargin)
+% Explanation:
+%       TODO
+% Example(s):
+%       plot_measures;
+% Arguments:
+%       varargin    - 'PlotType': type of plot
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'tuning'    - circles
+%                       'bar'       - horizontal bars
+%                   default == 'tuning'
+%                   - 'ComputeChevronFlag': whether to compute TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ComputeNormalizedFlag': whether to compute TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ComputeTimeTablesFlag': whether to compute TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ComputePopAverageFlag': whether to compute TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotAllFlag': whether to plot everything
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotChevronFlag': whether to plot TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotNormalizedFlag': whether to plot TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotByFileFlag': whether to plot TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotByPhaseFlag': whether to plot TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotPopAverageFlag': whether to plot TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'Directory': working directory
+%                   must be a string scalar or a character vector
+%                   default == pwd
+%                   - 'InFolder': directory to read files from
+%                   must be a string scalar or a character vector
+%                   default == same as directory
+%                   - 'OutFolder': directory to place output files
+%                   must be a string scalar or a character vector
+%                   default == same as inFolder
+%                   - 'PhaseNumbers': phase numbers to restrict to
+%                   must be a numeric vector
+%                   default == []
+%                   - 'NSweepsLastOfPhase': number of sweeps at 
+%                                           the last of a phase
+%                   must be a positive integer scalar
+%                   default == 10
+%                   - 'NSweepsToAverage': number of sweeps to average
+%                   must be a positive integer scalar
+%                   default == 5
+%                   - 'MaxRange2Mean': maximum percentage of range versus mean
+%                   must be a nonnegative scalar
+%                   default == 40%
+%                   - 'SweepLengthSec': sweep length in seconds
+%                   must be a nonnegative scalar
+%                   default == 60 seconds
+%                   - 'TimeLabel': time axis label
+%                   must be a string scalar or a character vector
+%                   default == 'Time'
+%                   - 'PhaseLabel': phase axis label
+%                   must be a string scalar or a character vector
+%                   default == 'Phase'
+%                   - 'PhaseStrings': phase strings
+%                   must be a string vector or a cell array of character vectors
+%                   default == {'Baseline', 'Wash-on', 'Wash-out'}
+%                   - 'VarsToPlot': variables to plot
+%                   must be a string vector or a cell array of character vectors
+%                   default == varsToPlotAll
+%                   - 'VarLabels': variable labels
+%                   must be a string vector or a cell array of character vectors
+%                   default == varLabelsAll
+%
 % Requires:
 %       cd/argfun.m
 %       cd/combine_variables_across_tables.m
@@ -14,10 +95,12 @@
 %       cd/ismatch.m
 %       cd/plot_table.m
 %       cd/renamevars.m
+%       cd/set_default_flag.m
 %       cd/unique_custom.m
 %
 % Used by:
 %       cd/parse_all_multiunit.m
+%       cd/clc2_analyze.m.m
 
 % File History:
 % 2019-03-15 Created by Adam Lu
@@ -27,53 +110,23 @@
 % 2019-08-06 Now plots markers for the Chevron plots
 % 2019-08-06 Added phaseNumbers
 % 2019-08-06 Renamed '_averaged' -> '_chevron'
-% TODO: extract specific usage to clc2_analyze.m
+% 2019-08-07 Added input parser and plotAllFlag
+% 2019-08-07 Added directory, inFolder, outFolder
+% 2019-08-07 Extracted specific usage to clc2_analyze.m
 % 
 
 %% Hard-coded parameters
-% Flags (TODO: make optional arguments)
-plotType = 'tuning';
-% TODO: plotAllFlag
-plotChevronFlag = true;
-plotNormalizedFlag = true;
-plotByFileFlag = true;
-plotByPhaseFlag = true;
-plotPopAverageFlag = true;
-computeChevronFlag = false;
-computeNormalizedFlag = false;
-computeTimeTablesFlag = false;
-computePopAverageFlag = false;
-
-% Protocol parameters
-sweepLengthSec = 60;
-timeLabel = 'Time';
-phaseLabel = 'Phase';
-phaseStrs = {'Baseline', 'Wash-on', 'Wash-out'};
-
-% Analysis parameters
-phaseNumbers = [1, 2];
-% phaseNumbers = [];
-
-%   Note: must be consistent with parse_multiunit.m
-nSweepsLastOfPhase = 10;
-nSweepsToAverage = 5;
-maxRange2Mean = 40;
-% maxRange2Mean = 20;
-% maxRange2Mean = 200;
-
-% File patterns
-sliceFilePattern = '.*slice.*';
-outFolder = pwd;
+validPlotTypes = {'tuning', 'bar'};
 
 % Must be consistent with parse_multiunit.m
-varsToPlot = {'oscIndex1'; 'oscIndex2'; 'oscIndex3'; 'oscIndex4'; ...
+varsToPlotAll = {'oscIndex1'; 'oscIndex2'; 'oscIndex3'; 'oscIndex4'; ...
                     'oscPeriod1Ms'; 'oscPeriod2Ms'; ...
                     'oscDurationSec'; ...
                     'nSpikesTotal'; 'nSpikesIn10s'; 'nSpikesInOsc'; ...
                     'nBurstsTotal'; 'nBurstsIn10s'; 'nBurstsInOsc'; ...
                     'nSpikesPerBurst'; 'nSpikesPerBurstIn10s'; ...
                     'nSpikesPerBurstInOsc'};
-varLabels = {'Oscillatory Index 1'; 'Oscillatory Index 2'; ...
+varLabelsAll = {'Oscillatory Index 1'; 'Oscillatory Index 2'; ...
                 'Oscillatory Index 3'; 'Oscillatory Index 4'; ...
                 'Oscillation Period 1 (ms)'; 'Oscillation Period 2 (ms)'; ...
                 'Oscillation Duration (s)'; ...
@@ -85,10 +138,138 @@ varLabels = {'Oscillatory Index 1'; 'Oscillatory Index 2'; ...
                 'Number of Spikes Per Burst in First 10 s'; ...
                 'Number of Spikes Per Burst in Oscillation'};
 
+%% Default values for optional arguments
+plotTypeDefault = 'tuning';
+computeChevronFlagDefault = false;
+computeNormalizedFlagDefault = false;
+computeTimeTablesFlagDefault = false;
+computePopAverageFlagDefault = false;
+plotAllFlagDefault = false;
+plotChevronFlagDefault = [];
+plotNormalizedFlagDefault = [];
+plotByFileFlagDefault = [];
+plotByPhaseFlagDefault = [];
+plotPopAverageFlagDefault = [];
+directoryDefault = pwd;
+inFolderDefault = '';                   % set later
+outFolderDefault = '';                  % set later
+phaseNumbersDefault = [];
+nSweepsLastOfPhaseDefault = 10;         % select from last 10 values by default
+nSweepsToAverageDefault = 5;            % select 5 values by default
+maxRange2MeanDefault = 40;              % range is not more than 40% of mean 
+                                        %   by default
+sweepLengthSecDefault = 60;             % sweep length is 60 seconds by default
+timeLabelDefault = 'Time';
+phaseLabelDefault = 'Phase';
+phaseStrsDefault = {'Baseline', 'Wash-on', 'Wash-out'};
+varsToPlotDefault = varsToPlotAll;
+varLabelsDefault = varLabelsAll;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%% Deal with arguments
+% Check number of required arguments
+if nargin < 1
+    error(create_error_for_nargin(mfilename));
+end
+
+% Set up Input Parser Scheme
+iP = inputParser;
+iP.FunctionName = mfilename;
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'PlotType', plotTypeDefault, ...
+    @(x) any(validatestring(x, validPlotTypes)));
+addParameter(iP, 'ComputeChevronFlag', computeChevronFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ComputeNormalizedFlag', computeNormalizedFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ComputeTimeTablesFlag', computeTimeTablesFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ComputePopAverageFlag', computePopAverageFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotAllFlag', plotAllFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotChevronFlag', plotChevronFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotNormalizedFlag', plotNormalizedFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotByFileFlag', plotByFileFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotByPhaseFlag', plotByPhaseFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotPopAverageFlag', plotPopAverageFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Directory', directoryDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'InFolder', inFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'PhaseNumbers', phaseNumbersDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'NSweepsLastOfPhase', nSweepsLastOfPhaseDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'NSweepsToAverage', nSweepsToAverageDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+addParameter(iP, 'SweepLengthSec', sweepLengthSecDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+addParameter(iP, 'TimeLabel', timeLabelDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'PhaseLabel', phaseLabelDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'PhaseStrings', phaseStrsDefault, ...
+    @(x) assert(iscellstr(x) || isstring(x), ...
+                ['PhaseStrings must be a cell array of character arrays ', ...
+                'or a string array!']));
+addParameter(iP, 'VarsToPlot', varsToPlotDefault, ...
+    @(x) assert(iscellstr(x) || isstring(x), ...
+                ['VarsToPlot must be a cell array of character arrays ', ...
+                'or a string array!']));
+addParameter(iP, 'VarLabels', varLabelsDefault, ...
+    @(x) assert(iscellstr(x) || isstring(x), ...
+                ['VarLabels must be a cell array of character arrays ', ...
+                'or a string array!']));
+
+% Read from the Input Parser
+parse(iP, varargin{:});
+plotType = validatestring(iP.Results.PlotType, validPlotTypes);
+computeChevronFlag = iP.Results.ComputeChevronFlag;
+computeNormalizedFlag = iP.Results.ComputeNormalizedFlag;
+computeTimeTablesFlag = iP.Results.ComputeTimeTablesFlag;
+computePopAverageFlag = iP.Results.ComputePopAverageFlag;
+plotAllFlag = iP.Results.PlotAllFlag;
+plotChevronFlag = iP.Results.PlotChevronFlag;
+plotNormalizedFlag = iP.Results.PlotNormalizedFlag;
+plotByFileFlag = iP.Results.PlotByFileFlag;
+plotByPhaseFlag = iP.Results.PlotByPhaseFlag;
+plotPopAverageFlag = iP.Results.PlotPopAverageFlag;
+directory = iP.Results.Directory;
+inFolder = iP.Results.InFolder;
+outFolder = iP.Results.OutFolder;
+phaseNumbers = iP.Results.PhaseNumbers;
+nSweepsLastOfPhase = iP.Results.NSweepsLastOfPhase;
+nSweepsToAverage = iP.Results.NSweepsToAverage;
+maxRange2Mean = iP.Results.MaxRange2Mean;
+sweepLengthSec = iP.Results.SweepLengthSec;
+timeLabel = iP.Results.TimeLabel;
+phaseLabel = iP.Results.PhaseLabel;
+phaseStrs = iP.Results.PhaseStrings;
+varsToPlot = iP.Results.VarsToPlot;
+varLabels = iP.Results.VarLabels;
+
 %% Preparation
-% Deal with flags
+% Set default flags
+fprintf('Setting default flags ...\n');
+[plotChevronFlag, plotNormalizedFlag, ...
+plotByFileFlag, plotByPhaseFlag, plotPopAverageFlag] = ...
+    argfun(@(x) set_default_flag(x, plotAllFlag), ...
+                plotChevronFlag, plotNormalizedFlag, ...
+                plotByFileFlag, plotByPhaseFlag, plotPopAverageFlag);
+
+% Set compute flags
 if plotPopAverageFlag
     computePopAverageFlag = true;
 end
@@ -102,10 +283,20 @@ if plotChevronFlag || computeNormalizedFlag
     computeChevronFlag = true;
 end
 
-fprintf('Finding all spreadsheets ...\n');
+% Decide on the input directory
+if isempty(inFolder)
+    inFolder = directory;
+end
+
+% Decide on the output directory
+if isempty(outFolder)
+    outFolder = inFolder;
+end
+
 % Find all files with the pattern *slice*_params in the file name
-[~, sliceParamSheets] = all_files('Keyword', 'slice', 'Suffix', 'params', ...
-                                    'ForceCellOutput', true);
+fprintf('Finding all spreadsheets ...\n');
+[~, sliceParamSheets] = all_files('Directory', inFolder, 'Keyword', 'slice', ...
+                                'Suffix', 'params', 'ForceCellOutput', true);
                                 
 % Extract the common prefix
 prefix = extract_fileparts(sliceParamSheets, 'commonprefix');
@@ -259,6 +450,7 @@ if plotChevronFlag
                                     'FigTitle', v, 'FigName', u, ...
                                     'LegendLocation', 'eastoutside', ...
                                     'RemoveOutliers', false, ...
+                                    'RunTTest', true, ...
                                     'Marker', 'o', 'MarkerFaceColor', 'auto'), ...
                 chevronTables, varsToPlot, varLabelsChevron, ...
                 tableLabels, figTitlesChevron, figNamesAvgd);
@@ -362,8 +554,6 @@ Time = minutes(timeMin);
 % Add a time column to the table
 myTable = addvars(myTable, Time, 'Before', 1);
 
-end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function outTable = average_last_of_each_phase(inTable, nSweepsLastOfPhase, ...
@@ -434,8 +624,6 @@ outTable.Properties.VariableNames = vertcat({'phaseNumber'}, readoutVars);
 % Save the table
 writetable(outTable, sheetPath);
 
-end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function indLastEachPhase = find_last_ind_each_phase(phaseVec, nLastIndices)
@@ -456,8 +644,6 @@ indLastEachPhase = create_indices('IndexStart', firstIndexEachPhase, ...
                                     'IndexEnd', lastIndexEachPhase, ...
                                     'MaxNum', nLastIndices, ...
                                     'ForceCellOutput', true);
-
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -481,8 +667,6 @@ normalizedTable = table;
 
 % Save the table
 writetable(normalizedTable, sheetPath);
-
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -520,8 +704,6 @@ outTable = renamevars(outTable, 'rowTimes', 'Time');
 % Save the table
 writetable(outTable, sheetPath);
 
-end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
@@ -539,6 +721,9 @@ readoutAvg = cellfun(@(x, y) cellfun(@(z) nanmean(inTable{:, x}(z)), y), ...
 nPhases = numel(uniquePhases);
 
 phaseStrs = {'baseline', 'washon', 'washoff'};
+
+% File patterns
+sliceFilePattern = '.*slice.*';
 
 %}
 
