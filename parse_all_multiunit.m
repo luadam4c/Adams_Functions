@@ -22,6 +22,10 @@ function [muParams, muData] = parse_all_multiunit(varargin)
 %                   - 'OutFolder': directory to place output files
 %                   must be a string scalar or a character vector
 %                   default == same as inFolder
+%                   - 'PlotMeasuresFlag': whether to plot time series 
+%                                           of measures
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - Any other parameter-value pair for the parse_multiunit() function
 %
 % Requires:
@@ -62,6 +66,7 @@ regexpSliceAbfFile = '.*slice[0-9]*.*.abf';
 directoryDefault = pwd;
 inFolderDefault = '';                   % set later
 outFolderDefault = '';                  % set later
+plotMeasuresFlagDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -79,12 +84,15 @@ addParameter(iP, 'InFolder', inFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'PlotMeasuresFlag', plotMeasuresFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 directory = iP.Results.Directory;
 inFolder = iP.Results.InFolder;
 outFolder = iP.Results.OutFolder;
+plotMeasuresFlag = iP.Results.PlotMeasuresFlag;
 
 % Keep unmatched arguments for the parse_multiunit() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -171,28 +179,40 @@ for iSlice = 1:nSlices
     fprintf("Parsing slice #%d ...\n", iSlice);
 
     % Parse and plot multi-unit recordings from this slice
-    [muParams{iSlice}, muData{iSlice}] = ...
+    if nargout >= 1
+        [muParams{iSlice}, muData{iSlice}] = ...
+            parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), ...
+                            'PulseVectors', iVecsSl{iSlice}, ...
+                            'FileBase', sliceBases{iSlice}, ...
+                            'PhaseBoundaries', phaseBoundaries{iSlice}, ...
+                            'OutFolder', outFolder, ...
+                            'PlotMeasuresFlag', plotMeasuresFlag, ...
+                            otherArguments{:});
+    else
         parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), ...
                         'PulseVectors', iVecsSl{iSlice}, ...
                         'FileBase', sliceBases{iSlice}, ...
                         'PhaseBoundaries', phaseBoundaries{iSlice}, ...
-                        'OutFolder', outFolder, otherArguments{:});
+                        'OutFolder', outFolder, ...
+                        'PlotMeasuresFlag', plotMeasuresFlag, ...
+                        otherArguments{:});
+    end
 
     % Close all figures
     close all force hidden;
-end
-
-% for iSlice = 1:nSlices; [muParams{iSlice}, muData{iSlice}] = parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), 'PulseVectors', iVecsSl{iSlice}, 'PlotFlag', plotFlag, 'OutFolder', outFolder, 'FileBase', sliceBases{iSlice}, 'PhaseBoundaries', phaseBoundaries{iSlice}); close all force hidden; end
-
-%% Plot tuning curves for all measures
-if plotMeasuresFlag
-    plot_measures;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+%% Plot tuning curves for all measures
+if plotMeasuresFlag
+    plot_measures;
+end
+
+for iSlice = 1:nSlices; [muParams{iSlice}, muData{iSlice}] = parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), 'PulseVectors', iVecsSl{iSlice}, 'PlotFlag', plotFlag, 'OutFolder', outFolder, 'FileBase', sliceBases{iSlice}, 'PhaseBoundaries', phaseBoundaries{iSlice}); close all force hidden; end
 
 %}
 

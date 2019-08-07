@@ -25,7 +25,7 @@
 % 
 
 %% Hard-coded parameters
-% Flags (to be made arguments later)
+% Flags (TODO: make optional arguments)
 plotType = 'tuning';
 plotChevronFlag = true;
 plotNormalizedFlag = true;

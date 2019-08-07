@@ -57,6 +57,7 @@ function [results, figtypes] = isfigtype (candidates, varargin)
 % 2018-05-15 possible_figtypes -> validFigTypes
 % 2018-05-16 Now uses istype.m
 % 2018-10-21 Now removes any '.' in the string candidates
+% 2019-08-06 Added 'eps' as a candidate
 % 
 
 %% Hard-coded parameters
@@ -65,7 +66,7 @@ validFigTypes = {'png', 'fig', 'm', 'mfig', ...
                 'bmpmono', 'bmp', 'bmp16m', 'bmp256', ...
                 'hdf', 'pbm', 'pbmraw', 'pcxmono', ...
                 'pcx24b', 'pcx256', 'pcx16', 'pgm', ...
-                'pgmraw', 'ppm', 'ppmraw'};
+                'pgmraw', 'ppm', 'ppmraw', 'eps'};
                                         % accepted by saveas()
                                         % Note: from Matlab 2017a Documentation
 
