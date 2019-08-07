@@ -2,8 +2,10 @@
 %% Plots all measures of interest across slices
 
 % Requires:
+%       cd/argfun.m
 %       cd/combine_variables_across_tables.m
 %       cd/compute_phase_average.m
+%       cd/compute_stats.m
 %       cd/count_vectors.m
 %       cd/create_indices.m
 %       cd/extract_common_directory.m
@@ -11,6 +13,7 @@
 %       cd/force_matrix.m
 %       cd/ismatch.m
 %       cd/plot_table.m
+%       cd/renamevars.m
 %       cd/unique_custom.m
 %
 % Used by:
@@ -23,16 +26,23 @@
 % 2019-06-11 Now plots both normalized and original versions of the Chevron Plot
 % 2019-08-06 Now plots markers for the Chevron plots
 % 2019-08-06 Added phaseNumbers
+% 2019-08-06 Renamed '_averaged' -> '_chevron'
 % TODO: extract specific usage to clc2_analyze.m
 % 
 
 %% Hard-coded parameters
 % Flags (TODO: make optional arguments)
 plotType = 'tuning';
+% TODO: plotAllFlag
 plotChevronFlag = true;
 plotNormalizedFlag = true;
 plotByFileFlag = true;
 plotByPhaseFlag = true;
+plotPopAverageFlag = true;
+computeChevronFlag = false;
+computeNormalizedFlag = false;
+computeTimeTablesFlag = false;
+computePopAverageFlag = false;
 
 % Protocol parameters
 sweepLengthSec = 60;
@@ -78,6 +88,20 @@ varLabels = {'Oscillatory Index 1'; 'Oscillatory Index 2'; ...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Preparation
+% Deal with flags
+if plotPopAverageFlag
+    computePopAverageFlag = true;
+end
+if plotByFileFlag || plotByPhaseFlag || computePopAverageFlag
+    computeTimeTablesFlag = true;
+end
+if plotNormalizedFlag
+    computeNormalizedFlag = true;
+end
+if plotChevronFlag || computeNormalizedFlag
+    computeChevronFlag = true;
+end
+
 fprintf('Finding all spreadsheets ...\n');
 % Find all files with the pattern *slice*_params in the file name
 [~, sliceParamSheets] = all_files('Keyword', 'slice', 'Suffix', 'params', ...
@@ -110,14 +134,23 @@ tableLabels = strcat(prefix, {': '}, varLabels);
 tableNames = strcat(prefix, '_', varsToPlot);
 
 % Create figure names
-figNames = fullfile(outFolder, strcat(tableNames, '.png'));
-figNamesByPhase = fullfile(outFolder, strcat(tableNames, '_byphase.png'));
-figNamesAvgd = fullfile(outFolder, strcat(tableNames, '_averaged.png'));
-figNamesNormAvgd = fullfile(outFolder, strcat(tableNames, '_normaveraged.png'));
+[figNames, figNamesByPhase, figNamesAvgd, figNamesNormAvgd, figNamesPopAvg] = ...
+    argfun(@(x) fullfile(outFolder, strcat(tableNames, '_', x, '.png')), ...
+            'byfile', 'byphase', 'chevron', 'normChevron', 'popAverage');
 
-% Create paths for averaged tables
-avgdTablePaths = fullfile(outFolder, strcat(tableNames, '_averaged.csv'));
-normAvgdTablePaths = fullfile(outFolder, strcat(tableNames, '_normaveraged.csv'));
+% Create paths for chevron tables
+% TODO: Use argfun
+chevronTablePaths = fullfile(outFolder, strcat(tableNames, '_chevron.csv'));
+normChevronTablePaths = fullfile(outFolder, strcat(tableNames, '_normChevron.csv'));
+popAvgTablePaths = fullfile(outFolder, strcat(tableNames, '_popAverage.csv'));
+
+% Create paths for mat files
+% TODO: Use argfun
+measureTablesMatPath = fullfile(outFolder, [prefix, '_', 'measureTables.mat']);
+chevronTablesMatPath = fullfile(outFolder, [prefix, '_', 'chevronTables.mat']);
+normalizedChevronTablesMatPath = fullfile(outFolder, [prefix, '_', 'normalizedChevronTables.mat']);
+measureTimeTablesMatPath = fullfile(outFolder, [prefix, '_', 'measureTimeTables.mat']);
+popAvgTablesMatPath = fullfile(outFolder, [prefix, '_', 'popAvgTables.mat']);
 
 %% Read in data and preprocess
 % Read all slice parameter spreadsheets
@@ -160,15 +193,17 @@ measureTables = combine_variables_across_tables(sliceParamsTables, ...
                 'Keys', 'Time', 'VariableNames', varsToCombine, ...
                 'InputNames', fileLabels, 'OmitVarName', false, ...
                 'OutFolder', outFolder, 'Prefix', prefix, 'SaveFlag', true);
+save(measureTablesMatPath, 'measureTables', '-mat');
 
 %% Compute population data
-if plotChevronFlag
+%% Average over each phase
+if computeChevronFlag
     % Average over the last nSweepsToAverage sweeps
     fprintf('Creating Chevron tables ...\n');
     chevronTables = ...
         cellfun(@(x, y) average_last_of_each_phase(x, nSweepsLastOfPhase, ...
                                     nSweepsToAverage, maxRange2Mean, y), ...
-                        measureTables, avgdTablePaths, 'UniformOutput', false);
+                        measureTables, chevronTablePaths, 'UniformOutput', false);
 
     % Generate figure titles for Chevron plots
     figTitlesChevron = strcat(varLabels, [' avg over ', ...
@@ -178,24 +213,40 @@ if plotChevronFlag
 
     % Generate variable labels
     varLabelsChevron = varLabels;
+
+    save(chevronTablesMatPath, 'chevronTables', '-mat');
 end
 
-% Normalize to baseline if requested
-if plotNormalizedFlag
+%% Normalize to baseline if requested
+if computeNormalizedFlag
     fprintf('Normalizing to baseline ...\n');
     normalizedChevronTables = ...
         cellfun(@(x, y) normalize_to_first_row(x, y), ...
-                    chevronTables, normAvgdTablePaths, 'UniformOutput', false);
+                    chevronTables, normChevronTablePaths, 'UniformOutput', false);
 
     % Generate variable labels
     varLabelsNormAvgd = repmat({'% of baseline'}, size(varLabels));
+
+    save(normalizedChevronTablesMatPath, 'normalizedChevronTables', '-mat');
 end
 
-% Convert to timetables
-if plotByFileFlag || plotByPhaseFlag
+%% Convert to timetables
+if computeTimeTablesFlag
     fprintf('Converting measure tables to time tables ...\n');
     measureTimeTables = cellfun(@table2timetable, ...
                                 measureTables, 'UniformOutput', false);
+
+    save(measureTimeTablesMatPath, 'measureTimeTables', '-mat');
+end
+
+%% Average over each file
+if computePopAverageFlag
+    fprintf('Computing population averages ...\n');
+    popAvgTables = cellfun(@(x, y, z) compute_population_average(x, y, z), ...
+                            measureTimeTables, varsToPlot, popAvgTablePaths, ...
+                            'UniformOutput', false);
+
+    save(popAvgTablesMatPath, 'popAvgTables', '-mat');
 end
 
 %% Do the job
@@ -273,14 +324,6 @@ if plotByPhaseFlag
 
     %                                 'PhaseLabels', phaseStrs, ...
 end
-
-%% Save tables together
-measureTablesMatPath = fullfile(outFolder, [prefix, '_', 'measureTables.mat']);
-chevronTablesMatPath = fullfile(outFolder, [prefix, '_', 'chevronTables.mat']);
-normalizedChevronTablesMatPath = fullfile(outFolder, [prefix, '_', 'normalizedChevronTables.mat']);
-save(measureTablesMatPath, 'measureTables', '-mat');
-save(chevronTablesMatPath, 'chevronTables', '-mat');
-save(normalizedChevronTablesMatPath, 'normalizedChevronTables', '-mat');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -425,7 +468,46 @@ end
 
 normalizedTable = table;
 
+% Save the table
 writetable(normalizedTable, sheetPath);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function outTimeTable = compute_population_average (inTimeTable, varName, sheetPath)
+%% Computes the population mean and confidence intervals
+
+% Get all the variable names
+columnNames = inTimeTable.Properties.VariableNames;
+
+% Select the columns that contains given variable name
+columnsToAverage = contains(columnNames, varName);
+
+% Extract the data
+popData = inTimeTable{:, columnsToAverage};
+
+% Compute the means and bounds of 95% confidence intervals
+[means, lower95s, upper95s] = ...
+    argfun(@(x) compute_stats(popData, x, 2), ...
+            'mean', 'lower95', 'upper95');
+
+% Save the row times from inTable
+rowTimes = inTimeTable.Properties.RowTimes;
+
+% Create output table
+outTimeTable = timetable(rowTimes, means, lower95s, upper95s, ...
+                    'VariableNames', {'Mean', 'Lower95', 'Upper95'});
+
+
+% Convert to a time table
+outTable = timetable2table(outTimeTable);
+
+% Rename 'rowTimes' -> 'Time'
+outTable = renamevars(outTable, 'rowTimes', 'Time');
+
+% Save the table
+writetable(outTable, sheetPath);
 
 end
 

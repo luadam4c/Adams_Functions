@@ -44,6 +44,7 @@ function table = renamevars (table, prevNames, newNames, varargin)
 % Used by:
 %       cd/combine_variables_across_tables.m
 %       cd/load_params.m
+%       cd/plot_measures.m
 
 % File History:
 % 2018-12-12 Created by Adam Lu

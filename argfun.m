@@ -53,6 +53,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/plot_bar.m
 %       cd/plot_cfit_pulse_response.m
 %       cd/plot_error_bar.m
+%       cd/plot_measures.m
 %       cd/plot_protocols.m
 %       cd/plot_traces.m
 %       cd/plot_traces_abf.m

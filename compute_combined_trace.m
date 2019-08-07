@@ -73,12 +73,11 @@ function [combTrace, paramsUsed] = ...
 %       cd/iscellnumericvector.m
 %
 % Used by:
-%       cd/compute_combined_data.m
 %       cd/compute_average_trace.m
+%       cd/compute_combined_data.m
 %       cd/compute_maximum_trace.m
 %       cd/compute_minimum_trace.m
 %       cd/find_in_strings.m
-%       cd/compute_combined_data.m
 
 % File History:
 % 2019-01-03 Moved from compute_average_trace
@@ -94,6 +93,7 @@ function [combTrace, paramsUsed] = ...
 % 2019-01-22 Added 'ConsistentFormat' as an optional parameter
 % 2019-04-26 Added 'IgnoreNan' as an optional parameter
 % TODO: Make 'Seeds' an optional argument
+% TODO: Use compute_stats.m with dim == 2?
 % 
 
 %% Hard-coded parameters
@@ -344,11 +344,10 @@ function [combTrace, seed] = ...
 % Combine traces
 switch combineMethod
     case {'average', 'mean'}
+        % Take the mean of each row and return a column
         if ignoreNan
-            % Take the mean of all columns
             combTrace = nanmean(traces, 2);
         else
-            % Take the mean of all columns
             combTrace = mean(traces, 2);
         end
     case {'maximum', 'minimum'}

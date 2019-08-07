@@ -16,8 +16,9 @@ function flag = set_default_flag(flag, varargin)
 % Arguments:
 %       flag        - flag that will be set if empty
 %                   must be either empty or a logical scalar
-%       auxFlag     - auxiliary flag that sets the default flag
+%       auxFlag     - (opt) auxiliary flag that sets the default flag
 %                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/create_error_for_nargin.m

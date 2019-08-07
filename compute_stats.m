@@ -21,7 +21,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %                   must be a numeric array or a cell array of numeric arrays
 %       statName    - name of the statistic
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'mean'      - mean
+%                       'average' or 'mean' - mean
 %                       'std'       - standard deviation
 %                       'stderr'    - standard error
 %                       'lower95'   - lower bound of the 95% confidence interval
@@ -67,6 +67,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       cd/parse_multiunit.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
+%       cd/plot_measures.m
 %       cd/select_similar_values.m
 %
 % Related functions:
@@ -81,11 +82,12 @@ function stats = compute_stats (vecs, statName, varargin)
 % 2019-03-14 Added 'cov' to validStatNames
 % 2019-05-12 Added 'zscore', 'range' and 'range2mean'
 % 2019-05-12 Added dim as an optional argument
+% 2019-08-07 Fixed 0.95 -> 0.96
 % TODO: Combine with compute_weighted_average.m
 % 
 
 %% Hard-coded parameters
-validStatNames = {'mean', 'std', 'stderr', 'lower95', 'upper95', ...
+validStatNames = {'average', 'mean', 'std', 'stderr', 'lower95', 'upper95', ...
                     'cov', 'zscore', 'range', 'range2mean'};
 
 %% Default values for optional arguments
@@ -165,7 +167,7 @@ end
 
 % Decide on the function to use on each vector
 switch statName
-    case 'mean'
+    case {'average', 'mean'}
         if ignoreNan
             func = @(x) nanmean(x, dim);
         else
@@ -185,15 +187,15 @@ switch statName
         end            
     case 'lower95'
         if ignoreNan
-            func = @(x) nanmean(x, dim) - 1.95 .* nanstderr(x, dim);
+            func = @(x) nanmean(x, dim) - 1.96 .* nanstderr(x, dim);
         else
-            func = @(x) mean(x, dim) - 1.95 .* stderr(x, dim);
+            func = @(x) mean(x, dim) - 1.96 .* stderr(x, dim);
         end            
     case 'upper95'
         if ignoreNan
-            func = @(x) nanmean(x, dim) + 1.95 .* nanstderr(x, dim);
+            func = @(x) nanmean(x, dim) + 1.96 .* nanstderr(x, dim);
         else
-            func = @(x) mean(x, dim) + 1.95 .* stderr(x, dim);
+            func = @(x) mean(x, dim) + 1.96 .* stderr(x, dim);
         end     
     case 'cov'
         if ignoreNan
