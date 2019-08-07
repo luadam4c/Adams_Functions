@@ -57,8 +57,16 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %                   must be a scalartext 
 %                       or a cell array of strings or character vectors
 %                   default == {'Column #1', 'Column #2', ...}
+%                   - 'PhaseLabels': phase labels if phase vectors are provided
+%                   must be a scalartext 
+%                       or a cell array of strings or character vectors
+%                   default == {'Phase #1', 'Phase #2', ...}
+%                   - 'ColorMap' - color map used when colsToPlot > 1
+%                   must be a 2-D numeric array with 3 columns
+%                   default == TODO
 %                   - 'SingleColor': color when colsToPlot == 1
 %                   must be a 3-element vector
+%                   default == rgb('SkyBlue')
 %                   - 'LegendLocation': location for legend
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'auto'      - use default
@@ -99,6 +107,7 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %
 % Requires:
 %       ~/Downloaded_Functions/rgb.m
+%       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/decide_on_fighandle.m
@@ -130,7 +139,9 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 % 2019-03-25 Now expands the y limits by a little by default
 % 2019-05-10 Now uses decide_on_fighandle.m
 % 2019-06-10 Added 'PBoundaries' and 'RBoundaries' as optional arguments
-% TODO: Make 'ColorMap' and optional argument
+% 2019-08-07 Now changes the pTickAngle only if the labels are too long
+% 2019-08-07 Added 'PhaseLabels' as an optional argument
+% 2019-08-07 Added 'ColorMap' as an optional argument
 % TODO: Return handles to plots
 %
 
@@ -151,6 +162,8 @@ pTickAngleDefault = [];             % set later
 pLabelDefault = 'Parameter';
 readoutLabelDefault = 'Readout';
 columnLabelsDefault = '';           % set later
+phaseLabelsDefault = '';            % set later
+colorMapDefault = [];               % set later
 singleColorDefault = rgb('SkyBlue');
 legendLocationDefault = 'auto';     % set later
 pBoundariesDefault = [];
@@ -203,7 +216,7 @@ addParameter(iP, 'ReadoutLimits', readoutLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'PTicks', pTicksDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'PTickLabels', pTickLabelsDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'PTickAngle', pTickAngleDefault, ...
@@ -214,6 +227,10 @@ addParameter(iP, 'ReadoutLabel', readoutLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ColumnLabels', columnLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'PhaseLabels', phaseLabelsDefault, ...
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'ColorMap', colorMapDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d', 'ncols', 3}));
 addParameter(iP, 'SingleColor', singleColorDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 3}));
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
@@ -251,6 +268,8 @@ pTickAngle = iP.Results.PTickAngle;
 pLabel = iP.Results.PLabel;
 readoutLabel = iP.Results.ReadoutLabel;
 columnLabels = iP.Results.ColumnLabels;
+phaseLabels = iP.Results.PhaseLabels;
+colorMap = iP.Results.ColorMap;
 singlecolor = iP.Results.SingleColor;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
@@ -301,12 +320,14 @@ if ~isempty(phaseVectors)
     maxNPhases = max(nPhases);
 
     % Create phase labels
-    phaseLabels = create_labels_from_numbers(1:maxNPhases, 'Prefix', 'Phase #');
+    if isempty(phaseLabels)
+        phaseLabels = create_labels_from_numbers(1:maxNPhases, ...
+                                                'Prefix', 'Phase #');
+    end
 else
     uniquePhases = {};
     nPhases = [];
-    maxNPhases = 1;   
-    phaseLabels = {};
+    maxNPhases = 1;
 end
 
 % Remove outliers if requested
@@ -363,11 +384,12 @@ nNonInf = sum(~isinf(readout), 1);
 nColsToPlot = length(colsToPlot);
 
 % Define the color map to use
-if isempty(phaseVectors)
-    cm = colormap(jet(nColsToPlot));
-else
-    % Create a color map
-    cm = colormap(hsv(maxNPhases));
+if isempty(colorMap)
+    if isempty(phaseVectors)
+        colorMap = colormap(jet(nColsToPlot));
+    else
+        colorMap = colormap(hsv(maxNPhases));
+    end
 end
 
 % Decide on the figure to plot on
@@ -376,8 +398,15 @@ fig = decide_on_fighandle('FigHandle', figHandle, 'FigNumber', figNumber);
 % Set the default parameter tick angle
 if isempty(pTickAngle)
     if ~isempty(pTickLabels)
-        % TODO: Rotate p tick labels only if too long
-        pTickAngle = 60;
+        maxCharPTickLabels = max(count_samples(pTickLabels, ...
+                                    'TreatCellStrAsArray', false));
+        if maxCharPTickLabels > 10
+            pTickAngle = 60;
+        elseif maxCharPTickLabels > 3
+            pTickAngle = 45;
+        else
+            pTickAngle = 0;
+        end
     else
         pTickAngle = 0;
     end
@@ -428,19 +457,19 @@ for c = 1:nColsToPlot
     if isempty(phaseVectors)
         % Set color by columns
         if nColsToPlot > 1
-            set(lines(c, 1), 'Color', cm(c, :))
+            set(lines(c, 1), 'Color', colorMap(c, :))
         elseif nColsToPlot == 1
             set(lines(c, 1), 'Color', singlecolor);
         end
     else
         % Set color by phase
         for iPhase = 1:nPhasesThis
-            set(lines(c, iPhase), 'Color', cm(iPhase, :));
+            set(lines(c, iPhase), 'Color', colorMap(iPhase, :));
         end
     end
 
     % Set display name
-    if isempty(phaseVectors)
+    if isempty(phaseVectors) || isempty(phaseLabels)
         if ~strcmpi(columnLabels, 'suppress')
             set(lines(c, 1), 'DisplayName', ...
                 replace(columnLabels{col}, '_', '\_'));
@@ -502,7 +531,7 @@ if ~isempty(pTicks)
     xticks(pTicks);
 end
 if ~isempty(pTickLabels)
-    xticklabels(pTicks);
+    xticklabels(pTickLabels);
 end
 if ~strcmpi(pLabel, 'suppress')
     xlabel(pLabel);

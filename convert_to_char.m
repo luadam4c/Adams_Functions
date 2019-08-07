@@ -29,7 +29,6 @@ function strs = convert_to_char(data, varargin)
 %
 % Used by:
 %       cd/create_labels_from_numbers.m
-%       cd/plot_table.m
 %       cd/test_difference.m
 
 % File History:

@@ -48,6 +48,9 @@ function figs = plot_table (table, varargin)
 %                   - 'PLabel': label for the parameter
 %                   must be a string scalar or a character vector
 %                   default == none ('suppress')
+%                   - 'PTicks': x tick values for the parameter values
+%                   must be a numeric vector
+%                   default == 1:numel(pTickLabels)
 %                   - 'PTickLabels': x tick labels
 %                   must be a cell array of character vectors/strings
 %                   default == row names or times if provided
@@ -61,7 +64,6 @@ function figs = plot_table (table, varargin)
 %                       or the plot_tuning_curve() function
 %
 % Requires:
-%       cd/convert_to_char.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_common_directory.m
 %       cd/extract_common_prefix.m
@@ -86,6 +88,7 @@ function figs = plot_table (table, varargin)
 % 2019-03-25 Added 'PhaseVariables' as an optional argument
 % 2019-05-08 Added 'PlotType' as an optional argument
 % 2019-08-07 Added 'PTickLabels' as an optional argument
+% 2019-08-07 Added 'PTicks' as an optional argument
 % TODO: Return handles to plots
 % TODO: Pass in figNames or figNumbers when plotting separately
 % 
@@ -118,6 +121,7 @@ delimiterDefault = '_';         % use '_' as delimiter by default
 readoutLabelDefault = '';       % set later
 tableLabelDefault = '';         % set later
 pLabelDefault = 'suppress';     % No x label by default
+pTicksDefault = [];
 pTickLabelsDefault = {};
 outFolderDefault = pwd;
 figNameDefault = '';
@@ -180,6 +184,8 @@ addParameter(iP, 'TableLabel', tableLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'PLabel', pLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'PTicks', pTicksDefault, ...
+    @(x) isempty(x) || isnumericvector(x));
 addParameter(iP, 'PTickLabels', pTickLabelsDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
@@ -203,6 +209,7 @@ delimiter = iP.Results.Delimiter;
 readoutLabel = iP.Results.ReadoutLabel;
 tableLabel = iP.Results.TableLabel;
 pLabel = iP.Results.PLabel;
+pTicks = iP.Results.PTicks;
 pTickLabels = iP.Results.PTickLabels;
 outFolder = iP.Results.OutFolder;
 figName = iP.Results.FigName;
@@ -275,12 +282,6 @@ if isempty(pTickLabels)
             % Just use the row names
             pTickLabels = rowNames;
         end
-    elseif isfield(table.Properties, 'RowTimes')
-        % Convert time to minutes
-        timeVec = minutes(table.Properties.RowTimes);
-
-        % Convert to a cell array of character vectors
-        pTickLabels = convert_to_char(timeVec);
     else
         % Use default x tick labels
         pTickLabels = {};
@@ -332,7 +333,8 @@ if plotSeparately
     figs = plot_struct(myStruct, 'OutFolder', outFolder, ...
                         'PlotType', plotType, ...
                         'FieldLabels', varLabels, ...
-                        'PTickLabels', pTickLabels, 'PLabel', pLabel, ...
+                        'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
+                        'PLabel', pLabel, ...
                         'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
                         'MarkerEdgeColor', markerEdgeColor, ...
                         'MarkerFaceColor', markerFaceColor, ...
@@ -384,6 +386,7 @@ else
         case 'tuning'
             figs = plot_tuning_curve(xValues, myArray, 'FigName', figName, ...
                             'PhaseVectors', phaseVectors, ...
+                            'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
                             'PLabel', pLabel, ...
                             'ReadoutLabel', readoutLabel, ...
                             'ColumnLabels', varLabels, ...
@@ -411,6 +414,19 @@ OLD CODE:
 % Create x tick labels
 pTickLabels = cellfun(@(x) strrep(x, '_', '\_'), fileBases, ...
                         'UniformOutput', false);
+
+% Will not work for durations data
+if isempty(pTicks) && ~isempty(pTickLabels)
+    pTicks = (1:numel(pTickLabels))';
+end
+
+% Does not work if pTicks is not also set
+elseif isfield(table.Properties, 'RowTimes')
+    % Convert time to minutes
+    timeVec = minutes(table.Properties.RowTimes);
+
+    % Convert to a cell array of character vectors
+    pTickLabels = convert_to_char(timeVec);
 
 %}
 

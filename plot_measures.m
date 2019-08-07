@@ -219,6 +219,7 @@ if plotChevronFlag
                 tableLabels, figTitlesChevron, figNamesAvgd);
 end
 
+%%
 if plotNormalizedFlag
     close all;
 
@@ -239,6 +240,7 @@ if plotNormalizedFlag
                 tableLabels, figTitlesChevron, figNamesNormAvgd);
 end
 
+%%
 if plotByFileFlag
     close all;
 
@@ -253,6 +255,7 @@ if plotByFileFlag
                     measureTimeTables, varsToPlot, varLabels, tableLabels, figNames);
 end
 
+%%
 if plotByPhaseFlag
     close all;
 
@@ -262,6 +265,7 @@ if plotByPhaseFlag
                                     'PlotType', plotType, ...
                                     'VariableNames', strcat(y, '_', fileLabels), ...
                                     'PhaseVariables', phaseVars, ...
+                                    'PhaseLabels', phaseStrs, ...
                                     'ReadoutLabel', z, 'TableLabel', w, ...
                                     'PLabel', timeLabel, 'FigName', v, ...
                                     'RemoveOutliers', false), ...
