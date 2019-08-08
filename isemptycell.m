@@ -18,6 +18,7 @@ function isEmpty = isemptycell (cellArray)
 % Used by:
 %       cd/all_data_files.m
 %       cd/compute_rms_error.m
+%       cd/compute_stats.m
 %       cd/create_indices.m
 %       cd/distribute_balls_into_boxes.m
 %       cd/extract_distinct_fileparts.m

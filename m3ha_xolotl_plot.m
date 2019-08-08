@@ -75,6 +75,8 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 %       cd/count_samples.m
 %       cd/create_time_vectors.m
 %       cd/find_in_strings.m
+%       cd/find_window_endpoints.m
+%       cd/force_row_vector.m
 %       cd/m3ha_plot_individual_traces.
 %       cd/parse_xolotl_object.m
 %
@@ -273,8 +275,16 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
 
     % If not provided, compute the holding potential(s) needed for simulations
     if isempty(holdingPotential)
+        % Find the baseline window endpoints
+        baseEndPoints = find_window_endpoints(individual.baseWindow, tVec);
+        
+        % Compute the holding potential from dataToCompare
         holdingPotential = ...
-            compute_stats(dataToCompare, 'mean', 'Windows', individual.baseWindow);
+            compute_stats(dataToCompare, 'mean', 'EndPoints', baseEndPoints, ...
+                            'IgnoreNaN', true);
+                        
+        % Force as a row vector
+        holdingPotential = force_row_vector(holdingPotential);
     end
 
     % Retrieve the original external current
@@ -319,16 +329,10 @@ endPointsToPlot = individual.endPointsToPlot;
 xolotlObject.I_ext = externalCurrentOrig;
 
 % Find the holding current (nA) necessary to match the holding potential
-if ~isempty(holdingPotential)
-    holdingCurrent = ...
-        xolotl_estimate_holding_current(xolotlObject, holdingPotential, ...
-                                        'CompToPatch', compToPatch, ...
-                                        'TimeToStabilize', timeToStabilize);
-else
-    holdingCurrent = 0;
-end
-% holdingCurrent = 0.095;
-% holdingCurrent = 0.8;
+holdingCurrent = ...
+    xolotl_estimate_holding_current(xolotlObject, holdingPotential, ...
+                                    'CompToPatch', compToPatch, ...
+                                    'TimeToStabilize', timeToStabilize);
 
 % Add the holding current (nA)
 xolotl_add_holding_current(xolotlObject, 'Compartment', compToPatch, ...
@@ -428,6 +432,10 @@ end
 if isstruct(xolotlObject.handles)
     xolotlObject.handles = xHandles;
 end
+
+%% Reset to the original external current
+% Note: this is important for x.manipulate to work!
+xolotlObject.I_ext = externalCurrentOrig;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -562,6 +570,8 @@ sweepWeights = individual.sweepWeights;
 % holdingCurrent = 0.0743;
 % holdingCurrent = 0.1125;
 % holdingCurrent = 0;
+% holdingCurrent = 0.095;
+% holdingCurrent = 0.8;
 
 %                   - 'CpDelay': current pulse delay (ms)
 %                   must be a numeric scalar
@@ -613,6 +623,11 @@ vVecToCompare = dataToCompare(:, 1:nCompartments);
 tVec = transpose(individual.plotsData(1).XData);
 
 individual.plotsData(iTrace).YData = dataPlots{iTrace};
+
+if ~isempty(holdingPotential)
+else
+    holdingCurrent = 0;
+end
 
 %}
 

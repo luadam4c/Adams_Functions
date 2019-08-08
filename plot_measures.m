@@ -4,7 +4,9 @@ function plot_measures (varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       plot_measures;
+%       plot_measures('PlotAll', true);
+%       plot_measures('PhaseNumbers', 1:2);
+%       plot_measures('SweepNumbers', 1:50);
 % Arguments:
 %       varargin    - 'PlotType': type of plot
 %                   must be an unambiguous, case-insensitive match to one of: 
@@ -321,14 +323,14 @@ if ~isempty(phaseNumbers)
     phaseNumbersString = num2str(phaseNumbers, '%d');
 
     % Append the phase numbers to the prefix
-    prefix = [prefix, '_phase', phaseNumbersString];
+    prefix = [prefix, '_phases', phaseNumbersString];
 end
 if ~isempty(sweepNumbers)
     % Create a sweep number string
-    phaseNumbersString = create_label_from_sequence(sweepNumbers);
+    sweepNumbersString = create_label_from_sequence(sweepNumbers);
 
     % Append the phase numbers to the prefix
-    prefix = [prefix, '_phase', phaseNumbersString];
+    prefix = [prefix, '_sweeps', sweepNumbersString];
 end
 
 % Extract the distinct parts of the file names
@@ -383,6 +385,12 @@ if ~isempty(phaseNumbers)
     fprintf('Restricting to phases %s ...\n', num2str(phaseNumbers, '%d, '));
     sliceParamsTables = ...
         cellfun(@(x) x(ismember(x.phaseNumber, phaseNumbers), :), ...
+                sliceParamsTables, 'UniformOutput', false);
+end
+if ~isempty(sweepNumbers)
+    fprintf('Restricting to sweeps %s ...\n', sweepNumbersString);
+    sliceParamsTables = ...
+        cellfun(@(x) x(ismember(x.sweepNumber, sweepNumbers), :), ...
                 sliceParamsTables, 'UniformOutput', false);
 end
 

@@ -3,6 +3,7 @@ function stats = compute_stats (vecs, statName, varargin)
 % Usage: stats = compute_stats (vecs, statName, dim (opt), varargin)
 % Explanation:
 %       TODO
+%       Note: If any element is empty, returns NaN
 % Example(s):
 %       data = randn(10, 3);
 %       compute_stats(data, 'mean')
@@ -59,6 +60,7 @@ function stats = compute_stats (vecs, statName, varargin)
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/extract_subvectors.m
+%       cd/isemptycell.m
 %       cd/remove_outliers.m
 %       cd/stderr.m
 %       cd/nanstderr.m
@@ -223,7 +225,17 @@ end
 
 % Compute the statistic for each subvector
 if iscell(subVecs)
-    stats = cellfun(func, subVecs);
+    % If any element is empty, return with NaN
+    if ~any(isemptycell(subVecs))
+        stats = cellfun(func, subVecs);
+    else
+        stats = nan(size(subVecs));
+        parfor iVec = 1:numel(subVecs)
+            if ~isempty(subVecs{iVec})
+                stats(iVec) = func(subVecs{iVec});
+            end
+        end
+    end
 else
     stats = func(subVecs);
 end
