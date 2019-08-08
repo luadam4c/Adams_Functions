@@ -1,14 +1,14 @@
-function label = create_label_from_integers (integers, varargin)
-%% Creates a single label from an array of integers with an optional prefix or suffix
-% Usage: label = create_label_from_integers (integers, varargin)
+function label = create_label_from_sequence (integers, varargin)
+%% Creates a single label from a sequence of integers with an optional prefix or suffix
+% Usage: label = create_label_from_sequence (integers, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       label = create_label_from_integers([-1, 1, 2, 5, 6, 7])
-%       label = create_label_from_integers([5; 3; 1; 8])
-%       label = create_label_from_integers(magic(3))
-%       label = create_label_from_integers([-1, 1, 2, 5], 'Suffix', ' Mississippi')
-%       label = create_label_from_integers([-1, 1, 2, 5], 'Prefix', 'Traces ')
+%       label = create_label_from_sequence([-1, 1, 2, 5, 6, 7])
+%       label = create_label_from_sequence([5; 3; 1; 8])
+%       label = create_label_from_sequence(magic(3))
+%       label = create_label_from_sequence([-1, 1, 2, 5], 'Suffix', ' Mississippi')
+%       label = create_label_from_sequence([-1, 1, 2, 5], 'Prefix', 'Traces ')
 % Outputs:
 %       label       - label created
 %                   specified as a cell array of character vectors
@@ -29,6 +29,7 @@ function label = create_label_from_integers (integers, varargin)
 %       cd/convert_to_char.m
 %
 % Used by:
+%       cd/plot_measures.m
 
 % File History:
 % 2019-08-07 Created by Adam Lu

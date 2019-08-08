@@ -91,6 +91,7 @@ function plot_measures (varargin)
 %       cd/compute_phase_average.m
 %       cd/compute_stats.m
 %       cd/count_vectors.m
+%       cd/create_label_from_sequence.m
 %       cd/create_indices.m
 %       cd/extract_common_directory.m
 %       cd/extract_fileparts.m
@@ -324,7 +325,7 @@ if ~isempty(phaseNumbers)
 end
 if ~isempty(sweepNumbers)
     % Create a sweep number string
-    phaseNumbersString = num2str(sweepNumbers, '%d');
+    phaseNumbersString = create_label_from_sequence(sweepNumbers);
 
     % Append the phase numbers to the prefix
     prefix = [prefix, '_phase', phaseNumbersString];
