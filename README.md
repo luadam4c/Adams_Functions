@@ -110,6 +110,7 @@ Last Updated 2019-08-07 by Adam Lu
 - [**create_grouping_by_columns.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_grouping_by_columns.m): Creates a grouping array using column numbers
 - [**create_indices.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_indices.m): Creates indices from endpoints (starting and ending indices)
 - [**create_input_file.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_input_file.m): Create an input spreadsheet file from data file names in a directory based on default parameters
+- [**create_label_from_integers.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_label_from_integers.m): Creates a single label from an array of integers with an optional prefix or suffix
 - [**create_labels_from_numbers.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_labels_from_numbers.m): Creates a cell array of labels from an array of numbers with an optional prefix or suffix
 - [**create_latex_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_latex_string.m): Creates a LaTeX string from an equation used for fitting
 - [**create_logical_array.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_logical_array.m): Creates a logical array from indices for true and dimensions

@@ -183,10 +183,10 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %                   default == detect from pulse vector
 %                   - 'PulseVectors': vector that contains the pulse itself
 %                   must be a numeric vector
-%                   default == [] (not used)
+%                   default == parsed from .abf files
 %                   - 'PhaseBoundaries': vector of phase boundaries
 %                   must be a numeric vector
-%                   default == [] (not used)
+%                   default == detected from .abf file names
 %                   - 'tVecs': original time vector(s)
 %                   must be a numeric array or a cell array of numeric arrays
 %                   default == [] (not used)

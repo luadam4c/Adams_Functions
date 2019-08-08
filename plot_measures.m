@@ -53,6 +53,9 @@ function plot_measures (varargin)
 %                   - 'PhaseNumbers': phase numbers to restrict to
 %                   must be a numeric vector
 %                   default == []
+%                   - 'SweepNumbers': sweep numbers to restrict to
+%                   must be a numeric vector
+%                   default == []
 %                   - 'NSweepsLastOfPhase': number of sweeps at 
 %                                           the last of a phase
 %                   must be a positive integer scalar
@@ -113,7 +116,8 @@ function plot_measures (varargin)
 % 2019-08-07 Added input parser and plotAllFlag
 % 2019-08-07 Added directory, inFolder, outFolder
 % 2019-08-07 Extracted specific usage to clc2_analyze.m
-% 
+% 2019-08-07 Added 'SweepNumbers' as an optional argument
+%               to allow the restriction to certain sweep numbers
 
 %% Hard-coded parameters
 validPlotTypes = {'tuning', 'bar'};
@@ -154,6 +158,7 @@ directoryDefault = pwd;
 inFolderDefault = '';                   % set later
 outFolderDefault = '';                  % set later
 phaseNumbersDefault = [];
+sweepNumbersDefault = [];
 nSweepsLastOfPhaseDefault = 10;         % select from last 10 values by default
 nSweepsToAverageDefault = 5;            % select 5 values by default
 maxRange2MeanDefault = 40;              % range is not more than 40% of mean 
@@ -208,6 +213,8 @@ addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'PhaseNumbers', phaseNumbersDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'SweepNumbers', sweepNumbersDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'NSweepsLastOfPhase', nSweepsLastOfPhaseDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
 addParameter(iP, 'NSweepsToAverage', nSweepsToAverageDefault, ...
@@ -250,6 +257,7 @@ directory = iP.Results.Directory;
 inFolder = iP.Results.InFolder;
 outFolder = iP.Results.OutFolder;
 phaseNumbers = iP.Results.PhaseNumbers;
+sweepNumbers = iP.Results.SweepNumbers;
 nSweepsLastOfPhase = iP.Results.NSweepsLastOfPhase;
 nSweepsToAverage = iP.Results.NSweepsToAverage;
 maxRange2Mean = iP.Results.MaxRange2Mean;
@@ -310,6 +318,13 @@ end
 if ~isempty(phaseNumbers)
     % Concatenate phase numbers into a string
     phaseNumbersString = num2str(phaseNumbers, '%d');
+
+    % Append the phase numbers to the prefix
+    prefix = [prefix, '_phase', phaseNumbersString];
+end
+if ~isempty(sweepNumbers)
+    % Create a sweep number string
+    phaseNumbersString = num2str(sweepNumbers, '%d');
 
     % Append the phase numbers to the prefix
     prefix = [prefix, '_phase', phaseNumbersString];

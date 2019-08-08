@@ -7,6 +7,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       labels = create_labels_from_numbers([3, 7, 5])
 %       labels = create_labels_from_numbers(1:3, 'Suffix', ' Mississippi')
 %       labels = create_labels_from_numbers(1:3, 'Prefix', 'Husband #')
+%       labels = create_labels_from_numbers(1:3, 'Prefix', 'Katie ')
 %       labels = create_labels_from_numbers(1:3, 'Prefix', 'Make ', 'Suffix', ' Wish')
 % Outputs:
 %       labels     - labels created
@@ -53,7 +54,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-forceColumnOutputDefault = true;  % force output as a column by default
+forceColumnOutputDefault = true;    % force output as a column by default
 prefixDefault = '';     % no string to place before each number by default
 suffixDefault = '';     % no string to place after each number by default
 
@@ -96,7 +97,7 @@ end
 
 %% Do the job
 % Create the labels
-labels = arrayfun(@(x) strcat(prefix, convert_to_char(x), suffix), ...
+labels = arrayfun(@(x) [prefix, convert_to_char(x), suffix], ...
                     numbers, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -109,6 +110,10 @@ addRequired(iP, 'nLabels', ...
 
 labels = arrayfun(@(x) [prefix, num2str(x), suffix], transpose(1:nLabels), ...
                         'UniformOutput', false);
+
+% strcat omits spaces in some cases
+labels = arrayfun(@(x) strcat(prefix, convert_to_char(x), suffix), ...
+                    numbers, 'UniformOutput', false);
 
 %}
 
