@@ -1,16 +1,15 @@
-%% Analyzes all CLC2 data
+%% Analyzes all metformin data
 %
 % Requires: 
 %       cd/parse_all_multiunit.m
 %       cd/plot_measures.m
 
 % File History:
-% 2019-08-06 Created by Adam Lu
-% 
+% 2019-08-08 Adapted from clc2_analyze.m
 
 %% Hard-coded parameters
-parentDir = '/media/adamX/CLC2/data/blinded';
-dirsToAnalyze = {'drug-clean', 'control-clean'};
+parentDir = fullfile('/media', 'adamX', 'Glucose', 'oscillations', 'metformin');
+dirsToAnalyze = {'new'};
 
 % For compute_default_signal2noise.m
 relSnrThres2Max = 0.1;
@@ -25,8 +24,8 @@ resolutionMs = 5;
 
 % For compute_spike_histogram.m
 minBurstLengthMs = 20;          % bursts must be at least 20 ms by default
-maxFirstInterBurstIntervalMs = 1000;
-maxInterBurstIntervalMs = 1000; % bursts are no more than 
+maxFirstInterBurstIntervalMs = 2000;
+maxInterBurstIntervalMs = 1500; % bursts are no more than 
                                 %   1 second apart by default
 minSpikeRateInBurstHz = 100;    % bursts must have a spike rate of 
                                 %   at least 100 Hz by default
@@ -108,8 +107,8 @@ for iDir = 1:numel(dirsToAnalyze)
                     'VarsToPlot', varsToPlot, ...
                     'VarLabels', varLabels);
 
-    % Plot measures for phases 1 & 2 only
-    plot_measures('PhaseNumbers', [1, 2], ...
+    % Plot measures for sweeps 1-50 only
+    plot_measures('SweepNumbers', 1:50, ...
                     'Directory', dirThis, ...
                     'NSweepsLastOfPhase', nSweepsLastOfPhase, ...
                     'NSweepsToAverage', nSweepsToAverage, ...

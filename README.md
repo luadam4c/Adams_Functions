@@ -269,6 +269,7 @@ Last Updated 2019-08-08 by Adam Lu
 - [**match_vector_count.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_vector_count.m): Expands or truncates a vector set to match a given number of vectors
 - [**medianfilter.m**](https://github.com/blabuva/Adams_Functions/blob/master/medianfilter.m): Applies a median filter to vectors
 - [**merge_structs.m**](https://github.com/blabuva/Adams_Functions/blob/master/merge_structs.m): Merges two scalar structures
+- [**metformin_analyze.m**](https://github.com/blabuva/Adams_Functions/blob/master/metformin_analyze.m): Analyzes all metformin data
 - [**movingaveragefilter.m**](https://github.com/blabuva/Adams_Functions/blob/master/movingaveragefilter.m): Applies a moving average filter to vectors
 - [**my_closereq.m**](https://github.com/blabuva/Adams_Functions/blob/master/my_closereq.m): Close request function that displays a question dialog box
 - [**nanstderr.m**](https://github.com/blabuva/Adams_Functions/blob/master/nanstderr.m): Calculate the standard error of the mean excluding NaN values

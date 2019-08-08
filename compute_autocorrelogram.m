@@ -38,13 +38,17 @@ function [autoCorrParams, autoCorrData] = compute_autocorrelogram (spikeTimesMs,
 %                   default == 10 ms
 %                   - 'MinBurstLengthMs': minimum burst length (ms)
 %                   must be a positive scalar
-%                   default == 0 ms
+%                   default == 20 ms
+%                   - 'MaxFirstInterBurstIntervalMs': maximum inter-burst interval (ms)
+%                                                   between the first two bursts
+%                   must be a positive scalar
+%                   default == 2000 ms
 %                   - 'MaxInterBurstIntervalMs': maximum inter-burst interval (ms)
 %                   must be a positive scalar
-%                   default == 0 ms
+%                   default == 1000 ms
 %                   - 'MinSpikeRateInBurstHz': minimum spike rate in a burst (Hz)
 %                   must be a positive scalar
-%                   default == 0 ms
+%                   default == 100 ms
 %                   - 'FilterWidthMs': filter width (ms) for moving average filter
 %                   must be a positive scalar
 %                   default == 100 ms
@@ -80,6 +84,9 @@ MS_PER_S = 1000;
 stimStartMsDefault = 0;             % stimulation start is at 0 ms by default
 binWidthMsDefault = 10;             % use a bin width of 10 ms by default
 minBurstLengthMsDefault = 20;       % bursts must be at least 20 ms by default
+maxFirstInterBurstIntervalMsDefault = 2000;
+                                    % first two bursts are no more than 
+                                    %   2 seconds apart by default
 maxInterBurstIntervalMsDefault = 1000;  % bursts are no more than 
                                         %   1 second apart by default
 minSpikeRateInBurstHzDefault = 100; % bursts must have a spike rate of 
@@ -114,6 +121,9 @@ addParameter(iP, 'BinWidthMs', binWidthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'MinBurstLengthMs', minBurstLengthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'MaxFirstInterBurstIntervalMs', ...
+                maxFirstInterBurstIntervalMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'MaxInterBurstIntervalMs', maxInterBurstIntervalMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'MinSpikeRateInBurstHz', minSpikeRateInBurstHzDefault, ...
@@ -132,6 +142,7 @@ parse(iP, spikeTimesMs, varargin{:});
 stimStartMs = iP.Results.StimStartMs;
 binWidthMs = iP.Results.BinWidthMs;
 minBurstLengthMs = iP.Results.MinBurstLengthMs;
+maxFirstInterBurstIntervalMs = iP.Results.MaxFirstInterBurstIntervalMs;
 maxInterBurstIntervalMs = iP.Results.MaxInterBurstIntervalMs;
 minSpikeRateInBurstHz = iP.Results.MinSpikeRateInBurstHz;
 filterWidthMs = iP.Results.FilterWidthMs;
@@ -147,10 +158,11 @@ otherArguments = struct2arglist(iP.Unmatched);
 if isempty(spikeHistParams) || isempty(spikeHistData)
     [spikeHistParams, spikeHistData] = ...
         compute_spike_histogram(spikeTimesMs, 'StimStartMs', stimStartMs, ...
-                        'BinWidthMs', binWidthMs, ...
-                        'MinBurstLengthMs', minBurstLengthMs, ...
-                        'MaxInterBurstIntervalMs', maxInterBurstIntervalMs, ...
-                        'MinSpikeRateInBurstHz', minSpikeRateInBurstHz);
+            'BinWidthMs', binWidthMs, ...
+            'MinBurstLengthMs', minBurstLengthMs, ...
+            'MaxFirstInterBurstIntervalMs', maxFirstInterBurstIntervalMs, ...
+            'MaxInterBurstIntervalMs', maxInterBurstIntervalMs, ...
+            'MinSpikeRateInBurstHz', minSpikeRateInBurstHz);
 end
 
 % Extract spike histogram parameters

@@ -33,6 +33,7 @@ function xolotlObject = m3ha_xolotl_create_neuron (neuronParamsTableOrFile, vara
 
 % File History:
 % 2018-12-12 Created by Adam Lu
+% 2019-08-08 Added back tree_idx
 %   TODO: Implement a cell array of tables or files
 % 
 
@@ -154,9 +155,8 @@ xolotlObject.add('compartment', 'soma', ...
             'radius', radiusSoma, 'len', lengthSoma, ...
             'Cm', specificMembraneCapacitance, ...
             'shell_thickness', shellDepth, ...
-            'Ca', caIn, 'Ca_out', caOut);
-%             'Ca', caIn, 'Ca_out', caOut, ...
-%             'tree_idx', 0);
+            'Ca', caIn, 'Ca_out', caOut, ...
+            'tree_idx', 0);
 
 % Add dend1
 %   Note: tree_idx does not have to be set here as long as

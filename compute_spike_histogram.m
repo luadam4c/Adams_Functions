@@ -66,7 +66,12 @@ function [histParams, histData] = compute_spike_histogram (spikeTimesMs, varargi
 %                   - 'MinBurstLengthMs': minimum burst length (ms)
 %                   must be a positive scalar
 %                   default == 20 ms
+%                   - 'MaxFirstInterBurstIntervalMs': maximum inter-burst interval (ms)
+%                                                   between the first two bursts
+%                   must be a positive scalar
+%                   default == 2000 ms
 %                   - 'MaxInterBurstIntervalMs': maximum inter-burst interval (ms)
+%                                                   after the second burst
 %                   must be a positive scalar
 %                   default == 1000 ms
 %                   - 'MinSpikeRateInBurstHz': minimum spike rate in a burst (Hz)
@@ -87,6 +92,7 @@ function [histParams, histData] = compute_spike_histogram (spikeTimesMs, varargi
 
 % File History:
 % 2019-05-13 Pulled from parse_multiunit.m
+% 2019-08-08 Added maxFirstInterBurstIntervalMs
 % 
 
 % Hard-coded constants
@@ -96,7 +102,10 @@ MS_PER_S = 1000;
 stimStartMsDefault = 0;             % stimulation start is at 0 ms by default
 binWidthMsDefault = 10;             % use a bin width of 10 ms by default
 minBurstLengthMsDefault = 20;       % bursts must be at least 20 ms by default
-maxInterBurstIntervalMsDefault = 1000;  % bursts are no more than 
+maxFirstInterBurstIntervalMsDefault = 2000;
+                                    % first two bursts are no more than 
+                                    %   2 seconds apart by default
+maxInterBurstIntervalMsDefault = 1000;  % subsequent bursts are no more than 
                                         %   1 second apart by default
 minSpikeRateInBurstHzDefault = 100; % bursts must have a spike rate of 
                                     %   at least 100 Hz by default
@@ -125,6 +134,9 @@ addParameter(iP, 'BinWidthMs', binWidthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'MinBurstLengthMs', minBurstLengthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'MaxFirstInterBurstIntervalMs', ...
+                maxFirstInterBurstIntervalMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'MaxInterBurstIntervalMs', maxInterBurstIntervalMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'MinSpikeRateInBurstHz', minSpikeRateInBurstHzDefault, ...
@@ -135,6 +147,7 @@ parse(iP, spikeTimesMs, varargin{:});
 stimStartMs = iP.Results.StimStartMs;
 binWidthMs = iP.Results.BinWidthMs;
 minBurstLengthMs = iP.Results.MinBurstLengthMs;
+maxFirstInterBurstIntervalMs = iP.Results.MaxFirstInterBurstIntervalMs;
 maxInterBurstIntervalMs = iP.Results.MaxInterBurstIntervalMs;
 minSpikeRateInBurstHz = iP.Results.MinSpikeRateInBurstHz;
 
@@ -149,6 +162,7 @@ binWidthSec = binWidthMs ./ MS_PER_S;
 histParams.stimStartMs = stimStartMs;
 histParams.binWidthMs = binWidthMs;
 histParams.minBurstLengthMs = minBurstLengthMs;
+histParams.maxFirstInterBurstIntervalMs = maxFirstInterBurstIntervalMs;
 histParams.maxInterBurstIntervalMs = maxInterBurstIntervalMs;
 histParams.minSpikeRateInBurstHz = minSpikeRateInBurstHz;
 
@@ -213,7 +227,10 @@ slidingWinSec = minBinsInBurst * binWidthSec;
 % Compute the minimum spikes per sliding window if in a burst
 minSpikesPerWindowInBurst = ceil(minSpikeRateInBurstHz * slidingWinSec);
 
-% Compute the maximum number of bins between consecutive bursts
+% Compute the maximum number of bins between the first two consecutive bursts
+maxFirstIbiBins = floor(maxFirstInterBurstIntervalMs ./ binWidthMs);
+
+% Compute the maximum number of bins between subsequent consecutive bursts
 maxIbiBins = floor(maxInterBurstIntervalMs ./ binWidthMs);
 
 % Count spikes for each sliding window (ending at each bin)
@@ -292,8 +309,28 @@ else
     % Compute the inter-burst intervals in bins
     ibiBins = diff(iBinBurstEnds);
 
+    % Count the number of inter-burst intervals
+    nIBIs = numel(ibiBins);
+
     % Find the first inter-burst interval greater than maxIbiBins
     firstIbiTooLarge = find(ibiBins > maxIbiBins, 1, 'first');
+
+    % If this happens to be the first inter-burst interval, 
+    %   and that it is not greater than maxFirstIbiBins, search again
+    if ~isempty(firstIbiTooLarge) && firstIbiTooLarge == 1 && ...
+            ibiBins(1) <= maxFirstIbiBins
+        if nIBIs < 2
+            firstIbiTooLarge = [];
+        else
+            % Find the first inter-burst interval in the rest of the bins
+            %   than is greater than maxIbiBins
+            firstIbiTooLargeShifted = ...
+                find(ibiBins(2:end) > maxIbiBins, 1, 'first');
+
+            % Add back the first bin so that it is the correct bin count
+            firstIbiTooLarge = firstIbiTooLargeShifted + 1;
+        end
+    end
 
     % Determine the number of bursts in oscillation
     if isempty(firstIbiTooLarge)
