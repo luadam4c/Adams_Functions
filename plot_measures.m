@@ -123,6 +123,7 @@ function plot_measures (varargin)
 %               to allow the restriction to certain sweep numbers
 % 2019-08-09 Now runs both T test and Wilcoxon signed-rank test for p-values
 % TODO: Restrict to certain time windows 'TimeWindow'
+% TODO: Pull out many code to functions
 
 %% Hard-coded parameters
 validPlotTypes = {'tuning', 'bar'};

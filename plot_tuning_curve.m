@@ -261,7 +261,7 @@ addParameter(iP, 'RemoveOutliers', removeOutliersDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RunTTest', runTTestDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'RunRankTest', runRankTestDefault, 
+addParameter(iP, 'RunRankTest', runRankTestDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ColsToPlot', colsToPlotDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
@@ -431,7 +431,9 @@ end
 % Run paired Wilcoxon signed rank tests if requested
 if runRankTest
     % Run t-tests on each pair of columns
-    [rankTestPValues, rankTestResults] = signrank(afters, befores);
+    % TODO: Make a function vecfun.m
+    [rankTestPValues, rankTestResults] = ...
+        arrayfun(@(x) signrank(afters(:, x), befores(:, x)), 1:size(afters, 2));
 else
     rankTestResults = [];
     rankTestPValues = [];
