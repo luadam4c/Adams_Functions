@@ -121,6 +121,7 @@ function plot_measures (varargin)
 % 2019-08-07 Extracted specific usage to clc2_analyze.m
 % 2019-08-07 Added 'SweepNumbers' as an optional argument
 %               to allow the restriction to certain sweep numbers
+% TODO: Restrict to certain time windows 'TimeWindow'
 
 %% Hard-coded parameters
 validPlotTypes = {'tuning', 'bar'};

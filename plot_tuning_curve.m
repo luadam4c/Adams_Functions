@@ -1,6 +1,23 @@
 function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargin)
-%% Plot a 1-dimensional tuning curve
+%% Plot 1-dimensional tuning curve(s), can include confidence intervals or test p values
 % Usage: [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargin)
+% Explanation:
+%       TODO
+% Examples:
+%       pValue = transpose(1:10);
+%       readout1 = randi(numel(pValue), 10, 1);
+%       upperCI1 = readout1 + randi(numel(pValue), 10, 1) / 10;
+%       lowerCI1 = readout1 - randi(numel(pValue), 10, 1) / 10;
+%       readout2 = randi(numel(pValue), 10, 1);
+%       upperCI2 = readout2 + randi(numel(pValue), 10, 1) / 10;
+%       lowerCI2 = readout2 - randi(numel(pValue), 10, 1) / 10;
+%       readoutAll = [readout1, readout2];
+%       upperCIAll = [upperCI1, upperCI2];
+%       lowerCIAll = [lowerCI1, lowerCI2];
+%       
+%       plot_tuning_curve(pValue, readout, 'UpperCI', upperCI, 'LowerCI', lowerCI);
+%       plot_tuning_curve(pValue, readoutAll, 'UpperCI', upperCIAll, 'LowerCI', lowerCIAll);
+%
 % Outputs:
 %       fig         - figure handle for the created figure
 %                   specified as a figure object handle
@@ -72,10 +89,14 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %                   default == {'Phase #1', 'Phase #2', ...}
 %                   - 'ColorMap' - color map used when colsToPlot > 1
 %                   must be a 2-D numeric array with 3 columns
-%                   default == TODO
+%                   default == jet(nColsToPlot) or 
+%                               hsv(maxNPhases) if phaseVectors is provided
 %                   - 'SingleColor': color when colsToPlot == 1
 %                   must be a 3-element vector
-%                   default == rgb('SkyBlue')
+%                   default == rgb('SkyBlue') == [0.5273, 0.8047, 0.9180]
+%                   - 'ConfIntColor': color for confidence intervals
+%                   must be a 3-element vector
+%                   default == rgb('LightGray') == [0.8242, 0.8242, 0.8242]
 %                   - 'LegendLocation': location for legend
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'auto'      - use default
@@ -157,11 +178,13 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 % 2019-08-07 Added 'ClearFig' as an optional argument
 % 2019-08-07 Now accepts infinite values for readout limits
 % 2019-08-07 Added 'RunTTest' as an optional argument
+% 2019-08-09 Updated confidence interval plots
+% TODO: 'RunWilcoxon' 
 % TODO: Return handles to plots
 %
 
 %% Hard-coded parameters
-alphaValue = 0.05;
+alphaValue = 0.05;                  % significance level for tests
 
 %% Default values for optional arguments
 lowerCIDefault = [];
@@ -184,6 +207,8 @@ columnLabelsDefault = '';           % set later
 phaseLabelsDefault = '';            % set later
 colorMapDefault = [];               % set later
 singleColorDefault = rgb('SkyBlue');
+confIntColorDefault = rgb('LightGray');  
+                                    % light gray confidence intervals by default
 legendLocationDefault = 'auto';     % set later
 pBoundariesDefault = [];
 rBoundariesDefault = [];
@@ -261,6 +286,8 @@ addParameter(iP, 'ColorMap', colorMapDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d', 'ncols', 3}));
 addParameter(iP, 'SingleColor', singleColorDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 3}));
+addParameter(iP, 'ConfIntColor', confIntColorDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d', 'numel', 3}));
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
 addParameter(iP, 'PBoundaries', pBoundariesDefault, ...
@@ -304,6 +331,7 @@ columnLabels = iP.Results.ColumnLabels;
 phaseLabels = iP.Results.PhaseLabels;
 colorMap = iP.Results.ColorMap;
 singlecolor = iP.Results.SingleColor;
+confIntColor = iP.Results.ConfIntColor;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
 pBoundaries = iP.Results.PBoundaries;
@@ -477,7 +505,7 @@ end
 
 % Plot readout values against parameter values
 lines = gobjects(nColsToPlot, maxNPhases);
-areas = gobjects(nColsToPlot, 2);
+confInts = gobjects(nColsToPlot, maxNPhases);
 for c = 1:nColsToPlot
     % Get the column to plot
     col = colsToPlot(c);
@@ -542,17 +570,18 @@ for c = 1:nColsToPlot
             % Remove tuning curve
             delete(lines(c, 1));
 
-            % Make the area under upperCIThis light gray
-            areas(c, 1) = area(pValues, upperCIThis, minY, ...
-                                'LineStyle', 'none', 'FaceColor', [0.9, 0.9, 0.9]);
+            % The x and y values for the confidence intervals
+            confIntXValues = [pValues; flipud(pValues)];
+            confIntYValues = [upperCIThis; flipud(lowerCIThis)];
 
-            % Make the area under lowerCIThis white
-            areas(c, 2) = area(pValues, lowerCIThis, minY, ...
-                                'LineStyle', 'none', 'FaceColor', [1, 1, 1]);
+            % Fill the area between lowerCIThis and upperCIThis 
+            %   with confIntColor
+            confInts(c, 1) = fill(confIntXValues, confIntYValues, ...
+                                    confIntColor, 'LineStyle', 'none');
 
             % Plot tuning curve again
-            lines(c, 1) = plot_one_line(pIsLog, pValues, readoutThis, lineSpec, ...
-                                lineWidth, otherArguments);
+            lines(c, 1) = plot_one_line(pIsLog, pValues, readoutThis, ...
+                                        lineSpec, lineWidth, otherArguments);
 
             % Display tick marks and grid lines over graphics objects.
             set(gca, 'Layer', 'top');
@@ -804,6 +833,16 @@ phaseVectorsNoNaN = cellfun(@(x) x(~isnan(x)), phaseVectors, ...
                             'UniformOutput', false);
 uniquePhases = cellfun(@(x) unique(x, 'stable'), phaseVectorsNoNaN, ...
                         'UniformOutput', false);
+
+confInts = gobjects(nColsToPlot, 2);
+
+% Make the area under upperCIThis light gray
+confInts(c, 1) = area(pValues, upperCIThis, minY, ...
+                    'LineStyle', 'none', 'FaceColor', [0.9, 0.9, 0.9]);
+
+% Make the area under lowerCIThis white
+confInts(c, 2) = area(pValues, lowerCIThis, minY, ...
+                    'LineStyle', 'none', 'FaceColor', [1, 1, 1]);
 
 %}
 

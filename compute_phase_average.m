@@ -67,6 +67,7 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 % 2019-05-16 Add 'ReturnLastTrial' as an optional argument
 % 2019-05-16 Now uses nanmean() instead of mean()
 % 2019-07-25 Added 'PhaseBoundaries' and 'PhaseNumber' as optional arguments
+% TODO: Return value no matter what?
 % 
 
 %% Hard-coded parameters
