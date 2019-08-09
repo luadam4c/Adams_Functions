@@ -45,6 +45,10 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %                   - 'RunTTest': whether to run paired t-test
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'RunRankTest': whether to run paired 
+%                                       Wilcoxon signed-rank test
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'ColsToPlot': columns of the readout matrix to plot
 %                   must be a numeric vector
 %                   default == 1:size(readout, 2);
@@ -178,6 +182,7 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 % 2019-08-07 Added 'ClearFig' as an optional argument
 % 2019-08-07 Now accepts infinite values for readout limits
 % 2019-08-07 Added 'RunTTest' as an optional argument
+% 2019-08-07 Added 'RunRankTest' as an optional argument
 % 2019-08-09 Updated confidence interval plots
 % TODO: 'RunWilcoxon' 
 % TODO: Return handles to plots
@@ -192,6 +197,7 @@ upperCIDefault = [];
 phaseVectorsDefault = {};           % no phase vectors by default
 removeOutliersDefault = false;      % don't remove outliers by default
 runTTestDefault = false;            % don't run paired t-test by default
+runRankTestDefault = false;         % don't run paired signed-rank test by default
 colsToPlotDefault = [];             % set later
 lineSpecDefault = '-';
 lineWidthDefault = 2;
@@ -255,6 +261,8 @@ addParameter(iP, 'RemoveOutliers', removeOutliersDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RunTTest', runTTestDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RunRankTest', runRankTestDefault, 
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ColsToPlot', colsToPlotDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'LineSpec', lineSpecDefault, ...
@@ -316,6 +324,7 @@ upperCI = iP.Results.UpperCI;
 phaseVectors = iP.Results.PhaseVectors;
 removeOutliers = iP.Results.RemoveOutliers;
 runTTest = iP.Results.RunTTest;
+runRankTest = iP.Results.RunRankTest;
 colsToPlot = iP.Results.ColsToPlot;
 lineSpec = iP.Results.LineSpec;
 lineWidth = iP.Results.LineWidth;
@@ -399,7 +408,7 @@ if removeOutliers
 end
 
 % Run paired t-tests if requested
-if runTTest && size(readout, 1) > 1
+if (runTTest || runRankTest) && size(readout, 1) > 1
     % Transpose the readout matrix
     readoutTransposed = transpose(readout);
 
@@ -408,12 +417,24 @@ if runTTest && size(readout, 1) > 1
 
     % Extract the after columns
     afters = readoutTransposed(:, 2:end);
+end
 
+% Run paired t-tests if requested
+if runTTest
     % Run t-tests on each pair of columns
-    [testResults, testPValues] = ttest(afters, befores);
+    [tTestResults, tTestPValues] = ttest(afters, befores);
 else
-    testResults = [];
-    testPValues = [];
+    tTestResults = [];
+    tTestPValues = [];
+end
+
+% Run paired Wilcoxon signed rank tests if requested
+if runRankTest
+    % Run t-tests on each pair of columns
+    [rankTestPValues, rankTestResults] = signrank(afters, befores);
+else
+    rankTestResults = [];
+    rankTestPValues = [];
 end
 
 % Set default columns to plot
@@ -711,8 +732,9 @@ if ~isempty(indSelected)
     % TODO
 end
 
+% TODO: Make function
 % Plot t-test p values if any
-if ~isempty(testPValues)
+if ~isempty(tTestPValues)
     hold on
 
     % Get the x locations
@@ -725,16 +747,47 @@ if ~isempty(testPValues)
     yLoc = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * 0.1;
 
     % Plot texts
-    for iValue =  1:numel(testPValues)
+    for iValue =  1:numel(tTestPValues)
         % Get the current values
-        testPValueThis = testPValues(iValue);
+        tTestPValueThis = tTestPValues(iValue);
         xLocThis = xLocs(iValue);
 
         % Create a p value string to 2 significant digits
-        pString = ['p = ', num2str(testPValueThis, 2)];
+        pString = ['p_t = ', num2str(tTestPValueThis, 2)];
 
         % Plot red if significant
-        if testPValueThis < alphaValue
+        if tTestPValueThis < alphaValue
+            text(xLocThis, yLoc, pString, 'Color', 'r');
+        else
+            text(xLocThis, yLoc, pString, 'Color', 'k');
+        end
+    end
+end
+
+% Plot rank test p values if any
+if ~isempty(rankTestPValues)
+    hold on
+
+    % Get the x locations
+    xLocs = pValues(1:end-1) + (pValues(2) - pValues(1)) * 0.25;
+    
+    % Get current y axis limits
+    yLimitsNow = get(gca, 'YLim');
+
+    % Get y location
+    yLoc = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * 0.05;
+
+    % Plot texts
+    for iValue =  1:numel(rankTestPValues)
+        % Get the current values
+        rankTestPValueThis = rankTestPValues(iValue);
+        xLocThis = xLocs(iValue);
+
+        % Create a p value string to 2 significant digits
+        pString = ['p_r = ', num2str(rankTestPValueThis, 2)];
+
+        % Plot red if significant
+        if rankTestPValueThis < alphaValue
             text(xLocThis, yLoc, pString, 'Color', 'r');
         else
             text(xLocThis, yLoc, pString, 'Color', 'k');

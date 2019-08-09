@@ -320,6 +320,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 % 2019-08-04 Now makes subplots maximally fit the figure
 % 2019-08-04 Now makes 'Trace #' the y label for raw plots
 % 2019-08-06 Made parameters optional arguments
+% 2019-08-09 Now saves contour plots as epsc2 instead of eps
 
 %% Hard-coded parameters
 plotTypeMeasures = 'bar'; %'tuning';
@@ -936,7 +937,7 @@ if plotContourFlag
                         'MaxNYTicks', 10);
 
     % Save the figure as an eps file
-    save_all_figtypes(figs(5), figBaseContour, {'eps', 'png'});
+    save_all_figtypes(figs(5), figBaseContour, {'epsc2', 'png'});
 end
 
 %% Plot time series of measures
