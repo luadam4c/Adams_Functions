@@ -519,8 +519,25 @@ while ishandle(fig)
     xlim([0, iFile + 1]);
 
     % Expand y limits
-    if ~isempty(yLimits)
-        ylim(compute_axis_limits(values, 'y'));
+    if (isempty(yLimits) || any(isinf(yLimits))) && numel(values) > 1
+        % Compute the best y limits
+        bestYLimits = compute_axis_limits(values, 'y');
+
+        % Initialize the new y limits with the old ones
+        yLimitsNew = yLimits;
+
+        % If upper limit is flexible, update it
+        if isempty(yLimits) || isinf(yLimits(2))
+            yLimitsNew(2) = bestYLimits(2);
+        end
+
+        % If lower limit is flexible, update it
+        if isempty(yLimits) || isinf(yLimits(1))
+            yLimitsNew(1) = bestYLimits(1);
+        end
+
+        % Apply new y limits
+        ylim(yLimitsNew);
     end
 
     % Delete previous horizontal line(s) if any
