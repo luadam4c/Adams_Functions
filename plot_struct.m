@@ -55,7 +55,7 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %                   - 'FieldLabels': label for the field
 %                   must be a cell array of character vectors/strings
 %                   default == field name
-%                   - 'SingleColor': color when colsToPlot == 1
+%                   - 'SingleColor': color when nColsToPlot == 1
 %                   must be a 3-element vector
 %                   - 'FigTitles': titles for each figure
 %                   must be a cell array of character vectors/strings

@@ -9,8 +9,8 @@
 % TODO: Change nSweepsToAverage to 10
 % TODO: Add SelectionMethod as a parameter
 % TODO: Automatically save script copy with timestamp (make a function)
-% TODO: Generate a list of functions 
-% TODO: 
+% TODO: Generate a function tree that this script uses
+% TODO: Generate a snapshot of Adams_Functions, etc.
 % 
 %% Hard-coded parameters
 parentDir = '/media/adamX/CLC2/data/blinded';

@@ -15,7 +15,7 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %       upperCIAll = [upperCI1, upperCI2];
 %       lowerCIAll = [lowerCI1, lowerCI2];
 %       
-%       plot_tuning_curve(pValue, readout, 'UpperCI', upperCI, 'LowerCI', lowerCI);
+%       plot_tuning_curve(pValue, readout1, 'UpperCI', upperCI1, 'LowerCI', lowerCI1);
 %       plot_tuning_curve(pValue, readoutAll, 'UpperCI', upperCIAll, 'LowerCI', lowerCIAll);
 %
 % Outputs:
@@ -49,7 +49,7 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %                                       Wilcoxon signed-rank test
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'ColsToPlot': columns of the readout matrix to plot
+%                   - 'ColumnsToPlot': columns of the readout matrix to plot
 %                   must be a numeric vector
 %                   default == 1:size(readout, 2);
 %                   - 'LineSpec': line specification
@@ -91,11 +91,13 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %                   must be a scalartext 
 %                       or a cell array of strings or character vectors
 %                   default == {'Phase #1', 'Phase #2', ...}
-%                   - 'ColorMap' - color map used when colsToPlot > 1
+%                   - 'ColorMap' - color map used when nColumnsToPlot > 1
 %                   must be a 2-D numeric array with 3 columns
-%                   default == jet(nColsToPlot) or 
+%                   default == jet(nColumnsToPlot) or 
+%                               rgb('SkyBlue') == [0.5273, 0.8047, 0.9180]
+%                                   if nColumnsToPlot == 1 or
 %                               hsv(maxNPhases) if phaseVectors is provided
-%                   - 'SingleColor': color when colsToPlot == 1
+%                   - 'SingleColor': color when nColumnsToPlot == 1
 %                   must be a 3-element vector
 %                   default == rgb('SkyBlue') == [0.5273, 0.8047, 0.9180]
 %                   - 'ConfIntColor': color for confidence intervals
@@ -159,6 +161,7 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %
 % Used by:
 %       cd/plot_struct.m
+%       ~/Marks_Functions/Adam/CLC2/markCLC2figures.m
 %       /media/adamX/RTCl/tuning_curves.m
 
 % 2017-04-17 Moved from tuning_curves.m
@@ -184,7 +187,9 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 % 2019-08-07 Added 'RunTTest' as an optional argument
 % 2019-08-07 Added 'RunRankTest' as an optional argument
 % 2019-08-09 Updated confidence interval plots
-% TODO: 'RunWilcoxon' 
+% TODO: Combine SingleColor with ColorMap
+% TODO: Fix confidence interval plots for matrices
+% 
 % TODO: Return handles to plots
 %
 
@@ -198,7 +203,7 @@ phaseVectorsDefault = {};           % no phase vectors by default
 removeOutliersDefault = false;      % don't remove outliers by default
 runTTestDefault = false;            % don't run paired t-test by default
 runRankTestDefault = false;         % don't run paired signed-rank test by default
-colsToPlotDefault = [];             % set later
+columnsToPlotDefault = [];             % set later
 lineSpecDefault = '-';
 lineWidthDefault = 2;
 pislogDefault = false;
@@ -263,7 +268,7 @@ addParameter(iP, 'RunTTest', runTTestDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RunRankTest', runRankTestDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'ColsToPlot', colsToPlotDefault, ...
+addParameter(iP, 'ColumnsToPlot', columnsToPlotDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'LineSpec', lineSpecDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
@@ -325,7 +330,7 @@ phaseVectors = iP.Results.PhaseVectors;
 removeOutliers = iP.Results.RemoveOutliers;
 runTTest = iP.Results.RunTTest;
 runRankTest = iP.Results.RunRankTest;
-colsToPlot = iP.Results.ColsToPlot;
+columnsToPlot = iP.Results.ColumnsToPlot;
 lineSpec = iP.Results.LineSpec;
 lineWidth = iP.Results.LineWidth;
 pIsLog = iP.Results.PisLog;
@@ -440,8 +445,8 @@ else
 end
 
 % Set default columns to plot
-if isempty(colsToPlot)
-    colsToPlot = 1:size(readout, 2);
+if isempty(columnsToPlot)
+    columnsToPlot = 1:size(readout, 2);
 end
 
 % Set column labels
@@ -484,12 +489,16 @@ end
 nNonInf = sum(~isinf(readout), 1);
 
 % Count the number of columns to plot
-nColsToPlot = length(colsToPlot);
+nColumnsToPlot = length(columnsToPlot);
 
 % Define the color map to use
 if isempty(colorMap)
     if isempty(phaseVectors)
-        colorMap = colormap(jet(nColsToPlot));
+        if nColumnsToPlot == 1
+            colorMap = rgb('SkyBlue');
+        else
+            colorMap = colormap(jet(nColumnsToPlot));
+        end
     else
         colorMap = colormap(hsv(maxNPhases));
     end
@@ -522,16 +531,16 @@ end
 
 %% Plot tuning curve
 % Hold on if more than one column
-if nColsToPlot > 1
+if nColumnsToPlot > 1
     hold on
 end
 
 % Plot readout values against parameter values
-lines = gobjects(nColsToPlot, maxNPhases);
-confInts = gobjects(nColsToPlot, maxNPhases);
-for c = 1:nColsToPlot
+lines = gobjects(nColumnsToPlot, maxNPhases);
+confInts = gobjects(nColumnsToPlot, maxNPhases);
+for c = 1:nColumnsToPlot
     % Get the column to plot
-    col = colsToPlot(c);
+    col = columnsToPlot(c);
     readoutThis = readout(:, col);
 
     % Plot the tuning curve for this column
@@ -614,9 +623,9 @@ for c = 1:nColsToPlot
     % Set color
     if isempty(phaseVectors)
         % Set color by columns
-        if nColsToPlot > 1
+        if nColumnsToPlot > 1
             set(lines(c, 1), 'Color', colorMap(c, :))
-        elseif nColsToPlot == 1
+        elseif nColumnsToPlot == 1
             set(lines(c, 1), 'Color', singlecolor);
         end
     else
@@ -647,7 +656,7 @@ for c = 1:nColsToPlot
 end
 
 % Hold off if more than one column
-if nColsToPlot > 1
+if nColumnsToPlot > 1
     hold off
 end
 
@@ -835,7 +844,7 @@ end
 %{
 OLD CODE:
 
-% Usage: plot_tuning_curve(pValues, readout, colsToPlot, pIsLog, pLabel, ...
+% Usage: plot_tuning_curve(pValues, readout, columnsToPlot, pIsLog, pLabel, ...
             readoutLabel, columnLabels, pLimits, readoutLimits, figName, varargin)
 
 if ~isequal(columnLabels, {'suppress'})
@@ -889,7 +898,7 @@ phaseVectorsNoNaN = cellfun(@(x) x(~isnan(x)), phaseVectors, ...
 uniquePhases = cellfun(@(x) unique(x, 'stable'), phaseVectorsNoNaN, ...
                         'UniformOutput', false);
 
-confInts = gobjects(nColsToPlot, 2);
+confInts = gobjects(nColumnsToPlot, 2);
 
 % Make the area under upperCIThis light gray
 confInts(c, 1) = area(pValues, upperCIThis, minY, ...
