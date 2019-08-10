@@ -186,6 +186,7 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 % 2019-08-09 Updated confidence interval plots
 % 2019-08-09 Combined SingleColor with ColorMap
 % 2019-08-09 Fixed confidence interval plots for matrices
+% 2019-08-09 Added 'IndSelected' as an optional argument
 % TODO: Return handles to plots
 %
 
@@ -195,6 +196,7 @@ WHITE = [1, 1, 1];
 %% Hard-coded parameters
 sigLevel = 0.05;                    % significance level for tests
 fadePercentage = 0.25;              % fade percentage for confidence interval colors
+markerLineWidth = 3;
 
 %% Default values for optional arguments
 lowerCIDefault = [];
@@ -652,20 +654,6 @@ for iPlot = 1:nColumnsToPlot
     end
 end
 
-% Hold off if more than one column
-if nColumnsToPlot > 1
-    hold off
-end
-
-% Generate a legend if there is more than one trace
-if ~strcmpi(legendLocation, 'suppress')
-    if isempty(phaseVectors)
-        legend(lines, 'location', legendLocation);
-    else
-        legend(lines(1, :), 'location', legendLocation);
-    end
-end
-
 % Restrict x axis if pLimits provided; 
 %   otherwise expand the x axis by a little bit
 if ~isempty(pLimits)
@@ -737,7 +725,16 @@ end
 
 % Plot selected values if any
 if ~isempty(indSelected)
-    % TODO:
+    % Selected x locations
+    xLocsSelected = pValues(indSelected);
+
+    % Selected y locations
+    yLocsSelected = readout(indSelected, :);
+
+    % Plot values
+    hold on
+    markers = plot(xLocsSelected, yLocsSelected, 'ro', ...
+                    'LineWidth', markerLineWidth);
 end
 
 % TODO: Make function plot_text.m
@@ -803,7 +800,21 @@ if ~isempty(rankTestPValues)
     end
 end
 
+% Hold off if more than one column
+if nColumnsToPlot > 1
+    hold off
+end
+
 %% Post-plotting
+% Generate a legend for the lines only if there is more than one trace
+if ~strcmpi(legendLocation, 'suppress')
+    if isempty(phaseVectors) && nColumnsToPlot > 1
+        legend(lines, 'location', legendLocation);
+    else
+        legend(lines(1, :), 'location', legendLocation);
+    end
+end
+
 % Return boundaries
 boundaries = transpose(vertcat(pBoundaries, rBoundaries));
 
