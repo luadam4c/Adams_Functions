@@ -27,9 +27,10 @@ function parentDir = extract_common_directory (paths, varargin)
 %       cd/extract_fileparts.m
 %
 % Used by:
-%       cd/plot_measures.m
+%       cd/all_dependent_functions.m
 %       cd/extract_distinct_fileparts.m
 %       cd/extract_fileparts.m
+%       cd/plot_measures.m
 %       cd/plot_swd_histogram.m
 %       cd/plot_swd_raster.m
 %       cd/plot_table.m

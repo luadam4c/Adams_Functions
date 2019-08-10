@@ -9,6 +9,7 @@ function draw_arrow(p1, p2)
 %                       Week\ 7/Week\ 7\ Quiz/Quiz_7_Pr_5.m (not really)
 % 2017-05-21 Renamed drawArrow() -> draw_arrow()
 % TODO: Input Parser
+% TODO: Rename as plot_arrow.m for consistency
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

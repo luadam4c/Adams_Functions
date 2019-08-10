@@ -47,6 +47,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/force_column_vector.m
 %
 % Used by:
+%       cd/all_dependent_functions.m
 %       cd/combine_variables_across_tables.m
 %       cd/compute_rms_error.m
 %       cd/construct_fullpath.m

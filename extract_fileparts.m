@@ -51,6 +51,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/extract_distinct_fileparts.m
 %
 % Used by:
+%       cd/all_dependent_functions.m
 %       cd/all_file_bases.m
 %       cd/plot_measures.m
 %       cd/combine_data_from_same_slice.m
