@@ -4,11 +4,11 @@ function varargout = all_dependent_functions (mFileName, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       all_dependent_functions('match_array_counts')
-%       all_dependent_functions('match_array_counts.m')
-%       [fTable, pTable] = all_dependent_functions('match_array_counts')
+%       all_dependent_functions('parse_pulse')
+%       all_dependent_functions('parse_pulse.m')
+%       [fTable, pTable] = all_dependent_functions('parse_pulse')
 %       TODO:
-%       [fList, pList] = all_dependent_functions('match_array_counts', 'OriginalOutput', true)
+%       [fList, pList] = all_dependent_functions('parse_pulse', 'OriginalOutput', true)
 %
 % Outputs:
 %       fTableOrList    - a table or cell array of function paths
