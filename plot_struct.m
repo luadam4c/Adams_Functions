@@ -55,8 +55,9 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %                   - 'FieldLabels': label for the field
 %                   must be a cell array of character vectors/strings
 %                   default == field name
-%                   - 'SingleColor': color when nColsToPlot == 1
-%                   must be a 3-element vector
+%                   - 'ColorMap' - color map used when nColumnsToPlot > 1
+%                   must be a 2-D numeric array with 3 columns
+%                   default == set in plot_tuning_curve.m
 %                   - 'FigTitles': titles for each figure
 %                   must be a cell array of character vectors/strings
 %                   default == [fieldLabel, ' vs. ', pLabel]
@@ -132,7 +133,7 @@ pTickLabelsDefault = {};
 pTickAngleDefault = 0;
 pLabelDefault = 'Parameter';
 fieldLabelsDefault = {};
-singleColorDefault = rgb('SkyBlue');
+colorMapDefault = [];           % set later
 figTitlesDefault = {};          % set later
 figNumberDefault = [];          % use current figure by default
 outFolderDefault = pwd;
@@ -186,8 +187,8 @@ addParameter(iP, 'PLabel', pLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FieldLabels', fieldLabelsDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
-addParameter(iP, 'SingleColor', singleColorDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 3}));
+addParameter(iP, 'ColorMap', colorMapDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d', 'ncols', 3}));
 addParameter(iP, 'FigTitles', figTitlesDefault, ...
     @(x) isempty(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'FigNumber', figNumberDefault, ...
@@ -217,7 +218,7 @@ pTickLabels = iP.Results.PTickLabels;
 pTickAngle = iP.Results.PTickAngle;
 pLabel = iP.Results.PLabel;
 fieldLabels = iP.Results.FieldLabels;
-singlecolor = iP.Results.SingleColor;
+colorMap = iP.Results.ColorMap;
 figTitles = iP.Results.FigTitles;
 figNumber = iP.Results.FigNumber;
 outFolder = iP.Results.OutFolder;
@@ -405,7 +406,7 @@ for iField = 1:nFields
                         'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
                         'PTickAngle', pTickAngle, ...
                         'PLabel', pLabel, 'ReadoutLabel', fieldLabel, ...
-                        'SingleColor', singlecolor, ...
+                        'ColorMap', colorMap, ...
                         'FigTitle', figTitle, 'FigHandle', figThis, ...
                         'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
                         'MarkerEdgeColor', markerEdgeColor, ...

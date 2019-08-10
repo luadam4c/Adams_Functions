@@ -16,7 +16,7 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %       lowerCIAll = [lowerCI1, lowerCI2];
 %       
 %       plot_tuning_curve(pValue, readout1, 'UpperCI', upperCI1, 'LowerCI', lowerCI1);
-%       plot_tuning_curve(pValue, readoutAll, 'UpperCI', upperCIAll, 'LowerCI', lowerCIAll);
+%       plot_tuning_curve(pValue, readoutAll, 'UpperCI', upperCIAll, 'LowerCI', lowerCIAll, 'ColorMap', hsv(2));
 %
 % Outputs:
 %       fig         - figure handle for the created figure
@@ -97,9 +97,6 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %                               rgb('SkyBlue') == [0.5273, 0.8047, 0.9180]
 %                                   if nColumnsToPlot == 1 or
 %                               hsv(maxNPhases) if phaseVectors is provided
-%                   - 'SingleColor': color when nColumnsToPlot == 1
-%                   must be a 3-element vector
-%                   default == rgb('SkyBlue') == [0.5273, 0.8047, 0.9180]
 %                   - 'ConfIntColor': color for confidence intervals
 %                   must be a 3-element vector
 %                   default == rgb('LightGray') == [0.8242, 0.8242, 0.8242]
@@ -187,14 +184,17 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 % 2019-08-07 Added 'RunTTest' as an optional argument
 % 2019-08-07 Added 'RunRankTest' as an optional argument
 % 2019-08-09 Updated confidence interval plots
-% TODO: Combine SingleColor with ColorMap
+% 2019-08-09 Combined SingleColor with ColorMap
 % TODO: Fix confidence interval plots for matrices
-% 
 % TODO: Return handles to plots
 %
 
+%% Hard-coded constants
+WHITE = [1, 1, 1];
+
 %% Hard-coded parameters
-alphaValue = 0.05;                  % significance level for tests
+sigLevel = 0.05;                    % significance level for tests
+fadePercentage = 0.25;              % fade percentage for confidence interval colors
 
 %% Default values for optional arguments
 lowerCIDefault = [];
@@ -203,7 +203,7 @@ phaseVectorsDefault = {};           % no phase vectors by default
 removeOutliersDefault = false;      % don't remove outliers by default
 runTTestDefault = false;            % don't run paired t-test by default
 runRankTestDefault = false;         % don't run paired signed-rank test by default
-columnsToPlotDefault = [];             % set later
+columnsToPlotDefault = [];          % set later
 lineSpecDefault = '-';
 lineWidthDefault = 2;
 pislogDefault = false;
@@ -217,9 +217,7 @@ readoutLabelDefault = 'Readout';
 columnLabelsDefault = '';           % set later
 phaseLabelsDefault = '';            % set later
 colorMapDefault = [];               % set later
-singleColorDefault = rgb('SkyBlue');
-confIntColorDefault = rgb('LightGray');  
-                                    % light gray confidence intervals by default
+confIntColorDefault = [];           % light gray confidence intervals by default
 legendLocationDefault = 'auto';     % set later
 pBoundariesDefault = [];
 rBoundariesDefault = [];
@@ -297,8 +295,6 @@ addParameter(iP, 'PhaseLabels', phaseLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'ColorMap', colorMapDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d', 'ncols', 3}));
-addParameter(iP, 'SingleColor', singleColorDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 3}));
 addParameter(iP, 'ConfIntColor', confIntColorDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d', 'numel', 3}));
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
@@ -344,7 +340,6 @@ readoutLabel = iP.Results.ReadoutLabel;
 columnLabels = iP.Results.ColumnLabels;
 phaseLabels = iP.Results.PhaseLabels;
 colorMap = iP.Results.ColorMap;
-singlecolor = iP.Results.SingleColor;
 confIntColor = iP.Results.ConfIntColor;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
@@ -452,8 +447,8 @@ end
 % Set column labels
 if isempty(columnLabels)
     columnLabels = cell(1, nCols);
-    for c = 1:nCols
-        columnLabels{c} = ['Column #', num2str(c)];
+    for iPlot = 1:nCols
+        columnLabels{iPlot} = ['Column #', num2str(iPlot)];
     end
 end
 
@@ -491,7 +486,7 @@ nNonInf = sum(~isinf(readout), 1);
 % Count the number of columns to plot
 nColumnsToPlot = length(columnsToPlot);
 
-% Define the color map to use
+% Decide on the color map to use
 if isempty(colorMap)
     if isempty(phaseVectors)
         if nColumnsToPlot == 1
@@ -502,6 +497,12 @@ if isempty(colorMap)
     else
         colorMap = colormap(hsv(maxNPhases));
     end
+end
+
+% Decide on the confidence interval color map to use
+if isempty(confIntColor)
+    % Color of the confidence interval
+    confIntColor = WHITE - (WHITE - colorMap) * fadePercentage;
 end
 
 % Decide on the figure to plot on
@@ -538,22 +539,22 @@ end
 % Plot readout values against parameter values
 lines = gobjects(nColumnsToPlot, maxNPhases);
 confInts = gobjects(nColumnsToPlot, maxNPhases);
-for c = 1:nColumnsToPlot
+for iPlot = 1:nColumnsToPlot
     % Get the column to plot
-    col = columnsToPlot(c);
+    col = columnsToPlot(iPlot);
     readoutThis = readout(:, col);
 
     % Plot the tuning curve for this column
     if isempty(phaseVectors)
-        lines(c, 1) = plot_one_line(pIsLog, pValues, readoutThis, lineSpec, ...
-                            lineWidth, otherArguments);
+        lines(iPlot, 1) = plot_one_line(pIsLog, pValues, readoutThis, ...
+                                        lineSpec, lineWidth, otherArguments);
     else
         hold on;
         
         % Get the current phase vector
-        phaseVectorThis = phaseVectors{c};
-        uniquePhasesThis = uniquePhases{c};
-        nPhasesThis = nPhases(c);
+        phaseVectorThis = phaseVectors{iPlot};
+        uniquePhasesThis = uniquePhases{iPlot};
+        nPhasesThis = nPhases(iPlot);
 
         % Get the distinct phase indices for this readout vector
         phaseIndices = arrayfun(@(x) find(phaseVectorThis == x), ...
@@ -567,7 +568,7 @@ for c = 1:nColumnsToPlot
                                 phaseIndices, 'UniformOutput', false);
 
         % Plot readout vector for all phases
-        lines(c, 1:nPhasesThis) = ...
+        lines(iPlot, 1:nPhasesThis) = ...
             cellfun(@(x) plot_one_line(pIsLog, pValues(x), readout(x, col), ...
                         lineSpec, lineWidth, otherArguments), phaseIndices);
     end
@@ -600,7 +601,7 @@ for c = 1:nColumnsToPlot
             minY = apply_iteratively(@min, {yLimits, readoutLimits});
 
             % Remove tuning curve
-            delete(lines(c, 1));
+            delete(lines(iPlot, 1));
 
             % The x and y values for the confidence intervals
             confIntXValues = [pValues; flipud(pValues)];
@@ -608,11 +609,11 @@ for c = 1:nColumnsToPlot
 
             % Fill the area between lowerCIThis and upperCIThis 
             %   with confIntColor
-            confInts(c, 1) = fill(confIntXValues, confIntYValues, ...
-                                    confIntColor, 'LineStyle', 'none');
+            confInts(iPlot, 1) = fill(confIntXValues, confIntYValues, ...
+                                confIntColor(iPlot, :), 'LineStyle', 'none');
 
             % Plot tuning curve again
-            lines(c, 1) = plot_one_line(pIsLog, pValues, readoutThis, ...
+            lines(iPlot, 1) = plot_one_line(pIsLog, pValues, readoutThis, ...
                                         lineSpec, lineWidth, otherArguments);
 
             % Display tick marks and grid lines over graphics objects.
@@ -623,27 +624,23 @@ for c = 1:nColumnsToPlot
     % Set color
     if isempty(phaseVectors)
         % Set color by columns
-        if nColumnsToPlot > 1
-            set(lines(c, 1), 'Color', colorMap(c, :))
-        elseif nColumnsToPlot == 1
-            set(lines(c, 1), 'Color', singlecolor);
-        end
+        set(lines(iPlot, 1), 'Color', colorMap(iPlot, :));
     else
         % Set color by phase
         for iPhase = 1:nPhasesThis
-            set(lines(c, iPhase), 'Color', colorMap(iPhase, :));
+            set(lines(iPlot, iPhase), 'Color', colorMap(iPhase, :));
         end
     end
 
     % Set display name
     if isempty(phaseVectors) || isempty(phaseLabels)
         if ~strcmpi(columnLabels, 'suppress')
-            set(lines(c, 1), 'DisplayName', ...
+            set(lines(iPlot, 1), 'DisplayName', ...
                 replace(columnLabels{col}, '_', '\_'));
         end
     else
         for iPhase = 1:nPhasesThis
-            set(lines(c, iPhase), 'DisplayName', ...
+            set(lines(iPlot, iPhase), 'DisplayName', ...
                 replace(phaseLabels{iPhase}, '_', '\_'));
         end
     end
@@ -651,7 +648,7 @@ for c = 1:nColumnsToPlot
     % If there is only one value for this column, mark with a circle
     % TODO: for ~isempty(phaseVectors)?
     if nNonInf(col) == 1
-        set(lines(c, 1), 'Marker', 'o');
+        set(lines(iPlot, 1), 'Marker', 'o');
     end
 end
 
@@ -743,7 +740,7 @@ if ~isempty(indSelected)
     % TODO
 end
 
-% TODO: Make function
+% TODO: Make function plot_text.m
 % Plot t-test p values if any
 if ~isempty(tTestPValues)
     hold on
@@ -767,7 +764,7 @@ if ~isempty(tTestPValues)
         pString = ['p_t = ', num2str(tTestPValueThis, 2)];
 
         % Plot red if significant
-        if tTestPValueThis < alphaValue
+        if tTestPValueThis < sigLevel
             text(xLocThis, yLoc, pString, 'Color', 'r');
         else
             text(xLocThis, yLoc, pString, 'Color', 'k');
@@ -798,7 +795,7 @@ if ~isempty(rankTestPValues)
         pString = ['p_r = ', num2str(rankTestPValueThis, 2)];
 
         % Plot red if significant
-        if rankTestPValueThis < alphaValue
+        if rankTestPValueThis < sigLevel
             text(xLocThis, yLoc, pString, 'Color', 'r');
         else
             text(xLocThis, yLoc, pString, 'Color', 'k');
@@ -901,12 +898,28 @@ uniquePhases = cellfun(@(x) unique(x, 'stable'), phaseVectorsNoNaN, ...
 confInts = gobjects(nColumnsToPlot, 2);
 
 % Make the area under upperCIThis light gray
-confInts(c, 1) = area(pValues, upperCIThis, minY, ...
+confInts(iPlot, 1) = area(pValues, upperCIThis, minY, ...
                     'LineStyle', 'none', 'FaceColor', [0.9, 0.9, 0.9]);
 
 % Make the area under lowerCIThis white
-confInts(c, 2) = area(pValues, lowerCIThis, minY, ...
+confInts(iPlot, 2) = area(pValues, lowerCIThis, minY, ...
                     'LineStyle', 'none', 'FaceColor', [1, 1, 1]);
+
+%                   - 'SingleColor': color when nColumnsToPlot == 1
+%                   must be a 3-element vector
+%                   default == rgb('SkyBlue') == [0.5273, 0.8047, 0.9180]
+singleColorDefault = rgb('SkyBlue');
+addParameter(iP, 'SingleColor', singleColorDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 3}));
+singlecolor = iP.Results.SingleColor;
+if nColumnsToPlot > 1
+    set(lines(iPlot, 1), 'Color', colorMap(iPlot, :));
+elseif nColumnsToPlot == 1
+    set(lines(iPlot, 1), 'Color', singlecolor);
+end
+
+confIntColorDefault = rgb('LightGray');  
+                                    % light gray confidence intervals by default
 
 %}
 
