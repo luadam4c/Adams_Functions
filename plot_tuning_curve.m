@@ -185,7 +185,7 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 % 2019-08-07 Added 'RunRankTest' as an optional argument
 % 2019-08-09 Updated confidence interval plots
 % 2019-08-09 Combined SingleColor with ColorMap
-% TODO: Fix confidence interval plots for matrices
+% 2019-08-09 Fixed confidence interval plots for matrices
 % TODO: Return handles to plots
 %
 
@@ -660,7 +660,7 @@ end
 % Generate a legend if there is more than one trace
 if ~strcmpi(legendLocation, 'suppress')
     if isempty(phaseVectors)
-        legend('location', legendLocation);
+        legend(lines, 'location', legendLocation);
     else
         legend(lines(1, :), 'location', legendLocation);
     end
@@ -737,7 +737,7 @@ end
 
 % Plot selected values if any
 if ~isempty(indSelected)
-    % TODO
+    % TODO:
 end
 
 % TODO: Make function plot_text.m
