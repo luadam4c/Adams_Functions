@@ -6,8 +6,8 @@
 
 % File History:
 % 2019-08-06 Created by Adam Lu
-% TODO: Change nSweepsToAverage to 10
-% TODO: Add SelectionMethod as a parameter
+% 2019-08-10 Changed nSweepsToAverage to 10
+% 2019-08-10 Added SelectionMethod as a parameter
 % TODO: Automatically save script copy with timestamp (make a function)
 % TODO: Generate a function tree that this script uses
 % TODO: Generate a snapshot of Adams_Functions, etc.
@@ -27,31 +27,33 @@ parsePopulationFlag = true;
 plotChevronFlag = true;
 
 % For compute_default_signal2noise.m
-relSnrThres2Max = 0.1;
+relSnrThres2Max = 0.1;          % parameter for calculating signal-to-noise ratio
 
 % For detect_spikes_multiunit.m
-filtFreq = [100, 1000];
-minDelayMs = 25;
+filtFreq = [100, 1000];         % bandpass filter frequency
+minDelayMs = 25;                % minimum delay after stimulation start
 
 % For compute_spike_density.m
-binWidthMs = 10;                % use a bin width of 10 ms by default
-resolutionMs = 5;
+binWidthMs = 10;                % use a bin width of 10 ms
+resolutionMs = 5;               % plots have a 5 ms resolution
 
 % For compute_spike_histogram.m
-minBurstLengthMs = 20;          % bursts must be at least 20 ms by default
+minBurstLengthMs = 20;          % bursts must be at least 20 ms
 maxFirstInterBurstIntervalMs = 2000;
-maxInterBurstIntervalMs = 2000; % bursts are no more than 
-                                %   1 second apart by default
+maxInterBurstIntervalMs = 2000; % bursts are no more than 1 second apart
 minSpikeRateInBurstHz = 100;    % bursts must have a spike rate of 
-                                %   at least 100 Hz by default
+                                %   at least 100 Hz
 
 % For compute_autocorrelogram.m
-filterWidthMs = 100;
-minRelProm = 0.02;
+filterWidthMs = 100;            % moving average filter width for 
+                                %   smoothing the raw autocorrelation function
+minRelProm = 0.02;              % minimum relative prominence for 
+                                %   a frequency peak
 
 % For compute_phase_average.m & plot_measures.m
-nSweepsLastOfPhase = 10;         % select from last 10 values by default
-nSweepsToAverage = 5;            % select 5 values by default
+nSweepsLastOfPhase = 10;        % select from last 10 values of each phase
+nSweepsToAverage = 10;          % select 10 values to average
+selectionMethod = 'notNaN';     % average all values that are not NaNs
 
 % For plot_measures.m
 plotType = 'tuning';
@@ -106,7 +108,7 @@ for iDir = 1:numel(dirsToAnalyze)
                 'MinRelProm', minRelProm, ...
                 'NSweepsLastOfPhase', nSweepsLastOfPhase, ...
                 'NSweepsToAverage', nSweepsToAverage, ...
-                'SelectionMethod', 'notNaN');
+                'SelectionMethod', selectionMethod);
     end
     
     if parsePopulationFlag
@@ -130,7 +132,7 @@ for iDir = 1:numel(dirsToAnalyze)
                         'PlotChevronFlag', plotChevronFlag, ...
                         'NSweepsLastOfPhase', nSweepsLastOfPhase, ...
                         'NSweepsToAverage', nSweepsToAverage, ...
-                        'SelectionMethod', 'notNaN', ...
+                        'SelectionMethod', selectionMethod, ...
                         'PlotType', plotType, ...
                         'SweepLengthSec', sweepLengthSec, ...
                         'TimeLabel', timeLabel, ...

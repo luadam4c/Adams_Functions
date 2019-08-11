@@ -65,6 +65,13 @@ function plot_measures (varargin)
 %                   - 'NSweepsToAverage': number of sweeps to average
 %                   must be a positive integer scalar
 %                   default == 5
+%                   - 'SelectionMethod': the selection method
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'notNaN'        - select any non-NaN value
+%                       'maxRange2Mean' - select vales so that the maximum 
+%                                           range is within a percentage 
+%                                           of the mean
+%                   default == 'maxRange2Mean'
 %                   - 'MaxRange2Mean': maximum percentage of range versus mean
 %                   must be a nonnegative scalar
 %                   default == 40%
@@ -126,6 +133,7 @@ function plot_measures (varargin)
 % TODO: Pull out many code to functions
 
 %% Hard-coded parameters
+validSelectionMethods = {'notNaN', 'maxRange2Mean'};
 validPlotTypes = {'tuning', 'bar'};
 
 % Must be consistent with parse_multiunit.m
@@ -167,6 +175,8 @@ phaseNumbersDefault = [];
 sweepNumbersDefault = [];
 nSweepsLastOfPhaseDefault = 10;         % select from last 10 values by default
 nSweepsToAverageDefault = 5;            % select 5 values by default
+selectionMethodDefault = 'maxRange2Mean';   
+                                        % select using maxRange2Mean by default
 maxRange2MeanDefault = 40;              % range is not more than 40% of mean 
                                         %   by default
 sweepLengthSecDefault = 60;             % sweep length is 60 seconds by default
@@ -225,6 +235,8 @@ addParameter(iP, 'NSweepsLastOfPhase', nSweepsLastOfPhaseDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
 addParameter(iP, 'NSweepsToAverage', nSweepsToAverageDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'SelectionMethod', selectionMethodDefault, ...
+    @(x) any(validatestring(x, validSelectionMethods)));
 addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'SweepLengthSec', sweepLengthSecDefault, ...
@@ -266,6 +278,8 @@ phaseNumbers = iP.Results.PhaseNumbers;
 sweepNumbers = iP.Results.SweepNumbers;
 nSweepsLastOfPhase = iP.Results.NSweepsLastOfPhase;
 nSweepsToAverage = iP.Results.NSweepsToAverage;
+selectionMethod = validatestring(iP.Results.SelectionMethod, ...
+                                    validSelectionMethods);
 maxRange2Mean = iP.Results.MaxRange2Mean;
 sweepLengthSec = iP.Results.SweepLengthSec;
 timeLabel = iP.Results.TimeLabel;
@@ -636,6 +650,7 @@ readoutAvg = ...
     cellfun(@(x, y) cellfun(@(z) compute_phase_average(inTable{:, x}, ...
                                         'Indices', z, ...
                                         'NToAverage', nSweepsToAverage, ...
+                                        'SelectionMethod', selectionMethod, ...
                                         'MaxRange2Mean', maxRange2Mean), ...
                             y), ...
             readoutVars, indLastOfPhase, 'UniformOutput', false);

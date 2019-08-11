@@ -521,8 +521,13 @@ while ishandle(fig)
     % Expand y limits
     if (isempty(yLimits) || any(isinf(yLimits))) && numel(values) > 1
         % Compute the best y limits
-        bestYLimits = compute_axis_limits(values, 'y');
-
+        % TODO
+        if numel(unique(values)) == 1
+            bestYLimits = [0; unique(values) * 1.1];
+        else
+            bestYLimits = compute_axis_limits(values, 'y');
+        end
+            
         % Initialize the new y limits with the old ones
         yLimitsNew = yLimits;
 

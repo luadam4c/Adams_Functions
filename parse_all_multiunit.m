@@ -55,6 +55,9 @@ function [muParams, muData] = parse_all_multiunit(varargin)
 % 2019-08-06 Now accepts any parameter-value pair for parse_multiunit.m
 
 %% Hard-coded parameters
+% TODO
+saveMatFlag = true;
+
 matFileSuffix = '_multiunit_data';
 varsNeeded = {'sliceBase', 'vVecsSl', 'siMsSl', 'iVecsSl', ...
                 'phaseBoundaries', 'phaseStrs'};
@@ -163,6 +166,7 @@ phaseStrs = allDataTable.phaseStrs;
 if isnumeric(phaseBoundaries)
     phaseBoundaries = num2cell(phaseBoundaries);
 end
+
 
 %% Parse all slices
 % Count the number of slices

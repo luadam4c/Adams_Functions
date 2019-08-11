@@ -242,6 +242,13 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %                   - 'NSweepsToAverage': number of sweeps to average
 %                   must be a positive integer scalar
 %                   default == 5
+%                   - 'SelectionMethod': the selection method
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'notNaN'        - select any non-NaN value
+%                       'maxRange2Mean' - select vales so that the maximum 
+%                                           range is within a percentage 
+%                                           of the mean
+%                   default == 'maxRange2Mean'
 %                   - 'MaxRange2Mean': maximum percentage of range versus mean
 %                   must be a nonnegative scalar
 %                   default == 40%
@@ -323,6 +330,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 % 2019-08-09 Now saves contour plots as epsc2 instead of eps
 
 %% Hard-coded parameters
+validSelectionMethods = {'notNaN', 'maxRange2Mean'};
 plotTypeMeasures = 'bar'; %'tuning';
 yAmountToStagger = [];                  % y amount to stagger for the raw plots
 % yAmountToStagger = 10;
@@ -399,6 +407,8 @@ minRelPromDefault = 0.02;
 % Note: must be consistent with plot_measures.m
 nSweepsLastOfPhaseDefault = 10;         % select from last 10 values by default
 nSweepsToAverageDefault = 5;            % select 5 values by default
+selectionMethodDefault = 'maxRange2Mean';   
+                                        % select using maxRange2Mean by default
 maxRange2MeanDefault = 40;              % range is not more than 40% of mean 
                                         %   by default
 
@@ -506,6 +516,8 @@ addParameter(iP, 'NSweepsLastOfPhase', nSweepsLastOfPhaseDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
 addParameter(iP, 'NSweepsToAverage', nSweepsToAverageDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'SelectionMethod', selectionMethodDefault, ...
+    @(x) any(validatestring(x, validSelectionMethods)));
 addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 
@@ -547,6 +559,8 @@ filterWidthMs = iP.Results.FilterWidthMs;
 minRelProm = iP.Results.MinRelProm;
 nSweepsLastOfPhase = iP.Results.NSweepsLastOfPhase;
 nSweepsToAverage = iP.Results.NSweepsToAverage;
+selectionMethod = validatestring(iP.Results.SelectionMethod, ...
+                                    validSelectionMethods);
 maxRange2Mean = iP.Results.MaxRange2Mean;
 
 %% Preparation
@@ -874,6 +888,7 @@ if plotCombinedFlag
                     'PhaseNumber', 1, ...
                     'NLastOfPhase', nSweepsLastOfPhase, ...
                     'NToAverage', nSweepsToAverage, ...
+                    'SelectionMethod', selectionMethod, ...
                     'MaxRange2Mean', maxRange2Mean);
 
     % Create a new figure with 1 x 3 subplots
