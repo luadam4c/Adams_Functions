@@ -22,6 +22,19 @@ function varargout = all_dependent_functions (mFileName, varargin)
 %                                   by the given script/function
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'OriginalOutput': whether to return a cell array
+%                                       and a structure instead
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'SaveFlag': whether to save spreadsheets
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'PrintFlag': whether to print to standard output
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'OutFolder': directory to save spreadsheets
+%                   must be a string scalar or a character vector
+%                   default == pwd
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -30,33 +43,34 @@ function varargout = all_dependent_functions (mFileName, varargin)
 %       cd/force_column_cell.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/archive_dependent_scripts.m
 
 % File History:
 % 2019-08-09 Created by Adam Lu
-% TODO: Add 'SaveFlag' as an optional argument
-% TODO: Add 'PrintFlag' as an optional argument
-% TODO: Add 'OutFolder' as an optional argument
+% 2019-08-12 Added 'OutFolder' as an optional argument
+% 2019-08-12 Added 'OriginalOutput' as an optional argument
+% 2019-08-12 Added 'SaveFlag' as an optional argument
+% 2019-08-12 Added 'PrintFlag' as an optional argument
 % TODO: Add 'FunctionListPath' as an optional argument
 % TODO: Add 'MatlabProductListPath' as an optional argument
-% TODO: Add 'OriginalOutput' as an optional argument
 % TODO: Add 'SheetType' as an optional argument
+% TODO: Allow processing of multiple files 
 
 %% Hard-coded parameters
 functionListSuffix = 'function_list';
 matlabProductListSuffix = 'matlab_product_list';
 
 % TODO: Make these optional arguments
-saveFlag = true;
-printFlag = true;
-outFolder = pwd;
 functionListPath = [];
 matlabProductListPath = [];
-originalOutput = false;
 sheetType = 'csv';
 
 %% Default values for optional arguments
-topOnlyDefault = [];
+topOnlyDefault = false;
+originalOutputDefault = false;
+saveFlagDefault = true;
+printFlagDefault = true;
+outFolderDefault = pwd;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -71,14 +85,30 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'mFileName');
+addRequired(iP, 'mFileName', ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['mFileName must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'TopOnly', topOnlyDefault);
+addParameter(iP, 'TopOnly', topOnlyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'OriginalOutput', originalOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveFlag', saveFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PrintFlag', printFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, mFileName, varargin{:});
 topOnly = iP.Results.TopOnly;
+originalOutput = iP.Results.OriginalOutput;
+saveFlag = iP.Results.SaveFlag;
+printFlag = iP.Results.PrintFlag;
+outFolder = iP.Results.OutFolder;
 
 %% Preparation 
 % Extract just the file name without '.m'
@@ -90,12 +120,14 @@ end
 
 % Set default function list path
 if isempty(functionListPath)
-    functionListPath = [mFileBase, '_', functionListSuffix, '.', sheetType];
+    functionListPath = fullfile(outFolder, ...
+                    [mFileBase, '_', functionListSuffix, '.', sheetType]);
 end
 
 % Set default MATLAB product list path
 if isempty(matlabProductListPath)
-    matlabProductListPath = [mFileBase, '_', matlabProductListSuffix, '.', sheetType];
+    matlabProductListPath = fullfile(outFolder, ...
+                    [mFileBase, '_', matlabProductListSuffix, '.', sheetType]);
 end
 
 %% Do the job
@@ -149,8 +181,8 @@ end
 
 %% Display results
 if printFlag
-    functionListTable
-    matlabProductListTable
+    display(functionListTable);
+    display(matlabProductListTable);
 end
 
 %% Output results

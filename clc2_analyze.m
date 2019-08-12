@@ -11,7 +11,7 @@
 % TODO: Automatically save script copy with timestamp (make a function)
 % TODO: Generate a function tree that this script uses
 % TODO: Generate a snapshot of Adams_Functions, etc.
-% 
+
 %% Hard-coded parameters
 parentDir = '/media/adamX/CLC2/data/blinded';
 dirsToAnalyze = {'drug-clean', 'control-clean'};

@@ -15,6 +15,7 @@ function timeStamp = create_time_stamp (varargin)
 %
 %
 % Used by:    
+%       cd/archive_dependent_scripts.m
 %       cd/save_params.m
 
 % File History:

@@ -9,6 +9,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       extract_fileparts(paths, 'dirbase')
 %       extract_fileparts(paths, 'name')
 %       extract_fileparts(paths, 'base')
+%       extract_fileparts(paths, 'pathbase')
 %       extract_fileparts(paths, 'ext')
 %       extract_fileparts(paths, 'commondirectory')
 %       extract_fileparts(paths, 'commonprefix')
@@ -34,6 +35,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %                       'dirbase'   - directory base containing the file(s)
 %                       'name'      - file name with the extension
 %                       'base'      - file base name without the extension
+%                       'pathbase'  - full file path without the extension
 %                       'extension' - file extension including the leading '.'
 %       varargin    - 'Delimiter': delimiter used for file suffices
 %                   must be a string scalar or a character vector
@@ -53,6 +55,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 % Used by:
 %       cd/all_dependent_functions.m
 %       cd/all_file_bases.m
+%       cd/archive_dependent_scripts.m
 %       cd/plot_measures.m
 %       cd/combine_data_from_same_slice.m
 %       cd/combine_variables_across_tables.m
@@ -69,13 +72,14 @@ function parts = extract_fileparts (paths, partType, varargin)
 % 2019-04-07 Added 'dirbase' as a part type
 % 2019-04-07 Added 'RegExp' as an optional argument
 % 2019-04-07 Added 'name' as a part type
+% 2019-08-12 Added 'pathbase' as a part type
 % TODO: Make the first argument accept a files structure array too
 % 
 
 %% Hard-coded parameters
 validPartTypes = {'commondirectory', 'commonprefix', 'commonsuffix', ...
                     'distinct', 'directory', 'dirbase', ...
-                    'name', 'base', 'extension'};
+                    'name', 'base', 'pathbase', 'extension'};
 
 %% Default values for optional arguments
 delimiterDefault = '_';
@@ -122,7 +126,7 @@ partType = validatestring(partType, validPartTypes);
 
 %% Do the job
 switch partType
-case {'directory', 'dirbase', 'name', 'base', 'extension'}
+case {'directory', 'dirbase', 'name', 'base', 'pathbase', 'extension'}
     parts = extract_simple_fileparts(paths, partType);
 case 'commondirectory'
     parts = extract_common_directory(paths, varargin{:});
@@ -190,6 +194,8 @@ switch partType
         parts = strcat(fileBases, fileExtensions);
     case 'base'
         parts = fileBases;
+    case 'pathbase'
+        parts = fullfile(fileDirs, fileBases);        
     case 'extension'
         parts = fileExtensions;
 end
