@@ -16,6 +16,7 @@ function isCellNumeric = iscellnumeric (x)
 %       cd/isnum.m
 %
 % Used by:
+%       cd/alternate_elements.m
 %       cd/compute_baseline_noise.m
 %       cd/compute_residuals.m
 %       cd/compute_rms_error.m

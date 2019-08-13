@@ -328,7 +328,6 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 % 2019-08-04 Now makes 'Trace #' the y label for raw plots
 % 2019-08-06 Made parameters optional arguments
 % 2019-08-09 Now saves contour plots as epsc2 instead of eps
-% 2019-08-13 Expanded combined plot
 
 %% Hard-coded parameters
 validSelectionMethods = {'notNaN', 'maxRange2Mean'};
@@ -871,6 +870,7 @@ if plotSpikeDensityFlag
 end
 
 %% Plot combined plots
+% TODO: Make 3 X 3
 if plotCombinedFlag
     fprintf('Plotting a combined plot for %s ...\n', fileBase);    
 
@@ -891,8 +891,8 @@ if plotCombinedFlag
     oscPeriod2Ms = parsedParams.oscPeriod2Ms;
 
     % Extract sample data
-    [parsedParamsStruct, parsedDataStruct] = ...
-        argfun(@struct2table, parsedData, parsedParams);
+    parsedDataStruct = struct2table(parsedData);
+    parsedParamsStruct = struct2table(parsedParams);
     sampleDataStruct = parsedDataStruct(iTraceToSample);
     sampleParamsStruct = parsedParamsStruct(iTraceToSample);
     tVec = sampleDataStruct.tVec;
@@ -1005,11 +1005,10 @@ if plotCombinedFlag
 
     % Plot spike histogram
     axes(axCombined(3, 2));
-    plot_spike_histogram(sampleParamsStruct, sampleDataStruct);
+    plot_spike_histogram(sampleDataStruct, sampleParamsStruct)
 
     % Plot autocorrelogram
     axes(axCombined(3, 3));
-    plot_autocorrelogram(sampleParamsStruct, sampleDataStruct);
 
     % Save the figure
     saveas(figCombined, figBaseCombined, 'png');
@@ -1393,22 +1392,17 @@ parsedData.halfPeriodsToMultiple = halfPeriodsToMultiple;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function vector = prepare_for_plot_horizontal_line(starts, ends)
-%% Put in the form [start1; end1; start2; end2; ...; startn; endn]
+%% Put in the form [start1, end1, start2, end2, ..., startn, endn]
 
-% Make sure inputs are column vectors
-[starts, ends] = argfun(@force_column_vector, starts, ends);
-
-% Place together as two rows
 if isempty(starts) || isempty(ends)
-    % This will cause nothing to be plotted
-    form1 = [NaN; NaN];
+    form1 = [0; 0];
 else
     % Put in the form [start1, start2, ..., startn;
     %                   end1,   end2,  ...,  endn]
     form1 = transpose([starts, ends]);
 end
 
-% Reshape as a single column vector
+% Reshape as a column vector
 vector = reshape(form1, [], 1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1505,7 +1499,7 @@ linkaxes(ax, 'x');
 function [histBars, histFig] = ...
                 plot_spike_histogram(spikeCounts, edgesSec, durationWindows, ...
                                 oscDurationSec, nSpikesInOsc, ...
-                                xLimits, yLimits, figTitleBase)
+                                xLimitsHist, yLimitsHist, figTitleBase)
 
 
 % Plot figure
@@ -1513,7 +1507,7 @@ histFig = figure('Visible', 'off');
 hold on;
 [histBars, histFig] = ...
     plot_histogram([], 'Counts', spikeCounts, 'Edges', edgesSec, ...
-                    'XLimits', xLimits, 'YLimits', yLimits, ...
+                    'XLimits', xLimitsHist, 'YLimits', yLimitsHist, ...
                     'XLabel', 'Time (seconds)', ...
                     'YLabel', 'Spike Count per 10 ms', ...
                     'FigTitle', ['Spike histogram for ', figTitleBase], ...
@@ -1689,7 +1683,7 @@ xLimitsHist = [histLeft, histRight];
 
 % Compute x limits for durations
 %    durationWindows = force_column_cell(transpose([histLeft, timeOscEndSec]));
-burstWindows = cellfun(@(x, y) alternate_elements(x, y), ...
+durationWindows = cellfun(@(x, y) prepare_for_plot_horizontal_line(x, y), ...
                         timeBurstStartsSec, timeBurstEndsSec, ...
                         'UniformOutput', false);
 
@@ -1704,11 +1698,6 @@ yLimitsHist = [0, largestSpikeCount * 1.1];
 
 % Check if output directory exists
 check_dir(outFolder);
-
-% Convert to structure arrays
-% TODO: Use this
-[parsedParamsStruct, parsedDataStruct] = ...
-    argfun(@struct2table, parsedData, parsedParams);
 
 % Plot histograms
 parfor iVec = 1:nVectors
@@ -1942,7 +1931,7 @@ nVectors = height(parsedParams);
 oscWindow = transpose([stimStartSec, timeOscEndSec]);
 
 % Burst windows
-burstWindows = cellfun(@(x, y) alternate_elements(x, y), ...
+burstWindows = cellfun(@(x, y) prepare_for_plot_horizontal_line(x, y), ...
                         timeBurstStartsSec, timeBurstEndsSec, ...
                         'UniformOutput', false);
 
@@ -2121,6 +2110,8 @@ end
 
 %{
 OLD CODE:
+
+save_all_zooms(figs(4), figBaseCombined, zoomWinsMulti);
 
 %}
 

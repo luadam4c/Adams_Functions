@@ -32,6 +32,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/force_column_vector.m
 %
 % Used by:
+%       cd/alternate_elements.m
 %       cd/combine_data_from_same_slice.m
 %       cd/compute_combined_data.m
 %       cd/compute_combined_trace.m

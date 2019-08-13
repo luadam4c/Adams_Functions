@@ -19,6 +19,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/alternate_elements.m
 %       cd/annotation_in_plot.m
 %       cd/combine_data_from_same_slice.m
 %       cd/compute_average_pulse_response.m
