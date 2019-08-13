@@ -1,14 +1,17 @@
 %% Analyzes all metformin data
 %
-% Requires: 
+% Requires:
+%       cd/archive_dependent_scripts.m
 %       cd/parse_all_multiunit.m
 %       cd/plot_measures.m
 
 % File History:
 % 2019-08-08 Adapted from clc2_analyze.m
+% 2019-08-12 Now runs archive_dependent_scripts.m
 
 %% Hard-coded parameters
 parentDir = fullfile('/media', 'adamX', 'Glucose', 'oscillations', 'metformin');
+archiveDir = parentDir;
 dirsToAnalyze = {'all'};
 
 % For compute_default_signal2noise.m
@@ -115,6 +118,9 @@ for iDir = 1:numel(dirsToAnalyze)
                     'VarsToPlot', varsToPlot, ...
                     'VarLabels', varLabels);
 end
+
+% Archive all scripts for this run
+archive_dependent_scripts(mfilename, 'OutFolder', archiveDir);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

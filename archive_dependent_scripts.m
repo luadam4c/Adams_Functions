@@ -35,7 +35,7 @@ function varargout = archive_dependent_scripts (mFileName, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/clc2_analyze.m
 
 % File History:
 % 2019-08-11 Created by Adam Lu

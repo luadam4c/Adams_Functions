@@ -1,6 +1,7 @@
 %% Analyzes all CLC2 data
 %
 % Requires: 
+%       cd/archive_dependent_scripts.m
 %       cd/parse_all_multiunit.m
 %       cd/plot_measures.m
 
@@ -8,11 +9,10 @@
 % 2019-08-06 Created by Adam Lu
 % 2019-08-10 Changed nSweepsToAverage to 10
 % 2019-08-10 Added SelectionMethod as a parameter
-% TODO: Automatically save script copy with timestamp (make a function)
-% TODO: Generate a function tree that this script uses
-% TODO: Generate a snapshot of Adams_Functions, etc.
+% 2019-08-12 Now runs archive_dependent_scripts.m
 
 %% Hard-coded parameters
+archiveDir = '/media/adamX/CLC2/data';
 parentDir = '/media/adamX/CLC2/data/blinded';
 dirsToAnalyze = {'drug-clean', 'control-clean'};
 
@@ -142,6 +142,9 @@ for iDir = 1:numel(dirsToAnalyze)
                         'VarLabels', varLabels);
     end
 end
+
+% Archive all scripts for this run
+archive_dependent_scripts(mfilename, 'OutFolder', archiveDir);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
