@@ -58,6 +58,9 @@ function indices = create_indices (varargin)
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'left'   - always include indexStart
 %                       'right'  - always include indexEnd
+%                       TODO: 'spanboth'   - always include indexStart and indexEnd
+%                       TODO: 'spanleft'   - always include indexStart and maximize span
+%                       TODO: 'spanright'   - always include indexEnd and maximize span
 %                       'center' - center the indices as much as possible
 %                   default == 'right'
 %
@@ -103,6 +106,7 @@ function indices = create_indices (varargin)
 % 2019-04-26 Fixed bug when start and end indices are the same
 % 2019-04-26 Now makes create_indices([NaN; NaN]) == []
 % 2019-05-16 Added 'AlignMethod' as an optional argument
+% TODO: Added 'spanboth', 'spanleft' and 'spanright' as align methods
 % TODO: Use argument 'ForcePositive' as false where necessary
 
 %% Hard-coded parameters

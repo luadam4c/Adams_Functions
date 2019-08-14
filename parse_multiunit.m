@@ -933,7 +933,6 @@ if plotCombinedFlag
     close(figure(4));
     [figCombined, axCombined] = create_subplots(3, 3, 'FigNumber', 4);
 
-%{
     % Plot raw data with zoomWin1
     axes(axCombined(1, 1));
     plot_raw_multiunit(parsedData, parsedParams, ...
@@ -990,7 +989,6 @@ if plotCombinedFlag
                 'PBoundaries', phaseBoundaries, ...
                 'RBoundaries', baselineAverageOscPeriod, ...
                 'IndSelected', indSelectedOscPeriod);
-%}
 
     % Plot spike detection
     axes(axCombined(3, 1)); hold on;
@@ -1008,12 +1006,13 @@ if plotCombinedFlag
 
     % Plot spike histogram
     axes(axCombined(3, 2));
-    plot_spike_histogram(sampleParamsStruct, sampleDataStruct, ...
-                          'XLimits', zoomWin2);
+    plot_spike_histogram(sampleDataStruct, sampleParamsStruct, ...
+                            'XLimits', zoomWin2);
 
     % Plot autocorrelogram
     axes(axCombined(3, 3));
-    plot_autocorrelogram(sampleParamsStruct, sampleDataStruct);
+    plot_autocorrelogram(sampleDataStruct, sampleParamsStruct, ...
+                            'DataType', 'acfFiltered');
 
     % Save the figure
     saveas(figCombined, figBaseCombined, 'png');
@@ -1486,7 +1485,7 @@ linkaxes(ax, 'x');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [histBars, histFig] = ...
-                plot_spike_histogram(spHistParams, spHistData, varargin)
+                plot_spike_histogram(spHistData, spHistParams, varargin)
 %% Plots a spike histogram from the results of compute_spike_histogram
 
 %                   - 'XLimits': x-axis limits
@@ -1518,9 +1517,9 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'spHistParams', ...
-    @(x) validateattributes(x, {'struct'}, {'scalar'}));
 addRequired(iP, 'spHistData', ...
+    @(x) validateattributes(x, {'struct'}, {'scalar'}));
+addRequired(iP, 'spHistParams', ...
     @(x) validateattributes(x, {'struct'}, {'scalar'}));
 
 % Add parameter-value pairs to the Input Parser
@@ -1532,7 +1531,7 @@ addParameter(iP, 'YLimits', yLimitsDefault, ...
         isnumeric(x) && isvector(x) && length(x) == 2);
 
 % Read from the Input Parser
-parse(iP, spHistParams, spHistData, varargin{:});
+parse(iP, spHistData, spHistParams, varargin{:});
 xLimits = iP.Results.XLimits;
 yLimits = iP.Results.YLimits;
 
@@ -1609,16 +1608,8 @@ hold off;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [autoCorrFig, acfFig, acfLine1, acfLine2, acfFilteredLine] = ...
-                plot_autocorrelogram(autoCorr, acf, acfFiltered, indPeaks, ...
-                                    indTroughs, ampPeaks, ampTroughs, ...
-                                    binWidthSec, nBins, halfNBins, ...
-                                    oscIndex1, oscIndex2, oscIndex3, oscIndex4, ...
-                                    oscPeriod1Ms, oscPeriod2Ms, ...
-                                    oscDurationSec, nSpikesInOsc, ...
-                                    xLimitsAutoCorr, yLimitsAutoCorr, ...
-                                    xLimitsAcfFiltered, yLimitsAcfFiltered, ...
-                                    yOscDur, figTitleBase)
+function [fig, lines] = ...
+                plot_autocorrelogram (autoCorrData, autoCorrParams, varargin)
 %% Plots an autocorrelation function from the results of compute_autocorrelogram.m
 
 %                   - 'XLimits': x-axis limits
@@ -1632,10 +1623,15 @@ function [autoCorrFig, acfFig, acfLine1, acfLine2, acfFilteredLine] = ...
 %                   - Any other parameter-value pair for the TODO() function
 
 %% Hard-coded parameters
+valideDataTypes = {'autocorrelogram', 'acfFiltered'};
+% TODO:
+figHandle = [];
 
 %% Default values for optional arguments
-xLimitsDefault = [];            % set later
-yLimitsDefault = [];            % set later
+dataTypeDefault = 'autocorrelogram';
+xLimitsDefault = [];                    % set later
+yLimitsDefault = [];                    % set later
+barYValueDefault = [];                  % set later
 
 %% Deal with arguments
 % Check number of required arguments
@@ -1649,31 +1645,60 @@ iP.FunctionName = mfilename;
 % iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'autoCorrParams', ...
-    @(x) validateattributes(x, {'struct'}, {'scalar'}));
 addRequired(iP, 'autoCorrData', ...
+    @(x) validateattributes(x, {'struct'}, {'scalar'}));
+addRequired(iP, 'autoCorrParams', ...
     @(x) validateattributes(x, {'struct'}, {'scalar'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'DataType', dataTypeDefault, ...
+    @(x) any(validatestring(x, valideDataTypes)));
 addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isvector(x) && length(x) == 2);
 addParameter(iP, 'YLimits', yLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
+addParameter(iP, 'BarYValue', barYValueDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 
 % Read from the Input Parser
-parse(iP, autoCorrParams, autoCorrData, varargin{:});
+parse(iP, autoCorrData, autoCorrParams, varargin{:});
+dataType = validatestring(iP.Results.DataType, valideDataTypes);
 xLimits = iP.Results.XLimits;
 yLimits = iP.Results.YLimits;
+barYValue = iP.Results.BarYValue;
 
 % Keep unmatched arguments for the TODO() function
 % otherArguments = struct2arglist(iP.Unmatched);
 
+%% Preparation
+% Retrieve data for plotting
+autoCorr = autoCorrData.autoCorr;
+acf = autoCorrData.acf;
+acfFiltered = autoCorrData.acfFiltered;
+indPeaks = autoCorrData.indPeaks;
+indTroughs = autoCorrData.indTroughs;
+ampPeaks = autoCorrData.ampPeaks;
+ampTroughs = autoCorrData.ampTroughs;
+
+binWidthSec = autoCorrParams.binWidthSec;
+nBins = autoCorrParams.nBins;
+halfNBins = autoCorrParams.halfNBins;
+oscIndex1 = autoCorrParams.oscIndex1;
+oscIndex2 = autoCorrParams.oscIndex2;
+oscIndex3 = autoCorrParams.oscIndex3;
+oscIndex4 = autoCorrParams.oscIndex4;
+oscPeriod2Ms = autoCorrParams.oscPeriod2Ms;
+oscPeriod1Ms = autoCorrParams.oscPeriod1Ms;
+oscDurationSec = autoCorrParams.oscDurationSec;
+nSpikesInOsc = autoCorrParams.nSpikesInOsc;
+figTitleBase = autoCorrParams.figTitleBase;
+
 % Create time values 
 if nBins > 1
     tAcfTemp = create_time_vectors(nBins - 1, 'SamplingIntervalSec', binWidthSec, ...
-                                'TimeUnits', 's');
+                                    'TimeUnits', 's');
     tAcf = [0; tAcfTemp(1:halfNBins)];
     tAutoCorr = [-flipud(tAcfTemp); 0; tAcfTemp];
     timePeaksSec = (indPeaks - indPeaks(1)) * binWidthSec;
@@ -1688,45 +1713,94 @@ end
 % Compute the x limits for the oscillation duration line
 xLimitsOscDur = [0, oscDurationSec];
 
-% Plot the autocorrelogram
-autoCorrFig = figure('Visible', 'off');
-acfLine1 = plot(tAutoCorr, autoCorr);
-xlim(xLimitsAutoCorr);
-ylim(yLimitsAutoCorr);
-xlabel('Lag (s)');
-ylabel('Spike rate squared (Hz^2)');
-title(['Autocorrelation for ', figTitleBase]);
+% Compute default x limits
+if isempty(xLimits)
+    allLastPeaksBins = extract_elements(indPeaks, 'last');
+    allLastPeaksSec = allLastPeaksBins .* binWidthSec;
+    allOscDur = oscDurationSec;
+    bestRightForAll = max([allOscDur, allLastPeaksSec], [], 2) + 1;
+    acfFilteredRight = compute_stats(bestRightForAll, 'upper95', ...
+                                    'RemoveOutliers', true);
 
-% Plot the autocorrelation function
-acfFig = figure('Visible', 'off');
-hold on;
-acfLine2 = plot(tAcf, acf, 'k');
-acfFilteredLine = plot(tAcf, acfFiltered, 'g', 'LineWidth', 1);
-plot(timePeaksSec, ampPeaks, 'ro', 'LineWidth', 2);
-plot(timeTroughsSec, ampTroughs, 'bx', 'LineWidth', 2);
-plot_horizontal_line(yOscDur, 'XLimits', xLimitsOscDur, ...
-                    'Color', 'r', 'LineStyle', '-', 'LineWidth', 2);
-text(0.5, 0.98, sprintf('Oscillatory Index 4 = %.2g', oscIndex4), ...
-    'Units', 'normalized');
-text(0.5, 0.94, sprintf('Oscillatory Index 3 = %.2g', oscIndex3), ...
-    'Units', 'normalized');
-text(0.5, 0.90, sprintf('Oscillatory Index 2 = %.2g', oscIndex2), ...
-    'Units', 'normalized');
-text(0.5, 0.86, sprintf('Oscillatory Index 1 = %.2g', oscIndex1), ...
-    'Units', 'normalized');
-text(0.5, 0.82, sprintf('Oscillation Period 2 = %.3g ms', oscPeriod2Ms), ...
-    'Units', 'normalized');
-text(0.5, 0.78, sprintf('Oscillation Period 1 = %.3g ms', oscPeriod1Ms), ...
-    'Units', 'normalized');
-text(0.5, 0.74, sprintf('Total spike count = %g', nSpikesInOsc), ...
-    'Units', 'normalized');
-text(0.5, 0.70, sprintf('Oscillation Duration = %.2g seconds', ...
-    oscDurationSec), 'Units', 'normalized');
-xlim(xLimitsAcfFiltered);
-ylim(yLimitsAcfFiltered);
-xlabel('Lag (s)');
-ylabel('Spike rate squared (Hz^2)');
-title(['Autocorrelation function for ', figTitleBase]);
+    switch dataType
+    case 'autocorrelogram'
+        xLimits = [-acfFilteredRight, acfFilteredRight];
+    case 'acfFiltered'
+        xLimits = [0, acfFilteredRight];
+    end
+end
+
+% Compute default y limits
+if isempty(yLimits)
+    % Find the best upper limits
+    lastIndexToShow = floor(xLimits(2) ./ binWidthSec) + 1;
+    acfOfInterest = extract_subvectors(acf, 'IndexEnd', lastIndexToShow);
+    largestAcfValues = extract_elements(acfOfInterest, 'max');
+    bestUpperLimit = compute_stats(largestAcfValues, 'upper95', ...
+                                    'RemoveOutliers', true);
+
+    % Compute appropriate y limits
+    switch dataType
+    case 'autocorrelogram'
+        yLimits = compute_axis_limits([0, bestUpperLimit], ...
+                                        'y', 'Coverage', 95);
+    case 'acfFiltered'
+        yLimits = compute_axis_limits([0, bestUpperLimit], ...
+                                        'y', 'Coverage', 90);
+    end
+end
+
+% Compute default oscillation duration bar y value
+if isempty(barYValue)
+    barYValue = -(yLimits(2) * 0.025);
+end
+
+% Decide on the figure handle
+fig = decide_on_fighandle('FigHandle', figHandle);
+
+%% Plot
+switch dataType
+    case 'autocorrelogram'
+        % Plot the autocorrelogram
+        lines = plot(tAutoCorr, autoCorr);
+        xlabel('Lag (s)');
+        ylabel('Spike rate squared (Hz^2)');
+        title(['Autocorrelation for ', figTitleBase]);
+    case 'acfFiltered'
+        % Plot the autocorrelation function
+        hold on;
+        lines(1) = plot(tAcf, acf, 'k');
+        lines(2) = plot(tAcf, acfFiltered, 'g', 'LineWidth', 1);
+        plot(timePeaksSec, ampPeaks, 'ro', 'LineWidth', 2);
+        plot(timeTroughsSec, ampTroughs, 'bx', 'LineWidth', 2);
+        plot_horizontal_line(barYValue, 'XLimits', xLimitsOscDur, ...
+                            'Color', 'r', 'LineStyle', '-', 'LineWidth', 2);
+        text(0.3, 0.98, sprintf('Oscillatory Index 4 = %.2g', oscIndex4), ...
+            'Units', 'normalized');
+        text(0.3, 0.94, sprintf('Oscillatory Index 3 = %.2g', oscIndex3), ...
+            'Units', 'normalized');
+        text(0.3, 0.90, sprintf('Oscillatory Index 2 = %.2g', oscIndex2), ...
+            'Units', 'normalized');
+        text(0.3, 0.86, sprintf('Oscillatory Index 1 = %.2g', oscIndex1), ...
+            'Units', 'normalized');
+        text(0.3, 0.82, sprintf('Oscillation Period 2 = %.3g ms', oscPeriod2Ms), ...
+            'Units', 'normalized');
+        text(0.3, 0.78, sprintf('Oscillation Period 1 = %.3g ms', oscPeriod1Ms), ...
+            'Units', 'normalized');
+        text(0.3, 0.74, sprintf('Total spike count = %g', nSpikesInOsc), ...
+            'Units', 'normalized');
+        text(0.3, 0.70, sprintf('Oscillation Duration = %.2g seconds', ...
+            oscDurationSec), 'Units', 'normalized');
+        xlabel('Lag (s)');
+        ylabel('Spike rate squared (Hz^2)');
+        title(['Autocorrelation function for ', figTitleBase]);
+    otherwise
+        error('dataType unrecognized!');
+end
+
+% Set x and y limits
+xlim(xLimits);
+ylim(yLimits);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1839,7 +1913,7 @@ parfor iVec = 1:nVectors
 
     histFig = figure('Visible', 'off');
     [histBars, histFig] = ...
-        plot_spike_histogram(thisParams, thisData, ...
+        plot_spike_histogram(thisData, thisParams, ...
                                 'XLimits', xLimitsHist, ...
                                 'YLimits', yLimitsHist);
 
@@ -1853,27 +1927,12 @@ end
 function plot_all_autocorrelograms(parsedData, parsedParams, ...
                                     outFolderAutoCorr, outFolderAcf)
 
-% Retrieve data for plotting
-autoCorr = parsedData.autoCorr;
+% Retrieve data
 acf = parsedData.acf;
-acfFiltered = parsedData.acfFiltered;
 indPeaks = parsedData.indPeaks;
-indTroughs = parsedData.indTroughs;
-ampPeaks = parsedData.ampPeaks;
-ampTroughs = parsedData.ampTroughs;
 
 binWidthSec = parsedParams.binWidthSec;
-nBins = parsedParams.nBins;
-halfNBins = parsedParams.halfNBins;
-oscIndex1 = parsedParams.oscIndex1;
-oscIndex2 = parsedParams.oscIndex2;
-oscIndex3 = parsedParams.oscIndex3;
-oscIndex4 = parsedParams.oscIndex4;
-oscPeriod2Ms = parsedParams.oscPeriod2Ms;
-oscPeriod1Ms = parsedParams.oscPeriod1Ms;
 oscDurationSec = parsedParams.oscDurationSec;
-nSpikesInOsc = parsedParams.nSpikesInOsc;
-figTitleBase = parsedParams.figTitleBase;
 figPathBase = parsedParams.figPathBase;
 
 % Count the number of sweeps
@@ -1911,27 +1970,28 @@ check_dir(outFolderAcf);
 
 %% Do the job
 % Convert to structure arrays
-% TODO: USE THIS
 [parsedParamsStruct, parsedDataStruct] = ...
     argfun(@table2struct, parsedParams, parsedData);
 
 % Plot autocorrelograms
 parfor iVec = 1:nVectors
-    [autoCorrFig, acfFig] = ...
-        plot_autocorrelogram(autoCorr{iVec}, acf{iVec}, acfFiltered{iVec}, ...
-            indPeaks{iVec}, indTroughs{iVec}, ...
-            ampPeaks{iVec}, ampTroughs{iVec}, ...
-            binWidthSec(iVec), nBins(iVec), halfNBins(iVec), ...
-            oscIndex1(iVec), oscIndex2(iVec), ...
-            oscIndex3(iVec), oscIndex4(iVec), ...
-            oscPeriod1Ms(iVec), oscPeriod2Ms(iVec), ...
-            oscDurationSec(iVec), nSpikesInOsc(iVec), ...
-            xLimitsAutoCorr, yLimitsAutoCorr, ...
-            xLimitsAcfFiltered, yLimitsAcfFiltered, ...
-            yOscDur, figTitleBase{iVec});
+    thisParams = parsedParamsStruct(iVec);
+    thisData = parsedDataStruct(iVec);
 
+    autoCorrFig = figure('Visible', 'off');
+    plot_autocorrelogram(thisData, thisParams, ...
+            'DataType', 'autocorrelogram', ...
+            'XLimits', xLimitsAutoCorr, ...
+            'YLimits', yLimitsAutoCorr);
     saveas(autoCorrFig, fullfile(outFolderAutoCorr, ...
             [figPathBase{iVec}, '_autocorrelogram']), 'png');
+
+    acfFig = figure('Visible', 'off');
+    plot_autocorrelogram(thisData, thisParams, ...
+            'DataType', 'acfFiltered', ...
+            'XLimits', xLimitsAcfFiltered, ...
+            'YLimits', yLimitsAcfFiltered, ...
+            'BarYValue', yOscDur);
     saveas(acfFig, fullfile(outFolderAcf, ...
             [figPathBase{iVec}, '_autocorrelation_function']), 'png');
 
