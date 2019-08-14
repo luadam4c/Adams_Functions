@@ -33,6 +33,9 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                   - 'IndexEnd': last index to extract
 %                   must be empty or a numeric vector
 %                   default == numel(vector) * ones(nVectors, 1)
+%                   - 'MaxNum': maximum number of indices to extract
+%                   must be a positive integer scalar or Inf
+%                   default == Inf
 %                   - 'Windows': value windows to extract 
 %                       Note: this assumes that the values are nondecreasing
 %                   must be empty or a numeric vector with 2 elements,
@@ -88,6 +91,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/parse_multiunit.m
 %       cd/parse_pulse_response.m
+%       cd/plot_histogram.m
 %       cd/plot_traces.m
 %       cd/select_similar_values.m
 
@@ -107,7 +111,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2019-01-04 Fixed bugs for cellstrs
 % 2019-04-26 Added padarray_custom
 % 2019-04-26 Fixed padding when there are empty vectors
-% TODO: Restrict the number of samples if provided
+% 2019-08-13 Added 'MaxNum' as an optional parameter
 % TODO: check if all endpoints have 2 elements
 % 
 
@@ -120,6 +124,7 @@ indicesDefault = [];            % set later
 endPointsDefault = [];          % set later
 indexEndDefault = [];           % set later
 indexStartDefault = [];         % set later
+maxNumDefault = Inf;            % no limit by default
 windowsDefault = [];            % extract entire trace(s) by default
 alignMethodDefault  = 'none';   % no alignment/truncation by default
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
@@ -156,6 +161,9 @@ addParameter(iP, 'IndexStart', indexStartDefault, ...
 addParameter(iP, 'IndexEnd', indexEndDefault, ...
     @(x) assert(isnumericvector(x), ...
                 'IndexEnd must be either empty or a numeric vector!'));
+addParameter(iP, 'MaxNum', maxNumDefault, ...
+    @(x) assert(isinf(x) || isaninteger(x), ...
+                'MaxNum must be either Inf or a positive integer scalar!'));
 addParameter(iP, 'Windows', windowsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['Windows must be either a numeric array ', ...
@@ -173,6 +181,7 @@ indices = iP.Results.Indices;
 endPoints = iP.Results.EndPoints;
 indexStart = iP.Results.IndexStart;
 indexEnd = iP.Results.IndexEnd;
+maxNum = iP.Results.MaxNum;
 windows = iP.Results.Windows;
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 treatCellAsArray = iP.Results.TreatCellAsArray;
@@ -228,6 +237,7 @@ end
 if isempty(indices)
     indices = create_indices(endPoints, 'Vectors', vecs, ...
                             'IndexStart', indexStart, 'IndexEnd', indexEnd, ...
+                            'MaxNum', maxNum, ...
                             'TreatCellAsArray', treatCellAsArray, ...
                             'TreatCellStrAsArray', treatCellStrAsArray);
 end

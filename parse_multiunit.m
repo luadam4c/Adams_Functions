@@ -254,6 +254,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %                   default == 40%
 %
 % Requires:
+%       cd/alternate_elements.m
 %       cd/argfun.m
 %       cd/check_dir.m
 %       cd/check_subdir.m
@@ -329,6 +330,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 % 2019-08-06 Made parameters optional arguments
 % 2019-08-09 Now saves contour plots as epsc2 instead of eps
 % 2019-08-13 Expanded combined plot
+% 2019-08-13 Now uses alternate_elements.m
 
 %% Hard-coded parameters
 validSelectionMethods = {'notNaN', 'maxRange2Mean'};
@@ -892,7 +894,7 @@ if plotCombinedFlag
 
     % Extract sample data
     [parsedParamsStruct, parsedDataStruct] = ...
-        argfun(@struct2table, parsedData, parsedParams);
+        argfun(@table2struct, parsedParams, parsedData);
     sampleDataStruct = parsedDataStruct(iTraceToSample);
     sampleParamsStruct = parsedParamsStruct(iTraceToSample);
     tVec = sampleDataStruct.tVec;
@@ -902,6 +904,7 @@ if plotCombinedFlag
     vRange = sampleParamsStruct.vRange;
     vMax = sampleParamsStruct.vMax;
     vMin = sampleParamsStruct.vMin;
+    figTitleBase = sampleParamsStruct.figTitleBase;
 
     % Compute for spike detection plot
     barWidth = vRange * barWidth2Range;
@@ -1001,11 +1004,12 @@ if plotCombinedFlag
     ylim(yLimits);
     xlabel('Time (ms)');
     ylabel('Voltage (mV)');
-    title('Original voltage vector with spikes');
+    title(['Original voltage vector for ', figTitleBase]);
 
     % Plot spike histogram
     axes(axCombined(3, 2));
-    plot_spike_histogram(sampleParamsStruct, sampleDataStruct);
+    plot_spike_histogram(sampleParamsStruct, sampleDataStruct, ...
+                          'XLimits', zoomWin2);
 
     % Plot autocorrelogram
     axes(axCombined(3, 3));
@@ -1392,27 +1396,6 @@ parsedData.halfPeriodsToMultiple = halfPeriodsToMultiple;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function vector = prepare_for_plot_horizontal_line(starts, ends)
-%% Put in the form [start1; end1; start2; end2; ...; startn; endn]
-
-% Make sure inputs are column vectors
-[starts, ends] = argfun(@force_column_vector, starts, ends);
-
-% Place together as two rows
-if isempty(starts) || isempty(ends)
-    % This will cause nothing to be plotted
-    form1 = [NaN; NaN];
-else
-    % Put in the form [start1, start2, ..., startn;
-    %                   end1,   end2,  ...,  endn]
-    form1 = transpose([starts, ends]);
-end
-
-% Reshape as a single column vector
-vector = reshape(form1, [], 1);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 function [fig, ax, lines, markers, raster] = ...
                 plot_spike_detection(tVec, vVec, vVecFilt, ...
                                     slopes, idxSpikes, ...
@@ -1503,27 +1486,126 @@ linkaxes(ax, 'x');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [histBars, histFig] = ...
-                plot_spike_histogram(spikeCounts, edgesSec, durationWindows, ...
-                                oscDurationSec, nSpikesInOsc, ...
-                                xLimits, yLimits, figTitleBase)
+                plot_spike_histogram(spHistParams, spHistData, varargin)
+%% Plots a spike histogram from the results of compute_spike_histogram
 
+%                   - 'XLimits': x-axis limits
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == minimum and maximum edges of bins
+%                   - 'YLimits': limits of y axis, 
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == 'suppress'
+%                   - Any other parameter-value pair for the plot_histogram() function
 
+%% Hard-coded parameters
+minNXTicks = 5;
+
+%% Default values for optional arguments
+xLimitsDefault = [];            % set later
+yLimitsDefault = [];            % set later
+
+%% Deal with arguments
+% Check number of required arguments
+if nargin < 2
+    error(create_error_for_nargin(mfilename));
+end
+
+% Set up Input Parser Scheme
+iP = inputParser;
+iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
+
+% Add required inputs to the Input Parser
+addRequired(iP, 'spHistParams', ...
+    @(x) validateattributes(x, {'struct'}, {'scalar'}));
+addRequired(iP, 'spHistData', ...
+    @(x) validateattributes(x, {'struct'}, {'scalar'}));
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'XLimits', xLimitsDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isvector(x) && length(x) == 2);
+addParameter(iP, 'YLimits', yLimitsDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
+
+% Read from the Input Parser
+parse(iP, spHistParams, spHistData, varargin{:});
+xLimits = iP.Results.XLimits;
+yLimits = iP.Results.YLimits;
+
+% Keep unmatched arguments for the plot_histogram() function
+otherArguments = struct2arglist(iP.Unmatched);
+
+%% Preparation
+% Extract from spHistData
+spikeCounts = spHistData.spikeCounts;
+edgesSec = spHistData.edgesSec;
+timeBurstStartsSec = spHistData.timeBurstStartsSec;
+timeBurstEndsSec = spHistData.timeBurstEndsSec;
+
+% Extract from spHistParams
+oscDurationSec = spHistParams.oscDurationSec;
+nSpikesInOsc = spHistParams.nSpikesInOsc;
+figTitleBase = spHistParams.figTitleBase;
+
+% Compute burst windows
+burstWindows = alternate_elements(timeBurstStartsSec, timeBurstEndsSec, ...
+                                    'ReturnNaNIfEmpty', true);
+
+% Compute default x limits
+if isempty(xLimits)
+    % Extract parameters
+    histLeftSec = spHistParams.histLeftSec;
+    timeOscEndSec = spHistParams.timeOscEndSec;
+    maxInterBurstIntervalSec = spHistParams.maxInterBurstIntervalSec;
+
+    % Compute left and right ends of histogram to show
+    histLeft = min(histLeftSec);
+    histRight = timeOscEndSec + 1.5 * max(maxInterBurstIntervalSec);
+    % histRight = 10;
+
+    % Find appropriate x limits
+    xLimits = [histLeft, histRight];
+end
+
+% Compute x tick locations
+xTickLocs = linspace(xLimits(1), xLimits(2), minNXTicks);
+
+% Compute default y limits
+if isempty(yLimits)
+    % Extract parameters
+    binWidthSec = spHistParams.binWidthSec;
+
+    % Find the last bin to show for all traces
+    lastBinToShow = floor(range(xLimits) ./ binWidthSec) + 1;
+
+    % Find appropriate y limits
+    spikeCountsOfInterest = extract_subvectors(spikeCounts, ...
+                            'IndexEnd', lastBinToShow);
+    largestSpikeCount = apply_iteratively(@max, spikeCountsOfInterest);
+    yLimits = [0, largestSpikeCount * 1.2];
+end
+
+%% Plot
 % Plot figure
-histFig = figure('Visible', 'off');
 hold on;
 [histBars, histFig] = ...
     plot_histogram([], 'Counts', spikeCounts, 'Edges', edgesSec, ...
                     'XLimits', xLimits, 'YLimits', yLimits, ...
-                    'XLabel', 'Time (seconds)', ...
+                    'XTickLocs', xTickLocs, 'XLabel', 'Time (seconds)', ...
                     'YLabel', 'Spike Count per 10 ms', ...
                     'FigTitle', ['Spike histogram for ', figTitleBase], ...
-                    'FigHandle', histFig);
-text(0.5, 0.95, sprintf('Oscillation Duration = %.2g seconds', ...
+                    otherArguments{:});
+text(0.2, 0.95, sprintf('Oscillation Duration = %.2g seconds', ...
     oscDurationSec), 'Units', 'normalized');
-text(0.5, 0.9, sprintf('Number of spikes in oscillation = %d', ...
+text(0.2, 0.9, sprintf('Number of spikes in oscillation = %d', ...
     nSpikesInOsc), 'Units', 'normalized');
-plot_horizontal_line(0, 'XLimits', durationWindows, ...
-                    'Color', 'r', 'LineStyle', '-', 'LineWidth', 2);
+plot_horizontal_line(0, 'XLimits', burstWindows, ...
+                    'Color', 'r', 'LineStyle', '-', 'LineWidth', 3);
+hold off;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1537,7 +1619,57 @@ function [autoCorrFig, acfFig, acfLine1, acfLine2, acfFilteredLine] = ...
                                     xLimitsAutoCorr, yLimitsAutoCorr, ...
                                     xLimitsAcfFiltered, yLimitsAcfFiltered, ...
                                     yOscDur, figTitleBase)
-                                
+%% Plots an autocorrelation function from the results of compute_autocorrelogram.m
+
+%                   - 'XLimits': x-axis limits
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == minimum and maximum edges of bins
+%                   - 'YLimits': limits of y axis, 
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == 'suppress'
+%                   - Any other parameter-value pair for the TODO() function
+
+%% Hard-coded parameters
+
+%% Default values for optional arguments
+xLimitsDefault = [];            % set later
+yLimitsDefault = [];            % set later
+
+%% Deal with arguments
+% Check number of required arguments
+if nargin < 2
+    error(create_error_for_nargin(mfilename));
+end
+
+% Set up Input Parser Scheme
+iP = inputParser;
+iP.FunctionName = mfilename;
+% iP.KeepUnmatched = true;                        % allow extraneous options
+
+% Add required inputs to the Input Parser
+addRequired(iP, 'autoCorrParams', ...
+    @(x) validateattributes(x, {'struct'}, {'scalar'}));
+addRequired(iP, 'autoCorrData', ...
+    @(x) validateattributes(x, {'struct'}, {'scalar'}));
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'XLimits', xLimitsDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isvector(x) && length(x) == 2);
+addParameter(iP, 'YLimits', yLimitsDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
+
+% Read from the Input Parser
+parse(iP, autoCorrParams, autoCorrData, varargin{:});
+xLimits = iP.Results.XLimits;
+yLimits = iP.Results.YLimits;
+
+% Keep unmatched arguments for the TODO() function
+% otherArguments = struct2arglist(iP.Unmatched);
+
 % Create time values 
 if nBins > 1
     tAcfTemp = create_time_vectors(nBins - 1, 'SamplingIntervalSec', binWidthSec, ...
@@ -1553,6 +1685,7 @@ else
     timeTroughsSec = NaN(size(ampTroughs));
 end
 
+% Compute the x limits for the oscillation duration line
 xLimitsOscDur = [0, oscDurationSec];
 
 % Plot the autocorrelogram
@@ -1662,36 +1795,25 @@ end
 
 function plot_all_spike_histograms(parsedData, parsedParams, outFolder)
 
+%% Preparation
+% Count the number of sweeps
+nVectors = height(parsedParams);
+
 % Retrieve data for plotting
 spikeCounts = parsedData.spikeCounts;
-edgesSec = parsedData.edgesSec;
-timeBurstStartsSec = parsedData.timeBurstStartsSec;
-timeBurstEndsSec = parsedData.timeBurstEndsSec;
 
 binWidthSec = parsedParams.binWidthSec;
 histLeftSec = parsedParams.histLeftSec;
 timeOscEndSec = parsedParams.timeOscEndSec;
 maxInterBurstIntervalSec = parsedParams.maxInterBurstIntervalSec;
-oscDurationSec = parsedParams.oscDurationSec;
-nSpikesInOsc = parsedParams.nSpikesInOsc;
-figTitleBase = parsedParams.figTitleBase;
 figPathBase = parsedParams.figPathBase;
-
-% Count the number of sweeps
-nVectors = height(parsedParams);
 
 % Find appropriate x limits
 histLeft = min(histLeftSec);
-% histRight = nanmean(timeOscEndSec) + 1.96 * stderr(timeOscEndSec) + ...
-%                 1.5 * max(maxInterBurstIntervalSec);
-histRight = 10;
+histRight = nanmean(timeOscEndSec) + 1.96 * stderr(timeOscEndSec) + ...
+                1.5 * max(maxInterBurstIntervalSec);
+% histRight = 10;
 xLimitsHist = [histLeft, histRight];
-
-% Compute x limits for durations
-%    durationWindows = force_column_cell(transpose([histLeft, timeOscEndSec]));
-burstWindows = cellfun(@(x, y) alternate_elements(x, y), ...
-                        timeBurstStartsSec, timeBurstEndsSec, ...
-                        'UniformOutput', false);
 
 % Find the last bin to show for all traces
 lastBinToShow = floor((histRight - histLeft) ./ binWidthSec) + 1;
@@ -1700,23 +1822,26 @@ lastBinToShow = floor((histRight - histLeft) ./ binWidthSec) + 1;
 spikeCountsOfInterest = extract_subvectors(spikeCounts, ...
                         'IndexEnd', lastBinToShow);
 largestSpikeCount = apply_iteratively(@max, spikeCountsOfInterest);
-yLimitsHist = [0, largestSpikeCount * 1.1];
+yLimitsHist = [0, largestSpikeCount * 1.2];
 
 % Check if output directory exists
 check_dir(outFolder);
 
+%% Do the job
 % Convert to structure arrays
-% TODO: Use this
 [parsedParamsStruct, parsedDataStruct] = ...
-    argfun(@struct2table, parsedData, parsedParams);
+    argfun(@table2struct, parsedParams, parsedData);
 
 % Plot histograms
 parfor iVec = 1:nVectors
+    thisParams = parsedParamsStruct(iVec);
+    thisData = parsedDataStruct(iVec);
+
+    histFig = figure('Visible', 'off');
     [histBars, histFig] = ...
-        plot_spike_histogram(spikeCounts{iVec}, edgesSec{iVec}, ...
-                            durationWindows{iVec}, oscDurationSec(iVec), ...
-                            nSpikesInOsc(iVec), ...
-                            xLimitsHist, yLimitsHist, figTitleBase{iVec});
+        plot_spike_histogram(thisParams, thisData, ...
+                                'XLimits', xLimitsHist, ...
+                                'YLimits', yLimitsHist);
 
     saveas(histFig, fullfile(outFolder, ...
                     [figPathBase{iVec}, '_spike_histogram']), 'png');
@@ -1784,6 +1909,13 @@ yOscDur = -(bestUpperLimit * 0.025);
 check_dir(outFolderAutoCorr);
 check_dir(outFolderAcf);
 
+%% Do the job
+% Convert to structure arrays
+% TODO: USE THIS
+[parsedParamsStruct, parsedDataStruct] = ...
+    argfun(@table2struct, parsedParams, parsedData);
+
+% Plot autocorrelograms
 parfor iVec = 1:nVectors
     [autoCorrFig, acfFig] = ...
         plot_autocorrelogram(autoCorr{iVec}, acf{iVec}, acfFiltered{iVec}, ...
@@ -1942,9 +2074,10 @@ nVectors = height(parsedParams);
 oscWindow = transpose([stimStartSec, timeOscEndSec]);
 
 % Burst windows
-burstWindows = cellfun(@(x, y) alternate_elements(x, y), ...
-                        timeBurstStartsSec, timeBurstEndsSec, ...
-                        'UniformOutput', false);
+burstWindows = ...
+    cellfun(@(x, y) alternate_elements(x, y, 'ReturnNaNIfEmpty', true), ...
+            timeBurstStartsSec, timeBurstEndsSec, ...
+            'UniformOutput', false);
 
 % Create colors
 nSweeps = numel(spikeTimesSec);
@@ -2121,6 +2254,13 @@ end
 
 %{
 OLD CODE:
+
+% Compute x limits for durations
+%    durationWindows = force_column_cell(transpose([histLeft, timeOscEndSec]));
+burstWindows = ...
+    cellfun(@(x, y) alternate_elements(x, y, 'ReturnNaNIfEmpty', true), ...
+            timeBurstStartsSec, timeBurstEndsSec, ...
+            'UniformOutput', false);
 
 %}
 

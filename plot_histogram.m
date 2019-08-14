@@ -87,6 +87,12 @@ function [bars, fig] = plot_histogram (X, varargin)
 %                               suppress by setting value to 'suppress'
 %                   must be a string scalar or a character vector
 %                   default == 'Count'
+%                   - 'XTickLocs': locations of X ticks
+%                   must be 'suppress' or a numeric vector
+%                   default == TODO
+%                   - 'XTickLabels': labels for each raster
+%                   must be 'suppress' or a cell array of character/string arrays
+%                   default == TODO
 %                   - 'GroupingLabels': labels for the groupings, 
 %                               suppress by setting value to 'suppress'
 %                   must be a string scalar or a character vector 
@@ -125,14 +131,18 @@ function [bars, fig] = plot_histogram (X, varargin)
 %                   - Any other parameter-value pair for the bar() function
 %
 % Requires:
+%       cd/argfun.m
 %       cd/compute_centers_from_edges.m
 %       cd/compute_grouped_histcounts.m
 %       cd/construct_fullpath.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
+%       cd/extract_subvectors.m
 %       cd/force_column_vector.m
+%       cd/force_row_vector.m
 %       cd/plot_grouped_histogram.m
 %       cd/isfigtype.m
+%       cd/isnumericvector.m
 %       cd/remove_outliers.m
 %       cd/save_all_figtypes.m
 %       cd/test_difference.m
@@ -153,11 +163,13 @@ function [bars, fig] = plot_histogram (X, varargin)
 % 2019-02-24 Fixed bug when 'Counts' is passed in 
 % 2019-03-14 Now returns empty plot if there is no data
 % 2019-03-14 Fixed bug when xTickLabelNums is empty
+% 2019-08-13 Fixed bug when histogram() is used
 
 %% Hard-coded parameters
 validOutlierMethods = {'boxplot', 'isoutlier', ...
                         'fiveStds', 'threeStds', 'twoStds'};
 validGroupedStyles = {'side-by-side', 'stacked', 'overlapped'};
+minNXTicks = 5;
 
 %% Default values for optional arguments
 plotOutliersDefault = true;             % plot outliers by default
@@ -173,6 +185,8 @@ yLimitsDefault = 'suppress';            % set later
 xUnitsDefault = 'unit';                 % the default x-axis units
 xLabelDefault = '';                     % set later
 yLabelDefault = 'Count';                % set later
+xTickLocsDefault = [];                  % set later
+xTickLabelsDefault = {};                % set later
 groupingLabelsDefault = '';             % set later
 legendLocationDefault = 'auto';         % set later
 figTitleDefault = '';                   % set later
@@ -232,6 +246,13 @@ addParameter(iP, 'XLabel', xLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'YLabel', yLabelDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'XTickLocs', xTickLocsDefault, ...
+    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || isnumericvector(x), ...
+        'XTickLocs must be ''suppress'' or a numeric vector!'));
+addParameter(iP, 'XTickLabels', xTickLabelsDefault, ...
+    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || ...
+                iscell(x) && all(cellfun(@(x) ischar(x) || isstring(x), x)), ...
+        'XTickLabels must be ''suppress'' or a cell array of character/string arrays!'));
 addParameter(iP, 'GroupingLabels', groupingLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
@@ -264,6 +285,8 @@ yLimits = iP.Results.YLimits;
 xUnits = iP.Results.XUnits;
 xLabel = iP.Results.XLabel;
 yLabel = iP.Results.YLabel;
+xTickLocs = iP.Results.XTickLocs;
+xTickLabels = iP.Results.XTickLabels;
 groupingLabels = iP.Results.GroupingLabels;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
@@ -412,6 +435,9 @@ end
 % Plot histogram
 if useBuiltIn
     if matlabYear >= 2017
+        % Force as row vectors to be consistent with histogram()
+        [edgesPlot, counts] = argfun(@force_row_vector, edgesPlot, counts);
+
         % Plot histogram with histogram()
         bars = histogram('BinEdges', edgesPlot, 'BinCounts', counts, ...
                       'DisplayName', 'data', otherArguments{:});
@@ -420,6 +446,26 @@ if useBuiltIn
         % Plot histogram by using the bar() function in the 'histc' groupedStyle
         bars = bar(leftEdgesPlot, counts, 'histc', ...
                 'DisplayName', 'data', otherArguments{:});
+    end
+
+    % Set y axis limits
+    if ~isempty(yLimits) && ~strcmpi(yLimits, 'suppress')
+        ylim(yLimits);
+    end
+
+    % Generate an x-axis label
+    if ~strcmpi(xLabel, 'suppress')
+        xlabel(xLabel);
+    end
+
+    % Generate a y-axis label
+    if ~strcmpi(yLabel, 'suppress')
+        ylabel(yLabel);
+    end    
+
+    % Generate a title
+    if ~strcmpi(figTitle, 'suppress')
+        title(figTitle);
     end
 else
     % Allow the option to plot a grouped histogram
@@ -437,32 +483,49 @@ end
 % Count the number of bars plotted
 nGroups = numel(bars);
 
-% Initialize x tick locations with old locations
-xTicks = get(gca, 'XTick'); 
+% Set default x tick locations
+if isempty(xTickLocs)
+    % Initialize x tick locations with old locations
+    xTicks = get(gca, 'XTick'); 
 
-% Remove x ticks that are beyond finite range of edges
-%   and initialize x tick labels with these numbers
-xTicks = xTicks(xTicks >= edgesFinite(1));
-xTicks = xTicks(xTicks <= edgesFinite(end));
-xTickLabelNums = xTicks;
+    % If too few x ticks within x limits, find new tick locations
+    if ~isempty(xLimits) && ...
+            sum(xTicks >= xLimits(1) & xTicks <= xLimits(2)) < minNXTicks
+        % Use the minimum number of x ticks
+        xTicks = extract_subvectors(edgesFinite, 'Windows', xLimits, ...
+                                    'MaxNum', minNXTicks);
+    end
 
-% Update x ticks to include where -Inf and Inf would be placed
-if edgesNew(1) == -Inf              % data out of range on the left
-    % Add -Inf as first XTick at edgesPlot(1)
-    xTicks = [edgesPlot(1), xTicks];
-    xTickLabelNums = [-Inf, xTickLabelNums];
-end
-if edgesNew(end) == Inf              % data out of range on the right
-    % Add Inf as last XTick at edgesPlot(end)
-    xTicks = [xTicks, edgesPlot(end)];
-    xTickLabelNums = [xTickLabelNums, Inf];
+    % Remove x ticks that are beyond finite range of edges
+    %   and initialize x tick labels with these numbers
+    xTicks = xTicks(xTicks >= edgesFinite(1));
+    xTicks = xTicks(xTicks <= edgesFinite(end));
+    xTickLabelNums = xTicks;
+
+    % Update x ticks to include where -Inf and Inf would be placed
+    if edgesNew(1) == -Inf              % data out of range on the left
+        % Add -Inf as first XTick at edgesPlot(1)
+        xTicks = [edgesPlot(1), xTicks];
+        xTickLabelNums = [-Inf, xTickLabelNums];
+    end
+    if edgesNew(end) == Inf              % data out of range on the right
+        % Add Inf as last XTick at edgesPlot(end)
+        xTicks = [xTicks, edgesPlot(end)];
+        xTickLabelNums = [xTickLabelNums, Inf];
+    end
+else
+    xTicks = xTickLocs;
+    xTickLabelNums = xTicks;
 end
 
 % Update the x tick locations
 set(gca, 'XTick', xTicks);
 
-% Create x tick labels using xTickLabelNums
-xTickLabels = create_labels_from_numbers(xTickLabelNums);
+% Create default x tick labels
+if isempty(xTickLabels)
+    % Create x tick labels using xTickLabelNums
+    xTickLabels = create_labels_from_numbers(xTickLabelNums, 'Precision', 2);
+end
 
 % Update x tick labels
 set(gca, 'XTickLabel', xTickLabels);
@@ -630,6 +693,13 @@ if iscolumn(edgesNew)
     edgesPlot = [leftEdgesPlot; rightMostEdgePlot];
 else
     edgesPlot = [leftEdgesPlot, rightMostEdgePlot];
+end
+
+if numel(edgesFinite) >= 2
+    binWidth = edgesFinite(2) - edgesFinite(1);
+    xTicksLeft = xLimits(1) + binWidth*10;
+else
+    xTicksLeft = xLimits(1);
 end
 
 %}

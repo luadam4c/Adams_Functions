@@ -1,6 +1,6 @@
-function strs = convert_to_char(data, varargin)
+function strs = convert_to_char (data, varargin)
 %% Converts other data types to character arrays or a cell array of character arrays
-% Usage: strs = convert_to_char(data, varargin)
+% Usage: strs = convert_to_char (data, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -11,6 +11,8 @@ function strs = convert_to_char(data, varargin)
 %       convert_to_char({"dog", "cat"})
 %       convert_to_char({{'dog', 'cat'}, "fly"})
 %       convert_to_char({{'dog', 'cat'}, "fly"}, 'SingleOutput', true)
+%       convert_to_char(linspace(1, 10, 15), 'Precision', 3);
+%
 % Outputs:
 %       strs        - strings
 %                   specified as a character array 
@@ -23,9 +25,16 @@ function strs = convert_to_char(data, varargin)
 %                   - 'Delimiter': used to delimit separate entries
 %                   must be a character array
 %                   default == '_'
+%                   - 'Precision': maximum number of significant digits
+%                   must be empty or a positive integer scalar
+%                   default == []
+%                   - 'FormatSpec': format specification for num2str() or char()
+%                   must be a string scalar or a character vector
+%                   default == ''
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/ispositiveintegerscalar.m
 %
 % Used by:
 %       cd/create_labels_from_numbers.m
@@ -35,6 +44,7 @@ function strs = convert_to_char(data, varargin)
 % 2018-12-27 Created by Adam Lu
 % 2019-01-11 Now accepts any data type
 % 2019-01-11 Added 'SingleOutput' and 'Delimiter' as optional arguments
+% 2019-08-14 Added 'Precision' and 'FormatSpec' as optional arguments
 % TODO: Make a convert_to_string.m for string array outputs
 %           that can take non-scalar arguments
 % 
@@ -44,6 +54,8 @@ function strs = convert_to_char(data, varargin)
 %% Default values for optional arguments
 singleOutputDefault = false;    % accept cell array outputs by default
 delimiterDefault = '_';
+precisionDefault = [];
+formatSpecDefault = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -56,7 +68,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
-% iP.KeepUnmatched = true;                        % allow extraneous options
+% iP.KeepUnmatched = true;                % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'data');
@@ -66,11 +78,22 @@ addParameter(iP, 'SingleOutput', singleOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Delimiter', delimiterDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'Precision', precisionDefault, ...
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                ['Precision must be either empty ', ...
+                    'or a positive integer scalar!']));
+addParameter(iP, 'FormatSpec', formatSpecDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
 singleOutput = iP.Results.SingleOutput;
 delimiter = iP.Results.Delimiter;               % Examples: ',' '/'
+precision = iP.Results.Precision;
+formatSpec = iP.Results.FormatSpec;
+
+% Keep unmatched arguments
+% otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Do nothing if already a cell array of character arrays
@@ -87,43 +110,63 @@ if numel(data) > 1
         strs = char(strjoin(data, delimiter));
     elseif iscell(data)
         strs = cellfun(@(x) convert_to_char_helper(x, singleOutput, ...
-                                                    delimiter), ...
+                                        delimiter, precision, formatSpec), ...
                         data, 'UniformOutput', false);
     else
         strs = arrayfun(@(x) convert_to_char_helper(x, singleOutput, ...
-                                                    delimiter), ...
+                                        delimiter, precision, formatSpec), ...
                         data, 'UniformOutput', false);
     end
 else
-    strs = convert_to_char_helper(data);
+    strs = convert_to_char_helper(data, singleOutput, delimiter, ...
+                                    precision, formatSpec);
 end
 
 if singleOutput && ~ischar(strs)
-    strs = convert_to_char(strs, 'SingleOutput', singleOutput);
+    strs = convert_to_char(strs, 'SingleOutput', singleOutput, ...
+                    'Precision', precision, 'FormatSpec', formatSpec);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function str = convert_to_char_helper(x, singleOutput, delimiter)
+function str = convert_to_char_helper(x, singleOutput, delimiter, ...
+                                        precision, formatSpec)
 
 % If there is more than one element, apply the function to this element
 if numel(x) > 1
     str = convert_to_char(x, 'SingleOutput', singleOutput, ...
-                            'Delimiter', delimiter);
+                            'Delimiter', delimiter, 'Precision', precision, ...
+                            'FormatSpec', formatSpec);
     return
 end
 
 % Otherwise, convert based on data type
 if isnumeric(x)
-    str = num2str(x);
-elseif islogical(x)
-    str = char(string(x));
+    if ~isempty(formatSpec)
+        str = num2str(x, formatSpec);
+    elseif ~isempty(precision)
+        str = num2str(x, precision);
+    else
+        str = num2str(x);
+    end
 elseif isdatetime(x)
-    str = datestr(x);
-elseif isduration(x) || iscellstr(x) || isstring(x)
-    str = char(x);
+    if ~isempty(formatSpec)
+        str = datestr(x, formatSpec);
+    else
+        str = datestr(x);
+    end
 else
-    str = char(x);
+    % Note: islogical(x) || isduration(x) || iscellstr(x) || isstring(x)
+    if islogical(x)
+        x = string(x);
+    end
+
+    % Convert to characters
+    if ~isempty(formatSpec)
+        str = char(x, formatSpec);
+    else
+        str = char(x);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

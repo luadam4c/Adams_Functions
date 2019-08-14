@@ -19,6 +19,7 @@ function isPositiveIntegerScalar = ispositiveintegerscalar (x)
 %
 % Used by:
 %       cd/compute_weighted_average.m
+%       cd/convert_to_char.m
 %       cd/find_in_strings.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/plot_grouped_histogram.m

@@ -4,8 +4,8 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 % Explanation:
 %       TODO
 % Examples:
-%       pValue = transpose(1:10);
-%       readout1 = randi(numel(pValue), 10, 1);
+%       pValue = transpose(1:10); %(aka x-values)
+%       readout1 = randi(numel(pValue), 10, 1); %(aka y-values)
 %       upperCI1 = readout1 + randi(numel(pValue), 10, 1) / 10;
 %       lowerCI1 = readout1 - randi(numel(pValue), 10, 1) / 10;
 %       readout2 = randi(numel(pValue), 10, 1);

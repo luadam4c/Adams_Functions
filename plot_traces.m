@@ -179,6 +179,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
 %       cd/islinestyle.m
+%       cd/isnumericvector.m
 %       cd/ispositiveintegerscalar.m
 %       cd/ispositivescalar.m
 %       cd/match_format_vector_sets.m

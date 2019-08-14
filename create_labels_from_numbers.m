@@ -25,6 +25,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %                   - 'Suffix': string to place after each number
 %                   must be a string scalar or a character vector
 %                   default == ''
+%                   - Any other parameter-value pair for the convert_to_char() function
 %
 %
 % Requires:
@@ -69,6 +70,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'numbers', ...
@@ -89,6 +91,9 @@ forceColumnOutput = iP.Results.ForceColumnOutput;
 prefix = iP.Results.Prefix;
 suffix = iP.Results.Suffix;
 
+% Keep unmatched arguments for the convert_to_char() function
+otherArguments = struct2arglist(iP.Unmatched);
+
 %% Preparation
 % Force the numbers as a column vector if requested
 if forceColumnOutput
@@ -97,7 +102,7 @@ end
 
 %% Do the job
 % Create the labels
-labels = arrayfun(@(x) [prefix, convert_to_char(x), suffix], ...
+labels = arrayfun(@(x) [prefix, convert_to_char(x, otherArguments{:}), suffix], ...
                     numbers, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
