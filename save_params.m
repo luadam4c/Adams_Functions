@@ -24,10 +24,11 @@ function fileName = save_params (paramsTable, varargin)
 %       cd/issheettype.m
 %
 % Used by:
-%       cd/m3ha_neuron_create_initial_params.m
-%       cd/m3ha_log_errors_params.m
 %       cd/m3ha_fminsearch3.m
+%       cd/m3ha_log_errors_params.m
+%       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_neuron_run_and_analyze.m TODO
+%       cd/m3ha_pfiles2csv.m
 
 % File History:
 % 2018-10-16 Created by Adam Lu
