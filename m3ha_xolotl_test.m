@@ -3,6 +3,7 @@
 %
 % Requires:
 % TODO
+%       cd/compute_sampling_interval.m
 %       cd/extract_columns.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_xolotl_create_neuron.m
@@ -15,20 +16,24 @@
 % 2018-12-12 Created by Adam Lu
 % 2018-12-13 Added voltage clamp
 % 2019-01-01 Now uses m3ha_import_raw_traces.m
+% 2019-08-15 Now uses a time step that matches the sampling interval
+% 2019-08-15 Now sets dendritic dataToCompare to be NaN values
 
 %% Hard-coded parameters
 % Files
-sweepName = 'D091710_0012_15';
+sweepName = 'C101210_0006_3';
+% sweepName = 'D091710_0012_15';
 cellName = sweepName(1:7);
 projectDir = '/media/adamX/m3ha';
 realDataDir = fullfile(projectDir, 'data_dclamp');
 matFilesDir = fullfile(realDataDir, 'take4/matfiles');
 simDir = fullfile(projectDir, 'optimizer4gabab');
 outFolder = '/media/adamX/xolotl_test';
-outFileName = 'xolotl_test_before_simulations.mat';
-neuronParamsDir = fullfile(simDir, 'best_params');
+outFileName = ['xolotl_test_', sweepName, '_before_simulations.mat'];
+neuronParamsDir = fullfile(simDir, 'best_params', ...
+            'bestparams_20180424_singleneuronfitting21_Rivanna');
 % neuronParamsDir = fullfile(simDir, 'initial_params');
-neuronParamsFileName = ['best_params_', cellName, '.csv'];
+neuronParamsFileName = ['bestparams_', cellName, '.csv'];
 % neuronParamsFileName = ['initial_params_', cellName, '.csv'];
 figTitle = ['Simulation for ', replace(sweepName, '_', '\_')];
 
@@ -42,13 +47,11 @@ cpDuration = 10;        % current pulse duration in ms
 cpAmplitude = -0.050;   % current pulse amplitude in nA
 
 % Parameters for simulations
-nCompartments = 3;      % number of compartments
+nCompartments = 3;      % number of compartments (currently supports 3 only)
 closedLoop = false;     % whether to use the final state as the initial
                         %   condition for the next simulation
 solverOrder = 0;        % uses the implicit Crank-Nicholson scheme
                         %   for multi-compartment models
-timeStep = 0.1;         % output time step in ms
-simTimeStep = 0.1;      % simulation time step in ms
 timeToStabilize = 1000; % time for state variables to stabilize in ms
 
 % Parameters for calculations
@@ -86,13 +89,25 @@ timeEndCpr = cprWindow(2);
                         'ResponseWindow', cprWindowOrig, ...
                         'StimStartWindow', cpStartWindowOrig);
 
+% Extract from cell array
+dataCpr = dataCpr{1};
+
 % Extract needed data and information
-[realVoltageData, realStimPulse] = extract_columns(dataCpr, 2:3);
+[timeData, realVoltageData, realStimPulse] = extract_columns(dataCpr, 1:3);
 holdingPotential = sweepInfo.holdPotential;
 
+% Update the sampling interval (esp. the number of rows)
+siMs = compute_sampling_interval(timeData);
+
+% Match the simulation time step with the sampling interval
+timeStep = siMs;         % output time step in ms
+simTimeStep = siMs;      % simulation time step in ms
+
+% Create NaN data for dendrites
+nanData = nan(size(realVoltageData));
+
 % Put together as data to compare
-dataToCompare = [realVoltageData, realVoltageData, ...
-                 realVoltageData, realStimPulse];
+dataToCompare = [nanData, nanData, realVoltageData, realStimPulse];
 
 % Make sure holdingPotential has the correct dimensions
 holdingPotential = match_dimensions(holdingPotential, [1, nCompartments]);
@@ -100,7 +115,7 @@ holdingPotential = match_dimensions(holdingPotential, [1, nCompartments]);
 %% Create the neuron
 % Create a xolotl object based on a parameters file
 %   Note: m3ha is a handle to the xolotl object
-m3ha = m3ha_xolotl_create_neuron(neuronParamsPath);
+m3ha = m3ha_xolotl_create_neuron(neuronParamsPath, 'PassiveOnly', true);
 
 % Set general simulation parameters
 xolotl_set_simparams(m3ha, 'ClosedLoop', closedLoop, ...
@@ -125,16 +140,16 @@ save(outPath, 'm3ha');
 % m3ha.plot;
 
 % Simulate and plot individual traces against data
-%{
 m3ha_xolotl_plot(m3ha, 'DataToCompare', dataToCompare, ...
                         'XLimits', xLimits, ...
                         'BaseWindow', baseWindow, 'FitWindow', fitWindow, ...
                         'FigTitle', figTitle, 'CompToPatch', compToPatch, ...
                         'TimeToStabilize', timeToStabilize, ...
                         'HoldingPotential', holdingPotential);
-%}
+
 
 %% Manipulate
+%{
 % Set up the plots to be manipulated
 m3ha.manipulate_plot_func = ...
     {@(x) m3ha_xolotl_plot(x, 'DataToCompare', dataToCompare, ...
@@ -153,6 +168,7 @@ m3ha.manipulate({'soma.len', 'soma.radius', 'soma.Leak.gbar', ...
 % m3ha.manipulate({'*Leak*', '*length*'})
 manip = gcf;
 manip.Position(2) = manip.Position(2) - 200;
+%}
 
 % Displays a list of properties
 % properties(xolotl)
@@ -226,6 +242,9 @@ ivecToPadCpr = zeros(nSamplesToPadForStabilization, 1);
 
 realVoltageData = [vvecsToPadCpr; vvecsCpr];
 realStimPulse = [ivecToPadCpr; ivecCpr];
+
+dataToCompare = [realVoltageData, realVoltageData, ...
+                realVoltageData, realStimPulse];
 
 %}
 

@@ -50,10 +50,33 @@ valueStr = 'Value';
 diamSomaStr = 'diamSoma';
 LDendStr = 'LDend';
 diamDendStr = 'diamDend';
+diamDendToSomaStr = 'diamDendToSoma';
 cmStr = 'cm';
 RaStr = 'Ra';
+corrDStr = 'corrD';
 gpasStr = 'gpas';
 epasStr = 'epas';
+pcabarITSomaStr = 'pcabarITSoma';
+pcabarITDend1Str = 'pcabarITDend1';
+pcabarITDend2Str = 'pcabarITDend2';
+shiftmITStr = 'shiftmIT';
+shifthITStr = 'shifthIT';
+slopemITStr = 'slopemIT';
+slopehITStr = 'slopehIT';
+ghbarIhSomaStr = 'ghbarIhSoma';
+ghbarIhDend1Str = 'ghbarIhDend1';
+ghbarIhDend2Str = 'ghbarIhDend2';
+ehIhStr = 'ehIh';
+shiftmIhStr = 'shiftmIh';
+gkbarIKirSomaStr = 'gkbarIKirSoma';
+gkbarIKirDend1Str = 'gkbarIKirDend1';
+gkbarIKirDend2Str = 'gkbarIKirDend2';
+gkbarIASomaStr = 'gkbarIASoma';
+gkbarIADend1Str = 'gkbarIADend1';
+gkbarIADend2Str = 'gkbarIADend2';
+gnabarINaPSomaStr = 'gnabarINaPSoma';
+gnabarINaPDend1Str = 'gnabarINaPDend1';
+gnabarINaPDend2Str = 'gnabarINaPDend2';
 
 % Shell depth in mm
 shellDepth = 1e-4;      % 0.1 um used in TC3.tem
@@ -109,10 +132,22 @@ else
     neuronParamsTable = neuronParamsTableOrFile;
 end
 
+% Extract all parameter names
+paramNames = neuronParamsTable.Properties.RowNames;
+
 % Extract the geometric parameters in um
 diamSoma = neuronParamsTable{diamSomaStr, valueStr};
 LDend = neuronParamsTable{LDendStr, valueStr};
-diamDend = neuronParamsTable{diamDendStr, valueStr};
+if ismember(diamDendStr, paramNames)
+    diamDend = neuronParamsTable{diamDendStr, valueStr};
+elseif ismember(diamDendToSomaStr, paramNames)
+    diamDendToSoma = neuronParamsTable{diamDendToSomaStr, valueStr};
+    diamDend = diamDendToSoma * diamSoma;
+else
+    fprintf('diamDend or diamDendToSoma must be provided!\n!');
+    xolotlObject = [];
+    return;
+end
 
 % Extract the specific membrane capacitance in uF/cm^2
 cm = neuronParamsTable{cmStr, valueStr};
@@ -148,6 +183,28 @@ eLeak = epas;
 % Deal with active parameters
 if ~passiveOnly
     % TODO
+    corrD = neuronParamsTable{corrDStr, valueStr};
+    pcabarITSoma = neuronParamsTable{pcabarITSomaStr, valueStr};
+    pcabarITDend1 = neuronParamsTable{pcabarITDend1Str, valueStr};
+    pcabarITDend2 = neuronParamsTable{pcabarITDend2Str, valueStr};
+    shiftmIT = neuronParamsTable{shiftmITStr, valueStr};
+    shifthIT = neuronParamsTable{shifthITStr, valueStr};
+    slopemIT = neuronParamsTable{slopemITStr, valueStr};
+    slopehIT = neuronParamsTable{slopehITStr, valueStr};
+    ghbarIhSoma = neuronParamsTable{ghbarIhSomaStr, valueStr};
+    ghbarIhDend1 = neuronParamsTable{ghbarIhDend1Str, valueStr};
+    ghbarIhDend2 = neuronParamsTable{ghbarIhDend2Str, valueStr};
+    ehIh = neuronParamsTable{ehIhStr, valueStr};
+    shiftmIh = neuronParamsTable{shiftmIhStr, valueStr};
+    gkbarIKirSoma = neuronParamsTable{gkbarIKirSomaStr, valueStr};
+    gkbarIKirDend1 = neuronParamsTable{gkbarIKirDend1Str, valueStr};
+    gkbarIKirDend2 = neuronParamsTable{gkbarIKirDend2Str, valueStr};
+    gkbarIASoma = neuronParamsTable{gkbarIASomaStr, valueStr};
+    gkbarIADend1 = neuronParamsTable{gkbarIADend1Str, valueStr};
+    gkbarIADend2 = neuronParamsTable{gkbarIADend2Str, valueStr};
+    gnabarINaPSoma = neuronParamsTable{gnabarINaPSomaStr, valueStr};
+    gnabarINaPDend1 = neuronParamsTable{gnabarINaPDend1Str, valueStr};
+    gnabarINaPDend2 = neuronParamsTable{gnabarINaPDend2Str, valueStr};
 end
 
 %% Do the job
@@ -192,9 +249,15 @@ xolotlObject.dend2.add('Leak', 'gbar', gLeak, 'E', eLeak);
 
 % Add active conductances
 if ~passiveOnly
-    xolotlObject.soma.add('CaT', 'pcabar', pcabar_IT);
-    xolotlObject.dend1.add('CaT', 'pcabar', pcabar_IT);
-    xolotlObject.dend2.add('CaT', 'pcabar', pcabar_IT);
+%     xolotlObject.soma.add('CaTDestexhe');
+%     xolotlObject.dend1.add('CaTDestexhe');
+%     xolotlObject.dend2.add('CaTDestexhe');
+    xolotlObject.soma.add('CaTDestexhe', 'pbar', pcabarITSoma);
+    xolotlObject.dend1.add('CaTDestexhe', 'pbar', pcabarITDend1);
+    xolotlObject.dend2.add('CaTDestexhe', 'pbar', pcabarITDend2);
+%     xolotlObject.soma.add('CaTm3ha', 'pbar', pcabarITSoma);
+%     xolotlObject.dend1.add('CaTm3ha', 'pbar', pcabarITDend1);
+%     xolotlObject.dend2.add('CaTm3ha', 'pbar', pcabarITDend2);
 end
 
 %% Print to standard output

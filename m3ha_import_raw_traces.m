@@ -15,7 +15,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %                       baseNoise
 %                       holdCurrentNoise
 %                       sweepWeights
-%       data        - all imported raw traces
+%       dataAll     - all imported raw traces
 % Arguments:
 %       fileNames   - file or directory name(s)
 %                       e.g. 'A100110_0008_18.mat'
@@ -644,11 +644,11 @@ else
     holdCurrentNoise = NaN(nSwps, 1);
 end
 
-%% Save results
+%% Output results
 % Print message
-fprintf('Saving results ... \n');
+fprintf('Putting results into a table ... \n');
 
-% Save in sweepInfo tables
+% Output in sweepInfo tables
 sweepInfo = table(fileNames, currentPulseAmplitude, ...
                     holdPotential, holdCurrent, baseNoise, ...
                     holdCurrentNoise, sweepWeights);

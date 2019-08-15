@@ -357,7 +357,7 @@ newYLimits = zeros(nTraces, 2);
 for iTrace = 1:nTraces
     % Put the new data and old y limits together
     newDataForLimits = {dataPlots(:, iTrace); yLimits(iTrace, :)};
-    
+
     % Update y limits
     newYLimits(iTrace, :) = compute_axis_limits(newDataForLimits, 'y');
 end

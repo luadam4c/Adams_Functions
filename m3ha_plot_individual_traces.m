@@ -490,10 +490,17 @@ for iSwp = 1:nSweeps
     axis 'auto y'
 end
 
-% Extract y axis limits
+% Extract y axis limits if something is plotted
 yLimits = zeros(nSweeps, 2);
 for iSwp = 1:nSweeps
-    yLimits(iSwp, :) = get(subPlots(iSwp), 'YLim');
+    yLimitsThis = get(subPlots(iSwp), 'YLim');
+
+    % If it is exactly [0, 1], it means nothing is plotted, so disregard it
+    if yLimitsThis(1) == 0 && yLimitsThis(2) == 1
+        yLimitsThis = [NaN, NaN];
+    end
+
+    yLimits(iSwp, :) = yLimitsThis;
 end
 
 % Create a title
