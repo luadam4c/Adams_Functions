@@ -92,6 +92,7 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 % 2018-12-20 Added x and y labels
 % 2018-12-20 Now updates error strings
 % 2018-12-20 Now updates holding current here
+% 2019-08-15 Fixed bugs for computing new y limits
 % 
 
 %% Hard-coded parameters
@@ -323,6 +324,7 @@ yLimits = individual.yLimits;
 baseWindow = individual.baseWindow;
 fitWindow = individual.fitWindow;
 endPointsToPlot = individual.endPointsToPlot;
+subPlots = individual.subPlots;
 
 %% Set up simulation
 % Reset to the original external current
@@ -352,16 +354,6 @@ vVecPlots = vVecs(:, idxInXolotl);
 % Put together into a data array
 dataPlots = [vVecPlots, externalCurrent(:, idxCompToPatch)];
 
-% Compute new y limits
-newYLimits = zeros(nTraces, 2);
-for iTrace = 1:nTraces
-    % Put the new data and old y limits together
-    newDataForLimits = {dataPlots(:, iTrace); yLimits(iTrace, :)};
-
-    % Update y limits
-    newYLimits(iTrace, :) = compute_axis_limits(newDataForLimits, 'y');
-end
-
 % Re-compute baseline errors if not provided
 if isempty(baseErrors)
     if isempty(dataToCompare)
@@ -378,7 +370,7 @@ if isempty(baseErrors)
     end
 end
 
-% compute sweep errors if not provided
+% Compute sweep errors if not provided
 if isempty(sweepErrors)
     if isempty(dataToCompare)
         % Compute the baseline noise over the fitting window
@@ -412,15 +404,30 @@ end
 %   Note: this should only be done after the errors are computed
 dataPlots = extract_subvectors(dataPlots, 'EndPoints', endPointsToPlot);
 
+% Compute new y limits
+%   Note: this should only be done after dataPlots is restricted
+newYLimits = zeros(nTraces, 2);
+for iTrace = 1:nTraces
+    % Put the new data and old y limits together
+    newDataForLimits = {dataPlots(:, iTrace); yLimits(iTrace, :)};
+
+    % Update y limits
+    newYLimits(iTrace, :) = compute_axis_limits(newDataForLimits, 'y');
+end
+
 % Update data in the chart line objects
 for iTrace = 1:nTraces
     individual.plotsData(iTrace).YData = dataPlots(:, iTrace);
 end
 
-% Update data in the primitive line objects
+% Update data in the primitive line objects and set new y limits
 for iTrace = 1:nTraces
-    individual.boundaries(iTrace, 1).YData = newYLimits(iTrace, :);
-    individual.boundaries(iTrace, 2).YData = newYLimits(iTrace, :);
+    newYLimitsThis = newYLimits(iTrace, :);
+    individual.boundaries(iTrace, 1).YData = newYLimitsThis;
+    individual.boundaries(iTrace, 2).YData = newYLimitsThis;
+    if ~any(isnan(newYLimitsThis))
+        set(subPlots(iTrace), 'YLim', newYLimitsThis);
+    end
 end
 
 % Update subplot titles

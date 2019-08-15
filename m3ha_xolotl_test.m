@@ -18,6 +18,8 @@
 % 2019-01-01 Now uses m3ha_import_raw_traces.m
 % 2019-08-15 Now uses a time step that matches the sampling interval
 % 2019-08-15 Now sets dendritic dataToCompare to be NaN values
+% TODO: active mode
+% TODO: single compartment, try model_soplata
 
 %% Hard-coded parameters
 % Files
@@ -47,6 +49,8 @@ cpDuration = 10;        % current pulse duration in ms
 cpAmplitude = -0.050;   % current pulse amplitude in nA
 
 % Parameters for simulations
+simMode = 'passive';    % 'passive' or 'active'
+passiveOnly = false;
 nCompartments = 3;      % number of compartments (currently supports 3 only)
 closedLoop = false;     % whether to use the final state as the initial
                         %   condition for the next simulation
@@ -115,7 +119,7 @@ holdingPotential = match_dimensions(holdingPotential, [1, nCompartments]);
 %% Create the neuron
 % Create a xolotl object based on a parameters file
 %   Note: m3ha is a handle to the xolotl object
-m3ha = m3ha_xolotl_create_neuron(neuronParamsPath, 'PassiveOnly', true);
+m3ha = m3ha_xolotl_create_neuron(neuronParamsPath, 'PassiveOnly', passiveOnly);
 
 % Set general simulation parameters
 xolotl_set_simparams(m3ha, 'ClosedLoop', closedLoop, ...

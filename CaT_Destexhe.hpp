@@ -14,7 +14,7 @@
 #include "conductance.hpp"
 
 //inherit conductance class spec
-class CaTDestexhe: public conductance {
+class CaT_Destexhe: public conductance {
 
 
 private:
@@ -33,7 +33,7 @@ public:
     double pbar; 
 
     // specify parameters + initial conditions
-    CaTDestexhe(double g_, double E_, double m_, double h_, double pbar_)
+    CaT_Destexhe(double g_, double E_, double m_, double h_, double pbar_)
     {
 
         
@@ -55,7 +55,7 @@ public:
         p = 2;
         q = 1;
 
-        if (isnan(pbar)) {pbar = .2e-3;}
+        if (isnan(pbar)) {pbar = 2e-4;}
 
         // allow this channel to be approximated
         approx_m = 0;
@@ -85,7 +85,7 @@ public:
 };
 
 
-void CaTDestexhe::connect(compartment * pcomp_) {
+void CaT_Destexhe::connect(compartment * pcomp_) {
     conductance::connect(pcomp_);
 
     // compute a constant
@@ -95,18 +95,18 @@ void CaTDestexhe::connect(compartment * pcomp_) {
 
 }
 
-double CaTDestexhe::getCurrent(double V) {
+double CaT_Destexhe::getCurrent(double V) {
     return V*G_by_V(V, container->Ca_prev);
 }
 
 
-double CaTDestexhe::G_by_V(double V, double Ca) {
+double CaT_Destexhe::G_by_V(double V, double Ca) {
     K_exp = exp(-V/(container->RT_by_nF));
     return K*(Ca - container->Ca_out * K_exp)/(1 - K_exp);
 
 }
 
-void CaTDestexhe::integrate(double V, double Ca) {
+void CaT_Destexhe::integrate(double V, double Ca) {
 
 
     // integrate the gating variables
@@ -129,25 +129,25 @@ void CaTDestexhe::integrate(double V, double Ca) {
 }
 
 
-string CaTDestexhe::getClass(){
-    return "CaTDestexhe";
+string CaT_Destexhe::getClass(){
+    return "CaT_Destexhe";
 }
 
 
-double CaTDestexhe::m_inf(double V, double Ca) {
+double CaT_Destexhe::m_inf(double V, double Ca) {
     return 1.0 / ( 1.0 + exp( (V  + 56.0) / -6.2 ) );
 }
 
-double CaTDestexhe::h_inf(double V, double Ca)  {
+double CaT_Destexhe::h_inf(double V, double Ca)  {
     return 1.0 / (1.0 + exp( ( V  + 80.0) / 4.0 ) ); 
 }
 
-double CaTDestexhe::tau_m(double V, double Ca)  {
+double CaT_Destexhe::tau_m(double V, double Ca)  {
     return ( 0.204 + .333 / ( exp( (V + 131.0 ) / -16.7) + exp( (V + 15.8 ) / 18.2) ) );
 
 }
 
-double CaTDestexhe::tau_h(double V, double Ca)  {
+double CaT_Destexhe::tau_h(double V, double Ca)  {
     if (V < -81)  {
         return 0.333* exp((V+466)/(66.6));
     } else {

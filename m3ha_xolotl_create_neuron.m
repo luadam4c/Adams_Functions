@@ -35,6 +35,7 @@ function xolotlObject = m3ha_xolotl_create_neuron (neuronParamsTableOrFile, vara
 % 2018-12-12 Created by Adam Lu
 % 2019-08-08 Added back tree_idx
 % 2019-08-14 Added 'PassiveOnly' as an optional argument
+% 2019-08-15 Added corrD
 %   TODO: Implement a cell array of tables or files
 % 
 
@@ -155,6 +156,9 @@ cm = neuronParamsTable{cmStr, valueStr};
 % Extract the axial resistivity in Ω cm
 Ra = neuronParamsTable{RaStr, valueStr};
 
+% Extract the dendritic surface area correction factor
+corrD = neuronParamsTable{corrDStr, valueStr};
+
 % Extract the leak conductance in S/cm^2
 gpas = neuronParamsTable{gpasStr, valueStr};
 
@@ -183,7 +187,6 @@ eLeak = epas;
 % Deal with active parameters
 if ~passiveOnly
     % TODO
-    corrD = neuronParamsTable{corrDStr, valueStr};
     pcabarITSoma = neuronParamsTable{pcabarITSomaStr, valueStr};
     pcabarITDend1 = neuronParamsTable{pcabarITDend1Str, valueStr};
     pcabarITDend2 = neuronParamsTable{pcabarITDend2Str, valueStr};
@@ -226,14 +229,14 @@ xolotlObject.add('compartment', 'soma', ...
 %           other compartments are connected with 'Axial' synapses
 xolotlObject.add('compartment', 'dend1', ...
             'radius', radiusDendrite, 'len', lengthDendrite/2, ...
-            'Cm', specificMembraneCapacitance, ...
+            'Cm', specificMembraneCapacitance * corrD, ...
             'shell_thickness', shellDepth, ...
             'Ca', caIn, 'Ca_out', caOut);
 
 % Add dend2
 xolotlObject.add('compartment', 'dend2', ...
             'radius', radiusDendrite, 'len', lengthDendrite/2, ...
-            'Cm', specificMembraneCapacitance, ...
+            'Cm', specificMembraneCapacitance * corrD, ...
             'shell_thickness', shellDepth, ...
             'Ca', caIn, 'Ca_out', caOut);
 
@@ -244,20 +247,20 @@ xolotlObject.connect('dend1', 'dend2', axialResistivity);
 
 % Add passive conductances
 xolotlObject.soma.add('Leak', 'gbar', gLeak, 'E', eLeak);
-xolotlObject.dend1.add('Leak', 'gbar', gLeak, 'E', eLeak);
-xolotlObject.dend2.add('Leak', 'gbar', gLeak, 'E', eLeak);
+xolotlObject.dend1.add('Leak', 'gbar', gLeak * corrD, 'E', eLeak);
+xolotlObject.dend2.add('Leak', 'gbar', gLeak * corrD, 'E', eLeak);
 
 % Add active conductances
 if ~passiveOnly
-%     xolotlObject.soma.add('CaTDestexhe');
-%     xolotlObject.dend1.add('CaTDestexhe');
-%     xolotlObject.dend2.add('CaTDestexhe');
-    xolotlObject.soma.add('CaTDestexhe', 'pbar', pcabarITSoma);
-    xolotlObject.dend1.add('CaTDestexhe', 'pbar', pcabarITDend1);
-    xolotlObject.dend2.add('CaTDestexhe', 'pbar', pcabarITDend2);
-%     xolotlObject.soma.add('CaTm3ha', 'pbar', pcabarITSoma);
-%     xolotlObject.dend1.add('CaTm3ha', 'pbar', pcabarITDend1);
-%     xolotlObject.dend2.add('CaTm3ha', 'pbar', pcabarITDend2);
+%     xolotlObject.soma.add('CaT_Destexhe');
+%     xolotlObject.dend1.add('CaT_Destexhe');
+%     xolotlObject.dend2.add('CaT_Destexhe');
+    xolotlObject.soma.add('CaT_Destexhe', 'pbar', pcabarITSoma);
+    xolotlObject.dend1.add('CaT_Destexhe', 'pbar', pcabarITDend1);
+    xolotlObject.dend2.add('CaT_Destexhe', 'pbar', pcabarITDend2);
+%     xolotlObject.soma.add('CaT_m3ha', 'pbar', pcabarITSoma);
+%     xolotlObject.dend1.add('CaT_m3ha', 'pbar', pcabarITDend1);
+%     xolotlObject.dend2.add('CaT_m3ha', 'pbar', pcabarITDend2);
 end
 
 %% Print to standard output
