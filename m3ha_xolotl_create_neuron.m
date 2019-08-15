@@ -19,9 +19,9 @@ function xolotlObject = m3ha_xolotl_create_neuron (neuronParamsTableOrFile, vara
 %                   - file(s) containing single neuron parameter table(s)
 %                   must be a character array, a string array 
 %                       or a cell array of character arrays
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'PassiveOnly': Include passive currents only
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -34,6 +34,7 @@ function xolotlObject = m3ha_xolotl_create_neuron (neuronParamsTableOrFile, vara
 % File History:
 % 2018-12-12 Created by Adam Lu
 % 2019-08-08 Added back tree_idx
+% 2019-08-14 Added 'PassiveOnly' as an optional argument
 %   TODO: Implement a cell array of tables or files
 % 
 
@@ -62,7 +63,7 @@ caIn = 2.4e-1;          % 2.4e-4 mM used in TC3.tem
 caOut = 2000;           % 2 mM used in NEURON by default
 
 %% Default values for optional arguments
-% param1Default   = [];                   % default TODO: Description of param1
+passiveOnlyDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -81,12 +82,12 @@ addRequired(iP, 'neuronParamsTableOrFile', ...
     @(x) validateattributes(x, {'table', 'cell', 'string', 'char'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default, ...
-%     % TODO: validation function %);
+addParameter(iP, 'PassiveOnly', passiveOnlyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, neuronParamsTableOrFile, varargin{:});
-% param1 = iP.Results.param1;
+passiveOnly = iP.Results.PassiveOnly;
 
 %% Preparation
 % Decipher the first argument
@@ -144,6 +145,11 @@ gLeak = gpas / (S_PER_US / (CM_PER_MM)^2);
 % The leak reversal potential is still in mV
 eLeak = epas;
 
+% Deal with active parameters
+if ~passiveOnly
+    % TODO
+end
+
 %% Do the job
 % Create a xolotl object
 xolotlObject = xolotl;
@@ -183,6 +189,13 @@ xolotlObject.connect('dend1', 'dend2', axialResistivity);
 xolotlObject.soma.add('Leak', 'gbar', gLeak, 'E', eLeak);
 xolotlObject.dend1.add('Leak', 'gbar', gLeak, 'E', eLeak);
 xolotlObject.dend2.add('Leak', 'gbar', gLeak, 'E', eLeak);
+
+% Add active conductances
+if ~passiveOnly
+    xolotlObject.soma.add('CaT', 'pcabar', pcabar_IT);
+    xolotlObject.dend1.add('CaT', 'pcabar', pcabar_IT);
+    xolotlObject.dend2.add('CaT', 'pcabar', pcabar_IT);
+end
 
 %% Print to standard output
 % This returns a column cell array of compartments in alphabetical order

@@ -47,6 +47,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/create_new_mscript.m
 %       cd/extract_common_directory.m
 %       cd/extract_common_prefix.m
 %       cd/extract_common_suffix.m

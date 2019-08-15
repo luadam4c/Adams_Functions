@@ -117,6 +117,7 @@ Last Updated 2019-08-14 by Adam Lu
 - [**create_labels_from_numbers.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_labels_from_numbers.m): Creates a cell array of labels from an array of numbers with an optional prefix or suffix
 - [**create_latex_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_latex_string.m): Creates a LaTeX string from an equation used for fitting
 - [**create_logical_array.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_logical_array.m): Creates a logical array from indices for true and dimensions
+- [**create_new_mscript.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_new_mscript.m): Creates a new MATLAB script starting from a function template
 - [**create_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pulse.m): Creates a pulse vector
 - [**create_pulse_train_series.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pulse_train_series.m): Creates a pulse train series (a theta burst stimulation by default)
 - [**create_row_labels.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_row_labels.m): Creates row labels for table(s)

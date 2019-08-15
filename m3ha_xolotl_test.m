@@ -26,8 +26,10 @@ matFilesDir = fullfile(realDataDir, 'take4/matfiles');
 simDir = fullfile(projectDir, 'optimizer4gabab');
 outFolder = '/media/adamX/xolotl_test';
 outFileName = 'xolotl_test_before_simulations.mat';
-neuronParamsDir = fullfile(simDir, 'initial_params');
-neuronParamsFileName = ['initial_params_', cellName, '.csv'];
+neuronParamsDir = fullfile(simDir, 'best_params');
+% neuronParamsDir = fullfile(simDir, 'initial_params');
+neuronParamsFileName = ['best_params_', cellName, '.csv'];
+% neuronParamsFileName = ['initial_params_', cellName, '.csv'];
 figTitle = ['Simulation for ', replace(sweepName, '_', '\_')];
 
 % Parameters that should be consistent with the experiment
