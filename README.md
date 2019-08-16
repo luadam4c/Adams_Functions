@@ -372,10 +372,11 @@ Last Updated 2019-08-15 by Adam Lu
 - [**vec2array.m**](https://github.com/blabuva/Adams_Functions/blob/master/vec2array.m): Convert a vector to an array with dimensions given by dims using linear indexing (obsolete, use reshape() instead)
 - [**vec2cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/vec2cell.m): Reorganize a vector or array into a cell array of partial vectors/arrays according to class
 - [**vertcat_spreadsheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/vertcat_spreadsheets.m): Combine spreadsheets using readtable, vertcat, then writetable
+- [**xolotl_add_current_injection.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_current_injection.m): Adds a current injection to a xolotl object, just the first compartment by default
 - [**xolotl_add_current_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_current_pulse.m): Adds a current pulse to the first compartment of a xolotl object
-- [**xolotl_add_holding_current.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_holding_current.m): Adds a holding current to the first compartment of a xolotl object
+- [**xolotl_add_holding_current.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_holding_current.m): Adds a holding current to a xolotl object
 - [**xolotl_add_voltage_clamp.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_voltage_clamp.m): Adds a voltage clamp to the first compartment of a xolotl object
-- [**xolotl_compartment_index.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_compartment_index.m): Returns the index of the compartment or the default
+- [**xolotl_compartment_index.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_compartment_index.m): Returns the index of the compartment or the first compartment by default
 - [**xolotl_estimate_holding_current.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_estimate_holding_current.m): Estimates the holding current necessary to match a certain holding potential
 - [**xolotl_set_simparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_set_simparams.m): Runs a simulation on a xolotl object
 - [**xolotl_simulate.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_simulate.m): Simulates a voltage clamp experiment

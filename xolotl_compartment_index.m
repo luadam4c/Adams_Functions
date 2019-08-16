@@ -1,5 +1,5 @@
 function [idxCompartment, compartment] = xolotl_compartment_index (xolotlObject, varargin)
-%% Returns the index of the compartment or the default
+%% Returns the index of the compartment or the first compartment by default
 % Usage: [idxCompartment, compartment] = xolotl_compartment_index (xolotlObject, varargin)
 % Explanation:
 %       TODO
@@ -23,8 +23,7 @@ function [idxCompartment, compartment] = xolotl_compartment_index (xolotlObject,
 %       cd/find_in_strings.m
 %
 % Used by:
-%       cd/xolotl_add_current_pulse.m
-%       cd/xolotl_add_holding_current.m
+%       cd/xolotl_add_current_injection.m
 %       cd/xolotl_add_voltage_clamp.m
 %       cd/xolotl_estimate_holding_current.m
 

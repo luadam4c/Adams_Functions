@@ -3,6 +3,7 @@
 %
 % Requires:
 % TODO
+%       cd/create_time_stamp.m
 %       cd/compute_sampling_interval.m
 %       cd/extract_columns.m
 %       cd/m3ha_import_raw_traces.m
@@ -19,6 +20,7 @@
 % 2019-08-15 Now uses a time step that matches the sampling interval
 % 2019-08-15 Now sets dendritic dataToCompare to be NaN values
 % TODO: active mode
+% Use current vector from data
 % TODO: single compartment, try model_soplata
 
 %% Hard-coded parameters
@@ -32,6 +34,7 @@ matFilesDir = fullfile(realDataDir, 'take4/matfiles');
 simDir = fullfile(projectDir, 'optimizer4gabab');
 outFolder = '/media/adamX/xolotl_test';
 outFileName = ['xolotl_test_', sweepName, '_before_simulations.mat'];
+% outFileName = [create_time_stamp, 'xolotl_test_', sweepName, '_before_simulations.mat'];
 neuronParamsDir = fullfile(simDir, 'best_params', ...
             'bestparams_20180424_singleneuronfitting21_Rivanna');
 % neuronParamsDir = fullfile(simDir, 'initial_params');
@@ -47,9 +50,12 @@ cpStartWindowOrig = [95, 105];
 cpDelayOrig = 100;      % original current pulse delay in ms
 cpDuration = 10;        % current pulse duration in ms
 cpAmplitude = -0.050;   % current pulse amplitude in nA
+ipscrWindowOrig = [0, 8000];   % window in which the IPSC response would lie (ms), original
+ipscStartOrig = 1000;   % time of IPSC application (ms), original
+ipscDur = 7000;         % duration of IPSC application (ms), for fitting
 
 % Parameters for simulations
-simMode = 'passive';    % 'passive' or 'active'
+simMode = 'active';    % 'passive' or 'active'
 passiveOnly = false;
 nCompartments = 3;      % number of compartments (currently supports 3 only)
 closedLoop = false;     % whether to use the final state as the initial
@@ -58,13 +64,17 @@ solverOrder = 0;        % uses the implicit Crank-Nicholson scheme
                         %   for multi-compartment models
 timeToStabilize = 1000; % time for state variables to stabilize in ms
 
-% Parameters for calculations
-baseWindowOrig = [0, cpDelayOrig];
-fitWindowOrig = [cpDelayOrig, cprWindowOrig(2)];
-                        % from current pulse start to current pulse response end
-
-% Parameters for plotting
-xLimitsOrig = [cpDelayOrig - 10, cpDelayOrig + 40];
+% Parameters for calculations and plotting
+switch simMode
+case 'passive'
+    baseWindowOrig = [cprWindowOrig(1), cpDelayOrig];
+    fitWindowOrig = [cpDelayOrig, cprWindowOrig(2)];
+    xLimitsOrig = [cpDelayOrig - 10, cpDelayOrig + 40];
+case 'active'
+    baseWindowOrig = [ipscrWindowOrig(1), ipscStartOrig];
+    fitWindowOrig = [ipscStartOrig, ipscrWindowOrig(2)];
+    xLimitsOrig = [ipscStartOrig - 200, ipscStartOrig + 2000];
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -75,29 +85,47 @@ outPath = fullfile(outFolder, outFileName);
 
 % Shift original times by timeToStabilize
 cprWindow = cprWindowOrig + timeToStabilize;
+ipscrWindow = ipscrWindowOrig + timeToStabilize;
 cpDelay = cpDelayOrig + timeToStabilize;
 fitWindow = fitWindowOrig + timeToStabilize;
 baseWindow = baseWindowOrig + timeToStabilize;
 xLimits = xLimitsOrig + timeToStabilize;
 
-% Obtain the simulation end time in ms for current pulse response
-timeEndCpr = cprWindow(2);
+% Obtain the simulation end time in ms
+switch simMode
+case 'passive'
+    timeEnd = cprWindow(2);
+case 'active'
+    timeEnd = ipscrWindow(2);
+end
 
 %% Import data to compare against
-[dataCpr, sweepInfo] = ...
-        m3ha_import_raw_traces(sweepName, 'Directory', matFilesDir, ...
-                        'Verbose', true, 'CreateLog', true, ...
-                        'ToParsePulse', true, 'ToCorrectDcSteps', true, ...
-                        'ToAverageByVhold', true, 'OutFolder', outFolder, ...
-                        'TimeToPad', timeToStabilize, ...
-                        'ResponseWindow', cprWindowOrig, ...
-                        'StimStartWindow', cpStartWindowOrig);
+switch simMode
+case 'passive'
+    [dataCpr, sweepInfo] = ...
+            m3ha_import_raw_traces(sweepName, 'Directory', matFilesDir, ...
+                    'Verbose', true, 'CreateLog', true, ...
+                    'ToParsePulse', true, 'ToCorrectDcSteps', true, ...
+                    'ToAverageByVhold', true, 'OutFolder', outFolder, ...
+                    'TimeToPad', timeToStabilize, ...
+                    'ResponseWindow', cprWindowOrig, ...
+                    'StimStartWindow', cpStartWindowOrig);
+case 'active'
+    [dataCpr, sweepInfo] = ...
+            m3ha_import_raw_traces(sweepName, 'Directory', matFilesDir, ...
+                    'Verbose', true, 'CreateLog', true, ...
+                    'ToParsePulse', false, 'ToCorrectDcSteps', false, ...
+                    'ToAverageByVhold', false, 'OutFolder', outFolder, ...
+                    'TimeToPad', timeToStabilize, ...
+                    'ResponseWindow', ipscrWindowOrig, ...
+                    'StimStartWindow', ipscStartOrig);
+end
 
 % Extract from cell array
 dataCpr = dataCpr{1};
 
 % Extract needed data and information
-[timeData, realVoltageData, realStimPulse] = extract_columns(dataCpr, 1:3);
+[timeData, realVoltageData, realStimCopy] = extract_columns(dataCpr, 1:3);
 holdingPotential = sweepInfo.holdPotential;
 
 % Update the sampling interval (esp. the number of rows)
@@ -111,7 +139,7 @@ simTimeStep = siMs;      % simulation time step in ms
 nanData = nan(size(realVoltageData));
 
 % Put together as data to compare
-dataToCompare = [nanData, nanData, realVoltageData, realStimPulse];
+dataToCompare = [nanData, nanData, realVoltageData, realStimCopy];
 
 % Make sure holdingPotential has the correct dimensions
 holdingPotential = match_dimensions(holdingPotential, [1, nCompartments]);
@@ -127,14 +155,20 @@ xolotl_set_simparams(m3ha, 'ClosedLoop', closedLoop, ...
                     'TimeStep', timeStep, 'SimTimeStep', simTimeStep);
 
 % Set simulation parameters for the current pulse response
-xolotl_set_simparams(m3ha, 'TimeEnd', timeEndCpr, ...
+xolotl_set_simparams(m3ha, 'TimeEnd', timeEnd, ...
                         'InitialVoltage', holdingPotential);
 
 % Add a current pulse protocol
 %   Note: must do this after the correct time_end is set
-xolotl_add_current_pulse(m3ha, 'Compartment', compToPatch, ...
+switch simMode
+case 'passive'
+    xolotl_add_current_pulse(m3ha, 'Compartment', compToPatch, ...
                                 'Delay', cpDelay, 'Duration', cpDuration, ...
                                 'Amplitude', cpAmplitude);
+case 'active'
+    xolotl_add_current_injection(m3ha, 'Compartment', compToPatch, ...
+                                'CurrentVector', realStimCopy);
+end
 
 % Save the xolotl object before simulations
 save(outPath, 'm3ha');
@@ -187,7 +221,7 @@ timeEndVc = 1000;       % simulation end time in ms for voltage clamp
 
 initialVoltageCpr = -60;% initial voltage level for current pulse response
 m3ha = xolotl_set_simparams(m3ha, 'InitialVoltage', initialVoltageCpr, ...
-                            'TimeEnd', timeEndCpr);
+                            'TimeEnd', timeEnd);
 
 [holdingCurrent, testObject] = ...
 
@@ -245,10 +279,10 @@ vvecsToPadCpr = ones(nSamplesToPadForStabilization, 1) * holdingPotential;
 ivecToPadCpr = zeros(nSamplesToPadForStabilization, 1);
 
 realVoltageData = [vvecsToPadCpr; vvecsCpr];
-realStimPulse = [ivecToPadCpr; ivecCpr];
+realStimCopy = [ivecToPadCpr; ivecCpr];
 
 dataToCompare = [realVoltageData, realVoltageData, ...
-                realVoltageData, realStimPulse];
+                realVoltageData, realStimCopy];
 
 %}
 

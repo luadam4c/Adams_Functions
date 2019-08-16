@@ -1,6 +1,6 @@
-function [parsedParams] = parse_xolotl_object (xolotlObject)
+function parsedParams = parse_xolotl_object (xolotlObject)
 %% Parses a xolotl object
-% Usage: [parsedParams] = parse_xolotl_object (xolotlObject)
+% Usage: parsedParams = parse_xolotl_object (xolotlObject)
 % Explanation:
 %       TODO
 % Example(s):
@@ -14,7 +14,6 @@ function [parsedParams] = parse_xolotl_object (xolotlObject)
 %                           totalDuration: total duration in ms
 %                           clampedVoltages: clamped voltages
 %                           externalCurrents: injected currents
-%                       TODO
 %                       specified as a structure
 % Arguments:
 %       xolotlObject    - a created neuron with simulation parameters
@@ -25,6 +24,7 @@ function [parsedParams] = parse_xolotl_object (xolotlObject)
 %
 % Used by:
 %       cd/m3ha_xolotl_plot.m
+%       cd/xolotl_add_current_injection.m
 %       cd/xolotl_add_current_pulse.m
 %       cd/xolotl_add_holding_current.m
 %       cd/xolotl_add_voltage_clamp.m
