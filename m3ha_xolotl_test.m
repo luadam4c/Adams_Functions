@@ -35,8 +35,6 @@ realDataDir = fullfile(projectDir, 'data_dclamp');
 matFilesDir = fullfile(realDataDir, 'take4/matfiles');
 simDir = fullfile(projectDir, 'optimizer4gabab');
 outFolder = '/media/adamX/xolotl_test';
-outFileName = ['xolotl_test_', sweepName, '_before_simulations.mat'];
-% outFileName = [create_time_stamp, 'xolotl_test_', sweepName, '_before_simulations.mat'];
 neuronParamsDir = fullfile(simDir, 'best_params', ...
             'bestparams_20180424_singleneuronfitting21_Rivanna');
 % neuronParamsDir = fullfile(simDir, 'initial_params');
@@ -57,9 +55,9 @@ ipscStartOrig = 1000;   % time of IPSC application (ms), original
 ipscDur = 7000;         % duration of IPSC application (ms), for fitting
 
 % Parameters for simulations
-modelName = 'howard';  % 'm3ha' or 'soplata' or 'howard'
-simMode = 'passive';     % 'passive' or 'active'
-passiveOnly = false;
+modelName = 'howard';   % 'm3ha' or 'soplata' or 'howard'
+simMode = 'passive';    % 'passive' or 'active'
+passiveOnly = false;    % whether to include passive parameters only
 closedLoop = false;     % whether to use the final state as the initial
                         %   condition for the next simulation
 solverOrder = 0;        % uses the implicit Crank-Nicholson scheme
@@ -78,12 +76,14 @@ case 'active'
     xLimitsOrig = [ipscStartOrig - 200, ipscStartOrig + 2000];
 end
 
+% Parameters for saving things
+createImportLog = false;
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Preparation
 % Generate full file paths
 neuronParamsPath = fullfile(neuronParamsDir, neuronParamsFileName);
-outPath = fullfile(outFolder, outFileName);
 
 % Shift original times by timeToStabilize
 cprWindow = cprWindowOrig + timeToStabilize;
@@ -101,12 +101,23 @@ case 'active'
     timeEnd = ipscrWindow(2);
 end
 
+% Create file prefix
+filePrefix = [create_time_stamp, '_', modelName, '_', simMode, '_', sweepName];
+
+% Create output model file name
+matFileName = [filePrefix, '_before_simulations.mat'];
+figName = [filePrefix, '_comparison.png'];
+
+% Create full paths
+matFilePath = fullfile(outFolder, matFileName);
+figPath = fullfile(outFolder, figName);
+
 %% Import data to compare against
 switch simMode
 case 'passive'
     [dataCpr, sweepInfo] = ...
             m3ha_import_raw_traces(sweepName, 'Directory', matFilesDir, ...
-                    'Verbose', true, 'CreateLog', true, ...
+                    'Verbose', true, 'CreateLog', createImportLog, ...
                     'ToParsePulse', true, 'ToCorrectDcSteps', true, ...
                     'ToAverageByVhold', true, 'OutFolder', outFolder, ...
                     'TimeToPad', timeToStabilize, ...
@@ -115,7 +126,7 @@ case 'passive'
 case 'active'
     [dataCpr, sweepInfo] = ...
             m3ha_import_raw_traces(sweepName, 'Directory', matFilesDir, ...
-                    'Verbose', true, 'CreateLog', true, ...
+                    'Verbose', true, 'CreateLog', createImportLog, ...
                     'ToParsePulse', false, 'ToCorrectDcSteps', false, ...
                     'ToAverageByVhold', false, 'OutFolder', outFolder, ...
                     'TimeToPad', timeToStabilize, ...
@@ -192,7 +203,7 @@ case 'active'
 end
 
 % Save the xolotl object before simulations
-save(outPath, 'm3ha');
+save(matFilePath, 'm3ha');
 
 %% Simulate and plot
 % Simulate and use default plot
@@ -206,6 +217,7 @@ m3ha_xolotl_plot(m3ha, 'DataToCompare', dataToCompare, ...
                         'TimeToStabilize', timeToStabilize, ...
                         'HoldingPotential', holdingPotential);
 
+saveas(gcf, figPath);
 
 %% Manipulate
 %{
