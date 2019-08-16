@@ -12,6 +12,8 @@
 %       cd/xolotl_add_current_pulse.m
 %       cd/xolotl_add_holding_current.m
 %       cd/xolotl_set_simparams.m
+%       cd/xolotl_create_model_soplata.m
+%       cd/xolotl_create_model_howard.m
 
 % File History:
 % 2018-12-12 Created by Adam Lu
@@ -19,8 +21,8 @@
 % 2019-01-01 Now uses m3ha_import_raw_traces.m
 % 2019-08-15 Now uses a time step that matches the sampling interval
 % 2019-08-15 Now sets dendritic dataToCompare to be NaN values
-% TODO: active mode
-% Use current vector from data
+% 2019-08-15 Added active mode
+% 2019-08-15 Now uses current vector from data
 % TODO: single compartment, try model_soplata
 
 %% Hard-coded parameters
@@ -55,9 +57,9 @@ ipscStartOrig = 1000;   % time of IPSC application (ms), original
 ipscDur = 7000;         % duration of IPSC application (ms), for fitting
 
 % Parameters for simulations
-simMode = 'active';    % 'passive' or 'active'
+modelName = 'howard';  % 'm3ha' or 'soplata' or 'howard'
+simMode = 'passive';     % 'passive' or 'active'
 passiveOnly = false;
-nCompartments = 3;      % number of compartments (currently supports 3 only)
 closedLoop = false;     % whether to use the final state as the initial
                         %   condition for the next simulation
 solverOrder = 0;        % uses the implicit Crank-Nicholson scheme
@@ -135,19 +137,36 @@ siMs = compute_sampling_interval(timeData);
 timeStep = siMs;         % output time step in ms
 simTimeStep = siMs;      % simulation time step in ms
 
-% Create NaN data for dendrites
-nanData = nan(size(realVoltageData));
+%% Create the neuron
+% Create a xolotl object based on a parameters file
+%   Note: m3ha is a handle to the xolotl object
+switch modelName
+    case 'm3ha'
+        m3ha = m3ha_xolotl_create_neuron(neuronParamsPath, ...
+                                            'PassiveOnly', passiveOnly);
+    case 'soplata'
+        m3ha = xolotl_create_model_soplata;
+    case 'howard'
+        m3ha = xolotl_create_model_howard;
+    otherwise
+        error('modelName unrecognized!');
+end
 
-% Put together as data to compare
-dataToCompare = [nanData, nanData, realVoltageData, realStimCopy];
+% Parse the xolotl object
+parsedParams = parse_xolotl_object(m3ha);
+
+% Get the number of compartments
+nCompartments = parsedParams.nCompartments;
 
 % Make sure holdingPotential has the correct dimensions
 holdingPotential = match_dimensions(holdingPotential, [1, nCompartments]);
 
-%% Create the neuron
-% Create a xolotl object based on a parameters file
-%   Note: m3ha is a handle to the xolotl object
-m3ha = m3ha_xolotl_create_neuron(neuronParamsPath, 'PassiveOnly', passiveOnly);
+% Create NaN data for dendrites
+nanData = nan(size(realVoltageData));
+nanDataDendrites = repmat(nanData, 1, nCompartments - 1);
+
+% Put together as data to compare
+dataToCompare = [nanDataDendrites, realVoltageData, realStimCopy];
 
 % Set general simulation parameters
 xolotl_set_simparams(m3ha, 'ClosedLoop', closedLoop, ...
@@ -159,12 +178,14 @@ xolotl_set_simparams(m3ha, 'TimeEnd', timeEnd, ...
                         'InitialVoltage', holdingPotential);
 
 % Add a current pulse protocol
-%   Note: must do this after the correct time_end is set
+%   Note: must do this after the correct t_end is set
 switch simMode
 case 'passive'
     xolotl_add_current_pulse(m3ha, 'Compartment', compToPatch, ...
                                 'Delay', cpDelay, 'Duration', cpDuration, ...
                                 'Amplitude', cpAmplitude);
+    % xolotl_add_current_injection(m3ha, 'Compartment', compToPatch, ...
+    %                             'CurrentVector', realStimCopy);
 case 'active'
     xolotl_add_current_injection(m3ha, 'Compartment', compToPatch, ...
                                 'CurrentVector', realStimCopy);

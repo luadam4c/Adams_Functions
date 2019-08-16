@@ -4,7 +4,7 @@ function xolotlObject = xolotl_add_holding_current (xolotlObject, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       model_soplata;
+%       x = xolotl_create_model_soplata;
 %       x = xolotl_add_holding_current(x, 'Amp', 10);
 %       x.plot
 %

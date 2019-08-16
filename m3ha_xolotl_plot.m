@@ -73,6 +73,7 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 %       cd/compute_baseline_noise.m
 %       cd/compute_sweep_errors.m
 %       cd/count_samples.m
+%       cd/create_labels_from_numbers.m
 %       cd/create_time_vectors.m
 %       cd/find_in_strings.m
 %       cd/find_window_endpoints.m
@@ -96,8 +97,6 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 % 
 
 %% Hard-coded parameters
-compsToLabel = {'dend2', 'dend1', 'soma'};
-yLabels = {'Dendrite 2 (mV)', 'Dendrite 1 (mV)', 'Soma (mV)', 'Stim (nA)'};
 nSigFig = 3;
 xUnits = 'ms';
 
@@ -207,11 +206,29 @@ nCompartments = numel(compartments);
 % Count the number of vectors
 nTraces = nCompartments + 1;
 
+% Generate compartments to label
+if nCompartments > 1
+    dendStrs = create_labels_from_numbers((nCompartments - 1):-1:1, ...
+                                            'Prefix', 'dend');
+else
+    dendStrs = {};
+end
+compsToLabel = [dendStrs; {'soma'}];
+
 % Find the indices for compartments to label in xolotl
 idxInXolotl = ...
     cellfun(@(x) find_in_strings(x, compartments, 'IgnoreCase', true, ...
                                 'SearchMode', 'substrings', 'MaxNum', 1), ...
             compsToLabel);
+
+% Generate y axis labels for subplots
+if nCompartments > 1
+    dendLabels = create_labels_from_numbers((nCompartments - 1):-1:1, ...
+                                'Prefix', 'Dendrite ', 'Suffix', ' (mV)');
+else
+    dendLabels = {};
+end
+yLabels = [dendLabels; {'Soma (mV)'; 'Stim (nA)'}];
 
 %% Initialize a plot or retrieve plot
 % Retrieve handles from xolotl object
@@ -242,7 +259,7 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
 
     % Create NaN data for the initial plot
     nanVoltageData = NaN * tVec;
-    nanData = [nanVoltageData, nanVoltageData, nanVoltageData, iStim];
+    nanData = [repmat(nanVoltageData, 1, nCompartments), iStim];
 
     % Make a figure
     figHandle = ...
@@ -635,6 +652,8 @@ if ~isempty(holdingPotential)
 else
     holdingCurrent = 0;
 end
+
+nanData = [nanVoltageData, nanVoltageData, nanVoltageData, iStim];
 
 %}
 
