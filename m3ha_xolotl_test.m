@@ -3,6 +3,7 @@
 %
 % Requires:
 % TODO
+%       cd/archive_dependent_scripts.m
 %       cd/create_time_stamp.m
 %       cd/compute_sampling_interval.m
 %       cd/extract_columns.m
@@ -55,7 +56,7 @@ ipscStartOrig = 1000;   % time of IPSC application (ms), original
 ipscDur = 7000;         % duration of IPSC application (ms), for fitting
 
 % Parameters for simulations
-modelName = 'howard';   % 'm3ha' or 'soplata' or 'howard'
+modelName = 'm3ha';   % 'm3ha' or 'soplata' or 'howard'
 simMode = 'passive';    % 'passive' or 'active'
 passiveOnly = false;    % whether to include passive parameters only
 closedLoop = false;     % whether to use the final state as the initial
@@ -77,6 +78,7 @@ case 'active'
 end
 
 % Parameters for saving things
+archiveTopOnly = true;
 createImportLog = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -107,6 +109,11 @@ filePrefix = [create_time_stamp, '_', modelName, '_', simMode, '_', sweepName];
 % Create output model file name
 matFileName = [filePrefix, '_before_simulations.mat'];
 figName = [filePrefix, '_comparison.png'];
+if archiveTopOnly
+    archiveName = [filePrefix, '_dependent_scripts_toponly.zip'];
+else
+    archiveName = [filePrefix, '_dependent_scripts.zip'];
+end
 
 % Create full paths
 matFilePath = fullfile(outFolder, matFileName);
@@ -243,6 +250,11 @@ manip.Position(2) = manip.Position(2) - 200;
 
 % Displays a list of properties
 % properties(xolotl)
+
+archiveScripts = true;
+archive_dependent_scripts(mfilename, 'OutFolder', outFolder, ...
+                            'OutFileName', archiveName, ...
+                            'TopOnly', archiveTopOnly);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

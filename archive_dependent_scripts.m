@@ -17,6 +17,13 @@ function varargout = archive_dependent_scripts (mFileName, varargin)
 %       varargin    - 'OutFolder': directory to place archive file
 %                   must be a string scalar or a character vector
 %                   default == pwd
+%                   - 'OutFilePath': full path to archive file
+%                   must be a string scalar or a character vector
+%                   default == fullfile(outFolder, outFileName)
+%                   - 'OutFileName': name of archive file
+%                       Note: If provided, OutFilePath will override this
+%                   must be a string scalar or a character vector
+%                   default == [mFileName, '_dependent_files_', create_time_stamp]
 %                   - 'FileExt': file extension for the archive
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'zip'   - Windows zip
@@ -42,16 +49,17 @@ function varargout = archive_dependent_scripts (mFileName, varargin)
 % 
 
 %% Hard-coded parameters
-validFileExts = {'zip', 'tar', 'gz'};
+validFileExts = {'', 'zip', 'tar', 'gz'};
 
 % TODO: Make these optional arguments
-archiveFilePath = [];
 saveListFlag = true;
 printListFlag = false;
 
 %% Default values for optional arguments
 outFolderDefault = pwd;
-fileExtDefault = 'zip';
+outFilePathDefault = '';
+outFileNameDefault = '';
+fileExtDefault = '';            % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -75,35 +83,65 @@ addRequired(iP, 'mFileName', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'OutFilePath', outFilePathDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'OutFileName', outFileNameDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+
+
 addParameter(iP, 'FileExt', fileExtDefault, ...
     @(x) any(validatestring(x, validFileExts)));
 
 % Read from the Input Parser
 parse(iP, mFileName, varargin{:});
-fileExt = validatestring(iP.Results.FileExt, validFileExts);
 outFolder = iP.Results.OutFolder;
+outFilePath = iP.Results.OutFilePath;
+outFileName = iP.Results.OutFileName;
+fileExt = validatestring(iP.Results.FileExt, validFileExts);
 
 % Keep unmatched arguments for the all_dependent_functions() function
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % If the file extension for the archive is provided, extract it
-if ~isempty(archiveFilePath) && isempty(fileExt)
-    fileExt = extract_fileparts(archiveFilePath, 'ext');
+%   otherwise, set default
+if isempty(fileExt)
+    if ~isempty(outFilePath)
+        fileExt = extract_fileparts(outFilePath, 'ext');
+    elseif ~isempty(outFileName)
+        fileExt = extract_fileparts(outFileName, 'ext');
+    else
+        fileExt = 'zip';
+    end
+end
+
+% Remove the first '.' from extensions
+% TODO: Make this a function remove_string_start.m
+%   fileExt = remove_string_start(fileExt, '.');
+if regexp(fileExt, '^\.')
+    fileExt = extractAfter(fileExt, '.');
 end
 
 % Create a file path for the archive
-if isempty(archiveFilePath)
-    % Create a default file path
-    archiveFilePathBase = fullfile(outFolder, ...
-                            [mFileName, '_dependent_files_', create_time_stamp]);
+if isempty(outFilePath)
+    if ~isempty(outFileName)
+        % Extract just the file base
+        [~, outFileBase] = fileparts(outFileName);
+
+        % Create a default file path
+        outFilePathBase = fullfile(outFolder, outFileBase);
+    else
+        % Create a default file path
+        outFilePathBase = fullfile(outFolder, ...
+                        [mFileName, '_dependent_files_', create_time_stamp]);
+    end
 else
     % Extract just the part without the extension
-    archiveFilePathBase = extract_fileparts(archiveFilePath, 'pathbase');
+    outFilePathBase = extract_fileparts(outFilePath, 'pathbase');
 end
 
 % Create a temporary folder for copying files
-outFolderTemp = archiveFilePathBase;
+outFolderTemp = outFilePathBase;
 check_dir(outFolderTemp);
 
 %% Do the job
@@ -129,21 +167,21 @@ parfor iFile = 1:nFiles
 end
 
 % Archive the files in the temporary folder
-fprintf('Archiving files to %s ... \n', archiveFilePathBase);
+fprintf('Archiving files to %s ... \n', outFilePathBase);
 switch fileExt
     case 'zip'
-        zip(archiveFilePathBase, outFolderTemp);
+        zip(outFilePathBase, outFolderTemp);
     case 'gz'
         % Create a tar ball
-        tar(archiveFilePathBase, outFolderTemp);
+        tar(outFilePathBase, outFolderTemp);
 
         % Compress the tar ball
-        gzip([archiveFilePathBase, '.tar']);
+        gzip([outFilePathBase, '.tar']);
 
         % Delete the tar ball
-        delete([archiveFilePathBase, '.tar']);
+        delete([outFilePathBase, '.tar']);
     case 'tar'
-        tar(archiveFilePathBase, outFolderTemp);
+        tar(outFilePathBase, outFolderTemp);
     otherwise
         error('The archive file extension %s is unrecognized!', fileExt);
 end

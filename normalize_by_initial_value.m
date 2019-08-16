@@ -60,7 +60,7 @@ parse(iP, newValue, initValue, varargin{:});
 initValue = match_dimensions(initValue, size(newValue));
 
 %% Do the job
-if initValue = [];
+if isempty(initValue);
     initValue = newValue;
     normalizedValue = ones(size(newValue));
 else

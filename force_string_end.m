@@ -40,6 +40,7 @@ function newStr = force_string_end (oldStr, subStr, varargin)
 % 2019-06-03 Now escapes the metacharacter .
 % TODO: Escape all metacharacters for regexp
 % TODO: Deal with the case when substr is more than one character
+% TODO: force_string_start.m
 % 
 
 %% Hard-coded parameters
