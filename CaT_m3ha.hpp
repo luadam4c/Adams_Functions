@@ -9,8 +9,8 @@
 //      Alain Destexhe, Mike Neubig, Daniel Ulrich and John Huguenard
 //      https://www.jneurosci.org/content/18/10/3574.short
 
-#ifndef CAT
-#define CAT
+#ifndef CAT_M3HA
+#define CAT_M3HA
 #include "conductance.hpp"
 
 // Define constants (compatible with NEURON)

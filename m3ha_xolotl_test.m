@@ -57,8 +57,8 @@ ipscDur = 7000;         % duration of IPSC application (ms), for fitting
 
 % Parameters for simulations
 modelName = 'm3ha';   % 'm3ha' or 'soplata' or 'howard'
-simMode = 'active';    % 'passive' or 'active'
-passiveOnly = false;    % whether to include passive parameters only
+simMode = 'passive';    % 'passive' or 'active'
+passiveOnly = true; %false;    % whether to include passive parameters only
 closedLoop = false;     % whether to use the final state as the initial
                         %   condition for the next simulation
 solverOrder = 0;        % uses the implicit Crank-Nicholson scheme
@@ -159,6 +159,9 @@ timeStep = siMs;         % output time step in ms
 simTimeStep = siMs;      % simulation time step in ms
 
 %% Create the neuron
+% Purge all pre-compiled binaries
+xolotl.cleanup;
+
 % Create a xolotl object based on a parameters file
 %   Note: m3ha is a handle to the xolotl object
 switch modelName

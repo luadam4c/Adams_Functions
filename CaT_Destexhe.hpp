@@ -9,8 +9,8 @@
 // https://www.jneurosci.org/content/18/10/3574.short
 
 
-#ifndef CAT
-#define CAT
+#ifndef CAT_DESTEXHE
+#define CAT_DESTEXHE
 #include "conductance.hpp"
 
 //inherit conductance class spec
