@@ -1,5 +1,5 @@
 function varargout = xolotl_simulate (xolotlObject, varargin)
-%% Simulates a voltage clamp experiment
+%% Simulates and returns output
 % Usage: varargout = xolotl_simulate (xolotlObject, varargin)
 % Explanation:
 %       TODO

@@ -46,6 +46,7 @@ function varargout = archive_dependent_scripts (mFileName, varargin)
 
 % File History:
 % 2019-08-11 Created by Adam Lu
+% 2019-08-16 Added 'OutFilePath' and 'OutFileName' as optional arguments
 % 
 
 %% Hard-coded parameters

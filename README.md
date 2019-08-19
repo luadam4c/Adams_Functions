@@ -257,7 +257,7 @@ Last Updated 2019-08-16 by Adam Lu
 - [**m3ha_select_sweeps_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_sweeps_to_fit.m): Find file names and row indices in swpInfo that will be used for fitting
 - [**m3ha_specs_for_fitmode.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_specs_for_fitmode.m): Specifications depending on fitMode for the GAT blockade project
 - [**m3ha_xolotl_create_neuron.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_xolotl_create_neuron.m): Creates a xolotl object for a 3-compartment neuron based on a parameters table
-- [**m3ha_xolotl_plot.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_xolotl_plot.m): Plots the simulation results from a xolotl object
+- [**m3ha_xolotl_plot.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_xolotl_plot.m): Plots the simulation results from a xolotl object against recorded data
 - [**m3ha_xolotl_test.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_xolotl_test.m): m3ha_xolotl_test
 - [**make_loopedparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/make_loopedparams.m): Construct parameters to change for each trial from loopmode, pnames, pislog, pmin, pmax, pinc 
 - [**mat2sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/mat2sheet.m): Converts .mat files to a spreadsheet file(s) (type specified by the 'SheetType' argument)
@@ -378,10 +378,10 @@ Last Updated 2019-08-16 by Adam Lu
 - [**xolotl_add_voltage_clamp.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_voltage_clamp.m): Adds a voltage clamp to the first compartment of a xolotl object
 - [**xolotl_compartment_index.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_compartment_index.m): Returns the index of the compartment or the first compartment by default
 - [**xolotl_create_model_howard.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_create_model_howard.m): Creates a xolotl model based on Howard et al
-- [**xolotl_create_model_soplata.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_create_model_soplata.m): Creates a xolotl model based on Soplata et al
+- [**xolotl_create_model_soplata.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_create_model_soplata.m): function xolotlObject = xolotl_create_model_soplata
 - [**xolotl_estimate_holding_current.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_estimate_holding_current.m): Estimates the holding current necessary to match a certain holding potential
 - [**xolotl_set_simparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_set_simparams.m): Runs a simulation on a xolotl object
-- [**xolotl_simulate.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_simulate.m): Simulates a voltage clamp experiment
+- [**xolotl_simulate.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_simulate.m): Simulates and returns output
 - [**ZG_compute_IEI_thresholds.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_compute_IEI_thresholds.m): Compute all possible inter-event interval thresholds from the data within an all_output directory
 - [**ZG_extract_all_data.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_all_data.m): Extract each cell and concatenate sweeps into a single file under a subdirectory of its own
 - [**ZG_extract_all_IEIs.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_all_IEIs.m): Extract all the inter-event intervals from a directory containing multiple minEASE output subdirectories

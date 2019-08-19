@@ -1,5 +1,5 @@
 function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
-%% Plots the simulation results from a xolotl object
+%% Plots the simulation results from a xolotl object against recorded data
 % Usage: xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 % Explanation:
 %       TODO
@@ -78,7 +78,7 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 %       cd/find_in_strings.m
 %       cd/find_window_endpoints.m
 %       cd/force_row_vector.m
-%       cd/m3ha_plot_individual_traces.
+%       cd/m3ha_plot_individual_traces.m
 %       cd/parse_xolotl_object.m
 %
 % Used by:
@@ -216,19 +216,30 @@ end
 compsToLabel = [dendStrs; {'soma'}];
 
 % Find the indices for compartments to label in xolotl
-idxInXolotl = ...
-    cellfun(@(x) find_in_strings(x, compartments, 'IgnoreCase', true, ...
-                                'SearchMode', 'substrings', 'MaxNum', 1), ...
-            compsToLabel);
+if all(ismember(compsToLabel, compartments))
+    idxInXolotl = ...
+        cellfun(@(x) find_in_strings(x, compartments, 'IgnoreCase', true, ...
+                                    'SearchMode', 'substrings', 'MaxNum', 1), ...
+                compsToLabel);
+else
+    idxInXolotl = 1:numel(compartments);
+end
 
 % Generate y axis labels for subplots
-if nCompartments > 1
-    dendLabels = create_labels_from_numbers((nCompartments - 1):-1:1, ...
-                                'Prefix', 'Dendrite ', 'Suffix', ' (mV)');
+if all(ismember(compsToLabel, compartments))
+    if nCompartments > 1
+        dendLabels = create_labels_from_numbers((nCompartments - 1):-1:1, ...
+                                    'Prefix', 'Dendrite ', 'Suffix', ' (mV)');
+    else
+        dendLabels = {};
+    end
+    yLabels = [dendLabels; {'Soma (mV)'; 'Stim (nA)'}];
 else
-    dendLabels = {};
+    compLabels = create_labels_from_numbers(nCompartments:-1:1, ...
+                                'Prefix', 'Compartment #');
+
+    yLabels = [compLabels; {'Stim (nA)'}];
 end
-yLabels = [dendLabels; {'Soma (mV)'; 'Stim (nA)'}];
 
 %% Initialize a plot or retrieve plot
 % Retrieve handles from xolotl object

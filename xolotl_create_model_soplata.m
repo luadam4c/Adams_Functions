@@ -1,4 +1,4 @@
-function xolotlObject = xolotl_create_model_soplata
+%% function xolotlObject = xolotl_create_model_soplata
 %% Creates a xolotl model based on Soplata et al
 %
 % Used by:

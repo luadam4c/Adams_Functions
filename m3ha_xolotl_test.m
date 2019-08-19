@@ -57,7 +57,7 @@ ipscDur = 7000;         % duration of IPSC application (ms), for fitting
 
 % Parameters for simulations
 modelName = 'm3ha';   % 'm3ha' or 'soplata' or 'howard'
-simMode = 'passive';    % 'passive' or 'active'
+simMode = 'active';    % 'passive' or 'active'
 passiveOnly = false;    % whether to include passive parameters only
 closedLoop = false;     % whether to use the final state as the initial
                         %   condition for the next simulation
@@ -78,7 +78,10 @@ case 'active'
 end
 
 % Parameters for saving things
+archiveScripts = false; % true;
 archiveTopOnly = true;
+saveModel = false; % true;
+saveFigure = true;
 createImportLog = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -180,8 +183,7 @@ nCompartments = parsedParams.nCompartments;
 holdingPotential = match_dimensions(holdingPotential, [1, nCompartments]);
 
 % Create NaN data for dendrites
-nanData = nan(size(realVoltageData));
-nanDataDendrites = repmat(nanData, 1, nCompartments - 1);
+nanDataDendrites = nan(size(realVoltageData, 1), nCompartments - 1);
 
 % Put together as data to compare
 dataToCompare = [nanDataDendrites, realVoltageData, realStimCopy];
@@ -210,21 +212,26 @@ case 'active'
 end
 
 % Save the xolotl object before simulations
-save(matFilePath, 'm3ha');
+if saveModel
+    save(matFilePath, 'm3ha');
+end
 
 %% Simulate and plot
 % Simulate and use default plot
 % m3ha.plot;
 
 % Simulate and plot individual traces against data
-m3ha_xolotl_plot(m3ha, 'DataToCompare', dataToCompare, ...
+m3haAfter = ...
+    m3ha_xolotl_plot(m3ha, 'DataToCompare', dataToCompare, ...
                         'XLimits', xLimits, ...
                         'BaseWindow', baseWindow, 'FitWindow', fitWindow, ...
                         'FigTitle', figTitle, 'CompToPatch', compToPatch, ...
                         'TimeToStabilize', timeToStabilize, ...
                         'HoldingPotential', holdingPotential);
 
-saveas(gcf, figPath);
+if saveFigure
+    saveas(gcf, figPath);
+end
 
 %% Manipulate
 %{
@@ -251,10 +258,11 @@ manip.Position(2) = manip.Position(2) - 200;
 % Displays a list of properties
 % properties(xolotl)
 
-archiveScripts = true;
-archive_dependent_scripts(mfilename, 'OutFolder', outFolder, ...
-                            'OutFileName', archiveName, ...
-                            'TopOnly', archiveTopOnly);
+if archiveScripts
+    archive_dependent_scripts(mfilename, 'OutFolder', outFolder, ...
+                                'OutFileName', archiveName, ...
+                                'TopOnly', archiveTopOnly);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
