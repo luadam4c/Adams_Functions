@@ -24,7 +24,8 @@ function newStr = force_string_end (oldStr, subStr, varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %
-% Used by:    
+% Used by:
+%       cd/archive_dependent_scripts.m
 %       cd/create_simulation_output_filenames.m
 %       cd/run_neuron.m
 %       cd/match_format_vector_sets.m

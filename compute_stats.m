@@ -66,6 +66,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       cd/nanstderr.m
 %
 % Used by:
+%       cd/compute_statistical_power.m
 %       cd/parse_multiunit.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
@@ -85,6 +86,7 @@ function stats = compute_stats (vecs, statName, varargin)
 % 2019-05-12 Added 'zscore', 'range' and 'range2mean'
 % 2019-05-12 Added dim as an optional argument
 % 2019-08-07 Fixed 0.95 -> 0.96
+% 2019-08-20 Now always return NaN if empty
 % TODO: Combine with compute_weighted_average.m
 % 
 
@@ -237,7 +239,11 @@ if iscell(subVecs)
         end
     end
 else
-    stats = func(subVecs);
+    if isempty(subVecs)
+        stats = NaN;
+    else
+        stats = func(subVecs);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -40,6 +40,10 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %                   - 'RowInstead': whether to force as row vector instead
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'TreatVectorAsElement': whether to treat numeric vector
+%                                           as an element
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -50,6 +54,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/all_dependent_functions.m
 %       cd/combine_variables_across_tables.m
 %       cd/compute_rms_error.m
+%       cd/compute_statistical_power.m
 %       cd/construct_fullpath.m
 %       cd/create_average_time_vector.m
 %       cd/create_indices.m
@@ -89,6 +94,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %% Default values for optional arguments
 toLinearizeDefault = false;     % whether to linearize a nonvector cell array
 rowInsteadDefault = false;      % whether to force as row vector instead
+treatVectorAsElementDefault = true;    % treat vectors as element by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -110,11 +116,14 @@ addParameter(iP, 'ToLinearize', toLinearizeDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RowInstead', rowInsteadDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatVectorAsElement', treatVectorAsElementDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vectorsOrig, varargin{:});
 toLinearize = iP.Results.ToLinearize;
 rowInstead = iP.Results.RowInstead;
+treatVectorAsElement = iP.Results.TreatVectorAsElement;
 
 %% Do the job
 if isempty(vectorsOrig) || iscell(vectorsOrig) && ...
@@ -159,10 +168,14 @@ elseif ~iscell(vectorsOrig) || ...
         asRowVectors = false;
     end
 
-    % Extract as a cell array
-    vectorsCell = extract_columns(vectorsOrig, 'all', ...
-                            'OutputMode', 'single', 'TreatCellAsArray', true, ...
-                            'AsRowVectors', asRowVectors);
+    % Extract as a cell array or use num2cell
+    if treatVectorAsElement
+        vectorsCell = extract_columns(vectorsOrig, 'all', ...
+                                'OutputMode', 'single', 'TreatCellAsArray', true, ...
+                                'AsRowVectors', asRowVectors);
+    else
+        vectorsCell = num2cell(vectorsOrig);
+    end
 
     % Pass to this function again
     vectorsCell = force_column_cell(vectorsCell, 'ToLinearize', toLinearize, ...

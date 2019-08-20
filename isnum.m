@@ -15,6 +15,7 @@ function isNum = isnum (x, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/cell2num.m
 %       cd/compute_axis_limits.m
 %       cd/compute_combined_trace.m
 %       cd/force_column_cell.m

@@ -62,6 +62,7 @@ function nSamples = count_samples (vectors, varargin)
 %       cd/combine_data_from_same_slice.m
 %       cd/compute_combined_trace.m
 %       cd/compute_single_neuron_errors.m
+%       cd/compute_statistical_power.m
 %       cd/compute_sweep_errors.m
 %       cd/create_average_time_vector.m
 %       cd/create_indices.m

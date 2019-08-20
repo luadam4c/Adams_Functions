@@ -39,6 +39,7 @@ function varargout = archive_dependent_scripts (mFileName, varargin)
 %       cd/create_time_stamp.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_fileparts.m
+%       cd/force_string_end.m
 %       cd/struct2arglist.m
 %
 % Used by:
@@ -47,6 +48,7 @@ function varargout = archive_dependent_scripts (mFileName, varargin)
 % File History:
 % 2019-08-11 Created by Adam Lu
 % 2019-08-16 Added 'OutFilePath' and 'OutFileName' as optional arguments
+% 2019-08-20 Now returns appropriate error when .m file cannot be found
 % 
 
 %% Hard-coded parameters
@@ -88,8 +90,6 @@ addParameter(iP, 'OutFilePath', outFilePathDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFileName', outFileNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-
-
 addParameter(iP, 'FileExt', fileExtDefault, ...
     @(x) any(validatestring(x, validFileExts)));
 
@@ -104,6 +104,13 @@ fileExt = validatestring(iP.Results.FileExt, validFileExts);
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
+% If an empty file name is provided, return error
+if exist(mFileName) ~= 2
+    mFileName = force_string_end(mFileName, '.m');
+    fprintf('The file %s cannot be found!\n', mFileName);
+    return
+end
+
 % If the file extension for the archive is provided, extract it
 %   otherwise, set default
 if isempty(fileExt)
