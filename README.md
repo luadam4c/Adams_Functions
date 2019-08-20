@@ -15,7 +15,7 @@ git submodule add https://github.com/blabuva/Adams_Functions.git
 git submodule foreach git pull origin master
 ```
 
-There are 381 MATLAB scripts in this directory: 
+There are 1 MATLAB scripts in this directory: 
 - [**abf2mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/abf2mat.m): Converts .abf files to .mat files with time vector (in ms) included
 - [**addpath_custom.m**](https://github.com/blabuva/Adams_Functions/blob/master/addpath_custom.m): Add a folder to MATLAB path only if is not already on the path
 - [**adjust_peaks.m**](https://github.com/blabuva/Adams_Functions/blob/master/adjust_peaks.m): Adjusts peak indices and values given approximate peak indices
