@@ -48,6 +48,7 @@ function string = print_cellstr (cellStr, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/compute_sampsizepwr.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_parse_mat.m
 %       cd/m3ha_select_cells.m

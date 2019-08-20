@@ -13,6 +13,7 @@ function nSamples = count_samples (vectors, varargin)
 %       count_samples(rand(2, 3), 'CountMethod', 'length')
 %       count_samples(repmat({repmat({'sdf'}, 3, 1)}, 3, 1))
 %       count_samples(repmat({'sdf'}, 3, 4))
+%       count_samples(repmat({'sdf'}, 3, 4), 'TreatCellStrAsArray', false)
 % Outputs:
 %       nSamples    - number of samples for each vector
 %                   specified as a column vector 
@@ -62,7 +63,7 @@ function nSamples = count_samples (vectors, varargin)
 %       cd/combine_data_from_same_slice.m
 %       cd/compute_combined_trace.m
 %       cd/compute_single_neuron_errors.m
-%       cd/compute_statistical_power.m
+%       cd/compute_sampsizepwr.m
 %       cd/compute_sweep_errors.m
 %       cd/create_average_time_vector.m
 %       cd/create_indices.m

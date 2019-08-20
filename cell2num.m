@@ -21,7 +21,7 @@ function numArray = cell2num (cellArray, varargin)
 %       cd/isnum.m
 %
 % Used by:
-%       cd/compute_statistical_power.m
+%       cd/compute_sampsizepwr.m
 
 % File History:
 % 2019-08-20 Created by Adam Lu

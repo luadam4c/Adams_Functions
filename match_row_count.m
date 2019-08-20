@@ -32,7 +32,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %
 % Used by:
 %       cd/compute_single_neuron_errors.m
-%       cd/compute_statistical_power.m
+%       cd/compute_sampsizepwr.m
 %       cd/compute_sweep_errors.m
 %       cd/count_samples.m
 %       cd/m3ha_neuron_create_simulation_params.m

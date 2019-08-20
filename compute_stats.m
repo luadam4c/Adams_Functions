@@ -66,7 +66,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       cd/nanstderr.m
 %
 % Used by:
-%       cd/compute_statistical_power.m
+%       cd/compute_sampsizepwr.m
 %       cd/parse_multiunit.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
