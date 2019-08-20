@@ -28,7 +28,7 @@ function [allParsedParamsTable, allParsedDataTable, ...
 %                   - 'FileNames': names of .abf files to detect
 %                   must be a characeter vector, a string array 
 %                       or a cell array of character arrays
-%                   default == detect from pwd
+%                   default == detect from directory
 %                   - 'Verbose': whether to output parsed results
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -109,7 +109,7 @@ validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 %% Default values for optional arguments
 directoryDefault = pwd;             % look for .abf files in 
                                     %   the present working directory by default
-fileNamesDefault = {};              % detect from pwd by default
+fileNamesDefault = {};              % detect from directory by default
 verboseDefault = false;             % print to standard output by default
 saveMatFlagDefault = false;         % don't save parsed data by default
 saveSheetFlagDefault = true;        % save parsed params by default

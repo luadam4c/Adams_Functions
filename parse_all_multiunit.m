@@ -16,6 +16,10 @@ function [muParams, muData] = parse_all_multiunit(varargin)
 %       varargin    - 'Directory': working directory
 %                   must be a string scalar or a character vector
 %                   default == pwd
+%                   - 'SliceBases': names of slices to analyze
+%                   must be a characeter vector, a string array 
+%                       or a cell array of character arrays
+%                   default == detect from directory
 %                   - 'InFolder': directory to read files from
 %                   must be a string scalar or a character vector
 %                   default == same as directory
@@ -57,8 +61,7 @@ function [muParams, muData] = parse_all_multiunit(varargin)
 %% Hard-coded parameters
 % TODO
 saveMatFlag = true;
-
-matFileSuffix = '_multiunit_data';
+% TODO: matFileSuffix = '_multiunit_data';?
 varsNeeded = {'sliceBase', 'vVecsSl', 'siMsSl', 'iVecsSl', ...
                 'phaseBoundaries', 'phaseStrs'};
 regexpSliceMatFile = '.*slice[0-9]*.mat';
@@ -66,6 +69,7 @@ regexpSliceAbfFile = '.*slice[0-9]*.*.abf';
 
 %% Default values for optional arguments
 directoryDefault = pwd;
+sliceBasesDefault = {};                 % detect from directory by default
 inFolderDefault = '';                   % set later
 outFolderDefault = '';                  % set later
 plotMeasuresFlagDefault = false;
@@ -82,6 +86,8 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'SliceBases', sliceBasesDefault, ...
+    @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'InFolder', inFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
@@ -92,6 +98,7 @@ addParameter(iP, 'PlotMeasuresFlag', plotMeasuresFlagDefault, ...
 % Read from the Input Parser
 parse(iP, varargin{:});
 directory = iP.Results.Directory;
+sliceBases = iP.Results.SliceBases;
 inFolder = iP.Results.InFolder;
 outFolder = iP.Results.OutFolder;
 plotMeasuresFlag = iP.Results.PlotMeasuresFlag;
@@ -123,12 +130,14 @@ sliceBasesAbf = all_slice_bases('Directory', inFolder, ...
                                 'RegExpBase', '.*slice[0-9]*');
 
 
-% Either load .mat files or combine data from .abf files
+% Either combine data from .abf files or load .mat files
 if isempty(sliceBasesMat)
-    % Combine data from the same slice
+    % Combine data from the same slice possibly without saving 
+    %   the combined data as .mat files
     fprintf('Combining data for each slice ...\n');
     allDataTable = ...
         combine_data_from_same_slice('Directory', inFolder, ...
+                                    'SliceBase', sliceBases, ...
                                     'SaveMatFlag', saveMatFlag, ...
                                     'VarsToSave', varsNeeded);
 else
@@ -145,6 +154,11 @@ else
     [~, allMatPaths] = ...
         all_files('Directory', inFolder, 'RegExp', regexpSliceMatFile, ...
                     'SortBy', 'date', 'ForceCellOutput', true);
+
+    % Restricted to specific slices if provided
+    if ~isempty(sliceBases)
+        allMatPaths = allMatPaths(contains(allMatPaths, sliceBases));
+    end
 
     % Load data for each slice as a structure array
     fprintf('Loading data for each slice ...\n');

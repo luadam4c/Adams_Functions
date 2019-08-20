@@ -363,7 +363,7 @@ paramsSuffix = '_params.csv';
 resultsSuffix = '_parsed.mat';
 varsNeeded = {'sliceBase', 'vVecsSl', 'siMsSl', 'iVecsSl', ...
                 'phaseBoundaries', 'phaseStrs'};
-
+            
 %% Default values for optional arguments
 siMsDefault = 0.1;                      % 0.1 ms by default
 plotAllFlagDefault = false;

@@ -9,11 +9,14 @@
 % 2019-08-08 Adapted from clc2_analyze.m
 % 2019-08-12 Now runs archive_dependent_scripts.m
 % 2019-08-20 Changed parent directory to katieX
+% 2019-08-20 Added specificSlicesToAnalyze
 
 %% Hard-coded parameters
 parentDir = fullfile('/media', 'katieX', 'Glucose_Paper', 'Data', 'Oscillations','10mM_metformin');
 archiveDir = parentDir;
 dirsToAnalyze = {'all'};
+% specificSlicesToAnalyze = {};
+specificSlicesToAnalyze = {'20190819_slice1'};
 
 parseIndividualFlag = true;
 saveMatFlag = true;
@@ -89,6 +92,7 @@ for iDir = 1:numel(dirsToAnalyze)
     % Parse all slices in this directory
     if parseIndividualFlag
         parse_all_multiunit('Directory', dirThis, ...
+                'SliceBases', specificSlicesToAnalyze, ...
                 'SaveMatFlag', saveMatFlag, ...
                 'PlotRawFlag', plotRawFlag, ...
                 'PlotSpikeDetectionFlag', plotSpikeDetectionFlag, ...
