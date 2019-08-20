@@ -8,14 +8,14 @@
 % File History:
 % 2019-08-08 Adapted from clc2_analyze.m
 % 2019-08-12 Now runs archive_dependent_scripts.m
-% 2019-08-19 Added 
+% 2019-08-20 Changed parent directory to katieX
 
 %% Hard-coded parameters
-parentDir = fullfile('/media', 'adamX', 'Glucose', 'oscillations', 'metformin');
+parentDir = fullfile('/media', 'katieX', 'Glucose_Paper', 'Data', 'Oscillations','10mM_metformin');
 archiveDir = parentDir;
 dirsToAnalyze = {'all'};
 
-parseIndividualFlag = false; %true;
+parseIndividualFlag = true;
 saveMatFlag = true;
 plotRawFlag = false; %true;
 plotSpikeDetectionFlag = false; %true;
@@ -26,7 +26,7 @@ plotMeasuresFlag = false; %true;
 plotContourFlag = true;
 plotCombinedFlag = true;
 
-parsePopulationFlag = true;
+parsePopulationFlag = false; %true;
 plotAllMeasurePlotsFlag = false;
 plotChevronFlag = true;
 
@@ -157,6 +157,8 @@ archive_dependent_scripts(mfilename, 'OutFolder', archiveDir);
 
 %{
 OLD CODE:
+
+parentDir = fullfile('/media', 'adamX', 'Glucose', 'oscillations', 'metformin');
 
 %}
 

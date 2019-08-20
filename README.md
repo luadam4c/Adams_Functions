@@ -390,3 +390,12 @@ There are 1 MATLAB scripts in this directory:
 - [**xolotl_add_voltage_clamp.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_voltage_clamp.m): Adds a voltage clamp to the first compartment of a xolotl object
 - [**xolotl_compartment_index.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_compartment_index.m): Returns the index of the compartment or the first compartment by default
 - [**xolotl_create_model_howard.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_create_model_howard.m): Creates a xolotl model based on Howard et al
+- [**xolotl_create_model_soplata.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_create_model_soplata.m): Creates a xolotl model based on Soplata et al
+- [**xolotl_estimate_holding_current.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_estimate_holding_current.m): Estimates the holding current necessary to match a certain holding potential
+- [**xolotl_set_simparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_set_simparams.m): Runs a simulation on a xolotl object
+- [**xolotl_simulate.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_simulate.m): Simulates and returns output
+- [**ZG_compute_IEI_thresholds.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_compute_IEI_thresholds.m): Compute all possible inter-event interval thresholds from the data within an all_output directory
+- [**ZG_extract_all_data.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_all_data.m): Extract each cell and concatenate sweeps into a single file under a subdirectory of its own
+- [**ZG_extract_all_IEIs.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_all_IEIs.m): Extract all the inter-event intervals from a directory containing multiple minEASE output subdirectories
+- [**ZG_extract_IEI_thresholds.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_IEI_thresholds.m): Extract/compute inter-event-interval distribution thresholds, separating events from spikes
+- [**ZG_fit_IEI_distributions.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_fit_IEI_distributions.m): Fit inter-event-interval distributions and log distributions
