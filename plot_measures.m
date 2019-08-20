@@ -6,6 +6,7 @@ function plot_measures (varargin)
 % Example(s):
 %       plot_measures('PlotAll', true);
 %       plot_measures('PhaseNumbers', 1:2);
+%       plot_measures('SweepsRelToPhase2', -19:30);
 %       plot_measures('SweepNumbers', 1:50);
 % Arguments:
 %       varargin    - 'PlotType': type of plot
@@ -43,6 +44,10 @@ function plot_measures (varargin)
 %                   - 'PlotPopAverageFlag': whether to plot TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'RemoveOutliersInPlot': whether to remove outliers 
+%                                               in time series plots
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'Directory': working directory
 %                   must be a string scalar or a character vector
 %                   default == pwd
@@ -56,6 +61,10 @@ function plot_measures (varargin)
 %                   must be a numeric vector
 %                   default == []
 %                   - 'SweepNumbers': sweep numbers to restrict to
+%                   must be a numeric vector
+%                   default == []
+%                   - 'SweepsRelToPhase2': sweep numbers relative to phase 2
+%                                           to restrict to
 %                   must be a numeric vector
 %                   default == []
 %                   - 'NSweepsLastOfPhase': number of sweeps at 
@@ -129,6 +138,11 @@ function plot_measures (varargin)
 % 2019-08-07 Added 'SweepNumbers' as an optional argument
 %               to allow the restriction to certain sweep numbers
 % 2019-08-09 Now runs both T test and Wilcoxon signed-rank test for p-values
+% 2019-08-20 Added 'SweepsRelToPhase2' as an optional argument
+% 2019-08-20 Fixed population average computation to ignore NaNs
+% 2019-08-20 Added 'RemoveOutliersInPlot' as an optional argument
+% 2019-08-20 Now sets 'ReturnLastTrial' to be true for compute_phase_average 
+%               to avoid NaNs
 % TODO: Restrict to certain time windows 'TimeWindow'
 % TODO: Pull out many code to functions
 
@@ -168,11 +182,13 @@ plotNormalizedFlagDefault = [];
 plotByFileFlagDefault = [];
 plotByPhaseFlagDefault = [];
 plotPopAverageFlagDefault = [];
+removeOutliersInPlotDefault = true;
 directoryDefault = pwd;
 inFolderDefault = '';                   % set later
 outFolderDefault = '';                  % set later
 phaseNumbersDefault = [];
 sweepNumbersDefault = [];
+sweepsRelToPhase2Default = [];
 nSweepsLastOfPhaseDefault = 10;         % select from last 10 values by default
 nSweepsToAverageDefault = 5;            % select 5 values by default
 selectionMethodDefault = 'maxRange2Mean';   
@@ -221,6 +237,8 @@ addParameter(iP, 'PlotByPhaseFlag', plotByPhaseFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotPopAverageFlag', plotPopAverageFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RemoveOutliersInPlot', removeOutliersInPlotDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'InFolder', inFolderDefault, ...
@@ -230,6 +248,8 @@ addParameter(iP, 'OutFolder', outFolderDefault, ...
 addParameter(iP, 'PhaseNumbers', phaseNumbersDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'SweepNumbers', sweepNumbersDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'SweepsRelToPhase2', sweepsRelToPhase2Default, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'NSweepsLastOfPhase', nSweepsLastOfPhaseDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
@@ -271,11 +291,13 @@ plotNormalizedFlag = iP.Results.PlotNormalizedFlag;
 plotByFileFlag = iP.Results.PlotByFileFlag;
 plotByPhaseFlag = iP.Results.PlotByPhaseFlag;
 plotPopAverageFlag = iP.Results.PlotPopAverageFlag;
+removeOutliersInPlot = iP.Results.RemoveOutliersInPlot;
 directory = iP.Results.Directory;
 inFolder = iP.Results.InFolder;
 outFolder = iP.Results.OutFolder;
 phaseNumbers = iP.Results.PhaseNumbers;
 sweepNumbers = iP.Results.SweepNumbers;
+sweepsRelToPhase2 = iP.Results.SweepsRelToPhase2;
 nSweepsLastOfPhase = iP.Results.NSweepsLastOfPhase;
 nSweepsToAverage = iP.Results.NSweepsToAverage;
 selectionMethod = validatestring(iP.Results.SelectionMethod, ...
@@ -349,6 +371,13 @@ if ~isempty(sweepNumbers)
     % Append the phase numbers to the prefix
     prefix = [prefix, '_sweeps', sweepNumbersString];
 end
+if ~isempty(sweepsRelToPhase2)
+    % Create a sweep number string
+    sweepsRelToPhase2String = create_label_from_sequence(sweepsRelToPhase2);
+
+    % Append the phase numbers to the prefix
+    prefix = [prefix, '_sweeps', sweepsRelToPhase2String, 'relToPhase2'];
+end
 
 % Extract the distinct parts of the file names
 fileLabels = extract_fileparts(sliceParamSheets, 'distinct');
@@ -408,6 +437,14 @@ if ~isempty(sweepNumbers)
     fprintf('Restricting to sweeps %s ...\n', sweepNumbersString);
     sliceParamsTables = ...
         cellfun(@(x) x(ismember(x.sweepNumber, sweepNumbers), :), ...
+                sliceParamsTables, 'UniformOutput', false);
+end
+if ~isempty(sweepsRelToPhase2)
+    fprintf('Restricting to sweeps %s relative to phase 2 ...\n', ...
+            sweepsRelToPhase2String);
+
+    sliceParamsTables = ... 
+        cellfun(@(x) restrict_to_relative_sweeps(x, sweepsRelToPhase2, 2), ...
                 sliceParamsTables, 'UniformOutput', false);
 end
 
@@ -529,7 +566,7 @@ if plotByFileFlag
                                     'VariableNames', strcat(y, '_', fileLabels), ...
                                     'ReadoutLabel', z, 'TableLabel', w, ...
                                     'PLabel', timeLabel, 'FigName', v, ...
-                                    'RemoveOutliers', false), ...
+                                    'RemoveOutliers', removeOutliersInPlot), ...
                     measureTimeTables, varsToPlot, varLabels, tableLabels, figNames);
 end
 
@@ -545,7 +582,7 @@ if plotByPhaseFlag
                                     'ReadoutLimits', [0, Inf], ...
                                     'ReadoutLabel', z, 'TableLabel', w, ...
                                     'PLabel', timeLabel, 'FigName', v, ...
-                                    'RemoveOutliers', false), ...
+                                    'RemoveOutliers', removeOutliersInPlot), ...
             measureTimeTables, varsToPlot, varLabels, tableLabels, figNamesByPhase);
 
     %                                 'PhaseLabels', phaseStrs, ...
@@ -650,6 +687,7 @@ phaseNumber = transpose(1:maxNPhases);
 %    the last nSweepsLastOfPhase sweeps of each phase
 readoutAvg = ...
     cellfun(@(x, y) cellfun(@(z) compute_phase_average(inTable{:, x}, ...
+                                        'ReturnLastTrial', true, ...
                                         'Indices', z, ...
                                         'NToAverage', nSweepsToAverage, ...
                                         'SelectionMethod', selectionMethod, ...
@@ -728,7 +766,7 @@ popData = inTimeTable{:, columnsToAverage};
 
 % Compute the means and bounds of 95% confidence intervals
 [means, lower95s, upper95s] = ...
-    argfun(@(x) compute_stats(popData, x, 2), ...
+    argfun(@(x) compute_stats(popData, x, 2, 'IgnoreNan', true), ...
             'mean', 'lower95', 'upper95');
 
 % Save the row times from inTable
@@ -747,6 +785,27 @@ outTable = renamevars(outTable, 'rowTimes', 'Time');
 
 % Save the table
 writetable(outTable, sheetPath);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function paramsTable = restrict_to_relative_sweeps (paramsTable, ...
+                                        relativeSweepNums, phaseNumber)
+
+% Extract from the parameters table
+phaseNumbers = paramsTable.phaseNumber;
+sweepNumbers = paramsTable.sweepNumber;
+
+% Find the index of the last sweep from the previous phase
+idxLastSweepPrevPhase = find(phaseNumbers < phaseNumber, 1, 'last');
+if isempty(idxLastSweepPrevPhase)
+    idxLastSweepPrevPhase = 0;
+end
+
+% Shift the relative sweep numbers to the original
+sweepNumbersToRestrictTo = idxLastSweepPrevPhase + relativeSweepNums;
+
+% Restrict to those sweeps
+paramsTable = paramsTable(ismember(sweepNumbers, sweepNumbersToRestrictTo), :);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

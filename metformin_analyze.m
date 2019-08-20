@@ -10,15 +10,16 @@
 % 2019-08-12 Now runs archive_dependent_scripts.m
 % 2019-08-20 Changed parent directory to katieX
 % 2019-08-20 Added specificSlicesToAnalyze
+% 2019-08-20 Now uses sweepsRelToPhase2
 
 %% Hard-coded parameters
 parentDir = fullfile('/media', 'katieX', 'Glucose_Paper', 'Data', 'Oscillations','10mM_metformin');
 archiveDir = parentDir;
 dirsToAnalyze = {'all'};
-% specificSlicesToAnalyze = {};
-specificSlicesToAnalyze = {'20190819_slice1'};
+specificSlicesToAnalyze = {};
+% specificSlicesToAnalyze = {'20190819_slice1'};
 
-parseIndividualFlag = true;
+parseIndividualFlag = false; %true;
 saveMatFlag = true;
 plotRawFlag = false; %true;
 plotSpikeDetectionFlag = false; %true;
@@ -29,9 +30,15 @@ plotMeasuresFlag = false; %true;
 plotContourFlag = true;
 plotCombinedFlag = true;
 
-parsePopulationFlag = false; %true;
-plotAllMeasurePlotsFlag = false;
-plotChevronFlag = true;
+parsePopulationAllFlag = false; %true;
+parsePopulationRestrictedFlag = true;
+plotAllMeasurePlotsFlag = false; %true;
+plotChevronFlag = false; %true;
+plotByFileFlag = true;
+plotByPhaseFlag = true;
+plotPopAverageFlag = true;
+
+archiveScriptsFlag = false; %true;
 
 % For compute_default_signal2noise.m
 relSnrThres2Max = 0.1;
@@ -57,7 +64,7 @@ filterWidthMs = 100;
 minRelProm = 0.02;
 
 % For compute_phase_average.m & plot_measures.m
-lastSweepToMeasure = 45;        % select between 15-25 min
+sweepsRelToPhase2 = -9:30;      % select between -10 & 30 min
 nSweepsLastOfPhase = 10;        % select from last 10 values of each phase
 nSweepsToAverage = 10; %5;          % select 10 values to average
 selectionMethod = 'notNaN'; %'maxRange2Mean'    % average all values that are not NaNs
@@ -118,11 +125,15 @@ for iDir = 1:numel(dirsToAnalyze)
                 'MaxRange2Mean', maxRange2Mean);
     end
     
-    if parsePopulationFlag
+    if parsePopulationAllFlag
         % Plot measures for all phases
         plot_measures('Directory', dirThis, ...
                         'PlotAll', plotAllMeasurePlotsFlag, ...
                         'PlotChevronFlag', plotChevronFlag, ...
+                        'PlotByFileFlag', plotByFileFlag, ...
+                        'PlotByPhaseFlag', plotByPhaseFlag, ...
+                        'PlotPopAverageFlag', plotPopAverageFlag, ...
+                        'RemoveOutliersInPlot', false, ...
                         'NSweepsLastOfPhase', nSweepsLastOfPhase, ...
                         'NSweepsToAverage', nSweepsToAverage, ...
                         'SelectionMethod', 'notNaN', ...
@@ -134,12 +145,18 @@ for iDir = 1:numel(dirsToAnalyze)
                         'PhaseStrings', phaseStrings, ...
                         'VarsToPlot', varsToPlot, ...
                         'VarLabels', varLabels);
+    end
 
+    if parsePopulationRestrictedFlag
         % Plot measures for sweeps 1-lastSweepToMeasure only
-        plot_measures('SweepNumbers', 1:lastSweepToMeasure, ...
+        plot_measures('Directory', dirThis, ...
+                        'SweepsRelToPhase2', sweepsRelToPhase2, ...
                         'PlotAll', plotAllMeasurePlotsFlag, ...
                         'PlotChevronFlag', plotChevronFlag, ...
-                        'Directory', dirThis, ...
+                        'PlotByFileFlag', plotByFileFlag, ...
+                        'PlotByPhaseFlag', plotByPhaseFlag, ...
+                        'PlotPopAverageFlag', plotPopAverageFlag, ...
+                        'RemoveOutliersInPlot', true, ...
                         'NSweepsLastOfPhase', nSweepsLastOfPhase, ...
                         'NSweepsToAverage', nSweepsToAverage, ...
                         'SelectionMethod', 'notNaN', ...
@@ -155,7 +172,9 @@ for iDir = 1:numel(dirsToAnalyze)
 end
 
 % Archive all scripts for this run
-archive_dependent_scripts(mfilename, 'OutFolder', archiveDir);
+if archiveScriptsFlag
+    archive_dependent_scripts(mfilename, 'OutFolder', archiveDir);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -163,6 +182,7 @@ archive_dependent_scripts(mfilename, 'OutFolder', archiveDir);
 OLD CODE:
 
 parentDir = fullfile('/media', 'adamX', 'Glucose', 'oscillations', 'metformin');
+lastSweepToMeasure = 45;        % select between sweeps 1:45
 
 %}
 
