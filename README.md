@@ -82,6 +82,7 @@ There are 1 MATLAB scripts in this directory:
 - [**compute_gpas.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_gpas.m): Computes the passive conductance (gpas, in S/cm^2) from input resistance and surface area
 - [**compute_grouped_histcounts.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_grouped_histcounts.m): Computes bin counts and edges from grouped data
 - [**compute_IMax_GHK.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_IMax_GHK.m): Computes the maximum current [mA/cm^2] using the GHK current equation
+- [**compute_index_boundaries.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_index_boundaries.m): Computes boundary values for indices of different groups
 - [**compute_initial_slopes.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_initial_slopes.m): Computes the average initial slope from a current pulse response
 - [**compute_maximum_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_maximum_trace.m): Computes the maximum of traces that are not necessarily the same length
 - [**compute_minimum_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_minimum_trace.m): Computes the minimum of traces that are not necessarily the same length
@@ -114,6 +115,7 @@ There are 1 MATLAB scripts in this directory:
 - [**convert_to_samples.m**](https://github.com/blabuva/Adams_Functions/blob/master/convert_to_samples.m): Converts time(s) from a time unit to samples based on a sampling interval in the same time unit
 - [**copyvars.m**](https://github.com/blabuva/Adams_Functions/blob/master/copyvars.m): Copies variable 1 of a table to variable 2 of the same table
 - [**correct_unbalanced_bridge.m**](https://github.com/blabuva/Adams_Functions/blob/master/correct_unbalanced_bridge.m): Shifts a current pulse response to correct the unbalanced bridge
+- [**count_A_each_C.m**](https://github.com/blabuva/Adams_Functions/blob/master/count_A_each_C.m): Counts the number of (A)s in each (C) based on the number of (A)s in each (B) and the number of (B)s in each (C)
 - [**count_samples.m**](https://github.com/blabuva/Adams_Functions/blob/master/count_samples.m): Counts the number of samples whether given an array or a cell array
 - [**count_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/count_vectors.m): Counts the number of vectors whether given an array or a cell array
 - [**create_average_time_vector.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_average_time_vector.m): Creates an average time vector from a set of time vectors
@@ -378,6 +380,7 @@ There are 1 MATLAB scripts in this directory:
 - [**transform_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/transform_vectors.m): Transform vectors by a binary operation
 - [**transpose_table.m**](https://github.com/blabuva/Adams_Functions/blob/master/transpose_table.m): Transposes a table (make row names variable names and vice versa)
 - [**unique_custom.m**](https://github.com/blabuva/Adams_Functions/blob/master/unique_custom.m): Returns the unique values in x, optionally without NaN
+- [**unique_groups.m**](https://github.com/blabuva/Adams_Functions/blob/master/unique_groups.m): Retrieves the unique groups and counts the number in each group
 - [**update_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/update_params.m): Update dependent parameters for particular experiments
 - [**update_param_values.m**](https://github.com/blabuva/Adams_Functions/blob/master/update_param_values.m): Updates a parameters table with new values
 - [**validate_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/validate_string.m): Validate whether a string is an element of a cell array of valid strings

@@ -35,9 +35,11 @@ function allData = combine_data_from_same_slice (varargin)
 %       cd/all_files.m
 %       cd/all_slice_bases.m
 %       cd/argfun.m
-%       cd/create_error_for_nargin.m
+%       cd/compute_index_boundaries.m
+%       cd/count_A_each_C.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
+%       cd/create_error_for_nargin.m
 %       cd/extract_fileparts.m
 %       cd/force_matrix.m
 %       cd/istext.m
@@ -52,6 +54,8 @@ function allData = combine_data_from_same_slice (varargin)
 % 2019-07-24 Made 'Directory', 'InFolder', 'SaveMatFlag', 'VarsToSave'
 %               optional arguments
 % 2019-07-24 Added 'SliceName' as an optional argument
+% 2019-08-21 Now uses count_A_each_C.m
+% 2019-08-21 Now uses compute_index_boundaries.m
 
 %% Default values for optional arguments
 directoryDefault = pwd;
@@ -210,17 +214,18 @@ indEachPhase = cellfun(@(x) find_in_strings(x, allFileNames), ...
 % Put them all together
 sortOrder = vertcat(indEachPhase{:});
 
-% Reorder data
-[siMs, vVecs, iVecs] = argfun(@(x) x(sortOrder), siMs, vVecs, iVecs);
+% Reorder data so that the order matches that of phaseStrs
+[siMsSorted, vVecsSorted, iVecsSorted] = ...
+    argfun(@(x) x(sortOrder), siMs, vVecs, iVecs);
 
 %% Combine the data
 % Compute the new siMs
-siMsSl = mean(siMs);
+siMsSl = mean(siMsSorted);
 
 % Concatenate vectors
 % TODO: Fix force_matrix
-% [vVecsSl, iVecsSl] = argfun(@force_matrix, vVecs, iVecs);
-[vVecsSl, iVecsSl] = argfun(@(x) horzcat(x{:}), vVecs, iVecs);
+% [vVecsSl, iVecsSl] = argfun(@force_matrix, vVecsSorted, iVecsSorted);
+[vVecsSl, iVecsSl] = argfun(@(x) horzcat(x{:}), vVecsSorted, iVecsSorted);
 
 %% Create phase boundaries
 % Count the number of phase boundaries
@@ -230,27 +235,17 @@ nBoundaries = nPhases - 1;
 if nBoundaries == 0
     phaseBoundaries = [];
 else
+    % Count the number of sweeps in each file
+    nSweepsEachFile = cellfun(@count_vectors, vVecsSorted);
+
     % Count the number of files for each phase
     nFilesEachPhase = cellfun(@count_samples, indEachPhase);
 
-    % Get the index of the last file for each phase
-    iFileLastEachPhase = cumsum(nFilesEachPhase);
-
-    % Get the index of the first file for each phase
-    iFileFirstEachPhase = iFileLastEachPhase - nFilesEachPhase + 1;
-
-    % Count the number of sweeps in each file
-    nSweepsEachFile = cellfun(@count_vectors, vVecs);
-
     % Count the number of sweeps in each phase
-    nSweepsEachPhase = arrayfun(@(x, y) sum(nSweepsEachFile(x:y)), ...
-                            iFileFirstEachPhase, iFileLastEachPhase);
-
-    % Get the index of the last sweep for each phase
-    iFileLastEachPhase = cumsum(nSweepsEachPhase);
+    nSweepsEachPhase = count_A_each_C(nSweepsEachFile, nFilesEachPhase);
 
     % Compute the phase boundaries
-    phaseBoundaries = iFileLastEachPhase(1:nBoundaries) + 0.5;
+    phaseBoundaries = compute_index_boundaries('NEachGroup', nSweepsEachPhase);
 end
 
 %% Save to a matfile if requested

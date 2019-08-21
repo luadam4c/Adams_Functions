@@ -45,6 +45,7 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %       cd/extract_subvectors.m
 %       cd/plot_measures.m
 %       cd/plot_tuning_curve.m
+%       cd/unique_groups.m
 
 % File History:
 % 2019-04-01 BT - Adapted from https://www.mathworks.com/matlabcentral/

@@ -69,6 +69,7 @@ function figs = plot_table (table, varargin)
 %       cd/extract_common_prefix.m
 %       cd/extract_fileparts.m
 %       cd/plot_struct.m
+%       cd/plot_tuning_curve.m
 %       cd/struct2arglist.m
 %       ~/Downloaded_Functions/rgb.m
 %
@@ -384,7 +385,7 @@ else
     % Plot a tuning curve
     switch plotType
         case 'tuning'
-            figs = plot_tuning_curve(xValues, myArray, 'FigName', figName, ...
+            handles = plot_tuning_curve(xValues, myArray, 'FigName', figName, ...
                             'PhaseVectors', phaseVectors, ...
                             'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
                             'PLabel', pLabel, ...
@@ -395,6 +396,7 @@ else
                             'MarkerEdgeColor', markerEdgeColor, ...
                             'MarkerFaceColor', markerFaceColor, ...
                             otherArguments{:});
+            figs = handles.fig;
         case 'bar'
             % TODO
         otherwise

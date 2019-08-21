@@ -1,6 +1,6 @@
-function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargin)
+function handles = plot_tuning_curve (pValues, readout, varargin)
 %% Plot 1-dimensional tuning curve(s), can include confidence intervals or test p values
-% Usage: [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargin)
+% Usage: handles = plot_tuning_curve (pValues, readout, varargin)
 % Explanation:
 %       TODO
 % Examples:
@@ -19,12 +19,12 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %       plot_tuning_curve(pValue, readoutAll, 'UpperCI', upperCIAll, 'LowerCI', lowerCIAll, 'ColorMap', hsv(2));
 %
 % Outputs:
-%       fig         - figure handle for the created figure
-%                   specified as a figure object handle
-%       lines       - lines for the tuning curves
-%                   specified as a line object handle array
-%       boundaries  - boundary lines
-%                   specified as a line object handle array
+%       handles     - handles structure with fields:
+%                       fig         - figure handle for the created figure
+%                       curves      - tuning curves
+%                       confInts    - confidence interval areas
+%                       boundaries  - boundary lines
+%                   specified as a scalar structure
 % Arguments:
 %       pValues     - column vector of parameter values
 %                   must be a numeric vector
@@ -91,6 +91,9 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %                   must be a scalartext 
 %                       or a cell array of strings or character vectors
 %                   default == {'Phase #1', 'Phase #2', ...}
+%                   - 'ColorByPhase': whether to color by phase
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'ColorMap' - color map used when nColumnsToPlot > 1
 %                   must be a 2-D numeric array with 3 columns
 %                   default == jet(nColumnsToPlot) or 
@@ -108,11 +111,16 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %                   default == 'suppress' if nTraces == 1 
 %                               'northeast' if nTraces is 2~9
 %                               'eastoutside' if nTraces is 10+
+%                   - 'PlotPhaseBoundaries': whether to plot phase boundaries
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true if PhaseVectors provided, false otherwise
 %                   - 'PBoundaries': parameter boundary values
-%                   must be a numeric vector
+%                       Note: each row is a set of boundaries
+%                   must be a numeric array
 %                   default == []
 %                   - 'RBoundaries': readout boundary values
-%                   must be a numeric vector
+%                       Note: each row is a set of boundaries
+%                   must be a numeric array
 %                   default == []
 %                   - 'IndSelected': selected indices to mark differently
 %                   must be a numeric vector
@@ -154,11 +162,16 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 %       cd/plot_vertical_line.m
 %       cd/remove_outliers.m
 %       cd/save_all_figtypes.m
+%       cd/set_default_flag.m
 %       cd/unique_custom.m
 %
 % Used by:
+%       cd/plot_measures.m
 %       cd/plot_struct.m
+%       cd/plot_table.m
+%       ~/Matts_Functions/contour_plot.m
 %       ~/Marks_Functions/Adam/CLC2/markCLC2figures.m
+%       ~/Marks_Functions/Katie/twoDGtimeSeries.m
 %       /media/adamX/RTCl/tuning_curves.m
 
 % 2017-04-17 Moved from tuning_curves.m
@@ -187,7 +200,7 @@ function [fig, lines, boundaries] = plot_tuning_curve (pValues, readout, varargi
 % 2019-08-09 Combined SingleColor with ColorMap
 % 2019-08-09 Fixed confidence interval plots for matrices
 % 2019-08-09 Added 'IndSelected' as an optional argument
-% TODO: Return handles to plots
+% 2019-08-21 Now outputs a handles structure
 %
 
 %% Hard-coded constants
@@ -218,9 +231,11 @@ pLabelDefault = 'Parameter';
 readoutLabelDefault = 'Readout';
 columnLabelsDefault = '';           % set later
 phaseLabelsDefault = '';            % set later
+colorByPhaseDefault = false;        % don't color by phase by default
 colorMapDefault = [];               % set later
 confIntColorDefault = [];           % light gray confidence intervals by default
 legendLocationDefault = 'auto';     % set later
+plotPhaseBoundariesDefault = [];    % set later
 pBoundariesDefault = [];
 rBoundariesDefault = [];
 indSelectedDefault = [];
@@ -295,12 +310,16 @@ addParameter(iP, 'ColumnLabels', columnLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'PhaseLabels', phaseLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'ColorByPhase', colorByPhaseDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ColorMap', colorMapDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d', 'ncols', 3}));
 addParameter(iP, 'ConfIntColor', confIntColorDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d', 'numel', 3}));
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
+addParameter(iP, 'PlotPhaseBoundaries', plotPhaseBoundariesDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PBoundaries', pBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'RBoundaries', rBoundariesDefault, ...
@@ -341,10 +360,12 @@ pLabel = iP.Results.PLabel;
 readoutLabel = iP.Results.ReadoutLabel;
 columnLabels = iP.Results.ColumnLabels;
 phaseLabels = iP.Results.PhaseLabels;
+colorByPhase = iP.Results.ColorByPhase;
 colorMap = iP.Results.ColorMap;
 confIntColor = iP.Results.ConfIntColor;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
+plotPhaseBoundaries = iP.Results.PlotPhaseBoundaries;
 pBoundaries = iP.Results.PBoundaries;
 rBoundaries = iP.Results.RBoundaries;
 indSelected = iP.Results.IndSelected;
@@ -367,11 +388,18 @@ if ~isempty(pTicks) && ~isempty(pTickLabels) && ...
 end
 
 %% Prepare for tuning curve
+% Initialize a handles structure
+handles = struct;
+
 % Count number of entries
 nEntries = length(pValues);
 
 % Count number of columns
 nCols = size(readout, 2);
+
+% Decide whether to plot phase boundaries
+plotPhaseBoundaries = ...
+    set_default_flag(plotPhaseBoundaries, ~isempty(phaseVectors));
 
 % Deal with phase vectors
 if ~isempty(phaseVectors)
@@ -397,7 +425,23 @@ if ~isempty(phaseVectors)
         phaseLabels = create_labels_from_numbers(1:maxNPhases, ...
                                                 'Prefix', 'Phase #');
     end
+
+    % Generate phase boundaries to be plotted if requested
+    % TODO: what if the old pBoundaries is 2-dimensional?
+    if plotPhaseBoundaries
+        phaseBoundaries = 
+
+        pBoundaries = [pBoundaries, ];
+    end
 else
+    if colorByPhase
+        fprintf('Phase vectors must be provided if to color by phase!\n');
+        return
+    end
+    if plotPhaseBoundaries
+        fprintf('Phase vectors must be provided if to plot phase boundaries!\n');
+        return
+    end
     uniquePhases = {};
     nPhases = [];
     maxNPhases = 1;
@@ -490,14 +534,14 @@ nColumnsToPlot = length(columnsToPlot);
 
 % Decide on the color map to use
 if isempty(colorMap)
-    if isempty(phaseVectors)
+    if colorByPhase
+        colorMap = colormap(hsv(maxNPhases));
+    else
         if nColumnsToPlot == 1
             colorMap = rgb('SkyBlue');
         else
             colorMap = colormap(jet(nColumnsToPlot));
         end
-    else
-        colorMap = colormap(hsv(maxNPhases));
     end
 end
 
@@ -505,14 +549,6 @@ end
 if isempty(confIntColor)
     % Color of the confidence interval
     confIntColor = WHITE - (WHITE - colorMap) * fadePercentage;
-end
-
-% Decide on the figure to plot on
-fig = decide_on_fighandle('FigHandle', figHandle, 'FigNumber', figNumber);
-
-% Clear figure if requested
-if clearFigure
-    clf;
 end
 
 % Set the default parameter tick angle
@@ -533,24 +569,31 @@ if isempty(pTickAngle)
 end
 
 %% Plot tuning curve
+% Decide on the figure to plot on
+fig = decide_on_fighandle('FigHandle', figHandle, 'FigNumber', figNumber);
+
+% Initialize graphics objects
+curves = gobjects(nColumnsToPlot, maxNPhases);
+confInts = gobjects(nColumnsToPlot, maxNPhases);
+
+% Clear figure if requested
+if clearFigure
+    clf;
+end
+
 % Hold on if more than one column
 if nColumnsToPlot > 1
     hold on
 end
 
 % Plot readout values against parameter values
-lines = gobjects(nColumnsToPlot, maxNPhases);
-confInts = gobjects(nColumnsToPlot, maxNPhases);
 for iPlot = 1:nColumnsToPlot
     % Get the column to plot
     col = columnsToPlot(iPlot);
     readoutThis = readout(:, col);
 
     % Plot the tuning curve for this column
-    if isempty(phaseVectors)
-        lines(iPlot, 1) = plot_one_line(pIsLog, pValues, readoutThis, ...
-                                        lineSpec, lineWidth, otherArguments);
-    else
+    if colorByPhase
         hold on;
         
         % Get the current phase vector
@@ -570,9 +613,12 @@ for iPlot = 1:nColumnsToPlot
                                 phaseIndices, 'UniformOutput', false);
 
         % Plot readout vector for all phases
-        lines(iPlot, 1:nPhasesThis) = ...
+        curves(iPlot, 1:nPhasesThis) = ...
             cellfun(@(x) plot_one_line(pIsLog, pValues(x), readout(x, col), ...
                         lineSpec, lineWidth, otherArguments), phaseIndices);
+    else
+        curves(iPlot, 1) = plot_one_line(pIsLog, pValues, readoutThis, ...
+                                        lineSpec, lineWidth, otherArguments);
     end
 
     % If provided, plot a confidence interval for this column
@@ -603,7 +649,7 @@ for iPlot = 1:nColumnsToPlot
             minY = apply_iteratively(@min, {yLimits, readoutLimits});
 
             % Remove tuning curve
-            delete(lines(iPlot, 1));
+            delete(curves(iPlot, 1));
 
             % The x and y values for the confidence intervals
             confIntXValues = [pValues; flipud(pValues)];
@@ -615,7 +661,7 @@ for iPlot = 1:nColumnsToPlot
                                 confIntColor(iPlot, :), 'LineStyle', 'none');
 
             % Plot tuning curve again
-            lines(iPlot, 1) = plot_one_line(pIsLog, pValues, readoutThis, ...
+            curves(iPlot, 1) = plot_one_line(pIsLog, pValues, readoutThis, ...
                                         lineSpec, lineWidth, otherArguments);
 
             % Display tick marks and grid lines over graphics objects.
@@ -626,23 +672,23 @@ for iPlot = 1:nColumnsToPlot
     % Set color
     if isempty(phaseVectors)
         % Set color by columns
-        set(lines(iPlot, 1), 'Color', colorMap(iPlot, :));
+        set(curves(iPlot, 1), 'Color', colorMap(iPlot, :));
     else
         % Set color by phase
         for iPhase = 1:nPhasesThis
-            set(lines(iPlot, iPhase), 'Color', colorMap(iPhase, :));
+            set(curves(iPlot, iPhase), 'Color', colorMap(iPhase, :));
         end
     end
 
     % Set display name
     if isempty(phaseVectors) || isempty(phaseLabels)
         if ~strcmpi(columnLabels, 'suppress')
-            set(lines(iPlot, 1), 'DisplayName', ...
+            set(curves(iPlot, 1), 'DisplayName', ...
                 replace(columnLabels{col}, '_', '\_'));
         end
     else
         for iPhase = 1:nPhasesThis
-            set(lines(iPlot, iPhase), 'DisplayName', ...
+            set(curves(iPlot, iPhase), 'DisplayName', ...
                 replace(phaseLabels{iPhase}, '_', '\_'));
         end
     end
@@ -650,7 +696,7 @@ for iPlot = 1:nColumnsToPlot
     % If there is only one value for this column, mark with a circle
     % TODO: for ~isempty(phaseVectors)?
     if nNonInf(col) == 1
-        set(lines(iPlot, 1), 'Marker', 'o');
+        set(curves(iPlot, 1), 'Marker', 'o');
     end
 end
 
@@ -711,7 +757,7 @@ if nPBoundaries > 0
     pLines = plot_vertical_line(pBoundaries, 'LineWidth', 0.5, ...
                                 'LineStyle', '--', 'Color', 'g');
 else
-    pBoundaries = gobjects;
+    pLines = gobjects;
 end
 
 % Plot readout boundaries
@@ -720,7 +766,7 @@ if nRBoundaries > 0
     rLines = plot_horizontal_line(rBoundaries, 'LineWidth', 0.5, ...
                                 'LineStyle', '--', 'Color', 'r');
 else
-    rBoundaries = gobjects;
+    rLines = gobjects;
 end
 
 % Plot selected values if any
@@ -806,22 +852,29 @@ if nColumnsToPlot > 1
 end
 
 %% Post-plotting
-% Generate a legend for the lines only if there is more than one trace
+% Generate a legend for the curves only if there is more than one trace
 if ~strcmpi(legendLocation, 'suppress')
     if isempty(phaseVectors) && nColumnsToPlot > 1
-        legend(lines, 'location', legendLocation);
+        legend(curves, 'location', legendLocation);
     else
-        legend(lines(1, :), 'location', legendLocation);
+        legend(curves(1, :), 'location', legendLocation);
     end
 end
 
 % Return boundaries
-boundaries = transpose(vertcat(pBoundaries, rBoundaries));
+boundaries = transpose(vertcat(pLines, rLines));
 
 % Save figure if figName provided
 if ~isempty(figName)
     save_all_figtypes(fig, figName, figtypes);
 end
+
+%% Output handles
+handles.fig = fig;
+handles.curves = curves;
+handles.confInts = confInts;
+handles.boundaries = boundaries;
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -924,9 +977,9 @@ addParameter(iP, 'SingleColor', singleColorDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 3}));
 singlecolor = iP.Results.SingleColor;
 if nColumnsToPlot > 1
-    set(lines(iPlot, 1), 'Color', colorMap(iPlot, :));
+    set(curves(iPlot, 1), 'Color', colorMap(iPlot, :));
 elseif nColumnsToPlot == 1
-    set(lines(iPlot, 1), 'Color', singlecolor);
+    set(curves(iPlot, 1), 'Color', singlecolor);
 end
 
 confIntColorDefault = rgb('LightGray');  

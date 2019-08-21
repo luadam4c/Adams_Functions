@@ -3,13 +3,16 @@ function varargout = ismatch (list, cand, varargin)
 % Usage: [isMatch, indices, matched] = ismatch(list, cand, varargin)
 % Explanation:
 %   This function uses is_matching_string.m for strings
-%       and isequal() for everything else
+%       and isequaln() for everything else
 %   This function optionally returns the indices as the second output
 %       and the matched elements as the third output.
 %
 % Example(s):
 %       ismatch([3; 4; 4; 3], 4)
 %       ismatch(1:10, 4)
+%       ismatch([1 NaN 2 1 1 NaN 3 NaN 2 3], 2)
+%       ismatch([1 NaN 2 1 1 NaN 3 NaN 2 3], NaN)
+%       ismatch({'', '12', 'dg', ''}, '')
 %       strs1 = {'Mark''s fish', 'Peter''s fish', 'Katie''s sealion'};
 %       strs2 = ["Mark's fish", "Peter's fish", "Katie's sealion"];
 %       ismatch(strs1, 'fish')
@@ -61,9 +64,11 @@ function varargout = ismatch (list, cand, varargin)
 %       cd/plot_measures.m
 %       cd/find_in_strings.m
 %       cd/ismember_custom.m
+%       cd/unique_groups.m
 
 % File History:
 % 2019-01-11 Modified from is_matching_strings.m
+% 2019-08-21 Now uses isequaln() instead of isequal() for matching
 
 %% Hard-coded constants
 validMatchModes = {'exact', 'parts', 'regexp'};
@@ -136,9 +141,9 @@ if istext(list)
 else
     % Test whether each member is a match to cand
     if iscell(list)
-        isMatch = cellfun(@(x) isequal(x, cand), list);
+        isMatch = cellfun(@(x) isequaln(x, cand), list);
     else
-        isMatch = arrayfun(@(x) isequal(x, cand), list);
+        isMatch = arrayfun(@(x) isequaln(x, cand), list);
     end
 end
 
