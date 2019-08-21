@@ -14,6 +14,8 @@
 
 %% Hard-coded parameters
 parentDir = fullfile('/media', 'katieX', 'Glucose_Paper', 'Data', 'Oscillations','10mM_metformin');
+% parentDir = fullfile('/media', 'katieX', 'Glucose_Paper', 'Data', 'Oscillations','Adrug');
+%
 archiveDir = parentDir;
 dirsToAnalyze = {'all'};
 specificSlicesToAnalyze = {};
@@ -65,13 +67,13 @@ minRelProm = 0.02;
 
 % For compute_phase_average.m & plot_measures.m
 % sweepsRelToPhase2 = -9:30;      % select between -10 & 30 min
-sweepsRelToPhase2 = -9:25;      % select between -10 & 25 min
+sweepsRelToPhase2 = -5:25;      % select between -10 & 25 min
 nSweepsLastOfPhase = 10;        % select from last 10 values of each phase
 % nSweepsToAverage = 5;           % select 5 values to average
 nSweepsToAverage = 10;        % select 10 values to average
 % selectionMethod = 'maxRange2Mean'; % average values within 40% of mean 
 selectionMethod = 'notNaN';    % average all values that are not NaNs
-maxRange2Mean = 40;              % range is not more than 40% of mean 
+maxRange2Mean = 50;              % range is not more than 40% of mean 
                                  %   by default
 
 % For plot_measures.m
