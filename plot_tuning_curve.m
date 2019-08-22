@@ -206,6 +206,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/remove_outliers.m
 %       cd/save_all_figtypes.m
 %       cd/set_default_flag.m
+%       cd/trim_nans.m
 %       cd/unique_custom.m
 %       cd/union_over_cells.m
 %
@@ -543,6 +544,14 @@ if ~isempty(phaseVectors)
         % Convert to the parameter units
         phaseBoundariesAll = ...
             extract_subvectors(pValues, 'Indices', indBoundariesAll);
+
+        % Force as a column cell array of column vectors
+        [readoutCell, indBoundariesAllCell] = ...
+            argfun(@force_column_cell, readout, indBoundariesAll);
+
+        % If there is any trailing NaNs, remove them
+        readoutCell = cellfun(@(x) trim_nans(x, 'trailing'), ...
+                                readoutCell, 'UniformOutput', false);
     end
 
     % Generate phase boundaries to be plotted if requested
@@ -559,8 +568,8 @@ if ~isempty(phaseVectors)
     if computeAverageWindows
         % Compute the last index of each window
         iLastEachWindowAll = ...
-            cellfun(@(x) [x - 0.5; nEntries], ...
-                    indBoundariesAll, 'UniformOutput', false);
+            cellfun(@(x, y) [x - 0.5; numel(y)], ...
+                    indBoundariesAllCell, readoutCell, 'UniformOutput', false);
 
         % Compute the first index of each window
         iFirstEachWindowAll = ...
@@ -580,11 +589,7 @@ if ~isempty(phaseVectors)
     end
 
     % Generate phase averages to be plotted if requested
-    if computePhaseAverages || computeIndSelected
-        % Force as a column cell array of column vectors
-        [readoutCell, indBoundariesAllCell] = ...
-            argfun(@force_column_cell, readout, indBoundariesAll);
-
+    if computePhaseAverages || computeIndSelected        
         % Compute phase averages
         %   Note: this generates a cell array of cell arrays of vectors
         [phaseAveragesCellCell, indSelectedCellCell] = ...

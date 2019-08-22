@@ -382,6 +382,7 @@ There are 1 MATLAB scripts in this directory:
 - [**test_passive_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/test_passive_fit.m): Tests passive fitting 
 - [**transform_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/transform_vectors.m): Transform vectors by a binary operation
 - [**transpose_table.m**](https://github.com/blabuva/Adams_Functions/blob/master/transpose_table.m): Transposes a table (make row names variable names and vice versa)
+- [**trim_nans.m**](https://github.com/blabuva/Adams_Functions/blob/master/trim_nans.m): Removes leading and trailing NaNs from vector(s)
 - [**union_over_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/union_over_cells.m): Apply the union function over all contents of a cell array
 - [**unique_custom.m**](https://github.com/blabuva/Adams_Functions/blob/master/unique_custom.m): Returns the unique values in x, optionally without NaN
 - [**unique_groups.m**](https://github.com/blabuva/Adams_Functions/blob/master/unique_groups.m): Retrieves the unique groups and counts the number in each group
