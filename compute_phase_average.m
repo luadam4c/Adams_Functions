@@ -16,12 +16,6 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 %                                           instead of NaNs if criteria not met
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'NLastOfPhase': number of values at the last of a phase
-%                   must be a positive integer scalar
-%                   default == 10
-%                   - 'NToAverage': number of values to average
-%                   must be a positive integer scalar
-%                   default == 5
 %                   - 'Indices': indices for the subvectors to extract 
 %                       Note: if provided, would override 'EndPoints'
 %                   must be a numeric vector with 2 elements
@@ -39,6 +33,12 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 %                   - 'PhaseNumber': phase number to average
 %                   must be a positive integer scalar
 %                   default == 1
+%                   - 'NLastOfPhase': number of values at the last of a phase
+%                   must be a positive integer scalar
+%                   default == 10
+%                   - 'NToAverage': number of values to average
+%                   must be a positive integer scalar
+%                   default == 5
 %                   - 'SelectionMethod': the selection method
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'notNaN'        - select any non-NaN value
@@ -75,12 +75,12 @@ validSelectionMethods = {'notNaN', 'maxRange2Mean'};
 
 %% Default values for optional arguments
 returnLastTrialDefault = false; % return NaN if criteria not met by default
-nLastOfPhaseDefault = 10;       % select from last 10 values by default
-nToAverageDefault = 5;          % select 5 values by default
 indicesDefault = [];            % set in extract_subvectors.m
 phaseBoundariesDefault = [];    % no phase boundaries by default
 phaseNumberDefault = 1;         % the first phase by default
 endPointsDefault = [];          % set in select_similar_values.m
+nLastOfPhaseDefault = 10;       % select from last 10 values by default
+nToAverageDefault = 5;          % select 5 values by default
 selectionMethodDefault = 'maxRange2Mean';   
                                 % select using maxRange2Mean by default
 maxRange2MeanDefault = 40;      % range is not more than 40% of mean by default
@@ -106,10 +106,6 @@ addRequired(iP, 'values', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ReturnLastTrial', returnLastTrialDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'NLastOfPhase', nLastOfPhaseDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
-addParameter(iP, 'NToAverage', nToAverageDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
 addParameter(iP, 'Indices', indicesDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['Indices must be either a numeric array ', ...
@@ -122,6 +118,10 @@ addParameter(iP, 'EndPoints', endPointsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['EndPoints must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
+addParameter(iP, 'NLastOfPhase', nLastOfPhaseDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'NToAverage', nToAverageDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
 addParameter(iP, 'SelectionMethod', selectionMethodDefault, ...
     @(x) any(validatestring(x, validSelectionMethods)));
 addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
@@ -130,12 +130,12 @@ addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
 % Read from the Input Parser
 parse(iP, values, varargin{:});
 returnLastTrial = iP.Results.ReturnLastTrial;
-nLastOfPhase = iP.Results.NLastOfPhase;
-nToAverage = iP.Results.NToAverage;
 indices = iP.Results.Indices;
 phaseBoundaries = iP.Results.PhaseBoundaries;
 phaseNumber = iP.Results.PhaseNumber;
 endPoints = iP.Results.EndPoints;
+nLastOfPhase = iP.Results.NLastOfPhase;
+nToAverage = iP.Results.NToAverage;
 selectionMethod = validatestring(iP.Results.SelectionMethod, ...
                                     validSelectionMethods);
 maxRange2Mean = iP.Results.MaxRange2Mean;

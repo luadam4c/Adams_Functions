@@ -10,10 +10,15 @@ function vecs = force_matrix (vecs, varargin)
 %       force_matrix({1:5, magic(3)})
 %       force_matrix({{1:3, 1:3}, {1:3, 1:3}})
 %       force_matrix({1:5, 1:3, []})
-%       TODO: force_matrix({{1:5, 1:3}, {1:2, 1:6}})
+%       load_examples;
+%       force_matrix(myCellCellNumeric, 'TreatCellAsArray', true);
+%       force_matrix({{1:5; 1:3}, {1:2; 1:6}}, 'TreatCellAsArray', true)
+%       TODO: force_matrix({{1:5}, {1:2; 1:6}}, 'TreatCellAsArray', true)
+%
 % Outputs:
 %       vecs        - vectors as a matrix
 %                   specified as a matrix
+%
 % Arguments:
 %       vecs        - vectors
 %                   must be an array
@@ -25,6 +30,15 @@ function vecs = force_matrix (vecs, varargin)
 %                       'rightAdjustPad' - align to the right and pad
 %                       'none'        - no alignment/truncation
 %                   default == 'leftAdjustPad'
+%                   - 'TreatCellAsArray': whether to treat a cell array
+%                                           as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'TreatCellStrAsArray': whether to treat a cell array
+%                                       of character arrays as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - Any other parameter-value pair for force_column_vector()
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -64,6 +78,9 @@ validAlignMethods = {'leftAdjust', 'rightAdjust', ...
 
 %% Default values for optional arguments
 alignMethodDefault  = 'leftAdjustPad';   % pad on the right by default
+treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
+treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
+                                    %   as an array by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -76,6 +93,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vecs');
@@ -83,10 +101,19 @@ addRequired(iP, 'vecs');
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'AlignMethod', alignMethodDefault, ...
     @(x) any(validatestring(x, validAlignMethods)));
+addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vecs, varargin{:});
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
+treatCellAsArray = iP.Results.TreatCellAsArray;
+treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
+
+% Keep unmatched arguments for the force_column_vector() function
+otherArguments = iP.Unmatched;
 
 %% Do the job
 % Extract vectors padded on the right
@@ -94,9 +121,12 @@ alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 %           Otherwise, extract_subvectors.m uses create_indices.m,
 %         	which uses force_matrix.m and will enter infinite loop
 if ~strcmpi(alignMethod, 'none')
-    vecs = extract_subvectors(vecs, 'AlignMethod', alignMethod);
+    vecs = extract_subvectors(vecs, 'AlignMethod', alignMethod, ...
+                            'TreatCellAsArray', treatCellAsArray, ...
+                            'TreatCellStrAsArray', treatCellStrAsArray);
 else
-    vecs = force_column_vector(vecs);
+    vecs = force_column_vector(vecs, 'TreatCellAsArray', treatCellAsArray, ...
+                    'TreatCellStrAsArray', treatCellStrAsArray, otherArguments);
 end
 
 % Count the number of samples

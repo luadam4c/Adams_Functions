@@ -30,6 +30,13 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %                   - 'NToAverage': number of values to average
 %                   must be a positive integer scalar
 %                   default == 5
+%                   - 'SelectionMethod': the selection method
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'notNaN'        - select any non-NaN value
+%                       'maxRange2Mean' - select vales so that the maximum 
+%                                           range is within a percentage 
+%                                           of the mean
+%                   default == 'maxRange2Mean'
 %                   - 'MaxRange2Mean': maximum percentage of range versus mean
 %                   must be a nonnegative scalar
 %                   default == 40%
@@ -111,6 +118,7 @@ function [figs, lines] = plot_struct (structArray, varargin)
 % 
 
 %% Hard-coded parameters
+validSelectionMethods = {'notNaN', 'maxRange2Mean'};
 validPlotTypes = {'tuning', 'bar'};
 maxNPTicks = 10;
 barDirection = 'horizontal';
@@ -122,6 +130,8 @@ pBoundariesDefault = [];
 rBoundariesDefault = [];
 nLastOfPhaseDefault = 10;       % select from last 10 values by default
 nToAverageDefault = 5;          % select 5 values by default
+selectionMethodDefault = 'maxRange2Mean';   
+                                % select using maxRange2Mean by default
 maxRange2MeanDefault = 40;      % range is not more than 40% of mean by default
 lineSpecDefault = 'o';
 lineWidthDefault = [];
@@ -168,6 +178,8 @@ addParameter(iP, 'NLastOfPhase', nLastOfPhaseDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
 addParameter(iP, 'NToAverage', nToAverageDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'SelectionMethod', selectionMethodDefault, ...
+    @(x) any(validatestring(x, validSelectionMethods)));
 addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'LineSpec', lineSpecDefault, ...
@@ -207,6 +219,8 @@ pBoundaries = iP.Results.PBoundaries;
 rBoundaries = iP.Results.RBoundaries;
 nLastOfPhase = iP.Results.NLastOfPhase;
 nToAverage = iP.Results.NToAverage;
+selectionMethod = validatestring(iP.Results.SelectionMethod, ...
+                                    validSelectionMethods);
 maxRange2Mean = iP.Results.MaxRange2Mean;
 lineSpec = iP.Results.LineSpec;
 lineWidth = iP.Results.LineWidth;
@@ -325,6 +339,7 @@ end
 pBoundaries = match_row_count(pBoundaries, nFields);
 
 % Compute baseline averages if no readout boundaries provided
+% TODO: Move to plot_bar.m
 indSelected = cell(nFields, 1);
 if isempty(rBoundaries)
     rBoundaries = nan(nFields, 1);
@@ -336,6 +351,7 @@ if isempty(rBoundaries)
                         'PhaseNumber', 1, ...
                         'NLastOfPhase', nLastOfPhase, ...
                         'NToAverage', nToAverage, ...
+                        'SelectionMethod', selectionMethod, ...
                         'MaxRange2Mean', maxRange2Mean);
     end
 end

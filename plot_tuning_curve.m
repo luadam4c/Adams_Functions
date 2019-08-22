@@ -115,6 +115,12 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   - 'PlotPhaseBoundaries': whether to plot phase boundaries
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true if PhaseVectors provided, false otherwise
+%                   - 'PlotPhaseAverages': whether to plot phase averages
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true if PhaseVectors provided, false otherwise
+%                   - 'PlotIndSelected': whether to plot selected indices
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true if PhaseVectors provided, false otherwise
 %                   - 'PBoundaries': parameter boundary values
 %                       Note: each row is a set of boundaries
 %                   must be a numeric array
@@ -126,6 +132,22 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   - 'IndSelected': selected indices to mark differently
 %                   must be a numeric vector
 %                   default == []
+%                   - 'NLastOfPhase': number of values at the last of a phase
+%                   must be a positive integer scalar
+%                   default == 10
+%                   - 'NToAverage': number of values to average
+%                   must be a positive integer scalar
+%                   default == 5
+%                   - 'SelectionMethod': the selection method
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'notNaN'        - select any non-NaN value
+%                       'maxRange2Mean' - select vales so that the maximum 
+%                                           range is within a percentage 
+%                                           of the mean
+%                   default == 'maxRange2Mean'
+%                   - 'MaxRange2Mean': maximum percentage of range versus mean
+%                   must be a nonnegative scalar
+%                   default == 40%
 %                   - 'FigTitle': title for the figure
 %                   must be a string scalar or a character vector
 %                   default == ['Traces for ', figName]
@@ -211,6 +233,8 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 WHITE = [1, 1, 1];
 
 %% Hard-coded parameters
+validSelectionMethods = {'notNaN', 'maxRange2Mean'};
+
 % TODO: Make optional arguments
 sigLevel = 0.05;                    % significance level for tests
 confIntFadePercentage = 0.25;       % fade percentage for confidence interval colors
@@ -242,9 +266,16 @@ colorMapDefault = [];               % set later
 confIntColorDefault = [];           % light gray confidence intervals by default
 legendLocationDefault = 'auto';     % set later
 plotPhaseBoundariesDefault = [];    % set later
+plotPhaseAveragesDefault = [];      % set later
+plotIndSelectedDefault = [];        % set later
 pBoundariesDefault = [];
 rBoundariesDefault = [];
 indSelectedDefault = [];
+nLastOfPhaseDefault = 10;       % select from last 10 values by default
+nToAverageDefault = 5;          % select 5 values by default
+selectionMethodDefault = 'maxRange2Mean';   
+                                % select using maxRange2Mean by default
+maxRange2MeanDefault = 40;      % range is not more than 40% of mean by default
 figTitleDefault = '';               % set later
 figHandleDefault = [];              % no existing figure by default
 figNumberDefault = [];              % no figure number by default
@@ -326,12 +357,24 @@ addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
 addParameter(iP, 'PlotPhaseBoundaries', plotPhaseBoundariesDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotPhaseAverages', plotPhaseAveragesDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotIndSelected', plotIndSelectedDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PBoundaries', pBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'RBoundaries', rBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'IndSelected', indSelectedDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'NLastOfPhase', nLastOfPhaseDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'NToAverage', nToAverageDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'SelectionMethod', selectionMethodDefault, ...
+    @(x) any(validatestring(x, validSelectionMethods)));
+addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigHandle', figHandleDefault);
@@ -372,9 +415,16 @@ confIntColor = iP.Results.ConfIntColor;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
 plotPhaseBoundaries = iP.Results.PlotPhaseBoundaries;
+plotPhaseAverages = iP.Results.PlotPhaseAverages;
+plotIndSelected = iP.Results.PlotIndSelected;
 pBoundaries = iP.Results.PBoundaries;
 rBoundaries = iP.Results.RBoundaries;
 indSelected = iP.Results.IndSelected;
+nLastOfPhase = iP.Results.NLastOfPhase;
+nToAverage = iP.Results.NToAverage;
+selectionMethod = validatestring(iP.Results.SelectionMethod, ...
+                                    validSelectionMethods);
+maxRange2Mean = iP.Results.MaxRange2Mean;
 figTitle = iP.Results.FigTitle;
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
@@ -402,9 +452,10 @@ nEntries = length(pValues);
 % Count number of columns
 nCols = size(readout, 2);
 
-% Decide whether to plot phase boundaries
-plotPhaseBoundaries = ...
-    set_default_flag(plotPhaseBoundaries, ~isempty(phaseVectors));
+% Decide whether to plot phase-related stuff
+[plotPhaseBoundaries, plotPhaseAverages, plotIndSelected] = ...
+    argfun(@(x) set_default_flag(x, ~isempty(phaseVectors)), ...
+            plotPhaseBoundaries, plotPhaseAverages, plotIndSelected);
 
 % Deal with phase vectors
 if ~isempty(phaseVectors)
@@ -432,8 +483,8 @@ if ~isempty(phaseVectors)
     end
 
     % Generate phase boundaries to be plotted if requested
-    % TODO: What if pBoundaries is 2-D?
-    if plotPhaseBoundaries
+    if plotPhaseBoundaries || plotPhaseAverages || plotIndSelected
+        % TODO: Make function compute_value_boundaries(values, grouping)
         % Compute all possible index boundaries for the phases
         indBoundariesAll = ...
             compute_index_boundaries('Grouping', phaseVectors, ...
@@ -442,7 +493,11 @@ if ~isempty(phaseVectors)
         % Convert to the parameter units
         phaseBoundariesAll = ...
             extract_subvectors(pValues, 'Indices', indBoundariesAll);
+    end
 
+    % Generate phase boundaries to be plotted if requested
+    % TODO: What if pBoundaries is 2-D?
+    if plotPhaseBoundaries
         % Pool all phase boundaries together
         phaseBoundaries = union_over_cells(phaseBoundariesAll);
 
@@ -452,13 +507,32 @@ if ~isempty(phaseVectors)
         % Add it to other parameter boundaries
         pBoundaries = [pBoundaries, phaseBoundaries];
     end
-else
-    if colorByPhase
-        fprintf('Phase vectors must be provided if to color by phase!\n');
-        return
+
+    % Generate phase averages to be plotted if requested
+    if plotPhaseAverages || plotIndSelected
+        % Force as a column cell array of column vectors
+        [readoutCell, phaseBoundariesAllCell] = 
+            = argfun(@force_column_cell, readout, phaseBoundariesAll);
+
+        % Compute phase averages
+        %   Note: this generates a cell array of cell arrays of vectors
+        [phaseAverages, indSelected] = ...
+            cellfun(@(x, y) ...
+                arrayfun(@(z) compute_phase_average(x, 'PhaseBoundaries', y, ...
+                            'PhaseNumber', z, ...
+                            'NLastOfPhase', nLastOfPhase, ...
+                            'NToAverage', nToAverage, ...
+                            'MaxRange2Mean', maxRange2Mean), uniquePhases, ...
+                'UniformOutput', false), ...
+            readoutCell, phaseBoundariesAllCell, 'UniformOutput', false);
+
+        % Reorganize so that outputs are a matrix cell array
+        [phaseAverages, indSelected] = ...
+            argfun(@force_matrix, phaseAverages, indSelected);
     end
-    if plotPhaseBoundaries
-        fprintf('Phase vectors must be provided if to plot phase boundaries!\n');
+else
+    if colorByPhase || plotPhaseBoundaries || plotPhaseAverages
+        fprintf('Phase vectors must be provided!\n');
         return
     end
     uniquePhases = {};
@@ -600,7 +674,9 @@ fig = decide_on_fighandle('FigHandle', figHandle, 'FigNumber', figNumber);
 
 % Initialize graphics objects
 curves = gobjects(nColumnsToPlot, nLinesPerPhase);
-confInts = gobjects(nColumnsToPlot, nLinesPerPhase);
+if ~isempty(lowerCI) || ~isempty(upperCI)
+    confInts = gobjects(nColumnsToPlot, nLinesPerPhase);
+end
 
 % Clear figure if requested
 if clearFigure
@@ -797,16 +873,12 @@ end
 
 % Plot selected values if any
 if ~isempty(indSelected)
-    % Selected x locations
-    xLocsSelected = pValues(indSelected);
-
-    % Selected y locations
-    yLocsSelected = readout(indSelected, :);
-
-    % Plot values
-    hold on
-    handles.selected = plot(xLocsSelected, yLocsSelected, 'ro', ...
-                            'LineWidth', selectedLineWidth);
+    if iscell(indSelected)
+        selected = cellfun();
+    else
+        selected = plot_selected_indices(pValues, readout, indSelected, ...
+                                            selectedColor, selectedLineWidth);
+    end
 end
 
 % TODO: Make function plot_text.m
@@ -887,11 +959,6 @@ if ~strcmpi(legendLocation, 'suppress') && nColumnsToPlot > 1
     end
 end
 
-% Return boundaries
-if ~isempty(pLines) || ~isempty(rLines)
-    handles.boundaries = transpose(vertcat(pLines, rLines));
-end
-
 % Save figure if figName provided
 if ~isempty(figName)
     save_all_figtypes(fig, figName, figtypes);
@@ -900,7 +967,15 @@ end
 %% Output handles
 handles.fig = fig;
 handles.curves = curves;
-handles.confInts = confInts;
+if ~isempty(lowerCI) || ~isempty(upperCI)
+    handles.confInts = confInts;
+end
+if ~isempty(pLines) || ~isempty(rLines)
+    handles.boundaries = transpose(vertcat(pLines, rLines));
+end
+if ~isempty(indSelected)
+    handles.selected = selected;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -925,6 +1000,22 @@ function indices = add_next_index(indices, lastIndex)
 if indices(end) < lastIndex
     indices = [indices; indices(end) + 1];
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function selected = plot_selected_indices (pValues, readout, indSelected, ...
+                                            selectedColor, selectedLineWidth)
+
+% Selected x locations
+xLocsSelected = pValues(indSelected);
+
+% Selected y locations
+yLocsSelected = readout(indSelected, :);
+
+% Plot values
+hold on
+selected = plot(xLocsSelected, yLocsSelected, 'o', ...
+                'Color', selectedColor, 'LineWidth', selectedLineWidth);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
