@@ -100,7 +100,6 @@ switch trimMethod
     otherwise
         error('trimMethod unrecognized!');
 end
-newVec = oldVec(idxFirstToLeave:idxLastToLeave);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

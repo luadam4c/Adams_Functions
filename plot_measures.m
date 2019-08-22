@@ -19,7 +19,7 @@ function plot_measures (varargin)
 %                   - 'ComputeChevronFlag': whether to compute TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'ComputeNormalizedFlag': whether to compute TODO
+%                   - 'ComputeNormChevronFlag': whether to compute TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'ComputeTimeTablesFlag': whether to compute TODO
@@ -34,13 +34,19 @@ function plot_measures (varargin)
 %                   - 'PlotChevronFlag': whether to plot TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'PlotNormalizedFlag': whether to plot TODO
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
 %                   - 'PlotByFileFlag': whether to plot TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'PlotByPhaseFlag': whether to plot TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotNormChevronFlag': whether to plot TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotNormByFileFlag': whether to plot TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotNormByPhaseFlag': whether to plot TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'PlotPopAverageFlag': whether to plot TODO
@@ -128,8 +134,8 @@ function plot_measures (varargin)
 %       cd/unique_custom.m
 %
 % Used by:
-%       cd/parse_all_multiunit.m
-%       cd/clc2_analyze.m.m
+%       cd/clc2_analyze.m
+%       cd/metformin_analyze.m
 
 % File History:
 % 2019-03-15 Created by Adam Lu
@@ -181,14 +187,16 @@ varLabelsAll = {'Oscillatory Index 1'; 'Oscillatory Index 2'; ...
 %% Default values for optional arguments
 plotTypeDefault = 'tuning';
 computeChevronFlagDefault = false;
-computeNormalizedFlagDefault = false;
+computeNormChevronFlagDefault = false;
 computeTimeTablesFlagDefault = false;
 computePopAverageFlagDefault = false;
 plotAllFlagDefault = false;
 plotChevronFlagDefault = [];
-plotNormalizedFlagDefault = [];
 plotByFileFlagDefault = [];
 plotByPhaseFlagDefault = [];
+plotNormChevronFlagDefault = [];
+plotNormByFileFlagDefault = [];
+plotNormByPhaseFlagDefault = [];
 plotPopAverageFlagDefault = [];
 removeOutliersInPlotDefault = true;
 directoryDefault = pwd;
@@ -228,7 +236,7 @@ addParameter(iP, 'PlotType', plotTypeDefault, ...
     @(x) any(validatestring(x, validPlotTypes)));
 addParameter(iP, 'ComputeChevronFlag', computeChevronFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'ComputeNormalizedFlag', computeNormalizedFlagDefault, ...
+addParameter(iP, 'ComputeNormChevronFlag', computeNormChevronFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ComputeTimeTablesFlag', computeTimeTablesFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -238,11 +246,15 @@ addParameter(iP, 'PlotAllFlag', plotAllFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotChevronFlag', plotChevronFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'PlotNormalizedFlag', plotNormalizedFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotByFileFlag', plotByFileFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotByPhaseFlag', plotByPhaseFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotNormChevronFlag', plotNormChevronFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotNormByFileFlag', plotNormByFileFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotNormByPhaseFlag', plotNormByPhaseFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotPopAverageFlag', plotPopAverageFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -293,14 +305,16 @@ addParameter(iP, 'VarLabels', varLabelsDefault, ...
 parse(iP, varargin{:});
 plotType = validatestring(iP.Results.PlotType, validPlotTypes);
 computeChevronFlag = iP.Results.ComputeChevronFlag;
-computeNormalizedFlag = iP.Results.ComputeNormalizedFlag;
+computeNormChevronFlag = iP.Results.ComputeNormChevronFlag;
 computeTimeTablesFlag = iP.Results.ComputeTimeTablesFlag;
 computePopAverageFlag = iP.Results.ComputePopAverageFlag;
 plotAllFlag = iP.Results.PlotAllFlag;
 plotChevronFlag = iP.Results.PlotChevronFlag;
-plotNormalizedFlag = iP.Results.PlotNormalizedFlag;
 plotByFileFlag = iP.Results.PlotByFileFlag;
 plotByPhaseFlag = iP.Results.PlotByPhaseFlag;
+plotNormChevronFlag = iP.Results.PlotNormChevronFlag;
+plotNormByFileFlag = iP.Results.PlotNormByFileFlag;
+plotNormByPhaseFlag = iP.Results.PlotNormByPhaseFlag;
 plotPopAverageFlag = iP.Results.PlotPopAverageFlag;
 removeOutliersInPlot = iP.Results.RemoveOutliersInPlot;
 directory = iP.Results.Directory;
@@ -325,23 +339,29 @@ varLabels = iP.Results.VarLabels;
 %% Preparation
 % Set default flags
 fprintf('Setting default flags ...\n');
-[plotChevronFlag, plotNormalizedFlag, ...
+[plotChevronFlag, plotNormChevronFlag, ...
+plotNormByFileFlag, plotNormByPhaseFlag, ...
 plotByFileFlag, plotByPhaseFlag, plotPopAverageFlag] = ...
     argfun(@(x) set_default_flag(x, plotAllFlag), ...
-                plotChevronFlag, plotNormalizedFlag, ...
+                plotChevronFlag, plotNormChevronFlag, ...
+                plotNormByFileFlag, plotNormByPhaseFlag, ...
                 plotByFileFlag, plotByPhaseFlag, plotPopAverageFlag);
 
 % Set compute flags
 if plotPopAverageFlag
     computePopAverageFlag = true;
 end
-if plotByFileFlag || plotByPhaseFlag || computePopAverageFlag
+if plotByFileFlag || plotByPhaseFlag || ...
+        plotNormByFileFlag || plotNormByPhaseFlag || computePopAverageFlag
     computeTimeTablesFlag = true;
 end
-if plotNormalizedFlag
-    computeNormalizedFlag = true;
+if plotNormChevronFlag
+    computeNormChevronFlag = true;
 end
-if plotChevronFlag || computeNormalizedFlag
+if plotNormByFileFlag || plotNormByPhaseFlag || computeTimeTablesFlag
+    computeNormTablesFlag = true;
+end
+if plotChevronFlag || computeNormChevronFlag || computeNormTablesFlag
     computeChevronFlag = true;
 end
 
@@ -406,14 +426,16 @@ tableLabels = strcat(prefix, {': '}, varLabels);
 tableNames = strcat(prefix, '_', varsToPlot);
 
 % Create figure names
-[figNames, figNamesByPhase, figNamesAvgd, figNamesNormAvgd, figNamesPopAvg] = ...
+[figNamesAvgd, figNamesByFile, figNamesByPhase, figNamesNormAvgd, ...
+    figNamesNormByFile, figNamesNormByPhase, figNamesPopAvg] = ...
     argfun(@(x) fullfile(figFolder, strcat(tableNames, '_', x, '.png')), ...
-            'byfile', 'byphase', 'chevron', 'normChevron', 'popAverage');
+            'chevron', 'byfile', 'byphase', 'normChevron', ...
+            'normByFile', 'normByPhase', 'popAverage');
 
-% Create paths for chevron tables
-[chevronTablePaths, normChevronTablePaths, popAvgTablePaths] = ...
+% Create paths for spreadsheet files
+[chevronTablePaths, normTablePaths, normChevronTablePaths, popAvgTablePaths] = ...
     argfun(@(x) fullfile(outFolder, strcat(tableNames, '_', x, '.csv')), ...
-            'chevron', 'normChevron', 'popAverage');
+            'chevron', 'normAll', 'normChevron', 'popAverage');
 
 % Create paths for mat files
 [measureTablesMatPath, chevronTablesMatPath, normalizedChevronTablesMatPath, ...
@@ -495,8 +517,17 @@ if computeChevronFlag
     save(chevronTablesMatPath, 'chevronTables', '-mat');
 end
 
+%% Normalize to baseline
+if computeNormTablesFlag
+    fprintf('Computing normalized tables ...\n');
+    normalizedMeasureTables = ...
+        cellfun(@(x, y, z, w) normalize_to_baseline(x, y, z, w), ...
+                measureTables, chevronTables, varsToPlot, normTablePaths, ...
+                'UniformOutput', false);
+end
+
 %% Normalize to baseline if requested
-if computeNormalizedFlag
+if computeNormChevronFlag
     fprintf('Normalizing to baseline ...\n');
     normalizedChevronTables = ...
         cellfun(@(x, y) normalize_to_first_row(x, y), ...
@@ -510,8 +541,10 @@ if computeTimeTablesFlag
     fprintf('Converting measure tables to time tables ...\n');
     measureTimeTables = cellfun(@table2timetable, ...
                                 measureTables, 'UniformOutput', false);
+    normTimeTables = cellfun(@table2timetable, ...
+                                normalizedMeasureTables, 'UniformOutput', false);
 
-    save(measureTimeTablesMatPath, 'measureTimeTables', '-mat');
+    save(measureTimeTablesMatPath, 'measureTimeTables', 'normTimeTables', '-mat');
 end
 
 %% Average over each file
@@ -537,7 +570,7 @@ if plotChevronFlag
 
     close all;
     fprintf('Plotting Chevron plots ...\n');
-    figs = cellfun(@(x, y, z, w, v, u) plot_table(x, 'PlotSeparately', false, ...
+    cellfun(@(x, y, z, w, v, u) plot_table(x, 'PlotSeparately', false, ...
                                     'PlotType', plotType, ...
                                     'VariableNames', strcat(y, '_', fileLabels), ...
                                     'PTicks', phaseTickLocs, ...
@@ -554,7 +587,7 @@ if plotChevronFlag
 end
 
 %% Plot Normalized Chevron plots
-if plotNormalizedFlag
+if plotNormChevronFlag
     % Generate variable labels
     varLabelsNormAvgd = repmat({'% of baseline'}, size(varLabels));
 
@@ -575,7 +608,7 @@ if plotNormalizedFlag
             tableLabels, figTitlesChevron, figNamesNormAvgd);
 end
 
-%% Plot each column separately
+%% Plot each column with a different color
 if plotByFileFlag
     close all;
     fprintf('Plotting each column with a different color ...\n');
@@ -593,10 +626,29 @@ if plotByFileFlag
                 'ReadoutLabel', z, 'TableLabel', w, ...
                 'PLabel', timeLabel, 'FigName', v, ...
                 'RemoveOutliers', removeOutliersInPlot), ...
-            measureTimeTables, varsToPlot, varLabels, tableLabels, figNames);
+            measureTimeTables, varsToPlot, varLabels, tableLabels, figNamesByFile);
 end
 
-%% Plot all columns together colored by phase
+if plotNormByFileFlag
+    close all;
+    fprintf('Plotting each column with a different color, data normalized ...\n');
+    cellfun(@(x, y, z, w, v) plot_table(x, 'PlotSeparately', false, ...
+                'PhaseVariables', phaseVars, 'PhaseLabels', phaseStrs, ...
+                'PlotPhaseBoundaries', true, 'PlotPhaseAverages', false, ...
+                'PlotIndSelected', false, 'ColorByPhase', false, ...
+                'NLastOfPhase', nSweepsLastOfPhase, ...
+                'NToAverage', nSweepsToAverage, ...
+                'SelectionMethod', selectionMethod, ...
+                'MaxRange2Mean', maxRange2Mean, ...
+                'PlotType', plotType, ...
+                'VariableNames', strcat(y, '_', fileLabels), ...
+                'ReadoutLabel', z, 'TableLabel', w, ...
+                'PLabel', timeLabel, 'FigName', v, ...
+                'RemoveOutliers', removeOutliersInPlot), ...
+            normTimeTables, varsToPlot, varLabels, tableLabels, figNamesNormByFile);
+end
+
+%% Plot each phase with a different color
 if plotByPhaseFlag
     close all;
     fprintf('Plotting each phase with a different color ...\n');
@@ -618,6 +670,26 @@ if plotByPhaseFlag
             measureTimeTables, varsToPlot, varLabels, tableLabels, figNamesByPhase);
 
     %                                 'PhaseLabels', phaseStrs, ...
+end
+
+if plotNormByPhaseFlag
+    close all;
+    fprintf('Plotting each phase with a different color, data normalized ...\n');
+    cellfun(@(x, y, z, w, v) plot_table(x, 'PlotSeparately', false, ...
+                'PhaseVariables', phaseVars, 'PhaseLabels', phaseStrs, ...
+                'PlotPhaseBoundaries', false, 'PlotPhaseAverages', false, ...
+                'PlotIndSelected', false, 'ColorByPhase', true, ...
+                'NLastOfPhase', nSweepsLastOfPhase, ...
+                'NToAverage', nSweepsToAverage, ...
+                'SelectionMethod', selectionMethod, ...
+                'MaxRange2Mean', maxRange2Mean, ...
+                'PlotType', plotType, ...
+                'VariableNames', strcat(y, '_', fileLabels), ...
+                'ReadoutLimits', [0, Inf], ...
+                'ReadoutLabel', z, 'TableLabel', w, ...
+                'PLabel', timeLabel, 'FigName', v, ...
+                'RemoveOutliers', removeOutliersInPlot), ...
+            normTimeTables, varsToPlot, varLabels, tableLabels, figNamesNormByPhase);
 end
 
 %% Plot population averages
@@ -667,7 +739,8 @@ myTable = addvars(myTable, Time, 'Before', 1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function outTable = average_last_of_each_phase(inTable, nSweepsLastOfPhase, ...
+function outTable = ...
+            average_last_of_each_phase(inTable, nSweepsLastOfPhase, ...
                                 nSweepsToAverage, selectionMethod, ...
                                 maxRange2Mean, sheetPath)
 %% Averages over the last nSweepsToAverage sweeps of each phase
@@ -758,6 +831,36 @@ indLastEachPhase = create_indices('IndexStart', firstIndexEachPhase, ...
                                     'IndexEnd', lastIndexEachPhase, ...
                                     'MaxNum', nLastIndices, ...
                                     'ForceCellOutput', true);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function normalizedTable = normalize_to_baseline(table, avgTable, varName, sheetPath)
+%% Normalizes all values to baseline
+
+% Get all the variable names
+columnNames = table.Properties.VariableNames;
+
+% Select the columns that contains given variable name
+columnsToNormalize = find(contains(columnNames, varName));
+
+% Run through all columns containing given variable name
+normalizedTable = table;
+for idxCol = columnsToNormalize
+    % Get the column name
+    thisColumnName = columnNames{idxCol};
+
+    % Extract the baseline value for this column
+    baseValue = avgTable{1, thisColumnName};
+
+    % Extract this column
+    thisColumn = table{:, idxCol};
+    
+    % Normalize the column with the baseline value
+    normalizedTable{:, idxCol} = (thisColumn ./ baseValue) .* 100;
+end
+
+% Save the table
+writetable(normalizedTable, sheetPath);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

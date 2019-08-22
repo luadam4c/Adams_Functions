@@ -995,13 +995,12 @@ end
 % Plot selected values if any
 if ~isempty(indSelected)
     if iscell(indSelected)
-        % Color by curve first
+        % Color arbitrarily first
         selectedCell = ...
             arrayfun(@(x) ...
                 cellfun(@(y) plot_selected(pValues, ...
                             readoutToPlot(:, columnsToPlot(x)), y, ...
-                            selectedMarker, selectedColorMap(x, :), ...
-                            selectedLineWidth), ...
+                            selectedMarker, 'r', selectedLineWidth), ...
                         indSelected(:, columnsToPlot(x))), ...
                 1:nColumnsToPlot, 'UniformOutput', false);            
 
@@ -1015,6 +1014,16 @@ if ~isempty(indSelected)
                 colorThis = selectedColorMap(iPhase, :);
 
                 for iCol = 1:nColumnsToPlot
+                    x = selected(iPhase, iCol);
+                    if isgraphics(x)
+                        x.Color = colorThis;
+                    end
+                end
+            end
+        else
+            for iCol = 1:nColumnsToPlot
+                colorThis = selectedColorMap(iCol, :);
+                for iPhase = 1:maxNPhases
                     x = selected(iPhase, iCol);
                     if isgraphics(x)
                         x.Color = colorThis;
