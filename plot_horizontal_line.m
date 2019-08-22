@@ -14,7 +14,7 @@ function h = plot_horizontal_line (yValue, varargin)
 %       h = plot_horizontal_line(3, 'XLimits', [1, 2, 4, 5])
 %       h = plot_horizontal_line([3, 4, 5])
 %       h = plot_horizontal_line([3, 4, 5], 'Color', 'r')
-%       h = plot_horizontal_line([3, 4, 5], 'ColorMap', 'jet')
+%       TODO: h = plot_horizontal_line([3, 4, 5], 'ColorMapFunc', 'jet')
 %
 % Outputs:
 %       h           - handle to the line object(s) created
@@ -28,11 +28,10 @@ function h = plot_horizontal_line (yValue, varargin)
 %                   default == get(gca, 'XLim')
 %                   - 'ColorMap' - color map used
 %                   must be a 2-D numeric array with 3 columns
-%                   default == create_colormap(nLines)
+%                   default == decide_on_colormap([], nLines)
 %                   - Any other parameter-value pair for the line() function
 %
 % Requires:
-%       cd/create_colormap.m
 %       cd/create_error_for_nargin.m
 %       cd/decide_on_colormap.m
 %       cd/force_column_cell.m
@@ -123,6 +122,9 @@ end
 
 % Set default color map
 colorMap = decide_on_colormap(colorMap, nColors);
+
+% Expand to nLines
+colorMap = decide_on_colormap(colorMap, nLines);
 
 %% Do the job
 % Hold on if plotting more than one line
