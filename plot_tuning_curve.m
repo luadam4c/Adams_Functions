@@ -964,8 +964,9 @@ end
 if ~isempty(phaseAverages) && ~isempty(averageWindows)
     % Decide on the color map for each phase
     if colorByPhase
-        colorMapEachPhase = arrayfun(@(x) colorMap(x, :), ...
-                                1:size(colorMap, 1), 'UniformOutput', false);
+        colorMapEachPhase = ...
+            arrayfun(@(x) repmat(colorMap(x, :), nColumnsToPlot, 1), ...
+                        1:size(colorMap, 1), 'UniformOutput', false);
     else
         colorMapEachPhase = repmat({colorMap}, maxNPhases, 1);
     end
