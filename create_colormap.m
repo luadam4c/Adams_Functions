@@ -3,6 +3,7 @@ function colorMap = create_colormap (varargin);
 % Usage: colorMap = create_colormap (nColors (opt), varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       create_colormap(1)
 %       create_colormap(2)
@@ -13,13 +14,14 @@ function colorMap = create_colormap (varargin);
 %       create_colormap(7, 'ReverseOrder', true)
 %       create_colormap('ColorMapFunc', @gray, 'ReverseOrder', true)
 %       create_colormap('ColorMapFunc', @gray, 'ReverseOrder', true, 'HighContrast', true)
+%
 % Outputs:
 %       colorMap    - color map created
 %                   specified as a nColors by 3 numeric array
 % Arguments:
-%       nColors         - (opt) number of colors
-%                       must be a positive integer vector
-%                       default == 64
+%       nColors     - (opt) number of colors
+%                   must be a positive integer vector
+%                   default == 64
 %       varargin    - 'ColorMapFunc': color map function to use
 %                       must be a function handle
 %                       default == @jet
@@ -35,6 +37,7 @@ function colorMap = create_colormap (varargin);
 %       cd/locate_functionsdir.m
 %
 % Used by:
+%       cd/decide_on_colormap.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/plot_horizontal_line.m
 %       cd/plot_traces.m   

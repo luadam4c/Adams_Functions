@@ -35,6 +35,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %       cd/compute_sampsizepwr.m
 %       cd/compute_sweep_errors.m
 %       cd/count_samples.m
+%       cd/decide_on_colormap.m
 %       cd/m3ha_neuron_create_simulation_params.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/match_format_vectors.m

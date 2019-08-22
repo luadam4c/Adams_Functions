@@ -24,7 +24,7 @@ function rgbValue = char2rgb (colorStr, varargin)
 %       ~/Downloaded_Functions/rgb.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/decide_on_colormap.m
 
 % File History:
 % 2019-08-22 Adapted from https://stackoverflow.com/questions/4922383/how-can-i-convert-a-color-name-to-a-3-element-rgb-vector

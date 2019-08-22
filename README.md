@@ -144,6 +144,7 @@ There are 1 MATLAB scripts in this directory:
 - [**create_waveform_train.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_waveform_train.m): Creates a waveform train from a waveform, a frequency, and a total duration
 - [**crosscorr_profile.m**](https://github.com/blabuva/Adams_Functions/blob/master/crosscorr_profile.m): data: each channel is a column
 - [**csvwrite_with_header.m**](https://github.com/blabuva/Adams_Functions/blob/master/csvwrite_with_header.m): Write a comma-separated value file with given header
+- [**decide_on_colormap.m**](https://github.com/blabuva/Adams_Functions/blob/master/decide_on_colormap.m): Decides on the color map to use
 - [**decide_on_fighandle.m**](https://github.com/blabuva/Adams_Functions/blob/master/decide_on_fighandle.m): Decides on the figure handle depending on what's provided
 - [**detect_spikes_multiunit.m**](https://github.com/blabuva/Adams_Functions/blob/master/detect_spikes_multiunit.m): Detects spikes from a multiunit recording
 - [**distribute_balls_into_boxes.m**](https://github.com/blabuva/Adams_Functions/blob/master/distribute_balls_into_boxes.m): Returns the ways and number of ways to distribute identical/discrete balls into identical/discrete boxes

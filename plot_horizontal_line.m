@@ -34,6 +34,7 @@ function h = plot_horizontal_line (yValue, varargin)
 % Requires:
 %       cd/create_colormap.m
 %       cd/create_error_for_nargin.m
+%       cd/decide_on_colormap.m
 %       cd/force_column_cell.m
 %       cd/isnum.m
 %       cd/match_format_vector_sets.m
@@ -113,21 +114,15 @@ xLimitsAll = apply_over_cells(@vertcat, xLimitsCell);
 % Compute the number of lines to plot
 nLines = numel(yValueAll);
 
-% TODO: colorMap = decide_on_colormap(colorMap, nPlots)
-% Set default color map
-if isempty(colorMap)
-    if numel(yValue) > 1
-        colorMap = create_colormap(nLines);
-    else
-        colorMap = create_colormap(1);
-    end
-elseif ischar(colorMap) || isstring(colorMap)
-    char2rgb = @(x) bitget(find('krgybmcw' == x) - 1, 1:3);
-    colorMap = char2rgb(colorMap);
+% Decide on the number of colors
+if numel(yValue) > 1
+    nColors = nLines;
+else
+    nColors = 1;
 end
 
-% Match the number of rows in the color map to nLines
-colorMap = match_row_count(colorMap, nLines, 'ExpansionMethod', 'repeat');
+% Set default color map
+colorMap = decide_on_colormap(colorMap, nColors);
 
 %% Do the job
 % Hold on if plotting more than one line
