@@ -132,6 +132,11 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                       Note: each row is a set of boundaries
 %                   must be a numeric array
 %                   default == []
+%                   - 'AverageWindows': windows to average values
+%                       Note: If a matrix cell array, 
+%                           each column is for a curve and each row is for a phase
+%                   must be a numeric vector or a cell array of numeric vectors
+%                   default == []
 %                   - 'PhaseAverages': average values for each phase
 %                       Note: If a matrix cell array, 
 %                           each column is for a curve and each row is for a phase
@@ -241,6 +246,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-08-09 Added 'IndSelected' as an optional argument
 % 2019-08-21 Now outputs a handles structure
 % 2019-08-21 Added 'PlotPhaseBoundaries', 'PlotPhaseAverages', 'PlotIndSelected'
+% 2019-08-22 Made averageWindows an optional argument
 %
 
 %% Hard-coded constants
@@ -255,6 +261,10 @@ confIntFadePercentage = 0.25;       % fade percentage for confidence interval co
 selectedLineWidth = 3;              % line width for selected values markers
 selectedMarker = 'o';
 outlierMethod = 'fiveStds';
+plotAverageWindows = [];
+boundariesLineStyle = '--';
+averagesLineStyle = ':';
+averagesLineWidth = 2;
 
 %% Default values for optional arguments
 lowerCIDefault = [];
@@ -286,6 +296,7 @@ plotPhaseAveragesDefault = [];      % set later
 plotIndSelectedDefault = [];        % set later
 pBoundariesDefault = [];
 rBoundariesDefault = [];
+averageWindowsDefault = {};         % set later
 phaseAveragesDefault = [];          % set later
 indSelectedDefault = [];
 nLastOfPhaseDefault = 10;       % select from last 10 values by default
@@ -384,6 +395,8 @@ addParameter(iP, 'PBoundaries', pBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'RBoundaries', rBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'AverageWindows', averageWindowsDefault, ...
+    @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
 addParameter(iP, 'PhaseAverages', phaseAveragesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'IndSelected', indSelectedDefault, ...
@@ -441,6 +454,7 @@ plotPhaseAverages = iP.Results.PlotPhaseAverages;
 plotIndSelected = iP.Results.PlotIndSelected;
 pBoundaries = iP.Results.PBoundaries;
 rBoundaries = iP.Results.RBoundaries;
+averageWindows = iP.Results.AverageWindows;
 phaseAverages = iP.Results.PhaseAverages;
 indSelected = iP.Results.IndSelected;
 nLastOfPhase = iP.Results.NLastOfPhase;
@@ -476,14 +490,19 @@ nEntries = length(pValues);
 nCols = size(readout, 2);
 
 % Decide whether to plot phase-related stuff
-[plotPhaseBoundaries, plotPhaseAverages, plotIndSelected] = ...
+[plotPhaseBoundaries, plotPhaseAverages, ...
+    plotIndSelected, plotAverageWindows] = ...
     argfun(@(x) set_default_flag(x, ~isempty(phaseVectors)), ...
-            plotPhaseBoundaries, plotPhaseAverages, plotIndSelected);
+            plotPhaseBoundaries, plotPhaseAverages, ...
+            plotIndSelected, plotAverageWindows);
 
 % Decide on compute flags
-[computePhaseBoundaries, computePhaseAverages, computeIndSelected] = ...
+[computePhaseBoundaries, computeAverageWindows, ...
+        computePhaseAverages, computeIndSelected] = ...
     argfun(@(x) set_default_flag([], x), ...
             plotPhaseBoundaries && isempty(pBoundaries), ...
+            (plotAverageWindows || plotPhaseAverages) && ...
+                isempty(averageWindows), ...
             plotPhaseAverages && isempty(phaseAverages), ...
             plotIndSelected && isempty(indSelected));
 
@@ -513,7 +532,8 @@ if ~isempty(phaseVectors)
     end
 
     % Generate phase boundaries to be plotted if requested
-    if computePhaseBoundaries || computePhaseAverages || computeIndSelected
+    if computePhaseBoundaries || computeAverageWindows || ...
+            computePhaseAverages || computeIndSelected
         % TODO: Make function [valueBoundaries, indBoundaries] = compute_value_boundaries(values, grouping)
         % Compute all possible index boundaries for the phases
         indBoundariesAll = ...
@@ -535,11 +555,35 @@ if ~isempty(phaseVectors)
         pBoundaries = force_row_vector(pBoundaries);
     end
 
+    % Compute averaging windows
+    if computeAverageWindows
+        % Compute the last index of each window
+        iLastEachWindowAll = ...
+            cellfun(@(x) [x - 0.5; nEntries], ...
+                    indBoundariesAll, 'UniformOutput', false);
+
+        % Compute the first index of each window
+        iFirstEachWindowAll = ...
+            cellfun(@(x) x - nLastOfPhase + 1, ...
+                    iLastEachWindowAll, 'UniformOutput', false);
+
+        % Compute each averaging window
+        averageWindows = ...
+            cellfun(@(x, y) ...
+                    arrayfun(@(u, v) extract_subvectors(pValues, ...
+                                                    'Indices', [u; v]), ...
+                            x, y, 'UniformOutput', false), ...
+            iFirstEachWindowAll, iLastEachWindowAll, 'UniformOutput', false);
+
+        % Force as a matrix
+        averageWindows = force_matrix(averageWindows, 'TreatCellAsArray', true);
+    end
+
     % Generate phase averages to be plotted if requested
     if computePhaseAverages || computeIndSelected
         % Force as a column cell array of column vectors
-        [readoutCell, phaseBoundariesAllCell] = ...
-            argfun(@force_column_cell, readout, phaseBoundariesAll);
+        [readoutCell, indBoundariesAllCell] = ...
+            argfun(@force_column_cell, readout, indBoundariesAll);
 
         % Compute phase averages
         %   Note: this generates a cell array of cell arrays of vectors
@@ -554,7 +598,7 @@ if ~isempty(phaseVectors)
                             'SelectionMethod', selectionMethod, ...
                             'MaxRange2Mean', maxRange2Mean), z, ...
                 'UniformOutput', false), ...
-            readoutCell, indBoundariesAll, uniquePhases, ...
+            readoutCell, indBoundariesAllCell, uniquePhases, ...
             'UniformOutput', false);
 
         % Reorganize so that outputs are a matrix cell array
@@ -568,7 +612,8 @@ if ~isempty(phaseVectors)
     end
 else
     if colorByPhase || computePhaseBoundaries || ...
-            computePhaseAverages || computeIndSelected
+            computeAverageWindows || computePhaseAverages || ...
+            computeIndSelected
         fprintf('Phase vectors must be provided!\n');
         return
     end
@@ -901,7 +946,7 @@ xtickangle(pTickAngle);
 if nPBoundaries > 0
     hold on
     pLines = plot_vertical_line(pBoundaries, 'LineWidth', 0.5, ...
-                                'LineStyle', '--', 'Color', 'g');
+                                'LineStyle', boundariesLineStyle, 'Color', 'g');
 else
     pLines = gobjects;
 end
@@ -910,31 +955,31 @@ end
 if nRBoundaries > 0
     hold on
     rLines = plot_horizontal_line(rBoundaries, 'LineWidth', 0.5, ...
-                                'LineStyle', '--', 'Color', 'r');
+                                'LineStyle', boundariesLineStyle, 'Color', 'r');
 else
     rLines = gobjects;
 end
 
 % Plot phaseAverages if any
-% TODO: Make averageWindows an optional argument
-% TODO: Compute average windows
-averageWindows = repmat({[]}, maxNPhases, 1);
 if ~isempty(phaseAverages) && ~isempty(averageWindows)
     % Decide on the color map for each phase
     if colorByPhase
         colorMapEachPhase = arrayfun(@(x) colorMap(x, :), ...
-                                    1:size(colorMap, 1), 'UniformOutput', false);
+                                1:size(colorMap, 1), 'UniformOutput', false);
     else
         colorMapEachPhase = repmat({colorMap}, maxNPhases, 1);
     end
 
     % Plot the phase averages as horizontal lines
     averages = ...
-        arrayfun(@(x) plot_horizontal_line(phaseAverages(x, :), ...
-                                    'XLimits', averageWindows{x}, ...
-                                    'ColorMap', colorMapEachPhase{x}, ...
-                                    'LineStyle', '--'), ...
-                1:size(phaseAverages, 1), 'UniformOutput', false);
+        arrayfun(@(x) ...
+            arrayfun(@(y) plot_horizontal_line(phaseAverages(x, columnsToPlot(y)), ...
+                                'XLimits', averageWindows{x, columnsToPlot(y)}, ...
+                                'ColorMap', colorMapEachPhase{x}(y, :), ...
+                                'LineStyle', averagesLineStyle, ...
+                                'LineWidth', averagesLineWidth), ...
+                    transpose(1:nColumnsToPlot)), ...
+            transpose(1:size(phaseAverages, 1)), 'UniformOutput', false);
             
     % Force the graphics array as a matrix
     %   Note: Each column is curve and each row is a phase
@@ -1115,7 +1160,8 @@ yLocsSelected = readout(indSelected, :);
 
 % Plot values
 hold on
-selected = plot(xLocsSelected, yLocsSelected, 'Marker', selectedMarker, ...
+selected = plot(xLocsSelected, yLocsSelected, ...
+                'LineStyle', 'none', 'Marker', selectedMarker, ...
                 'Color', selectedColor, 'LineWidth', selectedLineWidth);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
