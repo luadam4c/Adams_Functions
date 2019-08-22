@@ -76,8 +76,7 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'x', ...                  % array to be operated on
-    @(z) validateattributes(z, {'char', 'string', 'cell', 'numeric'}, {'nonempty'}));
+addRequired(iP, 'x');
 
 % Add optional inputs to the Input Parser
 addOptional(iP, 'optArg', optArgDefault, ...

@@ -93,8 +93,8 @@ end
                                     'UniformOutput', false);
 
 % Vertically concatenate all column cell arrays
-yValueAll = apply_over_cell(@vertcat, yValueCell);
-xLimitsAll = apply_over_cell(@vertcat, xLimitsCell);
+yValueAll = apply_over_cells(@vertcat, yValueCell);
+xLimitsAll = apply_over_cells(@vertcat, xLimitsCell);
 
 %% Do the job
 h = cellfun(@(y, x) line(x, repmat(y, size(x)), otherArguments), ...

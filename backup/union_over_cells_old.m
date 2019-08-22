@@ -1,6 +1,14 @@
 function unionOfContents = union_over_cells (cellArray, varargin)
 %% Apply the union function over all contents of a cell array
 % Usage: unionOfContents = union_over_cells (cellArray, varargin)
+% Explanation:
+%       TODO
+%
+% Examples:
+%       union_over_cells([2; 3])
+%       union_over_cells({'ab', 'bc', 'bg'})
+%       union_over_cells({[1 2], [2; 3]})
+%
 % Outputs:    
 %       unionOfContents - union of contents
 %
@@ -12,10 +20,11 @@ function unionOfContents = union_over_cells (cellArray, varargin)
 %
 %
 % Used by:
-%   /media/adamX/m3ha/optimizer4gabab/compare_and_plot_across_conditions.m
-%
+%       /media/adamX/m3ha/optimizer4gabab/compare_and_plot_across_conditions.m
+
 % File History:
 %   2018-08-17 Created by Adam Lu
+%   2019-08-21 Now uses apply_over_cells.m
 
 %% Hard-coded parameters
 validSetOrders = {'sorted', 'stable'};
@@ -36,9 +45,8 @@ end
 iP = inputParser;
 iP.FunctionName = mfilename;
 
-% TODO: Add required inputs to an Input Parser
 % Add required inputs to the Input Parser
-addRequired(iP, 'cellArray', @iscell)
+addRequired(iP, 'cellArray');
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'SetOrder', setOrderDefault, ...

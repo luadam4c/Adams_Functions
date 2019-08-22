@@ -25,6 +25,7 @@ function empty = create_empty_match (array, varargin)
 
 % File History:
 % 2019-01-03 Moved from extract_subvectors.m
+% 2019-08-21 Defaults duration arrays to NaN minutes
 % 
 
 %% Hard-coded parameters
@@ -72,6 +73,8 @@ end
 % Construct the empty array according to type
 if isnumeric(array)
     empty = NaN(nRows, nColumns);
+elseif isduration(array)
+    empty = minutes(NaN(nRows, nColumns));
 elseif islogical(array)
     empty = false(nRows, nColumns);
 elseif iscell(array)

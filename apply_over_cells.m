@@ -1,15 +1,17 @@
-function output = apply_over_cell (myFunction, cellArray, varargin)
+function output = apply_over_cells (myFunction, inputs, varargin)
 %% Apply a function that usually takes two equivalent arguments over all contents of a cell array
-% Usage: output = apply_over_cell (myFunction, cellArray, varargin)
+% Usage: output = apply_over_cells (myFunction, inputs, varargin)
 % Explanation:
 %       TODO
+%
 % Examples:
 %       vecs1 = {[2, 3, 4], [3, 4, 5], [1, 3, 4]};
-%       apply_over_cell(@intersect, vecs1)
-%       apply_over_cell(@union, vecs1, 'OptArg', 'stable')
+%       apply_over_cells(@intersect, vecs1)
+%       apply_over_cells(@union, vecs1, 'OptArg', 'stable')
 %       load_examples;
-%       apply_over_cell(@outerjoin, myCellTable, 'MergeKeys', true)
-%       apply_over_cell(@outerjoin, myCellTable, 'MergeKeys', true, 'Keys', 'Key')
+%       apply_over_cells(@outerjoin, myCellTable, 'MergeKeys', true)
+%       apply_over_cells(@outerjoin, myCellTable, 'MergeKeys', true, 'Keys', 'Key')
+%
 % Outputs:
 %       output      - final output
 %
@@ -18,7 +20,7 @@ function output = apply_over_cell (myFunction, cellArray, varargin)
 %                       as normal input
 %                       e.g., intersect(), union(), outerjoin()
 %                   must be a function handle
-%       cellArray   - a cell array of arguments for myFunction
+%       inputs      - a cell array of arguments for myFunction
 %                   must be a cell array of inputs that 
 %                       can serve as the first two inputs for myFunction
 %       varargin    - 'OptArg': optional argument that's 
@@ -32,7 +34,9 @@ function output = apply_over_cell (myFunction, cellArray, varargin)
 %       ~/m3ha/optimizer4gabab/compare_and_plot_across_conditions.m
 %
 % File History:
-% 2019-03-17 MOdified from union_over_cell.m
+%   2019-03-17 Modified from union_over_cell.m
+%   2019-08-21 Now accepts any array and 
+%               applies it to itself if not a cell array
 
 %% Hard-coded parameters
 
@@ -56,27 +60,27 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 % Add required inputs to the Input Parser
 addRequired(iP, 'myFunction', ...           % a custom function
     @(x) validateattributes(x, {'function_handle'}, {'scalar'}));
-addRequired(iP, 'cellArray', @iscell);
+addRequired(iP, 'inputs');
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'OptArg', optArgDefault);
 
 % Read from the Input Parser
-parse(iP, myFunction, cellArray, varargin{:});
+parse(iP, myFunction, inputs, varargin{:});
 optArg = iP.Results.OptArg;
 
 % Keep unmatched arguments for myFunction
 otherArguments = struct2arglist(iP.Unmatched);
 
-%% Return the input if not a cell array
-if isempty(cellArray) || ~iscell(cellArray)
-    output = cellArray;
+%% Preparation
+% Return the input if empty
+if isempty(inputs)
+    output = inputs;
     return;
 end
 
-%% Return the union of the contents of the cell array
 % Count the number of elements
-nElements = numel(cellArray);
+nElements = numel(inputs);
 
 % If there are no elements, return an empty matrix
 if nElements == 0
@@ -84,17 +88,28 @@ if nElements == 0
     return
 end
 
-% Initialize the output
-output = cellArray{1};
+% If inputs is not a cell array, apply the function to itself
+if ~iscell(inputs)
+    if ~isempty(optArg)
+        output = myFunction(inputs, inputs, optArg, otherArguments{:});
+    else
+        output = myFunction(inputs, inputs, otherArguments{:});
+    end
+    return
+end
+
+%% Iterate over all cells
+% Initialize the output as the first input
+output = inputs{1};
 
 % Iterate over all elements
 if nElements > 1
     for iElement = 2:nElements
         if ~isempty(optArg)
-            output = myFunction(output, cellArray{iElement}, ...
+            output = myFunction(output, inputs{iElement}, ...
                                 optArg, otherArguments{:});
         else
-            output = myFunction(output, cellArray{iElement}, otherArguments{:});
+            output = myFunction(output, inputs{iElement}, otherArguments{:});
         end
     end
 end

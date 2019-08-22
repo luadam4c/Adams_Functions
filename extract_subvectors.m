@@ -3,12 +3,16 @@ function subVecs = extract_subvectors (vecs, varargin)
 % Usage: subVecs = extract_subvectors (vecs, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       subVecs1 = extract_subvectors({1:5, 2:6}, 'EndPoints', [1, 3])
 %       subVecs2 = extract_subvectors({1:5, 2:6}, 'EndPoints', {[1, 3], [2, 4]})
 %       subVecs3 = extract_subvectors(1:5, 'EndPoints', {[1, 3], [2, 4]})
 %       subVecs4 = extract_subvectors({1:5, 2:6}, 'Windows', [2.5, 6.5])
 %       subVecs5 = extract_subvectors(magic(3), 'EndPoints', {[1,Inf], [2,Inf], [3,Inf]})
+%       extract_subvectors(3:3:18, 'Indices', [2.5, 5.5])
+%       extract_subvectors(3:3:18, 'Indices', {3.5; [2.5, 5.5]})
+%
 % Outputs:
 %       subVecs     - subvectors extracted
 %                   specified as a numeric array 
@@ -71,6 +75,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/force_column_vector.m
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
+%       cd/ispositiveintegervector.m
 %       cd/match_format_vector_sets.m
 %       cd/unique_custom.m
 %
@@ -112,6 +117,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2019-04-26 Added padarray_custom
 % 2019-04-26 Fixed padding when there are empty vectors
 % 2019-08-13 Added 'MaxNum' as an optional parameter
+% 2019-08-21 Now allows indices to be non-integers (uses interpolation)
 % TODO: check if all endpoints have 2 elements
 % 
 
@@ -291,7 +297,7 @@ end
                                         'TreatCellStrAsArray', true), ...
             vec, indices);
 
-% Count the number of indices
+% Count the number of different indices vectors
 nIndices = size(indices, 2);
 
 % Count the desired number of rows
@@ -319,9 +325,11 @@ else
 end
 
 % Extract the subvectors
-if nIndices == 1
+if nIndices == 0
+    % do nothing
+elseif nIndices == 1
     % Replace the parts that are not NaNs
-    subVec(withoutNaNs, :) = vec(indices(withoutNaNs), :);
+    subVec(withoutNaNs, :) = extract_one_subvector(vec, indices(withoutNaNs));
 else
     for iCol = 1:nColumns
         % Get the indices for this column
@@ -330,14 +338,36 @@ else
         % Get the parts without NaNs for the indices of this column
         withoutNaNsThis = withoutNaNs{iCol};
 
+        % Extract this column
+        vecThis = vec(:, iCol);
+
         % Replace the parts of this column that are not NaNs
-        subVec(withoutNaNsThis, iCol) = vec(indicesThis(withoutNaNsThis), iCol);
+        subVec(withoutNaNsThis, iCol) = ...
+            extract_one_subvector(vecThis, indicesThis(withoutNaNsThis));
     end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function subVec = extract_one_subvector (vec, indices)
+% Extract just one subvector
+
+if ispositiveintegervector(indices)
+    % Just get the subvector
+    subVec = vec(indices, :);
+else
+    % Set up indices
+    allIndices = 1:size(vec, 1);
+
+    % Interpolate
+    subVec = interp1(allIndices, vec, indices);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function indices = align_subvectors(indices, alignMethod)
+%% TODO: Description
+% TODO: Pull out to its own function?
 
 switch alignMethod
 case {'leftAdjust', 'rightAdjust', 'leftAdjustPad', 'rightAdjustPad'}
@@ -488,6 +518,9 @@ if iscellnumericvector(vecs)
         match_format_vector_sets(indices, vecs, 'ForceCellOutputs', true);
 
 uniqueNSamples = unique(nSamples);
+
+subVec(withoutNaNs, :) = vec(indices(withoutNaNs), :);
+subVec(withoutNaNsThis, iCol) = vecThis(indicesThis(withoutNaNsThis));
 
 %}
 

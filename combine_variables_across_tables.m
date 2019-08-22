@@ -53,7 +53,7 @@ function [outTables, outSheetPaths] = ...
 %                   - Any other parameter-value pair for the outerjoin() function
 %
 % Requires:
-%       cd/apply_over_cell.m
+%       cd/apply_over_cells.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_row_labels.m
@@ -183,7 +183,7 @@ else
                         'UniformOutput', false);
 
     % Take the union over all possible variable names
-    varNames = apply_over_cell(@union, varNamesAll);
+    varNames = apply_over_cells(@union, varNamesAll);
 
     % Force as a column cell array
     varNames = force_column_vector(varNames);
@@ -254,7 +254,7 @@ else
 end
 
 % Join the tables by the key(s)
-outTable = apply_over_cell(@outerjoin, tablesToJoin, ...
+outTable = apply_over_cells(@outerjoin, tablesToJoin, ...
                             'Keys', keys, 'MergeKeys', true, otherArguments{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

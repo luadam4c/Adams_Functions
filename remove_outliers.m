@@ -54,6 +54,7 @@ function [newData, rowsToKeep] = remove_outliers (oldData, varargin)
 % 2018-06-11 Modified to use various outlier methods
 % 2019-03-14 Return original data if empty
 % 2019-03-14 Added 'ReplaceWithNans' as an optional argument
+% 2019-08-21 Now ignores NaNs when computing standard deviations and means
 
 %% Hard-coded parameters
 validOutlierMethods = {'boxplot', 'isoutlier', ...
@@ -145,10 +146,10 @@ case 'isoutlier'
     withinRange = ~isoutlier(oldData);
 case {'fiveStds', 'threeStds', 'twoStds'}
     % Compute the mean of each column
-    meanX = mean(oldData);
+    meanX = nanmean(oldData);
 
     % Compute the standard deviation of each column
-    stdX = std(oldData);
+    stdX = nanstd(oldData);
 
     % Get the number of standard deviations away from the mean
     if strcmp(outlierMethod, 'fiveStds')

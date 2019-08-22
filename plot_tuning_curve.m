@@ -24,6 +24,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                       curves      - tuning curves
 %                       confInts    - confidence interval areas
 %                       boundaries  - boundary lines
+%                       selected    - selected values
 %                   specified as a scalar structure
 % Arguments:
 %       pValues     - column vector of parameter values
@@ -151,11 +152,13 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %
 % Requires:
 %       ~/Downloaded_Functions/rgb.m
+%       cd/compute_index_boundaries.m
 %       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/decide_on_fighandle.m
 %       cd/force_column_vector.m
+%       cd/force_row_vector.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
 %       cd/plot_horizontal_line.m
@@ -164,6 +167,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/save_all_figtypes.m
 %       cd/set_default_flag.m
 %       cd/unique_custom.m
+%       cd/union_over_cells.m
 %
 % Used by:
 %       cd/plot_measures.m
@@ -207,9 +211,11 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 WHITE = [1, 1, 1];
 
 %% Hard-coded parameters
+% TODO: Make optional arguments
 sigLevel = 0.05;                    % significance level for tests
-fadePercentage = 0.25;              % fade percentage for confidence interval colors
-markerLineWidth = 3;
+confIntFadePercentage = 0.25;       % fade percentage for confidence interval colors
+selectedLineWidth = 3;              % line width for selected values markers
+outlierMethod = 'fiveStds';
 
 %% Default values for optional arguments
 lowerCIDefault = [];
@@ -379,17 +385,16 @@ figName = iP.Results.FigName;
 % Keep unmatched arguments for the plot() function
 otherArguments = iP.Unmatched;
 
+%% Prepare for tuning curve
+% Initialize a handles structure
+handles = struct;
+
 % Check relationships between arguments
 if ~isempty(pTicks) && ~isempty(pTickLabels) && ...
         numel(pTicks) ~= numel(pTickLabels)
     fprintf('PTicks and PTickLabels must have the same number of elements!\n');
-    fig = [];
     return
 end
-
-%% Prepare for tuning curve
-% Initialize a handles structure
-handles = struct;
 
 % Count number of entries
 nEntries = length(pValues);
@@ -427,11 +432,25 @@ if ~isempty(phaseVectors)
     end
 
     % Generate phase boundaries to be plotted if requested
-    % TODO: what if the old pBoundaries is 2-dimensional?
+    % TODO: What if pBoundaries is 2-D?
     if plotPhaseBoundaries
-        phaseBoundaries = 
+        % Compute all possible index boundaries for the phases
+        indBoundariesAll = ...
+            compute_index_boundaries('Grouping', phaseVectors, ...
+                                        'TreatNaNsAsGroup', false);
 
-        pBoundaries = [pBoundaries, ];
+        % Convert to the parameter units
+        phaseBoundariesAll = ...
+            extract_subvectors(pValues, 'Indices', indBoundariesAll);
+
+        % Pool all phase boundaries together
+        phaseBoundaries = union_over_cells(phaseBoundariesAll);
+
+        % Force as a row vector
+        phaseBoundaries = force_row_vector(phaseBoundaries);
+
+        % Add it to other parameter boundaries
+        pBoundaries = [pBoundaries, phaseBoundaries];
     end
 else
     if colorByPhase
@@ -447,9 +466,16 @@ else
     maxNPhases = 1;
 end
 
+% Decide on the number of curves to plot per phase
+if colorByPhase
+    nLinesPerPhase = maxNPhases;
+else
+    nLinesPerPhase = 1;
+end
+
 % Remove outliers if requested
 if removeOutliers
-    readout = remove_outliers(readout, 'OutlierMethod', 'isoutlier', ...
+    readout = remove_outliers(readout, 'OutlierMethod', outlierMethod, ...
                                 'ReplaceWithNans', true);
 end
 
@@ -468,9 +494,8 @@ end
 % Run paired t-tests if requested
 if runTTest
     % Run t-tests on each pair of columns
-    [tTestResults, tTestPValues] = ttest(afters, befores);
+    [~, tTestPValues] = ttest(afters, befores, 'Alpha', sigLevel);
 else
-    tTestResults = [];
     tTestPValues = [];
 end
 
@@ -478,10 +503,11 @@ end
 if runRankTest
     % Run t-tests on each pair of columns
     % TODO: Make a function vecfun.m
-    [rankTestPValues, rankTestResults] = ...
-        arrayfun(@(x) signrank(afters(:, x), befores(:, x)), 1:size(afters, 2));
+    rankTestPValues = ...
+        arrayfun(@(x) signrank(afters(:, x), befores(:, x), ...
+                                'Alpha', sigLevel), ...
+                    1:size(afters, 2));
 else
-    rankTestResults = [];
     rankTestPValues = [];
 end
 
@@ -512,7 +538,7 @@ end
 % Count the number of boundaries
 nPBoundaries = size(pBoundaries, 2);
 nRBoundaries = size(rBoundaries, 2);
-nBoundaries = nPBoundaries + nRBoundaries;
+% nBoundaries = nPBoundaries + nRBoundaries;
 
 % Set the default figure title
 if isempty(figTitle)
@@ -548,7 +574,7 @@ end
 % Decide on the confidence interval color map to use
 if isempty(confIntColor)
     % Color of the confidence interval
-    confIntColor = WHITE - (WHITE - colorMap) * fadePercentage;
+    confIntColor = WHITE - (WHITE - colorMap) * confIntFadePercentage;
 end
 
 % Set the default parameter tick angle
@@ -573,8 +599,8 @@ end
 fig = decide_on_fighandle('FigHandle', figHandle, 'FigNumber', figNumber);
 
 % Initialize graphics objects
-curves = gobjects(nColumnsToPlot, maxNPhases);
-confInts = gobjects(nColumnsToPlot, maxNPhases);
+curves = gobjects(nColumnsToPlot, nLinesPerPhase);
+confInts = gobjects(nColumnsToPlot, nLinesPerPhase);
 
 % Clear figure if requested
 if clearFigure
@@ -636,17 +662,17 @@ for iPlot = 1:nColumnsToPlot
         end
 
         % Plot the confidence interval
-        if ~isempty(phaseVectors) || pIsLog
+        if colorByPhase || pIsLog
             fprintf('Not Supported Yet!\n');
         else
             hold on;
 
             % Get the current Y limits
-            yLimits = get(gca, 'YLim');
+            % yLimits = get(gca, 'YLim');
 
             % Compute the minimum y limits
             %TODO
-            minY = apply_iteratively(@min, {yLimits, readoutLimits});
+            % minY = apply_iteratively(@min, {yLimits, readoutLimits});
 
             % Remove tuning curve
             delete(curves(iPlot, 1));
@@ -670,31 +696,31 @@ for iPlot = 1:nColumnsToPlot
     end
 
     % Set color
-    if isempty(phaseVectors)
-        % Set color by columns
-        set(curves(iPlot, 1), 'Color', colorMap(iPlot, :));
-    else
+    if colorByPhase
         % Set color by phase
         for iPhase = 1:nPhasesThis
             set(curves(iPlot, iPhase), 'Color', colorMap(iPhase, :));
         end
+    else
+        % Set color by columns
+        set(curves(iPlot, 1), 'Color', colorMap(iPlot, :));
     end
 
     % Set display name
-    if isempty(phaseVectors) || isempty(phaseLabels)
-        if ~strcmpi(columnLabels, 'suppress')
-            set(curves(iPlot, 1), 'DisplayName', ...
-                replace(columnLabels{col}, '_', '\_'));
-        end
-    else
+    if colorByPhase
         for iPhase = 1:nPhasesThis
             set(curves(iPlot, iPhase), 'DisplayName', ...
                 replace(phaseLabels{iPhase}, '_', '\_'));
         end
+    else        
+        if ~strcmpi(columnLabels, 'suppress')
+            set(curves(iPlot, 1), 'DisplayName', ...
+                replace(columnLabels{col}, '_', '\_'));
+        end
     end
 
     % If there is only one value for this column, mark with a circle
-    % TODO: for ~isempty(phaseVectors)?
+    % TODO: for colorByPhase?
     if nNonInf(col) == 1
         set(curves(iPlot, 1), 'Marker', 'o');
     end
@@ -779,8 +805,8 @@ if ~isempty(indSelected)
 
     % Plot values
     hold on
-    markers = plot(xLocsSelected, yLocsSelected, 'ro', ...
-                    'LineWidth', markerLineWidth);
+    handles.selected = plot(xLocsSelected, yLocsSelected, 'ro', ...
+                            'LineWidth', selectedLineWidth);
 end
 
 % TODO: Make function plot_text.m
@@ -853,16 +879,18 @@ end
 
 %% Post-plotting
 % Generate a legend for the curves only if there is more than one trace
-if ~strcmpi(legendLocation, 'suppress')
-    if isempty(phaseVectors) && nColumnsToPlot > 1
-        legend(curves, 'location', legendLocation);
-    else
+if ~strcmpi(legendLocation, 'suppress') && nColumnsToPlot > 1
+    if colorByPhase
         legend(curves(1, :), 'location', legendLocation);
+    else
+        legend(curves, 'location', legendLocation);
     end
 end
 
 % Return boundaries
-boundaries = transpose(vertcat(pLines, rLines));
+if ~isempty(pLines) || ~isempty(rLines)
+    handles.boundaries = transpose(vertcat(pLines, rLines));
+end
 
 % Save figure if figName provided
 if ~isempty(figName)
@@ -873,8 +901,6 @@ end
 handles.fig = fig;
 handles.curves = curves;
 handles.confInts = confInts;
-handles.boundaries = boundaries;
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

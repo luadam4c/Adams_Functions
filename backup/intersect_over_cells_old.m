@@ -1,6 +1,13 @@
-function intersection = intersect_over_cells (cellArray)
+function intersection = intersect_over_cells (cellArray, varargin)
 %% Apply the intersect function over all contents of a cell array
-% Usage: intersection = intersect_over_cells (cellArray)
+% Usage: intersection = intersect_over_cells (cellArray, varargin)
+% Explanation:
+%       TODO
+%
+% Examples:
+%       intersect_over_cells([2; 3])
+%       intersect_over_cells({'ab', 'bc', 'bg'})
+%       intersect_over_cells({[1 2], [2; 3]})
 % Outputs:    
 %       intersection    - intersection of contents
 %
@@ -12,12 +19,13 @@ function intersection = intersect_over_cells (cellArray)
 %
 % Used by:
 %       TODO
-%
+
 % File History:
-% 2018-01-10 Created
-% 2018-05-08 Fixed the case if cellArray is not a cell array
-% 2018-05-08 Changed tabs to spaces and limited width to 80
-% 2018-08-17 Renamed intersectm -> intersect_over_cells
+%   2018-01-10 Created
+%   2018-05-08 Fixed the case if cellArray is not a cell array
+%   2018-05-08 Changed tabs to spaces and limited width to 80
+%   2018-08-17 Renamed intersectm -> intersect_over_cells
+%   2019-08-21 Now uses apply_over_cells.m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -32,11 +40,11 @@ end
 iP = inputParser;
 iP.FunctionName = mfilename;
 
-% TODO: Add required inputs to an Input Parser
+% Add required inputs to the Input Parser
+addRequired(iP, 'cellArray');
 
-if isempty(cellArray)
-    error('Argument cannot be empty!');
-end
+% Read from the Input Parser
+parse(iP, cellArray, varargin{:});
 
 %% Return the array if not a cell array
 if ~iscell(cellArray)
@@ -60,7 +68,7 @@ intersection = cellArray{1};
 % Iterate over all elements
 if nElements > 1
     for iElement = 2:nElements
-        intersection = intersect(intersection, cellArray{iElement});
+        intersection = intersect(intersection, cellArray{iElement}, setOrder);
     end
 end
 
@@ -70,6 +78,9 @@ end
 OLD CODE:
 
 %       cd/find_in_strings.m
+if isempty(cellArray)
+    error('Argument cannot be empty!');
+end
 
 %}
 

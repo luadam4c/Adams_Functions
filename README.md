@@ -34,7 +34,7 @@ There are 1 MATLAB scripts in this directory:
 - [**annotation_in_plot.m**](https://github.com/blabuva/Adams_Functions/blob/master/annotation_in_plot.m): A wrapper function for the annotation() function that accepts x and y values normalized to the axes
 - [**apply_iteratively.m**](https://github.com/blabuva/Adams_Functions/blob/master/apply_iteratively.m): Applies a function iteratively to an array until it becomes a non-cell array result
 - [**apply_or_return.m**](https://github.com/blabuva/Adams_Functions/blob/master/apply_or_return.m): Applies a function if a condition is true, or return the original argument(s)
-- [**apply_over_cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/apply_over_cell.m): Apply a function that usually takes two equivalent arguments over all contents of a cell array
+- [**apply_over_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/apply_over_cells.m): Apply a function that usually takes two equivalent arguments over all contents of a cell array
 - [**apply_to_all_subdirs.m**](https://github.com/blabuva/Adams_Functions/blob/master/apply_to_all_subdirs.m): Apply the same function (must have 'Directory' as a parameter) to all subdirectories
 - [**archive_dependent_scripts.m**](https://github.com/blabuva/Adams_Functions/blob/master/archive_dependent_scripts.m): Archive all dependent scripts of a function
 - [**argfun.m**](https://github.com/blabuva/Adams_Functions/blob/master/argfun.m): Applies a function to each input argument
@@ -82,7 +82,7 @@ There are 1 MATLAB scripts in this directory:
 - [**compute_gpas.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_gpas.m): Computes the passive conductance (gpas, in S/cm^2) from input resistance and surface area
 - [**compute_grouped_histcounts.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_grouped_histcounts.m): Computes bin counts and edges from grouped data
 - [**compute_IMax_GHK.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_IMax_GHK.m): Computes the maximum current [mA/cm^2] using the GHK current equation
-- [**compute_index_boundaries.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_index_boundaries.m): Computes boundary values for indices of different groups
+- [**compute_index_boundaries.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_index_boundaries.m): Computes boundary values for indices of different groups, assuming the groups are all consecutive in the array
 - [**compute_initial_slopes.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_initial_slopes.m): Computes the average initial slope from a current pulse response
 - [**compute_maximum_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_maximum_trace.m): Computes the maximum of traces that are not necessarily the same length
 - [**compute_minimum_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_minimum_trace.m): Computes the minimum of traces that are not necessarily the same length
@@ -209,6 +209,7 @@ There are 1 MATLAB scripts in this directory:
 - [**identify_gabab_protocol.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_gabab_protocol.m): Identifies whether a .abf file or a set of voltage vectors follows a GABA-B IPSC protocol
 - [**identify_repetitive_pulses.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_repetitive_pulses.m): Identifies whether a set of vectors are repetitive pulses
 - [**increment_editbox.m**](https://github.com/blabuva/Adams_Functions/blob/master/increment_editbox.m): Increment or decrement editbox value based on direction
+- [**intersect_over_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/intersect_over_cells.m): Apply the intersect function over all contents of a cell array
 - [**isaninteger.m**](https://github.com/blabuva/Adams_Functions/blob/master/isaninteger.m): Returns whether each element of an array is an integer
 - [**isbinaryarray.m**](https://github.com/blabuva/Adams_Functions/blob/master/isbinaryarray.m): Returns whether the input is a binary array
 - [**isbinaryscalar.m**](https://github.com/blabuva/Adams_Functions/blob/master/isbinaryscalar.m): Returns whether an input is a binary scalar (may be empty)
@@ -379,6 +380,7 @@ There are 1 MATLAB scripts in this directory:
 - [**test_passive_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/test_passive_fit.m): Tests passive fitting 
 - [**transform_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/transform_vectors.m): Transform vectors by a binary operation
 - [**transpose_table.m**](https://github.com/blabuva/Adams_Functions/blob/master/transpose_table.m): Transposes a table (make row names variable names and vice versa)
+- [**union_over_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/union_over_cells.m): Apply the union function over all contents of a cell array
 - [**unique_custom.m**](https://github.com/blabuva/Adams_Functions/blob/master/unique_custom.m): Returns the unique values in x, optionally without NaN
 - [**unique_groups.m**](https://github.com/blabuva/Adams_Functions/blob/master/unique_groups.m): Retrieves the unique groups and counts the number in each group
 - [**update_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/update_params.m): Update dependent parameters for particular experiments

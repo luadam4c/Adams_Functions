@@ -54,9 +54,12 @@ function plot_measures (varargin)
 %                   - 'InFolder': directory to read files from
 %                   must be a string scalar or a character vector
 %                   default == same as directory
-%                   - 'OutFolder': directory to place output files
+%                   - 'OutFolder': directory to place output spreadsheet files
 %                   must be a string scalar or a character vector
-%                   default == same as inFolder
+%                   default == fullfile(inFolder, [create_time_stamp, '_', outDirSuffix])
+%                   - 'FigFolder': directory to place figures
+%                   must be a string scalar or a character vector
+%                   default == outFolder
 %                   - 'PhaseNumbers': phase numbers to restrict to
 %                   must be a numeric vector
 %                   default == []
@@ -105,6 +108,7 @@ function plot_measures (varargin)
 %
 % Requires:
 %       cd/argfun.m
+%       cd/check_dir.m
 %       cd/combine_variables_across_tables.m
 %       cd/compute_phase_average.m
 %       cd/compute_stats.m
@@ -150,6 +154,7 @@ function plot_measures (varargin)
 %% Hard-coded parameters
 validSelectionMethods = {'notNaN', 'maxRange2Mean'};
 validPlotTypes = {'tuning', 'bar'};
+outDirSuffix = 'population_measures';
 
 % Must be consistent with parse_multiunit.m
 varsToPlotAll = {'oscIndex1'; 'oscIndex2'; 'oscIndex3'; 'oscIndex4'; ...
@@ -187,6 +192,7 @@ removeOutliersInPlotDefault = true;
 directoryDefault = pwd;
 inFolderDefault = '';                   % set later
 outFolderDefault = '';                  % set later
+figFolderDefault = '';                  % set later
 phaseNumbersDefault = [];
 sweepNumbersDefault = [];
 sweepsRelToPhase2Default = [];
@@ -246,6 +252,8 @@ addParameter(iP, 'InFolder', inFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigFolder', figFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'PhaseNumbers', phaseNumbersDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'SweepNumbers', sweepNumbersDefault, ...
@@ -296,6 +304,7 @@ removeOutliersInPlot = iP.Results.RemoveOutliersInPlot;
 directory = iP.Results.Directory;
 inFolder = iP.Results.InFolder;
 outFolder = iP.Results.OutFolder;
+figFolder = iP.Results.FigFolder;
 phaseNumbers = iP.Results.PhaseNumbers;
 sweepNumbers = iP.Results.SweepNumbers;
 sweepsRelToPhase2 = iP.Results.SweepsRelToPhase2;
@@ -341,7 +350,12 @@ end
 
 % Decide on the output directory
 if isempty(outFolder)
-    outFolder = inFolder;
+    outFolder = fullfile(inFolder, [create_time_stamp, '_', outDirSuffix]);
+end
+
+% Decide on the figure directory
+if isempty(figFolder)
+    figFolder = outFolder;
 end
 
 % Find all files with the pattern *slice*_params in the file name
@@ -391,22 +405,23 @@ tableNames = strcat(prefix, '_', varsToPlot);
 
 % Create figure names
 [figNames, figNamesByPhase, figNamesAvgd, figNamesNormAvgd, figNamesPopAvg] = ...
-    argfun(@(x) fullfile(outFolder, strcat(tableNames, '_', x, '.png')), ...
+    argfun(@(x) fullfile(figFolder, strcat(tableNames, '_', x, '.png')), ...
             'byfile', 'byphase', 'chevron', 'normChevron', 'popAverage');
 
 % Create paths for chevron tables
-% TODO: Use argfun
-chevronTablePaths = fullfile(outFolder, strcat(tableNames, '_chevron.csv'));
-normChevronTablePaths = fullfile(outFolder, strcat(tableNames, '_normChevron.csv'));
-popAvgTablePaths = fullfile(outFolder, strcat(tableNames, '_popAverage.csv'));
+[chevronTablePaths, normChevronTablePaths, popAvgTablePaths] = ...
+    argfun(@(x) fullfile(outFolder, strcat(tableNames, '_', x, '.csv')), ...
+            'chevron', 'normChevron', 'popAverage');
 
 % Create paths for mat files
-% TODO: Use argfun
-measureTablesMatPath = fullfile(outFolder, [prefix, '_', 'measureTables.mat']);
-chevronTablesMatPath = fullfile(outFolder, [prefix, '_', 'chevronTables.mat']);
-normalizedChevronTablesMatPath = fullfile(outFolder, [prefix, '_', 'normalizedChevronTables.mat']);
-measureTimeTablesMatPath = fullfile(outFolder, [prefix, '_', 'measureTimeTables.mat']);
-popAvgTablesMatPath = fullfile(outFolder, [prefix, '_', 'popAvgTables.mat']);
+[measureTablesMatPath, chevronTablesMatPath, normalizedChevronTablesMatPath, ...
+    measureTimeTablesMatPath, popAvgTablesMatPath] = ...
+    argfun(@(x) fullfile(outFolder, [prefix, '_', x, '.mat']), ...
+            'measureTables', 'chevronTables', 'normalizedChevronTables', ...
+            'measureTimeTables', 'popAvgTables');
+
+% Check if output directories exist
+check_dir({outFolder, figFolder});
 
 %% Read in data and preprocess
 % Read all slice parameter spreadsheets
@@ -834,6 +849,16 @@ phaseStrs = {'baseline', 'washon', 'washoff'};
 
 % File patterns
 sliceFilePattern = '.*slice.*';
+
+chevronTablePaths = fullfile(outFolder, strcat(tableNames, '_chevron.csv'));
+normChevronTablePaths = fullfile(outFolder, strcat(tableNames, '_normChevron.csv'));
+popAvgTablePaths = fullfile(outFolder, strcat(tableNames, '_popAverage.csv'));
+
+measureTablesMatPath = fullfile(outFolder, [prefix, '_', 'measureTables.mat']);
+chevronTablesMatPath = fullfile(outFolder, [prefix, '_', 'chevronTables.mat']);
+normalizedChevronTablesMatPath = fullfile(outFolder, [prefix, '_', 'normalizedChevronTables.mat']);
+measureTimeTablesMatPath = fullfile(outFolder, [prefix, '_', 'measureTimeTables.mat']);
+popAvgTablesMatPath = fullfile(outFolder, [prefix, '_', 'popAvgTables.mat']);
 
 %}
 

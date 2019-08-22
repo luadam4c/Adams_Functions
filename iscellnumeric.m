@@ -35,6 +35,7 @@ function isCellNumeric = iscellnumeric (x)
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 %       cd/plot_raster.m
+%       cd/unique_groups.m
 
 % File History:
 % 2018-10-24 Created by Adam Lu
