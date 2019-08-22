@@ -26,6 +26,7 @@ function empty = create_empty_match (array, varargin)
 % File History:
 % 2019-01-03 Moved from extract_subvectors.m
 % 2019-08-21 Defaults duration arrays to NaN minutes
+% 2019-08-21 Defaults graphics handle arrays to gobjects
 % 
 
 %% Hard-coded parameters
