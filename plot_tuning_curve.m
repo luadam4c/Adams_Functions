@@ -101,9 +101,12 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                               rgb('SkyBlue') == [0.5273, 0.8047, 0.9180]
 %                                   if nColumnsToPlot == 1 or
 %                               hsv(maxNPhases) if phaseVectors is provided
-%                   - 'ConfIntColor': color for confidence intervals
+%                   - 'ConfIntColorMap': color map for confidence intervals
 %                   must be a 3-element vector
-%                   default == rgb('LightGray') == [0.8242, 0.8242, 0.8242]
+%                   default == WHITE - (WHITE - colorMap) * confIntFadePercentage;
+%                   - 'SelectedColorMap': color map for selected values
+%                   must be a 3-element vector
+%                   default == Same as ColorMap
 %                   - 'LegendLocation': location for legend
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'auto'      - use default
@@ -129,8 +132,15 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                       Note: each row is a set of boundaries
 %                   must be a numeric array
 %                   default == []
+%                   - 'PhaseAverages': average values for each phase
+%                       Note: If a matrix cell array, 
+%                           each column is for a curve and each row is for a phase
+%                   must be a numeric 2-D array
+%                   default == []
 %                   - 'IndSelected': selected indices to mark differently
-%                   must be a numeric vector
+%                       Note: If a matrix cell array, 
+%                           each column is for a curve and each row is for a phase
+%                   must be a numeric vector or a cell array of numeric vectors
 %                   default == []
 %                   - 'NLastOfPhase': number of values at the last of a phase
 %                   must be a positive integer scalar
@@ -174,12 +184,15 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %
 % Requires:
 %       ~/Downloaded_Functions/rgb.m
+%       cd/cell2num.m
 %       cd/compute_index_boundaries.m
+%       cd/compute_phase_average.m
 %       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/decide_on_fighandle.m
 %       cd/force_column_vector.m
+%       cd/force_matrix.m
 %       cd/force_row_vector.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
@@ -227,6 +240,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-08-09 Fixed confidence interval plots for matrices
 % 2019-08-09 Added 'IndSelected' as an optional argument
 % 2019-08-21 Now outputs a handles structure
+% 2019-08-21 Added 'PlotPhaseBoundaries', 'PlotPhaseAverages', 'PlotIndSelected'
 %
 
 %% Hard-coded constants
@@ -239,6 +253,7 @@ validSelectionMethods = {'notNaN', 'maxRange2Mean'};
 sigLevel = 0.05;                    % significance level for tests
 confIntFadePercentage = 0.25;       % fade percentage for confidence interval colors
 selectedLineWidth = 3;              % line width for selected values markers
+selectedMarker = 'o';
 outlierMethod = 'fiveStds';
 
 %% Default values for optional arguments
@@ -263,13 +278,15 @@ columnLabelsDefault = '';           % set later
 phaseLabelsDefault = '';            % set later
 colorByPhaseDefault = false;        % don't color by phase by default
 colorMapDefault = [];               % set later
-confIntColorDefault = [];           % light gray confidence intervals by default
+confIntColorMapDefault = [];        % set later
+selectedColorMapDefault = [];       % set later
 legendLocationDefault = 'auto';     % set later
 plotPhaseBoundariesDefault = [];    % set later
 plotPhaseAveragesDefault = [];      % set later
 plotIndSelectedDefault = [];        % set later
 pBoundariesDefault = [];
 rBoundariesDefault = [];
+phaseAveragesDefault = [];          % set later
 indSelectedDefault = [];
 nLastOfPhaseDefault = 10;       % select from last 10 values by default
 nToAverageDefault = 5;          % select 5 values by default
@@ -351,7 +368,9 @@ addParameter(iP, 'ColorByPhase', colorByPhaseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ColorMap', colorMapDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d', 'ncols', 3}));
-addParameter(iP, 'ConfIntColor', confIntColorDefault, ...
+addParameter(iP, 'ConfIntColorMap', confIntColorMapDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d', 'numel', 3}));
+addParameter(iP, 'SelectedColorMap', selectedColorMapDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d', 'numel', 3}));
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
@@ -365,8 +384,10 @@ addParameter(iP, 'PBoundaries', pBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'RBoundaries', rBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'IndSelected', indSelectedDefault, ...
+addParameter(iP, 'PhaseAverages', phaseAveragesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'IndSelected', indSelectedDefault, ...
+    @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
 addParameter(iP, 'NLastOfPhase', nLastOfPhaseDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
 addParameter(iP, 'NToAverage', nToAverageDefault, ...
@@ -411,7 +432,8 @@ columnLabels = iP.Results.ColumnLabels;
 phaseLabels = iP.Results.PhaseLabels;
 colorByPhase = iP.Results.ColorByPhase;
 colorMap = iP.Results.ColorMap;
-confIntColor = iP.Results.ConfIntColor;
+confIntColorMap = iP.Results.ConfIntColorMap;
+selectedColorMap = iP.Results.SelectedColorMap;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
 plotPhaseBoundaries = iP.Results.PlotPhaseBoundaries;
@@ -419,6 +441,7 @@ plotPhaseAverages = iP.Results.PlotPhaseAverages;
 plotIndSelected = iP.Results.PlotIndSelected;
 pBoundaries = iP.Results.PBoundaries;
 rBoundaries = iP.Results.RBoundaries;
+phaseAverages = iP.Results.PhaseAverages;
 indSelected = iP.Results.IndSelected;
 nLastOfPhase = iP.Results.NLastOfPhase;
 nToAverage = iP.Results.NToAverage;
@@ -457,6 +480,13 @@ nCols = size(readout, 2);
     argfun(@(x) set_default_flag(x, ~isempty(phaseVectors)), ...
             plotPhaseBoundaries, plotPhaseAverages, plotIndSelected);
 
+% Decide on compute flags
+[computePhaseBoundaries, computePhaseAverages, computeIndSelected] = ...
+    argfun(@(x) set_default_flag([], x), ...
+            plotPhaseBoundaries && isempty(pBoundaries), ...
+            plotPhaseAverages && isempty(phaseAverages), ...
+            plotIndSelected && isempty(indSelected));
+
 % Deal with phase vectors
 if ~isempty(phaseVectors)
     % Force as a cell array of column vectors
@@ -483,8 +513,8 @@ if ~isempty(phaseVectors)
     end
 
     % Generate phase boundaries to be plotted if requested
-    if plotPhaseBoundaries || plotPhaseAverages || plotIndSelected
-        % TODO: Make function compute_value_boundaries(values, grouping)
+    if computePhaseBoundaries || computePhaseAverages || computeIndSelected
+        % TODO: Make function [valueBoundaries, indBoundaries] = compute_value_boundaries(values, grouping)
         % Compute all possible index boundaries for the phases
         indBoundariesAll = ...
             compute_index_boundaries('Grouping', phaseVectors, ...
@@ -496,42 +526,49 @@ if ~isempty(phaseVectors)
     end
 
     % Generate phase boundaries to be plotted if requested
-    % TODO: What if pBoundaries is 2-D?
-    if plotPhaseBoundaries
+    % TODO: Add to it instead?
+    if computePhaseBoundaries
         % Pool all phase boundaries together
-        phaseBoundaries = union_over_cells(phaseBoundariesAll);
+        pBoundaries = union_over_cells(phaseBoundariesAll);
 
         % Force as a row vector
-        phaseBoundaries = force_row_vector(phaseBoundaries);
-
-        % Add it to other parameter boundaries
-        pBoundaries = [pBoundaries, phaseBoundaries];
+        pBoundaries = force_row_vector(pBoundaries);
     end
 
     % Generate phase averages to be plotted if requested
-    if plotPhaseAverages || plotIndSelected
+    if computePhaseAverages || computeIndSelected
         % Force as a column cell array of column vectors
-        [readoutCell, phaseBoundariesAllCell] = 
-            = argfun(@force_column_cell, readout, phaseBoundariesAll);
+        [readoutCell, phaseBoundariesAllCell] = ...
+            argfun(@force_column_cell, readout, phaseBoundariesAll);
 
         % Compute phase averages
         %   Note: this generates a cell array of cell arrays of vectors
-        [phaseAverages, indSelected] = ...
-            cellfun(@(x, y) ...
-                arrayfun(@(z) compute_phase_average(x, 'PhaseBoundaries', y, ...
-                            'PhaseNumber', z, ...
+        [phaseAveragesCellCell, indSelectedCellCell] = ...
+            cellfun(@(x, y, z) ...
+                arrayfun(@(w) compute_phase_average(x, ...
+                            'ReturnLastTrial', true, ...
+                            'PhaseBoundaries', y, ...
+                            'PhaseNumber', w, ...
                             'NLastOfPhase', nLastOfPhase, ...
                             'NToAverage', nToAverage, ...
-                            'MaxRange2Mean', maxRange2Mean), uniquePhases, ...
+                            'SelectionMethod', selectionMethod, ...
+                            'MaxRange2Mean', maxRange2Mean), z, ...
                 'UniformOutput', false), ...
-            readoutCell, phaseBoundariesAllCell, 'UniformOutput', false);
+            readoutCell, indBoundariesAll, uniquePhases, ...
+            'UniformOutput', false);
 
         % Reorganize so that outputs are a matrix cell array
-        [phaseAverages, indSelected] = ...
-            argfun(@force_matrix, phaseAverages, indSelected);
+        %   Note: each row is a phase and each column is a curve
+        [phaseAveragesCell, indSelectedCell] = ...
+            argfun(@force_matrix, phaseAveragesCellCell, indSelectedCellCell);
+
+        % Take scalar phase averages out of the cell array
+        phaseAverages = cell2num(phaseAveragesCell);
+        indSelected = indSelectedCell;
     end
 else
-    if colorByPhase || plotPhaseBoundaries || plotPhaseAverages
+    if colorByPhase || computePhaseBoundaries || ...
+            computePhaseAverages || computeIndSelected
         fprintf('Phase vectors must be provided!\n');
         return
     end
@@ -547,10 +584,12 @@ else
     nLinesPerPhase = 1;
 end
 
-% Remove outliers if requested
+% Remove outliers when plotting if requested
 if removeOutliers
-    readout = remove_outliers(readout, 'OutlierMethod', outlierMethod, ...
-                                'ReplaceWithNans', true);
+    readoutToPlot = remove_outliers(readout, 'OutlierMethod', outlierMethod, ...
+                                    'ReplaceWithNans', true);
+else
+    readoutToPlot = readout;
 end
 
 % Run paired t-tests if requested
@@ -646,9 +685,14 @@ if isempty(colorMap)
 end
 
 % Decide on the confidence interval color map to use
-if isempty(confIntColor)
+if isempty(confIntColorMap)
     % Color of the confidence interval
-    confIntColor = WHITE - (WHITE - colorMap) * confIntFadePercentage;
+    confIntColorMap = WHITE - (WHITE - colorMap) * confIntFadePercentage;
+end
+
+% Decide on the confidence interval color map to use
+if isempty(selectedColorMap)
+    selectedColorMap = colorMap;
 end
 
 % Set the default parameter tick angle
@@ -692,7 +736,7 @@ end
 for iPlot = 1:nColumnsToPlot
     % Get the column to plot
     col = columnsToPlot(iPlot);
-    readoutThis = readout(:, col);
+    readoutThis = readoutToPlot(:, col);
 
     % Plot the tuning curve for this column
     if colorByPhase
@@ -716,7 +760,7 @@ for iPlot = 1:nColumnsToPlot
 
         % Plot readout vector for all phases
         curves(iPlot, 1:nPhasesThis) = ...
-            cellfun(@(x) plot_one_line(pIsLog, pValues(x), readout(x, col), ...
+            cellfun(@(x) plot_one_line(pIsLog, pValues(x), readoutToPlot(x, col), ...
                         lineSpec, lineWidth, otherArguments), phaseIndices);
     else
         curves(iPlot, 1) = plot_one_line(pIsLog, pValues, readoutThis, ...
@@ -758,9 +802,9 @@ for iPlot = 1:nColumnsToPlot
             confIntYValues = [upperCIThis; flipud(lowerCIThis)];
 
             % Fill the area between lowerCIThis and upperCIThis 
-            %   with confIntColor
+            %   with confIntColorMap
             confInts(iPlot, 1) = fill(confIntXValues, confIntYValues, ...
-                                confIntColor(iPlot, :), 'LineStyle', 'none');
+                                confIntColorMap(iPlot, :), 'LineStyle', 'none');
 
             % Plot tuning curve again
             curves(iPlot, 1) = plot_one_line(pIsLog, pValues, readoutThis, ...
@@ -871,13 +915,60 @@ else
     rLines = gobjects;
 end
 
+% Plot phaseAverages if any
+% TODO: Make averageWindows an optional argument
+% TODO: Compute average windows
+averageWindows = [];
+if ~isempty(phaseAverages) && ~isempty(averageWindows)
+    % Decide on the color map for each phase
+    if colorByPhase
+        colorMapEachPhase = arrayfun(@(x) colorMap(x, :), ...
+                                    1:size(colorMap, 1), 'UniformOutput', false);
+    else
+        colorMapEachPhase = repmat({colorMap}, maxNPhases, 1);
+    end
+
+    % Plot the phase averages as horizontal lines
+    averages = ...
+        arrayfun(@(x) plot_horizontal_line(phaseAverages(x, :), ...
+                                    'XLimits', averageWindows{x}, ...
+                                    'ColorMap', colorMapEachPhase{x}), ...
+                1:size(phaseAverages, 1));
+
+end
+
 % Plot selected values if any
 if ~isempty(indSelected)
     if iscell(indSelected)
-        selected = cellfun();
+        % TODO: Simplify coloring by changing it after the plot
+        %       How to do this if there might be different number of phases?
+        if colorByPhase
+            selectedCell = ...
+                arrayfun(@(x) ...
+                    cellfun(@(y) plot_selected(pValues, ...
+                                readoutToPlot(:, columnsToPlot(x)), y, ...
+                                selectedMarker, selectedColorMap(y, :), ...
+                                selectedLineWidth), ...
+                            indSelected(:, columnsToPlot(x)), ...
+                    1:nColumnsToPlot, 'UniformOutput', false);
+        else
+            selectedCell = ...
+                arrayfun(@(x) ...
+                    cellfun(@(y) plot_selected(pValues, ...
+                                readoutToPlot(:, columnsToPlot(x)), y, ...
+                                selectedMarker, selectedColorMap(x, :), ...
+                                selectedLineWidth), ...
+                            indSelected(:, columnsToPlot(x)), ...
+                    1:nColumnsToPlot, 'UniformOutput', false);            
+        end
+
+        % Force the graphics array as a matrix
+        %   Note: Each column is curve and each row is a phase
+        selected = force_matrix(selectedCell);
     else
-        selected = plot_selected_indices(pValues, readout, indSelected, ...
-                                            selectedColor, selectedLineWidth);
+        selected = plot_selected(pValues, readoutToPlot, indSelected, ...
+                                selectedMarker, selectedColorMap(1, :), ...
+                                selectedLineWidth);
     end
 end
 
@@ -1003,8 +1094,9 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function selected = plot_selected_indices (pValues, readout, indSelected, ...
-                                            selectedColor, selectedLineWidth)
+function selected = plot_selected (pValues, readout, indSelected, ...
+                            selectedMarker, selectedColor, selectedLineWidth)
+% TODO: Pull this out to its own function
 
 % Selected x locations
 xLocsSelected = pValues(indSelected);
@@ -1014,7 +1106,7 @@ yLocsSelected = readout(indSelected, :);
 
 % Plot values
 hold on
-selected = plot(xLocsSelected, yLocsSelected, 'o', ...
+selected = plot(xLocsSelected, yLocsSelected, 'Marker', selectedMarker, ...
                 'Color', selectedColor, 'LineWidth', selectedLineWidth);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1099,7 +1191,7 @@ elseif nColumnsToPlot == 1
     set(curves(iPlot, 1), 'Color', singlecolor);
 end
 
-confIntColorDefault = rgb('LightGray');  
+confIntColorMapDefault = rgb('LightGray');  
                                     % light gray confidence intervals by default
 
 %}

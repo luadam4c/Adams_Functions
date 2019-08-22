@@ -22,6 +22,7 @@ function numArray = cell2num (cellArray, varargin)
 %
 % Used by:
 %       cd/compute_sampsizepwr.m
+%       cd/plot_tuning_curve.m
 
 % File History:
 % 2019-08-20 Created by Adam Lu

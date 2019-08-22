@@ -57,6 +57,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/parse_multiunit.m
 %       cd/plot_measures.m
 %       cd/plot_swd_histogram.m
+%       cd/plot_tuning_curve.m
 %       cd/transform_vectors.m
 
 % File History:

@@ -60,6 +60,7 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 % Used by:
 %       cd/plot_measures.m
 %       cd/plot_struct.m
+%       cd/plot_tuning_curve.m
 
 % File History:
 % 2019-05-13 Created by Adam Lu

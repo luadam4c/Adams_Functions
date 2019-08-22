@@ -36,6 +36,7 @@ function colorMap = create_colormap (varargin);
 %
 % Used by:
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/plot_horizontal_line.m
 %       cd/plot_traces.m   
 
 % File History:

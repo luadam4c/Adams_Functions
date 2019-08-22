@@ -69,6 +69,7 @@ function varargout = find_in_strings (cand, strList, varargin)
 %       cd/ismatch.m
 %
 % Used by:
+%       cd/char2rgb.m
 %       cd/ispositiveintegerscalar.m
 %       cd/increment_editbox.m
 %       cd/m3ha_correct_unbalanced_bridge.m

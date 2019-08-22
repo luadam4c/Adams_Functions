@@ -39,6 +39,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %       cd/m3ha_plot_individual_traces.m
 %       cd/match_format_vectors.m
 %       cd/match_time_info.m
+%       cd/plot_horizontal_line.m
 %       cd/plot_struct.m
 %       cd/xolotl_add_current_injection.m
 %       cd/xolotl_add_voltage_clamp.m

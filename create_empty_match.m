@@ -83,6 +83,8 @@ elseif isstruct(array)
     empty = struct(nRows, nColumns);
 elseif isdatetime(array)
     empty = NaT(nRows, nColumns);
+elseif isgraphics(array)
+    empty = gobjects(nRows, nColumns);
 else
     error('Not implemented yet!');
 end
