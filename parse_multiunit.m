@@ -824,6 +824,8 @@ if plotAutoCorrFlag
 end
 
 %% Plot raw traces
+% TODO: Plot with higher resolution
+% TODO: Plot with oscillation duration bars
 if plotRawFlag
     fprintf('Plotting raw traces for %s ...\n', fileBase);
 

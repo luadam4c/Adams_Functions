@@ -96,13 +96,16 @@ otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Extract file bases
-allFileBases = extract_fileparts(abfPaths, 'base');
+allFileNames = extract_fileparts(abfPaths, 'name');
 
 % Extract phase strings
 if isempty(regexpPhaseStr)
-    allPhaseStrs = extract_fileparts(allFileBases, 'distinct');
+    allPhaseStrs = extract_fileparts(allFileNames, 'distinct', ...
+                                    'Delimiter', '_');
 else
-    allPhaseStrs = extract_fileparts(allFileBases, 'base', ...
+    % Note: must pass in file names with the extension
+    %           or else extract_fileparts() thinks they are directories
+    allPhaseStrs = extract_fileparts(allFileNames, 'base', ...
                                     'RegExp', regexpPhaseStr);
 end
 
@@ -130,7 +133,7 @@ iVecsAll = allAbfData.iVecs;
 clear allAbfData;
 
 % Find the indices for each phase
-indEachPhase = cellfun(@(x) find_in_strings(x, allFileBases), ...
+indEachPhase = cellfun(@(x) find_in_strings(x, allFileNames), ...
                         phaseStrs, 'UniformOutput', false);
 
 %% Order the data correctedly (may not be needed)

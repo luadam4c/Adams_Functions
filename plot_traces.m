@@ -149,6 +149,9 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                   - 'FigHandle': figure handle for created figure
 %                   must be a empty or a figure object handle
 %                   default == []
+%                   TODO - 'FigExpansion': expansion factor for figure position
+%                   must be a positive scalar
+%                   default == []
 %                   - 'FigNumber': figure number for creating figure
 %                   must be a positive integer scalar
 %                   default == []
