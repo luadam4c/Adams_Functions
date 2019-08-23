@@ -9,6 +9,10 @@ function [parsedParams, parsedData] = parse_abf (fileName, varargin)
 %       3. Identify the appropriate time units and construct a time vector
 %       4. Identify whether each channel is voltage, current or conductance
 %           and extract them into vVecs, iVecs and gVecs
+%       Note: Current and voltage vectors are identified using 
+%               identify_channels.m by default. If it's already labelled
+%               correctly in the abf files, set 'UseOriginal' to be true.
+%   
 % Examples:
 %       [parsedParams, data, tVec, vVecs, iVecs, gVecs] = ...
 %           parse_abf('20180914C_0001');

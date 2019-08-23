@@ -3,6 +3,9 @@ function allData = combine_abf_data (abfPaths, varargin)
 % Usage: allData = combine_abf_data (abfPaths, varargin)
 % Explanation:
 %       TODO
+%       Note: Current and voltage vectors are identified using 
+%               identify_channels.m by default. If it's already labelled
+%               correctly in the abf files, set 'UseOriginal' to be true.
 %
 % Example(s):
 %       [~, abfPaths] = all_files('Ext', 'abf', 'SortBy', 'date');
@@ -15,7 +18,7 @@ function allData = combine_abf_data (abfPaths, varargin)
 %       allData     - a structure with fields:
 %                       siMs        - 
 %                       vVecs       - voltage vectors
-%                       iVecs       - 
+%                       iVecs       - current vectors
 %                       phaseBoundaries - 
 %                       phaseStrs   - 
 %                   specified as a scalar structure
@@ -46,11 +49,12 @@ function allData = combine_abf_data (abfPaths, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       combine_data_from_same_slice.m
+%       cd/combine_data_from_same_slice.m
 
 % File History:
 % 2019-08-23 Pulled from combine_data_from_same_slice.m
 % 2019-08-23 Now passes unmatched optional arguments to parse_all_abfs
+% TODO: Combine gVecs as well
 % 
 
 %% Hard-coded parameters

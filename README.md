@@ -59,6 +59,7 @@ There are 1 MATLAB scripts in this directory:
 - [**combine_abf_data.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_abf_data.m): Combine data from many .abf files and return a structure
 - [**combine_data_from_same_slice.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_data_from_same_slice.m): Combines data across multiple .abf files for each slice in the input folder (or for a particular slice)
 - [**combine_loopedparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_loopedparams.m): TODO
+- [**combine_multiunit_data.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_multiunit_data.m): Combines data across multiple .abf files (using multiunit data defaults) for each slice in the input folder (or for a particular slice)
 - [**combine_swd_sheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_swd_sheets.m): Combines all files ending with '_SWDs.csv' under a directory
 - [**combine_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_sweeps.m): Combines sweeps that begin with expLabel in dataDirectory under dataMode
 - [**combine_variables_across_tables.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_variables_across_tables.m): Combines measures across different tables

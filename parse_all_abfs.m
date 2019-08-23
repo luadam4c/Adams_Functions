@@ -10,8 +10,13 @@ function [allParsedParamsTable, allParsedDataTable, ...
 % Explanation:
 %       This function calls parse_abf.m with 'IdentifyProtocols' == true
 %           for all the .abf files in the provided directory (default pwd)
+%       Note: Current and voltage vectors are identified using 
+%               identify_channels.m by default. If it's already labelled
+%               correctly in the abf files, set 'UseOriginal' to be true.
+%
 % Example(s):
 %       [abfParamsTable, abfDataTable] = parse_all_abfs;
+%
 % Outputs:
 %       (see parse_abf.m for details of parsedParams & parsedData)
 %       allParsedParamsTable  - a table of parsedParams

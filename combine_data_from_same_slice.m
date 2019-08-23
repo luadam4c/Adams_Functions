@@ -3,12 +3,19 @@ function allData = combine_data_from_same_slice (varargin)
 % Usage: allData = combine_data_from_same_slice (varargin)
 % Explanation:
 %       TODO
+%       Note: Current and voltage vectors are identified using 
+%               identify_channels.m by default. If it's already labelled
+%               correctly in the abf files, set 'UseOriginal' to be true.
+%
 % Example(s):
 %       allData = combine_data_from_same_slice;
 %       allData = combine_data_from_same_slice('SliceBase', 'slice4');
+%       allData = combine_data_from_same_slice('ChannelTypes', {'voltage', 'current'});
+%
 % Outputs:
 %       allData     - combined data for all slices (or for a particular slice)
 %                   specified as a table (or struct)
+%
 % Arguments:
 %       varargin    - 'Directory': working directory
 %                   must be a string scalar or a character vector
@@ -43,11 +50,9 @@ function allData = combine_data_from_same_slice (varargin)
 %       cd/istext.m
 %       cd/parse_all_abfs.m
 %       cd/struct2arglist.m
-
-
+%
 % Used by:
-%       cd/parse_all_multiunit.m
-%       cd/parse_multiunit.m
+%       cd/combine_multiunit_data.m
 
 % File History:
 % 2019-07-24 Moved from parse_all_multiunit.m
@@ -57,9 +62,10 @@ function allData = combine_data_from_same_slice (varargin)
 % 2019-08-21 Now uses count_A_each_C.m
 % 2019-08-21 Now uses compute_index_boundaries.m
 % 2019-08-23 Fixed bug when there is only one phase
-% TODO: Pull out code to function combine_abf_data.m
+% 2019-08-23 Pull out code to function combine_abf_data.m
 % TODO: Reorganize code to use structure arrays
 % TODO: Allow combination of .mat files
+% TODO: Combine gVecs as well
 
 %% Hard-coded parameters
 dataExt = 'abf';            % Currently only accepts abf files
