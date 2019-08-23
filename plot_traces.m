@@ -5,8 +5,10 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %               plot_traces (tVecs, data, varargin)
 % Examples:
 %       plot_traces(1:3, magic(3))
+%       plot_traces(1:3, magic(3), 'HorzBarWindow', [1.5, 2.5])
 %       plot_traces(1:3, magic(3), 'PlotMode', 'parallel')
 %       plot_traces(1:100, rand(100, 3), 'PlotMode', 'staggered')
+%       plot_traces(1:100, rand(100, 3), 'PlotMode', 'staggered', 'HorzBarWindow', {[0 10], [0 20], [0 30]})
 %       plot_traces(1:100, rand(100, 3), 'PlotMode', 'staggered', 'YAmount', 1)
 %       plot_traces(1:3, magic(3), 'PlotMode', 'parallel', 'ReverseOrder', true)
 %       plot_traces(1:60, magic(60), 'PlotMode', 'parallel', 'LinkAxesOption', 'y')
@@ -71,6 +73,29 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                         If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array of numeric arrays
 %                   default == []
+%                   - 'HorzBarWindows': horizontal bar windows
+%                   must be empty or a cell array of numeric vectors
+%                           with the same length as nTraces
+%                   default == []
+%                   - 'HorzBarYValues': horizontal bar y values
+%                   Note: the number of y values will be matched with nTraces
+%                   must be empty or a numeric vector
+%                   default == []
+%                   - 'HorzBarColorMap': Color map for horizontal bars
+%                   must be empty or a string/character vector
+%                       or an n-by-3 numeric array
+%                   default == same as ColorMap
+%                   - 'HorzBarLineStyle': line style for horizontal bars
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       '-'     - solid line
+%                       '--'    - dashed line
+%                       ':'     - dotted line
+%                       '-.'    - dash-dotted line
+%                       'none'  - no line
+%                   default == '-'
+%                   - 'HorzBarLineWidth': line width for horizontal bars
+%                   must be empty or a positive scalar
+%                   default == 2
 %                   - 'LineStyleToCompare': line style for 
 %                                           data vector(s) to compare
 %                   must be an unambiguous, case-insensitive match to one of: 
@@ -228,6 +253,8 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % 2019-05-10 Now uses set_figure_properties.m
 % 2019-07-25 Added maxNYTicks
 % 2019-08-23 Added 'FigExpansion' as an optional argument
+% 2019-08-23 Added horizontal bars
+% TODO: Number of horizontal bars shouldn't need to match nTraces
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel', 'staggered'};
@@ -257,6 +284,11 @@ plotModeDefault = 'overlapped'; % plot traces overlapped by default
 subplotOrderDefault = 'auto';   % set later
 colorModeDefault = 'auto';      % set later
 dataToCompareDefault = [];      % no data to compare against by default
+horzBarWindowsDefault = [];     % no horizontal bars by default
+horzBarYValuesDefault = [];     % set later
+horzBarColorMapDefault = [];       % set later
+horzBarLineStyleDefault = '-';  % set later
+horzBarLineWidthDefault = 2;    % set later
 lineStyleToCompareDefault = '-';% data to compare are solid lines by default
 yAmountToStaggerDefault = [];   % set later  
 xLimitsDefault = [];            % set later
@@ -319,6 +351,21 @@ addParameter(iP, 'DataToCompare', dataToCompareDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['DataToCompare must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
+addParameter(iP, 'HorzBarWindows', horzBarWindowsDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['HorzBarWindows must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
+addParameter(iP, 'HorzBarYValues', horzBarYValuesDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['HorzBarYValues must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
+addParameter(iP, 'HorzBarColorMap', horzBarColorMapDefault);
+addParameter(iP, 'HorzBarLineStyle', horzBarLineStyleDefault, ...
+    @(x) all(islinestyle(x, 'ValidateMode', true)));
+addParameter(iP, 'HorzBarLineWidth', horzBarLineWidthDefault, ...
+    @(x) assert(isempty(x) || ispositivescalar(x), ...
+                ['HorzBarLineWidth must be either a empty ', ...
+                    'or a positive scalar!']));
 addParameter(iP, 'LineStyleToCompare', lineStyleToCompareDefault, ...
     @(x) all(islinestyle(x, 'ValidateMode', true)));
 addParameter(iP, 'YAmountToStagger', yAmountToStaggerDefault, ...
@@ -377,6 +424,11 @@ colorMode = validatestring(iP.Results.ColorMode, validColorModes);
 dataToCompare = iP.Results.DataToCompare;
 [~, lineStyleToCompare] = ...
     islinestyle(iP.Results.LineStyleToCompare, 'ValidateMode', true);
+horzBarWindows = iP.Results.HorzBarWindows;
+horzBarYValues = iP.Results.HorzBarYValues;
+horzBarColorMap = iP.Results.HorzBarColorMap;
+horzBarLineStyle = iP.Results.HorzBarLineStyle;
+horzBarLineWidth = iP.Results.HorzBarLineWidth;
 yAmountToStagger = iP.Results.YAmountToStagger;
 xLimits = iP.Results.XLimits;
 yLimits = iP.Results.YLimits;
@@ -431,10 +483,21 @@ end
 [data, dataToCompare] = ...
     match_format_vector_sets(data, dataToCompare, 'ForceCellOutputs', true);
 
-% Extract number of subplots (under parallel mode)
+% Match the horizontal bar windows with data if provided
+if ~isempty(horzBarWindows)
+    horzBarWindows = match_format_vector_sets(horzBarWindows, data);
+end
+
+% Count the number of subplots under parallel mode
+%       or the number of vectors to plot
 nPlots = count_vectors(data, 'TreatMatrixAsVector', true);
 
-% Count the number of traces per subplot (under parallel mode)
+% Match the horizontal bar y values with data if provided
+if ~isempty(horzBarYValues)
+    horzBarYValues = match_row_count(horzBarYValues, nPlots);
+end
+
+% Count the number of traces per subplot under parallel mode
 nTracesPerPlot = count_vectors(data, 'TreatMatrixAsVector', false);
 
 % Determine the number of rows and the number of columns
@@ -465,6 +528,10 @@ if isempty(colorMap)
         otherwise
             error('colorMode unrecognized!');
     end
+end
+
+if isempty(horzBarColorMap)
+    horzBarColorMap = colorMap;
 end
 
 % Force as column cell array and match up to nPlots elements 
@@ -623,23 +690,25 @@ if iscell(xLimits)
 
             % Plot all traces
             fig = plot_traces_helper(verbose, plotMode, colorMode, ...
-                            autoZoom, yAmountToStagger, ...
-                            tVecsThis, dataThis, ...
-                            dataToCompareThis, lineStyleToCompare, ...
-                            xUnits, xLimitsThis, yLimits, linkAxesOption, ...
-                            xLabel, yLabel, traceLabels, ...
-                            yTickLocs, yTickLabels, colorMap, ...
-                            legendLocation, figTitleThis, ...
-                            figHandle, figExpansion, figNumber, ...
-                            figNameThis, figTypes, ...
-                            nPlots, nRows, nColumns, nTracesPerPlot, ...
-                            maxNPlotsForAnnotations, maxNYLabels, ...
-                            maxNColsForTicks, maxNColsForXTickLabels, ...
-                            maxNRowsForTicks, maxNRowsForYTickLabels, ...
-                            maxNRowsForXAxis, maxNColsForYAxis, ...
-                            maxNYTicks, ...
-                            subPlotSqeezeFactor, ...
-                            otherArguments);
+                        autoZoom, yAmountToStagger, ...
+                        tVecsThis, dataThis, ...
+                        dataToCompareThis, lineStyleToCompare, ...
+                        horzBarWindows, horzBarYValues, ...
+                        horzBarColorMap, horzBarLineStyle, horzBarLineWidth, ...
+                        xUnits, xLimitsThis, yLimits, linkAxesOption, ...
+                        xLabel, yLabel, traceLabels, ...
+                        yTickLocs, yTickLabels, colorMap, ...
+                        legendLocation, figTitleThis, ...
+                        figHandle, figExpansion, figNumber, ...
+                        figNameThis, figTypes, ...
+                        nPlots, nRows, nColumns, nTracesPerPlot, ...
+                        maxNPlotsForAnnotations, maxNYLabels, ...
+                        maxNColsForTicks, maxNColsForXTickLabels, ...
+                        maxNRowsForTicks, maxNRowsForYTickLabels, ...
+                        maxNRowsForXAxis, maxNColsForYAxis, ...
+                        maxNYTicks, ...
+                        subPlotSqeezeFactor, ...
+                        otherArguments);
             
             % Hold off and close figure
             hold off;
@@ -658,6 +727,8 @@ else
         plot_traces_helper(verbose, plotMode, colorMode, ...
                         autoZoom, yAmountToStagger, ...
                         tVecs, data, dataToCompare, lineStyleToCompare, ...
+                        horzBarWindows, horzBarYValues, ...
+                        horzBarColorMap, horzBarLineStyle, horzBarLineWidth, ...
                         xUnits, xLimits, yLimits, linkAxesOption, ...
                         xLabel, yLabel, traceLabels, ...
                         yTickLocs, yTickLabels, colorMap, ...
@@ -680,6 +751,8 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
                 plot_traces_helper (verbose, plotMode, colorMode, ...
                     autoZoom, yAmountToStagger, ...
                     tVecs, data, dataToCompare, lineStyleToCompare, ...
+                    horzBarWindows, horzBarYValues, ...
+                    horzBarColorMap, horzBarLineStyle, horzBarLineWidth, ...
                     xUnits, xLimits, yLimits, linkAxesOption, ...
                     xLabel, yLabel, traceLabels, ...
                     yTickLocs, yTickLabels, colorMap, ...
@@ -712,17 +785,17 @@ else
     plotsDataToCompare = gobjects(nPlots, 1);
 end
 
+% Decide whether to stagger
+if strcmp(plotMode, 'staggered')
+    toStagger = true;
+else
+    toStagger = false;
+end
+
 switch plotMode
 case {'overlapped', 'staggered'}
     % Hold on
     hold on
-
-    % Decide whether to stagger
-    if strcmp(plotMode, 'staggered')
-        toStagger = true;
-    else
-        toStagger = false;
-    end
 
     % Set the default y-axis limits
     if isempty(yLimits)
@@ -733,17 +806,30 @@ case {'overlapped', 'staggered'}
         % TODO: Deal with yLimits if it is a cell array
     end
 
+    % Compute a default amount of y to stagger if not provided
+    if isempty(yAmountToStagger)
+        if toStagger
+            yAmountToStagger = range(yLimits);
+        else
+            yAmountToStagger = NaN;
+        end
+    end
+
+    % Compute a default horizontal bar y value
+    if isempty(horzBarYValues)
+        horzBarYValues = compute_default_horzbar_yvalue(yLimits, toStagger, ...
+                                                        yAmountToStagger);
+
+        % Match to the number of plots
+        horzBarYValues = match_row_count(horzBarYValues, nPlots);
+    end
+
     % Decide on the amount in y axis units to stagger
     %   and the new y-axis limits
     if toStagger
         % Use the mean and range of the original computed y axis limits 
         %   from the data
         yMean = mean(yLimits);
-
-        % Compute a default amount of y to stagger if not provided
-        if isempty(yAmountToStagger)
-            yAmountToStagger = range(yLimits);
-        end
 
         % Compute new y axis limits
         yLimits = yAmountToStagger * ([0, nPlots]  + 0.5);
@@ -776,12 +862,14 @@ case {'overlapped', 'staggered'}
             argfun(@(x) transform_vectors(x, yMean, 'subtract'), ...
                     data, dataToCompare);
 
-        % Add offsets
+        % Add offsets to data
         [data, dataToCompare] = ...
             argfun(@(x) transform_vectors(x, num2cell(yOffsets), 'add'), ...
                     data, dataToCompare);
+
+        % Add offsets to horizontal bar y values
+        horzBarYValues = yOffsets + horzBarYValues;
     else
-        yAmountToStagger = NaN;
         yOffsets = [];
         yTickLocs = [];
         yTickLabels = {};
@@ -836,6 +924,13 @@ case {'overlapped', 'staggered'}
         end
     end
     
+    % Plot horizontal bars
+    if ~isempty(horzBarWindows)
+        plot_horizontal_line(horzBarYValues, ...
+            'XLimits', horzBarWindows, 'ColorMap', horzBarColorMap, ...
+            'LineStyle', horzBarLineStyle, 'LineWidth', horzBarLineWidth);
+    end
+
     % Set time axis limits
     if ~iscell(xLimits) && ...
         ~(ischar(xLimits) && ~strcmpi(xLimits, 'suppress'))
@@ -883,7 +978,11 @@ case {'overlapped', 'staggered'}
 
     % Generate a legend if there is more than one trace
     if ~strcmpi(legendLocation, 'suppress')
-        legend(gca, 'location', legendLocation);
+        if ~isempty(dataToCompareThis)
+            legend(gca, [plotsData, plotsDataToCompare], 'location', legendLocation);
+        else
+            legend(gca, plotsData, 'location', legendLocation);
+        end
     end
 
     % Save current axes handle
@@ -930,6 +1029,15 @@ case 'parallel'
             yLimitsThis = yLimits;
         end
 
+        % Compute a default horizontal bar y value
+        if isempty(horzBarYValues)
+            horzBarYValueThis = ...
+                compute_default_horzbar_yvalue(yLimitsThis, toStagger, ...
+                                                    yAmountToStagger);
+        else
+            horzBarYValueThis = horzBarYValue(iPlot);
+        end
+
         % Get the current row number
         thisRowNumber = ceil(iPlot/nColumns);
 
@@ -968,6 +1076,13 @@ case 'parallel'
                             transpose(1:nVectors));
         end
 
+        % Plot horizontal bars
+        if ~isempty(horzBarWindows)
+            plot_horizontal_line(horzBarYValueThis, ...
+                    'XLimits', horzBarWindows{iPlot}, 'ColorMap', horzBarColorMap, ...
+                    'LineStyle', horzBarLineStyle, 'LineWidth', horzBarLineWidth);
+        end
+
         % Set the legend label as the trace label if provided
         if ~strcmpi(traceLabels, 'suppress')
             set(p, 'DisplayName', traceLabels{iPlot});
@@ -997,7 +1112,7 @@ case 'parallel'
 
         % Generate a legend
         if ~strcmpi(legendLocation, 'suppress')
-            legend(ax, 'location', legendLocation);
+            legend(ax, p, 'location', legendLocation);
         end
 
         % Remove x ticks if too many columns
@@ -1242,6 +1357,18 @@ switch colorMode
         end
     otherwise
         error('colorMode unrecognized!');
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function horzBarYValue = compute_default_horzbar_yvalue (yLimits, toStagger, ...
+                                                        yAmountToStagger);
+%% Computes a default horizontal bar y value
+
+if toStagger
+    horzBarYValue = -yAmountToStagger / 2;
+else
+    horzBarYValue = yLimits(1) + range(yLimits) * 1/8;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

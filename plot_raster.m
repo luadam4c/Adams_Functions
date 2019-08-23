@@ -1,18 +1,21 @@
-function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
+function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 %% Make a raster plot from a cell array of event time arrays
-% Usage: [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
+% Usage: [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 % Explanation:
 %       Plots a raster plot colored by groups.
 %       Each group has a different set of line handles
+%
 % Example(s):
 %       data = {magic(3), 5, (1:5)'};
-%       [hLines, eventTimes, yEnds] = ...
-%           plot_raster(data, 'BarWidth', 0.6, ...
+%       [hRaster, eventTimes, yEnds] = ...
+%           plot_raster(data, 'VertBarWidth', 0.6, ...
 %                       'LineStyle', '-', 'LineWidth', 2, ...
 %                       'Colors', {'Blue', 'Red', 'Purple'}, ...
-%                       'Labels', {'3 vectors', '1 number', '1 vector'});
+%                       'Labels', {'3 vectors', '1 number', '1 vector'}, ...
+%                       'HorzBarWindows', {1, 2, 3, 4, 5});
+%
 % Outputs:
-%       hLines      - handles to the lines for each group
+%       hRaster      - handles to the lines for each group
 %                   specified as cell array of vectors of primitive line objects
 %       eventTimes  - the event times for each group, linearized
 %                   specified as a cell array of numeric row vectors
@@ -27,10 +30,9 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 % Arguments:    
 %       data        - event time arrays
 %                   must be a numeric array or a cell array of numeric arrays
-%       varargin    - 'DurationWindow': time window for a duration line
-%                   must be empty or a numeric vector with 2 elements,
-%                       or a numeric array with 2 rows
-%                       or a cell array of numeric vectors with 2 elements
+%       varargin    - 'HorzBarWindows': horizontal bar windows
+%                   must be empty or a cell array of numeric vectors
+%                           with the same length as nVectors
 %                   default == []
 %                   - 'YMid': y value midpoints
 %                   must be a numeric vector
@@ -39,7 +41,8 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
 %                   default == uses 1 more than max and min of trialNos
-%                   - 'BarWidth': bar width relative to y value increments (0~1)
+%                   - 'VertBarWidth': vertical bar width relative to 
+%                                   y value increments (0~1)
 %                   must be a positive scalar
 %                   default == 0.6
 %                   - 'Colors': colors for each array
@@ -68,14 +71,14 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 % Used by:    
 %       cd/parse_multiunit.m
 %       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
-%
+
 % File History:
 % 2018-05-16 Created by Adam Lu
 % 2018-12-18 Now uses iP.KeepUnmatched
 % 2019-02-23 Fixed bugs
 % 2019-02-23 Added 'YLimits' as an optional argument
 % 2019-02-24 Added maxNYTicks
-% 2019-02-25 Added 'DurationWindow' as an optional argument
+% 2019-02-25 Added 'HorzBarWindows' as an optional argument
 % 2019-03-14 Fixed the case when there is a condition with no spikes
 % 
 
@@ -83,10 +86,10 @@ function [hLines, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin)
 maxNYTicks = 20;             % maximum number of Y ticks
 
 %% Default values for optional arguments
-durationWindowDefault = []; % no duration line by default
+horzBarWindowsDefault = [];    % no horizontal bars by default
 yMidDefault = [];           % set later
 yLimitsDefault = [];        % set later
-barWidthDefault = 0.6;      % default bar width relative to y value increments
+vertBarWidthDefault = 0.6;  % default bar width relative to y value increments
 colorsDefault = {};         % default colors to use for each array
 labelsDefault = {};         % default labels to use for each array
 yTickLocsDefault = [];      % set later
@@ -123,16 +126,16 @@ addRequired(iP, 'data', ...             % a cell array of event time arrays
                     'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'DurationWindow', durationWindowDefault, ...
+addParameter(iP, 'HorzBarWindows', horzBarWindowsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['timeWindows must be either a numeric array ', ...
+                ['HorzBarWindows must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'YMid', yMidDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'YLimits', yLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
-addParameter(iP, 'BarWidth', barWidthDefault, ...
+addParameter(iP, 'VertBarWidth', vertBarWidthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'Colors', colorsDefault, ...
     @(x) assert(iscell(x) && all(cellfun(@(x) ischar(x) || isstring(x), x)), ...
@@ -150,10 +153,10 @@ addParameter(iP, 'YTickLabels', yTickLabelsDefault, ...
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
-durationWindow = iP.Results.DurationWindow;
+horzBarWindows = iP.Results.HorzBarWindows;
 yMidUser = iP.Results.YMid;
 yLimits = iP.Results.YLimits;
-barWidth = iP.Results.BarWidth;
+vertBarWidth = iP.Results.VertBarWidth;
 colors = iP.Results.Colors;
 labels = iP.Results.Labels;
 yTickLocs = iP.Results.YTickLocs;
@@ -171,9 +174,9 @@ if isnumeric(data)
                                 'ForceCellOutput', true);
 end
 
-% Force any duration window to be a column vector
-if ~isempty(durationWindow)
-    durationWindow = force_column_vector(durationWindow, ...
+% Force measure bars to be column vectors
+if ~isempty(horzBarWindows)
+    horzBarWindows = force_column_vector(horzBarWindows, ...
                         'IgnoreNonVectors', false, 'ForceCellOutput', true);
 end
 
@@ -183,7 +186,7 @@ nArrays = numel(data);
 % If there is nothing to plot, return
 if nArrays == 0
     fprintf('Threre is nothing to plot!!\n');
-    hLines = [];
+    hRaster = [];
     eventTimes = [];
     yEnds = [];
     yTicksTable = [];
@@ -319,11 +322,11 @@ if ~ischar(yTickLabels) || ~strcmpi(yTickLabels, 'suppress')
 end
 
 % Get the half bar width in actual coordinates
-halfBarWidth = (barWidth / 2) * yIncr;
+halfBarWidth = (vertBarWidth / 2) * yIncr;
 
 % Compute the y values for the horizontal lines
-if ~isempty(durationWindow)
-    yHorzLines = yMidsAll + halfBarWidth;
+if ~isempty(horzBarWindows)
+    yHorzBars = yMidsAll + halfBarWidth;
 end
 
 % Assign y value endpoints to each event time
@@ -368,7 +371,7 @@ if isempty(yLimits)
 end
 
 %% Plot the event time arrays
-hLines = cell(size(data));
+hRaster = cell(size(data));
 for iArray = 1:nArrays
     % Get the event times and y endpoints
     eventTimesThis = eventTimes{iArray};
@@ -381,7 +384,7 @@ for iArray = 1:nArrays
     labelThis = labels{iArray};
 
     % Plot the event times with the color for this array
-    hLines{iArray} = line(eventTimesThis, yEndsThis, ...
+    hRaster{iArray} = line(eventTimesThis, yEndsThis, ...
                             'LineStyle', lineStyleDefault, ...
                             'LineWidth', lineWidthDefault, ...
                             'Color', colorThis, ...
@@ -389,10 +392,10 @@ for iArray = 1:nArrays
 end
 
 % Plot horizontal line(s) for duration if provided
-if ~isempty(durationWindow)
-    horzLines = cellfun(@(x, y) plot_horizontal_line(x, 'XLimits', y, ...
+if ~isempty(horzBarWindows)
+    hBars = cellfun(@(x, y) plot_horizontal_line(x, 'XLimits', y, ...
                         'Color', 'r', 'LineStyle', '-', 'LineWidth', 0.5), ...
-                        num2cell(yHorzLines), durationWindow, ...
+                        num2cell(yHorzBars), horzBarWindows, ...
                         'UniformOutput', false);
 end
 

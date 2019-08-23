@@ -824,7 +824,6 @@ if plotAutoCorrFlag
 end
 
 %% Plot raw traces
-% TODO: Plot with oscillation duration bars
 if plotRawFlag
     fprintf('Plotting raw traces for %s ...\n', fileBase);
     % Hard-coded parameters
@@ -887,7 +886,7 @@ if plotCombinedFlag
     % Hard-Coded Parameters
     iTraceToSample = 21;
     MS_PER_S = 1000;
-    barWidth2Range = 1/10;
+    vertBarWidth2Range = 1/10;
 
     % Create output directory and subdirectories for each measure
     outFolderCombined = fullfile(outFolder, combinedDir);
@@ -915,8 +914,8 @@ if plotCombinedFlag
     figTitleBase = sampleParamsStruct.figTitleBase;
 
     % Compute for spike detection plot
-    barWidth = vRange * barWidth2Range;
-    yMid = vMax + barWidth;
+    vertBarWidth = vRange * vertBarWidth2Range;
+    yMid = vMax + vertBarWidth;
     yLimits = compute_axis_limits([vMin, yMid], 'y', 'Coverage', 100);
 
     % Compute the baseline average and indices selected for this field
@@ -942,6 +941,7 @@ if plotCombinedFlag
     [figCombined, axCombined] = create_subplots(3, 3, 'FigNumber', 4);
 
     % Plot raw data with zoomWin1
+    % TODO: Plot with oscillation duration bars
     axes(axCombined(1, 1));
     plot_raw_multiunit(parsedData, parsedParams, ...
                         phaseBoundaries, fileBase, ...
@@ -1002,7 +1002,7 @@ if plotCombinedFlag
     axes(axCombined(3, 1)); hold on;
     plot(tVec, vVec, 'k');
     plot(tVec, vVecFilt, 'b');
-    plot_raster(tVec(idxSpikes), 'YMid', yMid, 'BarWidth', barWidth, ...
+    plot_raster(tVec(idxSpikes), 'YMid', yMid, 'VertBarWidth', vertBarWidth, ...
                         'LineWidth', 0.5, 'Colors', {'Red'}, ...
                         'YLimits', 'suppress', 'YTickLocs', 'suppress', ...
                         'YTickLabels', 'suppress');
@@ -1412,12 +1412,12 @@ function [fig, ax, lines, markers, raster] = ...
 %% Plots the spike detection
 
 % Hard-coded constants
-barWidth2Range = 1/10;
+vertBarWidth2Range = 1/10;
 
 % Compute the midpoint and bar width for the raster
-% barWidth = vRange * barWidth2Range;
-barWidth = 1;
-% yMid = vMax + barWidth;
+% vertBarWidth = vRange * vertBarWidth2Range;
+vertBarWidth = 1;
+% yMid = vMax + vertBarWidth;
 yMid = 9;
 
 % Compute y axis limits
@@ -1475,7 +1475,7 @@ ax(3) = subplot(3, 1, 3);
 cla; hold on
 lines(4) = plot(tVec, vVec, 'k');
 lines(5) = plot(tVec, vVecFilt, 'b');
-raster = plot_raster(tVec(idxSpikes), 'YMid', yMid, 'BarWidth', barWidth, ...
+raster = plot_raster(tVec(idxSpikes), 'YMid', yMid, 'VertBarWidth', vertBarWidth, ...
                     'LineWidth', 0.5, 'Colors', {'Red'}, ...
                     'YLimits', 'suppress', 'YTickLocs', 'suppress', ...
                     'YTickLabels', 'suppress');
@@ -2156,11 +2156,10 @@ titleBase = replace(fileBase, '_', '\_');
 
 % Create figure and plot
 hold on
-[hLines, eventTimes, yEnds, yTicksTable] = ...
-    plot_raster(spikeTimesSec, 'DurationWindow', burstWindows, ...
-                'LineWidth', 0.5, 'Colors', colorsRaster);
+hLines = plot_raster(spikeTimesSec, 'MeasureBars', burstWindows, ...
+                    'LineWidth', 0.5, 'Colors', colorsRaster);
 % [hLines, eventTimes, yEnds, yTicksTable] = ...
-%     plot_raster(spikeTimesSec, 'DurationWindow', oscWindow, ...
+%     plot_raster(spikeTimesSec, 'MeasureBars', oscWindow, ...
 %                 'LineWidth', 0.5, 'Colors', colorsRaster);
 
 % Plot stimulation start

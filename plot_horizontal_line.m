@@ -3,6 +3,8 @@ function h = plot_horizontal_line (yValue, varargin)
 % Usage: h = plot_horizontal_line (yValue, varargin)
 % Explanation:
 %       TODO
+%       Note: This function plots horizontal lines with the same y value
+%               as the same color
 %
 % Example(s):
 %       h = plot_horizontal_line(yValue)
@@ -13,6 +15,8 @@ function h = plot_horizontal_line (yValue, varargin)
 %       h = plot_horizontal_line(3, 'XLimits', [1, 2])
 %       h = plot_horizontal_line(3, 'XLimits', [1, 2, 4, 5])
 %       h = plot_horizontal_line([3, 4, 5])
+%       h = plot_horizontal_line([3 4], 'XLimits', {[2 4], [1 2 4 5]})
+%       h = plot_horizontal_line([3 4], 'XLimits', {[2 4], [1 2 4 5]})
 %       h = plot_horizontal_line([3, 4, 5], 'Color', 'r')
 %       TODO: h = plot_horizontal_line([3, 4, 5], 'ColorMapFunc', 'jet')
 %
@@ -55,6 +59,7 @@ function h = plot_horizontal_line (yValue, varargin)
 % 2019-03-17 Allow each x limits to be of length > 2 and break them up
 %               into pairs
 % 2019-08-22 Added 'ColorMap' as an optional argument
+% 2019-08-23 Made sure that each y value is a single color
 % TODO: Allow 2-D arrays for y values
 
 %% Hard-coded parameters
@@ -110,21 +115,26 @@ end
 yValueAll = apply_over_cells(@vertcat, yValueCell);
 xLimitsAll = apply_over_cells(@vertcat, xLimitsCell);
 
-% Compute the number of lines to plot
+% Count the number of y values
+nYValues = numel(yValue);
+
+% Count the number of lines for each y value
+nLinesEachY = count_vectors(yValueCell);
+
+% Count the number of lines to plot
 nLines = numel(yValueAll);
 
-% Decide on the number of colors
-if numel(yValue) > 1
-    nColors = nLines;
-else
-    nColors = 1;
-end
+% Decide on the number of colors to plot
+nColors = nYValues;
 
 % Set default color map
 colorMap = decide_on_colormap(colorMap, nColors);
 
 % Expand to nLines
-colorMap = decide_on_colormap(colorMap, nLines);
+% TODO: Add an option to decide_on_colormap.m to do this 'ExpandBy'
+colorMapCell = arrayfun(@(x) repmat(colorMap(x, :), nLinesEachY(x), 1), ...
+                    1:nYValues, 'UniformOutput', false);
+colorMapExpanded = vertcat(colorMapCell{:});
 
 %% Do the job
 % Hold on if plotting more than one line
@@ -134,7 +144,7 @@ end
 
 % Plot all lines
 h = cellfun(@(y, x, z) line(x, repmat(y, size(x)), ...
-                            'Color', colorMap(z, :), otherArguments), ...
+                        'Color', colorMapExpanded(z, :), otherArguments), ...
             yValueAll, xLimitsAll, num2cell(transpose(1:nLines)));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
