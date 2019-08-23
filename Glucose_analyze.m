@@ -1,4 +1,4 @@
-%% Analyzes all metformin data
+%% Analyzes all Glucose paper oscillations data
 %
 % Requires:
 %       cd/archive_dependent_scripts.m
@@ -11,17 +11,17 @@
 % 2019-08-20 Changed parent directory to katieX
 % 2019-08-20 Added specificSlicesToAnalyze
 % 2019-08-20 Now uses sweepsRelToPhase2
+% 2019-08-23 Renamed from metformin_analyze.m to Glucose_analyze.m
 
 %% Hard-coded parameters
-parentDir = fullfile('/media', 'katieX', 'Glucose_Paper', 'Data', 'Oscillations','10mM_metformin');
-% parentDir = fullfile('/media', 'katieX', 'Glucose_Paper', 'Data', 'Oscillations','Adrug');
-%
+parentDir = fullfile('/media', 'katieX', 'Glucose_Paper', 'Data', 'Oscillations');
 archiveDir = parentDir;
-dirsToAnalyze = {'all'};
+% dirsToAnalyze = {fullfile('Adrug', 'clean')};
+dirsToAnalyze = {fullfile('Adrug', 'clean'), fullfile('10mM_metformin', 'clean')};
 specificSlicesToAnalyze = {};
 % specificSlicesToAnalyze = {'20190819_slice1'};
 
-parseIndividualFlag = false; %true;
+parseIndividualFlag = true;
 saveMatFlag = true;
 plotRawFlag = false; %true;
 plotSpikeDetectionFlag = false; %true;

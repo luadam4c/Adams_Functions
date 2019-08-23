@@ -135,7 +135,7 @@ function plot_measures (varargin)
 %
 % Used by:
 %       cd/clc2_analyze.m
-%       cd/metformin_analyze.m
+%       cd/Glucose_analyze.m
 
 % File History:
 % 2019-03-15 Created by Adam Lu

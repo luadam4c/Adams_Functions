@@ -203,6 +203,7 @@ There are 1 MATLAB scripts in this directory:
 - [**get_idxEnd.m**](https://github.com/blabuva/Adams_Functions/blob/master/get_idxEnd.m): Get the index of the end of an event
 - [**get_loopedparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/get_loopedparams.m): Get parameters that were looped in the simulation from loopedparams.mat
 - [**get_var_name.m**](https://github.com/blabuva/Adams_Functions/blob/master/get_var_name.m): Returns a variable's name as a string
+- [**Glucose_analyze.m**](https://github.com/blabuva/Adams_Functions/blob/master/Glucose_analyze.m): Analyzes all Glucose paper oscillations data
 - [**has_same_attributes.m**](https://github.com/blabuva/Adams_Functions/blob/master/has_same_attributes.m): Returns all row indices that have the same attributes (column values) combination as a given set of row names
 - [**histg.m**](https://github.com/blabuva/Adams_Functions/blob/master/histg.m): HISTG    'Grouped' univariate histogram
 - [**histproperties.m**](https://github.com/blabuva/Adams_Functions/blob/master/histproperties.m): Computes the area, edges of the histogram for given data array
@@ -292,7 +293,6 @@ There are 1 MATLAB scripts in this directory:
 - [**match_vector_count.m**](https://github.com/blabuva/Adams_Functions/blob/master/match_vector_count.m): Expands or truncates a vector set to match a given number of vectors
 - [**medianfilter.m**](https://github.com/blabuva/Adams_Functions/blob/master/medianfilter.m): Applies a median filter to vectors
 - [**merge_structs.m**](https://github.com/blabuva/Adams_Functions/blob/master/merge_structs.m): Merges two scalar structures
-- [**metformin_analyze.m**](https://github.com/blabuva/Adams_Functions/blob/master/metformin_analyze.m): Analyzes all metformin data
 - [**movingaveragefilter.m**](https://github.com/blabuva/Adams_Functions/blob/master/movingaveragefilter.m): Applies a moving average filter to vectors
 - [**my_closereq.m**](https://github.com/blabuva/Adams_Functions/blob/master/my_closereq.m): Close request function that displays a question dialog box
 - [**nanstderr.m**](https://github.com/blabuva/Adams_Functions/blob/master/nanstderr.m): Calculate the standard error of the mean excluding NaN values

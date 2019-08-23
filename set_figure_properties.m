@@ -36,7 +36,7 @@ function fig = set_figure_properties (varargin)
 % File History:
 % 2019-05-10 Created by Adam Lu
 % 2019-08-23 Added 'FigExpansion' as an optional argument
-% 2019-08-23 Renamed to set_figure_properties.m
+% 2019-08-23 Renamed decide_on_fig_handle.m to set_figure_properties.m
 % 
 
 %% Hard-coded parameters

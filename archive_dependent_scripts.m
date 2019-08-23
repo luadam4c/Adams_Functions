@@ -4,9 +4,9 @@ function varargout = archive_dependent_scripts (mFileName, varargin)
 % Explanation:
 %       TODO
 % Example(s):
-%       archive_dependent_scripts('metformin_analyze', 'FileExt', 'zip')
-%       archive_dependent_scripts('metformin_analyze', 'FileExt', 'tar')
-%       archive_dependent_scripts('metformin_analyze', 'FileExt', 'gz')
+%       archive_dependent_scripts('Glucose_analyze', 'FileExt', 'zip')
+%       archive_dependent_scripts('Glucose_analyze', 'FileExt', 'tar')
+%       archive_dependent_scripts('Glucose_analyze', 'FileExt', 'gz')
 %
 % Outputs:
 %       functionListTable       - see all_dependent_functions.m
