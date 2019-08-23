@@ -7,6 +7,7 @@ function distinctParts = extract_distinct_fileparts (paths, varargin)
 %       [~, paths] = all_files;
 %       extract_distinct_fileparts(paths)
 %       extract_distinct_fileparts({'a+b+c', 'a+d+c'}, 'Delimiter', '+')
+%
 % Outputs:
 %       distinctParts   - distinct parts of the file paths
 %                       specified as a TODO
@@ -73,7 +74,11 @@ delimiter = iP.Results.Delimiter;
 commonParent = extract_common_directory(paths, 'KeepFileSep', true);
 
 % Extract everything after the common parent directory
-relativePaths = extractAfter(paths, commonParent);
+if ~isempty(commonParent)
+    relativePaths = extractAfter(paths, commonParent);
+else
+    relativePaths = paths;
+end
 
 % Extract the file extensions
 fileExt = extract_fileparts(relativePaths, 'extension');

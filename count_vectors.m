@@ -40,7 +40,7 @@ function nVectors = count_vectors (vectors, varargin)
 %
 % Used by:
 %       cd/collapse_identical_vectors.m
-%       cd/combine_data_from_same_slice.m
+%       cd/combine_abf_data.m
 %       cd/compute_all_pulse_responses.m
 %       cd/compute_combined_trace.m
 %       cd/compute_single_neuron_errors.m

@@ -34,7 +34,7 @@ function boundaryValues = compute_index_boundaries (varargin)
 %       cd/unique_groups.m
 %
 % Used by:
-%       cd/combine_data_from_same_slice.m
+%       cd/combine_abf_data.m
 %       cd/plot_tuning_curve.m
 
 % File History:

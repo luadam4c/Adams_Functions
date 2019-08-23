@@ -3,9 +3,13 @@ function parentDir = extract_common_directory (paths, varargin)
 % Usage: parentDir = extract_common_directory (paths, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       extract_common_directory({'a/b/c', 'a/b/c.m', 'a/b/c/d.m'})
-%       extract_common_directory({'a/b/c', 'a/b/c.m', 'a/b/c/d.m'}, 'BaseNameOnly', true)
+%       extract_common_directory({'a/b/c', 'a/b/c.m'}, 'BaseNameOnly', true)
+%       extract_common_directory({'a/b/c', 'a/b/c.m'}, 'KeepFileSep', true)
+%       extract_common_directory({'a.m', 'c.m'}, 'KeepFileSep', true)
+%
 % Outputs:
 %       parentDir   - the common parent directory
 %                   specified as a character vector

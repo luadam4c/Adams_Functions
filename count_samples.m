@@ -60,7 +60,7 @@ function nSamples = count_samples (vectors, varargin)
 %       cd/match_row_count.m
 %
 % Used by:    
-%       cd/combine_data_from_same_slice.m
+%       cd/combine_abf_data.m
 %       cd/compute_combined_trace.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sampsizepwr.m

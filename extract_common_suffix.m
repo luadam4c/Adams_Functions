@@ -5,6 +5,7 @@ function suffix = extract_common_suffix (strs, varargin)
 %       TODO
 % Example(s):
 %       extract_common_suffix({'a_b_e_c_d.m', 'a_c_d.m', 'a_b_c_d.m'})
+%
 % Outputs:
 %       suffix      - the common suffix
 %                   specified as a character vector

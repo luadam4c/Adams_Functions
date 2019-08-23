@@ -58,6 +58,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/all_file_bases.m
 %       cd/archive_dependent_scripts.m
 %       cd/plot_measures.m
+%       cd/combine_abf_data.m
 %       cd/combine_data_from_same_slice.m
 %       cd/combine_variables_across_tables.m
 %       cd/extract_common_directory.m

@@ -75,6 +75,7 @@ function abf2mat(abfFileOrDir, varargin)
 % 2018-05-17 Added ChannelsPerAnimal and animalStr
 % 2018-05-17 Added OmitChannels
 % TODO: Apply identify_channels.m and save each channel
+% TODO: Update this to use parse_abf.m
 
 %% Hard-coded parameters
 

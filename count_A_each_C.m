@@ -19,7 +19,7 @@ function nAsEachC = count_A_each_C (nAsEachB, nBsEachC)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
-%       cd/combine_data_from_same_slice.m
+%       cd/combine_abf_data.m
 
 % File History:
 % 2019-08-21 Created by Adam Lu

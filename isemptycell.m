@@ -21,6 +21,7 @@ function isEmpty = isemptycell (cellArray)
 %       cd/compute_stats.m
 %       cd/create_indices.m
 %       cd/distribute_balls_into_boxes.m
+%       cd/extract_common_prefix.m
 %       cd/extract_distinct_fileparts.m
 %       cd/find_in_strings.m
 %       cd/istype.m

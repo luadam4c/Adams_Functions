@@ -38,10 +38,39 @@ function [allParsedParamsTable, allParsedDataTable, ...
 %                   - 'SaveSheetFlag': whether to save params as a spreadsheet
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'UseOriginal': whether to use original 
+%                           channel labels and units over identify_channels()
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ExpMode': experiment mode
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'EEG'   - EEG data; x axis in seconds; y-axis in uV
+%                       'patch' - patch data; x axis in ms; y-axis in mV
+%                   default == 'EEG' for 2d data 'patch' for 3d data
 %                   - 'OutFolder': the name of the directory that 
 %                                       plots will be placed
 %                   must be a string scalar or a character vector
 %                   default == same as directory
+%                   - 'TimeUnits': units for time
+%                   must be a string scalar or a character vector
+%                   default == 's' for 2-data data and 'ms' for 3-data data
+%                   - 'ChannelTypes': the channel types
+%                   must be a cellstr with nChannels elements
+%                       each being one of the following:
+%                           'Voltage'
+%                           'Current'
+%                           'Conductance'
+%                           'Other'
+%                   default == detected with identify_channels()
+%                   - 'ChannelUnits': the channel units
+%                   must be a cellstr with nChannels elements
+%                   default == detected with identify_channels()
+%                   - 'ChannelLabels': the channel labels
+%                   must be a cellstr with nChannels elements
+%                   default == detected with identify_channels()
+%                   - 'IdentifyProtocols': whether to identify protocols
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'SheetType': sheet type; 
 %                       e.g., 'xlsx', 'csv', etc.
 %                   could be anything recognised by the readtable() function 
@@ -72,10 +101,12 @@ function [allParsedParamsTable, allParsedDataTable, ...
 % 2018-10-23 - Allowed fileNames to be a character vector
 % 2019-04-29 - Added saveMatFlag as an optional parameter
 % 2019-05-20 - Added saveSheetFlag as an optional parameter
-% 2019-08-23 Now passes unmatched optional arguments to parse_abf
+% 2019-08-23 Now passes optional arguments to parse_abf
 
 %% Hard-coded parameters
 tableSuffix = '_abfParams';
+validExpModes = {'EEG', 'patch', ''};
+validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 
 %% Default values for optional arguments
 directoryDefault = pwd;             % look for .abf files in 
@@ -84,7 +115,15 @@ fileNamesDefault = {};              % detect from directory by default
 verboseDefault = false;             % print to standard output by default
 saveMatFlagDefault = false;         % don't save parsed data by default
 saveSheetFlagDefault = true;        % save parsed params by default
+useOriginalDefault = false;         % use identify_channels.m instead
+                                    % of the original channel labels by default
+expModeDefault = '';                % set later
 outFolderDefault = '';              % set later
+timeUnitsDefault = '';              % set later
+channelTypesDefault = {};           % set later
+channelUnitsDefault = {};           % set later
+channelLabelsDefault = {};          % set later
+identifyProtocolsDefault = false;   % don't identify protocols by default
 sheetTypeDefault = 'xlsx';          % default spreadsheet type
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -107,8 +146,22 @@ addParameter(iP, 'SaveMatFlag', saveMatFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SaveSheetFlag', saveSheetFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'UseOriginal', useOriginalDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ExpMode', expModeDefault, ...
+    @(x) isempty(x) || any(validatestring(x, validExpModes)));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'ChannelTypes', channelTypesDefault, ...
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'ChannelUnits', channelUnitsDefault, ...
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'ChannelLabels', channelLabelsDefault, ...
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'IdentifyProtocols', identifyProtocolsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SheetType', sheetTypeDefault, ...
     @(x) all(issheettype(x, 'ValidateMode', true)));
 
@@ -119,11 +172,24 @@ fileNames = iP.Results.FileNames;
 verbose = iP.Results.Verbose;
 saveMatFlag = iP.Results.SaveMatFlag;
 saveSheetFlag = iP.Results.SaveSheetFlag;
+useOriginal = iP.Results.UseOriginal;
+expMode = validatestring(iP.Results.ExpMode, validExpModes);
 outFolder = iP.Results.OutFolder;
+timeUnits = iP.Results.TimeUnits;
+channelTypes = iP.Results.ChannelTypes;
+channelUnits = iP.Results.ChannelUnits;
+channelLabels = iP.Results.ChannelLabels;
+identifyProtocols = iP.Results.IdentifyProtocols;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 
 % Keep unmatched arguments for the parse_abf() function
 otherArguments = iP.Unmatched;
+
+% Validate channel types
+if ~isempty(channelTypes)
+    channelTypes = cellfun(@(x) validatestring(x, validChannelTypes), ...
+                            channelTypes, 'UniformOutput', false);
+end
 
 % Set default output folder
 if isempty(outFolder)
@@ -169,12 +235,22 @@ if ischar(fileNames)
     fileNames = {fileNames};
 end
 
+% Count the number of files
+nFiles = numel(fileNames);
+
 %% Loop through all .abf files
 % Parse all abf files
 [allParsedParamsCell, allParsedDataCell] = ...
     cellfun(@(x) parse_abf(x, 'Verbose', verbose, ...
-            'SaveMatFlag', saveMatFlag, otherArguments), ...
-            fileNames, 'UniformOutput', false);
+            'SaveMatFlag', saveMatFlag, ...
+            'UseOriginal', useOriginal, ...
+            'ExpMode', expMode, ...
+            'TimeUnits', timeUnits, ...
+            'ChannelTypes', channelTypes, ...
+            'ChannelUnits', channelUnits, ...
+            'ChannelLabels', channelLabels, ...
+            'IdentifyProtocols', identifyProtocols), ...
+            fileNames, 'UniformOutput', false, otherArguments);
 
 % Log all entries that are empty
 % TODO
@@ -208,6 +284,72 @@ end
 
 %{
 OLD CODE:
+
+[~, ~, fileNames] = dirr(directory, '.abf', 'name');
+
+sheetName = fullfile(directory, [directoryName, '_abfParams.', sheetType]);
+
+dataAll = {};
+tVecAll = {};
+vVecsAll = {};
+iVecsAll = {};
+gVecsAll = {};
+dataReorderedAll = {};
+allParsedParamsCell = {};
+
+dataAll = cell(nFiles, 1);
+tVecAll = cell(nFiles, 1);
+vVecsAll = cell(nFiles, 1);
+iVecsAll = cell(nFiles, 1);
+gVecsAll = cell(nFiles, 1);
+dataReorderedAll = cell(nFiles, 1);
+
+[allParsedParamsCell{iFile}, dataAll{iFile}, ...
+    tVecAll{iFile}, vVecsAll{iFile}, ...
+    iVecsAll{iFile}, gVecsAll{iFile}, dataReorderedAll{iFile}] = ...
+
+if nargout >= 5
+else
+end
+
+if nargout >= 6
+end
+
+% Find all .abf files in the directory
+files = dir(fullfile(directory, '*.abf'));
+if isempty(files)
+    fprintf('No .abf files in current directory!\n');
+    fprintf('Type ''help %s'' for usage\n', mfilename);
+    return
+end
+
+% Construct the full file names
+fileNames = extract_fullpath(files);
+
+%       cd/extract_fullpath.m
+
+allParsedDataCell = allParsedDataCell(~cellfun(@isempty, allParsedDataCell));
+
+allParsedParamsStruct = [allParsedParamsCell{:}];
+allParsedDataStruct = [allParsedDataCell{:}];
+
+allParsedParamsTable = struct2table(allParsedParamsStruct);
+allParsedDataTable = struct2table(allParsedDataStruct);
+
+allParsedParamsCell = cell(nFiles, 1);
+allParsedDataCell = cell(nFiles, 1);
+parfor iFile = 1:nFiles
+    % Parse the abf file
+    [allParsedParamsCell{iFile}, allParsedDataCell{iFile}] = ...
+        parse_abf(fileNames{iFile}, 'Verbose', verbose, ...
+                    'UseOriginal', useOriginal, ...
+                    'ExpMode', expMode, ...
+                    'TimeUnits', timeUnits, ...
+                    'ChannelTypes', channelTypes, ...
+                    'ChannelUnits', channelUnits, ...
+                    'ChannelLabels', channelLabels, ...
+                    'IdentifyProtocols', identifyProtocols);
+end
 
 %}
 

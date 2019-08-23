@@ -30,21 +30,21 @@ function allData = combine_data_from_same_slice (varargin)
 %                   - 'ForceTableOutput': whether to force output as a table
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - Any other parameter-value pair for combine_abf_data()
+%                           or parse_all_abfs()
 %
 % Requires:
 %       cd/all_files.m
 %       cd/all_slice_bases.m
-%       cd/argfun.m
-%       cd/compute_index_boundaries.m
-%       cd/count_A_each_C.m
-%       cd/count_samples.m
-%       cd/count_vectors.m
+%       cd/combine_abf_data.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_fileparts.m
-%       cd/force_matrix.m
+%       cd/force_column_cell.m
 %       cd/istext.m
 %       cd/parse_all_abfs.m
-%
+%       cd/struct2arglist.m
+
+
 % Used by:
 %       cd/parse_all_multiunit.m
 %       cd/parse_multiunit.m
@@ -56,6 +56,16 @@ function allData = combine_data_from_same_slice (varargin)
 % 2019-07-24 Added 'SliceName' as an optional argument
 % 2019-08-21 Now uses count_A_each_C.m
 % 2019-08-21 Now uses compute_index_boundaries.m
+% 2019-08-23 Fixed bug when there is only one phase
+% TODO: Pull out code to function combine_abf_data.m
+% TODO: Reorganize code to use structure arrays
+% TODO: Allow combination of .mat files
+
+%% Hard-coded parameters
+dataExt = 'abf';            % Currently only accepts abf files
+sortBy = 'date';
+regexpSliceBase = '.*slice[0-9]*';
+regexpPhaseStr = 'phase[a-zA-Z0-9]*';
 
 %% Default values for optional arguments
 directoryDefault = pwd;
@@ -72,6 +82,7 @@ forceTableOutputDefault = false;
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Directory', directoryDefault, ...
@@ -96,6 +107,10 @@ saveMatFlag = iP.Results.SaveMatFlag;
 varsToSave = iP.Results.VarsToSave;
 forceTableOutput = iP.Results.ForceTableOutput;
 
+% Keep unmatched arguments for the combine_abf_data() or parse_all_abfs() 
+%       or parse_abf() function
+otherArguments = struct2arglist(iP.Unmatched);
+
 %% Preparation
 % Decide on the input directory
 if isempty(inFolder)
@@ -105,9 +120,9 @@ end
 % Decide on the unique slice bases
 if isempty(sliceBases)
     % Look for unique slice bases that have .abf files
-    sliceBases = all_slice_bases('Directory', inFolder, 'Extension', 'abf', ...
-                                'ForceCellOutput', true, 'SortBy', 'date', ...
-                                'RegExpBase', '.*slice[0-9]*');
+    sliceBases = all_slice_bases('Directory', inFolder, 'Extension', dataExt, ...
+                                'ForceCellOutput', true, 'SortBy', sortBy, ...
+                                'RegExpBase', regexpSliceBase);
 end
 
 % Make sure sliceBase is a cell array
@@ -124,12 +139,13 @@ if nSlices > 1 || forceTableOutput
     iVecsSl = cell(nSlices, 1);
     phaseBoundaries = cell(nSlices, 1);
     phaseStrs = cell(nSlices, 1);
-    parfor iSlice = 1:nSlices
-    %for iSlice = 1:nSlices
+%    parfor iSlice = 1:nSlices
+    for iSlice = 1:nSlices
         [vVecsSl{iSlice}, siMsSl(iSlice), iVecsSl{iSlice}, ...
             phaseBoundaries{iSlice}, phaseStrs{iSlice}] = ...
             combine_data_from_one_slice(inFolder, sliceBase{iSlice}, ...
-                                        saveMatFlag, varsToSave);
+                                        saveMatFlag, varsToSave, ...
+                                        regexpPhaseStr, otherArguments);
     end
 
     % Return as a table
@@ -138,7 +154,8 @@ if nSlices > 1 || forceTableOutput
 elseif nSlices == 1
     [vVecsSl, siMsSl, iVecsSl, phaseBoundaries, phaseStrs] = ...
         combine_data_from_one_slice(inFolder, sliceBase{1}, ...
-                                    saveMatFlag, varsToSave);
+                                    saveMatFlag, varsToSave, ...
+                                    regexpPhaseStr, otherArguments);
 
     % Return as a struct
     allData.sliceBase = sliceBase{1};
@@ -156,11 +173,9 @@ end
 
 function [vVecsSl, siMsSl, iVecsSl, phaseBoundaries, phaseStrs] = ...
             combine_data_from_one_slice(inFolder, sliceBase, ...
-                                        saveMatFlag, varsToSave)
+                                        saveMatFlag, varsToSave, ...
+                                        regexpPhaseStr, otherArguments)
 %% Combines the data for one slice
-
-%% Hard-coded parameters
-regexpPhaseStr = 'phase[a-zA-Z0-9]*';
 
 %% Count files and phases
 % Get all .abf files for this slice ordered by time stamp
@@ -177,76 +192,16 @@ if isempty(allAbfPaths)
     return
 end
 
-% Extract file names
-allFileNames = extract_fileparts(allAbfPaths, 'name');
+%% Combine data
+allData = combine_abf_data(allAbfPaths, 'RegExpPhaseStr', regexpPhaseStr, ...
+                            'SaveMatFlag', false, 'SaveSheetFlag', false, ...
+                            otherArguments{:});
 
-% Extract phase strings
-allPhaseStrs = extract_fileparts(allFileNames, 'base', 'RegExp', regexpPhaseStr);
-
-% Get the unique phase strings in original order
-phaseStrs = unique(allPhaseStrs, 'stable');
-
-% Count the number of phases
-nPhases = numel(phaseStrs);
-
-%% Extract data to combine
-% Parse all multi-unit recordings for this slice
-[allParams, allData] = ...
-    parse_all_abfs('FileNames', allAbfPaths, ...
-                    'ChannelTypes', {'voltage', 'current'}, ...
-                    'ChannelUnits', {'uV', 'arb'}, ...
-                    'SaveSheetFlag', false);
-
-% Extract parameters, then clear unused parameters
-siMs = allParams.siMs;
-clear allParams;
-
-% Extract data, then clear unused data
-vVecs = allData.vVecs;
-iVecs = allData.iVecs;
-clear allData;
-
-% Find the indices for each phase
-indEachPhase = cellfun(@(x) find_in_strings(x, allFileNames), ...
-                        phaseStrs, 'UniformOutput', false);
-
-%% Order the data correctedly (may not be needed)
-% Put them all together
-sortOrder = vertcat(indEachPhase{:});
-
-% Reorder data so that the order matches that of phaseStrs
-[siMsSorted, vVecsSorted, iVecsSorted] = ...
-    argfun(@(x) x(sortOrder), siMs, vVecs, iVecs);
-
-%% Combine the data
-% Compute the new siMs
-siMsSl = mean(siMsSorted);
-
-% Concatenate vectors
-% TODO: Fix force_matrix
-% [vVecsSl, iVecsSl] = argfun(@force_matrix, vVecsSorted, iVecsSorted);
-[vVecsSl, iVecsSl] = argfun(@(x) horzcat(x{:}), vVecsSorted, iVecsSorted);
-
-%% Create phase boundaries
-% Count the number of phase boundaries
-nBoundaries = nPhases - 1;
-
-% Compute phase boundaries
-if nBoundaries == 0
-    phaseBoundaries = [];
-else
-    % Count the number of sweeps in each file
-    nSweepsEachFile = cellfun(@count_vectors, vVecsSorted);
-
-    % Count the number of files for each phase
-    nFilesEachPhase = cellfun(@count_samples, indEachPhase);
-
-    % Count the number of sweeps in each phase
-    nSweepsEachPhase = count_A_each_C(nSweepsEachFile, nFilesEachPhase);
-
-    % Compute the phase boundaries
-    phaseBoundaries = compute_index_boundaries('NEachGroup', nSweepsEachPhase);
-end
+vVecsSl = allData.vVecs;
+siMsSl = allData.siMs;
+iVecsSl = allData.iVecs;
+phaseBoundaries = allData.phaseBoundaries;
+phaseStrs = allData.phaseStrs;
 
 %% Save to a matfile if requested
 if saveMatFlag

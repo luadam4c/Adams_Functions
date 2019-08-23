@@ -3,8 +3,15 @@ function prefix = extract_common_prefix (strs, varargin)
 % Usage: prefix = extract_common_prefix (strs, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       extract_common_prefix({'a_b_c', 'a_b_c.m', 'a_b_c_d.m'})
+%       extract_common_prefix({'a+b+c', 'a+b+c+d-m'}, 'Delimiter', '+')
+%       extract_common_prefix({'a_b_c', 'a_b_c.m'}, 'KeepDelimiter', true)
+%       extract_common_prefix({'a_c', 'b_d'})
+%       extract_common_prefix({'a_c', 'b_d'}, 'KeepDelimiter', true)
+%       extract_common_prefix({'', ''}, 'KeepDelimiter', true)
+%
 % Outputs:
 %       prefix      - the common prefix
 %                   specified as a character vector
@@ -25,6 +32,7 @@ function prefix = extract_common_prefix (strs, varargin)
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/extract_subvectors.m
+%       cd/isemptycell.m
 %
 % Used by:
 %       cd/extract_common_directory.m
@@ -36,6 +44,7 @@ function prefix = extract_common_prefix (strs, varargin)
 % 2018-12-26 Moved from extract_common_directory.m
 % 2018-12-26 Added 'Delimiter' and 'SuffixInstead' as optional arguments
 % 2018-12-27 Added 'KeepDelimiter' as an optional argument
+% 2019-08-23 Now uses isemptycell.m
 % 
 
 %% Hard-coded parameters
@@ -86,7 +95,7 @@ end
         
 %% Do the job
 % If empty, return empty
-if isempty(strs)
+if isemptycell(strs)
     prefix = '';
     return
 end
