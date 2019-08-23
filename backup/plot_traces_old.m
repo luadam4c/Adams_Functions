@@ -172,7 +172,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       cd/create_error_for_nargin.m
 %       cd/create_indices.m
 %       cd/create_labels_from_numbers.m
-%       cd/decide_on_fighandle.m
+%       cd/set_figure_properties.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/isemptycell.mplot_traces
@@ -220,7 +220,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % 2019-04-24 Added 'AutoZoom' as an optional argument
 % 2019-04-26 Added 'staggered' as a valid plot mode 
 %               and added 'YAmountToStagger' as an optional argument
-% 2019-05-10 Now uses decide_on_fighandle.m
+% 2019-05-10 Now uses set_figure_properties.m
 % 2019-07-25 Added maxNYTicks
 
 %% Hard-coded parameters
@@ -681,7 +681,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
                         otherArguments)
 
 % Decide on the figure to plot on
-fig = decide_on_fighandle('FigHandle', figHandle, 'FigNumber', figNumber);
+fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber);
 
 % Set the default time axis limits
 if isempty(xLimits)

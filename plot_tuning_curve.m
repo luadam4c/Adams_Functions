@@ -173,6 +173,9 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   - 'FigNumber': figure number for creating figure
 %                   must be a positive integer scalar
 %                   default == []
+%                   - 'FigExpansion': expansion factor for figure position
+%                   must be a positive scalar
+%                   default == []
 %                   - 'ClearFigure': whether to clear figure
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -195,7 +198,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
-%       cd/decide_on_fighandle.m
+%       cd/set_figure_properties.m
 %       cd/force_column_vector.m
 %       cd/force_matrix.m
 %       cd/force_row_vector.m
@@ -232,7 +235,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-03-14 Added 'RemoveOutliers' as an optional argument
 % 2019-03-25 Added 'PhaseVectors' as an optional argument
 % 2019-03-25 Now expands the y limits by a little by default
-% 2019-05-10 Now uses decide_on_fighandle.m
+% 2019-05-10 Now uses set_figure_properties.m
 % 2019-06-10 Added 'PBoundaries' and 'RBoundaries' as optional arguments
 % 2019-08-07 Now changes the pTickAngle only if the labels are too long
 % 2019-08-07 Added 'PhaseLabels' as an optional argument
@@ -308,6 +311,7 @@ maxRange2MeanDefault = 40;      % range is not more than 40% of mean by default
 figTitleDefault = '';               % set later
 figHandleDefault = [];              % no existing figure by default
 figNumberDefault = [];              % no figure number by default
+figExpansionDefault = [];       % no figure expansion by default
 clearFigureDefault = false;         % don't clear figure by default
 figNameDefault = '';                % don't save figure by default
 figTypesDefault = 'png';
@@ -416,6 +420,8 @@ addParameter(iP, 'FigHandle', figHandleDefault);
 addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
                 'FigNumber must be a empty or a positive integer scalar!'));
+addParameter(iP, 'FigExpansion', figExpansionDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive'}));
 addParameter(iP, 'ClearFigure', clearFigureDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'FigName', figNameDefault, ...
@@ -466,6 +472,7 @@ maxRange2Mean = iP.Results.MaxRange2Mean;
 figTitle = iP.Results.FigTitle;
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
+figExpansion = iP.Results.FigExpansion;
 clearFigure = iP.Results.ClearFigure;
 figName = iP.Results.FigName;
 [~, figtypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
@@ -764,7 +771,8 @@ end
 
 %% Plot tuning curve
 % Decide on the figure to plot on
-fig = decide_on_fighandle('FigHandle', figHandle, 'FigNumber', figNumber);
+fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
+                            'FigExpansion', figExpansion);
 
 % Initialize graphics objects
 curves = gobjects(nColumnsToPlot, nLinesPerPhase);

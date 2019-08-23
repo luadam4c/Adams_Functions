@@ -410,7 +410,7 @@ for iField = 1:nFields
     end
     
     % Create a new figure
-    figThis = decide_on_fighandle('FigNumber', figNumber);
+    figThis = set_figure_properties('FigNumber', figNumber);
 
     % Clear the figure
     clf(figThis);

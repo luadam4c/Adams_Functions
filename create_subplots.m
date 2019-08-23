@@ -27,7 +27,7 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/decide_on_fighandle.m
+%       cd/set_figure_properties.m
 %       cd/struct2arglist.m
 %
 % Used by:
@@ -81,7 +81,7 @@ otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Decide on the figure to plot on
-fig = decide_on_fighandle('FigHandle', figHandle, 'FigNumber', figNumber);
+fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber);
 
 %% Compute
 % Count the number of subplots

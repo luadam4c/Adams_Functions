@@ -824,10 +824,11 @@ if plotAutoCorrFlag
 end
 
 %% Plot raw traces
-% TODO: Plot with higher resolution
 % TODO: Plot with oscillation duration bars
 if plotRawFlag
     fprintf('Plotting raw traces for %s ...\n', fileBase);
+    % Hard-coded parameters
+    figExpansion = 2;
 
     % Create a figure base
     figBaseRaw = fullfile(outFolder, rawDir, [fileBase, '_raw']);
@@ -836,7 +837,8 @@ if plotRawFlag
     figs(1) = figure(1); clf
     plot_raw_multiunit(parsedData, parsedParams, ...
                         phaseBoundaries, fileBase, ...
-                        'YAmountToStagger', yAmountToStagger);
+                        'YAmountToStagger', yAmountToStagger, ...
+                        'FigExpansion', figExpansion);
 
     % Save the figure zoomed to several x limits
     save_all_zooms(figs(1), figBaseRaw, zoomWinsMulti);
@@ -1762,7 +1764,7 @@ if isempty(barYValue)
 end
 
 % Decide on the figure handle
-fig = decide_on_fighandle('FigHandle', figHandle);
+fig = set_figure_properties('FigHandle', figHandle);
 
 %% Plot
 switch dataType

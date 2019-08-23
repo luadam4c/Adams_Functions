@@ -106,7 +106,7 @@ function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 %
 % Requires:
 %       cd/argfun.m
-%       cd/decide_on_fighandle.m
+%       cd/set_figure_properties.m
 %       cd/force_column_vector.m
 %       cd/isfigtype.m
 %       cd/plot_horizontal_line.m
@@ -137,7 +137,7 @@ function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 % 2019-05-10 Fix error bars when 'barDirection' is 'horizontal'
 % 2019-05-10 Now uses plot_error_bar.m
 % 2019-05-10 Now grabs XOffset or YOffset and uses it to plot error bars
-% 2019-05-10 Now uses decide_on_fighandle.m
+% 2019-05-10 Now uses set_figure_properties.m
 % 2019-05-11 Added 'ReverseOrder' as an optional argument
 % 2019-05-11 Added 'FigTitle' as an optional argument
 % 2019-06-10 Added 'PBoundaries' and 'RBoundaries' as optional arguments
@@ -392,7 +392,7 @@ end
 
 %% Plot bars
 % Decide on the figure to plot on
-fig = decide_on_fighandle('FigHandle', figHandle, 'FigNumber', figNumber);
+fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber);
 
 % Draw bar graph
 switch barDirection
