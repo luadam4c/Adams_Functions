@@ -181,6 +181,8 @@ for iDir = 1:numel(dirsToAnalyze)
                         'VarsToPlot', varsToPlot, ...
                         'VarLabels', varLabels);
     end
+    
+    close all
 end
 
 % Archive all scripts for this run

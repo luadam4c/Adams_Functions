@@ -37,6 +37,7 @@ function fig = set_figure_properties (varargin)
 % 2019-05-10 Created by Adam Lu
 % 2019-08-23 Added 'FigExpansion' as an optional argument
 % 2019-08-23 Renamed decide_on_fig_handle.m to set_figure_properties.m
+% 2019-08-24 Now uses the default figure position
 % 
 
 %% Hard-coded parameters
@@ -95,7 +96,10 @@ function fig = expand_figure_position (fig, expansionFactor)
 %% Expands or shrinks the figure position
 
 % Get the old figure position
-positionOld = get(fig, 'Position');
+% positionOld = get(fig, 'Position');
+
+% Get default figure position
+positionOld = get(0, 'defaultfigureposition');
 
 % Initialize as old position
 positionNew = positionOld;

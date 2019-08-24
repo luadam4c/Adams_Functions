@@ -1,14 +1,16 @@
-function [muParams, muData] = parse_all_multiunit(varargin)
+function varargout = parse_all_multiunit(varargin)
 %% Runs the parse_multiunit function on all slices in the present working directory
 % Usage: [muParams, muData] = parse_all_multiunit(varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       parse_all_multiunit;
 %       apply_to_all_subdirs(@parse_all_multiunit);
 %       [muParams, muData] = parse_all_multiunit;
 %       parse_all_multiunit('PlotRaw', true);
 %       parse_all_multiunit('PlotAll', true);
+%
 % Outputs:
 %       muParams    - parsed multiunit parameters
 %       muData      - parsed multiunit data
@@ -57,6 +59,7 @@ function [muParams, muData] = parse_all_multiunit(varargin)
 % 2019-07-25 Now combines slice data if .abf files present 
 %               but .mat file not present
 % 2019-08-06 Now accepts any parameter-value pair for parse_multiunit.m
+% 2019-08-24 Now uses varargout
 
 %% Hard-coded parameters
 % TODO Make optional arguments
@@ -207,8 +210,17 @@ for iSlice = 1:nSlices
     fprintf("Parsing slice #%d ...\n", iSlice);
 
     % Parse and plot multi-unit recordings from this slice
-    if nargout >= 1
+    if nargout >= 2
         [muParams{iSlice}, muData{iSlice}] = ...
+            parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), ...
+                            'PulseVectors', iVecsSl{iSlice}, ...
+                            'FileBase', sliceBases{iSlice}, ...
+                            'PhaseBoundaries', phaseBoundaries{iSlice}, ...
+                            'OutFolder', outFolder, ...
+                            'PlotMeasuresFlag', plotMeasuresFlag, ...
+                            otherArguments{:});
+    elseif nargout >= 1
+        muParams{iSlice} = ...
             parse_multiunit(vVecsSl{iSlice}, siMsSl(iSlice), ...
                             'PulseVectors', iVecsSl{iSlice}, ...
                             'FileBase', sliceBases{iSlice}, ...
@@ -228,6 +240,12 @@ for iSlice = 1:nSlices
 
     % Close all figures
     close all force hidden;
+end
+
+%% Output results
+varargout{1} = muParams;
+if nargout >= 2
+    varargout{2} = muData;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
