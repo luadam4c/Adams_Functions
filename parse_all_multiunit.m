@@ -174,6 +174,11 @@ else
     allDataTable = struct2table(allDataStruct, 'AsArray', true);
 end
 
+% Don't proceed if no files found
+if isempty(allDataTable)
+    return
+end
+
 % Extract from the table
 sliceBases = allDataTable.sliceBase;
 vVecsSl = allDataTable.vVecsSl;

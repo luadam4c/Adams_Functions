@@ -196,7 +196,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       cd/argfun.m
 %       cd/compute_axis_limits.m
 %       cd/count_vectors.m
-%       cd/create_colormap.m
+%       cd/decide_on_colormap.m
 %       cd/create_error_for_nargin.m
 %       cd/create_indices.m
 %       cd/create_labels_from_numbers.m
@@ -254,6 +254,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % 2019-07-25 Added maxNYTicks
 % 2019-08-23 Added 'FigExpansion' as an optional argument
 % 2019-08-23 Added horizontal bars
+% TODO: dataToCompareColorMap
 % TODO: Number of horizontal bars shouldn't need to match nTraces
 
 %% Hard-coded parameters
@@ -395,8 +396,7 @@ addParameter(iP, 'YTickLabels', yTickLabelsDefault, ...
     @(x) assert(ischar(x) && strcmpi(x, 'suppress') || ...
                 iscell(x) && all(cellfun(@(x) ischar(x) || isstring(x), x)), ...
         'YTickLabels must be ''suppress'' or a cell array of character/string arrays!'));
-addParameter(iP, 'ColorMap', colorMapDefault, ...
-    @(x) isempty(x) || isnumeric(x) && size(x, 2) == 3);
+addParameter(iP, 'ColorMap', colorMapDefault);
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
@@ -515,19 +515,17 @@ if strcmpi(colorMode, 'auto')
 end
 
 % Decide on a colormap
-if isempty(colorMap)
-    switch colorMode
-        case 'byPlot'
-            colorMap = create_colormap(nPlots);
-        case 'byRow'
-            colorMap = create_colormap(nRows);
-        case 'byColumn'
-            colorMap = create_colormap(nColumns);
-        case 'byTraceInPlot'
-            colorMap = create_colormap(nTracesPerPlot);
-        otherwise
-            error('colorMode unrecognized!');
-    end
+switch colorMode
+    case 'byPlot'
+        colorMap = decide_on_colormap(colorMap, nPlots);
+    case 'byRow'
+        colorMap = decide_on_colormap(colorMap, nRows);
+    case 'byColumn'
+        colorMap = decide_on_colormap(colorMap, nColumns);
+    case 'byTraceInPlot'
+        colorMap = decide_on_colormap(colorMap, nTracesPerPlot);
+    otherwise
+        error('colorMode unrecognized!');
 end
 
 if isempty(horzBarColorMap)

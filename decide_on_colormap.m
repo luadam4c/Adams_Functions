@@ -33,6 +33,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 %
 % Used by:
 %       cd/plot_horizontal_line.m
+%       cd/plot_traces.m   
 
 % File History:
 % 2019-08-22 Created by Adam Lu
