@@ -3,6 +3,7 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 % Usage: testResults = test_difference (dataTable, yVars, xVar, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       n = 180
 %       data1 = [rand(n, 1); rand(n, 1) + 0.5];
@@ -22,6 +23,7 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 %       testResults4 = test_difference(tble4, {'data4', 'data5'}, 'grps4')
 %       testResults5 = test_difference(tble4, {'data4', 'data5'}, 'grps5')
 %       testResults6 = test_difference(tble4, {'data4', 'data5'}, {'grps4', 'grps5'})
+%
 % Outputs:
 %       testResults - a table with each row corresponding to a measured variable
 %                           and columns:
@@ -32,6 +34,7 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 %                       h           - cell array of handles to histograms
 %                       histFigNames- histogram file names
 %                   specified as a table
+%
 % Arguments:
 %       dataTable   - data table
 %                   must be a table
@@ -41,7 +44,7 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 %                   must be a string array or a cell array of character arrays
 %       varargin    - 'SheetName' - spreadsheet file name for saving
 %                   must be a string scalar or a character vector
-%                   default == ''
+%                   default == '' (don't save)
 %                   - 'Prefix': prefix to prepend to file names
 %                   must be a character array
 %                   default == ''

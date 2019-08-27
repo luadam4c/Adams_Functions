@@ -1,8 +1,8 @@
 function phaseNumbers = combine_phase_numbers (allPhaseNumbers, varargin)
-%% Combines phase number vectors using unique_custom, ignoring NaNs
+%% Combines (possibly multiple) phase number vectors into a single vector
 % Usage: phaseNumbers = combine_phase_numbers (allPhaseNumbers, varargin)
 % Explanation:
-%       TODO
+%       The default method uses unique_custom, ignoring NaNs
 %
 % Example(s):
 %       combine_phase_numbers([[NaN; 1; 2; NaN], [NaN; 1; NaN; 3]])
@@ -19,21 +19,19 @@ function phaseNumbers = combine_phase_numbers (allPhaseNumbers, varargin)
 %       varargin    - 'param1': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
-%                   - Any other parameter-value pair for the TODO() function
+%                   - Any other parameter-value pair for compute_combined_trace
 %
 % Requires:
-%       cd/cell2num.m
-%       cd/count_samples.m
 %       cd/create_error_for_nargin.m
-%       cd/force_matrix.m
+%       cd/compute_combined_trace.m
 %       cd/struct2arglist.m
-%       cd/unique_custom.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/compute_population_average.m
 
 % File History:
 % 2019-08-27 Created by Adam Lu
+% 2019-08-27 Now uses compute_combined_trace with 'unique' option
 % 
 
 %% Hard-coded parameters
@@ -45,7 +43,7 @@ function phaseNumbers = combine_phase_numbers (allPhaseNumbers, varargin)
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 1    % TODO: 1 might need to be changed
+if nargin < 1
     error(create_error_for_nargin(mfilename));
 end
 
@@ -64,29 +62,12 @@ addRequired(iP, 'allPhaseNumbers');
 parse(iP, allPhaseNumbers, varargin{:});
 % param1 = iP.Results.param1;
 
-% Keep unmatched arguments for the TODO() function
-% otherArguments = struct2arglist(iP.Unmatched);
+% Keep unmatched arguments for the compute_combined_trace() function
+otherArguments = struct2arglist(iP.Unmatched);
 
-%% Preparation
-% Force as a matrix
-allPhaseNumbers = force_matrix(allPhaseNumbers);
-
-%% Do the job
-% Get all unique phase numbers for each row in a cell array
-uniquePhaseNumbers = ...
-    arrayfun(@(x) unique_custom(allPhaseNumbers(x, :), 'IgnoreNan', true), ...
-        transpose(1:size(allPhaseNumbers, 1)), 'UniformOutput', false);
-
-% Count the number of unique phase numbers for each row
-nUniquePhaseNumbers = count_samples(uniquePhaseNumbers);
-
-% If any number of unique phase numbers is greater than 1, there is a conflict
-if any(nUniquePhaseNumbers > 1)
-    disp("Phase numbers don't match!");
-    phaseNumbers = [];
-else
-    phaseNumbers = cell2num(uniquePhaseNumbers);
-end
+%% Apply the compute_combined_trace() function with the 'unique' option
+phaseNumbers = compute_combined_trace(allPhaseNumbers, 'unique', ...
+                                        otherArguments{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

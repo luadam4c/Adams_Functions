@@ -60,7 +60,7 @@ There are 1 MATLAB scripts in this directory:
 - [**combine_data_from_same_slice.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_data_from_same_slice.m): Combines data across multiple .abf files for each slice in the input folder (or for a particular slice)
 - [**combine_loopedparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_loopedparams.m): TODO
 - [**combine_multiunit_data.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_multiunit_data.m): Combines data across multiple .abf files (using multiunit data defaults) for each slice in the input folder (or for a particular slice)
-- [**combine_phase_numbers.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_phase_numbers.m): Combines phase number vectors using unique_custom, ignoring NaNs
+- [**combine_phase_numbers.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_phase_numbers.m): Combines (possibly multiple) phase number vectors into a single vector
 - [**combine_swd_sheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_swd_sheets.m): Combines all files ending with '_SWDs.csv' under a directory
 - [**combine_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_sweeps.m): Combines sweeps that begin with expLabel in dataDirectory under dataMode
 - [**combine_variables_across_tables.m**](https://github.com/blabuva/Adams_Functions/blob/master/combine_variables_across_tables.m): Combines measures across different tables
@@ -94,6 +94,7 @@ There are 1 MATLAB scripts in this directory:
 - [**compute_peak_decay.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_peak_decay.m): Computes the peak decays
 - [**compute_peak_halfwidth.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_peak_halfwidth.m): Computes the half widths for peaks
 - [**compute_phase_average.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_phase_average.m): Computes the average of values over the last of a phase
+- [**compute_population_average.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_population_average.m): Computes the population mean and confidence intervals from a table or time table
 - [**compute_relative_time.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_relative_time.m): Computes time(s) relative to limits from indice(s)
 - [**compute_relative_value.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_relative_value.m): Computes value(s) relative to limits
 - [**compute_residuals.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_residuals.m): Computes residual vector(s) from simulated and recorded vectors

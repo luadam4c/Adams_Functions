@@ -122,7 +122,7 @@ function plot_measures (varargin)
 %       cd/check_dir.m
 %       cd/combine_variables_across_tables.m
 %       cd/compute_phase_average.m
-%       cd/compute_stats.m
+%       cd/compute_population_average.m
 %       cd/count_vectors.m
 %       cd/create_label_from_sequence.m
 %       cd/create_indices.m
@@ -575,7 +575,8 @@ end
 %% Average over each file
 if computePopAverageFlag
     fprintf('Computing population averages ...\n');
-    popAvgTables = cellfun(@(x, y, z) compute_population_average(x, y, z), ...
+    popAvgTables = cellfun(@(x, y, z) compute_population_average(x, ...
+                                            'VarStr', y, 'SheetName', z), ...
                             measureTimeTables, varsToPlot, popAvgTablePaths, ...
                             'UniformOutput', false);
 
@@ -585,7 +586,8 @@ end
 %% Average over each normalized file
 if computeNormPopAverageFlag
     fprintf('Computing normalized population averages ...\n');
-    normPopAvgTables = cellfun(@(x, y, z) compute_population_average(x, y, z), ...
+    normPopAvgTables = cellfun(@(x, y, z) compute_population_average(x, ...
+                                            'VarStr', y, 'SheetName', z), ...
                             normTimeTables, varsToPlot, normPopAvgTablePaths, ...
                             'UniformOutput', false);
 
@@ -949,88 +951,6 @@ normalizedTable = table;
 
 % Save the table
 writetable(normalizedTable, sheetPath);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function popTable = compute_population_average (inTable, varStr, sheetPath)
-%% Computes the population mean and confidence intervals from a table or time table
-% TODO: Pull out to its own function
-% TODO: Input parser: optional argument VarStr and SheetPath
-
-%% Hard-coded parameters
-popVarNames = {'mean', 'lower95', 'upper95'};
-phaseNumStr = 'phaseNumber';
-
-%% Default parameters for optional arguments
-varStrDefault = '';
-sheetPathDefault = '';
-
-% Decide whether input is a time table
-if istimetable(inTable)
-    isTimeTable = true;
-else
-    isTimeTable = false;
-end
-
-% Prepend the variable name to the prefix
-if ~isempty(varStr)
-    popVarNamesToUse = strcat(varStr, '_', popVarNames);
-else
-    popVarNamesToUse = popVarNames;
-end
-
-% Get all the variable names
-columnNames = inTable.Properties.VariableNames;
-
-% Extract the data
-if ~isempty(varStr)
-    % Select the columns that contains a given variable string
-    columnsToAverage = contains(columnNames, varStr);
-
-    % Extract the data from these columns
-    popData = inTable{:, columnsToAverage};
-else
-    % Extract everything
-    popData = inTable{:, :};
-end
-
-% Select the columns that contains a given variable string
-phaseNumberColumns = contains(columnNames, phaseNumStr);
-
-% Extract the data from these columns
-phaseNumbersAll = inTable{:, phaseNumberColumns};
-
-% Only output a phaseNumber column if there are no conflicts
-phaseNumbers = combine_phase_numbers(phaseNumbersAll);
-
-% Extract the phase numbers if they exist
-
-% Compute the means and bounds of 95% confidence intervals
-[means, lower95s, upper95s] = ...
-    argfun(@(x) compute_stats(popData, x, 2, 'IgnoreNan', true), ...
-            'mean', 'lower95', 'upper95');
-
-if isTimeTable
-    % Save the row times from inTable
-    rowTimes = inTable.Properties.RowTimes;
-
-    % Create output table
-    popTable = timetable(means, lower95s, upper95s, ...
-                        'VariableNames', popVarNamesToUse, ...
-                        'RowTimes', rowTimes);
-else
-    % Create output table
-    popTable = table(means, lower95s, upper95s, ...
-                        'VariableNames', popVarNamesToUse);
-
-    % Use the same row names as before
-    popTable.Properties.RowNames = inTable.Properties.RowNames;
-end
-
-% Save the table
-if ~isempty(sheetPath)
-    write_timetable(popTable, sheetPath);
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -23,7 +23,7 @@ function numArray = cell2num (cellArray, varargin)
 %       cd/isnum.m
 %
 % Used by:
-%       cd/combine_phase_numbers.m
+%       cd/compute_combined_trace.m
 %       cd/compute_sampsizepwr.m
 %       cd/plot_tuning_curve.m
 

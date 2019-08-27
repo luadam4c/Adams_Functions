@@ -63,7 +63,6 @@ function nSamples = count_samples (vectors, varargin)
 %
 % Used by:    
 %       cd/combine_abf_data.m
-%       cd/combine_phase_numbers.m
 %       cd/compute_combined_trace.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sampsizepwr.m

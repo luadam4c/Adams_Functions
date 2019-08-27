@@ -5,6 +5,7 @@ function [combTrace, paramsUsed] = ...
 %               compute_combined_trace (traces, combineMethod, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       vecs = {[1;3;4], [6;6;6], [2;2;5]};
 %       vecs2 = [[1;3;4], [6;6;6], [2;2;5]];
@@ -14,6 +15,8 @@ function [combTrace, paramsUsed] = ...
 %       compute_combined_trace(vecs, 'bootmean', 'Group', {'b', 'a', 'b'})
 %       compute_combined_trace(vecs2, 'bootmean', 'Group', {'b', 'a', 'b'})
 %       compute_combined_trace({[1; NaN], [3; 4]}, 'max')
+%       compute_combined_trace({[NaN 1 2 NaN]; [NaN 1 NaN 3]}, 'unique')
+%
 % Outputs:
 %       combTrace       - the combined trace(s)
 %                           If grouped, a cell array is returned
@@ -25,6 +28,7 @@ function [combTrace, paramsUsed] = ...
 %                       must be a numeric array or a cell array
 %       combineMethod   - method for combining traces
 %                       must be an unambiguous, case-insensitive match to one of: 
+%                           'unique'    - take the unique value
 %                           'average' or 'mean' - take the average
 %                           'maximum'   - take the maximum
 %                           'minimum'   - take the minimum
@@ -59,6 +63,7 @@ function [combTrace, paramsUsed] = ...
 %                   default == []
 %                   
 % Requires:
+%       cd/cell2num.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
 %       cd/create_empty_match.m
@@ -71,8 +76,10 @@ function [combTrace, paramsUsed] = ...
 %       cd/error_unrecognized.m
 %       cd/get_var_name.m
 %       cd/iscellnumericvector.m
+%       cd/unique_custom.m
 %
 % Used by:
+%       cd/combine_phase_numbers.m
 %       cd/compute_average_trace.m
 %       cd/compute_combined_data.m
 %       cd/compute_maximum_trace.m
@@ -92,6 +99,7 @@ function [combTrace, paramsUsed] = ...
 % 2019-01-12 Added 'bootmeans', 'bootmax', 'bootmin as valid combine methods
 % 2019-01-22 Added 'ConsistentFormat' as an optional parameter
 % 2019-04-26 Added 'IgnoreNan' as an optional parameter
+% 2019-08-27 Added the 'unique' combine method
 % TODO: Make 'Seeds' an optional argument
 % TODO: Use compute_stats.m with dim == 2?
 % 
@@ -99,7 +107,7 @@ function [combTrace, paramsUsed] = ...
 %% Hard-coded parameters
 validAlignMethods = {'leftAdjust', 'rightAdjust', ...
                     'leftAdjustPad', 'rightAdjustPad'};
-validCombineMethods = {'average', 'mean', 'maximum', 'minimum', ...
+validCombineMethods = {'unique', 'average', 'mean', 'maximum', 'minimum', ...
                         'all', 'any', 'first', 'last', ...
                         'bootmean', 'bootmax', 'bootmin'};
 seeds = [];
@@ -343,6 +351,23 @@ function [combTrace, seed] = ...
 
 % Combine traces
 switch combineMethod
+    case {'unique'}
+        % Get all unique numbers for each row in a cell array
+        uniqueNumbers = ...
+            arrayfun(@(x) unique_custom(traces(x, :), ...
+                                        'IgnoreNan', ignoreNan), ...
+                transpose(1:size(traces, 1)), 'UniformOutput', false);
+
+        % Count the number of unique numbers for each row
+        nUniquePhaseNumbers = count_samples(uniqueNumbers);
+
+        % If any row has more than one unique number, there is a conflict
+        if any(nUniquePhaseNumbers > 1)
+            disp("There are more than one unique numbers for some rows!");
+            combTrace = [];
+        else
+            combTrace = cell2num(uniqueNumbers);
+        end
     case {'average', 'mean'}
         % Take the mean of each row and return a column
         if ignoreNan

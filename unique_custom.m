@@ -42,7 +42,7 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
-%       cd/combine_phase_numbers.m
+%       cd/compute_combined_trace.m
 %       cd/extract_subvectors.m
 %       cd/plot_measures.m
 %       cd/plot_tuning_curve.m

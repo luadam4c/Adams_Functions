@@ -17,7 +17,7 @@ function table = write_timetable (timeTable, varargin)
 % Arguments:
 %       timeTable   - time table to save
 %                   must be a time table
-%       sheetName   - (opt) spreadsheet file name
+%       sheetName   - (opt) spreadsheet file name for saving
 %                   must be a string scalar or a character vector
 %                   default == specified by writetable()
 %       varargin    - Any other parameter-value pair for writetable()
@@ -27,7 +27,7 @@ function table = write_timetable (timeTable, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/compute_population_average.m
 
 % File History:
 % 2019-08-27 Created by Adam Lu

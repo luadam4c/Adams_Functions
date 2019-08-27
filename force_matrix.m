@@ -50,7 +50,6 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/combine_abf_data.m
 %       cd/compute_combined_data.m
 %       cd/compute_combined_trace.m
-%       cd/combine_phase_numbers.m
 %       cd/create_indices.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_vector.m

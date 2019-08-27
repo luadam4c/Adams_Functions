@@ -4,6 +4,7 @@ function stats = compute_stats (vecs, statName, varargin)
 % Explanation:
 %       TODO
 %       Note: If any element is empty, returns NaN
+%
 % Example(s):
 %       data = randn(10, 3);
 %       compute_stats(data, 'mean')
@@ -14,6 +15,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       compute_stats(data, 'cov')
 %       compute_stats(data, 'zscore')
 %       compute_stats(data, 'mean', 2)
+%
 % Outputs:
 %       stats       - the computed statistic for each vector
 %                   specified as a numeric vector 
@@ -66,11 +68,11 @@ function stats = compute_stats (vecs, statName, varargin)
 %       cd/nanstderr.m
 %
 % Used by:
+%       cd/compute_population_average.m
 %       cd/compute_sampsizepwr.m
 %       cd/parse_multiunit.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
-%       cd/plot_measures.m
 %       cd/select_similar_values.m
 %
 % Related functions:
