@@ -3,9 +3,11 @@ function numArray = cell2num (cellArray, varargin)
 % Usage: numArray = cell2num (cellArray, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       cell2num({[], 2, [3, 4, 5], []})
 %       cell2num({[], 2; [3, 4, 5], []})
+%
 % Outputs:
 %       numArray    - numeric array
 %                   specified as a numeric array
@@ -21,6 +23,7 @@ function numArray = cell2num (cellArray, varargin)
 %       cd/isnum.m
 %
 % Used by:
+%       cd/combine_phase_numbers.m
 %       cd/compute_sampsizepwr.m
 %       cd/plot_tuning_curve.m
 

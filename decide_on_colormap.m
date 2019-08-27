@@ -7,6 +7,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 % Example(s):
 %       decide_on_colormap([])
 %       decide_on_colormap([], 4)
+%       decide_on_colormap([], 4, 'ColorMapFunc', @hsv)
 %
 % Outputs:
 %       colorMap    - color map created

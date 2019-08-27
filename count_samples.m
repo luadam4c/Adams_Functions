@@ -5,6 +5,7 @@ function nSamples = count_samples (vectors, varargin)
 %       Uses either numel(x) for vectors, 
 %           size(x, 1) for arrays,
 %           or cellfun(@numel, x) for cell arrays
+%
 % Example(s):
 %       nSamples = count_samples(data)
 %       count_samples(magic(3))
@@ -14,6 +15,7 @@ function nSamples = count_samples (vectors, varargin)
 %       count_samples(repmat({repmat({'sdf'}, 3, 1)}, 3, 1))
 %       count_samples(repmat({'sdf'}, 3, 4))
 %       count_samples(repmat({'sdf'}, 3, 4), 'TreatCellStrAsArray', false)
+%
 % Outputs:
 %       nSamples    - number of samples for each vector
 %                   specified as a column vector 
@@ -61,6 +63,7 @@ function nSamples = count_samples (vectors, varargin)
 %
 % Used by:    
 %       cd/combine_abf_data.m
+%       cd/combine_phase_numbers.m
 %       cd/compute_combined_trace.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sampsizepwr.m

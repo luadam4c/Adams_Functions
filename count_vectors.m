@@ -5,8 +5,10 @@ function nVectors = count_vectors (vectors, varargin)
 %       Uses either 1 for vectors,
 %               size(x, 2) for arrays 
 %               or numel() for cell arrays
+%
 % Example(s):
 %       nVectors = count_vectors(data)
+%
 % Outputs:
 %       nVectors    - number of vectors
 %                   specified as a nonnegative integer vector

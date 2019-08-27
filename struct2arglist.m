@@ -21,6 +21,7 @@ function argList = struct2arglist (structure, varargin)
 %
 % Used by:
 %       cd/annotation_in_plot.m
+%       cd/combine_phase_numbers.m
 %       cd/compute_bins.m
 %       cd/convert_to_rank.m
 %       cd/medianfilter.m
