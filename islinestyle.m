@@ -33,14 +33,16 @@ function [results, linestyles] = islinestyle (candidates, varargin)
 % Used by:
 %       /home/Matlab/EEG_gui/combine_EEG_gui_outputs.m
 %       cd/plot_traces.m
+%       cd/plot_vertical_shade.m
 %       cd/plot_window_boundaries.m
-%
+
 % File History:
 % 2018-05-16 Modified from issheettype.m
+% 2019-08-27 Added empty option
 % 
 
 %% Hard-coded parameters
-validLineStyles = {'-', '--', ':', '-.', 'none'};
+validLineStyles = {'', '-', '--', ':', '-.', 'none'};
                                         % accepted by line() or plot()
                                         % Note: from Matlab 2018a Documentation
 

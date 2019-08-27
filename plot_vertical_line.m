@@ -36,7 +36,7 @@ function h = plot_vertical_line (xValue, varargin)
 % 2018-12-27 Now allows xValue to be an array
 % 2018-12-27 Now accepts datetime and duration arrays
 % 2019-01-24 Now accepts multiple y limits
-% TODO: Copy over stuff from plot_horizontal_line.m
+% TODO: Use plot_horizontal_line.m with option 'VerticalInstead'
 % 
 
 %% Hard-coded parameters

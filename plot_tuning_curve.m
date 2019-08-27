@@ -256,6 +256,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-08-21 Added 'PlotPhaseBoundaries', 'PlotPhaseAverages', 'PlotIndSelected'
 % 2019-08-22 Made averageWindows an optional argument
 % 2019-08-27 Fixed usage of plot flags
+% 2019-08-27 Added 'PlotAverageWindows'
 %
 
 %% Hard-coded constants
@@ -270,7 +271,6 @@ confIntFadePercentage = 0.25;       % fade percentage for confidence interval co
 selectedLineWidth = 3;              % line width for selected values markers
 selectedMarker = 'o';
 outlierMethod = 'fiveStds';
-plotAverageWindows = [];
 boundariesLineStyle = '--';
 averagesLineStyle = ':';
 averagesLineWidth = 2;
@@ -968,6 +968,7 @@ end
 xtickangle(pTickAngle);
 
 % Plot parameter boundaries
+% TODO: use plot_window_boundaries with 'BoundaryType', pBoundaryType
 if nPBoundaries > 0
     hold on
     pLines = plot_vertical_line(pBoundaries, 'LineWidth', 0.5, ...
@@ -977,6 +978,7 @@ else
 end
 
 % Plot readout boundaries
+% TODO: use plot_window_boundaries with 'BoundaryType', rBoundaryType
 if nRBoundaries > 0
     hold on
     rLines = plot_horizontal_line(rBoundaries, 'LineWidth', 0.5, ...
@@ -1059,7 +1061,7 @@ if plotIndSelected && ~isempty(indSelected)
 end
 
 % Plot averageWindows if requested
-% TODO: Make function plot_window_bars.m
+% TODO: use plot_window_boundaries with 'BoundaryType', horizontalBars
 if plotAverageWindows && ~isempty(averageWindows)
     % Decide on the color map
     avgWindowColorMap = decide_on_colormap(avgWindowColorMap, maxNPhases, ...

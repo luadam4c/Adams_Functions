@@ -155,6 +155,7 @@ There are 1 MATLAB scripts in this directory:
 - [**error_unrecognized.m**](https://github.com/blabuva/Adams_Functions/blob/master/error_unrecognized.m): Throws an error for unrecognized string
 - [**estimate_passive_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/estimate_passive_params.m): Estimates passive parameters from fitted coefficients, current pulse amplitude and some constants
 - [**estimate_resting_potential.m**](https://github.com/blabuva/Adams_Functions/blob/master/estimate_resting_potential.m): Estimates the resting membrane potential (mV) and the input resistance (MOhm) from holding potentials and holding currents
+- [**examine_figure_objects.m**](https://github.com/blabuva/Adams_Functions/blob/master/examine_figure_objects.m): Examines figure objects
 - [**extract_channel.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_channel.m): Extracts vectors of a given type from a .abf file
 - [**extract_columns.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_columns.m): Extracts columns from arrays or a cell array of arrays
 - [**extract_common_directory.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_common_directory.m): Extracts the common parent directory of a cell array of file paths
@@ -350,6 +351,7 @@ There are 1 MATLAB scripts in this directory:
 - [**plot_tuning_curve.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_curve.m): Plot 1-dimensional tuning curve(s), can include confidence intervals or test p values
 - [**plot_tuning_map.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_map.m): Plot a 2-dimensional tuning map
 - [**plot_vertical_line.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_vertical_line.m): Plots vertical line(s)
+- [**plot_vertical_shade.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_vertical_shade.m): Plots a shaded area that extends to the current axis limits
 - [**plot_window_boundaries.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_window_boundaries.m): Plots window boundaries as vertical lines
 - [**print_and_show_message.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_and_show_message.m): Print to standard output and show message box at the same time
 - [**print_cellstr.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_cellstr.m): Prints and returns a string for the contents stored in a cell array

@@ -6,10 +6,12 @@ function flag = set_default_flag(flag, varargin)
 %       If flag is empty, it is set to be true if auxFlag is true,
 %           but false if auxFlag is false.
 %       If auxFlag is not provided, it is false.
+%
 % Example(s):
 %       set_default_flag([], 0)
 %       set_default_flag([], true)
 %       set_default_flag([], [])
+%
 % Outputs:
 %       flag        - flag that has been set
 %                   specified as a logical scalar
@@ -27,6 +29,7 @@ function flag = set_default_flag(flag, varargin)
 %       cd/parse_multiunit.m
 %       cd/plot_measures.m
 %       cd/plot_tuning_curve.m
+%       cd/plot_vertical_shade.m
 
 % File History:
 % 2019-07-22 Pulled from parse_multiunit.m

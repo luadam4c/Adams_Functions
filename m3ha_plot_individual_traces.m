@@ -476,7 +476,8 @@ if toAnnotate
 
         % Plot fit window
         boundaries(iSwp, :) = plot_window_boundaries(fitWindow{iSwp}, ...
-                                            'Color', 'g', 'LineStyle', '--');
+                                    'BoundaryType', 'verticalLines', ...
+                                    'Color', 'g', 'LineStyle', '--');
     end
 end
 
