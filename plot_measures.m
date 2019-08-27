@@ -40,6 +40,9 @@ function plot_measures (varargin)
 %                   - 'PlotByPhaseFlag': whether to plot TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'PlotPopAverageFlag': whether to plot TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'PlotNormChevronFlag': whether to plot TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -49,7 +52,7 @@ function plot_measures (varargin)
 %                   - 'PlotNormByPhaseFlag': whether to plot TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'PlotPopAverageFlag': whether to plot TODO
+%                   - 'PlotNormPopAverageFlag': whether to plot TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'RemoveOutliersInPlot': whether to remove outliers 
@@ -194,10 +197,11 @@ plotAllFlagDefault = false;
 plotChevronFlagDefault = [];
 plotByFileFlagDefault = [];
 plotByPhaseFlagDefault = [];
+plotPopAverageFlagDefault = [];
 plotNormChevronFlagDefault = [];
 plotNormByFileFlagDefault = [];
 plotNormByPhaseFlagDefault = [];
-plotPopAverageFlagDefault = [];
+plotNormPopAverageFlagDefault = [];
 removeOutliersInPlotDefault = true;
 directoryDefault = pwd;
 inFolderDefault = '';                   % set later
@@ -250,13 +254,15 @@ addParameter(iP, 'PlotByFileFlag', plotByFileFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotByPhaseFlag', plotByPhaseFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotPopAverageFlag', plotPopAverageFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotNormChevronFlag', plotNormChevronFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotNormByFileFlag', plotNormByFileFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotNormByPhaseFlag', plotNormByPhaseFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'PlotPopAverageFlag', plotPopAverageFlagDefault, ...
+addParameter(iP, 'PlotNormPopAverageFlag', plotNormPopAverageFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveOutliersInPlot', removeOutliersInPlotDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -312,10 +318,11 @@ plotAllFlag = iP.Results.PlotAllFlag;
 plotChevronFlag = iP.Results.PlotChevronFlag;
 plotByFileFlag = iP.Results.PlotByFileFlag;
 plotByPhaseFlag = iP.Results.PlotByPhaseFlag;
+plotPopAverageFlag = iP.Results.PlotPopAverageFlag;
 plotNormChevronFlag = iP.Results.PlotNormChevronFlag;
 plotNormByFileFlag = iP.Results.PlotNormByFileFlag;
 plotNormByPhaseFlag = iP.Results.PlotNormByPhaseFlag;
-plotPopAverageFlag = iP.Results.PlotPopAverageFlag;
+plotNormPopAverageFlag = iP.Results.PlotNormPopAverageFlag;
 removeOutliersInPlot = iP.Results.RemoveOutliersInPlot;
 directory = iP.Results.Directory;
 inFolder = iP.Results.InFolder;
@@ -339,26 +346,32 @@ varLabels = iP.Results.VarLabels;
 %% Preparation
 % Set default flags
 fprintf('Setting default flags ...\n');
-[plotChevronFlag, plotNormChevronFlag, ...
-plotNormByFileFlag, plotNormByPhaseFlag, ...
-plotByFileFlag, plotByPhaseFlag, plotPopAverageFlag] = ...
+[plotChevronFlag, plotByFileFlag, plotByPhaseFlag, plotPopAverageFlag, ...
+plotNormChevronFlag, plotNormByFileFlag, ...
+plotNormByPhaseFlag, plotNormPopAverageFlag] = ...
     argfun(@(x) set_default_flag(x, plotAllFlag), ...
-                plotChevronFlag, plotNormChevronFlag, ...
-                plotNormByFileFlag, plotNormByPhaseFlag, ...
-                plotByFileFlag, plotByPhaseFlag, plotPopAverageFlag);
+                plotChevronFlag, plotByFileFlag, ...
+                plotByPhaseFlag, plotPopAverageFlag, ...
+                plotNormChevronFlag, plotNormByFileFlag, ...
+                plotNormByPhaseFlag, plotNormPopAverageFlag);
 
 % Set compute flags
 if plotPopAverageFlag
     computePopAverageFlag = true;
 end
-if plotByFileFlag || plotByPhaseFlag || ...
-        plotNormByFileFlag || plotNormByPhaseFlag || computePopAverageFlag
+if plotNormPopAverageFlag
+    computeNormPopAverageFlag = true;
+end
+if plotByFileFlag || plotByPhaseFlag || computePopAverageFlag
     computeTimeTablesFlag = true;
+end
+if plotNormByFileFlag || plotNormByPhaseFlag || computeNormPopAverageFlag
+    computeNormTimeTablesFlag = true;
 end
 if plotNormChevronFlag
     computeNormChevronFlag = true;
 end
-if plotNormByFileFlag || plotNormByPhaseFlag || computeTimeTablesFlag
+if plotNormByFileFlag || plotNormByPhaseFlag || computeNormTimeTablesFlag
     computeNormTablesFlag = true;
 end
 if plotChevronFlag || computeNormChevronFlag || computeNormTablesFlag
@@ -426,23 +439,28 @@ tableLabels = strcat(prefix, {': '}, varLabels);
 tableNames = strcat(prefix, '_', varsToPlot);
 
 % Create figure names
-[figNamesAvgd, figNamesByFile, figNamesByPhase, figNamesNormAvgd, ...
-    figNamesNormByFile, figNamesNormByPhase, figNamesPopAvg] = ...
+[figNamesAvgd, figNamesByFile, figNamesByPhase, figNamesPopAvg, ...
+    figNamesNormAvgd, figNamesNormByFile, ...
+    figNamesNormByPhase, figNamesNormPopAvg] = ...
     argfun(@(x) fullfile(figFolder, strcat(tableNames, '_', x, '.png')), ...
-            'chevron', 'byfile', 'byphase', 'normChevron', ...
-            'normByFile', 'normByPhase', 'popAverage');
+            'chevron', 'byFile', 'byPhase', 'popAverage', ...
+            'normChevron', 'normByFile', 'normByPhase', 'normPopAverage');
 
 % Create paths for spreadsheet files
-[chevronTablePaths, normTablePaths, normChevronTablePaths, popAvgTablePaths] = ...
+[chevronTablePaths, popAvgTablePaths, ...
+    normTablePaths, normChevronTablePaths, normPopAvgTablePaths] = ...
     argfun(@(x) fullfile(outFolder, strcat(tableNames, '_', x, '.csv')), ...
-            'chevron', 'normAll', 'normChevron', 'popAverage');
+            'chevron', 'popAverage', ...
+            'normalized', 'normChevron', 'normPopAverage');
 
 % Create paths for mat files
-[measureTablesMatPath, chevronTablesMatPath, normalizedChevronTablesMatPath, ...
-    measureTimeTablesMatPath, popAvgTablesMatPath] = ...
+[measureTablesMatPath, measureTimeTablesMatPath, chevronTablesMatPath, ...
+    popAvgTablesMatPath, normTimeTablesMatPath, ...
+    normalizedChevronTablesMatPath, normalizedPopAvgTablesMatPath] = ...
     argfun(@(x) fullfile(outFolder, [prefix, '_', x, '.mat']), ...
-            'measureTables', 'chevronTables', 'normalizedChevronTables', ...
-            'measureTimeTables', 'popAvgTables');
+            'measureTables', 'measureTimeTables', 'chevronTables', ...
+            'popAvgTables', 'normalizedTimeTables', ...
+            'normalizedChevronTables', 'normalizedPopAvgTables');
 
 % Check if output directories exist
 check_dir({outFolder, figFolder});
@@ -502,6 +520,7 @@ measureTables = combine_variables_across_tables(sliceParamsTables, ...
                 'Keys', 'Time', 'VariableNames', varsToCombine, ...
                 'InputNames', fileLabels, 'OmitVarName', false, ...
                 'OutFolder', outFolder, 'Prefix', prefix, 'SaveFlag', true);
+
 save(measureTablesMatPath, 'measureTables', '-mat');
 
 %% Average over each phase
@@ -541,10 +560,16 @@ if computeTimeTablesFlag
     fprintf('Converting measure tables to time tables ...\n');
     measureTimeTables = cellfun(@table2timetable, ...
                                 measureTables, 'UniformOutput', false);
-    normTimeTables = cellfun(@table2timetable, ...
-                                normalizedMeasureTables, 'UniformOutput', false);
 
-    save(measureTimeTablesMatPath, 'measureTimeTables', 'normTimeTables', '-mat');
+    save(measureTimeTablesMatPath, 'measureTimeTables', '-mat');
+end
+
+%% Convert to normalized timetables
+if computeNormTimeTablesFlag
+    fprintf('Converting normalized measure tables to time tables ...\n');
+    normTimeTables = cellfun(@table2timetable, ...
+                            normalizedMeasureTables, 'UniformOutput', false);
+    save(normTimeTablesMatPath, 'normTimeTables', '-mat');
 end
 
 %% Average over each file
@@ -555,6 +580,16 @@ if computePopAverageFlag
                             'UniformOutput', false);
 
     save(popAvgTablesMatPath, 'popAvgTables', '-mat');
+end
+
+%% Average over each normalized file
+if computeNormPopAverageFlag
+    fprintf('Computing normalized population averages ...\n');
+    normPopAvgTables = cellfun(@(x, y, z) compute_population_average(x, y, z), ...
+                            normTimeTables, varsToPlot, normPopAvgTablePaths, ...
+                            'UniformOutput', false);
+
+    save(normalizedPopAvgTablesMatPath, 'normPopAvgTables', '-mat');
 end
 
 %% Plot Chevron plots
@@ -616,6 +651,7 @@ if plotByFileFlag
                 'PhaseVariables', phaseVars, 'PhaseLabels', phaseStrs, ...
                 'PlotPhaseBoundaries', true, 'FigExpansion', 2, ...
                 'PlotPhaseAverages', true, 'PlotIndSelected', true, ...
+                'PlotAverageWindows', false, ...
                 'NLastOfPhase', nSweepsLastOfPhase, ...
                 'NToAverage', nSweepsToAverage, ...
                 'SelectionMethod', selectionMethod, ...
@@ -636,6 +672,7 @@ if plotNormByFileFlag
                 'PhaseVariables', phaseVars, 'PhaseLabels', phaseStrs, ...
                 'PlotPhaseBoundaries', true, 'PlotPhaseAverages', false, ...
                 'PlotIndSelected', false, 'ColorByPhase', false, ...
+                'PlotAverageWindows', false, ...
                 'NLastOfPhase', nSweepsLastOfPhase, ...
                 'NToAverage', nSweepsToAverage, ...
                 'SelectionMethod', selectionMethod, ...
@@ -656,6 +693,7 @@ if plotByPhaseFlag
                 'PhaseVariables', phaseVars, 'PhaseLabels', phaseStrs, ...
                 'PlotPhaseBoundaries', false, 'FigExpansion', 2, ...
                 'PlotPhaseAverages', true, 'PlotIndSelected', true, ...
+                'PlotAverageWindows', false, ...
                 'NLastOfPhase', nSweepsLastOfPhase, ...
                 'NToAverage', nSweepsToAverage, ...
                 'SelectionMethod', selectionMethod, ...
@@ -679,6 +717,7 @@ if plotNormByPhaseFlag
                 'PhaseVariables', phaseVars, 'PhaseLabels', phaseStrs, ...
                 'PlotPhaseBoundaries', false, 'PlotPhaseAverages', false, ...
                 'PlotIndSelected', false, 'ColorByPhase', true, ...
+                'PlotAverageWindows', false, ...
                 'NLastOfPhase', nSweepsLastOfPhase, ...
                 'NToAverage', nSweepsToAverage, ...
                 'SelectionMethod', selectionMethod, ...
@@ -700,17 +739,38 @@ if plotPopAverageFlag
     close all;
     fprintf('Plotting Population Averages ...\n');
     cellfun(@(x, y, z, w) ...
-                    plot_tuning_curve(x.Properties.RowTimes, x.Mean, ...
-                                    'ClearFigure', true, ...
-                                    'LowerCI', x.Lower95, ...
-                                    'UpperCI', x.Upper95, ...
-                                    'ReadoutLimits', [0, Inf], ...
-                                    'PLabel', timeLabel, 'ReadoutLabel', y, ...
-                                    'FigTitle', z, 'FigName', w), ...
+                plot_tuning_curve(x.Properties.RowTimes, x.Mean, ...
+                                'PlotAverageWindows', true, ...
+                                'ClearFigure', true, ...
+                                'LowerCI', x.Lower95, ...
+                                'UpperCI', x.Upper95, ...
+                                'ReadoutLimits', [0, Inf], ...
+                                'PLabel', timeLabel, 'ReadoutLabel', y, ...
+                                'FigTitle', z, 'FigName', w), ...
             popAvgTables, varLabels, figTitlesPopAvg, figNamesPopAvg);
 
 end
 
+%% Plot normalized population averages
+if plotNormPopAverageFlag
+    % Create titles
+    figTitlesPopAvg = strcat(replace(tableLabels, '_', '\_'), ' over time');
+
+    close all;
+    fprintf('Plotting Normalized Population Averages ...\n');
+    cellfun(@(x, y, z, w) ...
+                plot_tuning_curve(x.Properties.RowTimes, x.Mean, ...
+                                'PlotAverageWindows', true, ...
+                                'ClearFigure', true, ...
+                                'LowerCI', x.Lower95, ...
+                                'UpperCI', x.Upper95, ...
+                                'ReadoutLimits', [0, Inf], ...
+                                'PLabel', timeLabel, 'ReadoutLabel', y, ...
+                                'FigTitle', z, 'FigName', w), ...
+            normPopAvgTables, varLabels, figTitlesPopAvg, figNamesNormPopAvg);
+
+end
+normPopAvgTables
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function myTable = create_time_rel_to_drugon(myTable, sweepLengthSec)
@@ -834,16 +894,17 @@ indLastEachPhase = create_indices('IndexStart', firstIndexEachPhase, ...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function normalizedTable = normalize_to_baseline(table, avgTable, varName, sheetPath)
+function normalizedTable = normalize_to_baseline(table, avgTable, varStr, sheetPath)
 %% Normalizes all values to baseline
+% TODO: Pull out to its own function
 
 % Get all the variable names
 columnNames = table.Properties.VariableNames;
 
-% Select the columns that contains given variable name
-columnsToNormalize = find(contains(columnNames, varName));
+% Select the columns that contains given variable string
+columnsToNormalize = find(contains(columnNames, varStr));
 
-% Run through all columns containing given variable name
+% Run through all columns containing given variable string
 normalizedTable = table;
 for idxCol = columnsToNormalize
     % Get the column name
@@ -866,6 +927,7 @@ writetable(normalizedTable, sheetPath);
 
 function normalizedTable = normalize_to_first_row(table, sheetPath)
 %% Normalizes all values to the first row
+% TODO: Pull out to its own function
 
 % Extract the first row
 firstRow = table{1, :};
@@ -887,39 +949,62 @@ writetable(normalizedTable, sheetPath);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function outTimeTable = compute_population_average (inTimeTable, varName, sheetPath)
-%% Computes the population mean and confidence intervals
+function popTable = compute_population_average (inTable, varStr, sheetPath)
+%% Computes the population mean and confidence intervals from a table or time table
+% TODO: Pull out to its own function
+% TODO: Input parser: optional argument VarStr and SheetPath
+
+varStrDefault = '';
+sheetPathDefault = '';
+
+% Decide whether input is a time table
+if istimetable(inTable)
+    isTimeTable = true;
+else
+    isTimeTable = false;
+end
 
 % Get all the variable names
-columnNames = inTimeTable.Properties.VariableNames;
-
-% Select the columns that contains given variable name
-columnsToAverage = contains(columnNames, varName);
+columnNames = inTable.Properties.VariableNames;
 
 % Extract the data
-popData = inTimeTable{:, columnsToAverage};
+if ~isempty(varStr)
+    % Select the columns that contains a given variable string
+    columnsToAverage = contains(columnNames, varStr);
+
+    % Extract the data from these columns
+    popData = inTable{:, columnsToAverage};
+else
+    % Extract everything
+    popData = inTable{:, :};
+end
 
 % Compute the means and bounds of 95% confidence intervals
 [means, lower95s, upper95s] = ...
     argfun(@(x) compute_stats(popData, x, 2, 'IgnoreNan', true), ...
             'mean', 'lower95', 'upper95');
 
-% Save the row times from inTable
-rowTimes = inTimeTable.Properties.RowTimes;
+if isTimeTable
+    % Save the row times from inTable
+    rowTimes = inTable.Properties.RowTimes;
 
-% Create output table
-outTimeTable = timetable(rowTimes, means, lower95s, upper95s, ...
-                    'VariableNames', {'Mean', 'Lower95', 'Upper95'});
+    % Create output table
+    popTable = timetable(means, lower95s, upper95s, ...
+                        'VariableNames', {'Mean', 'Lower95', 'Upper95'}, ...
+                        'RowTimes', rowTimes);
+else
+    % Create output table
+    popTable = table(means, lower95s, upper95s, ...
+                        'VariableNames', {'Mean', 'Lower95', 'Upper95'});
 
-
-% Convert to a time table
-outTable = timetable2table(outTimeTable);
-
-% Rename 'rowTimes' -> 'Time'
-outTable = renamevars(outTable, 'rowTimes', 'Time');
+    % Use the same row names as before
+    popTable.Properties.RowNames = inTable.Properties.RowNames;
+end
 
 % Save the table
-writetable(outTable, sheetPath);
+if ~isempty(sheetPath)
+    write_timetable(popTable, sheetPath);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

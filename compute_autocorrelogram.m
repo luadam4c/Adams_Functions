@@ -1,5 +1,5 @@
 function [autoCorrParams, autoCorrData] = compute_autocorrelogram (spikeTimesMs, varargin)
-%% Computes an autocorrelogram and compute the oscillatory index and period
+%% Computes an autocorrelogram and compute the oscillatory index and period from an array of event times
 % Usage: [autoCorrParams, autoCorrData] = compute_autocorrelogram (spikeTimesMs, varargin)
 % Explanation:
 %       TODO
@@ -75,6 +75,7 @@ function [autoCorrParams, autoCorrData] = compute_autocorrelogram (spikeTimesMs,
 % File History:
 % 2019-07-23 Moved from parse_multiunit.m
 % 2019-08-01 Fixed missing return
+% TODO: allow input to be non-event data as well
 % 
 
 % Hard-coded constants

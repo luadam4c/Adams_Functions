@@ -187,6 +187,10 @@ myTable3 = table({'a'; 'b'; 'c'; 'h'}, [4; 5; 6; 7], ...
                     'VariableNames', {'Key', 'Var'});
 myCellTable = {myTable1; myTable2; myTable3};
 
+%% TimeTables
+time = seconds(1:1:5);
+myTimeTable1 = table2timetable(myTable1, 'RowTimes', time);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{

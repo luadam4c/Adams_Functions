@@ -67,6 +67,7 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 % File History:
 % 2019-01-09 Created by Adam Lu
 % 2019-01-10 Added 'Prefix' as an optional argument
+% TODO: Rename as test_var_difference and pull out a version that will take two vectors as required arguments
 % 
 
 %% Hard-coded parameters

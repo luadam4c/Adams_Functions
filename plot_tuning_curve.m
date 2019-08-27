@@ -251,6 +251,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-08-21 Now outputs a handles structure
 % 2019-08-21 Added 'PlotPhaseBoundaries', 'PlotPhaseAverages', 'PlotIndSelected'
 % 2019-08-22 Made averageWindows an optional argument
+% 2019-08-27 Fixed usage of plot flags
 %
 
 %% Hard-coded constants
@@ -563,7 +564,7 @@ if ~isempty(phaseVectors)
 
     % Generate phase boundaries to be plotted if requested
     % TODO: Add to it instead?
-    if computePhaseBoundaries
+    if plotPhaseBoundaries
         % Pool all phase boundaries together
         pBoundaries = union_over_cells(phaseBoundariesAll);
 
@@ -974,7 +975,7 @@ else
 end
 
 % Plot phaseAverages if any
-if ~isempty(phaseAverages) && ~isempty(averageWindows)
+if plotPhaseAverages && ~isempty(phaseAverages) && ~isempty(averageWindows)
     % Decide on the color map for each phase
     if colorByPhase
         colorMapEachPhase = ...
@@ -1000,8 +1001,22 @@ if ~isempty(phaseAverages) && ~isempty(averageWindows)
     averages = transpose(force_matrix(averages));
 end
 
+% Plot averageWindows if requested
+if plotAverageWindows && ~isempty(averageWindows)
+    % Plot the average windows as horizontal lines
+    averages = ...
+        arrayfun(@(x) ...
+            arrayfun(@(y) plot_horizontal_line(phaseAverages(x, columnsToPlot(y)), ...
+                                'XLimits', averageWindows{x, columnsToPlot(y)}, ...
+                                'ColorMap', colorMapEachPhase{x}(y, :), ...
+                                'LineStyle', averagesLineStyle, ...
+                                'LineWidth', averagesLineWidth), ...
+                    transpose(1:nColumnsToPlot)), ...
+            transpose(1:size(phaseAverages, 1)), 'UniformOutput', false);
+end
+
 % Plot selected values if any
-if ~isempty(indSelected)
+if plotIndSelected && ~isempty(indSelected)
     if iscell(indSelected)
         % Color arbitrarily first
         selectedCell = ...
