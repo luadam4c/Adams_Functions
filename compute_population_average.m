@@ -1,6 +1,6 @@
-function [popTable] = compute_population_average (inTable, varargin)
+function popTable = compute_population_average (inTable, varargin)
 %% Computes the population mean and confidence intervals from a table or time table
-% Usage: [popTable] = compute_population_average (inTable, varargin)
+% Usage: popTable = compute_population_average (inTable, varargin)
 % Explanation:
 %       TODO
 %
@@ -68,7 +68,7 @@ addParameter(iP, 'SheetName', sheetNameDefault, ...
 
 % Read from the Input Parser
 parse(iP, inTable, varargin{:});
-varStr = iP.Results.varStr;
+varStr = iP.Results.VarStr;
 sheetName = iP.Results.SheetName;
 
 %% Preparation
@@ -111,11 +111,6 @@ phaseNumbersAll = inTable{:, phaseNumberColumns};
 % Try combining the phase numbers
 phaseNumbers = combine_phase_numbers(phaseNumbersAll);
 
-% Only output a phaseNumber column if there are no conflicts
-if ~isempty(phaseNumbers)
-
-end
-
 % Compute the means and bounds of 95% confidence intervals
 [means, lower95s, upper95s] = ...
     argfun(@(x) compute_stats(popData, x, 2, 'IgnoreNan', true), ...
@@ -138,12 +133,18 @@ else
     popTable.Properties.RowNames = inTable.Properties.RowNames;
 end
 
+% Only add a phaseNumber column if there are no conflicts
+if ~isempty(phaseNumbers)
+    popTable = addvars(popTable, phaseNumbers, 'Before', 1, ...
+                        'NewVariableNames', phaseNumStr);
+end
+
 %% Save the table
-if ~isempty(sheetPath)
+if ~isempty(sheetName)
     if isTimeTable
-        write_timetable(popTable, sheetPath);
+        write_timetable(popTable, sheetName);
     else
-        writetable(popTable, sheetPath);
+        writetable(popTable, sheetName);
     end
 end
 

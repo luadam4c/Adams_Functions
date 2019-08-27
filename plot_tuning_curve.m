@@ -274,6 +274,7 @@ plotAverageWindows = [];
 boundariesLineStyle = '--';
 averagesLineStyle = ':';
 averagesLineWidth = 2;
+avgWindowYValue = [];
 avgWindowColorMap = [];
 avgWindowLineStyle = '-';
 avgWindowLineWidth = 3;
@@ -1011,22 +1012,6 @@ if plotPhaseAverages && ~isempty(phaseAverages) && ~isempty(averageWindows)
     averages = transpose(force_matrix(averages));
 end
 
-% Plot averageWindows if requested
-if plotAverageWindows && ~isempty(averageWindows)
-    % Decide on the color map
-    avgWindowColorMap = decide_on_colormap(avgWindowColorMap, maxNPhases, ...
-                                            'ColorMapFunc', @hsv);
-
-    % Plot the average windows as horizontal lines
-    avgWindows = ...
-        cellfun(@(x) plot_horizontal_line(avgWindowYValue, ...
-                                'XLimits', averageWindows{x, 1}, ...
-                                'ColorMap', avgWindowColorMap(x, :), ...
-                                'LineStyle', avgWindowLineStyle, ...
-                                'LineWidth', avgWindowLineWidth), ...
-                transpose(1:maxNPhases), 'UniformOutput', false);
-end
-
 % Plot selected values if any
 if plotIndSelected && ~isempty(indSelected)
     if iscell(indSelected)
@@ -1071,6 +1056,32 @@ if plotIndSelected && ~isempty(indSelected)
                                 selectedMarker, selectedColorMap(1, :), ...
                                 selectedLineWidth);
     end
+end
+
+% Plot averageWindows if requested
+% TODO: Make function plot_window_bars.m
+if plotAverageWindows && ~isempty(averageWindows)
+    % Decide on the color map
+    avgWindowColorMap = decide_on_colormap(avgWindowColorMap, maxNPhases, ...
+                                            'ColorMapFunc', @hsv);
+
+    % Decide on the average window y value
+    if isempty(avgWindowYValue)
+        % Get the current y axis limits
+        yLimitsNow = get(gca, 'YLim');
+
+        % Compute a default window bar y value
+        avgWindowYValue = yLimitsNow(1) + 0.1 * (yLimitsNow(2) - yLimitsNow(1));
+    end
+
+    % Plot the average windows as horizontal lines
+    avgWindows = ...
+        arrayfun(@(x) plot_horizontal_line(avgWindowYValue, ...
+                                'XLimits', averageWindows{x, 1}, ...
+                                'ColorMap', avgWindowColorMap(x, :), ...
+                                'LineStyle', avgWindowLineStyle, ...
+                                'LineWidth', avgWindowLineWidth), ...
+                transpose(1:maxNPhases), 'UniformOutput', false);
 end
 
 % TODO: Make function plot_text.m

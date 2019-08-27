@@ -359,6 +359,7 @@ There are 1 MATLAB scripts in this directory:
 - [**print_structure.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_structure.m): Display all fields of a structure recursively
 - [**read_adicht.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_adicht.m): Reads in a .adicht file (from LabChart)
 - [**read_swd_sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_swd_sheet.m): Read in an SWD table from a spreadsheet file
+- [**read_timetable.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_timetable.m): Reads a time table from a spreadsheet file
 - [**relative_std.m**](https://github.com/blabuva/Adams_Functions/blob/master/relative_std.m): Computes the relative standard deviation (%)
 - [**remove_empty.m**](https://github.com/blabuva/Adams_Functions/blob/master/remove_empty.m): Removes empty elements from an array
 - [**remove_outliers.m**](https://github.com/blabuva/Adams_Functions/blob/master/remove_outliers.m): Removes outliers from a data matrix and return a new matrix

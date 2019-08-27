@@ -5,6 +5,7 @@ function [outTables, outSheetPaths] = ...
 %               combine_variables_across_tables (inputs, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       load_examples;
 %       combine_variables_across_tables(myCellTable, 'Keys', 'Key')
@@ -14,6 +15,7 @@ function [outTables, outSheetPaths] = ...
 %       combine_variables_across_tables(myCellTable, 'VariableNames', {'Key', 'Var'})
 %       combine_variables_across_tables(myCellTable, 'VariableNames', {'Var', 'Key'})
 %       combine_variables_across_tables(myCellTable, 'VariableNames', {'Var', 'Key'; 'Key', 'Var'})
+%
 % Outputs:
 %       outTables   - tables organized with each 
 %                   specified as a cell array of tables
@@ -69,6 +71,7 @@ function [outTables, outSheetPaths] = ...
 % File History:
 % 2019-03-17 Created by Adam Lu
 % 2019-03-24 Now allows variableNames to be 2 dimensional
+% TODO: Use parfor instead?
 
 %% Hard-coded parameters
 
