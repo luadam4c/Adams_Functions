@@ -8,7 +8,7 @@ function h = plot_vertical_shade (varargin)
 %       plot_vertical_shade([10, 20])
 %       plot_vertical_shade(1:5, rand(5, 1), rand(5, 1) + 2)
 %       plot_vertical_shade([1, 2], 'HorizontalInstead', true)
-%       plot_vertical_shade([1, 2], 'Color', 'LightGray')
+%       plot_vertical_shade([1, 2], 'Color', 'Blue')
 %
 % Outputs:
 %       h           - handle to the shade
@@ -36,7 +36,7 @@ function h = plot_vertical_shade (varargin)
 %                   - 'ColorMap': color map passed in
 %                   must be empty or a string/character vector
 %                       or an n-by-3 numeric array
-%                   default == set by decide_on_colormap.m
+%                   default == LightGray
 %                   - Any other parameter-value pair for the fill() function
 %
 % Requires:
@@ -60,7 +60,7 @@ yLowDefault = [];
 yHighDefault = [];
 horizontalInsteadDefault = false;
 lineStyleDefault = 'none';
-colorMapDefault = [];
+colorMapDefault = 'LightGray';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -178,11 +178,7 @@ uistack(h, 'bottom');
 
 function h = fill_helper (x, y, colorMap, lineStyle, otherArguments)
 
-if ~isempty(colorMap)
-    h = fill(x, y, colorMap, 'LineStyle', lineStyle, otherArguments{:});
-else
-    h = fill(x, y, 'LineStyle', lineStyle, otherArguments{:});
-end
+h = fill(x, y, colorMap, 'LineStyle', lineStyle, otherArguments{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

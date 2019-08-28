@@ -8,10 +8,10 @@ function h = plot_window_boundaries (win, varargin)
 %       figure(2); clf; load_examples; plot(myTimeVec, myRandomSignals1)
 %       plot_window_boundaries([5 10 20 25])
 %       plot_window_boundaries([1 2 3], 'BoundaryType', 'horizontalLines')
-%       plot_window_boundaries([1.5 2 3 3.5], 'BoundaryType', 'verticalBars')
+%       plot_window_boundaries([1.5 2 3 3.5], 'BoundaryType', 'verticalBars') TODO
 %       plot_window_boundaries([5 10 20 25], 'BoundaryType', 'horizontalBars')
-%       plot_window_boundaries([2 3], 'BoundaryType', 'verticalShades')
-%       plot_window_boundaries([5 10 20 25], 'BoundaryType', 'horizontalShades')
+%       plot_window_boundaries([5 10 20 25], 'BoundaryType', 'verticalShades') TODO
+%       plot_window_boundaries([2 3], 'BoundaryType', 'horizontalShades')
 %
 % Outputs:
 %       h           - handles to each line object (left, right)
@@ -74,6 +74,7 @@ lineLineWidth = 2;
 barLineStyle = '-';
 barLineWidth = 3;
 shadeLineStyle = 'none';
+shadeLineWidth = 0.5;
 
 %% Default values for optional arguments
 boundaryTypeDefault = 'verticalLines';
@@ -145,7 +146,7 @@ if isempty(lineWidth)
         case {'verticalBars', 'horizontalBars'}
             lineWidth = barLineWidth;
         case {'verticalShades', 'horizontalShades'}
-            % Keep empty
+            lineWidth = shadeLineWidth;
         otherwise
             error('boundaryType unrecognized!');
     end
@@ -197,11 +198,13 @@ switch boundaryType
                             'LineStyle', lineStyle, 'LineWidth', lineWidth, ...
                             otherArguments);
     case 'verticalShades'
-
-
+        h = plot_vertical_shade(win, ...
+                            'LineStyle', lineStyle, 'LineWidth', lineWidth, ...
+                            otherArguments);
     case 'horizontalShades'
-
-
+        h = plot_vertical_shade(win, 'HorizontalInstead', true, ...
+                            'LineStyle', lineStyle, 'LineWidth', lineWidth, ...
+                            otherArguments);
     otherwise
         error('boundaryType unrecognized!');
 end

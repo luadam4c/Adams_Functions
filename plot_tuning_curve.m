@@ -864,6 +864,7 @@ for iPlot = 1:nColumnsToPlot
             %TODO
             % minY = apply_iteratively(@min, {yLimits, readoutLimits});
 
+            % TODO: use plot_vertical_shade
             % Remove tuning curve
             delete(curves(iPlot, 1));
 
