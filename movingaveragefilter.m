@@ -4,10 +4,10 @@ function vecsFilt = movingaveragefilter (vecs, varargin)
 % Explanation:
 %       Same as smooth() but with option of using a window in time units
 % Example(s):
-%       movingaveragefilter(magic(4))
-%       movingaveragefilter(magic(4), 10, 10)
-%       movingaveragefilter(magic(4), 10, 2)
-%       movingaveragefilter(magic(4), 10, 1)
+%       movingaveragefilter(magic(5))
+%       movingaveragefilter(magic(5), 10, 10)
+%       movingaveragefilter(magic(5), 10, 2)
+%       movingaveragefilter(magic(5), 10, 1)
 % Outputs:
 %       vecsFilt    - filtered vector(s)
 %                   specified as a numeric array
@@ -27,6 +27,7 @@ function vecsFilt = movingaveragefilter (vecs, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/struct2arglist.m
 %       cd/find_nearest_odd.m
+%       cd/vecfun.m
 %
 % Used by:
 %       cd/compute_autocorrelogram.m
@@ -79,10 +80,6 @@ si = iP.Results.si;
 % Keep unmatched arguments for the smooth() function
 otherArguments = struct2arglist(iP.Unmatched);
 
-%% Preparation
-% Count the number of vectors
-nVectors = count_vectors(vecs);
-
 %% Do the job
 % Calculate the moving average filter window width in samples
 %   Note: Round down to the nearest odd integer to preserve values!!
@@ -90,7 +87,7 @@ nVectors = count_vectors(vecs);
 filtWidthSamples = find_nearest_odd(filtWidth / si, 'Direction', 'down');
 
 % Moving average filter vectors
-vecsFilt = smooth(vecs, filtWidthSamples, otherArguments{:});
+vecsFilt = vecfun(@(x) smooth(x, filtWidthSamples, otherArguments{:}), vecs);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

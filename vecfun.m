@@ -28,7 +28,7 @@ function outVecs = vecfun (myFunction, inVecs, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/movingaveragefilter.m
 
 % File History:
 % 2019-08-29 Created by Adam Lu
