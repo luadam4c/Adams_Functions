@@ -28,6 +28,9 @@ function plot_measures (varargin)
 %                   - 'ComputePopAverageFlag': whether to compute TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'ComputeSmoothedFlag': whether to compute TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'PlotAllFlag': whether to plot everything
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -130,6 +133,7 @@ function plot_measures (varargin)
 %       cd/extract_fileparts.m
 %       cd/force_matrix.m
 %       cd/ismatch.m
+%       cd/modify_table.m
 %       cd/plot_table.m
 %       cd/plot_tuning_curve.m
 %       cd/renamevars.m
@@ -159,6 +163,7 @@ function plot_measures (varargin)
 % 2019-08-20 Added 'RemoveOutliersInPlot' as an optional argument
 % 2019-08-20 Now sets 'ReturnLastTrial' to be true for compute_phase_average 
 %               to avoid NaNs
+% 2019-08-29 Added computation of smoothed tables
 % TODO: Restrict to certain time windows 'TimeWindow'
 % TODO: Pull out many code to functions
 
@@ -193,6 +198,7 @@ computeChevronFlagDefault = false;
 computeNormChevronFlagDefault = false;
 computeTimeTablesFlagDefault = false;
 computePopAverageFlagDefault = false;
+computeSmoothedFlagDefault = false;
 plotAllFlagDefault = false;
 plotChevronFlagDefault = [];
 plotByFileFlagDefault = [];
@@ -245,6 +251,8 @@ addParameter(iP, 'ComputeNormChevronFlag', computeNormChevronFlagDefault, ...
 addParameter(iP, 'ComputeTimeTablesFlag', computeTimeTablesFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ComputePopAverageFlag', computePopAverageFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ComputeSmoothedFlag', computeSmoothedFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotAllFlag', plotAllFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -314,6 +322,7 @@ computeChevronFlag = iP.Results.ComputeChevronFlag;
 computeNormChevronFlag = iP.Results.ComputeNormChevronFlag;
 computeTimeTablesFlag = iP.Results.ComputeTimeTablesFlag;
 computePopAverageFlag = iP.Results.ComputePopAverageFlag;
+computeSmoothedFlag = iP.Results.ComputeSmoothedFlag;
 plotAllFlag = iP.Results.PlotAllFlag;
 plotChevronFlag = iP.Results.PlotChevronFlag;
 plotByFileFlag = iP.Results.PlotByFileFlag;
@@ -376,6 +385,10 @@ if plotNormByFileFlag || plotNormByPhaseFlag || computeNormTimeTablesFlag
 end
 if plotChevronFlag || computeNormChevronFlag || computeNormTablesFlag
     computeChevronFlag = true;
+end
+plotSmoothedFlag = false; % TODO
+if plotSmoothedFlag
+    computeSmoothedFlag = true;
 end
 
 % Decide on the input directory
@@ -462,11 +475,13 @@ tableNames = strcat(prefix, '_', varsToPlot);
 % Create paths for mat files
 [measureTablesMatPath, measureTimeTablesMatPath, chevronTablesMatPath, ...
     popAvgTablesMatPath, normTimeTablesMatPath, ...
-    normalizedChevronTablesMatPath, normalizedPopAvgTablesMatPath] = ...
+    normalizedChevronTablesMatPath, normalizedPopAvgTablesMatPath, ...
+    smoothedTablesMatPath] = ...
     argfun(@(x) fullfile(outFolder, [prefix, '_', x, '.mat']), ...
             'measureTables', 'measureTimeTables', 'chevronTables', ...
             'popAvgTables', 'normalizedTimeTables', ...
-            'normalizedChevronTables', 'normalizedPopAvgTables');
+            'normalizedChevronTables', 'normalizedPopAvgTables', ...
+            'smoothedTables');
 
 % Check if output directories exist
 check_dir({outFolder, figFolder});
@@ -530,11 +545,12 @@ measureTables = combine_variables_across_tables(sliceParamsTables, ...
 save(measureTablesMatPath, 'measureTables', '-mat');
 
 %% Compute smoothed tables
-computeSmoothedFlag = false; %TODO
 if computeSmoothedFlag
     smoothedTables = cellfun(@(x, y) modify_table(x, @movingaveragefilter, ...
                                             'VariableNames', y), ...
                                 measureTables, varsToPlot, 'UniformOutput', false);
+
+    save(smoothedTablesMatPath, 'smoothedTables', '-mat');
 end
 
 %% Average over each phase

@@ -35,6 +35,7 @@ function vecsFilt = movingaveragefilter (vecs, varargin)
 
 % File History:
 % 2019-01-14 Created by Adam Lu
+% 2019-08-29 Now uses vecfun.m
 % 
 
 %% Hard-coded parameters

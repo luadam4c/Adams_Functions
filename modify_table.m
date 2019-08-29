@@ -33,10 +33,9 @@ function table = modify_table (table, varargin)
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/struct2arglist.m
-%       /TODO:dir/TODO:file
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/plot_measures.m
 
 % File History:
 % 2019-08-28 Created by Adam Lu
