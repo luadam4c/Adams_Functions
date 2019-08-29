@@ -131,10 +131,22 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                       Note: each row is a set of boundaries
 %                   must be a numeric array
 %                   default == []
+%                   - 'PBoundaryType': type of parameter boundaries
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'verticalLines'     - vertical dotted lines
+%                       'horizontalBars'    - horizontal bars
+%                       'verticalShades'    - vertical shades
+%                   default == 'verticalLines'
 %                   - 'RBoundaries': readout boundary values
 %                       Note: each row is a set of boundaries
 %                   must be a numeric array
 %                   default == []
+%                   - 'RBoundaryType': type of readout boundaries
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'horizontalLines'   - horizontal dotted lines
+%                       'verticalBars'      - vertical bars
+%                       'horizontalShades'  - horizontal shades
+%                   default == 'verticalLines'
 %                   - 'AverageWindows': windows to average values
 %                       Note: If a matrix cell array, 
 %                           each column is for a curve and each row is for a phase
@@ -210,6 +222,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/islegendlocation.m
 %       cd/plot_horizontal_line.m
 %       cd/plot_vertical_line.m
+%       cd/plot_window_boundaries.m
 %       cd/remove_outliers.m
 %       cd/save_all_figtypes.m
 %       cd/set_default_flag.m
@@ -257,13 +270,15 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-08-22 Made averageWindows an optional argument
 % 2019-08-27 Fixed usage of plot flags
 % 2019-08-27 Added 'PlotAverageWindows'
-%
+
 
 %% Hard-coded constants
 WHITE = [1, 1, 1];
 
 %% Hard-coded parameters
 validSelectionMethods = {'notNaN', 'maxRange2Mean'};
+validPBoundaryTypes = {'verticalLines', 'horizontalBars', 'verticalShades'};
+validRBoundaryTypes = {'horizontalLines', 'verticalBars', 'horizontalShades'};
 
 % TODO: Make optional arguments
 sigLevel = 0.05;                    % significance level for tests
@@ -271,10 +286,15 @@ confIntFadePercentage = 0.25;       % fade percentage for confidence interval co
 selectedLineWidth = 3;              % line width for selected values markers
 selectedMarker = 'o';
 outlierMethod = 'fiveStds';
-boundariesLineStyle = '--';
+pBoundaryColor = '';                % set in plot_window_boundaries.m
+pBoundaryLineStyle = '--';
+pBoundaryLineWidth = 0.5;
+rBoundaryColor = '';                % set in plot_window_boundaries.m
+rBoundaryLineStyle = '--';
+rBoundaryLineWidth = 0.5;
 averagesLineStyle = ':';
 averagesLineWidth = 2;
-avgWindowYValue = [];
+avgWindowRelYValue = 0.1;
 avgWindowColorMap = [];
 avgWindowLineStyle = '-';
 avgWindowLineWidth = 3;
@@ -309,7 +329,9 @@ plotPhaseAveragesDefault = [];      % set later
 plotIndSelectedDefault = [];        % set later
 plotAverageWindowsDefault = [];     % set later
 pBoundariesDefault = [];
+pBoundaryTypeDefault = 'verticalLines';
 rBoundariesDefault = [];
+rBoundaryTypeDefault = 'horizontalLines';
 averageWindowsDefault = {};         % set later
 phaseAveragesDefault = [];          % set later
 indSelectedDefault = [];
@@ -410,8 +432,12 @@ addParameter(iP, 'PlotAverageWindows', plotAverageWindowsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PBoundaries', pBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'PBoundaryType', pBoundaryTypeDefault, ...
+    @(x) any(validatestring(x, validPBoundaryTypes)));
 addParameter(iP, 'RBoundaries', rBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'RBoundaryType', rBoundaryTypeDefault, ...
+    @(x) any(validatestring(x, validRBoundaryTypes)));
 addParameter(iP, 'AverageWindows', averageWindowsDefault, ...
     @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
 addParameter(iP, 'PhaseAverages', phaseAveragesDefault, ...
@@ -473,7 +499,9 @@ plotPhaseAverages = iP.Results.PlotPhaseAverages;
 plotIndSelected = iP.Results.PlotIndSelected;
 plotAverageWindows = iP.Results.PlotAverageWindows;
 pBoundaries = iP.Results.PBoundaries;
+pBoundaryType = validatestring(iP.Results.PBoundaryType, validPBoundaryTypes);
 rBoundaries = iP.Results.RBoundaries;
+rBoundaryType = validatestring(iP.Results.RBoundaryType, validRBoundaryTypes);
 averageWindows = iP.Results.AverageWindows;
 phaseAverages = iP.Results.PhaseAverages;
 indSelected = iP.Results.IndSelected;
@@ -743,8 +771,10 @@ nColumnsToPlot = length(columnsToPlot);
 
 % Decide on the color map to use
 if colorByPhase
+    % Generate a color map for phases
     colorMap = decide_on_colormap(colorMap, maxNPhases, 'ColorMapFunc', @hsv);
 else
+    % Generate a color map for traces
     if nColumnsToPlot == 1 && isempty(colorMap)
         colorMap = rgb('SkyBlue');
     else
@@ -969,21 +999,25 @@ end
 xtickangle(pTickAngle);
 
 % Plot parameter boundaries
-% TODO: use plot_window_boundaries with 'BoundaryType', pBoundaryType
 if nPBoundaries > 0
     hold on
-    pLines = plot_vertical_line(pBoundaries, 'LineWidth', 0.5, ...
-                                'LineStyle', boundariesLineStyle, 'Color', 'g');
+    pLines = plot_window_boundaries(pBoundaries, ...
+                                'BoundaryType', pBoundaryType, ...
+                                'LineWidth', pBoundaryLineWidth, ...
+                                'LineStyle', pBoundaryLineStyle, ...
+                                'ColorMap', pBoundaryColor);
 else
     pLines = gobjects;
 end
 
 % Plot readout boundaries
-% TODO: use plot_window_boundaries with 'BoundaryType', rBoundaryType
 if nRBoundaries > 0
     hold on
-    rLines = plot_horizontal_line(rBoundaries, 'LineWidth', 0.5, ...
-                                'LineStyle', boundariesLineStyle, 'Color', 'r');
+    rLines = plot_window_boundaries(rBoundaries, ...
+                                'BoundaryType', rBoundaryType, ...
+                                'LineWidth', rBoundaryLineWidth, ...
+                                'LineStyle', rBoundaryLineStyle, ...
+                                'ColorMap', rBoundaryColor);
 else
     rLines = gobjects;
 end
@@ -1062,25 +1096,16 @@ if plotIndSelected && ~isempty(indSelected)
 end
 
 % Plot averageWindows if requested
-% TODO: use plot_window_boundaries with 'BoundaryType', horizontalBars
 if plotAverageWindows && ~isempty(averageWindows)
     % Decide on the color map
     avgWindowColorMap = decide_on_colormap(avgWindowColorMap, maxNPhases, ...
                                             'ColorMapFunc', @hsv);
 
-    % Decide on the average window y value
-    if isempty(avgWindowYValue)
-        % Get the current y axis limits
-        yLimitsNow = get(gca, 'YLim');
-
-        % Compute a default window bar y value
-        avgWindowYValue = yLimitsNow(1) + 0.1 * (yLimitsNow(2) - yLimitsNow(1));
-    end
-
     % Plot the average windows as horizontal lines
     avgWindows = ...
-        arrayfun(@(x) plot_horizontal_line(avgWindowYValue, ...
-                                'XLimits', averageWindows{x, 1}, ...
+        arrayfun(@(x) plot_window_boundaries(averageWindows{x, 1}, ...
+                                'BarRelValue', avgWindowRelYValue, ...
+                                'BoundaryType', 'horizontalBar', ...
                                 'ColorMap', avgWindowColorMap(x, :), ...
                                 'LineStyle', avgWindowLineStyle, ...
                                 'LineWidth', avgWindowLineWidth), ...
@@ -1179,11 +1204,14 @@ end
 if ~isempty(pLines) || ~isempty(rLines)
     handles.boundaries = transpose(vertcat(pLines, rLines));
 end
-if ~isempty(indSelected)
+if plotIndSelected && ~isempty(indSelected)
     handles.selected = selected;
 end
-if ~isempty(phaseAverages) && ~isempty(averageWindows)
+if plotPhaseAverages && ~isempty(phaseAverages) && ~isempty(averageWindows)
     handles.averages = averages;
+end
+if plotAverageWindows && ~isempty(averageWindows)
+    handles.avgWindows = avgWindows;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1332,6 +1360,29 @@ else
                     indSelected(:, columnsToPlot(x))), ...
             1:nColumnsToPlot, 'UniformOutput', false);            
 end
+
+
+% Decide on the average window y value
+if isempty(avgWindowYValue)
+    % Get the current y axis limits
+    yLimitsNow = get(gca, 'YLim');
+
+    % Compute a default window bar y value
+    avgWindowYValue = yLimitsNow(1) + 0.1 * (yLimitsNow(2) - yLimitsNow(1));
+end
+avgWindows = ...
+    arrayfun(@(x) plot_horizontal_line(avgWindowYValue, ...
+                            'XLimits', averageWindows{x, 1}, ...
+                            'ColorMap', avgWindowColorMap(x, :), ...
+                            'LineStyle', avgWindowLineStyle, ...
+                            'LineWidth', avgWindowLineWidth), ...
+            transpose(1:maxNPhases), 'UniformOutput', false);
+
+
+pLines = plot_vertical_line(pBoundaries, 'LineWidth', 0.5, ...
+                            'LineStyle', pBoundaryLineStyle, 'Color', 'g');
+rLines = plot_horizontal_line(rBoundaries, 'LineWidth', 0.5, ...
+                            'LineStyle', rBoundaryLineStyle, 'Color', 'r');
 
 %}
 

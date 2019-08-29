@@ -46,6 +46,10 @@ function h = plot_window_boundaries (win, varargin)
 %                   - 'BarValue': value for bars
 %                   must be empty or a numeric scalar
 %                   default == barRelValue relative to current axis
+%                   - 'ColorMap': color map passed in
+%                   must be empty or a string/character vector
+%                       or an n-by-3 numeric array
+%                   default == depends on BoundaryType
 %                   - Any other parameter-value pair for the line() function
 % 
 % Requires:
@@ -56,6 +60,7 @@ function h = plot_window_boundaries (win, varargin)
 %
 % Used by:    
 %       cd/m3ha_plot_individual_traces.m
+%       cd/plot_tuning_curve.m
 
 % File History:
 % 2018-10-29 Created by Adam Lu
@@ -66,7 +71,7 @@ function h = plot_window_boundaries (win, varargin)
 % 
 
 %% Hard-coded parameters
-validBoundaryTypes = {'verticalLines','horizontalLines', ...
+validBoundaryTypes = {'verticalLines', 'horizontalLines', ...
                         'horizontalBars', 'verticalBars', ...
                         'verticalShades', 'horizontalShades'};
 lineLineStyle = '--';
@@ -82,6 +87,7 @@ lineStyleDefault = '';      % set later
 lineWidthDefault = '';      % set later
 barRelValueDefault = 0.1;   % set later
 barValueDefault = [];       % set later
+colorMapDefault = '';       % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -98,7 +104,8 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'win', ...
-    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+    @(x) validateattributes(x, {'numeric', 'duration', ...
+                                'logical', 'datetime'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'BoundaryType', boundaryTypeDefault, ...
@@ -111,6 +118,7 @@ addParameter(iP, 'BarRelValue', barRelValueDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'BarValue', barValueDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'ColorMap', colorMapDefault);
 
 % Read from the Input Parser
 parse(iP, win, varargin{:});
@@ -119,6 +127,7 @@ boundaryType = validatestring(iP.Results.BoundaryType, validBoundaryTypes);
 lineWidth = iP.Results.LineWidth;
 barRelValue = iP.Results.BarRelValue;
 barValue = iP.Results.BarValue;
+colorMap = iP.Results.ColorMap;
 
 % Keep unmatched arguments for the line() function
 otherArguments = iP.Unmatched;
@@ -175,6 +184,26 @@ if isempty(barValue)
     end    
 end
 
+% Set default color map
+if isempty(colorMap)
+    switch boundaryType
+        case 'verticalLines' 
+            colorMap = 'g';
+        case 'horizontalLines' 
+            colorMap = 'r';
+        case 'verticalBars'
+            colorMap = 'DarkRed';
+        case 'horizontalBars'
+            colorMap = 'DarkGreen';
+        case 'verticalShades'
+            colorMap = 'LightGreen';
+        case 'horizontalShades'
+            colorMap = 'LightSalmon';
+        otherwise
+            error('boundaryType unrecognized!');
+    end
+end
+
 % Force as a column
 win = force_column_vector(win);
 
@@ -184,27 +213,27 @@ switch boundaryType
     case 'verticalLines' 
         h = plot_vertical_line(win, ...
                             'LineStyle', lineStyle, 'LineWidth', lineWidth, ...
-                            otherArguments);
+                            'ColorMap', colorMap, otherArguments);
     case 'horizontalLines' 
         h = plot_horizontal_line(win, ...
                             'LineStyle', lineStyle, 'LineWidth', lineWidth, ...
-                            otherArguments);
+                            'ColorMap', colorMap, otherArguments);
     case 'verticalBars'
         h = plot_vertical_line(barValue, 'YLimits', win, ...
                             'LineStyle', lineStyle, 'LineWidth', lineWidth, ...
-                            otherArguments);
+                            'ColorMap', colorMap, otherArguments);
     case 'horizontalBars'
         h = plot_horizontal_line(barValue, 'XLimits', win, ...
                             'LineStyle', lineStyle, 'LineWidth', lineWidth, ...
-                            otherArguments);
+                            'ColorMap', colorMap, otherArguments);
     case 'verticalShades'
         h = plot_vertical_shade(win, ...
                             'LineStyle', lineStyle, 'LineWidth', lineWidth, ...
-                            otherArguments);
+                            'ColorMap', colorMap, otherArguments);
     case 'horizontalShades'
         h = plot_vertical_shade(win, 'HorizontalInstead', true, ...
                             'LineStyle', lineStyle, 'LineWidth', lineWidth, ...
-                            otherArguments);
+                            'ColorMap', colorMap, otherArguments);
     otherwise
         error('boundaryType unrecognized!');
 end
