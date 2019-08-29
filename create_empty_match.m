@@ -86,6 +86,12 @@ elseif isdatetime(array)
     empty = NaT(nRows, nColumns);
 elseif isgraphics(array)
     empty = gobjects(nRows, nColumns);
+elseif isa(array, 'table')
+    % TODO: Not tested
+    empty = table.empty(nRows, nColumns);
+elseif isa(array, 'function_handle')
+    % TODO: Not tested
+    empty = function_handle.empty(nRows, nColumns);
 else
     error('Not implemented yet!');
 end

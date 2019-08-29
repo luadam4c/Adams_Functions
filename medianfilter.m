@@ -85,8 +85,8 @@ otherArguments = struct2arglist(iP.Unmatched);
 %           However, must be >= 1
 filtWidthSamples = find_nearest_odd(filtWidth / si, 'Direction', 'down');
 
-% Median filter current vectors
-vecsFilt = medfilt1(vecs, filtWidthSamples, otherArguments);
+% Median filter vectors
+vecsFilt = medfilt1(vecs, filtWidthSamples, otherArguments{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

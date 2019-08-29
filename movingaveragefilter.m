@@ -79,14 +79,18 @@ si = iP.Results.si;
 % Keep unmatched arguments for the smooth() function
 otherArguments = struct2arglist(iP.Unmatched);
 
+%% Preparation
+% Count the number of vectors
+nVectors = count_vectors(vecs);
+
 %% Do the job
 % Calculate the moving average filter window width in samples
 %   Note: Round down to the nearest odd integer to preserve values!!
 %           However, must be >= 1
 filtWidthSamples = find_nearest_odd(filtWidth / si, 'Direction', 'down');
 
-% Median filter current vectors
-vecsFilt = smooth(vecs, filtWidthSamples, otherArguments);
+% Moving average filter vectors
+vecsFilt = smooth(vecs, filtWidthSamples, otherArguments{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
