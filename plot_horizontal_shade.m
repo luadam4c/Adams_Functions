@@ -8,6 +8,7 @@ function h = plot_horizontal_shade (varargin)
 %       plot_horizontal_shade([10, 20])
 %       plot_horizontal_shade(1:5, rand(5, 1), rand(5, 1) + 2)
 %       plot_horizontal_shade([1, 2], 'Color', 'Blue')
+%       plot_horizontal_shade({[10, 20], [30, 40]})
 %
 % Outputs:
 %       h           - handle to the shade
