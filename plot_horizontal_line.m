@@ -46,6 +46,7 @@ function h = plot_horizontal_line (yValue, varargin)
 %       cd/plot_pulse_response_with_stimulus.m
 %       cd/plot_struct.m
 %       cd/plot_tuning_curve.m
+%       cd/plot_window_boundaries.m
 
 % File History:
 % 2018-12-19 Created by Adam Lu

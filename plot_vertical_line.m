@@ -16,6 +16,7 @@ function h = plot_vertical_line (xValue, varargin)
 %       h = plot_vertical_line([3 4], 'YLimits', {[2 4], [1 2 4 5]})
 %       h = plot_vertical_line([3 4], 'YLimits', {[2 4], [1 2 4 5]})
 %       h = plot_vertical_line([3, 4, 5], 'Color', 'r')
+%       h = plot_vertical_line(3, 'HorizontalInstead', true)
 %
 % Outputs:
 %       h           - handle to the line object(s) created

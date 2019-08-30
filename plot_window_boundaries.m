@@ -56,7 +56,10 @@ function h = plot_window_boundaries (win, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/force_column_vector.m
 %       cd/islinestyle.m
+%       cd/plot_horizontal_line.m
 %       cd/plot_vertical_line.m
+%       cd/plot_horizontal_shade.m
+%       cd/plot_vertical_shade.m
 %
 % Used by:    
 %       cd/m3ha_plot_individual_traces.m
@@ -231,7 +234,7 @@ switch boundaryType
                             'LineStyle', lineStyle, 'LineWidth', lineWidth, ...
                             'ColorMap', colorMap, otherArguments);
     case 'horizontalShades'
-        h = plot_vertical_shade(win, 'HorizontalInstead', true, ...
+        h = plot_horizontal_shade(win, ...
                             'LineStyle', lineStyle, 'LineWidth', lineWidth, ...
                             'ColorMap', colorMap, otherArguments);
     otherwise

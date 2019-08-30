@@ -333,6 +333,7 @@ There are 1 MATLAB scripts in this directory:
 - [**plot_grouped_scatter.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_grouped_scatter.m): Plot and save a grouped scatter plot with 95% confidence ellipses
 - [**plot_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_histogram.m): Plots a histogram labelling out of range values differently
 - [**plot_horizontal_line.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_horizontal_line.m): Plots horizontal line(s)
+- [**plot_horizontal_shade.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_horizontal_shade.m): Plots a shaded area at specific y values, either between specific x values or extend to the current x-axis limits
 - [**plot_measures.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_measures.m): Plots all measures of interest across slices
 - [**plot_pdf.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pdf.m): Plots scaled pdf fit of data X and return vectors for the plots
 - [**plot_protocols.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_protocols.m): Computes features for each file according to protocol type
@@ -352,7 +353,7 @@ There are 1 MATLAB scripts in this directory:
 - [**plot_tuning_curve.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_curve.m): Plot 1-dimensional tuning curve(s), can include confidence intervals or test p values
 - [**plot_tuning_map.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_map.m): Plot a 2-dimensional tuning map
 - [**plot_vertical_line.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_vertical_line.m): Plots vertical line(s)
-- [**plot_vertical_shade.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_vertical_shade.m): Plots a shaded area that extends to the current axis limits
+- [**plot_vertical_shade.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_vertical_shade.m): Plots a shaded area at specific x values, either between specific y values or extend to the current y-axis limits
 - [**plot_window_boundaries.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_window_boundaries.m): Plots window boundaries as vertical lines
 - [**print_and_show_message.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_and_show_message.m): Print to standard output and show message box at the same time
 - [**print_cellstr.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_cellstr.m): Prints and returns a string for the contents stored in a cell array

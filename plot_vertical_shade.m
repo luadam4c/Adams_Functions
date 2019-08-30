@@ -1,5 +1,5 @@
 function h = plot_vertical_shade (varargin)
-%% Plots a shaded area that extends to the current axis limits
+%% Plots a shaded area at specific x values, either between specific y values or extend to the current y-axis limits
 % Usage: h = plot_vertical_shade (x, yLow, yHigh, varargin)
 % Explanation:
 %       TODO
@@ -7,8 +7,8 @@ function h = plot_vertical_shade (varargin)
 % Example(s):
 %       plot_vertical_shade([10, 20])
 %       plot_vertical_shade(1:5, rand(5, 1), rand(5, 1) + 2)
-%       plot_vertical_shade([1, 2], 'HorizontalInstead', true)
 %       plot_vertical_shade([1, 2], 'Color', 'Blue')
+%       plot_vertical_shade([1, 2], 'HorizontalInstead', true)
 %
 % Outputs:
 %       h           - handle to the shade
@@ -46,7 +46,8 @@ function h = plot_vertical_shade (varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/plot_horizontal_shade.m
+%       cd/plot_window_boundaries.m
 
 % File History:
 % 2019-08-27 Created by Adam Lu
