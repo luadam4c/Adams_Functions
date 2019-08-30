@@ -3,9 +3,20 @@ function h = plot_vertical_line (xValue, varargin)
 % Usage: h = plot_vertical_line (xValue, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       h = plot_vertical_line(xValue)
 %       h = plot_vertical_line(xValue, 'YLimits', yLimits)
+%       h = plot_vertical_line(3)
+%       h = plot_vertical_line(3, 'YLimits', [])
+%       h = plot_vertical_line(3, 'YLimits', [0, 0])
+%       h = plot_vertical_line(3, 'YLimits', [1, 2])
+%       h = plot_vertical_line(3, 'YLimits', [1, 2, 4, 5])
+%       h = plot_vertical_line([3, 4, 5])
+%       h = plot_vertical_line([3 4], 'YLimits', {[2 4], [1 2 4 5]})
+%       h = plot_vertical_line([3 4], 'YLimits', {[2 4], [1 2 4 5]})
+%       h = plot_vertical_line([3, 4, 5], 'Color', 'r')
+%
 % Outputs:
 %       h           - handle to the line object(s) created
 %                   specified as a primitive line object handle
@@ -16,10 +27,16 @@ function h = plot_vertical_line (xValue, varargin)
 %                   must be empty or a numeric vector of 2 elements
 %                       or an array of 2 rows
 %                   default == get(gca, 'YLim')
+%                   - 'ColorMap' - color map used
+%                   must be a 2-D numeric array with 3 columns
+%                   default == decide_on_colormap([], nLines)
 %                   - Any other parameter-value pair for the line() function
 %
 % Requires:
+%       cd/apply_over_cells.m
 %       cd/create_error_for_nargin.m
+%       cd/decide_on_colormap.m
+%       cd/force_column_cell.m
 %       cd/isnum.m
 %       cd/match_format_vector_sets.m
 %
@@ -36,13 +53,15 @@ function h = plot_vertical_line (xValue, varargin)
 % 2018-12-27 Now allows xValue to be an array
 % 2018-12-27 Now accepts datetime and duration arrays
 % 2019-01-24 Now accepts multiple y limits
-% TODO: Use plot_horizontal_line.m with option 'VerticalInstead'
+% 2019-08-30 Added 'ColorMap' as an optional argument
+% TODO: Finish up 'HorizontalInstead' and use this in plot_horizontal_line
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
 yLimitsDefault = [];
+colorMapDefault = [];               % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -63,10 +82,12 @@ addRequired(iP, 'xValue', ...
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'YLimits', yLimitsDefault);
+addParameter(iP, 'ColorMap', colorMapDefault);
 
 % Read from the Input Parser
 parse(iP, xValue, varargin{:});
 yLimits = iP.Results.YLimits;
+colorMap = iP.Results.ColorMap;
 
 % Keep unmatched arguments for the line() function
 otherArguments = iP.Unmatched;
@@ -80,19 +101,81 @@ end
 % Force as a cell array of column vectors and match vectors
 [xValue, yLimits] = match_format_vector_sets(num2cell(xValue), yLimits);
 
+% Place in column cell arrays and 
+%   expand x limits if there are more than 2 values
+[yLimitsCell, xValueCell] = cellfun(@(x, y) expand_limits(x, y), yLimits, xValue, ...
+                                    'UniformOutput', false);
+
+% Vertically concatenate all column cell arrays
+xValueAll = apply_over_cells(@vertcat, xValueCell);
+yLimitsAll = apply_over_cells(@vertcat, yLimitsCell);
+
+% Count the number of y values
+nYValues = numel(xValue);
+
+% Count the number of lines for each y value
+nLinesEachX = count_vectors(xValueCell);
+
+% Count the number of lines to plot
+nLines = numel(xValueAll);
+
+% Decide on the number of colors to plot
+nColors = nYValues;
+
+% Set default color map
+colorMap = decide_on_colormap(colorMap, nColors);
+
+% Expand to nLines
+% TODO: Add an option to decide_on_colormap.m to do this 'ExpandBy'
+colorMapCell = arrayfun(@(x) repmat(colorMap(x, :), nLinesEachX(x), 1), ...
+                    1:nYValues, 'UniformOutput', false);
+colorMapExpanded = vertcat(colorMapCell{:});
+
 %% Do the job
-h = cellfun(@(x, y) line(repmat(x, size(y)), y, otherArguments), ...
-            xValue, yLimits);
+% Hold on if plotting more than one line
+if nLines > 1
+    hold on;
+end
+
+% Plot all lines
+horizontalInstead = false;
+% TODO
+if horizontalInstead
+    h = cellfun(@(y, x, z) line(x, repmat(y, size(x)), ...
+                            'Color', colorMapExpanded(z, :), otherArguments), ...
+                xValueAll, yLimitsAll, num2cell(transpose(1:nLines)));
+else
+    h = cellfun(@(x, y, z) line(repmat(x, size(y)), y, ...
+                            'Color', colorMapExpanded(z, :), otherArguments), ...
+                xValueAll, yLimitsAll, num2cell(transpose(1:nLines)));
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [yLimitsCell, xValueCell] = expand_limits(yLimits, xValue)
+
+nXEndpoints = numel(yLimits);
+
+if mod(nXEndpoints, 2) ~= 0
+    error('Number of x endpoints must be even!');
+end
+
+% Actual number of lines to plot
+nLines = nXEndpoints / 2;
+
+% Reshape as two rows
+yLimits = reshape(yLimits, 2, nLines);
+
+% Force as column cell array of column vectors
+yLimitsCell = force_column_cell(yLimits);
+
+% Expand y value accordingly
+xValueCell = repmat({xValue}, nLines, 1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
-
-h = arrayfun(@(x) line(repmat(x, size(yLimits)), yLimits, otherArguments), ...
-            xValue);
-addParameter(iP, 'YLimits', yLimitsDefault, ...
-    @(x) isempty(x) || isnum(x) && isvector(x) && length(x) == 2);
 
 %}
 

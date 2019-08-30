@@ -28,6 +28,9 @@ function table = modify_table (table, varargin)
 %                   - 'UseVarFun': whether to apply the function to each column
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'SheetName' - spreadsheet file name for saving
+%                   must be a string scalar or a character vector
+%                   default == '' (don't save)
 %                   - Any other parameter-value pair for myFunction()
 %
 % Requires:
@@ -47,6 +50,7 @@ function table = modify_table (table, varargin)
 myFunctionDefault = function_handle.empty;
 variableNamesDefault = {};  % plot all variables by default
 useVarFunDefault = [];
+sheetNameDefault = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -76,12 +80,15 @@ addParameter(iP, 'VariableNames', variableNamesDefault, ...
             'or cell array of character arrays!']));
 addParameter(iP, 'UseVarFun', useVarFunDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SheetName', sheetNameDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, table, varargin{:});
 myFunction = iP.Results.myFunction;
 varNames = iP.Results.VariableNames;
 useVarFun = iP.Results.UseVarFun;
+sheetName = iP.Results.SheetName;
 
 % Keep unmatched arguments for the myFunction() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -127,6 +134,11 @@ else
 
     % Place it back in the table
     table{:, varNames} = dataModified;
+end
+
+%% Save table
+if ~isempty(sheetName)
+    writetable(table, sheetName);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

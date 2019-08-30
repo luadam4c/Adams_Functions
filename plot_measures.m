@@ -19,22 +19,37 @@ function plot_measures (varargin)
 %                   - 'ComputeChevronFlag': whether to compute TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'ComputeNormChevronFlag': whether to compute TODO
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
 %                   - 'ComputeTimeTablesFlag': whether to compute TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'ComputePopAverageFlag': whether to compute TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'ComputeSmoothedFlag': whether to compute TODO
+%                   - 'ComputeNormTablesFlag': whether to compute TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ComputeNormChevronFlag': whether to compute TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ComputeNormTimeTablesFlag': whether to compute TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ComputeNormPopAverageFlag': whether to compute TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ComputeSmoothTablesFlag': whether to compute TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ComputeSmoothTimeTablesFlag': whether to compute TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ComputeSmoothNormTimeTablesFlag': whether to compute TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ComputeSmoothNormPopAverageFlag': whether to compute TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'PlotAllFlag': whether to plot everything
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
-%                   - 'PlotChevronFlag': whether to plot TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'PlotByFileFlag': whether to plot TODO
@@ -46,7 +61,7 @@ function plot_measures (varargin)
 %                   - 'PlotPopAverageFlag': whether to plot TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'PlotNormChevronFlag': whether to plot TODO
+%                   - 'PlotChevronFlag': whether to plot TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'PlotNormByFileFlag': whether to plot TODO
@@ -56,6 +71,18 @@ function plot_measures (varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'PlotNormPopAverageFlag': whether to plot TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotNormChevronFlag': whether to plot TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotSmoothByFileFlag': whether to plot TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotSmoothNormByFileFlag': whether to plot TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotSmoothNormPopAvgFlag': whether to plot TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'RemoveOutliersInPlot': whether to remove outliers 
@@ -195,19 +222,28 @@ varLabelsAll = {'Oscillatory Index 1'; 'Oscillatory Index 2'; ...
 %% Default values for optional arguments
 plotTypeDefault = 'tuning';
 computeChevronFlagDefault = false;
-computeNormChevronFlagDefault = false;
 computeTimeTablesFlagDefault = false;
 computePopAverageFlagDefault = false;
-computeSmoothedFlagDefault = false;
+computeNormTablesFlagDefault = false;
+computeNormChevronFlagDefault = false;
+computeNormTimeTablesFlagDefault = false;
+computeNormPopAverageFlagDefault = false;
+computeSmoothTablesFlagDefault = false;
+computeSmoothTimeTablesFlagDefault = false;
+computeSmoothNormTimeTablesFlagDefault = false;
+computeSmoothNormPopAverageFlagDefault = false;
 plotAllFlagDefault = false;
-plotChevronFlagDefault = [];
 plotByFileFlagDefault = [];
 plotByPhaseFlagDefault = [];
 plotPopAverageFlagDefault = [];
-plotNormChevronFlagDefault = [];
+plotChevronFlagDefault = [];
 plotNormByFileFlagDefault = [];
 plotNormByPhaseFlagDefault = [];
 plotNormPopAverageFlagDefault = [];
+plotNormChevronFlagDefault = [];
+plotSmoothByFileFlagDefault = [];
+plotSmoothNormByFileFlagDefault = [];
+plotSmoothNormPopAvgFlagDefault = [];
 removeOutliersInPlotDefault = true;
 directoryDefault = pwd;
 inFolderDefault = '';                   % set later
@@ -246,17 +282,33 @@ addParameter(iP, 'PlotType', plotTypeDefault, ...
     @(x) any(validatestring(x, validPlotTypes)));
 addParameter(iP, 'ComputeChevronFlag', computeChevronFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'ComputeNormChevronFlag', computeNormChevronFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ComputeTimeTablesFlag', computeTimeTablesFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ComputePopAverageFlag', computePopAverageFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'ComputeSmoothedFlag', computeSmoothedFlagDefault, ...
+addParameter(iP, 'ComputeNormTablesFlag', computeNormTablesFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ComputeNormChevronFlag', computeNormChevronFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ComputeNormTimeTablesFlag', ...
+    computeNormTimeTablesFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ComputeNormPopAverageFlag', ...
+    computeNormPopAverageFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ComputeSmoothTablesFlag', ...
+    computeSmoothTablesFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ComputeSmoothTimeTablesFlag', ...
+    computeSmoothTimeTablesFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ComputeSmoothNormTimeTablesFlag', ...
+    computeSmoothNormTimeTablesFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ComputeSmoothNormPopAverageFlag', ...
+    computeSmoothNormPopAverageFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotAllFlag', plotAllFlagDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'PlotChevronFlag', plotChevronFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotByFileFlag', plotByFileFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -264,13 +316,21 @@ addParameter(iP, 'PlotByPhaseFlag', plotByPhaseFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotPopAverageFlag', plotPopAverageFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'PlotNormChevronFlag', plotNormChevronFlagDefault, ...
+addParameter(iP, 'PlotChevronFlag', plotChevronFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotNormByFileFlag', plotNormByFileFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotNormByPhaseFlag', plotNormByPhaseFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotNormPopAverageFlag', plotNormPopAverageFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotNormChevronFlag', plotNormChevronFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotSmoothByFileFlag', plotSmoothByFileFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotSmoothNormByFileFlag', plotSmoothNormByFileFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotSmoothNormPopAvgFlag', plotSmoothNormPopAvgFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveOutliersInPlot', removeOutliersInPlotDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -319,19 +379,28 @@ addParameter(iP, 'VarLabels', varLabelsDefault, ...
 parse(iP, varargin{:});
 plotType = validatestring(iP.Results.PlotType, validPlotTypes);
 computeChevronFlag = iP.Results.ComputeChevronFlag;
-computeNormChevronFlag = iP.Results.ComputeNormChevronFlag;
 computeTimeTablesFlag = iP.Results.ComputeTimeTablesFlag;
 computePopAverageFlag = iP.Results.ComputePopAverageFlag;
-computeSmoothedFlag = iP.Results.ComputeSmoothedFlag;
+computeNormTablesFlag = iP.Results.ComputeNormTablesFlag;
+computeNormChevronFlag = iP.Results.ComputeNormChevronFlag;
+computeNormTimeTablesFlag = iP.Results.ComputeNormTimeTablesFlag;
+computeNormPopAverageFlag = iP.Results.ComputeNormPopAverageFlag;
+computeSmoothTablesFlag = iP.Results.ComputeSmoothTablesFlag;
+computeSmoothTimeTablesFlag = iP.Results.ComputeSmoothTimeTablesFlag;
+computeSmoothNormTimeTablesFlag = iP.Results.ComputeSmoothNormTimeTablesFlag;
+computeSmoothNormPopAverageFlag = iP.Results.ComputeSmoothNormPopAverageFlag;
 plotAllFlag = iP.Results.PlotAllFlag;
-plotChevronFlag = iP.Results.PlotChevronFlag;
 plotByFileFlag = iP.Results.PlotByFileFlag;
 plotByPhaseFlag = iP.Results.PlotByPhaseFlag;
 plotPopAverageFlag = iP.Results.PlotPopAverageFlag;
-plotNormChevronFlag = iP.Results.PlotNormChevronFlag;
+plotChevronFlag = iP.Results.PlotChevronFlag;
 plotNormByFileFlag = iP.Results.PlotNormByFileFlag;
 plotNormByPhaseFlag = iP.Results.PlotNormByPhaseFlag;
 plotNormPopAverageFlag = iP.Results.PlotNormPopAverageFlag;
+plotNormChevronFlag = iP.Results.PlotNormChevronFlag;
+plotSmoothByFileFlag = iP.Results.PlotSmoothByFileFlag;
+plotSmoothNormByFileFlag = iP.Results.PlotSmoothNormByFileFlag;
+plotSmoothNormPopAvgFlag = iP.Results.PlotSmoothNormPopAvgFlag;
 removeOutliersInPlot = iP.Results.RemoveOutliersInPlot;
 directory = iP.Results.Directory;
 inFolder = iP.Results.InFolder;
@@ -355,14 +424,18 @@ varLabels = iP.Results.VarLabels;
 %% Preparation
 % Set default flags
 fprintf('Setting default flags ...\n');
-[plotChevronFlag, plotByFileFlag, plotByPhaseFlag, plotPopAverageFlag, ...
-plotNormChevronFlag, plotNormByFileFlag, ...
-plotNormByPhaseFlag, plotNormPopAverageFlag] = ...
+[plotByFileFlag, plotByPhaseFlag, plotPopAverageFlag, plotChevronFlag, ...
+plotNormByFileFlag, plotNormByPhaseFlag, ...
+plotNormPopAverageFlag, plotNormChevronFlag, ...
+plotSmoothByFileFlag, plotSmoothNormByFileFlag, ...
+plotSmoothNormPopAvgFlag] = ...
     argfun(@(x) set_default_flag(x, plotAllFlag), ...
-                plotChevronFlag, plotByFileFlag, ...
-                plotByPhaseFlag, plotPopAverageFlag, ...
-                plotNormChevronFlag, plotNormByFileFlag, ...
-                plotNormByPhaseFlag, plotNormPopAverageFlag);
+                plotByFileFlag, plotByPhaseFlag, ...
+                plotPopAverageFlag, plotChevronFlag, ...
+                plotNormByFileFlag, plotNormByPhaseFlag, ...
+                plotNormPopAverageFlag, plotNormChevronFlag, ...
+                plotSmoothByFileFlag, plotSmoothNormByFileFlag, ...
+                plotSmoothNormPopAvgFlag);
 
 % Set compute flags
 if plotPopAverageFlag
@@ -386,9 +459,17 @@ end
 if plotChevronFlag || computeNormChevronFlag || computeNormTablesFlag
     computeChevronFlag = true;
 end
-plotSmoothedFlag = false; % TODO
-if plotSmoothedFlag
-    computeSmoothedFlag = true;
+if plotSmoothByFileFlag || plotSmoothNormByFileFlag || plotSmoothNormPopAvgFlag
+    computeSmoothTablesFlag = true;
+end
+if plotSmoothByFileFlag || plotSmoothNormByFileFlag || plotSmoothNormPopAvgFlag
+    computeSmoothTimeTablesFlag = true;
+end
+if plotSmoothNormByFileFlag || plotSmoothNormPopAvgFlag
+    computeSmoothNormTimeTablesFlag = true;
+end
+if plotSmoothNormPopAvgFlag
+    computeSmoothNormPopAverageFlag = true;
 end
 
 % Decide on the input directory
@@ -460,28 +541,36 @@ tableNames = strcat(prefix, '_', varsToPlot);
 % Create figure names
 [figNamesAvgd, figNamesByFile, figNamesByPhase, figNamesPopAvg, ...
     figNamesNormAvgd, figNamesNormByFile, ...
-    figNamesNormByPhase, figNamesNormPopAvg] = ...
+    figNamesNormByPhase, figNamesNormPopAvg, ...
+    figNamesSmoothByFile, figNamesSmoothNormByFile, ...
+    figNamesSmoothNormPopAvg] = ...
     argfun(@(x) fullfile(figFolder, strcat(tableNames, '_', x, '.png')), ...
             'chevron', 'byFile', 'byPhase', 'popAverage', ...
-            'normChevron', 'normByFile', 'normByPhase', 'normPopAverage');
+            'normChevron', 'normByFile', 'normByPhase', 'normPopAverage', ...
+            'smoothByFile', 'smoothNormByFile', ...
+            'smoothNormPopAverage');
 
 % Create paths for spreadsheet files
-[chevronTablePaths, popAvgTablePaths, ...
-    normTablePaths, normChevronTablePaths, normPopAvgTablePaths] = ...
+[chevronTablePaths, popAvgTablePaths, smoothTablePaths, ...
+    normTablePaths, normChevronTablePaths, normPopAvgTablePaths, ...
+    smoothNormTablePaths, smoothNormPopAvgPaths] = ...
     argfun(@(x) fullfile(outFolder, strcat(tableNames, '_', x, '.csv')), ...
-            'chevron', 'popAverage', ...
-            'normalized', 'normChevron', 'normPopAverage');
+            'chevron', 'popAverage', 'smooth', ...
+            'normalized', 'normChevron', 'normPopAverage', ...
+            'smoothNorm', 'smoothNormPopAverage');
 
 % Create paths for mat files
 [measureTablesMatPath, measureTimeTablesMatPath, chevronTablesMatPath, ...
     popAvgTablesMatPath, normTimeTablesMatPath, ...
     normalizedChevronTablesMatPath, normalizedPopAvgTablesMatPath, ...
-    smoothedTablesMatPath] = ...
+    smoothTablesMatPath, smoothTimeTablesMatPath, ...
+    smoothNormTablesMatPath, smoothNormPopAvgTablesMatPath] = ...
     argfun(@(x) fullfile(outFolder, [prefix, '_', x, '.mat']), ...
             'measureTables', 'measureTimeTables', 'chevronTables', ...
             'popAvgTables', 'normalizedTimeTables', ...
             'normalizedChevronTables', 'normalizedPopAvgTables', ...
-            'smoothedTables');
+            'smoothTables', 'smoothTimeTables', ...
+            'smoothNormTables', 'smoothNormPopAvgTables');
 
 % Check if output directories exist
 check_dir({outFolder, figFolder});
@@ -545,12 +634,14 @@ measureTables = combine_variables_across_tables(sliceParamsTables, ...
 save(measureTablesMatPath, 'measureTables', '-mat');
 
 %% Compute smoothed tables
-if computeSmoothedFlag
-    smoothedTables = cellfun(@(x, y) modify_table(x, @movingaveragefilter, ...
-                                            'VariableNames', y), ...
-                                measureTables, varsToPlot, 'UniformOutput', false);
+if computeSmoothTablesFlag
+    smoothTables = ...
+        cellfun(@(x, y, z) modify_table(x, @movingaveragefilter, ...
+                                        'VariableNames', y, 'SheetName', z), ...
+                measureTables, varsToPlot, smoothTablePaths, ...
+                'UniformOutput', false);
 
-    save(smoothedTablesMatPath, 'smoothedTables', '-mat');
+    save(smoothTablesMatPath, 'smoothTables', '-mat');
 end
 
 %% Average over each phase
@@ -566,7 +657,7 @@ if computeChevronFlag
     save(chevronTablesMatPath, 'chevronTables', '-mat');
 end
 
-%% Normalize to baseline
+%% Normalize raw data to baseline
 if computeNormTablesFlag
     fprintf('Computing normalized tables ...\n');
     normalizedMeasureTables = ...
@@ -575,7 +666,7 @@ if computeNormTablesFlag
                 'UniformOutput', false);
 end
 
-%% Normalize to baseline if requested
+%% Normalize averaged data to baseline
 if computeNormChevronFlag
     fprintf('Normalizing to baseline ...\n');
     normalizedChevronTables = ...
@@ -583,6 +674,11 @@ if computeNormChevronFlag
                     chevronTables, normChevronTablePaths, 'UniformOutput', false);
 
     save(normalizedChevronTablesMatPath, 'normalizedChevronTables', '-mat');
+end
+
+%% Normalize smoothed data to baseline
+if computeSmoothNormTimeTablesFlag
+    % TODO
 end
 
 %% Convert to timetables
@@ -594,7 +690,7 @@ if computeTimeTablesFlag
     save(measureTimeTablesMatPath, 'measureTimeTables', '-mat');
 end
 
-%% Convert to normalized timetables
+%% Convert normalized data to timetables
 if computeNormTimeTablesFlag
     fprintf('Converting normalized measure tables to time tables ...\n');
     normTimeTables = cellfun(@table2timetable, ...
@@ -602,7 +698,15 @@ if computeNormTimeTablesFlag
     save(normTimeTablesMatPath, 'normTimeTables', '-mat');
 end
 
-%% Average over each file
+%% Convert smoothed data to timetables
+if computeSmoothTimeTablesFlag
+    fprintf('Converting smoothed measure tables to time tables ...\n');
+    smoothTimeTables = cellfun(@table2timetable, ...
+                            smoothTables, 'UniformOutput', false);
+    save(smoothTimeTablesMatPath, 'smoothTimeTables', '-mat');
+end
+
+%% Average over slices
 if computePopAverageFlag
     fprintf('Computing population averages ...\n');
     popAvgTables = cellfun(@(x, y, z) compute_population_average(x, ...
@@ -613,7 +717,7 @@ if computePopAverageFlag
     save(popAvgTablesMatPath, 'popAvgTables', '-mat');
 end
 
-%% Average over each normalized file
+%% Average over slices for normalized data
 if computeNormPopAverageFlag
     fprintf('Computing normalized population averages ...\n');
     normPopAvgTables = cellfun(@(x, y, z) compute_population_average(x, ...
@@ -622,6 +726,11 @@ if computeNormPopAverageFlag
                             'UniformOutput', false);
 
     save(normalizedPopAvgTablesMatPath, 'normPopAvgTables', '-mat');
+end
+
+%% Average over slices for smoothed, then normalized data
+if computeSmoothNormPopAverageFlag
+    % TODO
 end
 
 %% Plot Chevron plots
@@ -712,6 +821,29 @@ if plotNormByFileFlag
                 'PLabel', timeLabel, 'FigName', v, ...
                 'RemoveOutliers', removeOutliersInPlot), ...
             normTimeTables, varsToPlot, varLabelsNorm, tableLabels, figNamesNormByFile);
+end
+
+if plotSmoothByFileFlag
+    close all;
+    tableLabelsSmooth = strcat(tableLabels, ' smoothed');
+
+    fprintf('Plotting each column with a different color, data smoothed ...\n');
+    cellfun(@(x, y, z, w, v) plot_table(x, 'PlotSeparately', false, ...
+                'PhaseVariables', phaseVars, 'PhaseLabels', phaseStrs, ...
+                'PlotPhaseBoundaries', true, 'PlotPhaseAverages', false, ...
+                'PlotIndSelected', false, 'ColorByPhase', false, ...
+                'PlotAverageWindows', false, ...
+                'NLastOfPhase', nSweepsLastOfPhase, ...
+                'NToAverage', nSweepsToAverage, ...
+                'SelectionMethod', selectionMethod, ...
+                'MaxRange2Mean', maxRange2Mean, ...
+                'PlotType', plotType, ...
+                'VariableNames', strcat(y, '_', fileLabels), ...
+                'ReadoutLabel', z, 'TableLabel', w, ...
+                'PLabel', timeLabel, 'FigName', v, ...
+                'RemoveOutliers', removeOutliersInPlot), ...
+            smoothTimeTables, varsToPlot, varLabels, ...
+            tableLabelsSmooth, figNamesSmoothByFile);
 end
 
 %% Plot each phase with a different color

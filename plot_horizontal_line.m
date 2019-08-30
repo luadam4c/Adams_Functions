@@ -36,12 +36,12 @@ function h = plot_horizontal_line (yValue, varargin)
 %                   - Any other parameter-value pair for the line() function
 %
 % Requires:
+%       cd/apply_over_cells.m
 %       cd/create_error_for_nargin.m
 %       cd/decide_on_colormap.m
 %       cd/force_column_cell.m
 %       cd/isnum.m
 %       cd/match_format_vector_sets.m
-%       cd/match_row_count.m
 %
 % Used by:
 %       cd/parse_multiunit.m
@@ -61,6 +61,7 @@ function h = plot_horizontal_line (yValue, varargin)
 % 2019-08-22 Added 'ColorMap' as an optional argument
 % 2019-08-23 Made sure that each y value is a single color
 % TODO: Allow 2-D arrays for y values
+% TODO: Use plot_vertical_line.m with option 'HorizontalInstead'
 
 %% Hard-coded parameters
 
