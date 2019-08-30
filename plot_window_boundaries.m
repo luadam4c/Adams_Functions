@@ -71,7 +71,8 @@ function h = plot_window_boundaries (win, varargin)
 % 2018-12-19 Now passes extra arguments
 % 2018-12-19 Now returns object handles
 % 2019-08-27 Added 'BoundaryType' as an optional argument with values:
-%               'verticalLines' (default), 'shades', 'horizontalBars'
+%               'verticalLines' (default), 'horizontalBars'
+% 2018-08-30 Added 'verticalShades', 'horizontalShades'
 % 
 
 %% Hard-coded parameters

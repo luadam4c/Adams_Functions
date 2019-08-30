@@ -55,7 +55,7 @@ function h = plot_vertical_shade (varargin)
 
 % File History:
 % 2019-08-27 Created by Adam Lu
-% TODO: Accept cell arrays as inputs
+% 2019-08-30 Now accepts cell arrays as inputs
 % 
 
 %% Hard-coded parameters
