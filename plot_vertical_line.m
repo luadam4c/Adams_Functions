@@ -23,7 +23,11 @@ function h = plot_vertical_line (xValue, varargin)
 % Arguments:
 %       xValue      - the x value(s) for the vertical line(s)
 %                   must be a numeric, datetime or duration array
-%       varargin    - 'YLimits': y value limits for the line(s)
+%       varargin    - 'HorizontalInstead': whether to plot a horizontal shade
+%                                               instead
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'YLimits': y value limits for the line(s)
 %                   must be empty or a numeric vector of 2 elements
 %                       or an array of 2 rows
 %                   default == get(gca, 'YLim')
@@ -37,12 +41,12 @@ function h = plot_vertical_line (xValue, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/decide_on_colormap.m
 %       cd/force_column_cell.m
-%       cd/isnum.m
 %       cd/match_format_vector_sets.m
 %
 % Used by:
 %       cd/plot_bar.m
 %       cd/plot_error_bar.m
+%       cd/plot_horizontal_line.m
 %       cd/plot_pulse_response_with_stimulus.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_swd_histogram.m
@@ -55,6 +59,7 @@ function h = plot_vertical_line (xValue, varargin)
 % 2019-01-24 Now accepts multiple y limits
 % 2019-08-30 Added 'ColorMap' as an optional argument
 % TODO: Finish up 'HorizontalInstead' and use this in plot_horizontal_line
+% TODO: Allow 2-D arrays for x values
 % 
 
 %% Hard-coded parameters
@@ -62,6 +67,7 @@ function h = plot_vertical_line (xValue, varargin)
 %% Default values for optional arguments
 yLimitsDefault = [];
 colorMapDefault = [];               % set later
+horizontalInsteadDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -83,11 +89,14 @@ addRequired(iP, 'xValue', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'YLimits', yLimitsDefault);
 addParameter(iP, 'ColorMap', colorMapDefault);
+addParameter(iP, 'HorizontalInstead', horizontalInsteadDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, xValue, varargin{:});
 yLimits = iP.Results.YLimits;
 colorMap = iP.Results.ColorMap;
+horizontalInstead = iP.Results.HorizontalInstead;
 
 % Keep unmatched arguments for the line() function
 otherArguments = iP.Unmatched;
@@ -138,15 +147,15 @@ if nLines > 1
 end
 
 % Plot all lines
-horizontalInstead = false;
-% TODO
 if horizontalInstead
     h = cellfun(@(y, x, z) line(x, repmat(y, size(x)), ...
-                            'Color', colorMapExpanded(z, :), otherArguments), ...
+                                'Color', colorMapExpanded(z, :), ...
+                                otherArguments), ...
                 xValueAll, yLimitsAll, num2cell(transpose(1:nLines)));
 else
     h = cellfun(@(x, y, z) line(repmat(x, size(y)), y, ...
-                            'Color', colorMapExpanded(z, :), otherArguments), ...
+                                'Color', colorMapExpanded(z, :), ...
+                                otherArguments), ...
                 xValueAll, yLimitsAll, num2cell(transpose(1:nLines)));
 end
 

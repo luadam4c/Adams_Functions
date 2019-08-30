@@ -31,7 +31,6 @@ function output = apply_over_cells (myFunction, inputs, varargin)
 %
 % Used by:
 %       cd/combine_variables_across_tables.m
-%       cd/plot_horizontal_line.m
 %       cd/plot_vertical_line.m
 %       ~/m3ha/optimizer4gabab/compare_and_plot_across_conditions.m
 %

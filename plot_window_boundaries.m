@@ -8,7 +8,7 @@ function h = plot_window_boundaries (win, varargin)
 %       figure(2); clf; load_examples; plot(myTimeVec, myRandomSignals1)
 %       plot_window_boundaries([5 10 20 25])
 %       plot_window_boundaries([1 2 3], 'BoundaryType', 'horizontalLines')
-%       plot_window_boundaries([1.5 2 3 3.5], 'BoundaryType', 'verticalBars') TODO
+%       plot_window_boundaries([1.5 2 3 3.5], 'BoundaryType', 'verticalBars')
 %       plot_window_boundaries([5 10 20 25], 'BoundaryType', 'horizontalBars')
 %       plot_window_boundaries([5 10 20 25], 'BoundaryType', 'verticalShades') TODO
 %       plot_window_boundaries([2 3], 'BoundaryType', 'horizontalShades')

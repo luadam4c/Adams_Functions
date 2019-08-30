@@ -23,8 +23,6 @@ function isNum = isnum (x, varargin)
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
 %       cd/match_format_vector_sets.m
-%       cd/plot_horizontal_line.m
-%       cd/plot_vertical_line.m
 
 % File History:
 % 2018-12-28 Created by Adam Lu

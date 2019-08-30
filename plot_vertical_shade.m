@@ -76,7 +76,7 @@ addOptional(iP, 'yLow', yLowDefault);
 addOptional(iP, 'yHigh', yHighDefault);
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'horizontalInstead', horizontalInsteadDefault, ...
+addParameter(iP, 'HorizontalInstead', horizontalInsteadDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'LineStyle', lineStyleDefault, ...
     @(x) all(islinestyle(x, 'ValidateMode', true)));
@@ -87,7 +87,7 @@ parse(iP, varargin{:});
 x = iP.Results.x;
 yLow = iP.Results.yLow;
 yHigh = iP.Results.yHigh;
-horizontalInstead = iP.Results.horizontalInstead;
+horizontalInstead = iP.Results.HorizontalInstead;
 [~, lineStyle] = islinestyle(iP.Results.LineStyle, 'ValidateMode', true);
 colorMap = iP.Results.ColorMap;
 

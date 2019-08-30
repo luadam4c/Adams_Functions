@@ -34,7 +34,6 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       cd/plot_horizontal_line.m
 %       cd/plot_traces.m
 %       cd/plot_vertical_shade.m
 
