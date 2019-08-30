@@ -11,6 +11,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %       cf. match_array_counts.m
 %
 % Example(s):
+%       [a, b] = match_format_vector_sets((2:5)', 1:5)
 %       [a, b] = match_format_vector_sets({1:5, 2:6}, 1:5)
 %       [a, b] = match_format_vector_sets({1:5, [2:6]'}, 1:5)
 %       [a, b] = match_format_vector_sets([[1:5]', [2:6]'], [1:5]')
@@ -74,6 +75,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %       cd/m3ha_plot_individual_traces.m
 %       cd/match_and_combine_vectors.m
 %       cd/plot_vertical_line.m
+%       cd/plot_vertical_shade.m
 %       cd/plot_traces.m
 %       cd/test_difference.m
 %       cd/transform_vectors.m

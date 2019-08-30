@@ -54,6 +54,7 @@ function h = plot_window_boundaries (win, varargin)
 % 
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/force_column_cell.m
 %       cd/force_column_vector.m
 %       cd/islinestyle.m
 %       cd/plot_horizontal_line.m
@@ -136,6 +137,9 @@ colorMap = iP.Results.ColorMap;
 otherArguments = iP.Unmatched;
 
 %% Preparation
+% Initialize output
+h = gobjects;
+
 % Set default line style
 if isempty(lineStyle)
     switch boundaryType
@@ -209,6 +213,33 @@ end
 
 % Force as a column
 win = force_column_vector(win);
+
+% Make sure the number of elements is allowed
+switch boundaryType
+    case {'verticalBars', 'horizontalBars', ...
+            'verticalShades', 'horizontalShades'}
+        if mod(numel(win), 2) ~= 0
+            fprintf(['The number of elements in the ', ...
+                    'first argument must be even!\n']);
+            return
+        end
+    otherwise
+        % Do nothing
+end
+
+% Transform into a cell array
+switch boundaryType
+    case {'verticalShades', 'horizontalShades'}
+        if numel(win) > 2
+            % Reshape as 2 rows
+            win = reshape(win, 2, []);
+
+            % Place into a cell array
+            win = force_column_cell(win);
+        end
+    otherwise
+        % Do nothing
+end
 
 %% Do the job
 % Plot lines

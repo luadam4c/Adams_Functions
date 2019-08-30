@@ -74,6 +74,8 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/plot_protocols.m
 %       cd/plot_struct.m
 %       cd/plot_vertical_line.m
+%       cd/plot_vertical_shade.m
+%       cd/plot_window_boundaries.m
 %       cd/run_neuron.m
 %       cd/save_all_zooms.m
 %       cd/struct2arglist.m

@@ -8,6 +8,7 @@ function h = plot_vertical_shade (varargin)
 %       plot_vertical_shade([10, 20])
 %       plot_vertical_shade(1:5, rand(5, 1), rand(5, 1) + 2)
 %       plot_vertical_shade([1, 2], 'Color', 'Blue')
+%       plot_vertical_shade({[10, 20], [30, 40]})
 %       plot_vertical_shade([1, 2], 'HorizontalInstead', true)
 %
 % Outputs:
@@ -40,8 +41,11 @@ function h = plot_vertical_shade (varargin)
 %                   - Any other parameter-value pair for the fill() function
 %
 % Requires:
+%       cd/argfun.m
 %       cd/decide_on_colormap.m
+%       cd/force_column_cell.m
 %       cd/islinestyle.m
+%       cd/match_format_vector_sets.m
 %       cd/set_default_flag.m
 %       cd/struct2arglist.m
 %
@@ -51,6 +55,7 @@ function h = plot_vertical_shade (varargin)
 
 % File History:
 % 2019-08-27 Created by Adam Lu
+% TODO: Accept cell arrays as inputs
 % 
 
 %% Hard-coded parameters
@@ -98,6 +103,32 @@ otherArguments = struct2arglist(iP.Unmatched);
 %% Preparation
 % Initialize handle
 h = gobjects(1);
+
+% Match the vectors if any input is a cell array
+if iscell(x) || iscell(yLow) || iscell(yHigh)
+    % Force as column cell arrays
+    x = force_column_cell(x);
+
+    % Match formats of vectors
+    [x, yLow] = match_format_vector_sets(x, yLow);
+    [x, yHigh] = match_format_vector_sets(x, yHigh);
+
+    % Plot many vertical shades
+    h = cellfun(@(x, y, z) plot_vertical_shade_helper(x, y, z, ...
+                            horizontalInstead, lineStyle, colorMap, ...
+                            otherArguments), ...
+                x, yLow, yHigh);
+else
+    % Plot one vertical shade
+    h = plot_vertical_shade_helper(x, yLow, yHigh, ...
+        horizontalInstead, lineStyle, colorMap, otherArguments);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function h = plot_vertical_shade_helper(x, yLow, yHigh, ...
+                        horizontalInstead, lineStyle, colorMap, otherArguments)
+%% Plots one vertical shade
 
 % Force as column vectors
 [x, yLow, yHigh] = argfun(@force_column_vector, x, yLow, yHigh);
