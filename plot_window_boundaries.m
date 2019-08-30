@@ -1,5 +1,5 @@
 function h = plot_window_boundaries (win, varargin)
-%% Plots window boundaries as vertical lines
+%% Plots window boundaries as separating lines, duration bars or background shades
 % Usage: h = plot_window_boundaries (win, varargin)
 % Explanation:
 %       TODO
