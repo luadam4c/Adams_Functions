@@ -315,6 +315,7 @@ else
                     'UniformOutput', false);
 end
 
+% TODO: use test_normality.m
 % Apply the Lilliefors test for normality to each group
 [~, pNormLill] = ...
     cellfun(@(x) lillietest(x, 'Alpha', alphaNormality), data);

@@ -44,7 +44,8 @@ function avgValues = compute_weighted_average (values, varargin)
 %       cd/ispositiveintegerscalar.m
 %       cd/match_dimensions.m
 %
-% Used by:    
+% Used by:
+%       cd/test_normality.m
 %       cd/compute_sweep_errors.m
 %
 % Related functions:

@@ -387,6 +387,7 @@ There are 1 MATLAB scripts in this directory:
 - [**struct2sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/struct2sheet.m): Converts a structure array into a table and write it to a spreadsheet
 - [**structs2vecs.m**](https://github.com/blabuva/Adams_Functions/blob/master/structs2vecs.m): Converts a cell array of structs with equal numbers of fields to a column cell array of row vectors or cell arrays
 - [**suptitle.m**](https://github.com/blabuva/Adams_Functions/blob/master/suptitle.m): SUPTITLE puts a title above all subplots.
+- [**test_normality.m**](https://github.com/blabuva/Adams_Functions/blob/master/test_normality.m): Test whether set(s) of values are normally distributed
 - [**test_passive_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/test_passive_fit.m): Tests passive fitting 
 - [**test_var_difference.m**](https://github.com/blabuva/Adams_Functions/blob/master/test_var_difference.m): Tests whether groups are different for each measured variable
 - [**transform_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/transform_vectors.m): Transform vectors by a binary operation

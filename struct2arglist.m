@@ -29,6 +29,7 @@ function argList = struct2arglist (structure, varargin)
 %       cd/plot_grouped_histogram.m
 %       cd/plot_histogram.m
 %       cd/solve_function_at_value.m
+%       cd/test_normality.m
 
 % File History:
 % 2018-12-28 Moved from annotation_in_plot.m
