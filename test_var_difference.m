@@ -70,7 +70,8 @@ function testResults = test_var_difference (dataTable, yVars, xVar, varargin)
 % File History:
 % 2019-01-09 Created by Adam Lu
 % 2019-01-10 Added 'Prefix' as an optional argument
-% TODO: Rename as test_var_difference and pull out a version that will take two vectors as required arguments
+% 2019-09-01 Renamed as test_var_difference 
+% TODO: Pull out test_var_difference_helper.m that will take two vectors as required arguments
 % 
 
 %% Hard-coded parameters
@@ -168,7 +169,7 @@ prefix = force_string_end(prefix, '_', 'OnlyIfNonempty', true);
 %% Perform the appropriate comparison test
 if nParams == 1
     % Perform t test, rank sum test or ANOVA
-    statsStructs = cellfun(@(y) test_difference(xData, y, ...
+    statsStructs = cellfun(@(y) test_var_difference_helper(xData, y, ...
                         uniqueX, groupNames, alphaNormality, ...
                         alphaTest, toDisplay), yData);
 
@@ -258,7 +259,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function statsStruct = test_difference (xData, yData, uniqueX, ...
+function statsStruct = test_var_difference_helper (xData, yData, uniqueX, ...
                                         groupNames, alphaNormality, ...
                                         alphaTest, toDisplay)
 %% Performs the appropriate test based on the normality
