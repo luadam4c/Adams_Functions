@@ -28,6 +28,7 @@ function table = write_timetable (timeTable, varargin)
 %
 % Used by:
 %       cd/compute_population_average.m
+%       cd/plot_measures.m
 
 % File History:
 % 2019-08-27 Created by Adam Lu

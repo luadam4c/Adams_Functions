@@ -166,6 +166,7 @@ function plot_measures (varargin)
 %       cd/renamevars.m
 %       cd/set_default_flag.m
 %       cd/unique_custom.m
+%       cd/write_timetable.m
 %
 % Used by:
 %       cd/clc2_analyze.m
@@ -444,32 +445,34 @@ end
 if plotNormPopAverageFlag
     computeNormPopAverageFlag = true;
 end
+if plotSmoothNormPopAvgFlag
+    computeSmoothNormPopAverageFlag = true;
+end
 if plotByFileFlag || plotByPhaseFlag || computePopAverageFlag
     computeTimeTablesFlag = true;
 end
 if plotNormByFileFlag || plotNormByPhaseFlag || computeNormPopAverageFlag
     computeNormTimeTablesFlag = true;
 end
+if plotSmoothNormByFileFlag || computeSmoothNormPopAverageFlag
+    computeSmoothNormTimeTablesFlag = true;
+end
 if plotNormChevronFlag
     computeNormChevronFlag = true;
 end
-if plotNormByFileFlag || plotNormByPhaseFlag || computeNormTimeTablesFlag
+if computeNormTimeTablesFlag
+    % TODO: redundant
     computeNormTablesFlag = true;
 end
-if plotChevronFlag || computeNormChevronFlag || computeNormTablesFlag
-    computeChevronFlag = true;
-end
-if plotSmoothByFileFlag || plotSmoothNormByFileFlag || plotSmoothNormPopAvgFlag
-    computeSmoothTablesFlag = true;
-end
-if plotSmoothByFileFlag || plotSmoothNormByFileFlag || plotSmoothNormPopAvgFlag
+if plotSmoothByFileFlag || computeSmoothNormTimeTablesFlag
     computeSmoothTimeTablesFlag = true;
 end
-if plotSmoothNormByFileFlag || plotSmoothNormPopAvgFlag
-    computeSmoothNormTimeTablesFlag = true;
+if plotSmoothByFileFlag || computeSmoothTimeTablesFlag
+    computeSmoothTablesFlag = true;
 end
-if plotSmoothNormPopAvgFlag
-    computeSmoothNormPopAverageFlag = true;
+if plotChevronFlag || computeNormChevronFlag || ...
+        computeNormTablesFlag || computeSmoothNormTimeTablesFlag
+    computeChevronFlag = true;
 end
 
 % Decide on the input directory
@@ -528,7 +531,8 @@ fileLabels = extract_fileparts(sliceParamSheets, 'distinct');
 
 % Generate variable labels for normalized plots
 if plotNormByFileFlag || plotNormByPhaseFlag || ...
-        plotNormChevronFlag || plotNormPopAverageFlag
+        plotNormChevronFlag || plotNormPopAverageFlag || ...
+        plotSmoothNormByFileFlag || plotSmoothNormPopAvgFlag
     varLabelsNorm = repmat({'% of baseline'}, size(varLabels));
 end
 
@@ -553,7 +557,7 @@ tableNames = strcat(prefix, '_', varsToPlot);
 % Create paths for spreadsheet files
 [chevronTablePaths, popAvgTablePaths, smoothTablePaths, ...
     normTablePaths, normChevronTablePaths, normPopAvgTablePaths, ...
-    smoothNormTablePaths, smoothNormPopAvgPaths] = ...
+    smoothNormTablePaths, smoothNormPopAvgTablePaths] = ...
     argfun(@(x) fullfile(outFolder, strcat(tableNames, '_', x, '.csv')), ...
             'chevron', 'popAverage', 'smooth', ...
             'normalized', 'normChevron', 'normPopAverage', ...
@@ -564,13 +568,13 @@ tableNames = strcat(prefix, '_', varsToPlot);
     popAvgTablesMatPath, normTimeTablesMatPath, ...
     normalizedChevronTablesMatPath, normalizedPopAvgTablesMatPath, ...
     smoothTablesMatPath, smoothTimeTablesMatPath, ...
-    smoothNormTablesMatPath, smoothNormPopAvgTablesMatPath] = ...
+    smoothNormTimeTablesMatPath, smoothNormPopAvgTablesMatPath] = ...
     argfun(@(x) fullfile(outFolder, [prefix, '_', x, '.mat']), ...
             'measureTables', 'measureTimeTables', 'chevronTables', ...
             'popAvgTables', 'normalizedTimeTables', ...
             'normalizedChevronTables', 'normalizedPopAvgTables', ...
             'smoothTables', 'smoothTimeTables', ...
-            'smoothNormTables', 'smoothNormPopAvgTables');
+            'smoothNormTimeTables', 'smoothNormPopAvgTables');
 
 % Check if output directories exist
 check_dir({outFolder, figFolder});
@@ -658,6 +662,7 @@ if computeChevronFlag
 end
 
 %% Normalize raw data to baseline
+% TODO: Don't need this. Normalize time tables directly?
 if computeNormTablesFlag
     fprintf('Computing normalized tables ...\n');
     normalizedMeasureTables = ...
@@ -674,11 +679,6 @@ if computeNormChevronFlag
                     chevronTables, normChevronTablePaths, 'UniformOutput', false);
 
     save(normalizedChevronTablesMatPath, 'normalizedChevronTables', '-mat');
-end
-
-%% Normalize smoothed data to baseline
-if computeSmoothNormTimeTablesFlag
-    % TODO
 end
 
 %% Convert to timetables
@@ -706,6 +706,16 @@ if computeSmoothTimeTablesFlag
     save(smoothTimeTablesMatPath, 'smoothTimeTables', '-mat');
 end
 
+%% Normalize smoothed data to baseline
+if computeSmoothNormTimeTablesFlag
+    fprintf('Computing smoothed, then normalized tables ...\n');
+    smoothNormTimeTables = ...
+        cellfun(@(x, y, z, w) normalize_to_baseline(x, y, z, w), ...
+                smoothTimeTables, chevronTables, ...
+                varsToPlot, smoothNormTablePaths, ...
+                'UniformOutput', false);
+end
+
 %% Average over slices
 if computePopAverageFlag
     fprintf('Computing population averages ...\n');
@@ -719,7 +729,7 @@ end
 
 %% Average over slices for normalized data
 if computeNormPopAverageFlag
-    fprintf('Computing normalized population averages ...\n');
+    fprintf('Computing population averages of normalized data ...\n');
     normPopAvgTables = cellfun(@(x, y, z) compute_population_average(x, ...
                                             'VarStr', y, 'SheetName', z), ...
                             normTimeTables, varsToPlot, normPopAvgTablePaths, ...
@@ -730,7 +740,14 @@ end
 
 %% Average over slices for smoothed, then normalized data
 if computeSmoothNormPopAverageFlag
-    % TODO
+    fprintf('Computing population averages of smoothed, then normalized data ...\n');
+    smoothNormPopAvgTables = cellfun(@(x, y, z) compute_population_average(x, ...
+                                            'VarStr', y, 'SheetName', z), ...
+                            smoothNormTimeTables, varsToPlot, ...
+                            smoothNormPopAvgTablePaths, ...
+                            'UniformOutput', false);
+
+    save(smoothNormPopAvgTablesMatPath, 'smoothNormPopAvgTables', '-mat');
 end
 
 %% Plot Chevron plots
@@ -846,6 +863,30 @@ if plotSmoothByFileFlag
             tableLabelsSmooth, figNamesSmoothByFile);
 end
 
+if plotSmoothNormByFileFlag
+    close all;
+    tableLabelsSmoothNorm = strcat(tableLabels, ' smoothed, then normalized');
+
+    fprintf(['Plotting each column with a different color, ', ...
+                'data smoothed then normalized ...\n']);
+    cellfun(@(x, y, z, w, v) plot_table(x, 'PlotSeparately', false, ...
+                'PhaseVariables', phaseVars, 'PhaseLabels', phaseStrs, ...
+                'PlotPhaseBoundaries', true, 'PlotPhaseAverages', false, ...
+                'PlotIndSelected', false, 'ColorByPhase', false, ...
+                'PlotAverageWindows', false, ...
+                'NLastOfPhase', nSweepsLastOfPhase, ...
+                'NToAverage', nSweepsToAverage, ...
+                'SelectionMethod', selectionMethod, ...
+                'MaxRange2Mean', maxRange2Mean, ...
+                'PlotType', plotType, ...
+                'VariableNames', strcat(y, '_', fileLabels), ...
+                'ReadoutLabel', z, 'TableLabel', w, ...
+                'PLabel', timeLabel, 'FigName', v, ...
+                'RemoveOutliers', removeOutliersInPlot), ...
+            smoothNormTimeTables, varsToPlot, varLabelsNorm, ...
+            tableLabelsSmoothNorm, figNamesSmoothNormByFile);
+end
+
 %% Plot each phase with a different color
 if plotByPhaseFlag
     close all;
@@ -898,7 +939,7 @@ if plotPopAverageFlag
     figTitlesPopAvg = replace(tableLabels, '_', '\_');
 
     close all;
-    fprintf('Plotting Population Averages ...\n');
+    fprintf('Plotting population averages ...\n');
     cellfun(@(x, y, z, w, v) ...
                 plot_tuning_curve(x.Properties.RowTimes, x{:, [y, '_mean']}, ...
                     'LowerCI', x{:, [y, '_lower95']}, ...
@@ -917,13 +958,13 @@ if plotPopAverageFlag
 
 end
 
-%% Plot normalized population averages
+%% Plot population averages of normalized data
 if plotNormPopAverageFlag
     % Create titles
     figTitlesPopAvg = replace(tableLabels, '_', '\_');
 
     close all;
-    fprintf('Plotting Normalized Population Averages ...\n');
+    fprintf('Plotting population averages of normalized data ...\n');
     cellfun(@(x, y, z, w, v) ...
                 plot_tuning_curve(x.Properties.RowTimes, x{:, [y, '_mean']}, ...
                     'LowerCI', x{:, [y, '_lower95']}, ...
@@ -941,6 +982,29 @@ if plotNormPopAverageFlag
             figTitlesPopAvg, figNamesNormPopAvg);
 end
 
+%% Plot population averages of smoothed, then normalized data 
+if plotSmoothNormPopAvgFlag
+    % Create titles
+    figTitlesPopAvg = replace(tableLabels, '_', '\_');
+
+    close all;
+    fprintf('Plotting population averages of smoothed, then normalized data  ...\n');
+    cellfun(@(x, y, z, w, v) ...
+                plot_tuning_curve(x.Properties.RowTimes, x{:, [y, '_mean']}, ...
+                    'LowerCI', x{:, [y, '_lower95']}, ...
+                    'UpperCI', x{:, [y, '_upper95']}, ...
+                    'PhaseVectors', x{:, 'phaseNumber'}, ...
+                    'PhaseLabels', phaseStrs, ...
+                    'PBoundaryType', 'verticalShade', 'ColorByPhase', false, ...
+                    'PlotPhaseBoundaries', true, 'PlotPhaseAverages', false, ...
+                    'PlotIndSelected', false, 'PlotAverageWindows', true, ...
+                    'ClearFigure', true, ...
+                    'ReadoutLimits', [0, Inf], ...
+                    'PLabel', timeLabel, 'ReadoutLabel', z, ...
+                    'FigTitle', w, 'FigName', v), ...
+            smoothNormPopAvgTables, varsToPlot, varLabelsNorm, ...
+            figTitlesPopAvg, figNamesSmoothNormPopAvg);
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function myTable = create_time_rel_to_drugon(myTable, sweepLengthSec)
@@ -1091,7 +1155,11 @@ for idxCol = columnsToNormalize
 end
 
 % Save the table
-writetable(normalizedTable, sheetPath);
+if istimetable(normalizedTable)
+    write_timetable(normalizedTable, sheetPath);
+else
+    writetable(normalizedTable, sheetPath);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

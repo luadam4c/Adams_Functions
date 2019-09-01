@@ -2,7 +2,7 @@ function h = plot_window_boundaries (win, varargin)
 %% Plots window boundaries as separating lines, duration bars or background shades
 % Usage: h = plot_window_boundaries (win, varargin)
 % Explanation:
-%       Plots a vector of window boundaries in potentially many different ways
+%       TODO
 %
 % Example(s):
 %       figure(2); clf; load_examples; plot(myTimeVec, myRandomSignals1)
@@ -278,6 +278,32 @@ end
 %{
 OLD CODE:
 
+yLimits
+yLimitsDefault = [];
+% Set default y value limits
+if isempty(yLimits)
+    yLimits = get(gca, 'YLim');
+end
+addParameter(iP, 'YLimits', yLimitsDefault, ...
+    @(x) isempty(x) || isnumeric(x) && isvector(x) && length(x) == 2);
+yLimits = iP.Results.YLimits;
+
+line(win(1) * ones(1, 2), yLimits, ...
+    'Color', lineColor, 'LineStyle', lineStyle);
+line(win(2) * ones(1, 2), yLimits, ...
+    'Color', lineColor, 'LineStyle', lineStyle);
+
+% Initialize a graphics object handle array
+h = gobjects(2, 1);
+
+h(1) = plot_vertical_line(win(1), 'YLimits', yLimits, ...
+                'Color', lineColor, 'LineStyle', lineStyle, otherArguments);
+h(2) = plot_vertical_line(win(2), 'YLimits', yLimits, ...
+                'Color', lineColor, 'LineStyle', lineStyle, otherArguments);
+
+h = arrayfun(@(x) plot_vertical_line(x, 'YLimits', yLimits, ...
+                'Color', lineColor, 'LineStyle', lineStyle, otherArguments), ...
+            win);
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
