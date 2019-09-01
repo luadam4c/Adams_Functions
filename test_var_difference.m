@@ -1,6 +1,6 @@
-function testResults = test_difference (dataTable, yVars, xVar, varargin)
+function testResults = test_var_difference (dataTable, yVars, xVar, varargin)
 %% Tests whether groups are different for each measured variable
-% Usage: testResults = test_difference (dataTable, yVars, xVar, varargin)
+% Usage: testResults = test_var_difference (dataTable, yVars, xVar, varargin)
 % Explanation:
 %       TODO
 %
@@ -12,17 +12,17 @@ function testResults = test_difference (dataTable, yVars, xVar, varargin)
 %       grps1 = [2 * ones(n, 1); 1 * ones(n, 1)];
 %       grps2 = [10 * ones(n, 1); -8 * ones(n, 1)];
 %       tble1 = table(data1, data2, data3, grps1, grps2);
-%       testResults1 = test_difference(tble1, 'data1', 'grps1')
-%       testResults2 = test_difference(tble1, {'data1', 'data2', 'data3'}, 'grps2')
-%       testResults3 = test_difference(tble1, {'data1', 'data2'}, {'grps1', 'grps2'})
+%       testResults1 = test_var_difference(tble1, 'data1', 'grps1')
+%       testResults2 = test_var_difference(tble1, {'data1', 'data2', 'data3'}, 'grps2')
+%       testResults3 = test_var_difference(tble1, {'data1', 'data2'}, {'grps1', 'grps2'})
 %       data4 = [randn(n, 1); randn(n, 1); randn(n, 1)];
 %       data5 = [randn(n, 1); randn(n, 1) + 1; randn(n, 1) - 1];
 %       grps4 = [2 * ones(n, 1); -1 * ones(n, 1); 3 * ones(n, 1)];
 %       grps5 = [7 * ones(n, 1); 8 * ones(n, 1); 6 * ones(n, 1)];
 %       tble4 = table(data4, data5, grps4, grps5);
-%       testResults4 = test_difference(tble4, {'data4', 'data5'}, 'grps4')
-%       testResults5 = test_difference(tble4, {'data4', 'data5'}, 'grps5')
-%       testResults6 = test_difference(tble4, {'data4', 'data5'}, {'grps4', 'grps5'})
+%       testResults4 = test_var_difference(tble4, {'data4', 'data5'}, 'grps4')
+%       testResults5 = test_var_difference(tble4, {'data4', 'data5'}, 'grps5')
+%       testResults6 = test_var_difference(tble4, {'data4', 'data5'}, {'grps4', 'grps5'})
 %
 % Outputs:
 %       testResults - a table with each row corresponding to a measured variable
@@ -168,7 +168,7 @@ prefix = force_string_end(prefix, '_', 'OnlyIfNonempty', true);
 %% Perform the appropriate comparison test
 if nParams == 1
     % Perform t test, rank sum test or ANOVA
-    statsStructs = cellfun(@(y) test_for_one_variable(xData, y, ...
+    statsStructs = cellfun(@(y) test_difference(xData, y, ...
                         uniqueX, groupNames, alphaNormality, ...
                         alphaTest, toDisplay), yData);
 
@@ -258,7 +258,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function statsStruct = test_for_one_variable(xData, yData, uniqueX, ...
+function statsStruct = test_difference (xData, yData, uniqueX, ...
                                         groupNames, alphaNormality, ...
                                         alphaTest, toDisplay)
 %% Performs the appropriate test based on the normality

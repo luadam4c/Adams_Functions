@@ -145,7 +145,7 @@ function [bars, fig] = plot_histogram (X, varargin)
 %       cd/isnumericvector.m
 %       cd/remove_outliers.m
 %       cd/save_all_figtypes.m
-%       cd/test_difference.m
+%       cd/test_var_difference.m
 %
 % Used by:    
 %       /home/Matlab/Marks_Functions/paula/Oct2017/zgRasterFigureMaker.m

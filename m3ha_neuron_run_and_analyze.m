@@ -256,7 +256,7 @@ function [errorStruct, hFig, simData] = ...
 %       cd/plot_bar.m
 %       cd/run_neuron.m
 %       cd/save_all_figtypes.m
-%       cd/test_difference.m
+%       cd/test_var_difference.m
 %
 %       cd/save_params.m TODO
 %
@@ -898,7 +898,7 @@ if generateDataFlag
     end
 
     % Test the difference of features between dataType
-    testResults = test_difference(featuresTable, featuresToCompare, 'dataType', ...
+    testResults = test_var_difference(featuresTable, featuresToCompare, 'dataType', ...
                                     'SheetName', testResultsFile, ...
                                     'Prefix', expStr, 'OutFolder', outFolder);
 end

@@ -38,7 +38,7 @@ function strs = convert_to_char (data, varargin)
 %
 % Used by:
 %       cd/create_labels_from_numbers.m
-%       cd/test_difference.m
+%       cd/test_var_difference.m
 
 % File History:
 % 2018-12-27 Created by Adam Lu
