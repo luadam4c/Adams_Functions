@@ -71,6 +71,7 @@ function varargout = all_files (varargin)
 %       cd/plot_all_abfs.m
 %       cd/plot_protocols.m
 %       cd/plot_traces_EEG.m
+%       /home/Matlab/plethRO1/spike2loader.m
 %       
 
 % File History:

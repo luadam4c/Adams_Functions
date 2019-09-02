@@ -82,6 +82,7 @@ function varargout = find_in_strings (cand, strList, varargin)
 %       cd/xolotl_compartment_index.m
 %       cd/ZG_extract_all_IEIs.m
 %       cd/ZG_extract_all_data.m
+%       /home/Matlab/plethRO1/spike2loader.m
 %       /home/Matlab/minEASE/minEASE.m
 %       /home/Matlab/minEASE/combine_eventInfo.m
 %       /home/Matlab/minEASE/extract_from_minEASE_output_filename.m

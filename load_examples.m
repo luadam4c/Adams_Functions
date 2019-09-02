@@ -82,6 +82,11 @@ myStruct.blab = blab;
 myScalarStruct.a = floor(rand(1) * 10);
 myScalarStruct.b = floor(rand(1) * 10);
 
+% Structures of structures
+myStructOfStruct.blab = blab;
+myStructOfStruct.myStruct = myStruct;
+myStructOfStruct.myScalarStruct = myScalarStruct;
+
 % Structure arrays
 myStructArray = [myStruct, myStruct, myStruct];
 for i = 1:10
