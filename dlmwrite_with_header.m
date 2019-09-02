@@ -6,6 +6,7 @@ function dlmwrite_with_header (filename, M, varargin)
 %
 % Example(s):
 %       dlmwrite_with_header('magic3.txt', magic(3));
+%       dlmwrite_with_header('magic3_h.txt', magic(3), 'ColumnHeader', {'A', 'B', 'C'});
 %       dlmwrite_with_header('magic4.csv', magic(4));
 %       dlmwrite_with_header('magic3_tab.txt', magic(3), 'Delimiter', '\t');
 %       dlmwrite_with_header('magic3_p2.txt', magic(3), 'Precision', 2);
@@ -25,18 +26,23 @@ function dlmwrite_with_header (filename, M, varargin)
 %                   - 'ColumnHeader': row header
 %                   must be a string vector or cell array of character vectors
 %                   default == none
+%                   - 'AppendToFile': whether to append to the file
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Used by:    
 %       cd/m3ha_autocorrelogram.m
 %       /home/Matlab/minEASE/minEASE.m
 %       /home/Matlab/minEASE/combine_eventInfo.m
 %       /home/Matlab/minEASE/filter_minEASE_output.m
+%       /home/Matlab/plethRO1/spike2Loader.m
 %       /media/adamX/m3ha/data_dclamp/initial_slopes.m
 %
 % File History:
 % 2017-07-24 Moved from examine_gapfree_events
 % 2019-09-02 Renamed csvwrite_with_header -> dlmwrite_with_header.m
 % 2019-09-02 Added 'Delimiter' and 'Precision' as optional arguments
+% 2019-09-02 Added 'AppendToFile'
 %
 
 %% Default values for optional arguments
@@ -44,6 +50,7 @@ delimiterDefault = ',';
 precisionDefault = '';      % set later
 rowHeaderDefault = {};
 columnHeaderDefault = {};
+appendToFileDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -77,6 +84,8 @@ addParameter(iP, 'ColumnHeader', columnHeaderDefault, ...
     @(x) assert(iscell(x) || isstring(x) || iscellstr(x), ...
                 ['Second input must be a cell array ', ...
                 'of strings or character arrays!']));
+addParameter(iP, 'AppendToFile', appendToFileDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, filename, M, varargin{:});
@@ -84,6 +93,7 @@ delimiter = iP.Results.Delimiter;               % Examples: ',' '\t'
 precision = iP.Results.Precision;
 rowHeader = iP.Results.RowHeader;
 columnHeader = iP.Results.ColumnHeader;
+appendToFile = iP.Results.AppendToFile;             % appendToFile is true/false
 
 %% Preparation
 % Decide on the precision
@@ -91,7 +101,11 @@ precision = decide_on_precision(precision);
 
 %% Do the job
 % Open file for writing
-fid = fopen(filename, 'w');
+if appendToFile
+    fid = fopen(filename, 'a');
+else
+    fid = fopen(filename, 'w');
+end
 
 % Print header
 if ~isempty(columnHeader)

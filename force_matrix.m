@@ -60,6 +60,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/plot_tuning_curve.m
 %       cd/transform_vectors.m
 %       cd/vecfun.m
+%       /home/Matlab/plethRO1/spike2Loader.m
 
 % File History:
 % 2019-01-03 Created by Adam Lu
