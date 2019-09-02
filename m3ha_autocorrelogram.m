@@ -420,7 +420,7 @@ rowheader = cell(1,length(pchnames));
 for i = 1:length(pchnames)
     rowheader{i} = [pchnames{i} '_' num2str(pchvalues(i))];
 end
-csvwrite_with_header(fullfile(infolder, 'oscillatoryPeriodIndex.csv'), [oscillatoryPeriodMat oscillatoryIndexMat], 'RowHeader', rowheader, 'ColumnHeader', colheader)
+dlmwrite_with_header(fullfile(infolder, 'oscillatoryPeriodIndex.csv'), [oscillatoryPeriodMat oscillatoryIndexMat], 'RowHeader', rowheader, 'ColumnHeader', colheader)
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,27 +1,28 @@
-function [fieldValues, fieldNames] = all_fields (myStruct, varargin)
+function fieldsTable = all_fields (inStruct, varargin)
 %% Get all field values and names of a structure that satisfies specific conditions in cell arrays
-% Usage: [fieldValues, fieldNames] = all_fields (myStruct, varargin)
+% Usage: fieldsTable = all_fields (inStruct, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
 %       load_examples;
-%       [v, n] = all_fields(blab)
-%       [v, n] = all_fields(myStruct)
-%       [v, n] = all_fields(myStruct, 'ValueFunc', @isnumeric)
-%       [v, n] = all_fields(myStruct, 'ValueFunc', @islogical)
-%       [v, n] = all_fields(myStruct, 'ValueFunc', @isnum)
-%       [v, n] = all_fields(myStruct, 'ValueFunc', @istext)
-%       [v, n] = all_fields(myScalarStruct)
+%       all_fields(blab)
+%       all_fields(myStruct)
+%       all_fields(myStruct, 'ValueFunc', @isnumeric)
+%       all_fields(myStruct, 'ValueFunc', @islogical)
+%       all_fields(myStruct, 'ValueFunc', @isnum)
+%       all_fields(myStruct, 'ValueFunc', @istext)
+%       all_fields(myScalarStruct)
 %
 % Outputs:
-%       fieldValues - the field values selected
-%                   specified as a column cell array
-%       fieldNames  - the field names selected
+%       fieldsTable - a table with columns:
+%                       Name        - the names of selected fields
+%                       Value       - the values of selected fields
+%                       IndexOrig   - the original index of selected fields
 %                   specified as a column cell array
 %
 % Arguments:
-%       myStruct    - a structure with fieldValues
+%       inStruct    - a structure with fieldsTable
 %                   must be a scalar structure
 %       varargin    - 'ValueFunc': a function that takes the field value
 %                           as the sole argument and a boolean as an output
@@ -33,6 +34,7 @@ function [fieldValues, fieldNames] = all_fields (myStruct, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       /home/Matlab/plethRO1/spike2loader.m
 
 % File History:
 % 2019-09-02 Created by Adam Lu
@@ -59,7 +61,7 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'myStruct', ...
+addRequired(iP, 'inStruct', ...
     @(x) validateattributes(x, {'struct'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
@@ -67,16 +69,16 @@ addParameter(iP, 'ValueFunc', valueFuncDefault, ...
     @(x) validateattributes(x, {'function_handle'}, {'2d'}));
 
 % Read from the Input Parser
-parse(iP, myStruct, varargin{:});
+parse(iP, inStruct, varargin{:});
 valueFunc = iP.Results.ValueFunc;
 
 %% Do the job
 % Get all the field names
-allFieldNames = fieldnames(myStruct);
+allFieldNames = fieldnames(inStruct);
 
 % Decide on whether to select the field based on the value
 if ~isempty(valueFunc)
-    toSelect = cellfun(@(x) valueFunc(myStruct.(x)), allFieldNames);
+    toSelect = cellfun(@(x) valueFunc(inStruct.(x)), allFieldNames);
 else
     toSelect = true(size(allFieldNames));
 end
@@ -85,7 +87,15 @@ end
 fieldNames = allFieldNames(toSelect);
 
 % Get all the field values
-fieldValues = cellfun(@(x) myStruct.(x), fieldNames, 'UniformOutput', false);
+fieldValues = cellfun(@(x) inStruct.(x), fieldNames, 'UniformOutput', false);
+
+% Return original indices
+indOriginal = find(toSelect);
+
+%% Output
+% Place in a table
+fieldsTable = table(fieldNames, fieldValues, indOriginal, ...
+                    'VariableNames', {'Name', 'Value', 'IndexOrig'});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
