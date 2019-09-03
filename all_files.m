@@ -3,10 +3,12 @@ function varargout = all_files (varargin)
 % Usage: [files, fullPaths] = all_files (varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       [files, fullPaths] = all_files;
 %       [files, fullPaths] = all_files('SortBy', 'date');
 %       [files, fullPaths] = all_files('Recursive', true);
+%
 % Outputs:
 %       files       - file structure(s) for the files
 %                   specified as a structure array with fields:

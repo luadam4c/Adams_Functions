@@ -3,12 +3,16 @@ function string = print_cellstr (cellStr, varargin)
 % Usage: string = print_cellstr (cellStr, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Side Effects:
 %       Prints to standard output or a file with given FileID
+%
 % Outputs:
 %       string      - a character array that includes elements of a cell array
+%
 % Arguments:
 %       cellStr   - a cell array of character arrays to be printed
 %                       or a character array
@@ -48,6 +52,7 @@ function string = print_cellstr (cellStr, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/atfwrite.m
 %       cd/compute_sampsizepwr.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_parse_mat.m
@@ -56,7 +61,7 @@ function string = print_cellstr (cellStr, varargin)
 %       cd/print_or_show_message.m
 %       cd/print_and_show_message.m
 %       cd/print_structure.m
-%
+
 % File History:
 % 2018-01-31 Modified from code in find_data_files.m by Mira
 % 2018-02-01 AL - Modified descriptions

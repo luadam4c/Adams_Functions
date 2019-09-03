@@ -55,6 +55,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %       cd/match_reciprocals.m
 %
 % Used by:
+%       cd/atfwrite.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/create_average_time_vector.m

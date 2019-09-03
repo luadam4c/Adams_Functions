@@ -3,12 +3,14 @@ function labels = create_labels_from_numbers (numbers, varargin)
 % Usage: labels = create_labels_from_numbers (numbers, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       labels = create_labels_from_numbers([3, 7, 5])
 %       labels = create_labels_from_numbers(1:3, 'Suffix', ' Mississippi')
 %       labels = create_labels_from_numbers(1:3, 'Prefix', 'Husband #')
 %       labels = create_labels_from_numbers(1:3, 'Prefix', 'Katie ')
 %       labels = create_labels_from_numbers(1:3, 'Prefix', 'Make ', 'Suffix', ' Wish')
+%
 % Outputs:
 %       labels     - labels created
 %                   specified as a cell array of character vectors
@@ -33,6 +35,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/convert_to_char.m
 %
 % Used by:
+%       cd/atfwrite.m
 %       cd/combine_variables_across_tables.m
 %       cd/compute_all_pulse_responses.m
 %       cd/create_default_grouping.m
