@@ -165,6 +165,7 @@ There are 1 MATLAB scripts in this directory:
 - [**extract_common_suffix.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_common_suffix.m): Extracts the common suffix of a cell array of strings
 - [**extract_distinct_fileparts.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_distinct_fileparts.m): Extracts distinct file parts (removes common parent directory, common prefix and common suffix)
 - [**extract_elements.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_elements.m): Extracts elements from vectors using a certain mode ('first', 'last', 'min', 'max')
+- [**extract_fields.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fields.m): Extracts field(s) from an array of structures or a cell array of structures
 - [**extract_fileparts.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fileparts.m): Extracts directories, bases, extensions, distinct parts or the common directory from file paths, treating any path without an extension as a directory
 - [**extract_fullpaths.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fullpaths.m): Extracts full paths from a files structure array
 - [**extract_subvectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_subvectors.m): Extracts subvectors from vectors, given either endpoints, value windows or a certain align mode ('leftAdjust', 'rightAdjust')

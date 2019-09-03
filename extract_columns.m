@@ -4,6 +4,7 @@ function varargout = extract_columns (arrays, varargin)
 % Explanation:
 %       TODO
 %       By default, cell arrays are not considered as arrays
+%
 % Example(s):
 %       [a, b] = extract_columns({magic(3); ones(4)}, [1:3])
 %       [a, b] = extract_columns({magic(3); ones(3); zeros(4)}, ...
@@ -17,6 +18,7 @@ function varargout = extract_columns (arrays, varargin)
 %                   specified as a column vector 
 %                       or a cell array of column vectors
 %                       or a cell array of cell arrays of column vectors
+%
 % Arguments:    
 %       arrays      - arrays to extract columns from
 %       colNums     - (opt) column number(s) to extract instead of 1, 2, 3, ...

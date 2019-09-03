@@ -61,6 +61,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/create_average_time_vector.m
 %       cd/create_indices.m
 %       cd/extract_columns.m
+%       cd/extract_fields.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/find_pulse_endpoints.m
 %       cd/force_row_cell.m
