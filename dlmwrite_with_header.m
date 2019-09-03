@@ -43,6 +43,9 @@ function dlmwrite_with_header (filename, M, varargin)
 % 2019-09-02 Renamed csvwrite_with_header -> dlmwrite_with_header.m
 % 2019-09-02 Added 'Delimiter' and 'Precision' as optional arguments
 % 2019-09-02 Added 'AppendToFile'
+% TODO: Rename as dlmwrite_custom
+% TODO: Use dlmwrite.m with the '-append' option and '%g' precision mode by default
+% TODO: Use print_cellstr.m
 %
 
 %% Default values for optional arguments
@@ -173,7 +176,7 @@ fclose(fid);
 function precision = decide_on_precision(precision)
 
 if isempty(precision)
-    precision = '%.5g';
+    precision = '%g';
 elseif isnumeric(precision)
     precision = ['%.', num2str(precision), 'g'];
 else
