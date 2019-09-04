@@ -128,8 +128,8 @@ validAlignMethods = {'leftAdjust', 'rightAdjust', ...
 %% Default values for optional arguments
 indicesDefault = [];            % set later
 endPointsDefault = [];          % set later
-indexEndDefault = [];           % set later
 indexStartDefault = [];         % set later
+indexEndDefault = [];           % set later
 maxNumDefault = Inf;            % no limit by default
 windowsDefault = [];            % extract entire trace(s) by default
 alignMethodDefault  = 'none';   % no alignment/truncation by default
