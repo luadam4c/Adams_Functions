@@ -76,7 +76,6 @@ figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
 
 % Keep unmatched arguments for the subplot() function
-otherArguments = iP.Unmatched;
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
@@ -84,9 +83,6 @@ otherArguments = struct2arglist(iP.Unmatched);
 fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber);
 
 %% Compute
-% Count the number of subplots
-nSubPlots = nRows * nColumns;
-
 % Compute the horizontal expansion factor
 horizontalExpandFactor = (nColumns - (nColumns - 1) * horizontalDeadSpace);
 
@@ -139,6 +135,9 @@ end
 
 %{
 OLD CODE:
+
+% Count the number of subplots
+nSubPlots = nRows * nColumns;
 
 %}
 

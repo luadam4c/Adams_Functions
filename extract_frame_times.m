@@ -65,7 +65,7 @@ otherArguments = struct2arglist(iP.Unmatched);
 
 %% Prepration
 % Decide on the video object
-vidObj = decide_on_video_object(videoPathOrObj);
+vidObj = decide_on_video_object(videoPathOrObj, otherArguments{:});
 
 %% Do the job
 % Initialize a frame count

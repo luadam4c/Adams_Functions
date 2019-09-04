@@ -21,12 +21,12 @@ function frames = read_all_frames (videoPathOrObj, varargin)
 %                   - Any other parameter-value pair for VideoReader()
 %
 % Requires:
+%       cd/create_empty_frame.m
 %       cd/create_error_for_nargin.m
 %       cd/decide_on_video_object.m
 %       cd/struct2arglist.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
 
 % File History:
 % 2019-09-04 Adapted from https://www.mathworks.com/help/matlab/import_export/read-video-files.html
@@ -65,12 +65,25 @@ otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Decide on the video object
-vidObj = decide_on_video_object(videoPathOrObj);
+vidObj = decide_on_video_object(videoPathOrObj, otherArguments{:});
 
 %% Do the job
 % Read the height and width of the video object
 vidHeight = vidObj.Height;
 vidWidth = vidObj.Width;
+
+% Initialize the MATLAB movie frame structure array
+frames = create_empty_frame(vidHeight, vidWidth);
+
+% Read one frame at a time until the end of the video is reached
+count = 0;
+while hasFrame(vidObj)
+    % Increment frame count
+    count = count + 1;
+
+    % Read in the frame data
+    frames(count, 1).cdata = readFrame(vidObj);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
