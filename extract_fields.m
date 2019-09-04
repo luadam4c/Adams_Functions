@@ -18,6 +18,10 @@ function varargout = extract_fields (structs, varargin)
 % Arguments:
 %       structs     - structures to extract from
 %                   must be a struct array or a cell array
+%       fieldNames  - (opt) name(s) of field(s) to extract
+%                   must be a character vector, a string array 
+%                       or a cell array of character vectors
+%                   default == all fields
 %       varargin    - 'UniformOutput': whether the output is not a cell array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -27,16 +31,14 @@ function varargout = extract_fields (structs, varargin)
 %       cd/force_column_cell.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       /home/Matlab/plethRO1/spike2loader.m
 
 % File History:
 % 2019-09-03 Created by Adam Lu
-% TODO: uniformOutput
 % TODO: OutputMode
 % 
 
 %% Hard-coded parameters
-uniformOutput = false;
 
 %% Default values for optional arguments
 fieldNamesDefault = '';             % set later
@@ -86,13 +88,24 @@ end
 
 %% Do the job
 if iscell(structs)
-    varargout = cellfun(@(y) cellfun(@(x) x.(y), structs, ...
+    varargout = cellfun(@(y) cellfun(@(x) get_field(x, y), structs, ...
                                 'UniformOutput', uniformOutput), ...
                         fieldNames, 'UniformOutput', false);
 else
-    varargout = cellfun(@(y) arrayfun(@(x) x.(y), structs, ...
+    varargout = cellfun(@(y) arrayfun(@(x) get_field(x, y), structs, ...
                                 'UniformOutput', uniformOutput), ...
                         fieldNames, 'UniformOutput', false);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function field = get_field (myStruct, fieldName)
+
+% Get the field or return NaN
+if isfield(myStruct, fieldName)
+    field = myStruct.(fieldName);
+else
+    field = NaN;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

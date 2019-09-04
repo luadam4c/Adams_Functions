@@ -123,6 +123,7 @@ There are 1 MATLAB scripts in this directory:
 - [**copyvars.m**](https://github.com/blabuva/Adams_Functions/blob/master/copyvars.m): Copies variable 1 of a table to variable 2 of the same table
 - [**correct_unbalanced_bridge.m**](https://github.com/blabuva/Adams_Functions/blob/master/correct_unbalanced_bridge.m): Shifts a current pulse response to correct the unbalanced bridge
 - [**count_A_each_C.m**](https://github.com/blabuva/Adams_Functions/blob/master/count_A_each_C.m): Counts the number of (A)s in each (C) based on the number of (A)s in each (B) and the number of (B)s in each (C)
+- [**count_frames.m**](https://github.com/blabuva/Adams_Functions/blob/master/count_frames.m): Count the number of frames in a video file
 - [**count_samples.m**](https://github.com/blabuva/Adams_Functions/blob/master/count_samples.m): Counts the number of samples whether given an array or a cell array
 - [**count_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/count_vectors.m): Counts the number of vectors whether given an array or a cell array
 - [**create_average_time_vector.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_average_time_vector.m): Creates an average time vector from a set of time vectors
