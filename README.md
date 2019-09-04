@@ -151,6 +151,7 @@ There are 1 MATLAB scripts in this directory:
 - [**create_waveform_train.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_waveform_train.m): Creates a waveform train from a waveform, a frequency, and a total duration
 - [**crosscorr_profile.m**](https://github.com/blabuva/Adams_Functions/blob/master/crosscorr_profile.m): data: each channel is a column
 - [**decide_on_colormap.m**](https://github.com/blabuva/Adams_Functions/blob/master/decide_on_colormap.m): Decides on the color map to use
+- [**decide_on_video_object.m**](https://github.com/blabuva/Adams_Functions/blob/master/decide_on_video_object.m): Decide on the video object given path or object
 - [**detect_spikes_multiunit.m**](https://github.com/blabuva/Adams_Functions/blob/master/detect_spikes_multiunit.m): Detects spikes from a multiunit recording
 - [**distribute_balls_into_boxes.m**](https://github.com/blabuva/Adams_Functions/blob/master/distribute_balls_into_boxes.m): Returns the ways and number of ways to distribute identical/discrete balls into identical/discrete boxes
 - [**dlmwrite_with_header.m**](https://github.com/blabuva/Adams_Functions/blob/master/dlmwrite_with_header.m): Write a comma-separated value file with given header
@@ -168,6 +169,7 @@ There are 1 MATLAB scripts in this directory:
 - [**extract_elements.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_elements.m): Extracts elements from vectors using a certain mode ('first', 'last', 'min', 'max')
 - [**extract_fields.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fields.m): Extracts field(s) from an array of structures or a cell array of structures
 - [**extract_fileparts.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fileparts.m): Extracts directories, bases, extensions, distinct parts or the common directory from file paths, treating any path without an extension as a directory
+- [**extract_frame_times.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_frame_times.m): Extracts all the frame start times in a video file
 - [**extract_fullpaths.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fullpaths.m): Extracts full paths from a files structure array
 - [**extract_subvectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_subvectors.m): Extracts subvectors from vectors, given either endpoints, value windows or a certain align mode ('leftAdjust', 'rightAdjust')
 - [**files2contents.m**](https://github.com/blabuva/Adams_Functions/blob/master/files2contents.m): Replaces file names with file contents in a cell array of strings
@@ -366,6 +368,7 @@ There are 1 MATLAB scripts in this directory:
 - [**print_or_show_message.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_or_show_message.m): Either print a message in standard output or show a message box
 - [**print_structure.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_structure.m): Display all fields of a structure recursively
 - [**read_adicht.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_adicht.m): Reads in a .adicht file (from LabChart)
+- [**read_all_frames.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_all_frames.m): Reads all frames from a video file
 - [**read_swd_sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_swd_sheet.m): Read in an SWD table from a spreadsheet file
 - [**read_timetable.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_timetable.m): Reads a time table from a spreadsheet file
 - [**relative_std.m**](https://github.com/blabuva/Adams_Functions/blob/master/relative_std.m): Computes the relative standard deviation (%)

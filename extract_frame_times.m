@@ -1,15 +1,15 @@
-function nFrames = count_frames (videoPathOrObj, varargin)
-%% Count the number of frames in a video file
-% Usage: nFrames = count_frames (videoPathOrObj, varargin)
+function frameTimes = extract_frame_times (videoPathOrObj, varargin)
+%% Extracts all the frame start times in a video file
+% Usage: frameTimes = extract_frame_times (videoPathOrObj, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       count_frames('xylophone.mp4')
+%       extract_frame_times('xylophone.mp4')
 %
 % Outputs:
-%       nFrames     - number of frames in the video
-%                   specified as a positive integer
+%       frameTimes  - all the frame times
+%                   specified as a numeric vector
 %
 % Arguments:
 %       videoPathOrObj  - path to video file or the VideoReader object
@@ -29,7 +29,7 @@ function nFrames = count_frames (videoPathOrObj, varargin)
 %       /TODO:dir/TODO:file
 
 % File History:
-% 2019-09-03 Created by Adam Lu
+% 2019-09-04 Created by Adam Lu
 % 
 
 %% Hard-coded parameters
@@ -68,16 +68,22 @@ otherArguments = struct2arglist(iP.Unmatched);
 vidObj = decide_on_video_object(videoPathOrObj);
 
 %% Do the job
-% Initialize the number of frames
-nFrames = 0;
+% Initialize a frame count
+count = 0;
 
-% Increment the frame count
+% Initialize frame times
+frameTimes = [];
+
+% Record all times
 while hasFrame(vidObj)
-    % Read a frame and throw it away
-    readFrame(vidObj);
-
     % Increment the frame count
-    nFrames = nFrames + 1;
+    count = count + 1;
+
+    % Read the time of this frame
+    frameTimes(count, 1) = vidObj.CurrentTime;
+
+    % Read this frame and throw it away
+    readFrame(vidObj);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

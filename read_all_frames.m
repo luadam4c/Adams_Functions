@@ -1,15 +1,15 @@
-function nFrames = count_frames (videoPathOrObj, varargin)
-%% Count the number of frames in a video file
-% Usage: nFrames = count_frames (videoPathOrObj, varargin)
+function frames = read_all_frames (videoPathOrObj, varargin)
+%% Reads all frames from a video file
+% Usage: frames = read_all_frames (videoPathOrObj, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       count_frames('xylophone.mp4')
+%       frames = read_all_frames('xylophone.mp4')
 %
 % Outputs:
-%       nFrames     - number of frames in the video
-%                   specified as a positive integer
+%       frames      - all the frames
+%                   specified as a numeric vector
 %
 % Arguments:
 %       videoPathOrObj  - path to video file or the VideoReader object
@@ -29,7 +29,7 @@ function nFrames = count_frames (videoPathOrObj, varargin)
 %       /TODO:dir/TODO:file
 
 % File History:
-% 2019-09-03 Created by Adam Lu
+% 2019-09-04 Adapted from https://www.mathworks.com/help/matlab/import_export/read-video-files.html
 % 
 
 %% Hard-coded parameters
@@ -63,22 +63,14 @@ parse(iP, videoPathOrObj, varargin{:});
 % Keep unmatched arguments for the VideoReader() function
 otherArguments = struct2arglist(iP.Unmatched);
 
-%% Prepration
+%% Preparation
 % Decide on the video object
 vidObj = decide_on_video_object(videoPathOrObj);
 
 %% Do the job
-% Initialize the number of frames
-nFrames = 0;
-
-% Increment the frame count
-while hasFrame(vidObj)
-    % Read a frame and throw it away
-    readFrame(vidObj);
-
-    % Increment the frame count
-    nFrames = nFrames + 1;
-end
+% Read the height and width of the video object
+vidHeight = vidObj.Height;
+vidWidth = vidObj.Width;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
