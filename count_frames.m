@@ -1,46 +1,46 @@
-function nFrames = count_frames (videoPath, varargin)
+function nFrames = count_frames (videoPathOrObj, varargin)
 %% Count the number of frames in a video file
-% Usage: nFrames = count_frames (videoPath, varargin)
+% Usage: nFrames = count_frames (videoPathOrObj, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       TODO
+%       count_frames('xylophone.mp4')
 %
 % Outputs:
-%       nFrames     - TODO: Description of nFrames
-%                   specified as a TODO
+%       nFrames     - number of frames in the video
+%                   specified as a positive integer
 %
 % Arguments:
-%       videoPath     - TODO: Description of videoPath
-%                   must be a TODO
+%       videoPathOrObj  - path to video file or the VideoReader object
+%                       must be a string scalar or a character vector or
+%                           a VideoReader object
 %       varargin    - 'param1': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
-%                   - Any other parameter-value pair for the TODO() function
+%                   - Any other parameter-value pair for VideoReader()
 %
 % Requires:
-%       ~/Adams_Functions/create_error_for_nargin.m
-%       ~/Adams_Functions/struct2arglist.m
-%       /TODO:dir/TODO:file
+%       cd/create_error_for_nargin.m
+%       cd/struct2arglist.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
 
 % File History:
-% 201X-XX-XX Created by TODO or Adapted from TODO
+% 2019-09-04 Created by Adam Lu
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-param1Default = [];             % default TODO: Description of param1
+% param1Default = [];             % default TODO: Description of param1
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 1    % TODO: 1 might need to be changed
+if nargin < 1
     error(create_error_for_nargin(mfilename));
 end
 
@@ -50,28 +50,28 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'videoPath');
+addRequired(iP, 'videoPathOrObj');
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'param1', param1Default);
+% addParameter(iP, 'param1', param1Default);
 
 % Read from the Input Parser
-parse(iP, videoPath, varargin{:});
-param1 = iP.Results.param1;
+parse(iP, videoPathOrObj, varargin{:});
+% param1 = iP.Results.param1;
 
-% Keep unmatched arguments for the TODO() function
+% Keep unmatched arguments for the VideoReader() function
 otherArguments = struct2arglist(iP.Unmatched);
 
-% Check relationships between arguments
-% TODO
-
-%% Preparation
-% TODO
+%% Prepration
+if isa(videoPathOrObj, 'VideoReader')
+    % The object is already passed in
+    vidObj = videoPathOrObj;
+else
+    % Create a video object from the video file
+    vidObj = VideoReader(videoPathOrObj, otherArguments{:});
+end
 
 %% Do the job
-% Create a video object from the video file
-vidObj = VideoReader(videoPath);
-
 % Initialize the number of frames
 nFrames = 0;
 
@@ -83,9 +83,6 @@ while hasFrame(vidObj)
     % Increment the frame count
     nFrames = nFrames + 1;
 end
-    
-%% Output results
-% TODO
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
