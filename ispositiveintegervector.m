@@ -24,6 +24,7 @@ function isPositiveIntegerVector = ispositiveintegervector (x)
 %       cd/match_time_info.m
 %       cd/m3ha_select_cells.m
 %       cd/plot_struct.m
+%       cd/set_axes_properties.m
 
 % File History:
 % 2018-10-24 Created by Adam Lu

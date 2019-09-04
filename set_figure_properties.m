@@ -6,6 +6,8 @@ function fig = set_figure_properties (varargin)
 %
 % Example(s):
 %       fig = set_figure_properties;
+%       fig = set_figure_properties('Width', 200);
+%       fig = set_figure_properties('Height', 300);
 %       fig = set_figure_properties('FigExpansion', 2);
 %
 % Outputs:
@@ -21,6 +23,15 @@ function fig = set_figure_properties (varargin)
 %                   - 'FigExpansion': expansion factor for figure position
 %                   must be a positive scalar
 %                   default == []
+%                   - 'Position': figure position
+%                   must be a 4-element positive integer vector
+%                   default == get(0, 'defaultfigureposition')
+%                   - 'Width': figure width
+%                   must be a positive scalar
+%                   default == get(0, 'defaultfigureposition') (3)
+%                   - 'Height': figure height
+%                   must be a positive scalar
+%                   default == get(0, 'defaultfigureposition') (4)
 %                   - Any other parameter-value pair for the figure() function
 %
 % Requires:
@@ -30,6 +41,7 @@ function fig = set_figure_properties (varargin)
 % Used by:
 %       cd/create_subplots.m
 %       cd/plot_bar.m
+%       cd/plot_frame.m
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
 
@@ -38,6 +50,7 @@ function fig = set_figure_properties (varargin)
 % 2019-08-23 Added 'FigExpansion' as an optional argument
 % 2019-08-23 Renamed decide_on_fig_handle.m to set_figure_properties.m
 % 2019-08-24 Now uses the default figure position
+% 2019-09-04 Added 'Height', 'Width', 'Position' as optional arguments
 % 
 
 %% Hard-coded parameters
@@ -46,6 +59,9 @@ function fig = set_figure_properties (varargin)
 figHandleDefault = [];          % no existing figure by default
 figNumberDefault = [];          % no figure number by default
 figExpansionDefault = [];       % no figure expansion by default
+positionDefault = [];           % set later
+widthDefault = [];              % set later
+heightDefault = [];             % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -61,45 +77,68 @@ addParameter(iP, 'FigNumber', figNumberDefault, ...
                 'FigNumber must be a empty or a positive integer scalar!'));
 addParameter(iP, 'FigExpansion', figExpansionDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive'}));
+addParameter(iP, 'Position', positionDefault, ...
+    @(x) assert(isempty(x) || isnumericvector(x), ...
+                'Position must be a empty or a numeric vector!'));
+addParameter(iP, 'Width', widthDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive'}));
+addParameter(iP, 'Height', heightDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
 figExpansion = iP.Results.FigExpansion;
+position = iP.Results.Position;
+width = iP.Results.Width;
+height = iP.Results.Height;
 
 % Keep unmatched arguments for the figure() function
 otherArguments = struct2arglist(iP.Unmatched);
+
+%% Preparation
+% Set default figure position
+if isempty(position)
+    position = get(0, 'defaultfigureposition');
+
+    % Modify figure position if requested
+    if ~isempty(width)
+        position(3) = width;
+    end
+    if ~isempty(height)
+        position(4) = height;
+    end
+end
 
 %% Do the job
 % Decide on the figure handle
 if ~isempty(figHandle)
     % Use the given figure
-    fig = figure(figHandle, otherArguments{:});
+    fig = figure(figHandle, 'Position', position, otherArguments{:});
 elseif ~isempty(figNumber)
     % Create and clear a new figure with given figure number
-    fig = figure(figNumber, otherArguments{:});
+    fig = figure(figNumber, 'Position', position, otherArguments{:});
+
+    % TODO: Make optional argument with different defaults
     clf(fig);
 else
     % Get the current figure or create one if non-existent
     fig = gcf;
+
+    % Set Figure object properties
+    set(fig, 'Position', position, otherArguments{:});
 end
 
-% Expand the figure position if requested
+% Expand figure position if requested
 if ~isempty(figExpansion)
-    fig = expand_figure_position(fig, figExpansion);
+    fig = expand_figure_position(fig, figExpansion, position);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function fig = expand_figure_position (fig, expansionFactor)
+function fig = expand_figure_position (fig, expansionFactor, positionOld)
 %% Expands or shrinks the figure position
-
-% Get the old figure position
-% positionOld = get(fig, 'Position');
-
-% Get default figure position
-positionOld = get(0, 'defaultfigureposition');
 
 % Initialize as old position
 positionNew = positionOld;

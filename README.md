@@ -325,6 +325,7 @@ There are 1 MATLAB scripts in this directory:
 - [**parse_stim.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_stim.m): Detects the index and time of stimulation start from pulse vectors
 - [**parse_xolotl_object.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_xolotl_object.m): Parses a xolotl object
 - [**piecelinspace.m**](https://github.com/blabuva/Adams_Functions/blob/master/piecelinspace.m): Generates a piece-wise linear row vector from nodes and number of points
+- [**play_frames.m**](https://github.com/blabuva/Adams_Functions/blob/master/play_frames.m): TODO: A summary of what the function does (must be a single unbreaked line)
 - [**plot_all_abfs.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_all_abfs.m): Plots all abf files in a directory
 - [**plot_all_GABA_B.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_all_GABA_B.m): plot_all_GABA_B.m
 - [**plot_and_save_boxplot.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_and_save_boxplot.m): Plots a box plot from a grouped vector according to group
@@ -336,6 +337,7 @@ There are 1 MATLAB scripts in this directory:
 - [**plot_ellipse.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_ellipse.m): Plot an ellipse that may be oblique
 - [**plot_error_bar.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_error_bar.m): Plots error bar(s)
 - [**plot_FI.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_FI.m): From a current injection protocol, detect spikes for each sweep and make an F-I plot
+- [**plot_frame.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_frame.m): Plots a specific movie frame
 - [**plot_grouped_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_grouped_histogram.m): Plots a grouped histogram
 - [**plot_grouped_scatter.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_grouped_scatter.m): Plot and save a grouped scatter plot with 95% confidence ellipses
 - [**plot_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_histogram.m): Plots a histogram labelling out of range values differently
@@ -383,6 +385,7 @@ There are 1 MATLAB scripts in this directory:
 - [**save_all_zooms.m**](https://github.com/blabuva/Adams_Functions/blob/master/save_all_zooms.m): Save a figure in various zoom windows
 - [**save_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/save_params.m): Saves parameters to a file
 - [**select_similar_values.m**](https://github.com/blabuva/Adams_Functions/blob/master/select_similar_values.m): Selects values that are within a certain percentage range of the mean
+- [**set_axes_properties.m**](https://github.com/blabuva/Adams_Functions/blob/master/set_axes_properties.m): Decides on the axes handle and sets axes properties
 - [**set_default_flag.m**](https://github.com/blabuva/Adams_Functions/blob/master/set_default_flag.m): Sets the default flag if empty according to an optional auxFlag
 - [**set_fields_zero.m**](https://github.com/blabuva/Adams_Functions/blob/master/set_fields_zero.m): Set each field specified in varargin to zero and store previous values in a new field strcat(field, '_prev')
 - [**set_figure_properties.m**](https://github.com/blabuva/Adams_Functions/blob/master/set_figure_properties.m): Decides on the figure handle and sets figure properties

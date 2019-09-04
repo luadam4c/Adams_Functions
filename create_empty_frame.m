@@ -8,7 +8,7 @@ function frame = create_empty_frame (height, width)
 %       create_empty_frame(3, 2)
 %
 % Outputs:
-%       frame       - empty MATLAB frame, with fields:
+%       frame       - empty MATLAB movie frame structure, with fields:
 %                       cdata    - RGB intensity data
 %                       colormap - color map used
 %                   specified as a structure

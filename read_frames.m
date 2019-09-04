@@ -6,17 +6,21 @@ function [frames, vidObj] = read_frames (videoPathOrObj, varargin)
 %
 % Example(s):
 %       xylo = read_frames('xylophone.mp4')
-%       xylo = read_frames('xylophone.mp4', 'FrameIndex', 3)
-%       xylo = read_frames('xylophone.mp4', 'IndexStart', 3, 'IndexEnd', 5)
-%       xyloThis = read_frames('xylophone.mp4', 'FrameIndex', 60);
-%       figure(1); image(xyloThis.cdata);
+%       xyloSome = read_frames('xylophone.mp4', 'TimeWindow', [0.5, 0.9]);
+%       xyloHead = read_frames('xylophone.mp4', 'TimeStart', 0.5);
+%       xyloTail = read_frames('xylophone.mp4', 'TimeEnd', 0.9);
+%       xylo3 = read_frames('xylophone.mp4', 'FrameIndex', 3)
+%       xylo3to5 = read_frames('xylophone.mp4', 'IndexStart', 3, 'IndexEnd', 5)
+%       xylo60 = read_frames('xylophone.mp4', 'FrameIndex', 60);
+%       figure(1); image(xylo60.cdata);
 %       xyloAll = read_frames('xylophone.mp4');
 %       figure(2); image(xyloAll(60).cdata);
-%       xyloSome = read_frames('xylophone.mp4', 'TimeWindow', [0.5, 0.9]);
 %
 % Outputs:
-%       frames      - all the frames
-%                   specified as a numeric vector
+%       frames      - MATLAB movie frame structures, with fields:
+%                       cdata    - RGB intensity data
+%                       colormap - color map used
+%                   specified as a structure array
 %       vidObj      - VideoReader object
 %                   specified as a VideoReader object
 %
@@ -24,13 +28,16 @@ function [frames, vidObj] = read_frames (videoPathOrObj, varargin)
 %       videoPathOrObj  - path to video file or the VideoReader object
 %                       must be a string scalar or a character vector or
 %                           a VideoReader object
-%       varargin    - 'FrameIndex': frame index to read
+%       varargin    - 'FrameIndex': frame index to read relative to
+%                               time start of the current videoReader object
 %                   must be empty or a numeric vector
 %                   default == read all frames
-%                   - 'IndexStart': first frame index to read
+%                   - 'IndexStart': first frame index to read relative to
+%                               time start of the current videoReader object
 %                   must be empty or a numeric vector
 %                   default == 1
-%                   - 'IndexEnd': last frame index to read
+%                   - 'IndexEnd': last frame index to read relative to
+%                               time start of the current videoReader object
 %                   must be empty or a numeric vector
 %                   default == count_frames(vidObj)
 %                   - 'TimeWindow': time window (in sec) to read the frame

@@ -34,6 +34,7 @@ function isNumericVector = isnumericvector (x)
 %       cd/plot_histogram.m
 %       cd/plot_struct.m
 %       cd/plot_traces.m
+%       cd/set_axes_properties.m
 
 % File History:
 % 2018-10-25 Created by Adam Lu
