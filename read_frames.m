@@ -1,6 +1,6 @@
-function frames = read_frames (videoPathOrObj, varargin)
+function [frames, vidObj] = read_frames (videoPathOrObj, varargin)
 %% Reads all frames from a video file
-% Usage: frames = read_frames (videoPathOrObj, varargin)
+% Usage: [frames, vidObj] = read_frames (videoPathOrObj, varargin)
 % Explanation:
 %       TODO
 %
@@ -17,6 +17,8 @@ function frames = read_frames (videoPathOrObj, varargin)
 % Outputs:
 %       frames      - all the frames
 %                   specified as a numeric vector
+%       vidObj      - VideoReader object
+%                   specified as a VideoReader object
 %
 % Arguments:
 %       videoPathOrObj  - path to video file or the VideoReader object
@@ -116,7 +118,7 @@ otherArguments = struct2arglist(iP.Unmatched);
 vidObj = decide_on_video_object(videoPathOrObj, otherArguments{:});
 
 % Compute the minimum starting time
-minTimeStart = vidObj.CurrentTime;
+minTimeStart = 0;
 
 % Compute the maximum end time
 maxTimeEnd = vidObj.Duration;
@@ -183,7 +185,7 @@ vidWidth = vidObj.Width;
 % Initialize the MATLAB movie frame structure array
 frames = create_empty_frame(vidHeight, vidWidth);
 
-% Initialize the video object at a specific time
+% Initialize the VideoReader object at a specific time
 vidObj.CurrentTime = timeStart;
 
 % Initialize a frame index

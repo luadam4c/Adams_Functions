@@ -71,6 +71,9 @@ vidObj = decide_on_video_object(videoPathOrObj, otherArguments{:});
 % Initialize the number of frames
 nFrames = 0;
 
+% Initialize the VideoReader object at time zero
+vidObj.CurrentTime = 0;
+
 % Increment the frame count
 while hasFrame(vidObj)
     % Read a frame and throw it away

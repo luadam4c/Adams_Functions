@@ -68,6 +68,9 @@ otherArguments = struct2arglist(iP.Unmatched);
 vidObj = decide_on_video_object(videoPathOrObj, otherArguments{:});
 
 %% Do the job
+% Initialize the VideoReader object at time zero
+vidObj.CurrentTime = 0;
+
 % Initialize a frame count
 count = 0;
 
