@@ -54,7 +54,7 @@ function [frames, vidObj] = read_frames (videoPathOrObj, varargin)
 %                   - Any other parameter-value pair for VideoReader()
 %
 % Requires:
-%       cd/create_empty_frame.m
+%       cd/create_empty_frames.m
 %       cd/create_error_for_nargin.m
 %       cd/decide_on_video_object.m
 %       cd/struct2arglist.m
@@ -193,7 +193,7 @@ vidHeight = vidObj.Height;
 vidWidth = vidObj.Width;
 
 % Initialize the MATLAB movie frame structure array
-frames = create_empty_frame(vidHeight, vidWidth);
+frames = create_empty_frames(vidWidth, vidHeight);
 
 % Initialize the VideoReader object at a specific time
 vidObj.CurrentTime = timeStart;

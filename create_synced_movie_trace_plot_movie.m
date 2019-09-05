@@ -8,7 +8,11 @@ function [plotFrames, handles] = create_synced_movie_trace_plot_movie (frames, d
 %       TODO
 %
 % Outputs:
-%       plotFrames  - frames for the plot movie
+%       plotFrames  - frames for the plot movie, with fields
+%                       cdata    - RGB intensity data
+%                       colormap - color map used
+%                       time     - time of the frame in seconds
+%                       duration - duration of frame in seconds
 %                   specified as a structure array
 %
 % Arguments:
@@ -150,20 +154,30 @@ plotFrameTimes = create_time_vectors(nPlotFrames, 'TimeStart', tVec(1), ...
                     'SamplingIntervalSeconds', plotFrameDuration, ...
                     'TimeUnits', 's', 'BoundaryMode', 'leftadjust');
 
-% Get the initial plot frame time
-plotFrameTimeThis = plotFrameTimes(1);
-
-% Compute the first x limits
-xLimitsFirst = plotFrameTimeThis + viewWindowSec * [-1, 1];
-
 %% Do the job
 % Create subplots
 [fig, ax] = create_subplots(2, 1, 'CenterPosition', firstSubplotPosition);
 
+% Get the figure position
+figPosition = get(fig, 'Position');
+
+% Get the figure width and height
+figWidth = figPosition(3);
+figHeight = figPosition(4);
+
+% Initialize plot movie frames
+plotFrames = create_empty_frames(figHeight, figWidth, [nPlotFrames, 1]);
+                
 % Rename the axes
 % Plot the trace on the bottom
 movieSubPlot = ax(1);
 traceSubPlot = ax(2);
+
+% Get the initial plot frame time
+plotFrameTimeThis = plotFrameTimes(1);
+
+% Compute the first x limits
+xLimitsFirst = plotFrameTimeThis + viewWindowSec * 0.5 * [-1, 1];
 
 % TODO: Update plot_traces to use 'AxesHandle' and use it
 % Plot the trace
@@ -193,7 +207,13 @@ handles = plot_frame(frameThis, 'AxesHandle', movieSubPlot);
 im = handles.im;
 
 % Capture this plot frame
-plotFrames(1, 1) = getframe(fig);
+plotFrameThis = getframe(fig);
+
+% Store info in plotFrames array and add time and duration
+plotFrames(1, 1).cdata = plotFrameThis.cdata;
+plotFrames(1, 1).colormap = plotFrameThis.colormap;
+plotFrames(1, 1).time = plotFrameTimeThis;
+plotFrames(1, 1).duration = plotFrameDuration;
 
 % Loop through all frame times
 if nPlotFrames > 1
@@ -202,7 +222,7 @@ if nPlotFrames > 1
         plotFrameTimeThis = plotFrameTimes(iPlotFrame);
 
         % Update the zoom window
-        set(traceSubPlot, 'XLim', plotFrameTimeThis + viewWindowSec * [-1, 1]);
+        set(traceSubPlot, 'XLim', plotFrameTimeThis + viewWindowSec * 0.5 * [-1, 1]);
 
         % Update the vertical line position
         set(vertLine, 'XData', [plotFrameTimeThis, plotFrameTimeThis]);
@@ -219,7 +239,13 @@ if nPlotFrames > 1
         end
 
         % Capture this plot frame
-        plotFrames(iPlotFrame, 1) = getframe(fig);
+        plotFrameThis = getframe(fig);
+
+        % Store info in plotFrames array and add time and duration
+        plotFrames(iPlotFrame, 1).cdata = plotFrameThis.cdata;
+        plotFrames(iPlotFrame, 1).colormap = plotFrameThis.colormap;
+        plotFrames(iPlotFrame, 1).time = plotFrameTimeThis;
+        plotFrames(iPlotFrame, 1).duration = plotFrameDuration;
     end
 end
 

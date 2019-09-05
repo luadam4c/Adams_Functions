@@ -169,6 +169,8 @@ positionNew(1:2) = positionOld(1:2) + positionShift;
 % Set as new position
 set(fig, 'Position', positionNew);
 
+% TODO: Make the following adjust_figure_position.m
+%%
 % Get the screen size
 screenSize = get(0, 'ScreenSize');
 
@@ -177,6 +179,7 @@ if ~any(positionNew(3:4) > screenSize(3:4))
     % Move the figure to entirely on screen
     movegui(fig)
 end
+%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

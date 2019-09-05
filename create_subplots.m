@@ -118,6 +118,18 @@ positionNew(4) = verticalExpandFactor * positionOrig(4);
 % Set new position
 fig.Position = positionNew;
 
+% TODO: Make the following adjust_figure_position.m
+%%
+% Get the screen size
+screenSize = get(0, 'ScreenSize');
+
+% If the new figure size is not greater than the screen, use movegui()
+if ~any(positionNew(3:4) > screenSize(3:4))
+    % Move the figure to entirely on screen
+    movegui(fig)
+end
+%%
+
 %% Create subplots
 % Initialize the axes array
 ax = gobjects(nRows, nColumns);

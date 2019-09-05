@@ -130,7 +130,7 @@ There are 1 MATLAB scripts in this directory:
 - [**create_colormap.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_colormap.m): Returns colorMap based on the number of colors requested
 - [**create_default_endpoints.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_default_endpoints.m): Constructs default endpoints from number of samples
 - [**create_default_grouping.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_default_grouping.m): Creates numeric grouping vectors and grouping labels from data, counts or original non-numeric grouping vectors
-- [**create_empty_frame.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_empty_frame.m): Creates an empty MATLAB movie frame
+- [**create_empty_frames.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_empty_frames.m): Creates an empty MATLAB movie frames
 - [**create_empty_match.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_empty_match.m): Creates an empty array that matches a given array
 - [**create_error_for_nargin.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_error_for_nargin.m): Creates an error text for not having enough input arguments
 - [**create_grouping_by_columns.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_grouping_by_columns.m): Creates a grouping array using column numbers
