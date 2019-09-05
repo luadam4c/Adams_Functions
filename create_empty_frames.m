@@ -8,6 +8,7 @@ function frames = create_empty_frames (width, height, varargin)
 %       create_empty_frames(3, 2)
 %       create_empty_frames(3, 2, [5, 1])
 %       create_empty_frames(3, 2, [10, 2])
+%       create_empty_frames(3, 2, [10, 2], 'Duration', 1)
 %
 % Outputs:
 %       frames     	- empty MATLAB movie frames structure, with fields:
@@ -24,6 +25,9 @@ function frames = create_empty_frames (width, height, varargin)
 %                   must be a positive scalar
 %       dimensions  - (opt) dimensions for an array
 %                   must be a positive integer 2-element vector
+%       varargin    - 'Duration': frame duration
+%                   must be a positive scalar
+%                   default == NaN
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -35,10 +39,12 @@ function frames = create_empty_frames (width, height, varargin)
 % 2019-09-04 Adapted from https://www.mathworks.com/help/matlab/import_export/read-video-files.html
 % 2019-09-05 Added times and durations in the frames structure
 % 2019-09-05 Added dimensions as an optional argument
-% 
+% 2019-09-05 Added 'Duration' as an optional argument
+% TODO: Add 'ColorMap' as an optional argument
 
 %% Default values for optional arguments
 dimensionsDefault = [];
+durationDefault = NaN;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -63,14 +69,19 @@ addRequired(iP, 'height', ...
 addOptional(iP, 'dimensions', dimensionsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'Duration', durationDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+
 % Read from the Input Parser
 parse(iP, height, width, varargin{:});
 dimensions = iP.Results.dimensions;
+duration = iP.Results.Duration;
 
 %% Do the job
 % Create one empty frame
 frames = struct('cdata', zeros(height, width, 3, 'uint8'), ...
-                'colormap', [], 'time', NaN, 'duration', NaN);
+                'colormap', [], 'time', NaN, 'duration', duration);
 
 % Expand to an array
 if ~isempty(dimensions)

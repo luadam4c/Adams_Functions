@@ -149,6 +149,22 @@ if ~isempty(figExpansion)
     fig = expand_figure_position(fig, figExpansion, positionOld);
 end
 
+%% Adjust the figure position if needed
+% TODO: Make the following adjust_figure_position.m
+if ~isempty(width) || ~isempty(height) || ~isempty(figExpansion)
+    % Get the screen size
+    screenSize = get(0, 'ScreenSize');
+
+    % Get the current figure position
+    figPosition = get(fig, 'Position');
+
+    % If the new figure size is not greater than the screen, use movegui()
+    if ~any(figPosition(3:4) > screenSize(3:4))
+        % Move the figure to entirely on screen
+        movegui(fig);
+    end
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function fig = expand_figure_position (fig, expansionFactor, positionOld)
@@ -168,18 +184,6 @@ positionNew(1:2) = positionOld(1:2) + positionShift;
 
 % Set as new position
 set(fig, 'Position', positionNew);
-
-% TODO: Make the following adjust_figure_position.m
-%%
-% Get the screen size
-screenSize = get(0, 'ScreenSize');
-
-% If the new figure size is not greater than the screen, use movegui()
-if ~any(positionNew(3:4) > screenSize(3:4))
-    % Move the figure to entirely on screen
-    movegui(fig)
-end
-%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

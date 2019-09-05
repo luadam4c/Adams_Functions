@@ -166,7 +166,8 @@ figWidth = figPosition(3);
 figHeight = figPosition(4);
 
 % Initialize plot movie frames
-plotFrames = create_empty_frames(figHeight, figWidth, [nPlotFrames, 1]);
+plotFrames = create_empty_frames(figHeight, figWidth, [nPlotFrames, 1], ...
+                                'Duration', plotFrameDuration);
                 
 % Rename the axes
 % Plot the trace on the bottom
@@ -213,10 +214,13 @@ plotFrameThis = getframe(fig);
 plotFrames(1, 1).cdata = plotFrameThis.cdata;
 plotFrames(1, 1).colormap = plotFrameThis.colormap;
 plotFrames(1, 1).time = plotFrameTimeThis;
-plotFrames(1, 1).duration = plotFrameDuration;
 
 % Loop through all frame times
 if nPlotFrames > 1
+    % Prevent y ticks from automatically updating
+    % TODO: How to do this?
+	% set(traceSubPlot, 'YTickLabelMode', 'manual');
+    
     for iPlotFrame = 2:nPlotFrames
         % Get the current plot frame time
         plotFrameTimeThis = plotFrameTimes(iPlotFrame);
@@ -245,7 +249,6 @@ if nPlotFrames > 1
         plotFrames(iPlotFrame, 1).cdata = plotFrameThis.cdata;
         plotFrames(iPlotFrame, 1).colormap = plotFrameThis.colormap;
         plotFrames(iPlotFrame, 1).time = plotFrameTimeThis;
-        plotFrames(iPlotFrame, 1).duration = plotFrameDuration;
     end
 end
 
