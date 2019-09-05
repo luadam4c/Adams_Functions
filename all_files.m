@@ -84,6 +84,7 @@ function varargout = all_files (varargin)
 % 2019-03-15 Fixed the case when extension is not provided
 % 2019-05-16 Added 'WarnFlag' as an optional flag
 % 2019-05-21 Added 'SortBy' as an optional argument
+% TODO: Add 'MaxNum' as an optional argument
 % TODO: use force_string_start.m to make sure extension starts with a dot
 % TODO: Fix bug when a dot is in the folder name
 

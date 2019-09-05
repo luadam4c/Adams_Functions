@@ -36,6 +36,7 @@ function varargout = match_time_info (tVecs, varargin)
 %       cd/match_vector_count.m
 %
 % Used by:
+%       cd/create_synced_movie_trace_plot_movie.m
 %       cd/parse_multiunit.m
 
 % File History:

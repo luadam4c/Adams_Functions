@@ -11,6 +11,8 @@ function frame = create_empty_frame (height, width)
 %       frame       - empty MATLAB movie frame structure, with fields:
 %                       cdata    - RGB intensity data
 %                       colormap - color map used
+%                       time     - time of the frame in seconds
+%                       duration - duration of frame in seconds
 %                   specified as a structure
 %
 % Arguments:
@@ -27,6 +29,7 @@ function frame = create_empty_frame (height, width)
 
 % File History:
 % 2019-09-04 Adapted from https://www.mathworks.com/help/matlab/import_export/read-video-files.html
+% 2019-09-05 Added times in the frame structure
 % 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -52,7 +55,8 @@ addRequired(iP, 'width', ...
 parse(iP, height, width);
 
 %% Do the job
-frame = struct('cdata', zeros(height, width, 3, 'uint8'), 'colormap', []);
+frame = struct('cdata', zeros(height, width, 3, 'uint8'), ...
+                'colormap', [], 'time', NaN, 'duration', NaN);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

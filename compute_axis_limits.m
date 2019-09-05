@@ -17,12 +17,14 @@ function [limits, axisRange] = compute_axis_limits (dataOrRange, axisType, varar
 %       compute_axis_limits({[-10; 10], NaN}, 'y')
 %       compute_axis_limits([-10; 10; ones(100, 1); -1 * ones(100, 1)], 'y', 'AutoZoom', true)
 %       compute_axis_limits({{ones(10, 1), ones(10, 1)}; -1 * ones(10, 1)}, 'y')
+%
 % Outputs:
 %       limits     - computed y axis limits
 %                   specified as a 2-element numeric vector
 %                       or a cell array of them
 %       axisRange   - computed axis range
 %                   specified as a numeric vector
+%
 % Arguments:
 %       dataOrRange - data for this axis or range along this axis
 %                   must be a numeric array or a cell array of numeric arrays
@@ -48,6 +50,7 @@ function [limits, axisRange] = compute_axis_limits (dataOrRange, axisType, varar
 %       cd/isnum.m
 %
 % Used by:
+%       cd/create_synced_movie_trace_plot_movie.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_multiunit.m
 %       cd/plot_cfit_pulse_response.m

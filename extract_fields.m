@@ -31,10 +31,12 @@ function varargout = extract_fields (structs, varargin)
 %       cd/force_column_cell.m
 %
 % Used by:
+%       cd/create_synced_movie_trace_plot_movie.m
 %       /home/Matlab/plethRO1/spike2loader.m
 
 % File History:
 % 2019-09-03 Created by Adam Lu
+% TODO: accept substrings
 % TODO: OutputMode
 % 
 

@@ -45,6 +45,7 @@ function h = plot_vertical_line (xValue, varargin)
 %       cd/match_format_vector_sets.m
 %
 % Used by:
+%       cd/create_synced_movie_trace_plot_movie.m
 %       cd/plot_bar.m
 %       cd/plot_error_bar.m
 %       cd/plot_horizontal_line.m

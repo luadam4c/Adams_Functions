@@ -43,7 +43,7 @@ function handles = plot_frame (frame, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/create_synced_movie_trace_plot_movie.m
 
 % File History:
 % 2019-09-04 Created by Adam Lu

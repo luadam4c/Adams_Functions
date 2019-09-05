@@ -3,10 +3,13 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 % Usage: [fig, ax] = create_subplots (nRows, nColumns, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       [fig, ax] = create_subplots(1, 1, 'FigNumber', 3);
 %       [fig, ax] = create_subplots(1, 3, 'FigNumber', 4);
 %       [fig, ax] = create_subplots(2, 3, 'FigNumber', 5);
+%       [fig, ax] = create_subplots(2, 3, 'CenterPosition', [500, 500, 300, 200]);
+%
 % Outputs:
 %       fig         - figure handle
 %                   specified as a figure handle
@@ -23,6 +26,9 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 %                   - 'FigNumber': figure number for creating figure
 %                   must be a positive integer scalar
 %                   default == []
+%                   - 'CenterPosition': position for the center subplot
+%                   must be a 4-element positive integer vector
+%                   default == get(0, 'defaultfigureposition')
 %                   - Any other parameter-value pair for the subplot() function
 %
 % Requires:
@@ -31,6 +37,7 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/create_synced_movie_trace_plot_movie.m
 %       cd/parse_multiunit.m
 
 % File History:
@@ -44,6 +51,7 @@ horizontalDeadSpace = 0.25;     % relative dead space at the edges of figure
 %% Default values for optional arguments
 figHandleDefault = [];          % no existing figure by default
 figNumberDefault = [];          % no figure number by default
+centerPositionDefault = [];     % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -69,18 +77,23 @@ addParameter(iP, 'FigHandle', figHandleDefault);
 addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
                 'FigNumber must be a empty or a positive integer scalar!'));
+addParameter(iP, 'CenterPosition', centerPositionDefault, ...
+    @(x) assert(isempty(x) || isnumericvector(x), ...
+                'Position must be a empty or a numeric vector!'));
 
 % Read from the Input Parser
 parse(iP, nRows, nColumns, varargin{:});
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
+centerPosition = iP.Results.CenterPosition;
 
 % Keep unmatched arguments for the subplot() function
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Decide on the figure to plot on
-fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber);
+fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
+                            'Position', centerPosition);
 
 %% Compute
 % Compute the horizontal expansion factor

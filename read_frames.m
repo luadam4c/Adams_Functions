@@ -5,7 +5,7 @@ function [frames, vidObj] = read_frames (videoPathOrObj, varargin)
 %       TODO
 %
 % Example(s):
-%       xylo = read_frames('xylophone.mp4')
+%       [xylo, v] = read_frames('xylophone.mp4')
 %       xyloSome = read_frames('xylophone.mp4', 'TimeWindow', [0.5, 0.9]);
 %       xyloHead = read_frames('xylophone.mp4', 'TimeStart', 0.5);
 %       xyloTail = read_frames('xylophone.mp4', 'TimeEnd', 0.9);
@@ -20,6 +20,8 @@ function [frames, vidObj] = read_frames (videoPathOrObj, varargin)
 %       frames      - MATLAB movie frame structures, with fields:
 %                       cdata    - RGB intensity data
 %                       colormap - color map used
+%                       time     - relative frame time in seconds
+%                       duration - duration of frame in seconds
 %                   specified as a structure array
 %       vidObj      - VideoReader object
 %                   specified as a VideoReader object
@@ -61,6 +63,7 @@ function [frames, vidObj] = read_frames (videoPathOrObj, varargin)
 
 % File History:
 % 2019-09-04 Adapted from https://www.mathworks.com/help/matlab/import_export/read-video-files.html
+% 2019-09-05 Added times and durations in the frame structure
 
 %% Hard-coded parameters
 
@@ -213,8 +216,16 @@ while vidObj.CurrentTime < timeEnd && iFrame < indexEnd
         % Increment count for frames to read
         count = count + 1;
 
+        % Read the time of this frame
+        %   Note: this must occur before readFrame() is called
+        frames(count, 1).time = vidObj.CurrentTime;
+
         % Read the frame and store in output
         frames(count, 1).cdata = readFrame(vidObj);
+
+        % Read the duration of this frame
+        %   Note: this must occur after readFrame() is called
+        frames(count, 1).duration = vidObj.CurrentTime - frames(count, 1).time;
     else
         % Read the frame and discard
         readFrame(vidObj);
