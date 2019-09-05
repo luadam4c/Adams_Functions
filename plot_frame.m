@@ -25,7 +25,16 @@ function handles = plot_frame (frame, varargin)
 %       plotFunc    - (opt) plotting function used
 %                   must be a function handle
 %                   default == @imshow
-%       varargin    - Any other parameter-value pair for plotFunc()
+%       varargin    - 'FigHandle': figure handle for created figure
+%                   must be a empty or a figure object handle
+%                   default == []
+%                   - 'AxesHandle': axes handle for created axes
+%                   must be a empty or a axes object handle
+%                   default == []
+%                   - 'VideoObject': video object read
+%                   must be a VideoReader object
+%                   default == VideoReader.empty
+%                   - Any other parameter-value pair for plotFunc()
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -44,6 +53,9 @@ function handles = plot_frame (frame, varargin)
 
 %% Default values for optional arguments
 plotFuncDefault = function_handle.empty;
+figHandleDefault = [];          % no existing figure by default
+axHandleDefault = [];           % no existing axes by default
+videoObjectDefault = VideoReader.empty;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -63,42 +75,70 @@ addRequired(iP, 'frame', ...
     @(x) validateattributes(x, {'struct'}, {'2d'}));
 
 % Add optional inputs to the Input Parser
-addOptional(iP, 'plotFunc', plotFuncDefault);
-    @(x) validateattributes(x, {'function_handle'}, {'2d'});
+addOptional(iP, 'plotFunc', plotFuncDefault, ...
+    @(x) validateattributes(x, {'function_handle'}, {'2d'}));
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'FigHandle', figHandleDefault);
+addParameter(iP, 'AxesHandle', axHandleDefault);
+addParameter(iP, 'VideoObject', videoObjectDefault, ...
+    @(x) validateattributes(x, {'VideoReader'}, {'2d'}));
 
 % Read from the Input Parser
 parse(iP, frame, varargin{:});
+figHandle = iP.Results.FigHandle;
+axHandle = iP.Results.AxesHandle;
 plotFunc = iP.Results.plotFunc;
+vidObj = iP.Results.VideoObject;
 
 % Keep unmatched arguments for the plotFunc() function
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Set default plotting function
-if isempty(plotFunc)
-    plotFunc = @imshow;
-end
 
-% Set figure properties and retrieve the figure handle
+% Grab the image data
+imData = frame.cdata;
+
+% Decide on the height and width
 if ~isempty(vidObj)
     % Read the height and width of the video object
     vidHeight = vidObj.Height;
     vidWidth = vidObj.Width;
-
-    fig = set_figure_properties('Height', vidHeight, 'Width', vidWidth]);
 else
-    fig = set_figure_properties;
+    % Assume each element is a pixel
+    vidHeight = size(imData, 1);
+    vidWidth = size(imData, 2);
 end
+
+% Set figure properties and retrieve handles
+if isempty(findall(0, 'type', 'figure'))
+    % Create a figure and update the figure height and width
+    fig = set_figure_properties('FigHandle', figHandle, ...
+                            'Height', vidHeight, 'Width', vidWidth);
+else
+    % Decide on the figure
+    fig = set_figure_properties('FigHandle', figHandle);
+end
+
+% Decide on the axes
+ax = set_axes_properties('AxesHandle', axHandle);
 
 %% Do the job
 % Add other arguments
-plotFuncWithOther = @(x) plotFunc(x, otherArguments{:});
+if isempty(plotFunc)
+    plotFunc = @(x) imshow(x, 'Border', 'tight', 'Parent', ax, ...
+                            'InitialMagnification', 'fit', otherArguments{:});
+else
+    plotFunc = @(x) plotFunc(x, 'Parent', ax, otherArguments{:});
+end
 
 % Plot the image
-im = plotFuncWithOther(frame.cdata);
+im = plotFunc(frame.cdata);
 
-% Retrieve the axes handle
-ax = set_axes_properties;
+% Remove ticks
+set(ax, 'XTick', []);
+set(ax, 'YTick', []);
 
 %% Output results
 handles.fig = fig;

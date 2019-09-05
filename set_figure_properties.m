@@ -32,7 +32,7 @@ function fig = set_figure_properties (varargin)
 %                   - 'Height': figure height
 %                   must be a positive scalar
 %                   default == get(0, 'defaultfigureposition') (4)
-%                   - Any other parameter-value pair for the figure() function
+%                   - Any other properties for the Figure object
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -69,6 +69,7 @@ heightDefault = [];             % set later
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'FigHandle', figHandleDefault);
@@ -90,49 +91,62 @@ parse(iP, varargin{:});
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
 figExpansion = iP.Results.FigExpansion;
-position = iP.Results.Position;
+positionUser = iP.Results.Position;
 width = iP.Results.Width;
 height = iP.Results.Height;
 
-% Keep unmatched arguments for the figure() function
+% Keep unmatched name-value pairs for the Figure object
 otherArguments = struct2arglist(iP.Unmatched);
-
-%% Preparation
-% Set default figure position
-if isempty(position)
-    position = get(0, 'defaultfigureposition');
-
-    % Modify figure position if requested
-    if ~isempty(width)
-        position(3) = width;
-    end
-    if ~isempty(height)
-        position(4) = height;
-    end
-end
 
 %% Do the job
 % Decide on the figure handle
 if ~isempty(figHandle)
     % Use the given figure
-    fig = figure(figHandle, 'Position', position, otherArguments{:});
+    fig = figure(figHandle);
 elseif ~isempty(figNumber)
     % Create and clear a new figure with given figure number
-    fig = figure(figNumber, 'Position', position, otherArguments{:});
-
-    % TODO: Make optional argument with different defaults
-    clf(fig);
+    fig = figure(figNumber);
 else
     % Get the current figure or create one if non-existent
     fig = gcf;
+end
 
-    % Set Figure object properties
-    set(fig, 'Position', position, otherArguments{:});
+% Clear figure if requested
+% TODO: Make optional argument with different defaults
+if ~isempty(figNumber)
+    clf(fig);
+end
+
+% Set other Figure object properties
+set(fig, otherArguments{:});
+
+% Modify figure position if requested
+% TODO: update_object_position.m
+if ~isempty(positionUser)
+    set(fig, 'Position', positionUser);
+end
+if ~isempty(width)
+    positionNew = get(fig, 'Position');
+    positionNew(3) = width;
+    set(fig, 'Position', positionNew);
+end
+if ~isempty(height)
+    positionNew = get(fig, 'Position');
+    positionNew(4) = height;
+    set(fig, 'Position', positionNew);
 end
 
 % Expand figure position if requested
 if ~isempty(figExpansion)
-    fig = expand_figure_position(fig, figExpansion, position);
+    if ~isempty(positionUser)
+        positionOld = positionUser;
+    elseif ~isempty(width) || ~isempty(height)
+        positionOld = get(fig, 'Position');
+    else
+        positionOld = get(0, 'defaultfigureposition');
+    end
+
+    fig = expand_figure_position(fig, figExpansion, positionOld);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
