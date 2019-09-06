@@ -9,7 +9,8 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       labels = create_labels_from_numbers(1:3, 'Suffix', ' Mississippi')
 %       labels = create_labels_from_numbers(1:3, 'Prefix', 'Husband #')
 %       labels = create_labels_from_numbers(1:3, 'Prefix', 'Katie ')
-%       labels = create_labels_from_numbers(1:3, 'Prefix', 'Make ', 'Suffix', ' Wish')
+%       labels = create_labels_from_numbers(1:3, 'Prefix', 'Katie', 'Delimiter', '_')
+%       labels = create_labels_from_numbers(1:3, 'Prefix', 'Make', 'Suffix', 'Wish', 'Delimiter', ' ')
 %
 % Outputs:
 %       labels     - labels created
@@ -27,12 +28,17 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %                   - 'Suffix': string to place after each number
 %                   must be a string scalar or a character vector
 %                   default == ''
+%                   - 'Delimiter': delimiter used
+%                   must be a string scalar or a character vector
+%                   default == ''
 %                   - Any other parameter-value pair for the convert_to_char() function
 %
 %
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/convert_to_char.m
+%       cd/force_string_end.m
+%       cd/force_string_start.m
 %
 % Used by:
 %       cd/atfwrite.m
@@ -54,6 +60,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 
 % File History:
 % 2018-12-17 Created by Adam Lu
+% 2019-09-06 Added 'Delimiter' as an optional argument
 % 
 
 %% Hard-coded parameters
@@ -62,6 +69,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 forceColumnOutputDefault = true;    % force output as a column by default
 prefixDefault = '';     % no string to place before each number by default
 suffixDefault = '';     % no string to place after each number by default
+delimiterDefault = '';  % delimiter is empty string by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -88,12 +96,15 @@ addParameter(iP, 'Prefix', prefixDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'Suffix', suffixDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'Delimiter', delimiterDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, numbers, varargin{:});
 forceColumnOutput = iP.Results.ForceColumnOutput;
 prefix = iP.Results.Prefix;
 suffix = iP.Results.Suffix;
+delimiter = iP.Results.Delimiter;
 
 % Keep unmatched arguments for the convert_to_char() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -104,9 +115,14 @@ if forceColumnOutput
     numbers = numbers(:);
 end
 
+% Modify prefix or suffix if necessary
+prefix = force_string_end(prefix, delimiter, 'OnlyIfNonempty', true);
+suffix = force_string_start(suffix, delimiter, 'OnlyIfNonempty', true);
+
 %% Do the job
 % Create the labels
-labels = arrayfun(@(x) [prefix, convert_to_char(x, otherArguments{:}), suffix], ...
+labels = ...
+    arrayfun(@(x) [prefix, convert_to_char(x, otherArguments{:}), suffix], ...
                     numbers, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

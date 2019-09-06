@@ -23,6 +23,11 @@ function atfwrite (dataMatrix, varargin)
 %                   - 'SignalNames': signal names for each signal
 %                   must be a string vector or a cell array of character vectors
 %                   default == Signal #1, Signal #2, ...
+%                   - 'TimeStart': start time in seconds
+%                       Note: this is the time a sampling interval before the 
+%                               first data time
+%                   must be a numeric vector
+%                   default == 0 seconds
 %
 % Requires:
 %       cd/construct_fullpath.m
@@ -38,6 +43,7 @@ function atfwrite (dataMatrix, varargin)
 
 % File History:
 % 2019-09-03 Created by Adam Lu
+% 2019-09-06 Added 'TimeStart' as an optional argument
 % 
 
 %% Hard-coded parameters
@@ -45,9 +51,10 @@ nRowsToSkip = 4;
 
 %% Default values for optional arguments
 fileNameDefault = '';
-outFolderDefault = '';      % set in construct_fullpath.m
-signalNamesDefault = {};    % set later
-samplingIntervalSecDefault = 0.01;    % sampling at 100 Hz by default
+outFolderDefault = '';              % set in construct_fullpath.m
+signalNamesDefault = {};            % set later
+samplingIntervalSecDefault = 0.01;  % sampling at 100 Hz by default
+timeStartDefault = 0;               % start at 0 by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -77,6 +84,8 @@ addParameter(iP, 'SignalNames', signalNamesDefault, ...
             'or cell array of character arrays!']));
 addParameter(iP, 'SamplingIntervalSeconds', samplingIntervalSecDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'positive'}));
+addParameter(iP, 'TimeStart', timeStartDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
 
 % Read from the Input Parser
 parse(iP, dataMatrix, varargin{:});
@@ -84,6 +93,7 @@ fileName = iP.Results.FileName;
 outFolder = iP.Results.OutFolder;
 signalNames = iP.Results.SignalNames;
 siSeconds = iP.Results.SamplingIntervalSeconds;
+timeStart = iP.Results.TimeStart;
 
 %% Preparation
 % Count the number of signals
@@ -118,7 +128,8 @@ end
 %% Deal with time
 % Create a time vector
 timeVectorSec = create_time_vectors(nSamples, 'TimeUnits', 's', ...
-                                'SamplingIntervalSeconds', siSeconds);
+                                'SamplingIntervalSeconds', siSeconds, ...
+                                'TimeStart', timeStart);
 
 % Count the number of significant figures needed
 nSigFig = ceil(log10(nSamples));

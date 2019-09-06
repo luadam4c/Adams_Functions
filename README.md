@@ -211,6 +211,7 @@ There are 1 MATLAB scripts in this directory:
 - [**force_row_cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_row_cell.m): Transforms a column cell array or a non-cell array to a row cell array of non-cell vectors
 - [**force_row_vector.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_row_vector.m): Transform column vector(s) or array(s) to row vector(s)
 - [**force_string_end.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_string_end.m): Force the string to end with a certain substring
+- [**force_string_start.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_string_start.m): Force the string to start with a certain substring
 - [**freqfilter.m**](https://github.com/blabuva/Adams_Functions/blob/master/freqfilter.m): Uses a Butterworth filter twice to filter data by a frequency band (each column is a vector of samples)
 - [**get_idxEnd.m**](https://github.com/blabuva/Adams_Functions/blob/master/get_idxEnd.m): Get the index of the end of an event
 - [**get_loopedparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/get_loopedparams.m): Get parameters that were looped in the simulation from loopedparams.mat

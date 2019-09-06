@@ -45,6 +45,7 @@ function textPath = spike2Mat2Text (spike2MatPath, varargin)
 
 %% Hard-coded parameters
 validTextTypes = {'atf', 'txt', 'csv'};
+maxNSamplesAtf = 1e6;
 
 %% Default values for optional arguments
 textTypeDefault  = 'atf';
@@ -132,17 +133,53 @@ else
 end
 
 %% Create the text file
+% Count the number of samples
+nSamples = size(channelMatrix, 1);
+
 switch textType
     case 'atf'
-        % Create the .atf file
-        atfwrite(channelMatrix, 'SignalNames', channelNames, ...
-              'SamplingIntervalSeconds', siSeconds, 'FileName', textPath);
+        % Split files if more than maxNSamples samples
+        if nSamples > maxNSamplesAtf
+            % Compute the number of files
+            nFiles = ceil(nSamples / maxNSamplesAtf);
+
+            % Create file paths
+            textPath = create_labels_from_numbers(1:nFiles, ...
+                        'Prefix', textPath, 'Delimiter', '_')
+
+            for iFile = 1:nFiles
+                % TODO: Use create_indices.m somehow
+                % Get the starting row
+                rowStart = (iFile - 1) * maxNSamplesAtf + 1;
+
+                % Get the ending row
+                rowEnd = min(nSamples, iFile * maxNSamplesAtf);
+
+                % Create indices
+                rowsThis = rowStart:rowEnd;
+
+                % Compute time start
+                timeStart = (rowStart - 1) * siSeconds;
+
+                % Create the .atf file
+                atfwrite(channelMatrix(rowsThis, :), ...
+                        'SignalNames', channelNames, ...
+                        'SamplingIntervalSeconds', siSeconds, ...
+                        'TimeStart', timeStart, ...
+                        'FileName', textPath{iFile});
+            end
+        else
+            % Start at time zero
+            timeStart = 0;
+
+            % Create the .atf file
+            atfwrite(channelMatrix, 'SignalNames', channelNames, ...
+                  'SamplingIntervalSeconds', siSeconds, ...
+                  'TimeStart', timeStart, 'FileName', textPath);
+        end
     case 'txt'
         % Create an output text file path
         textPath = replace(spike2MatPath, '.mat', '.txt');
-
-        % Count the number of samples
-        nSamples = size(channelMatrix, 1);
 
         % Create a time vector in ms
         timeVectorMs = create_time_vectors(nSamples, 'TimeUnits', 'ms', ...
