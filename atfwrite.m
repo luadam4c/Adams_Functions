@@ -23,11 +23,17 @@ function atfwrite (dataMatrix, varargin)
 %                   - 'SignalNames': signal names for each signal
 %                   must be a string vector or a cell array of character vectors
 %                   default == Signal #1, Signal #2, ...
+%                   - 'SignalUnits': signal units for each signal
+%                   must be a string vector or a cell array of character vectors
+%                   default == '', '', ...
 %                   - 'TimeStart': start time in seconds
 %                       Note: this is the time a sampling interval before the 
 %                               first data time
 %                   must be a numeric vector
 %                   default == 0 seconds
+%                   - 'Comment': comment to put in ATF header
+%                   must be a string scalar or a character vector
+%                   default == sprintf('Data from %s', inputname(1))
 %
 % Requires:
 %       cd/construct_fullpath.m
@@ -45,6 +51,8 @@ function atfwrite (dataMatrix, varargin)
 % File History:
 % 2019-09-03 Created by Adam Lu
 % 2019-09-06 Added 'TimeStart' as an optional argument
+% 2019-09-06 Added 'SignalUnits' as an optional argument
+% TODO: Add 'TextMarks' somehow
 % 
 
 %% Hard-coded parameters
@@ -54,8 +62,10 @@ maxNSamplesAtf = 1e6;
 fileNameDefault = '';
 outFolderDefault = '';              % set in construct_fullpath.m
 signalNamesDefault = {};            % set later
+signalUnitsDefault = {};            % set later
 samplingIntervalSecDefault = 0.01;  % sampling at 100 Hz by default
 timeStartDefault = 0;               % start at 0 seconds by default
+commentDefault = '';                % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -83,18 +93,26 @@ addParameter(iP, 'SignalNames', signalNamesDefault, ...
     @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
         ['SignalNames must be a character array or a string array ', ...
             'or cell array of character arrays!']));
+addParameter(iP, 'SignalUnits', signalUnitsDefault, ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['SignalUnits must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 addParameter(iP, 'SamplingIntervalSeconds', samplingIntervalSecDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'positive'}));
 addParameter(iP, 'TimeStart', timeStartDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'Comment', commentDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));    
 
 % Read from the Input Parser
 parse(iP, dataMatrix, varargin{:});
 fileName = iP.Results.FileName;
 outFolder = iP.Results.OutFolder;
 signalNames = iP.Results.SignalNames;
+signalUnits = iP.Results.SignalUnits;
 siSeconds = iP.Results.SamplingIntervalSeconds;
 timeStart = iP.Results.TimeStart;
+comment = iP.Results.Comment;
 
 %% Preparation
 % Count the number of samples
@@ -104,7 +122,7 @@ nSamples = size(dataMatrix, 1);
 nSignals = size(dataMatrix, 2);
 
 % Count the number of significant figures needed
-nSigFig = ceil(log10(nSamples));
+nSigFig = ceil(log10(nSamples)) + 1;
 
 % Create default file name
 if isempty(fileName)
@@ -127,6 +145,26 @@ if ~isempty(signalNames)
 else
     % Create default signal names
     signalNames = create_labels_from_numbers(1:nSignals, 'Prefix', 'Signal #');
+end
+
+% Decide on signal units
+if ~isempty(signalUnits)
+    % Count the number of signal names
+    nUnits = numel(signalUnits);
+
+    % Make sure they are the same
+    if nUnits ~= nSignals
+        fprintf('Number of signal units and data columns don''t match!\n');
+        return
+    end
+else
+    % Create default signal units
+    signalUnits = repmat({''}, size(signalNames));
+end
+
+% Create a default comment
+if isempty(comment)
+    comment = sprintf('Data from %s', inputname(1));
 end
 
 %% Do the job
@@ -156,20 +194,24 @@ if nSamples > maxNSamplesAtf
         % Compute time start for this file
         timeStartThis = timeStart + (rowStart - 1) * siSeconds;
 
+        % Modify the comment
+        commentThis = [comment, ', part', num2str(iFile)];
+
         % Create the .atf file
-        atfwrite_helper(dataMatrix(rowsThis, :), signalNames, siSeconds, ...
-                        timeStartThis, nSigFig, filePaths{iFile});
+        atfwrite_helper(dataMatrix(rowsThis, :), siSeconds, ...
+                        signalNames, signalUnits, ...
+                        timeStartThis, commentThis, nSigFig, filePaths{iFile});
     end
 else
     % Create the .atf file
-    atfwrite_helper(dataMatrix, signalNames, siSeconds, ...
-                    timeStart, nSigFig, filePath);
+    atfwrite_helper(dataMatrix, siSeconds, signalNames, signalUnits, ...
+                    timeStart, comment, nSigFig, filePath);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function atfwrite_helper(dataMatrix, signalNames, siSeconds, ...
-                            timeStart, nSigFig, filePath)
+function atfwrite_helper(dataMatrix, siSeconds, signalNames, signalUnits, ...
+                            timeStart, comment, nSigFig, filePath)
 %% Writes one .atf file
 % TODO: Construct the header text beforehand and pass it in
 
@@ -189,12 +231,17 @@ timeVectorSec = create_time_vectors(nSamples, 'TimeUnits', 's', ...
 timeStartMs = timeStart * MS_PER_S;
 
 %% Construct the ATF header
-atfHeaderLines = construct_atf_header(signalNames, timeStartMs);
+atfHeaderLines = construct_atf_header(signalNames, signalUnits, ...
+                                        timeStartMs, comment);
 
 %% Print the ATF header
 % Open the file
 fid = fopen(filePath, 'w');
 fprintf('Creating file at %s ... \n', filePath);
+
+% TODO: fprintf_custom.m?
+% Replace any '%' with '%%'
+atfHeaderLines = replace(atfHeaderLines, '%', '%%');
 
 % Print the ATF file header
 fprintf(fid, atfHeaderLines);
@@ -213,11 +260,12 @@ dlmwrite(filePath, [timeVectorSec, dataMatrix], '-append', ...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function atfHeaderLines = construct_atf_header (signalNames, timeStartMs)
+function atfHeaderLines = construct_atf_header (signalNames, signalUnits, ...
+                                                timeStartMs, comment)
 %% Constructs an Axon Text File header
 
 %% Hard-coded parameters
-nRowsToSkip = 4;
+nRowsToSkip = 5;
 
 %% Preparation
 % Count the number of signals
@@ -228,10 +276,13 @@ nSignals = numel(signalNames);
 versionInfoLine = 'ATF\t1.0\n';
 
 % Second line is nRowsToSkip and nSignals
-secondLine = sprintf('%d\t%d\n', nRowsToSkip, nSignals);
+secondLine = sprintf('%d\\t%d\\n', nRowsToSkip, nSignals);
 
 % Acquisition Mode
 acquisitionModeLine = '"AcquisitionMode=Fixed-Length Event-Driven"\n';
+
+% Comment Line
+commentLine = sprintf('"Comment=%s"\n', comment);
 
 % Sweep Start Time
 sweepStartTimesLine = sprintf('"SweepStartTimesMS=%.3f"\n', timeStartMs);
@@ -255,9 +306,13 @@ signalsLine = print_cellstr(signalsHeader, 'Delimiter', '\t', ...
                             'OmitQuotes', true, 'OmitNewline', false, ...
                             'OmitBraces', true, 'ToPrint', false);
 
-% Print the trace labels with signal units
+% Print the trace labels with no signal units
 traceLabels = create_labels_from_numbers(1:nSignals, 'Prefix', 'Trace #', ...
                                         'Suffix', ' ()');
+
+% Replace with correct signal units
+traceLabels = cellfun(@(x, y) replace(x, '()', ['(', y, ')']), ...
+                        traceLabels, signalUnits, 'UniformOutput', false);
 
 % Create trace headers
 traceHeader = ['"Time (s)"'; strcat('"', traceLabels, '"')];
@@ -269,7 +324,7 @@ headerInfo = print_cellstr(traceHeader, 'Delimiter', '\t', ...
 
 % Combine into the ATF file header
 atfHeaderLines = [versionInfoLine, secondLine, acquisitionModeLine, ...
-                sweepStartTimesLine, signalsExportedLine, ...
+                commentLine, sweepStartTimesLine, signalsExportedLine, ...
                 signalsLine, headerInfo];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

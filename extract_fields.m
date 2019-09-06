@@ -36,6 +36,8 @@ function varargout = extract_fields (structs, varargin)
 
 % File History:
 % 2019-09-03 Created by Adam Lu
+% 2019-09-06 Updated so that [] is returned instead of NaN 
+%               if UniformOutput is false
 % TODO: accept substrings
 % TODO: OutputMode
 % 
@@ -90,24 +92,30 @@ end
 
 %% Do the job
 if iscell(structs)
-    varargout = cellfun(@(y) cellfun(@(x) get_field(x, y), structs, ...
-                                'UniformOutput', uniformOutput), ...
+    varargout = cellfun(@(y) ...
+                            cellfun(@(x) get_field(x, y, uniformOutput), ...
+                                structs, 'UniformOutput', uniformOutput), ...
                         fieldNames, 'UniformOutput', false);
 else
-    varargout = cellfun(@(y) arrayfun(@(x) get_field(x, y), structs, ...
-                                'UniformOutput', uniformOutput), ...
+    varargout = cellfun(@(y) ...
+                            arrayfun(@(x) get_field(x, y, uniformOutput), ...
+                                structs, 'UniformOutput', uniformOutput), ...
                         fieldNames, 'UniformOutput', false);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function field = get_field (myStruct, fieldName)
+function field = get_field (myStruct, fieldName, uniformOutput)
 
 % Get the field or return NaN
 if isfield(myStruct, fieldName)
     field = myStruct.(fieldName);
 else
-    field = NaN;
+    if uniformOutput
+        field = NaN;
+    else
+        field = [];
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

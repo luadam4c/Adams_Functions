@@ -1,6 +1,6 @@
-function textPath = spike2Mat2Text (spike2MatPath, varargin)
+function varargout = spike2Mat2Text (spike2MatPath, varargin)
 %% Converts a Spike2-exported .mat file to a text file (atf, txt or csv)
-% Usage: textPath = spike2Mat2Text (spike2MatPath, varargin)
+% Usage: [textPath, dataStruct] = spike2Mat2Text (spike2MatPath, varargin)
 % Explanation:
 %       TODO
 %
@@ -10,6 +10,17 @@ function textPath = spike2Mat2Text (spike2MatPath, varargin)
 % Outputs:
 %       textPath     - path to output text file
 %                   specified as a character vector
+%       dataStruct   - a structure with fields:
+%                       spike2FileContents
+%                       spike2MatPath
+%                       textPath
+%                       channelMatrix
+%                       channelNames
+%                       channelUnits
+%                       siSeconds
+%                       timeStart
+%                       comment
+%                   specified as a scalar structure
 %
 % Arguments:
 %       spike2MatPath   - path to Spike2-exported .mat file
@@ -28,6 +39,7 @@ function textPath = spike2Mat2Text (spike2MatPath, varargin)
 % Requires:
 %       cd/all_fields.m
 %       cd/atfwrite.m
+%       cd/convert_to_char.m
 %       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/dlmwrite_with_header.m
@@ -41,10 +53,12 @@ function textPath = spike2Mat2Text (spike2MatPath, varargin)
 % File History:
 % 2019-09-06 Moved from spike2Loader.m
 % 2019-09-06 Added 'TextType' and 'TextPath' as optional arguments
+% TODO: Use parse_spike2_mat.m
 % 
 
 %% Hard-coded parameters
 validTextTypes = {'atf', 'txt', 'csv'};
+isTrace = @(x) isfield(x, 'values') && isfield(x, 'interval');
 
 % TODO: Make optional argument
 timeStart = 0;
@@ -91,23 +105,27 @@ end
 
 %% Load the data
 %   Note: this is a struct of structs
-spike2Data = load(spike2MatPath);
+spike2FileContents = load(spike2MatPath);
 
 %% Reorganize the data as a matrix
 % Find all fields with a 'values' field
-channelDataTable = all_fields(spike2Data, 'ValueFunc', @(x) isfield(x, 'values'));
+channelStructsTable = all_fields(spike2FileContents, 'ValueFunc', isTrace);
 
 % Get all the channel data
-channelData = channelDataTable.Value;
+channelStructs = channelStructsTable.Value;
 
 % Get all the channel names
-channelNames = extract_fields(channelData, 'title', 'UniformOutput', false);
+channelNames = extract_fields(channelStructs, 'title', 'UniformOutput', false);
 
 % Get all the channel values
-channelValues = extract_fields(channelData, 'values', 'UniformOutput', false);
+channelValues = extract_fields(channelStructs, 'values', 'UniformOutput', false);
+
+% Get all the channel units
+channelUnits = extract_fields(channelStructs, 'units', 'UniformOutput', false);
+channelUnits = cellfun(@convert_to_char, channelUnits, 'UniformOutput', false);
 
 % Get all the sampling intervals
-siSecondsAll = extract_fields(channelData, 'interval', 'UniformOutput', true);
+siSecondsAll = extract_fields(channelStructs, 'interval', 'UniformOutput', true);
 
 % Count all the number of samples
 nSamplesAll = count_samples(channelValues);
@@ -117,6 +135,8 @@ if numel(unique(nSamplesAll)) > 1
     % Resample to align the data
     % TODO
     disp('Not implemented yet!');
+    varargout{1} = '';
+    varargout{2} = struct;
     return
 else
     % Force as a matrix
@@ -128,6 +148,8 @@ if numel(unique(siSecondsAll)) > 1
     % Need to resample the vectors
     % TODO
     disp('Not implemented yet!');
+    varargout{1} = '';
+    varargout{2} = struct;
     return
 else
     % Just choose one sampling interval
@@ -140,9 +162,16 @@ nSamples = size(channelMatrix, 1);
 
 switch textType
     case 'atf'
+        % Create a comment
+        comment = sprintf('Data from Spike2-exported MATLAB file %s', ...
+                    spike2MatPath);
+
+        % Write to ATF file(s)
         atfwrite(channelMatrix, 'SignalNames', channelNames, ...
+              'SignalUnits', channelUnits, ...
               'SamplingIntervalSeconds', siSeconds, ...
-              'TimeStart', timeStart, 'FileName', textPath);
+              'TimeStart', timeStart, 'FileName', textPath, ...
+              'Comment', comment);
     case 'txt'
         % Create an output text file path
         textPath = replace(spike2MatPath, '.mat', '.txt');
@@ -175,6 +204,21 @@ switch textType
         error('textType unrecognized!');
 end
 
+%% Output info
+varargout{1} = textPath;
+if nargout >= 2    
+    dataStruct.spike2FileContents = spike2FileContents;
+    dataStruct.spike2MatPath = spike2MatPath;
+    dataStruct.textPath = textPath;
+    dataStruct.channelMatrix = channelMatrix;
+    dataStruct.channelNames = channelNames;
+    dataStruct.channelUnits = channelUnits;
+    dataStruct.siSeconds = siSeconds;
+    dataStruct.timeStart = timeStart;
+    dataStruct.comment = comment;
+
+    varargout{2} = dataStruct;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

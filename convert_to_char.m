@@ -38,6 +38,7 @@ function strs = convert_to_char (data, varargin)
 %
 % Used by:
 %       cd/create_labels_from_numbers.m
+%       cd/spike2Mat2Text.m
 %       cd/test_var_difference.m
 
 % File History:

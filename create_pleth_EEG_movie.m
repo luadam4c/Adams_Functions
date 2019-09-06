@@ -32,6 +32,7 @@
 
 % File History:
 % 2019-09-05 Created by Adam Lu
+% TODO: Use parse_spike2_mat.m without loading everything?
 % 
 
 %% Hard-coded parameters
@@ -90,6 +91,7 @@ if isempty(movieBase)
 end
 
 %% Deal with the Spike2 MATLAB file
+% TODO: Use parse_spike2_mat.m without loading everything?
 % Load .mat file
 spike2File = matfile(spike2MatPath);
 
