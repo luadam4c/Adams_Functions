@@ -31,7 +31,7 @@ function handles = plot_frame (frame, varargin)
 %                   - 'AxesHandle': axes handle for created axes
 %                   must be a empty or a axes object handle
 %                   default == []
-%                   - 'VideoObject': VideoReader object for the video
+%                   - 'VideoReaderObject': VideoReader object for the video
 %                   must be a VideoReader object
 %                   default == VideoReader.empty
 %                   - Any other parameter-value pair for plotFunc()
@@ -55,7 +55,7 @@ function handles = plot_frame (frame, varargin)
 plotFuncDefault = function_handle.empty;
 figHandleDefault = [];          % no existing figure by default
 axHandleDefault = [];           % no existing axes by default
-videoObjectDefault = VideoReader.empty;
+videoReaderObjectDefault = VideoReader.empty;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -81,7 +81,7 @@ addOptional(iP, 'plotFunc', plotFuncDefault, ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'FigHandle', figHandleDefault);
 addParameter(iP, 'AxesHandle', axHandleDefault);
-addParameter(iP, 'VideoObject', videoObjectDefault, ...
+addParameter(iP, 'VideoReaderObject', videoReaderObjectDefault, ...
     @(x) validateattributes(x, {'VideoReader'}, {'2d'}));
 
 % Read from the Input Parser
@@ -89,7 +89,7 @@ parse(iP, frame, varargin{:});
 figHandle = iP.Results.FigHandle;
 axHandle = iP.Results.AxesHandle;
 plotFunc = iP.Results.plotFunc;
-vidObj = iP.Results.VideoObject;
+vidObj = iP.Results.VideoReaderObject;
 
 % Keep unmatched arguments for the plotFunc() function
 otherArguments = struct2arglist(iP.Unmatched);

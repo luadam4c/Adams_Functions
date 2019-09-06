@@ -1,15 +1,15 @@
-function writer = write_frames (frames, varargin)
+function vidWriter = write_frames (frames, varargin)
 %% Write frames to a file
-% Usage: writer = write_frames (frames, varargin)
+% Usage: vidWriter = write_frames (frames, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
 %       [xylo, v] = read_frames('xylophone.mp4')
-%       write_frames(xylo, 'VideoObject', v)
+%       write_frames(xylo, 'VideoReaderObject', v)
 %
 % Outputs:
-%       writer      - the VideoWriter object created for the video
+%       vidWriter   - the VideoWriter object created for the video
 %                   specified as a VideoWriter object
 %
 % Arguments:
@@ -21,7 +21,7 @@ function writer = write_frames (frames, varargin)
 %                   must be a structure array
 %       varargin    - 'FrameRate': frame rate in Hz
 %                   must be a positive scalar
-%                   default == detected from frames or VideoObject, or 12 Hz
+%                   default == detected from frames or VideoReaderObject, or 12 Hz
 %                   - 'MovieType': movie type
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                     'Archival'          - Motion JPEG 2000 file 
@@ -35,7 +35,7 @@ function writer = write_frames (frames, varargin)
 %                     'Indexed AVI'       - Uncompressed with indexed video
 %                     'Grayscale AVI'     - Uncompressed with grayscale video
 %                   default == 'Motion JPEG AVI'
-%                   - 'VideoObject': VideoReader object for the video
+%                   - 'VideoReaderObject': VideoReader object for the video
 %                   must be a VideoReader object
 %                   default == VideoReader.empty
 %                   - 'OutFolder': directory to place .atf file
@@ -55,7 +55,8 @@ function writer = write_frames (frames, varargin)
 
 % File History:
 % 2019-09-05 Created by Adam Lu
-% TODO: Make OutFolder, FileBase, MovieType optional arguments
+% 2019-09-05 Made OutFolder, FileBase, MovieType optional arguments
+% TODO: Make 'VideoWriterObject' an optional argument
 % 
 
 %% Hard-coded parameters
@@ -69,7 +70,7 @@ extraFields = {'time', 'duration'};
 %% Default values for optional arguments
 frameRateDefault = [];
 movieTypeDefault = 'Motion JPEG AVI';
-videoObjectDefault = VideoReader.empty;
+videoReaderObjectDefault = VideoReader.empty;
 outFolderDefault = pwd;
 fileBaseDefault = 'newVideo';
 
@@ -94,7 +95,7 @@ addParameter(iP, 'FrameRate', frameRateDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'MovieType', movieTypeDefault);
     @(x) any(validatestring(x, validMovieTypes));
-addParameter(iP, 'VideoObject', videoObjectDefault, ...
+addParameter(iP, 'VideoReaderObject', videoReaderObjectDefault, ...
     @(x) validateattributes(x, {'VideoReader'}, {'2d'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));    
@@ -106,7 +107,7 @@ addParameter(iP, 'FileBase', fileBaseDefault, ...
 parse(iP, frames, varargin{:});
 frameRate = iP.Results.FrameRate;
 movieType = validatestring(iP.Results.MovieType, validMovieTypes);
-vidObj = iP.Results.VideoObject;
+vidReader = iP.Results.VideoReaderObject;
 outFolder = iP.Results.OutFolder;
 fileBase = iP.Results.FileBase;
 
@@ -117,8 +118,8 @@ otherArguments = struct2arglist(iP.Unmatched);
 if isempty(frameRate)
     if isfield(frames(1), 'duration')
         frameRate = 1 / frames(1).duration;
-    elseif ~isempty(vidObj)
-        frameRate = vidObj.FrameRate;
+    elseif ~isempty(vidReader)
+        frameRate = vidReader.FrameRate;
     else
         frameRate = 12;
     end
@@ -131,19 +132,19 @@ framesMatlab = rmfield_custom(frames, extraFields);
 moviePathBase = fullfile(outFolder, fileBase);
 
 % Create a VideoWriter object
-writer = VideoWriter(moviePathBase, movieType, otherArguments{:});
+vidWriter = VideoWriter(moviePathBase, movieType, otherArguments{:});
 
 % Set the frame rate in Hz
-writer.FrameRate = frameRate;
+vidWriter.FrameRate = frameRate;
 
 % Open the VideoWriter object
-open(writer);
+open(vidWriter);
 
 % Write frames to the file
-writeVideo(writer, framesMatlab);
+writeVideo(vidWriter, framesMatlab);
 
 % Close the VideoWriter object
-close(writer);
+close(vidWriter);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
