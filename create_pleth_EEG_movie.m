@@ -74,8 +74,10 @@ if isempty(spike2MatPath)
 end
 
 % Decide on the wmv file
-[~, wmvPath] = all_files('Extension', 'wmv', 'MaxNum', 1, ...
-                                    'ForceCellOutput', false);
+if isempty(wmvPath)
+    [~, wmvPath] = all_files('Extension', 'wmv', 'MaxNum', 1, ...
+                                        'ForceCellOutput', false);
+end
 
 % Decide on the output folder
 if isempty(outFolder)
@@ -115,7 +117,7 @@ tVec = create_time_vectors(nSamples, 'TimeStart', timeStart, ...
 
 %% Deal with the movie file
 % Read all frames
-[frames, vidObj] = read_frames(wmvPath);
+frames = read_frames(wmvPath);
 
 %% Combine into a plot movie
 % Create plot movie

@@ -38,7 +38,7 @@ function vidWriter = write_frames (frames, varargin)
 %                   - 'VideoReaderObject': VideoReader object for the video
 %                   must be a VideoReader object
 %                   default == VideoReader.empty
-%                   - 'OutFolder': directory to place .atf file
+%                   - 'OutFolder': directory to place movie
 %                   must be a string scalar or a character vector
 %                   default == pwd
 %                   - 'FileBase': file base for the movie
