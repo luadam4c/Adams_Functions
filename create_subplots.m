@@ -26,6 +26,9 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 %                   - 'FigNumber': figure number for creating figure
 %                   must be a positive integer scalar
 %                   default == []
+%                   - 'FigPosition': figure position
+%                   must be a 4-element positive integer vector
+%                   default == expanded from CenterPosition
 %                   - 'CenterPosition': position for the center subplot
 %                   must be a 4-element positive integer vector
 %                   default == get(0, 'defaultfigureposition')
@@ -51,6 +54,7 @@ horizontalDeadSpace = 0.25;     % relative dead space at the edges of figure
 %% Default values for optional arguments
 figHandleDefault = [];          % no existing figure by default
 figNumberDefault = [];          % no figure number by default
+figPositionDefault = [];           % set later
 centerPositionDefault = [];     % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -77,6 +81,9 @@ addParameter(iP, 'FigHandle', figHandleDefault);
 addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
                 'FigNumber must be a empty or a positive integer scalar!'));
+addParameter(iP, 'FigPosition', figPositionDefault, ...
+    @(x) assert(isempty(x) || isnumericvector(x), ...
+                'Position must be a empty or a numeric vector!'));
 addParameter(iP, 'CenterPosition', centerPositionDefault, ...
     @(x) assert(isempty(x) || isnumericvector(x), ...
                 'Position must be a empty or a numeric vector!'));
@@ -85,38 +92,34 @@ addParameter(iP, 'CenterPosition', centerPositionDefault, ...
 parse(iP, nRows, nColumns, varargin{:});
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
+figPosition = iP.Results.FigPosition;
 centerPosition = iP.Results.CenterPosition;
 
 % Keep unmatched arguments for the subplot() function
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
-% Decide on the figure to plot on
+if ~isempty(figPosition)
+    % TODO: expand_figure_position.m
+    % Compute the horizontal expansion factor
+    horizontalExpandFactor = (nColumns - (nColumns - 1) * horizontalDeadSpace);
+
+    % Compute the vertical expansion factor
+    verticalExpandFactor = nRows;
+
+    % Copy original position
+    figPosition = centerPosition;
+
+    % Modify new position
+    figPosition(1) = centerPosition(1) - centerPosition(3);
+    figPosition(2) = centerPosition(2) - centerPosition(4);
+    figPosition(3) = horizontalExpandFactor * centerPosition(3);
+    figPosition(4) = verticalExpandFactor * centerPosition(4);
+end
+
+% Decide on the figure to plot on and set figure position
 fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
-                            'Position', centerPosition);
-
-%% Compute
-% Compute the horizontal expansion factor
-horizontalExpandFactor = (nColumns - (nColumns - 1) * horizontalDeadSpace);
-
-% Compute the vertical expansion factor
-verticalExpandFactor = nRows;
-
-%% Update figure position
-% Save original position
-positionOrig = fig.Position;
-
-% Copy original position
-positionNew = positionOrig;
-
-% Modify new position
-positionNew(1) = positionOrig(1) - positionOrig(3);
-positionNew(2) = positionOrig(2) - positionOrig(4);
-positionNew(3) = horizontalExpandFactor * positionOrig(3);
-positionNew(4) = verticalExpandFactor * positionOrig(4);
-
-% Set new position
-fig.Position = positionNew;
+                            'Position', figPosition);
 
 % TODO: Make the following adjust_figure_position.m
 %%
