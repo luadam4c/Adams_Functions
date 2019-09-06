@@ -34,7 +34,7 @@ function atfwrite (dataMatrix, varargin)
 %       cd/print_cellstr.m
 %
 % Used by:
-%       /home/Matlab/plethRO1/spike2loader.m
+%       cd/spike2Mat2Text.m
 
 % File History:
 % 2019-09-03 Created by Adam Lu

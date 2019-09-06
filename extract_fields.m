@@ -32,7 +32,7 @@ function varargout = extract_fields (structs, varargin)
 %
 % Used by:
 %       cd/create_synced_movie_trace_plot_movie.m
-%       /home/Matlab/plethRO1/spike2loader.m
+%       cd/spike2Mat2Text.m
 
 % File History:
 % 2019-09-03 Created by Adam Lu

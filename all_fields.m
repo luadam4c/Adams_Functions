@@ -34,7 +34,7 @@ function fieldsTable = all_fields (inStruct, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       /home/Matlab/plethRO1/spike2loader.m
+%       cd/spike2Mat2Text.m
 
 % File History:
 % 2019-09-02 Created by Adam Lu

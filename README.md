@@ -393,6 +393,7 @@ There are 1 MATLAB scripts in this directory:
 - [**set_figure_properties.m**](https://github.com/blabuva/Adams_Functions/blob/master/set_figure_properties.m): Decides on the figure handle and sets figure properties
 - [**sigfig.m**](https://github.com/blabuva/Adams_Functions/blob/master/sigfig.m): Returns the number of significant figures from a number (numeric or string)
 - [**solve_function_at_value.m**](https://github.com/blabuva/Adams_Functions/blob/master/solve_function_at_value.m): Solves x for f(x) at a specific value (default is zero)
+- [**spike2Mat2Text.m**](https://github.com/blabuva/Adams_Functions/blob/master/spike2Mat2Text.m): Converts a Spike2-exported .mat file to a text file (atf, txt or csv)
 - [**sscanf_full.m**](https://github.com/blabuva/Adams_Functions/blob/master/sscanf_full.m): Same as sscanf but treats unmatched parts as whitespace (does not stop until end of string)
 - [**stderr.m**](https://github.com/blabuva/Adams_Functions/blob/master/stderr.m): Calculate the standard error of the mean
 - [**struct2arglist.m**](https://github.com/blabuva/Adams_Functions/blob/master/struct2arglist.m): Converts a scalar structure to an argument list
