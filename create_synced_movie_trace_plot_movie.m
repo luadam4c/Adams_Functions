@@ -44,7 +44,7 @@ function [plotFrames, handles] = create_synced_movie_trace_plot_movie (frames, d
 %       cd/plot_vertical_line.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/create_pleth_EEG_movie.m
 
 % File History:
 % 2019-09-05 Created by Adam Lu
@@ -219,7 +219,10 @@ plotFrames(1, 1).time = plotFrameTimeThis;
 if nPlotFrames > 1
     % Prevent y ticks from automatically updating
     % TODO: How to do this?
-	% set(traceSubPlot, 'YTickLabelMode', 'manual');
+    % NOT this: yticklabels('manual');
+    set(traceSubPlot, 'YTickLabel', []);
+	% NOT this: set(traceSubPlot, 'YTickLabelMode', 'manual');
+	% NOT this: set(traceSubPlot, 'DataAspectRatioMode', 'manual');
     
     for iPlotFrame = 2:nPlotFrames
         % Get the current plot frame time
@@ -241,7 +244,7 @@ if nPlotFrames > 1
             % Update the frame data
             set(im, 'CData', frames(iFrameThis).cdata);
         end
-
+        
         % Capture this plot frame
         plotFrameThis = getframe(fig);
 
@@ -278,6 +281,9 @@ timeDiffs(timeDiffs < 0) = NaN;
 OLD CODE:
 
 plotFrameTimes = tVec(1) + transpose(0:(nPlotFrames - 1)) * plotFrameDuration;
+
+% Display data aspect ratio
+disp(get(traceSubPlot, 'PlotBoxAspectRatio'));
 
 %}
 

@@ -57,6 +57,9 @@ function varargout = all_files (varargin)
 %                       'date'  - by modification date
 %                       'bytes' - by file size in bytes
 %                   default == 'name'
+%                   - 'MaxNum': maximum number of files to find
+%                   must be empty or a positive integer scalar
+%                   default == [] (no restriction)
 %
 % Requires:
 %       cd/construct_and_check_fullpath.m
@@ -66,6 +69,7 @@ function varargout = all_files (varargin)
 %       cd/all_swd_sheets.m
 %       cd/atf2sheet.m
 %       cd/combine_data_from_same_slice.m
+%       cd/create_pleth_EEG_movie.m
 %       cd/m3ha_pfiles2csv.m
 %       cd/parse_all_abfs.m
 %       cd/parse_all_multiunit.m
@@ -84,7 +88,7 @@ function varargout = all_files (varargin)
 % 2019-03-15 Fixed the case when extension is not provided
 % 2019-05-16 Added 'WarnFlag' as an optional flag
 % 2019-05-21 Added 'SortBy' as an optional argument
-% TODO: Add 'MaxNum' as an optional argument
+% 2019-09-05 Add 'MaxNum' as an optional argument
 % TODO: use force_string_start.m to make sure extension starts with a dot
 % TODO: Fix bug when a dot is in the folder name
 
@@ -103,6 +107,7 @@ suffixDefault = '';             % set later
 extensionDefault = '';          % set later
 regExpDefault = '';             % set later
 sortByDefault = 'name';         % sort by name by default
+maxNumDefault = [];             % no restriction by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -134,6 +139,9 @@ addParameter(iP, 'RegExp', regExpDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SortBy', sortByDefault, ...
     @(x) any(validatestring(x, validSortBys)));
+addParameter(iP, 'MaxNum', maxNumDefault, ...       % maximum number of indices
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                'MaxNum must be either empty or a positive integer scalar!'));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -148,6 +156,7 @@ suffix = iP.Results.Suffix;
 extension = iP.Results.Extension;
 regExp = iP.Results.RegExp;
 sortBy = validatestring(iP.Results.SortBy, validSortBys);
+maxNum = iP.Results.MaxNum;
 
 % Make sure the directory is an existing full path
 [directory, dirExists] = construct_and_check_fullpath(directory);
@@ -221,6 +230,15 @@ if ~strcmpi(sortBy, 'name')
 
     % Change it back to a struct array
     files = table2struct(filesTableSorted);
+end
+
+% Restrict to maximum number of files
+if ~isempty(maxNum)
+    % Find the index of the last file tp return
+    idxEnd = min(numel(files), maxNum);
+
+    % Restrict to those files
+    files = files(1:idxEnd);
 end
 
 % Get first output
