@@ -1,6 +1,6 @@
-%%function [plotFrames, handles] = create_pleth_EEG_movie (varargin)
+%%function [plotFrames, vidWriter, handles] = create_pleth_EEG_movie (varargin)
 %% Creates a synced movie from a .wmv file and a Spike2-exported .mat file in the current directory
-% Usage: [plotFrames, handles] = create_pleth_EEG_movie (varargin)
+% Usage: [plotFrames, vidWriter, handles] = create_pleth_EEG_movie (varargin)
 % Explanation:
 %       TODO
 %
@@ -25,6 +25,7 @@
 %       cd/create_time_vectors.m
 %       cd/read_frames.m
 %       cd/struct2arglist.m
+%       cd/write_frames.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -122,86 +123,8 @@ tVec = create_time_vectors(nSamples, 'TimeStart', timeStart, ...
     create_synced_movie_trace_plot_movie(frames, traceData, 'TimeVec', tVec);
 
 %% Write movie to file
-write_frames(plotFrames, outFolder, movieBase, movieType)
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function write_frames (plotFrames, outFolder, fileBase, movieType)
-%% Write frames to a file
-% TODO: Pull out as write_frames.m
-% TODO: Make OutFolder, FileBase, MovieType optional arguments
-
-%% Hard-coded parameters
-% TODO: Make optional arguments
-extraFields = {'time', 'duration'};
-plotFrameRate = [];
-
-% Decide on the frame rate in Hz
-if isempty(plotFrameRate)
-    if isfield(plotFrames(1), 'duration')
-        plotFrameRate = 1 / plotFrames(1).duration;
-    else
-        plotFrameRate = 12;
-    end
-end
-
-% Remove 'time' and 'duration' to match MATLAB's frames structure
-plotFramesMatlab = rmfield_custom(plotFrames, extraFields);
-    
-% Create a path for the movie
-moviePathBase = fullfile(outFolder, fileBase);
-
-% Create a VideoWriter object
-writer = VideoWriter(moviePathBase, movieType);
-
-% Set the frame rate in Hz
-writer.FrameRate = plotFrameRate;
-
-% Open the VideoWriter object
-open(writer);
-
-% Write frames to the file
-writeVideo(writer, plotFramesMatlab);
-
-% Close the VideoWriter object
-close(writer);
-
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function outStruct = rmfield_custom (inStruct, fieldNames)
-%% Removes a field from a structure only if it exists
-% TODO: Pull out as rmfield_custom.m
-
-% Initialize as the input structure
-outStruct = inStruct;
-
-% Remove fields one at a time
-if iscell(fieldNames)
-    for iField = 1:numel(fieldNames)
-        % Remove the field if it exists
-        outStruct = rmfield_if_exists(outStruct, fieldNames{iField});
-    end
-else
-    outStruct = rmfield_if_exists(outStruct, fieldNames);
-end
-
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function outStruct = rmfield_if_exists (inStruct, fieldName)
-%% Removes a field from a structure only if it exists
-% TODO: Pull out as part of rmfield_custom.m
-
-if isfield(inStruct, fieldName)
-    outStruct = rmfield(inStruct, fieldName);
-else
-    outStruct = inStruct;
-end
-
-end
+vidWriter = write_frames(plotFrames, 'MovieType', movieType, ...
+                'OutFolder', outFolder, 'FileBase', movieBase);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

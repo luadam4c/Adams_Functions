@@ -31,7 +31,7 @@ function handles = plot_frame (frame, varargin)
 %                   - 'AxesHandle': axes handle for created axes
 %                   must be a empty or a axes object handle
 %                   default == []
-%                   - 'VideoObject': video object read
+%                   - 'VideoObject': VideoReader object for the video
 %                   must be a VideoReader object
 %                   default == VideoReader.empty
 %                   - Any other parameter-value pair for plotFunc()

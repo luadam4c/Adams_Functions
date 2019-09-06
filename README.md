@@ -141,7 +141,7 @@ There are 1 MATLAB scripts in this directory:
 - [**create_latex_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_latex_string.m): Creates a LaTeX string from an equation used for fitting
 - [**create_logical_array.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_logical_array.m): Creates a logical array from indices for true and dimensions
 - [**create_new_mscript.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_new_mscript.m): Creates a new MATLAB script starting from a function template
-- [**create_pleth_EEG_movie.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pleth_EEG_movie.m): function [plotFrames, handles] = create_pleth_EEG_movie (varargin)
+- [**create_pleth_EEG_movie.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pleth_EEG_movie.m): function [plotFrames, vidWriter, handles] = create_pleth_EEG_movie (varargin)
 - [**create_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pulse.m): Creates a pulse vector
 - [**create_pulse_train_series.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pulse_train_series.m): Creates a pulse train series (a theta burst stimulation by default)
 - [**create_row_labels.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_row_labels.m): Creates row labels for table(s)
@@ -417,6 +417,7 @@ There are 1 MATLAB scripts in this directory:
 - [**vec2cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/vec2cell.m): Reorganize a vector or array into a cell array of partial vectors/arrays according to class
 - [**vecfun.m**](https://github.com/blabuva/Adams_Functions/blob/master/vecfun.m): Apply a function to each vector (each column of an array or each element of a cell array of vectors)
 - [**vertcat_spreadsheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/vertcat_spreadsheets.m): Combine spreadsheets using readtable, vertcat, then writetable
+- [**write_frames.m**](https://github.com/blabuva/Adams_Functions/blob/master/write_frames.m): Write frames to a file
 - [**write_timetable.m**](https://github.com/blabuva/Adams_Functions/blob/master/write_timetable.m): Writes a time table to a spreadsheet file
 - [**xolotl_add_current_injection.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_current_injection.m): Adds a current injection to a xolotl object, just the first compartment by default
 - [**xolotl_add_current_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_current_pulse.m): Adds a current pulse to the first compartment of a xolotl object
