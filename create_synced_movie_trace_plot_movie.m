@@ -220,7 +220,6 @@ if nPlotFrames > 1
     % Prevent y ticks from automatically updating
     % TODO: How to do this?
     % NOT this: yticklabels('manual');
-    set(traceSubPlot, 'YTickLabel', []);
 	% NOT this: set(traceSubPlot, 'YTickLabelMode', 'manual');
 	% NOT this: set(traceSubPlot, 'DataAspectRatioMode', 'manual');
     

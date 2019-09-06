@@ -141,7 +141,7 @@ There are 1 MATLAB scripts in this directory:
 - [**create_latex_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_latex_string.m): Creates a LaTeX string from an equation used for fitting
 - [**create_logical_array.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_logical_array.m): Creates a logical array from indices for true and dimensions
 - [**create_new_mscript.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_new_mscript.m): Creates a new MATLAB script starting from a function template
-- [**create_pleth_EEG_movie.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pleth_EEG_movie.m): function [output1] = create_pleth_EEG_movie (varargin)
+- [**create_pleth_EEG_movie.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pleth_EEG_movie.m): function [plotFrames, handles] = create_pleth_EEG_movie (varargin)
 - [**create_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pulse.m): Creates a pulse vector
 - [**create_pulse_train_series.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pulse_train_series.m): Creates a pulse train series (a theta burst stimulation by default)
 - [**create_row_labels.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_row_labels.m): Creates row labels for table(s)
