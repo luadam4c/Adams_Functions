@@ -3,6 +3,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 % Usage: parts = extract_fileparts (paths, partType, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       [~, paths] = all_files('Directory', pwd);
 %       extract_fileparts(paths, 'directory')
@@ -16,10 +17,12 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       extract_fileparts(paths, 'commonsuffix')
 %       extract_fileparts(paths, 'distinct')
 %       sliceNames = extract_fileparts(paths, 'base', 'RegExp', '.*slice[0-9]*');
+%
 % Outputs:
 %       parts       - parts extracted
 %                   specified as a character array 
 %                       or a cell array of character arrays
+%
 % Arguments:
 %       paths       - file paths (absolute or relative)
 %                   Note: this must contain the extension if it is a file
@@ -57,6 +60,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/all_dependent_functions.m
 %       cd/all_file_bases.m
 %       cd/archive_dependent_scripts.m
+%       cd/atfwrite.m
 %       cd/combine_abf_data.m
 %       cd/combine_data_from_same_slice.m
 %       cd/combine_variables_across_tables.m

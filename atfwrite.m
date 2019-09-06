@@ -35,6 +35,7 @@ function atfwrite (dataMatrix, varargin)
 %       cd/create_labels_from_numbers.m
 %       cd/create_time_stamp.m
 %       cd/create_time_vectors.m
+%       cd/extract_fileparts.m
 %       cd/force_column_cell.m
 %       cd/print_cellstr.m
 %
@@ -47,14 +48,14 @@ function atfwrite (dataMatrix, varargin)
 % 
 
 %% Hard-coded parameters
-nRowsToSkip = 4;
+maxNSamplesAtf = 1e6;
 
 %% Default values for optional arguments
 fileNameDefault = '';
 outFolderDefault = '';              % set in construct_fullpath.m
 signalNamesDefault = {};            % set later
 samplingIntervalSecDefault = 0.01;  % sampling at 100 Hz by default
-timeStartDefault = 0;               % start at 0 by default
+timeStartDefault = 0;               % start at 0 seconds by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -96,18 +97,21 @@ siSeconds = iP.Results.SamplingIntervalSeconds;
 timeStart = iP.Results.TimeStart;
 
 %% Preparation
+% Count the number of samples
+nSamples = size(dataMatrix, 1);
+
 % Count the number of signals
 nSignals = size(dataMatrix, 2);
 
-% Count the number of samples
-nSamples = size(dataMatrix, 1);
+% Count the number of significant figures needed
+nSigFig = ceil(log10(nSamples));
 
 % Create default file name
 if isempty(fileName)
     fileName = [create_time_stamp, '_', inputname(1), '.atf'];
 end
 
-% Create default file name
+% Construct file path to use
 filePath = construct_fullpath(fileName, 'Directory', outFolder);
 
 % Decide on signal names
@@ -125,16 +129,113 @@ else
     signalNames = create_labels_from_numbers(1:nSignals, 'Prefix', 'Signal #');
 end
 
+%% Do the job
+% Split files if more than maxNSamples samples
+if nSamples > maxNSamplesAtf
+    % Compute the number of files
+    nFiles = ceil(nSamples / maxNSamplesAtf);
+
+    % Extract the path base
+    filePathBase = extract_fileparts(filePath, 'pathbase');
+
+    % Create file paths
+    filePaths = create_labels_from_numbers(1:nFiles, ...
+                'Prefix', [filePathBase, '_part'], 'Suffix', '.atf');
+
+    for iFile = 1:nFiles
+        % TODO: Use create_indices.m somehow
+        % Get the starting row
+        rowStart = (iFile - 1) * maxNSamplesAtf + 1;
+
+        % Get the ending row
+        rowEnd = min(nSamples, iFile * maxNSamplesAtf);
+
+        % Create indices
+        rowsThis = rowStart:rowEnd;
+
+        % Compute time start for this file
+        timeStartThis = timeStart + (rowStart - 1) * siSeconds;
+
+        % Create the .atf file
+        atfwrite_helper(dataMatrix(rowsThis, :), signalNames, siSeconds, ...
+                        timeStartThis, nSigFig, filePaths{iFile});
+    end
+else
+    % Create the .atf file
+    atfwrite_helper(dataMatrix, signalNames, siSeconds, ...
+                    timeStart, nSigFig, filePath);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function atfwrite_helper(dataMatrix, signalNames, siSeconds, ...
+                            timeStart, nSigFig, filePath)
+%% Writes one .atf file
+% TODO: Construct the header text beforehand and pass it in
+
+%% Hard-coded constants
+MS_PER_S = 1000;
+
 %% Deal with time
-% Create a time vector
+% Count the number of samples
+nSamples = size(dataMatrix, 1);
+
+% Create a time vector for this file
 timeVectorSec = create_time_vectors(nSamples, 'TimeUnits', 's', ...
                                 'SamplingIntervalSeconds', siSeconds, ...
                                 'TimeStart', timeStart);
 
-% Count the number of significant figures needed
-nSigFig = ceil(log10(nSamples));
+% Compute the time start in milliseconds
+timeStartMs = timeStart * MS_PER_S;
 
-%% Prepare for the ATF header
+%% Construct the ATF header
+atfHeaderLines = construct_atf_header(signalNames, timeStartMs);
+
+%% Print the ATF header
+% Open the file
+fid = fopen(filePath, 'w');
+fprintf('Creating file at %s ... \n', filePath);
+
+% Print the ATF file header
+fprintf(fid, atfHeaderLines);
+
+% Close the file
+fclose(fid);
+
+%% Append the data
+% Append the data
+dlmwrite(filePath, [timeVectorSec, dataMatrix], '-append', ...
+                    'Delimiter', '\t', 'Precision', nSigFig);
+
+% dlmwrite_with_header(filePath, [timeVectorSec, dataMatrix], ...
+%                     'AppendToFile', true, 'Delimiter', '\t', ...
+%                     'Precision', nSigFig);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function atfHeaderLines = construct_atf_header (signalNames, timeStartMs)
+%% Constructs an Axon Text File header
+
+%% Hard-coded parameters
+nRowsToSkip = 4;
+
+%% Preparation
+% Count the number of signals
+nSignals = numel(signalNames);
+
+%% Do the job
+% First line is version info
+versionInfoLine = 'ATF\t1.0\n';
+
+% Second line is nRowsToSkip and nSignals
+secondLine = sprintf('%d\t%d\n', nRowsToSkip, nSignals);
+
+% Acquisition Mode
+acquisitionModeLine = '"AcquisitionMode=Fixed-Length Event-Driven"\n';
+
+% Sweep Start Time
+sweepStartTimesLine = sprintf('"SweepStartTimesMS=%.3f"\n', timeStartMs);
+
 % Force signal names as a column cell array
 signalNames = force_column_cell(signalNames);
 
@@ -166,44 +267,12 @@ headerInfo = print_cellstr(traceHeader, 'Delimiter', '\t', ...
                             'OmitQuotes', true, 'OmitNewline', false, ...
                             'OmitBraces', true, 'ToPrint', false);
 
-%% Create the ATF header
-% Open the file
-fid = fopen(filePath, 'w');
-
-% Print the version info
-fprintf(fid, 'ATF\t1.0\n');
-
-% Print nRowsToSkip and nSignals
-fprintf(fid, '%d\t%d\n', nRowsToSkip, nSignals);
-
-% Print the acquisition mode
-fprintf(fid, '"AcquisitionMode=Fixed-Length Event-Driven"\n');
-
-% Print sweep start time
-fprintf(fid, '"SweepStartTimesMS=0.000"\n');
-
-% Print the SignalsExported line
-fprintf(fid, signalsExportedLine);
-
-% Print the Signals line
-fprintf(fid, signalsLine);
-
-% Print the header info line
-fprintf(fid, headerInfo);
-
-% Close the file
-fclose(fid);
-
-%% Append the data
-dlmwrite(filePath, [timeVectorSec, dataMatrix], '-append', ...
-                    'Delimiter', '\t', 'Precision', nSigFig);
-
-% dlmwrite_with_header(filePath, [timeVectorSec, dataMatrix], ...
-%                     'AppendToFile', true, 'Delimiter', '\t', ...
-%                     'Precision', nSigFig);
+% Combine into the ATF file header
+atfHeaderLines = [versionInfoLine, secondLine, acquisitionModeLine, ...
+                sweepStartTimesLine, signalsExportedLine, ...
+                signalsLine, headerInfo];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %{
 OLD CODE:
 

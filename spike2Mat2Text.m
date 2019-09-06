@@ -45,7 +45,9 @@ function textPath = spike2Mat2Text (spike2MatPath, varargin)
 
 %% Hard-coded parameters
 validTextTypes = {'atf', 'txt', 'csv'};
-maxNSamplesAtf = 1e6;
+
+% TODO: Make optional argument
+timeStart = 0;
 
 %% Default values for optional arguments
 textTypeDefault  = 'atf';
@@ -62,7 +64,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
-iP.KeepUnmatched = true;                        % allow extraneous options
+% iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'spike2MatPath');
@@ -76,10 +78,10 @@ addParameter(iP, 'TextPath', textPathDefault, ...
 % Read from the Input Parser
 parse(iP, spike2MatPath, varargin{:});
 textType = validatestring(iP.Results.TextType, validTextTypes);
-textPath = iP.Results.textPath;
+textPath = iP.Results.TextPath;
 
 % Keep unmatched arguments for the TODO() function
-otherArguments = struct2arglist(iP.Unmatched);
+% otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Create an output Axon Text File path
@@ -138,52 +140,17 @@ nSamples = size(channelMatrix, 1);
 
 switch textType
     case 'atf'
-        % Split files if more than maxNSamples samples
-        if nSamples > maxNSamplesAtf
-            % Compute the number of files
-            nFiles = ceil(nSamples / maxNSamplesAtf);
-
-            % Create file paths
-            textPath = create_labels_from_numbers(1:nFiles, ...
-                        'Prefix', textPath, 'Delimiter', '_');
-
-            for iFile = 1:nFiles
-                % TODO: Use create_indices.m somehow
-                % Get the starting row
-                rowStart = (iFile - 1) * maxNSamplesAtf + 1;
-
-                % Get the ending row
-                rowEnd = min(nSamples, iFile * maxNSamplesAtf);
-
-                % Create indices
-                rowsThis = rowStart:rowEnd;
-
-                % Compute time start
-                timeStart = (rowStart - 1) * siSeconds;
-
-                % Create the .atf file
-                atfwrite(channelMatrix(rowsThis, :), ...
-                        'SignalNames', channelNames, ...
-                        'SamplingIntervalSeconds', siSeconds, ...
-                        'TimeStart', timeStart, ...
-                        'FileName', textPath{iFile});
-            end
-        else
-            % Start at time zero
-            timeStart = 0;
-
-            % Create the .atf file
-            atfwrite(channelMatrix, 'SignalNames', channelNames, ...
-                  'SamplingIntervalSeconds', siSeconds, ...
-                  'TimeStart', timeStart, 'FileName', textPath);
-        end
+        atfwrite(channelMatrix, 'SignalNames', channelNames, ...
+              'SamplingIntervalSeconds', siSeconds, ...
+              'TimeStart', timeStart, 'FileName', textPath);
     case 'txt'
         % Create an output text file path
         textPath = replace(spike2MatPath, '.mat', '.txt');
 
         % Create a time vector in ms
         timeVectorMs = create_time_vectors(nSamples, 'TimeUnits', 'ms', ...
-                                        'SamplingIntervalSeconds', siSeconds);
+                                    'SamplingIntervalSeconds', siSeconds, ...
+                                    'TimeStart', timeStart);
 
         % Count the number of significant figures needed
         nSigFig = ceil(log10(nSamples));
