@@ -145,7 +145,7 @@ switch textType
 
             % Create file paths
             textPath = create_labels_from_numbers(1:nFiles, ...
-                        'Prefix', textPath, 'Delimiter', '_')
+                        'Prefix', textPath, 'Delimiter', '_');
 
             for iFile = 1:nFiles
                 % TODO: Use create_indices.m somehow

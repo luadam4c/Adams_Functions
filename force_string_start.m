@@ -78,11 +78,11 @@ parse(iP, oldStr, subStr, varargin{:});
 onlyIfNonempty = iP.Results.OnlyIfNonempty;
 
 % Keep unmatched arguments for the force_string_end() function
-otherArguments = struct2arglist(iP.Unmatched);
+otherArguments = iP.Unmatched;
 
 %% Do the job
 newStr = force_string_end(oldStr, subStr, 'StringStartInstead', true, ...
-                        'onlyIfNonempty', onlyIfNonempty, otherArguments{:});
+                        'OnlyIfNonempty', onlyIfNonempty, otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
