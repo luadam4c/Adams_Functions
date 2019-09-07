@@ -23,21 +23,28 @@ function [plotFrames, handles] = create_synced_movie_trace_plot_movie (frames, d
 %                       duration - duration of frame in seconds
 %                   must be a structure array
 %       data        - trace data
-%                   must be a numeric vector
+%                   must be a numeric array or a cell array of numeric vectors
 %       siMs        - (opt) sampling interval in ms
 %                   must be a positive vector
 %                   default == 5 ms (200 Hz)
 %       varargin    - 'TimeVec': original time vector
 %                   must be a numeric vector
 %                   default == constructed from siMs
+%                   - 'TraceLabels': labels for the traces, 
+%                               suppress by setting value to 'suppress'
+%                   must be a string scalar or a character vector 
+%                       or a cell array of strings or character vectors
+%                   default == {'Trace #1', 'Trace #2', ...}
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
 %       cd/compute_axis_limits.m
 %       cd/create_subplots.m
 %       cd/create_error_for_nargin.m
+%       cd/create_labels_from_numbers.m
 %       cd/create_time_vectors.m
 %       cd/extract_fields.m
+%       cd/force_matrix.m
 %       cd/struct2arglist.m
 %       cd/match_time_info.m
 %       cd/plot_frame.m
@@ -48,6 +55,7 @@ function [plotFrames, handles] = create_synced_movie_trace_plot_movie (frames, d
 
 % File History:
 % 2019-09-05 Created by Adam Lu
+% 2019-09-06 Added 'TraceLabels' as an optional argument
 % 
 
 %% Hard-coded parameters
@@ -58,11 +66,11 @@ viewWindowSec = 5;          % width of viewing window in seconds
 plotFrameRate = [];         % frame rate for playing the plot movie
 yLimits = [];               % y limits for trace subplot
 timeLabel = 'Time (s)';
-dataLabel = 'EEG amplitude (uV)';
 
 %% Default values for optional arguments
 siMsDefault = [];
 tVecDefault = [];           % set later
+traceLabelsDefault = '';    % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -81,7 +89,7 @@ iP.FunctionName = mfilename;
 addRequired(iP, 'frames', ...
     @(x) validateattributes(x, {'struct'}, {'vector'}));
 addRequired(iP, 'data', ...
-    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+    @(x) validateattributes(x, {'cell', 'numeric'}, {'2d'}));
 
 % Add optional inputs to the Input Parser
 addOptional(iP, 'siMs', siMsDefault, ...
@@ -91,18 +99,39 @@ addOptional(iP, 'siMs', siMsDefault, ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'TimeVec', tVecDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'TraceLabels', traceLabelsDefault, ...
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
 
 % Read from the Input Parser
 parse(iP, frames, data, varargin{:});
 siMs = iP.Results.siMs;
 tVec = iP.Results.TimeVec;
+traceLabels = iP.Results.TraceLabels;
 
 % Keep unmatched arguments for the TODO() function
 % otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
+% Force as a matrix
+%   Note: data vectors are assumed to have the same length
+data = force_matrix(data);
+
 % Compute the number of samples
-nSamples = numel(data);
+nSamples = size(data, 1);
+
+% Compute the number of traces
+nTraces = size(data, 2);
+
+% Compute the number of subplot rows
+nRowsSubplots = nTraces * 2;
+
+% Compute the subplot grid positions
+subPlotGridPositions = [{1:nTraces}, num2cell(nTraces + 1:nRowsSubplots)];
+
+% Create default trace labels
+if isempty(traceLabels)
+    traceLabels = create_labels_from_numbers(1:nTraces, 'Prefix', 'Trace #');
+end
 
 % Construct the time vector if necessary
 tVec = match_time_info(tVec, siMs, nSamples);
@@ -144,7 +173,9 @@ end
 
 % Compute the appropriate y limits
 if isempty(yLimits)
-    yLimits = compute_axis_limits(data, 'y', 'Coverage', 90, 'AutoZoom', true);
+    yLimits = arrayfun(@(x) compute_axis_limits(data(:, x), 'y', ...
+                                        'Coverage', 90, 'AutoZoom', true), ...
+                        transpose(1:nTraces), 'UniformOutput', false);
 end
 
 % Compute the plot frame duration in seconds
@@ -163,7 +194,8 @@ plotFrameTimes = create_time_vectors(nPlotFrames, 'TimeStart', tVec(1), ...
 
 %% Do the job
 % Create subplots
-[fig, ax] = create_subplots(6, 1, {1:3, 4, 5, 6}, 'FigPosition', figPosition);
+[fig, ax] = create_subplots(nRowsSubplots, 1, subPlotGridPositions, ...
+                            'FigPosition', figPosition);
 
 % Get the figure position
 figPosition = get(fig, 'Position');
@@ -179,7 +211,7 @@ plotFrames = create_empty_frames(figHeight, figWidth, [nPlotFrames, 1], ...
 % Rename the axes
 % Plot the trace on the bottom
 movieSubPlot = ax(1);
-traceSubPlot = ax(2);
+traceSubPlots = ax(2:end);
 
 % Get the initial plot frame time
 plotFrameTimeThis = plotFrameTimes(1);
@@ -188,24 +220,39 @@ plotFrameTimeThis = plotFrameTimes(1);
 xLimitsFirst = plotFrameTimeThis + viewWindowSec * 0.5 * [-1, 1];
 
 % TODO: Update plot_traces to use 'AxesHandle' and use it
-% Plot the trace
-traceLine = plot(traceSubPlot, tVec, data);
+% Plot the traces
+for iTrace = 1:nTraces
+    traceLine = plot(traceSubPlots(iTrace), tVec, data(:, iTrace));
+end
 
-% Zoom in to the first window, set the axis limits, 
-%   set time tick locations and don't show ticks
-set(traceSubPlot, 'XLim', xLimitsFirst, 'YLim', yLimits, ...
-    'XTick', xTicks, 'TickLength', [0, 0]);
+% Zoom in to the first window, set the axis limits, and remove time ticks
+for iTrace = 1:nTraces
+    set(traceSubPlots(iTrace), 'XLim', xLimitsFirst, 'XTick', [], ...
+        'YLim', yLimits{iTrace}, 'TickLength', [0, 0]);
+end
 
-% Create time label
-traceSubPlot.XLabel.String = timeLabel;
+% Link the time axis limits
+linkaxes(traceSubPlots, 'x');
 
-% Create data label
-traceSubPlot.YLabel.String = dataLabel;
+% Add time tick locations for the bottom-most plot
+set(traceSubPlots(end), 'XTick', xTicks);
 
-% Plot a vertical line through the plot
-vertLine = plot_vertical_line(plotFrameTimeThis, 'LineStyle', '--', ...
-                                'LineWidth', 2, 'ColorMap', 'r', ...
-                                'AxesHandle', traceSubPlot);
+% Create time label for the bottom-most plot
+traceSubPlots(end).XLabel.String = timeLabel;
+
+% Create data labels
+for iTrace = 1:nTraces
+    traceSubPlots(iTrace).YLabel.String = traceLabels{iTrace};
+end
+
+% Plot a vertical line through the plots
+vertLines = gobjects(nTraces, 1);
+for iTrace = 1:nTraces
+    vertLines(iTrace) = ...
+        plot_vertical_line(plotFrameTimeThis, 'LineStyle', '--', ...
+                                    'LineWidth', 2, 'ColorMap', 'r', ...
+                                    'AxesHandle', traceSubPlots(iTrace));
+end
 
 % Look for the corresponding movie frame
 [iFrameThis, frameTimeThis] = find_nearest_frame(plotFrameTimeThis, frameTimes);
@@ -238,12 +285,15 @@ if nPlotFrames > 1
         % Get the current plot frame time
         plotFrameTimeThis = plotFrameTimes(iPlotFrame);
 
-        % Update the zoom window
-        set(traceSubPlot, 'XLim', plotFrameTimeThis + viewWindowSec * 0.5 * [-1, 1]);
+        % Update the zoom window of the first subplot
+        %   Note: the other trace subplots are linked so will be updated too
+        set(traceSubPlots(1), 'XLim', plotFrameTimeThis + viewWindowSec * 0.5 * [-1, 1]);
 
         % Update the vertical line position
-        set(vertLine, 'XData', [plotFrameTimeThis, plotFrameTimeThis]);
-
+        for iTrace = 1:nTraces
+            set(vertLines(iTrace), 'XData', [plotFrameTimeThis, plotFrameTimeThis]);
+        end
+        
         % Update the corresponding movie frame if necessary
         if plotFrameTimeThis < frameTimeThis || ...
                 plotFrameTimeThis >= frameTimes(iFrameThis + 1)
@@ -270,7 +320,7 @@ end
 handles.fig = fig;
 handles.ax = ax;
 handles.traceLine = traceLine;
-handles.vertLine = vertLine;
+handles.vertLines = vertLines;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

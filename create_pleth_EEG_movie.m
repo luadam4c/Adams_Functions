@@ -47,6 +47,7 @@ plethChannelName = 'Pleth_2';
 movieType = 'Motion JPEG AVI';
 outFolder = '';
 movieBase = '';
+traceLabels = {'Pleth', 'EEG amp (uV)', 'EMG amp (uV)'};
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -100,22 +101,21 @@ spike2File = matfile(spike2MatPath);
 % Get all the structure names
 allStructNames = fieldnames(spike2File);
 
-% Find the structure with EEG trace data
+% Find the structure with trace data
+[~, plethStructName] = find_in_strings(plethChannelName, allStructNames);
 [~, eegStructName] = find_in_strings(eegChannelName, allStructNames);
 [~, emgStructName] = find_in_strings(emgChannelName, allStructNames);
-[~, plethStructName] = find_in_strings(plethChannelName, allStructNames);
 
-% Extract the EEG struct
+% Extract the structures
+plethStruct = spike2File.(plethStructName);
 eegStruct = spike2File.(eegStructName);
 emgStruct = spike2File.(emgStructName);
-plethStruct = spike2File.(plethStructName);
 
 % Extract the trace data
-% traceData = cell(3, 1);
-% traceData{1} = eegStruct.values;
-% traceData{2} = emgStruct.values;
-% traceData{3} = plethStruct.values;
-traceData = eegStruct.values;
+traceData = cell(3, 1);
+traceData{1} = plethStruct.values;
+traceData{2} = eegStruct.values;
+traceData{3} = emgStruct.values;
 
 % Extract the trace time info
 timeStart = eegStruct.start;
@@ -134,7 +134,8 @@ frames = read_frames(wmvPath);
 %% Combine into a plot movie
 % Create plot movie
 [plotFrames, handles] = ...
-    create_synced_movie_trace_plot_movie(frames, traceData, 'TimeVec', tVec);
+    create_synced_movie_trace_plot_movie(frames, traceData, 'TimeVec', tVec, ...
+                                            'TraceLabels', traceLabels);
 
 %% Write movie to file
 vidWriter = write_frames(plotFrames, 'MovieType', movieType, ...
