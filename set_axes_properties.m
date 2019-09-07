@@ -7,6 +7,7 @@ function ax = set_axes_properties (varargin)
 % Example(s):
 %       ax = set_axes_properties;
 %       ax = set_axes_properties('SubPlotNumber', [2, 3, 1]);
+%       ax = set_axes_properties('AxesCoverage', 90);
 %
 % Outputs:
 %       ax         - axes handle to use
@@ -18,15 +19,22 @@ function ax = set_axes_properties (varargin)
 %                   - 'SubPlotNumber': subplot numbers for created axes
 %                   must be a 3-element positive integer vector
 %                   default == []
+%                   - 'OuterPosition': axes outer position
+%                   must be a 4-element positive integer vector
+%                   default == [] (not set)
 %                   - 'Position': axes position
 %                   must be a 4-element positive integer vector
-%                   default == [0, 0, 1, 1] in normalized units
+%                   default == [] (not set)
 %                   - 'Width': axes width
 %                   must be a positive scalar
 %                   default == get(0, 'defaultfigureposition') (3)
 %                   - 'Height': axes height
 %                   must be a positive scalar
 %                   default == get(0, 'defaultfigureposition') (4)
+%                   - 'AxesCoverage': percent of axes position 
+%                                       relative to outerPosition
+%                   must be a nonnegative scalar or 2-element vector
+%                   default == [] (not changed from default)
 %                   - Any other parameter-value pair for the axes() function
 %
 % Requires:
@@ -47,9 +55,11 @@ function ax = set_axes_properties (varargin)
 %% Default values for optional arguments
 axHandleDefault = [];           % no existing axes by default
 subPlotNumberDefault = [];      % no subplot number by default
+outerPositionDefault = [];      % set later
 positionDefault = [];           % set later
 widthDefault = [];              % set later
 heightDefault = [];             % set later
+axesCoverageDefault = [];       % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -64,6 +74,9 @@ addParameter(iP, 'AxesHandle', axHandleDefault);
 addParameter(iP, 'SubPlotNumber', subPlotNumberDefault, ...
     @(x) assert(isempty(x) || ispositiveintegervector(x), ...
                 'SubPlotNumber must be a empty or a positive integer vector!'));
+addParameter(iP, 'OuterPosition', outerPositionDefault, ...
+    @(x) assert(isempty(x) || isnumericvector(x), ...
+                'OuterPosition must be a empty or a numeric vector!'));
 addParameter(iP, 'Position', positionDefault, ...
     @(x) assert(isempty(x) || isnumericvector(x), ...
                 'Position must be a empty or a numeric vector!'));
@@ -71,26 +84,23 @@ addParameter(iP, 'Width', widthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive'}));
 addParameter(iP, 'Height', heightDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive'}));
+addParameter(iP, 'AxesCoverage', axesCoverageDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'vector'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 axHandle = iP.Results.AxesHandle;
 subPlotNumber = iP.Results.SubPlotNumber;
-positionUser = iP.Results.Position;
+outerPosition = iP.Results.OuterPosition;
+position = iP.Results.Position;
 width = iP.Results.Width;
 height = iP.Results.Height;
+axesCoverage = iP.Results.AxesCoverage;
 
 % Keep unmatched arguments for the axes() function
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
-% Set the default position to have no margins
-% TODO: How to tell if a figure was newly created?
-% if isempty(positionUser)
-%     position = [0, 0, 1, 1];
-% else
-%     position = positionUser;
-% end
 
 %% Do the job
 % Decide on the axes handle
@@ -116,8 +126,18 @@ set(ax, otherArguments{:});
 
 % Modify Axes position if requested
 % TODO: update_object_position.m
-if ~isempty(positionUser)
-    set(ax, 'Position', positionUser);
+if ~isempty(outerPosition)
+    set(ax, 'OuterPosition', outerPosition);
+end
+% If no margins, make the position the same as outer position
+if ~isempty(axesCoverage)
+    outerPosition = get(ax, 'OuterPosition');
+    position(1:2) = outerPosition(1:2) + ...
+                        outerPosition(3:4) .* (100 - axesCoverage)/200;
+    position(3:4) = outerPosition(3:4) .* axesCoverage/100;
+end
+if ~isempty(position)
+    set(ax, 'Position', position);
 end
 if ~isempty(width)
     positionNew = get(ax, 'Position');

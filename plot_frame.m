@@ -34,6 +34,10 @@ function handles = plot_frame (frame, varargin)
 %                   - 'VideoReaderObject': VideoReader object for the video
 %                   must be a VideoReader object
 %                   default == VideoReader.empty
+%                   - 'AxesCoverage': percent of axes position 
+%                                       relative to outerPosition
+%                   must be a nonnegative scalar or 2-element vector
+%                   default == 100 %
 %                   - Any other parameter-value pair for plotFunc()
 %
 % Requires:
@@ -54,8 +58,9 @@ function handles = plot_frame (frame, varargin)
 %% Default values for optional arguments
 plotFuncDefault = function_handle.empty;
 figHandleDefault = [];          % no existing figure by default
-axHandleDefault = [];           % no existing axes by default
+axesHandleDefault = [];           % no existing axes by default
 videoReaderObjectDefault = VideoReader.empty;
+axesCoverageDefault = 100;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -80,16 +85,19 @@ addOptional(iP, 'plotFunc', plotFuncDefault, ...
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'FigHandle', figHandleDefault);
-addParameter(iP, 'AxesHandle', axHandleDefault);
+addParameter(iP, 'AxesHandle', axesHandleDefault);
 addParameter(iP, 'VideoReaderObject', videoReaderObjectDefault, ...
     @(x) validateattributes(x, {'VideoReader'}, {'2d'}));
+addParameter(iP, 'AxesCoverage', axesCoverageDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'vector'}));
 
 % Read from the Input Parser
 parse(iP, frame, varargin{:});
 figHandle = iP.Results.FigHandle;
-axHandle = iP.Results.AxesHandle;
+axesHandle = iP.Results.AxesHandle;
 plotFunc = iP.Results.plotFunc;
 vidObj = iP.Results.VideoReaderObject;
+axesCoverage = iP.Results.AxesCoverage;
 
 % Keep unmatched arguments for the plotFunc() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -122,7 +130,8 @@ else
 end
 
 % Decide on the axes
-ax = set_axes_properties('AxesHandle', axHandle);
+ax = set_axes_properties('AxesHandle', axesHandle, ...
+                        'AxesCoverage', axesCoverage);
 
 %% Do the job
 % Add other arguments

@@ -35,6 +35,9 @@ function h = plot_vertical_line (xValue, varargin)
 %                   - 'ColorMap' - color map used
 %                   must be a 2-D numeric array with 3 columns
 %                   default == decide_on_colormap([], nLines)
+%                   - 'AxesHandle': axes handle for created axes
+%                   must be a empty or a axes object handle
+%                   default == []
 %                   - Any other parameter-value pair for the line() function
 %
 % Requires:
@@ -70,6 +73,7 @@ function h = plot_vertical_line (xValue, varargin)
 yLimitsDefault = [];
 colorMapDefault = [];               % set later
 horizontalInsteadDefault = false;
+axHandleDefault = [];           % no existing axes by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -93,20 +97,25 @@ addParameter(iP, 'YLimits', yLimitsDefault);
 addParameter(iP, 'ColorMap', colorMapDefault);
 addParameter(iP, 'HorizontalInstead', horizontalInsteadDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AxesHandle', axHandleDefault);
 
 % Read from the Input Parser
 parse(iP, xValue, varargin{:});
 yLimits = iP.Results.YLimits;
 colorMap = iP.Results.ColorMap;
 horizontalInstead = iP.Results.HorizontalInstead;
+axesHandle = iP.Results.AxesHandle;
 
 % Keep unmatched arguments for the line() function
 otherArguments = iP.Unmatched;
 
 %% Preparation
+% Decide on the axes
+ax = set_axes_properties('AxesHandle', axesHandle);
+
 % Set default y value limits
 if isempty(yLimits)
-    yLimits = get(gca, 'YLim');
+    yLimits = get(ax, 'YLim');
 end
 
 % Force as a cell array of column vectors and match vectors
@@ -150,12 +159,12 @@ end
 
 % Plot all lines
 if horizontalInstead
-    h = cellfun(@(y, x, z) line(x, repmat(y, size(x)), ...
+    h = cellfun(@(y, x, z) line(ax, x, repmat(y, size(x)), ...
                                 'Color', colorMapExpanded(z, :), ...
                                 otherArguments), ...
                 xValueAll, yLimitsAll, num2cell(transpose(1:nLines)));
 else
-    h = cellfun(@(x, y, z) line(repmat(x, size(y)), y, ...
+    h = cellfun(@(x, y, z) line(ax, repmat(x, size(y)), y, ...
                                 'Color', colorMapExpanded(z, :), ...
                                 otherArguments), ...
                 xValueAll, yLimitsAll, num2cell(transpose(1:nLines)));

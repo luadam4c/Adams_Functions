@@ -189,7 +189,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   must be a positive integer scalar
 %                   default == []
 %                   - 'FigExpansion': expansion factor for figure position
-%                   must be a positive scalar
+%                   must be a must be a positive scalar or 2-element vector
 %                   default == []
 %                   - 'ClearFigure': whether to clear figure
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -812,19 +812,15 @@ if isempty(pTickAngle)
 end
 
 %% Plot tuning curve
-% Decide on the figure to plot on
+% Decide on the figure to plot on and set properties
 fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
-                            'FigExpansion', figExpansion);
+                            'ExpansionFactor', figExpansion, ...
+                            'ClearFigure', clearFigure);
 
 % Initialize graphics objects
 curves = gobjects(nColumnsToPlot, nLinesPerPhase);
 if ~isempty(lowerCI) || ~isempty(upperCI)
     confInts = gobjects(nColumnsToPlot, nLinesPerPhase);
-end
-
-% Clear figure if requested
-if clearFigure
-    clf;
 end
 
 % Hold on if more than one column

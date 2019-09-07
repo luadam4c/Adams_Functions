@@ -10,6 +10,7 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 %       [fig, ax] = create_subplots(2, 3, 'FigNumber', 5);
 %       [fig, ax] = create_subplots(2, 3, 2:3, 'FigNumber', 6);
 %       [fig, ax] = create_subplots(2, 3, 'CenterPosition', [500, 500, 300, 200]);
+%       [fig, ax] = create_subplots(6, 1, {1:3, 4, 5, 6}, 'CenterPosition', [500, 500, 400, 200]);
 %
 % Outputs:
 %       fig         - figure handle
@@ -125,23 +126,22 @@ if isempty(centerPosition)
     centerPosition = get(0, 'defaultfigureposition');
 end
 
-% Decide on the figure position
+% Decide on any expansion factors
 if isempty(figPosition)
-    % TODO: expand_figure_position.m
+    % Start with the initial figure position
+    figPosition = centerPosition;
+
     % Compute the horizontal expansion factor
     horizontalExpandFactor = (nColumns - (nColumns - 1) * horizontalDeadSpace);
 
     % Compute the vertical expansion factor
     verticalExpandFactor = nRows;
 
-    % Copy original position
-    figPosition = centerPosition;
-
-    % Modify new position
-    figPosition(1) = centerPosition(1) - centerPosition(3);
-    figPosition(2) = centerPosition(2) - centerPosition(4);
-    figPosition(3) = horizontalExpandFactor * centerPosition(3);
-    figPosition(4) = verticalExpandFactor * centerPosition(4);
+    % Compute the expansion factor
+    figExpansion = [horizontalExpandFactor, verticalExpandFactor];
+else
+    % Use the figure position decided by the user, so no expansion
+    figExpansion = [];
 end
 
 % Decide on the subplot gridPositions
@@ -153,22 +153,8 @@ end
 
 % Decide on the figure to plot on and set figure position
 fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
-                            'Position', figPosition);
-
-% TODO: Make the following adjust_figure_position.m
-%%
-% Get the screen size
-screenSize = get(0, 'ScreenSize');
-
-% Get the current figure position
-figPositionNow = get(fig, 'Position');
-
-% If the new figure size is not greater than the screen, use movegui()
-if ~any(figPositionNow(3:4) > screenSize(3:4))
-    % Move the figure to entirely on screen
-    movegui(fig);
-end
-%%
+                    'Position', figPosition, 'FigExpansion', figExpansion, ...
+                    'AdjustPosition', true);
 
 %% Create subplots
 % Count the number of subplots
@@ -177,8 +163,10 @@ nSubPlots = numel(gridPositions);
 % Initialize the axes array
 ax = gobjects(nSubPlots, 1);
 
-% Save each subplot
-for iSubPlot = 1:nSubPlots
+% Create subplots in the reverse order
+%   Note: For some reason, subplots sometime disappear 
+%           if created in the forward order
+for iSubPlot = nSubPlots:-1:1
     % Get the grid positions for this subplot
     gridPositionsThis = gridPositions{iSubPlot};
 
@@ -194,15 +182,18 @@ for iSubPlot = 1:nSubPlots
     minRow = min(iRows);
     maxRow = max(iRows);
 
+    % Compute the outer position for maximal fit
+    outerPositionThis = [(minColumn - 1)/nColumns, ...
+                        (nRows - maxRow)/nRows, ...
+                        (maxColumn - minColumn + 1)/nColumns, ...
+                        (maxRow - minRow + 1)/nRows];
+
     % Create subplot
     axThis = subplot(nRows, nColumns, gridPositionsThis, ...
                     otherArguments{:});
 
-    % Modify the outer position for maximal fit
-    axThis.OuterPosition = [(minColumn - 1)/nColumns, ...
-                            (nRows - maxRow)/nRows, ...
-                            (maxColumn - minColumn + 1)/nColumns, ...
-                            (maxRow - minRow + 1)/nRows];
+    % Modify the outer position
+    set(axThis, 'OuterPosition', outerPositionThis);
 
     % Save subplot in array
     ax(iSubPlot) = axThis;
@@ -212,6 +203,9 @@ end
 
 %{
 OLD CODE:
+
+% 
+figPosition = expand_figure_position(centerPosition, horizontalExpandFactor, verticalExpandFactor)
 
 %}
 

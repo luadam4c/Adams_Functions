@@ -51,6 +51,8 @@ function [plotFrames, handles] = create_synced_movie_trace_plot_movie (frames, d
 % 
 
 %% Hard-coded parameters
+axesCoverage = 90;
+
 % TODO: Make optional arguments
 viewWindowSec = 5;          % width of viewing window in seconds
 plotFrameRate = [];         % frame rate for playing the plot movie
@@ -105,6 +107,11 @@ nSamples = numel(data);
 % Construct the time vector if necessary
 tVec = match_time_info(tVec, siMs, nSamples);
 
+% Decide on the x tick locations (every second)
+firstSecond = round(tVec(1));
+lastSecond = round(tVec(end));
+xTicks = firstSecond:lastSecond;
+
 % Extract the frame start times
 frameTimes = extract_fields(frames, 'time', 'UniformOutput', true);
 
@@ -115,10 +122,10 @@ firstFrameData = frames(1).cdata;
 frameHeight = size(firstFrameData, 1);
 frameWidth = size(firstFrameData, 2);
 
-% Decide on the first subplot position
-firstSubplotPosition = get(0, 'defaultfigureposition');
-firstSubplotPosition(3) = frameWidth;
-firstSubplotPosition(4) = frameHeight;
+% Decide on the figure position
+figPosition = get(0, 'defaultfigureposition');
+figPosition(3) = round(frameWidth / (axesCoverage / 100));
+figPosition(4) = round(frameHeight * 2 / (axesCoverage / 100));
 
 % % Count the number of frames
 % nFrames = numel(frames);
@@ -156,7 +163,7 @@ plotFrameTimes = create_time_vectors(nPlotFrames, 'TimeStart', tVec(1), ...
 
 %% Do the job
 % Create subplots
-[fig, ax] = create_subplots(2, 1, 'CenterPosition', firstSubplotPosition);
+[fig, ax] = create_subplots(6, 1, {1:3, 4, 5, 6}, 'FigPosition', figPosition);
 
 % Get the figure position
 figPosition = get(fig, 'Position');
@@ -184,18 +191,21 @@ xLimitsFirst = plotFrameTimeThis + viewWindowSec * 0.5 * [-1, 1];
 % Plot the trace
 traceLine = plot(traceSubPlot, tVec, data);
 
-% Zoom in to the first window and set the y limits
-set(traceSubPlot, 'XLim', xLimitsFirst, 'YLim', yLimits);
+% Zoom in to the first window, set the axis limits, 
+%   set time tick locations and don't show ticks
+set(traceSubPlot, 'XLim', xLimitsFirst, 'YLim', yLimits, ...
+    'XTick', xTicks, 'TickLength', [0, 0]);
 
 % Create time label
-xlabel(timeLabel);
+traceSubPlot.XLabel.String = timeLabel;
 
 % Create data label
-ylabel(dataLabel);
+traceSubPlot.YLabel.String = dataLabel;
 
 % Plot a vertical line through the plot
 vertLine = plot_vertical_line(plotFrameTimeThis, 'LineStyle', '--', ...
-                                'LineWidth', 2, 'ColorMap', 'r');
+                                'LineWidth', 2, 'ColorMap', 'r', ...
+                                'AxesHandle', traceSubPlot);
 
 % Look for the corresponding movie frame
 [iFrameThis, frameTimeThis] = find_nearest_frame(plotFrameTimeThis, frameTimes);
@@ -204,7 +214,8 @@ vertLine = plot_vertical_line(plotFrameTimeThis, 'LineStyle', '--', ...
 frameThis = frames(iFrameThis);
 
 % Plot the frame on the top
-handles = plot_frame(frameThis, 'AxesHandle', movieSubPlot);
+handles = plot_frame(frameThis, 'AxesHandle', movieSubPlot, ...
+                                'AxesCoverage', axesCoverage);
 im = handles.im;
 
 % Capture this plot frame

@@ -33,7 +33,7 @@
 % File History:
 % 2019-09-05 Created by Adam Lu
 % TODO: Use parse_spike2_mat.m without loading everything?
-% 
+% TODO: Add pleth and EMG channels
 
 %% Hard-coded parameters
 
@@ -41,6 +41,8 @@
 spike2MatPath = '';
 wmvPath = '';
 eegChannelName = 'WIC_2';
+emgChannelName = 'WIC_1';
+plethChannelName = 'Pleth_2';
 % movieType = 'MPEG-4';             % Only works in Windows
 movieType = 'Motion JPEG AVI';
 outFolder = '';
@@ -100,14 +102,22 @@ allStructNames = fieldnames(spike2File);
 
 % Find the structure with EEG trace data
 [~, eegStructName] = find_in_strings(eegChannelName, allStructNames);
+[~, emgStructName] = find_in_strings(emgChannelName, allStructNames);
+[~, plethStructName] = find_in_strings(plethChannelName, allStructNames);
 
 % Extract the EEG struct
 eegStruct = spike2File.(eegStructName);
+emgStruct = spike2File.(emgStructName);
+plethStruct = spike2File.(plethStructName);
 
-% Extract the EEG trace data
+% Extract the trace data
+% traceData = cell(3, 1);
+% traceData{1} = eegStruct.values;
+% traceData{2} = emgStruct.values;
+% traceData{3} = plethStruct.values;
 traceData = eegStruct.values;
 
-% Extract the EEG trace time info
+% Extract the trace time info
 timeStart = eegStruct.start;
 siSeconds = eegStruct.interval;
 nSamples = eegStruct.length;

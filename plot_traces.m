@@ -178,7 +178,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                   must be a positive integer scalar
 %                   default == []
 %                   - 'FigExpansion': expansion factor for figure position
-%                   must be a positive scalar
+%                   must be a positive scalar or 2-element vector
 %                   default == []
 %                   - 'FigName': figure name for saving
 %                   must be a string scalar or a character vector
@@ -767,7 +767,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 
 % Decide on the figure to plot on
 fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
-                            'FigExpansion', figExpansion);
+                            'ExpansionFactor', figExpansion);
 
 % Set the default time axis limits
 if isempty(xLimits)
