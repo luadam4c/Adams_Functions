@@ -1,6 +1,8 @@
-function [counts, edges] = compute_psth (eventTimes, stimTimes, varargin)
+function [counts, edges, relEventTimes] = ...
+                compute_psth (eventTimes, stimTimes, varargin)
 %% Computes a peri-stimulus time histogram
-% Usage: [counts, edges] = compute_psth (eventTimes, stimTimes, varargin)
+% Usage: [counts, edges, relEventTimes] = ...
+%               compute_psth (eventTimes, stimTimes, varargin)
 % Explanation:
 %       TODO
 %
@@ -15,6 +17,8 @@ function [counts, edges] = compute_psth (eventTimes, stimTimes, varargin)
 %                   specified as a numeric vector
 %       edges       - edges for each bin
 %                   specified as a numeric vector
+%       relEventTimes   - all relative event times
+%                       specified as a numeric vector
 %
 % Arguments:
 %       eventTimes  - event times
@@ -24,10 +28,11 @@ function [counts, edges] = compute_psth (eventTimes, stimTimes, varargin)
 %       varargin    - 'RelativeTimeWindow': relative time window
 %                   must be a 2-element numeric vector
 %                   default == interStimInterval * 0.5 * [-1, 1]
-%                   - Any other parameter-value pair for histcounts()
+%                   - Any other parameter-value pair for compute_bins()
 %
 % Requires:
 %       cd/argfun.m
+%       cd/compute_bins.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_subvectors.m
 %       cd/force_column_vector.m
@@ -37,7 +42,7 @@ function [counts, edges] = compute_psth (eventTimes, stimTimes, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/plot_psth.m
 
 % File History:
 % 2019-09-07 Created by Adam Lu
@@ -79,7 +84,7 @@ addParameter(iP, 'RelativeTimeWindow', relativeTimeWindowDefault, ...
 parse(iP, eventTimes, stimTimes, varargin{:});
 relativeTimeWindow = iP.Results.RelativeTimeWindow;
 
-% Keep unmatched arguments for the histcounts() function
+% Keep unmatched arguments for the compute_bins() function
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
@@ -117,7 +122,8 @@ relEventTimesCell = vertcat(relEventTimesCellCell{:});
 relEventTimes = vertcat(relEventTimesCell{:});
 
 % Compute the peri-stimulus time histogram
-[counts, edges] = histcounts(relEventTimes, otherArguments{:});
+[counts, edges] = ...
+    compute_bins(relEventTimes, 'FixedEdges', 0, otherArguments{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -137,6 +143,24 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function relEventTimes = compute_relative_event_times(eventTimes, stimTimes, ...
+                                                            relativeTimeWindow)
+%% Computes the relative event times from event times and stimulus times
+% TODO: Pull out as its own function
+
+% Extract a time window for each stimulus time
+windows = compute_time_windows(stimTimes, relativeTimeWindow);
+
+% Extract the event times corresponding to each time window
+eventTimesEachWindow = extract_subvectors(eventTimes, 'Windows', windows, ...
+                                                    'ForceCellOutput', true);
+
+% Compute the relative event times for each time window
+relEventTimes = cellfun(@(x, y) x - y, eventTimesEachWindow, ...
+                        num2cell(stimTimes), 'UniformOutput', false);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function windows = compute_time_windows (centerTimes, relativeTimeWindow)
 %% Computes time windows based on center times and a relative time window
 % TODO: Either merge with compute_time_window.m or pull out as its own function
@@ -151,23 +175,6 @@ centerTimes = force_row_vector(centerTimes);
 %   Note: Each column corresponds to a time window
 windows = repmat(centerTimes, size(relativeTimeWindow)) + ...
             repmat(relativeTimeWindow, size(centerTimes));
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function relEventTimes = compute_relative_event_times(eventTimes, stimTimes, ...
-                                                            relativeTimeWindow)
-%% Computes the relative event times from event times and stimulus times
-
-% Extract a time window for each stimulus time
-windows = compute_time_windows(stimTimes, relativeTimeWindow);
-
-% Extract the event times corresponding to each time window
-eventTimesEachWindow = extract_subvectors(eventTimes, 'Windows', windows, ...
-                                                    'ForceCellOutput', true);
-
-% Compute the relative event times for each time window
-relEventTimes = cellfun(@(x, y) x - y, eventTimesEachWindow, ...
-                        num2cell(stimTimes), 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

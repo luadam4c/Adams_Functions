@@ -3,12 +3,15 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % Usage: [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       extract_elements({[3; 5; 4], [], [1, 2, -1]}, 'first')
 %       extract_elements({[3; 5; 4], [], [1, 2, -1]}, 'last')
 %       extract_elements({[3; 5; 4], [], [1, 2, -1]}, 'min')
 %       extract_elements({[3; 5; 4], [], [1, 2, -1]}, 'max')
 %       extract_elements({[3; 5; 4], [], [1, 2, -1]}, 'firstdiff')
+%       extract_elements({[3; 5; 4], [], [1, 2, -1]}, 'center')
+%
 % Outputs:
 %       elements    - element(s) from each vector extracted
 %                   specified as a numeric vector 
@@ -16,6 +19,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       idxElement  - indices(s) of elements extracted
 %                   specified as a numeric vector 
 %                       or a cell array of column numeric vectors
+%
 % Arguments:
 %       vecs        - vector(s)
 %                   must be a numeric array or a cell array
@@ -23,6 +27,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'first' - first element of each vector
 %                       'last'  - last element of each vector
+%                       'center'- center element of each vector
 %                       'min'   - minimum-valued element of each vector
 %                       'max'   - maximum-valued element of each vector
 %                       'firstdiff' - first difference of each vector
@@ -34,6 +39,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % Requires:
 %       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
+%       cd/isaninteger.m
 %       cd/iscellnumericvector.m
 %       cd/isnumericvector.m
 %       cd/match_dimensions.m
@@ -59,13 +65,15 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % 2019-01-03 Now accepts cell arrays of non-vector arrays
 % 2019-02-20 Fixed bug when using match_dimensions
 % 2019-03-14 Now returns NaN if the vector is not long enough
+% 2019-09-08 Added 'center' as a possible extract mode
 % TODO: Add 'MaxNum' as an optional argument with default Inf
 % TODO: Add 'Indices', 'Endpoints' and 'Windows' as optional arguments
 %           and use extract_subvectors.m
 % 
 
 %% Hard-coded parameters
-validExtractModes = {'first', 'last', 'min', 'max', 'firstdiff', 'specific'};
+validExtractModes = {'first', 'last', 'center', 'min', 'max', ...
+                        'firstdiff', 'specific'};
 
 %% Default values for optional arguments
 indexDefault = [];
@@ -103,7 +111,7 @@ extractMode = validatestring(extractMode, validExtractModes);
 
 %% Do the job
 switch extractMode
-case {'first', 'last', 'min', 'max', 'firstdiff'}
+case {'first', 'last', 'center', 'min', 'max', 'firstdiff'}
     % Extract from a position
     if iscellnumericvector(vecs)
         [elements, idxElement] = ...
@@ -170,6 +178,14 @@ switch extractMode
     case 'last'
         element = x(end);
         idxElement = numel(x);
+    case 'center'
+        nElements = numel(x);
+        idxElement = (nElements + 1) / 2;
+        if isaninteger(idxElement)
+            element = x(idxElement);
+        else
+            element = nanmean([x(idxElement - 0.5), x(idxElement + 0.5)]);
+        end
     case 'min'
         [element, idxElement] = min(x);
     case 'max'

@@ -350,6 +350,7 @@ There are 1 MATLAB scripts in this directory:
 - [**plot_measures.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_measures.m): Plots all measures of interest across slices
 - [**plot_pdf.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pdf.m): Plots scaled pdf fit of data X and return vectors for the plots
 - [**plot_protocols.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_protocols.m): Computes features for each file according to protocol type
+- [**plot_psth.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_psth.m): Plots a peri-stimulus time histogram
 - [**plot_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pulse.m): Plots pulses, marks the parsed endpoints and displays total number of sweeps
 - [**plot_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pulse_response.m): Plots pulse responses, marks the parsed baseline and steady state bounds
 - [**plot_pulse_response_with_stimulus.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pulse_response_with_stimulus.m): Plots a pulse response with its stimulus

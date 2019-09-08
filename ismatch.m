@@ -35,6 +35,7 @@ function varargout = ismatch (list, cand, varargin)
 %       members    - members of the list corresponding to those indices
 %                   specified as a cell array if more than one indices 
 %                       or the element if only one index; or an empty string
+%
 % Arguments:
 %       list        - an array
 %       cand        - candidate or parts of the candidate

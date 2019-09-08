@@ -151,6 +151,7 @@ function [bars, fig] = plot_histogram (varargin)
 %       cd/test_var_difference.m
 %
 % Used by:    
+%       cd/plot_psth.m
 %       /home/Matlab/Marks_Functions/paula/Oct2017/zgRasterFigureMaker.m
 %       /media/adamX/m3ha/data_dclamp/initial_slopes.m
 
@@ -167,8 +168,9 @@ function [bars, fig] = plot_histogram (varargin)
 % 2019-03-14 Now returns empty plot if there is no data
 % 2019-03-14 Fixed bug when xTickLabelNums is empty
 % 2019-08-13 Fixed bug when histogram() is used
-% 2019-09-08 Make X an optional argument (allow passing in of just 
+% 2019-09-08 Made X an optional argument (allow passing in of just 
 %               'Counts' and 'Edges')
+% 2019-09-08 Now uses set_figure_properties.m
 
 %% Hard-coded parameters
 validOutlierMethods = {'boxplot', 'isoutlier', ...
