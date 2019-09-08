@@ -1,6 +1,6 @@
-function nSigFig = sigfig(number, varargin)
+function nSigFig = compute_sigfig(number, varargin)
 %% Returns the number of significant figures from a number (numeric or string)
-% Usage: nSigFig = sigfig(number, varargin)
+% Usage: nSigFig = compute_sigfig(number, varargin)
 % Explanation:
 %       Returns 0 for 0
 %       It seems like the maximum number of significant figures
@@ -16,16 +16,19 @@ function nSigFig = sigfig(number, varargin)
 %       limited precision of the internal representation of doubles. 
 %       In consequence, there cannot be a program, which replies the 
 %       "number of digits after the decimal point" for "any rational number".
+%
 % Outputs:
 %       nSigFig     - number of significant figures
 %                   specified as an integer
+%
 % Arguments:    
 %       number      - the number of interest
 %                   must be a numeric scalar or a character vector or a string
 %       varargin    - TODO
 %
-% Used by:    
-%
+% Used by:
+%       cd/atfwrite.m
+
 % File History:
 % 2018-02-14 Created by Adam Lu
 % 2018-02-15 Fixed the infinite loop when the argument is 0

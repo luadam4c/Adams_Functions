@@ -105,6 +105,7 @@ There are 1 MATLAB scripts in this directory:
 - [**compute_rms_error.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_rms_error.m): Computes the root mean squared error(s) given one or two sets of vectors
 - [**compute_sampling_interval.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_sampling_interval.m): Computes sampling intervals from time vectors
 - [**compute_sampsizepwr.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_sampsizepwr.m): Computes the sample size needed, the statistical power or the alternative hypothesis parameter from either raw data or estimated parameters
+- [**compute_sigfig.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_sigfig.m): Returns the number of significant figures from a number (numeric or string)
 - [**compute_single_neuron_errors.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_single_neuron_errors.m): Computes all errors for single neuron data
 - [**compute_slope.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_slope.m): Computes the slope given two vectors and two indices
 - [**compute_spike_density.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_spike_density.m): Computes the spike density from spike times and overlapping bins
@@ -238,3 +239,30 @@ There are 1 MATLAB scripts in this directory:
 - [**iscellvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/iscellvector.m): Returns whether an input is a cell array of vectors (may be empty)
 - [**isemptycell.m**](https://github.com/blabuva/Adams_Functions/blob/master/isemptycell.m): Returns whether each cell of a cell array is empty; if not a cell array, same as isempty()
 - [**isfigtype.m**](https://github.com/blabuva/Adams_Functions/blob/master/isfigtype.m): Check whether a string or each string in a cell array is a valid figure type accepted by saveas()
+- [**is_in_parallel.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_in_parallel.m): Checks whether in a parfor loop
+- [**islegendlocation.m**](https://github.com/blabuva/Adams_Functions/blob/master/islegendlocation.m): Check whether a string or each string in a cell array is a valid legend location or 'suppress' or 'auto'
+- [**islinestyle.m**](https://github.com/blabuva/Adams_Functions/blob/master/islinestyle.m): Check whether a string or each string in a cell array is a valid line style accepted by plot() or line()
+- [**is_matching_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_matching_string.m): Returns whether each element in a list of strings matches a candidate
+- [**ismatch.m**](https://github.com/blabuva/Adams_Functions/blob/master/ismatch.m): Returns whether each element in a list matches a candidate
+- [**ismember_custom.m**](https://github.com/blabuva/Adams_Functions/blob/master/ismember_custom.m): Returns whether a particular candidate is a member of a list
+- [**isnumericvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/isnumericvector.m): Returns whether an input is a numeric vector (may be empty)
+- [**isnum.m**](https://github.com/blabuva/Adams_Functions/blob/master/isnum.m): Returns whether the input is numeric in the general sense (numeric, logical, datetime or duration)
+- [**is_on_path.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_on_path.m): Returns whether folder(s) are on the MATLAB path
+- [**is_out_of_range.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_out_of_range.m): Check if any of the value(s) are out of range
+- [**ispositiveintegerarray.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositiveintegerarray.m): Returns whether an input is a positive integer array
+- [**ispositiveintegerscalar.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositiveintegerscalar.m): Returns whether an input is a positive integer scalar
+- [**ispositiveintegervector.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositiveintegervector.m): Returns whether an input is a positive integer vector
+- [**ispositivescalar.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositivescalar.m): Returns whether an input is a positive scalar
+- [**ispositivevector.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositivevector.m): Returns whether an input is a positive vector
+- [**issheettype.m**](https://github.com/blabuva/Adams_Functions/blob/master/issheettype.m): Check whether a string or each string in a cell array is a valid spreadsheet type accepted by readtable()
+- [**istext.m**](https://github.com/blabuva/Adams_Functions/blob/master/istext.m): Returns whether the input is a character array, a string array or a cell array of character arrays
+- [**istype.m**](https://github.com/blabuva/Adams_Functions/blob/master/istype.m): Check whether a string or each string in a cell array is a valid type specified by validTypes
+- [**is_var_in_table.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_var_in_table.m): TODO: A summary of what the function does (must be a single unbreaked line)
+- [**load_examples.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_examples.m): Loads example data structures for testing
+- [**load_neuron_outputs.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_neuron_outputs.m): Loads .out files created by NEURON into a cell array
+- [**load_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_params.m): Loads parameters from file(s) into a table
+- [**load_swd_sheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_swd_sheets.m): Loads SWD tables from SWD spreadsheets
+- [**locate_dir.m**](https://github.com/blabuva/Adams_Functions/blob/master/locate_dir.m): Locate the first directory that exists out of a list of candidates
+- [**locate_functionsdir.m**](https://github.com/blabuva/Adams_Functions/blob/master/locate_functionsdir.m): Locate the first shared functions directory that exists
+- [**log_arraytext.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_arraytext.m): Create a text file that logs the array information
+- [**log_matfile.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_matfile.m): Print variables in a MATfile to a comma-separated-value file

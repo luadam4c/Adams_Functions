@@ -44,6 +44,7 @@ function atfwrite (dataMatrix, varargin)
 %       cd/extract_fileparts.m
 %       cd/force_column_cell.m
 %       cd/print_cellstr.m
+%       cd/compute_sigfig.m
 %
 % Used by:
 %       cd/spike2Mat2Text.m
@@ -122,11 +123,12 @@ nSamples = size(dataMatrix, 1);
 % Count the number of signals
 nSignals = size(dataMatrix, 2);
 
-% Count the number of decimal places needed
-nDecimals = compute_ndecimals(siSeconds);
+% Count the number of significant figures needed
+%   Note: print at least 5 significant figures
+nSigFig = max(5, compute_nsigfig_for_time(nSamples, siSeconds));
 
 % Create a precision string
-precision = ['%.', num2str(nDecimals), 'f'];
+precision = ['%.', num2str(nSigFig), 'g'];
 
 % Create default file name
 if isempty(fileName)
@@ -342,15 +344,31 @@ function nDecimals = compute_ndecimals (number)
 nDecimalsFirstDigit = -floor(log10(number));
 
 % Compute the number of significant figures
-nSigFig = sigfig(number);
+nSigFig = compute_sigfig(number);
 
 if nDecimalsFirstDigit <= 0
     nDecimals = 0;
 elseif nSigFig > 1
-    nDecimals = nDecimalsFirstDigit + 1;
+    nDecimals = nDecimalsFirstDigit + (nSigFig - 1);
 else
     nDecimals = nDecimalsFirstDigit;
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function nSigFig = compute_nsigfig_for_time (nSamples, samplingInterval)
+
+% Compute the number of places to the right of the decimal point needed
+nPlacesRight = compute_ndecimals(samplingInterval);
+
+% Compute the total duration
+totalDuration = nSamples * samplingInterval;
+
+% Compute the number of places to the left of the decimal point needed
+nPlacesLeft = ceil(log10(totalDuration));
+
+% Compute the number of significant figures needed
+nSigFig = nPlacesRight + nPlacesLeft;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
