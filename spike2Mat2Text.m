@@ -37,14 +37,11 @@ function varargout = spike2Mat2Text (spike2MatPath, varargin)
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
-%       cd/all_fields.m
 %       cd/atfwrite.m
-%       cd/convert_to_char.m
-%       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/dlmwrite_with_header.m
-%       cd/extract_fields.m
 %       cd/force_matrix.m
+%       cd/parse_spike2_mat.m
 %       cd/struct2arglist.m
 %
 % Used by:
@@ -58,7 +55,6 @@ function varargout = spike2Mat2Text (spike2MatPath, varargin)
 
 %% Hard-coded parameters
 validTextTypes = {'atf', 'txt', 'csv'};
-isTrace = @(x) isfield(x, 'values') && isfield(x, 'interval');
 
 % TODO: Make optional argument
 timeStart = 0;
@@ -104,56 +100,24 @@ if isempty(textPath)
 end
 
 %% Load the data
-%   Note: this is a struct of structs
-spike2FileContents = load(spike2MatPath);
+% Parse the Spike2-exported MATLAB file
+[spike2Params, spike2Data] = parse_spike2_mat(spike2MatPath);
 
-%% Reorganize the data as a matrix
-% Find all fields with a 'values' field
-channelStructsTable = all_fields(spike2FileContents, 'ValueFunc', isTrace);
+% Extract from parsed params structure
+siSeconds = spike2Params.siSeconds;
 
-% Get all the channel data
-channelStructs = channelStructsTable.Value;
+% Extract from parsed data table
+channelValues = spike2Data.channelValues;
+channelNames = spike2Data.channelNames;
+channelUnits = spike2Data.channelUnits;
 
-% Get all the channel names
-channelNames = extract_fields(channelStructs, 'title', 'UniformOutput', false);
-
-% Get all the channel values
-channelValues = extract_fields(channelStructs, 'values', 'UniformOutput', false);
-
-% Get all the channel units
-channelUnits = extract_fields(channelStructs, 'units', 'UniformOutput', false);
-channelUnits = cellfun(@convert_to_char, channelUnits, 'UniformOutput', false);
-
-% Get all the sampling intervals
-siSecondsAll = extract_fields(channelStructs, 'interval', 'UniformOutput', true);
-
-% Count all the number of samples
-nSamplesAll = count_samples(channelValues);
-
-% Make sure all data vectors are the same length
-if numel(unique(nSamplesAll)) > 1
-    % Resample to align the data
-    % TODO
-    disp('Not implemented yet!');
-    varargout{1} = '';
-    varargout{2} = struct;
-    return
-else
-    % Force as a matrix
-    channelMatrix = force_matrix(channelValues);
-end
-
-% Make sure sampling intervals are the same
-if numel(unique(siSecondsAll)) > 1
-    % Need to resample the vectors
-    % TODO
-    disp('Not implemented yet!');
-    varargout{1} = '';
-    varargout{2} = struct;
-    return
-else
-    % Just choose one sampling interval
-    siSeconds = siSecondsAll(1);
+% Force as a matrix if needed
+switch textType
+    case {'atf', 'txt'}
+        % Force as a matrix
+        channelMatrix = force_matrix(channelValues);
+    case 'csv'
+        % Do nothing
 end
 
 %% Create the text file
@@ -207,12 +171,11 @@ end
 %% Output info
 varargout{1} = textPath;
 if nargout >= 2    
-    dataStruct.spike2FileContents = spike2FileContents;
+    dataStruct.spike2Params = spike2Params;
+    dataStruct.spike2Data = spike2Data;
     dataStruct.spike2MatPath = spike2MatPath;
     dataStruct.textPath = textPath;
     dataStruct.channelMatrix = channelMatrix;
-    dataStruct.channelNames = channelNames;
-    dataStruct.channelUnits = channelUnits;
     dataStruct.siSeconds = siSeconds;
     dataStruct.timeStart = timeStart;
     dataStruct.comment = comment;

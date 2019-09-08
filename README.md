@@ -327,6 +327,7 @@ There are 1 MATLAB scripts in this directory:
 - [**parse_multiunit.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_multiunit.m): Parses multiunit recordings: detect spikes, computes spike histograms and autocorrelograms
 - [**parse_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_pulse.m): Parses pulse widths, endpoints, amplitudes for vector(s) containing a pulse
 - [**parse_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_pulse_response.m): Parses pulse response widths, endpoints, amplitudes for vector(s) containing a pulse response
+- [**parse_spike2_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_spike2_mat.m): Parses a Spike2-exported MATLAB file
 - [**parse_stim.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_stim.m): Detects the index and time of stimulation start from pulse vectors
 - [**parse_xolotl_object.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_xolotl_object.m): Parses a xolotl object
 - [**piecelinspace.m**](https://github.com/blabuva/Adams_Functions/blob/master/piecelinspace.m): Generates a piece-wise linear row vector from nodes and number of points
