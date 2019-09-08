@@ -29,7 +29,7 @@ function [counts, edges] = compute_bins (stats, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/force_column_vector.m
 %       cd/struct2arglist.m
-%       cd/update_edges.m
+%       cd/adjust_edges.m
 %
 % Used by:
 %       cd/compute_grouped_histcounts.m
@@ -93,7 +93,7 @@ end
 % If the edges do not contain a fixed edge, shift so that it does
 if ~isempty(fixedEdges)
     % Update edges if necessary
-    [edgesNew, isUpdated] = update_edges(edges, 'FixedEdges', fixedEdges);
+    [edgesNew, isUpdated] = adjust_edges(edges, 'FixedEdges', fixedEdges);
 
     % Compute bins again
     if isUpdated

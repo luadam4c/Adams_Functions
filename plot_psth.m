@@ -10,6 +10,7 @@ function handles = plot_psth (varargin)
 %       eventTimes = {randi(100, 100, 1); randi(100, 100, 1) + 100};
 %       stimTimes = {10:10:80; 110:10:200};
 %       handles = plot_psth('EventTimes', eventTimes, 'StimTimes', stimTimes);
+%       handles = plot_psth('EventTimes', eventTimes, 'StimTimes', stimTimes, 'StimDuration', 3);
 %
 % Outputs:
 %
@@ -36,6 +37,10 @@ function handles = plot_psth (varargin)
 %                   - 'RelativeTimeWindow': relative time window
 %                   must be a 2-element numeric vector
 %                   default == interStimInterval * 0.5 * [-1, 1]
+%                   - 'StimDuration': stimulus duration for plotting
+%                                       (stim always occur at 0)
+%                   must be a positive scalar
+%                   default == [] (not plotted)
 %                   - 'Grouping': group assignment for each data point
 %                   must be an array of one the following types:
 %                       'cell', 'string', numeric', 'logical', 
@@ -68,6 +73,7 @@ function handles = plot_psth (varargin)
 %       cd/create_time_stamp.m
 %       cd/plot_histogram.m
 %       cd/plot_vertical_line.m
+%       cd/plot_vertical_shade.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -75,13 +81,16 @@ function handles = plot_psth (varargin)
 % File History:
 % 2019-09-07 Created by Adam Lu
 % 2019-09-08 Added 'Grouping' as an optional argument
-% TODO: Add stimulus duration and vertical shade
+% 2019-09-08 Added 'StimDuration' as an optional argument
+% 2019-09-08 Now plots vertical shade
 
 %% Hard-coded parameters
 % TODO: Make optional parameters
 vertLineLineWidth = 2;
 vertLineLineStyle = '-';
 vertLineColor = 'k';
+stimStart = 0;
+stimWindow = [];
 
 %% Default values for optional arguments
 relEventTimesDefault = [];              % set later
@@ -90,6 +99,7 @@ edgesDefault = [];                      % set later
 eventTimesDefault = [];
 stimTimesDefault = [];
 relativeTimeWindowDefault = [];
+stimDurationDefault = 0;
 groupingDefault = [];                   % set later
 xLabelDefault = 'Relative Time From Stim';
 yLabelDefault = 'Event Count';
@@ -126,6 +136,8 @@ addParameter(iP, 'StimTimes', stimTimesDefault, ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'RelativeTimeWindow', relativeTimeWindowDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'StimDuration', stimDurationDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'Grouping', groupingDefault, ...
     @(x) validateattributes(x, {'cell', 'string', 'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
@@ -146,6 +158,7 @@ edges = iP.Results.Edges;
 eventTimes = iP.Results.EventTimes;
 stimTimes = iP.Results.StimTimes;
 relativeTimeWindow = iP.Results.RelativeTimeWindow;
+stimDuration = iP.Results.StimDuration;
 grouping = iP.Results.Grouping;
 xLabel = iP.Results.XLabel;
 yLabel = iP.Results.YLabel;
@@ -166,12 +179,18 @@ if isempty(relEventTimes) && (isempty(counts) || isempty(edges)) && ...
     return
 end
 
+% Decide on stimulus window
+if isempty(stimWindow)
+    stimWindow = stimStart + [0, stimDuration];
+end
+
 % Compute histogram counts if not already done
 if isempty(counts)
     if isempty(relEventTimes)
         % Compute counts and edges from eventTimes and stimTimes
         [counts, edges] = ...
             compute_psth(eventTimes, stimTimes, ...
+                        'StimDuration', stimDuration, ...
                         'RelativeTimeWindow', relativeTimeWindow);
     else
         % Compute a grouping vector from relEventTimes
@@ -185,7 +204,7 @@ if isempty(counts)
         %   Note: must be consistent with compute_psth.m
         [counts, edges] = ...
             compute_grouped_histcounts(relEventTimes, 'Grouping', grouping, ...
-                                        'FixedEdges', 0, otherArguments{:});
+                                'FixedEdges', stimWindow, otherArguments{:});
     end
 else
     if isempty(edges)
@@ -214,10 +233,13 @@ end
                             'FigTitle', figTitle, ...
                             otherArguments);
 
-% Plot a vertical line at zero
-vertLine = plot_vertical_line(0, 'LineWidth', vertLineLineWidth, ...
+% Plot the stimulus start as a vertical line
+vertLine = plot_vertical_line(stimStart, 'LineWidth', vertLineLineWidth, ...
                                 'LineStyle', vertLineLineStyle, ...
                                 'Color', vertLineColor);
+
+% Plot stimulus window as a vertical shade
+vertLine = plot_vertical_shade(stimWindow);
 
 %% Output handles
 handles.fig = fig;

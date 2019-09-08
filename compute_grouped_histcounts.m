@@ -47,7 +47,7 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 %       cd/create_default_grouping.m
 %       cd/create_error_for_nargin.m
 %       cd/struct2arglist.m
-%       cd/update_edges.m
+%       cd/adjust_edges.m
 %
 % Used by:
 %       cd/compute_psth.m
@@ -146,7 +146,7 @@ if isempty(edges)
 end
 
 %% Modify edges to include fixed edges if necessary
-edges = update_edges(edges, 'FixedEdges', fixedEdges);
+edges = adjust_edges(edges, 'FixedEdges', fixedEdges);
 
 %% Compute the bin counts for each group based on these edges
 %   Note: edges are not updated here

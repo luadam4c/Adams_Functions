@@ -28,6 +28,10 @@ function [counts, edges, relEventTimes] = ...
 %       varargin    - 'RelativeTimeWindow': relative time window
 %                   must be a 2-element numeric vector
 %                   default == interStimInterval * 0.5 * [-1, 1]
+%                   - 'StimDuration': stimulus duration for plotting
+%                                       (stim always occur at 0)
+%                   must be a positive scalar
+%                   default == [] (not plotted)
 %                   - 'Grouping': group assignment for each data point
 %                   must be an array of one the following types:
 %                       'cell', 'string', numeric', 'logical', 
@@ -52,12 +56,17 @@ function [counts, edges, relEventTimes] = ...
 % File History:
 % 2019-09-07 Created by Adam Lu
 % 2019-09-08 Added 'Grouping' as an optional argument
-% 
+% TODO: Shift relative event times by stimStart
+
 
 %% Hard-coded parameters
+% TODO: Make optional parameters
+stimStart = 0;
+stimWindow = [];
 
 %% Default values for optional arguments
 relativeTimeWindowDefault = [];
+stimDurationDefault = 0;
 groupingDefault = [];                   % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -86,6 +95,8 @@ addRequired(iP, 'stimTimes', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'RelativeTimeWindow', relativeTimeWindowDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'StimDuration', stimDurationDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'Grouping', groupingDefault, ...
     @(x) validateattributes(x, {'cell', 'string', 'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
@@ -93,6 +104,7 @@ addParameter(iP, 'Grouping', groupingDefault, ...
 % Read from the Input Parser
 parse(iP, eventTimes, stimTimes, varargin{:});
 relativeTimeWindow = iP.Results.RelativeTimeWindow;
+stimDuration = iP.Results.StimDuration;
 grouping = iP.Results.Grouping;
 
 % Keep unmatched arguments for the compute_grouped_histcounts() function
@@ -122,6 +134,11 @@ if isempty(relativeTimeWindow)
     relativeTimeWindow = interStimInterval * 0.5 * [-1, 1];
 end
 
+% Decide on stimulus window
+if isempty(stimWindow)
+    stimWindow = stimStart + [0, stimDuration];
+end
+
 %% Do the job
 % Extract relative event times for each window
 relEventTimesCellCell = ...
@@ -144,7 +161,7 @@ end
 %   Note: must be consistent with plot_psth.m
 [counts, edges] = ...
     compute_grouped_histcounts(relEventTimes, 'Grouping', grouping, ...
-                                'FixedEdges', 0, otherArguments{:});
+                                'FixedEdges', stimWindow, otherArguments{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

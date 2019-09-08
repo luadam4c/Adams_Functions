@@ -51,6 +51,7 @@ function h = plot_vertical_shade (varargin)
 %
 % Used by:
 %       cd/plot_horizontal_shade.m
+%       cd/plot_psth.m
 %       cd/plot_window_boundaries.m
 
 % File History:

@@ -1,11 +1,11 @@
-function [edgesNew, isUpdated] = update_edges (edgesOld, varargin)
+function [edgesNew, isUpdated] = adjust_edges (edgesOld, varargin)
 %% Update histogram bin edges according to specific parameters
-% Usage: [edgesNew, isUpdated] = update_edges (edgesOld, varargin)
+% Usage: [edgesNew, isUpdated] = adjust_edges (edgesOld, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       TODO
+%       adjust_edges(, 'FixedEdges', [-5, 0, -6)
 %
 % Outputs:
 %       edgesNew    - new edges
@@ -23,6 +23,7 @@ function [edgesNew, isUpdated] = update_edges (edgesOld, varargin)
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
+%       cd/unique_custom.m
 %
 % Used by:
 %       cd/compute_bins.m
@@ -30,6 +31,7 @@ function [edgesNew, isUpdated] = update_edges (edgesOld, varargin)
 
 % File History:
 % 2019-09-08 Created by Adam Lu
+% TODO: Change to adjust_edges.m
 % 
 
 %% Hard-coded parameters
@@ -65,34 +67,53 @@ parse(iP, edgesOld, varargin{:});
 fixedEdges = iP.Results.FixedEdges;
 
 %% Do the job
-if ~all(ismember(fixedEdges, edgesOld))
+if ~isempty(fixedEdges) && ~all(ismember(fixedEdges, edgesOld))
     % Sort the fixed edges
-    fixedEdges = sort(fixedEdges);
+    fixedEdges = unique_custom(fixedEdges, 'sorted', 'IgnoreNaN', true);
 
     % Get the center fixed edge
-    centerEdge = extract_elements(fixedEdges, 'center');
+    fixedCenter = extract_elements(fixedEdges, 'center');
 
     % Count the number of edges greater than the center fixed edge
-    nEdgesRight = length(find(edgesOld > centerEdge));
+    nEdgesRight = length(find(edgesOld > fixedCenter));
 
     % Count the number of edges less than the center fixed edge
-    nEdgesLeft = length(find(edgesOld < centerEdge));
+    nEdgesLeft = length(find(edgesOld < fixedCenter));
 
     % Extract the average bin width
     binWidth = nanmean(diff(edgesOld));
 
-    % Compute a new bin width if necessary
+    % Compute new bin widths if necessary
     diffs = diff(fixedEdges);
     if ~isempty(diffs) && ~all(mod(diffs, binWidth) == 0);
-        % TODO
+        % Get the extreme fixed edges
+        fixedLeft = fixedEdges(1);
+        fixedRight = fixedEdges(end);
+
+        % Count the number of bins in between left and center
+        nBinsLeftToCenter = length(find(edgesOld >= fixedLeft && ...
+                                        edgesOld < fixedCenter));
+
+        % Count the number of bins in between left and center
+        nBinsCenterToRight = length(find(edgesOld > fixedCenter && ...
+                                        edgesOld <= fixedRight));
+
+        % Compute the bin width on either side
+        binWidthLeft = (fixedCenter - fixedLeft) / nBinsLeftToCenter;
+        binWidthRight = (fixedRight - fixedCenter) / nBinsCenterToRight;
+    else
+        binWidthLeft = binWidth;
+        binWidthRight = binWidth;        
     end
 
     % Compute the new bin limits
-    minEdge = centerEdge - nEdgesLeft * binWidth;
-    maxEdge = centerEdge + nEdgesRight * binWidth;
+    minEdge = fixedCenter - nEdgesLeft * binWidthLeft;
+    maxEdge = fixedCenter + nEdgesRight * binWidthRight;
 
     % Compute the new bin edges
-    edgesNew = minEdge:binWidth:maxEdge;
+    edgesNew = [minEdge:binWidthLeft:fixedCenter, ...
+                fixedCenter:binWidthRight:maxEdge];
+    edgesNew = unique(edgesNew, 'sorted');
 
     % Edges are updated
     isUpdated = true;

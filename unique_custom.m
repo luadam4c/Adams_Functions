@@ -47,6 +47,7 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %       cd/plot_measures.m
 %       cd/plot_tuning_curve.m
 %       cd/unique_groups.m
+%       cd/adjust_edges.m
 
 % File History:
 % 2019-04-01 BT - Adapted from https://www.mathworks.com/matlabcentral/

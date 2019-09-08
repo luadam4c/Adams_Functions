@@ -58,7 +58,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/parse_stim.m
 %       cd/plot_protocols.m
 %       cd/select_similar_values.m
-%       cd/update_edges.m
+%       cd/adjust_edges.m
 
 % File History:
 % 2018-12-15 Created by Adam Lu
@@ -180,6 +180,13 @@ switch extractMode
         element = x(end);
         idxElement = numel(x);
     case 'center'
+        nElements = numel(x);
+        idxElement = (nElements + 1) / 2;
+        if ~isaninteger(idxElement)
+            idxElement = idxElement - 0.5;
+        end
+        element = x(idxElement);
+    case 'middle'
         nElements = numel(x);
         idxElement = (nElements + 1) / 2;
         if isaninteger(idxElement)
