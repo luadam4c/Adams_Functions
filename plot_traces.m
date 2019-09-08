@@ -767,7 +767,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 
 % Decide on the figure to plot on
 fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
-                            'ExpansionFactor', figExpansion);
+                            'FigExpansion', figExpansion);
 
 % Set the default time axis limits
 if isempty(xLimits)
