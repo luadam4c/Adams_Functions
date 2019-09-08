@@ -1,6 +1,6 @@
 function varargout = spike2Mat2Text (spike2MatPath, varargin)
 %% Converts a Spike2-exported .mat file to a text file (atf, txt or csv)
-% Usage: [textPath, dataStruct] = spike2Mat2Text (spike2MatPath, varargin)
+% Usage: [textPath, parsedTable] = spike2Mat2Text (spike2MatPath, varargin)
 % Explanation:
 %       TODO
 %
@@ -8,19 +8,10 @@ function varargout = spike2Mat2Text (spike2MatPath, varargin)
 %       TODO
 %
 % Outputs:
-%       textPath     - path to output text file
+%       textPath    - path to output text file
 %                   specified as a character vector
-%       dataStruct   - a structure with fields:
-%                       spike2FileContents
-%                       spike2MatPath
-%                       textPath
-%                       channelMatrix
-%                       channelNames
-%                       channelUnits
-%                       siSeconds
-%                       timeStart
-%                       comment
-%                   specified as a scalar structure
+%       parsedTable - data table returned by parse_spike2_mat.m
+%                   specified as a table
 %
 % Arguments:
 %       spike2MatPath   - path to Spike2-exported .mat file
@@ -55,9 +46,6 @@ function varargout = spike2Mat2Text (spike2MatPath, varargin)
 
 %% Hard-coded parameters
 validTextTypes = {'atf', 'txt', 'csv'};
-
-% TODO: Make optional argument
-timeStart = 0;
 
 %% Default values for optional arguments
 textTypeDefault  = 'atf';
@@ -101,15 +89,16 @@ end
 
 %% Load the data
 % Parse the Spike2-exported MATLAB file
-[spike2Params, spike2Data] = parse_spike2_mat(spike2MatPath);
-
-% Extract from parsed params structure
-siSeconds = spike2Params.siSeconds;
+parsedTable = parse_spike2_mat(spike2MatPath);
 
 % Extract from parsed data table
-channelValues = spike2Data.channelValues;
-channelNames = spike2Data.channelNames;
-channelUnits = spike2Data.channelUnits;
+channelValues = parsedTable.channelValues;
+channelNames = parsedTable.channelNames;
+channelUnits = parsedTable.channelUnits;
+siSeconds = mean(parsedTable.siSeconds);
+
+% TODO: Make optional argument
+timeStart = 0;
 
 % Force as a matrix if needed
 switch textType
@@ -170,18 +159,7 @@ end
 
 %% Output info
 varargout{1} = textPath;
-if nargout >= 2    
-    dataStruct.spike2Params = spike2Params;
-    dataStruct.spike2Data = spike2Data;
-    dataStruct.spike2MatPath = spike2MatPath;
-    dataStruct.textPath = textPath;
-    dataStruct.channelMatrix = channelMatrix;
-    dataStruct.siSeconds = siSeconds;
-    dataStruct.timeStart = timeStart;
-    dataStruct.comment = comment;
-
-    varargout{2} = dataStruct;
-end
+varargout{2} = parsedTable;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

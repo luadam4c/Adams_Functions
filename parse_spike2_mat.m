@@ -1,17 +1,14 @@
-function varargout = parse_spike2_mat (spike2MatPath, varargin)
+function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %% Parses a Spike2-exported MATLAB file
-% Usage: [parsedParamsStruct, parsedDataTable] = ...
-%               parse_spike2_mat (spike2MatPath, varargin)
+% Usage: parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       spike2MatPath = '/media/shareX/2019octoberRO1/Pleth/Data/matFiles/test2AtNight_200Hz.mat';
-%       [params, data] = parse_spike2_mat('test2AtNight_200Hz');
+%       spike2MatPath = '/media/shareX/2019octoberR01/Pleth/Data/matFiles/test2AtNight_200Hz.mat';
+%       parsedTable = parse_spike2_mat(spike2MatPath);
 %
 % Outputs:
-%       parsedParamsStruct  - parsed params structure
-%                           specified as a structure
 %       parsedDataTable     - parsed data
 %                           specified as a table
 %
@@ -90,65 +87,75 @@ channelStructs = channelStructsTable.Value;
 % Get all the channel names
 channelNames = extract_fields(channelStructs, 'title', 'UniformOutput', false);
 
-% Get all the channel values
-channelValues = extract_fields(channelStructs, 'values', 'UniformOutput', false);
-
 % Get all the channel units
 channelUnits = extract_fields(channelStructs, 'units', 'UniformOutput', false);
 channelUnits = cellfun(@convert_to_char, channelUnits, 'UniformOutput', false);
 
+% Get all the channel values
+channelValues = extract_fields(channelStructs, 'values', 'UniformOutput', false);
+
+% Get all the channel scales
+channelScales = extract_fields(channelStructs, 'scale', 'UniformOutput', true);
+
+% Get all the channel offsets
+channelOffsets = extract_fields(channelStructs, 'offset', 'UniformOutput', true);
+
+% Get all the channel starting times
+channelStarts = extract_fields(channelStructs, 'start', 'UniformOutput', true);
+
 % Get all the sampling intervals
-siSecondsAll = extract_fields(channelStructs, 'interval', 'UniformOutput', true);
+siSeconds = extract_fields(channelStructs, 'interval', 'UniformOutput', true);
 
 % Count all the number of samples
-nSamplesAll = count_samples(channelValues);
+nSamples = count_samples(channelValues);
+
+% Compute the total durations in seconds
+totalDurationsSec = siSeconds .* nSamples;
 
 % Make sure all data vectors are the same length
-if numel(unique(nSamplesAll)) > 1
+if numel(unique(nSamples)) > 1 || numel(unique(siSeconds)) > 1
     % Resample to align the data
     % TODO
     disp('Not implemented yet!');
-    varargout{1} = struct.empty;
-    varargout{2} = table.empty;
+    parsedDataTable = table.empty;
     return
 end
 
-% Make sure sampling intervals are the same
-if numel(unique(siSecondsAll)) > 1
-    % Need to resample the vectors
-    % TODO
-    disp('Not implemented yet!');
-    varargout{1} = struct.empty;
-    varargout{2} = table.empty;
-    return
-else
-    % Just choose one sampling interval
-    siSeconds = siSecondsAll(1);
-end
+% Adjust channel start times so that they are all the same
+channelStarts = adjust_start_times(channelStarts, siSeconds);
 
 %% Output results
-% Parsed params 
-parsedParamsStruct.siSeconds = siSeconds;
+% Place in a table
+parsedDataTable = ...
+    table(channelNames, channelUnits, channelValues, channelScales, ...
+            channelOffsets, channelStarts, ...
+            siSeconds, nSamples, totalDurationsSec);
 
-% Parsed data
-if nargout >= 2
-    parsedDataTable = ...
-        table(channelNames, channelUnits, channelValues, ...
-            siSecondsAll, nSamplesAll, ...
-            'VariableNames', {'channelNames', 'channelUnits', ...
-                            'channelValues', 'siSeconds', 'nSamples'});
-end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Variable arguments out
-varargout{1} = parsedParamsStruct;
-if nargout >= 2
-    varargout{2} = parsedDataTable;
-end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function channelStarts = adjust_start_times (channelStarts, siSeconds)
+
+% Make sure it is a multiple of siSeconds
+channelStarts = floor(channelStarts ./ siSeconds) .* siSeconds;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+% Adjust sampling intervals so that it matches an integer frequency in Hz
+siSeconds = adjust_sampling_interval(siSeconds);
+
+function siSeconds = adjust_sampling_interval(siSeconds)
+
+% Round sampling rate to the nearest integer in Hz
+samplingRate = round(1./siSeconds);
+
+% Compute the new sampling interval
+siSeconds = 1./samplingRate;
 
 %}
 

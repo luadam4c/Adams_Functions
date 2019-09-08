@@ -52,6 +52,7 @@ function atfwrite (dataMatrix, varargin)
 % 2019-09-03 Created by Adam Lu
 % 2019-09-06 Added 'TimeStart' as an optional argument
 % 2019-09-06 Added 'SignalUnits' as an optional argument
+% 2019-09-08 Now computes nDecimals instead of nSigFig
 % TODO: Add 'TextMarks' somehow
 % 
 
@@ -121,8 +122,11 @@ nSamples = size(dataMatrix, 1);
 % Count the number of signals
 nSignals = size(dataMatrix, 2);
 
-% Count the number of significant figures needed
-nSigFig = ceil(log10(nSamples)) + 1;
+% Count the number of decimal places needed
+nDecimals = compute_ndecimals(siSeconds);
+
+% Create a precision string
+precision = ['%.', num2str(nDecimals), 'f'];
 
 % Create default file name
 if isempty(fileName)
@@ -200,18 +204,19 @@ if nSamples > maxNSamplesAtf
         % Create the .atf file
         atfwrite_helper(dataMatrix(rowsThis, :), siSeconds, ...
                         signalNames, signalUnits, ...
-                        timeStartThis, commentThis, nSigFig, filePaths{iFile});
+                        timeStartThis, commentThis, ...
+                        precision, filePaths{iFile});
     end
 else
     % Create the .atf file
     atfwrite_helper(dataMatrix, siSeconds, signalNames, signalUnits, ...
-                    timeStart, comment, nSigFig, filePath);
+                    timeStart, comment, precision, filePath);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function atfwrite_helper(dataMatrix, siSeconds, signalNames, signalUnits, ...
-                            timeStart, comment, nSigFig, filePath)
+                            timeStart, comment, precision, filePath)
 %% Writes one .atf file
 % TODO: Construct the header text beforehand and pass it in
 
@@ -226,7 +231,7 @@ nSamples = size(dataMatrix, 1);
 timeVectorSec = create_time_vectors(nSamples, 'TimeUnits', 's', ...
                                 'SamplingIntervalSeconds', siSeconds, ...
                                 'TimeStart', timeStart);
-
+                          
 % Compute the time start in milliseconds
 timeStartMs = timeStart * MS_PER_S;
 
@@ -252,7 +257,7 @@ fclose(fid);
 %% Append the data
 % Append the data
 dlmwrite(filePath, [timeVectorSec, dataMatrix], '-append', ...
-                    'Delimiter', '\t', 'Precision', nSigFig);
+                    'Delimiter', '\t', 'Precision', precision);
 
 % dlmwrite_with_header(filePath, [timeVectorSec, dataMatrix], ...
 %                     'AppendToFile', true, 'Delimiter', '\t', ...
@@ -328,6 +333,27 @@ atfHeaderLines = [versionInfoLine, secondLine, acquisitionModeLine, ...
                 signalsLine, headerInfo];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function nDecimals = compute_ndecimals (number)
+%% Computes the number of decimal places needed
+% TODO: Pull out to its own function
+
+% Compute the place 
+nDecimalsFirstDigit = -floor(log10(number));
+
+% Compute the number of significant figures
+nSigFig = sigfig(number);
+
+if nDecimalsFirstDigit <= 0
+    nDecimals = 0;
+elseif nSigFig > 1
+    nDecimals = nDecimalsFirstDigit + 1;
+else
+    nDecimals = nDecimalsFirstDigit;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %{
 OLD CODE:
 
