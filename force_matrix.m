@@ -38,6 +38,10 @@ function vecs = force_matrix (vecs, varargin)
 %                                       of character arrays as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'Verbose' - whether to print to standard output
+%                                   regardless of message mode
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - Any other parameter-value pair for force_column_vector()
 %
 % Requires:
@@ -67,6 +71,7 @@ function vecs = force_matrix (vecs, varargin)
 % 2019-01-03 Created by Adam Lu
 % 2019-01-22 Added a quick return for performance
 % 2019-04-26 Fixed bug for 'AlignMethod' == 'none'
+% 2019-09-07 Added 'Verbose' as an optional argument
 % TODO: Restrict the number of samples if provided
 % 
 
@@ -85,6 +90,7 @@ alignMethodDefault  = 'leftAdjustPad';   % pad on the right by default
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
 treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
                                     %   as an array by default
+verboseDefault = true;              % print warning by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -109,12 +115,15 @@ addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Verbose', verboseDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vecs, varargin{:});
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 treatCellAsArray = iP.Results.TreatCellAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
+verbose = iP.Results.Verbose;
 
 % Keep unmatched arguments for the force_column_vector() function
 otherArguments = iP.Unmatched;
@@ -140,7 +149,10 @@ nUniqueSamples = numel(unique(cellfun(@numel, vecs)));
 if nUniqueSamples == 1
     vecs = horzcat(vecs{:});
 else
-    disp('Warning: Vector lengths are not consistent, concatenation aborted!');
+    if verbose
+        disp(['Warning: Vector lengths are not consistent, ', ...
+                'concatenation aborted!']);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

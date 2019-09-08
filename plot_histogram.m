@@ -7,10 +7,12 @@ function [bars, fig] = plot_histogram (X, varargin)
 %           on the right, respectively.
 %       Note: The bar() function is used for the main histogram
 %               unless 'UseBuiltIn' is set to true
+%
 % Example(s):
 %       plot_histogram([-100, randn(1, 100) + 4, 100])
 %       plot_histogram([randn(100, 3); [100, -200, 300]])
 %       plot_histogram([], 'Counts', (1:5)', 'Edges', (1:6)')
+%
 % Outputs:
 %       bars        - handles to Bar objects
 %                       bars(1:nGroups) - main histogram
@@ -164,6 +166,8 @@ function [bars, fig] = plot_histogram (X, varargin)
 % 2019-03-14 Now returns empty plot if there is no data
 % 2019-03-14 Fixed bug when xTickLabelNums is empty
 % 2019-08-13 Fixed bug when histogram() is used
+% TODO: Make X an optional argument (allow passing in of just 'Counts' and
+% 'Edges'
 
 %% Hard-coded parameters
 validOutlierMethods = {'boxplot', 'isoutlier', ...

@@ -14,6 +14,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       vector = force_column_vector(vector);
 %       vectors = force_column_vector(vectors);
 %       force_column_vector({[3, 4], [5; 6], magic(3)})
+%       force_column_vector({1:3, 4:7}, 'CombineAcrossCells', true)
 %       force_column_vector({ones(2, 1), magic(3)}, 'ToLinearize', true)
 %       force_column_vector({ones(2, 1), magic(3)}, 'CombineAcrossCells', true)
 %       force_column_vector({ones(2, 1), magic(3)}, 'ToLinearize', true, 'CombineAcrossCells', true)
@@ -191,7 +192,8 @@ if iscell(vectors) && ~treatCellAsArray && ...
 
             % Force as a matrix (horizontally-concatenated vectors)
             if toLinearize
-                vectors = force_matrix(vectors, 'AlignMethod', 'leftAdjustPad');
+                vectors = force_matrix(vectors, 'Verbose', false, ...
+                                        'AlignMethod', 'leftAdjustPad');
             else
                 vectors = force_matrix(vectors, 'AlignMethod', 'none');
             end

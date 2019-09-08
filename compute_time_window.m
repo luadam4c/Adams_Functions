@@ -3,10 +3,12 @@ function windows = compute_time_window (timeVecs, varargin)
 % Usage: windows = compute_time_window (timeVecs, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       compute_time_window({2:100, 50:200})
 %       compute_time_window({2:100, 50:200}, 'TimeEnd', 150)
 %       compute_time_window({2:100, 50:200}, 'TimeStart', 3)
+%
 % Outputs:
 %       windows     - computed time windows
 %                   specified as a numeric array with 2 rows

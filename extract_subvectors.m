@@ -62,6 +62,10 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                                       of character arrays as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'ForceCellOutput': whether to force output as 
+%                                           a cell array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/apply_iteratively.m
@@ -118,6 +122,8 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2019-04-26 Fixed padding when there are empty vectors
 % 2019-08-13 Added 'MaxNum' as an optional parameter
 % 2019-08-21 Now allows indices to be non-integers (uses interpolation)
+% 2019-09-07 Now matches vectors with the number of indices vectors
+% 2019-09-07 Added 'ForceCellOutput' as an optional argument
 % TODO: check if all endpoints have 2 elements
 % 
 
@@ -136,6 +142,7 @@ alignMethodDefault  = 'none';   % no alignment/truncation by default
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
 treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
                                     %   as an array by default
+forceCellOutputDefault = false;     % don't force as cell array by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -180,6 +187,8 @@ addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vecs, varargin{:});
@@ -192,6 +201,7 @@ windows = iP.Results.Windows;
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 treatCellAsArray = iP.Results.TreatCellAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
+forceCellOutput = iP.Results.ForceCellOutput;
 
 % If indices is provided and endPoints or windows is also provided, 
 %   display warning
@@ -251,8 +261,8 @@ end
 % If there is a alignment method used, apply it to indices
 indices = align_subvectors(indices, alignMethod);
 
-% If one of indices and vecs is a cell array, match the formats of 
-%   indices and vecs so that cellfun can be used
+% If one of indices and vecs is a cell array, 
+%   match the formats of indices and vecs so that cellfun can be used
 if iscell(indices) || iscell(vecs)
     [indices, vecs] = ...
         match_format_vector_sets(indices, vecs, 'ForceCellOutputs', false, ...
@@ -272,6 +282,11 @@ elseif iscell(vecs) && ~treatCellAsArray && ...
                         vecs, indices, 'UniformOutput', false);
 else
     subVecs = extract_subvectors_helper(vecs, indices);
+end
+
+% Force as cell array of column vectors if requested
+if forceCellOutput
+    subVecs = force_column_cell(subVecs);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -306,8 +321,15 @@ nRows = size(indices, 1);
 % Count the desired number of columns
 nColumns = size(vec, 2);
 
+% If there is only one vector, repmat it to match the number of indices
+%   vectors
+if nColumns == 1 && nIndices > 1 
+    vec = repmat(vec, 1, nIndices);
+    nColumns = nIndices;
+end
+
 % Make sure nIndices is either 1 or nColumns
-if nIndices ~= 1 && nIndices ~= nColumns
+if (nIndices ~= 1 && nIndices ~= nColumns)
     error('nIndices not correct!');
 end
 
