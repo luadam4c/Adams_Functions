@@ -133,9 +133,6 @@ parsedDataTable = ...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 function channelStarts = adjust_start_times (channelStarts, siSeconds)
 
 % Make sure it is a multiple of siSeconds
@@ -145,17 +142,6 @@ channelStarts = floor(channelStarts ./ siSeconds) .* siSeconds;
 
 %{
 OLD CODE:
-
-% Adjust sampling intervals so that it matches an integer frequency in Hz
-siSeconds = adjust_sampling_interval(siSeconds);
-
-function siSeconds = adjust_sampling_interval(siSeconds)
-
-% Round sampling rate to the nearest integer in Hz
-samplingRate = round(1./siSeconds);
-
-% Compute the new sampling interval
-siSeconds = 1./samplingRate;
 
 %}
 

@@ -66,6 +66,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/combine_variables_across_tables.m
 %       cd/create_pleth_EEG_movie.m
 %       cd/extract_common_directory.m
+%       cd/parse_atf_swd.m
 %       cd/plot_measures.m
 %       cd/plot_swd_histogram.m
 %       cd/plot_table.m

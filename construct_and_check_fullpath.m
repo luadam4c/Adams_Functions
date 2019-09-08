@@ -50,6 +50,7 @@ function [fullPath, pathExists] = construct_and_check_fullpath (pathName, vararg
 %       cd/load_params.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_parse_mat.m
+%       cd/parse_atf_swd.m
 
 % File History: 
 % 2017-04-11 - Moved from plot_traces_abf.m

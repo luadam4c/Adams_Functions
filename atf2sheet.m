@@ -56,6 +56,7 @@ function [tablesAll, sheetFullFileNames] = atf2sheet (varargin)
 % 2018-05-23 Now has tablesAll as the first output
 % 2018-11-21 Changed default sheetType xlsx -> csv
 % 2018-11-29 Now uses parse_file_or_directory.m, all_files.m and check_dir.m
+% 2019-09-08 Updated default sheet name to have the ending _atf
 % TODO: isdelimiter.m
 % 
 
@@ -145,8 +146,8 @@ else
     atfFullFileName = fullfile(atfDir, atfFileName);
 
     % Construct the full file name for the sheet file
-    sheetFullFileNames = fullfile(outFolder, ...
-                                strrep(atfFileName, '.atf', ['.', sheetType]));
+    sheetFullFileNames = ...
+        fullfile(outFolder, replace(atfFileName, '.atf', ['_atf.', sheetType]));
 
     % Read in the .atf file, ignoring the first two lines
     tablesAll = readtable(atfFullFileName, 'FileType', 'text', ...

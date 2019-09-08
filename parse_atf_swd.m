@@ -5,19 +5,22 @@ function [swdManualTable, swdManualCsvFile] = ...
 %               parse_atf_swd (originalEventFile, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       swdManualTable = parse_atf_swd('WAGS04_30_2018_cage3_Manual_SWDs.atf');
+%
 % Outputs:
 %       swdManualTable      - a table of spike-wave discharge event info
 %                           specified as a 2D table
+%
 % Arguments:
 %       originalEventFile   - original event file, could be .atf or 
 %                               converted .csv
 %                           must be a string scalar or a character vector
-%       varargin    - 'AbfFileName': Name of the corresponding .abf file(s)
+%       varargin    - 'TraceFileName': Name of the corresponding trace file(s)
 %                   must be empty, a characeter vector, a string array 
 %                       or a cell array of character arrays
-%                   default == [fileBase, '.abf']
+%                   default == extracted from the .atf file
 %                   - 'OutFolder': directory to output swd table file, 
 %                                   e.g. 'output'
 %                   must be a string scalar or a character vector
@@ -31,8 +34,9 @@ function [swdManualTable, swdManualCsvFile] = ...
 % Requires:
 %       cd/argfun.m
 %       cd/atf2sheet.m
-%       cd/construct_and_check_abfpath.m
+%       cd/construct_and_check_fullpath.m
 %       cd/create_error_for_nargin.m
+%       cd/extract_fileparts.m
 %       cd/issheettype.m
 %       cd/match_dimensions.m
 %
@@ -43,16 +47,18 @@ function [swdManualTable, swdManualCsvFile] = ...
 % File History:
 % 2018-11-21 Created by Adam Lu
 % 2018-12-26 Added 'SheetType' as an optional argument
+% 2019-09-08 Now uses the trace file name as the basis 
+%               for constructing sheet file name
 % 
 
 %% Hard-coded constants
 MS_PER_S = 1000;
 
 %% Hard-coded parameters
-varNames = {'startTime', 'endTime', 'duration', 'abfPath', 'pathExists'};
+varNames = {'startTime', 'endTime', 'duration', 'tracePath', 'tracePathExists'};
 
 %% Default values for optional arguments
-abfFileNameDefault = '';        % set later
+traceFileNameDefault = '';      % set later
 outFolderDefault = '';          % set later
 sheetTypeDefault = 'csv';       % default spreadsheet type
 
@@ -73,7 +79,7 @@ addRequired(iP, 'originalEventFile', ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'AbfFileName', abfFileNameDefault, ...
+addParameter(iP, 'TraceFileName', traceFileNameDefault, ...
     @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
@@ -82,7 +88,7 @@ addParameter(iP, 'SheetType', sheetTypeDefault, ...
 
 % Read from the Input Parser
 parse(iP, originalEventFile, varargin{:});
-abfFileName = iP.Results.AbfFileName;
+traceFileName = iP.Results.TraceFileName;
 outFolder = iP.Results.OutFolder;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 
@@ -91,7 +97,7 @@ outFolder = iP.Results.OutFolder;
 if regexpi(originalEventFile, '.atf$')
     atfFile = originalEventFile;
     atfCsvFile = '';
-elseif regexpi(originalEventFile, '.csv$')
+elseif regexpi(originalEventFile, '_atf.csv$')
     atfFile = '';
     atfCsvFile = originalEventFile;
 else
@@ -106,9 +112,6 @@ end
 if isempty(outFolder)
     outFolder = fileDir;
 end
-
-% Construct manual SWD table csv file
-swdManualCsvFile = fullfile(outFolder, [fileBase, '_Manual_SWDs.', sheetType]);
 
 %% Do the job
 % Read the table from the file
@@ -158,23 +161,30 @@ endTime = endTimesMs / MS_PER_S;
 % Compute duration
 duration = endTime - startTime;
 
-% If not provided, read in the .abf file names
-if isempty(abfFileName)
+% If not provided, read in the trace file names
+if isempty(traceFileName)
     % Get the .abf file name for each SWD
-    abfFileName = swdManualTableOfInterest.FileName;
+    traceFileName = swdManualTableOfInterest.FileName;
 end
 
-% Construct full path to abf file
-[abfPath, pathExists] = construct_and_check_abfpath(abfFileName);
+% Construct full path to original data file
+[tracePath, tracePathExists] = construct_and_check_fullpath(traceFileName);
 
 % Make sure the dimensions match up
-[abfPath, pathExists] = ...
-    argfun(@(x) match_dimensions(x, size(startTime)), abfPath, pathExists);
+[tracePath, tracePathExists] = ...
+    argfun(@(x) match_dimensions(x, size(startTime)), ...
+            tracePath, tracePathExists);
+
+% Extract the file base of the trace file
+traceFileBase = extract_fileparts(traceFileName{1}, 'base');
+
+% Construct manual SWD table csv file
+swdManualCsvFile = fullfile(outFolder, [traceFileBase, '_Manual_SWDs.', sheetType]);
 
 %% Output results
 % Create a table for the parsed SWDs
-swdManualTable = table(startTime, endTime, duration, abfPath, pathExists, ...
-                        'VariableNames', varNames);
+swdManualTable = table(startTime, endTime, duration, ...
+                        tracePath, tracePathExists, 'VariableNames', varNames);
 
 % Write the table to a file
 writetable(swdManualTable, swdManualCsvFile);
