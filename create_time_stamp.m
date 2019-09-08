@@ -3,11 +3,14 @@ function timeStamp = create_time_stamp (varargin)
 % Usage: timeStamp = create_time_stamp (varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       timeStamp   - a string for the current date and time
 %                   specified as a character array
+%
 % Arguments:
 %       varargin    - 'FormatOut': format of the output text
 %                   must be a string scalar or character vector
@@ -17,6 +20,7 @@ function timeStamp = create_time_stamp (varargin)
 % Used by:    
 %       cd/archive_dependent_scripts.m
 %       cd/atfwrite.m
+%       cd/plot_psth.m
 %       cd/save_params.m
 
 % File History:

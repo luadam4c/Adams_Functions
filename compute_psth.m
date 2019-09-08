@@ -28,6 +28,11 @@ function [counts, edges, relEventTimes] = ...
 %       varargin    - 'RelativeTimeWindow': relative time window
 %                   must be a 2-element numeric vector
 %                   default == interStimInterval * 0.5 * [-1, 1]
+%                   - 'Grouping': group assignment for each data point
+%                   must be an array of one the following types:
+%                       'cell', 'string', numeric', 'logical', 
+%                           'datetime', 'duration'
+%                   default == pre- or post- stimulus
 %                   - Any other parameter-value pair for compute_grouped_histcounts()
 %
 % Requires:
@@ -46,12 +51,14 @@ function [counts, edges, relEventTimes] = ...
 
 % File History:
 % 2019-09-07 Created by Adam Lu
+% 2019-09-08 Added 'Grouping' as an optional argument
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
 relativeTimeWindowDefault = [];
+groupingDefault = [];                   % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -79,10 +86,14 @@ addRequired(iP, 'stimTimes', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'RelativeTimeWindow', relativeTimeWindowDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'Grouping', groupingDefault, ...
+    @(x) validateattributes(x, {'cell', 'string', 'numeric', 'logical', ...
+                                'datetime', 'duration'}, {'2d'}));
 
 % Read from the Input Parser
 parse(iP, eventTimes, stimTimes, varargin{:});
 relativeTimeWindow = iP.Results.RelativeTimeWindow;
+grouping = iP.Results.Grouping;
 
 % Keep unmatched arguments for the compute_grouped_histcounts() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -123,11 +134,14 @@ relEventTimes = vertcat(relEventTimesCell{:});
 
 % Create a grouping vector with the pre-stimulus and post-stimulus times
 %   as separate groups
-%   Note: must be consistent with compute_psth.m
-grouping = ones(size(relEventTimes));
-grouping(relEventTimes >= 0) = 2;
+%   Note: must be consistent with plot_psth.m
+if isempty(grouping)
+    grouping = ones(size(relEventTimes));
+    grouping(relEventTimes < 0) = -1;
+end
 
 % Compute the peri-stimulus time histogram
+%   Note: must be consistent with plot_psth.m
 [counts, edges] = ...
     compute_grouped_histcounts(relEventTimes, 'Grouping', grouping, ...
                                 'FixedEdges', 0, otherArguments{:});

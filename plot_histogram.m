@@ -53,7 +53,7 @@ function [bars, fig] = plot_histogram (varargin)
 %                       'side-by-side'  - same as 'grouped' bar graph
 %                       'stacked'       - same as 'stacked' bar graph
 %                       'overlapped'    - overlapped histograms
-%                   default == 'side-by-side'
+%                   default == 'stacked'
 %                   - 'SpecialColor': color of expanded bins
 %                   must be a 3-element numeric vector:
 %                   default == [0 0.8 0.8] (light blue)

@@ -36,12 +36,36 @@ function handles = plot_psth (varargin)
 %                   - 'RelativeTimeWindow': relative time window
 %                   must be a 2-element numeric vector
 %                   default == interStimInterval * 0.5 * [-1, 1]
+%                   - 'Grouping': group assignment for each data point
+%                   must be an array of one the following types:
+%                       'cell', 'string', numeric', 'logical', 
+%                           'datetime', 'duration'
+%                   default == pre- or post- stimulus
+%                   - 'XLabel': label for the time axis, 
+%                               suppress by setting value to 'suppress'
+%                   must be a string scalar or a character vector 
+%                       or a cell array of strings or character vectors
+%                   default == 'Relative Time From Stim'
+%                   - 'YLabel': label(s) for the y axis, 
+%                               suppress by setting value to 'suppress'
+%                   must be a string scalar or a character vector
+%                   default == 'Event Count'
+%                   - 'GroupingLabels': labels for the groupings, 
+%                               suppress by setting value to 'suppress'
+%                   must be a string scalar or a character vector 
+%                       or a cell array of strings or character vectors
+%                   default == {'Pre-Stim', 'Post-Stim'}
+%                   - 'FigTitle': title for the figure
+%                   must be a string scalar or a character vector
+%                   default == ['Peri-Stimulus Time Histogram on ', ...
+%                               create_time_stamp]
 %                   - Any other parameter-value pair for plot_histogram()
 %
 % Requires:
 %       cd/compute_grouped_histcounts.m
 %       cd/compute_psth.m
 %       cd/create_error_for_nargin.m
+%       cd/create_time_stamp.m
 %       cd/plot_histogram.m
 %       cd/plot_vertical_line.m
 %
@@ -50,6 +74,7 @@ function handles = plot_psth (varargin)
 
 % File History:
 % 2019-09-07 Created by Adam Lu
+% 2019-09-08 Added 'Grouping' as an optional argument
 % TODO: Add stimulus duration and vertical shade
 
 %% Hard-coded parameters
@@ -65,6 +90,11 @@ edgesDefault = [];                      % set later
 eventTimesDefault = [];
 stimTimesDefault = [];
 relativeTimeWindowDefault = [];
+groupingDefault = [];                   % set later
+xLabelDefault = 'Relative Time From Stim';
+yLabelDefault = 'Event Count';
+groupingLabelsDefault = {};             % set later
+figTitleDefault = '';                   % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -96,6 +126,17 @@ addParameter(iP, 'StimTimes', stimTimesDefault, ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'RelativeTimeWindow', relativeTimeWindowDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'Grouping', groupingDefault, ...
+    @(x) validateattributes(x, {'cell', 'string', 'numeric', 'logical', ...
+                                'datetime', 'duration'}, {'2d'}));
+addParameter(iP, 'XLabel', xLabelDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'YLabel', yLabelDefault, ...
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'GroupingLabels', groupingLabelsDefault, ...
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'FigTitle', figTitleDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -105,18 +146,22 @@ edges = iP.Results.Edges;
 eventTimes = iP.Results.EventTimes;
 stimTimes = iP.Results.StimTimes;
 relativeTimeWindow = iP.Results.RelativeTimeWindow;
+grouping = iP.Results.Grouping;
+xLabel = iP.Results.XLabel;
+yLabel = iP.Results.YLabel;
+groupingLabels = iP.Results.GroupingLabels;
+figTitle = iP.Results.FigTitle;
 
 % Keep unmatched arguments for the plot_histogram() function
 otherArguments = iP.Unmatched;
 
 %% Preparation
 % Initialize output structure
-h = struct;
+handles = struct;
 
 % Make sure there is data
 if isempty(relEventTimes) && (isempty(counts) || isempty(edges)) && ...
         (isempty(eventTimes) || isempty(stimTimes))
-    handles = struct;
     disp('There is no data to plot!');
     return
 end
@@ -129,10 +174,15 @@ if isempty(counts)
             compute_psth(eventTimes, stimTimes, ...
                         'RelativeTimeWindow', relativeTimeWindow);
     else
+        % Compute a grouping vector from relEventTimes
+        %   Note: must be consistent with compute_psth.m
+        if isempty(grouping)
+            grouping = ones(size(relEventTimes));
+            grouping(relEventTimes < 0) = -1;
+        end
+
         % Compute counts and edges from relEventTimes
         %   Note: must be consistent with compute_psth.m
-        grouping = ones(size(relEventTimes));
-        grouping(relEventTimes >= 0) = 2;
         [counts, edges] = ...
             compute_grouped_histcounts(relEventTimes, 'Grouping', grouping, ...
                                         'FixedEdges', 0, otherArguments{:});
@@ -144,9 +194,24 @@ else
     end
 end
 
+% Create default grouping labels
+if isempty(groupingLabels)
+    if size(counts, 2) <= 2
+        groupingLabels = {'Pre-Stim', 'Post-Stim'};
+    end
+end
+
+% Create default title
+if isempty(figTitle)
+    figTitle = ['Peri-Stimulus Time Histogram on ', create_time_stamp];
+end
+
 %% Do the job
 % Plot the histogram
 [bars, fig] = plot_histogram('Counts', counts, 'Edges', edges, ...
+                            'XLabel', xLabel, 'YLabel', yLabel, ...
+                            'GroupingLabels', groupingLabels, ...
+                            'FigTitle', figTitle, ...
                             otherArguments);
 
 % Plot a vertical line at zero

@@ -54,7 +54,6 @@ function varargout = unique_groups (grouping, varargin)
 %       cd/unique_custom.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
 
 % File History:
 % 2019-08-21 Created by Adam Lu
