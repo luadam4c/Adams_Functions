@@ -34,6 +34,7 @@
 % 2019-09-05 Created by Adam Lu
 % 2019-09-06 Added pleth and EMG channels
 % TODO: Add Light on info as raster
+% TODO: Make optional arguments
 % TODO: Use parse_spike2_mat.m without loading everything?
 
 %% Hard-coded parameters
