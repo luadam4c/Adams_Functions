@@ -71,6 +71,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/apply_iteratively.m
 %       cd/argfun.m
 %       cd/create_default_endpoints.m
+%       cd/compute_psth.m
 %       cd/count_samples.m
 %       cd/create_empty_match.m
 %       cd/create_error_for_nargin.m

@@ -1,6 +1,6 @@
-function [bars, fig] = plot_histogram (X, varargin)
+function [bars, fig] = plot_histogram (varargin)
 %% Plots a histogram labelling out of range values differently
-% Usage: [bars, fig] = plot_histogram (X, varargin)
+% Usage: [bars, fig] = plot_histogram (X (opt), varargin)
 % Explanation:
 %       Automatically combines the counts of X outside of the finite range 
 %           of edges on the left or on the right to a bin on the left or 
@@ -11,7 +11,7 @@ function [bars, fig] = plot_histogram (X, varargin)
 % Example(s):
 %       plot_histogram([-100, randn(1, 100) + 4, 100])
 %       plot_histogram([randn(100, 3); [100, -200, 300]])
-%       plot_histogram([], 'Counts', (1:5)', 'Edges', (1:6)')
+%       plot_histogram('Counts', (1:5)', 'Edges', (1:6)')
 %
 % Outputs:
 %       bars        - handles to Bar objects
@@ -24,7 +24,7 @@ function [bars, fig] = plot_histogram (X, varargin)
 % Side Effects:
 %       Plots a histogram
 % Arguments:
-%       X           - data to distribute among bins
+%       X           - (opt) data to distribute among bins
 %                   must be an array of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
 %       varargin    - 'PlotOutliers': whether to plot outliers separately
@@ -147,6 +147,7 @@ function [bars, fig] = plot_histogram (X, varargin)
 %       cd/isnumericvector.m
 %       cd/remove_outliers.m
 %       cd/save_all_figtypes.m
+%       cd/set_figure_properties.m
 %       cd/test_var_difference.m
 %
 % Used by:    
@@ -166,8 +167,8 @@ function [bars, fig] = plot_histogram (X, varargin)
 % 2019-03-14 Now returns empty plot if there is no data
 % 2019-03-14 Fixed bug when xTickLabelNums is empty
 % 2019-08-13 Fixed bug when histogram() is used
-% TODO: Make X an optional argument (allow passing in of just 'Counts' and
-% 'Edges'
+% 2019-09-08 Make X an optional argument (allow passing in of just 
+%               'Counts' and 'Edges')
 
 %% Hard-coded parameters
 validOutlierMethods = {'boxplot', 'isoutlier', ...
@@ -176,6 +177,7 @@ validGroupedStyles = {'side-by-side', 'stacked', 'overlapped'};
 minNXTicks = 5;
 
 %% Default values for optional arguments
+XDefault = [];                          % set later
 plotOutliersDefault = true;             % plot outliers by default
 useBuiltInDefault = false;              % use plot_grouped_histogram by default
 countsDefault = [];                     % set later
@@ -203,18 +205,13 @@ figTypesDefault = 'png';                % save as png file by default
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
-% Check number of required arguments
-if nargin < 1
-    error(create_error_for_nargin(mfilename));
-end
-
 % Set up Input Parser Scheme
 iP = inputParser;         
 iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
-% Add required inputs to the Input Parser
-addRequired(iP, 'X', ...                        % data to distribute among bins
+% Add optional inputs to the Input Parser
+addOptional(iP, 'X', XDefault, ...      % data to distribute among bins
     @(x) validateattributes(x, {'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
 
@@ -275,7 +272,8 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
-parse(iP, X, varargin{:});
+parse(iP, varargin{:});
+X = iP.Results.X;
 plotOutliers = iP.Results.PlotOutliers;
 useBuiltIn = iP.Results.UseBuiltIn;
 counts = iP.Results.Counts;
@@ -311,27 +309,34 @@ matlabRelease = version('-release');
 % Get the current MATLAB release year
 matlabYear = str2double(matlabRelease(1:4));
 
+% Make sure there is data
+if isempty(X) && (isempty(counts) || isempty(edgesUser))
+    bars = gobjects;
+    fig = gobjects;
+    disp('There is no data to plot!');
+    return
+end
+
 % Force rows as columns
 X = force_column_vector(X, 'IgnoreNonVectors', true);
 grouping = force_column_vector(grouping, 'TreatCellAsArray', true, ...
                                 'IgnoreNonVectors', true);
 edgesUser = force_column_vector(edgesUser);
 
-% If the figure name is not a full path, create full path
+% If the figure name is passed in, make sure a new figure is created
 if ~isempty(figName)
+    % If the figure name is not a full path, create full path
     figName = construct_fullpath(figName, 'Directory', outFolder);
+
+    % Create a new figure
+    alwaysNew = true;
+else
+    alwaysNew = false;
 end
 
 % Decide on the figure to plot on
-if ~isempty(figHandle)
-    fig = figure(figHandle);
-elseif ~isempty(figNumber)
-    fig = figure(figNumber);
-elseif ~isempty(figName)
-    fig = figure;
-else
-    fig = gcf;
-end
+fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
+                            'AlwaysNew', alwaysNew);
 
 %% Identify edges if not provided
 if isempty(edgesUser)
@@ -353,6 +358,9 @@ if isempty(edgesUser)
         % Find the bin edges for all data
         [~, edgesUser] = compute_grouped_histcounts(X, grouping);
     end
+else
+    % Force as a column vector
+    edgesUser = force_column_vector(edgesUser);
 end
 
 %% Create histogram
@@ -368,6 +376,10 @@ edgesExpanded = [-Inf; edgesFinite; Inf];
 if isempty(counts)
     counts = compute_grouped_histcounts(X, grouping, 'Edges', edgesExpanded);
 else
+    % Force as a column vector
+    counts = force_column_vector(counts);
+
+    % Add zeros for the expanded bins
     counts = [0; counts; 0];
 end
 
@@ -704,6 +716,16 @@ if numel(edgesFinite) >= 2
     xTicksLeft = xLimits(1) + binWidth*10;
 else
     xTicksLeft = xLimits(1);
+end
+
+if ~isempty(figHandle)
+    fig = figure(figHandle);
+elseif ~isempty(figNumber)
+    fig = figure(figNumber);
+elseif ~isempty(figName)
+    fig = figure;
+else
+    fig = gcf;
 end
 
 %}

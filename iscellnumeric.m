@@ -3,9 +3,11 @@ function isCellNumeric = iscellnumeric (x)
 % Usage: isCellNumeric = iscellnumeric (x)
 % Explanation:
 %       Tests whether the input is a cell array of numeric arrays
+%
 % Example(s):
 %       iscellnumeric({1:10, 2:20})
 %       iscellnumeric({'sets', 'lasts'})
+%
 % Outputs:
 %       isCellNumeric   - whether the input is a cell array of numeric arrays
 %                       specified as a logical scalar
@@ -18,6 +20,7 @@ function isCellNumeric = iscellnumeric (x)
 % Used by:
 %       cd/alternate_elements.m
 %       cd/compute_baseline_noise.m
+%       cd/compute_psth.m
 %       cd/compute_residuals.m
 %       cd/compute_rms_error.m
 %       cd/compute_sampsizepwr.m

@@ -6,10 +6,12 @@ function vectors = force_row_vector (vectors, varargin)
 %           this function makes sure each vector is a row vector.
 %       If a single vector is provided, the function makes sure 
 %           it's a row vector.
+%
 % Example(s):
 %       vector = force_row_vector(vector);
 %       vectors = force_row_vector(vectors);
 %       force_row_vector({[3, 4], [5; 6], magic(3)})
+%
 % Outputs:
 %       vectors     - vectors transformed
 %
@@ -18,11 +20,13 @@ function vectors = force_row_vector (vectors, varargin)
 %       varargin    - see force_column_vector.m
 %
 % Requires:
+%       cd/compute_psth.m
 %       cd/create_error_for_nargin.m
 %       cd/force_column_vector.m
 %
 % Used by:    
 %       cd/compute_centers_from_edges.m
+%       cd/compute_psth.m
 %       cd/plot_tuning_curve.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/plot_histogram.m

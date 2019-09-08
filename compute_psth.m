@@ -5,7 +5,8 @@ function [counts, edges] = compute_psth (eventTimes, stimTimes, varargin)
 %       TODO
 %
 % Example(s):
-%       eventTimes = {1:2:99; 101:2:199};
+%       [counts, edges] = compute_psth(randi(100, 100, 1), 10:10:80)
+%       eventTimes = {randi(100, 100, 1); randi(100, 100, 1) + 100};
 %       stimTimes = {10:10:80; 110:10:200};
 %       [counts, edges] = compute_psth(eventTimes, stimTimes)
 %
@@ -26,12 +27,12 @@ function [counts, edges] = compute_psth (eventTimes, stimTimes, varargin)
 %                   - Any other parameter-value pair for histcounts()
 %
 % Requires:
+%       cd/argfun.m
 %       cd/create_error_for_nargin.m
-%   argfun
-% force_column_vector
-% force_row_vector
-% extract_subvectors
-%   iscellnumeric
+%       cd/extract_subvectors.m
+%       cd/force_column_vector.m
+%       cd/force_row_vector.m
+%       cd/iscellnumeric.m
 %       cd/match_format_vector_sets.m
 %       cd/struct2arglist.m
 %
@@ -83,11 +84,18 @@ otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Force as column vectors
-[eventTimes, stimTimes] = argfun(@force_column_vector, eventTimes, stimTimes);
+[eventTimes, stimTimes] = ...
+    argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', false), ...
+            eventTimes, stimTimes);
 
 % Make sure the vector numbers are identical and force as column cell arrays
 [eventTimes, stimTimes] = ...
     match_format_vector_sets(eventTimes, stimTimes, 'ForceCellOutputs', true);
+
+% Sort the times in ascending order
+[eventTimes, stimTimes] = ...
+    argfun(@(x) cellfun(@sort, x, 'UniformOutput', false), ...
+            eventTimes, stimTimes);
 
 % Compute the default relative time window for the PSTH
 if isempty(relativeTimeWindow)

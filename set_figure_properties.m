@@ -42,6 +42,10 @@ function fig = set_figure_properties (varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true if 'FigNumber' provided 
 %                               but false otherwise
+%                   - 'AlwaysNew': whether to always create a new figure even if
+%                                   figNumber is not passed in
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - Any other properties for the Figure object
 %
 % Requires:
@@ -52,6 +56,7 @@ function fig = set_figure_properties (varargin)
 %       cd/create_subplots.m
 %       cd/plot_bar.m
 %       cd/plot_frame.m
+%       cd/plot_histogram.m
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
 
@@ -63,6 +68,7 @@ function fig = set_figure_properties (varargin)
 % 2019-09-04 Added 'Height', 'Width', 'Position' as optional arguments
 % 2019-09-06 Allowed 'FigExpansion' to be two elements
 % 2019-09-06 Added 'AdjustPosition' and 'ClearFigure' as optional arguments
+% 2019-09-08 Added 'AlwaysNew' as an optional argument
 
 %% Hard-coded parameters
 
@@ -75,6 +81,7 @@ widthDefault = [];              % set later
 heightDefault = [];             % set later
 adjustPositionDefault = [];     % set later
 clearFigureDefault = [];        % set later
+alwaysNewDefault = false;       % don't always create new figure by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -102,6 +109,8 @@ addParameter(iP, 'AdjustPosition', adjustPositionDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ClearFigure', clearFigureDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AlwaysNew', alwaysNewDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -113,6 +122,7 @@ width = iP.Results.Width;
 height = iP.Results.Height;
 adjustPositionUser = iP.Results.AdjustPosition;
 clearFigureUser = iP.Results.ClearFigure;
+alwaysNew = iP.Results.AlwaysNew;
 
 % Keep unmatched name-value pairs for the Figure object
 otherArguments = struct2arglist(iP.Unmatched);
@@ -125,6 +135,8 @@ if ~isempty(figHandle)
 elseif ~isempty(figNumber)
     % Create and clear a new figure with given figure number
     fig = figure(figNumber);
+elseif alwaysNew
+    fig = figure;
 else
     % Get the current figure or create one if non-existent
     fig = gcf;

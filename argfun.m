@@ -6,10 +6,13 @@ function varargout = argfun (myFunction, varargin)
 %           to each of the rest of the arguments
 %       The first argument becomes the first output,
 %           the second argument becomes the second output, and so on ...
+%
 % Example(s):
 %       [a, b] = argfun(@sum, 1:10, magic(3))
+%
 % Outputs:
 %       varargout   - outputs of the function applied to each input argument
+%
 % Arguments:    
 %       myFunction  - a custom function
 %                   must be a function handle
@@ -27,6 +30,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/compute_default_sweep_info.m
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
+%       cd/compute_psth.m
 %       cd/compute_rms_error.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sampsizepwr.m
