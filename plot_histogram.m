@@ -323,7 +323,7 @@ end
 X = force_column_vector(X, 'IgnoreNonVectors', true);
 grouping = force_column_vector(grouping, 'TreatCellAsArray', true, ...
                                 'IgnoreNonVectors', true);
-edgesUser = force_column_vector(edgesUser);
+edgesUser = force_column_vector(edgesUser, 'IgnoreNonVectors', true);
 
 % If the figure name is passed in, make sure a new figure is created
 if ~isempty(figName)
@@ -362,7 +362,7 @@ if isempty(edgesUser)
     end
 else
     % Force as a column vector
-    edgesUser = force_column_vector(edgesUser);
+    edgesUser = force_column_vector(edgesUser, 'IgnoreNonVectors', true);
 end
 
 %% Create histogram
@@ -379,10 +379,13 @@ if isempty(counts)
     counts = compute_grouped_histcounts(X, grouping, 'Edges', edgesExpanded);
 else
     % Force as a column vector
-    counts = force_column_vector(counts);
+    counts = force_column_vector(counts, 'IgnoreNonVectors', true);
 
+    % Create a row of zeros
+    zeroRow = zeros(1, size(counts, 2));
+    
     % Add zeros for the expanded bins
-    counts = [0; counts; 0];
+    counts = [zeroRow; counts; zeroRow];
 end
 
 % Decide whether the histogram will be expanded on the left and right

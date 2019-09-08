@@ -28,11 +28,11 @@ function [counts, edges, relEventTimes] = ...
 %       varargin    - 'RelativeTimeWindow': relative time window
 %                   must be a 2-element numeric vector
 %                   default == interStimInterval * 0.5 * [-1, 1]
-%                   - Any other parameter-value pair for compute_bins()
+%                   - Any other parameter-value pair for compute_grouped_histcounts()
 %
 % Requires:
 %       cd/argfun.m
-%       cd/compute_bins.m
+%       cd/compute_grouped_histcounts.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_subvectors.m
 %       cd/force_column_vector.m
@@ -84,7 +84,7 @@ addParameter(iP, 'RelativeTimeWindow', relativeTimeWindowDefault, ...
 parse(iP, eventTimes, stimTimes, varargin{:});
 relativeTimeWindow = iP.Results.RelativeTimeWindow;
 
-% Keep unmatched arguments for the compute_bins() function
+% Keep unmatched arguments for the compute_grouped_histcounts() function
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
@@ -121,9 +121,16 @@ relEventTimesCellCell = ...
 relEventTimesCell = vertcat(relEventTimesCellCell{:});
 relEventTimes = vertcat(relEventTimesCell{:});
 
+% Create a grouping vector with the pre-stimulus and post-stimulus times
+%   as separate groups
+%   Note: must be consistent with compute_psth.m
+grouping = ones(size(relEventTimes));
+grouping(relEventTimes >= 0) = 2;
+
 % Compute the peri-stimulus time histogram
 [counts, edges] = ...
-    compute_bins(relEventTimes, 'FixedEdges', 0, otherArguments{:});
+    compute_grouped_histcounts(relEventTimes, 'Grouping', grouping, ...
+                                'FixedEdges', 0, otherArguments{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

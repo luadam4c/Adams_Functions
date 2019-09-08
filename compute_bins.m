@@ -29,12 +29,11 @@ function [counts, edges] = compute_bins (stats, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/force_column_vector.m
 %       cd/struct2arglist.m
+%       cd/update_edges.m
 %
 % Used by:
 %       cd/compute_grouped_histcounts.m
-%       cd/compute_psth.m
 %       cd/compute_spike_histogram.m
-%       cd/plot_psth.m
 
 % File History:
 % 2018-12-28 Moved from plot_grouped_histogram.m
@@ -93,36 +92,11 @@ end
 
 % If the edges do not contain a fixed edge, shift so that it does
 if ~isempty(fixedEdges)
-    if ~all(ismember(fixedEdges, edges))
-        % Sort the fixed edges
-        fixedEdges = sort(fixedEdges);
+    % Update edges if necessary
+    [edgesNew, isUpdated] = update_edges(edges, 'FixedEdges', fixedEdges);
 
-        % Get the center fixed edge
-        centerEdge = extract_elements(fixedEdges, 'center');
-
-        % Count the number of edges greater than the center fixed edge
-        nEdgesRight = length(find(edges > centerEdge));
-
-        % Count the number of edges less than the center fixed edge
-        nEdgesLeft = length(find(edges < centerEdge));
-
-        % Extract the average bin width
-        binWidth = nanmean(diff(edges));
-
-        % Compute a new bin width if necessary
-        diffs = diff(fixedEdges);
-        if ~isempty(diffs) && ~all(mod(diffs, binWidth) == 0);
-            % TODO
-        end
-
-        % Compute the new bin limits
-        minEdge = centerEdge - nEdgesLeft * binWidth;
-        maxEdge = centerEdge + nEdgesRight * binWidth;
-
-        % Compute the new bin edges
-        edgesNew = minEdge:binWidth:maxEdge;
-
-        % Compute bins again
+    % Compute bins again
+    if isUpdated
         [counts, edges] = histcounts(stats, edgesNew, otherArguments{:});
     end
 end

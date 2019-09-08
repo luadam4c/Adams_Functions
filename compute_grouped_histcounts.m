@@ -4,6 +4,7 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 % Explanation:
 %       This is similar to histcounts() but returns a 2-D array
 %           if a grouping vector is provided
+%
 % Example(s):
 %       randVec = randn(100, 1);
 %       stats1 = [randVec, randVec + 1, randVec - 1];
@@ -11,6 +12,7 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 %       stats2 = [randVec; randVec + 1; randVec - 1];
 %       grouping2 = [repmat({'Mark'}, 100, 1); repmat({'Peter'}, 100, 1); repmat({'Katie'}, 100, 1)];
 %       [counts, edges, centers] = compute_grouped_histcounts(stats2, grouping2)
+%
 % Outputs:
 %       counts      - bin counts, with each group being a different column
 %                   specified as a an array of one the following types:
@@ -34,6 +36,9 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 %                   must be a vector of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
 %                   default == automatic detection of 
+%                   - 'FixedEdges': numbers that must exist in bin edges
+%                   must be a numeric, logical, datetime or duration vector
+%                   default == []
 %                   - Any other parameter-value pair for histcounts()
 %
 % Requires:
@@ -42,10 +47,13 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 %       cd/create_default_grouping.m
 %       cd/create_error_for_nargin.m
 %       cd/struct2arglist.m
+%       cd/update_edges.m
 %
 % Used by:
+%       cd/compute_psth.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_histogram.m
+%       cd/plot_psth.m
 
 % File History:
 % 2019-01-15 Moved from plot_grouped_histogram.m
@@ -56,6 +64,7 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 %% Default values for optional arguments
 groupingDefault = [];           % set later
 edgesDefault = [];              % set later
+fixedEdgesDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -84,11 +93,15 @@ addOptional(iP, 'grouping', groupingDefault, ...
 addParameter(iP, 'Edges', edgesDefault, ...
     @(x) validateattributes(x, {'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
+addParameter(iP, 'FixedEdges', fixedEdgesDefault, ...
+    @(x) validateattributes(x, {'numeric', 'logical', ...
+                                'datetime', 'duration'}, {'2d'}));
 
 % Read from the Input Parser
 parse(iP, stats, varargin{:});
 grouping = iP.Results.grouping;
 edges = iP.Results.Edges;
+fixedEdges = iP.Results.FixedEdges;
 
 % Keep unmatched arguments for the histcounts() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -111,8 +124,9 @@ statsCell = arrayfun(@(x) stats(grouping == groupValues(x)), ...
 if isempty(edges)
     % Compute bin edges for each group
     [~, edgesAll] = ...
-        cellfun(@(x) compute_bins(x, 'Edges', edges, otherArguments{:}), ...
-                                    statsCell, 'UniformOutput', false);
+        cellfun(@(x) compute_bins(x, 'Edges', edges, ...
+                            'FixedEdges', fixedEdges, otherArguments{:}), ...
+                statsCell, 'UniformOutput', false);
 
     % Compute the minimum bin width across groups
     minBinWidth = min(extract_elements(edgesAll, 'firstdiff'));
@@ -131,9 +145,13 @@ if isempty(edges)
     edges = transpose(linspace(minEdges, maxEdges, nBins));
 end
 
+%% Modify edges to include fixed edges if necessary
+edges = update_edges(edges, 'FixedEdges', fixedEdges);
+
 %% Compute the bin counts for each group based on these edges
+%   Note: edges are not updated here
 counts = cellfun(@(x) compute_bins(x, 'Edges', edges, otherArguments{:}), ...
-                    statsCell, 'UniformOutput', false);
+                statsCell, 'UniformOutput', false);
 counts = horzcat(counts{:});
 
 %% Compute the bin centers

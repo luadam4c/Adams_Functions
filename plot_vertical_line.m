@@ -52,6 +52,7 @@ function h = plot_vertical_line (xValue, varargin)
 %       cd/plot_bar.m
 %       cd/plot_error_bar.m
 %       cd/plot_horizontal_line.m
+%       cd/plot_psth.m
 %       cd/plot_pulse_response_with_stimulus.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_swd_histogram.m

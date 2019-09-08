@@ -39,10 +39,11 @@ function handles = plot_psth (varargin)
 %                   - Any other parameter-value pair for plot_histogram()
 %
 % Requires:
-%       cd/compute_bins.m
+%       cd/compute_grouped_histcounts.m
 %       cd/compute_psth.m
 %       cd/create_error_for_nargin.m
 %       cd/plot_histogram.m
+%       cd/plot_vertical_line.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -52,6 +53,10 @@ function handles = plot_psth (varargin)
 % TODO: Add stimulus duration and vertical shade
 
 %% Hard-coded parameters
+% TODO: Make optional parameters
+vertLineLineWidth = 2;
+vertLineLineStyle = '-';
+vertLineColor = 'k';
 
 %% Default values for optional arguments
 relEventTimesDefault = [];              % set later
@@ -105,6 +110,9 @@ relativeTimeWindow = iP.Results.RelativeTimeWindow;
 otherArguments = iP.Unmatched;
 
 %% Preparation
+% Initialize output structure
+h = struct;
+
 % Make sure there is data
 if isempty(relEventTimes) && (isempty(counts) || isempty(edges)) && ...
         (isempty(eventTimes) || isempty(stimTimes))
@@ -113,29 +121,43 @@ if isempty(relEventTimes) && (isempty(counts) || isempty(edges)) && ...
     return
 end
 
-% Compute histogram if not already done
-if isempty(counts) || isempty(edges)
+% Compute histogram counts if not already done
+if isempty(counts)
     if isempty(relEventTimes)
         % Compute counts and edges from eventTimes and stimTimes
-        [counts, edges] = compute_psth(eventTimes, stimTimes, ...
-                                    'RelativeTimeWindow', relativeTimeWindow);
+        [counts, edges] = ...
+            compute_psth(eventTimes, stimTimes, ...
+                        'RelativeTimeWindow', relativeTimeWindow);
     else
         % Compute counts and edges from relEventTimes
-        [counts, edges] = compute_bins(relEventTimes, 'FixedEdges', 0);
+        %   Note: must be consistent with compute_psth.m
+        grouping = ones(size(relEventTimes));
+        grouping(relEventTimes >= 0) = 2;
+        [counts, edges] = ...
+            compute_grouped_histcounts(relEventTimes, 'Grouping', grouping, ...
+                                        'FixedEdges', 0, otherArguments{:});
+    end
+else
+    if isempty(edges)
+        disp('Edges must be provided if counts are provided!');
+        return
     end
 end
 
 %% Do the job
 % Plot the histogram
-[bars, fig] = plot_histogram('Counts', counts, 'Edges', edges, otherArguments);
+[bars, fig] = plot_histogram('Counts', counts, 'Edges', edges, ...
+                            otherArguments);
 
 % Plot a vertical line at zero
-vertLine = plot_vertical_line(0, 'LineWidth', 2, 'LineStyle', '-', ...
-                                'Color', 'r');
+vertLine = plot_vertical_line(0, 'LineWidth', vertLineLineWidth, ...
+                                'LineStyle', vertLineLineStyle, ...
+                                'Color', vertLineColor);
 
 %% Output handles
 handles.fig = fig;
 handles.bars = bars;
+handles.vertLine = vertLine;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

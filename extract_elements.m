@@ -58,6 +58,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/parse_stim.m
 %       cd/plot_protocols.m
 %       cd/select_similar_values.m
+%       cd/update_edges.m
 
 % File History:
 % 2018-12-15 Created by Adam Lu
