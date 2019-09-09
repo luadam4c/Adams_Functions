@@ -34,6 +34,7 @@ function newStr = force_string_start (oldStr, subStr, varargin)
 %       cd/force_string_end.m
 %
 % Used by:
+%       cd/all_files.m
 %       cd/create_labels_from_numbers.m
 
 % File History:

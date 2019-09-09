@@ -20,6 +20,7 @@ function varargout = all_files (varargin)
 %                       datenum
 %       fullPaths   - full path(s) to the files
 %                   specified as a column cell array of character vectors
+%
 % Arguments:
 %       varargin    - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -70,6 +71,7 @@ function varargout = all_files (varargin)
 %       cd/atf2sheet.m
 %       cd/combine_data_from_same_slice.m
 %       cd/create_pleth_EEG_movie.m
+%       cd/force_string_start.m
 %       cd/m3ha_pfiles2csv.m
 %       cd/parse_all_abfs.m
 %       cd/parse_all_multiunit.m
@@ -165,6 +167,10 @@ if ~dirExists
     varargout{2} = {};
     return
 end
+
+%% Preparation
+% Make sure the extension begins with a dot
+extension = force_string_start(extension, '.');
 
 %% Find files
 % Get or check the regular expression to match

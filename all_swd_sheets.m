@@ -31,6 +31,7 @@ function [swdSheetFiles, swdSheetPaths] = all_swd_sheets (varargin)
 %                   could be anything recognised by the readtable() function 
 %                   (see issheettype.m under Adams_Functions)
 %                   default == 'csv'
+%                   - Any other parameter-value pair for all_files()
 %                   
 % Requires:
 %       cd/all_files.m
@@ -61,6 +62,7 @@ sheetTypeDefault = 'csv';       % default spreadsheet type
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
@@ -79,6 +81,9 @@ directory = iP.Results.Directory;
 suffix = iP.Results.Suffix;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 
+% Keep unmatched arguments for the all_files() function
+otherArguments = iP.Unmatched;
+
 %% Do the job
 % Set default string to recognize SWD spreadsheets
 if isempty(suffix)
@@ -89,7 +94,8 @@ end
 [swdSheetFiles, swdSheetPaths] = ...
     all_files('Verbose', verbose, 'Recursive', true, ...
                 'Directory', directory, ...
-                'Suffix', suffix, 'Extension', ['.', sheetType]);
+                'Suffix', suffix, 'Extension', ['.', sheetType], ...
+                otherArguments);
 
 % Exit function if no spreadsheet files are found
 if isempty(swdSheetPaths)
