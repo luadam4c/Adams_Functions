@@ -1,16 +1,16 @@
-function [combinedTable, combinedPath] = combine_swd_sheets (varargin)
+function [outTable, outPath] = combine_swd_sheets (varargin)
 %% Combines all files ending with '_SWDs.csv' under a directory
-% Usage: [combinedTable, combinedPath] = combine_swd_sheets (varargin)
+% Usage: [outTable, outPath] = combine_swd_sheets (varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       combinedTable = combine_swd_sheets('Keyword', 'test3AtNight_200Hz')
+%       outTable = combine_swd_sheets('Keyword', 'test3AtNight_200Hz')
 %
 % Outputs:
-%       combinedTable   - combined SWD table
+%       outTable   - combined SWD table
 %                       specified as a 2-D table
-%       combinedPath    - full path to the combined SWD spreadheet file
+%       outPath    - full path to the combined SWD spreadheet file
 %                       specified as a character vector
 %
 % Arguments:
@@ -23,6 +23,9 @@ function [combinedTable, combinedPath] = combine_swd_sheets (varargin)
 %                   - 'Keyword': keyword for file bases
 %                   must be a string scalar or a character vector
 %                   default == ''
+%                   - 'OutPrefix': output file prefix
+%                   must be a string scalar or a character vector
+%                   default == keyword or directory name
 %                   - 'SheetType': sheet type;
 %                       e.g., 'xlsx', 'csv', etc.
 %                   could be anything recognised by the readtable() function 
@@ -47,11 +50,13 @@ function [combinedTable, combinedPath] = combine_swd_sheets (varargin)
 % 
 
 %% Hard-coded parameters
+combinedStr = '_combined';
 
 %% Default values for optional arguments
 verboseDefault = true;
 directoryDefault = '';          % set later
 keywordDefault = '';
+outPrefixDefault = '';
 sheetTypeDefault = 'csv';       % default spreadsheet type
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -68,6 +73,8 @@ addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'Keyword', keywordDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'OutPrefix', outPrefixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SheetType', sheetTypeDefault, ...
     @(x) all(issheettype(x, 'ValidateMode', true)));
 
@@ -76,6 +83,7 @@ parse(iP, varargin{:});
 verbose = iP.Results.Verbose;
 directory = iP.Results.Directory;
 keyword = iP.Results.Keyword;
+outPrefix = iP.Results.OutPrefix;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
 
 %% Preparation
@@ -85,10 +93,12 @@ keyword = iP.Results.Keyword;
                     'Keyword', keyword, 'SheetType', sheetType);
 
 % Decide on the combined SWD file prefix
-if ~isempty(keyword)
-    combinedPrefix = keyword;
-else
-    combinedPrefix = fileparts(directory);
+if isempty(outPrefix)
+    if ~isempty(keyword)
+        outPrefix = keyword;
+    else
+        outPrefix = fileparts(directory);
+    end
 end
 
 % Extract a common suffix across all files
@@ -97,9 +107,13 @@ commonSuffix = extract_fileparts(swdSheetPaths, 'commonsuffix');
 % Make sure it start with '_'
 commonSuffix = force_string_start(commonSuffix, '_', 'OnlyIfNonempty', true);
 
+% Create a suffix for the combined SWD file
+%   Note: this is necessary for this output file to be distinguished 
+%           from input files
+combinedSuffix = [commonSuffix, combinedStr];
+
 % Create a combined SWD file name
-combinedPath = ...
-    fullfile(directory, [combinedPrefix, commonSuffix, '.', sheetType]);
+outPath = fullfile(directory, [outPrefix, combinedSuffix, '.', sheetType]);
 
 % Find corresponding trace file(s)
 % TODO: Use extract_swd_filebases.m
@@ -107,23 +121,18 @@ combinedPath = ...
 
 %% Do the job
 % Concatenate the SWD sheets
-combinedTable = vertcat_spreadsheets(swdSheetPaths);
+outTable = vertcat_spreadsheets(swdSheetPaths);
 
 % TODO: Add corresponding sweepStartTime to 'startTime', 'endTime' & 'duration'
 %       based on trace file
 
 %% Save the table in a file
-writetable(combinedTable, combinedPath);
+writetable(outTable, outPath);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
-
-combinedStr = 'combined';
-
-% Create a suffix for the combined SWD file
-combinedSuffix = [commonSuffix, combinedStr];
 
 %}
 

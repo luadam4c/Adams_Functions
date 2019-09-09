@@ -37,6 +37,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 %       cd/construct_and_check_fullpath.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_fileparts.m
+%       cd/force_column_cell.m
 %       cd/issheettype.m
 %       cd/match_dimensions.m
 %
@@ -55,7 +56,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 MS_PER_S = 1000;
 
 %% Hard-coded parameters
-varNames = {'startTime', 'endTime', 'duration', 'tracePath', 'tracePathExists'};
+varNames = {'startTime', 'endTime', 'duration', 'tracePath', 'pathExists'};
 
 %% Default values for optional arguments
 traceFileNameDefault = '';      % set later
@@ -168,23 +169,39 @@ if isempty(traceFileName)
 end
 
 % Construct full path to original data file
-[tracePath, tracePathExists] = construct_and_check_fullpath(traceFileName);
+[tracePath, pathExists] = construct_and_check_fullpath(traceFileName);
+
+% Force as a column cell array
+tracePath = force_column_cell(tracePath);
 
 % Make sure the dimensions match up
-[tracePath, tracePathExists] = ...
+[tracePath, pathExists] = ...
     argfun(@(x) match_dimensions(x, size(startTime)), ...
-            tracePath, tracePathExists);
+            tracePath, pathExists);
 
 % Extract the file base of the trace file
 traceFileBase = extract_fileparts(traceFileName{1}, 'base');
 
+% Extract the file extension of the trace file
+traceFileExt = extract_fileparts(traceFileName{1}, 'ext');
+
 % Construct manual SWD table csv file
-swdManualCsvFile = fullfile(outFolder, [traceFileBase, '_Manual_SWDs.', sheetType]);
+swdManualCsvFile = ...
+    fullfile(outFolder, [traceFileBase, '_Manual_SWDs.', sheetType]);
+
+%% Correct the start and end times if the data comes from an ATF file
+if strcmpi(traceFileExt, 'atf')
+    if 
+        traceStartTime = 
+    end
+    startTime = 
+    endTime = 
+end
 
 %% Output results
 % Create a table for the parsed SWDs
 swdManualTable = table(startTime, endTime, duration, ...
-                        tracePath, tracePathExists, 'VariableNames', varNames);
+                        tracePath, pathExists, 'VariableNames', varNames);
 
 % Write the table to a file
 writetable(swdManualTable, swdManualCsvFile);
