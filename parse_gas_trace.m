@@ -32,19 +32,19 @@ function varargout = parse_gas_trace (vectors, siMs, varargin)
 %       /TODO:dir/TODO:file
 
 % File History:
-% 201X-XX-XX Created by TODO or Adapted from TODO
+% 2019-09-09 Created by Adam Lu
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-param1Default = [];             % default TODO: Description of param1
+% param1Default = [];             % default TODO: Description of param1
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 1    % TODO: 1 might need to be changed
+if nargin < 2
     error(create_error_for_nargin(mfilename));
 end
 
@@ -62,14 +62,14 @@ addRequired(iP, 'siMs', ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'vector'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'param1', param1Default, ...
+% addParameter(iP, 'param1', param1Default, ...
     % TODO: validation function %);
 
 % Read from the Input Parser
 parse(iP, vectors, siMs, varargin{:});
 % Force vectors to be a column cell array
 vectors = force_column_cell(vectors);
-param1 = iP.Results.param1;
+% param1 = iP.Results.param1;
 
 % Keep unmatched arguments for the TODO() function
 % otherArguments = iP.Unmatched;
@@ -84,8 +84,12 @@ vectors = force_column_cell(vectors);
 
 %% Do the job
 
+
 %% Output results
-% TODO
+varargout{1} = parsedParams;
+if nargout > 1
+    varargout{2} = parsedData;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

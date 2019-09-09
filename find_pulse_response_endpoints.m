@@ -54,6 +54,7 @@ function [indResponseStart, indResponseEnd, hasJump, ...
 % Requires:
 %       cd/find_first_jump.m
 %       cd/find_pulse_endpoints.m
+%       cd/fit_first_order_response.m TODO
 %       cd/iscellnumeric.m
 %       cd/match_format_vector_sets.m
 %
@@ -177,16 +178,19 @@ else
     % If not, estimate by fitting to a moving pulse_response, 
     %   then look for inflection points 
 
-    % TODO: Merge with fit_pulse_response.m?
-
     % Construct a time vector
-    timeVec = create_time_vectors(nSamples, 'SamplingIntervalMs', siMs);
+    timeVec = create_time_vectors(nSamples, 'SamplingIntervalMs', siMs, ...
+                                    'TimeUnits', 'ms');
 
     % Shift the vector to start at 0
     vectorShifted = vector - vector(1);
 
+    % TODO: Pull out as fit_first_order_response.m
+
+    %% 
+
     % Compute the total duration
-    totalDuration = timeVec(2) - timeVec(1) + siMs;
+    totalDuration = timeVec(end) - timeVec(1) + siMs;
 
     % Estimate amplitude
     [absAmplitudeEstimate, idxMaxAbs] = max(abs(vectorShifted));
@@ -221,6 +225,8 @@ else
     % Parse the results
     fitResults = parse_fitobject(fitObject);
 
+    %% 
+
     % Extract fitted parameters
     coeffNames = fitResults.coeffNames;
     coeffValues = fitResults.coeffValues;
@@ -231,9 +237,9 @@ else
     timePulseStart = delay;
     timePulseEnd = delay + duration;
 
-    % Get the pulse indices
-    idxPulseStart = timePulseStart / siMs;
-    idxPulseEnd = timePulseEnd / siMs;
+    % Get the closest pulse indices
+    idxPulseStart = floor(timePulseStart / siMs);
+    idxPulseEnd = floor(timePulseEnd / siMs);
 end
 
 % Use windows straddling the the start/end points of the current pulse

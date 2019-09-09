@@ -54,7 +54,8 @@ function [eqForm, aFittype, coeffInit, coeffLower, coeffUpper] = ...
 % Requires:
 %       cd/create_error_for_nargin.m
 %
-% Used by:    
+% Used by:
+%       cd/fit_first_order_response.m TODO
 
 % File History:
 % 2019-09-09 Modified from fit_setup_2exp.m
