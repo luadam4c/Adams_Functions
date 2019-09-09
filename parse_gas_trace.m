@@ -11,7 +11,13 @@ function varargout = parse_gas_trace (vectors, siMs, varargin)
 %       channelNames = spike2Table.channelNames;
 %       gasVec = channelValues{strcmp(channelNames, 'O2')};
 %       siMs = spike2Table{4, 'siSeconds'} * 1000;
-%       [parsedParams, parsedData] = parse_gas_trace(gasVec, siMs)
+%       [parsedParams, parsedData] = parse_gas_trace(gasVec, siMs);
+%       timeVecs = parsedData{1, 'timeVecs'};
+%       timeVec = timeVecs{1};
+%       pulseWindows = parsedData{1, 'pulseWindows'};
+%       pulseWindowBoundaries = pulseWindows{1}(:)
+%       plot(timeVec, gasVec); hold on;
+%       plot_window_boundaries(pulseWindowBoundaries, 'BoundaryType', 'verticalShade')
 %
 % Outputs:
 %       output1     - TODO: Description of output1
@@ -143,6 +149,7 @@ sections = cellfun(@(x, y) extract_subvectors(x, 'EndPoints', y), ...
 
 % Find the protocol end points
 % TODO: Use fit_first_order_response.m directly and get amplitude and tau info
+%       and put in stim table
 pulseEndPointsRel = ...
     cellfun(@(x) find_pulse_endpoints_from_response(x, siMs), ...
             sections, 'UniformOutput', false);
@@ -155,12 +162,19 @@ pulseEndPoints = cellfun(@(x, y) x + repmat(y(1, :), 2, 1), ...
 pulseWindows = cellfun(@(x, y) x(y), ...
                     timeVecs, pulseEndPoints, 'UniformOutput', false);
 
+% Create stim tables
+stimTables = cellfun()
+
 %% Output results
-parsedParams = table(nSamples, siSeconds, maxValue, minValue, baseValue, steadyValue, amplitude);
+% Put parameters in a table
+parsedParams = table(nSamples, siSeconds, maxValue, minValue, ...
+                    baseValue, steadyValue, amplitude);
 
-parsedData = table(timeVecs, sections, secEndPoints, pulseEndPoints, pulseWindows);
+% Put data in a table
+parsedData = table(timeVecs, sections, secEndPoints, ...
+                    pulseEndPoints, pulseWindows);
 
-
+% Output variably
 varargout{1} = parsedParams;
 if nargout > 1
     varargout{2} = parsedData;

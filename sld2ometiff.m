@@ -104,19 +104,12 @@ slideBase = extract_fileparts(slidePath, 'base');
 % Make sure that directory exists
 check_dir(outDirPath);
 
-% Load all the data in the SlideBook file
-% data = bfopen(slidePath);
-
 % Create a Bio-Formats reader for the SlideBook file
-reader1 = bfGetReader(slidePath);
-
-%{
-% Construct a Bio-Formats reader decorated with the Memoizer wrapper
-reader1 = loci.formats.Memoizer(bfGetReader(), 0);
-
-% Initialize the reader2 with an input file to cache the reader2
-reader1.setId(slidePath);
-%}
+try
+    reader1 = bfGetReader(slidePath);
+catch
+    error('%s could not be read!', slidePath);
+end
 
 % Iterate the series until it reaches a series that has more than one frame
 iSeries = 1;
@@ -132,9 +125,6 @@ nFrames = reader1.getImageCount();
 % Read in the OME metadata stored
 omeMeta = reader1.getMetadataStore();
 
-% Close reader1
-% reader1.close()
-
 % Create file bases for the OME-TIFF files
 tiffFileBases = create_labels_from_numbers(1:nFrames, ...
                                     'Prefix', [slideBase, '_frame'], ...
@@ -143,16 +133,43 @@ tiffFileBases = create_labels_from_numbers(1:nFrames, ...
 % Create full paths for the OME-TIFF files
 tiffPaths = fullfile(outDirPath, tiffFileBases);
 
-% Grab all frames
-framesAll = arrayfun(@(x) bfGetPlane(reader1, x), 1:nFrames, ...
-                        'UniformOutput', false);
+% Read and save each frame
+arrayfun(@(x) read_then_save(reader1, x, tiffPaths{x}, omeMeta), 1:nFrames);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function read_then_save(reader, iFrame, tiffPath, omeMeta)
+% Read a frame and save it
+
+% Read the frame
+frame = bfGetPlane(reader, iFrame);
+
+% Save the frame
+bfsave(frame, tiffPath);
+% bfsave(frame, tiffPath, 'metadata', omeMeta);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%{
+OLD CODE:
+
+% Load all the data in the SlideBook file
+data = bfopen(slidePath);
+
+% Construct a Bio-Formats reader decorated with the Memoizer wrapper
+reader1 = loci.formats.Memoizer(bfGetReader(), 0);
+
+% Initialize the reader2 with an input file to cache the reader2
+reader1.setId(slidePath);
+
+% Close reader1
+reader1.close()
 
 % Enter parallel loop
-for iFrame = 1:nFrames
+parfor iFrame = 1:nFrames
     % Create a path to this OME-TIFF
     tiffPathThis = tiffPaths{iFrame};
 
-%{
     % Initialize logging at INFO level
     bfInitLogging('INFO');
 
@@ -175,19 +192,17 @@ for iFrame = 1:nFrames
 
     % Get the frame of interest
     frame = bfGetPlane(reader2, iFrame);
-%}
-
-    % Get the frame of interest
-    frame = framesAll{iFrame};
 
     % Save as OME-TIFF
     bfsave(frame, tiffPathThis, 'metadata', omeMeta);
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Grab all frames
+framesAll = arrayfun(@(x) bfGetPlane(reader1, x), 1:nFrames, ...
+                        'UniformOutput', false);
 
-%{
-OLD CODE:
+% Save all frames as individual OME-TIFF files
+cellfun(@(x, y) bfsave(x, y, 'metadata', omeMeta), framesAll, tiffPaths);
 
 %}
 
