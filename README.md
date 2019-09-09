@@ -207,6 +207,7 @@ There are 1 MATLAB scripts in this directory:
 - [**fit_logIEI.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_logIEI.m): Fit log(IEI) logData to curves
 - [**fit_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_pulse_response.m): Estimate short and long pulse response parameters from a double exponential fit to the rising/falling phase of a pulse response
 - [**fit_setup_2exp.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_setup_2exp.m): Constructs a fittype object and set initial conditions and bounds for a double exponential equation form
+- [**fit_setup_first_order_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_setup_first_order_response.m): Constructs a fittype object and set initial conditions and bounds for a first order response equation form
 - [**force_column_cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_column_cell.m): Transforms a row cell array or a non-cell array to a column cell array of non-cell vectors
 - [**force_column_vector.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_column_vector.m): Transform row vector(s) or array(s) to column vector(s)
 - [**force_logical.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_logical.m): Forces any numeric binary array to become a logical array

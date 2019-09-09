@@ -11,7 +11,8 @@ function [indResponseStart, indResponseEnd, hasJump, ...
 %
 % Examples:
 %       load_examples;
-%       [idxStart, idxEnd] = find_pulse_response_endpoints(myPulseResponse1a)
+%       [idxStart, idxEnd] = find_pulse_response_endpoints(myPulseResponse1a, siMs)
+%       [idxStart, idxEnd] = find_pulse_response_endpoints(myPulseResponse1a, siMs, 'ResponseLength', 0)
 %
 % Outputs:
 %       indResponseStart    - indices of pulse response start
@@ -173,11 +174,66 @@ if ~isempty(pulseVector)
         return
     end
 else
-    % If not, estimate by fitting to a single exponential, 
+    % If not, estimate by fitting to a moving pulse_response, 
     %   then look for inflection points 
-    % TODO
-    fitResults = fit_2exp(vector);
-    error('Please provide a pulseVector for now!\n');
+
+    % TODO: Merge with fit_pulse_response.m?
+
+    % Construct a time vector
+    timeVec = create_time_vectors(nSamples, 'SamplingIntervalMs', siMs);
+
+    % Shift the vector to start at 0
+    vectorShifted = vector - vector(1);
+
+    % Compute the total duration
+    totalDuration = timeVec(2) - timeVec(1) + siMs;
+
+    % Estimate amplitude
+    [absAmplitudeEstimate, idxMaxAbs] = max(abs(vectorShifted));
+    amplitudeEstimate = vectorShifted(idxMaxAbs);
+
+    % Find the first point that reached at least 1/4 of amplitude
+    idxFirstDip = find(abs(vectorShifted) > absAmplitudeEstimate / 4, ...
+                        1, 'first');
+    timeFirstDip = idxFirstDip * siMs;
+
+    % Find the last point that reached at least 3/4 of amplitude
+    idxFirstReturn = find(abs(vectorShifted) > absAmplitudeEstimate * 3 / 4, ...
+                            1, 'last');
+    
+    % Estimate the duration
+    durationEstimate = (idxFirstReturn - idxFirstDip) * siMs;
+    tauEstimate = durationEstimate;
+
+    % Set up fitting parameters for a first order response 
+    [eqForm, aFittype, coeffInit, coeffLower, coeffUpper] = ...
+        fit_setup_first_order_response('TotalDuration', totalDuration, ...
+                                    'AmplitudeEstimate', amplitudeEstimate, ...
+                                    'TauEstimate', tauEstimate, ...
+                                    'DurationEstimate', durationEstimate, ...
+                                    'DelayEstimate', timeFirstDip);
+
+    % Fit the first order response
+    [fitObject, goodnessOfFit, algorithmInfo] = ...
+        fit(timeVec, vectorShifted, aFittype, 'StartPoint', coeffInit, ...
+            'Lower', coeffLower, 'Upper', coeffUpper);
+
+    % Parse the results
+    fitResults = parse_fitobject(fitObject);
+
+    % Extract fitted parameters
+    coeffNames = fitResults.coeffNames;
+    coeffValues = fitResults.coeffValues;
+    duration = coeffValues(strcmp(coeffNames, 'c'));
+    delay = coeffValues(strcmp(coeffNames, 'd'));
+
+    % Get the pulse times
+    timePulseStart = delay;
+    timePulseEnd = delay + duration;
+
+    % Get the pulse indices
+    idxPulseStart = timePulseStart / siMs;
+    idxPulseEnd = timePulseEnd / siMs;
 end
 
 % Use windows straddling the the start/end points of the current pulse

@@ -7,10 +7,12 @@ function [eqForm, aFittype, coeffInit, coeffLower, coeffUpper] = ...
 %   This function is for fitting equations of the form
 %       'a*(1-exp(-x/b))+c*(1-exp(-x/d))' ('rising')
 %       'a*exp(-x/b)+c*exp(-x/d)' ('falling')
+%
 % Example(s):
 %       fit_setup_2exp('rising');
 %       fit_setup_2exp('falling', 'MaxScalingFactor', 10);
 %       fit_setup_2exp('custom', 'EquationForm', 'a*exp(-x/b)+c*exp(-x/d)+1');
+%
 % Outputs:
 %       eqForm      - equation form used
 %                   specified as a character vector
@@ -22,6 +24,7 @@ function [eqForm, aFittype, coeffInit, coeffLower, coeffUpper] = ...
 %                   specified as a numeric column vector
 %       coeffUpper  - upper bounds for the coefficients
 %                   specified as a numeric column vector
+^
 % Arguments:    
 %       direction   - the direction of the curve
 %                   must be an unambiguous, case-insensitive match to one of: 
@@ -109,8 +112,8 @@ addParameter(iP, 'Tau2Range', tau2RangeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 2}));
 addParameter(iP, 'EquationForm', eqFormDefault, ...
     @(x) validateattributes(x, {'char'}, {'2d'}));
-addParameter(iP, 'EquationFormLatex', eqFormDefault, ...
-    @(x) validateattributes(x, {'char'}, {'2d'}));
+% addParameter(iP, 'EquationFormLatex', eqFormDefault, ...
+%     @(x) validateattributes(x, {'char'}, {'2d'}));
 
 % Read from the Input Parser
 parse(iP, direction, varargin{:});
