@@ -52,6 +52,7 @@ function [indResponseStart, indResponseEnd, hasJump, ...
 %                   default = 0 ms
 %
 % Requires:
+%       cd/create_time_vectors.m
 %       cd/find_first_jump.m
 %       cd/find_pulse_endpoints.m
 %       cd/fit_first_order_response.m TODO
@@ -72,6 +73,7 @@ function [indResponseStart, indResponseEnd, hasJump, ...
 % 2018-12-15 Now returns NaN if there is no pulse
 % 2018-12-15 Now prevents the endpoints from exceeding bounds
 % 2018-12-17 Now allows siMs to be a vector
+% 2019-09-09 Now allows PulseVectors to be omitted
 
 %% Hard-coded parameters
 nSamplesPerJump = 2;            % number of samples apart for calculating jump

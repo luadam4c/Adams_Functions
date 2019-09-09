@@ -5,8 +5,8 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %       TODO
 %
 % Example(s):
-%       spike2MatPath = '/media/shareX/2019octoberR01/Pleth/Data/matFiles/test2AtNight_200Hz.mat';
-%       parsedTable = parse_spike2_mat(spike2MatPath);
+%       spike2MatPath = '/media/shareX/2019octoberR01/Pleth/Data/new_pleth_data/test2AtNight_200Hz.mat';
+%       spike2Table = parse_spike2_mat(spike2MatPath);
 %
 % Outputs:
 %       parsedDataTable     - parsed data
