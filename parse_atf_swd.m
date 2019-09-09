@@ -40,6 +40,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 %       cd/force_column_cell.m
 %       cd/issheettype.m
 %       cd/match_dimensions.m
+%       cd/read_lines_from_file.m
 %       cd/sscanf_full.m
 %
 % Used by:
@@ -116,11 +117,13 @@ if isempty(outFolder)
 end
 
 %% Do the job
+% Initialize outputs
+swdManualTable = table.empty;
+swdManualCsvFile = '';
+
 % Read the table from the file
 if ~isfile(atfFile) && ~isfile(atfCsvFile)
     % Do nothing
-    swdManualTable = [];
-    swdManualCsvFile = '';
     return
 elseif isfile(atfCsvFile)
     % Display warning if atf file also provided
@@ -132,6 +135,13 @@ elseif isfile(atfCsvFile)
     % Read in the SWD manual table from the converted csv file
     atfTable = readtable(atfCsvFile);
 elseif isfile(atfFile)
+    % Make sure it is not an ATF trace file
+    isScoredAtf = is_scored_atf(atfFile);
+    if ~isScoredAtf
+        fprintf('%s is not a scored ATF file!\n', atfFile);
+        return;
+    end
+
     % Read in the SWD manual table and print to a csv file
     [atfTable, atfCsvFile] = atf2sheet(atfFile, 'SheetType', sheetType);
 end
@@ -195,21 +205,9 @@ if strcmpi(traceFileExt, '.atf')
     % Note: The scored atf file itself also has the info, 
     %   but at a weird location
 
-    % TODO FOR UNDERGRAD: read_line_from_file.m
-    %   headerLine = read_lines_from_file(tracePath, 'Keyword', 'SweepStartTimesMS', 'MaxNum', 1);
-    %%
-    % Open the trace file for reading
-    traceFid = fopen(tracePath{1}, 'r');
-
-    % Read lines until 'SweepStartTimesMS' is read
-    headerLine = fgetl(traceFid);
-    while ~contains(headerLine, 'SweepStartTimesMS')
-        headerLine = fgetl(traceFid);
-    end
-
-    % Close the trace file
-    fclose(traceFid);
-    %%
+    % Read the sweep start time line
+    headerLine = read_lines_from_file(tracePath{1}, 'MaxNum', 1, ...
+                                'Keyword', 'SweepStartTimesMS');
 
     % Read in the start time of the trace
     traceStartTimeMs = sscanf_full(headerLine, '%g');
@@ -229,6 +227,21 @@ swdManualTable = table(startTime, endTime, duration, ...
 
 % Write the table to a file
 writetable(swdManualTable, swdManualCsvFile);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function isScoredAtf = is_scored_atf (atfFile)
+%% Determine whether the ATF file is scored
+
+% Read in the second line of the file
+line2 = read_lines_from_file(atfFile, 'LineNumber', 2);
+
+% Read in the number of lines to skip following this line before the header
+%   is reached
+nLinesToSkip = sscanf(line2, '%d', 1);
+
+% This number should be zero for a scored ATF file
+isScoredAtf = nLinesToSkip == 0;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

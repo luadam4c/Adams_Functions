@@ -56,6 +56,7 @@ function [swdTables, swdSheetPaths, ...
 % File History:
 % 2018-12-26 Modified from plot_swd_raster.m
 % 2019-09-08 Added 'ToCombine' as an optional parameter
+% TODO: Combine SWD sheets with 'part' in the name
 
 %% Hard-coded constants
 
