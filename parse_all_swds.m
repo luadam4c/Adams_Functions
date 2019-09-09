@@ -20,6 +20,9 @@ function [swdTables, swdSheetPaths, ...
 %       varargin    - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'ToCombine': whether to combine spreadsheets
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'OutFolder': the name of the directory in which 
 %                                       plots will be placed
 %                   must be a string scalar or a character vector
@@ -52,6 +55,7 @@ function [swdTables, swdSheetPaths, ...
 
 % File History:
 % 2018-12-26 Modified from plot_swd_raster.m
+% 2019-09-08 Added 'ToCombine' as an optional parameter
 
 %% Hard-coded constants
 
@@ -68,6 +72,7 @@ sweepStr = '_sweep';            % string in file names that separate sweeps
 
 %% Default values for optional arguments
 verboseDefault = true;
+toCombineDefault = false;
 outFolderDefault = '';          % set later
 manualFolderDefault = '';       % set later
 sayliFolderDefault = '';        % set later
@@ -85,6 +90,8 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ToCombine', toCombineDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ManualFolder', manualFolderDefault, ...
@@ -99,6 +106,7 @@ addParameter(iP, 'SheetType', sheetTypeDefault, ...
 % Read from the Input Parser
 parse(iP, varargin{:});
 verbose = iP.Results.Verbose;
+toCombine = iP.Results.ToCombine;
 outFolder = iP.Results.OutFolder;
 manualFolder = iP.Results.ManualFolder;
 sayliFolder = iP.Results.SayliFolder;
@@ -136,7 +144,7 @@ end
 nManualPaths = numel(manualPaths);
 nAssystPaths = numel(assystPaths);
 
-%% Do the job
+%% Parse all scored ATF file
 % Apply parse_atf_swd.m to each .atf file
 swdManualTables = cell(nManualPaths, 1);
 swdManualCsvFiles = cell(nManualPaths, 1);
@@ -146,6 +154,7 @@ parfor iFile = 1:nManualPaths
                         'SheetType', sheetType);
 end
 
+%% Parse all scored Assyst output file
 % Apply parse_assyst_swd.m to each Assyst output file
 swdAssystTables = cell(nAssystPaths, 1);
 swdAssystCsvFiles = cell(nAssystPaths, 1);
@@ -155,23 +164,30 @@ parfor iFile = 1:nAssystPaths
                         'SheetType', sheetType);
 end
 
-% Get all unique SWD folders
-allManualFolders = transpose(unique({manualFiles.folder}));
-allAssystFolders = transpose(unique({assystFiles.folder}));
-allSwdFolders = vertcat(allManualFolders, allAssystFolders);
+%% Combine SWD sheets
+if toCombine
+    % Get all unique SWD folders
+    allManualFolders = transpose(unique({manualFiles.folder}));
+    allAssystFolders = transpose(unique({assystFiles.folder}));
+    allSwdFolders = vertcat(allManualFolders, allAssystFolders);
 
-% Count the number of unique SWD folders
-nSwdFolders = numel(allSwdFolders);
+    % Count the number of unique SWD folders
+    nSwdFolders = numel(allSwdFolders);
 
-% Vertically concatenate all SWD files in the same SWD folders
-swdCombinedTables = cell(nCombinedPaths, 1);
-swdCombinedCsvFiles = cell(nCombinedPaths, 1);
-parfor iFolder = 1:nSwdFolders
-    [swdCombinedTables{iFolder}, swdCombinedCsvFiles{iFolder}] = ...
-        combine_swd_sheets('Directory', allSwdFolders{iFolder}, ...
-                            'Verbose', verbose, 'SheetType', sheetType);
+    % Vertically concatenate all SWD files in the same SWD folders
+    swdCombinedTables = cell(nCombinedPaths, 1);
+    swdCombinedCsvFiles = cell(nCombinedPaths, 1);
+    parfor iFolder = 1:nSwdFolders
+        [swdCombinedTables{iFolder}, swdCombinedCsvFiles{iFolder}] = ...
+            combine_swd_sheets('Directory', allSwdFolders{iFolder}, ...
+                                'Verbose', verbose, 'SheetType', sheetType);
+    end
+else
+    swdCombinedTables = table.empty;
+    swdCombinedCsvFiles = {};
 end
 
+%% Output resultsswdSheetPaths
 % Put all SWD tables together 
 swdTables = vertcat(swdManualTables, swdAssystTables);
 swdSheetPaths = vertcat(swdManualCsvFiles, swdAssystCsvFiles);

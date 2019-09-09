@@ -61,8 +61,7 @@ function [tablesAll, sheetFullFileNames] = atf2sheet (varargin)
 % 
 
 %% Hard-coded parameters
-N_LINES_TO_SKIP = 2;            % scored atf files all seem to have 
-                                %   two irrelevant lines
+N_LINES_TO_SKIP = 2;            % atf files all seem to have two irrelevant lines
 
 %% Default values for optional arguments
 atfFileOrDirDefault = pwd;      % convert all .atf files in the present working 
@@ -163,6 +162,106 @@ end
 
 %{
 OLD CODE:
+
+sheetTypeDefault = 'xlsx';      % default spreadsheet type
+
+if exist(atfFileOrDir, 'file') == 2                         % it's a file
+    % Store the directory containing the file
+    [atfDir, atfFileBase, atfFileExt] = fileparts(atfFileOrDir);
+
+    % If the directory is empty, it is the present working directory
+    if isempty(atfDir)
+        atfDir = pwd;
+    end
+
+    % Get the relative path for the file name
+    atfFileName = [atfFileBase, atfFileExt];
+
+    % Set flag
+    multipleFiles = false;
+elseif exist(atfFileOrDir, 'dir') == 7                      % it's a directory
+    % The argument is already the full directory
+    atfDir = atfFileOrDir;
+
+    % Set atfFileName to empty (will be vary for each file)
+    atfFileName = '';
+
+    % Set flag
+    multipleFiles = true;
+elseif exist(fullfile(pwd, atfFileOrDir), 'file') == 2      % it's a file
+    % The first argument is just the file name in current directory
+    atfDir = pwd;
+
+    % Get the relative path for the file name
+    atfFileName = atfFileOrDir;
+
+    % Set flag
+    multipleFiles = false;
+elseif exist(fullfile(pwd, atfFileOrDir), 'dir') == 7       % it's a directory
+    % The first argument is a subdirectory in current directory
+    %   Get full path to directory
+    atfDir = fullfile(pwd, atfFileOrDir);
+
+    % Set atfFileName to empty (will be vary for each file)
+    atfFileName = '';
+
+    % Set flag
+    multipleFiles = true;
+else
+    message = sprintf('The .atf file or directory %s does not exist!', ...
+                        atfFileOrDir);
+    mTitle = 'File or Directory Not Found';
+    icon = 'warn';
+    print_or_show_message(message, 'MTitle', mTitle, 'Icon', icon, ...
+                          'MessageMode', 'show', 'Verbose', true, ...
+                          'CreateMode', 'replace');
+    return;
+end
+
+if exist(outFolder, 'dir') ~= 7
+    mkdir(outFolder);
+    fprintf('New directory is made: %s\n\n', outFolder);
+end
+
+allAtfFiles = dir(fullfile(atfDir, '*.atf'));
+
+% Compute the number of .atf files in the directory
+nAtfFiles = length(allAtfFiles);
+
+% Loop through all files
+tablesAll = cell(nAtfFiles, 1);
+sheetFullFileNames = cell(nAtfFiles, 1);
+parfor iFile = 1:nAtfFiles
+    atfFileName = allAtfFiles(iFile).name;
+    [tablesAll{iFile}, sheetFullFileNames{iFile}] = ...
+        convert_atf2sheet(atfDir, atfFileName, outFolder, ...
+                            sheetType, delimiter, nLinesToSkip, encoding);
+end
+
+% Separate the file parts
+[allAtfDirs, allAtfBases, allAtfExts] = ...
+    cellfun(@fileparts, allAtfPaths, 'UniformOutput', false);
+
+% Put together the file names
+allAtfFileNames = ...
+    cellfun(@(x, y) [x, y], allAtfBases, allAtfExts, 'UniformOutput', false);
+
+% Convert all files
+[tablesAll, sheetFullFileNames]  = ...
+    cellfun(@(x, y) convert_atf2sheet(x, y, outFolder, sheetType, ...
+                                    delimiter, nLinesToSkip, encoding), ...
+            allAtfDirs, allAtfFileNames, 'UniformOutput', false);
+
+% Convert this file
+[tablesAll, sheetFullFileNames]  = ...
+    convert_atf2sheet(atfDir, atfFileName, outFolder, ...
+                            sheetType, delimiter, nLinesToSkip, encoding);
+
+function [table, sheetFullFileName] = ...
+                convert_atf2sheet (atfDir, atfFileName, outFolder, ...
+                                sheetType, delimiter, nLinesToSkip, encoding)
+%% Convert an .aft file to a spreadsheet file
+
 
 %}
 

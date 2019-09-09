@@ -380,6 +380,7 @@ There are 1 MATLAB scripts in this directory:
 - [**print_structure.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_structure.m): Display all fields of a structure recursively
 - [**read_adicht.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_adicht.m): Reads in a .adicht file (from LabChart)
 - [**read_frames.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_frames.m): Reads all frames from a video file
+- [**read_lines_from_file.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_lines_from_file.m): Reads line(s) from a file
 - [**read_swd_sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_swd_sheet.m): Read in an SWD table from a spreadsheet file
 - [**read_timetable.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_timetable.m): Reads a time table from a spreadsheet file
 - [**relative_std.m**](https://github.com/blabuva/Adams_Functions/blob/master/relative_std.m): Computes the relative standard deviation (%)

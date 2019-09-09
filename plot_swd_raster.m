@@ -188,7 +188,8 @@ if isempty(swdTables)
     if parseAllFlag
         parse_all_swds('Verbose', verbose, 'SwdFolder', swdFolder, ...
                 'ManualFolder', manualFolder, 'SayliFolder', sayliFolder, ...
-                'AssystFolder', assystFolder, 'SheetType', sheetType);
+                'AssystFolder', assystFolder, 'SheetType', sheetType, ...
+                'ToCombine', true);
     end
 
     % Load all tables from either paths or folder

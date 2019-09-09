@@ -40,6 +40,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 %       cd/force_column_cell.m
 %       cd/issheettype.m
 %       cd/match_dimensions.m
+%       cd/sscanf_full.m
 %
 % Used by:
 %       cd/parse_all_swds.m
@@ -190,12 +191,35 @@ swdManualCsvFile = ...
     fullfile(outFolder, [traceFileBase, '_Manual_SWDs.', sheetType]);
 
 %% Correct the start and end times if the data comes from an ATF file
-if strcmpi(traceFileExt, 'atf')
-    if 
-        traceStartTime = 
+if strcmpi(traceFileExt, '.atf')
+    % Note: The scored atf file itself also has the info, 
+    %   but at a weird location
+
+    % TODO FOR UNDERGRAD: read_line_from_file.m
+    %   headerLine = read_lines_from_file(tracePath, 'Keyword', 'SweepStartTimesMS', 'MaxNum', 1);
+    %%
+    % Open the trace file for reading
+    traceFid = fopen(tracePath{1}, 'r');
+
+    % Read lines until 'SweepStartTimesMS' is read
+    headerLine = fgetl(traceFid);
+    while ~contains(headerLine, 'SweepStartTimesMS')
+        headerLine = fgetl(traceFid);
     end
-    startTime = 
-    endTime = 
+
+    % Close the trace file
+    fclose(traceFid);
+    %%
+
+    % Read in the start time of the trace
+    traceStartTimeMs = sscanf_full(headerLine, '%g');
+
+    % Extract the start time of the trace
+    traceStartTimeSeconds = traceStartTimeMs / MS_PER_S;
+
+    % Modify the start and end times
+    startTime = traceStartTimeSeconds + startTime;
+    endTime = traceStartTimeSeconds + endTime;
 end
 
 %% Output results

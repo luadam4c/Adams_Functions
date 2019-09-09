@@ -4,11 +4,13 @@ function [matches, nMatches] = sscanf_full (str, formatSpec, varargin)
 % Example(s):
 %       [matches, nMatches] = sscanf_full('test(-23.5 -> 230)', '%f')
 %       [matches, nMatches] = sscanf_full('test(-23.5 -> 230)', '%d')
+%
 % Outputs:
 %       matches     - matches of pattern from the input text
 %                   specified as a column vector or 2-d array
 %       nMatches    - Number of actual matches
 %                   specified as a positive integer scalar
+%
 % Arguments:    
 %       str         - input text to scan
 %                   must be a string scalar or a character vector
@@ -19,7 +21,8 @@ function [matches, nMatches] = sscanf_full (str, formatSpec, varargin)
 %
 % Requires:
 %
-% Used by:    
+% Used by:
+%       cd/parse_atf_swd.m
 %       /media/adamX/m3ha/data_dclamp/CountSweeps.m
 %       /home/Matlab/minEASE/extract_from_minEASE_output_filename.m
 %
