@@ -400,6 +400,7 @@ There are 1 MATLAB scripts in this directory:
 - [**set_default_flag.m**](https://github.com/blabuva/Adams_Functions/blob/master/set_default_flag.m): Sets the default flag if empty according to an optional auxFlag
 - [**set_fields_zero.m**](https://github.com/blabuva/Adams_Functions/blob/master/set_fields_zero.m): Set each field specified in varargin to zero and store previous values in a new field strcat(field, '_prev')
 - [**set_figure_properties.m**](https://github.com/blabuva/Adams_Functions/blob/master/set_figure_properties.m): Decides on the figure handle and sets figure properties
+- [**sld2ometiff.m**](https://github.com/blabuva/Adams_Functions/blob/master/sld2ometiff.m): Converts each SlideBook file to a directory of OME-TIFF files
 - [**solve_function_at_value.m**](https://github.com/blabuva/Adams_Functions/blob/master/solve_function_at_value.m): Solves x for f(x) at a specific value (default is zero)
 - [**spike2Mat2Text.m**](https://github.com/blabuva/Adams_Functions/blob/master/spike2Mat2Text.m): Converts a Spike2-exported .mat file to a text file (atf, txt or csv)
 - [**sscanf_full.m**](https://github.com/blabuva/Adams_Functions/blob/master/sscanf_full.m): Same as sscanf but treats unmatched parts as whitespace (does not stop until end of string)

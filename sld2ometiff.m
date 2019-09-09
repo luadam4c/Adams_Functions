@@ -1,0 +1,159 @@
+function tiffPaths = sld2ometiff (varargin)
+%% Converts each SlideBook file to a directory of OME-TIFF files
+% Usage: tiffPaths = sld2ometiff (varargin)
+% Explanation:
+%       TODO
+%
+% Example(s):
+%       [~, fullPaths] = all_files('Extension', 'sld', 'Recursive', true);
+%       if numel(fullPaths) > 1; sld2ometiff('FileNumber', 1); end
+%
+% Outputs:
+%       tiffPaths   - paths to created OME-TIFF files
+%                   specified as a cell array 
+%                       of cell arrays of character vectors
+%
+% Arguments:
+%       varargin    - 'FileNumber': File number to convert
+%                   must be a numeric scalar
+%                   default == []
+%                   - Any other parameter-value pair for TODO()
+%
+% Requires:
+% TODO
+%       cd/all_files.m
+%       cd/check_dir.m
+%       cd/create_labels_from_numbers.m
+%       cd/extract_fileparts.m
+%       cd/locate_functionsdir.m
+%       ~/Adams_Functions/struct2arglist.m
+%
+% Used by:
+%       /TODO:dir/TODO:file
+
+% File History:
+% 2019-09-09 Created by Adam Lu
+% 
+
+%% Hard-coded parameters
+
+%% Default values for optional arguments
+fileNumberDefault = [];
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Deal with arguments
+% Set up Input Parser Scheme
+iP = inputParser;
+iP.FunctionName = mfilename;
+% iP.KeepUnmatched = true;                        % allow extraneous options
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'fileNumber', fileNumberDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+
+% Read from the Input Parser
+parse(iP, varargin{:});
+fileNumber = iP.Results.fileNumber;
+
+% Keep unmatched arguments for the TODO() function
+% otherArguments = struct2arglist(iP.Unmatched);
+
+% Check relationships between arguments
+% TODO
+
+%% If not compiled, add directories to search path for required functions
+%   Note: If addpath is used, adding `if ~isdeployed` is important to 
+%          avoid errors if the function is used as part of a compiled program
+%   Note: addpath takes a long time, so use addpath_custom for checking
+if ~isdeployed
+    % Locate the functions directory
+    functionsDirectory = locate_functionsdir;
+
+    % Add path for bfopen.m , etc.
+    addpath_custom(fullfile(functionsDirectory, 'bfmatlab'));
+end
+
+%% Preparation
+% Get all .sld files in the directory
+[~, fullPaths] = all_files('Extension', 'sld', 'Recursive', true);
+
+% Restrict the file paths if requested
+if ~isempty(fileNumber)
+    fullPaths = fullPaths(fileNumber);
+end
+
+%% Do the job
+% Convert each .sld file
+tiffPaths = cellfun(@sld2ometiff_helper, fullPaths, 'UniformOutput', false);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function tiffPaths = sld2ometiff_helper(slidePath)
+%% Converts a .sld file to a directory of OME-TIFFs
+
+% Print message
+fprintf('Converting %s to TIFFs ...\n', slidePath);
+
+% Decide on an output directory for the OME-TIFFs
+outDirPath = extract_fileparts(slidePath, 'pathbase');
+
+% Decide on an output directory for the OME-TIFFs
+slideBase = extract_fileparts(slidePath, 'base');
+
+% Make sure that directory exists
+check_dir(outDirPath);
+
+% Load all the data in the SlideBook file
+% data = bfopen(slidePath);
+
+% Create a reader for the SlideBook file
+reader = bfGetReader(slidePath);
+
+% Read in the OME metadata stored
+omeMeta = reader.getMetadataStore();
+
+% Iterate the series until it reaches a series that has more than one frame
+iSeries = 1;
+reader.setSeries(1);
+while reader.getImageCount() <= 1
+    iSeries = iSeries + 1;
+    reader.setSeries(iSeries);
+end
+
+% Get the frame count for this series
+nFrames = reader.getImageCount();
+
+% Create file bases for the OME-TIFF files
+tiffFileBases = create_labels_from_numbers(1:nFrames, ...
+                                    'Prefix', [slideBase, '_frame'], ...
+                                    'Suffix', '.ome.tiff');
+
+% Create full paths for the OME-TIFF files
+tiffPaths = fullfile(outDirPath, tiffFileBases);
+
+% Grab all frames
+%   Note: For some reason, this step couldn't be used in parfor
+framesAll = arrayfun(@(x) bfGetPlane(reader, x), 1:nFrames, ...
+                        'UniformOutput', false);
+
+% Convert the images to OME-TIFF files
+parfor iFrame = 1:nFrames
+    % Create a path to this OME-TIFF
+    tiffPathThis = tiffPaths{iFrame};
+
+    % Grab a specific plane
+    frame = framesAll{iFrame};
+
+    % Save as OME-TIFF
+    bfsave(frame, tiffPathThis, 'metadata', omeMeta);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%{
+OLD CODE:
+
+%}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
