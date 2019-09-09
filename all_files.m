@@ -170,7 +170,7 @@ end
 
 %% Preparation
 % Make sure the extension begins with a dot
-extension = force_string_start(extension, '.');
+extension = force_string_start(extension, '.', 'OnlyIfNonempty', true);
 
 %% Find files
 % Get or check the regular expression to match
