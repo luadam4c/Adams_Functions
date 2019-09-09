@@ -5,8 +5,10 @@ function [fig, subplots, plots] = ...
 %               plot_pulse_response_with_stimulus (tVec, respVec, stimVec, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       fig         - handle to figure
 %                   specified as a figure object handle

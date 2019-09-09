@@ -5,8 +5,11 @@ function [fitResults, fitObject, goodnessOfFit, algorithmInfo] = ...
 %               fit_pulse_response (tVec, yVec, pulseWidth, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
-%       TODO
+%       load_examples;
+%       [res, obj, gof, alg] = fit_pulse_response(myTimeVec, myPulseResponse1a, pulseWidth1)
+%
 % Outputs:
 %       fitResults      - fitted parameters, including the fields: 
 %                           eqnShortPulseResponse
@@ -35,6 +38,7 @@ function [fitResults, fitObject, goodnessOfFit, algorithmInfo] = ...
 %                       specified as a gof structure 
 %       algorithmInfo   - the output structure returned by fit_setup_2exp.m
 %                       specified as a scalar structure
+%
 % Arguments:    
 %       tVec        - time vector
 %                   must be a numeric vector

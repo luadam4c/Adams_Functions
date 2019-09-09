@@ -3,11 +3,15 @@ function h = plot_pulse_response (timeVec, responseVecs, varargin)
 % Usage: h = plot_pulse_response (timeVec, responseVecs, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
-%       TODO
+%       load_examples;
+%       h = plot_pulse_response(myTimeVec, myPulseResponse1a)
+%
 % Outputs:
 %       h           - figure handle for the created figure
 %                   specified as a figure handle
+%
 % Arguments:
 %       timeVec         - time vector(s)
 %                       must be a numeric array
@@ -71,6 +75,7 @@ function h = plot_pulse_response (timeVec, responseVecs, varargin)
 % TODO: Use improved version of match_vector_numbers.m
 
 %% Hard-coded parameters
+validPeakDirections = {'upward', 'downward', 'auto'};
 yCoverage = 80;                 % coverage of y axis (%)
 
 %% Default values for optional arguments
@@ -154,7 +159,7 @@ if isempty(responseParams)
     responseParams = parse_pulse_response(responseVecs, siMs, ...
                                 'PulseVectors', pulseVectors, ...
                                 'SameAsPulse', sameAsPulse, ...
-                                'MeanValueWindowMs', baselineLengthMs, ...
+                                'MeanValueWindowMs', meanValueWindowMs, ...
                                 'MinPeakDelayMs', minPeakDelayMs, ...
                                 'PeakDirection', peakDirection);
 end

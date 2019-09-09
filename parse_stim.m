@@ -3,8 +3,10 @@ function [stimParams, pulseParams, pulseData] = parse_stim (pulseVecs, varargin)
 % Usage: [stimParams, pulseParams, pulseData] = parse_stim (pulseVecs, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       stimParams  - stimulation parameters, with fields:
 %                       idxStimStart
@@ -15,6 +17,7 @@ function [stimParams, pulseParams, pulseData] = parse_stim (pulseVecs, varargin)
 %                   specified as a table
 %       pulseData   - see parse_pulse.m
 %                   specified as a table
+%
 % Arguments:
 %       pulseVecs   - vectors containing a stimulation pulse
 %                   Note: If a cell array, each element must be a vector

@@ -154,6 +154,9 @@ cumNSamplesEachBin2 = cumsum(nSamplesEachBin2);
 indPulse1 = cumNSamplesEachBin1(1):cumNSamplesEachBin1(2);
 indPulse2 = cumNSamplesEachBin2(1):cumNSamplesEachBin2(2);
 
+pulseWidth1 = cumNSamplesEachBin1(2) - cumNSamplesEachBin1(1);
+pulseWidth2 = cumNSamplesEachBin2(2) - cumNSamplesEachBin2(1);
+
 indAfter1 = cumNSamplesEachBin1(2):nSamples;
 indAfter2 = cumNSamplesEachBin2(2):nSamples;
 

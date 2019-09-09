@@ -6,6 +6,13 @@ function [indResponseStart, indResponseEnd, hasJump, ...
 %               indBeforePulseStart, indBeforePulseEnd] = ...
 %               find_pulse_response_endpoints (vectors, siMs, varargin)
 %
+% Explanation:
+%       TODO
+%
+% Examples:
+%       load_examples;
+%       [idxStart, idxEnd] = find_pulse_response_endpoints(myPulseResponse1a)
+%
 % Outputs:
 %       indResponseStart    - indices of pulse response start
 %                           specified as a positive integer (or NaN) vector
@@ -166,8 +173,10 @@ if ~isempty(pulseVector)
         return
     end
 else
-    % If not, estimate by smoothing the trace, then look for inflection points 
+    % If not, estimate by fitting to a single exponential, 
+    %   then look for inflection points 
     % TODO
+    fitResults = fit_2exp(vector);
     error('Please provide a pulseVector for now!\n');
 end
 

@@ -3,8 +3,10 @@ function varargout = parse_pulse_response (vectors, siMs, varargin)
 % Usage: [parsedParams, parsedData] = parse_pulse_response (vectors, siMs, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       parsedParams    - a table containing the parsed parameters, 
 %                           each row corresponding to a vector, with fields:
@@ -228,7 +230,7 @@ addParameter(iP, 'FitResponse', fitResponseDefault, ...
 addParameter(iP, 'MeanValueWindowMs', meanValueWindowMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
 addParameter(iP, 'MinPeakDelayMs', minPeakDelayMsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'scalar'}));
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'ResponseLengthMs', responseLengthMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'BaselineLengthMs', baselineLengthMsDefault, ...

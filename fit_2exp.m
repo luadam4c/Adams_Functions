@@ -5,8 +5,10 @@ function [fitResults, fitObject, goodnessOfFit, algorithmInfo] = ...
 %               fit_2exp (yVec, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       fitResults       - fitted parameters returned by parse_fitobject.m,
 %                           as well as added fields:
@@ -99,7 +101,7 @@ eqFormDefault = '';
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 2
+if nargin < 1
     error(create_error_for_nargin(mfilename));
 end
 
