@@ -12,12 +12,13 @@ function varargout = parse_gas_trace (vectors, siMs, varargin)
 %       gasVec = channelValues{strcmp(channelNames, 'O2')};
 %       siMs = spike2Table{4, 'siSeconds'} * 1000;
 %       [parsedParams, parsedData] = parse_gas_trace(gasVec, siMs);
-%       timeVecs = parsedData{1, 'timeVecs'};
-%       timeVec = timeVecs{1};
-%       pulseWindows = parsedData{1, 'pulseWindows'};
-%       pulseWindowBoundaries = pulseWindows{1}(:)
+%       timeVec = parsedData.timeVec;
+%       pulseWindows = parsedData.pulseWindows;
+%       pulseWindowBoundaries = pulseWindows(:)
 %       plot(timeVec, gasVec); hold on;
 %       plot_window_boundaries(pulseWindowBoundaries, 'BoundaryType', 'verticalShade')
+%
+%       parse_gas_trace(vectors, siMs, 'FileBases', 
 %
 % Outputs:
 %       output1     - TODO: Description of output1
@@ -30,8 +31,9 @@ function varargout = parse_gas_trace (vectors, siMs, varargin)
 %                   must be a numeric array or a cell array of numeric vectors
 %       siMs        - sampling interval in ms
 %                   must be a positive vector
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
+%       varargin    - 'FileBases': Base name of the corresponding trace file(s)
+%                   must be empty, a characeter vector, a string array 
+%                       or a cell array of character arrays
 %                   default == TODO
 %                   - Any other parameter-value pair for TODO()
 %
@@ -39,11 +41,14 @@ function varargout = parse_gas_trace (vectors, siMs, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/create_time_vectors.m
 %       cd/struct2arglist.m
+% TODO:
+% create_labels_from_numbers
 % extract_elements
 % extract_subvectors
 % force_column_vector
 % force_column_cell
 % count_samples
+% match_row_count
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -56,7 +61,7 @@ function varargout = parse_gas_trace (vectors, siMs, varargin)
 MS_PER_S = 1000;
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+fileBasesDefault = '';      % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -80,14 +85,12 @@ addRequired(iP, 'siMs', ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'vector'}));
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default, ...
-    % TODO: validation function %);
+addParameter(iP, 'FileBases', fileBasesDefault, ...
+    @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
 
 % Read from the Input Parser
 parse(iP, vectors, siMs, varargin{:});
-% Force vectors to be a column cell array
-vectors = force_column_cell(vectors);
-% param1 = iP.Results.param1;
+fileBases = iP.Results.FileBases;
 
 % Keep unmatched arguments for the TODO() function
 % otherArguments = iP.Unmatched;
@@ -107,11 +110,11 @@ nSamples = count_samples(vectors);
 nVectors = count_vectors(vectors);
 
 % Create time vectors in seconds
-timeVecs = ...
-    create_time_vectors(nSamples, 'SamplingIntervalMs', siMs, 'TimeUnits', 's');
+timeVec = create_time_vectors(nSamples, 'TimeUnits', 's', ...
+                                'SamplingIntervalMs', siMs);
 
 % Match the format
-timeVecs = match_format_vector_sets(timeVecs, vectors);
+timeVec = match_format_vector_sets(timeVec, vectors);
 
 % Convert sampling interval to seconds
 siSeconds = siMs / MS_PER_S;
@@ -119,7 +122,22 @@ siSeconds = siMs / MS_PER_S;
 % Match the row count
 siSeconds = match_row_count(siSeconds, nVectors);
 
-%% Do the job
+% Make sure fileBases is in agreement with nVectors
+if isempty(fileBases)
+    fileBases = create_labels_from_numbers(1:nVectors, ...
+                                'Prefix', strcat(create_time_stamp, '_'));
+else
+    fileBases = force_column_cell(fileBases);
+    
+    if numel(fileBases) ~= nVectors
+        fprintf('Number of file bases must match the number of vectors!\n');
+        varargout{1} = table.empty;
+        varargout{2} = table.empty;
+        return
+    end
+end
+
+%% Parse the amplitude of any change
 % Compute the extreme values
 maxValue = extract_elements(vectors, 'max');
 minValue = extract_elements(vectors, 'min');
@@ -137,6 +155,14 @@ steadyValue = candValue(3 - iTemp1);
 
 % Compute the amplitudes
 amplitude = steadyValue - baseValue;
+
+%% Parse stimulus protocol
+%% TODO: Pull out as a function
+% Hard-coded parameters
+pulseTableSuffix = 'gas_pulses';
+
+% Create paths for the pulse table
+pulseTablePaths = strcat(fileBases, '_', pulseTableSuffix, '.csv');
 
 % Find approximate windows for first-order responses
 secEndPoints = cellfun(@(x, y, z) find_section_endpoints(x, y, z), ...
@@ -160,20 +186,41 @@ pulseEndPoints = cellfun(@(x, y) x + repmat(y(1, :), 2, 1), ...
 
 % Convert to pulse windows
 pulseWindows = cellfun(@(x, y) x(y), ...
-                    timeVecs, pulseEndPoints, 'UniformOutput', false);
+                    timeVec, pulseEndPoints, 'UniformOutput', false);
 
 % Create stim tables
-stimTables = cellfun()
+pulseTables = cellfun(@(x, y) separate_and_create_table(x, y), ...
+                    pulseEndPoints, pulseWindows, 'UniformOutput', false);
+
+% Write to spreadsheet files
+cellfun(@(x, y) writetable(x, y), pulseTables, pulseTablePaths);
 
 %% Output results
-% Put parameters in a table
-parsedParams = table(nSamples, siSeconds, maxValue, minValue, ...
-                    baseValue, steadyValue, amplitude);
+if nVectors > 1
+    % Put parameters in a table
+    parsedParams = table(nSamples, siSeconds, maxValue, minValue, ...
+                        baseValue, steadyValue, amplitude);
 
-% Put data in a table
-parsedData = table(timeVecs, sections, secEndPoints, ...
-                    pulseEndPoints, pulseWindows);
+    % Put data in a table
+    parsedData = table(timeVec, sections, secEndPoints, ...
+                        pulseEndPoints, pulseWindows);
+else
+    % Put parameters in a structure
+    parsedParams.nSamples = nSamples;
+    parsedParams.siSeconds = siSeconds;
+    parsedParams.maxValue = maxValue;
+    parsedParams.minValue = minValue;
+    parsedParams.baseValue = baseValue;
+    parsedParams.steadyValue = steadyValue;
+    parsedParams.amplitude = amplitude;
 
+    % Put data in a structure
+    parsedData.timeVec = timeVec;
+    parsedData.sections = sections;
+    parsedData.secEndPoints = secEndPoints;
+    parsedData.pulseEndPoints = pulseEndPoints;
+    parsedData.pulseWindows = pulseWindows;
+end
 % Output variably
 varargout{1} = parsedParams;
 if nargout > 1
@@ -248,6 +295,22 @@ function endPoints = find_pulse_endpoints_from_response (vec, siMs)
 
 % Put together as end points
 endPoints = transpose([idxPulseStartsRel, idxPulseEndsRel]);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function pulseTable = separate_and_create_table (pulseEndPoints, pulseWindows)
+%% Create a pulse table
+
+% Extract the index
+idxStart = transpose(pulseEndPoints(1, :));
+idxEnd = transpose(pulseEndPoints(2, :));
+
+% Extract the time
+timeStart = transpose(pulseWindows(1, :));
+timeEnd = transpose(pulseWindows(2, :));
+
+% Create a table
+pulseTable = table(idxStart, idxEnd, timeStart, timeEnd);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

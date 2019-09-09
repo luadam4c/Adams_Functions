@@ -37,6 +37,7 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 % 
 
 %% Hard-coded parameters
+MS_PER_S = 1000;
 isTrace = @(x) isfield(x, 'values') && isfield(x, 'interval');
 
 %% Default values for optional arguments
@@ -123,6 +124,24 @@ end
 
 % Adjust channel start times so that they are all the same
 channelStarts = adjust_start_times(channelStarts, siSeconds);
+
+%% Parse gas trace if it exists
+% Test if a gas trace exists
+isGasTrace = strcmp(channelNames, 'O2');
+
+if any(isGasTrace)
+    % Get gas vector(s)
+    gasVec = channelValues{isGasTrace};
+
+    % Get the sampling interval in ms
+    siMs = siSeconds(isGasTrace) * MS_PER_S;
+
+    % Get the file path base
+    filePathBase = extract_fileparts(spike2MatPath, 'pathbase');
+
+    % Parse gas vectors and create pulse tables
+    parse_gas_trace(gasVec, siMs, 'FileBase', filePathBase);
+end
 
 %% Output results
 % Place in a table
