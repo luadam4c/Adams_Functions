@@ -11,14 +11,7 @@ function varargout = parse_gas_trace (vectors, siMs, varargin)
 %       channelNames = spike2Table.channelNames;
 %       gasVec = channelValues{strcmp(channelNames, 'O2')};
 %       siMs = spike2Table{4, 'siSeconds'} * 1000;
-%       [parsedParams, parsedData] = parse_gas_trace(gasVec, siMs);
-%       timeVec = parsedData.timeVec;
-%       pulseWindows = parsedData.pulseWindows;
-%       pulseWindowBoundaries = pulseWindows(:)
-%       plot(timeVec, gasVec); hold on;
-%       plot_window_boundaries(pulseWindowBoundaries, 'BoundaryType', 'verticalShade')
-%
-%       parse_gas_trace(vectors, siMs, 'FileBases', 
+%       [parsedParams, parsedData] = parse_gas_trace(gasVec, siMs, 'PulseDirection', 'downward', 'TraceFileName', spike2MatPath);
 %
 % Outputs:
 %       output1     - TODO: Description of output1
@@ -31,10 +24,16 @@ function varargout = parse_gas_trace (vectors, siMs, varargin)
 %                   must be a numeric array or a cell array of numeric vectors
 %       siMs        - sampling interval in ms
 %                   must be a positive vector
-%       varargin    - 'FileBases': Base name of the corresponding trace file(s)
+%       varargin    - 'TraceFileName': Name of the corresponding trace file(s)
 %                   must be empty, a characeter vector, a string array 
 %                       or a cell array of character arrays
-%                   default == TODO
+%                   default == extracted from the .atf file
+%                   - 'PulseDirection': direction of expected pulse
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'downward'  - downward peaks (e.g., hypoxia for O2)
+%                       'upward'    - upward peaks (e.g., hypercapnia for CO2)
+%                       'auto'      - no preference (whichever is largest)
+%                   default = 'auto'
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
@@ -47,21 +46,30 @@ function varargout = parse_gas_trace (vectors, siMs, varargin)
 % extract_subvectors
 % force_column_vector
 % force_column_cell
+% force_string_end
 % count_samples
+% isemptycell
 % match_row_count
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/parse_spike2_mat.m
 
 % File History:
 % 2019-09-09 Created by Adam Lu
+% 2018-09-10 Added 'PulseDirection' as an optional argument
+% TODO: Allow different pulse directions for different vectors
 % 
 
 %% Hard-coded parameters
 MS_PER_S = 1000;
+validPulseDirections = {'upward', 'downward', 'auto'};
+
+% TODO: Make optional argument
+fileBase = '';                  % file base for output files
 
 %% Default values for optional arguments
-fileBasesDefault = '';      % set later
+traceFileNameDefault = '';      % set later
+pulseDirectionDefault = 'auto';  % automatically detect largest peak by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -85,12 +93,15 @@ addRequired(iP, 'siMs', ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'vector'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'FileBases', fileBasesDefault, ...
+addParameter(iP, 'TraceFileName', traceFileNameDefault, ...
     @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'PulseDirection', pulseDirectionDefault, ...
+    @(x) any(validatestring(x, validPulseDirections)));
 
 % Read from the Input Parser
 parse(iP, vectors, siMs, varargin{:});
-fileBases = iP.Results.FileBases;
+traceFileName = iP.Results.TraceFileName;
+pulseDirection = validatestring(iP.Results.PulseDirection, validPulseDirections);
 
 % Keep unmatched arguments for the TODO() function
 % otherArguments = iP.Unmatched;
@@ -122,14 +133,26 @@ siSeconds = siMs / MS_PER_S;
 % Match the row count
 siSeconds = match_row_count(siSeconds, nVectors);
 
-% Make sure fileBases is in agreement with nVectors
-if isempty(fileBases)
-    fileBases = create_labels_from_numbers(1:nVectors, ...
+% Match the number of file names to the number of vectors
+[traceFileName, vectors] = match_format_vector_sets(traceFileName, vectors);
+
+% Make sure fileBase is in agreement with nVectors
+if isempty(fileBase)
+    if isemptycell(traceFileName)
+        fileBase = create_labels_from_numbers(1:nVectors, ...
                                 'Prefix', strcat(create_time_stamp, '_'));
+    else
+        % Extract from the trace file name
+        fileBase = extract_fileparts(traceFileName, 'pathbase');
+
+        % Force as a cell array
+        fileBase = force_column_cell(fileBase);
+    end
 else
-    fileBases = force_column_cell(fileBases);
-    
-    if numel(fileBases) ~= nVectors
+    % Force as a cell array
+    fileBase = force_column_cell(fileBase);
+
+    if numel(fileBase) ~= nVectors
         fprintf('Number of file bases must match the number of vectors!\n');
         varargout{1} = table.empty;
         varargout{2} = table.empty;
@@ -142,64 +165,30 @@ end
 maxValue = extract_elements(vectors, 'max');
 minValue = extract_elements(vectors, 'min');
 
-% Compute the baseline values
+% Compute the baseline and steady-state values
 %   Note: this is either maxValue or minValue, whichever is closest to
 %           the first value
-candValue = [minValue, maxValue];
 firstValue = extract_elements(vectors, 'first');
-[~, iTemp1] = min(abs([firstValue, firstValue] - candValue), [], 2);
-baseValue = candValue(iTemp1);
-
-% Compute the steady-state values
-steadyValue = candValue(3 - iTemp1);
+[baseValue, steadyValue] = ...
+    arrayfun(@(x, y, z) decide_on_baseline_steadystate(x, y, z, pulseDirection), ...
+                    firstValue, maxValue, minValue);
 
 % Compute the amplitudes
 amplitude = steadyValue - baseValue;
 
 %% Parse stimulus protocol
-%% TODO: Pull out as a function
-% Hard-coded parameters
-pulseTableSuffix = 'gas_pulses';
-
-% Create paths for the pulse table
-pulseTablePaths = strcat(fileBases, '_', pulseTableSuffix, '.csv');
-
-% Find approximate windows for first-order responses
-secEndPoints = cellfun(@(x, y, z) find_section_endpoints(x, y, z), ...
-                        vectors, num2cell(baseValue), num2cell(amplitude), ...
-                        'UniformOutput', false);
-
-% Extract subvectors
-sections = cellfun(@(x, y) extract_subvectors(x, 'EndPoints', y), ...
-                        vectors, secEndPoints, 'UniformOutput', false);
-
-% Find the protocol end points
-% TODO: Use fit_first_order_response.m directly and get amplitude and tau info
-%       and put in stim table
-pulseEndPointsRel = ...
-    cellfun(@(x) find_pulse_endpoints_from_response(x, siMs), ...
-            sections, 'UniformOutput', false);
-
-% Fix the pulse end points
-pulseEndPoints = cellfun(@(x, y) x + repmat(y(1, :), 2, 1), ...
-                    pulseEndPointsRel, secEndPoints, 'UniformOutput', false);
-
-% Convert to pulse windows
-pulseWindows = cellfun(@(x, y) x(y), ...
-                    timeVec, pulseEndPoints, 'UniformOutput', false);
-
-% Create stim tables
-pulseTables = cellfun(@(x, y) separate_and_create_table(x, y), ...
-                    pulseEndPoints, pulseWindows, 'UniformOutput', false);
-
-% Write to spreadsheet files
-cellfun(@(x, y) writetable(x, y), pulseTables, pulseTablePaths);
+% Create pulse tables
+[pulseTables, secEndPoints, pulseEndPoints, pulseTablePaths] = ...
+    cellfun(@(x, y, z, u, v, w) ...
+            create_pulse_tables(x, y, z, u, v, w, pulseDirection), ...
+            timeVec, vectors, num2cell(baseValue), num2cell(amplitude), ...
+            traceFileName, fileBase, 'UniformOutput', false);
 
 %% Output results
 if nVectors > 1
     % Put parameters in a table
     parsedParams = table(nSamples, siSeconds, maxValue, minValue, ...
-                        baseValue, steadyValue, amplitude);
+                        baseValue, steadyValue, amplitude, pulseTablePaths);
 
     % Put data in a table
     parsedData = table(timeVec, sections, secEndPoints, ...
@@ -213,13 +202,13 @@ else
     parsedParams.baseValue = baseValue;
     parsedParams.steadyValue = steadyValue;
     parsedParams.amplitude = amplitude;
+    parsedParams.pulseTablePaths = pulseTablePaths;
 
     % Put data in a structure
     parsedData.timeVec = timeVec;
-    parsedData.sections = sections;
+    parsedData.pulseTables = pulseTables;
     parsedData.secEndPoints = secEndPoints;
     parsedData.pulseEndPoints = pulseEndPoints;
-    parsedData.pulseWindows = pulseWindows;
 end
 % Output variably
 varargout{1} = parsedParams;
@@ -229,14 +218,193 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function endPoints = find_section_endpoints(vector, baseValue, amplitude)
+function [baseValue, steadyValue] = ...
+                decide_on_baseline_steadystate (firstValue, maxValue, ...
+                                                minValue, pulseDirection)
+
+% Hard-coded parameters
+maxPulseAmpRatio = 10;
+
+% Compute the distance from the first value to the extreme values
+distFirstToMax = abs(firstValue - maxValue);
+distFirstToMin = abs(firstValue - minValue);
+
+% Decide which values are baseline and steady state
+if distFirstToMax / distFirstToMin > maxPulseAmpRatio
+    % Baseline is close to minimum
+    if strcmp(pulseDirection, 'downward')
+        % Force going down
+        baseValue = firstValue;
+        steadyValue = minValue;
+    else
+        baseValue = mean([firstValue, minValue]);
+        steadyValue = maxValue;
+    end
+elseif distFirstToMin / distFirstToMax > maxPulseAmpRatio
+    % Baseline is close to maximum
+    if strcmp(pulseDirection, 'upward')
+        % Force going up
+        baseValue = firstValue;
+        steadyValue = maxValue;
+    else
+        % Use the average of firstValue and maxValue as baseline
+        baseValue = mean([firstValue, maxValue]);
+        steadyValue = minValue;
+    end
+else
+    % Baseline is in between minimum and maximum
+    baseValue = firstValue;
+
+    % Steady state depends on the pulse direction
+    switch pulseDirection
+        case 'auto'
+            % Use whatever is larger
+            if distFirstToMax > distFirstToMin
+                steadyValue = maxValue;
+            else
+                steadyValue = minValue;
+            end
+        case 'upward'
+            steadyValue = maxValue;
+        case 'downward'
+            steadyValue = minValue;
+        otherwise
+            error('pulseDirection unrecognized!');
+    end
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [pulseTable, secEndPoints, pulseEndPoints, pulseTablePath, handles] = ...
+                create_pulse_tables(timeVec, vector, baseValue, amplitude, ...
+                                    traceFileName, fileBase, pulseDirection)
+%% Create pulse tables
+% TODO: Pull out as its own function
+
+% Hard-coded parameters
+MS_PER_S = 1000;
+pulseTableSuffix = 'gas_pulses';
+figSuffix = 'gas_pulse_detection';
+
+% Make sure the sheet base ends with pulseTableSuffix
+pulseTableBase = force_string_end(fileBase, ['_', pulseTableSuffix]);
+figBase = force_string_end(fileBase, ['_', figSuffix]);
+
+% Create paths for the pulse table
+pulseTablePath = force_string_end(pulseTableBase, '.csv');
+
+% Find approximate windows for first-order responses
+disp('Finding approximate gas pulse sections ...');
+secEndPoints = find_section_endpoints(vector, baseValue, ...
+                                        amplitude, pulseDirection);
+
+% Extract subvectors
+sections = extract_subvectors(vector, 'EndPoints', secEndPoints);
+
+% Compute the sampling interval in ms
+siMs = (timeVec(2) - timeVec(1)) * MS_PER_S;
+
+% Find the protocol end points
+% TODO: Use fit_first_order_response.m directly and get amplitude and tau info
+%       and put in pulse table
+% Find pulse response end points relative to each section
+disp('Finding gas pulse end points ...');
+[idxPulseStartsRel, idxPulseEndsRel] = ...
+    find_pulse_response_endpoints(sections, siMs, 'ResponseLengthMs', 0);
+
+% Put together as end points
+pulseEndPointsRel = transpose([idxPulseStartsRel, idxPulseEndsRel]);
+
+% Fix the pulse end points
+pulseEndPoints = pulseEndPointsRel + repmat(secEndPoints(1, :), 2, 1);
+
+% Convert to pulse windows
+pulseWindows = timeVec(pulseEndPoints);
+
+% Extract the index
+idxStart = transpose(pulseEndPoints(1, :));
+idxEnd = transpose(pulseEndPoints(2, :));
+
+% Extract the time
+startTime = transpose(pulseWindows(1, :));
+endTime = transpose(pulseWindows(2, :));
+
+% Compute the duration
+duration = endTime - startTime;
+
+% Match traceFileName with the number of sections
+traceFileName = match_format_vector_sets(traceFileName, sections);
+
+% Determine if the trace file exists
+[tracePath, pathExists] = construct_and_check_fullpath(traceFileName);
+
+% Create a pulse table
+pulseTable = table(startTime, endTime, duration, ...
+                    tracePath, pathExists, idxStart, idxEnd);
+
+% Write to spreadsheet files
+writetable(pulseTable, pulseTablePath);
+
+% Plot and save a figure that verifies the pulse window detection
+handles = plot_gas_pulse_detection(timeVec, vector, pulseWindows, figBase);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function handles = plot_gas_pulse_detection (timeVec, gasVec, pulseWindows, figBase)
+%% Plots gas pulse window detection
+
+% Display message
+disp('Plotting gas pulse detection ...');
+
+% Create a new figure
+fig = figure;
+
+% Plot the original gas trace
+p = plot(timeVec, gasVec);
+
+% Hold on
+hold on;
+
+% Plot the window boundaries
+shades = plot_window_boundaries(pulseWindows(:), ...
+                                'BoundaryType', 'verticalShade');
+
+% Save figure if requested                            
+if ~isempty(figBase)
+    saveas(fig, figBase, 'png');
+end
+
+% Return handles
+handles.fig = fig;
+handles.p = p;
+handles.shades = shades;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function endPoints = find_section_endpoints(vector, baseValue, ...
+                                            amplitude, pulseDirection)
 
 % Subtract the vector by the baseline value 
 vecShifted = vector - baseValue;
 
 % Make amplitude and vector positive
-absAmp = abs(amplitude);
-vecPos = abs(vecShifted);
+switch pulseDirection
+    case 'auto'
+        % Detect all pulses
+        absAmp = abs(amplitude);
+        vecPos = abs(vecShifted);
+    case 'upward'
+        % Detect only upward pulses
+        absAmp = amplitude;
+        vecPos = vecShifted;
+    case 'downward'
+        % Detect only downward pulses
+        absAmp = -amplitude;
+        vecPos = -vecShifted;
+    otherwise
+        error('pulseDirection unrecognized!');
+end
 
 % Find the first points that reaches 1/4 and 3/4 of the amplitude
 idxRef = 0;
@@ -283,39 +451,15 @@ while ~isempty(idx25Rel) && ~isempty(idx75Rel)
     idx75Rel = find(vecPos > absAmp * 3 / 4, 1, 'first');
 end
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function endPoints = find_pulse_endpoints_from_response (vec, siMs)
-% Finds pulse endpoints from shape of pulse response
-
-% Find pulse response end points
-[idxPulseStartsRel, idxPulseEndsRel] = ...
-    find_pulse_response_endpoints(vec, siMs, 'ResponseLengthMs', 0);
-
-% Put together as end points
-endPoints = transpose([idxPulseStartsRel, idxPulseEndsRel]);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function pulseTable = separate_and_create_table (pulseEndPoints, pulseWindows)
-%% Create a pulse table
-
-% Extract the index
-idxStart = transpose(pulseEndPoints(1, :));
-idxEnd = transpose(pulseEndPoints(2, :));
-
-% Extract the time
-timeStart = transpose(pulseWindows(1, :));
-timeEnd = transpose(pulseWindows(2, :));
-
-% Create a table
-pulseTable = table(idxStart, idxEnd, timeStart, timeEnd);
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+candValue = [minValue, maxValue];
+firstValue = extract_elements(vectors, 'first');
+[~, iTemp1] = min(abs([firstValue, firstValue] - candValue), [], 2);
+baseValue = candValue(iTemp1);
 
 %}
 

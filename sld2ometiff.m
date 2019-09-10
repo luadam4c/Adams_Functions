@@ -145,8 +145,9 @@ function read_then_save(reader, iFrame, tiffPath, omeMeta)
 frame = bfGetPlane(reader, iFrame);
 
 % Save the frame
-bfsave(frame, tiffPath);
 % bfsave(frame, tiffPath, 'metadata', omeMeta);
+% bfsave(frame, tiffPath);
+imwrite(frame, tiffPath);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

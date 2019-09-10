@@ -129,7 +129,7 @@ otherArguments = struct2arglist(iP.Unmatched);
 if isempty(relativeTimeWindow)
     % Compute the average inter-stimulus interval
     interStimInterval = compute_average_interval(stimTimes);
-
+        
     % Use half of the average inter-stimulus interval on each side
     relativeTimeWindow = interStimInterval * 0.5 * [-1, 1];
 end

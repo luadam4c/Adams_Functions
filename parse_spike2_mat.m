@@ -27,6 +27,7 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/extract_fields.m
 %       cd/force_string_end.m
+%       cd/parse_gas_trace.m
 %       cd/struct2arglist.m
 %
 % Used by:
@@ -136,11 +137,12 @@ if any(isGasTrace)
     % Get the sampling interval in ms
     siMs = siSeconds(isGasTrace) * MS_PER_S;
 
-    % Get the file path base
-    filePathBase = extract_fileparts(spike2MatPath, 'pathbase');
+    % TODO: Change this one CO2 is read as well
+    pulseDirection = 'downward';
 
     % Parse gas vectors and create pulse tables
-    parse_gas_trace(gasVec, siMs, 'FileBase', filePathBase);
+    parse_gas_trace(gasVec, siMs, 'TraceFileName', spike2MatPath, ...
+                    'PulseDirection', pulseDirection);
 end
 
 %% Output results

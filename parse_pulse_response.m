@@ -115,10 +115,10 @@ function varargout = parse_pulse_response (vectors, siMs, varargin)
 %                   default = 0 ms
 %                   - 'PeakDirection': direction of expected peak
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'Downward'  - downward peaks (e.g., EPSCs)
-%                       'Upward'    - upward peaks (e.g., IPSCs)
-%                       'Auto'      - no preference (whichever is largest)
-%                   default = 'Auto'
+%                       'downward'  - downward peaks (e.g., EPSCs)
+%                       'upward'    - upward peaks (e.g., IPSCs)
+%                       'auto'      - no preference (whichever is largest)
+%                   default = 'auto'
 %                   
 %
 % Requires:
