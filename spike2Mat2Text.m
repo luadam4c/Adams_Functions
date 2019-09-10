@@ -36,10 +36,10 @@ function varargout = spike2Mat2Text (spike2MatPath, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       /home/Matlab/plethRO1/spike2Loader.m
+%       /home/Matlab/plethRO1/plethRO1_analyze.m
 
 % File History:
-% 2019-09-06 Moved from spike2Loader.m
+% 2019-09-06 Moved from plethRO1_analyze.m
 % 2019-09-06 Added 'TextType' and 'TextPath' as optional arguments
 % TODO: Use parse_spike2_mat.m
 % 

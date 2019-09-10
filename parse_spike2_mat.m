@@ -32,6 +32,7 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %
 % Used by:
 %       cd/spike2Mat2Text.m
+%       /home/Matlab/plethRO1/plethRO1_analyze.m
 
 % File History:
 % 2019-09-08 Moved from spike2Mat2Text.m

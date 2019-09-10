@@ -52,6 +52,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 % 2018-12-26 Added 'SheetType' as an optional argument
 % 2019-09-08 Now uses the trace file name as the basis 
 %               for constructing sheet file name
+% 2019-09-09 Updated the construction of trace file paths
 % 
 
 %% Hard-coded constants
@@ -180,7 +181,9 @@ if isempty(traceFileName)
 end
 
 % Construct full path to original data file
-[tracePath, pathExists] = construct_and_check_fullpath(traceFileName);
+%   Note: Must be (or copied to) the same directory as the original event file
+[tracePath, pathExists] = ...
+    construct_and_check_fullpath(traceFileName, 'Directory', fileDir);
 
 % Force as a column cell array
 tracePath = force_column_cell(tracePath);

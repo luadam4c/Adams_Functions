@@ -19,6 +19,7 @@ function outputTable = vertcat_spreadsheets (inputFileNames, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/force_column_cell.m
 %
 % Used by:
 %       cd/combine_swd_sheets.m
@@ -49,11 +50,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'inputFileNames', ...
-    @(x) assert(iscell(x) && (min(cellfun(@ischar, x)) ...
-                || min(cellfun(@isstring, x))), ...
-                ['Second input must be a cell array ', ...
-                'of strings or character arrays!']));
-%    @(x) iscellstr(x) || isstring(x));
+    @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'OutputFileName', outputFileNameDefault, ...
@@ -65,23 +62,20 @@ parse(iP, inputFileNames, varargin{:});
 outputFileName = iP.Results.OutputFileName;
 
 %% Prepare
+% Force file names as a cell array
+inputFileNames = force_column_cell(inputFileNames);
+
 % Get the number of spreadsheets to combine
 nTables = numel(inputFileNames);
 
 %% Read and concatenate
-outputTable = [];
+outputTable = table.empty;
 for iTable = 1:nTables
     % Read in the table for this input file
     inputTable = readtable(inputFileNames{iTable});
 
-    % Concatenate the input table with the output table
-    if isempty(outputTable)
-        % The inputTable is the first one; assign it as the outputTable
-        outputTable = inputTable;
-    else
-        % Vertically concatenate the new input table to the existing outputTable
-        outputTable = vertcat(outputTable, inputTable);
-    end
+    % Vertically concatenate the new input table to the existing outputTable
+    outputTable = vertcat(outputTable, inputTable);
 end
 
 %% Save output
@@ -96,6 +90,14 @@ OLD CODE:
 
 % The following will reorder the rows, so is not ideal
 outputTable = outerjoin(outputTable, inputTable, 'MergeKeys', true);
+
+outputTable = [];
+% Concatenate the input table with the output table
+if isempty(outputTable)
+    % The inputTable is the first one; assign it as the outputTable
+    outputTable = inputTable;
+else
+end
 
 %}
 
