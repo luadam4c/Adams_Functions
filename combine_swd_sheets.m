@@ -53,6 +53,9 @@ function [outTable, outPath] = combine_swd_sheets (varargin)
 %% Hard-coded parameters
 combinedStr = '_combined';
 
+% The following must be consistent with atfwrite.m
+pieceStr = '_piece';            % string in file names that separate pieces
+
 %% Default values for optional arguments
 verboseDefault = true;
 directoryDefault = '';          % set later

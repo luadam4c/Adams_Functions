@@ -60,6 +60,9 @@ function atfwrite (dataMatrix, varargin)
 %% Hard-coded parameters
 maxNSamplesAtf = 1e6;
 
+% The following must be consistent with combine_swd_sheets.m
+pieceStr = '_piece';            % string in file names that separate pieces
+
 %% Default values for optional arguments
 fileNameDefault = '';
 outFolderDefault = '';              % set in construct_fullpath.m
@@ -184,7 +187,7 @@ if nSamples > maxNSamplesAtf
 
     % Create file paths
     filePaths = create_labels_from_numbers(1:nFiles, ...
-                'Prefix', [filePathBase, '_part'], 'Suffix', '.atf');
+                'Prefix', [filePathBase, pieceStr], 'Suffix', '.atf');
 
     for iFile = 1:nFiles
         % TODO: Use create_indices.m somehow
@@ -201,7 +204,7 @@ if nSamples > maxNSamplesAtf
         timeStartThis = timeStart + (rowStart - 1) * siSeconds;
 
         % Modify the comment
-        commentThis = [comment, ', part', num2str(iFile)];
+        commentThis = [comment, ', piece', num2str(iFile)];
 
         % Create the .atf file
         atfwrite_helper(dataMatrix(rowsThis, :), siSeconds, ...
