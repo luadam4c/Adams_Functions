@@ -22,7 +22,7 @@ function [swdTables, swdSheetPaths, ...
 %                   default == true
 %                   - 'ToCombine': whether to combine spreadsheets
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   default == true
 %                   - 'OutFolder': the name of the directory in which 
 %                                       plots will be placed
 %                   must be a string scalar or a character vector
@@ -73,7 +73,7 @@ sweepStr = '_sweep';            % string in file names that separate sweeps
 
 %% Default values for optional arguments
 verboseDefault = true;
-toCombineDefault = false;
+toCombineDefault = true;
 outFolderDefault = '';          % set later
 manualFolderDefault = '';       % set later
 sayliFolderDefault = '';        % set later
@@ -176,9 +176,10 @@ if toCombine
     nSwdFolders = numel(allSwdFolders);
 
     % Vertically concatenate all SWD files in the same SWD folders
-    swdCombinedTables = cell(nCombinedPaths, 1);
-    swdCombinedCsvFiles = cell(nCombinedPaths, 1);
-    parfor iFolder = 1:nSwdFolders
+    swdCombinedTables = cell(nSwdFolders, 1);
+    swdCombinedCsvFiles = cell(nSwdFolders, 1);
+    for iFolder = 1:nSwdFolders
+    % parfor iFolder = 1:nSwdFolders
         [swdCombinedTables{iFolder}, swdCombinedCsvFiles{iFolder}] = ...
             combine_swd_sheets('Directory', allSwdFolders{iFolder}, ...
                                 'Verbose', verbose, 'SheetType', sheetType);

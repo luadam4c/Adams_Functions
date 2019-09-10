@@ -50,6 +50,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 % Used by:
 %       cd/atfwrite.m
 %       cd/check_dir.m
+%       cd/combine_swd_sheets.m
 %       cd/locate_dir.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/parse_iox.m

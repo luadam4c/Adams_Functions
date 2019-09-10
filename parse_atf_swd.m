@@ -210,7 +210,10 @@ if strcmpi(traceFileExt, '.atf')
     % Read the sweep start time line
     headerLine = read_lines_from_file(tracePath{1}, 'MaxNum', 1, ...
                                 'Keyword', 'SweepStartTimesMS');
-
+    if isempty(headerLine)
+        error('headerLine not found in %s', tracePath{1});
+    end
+                            
     % Read in the start time of the trace
     traceStartTimeMs = sscanf_full(headerLine, '%g');
 

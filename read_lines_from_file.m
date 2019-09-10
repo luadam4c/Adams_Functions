@@ -105,6 +105,12 @@ lineStrs = {};
 % Decide on the function to use based on includeNewLine
 % TODO: Hint: fgetl vs. fgets
 
+% Return if file does not exist
+if ~isfile(filePath)
+    fprintf('The file %s doesn''t exist!\n', filePath);
+    return
+end
+
 % Update maxNum if lineNumber provided
 if ~isempty(lineNumber)
     if ~isinf(maxNum) && maxNum <= 1

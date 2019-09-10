@@ -23,7 +23,7 @@ function [swdTables, filePaths] = load_swd_sheets (varargin)
 %                   default == true
 %                   - 'Suffix': suffix the file name must have
 %                   must be a string scalar or a character vector
-%                   default == '_SWDs'
+%                   default == set in all_swd_sheets.m
 %                   - 'SheetType': sheet type;
 %                       e.g., 'xlsx', 'csv', etc.
 %                   could be anything recognised by the readtable() function 

@@ -38,7 +38,7 @@ function [his, lines, fig] = plot_swd_histogram (varargin)
 %                   default == a subdirectory named by {fileName}_traces in pwd
 %                   - 'Suffix': suffix the file name must have
 %                   must be a string scalar or a character vector
-%                   default == '_SWDs_combined'
+%                   default == set in all_swd_sheets.m
 %                   - 'SheetType': sheet type;
 %                       e.g., 'xlsx', 'csv', etc.
 %                   could be anything recognised by the readtable() function 
@@ -62,12 +62,11 @@ function [his, lines, fig] = plot_swd_histogram (varargin)
 
 % File History:
 % 2018-12-27 Created by Adam Lu
+% 2019-09-10 Updated suffix default
 % TODO: 'UseAbsoluteTime' as an optional argument
 % 
 
 %% Hard-coded parameters
-combinedSwdStr = '_SWDs_combined';
-
 % TODO: Make these optional arguments
 recordingStartHrs = 16;         % time that recording started each day (hours)
 infusionStartHrs = 20;          % time that infusion started each day (hours)
@@ -80,7 +79,7 @@ swdTablesDefault = '';          % set later
 swdSheetPathsDefault = '';      % set later
 swdFolderDefault = '';          % set later
 outFolderDefault = '';          % set later
-suffixDefault = '';             % set later
+suffixDefault = '';             % set in all_swd_sheets.m
 sheetTypeDefault = 'csv';       % default spreadsheet type
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -132,7 +131,7 @@ otherArguments = iP.Unmatched;
 %% Preparation
 % Set default string to recognize SWD spreadsheets
 if isempty(suffix)
-    suffix = combinedSwdStr;
+    suffix = swdStr;
 end
 
 % Find all combined SWD spreadsheet files in the directory
@@ -378,6 +377,8 @@ startTimes = extract_subvectors(startTimes, 'AlignMethod', 'leftAdjustPad');
 
 % Put together as an array
 startTimes = horzcat(startTimes{:});
+
+combinedSwdStr = '_SWDs_combined';
 
 %}
 
