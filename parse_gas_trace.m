@@ -37,6 +37,7 @@ function varargout = parse_gas_trace (vectors, siMs, varargin)
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
+%       cd/construct_and_check_fullpath.m
 %       cd/create_error_for_nargin.m
 %       cd/create_time_vectors.m
 %       cd/struct2arglist.m
@@ -284,12 +285,14 @@ function [pulseTable, secEndPoints, pulseEndPoints, pulseTablePath, handles] = .
 
 % Hard-coded parameters
 MS_PER_S = 1000;
-pulseTableSuffix = 'gas_pulses';
-figSuffix = 'gas_pulse_detection';
+
+% Note: Must be consistent with parse_iox.m
+pulseTableSuffix = '_gas_pulses';
+figSuffix = '_gas_pulse_detection';
 
 % Make sure the sheet base ends with pulseTableSuffix
-pulseTableBase = force_string_end(fileBase, ['_', pulseTableSuffix]);
-figBase = force_string_end(fileBase, ['_', figSuffix]);
+pulseTableBase = force_string_end(fileBase, pulseTableSuffix);
+figBase = force_string_end(fileBase, figSuffix);
 
 % Create paths for the pulse table
 pulseTablePath = force_string_end(pulseTableBase, '.csv');

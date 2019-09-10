@@ -1,78 +1,195 @@
-function [output1] = parse_iox (reqarg1, varargin)
-%% TODO: A summary of what the function does (must be a single unbreaked line)
-% Usage: [output1] = parse_iox (reqarg1, varargin)
+function pulseTables = parse_iox (varargin)
+%% Parses a .iox.txt file and return a pulse table
+% Usage: pulseTables = parse_iox (varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       parse_iox('2015_09_28')
+%       pulseTables = parse_iox;
+%       pulseTable = parse_iox('2015_09_28')
 %
 % Outputs:
-%       output1     - TODO: Description of output1
+%       pulseTable  - TODO: Description of pulseTable
+%                   specified as a TODO
+%       endTimes    - TODO: Description of pulseTable
 %                   specified as a TODO
 %
 % Arguments:
-%       reqarg1     - TODO: Description of reqarg1
-%                   must be a TODO
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'Directory': the name of the directory containing 
+%                                   the .iox files, e.g. '2015_09_28'
+%                   must be a string scalar or a character vector
+%                   default == pwd
+%                   - 'FileNames': names of .iox files to detect
+%                   must be a character vector, a string array 
+%                       or a cell array of character arrays
+%                   default == detect from directory
+%                   - 'TraceFileNames': Name of the corresponding trace file(s)
+%                   must be empty, a characeter vector, a string array 
+%                       or a cell array of character arrays
+%                   default == extracted from the .atf file
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
-%       ~/Adams_Functions/create_error_for_nargin.m
+%       cd/argfun.m
+%       cd/construct_and_check_fullpath.m
+%       cd/construct_fullpath.m
+%       cd/extract_common_directory.m
+%       cd/extract_fileparts.m
+%       cd/find_in_strings.m
+%       cd/force_column_cell.m
+%       cd/match_dimensions.m
+%       cd/read_lines_from_file.m
 %       ~/Adams_Functions/struct2arglist.m
-%       /TODO:dir/TODO:file
 %
 % Used by:
 %       /TODO:dir/TODO:file
 
 % File History:
-% 201X-XX-XX Created by TODO or Adapted from TODO
+% 2019-09-10 Created by Adam Lu
 % 
 
 %% Hard-coded parameters
+ioxSuffixExtension = '.rf_1.iox.txt';
+
+% Note: Must be consistent with parse_gas_trace.m
+pulseTableSuffix = '_gas_pulses';
 
 %% Default values for optional arguments
-param1Default = [];             % default TODO: Description of param1
+directoryDefault = pwd;         % look for .abf files in 
+                                %   the present working directory by default
+fileNamesDefault = {};          % detect from directory by default
+traceFileNamesDefault = '';      % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
-% Check number of required arguments
-if nargin < 1    % TODO: 1 might need to be changed
-    error(create_error_for_nargin(mfilename));
-end
-
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
-iP.KeepUnmatched = true;                        % allow extraneous options
-
-% Add required inputs to the Input Parser
-addRequired(iP, 'reqarg1');
+% iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'param1', param1Default);
+addParameter(iP, 'Directory', directoryDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+                                                % introduced after R2016b
+addParameter(iP, 'FileNames', fileNamesDefault, ...
+    @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'TraceFileNames', traceFileNamesDefault, ...
+    @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
 
 % Read from the Input Parser
-parse(iP, reqarg1, varargin{:});
-param1 = iP.Results.param1;
+parse(iP, varargin{:});
+directory = iP.Results.Directory;
+fileNames = iP.Results.FileNames;
+traceFileNames = iP.Results.TraceFileNames;
 
 % Keep unmatched arguments for the TODO() function
-otherArguments = struct2arglist(iP.Unmatched);
-
-% Check relationships between arguments
-% TODO
+% otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
-% TODO
+% Initialize output
+pulseTables = table.empty;
+
+% Decide on the files to use
+if isempty(fileNames)
+    % Find all iox files in the directory
+    [~, fileNames] = all_files('Directory', directory, ...
+                                'Extension', ioxSuffixExtension);
+else
+    % Extract the common parent directory
+    directory = extract_common_directory(fileNames);
+end
+
+% Return usage message if no .abf files found
+if isempty(fileNames)
+    fprintf('No .iox files were found in %s!\n', directory);
+    return
+end
+
+% Force file name(s) with the iox text file ending
+fileNames = force_string_end(fileNames, ioxSuffixExtension);
+
+% Extract everything before ioxSuffixExtension
+filePathBases = extractBefore(fileNames, ioxSuffixExtension);
+
+% Extract just the file bases
+%   Note: After removing the extension, the paths look like directories
+fileBases = extract_fileparts(filePathBases, 'dirbase');
+
+% Construct trace paths
+if isempty(traceFileNames)
+    traceFileNames = fullfile(directory, strcat(fileBases, '.txt'));
+else
+    traceFileNames = construct_fullpath(traceFileNames, 'Directory', directory);
+end
+
+% Make sure the pulse table base ends with pulseTableSuffix
+pulseTableNames = force_string_end(fileBases, [pulseTableSuffix, '.csv']);
+
+% Create path(s) to the pulse table file(s)
+pulseTablePaths = fullfile(directory, pulseTableNames);
 
 %% Do the job
-% TODO
+if iscell(fileNames)
+    pulseTables = cellfun(@(x, y, z) parse_one_iox(x, y, z), ...
+                            fileNames, traceFileNames, pulseTablePaths, ...
+                            'UniformOutput', false);
+else
+    pulseTables = parse_one_iox(fileNames, traceFileNames, pulseTablePaths);
+end
 
-%% Output results
-% TODO
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function pulseTable = parse_one_iox (fileName, traceFileName, pulseTablePath)
+
+%% Hard-coded parameters
+eventStr = 'hypoxia';
+regexpDateTime = '\d{2}\:\d{2}\:\d{2}\.\d{3}';
+
+%% Read in start and end times
+% Read in all lines with the eventStr
+lineStrs = read_lines_from_file(fileName, 'Keyword', eventStr);
+
+% Find the lines with start times
+[~, startLineStrs] = find_in_strings('period-start', lineStrs, ...
+                                    'SearchMode', 'substrings');
+
+% Find the lines with end times
+[~, endLineStrs] = find_in_strings('period-stop', lineStrs, ...
+                                    'SearchMode', 'substrings');
+
+% Extract the start and end times
+[startTimeStrs, endTimeStrs] = ...
+    argfun(@(x) regexp(x, regexpDateTime, 'match'), startLineStrs, endLineStrs);
+
+% Convert to the number of seconds
+[startTime, endTime] = ...
+    argfun(@(x) seconds(cellfun(@duration, x)), ...
+            startTimeStrs, endTimeStrs);
+
+%% Check trace paths
+% Determine if the trace file exists
+[tracePath, pathExists] = construct_and_check_fullpath(traceFileName);
+
+% Force as a cell array
+tracePath = force_column_cell(tracePath);
+
+% Match the row count
+[tracePath, pathExists] = ...
+    argfun(@(x) match_dimensions(x, size(startTime)), tracePath, pathExists);
+
+%% Create the pulse table
+% Compute the duration
+durationVar = endTime - startTime;
+
+% Create a pulse table
+pulseTable = table(startTime, endTime, durationVar, tracePath, pathExists, ...
+                    'VariableNames', {'startTime', 'endTime', 'duration', ...
+                                        'tracePath', 'pathExists'});
+
+% Write to spreadsheet files
+writetable(pulseTable, pulseTablePath);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

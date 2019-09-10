@@ -190,8 +190,7 @@ tracePath = force_column_cell(tracePath);
 
 % Make sure the dimensions match up
 [tracePath, pathExists] = ...
-    argfun(@(x) match_dimensions(x, size(startTime)), ...
-            tracePath, pathExists);
+    argfun(@(x) match_dimensions(x, size(startTime)), tracePath, pathExists);
 
 % Extract the file base of the trace file
 traceFileBase = extract_fileparts(traceFileName{1}, 'base');

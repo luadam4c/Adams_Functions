@@ -325,7 +325,7 @@ There are 1 MATLAB scripts in this directory:
 - [**parse_file_or_directory.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_file_or_directory.m): Parses whether the argument is a file or a directory
 - [**parse_fitobject.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_fitobject.m): Extract information from a cfit or sfit object
 - [**parse_gas_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_gas_trace.m): Parses gas traces
-- [**parse_iox.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_iox.m): TODO: A summary of what the function does (must be a single unbreaked line)
+- [**parse_iox.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_iox.m): Parses a .iox.txt file and return a pulse table
 - [**parse_ipsc.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_ipsc.m): Finds time of current peak from a an inhibitory current trace (must be negative current)
 - [**parse_lts.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_lts.m): Finds, plots and classifies the most likely low-threshold spike (LTS) candidate in a voltage trace
 - [**parse_multiunit.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_multiunit.m): Parses multiunit recordings: detect spikes, computes spike histograms and autocorrelograms

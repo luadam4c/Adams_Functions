@@ -7,12 +7,14 @@ function [fullPath, pathExists] = construct_and_check_fullpath (pathName, vararg
 %       if ~fileExists
 %           return
 %       end
+%
 % Outputs:
 %       fullPath    - the full path(s) to file(s) or directory(s) constructed
 %                   specified as a character vector 
 %                       or a column cell array or character vectors
 %       pathExists  - whether the path(s) exists
 %                   specified as a column logical array
+%
 % Arguments:
 %       pathName    - file or directory name(s)
 %                       e.g. 'A100110_0008_18.mat'
@@ -38,6 +40,7 @@ function [fullPath, pathExists] = construct_and_check_fullpath (pathName, vararg
 %                       is a string/char array or cell array 
 %                       and whose second element is a numeric array
 %                   default == {'', NaN}
+%
 % Requires:
 %       cd/check_fullpath.m
 %       cd/construct_fullpath.m
@@ -51,6 +54,8 @@ function [fullPath, pathExists] = construct_and_check_fullpath (pathName, vararg
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_parse_mat.m
 %       cd/parse_atf_swd.m
+%       cd/parse_iox.m
+%       cd/parse_gas_trace.m
 
 % File History: 
 % 2017-04-11 - Moved from plot_traces_abf.m

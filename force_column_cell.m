@@ -71,6 +71,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/m3ha_plot_individual_traces.m
 %       cd/match_format_vector_sets.m
 %       cd/parse_atf_swd.m
+%       cd/parse_iox.m
 %       cd/parse_multiunit.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
@@ -80,6 +81,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/plot_vertical_line.m
 %       cd/plot_vertical_shade.m
 %       cd/plot_window_boundaries.m
+%       cd/read_lines_from_file.m
 %       cd/run_neuron.m
 %       cd/save_all_zooms.m
 %       cd/struct2arglist.m

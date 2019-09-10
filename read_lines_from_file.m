@@ -5,11 +5,15 @@ function lineStrs = read_lines_from_file (filePath, varargin)
 %       TODO
 %
 % Example(s):
-%       TODO
+%       path = '/home/Matlab/Adams_Functions/read_lines_from_file.m'
+%       lineStrs = read_lines_from_file(path, 'LineNumber', 2)
+%       lineStrs = read_lines_from_file(path, 'Keyword', 'unix')
+%       lineStrs = read_lines_from_file(path, 'Keyword', 'unix', 'MaxNum', 1)
 %
 % Outputs:
 %       lineStrs    - line(s) read
-%                   specified as a character vector
+%                   specified as a character vector 
+%                       or a cell array of character vectors
 %
 % Arguments:
 %       filePath    - path to file to read
@@ -25,23 +29,25 @@ function lineStrs = read_lines_from_file (filePath, varargin)
 %                   default == false
 %                   - 'MaxNum': maximum number of lines to read
 %                   must be empty or a positive integer scalar
-%                   default == read all lines of the file
+%                   default == Inf
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/force_column_cell.m
 %       cd/ispositiveintegerscalar.m
 %       cd/struct2arglist.m
 %       /TODO:dir/TODO:file
 %
 % Used by:
 %       cd/parse_atf_swd.m
+%       cd/parse_iox.m
 
 % File History:
 % 2019-09-08 Created by Adam Lu
+% 2019-09-10 Added 'MaxNum' as an optional argument
 % TODO FOR UNDERGRAD: complete 'IncludeNewLine' as an optional argument
 % TODO: Expand to multiple lines
-% TODO: Complete 'MaxNum' as an optional argument
 
 %% Hard-coded parameters
 
@@ -49,7 +55,7 @@ function lineStrs = read_lines_from_file (filePath, varargin)
 lineNumberDefault = [];
 keywordDefault = '';
 includeNewLineDefault = [];             % default TODO: Description of includeNewLine
-maxNumDefault = [];                     % TODO by default
+maxNumDefault = Inf;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -93,37 +99,106 @@ maxNum = iP.Results.MaxNum;
 % TODO
 
 %% Preparation
+% Initialize output
+lineStrs = {};
+
 % Decide on the function to use based on includeNewLine
 % TODO: Hint: fgetl vs. fgets
 
+% Update maxNum if lineNumber provided
+if ~isempty(lineNumber)
+    if ~isinf(maxNum) && maxNum <= 1
+        fprintf('One can only read at most 1 line with a specific line number!\n');
+        return;
+    else
+        maxNum = 1;
+    end
+end
 
 %% Do the job
+if isunix
+    if ~isempty(lineNumber)
+        [~, unixOut] = unix(sprintf('sed -n ''%dp'' %s', lineNumber, filePath));
+    else
+        % Use grep
+        if isinf(maxNum)
+            [~, unixOut] = unix(sprintf('grep "%s" %s', keyword, filePath));
+        else
+            [~, unixOut] = unix(sprintf('grep -m %d "%s" %s', ...
+                                            maxNum, keyword, filePath));
+        end
+    end
+
+    % Split output by endline character
+    lineStrs = strsplit(unixOut, '\n');
+
+    % Remove the last string if it's empty
+    if isempty(lineStrs{end})
+        lineStrs = lineStrs(1:end-1);
+    end
+else
+    lineStrs = read_lines_from_files_slow(filePath, lineNumber, keyword, maxNum);
+end
+
+%% Output results
+% Output as a character vector if there is only one line
+if iscell(lineStrs) && numel(lineStrs) == 1
+    lineStrs = lineStrs{1};
+else
+    lineStrs = force_column_cell(lineStrs);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [lineStrThis, fid, nRead] = read_and_increment (fid, nRead)
+%% Read line and increment counter
+
+% Read new line
+lineStrThis = fgetl(fid);
+
+% Increment counter
+nRead = nRead + 1;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function lineStrs = read_lines_from_files_slow (filePath, lineNumber, ...
+                                                keyword, maxNum)
+%% Read lines with MATLAB functions
+
 % Open the file for reading
 fid = fopen(filePath, 'r');
 
-% Read a line 
-lineStrs = fgetl(fid);
+% Initialize a counter for stored lines
+nStored = 0;
 
-% Ignore lines that are not needed
-if ~isempty(lineNumber)
-    % Read lines until a line number is reached
-    lineCount = 1;
-    while lineCount < lineNumber
-        lineStrs = fgetl(fid);
-        lineCount = lineCount + 1;
+% Initialize a counter for read lines
+nRead = 0;
+
+% Read a line and increment counter
+[lineStrThis, fid, nRead] = read_and_increment(fid, nRead);
+
+% Read until maxNum or end of file is reached
+while nStored <= maxNum && ischar(lineStrThis)
+    % Ignore lines that are not needed
+    if ~isempty(lineNumber)
+        % Read lines until a line number is reached
+        while nRead < lineNumber
+            [lineStrThis, fid, nRead] = read_and_increment(fid, nRead);
+        end
+    elseif ~isempty(keyword)
+        % Read lines until a line containing keyword is read
+        while ~contains(lineStrThis, keyword)
+            [lineStrThis, fid, nRead] = read_and_increment(fid, nRead);
+        end
     end
-elseif ~isempty(keyword)
-    % Read lines until a line containing keyword is read
-    while ~contains(lineStrs, keyword)
-        lineStrs = fgetl(fid);
-    end
+
+    % Store the current line
+    nStored = nStored + 1;
+    lineStrs{nStored} = lineStrThis;
 end
 
 % Close the trace file
 fclose(fid);
-
-%% Output results
-% TODO
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -67,6 +67,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/create_pleth_EEG_movie.m
 %       cd/extract_common_directory.m
 %       cd/parse_atf_swd.m
+%       cd/parse_iox.m
 %       cd/plot_measures.m
 %       cd/plot_swd_histogram.m
 %       cd/plot_table.m
@@ -82,6 +83,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 % 2019-04-07 Added 'RegExp' as an optional argument
 % 2019-04-07 Added 'name' as a part type
 % 2019-08-12 Added 'pathbase' as a part type
+% 2019-09-10 Fixed 'dirbase' when the input is a cell array
 % TODO: Make the first argument accept a files structure array too
 % 
 
@@ -198,7 +200,7 @@ switch partType
     case 'directory'
         parts = fileDirs;
     case 'dirbase'
-        [~, parts] = fileparts(fileDirs);
+        parts = extract_simple_fileparts(strcat(fileDirs, '.dum'), 'base');
     case 'name'
         parts = strcat(fileBases, fileExtensions);
     case 'base'

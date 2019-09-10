@@ -76,6 +76,7 @@ function varargout = find_in_strings (cand, strList, varargin)
 %       cd/m3ha_correct_unbalanced_bridge.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_xolotl_plot.m
+%       cd/parse_iox.m
 %       cd/plot_swd_raster.m
 %       cd/renamevars.m
 %       cd/update_params.m
