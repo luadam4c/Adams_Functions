@@ -86,6 +86,22 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 %                   must be a string scalar or a character vector
 %                   default == ['Traces for ', figName]
 %                               or [yLabel, ' over time']
+%                   - 'FigHandle': figure handle for created figure
+%                   must be a empty or a figure object handle
+%                   default == []
+%                   - 'FigNumber': figure number for creating figure
+%                   must be a positive integer scalar
+%                   default == []
+%                   - 'FigExpansion': expansion factors for figure position
+%                   must be a must be a positive scalar or 2-element vector
+%                   default == []
+%                   - 'ClearFigure': whether to clear figure
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == falss
+%                   - 'AlwaysNew': whether to always create a new figure even if
+%                                   figNumber is not passed in
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - Any other parameter-value pair for the line() function
 %
 % Requires:
@@ -96,6 +112,7 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 %       cd/count_vectors.m
 %       cd/force_column_vector.m
 %       cd/iscellnumeric.m
+%       cd/set_figure_properties.m
 %
 % Used by:    
 %       cd/parse_multiunit.m
@@ -136,6 +153,11 @@ yTickLocsDefault = [];          % set later
 yTickLabelsDefault = {};        % set later
 legendLocationDefault = 'auto'; % set later
 figTitleDefault = '';           % set later
+figHandleDefault = [];          % no existing figure by default
+figNumberDefault = [];          % no figure number by default
+figExpansionDefault = [];       % no figure expansion by default
+clearFigureDefault = false;     % don't clear figure by default
+alwaysNewDefault = false;       % don't always create new figure
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -201,6 +223,16 @@ addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigHandle', figHandleDefault);
+addParameter(iP, 'FigNumber', figNumberDefault, ...
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                'FigNumber must be a empty or a positive integer scalar!'));
+addParameter(iP, 'FigExpansion', figExpansionDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive'}));
+addParameter(iP, 'ClearFigure', clearFigureDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AlwaysNew', alwaysNewDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
@@ -219,6 +251,11 @@ yTickLabels = iP.Results.YTickLabels;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
 figTitle = iP.Results.FigTitle;
+figHandle = iP.Results.FigHandle;
+figNumber = iP.Results.FigNumber;
+figExpansion = iP.Results.FigExpansion;
+clearFigure = iP.Results.ClearFigure;
+alwaysNew = iP.Results.AlwaysNew;
 
 % Keep unmatched arguments for the line() function
 otherArguments = iP.Unmatched;
@@ -455,6 +492,12 @@ if isempty(figTitle)
 end
 
 %% Plot the event time arrays
+% Decide on the figure to plot on
+fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
+                'FigExpansion', figExpansion, 'ClearFigure', clearFigure, ...
+                'AlwaysNew', alwaysNew);
+
+% Plot the event time arrays
 hRaster = cell(size(data));
 for iArray = 1:nArrays
     % Get the event times and y endpoints

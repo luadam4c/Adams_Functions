@@ -1,11 +1,11 @@
 function handles = plot_relative_swd_raster (varargin)
-%% Plots a relative SWD raster from all gas_pulses.csv files and SWDs.csv files in a directory
+%% Plots a relative SWD raster from all gas_pulses.csv files and SWDs.csv files in a directory (unfinished)
 % Usage: handles = plot_relative_swd_raster (varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       plot_relative_swd_raster('Directory', '/media/shareX/2019octoberR01/Pleth/PSTH/WAGs')
+%       plot_relative_swd_raster('Directory', '/media/shareX/2019octoberR01/Figures/Figure1c')
 %
 % Outputs:
 %       handles     - TODO: Description of handles
@@ -34,7 +34,7 @@ function handles = plot_relative_swd_raster (varargin)
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == {'png', 'epsc2'}
-%                   - Any other parameter-value pair for plot_psth()
+%                   - Any other parameter-value pair for plot_raster()
 %
 % Requires:
 %       cd/compute_relative_event_times.m
@@ -111,7 +111,7 @@ figTitle = iP.Results.FigTitle;
 figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
-% Keep unmatched arguments for the plot_psth() function
+% Keep unmatched arguments for the plot_raster() function
 otherArguments = iP.Unmatched;
 
 %% Preparation
@@ -217,11 +217,11 @@ end
 
 %% Plot the raster
 if firstOnly
-    fig1 = set_figure_properties('AlwaysNew', true, 'Width', 700, 'Height', 200);
     handles = plot_raster(relEventTimes, 'Labels', labels, ...
-                            'XLimits', relTimeWindowMin);
-    plot_vertical_line(0, 'LineWidth', 3, 'Color', 'k');
-    save_all_figtypes(fig1, '/media/shareX/2019octoberR01/Figures/Figure1c/Figure1c', {'png', 'epsc2'})
+                            'XLabel', 'Time (min)', ...
+                            'XLimits', relTimeWindowMin, otherArguments);
+    plot_vertical_line(0, 'LineWidth', 2, 'Color', 'k');
+    save_all_figtypes(gcf, '/media/shareX/2019octoberR01/Figures/Figure1c/Figure1c', {'png', 'epsc2'})
 else
     error('Not implemented yet!');
 end
@@ -253,18 +253,19 @@ if firstOnly
     pValue = [1, 2];
 
     % Plot a tuning curve
-    fig2 = set_figure_properties('AlwaysNew', true);
+    figure1e = set_figure_properties('AlwaysNew', true, 'FigExpansion', [0.7, 0.7]);
     plot_tuning_curve(pValue, chevronData, 'PLimits', [0.5, 2.5], ...
                         'RunTTest', true, 'RunRankTest', true, ...
                         'Marker', 'o', 'MarkerFaceColor', [0, 0, 0], ...
                         'MarkerSize', 8, 'ColorMap', [0, 0, 0], ...
+                        'FigHandle', figure1e, ...
                         'LegendLocation', 'suppress');
     hold on 
     plot(pValue, [meanBefore, meanAfter], 'r-o', ...
-        'LineWidth', 3, 'MarkerSize', 10, 'MarkerFaceColor', 'r');
+        'LineWidth', 2, 'MarkerSize', 10, 'MarkerFaceColor', 'r');
     plot_error_bar(pValue, [lowBefore, lowAfter], [highBefore, highAfter], ...
-        'Color', 'r', 'LineWidth', 3);
-    save_all_figtypes(fig2, '/media/shareX/2019octoberR01/Figures/Figure1e/Figure1e', {'png', 'epsc2'})
+        'Color', 'r', 'LineWidth', 2);
+    save_all_figtypes(figure1e, '/media/shareX/2019octoberR01/Figures/Figure1e/Figure1e', {'png', 'epsc2'})
 else
 end
     

@@ -36,6 +36,8 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 
 % File History:
 % 2019-09-08 Moved from spike2Mat2Text.m
+% TODO: Add 'ToParsePleth' as an optional argument with default false
+% TODO: Add 'ChannelNames' as an optional argument with default {}
 % 
 
 %% Hard-coded parameters

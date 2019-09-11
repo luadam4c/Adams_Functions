@@ -367,7 +367,7 @@ There are 1 MATLAB scripts in this directory:
 - [**plot_signals.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_signals.m): Default values for optional arguments
 - [**plot_struct.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_struct.m): Plot all fields in a structure array as tuning curves
 - [**plot_swd_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_swd_histogram.m): Plots SWD start times in a histogram
-- [**plot_swd_psth.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_swd_psth.m): Plots a peri-stimulus time histogram from all gas_pulses.csv files and SWDs.csv files in a directory
+- [**plot_swd_psth.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_swd_psth.m): Plots a peri-stimulus time histogram from all gas_pulses.csv files and SWDs.csv files in a directory (unfinished)
 - [**plot_swd_raster.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_swd_raster.m): Compares all SWD start times in a directory as a raster plot
 - [**plot_table.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_table.m): Plots all variables in a table as tuning curves
 - [**plot_traces_abf.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_abf.m): Takes an abf file and plots all traces

@@ -117,6 +117,16 @@ function [bars, fig] = plot_histogram (varargin)
 %                   - 'FigNumber': figure number for creating figure
 %                   must be a positive integer scalar
 %                   default == []
+%                   - 'FigExpansion': expansion factors for figure position
+%                   must be a must be a positive scalar or 2-element vector
+%                   default == []
+%                   - 'ClearFigure': whether to clear figure
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == falss
+%                   - 'AlwaysNew': whether to always create a new figure even if
+%                                   figNumber is not passed in
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'OutFolder': directory to save figure, 
 %                                   e.g. 'output'
 %                   must be a string scalar or a character vector
@@ -200,6 +210,9 @@ legendLocationDefault = 'auto';         % set later
 figTitleDefault = '';                   % set later
 figHandleDefault = [];                  % no existing figure by default
 figNumberDefault = [];                  % no figure number by default
+figExpansionDefault = [];               % no figure expansion by default
+clearFigureDefault = false;             % don't clear figure by default
+alwaysNewDefault = false;               % don't always create new figure
 outFolderDefault = '';                  % default directory to save figure
 figNameDefault = '';                    % don't save figure by default
 figTypesDefault = 'png';                % save as png file by default
@@ -266,6 +279,12 @@ addParameter(iP, 'FigHandle', figHandleDefault);
 addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
                 'FigNumber must be a empty or a positive integer scalar!'));
+addParameter(iP, 'FigExpansion', figExpansionDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive'}));
+addParameter(iP, 'ClearFigure', clearFigureDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AlwaysNew', alwaysNewDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigName', figNameDefault, ...
@@ -297,6 +316,9 @@ groupingLabels = iP.Results.GroupingLabels;
 figTitle = iP.Results.FigTitle;
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
+figExpansion = iP.Results.FigExpansion;
+clearFigure = iP.Results.ClearFigure;
+alwaysNew = iP.Results.AlwaysNew;
 outFolder = iP.Results.OutFolder;
 figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
@@ -332,13 +354,12 @@ if ~isempty(figName)
 
     % Create a new figure
     alwaysNew = true;
-else
-    alwaysNew = false;
 end
 
 % Decide on the figure to plot on
 fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
-                            'AlwaysNew', alwaysNew);
+                'FigExpansion', figExpansion, 'ClearFigure', clearFigure, ...
+                'AlwaysNew', alwaysNew);
 
 %% Identify edges if not provided
 if isempty(edgesUser)

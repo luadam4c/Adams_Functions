@@ -813,8 +813,7 @@ end
 %% Plot tuning curve
 % Decide on the figure to plot on and set properties
 fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
-                            'FigExpansion', figExpansion, ...
-                            'ClearFigure', clearFigure);
+                    'FigExpansion', figExpansion, 'ClearFigure', clearFigure);
 
 % Initialize graphics objects
 curves = gobjects(nColumnsToPlot, nLinesPerPhase);

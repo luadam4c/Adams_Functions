@@ -37,8 +37,7 @@ function fig = set_figure_properties (varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true if 'FigExpansion', 'Width', 
 %                               or 'Height' provided, but false otherwise
-%                   - 'ClearFigure': whether to adjust figure position 
-%                                           so that it fits
+%                   - 'ClearFigure': whether to clear figure
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true if 'FigNumber' provided 
 %                               but false otherwise
@@ -58,6 +57,7 @@ function fig = set_figure_properties (varargin)
 %       cd/plot_bar.m
 %       cd/plot_frame.m
 %       cd/plot_histogram.m
+%       cd/plot_raster.m
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
 

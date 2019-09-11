@@ -28,6 +28,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %                   default == 'rightadjust'
 %                   - 'TimeUnits': output time units
 %                   must be an unambiguous, case-insensitive match to one of: 
+%                       'min'   - minutes
 %                       's'     - seconds
 %                       'ms'    - milliseconds
 %                       'us'    - microseconds
@@ -78,15 +79,17 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 % 2018-12-17 Now uses match_format_vectors.m
 % 2019-01-01 Added 'ForceCellOutput' as an optional argument
 % 2019-03-14 Added 'SamplingIntervalSeconds' as an optional argument
+% 2019-09-11 Added 'min' as a valid time unit
 % 
 
 %% Hard-coded constants
+S_PER_MIN = 60;
 US_PER_S = 1e6;
 MS_PER_S = 1e3;
 
 %% Hard-coded parameters
 validBoundaryModes = {'span', 'leftadjust', 'rightadjust'};
-validTimeUnits = {'s', 'ms', 'us'};
+validTimeUnits = {'min', 's', 'ms', 'us'};
 
 %% Default values for optional arguments
 boundaryModeDefault = 'rightadjust';    % don't start from zero by default
@@ -168,6 +171,8 @@ siSeconds = match_reciprocals(siSeconds, samplingRateHz);
 
 % Compute the sampling interval(s) in the desired time units
 switch timeUnits
+    case 'min'
+        siUnits = siSeconds / S_PER_MIN;
     case 's'
         siUnits = siSeconds;
     case 'ms'

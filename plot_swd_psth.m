@@ -1,11 +1,11 @@
 function handles = plot_swd_psth (varargin)
-%% Plots a peri-stimulus time histogram from all gas_pulses.csv files and SWDs.csv files in a directory
+%% Plots a peri-stimulus time histogram from all gas_pulses.csv files and SWDs.csv files in a directory (unfinished)
 % Usage: handles = plot_swd_psth (varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       plot_swd_psth('Directory', '/media/shareX/2019octoberR01/Pleth/PSTH/WAGs')
+%       plot_swd_psth('Directory', '/media/shareX/2019octoberR01/Figures/Figure1d')
 %
 % Outputs:
 %       handles     - TODO: Description of handles
