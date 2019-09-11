@@ -11,6 +11,8 @@
 % 2019-08-20 Changed parent directory to katieX
 % 2019-08-20 Added specificSlicesToAnalyze
 % 2019-08-20 Now uses sweepsRelToPhase2
+
+
 % 2019-08-23 Renamed from metformin_analyze.m to Glucose_analyze.m
 
 %% Hard-coded parameters
@@ -69,9 +71,9 @@ filterWidthMs = 100;
 minRelProm = 0.02;
 
 % For compute_phase_average.m & plot_measures.m
-sweepsRelToPhase2 = -9:30;      % select between -10 & 30 min
+sweepsRelToPhase2 = -5:30;      % select between -10 & 30 min
 % sweepsRelToPhase2 = -5:25;      % select between -10 & 25 min
-nSweepsLastOfPhase = 10;        % select from last 10 values of each phase
+nSweepsLastOfPhase = 5;        % select from last 10 values of each phase
 % nSweepsLastOfPhase = 10;        % select from last 10 values of each phase
 nSweepsToAverage = 5;           % select 5 values to average
 % nSweepsToAverage = 10;        % select 10 values to average

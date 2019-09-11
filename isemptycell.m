@@ -29,6 +29,8 @@ function isEmpty = isemptycell (cellArray)
 %       cd/m3ha_select_cells.m
 %       cd/plot_traces.m
 %       cd/remove_empty.m
+%       cd/set_axes_properties.m
+%       cd/set_figure_properties.m
 %       cd/transform_vectors.m
 
 % File History:
@@ -45,7 +47,7 @@ if nargin < 1
 end
 
 %% Do the job
-if iscell(cellArray)
+if iscell(cellArray) && ~isempty(cellArray)
     isEmpty = cellfun(@isempty, cellArray);
 else
     isEmpty = isempty(cellArray);

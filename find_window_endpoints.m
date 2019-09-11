@@ -41,6 +41,9 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %                   - 'ForceMatrixOutput': whether to force output as a cell array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'WarnFlag': whether to warn if no files found
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %
 % Requires:
 %       cd/count_samples.m
@@ -69,6 +72,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %               and is a cell array if multiple vectors are passed in
 % 2019-01-03 Now accepts a cell array of non-vector arrays and 
 %               added 'ForceMatrixOutput' as an optional argument
+% 2019-09-10 Added 'WarnFlag' as an optional flag
 % 
 
 %% Hard-coded parameters
@@ -77,6 +81,7 @@ validBoundaryModes = {'inclusive', 'leftadjust', 'rightadjust', 'restrictive'};
 %% Default values for optional arguments
 boundaryModeDefault = 'restrictive';
 forceMatrixOutputDefault = logical([]); % set later
+warnFlagDefault = true;         % warn if windows out of bounds by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -106,11 +111,14 @@ addParameter(iP, 'BoundaryMode', boundaryModeDefault, ...
     @(x) any(validatestring(x, validBoundaryModes)));
 addParameter(iP, 'ForceMatrixOutput', forceMatrixOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'WarnFlag', warnFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, timeWindows, timeVecs, varargin{:});
 boundaryMode = validatestring(iP.Results.BoundaryMode, validBoundaryModes);
 forceMatrixOutputUser = iP.Results.ForceMatrixOutput;
+warnFlag = iP.Results.WarnFlag;
 
 %% Preparation
 % Decide whether to force output as a matrix if not provided
@@ -137,7 +145,8 @@ end
 if iscellnumericvector(timeVecs)
     % Find end points for each vector
     endPoints = ...
-        cellfun(@(x, y) find_window_endpoints_helper(x, y, boundaryMode), ...
+        cellfun(@(x, y) find_window_endpoints_helper(x, y, ...
+                                                boundaryMode, warnFlag), ...
                 timeWindows, timeVecs, 'UniformOutput', false);
 
     % Force as a matrix if requested
@@ -152,14 +161,14 @@ elseif iscell(timeVecs)
                         'ForceMatrixOutput', forceMatrixOutputUser), ...
                 timeWindows, timeVecs, 'UniformOutput', false);
 else
-    endPoints = ...
-        find_window_endpoints_helper(timeWindows, timeVecs, boundaryMode);
+    endPoints = find_window_endpoints_helper(timeWindows, timeVecs, ...
+                                                boundaryMode, warnFlag);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function endPoints = find_window_endpoints_helper (timeWindow, timeVec, ...
-                                                    boundaryMode)
+                                                    boundaryMode, warnFlag)
 %% Find the endPoints for one time vector
 
 % If the time window is empty, return the first and last indices
@@ -209,7 +218,9 @@ switch boundaryMode
         %   the time window is between sample points, 
         %   so print message and return empty arrays
         if idxStart > idxEnd
-            fprintf('Time window is in between sample points!\n\n');
+            if warnFlag
+                fprintf('Time window is in between sample points!\n\n');
+            end
             idxStart = [];
             idxEnd = [];
         end
@@ -220,7 +231,9 @@ end
 % If either is empty, the time window is out of range, 
 %   so print message and return empty arrays
 if isempty(idxStart) || isempty(idxEnd)
-    fprintf('Time window is out of range!\n\n');
+    if warnFlag
+        fprintf('Time window is out of range!\n\n');
+    end
     endPoints = [];
 else
     endPoints = [idxStart; idxEnd];

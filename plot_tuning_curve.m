@@ -346,7 +346,8 @@ figNumberDefault = [];              % no figure number by default
 figExpansionDefault = [];       % no figure expansion by default
 clearFigureDefault = false;         % don't clear figure by default
 figNameDefault = '';                % don't save figure by default
-figTypesDefault = 'png';
+figTypesDefault = 'epsc';
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

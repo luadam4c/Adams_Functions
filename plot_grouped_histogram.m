@@ -254,15 +254,7 @@ otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Decide on the figure to plot on
-if ~isempty(figHandle)
-    fig = figure(figHandle);
-elseif ~isempty(figNumber)
-    fig = figure(figNumber);
-elseif ~isempty(figName)
-    fig = figure;
-else
-    fig = gcf;
-end
+fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber);
 
 % Return if there is nothing to plot
 if isempty(stats) && (isempty(counts) || isempty(edges))
@@ -495,6 +487,17 @@ end
 
 % Clear figure
 clf(fig);
+
+% Decide on the figure to plot on
+if ~isempty(figHandle)
+    fig = figure(figHandle);
+elseif ~isempty(figNumber)
+    fig = figure(figNumber);
+elseif ~isempty(figName)
+    fig = figure;
+else
+    fig = gcf;
+end
 
 %}
 

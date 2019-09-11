@@ -71,7 +71,6 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/apply_iteratively.m
 %       cd/argfun.m
 %       cd/create_default_endpoints.m
-%       cd/compute_psth.m
 %       cd/count_samples.m
 %       cd/create_empty_match.m
 %       cd/create_error_for_nargin.m
@@ -87,6 +86,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 % Used by:
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
+%       cd/compute_relative_event_times.m
 %       cd/compute_rms_error.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
@@ -259,30 +259,40 @@ if isempty(indices)
                             'TreatCellStrAsArray', treatCellStrAsArray);
 end
 
-% If there is a alignment method used, apply it to indices
-indices = align_subvectors(indices, alignMethod);
-
-% If one of indices and vecs is a cell array, 
-%   match the formats of indices and vecs so that cellfun can be used
-if iscell(indices) || iscell(vecs)
-    [indices, vecs] = ...
-        match_format_vector_sets(indices, vecs, 'ForceCellOutputs', false, ...
-                                'TreatCellAsArray', treatCellAsArray, ...
-                                'TreatCellStrAsArray', treatCellStrAsArray);
-end
-
 %% Do the job
-if iscellnumeric(vecs)
-    subVecs = cellfun(@(x, y) extract_subvectors_helper(x, y), ...
-                        vecs, indices, 'UniformOutput', false);
-elseif iscell(vecs) && ~treatCellAsArray && ...
-            ~(iscellstr(vecs) && treatCellStrAsArray)
-    subVecs = cellfun(@(x, y) extract_subvectors(x, 'Indices', y, ...
-                                'TreatCellAsArray', treatCellAsArray, ...
-                                'TreatCellStrAsArray', treatCellStrAsArray), ...
-                        vecs, indices, 'UniformOutput', false);
+if isempty(indices)
+    % If no indices are found, return empty match
+    if iscell(vecs)
+        subVecs = create_empty_match(vecs);
+    else
+        subVecs = [];
+    end
 else
-    subVecs = extract_subvectors_helper(vecs, indices);
+    % If there is a alignment method used, apply it to indices
+    indices = align_subvectors(indices, alignMethod);
+
+    % If one of indices and vecs is a cell array, 
+    %   match the formats of indices and vecs so that cellfun can be used
+    if iscell(indices) || iscell(vecs)
+        [indices, vecs] = ...
+            match_format_vector_sets(indices, vecs, 'ForceCellOutputs', false, ...
+                                    'TreatCellAsArray', treatCellAsArray, ...
+                                    'TreatCellStrAsArray', treatCellStrAsArray);
+    end
+
+    % Extract subvectors
+    if iscellnumeric(vecs)
+        subVecs = cellfun(@(x, y) extract_subvectors_helper(x, y), ...
+                            vecs, indices, 'UniformOutput', false);
+    elseif iscell(vecs) && ~treatCellAsArray && ...
+                ~(iscellstr(vecs) && treatCellStrAsArray)
+        subVecs = cellfun(@(x, y) extract_subvectors(x, 'Indices', y, ...
+                                    'TreatCellAsArray', treatCellAsArray, ...
+                                    'TreatCellStrAsArray', treatCellStrAsArray), ...
+                            vecs, indices, 'UniformOutput', false);
+    else
+        subVecs = extract_subvectors_helper(vecs, indices);
+    end
 end
 
 % Force as cell array of column vectors if requested

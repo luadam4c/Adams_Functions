@@ -54,6 +54,7 @@ function fig = set_figure_properties (varargin)
 %
 % Used by:
 %       cd/create_subplots.m
+%       cd/isemptycell.m
 %       cd/plot_bar.m
 %       cd/plot_frame.m
 %       cd/plot_histogram.m
@@ -165,7 +166,9 @@ else
 end
 
 % Set other Figure object properties
-set(fig, otherArguments{:});
+if ~isemptycell(otherArguments)
+    set(fig, otherArguments{:});
+end
 
 % Set figure position if requested
 if ~isempty(positionUser)

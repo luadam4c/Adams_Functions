@@ -74,7 +74,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/compute_default_sweep_info.m
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
-%       cd/compute_psth.m
+%       cd/compute_relative_event_times.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/count_samples.m

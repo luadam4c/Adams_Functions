@@ -1,93 +1,188 @@
-%function [output1] = plot_swd_psth (reqarg1, varargin)
-%% TODO: A summary of what the function does (must be a single unbreaked line)
-% Usage: [output1] = plot_swd_psth (reqarg1, varargin)
+function handles = plot_swd_psth (varargin)
+%% Plots a peri-stimulus time histogram from all gas_pulses.csv files and SWDs.csv files in a directory
+% Usage: handles = plot_swd_psth (varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       TODO
+%       plot_swd_psth('Directory', '/media/shareX/2019octoberR01/Pleth/PSTH/WAGs')
 %
 % Outputs:
-%       output1     - TODO: Description of output1
+%       handles     - TODO: Description of handles
 %                   specified as a TODO
 %
 % Arguments:
-%       reqarg1     - TODO: Description of reqarg1
-%                   must be a TODO
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
+%       varargin    - 'FirstOnly': whether to take only the first window 
+%                                   from each file
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'Directory': directory to look for SWD table files
+%                   must be a string scalar or a character vector
+%                   default == pwd
+%                   - 'RelativeTimeWindowMin': relative time window
+%                   must be a 2-element numeric vector
+%                   default == interStimInterval * 0.5 * [-1, 1]
+%                   - 'FigTitle': title for the figure
+%                   must be a string scalar or a character vector
 %                   default == TODO
-%                   - Any other parameter-value pair for TODO()
+%                   - 'FigName': figure name for saving
+%                   must be a string scalar or a character vector
+%                   default == TODO
+%                   - 'FigTypes': figure type(s) for saving; 
+%                               e.g., 'png', 'fig', or {'png', 'fig'}, etc.
+%                   could be anything recognised by 
+%                       the built-in saveas() function
+%                   (see isfigtype.m under Adams_Functions)
+%                   default == {'png', 'epsc2'}
+%                   - Any other parameter-value pair for plot_psth()
 %
 % Requires:
-%       ~/Adams_Functions/create_error_for_nargin.m
-%       ~/Adams_Functions/struct2arglist.m
-%       /TODO:dir/TODO:file
+%       cd/all_files.m
+%       cd/create_label_from_sequence.m
+%       cd/extract_distinct_fileparts.m
+%       cd/extract_fileparts.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
 
 % File History:
-% 201X-XX-XX Created by TODO or Adapted from TODO
+% 2019-09-10 Created by Adam Lu
 % 
 
 %% Hard-coded parameters
+SEC_PER_MIN = 60;
+
+%   TODO: Create load_gas_pulses.m;
+% Note: Must be consistent with parse_iox.m and parse_gas_trace.m
+gasTableSuffix = '_gas_pulses';
+
+% Note: Must be consistent with all_swd_sheets.m
+swdTableSuffix = '_SWDs';
+
+% TODO: Make optional arguments
+pathBase = '';
+sheetType = 'csv';
+figSuffix = '';
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+firstOnlyDefault = false;       % take all windows by default
+directoryDefault = '';          % set later
+relativeTimeWindowMinDefault = 10;
+figTitleDefault = '';           % set later
+figNameDefault = '';            % set later
+figTypesDefault = {'png', 'epsc2'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
-% Check number of required arguments
-% if nargin < 1    % TODO: 1 might need to be changed
-%     error(create_error_for_nargin(mfilename));
-% end
-
 % Set up Input Parser Scheme
-% iP = inputParser;
-% iP.FunctionName = mfilename;
-% iP.KeepUnmatched = true;                        % allow extraneous options
-
-% Add required inputs to the Input Parser
-% addRequired(iP, 'reqarg1');
+iP = inputParser;
+iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default);
+addParameter(iP, 'FirstOnly', firstOnlyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Directory', directoryDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'RelativeTimeWindowMin', relativeTimeWindowMinDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'FigTitle', figTitleDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigName', figNameDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigTypes', figTypesDefault, ...
+    @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
-% parse(iP, reqarg1, varargin{:});
-% param1 = iP.Results.param1;
+parse(iP, varargin{:});
+firstOnly = iP.Results.FirstOnly;
+directory = iP.Results.Directory;
+relTimeWindowMin = iP.Results.RelativeTimeWindowMin;
+figTitle = iP.Results.FigTitle;
+figName = iP.Results.FigName;
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
-% Keep unmatched arguments for the TODO() function
-% otherArguments = struct2arglist(iP.Unmatched);
-
-% Check relationships between arguments
-% TODO
+% Keep unmatched arguments for the plot_psth() function
+otherArguments = iP.Unmatched;
 
 %% Preparation
-% TODO
+% Set default figure suffix
+if isempty(figSuffix)
+    if firstOnly
+        figSuffix = 'first_windows';
+    else
+        figSuffix = 'all_windows';
+    end
+end
+
+% Set default figure name
+if isempty(figName)
+    % Extract the directory base
+    dirBase = extract_fileparts(directory, 'dirbase');
+
+    % Create a sequence for create_label_from_sequence
+    relTimeWindowSeq = linspace(relTimeWindowMin(1), relTimeWindowMin(2), 2);
+
+    % Create a figure name
+    figName = fullfile(directory, [dirBase, '_', ...
+                        create_label_from_sequence(relTimeWindowSeq), ...
+                        '_', figSuffix]);
+end
+
+% Set default figure title
+if isempty(figTitle)
+    if firstOnly
+        figTitle = '# of SWDs around first stimulus starts';
+    else
+        figTitle = '# of SWDs around all stimulus starts';
+    end
+end
 
 %% Do the job
-% Load the file
-pathBase = 'test3AtNight_200Hz';
-gasTableSuffix = 'gas_pulses';
-swdTableSuffix = 'Manual_SWDs_combined';
+% Get all gas pulse files
+[~, gasPulsePaths] = ...
+    all_files('Directory', directory, 'Keyword', pathBase, ...
+                'Suffix', gasTableSuffix, 'Extension', sheetType);
 
-gasTablePath = [pathBase, '_', gasTableSuffix, '.csv'];
-swdTablePath = [pathBase, '_', swdTableSuffix, '.csv'];
+% Extract distinct prefixes
+distinctPrefixes = extract_distinct_fileparts(gasPulsePaths);
 
-gasTable = readtable(gasTablePath);
-swdTable = readtable(swdTablePath);
+% Look for corresponding SWD spreadsheet files
+[~, swdPaths] = ...
+    cellfun(@(x) all_files('Prefix', x, 'Directory', directory, ...
+                    'Suffix', swdTableSuffix, 'Extension', sheetType), ...
+            distinctPrefixes, 'UniformOutput', false);
 
-gasTimes = gasTable.startTime;
-swdTimes = swdTable.startTime; 
+% Read all tables
+[gasTables, swdTables] = ...
+    argfun(@(x) cellfun(@readtable, x, 'UniformOutput', false), ...
+            gasPulsePaths, swdPaths);
 
-handles = plot_psth('EventTimes', swdTimes, 'StimTimes', gasTimes, ...
-                'RelativeTimeWindow', [-600, 600]);
+% Extract all start times in seconds
+[gasStartTimesSec, swdStartTimesSec] = ...
+    argfun(@(x) cellfun(@(y) y.startTime, x, 'UniformOutput', false), ...
+            gasTables, swdTables);
 
-%% Output results
-% TODO
+% Restrict to the first events only if requested
+if firstOnly
+    gasStartTimesSec = cellfun(@(x) x(1), gasStartTimesSec, ...
+                                'UniformOutput', false);
+end
+
+% Convert to minutes
+[gasStartTimesMin, swdStartTimesMin] = ...
+    argfun(@(x) cellfun(@(y) y / SEC_PER_MIN, x, 'UniformOutput', false), ...
+            gasStartTimesSec, swdStartTimesSec);
+
+%% Plot the peri-stimulus time histogram
+handles = plot_psth('EventTimes', swdStartTimesMin, ...
+                    'StimTimes', gasStartTimesMin, ...
+                    'XLabel', 'Time (min)', ...
+                    'RelativeTimeWindow', relTimeWindowMin, ...
+                    'FigTitle', figTitle, ...
+                    'FigName', figName, 'FigTypes', figTypes, ...
+                    otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

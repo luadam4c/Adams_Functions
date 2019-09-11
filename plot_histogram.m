@@ -607,9 +607,6 @@ end
 if ~isempty(figName)
     % Save the figure in all file types requested
     save_all_figtypes(fig, figName, figTypes);
-
-    % Close figure
-    close(fig);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

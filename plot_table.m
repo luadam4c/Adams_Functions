@@ -344,6 +344,7 @@ else
     % Create a figure name if empty
     if isempty(figName)
         figName = fullfile(outFolder, [tableLabel, '.png']);
+        figName = fullfile(outFolder, [tableLabel, '.epsc']);
     end
 
     % Convert to an array

@@ -26,7 +26,7 @@ function vectors = force_row_vector (vectors, varargin)
 %
 % Used by:    
 %       cd/compute_centers_from_edges.m
-%       cd/compute_psth.m
+%       cd/compute_relative_event_times.m
 %       cd/plot_tuning_curve.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/plot_histogram.m

@@ -20,7 +20,7 @@ function isCellNumeric = iscellnumeric (x)
 % Used by:
 %       cd/alternate_elements.m
 %       cd/compute_baseline_noise.m
-%       cd/compute_psth.m
+%       cd/compute_relative_event_times.m
 %       cd/compute_residuals.m
 %       cd/compute_rms_error.m
 %       cd/compute_sampsizepwr.m

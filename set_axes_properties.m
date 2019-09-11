@@ -39,6 +39,7 @@ function ax = set_axes_properties (varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/isemptycell.m
 %       cd/isnumericvector.m
 %       cd/ispositiveintegervector.m
 %       cd/struct2arglist.m
@@ -122,7 +123,9 @@ else
 end
 
 % Set other Axes object properties
-set(ax, otherArguments{:});
+if ~isemptycell(otherArguments)
+    set(ax, otherArguments{:});
+end
 
 % Modify Axes position if requested
 % TODO: update_object_position.m

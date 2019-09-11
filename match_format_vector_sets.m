@@ -63,7 +63,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %
 % Used by:
 %       cd/compute_default_sweep_info.m
-%       cd/compute_psth.m
+%       cd/compute_relative_event_times.m
 %       cd/compute_residuals.m
 %       cd/compute_rms_error.m
 %       cd/compute_sampsizepwr.m

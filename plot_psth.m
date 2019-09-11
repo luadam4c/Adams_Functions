@@ -13,6 +13,8 @@ function handles = plot_psth (varargin)
 %       handles = plot_psth('EventTimes', eventTimes, 'StimTimes', stimTimes, 'StimDuration', 3);
 %
 % Outputs:
+%       handles     - TODO: Description of handles
+%                   specified as a TODO
 %
 % Arguments:
 %       relEventTimes   - relative event times
@@ -64,6 +66,15 @@ function handles = plot_psth (varargin)
 %                   must be a string scalar or a character vector
 %                   default == ['Peri-Stimulus Time Histogram on ', ...
 %                               create_time_stamp]
+%                   - 'FigName': figure name for saving
+%                   must be a string scalar or a character vector
+%                   default == ''
+%                   - 'FigTypes': figure type(s) for saving; 
+%                               e.g., 'png', 'fig', or {'png', 'fig'}, etc.
+%                   could be anything recognised by 
+%                       the built-in saveas() function
+%                   (see isfigtype.m under Adams_Functions)
+%                   default == 'png'
 %                   - Any other parameter-value pair for plot_histogram()
 %
 % Requires:
@@ -105,6 +116,8 @@ xLabelDefault = 'Relative Time From Stim';
 yLabelDefault = 'Event Count';
 groupingLabelsDefault = {};             % set later
 figTitleDefault = '';                   % set later
+figNameDefault = '';                    % don't save figure by default
+figTypesDefault = 'png';                % save as png file by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -149,6 +162,10 @@ addParameter(iP, 'GroupingLabels', groupingLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigName', figNameDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigTypes', figTypesDefault, ...
+    @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -164,6 +181,8 @@ xLabel = iP.Results.XLabel;
 yLabel = iP.Results.YLabel;
 groupingLabels = iP.Results.GroupingLabels;
 figTitle = iP.Results.FigTitle;
+figName = iP.Results.FigName;
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Keep unmatched arguments for the plot_histogram() function
 otherArguments = iP.Unmatched;
@@ -190,6 +209,7 @@ if isempty(counts)
         % Compute counts and edges from eventTimes and stimTimes
         [counts, edges] = ...
             compute_psth(eventTimes, stimTimes, ...
+                        'Edges', edges, ...
                         'StimDuration', stimDuration, ...
                         'RelativeTimeWindow', relativeTimeWindow);
     else
@@ -204,7 +224,8 @@ if isempty(counts)
         %   Note: must be consistent with compute_psth.m
         [counts, edges] = ...
             compute_grouped_histcounts(relEventTimes, 'Grouping', grouping, ...
-                                'FixedEdges', stimWindow, otherArguments{:});
+                                'Edges', edges, 'FixedEdges', stimWindow, ...
+                                otherArguments{:});
     end
 else
     if isempty(edges)
@@ -239,12 +260,19 @@ vertLine = plot_vertical_line(stimStart, 'LineWidth', vertLineLineWidth, ...
                                 'Color', vertLineColor);
 
 % Plot stimulus window as a vertical shade
-vertLine = plot_vertical_shade(stimWindow);
+vertShade = plot_vertical_shade(stimWindow);
+
+% Save the figure
+if ~isempty(figName)
+    % Save the figure in all file types requested
+    save_all_figtypes(fig, figName, figTypes);
+end
 
 %% Output handles
 handles.fig = fig;
 handles.bars = bars;
 handles.vertLine = vertLine;
+handles.vertShade = vertShade;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

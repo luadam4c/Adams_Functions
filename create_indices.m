@@ -3,6 +3,7 @@ function indices = create_indices (varargin)
 % Usage: indices = create_indices (varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       create_indices([2, 5])
 %       create_indices([5, 1])
@@ -18,6 +19,9 @@ function indices = create_indices (varargin)
 %       create_indices([1, 50], 'MaxNum', 5, 'AlignMethod', 'center')
 %       create_indices([5; 1], 'MaxNum', 2)
 %       create_indices([0, 0])
+%       create_indices([])
+%       create_indices([], 'Vectors', 1:5)
+%
 % Outputs:
 %       indices     - indices for each pair of idxStart and idxEnd
 %                   specified as a numeric vector 
@@ -106,6 +110,7 @@ function indices = create_indices (varargin)
 % 2019-04-26 Fixed bug when start and end indices are the same
 % 2019-04-26 Now makes create_indices([NaN; NaN]) == []
 % 2019-05-16 Added 'AlignMethod' as an optional argument
+% 2019-09-10 Fixed bug when start and end indices are both empty
 % TODO: Added 'spanboth', 'spanleft' and 'spanright' as align methods
 % TODO: Use argument 'ForcePositive' as false where necessary
 
@@ -234,6 +239,12 @@ end
 
 % Make sure indices are columns
 [idxStart, idxEnd] = argfun(@force_column_vector, idxStart, idxEnd);
+
+% If both indices are empty, return
+if isempty(idxStart) && isempty(idxEnd)
+    indices = [];
+    return;
+end
 
 % Match the formats of idxStart and idxEnd
 [idxStart, idxEnd] = ...
