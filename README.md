@@ -261,6 +261,7 @@ There are 1 MATLAB scripts in this directory:
 - [**istype.m**](https://github.com/blabuva/Adams_Functions/blob/master/istype.m): Check whether a string or each string in a cell array is a valid type specified by validTypes
 - [**is_var_in_table.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_var_in_table.m): TODO: A summary of what the function does (must be a single unbreaked line)
 - [**load_examples.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_examples.m): Loads example data structures for testing
+- [**load_matching_sheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_matching_sheets.m): Loads spreadsheets with matching strings before given suffixes (incomplete)
 - [**load_neuron_outputs.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_neuron_outputs.m): Loads .out files created by NEURON into a cell array
 - [**load_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_params.m): Loads parameters from file(s) into a table
 - [**load_swd_sheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_swd_sheets.m): Loads SWD tables from SWD spreadsheets
@@ -362,6 +363,7 @@ There are 1 MATLAB scripts in this directory:
 - [**plot_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pulse_response.m): Plots pulse responses, marks the parsed baseline and steady state bounds
 - [**plot_pulse_response_with_stimulus.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pulse_response_with_stimulus.m): Plots a pulse response with its stimulus
 - [**plot_raster.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_raster.m): Make a raster plot from a cell array of event time arrays
+- [**plot_relative_swd_raster.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_relative_swd_raster.m): Binary file /home/Matlab/Adams_Functions/plot_relative_swd_raster.m matches
 - [**plot_signals.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_signals.m): Default values for optional arguments
 - [**plot_struct.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_struct.m): Plot all fields in a structure array as tuning curves
 - [**plot_swd_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_swd_histogram.m): Plots SWD start times in a histogram

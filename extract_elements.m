@@ -67,6 +67,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % 2019-02-20 Fixed bug when using match_dimensions
 % 2019-03-14 Now returns NaN if the vector is not long enough
 % 2019-09-08 Added 'center' as a possible extract mode
+% TODO: Add 'TreatCellAsArray' as a parameter
 % TODO: Add 'MaxNum' as an optional argument with default Inf
 % TODO: Add 'Indices', 'Endpoints' and 'Windows' as optional arguments
 %           and use extract_subvectors.m
@@ -75,6 +76,9 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %% Hard-coded parameters
 validExtractModes = {'first', 'last', 'center', 'min', 'max', ...
                         'firstdiff', 'specific'};
+
+% TODO: Add as optional argument
+treatCellAsArray = false;   % TODO: Not working yet. UniformOutput might need to be set according to this
 
 %% Default values for optional arguments
 indexDefault = [];
@@ -114,10 +118,10 @@ extractMode = validatestring(extractMode, validExtractModes);
 switch extractMode
 case {'first', 'last', 'center', 'min', 'max', 'firstdiff'}
     % Extract from a position
-    if iscellnumericvector(vecs)
+    if iscellnumericvector(vecs) && ~treatCellAsArray
         [elements, idxElement] = ...
             cellfun(@(x) extract_by_position(x, extractMode), vecs);
-    elseif iscell(vecs)
+    elseif iscell(vecs) && ~treatCellAsArray
         [elements, idxElement] = ...
             cellfun(@(x) extract_elements(x, extractMode), vecs, ...
                     'UniformOutput', false);
@@ -134,7 +138,7 @@ case 'specific'
     end
 
     % Extract from a specific index
-    if iscell(vecs)
+    if iscell(vecs) && ~treatCellAsArray
         % Force as a cell array
         if isnumeric(index)
             index = num2cell(index);
@@ -174,25 +178,26 @@ end
 
 switch extractMode
     case 'first'
-        element = x(1);
         idxElement = 1;
+        element = get_element(x, idxElement);
     case 'last'
-        element = x(end);
         idxElement = numel(x);
+        element = get_element(x, idxElement);
     case 'center'
         nElements = numel(x);
         idxElement = (nElements + 1) / 2;
         if ~isaninteger(idxElement)
             idxElement = idxElement - 0.5;
         end
-        element = x(idxElement);
+        element = get_element(x, idxElement);
     case 'middle'
         nElements = numel(x);
         idxElement = (nElements + 1) / 2;
         if isaninteger(idxElement)
-            element = x(idxElement);
+            element = get_element(x, idxElement);
         else
-            element = nanmean([x(idxElement - 0.5), x(idxElement + 0.5)]);
+            element = nanmean([get_element(x, idxElement - 0.5); ...
+                                get_element(x, idxElement + 0.5)]);
         end
     case 'min'
         [element, idxElement] = min(x);
@@ -209,26 +214,40 @@ end
 
 function [element, idxElement] = extract_by_index (x, index)
 
-if numel(x) < 1
-    element = NaN;
+% Decide on the actual index
+if numel(x) == 0
     idxElement = NaN;
-    return
-end
-
-if isnan(index)
-    element = NaN;
+elseif isnan(index)
     idxElement = NaN;
 elseif index == Inf
-    element = x(end);
     idxElement = numel(x);
 elseif index == -Inf
-    element = x(1);
     idxElement = 1;
 elseif index >= 1 && index <= numel(x)
-    element = x(index);
     idxElement = index;
 else
     error('The index %g is out of bounds!', index);
+end
+
+% Get the element
+element = get_element(x, idxElement);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function element = get_element (vector, index)
+%% Retrieves an element based on vector type
+
+% Return NaN if index is NaN
+if ~isempty(index) && isnan(index)
+    element = NaN;
+    return
+end
+
+% Get element based on vector type
+if iscell(vector)
+    element = vector{index};
+else
+    element = vector(index);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

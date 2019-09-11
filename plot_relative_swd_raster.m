@@ -1,11 +1,11 @@
-function handles = plot_swd_psth (varargin)
-%% Plots a peri-stimulus time histogram from all gas_pulses.csv files and SWDs.csv files in a directory
-% Usage: handles = plot_swd_psth (varargin)
+function handles = plot_relative_swd_raster (varargin)
+%% Plots a relative SWD raster from all gas_pulses.csv files and SWDs.csv files in a directory
+% Usage: handles = plot_relative_swd_raster (varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       plot_swd_psth('Directory', '/media/shareX/2019octoberR01/Pleth/PSTH/WAGs')
+%       plot_relative_swd_raster('Directory', '/media/shareX/2019octoberR01/Pleth/PSTH/WAGs')
 %
 % Outputs:
 %       handles     - TODO: Description of handles
@@ -37,11 +37,15 @@ function handles = plot_swd_psth (varargin)
 %                   - Any other parameter-value pair for plot_psth()
 %
 % Requires:
+%       cd/compute_relative_event_times.m
+%       cd/plot_raster.m
+%
+%   TODO: Update docs
 %       cd/all_files.m
 %       cd/create_label_from_sequence.m
 %       cd/extract_distinct_fileparts.m
+%       cd/extract_elements.m
 %       cd/extract_fileparts.m
-%       cd/plot_psth.m
 %
 % Used by:
 %       /home/Matlab/plethRO1/plethRO1_analyze.m
@@ -49,6 +53,7 @@ function handles = plot_swd_psth (varargin)
 % File History:
 % 2019-09-10 Created by Adam Lu
 % TODO: Use load_matching_sheets.m
+% TODO: Combine with plot_swd_raster.m
 % 
 
 %% Hard-coded parameters
@@ -61,9 +66,11 @@ stimTableSuffix = '_gas_pulses';
 % Note: Must be consistent with all_swd_sheets.m
 swdTableSuffix = '_SWDs';
 
+% TODO: Make optional arguments
 pathBase = '';
 sheetType = 'csv';
 figSuffix = '';
+labels = {};
 
 %% Default values for optional arguments
 firstOnlyDefault = false;       % take all windows by default
@@ -166,7 +173,17 @@ distinctPrefixes = extract_distinct_fileparts(stimPaths);
     argfun(@(x) cellfun(@readtable, x, 'UniformOutput', false), ...
             stimPaths, swdPaths);
 
+% Set default labels for each raster
+if isempty(labels)
+    labels = strrep(distinctPrefixes, '_', '\_');
+end
+
 % Extract all start times in seconds
+[stimStartTimesSec, swdStartTimesSec] = ...
+    argfun(@(x) cellfun(@(y) y.startTime, x, 'UniformOutput', false), ...
+            stimTables, swdTables);
+
+% Extract stim durations in seconds
 [stimStartTimesSec, swdStartTimesSec] = ...
     argfun(@(x) cellfun(@(y) y.startTime, x, 'UniformOutput', false), ...
             stimTables, swdTables);
@@ -183,20 +200,94 @@ end
     argfun(@(x) cellfun(@(y) y / SEC_PER_MIN, x, 'UniformOutput', false), ...
             stimStartTimesSec, swdStartTimesSec);
 
-%% Plot the peri-stimulus time histogram
-handles = plot_psth('EventTimes', swdStartTimesMin, ...
-                    'StimTimes', stimStartTimesMin, ...
-                    'XLabel', 'Time (min)', ...
-                    'RelativeTimeWindow', relTimeWindowMin, ...
-                    'FigTitle', figTitle, ...
-                    'FigName', figName, 'FigTypes', figTypes, ...
-                    otherArguments);
+% Compute the relative event times
+%   Note: this should return a cell array of cell arrays
+relEventTimesCellCell = ...
+    compute_relative_event_times(swdStartTimesMin, stimStartTimesMin, ...
+                                    'RelativeTimeWindow', relTimeWindowMin);
 
+% Restrict to just the first event times
+if firstOnly
+    %   Note: this should return a cell array of numeric vectors
+    relEventTimes = cellfun(@extract_first_element, relEventTimesCellCell, ...
+                            'UniformOutput', false);
+else
+    error('Not implemented yet!');
+end
+
+%% Plot the raster
+if firstOnly
+    fig1 = set_figure_properties('AlwaysNew', true, 'Width', 700, 'Height', 200);
+    handles = plot_raster(relEventTimes, 'Labels', labels, ...
+                            'XLimits', relTimeWindowMin);
+    plot_vertical_line(0, 'LineWidth', 3, 'Color', 'k');
+    save_all_figtypes(fig1, '/media/shareX/2019octoberR01/Figures/Figure1c/Figure1c', {'png', 'epsc2'})
+else
+    error('Not implemented yet!');
+end
+
+%% Plot a Chevron plot
+% TODO: Move this to its own function
+if firstOnly
+    % Compute the number of events before and after
+    %   TODO: Always cell arrays?
+    nEventsBefore = cellfun(@(x) numel(x(x < 0)), relEventTimes);
+    nEventsAfter = cellfun(@(x) numel(x(x >= 0)), relEventTimes);
+
+    % Force as column vectors
+    %   TODO: may not be necessary
+    [nEventsBefore, nEventsAfter] = ...
+        argfun(@force_column_vector, nEventsBefore, nEventsAfter);
+
+    % Generate the data for the Chevron plot
+    chevronData = transpose([nEventsBefore, nEventsAfter]);
+
+    % TODO: plot_chevron.m
+    [lowBefore, lowAfter] = ...
+        argfun(@(x) compute_stats(x, 'lower95'), nEventsBefore, nEventsAfter);
+    [highBefore, highAfter] = ...
+        argfun(@(x) compute_stats(x, 'upper95'), nEventsBefore, nEventsAfter);
+
+    [meanBefore, meanAfter] = ...
+        argfun(@(x) compute_stats(x, 'mean'), nEventsBefore, nEventsAfter);
+    pValue = [1, 2];
+
+    % Plot a tuning curve
+    fig2 = set_figure_properties('AlwaysNew', true);
+    plot_tuning_curve(pValue, chevronData, 'PLimits', [0.5, 2.5], ...
+                        'RunTTest', true, 'RunRankTest', true, ...
+                        'Marker', 'o', 'MarkerFaceColor', [0, 0, 0], ...
+                        'MarkerSize', 8, 'ColorMap', [0, 0, 0], ...
+                        'LegendLocation', 'suppress');
+    hold on 
+    plot(pValue, [meanBefore, meanAfter], 'r-o', ...
+        'LineWidth', 3, 'MarkerSize', 10, 'MarkerFaceColor', 'r');
+    plot_error_bar(pValue, [lowBefore, lowAfter], [highBefore, highAfter], ...
+        'Color', 'r', 'LineWidth', 3);
+    save_all_figtypes(fig2, '/media/shareX/2019octoberR01/Figures/Figure1e/Figure1e', {'png', 'epsc2'})
+else
+end
+    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function first = extract_first_element (vec)
+%% Take the first element or return empty
+% TODO: Merge with extract_elements
+
+if numel(vec) >= 1
+    if iscell(vec)
+        first = vec{1};
+    else
+        first = vec(1);
+    end
+else
+    first = [];
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
 OLD CODE:
 
 %}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    

@@ -87,7 +87,7 @@ function handles = plot_psth (varargin)
 %       cd/plot_vertical_shade.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/plot_swd_psth.m
 
 % File History:
 % 2019-09-07 Created by Adam Lu

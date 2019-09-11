@@ -425,7 +425,7 @@ end
 ylim(yLimits);
 xlabel('Time (s)');
 ylabel('Sweep #');
-title(['Event start times for ', replace(outFolderName, '_', '\_')]);
+title(['SWD start times for ', replace(outFolderName, '_', '\_')]);
 legend(firstLines, labelsToShow, 'Location', 'SouthOutside');
 saveas(fig, figName);
 

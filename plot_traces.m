@@ -625,6 +625,7 @@ if isempty(figTitle)
 end
 
 % Set legend location based on number of subplots
+% TODO: Use set_default_legend_location.m
 if strcmpi(legendLocation, 'auto')
     if nPlots > 1 && nPlots <= maxNPlotsForAnnotations
         legendLocation = 'northeast';
