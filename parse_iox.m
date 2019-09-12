@@ -51,7 +51,7 @@ function pulseTables = parse_iox (varargin)
 %% Hard-coded parameters
 ioxSuffixExtension = '.rf_1.iox.txt';
 
-% Note: Must be consistent with parse_gas_trace.m and plot_swd_psth.m
+% Note: Must be consistent with parse_gas_trace.m and plot_relative_events.m
 pulseTableSuffix = '_gas_pulses';
 
 %% Default values for optional arguments

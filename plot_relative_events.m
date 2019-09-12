@@ -58,7 +58,6 @@ function handles = plot_relative_events (varargin)
 % 2019-09-10 Created by Adam Lu
 % 2019-09-11 Added 'PlotType' as an optional argument
 % TODO: Use load_matching_sheets.m
-% TODO: Combine with plot_swd_psth.m?
 % 
 
 %% Hard-coded parameters

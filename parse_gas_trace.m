@@ -286,7 +286,7 @@ function [pulseTable, secEndPoints, pulseEndPoints, pulseTablePath, handles] = .
 % Hard-coded parameters
 MS_PER_S = 1000;
 
-% Note: Must be consistent with parse_iox.m and plot_swd_psth.m
+% Note: Must be consistent with parse_iox.m and plot_relative_events.m
 pulseTableSuffix = '_gas_pulses';
 figSuffix = '_gas_pulse_detection';
 
