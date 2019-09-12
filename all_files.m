@@ -80,7 +80,7 @@ function varargout = all_files (varargin)
 %       cd/plot_protocols.m
 %       cd/plot_swd_psth.m
 %       cd/plot_traces_EEG.m
-%       /home/Matlab/plethRO1/plethRO1_analyze.m
+%       /home/Matlab/plethR01/plethR01_analyze.m
 %       
 
 % File History:

@@ -48,7 +48,7 @@ function handles = plot_relative_swd_raster (varargin)
 %       cd/extract_fileparts.m
 %
 % Used by:
-%       /home/Matlab/plethRO1/plethRO1_analyze.m
+%       /home/Matlab/plethR01/plethR01_analyze.m
 
 % File History:
 % 2019-09-10 Created by Adam Lu

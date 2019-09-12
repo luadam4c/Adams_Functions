@@ -51,7 +51,7 @@ function [swdTables, swdSheetPaths, ...
 %
 % Used by:
 %       cd/plot_swd_raster.m
-%       /home/Matlab/plethRO1/plethRO1_analyze.m
+%       /home/Matlab/plethR01/plethR01_analyze.m
 
 % File History:
 % 2018-12-26 Modified from plot_swd_raster.m

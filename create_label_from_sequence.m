@@ -31,7 +31,7 @@ function label = create_label_from_sequence (integers, varargin)
 % Used by:
 %       cd/plot_measures.m
 %       cd/plot_swd_psth.m
-%       /home/Matlab/plethRO1/plethRO1_analyze.m
+%       /home/Matlab/plethR01/plethR01_analyze.m
 
 % File History:
 % 2019-08-07 Created by Adam Lu
