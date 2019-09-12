@@ -24,6 +24,11 @@ function fig = set_figure_properties (varargin)
 %                       Note: This occurs AFTER position is set
 %                   must be a must be a positive scalar or 2-element vector
 %                   default == []
+%                   - 'ExpandFromDefault': whether to expand from figure 
+%                                           position default
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true except when 'Position', 'Width' or 'Height'
+%                               are set
 %                   - 'Position': figure position
 %                   must be a 4-element positive integer vector
 %                   default == get(0, 'defaultfigureposition')
@@ -71,6 +76,7 @@ function fig = set_figure_properties (varargin)
 % 2019-09-06 Allowed 'FigExpansion' to be two elements
 % 2019-09-06 Added 'AdjustPosition' and 'ClearFigure' as optional arguments
 % 2019-09-08 Added 'AlwaysNew' as an optional argument
+% 2019-09-12 Added 'ExpandFromDefault' as an optional argument
 
 %% Hard-coded parameters
 
@@ -78,6 +84,7 @@ function fig = set_figure_properties (varargin)
 figHandleDefault = [];          % no existing figure by default
 figNumberDefault = [];          % no figure number by default
 figExpansionDefault = [];       % no figure expansion by default
+expandFromDefaultDefault = [];  % set later
 positionDefault = [];           % set later
 widthDefault = [];              % set later
 heightDefault = [];             % set later
@@ -101,6 +108,8 @@ addParameter(iP, 'FigNumber', figNumberDefault, ...
 addParameter(iP, 'FigExpansion', figExpansionDefault, ...
     @(x) assert(isempty(x) || isnumericvector(x), ...
                 'FigExpansion must be a empty or a numeric vector!'));
+addParameter(iP, 'ExpandFromDefault', expandFromDefaultDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Position', positionDefault, ...
     @(x) assert(isempty(x) || isnumericvector(x), ...
                 'Position must be a empty or a numeric vector!'));
@@ -122,15 +131,35 @@ parse(iP, varargin{:});
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
 figExpansion = iP.Results.FigExpansion;
+expandFromDefault = iP.Results.ExpandFromDefault;
 positionUser = iP.Results.Position;
 width = iP.Results.Width;
 height = iP.Results.Height;
-adjustPositionUser = iP.Results.AdjustPosition;
+adjustPosition = iP.Results.AdjustPosition;
 clearFigureUser = iP.Results.ClearFigure;
 alwaysNew = iP.Results.AlwaysNew;
 
 % Keep unmatched name-value pairs for the Figure object
 otherArguments = struct2arglist(iP.Unmatched);
+
+%% Preparation
+% Set default expandFromDefault
+if isempty(expandFromDefault)
+    if ~isempty(positionUser) || ~isempty(width) || ~isempty(height)
+        expandFromDefault = false;
+    else
+        expandFromDefault = true;
+    end
+end
+
+% Decide whether to adjust figure position at the end
+if isempty(adjustPosition)
+    if ~isempty(width) || ~isempty(height) || ~isempty(figExpansion)
+        adjustPosition = true;
+    else
+        adjustPosition = false;
+    end
+end
 
 %% Do the job
 % Decide on the figure handle
@@ -145,17 +174,6 @@ elseif alwaysNew
 else
     % Get the current figure or create one if non-existent
     fig = gcf;
-end
-
-% Decide whether to adjust figure position at the end
-if isempty(adjustPositionUser)
-    if ~isempty(width) || ~isempty(height) || ~isempty(figExpansion)
-        adjustPosition = true;
-    else
-        adjustPosition = true;
-    end
-else
-    adjustPosition = adjustPositionUser;
 end
 
 % Decide whether to clear figure at the end
@@ -195,10 +213,10 @@ end
 
 % Expand figure position if requested
 if ~isempty(figExpansion)
-    if ~isempty(positionUser) || ~isempty(width) || ~isempty(height)
-        positionOld = get(fig, 'Position');
-    else
+    if expandFromDefault
         positionOld = get(0, 'defaultfigureposition');
+    else
+        positionOld = get(fig, 'Position');
     end
 
     expand_figure_position(fig, figExpansion, positionOld);
