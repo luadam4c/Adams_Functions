@@ -1,11 +1,11 @@
-function handles = plot_relative_swd_raster (varargin)
+function handles = plot_relative_events (varargin)
 %% Plots a relative SWD raster from all gas_pulses.csv files and SWDs.csv files in a directory (unfinished)
-% Usage: handles = plot_relative_swd_raster (varargin)
+% Usage: handles = plot_relative_events (varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       plot_relative_swd_raster('Directory', '/media/shareX/2019octoberR01/Figures/Figure1c')
+%       plot_relative_events('Directory', '/media/shareX/2019octoberR01/Figures/Figure1c')
 %
 % Outputs:
 %       handles     - TODO: Description of handles
