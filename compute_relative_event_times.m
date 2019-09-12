@@ -53,7 +53,7 @@ function relEventTimes = compute_relative_event_times (eventTimes, stimTimes, va
 %       cd/force_row_vector.m
 %       cd/iscellnumeric.m
 %       cd/match_format_vector_sets.m
-%       cd/plot_relative_swd_raster.m
+%       cd/plot_relative_events.m
 %
 % Used by:
 %       cd/compute_psth.m

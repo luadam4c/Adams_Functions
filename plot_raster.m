@@ -119,7 +119,7 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 %
 % Used by:    
 %       cd/parse_multiunit.m
-%       cd/plot_relative_swd_raster.m
+%       cd/plot_relative_events.m
 %       cd/plot_swd_raster.m
 %       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
 
