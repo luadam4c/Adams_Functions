@@ -30,7 +30,7 @@ function label = create_label_from_sequence (integers, varargin)
 %
 % Used by:
 %       cd/plot_measures.m
-%       cd/plot_swd_psth.m
+%       cd/plot_relative_events.m
 %       /home/Matlab/plethR01/plethR01_analyze.m
 
 % File History:

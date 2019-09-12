@@ -1,5 +1,5 @@
 function handles = plot_relative_events (varargin)
-%% Plots a relative SWD raster from all gas_pulses.csv files and SWDs.csv files in a directory (unfinished)
+%% Plots events (such as SWDs) relative to stim (such as gas pulses) (unfinished)
 % Usage: handles = plot_relative_events (varargin)
 % Explanation:
 %       TODO
@@ -12,7 +12,13 @@ function handles = plot_relative_events (varargin)
 %                   specified as a TODO
 %
 % Arguments:
-%       varargin    - 'FirstOnly': whether to take only the first window 
+%       varargin    - 'PlotType': type of plot
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'raster'    - event raster
+%                       'psth'      - peri-stimulus time histogram
+%                       'chevron'   - chevron plot
+%                   default == 'raster'
+%                   - 'FirstOnly': whether to take only the first window 
 %                                   from each file
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -37,27 +43,27 @@ function handles = plot_relative_events (varargin)
 %                   - Any other parameter-value pair for plot_raster()
 %
 % Requires:
-%       cd/compute_relative_event_times.m
-%       cd/plot_raster.m
-%
-%   TODO: Update docs
 %       cd/all_files.m
+%       cd/compute_relative_event_times.m
 %       cd/create_label_from_sequence.m
 %       cd/extract_distinct_fileparts.m
 %       cd/extract_elements.m
 %       cd/extract_fileparts.m
+%       cd/plot_raster.m
 %
 % Used by:
 %       /home/Matlab/plethR01/plethR01_analyze.m
 
 % File History:
 % 2019-09-10 Created by Adam Lu
+% 2019-09-11 Added 'PlotType' as an optional argument
 % TODO: Use load_matching_sheets.m
 % TODO: Combine with plot_swd_psth.m?
 % 
 
 %% Hard-coded parameters
 SEC_PER_MIN = 60;
+validPlotTypes = {'raster', 'psth', 'chevron'};
 
 %   TODO: Create load_gas_pulses.m;
 % Note: Must be consistent with parse_iox.m and parse_gas_trace.m
@@ -73,6 +79,7 @@ figSuffix = '';
 labels = {};
 
 %% Default values for optional arguments
+plotTypeDefault = 'raster';
 firstOnlyDefault = false;       % take all windows by default
 directoryDefault = '';          % set later
 relativeTimeWindowMinDefault = [];
@@ -89,6 +96,8 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'PlotType', plotTypeDefault, ...
+    @(x) any(validatestring(x, validPlotTypes)));
 addParameter(iP, 'FirstOnly', firstOnlyDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Directory', directoryDefault, ...
@@ -104,6 +113,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 
 % Read from the Input Parser
 parse(iP, varargin{:});
+plotType = validatestring(iP.Results.PlotType, validPlotTypes);
 firstOnly = iP.Results.FirstOnly;
 directory = iP.Results.Directory;
 relTimeWindowMin = iP.Results.RelativeTimeWindowMin;
@@ -153,7 +163,7 @@ if isempty(figTitle)
     end
 end
 
-%% Do the job
+%% Get relative event times
 % Get all stim pulse files
 [~, stimPaths] = ...
     all_files('Directory', directory, 'Keyword', pathBase, ...
@@ -200,84 +210,97 @@ end
     argfun(@(x) cellfun(@(y) y / SEC_PER_MIN, x, 'UniformOutput', false), ...
             stimStartTimesSec, swdStartTimesSec);
 
-% Compute the relative event times
-%   Note: this should return a cell array of cell arrays
-relEventTimesCellCell = ...
-    compute_relative_event_times(swdStartTimesMin, stimStartTimesMin, ...
-                                    'RelativeTimeWindow', relTimeWindowMin);
+%% Compute relative event times for each set
+switch plotType
+    case {'raster', 'chevron'}
+        % Compute the relative event times
+        %   Note: this should return a cell array of cell arrays
+        relEventTimesCellCell = ...
+            compute_relative_event_times(swdStartTimesMin, stimStartTimesMin, ...
+                                            'RelativeTimeWindow', relTimeWindowMin);
 
-% Restrict to just the first event times
-if firstOnly
-    %   Note: this should return a cell array of numeric vectors
-    relEventTimes = cellfun(@extract_first_element, relEventTimesCellCell, ...
-                            'UniformOutput', false);
-else
-    error('Not implemented yet!');
+        % Restrict to just the first event times
+        if firstOnly
+            %   Note: this should return a cell array of numeric vectors
+            relEventTimes = cellfun(@extract_first_element, relEventTimesCellCell, ...
+                                    'UniformOutput', false);
+        else
+            error('Not implemented yet!');
+        end
+    case 'psth'
+        % Relative event times computed in plot_psth.m
+    otherwise
+        error('plotType unrecognized!');
 end
 
-%% Plot the peri-stimulus time histogram
-handles = plot_psth('EventTimes', swdStartTimesMin, ...
-                    'StimTimes', stimStartTimesMin, ...
-                    'XLabel', 'Time (min)', ...
-                    'RelativeTimeWindow', relTimeWindowMin, ...
-                    'FigTitle', figTitle, ...
-                    'FigName', figName, 'FigTypes', figTypes, ...
-                    otherArguments);
+%% Plot event times
+switch plotType
+case 'raster'
+    %% Plot the raster
+    if firstOnly
+        handles = plot_raster(relEventTimes, 'Labels', labels, ...
+                                'XLabel', 'Time (min)', ...
+                                'XLimits', relTimeWindowMin, otherArguments);
+        plot_vertical_line(0, 'LineWidth', 2, 'Color', 'k');
+        save_all_figtypes(gcf, figName, figTypes);
+    else
+        error('Not implemented yet!');
+    end
+case 'psth'
+    %% Plot the peri-stimulus time histogram
+    handles = plot_psth('EventTimes', swdStartTimesMin, ...
+                        'StimTimes', stimStartTimesMin, ...
+                        'XLabel', 'Time (min)', ...
+                        'RelativeTimeWindow', relTimeWindowMin, ...
+                        'FigTitle', figTitle, ...
+                        'FigName', figName, 'FigTypes', figTypes, ...
+                        otherArguments);
+case 'chevron'
+    %% Plot a Chevron plot
+    % TODO: Move this to its own function
+    if firstOnly
+        % Compute the number of events before and after
+        %   TODO: Always cell arrays?
+        nEventsBefore = cellfun(@(x) numel(x(x < 0)), relEventTimes);
+        nEventsAfter = cellfun(@(x) numel(x(x >= 0)), relEventTimes);
 
-%% Plot the raster
-if firstOnly
-    handles = plot_raster(relEventTimes, 'Labels', labels, ...
-                            'XLabel', 'Time (min)', ...
-                            'XLimits', relTimeWindowMin, otherArguments);
-    plot_vertical_line(0, 'LineWidth', 2, 'Color', 'k');
-    save_all_figtypes(gcf, '/media/shareX/2019octoberR01/Figures/Figure1c/Figure1c', {'png', 'epsc2'})
-else
-    error('Not implemented yet!');
+        % Force as column vectors
+        %   TODO: may not be necessary
+        [nEventsBefore, nEventsAfter] = ...
+            argfun(@force_column_vector, nEventsBefore, nEventsAfter);
+
+        % Generate the data for the Chevron plot
+        chevronData = transpose([nEventsBefore, nEventsAfter]);
+
+        % TODO: plot_chevron.m
+        [lowBefore, lowAfter] = ...
+            argfun(@(x) compute_stats(x, 'lower95'), nEventsBefore, nEventsAfter);
+        [highBefore, highAfter] = ...
+            argfun(@(x) compute_stats(x, 'upper95'), nEventsBefore, nEventsAfter);
+
+        [meanBefore, meanAfter] = ...
+            argfun(@(x) compute_stats(x, 'mean'), nEventsBefore, nEventsAfter);
+        pValue = [1, 2];
+
+        % Plot a tuning curve
+        plot_tuning_curve(pValue, chevronData, 'PLimits', [0.5, 2.5], ...
+                            'RunTTest', true, 'RunRankTest', true, ...
+                            'Marker', 'o', 'MarkerFaceColor', [0, 0, 0], ...
+                            'MarkerSize', 8, 'ColorMap', [0, 0, 0], ...
+                            'LegendLocation', 'suppress', otherArguments);
+        hold on 
+        plot(pValue, [meanBefore, meanAfter], 'r-o', ...
+            'LineWidth', 2, 'MarkerSize', 10, 'MarkerFaceColor', 'r');
+        plot_error_bar(pValue, [lowBefore, lowAfter], [highBefore, highAfter], ...
+            'Color', 'r', 'LineWidth', 2);
+        save_all_figtypes(gcf, figName, figTypes);
+    else
+        error('Not implemented yet!');
+    end
+otherwise
+    error('plotType unrecognized!');
 end
 
-%% Plot a Chevron plot
-% TODO: Move this to its own function
-if firstOnly
-    % Compute the number of events before and after
-    %   TODO: Always cell arrays?
-    nEventsBefore = cellfun(@(x) numel(x(x < 0)), relEventTimes);
-    nEventsAfter = cellfun(@(x) numel(x(x >= 0)), relEventTimes);
-
-    % Force as column vectors
-    %   TODO: may not be necessary
-    [nEventsBefore, nEventsAfter] = ...
-        argfun(@force_column_vector, nEventsBefore, nEventsAfter);
-
-    % Generate the data for the Chevron plot
-    chevronData = transpose([nEventsBefore, nEventsAfter]);
-
-    % TODO: plot_chevron.m
-    [lowBefore, lowAfter] = ...
-        argfun(@(x) compute_stats(x, 'lower95'), nEventsBefore, nEventsAfter);
-    [highBefore, highAfter] = ...
-        argfun(@(x) compute_stats(x, 'upper95'), nEventsBefore, nEventsAfter);
-
-    [meanBefore, meanAfter] = ...
-        argfun(@(x) compute_stats(x, 'mean'), nEventsBefore, nEventsAfter);
-    pValue = [1, 2];
-
-    % Plot a tuning curve
-    figure1e = set_figure_properties('AlwaysNew', true, 'FigExpansion', [0.7, 0.7]);
-    plot_tuning_curve(pValue, chevronData, 'PLimits', [0.5, 2.5], ...
-                        'RunTTest', true, 'RunRankTest', true, ...
-                        'Marker', 'o', 'MarkerFaceColor', [0, 0, 0], ...
-                        'MarkerSize', 8, 'ColorMap', [0, 0, 0], ...
-                        'FigHandle', figure1e, ...
-                        'LegendLocation', 'suppress');
-    hold on 
-    plot(pValue, [meanBefore, meanAfter], 'r-o', ...
-        'LineWidth', 2, 'MarkerSize', 10, 'MarkerFaceColor', 'r');
-    plot_error_bar(pValue, [lowBefore, lowAfter], [highBefore, highAfter], ...
-        'Color', 'r', 'LineWidth', 2);
-    save_all_figtypes(figure1e, '/media/shareX/2019octoberR01/Figures/Figure1e/Figure1e', {'png', 'epsc2'})
-else
-end
-    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function first = extract_first_element (vec)

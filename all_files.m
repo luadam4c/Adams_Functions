@@ -78,7 +78,7 @@ function varargout = all_files (varargin)
 %       cd/parse_all_swds.m
 %       cd/plot_all_abfs.m
 %       cd/plot_protocols.m
-%       cd/plot_swd_psth.m
+%       cd/plot_relative_events.m
 %       cd/plot_traces_EEG.m
 %       /home/Matlab/plethR01/plethR01_analyze.m
 %       

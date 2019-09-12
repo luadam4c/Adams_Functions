@@ -70,8 +70,8 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/parse_atf_swd.m
 %       cd/parse_iox.m
 %       cd/plot_measures.m
+%       cd/plot_relative_events.m
 %       cd/plot_swd_histogram.m
-%       cd/plot_swd_psth.m
 %       cd/plot_table.m
 %       cd/save_all_zooms.m
 %       /home/Matlab/plethR01/plethR01_analyze.m

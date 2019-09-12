@@ -30,6 +30,7 @@ function distinctParts = extract_distinct_fileparts (paths, varargin)
 % Used by:
 %       cd/extract_fileparts.m
 %       cd/plot_swd_histogram.m
+%       cd/plot_relative_events.m
 
 % File History:
 % 2018-12-27 Moved from extract_fileparts.m
