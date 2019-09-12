@@ -38,7 +38,7 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 %                   default == []
 %                   - 'FigPosition': figure position
 %                   must be a 4-element positive integer vector
-%                   default == expanded from CenterPosition
+%                   default == same as CenterPosition
 %                   - 'FigWidth': figure width
 %                   must be a positive scalar
 %                   default == get(0, 'defaultfigureposition') (3)

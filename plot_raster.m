@@ -10,9 +10,9 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 %       [hRaster, eventTimes, yEnds] = ...
 %           plot_raster(data, 'VertBarWidth', 0.6, ...
 %                       'LineStyle', '-', 'LineWidth', 2, ...
-%                       'Colors', {'Blue', 'Red', 'Purple'}, ...
+%                       'ColorMap', {'Blue', 'Red', 'Purple'}, ...
 %                       'Labels', {'3 vectors', '1 number', '1 vector'}, ...
-%                       'HorzBarWindows', {1, 2, 3, 4, 5});
+%                       'HorzBarWindows', {[1, 5], [1, 4], [1, 3], [1, 2], [1, 1]});
 %
 % Outputs:
 %       hRaster      - handles to the lines for each group
@@ -25,8 +25,10 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 %       yTicksTable - a table with two fields:
 %                       locs    - Y tick values
 %                       labels  - Y tick labels
+%
 % Side Effects:
 %       Plots a raster plot colored by groups.
+%
 % Arguments:    
 %       data        - event time arrays
 %                   must be a numeric array or a cell array of numeric arrays
@@ -133,8 +135,6 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 
 %% Hard-coded parameters
 maxNYTicks = 20;             % maximum number of Y ticks
-maxNArraysForAnnotations = 8;
-maxNArraysForLegends = 12;
 
 %% Default values for optional arguments
 horzBarWindowsDefault = [];     % no horizontal bars by default
@@ -262,8 +262,6 @@ otherArguments = iP.Unmatched;
 
 %% Prepare for plotting
 % If numeric, force as a column cell array of column vectors
-%   Note: if data is already a cell array, don't use this 
-%           function or else elements can't be non-vectors!
 if isnumeric(data)
     data = force_column_vector(data, 'IgnoreNonVectors', false, ...
                                 'ForceCellOutput', true);
@@ -294,20 +292,7 @@ colorMap = decide_on_colormap(colorMap, nArrays);
 
 % Create labels if not provided
 if isempty(labels)
-    parfor iArray = 1:nArrays
-        labels{iArray} = sprintf('Group #%d', iArray);
-    end
-end
-
-% Force vectors to be column vectors
-parfor iArray = 1:nArrays
-    % Get the current array
-    dataThis = data{iArray};
-
-    % If it is a vector, force it to be a column
-    if isvector(dataThis)
-        data{iArray} = dataThis(:);
-    end
+    labels = create_labels_from_numbers(nArrays, 'Prefix', 'Group #');
 end
 
 % Get the number of vectors in each event time array
@@ -383,9 +368,9 @@ if ~ischar(yTickLabels) || ~strcmpi(yTickLabels, 'suppress')
         % If provided, use custom Y tick labels instead
         yTicks.labels = yTickLabels;
     else
-        if ~isempty(labels)
-            yTicks.labels = labels;
-        else
+%        if ~isempty(labels)
+            % TODO: Not Implemented yet!
+%        else
             % Create trial labels from numbers
             trialLabels = create_labels_from_numbers(trialNosAll);
 
@@ -395,7 +380,7 @@ if ~ischar(yTickLabels) || ~strcmpi(yTickLabels, 'suppress')
             else
                 yTicks.labels = trialLabels(indTicks);            
             end
-        end
+%        end
     end
 end
 
@@ -417,38 +402,9 @@ if ~isempty(horzBarWindows)
 end
 
 % Assign y value endpoints to each event time
-eventTimes = cell(size(data));
-yEnds = cell(size(data));
-parfor iArray = 1:nArrays
-    % Get the time values for this event time array
-    timesArray = data{iArray};
-
-    % Reshape as a single column 
-    timesVector = timesArray(:);
-
-    % Duplicate the time columns, then transpose
-    eventTimesThis = [timesVector, timesVector]';
-
-    % Get the dimensions of the event time array
-    sizeThis = size(timesArray);
-
-    % Get the y value midpoints
-    yMidsThis = yMids{iArray};
-
-    % Assign y value midpoints to all event times
-    yMidsArray = ones(sizeThis) * diag(yMidsThis);
-
-    % Reshape as a single column 
-    yMidsVector = yMidsArray(:);
-
-    % Shift the y midpoints by half the bar width to get the y endpoints,
-    %   then transpose it so that each column corresponds to a time point
-    yEndsThis = [yMidsVector - halfBarWidth, yMidsVector + halfBarWidth]';
-
-    % Store the event times and y endpoints
-    eventTimes{iArray} = eventTimesThis;
-    yEnds{iArray} = yEndsThis;
-end
+[eventTimes, yEnds] = ...
+    cellfun(@(x, y) compute_y_endpoints(x, y, halfBarWidth), ...
+            data, yMids, 'UniformOutput', false);
 
 % Set the default x axis limits
 if isempty(xLimits)
@@ -564,6 +520,30 @@ end
 if ~strcmpi(figTitle, 'suppress')
     title(figTitle);
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [eventTimes, yEnds] = ...
+                compute_y_endpoints (timesArray, yMids, halfBarWidth);
+
+% Reshape the time values as a single column 
+timesVector = timesArray(:);
+
+% Duplicate the time columns, then transpose
+eventTimes = transpose([timesVector, timesVector]);
+
+% Get the dimensions of the event time array
+sizeThis = size(timesArray);
+
+% Assign y value midpoints to all event times
+yMidsArray = ones(sizeThis) * diag(yMids);
+
+% Reshape as a single column
+yMidsVector = yMidsArray(:);
+
+% Shift the y midpoints by half the bar width to get the y endpoints,
+%   then transpose it so that each column corresponds to a time point
+yEnds = transpose(yMidsVector + halfBarWidth * [-1, 1]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

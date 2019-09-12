@@ -7,6 +7,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 % Example(s):
 %       decide_on_colormap([])
 %       decide_on_colormap('Gray')
+%       decide_on_colormap({'Red', 'Blue', 'Green'})
 %       decide_on_colormap([], 4)
 %       decide_on_colormap([], 4, 'ColorMapFunc', @hsv)
 %
@@ -82,9 +83,21 @@ otherArguments = iP.Unmatched;
 if isempty(colorMap)
     % Set default color map
     colorMap = create_colormap(nColors, otherArguments);
-elseif ischar(colorMap) || isstring(colorMap)
+elseif ischar(colorMap)
     % Convert to a numeric array
     colorMap = char2rgb(colorMap);
+elseif isstring(colorMap) || iscellstr(colorMap)
+    % Convert to a numeric vectors
+    % TODO: cellorarrayfun.m
+    if iscell(colorMap)
+        cellorarrayfun = @cellfun;
+    else
+        cellorarrayfun = @arrayfun;
+    end
+    colorMap = cellorarrayfun(@char2rgb, colorMap, 'UniformOutput', false);
+    
+    % Vertically concatenate them
+    colorMap = vertcat(colorMap{:});
 end
 
 % Match the number of rows in the color map to nColors

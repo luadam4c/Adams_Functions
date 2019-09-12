@@ -15,9 +15,9 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 % Arguments:
 %       spike2MatPath   - Spike2-exported MATLAB path
 %                       must be a string scalar or a character vector
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'ParseGas': whether to parse pleth pulses
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
@@ -36,7 +36,7 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 
 % File History:
 % 2019-09-08 Moved from spike2Mat2Text.m
-% TODO: Add 'ToParsePleth' as an optional argument with default false
+% 2019-09-11 Added 'ParseGas' as an optional argument
 % TODO: Add 'ChannelNames' as an optional argument with default {}
 % 
 
@@ -45,7 +45,7 @@ MS_PER_S = 1000;
 isTrace = @(x) isfield(x, 'values') && isfield(x, 'interval');
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+parseGasDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -65,11 +65,12 @@ addRequired(iP, 'spike2MatPath', ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default);
+addParameter(iP, 'ParseGas', parseGasDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, spike2MatPath, varargin{:});
-% param1 = iP.Results.param1;
+parseGas = iP.Results.ParseGas;
 
 % Keep unmatched arguments for the TODO() function
 % otherArguments = struct2arglist(iP.Unmatched);
@@ -133,7 +134,7 @@ channelStarts = adjust_start_times(channelStarts, siSeconds);
 % Test if a gas trace exists
 isGasTrace = strcmp(channelNames, 'O2');
 
-if any(isGasTrace)
+if any(isGasTrace) && parseGas
     % Get gas vector(s)
     gasVec = channelValues{isGasTrace};
 

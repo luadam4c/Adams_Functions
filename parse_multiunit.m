@@ -3,12 +3,14 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 % Usage: [parsedParams, parsedData, phaseBoundaries, fileBase, figs] = parse_multiunit (vVecsOrSlice, siMs (opt), varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       parse_multiunit(vVecs, siMs, 'PulseVectors', iVecs);
 %       parse_multiunit('20190217_slice3');
 %       parse_multiunit('20190217_slice3', 'SaveResults', true);
 %       parse_multiunit('20190217_slice3', 'PlotRaw', true);
 %       [parsedParams, parsedData, phaseBoundaries, fileBase, figs] = parse_multiunit('20190217_slice3');
+%
 % Outputs:
 %       parsedParams - parsed parameters, a table with columns:
 %                       phaseNumber
@@ -1005,7 +1007,7 @@ if plotCombinedFlag
     plot_raster(tVec(idxSpikes), 'YMid', yMid, 'VertBarWidth', vertBarWidth, ...
                         'LineWidth', 0.5, 'ColorMap', 'Red', ...
                         'YLimits', 'suppress', 'YTickLocs', 'suppress', ...
-                        'YTickLabels', 'suppress');
+                        'YTickLabels', 'suppress', 'XLabel', 'suppress');
     xlim(zoomWin2 * MS_PER_S);
     ylim(yLimits);
     xlabel('Time (ms)');
@@ -1478,7 +1480,7 @@ lines(5) = plot(tVec, vVecFilt, 'b');
 raster = plot_raster(tVec(idxSpikes), 'YMid', yMid, 'VertBarWidth', vertBarWidth, ...
                     'LineWidth', 0.5, 'ColorMap', 'Red', ...
                     'YLimits', 'suppress', 'YTickLocs', 'suppress', ...
-                    'YTickLabels', 'suppress');
+                    'YTickLabels', 'suppress', 'XLabel', 'suppress');
 ylim(yLimits3);
 xlabel('Time (ms)');
 ylabel('Voltage (mV)');
