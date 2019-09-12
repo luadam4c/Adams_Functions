@@ -32,9 +32,26 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 %                   - 'FigNumber': figure number for creating figure
 %                   must be a positive integer scalar
 %                   default == []
+%                   - 'FigExpansion': expansion factors for figure position
+%                       Note: This occurs AFTER position is set
+%                   must be a must be a positive scalar or 2-element vector
+%                   default == []
 %                   - 'FigPosition': figure position
 %                   must be a 4-element positive integer vector
 %                   default == expanded from CenterPosition
+%                   - 'FigWidth': figure width
+%                   must be a positive scalar
+%                   default == get(0, 'defaultfigureposition') (3)
+%                   - 'FigHeight': figure height
+%                   must be a positive scalar
+%                   default == get(0, 'defaultfigureposition') (4)
+%                   - 'ClearFigure': whether to clear figure
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'AlwaysNew': whether to always create a new figure even if
+%                                   figNumber is not passed in
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'CenterPosition': position for the center subplot
 %                   must be a 4-element positive integer vector
 %                   default == get(0, 'defaultfigureposition')
@@ -52,8 +69,9 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 
 % File History:
 % 2018-08-04 Created by Adam Lu
-% 2018-09-06 Added 'FigPosition' and 'CenterPosition' as optional arguments
-% 2018-09-06 Added gridPositions as an optional argument
+% 2019-09-06 Added 'FigPosition' and 'CenterPosition' as optional arguments
+% 2019-09-06 Added gridPositions as an optional argument
+% 2019-09-11 Added more figure properties as optional arguments
 % 
 
 %% Hard-coded parameters
@@ -64,7 +82,12 @@ horizontalDeadSpace = 0.25;     % relative dead space at the edges of figure
 gridPositionsDefault = [];      % set later
 figHandleDefault = [];          % no existing figure by default
 figNumberDefault = [];          % no figure number by default
+figExpansionDefault = [];       % set later
 figPositionDefault = [];        % set later
+figWidthDefault = [];           % set later
+figHeightDefault = [];          % set later
+clearFigureDefault = true;      % clear figure by default
+alwaysNewDefault = false;       % don't always create new figure by default
 centerPositionDefault = [];     % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -99,9 +122,22 @@ addParameter(iP, 'FigHandle', figHandleDefault);
 addParameter(iP, 'FigNumber', figNumberDefault, ...
     @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
                 'FigNumber must be a empty or a positive integer scalar!'));
+addParameter(iP, 'FigExpansion', figExpansionDefault, ...
+    @(x) assert(isempty(x) || isnumericvector(x), ...
+                'FigExpansion must be a empty or a numeric vector!'));
 addParameter(iP, 'FigPosition', figPositionDefault, ...
     @(x) assert(isempty(x) || isnumericvector(x), ...
-                'Position must be a empty or a numeric vector!'));
+                'FigPosition must be a empty or a numeric vector!'));
+addParameter(iP, 'FigWidth', figWidthDefault, ...
+    @(x) assert(isempty(x) || ispositivescalar(x), ...
+                'FigWidth must be a empty or a positive scalar!'));
+addParameter(iP, 'FigHeight', figHeightDefault, ...
+    @(x) assert(isempty(x) || ispositivescalar(x), ...
+                'FigHeight must be a empty or a positive scalar!'));
+addParameter(iP, 'ClearFigure', clearFigureDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AlwaysNew', alwaysNewDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'CenterPosition', centerPositionDefault, ...
     @(x) assert(isempty(x) || isnumericvector(x), ...
                 'Position must be a empty or a numeric vector!'));
@@ -111,7 +147,12 @@ parse(iP, nRows, nColumns, varargin{:});
 gridPositions = iP.Results.gridPositions;
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
+figExpansion = iP.Results.FigExpansion;
 figPosition = iP.Results.FigPosition;
+figWidth = iP.Results.FigWidth;
+figHeight = iP.Results.FigHeight;
+clearFigure = iP.Results.ClearFigure;
+alwaysNew = iP.Results.AlwaysNew;
 centerPosition = iP.Results.CenterPosition;
 
 % Keep unmatched arguments for the subplot() function
@@ -126,8 +167,8 @@ if isempty(centerPosition)
     centerPosition = get(0, 'defaultfigureposition');
 end
 
-% Decide on any expansion factors
-if isempty(figPosition)
+% Set default figure position and figure expansion factors
+if isempty(figExpansion) && isempty(figPosition)
     % Start with the initial figure position
     figPosition = centerPosition;
 
@@ -139,9 +180,6 @@ if isempty(figPosition)
 
     % Compute the expansion factor
     figExpansion = [horizontalExpandFactor, verticalExpandFactor];
-else
-    % Use the figure position decided by the user, so no expansion
-    figExpansion = [];
 end
 
 % Decide on the subplot gridPositions
@@ -153,7 +191,9 @@ end
 
 % Decide on the figure to plot on and set figure position
 fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
-                    'Position', figPosition, 'FigExpansion', figExpansion, ...
+                    'FigExpansion', figExpansion, 'Position', figPosition, ...
+                    'Width', figWidth, 'Height', figHeight, ...
+                    'ClearFigure', clearFigure, 'AlwaysNew', alwaysNew, ...
                     'AdjustPosition', true);
 
 %% Create subplots
