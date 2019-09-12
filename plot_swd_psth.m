@@ -16,7 +16,7 @@ function handles = plot_swd_psth (varargin)
 %                                   from each file
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'Directory': directory to look for SWD table files
+%                   - 'Directory': directory to look for SWD and stim table files
 %                   must be a string scalar or a character vector
 %                   default == pwd
 %                   - 'RelativeTimeWindowMin': relative time window

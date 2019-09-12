@@ -16,7 +16,7 @@ function handles = plot_relative_swd_raster (varargin)
 %                                   from each file
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'Directory': directory to look for SWD table files
+%                   - 'Directory': directory to look for SWD and stim table files
 %                   must be a string scalar or a character vector
 %                   default == pwd
 %                   - 'RelativeTimeWindowMin': relative time window
@@ -53,7 +53,7 @@ function handles = plot_relative_swd_raster (varargin)
 % File History:
 % 2019-09-10 Created by Adam Lu
 % TODO: Use load_matching_sheets.m
-% TODO: Combine with plot_swd_raster.m
+% TODO: Combine with plot_swd_psth.m?
 % 
 
 %% Hard-coded parameters
