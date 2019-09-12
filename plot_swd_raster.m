@@ -389,6 +389,15 @@ end
 % Get outfolder name
 [~, outFolderName] = fileparts(outFolder);
 
+% Decide on labels
+xLabel = 'Time (s)';
+
+% Decide on labels
+yLabel = 'Sweep #';
+
+% Decide on the figure title 
+figTitle = ['SWD start times for ', replace(outFolderName, '_', '\_')];
+
 % Decide on the figure name
 figName = fullfile(outFolder, [outFolderName, '_SWDs_raster.png']);
 
@@ -403,12 +412,13 @@ clf;
                 'LineStyle', lineStyle, ...
                 'LineWidth', lineWidth, ...
                 'Labels', labels, 'YTickLabels', yTickLabels, ...
+                'XLimits', xLimits, ...
+                'XLabel', xLabel, 'YLabel', yLabel, ...
+                'FigTitle', figTitle, ...
                 otherArguments);
 
-% Compute y axis limits
-yLimits = [min(yTicksTable.locs) - 1, max(yTicksTable.locs) + 1];
-
 % Get the handles to the first line objects for each group
+% TODO: Move into plot_raster.m
 firstLines = [];
 labelsToShow = cell(0, 1);
 for iBase = 1:nDataFileBases
@@ -417,16 +427,14 @@ for iBase = 1:nDataFileBases
         labelsToShow = [labelsToShow, labels{iBase}];
     end
 end
-
-% Set other plot properties and save figure
-if ~isempty(xLimits)
-    xlim(xLimits);
-end
-ylim(yLimits);
-xlabel('Time (s)');
-ylabel('Sweep #');
-title(['SWD start times for ', replace(outFolderName, '_', '\_')]);
 legend(firstLines, labelsToShow, 'Location', 'SouthOutside');
+
+% Update y axis limits
+% TODO: Move into plot_raster.m
+yLimits = [min(yTicksTable.locs) - 1, max(yTicksTable.locs) + 1];
+ylim(yLimits);
+
+% Save figure
 saveas(fig, figName);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

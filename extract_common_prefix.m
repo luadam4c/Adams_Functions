@@ -38,6 +38,7 @@ function prefix = extract_common_prefix (strs, varargin)
 %       cd/extract_common_directory.m
 %       cd/extract_common_suffix.m
 %       cd/extract_fileparts.m
+%       cd/plot_raster.m
 %       cd/plot_table.m
 
 % File History:

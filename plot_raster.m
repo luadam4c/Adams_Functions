@@ -112,6 +112,7 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 %       cd/create_labels_from_numbers.m
 %       cd/create_error_for_nargin.m
 %       cd/count_vectors.m
+%       cd/extract_common_prefix.m
 %       cd/force_column_vector.m
 %       cd/iscellnumeric.m
 %       cd/set_figure_properties.m
@@ -132,6 +133,7 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 % 2019-03-14 Fixed the case when there is a condition with no spikes
 % 2019-09-11 Updated 'Colors' to 'ColorMap'
 % 2019-09-11 Updated to not use parfor
+% TODO: Distinguish plot_raster.m vs plot_raster_plot.m?
 % 
 
 %% Hard-coded parameters
