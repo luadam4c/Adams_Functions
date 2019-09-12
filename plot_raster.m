@@ -131,6 +131,7 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 % 2019-02-25 Added 'HorzBarWindows' as an optional argument
 % 2019-03-14 Fixed the case when there is a condition with no spikes
 % 2019-09-11 Updated 'Colors' to 'ColorMap'
+% 2019-09-11 Updated to not use parfor
 % 
 
 %% Hard-coded parameters
