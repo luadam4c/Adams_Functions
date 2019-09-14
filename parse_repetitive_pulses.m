@@ -333,7 +333,7 @@ pulseTablePath = force_string_end(pulseTableBase, '.csv');
 siMs = (timeVec(2) - timeVec(1)) * MS_PER_S;
 
 % Compute the minimum 
-minInterPulseIntervalSamples = floor(minInterPulseIntervalMs / MS_PER_S);
+minInterPulseIntervalSamples = floor(minInterPulseIntervalMs / siMs);
 
 switch pulseShape
 case 'square'
@@ -406,11 +406,11 @@ function endPoints = find_all_pulse_endpoints (vector, baseValue, ...
                                                 amplitude, pulseDirection, ...
                                                 minInterPulseIntervalSamples)
 %% Find all pulse endpoints
-% TODO: Use minInterPulseIntervalSamples
+% TODO: Improve the performance with a better algorithm
 
 % Standardize the pulse vector
 [vecPos, ampPos] = ...
-    standardize_vector(vector, baseValue, amplitude, pulseDirection);
+    standardize_pulse(vector, baseValue, amplitude, pulseDirection);
 
 % Rename thresholds
 oneFourthAmp = ampPos / 4;
@@ -450,7 +450,7 @@ while ~isempty(idxFirstAbove)
 
     % Decide what to do to the new end points
     if ~isempty(endPoints) && ...
-            idxStart - endPoints(1, end) < minInterPulseIntervalSamples
+            idxStart - endPoints(2, end) < minInterPulseIntervalSamples
         % The pulse is part of the previous pulse: replace the last end point
         endPoints(2, end) = idxEnd;
     else
@@ -474,7 +474,7 @@ function endPoints = find_section_endpoints(vector, baseValue, ...
 
 % Standardize the pulse vector
 [vecPos, ampPos] = ...
-    standardize_vector(vector, baseValue, amplitude, pulseDirection);
+    standardize_pulse(vector, baseValue, amplitude, pulseDirection);
 
 % Rename thresholds
 oneFourthAmp = ampPos / 4;
