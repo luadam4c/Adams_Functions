@@ -448,8 +448,15 @@ while ~isempty(idxFirstAbove)
     % Put end points together
     endPointsThis = [idxStart; idxEnd];
 
-    % Add to all end points
-    endPoints = [endPoints, endPointsThis];
+    % Decide what to do to the new end points
+    if ~isempty(endPoints) && ...
+            idxStart - endPoints(1, end) < minInterPulseIntervalSamples
+        % The pulse is part of the previous pulse: replace the last end point
+        endPoints(2, end) = idxEnd;
+    else
+        % The pulse is new: add to all previous endpoints
+        endPoints = [endPoints, endPointsThis];
+    end
 
     % Remove up to idxEndRel and update the reference index
     vecPos(1:idxEndRel) = [];
