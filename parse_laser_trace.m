@@ -1,6 +1,6 @@
-function varargout = parse_gas_trace (vectors, siMs, varargin)
-%% Parses gas traces
-% Usage: [parsedParams, parsedData] = parse_gas_trace (vectors, siMs, varargin)
+function varargout = parse_laser_trace (vectors, siMs, varargin)
+%% Parses laser traces
+% Usage: [parsedParams, parsedData] = parse_laser_trace (vectors, siMs, varargin)
 % Explanation:
 %       TODO
 %
@@ -9,9 +9,9 @@ function varargout = parse_gas_trace (vectors, siMs, varargin)
 %       spike2Table = parse_spike2_mat(spike2MatPath);
 %       channelValues = spike2Table.channelValues;
 %       channelNames = spike2Table.channelNames;
-%       gasVec = channelValues{strcmp(channelNames, 'O2')};
-%       siMs = spike2Table{strcmp(channelNames, 'O2'), 'siSeconds'} * 1000;
-%       [parsedParams, parsedData] = parse_gas_trace(gasVec, siMs, 'PulseDirection', 'downward', 'TraceFileName', spike2MatPath);
+%       laserVec = channelValues{strcmp(channelNames, 'Sound')};
+%       siMs = spike2Table{strcmp(channelNames, 'Sound'), 'siSeconds'} * 1000;
+%       [parsedParams, parsedData] = parse_laser_trace(laserVec, siMs, 'TraceFileName', spike2MatPath);
 %
 % Outputs:
 %       output1     - TODO: Description of output1
@@ -34,15 +34,16 @@ function varargout = parse_gas_trace (vectors, siMs, varargin)
 %       cd/parse_spike2_mat.m
 
 % File History:
-% 2019-09-09 Created by Adam Lu
-% 2019-09-10 Added 'PulseDirection' as an optional argument
+% 2019-09-12 Modified from parse_gas_trace.m
 % 2019-09-13 Now uses parse_repetitive_pulses.m
 % 
 
 %% Hard-coded parameters
-% Note: Must be consistent with parse_iox.m and plot_relative_events.m
-pulseTableSuffix = '_gas_pulses';
-pulseShape = 'first-order';
+% Note: Must be consistent with plot_relative_events.m
+pulseTableSuffix = '_laser_pulses';
+pulseShape = 'square';
+pulseDirection = 'upward';
+minInterPulseInterval = 100;
 
 %% Default values for optional arguments
 
@@ -77,10 +78,12 @@ otherArguments = iP.Unmatched;
 
 %% Do the job
 % Output variably
-varargout = parse_repetitive_pulses(vectors, siMs, ...
-                                'PulseTableSuffix', pulseTableSuffix, ...
-                                'PulseShape', pulseShape, ...
-                                otherArguments);
+varargout = parse_repetitive_pulses(vectors, siMs, ... 
+                            'PulseTableSuffix', pulseTableSuffix, ...
+                            'PulseShape', pulseShape, ...
+                            'PulseDirection', pulseDirection, ...
+                            'MinInterPulseInterval', minInterPulseInterval, ...
+                            otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

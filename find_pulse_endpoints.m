@@ -25,7 +25,7 @@ function [indStart1, indEnd1, indStart2, indEnd2] = ...
 % Used by:
 %       cd/parse_pulse.m
 %       cd/find_pulse_response_endpoints.m
-%
+
 % File History:
 % 2018-07-25 BT - Adapted from find_initial_slopes.m
 % 2018-08-10 Change the amplitude to take the value from pulseShifted

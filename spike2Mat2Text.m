@@ -89,7 +89,8 @@ end
 
 %% Load the data
 % Parse the Spike2-exported MATLAB file
-parsedTable = parse_spike2_mat(spike2MatPath);
+parsedTable = parse_spike2_mat(spike2MatPath, 'ParseGas', parseGas, ...
+                                'ParseLaser', parseLaser);
 
 % Extract from parsed data table
 channelValues = parsedTable.channelValues;

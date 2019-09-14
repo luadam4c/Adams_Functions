@@ -18,6 +18,9 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %       varargin    - 'ParseGas': whether to parse pleth pulses
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'ParseLaser': whether to parse laser pulses
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
@@ -28,6 +31,7 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %       cd/extract_fields.m
 %       cd/force_string_end.m
 %       cd/parse_gas_trace.m
+%       cd/parse_laser_trace.m
 %       cd/struct2arglist.m
 %
 % Used by:
@@ -46,6 +50,7 @@ isTrace = @(x) isfield(x, 'values') && isfield(x, 'interval');
 
 %% Default values for optional arguments
 parseGasDefault = false;
+parseLaserDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -67,10 +72,13 @@ addRequired(iP, 'spike2MatPath', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ParseGas', parseGasDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ParseLaser', parseLaserDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, spike2MatPath, varargin{:});
 parseGas = iP.Results.ParseGas;
+parseLaser = iP.Results.ParseLaser;
 
 % Keep unmatched arguments for the TODO() function
 % otherArguments = struct2arglist(iP.Unmatched);
@@ -146,8 +154,24 @@ if any(isGasTrace) && parseGas
 
     % Parse gas vectors and create pulse tables
     parse_gas_trace(gasVec, siMs, 'TraceFileName', spike2MatPath, ...
-                    'PulseDirection', pulseDirection);
+                        'PulseDirection', pulseDirection);
 end
+
+%% Parse laser trace if it exists
+% Test if a laser trace exists
+isLaserTrace = strcmp(channelNames, 'Sound');
+
+if any(isLaserTrace) && parseLaser
+    % Get laser vector(s)
+    laserVec = channelValues{isLaserTrace};
+
+    % Get the sampling interval in ms
+    siMs = siSeconds(isLaserTrace) * MS_PER_S;
+
+    % Parse gas vectors and create pulse tables
+    parse_laser_trace(laserVec, siMs, 'TraceFileName', spike2MatPath);
+end
+
 
 %% Output results
 % Place in a table
