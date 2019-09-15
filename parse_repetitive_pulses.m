@@ -74,6 +74,7 @@ function varargout = parse_repetitive_pulses (vectors, siMs, varargin)
 % 2019-09-10 Added 'PulseDirection' as an optional argument
 % 2019-09-13 Now uses parse_repetitive_pulses.m
 % 2019-09-13 Added 'PulseShape' as an optional argument
+% 2019-09-14 Now applies detection of square pulses with faster algorithm
 % TODO: Allow different pulse directions for different vectors
 % 
 
@@ -341,6 +342,7 @@ case 'square'
     pulseEndPoints = find_all_pulse_endpoints(vector, baseValue, ...
                                             amplitude, pulseDirection, ...
                                             minInterPulseIntervalSamples);
+    secEndPoints = pulseEndPoints;
 case 'first-order'
     % TODO: Use minInterPulseIntervalSamples
 
@@ -384,8 +386,11 @@ endTime = transpose(pulseWindows(2, :));
 % Compute the duration
 duration = endTime - startTime;
 
-% Match traceFileName with the number of sections
-traceFileName = match_format_vector_sets(traceFileName, sections);
+% Force file name as a cell array
+traceFileName = force_column_cell(traceFileName);
+
+% Match number of file names with the number of startTime
+traceFileName = match_row_count(traceFileName, size(startTime, 1));
 
 % Determine if the trace file exists
 [tracePath, pathExists] = construct_and_check_fullpath(traceFileName);
@@ -412,59 +417,52 @@ function endPoints = find_all_pulse_endpoints (vector, baseValue, ...
 [vecPos, ampPos] = ...
     standardize_pulse(vector, baseValue, amplitude, pulseDirection);
 
-% Rename thresholds
-oneFourthAmp = ampPos / 4;
-threeFourthsAmp = ampPos * 3 / 4;
+% Compute the amplitude threshold
+thresAmp = ampPos / 2;
 
-% Find the index before first points that reaches 1/4 and 3/4 of the amplitude
-idxRef = 0;
-idxFirstAbove = find(vecPos > oneFourthAmp, 1, 'first');
-endPoints = [];
-while ~isempty(idxFirstAbove)
-    % Compute the relative starting index
-    idxStartRel = idxFirstAbove - 1;
+% Get all differences
+diffVecPos = diff(vecPos);
 
-    % Compute the original starting index
-    idxStart = idxRef + idxStartRel;
+% Compute the maximum positive jump
+maxJump = max(diffVecPos);
 
-    % Remove up to idxStartRel and update the reference index
-    vecPos(1:idxStartRel) = [];
-    idxRef = idxRef + idxStartRel;
+% Compute the minimum negative fall
+minFall = min(diffVecPos);
 
-    % Find the index before first point that reaches below 3/4 of the amplitude
-    idxFirstBelow = find(vecPos < threeFourthsAmp, 1, 'first');
+% Compute the thresholds for minimum jump and minimum fall
+thresJump = maxJump * 1 / 4;
+thresFall = minFall * 1 / 4;
 
-    % If not found, we are done
-    if isempty(idxFirstBelow)
-        break
+% Find the indices before jumps and before falls 
+indBeforeJumps = find(diffVecPos > thresJump & vecPos(1:end-1) < thresAmp);
+indBeforeFalls = find(diffVecPos < thresFall & vecPos(1:end-1) > thresAmp);
+
+% Compute the differences between the indices before jumps
+diffIndBeforeJumps = diff(indBeforeJumps);
+
+% Decide whether each index is at least minInterPulseIntervalSamples after
+%   the previous index
+isIdxStart = [true; diffIndBeforeJumps >= minInterPulseIntervalSamples];
+
+% Get all starting indices
+indStart = indBeforeJumps(isIdxStart);
+
+% For each starting index after the first, 
+%   find the most recent index before fall
+if numel(indStart) > 1
+    for iStart = 2:numel(indStart)
+        iTemp = find(indBeforeFalls < indStart(iStart), 1, 'last');
+        if isempty(iTemp)
+            error('Code logic error!');
+        else
+            indEnd(iStart - 1, 1) = indBeforeFalls(iTemp);
+        end
     end
-
-    % Compute the relative ending index
-    idxEndRel = idxFirstBelow - 1;
-
-    % Compute the original ending index
-    idxEnd = idxRef + idxEndRel;
-
-    % Put end points together
-    endPointsThis = [idxStart; idxEnd];
-
-    % Decide what to do to the new end points
-    if ~isempty(endPoints) && ...
-            idxStart - endPoints(2, end) < minInterPulseIntervalSamples
-        % The pulse is part of the previous pulse: replace the last end point
-        endPoints(2, end) = idxEnd;
-    else
-        % The pulse is new: add to all previous endpoints
-        endPoints = [endPoints, endPointsThis];
-    end
-
-    % Remove up to idxEndRel and update the reference index
-    vecPos(1:idxEndRel) = [];
-    idxRef = idxRef + idxEndRel;
-
-    % Find the index before first point that reaches 1/4 of the amplitude again
-    idxFirstAbove = find(vecPos > oneFourthAmp, 1, 'first');
+    indEnd(numel(indStart), 1) = indBeforeFalls(end);
 end
+
+% Put together as end points
+endPoints = transpose([indStart, indEnd]);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -590,11 +588,66 @@ handles.shades = shades;
 %{
 OLD CODE:
 
-% The following assumes that there are only two possible values
+% Note: The following assumes that there are only two possible values
 candValue = [minValue, maxValue];
 firstValue = extract_elements(vectors, 'first');
 [~, iTemp1] = min(abs([firstValue, firstValue] - candValue), [], 2);
 baseValue = candValue(iTemp1);
+
+% Note: the following is very slow:
+% Rename thresholds
+oneFourthAmp = ampPos / 4;
+threeFourthsAmp = ampPos * 3 / 4;
+
+% Find the index before first points that reaches 1/4 and 3/4 of the amplitude
+idxRef = 0;
+idxFirstAbove = find(vecPos > oneFourthAmp, 1, 'first');
+endPoints = [];
+while ~isempty(idxFirstAbove)
+    % Compute the relative starting index
+    idxStartRel = idxFirstAbove - 1;
+
+    % Compute the original starting index
+    idxStart = idxRef + idxStartRel;
+
+    % Remove up to idxStartRel and update the reference index
+    vecPos(1:idxStartRel) = [];
+    idxRef = idxRef + idxStartRel;
+
+    % Find the index before first point that reaches below 3/4 of the amplitude
+    idxFirstBelow = find(vecPos < threeFourthsAmp, 1, 'first');
+
+    % If not found, we are done
+    if isempty(idxFirstBelow)
+        break
+    end
+
+    % Compute the relative ending index
+    idxEndRel = idxFirstBelow - 1;
+
+    % Compute the original ending index
+    idxEnd = idxRef + idxEndRel;
+
+    % Put end points together
+    endPointsThis = [idxStart; idxEnd];
+
+    % Decide what to do to the new end points
+    if ~isempty(endPoints) && ...
+            idxStart - endPoints(2, end) < minInterPulseIntervalSamples
+        % The pulse is part of the previous pulse: replace the last end point
+        endPoints(2, end) = idxEnd;
+    else
+        % The pulse is new: add to all previous endpoints
+        endPoints = [endPoints, endPointsThis];
+    end
+
+    % Remove up to idxEndRel and update the reference index
+    vecPos(1:idxEndRel) = [];
+    idxRef = idxRef + idxEndRel;
+
+    % Find the index before first point that reaches 1/4 of the amplitude again
+    idxFirstAbove = find(vecPos > oneFourthAmp, 1, 'first');
+end
 
 %}
 
