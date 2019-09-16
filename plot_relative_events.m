@@ -22,12 +22,23 @@ function handles = plot_relative_events (varargin)
 %                                   from each file
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'Directory': directory to look for SWD and stim table files
+%                   - 'EventTableSuffix': Suffix for the event table
+%                   must be a character vector or a string scalar 
+%                   default == '_SWDs'
+%                   - 'StimTableSuffix': Suffix for the stim table
+%                   must be a character vector or a string scalar 
+%                   default == '_pulses'
+%                   - 'Directory': directory to look for event table
+%                                   and stim table files
 %                   must be a string scalar or a character vector
 %                   default == pwd
 %                   - 'RelativeTimeWindowMin': relative time window
 %                   must be a 2-element numeric vector
 %                   default == interStimInterval * 0.5 * [-1, 1]
+%                   - 'StimDurationMin': stimulus duration for plotting
+%                                       (stim always occur at 0)
+%                   must be a positive scalar
+%                   default == [] (not plotted)
 %                   - 'FigTitle': title for the figure
 %                   must be a string scalar or a character vector
 %                   default == TODO
@@ -44,6 +55,7 @@ function handles = plot_relative_events (varargin)
 %
 % Requires:
 %       cd/all_files.m
+%       cd/apply_iteratively.m
 %       cd/compute_relative_event_times.m
 %       cd/create_label_from_sequence.m
 %       cd/extract_distinct_fileparts.m
@@ -57,19 +69,14 @@ function handles = plot_relative_events (varargin)
 % File History:
 % 2019-09-10 Created by Adam Lu
 % 2019-09-11 Added 'PlotType' as an optional argument
+% 2019-09-15 Added 'StimTableSuffix' and 'EventTableSuffix' 
+%               as optional arguments
 % TODO: Use load_matching_sheets.m
 % 
 
 %% Hard-coded parameters
 SEC_PER_MIN = 60;
 validPlotTypes = {'raster', 'psth', 'chevron'};
-
-%   TODO: Create load_gas_pulses.m;
-% Note: Must be consistent with parse_iox.m and parse_gas_trace.m
-stimTableSuffix = '_gas_pulses';
-
-% Note: Must be consistent with all_swd_sheets.m
-swdTableSuffix = '_SWDs';
 
 % TODO: Make optional arguments
 pathBase = '';
@@ -80,8 +87,11 @@ labels = {};
 %% Default values for optional arguments
 plotTypeDefault = 'raster';
 firstOnlyDefault = false;       % take all windows by default
+eventTableSuffixDefault = '_SWDs';
+stimTableSuffixDefault = '_pulses';
 directoryDefault = '';          % set later
 relativeTimeWindowMinDefault = [];
+stimDurationMinDefault = [];
 figTitleDefault = '';           % set later
 figNameDefault = '';            % set later
 figTypesDefault = {'png', 'epsc2'};
@@ -99,9 +109,15 @@ addParameter(iP, 'PlotType', plotTypeDefault, ...
     @(x) any(validatestring(x, validPlotTypes)));
 addParameter(iP, 'FirstOnly', firstOnlyDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'EventTableSuffix', eventTableSuffixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'StimTableSuffix', stimTableSuffixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'RelativeTimeWindowMin', relativeTimeWindowMinDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'StimDurationMin', stimDurationMinDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
@@ -114,8 +130,11 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 parse(iP, varargin{:});
 plotType = validatestring(iP.Results.PlotType, validPlotTypes);
 firstOnly = iP.Results.FirstOnly;
+eventTableSuffix = iP.Results.EventTableSuffix;
+stimTableSuffix = iP.Results.StimTableSuffix;
 directory = iP.Results.Directory;
 relTimeWindowMin = iP.Results.RelativeTimeWindowMin;
+stimDurationMin = iP.Results.StimDurationMin;
 figTitle = iP.Results.FigTitle;
 figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
@@ -163,10 +182,12 @@ if isempty(figTitle)
 end
 
 %% Get relative event times
+% TODO: Use load_matching_sheets;
 % Get all stim pulse files
 [~, stimPaths] = ...
     all_files('Directory', directory, 'Keyword', pathBase, ...
-                'Suffix', stimTableSuffix, 'Extension', sheetType);
+                'Suffix', stimTableSuffix, 'Extension', sheetType, ...
+                'ForceCellOutput', true);
 
 % Extract distinct prefixes
 distinctPrefixes = extract_distinct_fileparts(stimPaths);
@@ -174,7 +195,7 @@ distinctPrefixes = extract_distinct_fileparts(stimPaths);
 % Look for corresponding SWD spreadsheet files
 [~, swdPaths] = ...
     cellfun(@(x) all_files('Prefix', x, 'Directory', directory, ...
-                    'Suffix', swdTableSuffix, 'Extension', sheetType), ...
+                    'Suffix', eventTableSuffix, 'Extension', sheetType), ...
             distinctPrefixes, 'UniformOutput', false);
 
 % Read all tables
@@ -193,36 +214,56 @@ end
             stimTables, swdTables);
 
 % Extract stim durations in seconds
-[stimStartTimesSec, swdStartTimesSec] = ...
-    argfun(@(x) cellfun(@(y) y.startTime, x, 'UniformOutput', false), ...
-            stimTables, swdTables);
+stimDurationsSec = cellfun(@(y) y.duration, stimTables, ...
+                            'UniformOutput', false);
 
 % Restrict to the first events only if requested
 if firstOnly
     % Note: TODO: Use extract_elements.m with 'UniformOutput', false
     stimStartTimesSec = cellfun(@(x) x(1), stimStartTimesSec, ...
                                 'UniformOutput', false);
+    stimDurationsSec = cellfun(@(x) x(1), stimDurationsSec, ...
+                                'UniformOutput', false);
 end
 
 % Convert to minutes
-[stimStartTimesMin, swdStartTimesMin] = ...
+[stimStartTimesMin, stimDurationsMin, swdStartTimesMin] = ...
     argfun(@(x) cellfun(@(y) y / SEC_PER_MIN, x, 'UniformOutput', false), ...
-            stimStartTimesSec, swdStartTimesSec);
+            stimStartTimesSec, stimDurationsSec, swdStartTimesSec);
+
+% Compute default stimulation duration in minutes
+if isempty(stimDurationMin)
+    % Find the minimum and maximum stimulation duration in minutes
+    minStimDurationMin = apply_iteratively(@min, stimDurationsMin);
+    maxStimDurationMin = apply_iteratively(@max, stimDurationsMin);
+
+    % If they don't agree within 1%, plot stimulus duration as 0
+    if (maxStimDurationMin - minStimDurationMin) / minStimDurationMin > 0.01
+        fprintf(['Maximum stimulus duration %g and ' , ...
+                    'minimum stimulus duration %g ', ...
+                    'are more than 1% apart, ', ...
+                    'so stimulus duration will be plotted as 0!'], ...
+                    maxStimDurationMin, minStimDurationMin);
+        stimDurationMin = 0;
+    else
+        stimDurationMin = mean([maxStimDurationMin, minStimDurationMin]);
+    end
+end
 
 %% Compute relative event times for each set
 switch plotType
     case {'raster', 'chevron'}
         % Compute the relative event times
         %   Note: this should return a cell array of cell arrays
-        relEventTimesCellCell = ...
+        [relEventTimesCellCell, relTimeWindowMin] = ...
             compute_relative_event_times(swdStartTimesMin, stimStartTimesMin, ...
-                                            'RelativeTimeWindow', relTimeWindowMin);
+                                    'RelativeTimeWindow', relTimeWindowMin);
 
         % Restrict to just the first event times
         if firstOnly
             %   Note: this should return a cell array of numeric vectors
-            relEventTimes = cellfun(@extract_first_element, relEventTimesCellCell, ...
-                                    'UniformOutput', false);
+            relEventTimes = cellfun(@extract_first_element, ...
+                                relEventTimesCellCell, 'UniformOutput', false);
         else
             error('Not implemented yet!');
         end
@@ -251,6 +292,7 @@ case 'psth'
                         'StimTimes', stimStartTimesMin, ...
                         'XLabel', 'Time (min)', ...
                         'RelativeTimeWindow', relTimeWindowMin, ...
+                        'StimDuration', stimDurationMin, ...
                         'FigTitle', figTitle, ...
                         'FigName', figName, 'FigTypes', figTypes, ...
                         otherArguments);

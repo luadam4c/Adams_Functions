@@ -1,6 +1,8 @@
-function relEventTimes = compute_relative_event_times (eventTimes, stimTimes, varargin)
+function [relEventTimes, relativeTimeWindow] = ...
+                compute_relative_event_times (eventTimes, stimTimes, varargin)
 %% Computes the relative event times from event times and stimulus times
-% Usage: relEventTimes = compute_relative_event_times (eventTimes, stimTimes, varargin)
+% Usage: [relEventTimes, relativeTimeWindow] = ...
+%               compute_relative_event_times (eventTimes, stimTimes, varargin)
 % Explanation:
 %       Computes the relative event times around stimulus times
 %       For each stimulus time, a window around it is used
@@ -60,6 +62,7 @@ function relEventTimes = compute_relative_event_times (eventTimes, stimTimes, va
 
 % File History:
 % 2019-09-11 Moved from compute_psth.m
+% 2019-09-15 Now returns relative event time window used
 % TODO: Add option to shift relative event times by stimDelay
 % 
 

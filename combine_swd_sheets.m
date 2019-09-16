@@ -165,6 +165,12 @@ keywordWithPieceThis = force_string_end(keywordThis, pieceStr);
                     'Keyword', keywordWithPieceThis, 'SheetType', sheetType, ...
                     'SortBy', 'name');
 
+if isempty(swdSheetPathsThis)
+    outTable = table.empty;
+    outPath = '';
+    return
+end
+
 % Extract a common suffix across all files
 outSuffix = extract_fileparts(swdSheetPathsThis, 'commonsuffix');
 

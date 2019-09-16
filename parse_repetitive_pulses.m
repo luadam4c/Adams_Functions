@@ -46,6 +46,9 @@ function varargout = parse_repetitive_pulses (vectors, siMs, varargin)
 %                                                   in ms
 %                   must be a numeric scalar
 %                   default = 0 ms
+%                   - 'FileBase': file base for output files
+%                   must be a string scalar or a character vector
+%                   default == TODO
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
@@ -75,6 +78,7 @@ function varargout = parse_repetitive_pulses (vectors, siMs, varargin)
 % 2019-09-13 Now uses parse_repetitive_pulses.m
 % 2019-09-13 Added 'PulseShape' as an optional argument
 % 2019-09-14 Now applies detection of square pulses with faster algorithm
+% 2019-09-15 Added 'FileBase' as an optional argument
 % TODO: Allow different pulse directions for different vectors
 % 
 
@@ -83,15 +87,13 @@ MS_PER_S = 1000;
 validPulseShapes = {'square', 'first-order'};
 validPulseDirections = {'upward', 'downward', 'auto'};
 
-% TODO: Make optional argument
-fileBase = '';                  % file base for output files
-
 %% Default values for optional arguments
 traceFileNameDefault = '';      % set later
 pulseTableSuffixDefault = '_pulses';
 pulseShapeDefault = 'square';   % detects square pulses by default
 pulseDirectionDefault = 'auto'; % automatically detect largest peak by default
 minInterPulseIntervalMsDefault = 0;
+fileBaseDefault = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -125,6 +127,8 @@ addParameter(iP, 'PulseDirection', pulseDirectionDefault, ...
     @(x) any(validatestring(x, validPulseDirections)));
 addParameter(iP, 'MinInterPulseIntervalMs', minInterPulseIntervalMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'FileBase', fileBaseDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, vectors, siMs, varargin{:});
@@ -133,6 +137,7 @@ pulseTableSuffix = iP.Results.PulseTableSuffix;
 pulseShape = validatestring(iP.Results.PulseShape, validPulseShapes);
 pulseDirection = validatestring(iP.Results.PulseDirection, validPulseDirections);
 minInterPulseIntervalMs = iP.Results.MinInterPulseIntervalMs;
+fileBase = iP.Results.FileBase;
 
 % Keep unmatched arguments for the TODO() function
 % otherArguments = iP.Unmatched;
@@ -458,8 +463,10 @@ if numel(indStart) > 1
             indEnd(iStart - 1, 1) = indBeforeFalls(iTemp);
         end
     end
-    indEnd(numel(indStart), 1) = indBeforeFalls(end);
 end
+
+% The last index before fall is the last ending index
+indEnd(numel(indStart), 1) = indBeforeFalls(end);
 
 % Put together as end points
 endPoints = transpose([indStart, indEnd]);

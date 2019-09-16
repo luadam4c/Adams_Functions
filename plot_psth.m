@@ -78,6 +78,7 @@ function handles = plot_psth (varargin)
 %                   - Any other parameter-value pair for plot_histogram()
 %
 % Requires:
+%       cd/adjust_window_to_bounds.m
 %       cd/compute_grouped_histcounts.m
 %       cd/compute_psth.m
 %       cd/create_error_for_nargin.m
@@ -94,6 +95,8 @@ function handles = plot_psth (varargin)
 % 2019-09-08 Added 'Grouping' as an optional argument
 % 2019-09-08 Added 'StimDuration' as an optional argument
 % 2019-09-08 Now plots vertical shade
+% 2019-09-15 Now trims the stimulus window so that 
+%               it does not exceed relativeTimeWindow
 
 %% Hard-coded parameters
 % TODO: Make optional parameters
@@ -201,6 +204,12 @@ end
 % Decide on stimulus window
 if isempty(stimWindow)
     stimWindow = stimStart + [0, stimDuration];
+end
+
+% Trim the stimulus window so that it does not exceed relativeTimeWindow
+%   bounds
+if ~isempty(relativeTimeWindow)
+    stimWindow = adjust_window_to_bounds(stimWindow, relativeTimeWindow);
 end
 
 % Compute histogram counts if not already done

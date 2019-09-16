@@ -35,6 +35,7 @@ function result = apply_iteratively (myFunction, array, varargin)
 %       cd/extract_subvectors.m
 %       cd/identify_channels.m
 %       cd/plot_raster.m
+%       cd/plot_relative_events.m
 %       cd/plot_traces.m
 %       cd/plot_swd_histogram.m
 

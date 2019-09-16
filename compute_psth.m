@@ -44,6 +44,7 @@ function [counts, edges, relEventTimes] = ...
 %                   - Any other parameter-value pair for compute_grouped_histcounts()
 %
 % Requires:
+%       cd/adjust_window_to_bounds.m
 %       cd/compute_grouped_histcounts.m
 %       cd/compute_relative_event_times.m
 %       cd/create_error_for_nargin.m
@@ -54,6 +55,8 @@ function [counts, edges, relEventTimes] = ...
 % File History:
 % 2019-09-07 Created by Adam Lu
 % 2019-09-08 Added 'Grouping' as an optional argument
+% 2019-09-15 Now trims the stimulus window so that 
+%               it does not exceed relativeTimeWindow
 % TODO: Add option to shift relative event times by stimDelay
 
 
@@ -130,8 +133,13 @@ end
 
 %% Do the job
 % Compute relative event times
-relEventTimesCellCell = compute_relative_event_times(eventTimes, stimTimes, ...
+[relEventTimesCellCell, relativeTimeWindow] = ...
+    compute_relative_event_times(eventTimes, stimTimes, ...
                                     'RelativeTimeWindow', relativeTimeWindow);
+
+% Trim the stimulus window so that it does not exceed relativeTimeWindow
+%   bounds
+stimWindow = adjust_window_to_bounds(stimWindow, relativeTimeWindow);
 
 % Put all relative event times together
 relEventTimesCell = vertcat(relEventTimesCellCell{:});
