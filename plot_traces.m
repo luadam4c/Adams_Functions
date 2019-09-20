@@ -109,6 +109,10 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                                           if 'plotmode' is 'stagger'
 %                   must be a positive scalar
 %                   default == uses the original y axis range
+%                   - 'YBase': base value to subtract by
+%                                           if 'plotmode' is 'stagger'
+%                   must be a scalar
+%                   default == uses the center of the y axis range
 %                   - 'XLimits': limits of x axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
@@ -201,6 +205,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       cd/create_indices.m
 %       cd/create_labels_from_numbers.m
 %       cd/set_figure_properties.m
+%       cd/set_axes_properties.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/isemptycell.mplot_traces
@@ -254,6 +259,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % 2019-07-25 Added maxNYTicks
 % 2019-08-23 Added 'FigExpansion' as an optional argument
 % 2019-08-23 Added horizontal bars
+% 2019-09-19 Added 'YBase' as an optional argument
 % TODO: dataToCompareColorMap
 % TODO: Number of horizontal bars shouldn't need to match nTraces
 
@@ -292,6 +298,7 @@ horzBarLineStyleDefault = '-';  % set later
 horzBarLineWidthDefault = 2;    % set later
 lineStyleToCompareDefault = '-';% data to compare are solid lines by default
 yAmountToStaggerDefault = [];   % set later  
+yBaseDefault = [];              % set later  
 xLimitsDefault = [];            % set later
 yLimitsDefault = [];            % set later
 linkAxesOptionDefault = 'none'; % don't force link axes by default
@@ -373,6 +380,10 @@ addParameter(iP, 'YAmountToStagger', yAmountToStaggerDefault, ...
     @(x) assert(isempty(x) || ispositivescalar(x), ...
                 ['YAmountToStagger must be either a empty ', ...
                     'or a positive scalar!']));
+addParameter(iP, 'YBase', yBaseDefault, ...
+    @(x) assert(isempty(x) || isscalar(x), ...
+                ['YAmountToStagger must be either a empty ', ...
+                    'or a scalar!']));
 addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) isempty(x) || iscell(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
@@ -430,6 +441,7 @@ horzBarColorMap = iP.Results.HorzBarColorMap;
 horzBarLineStyle = iP.Results.HorzBarLineStyle;
 horzBarLineWidth = iP.Results.HorzBarLineWidth;
 yAmountToStagger = iP.Results.YAmountToStagger;
+yBase = iP.Results.YBase;
 xLimits = iP.Results.XLimits;
 yLimits = iP.Results.YLimits;
 linkAxesOption = validatestring(iP.Results.LinkAxesOption, ...
@@ -689,7 +701,7 @@ if iscell(xLimits)
 
             % Plot all traces
             fig = plot_traces_helper(verbose, plotMode, colorMode, ...
-                        autoZoom, yAmountToStagger, ...
+                        autoZoom, yAmountToStagger, yBase, ...
                         tVecsThis, dataThis, ...
                         dataToCompareThis, lineStyleToCompare, ...
                         horzBarWindows, horzBarYValues, ...
@@ -724,7 +736,7 @@ else
     % Plot all traces
     [fig, subPlots, plotsData, plotsDataToCompare] = ...
         plot_traces_helper(verbose, plotMode, colorMode, ...
-                        autoZoom, yAmountToStagger, ...
+                        autoZoom, yAmountToStagger, yBase, ...
                         tVecs, data, dataToCompare, lineStyleToCompare, ...
                         horzBarWindows, horzBarYValues, ...
                         horzBarColorMap, horzBarLineStyle, horzBarLineWidth, ...
@@ -748,7 +760,7 @@ end
 
 function [fig, subPlots, plotsData, plotsDataToCompare] = ...
                 plot_traces_helper (verbose, plotMode, colorMode, ...
-                    autoZoom, yAmountToStagger, ...
+                    autoZoom, yAmountToStagger, yBase, ...
                     tVecs, data, dataToCompare, lineStyleToCompare, ...
                     horzBarWindows, horzBarYValues, ...
                     horzBarColorMap, horzBarLineStyle, horzBarLineWidth, ...
@@ -769,6 +781,9 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % Decide on the figure to plot on
 fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
                             'FigExpansion', figExpansion);
+
+% Decide on the axes to plot on and set properties
+ax = set_axes_properties;
 
 % Set the default time axis limits
 if isempty(xLimits)
@@ -793,6 +808,14 @@ end
 
 switch plotMode
 case {'overlapped', 'staggered'}
+    % Store hold on status
+    % TODO: store_hold_on_status.m
+    if ishold
+        wasHold = true;
+    else
+        wasHold = false;
+    end
+
     % Hold on
     hold on
 
@@ -826,12 +849,19 @@ case {'overlapped', 'staggered'}
     % Decide on the amount in y axis units to stagger
     %   and the new y-axis limits
     if toStagger
+        % Store the original y-axis limits
+        yLimitsOrig = yLimits;
+
         % Use the mean and range of the original computed y axis limits 
         %   from the data
-        yMean = mean(yLimits);
+        if isempty(yBase)
+            yBase = mean(yLimitsOrig);
+        end
 
         % Compute new y axis limits
-        yLimits = yAmountToStagger * ([0, nPlots]  + 0.5);
+        yMin = min([0, yAmountToStagger + (yLimitsOrig(1) - yBase)]);
+        yMax = yAmountToStagger * nPlots + (yLimitsOrig(2) - yBase);
+        yLimits = [yMin, yMax];
 
         % Create indices in reverse
         indRev = create_indices([nPlots; 1]);
@@ -858,7 +888,7 @@ case {'overlapped', 'staggered'}
 
         % Subtract by the mean
         [data, dataToCompare] = ...
-            argfun(@(x) transform_vectors(x, yMean, 'subtract'), ...
+            argfun(@(x) transform_vectors(x, yBase, 'subtract'), ...
                     data, dataToCompare);
 
         % Add offsets to data
@@ -923,6 +953,18 @@ case {'overlapped', 'staggered'}
         end
     end
     
+    % Plot a red vertical bar showing the y amount that was staggered
+    if toStagger
+        xBar = xLimits(1) + (xLimits(2) - xLimits(1)) * 0.9;
+        yLimitsBar = [yAmountToStagger, yAmountToStagger * 2];
+        hold on
+        plot_vertical_line(xBar, 'YLimits', yLimitsBar, ...
+                            'Color', 'r', 'LineWidth', 1);
+        xText = xLimits(1) + (xLimits(2) - xLimits(1)) * 0.91;
+        yText = yAmountToStagger * 3 / 2;
+        text(xText, yText, num2str(yAmountToStagger, 3));
+    end
+
     % Plot horizontal bars
     if ~isempty(horzBarWindows)
         plot_horizontal_line(horzBarYValues, ...
@@ -986,6 +1028,10 @@ case {'overlapped', 'staggered'}
 
     % Save current axes handle
     subPlots = gca;
+
+    if ~wasHold
+        hold off
+    end
 case 'parallel'
     if ~strcmpi(legendLocation, 'suppress')
         % Set a legend location differently    
@@ -1361,7 +1407,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function horzBarYValue = compute_default_horzbar_yvalue (yLimits, toStagger, ...
-                                                        yAmountToStagger);
+                                                        yAmountToStagger)
 %% Computes a default horizontal bar y value
 
 if toStagger
@@ -1374,6 +1420,8 @@ end
 
 %{ 
 OLD CODE:
+
+yLimits = yAmountToStagger * ([0, nPlots]  + 0.5);
 
 %}
 

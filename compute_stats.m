@@ -15,6 +15,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       compute_stats(data, 'cov')
 %       compute_stats(data, 'zscore')
 %       compute_stats(data, 'mean', 2)
+%       compute_stats(data, 'max', 2)
 %
 % Outputs:
 %       stats       - the computed statistic for each vector
@@ -31,6 +32,8 @@ function stats = compute_stats (vecs, statName, varargin)
 %                       'upper95'   - upper bound of the 95% confidence interval
 %                       'cov'       - coefficient of variation
 %                       'zscore'    - z-score
+%                       'max'       - maximum
+%                       'min'       - manimum
 %                       'range'     - range
 %                       'range2mean'- percentage of range relative to mean
 %       dim         - (opt) dimension to compute stats along
@@ -68,6 +71,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       cd/nanstderr.m
 %
 % Used by:
+%       cd/compute_combined_trace.m
 %       cd/compute_population_average.m
 %       cd/compute_sampsizepwr.m
 %       cd/parse_multiunit.m
@@ -89,12 +93,13 @@ function stats = compute_stats (vecs, statName, varargin)
 % 2019-05-12 Added dim as an optional argument
 % 2019-08-07 Fixed 0.95 -> 0.96
 % 2019-08-20 Now always return NaN if empty
+% 2019-09-19 Added 'max' and 'min'
 % TODO: Combine with compute_weighted_average.m
 % 
 
 %% Hard-coded parameters
 validStatNames = {'average', 'mean', 'std', 'stderr', 'lower95', 'upper95', ...
-                    'cov', 'zscore', 'range', 'range2mean'};
+                    'cov', 'zscore', 'max', 'min', 'range', 'range2mean'};
 
 %% Default values for optional arguments
 dimDefault = 1;                 % compute across rows by default
@@ -215,6 +220,10 @@ switch statName
         else
             func = @(x) mean(x, dim) ./ std(x, dim);
         end
+    case 'max'
+        func = @(x) max(x, [], dim);
+    case 'min'
+        func = @(x) min(x, [], dim);
     case 'range'
         func = @(x) range(x, dim);
     case 'range2mean'

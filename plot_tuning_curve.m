@@ -214,6 +214,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/decide_on_colormap.m
+%       cd/set_axes_properties.m
 %       cd/set_figure_properties.m
 %       cd/force_column_vector.m
 %       cd/force_matrix.m
@@ -815,6 +816,9 @@ end
 fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
                     'FigExpansion', figExpansion, 'ClearFigure', clearFigure);
 
+% Decide on the axes to plot on and set properties
+ax = set_axes_properties;
+
 % Initialize graphics objects
 curves = gobjects(nColumnsToPlot, nLinesPerPhase);
 if ~isempty(lowerCI) || ~isempty(upperCI)
@@ -1191,6 +1195,7 @@ end
 
 %% Output handles
 handles.fig = fig;
+handles.ax = ax;
 handles.curves = curves;
 if ~isempty(lowerCI) || ~isempty(upperCI)
     handles.confInts = confInts;

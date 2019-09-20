@@ -143,6 +143,11 @@ alwaysNew = iP.Results.AlwaysNew;
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
+% If alwaysNew is true, figHandle shouldn't be provided
+if alwaysNew && ~isempty(figHandle)
+    error('FigHandle can''t be provided if alwaysNew is true!');
+end
+
 % Set default expandFromDefault
 if isempty(expandFromDefault)
     if ~isempty(positionUser) || ~isempty(width) || ~isempty(height)

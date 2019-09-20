@@ -3,17 +3,20 @@ function samplingIntervals = compute_sampling_interval (timeVecs, varargin)
 % Usage: samplingIntervals = compute_sampling_interval (timeVecs, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
-%       TODO
+%       compute_sampling_interval([1; 3; 4; 6])
+%       compute_sampling_interval([1; 3; 4; 6], 'IsRegular', false)
+%
 % Outputs:
 %       samplingIntervals   - sampling intervals
 %                           specified as a numeric vector
 % Arguments:
 %       timeVecs    - time vectors
 %                   must be a numeric vector or a cell array of numeric vectors
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'IsRegular': whether the sampling intervals are regular
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %
 % Used by:
 %       cd/compute_all_pulse_responses.m
@@ -26,12 +29,13 @@ function samplingIntervals = compute_sampling_interval (timeVecs, varargin)
 
 % File History:
 % 2018-11-28 Created by Adam Lu
+% 2019-09-19 Added 'IsRegular' as an optional argument
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-% param1Default   = [];                   % default TODO: Description of param1
+isRegularDefault = true;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -52,21 +56,31 @@ addRequired(iP, 'timeVecs', ...
                 ['vecs must be either a numeric vector ', ...
                     'or a cell array of numeric vectors!']));
 
-% % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default, ...
-%     % TODO: validation function %);
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'IsRegular', isRegularDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, timeVecs, varargin{:});
-% param1 = iP.Results.param1;
+isRegular = iP.Results.IsRegular;
 
 %% Do the job
 if iscell(timeVecs)
-    % Use cellfun
-    samplingIntervals = cellfun(@(x) x(2) - x(1), timeVecs);
+    samplingIntervals = ...
+        cellfun(@(x) compute_sampling_interval_helper(x, isRegular), timeVecs);
 else
-    % Use the first two points
-    samplingIntervals = timeVecs(2) - timeVecs(1);
+    samplingIntervals = compute_sampling_interval_helper(timeVecs, isRegular);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function samplingInterval = compute_sampling_interval_helper (timeVec, isRegular)
+%% Computes the sampling interval from one vector
+
+if isRegular
+    samplingInterval = timeVec(2) - timeVec(1);
+else
+    samplingInterval = mean(diff(timeVec));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

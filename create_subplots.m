@@ -168,7 +168,7 @@ if isempty(centerPosition)
 end
 
 % Set default figure position and figure expansion factors
-if isempty(figExpansion) && isempty(figPosition)
+if isempty(figExpansion) && isempty(figPosition) && isempty(figHandle)
     % Start with the initial figure position
     figPosition = centerPosition;
 

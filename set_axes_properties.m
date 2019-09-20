@@ -46,9 +46,12 @@ function ax = set_axes_properties (varargin)
 %
 % Used by:
 %       cd/plot_frame.m
+%       cd/plot_traces.m
+%       cd/plot_tuning_curve.m
 
 % File History:
 % 2019-09-04 Adaped from set_figure_properties.m
+% 2019-09-19 Now defaults TickDir to 'out'
 
 
 %% Hard-coded parameters
@@ -121,6 +124,11 @@ else
     % Get the current axes or create one if non-existent
     ax = gca;
 end
+
+% Plot with tick direction outward
+% TODO: Make optional argument with this default
+set(ax, 'TickDir', 'out');
+set(ax, 'TickDirMode', 'manual');
 
 % Set other Axes object properties
 if ~isemptycell(otherArguments)

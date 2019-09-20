@@ -30,6 +30,10 @@ function [combTrace, paramsUsed] = ...
 %                       must be an unambiguous, case-insensitive match to one of: 
 %                           'unique'    - take the unique value
 %                           'average' or 'mean' - take the average
+%                           'std'       - standard deviation
+%                           'stderr'    - standard error
+%                           'lower95'   - lower bound of the 95% conf interval
+%                           'upper95'   - upper bound of the 95% conf interval
 %                           'maximum'   - take the maximum
 %                           'minimum'   - take the minimum
 %                           'all'       - take the logical AND
@@ -64,6 +68,7 @@ function [combTrace, paramsUsed] = ...
 %                   
 % Requires:
 %       cd/cell2num.m
+%       cd/compute_stats.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
 %       cd/create_empty_match.m
@@ -100,6 +105,10 @@ function [combTrace, paramsUsed] = ...
 % 2019-01-22 Added 'ConsistentFormat' as an optional parameter
 % 2019-04-26 Added 'IgnoreNan' as an optional parameter
 % 2019-08-27 Added the 'unique' combine method
+% 2019-09-19 Added 'std', 'stderr', 'lower95', 'upper95'
+% 2019-09-19 Now uses compute_stats.m
+% TODO: Move more functionality to compute_stats.m
+
 % TODO: Make 'Seeds' an optional argument
 % TODO: Use compute_stats.m with dim == 2?
 % 
@@ -107,7 +116,9 @@ function [combTrace, paramsUsed] = ...
 %% Hard-coded parameters
 validAlignMethods = {'leftAdjust', 'rightAdjust', ...
                     'leftAdjustPad', 'rightAdjustPad'};
-validCombineMethods = {'unique', 'average', 'mean', 'maximum', 'minimum', ...
+validCombineMethods = {'unique', 'average', 'mean', ...
+                        'std', 'stderr', 'lower95', 'upper95', ...
+                        'maximum', 'minimum', ...
                         'all', 'any', 'first', 'last', ...
                         'bootmean', 'bootmax', 'bootmin'};
 seeds = [];
@@ -324,8 +335,8 @@ end
 
 % Concatenate into a single matrix
 switch combineMethod
-    case {'average', 'mean', 'maximum', 'minimum', ...
-            'all', 'any', 'first', 'last'}
+    case {'average', 'mean', 'std', 'stderr', 'lower95', 'upper95', ...
+            'maximum', 'minimum', 'all', 'any', 'first', 'last'}
         % Concatenate directly
         combTraces = horzcat(combTraceEachGroup{:});
     case {'bootmean', 'bootmax', 'bootmin'}
@@ -370,11 +381,10 @@ switch combineMethod
         end
     case {'average', 'mean'}
         % Take the mean of each row and return a column
-        if ignoreNan
-            combTrace = nanmean(traces, 2);
-        else
-            combTrace = mean(traces, 2);
-        end
+        combTrace = compute_stats(traces, 'mean', 2, 'IgnoreNan', ignoreNan);
+    case {'std', 'stderr', 'lower95', 'upper95'}
+        combTrace = compute_stats(traces, combineMethod, 2, ...
+                                    'IgnoreNan', ignoreNan);
     case {'maximum', 'minimum'}
         if ignoreNan
             nanFlag = 'omitnan';
