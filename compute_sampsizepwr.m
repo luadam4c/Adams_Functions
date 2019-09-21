@@ -35,10 +35,12 @@ function output = compute_sampsizepwr (varargin)
 % Outputs:
 %       output      - output specified by outputType or everything in a table
 %                   specified as a numeric column vector or a table
+%
 % Arguments:
 %       varargin    - 'OutputType': type of output
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'all'       - everything in a table
+%                       'scalars'   - everything except data vectors
 %                       'sampsize'  - sample size needed
 %                       'statpower' - computed statistical power
 %                       'pAlt'      - parameter for alternative hypothesis
@@ -104,6 +106,7 @@ function output = compute_sampsizepwr (varargin)
 %       cd/compute_stats.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
+%       cd/extract_elements.m
 %       cd/force_column_cell.m
 %       cd/iscellnumeric.m
 %       cd/match_format_vector_sets.m
@@ -116,10 +119,11 @@ function output = compute_sampsizepwr (varargin)
 
 % File History:
 % 2019-08-20 Created by Adam Lu
+% 2019-09-20 Added 'scalars' as an outputType
 % 
 
 %% Hard-coded parameters
-validOutputTypes = {'all', 'sampsize', 'power', 'pAlt'};
+validOutputTypes = {'all', 'scalars', 'sampsize', 'power', 'pAlt'};
 validTestTypes = {'z', 't', 't2', 'var', 'p'};
 
 % TODO: Make optional arguments
@@ -266,7 +270,7 @@ nVectors = max(nVecs);
 
 %% Output results in a table
 switch outputType
-    case 'all'
+    case {'all', 'scalars'}
         % Convert back to numeric vectors
         [nSamplesNeeded, statPower, pAlt, ...
             nSamplesNull, nSamplesAlt, statPowerDesired] = ...
@@ -289,7 +293,25 @@ switch outputType
             sheetPath = [create_time_stamp, '_', fileSuffix, '.csv'];
             writetable(sampsizeTable, sheetPath);
         end
+        
+        % Remove raw data if requested
+        if strcmpi(outputType, 'scalars')
+            % Compute scalar variables
+            meanNull = extract_elements(pNull, 'specific', 'Index', 1);
+            stdNull = extract_elements(pNull, 'specific', 'Index', 2);
+            meanAlt = pAlt;
 
+            % Add scalar variables
+            sampsizeTable = ...
+                addvars(sampsizeTable, meanNull, stdNull, meanAlt, ...
+                        'Before', 'pNull');
+
+            % Remove vector variables
+            sampsizeTable = ...
+                removevars(sampsizeTable, {'dataNull', 'dataAlt', ...
+                                            'pNull', 'pAlt'});
+        end
+        
         % Return as output
         output = sampsizeTable;
     case 'sampsize'
@@ -389,6 +411,8 @@ end
 if isempty(pAlt) 
     if ~isempty(dataAlt)
         pAlt = estimate_dist_params(dataAlt, testType, meanAlt, stdev, 'alt');
+    elseif ~isempty(meanAlt)
+        pAlt = meanAlt;
     elseif ~isempty(nSamples)
         pAlt = sampsizepwr(testType, pNull, [], statPowerDesired, nSamples, ...
                             'Ratio', nSamplesRatio, otherArguments{:});

@@ -48,6 +48,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % Used by:
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
+%       cd/compute_sampsizepwr.m
 %       cd/compute_time_window.m
 %       cd/create_average_time_vector.m
 %       cd/create_indices.m

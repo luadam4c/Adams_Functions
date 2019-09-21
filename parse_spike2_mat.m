@@ -15,7 +15,10 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 % Arguments:
 %       spike2MatPath   - Spike2-exported MATLAB path
 %                       must be a string scalar or a character vector
-%       varargin    - 'ParseGas': whether to parse pleth pulses
+%       varargin    - 'ParseText': whether to parse text marks
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ParseGas': whether to parse pleth pulses
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'ParseLaser': whether to parse laser pulses
@@ -41,6 +44,7 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 % File History:
 % 2019-09-08 Moved from spike2Mat2Text.m
 % 2019-09-11 Added 'ParseGas' as an optional argument
+% 2019-09-20 Added 'ParseText' as an optional argument
 % TODO: Add 'ChannelNames' as an optional argument with default {}
 % 
 
@@ -49,6 +53,7 @@ MS_PER_S = 1000;
 isTrace = @(x) isfield(x, 'values') && isfield(x, 'interval');
 
 %% Default values for optional arguments
+parseTextDefault = false;
 parseGasDefault = false;
 parseLaserDefault = false;
 
@@ -70,6 +75,8 @@ addRequired(iP, 'spike2MatPath', ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'ParseText', parseTextDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ParseGas', parseGasDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ParseLaser', parseLaserDefault, ...
@@ -77,6 +84,7 @@ addParameter(iP, 'ParseLaser', parseLaserDefault, ...
 
 % Read from the Input Parser
 parse(iP, spike2MatPath, varargin{:});
+parseText = iP.Results.ParseText;
 parseGas = iP.Results.ParseGas;
 parseLaser = iP.Results.ParseLaser;
 
@@ -137,6 +145,11 @@ end
 
 % Adjust channel start times so that they are all the same
 channelStarts = adjust_start_times(channelStarts, siSeconds);
+
+%% Parse text marks it they exist
+% TODO
+if parseText
+end
 
 %% Parse gas trace if it exists
 % Test if a gas trace exists
