@@ -1,12 +1,20 @@
 function [orderedPairs, nOrderedPairs, nVectors] = all_ordered_pairs (vectors, varargin)
 %% Generates a cell array of all ordered pairs of elements/indices, one from each vector
 % Usage: [orderedPairs, nOrderedPairs, nVectors] = all_ordered_pairs (vectors, varargin)
+% Explanation:
+%       TODO
+%       cf. outer_product.m
+%
+% Example(s):
+%       all_ordered_pairs({1:3, 4:5})
+%
 % Outputs:
 %       orderedPairs    - a cell array of all ordered pairs of elements/indices,
 %                           one from each vector(default: elements)
 %       nOrderedPairs   - total number of unique ordered pairs 
 %                           generated from the vectors
 %       nVectors        - total number of vectors
+%
 % Arguments:    
 %       vectors         - a cell array of vectors to be paired
 %                       must be a cell array of vectors

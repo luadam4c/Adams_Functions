@@ -3,8 +3,12 @@ function product = outer_product (X, Y)
 % Usage: product = outer_product (X, Y)
 % Explanation:
 %       TODO
+%       cf. all_ordered_pairs.m
+%
 % Example(s):
 %       outer_product({'a', 'b'}, {'1', '2', '3'})
+%       outer_product(1:3, 4:6)
+%
 % Outputs:
 %       product     - TODO: Description of product
 %                   specified as a TODO

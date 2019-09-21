@@ -5,7 +5,7 @@ function figHandle = update_figure_for_corel (figHandle, varargin)
 %       TODO
 %
 % Example(s):
-%       TODO
+%       fig = update_figure_for_corel(fig);
 %
 % Outputs:
 %       figHandle     - TODO: Description of figHandle
@@ -14,9 +14,9 @@ function figHandle = update_figure_for_corel (figHandle, varargin)
 % Arguments:
 %       figHandle     - TODO: Description of figHandle
 %                   must be a TODO
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'RemoveTicks': whether to remove all ticks
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
@@ -29,12 +29,18 @@ function figHandle = update_figure_for_corel (figHandle, varargin)
 
 % File History:
 % 2019-09-19 Created by Adam Lu
+% 2019-09-20 Added 'RemoveTicks' as an optional argument
 % 
 
 %% Hard-coded parameters
+% TODO: Make optional parameters
+fontSizeLabels = 8;
+fontSizeAxis = 6; 
+linewidth = 1;
+tickLengths = [0.025, 0.025];
 
 %% Default values for optional arguments
-param1Default = [];             % default TODO: Description of param1
+removeTicksDefault = false;  % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -53,11 +59,12 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 addRequired(iP, 'figHandle');
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'param1', param1Default);
+addParameter(iP, 'RemoveTicks', removeTicksDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, figHandle, varargin{:});
-param1 = iP.Results.param1;
+removeTicks = iP.Results.RemoveTicks;
 
 % Keep unmatched arguments for the TODO() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -68,6 +75,9 @@ otherArguments = struct2arglist(iP.Unmatched);
 %% Preparation
 % TODO
 
+titleFontSizeMultiplier = fontSizeLabels / fontSizeAxis;
+labelFontSizeMultiplier = fontSizeLabels / fontSizeAxis;
+
 %% Do the job
 % Find all axes in the figure
 ax = findall(figHandle, 'type', 'axes');
@@ -75,9 +85,12 @@ ax = findall(figHandle, 'type', 'axes');
 % Count the number of axes
 nAx = numel(ax);
 
-% Make all ticks go outward
-set(ax, 'TickDir', 'out');
-set(ax, 'TickDirMode', 'manual');
+% Set font
+set(ax, 'FontName', 'Arial');
+set(ax, 'FontSize', fontSizeAxis);
+set(ax, 'TitleFontSizeMultiplier', 4/3);
+set(ax, 'TitleFontWeight', 'normal');
+set(ax, 'LabelFontSizeMultiplier', 4/3);
 
 % Make all rulers linewidth 1
 set(ax, 'LineWidth', 1);
@@ -87,12 +100,16 @@ for iAx = 1:nAx
     box(ax(iAx), 'off');
 end
 
-% Remove x axis ticks
-set(ax, 'XTick', []);
+% Make all ticks go outward
+set(ax, 'TickDir', 'out');
+set(ax, 'TickDirMode', 'manual');
+set(ax, 'TickLength', tickLengths);
 
-% Remove y axis ticks
-set(ax, 'YTick', []);
-
+% Remove x and y axis ticks
+if removeTicks
+    set(ax, 'XTick', []);
+    set(ax, 'YTick', []);
+end
 
 %% Output results
 % TODO

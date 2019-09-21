@@ -313,6 +313,12 @@ case 'chevron'
         % Generate the data for the Chevron plot
         chevronData = transpose([nEventsBefore, nEventsAfter]);
 
+        % Save the data in a table
+        chevronTable = table(nEventsBefore, nEventsAfter);
+        figPathBase = extract_fileparts(figName, 'pathbase');
+        sheetPath = [figPathBase, '.csv'];
+        writetable(chevronTable, sheetPath);
+        
         % TODO: plot_chevron.m
         [lowBefore, lowAfter] = ...
             argfun(@(x) compute_stats(x, 'lower95'), nEventsBefore, nEventsAfter);

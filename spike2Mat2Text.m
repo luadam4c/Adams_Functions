@@ -25,6 +25,12 @@ function varargout = spike2Mat2Text (spike2MatPath, varargin)
 %                   - 'TextPath': path to text file
 %                   must be a string scalar or a character vector
 %                   default == replace(spike2MatPath, '.mat', ['.', textType])
+%                   - 'ParseGas': whether to parse pleth pulses
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ParseLaser': whether to parse laser pulses
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
@@ -50,6 +56,8 @@ validTextTypes = {'atf', 'txt', 'csv'};
 %% Default values for optional arguments
 textTypeDefault  = 'atf';
 textPathDefault = '';
+parseGasDefault = false;
+parseLaserDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -72,11 +80,17 @@ addParameter(iP, 'TextType', textTypeDefault, ...
     @(x) any(validatestring(x, validTextTypes)));
 addParameter(iP, 'TextPath', textPathDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'ParseGas', parseGasDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ParseLaser', parseLaserDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, spike2MatPath, varargin{:});
 textType = validatestring(iP.Results.TextType, validTextTypes);
 textPath = iP.Results.TextPath;
+parseGas = iP.Results.ParseGas;
+parseLaser = iP.Results.ParseLaser;
 
 % Keep unmatched arguments for the TODO() function
 % otherArguments = struct2arglist(iP.Unmatched);
