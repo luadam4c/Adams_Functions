@@ -1,6 +1,6 @@
-function fieldsTable = all_fields (inStruct, varargin)
+function output = all_fields (inStruct, varargin)
 %% Get all field values and names of a structure that satisfies specific conditions in cell arrays
-% Usage: fieldsTable = all_fields (inStruct, varargin)
+% Usage: output = all_fields (inStruct, varargin)
 % Explanation:
 %       TODO
 %
@@ -13,18 +13,29 @@ function fieldsTable = all_fields (inStruct, varargin)
 %       all_fields(myStruct, 'ValueFunc', @isnum)
 %       all_fields(myStruct, 'ValueFunc', @istext)
 %       all_fields(myScalarStruct)
+%       all_fields(myScalarStruct, 'OutputType', 'name')
+%       all_fields(myScalarStruct, 'OutputType', 'value')
+%       all_fields(myScalarStruct, 'OutputType', 'index')
 %
 % Outputs:
-%       fieldsTable - a table with columns:
+%       output      - a table with columns:
 %                       Name        - the names of selected fields
 %                       Value       - the values of selected fields
 %                       IndexOrig   - the original index of selected fields
+%                       or just the column requested
 %                   specified as a column cell array
 %
 % Arguments:
-%       inStruct    - a structure with fieldsTable
+%       inStruct    - a structure with fields
 %                   must be a scalar structure
-%       varargin    - 'ValueFunc': a function that takes the field value
+%       varargin    - 'OutputType': type of output
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'table'     - everything in a table
+%                       'name'      - just the names in a cell array
+%                       'value'     - just the values in a cell array
+%                       'index'     - just the original indices
+%                   default == 'table'
+%                   - 'ValueFunc': a function that takes the field value
 %                           as the sole argument and a boolean as an output
 %                   must be a function handle
 %                   default == empty function handle
@@ -38,13 +49,16 @@ function fieldsTable = all_fields (inStruct, varargin)
 
 % File History:
 % 2019-09-02 Created by Adam Lu
+% 2019-09-22 Added 'OutputType' as an optional argument
 % TODO: Extract code for regexp match from all_files.m into a function
 % TODO: Add regexp match
 % 
 
 %% Hard-coded parameters
+validOutputTypes = {'table', 'name', 'value', 'index'};
 
 %% Default values for optional arguments
+outputTypeDefault = 'table';
 valueFuncDefault = function_handle.empty;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -65,11 +79,14 @@ addRequired(iP, 'inStruct', ...
     @(x) validateattributes(x, {'struct'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'OutputType', outputTypeDefault, ...
+    @(x) any(validatestring(x, validOutputTypes)));
 addParameter(iP, 'ValueFunc', valueFuncDefault, ...
     @(x) validateattributes(x, {'function_handle'}, {'2d'}));
 
 % Read from the Input Parser
 parse(iP, inStruct, varargin{:});
+outputType = validatestring(iP.Results.OutputType, validOutputTypes);
 valueFunc = iP.Results.ValueFunc;
 
 %% Do the job
@@ -87,15 +104,30 @@ end
 fieldNames = allFieldNames(toSelect);
 
 % Get all the field values
-fieldValues = cellfun(@(x) inStruct.(x), fieldNames, 'UniformOutput', false);
+if ~strcmp(outputType, 'name')
+    fieldValues = cellfun(@(x) inStruct.(x), ...
+                            fieldNames, 'UniformOutput', false);
+end
 
 % Return original indices
-indOriginal = find(toSelect);
+if ~strcmp(outputType, 'name') && ~strcmp(outputType, 'value')
+    indOriginal = find(toSelect);
+end
 
 %% Output
-% Place in a table
-fieldsTable = table(fieldNames, fieldValues, indOriginal, ...
-                    'VariableNames', {'Name', 'Value', 'IndexOrig'});
+switch outputType
+    case 'table'
+        % Place in a table
+        output = table(fieldNames, fieldValues, indOriginal, ...
+                            'VariableNames', {'Name', 'Value', 'IndexOrig'});
+    case 'name'
+        output = fieldNames;
+    case 'value'
+        output = fieldValues;
+    case 'index'
+        output = indOriginal;
+    otherwise
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
