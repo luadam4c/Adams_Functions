@@ -37,6 +37,7 @@ function varargout = parse_gas_trace (vectors, siMs, varargin)
 % 2019-09-09 Created by Adam Lu
 % 2019-09-10 Added 'PulseDirection' as an optional argument
 % 2019-09-13 Now uses parse_repetitive_pulses.m
+% 2019-09-20 Fixed bug
 % 
 
 %% Hard-coded parameters

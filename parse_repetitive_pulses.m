@@ -531,6 +531,11 @@ while ~isempty(idx25Rel) && ~isempty(idx75Rel)
     idx75Rel = find(vecPos > threeFourthsAmp, 1, 'first');
 end
 
+% If not found, use the first and last point
+if isempty(endPoints)
+    endPoints = [1; numel(vecPos)];
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [vecPos, ampPos] = standardize_pulse (vector, baseValue, ...
