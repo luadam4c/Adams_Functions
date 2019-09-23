@@ -27,12 +27,14 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
+%       cd/argfun.m
 %       cd/all_fields.m
 %       cd/convert_to_char.m
 %       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_fields.m
 %       cd/force_string_end.m
+%       cd/match_row_count.m
 %       cd/parse_gas_trace.m
 %       cd/parse_laser_trace.m
 %       cd/struct2arglist.m
@@ -51,7 +53,6 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %% Hard-coded parameters
 MS_PER_S = 1000;
 isTrace = @(x) isfield(x, 'values') && isfield(x, 'interval');
-isText = @(x) isfield(x, 'text');
 
 %% Default values for optional arguments
 parseTextDefault = false;
@@ -150,54 +151,7 @@ channelStarts = adjust_start_times(channelStarts, siSeconds);
 
 %% Parse text marks it they exist
 if parseText
-    % TODO: parse_spike2_text.m
-    % Hard-coded parameters
-    textTableSuffix = '_texts';
-    figSuffix = strcat(textTableSuffix, '_detection');
-
-    % Extract file parts
-    fileBase = extract_fileparts(spike2MatPath, 'pathbase');
-
-    % Make sure the sheet base ends with pulseTableSuffix
-    textTableBase = force_string_end(fileBase, textTableSuffix);
-    figBase = force_string_end(fileBase, figSuffix);
-
-    % Create paths for the pulse table
-    textTablePath = force_string_end(textTableBase, '.csv');
-
-    % Find all fields with a 'text' field
-    textStructs = all_fields(spike2FileContents, 'ValueFunc', isText, ...
-                                'OutputType', 'value');
-    
-    % Extract just the first structure with the 'text' field
-    % TODO: What if there are multiple 'text' fields
-    textStruct = textStructs{1};
-    
-    % Extract the text content
-    %   Note: this is a character matrix
-    textContent = textStruct.text;
-
-    % Extract the text times
-    %   Note: this is a numeric column vector
-    textTimes = textStruct.times;
-
-    % Extract the text codes
-    %   Note: this is a numeric matrix
-    % TODO: What is this?
-    textCodes = textStruct.codes;
-    
-    % Convert to a cell array
-    textStrings = cellstr(textContent);
-    
-    % TODO: Add tracePath and pathExists
-    % TODO: Plot detection result
-
-    % Place into a table
-    textTable = table(textStrings, textTimes, textCodes, ...
-                        'VariableNames', {'String', 'Time', 'Code'});
-    
-    % Save the table
-    writetable(textTable, textTablePath);
+    textTable = parse_text_spike2_mat(spike2MatPath, spike2FileContents);
 end
 
 %% Parse gas trace if it exists
@@ -248,6 +202,72 @@ function channelStarts = adjust_start_times (channelStarts, siSeconds)
 
 % Make sure it is a multiple of siSeconds
 channelStarts = floor(channelStarts ./ siSeconds) .* siSeconds;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function textTable = parse_text_spike2_mat (spike2MatPath, spike2FileContents)
+% TODO: parse_text_spike2_mat.m
+
+% Hard-coded parameters
+textTableSuffix = '_texts';
+isText = @(x) isfield(x, 'text');
+figSuffix = strcat(textTableSuffix, '_detection');
+
+% Extract file parts
+fileBase = extract_fileparts(spike2MatPath, 'pathbase');
+
+% Make sure the sheet base ends with pulseTableSuffix
+textTableBase = force_string_end(fileBase, textTableSuffix);
+figBase = force_string_end(fileBase, figSuffix);
+
+% Create paths for the pulse table
+textTablePath = force_string_end(textTableBase, '.csv');
+
+% Find all fields with a 'text' field
+textStructs = all_fields(spike2FileContents, 'ValueFunc', isText, ...
+                            'OutputType', 'value');
+
+% Extract just the first structure with the 'text' field
+% TODO: What if there are multiple 'text' fields
+textStruct = textStructs{1};
+
+% Extract the text content
+%   Note: this is a character matrix
+textContent = textStruct.text;
+
+% Extract the text times
+%   Note: this is a numeric column vector
+textTimes = textStruct.times;
+
+% Extract the text codes
+%   Note: this is a numeric matrix
+% TODO: What is this?
+textCodes = textStruct.codes;
+
+% Convert to a cell array
+textStrings = cellstr(textContent);
+
+
+% Record trace path and whether path exists
+tracePath = {spike2MatPath};
+
+% Determine if the trace file exists
+[tracePath, pathExists] = construct_and_check_fullpath(tracePath);
+
+% Match row counts
+[tracePath, pathExists] = ...
+    argfun(@(x) match_row_count(x, numel(textStrings)), tracePath, pathExists);
+
+% TODO: Plot detection result
+
+% Place into a table
+textTable = table(textStrings, textTimes, textCodes, tracePath, pathExists, ...
+                    'VariableNames', {'String', 'Time', 'Code', ...
+                                        'tracePath', 'pathExists'});
+
+% Save the table
+writetable(textTable, textTablePath);
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

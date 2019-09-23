@@ -171,6 +171,10 @@ endTimesMs = swdManualTableOfInterest.Time2_ms_;
 startTime = startTimesMs / MS_PER_S;
 endTime = endTimesMs / MS_PER_S;
 
+% Make sure none of the windows overlap
+% TODO TODO TODO
+% isOverlapping = is_overlapping(transpose([startTime, endTime]));
+
 % Compute duration
 duration = endTime - startTime;
 

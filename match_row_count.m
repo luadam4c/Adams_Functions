@@ -3,6 +3,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 % Usage: arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       match_row_count([1, 2, 3], 6)
 %       match_row_count([1; 2; 3], 6)
@@ -40,6 +41,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %       cd/m3ha_plot_individual_traces.m
 %       cd/match_format_vectors.m
 %       cd/match_time_info.m
+%       cd/parse_spike2_mat.m
 %       cd/plot_struct.m
 %       cd/xolotl_add_current_injection.m
 %       cd/xolotl_add_voltage_clamp.m
@@ -72,7 +74,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'arrayOld', ...
-    @(x) validateattributes(x, {'numeric', 'cell', 'struct'}, {'3d'}));
+    @(x) validateattributes(x, {'numeric', 'logical', 'cell', 'struct'}, {'3d'}));
 addRequired(iP, 'nRowsNew', ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
 
