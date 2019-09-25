@@ -107,6 +107,7 @@ function [combTrace, paramsUsed] = ...
 % 2019-08-27 Added the 'unique' combine method
 % 2019-09-19 Added 'std', 'stderr', 'lower95', 'upper95'
 % 2019-09-19 Now uses compute_stats.m
+% 2019-09-25 Fixed bug for the 'unique' combine method
 % TODO: Move more functionality to compute_stats.m
 
 % TODO: Make 'Seeds' an optional argument
@@ -372,14 +373,15 @@ switch combineMethod
         % Count the number of unique numbers for each row
         nUniquePhaseNumbers = count_samples(uniqueNumbers);
 
-        % If any row has more than one unique number, there is a conflict
+        % If any row has more than one unique number, display a warning
         if any(nUniquePhaseNumbers > 1)
             disp([mfilename, ':', ...
                     ' There are more than one unique numbers for some rows!']);
-            combTrace = [];
-        else
-            combTrace = cell2num(uniqueNumbers);
         end
+
+        % Place into a numeric vector and place NaNs for any row
+        %   with more than one unique number
+        combTrace = cell2num(uniqueNumbers, 'CombineMethod', 'nan');
     case {'average', 'mean'}
         % Take the mean of each row and return a column
         combTrace = compute_stats(traces, 'mean', 2, 'IgnoreNan', ignoreNan);
