@@ -367,14 +367,15 @@ switch combineMethod
         uniqueNumbers = ...
             arrayfun(@(x) unique_custom(traces(x, :), ...
                                         'IgnoreNan', ignoreNan), ...
-                transpose(1:size(traces, 1)), 'UniformOutput', false);
+                    transpose(1:size(traces, 1)), 'UniformOutput', false);
 
         % Count the number of unique numbers for each row
         nUniquePhaseNumbers = count_samples(uniqueNumbers);
 
         % If any row has more than one unique number, there is a conflict
         if any(nUniquePhaseNumbers > 1)
-            disp("There are more than one unique numbers for some rows!");
+            disp([mfilename, ':', ...
+                    ' There are more than one unique numbers for some rows!']);
             combTrace = [];
         else
             combTrace = cell2num(uniqueNumbers);

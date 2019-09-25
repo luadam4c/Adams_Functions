@@ -194,6 +194,7 @@ There are 1 MATLAB scripts in this directory:
 - [**find_istart_old.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_istart_old.m): Finds time of current application from a series of current vectors
 - [**find_LTS.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_LTS.m): Find, plot and classify the most likely low-threshold spike (LTS) candidate in a voltage trace
 - [**find_LTSs_many_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_LTSs_many_sweeps.m): Calls find_LTS.m for many voltage traces
+- [**find_matching_files.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_matching_files.m): Finds matching files from file parts
 - [**find_nearest_multiple.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_nearest_multiple.m): Finds the nearest integer multiple of base to target and the distance to between it and target
 - [**find_nearest_odd.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_nearest_odd.m): Returns the nearest odd integer to real number(s)
 - [**find_passive_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_passive_params.m): Extract passive parameters from both the rising and falling phase of a current pulse response

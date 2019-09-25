@@ -1,6 +1,6 @@
-function [tables1, tables2, distinctPrefixes] = load_matching_sheets (suffix1, suffix2, varargin)
+function [tables1, tables2, distinctParts] = load_matching_sheets (suffix1, suffix2, varargin)
 %% Loads spreadsheets with matching strings before given suffixes (incomplete)
-% Usage: [tables1, tables2, distinctPrefixes] = load_matching_sheets (suffix1, suffix2, varargin)
+% Usage: [tables1, tables2, distinctParts] = load_matching_sheets (suffix1, suffix2, varargin)
 % Explanation:
 %       TODO
 %
@@ -12,7 +12,7 @@ function [tables1, tables2, distinctPrefixes] = load_matching_sheets (suffix1, s
 %                   specified as a TODO
 %       tables2     - TODO: Description of tables2
 %                   specified as a TODO
-%       distinctPrefixes    - TODO
+%       distinctParts    - TODO
 %
 % Arguments:
 %       suffix1     - TODO: Description of suffix1
@@ -25,9 +25,9 @@ function [tables1, tables2, distinctPrefixes] = load_matching_sheets (suffix1, s
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
+%       cd/all_files.m
 %       cd/create_error_for_nargin.m
-%       cd/struct2arglist.m
-%       /TODO:dir/TODO:file
+%       cd/find_matching_files.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -70,10 +70,7 @@ parse(iP, suffix1, varargin{:});
 directory = iP.Results.Directory;
 
 % Keep unmatched arguments for the TODO() function
-otherArguments = struct2arglist(iP.Unmatched);
-
-%% Preparation
-% TODO
+% otherArguments = iP.Unmatched;
 
 %% Do the job
 % Get all files for suffix1
@@ -81,14 +78,10 @@ otherArguments = struct2arglist(iP.Unmatched);
     all_files('Directory', directory, 'Keyword', pathBase, ...
                 'Suffix', suffix1, 'Extension', sheetType);
 
-% Extract distinct prefixes
-distinctPrefixes = extract_distinct_fileparts(paths1);
-
-% Look for corresponding files for suffix2
+% Get all matching files for suffix2
 [~, paths2] = ...
-    cellfun(@(x) all_files('Prefix', x, 'Directory', directory, ...
-                    'Suffix', suffix2, 'Extension', sheetType), ...
-            distinctPrefixes, 'UniformOutput', false);
+    find_matching_files(paths1, 'Directory', directory, ...
+                        'Suffix', suffix2, 'Extension', sheetType);
 
 % Read all tables
 [tables1, tables2] = ...
@@ -99,6 +92,15 @@ distinctPrefixes = extract_distinct_fileparts(paths1);
 
 %{
 OLD CODE:
+
+% Extract distinct file parts
+distinctParts = extract_distinct_fileparts(paths1);
+
+% Look for corresponding files for suffix2
+[~, paths2] = ...
+    cellfun(@(x) all_files('Prefix', x, 'Directory', directory, ...
+                    'Suffix', suffix2, 'Extension', sheetType), ...
+            distinctParts, 'UniformOutput', false);
 
 %}
 
