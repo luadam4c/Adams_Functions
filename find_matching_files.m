@@ -92,8 +92,14 @@ distinctParts = extract_distinct_fileparts(fileParts);
                         'ForceCellOutput', false, otherArguments), ...
             distinctParts, 'UniformOutput', false);
 
-% Convert to array
-files = cellfun(@(x) x, filesCell);
+% Try to convert to an array
+%   Note: this fails if a cell is empty
+try
+    files = cellfun(@(x) x, filesCell);
+catch
+    disp([mfilename, ': Some files were not found!']);
+    files = filesCell;
+end
 
 % Get first output
 varargout{1} = files;
