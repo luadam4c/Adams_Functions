@@ -11,6 +11,7 @@ function distinctParts = extract_distinct_fileparts (paths, varargin)
 % Outputs:
 %       distinctParts   - distinct parts of the file paths
 %                       specified as a TODO
+%
 % Arguments:
 %       paths       - file paths
 %                   must be a character vector or a string vector

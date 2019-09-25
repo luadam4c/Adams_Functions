@@ -54,13 +54,12 @@ function handles = plot_relative_events (varargin)
 %                   - Any other parameter-value pair for plot_raster()
 %
 % Requires:
-%       cd/all_files.m
 %       cd/apply_iteratively.m
 %       cd/compute_relative_event_times.m
 %       cd/create_label_from_sequence.m
-%       cd/extract_distinct_fileparts.m
 %       cd/extract_elements.m
 %       cd/extract_fileparts.m
+%       cd/load_matching_sheets.m
 %       cd/plot_raster.m
 %
 % Used by:
@@ -183,30 +182,13 @@ if isempty(figTitle)
 end
 
 %% Get relative event times
-% TODO: Use load_matching_sheets;
-% Get all stim pulse files
-[~, stimPaths] = ...
-    all_files('Directory', directory, 'Keyword', pathBase, ...
-                'Suffix', stimTableSuffix, 'Extension', sheetType, ...
-                'ForceCellOutput', true);
-
-% Extract distinct prefixes
-distinctPrefixes = extract_distinct_fileparts(stimPaths);
-
-% Look for corresponding SWD spreadsheet files
-[~, swdPaths] = ...
-    cellfun(@(x) all_files('Prefix', x, 'Directory', directory, ...
-                    'Suffix', eventTableSuffix, 'Extension', sheetType), ...
-            distinctPrefixes, 'UniformOutput', false);
-
-% Read all tables
-[stimTables, swdTables] = ...
-    argfun(@(x) cellfun(@readtable, x, 'UniformOutput', false), ...
-            stimPaths, swdPaths);
+% Load matching stimulus and event tables
+[stimTables, swdTables, distinctParts] = ...
+    load_matching_sheets(stimTableSuffix, eventTableSuffix);
 
 % Set default labels for each raster
 if isempty(labels)
-    labels = replace(distinctPrefixes, '_', '\_');
+    labels = replace(distinctParts, '_', '\_');
 end
 
 % Extract all start times in seconds

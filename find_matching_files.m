@@ -1,6 +1,6 @@
 function varargout = find_matching_files (fileParts, varargin)
 %% Finds matching files from file parts
-% Usage: [files, fullPaths] = find_matching_files (fileParts, varargin)
+% Usage: [files, fullPaths, distinctParts] = find_matching_files (fileParts, varargin)
 % Explanation:
 %       TODO
 %
@@ -104,6 +104,7 @@ end
 % Get first output
 varargout{1} = files;
 varargout{2} = fullPaths;
+varargout{3} = distinctParts;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -5,20 +5,21 @@ function [tables1, tables2, distinctParts] = load_matching_sheets (suffix1, suff
 %       TODO
 %
 % Example(s):
-%       TODO
+%       [tables1, tables2, distinctParts] = load_matching_sheets('pulses', 'SWDs')
 %
 % Outputs:
-%       tables1     - TODO: Description of tables1
-%                   specified as a TODO
-%       tables2     - TODO: Description of tables2
-%                   specified as a TODO
-%       distinctParts    - TODO
+%       tables1     - first list of tables
+%                   specified as a cell array of tables
+%       tables2     - second list of tables
+%                   specified as a cell array of tables
+%       distinctParts   - distinct parts of file names that identifies tables
+%                       specified as a cell array of character vectors
 %
 % Arguments:
-%       suffix1     - TODO: Description of suffix1
-%                   must be a TODO
-%       suffix2     - TODO: Description of suffix1
-%                   must be a TODO
+%       suffix1     - suffix for the first list of tables
+%                   must be a string scalar or a character vector
+%       suffix2     - suffix for the second list of tables
+%                   must be a string scalar or a character vector
 %       varargin    - 'Directory': directory to look for SWD table files
 %                   must be a string scalar or a character vector
 %                   default == pwd
@@ -30,7 +31,7 @@ function [tables1, tables2, distinctParts] = load_matching_sheets (suffix1, suff
 %       cd/find_matching_files.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/plot_relative_events.m
 
 % File History:
 % 2019-09-11 Created by Adam Lu
@@ -59,14 +60,17 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'suffix1');
+addRequired(iP, 'suffix1', ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addRequired(iP, 'suffix2', ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
-parse(iP, suffix1, varargin{:});
+parse(iP, suffix1, suffix2, varargin{:});
 directory = iP.Results.Directory;
 
 % Keep unmatched arguments for the TODO() function
@@ -76,10 +80,11 @@ directory = iP.Results.Directory;
 % Get all files for suffix1
 [~, paths1] = ...
     all_files('Directory', directory, 'Keyword', pathBase, ...
-                'Suffix', suffix1, 'Extension', sheetType);
+                'Suffix', suffix1, 'Extension', sheetType, ...
+                'ForceCellOutput', true);
 
 % Get all matching files for suffix2
-[~, paths2] = ...
+[~, paths2, distinctParts] = ...
     find_matching_files(paths1, 'Directory', directory, ...
                         'Suffix', suffix2, 'Extension', sheetType);
 
@@ -92,15 +97,6 @@ directory = iP.Results.Directory;
 
 %{
 OLD CODE:
-
-% Extract distinct file parts
-distinctParts = extract_distinct_fileparts(paths1);
-
-% Look for corresponding files for suffix2
-[~, paths2] = ...
-    cellfun(@(x) all_files('Prefix', x, 'Directory', directory, ...
-                    'Suffix', suffix2, 'Extension', sheetType), ...
-            distinctParts, 'UniformOutput', false);
 
 %}
 
