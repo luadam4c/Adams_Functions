@@ -20,7 +20,7 @@ function [tables1, tables2, distinctParts] = load_matching_sheets (suffix1, suff
 %                   must be a string scalar or a character vector
 %       suffix2     - suffix for the second list of tables
 %                   must be a string scalar or a character vector
-%       varargin    - 'Directory': directory to look for SWD table files
+%       varargin    - 'Directory': directory to look for spreadsheet files
 %                   must be a string scalar or a character vector
 %                   default == pwd
 %                   - Any other parameter-value pair for TODO()
