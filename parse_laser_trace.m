@@ -36,6 +36,7 @@ function varargout = parse_laser_trace (vectors, siMs, varargin)
 % File History:
 % 2019-09-12 Modified from parse_gas_trace.m
 % 2019-09-13 Now uses parse_repetitive_pulses.m
+% 2019-09-25 Changed minInterPulseIntervalMs to 20000 ms
 % 
 
 %% Hard-coded parameters
@@ -43,7 +44,7 @@ function varargout = parse_laser_trace (vectors, siMs, varargin)
 pulseTableSuffix = '_laser_pulses';
 pulseShape = 'square';
 pulseDirection = 'upward';
-minInterPulseIntervalMs = 10000;
+minInterPulseIntervalMs = 20000;
 
 %% Default values for optional arguments
 

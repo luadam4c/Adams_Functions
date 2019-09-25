@@ -7,6 +7,8 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 % Example(s):
 %       spike2MatPath = '/media/shareX/2019octoberR01/Pleth/Data/new_pleth_data/test2AtNight_200Hz.mat';
 %       spike2Table = parse_spike2_mat(spike2MatPath);
+%       [~, matPaths] = all_files('Ext', 'mat');    
+%       for i = 1:numel(matPaths); parse_spike2_mat(matPaths{i}); end
 %
 % Outputs:
 %       parsedDataTable     - parsed data

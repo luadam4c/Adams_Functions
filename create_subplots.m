@@ -5,6 +5,7 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 %       TODO
 %
 % Example(s):
+%       [fig, ax] = create_subplots(1, 4);
 %       [fig, ax] = create_subplots(1, 1, 'FigNumber', 3);
 %       [fig, ax] = create_subplots(1, 3, 'FigNumber', 4);
 %       [fig, ax] = create_subplots(2, 3, 'FigNumber', 5);
@@ -203,10 +204,16 @@ nSubPlots = numel(gridPositions);
 % Initialize the axes array
 ax = gobjects(nSubPlots, 1);
 
-% Create subplots in the reverse order
+% Decide on the creating order
 %   Note: For some reason, subplots sometime disappear 
-%           if created in the forward order
-for iSubPlot = nSubPlots:-1:1
+if nRows > nColumns
+    indSubplots = nSubPlots:-1:1;
+else
+    indSubplots = 1:nSubPlots;
+end
+
+% Create subplots in the reverse order
+for iSubPlot = indSubplots
     % Get the grid positions for this subplot
     gridPositionsThis = gridPositions{iSubPlot};
 

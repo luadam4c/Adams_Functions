@@ -144,7 +144,7 @@ function plot_measures (varargin)
 %                   must be a string vector or a cell array of character vectors
 %                   default == varsToPlotAll
 %                   - 'VarLabels': variable labels
-%                   must be a string vector or a cell array of character vectors
+%                   must be a string vector or a cell array of character vectors1
 %                   default == varLabelsAll
 %
 % Requires:

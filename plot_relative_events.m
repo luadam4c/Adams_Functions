@@ -71,6 +71,7 @@ function handles = plot_relative_events (varargin)
 % 2019-09-11 Added 'PlotType' as an optional argument
 % 2019-09-15 Added 'StimTableSuffix' and 'EventTableSuffix' 
 %               as optional arguments
+% 2019-09-25 Finished the raster plot code
 % TODO: Use load_matching_sheets.m
 % 
 
@@ -146,9 +147,9 @@ otherArguments = iP.Unmatched;
 % Set default figure suffix
 if isempty(figSuffix)
     if firstOnly
-        figSuffix = 'first_windows';
+        figSuffix = strcat(plotType, '_first_windows');
     else
-        figSuffix = 'all_windows';
+        figSuffix = strcat(plotType, '_all_windows');
     end
 end
 
@@ -205,7 +206,7 @@ distinctPrefixes = extract_distinct_fileparts(stimPaths);
 
 % Set default labels for each raster
 if isempty(labels)
-    labels = strrep(distinctPrefixes, '_', '\_');
+    labels = replace(distinctPrefixes, '_', '\_');
 end
 
 % Extract all start times in seconds
@@ -259,13 +260,15 @@ switch plotType
             compute_relative_event_times(swdStartTimesMin, stimStartTimesMin, ...
                                     'RelativeTimeWindow', relTimeWindowMin);
 
-        % Restrict to just the first event times
+        % Extract the relevant event times
         if firstOnly
+            % Restrict to just the first event times
             %   Note: this should return a cell array of numeric vectors
-            relEventTimes = cellfun(@extract_first_element, ...
+            relEventTimes = cellfun(@(x) extract_element_by_index(x, 1, ...
+                                                                    false), ...
                                 relEventTimesCellCell, 'UniformOutput', false);
         else
-            error('Not implemented yet!');
+            relEventTimes = extract_in_order(relEventTimesCellCell);
         end
     case 'psth'
         % Relative event times computed in plot_psth.m
@@ -278,14 +281,45 @@ switch plotType
 case 'raster'
     %% Plot the raster
     if firstOnly
+        % Create a figure title
+        figTitle = ['Events around stim #', num2str(1)];
+
+        % Plot raster
         handles = plot_raster(relEventTimes, 'Labels', labels, ...
                                 'XLabel', 'Time (min)', ...
+                                'FigTitle', figTitle, ...
                                 'XLimits', relTimeWindowMin, otherArguments);
+
+        % Plot stim start line
         plot_vertical_line(0, 'LineWidth', 2, 'Color', 'k');
-        save_all_figtypes(gcf, figName, figTypes);
     else
-        error('Not implemented yet!');
+        % Count the appropriate number of subplots
+        nSubplots = numel(relEventTimes);
+
+        % Create subplots
+        [fig, ax] = create_subplots(1, nSubplots);
+
+        % Plot the rasters
+        for iAx = 1:numel(ax)
+            % Use this subplot
+            subplot(ax(iAx));
+
+            % Create a figure title
+            figTitle = ['Events around stim #', num2str(iAx)];
+
+            % Plot raster
+            handles = plot_raster(relEventTimes{iAx}, 'Labels', labels, ...
+                                    'XLabel', 'Time (min)', ...
+                                    'XLimits', relTimeWindowMin, ...
+                                    'FigTitle', figTitle, ...
+                                    otherArguments);
+
+            % Plot stim start line
+            plot_vertical_line(0, 'LineWidth', 2, 'Color', 'k');
+        end
     end
+
+    save_all_figtypes(gcf, figName, figTypes);
 case 'psth'
     %% Plot the peri-stimulus time histogram
     handles = plot_psth('EventTimes', swdStartTimesMin, ...
@@ -355,21 +389,48 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function first = extract_first_element (vec)
-%% Take the first element or return empty
+function vectorsInOrder = extract_in_order(vectorSets)
+%% TODO: Pull out as its own function
+%% TODO: Merge with extract_columns.m?
+
+% Force as a column cell array
+vectorSets = force_column_cell(vectorSets);
+
+% Count the number of vectors in each set
+nVectorsEachSet = count_vectors(vectorSets);
+
+% Compute the maximum
+maxNVectorsEachSet = max(nVectorsEachSet);
+
+% Place all first vectors in the first cell, second vectors in the second cell,
+%   and so on
+vectorsInOrder = ...
+    arrayfun(@(x) cellfun(@(y) extract_element_by_index(y, x, true), ...
+                            vectorSets, 'UniformOutput', false), ...
+            transpose(1:maxNVectorsEachSet), 'UniformOutput', false);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function element = extract_element_by_index (vec, index, returnNaNInstead)
+%% Extract an element or return empty if the element doesn't exist
 % TODO: Merge with extract_elements
 
-if numel(vec) >= 1
+if numel(vec) >= index
     if iscell(vec)
-        first = vec{1};
+        element = vec{index};
     else
-        first = vec(1);
+        element = vec(index);
     end
 else
-    first = [];
+    if returnNaNInstead
+        element = NaN;
+    else
+        element = [];
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %{
 OLD CODE:
 
