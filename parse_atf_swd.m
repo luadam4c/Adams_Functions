@@ -38,6 +38,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 %       cd/create_error_for_nargin.m
 %       cd/extract_fileparts.m
 %       cd/force_column_cell.m
+%       cd/is_overlapping.m
 %       cd/issheettype.m
 %       cd/match_dimensions.m
 %       cd/read_lines_from_file.m
@@ -53,6 +54,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 % 2019-09-08 Now uses the trace file name as the basis 
 %               for constructing sheet file name
 % 2019-09-09 Updated the construction of trace file paths
+% 2019-09-24 Added check for overlapping windows
 % 
 
 %% Hard-coded constants
@@ -109,8 +111,8 @@ else
     atfCsvFile = '';
 end
 
-% Get the fileDir and fileBase
-[fileDir, fileBase, ~] = fileparts(originalEventFile);
+% Get the file directory
+fileDir = fileparts(originalEventFile);
 
 % Decide on the output folder
 if isempty(outFolder)
@@ -145,12 +147,11 @@ elseif isfile(atfFile)
 
     % Read in the SWD manual table and print to a csv file
     [atfTable, atfCsvFile] = atf2sheet(atfFile, 'SheetType', sheetType);
+    fprintf('%s created!\n', atfCsvFile);
 end
 
 % Make sure there is an event recorded
 if height(atfTable) == 0
-    % Do nothing
-    atfTable = [];
     return
 end
 
@@ -172,8 +173,12 @@ startTime = startTimesMs / MS_PER_S;
 endTime = endTimesMs / MS_PER_S;
 
 % Make sure none of the windows overlap
-% TODO TODO TODO
-% isOverlapping = is_overlapping(transpose([startTime, endTime]));
+isOverlapping = is_overlapping(transpose([startTime, endTime]));
+if isOverlapping
+    fprintf('The file %s cannot be parsed because windows overlap!\n', ...
+            originalEventFile);
+    return
+end
 
 % Compute duration
 duration = endTime - startTime;

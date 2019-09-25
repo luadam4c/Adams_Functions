@@ -30,7 +30,7 @@ function [isOverlapping, overLapsPrev] = is_overlapping (timeWindows, varargin)
 %       cd/extract_elements.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/parse_atf_swd.m
 
 % File History:
 % 2019-09-24 Created by Adam Lu
