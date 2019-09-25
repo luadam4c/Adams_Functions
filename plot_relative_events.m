@@ -352,13 +352,17 @@ case 'chevron'
         figPathBase = extract_fileparts(figName, 'pathbase');
         sheetPath = [figPathBase, '.csv'];
         writetable(chevronTable, sheetPath);
-        
+
         % TODO: plot_chevron.m
+        % TODO: Combine with plot_table.m?
+        
+        % Compute the lower and upper confidence interval bounds
         [lowBefore, lowAfter] = ...
             argfun(@(x) compute_stats(x, 'lower95'), nEventsBefore, nEventsAfter);
         [highBefore, highAfter] = ...
             argfun(@(x) compute_stats(x, 'upper95'), nEventsBefore, nEventsAfter);
 
+        % Compute the mean values
         [meanBefore, meanAfter] = ...
             argfun(@(x) compute_stats(x, 'mean'), nEventsBefore, nEventsAfter);
         pValue = [1, 2];
