@@ -5,7 +5,8 @@ function varargout = spike2Mat2Text (spike2MatPath, varargin)
 %       TODO
 %
 % Example(s):
-%       TODO
+%       [~, matPaths] = all_files('Ext', 'mat');    
+%       for i = 1:numel(matPaths); spike2Mat2Text(matPaths{i}); end
 %
 % Outputs:
 %       textPath    - path to output text file
