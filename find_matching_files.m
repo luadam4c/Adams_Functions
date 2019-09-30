@@ -37,8 +37,10 @@ function varargout = find_matching_files (fileParts, varargin)
 %                   - Any other parameter-value pair for all_files()
 %
 % Requires:
+%       cd/all_files.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_distinct_fileparts.m
+%       cd/extract_fileparts.m
 %
 % Used by:
 %       cd/load_matching_sheets.m

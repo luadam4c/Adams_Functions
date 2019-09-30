@@ -71,6 +71,7 @@ function varargout = all_files (varargin)
 %       cd/atf2sheet.m
 %       cd/combine_data_from_same_slice.m
 %       cd/create_pleth_EEG_movie.m
+%       cd/find_matching_files.m
 %       cd/force_string_start.m
 %       cd/load_matching_sheets.m
 %       cd/m3ha_pfiles2csv.m
