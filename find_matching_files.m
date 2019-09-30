@@ -20,6 +20,8 @@ function varargout = find_matching_files (fileParts, varargin)
 %                       datenum
 %       fullPaths   - full path(s) to the files
 %                   specified as a column cell array of character vectors
+%       distinctParts   - distinct parts between different files
+%                   specified as a column cell array of character vectors
 %
 % Arguments:
 %       fileParts   - file parts to match (can be )
@@ -43,6 +45,8 @@ function varargout = find_matching_files (fileParts, varargin)
 
 % File History:
 % 2019-09-25 Created by Adam Lu
+% 2019-09-30 Now maintains character vectors as character vectors
+% TODO: 'MaxNum' not always 1
 % 
 
 %% Hard-coded parameters
@@ -82,6 +86,14 @@ partType = validatestring(iP.Results.PartType, validPartTypes);
 otherArguments = iP.Unmatched;
 
 %% Extract distinct parts
+% Force as a cell array
+if ischar(fileParts)
+    fileParts = force_column_cell(fileParts);
+    wasChar = true;
+else
+    wasChar = false;
+end
+
 % Extract distinct file parts
 distinctParts = extract_distinct_fileparts(fileParts);
 
@@ -105,6 +117,11 @@ try
 catch
     disp([mfilename, ': Some files were not found!']);
     files = filesCell;
+end
+
+% Extract the character array if it was one
+if wasChar
+    fullPaths = fullPaths{1};
 end
 
 % Get first output
