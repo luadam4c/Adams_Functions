@@ -8,6 +8,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       [~, paths] = all_files('Directory', pwd);
 %       extract_fileparts(paths, 'directory')
 %       extract_fileparts(paths, 'dirbase')
+%       extract_fileparts(paths, 'parentdir')
 %       extract_fileparts(paths, 'name')
 %       extract_fileparts(paths, 'base')
 %       extract_fileparts(paths, 'pathbase')
@@ -36,6 +37,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %                       'distinct'  - distinct parts across file(s)
 %                       'directory' - directory containing the file(s)
 %                       'dirbase'   - directory base containing the file(s)
+%                       'parentdir' - directory one level up
 %                       'name'      - file name with the extension
 %                       'base'      - file base name without the extension
 %                       'pathbase'  - full file path without the extension
@@ -86,12 +88,13 @@ function parts = extract_fileparts (paths, partType, varargin)
 % 2019-04-07 Added 'name' as a part type
 % 2019-08-12 Added 'pathbase' as a part type
 % 2019-09-10 Fixed 'dirbase' when the input is a cell array
+% 2019-09-30 Added 'parentdir' as a part type
 % TODO: Make the first argument accept a files structure array too
 % 
 
 %% Hard-coded parameters
 validPartTypes = {'commondirectory', 'commonprefix', 'commonsuffix', ...
-                    'distinct', 'directory', 'dirbase', ...
+                    'distinct', 'directory', 'dirbase', 'parentdir', ...
                     'name', 'base', 'pathbase', 'extension'};
 
 %% Default values for optional arguments
@@ -139,7 +142,8 @@ partType = validatestring(partType, validPartTypes);
 
 %% Do the job
 switch partType
-case {'directory', 'dirbase', 'name', 'base', 'pathbase', 'extension'}
+case {'directory', 'dirbase', 'parentdir', ...
+        'name', 'base', 'pathbase', 'extension'}
     parts = extract_simple_fileparts(paths, partType);
 case 'commondirectory'
     parts = extract_common_directory(paths, varargin{:});
@@ -203,6 +207,8 @@ switch partType
         parts = fileDirs;
     case 'dirbase'
         parts = extract_simple_fileparts(strcat(fileDirs, '.dum'), 'base');
+    case 'parentdir'
+        parts = extract_simple_fileparts(strcat(fileDirs, '.dum'), 'directory');
     case 'name'
         parts = strcat(fileBases, fileExtensions);
     case 'base'

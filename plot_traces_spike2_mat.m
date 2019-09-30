@@ -1,6 +1,6 @@
-function [output1] = plot_traces_spike2_mat (spike2Path, varargin)
+function handles = plot_traces_spike2_mat (spike2Path, varargin)
 %% Plots traces from a Spike2-exported .mat file
-% Usage: [output1] = plot_traces_spike2_mat (spike2Path, varargin)
+% Usage: handles = plot_traces_spike2_mat (spike2Path, varargin)
 % Explanation:
 %       TODO
 %
@@ -8,12 +8,14 @@ function [output1] = plot_traces_spike2_mat (spike2Path, varargin)
 %       TODO
 %
 % Outputs:
-%       output1     - TODO: Description of output1
-%                   specified as a TODO
+%       handles     - graphics object handles, containing:
+%                       fig
+%                       ax
+%                   specified as a structure
 %
 % Arguments:
-%       spike2Path     - TODO: Description of spike2Path
-%                   must be a TODO
+%       spike2Path  - path to Spike2-exported .mat file
+%                   must be a string scalar or a character vector
 %       varargin    - 'param1': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
@@ -22,9 +24,20 @@ function [output1] = plot_traces_spike2_mat (spike2Path, varargin)
 % Requires:
 %       cd/create_error_for_nargin.m
 % TODO:
-% cd/create_time_vectors.m
-% cd/extract_fileparts.m
-% cd/parse_spike2_mat.m
+%       cd/create_subplots.m
+%       cd/create_time_vectors.m
+%       cd/extract_fileparts.m
+%       cd/extract_subvectors.m
+%       cd/find_in_strings.m
+%       cd/find_matching_files.m
+%       cd/find_window_endpoints.m
+%       cd/force_matrix.m
+%       cd/parse_spike2_mat.m
+%       cd/plot_vertical_line.m
+%       cd/plot_window_boundaries.m
+%       cd/set_figure_properties.m
+%       cd/save_all_figtypes.m
+%       cd/update_figure_for_corel.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -38,7 +51,22 @@ S_PER_MIN = 60;
 
 %% Hard-coded parameters
 channelNamesUser = {'O2'; 'Pleth 2'; 'WIC#2'; 'WIC#1'};
+plotChannelNames = {'O2'; 'Pleth'; 'EEG'; 'EMG'};
 parseGas = false;
+parseLaser = false;
+stimTableSuffix = '_gas_pulses';
+figExpansion = [1, 0.4];
+spectYLimits = [1, 50];
+
+plotSpectrogram = true;
+alignToFirstStim = false;
+updateForCorel = true;
+relativeWindowMin = [-10, 20];
+relativeWindowNoSwd = [-6.3, -6];
+relativeWindowSwd = [6, 6.3];
+figBase = '';
+suffixNoSwd = '_no_swd';
+suffixSwd = '_swd';
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -72,141 +100,239 @@ parse(iP, spike2Path, varargin{:});
 otherArguments = iP.Unmatched;
 
 %% Preparation
-% TODO
+% Decide on a figure base
+if isempty(figBase)
+    figBase = extract_fileparts(spike2Path, 'base');
+end
+
+% Decide on a figure base
+figBaseNoSwd = strcat(figBase, suffixNoSwd);
+figBaseSwd = strcat(figBase, suffixSwd);
+
+% Create figure paths
+[figPathBase, figPathBaseNoSwd, figPathBaseSwd] = ...
+    argfun(@(x) fullfile(outFolder, x), figBase, figBaseNoSwd, figBaseSwd);
 
 %% Load trace data
 % Load data and parse gas trace if necessary
-data = parse_spike2_mat(spike2Path, 'ParseGas', parseGas, ...
-                        'ChannelNames', channelNamesUser);
+data = parse_spike2_mat(spike2Path, 'ChannelNames', channelNamesUser, ...
+                        'ParseGas', parseGas, 'ParseLaser', parseLaser);
 
 % Extract the channel names and values
 channelNames = data.channelNames;
-channelValues = data.channelValues;
+
+% Extract the channel values and force as a matrix
+channelValues = force_matrix(data.channelValues);
+
+% Find the common sampling interval in seconds
 siSeconds = nanmean(data.siSeconds);
+
+% Find the common number of samples
 nSamples = nanmean(data.nSamples);
 
-% Create a time vector
+% Create a time vector in minutes
 timeVec = create_time_vectors(nSamples, 'TimeUnits', 'min', ...
-            'SamplingIntervalSec', siSeconds);
+                                'SamplingIntervalSec', siSeconds);
 
-%% Load gas time data
-% Find corresponding gas table
-% TODO: Make a function that finds corresponding files easily
-%       Consult code in load_matching_sheets.m
-spike2PathBase = extract_fileparts(spike2Path, 'pathbase');
-gasTablePath = [spike2PathBase, '_gas_pulses.csv'];
+%% Restrict or align trace data if requested
+if alignToFirstStim
+    % Find corresponding stim table
+    % TODO: Make a function that finds corresponding files easily
+    %       Consult code in load_matching_sheets.m
+    [~, stimTablePath] = ...
+        find_matching_files(spike2Path, 'Suffix', stimTableSuffix, ...
+                            'Extension', 'csv');
 
-% Load the gas table
-gasTable = readtable(gasTablePath);
-startTimesSec = gasTable.startTime;
-startTimesMin = startTimesSec / S_PER_MIN;
-exampleCenter = startTimesMin(1);
+    % Extract the first stim start time from the stim table
+    stimTable = readtable(stimTablePath);
+    startTimesSec = stimTable.startTime;
+    startTimesMin = startTimesSec / S_PER_MIN;
+    centerTimeMin = startTimesMin(1);
 
-% Create time window
-exampleRelWindow = [-10, 20];
-exampleNoSwdRelWindow = [-6.3, -6];
-exampleSwdRelWindow = [6, 6.3];
-exampleWindow = exampleCenter + exampleRelWindow;
+    % Create time window
+    timeWindowMin = centerTimeMin + relativeWindowMin;
 
-% Restrict data
-data = force_matrix(exampleChannelValues);
-endPoints = find_window_endpoints(exampleWindow, timeVec);
-dataShifted = extract_subvectors(data, 'EndPoints', endPoints);
-timeVecShifted = extract_subvectors(timeVec, 'EndPoints', endPoints);
-timeVecRelative = timeVecShifted - exampleCenter;
+    % Find the time window endpoints
+    endPoints = find_window_endpoints(timeWindowMin, timeVec);
 
-% Decide on plot channel names
-plotChannelNames = {'O2'; 'Pleth'; 'EEG'; 'EMG'; 'Spect'};
+    % Restrict time vector and shift it to be 
+    %   relative to the first stim start time
+    timeVecToPlot = extract_subvectors(timeVec, 'EndPoints', endPoints);
+    timeVecToPlot = timeVecToPlot - centerTimeMin;
 
-% Compute the spectrogram
-eegToShow = dataShifted(:, 3);
-spectWinSeconds = 1;             % 1 second windows
-spectWinSamples = round(spectWinSeconds / siSeconds);
-spectNOverLap = spectWinSamples / 2;
-spectSamplingFreqHz = 1 / siSeconds;
-[spectData, freqHz, timeInstantsRelSeconds] = ...
-    spectrogram(eegToShow, spectWinSamples, ...
-                spectNOverLap, [], spectSamplingFreqHz);
-timeInstantsMin = exampleRelWindow(1) + timeInstantsRelSeconds / S_PER_MIN;
+    % Restrict data to the time window endpoints
+    channelValuesToPlot = ...
+        extract_subvectors(channelValues, 'EndPoints', endPoints);
 
-% Create figure paths
-[figPathBase1, figPathBase2, figPathBase3] = ...
-    argfun(@(x) fullfile(hypoxiaExampleDir, x), ...
-            hypoxiaExampleName, hypoxiaExampleNoSwdName, hypoxiaExampleSwdName);
+else
+    timeVecToPlot = timeVec;
+    channelValuesToPlot = channelValues;
+end
 
-% Plot traces
+%% Compute the spectrogram from the EEG trace
+% Look for an EEG trace
+eegChannelNum = find_in_strings('EEG', plotChannelNames, 'MaxNum', 1);
+
+% Only compute spectrogram if EEG trace is found
+if plotSpectrogram && ~isempty(eegChannelNum)
+    % Update channel names to plot
+    plotChannelNames = [plotChannelNames; {'Spect'}];
+
+    % Get the EEG trace
+    eegToPlot = channelValuesToPlot(:, eegChannelNum);
+
+    % Compute the spectrogram
+    [spectData, freqHz, timeInstantsRelSeconds] = ...
+        compute_spectrogram(eegToPlot, siSeconds);
+
+    % Convert times to minutes
+    timeInstantsRelMin = timeInstantsRelSeconds / S_PER_MIN;
+
+    % Align times if requested
+    if alignToFirstStim
+        timeInstantsMin = relativeWindowMin(1) + timeInstantsRelMin;
+    else
+        timeInstantsMin = timeInstantsRelMin;
+    end
+else
+    plotSpectrogram = false;
+end
+
+%% Plot traces
+% Count the number of subplots
+nSubPlots = numel(plotChannelNames);
+
 % TODO: Let plot_traces accept 'AxesHandles' and use it
 % Create figure
-[figure1b, ax] = create_subplots(5, 1, 'AlwaysNew', true, 'FigExpansion', [1, 0.4]);
+[fig, ax] = create_subplots(nSubPlots, 1, 'AlwaysNew', true, ...
+                            'FigExpansion', figExpansion);
 
-for iPlot = 1:numel(plotChannelNames)
-
+% Plot traces
+for iPlot = 1:nSubPlots
     % Plot the appropriate trace or map
-    if iPlot == 5           
+    if plotSpectrogram && iPlot == nSubPlots
+        % TODO: plot_spectrogram(spectData, timeInstantsMin, freqHz, 'AxesHandle', ax);
+        spectColorMapFile = '/media/adamX/Settings_Matlab/spectrogram_colormap.mat';
+
         % Plot the log spectrum
         imagesc(ax(iPlot), timeInstantsMin, freqHz, abs(spectData));
 
         % Set a colormap
-        colorMapSpectFile = matfile('/media/adamX/Settings_Matlab/spectrogram_colormap.mat');
+        colorMapSpectFile = matfile(spectColorMapFile);
         colorMapSpect = colorMapSpectFile.colorMap;
         colormap(ax(iPlot), colorMapSpect);
 
         % Flip the Y Axis so lower frequencies are at the bottom
         set(ax(iPlot), 'YDir', 'normal');
 
-        % Show only 1-40 Hz
-        set(ax(iPlot), 'YLim', [1, 50]);
+        % Restrict to certain y axis limits
+        set(ax(iPlot), 'YLim', spectYLimits);
     else
-        plot(ax(iPlot), timeVecRelative, dataShifted(:, iPlot), ...
+        plot(ax(iPlot), timeVecToPlot, channelValuesToPlot(:, iPlot), ...
                 'Color', 'k');
         if iPlot == 1
-            set(ax(iPlot), 'YLim', [33, 40]);
+%            set(ax(iPlot), 'YLim', [33, 40]);
         elseif iPlot == 2
-            set(ax(iPlot), 'YLim', [-1, 1]);
+%            set(ax(iPlot), 'YLim', [-1, 1]);
         elseif iPlot == 3
             % Show only -0.5-0.5 mV
-            set(ax(iPlot), 'YLim', [-0.5, 0.5]);
+%            set(ax(iPlot), 'YLim', [-0.5, 0.5]);
         elseif iPlot == 4
-            set(ax(iPlot), 'YLim', [-0.5, 0.5]);
+%            set(ax(iPlot), 'YLim', [-0.5, 0.5]);
         end
     end
 
     % Plot a vertical line
-    plot_vertical_line(0, 'AxesHandle', ax(iPlot), 'Color', 'k');
+    if alignToFirstStim
+        plot_vertical_line(0, 'AxesHandle', ax(iPlot), 'Color', 'k', ...
+                            'LineWidth', 1);
+    end
 end
 
-set(ax, 'XTick', [], 'YTick', []);
-for iPlot = 1:numel(plotChannelNames); box(ax(iPlot), 'off'); end
-%    set(ax(1:(numel(plotChannelNames)-1)), 'XTick', []);
-%    set(ax, 'TickDir', 'out');
+% Link the x axes
 linkaxes(ax, 'x');
 
-% Save the figure in all different zooms
-set_figure_properties('FigHandle', figure1b, 'FigExpansion', [0.5, 1], ...
-                        'ExpandFromDefault', false);
-xlim(exampleNoSwdRelWindow);
-save_all_figtypes(figure1b, figPathBase2, figTypes);
-xlim(exampleSwdRelWindow);
-save_all_figtypes(figure1b, figPathBase3, figTypes);
-
-set_figure_properties('FigHandle', figure1b, 'FigExpansion', [2, 1], ...
-                        'ExpandFromDefault', false);
-for iPlot = 1:numel(plotChannelNames)
-    % Plot vertical shades
-    axes(ax(iPlot))
-    plot_window_boundaries([exampleNoSwdRelWindow, exampleSwdRelWindow], ...
-                            'BoundaryType', 'verticalShade');
+% Update figure for Corel Draw
+if updateForCorel
+    fig = update_figure_for_corel(fig);
 end
-xlim(exampleRelWindow);
-save_all_figtypes(figure1b, figPathBase1, figTypes);    
+
+% Save the figure in different zooms
+if plotZooms
+    % Shrink figure width
+    set_figure_properties('FigHandle', fig, 'FigExpansion', [0.5, 1], ...
+                            'ExpandFromDefault', false);
+
+    % Zoom to first region and save
+    xlim(relativeWindowNoSwd);
+    save_all_figtypes(fig, figPathBaseNoSwd, figTypes);
+
+    % Zoom to second region and save
+    xlim(relativeWindowSwd);
+    save_all_figtypes(fig, figPathBaseSwd, figTypes);
+
+    % Expand figure width
+    set_figure_properties('FigHandle', fig, 'FigExpansion', [2, 1], ...
+                            'ExpandFromDefault', false);
+
+    % Plot shades
+    for iPlot = 1:numel(plotChannelNames)
+        % Plot vertical shades
+        subplot(ax(iPlot))
+        plot_window_boundaries([relativeWindowNoSwd, relativeWindowSwd], ...
+                                'BoundaryType', 'verticalShade');
+    end
+
+    % Zoom back out
+    xlim(relativeWindowMin);
+end
+
+% Save figure
+save_all_figtypes(fig, figPathBase, figTypes);    
 
 %% Output results
-% TODO
+handles.fig = fig;
+handles.ax = ax;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [spectData, freqHz, timeInstantsSeconds] = ...
+                compute_spectrogram(eegToPlot, siSeconds)
+%% Computes a spectrogram
+% TODO: Pull out as its own function
+
+%% Hard-coded parameters
+% TODO: Make optional arguments
+binWidthSeconds = 1;             % 1 second windows
+overlapSeconds = [];
+
+%% Preparation
+% Compute the bin width in samples
+binWidthSamples = round(binWidthSeconds / siSeconds);
+
+% Set a default overlap in samples
+if isempty(overlapSeconds)
+    overlapSamples = binWidthSamples / 2;
+else
+    overlapSamples = round(overlapSeconds / siSeconds);
+end
+
+% Compute the sampling frequency in Hz
+samplingFreqHz = 1 / siSeconds;
+
+%% Do the job
+% Compute the spectrogram
+[spectData, freqHz, timeInstantsSeconds] = ...
+    spectrogram(eegToPlot, binWidthSamples, ...
+                overlapSamples, [], samplingFreqHz);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+spike2PathBase = extract_fileparts(spike2Path, 'pathbase');
+stimTablePath = [spike2PathBase, stimTableSuffix, '.csv'];
 
 %}
 

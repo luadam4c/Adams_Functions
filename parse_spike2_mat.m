@@ -16,7 +16,7 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %                           specified as a table
 %
 % Arguments:
-%       spike2MatPath   - Spike2-exported MATLAB path
+%       spike2MatPath   - path to Spike2-exported .mat file
 %                       must be a string scalar or a character vector
 %       varargin    - 'ParseText': whether to parse text marks
 %                   must be numeric/logical 1 (true) or 0 (false)

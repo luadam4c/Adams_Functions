@@ -85,12 +85,18 @@ otherArguments = iP.Unmatched;
 % Extract distinct file parts
 distinctParts = extract_distinct_fileparts(fileParts);
 
+% Extract the base
+distinctPartsBase = extract_fileparts(distinctParts, 'dirbase');
+
+% Extract the parent directory
+distinctPartsDir = extract_fileparts(distinctParts, 'parentdir');
+
 %% Do the job
 % Find one matching file for each file part
 [filesCell, fullPaths] = ...
-    cellfun(@(x) all_files(partType, x, 'MaxNum', 1, ...
+    cellfun(@(x, y) all_files('Directory', x, partType, y, 'MaxNum', 1, ...
                         'ForceCellOutput', false, otherArguments), ...
-            distinctParts, 'UniformOutput', false);
+            distinctPartsDir, distinctPartsBase, 'UniformOutput', false);
 
 % Try to convert to an array
 %   Note: this fails if a cell is empty
