@@ -379,6 +379,7 @@ There are 1 MATLAB scripts in this directory:
 - [**plot_traces_EEG.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_EEG.m): Plots EEG traces from a .abf file
 - [**plot_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces.m): Plots traces all in one place, overlapped or in parallel
 - [**plot_traces_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_mat.m): Plot traces from mat file
+- [**plot_traces_spike2_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_spike2_mat.m): Plots traces from a Spike2-exported .mat file
 - [**plot_tuning_curve.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_curve.m): Plot 1-dimensional tuning curve(s), can include confidence intervals or test p values
 - [**plot_tuning_map.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_map.m): Plot a 2-dimensional tuning map
 - [**plot_vertical_line.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_vertical_line.m): Plots vertical line(s)

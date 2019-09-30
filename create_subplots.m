@@ -246,6 +246,9 @@ for iSubPlot = indSubplots
     ax(iSubPlot) = axThis;
 end
 
+% Future updates will not change the axes position
+set(ax, 'ActivePositionProperty', 'Position');
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
