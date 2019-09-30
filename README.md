@@ -349,7 +349,7 @@ There are 1 MATLAB scripts in this directory:
 - [**plot_and_save_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_and_save_histogram.m): Plots and saves a stacked histogram for a vector and color code according to class
 - [**plot_ball_stick.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_ball_stick.m): Plots a ball-and-stick model
 - [**plot_bar.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_bar.m): Plots a bar graph (grouped or not) with or without confidence intervals
-- [**plot_calcium_imaging_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_calcium_imaging_traces.m): function [output1] = plot_calcium_imaging_traces (reqarg1, varargin)
+- [**plot_calcium_imaging_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_calcium_imaging_traces.m): Plots calcium imaging traces
 - [**plot_cfit_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_cfit_pulse_response.m): Plots data along with the fitted curve
 - [**plot_EEG.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_EEG.m): Plots EEG traces from .abf file(s) or all .abf files in a directory 
 - [**plot_ellipse.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_ellipse.m): Plot an ellipse that may be oblique

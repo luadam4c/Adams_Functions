@@ -26,6 +26,7 @@ function argList = struct2arglist (structure, varargin)
 %       cd/convert_to_rank.m
 %       cd/medianfilter.m
 %       cd/plot_bar.m
+%       cd/plot_calcium_imaging_traces.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_histogram.m
 %       cd/solve_function_at_value.m

@@ -36,6 +36,7 @@ function [results, figtypes] = isfigtype (candidates, varargin)
 %       cd/create_pulse_train_series.m
 %       cd/plot_all_abfs.m
 %       cd/plot_bar.m
+%       cd/plot_calcium_imaging_traces.m
 %       cd/plot_struct.m
 %       cd/plot_traces.m
 %       cd/plot_traces_abf.m

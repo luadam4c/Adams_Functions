@@ -5,7 +5,8 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 %       TODO
 %
 % Example(s):
-%       TODO
+%       [~, matPaths] = all_files('Ext', 'mat');
+%       for i = 1:numel(matPaths); plot_traces_spike2_mat(matPaths{i}, 'ParseLaser', true); end
 %
 % Outputs:
 %       handles     - graphics object handles, containing:
@@ -16,13 +17,25 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 % Arguments:
 %       spike2Path  - path to Spike2-exported .mat file
 %                   must be a string scalar or a character vector
-%       varargin    - 'TimeUnits': output time units
+%       varargin    - 'ParseGas': whether to parse pleth pulses
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ParseLaser': whether to parse laser pulses
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'TimeUnits': output time units
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'min'   - minutes
 %                       's'     - seconds
 %                       'ms'    - milliseconds
 %                       'us'    - microseconds
 %                   default == 's'
+%                   - 'FigTypes': figure type(s) for saving; 
+%                               e.g., 'png', 'fig', or {'png', 'fig'}, etc.
+%                   could be anything recognised by 
+%                       the built-in saveas() function
+%                   (see isfigtype.m under Adams_Functions)
+%                   default == {'png', 'epsc'}
 %                   - Any other parameter-value pair for plot_traces() TODO
 %
 % Requires:
@@ -59,19 +72,15 @@ validTimeUnits = {'min', 's', 'ms', 'us'};
 % TODO: Make optional arguments
 channelNamesUser = {'Sound'; 'Pleth 2'; 'WIC#2'; 'WIC#1'};
 plotChannelNames = {'Laser'; 'Pleth'; 'EEG'; 'EMG'};
-parseGas = false;
-parseLaser = true; %false;
 plotSpectrogram = true;
 plotZooms = false;
 alignToFirstStim = true; %false;
-updateForCorel = true;
+plotForCorel = false; %true;
 removeTicks = false;
 outFolder = pwd;
 figBase = '';
 figTypes = {'png', 'epsc2'};
 stimTableSuffix = '_pulses';
-% figExpansion = [1, 0.4];
-figExpansion = [1, 1];
 spectYLimits = [1, 50];
 relativeWindow = [-10, 10];
 % relativeWindowNoSwd = ;
@@ -83,7 +92,9 @@ suffixNoSwd = '_no_swd';
 suffixSwd = '_swd';
 
 %% Default values for optional arguments
-timeUnitsDefault = 's';
+parseGasDefault = false;
+parseLaserDefault = false;
+timeUnitsDefault = '';          % set later
 % param1Default = [];             % default TODO: Description of param1
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -104,12 +115,21 @@ addRequired(iP, 'spike2Path', ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'ParseGas', parseGasDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ParseLaser', parseLaserDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
     @(x) any(validatestring(x, validTimeUnits)));
+addParameter(iP, 'FigTypes', figTypesDefault, ...
+    @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, spike2Path, varargin{:});
+parseGas = iP.Results.ParseGas;
+parseLaser = iP.Results.ParseLaser;
 timeUnits = validatestring(iP.Results.TimeUnits, validTimeUnits);
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Keep unmatched arguments for the plot_traces() function
 % otherArguments = iP.Unmatched;
@@ -123,6 +143,15 @@ if isempty(figBase)
     figBase = extract_fileparts(spike2Path, 'base');
 end
 
+% Decide on the time units
+if parseGas
+    timeUnits = 'min';
+elseif parseLaser
+    timeUnits = 's';
+else
+    timeUnits = 's';
+end
+
 % Compute the time units conversion factor
 switch timeUnits
     case 's'
@@ -131,6 +160,13 @@ switch timeUnits
         unitsPerSecond = 1 / S_PER_MIN;
     otherwise
         error('timeUnits unrecognized!');
+end
+
+% Decide on the figure expansion
+if plotForCorel
+    figExpansion = [1, 0.4];
+else
+    figExpansion = [1, 1];
 end
 
 % Decide on a figure base
@@ -276,7 +312,7 @@ end
 linkaxes(ax, 'x');
 
 % Update figure for Corel Draw
-if updateForCorel
+if plotForCorel
     fig = update_figure_for_corel(fig, 'RemoveTicks', removeTicks);
 end
 

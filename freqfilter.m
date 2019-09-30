@@ -39,6 +39,7 @@ function filteredData = freqfilter (data, fc, varargin)
 %       cd/detect_spikes_multiunit.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/identify_CI_protocol.m
+%       cd/plot_calcium_imaging_traces.m
 %       /home/Matlab/minEASE/minEASE.m
 %           many others; apply this command in a LINUX terminal to find them:
 %             grep --include=*.m -rlw '/home/Matlab/' -e "freqfilter"

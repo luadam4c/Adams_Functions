@@ -1,6 +1,6 @@
-%function [output1] = plot_calcium_imaging_traces (reqarg1, varargin)
+function figs = plot_calcium_imaging_traces (varargin)
 %% Plots calcium imaging traces
-% Usage: [output1] = plot_calcium_imaging_traces (reqarg1, varargin)
+% Usage: figs = plot_calcium_imaging_traces (varargin)
 % Explanation:
 %       TODO
 %
@@ -8,36 +8,39 @@
 %       TODO
 %
 % Outputs:
-%       output1     - TODO: Description of output1
-%                   specified as a TODO
+%       figs        - figures plotted
+%                   specified as a Figure object handle array
 %
 % Arguments:
-%       reqarg1     - TODO: Description of reqarg1
-%                   must be a TODO
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
-%                   - Any other parameter-value pair for TODO()
+%       varargin    - 'FigTypes': figure type(s) for saving; 
+%                               e.g., 'png', 'fig', or {'png', 'fig'}, etc.
+%                   could be anything recognised by 
+%                       the built-in saveas() function
+%                   (see isfigtype.m under Adams_Functions)
+%                   default == {'png', 'epsc'}
+%                   - Any other parameter-value pair for 
+%                       plot_traces() or plot_tuning_curve()
 %
 % Requires:
-%       ~/Adams_Functions/create_error_for_nargin.m
-%       ~/Adams_Functions/struct2arglist.m
+%       cd/all_files.m
+%       cd/compute_stats.m
+%       cd/extract_fileparts.m
+%       cd/extract_subvectors.m
+%       cd/find_in_strings.m
+%       cd/freqfilter.m
+%       cd/isfigtype.m
+%       cd/plot_traces.m
+%       cd/plot_tuning_curve.m
+%       cd/save_all_figtypes.m
+%       cd/struct2arglist.m
 %       cd/update_figure_for_corel.m
-% TODO:
-% cd/all_files.m
-% cd/compute_stats.m
-% cd/extract_fileparts.m
-% cd/extract_subvectors.m
-% cd/find_in_strings.m
-% cd/freqfilter
-% cd/plot_traces.m
-% cd/save_all_figtypes
 %
 % Used by:
 %       /TODO:dir/TODO:file
 
 % File History:
 % 2019-09-19 Created by Adam Lu
+% 2019-09-30 Made into a function
 % 
 
 %% Hard-coded parameters
@@ -46,41 +49,30 @@ S_PER_MIN = 60;
 % TODO: Make optional arguments
 baseWindowSeconds = 10;
 yAmountToStagger = [];
-figTypes = {'png', 'epsc'};
 plotIndividualFlag = true;
 plotPopulationFlag = false;
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+figTypesDefault = {'png', 'epsc'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
-% Check number of required arguments
-% if nargin < 1    % TODO: 1 might need to be changed
-%     error(create_error_for_nargin(mfilename));
-% end
-
 % Set up Input Parser Scheme
-% iP = inputParser;
-% iP.FunctionName = mfilename;
-% iP.KeepUnmatched = true;                        % allow extraneous options
-
-% Add required inputs to the Input Parser
-% addRequired(iP, 'reqarg1');
+iP = inputParser;
+iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default);
+addParameter(iP, 'FigTypes', figTypesDefault, ...
+    @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
-% parse(iP, reqarg1, varargin{:});
-% param1 = iP.Results.param1;
+parse(iP, varargin{:});
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
-% Keep unmatched arguments for the TODO() function
-% otherArguments = struct2arglist(iP.Unmatched);
-
-% Check relationships between arguments
-% TODO
+% Keep unmatched arguments for plot_traces() or plot_tuning_curve()
+otherArguments = iP.Unmatched;
 
 %% Preparation
 % Get all paths to trace text files
@@ -147,16 +139,17 @@ dFF0Lower95s = cellfun(@(x) compute_combined_trace(x, 'lower95'), ...
 %% Plot individual traces
 if plotIndividualFlag
     figs(1:nFiles) = cellfun(@(x, y, z, w) plot_individual_imaging_traces(x, y, ...
-                                            yAmountToStagger, z, w, figTypes), ...
+                                            yAmountToStagger, z, w, ...
+                                            figTypes, otherArguments), ...
                             timeVecsMin, dFF0ValuesSorted, ...
                             figTitlesSingles, figNamesSingles);
 end
 
 %% Plot population data
 if plotPopulationFlag
-    fig(nFiles + 1) = plot_averaged_imaging_traces(timeVecsMin, dFF0Means, ...
+    figs(nFiles + 1) = plot_averaged_imaging_traces(timeVecsMin, dFF0Means, ...
                             dFF0Upper95s, dFF0Lower95s, ...
-                            figTitlePop, figNamePop, figTypes);
+                            figTitlePop, figNamePop, figTypes, otherArguments);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -179,8 +172,6 @@ timeVecMs = traceTable{:, idxTimeVar};
 
 % Convert to seconds
 timeVecSec = timeVecMs / MS_PER_S;
-
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -252,13 +243,11 @@ maxValues = compute_stats(dFF0Values, 'max');
 % Reorder the traces
 dFF0ValuesSorted = dFF0Values(:, origIndex);
 
-end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function fig = plot_individual_imaging_traces (timeVecMin, dFF0Values, ...
                                             yAmountToStagger, figTitle, ...
-                                            figName, figTypes)
+                                            figName, figTypes, otherArguments)
 
 %% Plot the mean values
 % Decide on the amount to stagger on the y axis
@@ -283,7 +272,7 @@ yLabel = 'Cell Number';
                 'YAmountToStagger', yAmountToStagger, 'YBase', 0, ...
                 'XLabel', xLabel, 'YLabel', yLabel, ...
                 'LineWidth', 1, 'ColorMap', 'k', ...
-                'FigTitle', figTitle, 'FigHandle', fig);
+                'FigTitle', figTitle, 'FigHandle', fig, otherArguments);
 
 % Update the figure to look pretty
 fig = update_figure_for_corel(fig);
@@ -291,12 +280,12 @@ fig = update_figure_for_corel(fig);
 % Save figure
 save_all_figtypes(fig, figName, figTypes);
 
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function fig = plot_averaged_imaging_traces (timeVecsMin, dFF0Means, ...
-                    dFF0Upper95s, dFF0Lower95s, figTitlePop, figNamePop, figTypes)
+                    dFF0Upper95s, dFF0Lower95s, figTitlePop, figNamePop, ...
+                    figTypes, otherArguments)
 
 %% Preparation
 % Count the number of slices
@@ -333,7 +322,7 @@ for iSlice = 1:nSlices
                         'UpperCI', upper95, 'ReadoutLimits', yLimits, ...
                         'FigTitle', 'suppress', ...
                         'PLabel', 'suppress', 'ReadoutLabel', 'suppress', ...
-                        'ColorMap', colorMap(iSlice, :));
+                        'ColorMap', colorMap(iSlice, :), otherArguments);
     
 end
 
@@ -342,8 +331,6 @@ fig = update_figure_for_corel(fig);
 
 % Save figure
 save_all_figtypes(fig, figNamePop, figTypes);
-
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

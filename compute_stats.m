@@ -77,6 +77,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       cd/parse_multiunit.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
+%       cd/plot_calcium_imaging_traces.m
 %       cd/select_similar_values.m
 %
 % Related functions:
