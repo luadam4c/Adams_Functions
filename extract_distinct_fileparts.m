@@ -7,6 +7,7 @@ function distinctParts = extract_distinct_fileparts (paths, varargin)
 %       [~, paths] = all_files;
 %       extract_distinct_fileparts(paths)
 %       extract_distinct_fileparts({'a+b+c', 'a+d+c'}, 'Delimiter', '+')
+%       extract_distinct_fileparts('a+b+c', 'Delimiter', '+')
 %
 % Outputs:
 %       distinctParts   - distinct parts of the file paths
@@ -39,7 +40,7 @@ function distinctParts = extract_distinct_fileparts (paths, varargin)
 % 2019-01-23 Fixed the case where commonSuffix is empty
 % 2019-03-17 Now removes common prefix as well
 % 2019-03-17 Added 'Delimiter' as an optional argument
-% 
+% 2019-09-30 Fixed the case when there is only one path
 
 %% Hard-coded parameters
 
@@ -73,6 +74,12 @@ parse(iP, paths, varargin{:});
 delimiter = iP.Results.Delimiter;
 
 %% Do the job
+% If there is only one path, return everything
+if ischar(paths) || iscell(paths) && numel(paths) == 1
+    distinctParts = paths;
+    return
+end
+
 % Extract the common parent directory
 commonParent = extract_common_directory(paths, 'KeepFileSep', true);
 
