@@ -7,6 +7,7 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 % Example(s):
 %       spike2MatPath = '/media/shareX/2019octoberR01/Pleth/Data/new_pleth_data/test2AtNight_200Hz.mat';
 %       spike2Table = parse_spike2_mat(spike2MatPath);
+%       spike2Table = parse_spike2_mat(spike2MatPath, 'ChannelNames', {'Sound', 'O2', 'Pleth 2', 'WIC#2', 'WIC#1'});
 %       [~, matPaths] = all_files('Ext', 'mat');    
 %       for i = 1:numel(matPaths); parse_spike2_mat(matPaths{i}); end
 %
@@ -26,6 +27,10 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %                   - 'ParseLaser': whether to parse laser pulses
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'ChannelNames': channel names to restrict to
+%                   must be a string array or a cell array of character vectors
+%                   default == all channels with a 'values' field and 
+%                                   an 'interval' field
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
@@ -35,6 +40,7 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_fields.m
+%       cd/find_in_strings.m
 %       cd/force_string_end.m
 %       cd/match_row_count.m
 %       cd/parse_gas_trace.m
@@ -49,7 +55,7 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 % 2019-09-08 Moved from spike2Mat2Text.m
 % 2019-09-11 Added 'ParseGas' as an optional argument
 % 2019-09-20 Added 'ParseText' as an optional argument
-% TODO: Add 'ChannelNames' as an optional argument with default {}
+% 2019-09-29 Added 'ChannelNames' as an optional argument with default {}
 % 
 
 %% Hard-coded parameters
@@ -60,6 +66,7 @@ isTrace = @(x) isfield(x, 'values') && isfield(x, 'interval');
 parseTextDefault = false;
 parseGasDefault = false;
 parseLaserDefault = false;
+channelNamesDefault = {};          % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -85,12 +92,15 @@ addParameter(iP, 'ParseGas', parseGasDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ParseLaser', parseLaserDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ChannelNames', channelNamesDefault, ...
+    @(x) isempty(x) || isstring(x) || iscellstr(x));
 
 % Read from the Input Parser
 parse(iP, spike2MatPath, varargin{:});
 parseText = iP.Results.ParseText;
 parseGas = iP.Results.ParseGas;
 parseLaser = iP.Results.ParseLaser;
+channelNamesUser = iP.Results.ChannelNames;
 
 % Keep unmatched arguments for the TODO() function
 % otherArguments = struct2arglist(iP.Unmatched);
@@ -99,17 +109,40 @@ parseLaser = iP.Results.ParseLaser;
 % Make sure the MATLAB path ends with .mat
 spike2MatPath = force_string_end(spike2MatPath, '.mat');
 
-%% Do the job
+%% Reorganize the data as a matrix
+% Load everything
 %   Note: this is a struct of structs
 spike2FileContents = load(spike2MatPath);
 
-%% Reorganize the data as a matrix
-% Find all fields with a 'values' field
-channelStructsTable = all_fields(spike2FileContents, 'ValueFunc', isTrace, ...
-                                    'OutputType', 'table');
+% Load data
+if isempty(channelNamesUser)
+    % Find all fields with a 'values' field
+    channelStructsTable = all_fields(spike2FileContents, 'ValueFunc', isTrace, ...
+                                        'OutputType', 'table');
 
-% Get all the channel data
-channelStructs = channelStructsTable.Value;
+    % Get all the channel data
+    channelStructs = channelStructsTable.Value;
+
+    % Remove the channel structs table
+    clear channelStructsTable
+else
+    % Find all structures
+    allChannelStructs = all_fields(spike2FileContents, 'OutputType', 'value');
+
+    % Extract all channel names
+    allChannelNames = extract_fields(allChannelStructs, 'title', 'UniformOutput', false);
+
+    % Find the channels of interest
+    indOfInterest = cellfun(@(x) find_in_strings(x, allChannelNames, ...
+                                    'SearchMode', 'exact', 'MaxNum', 1, ...
+                                    'ReturnNaN', true), channelNamesUser);
+    
+    % Restrict to the channels of interest
+    channelStructs = allChannelStructs(indOfInterest);
+    
+    % Remove the channel structs table
+    clear spike2FileContents allChannelStructs
+end
 
 % Get all the channel names
 channelNames = extract_fields(channelStructs, 'title', 'UniformOutput', false);
@@ -275,6 +308,33 @@ writetable(textTable, textTablePath);
 
 %{
 OLD CODE:
+
+% Get the .mat file
+spike2MatFile = matfile(spike2MatPath);
+
+% Extract all structure names
+allStructNames = all_fields(spike2MatFile, 'OutputType', 'name');
+
+% Number of channels
+nChannels = numel(channelNames);
+
+% Content of matfile
+spike2MatContent = whos(spike2MatFile);
+
+% All structure names
+structNames = extract_fields(spike2MatContent, 'name');
+
+% Find the actual structure names
+[~, actualChannelNames] = find_in_strings(channelNames, structNames);
+
+% Load only data needed
+for iChannel = 1:nChannels
+    % Get the current channel name
+    channelNameThis = channelNames{iChannel};
+
+    % Find the current channel struct
+    spike2MatFile
+end
 
 %}
 

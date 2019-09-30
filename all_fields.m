@@ -50,6 +50,7 @@ function output = all_fields (inStruct, varargin)
 % File History:
 % 2019-09-02 Created by Adam Lu
 % 2019-09-22 Added 'OutputType' as an optional argument
+% 2019-09-29 Now accepts matfiles
 % TODO: Extract code for regexp match from all_files.m into a function
 % TODO: Add regexp match
 % 
@@ -76,7 +77,7 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'inStruct', ...
-    @(x) validateattributes(x, {'struct'}, {'2d'}));
+    @(x) validateattributes(x, {'struct', 'matlab.io.MatFile'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'OutputType', outputTypeDefault, ...
