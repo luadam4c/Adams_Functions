@@ -71,6 +71,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %       cd/parse_gas_trace.m
 %       cd/parse_lts.m
 %       cd/parse_multiunit.m
+%       cd/plot_traces_spike2_mat.m
 
 % File History:
 % 2018-10-25 Adapted from make_time_column.m in Marks_Functions

@@ -103,6 +103,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/parse_pulse_response.m
 %       cd/plot_histogram.m
 %       cd/plot_traces.m
+%       cd/plot_traces_spike2_mat.m
 %       cd/select_similar_values.m
 
 % File History:

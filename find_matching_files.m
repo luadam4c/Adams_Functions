@@ -44,6 +44,7 @@ function varargout = find_matching_files (fileParts, varargin)
 %
 % Used by:
 %       cd/load_matching_sheets.m
+%       cd/plot_traces_spike2_mat.m
 
 % File History:
 % 2019-09-25 Created by Adam Lu

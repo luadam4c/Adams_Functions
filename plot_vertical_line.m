@@ -56,6 +56,7 @@ function h = plot_vertical_line (xValue, varargin)
 %       cd/plot_pulse_response_with_stimulus.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_swd_histogram.m
+%       cd/plot_traces_spike2_mat.m
 %       cd/plot_window_boundaries.m
 
 % File History:

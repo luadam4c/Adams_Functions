@@ -1,5 +1,5 @@
 function figHandle = update_figure_for_corel (figHandle, varargin)
-%% Update figure to be journal-friendly
+%% Update figure to be journal-friendly (ready for CorelDraw)
 % Usage: figHandle = update_figure_for_corel (figHandle, varargin)
 % Explanation:
 %       TODO
@@ -8,24 +8,24 @@ function figHandle = update_figure_for_corel (figHandle, varargin)
 %       fig = update_figure_for_corel(fig);
 %
 % Outputs:
-%       figHandle     - TODO: Description of figHandle
-%                   specified as a TODO
+%       figHandle   - figure handle updated
+%                   specified as a Figure object handle
 %
 % Arguments:
-%       figHandle     - TODO: Description of figHandle
-%                   must be a TODO
+%       figHandle   - figure handle to update
+%                   must be a Figure object handle
 %       varargin    - 'RemoveTicks': whether to remove all ticks
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - Any other parameter-value pair for TODO()
+%                   - Any other parameter-value pair for Axes properties
 %
 % Requires:
-%       ~/Adams_Functions/create_error_for_nargin.m
-%       ~/Adams_Functions/struct2arglist.m
-%       /TODO:dir/TODO:file
+%       cd/create_error_for_nargin.m
+%       cd/struct2arglist.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/plot_calcium_imaging_traces.m
+%       cd/plot_traces_spike2_mat.m
 
 % File History:
 % 2019-09-19 Created by Adam Lu
@@ -36,8 +36,8 @@ function figHandle = update_figure_for_corel (figHandle, varargin)
 % TODO: Make optional parameters
 fontSizeLabels = 8;
 fontSizeAxis = 6; 
-linewidth = 1;
-tickLengths = [0.025, 0.025];
+lineWidth = 1;
+tickLengths = [0.01, 0.01];
 
 %% Default values for optional arguments
 removeTicksDefault = false;  % set later
@@ -66,15 +66,11 @@ addParameter(iP, 'RemoveTicks', removeTicksDefault, ...
 parse(iP, figHandle, varargin{:});
 removeTicks = iP.Results.RemoveTicks;
 
-% Keep unmatched arguments for the TODO() function
+% Keep unmatched arguments for Axes properties
 otherArguments = struct2arglist(iP.Unmatched);
 
-% Check relationships between arguments
-% TODO
-
 %% Preparation
-% TODO
-
+% Compute font size multipliers
 titleFontSizeMultiplier = fontSizeLabels / fontSizeAxis;
 labelFontSizeMultiplier = fontSizeLabels / fontSizeAxis;
 
@@ -88,12 +84,12 @@ nAx = numel(ax);
 % Set font
 set(ax, 'FontName', 'Arial');
 set(ax, 'FontSize', fontSizeAxis);
-set(ax, 'TitleFontSizeMultiplier', 4/3);
+set(ax, 'TitleFontSizeMultiplier', titleFontSizeMultiplier);
 set(ax, 'TitleFontWeight', 'normal');
-set(ax, 'LabelFontSizeMultiplier', 4/3);
+set(ax, 'LabelFontSizeMultiplier', labelFontSizeMultiplier);
 
-% Make all rulers linewidth 1
-set(ax, 'LineWidth', 1);
+% Make all rulers the same linewidth
+set(ax, 'LineWidth', lineWidth);
 
 % Remove boxes
 for iAx = 1:nAx
@@ -109,6 +105,11 @@ set(ax, 'TickLength', tickLengths);
 if removeTicks
     set(ax, 'XTick', []);
     set(ax, 'YTick', []);
+end
+
+%
+if ~isempty(otherArguments)
+    set(ax, otherArguments{:});    
 end
 
 %% Output results

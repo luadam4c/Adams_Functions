@@ -64,6 +64,7 @@ function h = plot_window_boundaries (win, varargin)
 %
 % Used by:    
 %       cd/m3ha_plot_individual_traces.m
+%       cd/plot_traces_spike2_mat.m
 %       cd/plot_tuning_curve.m
 
 % File History:

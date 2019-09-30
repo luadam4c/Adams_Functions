@@ -44,6 +44,7 @@ function newStr = force_string_end (oldStr, subStr, varargin)
 %       cd/m3ha_neuron_create_TC_commands.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/parse_spike2_mat.m
+%       cd/plot_traces_spike2_mat.m
 %       cd/save_all_zooms.m
 %       cd/test_var_difference.m
 

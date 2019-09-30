@@ -45,6 +45,7 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %       cd/match_row_count.m
 %       cd/parse_gas_trace.m
 %       cd/parse_laser_trace.m
+%       cd/plot_traces_spike2_mat.m
 %       cd/struct2arglist.m
 %
 % Used by:

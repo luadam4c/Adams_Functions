@@ -22,6 +22,8 @@
 % Requires:
 %       ~/Adams_Functions/create_error_for_nargin.m
 %       ~/Adams_Functions/struct2arglist.m
+%       cd/update_figure_for_corel.m
+% TODO:
 % cd/all_files.m
 % cd/compute_stats.m
 % cd/extract_fileparts.m

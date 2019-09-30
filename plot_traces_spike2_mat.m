@@ -16,14 +16,17 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 % Arguments:
 %       spike2Path  - path to Spike2-exported .mat file
 %                   must be a string scalar or a character vector
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'TimeUnits': output time units
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'min'   - minutes
+%                       's'     - seconds
+%                       'ms'    - milliseconds
+%                       'us'    - microseconds
+%                   default == 's'
 %                   - Any other parameter-value pair for plot_traces() TODO
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-% TODO:
 %       cd/create_subplots.m
 %       cd/create_time_vectors.m
 %       cd/extract_fileparts.m
@@ -32,6 +35,7 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 %       cd/find_matching_files.m
 %       cd/find_window_endpoints.m
 %       cd/force_matrix.m
+%       cd/force_string_end.m
 %       cd/parse_spike2_mat.m
 %       cd/plot_vertical_line.m
 %       cd/plot_window_boundaries.m
@@ -50,25 +54,36 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 S_PER_MIN = 60;
 
 %% Hard-coded parameters
-channelNamesUser = {'O2'; 'Pleth 2'; 'WIC#2'; 'WIC#1'};
-plotChannelNames = {'O2'; 'Pleth'; 'EEG'; 'EMG'};
-parseGas = false;
-parseLaser = false;
-stimTableSuffix = '_gas_pulses';
-figExpansion = [1, 0.4];
-spectYLimits = [1, 50];
+validTimeUnits = {'min', 's', 'ms', 'us'};
 
+% TODO: Make optional arguments
+channelNamesUser = {'Sound'; 'Pleth 2'; 'WIC#2'; 'WIC#1'};
+plotChannelNames = {'Laser'; 'Pleth'; 'EEG'; 'EMG'};
+parseGas = false;
+parseLaser = true; %false;
 plotSpectrogram = true;
-alignToFirstStim = false;
+plotZooms = false;
+alignToFirstStim = true; %false;
 updateForCorel = true;
-relativeWindowMin = [-10, 20];
-relativeWindowNoSwd = [-6.3, -6];
-relativeWindowSwd = [6, 6.3];
+removeTicks = false;
+outFolder = pwd;
 figBase = '';
+figTypes = {'png', 'epsc2'};
+stimTableSuffix = '_pulses';
+% figExpansion = [1, 0.4];
+figExpansion = [1, 1];
+spectYLimits = [1, 50];
+relativeWindow = [-10, 10];
+% relativeWindowNoSwd = ;
+% relativeWindowSwd = ;
+% relativeWindow = [-10, 20];
+% relativeWindowNoSwd = [-6.3, -6];
+% relativeWindowSwd = [6, 6.3];
 suffixNoSwd = '_no_swd';
 suffixSwd = '_swd';
 
 %% Default values for optional arguments
+timeUnitsDefault = 's';
 % param1Default = [];             % default TODO: Description of param1
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -89,20 +104,33 @@ addRequired(iP, 'spike2Path', ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default, ...
-    % TODO: validation function %);
+addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
+    @(x) any(validatestring(x, validTimeUnits)));
 
 % Read from the Input Parser
 parse(iP, spike2Path, varargin{:});
-% param1 = iP.Results.param1;
+timeUnits = validatestring(iP.Results.TimeUnits, validTimeUnits);
 
 % Keep unmatched arguments for the plot_traces() function
-otherArguments = iP.Unmatched;
+% otherArguments = iP.Unmatched;
 
 %% Preparation
+% Force the Spike2 path to end with '.mat'
+spike2Path = force_string_end(spike2Path, '.mat');
+
 % Decide on a figure base
 if isempty(figBase)
     figBase = extract_fileparts(spike2Path, 'base');
+end
+
+% Compute the time units conversion factor
+switch timeUnits
+    case 's'
+        unitsPerSecond = 1;
+    case 'min'
+        unitsPerSecond = 1 / S_PER_MIN;
+    otherwise
+        error('timeUnits unrecognized!');
 end
 
 % Decide on a figure base
@@ -118,9 +146,6 @@ figBaseSwd = strcat(figBase, suffixSwd);
 data = parse_spike2_mat(spike2Path, 'ChannelNames', channelNamesUser, ...
                         'ParseGas', parseGas, 'ParseLaser', parseLaser);
 
-% Extract the channel names and values
-channelNames = data.channelNames;
-
 % Extract the channel values and force as a matrix
 channelValues = force_matrix(data.channelValues);
 
@@ -131,7 +156,7 @@ siSeconds = nanmean(data.siSeconds);
 nSamples = nanmean(data.nSamples);
 
 % Create a time vector in minutes
-timeVec = create_time_vectors(nSamples, 'TimeUnits', 'min', ...
+timeVec = create_time_vectors(nSamples, 'TimeUnits', timeUnits, ...
                                 'SamplingIntervalSec', siSeconds);
 
 %% Restrict or align trace data if requested
@@ -144,19 +169,19 @@ if alignToFirstStim
     % Extract the first stim start time from the stim table
     stimTable = readtable(stimTablePath);
     startTimesSec = stimTable.startTime;
-    startTimesMin = startTimesSec / S_PER_MIN;
-    centerTimeMin = startTimesMin(1);
+    startTimes = startTimesSec * unitsPerSecond;
+    centerTime = startTimes(1);
 
     % Create time window
-    timeWindowMin = centerTimeMin + relativeWindowMin;
+    timeWindow = centerTime + relativeWindow;
 
     % Find the time window endpoints
-    endPoints = find_window_endpoints(timeWindowMin, timeVec);
+    endPoints = find_window_endpoints(timeWindow, timeVec);
 
     % Restrict time vector and shift it to be 
     %   relative to the first stim start time
     timeVecToPlot = extract_subvectors(timeVec, 'EndPoints', endPoints);
-    timeVecToPlot = timeVecToPlot - centerTimeMin;
+    timeVecToPlot = timeVecToPlot - centerTime;
 
     % Restrict data to the time window endpoints
     channelValuesToPlot = ...
@@ -184,13 +209,13 @@ if plotSpectrogram && ~isempty(eegChannelNum)
         compute_spectrogram(eegToPlot, siSeconds);
 
     % Convert times to minutes
-    timeInstantsRelMin = timeInstantsRelSeconds / S_PER_MIN;
+    timeInstantsRel = timeInstantsRelSeconds * unitsPerSecond;
 
     % Align times if requested
     if alignToFirstStim
-        timeInstantsMin = relativeWindowMin(1) + timeInstantsRelMin;
+        timeInstantsMin = relativeWindow(1) + timeInstantsRel;
     else
-        timeInstantsMin = timeInstantsRelMin;
+        timeInstantsMin = timeInstantsRel;
     end
 else
     plotSpectrogram = false;
@@ -200,11 +225,11 @@ end
 % Count the number of subplots
 nSubPlots = numel(plotChannelNames);
 
-% TODO: Let plot_traces accept 'AxesHandles' and use it
 % Create figure
 [fig, ax] = create_subplots(nSubPlots, 1, 'AlwaysNew', true, ...
                             'FigExpansion', figExpansion);
 
+% TODO: Let plot_traces accept 'AxesHandles' and use it
 % Plot traces
 for iPlot = 1:nSubPlots
     % Plot the appropriate trace or map
@@ -252,7 +277,7 @@ linkaxes(ax, 'x');
 
 % Update figure for Corel Draw
 if updateForCorel
-    fig = update_figure_for_corel(fig);
+    fig = update_figure_for_corel(fig, 'RemoveTicks', removeTicks);
 end
 
 % Save the figure in different zooms
@@ -282,7 +307,7 @@ if plotZooms
     end
 
     % Zoom back out
-    xlim(relativeWindowMin);
+    xlim(relativeWindow);
 end
 
 % Save figure
@@ -310,7 +335,7 @@ binWidthSamples = round(binWidthSeconds / siSeconds);
 
 % Set a default overlap in samples
 if isempty(overlapSeconds)
-    overlapSamples = binWidthSamples / 2;
+    overlapSamples = round(binWidthSamples / 2);
 else
     overlapSamples = round(overlapSeconds / siSeconds);
 end
@@ -331,6 +356,9 @@ OLD CODE:
 
 spike2PathBase = extract_fileparts(spike2Path, 'pathbase');
 stimTablePath = [spike2PathBase, stimTableSuffix, '.csv'];
+
+% Extract the channel names and values
+channelNames = data.channelNames;
 
 %}
 

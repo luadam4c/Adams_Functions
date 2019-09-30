@@ -26,6 +26,7 @@ function save_all_figtypes (fig, filename, varargin)
 %       cd/plot_bar.m
 %       cd/plot_struct.m
 %       cd/plot_traces.m
+%       cd/plot_traces_spike2_mat.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_tuning_map.m
 %       cd/save_all_zooms.m
@@ -35,7 +36,7 @@ function save_all_figtypes (fig, filename, varargin)
 %       ~/RTCl/single_neuron.m
 %       ~/RTCl/tuning_curves.m
 %       ~/RTCl/tuning_maps.m
-%
+
 % File History:
 % 2017-05-09 Created by Adam Lu
 % 2017-11-08 Replaced figbase with [figbase, '.', figtypes]

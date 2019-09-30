@@ -431,7 +431,7 @@ There are 1 MATLAB scripts in this directory:
 - [**union_over_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/union_over_cells.m): Apply the union function over all contents of a cell array
 - [**unique_custom.m**](https://github.com/blabuva/Adams_Functions/blob/master/unique_custom.m): Returns the unique values in x, optionally without NaN
 - [**unique_groups.m**](https://github.com/blabuva/Adams_Functions/blob/master/unique_groups.m): Retrieves the unique groups and counts the number in each group
-- [**update_figure_for_corel.m**](https://github.com/blabuva/Adams_Functions/blob/master/update_figure_for_corel.m): Update figure to be journal-friendly
+- [**update_figure_for_corel.m**](https://github.com/blabuva/Adams_Functions/blob/master/update_figure_for_corel.m): Update figure to be journal-friendly (ready for CorelDraw)
 - [**update_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/update_params.m): Update dependent parameters for particular experiments
 - [**update_param_values.m**](https://github.com/blabuva/Adams_Functions/blob/master/update_param_values.m): Updates a parameters table with new values
 - [**validate_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/validate_string.m): Validate whether a string is an element of a cell array of valid strings
