@@ -6,7 +6,7 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 %
 % Example(s):
 %       [~, matPaths] = all_files('Ext', 'mat');
-%       for i = 1:numel(matPaths); plot_traces_spike2_mat(matPaths{i}, 'ParseLaser', true); end
+%       for i = 1:numel(matPaths); plot_traces_spike2_mat(matPaths{i}, 'ParseLaser', true, 'AlignToStim', true); end
 %
 % Outputs:
 %       handles     - graphics object handles, containing:
@@ -17,12 +17,37 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 % Arguments:
 %       spike2Path  - path to Spike2-exported .mat file
 %                   must be a string scalar or a character vector
-%       varargin    - 'ParseGas': whether to parse pleth pulses
+%       varargin    - 'AlignToStim': whether to align to first stim start
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'StimType': stimulation type
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'auto'  - detect automatically
+%                       'none'  - no stimulation
+%                       'gas'   - hypoxia
+%                       'laser' - laser
+%                   default == auto
+%                   - 'ParseGas': whether to parse gas pulses
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'ParseLaser': whether to parse laser pulses
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'PlotSpectrogram': whether to plot spectrogram
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'PlotZooms': whether to plot zoomed regions
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotForCorel': whether to plot for CorelDraw
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'RemoveTicks': whether to remove all ticks
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'StimTableSuffix': Suffix for the stim table
+%                   must be a character vector or a string scalar 
+%                   default == '_pulses'
 %                   - 'TimeUnits': output time units
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'min'   - minutes
@@ -30,6 +55,12 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 %                       'ms'    - milliseconds
 %                       'us'    - microseconds
 %                   default == 's'
+%                   - 'FigExpansion': expansion factor for figure position
+%                   must be a positive scalar or 2-element vector
+%                   default == []
+%                   - 'FigName': figure name for saving
+%                   must be a string scalar or a character vector
+%                   default == ''
 %                   - 'FigTypes': figure type(s) for saving; 
 %                               e.g., 'png', 'fig', or {'png', 'fig'}, etc.
 %                   could be anything recognised by 
@@ -67,35 +98,38 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 S_PER_MIN = 60;
 
 %% Hard-coded parameters
+validStimTypes = {'auto', 'none', 'gas', 'laser'};
 validTimeUnits = {'min', 's', 'ms', 'us'};
+stimTableSuffixGas = '_gas_pulses';
+stimTableSuffixLaser = '_laser_pulses';
 
 % TODO: Make optional arguments
-channelNamesUser = {'Sound'; 'Pleth 2'; 'WIC#2'; 'WIC#1'};
-plotChannelNames = {'Laser'; 'Pleth'; 'EEG'; 'EMG'};
-plotSpectrogram = true;
-plotZooms = false;
-alignToFirstStim = true; %false;
-plotForCorel = false; %true;
-removeTicks = false;
-outFolder = pwd;
-figBase = '';
-figTypes = {'png', 'epsc2'};
-stimTableSuffix = '_pulses';
-spectYLimits = [1, 50];
-relativeWindow = [-10, 10];
-% relativeWindowNoSwd = ;
-% relativeWindowSwd = ;
-% relativeWindow = [-10, 20];
+spectYLimits = [1, 50];         % Look at 1-50 Hz by default
 % relativeWindowNoSwd = [-6.3, -6];
 % relativeWindowSwd = [6, 6.3];
 suffixNoSwd = '_no_swd';
 suffixSwd = '_swd';
 
 %% Default values for optional arguments
+alignToStimDefault = false;
+stimTypeDefault = '';          % set later
 parseGasDefault = false;
 parseLaserDefault = false;
+plotSpectrogramDefault = true;
+plotZoomsDefault = false;
+plotForCorelDefault = false;
+removeTicksDefault = false;
+stimTableSuffixDefault = '';    % set later
+
+% TODO: Make optional arguments
+channelNamesOriginal = {};
+channelNamesToPlot = {};
+relativeWindow = [];
+
 timeUnitsDefault = '';          % set later
-% param1Default = [];             % default TODO: Description of param1
+figExpansionDefault = [];       % no figure expansion by default
+figNameDefault = '';            % don't save figure by default
+figTypesDefault = {'png', 'epsc'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -115,20 +149,47 @@ addRequired(iP, 'spike2Path', ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'AlignToStim', alignToStimDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'StimTypes', stimTypeDefault, ...
+    @(x) any(validatestring(x, validStimTypes)));
 addParameter(iP, 'ParseGas', parseGasDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ParseLaser', parseLaserDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotSpectrogram', plotSpectrogramDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotZooms', plotZoomsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotForCorel', plotForCorelDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RemoveTicks', removeTicksDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'StimTableSuffix', stimTableSuffixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
     @(x) any(validatestring(x, validTimeUnits)));
+addParameter(iP, 'FigExpansion', figExpansionDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive'}));
+addParameter(iP, 'FigName', figNameDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, spike2Path, varargin{:});
+alignToStim = iP.Results.AlignToStim;
+stimType = validatestring(iP.Results.StimTypes, validStimTypes);
 parseGas = iP.Results.ParseGas;
 parseLaser = iP.Results.ParseLaser;
+plotSpectrogram = iP.Results.PlotSpectrogram;
+plotZooms = iP.Results.PlotZooms;
+plotForCorel = iP.Results.PlotForCorel;
+removeTicks = iP.Results.RemoveTicks;
+stimTableSuffix = iP.Results.StimTableSuffix;
 timeUnits = validatestring(iP.Results.TimeUnits, validTimeUnits);
+figExpansion = iP.Results.FigExpansion;
+figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Keep unmatched arguments for the plot_traces() function
@@ -138,18 +199,102 @@ timeUnits = validatestring(iP.Results.TimeUnits, validTimeUnits);
 % Force the Spike2 path to end with '.mat'
 spike2Path = force_string_end(spike2Path, '.mat');
 
-% Decide on a figure base
-if isempty(figBase)
-    figBase = extract_fileparts(spike2Path, 'base');
+% Decide on a figure name
+if isempty(figName)
+    figPathBase = extract_fileparts(spike2Path, 'pathbase');
+else
+    figPathBase = extract_fileparts(figName, 'pathbase');
 end
 
-% Decide on the time units
-if parseGas
-    timeUnits = 'min';
-elseif parseLaser
-    timeUnits = 's';
-else
-    timeUnits = 's';
+% Detect stimulation type
+if strcmpi(stimType, 'auto')
+    % If not aligning, stim type is 'none'
+    if ~alignToStim
+        stimType = 'none';
+    else
+        % Try finding the corresponding gas stim table
+        [~, stimTablePath] = ...
+            find_matching_files(spike2Path, 'Suffix', stimTableSuffixGas, ...
+                                'Extension', 'csv');
+
+        % Otherwise, try finding the corresponding laser stim table
+        if ~isempty(stimTablePath)
+            stimType = 'gas';        
+        else
+            [~, stimTablePath] = ...
+                find_matching_files(spike2Path, 'Suffix', stimTableSuffixLaser, ...
+                                    'Extension', 'csv');
+                                
+            % If not found, don't align to stimulus
+            if ~isempty(stimTablePath)
+                stimType = 'laser';
+            else
+                alignToStim = false;
+                stimType = 'none';
+            end
+        end
+    end
+end
+
+% Decide on stimulation table suffix
+if isempty(stimTableSuffix)
+    switch stimType
+        case 'gas'
+            stimTableSuffix = stimTableSuffixGas;
+        case 'laser'
+            stimTableSuffix = stimTableSuffixLaser;
+        otherwise
+            stimTableSuffix = '';
+    end
+end
+
+% Decide on original channel names
+if isempty(channelNamesOriginal)
+    switch stimType
+        case 'gas'
+            channelNamesOriginal = {'O2'; 'Pleth 2'; 'WIC#2'; 'WIC#1'};
+        case 'laser'
+            channelNamesOriginal = {'Sound'; 'Pleth 2'; 'WIC#2'; 'WIC#1'};
+        case 'none'
+            channelNamesOriginal = {'Pleth 2'; 'WIC#2'; 'WIC#1'};
+        otherwise
+    end
+end
+
+% Decide on channel names to plot
+if isempty(channelNamesToPlot)
+    switch stimType
+        case 'gas'
+            channelNamesToPlot = {'O2'; 'Pleth'; 'EEG'; 'EMG'};
+        case 'laser'
+            channelNamesToPlot = {'Laser'; 'Pleth'; 'EEG'; 'EMG'};
+        otherwise
+            channelNamesToPlot = {'Pleth'; 'EEG'; 'EMG'};
+    end
+end
+
+% Decide on relative time window
+if isempty(relativeWindow)
+    switch stimType
+        case 'gas'
+            relativeWindow = [-10, 20];
+        case 'laser'
+            relativeWindow = [-10, 10];
+        otherwise
+            relativeWindow = [];
+    end
+end
+
+% Decide on time units
+if isempty(timeUnits)
+    switch stimType
+        case 'gas'
+            timeUnits = 'min';
+        case 'laser'
+            timeUnits = 's';
+        otherwise
+            timeUnits = 's';
+    end
 end
 
 % Compute the time units conversion factor
@@ -163,23 +308,21 @@ switch timeUnits
 end
 
 % Decide on the figure expansion
-if plotForCorel
-    figExpansion = [1, 0.4];
-else
-    figExpansion = [1, 1];
+if isempty(figExpansion)
+    if plotForCorel
+        figExpansion = [1, 0.4];
+    else
+        figExpansion = [1, 1];
+    end
 end
 
 % Decide on a figure base
-figBaseNoSwd = strcat(figBase, suffixNoSwd);
-figBaseSwd = strcat(figBase, suffixSwd);
-
-% Create figure paths
-[figPathBase, figPathBaseNoSwd, figPathBaseSwd] = ...
-    argfun(@(x) fullfile(outFolder, x), figBase, figBaseNoSwd, figBaseSwd);
+figPathBaseNoSwd = strcat(figPathBase, suffixNoSwd);
+figPathBaseSwd = strcat(figPathBase, suffixSwd);
 
 %% Load trace data
 % Load data and parse gas trace if necessary
-data = parse_spike2_mat(spike2Path, 'ChannelNames', channelNamesUser, ...
+data = parse_spike2_mat(spike2Path, 'ChannelNames', channelNamesOriginal, ...
                         'ParseGas', parseGas, 'ParseLaser', parseLaser);
 
 % Extract the channel values and force as a matrix
@@ -196,7 +339,7 @@ timeVec = create_time_vectors(nSamples, 'TimeUnits', timeUnits, ...
                                 'SamplingIntervalSec', siSeconds);
 
 %% Restrict or align trace data if requested
-if alignToFirstStim
+if alignToStim
     % Find corresponding stim table
     [~, stimTablePath] = ...
         find_matching_files(spike2Path, 'Suffix', stimTableSuffix, ...
@@ -230,12 +373,12 @@ end
 
 %% Compute the spectrogram from the EEG trace
 % Look for an EEG trace
-eegChannelNum = find_in_strings('EEG', plotChannelNames, 'MaxNum', 1);
+eegChannelNum = find_in_strings('EEG', channelNamesToPlot, 'MaxNum', 1);
 
 % Only compute spectrogram if EEG trace is found
 if plotSpectrogram && ~isempty(eegChannelNum)
     % Update channel names to plot
-    plotChannelNames = [plotChannelNames; {'Spect'}];
+    channelNamesToPlot = [channelNamesToPlot; {'Spect'}];
 
     % Get the EEG trace
     eegToPlot = channelValuesToPlot(:, eegChannelNum);
@@ -248,7 +391,7 @@ if plotSpectrogram && ~isempty(eegChannelNum)
     timeInstantsRel = timeInstantsRelSeconds * unitsPerSecond;
 
     % Align times if requested
-    if alignToFirstStim
+    if alignToStim
         timeInstantsMin = relativeWindow(1) + timeInstantsRel;
     else
         timeInstantsMin = timeInstantsRel;
@@ -259,7 +402,7 @@ end
 
 %% Plot traces
 % Count the number of subplots
-nSubPlots = numel(plotChannelNames);
+nSubPlots = numel(channelNamesToPlot);
 
 % Create figure
 [fig, ax] = create_subplots(nSubPlots, 1, 'AlwaysNew', true, ...
@@ -302,7 +445,7 @@ for iPlot = 1:nSubPlots
     end
 
     % Plot a vertical line
-    if alignToFirstStim
+    if alignToStim
         plot_vertical_line(0, 'AxesHandle', ax(iPlot), 'Color', 'k', ...
                             'LineWidth', 1);
     end
@@ -314,6 +457,8 @@ linkaxes(ax, 'x');
 % Update figure for Corel Draw
 if plotForCorel
     fig = update_figure_for_corel(fig, 'RemoveTicks', removeTicks);
+elseif removeTicks
+    % TODO
 end
 
 % Save the figure in different zooms
@@ -335,7 +480,7 @@ if plotZooms
                             'ExpandFromDefault', false);
 
     % Plot shades
-    for iPlot = 1:numel(plotChannelNames)
+    for iPlot = 1:numel(channelNamesToPlot)
         % Plot vertical shades
         subplot(ax(iPlot))
         plot_window_boundaries([relativeWindowNoSwd, relativeWindowSwd], ...
@@ -395,6 +540,10 @@ stimTablePath = [spike2PathBase, stimTableSuffix, '.csv'];
 
 % Extract the channel names and values
 channelNames = data.channelNames;
+
+% Create figure paths
+[figPathBase, figPathBaseNoSwd, figPathBaseSwd] = ...
+    argfun(@(x) fullfile(outFolder, x), figBase, figBaseNoSwd, figBaseSwd);
 
 %}
 

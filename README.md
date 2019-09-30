@@ -370,7 +370,7 @@ There are 1 MATLAB scripts in this directory:
 - [**plot_pulse_response_with_stimulus.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pulse_response_with_stimulus.m): Plots a pulse response with its stimulus
 - [**plot_raster.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_raster.m): Make a raster plot from a cell array of event time arrays
 - [**plot_relative_events.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_relative_events.m): Binary file /home/Matlab/Adams_Functions/plot_relative_events.m matches
-- [**plot_signals.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_signals.m): Default values for optional arguments
+- [**plot_signals.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_signals.m): Plots signals (TO BE MERGED WITH plot_traces.m)
 - [**plot_struct.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_struct.m): Plot all fields in a structure array as tuning curves
 - [**plot_swd_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_swd_histogram.m): Plots SWD start times in a histogram
 - [**plot_swd_raster.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_swd_raster.m): Compares all SWD start times in a directory as a raster plot

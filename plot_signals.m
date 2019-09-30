@@ -1,4 +1,5 @@
 function plot_signals(timeVec, data, varargin)
+%% Plots signals (TO BE MERGED WITH plot_traces.m)
 
 %% Default values for optional arguments
 titleDefault = 'Some data';
