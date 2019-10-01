@@ -23,9 +23,9 @@ function output = compute_sampsizepwr (varargin)
 % Example(s):
 %       data0 = 2 * randn(100, 1) + 1;
 %       data1 = 2 * randn(50, 1) + 2;
-%       compute_sampsizepwr('DataNull', data0, 'DataAlt', data1)
-%       compute_sampsizepwr('DataNull', data0, 'DataAlt', data1, 'TestType', {'z', 't', 't2'})
-%       compute_sampsizepwr('DataNull', data0, 'PAlt', 1.5:0.1:2)
+%       compute_sampsizepwr('DataCon', data0, 'DataExp', data1)
+%       compute_sampsizepwr('DataCon', data0, 'DataExp', data1, 'TestType', {'z', 't', 't2'})
+%       compute_sampsizepwr('DataCon', data0, 'PAlt', 1.5:0.1:2)
 %       compute_sampsizepwr('PNull', [1, 2], 'PAlt', 2, 'NSamples', 5:10:100)
 %       sampsize = compute_sampsizepwr('PNull', [1, 2], 'PAlt', 2, 'OutputType', 'sampsize')
 %       sampsize = compute_sampsizepwr('PNull', [1, 2], 'PAlt', 2, 'StatPower', 0.8:0.01:0.95, 'OutputType', 'sampsize')
@@ -47,17 +47,17 @@ function output = compute_sampsizepwr (varargin)
 %                   default == 'all'
 %                   - 'TestType': type of test to use
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'z'     - z test for data with known std
-%                       't'     - paired or one-sample t test
+%                       'z'     - paired z test
+%                       't'     - paired t test
 %                       't2'    - two-sample t test
 %                       'var'   - Chi-squared test of variance
 %                       'p'     - test for proportion (binomial distribution)
 %                   or a cell array of such strings
 %                   default == 't2'
-%                   - 'DataNull': null hypothesis data
+%                   - 'DataCon': control group data
 %                   must be a numeric array or a cell array of numeric vectors
 %                   default == []
-%                   - 'DataAlt': alternative hypothesis data
+%                   - 'DataExp': experimental group data
 %                   must be a numeric array or a cell array of numeric vectors
 %                   default == []
 %                   - 'MeanNull': null hypothesis mean
@@ -80,10 +80,10 @@ function output = compute_sampsizepwr (varargin)
 %                   - 'StatPowerDesired': statistical power desired
 %                   must be a numeric vector
 %                   default == 0.80
-%                   - 'NSamplesNull': null hypothesis number of samples
+%                   - 'NSamplesCon': null hypothesis number of samples
 %                   must be a numeric vector
 %                   default == computed from data
-%                   - 'NSamplesAlt': alternative hypothesis number of samples
+%                   - 'NSamplesExp': alternative hypothesis number of samples
 %                   must be a numeric vector
 %                   default == computed from data
 %                   - 'NSamples': number of samples for both hypotheses
@@ -120,6 +120,7 @@ function output = compute_sampsizepwr (varargin)
 % File History:
 % 2019-08-20 Created by Adam Lu
 % 2019-09-20 Added 'scalars' as an outputType
+% 2019-10-01 Renamed dataNull, dataAlt as dataCon, dataExp
 % 
 
 %% Hard-coded parameters
@@ -132,16 +133,16 @@ fileSuffix = 'sample_size_power_analysis';
 %% Default values for optional arguments
 outputTypeDefault = 'all';
 testTypeDefault = 't2';
-dataNullDefault = [];
-dataAltDefault = [];
+dataConDefault = [];
+dataExpDefault = [];
 meanNullDefault = [];
 meanAltDefault = [];
 stdevDefault = [];
 pNullDefault = [];
 pAltDefault = [];
 statPowerDesiredDefault = 0.8;
-nSamplesNullDefault = [];
-nSamplesAltDefault = [];
+nSamplesConDefault = [];
+nSamplesExpDefault = [];
 nSamplesDefault = [];
 nSamplesRatioDefault = [];
 saveSheetFlagDefault = false;   % don't save values in a spreadsheet by default
@@ -162,13 +163,13 @@ addParameter(iP, 'TestType', testTypeDefault, ...
     @(x) assert(iscell(x) || any(validatestring(x, validTestTypes)), ...
                 ['TestType must be either a cell array of character vectors', ...
                     'or one of ', print_cellstr(validOutputTypes, 'ToPrint', false)]));
-addParameter(iP, 'DataNull', dataNullDefault, ...
+addParameter(iP, 'DataCon', dataConDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['DataNull must be either a numeric array ', ...
+                ['DataCon must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
-addParameter(iP, 'DataAlt', dataAltDefault, ...
+addParameter(iP, 'DataExp', dataExpDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['DataAlt must be either a numeric array ', ...
+                ['DataExp must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'MeanNull', meanNullDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
@@ -184,9 +185,9 @@ addParameter(iP, 'PAlt', pAltDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'StatPowerDesired', statPowerDesiredDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'NSamplesNull', nSamplesNullDefault, ...
+addParameter(iP, 'NSamplesCon', nSamplesConDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'NSamplesAlt', nSamplesAltDefault, ...
+addParameter(iP, 'NSamplesExp', nSamplesExpDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'NSamples', nSamplesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
@@ -201,16 +202,16 @@ addParameter(iP, 'SaveMatFlag', saveMatFlagDefault, ...
 parse(iP, varargin{:});
 outputType = validatestring(iP.Results.OutputType, validOutputTypes);
 testType = iP.Results.TestType;
-dataNull = iP.Results.DataNull;
-dataAlt = iP.Results.DataAlt;
+dataCon = iP.Results.DataCon;
+dataExp = iP.Results.DataExp;
 meanNull = iP.Results.MeanNull;
 meanAlt = iP.Results.MeanAlt;
 stdev = iP.Results.Stdev;
 pNull = iP.Results.PNull;
 pAlt = iP.Results.PAlt;
 statPowerDesired = iP.Results.StatPowerDesired;
-nSamplesNull = iP.Results.NSamplesNull;
-nSamplesAlt = iP.Results.NSamplesAlt;
+nSamplesCon = iP.Results.NSamplesCon;
+nSamplesExp = iP.Results.NSamplesExp;
 nSamples = iP.Results.NSamples;
 nSamplesRatio = iP.Results.NSamplesRatio;
 saveSheetFlag = iP.Results.SaveSheetFlag;
@@ -221,25 +222,25 @@ otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Match the formats of the two vector sets
-[dataNull, dataAlt] = ...
-    match_format_vector_sets(dataNull, dataAlt, 'ForceCellOutputs', true);
+[dataCon, dataExp] = ...
+    match_format_vector_sets(dataCon, dataExp, 'ForceCellOutputs', true);
 
 % Force as column cell arrays
 [testType, pNull] = argfun(@force_column_cell, testType, pNull);
 
 % Force as column cell arrays with each scalar in a cell
 [meanNull, meanAlt, stdev, pAlt, statPowerDesired, ...
-    nSamplesNull, nSamplesAlt, nSamples, nSamplesRatio] = ...
+    nSamplesCon, nSamplesExp, nSamples, nSamplesRatio] = ...
     argfun(@(x) force_column_cell(x, 'TreatVectorAsElement', false), ...
             meanNull, meanAlt, stdev, pAlt, statPowerDesired, ...
-            nSamplesNull, nSamplesAlt, nSamples, nSamplesRatio);
+            nSamplesCon, nSamplesExp, nSamples, nSamplesRatio);
 
 % Count the number of different values to test
 [nVecs(1), nVecs(2), nVecs(3), nVecs(4), nVecs(5), nVecs(6), nVecs(7), ...
     nVecs(8), nVecs(9), nVecs(10), nVecs(11), nVecs(12), nVecs(13)] = ...
-    argfun(@numel, testType, dataNull, dataAlt, pNull, ...
+    argfun(@numel, testType, dataCon, dataExp, pNull, ...
             meanNull, meanAlt, stdev, pAlt, statPowerDesired, ...
-            nSamplesNull, nSamplesAlt, nSamples, nSamplesRatio);
+            nSamplesCon, nSamplesExp, nSamples, nSamplesRatio);
 
 % Check input lengths
 if numel(unique(nVecs)) > 2
@@ -251,21 +252,22 @@ end
 nVectors = max(nVecs);
 
 % Match the row counts of all inputs
-[testType, dataNull, dataAlt, meanNull, meanAlt, stdev, pNull, pAlt, ...
-    statPowerDesired, nSamplesNull, nSamplesAlt, nSamples, nSamplesRatio] = ...
+[testType, dataCon, dataExp, meanNull, meanAlt, stdev, pNull, pAlt, ...
+    statPowerDesired, nSamplesCon, nSamplesExp, nSamples, nSamplesRatio] = ...
     argfun(@(x) match_row_count(x, nVectors), ...
-            testType, dataNull, dataAlt, meanNull, meanAlt, stdev, pNull, pAlt, ...
-            statPowerDesired, nSamplesNull, nSamplesAlt, nSamples, nSamplesRatio);
+            testType, dataCon, dataExp, meanNull, meanAlt, stdev, pNull, pAlt, ...
+            statPowerDesired, nSamplesCon, nSamplesExp, nSamples, nSamplesRatio);
 
 %% Do the job
+% Compute the sample size or power
 [nSamplesNeeded, statPower, pNull, pAlt, ...
-    nSamplesNull, nSamplesAlt, statPowerDesired] = ...
+    nSamplesCon, nSamplesExp, statPowerDesired] = ...
     cellfun(@(a, b, c, d, e, f, g, h, i, j, k, l, m) ...
             compute_sampsizepwr_helper(a, b, c, d, e, f, ...
                                     g, h, i, j, k, l, m, otherArguments), ...
-            testType, dataNull, dataAlt, meanNull, meanAlt, ...
+            testType, dataCon, dataExp, meanNull, meanAlt, ...
             stdev, pNull, pAlt, statPowerDesired, ...
-            nSamplesNull, nSamplesAlt, nSamples, nSamplesRatio, ...
+            nSamplesCon, nSamplesExp, nSamples, nSamplesRatio, ...
             'UniformOutput', false);
 
 %% Output results in a table
@@ -273,13 +275,13 @@ switch outputType
     case {'all', 'scalars'}
         % Convert back to numeric vectors
         [nSamplesNeeded, statPower, pAlt, ...
-            nSamplesNull, nSamplesAlt, statPowerDesired] = ...
+            nSamplesCon, nSamplesExp, statPowerDesired] = ...
             argfun(@cell2num, nSamplesNeeded, statPower, pAlt, ...
-                nSamplesNull, nSamplesAlt, statPowerDesired);
+                nSamplesCon, nSamplesExp, statPowerDesired);
 
         % Place together in a table
-        sampsizeTable = table(testType, dataNull, dataAlt, ...
-                    nSamplesNull, nSamplesAlt, ...
+        sampsizeTable = table(testType, dataCon, dataExp, ...
+                    nSamplesCon, nSamplesExp, ...
                     pNull, pAlt, statPower, statPowerDesired, nSamplesNeeded);
 
         % Save the table as a .mat file
@@ -308,7 +310,7 @@ switch outputType
 
             % Remove vector variables
             sampsizeTable = ...
-                removevars(sampsizeTable, {'dataNull', 'dataAlt', ...
+                removevars(sampsizeTable, {'dataCon', 'dataExp', ...
                                             'pNull', 'pAlt'});
         end
         
@@ -327,54 +329,54 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [nSamplesNeeded, statPower, pNull, pAlt, ...
-                nSamplesNull, nSamplesAlt, statPowerDesired] = ...
-                compute_sampsizepwr_helper (testType, dataNull, dataAlt, ...
+                nSamplesCon, nSamplesExp, statPowerDesired] = ...
+                compute_sampsizepwr_helper (testType, dataCon, dataExp, ...
                                 meanNull, meanAlt, stdev, ...
                                 pNull, pAlt, statPowerDesired, ...
-                                nSamplesNull, nSamplesAlt, ...
+                                nSamplesCon, nSamplesExp, ...
                                 nSamples, nSamplesRatio, otherArguments)
 %% Compute the statistical power for one set of data
 
-% Decide on the number of samples for the null hypothesis
-if isempty(nSamplesNull)
-    if ~isempty(dataNull)
+% Decide on the number of samples for the control group
+if isempty(nSamplesCon)
+    if ~isempty(dataCon)
         % Count from data if provided
-        nSamplesNull = count_samples(dataNull);
+        nSamplesCon = count_samples(dataCon);
     elseif ~isempty(nSamples)
         % Just use number of samples
-        nSamplesNull = nSamples;
-    elseif ~isempty(nSamplesAlt)
-        % Use the same number of samples as the alternative hypothesis
-        nSamplesNull = nSamplesAlt;
+        nSamplesCon = nSamples;
+    elseif ~isempty(nSamplesExp)
+        % Use the same number of samples as the experimental group
+        nSamplesCon = nSamplesExp;
     end
 end
 
-% Decide on the number of samples for the alternative hypothesis
-if isempty(nSamplesAlt)
-    if ~isempty(dataAlt)
+% Decide on the number of samples for the experimental group
+if isempty(nSamplesExp)
+    if ~isempty(dataExp)
         % Count from data if provided
-        nSamplesAlt = count_samples(dataAlt);
+        nSamplesExp = count_samples(dataExp);
     elseif ~isempty(nSamples)
         % Just use number of samples
         if ~isempty(nSamplesRatio)
             % Multiply by the ratio if provided
-            nSamplesAlt = nSamples * nSamplesRatio;
+            nSamplesExp = nSamples * nSamplesRatio;
         else
             % The ratio is 1 by default
-            nSamplesAlt = nSamples;
+            nSamplesExp = nSamples;
         end
-    elseif ~isempty(nSamplesNull)
-        % Use the same number of samples as the null hypothesis
-        nSamplesAlt = nSamplesNull;
+    elseif ~isempty(nSamplesCon)
+        % Use the same number of samples as the control group
+        nSamplesExp = nSamplesCon;
     end
 end
 
 % Decide on the sample size
 %   Note: use the smaller of the two samples for sampsizepwr()
 if isempty(nSamples)
-    if ~isempty(nSamplesNull) || ~isempty(nSamplesAlt)
+    if ~isempty(nSamplesCon) || ~isempty(nSamplesExp)
         % Use the smaller number of samples
-        nSamples = min([nSamplesNull, nSamplesAlt]);
+        nSamples = min([nSamplesCon, nSamplesExp]);
     else
         % Keep empty
     end
@@ -382,9 +384,9 @@ end
 
 % Decide on the sample size ratio
 if isempty(nSamplesRatio)
-    if ~isempty(nSamplesNull) || ~isempty(nSamplesAlt)
+    if ~isempty(nSamplesCon) || ~isempty(nSamplesExp)
         % Compute the larger of the two samples
-        nSamplesMax = max([nSamplesNull, nSamplesAlt]);
+        nSamplesMax = max([nSamplesCon, nSamplesExp]);
 
         % Compute the sample size ratio
         nSamplesRatio = nSamplesMax ./ nSamples;
@@ -396,21 +398,38 @@ end
 % Estimate a standard deviation if not provided
 %   Note: this might be NaN
 if isempty(stdev)
-    stdNull = compute_stats(dataNull, 'std');
-    stdAlt = compute_stats(dataAlt, 'std');
-    stdev = nanmean([stdNull, stdAlt]);
+    if strcmpi(testType, 'z') || strcmpi(testType, 't')
+        if ~isempty(dataExp) && ~isempty(dataCon)
+            stdev = compute_stats(dataExp - dataCon, 'std');
+        elseif ~isempty(dataExp)
+            stdev = compute_stats(dataExp, 'std');
+        else
+            stdev = compute_stats(dataCon, 'std');
+        end
+    else
+        stdNull = compute_stats(dataCon, 'std');
+        stdAlt = compute_stats(dataExp, 'std');
+        stdev = nanmean([stdNull, stdAlt]);
+    end
 end
 
 % Estimate null hypothesis parameters if not provided
 %   Note: this might be NaN
 if isempty(pNull)
-    pNull = estimate_dist_params(dataNull, testType, meanNull, stdev, 'null');
+    pNull = estimate_dist_params(dataCon, testType, meanNull, stdev, 'null');
 end
 
+
 % Estimate alternative hypothesis parameters if not provided
-if isempty(pAlt) 
-    if ~isempty(dataAlt)
-        pAlt = estimate_dist_params(dataAlt, testType, meanAlt, stdev, 'alt');
+if isempty(pAlt)
+    if ~isempty(dataExp)
+        if strcmpi(testType, 'z') || strcmpi(testType, 't')
+            pAlt = estimate_dist_params(dataExp - dataCon, testType, ...
+                                        meanAlt, stdev, 'alt');
+        else
+            pAlt = estimate_dist_params(dataExp, testType, ...
+                                        meanAlt, stdev, 'alt');
+        end
     elseif ~isempty(meanAlt)
         pAlt = meanAlt;
     elseif ~isempty(nSamples)
@@ -439,13 +458,33 @@ function params = estimate_dist_params (data, testType, ...
                                         meanValue, stdValue, paramType)
 %% Estimates parameters for the underlying distribution
 
+% Compute the mean parameter value if not provided
+if isempty(meanValue)
+    switch testType
+        case {'z', 't'}
+            switch paramType
+                case 'null'
+                    meanValue = 0;
+                case 'alt'
+                    meanValue = compute_stats(data, 'mean');
+                otherwise
+                    error('paramType unrecognized!');
+            end
+        case 't2'
+            meanValue = compute_stats(data, 'mean');
+        case 'var'
+            % Compute the sample variance
+            meanValue = compute_stats(data, 'var');
+        case 'p'
+            % Estimate the proportion of ones from a Bernoulli trial
+            meanValue = sum(data)/numel(data);
+        otherwise
+            error('testType unrecognized!');
+    end
+end
+
 switch testType
     case {'z', 't', 't2'}
-        % Compute the mean if not provided
-        if isempty(meanValue)
-            meanValue = compute_stats(data, 'mean');
-        end
-
         % Put the normal distribution parameters together
         switch paramType
             case 'null'
@@ -455,12 +494,8 @@ switch testType
             otherwise
                 error('paramType unrecognized!');
          end 
-    case 'var'
-        % Compute the sample variance
-        params = compute_stats(data, 'var');
-    case 'p'
-        % Estimate the proportion of ones from a Bernoulli trial
-        params = sum(data)/numel(data);
+    case {'var', 'p'}
+        params = meanValue;
     otherwise
         error('testType unrecognized!');
 end
@@ -469,6 +504,15 @@ end
 
 %{
 OLD CODE:
+
+if ~any(isemptycell(dataCon))
+    dataCon = cellfun(@(x, y) x - y, dataCon, dataCon, ...
+                        'UniformOutput', false);
+end
+if ~any(isemptycell(dataCon)) && ~any(isemptycell(dataExp))
+    dataExp = cellfun(@(x, y) x - y, dataExp, dataCon, ...
+                        'UniformOutput', false);
+end
 
 %}
 
