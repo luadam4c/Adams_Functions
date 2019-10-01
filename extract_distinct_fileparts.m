@@ -41,6 +41,7 @@ function distinctParts = extract_distinct_fileparts (paths, varargin)
 % 2019-03-17 Now removes common prefix as well
 % 2019-03-17 Added 'Delimiter' as an optional argument
 % 2019-09-30 Fixed the case when there is only one path
+% 2019-10-01 Now always removes extension
 
 %% Hard-coded parameters
 
@@ -74,9 +75,10 @@ parse(iP, paths, varargin{:});
 delimiter = iP.Results.Delimiter;
 
 %% Do the job
-% If there is only one path, return everything
+% If there is only one path, return everything except the extension
 if ischar(paths) || iscell(paths) && numel(paths) == 1
-    distinctParts = paths;
+    % Remove extensions
+    distinctParts = extract_fileparts(paths, 'pathbase');
     return
 end
 

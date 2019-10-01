@@ -6,7 +6,7 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 %
 % Example(s):
 %       [~, matPaths] = all_files('Ext', 'mat');
-%       for i = 1:numel(matPaths); plot_traces_spike2_mat(matPaths{i}, 'ParseLaser', true, 'AlignToStim', true); end
+%       for i = 1:numel(matPaths); plot_traces_spike2_mat(matPaths{i}, 'AlignToStim', true, 'StimType', 'laser'); end
 %
 % Outputs:
 %       handles     - graphics object handles, containing:
@@ -99,7 +99,7 @@ S_PER_MIN = 60;
 
 %% Hard-coded parameters
 validStimTypes = {'auto', 'none', 'gas', 'laser'};
-validTimeUnits = {'min', 's', 'ms', 'us'};
+validTimeUnits = {'', 'min', 's', 'ms', 'us'};
 stimTableSuffixGas = '_gas_pulses';
 stimTableSuffixLaser = '_laser_pulses';
 
@@ -112,7 +112,7 @@ suffixSwd = '_swd';
 
 %% Default values for optional arguments
 alignToStimDefault = false;
-stimTypeDefault = '';          % set later
+stimTypeDefault = 'auto';
 parseGasDefault = false;
 parseLaserDefault = false;
 plotSpectrogramDefault = true;
@@ -199,13 +199,6 @@ figName = iP.Results.FigName;
 % Force the Spike2 path to end with '.mat'
 spike2Path = force_string_end(spike2Path, '.mat');
 
-% Decide on a figure name
-if isempty(figName)
-    figPathBase = extract_fileparts(spike2Path, 'pathbase');
-else
-    figPathBase = extract_fileparts(figName, 'pathbase');
-end
-
 % Detect stimulation type
 if strcmpi(stimType, 'auto')
     % If not aligning, stim type is 'none'
@@ -233,6 +226,20 @@ if strcmpi(stimType, 'auto')
                 stimType = 'none';
             end
         end
+    end
+elseif strcmpi(stimType, 'gas')
+    [~, stimTablePath] = ...
+        find_matching_files(spike2Path, 'Suffix', stimTableSuffixGas, ...
+                            'Extension', 'csv');
+    if isempty(stimTablePath)
+        parseGas = true;
+    end
+elseif strcmpi(stimType, 'laser')
+    [~, stimTablePath] = ...
+        find_matching_files(spike2Path, 'Suffix', stimTableSuffixLaser, ...
+                            'Extension', 'csv');
+    if isempty(stimTablePath)
+        parseLaser = true;
     end
 end
 
@@ -316,7 +323,20 @@ if isempty(figExpansion)
     end
 end
 
-% Decide on a figure base
+% Decide on a figure name
+if isempty(figName)
+    figPathBase = extract_fileparts(spike2Path, 'pathbase');
+
+    if ~isempty(relativeWindow)
+        figPathBase = strcat(figPathBase, '_rel', ...
+                            num2str(relativeWindow(1)), 'to', ...
+                            num2str(relativeWindow(2)));
+    end
+else
+    figPathBase = extract_fileparts(figName, 'pathbase');
+end
+
+% Create other figure names
 figPathBaseNoSwd = strcat(figPathBase, suffixNoSwd);
 figPathBaseSwd = strcat(figPathBase, suffixSwd);
 

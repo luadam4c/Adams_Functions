@@ -6,6 +6,7 @@ function handles = plot_relative_events (varargin)
 %
 % Example(s):
 %       plot_relative_events('Directory', '/media/shareX/2019octoberR01/Figures/Figure1c')
+%       plot_relative_events('RelativeTimeWindow', [-20, 20]);
 %
 % Outputs:
 %       handles     - TODO: Description of handles
@@ -71,7 +72,7 @@ function handles = plot_relative_events (varargin)
 % 2019-09-15 Added 'StimTableSuffix' and 'EventTableSuffix' 
 %               as optional arguments
 % 2019-09-25 Finished the raster plot code
-% TODO: Use load_matching_sheets.m
+% 2019-09-30 Now uses load_matching_sheets.m
 % 
 
 %% Hard-coded parameters
@@ -143,6 +144,11 @@ figName = iP.Results.FigName;
 otherArguments = iP.Unmatched;
 
 %% Preparation
+% Set default directory
+if isempty(directory)
+    directory = pwd;
+end
+
 % Set default figure suffix
 if isempty(figSuffix)
     if firstOnly
