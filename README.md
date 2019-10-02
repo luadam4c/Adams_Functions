@@ -227,6 +227,8 @@ There are 1 MATLAB scripts in this directory:
 - [**has_same_attributes.m**](https://github.com/blabuva/Adams_Functions/blob/master/has_same_attributes.m): Returns all row indices that have the same attributes (column values) combination as a given set of row names
 - [**histg.m**](https://github.com/blabuva/Adams_Functions/blob/master/histg.m): HISTG    'Grouped' univariate histogram
 - [**histproperties.m**](https://github.com/blabuva/Adams_Functions/blob/master/histproperties.m): Computes the area, edges of the histogram for given data array
+- [**hold_off.m**](https://github.com/blabuva/Adams_Functions/blob/master/hold_off.m): Holds off based on previous status
+- [**hold_on.m**](https://github.com/blabuva/Adams_Functions/blob/master/hold_on.m): Holds on and returns previous status
 - [**identify_channels.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_channels.m): Assigns voltage, current or conductance to each channel (2nd dim) in abfdata
 - [**identify_CI_protocol.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_CI_protocol.m): Identifies whether a set of current vectors is a current injection protocol, and if so, what the range of the current injection is
 - [**identify_eLFP_protocol.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_eLFP_protocol.m): Identifies whether a .abf file or a set of current vectors follows an eLFP protocol

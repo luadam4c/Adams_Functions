@@ -222,6 +222,8 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/force_column_vector.m
 %       cd/force_matrix.m
 %       cd/force_row_vector.m
+%       cd/hold_off.m
+%       cd/hold_on.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
 %       cd/plot_horizontal_line.m
@@ -276,6 +278,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-08-27 Fixed usage of plot flags
 % 2019-08-27 Added 'PlotAverageWindows'
 % 2019-10-02 Added 'PlotCurveOnly'
+% 2019-10-02 Now plots a star if significant
 
 %% Hard-coded constants
 WHITE = [1, 1, 1];
@@ -303,6 +306,13 @@ avgWindowRelYValue = 0.1;
 avgWindowColorMap = [];
 avgWindowLineStyle = '-';
 avgWindowLineWidth = 3;
+testXLocRel = 0.25;
+tTestPString = 'p_t';
+tTestYLocText = 0.1;
+tTestYLocStar = 0.9;
+rankTestPString = 'p_r';
+rankTestYLocText = 0.05;
+rankTestYLocStar = 0.85;
 
 %% Default values for optional arguments
 lowerCIDefault = [];
@@ -840,10 +850,8 @@ if ~isempty(lowerCI) || ~isempty(upperCI)
     confInts = gobjects(nColumnsToPlot, nLinesPerPhase);
 end
 
-% Hold on if more than one column
-if nColumnsToPlot > 1
-    hold on
-end
+% Hold on
+wasHold = hold_on;
 
 % Plot readout values against parameter values
 for iPlot = 1:nColumnsToPlot
@@ -852,9 +860,7 @@ for iPlot = 1:nColumnsToPlot
     readoutThis = readoutToPlot(:, col);
 
     % Plot the tuning curve for this column
-    if colorByPhase
-        hold on;
-        
+    if colorByPhase       
         % Get the current phase vector
         phaseVectorThis = phaseVectors{iPlot};
         uniquePhasesThis = uniquePhases{iPlot};
@@ -898,8 +904,6 @@ for iPlot = 1:nColumnsToPlot
         if colorByPhase || pIsLog
             fprintf('Not Supported Yet!\n');
         else
-            hold on;
-
             % Get the current Y limits
             % yLimits = get(gca, 'YLim');
 
@@ -1013,7 +1017,6 @@ xtickangle(pTickAngle);
 
 % Plot parameter boundaries
 if nPBoundaries > 0
-    hold on
     pLines = plot_window_boundaries(pBoundaries, ...
                                 'BoundaryType', pBoundaryType, ...
                                 'LineWidth', pBoundaryLineWidth, ...
@@ -1025,7 +1028,6 @@ end
 
 % Plot readout boundaries
 if nRBoundaries > 0
-    hold on
     rLines = plot_window_boundaries(rBoundaries, ...
                                 'BoundaryType', rBoundaryType, ...
                                 'LineWidth', rBoundaryLineWidth, ...
@@ -1125,73 +1127,22 @@ if plotAverageWindows && ~isempty(averageWindows)
                 transpose(1:maxNPhases), 'UniformOutput', false);
 end
 
-% TODO: Make function plot_text.m
 % Plot t-test p values if any
 if ~isempty(tTestPValues)
-    hold on
-
-    % Get the x locations
-    xLocs = pValues(1:end-1) + (pValues(2) - pValues(1)) * 0.25;
-    
-    % Get current y axis limits
-    yLimitsNow = get(gca, 'YLim');
-
-    % Get y location
-    yLoc = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * 0.1;
-
-    % Plot texts
-    for iValue =  1:numel(tTestPValues)
-        % Get the current values
-        tTestPValueThis = tTestPValues(iValue);
-        xLocThis = xLocs(iValue);
-
-        % Create a p value string to 2 significant digits
-        pString = ['p_t = ', num2str(tTestPValueThis, 2)];
-
-        % Plot red if significant
-        if tTestPValueThis < sigLevel
-            text(xLocThis, yLoc, pString, 'Color', 'r');
-        else
-            text(xLocThis, yLoc, pString, 'Color', 'k');
-        end
-    end
+    plot_test_result(tTestPValues, tTestPString, ...
+                    tTestYLocText, tTestYLocStar, ...
+                    testXLocRel, pValues, sigLevel);
 end
 
 % Plot rank test p values if any
 if ~isempty(rankTestPValues)
-    hold on
-
-    % Get the x locations
-    xLocs = pValues(1:end-1) + (pValues(2) - pValues(1)) * 0.25;
-    
-    % Get current y axis limits
-    yLimitsNow = get(gca, 'YLim');
-
-    % Get y location
-    yLoc = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * 0.05;
-
-    % Plot texts
-    for iValue =  1:numel(rankTestPValues)
-        % Get the current values
-        rankTestPValueThis = rankTestPValues(iValue);
-        xLocThis = xLocs(iValue);
-
-        % Create a p value string to 2 significant digits
-        pString = ['p_r = ', num2str(rankTestPValueThis, 2)];
-
-        % Plot red if significant
-        if rankTestPValueThis < sigLevel
-            text(xLocThis, yLoc, pString, 'Color', 'r');
-        else
-            text(xLocThis, yLoc, pString, 'Color', 'k');
-        end
-    end
+    plot_test_result(rankTestPValues, rankTestPString, ...
+                    rankTestYLocText, rankTestYLocStar, ...
+                    testXLocRel, pValues, sigLevel);
 end
 
-% Hold off if more than one column
-if nColumnsToPlot > 1
-    hold off
-end
+% Hold off
+hold_off(wasHold);
 
 %% Post-plotting
 % Generate a legend for the curves only if there is more than one trace
@@ -1265,10 +1216,54 @@ xLocsSelected = pValues(indSelected);
 yLocsSelected = readout(indSelected, :);
 
 % Plot values
-hold on
 selected = plot(xLocsSelected, yLocsSelected, ...
                 'LineStyle', 'none', 'Marker', selectedMarker, ...
                 'Color', selectedColor, 'LineWidth', selectedLineWidth);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function plot_test_result (tTestPValues, pString, yLocTextRel, yLocStarRel, ...
+                            xLocRel, pValues, sigLevel)
+%% Plots p values and star if significant
+
+% TODO: Make function plot_text.m
+
+% Decide on the x locations
+xLocs = pValues(1:end-1) + (pValues(2) - pValues(1)) * xLocRel;
+
+% Get current y axis limits
+yLimitsNow = get(gca, 'YLim');
+
+% Decide on the y location for texts
+yLocText = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * yLocTextRel;
+
+% Decide on the y location for stars
+yLocStar = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * yLocStarRel;
+
+% Plot texts
+for iValue =  1:numel(tTestPValues)
+    % Get the current values
+    tTestPValueThis = tTestPValues(iValue);
+    xLocThis = xLocs(iValue);
+
+    % Create a p value string to 2 significant digits
+    pValueString = [pString, ' = ', num2str(tTestPValueThis, 2)];
+
+    % Plot red if significant
+    if tTestPValueThis < sigLevel
+        pColor = 'r';
+    else
+        pColor = 'k';
+    end
+
+    % Plot text
+    text(xLocThis, yLocText, pValueString, 'Color', pColor);
+
+    % Plot star if significant
+    if tTestPValueThis < sigLevel
+        plot(xLocThis, yLocStar, '*', 'Color', pColor);
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1397,6 +1392,19 @@ pLines = plot_vertical_line(pBoundaries, 'LineWidth', 0.5, ...
                             'LineStyle', pBoundaryLineStyle, 'Color', 'g');
 rLines = plot_horizontal_line(rBoundaries, 'LineWidth', 0.5, ...
                             'LineStyle', rBoundaryLineStyle, 'Color', 'r');
+
+% Hold on if more than one column
+if nColumnsToPlot > 1
+    hold on
+end
+        hold on;
+            hold on;
+    hold on
+    hold on
+% Hold off if more than one column
+if nColumnsToPlot > 1
+    hold off
+end
 
 %}
 

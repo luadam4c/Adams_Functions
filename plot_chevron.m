@@ -6,7 +6,7 @@ function [handles1, handles2] = plot_chevron (data, varargin)
 %
 % Example(s):
 %       randVec1 = randi(10, 10, 1);
-%       randVec2 = randi(10, 10, 1) + 2;
+%       randVec2 = randi(10, 10, 1) + 10;
 %       data = [randVec1, randVec2];
 %       plot_chevron(data)
 %
@@ -26,8 +26,9 @@ function [handles1, handles2] = plot_chevron (data, varargin)
 %                   - Any other parameter-value pair for plot_tuning_curve()
 %
 % Requires:
-%       ~/Adams_Functions/create_error_for_nargin.m
-%       ~/Adams_Functions/struct2arglist.m
+%       cd/create_error_for_nargin.m
+%       cd/hold_off.m
+%       cd/hold_on.m
 %       /TODO:dir/TODO:file
 %       cd/argfun.m
 %       cd/compute_stats.m
@@ -51,7 +52,6 @@ colorMap = [0, 0, 0];
 meanLineWidth = 2;
 meanMarkSize = 6;
 meanColorMap = 'r';
-plotStar = false;
 figTitle = '';
 
 %% Default values for optional arguments
@@ -143,6 +143,9 @@ if nConds == 2
 end
 
 %% Do the job
+% Hold on
+wasHold = hold_on;
+
 % Plot a tuning curve
 handles1 = plot_tuning_curve(pValues, transpose(dataValues), ...
                     'PLimits', pLimits, 'PTicks', pValues, ...
@@ -156,14 +159,6 @@ handles1 = plot_tuning_curve(pValues, transpose(dataValues), ...
                     'MarkerSize', markerSize, ...
                     'LegendLocation', 'suppress', otherArguments);
 
-% Hold on
-if ~ishold
-    wasHold = false;
-    hold on
-else
-    wasHold = true;
-end
-
 % Plot the mean and confidence intervals of the differences
 if nConds == 2
     handles2 = plot_tuning_curve(pValues, meanValues, ...
@@ -174,20 +169,8 @@ if nConds == 2
                     'MarkerSize', meanMarkSize);
 end
 
-% TODO: Place in plot_tuning_curve 'PlotStar'
-% Plot a star if significant
-if plotStar
-    starXPos = mean(pValues);
-    yLimits = get(gca, 'YLim');
-    starYPos = yLimits(1) + 0.8 * (yLimits(2) - yLimits(1));
-    plot(starXPos, starYPos, 'k*');
-end
-
 % Hold off
-if ~wasHold
-    hold off
-end
-
+hold_off(wasHold);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -221,6 +204,15 @@ plot(pValues, means, 'r-o', ...
 % Plot error bars
 plot_error_bar(pValues, lower95s, upper95s, 'Color', meanColorMap, ...
                 'LineWidth', meanLineWidth);
+
+% Plot a star if significant
+plotStar = false;
+if plotStar
+    starXPos = mean(pValues);
+    yLimits = get(gca, 'YLim');
+    starYPos = yLimits(1) + 0.8 * (yLimits(2) - yLimits(1));
+    plot(starXPos, starYPos, 'k*');
+end
 
 %}
 
