@@ -238,6 +238,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %
 % Used by:
 %       cd/plot_calcium_imaging_traces.m
+%       cd/plot_chevron.m
 %       cd/plot_measures.m
 %       cd/plot_struct.m
 %       cd/plot_table.m

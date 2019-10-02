@@ -60,6 +60,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/force_column_vector.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/parse_multiunit.m
+%       cd/plot_chevron.m
 %       cd/plot_measures.m
 %       cd/plot_swd_histogram.m
 %       cd/plot_traces_spike2_mat.m

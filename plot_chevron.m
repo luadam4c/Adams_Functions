@@ -26,14 +26,13 @@ function [handles1, handles2] = plot_chevron (data, varargin)
 %                   - Any other parameter-value pair for plot_tuning_curve()
 %
 % Requires:
-%       cd/create_error_for_nargin.m
-%       cd/hold_off.m
-%       cd/hold_on.m
-%       /TODO:dir/TODO:file
 %       cd/argfun.m
 %       cd/compute_stats.m
+%       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/force_matrix.m
+%       cd/hold_off.m
+%       cd/hold_on.m
 %       cd/plot_tuning_curve.m
 %
 % Used by:
@@ -46,9 +45,8 @@ function [handles1, handles2] = plot_chevron (data, varargin)
 %% Hard-coded parameters
 readoutLabel = 'SWD count';
 lineWidth = 1;
-markerColor = [0, 0, 0];
-markerSize = 4;
 colorMap = [0, 0, 0];
+markerSize = 4;
 meanLineWidth = 2;
 meanMarkSize = 6;
 meanColorMap = 'r';

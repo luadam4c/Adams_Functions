@@ -60,6 +60,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/parse_pulse_response.m
 %       cd/parse_spike2_mat.m
 %       cd/plot_bar.m
+%       cd/plot_chevron.m
 %       cd/plot_cfit_pulse_response.m
 %       cd/plot_error_bar.m
 %       cd/plot_histogram.m
