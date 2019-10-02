@@ -52,7 +52,8 @@ function handles = plot_relative_events (varargin)
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == {'png', 'epsc2'}
-%                   - Any other parameter-value pair for plot_raster()
+%                   - Any other parameter-value pair for plot_raster() 
+%                           or plot_chevron() or plot_psth() 
 %
 % Requires:
 %       cd/apply_iteratively.m
@@ -61,6 +62,8 @@ function handles = plot_relative_events (varargin)
 %       cd/extract_elements.m
 %       cd/extract_fileparts.m
 %       cd/load_matching_sheets.m
+%       cd/plot_chevron.m
+%       cd/plot_psth.m
 %       cd/plot_raster.m
 %
 % Used by:
@@ -140,7 +143,8 @@ figTitle = iP.Results.FigTitle;
 figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
-% Keep unmatched arguments for the plot_raster() function
+% Keep unmatched arguments for the plot_raster() 
+%                           or plot_chevron() or plot_psth() function
 otherArguments = iP.Unmatched;
 
 %% Preparation
@@ -227,10 +231,10 @@ if isempty(stimDurationMin)
     maxStimDurationMin = apply_iteratively(@max, stimDurationsMin);
 
     % If they don't agree within 1%, plot stimulus duration as 0
-    if (maxStimDurationMin - minStimDurationMin) / minStimDurationMin > 0.01
+    if (maxStimDurationMin - minStimDurationMin) / minStimDurationMin > 0.05
         fprintf(['Maximum stimulus duration %g and ' , ...
                     'minimum stimulus duration %g ', ...
-                    'are more than 1%% apart, ', ...
+                    'are more than 5%% apart, ', ...
                     'so stimulus duration will be plotted as 0!\n'], ...
                     maxStimDurationMin, minStimDurationMin);
         stimDurationMin = 0;
@@ -307,6 +311,7 @@ case 'raster'
         end
     end
 
+    % Save figure
     save_all_figtypes(gcf, figName, figTypes);
 case 'psth'
     %% Plot the peri-stimulus time histogram

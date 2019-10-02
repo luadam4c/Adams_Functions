@@ -202,53 +202,65 @@ fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
 % Count the number of subplots
 nSubPlots = numel(gridPositions);
 
-% Initialize the axes array
-ax = gobjects(nSubPlots, 1);
+% Create subplots
+ax = arrayfun(@(x) create_one_subplot(x, gridPositions, ...
+                                        nRows, nColumns, otherArguments), ...
+                transpose(1:nSubPlots));
 
-% Decide on the creating order
+% If any subplot got deleted, recreate it
 %   Note: For some reason, subplots sometime disappear 
-if nRows > nColumns
-    indSubplots = nSubPlots:-1:1;
-else
-    indSubplots = 1:nSubPlots;
-end
-
-% Create subplots in the reverse order
-for iSubPlot = indSubplots
-    % Get the grid positions for this subplot
-    gridPositionsThis = gridPositions{iSubPlot};
-
-    % Get the column numbers
-    iColumns = mod((gridPositionsThis - 1), nColumns) + 1;
-
-    % Get the row numbers
-    iRows = ceil(gridPositionsThis ./ nColumns);
-
-    % Get the minimum and maximum row and column numbers
-    minColumn = min(iColumns);
-    maxColumn = max(iColumns);
-    minRow = min(iRows);
-    maxRow = max(iRows);
-
-    % Compute the outer position for maximal fit
-    outerPositionThis = [(minColumn - 1)/nColumns, ...
-                        (nRows - maxRow)/nRows, ...
-                        (maxColumn - minColumn + 1)/nColumns, ...
-                        (maxRow - minRow + 1)/nRows];
-
-    % Create subplot
-    axThis = subplot(nRows, nColumns, gridPositionsThis, ...
-                    otherArguments{:});
-
-    % Modify the outer position
-    set(axThis, 'OuterPosition', outerPositionThis);
-
-    % Save subplot in array
-    ax(iSubPlot) = axThis;
-end
+ax = arrayfun(@(x) create_subplot_again(ax(x), x, gridPositions, ...
+                                        nRows, nColumns, otherArguments), ...
+                transpose(1:nSubPlots));
 
 % Future updates will not change the axes position
 set(ax, 'ActivePositionProperty', 'Position');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function axThis = create_one_subplot (iSubPlot, gridPositions, ...
+                                        nRows, nColumns, otherArguments)
+%% Creates one subplot
+
+% Get the grid positions for this subplot
+gridPositionsThis = gridPositions{iSubPlot};
+
+% Get the column numbers
+iColumns = mod((gridPositionsThis - 1), nColumns) + 1;
+
+% Get the row numbers
+iRows = ceil(gridPositionsThis ./ nColumns);
+
+% Get the minimum and maximum row and column numbers
+minColumn = min(iColumns);
+maxColumn = max(iColumns);
+minRow = min(iRows);
+maxRow = max(iRows);
+
+% Compute the outer position for maximal fit
+outerPositionThis = [(minColumn - 1)/nColumns, ...
+                    (nRows - maxRow)/nRows, ...
+                    (maxColumn - minColumn + 1)/nColumns, ...
+                    (maxRow - minRow + 1)/nRows];
+
+% Create subplot
+axThis = subplot(nRows, nColumns, gridPositionsThis, ...
+                otherArguments{:});
+
+% Modify the outer position
+set(axThis, 'OuterPosition', outerPositionThis);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function axThis = create_subplot_again (axThis, iSubPlot, gridPositions, ...
+                                        nRows, nColumns, otherArguments)
+%% Creates a subplot again if it is not valid
+
+if ~isvalid(axThis)
+    % Recreate and save subplot in array
+    axThis = create_one_subplot(iSubPlot, gridPositions, ...
+                                    nRows, nColumns, otherArguments);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -258,6 +270,21 @@ OLD CODE:
 % 
 figPosition = expand_figure_position(centerPosition, horizontalExpandFactor, verticalExpandFactor)
 
+% Decide on the creating order
+%   Note: For some reason, subplots sometime disappear 
+if nRows > nColumns
+    indSubplots = nSubPlots:-1:1;
+else
+    indSubplots = 1:nSubPlots;
+end
+
+% Initialize the axes array
+ax = gobjects(nSubPlots, 1);
+% Create subplots
+for iSubPlot = 1:nSubPlots
+    % Create and save subplot in array
+    ax(iSubPlot) = 
+end
 %}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

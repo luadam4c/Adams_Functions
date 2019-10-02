@@ -36,7 +36,7 @@ function [handles1, handles2] = plot_chevron (data, varargin)
 %       cd/plot_tuning_curve.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/plot_relative_events.m
 
 % File History:
 % 2019-10-01 Created by Adam Lu
