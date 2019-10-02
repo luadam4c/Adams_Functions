@@ -115,6 +115,9 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   default == 'suppress' if nTraces == 1 
 %                               'northeast' if nTraces is 2~9
 %                               'eastoutside' if nTraces is 10+
+%                   - 'PlotCurveOnly': whether to plot the curve only
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'PlotPhaseBoundaries': whether to plot phase boundaries
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true if PhaseVectors provided, false otherwise
@@ -272,7 +275,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-08-22 Made averageWindows an optional argument
 % 2019-08-27 Fixed usage of plot flags
 % 2019-08-27 Added 'PlotAverageWindows'
-
+% 2019-10-02 Added 'PlotCurveOnly'
 
 %% Hard-coded constants
 WHITE = [1, 1, 1];
@@ -326,6 +329,7 @@ colorMapDefault = [];               % set later
 confIntColorMapDefault = [];        % set later
 selectedColorMapDefault = [];       % set later
 legendLocationDefault = 'auto';     % set later
+plotCurveOnlyDefault = false;       % set later
 plotPhaseBoundariesDefault = [];    % set later
 plotPhaseAveragesDefault = [];      % set later
 plotIndSelectedDefault = [];        % set later
@@ -423,6 +427,8 @@ addParameter(iP, 'SelectedColorMap', selectedColorMapDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d', 'numel', 3}));
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
+addParameter(iP, 'PlotCurveOnly', plotCurveOnlyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotPhaseBoundaries', plotPhaseBoundariesDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotPhaseAverages', plotPhaseAveragesDefault, ...
@@ -495,6 +501,7 @@ confIntColorMap = iP.Results.ConfIntColorMap;
 selectedColorMap = iP.Results.SelectedColorMap;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
+plotCurveOnly = iP.Results.PlotCurveOnly;
 plotPhaseBoundaries = iP.Results.PlotPhaseBoundaries;
 plotPhaseAverages = iP.Results.PlotPhaseAverages;
 plotIndSelected = iP.Results.PlotIndSelected;
@@ -531,6 +538,13 @@ if ~isempty(pTicks) && ~isempty(pTickLabels) && ...
         numel(pTicks) ~= numel(pTickLabels)
     fprintf('PTicks and PTickLabels must have the same number of elements!\n');
     return
+end
+
+% If plotting curve only, change some defaults
+if plotCurveOnly
+    pLabel = 'suppress';
+    readoutLabel = 'suppress';
+    figTitle = 'suppress';
 end
 
 % Count number of entries
@@ -753,7 +767,7 @@ nRBoundaries = size(rBoundaries, 2);
 % nBoundaries = nPBoundaries + nRBoundaries;
 
 % Set the default figure title
-if isempty(figTitle)
+if isempty(figTitle) && ~strcmpi(figTitle, 'suppress')
     if ~strcmpi(readoutLabel, 'suppress') && ~strcmpi(pLabel, 'suppress')
         figTitle = strrep([readoutLabel, ' vs. ', pLabel], '_', '\_');
     elseif ~strcmpi(readoutLabel, 'suppress')
