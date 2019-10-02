@@ -309,11 +309,11 @@ avgWindowLineStyle = '-';
 avgWindowLineWidth = 3;
 testXLocRel = 0.25;
 tTestPString = 'p_t';
-tTestYLocText = 0.1;
+tTestYLocText = 0.2;
 tTestYLocStar = 0.9;
 rankTestPString = 'p_r';
-rankTestYLocText = 0.05;
-rankTestYLocStar = 0.85;
+rankTestYLocText = 0.1;
+rankTestYLocStar = 0.8;
 
 %% Default values for optional arguments
 lowerCIDefault = [];
@@ -556,6 +556,9 @@ if plotCurveOnly
     pLabel = 'suppress';
     readoutLabel = 'suppress';
     figTitle = 'suppress';
+    pLimits = 'suppress';
+    readoutLimits = 'suppress';
+    legendLocation = 'suppress';
 end
 
 % Count number of entries
@@ -983,7 +986,7 @@ end
 
 % Restrict y axis if readoutLimits provided
 %   otherwise expand the y axis by a little bit
-if ~isempty(readoutLimits)
+if ~isempty(readoutLimits) && ~strcmpi(readoutLimits, 'suppress')
     yLimitsOrig = get(gca, 'YLim');
     if isinf(readoutLimits(1))
         readoutLimits(1) = yLimitsOrig(1);
@@ -992,7 +995,7 @@ if ~isempty(readoutLimits)
         readoutLimits(2) = yLimitsOrig(2);
     end
     ylim(readoutLimits);
-else
+elseif ~strcmpi(readoutLimits, 'suppress')
     ylim(compute_axis_limits(get(gca, 'YLim'), 'y', 'Coverage', 80));
 end
 

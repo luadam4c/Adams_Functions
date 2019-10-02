@@ -336,41 +336,17 @@ case 'chevron'
         chevronData = transpose([nEventsBefore, nEventsAfter]);
 
         % Save the data in a table
-        chevronTable = table(nEventsBefore, nEventsAfter);
+        chevronTable = table(nEventsBefore, nEventsAfter, ...
+                            'VariableNames', {'Before', 'After'});
         figPathBase = extract_fileparts(figName, 'pathbase');
         sheetPath = [figPathBase, '.csv'];
         writetable(chevronTable, sheetPath);
 
-        % TODO: plot_chevron.m
-        % TODO: Combine with plot_table.m?
+        % Plot Chevron plot
+        plot_chevron(chevronTable, 'FigTitle', figTitle, ...
+                    'ReadoutLabel', '# of events', otherArguments);
         
-        % Compute the lower and upper confidence interval bounds
-        [lowBefore, lowAfter] = ...
-            argfun(@(x) compute_stats(x, 'lower95'), nEventsBefore, nEventsAfter);
-        [highBefore, highAfter] = ...
-            argfun(@(x) compute_stats(x, 'upper95'), nEventsBefore, nEventsAfter);
-
-        % Compute the mean values
-        [meanBefore, meanAfter] = ...
-            argfun(@(x) compute_stats(x, 'mean'), nEventsBefore, nEventsAfter);
-        pValue = [1, 2];
-
-        % Plot a tuning curve
-        plot_tuning_curve(pValue, chevronData, 'PLimits', [0.75, 2.25], ...
-                            'PTicks', pValue, 'PTickLabels', {'Before', 'After'}, ...
-                            'PLabel', 'suppress', 'ReadoutLabel', '# of events', ...
-                            'FigTitle', figTitle, ...
-                            'RunTTest', true, 'RunRankTest', true, ...
-                            'Marker', 'o', 'MarkerFaceColor', [0, 0, 0], ...
-                            'MarkerSize', 4, 'ColorMap', [0, 0, 0], ...
-                            'LegendLocation', 'suppress', otherArguments);
-        hold on 
-        plot(pValue, [meanBefore, meanAfter], 'ro', ...
-            'LineWidth', 2, 'MarkerSize', 6, 'MarkerFaceColor', 'r');
-        plot_error_bar(pValue, [lowBefore, lowAfter], [highBefore, highAfter], ...
-            'Color', 'r', 'LineWidth', 2);
-        yLimits = get(gca, 'YLim');
-        plot(mean(pValue), yLimits(1) + 0.8 * (yLimits(2) - yLimits(1)), 'k*');
+        % Save figure
         save_all_figtypes(gcf, figName, figTypes);
     else
         error('Not implemented yet!');

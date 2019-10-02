@@ -40,17 +40,16 @@ function [handles1, handles2] = plot_chevron (data, varargin)
 
 % File History:
 % 2019-10-01 Created by Adam Lu
-% 
+% TODO: Combine with plot_table.m?
 
 %% Hard-coded parameters
-readoutLabel = 'SWD count';
+figExpansion = [0.4, 0.4];
 lineWidth = 1;
 colorMap = [0, 0, 0];
 markerSize = 4;
 meanLineWidth = 2;
 meanMarkSize = 6;
 meanColorMap = 'r';
-figTitle = '';
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -111,7 +110,7 @@ if istable(data)
     pTickLabels = data.Properties.VariableNames;
 else
     % Create labels
-    pTickLabels = create_labels_from_numbers(pValues, 'Prefix', 'time');
+    pTickLabels = create_labels_from_numbers(pValues, 'Prefix', 'param');
 end
 
 % Decide on column labels
@@ -141,16 +140,13 @@ if nConds == 2
 end
 
 %% Do the job
-% Hold on
-wasHold = hold_on;
-
 % Plot a tuning curve
 handles1 = plot_tuning_curve(pValues, transpose(dataValues), ...
+                    'FigExpansion', figExpansion, ...
                     'PLimits', pLimits, 'PTicks', pValues, ...
                     'PTickLabels', pTickLabels, ...
                     'ColumnLabels', columnLabels, ...
-                    'PLabel', 'suppress', 'ReadoutLabel', readoutLabel, ...
-                    'FigTitle', figTitle, ...
+                    'PLabel', 'suppress', ...
                     'RunTTest', true, 'RunRankTest', true, ...
                     'LineWidth', lineWidth, 'ColorMap', colorMap, ...
                     'Marker', 'o', 'MarkerFaceColor', colorMap, ...
@@ -159,16 +155,21 @@ handles1 = plot_tuning_curve(pValues, transpose(dataValues), ...
 
 % Plot the mean and confidence intervals of the differences
 if nConds == 2
+    % Hold on
+    wasHold = hold_on;
+
+    % Plot mean and confidence intervals
     handles2 = plot_tuning_curve(pValues, meanValues, ...
                     'LowerCI', lower95Values, 'UpperCI', upper95Values, ...
                     'PlotCurveOnly', true, ...
                     'LineWidth', meanLineWidth, 'ColorMap', meanColorMap, ...
                     'Marker', 'o', 'MarkerFaceColor', meanColorMap, ...
                     'MarkerSize', meanMarkSize);
+
+    % Hold off
+    hold_off(wasHold);
 end
 
-% Hold off
-hold_off(wasHold);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
