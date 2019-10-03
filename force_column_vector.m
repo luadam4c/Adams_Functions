@@ -14,6 +14,8 @@ function vectors = force_column_vector (vectors, varargin)
 %       vector = force_column_vector(vector);
 %       vectors = force_column_vector(vectors);
 %       force_column_vector({[3, 4], [5; 6], magic(3)})
+%       force_column_vector({1:3, 4:7})
+%       force_column_vector({1:3, 4:7}, 'TreatCellNumAsArray', true)
 %       force_column_vector({1:3, 4:7}, 'CombineAcrossCells', true)
 %       force_column_vector({ones(2, 1), magic(3)}, 'ToLinearize', true)
 %       force_column_vector({ones(2, 1), magic(3)}, 'CombineAcrossCells', true)
@@ -35,6 +37,10 @@ function vectors = force_column_vector (vectors, varargin)
 %                   default == false
 %                   - 'TreatCellAsArray': whether to treat a cell array
 %                                           as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'TreatCellNumAsArray': whether to treat a cell array
+%                                       of numeric arrays as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'TreatCellStrAsArray': whether to treat a cell array
@@ -124,6 +130,7 @@ function vectors = force_column_vector (vectors, varargin)
 % 2019-04-24 Added 'CombineAcrossCells' as an optional argument
 % 2019-04-27 Fixed the case when 'ToLinearize' and 'CombineAcrossCells' are
 %               both true
+% 2019-10-03 Added 'TreatCellNumAsArray' as an optional argument
 % 
 % TODO: Deal with 3D arrays
 % 
@@ -132,6 +139,8 @@ function vectors = force_column_vector (vectors, varargin)
 ignoreNonVectorsDefault = false;    % don't ignore non-vectors by default
 forceCellOutputDefault = false;     % don't force as cell array by default
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
+treatCellNumAsArrayDefault = false; % treat cell arrays of numeric arrays
+                                    %   as many arrays by default
 treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
                                     %   as an array by default
 treatCharAsScalarDefault = true;% treat character arrays as scalars by default
@@ -161,6 +170,8 @@ addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellNumAsArray', treatCellNumAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCharAsScalar', treatCharAsScalarDefault, ...
@@ -177,6 +188,7 @@ parse(iP, vectors, varargin{:});
 ignoreNonVectors = iP.Results.IgnoreNonVectors;
 forceCellOutput = iP.Results.ForceCellOutput;
 treatCellAsArray = iP.Results.TreatCellAsArray;
+treatCellNumAsArray = iP.Results.TreatCellNumAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 treatCharAsScalar = iP.Results.TreatCharAsScalar;
 toLinearize = iP.Results.ToLinearize;
@@ -185,6 +197,7 @@ rowInstead = iP.Results.RowInstead;
 
 %% Do the job
 if iscell(vectors) && ~treatCellAsArray && ...
+        ~(iscellnumeric(vectors) && treatCellNumAsArray) && ...
         ~(iscellstr(vectors) && treatCellStrAsArray)
     if combineAcrossCells
         % Break up contents in cells

@@ -54,6 +54,10 @@ function indices = create_indices (varargin)
 %                                           as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'TreatCellNumAsArray': whether to treat a cell array
+%                                       of numeric arrays as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'TreatCellStrAsArray': whether to treat a cell array
 %                                       of character arrays as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -111,6 +115,7 @@ function indices = create_indices (varargin)
 % 2019-04-26 Now makes create_indices([NaN; NaN]) == []
 % 2019-05-16 Added 'AlignMethod' as an optional argument
 % 2019-09-10 Fixed bug when start and end indices are both empty
+% 2019-10-03 Added 'TreatCellNumAsArray' as an optional argument
 % TODO: Added 'spanboth', 'spanleft' and 'spanright' as align methods
 % TODO: Use argument 'ForcePositive' as false where necessary
 
@@ -127,6 +132,8 @@ indexEndDefault = [];           % set later
 indexStartDefault = [];         % set later
 maxNumDefault = Inf;            % no limit by default
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
+treatCellNumAsArrayDefault = false; % treat cell arrays of numeric arrays
+                                    %   as many arrays by default
 treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
                                     %   as an array by default
 alignMethodDefault  = 'right';  % always include indexEnd by default
@@ -166,6 +173,8 @@ addParameter(iP, 'MaxNum', maxNumDefault, ...
                 'MaxNum must be either Inf or a positive integer scalar!'));
 addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellNumAsArray', treatCellNumAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'AlignMethod', alignMethodDefault, ...
@@ -182,6 +191,7 @@ indexStartUser = iP.Results.IndexStart;
 indexEndUser = iP.Results.IndexEnd;
 maxNum = iP.Results.MaxNum;
 treatCellAsArray = iP.Results.TreatCellAsArray;
+treatCellNumAsArray = iP.Results.TreatCellNumAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 
@@ -255,7 +265,8 @@ end
 if ~(isempty(vectors) || iscell(vectors) && all(all(isemptycell(vectors))))
     % Count the number of samples in each vector
     nSamples = count_samples(vectors, 'TreatCellAsArray', treatCellAsArray, ...
-                                    'TreatCellStrAsArray', treatCellStrAsArray);
+                                'TreatCellNumAsArray', treatCellNumAsArray, ...
+                                'TreatCellStrAsArray', treatCellStrAsArray);
 
     % Match the vector counts
     [idxStart, idxEnd] = ...

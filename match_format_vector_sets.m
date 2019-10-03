@@ -40,6 +40,10 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %                                           as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'TreatCellNumAsArray': whether to treat a cell array
+%                                       of numeric arrays as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'TreatCellStrAsArray': whether to treat a cell array
 %                                       of character arrays as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -90,6 +94,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 % 2019-01-04 Added 'TreatCellStrAsArray' (default == 'true')
 % 2019-01-04 Added 'TreatCharAsScalar' (default == 'true')
 % 2019-01-04 Fixed bug
+% 2019-10-03 Added 'TreatCellNumAsArray' as an optional argument
 % TODO: Include the option to not force as column cell arrays
 %           i.e., match 2D cell arrays
 % TODO: Accept more than two vector sets
@@ -101,6 +106,8 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 forceCellOutputsDefault = false;    % don't force as cell array by default
 matchVectorsDefault = false;        % don't match vectors by default
 treatCellAsArrayDefault = false;    % treat cell arrays as an array by default
+treatCellNumAsArrayDefault = false; % treat cell arrays of numeric arrays
+                                    %   as many arrays by default
 treatCellStrAsArrayDefault = false; % treat cell arrays of character arrays
                                     %   as an array by default
 treatCharAsScalarDefault = true;% treat character arrays as scalars by default
@@ -135,6 +142,8 @@ addParameter(iP, 'MatchVectors', matchVectorsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellNumAsArray', treatCellNumAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCharAsScalar', treatCharAsScalarDefault, ...
@@ -145,6 +154,7 @@ parse(iP, vecs1, vecs2, varargin{:});
 forceCellOutputs = iP.Results.ForceCellOutputs;
 matchVectors = iP.Results.MatchVectors;
 treatCellAsArray = iP.Results.TreatCellAsArray;
+treatCellNumAsArray = iP.Results.TreatCellNumAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 treatCharAsScalar = iP.Results.TreatCharAsScalar;
 
@@ -157,9 +167,9 @@ treatCharAsScalar = iP.Results.TreatCharAsScalar;
 
 % If there are more than one vectors in either vecs1 or vecs2, 
 %   put things in a format so cellfun can be used
-if is_vector(vecs1, treatCellStrAsArray, ...
+if is_vector(vecs1, treatCellNumAsArray, treatCellStrAsArray, ...
                 treatCellAsArray, treatCharAsScalar) && ...
-        is_vector(vecs2, treatCellStrAsArray, ...
+        is_vector(vecs2, treatCellNumAsArray, treatCellStrAsArray, ...
                     treatCellAsArray, treatCharAsScalar)
     % Match vectors if requested
     if matchVectors
@@ -196,11 +206,15 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function isVector = is_vector(vecs1, treatCellStrAsArray, ...
-                                treatCellAsArray, treatCharAsScalar)
+function isVector = is_vector(vecs1, treatCellNumAsArray, ...
+                                treatCellStrAsArray, treatCellAsArray, ...
+                                treatCharAsScalar)
+%% Tests whether
+% TODO: Use this in other functions?
 
 isVector = isnumericvector(vecs1) || ...
         ischar(vecs1) && treatCharAsScalar || ...
+        iscellnumeric(vecs1) && treatCellNumAsArray || ...
         iscellstr(vecs1) && treatCellStrAsArray || ...
         iscell(vecs1) && treatCellAsArray;
 
