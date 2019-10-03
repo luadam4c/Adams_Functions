@@ -23,6 +23,7 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 %       binCenters  - bin centers
 %                   specified as a vector of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
+%
 % Arguments:
 %       stats       - data to distribute among bins
 %                   must be an array of one the following types:

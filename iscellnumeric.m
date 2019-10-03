@@ -26,6 +26,8 @@ function isCellNumeric = iscellnumeric (x)
 %       cd/compute_sampsizepwr.m
 %       cd/count_samples.m
 %       cd/create_default_endpoints.m
+%       cd/create_default_grouping.m
+%       cd/create_grouping_by_vectors.m
 %       cd/find_pulse_endpoints.m
 %       cd/find_pulse_response_endpoints.m
 %       cd/find_window_endpoints.m

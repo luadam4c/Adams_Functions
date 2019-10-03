@@ -3,8 +3,10 @@ function isNum = isnum (x, varargin)
 % Usage: isNum = isnum (x, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       isNum       - whether the input is numeric in the general sense
 %                   specified as a logical scalar
@@ -19,6 +21,8 @@ function isNum = isnum (x, varargin)
 %       cd/compute_axis_limits.m
 %       cd/compute_combined_data.m
 %       cd/compute_combined_trace.m
+%       cd/create_default_grouping.m
+%       cd/create_grouping_by_vectors.m
 %       cd/force_column_cell.m
 %       cd/force_matrix.m
 %       cd/iscellnumeric.m

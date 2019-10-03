@@ -138,7 +138,7 @@ There are 1 MATLAB scripts in this directory:
 - [**create_empty_frames.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_empty_frames.m): Creates an empty MATLAB movie frames
 - [**create_empty_match.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_empty_match.m): Creates an empty array that matches a given array
 - [**create_error_for_nargin.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_error_for_nargin.m): Creates an error text for not having enough input arguments
-- [**create_grouping_by_columns.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_grouping_by_columns.m): Creates a grouping array using column numbers
+- [**create_grouping_by_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_grouping_by_vectors.m): Creates a grouping array that matches input by putting all elements of a vector into the same group
 - [**create_indices.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_indices.m): Creates indices from endpoints (starting and ending indices)
 - [**create_input_file.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_input_file.m): Create an input spreadsheet file from data file names in a directory based on default parameters
 - [**create_label_from_sequence.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_label_from_sequence.m): Creates a single label from a sequence of integers with an optional prefix or suffix

@@ -1,13 +1,19 @@
 function varargout = create_default_grouping (varargin)
 %% Creates numeric grouping vectors and grouping labels from data, counts or original non-numeric grouping vectors
-% Usage: varargout = create_default_grouping (varargin)
+% Usage: [grouping, groupingLabels] = create_default_grouping (varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
-%       TODO
+%       create_default_grouping('Stats', magic(3))
+%       create_default_grouping('Stats', {1:5, 2:3, 6:10})
+%       create_default_grouping('Counts', magic(3))
+%       create_default_grouping('Grouping', {'cat', 'dog', 'rabbit'})
+%
 % Outputs:
 %       grouping        - final numeric group assignment for each data entry
 %       groupingLabels  - final group labels
+%
 % Arguments:
 %       varargin    - 'Grouping': group assignment for each data point
 %                   must be an array of one the following types:
@@ -19,18 +25,34 @@ function varargout = create_default_grouping (varargin)
 %                   must be a string scalar or a character vector 
 %                       or a cell array of strings or character vectors
 %                   default == {'Group #1', 'Group #2', ...}
-%                   - 'Stats': (opt) data to distribute among bins
+%                   - 'Stats': data to distribute among bins
 %                   must be an array of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
-%                   - 'Counts': (opt) bin counts
+%                       or a cell array of such
+%                   default == []
+%                   - 'Counts': bin counts
 %                   must be a numeric array
+%                   default == []
+%                   - 'TreatCellAsArray': whether to treat a cell array
+%                                           as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'TreatCellNumAsArray': whether to treat a cell array
+%                                       of numeric arrays as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'TreatCellStrAsArray': whether to treat a cell array
+%                                       of character arrays as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   
 % Requires:
 %       cd/convert_to_rank.m
 %       cd/create_error_for_nargin.m
-%       cd/create_grouping_by_columns.m
+%       cd/create_grouping_by_vectors.m
 %       cd/create_labels_from_numbers.m
-%       cd/force_column_vector.m
+%       cd/iscellnumeric.m
+%       cd/isnum.m
 %       cd/struct2arglist.m
 %
 % Used by:
@@ -39,6 +61,7 @@ function varargout = create_default_grouping (varargin)
 
 % File History:
 % 2019-01-15 Moved from plot_grouped_histogram.m
+% 2019-10-03 Now only treats cellstrs (but not cell arrays in general) as arrays
 % 
 
 %% Hard-coded parameters
@@ -50,6 +73,10 @@ groupingDefault = [];           % set later
 groupingLabelsDefault = '';     % set later
 statsDefault = [];              % set later
 countsDefault = [];             % set later
+treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
+treatCellNumAsArrayDefault = [];    % set later
+treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
+                                    %   as an array by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -70,10 +97,15 @@ addParameter(iP, 'Grouping', groupingDefault, ...
 addParameter(iP, 'GroupingLabels', groupingLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'Stats', statsDefault, ...
-    @(x) validateattributes(x, {'numeric', 'logical', ...
-                                'datetime', 'duration'}, {'2d'}));
+    @(x) isnum(x) || iscellnumeric(x));
 addParameter(iP, 'Counts', countsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellNumAsArray', treatCellNumAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -81,23 +113,23 @@ grouping = iP.Results.Grouping;
 groupingLabels = iP.Results.GroupingLabels;
 stats = iP.Results.Stats;
 counts = iP.Results.Counts;
+treatCellAsArray = iP.Results.TreatCellAsArray;
+treatCellNumAsArray = iP.Results.TreatCellNumAsArray;
+treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
+
+%% Preparation
 
 %% Do the job
 if isempty(grouping)
     if ~isempty(stats)
-        % Force rows as a columns
-        stats = force_column_vector(stats, 'TreatCellAsArray', true, ...
-                                    'IgnoreNonVectors', true);
-
-        % Create a grouping vector from the columns
-        grouping = create_grouping_by_columns(stats);
+        % Create a grouping vector from the vectors
+        grouping = create_grouping_by_vectors(stats, ...
+                                'TreatCellAsArray', treatCellAsArray, ...
+                                'TreatCellNumAsArray', treatCellNumAsArray, ...
+                                'TreatCellStrAsArray', treatCellStrAsArray);
     elseif ~isempty(counts)
-        % Force rows as a columns
-        stats = force_column_vector(counts, 'TreatCellAsArray', true, ...
-                                    'IgnoreNonVectors', true);
-
         % Create a grouping vector from the columns
-        grouping = create_grouping_by_columns(counts);
+        grouping = create_grouping_by_vectors(counts);
     else
         grouping = NaN;
     end
@@ -136,6 +168,17 @@ end
 
 %{
 OLD CODE:
+
+% Force rows as a columns
+stats = force_column_vector(stats, 'IgnoreNonVectors', true, ...
+                        'TreatCellAsArray', treatCellAsArray, ...
+                        'TreatCellNumAsArray', treatCellNumAsArray, ...
+                        'TreatCellStrAsArray', treatCellStrAsArray);
+% Force rows as a columns
+counts = force_column_vector(counts, 'IgnoreNonVectors', true, ...
+                        'TreatCellAsArray', treatCellAsArray, ...
+                        'TreatCellNumAsArray', treatCellNumAsArray, ...
+                        'TreatCellStrAsArray', treatCellStrAsArray);
 
 %}
 

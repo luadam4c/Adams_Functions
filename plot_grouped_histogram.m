@@ -19,6 +19,7 @@ function [bars, fig, outlines] = plot_grouped_histogram (varargin)
 %       plot_grouped_histogram(stats2, grouping2)
 %       plot_grouped_histogram(stats2, grouping2, 'Style', 'stacked')
 %       plot_grouped_histogram(stats2, grouping2, 'Style', 'overlapped')
+%
 % Outputs:
 %       bars        - the histogram(s) returned as Bar object(s)
 %                   specified as a Bar object handle array

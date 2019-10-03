@@ -48,7 +48,7 @@ function [his, lines, fig] = plot_swd_histogram (varargin)
 %
 % Requires:
 %       cd/apply_iteratively.m
-%       cd/create_grouping_by_columns.m
+%       cd/create_grouping_by_vectors.m
 %       cd/extract_common_directory.m
 %       cd/extract_common_suffix.m
 %       cd/extract_distinct_fileparts.m
@@ -207,7 +207,7 @@ if isdatetime(startTimes)
     grouping = dates;
 else
     % Use the column number
-    grouping = create_grouping_by_columns(startTimes);
+    grouping = create_grouping_by_vectors(startTimes);
 end
 
 % Find the minimum and maximum times

@@ -3,15 +3,18 @@ function ranks = convert_to_rank (array, varargin)
 % Usage: ranks = convert_to_rank (array, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       convert_to_rank([20, 3, 3, 10, 10, 20, 3])
 %       convert_to_rank({'dog'; 'cat'; 'cat'; 'dog'})
 %       convert_to_rank(["dog", "cat", "cat", "dog"])
 %       convert_to_rank({'dog'; 'cat'}, 'Ranked', ["dog"; "fly"; "cat"])
 %       convert_to_rank(["dog", "fly", "cat"], 'Ranked', {'dog'; 'cat'})
+%
 % Outputs:
 %       ranks        - ranks of each element
 %                   specified as a positive integer array (may contain NaN)
+%
 % Arguments:
 %       array       - an array that can be passed into unique()
 %       varargin    - 'RankedElements': ranked elements
