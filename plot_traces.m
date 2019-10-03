@@ -162,7 +162,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                                   if the plot mode is 'parallel' and 
 %                                       the subplot order is 'bycolor'
 %                   must be a numeric array with 3 columns
-%                   default == colormap(jet(nPlots))
+%                   default == set in decide_on_colormap.m
 %                   - 'LegendLocation': location for legend
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'auto'      - use default

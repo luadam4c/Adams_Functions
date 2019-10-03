@@ -6,10 +6,11 @@ function handles = plot_relative_events (varargin)
 %
 % Example(s):
 %       plot_relative_events('Directory', '/media/shareX/2019octoberR01/Figures/Figure1c')
-%       plot_relative_events('Edges', -20:2:20);
+%       plot_relative_events('RelativeTimeWindow', [-20, 20]);
 %       plot_relative_events('RelativeTimeWindow', [-15, 15]);
 %       plot_relative_events('RelativeTimeWindow', [-15, 15], 'PlotType', 'psth');
 %       plot_relative_events('RelativeTimeWindow', [-15, 15], 'PlotType', 'chevron');
+%       plot_relative_events('PlotType', 'psth', 'Edges', -20:2:20);
 %
 % Outputs:
 %       handles     - TODO: Description of handles

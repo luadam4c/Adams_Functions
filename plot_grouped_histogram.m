@@ -78,6 +78,10 @@ function [bars, fig, outlines] = plot_grouped_histogram (varargin)
 %                   must be a string scalar or a character vector 
 %                       or a cell array of strings or character vectors
 %                   default == {'Group #1', 'Group #2', ...}
+%                   - 'ColorMap': a color map that provides a different
+%                                   color for each group
+%                   must be a numeric array with 3 columns
+%                   default == set in decide_on_colormap.m
 %                   - 'LegendLocation': location for legend
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'auto'      - use default
@@ -116,6 +120,7 @@ function [bars, fig, outlines] = plot_grouped_histogram (varargin)
 %       cd/construct_fullpath.m
 %       cd/create_default_grouping.m
 %       cd/create_error_for_nargin.m
+%       cd/decide_on_colormap.m
 %       cd/islegendlocation.m
 %       cd/ispositiveintegerscalar.m
 %       cd/struct2arglist.m
@@ -142,6 +147,7 @@ function [bars, fig, outlines] = plot_grouped_histogram (varargin)
 % 2019-01-15 Added 'Counts' as an optional parameter
 % 2019-01-15 Moved code to compute_grouped_histcounts.m
 % 2019-03-14 Now always returns a valid figure handle
+% 2019-10-03 Added 'ColorMap' as an optional parameter
 
 %% Hard-coded parameters
 validStyles = {'side-by-side', 'stacked', 'overlapped'};
@@ -161,6 +167,7 @@ xUnitsDefault = 'unit';         % the default x-axis units
 xLabelDefault = '';             % set later
 yLabelDefault = 'Count';        % set later
 groupingLabelsDefault = '';     % set later
+colorMapDefault = [];           % set later
 legendLocationDefault = 'auto'; % set later
 figTitleDefault = '';           % set later
 figHandleDefault = [];          % no existing figure by default
@@ -213,6 +220,7 @@ addParameter(iP, 'YLabel', yLabelDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'GroupingLabels', groupingLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'ColorMap', colorMapDefault);
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
@@ -241,6 +249,7 @@ xUnits = iP.Results.XUnits;
 xLabel = iP.Results.XLabel;
 yLabel = iP.Results.YLabel;
 groupingLabels = iP.Results.GroupingLabels;
+colorMap = iP.Results.ColorMap;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
 figTitle = iP.Results.FigTitle;
@@ -279,6 +288,9 @@ groupValues = unique(grouping);
 
 % Count the number of groups
 nGroups = numel(groupValues);
+
+% Decide on the color map
+colorMap = decide_on_colormap(colorMap, nGroups);
 
 % Compute the bin counts and bin edges
 if isempty(counts)
@@ -349,13 +361,11 @@ else
     bars = bar(binCenters, counts, barWidth, barStyle, otherArguments{:});
 end
 
-% Count the number of groups
-nGroups = numel(bars);
+% Change the bar colors to reflect the color map
+arrayfun(@(x) set(bars(x), 'FaceColor', colorMap(x, :)), 1:nGroups);
 
 % Set the legend labels for each Bar object
-for iBar = 1:nGroups
-    set(bars(iBar), 'DisplayName', groupingLabels{iBar});
-end
+arrayfun(@(x) set(bars(x), 'DisplayName', groupingLabels{x}), 1:nGroups);
 
 % Set x axis limits
 if ~strcmpi(xLimits, 'suppress')
@@ -375,13 +385,14 @@ end
 % Create staircase outlines if style is 'overlapped'
 if strcmpi(style, 'overlapped')
     % Retrieve the colors used for the histograms
-    colorsUsed = arrayfun(@(x) get(x, 'FaceColor'), bars, 'UniformOutput', false);
+    colorsUsed = arrayfun(@(x) get(x, 'FaceColor'), bars, ...
+                            'UniformOutput', false);
     colorsUsed = vertcat(colorsUsed{:});
 
     % Create outlines
     outlines = arrayfun(@(x, y) stairs(edges, [counts(:, x); 0], ...
                                 'LineWidth', 2, 'Color', colorsUsed(x, :)), ...
-                    transpose(1:nGroups), groupingLabels);
+                        transpose(1:nGroups), groupingLabels);
 else
     outlines = gobjects(nGroups, 1);
 end
@@ -499,6 +510,9 @@ elseif ~isempty(figName)
 else
     fig = gcf;
 end
+
+% Count the number of groups
+nGroups = numel(bars);
 
 %}
 

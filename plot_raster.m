@@ -112,6 +112,7 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 %       cd/create_labels_from_numbers.m
 %       cd/create_error_for_nargin.m
 %       cd/count_vectors.m
+%       cd/decide_on_colormap.m
 %       cd/extract_common_prefix.m
 %       cd/force_column_vector.m
 %       cd/iscellnumeric.m
