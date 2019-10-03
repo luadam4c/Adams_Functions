@@ -7,6 +7,8 @@ function varargout = create_default_grouping (varargin)
 % Example(s):
 %       [grouping, groupingLabels] = create_default_grouping('Stats', magic(3))
 %       [grouping, groupingLabels] = create_default_grouping('Stats', {1:5, 2:3, 6:10})
+%       [grouping, groupingLabels] = create_default_grouping('Stats', {1:5, 1:2; 1:3, 1:4})
+%       [grouping, groupingLabels] = create_default_grouping('Stats', {{1:5}, {1:3, 1:4}})
 %       [grouping, groupingLabels] = create_default_grouping('Counts', magic(3))
 %       [grouping, groupingLabels] = create_default_grouping('Grouping', {'cat', 'dog', 'rabbit'})
 %
@@ -59,6 +61,7 @@ function varargout = create_default_grouping (varargin)
 %
 % Used by:
 %       cd/compute_grouped_histcounts.m
+%       cd/compute_psth.m
 %       cd/plot_grouped_histogram.m
 
 % File History:
@@ -99,7 +102,7 @@ addParameter(iP, 'Grouping', groupingDefault, ...
 addParameter(iP, 'GroupingLabels', groupingLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'Stats', statsDefault, ...
-    @(x) isnum(x) || iscellnumeric(x));
+    @(x) isnum(x) || iscell(x));
 addParameter(iP, 'Counts', countsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...

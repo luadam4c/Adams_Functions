@@ -1,7 +1,7 @@
-function [counts, edges, relEventTimes] = ...
+function [counts, edges, relativeEventTimes] = ...
                 compute_psth (eventTimes, stimTimes, varargin)
 %% Computes a peri-stimulus time histogram
-% Usage: [counts, edges, relEventTimes] = ...
+% Usage: [counts, edges, relativeEventTimes] = ...
 %               compute_psth (eventTimes, stimTimes, varargin)
 % Explanation:
 %       TODO
@@ -17,7 +17,7 @@ function [counts, edges, relEventTimes] = ...
 %                   specified as a numeric vector
 %       edges       - edges for each bin
 %                   specified as a numeric vector
-%       relEventTimes   - all relative event times
+%       relativeEventTimes   - all relative event times
 %                       specified as a numeric vector
 %
 % Arguments:
@@ -25,7 +25,11 @@ function [counts, edges, relEventTimes] = ...
 %                   must be a numeric vector or a cell array of numeric vectors
 %       stimTimes   - stimulus times
 %                   must be a numeric vector or a cell array of numeric vectors
-%       varargin    - 'RelativeTimeWindow': relative time window
+%       varargin    - 'RelativeEventTimes': relative event times
+%                   must be a numeric vector or a cell array of numeric vectors
+%                       or a cell array of cell arrays of numeric vectors
+%                   default == not provided
+%                   - 'RelativeTimeWindow': relative time window
 %                   must be a 2-element numeric vector
 %                   default == interStimInterval * 0.5 * [-1, 1]
 %                   - 'StimDuration': stimulus duration for plotting
@@ -47,7 +51,10 @@ function [counts, edges, relEventTimes] = ...
 %       cd/adjust_window_to_bounds.m
 %       cd/compute_grouped_histcounts.m
 %       cd/compute_relative_event_times.m
+%       cd/create_default_grouping.m
 %       cd/create_error_for_nargin.m
+%       cd/isnum.m
+%       cd/iscellnumeric.m
 %
 % Used by:
 %       cd/plot_psth.m
@@ -66,6 +73,7 @@ stimStart = 0;
 stimWindow = [];
 
 %% Default values for optional arguments
+relativeEventTimesDefault = [];
 relativeTimeWindowDefault = [];
 stimDurationDefault = 0;
 groupingDefault = [];                   % set later
@@ -86,19 +94,23 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'eventTimes', ...
-    @(x) assert(isempty(x) || isnumeric(x) || iscellnumeric(x), ...
+    @(x) assert(isempty(x) || isnum(x) || iscellnumeric(x), ...
                 ['eventTimes must be either empty or a numeric array ', ...
                     'or a cell array of numeric arrays!']));
 addRequired(iP, 'stimTimes', ...
-    @(x) assert(isempty(x) || isnumeric(x) || iscellnumeric(x), ...
+    @(x) assert(isempty(x) || isnum(x) || iscellnumeric(x), ...
                 ['stimTimes must be either empty or a numeric array ', ...
                     'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'RelativeEventTimes', relativeEventTimesDefault, ...
+    @(x) assert(isempty(x) || isnum(x) || iscellnumeric(x), ...
+                ['RelativeEventTimes must be either empty or a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
 addParameter(iP, 'RelativeTimeWindow', relativeTimeWindowDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+    @(x) isempty(x) || isnum(x));
 addParameter(iP, 'StimDuration', stimDurationDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+    @(x) isempty(x) || isnum(x));
 addParameter(iP, 'Grouping', groupingDefault, ...
     @(x) validateattributes(x, {'cell', 'string', 'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
@@ -108,6 +120,7 @@ addParameter(iP, 'Edges', edgesDefault, ...
 
 % Read from the Input Parser
 parse(iP, eventTimes, stimTimes, varargin{:});
+relativeEventTimes = iP.Results.RelativeEventTimes;
 relativeTimeWindow = iP.Results.RelativeTimeWindow;
 stimDuration = iP.Results.StimDuration;
 grouping = iP.Results.Grouping;
@@ -133,34 +146,61 @@ end
 
 %% Do the job
 % Compute relative event times
-[relEventTimes, relativeTimeWindow] = ...
-    compute_relative_event_times(eventTimes, stimTimes, ...
+%   Note: If eventTimes is a cell array, 
+%           this will be a cell array of cell arrays;
+%         Otherwise, this will be a cell array of numeric vectors (many stims)
+%           or a numeric vector (one stim time)
+if isempty(relativeEventTimes)
+    [relativeEventTimes, relativeTimeWindow] = ...
+        compute_relative_event_times(eventTimes, stimTimes, ...
                                     'RelativeTimeWindow', relativeTimeWindow);
+end
+
+% If relative time window is still empty, estimate it
+if isempty(relativeTimeWindow)
+    if ~isempty(edges)
+        % Base on given edges of the histogram
+        relativeTimeWindow = [edges(1), edges(end)];
+    else
+        % Find the maximum and minimum times
+        minTime = apply_iteratively(@min, relativeEventTimes);
+        maxTime = apply_iteratively(@max, relativeEventTimes);
+
+        % Construct the relative time window
+        relativeTimeWindow = [minTime, maxTime];
+    end
+end
 
 % Trim the stimulus window so that it does not exceed relativeTimeWindow
 %   bounds
 stimWindow = adjust_window_to_bounds(stimWindow, relativeTimeWindow);
 
-% Put all relative event times together
-if iscell(relEventTimes)
-    relEventTimes = vertcat(relEventTimes{:});
+% Pool relative event times across stims for each file
+if iscellnumeric(relativeEventTimes)
+    % Many stims for one condition, just pool
+    relativeEventTimes = vertcat(relativeEventTimes{:});
+elseif iscell(relativeEventTimes)
+    % Pool for each file
+    relativeEventTimes = cellfun(@(x) vertcat(x{:}), ...
+                            relativeEventTimes, 'UniformOutput', false);    
 end
-relEventTimes = vertcat(relEventTimes{:});
 
-% Create a grouping vector with the pre-stimulus and post-stimulus times
-%   as separate groups
-% TODO: How to assign default grouping
-%   Note: must be consistent with plot_psth.m
+% Decide on the grouping vector
 if isempty(grouping)
-    if isempty()
-    grouping = ones(size(relEventTimes));
-    grouping(relEventTimes < 0) = -1;
+    if iscell(relativeEventTimes)
+        % Create a grouping vector with each file as separate groups
+        grouping = create_default_grouping('Stats', relativeEventTimes);
+    else
+        % Create a grouping vector with the pre-stimulus and post-stimulus times
+        %   as separate groups
+        grouping = ones(size(relativeEventTimes));
+        grouping(relativeEventTimes < 0) = -1;
+    end
 end
 
 % Compute the peri-stimulus time histogram
-%   Note: must be consistent with plot_psth.m
 [counts, edges] = ...
-    compute_grouped_histcounts(relEventTimes, 'Grouping', grouping, ...
+    compute_grouped_histcounts(relativeEventTimes, 'Grouping', grouping, ...
                                 'Edges', edges, 'FixedEdges', stimWindow, ...
                                 otherArguments);
 

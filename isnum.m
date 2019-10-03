@@ -21,6 +21,7 @@ function isNum = isnum (x, varargin)
 %       cd/compute_axis_limits.m
 %       cd/compute_combined_data.m
 %       cd/compute_combined_trace.m
+%       cd/compute_psth.m
 %       cd/create_default_grouping.m
 %       cd/create_grouping_by_vectors.m
 %       cd/force_column_cell.m
@@ -28,6 +29,7 @@ function isNum = isnum (x, varargin)
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
 %       cd/match_format_vector_sets.m
+%       cd/plot_psth.m
 
 % File History:
 % 2018-12-28 Created by Adam Lu

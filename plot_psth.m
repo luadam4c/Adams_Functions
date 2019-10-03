@@ -17,10 +17,10 @@ function handles = plot_psth (varargin)
 %                   specified as a TODO
 %
 % Arguments:
-%       relEventTimes   - relative event times
-%                       must be a vector of one the following types:
-%                           'numeric', 'logical', 'datetime', 'duration'
-%                       default == not provided
+%       relEventTimes   - (opt) relative event times
+%                   must be a numeric vector or a cell array of numeric vectors
+%                       or a cell array of cell arrays of numeric vectors
+%                   default == not provided
 %       varargin    - 'Counts': bin counts, with each group 
 %                                   being a different column
 %                   must be an array of one the following types:
@@ -83,6 +83,8 @@ function handles = plot_psth (varargin)
 %       cd/compute_psth.m
 %       cd/create_error_for_nargin.m
 %       cd/create_time_stamp.m
+%       cd/isnum.m
+%       cd/iscellnumeric.m
 %       cd/plot_histogram.m
 %       cd/plot_vertical_line.m
 %       cd/plot_vertical_shade.m
@@ -132,8 +134,9 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add optional inputs to the Input Parser
 addOptional(iP, 'relEventTimes', relEventTimesDefault, ...
-    @(x) validateattributes(x, {'numeric', 'logical', ...
-                                'datetime', 'duration'}, {'2d'}));
+    @(x) assert(isempty(x) || isnum(x) || iscellnumeric(x), ...
+                ['relEventTimes must be either empty or a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Counts', countsDefault, ...
@@ -214,30 +217,14 @@ end
 
 % Compute histogram counts if not already done
 if isempty(counts)
-    if isempty(relEventTimes)
-        % Compute counts and edges from eventTimes and stimTimes
-        [counts, edges] = ...
-            compute_psth(eventTimes, stimTimes, ...
-                        'Edges', edges, ...
-                        'StimDuration', stimDuration, ...
-                        'Grouping', grouping, ...
-                        'RelativeTimeWindow', relativeTimeWindow);
-    else
-        % Compute a grouping vector from relEventTimes
-        % TODO: How to assign default grouping
-        %   Note: must be consistent with compute_psth.m
-        if isempty(grouping)
-            grouping = ones(size(relEventTimes));
-            grouping(relEventTimes < 0) = -1;
-        end
-
-        % Compute counts and edges from relEventTimes
-        %   Note: must be consistent with compute_psth.m
-        [counts, edges] = ...
-            compute_grouped_histcounts(relEventTimes, 'Grouping', grouping, ...
-                                'Edges', edges, 'FixedEdges', stimWindow, ...
-                                otherArguments{:});
-    end
+    % Compute counts and edges from eventTimes and stimTimes
+    [counts, edges] = ...
+        compute_psth(eventTimes, stimTimes, ...
+                    'Edges', edges, ...
+                    'StimDuration', stimDuration, ...
+                    'RelativeEventTimes', relEventTimes, ...
+                    'Grouping', grouping, ...
+                    'RelativeTimeWindow', relativeTimeWindow);
 else
     if isempty(edges)
         disp('Edges must be provided if counts are provided!');
@@ -291,6 +278,5 @@ handles.vertShade = vertShade;
 OLD CODE:
 
 %}
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

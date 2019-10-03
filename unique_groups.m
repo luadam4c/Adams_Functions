@@ -3,6 +3,7 @@ function varargout = unique_groups (grouping, varargin)
 % Usage: [uniqueGroups, nEachGroup] = unique_groups (grouping, setOrder (opt), varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       [uG, nEG] = unique_groups([3; 3; 3; 2; 2; 1])
 %       [uG, nEG] = unique_groups([3; 3; 3; 2; 2; 1], 'sorted')
@@ -20,6 +21,7 @@ function varargout = unique_groups (grouping, varargin)
 %                       specified as an array with the same type as grouping
 %       nEachGroup      - number in each group
 %                       specified as a numeric vector
+%
 % Arguments:
 %       grouping    - a vector with the same value for all elements of each group
 %                   must be an array

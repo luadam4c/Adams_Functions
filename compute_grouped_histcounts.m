@@ -43,10 +43,12 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 %                   - Any other parameter-value pair for histcounts()
 %
 % Requires:
+%       cd/argfun.m
 %       cd/compute_bins.m
 %       cd/compute_centers_from_edges.m
 %       cd/create_default_grouping.m
 %       cd/create_error_for_nargin.m
+%       cd/force_column_vector.m
 %       cd/struct2arglist.m
 %       cd/adjust_edges.m
 %
@@ -82,7 +84,7 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'stats', ...
-    @(x) validateattributes(x, {'numeric', 'logical', ...
+    @(x) validateattributes(x, {'cell', 'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
 
 % Add optional inputs to the Input Parser
@@ -111,14 +113,20 @@ otherArguments = struct2arglist(iP.Unmatched);
 % Decide on the grouping vector
 grouping = create_default_grouping('Stats', stats, 'Grouping', grouping);
 
+% If stats and grouping are cell arrays of numeric vectors, pool them
+if iscellnumeric(stats) && iscellnumeric(grouping)
+    [stats, grouping] = argfun(@force_column_vector, stats, grouping);
+    [stats, grouping] = argfun(@(x) vertcat(x{:}), stats, grouping);
+end
+
 % Get all unique group values
-groupValues = unique(grouping);
+uniqueGroupValues = unique(grouping);
 
 % Count the number of groups
-nGroups = numel(groupValues);
+nGroups = numel(uniqueGroupValues);
 
 %% Break up stats into a cell array of vectors
-statsCell = arrayfun(@(x) stats(grouping == groupValues(x)), ...
+statsCell = arrayfun(@(x) stats(grouping == uniqueGroupValues(x)), ...
                     transpose(1:nGroups), 'UniformOutput', false);
 
 %% Compute default bin edges for all data if not provided

@@ -20,6 +20,7 @@ function isCellNumeric = iscellnumeric (x)
 % Used by:
 %       cd/alternate_elements.m
 %       cd/compute_baseline_noise.m
+%       cd/compute_psth.m
 %       cd/compute_relative_event_times.m
 %       cd/compute_residuals.m
 %       cd/compute_rms_error.m
@@ -41,6 +42,7 @@ function isCellNumeric = iscellnumeric (x)
 %       cd/parse_multiunit.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
+%       cd/plot_psth.m
 %       cd/plot_raster.m
 %       cd/unique_groups.m
 
