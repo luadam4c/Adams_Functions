@@ -78,7 +78,7 @@ function vecs = force_matrix (vecs, varargin)
 % 2019-04-26 Fixed bug for 'AlignMethod' == 'none'
 % 2019-09-07 Added 'Verbose' as an optional argument
 % 2019-10-02 Now returns if already a matrix
-% 2019-10-02 Now pads cell arrays when treatCellAsArray is true
+% TODO: 2019-10-03 Added 'TreatCellNumAsArray' as an optional argument
 % TODO: Restrict the number of samples if provided
 % 
 

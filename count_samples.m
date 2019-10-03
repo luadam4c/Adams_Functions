@@ -13,6 +13,8 @@ function nSamples = count_samples (vectors, varargin)
 %       count_samples(magic(3), 'CountMethod', 'nrows')
 %       count_samples(rand(2, 3), 'CountMethod', 'length')
 %       count_samples(repmat({repmat({'sdf'}, 3, 1)}, 3, 1))
+%       count_samples(repmat({1:3}, 3, 4))
+%       count_samples(repmat({1:3}, 3, 4), 'TreatCellNumAsArray', true)
 %       count_samples(repmat({'sdf'}, 3, 4))
 %       count_samples(repmat({'sdf'}, 3, 4), 'TreatCellStrAsArray', false)
 %
@@ -40,6 +42,10 @@ function nSamples = count_samples (vectors, varargin)
 %                                           as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'TreatCellNumAsArray': whether to treat a cell array
+%                                       of numeric arrays as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'TreatCellStrAsArray': whether to treat a cell array
 %                                       of character arrays as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -57,7 +63,7 @@ function nSamples = count_samples (vectors, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/iscellnumericvector.m
+%       cd/iscellnumeric.m
 %       cd/force_column_vector.m
 %       cd/match_row_count.m
 %
@@ -94,6 +100,7 @@ function nSamples = count_samples (vectors, varargin)
 % 2019-01-22 Now returns 0 if vectors is empty
 % 2019-01-23 Now maintains uniform output if possible
 % 2019-04-24 Added 'CountMethod' as an optional argument
+% 2019-10-03 Added 'TreatCellNumAsArray' as an optional argument
 % 
 
 %% Hard-coded parameters
@@ -105,6 +112,8 @@ forceColumnOutputDefault = true;    % force output as a column by default
 treatMatrixAsVectorDefault = false; % treat a matrix as many vectors by default
 treatRowAsMatrixDefault = false;    % treat a row vector as a vector by default
 treatCellAsArrayDefault = false;    % treat cell arrays as many arrays by default
+treatCellNumAsArrayDefault = false; % treat cell arrays of numeric arrays
+                                    %   as many arrays by default
 treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
                                     %   as an array by default
 countMethodDefault = 'veclength';   % count the length of each vector by default
@@ -133,6 +142,8 @@ addParameter(iP, 'TreatRowAsMatrix', treatRowAsMatrixDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellNumAsArray', treatCellNumAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'CountMethod', countMethodDefault, ...
@@ -144,6 +155,7 @@ forceColumnOutput = iP.Results.ForceColumnOutput;
 treatMatrixAsVector = iP.Results.TreatMatrixAsVector;
 treatRowAsMatrix = iP.Results.TreatRowAsMatrix;
 treatCellAsArray = iP.Results.TreatCellAsArray;
+treatCellNumAsArray = iP.Results.TreatCellNumAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 countMethod = validatestring(iP.Results.CountMethod, validCountMethods);
 
@@ -152,6 +164,7 @@ countMethod = validatestring(iP.Results.CountMethod, validCountMethods);
 if isempty(vectors)
     nSamples = 0;
 elseif iscell(vectors) && ~treatCellAsArray && ...
+        ~(iscellnumeric(vectors) && treatCellNumAsArray) && ...
         ~(iscellstr(vectors) && treatCellStrAsArray)
     % Count the number of elements for each array in each cell,
     %   maintaining uniform output if possible
@@ -159,6 +172,7 @@ elseif iscell(vectors) && ~treatCellAsArray && ...
         nSamples = cellfun(@(x) count_samples(x, ...
                             'ForceColumnOutput', forceColumnOutput, ...
                             'TreatCellAsArray', treatCellAsArray, ...
+                            'TreatCellNumAsArray', treatCellNumAsArray, ...
                             'TreatCellStrAsArray', treatCellStrAsArray, ...
                             'CountMethod', countMethod), ...
                             vectors, 'UniformOutput', true);
@@ -166,6 +180,7 @@ elseif iscell(vectors) && ~treatCellAsArray && ...
         nSamples = cellfun(@(x) count_samples(x, ...
                             'ForceColumnOutput', forceColumnOutput, ...
                             'TreatCellAsArray', treatCellAsArray, ...
+                            'TreatCellNumAsArray', treatCellNumAsArray, ...
                             'TreatCellStrAsArray', treatCellStrAsArray, ...
                             'CountMethod', countMethod), ...
                             vectors, 'UniformOutput', false);

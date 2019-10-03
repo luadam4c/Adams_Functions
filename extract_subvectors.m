@@ -58,6 +58,10 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                                           as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'TreatCellNumAsArray': whether to treat a cell array
+%                                       of numeric arrays as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'TreatCellStrAsArray': whether to treat a cell array
 %                                       of character arrays as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -127,6 +131,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2019-08-21 Now allows indices to be non-integers (uses interpolation)
 % 2019-09-07 Now matches vectors with the number of indices vectors
 % 2019-09-07 Added 'ForceCellOutput' as an optional argument
+% TODO: 2019-10-03 Added 'TreatCellNumAsArray' as an optional argument
 % TODO: check if all endpoints have 2 elements
 % 
 
@@ -143,6 +148,8 @@ maxNumDefault = Inf;            % no limit by default
 windowsDefault = [];            % extract entire trace(s) by default
 alignMethodDefault  = 'none';   % no alignment/truncation by default
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
+treatCellNumAsArrayDefault = false; % treat cell arrays of numeric arrays
+                                    %   as many arrays by default
 treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
                                     %   as an array by default
 forceCellOutputDefault = false;     % don't force as cell array by default
@@ -188,6 +195,8 @@ addParameter(iP, 'AlignMethod', alignMethodDefault, ...
     @(x) any(validatestring(x, validAlignMethods)));
 addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellNumAsArray', treatCellNumAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
@@ -203,6 +212,7 @@ maxNum = iP.Results.MaxNum;
 windows = iP.Results.Windows;
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 treatCellAsArray = iP.Results.TreatCellAsArray;
+treatCellNumAsArray = iP.Results.TreatCellNumAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 forceCellOutput = iP.Results.ForceCellOutput;
 
@@ -245,7 +255,8 @@ if isempty(endPoints)
     else
         % Count the number of elements in each vector
         nSamples = count_samples(vecs, 'TreatCellAsArray', treatCellAsArray, ...
-                                    'TreatCellStrAsArray', treatCellStrAsArray);
+                                'TreatCellNumAsArray', treatCellNumAsArray, ...
+                                'TreatCellStrAsArray', treatCellStrAsArray);
 
         % Construct end points
         endPoints = create_default_endpoints(nSamples);

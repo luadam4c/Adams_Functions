@@ -24,6 +24,7 @@ function isCellNumeric = iscellnumeric (x)
 %       cd/compute_residuals.m
 %       cd/compute_rms_error.m
 %       cd/compute_sampsizepwr.m
+%       cd/count_samples.m
 %       cd/create_default_endpoints.m
 %       cd/find_pulse_endpoints.m
 %       cd/find_pulse_response_endpoints.m
