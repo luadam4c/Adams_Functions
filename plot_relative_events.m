@@ -6,6 +6,7 @@ function handles = plot_relative_events (varargin)
 %
 % Example(s):
 %       plot_relative_events('Directory', '/media/shareX/2019octoberR01/Figures/Figure1c')
+%       plot_relative_events('RelativeTimeWindow', [-15, 15]);
 %       plot_relative_events('RelativeTimeWindow', [-20, 20]);
 %
 % Outputs:
@@ -59,6 +60,7 @@ function handles = plot_relative_events (varargin)
 %       cd/apply_iteratively.m
 %       cd/compute_relative_event_times.m
 %       cd/create_label_from_sequence.m
+%       cd/create_subplots.m
 %       cd/extract_elements.m
 %       cd/extract_fileparts.m
 %       cd/load_matching_sheets.m
@@ -247,20 +249,20 @@ end
 switch plotType
     case {'raster', 'chevron'}
         % Compute the relative event times
-        %   Note: this should return a cell array of cell arrays
+        %   Note: this should return a cell array (files) of cell arrays (stims)
         [relEventTimesCellCell, relTimeWindowMin] = ...
             compute_relative_event_times(swdStartTimesMin, stimStartTimesMin, ...
                                     'RelativeTimeWindow', relTimeWindowMin);
 
+        % Put the event time arrays in a cell matrix
+        %   Note: Each column is a file
+        %         Each row is a stim
+        relEventTimes = force_matrix(relEventTimesCellCell, ...
+                                    'TreatCellNumAsArray', true);
+
         % Extract the relevant event times
         if firstOnly
-            % Restrict to just the first event times
-            %   Note: this should return a cell array of numeric vectors
-            relEventTimes = cellfun(@(x) extract_element_by_index(x, 1, ...
-                                                                    false), ...
-                                relEventTimesCellCell, 'UniformOutput', false);
-        else
-            relEventTimes = extract_in_order(relEventTimesCellCell);
+            relEventTimes = relEventTimes(1, :);
         end
     case 'psth'
         % Relative event times computed in plot_psth.m
@@ -271,44 +273,30 @@ end
 %% Plot event times
 switch plotType
 case 'raster'
-    %% Plot the raster
-    if firstOnly
+    %% Plot rasters by stim #
+    % Count the appropriate number of subplots
+    nSubplots = size(relEventTimes, 1);
+
+    % Create subplots
+    [fig, ax] = create_subplots(1, nSubplots);
+
+    % Plot the rasters
+    for iAx = 1:numel(ax)
+        % Use this subplot
+        subplot(ax(iAx));
+
         % Create a figure title
-        figTitle = ['Events around stim #', num2str(1)];
+        figTitle = ['Events around stim #', num2str(iAx)];
 
         % Plot raster
-        handles = plot_raster(relEventTimes, 'Labels', labels, ...
+        handles = plot_raster(relEventTimes(iAx, :), 'Labels', labels, ...
                                 'XLabel', 'Time (min)', ...
+                                'XLimits', relTimeWindowMin, ...
                                 'FigTitle', figTitle, ...
-                                'XLimits', relTimeWindowMin, otherArguments);
+                                otherArguments);
 
         % Plot stim start line
         plot_vertical_line(0, 'LineWidth', 2, 'Color', 'k');
-    else
-        % Count the appropriate number of subplots
-        nSubplots = numel(relEventTimes);
-
-        % Create subplots
-        [fig, ax] = create_subplots(1, nSubplots);
-
-        % Plot the rasters
-        for iAx = 1:numel(ax)
-            % Use this subplot
-            subplot(ax(iAx));
-
-            % Create a figure title
-            figTitle = ['Events around stim #', num2str(iAx)];
-
-            % Plot raster
-            handles = plot_raster(relEventTimes{iAx}, 'Labels', labels, ...
-                                    'XLabel', 'Time (min)', ...
-                                    'XLimits', relTimeWindowMin, ...
-                                    'FigTitle', figTitle, ...
-                                    otherArguments);
-
-            % Plot stim start line
-            plot_vertical_line(0, 'LineWidth', 2, 'Color', 'k');
-        end
     end
 
     % Save figure
@@ -406,6 +394,37 @@ end
 
 %{
 OLD CODE:
+
+relEventTimes = extract_in_order(relEventTimesCellCell);
+
+% Extract the relevant event times
+if firstOnly
+    % Restrict to just the first event times
+    %   Note: this should return a cell array of numeric vectors
+    relEventTimes = cellfun(@(x) extract_element_by_index(x, 1, ...
+                                                            false), ...
+                        relEventTimesCellCell, 'UniformOutput', false);
+else
+    relEventTimes = extract_in_order(relEventTimesCellCell);
+end
+
+if firstOnly
+    % Create a figure title
+    figTitle = ['Events around stim #', num2str(1)];
+
+    % Plot raster
+    handles = plot_raster(relEventTimes, 'Labels', labels, ...
+                            'XLabel', 'Time (min)', ...
+                            'FigTitle', figTitle, ...
+                            'XLimits', relTimeWindowMin, otherArguments);
+
+    % Plot stim start line
+    plot_vertical_line(0, 'LineWidth', 2, 'Color', 'k');
+else
+end
+
+% Count the appropriate number of subplots
+nSubplots = numel(relEventTimes);
 
 %}
 
