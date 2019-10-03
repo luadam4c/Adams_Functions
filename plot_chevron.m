@@ -1,6 +1,6 @@
-function [handles1, handles2] = plot_chevron (data, varargin)
+function [handles, handlesMean] = plot_chevron (data, varargin)
 %% Plots a Chevron (paired comparison) plot from data
-% Usage: [handles1, handles2] = plot_chevron (data, varargin)
+% Usage: [handles, handlesMean] = plot_chevron (data, varargin)
 % Explanation:
 %       TODO
 %
@@ -11,18 +11,56 @@ function [handles1, handles2] = plot_chevron (data, varargin)
 %       plot_chevron(data)
 %
 % Outputs:
-%       handles1    - TODO: Description of handles1
-%                   specified as a TODO
-%       handles2    - TODO: Description of handles1
-%                   specified as a TODO
+%       handles     - handles to plotted objects for the data
+%                   specified as a structure
+%       handlesMean - handles to plotted objects for the mean difference
+%                   specified as a structure
 %
 % Arguments:
 %       data        - data table or data vectors
 %                   must be a table or a numeric array
 %                       or a cell array of numeric vectors
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'PlotMean': whether to plot the mean difference
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'RunTTest': whether to run paired t-test
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'RunRankTest': whether to run paired 
+%                                       Wilcoxon signed-rank test
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'PLimits': limits of parameter axis
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == set in compute_paxis_limits_chevron()
+%                   - 'PTicks': x tick values for the parameter values
+%                   must be a numeric vector
+%                   default == all parameter values
+%                   - 'PTickLabels': x tick labels in place of parameter values
+%                   must be a cell array of character vectors/strings
+%                   default == table column names or time1, time2, ...
+%                   - 'PLabel': label for the parameter, 
+%                               suppress by setting value to {'suppress'}
+%                   must be a string scalar or a character vector
+%                   default == 'suppress'
+%                   - 'ColumnLabels': labels for the readout columns, 
+%                               suppress by setting value to {'suppress'}
+%                   must be a scalartext 
+%                       or a cell array of strings or character vectors
+%                   default == table row names or data1, data2, ...
+%                   - 'ColorMap' - color map used when nColumnsToPlot > 1
+%                   must be a 2-D numeric array with 3 columns
+%                   default == set in decide_on_colormap.m
+%                   - 'LegendLocation': location for legend
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'auto'      - use default
+%                       'suppress'  - no legend
+%                       anything else recognized by the legend() function
+%                   default == 'eastoutside'
+%                   - 'FigExpansion': expansion factor for figure position
+%                   must be a must be a positive scalar or 2-element vector
+%                   default == [1, 0.4]
 %                   - Any other parameter-value pair for plot_tuning_curve()
 %
 % Requires:
@@ -40,19 +78,28 @@ function [handles1, handles2] = plot_chevron (data, varargin)
 
 % File History:
 % 2019-10-01 Created by Adam Lu
+% 2019-10-03 Made many things optional arguments
 % TODO: Combine with plot_table.m?
 
 %% Hard-coded parameters
-figExpansion = [0.4, 0.4];
 lineWidth = 1;
-colorMap = [0, 0, 0];
 markerSize = 4;
 meanLineWidth = 2;
 meanMarkSize = 6;
 meanColorMap = 'r';
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+plotMeanDefault = true;
+runTTestDefault = true;
+runRankTestDefault = true;
+pLimitsDefault = [];                % set later
+pTicksDefault = [];                 % set later
+pTickLabelsDefault = {};            % set later
+pLabelDefault = 'suppress';
+columnLabelsDefault = '';           % set later
+colorMapDefault = [];               % set later
+legendLocationDefault = 'eastoutside';
+figExpansionDefault = [1, 0.4];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -72,12 +119,43 @@ addRequired(iP, 'data', ...
     @(x) validateattributes(x, {'numeric', 'cell', 'table'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default, ...
-    % TODO: validation function %);
+addParameter(iP, 'PlotMean', plotMeanDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RunTTest', runTTestDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RunRankTest', runRankTestDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PLimits', pLimitsDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
+addParameter(iP, 'PTicks', pTicksDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'PTickLabels', pTickLabelsDefault, ...
+    @(x) isempty(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'PLabel', pLabelDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'ColumnLabels', columnLabelsDefault, ...
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'ColorMap', colorMapDefault);
+addParameter(iP, 'LegendLocation', legendLocationDefault, ...
+    @(x) all(islegendlocation(x, 'ValidateMode', true)));
+addParameter(iP, 'FigExpansion', figExpansionDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive'}));
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
-% param1 = iP.Results.param1;
+plotMean = iP.Results.PlotMean;
+runTTest = iP.Results.RunTTest;
+runRankTest = iP.Results.RunRankTest;
+pLimits = iP.Results.PLimits;
+pTicks = iP.Results.PTicks;
+pTickLabels = iP.Results.PTickLabels;
+pLabel = iP.Results.PLabel;
+columnLabels = iP.Results.ColumnLabels;
+colorMap = iP.Results.ColorMap;
+[~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
+                                        'ValidateMode', true);
+figExpansion = iP.Results.FigExpansion;
 
 % Keep unmatched arguments for the plot_tuning_curve() function
 otherArguments = iP.Unmatched;
@@ -98,28 +176,44 @@ nConds = size(dataValues, 2);
 % Count the number of samples
 nSamples = size(dataValues, 1);
 
+% Decide on a color map
+if isempty(colorMap)
+    colorMap = decide_on_colormap(colorMap, nSamples);
+end
+
 % Compute parameter values for the plot
 pValues = transpose(1:nConds);
 
 % Compute parameter axis limits
-pLimits = compute_paxis_limits_chevron(pValues);
+if isempty(pLimits)
+    pLimits = compute_paxis_limits_chevron(pValues);
+end
 
-% Decide on p tick labels
-if istable(data)
-    % Extract variable names if any
-    pTickLabels = data.Properties.VariableNames;
-else
-    % Create labels
-    pTickLabels = create_labels_from_numbers(pValues, 'Prefix', 'param');
+% Decide on parameter tick values
+if isempty(pTicks)
+    pTicks = pValues;
+end
+
+% Decide on parameter tick labels
+if isempty(pTickLabels)
+    if istable(data)
+        % Extract variable names if any
+        pTickLabels = data.Properties.VariableNames;
+    else
+        % Create labels
+        pTickLabels = create_labels_from_numbers(pValues, 'Prefix', 'param');
+    end
 end
 
 % Decide on column labels
-if istable(data) && ~isempty(data.Properties.RowNames)
-    % Extract row names if any
-    columnLabels = data.Properties.RowNames;
-else
-    % Create labels
-    columnLabels = create_labels_from_numbers(1:nSamples, 'Prefix', 'data');
+if isempty(columnLabels)
+    if istable(data) && ~isempty(data.Properties.RowNames)
+        % Extract row names if any
+        columnLabels = data.Properties.RowNames;
+    else
+        % Create labels
+        columnLabels = create_labels_from_numbers(1:nSamples, 'Prefix', 'data');
+    end
 end
 
 % Compute means and confidence intervals
@@ -141,25 +235,26 @@ end
 
 %% Do the job
 % Plot a tuning curve
-handles1 = plot_tuning_curve(pValues, transpose(dataValues), ...
-                    'FigExpansion', figExpansion, ...
-                    'PLimits', pLimits, 'PTicks', pValues, ...
-                    'PTickLabels', pTickLabels, ...
+handles = plot_tuning_curve(pValues, transpose(dataValues), ...
+                    'RunTTest', runTTest, 'RunRankTest', runRankTest, ...
+                    'PLimits', pLimits, 'PTicks', pTicks, ...
+                    'PTickLabels', pTickLabels, 'PLabel', pLabel, ...
                     'ColumnLabels', columnLabels, ...
-                    'PLabel', 'suppress', ...
-                    'RunTTest', true, 'RunRankTest', true, ...
-                    'LineWidth', lineWidth, 'ColorMap', colorMap, ...
-                    'Marker', 'o', 'MarkerFaceColor', colorMap, ...
-                    'MarkerSize', markerSize, ...
-                    'LegendLocation', 'suppress', otherArguments);
+                    'ColorMap', colorMap, ...
+                    'LegendLocation', legendLocation, ...
+                    'FigExpansion', figExpansion, ...
+                    'LineWidth', lineWidth, ...
+                    'Marker', 'o', 'MarkerSize', markerSize, ...
+                    otherArguments);
 
 % Plot the mean and confidence intervals of the differences
-if nConds == 2
+%   TODO: Does it ever make sense for more than 2 conditions?
+if plotMean && nConds == 2
     % Hold on
     wasHold = hold_on;
 
     % Plot mean and confidence intervals
-    handles2 = plot_tuning_curve(pValues, meanValues, ...
+    handlesMean = plot_tuning_curve(pValues, meanValues, ...
                     'LowerCI', lower95Values, 'UpperCI', upper95Values, ...
                     'PlotCurveOnly', true, ...
                     'LineWidth', meanLineWidth, 'ColorMap', meanColorMap, ...
@@ -168,8 +263,9 @@ if nConds == 2
 
     % Hold off
     hold_off(wasHold);
+else
+    handlesMean = struct;
 end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -212,6 +308,8 @@ if plotStar
     starYPos = yLimits(1) + 0.8 * (yLimits(2) - yLimits(1));
     plot(starXPos, starYPos, 'k*');
 end
+
+colorMap = [0, 0, 0];
 
 %}
 

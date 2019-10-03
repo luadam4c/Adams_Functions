@@ -182,6 +182,7 @@ There are 1 MATLAB scripts in this directory:
 - [**extract_in_order.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_in_order.m): Reorganizes a set of vectors by the first vectors, the second vectors, ... and so on
 - [**extract_subvectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_subvectors.m): Extracts subvectors from vectors, given either endpoints, value windows or a certain align mode ('leftAdjust', 'rightAdjust')
 - [**files2contents.m**](https://github.com/blabuva/Adams_Functions/blob/master/files2contents.m): Replaces file names with file contents in a cell array of strings
+- [**fill_markers.m**](https://github.com/blabuva/Adams_Functions/blob/master/fill_markers.m): Fills markers if any for the current axes
 - [**filter_and_extract_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/filter_and_extract_pulse_response.m): Filters and extracts pulse response(s) from a .abf file
 - [**find_custom.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_custom.m): Same as find() but takes custom parameter-value pairs
 - [**find_first_deviant.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_first_deviant.m): Finds the index of the first deviant from preceding peers in a time series

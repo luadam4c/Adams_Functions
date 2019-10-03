@@ -7,10 +7,11 @@ function handles = plot_relative_events (varargin)
 % Example(s):
 %       plot_relative_events('Directory', '/media/shareX/2019octoberR01/Figures/Figure1c')
 %       plot_relative_events('RelativeTimeWindow', [-20, 20]);
+%       plot_relative_events('PlotType', 'psth', 'Edges', -20:2:20);
+%       plot_relative_events('RelativeTimeWindow', [-20, 20], 'PlotType', 'chevron');
 %       plot_relative_events('RelativeTimeWindow', [-15, 15]);
 %       plot_relative_events('RelativeTimeWindow', [-15, 15], 'PlotType', 'psth');
 %       plot_relative_events('RelativeTimeWindow', [-15, 15], 'PlotType', 'chevron');
-%       plot_relative_events('PlotType', 'psth', 'Edges', -20:2:20);
 %
 % Outputs:
 %       handles     - TODO: Description of handles
@@ -318,7 +319,16 @@ case 'psth'
                         'FigName', figName, 'FigTypes', figTypes, ...
                         otherArguments);
 case 'chevron'
-    %% Plot a Chevron plot
+    %% Plot two Chevron plots
+    % Decide on p tick labels
+    pTickLabels = {'Before', 'After'};
+
+    % Decide on file names
+    figPathBase = extract_fileparts(figName, 'pathbase');
+    figNameNormalized = strcat(figPathBase, '_normalized');
+    sheetPath = [figPathBase, '.csv'];
+    sheetPathNormalized = [figPathBase, '_normalized', '.csv'];
+
     % Transpose so that each column is a stim
     relEventTimesTrans = transpose(relEventTimes);
     
@@ -330,20 +340,31 @@ case 'chevron'
     [nEventsBefore, nEventsAfter] = ...
         argfun(@(x) sum(x, 2), nEventsBeforeEachStim, nEventsAfterEachStim);
 
-    % Save the data in a table
+    % Compute normalized data
+    nEventsBeforeNormalized = nEventsBefore ./ nEventsBefore;
+    nEventsAfterNormalized = nEventsAfter ./ nEventsBefore;
+
+    % Save the data in tables
     chevronTable = table(nEventsBefore, nEventsAfter, ...
-                        'VariableNames', {'Before', 'After'}, ...
                         'RowNames', labels);
-    figPathBase = extract_fileparts(figName, 'pathbase');
-    sheetPath = [figPathBase, '.csv'];
     writetable(chevronTable, sheetPath);
 
-    % Plot Chevron plot
+    % Save normalized data in a table
+    normChevronTable = table(nEventsBeforeNormalized, ...
+                            nEventsAfterNormalized, 'RowNames', labels);
+    writetable(normChevronTable, sheetPathNormalized);
+
+    % Plot Chevron plot and save figure
     plot_chevron(chevronTable, 'FigTitle', figTitle, ...
-                'ReadoutLabel', '# of events', otherArguments);
-        
-    % Save figure
+                'ReadoutLabel', 'SWD count', 'PTickLabels', pTickLabels, ...
+                otherArguments);
     save_all_figtypes(gcf, figName, figTypes);
+
+    % Plot normalized Chevron plot and save figure
+    plot_chevron(chevronTable, 'FigTitle', figTitle, ...
+                'ReadoutLabel', '% SWD count', 'PTickLabels', pTickLabels, ...
+                otherArguments);
+    save_all_figtypes(gcf, figNameNormalized, figTypes);
 otherwise
     error('plotType unrecognized!');
 end

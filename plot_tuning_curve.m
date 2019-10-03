@@ -77,7 +77,8 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   - 'PTickAngle': angle for parameter tick labels
 %                   must be a numeric scalar
 %                   default == 0
-%                   - 'PLabel': label for the parameter
+%                   - 'PLabel': label for the parameter, 
+%                               suppress by setting value to {'suppress'}
 %                   must be a string scalar or a character vector
 %                   default == 'Parameter'
 %                   - 'ReadoutLabel': label for the readout
@@ -187,16 +188,19 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                               or [yLabel, ' over time']
 %                   - 'FigHandle': figure handle for created figure
 %                   must be a empty or a figure object handle
-%                   default == []
+%                   default == set in set_figure_properties.m
 %                   - 'FigNumber': figure number for creating figure
 %                   must be a positive integer scalar
-%                   default == []
+%                   default == set in set_figure_properties.m
 %                   - 'FigExpansion': expansion factor for figure position
 %                   must be a must be a positive scalar or 2-element vector
-%                   default == []
+%                   default == set in set_figure_properties.m
 %                   - 'ClearFigure': whether to clear figure
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'AxesHandle': axes handle for created axes
+%                   must be a empty or a axes object handle
+%                   default == set in set_axes_properties.m
 %                   - 'FigName': figure name for saving
 %                   must be a string scalar or a character vector
 %                   default == ''
@@ -219,6 +223,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/decide_on_colormap.m
 %       cd/set_axes_properties.m
 %       cd/set_figure_properties.m
+%       cd/fill_markers.m
 %       cd/force_column_vector.m
 %       cd/force_matrix.m
 %       cd/force_row_vector.m
@@ -352,16 +357,17 @@ rBoundaryTypeDefault = 'horizontalLines';
 averageWindowsDefault = {};         % set later
 phaseAveragesDefault = [];          % set later
 indSelectedDefault = [];
-nLastOfPhaseDefault = 10;       % select from last 10 values by default
-nToAverageDefault = 5;          % select 5 values by default
+nLastOfPhaseDefault = 10;           % select from last 10 values by default
+nToAverageDefault = 5;              % select 5 values by default
 selectionMethodDefault = 'maxRange2Mean';   
-                                % select using maxRange2Mean by default
-maxRange2MeanDefault = 40;      % range is not more than 40% of mean by default
+                                    % select using maxRange2Mean by default
+maxRange2MeanDefault = 40;          % range is not more than 40% of mean by default
 figTitleDefault = '';               % set later
 figHandleDefault = [];              % no existing figure by default
 figNumberDefault = [];              % no figure number by default
-figExpansionDefault = [];       % no figure expansion by default
+figExpansionDefault = [];           % no figure expansion by default
 clearFigureDefault = false;         % don't clear figure by default
+axHandleDefault = [];               % gca by default
 figNameDefault = '';                % don't save figure by default
 figTypesDefault = 'epsc';
 
@@ -480,6 +486,7 @@ addParameter(iP, 'FigExpansion', figExpansionDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive'}));
 addParameter(iP, 'ClearFigure', clearFigureDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AxesHandle', axHandleDefault);
 addParameter(iP, 'FigName', figNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
@@ -534,6 +541,7 @@ figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
 figExpansion = iP.Results.FigExpansion;
 clearFigure = iP.Results.ClearFigure;
+axHandle = iP.Results.AxesHandle;
 figName = iP.Results.FigName;
 [~, figtypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
@@ -846,7 +854,7 @@ fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
                     'FigExpansion', figExpansion, 'ClearFigure', clearFigure);
 
 % Decide on the axes to plot on and set properties
-ax = set_axes_properties;
+ax = set_axes_properties('AxesHandle', axHandle);
 
 % Initialize graphics objects
 curves = gobjects(nColumnsToPlot, nLinesPerPhase);
@@ -940,9 +948,8 @@ for iPlot = 1:nColumnsToPlot
     % Set color
     if colorByPhase
         % Set color by phase
-        for iPhase = 1:nPhasesThis
-            set(curves(iPlot, iPhase), 'Color', colorMap(iPhase, :));
-        end
+        arrayfun(@(x) set(curves(iPlot, x), 'Color', colorMap(x, :)), ...
+                1:nPhasesThis);
     else
         % Set color by columns
         set(curves(iPlot, 1), 'Color', colorMap(iPlot, :));
@@ -967,6 +974,9 @@ for iPlot = 1:nColumnsToPlot
         set(curves(iPlot, 1), 'Marker', 'o');
     end
 end
+
+% Fill markers if any
+fill_markers('AxesHandle', axHandle);
 
 % Restrict x axis if pLimits provided; 
 %   otherwise expand the x axis by a little bit
@@ -1408,6 +1418,10 @@ end
 % Hold off if more than one column
 if nColumnsToPlot > 1
     hold off
+end
+
+for iPhase = 1:nPhasesThis
+    set(curves(iPlot, iPhase), 'Color', colorMap(iPhase, :));
 end
 
 %}

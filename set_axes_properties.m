@@ -45,6 +45,7 @@ function ax = set_axes_properties (varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/fill_markers.m
 %       cd/plot_frame.m
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
@@ -57,7 +58,7 @@ function ax = set_axes_properties (varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-axHandleDefault = [];           % no existing axes by default
+axHandleDefault = [];           % gca by default
 subPlotNumberDefault = [];      % no subplot number by default
 outerPositionDefault = [];      % set later
 positionDefault = [];           % set later
