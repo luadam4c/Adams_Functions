@@ -57,6 +57,7 @@ function handles = plot_relative_events (varargin)
 %                           or plot_chevron() or plot_psth() 
 %
 % Requires:
+%       cd/argfun.m
 %       cd/apply_iteratively.m
 %       cd/compute_relative_event_times.m
 %       cd/create_label_from_sequence.m
@@ -261,6 +262,7 @@ switch plotType
                                     'TreatCellNumAsArray', true);
 
         % Extract the relevant event times
+        % TODO: May not be necessary
         if firstOnly
             relEventTimes = relEventTimes(1, :);
         end
@@ -305,6 +307,8 @@ case 'psth'
     %% Plot the peri-stimulus time histogram
     handles = plot_psth('EventTimes', swdStartTimesMin, ...
                         'StimTimes', stimStartTimesMin, ...
+                        'Grouping', groupingVector, ...
+                        'GroupingLabels', labels, ...
                         'XLabel', 'Time (min)', ...
                         'RelativeTimeWindow', relTimeWindowMin, ...
                         'StimDuration', stimDurationMin, ...
@@ -313,81 +317,30 @@ case 'psth'
                         otherArguments);
 case 'chevron'
     %% Plot a Chevron plot
-    % TODO: Move this to its own function
-    if firstOnly
-        % Compute the number of events before and after
-        %   TODO: Always cell arrays?
-        nEventsBefore = cellfun(@(x) numel(x(x < 0)), relEventTimes);
-        nEventsAfter = cellfun(@(x) numel(x(x >= 0)), relEventTimes);
+    % Compute the number of events before and after, 
+    %       summing across stims for each file
+    %   Note: relEventTimes must be a cell array of numeric vectors
+    nEventsBeforeEachStim = cellfun(@(x) numel(x(x < 0)), relEventTimes);
+    nEventsAfterEachStim = cellfun(@(x) numel(x(x >= 0)), relEventTimes);
+    [nEventsBefore, nEventsAfter] = ...
+        argfun(@(x) sum(x, 2), nEventsBeforeEachStim, nEventsAfterEachStim);
 
-        % Force as column vectors
-        %   TODO: may not be necessary
-        [nEventsBefore, nEventsAfter] = ...
-            argfun(@force_column_vector, nEventsBefore, nEventsAfter);
+    % Save the data in a table
+    chevronTable = table(nEventsBefore, nEventsAfter, ...
+                        'VariableNames', {'Before', 'After'}, ...
+                        'RowNames', labels);
+    figPathBase = extract_fileparts(figName, 'pathbase');
+    sheetPath = [figPathBase, '.csv'];
+    writetable(chevronTable, sheetPath);
 
-        % Generate the data for the Chevron plot
-        chevronData = transpose([nEventsBefore, nEventsAfter]);
-
-        % Save the data in a table
-        chevronTable = table(nEventsBefore, nEventsAfter, ...
-                            'VariableNames', {'Before', 'After'});
-        figPathBase = extract_fileparts(figName, 'pathbase');
-        sheetPath = [figPathBase, '.csv'];
-        writetable(chevronTable, sheetPath);
-
-        % Plot Chevron plot
-        plot_chevron(chevronTable, 'FigTitle', figTitle, ...
-                    'ReadoutLabel', '# of events', otherArguments);
+    % Plot Chevron plot
+    plot_chevron(chevronTable, 'FigTitle', figTitle, ...
+                'ReadoutLabel', '# of events', otherArguments);
         
-        % Save figure
-        save_all_figtypes(gcf, figName, figTypes);
-    else
-        error('Not implemented yet!');
-    end
+    % Save figure
+    save_all_figtypes(gcf, figName, figTypes);
 otherwise
     error('plotType unrecognized!');
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function vectorsInOrder = extract_in_order(vectorSets)
-%% TODO: Pull out as its own function
-%% TODO: Merge with extract_columns.m?
-
-% Force as a column cell array
-vectorSets = force_column_cell(vectorSets);
-
-% Count the number of vectors in each set
-nVectorsEachSet = count_vectors(vectorSets);
-
-% Compute the maximum
-maxNVectorsEachSet = max(nVectorsEachSet);
-
-% Place all first vectors in the first cell, second vectors in the second cell,
-%   and so on
-vectorsInOrder = ...
-    arrayfun(@(x) cellfun(@(y) extract_element_by_index(y, x, true), ...
-                            vectorSets, 'UniformOutput', false), ...
-            transpose(1:maxNVectorsEachSet), 'UniformOutput', false);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function element = extract_element_by_index (vec, index, returnNaNInstead)
-%% Extract an element or return empty if the element doesn't exist
-% TODO: Merge with extract_elements
-
-if numel(vec) >= index
-    if iscell(vec)
-        element = vec{index};
-    else
-        element = vec(index);
-    end
-else
-    if returnNaNInstead
-        element = NaN;
-    else
-        element = [];
-    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -425,6 +378,13 @@ end
 
 % Count the appropriate number of subplots
 nSubplots = numel(relEventTimes);
+
+% Force as column vectors
+[nEventsBefore, nEventsAfter] = ...
+    argfun(@force_column_vector, nEventsBefore, nEventsAfter);
+
+% Generate the data for the Chevron plot
+chevronData = transpose([nEventsBefore, nEventsAfter]);
 
 %}
 

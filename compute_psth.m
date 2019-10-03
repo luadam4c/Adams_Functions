@@ -142,11 +142,13 @@ end
 stimWindow = adjust_window_to_bounds(stimWindow, relativeTimeWindow);
 
 % Put all relative event times together
+% TODO: Change this
 relEventTimesCell = vertcat(relEventTimesCellCell{:});
 relEventTimes = vertcat(relEventTimesCell{:});
 
 % Create a grouping vector with the pre-stimulus and post-stimulus times
 %   as separate groups
+% TODO: How to assign default grouping
 %   Note: must be consistent with plot_psth.m
 if isempty(grouping)
     grouping = ones(size(relEventTimes));

@@ -179,6 +179,7 @@ There are 1 MATLAB scripts in this directory:
 - [**extract_fileparts.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fileparts.m): Extracts directories, bases, extensions, distinct parts or the common directory from file paths, treating any path without an extension as a directory
 - [**extract_frame_times.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_frame_times.m): Extracts all the frame start times in a video file
 - [**extract_fullpaths.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fullpaths.m): Extracts full paths from a files structure array
+- [**extract_in_order.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_in_order.m): Reorganizes a set of vectors by the first vectors, the second vectors, ... and so on
 - [**extract_subvectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_subvectors.m): Extracts subvectors from vectors, given either endpoints, value windows or a certain align mode ('leftAdjust', 'rightAdjust')
 - [**files2contents.m**](https://github.com/blabuva/Adams_Functions/blob/master/files2contents.m): Replaces file names with file contents in a cell array of strings
 - [**filter_and_extract_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/filter_and_extract_pulse_response.m): Filters and extracts pulse response(s) from a .abf file
