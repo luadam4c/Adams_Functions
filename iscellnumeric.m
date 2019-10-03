@@ -30,6 +30,7 @@ function isCellNumeric = iscellnumeric (x)
 %       cd/find_pulse_response_endpoints.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_vector.m
+%       cd/force_matrix.m
 %       cd/force_row_vector.m
 %       cd/extract_columns.m
 %       cd/m3ha_plot_individual_traces.m

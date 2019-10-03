@@ -16,7 +16,7 @@ function vecs = force_matrix (vecs, varargin)
 %       load_examples;
 %       force_matrix(myCellCellNumeric, 'TreatCellAsArray', true);
 %       force_matrix({{1:5; 1:3}, {1:2; 1:6}}, 'TreatCellAsArray', true)
-%       TODO: force_matrix({{1:5}, {1:2; 1:6}}, 'TreatCellAsArray', true)
+%       force_matrix({{1:5}, {1:2; 1:6}}, 'TreatCellNumAsArray', true)
 %
 % Outputs:
 %       vecs        - vectors as a matrix
@@ -37,6 +37,10 @@ function vecs = force_matrix (vecs, varargin)
 %                                           as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'TreatCellNumAsArray': whether to treat a cell array
+%                                       of numeric arrays as a single array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'TreatCellStrAsArray': whether to treat a cell array
 %                                       of character arrays as a single array
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -51,6 +55,8 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/extract_subvectors.m
 %       cd/force_column_vector.m
+%       cd/iscellnumeric.m
+%       cd/isnum.m
 %
 % Used by:
 %       cd/alternate_elements.m
@@ -78,7 +84,7 @@ function vecs = force_matrix (vecs, varargin)
 % 2019-04-26 Fixed bug for 'AlignMethod' == 'none'
 % 2019-09-07 Added 'Verbose' as an optional argument
 % 2019-10-02 Now returns if already a matrix
-% TODO: 2019-10-03 Added 'TreatCellNumAsArray' as an optional argument
+% 2019-10-03 Added 'TreatCellNumAsArray' as an optional argument
 % TODO: Restrict the number of samples if provided
 % 
 
@@ -95,6 +101,8 @@ validAlignMethods = {'leftAdjust', 'rightAdjust', ...
 %% Default values for optional arguments
 alignMethodDefault  = 'leftAdjustPad';   % pad on the right by default
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
+treatCellNumAsArrayDefault = false; % treat cell arrays of numeric arrays
+                                    %   as many arrays by default
 treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
                                     %   as an array by default
 verboseDefault = true;              % print warning by default
@@ -120,6 +128,8 @@ addParameter(iP, 'AlignMethod', alignMethodDefault, ...
     @(x) any(validatestring(x, validAlignMethods)));
 addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatCellNumAsArray', treatCellNumAsArrayDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Verbose', verboseDefault, ...
@@ -129,6 +139,7 @@ addParameter(iP, 'Verbose', verboseDefault, ...
 parse(iP, vecs, varargin{:});
 alignMethod = validatestring(iP.Results.AlignMethod, validAlignMethods);
 treatCellAsArray = iP.Results.TreatCellAsArray;
+treatCellNumAsArray = iP.Results.TreatCellNumAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 verbose = iP.Results.Verbose;
 
@@ -137,9 +148,10 @@ otherArguments = iP.Unmatched;
 
 %% Do the job
 % Return if already a matrix
-if isnum(vecs) || ...
-    iscell(vecs) && treatCellAsArray && ~isvector(vecs) || ...
-    iscellstr(vecs) && treatCellStrAsArray && ~isvector(vecs)
+if isnum(vecs) || ~isvector(vecs) && ...
+        treatCellAsArray && iscell(vecs) || ...
+        treatCellNumAsArray && iscellnumeric(vecs) || ...
+        treatCellStrAsArray && iscellstr(vecs)
     return
 end
 
@@ -150,9 +162,11 @@ end
 if ~strcmpi(alignMethod, 'none')
     vecs = extract_subvectors(vecs, 'AlignMethod', alignMethod, ...
                             'TreatCellAsArray', treatCellAsArray, ...
+                            'TreatCellNumAsArray', treatCellNumAsArray, ...
                             'TreatCellStrAsArray', treatCellStrAsArray);
 else
     vecs = force_column_vector(vecs, 'TreatCellAsArray', treatCellAsArray, ...
+                    'TreatCellNumAsArray', treatCellNumAsArray, ...
                     'TreatCellStrAsArray', treatCellStrAsArray, otherArguments);
 end
 

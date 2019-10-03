@@ -20,6 +20,7 @@ function isNum = isnum (x, varargin)
 %       cd/compute_combined_data.m
 %       cd/compute_combined_trace.m
 %       cd/force_column_cell.m
+%       cd/force_matrix.m
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
 %       cd/match_format_vector_sets.m
