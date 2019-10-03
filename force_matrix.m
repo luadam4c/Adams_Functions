@@ -3,6 +3,7 @@ function vecs = force_matrix (vecs, varargin)
 % Usage: vecs = force_matrix (vecs, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       force_matrix({1:5, 1:3, 1:4})
 %       force_matrix({1:5, 1:3, 1:4}, 'AlignMethod', 'leftadjust')
@@ -10,6 +11,8 @@ function vecs = force_matrix (vecs, varargin)
 %       force_matrix({1:5, magic(3)})
 %       force_matrix({{1:3, 1:3}, {1:3, 1:3}})
 %       force_matrix({1:5, 1:3, []})
+%       force_matrix({{'a', 'b'}; {'b'; 'c'; 'd'}})
+%       force_matrix({{'a', 'b'}; {'b'; 'c'; 'd'}}, 'AlignMethod', 'leftadjust')
 %       load_examples;
 %       force_matrix(myCellCellNumeric, 'TreatCellAsArray', true);
 %       force_matrix({{1:5; 1:3}, {1:2; 1:6}}, 'TreatCellAsArray', true)
@@ -74,6 +77,8 @@ function vecs = force_matrix (vecs, varargin)
 % 2019-01-22 Added a quick return for performance
 % 2019-04-26 Fixed bug for 'AlignMethod' == 'none'
 % 2019-09-07 Added 'Verbose' as an optional argument
+% 2019-10-02 Now returns if already a matrix
+% 2019-10-02 Now pads cell arrays when treatCellAsArray is true
 % TODO: Restrict the number of samples if provided
 % 
 
@@ -131,6 +136,13 @@ verbose = iP.Results.Verbose;
 otherArguments = iP.Unmatched;
 
 %% Do the job
+% Return if already a matrix
+if isnum(vecs) || ...
+    iscell(vecs) && treatCellAsArray && ~isvector(vecs) || ...
+    iscellstr(vecs) && treatCellStrAsArray && ~isvector(vecs)
+    return
+end
+
 % Extract vectors padded on the right
 %   Note: don't do this if alignMethod is set to 'none'
 %           Otherwise, extract_subvectors.m uses create_indices.m,
@@ -144,11 +156,15 @@ else
                     'TreatCellStrAsArray', treatCellStrAsArray, otherArguments);
 end
 
-% Count the number of samples
-nUniqueSamples = numel(unique(cellfun(@numel, vecs)));
+% Count the number of samples for each vector
+nSamples = cellfun(@numel, vecs);
+
+% Find the maximum and minimum number of samples
+maxNSamples = max(nSamples);
+minNSamples = min(nSamples);
 
 % Put together as an array
-if nUniqueSamples == 1
+if maxNSamples == minNSamples
     vecs = horzcat(vecs{:});
 else
     if verbose
@@ -161,6 +177,9 @@ end
 
 %{
 OLD CODE:
+
+nUniqueNSamples = numel(unique(cellfun(@numel, vecs)));
+if nUniqueNSamples == 1
 
 %}
 

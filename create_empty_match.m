@@ -3,10 +3,13 @@ function empty = create_empty_match (array, varargin)
 % Usage: empty = create_empty_match (array, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       empty       - empty array matched to input
+%
 % Arguments:
 %       array       - input array to match
 %       varargin    - 'NRows': number of rows
@@ -27,6 +30,7 @@ function empty = create_empty_match (array, varargin)
 % 2019-01-03 Moved from extract_subvectors.m
 % 2019-08-21 Defaults duration arrays to NaN minutes
 % 2019-08-21 Defaults graphics handle arrays to gobjects
+% 2019-10-03 Now creates a cell array of empty strings to match cellstrs
 % 
 
 %% Hard-coded parameters
@@ -78,6 +82,8 @@ elseif isduration(array)
     empty = minutes(NaN(nRows, nColumns));
 elseif islogical(array)
     empty = false(nRows, nColumns);
+elseif iscellstr(array)
+    empty = arrayfun(@(x) '', ones(nRows, nColumns), 'UniformOutput', false);
 elseif iscell(array)
     empty = cell(nRows, nColumns);
 elseif isstruct(array)
