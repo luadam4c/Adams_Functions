@@ -5,10 +5,10 @@ function varargout = create_default_grouping (varargin)
 %       TODO
 %
 % Example(s):
-%       create_default_grouping('Stats', magic(3))
-%       create_default_grouping('Stats', {1:5, 2:3, 6:10})
-%       create_default_grouping('Counts', magic(3))
-%       create_default_grouping('Grouping', {'cat', 'dog', 'rabbit'})
+%       [grouping, groupingLabels] = create_default_grouping('Stats', magic(3))
+%       [grouping, groupingLabels] = create_default_grouping('Stats', {1:5, 2:3, 6:10})
+%       [grouping, groupingLabels] = create_default_grouping('Counts', magic(3))
+%       [grouping, groupingLabels] = create_default_grouping('Grouping', {'cat', 'dog', 'rabbit'})
 %
 % Outputs:
 %       grouping        - final numeric group assignment for each data entry
@@ -47,6 +47,7 @@ function varargout = create_default_grouping (varargin)
 %                   default == true
 %                   
 % Requires:
+%       cd/apply_iteratively.m
 %       cd/convert_to_rank.m
 %       cd/create_error_for_nargin.m
 %       cd/create_grouping_by_vectors.m
@@ -54,6 +55,7 @@ function varargout = create_default_grouping (varargin)
 %       cd/iscellnumeric.m
 %       cd/isnum.m
 %       cd/struct2arglist.m
+%       cd/union_over_cells.m
 %
 % Used by:
 %       cd/compute_grouped_histcounts.m
@@ -74,7 +76,7 @@ groupingLabelsDefault = '';     % set later
 statsDefault = [];              % set later
 countsDefault = [];             % set later
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
-treatCellNumAsArrayDefault = [];    % set later
+treatCellNumAsArrayDefault = false; 
 treatCellStrAsArrayDefault = true;  % treat cell arrays of character arrays
                                     %   as an array by default
 
@@ -150,11 +152,14 @@ end
 
 % Set the default grouping labels
 if nargout >= 2 && isempty(groupingLabels)
+    % Get all group values
+    allGroupValues = apply_iteratively(@union_over_cells, grouping);
+
     % Get all unique group values
-    groupValues = unique(grouping);
+    uniqueGroupValues = unique(allGroupValues);
 
     % Create grouping labels from unique values
-    groupingLabels = create_labels_from_numbers(groupValues, ...
+    groupingLabels = create_labels_from_numbers(uniqueGroupValues, ...
                                         'Prefix', groupingLabelPrefix);
 end
 

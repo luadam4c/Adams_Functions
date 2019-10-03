@@ -5,6 +5,7 @@ function result = apply_iteratively (myFunction, array, varargin)
 %       Applies a function iteratively to an array.
 %           The function must be able to take elements of the array as an argument
 %               and return outputs that can be retaken as input
+%
 % Example(s):
 %       a = apply_iteratively(@max, magic(3))
 %       b = apply_iteratively(@min, {1:10, -10:5, 5:30})
@@ -14,6 +15,8 @@ function result = apply_iteratively (myFunction, array, varargin)
 %       f = apply_iteratively(@max, {{magic(3), magic(3)}, {[], []}})
 %       g = apply_iteratively(@unique, {{magic(3), magic(3)}, {[], []}})
 %       h = apply_iteratively(@unique_custom, {{magic(3), magic(3)}, {[], []}}, 'IgnoreNaN', true)
+%       i = apply_iteratively(@union_over_cells, {{1:2, 3:5}, {1:3}})
+%
 % Outputs:
 %       result      - the resulting vector
 %                   specified as a vector
@@ -32,6 +35,7 @@ function result = apply_iteratively (myFunction, array, varargin)
 %
 % Used by:
 %       cd/compute_axis_limits.m
+%       cd/create_default_grouping.m
 %       cd/extract_subvectors.m
 %       cd/identify_channels.m
 %       cd/plot_raster.m
