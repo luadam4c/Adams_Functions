@@ -144,6 +144,11 @@ end
 [eventTimes, stimTimes] = ...
     match_format_vector_sets(eventTimes, stimTimes, 'ForceCellOutputs', true);
 
+% Decide on relative time window based on given edges of the histogram
+if isempty(relativeTimeWindow) && ~isempty(edges)
+    relativeTimeWindow = [edges(1), edges(end)];
+end
+
 %% Do the job
 % Compute relative event times
 %   Note: If eventTimes is a cell array, 
@@ -156,19 +161,14 @@ if isempty(relativeEventTimes)
                                     'RelativeTimeWindow', relativeTimeWindow);
 end
 
-% If relative time window is still empty, estimate it
+% If relative time window is still empty, estimate it from data
 if isempty(relativeTimeWindow)
-    if ~isempty(edges)
-        % Base on given edges of the histogram
-        relativeTimeWindow = [edges(1), edges(end)];
-    else
-        % Find the maximum and minimum times
-        minTime = apply_iteratively(@min, relativeEventTimes);
-        maxTime = apply_iteratively(@max, relativeEventTimes);
+    % Find the maximum and minimum times
+    minTime = apply_iteratively(@min, relativeEventTimes);
+    maxTime = apply_iteratively(@max, relativeEventTimes);
 
-        % Construct the relative time window
-        relativeTimeWindow = [minTime, maxTime];
-    end
+    % Construct the relative time window
+    relativeTimeWindow = [minTime, maxTime];
 end
 
 % Trim the stimulus window so that it does not exceed relativeTimeWindow

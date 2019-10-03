@@ -6,8 +6,10 @@ function handles = plot_relative_events (varargin)
 %
 % Example(s):
 %       plot_relative_events('Directory', '/media/shareX/2019octoberR01/Figures/Figure1c')
+%       plot_relative_events('Edges', -20:2:20);
 %       plot_relative_events('RelativeTimeWindow', [-15, 15]);
-%       plot_relative_events('RelativeTimeWindow', [-20, 20]);
+%       plot_relative_events('RelativeTimeWindow', [-15, 15], 'PlotType', 'psth');
+%       plot_relative_events('RelativeTimeWindow', [-15, 15], 'PlotType', 'chevron');
 %
 % Outputs:
 %       handles     - TODO: Description of handles
@@ -316,11 +318,14 @@ case 'psth'
                         otherArguments);
 case 'chevron'
     %% Plot a Chevron plot
+    % Transpose so that each column is a stim
+    relEventTimesTrans = transpose(relEventTimes);
+    
     % Compute the number of events before and after, 
     %       summing across stims for each file
     %   Note: relEventTimes must be a cell array of numeric vectors
-    nEventsBeforeEachStim = cellfun(@(x) numel(x(x < 0)), relEventTimes);
-    nEventsAfterEachStim = cellfun(@(x) numel(x(x >= 0)), relEventTimes);
+    nEventsBeforeEachStim = cellfun(@(x) numel(x(x < 0)), relEventTimesTrans);
+    nEventsAfterEachStim = cellfun(@(x) numel(x(x >= 0)), relEventTimesTrans);
     [nEventsBefore, nEventsAfter] = ...
         argfun(@(x) sum(x, 2), nEventsBeforeEachStim, nEventsAfterEachStim);
 
