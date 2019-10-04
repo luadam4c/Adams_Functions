@@ -3,8 +3,10 @@ function [his, lines, fig] = plot_swd_histogram (varargin)
 % Usage: [his, lines, fig] = plot_swd_histogram (varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       his         - histogram object created
 %                   specified as a histogram object handle
