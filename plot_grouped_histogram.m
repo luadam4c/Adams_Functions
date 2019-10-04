@@ -127,7 +127,6 @@ function [bars, fig, outlines] = plot_grouped_histogram (varargin)
 %       cd/islegendlocation.m
 %       cd/ispositiveintegerscalar.m
 %       cd/struct2arglist.m
-%       cd/unique_custom.m
 %
 % Used by:
 %       cd/plot_histogram.m
@@ -298,12 +297,9 @@ if ~isempty(stats) && ~isempty(counts)
 end
 
 % Decide on the grouping vector and possibly labels
-[grouping, groupingLabels] = ...
+[grouping, groupValues, groupingLabels] = ...
     create_default_grouping('Stats', stats, 'Counts', counts, ...
                         'Grouping', grouping, 'GroupingLabels', groupingLabels);
-
-% Get all unique group values
-groupValues = unique_custom(grouping, 'IgnoreNan', true);
 
 % Count the number of groups
 nGroups = numel(groupValues);

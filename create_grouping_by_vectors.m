@@ -10,6 +10,7 @@ function grouping = create_grouping_by_vectors (array, varargin)
 %       grouping2 = create_grouping_by_vectors({1:5, 2:3, 6:10})
 %       grouping3 = create_grouping_by_vectors({1:5, 1:2; 1:3, 1:4})
 %       grouping4 = create_grouping_by_vectors({{1:5}, {1:3, 1:4}})
+%       grouping5 = create_grouping_by_vectors({{[], 1:3}, {1:3, 1:4}})
 %
 % Outputs:
 %       grouping    - a grouping array with the same size as the input array

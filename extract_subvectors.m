@@ -13,6 +13,8 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       subVecs6 = extract_subvectors({{1:5, 2:6}, {1:2}}, 'TreatCellNumAsArray', true)
 %       extract_subvectors(3:3:18, 'Indices', [2.5, 5.5])
 %       extract_subvectors(3:3:18, 'Indices', {3.5; [2.5, 5.5]})
+%       extract_subvectors({1:5, 2:6}, 'Pattern', 'odd')
+%       extract_subvectors({1:5, 2:6}, 'Pattern', 'even')
 %
 % Outputs:
 %       subVecs     - subvectors extracted
@@ -21,7 +23,14 @@ function subVecs = extract_subvectors (vecs, varargin)
 % Arguments:
 %       vecs        - vectors to extract
 %                   must be an array
-%       varargin    - 'Indices': indices for the subvectors to extract 
+%       varargin    - 'Pattern': pattern for selecting indices
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'auto'  - use other options
+%                       'odd'   - select odd indices
+%                       'even'  - select even indices
+%                       'all'   - select all indices
+%                   default == 'auto'
+%                   - 'Indices': indices for the subvectors to extract 
 %                       Note: if provided, would override 'EndPoints'
 %                   must be a numeric vector with 2 elements
 %                       or a numeric array with 2 rows
@@ -80,8 +89,10 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/create_empty_match.m
 %       cd/create_error_for_nargin.m
 %       cd/create_indices.m
+%       cd/error_unrecognized.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_vector.m
+%       cd/get_var_name.m
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
 %       cd/ispositiveintegervector.m
@@ -108,6 +119,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/parse_pulse_response.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_histogram.m
+%       cd/plot_relative_events.m
 %       cd/plot_traces.m
 %       cd/plot_traces_spike2_mat.m
 %       cd/select_similar_values.m
@@ -133,14 +145,17 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2019-09-07 Now matches vectors with the number of indices vectors
 % 2019-09-07 Added 'ForceCellOutput' as an optional argument
 % 2019-10-03 Added 'TreatCellNumAsArray' as an optional argument
+% 2019-10-04 Added 'Pattern' as an optional argument
 % TODO: check if all endpoints have 2 elements
 % 
 
 %% Hard-coded parameters
+validPatterns = {'auto', 'odd', 'even', 'all'};
 validAlignMethods = {'leftAdjust', 'rightAdjust', ...
                     'leftAdjustPad', 'rightAdjustPad', 'none'};
 
 %% Default values for optional arguments
+patternDefault = 'auto';        % set later
 indicesDefault = [];            % set later
 endPointsDefault = [];          % set later
 indexStartDefault = [];         % set later
@@ -171,6 +186,8 @@ iP.FunctionName = mfilename;
 addRequired(iP, 'vecs');
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'Pattern', patternDefault, ...
+    @(x) any(validatestring(x, validPatterns)));
 addParameter(iP, 'Indices', indicesDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['Indices must be either a numeric array ', ...
@@ -205,6 +222,7 @@ addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
 
 % Read from the Input Parser
 parse(iP, vecs, varargin{:});
+pattern = validatestring(iP.Results.Pattern, validPatterns);
 indices = iP.Results.Indices;
 endPoints = iP.Results.EndPoints;
 indexStart = iP.Results.IndexStart;
@@ -219,8 +237,10 @@ forceCellOutput = iP.Results.ForceCellOutput;
 
 % If indices is provided and endPoints or windows is also provided, 
 %   display warning
-if ~isempty(indices) && (~isempty(endPoints) || ~isempty(windows))
-    fprintf('Endpoints will be ignored because indices are provided!\n');
+if ~isempty(indices) && (~isempty(endPoints) || ~isempty(windows) || ...
+                        ~strcmpi(pattern, 'auto'))
+    fprintf(['Endpoints or windows or pattern will be ignored ', ...
+                'because indices are provided!\n']);
 end
 
 % If endPoints is provided and windows is also provided, display warning
@@ -252,7 +272,7 @@ if isempty(endPoints)
         %   If not, ask for endPoints or indices to be passed
 
         % Extract the start and end indices of the vectors for fitting
-        endPoints = find_window_endpoints(windows, vecs);
+        endPoints = find_window_endpoints(windows, vecs, 'WarnFlag', false);
     else
         % Count the number of elements in each vector
         nSamples = count_samples(vecs, 'TreatCellAsArray', treatCellAsArray, ...
@@ -272,6 +292,34 @@ if isempty(indices)
                             'TreatCellAsArray', treatCellAsArray, ...
                             'TreatCellNumAsArray', treatCellNumAsArray, ...
                             'TreatCellStrAsArray', treatCellStrAsArray);
+end
+
+% Restrict indices to match pattern
+switch pattern
+    case {'auto', 'all'}
+        % Do nothing
+    case {'odd', 'even'}
+        % Record whether indices was a matrix
+        if isnumeric(indices)
+            wasNumeric = true;
+        else
+            wasNumeric = false;
+        end
+
+        % Force indices as a cell array of numeric vectors
+        indices = force_column_vector(indices, 'IgnoreNonVectors', false);
+
+        % Restrict indices by given pattern
+        indices = cellfun(@(x) restrict_indices(x, pattern), ...
+                        indices, 'UniformOutput', false);
+
+        % Force as a numeric matrix
+        if wasNumeric
+            indices = force_matrix(indices, 'AlignMethod', 'none', ...
+                                    'Verbose', false);
+        end
+    otherwise
+        error_unrecognized(get_var_name(pattern), pattern, mfilename);
 end
 
 %% Do the job
@@ -508,6 +556,19 @@ if isempty(array)
     padded = padValue * ones(padSize, 1);
 else
     padded = padarray(array, padSize, padValue, padDirection);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function indices = restrict_indices(indices, pattern)
+% Restrict a set of indices
+
+switch pattern
+    case 'odd'
+        indices = indices(mod(indices, 2) == 1);
+    case 'even'
+        indices = indices(mod(indices, 2) == 0);
+    otherwise
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

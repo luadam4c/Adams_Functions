@@ -1,16 +1,16 @@
 function varargout = create_default_grouping (varargin)
 %% Creates numeric grouping vectors and grouping labels from data, counts or original non-numeric grouping vectors
-% Usage: [grouping, groupingLabels] = create_default_grouping (varargin)
+% Usage: [grouping, uniqueGroupValues, groupingLabels] = create_default_grouping (varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       [grouping, groupingLabels] = create_default_grouping('Stats', magic(3))
-%       [grouping, groupingLabels] = create_default_grouping('Stats', {1:5, 2:3, 6:10})
-%       [grouping, groupingLabels] = create_default_grouping('Stats', {1:5, 1:2; 1:3, 1:4})
-%       [grouping, groupingLabels] = create_default_grouping('Stats', {{1:5}, {1:3, 1:4}})
-%       [grouping, groupingLabels] = create_default_grouping('Counts', magic(3))
-%       [grouping, groupingLabels] = create_default_grouping('Grouping', {'cat', 'dog', 'rabbit'})
+%       [v, u, l] = create_default_grouping('Stats', magic(3))
+%       [v, u, l] = create_default_grouping('Stats', {1:5, 2:3, 6:10})
+%       [v, u, l] = create_default_grouping('Stats', {1:5, 1:2; 1:3, 1:4})
+%       [v, u, l] = create_default_grouping('Stats', {{1:5}, {1:3, 1:4}})
+%       [v, u, l] = create_default_grouping('Counts', magic(3))
+%       [v, u, l] = create_default_grouping('Grouping', {'cat', 'dog', 'rabbit'})
 %
 % Outputs:
 %       grouping        - final numeric group assignment for each data entry
@@ -51,6 +51,7 @@ function varargout = create_default_grouping (varargin)
 % Requires:
 %       cd/apply_iteratively.m
 %       cd/convert_to_rank.m
+%       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
 %       cd/create_grouping_by_vectors.m
 %       cd/create_labels_from_numbers.m
@@ -69,7 +70,9 @@ function varargout = create_default_grouping (varargin)
 % File History:
 % 2019-01-15 Moved from plot_grouped_histogram.m
 % 2019-10-03 Now only treats cellstrs (but not cell arrays in general) as arrays
-% 
+% 2019-10-04 Now uses vector numbers as grouping labels 
+%               if grouping is a set of vectors
+% 2019-10-04 Made uniqueGroupValues the second argument
 
 %% Hard-coded parameters
 % TODO: Make these optional arguments
@@ -130,13 +133,13 @@ treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 %% Do the job
 if isempty(grouping)
     if ~isempty(stats)
-        % Create a grouping vector from the vectors
+        % Create a grouping vector from the vector numbers
         grouping = create_grouping_by_vectors(stats, ...
                                 'TreatCellAsArray', treatCellAsArray, ...
                                 'TreatCellNumAsArray', treatCellNumAsArray, ...
                                 'TreatCellStrAsArray', treatCellStrAsArray);
     elseif ~isempty(counts)
-        % Create a grouping vector from the columns
+        % Create a grouping vector from the column numbers
         grouping = create_grouping_by_vectors(counts);
     else
         grouping = NaN;
@@ -160,14 +163,25 @@ else
     % Do nothing
 end
 
+% Determine unique group values
+if nargout >= 2
+    if iscellnumeric(grouping) || isnumeric(grouping) && ~isvector(grouping)
+        % Count the number of vectors
+        nVectors = count_vectors(grouping);
+
+        % The vectors numbers should be the grouping values assigned
+        uniqueGroupValues = 1:nVectors;
+    else
+        % Get all group values
+        allGroupValues = apply_iteratively(@union_over_cells, grouping);
+
+        % Get all unique grouping values
+        uniqueGroupValues = unique(allGroupValues);
+    end
+end
+
 % Set the default grouping labels
-if nargout >= 2 && isempty(groupingLabels)
-    % Get all group values
-    allGroupValues = apply_iteratively(@union_over_cells, grouping);
-
-    % Get all unique group values
-    uniqueGroupValues = unique(allGroupValues);
-
+if nargout >= 3 && isempty(groupingLabels)
     % Create grouping labels from unique values
     groupingLabels = create_labels_from_numbers(uniqueGroupValues, ...
                                         'Prefix', groupingLabelPrefix);
@@ -176,7 +190,10 @@ end
 %% Outputs
 varargout{1} = grouping;
 if nargout >= 2
-    varargout{2} = groupingLabels;
+    varargout{2} = uniqueGroupValues;
+end
+if nargout >= 3
+    varargout{3} = groupingLabels;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

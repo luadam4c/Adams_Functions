@@ -179,7 +179,15 @@ minNSamples = min(nSamples);
 
 % Put together as an array
 if maxNSamples == minNSamples
-    vecs = horzcat(vecs{:});
+    if maxNSamples == 0
+        % Don't force as matrix
+        if verbose
+            disp(['Warning: Vector lengths are all zero, ', ...
+                    'concatenation aborted!']);
+        end
+    else
+        vecs = horzcat(vecs{:});
+    end
 else
     if verbose
         disp(['Warning: Vector lengths are not consistent, ', ...
@@ -194,6 +202,12 @@ OLD CODE:
 
 nUniqueNSamples = numel(unique(cellfun(@numel, vecs)));
 if nUniqueNSamples == 1
+
+% Count the number of vectors
+nVectors = numel(vecs);
+
+% Create an empty matrix that matches the number of vectors
+vecs = double.empty(0, nVectors);
 
 %}
 

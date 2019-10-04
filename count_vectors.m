@@ -48,6 +48,7 @@ function nVectors = count_vectors (vectors, varargin)
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sampsizepwr.m
 %       cd/compute_sweep_errors.m
+%       cd/create_default_grouping.m
 %       cd/extract_channel.m
 %       cd/extract_columns.m
 %       cd/extract_elements.m

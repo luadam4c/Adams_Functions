@@ -51,7 +51,6 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/force_column_vector.m
 %       cd/struct2arglist.m
-%       cd/unique_custom.m
 %
 % Used by:
 %       cd/compute_psth.m
@@ -112,19 +111,21 @@ otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Decide on the grouping vector
-grouping = create_default_grouping('Stats', stats, 'Grouping', grouping);
-
-% If stats and grouping are cell arrays of numeric vectors, pool them
-if iscellnumeric(stats) && iscellnumeric(grouping)
-    [stats, grouping] = argfun(@force_column_vector, stats, grouping);
-    [stats, grouping] = argfun(@(x) vertcat(x{:}), stats, grouping);
-end
-
-% Get all unique group values
-uniqueGroupValues = unique_custom(grouping, 'IgnoreNaN', true);
+[grouping, uniqueGroupValues] = ...
+    create_default_grouping('Stats', stats, 'Grouping', grouping);
 
 % Count the number of groups
 nGroups = numel(uniqueGroupValues);
+
+% Force non-vectors as cell arrays of numeric vectors
+[stats, grouping] = ...
+    argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', false), ...
+            stats, grouping);
+
+% If stats and grouping are cell arrays of numeric vectors, pool them
+if iscellnumeric(stats) && iscellnumeric(grouping)
+    [stats, grouping] = argfun(@(x) vertcat(x{:}), stats, grouping);
+end
 
 %% Break up stats into a cell array of vectors
 statsCell = arrayfun(@(x) stats(grouping == uniqueGroupValues(x)), ...
@@ -180,6 +181,24 @@ end
 
 %{
 OLD CODE:
+
+% Get all unique group values
+uniqueGroupValues = unique_custom(grouping, 'IgnoreNaN', true);
+
+% Count the number of groups
+nGroups = numel(uniqueGroupValues);
+
+% Find all unique grouping values
+if iscellnumeric(grouping)
+    % Get all unique grouping values from each vector
+    uniqueGroupValues = cellfun(@(x) unique_custom(x, 'IgnoreNaN', true), ...
+                                grouping, 'UniformOutput', false);
+
+    % Replace any empty values with a new value
+else
+    % Get unique grouping values
+    uniqueGroupValues = unique_custom(x, 'IgnoreNaN', true);
+end
 
 %}
 

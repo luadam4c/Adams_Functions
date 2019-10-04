@@ -218,7 +218,7 @@ if isdatetime(startTimes)
     grouping = arrayfun(@convert_to_datestr, dates, 'UniformOutput', false);
 
     % Simplify the grouping and generate grouping labels
-    [grouping, groupingLabels] = create_default_grouping('Grouping', grouping); 
+    [grouping, ~, groupingLabels] = create_default_grouping('Grouping', grouping); 
 else
     % Use the column number
     grouping = create_grouping_by_vectors(startTimes);

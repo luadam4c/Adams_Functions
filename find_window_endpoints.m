@@ -11,8 +11,9 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %       endPoints5 = find_window_endpoints([1.5, 3.5], {1:5, 0:6})
 %       endPoints6 = find_window_endpoints([0.5, 1.5; 2.5, 3.5], 0:6)
 %       endPoints7 = find_window_endpoints({[0.5, 1.5], [2.5; 3.5]}, 0:6)
-%       endPoints8 = find_window_endpoints({[], [2.5; 3.5]}, 0:6)
-%       endPoints9 = find_window_endpoints([0.5, 1.5; 2.5, 3.5], [(0:6)', (1:7)'])
+%       endPoints8 = find_window_endpoints({[0.5, 1.5], [2.5; 3.5]}, 0:2:4)
+%       endPoints9 = find_window_endpoints({[], [2.5; 3.5]}, 0:6)
+%       endPoints10 = find_window_endpoints([0.5, 1.5; 2.5, 3.5], [(0:6)', (1:7)'])
 %
 % Outputs:
 %       endPoints   - index(ices) of window endpoints
@@ -81,7 +82,7 @@ validBoundaryModes = {'inclusive', 'leftadjust', 'rightadjust', 'restrictive'};
 
 %% Default values for optional arguments
 boundaryModeDefault = 'restrictive';
-forceMatrixOutputDefault = logical([]); % set later
+forceMatrixOutputDefault = logical.empty; % set later
 warnFlagDefault = true;         % warn if windows out of bounds by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

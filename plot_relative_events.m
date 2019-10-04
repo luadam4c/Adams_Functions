@@ -10,7 +10,8 @@ function handles = plot_relative_events (varargin)
 %       plot_relative_events('PlotType', 'psth', 'Edges', -20:2:20);
 %       plot_relative_events('RelativeTimeWindow', [-20, 20], 'PlotType', 'chevron');
 %       plot_relative_events('RelativeTimeWindow', [-15, 15]);
-%       plot_relative_events('RelativeTimeWindow', [-15, 15], 'PlotType', 'psth');
+%       plot_relative_events('PlotType', 'psth', 'Edges', -15:3:15, 'StimIndices', 'odd');
+%       plot_relative_events('PlotType', 'psth', 'Edges', -15:3:15, 'StimIndices', 'even');
 %       plot_relative_events('RelativeTimeWindow', [-15, 15], 'PlotType', 'chevron');
 %
 % Outputs:
@@ -24,10 +25,12 @@ function handles = plot_relative_events (varargin)
 %                       'psth'      - peri-stimulus time histogram
 %                       'chevron'   - chevron plot
 %                   default == 'raster'
-%                   - 'FirstOnly': whether to take only the first window 
-%                                   from each file
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   - 'StimIndices': stimulation indices to restrict to
+%                   must be a positive integer array or string recognized by
+%                        the 'Pattern' option of extract_subvectors.m
+%                           'odd'   - odd indices
+%                           'even'  - even indices
+%                   default == no restrictions
 %                   - 'EventTableSuffix': Suffix for the event table
 %                   must be a character vector or a string scalar 
 %                   default == '_SWDs'
@@ -66,7 +69,7 @@ function handles = plot_relative_events (varargin)
 %       cd/compute_relative_event_times.m
 %       cd/create_label_from_sequence.m
 %       cd/create_subplots.m
-%       cd/extract_elements.m
+%       cd/extract_subvectors.m
 %       cd/extract_fileparts.m
 %       cd/load_matching_sheets.m
 %       cd/plot_chevron.m
@@ -83,6 +86,7 @@ function handles = plot_relative_events (varargin)
 %               as optional arguments
 % 2019-09-25 Finished the raster plot code
 % 2019-09-30 Now uses load_matching_sheets.m
+% 2019-10-04 Added 'StimIndices' as an optional arguments
 % 
 
 %% Hard-coded parameters
@@ -97,7 +101,7 @@ labels = {};
 
 %% Default values for optional arguments
 plotTypeDefault = 'raster';
-firstOnlyDefault = false;       % take all windows by default
+stimIndicesDefault = [];        % take all stims by default
 eventTableSuffixDefault = '_SWDs';
 stimTableSuffixDefault = '_pulses';
 directoryDefault = '';          % set later
@@ -118,8 +122,8 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'PlotType', plotTypeDefault, ...
     @(x) any(validatestring(x, validPlotTypes)));
-addParameter(iP, 'FirstOnly', firstOnlyDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'StimIndices', stimIndicesDefault, ...
+    @(x) validateattributes(x, {'numeric', 'char'}, {'2d'}));
 addParameter(iP, 'EventTableSuffix', eventTableSuffixDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'StimTableSuffix', stimTableSuffixDefault, ...
@@ -140,7 +144,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 % Read from the Input Parser
 parse(iP, varargin{:});
 plotType = validatestring(iP.Results.PlotType, validPlotTypes);
-firstOnly = iP.Results.FirstOnly;
+stimIndices = iP.Results.StimIndices;
 eventTableSuffix = iP.Results.EventTableSuffix;
 stimTableSuffix = iP.Results.StimTableSuffix;
 directory = iP.Results.Directory;
@@ -162,11 +166,17 @@ end
 
 % Set default figure suffix
 if isempty(figSuffix)
-    if firstOnly
-        figSuffix = strcat(plotType, '_first_windows');
+    if isempty(stimIndices)
+        figSuffixAddition = 'all_stims';
+    elseif isnumeric(stimIndices)
+        figSuffixAddition = ['stim', create_label_from_sequence(stimIndices)];
+    elseif ischar(stimIndices)
+        figSuffixAddition = ['all_', stimIndices, '_stims'];
     else
-        figSuffix = strcat(plotType, '_all_windows');
+        error('stimNumber unrecognized!');
     end
+
+    figSuffix = [plotType, '_', figSuffixAddition];
 end
 
 % Set default figure name
@@ -191,10 +201,13 @@ end
 
 % Set default figure title
 if isempty(figTitle)
-    if firstOnly
-        figTitle = 'SWD count around first stimulus starts';
-    else
-        figTitle = 'SWD count around all stimulus starts';
+    if isempty(stimIndices)
+        figTitle = 'SWD count around all stims';
+    elseif isnumeric(stimIndices)
+        figTitle = ['SWD count around stims ', ...
+                    create_label_from_sequence(stimIndices)];
+    elseif ischar(stimIndices)
+        figTitle = ['SWD count around ', stimIndices, ' stims'];
     end
 end
 
@@ -214,16 +227,19 @@ end
             stimTables, swdTables);
 
 % Extract stim durations in seconds
-stimDurationsSec = cellfun(@(y) y.duration, stimTables, ...
-                            'UniformOutput', false);
+stimDurationsSec = cellfun(@(y) y.duration, stimTables, 'UniformOutput', false);
 
-% Restrict to the first events only if requested
-if firstOnly
-    % Note: TODO: Use extract_elements.m with 'UniformOutput', false
-    stimStartTimesSec = cellfun(@(x) x(1), stimStartTimesSec, ...
-                                'UniformOutput', false);
-    stimDurationsSec = cellfun(@(x) x(1), stimDurationsSec, ...
-                                'UniformOutput', false);
+% Restrict to certain events if requested
+if isempty(stimIndices)
+    % Do nothing
+elseif isnumeric(stimIndices)
+    [stimStartTimesSec, stimDurationsSec] = ...
+        argfun(@(x) extract_subvectors(x, 'Indices', stimIndices), ...
+                stimStartTimesSec, stimDurationsSec);
+elseif ischar(stimIndices)
+    [stimStartTimesSec, stimDurationsSec] = ...
+        argfun(@(x) extract_subvectors(x, 'Pattern', stimIndices), ...
+                stimStartTimesSec, stimDurationsSec);
 end
 
 % Convert to minutes
@@ -265,11 +281,6 @@ switch plotType
         relEventTimes = force_matrix(relEventTimesCellCell, ...
                                     'TreatCellNumAsArray', true);
 
-        % Extract the relevant event times
-        % TODO: May not be necessary
-        if firstOnly
-            relEventTimes = relEventTimes(1, :);
-        end
     case 'psth'
         % Relative event times computed in plot_psth.m
     otherwise
@@ -383,7 +394,7 @@ OLD CODE:
 relEventTimes = extract_in_order(relEventTimesCellCell);
 
 % Extract the relevant event times
-if firstOnly
+if stimIndices
     % Restrict to just the first event times
     %   Note: this should return a cell array of numeric vectors
     relEventTimes = cellfun(@(x) extract_element_by_index(x, 1, ...
@@ -393,7 +404,7 @@ else
     relEventTimes = extract_in_order(relEventTimesCellCell);
 end
 
-if firstOnly
+if stimIndices
     % Create a figure title
     figTitle = ['Events around stim #', num2str(1)];
 
@@ -420,6 +431,17 @@ chevronData = transpose([nEventsBefore, nEventsAfter]);
 
 if isempty(labels)
     labels = replace(distinctParts, '_', '\_');
+end
+
+stimStartTimesSec = cellfun(@(x) x(stimIndices), stimStartTimesSec, ...
+                            'UniformOutput', false);
+stimDurationsSec = cellfun(@(x) x(stimIndices), stimDurationsSec, ...
+                            'UniformOutput', false);
+
+% Extract the relevant event times
+% TODO: May not be necessary
+if stimIndices
+    relEventTimes = relEventTimes(1, :);
 end
 
 %}

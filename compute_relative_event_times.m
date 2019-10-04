@@ -196,8 +196,18 @@ eventTimesEachWindow = extract_subvectors(eventTimes, 'Windows', windows, ...
                                                     'ForceCellOutput', true);
 
 % Compute the relative event times for each time window
-relEventTimes = cellfun(@(x, y) x - y, eventTimesEachWindow, ...
+relEventTimes = cellfun(@(x, y) subtract(x, y), eventTimesEachWindow, ...
                         num2cell(stimTimes), 'UniformOutput', false);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function difference = subtract(x, y)
+
+if isempty(x) || isempty(y)
+    difference = x;
+else
+    difference = x - y;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

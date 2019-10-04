@@ -3,8 +3,10 @@ function error_unrecognized (stringVar, string, funcName)
 % Usage: error_unrecognized (stringVar, string, funcName)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Arguments:    
 %       stringVar   - variable name for the unrecognized string
 %                   must be a string scalar or a character vector

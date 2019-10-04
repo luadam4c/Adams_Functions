@@ -44,13 +44,11 @@ function [y, ia, ic] = unique_custom (x, varargin)
 % Used by:
 %       cd/adjust_edges.m
 %       cd/compute_combined_trace.m
-%       cd/compute_grouped_histcounts.m
 %       cd/convert_to_rank.m
 %       cd/create_default_grouping.m
 %       cd/extract_subvectors.m
 %       cd/plot_measures.m
 %       cd/plot_tuning_curve.m
-%       cd/plot_grouped_histogram.m
 %       cd/unique_groups.m
 
 % File History:
