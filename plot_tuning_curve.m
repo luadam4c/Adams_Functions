@@ -3,6 +3,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % Usage: handles = plot_tuning_curve (pValues, readout, varargin)
 % Explanation:
 %       TODO
+% 
 % Examples:
 %       pValue = transpose(1:10); %(aka x-values)
 %       readout1 = randi(numel(pValue), 10, 1); %(aka y-values)
@@ -116,7 +117,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   default == 'suppress' if nTraces == 1 
 %                               'northeast' if nTraces is 2~9
 %                               'eastoutside' if nTraces is 10+
-%                   - 'PlotCurveOnly': whether to plot the curve only
+%                   - 'PlotOnly': whether to plot the curve only
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'PlotPhaseBoundaries': whether to plot phase boundaries
@@ -283,7 +284,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-08-22 Made averageWindows an optional argument
 % 2019-08-27 Fixed usage of plot flags
 % 2019-08-27 Added 'PlotAverageWindows'
-% 2019-10-02 Added 'PlotCurveOnly'
+% 2019-10-02 Added 'PlotOnly' as an optional argument
 % 2019-10-02 Now plots a star if significant
 
 %% Hard-coded constants
@@ -297,6 +298,7 @@ validRBoundaryTypes = {'horizontalLines', 'verticalBars', 'horizontalShades'};
 % TODO: Make optional arguments
 sigLevel = 0.05;                    % significance level for tests
 confIntFadePercentage = 0.25;       % fade percentage for confidence interval colors
+confIntLineStyle = 'none';
 selectedLineWidth = 3;              % line width for selected values markers
 selectedMarker = 'o';
 outlierMethod = 'fiveStds';
@@ -313,6 +315,7 @@ avgWindowColorMap = [];
 avgWindowLineStyle = '-';
 avgWindowLineWidth = 3;
 testXLocRel = 0.25;
+starXLocRel = 0.5;
 tTestPString = 'p_t';
 tTestYLocText = 0.2;
 tTestYLocStar = 0.9;
@@ -345,7 +348,7 @@ colorMapDefault = [];               % set later
 confIntColorMapDefault = [];        % set later
 selectedColorMapDefault = [];       % set later
 legendLocationDefault = 'auto';     % set later
-plotCurveOnlyDefault = false;       % set later
+plotOnlyDefault = false;            % setup default labels by default
 plotPhaseBoundariesDefault = [];    % set later
 plotPhaseAveragesDefault = [];      % set later
 plotIndSelectedDefault = [];        % set later
@@ -444,7 +447,7 @@ addParameter(iP, 'SelectedColorMap', selectedColorMapDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d', 'numel', 3}));
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
-addParameter(iP, 'PlotCurveOnly', plotCurveOnlyDefault, ...
+addParameter(iP, 'PlotOnly', plotOnlyDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotPhaseBoundaries', plotPhaseBoundariesDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -519,7 +522,7 @@ confIntColorMap = iP.Results.ConfIntColorMap;
 selectedColorMap = iP.Results.SelectedColorMap;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
-plotCurveOnly = iP.Results.PlotCurveOnly;
+plotOnly = iP.Results.PlotOnly;
 plotPhaseBoundaries = iP.Results.PlotPhaseBoundaries;
 plotPhaseAverages = iP.Results.PlotPhaseAverages;
 plotIndSelected = iP.Results.PlotIndSelected;
@@ -560,7 +563,7 @@ if ~isempty(pTicks) && ~isempty(pTickLabels) && ...
 end
 
 % If plotting curve only, change some defaults
-if plotCurveOnly
+if plotOnly
     pLabel = 'suppress';
     readoutLabel = 'suppress';
     figTitle = 'suppress';
@@ -934,7 +937,8 @@ for iPlot = 1:nColumnsToPlot
             % Fill the area between lowerCIThis and upperCIThis 
             %   with confIntColorMap
             confInts(iPlot, 1) = fill(confIntXValues, confIntYValues, ...
-                                confIntColorMap(iPlot, :), 'LineStyle', 'none');
+                                        confIntColorMap(iPlot, :), ...
+                                        'LineStyle', confIntLineStyle);
 
             % Plot tuning curve again
             curves(iPlot, 1) = plot_one_line(pIsLog, pValues, readoutThis, ...
@@ -957,14 +961,11 @@ for iPlot = 1:nColumnsToPlot
 
     % Set display name
     if colorByPhase
-        for iPhase = 1:nPhasesThis
-            set(curves(iPlot, iPhase), 'DisplayName', ...
-                replace(phaseLabels{iPhase}, '_', '\_'));
-        end
+        arrayfun(@(x) set(curves(iPlot, x), 'DisplayName', phaseLabels{x}), ...
+                1:nPhasesThis);
     else        
         if ~strcmpi(columnLabels, 'suppress')
-            set(curves(iPlot, 1), 'DisplayName', ...
-                replace(columnLabels{col}, '_', '\_'));
+            set(curves(iPlot, 1), 'DisplayName', columnLabels{col});
         end
     end
 
@@ -1145,14 +1146,14 @@ end
 if ~isempty(tTestPValues)
     plot_test_result(tTestPValues, tTestPString, ...
                     tTestYLocText, tTestYLocStar, ...
-                    testXLocRel, pValues, sigLevel);
+                    testXLocRel, starXLocRel, pValues, sigLevel);
 end
 
 % Plot rank test p values if any
 if ~isempty(rankTestPValues)
     plot_test_result(rankTestPValues, rankTestPString, ...
                     rankTestYLocText, rankTestYLocStar, ...
-                    testXLocRel, pValues, sigLevel);
+                    testXLocRel, starXLocRel, pValues, sigLevel);
 end
 
 % Hold off
@@ -1162,10 +1163,12 @@ hold_off(wasHold);
 % Generate a legend for the curves only if there is more than one trace
 if ~strcmpi(legendLocation, 'suppress') && nColumnsToPlot > 1
     if colorByPhase
-        legend(curves(1, :), 'location', legendLocation);
+        lgd = legend(curves(1, :), 'location', legendLocation);
     else
-        legend(curves, 'location', legendLocation);
+        lgd = legend(curves, 'location', legendLocation);
     end
+
+    set(lgd, 'AutoUpdate', 'off', 'Interpreter', 'none');
 end
 
 % Save figure if figName provided
@@ -1237,13 +1240,14 @@ selected = plot(xLocsSelected, yLocsSelected, ...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_test_result (tTestPValues, pString, yLocTextRel, yLocStarRel, ...
-                            xLocRel, pValues, sigLevel)
+                            xLocTextRel, xLocStarRel, pValues, sigLevel)
 %% Plots p values and star if significant
 
 % TODO: Make function plot_text.m
 
 % Decide on the x locations
-xLocs = pValues(1:end-1) + (pValues(2) - pValues(1)) * xLocRel;
+xLocsText = pValues(1:end-1) + (pValues(2) - pValues(1)) * xLocTextRel;
+xLocsStar = pValues(1:end-1) + (pValues(2) - pValues(1)) * xLocStarRel;
 
 % Get current y axis limits
 yLimitsNow = get(gca, 'YLim');
@@ -1258,7 +1262,8 @@ yLocStar = yLimitsNow(1) + (yLimitsNow(2) - yLimitsNow(1)) * yLocStarRel;
 for iValue =  1:numel(tTestPValues)
     % Get the current values
     tTestPValueThis = tTestPValues(iValue);
-    xLocThis = xLocs(iValue);
+    xLocTextThis = xLocsText(iValue);
+    xLocStarThis = xLocsStar(iValue);
 
     % Create a p value string to 2 significant digits
     pValueString = [pString, ' = ', num2str(tTestPValueThis, 2)];
@@ -1271,11 +1276,11 @@ for iValue =  1:numel(tTestPValues)
     end
 
     % Plot text
-    text(xLocThis, yLocText, pValueString, 'Color', pColor);
+    text(xLocTextThis, yLocText, pValueString, 'Color', pColor);
 
     % Plot star if significant
     if tTestPValueThis < sigLevel
-        plot(xLocThis, yLocStar, '*', 'Color', pColor);
+        plot(xLocStarThis, yLocStar, '*', 'Color', pColor);
     end
 end
 
@@ -1423,6 +1428,12 @@ end
 for iPhase = 1:nPhasesThis
     set(curves(iPlot, iPhase), 'Color', colorMap(iPhase, :));
 end
+
+set(curves(iPlot, iPhase), 'DisplayName', ...
+    replace(phaseLabels{iPhase}, '_', '\_'));
+
+set(curves(iPlot, 1), 'DisplayName', ...
+    replace(columnLabels{col}, '_', '\_'));
 
 %}
 

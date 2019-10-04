@@ -43,6 +43,7 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 %                   - Any other parameter-value pair for histcounts()
 %
 % Requires:
+%       cd/adjust_edges.m
 %       cd/argfun.m
 %       cd/compute_bins.m
 %       cd/compute_centers_from_edges.m
@@ -50,7 +51,7 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/force_column_vector.m
 %       cd/struct2arglist.m
-%       cd/adjust_edges.m
+%       cd/unique_custom.m
 %
 % Used by:
 %       cd/compute_psth.m
@@ -120,7 +121,7 @@ if iscellnumeric(stats) && iscellnumeric(grouping)
 end
 
 % Get all unique group values
-uniqueGroupValues = unique(grouping);
+uniqueGroupValues = unique_custom(grouping, 'IgnoreNaN', true);
 
 % Count the number of groups
 nGroups = numel(uniqueGroupValues);

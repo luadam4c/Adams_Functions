@@ -42,12 +42,16 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/adjust_edges.m
 %       cd/compute_combined_trace.m
+%       cd/compute_grouped_histcounts.m
+%       cd/convert_to_rank.m
+%       cd/create_default_grouping.m
 %       cd/extract_subvectors.m
 %       cd/plot_measures.m
 %       cd/plot_tuning_curve.m
+%       cd/plot_grouped_histogram.m
 %       cd/unique_groups.m
-%       cd/adjust_edges.m
 
 % File History:
 % 2019-04-01 BT - Adapted from https://www.mathworks.com/matlabcentral/
@@ -103,20 +107,22 @@ otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Deal with NaNs
-if ignoreNan
-    % Remove NaNs from the data
-    x = x(~isnan(x));
-elseif treatNanAsEqual
-    % Decide if there is an NaN
-    if any(isnan(x))
+if isnum(x)
+    if ignoreNan
         % Remove NaNs from the data
         x = x(~isnan(x));
+    elseif treatNanAsEqual
+        % Decide if there is an NaN
+        if any(isnan(x))
+            % Remove NaNs from the data
+            x = x(~isnan(x));
 
-        % Place one at the end
-        if iscolumn(x)
-            x = [x; NaN];
-        else
-            x = [x, NaN];
+            % Place one at the end
+            if iscolumn(x)
+                x = [x; NaN];
+            else
+                x = [x, NaN];
+            end
         end
     end
 end

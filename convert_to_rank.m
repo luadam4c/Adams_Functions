@@ -29,12 +29,13 @@ function ranks = convert_to_rank (array, varargin)
 %                   - 'IgnoreCase': whether to ignore differences in letter case
 %                   must be logical 1 (true) or 0 (false)
 %                   default == false
-%                   - Any other parameter-value pair for the unique() function
+%                   - Any other parameter-value pair for the unique_custom() function
 %
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/find_in_list.m
 %       cd/struct2arglist.m
+%       cd/unique_custom.m
 %
 % Used by:
 %       cd/create_default_grouping.m
@@ -42,6 +43,8 @@ function ranks = convert_to_rank (array, varargin)
 % File History:
 % 2019-01-09 Created by Adam Lu
 % 2019-01-15 Now uses find_in_list.m instead
+% 2019-10-03 Now initialized rank array with NaNs
+% 2019-10-03 Now uses unique_custom.m
 % 
 
 %% Hard-coded parameters
@@ -81,13 +84,13 @@ rankedElements = iP.Results.RankedElements;
 matchMode = validatestring(iP.Results.MatchMode, validMatchModes);
 ignoreCase = iP.Results.IgnoreCase;
 
-% Keep unmatched arguments for the unique() function
+% Keep unmatched arguments for the unique_custom() function
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % Set default ranks of elements
 if isempty(rankedElements)
-    rankedElements = unique(array, otherArguments{:});
+    rankedElements = unique_custom(array, otherArguments{:});
 end
 
 %% Do the job
@@ -111,7 +114,7 @@ parfor iRank = 1:nRanks
 end
 
 % Initialize a ranks array with the same size as array
-ranks = zeros(size(array));
+ranks = nan(size(array));
 
 % Store the ranks of these elements
 for iRank = 1:nRanks

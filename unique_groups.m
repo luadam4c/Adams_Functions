@@ -35,7 +35,7 @@ function varargout = unique_groups (grouping, varargin)
 %                               to become separate groups
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'IgnoreNaN': whether to include NaN as distinct elements
+%                   - 'IgnoreNaN': whether to ignore NaNs
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'TreatNanAsEqual': whether to treat all NaN values

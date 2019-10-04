@@ -58,11 +58,13 @@ function varargout = create_default_grouping (varargin)
 %       cd/isnum.m
 %       cd/struct2arglist.m
 %       cd/union_over_cells.m
+%       cd/unique_custom.m
 %
 % Used by:
 %       cd/compute_grouped_histcounts.m
 %       cd/compute_psth.m
 %       cd/plot_grouped_histogram.m
+%       cd/plot_swd_histogram.m
 
 % File History:
 % 2019-01-15 Moved from plot_grouped_histogram.m
@@ -72,6 +74,7 @@ function varargout = create_default_grouping (varargin)
 %% Hard-coded parameters
 % TODO: Make these optional arguments
 groupingLabelPrefix = '';
+ignoreEmpty = true;
 
 %% Default values for optional arguments
 groupingDefault = [];           % set later
@@ -142,7 +145,11 @@ elseif iscellstr(grouping) || isstring(grouping)
     % Use these for grouping labels
     if isempty(groupingLabels)
         % Make unique strings the grouping labels
-        groupingLabels = unique(grouping);
+        groupingLabels = unique_custom(grouping);
+        
+        if ignoreEmpty
+            groupingLabels(isemptycell(groupingLabels)) = [];
+        end
     end
 
     % Create a numeric grouping vector based on the order in the grouping labels

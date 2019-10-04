@@ -52,6 +52,9 @@ function [bars, fig, outlines] = plot_grouped_histogram (varargin)
 %                       'stacked'       - same as 'stacked' bar graph
 %                       'overlapped'    - overlapped histograms
 %                   default == 'side-by-side'
+%                   - 'PlotOnly': whether to plot the curve only
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'XLimits': limits of x axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
@@ -124,6 +127,7 @@ function [bars, fig, outlines] = plot_grouped_histogram (varargin)
 %       cd/islegendlocation.m
 %       cd/ispositiveintegerscalar.m
 %       cd/struct2arglist.m
+%       cd/unique_custom.m
 %
 % Used by:
 %       cd/plot_histogram.m
@@ -148,6 +152,7 @@ function [bars, fig, outlines] = plot_grouped_histogram (varargin)
 % 2019-01-15 Moved code to compute_grouped_histcounts.m
 % 2019-03-14 Now always returns a valid figure handle
 % 2019-10-03 Added 'ColorMap' as an optional parameter
+% 2019-10-03 Added 'PlotOnly' as an optional argument
 
 %% Hard-coded parameters
 validStyles = {'side-by-side', 'stacked', 'overlapped'};
@@ -161,6 +166,7 @@ groupingDefault = [];           % set later
 countsDefault = [];             % set later
 edgesDefault = [];              % set later
 styleDefault = 'side-by-side';  % plot bars side-by-side by default
+plotOnlyDefault = false;        % setup default labels by default
 xLimitsDefault = 'suppress';    % set later
 yLimitsDefault = 'suppress';    % set later
 xUnitsDefault = 'unit';         % the default x-axis units
@@ -206,6 +212,8 @@ addParameter(iP, 'Edges', edgesDefault, ...
                                 'datetime', 'duration'}, {'2d'}));
 addParameter(iP, 'Style', styleDefault, ...
     @(x) any(validatestring(x, validStyles)));
+addParameter(iP, 'PlotOnly', plotOnlyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isvector(x) && length(x) == 2);
@@ -243,6 +251,7 @@ grouping = iP.Results.grouping;
 counts = iP.Results.Counts;
 edges = iP.Results.Edges;
 style = validatestring(iP.Results.Style, validStyles);
+plotOnly = iP.Results.PlotOnly;
 xLimits = iP.Results.XLimits;
 yLimits = iP.Results.YLimits;
 xUnits = iP.Results.XUnits;
@@ -263,6 +272,16 @@ figName = iP.Results.FigName;
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
+% Change default if plotting histogram only
+if plotOnly
+    xLimits = 'suppress';
+    yLimits = 'suppress';
+    xLabel = 'suppress';
+    yLabel = 'suppress';
+    figTitle = 'suppress';
+    legendLocation = 'suppress';
+end
+
 % Decide on the figure to plot on
 fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber);
 
@@ -284,7 +303,7 @@ end
                         'Grouping', grouping, 'GroupingLabels', groupingLabels);
 
 % Get all unique group values
-groupValues = unique(grouping);
+groupValues = unique_custom(grouping, 'IgnoreNan', true);
 
 % Count the number of groups
 nGroups = numel(groupValues);
@@ -379,7 +398,8 @@ end
 
 % Generate a legend if there is more than one group
 if ~strcmpi(legendLocation, 'suppress')
-    legend('location', legendLocation, 'AutoUpdate', 'off');
+    lgd = legend('location', legendLocation);
+    set(lgd, 'AutoUpdate', 'off', 'Interpreter', 'none');
 end
 
 % Create staircase outlines if style is 'overlapped'
@@ -411,6 +431,9 @@ end
 if ~strcmpi(figTitle, 'suppress')
     title(figTitle);
 end
+
+% Remove box by default
+set(gca, 'box', 'off');
 
 % Hold off if it was originally so
 if ~wasHold

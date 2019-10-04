@@ -99,7 +99,7 @@ addParameter(iP, 'RelativeTimeWindow', relativeTimeWindowDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 
 % Read from the Input Parser
-parse(iP, eventTimes, stimTimes,  varargin{:});
+parse(iP, eventTimes, stimTimes, varargin{:});
 relativeTimeWindow = iP.Results.RelativeTimeWindow;
 
 %% Preparation

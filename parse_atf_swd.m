@@ -216,6 +216,11 @@ if strcmpi(traceFileExt, '.atf')
     % Note: The scored atf file itself also has the info, 
     %   but at a weird location
 
+    % If trace file doesn't exist, return error
+    if ~isfile(tracePath{1})
+        error('%s does not exist!', tracePath{1});
+    end
+    
     % Read the sweep start time line
     headerLine = read_lines_from_file(tracePath{1}, 'MaxNum', 1, ...
                                 'Keyword', 'SweepStartTimesMS');

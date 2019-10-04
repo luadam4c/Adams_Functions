@@ -44,10 +44,17 @@ function [his, lines, fig] = plot_swd_histogram (varargin)
 %                   could be anything recognised by the readtable() function 
 %                   (see issheettype.m under Adams_Functions)
 %                   default == 'csv'
+%                   - 'FigTypes': figure type(s) for saving; 
+%                               e.g., 'png', 'fig', or {'png', 'fig'}, etc.
+%                   could be anything recognised by 
+%                       the built-in saveas() function
+%                   (see isfigtype.m under Adams_Functions)
+%                   default == {'png', 'epsc2'}
 %                   - Any other parameter-value pair for the histogram() function
 %
 % Requires:
 %       cd/apply_iteratively.m
+%       cd/create_default_grouping.m
 %       cd/create_grouping_by_vectors.m
 %       cd/extract_common_directory.m
 %       cd/extract_common_suffix.m
@@ -56,6 +63,7 @@ function [his, lines, fig] = plot_swd_histogram (varargin)
 %       cd/load_swd_sheets.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_vertical_line.m
+%       cd/set_figure_properties.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -63,17 +71,19 @@ function [his, lines, fig] = plot_swd_histogram (varargin)
 % File History:
 % 2018-12-27 Created by Adam Lu
 % 2019-09-10 Updated suffix default
-% TODO: 'UseAbsoluteTime' as an optional argument
+% 2019-10-03 Added 'FigTypes' as an optional argument
 % 
 
 %% Hard-coded parameters
+swdStr = '_SWDs';
+
 % TODO: Make these optional arguments
 recordingStartHrs = 16;         % time that recording started each day (hours)
 infusionStartHrs = 20;          % time that infusion started each day (hours)
 
 %% Default values for optional arguments
 verboseDefault = true;
-absoluteTimeDefault = true;
+absoluteTimeDefault = true;     % use absolute time by default
 individuallyDefault = false;    % plot all tables together by default
 swdTablesDefault = '';          % set later
 swdSheetPathsDefault = '';      % set later
@@ -81,6 +91,7 @@ swdFolderDefault = '';          % set later
 outFolderDefault = '';          % set later
 suffixDefault = '';             % set in all_swd_sheets.m
 sheetTypeDefault = 'csv';       % default spreadsheet type
+figTypesDefault = {'png', 'epsc2'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -112,6 +123,8 @@ addParameter(iP, 'Suffix', suffixDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SheetType', sheetTypeDefault, ...
     @(x) all(issheettype(x, 'ValidateMode', true)));
+addParameter(iP, 'FigTypes', figTypesDefault, ...
+    @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -124,6 +137,7 @@ swdFolder = iP.Results.SwdFolder;
 outFolder = iP.Results.OutFolder;
 suffix = iP.Results.Suffix;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Keep unmatched arguments for the histogram() function
 otherArguments = iP.Unmatched;
@@ -169,14 +183,14 @@ if iscell(swdTables) && individually
         cellfun(@(x, y) plot_swd_histogram_helper(x, y, ...
                                 outFolder, absoluteTime, ...
                                 recordingStartHrs, infusionStartHrs, ...
-                                otherArguments), ...
+                                figTypes, otherArguments), ...
                 swdTables, swdSheetPaths);
 else
     [his, lines, fig] = ...
         plot_swd_histogram_helper(swdTables, swdSheetPaths, ...
                                 outFolder, absoluteTime, ...
                                 recordingStartHrs, infusionStartHrs, ...
-                                otherArguments);
+                                figTypes, otherArguments);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -185,11 +199,8 @@ function [his, lines, fig] = ...
                 plot_swd_histogram_helper(swdTables, swdSheetPaths, ...
                                         outFolder, absoluteTime, ...
                                         recordingStartHrs, infusionStartHrs, ...
-                                        otherArguments)
+                                        figTypes, otherArguments)
 %% Plots a histogram from an SWD table
-
-%% TODO: Make optional argument
-figTypes = 'png';
 
 %% Preparation
 % Extract the start times in hours (or absolute datetime)
@@ -204,10 +215,19 @@ if isdatetime(startTimes)
     dates = dateshift(startTimesForGrouping, 'start', 'day');
 
     % Use the date as the group value
-    grouping = dates;
+    grouping = arrayfun(@convert_to_datestr, dates, 'UniformOutput', false);
+
+    % Simplify the grouping and generate grouping labels
+    [grouping, groupingLabels] = create_default_grouping('Grouping', grouping); 
 else
     % Use the column number
     grouping = create_grouping_by_vectors(startTimes);
+
+    % Extract distinct file parts
+    distinctParts = extract_distinct_fileparts(swdSheetPaths);
+
+    % Set grouping labels
+    groupingLabels = distinctParts;
 end
 
 % Find the minimum and maximum times
@@ -250,12 +270,6 @@ end
 % Set y axis label
 yLabel = 'SWD Count';
 
-% Extract distinct file parts
-distinctParts = extract_distinct_fileparts(swdSheetPaths);
-
-% Set grouping labels
-groupingLabels = replace(distinctParts, '_', '\_');
-
 % Set figure base name
 if iscell(swdSheetPaths) && numel(swdSheetPaths) > 1
     % Extract common suffix
@@ -287,8 +301,7 @@ end
 
 %% Plot the histogram
 % Create and clear figure
-fig = figure('WindowState','maximized');
-clf;
+fig = set_figure_properties('AlwaysNew', true, 'WindowState', 'maximized');
 
 % Plot the histogram
 [his, fig] = plot_grouped_histogram(startTimes, grouping, 'Edges', binEdges, ...
@@ -341,8 +354,25 @@ if iscell(startTimes)
 end
 
 % Convert to hours if not a datetime array
-if ~isdatetime(startTimes)
-    startTimes = startTimes / SEC_PER_HR;
+% TODO: convert_units.m
+if isnum(startTimes) && ~isdatetime(startTimes) || ...
+        iscellnumeric(startTimes) && ~any(cellfun(@isdatetime, startTimes))
+    if iscell(startTimes)
+        startTimes = cellfun(@(x) x / SEC_PER_HR, startTimes, ...
+                            'UniformOutput', false);
+    else
+        startTimes = startTimes / SEC_PER_HR;
+    end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function dateStr = convert_to_datestr(dateTime)
+
+if isnat(dateTime)
+    dateStr = '';
+else
+    dateStr = datestr(dateTime, 'yyyymmdd');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -379,6 +409,11 @@ startTimes = extract_subvectors(startTimes, 'AlignMethod', 'leftAdjustPad');
 startTimes = horzcat(startTimes{:});
 
 combinedSwdStr = '_SWDs_combined';
+
+fig = figure('WindowState', 'maximized');
+clf;
+
+groupingLabels = replace(distinctParts, '_', '\_');
 
 %}
 

@@ -192,9 +192,9 @@ end
 % Set default figure title
 if isempty(figTitle)
     if firstOnly
-        figTitle = '# of SWDs around first stimulus starts';
+        figTitle = 'SWD count around first stimulus starts';
     else
-        figTitle = '# of SWDs around all stimulus starts';
+        figTitle = 'SWD count around all stimulus starts';
     end
 end
 
@@ -205,7 +205,7 @@ end
 
 % Set default labels for each raster
 if isempty(labels)
-    labels = replace(distinctParts, '_', '\_');
+    labels = distinctParts;
 end
 
 % Extract all start times in seconds
@@ -323,6 +323,9 @@ case 'chevron'
     % Decide on p tick labels
     pTickLabels = {'Before', 'After'};
 
+    % Modify the figure title for the normalized plot
+    figTitleNormalize = ['% ', figTitle];
+
     % Decide on file names
     figPathBase = extract_fileparts(figName, 'pathbase');
     figNameNormalized = strcat(figPathBase, '_normalized');
@@ -341,8 +344,8 @@ case 'chevron'
         argfun(@(x) sum(x, 2), nEventsBeforeEachStim, nEventsAfterEachStim);
 
     % Compute normalized data
-    nEventsBeforeNormalized = nEventsBefore ./ nEventsBefore;
-    nEventsAfterNormalized = nEventsAfter ./ nEventsBefore;
+    nEventsBeforeNormalized = 100 * nEventsBefore ./ nEventsBefore;
+    nEventsAfterNormalized = 100 * nEventsAfter ./ nEventsBefore;
 
     % Save the data in tables
     chevronTable = table(nEventsBefore, nEventsAfter, ...
@@ -355,16 +358,19 @@ case 'chevron'
     writetable(normChevronTable, sheetPathNormalized);
 
     % Plot Chevron plot and save figure
+    fig1 = set_figure_properties('AlwaysNew', true);
     plot_chevron(chevronTable, 'FigTitle', figTitle, ...
                 'ReadoutLabel', 'SWD count', 'PTickLabels', pTickLabels, ...
                 otherArguments);
-    save_all_figtypes(gcf, figName, figTypes);
+    save_all_figtypes(fig1, figName, figTypes);
 
     % Plot normalized Chevron plot and save figure
-    plot_chevron(chevronTable, 'FigTitle', figTitle, ...
+    fig2 = set_figure_properties('AlwaysNew', true);
+    plot_chevron(normChevronTable, 'FigTitle', figTitleNormalize, ...
                 'ReadoutLabel', '% SWD count', 'PTickLabels', pTickLabels, ...
+                'ReadoutLimits', [0, Inf], ...
                 otherArguments);
-    save_all_figtypes(gcf, figNameNormalized, figTypes);
+    save_all_figtypes(fig2, figNameNormalized, figTypes);
 otherwise
     error('plotType unrecognized!');
 end
@@ -411,6 +417,10 @@ nSubplots = numel(relEventTimes);
 
 % Generate the data for the Chevron plot
 chevronData = transpose([nEventsBefore, nEventsAfter]);
+
+if isempty(labels)
+    labels = replace(distinctParts, '_', '\_');
+end
 
 %}
 

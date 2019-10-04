@@ -99,7 +99,7 @@ pLabelDefault = 'suppress';
 columnLabelsDefault = '';           % set later
 colorMapDefault = [];               % set later
 legendLocationDefault = 'eastoutside';
-figExpansionDefault = [1, 0.4];
+figExpansionDefault = [1, 0.6];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -254,9 +254,8 @@ if plotMean && nConds == 2
     wasHold = hold_on;
 
     % Plot mean and confidence intervals
-    handlesMean = plot_tuning_curve(pValues, meanValues, ...
+    handlesMean = plot_tuning_curve(pValues, meanValues, 'PlotOnly', true, ...
                     'LowerCI', lower95Values, 'UpperCI', upper95Values, ...
-                    'PlotCurveOnly', true, ...
                     'LineWidth', meanLineWidth, 'ColorMap', meanColorMap, ...
                     'Marker', 'o', 'MarkerFaceColor', meanColorMap, ...
                     'MarkerSize', meanMarkSize);

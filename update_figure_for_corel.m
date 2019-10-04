@@ -107,10 +107,12 @@ if removeTicks
     set(ax, 'YTick', []);
 end
 
-%
+% Set other axes properties
 if ~isempty(otherArguments)
     set(ax, otherArguments{:});    
 end
+
+%
 
 %% Output results
 % TODO
