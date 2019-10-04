@@ -48,6 +48,9 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 %                   - 'StimTableSuffix': Suffix for the stim table
 %                   must be a character vector or a string scalar 
 %                   default == '_pulses'
+%                   - 'RelativeTimeWindow': relative time window
+%                   must be a 2-element numeric vector
+%                   default == [-10, 20] for gas and [-10, 10] for laser
 %                   - 'TimeUnits': output time units
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'min'   - minutes
@@ -105,8 +108,8 @@ stimTableSuffixLaser = '_laser_pulses';
 
 % TODO: Make optional arguments
 spectYLimits = [1, 50];         % Look at 1-50 Hz by default
-% relativeWindowNoSwd = [-6.3, -6];
-% relativeWindowSwd = [6, 6.3];
+% relativeTimeWindowNoSwd = [-6.3, -6];
+% relativeTimeWindowSwd = [6, 6.3];
 suffixNoSwd = '_no_swd';
 suffixSwd = '_swd';
 
@@ -124,8 +127,8 @@ stimTableSuffixDefault = '';    % set later
 % TODO: Make optional arguments
 channelNamesOriginal = {};
 channelNamesToPlot = {};
-relativeWindow = [];
 
+relativeTimeWindowDefault = [];     % set later
 timeUnitsDefault = '';          % set later
 figExpansionDefault = [];       % no figure expansion by default
 figNameDefault = '';            % don't save figure by default
@@ -167,6 +170,8 @@ addParameter(iP, 'RemoveTicks', removeTicksDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'StimTableSuffix', stimTableSuffixDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'RelativeTimeWindow', relativeTimeWindowDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
     @(x) any(validatestring(x, validTimeUnits)));
 addParameter(iP, 'FigExpansion', figExpansionDefault, ...
@@ -187,6 +192,7 @@ plotZooms = iP.Results.PlotZooms;
 plotForCorel = iP.Results.PlotForCorel;
 removeTicks = iP.Results.RemoveTicks;
 stimTableSuffix = iP.Results.StimTableSuffix;
+relativeTimeWindow = iP.Results.RelativeTimeWindow;
 timeUnits = validatestring(iP.Results.TimeUnits, validTimeUnits);
 figExpansion = iP.Results.FigExpansion;
 figName = iP.Results.FigName;
@@ -281,14 +287,14 @@ if isempty(channelNamesToPlot)
 end
 
 % Decide on relative time window
-if isempty(relativeWindow)
+if isempty(relativeTimeWindow)
     switch stimType
         case 'gas'
-            relativeWindow = [-10, 20];
+            relativeTimeWindow = [-10, 20];
         case 'laser'
-            relativeWindow = [-10, 10];
+            relativeTimeWindow = [-10, 10];
         otherwise
-            relativeWindow = [];
+            relativeTimeWindow = [];
     end
 end
 
@@ -327,10 +333,10 @@ end
 if isempty(figName)
     figPathBase = extract_fileparts(spike2Path, 'pathbase');
 
-    if ~isempty(relativeWindow)
+    if ~isempty(relativeTimeWindow)
         figPathBase = strcat(figPathBase, '_rel', ...
-                            num2str(relativeWindow(1)), 'to', ...
-                            num2str(relativeWindow(2)));
+                            num2str(relativeTimeWindow(1)), 'to', ...
+                            num2str(relativeTimeWindow(2)));
     end
 else
     figPathBase = extract_fileparts(figName, 'pathbase');
@@ -358,6 +364,28 @@ nSamples = nanmean(data.nSamples);
 timeVec = create_time_vectors(nSamples, 'TimeUnits', timeUnits, ...
                                 'SamplingIntervalSec', siSeconds);
 
+%% Compute the spectrogram from the EEG trace
+% Look for an EEG trace
+eegChannelNum = find_in_strings('EEG', channelNamesToPlot, 'MaxNum', 1);
+
+% Only compute spectrogram if EEG trace is found
+if plotSpectrogram && ~isempty(eegChannelNum)
+    % Update channel names to plot
+    channelNamesToPlot = [channelNamesToPlot; {'Spect'}];
+
+    % Get the entire EEG trace
+    eegChannelValues = channelValues(:, eegChannelNum);
+
+    % Compute the spectrogram
+    [spectData, freqHz, timeInstantsSeconds] = ...
+        compute_spectrogram(eegChannelValues, siSeconds);
+
+    % Convert times to minutes
+    timeInstants = timeInstantsSeconds * unitsPerSecond;
+else
+    plotSpectrogram = false;
+end
+
 %% Restrict or align trace data if requested
 if alignToStim
     % Find corresponding stim table
@@ -372,7 +400,7 @@ if alignToStim
     centerTime = startTimes(1);
 
     % Create time window
-    timeWindow = centerTime + relativeWindow;
+    timeWindow = centerTime + relativeTimeWindow;
 
     % Find the time window endpoints
     endPoints = find_window_endpoints(timeWindow, timeVec);
@@ -386,38 +414,30 @@ if alignToStim
     channelValuesToPlot = ...
         extract_subvectors(channelValues, 'EndPoints', endPoints);
 
+    % Restrict spectrogram to the time window endpoints
+    if plotSpectrogram
+        % Find the time window endpoints in timeInstants
+        %   making sure that all parts of the time window is included
+        endPointsInstants = find_window_endpoints(timeWindow, timeInstants, ...
+                                            'BoundaryMode', 'inclusive');
+
+        % Restrict timeInstants to the time window endpoints and shift it to be 
+        %   relative to the first stim start time
+        timeInstants = ...
+            extract_subvectors(timeInstants, 'EndPoints', endPointsInstants);
+        timeInstantsToPlot = timeInstants - centerTime;
+
+        % Restrict spectrogram data to the time window endpoints
+        spectDataToPlot = transpose(extract_subvectors(transpose(spectData), ...
+                                            'EndPoints', endPointsInstants));
+    end
 else
     timeVecToPlot = timeVec;
     channelValuesToPlot = channelValues;
-end
-
-%% Compute the spectrogram from the EEG trace
-% Look for an EEG trace
-eegChannelNum = find_in_strings('EEG', channelNamesToPlot, 'MaxNum', 1);
-
-% Only compute spectrogram if EEG trace is found
-if plotSpectrogram && ~isempty(eegChannelNum)
-    % Update channel names to plot
-    channelNamesToPlot = [channelNamesToPlot; {'Spect'}];
-
-    % Get the EEG trace
-    eegToPlot = channelValuesToPlot(:, eegChannelNum);
-
-    % Compute the spectrogram
-    [spectData, freqHz, timeInstantsRelSeconds] = ...
-        compute_spectrogram(eegToPlot, siSeconds);
-
-    % Convert times to minutes
-    timeInstantsRel = timeInstantsRelSeconds * unitsPerSecond;
-
-    % Align times if requested
-    if alignToStim
-        timeInstantsMin = relativeWindow(1) + timeInstantsRel;
-    else
-        timeInstantsMin = timeInstantsRel;
+    if plotSpectrogram
+        timeInstantsToPlot = timeInstants;
+        spectDataToPlot = spectData;
     end
-else
-    plotSpectrogram = false;
 end
 
 %% Plot traces
@@ -437,7 +457,7 @@ for iPlot = 1:nSubPlots
         spectColorMapFile = '/media/adamX/Settings_Matlab/spectrogram_colormap.mat';
 
         % Plot the log spectrum
-        imagesc(ax(iPlot), timeInstantsMin, freqHz, abs(spectData));
+        imagesc(ax(iPlot), timeInstantsToPlot, freqHz, abs(spectDataToPlot));
 
         % Set a colormap
         colorMapSpectFile = matfile(spectColorMapFile);
@@ -474,6 +494,11 @@ end
 % Link the x axes
 linkaxes(ax, 'x');
 
+% Set x axes limits to the relative window
+if alignToStim && ~isempty(relativeTimeWindow)
+    xlim(relativeTimeWindow);
+end
+
 % Update figure for Corel Draw
 if plotForCorel
     fig = update_figure_for_corel(fig, 'RemoveTicks', removeTicks);
@@ -488,11 +513,11 @@ if plotZooms
                             'ExpandFromDefault', false);
 
     % Zoom to first region and save
-    xlim(relativeWindowNoSwd);
+    xlim(relativeTimeWindowNoSwd);
     save_all_figtypes(fig, figPathBaseNoSwd, figTypes);
 
     % Zoom to second region and save
-    xlim(relativeWindowSwd);
+    xlim(relativeTimeWindowSwd);
     save_all_figtypes(fig, figPathBaseSwd, figTypes);
 
     % Expand figure width
@@ -503,12 +528,12 @@ if plotZooms
     for iPlot = 1:numel(channelNamesToPlot)
         % Plot vertical shades
         subplot(ax(iPlot))
-        plot_window_boundaries([relativeWindowNoSwd, relativeWindowSwd], ...
+        plot_window_boundaries([relativeTimeWindowNoSwd, relativeTimeWindowSwd], ...
                                 'BoundaryType', 'verticalShade');
     end
 
     % Zoom back out
-    xlim(relativeWindow);
+    xlim(relativeTimeWindow);
 end
 
 % Save figure
@@ -521,7 +546,7 @@ handles.ax = ax;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [spectData, freqHz, timeInstantsSeconds] = ...
-                compute_spectrogram(eegToPlot, siSeconds)
+                compute_spectrogram(eegValues, siSeconds)
 %% Computes a spectrogram
 % TODO: Pull out as its own function
 
@@ -546,8 +571,9 @@ samplingFreqHz = 1 / siSeconds;
 
 %% Do the job
 % Compute the spectrogram
+%   Note: time instants are the midpoints of each time window
 [spectData, freqHz, timeInstantsSeconds] = ...
-    spectrogram(eegToPlot, binWidthSamples, ...
+    spectrogram(eegValues, binWidthSamples, ...
                 overlapSamples, [], samplingFreqHz);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
