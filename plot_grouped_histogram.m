@@ -130,7 +130,6 @@ function [bars, fig, outlines] = plot_grouped_histogram (varargin)
 %
 % Used by:
 %       cd/plot_histogram.m
-%       cd/plot_swd_histogram.m
 %       cd/ZG_fit_IEI_distributions.m
 
 % TODO:

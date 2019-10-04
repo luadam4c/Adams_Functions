@@ -20,6 +20,9 @@ function [swdSheetFiles, swdSheetPaths] = all_swd_sheets (varargin)
 %       varargin    - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'Recursive': whether to search recursively
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'Directory': directory to look for SWD table files
 %                   must be a string scalar or a character vector
 %                   default == pwd
@@ -45,13 +48,14 @@ function [swdSheetFiles, swdSheetPaths] = all_swd_sheets (varargin)
 % File History:
 % 2018-11-27 Moved from plot_swd_raster.m
 % 2018-12-27 Added 'Suffix' as an optional argument
-% 
+% 2019-10-04 Added 'Recursive' as an optional argument
 
 %% Hard-coded parameters
 swdStr = '_SWDs';               % string in file names for SWD spreadsheets
 
 %% Default values for optional arguments
 verboseDefault = true;
+recursiveDefault = true;        % search recursively by default
 directoryDefault = '';          % set later
 suffixDefault = '';             % set later
 sheetTypeDefault = 'csv';       % default spreadsheet type
@@ -67,6 +71,8 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Recursive', recursiveDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'Suffix', suffixDefault, ...
@@ -77,6 +83,7 @@ addParameter(iP, 'SheetType', sheetTypeDefault, ...
 % Read from the Input Parser
 parse(iP, varargin{:});
 verbose = iP.Results.Verbose;
+recursive = iP.Results.Recursive;
 directory = iP.Results.Directory;
 suffix = iP.Results.Suffix;
 [~, sheetType] = issheettype(iP.Results.SheetType, 'ValidateMode', true);
@@ -92,7 +99,7 @@ end
 
 % Find all SWD spreadsheet files in the directory
 [swdSheetFiles, swdSheetPaths] = ...
-    all_files('Verbose', verbose, 'Recursive', true, ...
+    all_files('Verbose', verbose, 'Recursive', recursive, ...
                 'Directory', directory, ...
                 'Suffix', suffix, 'Extension', ['.', sheetType], ...
                 otherArguments);

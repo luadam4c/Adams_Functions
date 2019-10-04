@@ -11,7 +11,10 @@ function [swdTables, filePaths] = load_swd_sheets (varargin)
 %       filePaths   - TODO: Description of filePaths
 %                   specified as a TODO
 % Arguments:
-%       varargin    - 'Directory': directory to look for SWD table files
+%       varargin    - 'Recursive': whether to search recursively
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'Directory': directory to look for SWD table files
 %                   must be a string scalar or a character vector
 %                   default == pwd
 %                   - 'FilePaths': names of '_SWDs.csv' sheets to load
@@ -47,6 +50,7 @@ function [swdTables, filePaths] = load_swd_sheets (varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
+recursiveDefault = true;        % search recursively by default
 directoryDefault = '';        % set later
 filePathsDefault = {};          % detect from pwd by default
 verboseDefault = false;         % print to standard output by default
@@ -62,6 +66,8 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'Recursive', recursiveDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FilePaths', filePathsDefault, ...
@@ -75,6 +81,7 @@ addParameter(iP, 'SheetType', sheetTypeDefault, ...
 
 % Read from the Input Parser
 parse(iP, varargin{:});
+recursive = iP.Results.Recursive;
 directory = iP.Results.Directory;
 filePaths = iP.Results.FilePaths;
 verbose = iP.Results.Verbose;
@@ -92,6 +99,7 @@ if isempty(filePaths)
 
     % Find all '_SWDs.csv' sheets in the directory recursively
     [~, filePaths] = all_swd_sheets('Verbose', verbose, ...
+                                    'Recursive', recursive, ...
                                     'Directory', directory, ...
                                     'Suffix', suffix, ...
                                     'SheetType', sheetType);

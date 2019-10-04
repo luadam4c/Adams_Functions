@@ -17,11 +17,11 @@ function figHandle = update_figure_for_corel (figHandle, varargin)
 %       varargin    - 'RemoveTicks': whether to remove all ticks
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - Any other parameter-value pair for Axes properties
+%                   - Any other parameter-value pair for set_figure_properties()
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/struct2arglist.m
+%       cd/set_figure_properties.m
 %
 % Used by:
 %       cd/plot_calcium_imaging_traces.m
@@ -66,15 +66,23 @@ addParameter(iP, 'RemoveTicks', removeTicksDefault, ...
 parse(iP, figHandle, varargin{:});
 removeTicks = iP.Results.RemoveTicks;
 
-% Keep unmatched arguments for Axes properties
-otherArguments = struct2arglist(iP.Unmatched);
+% Keep unmatched arguments for set_figure_properties()
+otherArguments = iP.Unmatched;
 
 %% Preparation
 % Compute font size multipliers
 titleFontSizeMultiplier = fontSizeLabels / fontSizeAxis;
 labelFontSizeMultiplier = fontSizeLabels / fontSizeAxis;
 
-%% Do the job
+% Check if the figure handle is valid
+if ~isempty(figHandle) && ~isvalid(figHandle)
+    error('figHandle is not valid!');
+end
+
+%% Set figure properties
+figHandle = set_figure_properties('FigHandle', figHandle, otherArguments);
+
+%% Set axes properties
 % Find all axes in the figure
 ax = findall(figHandle, 'type', 'axes');
 
@@ -107,16 +115,6 @@ if removeTicks
     set(ax, 'YTick', []);
 end
 
-% Set other axes properties
-if ~isempty(otherArguments)
-    set(ax, otherArguments{:});    
-end
-
-%
-
-%% Output results
-% TODO
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
@@ -125,6 +123,11 @@ OLD CODE:
 for iAx = 1:nAx
     ax(iAx).XAxis.LineWidth = 1;
     ax(iAx).YAxis.LineWidth = 1;
+end
+
+% Set other axes properties
+if ~isempty(otherArguments)
+    set(ax, otherArguments{:});    
 end
 
 %}

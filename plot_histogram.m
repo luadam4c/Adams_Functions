@@ -162,6 +162,7 @@ function [bars, fig] = plot_histogram (varargin)
 %
 % Used by:    
 %       cd/plot_psth.m
+%       cd/plot_swd_histogram.m
 %       /home/Matlab/Marks_Functions/paula/Oct2017/zgRasterFigureMaker.m
 %       /media/adamX/m3ha/data_dclamp/initial_slopes.m
 
@@ -187,6 +188,9 @@ validOutlierMethods = {'boxplot', 'isoutlier', ...
                         'fiveStds', 'threeStds', 'twoStds'};
 validGroupedStyles = {'side-by-side', 'stacked', 'overlapped'};
 minNXTicks = 5;
+
+dateTimeInf = datetime(Inf, 'ConvertFrom', 'datenum');
+dateTimeNegInf = datetime(-Inf, 'ConvertFrom', 'datenum');
 
 %% Default values for optional arguments
 XDefault = [];                          % set later
@@ -391,7 +395,11 @@ end
 edgesFinite = edgesUser(isfinite(edgesUser));
 
 % Expand edges for full histogram bin counts
-edgesExpanded = [-Inf; edgesFinite; Inf];
+if isdatetime(edgesFinite)
+    edgesExpanded = [dateTimeNegInf; edgesFinite; dateTimeInf];
+else
+    edgesExpanded = [-Inf; edgesFinite; Inf];
+end
 
 % Compute histogram bincounts with expanded edges
 %   Note: the first bin is always < the first non-Inf number in edges
@@ -411,8 +419,8 @@ end
 
 % Decide whether the histogram will be expanded on the left and right
 %   Note: Either there is data out of range or the user decides to expand
-toExpandOnTheLeft = any(counts(1, :) > 0) || edgesUser(1) == -Inf;
-toExpandOnTheRight = any(counts(end, :) > 0) || edgesUser(end) == Inf;
+toExpandOnTheLeft = any(counts(1, :) > 0) || isinf(edgesUser(1));
+toExpandOnTheRight = any(counts(end, :) > 0) || isinf(edgesUser(end));
 
 % Check for out of range data and adjust the bincounts and edges
 if toExpandOnTheLeft && toExpandOnTheRight
@@ -445,7 +453,7 @@ leftEdges = edgesNew(1:end-1);
 % Determine the left edges for plotting 
 %   If expanded to the left, replace -Inf with a finite left edge
 leftEdgesPlot = leftEdges;          % initialize to be the same as left edges
-if edgesNew(1) == -Inf              % data out of range on the left
+if isinf(edgesNew(1))               % data out of range on the left
     % Use the left most finite bin width to set the width for the first bin
     leftMostBinWidth = edgesExpanded(3) - edgesExpanded(2);
 
@@ -454,7 +462,7 @@ if edgesNew(1) == -Inf              % data out of range on the left
 end
 
 % Determine the right edge of the histogram
-if edgesNew(end) == Inf             % data out of range on the right
+if isinf(edgesNew(end))             % data out of range on the right
     % Note: The right most finite bin width is used 
     %   by bar() to set the width for the last bin
     rightMostBinWidth = edgesNew(end-1) - edgesNew(end-2);
@@ -545,15 +553,15 @@ if isempty(xTickLocs)
     xTickLabelNums = xTicks;
 
     % Update x ticks to include where -Inf and Inf would be placed
-    if edgesNew(1) == -Inf              % data out of range on the left
+    if isinf(edgesNew(1))               % data out of range on the left
         % Add -Inf as first XTick at edgesPlot(1)
         xTicks = [edgesPlot(1), xTicks];
-        xTickLabelNums = [-Inf, xTickLabelNums];
+        xTickLabelNums = [edgesNew(1), xTickLabelNums];
     end
-    if edgesNew(end) == Inf              % data out of range on the right
+    if isinf(edgesNew(end))             % data out of range on the right
         % Add Inf as last XTick at edgesPlot(end)
         xTicks = [xTicks, edgesPlot(end)];
-        xTickLabelNums = [xTickLabelNums, Inf];
+        xTickLabelNums = [xTickLabelNums, edgesNew(end)];
     end
 else
     xTicks = xTickLocs;
@@ -579,7 +587,7 @@ wasHold = ishold;
 hold on;
 
 % Plot expanded bins
-if ~isempty(xTickLabelNums) && xTickLabelNums(1) == -Inf
+if ~isempty(xTickLabelNums) && isinf(xTickLabelNums(1))
     if useBuiltIn
         bars(nGroups + 1) = ...
             histogram(edgesPlot(1) * ones(1, counts(1)), ...
@@ -596,7 +604,7 @@ if ~isempty(xTickLabelNums) && xTickLabelNums(1) == -Inf
 else
     bars(nGroups + 1) = gobjects(1);
 end
-if ~isempty(xTickLabelNums) && xTickLabelNums(end) == Inf
+if ~isempty(xTickLabelNums) && isinf(xTickLabelNums(end))
     if useBuiltIn
         bars(nGroups + 2) = ...
             histogram(edgesPlot(end-1) * ones(1, counts(end)), ...

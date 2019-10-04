@@ -24,6 +24,9 @@ function [his, lines, fig] = plot_swd_histogram (varargin)
 %                   - 'Individually': whether tables are plotted individually
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'Recursive': whether to search recursively
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'SwdTables': SWD tables
 %                   must be a 2D table or a cell array of 2D tables
 %                   default == read from swdSheetPaths
@@ -63,7 +66,7 @@ function [his, lines, fig] = plot_swd_histogram (varargin)
 %       cd/extract_distinct_fileparts.m
 %       cd/force_matrix.m
 %       cd/load_swd_sheets.m
-%       cd/plot_grouped_histogram.m
+%       cd/plot_histogram.m
 %       cd/plot_vertical_line.m
 %       cd/set_figure_properties.m
 %
@@ -74,6 +77,7 @@ function [his, lines, fig] = plot_swd_histogram (varargin)
 % 2018-12-27 Created by Adam Lu
 % 2019-09-10 Updated suffix default
 % 2019-10-03 Added 'FigTypes' as an optional argument
+% 2019-10-04 Fixed bug in creating maxHour for datetime data
 % 
 
 %% Hard-coded parameters
@@ -87,6 +91,7 @@ infusionStartHrs = 20;          % time that infusion started each day (hours)
 verboseDefault = true;
 absoluteTimeDefault = true;     % use absolute time by default
 individuallyDefault = false;    % plot all tables together by default
+recursiveDefault = true;        % search recursively by default
 swdTablesDefault = '';          % set later
 swdSheetPathsDefault = '';      % set later
 swdFolderDefault = '';          % set later
@@ -109,6 +114,8 @@ addParameter(iP, 'Verbose', verboseDefault, ...
 addParameter(iP, 'AbsoluteTime', absoluteTimeDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Individually', individuallyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Recursive', recursiveDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SwdTables', swdTablesDefault, ...
     @(x) assert(isempty(x) || istable(x) || ischar(x) || iscell(x), ...
@@ -133,6 +140,7 @@ parse(iP, varargin{:});
 verbose = iP.Results.Verbose;
 absoluteTime = iP.Results.AbsoluteTime;
 individually = iP.Results.Individually;
+recursive = iP.Results.Recursive;
 swdTables = iP.Results.SwdTables;
 swdSheetPaths = iP.Results.SwdSheetPaths;
 swdFolder = iP.Results.SwdFolder;
@@ -154,9 +162,9 @@ end
 if isempty(swdTables)
     % Load all tables from either paths or folder
     [swdTables, swdSheetPaths] = ...
-        load_swd_sheets('Verbose', verbose, 'FilePaths', swdSheetPaths, ...
-                        'Directory', swdFolder, 'SheetType', sheetType, ...
-                        'Suffix', suffix);
+        load_swd_sheets('Verbose', verbose, 'Recursive', recursive, ...
+                        'FilePaths', swdSheetPaths, 'Directory', swdFolder, ...
+                        'SheetType', sheetType, 'Suffix', suffix);
 
     % Exit if nothing is loaded
     if isempty(swdTables)
@@ -239,7 +247,7 @@ maxTime = apply_iteratively(@max, startTimes);
 % Find the nearest hours
 if isdatetime(minTime)
     minHour = dateshift(minTime, 'start', 'hour');
-    maxHour = dateshift(maxTime, 'start', 'hour');
+    maxHour = dateshift(maxTime, 'end', 'hour');
 else
     minHour = floor(minTime);
     maxHour = ceil(maxTime);
@@ -270,7 +278,7 @@ else
 end
 
 % Set y axis label
-yLabel = 'SWD Count';
+yLabel = 'SWD count / hour';
 
 % Set figure base name
 if iscell(swdSheetPaths) && numel(swdSheetPaths) > 1
@@ -306,8 +314,9 @@ end
 fig = set_figure_properties('AlwaysNew', true, 'WindowState', 'maximized');
 
 % Plot the histogram
-[his, fig] = plot_grouped_histogram(startTimes, grouping, 'Edges', binEdges, ...
-                            'Style', style, 'XLimits', xLimits, ...
+[his, fig] = plot_histogram(startTimes, 'Edges', binEdges, ...
+                            'Grouping', grouping, 'GroupedStyle', style, ...
+                            'XLimits', xLimits, ...
                             'XLabel', xLabel, 'YLabel', yLabel, ...
                             'GroupingLabels', groupingLabels, ...
                             'FigTitle', figTitle, 'FigHandle', fig, ...
