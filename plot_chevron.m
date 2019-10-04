@@ -20,9 +20,13 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %       data        - data table or data vectors
 %                   must be a table or a numeric array
 %                       or a cell array of numeric vectors
-%       varargin    - 'PlotMean': whether to plot the mean difference
+%       varargin    - 'PlotMeanDifference': whether to plot the mean difference
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == false
+%                   - 'PlotErrorBars': whether to plot error bars 
+%                                       even though it's wrong to do so
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'RunTTest': whether to run paired t-test
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
@@ -71,6 +75,7 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %       cd/force_matrix.m
 %       cd/hold_off.m
 %       cd/hold_on.m
+%       cd/plot_error_bar.m
 %       cd/plot_tuning_curve.m
 %
 % Used by:
@@ -89,7 +94,8 @@ meanMarkSize = 6;
 meanColorMap = 'r';
 
 %% Default values for optional arguments
-plotMeanDefault = true;
+plotMeanDifferenceDefault = false;
+plotErrorBarsDefault = false;
 runTTestDefault = true;
 runRankTestDefault = true;
 pLimitsDefault = [];                % set later
@@ -119,7 +125,9 @@ addRequired(iP, 'data', ...
     @(x) validateattributes(x, {'numeric', 'cell', 'table'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'PlotMean', plotMeanDefault, ...
+addParameter(iP, 'PlotMeanDifference', plotMeanDifferenceDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotErrorBars', plotErrorBarsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RunTTest', runTTestDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -144,7 +152,8 @@ addParameter(iP, 'FigExpansion', figExpansionDefault, ...
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
-plotMean = iP.Results.PlotMean;
+plotMeanDifference = iP.Results.PlotMeanDifference;
+plotErrorBars = iP.Results.PlotErrorBars;
 runTTest = iP.Results.RunTTest;
 runRankTest = iP.Results.RunRankTest;
 pLimits = iP.Results.PLimits;
@@ -216,23 +225,6 @@ if isempty(columnLabels)
     end
 end
 
-% Compute means and confidence intervals
-if nConds == 2
-    % Compute the mean of the baseline values
-    baseMean = compute_stats(dataValues(:, 1), 'mean');
-
-    % Compute the differences
-    diffValues = dataValues(:, 2) - dataValues(:, 1);
-
-    % Compute the mean and confidence intervals of the differences
-    [diffMean, diffLower95, diffUpper95] = ...
-        argfun(@(x) compute_stats(diffValues, x), 'mean', 'lower95', 'upper95');
-
-    % Compute the values to plot
-    [meanValues, lower95Values, upper95Values] = ...
-        argfun(@(x) baseMean + [0; x], diffMean, diffLower95, diffUpper95);
-end
-
 %% Do the job
 % Plot a tuning curve
 handles = plot_tuning_curve(pValues, transpose(dataValues), ...
@@ -249,7 +241,21 @@ handles = plot_tuning_curve(pValues, transpose(dataValues), ...
 
 % Plot the mean and confidence intervals of the differences
 %   TODO: Does it ever make sense for more than 2 conditions?
-if plotMean && nConds == 2
+if plotMeanDifference && nConds == 2
+    % Compute the mean of the baseline values
+    baseMean = compute_stats(dataValues(:, 1), 'mean');
+
+    % Compute the differences
+    diffValues = dataValues(:, 2) - dataValues(:, 1);
+
+    % Compute the mean and confidence intervals of the differences
+    [diffMean, diffLower95, diffUpper95] = ...
+        argfun(@(x) compute_stats(diffValues, x), 'mean', 'lower95', 'upper95');
+
+    % Compute the values to plot
+    [meanValues, lower95Values, upper95Values] = ...
+        argfun(@(x) baseMean + [0; x], diffMean, diffLower95, diffUpper95);
+
     % Hold on
     wasHold = hold_on;
 
@@ -264,6 +270,28 @@ if plotMean && nConds == 2
     hold_off(wasHold);
 else
     handlesMean = struct;
+end
+
+% Plot error bars if requested
+if plotErrorBars
+    % Compute the mean, lower and upper confidence interval bounds
+    [means, lower95s, upper95s] = ...
+        argfun(@(x) compute_stats(dataValues, x), 'mean', 'lower95', 'upper95');
+
+    % Hold on
+    wasHold = hold_on;
+
+    % Plot the means
+    plot(pValues, means, 'r-o', ...
+        'LineWidth', meanLineWidth, 'MarkerSize', meanMarkSize, ...
+        'MarkerFaceColor', meanColorMap);
+
+    % Plot error bars
+    plot_error_bar(pValues, lower95s, upper95s, 'Color', meanColorMap, ...
+                    'LineWidth', meanLineWidth);
+
+    % Hold off
+    hold_off(wasHold);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -285,19 +313,6 @@ xLimits = [tickValues(1), tickValues(end)] + ...
 
 %{
 OLD CODE:
-
-% Compute the mean, lower and upper confidence interval bounds
-[means, lower95s, upper95s] = ...
-    argfun(@(x) compute_stats(dataValues, x), 'mean', 'lower95', 'upper95');
-
-% Plot the means
-plot(pValues, means, 'r-o', ...
-    'LineWidth', meanLineWidth, 'MarkerSize', meanMarkSize, ...
-    'MarkerFaceColor', meanColorMap);
-
-% Plot error bars
-plot_error_bar(pValues, lower95s, upper95s, 'Color', meanColorMap, ...
-                'LineWidth', meanLineWidth);
 
 % Plot a star if significant
 plotStar = false;

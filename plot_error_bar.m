@@ -41,6 +41,7 @@ function lines = plot_error_bar (pValue, rLow, rHigh, varargin)
 %
 % Used by:
 %       cd/plot_bar.m
+%       cd/plot_chevron.m
 
 % File History:
 % 2019-01-24 Created by Adam and Katerina

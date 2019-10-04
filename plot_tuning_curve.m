@@ -286,6 +286,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-08-27 Added 'PlotAverageWindows'
 % 2019-10-02 Added 'PlotOnly' as an optional argument
 % 2019-10-02 Now plots a star if significant
+% 2019-10-04 Now plots 'NS' if not significant
 
 %% Hard-coded constants
 WHITE = [1, 1, 1];
@@ -314,7 +315,7 @@ avgWindowRelYValue = 0.1;
 avgWindowColorMap = [];
 avgWindowLineStyle = '-';
 avgWindowLineWidth = 3;
-testXLocRel = 0.25;
+testXLocRel = 0.5;
 starXLocRel = 0.5;
 tTestPString = 'p_t';
 tTestYLocText = 0.2;
@@ -1243,8 +1244,6 @@ function plot_test_result (tTestPValues, pString, yLocTextRel, yLocStarRel, ...
                             xLocTextRel, xLocStarRel, pValues, sigLevel)
 %% Plots p values and star if significant
 
-% TODO: Make function plot_text.m
-
 % Decide on the x locations
 xLocsText = pValues(1:end-1) + (pValues(2) - pValues(1)) * xLocTextRel;
 xLocsStar = pValues(1:end-1) + (pValues(2) - pValues(1)) * xLocStarRel;
@@ -1276,11 +1275,16 @@ for iValue =  1:numel(tTestPValues)
     end
 
     % Plot text
-    text(xLocTextThis, yLocText, pValueString, 'Color', pColor);
+    % TODO: Make function plot_text.m
+    text(xLocTextThis, yLocText, pValueString, 'Color', pColor, ...
+            'HorizontalAlignment', 'center');
 
-    % Plot star if significant
+    % Plot star if significant, 'NS' if not
     if tTestPValueThis < sigLevel
         plot(xLocStarThis, yLocStar, '*', 'Color', pColor);
+    else
+        text(xLocStarThis, yLocStar, 'NS', 'Color', pColor, ...
+            'HorizontalAlignment', 'center');
     end
 end
 

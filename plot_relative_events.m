@@ -8,7 +8,7 @@ function handles = plot_relative_events (varargin)
 %       plot_relative_events('Directory', '/media/shareX/2019octoberR01/Figures/Figure1c')
 %       plot_relative_events('RelativeTimeWindow', [-20, 20]);
 %       plot_relative_events('PlotType', 'psth', 'Edges', -20:2:20);
-%       plot_relative_events('RelativeTimeWindow', [-20, 20], 'PlotType', 'chevron');
+%       plot_relative_events('RelativeTimeWindow', [-20, 20], 'PlotType', 'chevron', 'PlotErrorBars', true);
 %       plot_relative_events('RelativeTimeWindow', [-15, 15]);
 %       plot_relative_events('PlotType', 'psth', 'Edges', -15:3:15, 'StimIndices', 'odd');
 %       plot_relative_events('PlotType', 'psth', 'Edges', -15:3:15, 'StimIndices', 'even');

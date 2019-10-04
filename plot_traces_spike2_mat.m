@@ -91,10 +91,12 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 %       cd/update_figure_for_corel.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       /home/Matlab/plethR01/plethR01_plot_figureLaserExamples.m
 
 % File History:
 % 2019-09-30 Moved from plethRO1_analyze.m
+% 2019-10-04 Now computes the spectrogram for the full trace 
+%               and then restrict it to the time window of interest
 % 
 
 %% Hard-coded constants
