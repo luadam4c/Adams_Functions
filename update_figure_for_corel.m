@@ -35,12 +35,13 @@ function figHandle = update_figure_for_corel (figHandle, varargin)
 % 2019-09-19 Created by Adam Lu
 % 2019-09-20 Added 'RemoveTicks' as an optional argument
 % 2019-10-04 Added 'RemoveLegends' as an optional argument
-% TODO: Add fontSizeText
+% 2019-10-05 Add textFontSize
 
 %% Hard-coded parameters
 % TODO: Make optional parameters
-fontSizeLabels = 8;
-fontSizeAxis = 6; 
+labelsFontSize = 8;
+axisFontSize = 6; 
+textFontSize = 6;
 lineWidth = 1;
 tickLengths = [0.01, 0.01];
 
@@ -80,8 +81,8 @@ otherArguments = iP.Unmatched;
 
 %% Preparation
 % Compute font size multipliers
-titleFontSizeMultiplier = fontSizeLabels / fontSizeAxis;
-labelFontSizeMultiplier = fontSizeLabels / fontSizeAxis;
+titleFontSizeMultiplier = labelsFontSize / axisFontSize;
+labelFontSizeMultiplier = labelsFontSize / axisFontSize;
 
 % Check if the figure handle is valid
 if ~isempty(figHandle) && ~isvalid(figHandle)
@@ -102,7 +103,7 @@ nAx = numel(ax);
 
 % Set font
 set(ax, 'FontName', 'Arial');
-set(ax, 'FontSize', fontSizeAxis);
+set(ax, 'FontSize', axisFontSize);
 set(ax, 'TitleFontSizeMultiplier', titleFontSizeMultiplier);
 set(ax, 'TitleFontWeight', 'normal');
 set(ax, 'LabelFontSizeMultiplier', labelFontSizeMultiplier);
@@ -130,6 +131,12 @@ end
 if removeLegends
     lgds = findobj(gcf, 'Type', 'Legend');
     delete(lgds);
+end
+
+% Change the fontsize of texts
+texts = findobj(gcf, 'Type', 'Text');
+if ~isempty(texts)
+    set(texts, 'Fontsize', textFontSize);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
