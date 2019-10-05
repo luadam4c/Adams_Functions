@@ -46,6 +46,7 @@ function ax = set_axes_properties (varargin)
 %
 % Used by:
 %       cd/fill_markers.m
+%       cd/plot_chevron.m
 %       cd/plot_frame.m
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m

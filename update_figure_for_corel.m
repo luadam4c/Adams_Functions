@@ -34,7 +34,8 @@ function figHandle = update_figure_for_corel (figHandle, varargin)
 % File History:
 % 2019-09-19 Created by Adam Lu
 % 2019-09-20 Added 'RemoveTicks' as an optional argument
-% 
+% 2019-10-04 Added 'RemoveLegends' as an optional argument
+% TODO: Add fontSizeText
 
 %% Hard-coded parameters
 % TODO: Make optional parameters
@@ -87,7 +88,9 @@ if ~isempty(figHandle) && ~isvalid(figHandle)
     error('figHandle is not valid!');
 end
 
+
 %% Set figure properties
+% Might change sizes
 figHandle = set_figure_properties('FigHandle', figHandle, otherArguments);
 
 %% Set axes properties
@@ -125,7 +128,8 @@ end
 
 % Remove legends if requested
 if removeLegends
-    legend('off');
+    lgds = findobj(gcf, 'Type', 'Legend');
+    delete(lgds);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

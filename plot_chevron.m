@@ -65,6 +65,9 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %                   - 'FigExpansion': expansion factor for figure position
 %                   must be a must be a positive scalar or 2-element vector
 %                   default == [1, 0.4]
+%                   - 'AxesHandle': axes handle for created axes
+%                   must be a empty or a axes object handle
+%                   default == set in set_axes_properties.m
 %                   - Any other parameter-value pair for plot_tuning_curve()
 %
 % Requires:
@@ -77,6 +80,7 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %       cd/hold_on.m
 %       cd/plot_error_bar.m
 %       cd/plot_tuning_curve.m
+%       cd/set_axes_properties.m
 %
 % Used by:
 %       cd/plot_relative_events.m
@@ -106,6 +110,7 @@ columnLabelsDefault = '';           % set later
 colorMapDefault = [];               % set later
 legendLocationDefault = 'eastoutside';
 figExpansionDefault = [1, 0.6];
+axHandleDefault = [];               % gca by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -149,6 +154,7 @@ addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
 addParameter(iP, 'FigExpansion', figExpansionDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive'}));
+addParameter(iP, 'AxesHandle', axHandleDefault);
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
@@ -165,6 +171,7 @@ colorMap = iP.Results.ColorMap;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
 figExpansion = iP.Results.FigExpansion;
+axHandle = iP.Results.AxesHandle;
 
 % Keep unmatched arguments for the plot_tuning_curve() function
 otherArguments = iP.Unmatched;
@@ -226,6 +233,9 @@ if isempty(columnLabels)
 end
 
 %% Do the job
+% Decide on the axes
+set_axes_properties('AxesHandle', axHandle);
+
 % Plot a tuning curve
 handles = plot_tuning_curve(pValues, transpose(dataValues), ...
                     'RunTTest', runTTest, 'RunRankTest', runRankTest, ...
@@ -234,7 +244,7 @@ handles = plot_tuning_curve(pValues, transpose(dataValues), ...
                     'ColumnLabels', columnLabels, ...
                     'ColorMap', colorMap, ...
                     'LegendLocation', legendLocation, ...
-                    'FigExpansion', figExpansion, ...
+                    'FigExpansion', figExpansion, 'AxesHandle', axHandle, ...                    
                     'LineWidth', lineWidth, ...
                     'Marker', 'o', 'MarkerSize', markerSize, ...
                     otherArguments);
@@ -264,7 +274,7 @@ if plotMeanDifference && nConds == 2
                     'LowerCI', lower95Values, 'UpperCI', upper95Values, ...
                     'LineWidth', meanLineWidth, 'ColorMap', meanColorMap, ...
                     'Marker', 'o', 'MarkerFaceColor', meanColorMap, ...
-                    'MarkerSize', meanMarkSize);
+                    'MarkerSize', meanMarkSize, 'AxesHandle', axHandle);
 
     % Hold off
     hold_off(wasHold);

@@ -375,21 +375,20 @@ case 'chevron'
     writetable(normChevronTable, sheetPathNormalized);
 
     % Create subplots
-    [fig, ax] = create_subplots(1, 2, 'AlwaysNew', true, ...
-                                'FigExpansion', [1, 1]);
+    [fig, ax] = create_subplots(1, 2, 'FigExpansion', [1, 1]);
 
     % Plot Chevron plot and save figure
-    subplot(ax(1));
     plot_chevron(chevronTable, 'FigTitle', figTitle, ...
                 'ReadoutLabel', 'SWD count', 'PTickLabels', pTickLabels, ...
-                'FigExpansion', [], otherArguments);
+                'LegendLocation', 'northeast', ...
+                'AxesHandle', ax(1), 'FigExpansion', [], otherArguments);
 
     % Plot normalized Chevron plot and save figure
-    subplot(ax(2));
     plot_chevron(normChevronTable, 'FigTitle', figTitleNormalize, ...
                 'ReadoutLabel', '% SWD count', 'PTickLabels', pTickLabels, ...
                 'ReadoutLimits', [0, Inf], ...
-                'FigExpansion', [], otherArguments);
+                'LegendLocation', 'northeast', ...
+                'AxesHandle', ax(2), 'FigExpansion', [], otherArguments);
 
     % Save figure
     save_all_figtypes(fig, figName, figTypes);

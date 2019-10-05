@@ -217,7 +217,7 @@ while any(~isvalid(ax))
 end
 
 % Future updates will not change the axes position
-set(ax, 'ActivePositionProperty', 'Position');
+% set(ax, 'ActivePositionProperty', 'Position');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
