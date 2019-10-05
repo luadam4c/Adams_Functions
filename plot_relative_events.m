@@ -306,18 +306,25 @@ case 'raster'
         figTitle = ['Events around stim #', num2str(iAx)];
 
         % Plot raster
-        handles = plot_raster(relEventTimes(iAx, :), 'Labels', labels, ...
+        rasters = plot_raster(relEventTimes(iAx, :), 'Labels', labels, ...
                                 'XLabel', 'Time (min)', ...
-                                'XLimits', relTimeWindowMin, ...
                                 'FigTitle', figTitle, ...
+                                'XLimits', relTimeWindowMin, ...
+                                'LegendLocation', 'eastoutside', ...
                                 otherArguments);
 
         % Plot stim start line
-        plot_vertical_line(0, 'LineWidth', 2, 'Color', 'k');
+        stimStartLine = plot_vertical_line(0, 'LineWidth', 2, 'Color', 'k');
     end
 
     % Save figure
-    save_all_figtypes(gcf, figName, figTypes);
+    save_all_figtypes(fig, figName, figTypes);
+
+    % Return in handles
+    handles.fig = fig;
+    handles.ax = ax;
+    handles.rasters = rasters;
+    handles.stimStartLine = stimStartLine;
 case 'psth'
     %% Plot the peri-stimulus time histogram
     handles = plot_psth('EventTimes', swdStartTimesMin, ...
@@ -339,7 +346,6 @@ case 'chevron'
 
     % Decide on file names
     figPathBase = extract_fileparts(figName, 'pathbase');
-    figNameNormalized = strcat(figPathBase, '_normalized');
     sheetPath = [figPathBase, '.csv'];
     sheetPathNormalized = [figPathBase, '_normalized', '.csv'];
 
@@ -368,20 +374,28 @@ case 'chevron'
                             nEventsAfterNormalized, 'RowNames', labels);
     writetable(normChevronTable, sheetPathNormalized);
 
+    % Create subplots
+    [fig, ax] = create_subplots(1, 2, 'AlwaysNew', true, ...
+                                'FigExpansion', [1, 1]);
+
     % Plot Chevron plot and save figure
-    fig1 = set_figure_properties('AlwaysNew', true);
+    subplot(ax(1));
     plot_chevron(chevronTable, 'FigTitle', figTitle, ...
                 'ReadoutLabel', 'SWD count', 'PTickLabels', pTickLabels, ...
-                otherArguments);
-    save_all_figtypes(fig1, figName, figTypes);
+                'FigExpansion', [], otherArguments);
 
     % Plot normalized Chevron plot and save figure
-    fig2 = set_figure_properties('AlwaysNew', true);
+    subplot(ax(2));
     plot_chevron(normChevronTable, 'FigTitle', figTitleNormalize, ...
                 'ReadoutLabel', '% SWD count', 'PTickLabels', pTickLabels, ...
                 'ReadoutLimits', [0, Inf], ...
-                otherArguments);
-    save_all_figtypes(fig2, figNameNormalized, figTypes);
+                'FigExpansion', [], otherArguments);
+
+    % Save figure
+    save_all_figtypes(fig, figName, figTypes);
+
+    % Return in handles
+    handles.fig = fig;
 otherwise
     error('plotType unrecognized!');
 end
@@ -443,6 +457,13 @@ stimDurationsSec = cellfun(@(x) x(stimIndices), stimDurationsSec, ...
 if stimIndices
     relEventTimes = relEventTimes(1, :);
 end
+
+figNameNormalized = strcat(figPathBase, '_normalized');
+
+fig(1) = set_figure_properties('AlwaysNew', true);
+save_all_figtypes(fig(1), figName, figTypes);
+fig(2) = set_figure_properties('AlwaysNew', true);
+save_all_figtypes(fig(2), figNameNormalized, figTypes);
 
 %}
 

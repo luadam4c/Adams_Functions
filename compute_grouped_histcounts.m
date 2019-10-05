@@ -60,6 +60,7 @@ function varargout = compute_grouped_histcounts (stats, varargin)
 
 % File History:
 % 2019-01-15 Moved from plot_grouped_histogram.m
+% 2019-10-05 Now does not adjust edges to fixed edges if edges is provided
 % 
 
 %% Hard-coded parameters
@@ -154,10 +155,10 @@ if isempty(edges)
 
     % Create bin edges that works for all data
     edges = transpose(linspace(minEdges, maxEdges, nBins));
+    
+    %% Modify edges to include fixed edges if necessary
+    edges = adjust_edges(edges, 'FixedEdges', fixedEdges);
 end
-
-%% Modify edges to include fixed edges if necessary
-edges = adjust_edges(edges, 'FixedEdges', fixedEdges);
 
 %% Compute the bin counts for each group based on these edges
 %   Note: edges are not updated here

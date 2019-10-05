@@ -515,9 +515,9 @@ end
 
 % Generate a legend if there is more than one trace
 if ~strcmpi(legendLocation, 'suppress')
-%    legend('Location', legendLocation);
-% TODO: Use only the first line Object of each set
-    error('Not Implemented yet!')
+    hFirstLines = extract_elements(hRaster, 'first');
+    lgd = legend(hFirstLines, 'Location', legendLocation);
+    set(lgd, 'AutoUpdate', 'off', 'Interpreter', 'none');
 end
 
 % Generate a title

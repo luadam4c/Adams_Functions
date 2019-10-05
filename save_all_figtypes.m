@@ -37,6 +37,7 @@ function save_all_figtypes (fig, filename, varargin)
 %       ~/RTCl/single_neuron.m
 %       ~/RTCl/tuning_curves.m
 %       ~/RTCl/tuning_maps.m
+%       /home/Matlab/plethR01/plethR01_analyze.m
 
 % File History:
 % 2017-05-09 Created by Adam Lu

@@ -17,6 +17,9 @@ function figHandle = update_figure_for_corel (figHandle, varargin)
 %       varargin    - 'RemoveTicks': whether to remove all ticks
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'RemoveLegends': whether to remove all legends
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - Any other parameter-value pair for set_figure_properties()
 %
 % Requires:
@@ -26,6 +29,7 @@ function figHandle = update_figure_for_corel (figHandle, varargin)
 % Used by:
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_traces_spike2_mat.m
+%       /home/Matlab/plethR01/plethR01_analyze.m
 
 % File History:
 % 2019-09-19 Created by Adam Lu
@@ -41,6 +45,7 @@ tickLengths = [0.01, 0.01];
 
 %% Default values for optional arguments
 removeTicksDefault = false;  % set later
+removeLegendsDefault = false;  % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -61,10 +66,13 @@ addRequired(iP, 'figHandle');
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'RemoveTicks', removeTicksDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RemoveLegends', removeLegendsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, figHandle, varargin{:});
 removeTicks = iP.Results.RemoveTicks;
+removeLegends = iP.Results.RemoveLegends;
 
 % Keep unmatched arguments for set_figure_properties()
 otherArguments = iP.Unmatched;
@@ -113,6 +121,11 @@ set(ax, 'TickLength', tickLengths);
 if removeTicks
     set(ax, 'XTick', []);
     set(ax, 'YTick', []);
+end
+
+% Remove legends if requested
+if removeLegends
+    legend('off');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
