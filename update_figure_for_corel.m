@@ -36,14 +36,16 @@ function figHandle = update_figure_for_corel (figHandle, varargin)
 % 2019-09-20 Added 'RemoveTicks' as an optional argument
 % 2019-10-04 Added 'RemoveLegends' as an optional argument
 % 2019-10-05 Add textFontSize
+% 2019-10-06 Changed default labelsFontSize from 8 to 7
 
 %% Hard-coded parameters
 % TODO: Make optional parameters
-labelsFontSize = 8;
+labelsFontSize = 7;
 axisFontSize = 6; 
 textFontSize = 6;
 lineWidth = 1;
-tickLengths = [0.01, 0.01];
+units = 'inches';
+tickLengthsUnits = [0.025, 0.025];
 
 %% Default values for optional arguments
 removeTicksDefault = false;  % set later
@@ -94,6 +96,12 @@ end
 % Might change sizes
 figHandle = set_figure_properties('FigHandle', figHandle, otherArguments);
 
+% Update figure position units
+unitsOrig = get(figHandle, 'Units');
+if ~strcmp(unitsOrig, units)
+    set(figHandle, 'Units', units);
+end
+
 %% Set axes properties
 % Find all axes in the figure
 ax = findall(figHandle, 'type', 'axes');
@@ -101,25 +109,13 @@ ax = findall(figHandle, 'type', 'axes');
 % Count the number of axes
 nAx = numel(ax);
 
-% Set font
-set(ax, 'FontName', 'Arial');
-set(ax, 'FontSize', axisFontSize);
-set(ax, 'TitleFontSizeMultiplier', titleFontSizeMultiplier);
-set(ax, 'TitleFontWeight', 'normal');
-set(ax, 'LabelFontSizeMultiplier', labelFontSizeMultiplier);
-
-% Make all rulers the same linewidth
-set(ax, 'LineWidth', lineWidth);
-
 % Remove boxes
 for iAx = 1:nAx
     box(ax(iAx), 'off');
 end
 
 % Make all ticks go outward
-set(ax, 'TickDir', 'out');
-set(ax, 'TickDirMode', 'manual');
-set(ax, 'TickLength', tickLengths);
+set(ax, 'TickDir', 'out', 'TickDirMode', 'manual');
 
 % Remove x and y axis ticks
 if removeTicks
@@ -133,10 +129,41 @@ if removeLegends
     delete(lgds);
 end
 
+% Set font
+set(ax, 'FontName', 'Arial');
+set(ax, 'FontSize', axisFontSize);
+set(ax, 'TitleFontSizeMultiplier', titleFontSizeMultiplier);
+set(ax, 'TitleFontWeight', 'normal');
+set(ax, 'LabelFontSizeMultiplier', labelFontSizeMultiplier);
+
 % Change the fontsize of texts
 texts = findobj(gcf, 'Type', 'Text');
 if ~isempty(texts)
     set(texts, 'Fontsize', textFontSize);
+end
+
+% Make all rulers the same linewidth
+set(ax, 'LineWidth', lineWidth);
+
+% Set tick lengths
+figPosition = get(figHandle, 'Position');
+for iAx = 1:nAx
+    % Get the length of the longest axis
+    axPosition = get(ax(iAx), 'Position');
+    axisLengthUnits = max(axPosition(3:4) .* figPosition(3:4));
+
+    % Convert to units relative to longest axis
+    tickLengthsRel = tickLengthsUnits / axisLengthUnits;
+
+    % Set new tick lengths
+    set(ax(iAx), 'TickLength', tickLengthsRel);
+end
+
+%% Restore things
+% Restore figure position units
+unitsNow = get(figHandle, 'Units');
+if ~strcmp(unitsNow, unitsOrig)
+    set(figHandle, 'Units', unitsOrig);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

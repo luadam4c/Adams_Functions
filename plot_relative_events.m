@@ -96,6 +96,8 @@ SEC_PER_MIN = 60;
 validPlotTypes = {'raster', 'psth', 'chevron'};
 
 % TODO: Make optional arguments
+stimStartLineColor = [0.5, 0.5, 0.5];
+stimStartLineWidth = 1;
 pathBase = '';
 sheetType = 'csv';
 figSuffix = '';
@@ -161,6 +163,9 @@ figName = iP.Results.FigName;
 otherArguments = iP.Unmatched;
 
 %% Preparation
+% Initialize output
+handles = struct;
+
 % Set default directory
 if isempty(directory)
     directory = pwd;
@@ -289,6 +294,8 @@ switch plotType
         error('plotType unrecognized!');
 end
 
+
+
 %% Plot event times
 switch plotType
 case 'raster'
@@ -316,13 +323,15 @@ case 'raster'
         % Plot raster
         rasters = plot_raster(relEventTimes(iAx, :), 'Labels', labels, ...
                                 'XLabel', 'Time (min)', ...
+                                'YLabel', 'File #', ...
                                 'FigTitle', figTitle, ...
                                 'XLimits', relTimeWindowMin, ...
                                 'LegendLocation', legendLocation, ...
                                 otherArguments);
 
         % Plot stim start line
-        stimStartLine = plot_vertical_line(0, 'LineWidth', 2, 'Color', 'k');
+        stimStartLine = plot_vertical_line(0, 'Color', stimStartLineColor, ...
+                                        'LineWidth', stimStartLineWidth);
     end
 
     % Save figure
@@ -470,6 +479,12 @@ fig(1) = set_figure_properties('AlwaysNew', true);
 save_all_figtypes(fig(1), figName, figTypes);
 fig(2) = set_figure_properties('AlwaysNew', true);
 save_all_figtypes(fig(2), figNameNormalized, figTypes);
+
+% Check if event times exist
+if isempty(relEventTimes)
+    disp('There are no relative event times to plot!');
+    return
+end
 
 %}
 

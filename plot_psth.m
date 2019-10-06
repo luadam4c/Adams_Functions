@@ -102,9 +102,9 @@ function handles = plot_psth (varargin)
 
 %% Hard-coded parameters
 % TODO: Make optional parameters
-vertLineLineWidth = 2;
+vertLineLineWidth = 1;
 vertLineLineStyle = '-';
-vertLineColor = 'k';
+vertLineColor = [0.5, 0.5, 0.5];
 stimStart = 0;
 stimWindow = [];
 
