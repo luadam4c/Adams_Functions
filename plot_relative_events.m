@@ -13,6 +13,8 @@ function handles = plot_relative_events (varargin)
 %       plot_relative_events('PlotType', 'psth', 'Edges', -15:3:15, 'StimIndices', 'odd');
 %       plot_relative_events('PlotType', 'psth', 'Edges', -15:3:15, 'StimIndices', 'even');
 %       plot_relative_events('RelativeTimeWindow', [-15, 15], 'PlotType', 'chevron');
+%       plot_relative_events('RelativeTimeWindow', [-15, 15], 'PlotType', 'chevron', 'StimIndices', 'odd');
+%       plot_relative_events('RelativeTimeWindow', [-15, 15], 'PlotType', 'chevron', 'StimIndices', 'even');
 %
 % Outputs:
 %       handles     - TODO: Description of handles
@@ -294,6 +296,12 @@ case 'raster'
     % Count the appropriate number of subplots
     nSubplots = size(relEventTimes, 1);
 
+    if nSubplots == 1
+        legendLocation = 'eastoutside';
+    else
+        legendLocation = 'suppress';
+    end
+    
     % Create subplots
     [fig, ax] = create_subplots(1, nSubplots);
 
@@ -310,7 +318,7 @@ case 'raster'
                                 'XLabel', 'Time (min)', ...
                                 'FigTitle', figTitle, ...
                                 'XLimits', relTimeWindowMin, ...
-                                'LegendLocation', 'eastoutside', ...
+                                'LegendLocation', legendLocation, ...
                                 otherArguments);
 
         % Plot stim start line
