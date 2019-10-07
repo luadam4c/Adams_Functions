@@ -13,6 +13,7 @@ function fig = set_figure_properties (varargin)
 % Outputs:
 %       fig         - figure handle to use
 %                   specified as a Figure object handle
+%
 % Arguments:
 %       varargin    - 'FigHandle': figure handle for created figure
 %                   must be a empty or a figure object handle

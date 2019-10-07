@@ -1,6 +1,6 @@
-function figHandle = update_figure_for_corel (figHandle, varargin)
+function figHandle = update_figure_for_corel (varargin)
 %% Update figure to be journal-friendly (ready for CorelDraw)
-% Usage: figHandle = update_figure_for_corel (figHandle, varargin)
+% Usage: figHandle = update_figure_for_corel (figHandle (opt), varargin)
 % Explanation:
 %       TODO
 %
@@ -8,11 +8,11 @@ function figHandle = update_figure_for_corel (figHandle, varargin)
 %       fig = update_figure_for_corel(fig);
 %
 % Outputs:
-%       figHandle   - figure handle updated
+%       figHandle   - handle to updated figure
 %                   specified as a Figure object handle
 %
 % Arguments:
-%       figHandle   - figure handle to update
+%       figHandle   - (opt) figure handle to update
 %                   must be a Figure object handle
 %       varargin    - 'RemoveTicks': whether to remove all ticks
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -56,6 +56,7 @@ units = 'inches';
 tickLengthsUnits = [0.025, 0.025];
 
 %% Default values for optional arguments
+figHandleDefault = [];
 removeTicksDefault = false;  % set later
 removeLegendsDefault = false;  % set later
 xTickLocsDefault = 'suppress';  % don't change by default
@@ -74,8 +75,8 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
-% Add required inputs to the Input Parser
-addRequired(iP, 'figHandle');
+% Add optional inputs to the Input Parser
+addOptional(iP, 'figHandle', figHandleDefault);
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'RemoveTicks', removeTicksDefault, ...
@@ -90,7 +91,8 @@ addParameter(iP, 'YTickLocs', yTickLocsDefault, ...
         'YTickLocs must be ''suppress'' or a numeric vector!'));
 
 % Read from the Input Parser
-parse(iP, figHandle, varargin{:});
+parse(iP, varargin{:});
+figHandle = iP.Results.figHandle;
 removeTicks = iP.Results.RemoveTicks;
 removeLegends = iP.Results.RemoveLegends;
 xTickLocs = iP.Results.XTickLocs;
@@ -108,7 +110,6 @@ labelFontSizeMultiplier = labelsFontSize / axisFontSize;
 if ~isempty(figHandle) && ~isvalid(figHandle)
     error('figHandle is not valid!');
 end
-
 
 %% Set figure properties
 % Might change sizes
