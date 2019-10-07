@@ -94,13 +94,14 @@ function handles = plot_relative_events (varargin)
 % 2019-09-30 Now uses load_matching_sheets.m
 % 2019-10-04 Added 'StimIndices' as an optional arguments
 % 2019-10-06 Added 'YLimits' as an optional argument
+% 2019-10-06 Now plots SWD count ratio instead of percentage
 % 
 
 %% Hard-coded parameters
 SEC_PER_MIN = 60;
 validPlotTypes = {'raster', 'psth', 'chevron'};
 plotNormalized = true;
-yLimitsNormalized = [0, Inf];
+yLimitsNormalized = [];
 
 % TODO: Make optional arguments
 stimStartLineColor = [0.5, 0.5, 0.5];
@@ -383,7 +384,13 @@ case 'chevron'
     pTickLabels = {'Before', 'After'};
 
     % Modify the figure title for the normalized plot
-    figTitleNormalize = ['% ', figTitle];
+    figTitleNormalize = replace(figTitle, 'SWD count', 'SWD count ratio');
+
+    % Decide on y limits
+    % TODO: Adjust to be integer?
+    if isempty(yLimitsNormalized)
+        yLimitsNormalized = [0, Inf];
+    end
 
     % Decide on file names
     figPathBase = extract_fileparts(figName, 'pathbase');
@@ -402,8 +409,8 @@ case 'chevron'
         argfun(@(x) sum(x, 2), nEventsBeforeEachStim, nEventsAfterEachStim);
 
     % Compute normalized data
-    nEventsBeforeNormalized = 100 * nEventsBefore ./ nEventsBefore;
-    nEventsAfterNormalized = 100 * nEventsAfter ./ nEventsBefore;
+    nEventsBeforeNormalized = nEventsBefore ./ nEventsBefore;
+    nEventsAfterNormalized = nEventsAfter ./ nEventsBefore;
 
     % Save the data in tables
     chevronTable = table(nEventsBefore, nEventsAfter, ...
@@ -423,15 +430,15 @@ case 'chevron'
     end
 
     % Plot Chevron plot and save figure
-    plot_chevron(chevronTable, 'FigTitle', figTitle, ...
+    plot_chevron(chevronTable, 'FigTitle', 'suppress', ...
                 'ReadoutLabel', 'SWD count', 'PTickLabels', pTickLabels, ...
                 'ReadoutLimits', yLimits, 'LegendLocation', 'northeast', ...
                 'AxesHandle', ax(1), 'FigExpansion', [], otherArguments);
 
     % Plot normalized Chevron plot and save figure
     if plotNormalized
-        plot_chevron(normChevronTable, 'FigTitle', figTitleNormalize, ...
-                    'ReadoutLabel', '% SWD count', 'PTickLabels', pTickLabels, ...
+        plot_chevron(normChevronTable, 'FigTitle', 'suppress', ...
+                    'ReadoutLabel', 'SWD count ratio', 'PTickLabels', pTickLabels, ...
                     'ReadoutLimits', yLimitsNormalized, ...
                     'LegendLocation', 'northeast', ...
                     'AxesHandle', ax(2), 'FigExpansion', [], otherArguments);
@@ -516,6 +523,8 @@ if isempty(relEventTimes)
     disp('There are no relative event times to plot!');
     return
 end
+
+figTitleNormalize = ['% ', figTitle];
 
 %}
 
