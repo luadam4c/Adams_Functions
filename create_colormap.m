@@ -48,6 +48,7 @@ function colorMap = create_colormap (varargin);
 % 2019-08-04 Made nColors an optional argument
 % 2019-08-04 Added 'ReverseOrder' as an optional argument
 % 2019-08-04 Added 'HighContrast' as an optional argument
+% 2019-10-07 Changed default colors
 % 
 
 %% Hard-coded parameters
@@ -116,11 +117,15 @@ elseif nColors == 2
     colorMap = [rgb('Blue'); rgb('Red')];
 elseif nColors == 3
     % Color groups correspond to 3 vHold conditions
-    colorMap = [rgb('Blue'); rgb('DarkGreen'); rgb('Purple')];
+    colorMap = [rgb('DarkBlue'); rgb('DarkGreen'); rgb('DarkRed')];
 elseif nColors == 4
     % Color groups correspond to 4 pharm conditions
-    colorMap = [rgb('Black'); rgb('Blue'); ...
-                rgb('DarkGreen'); rgb('Purple')];
+    colorMap = [rgb('Black'); rgb('DarkBlue'); ...
+                rgb('DarkGreen'); rgb('Indigo')];
+elseif nColors == 6
+    % Color groups correspond to 4 pharm conditions
+    colorMap = [rgb('DarkBlue'); rgb('DarkCyan'); rgb('DarkGoldenRod'); ...
+                rgb('DarkGreen'); rgb('DarkRed'); rgb('DarkOrange');];
 else
     % Color groups corresponding to pharm-g incr pairs
     colorMap = colorMapFunc(nColors);
