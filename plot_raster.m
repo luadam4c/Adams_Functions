@@ -138,6 +138,7 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 % 2019-09-11 Updated 'Colors' to 'ColorMap'
 % 2019-09-11 Updated to not use parfor
 % 2019-10-07 Added 'XTickLocs' as an optional argument
+% 2019-10-07 Updated default y limits
 % TODO: Distinguish plot_raster.m vs plot_raster_plot.m?
 % 
 
@@ -428,7 +429,7 @@ end
 if isempty(yLimits)
     maxTrialNo = apply_iteratively(@max, trialNos);
     minTrialNo = apply_iteratively(@min, trialNos);
-    yLimits = [minTrialNo - 1, maxTrialNo + 1];
+    yLimits = [minTrialNo - 0.5, maxTrialNo + 0.5];
 end
 
 % Set the default x-axis label
@@ -567,6 +568,8 @@ yEnds = transpose(yMidsVector + halfBarWidth * [-1, 1]);
 
 %{
 OLD CODE:
+
+yLimits = [minTrialNo - 1, maxTrialNo + 1];
 
 %}
 

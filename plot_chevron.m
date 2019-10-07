@@ -94,14 +94,16 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 % File History:
 % 2019-10-01 Created by Adam Lu
 % 2019-10-03 Made many things optional arguments
+% 2019-10-07 Now plots means with open circles
 % TODO: Combine with plot_table.m?
 
 %% Hard-coded parameters
 lineWidth = 1;
 markerSize = 4;
-meanLineWidthRatio = 2;
-meanMarkerSizeRatio = 1.5;
-meanColorMap = 'r';
+meanLineWidthRatio = 1;
+meanLineStyle = '--';
+meanMarkerSizeRatio = 1.75;
+meanColorMap = [0, 0, 0];
 
 %% Default values for optional arguments
 plotMeanDifferenceDefault = false;
@@ -291,8 +293,8 @@ if plotMeanDifference && nConds == 2
     handlesMean = plot_tuning_curve(pValues, meanValues, 'PlotOnly', true, ...
                     'LowerCI', lower95Values, 'UpperCI', upper95Values, ...
                     'LineWidth', meanLineWidth, 'ColorMap', meanColorMap, ...
-                    'Marker', 'o', 'MarkerFaceColor', meanColorMap, ...
-                    'MarkerSize', meanMarkerSize, 'AxesHandle', axHandle);
+                    'Marker', 'o', 'MarkerSize', meanMarkerSize, ...
+                    'AxesHandle', axHandle);
 
     % Hold off
     hold_off(wasHold);
@@ -310,9 +312,9 @@ if plotErrorBars
     wasHold = hold_on;
 
     % Plot the means
-    plot(axHandle, pValues, means, 'r-o', ...
-        'LineWidth', meanLineWidth, 'MarkerSize', meanMarkerSize, ...
-        'MarkerFaceColor', meanColorMap);
+    plot(axHandle, pValues, means, 'o', 'Color', meanColorMap, ...
+        'LineStyle', meanLineStyle, 'LineWidth', meanLineWidth, ...
+        'MarkerSize', meanMarkerSize);
 
     % Plot error bars
     plot_error_bar(pValues, lower95s, upper95s, 'Color', meanColorMap, ...
@@ -352,6 +354,10 @@ if plotStar
 end
 
 colorMap = [0, 0, 0];
+
+plot(axHandle, pValues, means, 'r-o', ...
+    'LineWidth', meanLineWidth, 'MarkerSize', meanMarkerSize, ...
+    'MarkerFaceColor', meanColorMap);
 
 %}
 

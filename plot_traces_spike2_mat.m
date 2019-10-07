@@ -58,6 +58,10 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 %                       'ms'    - milliseconds
 %                       'us'    - microseconds
 %                   default == 's'
+%                   - 'YLimits': limits of y axis, 
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a cell array of numeric vectors
+%                   default == uses compute_axis_limits.m
 %                   - 'FigExpansion': expansion factor for figure position
 %                   must be a positive scalar or 2-element vector
 %                   default == []
@@ -97,6 +101,7 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 % 2019-09-30 Moved from plethRO1_analyze.m
 % 2019-10-04 Now computes the spectrogram for the full trace 
 %               and then restrict it to the time window of interest
+% 2019-10-07 Added 'YLimits' as an optional argument
 % 
 
 %% Hard-coded constants
@@ -134,6 +139,7 @@ channelNamesToPlot = {};
 
 relativeTimeWindowDefault = [];     % set later
 timeUnitsDefault = '';          % set later
+yLimitsDefault = [];            % set later
 figExpansionDefault = [];       % no figure expansion by default
 figNameDefault = '';            % don't save figure by default
 figTypesDefault = {'png', 'epsc'};
@@ -178,6 +184,9 @@ addParameter(iP, 'RelativeTimeWindow', relativeTimeWindowDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
     @(x) any(validatestring(x, validTimeUnits)));
+addParameter(iP, 'YLimits', yLimitsDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) || iscellnumeric(x));
 addParameter(iP, 'FigExpansion', figExpansionDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive'}));
 addParameter(iP, 'FigName', figNameDefault, ...
@@ -198,6 +207,7 @@ removeTicks = iP.Results.RemoveTicks;
 stimTableSuffix = iP.Results.StimTableSuffix;
 relativeTimeWindow = iP.Results.RelativeTimeWindow;
 timeUnits = validatestring(iP.Results.TimeUnits, validTimeUnits);
+yLimits = iP.Results.YLimits;
 figExpansion = iP.Results.FigExpansion;
 figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
@@ -475,15 +485,8 @@ for iPlot = 1:nSubPlots
     else
         plot(ax(iPlot), timeVecToPlot, channelValuesToPlot(:, iPlot), ...
                 'Color', 'k');
-        if iPlot == 1
-%            set(ax(iPlot), 'YLim', [33, 40]);
-        elseif iPlot == 2
-%            set(ax(iPlot), 'YLim', [-1, 1]);
-        elseif iPlot == 3
-            % Show only -0.5-0.5 mV
-%            set(ax(iPlot), 'YLim', [-0.5, 0.5]);
-        elseif iPlot == 4
-%            set(ax(iPlot), 'YLim', [-0.5, 0.5]);
+        if ~isempty(yLimits)
+            set(ax(iPlot), 'YLim', yLimits{iPlot});
         end
     end
 
@@ -594,6 +597,17 @@ channelNames = data.channelNames;
 % Create figure paths
 [figPathBase, figPathBaseNoSwd, figPathBaseSwd] = ...
     argfun(@(x) fullfile(outFolder, x), figBase, figBaseNoSwd, figBaseSwd);
+
+if iPlot == 1
+    set(ax(iPlot), 'YLim', [33, 40]);
+elseif iPlot == 2
+    set(ax(iPlot), 'YLim', [-1, 1]);
+elseif iPlot == 3
+    % Show only -0.5-0.5 mV
+    set(ax(iPlot), 'YLim', [-0.5, 0.5]);
+elseif iPlot == 4
+    set(ax(iPlot), 'YLim', [-0.5, 0.5]);
+end
 
 %}
 

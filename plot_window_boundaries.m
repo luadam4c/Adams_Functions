@@ -37,7 +37,7 @@ function h = plot_window_boundaries (win, varargin)
 %                       '-.'    - dash-dotted line
 %                       'none'  - no line
 %                   default == '-'
-%                   - 'LineWidth': color of boundaries
+%                   - 'LineWidth': line width of boundaries
 %                   must be empty or a positive scalar
 %                   default == 3 for bars and 2 for lines
 %                   - 'BarRelValue': value for bars relative to current axis
@@ -90,7 +90,7 @@ shadeLineWidth = 0.5;
 %% Default values for optional arguments
 boundaryTypeDefault = 'verticalLines';
 lineStyleDefault = '';      % set later
-lineWidthDefault = '';      % set later
+lineWidthDefault = [];      % set later
 barRelValueDefault = 0.1;   % set later
 barValueDefault = [];       % set later
 colorMapDefault = '';       % set later

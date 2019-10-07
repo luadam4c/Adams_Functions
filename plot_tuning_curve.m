@@ -287,6 +287,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-10-02 Added 'PlotOnly' as an optional argument
 % 2019-10-02 Now plots a star if significant
 % 2019-10-04 Now plots 'NS' if not significant
+% 2019-10-07 Now plots 'NS' or star in black
 
 %% Hard-coded constants
 WHITE = [1, 1, 1];
@@ -1281,10 +1282,10 @@ for iValue =  1:numel(tTestPValues)
 
     % Plot star if significant, 'NS' if not
     if tTestPValueThis < sigLevel
-        plot(xLocStarThis, yLocStar, '*', 'Color', pColor, ...
+        plot(xLocStarThis, yLocStar, '*', 'Color', [0, 0, 0], ...
             'MarkerSize', 4);
     else
-        text(xLocStarThis, yLocStar, 'NS', 'Color', pColor, ...
+        text(xLocStarThis, yLocStar, 'NS', 'Color', [0, 0, 0], ...
             'HorizontalAlignment', 'center');
     end
 end

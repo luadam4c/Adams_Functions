@@ -26,6 +26,9 @@ function figHandle = update_figure_for_corel (varargin)
 %                   - 'YTickLocs': locations of Y ticks
 %                   must be 'suppress' or a numeric vector
 %                   default == 'suppress'
+%                   - 'PlotLineWidth': line width of main plot
+%                   must be empty or a positive scalar
+%                   default == [] (don't change)
 %                   - Any other parameter-value pair for set_figure_properties()
 %
 % Requires:
@@ -49,7 +52,6 @@ function figHandle = update_figure_for_corel (varargin)
 labelsFontSize = 7;
 axisFontSize = 6; 
 textFontSize = 6;
-plotLineWidth = 0.5;
 annotationLineWidth = 1;
 rulerLineWidth = 1;
 units = 'inches';
@@ -61,6 +63,7 @@ removeTicksDefault = false;  % set later
 removeLegendsDefault = false;  % set later
 xTickLocsDefault = 'suppress';  % don't change by default
 yTickLocsDefault = 'suppress';  % don't change by default
+plotLineWidthDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -89,6 +92,8 @@ addParameter(iP, 'XTickLocs', xTickLocsDefault, ...
 addParameter(iP, 'YTickLocs', yTickLocsDefault, ...
     @(x) assert(ischar(x) && strcmpi(x, 'suppress') || isnumericvector(x), ...
         'YTickLocs must be ''suppress'' or a numeric vector!'));
+addParameter(iP, 'PlotLineWidth', plotLineWidthDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -97,6 +102,7 @@ removeTicks = iP.Results.RemoveTicks;
 removeLegends = iP.Results.RemoveLegends;
 xTickLocs = iP.Results.XTickLocs;
 yTickLocs = iP.Results.YTickLocs;
+plotLineWidth = iP.Results.PlotLineWidth;
 
 % Keep unmatched arguments for set_figure_properties()
 otherArguments = iP.Unmatched;
@@ -175,10 +181,12 @@ end
 set(ax, 'LineWidth', rulerLineWidth);
 
 % Update plot line widths
-lines = findobj(figHandle, 'Type', 'Line');
-plots = lines(arrayfun(@(x) is_plot(x), lines));
+if ~isempty(plotLineWidth)
+    lines = findobj(figHandle, 'Type', 'Line');
+    plots = lines(arrayfun(@(x) is_plot(x), lines));
+    set(plots, 'LineWidth', plotLineWidth);
+end
 
-set(plots, 'LineWidth', plotLineWidth);
 % Update annotation line widths
 % TODO: How to distinguish?
 

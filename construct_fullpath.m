@@ -45,6 +45,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %       cd/argfun.m
 %       cd/construct_suffix.m
 %       cd/force_column_cell.m
+%       cd/force_string_start.m
 %       cd/match_format_vector_sets.m
 %
 % Used by:
@@ -60,7 +61,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %       cd/test_var_difference.m
 %       ~/RTCl/neuronlaunch.m
 %       ~/m3ha/data_dclamp/dclampPassiveFitter.m
-% 
+
 % 2017-03-27 Created
 % 2017-05-04 Removed ntrials
 % 2017-05-04 Added input Parser scheme
@@ -74,6 +75,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 % 2018-10-03 Added pathType as an output
 % 2018-10-03 Now accepts a cell array of paths as input
 % 2018-11-01 Now uses argfun.m, force_column_cell.m, match_format_vector_sets.m
+% 2019-10-07 Now uses force_string_start.m on file extension
 
 %% Default values for optional arguments
 verboseDefault = false;             % don't print to standard output by default
@@ -168,11 +170,8 @@ function [fullPath, pathType] = ...
 
 % Decide on the file extension
 if ~isempty(extension)
-    % Use the provided file extension
-    fileExt = extension;
-
     % Make sure the file extension, if provided, starts with a dot
-    % TODO
+    fileExt = force_string_start(extension, '.');
 else
     % Use the detected file extension 
     %   Note: this could be empty in case of a directory

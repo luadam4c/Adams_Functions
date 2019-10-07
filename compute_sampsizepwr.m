@@ -400,15 +400,15 @@ end
 if isempty(stdev)
     if strcmpi(testType, 'z') || strcmpi(testType, 't')
         if ~isempty(dataExp) && ~isempty(dataCon)
-            stdev = compute_stats(dataExp - dataCon, 'std');
+            stdev = compute_stats(dataExp - dataCon, 'std', 'IgnoreNan', true);
         elseif ~isempty(dataExp)
-            stdev = compute_stats(dataExp, 'std');
+            stdev = compute_stats(dataExp, 'std', 'IgnoreNan', true);
         else
-            stdev = compute_stats(dataCon, 'std');
+            stdev = compute_stats(dataCon, 'std', 'IgnoreNan', true);
         end
     else
-        stdNull = compute_stats(dataCon, 'std');
-        stdAlt = compute_stats(dataExp, 'std');
+        stdNull = compute_stats(dataCon, 'std', 'IgnoreNan', true);
+        stdAlt = compute_stats(dataExp, 'std', 'IgnoreNan', true);
         stdev = nanmean([stdNull, stdAlt]);
     end
 end
@@ -419,6 +419,10 @@ if isempty(pNull)
     pNull = estimate_dist_params(dataCon, testType, meanNull, stdev, 'null');
 end
 
+% Standard deviation can't be zero
+if stdev == 0
+    return
+end
 
 % Estimate alternative hypothesis parameters if not provided
 if isempty(pAlt)
@@ -466,15 +470,15 @@ if isempty(meanValue)
                 case 'null'
                     meanValue = 0;
                 case 'alt'
-                    meanValue = compute_stats(data, 'mean');
+                    meanValue = compute_stats(data, 'mean', 'IgnoreNan', true);
                 otherwise
                     error('paramType unrecognized!');
             end
         case 't2'
-            meanValue = compute_stats(data, 'mean');
+            meanValue = compute_stats(data, 'mean', 'IgnoreNan', true);
         case 'var'
             % Compute the sample variance
-            meanValue = compute_stats(data, 'var');
+            meanValue = compute_stats(data, 'var', 'IgnoreNan', true);
         case 'p'
             % Estimate the proportion of ones from a Bernoulli trial
             meanValue = sum(data)/numel(data);
