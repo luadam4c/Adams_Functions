@@ -70,6 +70,9 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 %                               suppress by setting value to 'suppress'
 %                   must be a string scalar or a character vector 
 %                   default == 'suppress'
+%                   - 'XTickLocs': locations of X ticks
+%                   must be 'suppress' or a numeric vector
+%                   default == 'suppress'
 %                   - 'YTickLocs': locations of Y ticks
 %                   must be 'suppress' or a numeric vector
 %                   default == ntrials:1
@@ -134,6 +137,7 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 % 2019-03-14 Fixed the case when there is a condition with no spikes
 % 2019-09-11 Updated 'Colors' to 'ColorMap'
 % 2019-09-11 Updated to not use parfor
+% 2019-10-07 Added 'XTickLocs' as an optional argument
 % TODO: Distinguish plot_raster.m vs plot_raster_plot.m?
 % 
 
@@ -153,6 +157,7 @@ yLimitsDefault = [];            % set later
 xUnitsDefault = 'unit';         % the default x-axis units
 xLabelDefault = '';             % set later
 yLabelDefault = '';             % set later
+xTickLocsDefault = 'suppress';  % don't change by default
 yTickLocsDefault = [];          % set later
 yTickLabelsDefault = {};        % set later
 legendLocationDefault = 'auto'; % set later
@@ -216,6 +221,9 @@ addParameter(iP, 'XLabel', xLabelDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'YLabel', yLabelDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'XTickLocs', xTickLocsDefault, ...
+    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || isnumericvector(x), ...
+        'XTickLocs must be ''suppress'' or a numeric vector!'));
 addParameter(iP, 'YTickLocs', yTickLocsDefault, ...
     @(x) assert(ischar(x) && strcmpi(x, 'suppress') || isnumericvector(x), ...
         'YTickLocs must be ''suppress'' or a numeric vector!'));
@@ -250,6 +258,7 @@ yLimits = iP.Results.YLimits;
 xUnits = iP.Results.XUnits;
 xLabel = iP.Results.XLabel;
 yLabel = iP.Results.YLabel;
+xTickLocs = iP.Results.XTickLocs;
 yTickLocs = iP.Results.YTickLocs;
 yTickLabels = iP.Results.YTickLabels;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
@@ -485,6 +494,11 @@ if ~isempty(horzBarWindows)
                         'Color', 'r', 'LineStyle', '-', 'LineWidth', 0.5), ...
                         num2cell(yHorzBars), horzBarWindows, ...
                         'UniformOutput', false);
+end
+
+% Change the x tick values
+if ~ischar(xTickLocs) || ~strcmpi(xTickLocs, 'suppress')
+    set(gca, 'XTick', xTickLocs);
 end
 
 % Change the y tick values and labels

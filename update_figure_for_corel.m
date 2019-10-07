@@ -20,6 +20,12 @@ function figHandle = update_figure_for_corel (figHandle, varargin)
 %                   - 'RemoveLegends': whether to remove all legends
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'XTickLocs': locations of X ticks
+%                   must be 'suppress' or a numeric vector
+%                   default == 'suppress'
+%                   - 'YTickLocs': locations of Y ticks
+%                   must be 'suppress' or a numeric vector
+%                   default == 'suppress'
 %                   - Any other parameter-value pair for set_figure_properties()
 %
 % Requires:
@@ -52,6 +58,8 @@ tickLengthsUnits = [0.025, 0.025];
 %% Default values for optional arguments
 removeTicksDefault = false;  % set later
 removeLegendsDefault = false;  % set later
+xTickLocsDefault = 'suppress';  % don't change by default
+yTickLocsDefault = 'suppress';  % don't change by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -74,11 +82,19 @@ addParameter(iP, 'RemoveTicks', removeTicksDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveLegends', removeLegendsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'XTickLocs', xTickLocsDefault, ...
+    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || isnumericvector(x), ...
+        'XTickLocs must be ''suppress'' or a numeric vector!'));
+addParameter(iP, 'YTickLocs', yTickLocsDefault, ...
+    @(x) assert(ischar(x) && strcmpi(x, 'suppress') || isnumericvector(x), ...
+        'YTickLocs must be ''suppress'' or a numeric vector!'));
 
 % Read from the Input Parser
 parse(iP, figHandle, varargin{:});
 removeTicks = iP.Results.RemoveTicks;
 removeLegends = iP.Results.RemoveLegends;
+xTickLocs = iP.Results.XTickLocs;
+yTickLocs = iP.Results.YTickLocs;
 
 % Keep unmatched arguments for set_figure_properties()
 otherArguments = iP.Unmatched;
@@ -123,6 +139,16 @@ set(ax, 'TickDir', 'out', 'TickDirMode', 'manual');
 if removeTicks
     set(ax, 'XTick', []);
     set(ax, 'YTick', []);
+else
+    % Change the x tick values
+    if ~ischar(xTickLocs) || ~strcmpi(xTickLocs, 'suppress')
+        set(ax, 'XTick', xTickLocs);
+    end
+
+    % Change the y tick values
+    if ~ischar(yTickLocs) || ~strcmpi(yTickLocs, 'suppress')
+        set(ax, 'YTick', yTickLocs);
+    end
 end
 
 % Remove legends if requested

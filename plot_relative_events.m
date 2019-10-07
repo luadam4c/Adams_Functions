@@ -10,8 +10,8 @@ function handles = plot_relative_events (varargin)
 %       plot_relative_events('PlotType', 'psth', 'Edges', -20:2:20);
 %       plot_relative_events('RelativeTimeWindow', [-20, 20], 'PlotType', 'chevron', 'PlotErrorBars', true);
 %       plot_relative_events('RelativeTimeWindow', [-15, 15]);
-%       plot_relative_events('PlotType', 'psth', 'Edges', -15:3:15, 'StimIndices', 'odd');
-%       plot_relative_events('PlotType', 'psth', 'Edges', -15:3:15, 'StimIndices', 'even');
+%       plot_relative_events('PlotType', 'psth', 'Edges', -15:2.5:15, 'StimIndices', 'odd');
+%       plot_relative_events('PlotType', 'psth', 'Edges', -15:2.5:15, 'StimIndices', 'even');
 %       plot_relative_events('RelativeTimeWindow', [-15, 15], 'PlotType', 'chevron');
 %       plot_relative_events('RelativeTimeWindow', [-15, 15], 'PlotType', 'chevron', 'StimIndices', 'odd');
 %       plot_relative_events('RelativeTimeWindow', [-15, 15], 'PlotType', 'chevron', 'StimIndices', 'even');
@@ -51,6 +51,11 @@ function handles = plot_relative_events (varargin)
 %                   must be a positive scalar
 %                   default == [] (not plotted)
 %                   - 'YLimits': limits of y axis, 
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == uses compute_axis_limits.m
+%                   - 'YLimitsNormalized': limits of y axis 
+%                                           for the normalized plot
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
 %                   default == uses compute_axis_limits.m
@@ -95,13 +100,13 @@ function handles = plot_relative_events (varargin)
 % 2019-10-04 Added 'StimIndices' as an optional arguments
 % 2019-10-06 Added 'YLimits' as an optional argument
 % 2019-10-06 Now plots SWD count ratio instead of percentage
+% 2019-10-06 Added 'YLimitsNormalized' as an optional argument
 % 
 
 %% Hard-coded parameters
 SEC_PER_MIN = 60;
 validPlotTypes = {'raster', 'psth', 'chevron'};
 plotNormalized = true;
-yLimitsNormalized = [];
 
 % TODO: Make optional arguments
 stimStartLineColor = [0.5, 0.5, 0.5];
@@ -120,6 +125,7 @@ directoryDefault = '';          % set later
 relativeTimeWindowMinDefault = [];
 stimDurationMinDefault = [];
 yLimitsDefault = [];            % set later
+yLimitsNormalizedDefault = [];  % set later
 figTitleDefault = '';           % set later
 figNameDefault = '';            % set later
 figTypesDefault = {'png', 'epsc2'};
@@ -150,6 +156,9 @@ addParameter(iP, 'StimDurationMin', stimDurationMinDefault, ...
 addParameter(iP, 'YLimits', yLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
+addParameter(iP, 'YLimitsNormalized', yLimitsNormalizedDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigName', figNameDefault, ...
@@ -167,6 +176,7 @@ directory = iP.Results.Directory;
 relTimeWindowMin = iP.Results.RelativeTimeWindowMin;
 stimDurationMin = iP.Results.StimDurationMin;
 yLimits = iP.Results.YLimits;
+yLimitsNormalized = iP.Results.YLimitsNormalized;
 figTitle = iP.Results.FigTitle;
 figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
