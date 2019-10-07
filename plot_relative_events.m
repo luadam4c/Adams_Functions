@@ -50,6 +50,10 @@ function handles = plot_relative_events (varargin)
 %                                       (stim always occur at 0)
 %                   must be a positive scalar
 %                   default == [] (not plotted)
+%                   - 'YLimits': limits of y axis, 
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == uses compute_axis_limits.m
 %                   - 'FigTitle': title for the figure
 %                   must be a string scalar or a character vector
 %                   default == TODO
@@ -89,11 +93,14 @@ function handles = plot_relative_events (varargin)
 % 2019-09-25 Finished the raster plot code
 % 2019-09-30 Now uses load_matching_sheets.m
 % 2019-10-04 Added 'StimIndices' as an optional arguments
+% 2019-10-06 Added 'YLimits' as an optional argument
 % 
 
 %% Hard-coded parameters
 SEC_PER_MIN = 60;
 validPlotTypes = {'raster', 'psth', 'chevron'};
+plotNormalized = true;
+yLimitsNormalized = [0, Inf];
 
 % TODO: Make optional arguments
 stimStartLineColor = [0.5, 0.5, 0.5];
@@ -111,6 +118,7 @@ stimTableSuffixDefault = '_pulses';
 directoryDefault = '';          % set later
 relativeTimeWindowMinDefault = [];
 stimDurationMinDefault = [];
+yLimitsDefault = [];            % set later
 figTitleDefault = '';           % set later
 figNameDefault = '';            % set later
 figTypesDefault = {'png', 'epsc2'};
@@ -138,6 +146,9 @@ addParameter(iP, 'RelativeTimeWindowMin', relativeTimeWindowMinDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'StimDurationMin', stimDurationMinDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'YLimits', yLimitsDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigName', figNameDefault, ...
@@ -154,6 +165,7 @@ stimTableSuffix = iP.Results.StimTableSuffix;
 directory = iP.Results.Directory;
 relTimeWindowMin = iP.Results.RelativeTimeWindowMin;
 stimDurationMin = iP.Results.StimDurationMin;
+yLimits = iP.Results.YLimits;
 figTitle = iP.Results.FigTitle;
 figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
@@ -215,6 +227,16 @@ if isempty(figTitle)
                     create_label_from_sequence(stimIndices)];
     elseif ischar(stimIndices)
         figTitle = ['SWD count around ', stimIndices, ' stims'];
+    end
+end
+
+% Decide on default y limits
+if isempty(yLimits)
+    switch plotType
+        case 'chevron'
+            yLimits = [0, Inf];
+        otherwise
+            % Keep empty
     end
 end
 
@@ -326,6 +348,7 @@ case 'raster'
                                 'YLabel', 'File #', ...
                                 'FigTitle', figTitle, ...
                                 'XLimits', relTimeWindowMin, ...
+                                'YLimits', yLimits, ...
                                 'LegendLocation', legendLocation, ...
                                 otherArguments);
 
@@ -347,6 +370,7 @@ case 'psth'
     handles = plot_psth('EventTimes', swdStartTimesMin, ...
                         'StimTimes', stimStartTimesMin, ...
                         'GroupingLabels', labels, ...
+                        'YLimits', yLimits, ...
                         'XLabel', 'Time (min)', ...
                         'RelativeTimeWindow', relTimeWindowMin, ...
                         'StimDuration', stimDurationMin, ...
@@ -392,19 +416,26 @@ case 'chevron'
     writetable(normChevronTable, sheetPathNormalized);
 
     % Create subplots
-    [fig, ax] = create_subplots(1, 2, 'FigExpansion', [1, 1]);
+    if plotNormalized
+        [fig, ax] = create_subplots(1, 2, 'FigExpansion', [1, 1]);
+    else
+        [fig, ax] = create_subplots(1, 1);
+    end
 
     % Plot Chevron plot and save figure
     plot_chevron(chevronTable, 'FigTitle', figTitle, ...
                 'ReadoutLabel', 'SWD count', 'PTickLabels', pTickLabels, ...
-                'ReadoutLimits', [0, Inf], 'LegendLocation', 'northeast', ...
+                'ReadoutLimits', yLimits, 'LegendLocation', 'northeast', ...
                 'AxesHandle', ax(1), 'FigExpansion', [], otherArguments);
 
     % Plot normalized Chevron plot and save figure
-    plot_chevron(normChevronTable, 'FigTitle', figTitleNormalize, ...
-                'ReadoutLabel', '% SWD count', 'PTickLabels', pTickLabels, ...
-                'ReadoutLimits', [0, Inf], 'LegendLocation', 'northeast', ...
-                'AxesHandle', ax(2), 'FigExpansion', [], otherArguments);
+    if plotNormalized
+        plot_chevron(normChevronTable, 'FigTitle', figTitleNormalize, ...
+                    'ReadoutLabel', '% SWD count', 'PTickLabels', pTickLabels, ...
+                    'ReadoutLimits', yLimitsNormalized, ...
+                    'LegendLocation', 'northeast', ...
+                    'AxesHandle', ax(2), 'FigExpansion', [], otherArguments);
+    end
 
     % Save figure
     save_all_figtypes(fig, figName, figTypes);

@@ -50,6 +50,7 @@ function ax = set_axes_properties (varargin)
 %       cd/plot_frame.m
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
+%       cd/plot_vertical_line.m
 
 % File History:
 % 2019-09-04 Adaped from set_figure_properties.m

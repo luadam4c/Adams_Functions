@@ -37,7 +37,7 @@ function h = plot_vertical_line (xValue, varargin)
 %                   default == decide_on_colormap([], nLines)
 %                   - 'AxesHandle': axes handle for created axes
 %                   must be a empty or a axes object handle
-%                   default == []
+%                   default == set in set_axes_properties.m
 %                   - Any other parameter-value pair for the line() function
 %
 % Requires:
@@ -58,6 +58,7 @@ function h = plot_vertical_line (xValue, varargin)
 %       cd/plot_swd_histogram.m
 %       cd/plot_traces_spike2_mat.m
 %       cd/plot_window_boundaries.m
+%       cd/set_axes_properties.m
 
 % File History:
 % 2018-12-19 Created by Adam Lu
@@ -75,7 +76,7 @@ function h = plot_vertical_line (xValue, varargin)
 yLimitsDefault = [];
 colorMapDefault = [];               % set later
 horizontalInsteadDefault = false;
-axHandleDefault = [];           % no existing axes by default
+axHandleDefault = [];               % gca by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -111,16 +111,16 @@ function colorMap = create_colormap_helper (nColors, colorMapFunc, ...
 %   Note: this is an N by 3 array, where N is the number of colors
 
 if nColors == 1
-    colorMap = rgb('Blue');    
+    colorMap = rgb('Blue');
 elseif nColors == 2
     colorMap = [rgb('Blue'); rgb('Red')];
 elseif nColors == 3
     % Color groups correspond to 3 vHold conditions
-    colorMap = [rgb('Blue'); rgb('Red'); rgb('Purple')];
+    colorMap = [rgb('Blue'); rgb('DarkGreen'); rgb('Purple')];
 elseif nColors == 4
     % Color groups correspond to 4 pharm conditions
     colorMap = [rgb('Black'); rgb('Blue'); ...
-                rgb('Red'); rgb('Purple')];
+                rgb('DarkGreen'); rgb('Purple')];
 else
     % Color groups corresponding to pharm-g incr pairs
     colorMap = colorMapFunc(nColors);

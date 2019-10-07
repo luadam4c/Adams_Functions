@@ -53,9 +53,15 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %                   must be a scalartext 
 %                       or a cell array of strings or character vectors
 %                   default == table row names or data1, data2, ...
-%                   - 'ColorMap' - color map used when nColumnsToPlot > 1
+%                   - 'ColorMap': color map used when nColumnsToPlot > 1
 %                   must be a 2-D numeric array with 3 columns
 %                   default == set in decide_on_colormap.m
+%                   - 'MarkerSize': marker size for individual data
+%                   must be empty or a positive scalar
+%                   default == 6
+%                   - 'LineWidth': line width for individual data
+%                   must be empty or a positive scalar
+%                   default == 1
 %                   - 'LegendLocation': location for legend
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'auto'      - use default
@@ -93,8 +99,8 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %% Hard-coded parameters
 lineWidth = 1;
 markerSize = 4;
-meanLineWidth = 2;
-meanMarkSize = 6;
+meanLineWidthRatio = 2;
+meanMarkerSizeRatio = 1.5;
 meanColorMap = 'r';
 
 %% Default values for optional arguments
@@ -108,6 +114,8 @@ pTickLabelsDefault = {};            % set later
 pLabelDefault = 'suppress';
 columnLabelsDefault = '';           % set later
 colorMapDefault = [];               % set later
+markerSizeDefault = 6;
+lineWidthDefault = 1;
 legendLocationDefault = 'eastoutside';
 figExpansionDefault = [1, 0.6];
 axHandleDefault = [];               % gca by default
@@ -150,6 +158,10 @@ addParameter(iP, 'PLabel', pLabelDefault, ...
 addParameter(iP, 'ColumnLabels', columnLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'ColorMap', colorMapDefault);
+addParameter(iP, 'MarkerSize', markerSizeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+addParameter(iP, 'LineWidth', lineWidthDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
 addParameter(iP, 'FigExpansion', figExpansionDefault, ...
@@ -168,6 +180,8 @@ pTickLabels = iP.Results.PTickLabels;
 pLabel = iP.Results.PLabel;
 columnLabels = iP.Results.ColumnLabels;
 colorMap = iP.Results.ColorMap;
+markerSize = iP.Results.MarkerSize;
+lineWidth = iP.Results.LineWidth;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
 figExpansion = iP.Results.FigExpansion;
@@ -232,9 +246,13 @@ if isempty(columnLabels)
     end
 end
 
+% Decide on the mean marker size
+meanMarkerSize = ceil(meanMarkerSizeRatio * markerSize);
+meanLineWidth = meanLineWidthRatio * lineWidth;
+
 %% Do the job
 % Decide on the axes
-set_axes_properties('AxesHandle', axHandle);
+axHandle = set_axes_properties('AxesHandle', axHandle);
 
 % Plot a tuning curve
 handles = plot_tuning_curve(pValues, transpose(dataValues), ...
@@ -274,7 +292,7 @@ if plotMeanDifference && nConds == 2
                     'LowerCI', lower95Values, 'UpperCI', upper95Values, ...
                     'LineWidth', meanLineWidth, 'ColorMap', meanColorMap, ...
                     'Marker', 'o', 'MarkerFaceColor', meanColorMap, ...
-                    'MarkerSize', meanMarkSize, 'AxesHandle', axHandle);
+                    'MarkerSize', meanMarkerSize, 'AxesHandle', axHandle);
 
     % Hold off
     hold_off(wasHold);
@@ -292,13 +310,13 @@ if plotErrorBars
     wasHold = hold_on;
 
     % Plot the means
-    plot(pValues, means, 'r-o', ...
-        'LineWidth', meanLineWidth, 'MarkerSize', meanMarkSize, ...
+    plot(axHandle, pValues, means, 'r-o', ...
+        'LineWidth', meanLineWidth, 'MarkerSize', meanMarkerSize, ...
         'MarkerFaceColor', meanColorMap);
 
     % Plot error bars
     plot_error_bar(pValues, lower95s, upper95s, 'Color', meanColorMap, ...
-                    'LineWidth', meanLineWidth);
+                    'LineWidth', meanLineWidth, 'AxesHandle', axHandle);
 
     % Hold off
     hold_off(wasHold);

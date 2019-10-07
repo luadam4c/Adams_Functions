@@ -1281,7 +1281,8 @@ for iValue =  1:numel(tTestPValues)
 
     % Plot star if significant, 'NS' if not
     if tTestPValueThis < sigLevel
-        plot(xLocStarThis, yLocStar, '*', 'Color', pColor);
+        plot(xLocStarThis, yLocStar, '*', 'Color', pColor, ...
+            'MarkerSize', 4);
     else
         text(xLocStarThis, yLocStar, 'NS', 'Color', pColor, ...
             'HorizontalAlignment', 'center');

@@ -43,7 +43,9 @@ function figHandle = update_figure_for_corel (figHandle, varargin)
 labelsFontSize = 7;
 axisFontSize = 6; 
 textFontSize = 6;
-lineWidth = 1;
+plotLineWidth = 0.025; %0.5;
+annotationLineWidth = 1;
+rulerLineWidth = 1;
 units = 'inches';
 tickLengthsUnits = [0.025, 0.025];
 
@@ -137,13 +139,21 @@ set(ax, 'TitleFontWeight', 'normal');
 set(ax, 'LabelFontSizeMultiplier', labelFontSizeMultiplier);
 
 % Change the fontsize of texts
-texts = findobj(gcf, 'Type', 'Text');
+texts = findobj(figHandle, 'Type', 'Text');
 if ~isempty(texts)
     set(texts, 'Fontsize', textFontSize);
 end
 
-% Make all rulers the same linewidth
-set(ax, 'LineWidth', lineWidth);
+% Set ruler linewidths
+set(ax, 'LineWidth', rulerLineWidth);
+
+% Update plot line widths
+lines = findobj(figHandle, 'Type', 'Line');
+plots = lines(arrayfun(@(x) is_plot(x), lines));
+
+set(plots, 'LineWidth', plotLineWidth);
+% Update annotation line widths
+% TODO: How to distinguish?
 
 % Set tick lengths
 figPosition = get(figHandle, 'Position');
@@ -165,6 +175,18 @@ unitsNow = get(figHandle, 'Units');
 if ~strcmp(unitsNow, unitsOrig)
     set(figHandle, 'Units', unitsOrig);
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function isPlot = is_plot(lineObject)
+
+% Get x, y and z data
+xData = lineObject.XData;
+yData = lineObject.YData;
+zData = lineObject.ZData;
+
+% The line is a plot if there are more than two data points
+isPlot = numel(xData) > 2 || numel(yData) > 2 || numel(zData) > 2;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

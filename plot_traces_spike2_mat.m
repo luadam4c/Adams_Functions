@@ -91,7 +91,7 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 %       cd/update_figure_for_corel.m
 %
 % Used by:
-%       /home/Matlab/plethR01/plethR01_plot_figureLaserExamples.m
+%       /home/Matlab/plethR01/plethR01_analyze.m
 
 % File History:
 % 2019-09-30 Moved from plethRO1_analyze.m
@@ -101,6 +101,8 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 
 %% Hard-coded constants
 S_PER_MIN = 60;
+stimLineColor = [0.5, 0.5, 0.5];
+stimLineWidth = 1;
 
 %% Hard-coded parameters
 validStimTypes = {'auto', 'none', 'gas', 'laser'};
@@ -447,8 +449,7 @@ end
 nSubPlots = numel(channelNamesToPlot);
 
 % Create figure
-[fig, ax] = create_subplots(nSubPlots, 1, 'AlwaysNew', true, ...
-                            'FigExpansion', figExpansion);
+[fig, ax] = create_subplots(nSubPlots, 1, 'FigExpansion', figExpansion);
 
 % TODO: Let plot_traces accept 'AxesHandles' and use it
 % Plot traces
@@ -488,8 +489,9 @@ for iPlot = 1:nSubPlots
 
     % Plot a vertical line
     if alignToStim
-        plot_vertical_line(0, 'AxesHandle', ax(iPlot), 'Color', 'k', ...
-                            'LineWidth', 1);
+        plot_vertical_line(0, 'AxesHandle', ax(iPlot), ...
+                            'Color', stimLineColor, ...
+                            'LineWidth', stimLineWidth);
     end
 end
 
