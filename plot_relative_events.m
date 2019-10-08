@@ -54,8 +54,8 @@ function handles = plot_relative_events (varargin)
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
 %                   default == uses compute_axis_limits.m
-%                   - 'YLimitsNormalized': limits of y axis 
-%                                           for the normalized plot
+%                   - 'YLimitsLog2Ratio': limits of y axis 
+%                                           for the log2 ratio plot
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
 %                   default == uses compute_axis_limits.m
@@ -100,13 +100,15 @@ function handles = plot_relative_events (varargin)
 % 2019-10-04 Added 'StimIndices' as an optional arguments
 % 2019-10-06 Added 'YLimits' as an optional argument
 % 2019-10-06 Now plots SWD count ratio instead of percentage
-% 2019-10-06 Added 'YLimitsNormalized' as an optional argument
+% 2019-10-06 Added 'YLimitsLog2Ratio' as an optional argument
+% 2019-10-08 Now plot log2 data, then change y tick labels to reflect original values
+% 2019-10-08 Now conduct t-test on log2 data
 % 
 
 %% Hard-coded parameters
 SEC_PER_MIN = 60;
 validPlotTypes = {'raster', 'psth', 'chevron'};
-plotNormalized = true;
+plotLog2Ratio = true;
 
 % TODO: Make optional arguments
 stimStartLineColor = [0.5, 0.5, 0.5];
@@ -125,7 +127,7 @@ directoryDefault = '';          % set later
 relativeTimeWindowMinDefault = [];
 stimDurationMinDefault = [];
 yLimitsDefault = [];            % set later
-yLimitsNormalizedDefault = [];  % set later
+yLimitsLog2RatioDefault = [];  % set later
 figTitleDefault = '';           % set later
 figNameDefault = '';            % set later
 figTypesDefault = {'png', 'epsc2'};
@@ -156,7 +158,7 @@ addParameter(iP, 'StimDurationMin', stimDurationMinDefault, ...
 addParameter(iP, 'YLimits', yLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
-addParameter(iP, 'YLimitsNormalized', yLimitsNormalizedDefault, ...
+addParameter(iP, 'YLimitsLog2Ratio', yLimitsLog2RatioDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'FigTitle', figTitleDefault, ...
@@ -176,7 +178,7 @@ directory = iP.Results.Directory;
 relTimeWindowMin = iP.Results.RelativeTimeWindowMin;
 stimDurationMin = iP.Results.StimDurationMin;
 yLimits = iP.Results.YLimits;
-yLimitsNormalized = iP.Results.YLimitsNormalized;
+yLimitsLog2Ratio = iP.Results.YLimitsLog2Ratio;
 figTitle = iP.Results.FigTitle;
 figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
@@ -394,14 +396,8 @@ case 'chevron'
     % Decide on p tick labels
     pTickLabels = {'Before', 'After'};
 
-    % Modify the figure title for the normalized plot
+    % Modify the figure title for the log2 ratio plot
     figTitleNormalize = replace(figTitle, 'SWD count', 'SWD count ratio');
-
-    % Decide on y limits
-    % TODO: Adjust to be integer?
-    if isempty(yLimitsNormalized)
-        yLimitsNormalized = [0, Inf];
-    end
 
     % Decide on file names
     figPathBase = extract_fileparts(figName, 'pathbase');
@@ -419,22 +415,22 @@ case 'chevron'
     [nEventsBefore, nEventsAfter] = ...
         argfun(@(x) sum(x, 2), nEventsBeforeEachStim, nEventsAfterEachStim);
 
-    % Compute normalized data
-    nEventsBeforeNormalized = nEventsBefore ./ nEventsBefore;
-    nEventsAfterNormalized = nEventsAfter ./ nEventsBefore;
+    % Compute log2 ratio data
+    nEventsBeforeLog2Ratio = log2(nEventsBefore ./ nEventsBefore);
+    nEventsAfterLog2Ratio = log2(nEventsAfter ./ nEventsBefore);
 
     % Save the data in tables
     chevronTable = table(nEventsBefore, nEventsAfter, ...
                         'RowNames', labels);
     writetable(chevronTable, sheetPath);
 
-    % Save normalized data in a table
-    normChevronTable = table(nEventsBeforeNormalized, ...
-                            nEventsAfterNormalized, 'RowNames', labels);
-    writetable(normChevronTable, sheetPathNormalized);
+    % Save log2 ratio data in a table
+    log2ratioChevronTable = table(nEventsBeforeLog2Ratio, ...
+                            nEventsAfterLog2Ratio, 'RowNames', labels);
+    writetable(log2ratioChevronTable, sheetPathNormalized);
 
     % Create subplots
-    if plotNormalized
+    if plotLog2Ratio
         [fig, ax] = create_subplots(1, 2, 'FigExpansion', [1, 1]);
     else
         [fig, ax] = create_subplots(1, 1);
@@ -446,12 +442,13 @@ case 'chevron'
                 'ReadoutLimits', yLimits, 'LegendLocation', 'northeast', ...
                 'AxesHandle', ax(1), 'FigExpansion', [], otherArguments);
 
-    % Plot normalized Chevron plot and save figure
-    if plotNormalized
-        plot_chevron(normChevronTable, 'FigTitle', 'suppress', ...
+    % Plot log2 ratio Chevron plot and save figure
+    if plotLog2Ratio
+        plot_chevron(log2ratioChevronTable, 'FigTitle', 'suppress', ...
+                    'IsLog2Ratio', true, ...
                     'ReadoutLabel', 'SWD Count Ratio', ...
                     'PTickLabels', pTickLabels, ...
-                    'ReadoutLimits', yLimitsNormalized, ...
+                    'ReadoutLimits', yLimitsLog2Ratio, ...
                     'LegendLocation', 'northeast', ...
                     'AxesHandle', ax(2), 'FigExpansion', [], otherArguments);
     end
@@ -537,6 +534,12 @@ if isempty(relEventTimes)
 end
 
 figTitleNormalize = ['% ', figTitle];
+
+% Decide on y limits
+% TODO: Adjust to be integer?
+if isempty(yLimitsLog2Ratio)
+    yLimitsLog2Ratio = [-1, Inf];
+end
 
 %}
 

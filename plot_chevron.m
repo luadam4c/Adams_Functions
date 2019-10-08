@@ -20,7 +20,10 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %       data        - data table or data vectors
 %                   must be a table or a numeric array
 %                       or a cell array of numeric vectors
-%       varargin    - 'PlotMeanDifference': whether to plot the mean difference
+%       varargin    - 'IsLog2Ratio': whether data is log 2 ratio
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotMeanDifference': whether to plot the mean difference
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'PlotErrorBars': whether to plot error bars 
@@ -95,6 +98,7 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 % 2019-10-01 Created by Adam Lu
 % 2019-10-03 Made many things optional arguments
 % 2019-10-07 Now plots means with open circles
+% 2019-10-08 Added 'IsLog2Ratio' as an optional argument
 % TODO: Combine with plot_table.m?
 
 %% Hard-coded parameters
@@ -102,10 +106,11 @@ lineWidth = 1;
 markerSize = 4;
 meanLineWidthRatio = 1;
 meanLineStyle = '--';
-meanMarkerSizeRatio = 1.75;
+meanMarkerSizeRatio = 2;
 meanColorMap = [0, 0, 0];
 
 %% Default values for optional arguments
+isLog2RatioDefault = false;
 plotMeanDifferenceDefault = false;
 plotErrorBarsDefault = false;
 runTTestDefault = true;
@@ -140,6 +145,8 @@ addRequired(iP, 'data', ...
     @(x) validateattributes(x, {'numeric', 'cell', 'table'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'IsLog2Ratio', isLog2RatioDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotMeanDifference', plotMeanDifferenceDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotErrorBars', plotErrorBarsDefault, ...
@@ -172,6 +179,7 @@ addParameter(iP, 'AxesHandle', axHandleDefault);
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
+isLog2Ratio = iP.Results.IsLog2Ratio;
 plotMeanDifference = iP.Results.PlotMeanDifference;
 plotErrorBars = iP.Results.PlotErrorBars;
 runTTest = iP.Results.RunTTest;
@@ -280,7 +288,8 @@ if plotMeanDifference && nConds == 2
 
     % Compute the mean and confidence intervals of the differences
     [diffMean, diffLower95, diffUpper95] = ...
-        argfun(@(x) compute_stats(diffValues, x), 'mean', 'lower95', 'upper95');
+        argfun(@(x) compute_stats(diffValues, x, 'IgnoreNan', true), ...
+                'mean', 'lower95', 'upper95');
 
     % Compute the values to plot
     [meanValues, lower95Values, upper95Values] = ...
@@ -306,11 +315,13 @@ end
 if plotErrorBars
     % Compute the mean, lower and upper confidence interval bounds
     [means, lower95s, upper95s] = ...
-        argfun(@(x) compute_stats(dataValues, x), 'mean', 'lower95', 'upper95');
+        argfun(@(x) compute_stats(dataValues, x, 'IgnoreNan', true), ...
+                'mean', 'lower95', 'upper95');
 
     % Hold on
     wasHold = hold_on;
 
+    % TODO: Plot mean circle and error bar without overlap and fill the circle with transparency
     % Plot the means
     plot(axHandle, pValues, means, 'o', 'Color', meanColorMap, ...
         'LineStyle', meanLineStyle, 'LineWidth', meanLineWidth, ...
@@ -322,6 +333,29 @@ if plotErrorBars
 
     % Hold off
     hold_off(wasHold);
+end
+
+% Change the y tick locations and labels if data is log 2 ratio
+if isLog2Ratio
+    % Get the default y tick locations
+    yTickLocs = get(axHandle, 'YTick');
+
+    % Keep only the locations that are integers
+    yTickValuesOriginal = 2.^(yTickLocs);
+    newYTickLocs = yTickLocs(isaninteger(yTickValuesOriginal));
+
+    % Make sure 0 is included
+    newYTickLocs = unique([0, newYTickLocs], 'sorted');
+
+    % Get the original tick values
+    newYTickValuesOriginal = 2.^(newYTickLocs);
+
+    % Create y tick labels
+    newYTickLabels = create_labels_from_numbers(newYTickValuesOriginal);
+
+    % Set new ticks and labels
+    set(axHandle, 'YTick', newYTickLocs, 'YTickMode', 'manual');
+    set(axHandle, 'YTickLabel', newYTickLabels, 'YTickLabelMode', 'manual');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
