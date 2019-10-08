@@ -20,7 +20,7 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %       data        - data table or data vectors
 %                   must be a table or a numeric array
 %                       or a cell array of numeric vectors
-%       varargin    - 'IsLog2Ratio': whether data is log 2 ratio
+%       varargin    - 'IsLog2Data': whether data is log 2-scaled
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'PlotMeanDifference': whether to plot the mean difference
@@ -98,7 +98,7 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 % 2019-10-01 Created by Adam Lu
 % 2019-10-03 Made many things optional arguments
 % 2019-10-07 Now plots means with open circles
-% 2019-10-08 Added 'IsLog2Ratio' as an optional argument
+% 2019-10-08 Added 'IsLog2Data' as an optional argument
 % TODO: Combine with plot_table.m?
 
 %% Hard-coded parameters
@@ -110,7 +110,7 @@ meanMarkerSizeRatio = 2;
 meanColorMap = [0, 0, 0];
 
 %% Default values for optional arguments
-isLog2RatioDefault = false;
+isLog2DataDefault = false;
 plotMeanDifferenceDefault = false;
 plotErrorBarsDefault = false;
 runTTestDefault = true;
@@ -145,7 +145,7 @@ addRequired(iP, 'data', ...
     @(x) validateattributes(x, {'numeric', 'cell', 'table'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'IsLog2Ratio', isLog2RatioDefault, ...
+addParameter(iP, 'IsLog2Data', isLog2DataDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotMeanDifference', plotMeanDifferenceDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -179,7 +179,7 @@ addParameter(iP, 'AxesHandle', axHandleDefault);
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
-isLog2Ratio = iP.Results.IsLog2Ratio;
+isLog2Data = iP.Results.IsLog2Data;
 plotMeanDifference = iP.Results.PlotMeanDifference;
 plotErrorBars = iP.Results.PlotErrorBars;
 runTTest = iP.Results.RunTTest;
@@ -336,7 +336,7 @@ if plotErrorBars
 end
 
 % Change the y tick locations and labels if data is log 2 ratio
-if isLog2Ratio
+if isLog2Data
     % Get the default y tick locations
     yTickLocs = get(axHandle, 'YTick');
 
