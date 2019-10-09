@@ -35,6 +35,7 @@ function [tables1, tables2, distinctParts] = load_matching_sheets (suffix1, suff
 
 % File History:
 % 2019-09-11 Created by Adam Lu
+% 2019-10-09 Now removes suffix1 before finding files for suffix2
 % 
 
 % TODO: Make optional arguments
@@ -83,9 +84,12 @@ directory = iP.Results.Directory;
                 'Suffix', suffix1, 'Extension', sheetType, ...
                 'ForceCellOutput', true);
 
+% Remove suffix1
+paths1SuffixRemoved = extractBefore(paths1, suffix1);
+            
 % Get all matching files for suffix2
 [~, paths2, distinctParts] = ...
-    find_matching_files(paths1, 'Directory', directory, ...
+    find_matching_files(paths1SuffixRemoved, 'Directory', directory, ...
                         'Suffix', suffix2, 'Extension', sheetType);
 
 % Read all tables
