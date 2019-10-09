@@ -47,7 +47,6 @@ function [fig, lines] = plot_swd_raster (varargin)
 %                   - 'BarWidth': bar width relative to y value increments (0~1)
 %                   must be a positive scalar between 0 and 1
 %                   default == 0.6
-%                   - Any other parameter-value pair for the line() function
 %                   - 'LineStyle': line style of bars
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       '-'     - solid line
@@ -59,6 +58,7 @@ function [fig, lines] = plot_swd_raster (varargin)
 %                   - 'LineWidth': line width of bars
 %                   must be a positive scalar
 %                   default == 2
+%                   - Any other parameter-value pair for the plot_raster() function
 %
 % Requires:
 %       cd/create_labels_from_numbers.m
@@ -178,7 +178,7 @@ barWidth = iP.Results.BarWidth;
 [~, lineStyle] = islinestyle(iP.Results.LineStyle, 'ValidateMode', true);
 lineWidth = iP.Results.LineWidth;
 
-% Keep unmatched arguments for the line() function
+% Keep unmatched arguments for the plot_raster() function
 otherArguments = iP.Unmatched;
 
 %% Preparation
