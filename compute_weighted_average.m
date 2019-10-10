@@ -133,8 +133,13 @@ end
 
 %% Preparation
 % Remove NaN values if requested
-if ignoreNan
+% TODO: Not yet done for matrices
+if ignoreNan && isvector(values)
     values = values(~isnan(values));
+    % TODO: What to do about weights?
+    if ~isempty(valueWeights)
+        valueWeights = valueWeights(~isnan(values));
+    end
 end
 
 % If there is only one value, return it

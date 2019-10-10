@@ -72,27 +72,26 @@ data = force_column_cell(data);
 
 %% Do the job
 % Apply the Lilliefors test for normality to each group
-if numel(x) >= 4
-    [~, pNormLill] = ...
-        cellfun(@(x) lillietest(x, 'Alpha', sigLevel), data);
-else
-    pNormLill = NaN;
-end
+pNormLill = cellfun(@(x) compute_pnorm_lill(x, sigLevel), data);
 
 % Apply the Anderson-Darling test for normality to each group
-[~, pNormAd] = cellfun(@(x) adtest(x, 'Alpha', sigLevel), data);
+pNormAd = cellfun(@(x) compute_pnorm_ad(x, sigLevel), data);
 
 % Apply the Jarque-Bera test for normality to each group
-[~, pNormJb] = cellfun(@(x) jbtest(x, sigLevel), data);
+pNormJb = cellfun(@(x) compute_pnorm_jb(x, sigLevel), data);
 
 % Place all p values for normality together in a matrix
 %   Note: each row is a group; each column is a different test
 pNormMat = [pNormLill, pNormAd, pNormJb];
 
 % Take the geometric mean of the p values from different tests
-pNormAvg = compute_weighted_average(pNormMat, 'DimToOperate', 2, ...
-                                        'AverageMethod', 'geometric', ...
-                                        'IgnoreNan', true);
+if ~all(isnan(pNormMat))
+    pNormAvg = compute_weighted_average(pNormMat, 'DimToOperate', 2, ...
+                                            'AverageMethod', 'geometric', ...
+                                            'IgnoreNan', true);
+else
+    pNormAvg = 1;
+end
 
 % Normality is satified if p value is not less than the significance level
 isNormal = pNormAvg >= sigLevel;
@@ -101,6 +100,37 @@ isNormal = pNormAvg >= sigLevel;
 pTable = table(pNormAvg, pNormLill, pNormAd, pNormJb);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function pNormLill = compute_pnorm_lill (x, sigLevel)
+
+if numel(x) >= 4
+    [~, pNormLill] = lillietest(x, 'Alpha', sigLevel);
+else
+    pNormLill = NaN;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function pNormAd = compute_pnorm_ad (x, sigLevel)
+
+if numel(x) >= 4
+    [~, pNormAd] = adtest(x, 'Alpha', sigLevel);
+else
+    pNormAd = NaN;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function pNormJb = compute_pnorm_jb (x, sigLevel)
+
+if numel(x) >= 2
+    [~, pNormJb] = jbtest(x, sigLevel);
+else
+    pNormJb = NaN;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 %{
 OLD CODE:
