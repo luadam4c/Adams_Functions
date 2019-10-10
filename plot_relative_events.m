@@ -401,6 +401,7 @@ case 'chevron'
     % Transpose so that each column is a stim
     relEventTimesTrans = transpose(relEventTimes);
     
+    % TODO: Make a function count_events(eventTimes, 'StimTime', 0)
     % Compute the number of events before and after, 
     %       summing across stims for each file
     %   Note: relEventTimes must be a cell array of numeric vectors

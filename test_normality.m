@@ -72,8 +72,12 @@ data = force_column_cell(data);
 
 %% Do the job
 % Apply the Lilliefors test for normality to each group
-[~, pNormLill] = ...
-    cellfun(@(x) lillietest(x, 'Alpha', sigLevel), data);
+if numel(x) >= 4
+    [~, pNormLill] = ...
+        cellfun(@(x) lillietest(x, 'Alpha', sigLevel), data);
+else
+    pNormLill = NaN;
+end
 
 % Apply the Anderson-Darling test for normality to each group
 [~, pNormAd] = cellfun(@(x) adtest(x, 'Alpha', sigLevel), data);
@@ -87,7 +91,8 @@ pNormMat = [pNormLill, pNormAd, pNormJb];
 
 % Take the geometric mean of the p values from different tests
 pNormAvg = compute_weighted_average(pNormMat, 'DimToOperate', 2, ...
-                                        'AverageMethod', 'geometric');
+                                        'AverageMethod', 'geometric', ...
+                                        'IgnoreNan', true);
 
 % Normality is satified if p value is not less than the significance level
 isNormal = pNormAvg >= sigLevel;
