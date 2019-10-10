@@ -46,12 +46,22 @@ function [relEventTimes, relativeTimeWindow] = ...
 %       varargin    - 'RelativeTimeWindow': relative time window
 %                   must be a 2-element numeric vector
 %                   default == interStimInterval * 0.5 * [-1, 1]
+%                   - 'StimIndices': stimulation indices to restrict to
+%                   must be a positive integer array or string recognized by
+%                        the 'Pattern' option of extract_subvectors.m
+%                           'odd'   - odd indices
+%                           'even'  - even indices
+%                   default == no restrictions
+%                   - 'ForceMatrixOutput': whether to force output as a cell array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/argfun.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_subvectors.m
 %       cd/force_column_vector.m
+%       cd/force_matrix.m
 %       cd/force_row_vector.m
 %       cd/iscellnumeric.m
 %       cd/match_format_vector_sets.m
@@ -63,13 +73,17 @@ function [relEventTimes, relativeTimeWindow] = ...
 % File History:
 % 2019-09-11 Moved from compute_psth.m
 % 2019-09-15 Now returns relative event time window used
+% 2019-10-10 Added 'StimIndices' as an optional argument
+% 2019-10-10 Added 'ForceMatrixOutput' as an optional argument
 % TODO: Add option to shift relative event times by stimDelay
 % 
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
+stimIndicesDefault = [];        % take all stims by default
 relativeTimeWindowDefault = [];
+forceMatrixOutputDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -97,10 +111,16 @@ addRequired(iP, 'stimTimes', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'RelativeTimeWindow', relativeTimeWindowDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'StimIndices', stimIndicesDefault, ...
+    @(x) validateattributes(x, {'numeric', 'char'}, {'2d'}));
+addParameter(iP, 'ForceMatrixOutput', forceMatrixOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, eventTimes, stimTimes, varargin{:});
 relativeTimeWindow = iP.Results.RelativeTimeWindow;
+stimIndices = iP.Results.StimIndices;
+forceMatrixOutput = iP.Results.ForceMatrixOutput;
 
 %% Preparation
 % Force as column vectors
@@ -117,10 +137,19 @@ relativeTimeWindow = iP.Results.RelativeTimeWindow;
     argfun(@(x) cellfun(@sort, x, 'UniformOutput', false), ...
             eventTimesCell, stimTimesCell);
 
+% Restrict to certain stimulation windows if requested
+if isempty(stimIndices)
+    % Do nothing
+elseif isnumeric(stimIndices)
+    stimTimesCell = extract_subvectors(stimTimesCell, 'Indices', stimIndices);
+elseif ischar(stimIndices)
+    stimTimesCell = extract_subvectors(stimTimesCell, 'Pattern', stimIndices);
+end
+
 % Compute the default relative time window
 if isempty(relativeTimeWindow)
     % Compute the average inter-stimulus interval
-    interStimInterval = compute_average_interval(stimTimes);
+    interStimInterval = compute_average_interval(stimTimesCell);
 
     if isnan(interStimInterval)
         % Compute the minimum interval that contains 
@@ -162,8 +191,17 @@ if ~iscell(eventTimes) && ~iscell(stimTimes)
         error('Not implemented yet!')
     end
 else
-    relEventTimes = relEventTimesCellCell;
+    if forceMatrixOutput
+        % Put the event time arrays in a cell matrix
+        %   Note: Each column is a file
+        %         Each row is a stim
+        relEventTimes = force_matrix(relEventTimesCellCell, ...
+                                    'TreatCellNumAsArray', true);
+    else
+        relEventTimes = relEventTimesCellCell;
+    end
 end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

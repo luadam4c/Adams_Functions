@@ -272,7 +272,7 @@ end
 % Extract stim durations in seconds
 stimDurationsSec = cellfun(@(y) y.duration, stimTables, 'UniformOutput', false);
 
-% Restrict to certain events if requested
+% Restrict to certain stimulation windows if requested
 if isempty(stimIndices)
     % Do nothing
 elseif isnumeric(stimIndices)
@@ -313,24 +313,18 @@ end
 switch plotType
     case {'raster', 'chevron'}
         % Compute the relative event times
-        %   Note: this should return a cell array (files) of cell arrays (stims)
-        [relEventTimesCellCell, relTimeWindowMin] = ...
+        %   Note: this should return a cell matrix:
+        %           Each column is a file
+        %           Each row is a stim
+        [relEventTimes, relTimeWindowMin] = ...
             compute_relative_event_times(swdStartTimesMin, stimStartTimesMin, ...
-                                    'RelativeTimeWindow', relTimeWindowMin);
-
-        % Put the event time arrays in a cell matrix
-        %   Note: Each column is a file
-        %         Each row is a stim
-        relEventTimes = force_matrix(relEventTimesCellCell, ...
-                                    'TreatCellNumAsArray', true);
-
+                                    'RelativeTimeWindow', relTimeWindowMin, ...
+                                    'ForceMatrixOutput', true);
     case 'psth'
         % Relative event times computed in plot_psth.m
     otherwise
         error('plotType unrecognized!');
 end
-
-
 
 %% Plot event times
 switch plotType

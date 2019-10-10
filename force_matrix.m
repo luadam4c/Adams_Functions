@@ -63,6 +63,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/combine_abf_data.m
 %       cd/compute_combined_data.m
 %       cd/compute_combined_trace.m
+%       cd/compute_relative_event_times.m
 %       cd/create_indices.m
 %       cd/create_synced_movie_trace_plot_movie.m
 %       cd/find_window_endpoints.m

@@ -19,6 +19,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %       endPoints   - index(ices) of window endpoints
 %                   specified as a positive integer column vector
 %                       or a cell array of positive integer column vectors
+%
 % Arguments:
 %       timeWindows - time window(s); if empty, returns the first and last index
 %                   must be empty or a numeric vector with 2 elements,
