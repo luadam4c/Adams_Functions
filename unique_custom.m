@@ -11,6 +11,8 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %       unique_custom([5, NaN, 3, 5, NaN], 'IgnoreNaN', true)
 %       unique_custom([5, NaN, 3, 5, NaN], 'stable', 'IgnoreNaN', true)
 %       unique_custom([5, NaN, 3, 5, NaN], 'TreatNanAsEqual', false)
+%       unique_custom({'a', 'a', 'b', ''})
+%       unique_custom({'a', 'a', 'b', ''}, 'IgnoreEmpty', true)
 %       
 % Outputs:
 %       y           - All unique values in x
@@ -28,6 +30,11 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %                       - 'last'
 %                   default == ''
 %       varargin    - 'IgnoreNaN': whether to include NaN as distinct elements
+%                                   for numeric arrays
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'IgnoreEmpty': whether to include empty strings 
+%                                   as distinct elements for cell arrays
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'TreatNanAsEqual': whether to treat all NaN values
@@ -40,6 +47,7 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/isemptycell.m
 %
 % Used by:
 %       cd/adjust_edges.m
@@ -57,6 +65,7 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %                         unique-value-instead-of-as-a-distinct#answer_52371
 % 2019-07-24 Added optArg
 % 2019-07-24 Improved algorithm
+% 2019-10-09 Added 'IgnoreEmpty' as an optional argument
 
 %% Hard-coded parameters
 validOptArgs = {'', 'sorted', 'stable', 'first', 'last'};
@@ -64,6 +73,7 @@ validOptArgs = {'', 'sorted', 'stable', 'first', 'last'};
 %% Default values for optional arguments
 optArgDefault = '';
 ignoreNanDefault = false;  	    % do not ignore NaN by default
+ignoreEmptyDefault = false;     % do not ignore empty by default
 treatNanAsEqualDefault = true;  % treat all NaN values equal by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -89,6 +99,8 @@ addOptional(iP, 'optArg', optArgDefault, ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'IgnoreNaN', ignoreNanDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary', 'scalar'}));
+addParameter(iP, 'IgnoreEmpty', ignoreEmptyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary', 'scalar'}));
 addParameter(iP, 'TreatNanAsEqual', treatNanAsEqualDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary', 'scalar'}));
 
@@ -96,6 +108,7 @@ addParameter(iP, 'TreatNanAsEqual', treatNanAsEqualDefault, ...
 parse(iP, x, varargin{:});
 optArg = validatestring(iP.Results.optArg, validOptArgs);
 ignoreNan = iP.Results.IgnoreNaN;
+ignoreEmpty = iP.Results.IgnoreEmpty;
 treatNanAsEqual = iP.Results.TreatNanAsEqual;
 
 % Keep unmatched arguments for the unique_custom() function
@@ -104,7 +117,7 @@ otherArguments = struct2arglist(iP.Unmatched);
 % Check relationships between arguments
 
 %% Preparation
-% Deal with NaNs
+% Deal with NaNs of empty entries
 if isnum(x)
     if ignoreNan
         % Remove NaNs from the data
@@ -122,6 +135,10 @@ if isnum(x)
                 x = [x, NaN];
             end
         end
+    end
+elseif iscell(x)
+    if ignoreEmpty
+        x = x(~isemptycell(x));
     end
 end
 
