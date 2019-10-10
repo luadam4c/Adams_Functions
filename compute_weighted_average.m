@@ -5,12 +5,14 @@ function avgValues = compute_weighted_average (values, varargin)
 %   See https://community.plm.automation.siemens.com/t5/Testing-Knowledge-Base/
 %           Averaging-types-What-s-the-difference/ta-p/364121
 %           for the explanation on different averaging methods
+%
 % Example(s):
 %       compute_weighted_average([1; 10; 100], 'AverageMethod', 'rms')
 %       compute_weighted_average([1; 10; 100], 'AverageMethod', 'linear')
 %       compute_weighted_average([1; 10; 100], 'AverageMethod', 'geometric')
 %       compute_weighted_average([1; 10; 100], 'AverageMethod', 'exponential')
 %       compute_weighted_average([100; 10; 1], 'AverageMethod', 'exponential')
+%
 % Outputs:
 %       avgValues   - averaged value(s)
 %                   specified as a numeric vector
@@ -18,7 +20,10 @@ function avgValues = compute_weighted_average (values, varargin)
 % Arguments:    
 %       values      - values to be averaged (may be a 2D matrix)
 %                   must be a numeric array
-%       varargin    - 'Weights': weights
+%       varargin    - 'IgnoreNan': whether to ignore NaN entries
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'Weights': weights
 %                   must be a numeric array
 %                   default == ones(size(values))
 %                   - 'DimToOperate': dimension to compute averages on
@@ -56,6 +61,7 @@ function avgValues = compute_weighted_average (values, varargin)
 % 2018-10-26 Created by Adam Lu
 % 2018-10-28 Fixed the case when values has less than one element
 % 2019-01-11 Added 'geometric' as an averaging method
+% 2019-10-10 Added 'IgnoreNan' as an optional argument
 % TODO: Simply math if the weights are all the same 
 %       and use this function in compute_stats.m and compute_rms_error.m
 % 
@@ -65,6 +71,7 @@ validAverageMethods = {'rms', 'root-mean-square', 'energy', ...
                         'linear', 'arithmetic', 'geometric', 'exponential'};
 
 %% Default values for optional arguments
+ignoreNanDefault = false;       % don't ignore NaN by default
 weightsDefault = [];            % set later
 dimToOperateDefault = [];       % use the sum() function default by default
 averageMethodDefault = 'rms';   % use the root-mean-square average by default
@@ -88,6 +95,8 @@ addRequired(iP, 'values', ...
     @(x) validateattributes(x, {'numeric'}, {'3d'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'IgnoreNan', ignoreNanDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Weights', weightsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'3d'}));
 addParameter(iP, 'DimToOperate', dimToOperateDefault, ...
@@ -103,6 +112,7 @@ addParameter(iP, 'ExponentialWeightingFactor', ...
 
 % Read from the Input Parser
 parse(iP, values, varargin{:});
+ignoreNan = iP.Results.IgnoreNan;
 valueWeights = iP.Results.Weights;
 dimToOperate = iP.Results.DimToOperate;
 averageMethod = validatestring(iP.Results.AverageMethod, validAverageMethods);
@@ -122,6 +132,11 @@ if strcmpi(averageMethod, 'exponential') && ~isempty(valueWeights)
 end
 
 %% Preparation
+% Remove NaN values if requested
+if ignoreNan
+    values = values(~isnan(values));
+end
+
 % If there is only one value, return it
 if numel(values) <= 1
     avgValues = values;
