@@ -45,6 +45,12 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 %                   - 'RemoveTicks': whether to remove all ticks
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'ChannelNamesOriginal': the original channel names
+%                   must be a cellstr
+%                   default == depends on whether parsing gas or laser
+%                   - 'ChannelNamesToPlot': the channel names to plot
+%                   must be a cellstr
+%                   default == depends on whether parsing gas or laser
 %                   - 'StimTableSuffix': Suffix for the stim table
 %                   must be a character vector or a string scalar 
 %                   default == '_pulses'
@@ -102,6 +108,8 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 % 2019-10-04 Now computes the spectrogram for the full trace 
 %               and then restrict it to the time window of interest
 % 2019-10-07 Added 'YLimits' as an optional argument
+% 2019-10-10 Added 'ChannelNamesOriginal' and 'ChannelNamesToPlot' 
+%               as optional arguments
 % 
 
 %% Hard-coded constants
@@ -132,11 +140,8 @@ plotZoomsDefault = false;
 plotForCorelDefault = false;
 removeTicksDefault = false;
 stimTableSuffixDefault = '';    % set later
-
-% TODO: Make optional arguments
-channelNamesOriginal = {};
-channelNamesToPlot = {};
-
+channelNamesOriginalDefault = {};
+channelNamesToPlotDefault = {};
 relativeTimeWindowDefault = [];     % set later
 timeUnitsDefault = '';          % set later
 yLimitsDefault = [];            % set later
@@ -178,6 +183,10 @@ addParameter(iP, 'PlotForCorel', plotForCorelDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveTicks', removeTicksDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ChannelNamesOriginal', channelNamesOriginalDefault, ...
+    @(x) isempty(x) || isstring(x) || iscellstr(x));
+addParameter(iP, 'ChannelNamesToPlot', channelNamesToPlotDefault, ...
+    @(x) isempty(x) || isstring(x) || iscellstr(x));
 addParameter(iP, 'StimTableSuffix', stimTableSuffixDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'RelativeTimeWindow', relativeTimeWindowDefault, ...
@@ -204,6 +213,8 @@ plotSpectrogram = iP.Results.PlotSpectrogram;
 plotZooms = iP.Results.PlotZooms;
 plotForCorel = iP.Results.PlotForCorel;
 removeTicks = iP.Results.RemoveTicks;
+channelNamesOriginal = iP.Results.ChannelNamesOriginal;
+channelNamesToPlot = iP.Results.ChannelNamesToPlot;
 stimTableSuffix = iP.Results.StimTableSuffix;
 relativeTimeWindow = iP.Results.RelativeTimeWindow;
 timeUnits = validatestring(iP.Results.TimeUnits, validTimeUnits);

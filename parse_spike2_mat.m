@@ -41,6 +41,7 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_fields.m
+%       cd/extract_subvectors.m
 %       cd/find_in_strings.m
 %       cd/force_string_end.m
 %       cd/match_row_count.m
@@ -176,11 +177,20 @@ totalDurationsSec = siSeconds .* nSamples;
 
 % Make sure all data vectors are the same length
 if numel(unique(nSamples)) > 1 || numel(unique(siSeconds)) > 1
-    % Resample to align the data
-    % TODO
-    disp('Not implemented yet!');
-    parsedDataTable = table.empty;
-%     return
+    if max(nSamples) - min(nSamples) <= 1
+        % Just eliminate the last data point
+        nSamplesCommon = min(nSamples);
+        nSamples = repmat(nSamplesCommon, size(nSamples));
+        siSeconds = repmat(mean(siSeconds), size(siSeconds));
+        channelValues = extract_subvectors(channelValues, ...
+                                        'Endpoints', [1, nSamplesCommon]);
+    else
+        % Resample to align the data
+        % TODO
+        disp('Not implemented yet!');
+        parsedDataTable = table.empty;
+    %     return
+    end
 end
 
 % Adjust channel start times so that they are all the same
