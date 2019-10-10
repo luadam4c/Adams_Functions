@@ -19,6 +19,7 @@ function array = remove_empty (array, varargin)
 %
 % Used by:
 %       cd/parse_all_abfs.m
+%       cd/unique_custom.m
 
 % File History:
 % 2019-01-04 Created by Adam Lu

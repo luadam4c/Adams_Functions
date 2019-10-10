@@ -47,7 +47,7 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/isemptycell.m
+%       cd/remove_empty.m
 %
 % Used by:
 %       cd/adjust_edges.m
@@ -138,7 +138,7 @@ if isnum(x)
     end
 elseif iscell(x)
     if ignoreEmpty
-        x = x(~isemptycell(x));
+        x = remove_empty(x);
     end
 end
 

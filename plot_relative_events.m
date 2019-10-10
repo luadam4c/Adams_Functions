@@ -397,12 +397,12 @@ case 'chevron'
     pTickLabels = {'Before', 'After'};
 
     % Modify the figure title for the log2 ratio plot
-    figTitleNormalize = replace(figTitle, 'SWD count', 'SWD count ratio');
+    figTitleRatio = replace(figTitle, 'SWD count', 'SWD count ratio');
 
     % Decide on file names
     figPathBase = extract_fileparts(figName, 'pathbase');
     sheetPath = [figPathBase, '.csv'];
-    sheetPathNormalized = [figPathBase, '_normalized', '.csv'];
+    sheetPathLog2Ratio = [figPathBase, '_log2ratio', '.csv'];
 
     % Transpose so that each column is a stim
     relEventTimesTrans = transpose(relEventTimes);
@@ -427,7 +427,7 @@ case 'chevron'
     % Save log2 ratio data in a table
     log2ratioChevronTable = table(nEventsBeforeLog2Ratio, ...
                             nEventsAfterLog2Ratio, 'RowNames', labels);
-    writetable(log2ratioChevronTable, sheetPathNormalized);
+    writetable(log2ratioChevronTable, sheetPathLog2Ratio);
 
     % Create subplots
     if plotLog2Ratio
