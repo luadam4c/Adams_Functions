@@ -12,6 +12,7 @@ function avgValues = compute_weighted_average (values, varargin)
 %       compute_weighted_average([1; 10; 100], 'AverageMethod', 'geometric')
 %       compute_weighted_average([1; 10; 100], 'AverageMethod', 'exponential')
 %       compute_weighted_average([100; 10; 1], 'AverageMethod', 'exponential')
+%       compute_weighted_average([NaN, 3, 27; NaN, 4, 64], 'AverageMethod', 'geometric', 'DimToOperate', 2, 'IgnoreNan', true)
 %
 % Outputs:
 %       avgValues   - averaged value(s)
@@ -45,6 +46,7 @@ function avgValues = compute_weighted_average (values, varargin)
 %
 % Requires:
 %       cd/error_unrecognized.m
+%       cd/force_column_vector.m
 %       cd/get_var_name.m
 %       cd/ispositiveintegerscalar.m
 %       cd/match_dimensions.m
@@ -62,6 +64,8 @@ function avgValues = compute_weighted_average (values, varargin)
 % 2018-10-28 Fixed the case when values has less than one element
 % 2019-01-11 Added 'geometric' as an averaging method
 % 2019-10-10 Added 'IgnoreNan' as an optional argument
+% 2019-10-12 Allow values to be a cell array
+% 2019-10-12 Fixed 'IgnoreNan' for matrices
 % TODO: Simply math if the weights are all the same 
 %       and use this function in compute_stats.m and compute_rms_error.m
 % 
@@ -92,7 +96,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'values', ...
-    @(x) validateattributes(x, {'numeric'}, {'3d'}));
+    @(x) validateattributes(x, {'numeric', 'cell'}, {'3d'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'IgnoreNan', ignoreNanDefault, ...
@@ -133,15 +137,51 @@ end
 
 %% Preparation
 % Remove NaN values if requested
-% TODO: Not yet done for matrices
-if ignoreNan && isvector(values)
-    values = values(~isnan(values));
-    % TODO: What to do about weights?
-    if ~isempty(valueWeights)
-        valueWeights = valueWeights(~isnan(values));
+% TODO: What to do about weights?
+if ignoreNan && ~iscell(values)
+    if isvector(values)
+        values = values(~isnan(values));
+        if ~isempty(valueWeights)
+            valueWeights = valueWeights(~isnan(values));
+        end
+    else
+        % Force as a cell array of column vectors
+        if dimToOperate == 1
+            values = force_column_vector(values, 'IgnoreNonvectors', false);
+        elseif dimToOperate == 2
+            values = force_column_vector(transpose(values), ...
+                                            'IgnoreNonvectors', false);
+        else
+            error('Not implemented yet!');
+        end
+        if ~isempty(valueWeights)
+            valueWeights = force_column_vector(valueWeights);
+        end
+        dimToOperate = 1;
     end
 end
 
+%% Do the job
+if iscell(values)
+    avgValues = ...
+        cellfun(@(x) compute_weighted_average(x, ...
+                'IgnoreNan', ignoreNan, ...
+                'Weights', valueWeights, ...
+                'DimToOperate', dimToOperate, ...
+                'AverageMethod', averageMethod, ...
+                'ExponentialWeightingFactor', exponentialWeightingFactor), ...
+            values);
+else
+    avgValues = compute_weighted_average_helper(values, valueWeights, ...
+                    dimToOperate, averageMethod, exponentialWeightingFactor);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function avgValues = compute_weighted_average_helper (values, valueWeights, ...
+                    dimToOperate, averageMethod, exponentialWeightingFactor)
+
+%% Preparation
 % If there is only one value, return it
 if numel(values) <= 1
     avgValues = values;

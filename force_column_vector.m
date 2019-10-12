@@ -84,6 +84,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/compute_relative_event_times.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
+%       cd/compute_weighted_average.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
 %       cd/create_indices.m
