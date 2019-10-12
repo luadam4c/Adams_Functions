@@ -63,6 +63,7 @@ function testResults = test_var_difference (dataTable, yVars, xVar, varargin)
 %       cd/match_format_vector_sets.m
 %       cd/plot_histogram.m
 %       cd/struct2arglist.m
+%       cd/test_normality.m
 %
 % Used by:
 %       cd/m3ha_neuron_run_and_analyze.m
@@ -71,6 +72,7 @@ function testResults = test_var_difference (dataTable, yVars, xVar, varargin)
 % 2019-01-09 Created by Adam Lu
 % 2019-01-10 Added 'Prefix' as an optional argument
 % 2019-09-01 Renamed as test_var_difference 
+% 2019-10-12 Now uses test_normality.m
 % TODO: Pull out test_var_difference_helper.m that will take two vectors as required arguments
 % 
 
@@ -316,26 +318,11 @@ else
 end
 
 % TODO: use test_normality.m
-% Apply the Lilliefors test for normality to each group
-[~, pNormLill] = ...
-    cellfun(@(x) lillietest(x, 'Alpha', alphaNormality), data);
-
-% Apply the Anderson-Darling test for normality to each group
-[~, pNormAd] = cellfun(@(x) adtest(x, 'Alpha', alphaNormality), data);
-
-% Apply the Jarque-Bera test for normality to each group
-[~, pNormJb] = cellfun(@(x) jbtest(x, alphaNormality), data);
-
-% Place all p values for normality together in a matrix
-%   Note: each row is a group; each column is a different test
-pNormMat = [pNormLill, pNormAd, pNormJb];
-
-% Take the geometric mean of the p values from different tests
-pNormAvg = compute_weighted_average(pNormMat, 'DimToOperate', 2, ...
-                                        'AverageMethod', 'geometric');
-
-% Normality is satified if all p values are greater than the significance level
-isNormal = all(pNormAvg >= alphaNormality);
+[isNormal, pTable] = test_normality(data, 'SigLevel', alphaNormality);
+pNormLill = pTable.pNormLill; 
+pNormAd = pTable.pNormAd; 
+pNormJb = pTable.pNormJb;
+pNormAvg = pTable.pNormAvg;
 
 % Perform the correct test
 if nGroups == 1
@@ -344,13 +331,13 @@ if nGroups == 1
 
     % Store test function
     testFunction = 'ttest1';
-elseif nGroups == 2 && isNormal
+elseif nGroups == 2 && all(isNormal)
     % Perform a 2-sample t-test (tests difference between means)
     [isDifferent, pValue] = ttest2(data{:}, 'Alpha', alphaTest);
 
     % Store test function
     testFunction = 'ttest2';
-elseif nGroups == 2 && ~isNormal
+elseif nGroups == 2 && ~all(isNormal)
     % Perform a Wilcoxon rank-sum test (tests difference between medians)
     [pValue, isDifferent] = ranksum(data{:}, 'Alpha', alphaTest);
 
@@ -463,6 +450,27 @@ end
 [~, pNormKs] = cellfun(@(x) kstest(x, 'Alpha', alphaNormality), data);
 statsStruct.pNormKs = pNormKs;
 pNormMat = [pNormLill, pNormAd, pNormJb, pNormKs];
+
+% Apply the Lilliefors test for normality to each group
+[~, pNormLill] = ...
+    cellfun(@(x) lillietest(x, 'Alpha', alphaNormality), data);
+
+% Apply the Anderson-Darling test for normality to each group
+[~, pNormAd] = cellfun(@(x) adtest(x, 'Alpha', alphaNormality), data);
+
+% Apply the Jarque-Bera test for normality to each group
+[~, pNormJb] = cellfun(@(x) jbtest(x, alphaNormality), data);
+
+% Place all p values for normality together in a matrix
+%   Note: each row is a group; each column is a different test
+pNormMat = [pNormLill, pNormAd, pNormJb];
+
+% Take the geometric mean of the p values from different tests
+pNormAvg = compute_weighted_average(pNormMat, 'DimToOperate', 2, ...
+                                        'AverageMethod', 'geometric');
+
+% Normality is satified if all p values are greater than the significance level
+isNormal = all(pNormAvg >= alphaNormality);
 
 %}
 

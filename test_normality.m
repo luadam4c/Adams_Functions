@@ -29,7 +29,7 @@ function [isNormal, pTable] = test_normality (data, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/test_var_difference.m
 
 % File History:
 % 2019-09-01 Created by Adam Lu
