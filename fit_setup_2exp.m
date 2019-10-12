@@ -24,7 +24,7 @@ function [eqForm, aFittype, coeffInit, coeffLower, coeffUpper] = ...
 %                   specified as a numeric column vector
 %       coeffUpper  - upper bounds for the coefficients
 %                   specified as a numeric column vector
-^
+% 
 % Arguments:    
 %       direction   - the direction of the curve
 %                   must be an unambiguous, case-insensitive match to one of: 
