@@ -80,6 +80,8 @@ function [simCommands, simCmdsFilePath] = ...
 % 2018-11-01 Made corrD an argument of build()
 % 2018-11-23 Fixed placement of adjust_Ih()
 % 2018-12-14 Moved T channels to passive parameters
+% 2019-10-12 Now allows sim params table to have diamDendToSoma instead 
+%               of diamDend
 % 
 
 %% Hard-coded parameters
@@ -145,7 +147,12 @@ paramNames = simParamsTable.Properties.VariableNames;
 % Extract each required variable from the table
 diamSoma = simParamsTable.diamSoma;
 LDend = simParamsTable.LDend;
-diamDend = simParamsTable.diamDend;
+if ismember('diamDend', paramNames)
+    diamDend = simParamsTable.diamDend;
+elseif ismember('diamDendToSoma', paramNames)
+    diamDendToSoma = simParamsTable.diamDendToSoma;
+    diamDend = diamDendToSoma .* diamSoma;
+end
 cm = simParamsTable.cm;
 Ra = simParamsTable.Ra;
 gpas = simParamsTable.gpas;
