@@ -88,7 +88,7 @@ function [simplexOut, exitFlag] = m3ha_fminsearch3(outparams)
 %       cd/restore_fields.m
 %
 % Used by:
-%       ~/m3ha/optimizer4gabab/optimizer_4compgabab.m
+%       ~/m3ha/optimizer4gabab/m3ha_optimizer_4compgabab.m
 
 % File History:
 % 2011-01-30 - Modified by CLK
@@ -132,7 +132,7 @@ function [simplexOut, exitFlag] = m3ha_fminsearch3(outparams)
 %               within update_simplexOut()
 % 2017-05-16 - Added simplexOut.totalError & simplexOut.err
 % 2017-05-16 - Removed mat file saving; 
-%                   simplexOut will be saved in optimizer_4compgabab.m
+%                   simplexOut will be saved in m3ha_optimizer_4compgabab.m
 % 2017-05-17 - Now uses the same prefix for all output files
 % 2017-05-17 - Expanded update_errorhistory() so that it can plot lts errors
 % 2017-05-18 - outparams must now have initial errors already set
@@ -729,7 +729,7 @@ else
     simplexOut.maxParamChange = max(max(abs(v(:, 2:ncp+1) - v(:, ones(1, ncp))) ./ pi));
 end
 
-% Save first maximum error change, maximum parameter change, used in optimizer_4compgabab.m
+% Save first maximum error change, maximum parameter change, used in m3ha_optimizer_4compgabab.m
 if ctIterations == 1
     simplexOut.firstMaxErrorChange = simplexOut.maxErrorChange;
     simplexOut.firstMaxParamChange = simplexOut.maxParamChange;

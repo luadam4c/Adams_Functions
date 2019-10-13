@@ -13,7 +13,7 @@ function eRev = compute_eRev (cOutArray, cInArray, pArray, zArray, celsius)
 %       TODO
 %
 % Used by:    
-%       /media/adamX/m3ha/optimizer4gabab/compute_fixed_params.m
+%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_fixed_params.m
 %
 % File History:
 % 2017-08-05 Created

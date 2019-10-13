@@ -15,7 +15,7 @@ function fid = log_arraytext (filename, array, varargin)
 %       cd/check_dir.m
 %
 % Used by:    
-%        ~/m3ha/optimizer4gabab/optimizergui_4compgabab.m
+%        ~/m3ha/optimizer4gabab/m3ha_optimizergui_4compgabab.m
 %
 % File History:
 % 2017-05-01 Created by Adam Lu

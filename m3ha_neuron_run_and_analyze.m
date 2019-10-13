@@ -262,7 +262,7 @@ function [errorStruct, hFig, simData] = ...
 %
 % Used by:    
 %       cd/m3ha_fminsearch3.m
-%       ~/m3ha/optimizer4gabab/optimizer_4compgabab.m
+%       ~/m3ha/optimizer4gabab/m3ha_optimizer_4compgabab.m
 
 % File History:
 % 2014-04-XX - Created by Christine
@@ -309,7 +309,7 @@ function [errorStruct, hFig, simData] = ...
 % 2017-05-17 - Added outparams.isLtsError
 % 2017-05-17 - Fixed the case where simulation correctly predicted 
 %               the non-existence of LTS (should be 0 error)
-% 2017-05-19 - Moved update_sweeps_figures() here from optimizer_4compgabab.m
+% 2017-05-19 - Moved update_sweeps_figures() here from m3ha_optimizer_4compgabab.m
 % 2017-05-19 - Separated update_sweeps_figures() into 
 %               decide_on_xlimits(), plot_overlapped_traces(),
 %               plot_conductance_traces(), plot_current_traces() 

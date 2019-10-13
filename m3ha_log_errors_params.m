@@ -7,7 +7,7 @@ function m3ha_log_errors_params (logFileName, outparams, err, simplexOut)
 %
 % Used by:
 %       cd/m3ha_fminsearch3.m
-%       ~/m3ha/optimizer4gabab/optimizer_4compgabab.m
+%       ~/m3ha/optimizer4gabab/m3ha_optimizer_4compgabab.m
 
 % File History:
 % 2017-01-17 Created

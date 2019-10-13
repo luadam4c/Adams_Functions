@@ -9,7 +9,7 @@ function [vectors, vector_names] = structs2vecs(structs)
 %
 % Used by:	
 %		/media/adamX/m3ha/data_dclamp/PlotHistogramsRefineThreshold.m
-%		/media/adamX/m3ha/optimizer4gabab/optimizer_4compgabab.m
+%		/media/adamX/m3ha/optimizer4gabab/m3ha_optimizer_4compgabab.m
 %
 % 2016-12-05 Moved from PlotHistogramsRefineThreshold.m, originally Brian Truong's code
 % 2017-01-25 Now stores field names in vector_names

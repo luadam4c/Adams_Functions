@@ -277,12 +277,49 @@ There are 1 MATLAB scripts in this directory:
 - [**log_arraytext.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_arraytext.m): Create a text file that logs the array information
 - [**log_matfile.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_matfile.m): Print variables in a MATfile to a comma-separated-value file
 - [**m3ha_autocorrelogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_autocorrelogram.m): Shows an m3ha_autocorrelogram for each set of neurons (each .spi file in the infolder)
+- [**m3ha_compare_and_plot_across_conditions.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_and_plot_across_conditions.m): Plot activation/inactivation and I-V curves across conditions
+- [**m3ha_compare_and_plot_across_IC2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_and_plot_across_IC2.m): Plot activation/inactivation and I-V curves across initial conditions
+- [**m3ha_compare_and_plot_across_IC.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_and_plot_across_IC.m): Plot activation/inactivation and I-V curves across initial conditions
+- [**m3ha_compare_neuronparams2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_neuronparams2.m): compare graphs across different sets of NEURON parameters
+- [**m3ha_compare_neuronparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_neuronparams.m): compare graphs across different sets of NEURON parameters
+- [**m3ha_compute_and_plot_all_IV2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_all_IV2.m): Plot I-V curves of all currents together
+- [**m3ha_compute_and_plot_all_IV.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_all_IV.m): Plot I-V curves of all currents together
+- [**m3ha_compute_and_plot_geometry2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_geometry2.m): Plot the geometry of the cell
+- [**m3ha_compute_and_plot_geometry.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_geometry.m): Plot the geometry of the cell
+- [**m3ha_compute_and_plot_IA2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_IA2.m): Plot activation/inactivation curves for the T-type calcium current
+- [**m3ha_compute_and_plot_IA.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_IA.m): Plot activation/inactivation curves for the T-type calcium current
+- [**m3ha_compute_and_plot_Ih2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_Ih2.m): Plot activation/inactivation curves for the T-type calcium current
+- [**m3ha_compute_and_plot_Ih.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_Ih.m): Plot activation/inactivation curves for the T-type calcium current
+- [**m3ha_compute_and_plot_IKir2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_IKir2.m): Plot activation/inactivation curves for the T-type calcium current
+- [**m3ha_compute_and_plot_IKir.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_IKir.m): Plot activation/inactivation curves for the T-type calcium current
+- [**m3ha_compute_and_plot_INaP2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_INaP2.m): Plot activation/inactivation curves for the T-type calcium current
+- [**m3ha_compute_and_plot_INaP.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_INaP.m): Plot activation/inactivation curves for the T-type calcium current
+- [**m3ha_compute_and_plot_IT2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_IT2.m): Plot activation/inactivation curves for the T-type calcium current
+- [**m3ha_compute_and_plot_IT.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_IT.m): Plot activation/inactivation curves for the T-type calcium current
+- [**m3ha_compute_fixed_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_fixed_params.m): Compute fixed parameters that are used in the model
+- [**m3ha_compute_hinf_IA.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_hinf_IA.m): Compute the steady state value of the inactivation gating variable of IA
+- [**m3ha_compute_hinf_INaP.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_hinf_INaP.m): Compute the steady state value of the inactivation gating variable of INaP
+- [**m3ha_compute_hinf_IT.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_hinf_IT.m): Compute the steady state value of the inactivation gating variable of IT
+- [**m3ha_compute_m1inf_IA.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_m1inf_IA.m): Compute the steady state value of the activation gating variable of IA
+- [**m3ha_compute_m2inf_IA.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_m2inf_IA.m): Compute the steady state value of the activation gating variable of IA
+- [**m3ha_compute_minf_Ih.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_minf_Ih.m): Compute the steady state value of the activation gating variable of Ih
+- [**m3ha_compute_minf_IKir.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_minf_IKir.m): Compute the steady state value of the activation gating variable of IKir
+- [**m3ha_compute_minf_INaP.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_minf_INaP.m): Compute the steady state value of the activation gating variable of INaP
+- [**m3ha_compute_minf_IT.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_minf_IT.m): Compute the steady state value of the activation gating variable of IT
+- [**m3ha_compute_tauh1_IA.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_tauh1_IA.m): Compute the time constant for the inactivation gating variable of IA
+- [**m3ha_compute_tauh2_IA.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_tauh2_IA.m): Compute the time constant for the inactivation gating variable of IA
+- [**m3ha_compute_tauh_INaP.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_tauh_INaP.m): Compute the time constant for the inactivation gating variable of INaP
+- [**m3ha_compute_tauh_IT.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_tauh_IT.m): Compute the time constant for the inactivation gating variable of IT
+- [**m3ha_compute_taum_IA.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_taum_IA.m): Compute the time constant for the activation gating variable of IA
+- [**m3ha_compute_taum_Ih.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_taum_Ih.m): Compute the time constant for the activation gating variable of IT
+- [**m3ha_compute_taum_IT.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_taum_IT.m): Compute the time constant for the activation gating variable of IT
 - [**m3ha_correct_unbalanced_bridge.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_correct_unbalanced_bridge.m): Fix current pulse response traces that may have out-of-balance bridges
 - [**m3ha_determine_row_conditions.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_determine_row_conditions.m): Determine the conditions for each row
 - [**m3ha_find_files_to_take_out.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_files_to_take_out.m): Returns all the file names of files to take out from .png files in 'TAKE_OUT_*' folders of a special cases directory
 - [**m3ha_find_ind_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ind_to_fit.m): Find indices of fnrow in dclampdatalog_take4.mat that will be used for fitting
 - [**m3ha_fminsearch3.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_fminsearch3.m): Applies the Nelder-Mead simplex algorithm to optimize parameters (modified version of fminsearch for the m3ha project)
 - [**m3ha_generate_cell_info.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_generate_cell_info.m): Generates a table of cell information from the sweep information table
+- [**m3ha_histograms_across_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_histograms_across_cells.m): Plots histograms across cells for single neuron fitting
 - [**m3ha_import_raw_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_import_raw_traces.m): Imports raw traces from .mat files in the m3ha format
 - [**m3ha_load_sweep_info.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_load_sweep_info.m): Loads sweep info (default is homeDirectory/data_dclamp/take4/dclampdatalog_take4.csv)
 - [**m3ha_locate_homedir.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_locate_homedir.m): Locate the first home directory that exists for the GAT blockade project
@@ -292,6 +329,8 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_neuron_create_simulation_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_neuron_create_simulation_params.m): Generates a table of simulation parameters from table(s) of neuron parameters
 - [**m3ha_neuron_create_TC_commands.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_neuron_create_TC_commands.m): Generates simulation commands to be read by NEURON from a table of simulation parameters
 - [**m3ha_neuron_run_and_analyze.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_neuron_run_and_analyze.m): Runs "one iteration" of NEURON (once for each of the sweeps)
+- [**m3ha_optimizer_4compgabab.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_optimizer_4compgabab.m): OPTIMIZER  Passes parameters to NEURON (which runs simulations and saves
+- [**m3ha_optimizergui_4compgabab.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_optimizergui_4compgabab.m): OPTIMIZERGUI  The GUI interface for OPTIMIZER.m, which runs NEURON
 - [**m3ha_organize_sweep_indices.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_organize_sweep_indices.m): Organize sweep indices by g incr, pharm conditions for each cell
 - [**m3ha_parse_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_parse_mat.m): Parses and loads a set of matfiles for the GAT blockade project
 - [**m3ha_pfiles2csv.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_pfiles2csv.m): Converts the old m3ha .p files to spreadsheet files
@@ -364,100 +403,3 @@ There are 1 MATLAB scripts in this directory:
 - [**plot_grouped_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_grouped_histogram.m): Plots a grouped histogram
 - [**plot_grouped_scatter.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_grouped_scatter.m): Plot and save a grouped scatter plot with 95% confidence ellipses
 - [**plot_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_histogram.m): Plots a histogram labelling out of range values differently
-- [**plot_horizontal_line.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_horizontal_line.m): Plots horizontal line(s)
-- [**plot_horizontal_shade.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_horizontal_shade.m): Plots a shaded area at specific y values, either between specific x values or extend to the current x-axis limits
-- [**plot_measures.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_measures.m): Plots all measures of interest across slices
-- [**plot_pdf.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pdf.m): Plots scaled pdf fit of data X and return vectors for the plots
-- [**plot_protocols.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_protocols.m): Computes features for each file according to protocol type
-- [**plot_psth.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_psth.m): Plots a peri-stimulus time histogram
-- [**plot_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pulse.m): Plots pulses, marks the parsed endpoints and displays total number of sweeps
-- [**plot_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pulse_response.m): Plots pulse responses, marks the parsed baseline and steady state bounds
-- [**plot_pulse_response_with_stimulus.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_pulse_response_with_stimulus.m): Plots a pulse response with its stimulus
-- [**plot_raster.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_raster.m): Make a raster plot from a cell array of event time arrays
-- [**plot_relative_events.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_relative_events.m): Binary file /home/Matlab/Adams_Functions/plot_relative_events.m matches
-- [**plot_signals.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_signals.m): Plots signals (TO BE MERGED WITH plot_traces.m)
-- [**plot_struct.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_struct.m): Plot all fields in a structure array as tuning curves
-- [**plot_swd_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_swd_histogram.m): Plots SWD start times in a histogram
-- [**plot_swd_raster.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_swd_raster.m): Compares all SWD start times in a directory as a raster plot
-- [**plot_table.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_table.m): Plots all variables in a table as tuning curves
-- [**plot_traces_abf.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_abf.m): Takes an abf file and plots all traces
-- [**plot_traces_EEG.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_EEG.m): Plots EEG traces from a .abf file
-- [**plot_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces.m): Plots traces all in one place, overlapped or in parallel
-- [**plot_traces_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_mat.m): Plot traces from mat file
-- [**plot_traces_spike2_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_spike2_mat.m): Plots traces from a Spike2-exported .mat file
-- [**plot_tuning_curve.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_curve.m): Plot 1-dimensional tuning curve(s), can include confidence intervals or test p values
-- [**plot_tuning_map.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_map.m): Plot a 2-dimensional tuning map
-- [**plot_vertical_line.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_vertical_line.m): Plots vertical line(s)
-- [**plot_vertical_shade.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_vertical_shade.m): Plots a shaded area at specific x values, either between specific y values or extend to the current y-axis limits
-- [**plot_window_boundaries.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_window_boundaries.m): Plots window boundaries as separating lines, duration bars or background shades
-- [**print_and_show_message.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_and_show_message.m): Print to standard output and show message box at the same time
-- [**print_cellstr.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_cellstr.m): Prints and returns a string for the contents stored in a cell array
-- [**print_help.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_help.m): Prints and returns the documentation for a specific function
-- [**print_next_in_csv.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_next_in_csv.m): What to print next in a csv file
-- [**print_or_show_message.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_or_show_message.m): Either print a message in standard output or show a message box
-- [**print_structure.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_structure.m): Display all fields of a structure recursively
-- [**read_adicht.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_adicht.m): Reads in a .adicht file (from LabChart)
-- [**read_frames.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_frames.m): Reads all frames from a video file
-- [**read_lines_from_file.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_lines_from_file.m): Reads line(s) from a file
-- [**read_swd_sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_swd_sheet.m): Read in an SWD table from a spreadsheet file
-- [**read_timetable.m**](https://github.com/blabuva/Adams_Functions/blob/master/read_timetable.m): Reads a time table from a spreadsheet file
-- [**relative_std.m**](https://github.com/blabuva/Adams_Functions/blob/master/relative_std.m): Computes the relative standard deviation (%)
-- [**remove_empty.m**](https://github.com/blabuva/Adams_Functions/blob/master/remove_empty.m): Removes empty elements from an array
-- [**remove_outliers.m**](https://github.com/blabuva/Adams_Functions/blob/master/remove_outliers.m): Removes outliers from a data matrix and return a new matrix
-- [**renamevars.m**](https://github.com/blabuva/Adams_Functions/blob/master/renamevars.m): Rename variable(s) in a table
-- [**rescale_vec.m**](https://github.com/blabuva/Adams_Functions/blob/master/rescale_vec.m): Rescale a vector (vec1) to be in the same ballpark as another vector (vec2),
-- [**restore_fields.m**](https://github.com/blabuva/Adams_Functions/blob/master/restore_fields.m): Set each field specified in varargin to previous values from the field strcat(field, '_prev')
-- [**run_neuron.m**](https://github.com/blabuva/Adams_Functions/blob/master/run_neuron.m): Runs NEURON using a .hoc file and a cell array of simulation commands/files
-- [**save_all_figtypes.m**](https://github.com/blabuva/Adams_Functions/blob/master/save_all_figtypes.m): Save figures using all figure types provided
-- [**save_all_zooms.m**](https://github.com/blabuva/Adams_Functions/blob/master/save_all_zooms.m): Save a figure in various zoom windows
-- [**save_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/save_params.m): Saves parameters to a file
-- [**select_similar_values.m**](https://github.com/blabuva/Adams_Functions/blob/master/select_similar_values.m): Selects values that are within a certain percentage range of the mean
-- [**set_axes_properties.m**](https://github.com/blabuva/Adams_Functions/blob/master/set_axes_properties.m): Decides on the axes handle and sets axes properties
-- [**set_default_flag.m**](https://github.com/blabuva/Adams_Functions/blob/master/set_default_flag.m): Sets the default flag if empty according to an optional auxFlag
-- [**set_fields_zero.m**](https://github.com/blabuva/Adams_Functions/blob/master/set_fields_zero.m): Set each field specified in varargin to zero and store previous values in a new field strcat(field, '_prev')
-- [**set_figure_properties.m**](https://github.com/blabuva/Adams_Functions/blob/master/set_figure_properties.m): Decides on the figure handle and sets figure properties
-- [**sld2ometiff.m**](https://github.com/blabuva/Adams_Functions/blob/master/sld2ometiff.m): Converts each SlideBook file to a directory of OME-TIFF files
-- [**solve_function_at_value.m**](https://github.com/blabuva/Adams_Functions/blob/master/solve_function_at_value.m): Solves x for f(x) at a specific value (default is zero)
-- [**spike2Mat2Text.m**](https://github.com/blabuva/Adams_Functions/blob/master/spike2Mat2Text.m): Converts a Spike2-exported .mat file to a text file (atf, txt or csv)
-- [**sscanf_full.m**](https://github.com/blabuva/Adams_Functions/blob/master/sscanf_full.m): Same as sscanf but treats unmatched parts as whitespace (does not stop until end of string)
-- [**stderr.m**](https://github.com/blabuva/Adams_Functions/blob/master/stderr.m): Calculate the standard error of the mean
-- [**struct2arglist.m**](https://github.com/blabuva/Adams_Functions/blob/master/struct2arglist.m): Converts a scalar structure to an argument list
-- [**struct2mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/struct2mat.m): Saves each variable in a structure as a variable in a MAT-file and create a logHeader and a logVariables
-- [**struct2sheet.m**](https://github.com/blabuva/Adams_Functions/blob/master/struct2sheet.m): Converts a structure array into a table and write it to a spreadsheet
-- [**structofstruct2structarray.m**](https://github.com/blabuva/Adams_Functions/blob/master/structofstruct2structarray.m): Converts a structure of structures to a structure array
-- [**structs2vecs.m**](https://github.com/blabuva/Adams_Functions/blob/master/structs2vecs.m): Converts a cell array of structs with equal numbers of fields to a column cell array of row vectors or cell arrays
-- [**suptitle.m**](https://github.com/blabuva/Adams_Functions/blob/master/suptitle.m): SUPTITLE puts a title above all subplots.
-- [**test_normality.m**](https://github.com/blabuva/Adams_Functions/blob/master/test_normality.m): Test whether set(s) of values are normally distributed
-- [**test_passive_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/test_passive_fit.m): Tests passive fitting 
-- [**test_var_difference.m**](https://github.com/blabuva/Adams_Functions/blob/master/test_var_difference.m): Tests whether groups are different for each measured variable
-- [**transform_vectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/transform_vectors.m): Transform vectors by a binary operation
-- [**transpose_table.m**](https://github.com/blabuva/Adams_Functions/blob/master/transpose_table.m): Transposes a table (make row names variable names and vice versa)
-- [**trim_nans.m**](https://github.com/blabuva/Adams_Functions/blob/master/trim_nans.m): Removes leading and trailing NaNs from vector(s)
-- [**union_over_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/union_over_cells.m): Apply the union function over all contents of a cell array
-- [**unique_custom.m**](https://github.com/blabuva/Adams_Functions/blob/master/unique_custom.m): Returns the unique values in x, optionally without NaN
-- [**unique_groups.m**](https://github.com/blabuva/Adams_Functions/blob/master/unique_groups.m): Retrieves the unique groups and counts the number in each group
-- [**update_figure_for_corel.m**](https://github.com/blabuva/Adams_Functions/blob/master/update_figure_for_corel.m): Update figure to be journal-friendly (ready for CorelDraw)
-- [**update_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/update_params.m): Update dependent parameters for particular experiments
-- [**update_param_values.m**](https://github.com/blabuva/Adams_Functions/blob/master/update_param_values.m): Updates a parameters table with new values
-- [**validate_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/validate_string.m): Validate whether a string is an element of a cell array of valid strings
-- [**vec2array.m**](https://github.com/blabuva/Adams_Functions/blob/master/vec2array.m): Convert a vector to an array with dimensions given by dims using linear indexing (obsolete, use reshape() instead)
-- [**vec2cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/vec2cell.m): Reorganize a vector or array into a cell array of partial vectors/arrays according to class
-- [**vecfun.m**](https://github.com/blabuva/Adams_Functions/blob/master/vecfun.m): Apply a function to each vector (each column of an array or each element of a cell array of vectors)
-- [**vertcat_spreadsheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/vertcat_spreadsheets.m): Combine spreadsheets using readtable, vertcat, then writetable
-- [**write_frames.m**](https://github.com/blabuva/Adams_Functions/blob/master/write_frames.m): Write frames to a file
-- [**write_timetable.m**](https://github.com/blabuva/Adams_Functions/blob/master/write_timetable.m): Writes a time table to a spreadsheet file
-- [**xolotl_add_current_injection.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_current_injection.m): Adds a current injection to a xolotl object, just the first compartment by default
-- [**xolotl_add_current_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_current_pulse.m): Adds a current pulse to the first compartment of a xolotl object
-- [**xolotl_add_holding_current.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_holding_current.m): Adds a holding current to a xolotl object
-- [**xolotl_add_voltage_clamp.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_add_voltage_clamp.m): Adds a voltage clamp to the first compartment of a xolotl object
-- [**xolotl_compartment_index.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_compartment_index.m): Returns the index of the compartment or the first compartment by default
-- [**xolotl_create_model_howard.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_create_model_howard.m): Creates a xolotl model based on Howard et al
-- [**xolotl_create_model_soplata.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_create_model_soplata.m): Creates a xolotl model based on Soplata et al
-- [**xolotl_estimate_holding_current.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_estimate_holding_current.m): Estimates the holding current necessary to match a certain holding potential
-- [**xolotl_set_simparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_set_simparams.m): Runs a simulation on a xolotl object
-- [**xolotl_simulate.m**](https://github.com/blabuva/Adams_Functions/blob/master/xolotl_simulate.m): Simulates and returns output
-- [**ZG_compute_IEI_thresholds.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_compute_IEI_thresholds.m): Compute all possible inter-event interval thresholds from the data within an all_output directory
-- [**ZG_extract_all_data.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_all_data.m): Extract each cell and concatenate sweeps into a single file under a subdirectory of its own
-- [**ZG_extract_all_IEIs.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_all_IEIs.m): Extract all the inter-event intervals from a directory containing multiple minEASE output subdirectories
-- [**ZG_extract_IEI_thresholds.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_IEI_thresholds.m): Extract/compute inter-event-interval distribution thresholds, separating events from spikes
-- [**ZG_fit_IEI_distributions.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_fit_IEI_distributions.m): Fit inter-event-interval distributions and log distributions

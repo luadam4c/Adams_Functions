@@ -39,7 +39,7 @@ function check_dir (directories, varargin)
 %       cd/plot_traces_EEG.m
 %       /media/adamX/m3ha/data_dclamp/initial_slopes.m
 %       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
-%       /media/adamX/m3ha/optimizer4gabab/optimizer_4compgabab.m
+%       /media/adamX/m3ha/optimizer4gabab/m3ha_optimizer_4compgabab.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting42.m
 %       /home/Matlab/function_template.m
 

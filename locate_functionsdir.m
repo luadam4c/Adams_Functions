@@ -18,7 +18,7 @@ function functionsDirectory = locate_functionsdir
 %       cd/parse_abf.m
 %       ~/m3ha/data_dclamp/dclampPassiveFitter.m
 %       ~/m3ha/optimizer4gabab/singleneuronfitting42.m and beyond
-%       ~/m3ha/optimizer4gabab/optimizer_4compgabab.m
+%       ~/m3ha/optimizer4gabab/m3ha_optimizer_4compgabab.m
 %
 
 % File History:

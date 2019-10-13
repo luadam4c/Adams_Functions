@@ -19,7 +19,7 @@ function newTable = m3ha_neuron_create_new_initial_params (prevTable, varargin)
 %       cd/choose_random_values.m
 %
 % Used by:
-%       ~/m3ha/optimizer4gabab/optimizer_4compgabab.m
+%       ~/m3ha/optimizer4gabab/m3ha_optimizer_4compgabab.m
 
 % File History:
 % 2018-12-11 Created by Adam Lu

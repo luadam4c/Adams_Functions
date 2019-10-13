@@ -28,7 +28,7 @@ function unionOfContents = union_over_cells (cellArray, varargin)
 % Used by:
 %       cd/create_default_grouping.m
 %       cd/plot_tuning_curve.m
-%       ~/m3ha/optimizer4gabab/compare_and_plot_across_conditions.m
+%       ~/m3ha/optimizer4gabab/m3ha_compare_and_plot_across_conditions.m.m
 
 % File History:
 %   2018-08-17 Created by Adam Lu
