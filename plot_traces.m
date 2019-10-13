@@ -200,12 +200,11 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       cd/argfun.m
 %       cd/compute_axis_limits.m
 %       cd/count_vectors.m
-%       cd/decide_on_colormap.m
+%       cd/create_subplots.m
 %       cd/create_error_for_nargin.m
 %       cd/create_indices.m
 %       cd/create_labels_from_numbers.m
-%       cd/set_figure_properties.m
-%       cd/set_axes_properties.m
+%       cd/decide_on_colormap.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/isemptycell.mplot_traces
@@ -219,7 +218,6 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       cd/save_all_figtypes.m
 %       cd/transform_vectors.m
 %       ~/Downloaded_Function/suplabel.m
-%       ~/Downloaded_Function/subplotsqueeze.m
 %
 % Used by:
 %       cd/m3ha_plot_individual_traces.m
@@ -261,6 +259,8 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % 2019-08-23 Added 'FigExpansion' as an optional argument
 % 2019-08-23 Added horizontal bars
 % 2019-09-19 Added 'YBase' as an optional argument
+% 2019-10-13 No longer uses subplotsqueeze.m
+% 2019-10-13 Now uses create_subplots.m
 % TODO: dataToCompareColorMap
 % TODO: Number of horizontal bars shouldn't need to match nTraces
 
@@ -272,7 +272,7 @@ validLinkAxesOptions = {'none', 'x', 'y', 'xy', 'off'};
 maxRowsWithOneOnly = 8;
 maxNPlotsForTraceNum = 8;
 maxNPlotsForAnnotations = 8;
-maxNYLabels = 10;
+maxNYLabels = 20; %10;
 maxNPlotsForLegends = 12;
 maxNColsForTicks = 30;
 maxNColsForXTickLabels = 30;
@@ -779,12 +779,20 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
                     subPlotSqeezeFactor, ...
                     otherArguments)
 
-% Decide on the figure to plot on
-fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
-                            'FigExpansion', figExpansion);
+switch plotMode
+case {'overlapped', 'staggered'}
+    nRows = 1;
+    nColumns = 1;
+case 'parallel'
+    if isempty(figExpansion) && nRows > nColumns * 4
+        figExpansion = [1, nRows/4];
+    end
+otherwise
+end
 
-% Decide on the axes to plot on and set properties
-ax = set_axes_properties;
+% Create subplots
+[fig, ax] = create_subplots(nRows, nColumns, 'FigHandle', figHandle, ...
+                        'FigNumber', figNumber, 'FigExpansion', figExpansion);
 
 % Set the default time axis limits
 if isempty(xLimits)
@@ -998,18 +1006,18 @@ case {'overlapped', 'staggered'}
     % Decide on Y tick values
     if ~isempty(yTickLocs)
         if ischar(yTickLocs) && strcmpi(yTickLocs, 'suppress')
-            set(gca, 'YTick', []);
+            set(ax, 'YTick', []);
         else
-            set(gca, 'YTick', yTickLocs);
+            set(ax, 'YTick', yTickLocs);
         end
     end
 
     % Decide on Y tick labels
     if ~isempty(yTickLabels)
         if ischar(yTickLabels) && strcmpi(yTickLabels, 'suppress')
-            set(gca, 'YTickLabel', {});
+            set(ax, 'YTickLabel', {});
         else
-            set(gca, 'YTickLabel', yTickLabels);
+            set(ax, 'YTickLabel', yTickLabels);
         end
     end
 
@@ -1021,14 +1029,11 @@ case {'overlapped', 'staggered'}
     % Generate a legend if there is more than one trace
     if ~strcmpi(legendLocation, 'suppress')
         if ~isempty(dataToCompareThis)
-            legend(gca, [plotsData, plotsDataToCompare], 'location', legendLocation);
+            legend(ax, [plotsData, plotsDataToCompare], 'location', legendLocation);
         else
-            legend(gca, plotsData, 'location', legendLocation);
+            legend(ax, plotsData, 'location', legendLocation);
         end
     end
-
-    % Save current axes handle
-    subPlots = gca;
 
     if ~wasHold
         hold off
@@ -1054,7 +1059,7 @@ case 'parallel'
     %   Note: the number of rows is based on the number of rows in the color map
     for iPlot = 1:nPlots
         % Create a subplot and hold on
-        ax = subplot(nRows, nColumns, iPlot); hold on
+        axThis = subplot(ax(iPlot)); hold on
 
         % Get the current tVecs and data
         tVecsThis = tVecs{iPlot};
@@ -1079,7 +1084,7 @@ case 'parallel'
         % Compute a default horizontal bar y value
         if isempty(horzBarYValues)
             if isempty(yLimitsThis)
-                yLimitsNow = get(ax, 'YLim');
+                yLimitsNow = get(axThis, 'YLim');
             else
                 yLimitsNow = yLimitsThis;
             end
@@ -1164,50 +1169,50 @@ case 'parallel'
 
         % Generate a legend
         if ~strcmpi(legendLocation, 'suppress')
-            legend(ax, p, 'location', legendLocation);
+            legend(axThis, p, 'location', legendLocation);
         end
 
         % Remove x ticks if too many columns
         if nColumns > maxNColsForTicks
-            set(ax, 'XTick', []);
-            set(ax, 'TickLength', [0, 0]);
+            set(axThis, 'XTick', []);
+            set(axThis, 'TickLength', [0, 0]);
         end
 
         % Remove y ticks if too many rows
         if nRows > maxNRowsForTicks
-            set(ax, 'YTick', []);
-            set(ax, 'TickLength', [0, 0]);
+            set(axThis, 'YTick', []);
+            set(axThis, 'TickLength', [0, 0]);
         end
 
         % Remove x tick labels except for the last row
         %   or if too many columns
         if thisRowNumber ~= nRows || nColumns > maxNColsForXTickLabels
-            set(ax, 'XTickLabel', []);
+            set(axThis, 'XTickLabel', []);
         end
 
         % Remove x tick labels except for the first column
         %   or if too many rows
         if thisColNumber ~= 1 || nRows > maxNRowsForYTickLabels
-            set(ax, 'YTickLabel', []);
+            set(axThis, 'YTickLabel', []);
         end
 
         % TODO: Hide the X axis ruler if too many rows
         if nRows > maxNRowsForXAxis
-            % ax.XRuler.Axle.Visible = 'off';
-            xTick = get(ax, 'XTick');
-            xTickLabel = get(ax, 'XTickLabel');
-            set(ax.XAxis, 'Color', 'none');
-            set(ax.XAxis.Label, 'Color', 'k');
-            set(ax.XAxis.Label, 'Visible', 'on');
-            set(ax, 'XTick', xTick);
-            set(ax, 'XTickLabel', xTickLabel);
+            % axThis.XRuler.Axle.Visible = 'off';
+            xTick = get(axThis, 'XTick');
+            xTickLabel = get(axThis, 'XTickLabel');
+            set(axThis.XAxis, 'Color', 'none');
+            set(axThis.XAxis.Label, 'Color', 'k');
+            set(axThis.XAxis.Label, 'Visible', 'on');
+            set(axThis, 'XTick', xTick);
+            set(axThis, 'XTickLabel', xTickLabel);
         end
 
         % Hide the Y axis ruler if too many columns
         if nColumns > maxNColsForYAxis
-            % set(ax.YAxis, 'Color', 'r');
-            % set(ax.YAxis.Label, 'Color', 'k');
-            % set(ax.YAxis.Label, 'Visible', 'on');
+            % set(axThis.YAxis, 'Color', 'r');
+            % set(axThis.YAxis.Label, 'Color', 'k');
+            % set(axThis.YAxis.Label, 'Visible', 'on');
         end
 
         % Create a title for the first subplot
@@ -1223,7 +1228,6 @@ case 'parallel'
         end
 
         % Store handles in array
-        subPlots(iPlot) = ax;
         if iscell(plotsData)
             plotsData{iPlot} = p;
         else
@@ -1233,12 +1237,7 @@ case 'parallel'
 
     % If requested, link or unlink axes of subPlots
     if ~strcmpi(linkAxesOption, 'none')
-        linkaxes(subPlots, linkAxesOption);
-    end
-
-    % If nPlots > maxNPlotsForAnnotations, expand all subPlots by 1.2
-    if nPlots > maxNPlotsForAnnotations
-        subplotsqueeze(fig, subPlotSqeezeFactor);
+        linkaxes(ax, linkAxesOption);
     end
     
     % Create an overarching title
@@ -1254,6 +1253,9 @@ case 'parallel'
 otherwise
     error(['The plot mode ', plotMode, ' has not been implemented yet!']);
 end
+
+% Save axes handles
+subPlots = ax;
 
 %% Save
 % Save figure
@@ -1429,6 +1431,12 @@ end
 OLD CODE:
 
 yLimits = yAmountToStagger * ([0, nPlots]  + 0.5);
+
+% If nPlots > maxNPlotsForAnnotations, expand all subPlots by 1.2
+%       ~/Downloaded_Function/subplotsqueeze.m
+if nPlots > maxNPlotsForAnnotations
+    subplotsqueeze(fig, subPlotSqeezeFactor);
+end
 
 %}
 

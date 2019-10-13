@@ -67,7 +67,6 @@ function fig = set_figure_properties (varargin)
 %       cd/plot_histogram.m
 %       cd/plot_raster.m
 %       cd/plot_swd_histogram.m
-%       cd/plot_traces.m
 %       cd/plot_traces_spike2_mat.m
 %       cd/plot_tuning_curve.m
 %       cd/update_figure_for_corel.m

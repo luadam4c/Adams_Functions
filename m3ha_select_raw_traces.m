@@ -148,7 +148,7 @@ case 1
 
         % Find the sweep indices for each pharmacological condition 
         %   @ 200% g_incr from this cell to be fitted
-        swpIndRow = cellfun(@(x) find(x & isGCond(2) & fromCell & toFit), ...
+        swpIndRow = cellfun(@(x) find(x & isGCond{2} & fromCell & toFit), ...
                                 isPCond, 'UniformOutput', false);
 
         % Check if there is enough data or not
