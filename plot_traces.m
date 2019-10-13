@@ -1059,6 +1059,7 @@ case 'parallel'
         % Get the current tVecs and data
         tVecsThis = tVecs{iPlot};
         dataThis = data{iPlot};
+        dataToCompareThis = dataToCompare{iPlot};
 
         % Compute the number of vectors in dataThis
         nVectors = size(dataThis, 2);
@@ -1067,7 +1068,7 @@ case 'parallel'
         if isempty(yLimits)
             % Compute the y limits from both data and dataToCompare
             yLimitsThis = ...
-                compute_axis_limits({data{iPlot}, dataToCompare{iPlot}}, ...
+                compute_axis_limits({dataThis, dataToCompareThis}, ...
                                         'y', 'AutoZoom', autoZoom);                
         elseif iscell(yLimits)
             yLimitsThis = yLimits{iPlot};
@@ -1077,8 +1078,13 @@ case 'parallel'
 
         % Compute a default horizontal bar y value
         if isempty(horzBarYValues)
+            if isempty(yLimitsThis)
+                yLimitsNow = get(ax, 'YLim');
+            else
+                yLimitsNow = yLimitsThis;
+            end
             horzBarYValueThis = ...
-                compute_default_horzbar_yvalue(yLimitsThis, toStagger, ...
+                compute_default_horzbar_yvalue(yLimitsNow, toStagger, ...
                                                     yAmountToStagger);
         else
             horzBarYValueThis = horzBarYValue(iPlot);

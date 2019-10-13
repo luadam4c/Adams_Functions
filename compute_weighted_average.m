@@ -139,9 +139,14 @@ end
 % Remove NaN values if requested
 if ignoreNan && ~iscell(values)
     if isvector(values)
-        values = values(~isnan(values));
-        if ~isempty(valueWeights)
-            valueWeights = valueWeights(~isnan(values));
+        if all(isnan(values))
+            avgValues = NaN;
+            return
+        else
+            values = values(~isnan(values));
+            if ~isempty(valueWeights)
+                valueWeights = valueWeights(~isnan(values));
+            end
         end
     else
         % Force as a cell array of column vectors
