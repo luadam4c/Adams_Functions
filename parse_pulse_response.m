@@ -477,7 +477,7 @@ if fitResponse
                            num2cell(pulseWidthMs), num2cell(steadyAmplitude));
 
     % Convert structure array to a table
-    fitTable = struct2table(fitResults);
+    fitTable = struct2table(fitResults, 'AsArray', true);
 
     % TODO: create a writetable.m that fixes these problems automatically
     % Replace cell arrays with column character arrays

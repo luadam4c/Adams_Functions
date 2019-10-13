@@ -544,6 +544,7 @@ if isempty(xTickLocs)
         % Use the minimum number of x ticks
         xTicks = extract_subvectors(edgesFinite, 'Windows', xLimits, ...
                                     'MaxNum', minNXTicks);
+        xTicks = force_row_vector(xTicks);
     end
 
     % Remove x ticks that are beyond finite range of edges

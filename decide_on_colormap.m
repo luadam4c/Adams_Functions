@@ -19,6 +19,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 %       colorMap    - color map passed in
 %                   must be empty or a string/character vector
 %                       or an n-by-3 numeric array
+%                       or a cell array of n-by-3 numeric arrays
 %       nColors     - (opt) number of colors
 %                   must be a positive integer vector
 %                   default == 64
@@ -42,6 +43,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 
 % File History:
 % 2019-08-22 Created by Adam Lu
+% 2019-10-12 Now allows colorMap to be a cell array
 % 
 
 %% Hard-coded parameters
@@ -103,7 +105,9 @@ elseif isstring(colorMap) || iscellstr(colorMap)
 end
 
 % Match the number of rows in the color map to nColors
-colorMap = match_row_count(colorMap, nColors, 'ExpansionMethod', 'repeat');
+if isscalar(nColors)
+    colorMap = match_row_count(colorMap, nColors, 'ExpansionMethod', 'repeat');
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

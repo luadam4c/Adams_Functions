@@ -137,7 +137,6 @@ end
 
 %% Preparation
 % Remove NaN values if requested
-% TODO: What to do about weights?
 if ignoreNan && ~iscell(values)
     if isvector(values)
         values = values(~isnan(values));

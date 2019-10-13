@@ -85,13 +85,9 @@ pNormJb = cellfun(@(x) compute_pnorm_jb(x, sigLevel), data);
 pNormMat = [pNormLill, pNormAd, pNormJb];
 
 % Take the geometric mean of the p values from different tests
-if ~all(isnan(pNormMat))
-    pNormAvg = compute_weighted_average(pNormMat, 'DimToOperate', 2, ...
-                                            'AverageMethod', 'geometric', ...
-                                            'IgnoreNan', true);
-else
-    pNormAvg = 1;
-end
+pNormAvg = compute_weighted_average(pNormMat, 'DimToOperate', 2, ...
+                                        'AverageMethod', 'geometric', ...
+                                        'IgnoreNan', true);
 
 % Normality is satified if p value is not less than the significance level
 isNormal = pNormAvg >= sigLevel;
