@@ -35,11 +35,11 @@ function [v, minf, taum, IMax, IInf] = m3ha_compute_and_plot_Ih(varargin)
 %                   default == true
 %
 % Used by:    
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compare_and_plot_across_IC.m
+%       cd/m3ha_compare_and_plot_across_IC.m
 %
 % Requires:
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_minf_Ih.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_taum_Ih.m
+%       cd/m3ha_compute_minf_Ih.m
+%       cd/m3ha_compute_taum_Ih.m
 %
 % File History:
 % 2017-08-06 Created

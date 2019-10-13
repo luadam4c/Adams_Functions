@@ -32,15 +32,15 @@ function [v, m1inf, m2inf, hinf, taum, tauh1, tauh2, IMax, IInit, IInf] = m3ha_c
 %                   default == true
 %
 % Used by:    
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compare_and_plot_across_IC.m
+%       cd/m3ha_compare_and_plot_across_IC.m
 %
 % Requires:
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_m1inf_IA.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_m2inf_IA.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_hinf_IA.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_taum_IA.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_tauh1_IA.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_tauh2_IA.m
+%       cd/m3ha_compute_m1inf_IA.m
+%       cd/m3ha_compute_m2inf_IA.m
+%       cd/m3ha_compute_hinf_IA.m
+%       cd/m3ha_compute_taum_IA.m
+%       cd/m3ha_compute_tauh1_IA.m
+%       cd/m3ha_compute_tauh2_IA.m
 %
 % File History:
 % 2017-08-06 Adapted from plot_IT.m

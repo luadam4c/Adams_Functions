@@ -23,7 +23,7 @@ function [epas, Rin] = estimate_resting_potential (holdPotential, holdCurrentPa,
 %       cd/find_passive_params.m
 
 % File History:
-% 2018-11-13 Adapted from ~/m3ha/optimizer4gabab/import_rawtraces.m
+% 2018-11-13 Adapted from ~/m3ha/optimizer4gabab/m3ha_import_raw_traces.m
 % 
 
 %% Hard-coded constants

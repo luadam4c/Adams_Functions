@@ -32,12 +32,12 @@ function [v, minf, hinf, tauh, IMax, IInit, IInf] = m3ha_compute_and_plot_INaP(v
 %                   default == true
 %
 % Used by:    
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compare_and_plot_across_IC.m
+%       cd/m3ha_compare_and_plot_across_IC.m
 %
 % Requires:
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_minf_INaP.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_hinf_INaP.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_tauh_INaP.m
+%       cd/m3ha_compute_minf_INaP.m
+%       cd/m3ha_compute_hinf_INaP.m
+%       cd/m3ha_compute_tauh_INaP.m
 %
 % File History:
 % 2017-08-06 Adapted from plot_IA.m

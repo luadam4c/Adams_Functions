@@ -5,7 +5,7 @@ function m1inf = m3ha_compute_m1inf_IA (v)
 % Requires:
 %       /home/Matlab/boltzmann.m
 % Used by:    
-%       /media/adamX/m3ha/optimizer4gabab/compare_and_plot_IA.m
+%       cd/m3ha_compute_and_plot_IA.m
 %
 % File History:
 % 2017-08-06 Created

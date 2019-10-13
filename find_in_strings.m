@@ -99,9 +99,9 @@ function varargout = find_in_strings (cand, strList, varargin)
 %       /media/adamX/m3ha/data_dclamp/test_sweep.m
 %       /media/adamX/m3ha/data_dclamp/remove_E092810_0000.m
 %       /media/adamX/m3ha/data_dclamp/compare_statistics.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_optimizergui_4compgabab.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_optimizer_4compgabab.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compare_neuronparams.m
+%       cd/m3ha_optimizergui_4compgabab.m
+%       cd/m3ha_optimizer_4compgabab.m
+%       cd/m3ha_compare_neuronparams.m
 %       /media/adamX/RTCl/neuronlaunch.m
 %       /media/adamX/RTCl/raster_plot.m
 %       /media/adamX/RTCl/tuning_curves.m

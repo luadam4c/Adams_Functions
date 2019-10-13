@@ -12,7 +12,7 @@ function [structure] = my_closereq (hObject, varargin)
 %                   must be a string scalar or a character vector
 %
 % Used by:
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_optimizergui_4compgabab.m
+%       cd/m3ha_optimizergui_4compgabab.m
 %       /home/Matlab/minEASE/gui_examine_events.m
 %
 % 2016-04-25 Adapted from Figure properties documentation

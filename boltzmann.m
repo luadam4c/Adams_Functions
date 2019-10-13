@@ -13,16 +13,16 @@ function p = boltzmann(v, vHalf, k)
 %               must be a numeric scalar
 %
 % Used by:    
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_minf_IT.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_hinf_IT.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_minf_Ih.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_minf_IKir.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_m1inf_IA.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_m2inf_IA.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_hinf_IA.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_minf_INaP.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_hinf_INaP.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_tauh_INaP.m
+%       cd/m3ha_compute_minf_IT.m
+%       cd/m3ha_compute_hinf_IT.m
+%       cd/m3ha_compute_minf_Ih.m
+%       cd/m3ha_compute_minf_IKir.m
+%       cd/m3ha_compute_m1inf_IA.m
+%       cd/m3ha_compute_m2inf_IA.m
+%       cd/m3ha_compute_hinf_IA.m
+%       cd/m3ha_compute_minf_INaP.m
+%       cd/m3ha_compute_hinf_INaP.m
+%       cd/m3ha_compute_tauh_INaP.m
 % 
 % File History:
 % 2017-08-06 Created

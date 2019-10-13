@@ -3,7 +3,7 @@ function taum = m3ha_compute_taum_IA (v, celsius)
 % Usage: taum = m3ha_compute_taum_IA (v, celsius)
 %
 % Used by:    
-%       /media/adamX/m3ha/optimizer4gabab/compare_and_plot_IA.m
+%       cd/m3ha_compute_and_plot_IA.m
 %
 % File History:
 % 2017-08-06 Created

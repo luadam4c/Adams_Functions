@@ -6,7 +6,7 @@ function IMax = compute_IMax_GHK (v, pbar, z, celsius, cOut, cIn)
 %       TODO
 %
 % Used by:    
-%       /media/adamX/m3ha/optimizer4gabab/plot_IT.m
+%       cd/plot_IT.m
 %
 % File History:
 % 2017-08-06 Created

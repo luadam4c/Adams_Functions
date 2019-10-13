@@ -47,13 +47,13 @@ function [v, minf, hinf, taum, tauh, IMax, IInit, IInf] = m3ha_compute_and_plot_
 %                   default == true
 %
 % Used by:    
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compare_and_plot_across_IC.m
+%       cd/m3ha_compare_and_plot_across_IC.m
 %
 % Requires:
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_minf_IT.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_hinf_IT.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_taum_IT.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_tauh_IT.m
+%       cd/m3ha_compute_minf_IT.m
+%       cd/m3ha_compute_hinf_IT.m
+%       cd/m3ha_compute_taum_IT.m
+%       cd/m3ha_compute_tauh_IT.m
 %       /home/Matlab/Adams_Functions/compute_IMax_GHK.m
 %
 % File History:

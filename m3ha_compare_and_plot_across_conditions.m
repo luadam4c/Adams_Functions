@@ -1,6 +1,6 @@
-function m3ha_compare_and_plot_across_conditions.m(dirIdentifier, varargin)
+function m3ha_compare_and_plot_across_conditions (dirIdentifier, varargin)
 %% Plot activation/inactivation and I-V curves across conditions
-% Usage: m3ha_compare_and_plot_across_conditions.m(dirIdentifier, varargin)
+% Usage: m3ha_compare_and_plot_across_conditions (dirIdentifier, varargin)
 %
 % Arguments: TODO
 %

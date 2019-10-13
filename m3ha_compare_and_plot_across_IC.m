@@ -1,6 +1,6 @@
-function m3ha_compare_and_plot_across_IC(varargin)
+function m3ha_compare_and_plot_across_IC (varargin)
 %% Plot activation/inactivation and I-V curves across initial conditions
-% Usage: m3ha_compare_and_plot_across_IC(varargin)
+% Usage: m3ha_compare_and_plot_across_IC (varargin)
 %
 % Requires:
 %       cd/m3ha_compute_and_plot_IT.m

@@ -18,7 +18,7 @@ function print_cellstr (cellStr, varargin)
 %
 % Used by:    
 %       /home/Matlab/Adams_Functions/print_structure.m
-%       /media/adamX/m3ha/optimizer4gabab/import_rawtraces.m
+%       cd/m3ha_import_raw_traces.m
 %
 % File History:
 % 2018-06-21 Created by Adam Lu

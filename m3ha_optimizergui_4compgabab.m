@@ -59,8 +59,8 @@ function [hfig] = m3ha_optimizergui_4compgabab (realdata_cpr, realData, hfig, va
 % 2017-05-01 - Fixed across_cells attempt #4 to include all g incr 
 % 2017-05-01 - Moved code to subfunction select_cellstofit()
 % 2017-05-01 - Added fiti & fiti_start to iterate over all cells to fit
-% 2017-05-01 - Moved code to subfunction select_rawtraces()
-% 2017-05-01 - Moved code to subfunction import_rawtraces()
+% 2017-05-01 - Moved code to subfunction m3ha_select_raw_traces()
+% 2017-05-01 - Moved code to subfunction m3ha_import_raw_traces()
 % 2017-05-01 - Created log_arraytext.m
 % 2017-05-01 - Added autoparams to Panel 5
 % 2017-05-12 - Move everything unrelated to GUI to singleneuronfitting.m

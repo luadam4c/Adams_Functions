@@ -5,7 +5,7 @@ function minf = m3ha_compute_minf_IKir (v)
 % Requires:
 %       /home/Matlab/boltzmann.m
 % Used by:    
-%       /media/adamX/m3ha/optimizer4gabab/compare_and_plot_IKir.m
+%       cd/m3ha_compute_and_plot_IKir.m
 %
 % File History:
 % 2017-08-06 Created

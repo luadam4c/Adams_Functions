@@ -5,7 +5,7 @@ function [minf, vHalf, k] = m3ha_compute_minf_Ih (v, shiftm)
 % Requires:
 %       /home/Matlab/boltzmann.m
 % Used by:    
-%       /media/adamX/m3ha/optimizer4gabab/compare_and_plot_Ih.m
+%       cd/m3ha_compute_and_plot_Ih.m
 %
 % File History:
 % 2017-08-06 Created

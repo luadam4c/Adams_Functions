@@ -3,7 +3,7 @@ function tauh = m3ha_compute_tauh_IT (v, shifth, slopeh, celsius)
 % Usage: tauh = m3ha_compute_tauh_IT (v, shifth, slopeh, celsius)
 %
 % Used by:    
-%       /media/adamX/m3ha/optimizer4gabab/compare_and_plot_IT.m
+%       cd/m3ha_compute_and_plot_IT.m
 %
 % File History:
 % 2017-08-05 Created

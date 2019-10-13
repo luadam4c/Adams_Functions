@@ -29,10 +29,10 @@ function [v, minf, IMax, IInf] = m3ha_compute_and_plot_IKir2(varargin)
 %                   default == true
 %
 % Used by:    
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compare_and_plot_across_IC.m
+%       cd/m3ha_compare_and_plot_across_IC.m
 %
 % Requires:
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compute_minf_IKir.m
+%       cd/m3ha_compute_minf_IKir.m
 %
 % File History:
 % 2017-09-22 BT - Adapted from m3ha_compute_and_plot_IKir.m

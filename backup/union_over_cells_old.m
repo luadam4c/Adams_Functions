@@ -20,7 +20,7 @@ function unionOfContents = union_over_cells (cellArray, varargin)
 %
 %
 % Used by:
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_compare_and_plot_across_conditions.m.m
+%       cd/m3ha_compare_and_plot_across_conditions.m.m
 
 % File History:
 %   2018-08-17 Created by Adam Lu

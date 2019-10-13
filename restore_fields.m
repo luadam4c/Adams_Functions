@@ -8,8 +8,8 @@ function [structure] = restore_fields (structure, varargin)
 %
 % Used by:
 %       cd/m3ha_fminsearch3.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_optimizergui_4compgabab.m
-%       /media/adamX/m3ha/optimizer4gabab/m3ha_optimizer_4compgabab.m
+%       cd/m3ha_optimizergui_4compgabab.m
+%       cd/m3ha_optimizer_4compgabab.m
 %       /home/Matlab/minEASE.m
 
 % File History:

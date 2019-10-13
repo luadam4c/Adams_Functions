@@ -17,10 +17,10 @@ function vvecsNew = m3ha_correct_unbalanced_bridge(fileNames, vvecsOld, ivecsOld
 %
 % Used by:    
 %       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
-%       /media/adamX/m3ha/optimizer4gabab/import_rawtraces.m TODO
+%       cd/m3ha_import_raw_traces.m TODO
 
 % File History:
-% 2018-10-15 Adapted from /media/adamX/m3ha/optimizer4gabab/import_rawtraces.m
+% 2018-10-15 Adapted from cd/m3ha_import_raw_traces.m
 % TODO: Input parser
 % TODO: Make vvecsOld, ivecsOld, initialSlopesFile, diaryFile optional arguments
 

@@ -1,6 +1,6 @@
-function m3ha_compare_and_plot_across_IC2(varargin)
+function m3ha_compare_and_plot_across_IC2 (varargin)
 %% Plot activation/inactivation and I-V curves across initial conditions
-% Usage: m3ha_compare_and_plot_across_IC2(varargin)
+% Usage: m3ha_compare_and_plot_across_IC2 (varargin)
 %
 % Requires:
 %       cd/compare_neuronparams.m
