@@ -70,7 +70,7 @@ function varargout = find_in_strings (cand, strList, varargin)
 %
 % Used by:
 %       cd/char2rgb.m
-%       cd/create_pleth_EEG_movie.m
+%       cd/create_pleth_EEG_movies.m
 %       cd/ispositiveintegerscalar.m
 %       cd/increment_editbox.m
 %       cd/m3ha_correct_unbalanced_bridge.m

@@ -60,7 +60,7 @@ function [frames, vidObj] = read_frames (videoPathOrObj, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       cd/create_pleth_EEG_movie.m
+%       cd/create_pleth_EEG_movies.m
 
 % File History:
 % 2019-09-04 Adapted from https://www.mathworks.com/help/matlab/import_export/read-video-files.html

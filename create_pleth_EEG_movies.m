@@ -1,6 +1,6 @@
-%%function [plotFrames, vidWriter, handles] = create_pleth_EEG_movie (varargin)
+%%function [plotFrames, vidWriter, handles] = create_pleth_EEG_movies (varargin)
 %% Creates a synced movie from a .wmv file and a Spike2-exported .mat file in the current directory
-% Usage: [plotFrames, vidWriter, handles] = create_pleth_EEG_movie (varargin)
+% Usage: [plotFrames, vidWriter, handles] = create_pleth_EEG_movies (varargin)
 % Explanation:
 %       TODO
 %

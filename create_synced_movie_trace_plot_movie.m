@@ -51,7 +51,7 @@ function [plotFrames, handles] = create_synced_movie_trace_plot_movie (frames, d
 %       cd/plot_vertical_line.m
 %
 % Used by:
-%       cd/create_pleth_EEG_movie.m
+%       cd/create_pleth_EEG_movies.m
 
 % File History:
 % 2019-09-05 Created by Adam Lu

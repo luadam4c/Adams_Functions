@@ -51,7 +51,7 @@ function vidWriter = write_frames (frames, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       cd/create_pleth_EEG_movie.m
+%       cd/create_pleth_EEG_movies.m
 
 % File History:
 % 2019-09-05 Created by Adam Lu
