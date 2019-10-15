@@ -24,12 +24,12 @@ function [plotFrames, handles] = create_synced_movie_trace_plot_movie (frames, d
 %                   must be a structure array
 %       data        - trace data
 %                   must be a numeric array or a cell array of numeric vectors
-%       siMs        - (opt) sampling interval in ms
+%       siSeconds   - (opt) sampling interval in seconds
 %                   must be a positive vector
-%                   default == 5 ms (200 Hz)
-%       varargin    - 'TimeVec': original time vector
+%                   default == 0.005 s (200 Hz)
+%       varargin    - 'TimeVec': original time vector in seconds
 %                   must be a numeric vector
-%                   default == constructed from siMs
+%                   default == constructed from siSeconds
 %                   - 'TraceLabels': labels for the traces, 
 %                               suppress by setting value to 'suppress'
 %                   must be a string scalar or a character vector 
@@ -39,15 +39,19 @@ function [plotFrames, handles] = create_synced_movie_trace_plot_movie (frames, d
 %
 % Requires:
 %       cd/compute_axis_limits.m
+%       cd/compute_spectrogram.m
 %       cd/create_subplots.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_time_vectors.m
 %       cd/extract_fields.m
+%       cd/find_in_strings.m
+%       cd/force_column_cell.m
 %       cd/force_matrix.m
 %       cd/struct2arglist.m
 %       cd/match_time_info.m
 %       cd/plot_frame.m
+%       cd/plot_spectrogram.m
 %       cd/plot_vertical_line.m
 %
 % Used by:
@@ -56,7 +60,11 @@ function [plotFrames, handles] = create_synced_movie_trace_plot_movie (frames, d
 % File History:
 % 2019-09-05 Created by Adam Lu
 % 2019-09-06 Added 'TraceLabels' as an optional argument
+% 2019-10-15 Added plotSpectrogram
 % 
+
+%% Hard-coded constants
+MS_PER_S = 1000;
 
 %% Hard-coded parameters
 axesCoverage = 90;
@@ -65,10 +73,12 @@ axesCoverage = 90;
 viewWindowSec = 5;          % width of viewing window in seconds
 plotFrameRate = [];         % frame rate for playing the plot movie
 yLimits = [];               % y limits for trace subplot
+yLimitsSpect = [1, 50];
 timeLabel = 'Time (s)';
+plotSpectrogram = [];       % set later
 
 %% Default values for optional arguments
-siMsDefault = [];
+siSecondsDefault = 0.005;
 tVecDefault = [];           % set later
 traceLabelsDefault = '';    % set later
 
@@ -92,9 +102,9 @@ addRequired(iP, 'data', ...
     @(x) validateattributes(x, {'cell', 'numeric'}, {'2d'}));
 
 % Add optional inputs to the Input Parser
-addOptional(iP, 'siMs', siMsDefault, ...
+addOptional(iP, 'siSeconds', siSecondsDefault, ...
     @(x) assert(isempty(x) || ispositivevector(x), ...
-                'siMs must be either empty or a positive vector!'));
+                'siSeconds must be either empty or a positive vector!'));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'TimeVec', tVecDefault, ...
@@ -104,7 +114,7 @@ addParameter(iP, 'TraceLabels', traceLabelsDefault, ...
 
 % Read from the Input Parser
 parse(iP, frames, data, varargin{:});
-siMs = iP.Results.siMs;
+siSeconds = iP.Results.siSeconds;
 tVec = iP.Results.TimeVec;
 traceLabels = iP.Results.TraceLabels;
 
@@ -116,25 +126,56 @@ traceLabels = iP.Results.TraceLabels;
 %   Note: data vectors are assumed to have the same length
 data = force_matrix(data);
 
+% Determine the index for the first EEG trace
+%   Note: this will be used to plot a spectrogram
+if ~isempty(traceLabels)
+    idxEEG = find_in_strings('EEG', traceLabels, 'MaxNum', 1);
+else
+    idxEEG = [];
+end
+
+% Determine whether to plot spectrogram
+if isempty(idxEEG)
+    plotSpectrogram = false;
+elseif isempty(plotSpectrogram)
+    plotSpectrogram = true;
+end
+
 % Compute the number of samples
 nSamples = size(data, 1);
 
 % Compute the number of traces
 nTraces = size(data, 2);
 
+% Compute the number of plots
+if plotSpectrogram
+    nPlots = nTraces + 1;
+else
+    nPlots = nTraces;
+end
+
 % Compute the number of subplot rows
-nRowsSubplots = nTraces * 2;
+nRowsSubplots = nPlots * 2;
 
 % Compute the subplot grid positions
-subPlotGridPositions = [{1:nTraces}, num2cell(nTraces + 1:nRowsSubplots)];
+subPlotGridPositions = [{1:nPlots}, num2cell(nPlots + 1:nRowsSubplots)];
 
 % Create default trace labels
 if isempty(traceLabels)
     traceLabels = create_labels_from_numbers(1:nTraces, 'Prefix', 'Trace #');
+else
+    traceLabels = force_column_cell(traceLabels);
+end
+
+% Update trace labels if necessary
+if plotSpectrogram && numel(traceLabels) < nPlots
+    % Update trace labels
+    traceLabels = [traceLabels; {'Spect'}];
 end
 
 % Construct the time vector if necessary
-tVec = match_time_info(tVec, siMs, nSamples);
+siMs = siSeconds * MS_PER_S;
+[tVec, siMs] = match_time_info(tVec, siMs, nSamples, 'TimeUnits', 's');
 
 % Decide on the x tick locations (every second)
 firstSecond = round(tVec(1));
@@ -172,10 +213,14 @@ if isempty(plotFrameRate)
 end
 
 % Compute the appropriate y limits
-if isempty(yLimits)
+if isempty(yLimits) 
     yLimits = arrayfun(@(x) compute_axis_limits(data(:, x), 'y', ...
                                         'Coverage', 90, 'AutoZoom', true), ...
                         transpose(1:nTraces), 'UniformOutput', false);
+end
+if plotSpectrogram && numel(yLimits) < nPlots
+    yLimits = [yLimits; {yLimitsSpect}];
+
 end
 
 % Compute the plot frame duration in seconds
@@ -191,6 +236,19 @@ nPlotFrames = floor(totalDuration / plotFrameDuration);
 plotFrameTimes = create_time_vectors(nPlotFrames, 'TimeStart', tVec(1), ...
                     'SamplingIntervalSeconds', plotFrameDuration, ...
                     'TimeUnits', 's', 'BoundaryMode', 'leftadjust');
+
+% Only compute spectrogram if to be plotted
+if plotSpectrogram
+    % Get the entire EEG trace
+    eegChannelValues = data(:, idxEEG);
+
+    % Compute sampling interval in seconds
+    siSeconds = siMs / MS_PER_S;
+
+    % Compute the spectrogram
+    [spectData, freqHz, timeInstantsSeconds] = ...
+        compute_spectrogram(eegChannelValues, siSeconds);
+end
 
 %% Do the job
 % Create subplots
@@ -219,16 +277,24 @@ plotFrameTimeThis = plotFrameTimes(1);
 % Compute the first x limits
 xLimitsFirst = plotFrameTimeThis + viewWindowSec * 0.5 * [-1, 1];
 
-% TODO: Update plot_traces to use 'AxesHandle' and use it
+% TODO: Update plot_traces.m with plotSpectrogram?
 % Plot the traces
-for iTrace = 1:nTraces
-    traceLine = plot(traceSubPlots(iTrace), tVec, data(:, iTrace));
+traceLines = gobjects(nTraces, 1);
+spect = gobjects;
+for iPlot = 1:nPlots
+    % Plot the appropriate trace or map
+    if plotSpectrogram && iPlot == nPlots
+        spect = plot_spectrogram(spectData, timeInstantsSeconds, freqHz, ...
+                            'AxesHandle', traceSubPlots(iPlot));
+    else
+        traceLines(iPlot) = plot(traceSubPlots(iPlot), tVec, data(:, iPlot));
+    end
 end
 
 % Zoom in to the first window, set the axis limits, and remove time ticks
-for iTrace = 1:nTraces
-    set(traceSubPlots(iTrace), 'XLim', xLimitsFirst, 'XTick', [], ...
-        'YLim', yLimits{iTrace}, 'TickLength', [0, 0]);
+for iPlot = 1:nPlots
+    set(traceSubPlots(iPlot), 'XLim', xLimitsFirst, 'XTick', [], ...
+        'YLim', yLimits{iPlot}, 'TickLength', [0, 0]);
 end
 
 % Link the time axis limits
@@ -241,17 +307,17 @@ set(traceSubPlots(end), 'XTick', xTicks);
 traceSubPlots(end).XLabel.String = timeLabel;
 
 % Create data labels
-for iTrace = 1:nTraces
-    traceSubPlots(iTrace).YLabel.String = traceLabels{iTrace};
+for iPlot = 1:nPlots
+    traceSubPlots(iPlot).YLabel.String = traceLabels{iPlot};
 end
 
 % Plot a vertical line through the plots
-vertLines = gobjects(nTraces, 1);
-for iTrace = 1:nTraces
-    vertLines(iTrace) = ...
+vertLines = gobjects(nPlots, 1);
+for iPlot = 1:nPlots
+    vertLines(iPlot) = ...
         plot_vertical_line(plotFrameTimeThis, 'LineStyle', '--', ...
                                     'LineWidth', 2, 'ColorMap', 'r', ...
-                                    'AxesHandle', traceSubPlots(iTrace));
+                                    'AxesHandle', traceSubPlots(iPlot));
 end
 
 % Look for the corresponding movie frame
@@ -287,12 +353,11 @@ if nPlotFrames > 1
 
         % Update the zoom window of the first subplot
         %   Note: the other trace subplots are linked so will be updated too
-        set(traceSubPlots(1), 'XLim', plotFrameTimeThis + viewWindowSec * 0.5 * [-1, 1]);
+        set(traceSubPlots(1), 'XLim', ...
+                            plotFrameTimeThis + viewWindowSec * 0.5 * [-1, 1]);
 
         % Update the vertical line position
-        for iTrace = 1:nTraces
-            set(vertLines(iTrace), 'XData', [plotFrameTimeThis, plotFrameTimeThis]);
-        end
+        arrayfun(@(x) set(x, 'XData', plotFrameTimeThis * [1, 1]), vertLines);
         
         % Update the corresponding movie frame if necessary
         if plotFrameTimeThis < frameTimeThis || ...
@@ -319,7 +384,8 @@ end
 % Save handles
 handles.fig = fig;
 handles.ax = ax;
-handles.traceLine = traceLine;
+handles.traceLines = traceLines;
+handles.spect = spect;
 handles.vertLines = vertLines;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

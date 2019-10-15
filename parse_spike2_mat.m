@@ -13,7 +13,16 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %       for i = 1:numel(matPaths); parse_spike2_mat(matPaths{i}); end
 %
 % Outputs:
-%       parsedDataTable     - parsed data
+%       parsedDataTable     - parsed data, with columns:
+%                               channelNames
+%                               channelUnits
+%                               channelValues
+%                               channelScale
+%                               channelOffsets
+%                               channelStarts
+%                               siSeconds
+%                               nSamples
+%                               totalDurationsSec
 %                           specified as a table
 %
 % Arguments:
@@ -51,6 +60,7 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/create_pleth_EEG_movies.m
 %       cd/spike2Mat2Text.m
 %       /home/Matlab/plethR01/plethR01_analyze.m
 

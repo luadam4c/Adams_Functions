@@ -62,6 +62,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/create_average_time_vector.m
 %       cd/create_indices.m
 %       cd/create_subplots.m
+%       cd/create_synced_movie_trace_plot_movie.m
 %       cd/extract_columns.m
 %       cd/extract_fields.m
 %       cd/filter_and_extract_pulse_response.m

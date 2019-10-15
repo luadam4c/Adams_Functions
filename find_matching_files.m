@@ -24,16 +24,19 @@ function varargout = find_matching_files (fileParts, varargin)
 %                   specified as a column cell array of character vectors
 %
 % Arguments:
-%       fileParts   - file parts to match (can be )
+%       fileParts   - file parts to match (can be full paths)
 %                   must be empty or a character vector or a string vector
 %                       or a cell array of character vectors
 %       varargin    - 'PartType': part type to match
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'Prefix'    - solid line
-%                       'Keyword'   - dashed line
-%                       'Suffix'    - dotted line
-%                       'Extension' - extension
+%                       'Prefix'    - match the prefix
+%                       'Keyword'   - match any part of the file name
+%                       'Suffix'    - match the suffix
+%                       'Extension' - match the extension
 %                   default == 'Keyword'
+%                   - 'ForceCellOutput': whether to force output as a cell array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - Any other parameter-value pair for all_files()
 %
 % Requires:
@@ -43,12 +46,14 @@ function varargout = find_matching_files (fileParts, varargin)
 %       cd/extract_fileparts.m
 %
 % Used by:
+%       cd/create_pleth_EEG_movies.m
 %       cd/load_matching_sheets.m
 %       cd/plot_traces_spike2_mat.m
 
 % File History:
 % 2019-09-25 Created by Adam Lu
 % 2019-09-30 Now maintains character vectors as character vectors
+% 2019-10-15 Added 'ForceCellOutput' as an optional argument
 % TODO: 'MaxNum' not always 1
 % 
 
@@ -57,6 +62,7 @@ validPartTypes = {'Prefix', 'Keyword', 'Suffix', 'Extension'};
 
 %% Default values for optional arguments
 partTypeDefault = 'Keyword';
+forceCellOutputDefault = false; % don't force output as a cell array by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -80,10 +86,13 @@ addRequired(iP, 'fileParts', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'PartType', partTypeDefault, ...
     @(x) any(validatestring(x, validPartTypes)));
+addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, fileParts, varargin{:});
 partType = validatestring(iP.Results.PartType, validPartTypes);
+forceCellOutput = iP.Results.ForceCellOutput;
 
 % Keep unmatched arguments for the all_files() function
 otherArguments = iP.Unmatched;
@@ -123,7 +132,7 @@ catch
 end
 
 % Extract the character array if it was one
-if wasChar
+if wasChar && ~forceCellOutput
     fullPaths = fullPaths{1};
 end
 

@@ -22,9 +22,13 @@ function varargout = match_time_info (tVecs, varargin)
 %                   must be empty or a positive vector
 %       nSamples    - (opt) number of samples for each vector
 %                   must be empty or a positive integer vector
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'TimeUnits': output time units
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'min'   - minutes
+%                       's'     - seconds
+%                       'ms'    - milliseconds
+%                       'us'    - microseconds
+%                   default == 's'
 %
 % Requires:
 %       cd/compute_sampling_interval.m
@@ -41,13 +45,16 @@ function varargout = match_time_info (tVecs, varargin)
 
 % File History:
 % 2019-02-20 Created by Adam Lu
+% 2019-10-15 Added 'TimeUnits' as optional arguments
 % 
 
 %% Hard-coded parameters
+validTimeUnits = {'min', 's', 'ms', 'us'};
 
 %% Default values for optional arguments
 siMsDefault = [];
 nSamplesDefault = [];
+timeUnitsDefault = 'ms';           	% return time vector in ms by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -75,10 +82,15 @@ addOptional(iP, 'nSamples', nSamplesDefault, ...
     @(x) assert(isempty(x) || ispositiveintegervector(x), ...
                 'nSamples must be either empty or a positive integer vector!'));
 
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'TimeUnits', timeUnitsDefault, ...
+    @(x) any(validatestring(x, validTimeUnits)));
+
 % Read from the Input Parser
 parse(iP, tVecs, varargin{:});
 siMs = iP.Results.siMs;
 nSamples = iP.Results.nSamples;
+timeUnits = validatestring(iP.Results.TimeUnits, validTimeUnits);
 
 %% Do the job
 % Compute sampling interval(s) and create time vector(s)
@@ -95,7 +107,7 @@ if ~isempty(tVecs)
 elseif isempty(tVecs) && ~isempty(siMs) && ~isempty(nSamples)
     % Create time vector(s)
     tVecs = create_time_vectors(nSamples, 'SamplingIntervalMs', siMs, ...
-                                    'TimeUnits', 'ms');
+                                    'TimeUnits', timeUnits);
 elseif isempty(tVecs) && (isempty(siMs) || isempty(nSamples))
     error('One of tVecs or both siMs and nSamples must be provided!');
 end

@@ -83,6 +83,7 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 %                   - Any other parameter-value pair for plot_traces() TODO
 %
 % Requires:
+%       cd/compute_spectrogram.m
 %       cd/create_error_for_nargin.m
 %       cd/create_subplots.m
 %       cd/create_time_vectors.m
@@ -94,6 +95,7 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 %       cd/force_matrix.m
 %       cd/force_string_end.m
 %       cd/parse_spike2_mat.m
+%       cd/plot_spectrogram.m
 %       cd/plot_vertical_line.m
 %       cd/plot_window_boundaries.m
 %       cd/set_figure_properties.m
@@ -110,7 +112,7 @@ function handles = plot_traces_spike2_mat (spike2Path, varargin)
 % 2019-10-07 Added 'YLimits' as an optional argument
 % 2019-10-10 Added 'ChannelNamesOriginal' and 'ChannelNamesToPlot' 
 %               as optional arguments
-% 
+% 2019-10-15 Moved code to compute_spectrogram.m, plot_spectrogram.m
 
 %% Hard-coded constants
 S_PER_MIN = 60;
@@ -477,22 +479,8 @@ nSubPlots = numel(channelNamesToPlot);
 for iPlot = 1:nSubPlots
     % Plot the appropriate trace or map
     if plotSpectrogram && iPlot == nSubPlots
-        % TODO: plot_spectrogram(spectData, timeInstantsMin, freqHz, 'AxesHandle', ax);
-        spectColorMapFile = '/media/adamX/Settings_Matlab/spectrogram_colormap.mat';
-
-        % Plot the log spectrum
-        imagesc(ax(iPlot), timeInstantsToPlot, freqHz, abs(spectDataToPlot));
-
-        % Set a colormap
-        colorMapSpectFile = matfile(spectColorMapFile);
-        colorMapSpect = colorMapSpectFile.colorMap;
-        colormap(ax(iPlot), colorMapSpect);
-
-        % Flip the Y Axis so lower frequencies are at the bottom
-        set(ax(iPlot), 'YDir', 'normal');
-
-        % Restrict to certain y axis limits
-        set(ax(iPlot), 'YLim', spectYLimits);
+        plot_spectrogram(spectDataToPlot, timeInstantsToPlot, freqHz, ...
+                        'AxesHandle', ax(iPlot), 'YLimits', spectYLimits);
     else
         plot(ax(iPlot), timeVecToPlot, channelValuesToPlot(:, iPlot), ...
                 'Color', 'k');
@@ -563,39 +551,6 @@ handles.ax = ax;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [spectData, freqHz, timeInstantsSeconds] = ...
-                compute_spectrogram(eegValues, siSeconds)
-%% Computes a spectrogram
-% TODO: Pull out as its own function
-
-%% Hard-coded parameters
-% TODO: Make optional arguments
-binWidthSeconds = 1;             % 1 second windows
-overlapSeconds = [];
-
-%% Preparation
-% Compute the bin width in samples
-binWidthSamples = round(binWidthSeconds / siSeconds);
-
-% Set a default overlap in samples
-if isempty(overlapSeconds)
-    overlapSamples = round(binWidthSamples / 2);
-else
-    overlapSamples = round(overlapSeconds / siSeconds);
-end
-
-% Compute the sampling frequency in Hz
-samplingFreqHz = 1 / siSeconds;
-
-%% Do the job
-% Compute the spectrogram
-%   Note: time instants are the midpoints of each time window
-[spectData, freqHz, timeInstantsSeconds] = ...
-    spectrogram(eegValues, binWidthSamples, ...
-                overlapSamples, [], samplingFreqHz);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %{
 OLD CODE:
 
@@ -619,6 +574,23 @@ elseif iPlot == 3
 elseif iPlot == 4
     set(ax(iPlot), 'YLim', [-0.5, 0.5]);
 end
+
+spectColorMapFile = '/media/adamX/Settings_Matlab/spectrogram_colormap.mat';
+
+% Plot the log spectrum
+imagesc(ax(iPlot), timeInstantsToPlot, freqHz, abs(spectDataToPlot));
+
+% Set a colormap
+colorMapSpectFile = matfile(spectColorMapFile);
+colorMapSpect = colorMapSpectFile.colorMap;
+colormap(ax(iPlot), colorMapSpect);
+
+% Flip the Y Axis so lower frequencies are at the bottom
+set(ax(iPlot), 'YDir', 'normal');
+
+% Restrict to certain y axis limits
+set(ax(iPlot), 'YLim', spectYLimits);
+
 
 %}
 

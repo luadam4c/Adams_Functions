@@ -6,6 +6,7 @@ function ax = set_axes_properties (varargin)
 %
 % Example(s):
 %       ax = set_axes_properties;
+%       ax = set_axes_properties('AxesHandle', gca);
 %       ax = set_axes_properties('SubPlotNumber', [2, 3, 1]);
 %       ax = set_axes_properties('AxesCoverage', 90);
 %
