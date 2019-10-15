@@ -61,6 +61,7 @@ function varargout = extract_columns (arrays, varargin)
 %       cd/compute_combined_data.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/m3ha_plot_simulated_traces.m
 
 % File History:
 % 2018-10-24 Created by Adam Lu

@@ -138,6 +138,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 % 2019-01-01 Made all arguments optional except fileNames
 %               and consolidated the different types of responses
 % 2019-01-12 Now uses compute_combined_data.m
+% 2019-10-15 Fixed conversion of current pulse amplitude from swpInfo
 
 %% Hard-coded constants
 NS_PER_US = 1000;
@@ -438,7 +439,7 @@ else
     iVecsApprox = iVecsOrig;
     gVecsApprox = gVecsOrig;
     idxStimStart = convert_to_samples(stimStartExpectedOrig, siMs);
-    currentPulseAmplitude = swpInfoAll{fileNames, 'currpulse'};
+    currentPulseAmplitude = swpInfoAll{fileNames, 'currpulse'} / PA_PER_NA;
 end
 
 %% Fix current pulse response traces that may have out-of-balance bridges

@@ -62,6 +62,7 @@ function fig = set_figure_properties (varargin)
 %       cd/create_subplots.m
 %       cd/isemptycell.m
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/plot_bar.m
 %       cd/plot_frame.m
 %       cd/plot_histogram.m

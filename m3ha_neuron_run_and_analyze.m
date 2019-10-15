@@ -474,7 +474,7 @@ baseNoiseIpscrDefault = [];      % set later
 sweepWeightsCprDefault = [];     % set later
 sweepWeightsIpscrDefault = [];   % set later
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
@@ -802,14 +802,13 @@ simDataOrig = load_neuron_outputs('FileNames', outFilePath, ...
 %       is applied in NEURON
 if ~isempty(tVecs)
     simData = cellfun(@(x, y) match_time_points(x, y), ...
-                        simDataOrig, tVecs, ...
-                        'UniformOutput', false);
+                        simDataOrig, tVecs, 'UniformOutput', false);
 else
     simData = simDataOrig;
 end
 
 % Extract vectors from simulated data
-%   Note: these are arrays with 12 columns
+%   Note: these are arrays with 25 columns
 if strcmpi(simMode, 'passive')
     [tVecs, vVecsSim, iVecsSim, vVecsDend1, vVecsDend2] = ...
         extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
@@ -1103,13 +1102,14 @@ if plotFlag
 
         % Compute processed data
         itm2hVecsSim = (itmVecsSim .^ 2) .* ithVecsSim;
+        itminf2hinfVecsSim = (itminfVecsSim .^ 2) .* ithinfVecsSim;
 
         % Select data to plot
         if strcmpi(simMode, 'passive')
             dataForOverlapped = {vVecsSim; vVecsDend1; vVecsDend2; iVecsSim};
         elseif strcmpi(simMode, 'active')
             dataForOverlapped = {vVecsSim; gVecsSim; iVecsSim; ...
-                    icaVecsSim; itm2hVecsSim; ...
+                    icaVecsSim; itm2hVecsSim; itminf2hinfVecsSim; ...
                     itmVecsSim; itminfVecsSim; ithVecsSim; ithinfVecsSim; ...
                     ihVecsSim; ihmVecsSim; ...
                     ikaVecsSim; iam1VecsSim; iah1VecsSim; ...
@@ -1124,7 +1124,8 @@ if plotFlag
                                 'V_{dend2} (mV)'; 'I_{stim} (nA)'};
         elseif strcmpi(simMode, 'active')
             yLabelsOverlapped = {'V_{soma} (mV)'; 'g_{GABA_B} (uS)'; ...
-                    'I_{stim} (nA)'; 'I_{Ca} (mA/cm^2)'; 'm^2h_{T}'; ...
+                    'I_{stim} (nA)'; 'I_{Ca} (mA/cm^2)'; ...
+                    'm^2h_{T}'; 'm_{\infty}^2h_{\infty,T}'; ...
                     'm_{T}'; 'm_{\infty,T}'; 'h_{T}'; 'h_{\infty,T}'; ...
                     'I_{h} (mA/cm^2)'; 'm_{h}'; 'I_{A} (mA/cm^2)'; ...
                     'm_{1,A}'; 'h_{1,A}'; 'm_{2,A}'; 'h_{2,A}'; ...
@@ -1168,6 +1169,8 @@ if plotFlag
                         'YLabel', yLabelsOverlapped, ...
                         'FigTitle', figTitle, 'FigHandle', figHandle, ...
                         'FigName', figName);
+
+        handles = m3ha_plot_simulated_traces('Directory', outFolder);
     end
 
     %% TODO TODO
@@ -1184,7 +1187,7 @@ if plotFlag
     fprintf('\n');
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function nSweeps = decide_on_nSweeps (realData, nSweepsUser)
 %% Returns the number of sweeps to run and compare
@@ -1203,7 +1206,7 @@ else
     nSweeps = 1;
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [rowConditions, nRows] = ...
                 decide_on_row_conditions (rowConditions, nSweeps, ...
@@ -1226,7 +1229,7 @@ else
     nRows = size(rowConditions, 1);
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function xLimits = decide_on_xlimits (fitWindow, baseWindow, simMode, plotMarkFlag)
 %% Decide on x-axis limits
@@ -1241,7 +1244,7 @@ else
     xLimits = [min(allEndpoints), max(allEndpoints)];
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function vecs = prepare_for_plotting(vecs, endPointsForPlots)
 %% Prepare vectors for plotting
@@ -1252,7 +1255,7 @@ vecs = extract_subvectors(vecs, 'Endpoints', endPointsForPlots);
 % Combine vectors into matrices
 vecs = force_matrix(vecs, 'AlignMethod', 'leftAdjustPad');
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function featuresTable = analyze_response (vVecs, iVecs, siMs, simMode, dataType)
 

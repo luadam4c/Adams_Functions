@@ -29,6 +29,7 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 % Requires:
 %       cd/construct_and_check_fullpath.m
 %       cd/is_in_parallel.m
+%       cd/m3ha_plot_simulated_traces.m
 %
 % Used by:    
 %       cd/m3ha_neuron_run_and_analyze.m

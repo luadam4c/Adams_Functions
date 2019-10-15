@@ -3,6 +3,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 % Usage: [fullPath, pathType] = construct_fullpath (pathName, varargin)
 % Examples:
 %       fullpaths = construct_fullpath(files, 'Directory', directory);
+%
 % Outputs:
 %       fullPath    - the full path(s) to file(s) or directory(s) constructed
 %                   specified as a character vector 
@@ -54,6 +55,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %       cd/combine_swd_sheets.m
 %       cd/locate_dir.m
 %       cd/m3ha_neuron_create_initial_params.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_iox.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_histogram.m
