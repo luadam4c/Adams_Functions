@@ -76,11 +76,22 @@ INAPNA_COL_SIM = 23;
 INAPM_COL_SIM = 24;
 INAPH_COL_SIM = 25;
 
+% TODO: Use this
+labelsAll = {'Time (ms)'; 'V_{soma} (mV)'; 'V_{dend1} (mV)'; ...
+        'V_{dend2} (mV)'; 'I_{GABA_B} (nA)'; 'g_{GABA_B} (uS)'; ...
+        'I_{cp} (nA)'; 'I_{stim} (nA)'; 'I_{Ca} (mA/cm^2)'; ...
+        'm_{T}'; 'm_{\infty,T}'; 'h_{T}'; 'h_{\infty,T}'; ...
+        'I_{h} (mA/cm^2)'; 'm_{h}'; 'I_{A} (mA/cm^2)'; ...
+        'm_{1,A}'; 'h_{1,A}'; 'm_{2,A}'; 'h_{2,A}'; ...
+        'I_{Kir} (mA/cm^2)'; 'm_{\infty,Kir}'; ...
+        'I_{NaP} (mA/cm^2)'; 'm_{\infty,NaP}'; 'h_{NaP}'};
+
 %% Default values for optional arguments
 directoryDefault = '';          % set in all_files.m
 fileNamesDefault = {};
 extensionDefault = 'out';       % 
-xLimitsDefault = [];            % set later
+% xLimitsDefault = [];            % set later
+xLimitsDefault = [2800, 4500];
 outFolderDefault = '';          % set later
 %TODO
 expStr = '';
