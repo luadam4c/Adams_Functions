@@ -341,11 +341,32 @@ if isLog2Data
     yTickLocs = get(axHandle, 'YTick');
 
     % Keep only the locations that are integers
-    yTickValuesOriginal = 2.^(yTickLocs);
-    newYTickLocs = yTickLocs(isaninteger(yTickValuesOriginal));
+    % yTickValuesOriginal = 2.^(yTickLocs);
+    % newYTickLocs = yTickLocs(isaninteger(yTickValuesOriginal));
+    newYTickLocs = yTickLocs(isaninteger(yTickLocs));
 
     % Make sure 0 is included
     newYTickLocs = unique([0, newYTickLocs], 'sorted');
+
+    % Make sure there are at least two ticks
+    if numel(newYTickLocs) < 2
+        yLimits = get(axHandle, 'YLim');
+        maxValue = max(max(dataValues));
+        minValue = min(min(dataValues));
+
+        [~, idx] = min(abs([minValue - floor(yLimits(1)), ...
+                            maxValue - ceil(yLimits(2))]));
+
+        newYLimits = yLimits;
+        if idx == 1
+            newYTickLocs = [floor(yLimits(1)), newYTickLocs];
+            newYLimits(1) = floor(yLimits(1));
+        else
+            newYTickLocs = [floor(newYTickLocs, ceil(yLimits(2)))];
+            newYLimits(2) = ceil(yLimits(2));
+        end
+        set(axHandle, 'YLim', newYLimits);
+    end
 
     % Get the original tick values
     newYTickValuesOriginal = 2.^(newYTickLocs);

@@ -222,8 +222,10 @@ if any(isGasTrace) && parseGas
     % Get the sampling interval in ms
     siMs = siSeconds(isGasTrace) * MS_PER_S;
 
-    % TODO: Change this one CO2 is read as well
-    pulseDirection = 'downward';
+    % TODO: Change this once CO2 is read as well
+%    pulseDirection = 'auto';
+%    pulseDirection = 'downward';
+    pulseDirection = 'upward';
 
     % Parse gas vectors and create pulse tables
     parse_gas_trace(gasVec, siMs, 'TraceFileName', spike2MatPath, ...
