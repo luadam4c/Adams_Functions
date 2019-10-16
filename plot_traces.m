@@ -1005,7 +1005,7 @@ case {'overlapped', 'staggered'}
 
     % Set time axis limits
     if ~iscell(xLimits) && ...
-        ~(ischar(xLimits) && ~strcmpi(xLimits, 'suppress'))
+        ~(ischar(xLimits) && strcmpi(xLimits, 'suppress'))
         xlim(xLimits);
     end
 
