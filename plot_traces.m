@@ -39,6 +39,9 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                   - 'OverWrite': whether to overwrite existing output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'PlotOnly': whether to plot the traces only
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'AutoZoom': whether to zoom in on the y axis 
 %                                   to within a certain number of SDs 
 %                                       of the mean
@@ -262,6 +265,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % 2019-09-19 Added 'YBase' as an optional argument
 % 2019-10-13 No longer uses subplotsqueeze.m
 % 2019-10-13 Now uses create_subplots.m
+% 2019-10-16 Added 'PlotOnly' as an optional argument
 % TODO: dataToCompareColorMap
 % TODO: Number of horizontal bars shouldn't need to match nTraces
 
@@ -287,6 +291,7 @@ subPlotSqeezeFactor = 1.2;
 %% Default values for optional arguments
 verboseDefault = true;
 overWriteDefault = true;        % overwrite previous plots by default
+plotOnlyDefault = false;        % setup default labels by default
 autoZoomDefault = false;        % don't zoom in on y axis by default
 reverseOrderDefault = false;    % don't reverse order by default
 plotModeDefault = 'overlapped'; % plot traces overlapped by default
@@ -346,6 +351,8 @@ addRequired(iP, 'data', ...
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OverWrite', overWriteDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotOnly', plotOnlyDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'AutoZoom', autoZoomDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -429,6 +436,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 parse(iP, tVecs, data, varargin{:});
 verbose = iP.Results.Verbose;
 overWrite = iP.Results.OverWrite;
+plotOnly = iP.Results.PlotOnly;
 autoZoom = iP.Results.AutoZoom;
 reverseOrder = iP.Results.ReverseOrder;
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
@@ -468,6 +476,16 @@ figName = iP.Results.FigName;
 otherArguments = iP.Unmatched;
 
 %% Preparation
+% If plotting curve only, change some defaults
+if plotOnly
+    xLabel = 'suppress';
+    yLabel = 'suppress';
+    figTitle = 'suppress';
+    xLimits = 'suppress';
+    yLimits = 'suppress';
+    legendLocation = 'suppress';
+end
+
 % If data is empty, return
 if isempty(data) || iscell(data) && all(isemptycell(data))
     fprintf('Nothing to plot!\n');

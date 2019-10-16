@@ -373,9 +373,14 @@ end
 function subVec = extract_subvectors_helper (vec, indices)
 %% Extract a subvector from vector(s) if not empty
 
+% Force cell arrays as numeric matrices
+if iscell(indices)
+    indices = force_matrix(indices, 'AlignMethod', 'leftadjustpad');
+end
+
 % If indices all NaNs, it is for padding, so return it as the subvector
 %   If the time window is out of range, return an empty vector
-if all(all(isnan(indices)))
+if isnumeric(indices) && all(all(isnan(indices)))
     subVec = indices;
     return
 elseif isempty(indices) || isempty(vec)
