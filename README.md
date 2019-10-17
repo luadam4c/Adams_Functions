@@ -333,6 +333,7 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_optimizer_4compgabab.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_optimizer_4compgabab.m): OPTIMIZER  Passes parameters to NEURON (which runs simulations and saves
 - [**m3ha_optimizergui_4compgabab.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_optimizergui_4compgabab.m): OPTIMIZERGUI  The GUI interface for OPTIMIZER.m, which runs NEURON
 - [**m3ha_organize_sweep_indices.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_organize_sweep_indices.m): Organize sweep indices by g incr, pharm conditions for each cell
+- [**m3ha_oscillations_analyze.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_oscillations_analyze.m): Analyzes all GAT blocker oscillations data
 - [**m3ha_parse_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_parse_mat.m): Parses and loads a set of matfiles for the GAT blockade project
 - [**m3ha_pfiles2csv.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_pfiles2csv.m): Converts the old m3ha .p files to spreadsheet files
 - [**m3ha_plot_individual_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_individual_traces.m): Plots individual voltage traces
