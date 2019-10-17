@@ -17,6 +17,7 @@ function hold_off (wasHold)
 %
 % Used by:
 %       cd/plot_chevron.m
+%       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
 
 % File History:

@@ -204,6 +204,15 @@ fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber, ...
 % Count the number of subplots
 nSubPlots = numel(gridPositions);
 
+% Find all axes in the figure
+axOld = findall(fig, 'type', 'axes');
+
+% If correct subplots already created, do nothing
+if numel(axOld) == nSubPlots
+    ax = axOld;
+    return
+end
+
 % Create subplots
 ax = arrayfun(@(x) create_one_subplot(x, gridPositions, ...
                                         nRows, nColumns, otherArguments), ...

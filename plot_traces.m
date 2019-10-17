@@ -99,6 +99,14 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %                   - 'HorzBarLineWidth': line width for horizontal bars
 %                   must be empty or a positive scalar
 %                   default == 2
+%                   - 'LineStyle': line style for data vector(s)
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       '-'     - solid line
+%                       '--'    - dashed line
+%                       ':'     - dotted line
+%                       '-.'    - dash-dotted line
+%                       'none'  - no line
+%                   default == '-'
 %                   - 'LineStyleToCompare': line style for 
 %                                           data vector(s) to compare
 %                   must be an unambiguous, case-insensitive match to one of: 
@@ -210,6 +218,8 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       cd/decide_on_colormap.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
+%       cd/hold_off.m
+%       cd/hold_on.m
 %       cd/isemptycell.mplot_traces
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
@@ -219,6 +229,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       cd/ispositivescalar.m
 %       cd/match_format_vector_sets.m
 %       cd/save_all_figtypes.m
+%       cd/struct2arglist.m
 %       cd/transform_vectors.m
 %       ~/Downloaded_Function/suplabel.m
 %
@@ -266,6 +277,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % 2019-10-13 No longer uses subplotsqueeze.m
 % 2019-10-13 Now uses create_subplots.m
 % 2019-10-16 Added 'PlotOnly' as an optional argument
+% 2019-10-16 Added 'LineStyle' as an optional argument
 % TODO: dataToCompareColorMap
 % TODO: Number of horizontal bars shouldn't need to match nTraces
 
@@ -303,6 +315,7 @@ horzBarYValuesDefault = [];     % set later
 horzBarColorMapDefault = [];       % set later
 horzBarLineStyleDefault = '-';  % set later
 horzBarLineWidthDefault = 2;    % set later
+lineStyleDefault = '-';         % set later
 lineStyleToCompareDefault = '-';% data to compare are solid lines by default
 yAmountToStaggerDefault = [];   % set later  
 yBaseDefault = [];              % set later  
@@ -383,6 +396,8 @@ addParameter(iP, 'HorzBarLineWidth', horzBarLineWidthDefault, ...
     @(x) assert(isempty(x) || ispositivescalar(x), ...
                 ['HorzBarLineWidth must be either a empty ', ...
                     'or a positive scalar!']));
+addParameter(iP, 'LineStyle', lineStyleDefault, ...
+    @(x) all(islinestyle(x, 'ValidateMode', true)));
 addParameter(iP, 'LineStyleToCompare', lineStyleToCompareDefault, ...
     @(x) all(islinestyle(x, 'ValidateMode', true)));
 addParameter(iP, 'YAmountToStagger', yAmountToStaggerDefault, ...
@@ -443,6 +458,7 @@ plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
 subplotOrder = validatestring(iP.Results.SubplotOrder, validSubplotOrders);
 colorMode = validatestring(iP.Results.ColorMode, validColorModes);
 dataToCompare = iP.Results.DataToCompare;
+[~, lineStyle] = islinestyle(iP.Results.LineStyle, 'ValidateMode', true);
 [~, lineStyleToCompare] = ...
     islinestyle(iP.Results.LineStyleToCompare, 'ValidateMode', true);
 horzBarWindows = iP.Results.HorzBarWindows;
@@ -473,7 +489,7 @@ figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Keep unmatched arguments for the plot() function
-otherArguments = iP.Unmatched;
+otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
 % If plotting curve only, change some defaults
@@ -726,7 +742,7 @@ if iscell(xLimits)
             fig = plot_traces_helper(verbose, plotMode, colorMode, ...
                         autoZoom, yAmountToStagger, yBase, ...
                         tVecsThis, dataThis, ...
-                        dataToCompareThis, lineStyleToCompare, ...
+                        dataToCompareThis, lineStyle, lineStyleToCompare, ...
                         horzBarWindows, horzBarYValues, ...
                         horzBarColorMap, horzBarLineStyle, horzBarLineWidth, ...
                         xUnits, xLimitsThis, yLimits, linkAxesOption, ...
@@ -760,7 +776,8 @@ else
     [fig, subPlots, plotsData, plotsDataToCompare] = ...
         plot_traces_helper(verbose, plotMode, colorMode, ...
                         autoZoom, yAmountToStagger, yBase, ...
-                        tVecs, data, dataToCompare, lineStyleToCompare, ...
+                        tVecs, data, dataToCompare, ...
+                        lineStyle, lineStyleToCompare, ...
                         horzBarWindows, horzBarYValues, ...
                         horzBarColorMap, horzBarLineStyle, horzBarLineWidth, ...
                         xUnits, xLimits, yLimits, linkAxesOption, ...
@@ -784,7 +801,8 @@ end
 function [fig, subPlots, plotsData, plotsDataToCompare] = ...
                 plot_traces_helper (verbose, plotMode, colorMode, ...
                     autoZoom, yAmountToStagger, yBase, ...
-                    tVecs, data, dataToCompare, lineStyleToCompare, ...
+                    tVecs, data, dataToCompare, ...
+                    lineStyle, lineStyleToCompare, ...
                     horzBarWindows, horzBarYValues, ...
                     horzBarColorMap, horzBarLineStyle, horzBarLineWidth, ...
                     xUnits, xLimits, yLimits, linkAxesOption, ...
@@ -814,6 +832,7 @@ end
 
 % Create subplots
 [fig, ax] = create_subplots(nRows, nColumns, 'FigHandle', figHandle, ...
+                        'ClearFigure', false, ...
                         'FigNumber', figNumber, 'FigExpansion', figExpansion);
 
 % Set the default time axis limits
@@ -840,15 +859,7 @@ end
 switch plotMode
 case {'overlapped', 'staggered'}
     % Store hold on status
-    % TODO: store_hold_on_status.m
-    if ishold
-        wasHold = true;
-    else
-        wasHold = false;
-    end
-
-    % Hold on
-    hold on
+    wasHold = hold_on;
 
     % Set the default y-axis limits
     if isempty(yLimits)
@@ -952,15 +963,18 @@ case {'overlapped', 'staggered'}
         % Plot data to compare against as a black trace
         if ~isempty(dataToCompareThis)
             p2 = plot(tVecsThis, dataToCompareThis, 'Color', 'k', ...
-                        'LineStyle', lineStyleToCompare, otherArguments);
+                        'LineStyle', lineStyleToCompare, otherArguments{:});
         end
         
         % Plot the data using the color map
         if size(colorThis, 1) == 1
-            p1 = plot(tVecsThis, dataThis, 'Color', colorThis, otherArguments);
+            p1 = plot(tVecsThis, dataThis, 'LineStyle', lineStyle, ...
+                        'Color', colorThis, otherArguments{:});
         else
             p1 = arrayfun(@(x) plot(tVecsThis(:, x), dataThis(:, x), ...
-                                'Color', colorThis(:, x), otherArguments), ...
+                                    'LineStyle', lineStyle, ...
+                                    'Color', colorThis(:, x), ...
+                                    otherArguments{:}), ...
                             transpose(1:nColorsThis));
         end
 
@@ -1057,9 +1071,7 @@ case {'overlapped', 'staggered'}
         end
     end
 
-    if ~wasHold
-        hold off
-    end
+    hold_off(wasHold);
 case 'parallel'
     if ~strcmpi(legendLocation, 'suppress')
         % Set a legend location differently    
@@ -1143,15 +1155,18 @@ case 'parallel'
         if ~isempty(dataToCompare{iPlot})
             plotsDataToCompare(iPlot) = ...
                 plot(tVecs{iPlot}, dataToCompare{iPlot}, 'Color', 'k', ...
-                        'LineStyle', lineStyleToCompare, otherArguments);
+                        'LineStyle', lineStyleToCompare, otherArguments{:});
         end
 
         % Plot the data using the color map
         if size(colorThis, 1) == 1
-            p = plot(tVecsThis, dataThis, 'Color', colorThis, otherArguments);
+            p = plot(tVecsThis, dataThis, 'LineStyle', lineStyle, ...
+                    'Color', colorThis, otherArguments{:});
         else
             p = arrayfun(@(x) plot(tVecsThis(:, x), dataThis(:, x), ...
-                                'Color', colorThis(x, :), otherArguments), ...
+                                    'LineStyle', lineStyle, ...
+                                    'Color', colorThis(x, :), ...
+                                    otherArguments{:}), ...
                             transpose(1:nVectors));
         end
 

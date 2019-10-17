@@ -292,7 +292,7 @@ handles = ...
 %}
 
 fig2 = set_figure_properties('AlwaysNew', true, ...
-                'FigExpansion', [1, 1/4]);
+                'FigExpansion', [1, 1/2]);
 
 figNameM2h = fullfile(outFolder, [expStr, '_simulated_m2h.png']);
 
@@ -313,6 +313,7 @@ plot_traces(tVecs, itminf2hinfVecsSim, ...
                 'ColorMap', colorMap, 'XLimits', xLimits, ...
                 'FigHandle', fig2, otherArguments);
 
+set(gca, 'YLim', [1e-6, 1]);
 set(gca, 'YScale', 'log');
 
 save_all_figtypes(fig2, figNameM2h, figTypes);
