@@ -826,6 +826,8 @@ case {'overlapped', 'staggered'}
 case 'parallel'
     if isempty(figExpansion) && nRows > nColumns * 4
         figExpansion = [1, nRows/4];
+    else
+        figExpansion = [1, 1];
     end
 otherwise
 end
@@ -1089,6 +1091,19 @@ case 'parallel'
         rowsWithYLabels = create_indices('IndexEnd', nRows);
     end
 
+    % If requested, link or unlink axes of subPlots
+    if ~strcmpi(linkAxesOption, 'none')
+        linkaxes(ax, linkAxesOption);
+    end
+
+    % Set the default y-axis limits if linking y axis
+    if isempty(yLimits) && ...
+            (strcmpi(linkAxesOption, 'y') || strcmpi(linkAxesOption, 'xy'))
+        % Compute the y limits from both data and dataToCompare
+        yLimits = compute_axis_limits({data, dataToCompare}, 'y', ...
+                                        'AutoZoom', autoZoom);
+    end
+
     % Plot each trace as a different subplot
     %   Note: the number of rows is based on the number of rows in the color map
     for iPlot = 1:nPlots
@@ -1270,11 +1285,6 @@ case 'parallel'
         else
             plotsData(iPlot) = p;
         end
-    end
-
-    % If requested, link or unlink axes of subPlots
-    if ~strcmpi(linkAxesOption, 'none')
-        linkaxes(ax, linkAxesOption);
     end
     
     % Create an overarching title

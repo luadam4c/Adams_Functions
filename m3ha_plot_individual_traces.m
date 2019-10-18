@@ -151,6 +151,7 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 % 2018-12-20 Now computes baseErrors and sweepErrors
 % 2019-01-08 Added 'residuals' as a possible plot mode
 % 2019-01-08 Added 'LinkAxesOption' as an optional parameter
+% 2019-10-17 Now defaults autoUpdateYLimits to false
 % 
 
 %% Hard-coded parameters
@@ -159,6 +160,9 @@ validLinkAxesOptions = {'none', 'x', 'y', 'xy', 'off'};
 maxNTracesForAnnotations = 8;
 nSigFig = 3;
 fontSize = 8;
+
+% TODO: Why was this true before?
+autoUpdateYLimits = false;
 
 %% Default values for optional arguments
 dataToCompareDefault = [];      % no data to compare against by default
@@ -483,12 +487,14 @@ end
 
 % Change settings for each subplot
 %   Note: must do this after plotting vertical lines
-for iSwp = 1:nSweeps
-    % Get the subplot of interest
-    subplot(subPlots(iSwp));
+if autoUpdateYLimits
+    for iSwp = 1:nSweeps
+        % Get the subplot of interest
+        subplot(subPlots(iSwp));
 
-    % Make y axis automatically update
-    axis 'auto y'
+        % Make y axis automatically update
+        axis 'auto y'
+    end
 end
 
 % Extract y axis limits if something is plotted

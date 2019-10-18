@@ -12,21 +12,22 @@
 parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
 archiveDir = parentDir;
 dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
+% dirsToAnalyze = {'snap5114-final', 'dual-final'};
 specificSlicesToAnalyze = {};
 
 parseIndividualFlag = true;
-saveMatFlag = true;
-plotRawFlag = false; %true;
-plotSpikeDetectionFlag = false; %true;
-plotRasterFlag = false; %true;
-plotSpikeDensityFlag = false; %true;
-plotSpikeHistogramFlag = false; %true;
-plotMeasuresFlag = false; %true;
-plotContourFlag = true;
-plotCombinedFlag = false; %true;
+saveMatFlag = false; % true;
+plotRawFlag = false; % true;
+plotSpikeDetectionFlag = false; % true;
+plotRasterFlag = false; % true;
+plotSpikeDensityFlag = true;
+plotSpikeHistogramFlag = false; % true;
+plotMeasuresFlag = false; % true;
+plotContourFlag = false; %true;
+plotCombinedFlag = false; % true;
 
 parsePopulationAllFlag = false; %true;
-parsePopulationRestrictedFlag = true;
+parsePopulationRestrictedFlag = false; %true;
 plotAllMeasurePlotsFlag = false; %true;
 plotChevronFlag = true;
 plotByFileFlag = true;
