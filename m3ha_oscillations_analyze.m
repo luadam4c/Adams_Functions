@@ -8,6 +8,8 @@
 % File History:
 % 2019-10-17 Adapted from Glucose_analyze.m
 % 2019-10-18 Changed minSpikeRateInBurstHz from 100 Hz to 200 Hz
+% 2019-10-18 Changed minSpikeRateInBurstHz from 200 Hz to 100 Hz
+% 2019-10-18 Changed maxInterBurstIntervalMs from 1500 ms to 1000 ms
 
 %% Hard-coded parameters
 parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
@@ -23,10 +25,10 @@ saveMatFlag = false; % true;
 plotRawFlag = false; % true;
 plotSpikeDetectionFlag = false; %true;
 plotRasterFlag = false; % true;
-plotSpikeDensityFlag = true;
+plotSpikeDensityFlag =  true;
 plotSpikeHistogramFlag = false; %true;
 plotMeasuresFlag = true;
-plotContourFlag = true;
+plotContourFlag = false; % true;
 plotCombinedFlag = false; %true;
 
 parsePopulationAllFlag = false; %true;
@@ -56,10 +58,10 @@ resolutionMs = 5;
 % For compute_spike_histogram.m
 minBurstLengthMs = 20;          % bursts must be at least 20 ms by default
 maxFirstInterBurstIntervalMs = 2000;
-maxInterBurstIntervalMs = 1500; % bursts are no more than 
-                                %   1.5 seconds apart
-minSpikeRateInBurstHz = 200;    % bursts must have a spike rate of 
-                                %   at least 200 Hz by default
+maxInterBurstIntervalMs = 1000; % bursts are no more than 
+                                %   1 second apart
+minSpikeRateInBurstHz = 100;    % bursts must have a spike rate of 
+                                %   at least 100 Hz by default
 
 % For compute_autocorrelogram.m
 filterWidthMs = 100;

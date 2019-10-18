@@ -336,6 +336,7 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_oscillations_analyze.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_oscillations_analyze.m): Analyzes all GAT blocker oscillations data
 - [**m3ha_parse_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_parse_mat.m): Parses and loads a set of matfiles for the GAT blockade project
 - [**m3ha_pfiles2csv.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_pfiles2csv.m): Converts the old m3ha .p files to spreadsheet files
+- [**m3ha_plot_example_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_example_traces.m): 
 - [**m3ha_plot_individual_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_individual_traces.m): Plots individual voltage traces
 - [**m3ha_plot_oscillations.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_oscillations.m): Shows a swarm plot for each set of neurons (each .spi file in the infolder)
 - [**m3ha_plot_simulated_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_simulated_traces.m): Plots simulated traces from NEURON output files

@@ -18,6 +18,8 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %
 % Arguments:
 %       data        - data table or data vectors
+%                   Note: The dimension with fewer elements is taken as 
+%                           the parameter
 %                   must be a table or a numeric array
 %                       or a cell array of numeric vectors
 %       varargin    - 'IsLog2Data': whether data is log 2-scaled
@@ -203,8 +205,19 @@ otherArguments = iP.Unmatched;
 %% Preparation
 % Decide on data values
 if istable(data)
-    % Extract values
+    % Extract values so that each column is a parameter
     dataValues = table2array(data);
+
+    nRows = size(dataValues, 1);
+    nColumns = size(dataValues, 2);
+    if nRows < nColumns
+        dataValues = transpose(dataValues);
+        tableTransposed = true;
+        nRows = size(dataValues, 1);
+        nColumns = size(dataValues, 2);
+    else
+        tableTransposed = false;
+    end
 else
     % Force as a matrix
     dataValues = force_matrix(data, 'AlignMethod', 'leftadjustpad');
@@ -238,7 +251,11 @@ end
 if isempty(pTickLabels)
     if istable(data)
         % Extract variable names if any
-        pTickLabels = data.Properties.VariableNames;
+        if tableTransposed && ~isempty(data.Properties.RowNames)
+            pTickLabels = data.Properties.RowNames;
+        else
+            pTickLabels = data.Properties.VariableNames;
+        end
     else
         % Create labels
         pTickLabels = create_labels_from_numbers(pValues, 'Prefix', 'param');
@@ -247,9 +264,17 @@ end
 
 % Decide on column labels
 if isempty(columnLabels)
-    if istable(data) && ~isempty(data.Properties.RowNames)
-        % Extract row names if any
-        columnLabels = data.Properties.RowNames;
+    if istable(data) 
+        if tableTransposed
+            columnLabels = data.Properties.VariableNames;
+        elseif ~isempty(data.Properties.RowNames)
+            % Extract row names if any
+            columnLabels = data.Properties.RowNames;
+        else
+            % Create labels
+            columnLabels = create_labels_from_numbers(1:nSamples, ...
+                                                    'Prefix', 'data');
+        end
     else
         % Create labels
         columnLabels = create_labels_from_numbers(1:nSamples, 'Prefix', 'data');

@@ -86,6 +86,9 @@ plotInfFlagDefault = true;  % whether to plot steady state curves by default
 plotTauFlagDefault = true;  % whether to plot time constant curves by default
 plotIVFlagDefault = true;   % whether to plot I-V curves by default
 
+% TODO:
+figTypes = {'png', 'epsc2'};
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
@@ -147,10 +150,11 @@ plotIVFlag = iP.Results.PlotIVFlag;
 % Construct voltage vector if not provided
 if isempty(v)
     v = vMinDefault:vStepDefault:vMaxDefault;
-else
-    vMin = min(v);
-    vMax = max(v);
 end
+
+% Compute the minimum and maximum voltage
+vMin = min(v);
+vMax = max(v);
 
 % Compute the steady state value of the activation gating variable
 minf = m3ha_compute_minf_IT (v, shiftm, slopem);
@@ -182,10 +186,10 @@ if plotInfFlag
     xlim([vMin, vMax]);
     xlabel('Membrane potential (mV)');
     ylabel('Steady state value');
-    title('Steady state values for activation/inactivation of IT');
+    % title('Steady state values for activation/inactivation of IT');
     legend('location', 'northeast');
     set(gca, 'FontSize', 15);
-    saveas(hfig1, fullfile(outFolder, ['IT_minf_hinf', suffix]), 'png');
+    save_all_figtypes(hfig1, fullfile(outFolder, ['IT_minf_hinf', suffix]), figTypes);
 end
 
 % Plot and save the time constants
@@ -198,10 +202,10 @@ if plotTauFlag
     xlim([vMin, vMax]);
     xlabel('Membrane potential (mV)');
     ylabel('Time constant (ms)');
-    title('Time constants for activation/inactivation of IT');
+    % title('Time constants for activation/inactivation of IT');
     legend('location', 'northeast');
     set(gca, 'FontSize', 15);
-    saveas(hfig2, fullfile(outFolder, ['IT_taum_tauh', suffix]), 'png');
+    save_all_figtypes(hfig2, fullfile(outFolder, ['IT_taum_tauh', suffix]), figTypes);
 end
 
 % Plot and save the maximum current-voltage relationship
@@ -218,10 +222,10 @@ if plotIVFlag
     xlim([vMin, vMax]);
     xlabel('Membrane potential (mV)');
     ylabel('Current (mA/cm^2)');
-    title(['I-V relationship of IT for ', strrep(suffix(2:end), '_', '\_')]);
+    % title(['I-V relationship of IT for ', strrep(suffix(2:end), '_', '\_')]);
     legend('location', 'southeast');
     set(gca, 'FontSize', 15);
-    saveas(hfig3, fullfile(outFolder, ['IT_I-V', suffix]), 'png');
+    save_all_figtypes(hfig3, fullfile(outFolder, ['IT_I-V', suffix]), figTypes);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
