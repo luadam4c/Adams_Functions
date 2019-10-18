@@ -7,34 +7,37 @@
 
 % File History:
 % 2019-10-17 Adapted from Glucose_analyze.m
+% 2019-10-18 Changed minSpikeRateInBurstHz from 100 Hz to 200 Hz
 
 %% Hard-coded parameters
 parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
 archiveDir = parentDir;
 dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'snap5114-final', 'dual-final'};
+% dirsToAnalyze = {'no711-final'};
+% dirsToAnalyze = {'dual-final'};
 specificSlicesToAnalyze = {};
 
 parseIndividualFlag = true;
 saveMatFlag = false; % true;
 plotRawFlag = false; % true;
-plotSpikeDetectionFlag = false; % true;
+plotSpikeDetectionFlag = false; %true;
 plotRasterFlag = false; % true;
 plotSpikeDensityFlag = true;
-plotSpikeHistogramFlag = false; % true;
-plotMeasuresFlag = false; % true;
-plotContourFlag = false; %true;
-plotCombinedFlag = false; % true;
+plotSpikeHistogramFlag = false; %true;
+plotMeasuresFlag = true;
+plotContourFlag = true;
+plotCombinedFlag = false; %true;
 
 parsePopulationAllFlag = false; %true;
-parsePopulationRestrictedFlag = false; %true;
+parsePopulationRestrictedFlag = true;
 plotAllMeasurePlotsFlag = false; %true;
 plotChevronFlag = true;
-plotByFileFlag = true;
-plotByPhaseFlag = true;
-plotNormByFileFlag = true;
-plotNormByPhaseFlag = true;
-plotPopAverageFlag = true;
+plotByFileFlag = false; %true;
+plotByPhaseFlag = false; %true;
+plotNormByFileFlag = false; %true;
+plotNormByPhaseFlag = false; %true;
+plotPopAverageFlag = false; %true;
 plotSmoothNormPopAvgFlag = true;
 
 archiveScriptsFlag = true; %false;
@@ -55,8 +58,8 @@ minBurstLengthMs = 20;          % bursts must be at least 20 ms by default
 maxFirstInterBurstIntervalMs = 2000;
 maxInterBurstIntervalMs = 1500; % bursts are no more than 
                                 %   1.5 seconds apart
-minSpikeRateInBurstHz = 100;    % bursts must have a spike rate of 
-                                %   at least 100 Hz by default
+minSpikeRateInBurstHz = 200;    % bursts must have a spike rate of 
+                                %   at least 200 Hz by default
 
 % For compute_autocorrelogram.m
 filterWidthMs = 100;

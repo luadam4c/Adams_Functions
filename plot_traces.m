@@ -549,16 +549,25 @@ end
 nTracesPerPlot = count_vectors(data, 'TreatMatrixAsVector', false);
 
 % Determine the number of rows and the number of columns
-[nRows, nColumns] = ...
-    decide_on_subplot_placement(subplotOrder, nPlots, ...
-                                colorMap, maxRowsWithOneOnly);
+if strcmpi(plotMode, 'parallel')
+    [nRows, nColumns] = ...
+        decide_on_subplot_placement(subplotOrder, nPlots, ...
+                                    colorMap, maxRowsWithOneOnly);
+else
+    nRows = 1;
+    nColumns = 1;
+end
 
 % Decide on a default colorMode if not provided
 if strcmpi(colorMode, 'auto')
-    if ~isempty(colorMap)
-        colorMode = 'byRow';
+    if strcmpi(plotMode, 'parallel')
+        if ~isempty(colorMap)
+            colorMode = 'byRow';
+        else
+            colorMode = 'byPlot';
+        end
     else
-        colorMode = 'byPlot';
+        colorMode = 'byTraceInPlot';
     end
 end
 

@@ -3,6 +3,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 % Usage: [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargin)
 % Examples:
 %       [data, sweepInfo, dataAll] = m3ha_import_raw_traces('D091710_0000_20');
+%
 % Outputs:
 %       data        - imported raw traces; 
 %                       Do this to extract:
@@ -16,6 +17,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %                       holdCurrentNoise
 %                       sweepWeights
 %       dataAll     - all imported raw traces
+%
 % Arguments:
 %       fileNames   - file or directory name(s)
 %                       e.g. 'A100110_0008_18.mat'

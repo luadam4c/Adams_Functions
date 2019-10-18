@@ -60,6 +60,7 @@ function varargout = parse_all_multiunit(varargin)
 %               but .mat file not present
 % 2019-08-06 Now accepts any parameter-value pair for parse_multiunit.m
 % 2019-08-24 Now uses varargout
+% TODO: Load data one file at a time
 
 %% Hard-coded parameters
 % TODO Make optional arguments

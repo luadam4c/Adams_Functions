@@ -159,10 +159,13 @@ validPlotModes = {'overlapped', 'parallel', 'residuals'};
 validLinkAxesOptions = {'none', 'x', 'y', 'xy', 'off'};
 maxNTracesForAnnotations = 8;
 nSigFig = 3;
-fontSize = 8;
+textFontSize = 8;
 
 % TODO: Why was this true before?
 autoUpdateYLimits = false;
+
+figTypes = {'png', 'epsc'};
+lineWidth = 1;
 
 %% Default values for optional arguments
 dataToCompareDefault = [];      % no data to compare against by default
@@ -420,6 +423,7 @@ end
 [fig, subPlots, plotsData, plotsDataToCompare] = ...
     plot_traces(tVecs, data, 'DataToCompare', dataToCompare, ...
                 'LineStyleToCompare', lineStyleToCompare, ...
+                'LineWidth', lineWidth, ...
                 'ColorMap', colorMap, 'XLimits', xLimits, ...
                 'XUnits', xUnits, 'XLabel', xLabel, 'YLabel', yLabel, ...
                 'LegendLocation', 'suppress', ...
@@ -464,7 +468,7 @@ if plotSwpWeightsFlag
 
         % Show sweep weight
         text('String', ['w: ', num2str(sweepWeight, nSigFig)], ...
-            'Color', colorText, 'FontSize', fontSize, ...
+            'Color', colorText, 'FontSize', textFontSize, ...
             'Position', [0.1 0.9], 'Units', 'normalized');
     end
 end
@@ -516,7 +520,7 @@ suptitle(figTitle);
 %% Output results
 % Save figure
 if ~isempty(figName)
-    save_all_figtypes(fig, figName);
+    save_all_figtypes(fig, figName, figTypes);
 end
 
 % Store in handles structure

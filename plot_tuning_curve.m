@@ -210,7 +210,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   could be anything recognised by 
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
-%                   default == 'png'
+%                   default == {'png', 'epsc'}
 %                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
@@ -374,7 +374,7 @@ figExpansionDefault = [];           % no figure expansion by default
 clearFigureDefault = false;         % don't clear figure by default
 axHandleDefault = [];               % gca by default
 figNameDefault = '';                % don't save figure by default
-figTypesDefault = 'epsc';
+figTypesDefault = {'png', 'epsc'};
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -548,7 +548,7 @@ figExpansion = iP.Results.FigExpansion;
 clearFigure = iP.Results.ClearFigure;
 axHandle = iP.Results.AxesHandle;
 figName = iP.Results.FigName;
-[~, figtypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Keep unmatched arguments for the plot() function
 otherArguments = iP.Unmatched;
@@ -1175,7 +1175,7 @@ end
 
 % Save figure if figName provided
 if ~isempty(figName)
-    save_all_figtypes(fig, figName, figtypes);
+    save_all_figtypes(fig, figName, figTypes);
 end
 
 %% Output handles
