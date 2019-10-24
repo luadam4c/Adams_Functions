@@ -37,6 +37,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 %
 % Used by:
 %       cd/m3ha_plot_simulated_traces.m
+%       cd/plot_chevron.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_raster.m
 %       cd/plot_spectrogram.m

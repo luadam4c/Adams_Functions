@@ -419,6 +419,7 @@ There are 1 MATLAB scripts in this directory:
 - [**plot_raster.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_raster.m): Make a raster plot from a cell array of event time arrays
 - [**plot_relative_events.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_relative_events.m): Binary file /home/Matlab/Adams_Functions/plot_relative_events.m matches
 - [**plot_signals.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_signals.m): Plots signals (TO BE MERGED WITH plot_traces.m)
+- [**plot_small_chevrons.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_small_chevrons.m): Plots two chevron tables
 - [**plot_spectrogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_spectrogram.m): Plots the spectrogram data computed by compute_spectrogram.m
 - [**plot_struct.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_struct.m): Plot all fields in a structure array as tuning curves
 - [**plot_swd_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_swd_histogram.m): Plots SWD start times in a histogram

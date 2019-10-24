@@ -86,6 +86,7 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %       cd/compute_stats.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
+%       cd/decide_on_colormap.m
 %       cd/force_matrix.m
 %       cd/hold_off.m
 %       cd/hold_on.m
@@ -105,11 +106,12 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 
 %% Hard-coded parameters
 lineWidth = 1;
-markerSize = 4;
+% markerSize = 4;
+markerSize = 2;
 meanLineWidthRatio = 1;
 meanLineStyle = '--';
 meanMarkerSizeRatio = 2;
-meanColorMap = [0, 0, 0];
+meanColorMap = [];                  % set later
 
 %% Default values for optional arguments
 isLog2DataDefault = false;
@@ -230,8 +232,13 @@ nConds = size(dataValues, 2);
 nSamples = size(dataValues, 1);
 
 % Decide on a color map
-if isempty(colorMap)
-    colorMap = decide_on_colormap(colorMap, nSamples);
+colorMap = decide_on_colormap(colorMap, nSamples);
+
+% Decide on the mean color map
+if all(all(colorMap == 0))
+    meanColorMap = decide_on_colormap('r', 1);
+else
+    meanColorMap = [0, 0, 0];
 end
 
 % Compute parameter values for the plot
@@ -383,11 +390,11 @@ if isLog2Data
                             maxValue - ceil(yLimits(2))]));
 
         newYLimits = yLimits;
-        if idx == 1
+        if idx == 1 && floor(yLimits(1)) < 0
             newYTickLocs = [floor(yLimits(1)), newYTickLocs];
             newYLimits(1) = floor(yLimits(1));
         else
-            newYTickLocs = [floor(newYTickLocs, ceil(yLimits(2)))];
+            newYTickLocs = [newYTickLocs, ceil(yLimits(2))];
             newYLimits(2) = ceil(yLimits(2));
         end
         set(axHandle, 'YLim', newYLimits);

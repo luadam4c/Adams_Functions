@@ -424,6 +424,7 @@ case 'chevron'
                             nEventsAfterLog2Ratio, 'RowNames', labels);
     writetable(log2ratioChevronTable, sheetPathLog2Ratio);
 
+    % TODO: Use plot_small_chevrons.m
     % Create subplots
     if plotLog2Ratio
         [fig, ax] = create_subplots(1, 2, 'FigExpansion', [1, 1]);

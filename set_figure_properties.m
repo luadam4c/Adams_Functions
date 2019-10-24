@@ -155,7 +155,8 @@ end
 
 % Set default expandFromDefault
 if isempty(expandFromDefault)
-    if ~isempty(positionUser) || ~isempty(width) || ~isempty(height)
+    if ~isempty(figHandle) || ~isempty(positionUser) || ...
+            ~isempty(width) || ~isempty(height)
         expandFromDefault = false;
     else
         expandFromDefault = true;
