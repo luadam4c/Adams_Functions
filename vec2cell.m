@@ -20,9 +20,9 @@ function cellArray = vec2cell (vecORarray, classVector, varargin)
 % Requires:
 %
 % Used by:    
+%       cd/m3ha_network_tuning_curves.m
 %       /media/adamX/RTCl/tuning_curves.m
-%       /media/adamX/m3ha/network_model/tuning_curves.m
-%
+
 % File History:
 % 2017-05-12 Created by Adam Lu
 % 2017-10-31 Now accepts an array (each column is a vector to be separated) 

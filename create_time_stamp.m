@@ -20,10 +20,10 @@ function timeStamp = create_time_stamp (varargin)
 % Used by:    
 %       cd/archive_dependent_scripts.m
 %       cd/atfwrite.m
+%       cd/m3ha_network_launch.m
 %       cd/plot_psth.m
 %       cd/save_params.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting54.m
-%       /media/adamX/m3ha/network_model/m3ha_launch14.m
 
 % File History:
 % 2018-10-21 Created by Adam Lu

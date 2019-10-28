@@ -45,8 +45,9 @@ function h = plot_tuning_map (pValues, readout, varargin)
 %       cd/save_all_figtypes.m
 %
 % Used by:    
+%       cd/m3ha_network_tuning_maps.m
 %       /media/adamX/RTCl/tuning_maps.m
-%
+
 % File History:
 % 2017-05-05 Created by Adam Lu
 % 2017-05-09 Added 'FigTypes' as a parameter-value pair argument

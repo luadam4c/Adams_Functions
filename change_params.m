@@ -1,6 +1,6 @@
-function [paramvals] = change_params(namesToChange, valsToChange, paramnames, paramvals, varargin)
+function [paramvals] = change_params (namesToChange, valsToChange, paramnames, paramvals, varargin)
 %% Change parameter values
-% Usage: [paramvals] = change_params(namesToChange, valsToChange, paramnames, paramvals, varargin)
+% Usage: [paramvals] = change_params (namesToChange, valsToChange, paramnames, paramvals, varargin)
 % Outputs:
 %       paramvals   - updated paramvals
 % Arguments:     
@@ -27,9 +27,10 @@ function [paramvals] = change_params(namesToChange, valsToChange, paramnames, pa
 %        /home/Matlab/Adams_Functions/update_params.m
 %
 % Used by:    
+%        cd/m3ha_network_launch.m
 %        /media/adamX/RTCl/neuronlaunch.m
-%        /media/adamX/m3ha/m3ha_launch.m
-%
+
+% File History:
 % 2017-05-03 Moved from update_params.m
 % 2017-05-03 Moved trial number update back to neuronlaunch.m
 % 2017-05-03 Changed so that it reads namesToChange and valsToChange

@@ -10,9 +10,9 @@ function array = vec2array (vector, dims)
 %                   must be a vector of positive integers
 %
 % Used by:
+%       cd/m3ha_network_tuning_maps.m
 %       /media/adamX/RTCl/tuning_maps.m
-%       /media/adamX/m3ha/network_model/tuning_maps.m
-%
+
 % 2017-05-04 Created by Adam Lu
 % 2017-05-05 Expanded to accept cell arrays and struct arrays
 

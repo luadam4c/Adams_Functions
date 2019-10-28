@@ -5,15 +5,18 @@ function [nump, pnames, plabels, pislog, pvalues, nperp, pchnames, pchvalues, nc
 %     TODO
 %
 % Requires:
-%        infolder/*loopedparams.mat
-%        cd/all_ordered_pairs.m
+%       infolder/*loopedparams.mat
+%       cd/all_ordered_pairs.m
 %
 % Used by:
-%        cd/combine_loopparams.m
-%        /media/adamX/RTCl/raster_plot.m
-%        /media/adamX/RTCl/tuning_curves.m
-%
-% 2017-04-14 Moved from raster_plot.m
+%       cd/combine_loopparams.m
+%       cd/m3ha_network_tuning_curves.m
+%       cd/m3ha_network_tuning_maps.m
+%       cd/m3ha_network_raster_plot.m
+%       /media/adamX/RTCl/tuning_curves.m
+
+% File History:
+% 2017-04-14 Moved from m3ha_network_raster_plot.m
 % 2017-04-17 Now extracts pvalues if it exists
 % 2017-04-17 Removed latency_cells_to_plot
 % 2017-05-03 Moved to Adams_Functions

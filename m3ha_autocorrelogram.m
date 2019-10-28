@@ -29,7 +29,7 @@ function [oscillatoryPeriod, oscillatoryIndex] = m3ha_autocorrelogram (infolder,
 % Requires:
 %       cd/tuning_curves.m
 %       cd/tuning_maps.m
-%       cd/define_actmode.m
+%       cd/m3ha_network_define_actmode.m
 %       infolder/*.spi
 %       infolder/*loopedparams.mat
 %       infolder/['sim_params_', pstring, '.csv'] for all the possible parameter strings

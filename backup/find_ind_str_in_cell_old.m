@@ -39,7 +39,7 @@ function [indices, elements] = find_in_strings(str, cellarray, varargin)
 %       cd/m3ha_optimizergui_4compgabab.m
 %       cd/m3ha_optimizer_4compgabab.m
 %       /media/adamX/RTCl/neuronlaunch.m
-%       /media/adamX/RTCl/raster_plot.m
+%       /media/adamX/RTCl/m3ha_network_raster_plot.m
 %       /media/adamX/RTCl/tuning_curves.m
 %       /media/adamX/RTCl/single_neuron.m
 %       /home/Matlab/Adams_Functions/update_params.m

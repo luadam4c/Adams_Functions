@@ -54,7 +54,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %       cd/check_dir.m
 %       cd/combine_swd_sheets.m
 %       cd/locate_dir.m
-%       cd/m3ha_launch14.m
+%       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_iox.m

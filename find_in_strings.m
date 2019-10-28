@@ -73,9 +73,15 @@ function varargout = find_in_strings (cand, strList, varargin)
 %       cd/create_synced_movie_trace_plot_movie.m
 %       cd/ispositiveintegerscalar.m
 %       cd/increment_editbox.m
+%       cd/m3ha_compare_neuronparams.m
 %       cd/m3ha_correct_unbalanced_bridge.m
 %       cd/m3ha_import_raw_traces.m
+%       cd/m3ha_optimizergui_4compgabab.m
+%       cd/m3ha_optimizer_4compgabab.m
 %       cd/m3ha_xolotl_plot.m
+%       cd/m3ha_network_launch.m
+%       cd/m3ha_network_raster_plot.m
+%       cd/m3ha_network_tuning_curves.m
 %       cd/parse_iox.m
 %       cd/parse_spike2_mat.m
 %       cd/plot_calcium_imaging_traces.m
@@ -99,13 +105,8 @@ function varargout = find_in_strings (cand, strList, varargin)
 %       /media/adamX/m3ha/data_dclamp/test_sweep.m
 %       /media/adamX/m3ha/data_dclamp/remove_E092810_0000.m
 %       /media/adamX/m3ha/data_dclamp/compare_statistics.m
-%       /media/adamX/m3ha/network_model/m3ha_launch14.m
-%       /media/adamX/m3ha/network_model/raster_plot.m
-%       cd/m3ha_optimizergui_4compgabab.m
-%       cd/m3ha_optimizer_4compgabab.m
-%       cd/m3ha_compare_neuronparams.m
 %       /media/adamX/RTCl/neuronlaunch.m
-%       /media/adamX/RTCl/raster_plot.m
+%       /media/adamX/RTCl/m3ha_network_raster_plot.m
 %       /media/adamX/RTCl/tuning_curves.m
 %       /media/adamX/RTCl/single_neuron.m
 

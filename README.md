@@ -325,6 +325,13 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_load_sweep_info.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_load_sweep_info.m): Loads sweep info (default is homeDirectory/data_dclamp/take4/dclampdatalog_take4.csv)
 - [**m3ha_locate_homedir.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_locate_homedir.m): Locate the first home directory that exists for the GAT blockade project
 - [**m3ha_log_errors_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_log_errors_params.m): Log errors and parameter values
+- [**m3ha_network_define_actmode.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_define_actmode.m): Determine what cells are stimulated in each activation mode
+- [**m3ha_network_launch.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_launch.m): function m3ha_network_launch(nCells, useHH, TCtempCellIDs)
+- [**m3ha_network_raster_plot.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_raster_plot.m): Shows a spike raster plot and compute numActive, latency, oscDur, nSpikes, actDur, actVel for each set of neurons (each .spi file in the infolder)
+- [**m3ha_network_show_net.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_show_net.m): Shows network topology for each network (each .syn file in the infolder)
+- [**m3ha_network_single_neuron.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_single_neuron.m): Shows single neuron traces for different neurons or for different properties in the same neuron
+- [**m3ha_network_tuning_curves.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_tuning_curves.m): Shows a tuning curve for numActive, latency, oscDur, for each parameter changed
+- [**m3ha_network_tuning_maps.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_tuning_maps.m): Shows a tuning map for numActive, latency, oscDur, for each parameter changed
 - [**m3ha_neuron_create_initial_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_neuron_create_initial_params.m): Creates initial NEURON parameters for each cell
 - [**m3ha_neuron_create_new_initial_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_neuron_create_new_initial_params.m): Creates a new set of NEURON parameters based on information in the previous parameters table
 - [**m3ha_neuron_create_simulation_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_neuron_create_simulation_params.m): Generates a table of simulation parameters from table(s) of neuron parameters

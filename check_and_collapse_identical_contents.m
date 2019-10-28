@@ -3,9 +3,10 @@ function variable = check_and_collapse_identical_contents (array, arrayName)
 % USAGE: variable = check_and_collapse_identical_contents (array, arrayName)
 %
 % Used by:
+%       cd/m3ha_network_tuning_curves.m
 %       /media/adamX/RTCl/tuning_curves.m
-%       /media/adamX/m3ha/network_model/tuning_curves.m
-%
+
+% File History:
 % 2017-04-17 Created
 % 2018-05-08 Changed tabs to spaces and limited width to 80
 % TODO: Add input parser
