@@ -7,6 +7,9 @@ function varargout = archive_dependent_scripts (mFileName, varargin)
 %       archive_dependent_scripts('Glucose_analyze', 'FileExt', 'zip')
 %       archive_dependent_scripts('Glucose_analyze', 'FileExt', 'tar')
 %       archive_dependent_scripts('Glucose_analyze', 'FileExt', 'gz')
+%       [~, fullPaths] = all_files('Extension', '.m');
+%       scriptBases = extract_fileparts(fullPaths, 'base');
+%       for i = 1:numel(scriptBases); archive_dependent_scripts(scriptBases{i}); end
 %
 % Outputs:
 %       functionListTable       - see all_dependent_functions.m
