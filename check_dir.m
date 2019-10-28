@@ -30,6 +30,7 @@ function check_dir (directories, varargin)
 %       cd/create_input_file.m
 %       cd/create_new_mscript.m
 %       cd/log_arraytext.m
+%       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/parse_all_abfs.m
 %       cd/parse_multiunit.m

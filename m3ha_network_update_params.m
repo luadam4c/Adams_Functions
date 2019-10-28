@@ -1,6 +1,6 @@
-function [paramvals] = update_params(paramnames, paramvals, varargin)
+function [paramvals] = m3ha_network_update_params (paramnames, paramvals, varargin)
 %% Update dependent parameters for particular experiments
-% Usage: [paramvals] = update_params(paramnames, paramvals, varargin)
+% Usage: [paramvals] = m3ha_network_update_params (paramnames, paramvals, varargin)
 % Outputs:     paramvals    - updated paramvals
 % Arguments:
 %       paramnames  - a cell array of all parameter names
@@ -26,7 +26,7 @@ function [paramvals] = update_params(paramnames, paramvals, varargin)
 % File History:
 % 2017-03-30 Created by Adam Lu
 % 2017-05-03 Moved to /media/adamX/RTCl/
-% 2017-05-03 Moved parts to change_params.m
+% 2017-05-03 Moved parts to m3ha_network_change_params.m
 % 2017-05-03 Added inputParser scheme
 % 2017-05-03 Added 'ExperimentName' as a parameter
 % 2017-11-07 Fixed TCgabaaGmax for bicuculline mode
@@ -84,15 +84,16 @@ end
 %% Update dependent parameters, part I
 switch experimentname
 case {'RTCl', 'm3ha'}
+    % Note: Must be consistent with m3ha_network_launch.m
     % Find indices of parameters that influence other parameters
     indREdia = find_in_strings('REdiam', paramnames);
-    indstimf = find_in_strings('stim_freq', paramnames);
-    indstimd = find_in_strings('stim_dur', paramnames);
+    indstimf = find_in_strings('stimFreq', paramnames);
+    indstimd = find_in_strings('stimDur', paramnames);
 
     % Find indices of parameters that are influenced by other parameters
-    indcpamp = find_in_strings('cp_amp', paramnames);
-    indcpper = find_in_strings('cp_per', paramnames);
-    indcpnum = find_in_strings('cp_num', paramnames);
+    indcpamp = find_in_strings('cpAmp', paramnames);
+    indcpper = find_in_strings('cpPer', paramnames);
+    indcpnum = find_in_strings('cpNum', paramnames);
 
     % Update current pulse period (ms)
     paramvals(indcpper) = floor(1000/paramvals(indstimf));
