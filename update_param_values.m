@@ -16,7 +16,7 @@ function paramsTable = update_param_values (paramsTable, varargin)
 %                   must be a list of string-numeric pairs
 %
 % Requires:
-%       cd/check_membership.m
+%       cd/is_contained_in.m
 %
 % Used by:    
 %       cd/m3ha_neuron_create_initial_params.m
@@ -78,7 +78,7 @@ paramsTableVariableNames = paramsTable.Properties.VariableNames;
 paramNames = fieldnames(allParamValuePairs);
 
 % Check if all parameter names exist in the table
-if ~check_membership(paramNames, paramsTableRowNames)
+if ~is_contained_in(paramNames, paramsTableRowNames)
     fprintf('Original parameters table returned!\n');
     return
 end
@@ -88,7 +88,7 @@ paramValuesCell = struct2cell(allParamValuePairs);
 
 % If upper bounds and lower bounds exist, 
 %   check whether the values are within bounds
-if check_membership({upperBoundStr, lowerBoundStr}, ...
+if is_contained_in({upperBoundStr, lowerBoundStr}, ...
                     paramsTableVariableNames, 'SuppressOutput', true)
     % Convert to a numeric array if poss
     paramValues = cell2mat(paramValuesCell);

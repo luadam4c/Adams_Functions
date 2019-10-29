@@ -1,6 +1,6 @@
-function isAllMembers = check_membership (members, setToCheck, varargin)
+function isAllMembers = is_contained_in (members, setToCheck, varargin)
 %% Checks whether all elements of the first set are elements of the second set and print the ones that aren't
-% Usage: isAllMembers = check_membership (members, setToCheck, varargin)
+% Usage: isAllMembers = is_contained_in (members, setToCheck, varargin)
 % Explanation:
 %       TODO
 % Example(s):
