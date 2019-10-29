@@ -40,7 +40,7 @@ function [oscillatoryPeriod, oscillatoryIndex] = m3ha_autocorrelogram (infolder,
 %       /home/Matlab/Adams_Functions/plot_tuning_curve.m (through tuning_curves.m)
 %       /home/Matlab/Adams_Functions/plot_tuning_map.m (through tuning_maps.m)
 %       /home/Matlab/Adams_Functions/find_ind_str_in_cell.m
-%       /home/Matlab/Adams_Functions/get_loopedparams.m
+%       /home/Matlab/Adams_Functions/extract_looped_params.m
 %
 % Used by:
 %       /home/Matlab/Adams_Functions/m3ha_plot_oscillations.m
@@ -72,7 +72,7 @@ addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));
                                     % for dirr.m & subaxis.m
 addpath(fullfile(functionsdirectory, '/Adams_Functions/'));
                                     % for isfigtype.m, find_ind_str_in_cell.m 
-                                    %   get_loopedparams.m
+                                    %   extract_looped_params.m
 
 %% Deal with arguments
 % Check number of required arguments
@@ -118,7 +118,7 @@ TCfiles = dir(fullfile(infolder, 'TC*.spi'));
 nTCfiles = length(TCfiles);
 
 %% Get loop parameters
-[nump, pnames, plabels, pislog, pvalues, nperp, pchnames, pchvalues, ncells, actmode, loopmode] = get_loopedparams(infolder);
+[nump, pnames, plabels, pislog, pvalues, nperp, pchnames, pchvalues, ncells, actmode, loopmode] = extract_looped_params(infolder);
 
 %% Check number of .spi files
 ntrials = numel(pchnames);

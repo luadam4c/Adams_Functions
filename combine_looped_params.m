@@ -1,18 +1,18 @@
-function combine_loopedparams (infolder1, infolder2, outfolder)
+function combine_looped_params (infolder1, infolder2, outfolder)
 %% TODO
-% USAGE: combine_loopedparams (infolder1, infolder2, outfolder)
+% USAGE: combine_looped_params (infolder1, infolder2, outfolder)
 %
 % Requires:
 %		infolder/*loopedparams.mat
-%		cd/get_loopedparams.m
+%		cd/extract_looped_params.m
 %
 % 2017-04-17 Created
 % 2017-04-17 Removed latency_cells_to_plot
 % 2017-05-03 Moved to Adams_Functions
-% 2017-05-03 Renamed function combine_loopparams -> combine_loopedparams
+% 2017-05-03 Renamed function combine_loopparams -> combine_looped_params
 % 2017-05-03 Changed loopedparamsfile 'loopvariables.mat' -> 'loopedparams.mat'
 
-%% Must be consistent with create_looped_params.m & get_loopedparams.m
+%% Must be consistent with create_looped_params.m & extract_looped_params.m
 loopedparamsfile = 'loopedparams.mat';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -20,7 +20,7 @@ loopedparamsfile = 'loopedparams.mat';
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 3
-	error('Not enough input arguments, type ''help combine_loopedparams'' for usage');
+	error('Not enough input arguments, type ''help combine_looped_params'' for usage');
 end
 
 % TODO: Input Parser scheme
@@ -29,8 +29,8 @@ end
 m3 = matfile(fullfile(outfolder, loopedparamsfile), 'Writable', true);
 
 %% Extract parameters
-[nump1, pnames1, plabels1, pislog1, pvalues1, ~, ~, ~, ncells1, actmode1] = get_loopedparams (infolder1);
-[nump2, pnames2, plabels2, pislog2, pvalues2, ~, ~, ~, ncells2, actmode2] = get_loopedparams (infolder2);
+[nump1, pnames1, plabels1, pislog1, pvalues1, ~, ~, ~, ncells1, actmode1] = extract_looped_params (infolder1);
+[nump2, pnames2, plabels2, pislog2, pvalues2, ~, ~, ~, ncells2, actmode2] = extract_looped_params (infolder2);
 
 %% Check if invariants are the same
 if nump1 ~= nump2

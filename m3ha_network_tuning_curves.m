@@ -38,7 +38,7 @@ function [pvalues, numActiveTC, numActiveRE, latencyTC, latencyRE, ...
 % Requires:
 %        cd/check_and_collapse_identical_contents.m
 %        cd/find_in_strings.m
-%        cd/get_loopedparams.m
+%        cd/extract_looped_params.m
 %        cd/isfigtype.m
 %        cd/m3ha_network_raster_plot.m
 %        cd/plot_tuning_curve.m
@@ -84,7 +84,7 @@ addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));    % for dirr.m
 addpath(fullfile(functionsdirectory, '/Adams_Functions/'));        % for isfigtype.m, save_all_figtypes.m,
                                     %    find_in_strings.m, vec2cell.m
                                     %     check_and_collapse_identical_contents.m 
-                                    %    & plot_tuning_curve.m & get_loopedparams.m
+                                    %    & plot_tuning_curve.m & extract_looped_params.m
 
 %% Deal with arguments
 % Check number of required arguments
@@ -159,10 +159,10 @@ if isempty(actmode)        %%% TODO: might need more isempty()
         % Get the parameters from each condition
         for k = 1:ncond
             [nump(k), pnames{k}, plabels{k}, pislog{k}, pvalues{k}, nperp{k}, ...
-                ~, ~, ncells(k), actmode(k), loopmode{k}] = get_loopedparams(infolders{k});
+                ~, ~, ncells(k), actmode(k), loopmode{k}] = extract_looped_params(infolders{k});
         end
     else
-        [nump, pnames, plabels, pislog, pvalues, nperp, ~, ~, ncells, actmode, loopmode] = get_loopedparams(infolders{1});
+        [nump, pnames, plabels, pislog, pvalues, nperp, ~, ~, ncells, actmode, loopmode] = extract_looped_params(infolders{1});
     end
 end
 % Add required inputs to an Input Parser

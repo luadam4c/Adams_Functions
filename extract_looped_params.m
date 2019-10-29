@@ -1,6 +1,6 @@
-function [nump, pnames, plabels, pislog, pvalues, nperp, pchnames, pchvalues, ncells, actmode, loopmode] = get_loopedparams (infolder)
-%% Get parameters that were looped in the simulation from loopedparams.mat
-% USAGE: [nump, pnames, plabels, pislog, pvalues, nperp, pchnames, pchvalues, ncells, actmode, loopmode] = get_loopedparams (infolder)
+function [nump, pnames, plabels, pislog, pvalues, nperp, pchnames, pchvalues, ncells, actmode, loopmode] = extract_looped_params (infolder)
+%% Extracts parameters that were looped in the simulation from loopedparams.mat
+% USAGE: [nump, pnames, plabels, pislog, pvalues, nperp, pchnames, pchvalues, ncells, actmode, loopmode] = extract_looped_params (infolder)
 % Arguments:
 %     TODO
 %
@@ -20,14 +20,14 @@ function [nump, pnames, plabels, pislog, pvalues, nperp, pchnames, pchvalues, nc
 % 2017-04-17 Now extracts pvalues if it exists
 % 2017-04-17 Removed latency_cells_to_plot
 % 2017-05-03 Moved to Adams_Functions
-% 2017-05-03 Renamed function get_loopparams -> get_loopedparams
-% 2017-05-03 Changed loopedparamsfile 'loopvariables.mat' -> 'loopedparams.mat'
-% 2017-05-04 Added loopedparamsfile_old for compatibility with old data
+% 2017-05-03 Renamed function get_loopparams -> extract_looped_params
+% 2017-05-03 Changed loopedParamsFile 'loopvariables.mat' -> 'loopedparams.mat'
+% 2017-05-04 Added loopedParamsFileOld for compatibility with old data
 % 2018-05-08 Changed tabs to spaces and limited width to 80
 
 %% Must be consistent with create_looped_params.m & combine_loopparams.m
-loopedparamsfile = 'loopedparams.mat';
-loopedparamsfile_old = 'loopvariables.mat';
+loopedParamsFile = 'loopedparams.mat';
+loopedParamsFileOld = 'loopvariables.mat';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -45,17 +45,17 @@ iP.FunctionName = mfilename;
 % TODO: Add required inputs to an Input Parser
 
 %% Find the loopedparams.mat in infolder
-loopfiles = dirr(infolder, loopedparamsfile);
-loopfiles_old = dirr(infolder, loopedparamsfile_old);
-all_loopfiles = [loopfiles; loopfiles_old];
-if length(all_loopfiles) > 1
+loopFiles = dirr(infolder, loopedParamsFile);
+loopFilesOld = dirr(infolder, loopedParamsFileOld);
+allLoopFiles = [loopFiles; loopFilesOld];
+if length(allLoopFiles) > 1
     error('Too many versions of %s or %s!', ...
-            loopedparamsfile, loopedparamsfile_old);
-elseif length(all_loopfiles) < 1
-    error('%s or %s is required!', loopedparamsfile, loopedparamsfile_old);
+            loopedParamsFile, loopedParamsFileOld);
+elseif length(allLoopFiles) < 1
+    error('%s or %s is required!', loopedParamsFile, loopedParamsFileOld);
 else
     % There should be only one loopedparams.mat or loopvariables.mat
-    m = matfile(fullfile(infolder, all_loopfiles(1).name), ...  
+    m = matfile(fullfile(infolder, allLoopFiles(1).name), ...  
         'Writable', true);          % make writable for pvalues and nperp
 end
 

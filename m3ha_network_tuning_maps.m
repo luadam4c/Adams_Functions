@@ -21,7 +21,7 @@ function m3ha_network_tuning_maps (infolder, outfolder, numActiveTC, numActiveRE
 %                   default == ncells/2
 %
 % Requires:
-%        cd/get_loopedparams.m
+%        cd/extract_looped_params.m
 %        cd/isfigtype.m
 %        cd/m3ha_network_raster_plot.m
 %        cd/plot_tuning_map.m
@@ -60,7 +60,7 @@ elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
 else
     error('Valid functionsdirectory does not exist!');
 end
-addpath(fullfile(functionsdirectory, '/Adams_Functions/'));        % for isfigtype.m, get_loopedparams.m,
+addpath(fullfile(functionsdirectory, '/Adams_Functions/'));        % for isfigtype.m, extract_looped_params.m,
                                     %     vec2array.m
                                     %    & plot_tuning_map.m
 %% Check arguments
@@ -85,7 +85,7 @@ end
 if nargin < 6 || isempty(nump) || isempty(pnames) || isempty(plabels) ...
         || isempty(pislog) || isempty(pvalues) || isempty(nperp) ...
         || isempty(ncells) || isempty(actmode) || isempty(loopmode)
-    [nump, pnames, plabels, pislog, pvalues, nperp, ~, ~, ncells, actmode, loopmode] = get_loopedparams(infolder);
+    [nump, pnames, plabels, pislog, pvalues, nperp, ~, ~, ncells, actmode, loopmode] = extract_looped_params(infolder);
 end
 
 %% Use Input Parser for parameter-value pairs

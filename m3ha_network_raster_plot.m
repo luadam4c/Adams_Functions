@@ -36,7 +36,7 @@ function [REspikes, TCspikes, numActiveTC, numActiveRE, ...
 %
 % Requires:
 %       cd/find_in_strings.m
-%       cd/get_loopedparams.m
+%       cd/extract_looped_params.m
 %       cd/isfigtype.m
 %       cd/m3ha_network_define_actmode.m
 %       cd/m3ha_network_tuning_curves.m
@@ -76,7 +76,7 @@ addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));
                                     % for dirr.m & subaxis.m
 addpath(fullfile(functionsdirectory, '/Adams_Functions/'));
                                     % for isfigtype.m, find_in_strings.m 
-                                    %   get_loopedparams.m
+                                    %   extract_looped_params.m
 
 %% Deal with arguments
 % Check number of required arguments
@@ -128,7 +128,7 @@ TCfiles = dir(fullfile(infolder, 'TC*.spi'));
 nTCfiles = length(TCfiles);
 
 %% Get loop parameters
-[nump, pnames, plabels, pislog, pvalues, nperp, pchnames, pchvalues, nCells, actmode, loopmode] = get_loopedparams(infolder);
+[nump, pnames, plabels, pislog, pvalues, nperp, pchnames, pchvalues, nCells, actmode, loopmode] = extract_looped_params(infolder);
 
 %% Check number of .spi files
 ntrials = numel(pchnames);
