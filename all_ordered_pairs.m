@@ -31,7 +31,7 @@ function [orderedPairs, nOrderedPairs, nVectors] = all_ordered_pairs (vectors, v
 %                       default == 'forward'
 %
 % Used by:    
-%       cd/make_loopedparams.m
+%       cd/create_looped_params.m
 %       cd/get_loopedparams.m
 %
 % File History:

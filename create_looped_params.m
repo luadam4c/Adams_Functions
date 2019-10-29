@@ -1,6 +1,10 @@
-function [pchnames, pchvalues, ntrials, nump, pvalues, nperp] = make_loopedparams (loopmode, pnames, plabels, pislog, pmin, pmax, pinc, varargin)
+function [pchnames, pchvalues, ntrials, nump, pvalues, nperp] = ...
+                create_looped_params (loopmode, pnames, plabels, pislog, ...
+                                    pmin, pmax, pinc, varargin)
 %% Construct parameters to change for each trial from loopmode, pnames, pislog, pmin, pmax, pinc 
-% Usage: [pchnames, pchvalues, ntrials, nump, pvalues, nperp] = make_loopedparams (loopmode, pnames, plabels, pislog, pmin, pmax, pinc, varargin)
+% Usage: [pchnames, pchvalues, ntrials, nump, pvalues, nperp] = ...
+%               create_looped_params (loopmode, pnames, plabels, pislog, ...
+%                                   pmin, pmax, pinc, varargin)
 % Outputs:    
 %       pchnames    - a cell array of parameter names or ordered pairs 
 %                       of parameter names for each trial
@@ -10,6 +14,7 @@ function [pchnames, pchvalues, ntrials, nump, pvalues, nperp] = make_loopedparam
 %       nump        - number of different parameters
 %       pvalues     - a cell array of arrays of parameter values
 %       nperp       - number of parameter values for each parameter
+%
 % Arguments:    
 %       loopmode    - how to loop through parameters: 'cross' or 'grid'
 %                   must be an unambiguous, case-insensitive match 
@@ -47,13 +52,14 @@ function [pchnames, pchvalues, ntrials, nump, pvalues, nperp] = make_loopedparam
 % Requires:
 %       cd/all_ordered_pairs.m
 %
-% Used by:    
+% Used by:
+%       cd/m3ha_network_launch.m
 %       /media/adamX/RTCl/neuronlaunch.m
-%
+
 % File History:
 % 2017-05-03 Moved from /media/adamX/RTCl/neuronlaunch.m
 % 2018-05-08 Changed tabs to spaces and limited width to 80
-% 
+
 
 %% Hard-coded parameters
 possibleLoopmodes = {'cross', 'grid'};

@@ -12,7 +12,7 @@ function combine_loopedparams (infolder1, infolder2, outfolder)
 % 2017-05-03 Renamed function combine_loopparams -> combine_loopedparams
 % 2017-05-03 Changed loopedparamsfile 'loopvariables.mat' -> 'loopedparams.mat'
 
-%% Must be consistent with make_loopedparams.m & get_loopedparams.m
+%% Must be consistent with create_looped_params.m & get_loopedparams.m
 loopedparamsfile = 'loopedparams.mat';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

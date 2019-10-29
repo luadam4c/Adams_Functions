@@ -18,8 +18,8 @@ function [data] = m3ha_network_single_neuron (infolder, varargin)
 %            must be logical 1 (true) or 0 (false)
 %            default: true, but alway false if plotspikes == false
 %             - 'CellsToPlot': the ID #s for cells whose voltage & chloride concentration traces are to be plotted
-%            must be a numeric array with elements that are integers between 0 and ncells
-%            default: [act, act_left1, act_left2, far], whose values are saved in sim_params.csv
+%            must be a numeric array with elements that are integers between 0 and nCells
+%            default: [act, actLeft1, actLeft2, far], whose values are saved in sim_params.csv
 %            - 'PropertiesToPlot': property #s of special neuron to record to be plotted 
 %            maximum range: 1~12, must be consistent with net.hoc
 %            must be a numeric array with elements that are integers between 0 and 12
@@ -40,15 +40,17 @@ function [data] = m3ha_network_single_neuron (infolder, varargin)
 %            NOTE: must be consistent with proplabels & net.hoc
 %
 % Requires:
+%        cd/find_in_strings.m
+%        cd/isfigtype.m
+%        cd/save_all_figtypes.m
 %        infolder/*.singv OR infolder/*.singcli OR infolder/*.singsp
 %        infolder/['sim_params_', pstring, '.csv'] for all the possible parameter strings
 %        /home/Matlab/Downloaded_Functions/subaxis.m
-%        /home/Matlab/Adams_Functions/isfigtype.m
-%        /home/Matlab/Adams_Functions/save_all_figtypes.m
-%        /home/Matlab/Adams_Functions/find_ind_str_in_cell.m
+%
 % Used by:
 %        cd/m3ha_launch.m
-%
+
+% File History:
 % 2017-10-23 Modified from /RTCl/single_neuron.m
 % 2017-10-31 Replaced REuseca with useHH
 % 2017-11-03 Changed ylim for voltage [-100, 60] -> [-120, 60]
@@ -132,7 +134,7 @@ else
     error('Valid functionsdirectory does not exist!');
 end
 addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));    % for subaxis.m
-addpath(fullfile(functionsdirectory, '/Adams_Functions/'));         % for isfigtype.m & find_ind_str_in_cell.m
+addpath(fullfile(functionsdirectory, '/Adams_Functions/'));         % for isfigtype.m & find_in_strings.m
 
 %% Find all .singv, .singcli or .singsp files
 files = dir(fullfile(infolder, '*.sing*'));
@@ -143,18 +145,18 @@ nplots = nfiles * nppf;
 filenames = cell(1, nplots);    % stores file name for each plot
 filetypes = cell(1, nplots);    % stores file type for each plot
 fullfignames = cell(1, nplots); % stores full figure names for each plot
-ncells = zeros(1, nplots);      % stores ncells for each plot
-tstarts = zeros(1, nplots);     % stores tstart for each plot
-tstops = zeros(1, nplots);      % stores tstop for each plot
-stim_starts = zeros(1, nplots); % stores stim_start for each plot
-stim_durs = zeros(1, nplots);   % stores stim_dur for each plot
-stim_freqs = zeros(1, nplots);  % stores stim_freq for each plot
+nCells = zeros(1, nplots);      % stores nCells for each plot
+tStarts = zeros(1, nplots);     % stores tStart for each plot
+tStops = zeros(1, nplots);      % stores tStop for each plot
+stimStarts = zeros(1, nplots); % stores stimStart for each plot
+stimDurs = zeros(1, nplots);   % stores stimDur for each plot
+stimFreqs = zeros(1, nplots);  % stores stimFreq for each plot
 useHH = zeros(1, nplots);       % stores useHH for each plot
 act = zeros(1, nplots);         % stores act for each plot
-act_left1 = zeros(1, nplots);   % stores act_left1 for each plot
-act_left2 = zeros(1, nplots);   % stores act_left2 for each plot
+actLeft1 = zeros(1, nplots);   % stores actLeft1 for each plot
+actLeft2 = zeros(1, nplots);   % stores actLeft2 for each plot
 far = zeros(1, nplots);         % stores far for each plot
-IDs_cell = cell(1, nplots);     % stores default neuron ID #s to plot for each plot
+cellIDsToPlot = cell(1, nplots);     % stores default neuron ID #s to plot for each plot
 proplabels = cell(1, nplots);   % stores property labels for each plot
 for i = 1:nfiles
     % Set property labels according to file name
@@ -186,31 +188,32 @@ for i = 1:nfiles
         end
 
         % Extract parameters from sim_params file
-        [~, filebase, ~] = fileparts(files(i).name);
-        temparray = strsplit(filebase, '_');
-        simfilename = ['sim_params_', strjoin(temparray(2:end), '_'), '.csv'];
-        fid = fopen(fullfile(infolder, simfilename));
-        simfilecontent = textscan(fid, '%s %f %s', 'Delimiter', ',');
-        paramnames = simfilecontent{1};
-        params_val = simfilecontent{2};
-        ncells(ci) = params_val(find_ind_str_in_cell('ncells', paramnames, 'SearchMode', 'exact'));
-        tstarts(ci) = params_val(find_ind_str_in_cell('tstart', paramnames, 'SearchMode', 'exact'));
-        tstops(ci) = params_val(find_ind_str_in_cell('tstop', paramnames, 'SearchMode', 'exact'));
-        stim_starts(ci) = params_val(find_ind_str_in_cell('stim_start', paramnames, 'SearchMode', 'exact'));
-        stim_durs(ci) = params_val(find_ind_str_in_cell('stim_dur', paramnames, 'SearchMode', 'exact'));
-        stim_freqs(ci) = params_val(find_ind_str_in_cell('stim_freq', paramnames, 'SearchMode', 'exact'));
-        useHH(ci) = params_val(find_ind_str_in_cell('useHH', paramnames, 'SearchMode', 'exact'));
-        act(ci) = params_val(find_ind_str_in_cell('act', paramnames, 'SearchMode', 'exact'));
-        act_left1(ci) = params_val(find_ind_str_in_cell('act_left1', paramnames, 'SearchMode', 'exact'));
-        act_left2(ci) = params_val(find_ind_str_in_cell('act_left2', paramnames, 'SearchMode', 'exact'));
-        far(ci) = params_val(find_ind_str_in_cell('far', paramnames, 'SearchMode', 'exact'));
+        [~, fileBase, ~] = fileparts(files(i).name);
+        tempArray = strsplit(fileBase, '_');
+        simFileName = ['sim_params_', strjoin(tempArray(2:end), '_'), '.csv'];
+        fid = fopen(fullfile(infolder, simFileName));
+        simFileContent = textscan(fid, '%s %f %s', 'Delimiter', ',');
+        paramNames = simFileContent{1};
+        paramValues = simFileContent{2};
+        nCells(ci) = paramValues(find_in_strings('nCells', paramNames, 'SearchMode', 'exact'));
+        tStarts(ci) = paramValues(find_in_strings('tStart', paramNames, 'SearchMode', 'exact'));
+        tStops(ci) = paramValues(find_in_strings('tStop', paramNames, 'SearchMode', 'exact'));
+        stimStarts(ci) = paramValues(find_in_strings('stimStart', paramNames, 'SearchMode', 'exact'));
+        stimDurs(ci) = paramValues(find_in_strings('stimDur', paramNames, 'SearchMode', 'exact'));
+        stimFreqs(ci) = paramValues(find_in_strings('stimFreq', paramNames, 'SearchMode', 'exact'));
+        useHH(ci) = paramValues(find_in_strings('useHH', paramNames, 'SearchMode', 'exact'));
+        act(ci) = paramValues(find_in_strings('act', paramNames, 'SearchMode', 'exact'));
+        actLeft1(ci) = paramValues(find_in_strings('actLeft1', paramNames, 'SearchMode', 'exact'));
+        actLeft2(ci) = paramValues(find_in_strings('actLeft2', paramNames, 'SearchMode', 'exact'));
+        far(ci) = paramValues(find_in_strings('far', paramNames, 'SearchMode', 'exact'));
         fclose(fid);
 
+        % Set default ID #s for neurons whose voltage is to be plotted
         if ~isempty(cellstoplot)
-            IDs_cell{ci} = cellstoplot;
+            cellIDsToPlot{ci} = cellstoplot;
         else
-            IDs_cell{ci} = [act(ci), act_left1(ci), ...
-                act_left2(ci), far(ci)];    % default ID #s for neurons whose voltage is to be plotted
+            cellIDsToPlot{ci} = [act(ci), actLeft1(ci), ...
+                                actLeft2(ci), far(ci)];
         end
 
     end
@@ -232,20 +235,20 @@ for i = 1:nfiles
     fullfignames{nppf*(i-1)+5} = strrep(fullfignames{nppf*(i-1)+1}, 'selected', 'heatmap');
 
     % Create time limits for different time intervals to plot   % TODO: Change for m3ha
-    tstarts(nppf*(i-1)+1) = tstarts(ci);                                        % 0 ms
-    tstops(nppf*(i-1)+1) = tstops(ci);                                          % 30000 ms
-    tstarts(nppf*(i-1)+2) = max(stim_starts(ci)*2/3, tstarts(ci));              % 200 ms
-    tstops(nppf*(i-1)+2) = min(max(4000, stim_starts(ci)*40/3), tstops(ci));    % 30000 ms
-    tstarts(nppf*(i-1)+3) = max(stim_starts(ci) - 100, tstarts(ci));            % 2900 ms
-    tstops(nppf*(i-1)+3) = min(stim_starts(ci) + 400, tstops(ci));           % 4000 ms
-    tstarts(nppf*(i-1)+4) = max(stim_starts(ci) + stim_durs(ci), tstarts(ci));    % 500 ms
-    tstops(nppf*(i-1)+4) = min(stim_starts(ci) + stim_durs(ci) + 1000, tstops(ci));      % 1000 ms
+    tStarts(nppf*(i-1)+1) = tStarts(ci);                                        % 0 ms
+    tStops(nppf*(i-1)+1) = tStops(ci);                                          % 30000 ms
+    tStarts(nppf*(i-1)+2) = max(stimStarts(ci)*2/3, tStarts(ci));              % 200 ms
+    tStops(nppf*(i-1)+2) = min(max(4000, stimStarts(ci)*40/3), tStops(ci));    % 30000 ms
+    tStarts(nppf*(i-1)+3) = max(stimStarts(ci) - 100, tStarts(ci));            % 2900 ms
+    tStops(nppf*(i-1)+3) = min(stimStarts(ci) + 400, tStops(ci));           % 4000 ms
+    tStarts(nppf*(i-1)+4) = max(stimStarts(ci) + stimDurs(ci), tStarts(ci));    % 500 ms
+    tStops(nppf*(i-1)+4) = min(stimStarts(ci) + stimDurs(ci) + 1000, tStops(ci));      % 1000 ms
 %{
-    tstarts(nppf*(i-1)+4) = max(stim_starts(ci) + stim_durs(ci) - 100, tstarts(ci));    % 500 ms
-    tstops(nppf*(i-1)+4) = min(stim_starts(ci) + stim_durs(ci) + 400, tstops(ci));      % 1000 ms
+    tStarts(nppf*(i-1)+4) = max(stimStarts(ci) + stimDurs(ci) - 100, tStarts(ci));    % 500 ms
+    tStops(nppf*(i-1)+4) = min(stimStarts(ci) + stimDurs(ci) + 400, tStops(ci));      % 1000 ms
 %}
-    tstarts(nppf*(i-1)+5) = tstarts(ci);                                        % 0 ms
-    tstops(nppf*(i-1)+5) = tstops(ci);                                          % 233000 ms
+    tStarts(nppf*(i-1)+5) = tStarts(ci);                                        % 0 ms
+    tStops(nppf*(i-1)+5) = tStops(ci);                                          % 233000 ms
 end
 
 %% Create plots
@@ -278,18 +281,18 @@ while ct < nplots           % while not trials are completed yet
         if strcmp(filetypes{k}, 'v') || strcmp(filetypes{k}, 'cli')
             % Plot voltage or chloride concentration traces
             if mod(k, nppf) == 0
-                plot_heat_map(filetypes{k}, tstarts(k), tstops(k), filenames{k}, fullfignames{k}, ...
-                        stim_starts(k), stim_durs(k), stim_freqs(k), infolder, figtypes);
+                plot_heat_map(filetypes{k}, tStarts(k), tStops(k), filenames{k}, fullfignames{k}, ...
+                        stimStarts(k), stimDurs(k), stimFreqs(k), infolder, figtypes);
             elseif mod(k, nppf) == 1
                 % data{k} = ...
-                    plot_single_neuron_data(filetypes{k}, ncells(k), useHH(k), ...
-                        tstarts(k), tstops(k), filenames{k}, fullfignames{k}, ...
-                        IDs_cell{k}, stim_starts(k), stim_durs(k), stim_freqs(k), ...
+                    plot_single_neuron_data(filetypes{k}, nCells(k), useHH(k), ...
+                        tStarts(k), tStops(k), filenames{k}, fullfignames{k}, ...
+                        cellIDsToPlot{k}, stimStarts(k), stimDurs(k), stimFreqs(k), ...
                         infolder, figtypes, proplabels{iFile});
             else
-                plot_single_neuron_data(filetypes{k}, ncells(k), useHH(k), ...
-                    tstarts(k), tstops(k), filenames{k}, fullfignames{k}, ...
-                    IDs_cell{k}, stim_starts(k), stim_durs(k), stim_freqs(k), ...
+                plot_single_neuron_data(filetypes{k}, nCells(k), useHH(k), ...
+                    tStarts(k), tStops(k), filenames{k}, fullfignames{k}, ...
+                    cellIDsToPlot{k}, stimStarts(k), stimDurs(k), stimFreqs(k), ...
                     infolder, figtypes, proplabels{iFile});
             end
         elseif strcmp(filetypes{k}, 'sp')
@@ -298,14 +301,14 @@ while ct < nplots           % while not trials are completed yet
                 % No heat map; do nothing
             elseif mod(k, nppf) == 1
                 % data{k} = ...
-                    plot_single_neuron_data(filetypes{k}, ncells(k), useHH(k), ...
-                        tstarts(k), tstops(k), filenames{k}, fullfignames{k}, ...
-                        propertiestoplot, stim_starts(k), stim_durs(k), stim_freqs(k), ...
+                    plot_single_neuron_data(filetypes{k}, nCells(k), useHH(k), ...
+                        tStarts(k), tStops(k), filenames{k}, fullfignames{k}, ...
+                        propertiestoplot, stimStarts(k), stimDurs(k), stimFreqs(k), ...
                         infolder, figtypes, proplabels{iFile});
             else
-                plot_single_neuron_data(filetypes{k}, ncells(k), useHH(k), ...
-                    tstarts(k), tstops(k), filenames{k}, fullfignames{k}, ...
-                    propertiestoplot, stim_starts(k), stim_durs(k), stim_freqs(k), ...
+                plot_single_neuron_data(filetypes{k}, nCells(k), useHH(k), ...
+                    tStarts(k), tStops(k), filenames{k}, fullfignames{k}, ...
+                    propertiestoplot, stimStarts(k), stimDurs(k), stimFreqs(k), ...
                     infolder, figtypes, proplabels{iFile});
             end
         end
@@ -326,15 +329,15 @@ data = data(~cellfun(@isempty, data));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function data = plot_heat_map(filetype, tstart, tstop, filename, figname, stim_start, stim_dur, stim_freq, infolder, figtypes)
+function data = plot_heat_map(filetype, tStart, tStop, filename, figname, stimStart, stimDur, stimFreq, infolder, figtypes)
 %% Plot heat map
 
 % Load single neuron data
 data = load(fullfile(infolder, filename));
 
 % Check (ID #s of neurons) to plot
-ncells = size(data, 2) - 1;        % total number of columns in the data minus the time vector
-if ncells < 1
+nCells = size(data, 2) - 1;        % total number of columns in the data minus the time vector
+if nCells < 1
     fprintf('Warning: No neurons to plot for this file!\n');
     return;
 end
@@ -349,11 +352,11 @@ end
 
 % Change units of time axis from ms to s if the total time is > 10 seconds
 if ~isempty(spikes)
-    [timevec, timelabel, xlim1, xlim2, stim_start_plot, stim_dur_plot, spiketimes] ...
-        = set_time_units(data, tstart, tstop, stim_start, stim_dur, spikes);
+    [timevec, timelabel, xlim1, xlim2, stimStartPlot, stimDurPlot, spiketimes] ...
+        = set_time_units(data, tStart, tStop, stimStart, stimDur, spikes);
 else
-    [timevec, timelabel, xlim1, xlim2, stim_start_plot, stim_dur_plot, ~] ...
-        = set_time_units(data, tstart, tstop, stim_start, stim_dur);
+    [timevec, timelabel, xlim1, xlim2, stimStartPlot, stimDurPlot, ~] ...
+        = set_time_units(data, tStart, tStop, stimStart, stimDur);
 end
 
 % Find maximum and minimum time to plot
@@ -367,23 +370,23 @@ clf(h);
 hold on;
 
 % Create heat map
-imagesc([min(timevec), max(timevec)], [ncells-1, 0], flipud(data(:, 2:end)'));
+imagesc([min(timevec), max(timevec)], [nCells-1, 0], flipud(data(:, 2:end)'));
 set(gca, 'CLim', climits);
-%HeatMap(flipud(data(:, 2:end)'), 'ColumnLabels', timevec, 'RowLabels', 0:ncells-1);        % Doesn't seem to work
-%heatmap(timevec, 0:ncells-1, flipud(data(:, 2:end)'));     % Not available until R2017a
+%HeatMap(flipud(data(:, 2:end)'), 'ColumnLabels', timevec, 'RowLabels', 0:nCells-1);        % Doesn't seem to work
+%heatmap(timevec, 0:nCells-1, flipud(data(:, 2:end)'));     % Not available until R2017a
 if ~isempty(spikes)
     plot(spiketimes, spikecelln, 'r.', 'MarkerSize', 1);    % plot spikes
 end
-line([stim_start_plot, stim_start_plot], [-1, ncells], ...
+line([stimStartPlot, stimStartPlot], [-1, nCells], ...
     'Color', 'r', 'LineStyle', '--');   % line for stimulation on
-text(stim_start_plot + 0.5, ncells*0.95, ['Stim ON: ', num2str(stim_freq), ' Hz'], ...
+text(stimStartPlot + 0.5, nCells*0.95, ['Stim ON: ', num2str(stimFreq), ' Hz'], ...
     'Color', 'r');                      % text for stimulation on
-line([stim_start_plot + stim_dur_plot, stim_start_plot + stim_dur_plot], ...
-    [-1,  ncells], 'Color', 'r', 'LineStyle', '--');    % line for stimulation off
-text(stim_start_plot + stim_dur_plot + 0.5, ncells*0.95, 'Stim OFF', ...
+line([stimStartPlot + stimDurPlot, stimStartPlot + stimDurPlot], ...
+    [-1,  nCells], 'Color', 'r', 'LineStyle', '--');    % line for stimulation off
+text(stimStartPlot + stimDurPlot + 0.5, nCells*0.95, 'Stim OFF', ...
     'Color', 'r');                      % text for stimulation off
 xlim([xmin, xmax]);                     % time range to plot
-ylim([-1, ncells]);                     % cell ID runs from 0 to ncells-1
+ylim([-1, nCells]);                     % cell ID runs from 0 to nCells-1
 xlabel(timelabel);
 ylabel('Neuron number');
 colorbar;
@@ -400,7 +403,7 @@ save_all_figtypes(h, figname, figtypes);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function data = plot_single_neuron_data(filetype, ncells, useHH, tstart, tstop, filename, figname, ToPl, stim_start, stim_dur, stim_freq, infolder, figtypes, proplabels)
+function data = plot_single_neuron_data(filetype, nCells, useHH, tStart, tStop, filename, figname, ToPl, stimStart, stimDur, stimFreq, infolder, figtypes, proplabels)
 %% Plot single neuron data
 
 %% Extract info from arguments
@@ -409,13 +412,13 @@ nsubplots = length(ToPl);                % number of column vectors to plot
 %% Create legend labels
 if strcmp(filetype, 'v') || strcmp(filetype, 'cli')
     % Check ID numbers
-    if max(ToPl) > ncells
+    if max(ToPl) > nCells
         error('IDs are out of range!');
     end
 
     % Create ID labels
-    labels = cell(1, ncells);    % ID labels
-    for id = 0:ncells-1
+    labels = cell(1, nCells);    % ID labels
+    for id = 0:nCells-1
         labels{id+1} = sprintf('Cell #%d', id);
     end
 elseif strcmp(filetype, 'sp')
@@ -455,10 +458,10 @@ if strcmp(filetype, 'sp')
     % If spikes are available, get the spikes for this special neuron
     if ~isempty(spikes)
         % Get the base of the file name
-        [~, filebase, ~] = fileparts(filename);
+        [~, fileBase, ~] = fileparts(filename);
 
         % Find the cell ID of interest
-        temp1 = strsplit(filebase, ']');
+        temp1 = strsplit(fileBase, ']');
         temp2 = strsplit(temp1{1}, '[');
         cellID = str2double(temp2{2});
 
@@ -475,8 +478,8 @@ end
 % Deal with times
 if strcmp(filetype, 'sp') && ~isempty(indThis)
     % Change units of time axis from ms to s if the total time is > 10 seconds
-    [timevec, timelabel, xlim1, xlim2, stim_start_plot, stim_dur_plot, spiketimes] ...
-        = set_time_units(data, tstart, tstop, stim_start, stim_dur, spikes);
+    [timevec, timelabel, xlim1, xlim2, stimStartPlot, stimDurPlot, spiketimes] ...
+        = set_time_units(data, tStart, tStop, stimStart, stimDur, spikes);
 
     % Get the spike times for this cell
     spiketimesThis = spiketimes(indThis);
@@ -495,8 +498,8 @@ if strcmp(filetype, 'sp') && ~isempty(indThis)
     end
 else
     % Change units of time axis from ms to s if the total time is > 10 seconds
-    [timevec, timelabel, xlim1, xlim2, stim_start_plot, stim_dur_plot, ~] ...
-        = set_time_units(data, tstart, tstop, stim_start, stim_dur);
+    [timevec, timelabel, xlim1, xlim2, stimStartPlot, stimDurPlot, ~] ...
+        = set_time_units(data, tStart, tStop, stimStart, stimDur);
 end
 
 % Create figure
@@ -533,9 +536,9 @@ for k = 1:nsubplots
 
     % Add stimulation marks
     ax = gca;
-    line([stim_start_plot, stim_start_plot], [ax.YLim(1), ax.YLim(2)], ...
+    line([stimStartPlot, stimStartPlot], [ax.YLim(1), ax.YLim(2)], ...
         'Color', 'r', 'LineStyle', '--');            % line for stimulation on
-    line([stim_start_plot + stim_dur_plot, stim_start_plot + stim_dur_plot], [ax.YLim(1), ax.YLim(2)], ...
+    line([stimStartPlot + stimDurPlot, stimStartPlot + stimDurPlot], [ax.YLim(1), ax.YLim(2)], ...
         'Color', 'r', 'LineStyle', '--');            % line for stimulation off
 
     % For the voltage plot (subplot 1) of special neurons, 
@@ -567,16 +570,18 @@ save_all_figtypes(h, figname, figtypes);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [timevec, timelabel, xlim1, xlim2, stim_start_plot, stim_dur_plot, spiketimevec] = set_time_units(data, tstart, tstop, stim_start, stim_dur, spikes)
+function [timevec, timelabel, xlim1, xlim2, ...
+            stimStartPlot, stimDurPlot, spiketimevec] = ...
+                set_time_units(data, tStart, tStop, stimStart, stimDur, spikes)
 
 % Change units of time axis from ms to s if the total time is > 10 seconds
-if tstop > 10000
+if tStop > 10000
     timevec = data(:, 1)/1000;
     timelabel = 'Time (s)';
-    xlim1 = tstart/1000;
-    xlim2 = tstop/1000;
-    stim_start_plot = stim_start/1000;
-    stim_dur_plot = stim_dur/1000;
+    xlim1 = tStart/1000;
+    xlim2 = tStop/1000;
+    stimStartPlot = stimStart/1000;
+    stimDurPlot = stimDur/1000;
     if nargin >= 6
         spiketimevec = spikes(:, 2)/1000;
     else
@@ -585,10 +590,10 @@ if tstop > 10000
 else
     timevec = data(:, 1);
     timelabel = 'Time (ms)';
-    xlim1 = tstart;
-    xlim2 = tstop;
-    stim_start_plot = stim_start;
-    stim_dur_plot = stim_dur;
+    xlim1 = tStart;
+    xlim2 = tStop;
+    stimStartPlot = stimStart;
+    stimDurPlot = stimDur;
     if nargin >= 6
         spiketimevec = spikes(:, 2);
     else

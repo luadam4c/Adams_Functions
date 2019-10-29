@@ -25,7 +25,7 @@ function [nump, pnames, plabels, pislog, pvalues, nperp, pchnames, pchvalues, nc
 % 2017-05-04 Added loopedparamsfile_old for compatibility with old data
 % 2018-05-08 Changed tabs to spaces and limited width to 80
 
-%% Must be consistent with make_loopedparams.m & combine_loopparams.m
+%% Must be consistent with create_looped_params.m & combine_loopparams.m
 loopedparamsfile = 'loopedparams.mat';
 loopedparamsfile_old = 'loopvariables.mat';
 

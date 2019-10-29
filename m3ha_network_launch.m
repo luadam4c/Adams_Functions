@@ -1,13 +1,14 @@
-%%function m3ha_network_launch(nCells, useHH, TCtempCellIDs)
+%%function m3ha_network_launch(nCells, useHH, templateIDs)
 %% Launches NEURON with simulation commands and plot output figures
 %
 % Requires:
-%       cd/m3ha_network_change_params.m
 %       cd/check_dir.m
 %       cd/construct_fullpath.m
+%       cd/create_looped_params.m
 %       cd/create_time_stamp.m
 %       cd/find_in_strings.m
 %       cd/m3ha_locate_homedir.m
+%       cd/m3ha_network_change_params.m
 %       cd/m3ha_network_show_net.m
 %       cd/m3ha_network_raster_plot.m
 %       cd/m3ha_network_single_neuron.m
@@ -31,9 +32,9 @@
 % 2017-11-03 Added bicucullineFlag & heteroTCFlag
 % 2017-11-04 gIncr now scales TCgabaa as well
 % 2017-11-06 Moved code to define_actmode.m
-% 2017-11-07 Added TCtempCellIDs
+% 2017-11-07 Added templateIDs
 % 2017-11-07 Added actMode = 8~10
-% 2017-11-08 Added TCtempUsed to outFolderName
+% 2017-11-08 Added templateLabel to outFolderName
 % 2017-11-08 Added repNum
 % 2018-02-28 Don't use HH
 % 2018-03-29 Fixed ordering of useHH and REnsegs
@@ -41,7 +42,7 @@
 % 2018-04-24 Moved pfiles sources from ../optimizer4gabab/pfiles 
 %               to just pfiles
 % 2018-04-26 Added the case for nCells == 2
-% 2018-04-26 Made TCtempCellIDs an argument
+% 2018-04-26 Made templateIDs an argument
 % 2018-04-26 Made nCells and useHH arguments
 % TODO: Plot gAMPA and gGABA instead of the i's for synaptic event monitoring
 % TODO: Make the network circular to lose edge effects
@@ -49,26 +50,21 @@
 % TODO: Update specs for m3ha_network_raster_plot.m
 %
 
-%% Compile NEURON mod files
-% Test if there is a .mod file present in the directory
-[~, modPaths] = all_files('Extension', 'mod');
-if isempty(modPaths)
-    disp('There are no .mod files in the present working directory!');
-    return
-else
-    unix('nrnivmodl');
-end
-
 %% Experiment Name
 experimentname = 'm3ha';
 nCells = 1;
 % nCells = 100;
 useHH = true;
-% TCtempCellIDs = [25, 36, 27];
-TCtempCellIDs = 25;
+% templateIDs = [25, 36, 27];
+templateIDs = 25;
 % experimentSuffix = 'stimstart_3000';
 experimentSuffix = ['ncells_', num2str(nCells), '_useHH_', num2str(useHH), ...
-            '_TCtempCellIDs_', strjoin(strsplit(num2str(TCtempCellIDs)), ',')];
+            '_templateIDs_', strjoin(strsplit(num2str(templateIDs)), ',')];
+
+%% Hard-coded parameters
+homeDirName = 'network_model';
+paramsDirName = fullfile('best_params', ...
+                'bestparams_20180424_singleneuronfitting21_Rivanna');
 
 %% Flags
 debugFlag = 0;                  % whether to do a very short simulation
@@ -83,13 +79,14 @@ loopmode = 'cross'; %grid;      % how to loop through parameters:
                                 %               combinations of parameters
 
 % Decide on what to save and plot
-if nCells == 1 || nCells == 2
-    savePlotMode = 'spikes&special';
-elseif nCells == 20 || nCells == 100
-    savePlotMode = 'spikes';    
-else
-    error('nCells = %d is not implemented yet!', nCells);
-end
+savePlotMode = 'spikes';
+% if nCells == 1 || nCells == 2
+%     savePlotMode = 'spikes&special';
+% elseif nCells == 20 || nCells == 100
+%     savePlotMode = 'spikes';    
+% else
+%     error('nCells = %d is not implemented yet!', nCells);
+% end
 
 %% Simulation modes
 simmode = 2;    % 1 - full simulation
@@ -118,7 +115,7 @@ actMode = 1;
 
 % Decide on template TC neurons to use
 %% Template TC neurons;
-TCtempCells = {'D091710', 'E091710', 'B091810', 'D091810', ...
+templateNames = {'D091710', 'E091710', 'B091810', 'D091810', ...
                 'E091810', 'F091810', 'A092110', 'C092110', ...
                 'B092710', 'C092710', 'E092710', 'A092810', ...
                 'C092810', 'K092810', 'A092910', 'C092910', ...
@@ -127,45 +124,38 @@ TCtempCells = {'D091710', 'E091710', 'B091810', 'D091810', ...
                 'C101210', 'D101210', 'E101210', 'F101210', ...
                 'I101210', 'M101210', 'B101310', 'D101310', ...
                 'E101310', 'F101310', 'G101310', 'H101310'};
-%TCtempCellIDs = 21;
-%TCtempCellIDs = 3;
-%TCtempCellIDs = 20;
-%TCtempCellIDs = 21;
-%TCtempCellIDs = 22;
-%TCtempCellIDs = 26;
-%TCtempCellIDs = 27;
-%TCtempCellIDs = 33;
-%TCtempCellIDs = 25;
-%TCtempCellIDs = [22, 27];
-%TCtempCellIDs = [22, 33];
-%TCtempCellIDs = [20, 22, 33];
-%TCtempCellIDs = [20, 22, 27, 33];
-%TCtempCellIDs = [3, 20, 22, 26, 27, 33];
-%TCtempCellIDs = [3, 20, 22, 25, 26, 27, 33];
-%TCtempCellIDs = [3, 20, 21, 22, 25, 26, 27, 33];
-%TCtempCellIDs = 1:36;
-%TCtempCellIDs = [22, 27, 33];      % 'B100810', 'E101210', 'E101310'
+%templateIDs = 21;
+%templateIDs = 3;
+%templateIDs = 20;
+%templateIDs = 21;
+%templateIDs = 22;
+%templateIDs = 26;
+%templateIDs = 27;
+%templateIDs = 33;
+%templateIDs = 25;
+%templateIDs = [22, 27];
+%templateIDs = [22, 33];
+%templateIDs = [20, 22, 33];
+%templateIDs = [20, 22, 27, 33];
+%templateIDs = [3, 20, 22, 26, 27, 33];
+%templateIDs = [3, 20, 22, 25, 26, 27, 33];
+%templateIDs = [3, 20, 21, 22, 25, 26, 27, 33];
+%templateIDs = 1:36;
+%templateIDs = [22, 27, 33];      % 'B100810', 'E101210', 'E101310'
 
 % In ascending order of total error in singleneuronfitting16_Rivanna:
-%TCtempCellIDs = 25;                 % 'C101210'
-%TCtempCellIDs = 36;                 % 'H101310'
-%TCtempCellIDs = 27;                 % 'E101210'
-%TCtempCellIDs = [25, 36, 27];       % 'C101210', 'H101310', 'E101210'
+%templateIDs = 25;                 % 'C101210'
+%templateIDs = 36;                 % 'H101310'
+%templateIDs = 27;                 % 'E101210'
+%templateIDs = [25, 36, 27];       % 'C101210', 'H101310', 'E101210'
 
-%TCtempCellIDs = 20;                 % 'E100110'
-%TCtempCellIDs = 22;                 % 'B100810'
-%TCtempCellIDs = 30;                 % 'M101210'
-%TCtempCellIDs = 34;                 % 'F101310'
-%TCtempCellIDs = 10;                 % 'C092710'
-%TCtempCellIDs = 21;                 % 'A100810'
-%TCtempCellIDs = 3;                  % 'B091810'
-
-nCandidates = length(TCtempCellIDs);
-if nCandidates > 1
-    heteroTCFlag = 1;
-else
-    heteroTCFlag = 0;
-end
+%templateIDs = 20;                 % 'E100110'
+%templateIDs = 22;                 % 'B100810'
+%templateIDs = 30;                 % 'M101210'
+%templateIDs = 34;                 % 'F101310'
+%templateIDs = 10;                 % 'C092710'
+%templateIDs = 21;                 % 'A100810'
+%templateIDs = 3;                  % 'B091810'
 
 %% For parpool
 if onLargeMemFlag || debugFlag || singleTrialNumber ~= 0 || simmode == 2
@@ -486,22 +476,36 @@ elseif simmode == 3
     tStart = 0;                 % time to start plotting (ms)
 end
 REsp1cellID = actCellID;        % ID # of 1st special RE neuron to record
-REsp2cellID = actCellID - 1;    % ID # of 2nd special RE neuron to record
+if nCells > 1
+    REsp2cellID = actCellID - 1;    % ID # of 2nd special RE neuron to record
+else
+    REsp2cellID = actCellID;    % ID # of 2nd special RE neuron to record
+end
 TCsp1cellID = actCellID;        % ID # of 1st special TC neuron to record
-TCsp2cellID = actCellID - 1;    % ID # of 2nd special TC neuron to record
+if nCells > 1
+    TCsp2cellID = actCellID - 1;    % ID # of 2nd special TC neuron to record
+else
+    TCsp2cellID = actCellID;    % ID # of 2nd special TC neuron to record
+end
 
 %% Set ID #s of neurons to plot
 act = actCellID;            % ID # of the activated neuron
-actLeft1 = actCellID - 1;  % ID # of the neuron one below the activated neuron
 if nCells == 100
+    actLeft1 = actCellID - 1;  % ID # of the neuron one below the activated neuron
     actLeft2 = actCellID - 10; % ID # of the neuron 10 below the activated neuron
     far = actCellID - 20;       % ID # of a far away neuron
 elseif nCells == 20
+    actLeft1 = actCellID - 1;  % ID # of the neuron one below the activated neuron
     actLeft2 = actCellID - 2;  % ID # of the neuron 2 below the activated neuron
     far = actCellID - 10;       % ID # of a far away neuron
-elseif nCells == 2 || nCells == 1
+elseif nCells == 2
+    actLeft1 = actCellID - 1;  % ID # of the neuron one below the activated neuron
     actLeft2 = actCellID;      % Repeat for compatibility
     far = actCellID - 1;        % Repeat for compatibility
+elseif nCells == 1
+    actLeft1 = actCellID;       % Repeat for compatibility
+    actLeft2 = actCellID;       % Repeat for compatibility
+    far = actCellID;            % Repeat for compatibility
 else
     error('nCells unrecognized!');
 end
@@ -548,26 +552,49 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%% Preparation
+% Count the number of template candidates
+nCandidates = length(templateIDs);
+
+% Set a flag for whether heterogeneity is introduced
+if nCandidates > 1
+    heteroTCFlag = 1;
+else
+    heteroTCFlag = 0;
+end
+
 %% Set folders for reading and saving files
 % Find parent and home directory
 parentDirectory = m3ha_locate_homedir;
-homeDirectory = fullfile(parentDirectory, 'network_model');
+homeDirectory = fullfile(parentDirectory, homeDirName);
+
+% Test if there is a .mod file present in the home directory
+[~, modPaths] = all_files('Directory', homeDirectory, 'Extension', 'mod');
+
+% Change to the home directory and compile NEURON mod files
+if isempty(modPaths)
+    fprintf('There are no .mod files in %s!\n', homeDirectory);
+    return
+else
+    cd(homeDirectory);
+    unix('nrnivmodl');
+end
 
 % Make directory to save all data
 %   Note: Use current date & time in the format: YYYYMMDDThhmm
 timeStamp = create_time_stamp('FormatOut', 'yyyymmddTHHMM');
 if nCandidates > 1
-    TCtempUsed = ['hetero', num2str(nCandidates)];
+    templateLabel = ['hetero', num2str(nCandidates)];
 else
-    TCtempUsed = TCtempCells{TCtempCellIDs(1)};
+    templateLabel = templateNames{templateIDs(1)};
 end
-outFolderName = [timeStamp, '_', TCtempUsed, '_', experimentSuffix];
+outFolderName = [timeStamp, '_', templateLabel, '_', experimentSuffix];
 outFolder = fullfile(homeDirectory, outFolderName);     
 check_dir(outFolder);
 
 %% Construct looped parameters
 [pchnames, pchvalues, nTrials, nump, pvalues, nperp] = ...
-    make_loopedparams (loopmode, pnames, plabels, pislog, pmin, pmax, pinc, ...
+    create_looped_params (loopmode, pnames, plabels, pislog, pmin, pmax, pinc, ...
             'OutFolder', outFolder, 'FileLabel', outFolderName, ...
             'NCells', nCells, 'ActMode', actMode);
 
@@ -710,12 +737,16 @@ for k = 1:nTrials
     elseif isnumeric(pchvalues)
         pchvaluesThis = pchvalues(k);
     end
-    [paramValues{k}] = m3ha_network_change_params(pchnamesThis, pchvaluesThis, paramNames, paramsInit, ...
-                        'ExperimentName', experimentname);
+    paramValues{k} = ...
+        m3ha_network_change_params(pchnamesThis, pchvaluesThis, ...
+                    paramNames, paramsInit, 'ExperimentName', experimentname);
+
+    % Create name-value pairs
+    nameValuePairsThis = {pchnamesThis, pchvaluesThis};
 
     % Print parameters to a comma-separated-value file
     simParamsPaths{k} = construct_fullpath(simparamsF, 'Directory', outFolder, ...
-                        'NameValuePairs', {pchnamesThis, pchvaluesThis});
+                        'NameValuePairs', nameValuePairsThis);
     fid = fopen(simParamsPaths{k}, 'w');
     for i = 1:length(paramValues{k})
         fprintf(fid, '%s, %g, %s\n', ...
@@ -725,35 +756,35 @@ for k = 1:nTrials
 
     % Construct full file names
     sREREsynPaths{k}   = construct_fullpath(sREREsynF, 'Directory', outFolder, ...
-                        'NameValuePairs', {pchnamesThis, pchvaluesThis});
+                        'NameValuePairs', nameValuePairsThis);
     sTCREsynPaths{k}   = construct_fullpath(sTCREsynF, 'Directory', outFolder, ...
-                        'NameValuePairs', {pchnamesThis, pchvaluesThis});
+                        'NameValuePairs', nameValuePairsThis);
     sRETCsynPaths{k}   = construct_fullpath(sRETCsynF, 'Directory', outFolder, ...
-                        'NameValuePairs', {pchnamesThis, pchvaluesThis});
+                        'NameValuePairs', nameValuePairsThis);
     sREspikePaths{k}   = construct_fullpath(sREspikeF, 'Directory', outFolder, ...
-                        'NameValuePairs', {pchnamesThis, pchvaluesThis});
+                        'NameValuePairs', nameValuePairsThis);
     sTCspikePaths{k}   = construct_fullpath(sTCspikeF, 'Directory', outFolder, ...
-                        'NameValuePairs', {pchnamesThis, pchvaluesThis});
+                        'NameValuePairs', nameValuePairsThis);
     sREvPaths{k}       = construct_fullpath(sREvF, 'Directory', outFolder, ...
-                        'NameValuePairs', {pchnamesThis, pchvaluesThis});
+                        'NameValuePairs', nameValuePairsThis);
     sTCvPaths{k}       = construct_fullpath(sTCvF, 'Directory', outFolder, ...
-                        'NameValuePairs', {pchnamesThis, pchvaluesThis});
+                        'NameValuePairs', nameValuePairsThis);
     sREcliPaths{k}     = construct_fullpath(sREcliF, 'Directory', outFolder, ...
-                        'NameValuePairs', {pchnamesThis, pchvaluesThis});
+                        'NameValuePairs', nameValuePairsThis);
     sREsp1Paths{k}     = construct_fullpath(sREsp1F, 'Directory', outFolder, ...
-                        'NameValuePairs', {pchnamesThis, pchvaluesThis});
+                        'NameValuePairs', nameValuePairsThis);
     sREsp2Paths{k}     = construct_fullpath(sREsp2F, 'Directory', outFolder, ...
-                        'NameValuePairs', {pchnamesThis, pchvaluesThis});
+                        'NameValuePairs', nameValuePairsThis);
     sTCsp1Paths{k}     = construct_fullpath(sTCsp1F, 'Directory', outFolder, ...
-                        'NameValuePairs', {pchnamesThis, pchvaluesThis});
+                        'NameValuePairs', nameValuePairsThis);
     sTCsp2Paths{k}     = construct_fullpath(sTCsp2F, 'Directory', outFolder, ...
-                        'NameValuePairs', {pchnamesThis, pchvaluesThis});
+                        'NameValuePairs', nameValuePairsThis);
     sREleakPaths{k}     = construct_fullpath(sREleakF, 'Directory', outFolder, ...
-                        'NameValuePairs', {pchnamesThis, pchvaluesThis});
+                        'NameValuePairs', nameValuePairsThis);
     sREparamsPaths{k}     = construct_fullpath(sREparamsF, 'Directory', outFolder, ...
-                        'NameValuePairs', {pchnamesThis, pchvaluesThis});
+                        'NameValuePairs', nameValuePairsThis);
     sTCparamsPaths{k}     = construct_fullpath(sTCparamsF, 'Directory', outFolder, ...
-                        'NameValuePairs', {pchnamesThis, pchvaluesThis});
+                        'NameValuePairs', nameValuePairsThis);
 end
 
 % Find the IDs of cells that are stimulated or artificially activated
@@ -764,21 +795,22 @@ stimcellIDs = m3ha_network_define_actmode(actMode, actCellID, nCells, ...
 rng(repNum);
 
 % Load parameters for TC neurons
-TCparamsPFile = cell(1, nCells);
-TCtempID = zeros(1, nCells);
-TCtempCellName = cell(1, nCells);
+templateIDsUsed = zeros(1, nCells);
+templateNamesUsed = cell(1, nCells);
 for iCell = 1:nCells
     % Index of TC neuron starts from 0
     TCcellID(iCell) = iCell - 1;
 
     % Select a .p file to import
     % Randomly select a template TC neuron for the candidates
-    TCtempID(iCell) = TCtempCellIDs(randi(nCandidates));
-    TCtempCellName{iCell} = TCtempCells{TCtempID(iCell)};
+    templateIDsUsed(iCell) = templateIDs(randi(nCandidates));
+    templateNamesUsed{iCell} = templateNames{templateIDsUsed(iCell)};
+
+fullfile(homeDirectory, paramsDirName, )
 
     % Import .p file data
     pfiledata = importdata(sprintf('pfiles/bestparams_%s.p', ...
-                                    TCtempCellName{iCell}));  % a XX x 4 array
+                                    templateNamesUsed{iCell}));  % a XX x 4 array
     nTCParams = size(pfiledata, 1);
     for k = 1:nTCParams                 % for each parameter saved
         % Store parameter in the corresponding vector
@@ -810,7 +842,7 @@ for k = 1:nTrials
                     TCgkbarIASoma(i), TCgkbarIADend1(i), TCgkbarIADend2(i), ...
                     TCgkbarIKirSoma(i), TCgkbarIKirDend1(i), TCgkbarIKirDend2(i), ...
                     TCgnabarINaPSoma(i), TCgnabarINaPDend1(i), TCgnabarINaPDend2(i), ...
-                    useHH, TCtempID(i))];
+                    useHH, templateIDsUsed(i))];
     end
 
     % Commands to create RE neurons and build network
@@ -905,8 +937,12 @@ for k = 1:nTrials
     elseif isnumeric(pchvalues)
         pchvaluesThis = pchvalues(k);
     end
+
+    % Create name-value pairs
+    nameValuePairsThis = {pchnamesThis, pchvaluesThis};
+
     scmdsPaths{k} = construct_fullpath(scmdsF, 'Directory', outFolder, ...
-                    'NameValuePairs', {pchnamesThis, pchvaluesThis});
+                    'NameValuePairs', nameValuePairsThis);
     fid = fopen(scmdsPaths{k}, 'w');
     fprintf(fid, '%s\n\n', simCommands{k});
     fclose(fid);

@@ -128,7 +128,7 @@ TCfiles = dir(fullfile(infolder, 'TC*.spi'));
 nTCfiles = length(TCfiles);
 
 %% Get loop parameters
-[nump, pnames, plabels, pislog, pvalues, nperp, pchnames, pchvalues, ncells, actmode, loopmode] = get_loopedparams(infolder);
+[nump, pnames, plabels, pislog, pvalues, nperp, pchnames, pchvalues, nCells, actmode, loopmode] = get_loopedparams(infolder);
 
 %% Check number of .spi files
 ntrials = numel(pchnames);
@@ -142,12 +142,12 @@ end
 %% Create raster plot
 REspikes = cell(ntrials, 1);        % raw spike data for RE neurons
 TCspikes = cell(ntrials, 1);        % raw spike data for TC neurons
-latencyTC = zeros(ntrials, ncells); % latency to activation (seconds) for each TC cell
-latencyRE = zeros(ntrials, ncells); % latency to activation (seconds) for each RE cell
-nSpikesTC = zeros(ntrials, ncells); % number of spikes for each TC cell
-nSpikesRE = zeros(ntrials, ncells); % number of spikes for each RE cell
-actDurTC = zeros(ntrials, ncells);  % active duration (seconds) for each TC cell
-actDurRE = zeros(ntrials, ncells);  % active duration (seconds) for each RE cell
+latencyTC = zeros(ntrials, nCells); % latency to activation (seconds) for each TC cell
+latencyRE = zeros(ntrials, nCells); % latency to activation (seconds) for each RE cell
+nSpikesTC = zeros(ntrials, nCells); % number of spikes for each TC cell
+nSpikesRE = zeros(ntrials, nCells); % number of spikes for each RE cell
+actDurTC = zeros(ntrials, nCells);  % active duration (seconds) for each TC cell
+actDurRE = zeros(ntrials, nCells);  % active duration (seconds) for each RE cell
 numActiveTC = zeros(ntrials, 1);    % number of cells activated
 numActiveRE = zeros(ntrials, 1);	% number of cells activated
 oscDurTC = zeros(ntrials, 1);       % oscillation duration (seconds)
@@ -217,32 +217,32 @@ while ct < ntrials                  % while not trials are completed yet
             fprintf('The file %s does not exist or has no spikes!\n', pspifile);
             numActiveTC(i) = 0;     % number of cells activated is zero
 			numActiveRE(i) = 0;		% number of cells activated is zero
-            latencyTC(i, :) = Inf*ones(1, ncells);    
+            latencyTC(i, :) = Inf*ones(1, nCells);    
                                     % latency to activation (seconds) is infinite for every cell
-            latencyRE(i, :) = Inf*ones(1, ncells);    
+            latencyRE(i, :) = Inf*ones(1, nCells);    
                                     % latency to activation (seconds) is infinite for every cell
             oscDurTC(i) = 0;        % oscillation duration (seconds) is zero
             oscDurRE(i) = 0;        % oscillation duration (seconds) is zero
-			nSpikesTC(i, :) = Inf*ones(1, ncells); % number of spikes for each cell
-			nSpikesRE(i, :) = Inf*ones(1, ncells); % number of spikes for each cell
-			actDurTC(i, :) = Inf*ones(1, ncells);	% active duration (seconds) for each cell
-			actDurRE(i, :) = Inf*ones(1, ncells);	% active duration (seconds) for each cell
+			nSpikesTC(i, :) = Inf*ones(1, nCells); % number of spikes for each cell
+			nSpikesRE(i, :) = Inf*ones(1, nCells); % number of spikes for each cell
+			actDurTC(i, :) = Inf*ones(1, nCells);	% active duration (seconds) for each cell
+			actDurRE(i, :) = Inf*ones(1, nCells);	% active duration (seconds) for each cell
 			actVelTC(i) = 0; 	% activation velocity (cells/seconds)
 			actVelRE(i) = 0; 	% activation velocity (cells/seconds)
         else
             % Extract parameters from sim_params file
             fid = fopen(fullfile(infolder, ['sim_params_', pstring, '.csv']));
             simfilecontent = textscan(fid, '%s %f %s', 'Delimiter', ',');
-            paramnames = simfilecontent{1};
-            params_val = simfilecontent{2};
-            tstart = params_val(find_in_strings('tstart', paramnames, 'SearchMode', 'exact'));
-            tstop = params_val(find_in_strings('tstop', paramnames, 'SearchMode', 'exact'));
-            RERErad = params_val(find_in_strings('RERErad', paramnames, 'SearchMode', 'exact'));
-            RETCrad = params_val(find_in_strings('RETCrad', paramnames, 'SearchMode', 'exact'));
-            actcellID = params_val(find_in_strings('actcellID', paramnames, 'SearchMode', 'exact'));
-            stim_start = params_val(find_in_strings('stim_start', paramnames, 'SearchMode', 'exact'));
-            stim_dur = params_val(find_in_strings('stim_dur', paramnames, 'SearchMode', 'exact'));
-            stim_freq = params_val(find_in_strings('stim_freq', paramnames, 'SearchMode', 'exact'));
+            paramNames = simfilecontent{1};
+            paramValues = simfilecontent{2};
+            tstart = paramValues(find_in_strings('tStart', paramNames, 'SearchMode', 'exact'));
+            tstop = paramValues(find_in_strings('tStop', paramNames, 'SearchMode', 'exact'));
+            RERErad = paramValues(find_in_strings('RERErad', paramNames, 'SearchMode', 'exact'));
+            RETCrad = paramValues(find_in_strings('RETCrad', paramNames, 'SearchMode', 'exact'));
+            actCellID = paramValues(find_in_strings('actCellID', paramNames, 'SearchMode', 'exact'));
+            stimStart = paramValues(find_in_strings('stimStart', paramNames, 'SearchMode', 'exact'));
+            stim_dur = paramValues(find_in_strings('stimDur', paramNames, 'SearchMode', 'exact'));
+            stim_freq = paramValues(find_in_strings('stimFreq', paramNames, 'SearchMode', 'exact'));
             fclose(fid);
 
             % Extract info
@@ -262,140 +262,140 @@ while ct < ntrials                  % while not trials are completed yet
             end
             xlim1 = tstart;
             xlim2 = tstop;
-            stim_start_plot = stim_start;
-            stim_dur_plot = stim_dur;
+            stimStartPlot = stimStart;
+            stimDurPlot = stim_dur;
             timelabel = 'Spike time (ms)';
     
             % Find number of cells activated
             %   i.e., number of unique cells with spike times
-			ind = find(TCspiketimes > stim_start);
+			ind = find(TCspiketimes > stimStart);
 			numActiveTC(i) = length(unique(TCspikecelln(ind)));
-			ind = find(REspiketimes > stim_start);
+			ind = find(REspiketimes > stimStart);
 			numActiveRE(i) = length(unique(REspikecelln(ind)));  
 
             % Find latency to activation (seconds) for each TC and RE cell
-            latencyTC_this = zeros(1, ncells);    % for parfor
-            for j = 1:ncells        % for each cellID == j-1
+            latencyTC_this = zeros(1, nCells);    % for parfor
+            for j = 1:nCells        % for each cellID == j-1
                 ind = find(TCspikecelln == j-1);
                 if isempty(ind)    
                     % Make latency infinite if cell not activated
                     latencyTC_this(j) = Inf;
                 else
-                    latencyTC_this(j) = (min(TCspiketimes(ind)) - stim_start) / 1000;
+                    latencyTC_this(j) = (min(TCspiketimes(ind)) - stimStart) / 1000;
                 end
             end
             latencyTC(i, :) = latencyTC_this;       % for parfor
 
-            latencyRE_this = zeros(1, ncells);    % for parfor
-            for j = 1:ncells        % for each cellID == j-1
+            latencyREThis = zeros(1, nCells);    % for parfor
+            for j = 1:nCells        % for each cellID == j-1
                 ind = find(REspikecelln == j-1);
                 if isempty(ind)    
                     % Make latency infinite if cell not activated
-                    latencyRE_this(j) = Inf;
+                    latencyREThis(j) = Inf;
                 else
-                    latencyRE_this(j) = (min(REspiketimes(ind)) - stim_start) / 1000;
+                    latencyREThis(j) = (min(REspiketimes(ind)) - stimStart) / 1000;
                 end
             end
-            latencyRE(i, :) = latencyRE_this;       % for parfor
+            latencyRE(i, :) = latencyREThis;       % for parfor
 
             % Find oscillation duration for each TC and RE cell (seconds)
             %   i.e., maximum time that any neuron has spiked minus the start of stimulation
-            if max(TCspiketimes) - stim_start < 0
+            if max(TCspiketimes) - stimStart < 0
                 oscDurTC(i) = 0;
             else
-                oscDurTC(i) = (max(TCspiketimes) - stim_start) / 1000;
+                oscDurTC(i) = (max(TCspiketimes) - stimStart) / 1000;
 			end
-			if max(REspiketimes) - stim_start < 0
+			if max(REspiketimes) - stimStart < 0
 			    oscDurRE(i) = 0;
 		    else
-			    oscDurRE(i) = (max(REspiketimes) - stim_start) / 1000;
+			    oscDurRE(i) = (max(REspiketimes) - stimStart) / 1000;
 		    end
 
 			% Find number of spikes for each TC and RE cell
-            nSpikesTC_this = zeros(1, ncells);    % for parfor
-            for j = 1:ncells        % for each cellID == j-1
+            nSpikesTCThis = zeros(1, nCells);    % for parfor
+            for j = 1:nCells        % for each cellID == j-1
                 ind = find(TCspikecelln == j-1);
                 if isempty(ind)    
                     % Make nSpikes 0 if cell not activated
-                    nSpikesTC_this(j) = 0;
+                    nSpikesTCThis(j) = 0;
                 else
-					nSpikesTC_this(j) = length(ind);
+					nSpikesTCThis(j) = length(ind);
                 end
             end
-            nSpikesTC(i, :) = nSpikesTC_this;       % for parfor		
+            nSpikesTC(i, :) = nSpikesTCThis;       % for parfor		
 
-            nSpikesRE_this = zeros(1, ncells);    % for parfor
-            for j = 1:ncells        % for each cellID == j-1
+            nSpikesREThis = zeros(1, nCells);    % for parfor
+            for j = 1:nCells        % for each cellID == j-1
                 ind = find(REspikecelln == j-1);
                 if isempty(ind)    
                     % Make nSpikes 0 if cell not activated
-                    nSpikesRE_this(j) = 0;
+                    nSpikesREThis(j) = 0;
                 else
-					nSpikesRE_this(j) = length(ind);
+					nSpikesREThis(j) = length(ind);
                 end
             end
-            nSpikesRE(i, :) = nSpikesRE_this;       % for parfor	
+            nSpikesRE(i, :) = nSpikesREThis;       % for parfor	
 
 			% Find active duration (seconds) for each TC and RE cell
-            actDurTC_this = zeros(1, ncells);    % for parfor
-            for j = 1:ncells        % for each cellID == j-1
+            actDurTCThis = zeros(1, nCells);    % for parfor
+            for j = 1:nCells        % for each cellID == j-1
                 ind = find(TCspikecelln == j-1);
                 if isempty(ind)    
                     % Make actDur 0 if cell not activated
-                    actDurTC_this(j) = 0;
+                    actDurTCThis(j) = 0;
                 else
-					actDurTC_this(j) = (max(TCspiketimes(ind)) - stim_start) / 1000;
+					actDurTCThis(j) = (max(TCspiketimes(ind)) - stimStart) / 1000;
                 end
             end
-            actDurTC(i, :) = actDurTC_this;       % for parfor	
+            actDurTC(i, :) = actDurTCThis;       % for parfor	
 
-            actDurRE_this = zeros(1, ncells);    % for parfor
-            for j = 1:ncells        % for each cellID == j-1
+            actDurREThis = zeros(1, nCells);    % for parfor
+            for j = 1:nCells        % for each cellID == j-1
                 ind = find(REspikecelln == j-1);
                 if isempty(ind)    
                     % Make actDur 0 if cell not activated
-                    actDurRE_this(j) = 0;
+                    actDurREThis(j) = 0;
                 else
-					actDurRE_this(j) = (max(REspiketimes(ind)) - stim_start) / 1000;
+					actDurREThis(j) = (max(REspiketimes(ind)) - stimStart) / 1000;
                 end
             end
-            actDurRE(i, :) = actDurRE_this;       % for parfor	
+            actDurRE(i, :) = actDurREThis;       % for parfor	
 
 			% Find activation velocity (cells/seconds)
 			if numActiveTC(i) == 0
 			    actVelTC(i) = 0;
 	        else
-	            stim_dur_celltimesind = find((TCspiketimes < stim_start + stim_dur)&(TCspiketimes > stim_start));
-	            stim_dur_celln = TCspikecelln(stim_dur_celltimesind);
+	            indStimDurCellTimes = find((TCspiketimes < stimStart + stim_dur)&(TCspiketimes > stimStart));
+	            stim_dur_celln = TCspikecelln(indStimDurCellTimes);
 	            dn = numActiveTC(i) - length(unique(stim_dur_celln));	% difference between active cells and those stimulated at start
 	            minspiketime = Inf;
 	            for celln = unique(TCspikecelln)'
 	                cellnind = find(TCspikecelln == celln);
 	                celltimes = TCspiketimes(cellnind);
-	                celltimes(celltimes <= stim_start + stim_dur) = [];
+	                celltimes(celltimes <= stimStart + stim_dur) = [];
 	                if min(celltimes) < minspiketime
 	                    minspiketime = min(celltimes);
                     end
                 end
-	            dt = (minspiketime - stim_start + stim_dur) / 1000;
+	            dt = (minspiketime - stimStart + stim_dur) / 1000;
                 actVelTC(i) = dn / dt;
 			end
 			if numActiveRE(i) == 0
 			    actVelRE(i) = 0;
 		    else
-	            stim_dur_celltimesind = find((REspiketimes < stim_start + stim_dur)&(REspiketimes > stim_start));
-	            stim_dur_celln = REspikecelln(stim_dur_celltimesind);
+	            indStimDurCellTimes = find((REspiketimes < stimStart + stim_dur)&(REspiketimes > stimStart));
+	            stim_dur_celln = REspikecelln(indStimDurCellTimes);
 	            dn = numActiveRE(i) - length(unique(stim_dur_celln));	% difference between active cells and those stimulated at start
 	            minspiketime = Inf;
 	            for celln = unique(REspikecelln)'
 	                cellnind = find(REspikecelln == celln);
 	                celltimes = REspiketimes(cellnind);
-	                celltimes(celltimes <= stim_start + stim_dur) = [];
+	                celltimes(celltimes <= stimStart + stim_dur) = [];
 	                if min(celltimes) < minspiketime
 	                    minspiketime = min(celltimes);
                     end
                 end
-	            dt = (minspiketime - stim_start + stim_dur) / 1000;
+	            dt = (minspiketime - stimStart + stim_dur) / 1000;
                 actVelRE(i) = dn / dt;
             end
             
@@ -406,8 +406,8 @@ while ct < ntrials                  % while not trials are completed yet
                 timelabel = 'Spike time (s)';
                 xlim1 = xlim1/1000;
                 xlim2 = xlim2/1000;
-                stim_start_plot = stim_start/1000;
-                stim_dur_plot = stim_dur/1000;
+                stimStartPlot = stimStart/1000;
+                stimDurPlot = stim_dur/1000;
             end
 
             % Find maximum and minimum time to plot
@@ -415,19 +415,26 @@ while ct < ntrials                  % while not trials are completed yet
             xmax = max([xlim2, max([REspiketimes; TCspiketimes])]);
 
             % Find the IDs of cells that are stimulated or artificially activated
-            [stimcellIDs] = m3ha_network_define_actmode (actmode, actcellID, ncells, RERErad, RETCrad);
+            [stimcellIDs] = m3ha_network_define_actmode (actmode, actCellID, nCells, RERErad, RETCrad);
 
             % Separate the spike times and cell numbers into two vectors
             Lia1 = ismember(REspikecelln, stimcellIDs);    % whether the index in spikecelln belongs to stimcellIDs
-            Lia2 = (REspiketimes <= stim_start_plot + stim_dur_plot) ...
-                & (REspiketimes >= stim_start_plot);        % whether the spike time is within the stimulation period
-            REspiketimes_stim = REspiketimes(Lia1 & Lia2);
-            REspiketimes_nonstim = REspiketimes(~(Lia1 & Lia2));
-            REspikecelln_stim = REspikecelln(Lia1 & Lia2);
-            REspikecelln_nonstim = REspikecelln(~(Lia1 & Lia2));
+            Lia2 = (REspiketimes <= stimStartPlot + stimDurPlot) ...
+                & (REspiketimes >= stimStartPlot);        % whether the spike time is within the stimulation period
+            REspiketimesStim = REspiketimes(Lia1 & Lia2);
+            REspiketimesNonstim = REspiketimes(~(Lia1 & Lia2));
+            REspikecellnStim = REspikecelln(Lia1 & Lia2);
+            REspikecellnNonstim = REspikecelln(~(Lia1 & Lia2));
 
             % Plot raster plot
             if plotspikes
+                % Decide on the cell the plot
+                if actCellID > 0
+                    cellIDToPlot = actCellID - 1;
+                else
+                    cellIDToPlot = actCellID;
+                end
+
                 % Create plot
             %    h = figure(floor(rand()*10^4+1));
                 h = figure(30000);
@@ -437,68 +444,68 @@ while ct < ntrials                  % while not trials are completed yet
                 hold on;
 
                 % Create raster plot
-                line([stim_start_plot, stim_start_plot], [-1, 2 * ncells], ...
+                line([stimStartPlot, stimStartPlot], [-1, 2 * nCells], ...
                     'Color', 'r', 'LineStyle', '--');       % line for stimulation on
-                text(stim_start_plot + 0.5, ncells*1.975, ['Stim ON: ', num2str(stim_freq), ' Hz'], ...
+                text(stimStartPlot + 0.5, nCells*1.975, ['Stim ON: ', num2str(stim_freq), ' Hz'], ...
                     'Color', 'r');                          % text for stimulation on
-                line([stim_start_plot + stim_dur_plot, stim_start_plot + stim_dur_plot], ...
-                    [-1,  2 * ncells], 'Color', 'r', 'LineStyle', '--');    % line for stimulation off
-                text(stim_start_plot + stim_dur_plot + 0.5, ncells*1.975, 'Stim OFF', ...
+                line([stimStartPlot + stimDurPlot, stimStartPlot + stimDurPlot], ...
+                    [-1,  2 * nCells], 'Color', 'r', 'LineStyle', '--');    % line for stimulation off
+                text(stimStartPlot + stimDurPlot + 0.5, nCells*1.975, 'Stim OFF', ...
                     'Color', 'r');                          % text for stimulation off
                 line([TCspiketimes, TCspiketimes]', ...
                     [TCspikecelln - 0.5, TCspikecelln + 0.5]', ...
                     'Color', 'b', 'LineWidth', 0.5);        % plot spikes from TC cells
-                line([REspiketimes_stim, REspiketimes_stim]', ...
-                    ncells + [REspikecelln_stim - 0.5, REspikecelln_stim + 0.5]', ...
+                line([REspiketimesStim, REspiketimesStim]', ...
+                    nCells + [REspikecellnStim - 0.5, REspikecellnStim + 0.5]', ...
                     'Color', 'c', 'LineWidth', 0.5);        % plot spikes from stimulated RE cells
-                line([REspiketimes_nonstim, REspiketimes_nonstim]', ...
-                    ncells + [REspikecelln_nonstim - 0.5, REspikecelln_nonstim + 0.5]', ...
+                line([REspiketimesNonstim, REspiketimesNonstim]', ...
+                    nCells + [REspikecellnNonstim - 0.5, REspikecellnNonstim + 0.5]', ...
                     'Color', 'b', 'LineWidth', 0.5);        % plot spikes from nonstimulated RE cells
                 % RE text labels
-                text(xlim1 + 0.5, ncells*1.925, ['Number of cells activated: ', num2str(numActiveRE(i))], ...
+                text(xlim1 + 0.5, nCells*1.925, ['Number of cells activated: ', num2str(numActiveRE(i))], ...
                     'Color', 'g');                          % text for number of RE cells activated
-                text(xlim1 + 0.5, ncells*1.875, ...
-                    ['Latency to activation for Cell#', num2str(actcellID-1), ': ', ...
-                    num2str(latencyRE_this(actcellID-1+1)), ' seconds'], ...
+                text(xlim1 + 0.5, nCells*1.875, ...
+                    ['Latency to activation for Cell#', num2str(cellIDToPlot), ': ', ...
+                    num2str(latencyREThis(cellIDToPlot+1)), ' seconds'], ...
                     'Color', 'g');                          % text for RE latency to activation (seconds)
-                text(xlim1 + 0.5, ncells*1.825, ...
+                text(xlim1 + 0.5, nCells*1.825, ...
                     ['Oscillation Duration: ', num2str(oscDurRE(i)), ' seconds'], ...
                     'Color', 'g');                          % text for RE oscillation duration (seconds)
-                text(xlim1 + 0.5, ncells*1.775, ...
-                    ['Number of spikes for Cell#', num2str(actcellID-1), ': ', ...
-                    num2str(nSpikesRE_this(actcellID-1+1))], ...
+                text(xlim1 + 0.5, nCells*1.775, ...
+                    ['Number of spikes for Cell#', num2str(cellIDToPlot), ': ', ...
+                    num2str(nSpikesREThis(cellIDToPlot+1))], ...
                     'Color', 'g');                          % text for RE number of spikes 
-                text(xlim1 + 0.5, ncells*1.725, ...
-                    ['Activation duration for Cell#', num2str(actcellID-1), ': ', ...
-                    num2str(actDurRE_this(actcellID-1+1)), ' seconds'], ...
+                text(xlim1 + 0.5, nCells*1.725, ...
+                    ['Activation duration for Cell#', num2str(cellIDToPlot), ': ', ...
+                    num2str(actDurREThis(cellIDToPlot+1)), ' seconds'], ...
                     'Color', 'g');                          % text for RE activation duration (seconds)
-                text(xlim1 + 0.5, ncells*1.675, ...
+                text(xlim1 + 0.5, nCells*1.675, ...
                     ['Activation velocity: ', num2str(actVelRE(i)), ' cells/second'], ...
                     'Color', 'g');                          % text for RE activation velocity (cells/second) 
                 % TC text labels
-                text(xlim1 + 0.5, ncells*0.9625, ['Number of cells activated: ', num2str(numActiveTC(i))], ...
+                text(xlim1 + 0.5, nCells*0.9625, ['Number of cells activated: ', num2str(numActiveTC(i))], ...
                     'Color', 'g');                          % text for number of TC cells activated
-                text(xlim1 + 0.5, ncells*0.9125, ...
-                    ['Latency to activation for Cell#', num2str(actcellID-1), ': ', ...
-                    num2str(latencyTC_this(actcellID-1+1)), ' seconds'], ...
+                text(xlim1 + 0.5, nCells*0.9125, ...
+                    ['Latency to activation for Cell#', num2str(cellIDToPlot), ': ', ...
+                    num2str(latencyTC_this(cellIDToPlot+1)), ' seconds'], ...
                     'Color', 'g');                          % text for TC latency to activation (seconds)
-                text(xlim1 + 0.5, ncells*0.8625, ...
+                text(xlim1 + 0.5, nCells*0.8625, ...
                     ['Oscillation Duration: ', num2str(oscDurTC(i)), ' seconds'], ...
                     'Color', 'g');                          % text for TC oscillation duration (seconds)
-                text(xlim1 + 0.5, ncells*0.8125, ...
-                    ['Number of spikes for Cell#', num2str(actcellID-1), ': ', ...
-                    num2str(nSpikesTC_this(actcellID-1+1))], ...
+                text(xlim1 + 0.5, nCells*0.8125, ...
+                    ['Number of spikes for Cell#', num2str(cellIDToPlot), ': ', ...
+                    num2str(nSpikesTCThis(cellIDToPlot+1))], ...
                     'Color', 'g');                          % text for TC number of spikes 
-                text(xlim1 + 0.5, ncells*0.7625, ...
-                    ['Activation duration for Cell#', num2str(actcellID-1), ': ', ...
-                    num2str(actDurTC_this(actcellID-1+1)), ' seconds'], ...
+                text(xlim1 + 0.5, nCells*0.7625, ...
+                    ['Activation duration for Cell#', num2str(cellIDToPlot), ': ', ...
+                    num2str(actDurTCThis(cellIDToPlot+1)), ' seconds'], ...
                     'Color', 'g');                          % text for TC activation duration (seconds)
-                text(xlim1 + 0.5, ncells*0.7125, ...
+                text(xlim1 + 0.5, nCells*0.7125, ...
                     ['Activation velocity: ', num2str(actVelTC(i)), ' cells/second'], ...
                     'Color', 'g');                          % text for TC activation velocity (cells/second) 
                     
                 xlim([xmin, xmax]);                         % time range to plot
-                ylim([-1, 2*ncells]);                       % cell ID runs from 0 to ncells-1
+                ylim([-1, 2*nCells]);                       % cell ID runs from 0 to nCells-1
                 xlabel(timelabel);
                 ylabel('Neuron number');
                 figbaseWext = strrep(REfiles(jnowRE).name, 'RE_', '');
@@ -533,19 +540,19 @@ end
 if plottuning
     switch loopmode
     case 'cross'
-        latency_cells_to_plot = 0:ncells/2-1;        % cells to plot for the latency tuning curve
+        cellsToPlot = 0:nCells/2-1;        % cells to plot for the latency tuning curve
         m3ha_network_tuning_curves (infolder, outfolder, numActiveTC, numActiveRE, ...
 				latencyTC, latencyRE, oscDurTC, oscDurRE, nSpikesTC, nSpikesRE, ...
 				actDurTC, actDurRE, actVelTC, actVelRE, ...
                 nump, pnames, plabels, pislog, pvalues, nperp, ...
-                ncells, actmode, loopmode, 'CellsToPlot', latency_cells_to_plot, ...
+                nCells, actmode, loopmode, 'CellsToPlot', cellsToPlot, ...
                 'FigTypes', figtypes);
     case 'grid'
         m3ha_network_tuning_maps (infolder, outfolder, numActiveTC, numActiveRE, ...
 				latencyTC, latencyRE, oscDurTC, oscDurRE, nSpikesTC, nSpikesRE, ...
 				actDurTC, actDurRE, actVelTC, actVelRE, ...
                 nump, pnames, plabels, pislog, pvalues, nperp, ...
-                ncells, actmode, loopmode, 'FigTypes', figtypes);
+                nCells, actmode, loopmode, 'FigTypes', figtypes);
     end
 end
 
