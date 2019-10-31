@@ -19,6 +19,7 @@ function isInteger = isaninteger (array)
 %       cd/ispositiveintegerarray.m
 %       cd/ispositiveintegerscalar.m
 %       cd/ispositiveintegervector.m
+%       cd/run_neuron.m
 %       ~/Settings_Matlab/function_template.m
 
 % File History:

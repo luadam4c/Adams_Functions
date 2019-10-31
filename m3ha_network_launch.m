@@ -16,18 +16,15 @@
 %       cd/m3ha_network_raster_plot.m
 %       cd/m3ha_network_single_neuron.m
 %       cd/m3ha_network_define_actmode.m
+%       cd/run_neuron.m
 %       cd/save_params.m
-%       /media/adamX/m3ha/network_model/m3ha_run5.hoc
-%       /media/adamX/m3ha/network_model/m3ha_net1.hoc
+%       /media/adamX/m3ha/network_model/m3ha_run_1cell.hoc
+%       /media/adamX/m3ha/network_model/m3ha_net.hoc
 %       /media/adamX/m3ha/network_model/RE.tem
 %       /media/adamX/m3ha/network_model/TC3.tem
 %       /media/adamX/m3ha/network_model/ipulse2.mod
 %       /media/adamX/m3ha/network_model/gabaA_Cl.mod
 %       /media/adamX/m3ha/network_model/gabaa.mod (potentially)
-%       /media/adamX/m3ha/network_model/m3ha_run5_small.hoc
-%       /media/adamX/m3ha/network_model/m3ha_net1.hoc
-%       /media/adamX/m3ha/network_model/m3ha_run12_tiny.hoc
-%       /media/adamX/m3ha/network_model/m3ha_net1.hoc
 
 % File History:
 % 2017-10-23 Modified from /RTCl/neuronlaunch112.m
@@ -39,7 +36,7 @@
 % 2017-11-07 Added candidateIDs
 % 2017-11-07 Added actMode = 8~10
 % 2017-11-08 Added templateLabel to outFolderName
-% 2017-11-08 Added repNum
+% 2017-11-08 Added seedNumber
 % 2018-02-28 Don't use HH
 % 2018-03-29 Fixed ordering of useHH and REnsegs
 % 2018-04-17 Plot inSlopeWatching if useHH is 0
@@ -48,6 +45,8 @@
 % 2018-04-26 Added the case for nCells == 2
 % 2018-04-26 Made candidateIDs an argument
 % 2018-04-26 Made nCells and useHH arguments
+% 2019-10-31 Now uses m3ha_net.hoc
+% 2019-10-31 Now uses run_neuron.m
 % TODO: Plot gAMPA and gGABA instead of the i's for synaptic event monitoring
 % TODO: Make the network circular to lose edge effects
 % TODO: Perform simulations to generate a linear model
@@ -71,11 +70,13 @@ paramsDirName = fullfile('best_params', ...
                 'bestparams_20180424_singleneuronfitting21_Rivanna');
 
 %% Flags
-debugFlag = 0;                  % whether to do a very short simulation
-repNum = 1;                     % number to seed random number generator
-singleTrialNumber = 0;     %5;     % run only one trial with this trial number
-onLargeMemFlag = 0;     %1;     % whether to run on large memory nodes
-bicucullineFlag = 1;    %0;     % whether GABA-A conductances are removed
+debugFlag = false;              % whether to do a very short simulation
+seedNumber = 1;                 % number to seed random number generator
+simNumbers = []; %5;            % run only these simulation numbers
+onLargeMemFlag = false;         % whether to run on large memory nodes
+onHpcFlag = false;              % whether on high-performance computing server
+saveStdOutFlag = false;         % whether to always save standard outputs
+bicucullineFlag = true;         % whether GABA-A conductances are removed
 loopmode = 'cross'; %grid;      % how to loop through parameters: 
                                 %   'cross' - Loop through each parameter 
                                 %               while fixing others
@@ -162,8 +163,22 @@ templateNames = {'D091710'; 'E091710'; 'B091810'; 'D091810'; ...
 %candidateIDs = 21;                 % 'A100810'
 %candidateIDs = 3;                  % 'B091810'
 
+%% hoc file names
+switch nCells
+    case 100
+        hocFileName = 'm3ha_run_100cells.hoc';
+    case 20
+        hocFileName = 'm3ha_run_20cells.hoc';
+    case 2
+        hocFileName = 'm3ha_run_2cells.hoc';
+    case 1
+        hocFileName = 'm3ha_run_1cell.hoc';
+    otherwise
+        error('nCells == %d is not implemented yet!', nCells);
+end
+
 %% For parpool
-if onLargeMemFlag || debugFlag || singleTrialNumber ~= 0 || simmode == 2
+if onLargeMemFlag || debugFlag || numel(simNumbers) == 1 || simmode == 2
     % No need renew parpool each batch if memory is not an issue
     renewParpoolFlagNeuron = 0;    % whether to renew parpool every batch to release memory
     maxNumWorkersNeuron = 20;      % maximum number of workers for running NEURON 
@@ -598,7 +613,7 @@ outFolder = fullfile(homeDirectory, outFolderName);
 check_dir(outFolder);
 
 %% Construct looped parameters
-[pchnames, pchvalues, nTrials, nump, pvalues, nperp] = ...
+[pchnames, pchvalues, nSims, nump, pvalues, nperp] = ...
     create_looped_params (loopmode, pnames, plabels, pislog, pmin, pmax, pinc, ...
             'OutFolder', outFolder, 'FileLabel', outFolderName, ...
             'NCells', nCells, 'ActMode', actMode);
@@ -673,14 +688,13 @@ simParamLabels = { ...
     'ID # of the neuron 2 below the activated neuron'; 'ID # of a far away neuron'; ...
     'whether in debug mode'; ...
     'number to seed random number generator'; ...
-    'run only one trial with this trial number'; ...
     'whether to run on large memory nodes'; ...
     'whether TC neurons are heterogeneous'; ...
     'whether GABA-A conductances are removed'; ...
     'whether to save network topology'; 'whether to save spike data'; 'whether to save all voltage data'; ...
     'whether to save all chloride concentration data'; 'whether to save special neuron data'; ...
     'whether to plot network topology'; 'whether to plot spike data'; 'whether to plot single neuron data'; ...
-    'number of times to run simulation'; 'current trial number'};
+    'number of times to run simulation'; 'current simulation number'};
 
 % Note: Must be consistent with m3ha_network_update_params.m
 simParamNames = { ...
@@ -702,12 +716,12 @@ simParamNames = { ...
     'REsp1cellID'; 'REsp2cellID'; ...
     'TCsp1cellID'; 'TCsp2cellID'; ...
     'act'; 'actLeft1'; 'actLeft2'; 'far'; ...
-    'debugFlag'; 'repNum'; 'singleTrialNumber'; 'onLargeMemFlag'; ...
-    'heteroTCFlag'; 'bicucullineFlag'; ...
+    'debugFlag'; 'seedNumber'; ...
+    'onLargeMemFlag'; 'heteroTCFlag'; 'bicucullineFlag'; ...
     'saveNetwork'; 'saveSpikes'; 'saveSomaVoltage'; ...
     'saveSomaCli'; 'saveSpecial'; ...
     'plotNetwork'; 'plotSpikes'; 'plotSingleNeuronData'; ...
-    'nTrials'; 'trialNumber'};
+    'nSims'; 'simNumber'};
 
 % Set initial values for all parameters
 simParamsInit = [ ...
@@ -728,15 +742,16 @@ simParamsInit = [ ...
     dt; tStart; ...
     REsp1cellID; REsp2cellID; TCsp1cellID; TCsp2cellID; ...
     act; actLeft1; actLeft2; far; ...
-    debugFlag; repNum; singleTrialNumber; onLargeMemFlag; ...
-    heteroTCFlag; bicucullineFlag; ...
+    debugFlag; seedNumber; ...
+    onLargeMemFlag; heteroTCFlag; bicucullineFlag; ...
     saveNetwork; saveSpikes; saveSomaVoltage; ...
     saveSomaCli; saveSpecial; ...
     plotNetwork; plotSpikes; plotSingleNeuronData; ...
-    nTrials; singleTrialNumber];
+    nSims; 0];
 
-if max([numel(simParamLabels), numel(simParamNames), length(simParamsInit)]) ~= ...
-    min([numel(simParamLabels), numel(simParamNames), length(simParamsInit)])
+% Check if the labels, names and initial values have equal lengths
+if numel(unique([numel(simParamLabels), ...
+                numel(simParamNames), numel(simParamsInit)])) > 1
     error('simParamLabels, simParamNames and simParamsInit not equal length!');
 end
 
@@ -745,15 +760,13 @@ simTableInit = table(simParamsInit, simParamLabels, ...
                         'RowNames', simParamNames, ...
                         'VariableNames', {'Value', 'Label'});
 
-%% Setup simulation parameters for each trial
-% Create trial counts
-trialCounts = transpose(1:nTrials);
-
-% Create simulation parameter tables for each trial
+%% Setup simulation parameters for each simulation
+% Create simulation parameter tables for each simulation
 simTables = ...
     cellfun(@(x, y, z) setup_params_table(simTableInit, x, y, z, ...
                                             experimentName), ...
-                        pchnames, pchvaluesCell, num2cell(trialCounts), ...
+                        pchnames, pchvaluesCell, ...
+                        num2cell(transpose(1:nSims)), ...
                         'UniformOutput', false);
 
 % Save parameter tables
@@ -770,7 +783,7 @@ stimCellIDs = m3ha_network_define_actmode(actMode, actCellID, nCells, ...
                                             RERErad, RETCrad);
 
 % Seed random number generator with repetition number
-rng(repNum);
+rng(seedNumber);
 
 % Generate template IDs to use for each TC neuron
 templateIDsUsed = candidateIDs(randi(nCandidates, nCells, 1));
@@ -821,13 +834,13 @@ end
 % simCommands = cellfun(@(x, y) create_simulation_commands(x, y), ...
 %                         simTables, scmdsPaths, 'UniformOutput', false);
 % function simCommand = create_simulation_commands(paramsTable, scmdsPath)
-simCommands = cell(nTrials, 1);             % stores simulation commands
-for iTrial = 1:nTrials
-    % Retrieve simulation parameter names and values for this trial
-    simParamNames = simTables{iTrial}.Properties.RowNames;
-    paramValues = simTables{iTrial}{:, 'Value'};
+simCommands = cell(nSims, 1);             % stores simulation commands
+for iSim = 1:nSims
+    % Retrieve simulation parameter names and values for this simulation
+    simParamNames = simTables{iSim}.Properties.RowNames;
+    paramValues = simTables{iSim}{:, 'Value'};
 
-    % Update simulation parameters for this trial
+    % Update simulation parameters for this simulation
     for i = 1:length(paramValues)
         eval(sprintf('%s = %g;', simParamNames{i}, paramValues(i)));
     end
@@ -835,40 +848,43 @@ for iTrial = 1:nTrials
     
     % Commands to create TC neurons
     for i = 1:nCells
-        simCommand = [simCommand, sprintf(['buildTC(%d, %g, %g, %g, %g, %g, %g, %g, ', ...
-                    '%g, %g, %g, %g, %g, %g, %g, ', ...
-                    '%g, %g, %g, %g, %g, ', ...
-                    '%g, %g, %g, %g, %g, %g, %g, %g, %g, %d, %d)\n'], ...
-                    TCcellID(i), TCdiamSoma(i), TCLDend(i), TCdiamDendToSoma(i), TCdistDendPercent(i), ...
-                    TCcorrD(i), TCgpas(i), TCepas(i), ...
-                    TCpcabarITSoma(i), TCpcabarITDend1(i), TCpcabarITDend2(i), ...
-                    TCshiftmIT(i), TCshifthIT(i), TCslopemIT(i), TCslopehIT(i), ...
-                    TCghbarIhSoma(i), TCghbarIhDend1(i), TCghbarIhDend2(i), TCehIh(i), TCshiftmIh(i), ...
-                    TCgkbarIASoma(i), TCgkbarIADend1(i), TCgkbarIADend2(i), ...
-                    TCgkbarIKirSoma(i), TCgkbarIKirDend1(i), TCgkbarIKirDend2(i), ...
-                    TCgnabarINaPSoma(i), TCgnabarINaPDend1(i), TCgnabarINaPDend2(i), ...
-                    useHH, templateIDsUsed(i))];
+        simCommand = [simCommand, sprintf(['buildTC(%d, %g, %g, %g, %g, ', ...
+            '%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, ', ...
+            '%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, ', ...
+            '%g, %g, %g, %g, %d, %d)\n'], ...
+            TCcellID(i), TCdiamSoma(i), TCLDend(i), ...
+            TCdiamDend(i), TCdistDendPercent(i), ...
+            TCcorrD(i), TCgpas(i), TCepas(i), ...
+            TCpcabarITSoma(i), TCpcabarITDend1(i), TCpcabarITDend2(i), ...
+            TCshiftmIT(i), TCshifthIT(i), TCslopemIT(i), TCslopehIT(i), ...
+            TCghbarIhSoma(i), TCghbarIhDend1(i), TCghbarIhDend2(i), ...
+            TCehIh(i), TCshiftmIh(i), ...
+            TCgkbarIASoma(i), TCgkbarIADend1(i), TCgkbarIADend2(i), ...
+            TCgkbarIKirSoma(i), TCgkbarIKirDend1(i), TCgkbarIKirDend2(i), ...
+            TCgnabarINaPSoma(i), TCgnabarINaPDend1(i), TCgnabarINaPDend2(i), ...
+            useHH, templateIDsUsed(i))];
     end
 
     % Commands to create RE neurons and build network
-    simCommand = [simCommand, sprintf(['buildnet("%s", "%s", "%s", %g, %g, %g, %g, %g, %d, ', ...
-                '%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, ', ...
-                '%g, %g, %g, %g, %g, %g, %g, %g, ', ...
-                '%g, %g, %g, %g, %g, %g, %g, ', ...
-                '%d, %d, %d, %d, %d, %d, %d)\n'], ...
-                sREREsynPaths{iTrial}, sTCREsynPaths{iTrial}, sRETCsynPaths{iTrial}, ...
-                REsp1cellID, REsp2cellID, TCsp1cellID, TCsp2cellID, useHH, REnsegs, ...
-                REcldnum, REconsyn, REtauKCC2, REepas, REdiam, ...
-                REgabaGmax, REampaGmax, TCgabaaErev, TCgabaaGmax, TCgababErev, ...
-                TCgababAmp, TCgababTrise, TCgababTfallFast, TCgababTfallSlow, TCgababW, ...
-                RERErad, TCRErad, RETCrad, ...
-                spThr, synDel, synWeight, cai0, cao0, cli0, clo0, ...
-                actCellID, actMode, saveNetwork, saveSpikes, saveSomaVoltage, saveSomaCli, saveSpecial)];
+    simCommand = [simCommand, sprintf(['buildnet("%s", "%s", "%s", ', ...
+        '%g, %g, %g, %g, %g, %d, ', ...
+        '%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, ', ...
+        '%g, %g, %g, %g, %g, %g, %g, %g, ', ...
+        '%g, %g, %g, %g, %g, %g, %g, ', ...
+        '%d, %d, %d, %d, %d, %d, %d)\n'], ...
+        sREREsynPaths{iSim}, sTCREsynPaths{iSim}, sRETCsynPaths{iSim}, ...
+        REsp1cellID, REsp2cellID, TCsp1cellID, TCsp2cellID, useHH, REnsegs, ...
+        REcldnum, REconsyn, REtauKCC2, REepas, REdiam, ...
+        REgabaGmax, REampaGmax, TCgabaaErev, TCgabaaGmax, TCgababErev, ...
+        TCgababAmp, TCgababTrise, TCgababTfallFast, TCgababTfallSlow, TCgababW, ...
+        RERErad, TCRErad, RETCrad, ...
+        spThr, synDel, synWeight, cai0, cao0, cli0, clo0, ...
+        actCellID, actMode, saveNetwork, saveSpikes, saveSomaVoltage, saveSomaCli, saveSpecial)];
 
     % Commands to randomize leak current properties
     %     uniformly randomizes leak conductance in [REgpasLB, REgpasUB]
     simCommand = [simCommand, sprintf('randleak(%g, %g, "%s")\n', ...
-        REgpasLB, REgpasUB, sREleakPaths{iTrial})];
+        REgpasLB, REgpasUB, sREleakPaths{iSim})];
 
     % Commands to initialize variables
     simCommand = [simCommand, sprintf('vinitRE(%g)\n', REepas)];
@@ -925,139 +941,32 @@ for iTrial = 1:nTrials
     simCommand = [simCommand, sprintf(['sim(%g, %g, "%s", "%s", "%s", "%s", "%s", ', ...
                                         '"%s", "%s", "%s", "%s", %d, %d, %d, %d)\n'], ...
                     tStop, dt, ...
-                    sREspikePaths{iTrial}, sTCspikePaths{iTrial}, sREvPaths{iTrial}, sTCvPaths{iTrial}, sREcliPaths{iTrial}, ...
-                    sREsp1Paths{iTrial}, sREsp2Paths{iTrial}, sTCsp1Paths{iTrial}, sTCsp2Paths{iTrial}, ...
+                    sREspikePaths{iSim}, sTCspikePaths{iSim}, sREvPaths{iSim}, sTCvPaths{iSim}, sREcliPaths{iSim}, ...
+                    sREsp1Paths{iSim}, sREsp2Paths{iSim}, sTCsp1Paths{iSim}, sTCsp2Paths{iSim}, ...
                     saveSpikes, saveSomaVoltage, saveSomaCli, saveSpecial)];
     %%%%%%%%%%%%
     %%%%%%
 
     % Commands to print all parameters
     simCommand = [simCommand, sprintf('print_params("%s", "%s", %g, %g, %g, %g)\n', ...
-                    sREparamsPaths{iTrial}, sTCparamsPaths{iTrial}, useHH, REnsegs, REcldnum, REconsyn)];
+                    sREparamsPaths{iSim}, sTCparamsPaths{iSim}, useHH, REnsegs, REcldnum, REconsyn)];
 
     % Print simulation commands to a text file
-    fid = fopen(scmdsPaths{iTrial}, 'w');
+    fid = fopen(scmdsPaths{iSim}, 'w');
     fprintf(fid, '%s\n\n', simCommand);
     fclose(fid);
 
     % Store in array
-    simCommands{iTrial} = simCommand;
+    simCommands{iSim} = simCommand;
 end
 
-% Initialize results saying "No errors!"
-results = repmat({'No_Errors!'}, nTrials, 1);
-
-% Set actual number of trials to simulate
-if singleTrialNumber ~= 0
-    nTrialsActual = 1;
-else
-    nTrialsActual = nTrials;    
-end
-
-%% Launch NEURON and execute run.hoc
-timer1 = tic();
-%##########
-%##############
-ct = 0;                         % counts number of trials completed
-poolObj = gcp('nocreate');      % get current parallel pool object without creating a new one
-if isempty(poolObj)
-    poolObj = parpool;          % create a default parallel pool object
-    oldNumWorkers = poolObj.NumWorkers;    % number of workers in the default parallel pool object
-else
-    oldNumWorkers = poolObj.NumWorkers;    % number of workers in the current parallel pool object
-end
-numWorkers = min(oldNumWorkers, maxNumWorkersNeuron);    % number of workers to use for running NEURON
-if renewParpoolFlagNeuron
-    delete(poolObj);            % delete the parallel pool object to release memory
-end
-while ct < nTrialsActual        % while not all trials are completed yet
-    if singleTrialNumber    % if running only one trial
-        first = singleTrialNumber; % run that trial
-    else
-        first = ct + 1;         % first trial in this batch
-    end
-    if singleTrialNumber           % if running only one trial
-        last = singleTrialNumber;      % run only that trial
-    elseif renewParpoolFlagNeuron && ...
-        ct + numWorkers <= nTrialsActual    % if memory is to be released
-        last = ct + numWorkers;             % limit the batch to numWorkers
-    else
-        last = nTrialsActual;   % run all trials at once
-    end
-    if renewParpoolFlagNeuron
-        % Recreate a parallel pool object using fewer workers to prevent running out of memory
-        poolObj = parpool('local', numWorkers); 
-    end
-    parfor iTrial = first:last
-    %for iTrial = first:last
-
-        %% Use m3ha_run5.hoc with simCommands
-        if nCells == 100
-            [status, results{iTrial}] = ...
-                unix(sprintf('x86_64/special m3ha_run5.hoc - << here\n%s\nprint "No_Errors!"\nhere', ...
-                    simCommands{iTrial}));    
-        elseif nCells == 20
-            [status, results{iTrial}] = ...
-                unix(sprintf('x86_64/special m3ha_run5_small.hoc - << here\n%s\nprint "No_Errors!"\nhere', ...
-                    simCommands{iTrial}));    
-        elseif nCells == 2
-            [status, results{iTrial}] = ...
-                unix(sprintf('x86_64/special m3ha_run12_tiny.hoc - << here\n%s\nprint "No_Errors!"\nhere', ...
-                    simCommands{iTrial}));    
-        elseif nCells == 1
-            [status, results{iTrial}] = ...
-                unix(sprintf('x86_64/special m3ha_run_1cell.hoc - << here\n%s\nprint "No_Errors!"\nhere', ...
-                    simCommands{iTrial}));    
-        else
-            status = -3;
-            results{iTrial} = 'NEURON wasn''t run because nCells is not correct\n';
-        end
-
-        fid = fopen(fullfile(outFolder, replace(soutF, 'sim', ['sim_', num2str(iTrial)])), 'w');
-        fprintf(fid, 'Return status was: %d\n\nSimulation output was:\n\n%s\n', status, results{iTrial});
-        fclose(fid);
-        fprintf('Simulation #%d complete!\n', iTrial);
-    end
-    if renewParpoolFlagNeuron
-        delete(poolObj);    % delete the parallel pool object to release memory
-    end
-    if singleTrialNumber
-        ct = nTrialsActual + 1;   % don't run again
-    else
-        ct = last;          % update number of trials completed
-    end
-end
-if renewParpoolFlagNeuron
-    poolObj = parpool('local', oldNumWorkers);    % recreate a parallel pool object using the previous number of workers
-end
-%##############
-%##########
-
-%% Analyze simulation standard outputs
-timeTaken = toc(timer1);
-fprintf('It took %3.3g seconds to run all %d simulations with NEURON!!\n', timeTaken, nTrialsActual);
-fprintf('\n');
-ranIntoErrors = ~contains(results, 'No_Errors!');
-if sum(ranIntoErrors) == 0
-    fprintf('No Errors in NEURON!\n');
-    fprintf('\n');
-
-    % Could use the following to display simulation outputs for debugging purposes 
-    %     (these are always saved as text files though)
-    %{
-    for iTrial = 1:nTrialsActual
-        disp(results{iTrial});
-        fprintf('\n');
-    end
-    %}
-else
-    indProblematic = find(ranIntoErrors > 0, 1);
-    fprintf(['Simulation for Sweep #', num2str(indProblematic), ' ran into errors with output:\n']);
-    fprintf('%s\n', results{indProblematic});
-end
-
-%% Save all variables in a mat file named by the date & time
-save(fullfile(outFolder, sprintf('%s.mat', outFolderName)), '-v7.3');
+%% Launch NEURON and execute hocFile
+outputTable = run_neuron(hocFileName, 'SimCommands', simCommands, ...
+                    'SimNumbers', simNumbers, 'OutFolder', outFolder, ...
+                    'DebugFlag', debugFlag, 'OnHpcFlag', onHpcFlag, ...
+                    'SaveStdOutFlag', saveStdOutFlag, ...
+                    'RenewParpoolFlag', renewParpoolFlagNeuron, ...
+                    'MaxNumWorkers', maxNumWorkersNeuron);
 
 %% Plot stuff
 timer2 = tic();
@@ -1076,7 +985,7 @@ end
     = m3ha_network_raster_plot(inFolder, 'OutFolder', outFolder, ...
             'RenewParpool', renewParpoolFlagPlots, ...
             'MaxNumWorkers', maxNumWorkersPlots, ...
-            'SingleTrialNum', singleTrialNumber, ...
+            'SingleTrialNum', simNumbers, ...
             'PlotSpikes', plotSpikes, 'PlotTuning', plotTuning);
 
 % Show single neuron traces and heat maps for selected neurons (each .singv, .singcli & .singsp file)
@@ -1106,10 +1015,10 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function paramsTable = setup_params_table(paramsTable, pchname, pchvalue, ...
-                                            trialCount, experimentName)
+                                            simCount, experimentName)
 
-% Update trial count
-paramsTable{'trialNumber', 'Value'} = trialCount;
+% Update simulation number
+paramsTable{'simNumber', 'Value'} = simCount;
 
 % TODO: Simplify this
 paramsIn = paramsTable{:, 'Value'};
@@ -1126,26 +1035,26 @@ end
 OLD CODE:
 
 %% Setup parameters and filenames for each trial
-paramValues = cell(1, nTrials);     % stores parameters used for each trial
-simParamsPaths = cell(1, nTrials);
-sREREsynPaths = cell(1, nTrials);
-sTCREsynPaths = cell(1, nTrials);
-sRETCsynPaths = cell(1, nTrials);
-sREspikePaths = cell(1, nTrials);
-sTCspikePaths = cell(1, nTrials);
-sREvPaths = cell(1, nTrials);
-sTCvPaths = cell(1, nTrials);
-sREcliPaths = cell(1, nTrials);
-sREsp1Paths = cell(1, nTrials);
-sREsp2Paths = cell(1, nTrials);
-sTCsp1Paths = cell(1, nTrials);
-sTCsp2Paths = cell(1, nTrials);
-sREleakPaths = cell(1, nTrials);
-sREparamsPaths = cell(1, nTrials);
-sTCparamsPaths = cell(1, nTrials);
-for k = 1:nTrials
+paramValues = cell(1, nSims);     % stores parameters used for each trial
+simParamsPaths = cell(1, nSims);
+sREREsynPaths = cell(1, nSims);
+sTCREsynPaths = cell(1, nSims);
+sRETCsynPaths = cell(1, nSims);
+sREspikePaths = cell(1, nSims);
+sTCspikePaths = cell(1, nSims);
+sREvPaths = cell(1, nSims);
+sTCvPaths = cell(1, nSims);
+sREcliPaths = cell(1, nSims);
+sREsp1Paths = cell(1, nSims);
+sREsp2Paths = cell(1, nSims);
+sTCsp1Paths = cell(1, nSims);
+sTCsp2Paths = cell(1, nSims);
+sREleakPaths = cell(1, nSims);
+sREparamsPaths = cell(1, nSims);
+sTCparamsPaths = cell(1, nSims);
+for k = 1:nSims
     % Update trial count
-    idxTrialNumber = find_in_strings('trialNumber', simParamNames);
+    idxTrialNumber = find_in_strings('simNumber', simParamNames);
     paramValues{k}(idxTrialNumber) = k;
 
     % Set parameters for this trial according to pchnames and pchvalues
