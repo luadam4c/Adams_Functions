@@ -16,15 +16,16 @@ function isInTable = is_var_in_table (varName, table, varargin)
 %                   must be a string scalar or a character vector
 %       table       - table to look in
 %                   must be a table
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'RowInstead': find in rows instead
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - Any other parameter-value pair for the ismatch() function
 %
 % Requires:
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/is_row_in_table.m
 %       cd/m3ha_network_change_params.m
 
 % File History:
@@ -34,7 +35,7 @@ function isInTable = is_var_in_table (varName, table, varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+rowInsteadDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -56,18 +57,23 @@ addRequired(iP, 'table', ...
     @(x) validateattributes(x, {'table'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default);
+addParameter(iP, 'RowInstead', rowInsteadDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varName, table, varargin{:});
-% param1 = iP.Results.param1;
+rowInstead = iP.Results.RowInstead;
 
 % Keep unmatched arguments for the ismatch() function
 otherArguments = iP.Unmatched;
 
 %% Do the job
-% Get all variable names of the table
-allVarNames = table.Properties.VariableNames;
+% Get all variable names
+if rowInstead
+    allVarNames = table.Properties.RowNames;
+else
+    allVarNames = table.Properties.VariableNames;
+end
 
 % Test whether varName is a match
 isInTable = any(ismatch(allVarNames, varName, otherArguments));

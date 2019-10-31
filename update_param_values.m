@@ -3,11 +3,14 @@ function paramsTable = update_param_values (paramsTable, varargin)
 % Usage: paramsTable = update_param_values (paramsTable, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       paramsTable - updated parameters table
 %                   specified as a table
+%
 % Arguments:
 %       paramsTable - a parameters table with the row names being the 
 %                       parameter names and a 'Value' column

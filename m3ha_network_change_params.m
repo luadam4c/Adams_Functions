@@ -1,12 +1,19 @@
 function paramsTable = m3ha_network_change_params (paramsTable, namesToChange, valsToChange, varargin)
 %% Change parameter values in a parameters table
 % Usage: paramsTable = m3ha_network_change_params (paramsTable, namesToChange, valsToChange, varargin)
+% Explanation:
+%       TODO
+%
+% Example(s):
+%       TODO
+%
 % Outputs:
 %       paramsTable     - updated parameters table
 %                       specified as a table
 %
 % Arguments:     
-%       paramsTable     - a parameters table with a 'Value' column
+%       paramsTable     - a parameters table with the row names being the 
+%                           parameter names and a 'Value' column
 %                       must be a table
 %       namesToChange   - the name(s) of the parameter(s) to change
 %                       must be a string/char vec or 
@@ -23,9 +30,8 @@ function paramsTable = m3ha_network_change_params (paramsTable, namesToChange, v
 %                   default == 'noexp'
 %
 % Requires:    
-%       cd/find_in_strings.m
 %       cd/is_var_in_table.m
-%       cd/m3ha_network_update_params.m
+%       cd/m3ha_network_update_dependent_params.m
 %
 % Used by:    
 %       cd/m3ha_network_launch.m
@@ -33,7 +39,7 @@ function paramsTable = m3ha_network_change_params (paramsTable, namesToChange, v
 %       /media/adamX/RTCl/neuronlaunch.m
 
 % File History:
-% 2017-05-03 Moved from m3ha_network_update_params.m
+% 2017-05-03 Moved from m3ha_network_update_dependent_params.m
 % 2017-05-03 Moved trial number update back to neuronlaunch.m
 % 2017-05-03 Changed so that it reads namesToChange and valsToChange
 % 2018-05-08 Changed tabs to spaces and limited width to 80
@@ -79,25 +85,12 @@ if ~is_var_in_table('Value', paramsTable)
 end
 
 %% Change parameter(s)
-
+% Update the table
 paramsTable(namesToChange, 'Value') = valsToChange;
 
-if iscell(namesToChange)
-    % One or more parameters to change
-    nToChange = numel(namesToChange);    % number of parameters to change
-    for p = 1:nToChange
-        indp = find_in_strings(namesToChange{p}, paramnames);
-        paramvals(indp) = valsToChange(p);
-    end
-else
-    % Only one parameter to change
-    indp = find_in_strings(namesToChange, paramnames);
-    paramvals(indp) = valsToChange;
-end
-
-%% Update dependent parameters for particular experiments
-[paramvals] = m3ha_network_update_params(paramnames, paramvals, ...
-                            'ExperimentName', experimentname);
+% Update dependent parameters for particular experiments
+paramsTable = m3ha_network_update_dependent_params(paramsTable, ...
+                                    'ExperimentName', experimentname);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

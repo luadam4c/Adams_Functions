@@ -1,6 +1,6 @@
-function paramValues = m3ha_network_update_params (paramNames, paramValues, varargin)
+function paramValues = m3ha_network_update_dependent_params (paramNames, paramValues, varargin)
 %% Update dependent parameters for particular experiments
-% Usage: paramValues = m3ha_network_update_params (paramNames, paramValues, varargin)
+% Usage: paramValues = m3ha_network_update_dependent_params (paramNames, paramValues, varargin)
 % Outputs:
 %       paramValues    - updated paramValues
 % Arguments:

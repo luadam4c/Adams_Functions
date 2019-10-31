@@ -42,7 +42,7 @@ function [indices, elements] = find_in_strings(str, cellarray, varargin)
 %       /media/adamX/RTCl/m3ha_network_raster_plot.m
 %       /media/adamX/RTCl/tuning_curves.m
 %       /media/adamX/RTCl/single_neuron.m
-%       /home/Matlab/Adams_Functions/m3ha_network_update_params.m
+%       /home/Matlab/Adams_Functions/m3ha_network_update_dependent_params.m
 %       /home/Matlab/Adams_Functions/isfigtype.m
 %       /home/Matlab/Brians_Functions/minEASE/ExceltoGUIConverter.m
 %

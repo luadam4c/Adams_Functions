@@ -24,14 +24,14 @@ function [paramvals] = m3ha_network_change_params (namesToChange, valsToChange, 
 %
 % Requires:    
 %        /home/Matlab/Adams_Functions/find_in_strings.m
-%        /home/Matlab/Adams_Functions/m3ha_network_update_params.m
+%        /home/Matlab/Adams_Functions/m3ha_network_update_dependent_params.m
 %
 % Used by:    
 %        cd/m3ha_network_launch.m
 %        /media/adamX/RTCl/neuronlaunch.m
 
 % File History:
-% 2017-05-03 Moved from m3ha_network_update_params.m
+% 2017-05-03 Moved from m3ha_network_update_dependent_params.m
 % 2017-05-03 Moved trial number update back to neuronlaunch.m
 % 2017-05-03 Changed so that it reads namesToChange and valsToChange
 % 2018-05-08 Changed tabs to spaces and limited width to 80
@@ -92,7 +92,7 @@ else
 end
 
 %% Update dependent parameters for particular experiments
-[paramvals] = m3ha_network_update_params(paramnames, paramvals, ...
+[paramvals] = m3ha_network_update_dependent_params(paramnames, paramvals, ...
                             'ExperimentName', experimentname);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -425,7 +425,7 @@ else
                             %   Based on Huguenard & Prince, 1994, 
                             %       the maximal GABA-A conductance is about 5 times that of GABA-B away from Erev
                             %       and about 2 time that of GABA-B close to Erev
-                            %   This must be consistent with /home/Matlab/Adams_Functions/m3ha_network_update_params.m
+                            %   This must be consistent with /home/Matlab/Adams_Functions/m3ha_network_update_dependent_params.m
 end
 TCgababErev = -100; %-105; %-115        % reversal potential (mV) of the GABA-B receptor on TC cells
                             %   Christine used -115 mV in dynamic clamp experiments
@@ -462,7 +462,7 @@ stimFreq = 0.1;                % stimulation frequency (Hz),
                                 %   must be less than 1000/cpDur
 cpDur = 40;                    % current pulse duration (ms)
 
-% The following must be consistent with m3ha_network_update_params.m
+% The following must be consistent with m3ha_network_update_dependent_params.m
 cpAmp = 0.2*(REdiam/10)^2;     % current pulse amplitude (nA),
                                 %   must be proportional to square of diameter 
 cpPer = floor(1000/stimFreq); % current pulse period (ms),
@@ -696,7 +696,7 @@ simParamLabels = { ...
     'whether to plot network topology'; 'whether to plot spike data'; 'whether to plot single neuron data'; ...
     'number of times to run simulation'; 'current simulation number'};
 
-% Note: Must be consistent with m3ha_network_update_params.m
+% Note: Must be consistent with m3ha_network_update_dependent_params.m
 simParamNames = { ...
     'nCells'; 'celsius'; 'nSpecial'; 'RERErad'; ...
     'TCRErad'; 'RETCrad'; 'pCond'; 'gIncr'; ...
@@ -1020,15 +1020,9 @@ function paramsTable = setup_params_table(paramsTable, pchname, pchvalue, ...
 % Update simulation number
 paramsTable{'simNumber', 'Value'} = simNumber;
 
+% Update parameters
 paramsTable = m3ha_network_change_params(paramsTable, pchname, pchvalue, ...
                                         'ExperimentName', experimentName);
-
-% TODO: Simplify this
-paramsIn = paramsTable{:, 'Value'};
-simParamNames = paramsTable.Properties.RowNames;
-paramsOut = m3ha_network_change_params(pchname, pchvalue, ...
-                    simParamNames, paramsIn, 'ExperimentName', experimentName);
-paramsTable{:, 'Value'} = paramsOut;
 
 end
 
@@ -1125,6 +1119,12 @@ for k = 1:nTCParams                 % for each parameter saved
     % Store parameter in the corresponding vector
     eval(sprintf('TC%s(%d) = %g;', pfiledata{k, 1}, iCell, pfiledata{k, 2}));
 end
+
+paramsIn = paramsTable{:, 'Value'};
+simParamNames = paramsTable.Properties.RowNames;
+paramsOut = m3ha_network_change_params(pchname, pchvalue, ...
+                    simParamNames, paramsIn, 'ExperimentName', experimentName);
+paramsTable{:, 'Value'} = paramsOut;
 
 %}
 

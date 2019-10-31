@@ -89,7 +89,7 @@ function varargout = find_in_strings (cand, strList, varargin)
 %       cd/plot_swd_raster.m
 %       cd/plot_traces_spike2_mat.m
 %       cd/renamevars.m
-%       cd/m3ha_network_update_params.m
+%       cd/m3ha_network_update_dependent_params.m
 %       cd/validate_string.m
 %       cd/xolotl_compartment_index.m
 %       cd/ZG_extract_all_IEIs.m
