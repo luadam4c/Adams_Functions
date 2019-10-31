@@ -1,12 +1,12 @@
-function fileName = save_params (paramsTable, varargin)
+function varargout = save_params (paramsTable, varargin)
 %% Saves parameters to a file
-% Usage: fileName = save_params (paramsTable, varargin)
+% Usage: fullPath = save_params (paramsTable, varargin)
 % Explanation:
 %       TODO
 % Example(s):
 %       TODO
 % Outputs:
-%       fileName    - file name used
+%       fullPath    - full path to file
 %                   must be a string scalar or a character vector
 % Arguments:    
 %       paramsTable - a table for all the parameters
@@ -26,6 +26,7 @@ function fileName = save_params (paramsTable, varargin)
 % Used by:
 %       cd/m3ha_fminsearch3.m
 %       cd/m3ha_log_errors_params.m
+%       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_neuron_run_and_analyze.m TODO
 %       cd/m3ha_pfiles2csv.m
@@ -91,6 +92,9 @@ else
     % Save as a matfile
     save(fullPath, 'paramsTable', '-v7.3');
 end
+
+%% Outputs
+varargout{1} = fullPath;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

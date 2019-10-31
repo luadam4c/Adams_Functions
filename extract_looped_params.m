@@ -1,6 +1,6 @@
-function [nump, pnames, plabels, pislog, pvalues, nperp, pchnames, pchvalues, ncells, actmode, loopmode] = extract_looped_params (infolder)
+function [nump, pNames, pLabels, pIsLog, pValues, nperp, pchnames, pchvalues, nCells, actMode, loopMode] = extract_looped_params (infolder)
 %% Extracts parameters that were looped in the simulation from loopedparams.mat
-% USAGE: [nump, pnames, plabels, pislog, pvalues, nperp, pchnames, pchvalues, ncells, actmode, loopmode] = extract_looped_params (infolder)
+% USAGE: [nump, pNames, pLabels, pIsLog, pValues, nperp, pchnames, pchvalues, nCells, actMode, loopMode] = extract_looped_params (infolder)
 % Arguments:
 %     TODO
 %
@@ -9,7 +9,7 @@ function [nump, pnames, plabels, pislog, pvalues, nperp, pchnames, pchvalues, nc
 %       cd/all_ordered_pairs.m
 %
 % Used by:
-%       cd/combine_loopparams.m
+%       cd/combine_looped_params.m
 %       cd/m3ha_network_tuning_curves.m
 %       cd/m3ha_network_tuning_maps.m
 %       cd/m3ha_network_raster_plot.m
@@ -17,7 +17,7 @@ function [nump, pnames, plabels, pislog, pvalues, nperp, pchnames, pchvalues, nc
 
 % File History:
 % 2017-04-14 Moved from m3ha_network_raster_plot.m
-% 2017-04-17 Now extracts pvalues if it exists
+% 2017-04-17 Now extracts pValues if it exists
 % 2017-04-17 Removed latency_cells_to_plot
 % 2017-05-03 Moved to Adams_Functions
 % 2017-05-03 Renamed function get_loopparams -> extract_looped_params
@@ -56,36 +56,36 @@ elseif length(allLoopFiles) < 1
 else
     % There should be only one loopedparams.mat or loopvariables.mat
     m = matfile(fullfile(infolder, allLoopFiles(1).name), ...  
-        'Writable', true);          % make writable for pvalues and nperp
+        'Writable', true);          % make writable for pValues and nperp
 end
 
-%% Extract pnames, plabels, pislog, ncells, actmode, loopmode
-pnames = m.pnames;
-plabels = m.plabels;
-pislog = m.pislog;
-ncells = m.ncells;
-if isempty(whos(m, 'actmode'))
+%% Extract pNames, pLabels, pIsLog, nCells, actMode, loopMode
+pNames = m.pNames;
+pLabels = m.pLabels;
+pIsLog = m.pIsLog;
+nCells = m.nCells;
+if isempty(whos(m, 'actMode'))
                     % for compatibility with older versions of loopedparams.mat
-    actmode = 1;
+    actMode = 1;
 else
-    actmode = m.actmode;
+    actMode = m.actMode;
 end
-if isempty(whos(m, 'loopmode'))
+if isempty(whos(m, 'loopMode'))
                     % for compatibility with older versions of loopedparams.mat
-    loopmode = 'cross';
+    loopMode = 'cross';
 else
-    loopmode = m.loopmode;
+    loopMode = m.loopMode;
 end
 
 %% Compute nump
-nump = numel(pnames);                   % number of parameters changed
+nump = numel(pNames);                   % number of parameters changed
 
-%% Extract pvalues if it exists and compute nperp
+%% Extract pValues if it exists and compute nperp
 % Otherwise, generate parameter values used from pmin, pmax, pinc
-if ~isempty(whos(m, 'pvalues'))         % pvalues already exists
-    % Extract pvalues and compute nperp
-    pvalues = m.pvalues;
-    nperp = cellfun(@length, pvalues);
+if ~isempty(whos(m, 'pValues'))         % pValues already exists
+    % Extract pValues and compute nperp
+    pValues = m.pValues;
+    nperp = cellfun(@length, pValues);
 
     % Check if number of parameter values is consistent
     if ~isempty(whos(m, 'nperp'))
@@ -97,29 +97,29 @@ if ~isempty(whos(m, 'pvalues'))         % pvalues already exists
             error('Number of parameter values is inconsistent!');
         end
     end
-else                % pvalues don't exist yet
+else                % pValues don't exist yet
     % Extract pmin, pmax & pinc
     pmin = m.pmin;
     pmax = m.pmax;
     pinc = m.pinc;
 
     % Generate parameter values used and compute nperp
-    pvalues = cell(1, nump);
+    pValues = cell(1, nump);
     nperp = zeros(1, nump);
     for p = 1:nump
         
-        if pislog(p)
-            pvalues{p} = exp(log(pmin(p)):log(pinc(p)):log(pmax(p)))';
+        if pIsLog(p)
+            pValues{p} = exp(log(pmin(p)):log(pinc(p)):log(pmax(p)))';
                                             % parameters used as a column vector
         else
-            pvalues{p} = (pmin(p):pinc(p):pmax(p))';
+            pValues{p} = (pmin(p):pinc(p):pmax(p))';
                                             % parameters used as a column vector
         end
-        nperp(p) = length(pvalues{p});
+        nperp(p) = length(pValues{p});
     end
 
-    % Save pvalues and nperp
-    m.pvalues = pvalues;
+    % Save pValues and nperp
+    m.pValues = pValues;
     m.nperp = nperp;
 end
 
@@ -130,7 +130,7 @@ if ~isempty(whos(m, 'pchnames')) && ...
     pchnames = m.pchnames;          % changed parameter name for each file
     pchvalues = m.pchvalues;        % changed parameter value for each file
 else
-    switch loopmode
+    switch loopMode
     case 'cross'
         % Create pchnames & pchvalues
         pchnames = cell(1, nfiles);     % changed parameter name for each file
@@ -140,24 +140,24 @@ else
             % Store parameter names and values for each file 
             %   (to keep things in order)
             indices = (ct + 1):(ct + nperp(p));     % indices for this parameter
-            pchnames(indices) = repmat(pnames(p), 1, length(indices));
-            pchvalues(indices) = (pvalues{p})';
+            pchnames(indices) = repmat(pNames(p), 1, length(indices));
+            pchvalues(indices) = (pValues{p})';
 
             % Update count of number of files used
             ct = ct + nperp(p);
         end
     case 'grid'
         % Repeat each parameter name nperp times
-        pnames_rep = cell(1, nump);
+        pNames_rep = cell(1, nump);
                             % stores each parameter name repeated nperp times
         for p = 1:nump
-            pnames_rep{p} = repmat(pnames(p), nperp(p), 1);
+            pNames_rep{p} = repmat(pNames(p), nperp(p), 1);
         end
 
         % Construct all possible ordered pairs of values and corresponding names
-        pchvalues = all_ordered_pairs(pvalues);
+        pchvalues = all_ordered_pairs(pValues);
                                             % a cell array of all ordered pairs
-        pchnames = all_ordered_pairs(pnames_rep);
+        pchnames = all_ordered_pairs(pNames_rep);
                                             % a cell array of ordered pairs of 
                                             %   corresponding parameter names
     end    

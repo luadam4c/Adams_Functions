@@ -39,6 +39,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/compute_sweep_errors.m
 %       cd/construct_fullpath.m
 %       cd/create_average_time_vector.m
+%       cd/create_looped_params.m
 %       cd/create_pleth_EEG_movies.m
 %       cd/create_indices.m
 %       cd/extract_subvectors.m
@@ -50,6 +51,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/m3ha_plot_simulated_traces.m
+%       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/match_format_vector_sets.m

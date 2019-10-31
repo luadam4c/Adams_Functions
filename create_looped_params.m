@@ -1,33 +1,33 @@
-function [pchnames, pchvalues, ntrials, nump, pvalues, nperp] = ...
-                create_looped_params (loopmode, pnames, plabels, pislog, ...
+function [pchnames, pchvalues, nTrials, nump, pValues, nperp] = ...
+                create_looped_params (loopMode, pNames, pLabels, pIsLog, ...
                                     pmin, pmax, pinc, varargin)
-%% Construct parameters to change for each trial from loopmode, pnames, pislog, pmin, pmax, pinc 
-% Usage: [pchnames, pchvalues, ntrials, nump, pvalues, nperp] = ...
-%               create_looped_params (loopmode, pnames, plabels, pislog, ...
+%% Construct parameters to change for each trial from loopMode, pNames, pIsLog, pmin, pmax, pinc 
+% Usage: [pchnames, pchvalues, nTrials, nump, pValues, nperp] = ...
+%               create_looped_params (loopMode, pNames, pLabels, pIsLog, ...
 %                                   pmin, pmax, pinc, varargin)
 % Outputs:    
 %       pchnames    - a cell array of parameter names or ordered pairs 
 %                       of parameter names for each trial
 %       pchvalues   - a numeric array of parameter values or a cell array 
 %                       of ordered paris of parameter values for each trial
-%       ntrials     - total number of trials
+%       nTrials     - total number of trials
 %       nump        - number of different parameters
-%       pvalues     - a cell array of arrays of parameter values
+%       pValues     - a cell array of arrays of parameter values
 %       nperp       - number of parameter values for each parameter
 %
 % Arguments:    
-%       loopmode    - how to loop through parameters: 'cross' or 'grid'
+%       loopMode    - how to loop through parameters: 'cross' or 'grid'
 %                   must be an unambiguous, case-insensitive match 
 %                       to one of the following: 
 %                       'cross' - Loop through each parameter 
 %                                   while fixing others
 %                       'grid'  - Loop through all possible 
 %                                   combinations of parameters
-%       pnames      - names of parameters to loop through
+%       pNames      - names of parameters to loop through
 %                   must be a cell array of strings or character arrays
-%       plabels     - labels of parameters to loop through
+%       pLabels     - labels of parameters to loop through
 %                   must be a cell array of strings or character arrays
-%       pislog      - whether increments of parameters is in log
+%       pIsLog      - whether increments of parameters is in log
 %                   must be a vector of logicals or 0s/1s
 %       pmin        - minimum values of parameters to loop through
 %                   must be a numeric vector
@@ -51,6 +51,8 @@ function [pchnames, pchvalues, ntrials, nump, pvalues, nperp] = ...
 %
 % Requires:
 %       cd/all_ordered_pairs.m
+%       cd/argfun.m
+%       cd/force_column_vector.m
 %
 % Used by:
 %       cd/m3ha_network_launch.m
@@ -83,17 +85,17 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to an input Parser
-addRequired(iP, 'loopmode', ... % how to loop through parameters
+addRequired(iP, 'loopMode', ... % how to loop through parameters
     @(x) any(validatestring(x, possibleLoopmodes)));
-addRequired(iP, 'pnames', ...   % names of parameters to loop through
+addRequired(iP, 'pNames', ...   % names of parameters to loop through
     @(x) assert(iscell(x) && ...
                 (min(cellfun(@ischar, x)) || min(cellfun(@isstring, x))), ...
         'Second input must be a cell array of strings or character arrays!'));
-addRequired(iP, 'plabels', ...  % labels of parameters to loop through
+addRequired(iP, 'pLabels', ...  % labels of parameters to loop through
     @(x) assert(iscell(x) && ...
                 (min(cellfun(@ischar, x)) || min(cellfun(@isstring, x))), ...
         'Second input must be a cell array of strings or character arrays!'));
-addRequired(iP, 'pislog', ...   % whether increments of parameters is in log
+addRequired(iP, 'pIsLog', ...   % whether increments of parameters is in log
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary', 'vector'}));
 addRequired(iP, 'pmin', ...     % minimum values of parameters to loop through
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
@@ -117,12 +119,12 @@ addParameter(iP, 'ActMode', 0, ...      % activation mode
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'integer'}));
 
 % Read from the input Parser
-parse(iP, loopmode, pnames, plabels, pislog, pmin, pmax, pinc, varargin{:});
-loopmode = validatestring(loopmode, possibleLoopmodes);
+parse(iP, loopMode, pNames, pLabels, pIsLog, pmin, pmax, pinc, varargin{:});
+loopMode = validatestring(loopMode, possibleLoopmodes);
 outfolder = iP.Results.OutFolder;
 filelabel = iP.Results.FileLabel;
-ncells = iP.Results.NCells;
-actmode = iP.Results.ActMode;
+nCells = iP.Results.NCells;
+actMode = iP.Results.ActMode;
 
 % Set default arguments
 if isempty(outfolder)
@@ -130,76 +132,81 @@ if isempty(outfolder)
 end
 
 % Check relationships between arguments
-if numel(unique([numel(pnames), numel(plabels), numel(pislog), ...
+if numel(unique([numel(pNames), numel(pLabels), numel(pIsLog), ...
                 numel(pmin), numel(pmax), numel(pinc)])) ~= 1
-    error('pnames, plabels, pislog, pmin, pmax, pinc not all equal length!!');
+    error('pNames, pLabels, pIsLog, pmin, pmax, pinc not all equal length!!');
 end
 
 %% Calculate number of parameters to loop through
-nump = numel(pnames);
-pvalues = cell(1, nump);        % parameter values that will be used
+nump = numel(pNames);
+pValues = cell(1, nump);        % parameter values that will be used
 nperp = zeros(1, nump);            % number of trials per parameter type
 for p = 1:nump
     % Generate parameter values that will be used
-    if pislog(p)
-        pvalues{p} = exp(log(pmin(p)):log(pinc(p)):log(pmax(p)))';
+    if pIsLog(p)
+        pValues{p} = exp(log(pmin(p)):log(pinc(p)):log(pmax(p)))';
                                             % parameters used as a column vector
     else
-        pvalues{p} = (pmin(p):pinc(p):pmax(p))';
+        pValues{p} = (pmin(p):pinc(p):pmax(p))';
                                             % parameters used as a column vector
     end
-    nperp(p) = length(pvalues{p});
+    nperp(p) = length(pValues{p});
 end
 
 %% Find total number of trials
-switch loopmode
+switch loopMode
 case 'cross'
     % Total number of trials in 'cross' mode
-    ntrials = sum(nperp);
+    nTrials = sum(nperp);
 case 'grid'
     % Total number of trials in 'grid' mode
-    ntrials = prod(nperp);
+    nTrials = prod(nperp);
 end
 
 %% Create pchnames & pchvalues
-switch loopmode
+switch loopMode
 case 'cross'
-    pchnames = cell(1, ntrials);    % stores parameter name for each trial
-    pchvalues = zeros(1, ntrials);  % stores parameter value for each trial
+    pchnames = cell(nTrials, 1);    % stores parameter name for each trial
+    pchvalues = zeros(nTrials, 1);  % stores parameter value for each trial
     ct = 0;                         % counts number of trials used
     for p = 1:nump
         % Store parameter names and values for each trial 
         %   (to keep things in order)
         indices = (ct + 1):(ct + nperp(p));     % indices for this parameter
-        pchnames(indices) = repmat(pnames(p), 1, length(indices));
+        pchnames(indices) = repmat(pNames(p), 1, length(indices));
                                                 % parameter name for each trial
-        pchvalues(indices) = (pvalues{p})';     % parameter value for each trial 
+        pchvalues(indices) = (pValues{p})';     % parameter value for each trial 
 
         % Update count of number of files used
         ct = ct + nperp(p);
     end
 case 'grid'
     % Repeat each parameter name nperp times
-    pnames_rep = cell(1, nump);     % stores each parameter name 
+    pNamesRepeated = cell(1, nump);     % stores each parameter name 
                                     %   repeated nperp times
     for p = 1:nump
-        pnames_rep{p} = repmat(pnames(p), nperp(p), 1);
+        pNamesRepeated{p} = repmat(pNames(p), nperp(p), 1);
     end
 
     % Construct all possible ordered pairs of values and corresponding names
-    pchvalues = all_ordered_pairs(pvalues); 
+    pchvalues = all_ordered_pairs(pValues); 
                                     % a cell array of all ordered pairs
-    pchnames = all_ordered_pairs(pnames_rep);
+    pchnames = all_ordered_pairs(pNamesRepeated);
                                     % a cell array of ordered pairs of 
                                     %   corresponding parameter names
 end
 
+% Force as columns
+[pchnames, pchvalues] = ...
+    argfun(@(x) force_column_vector(x, 'TreatCellAsArray', true), ...
+            pchnames, pchvalues);
+
 %% Save looping variables in a mat file named by the date & time
 save(fullfile(outfolder, sprintf('%s_%s', filelabel, loopedparamsfile)), ...
-    'loopmode', 'ntrials', 'nump', 'nperp', ...
-    'pnames', 'plabels', 'pislog', 'pmin', 'pmax', 'pinc', ...
-    'pvalues', 'pchnames', 'pchvalues', ...
-    'ncells', 'actmode', '-v7.3');
+    'loopMode', 'nTrials', 'nump', 'nperp', ...
+    'pNames', 'pLabels', 'pIsLog', 'pmin', 'pmax', 'pinc', ...
+    'pValues', 'pchnames', 'pchvalues', ...
+    'nCells', 'actMode', '-v7.3');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

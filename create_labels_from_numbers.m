@@ -48,6 +48,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/create_row_labels.m
 %       cd/create_simulation_output_filenames.m
 %       cd/create_synced_movie_trace_plot_movie.m
+%       cd/m3ha_network_launch.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/plot_histogram.m
 %       cd/parse_lts.m
