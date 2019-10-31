@@ -1,18 +1,18 @@
-function paramsTable = m3ha_network_change_params (paramsTable, namesToChange, valsToChange, varargin)
-%% Change parameter values in a parameters table
-% Usage: paramsTable = m3ha_network_change_params (paramsTable, namesToChange, valsToChange, varargin)
+function [paramvals] = m3ha_network_change_params (namesToChange, valsToChange, paramnames, paramvals, varargin)
+%% Change parameter values
+% Usage: [paramvals] = m3ha_network_change_params (namesToChange, valsToChange, paramnames, paramvals, varargin)
 % Outputs:
-%       paramsTable     - updated parameters table
-%                       specified as a table
-%
+%       paramvals   - updated paramvals
 % Arguments:     
-%       paramsTable     - a parameters table with a 'Value' column
-%                       must be a table
 %       namesToChange   - the name(s) of the parameter(s) to change
-%                       must be a string/char vec or 
-%                           a cell array of strings/char vecs
+%                   must be a string/char vec or 
+%                       a cell array of strings/char vecs
 %       valsToChange    - the values(s) of the parameter(s) to change
-%                       must be a numeric array
+%                   must be a numeric array
+%       paramnames  - a cell array of all parameter names
+%                   must be a cell array of strings or character arrays
+%       paramvals   - a numeric array of all parameter values
+%                   must be a numeric array of same length as paramnames
 %       varargin    - 'ExperimentName': name of the experiment of interest
 %                   must be an unambiguous, case-insensitive match 
 %                       to one of the following: 
@@ -23,21 +23,18 @@ function paramsTable = m3ha_network_change_params (paramsTable, namesToChange, v
 %                   default == 'noexp'
 %
 % Requires:    
-%       cd/find_in_strings.m
-%       cd/is_var_in_table.m
-%       cd/m3ha_network_update_params.m
+%        /home/Matlab/Adams_Functions/find_in_strings.m
+%        /home/Matlab/Adams_Functions/m3ha_network_update_params.m
 %
 % Used by:    
-%       cd/m3ha_network_launch.m
-%       TODO: Change specification
-%       /media/adamX/RTCl/neuronlaunch.m
+%        cd/m3ha_network_launch.m
+%        /media/adamX/RTCl/neuronlaunch.m
 
 % File History:
 % 2017-05-03 Moved from m3ha_network_update_params.m
 % 2017-05-03 Moved trial number update back to neuronlaunch.m
 % 2017-05-03 Changed so that it reads namesToChange and valsToChange
 % 2018-05-08 Changed tabs to spaces and limited width to 80
-% 2019-10-31 Now uses tables
 
 %% Hard-coded parameters
 validExperiments = {'RTCl', 'm3ha', 'noexp'};
@@ -46,7 +43,7 @@ validExperiments = {'RTCl', 'm3ha', 'noexp'};
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 3
+if nargin < 4
     error(['Not enough input arguments, ', ...
             'type ''help %s'' for usage'], mfilename);
 end
@@ -56,36 +53,35 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to an input Parser
-addRequired(iP, 'paramsTable', ...
-    @(x) validateattributes(x, {'table'}, {'2d'}));
 addRequired(iP, 'namesToChange', ...
-    @(x) validateattributes(x, {'char', 'string', 'cell'}, {'2d'}));
+    @(x) validateattributes(x, {'char', 'string', 'cell'}, {'nonempty'}));
 addRequired(iP, 'valsToChange', ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+    @(x) validateattributes(x, {'numeric'}, {'nonempty'}));
+addRequired(iP, 'paramnames', ...
+    @(x) assert(iscell(x) && ...
+                (min(cellfun(@ischar, x)) || min(cellfun(@isstring, x))), ...
+        'Second input must be a cell array of strings or character arrays!'));
+addRequired(iP, 'paramvals', ...
+    @(x) validateattributes(x, {'numeric', 'logical'}, {'vector'}));
 
 % Add parameter-value pairs to the input Parser
 addParameter(iP, 'ExperimentName', 'noexp', ...
     @(x) any(validatestring(x, validExperiments)));
 
 % Read from the input Parser
-parse(iP, paramsTable, namesToChange, valsToChange, varargin{:});
+parse(iP, namesToChange, valsToChange, paramnames, paramvals, varargin{:});
 experimentname = validatestring(iP.Results.ExperimentName, validExperiments);
 
-%% Preparation
-% Make sure the table has a 'Value' column
-if ~is_var_in_table('Value', paramsTable)
-    disp('"Value" must be a column of the table!');
-    return
+% Check relationships between arguments
+if length(paramnames) ~= length(paramvals)
+    error('length of paramnames and paramvals are unequal!!');
 end
 
 %% Change parameter(s)
-
-paramsTable(namesToChange, 'Value') = valsToChange;
-
 if iscell(namesToChange)
     % One or more parameters to change
-    nToChange = numel(namesToChange);    % number of parameters to change
-    for p = 1:nToChange
+    ntochange = numel(namesToChange);    % number of parameters to change
+    for p = 1:ntochange
         indp = find_in_strings(namesToChange{p}, paramnames);
         paramvals(indp) = valsToChange(p);
     end

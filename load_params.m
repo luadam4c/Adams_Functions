@@ -3,8 +3,10 @@ function paramTables = load_params (fileNames, varargin)
 % Usage: paramTables = load_params (fileNames, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       paramTables - parameter table(s) with parameter names as 
 %                       row names and at least these variables:

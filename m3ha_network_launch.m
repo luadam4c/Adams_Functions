@@ -35,7 +35,7 @@
 % 2017-11-06 Moved code to define_actmode.m
 % 2017-11-07 Added candidateIDs
 % 2017-11-07 Added actMode = 8~10
-% 2017-11-08 Added templateLabel to outFolderName
+% 2017-11-08 Added templateLabel to fileLabel
 % 2017-11-08 Added seedNumber
 % 2018-02-28 Don't use HH
 % 2018-03-29 Fixed ordering of useHH and REnsegs
@@ -608,14 +608,14 @@ if nCandidates > 1
 else
     templateLabel = templateNames{candidateIDs(1)};
 end
-outFolderName = [timeStamp, '_', templateLabel, '_', experimentSuffix];
-outFolder = fullfile(homeDirectory, outFolderName);     
+fileLabel = [timeStamp, '_', templateLabel, '_', experimentSuffix];
+outFolder = fullfile(homeDirectory, fileLabel);     
 check_dir(outFolder);
 
 %% Construct looped parameters
 [pchnames, pchvalues, nSims, nump, pvalues, nperp] = ...
     create_looped_params (loopmode, pnames, plabels, pislog, pmin, pmax, pinc, ...
-            'OutFolder', outFolder, 'FileLabel', outFolderName, ...
+            'OutFolder', outFolder, 'FileLabel', fileLabel, ...
             'NCells', nCells, 'ActMode', actMode);
 
 % Force as a cell array
@@ -1003,7 +1003,7 @@ fprintf('\n');
 
 %% Save all variables again in a mat file named by the date & time
 if saveAllVariablesFlag
-    save(fullfile(outFolder, sprintf('%s.mat', outFolderName)), '-v7.3');
+    save(fullfile(outFolder, sprintf('%s.mat', fileLabel)), '-v7.3');
 end
 
 %% Play Handel if not on Rivanna
@@ -1015,10 +1015,13 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function paramsTable = setup_params_table(paramsTable, pchname, pchvalue, ...
-                                            simCount, experimentName)
+                                            simNumber, experimentName)
 
 % Update simulation number
-paramsTable{'simNumber', 'Value'} = simCount;
+paramsTable{'simNumber', 'Value'} = simNumber;
+
+paramsTable = m3ha_network_change_params(paramsTable, pchname, pchvalue, ...
+                                        'ExperimentName', experimentName);
 
 % TODO: Simplify this
 paramsIn = paramsTable{:, 'Value'};
