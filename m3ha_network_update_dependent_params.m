@@ -85,12 +85,12 @@ switch experimentName
 case {'RTCl', 'm3ha'}
     % Note: Must be consistent with m3ha_network_launch.m
     % Update current pulse period (ms)
-    paramsTable('cpPer', 'Value') = ...
-        floor(1000 / paramsTable('stimFreq', 'Value'));
+    paramsTable{'cpPer', 'Value'} = ...
+        floor(1000 / paramsTable{'stimFreq', 'Value'});
 
     % Update number of current pulses
-    paramsTable('cpNum', 'Value') = ...
-        ceil(paramsTable('stimDur', 'Value')/paramsTable('cpPer', 'Value'));
+    paramsTable{'cpNum', 'Value'} = ...
+        ceil(paramsTable{'stimDur', 'Value'}/paramsTable{'cpPer', 'Value'});
 case 'noexp'
     % Do nothing
 end
@@ -99,11 +99,11 @@ end
 switch experimentName
 case 'RTCl'
     % Note: Must be consistent with m3ha_network_launch.m
-    paramsTable('cpAmp', 'Value') = ...
-        4 * (paramsTable('REdiam', 'Value') / 10) ^ 2;
+    paramsTable{'cpAmp', 'Value'} = ...
+        4 * (paramsTable{'REdiam', 'Value'} / 10) ^ 2;
 case 'm3ha'
-    paramsTable('cpAmp', 'Value') = ...
-        0.2 * (paramsTable('REdiam', 'Value') / 10) ^ 2;
+    paramsTable{'cpAmp', 'Value'} = ...
+        0.2 * (paramsTable{'REdiam', 'Value'} / 10) ^ 2;
 case 'noexp'
     % Do nothing
 end
@@ -113,31 +113,31 @@ switch experimentName
 case 'm3ha'
     % Note: Must be consistent with m3ha_network_launch.m 
     % Update parameters that are influenced by other parameters
-    pCond = paramsTable('pCond', 'Value');
-    gIncr = paramsTable('gIncr', 'Value');
+    pCond = paramsTable{'pCond', 'Value'};
+    gIncr = paramsTable{'gIncr', 'Value'};
 
     % Update maximal GABA-A conductance (uS)
     %   2 times that of GABA-B 
     %   based on Huguenard & Prince, 1994
-    if paramsTable('TCgabaaGmax', 'Value') ~= 0      % Not in bicuculline mode
-        paramsTable('TCgabaaGmax', 'Value') = ...
+    if paramsTable{'TCgabaaGmax', 'Value'} ~= 0      % Not in bicuculline mode
+        paramsTable{'TCgabaaGmax', 'Value'} = ...
             gabaaGmaxTemplate(pCond) * 2 * gIncr/100;  
     end
 
     % Update GABA-B conductance amplitude (uS)
-    paramsTable('TCgababAmp', 'Value') = gababAmpTemplate(pCond) * gIncr/100;
+    paramsTable{'TCgababAmp', 'Value'} = gababAmpTemplate(pCond) * gIncr/100;
 
     % Update rising phase time constant (ms)
-    paramsTable('TCgababTrise', 'Value') = gababTriseTemplate(pCond);
+    paramsTable{'TCgababTrise', 'Value'} = gababTriseTemplate(pCond);
 
     % Update fast decay time constant (ms)
-    paramsTable('TCgababTfallFast', 'Value') = gababTfallFastTemplate(pCond);
+    paramsTable{'TCgababTfallFast', 'Value'} = gababTfallFastTemplate(pCond);
 
     % Update slow decay time constant (ms)
-    paramsTable('TCgababTfallSlow', 'Value') = gababTfallSlowTemplate(pCond);
+    paramsTable{'TCgababTfallSlow', 'Value'} = gababTfallSlowTemplate(pCond);
 
     % Update weight of the fast decay
-    paramsTable('TCgababW', 'Value') = gababWeightDefault(pCond);
+    paramsTable{'TCgababW', 'Value'} = gababWeightDefault(pCond);
 case {'RTCl', 'noexp'}
     % Do nothing
 end

@@ -217,16 +217,16 @@ while ct < ntrials                  % while not trials are completed yet
             fprintf('The file %s does not exist or has no spikes!\n', pspifile);
             numActiveTC(i) = 0;     % number of cells activated is zero
 			numActiveRE(i) = 0;		% number of cells activated is zero
-            latencyTC(i, :) = Inf*ones(1, nCells);    
+            latencyTC(i, :) = Inf(1, nCells);    
                                     % latency to activation (seconds) is infinite for every cell
-            latencyRE(i, :) = Inf*ones(1, nCells);    
+            latencyRE(i, :) = Inf(1, nCells);    
                                     % latency to activation (seconds) is infinite for every cell
             oscDurTC(i) = 0;        % oscillation duration (seconds) is zero
             oscDurRE(i) = 0;        % oscillation duration (seconds) is zero
-			nSpikesTC(i, :) = Inf*ones(1, nCells); % number of spikes for each cell
-			nSpikesRE(i, :) = Inf*ones(1, nCells); % number of spikes for each cell
-			actDurTC(i, :) = Inf*ones(1, nCells);	% active duration (seconds) for each cell
-			actDurRE(i, :) = Inf*ones(1, nCells);	% active duration (seconds) for each cell
+			nSpikesTC(i, :) = Inf(1, nCells); % number of spikes for each cell
+			nSpikesRE(i, :) = Inf(1, nCells); % number of spikes for each cell
+			actDurTC(i, :) = Inf(1, nCells);	% active duration (seconds) for each cell
+			actDurRE(i, :) = Inf(1, nCells);	% active duration (seconds) for each cell
 			actVelTC(i) = 0; 	% activation velocity (cells/seconds)
 			actVelRE(i) = 0; 	% activation velocity (cells/seconds)
         else

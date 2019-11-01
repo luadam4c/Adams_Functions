@@ -63,6 +63,7 @@ function output = run_neuron (hocFile, varargin)
 %       cd/isaninteger.m
 %       cd/ispositiveintegervector.m
 %       cd/force_column_cell.m
+%       cd/force_row_vector.m
 %       cd/force_string_end.m
 %
 % Used by:    
@@ -229,8 +230,11 @@ end
 nSims = numel(simCommands);
 
 % Decide on the simulation numbers to run
+%   Note: parfor takes a row vector
 if isempty(simNumbers)
-    simNumbers = transpose(1:nSims);
+    simNumbers = 1:nSims;
+else
+    simNumbers = force_row_vector(simNumbers);
 end
 
 % Count actual number of simulations

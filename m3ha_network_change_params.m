@@ -86,7 +86,7 @@ end
 
 %% Change parameter(s)
 % Update the table
-paramsTable(namesToChange, 'Value') = valsToChange;
+paramsTable{namesToChange, 'Value'} = valsToChange;
 
 % Update dependent parameters for particular experiments
 paramsTable = m3ha_network_update_dependent_params(paramsTable, ...
