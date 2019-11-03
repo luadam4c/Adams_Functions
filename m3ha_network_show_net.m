@@ -18,10 +18,12 @@ function [RERE, TCRE, RETC] = m3ha_network_show_net (inFolder, varargin)
 %                   default == false
 %
 % Requires:
-%        inFolder/*.syn
+%       inFolder/*.syn
+%       cd/apply_iteratively.m
+%       cd/set_figure_properties.m
 %
 % Used by:
-%        cd/m3ha_launch1.m
+%       cd/m3ha_launch1.m
 
 % File History:
 % 2017-10-23 Modified from /RTCl/show_net.hoc
@@ -56,12 +58,12 @@ addParameter(iP, 'FirstOnly', firstOnlyDefault, ...
 
 % Read from the Input Parser
 parse(iP, inFolder, varargin{:});
-outfolder = iP.Results.OutFolder;
-firstonly = iP.Results.FirstOnly;
+outFolder = iP.Results.OutFolder;
+firstOnly = iP.Results.FirstOnly;
 
 % Set dependent argument defaults
-if isempty(outfolder)
-    outfolder = inFolder;
+if isempty(outFolder)
+    outFolder = inFolder;
 end
 
 %% Find all RERE*.syn files
@@ -75,7 +77,7 @@ if length(TCREfiles) ~= nNetworks || ...
 end
 
 %% Change the number of networks to plot if FirstOnly flag is true
-if firstonly
+if firstOnly
     nNetworks = 1;
 end
 
@@ -83,7 +85,8 @@ end
 RERE = cell(nNetworks, 1);        % raw RE-RE connections
 TCRE = cell(nNetworks, 1);        % raw TC-RE connections
 RETC = cell(nNetworks, 1);        % raw RE-TC connections
-parfor i = 1:nNetworks
+for i = 1:nNetworks
+% parfor i = 1:nNetworks
     % Extract names of files needed
     REREfilename = REREfiles(i).name;
     TCREfilename = replace(REREfilename, 'RERE', 'TCRE');
@@ -95,67 +98,56 @@ parfor i = 1:nNetworks
     RETC{i} = load(fullfile(inFolder, RETCfilename));
 
     % Set figure name
-    figname = replace(REREfilename, '.syn', '.png');
-    figname = replace(figname, 'RERE', 'Topology');
-    figname = fullfile(outfolder, figname);
+    figName = replace(REREfilename, '.syn', '.png');
+    figName = replace(figName, 'RERE', 'Topology');
+    figName = fullfile(outFolder, figName);
 
     % Plot data
-    [~, filebase, ~] = fileparts(replace(REREfilename, 'RERE_', ''));
-    network_topology(RERE{i}, TCRE{i}, RETC{i}, figname, 'full', filebase);
-    network_topology(RERE{i}, TCRE{i}, RETC{i}, figname, 'part', filebase);
+    [~, fileBase, ~] = fileparts(replace(REREfilename, 'RERE_', ''));
+    network_topology(RERE{i}, TCRE{i}, RETC{i}, figName, 'full', fileBase);
+    network_topology(RERE{i}, TCRE{i}, RETC{i}, figName, 'part', fileBase);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function network_topology(RERE, TCRE, RETC, figname, plotmode, filebase)
+function network_topology(RERE, TCRE, RETC, figName, plotMode, fileBase)
 %% Plot network topology from connection data
 
 % Prepare the figure
-h = figure(floor(rand()*10^4));
-clf(h);
+h = set_figure_properties('AlwaysNew', true);
 hold on;
 
 % Define color map
 cm = colormap(lines);
-ncolors = size(cm, 1);
+
+% Count the number of colors
+nColors = size(cm, 1);
 
 % Plot TC-RE connections
-for i = 1:length(TCRE)
-    color = cm(mod(TCRE(i, 1), ncolors) + 1, :);
-    if strcmp(plotmode, 'full')
-        plot([2; 1], round([TCRE(i, 1); TCRE(i, 2)]), 'r-o', 'Color', color);
-    elseif strcmp(plotmode, 'part')
-        plot([2; 1], round([TCRE(i, 1); TCRE(i, 2)]), 'r-o', 'Color', color);
-    end
+for i = 1:size(TCRE, 1)
+    colorThis = cm(mod(TCRE(i, 1), nColors) + 1, :);
+    plot([2; 1], round([TCRE(i, 1); TCRE(i, 2)]), '-o', 'Color', colorThis);
 end
 
 % Plot RE-TC connections
-for i = 1:length(RETC)
-    color = cm(mod(RETC(i, 1), ncolors) + 1, :);
-    if strcmp(plotmode, 'full')
-        plot([1; 2], round([RETC(i, 1); RETC(i, 2)]), 'g-.o', 'Color', color);
-    elseif strcmp(plotmode, 'part')
-        plot([1; 2], round([RETC(i, 1); RETC(i, 2)]), 'g-.o', 'Color', color);
-    end
+for i = 1:size(RETC, 1)
+    colorThis = cm(mod(RETC(i, 1), nColors) + 1, :);
+    plot([1; 2], round([RETC(i, 1); RETC(i, 2)]), '-.o', 'Color', colorThis);
 end
 
 % Plot RE-RE connections
-for i = 1:length(RERE)
-    color = cm(mod(RERE(i, 1), ncolors) + 1, :);
-    if strcmp(plotmode, 'full')
-        plot([1; 0.75], round([RERE(i, 1); RERE(i, 2)]), 'b:', 'Color', color);
-    elseif strcmp(plotmode, 'part')
-        plot([1; 0.75], round([RERE(i, 1); RERE(i, 2)]), 'b:', 'Color', color);
-    end
+for i = 1:size(RERE, 1)
+    colorThis = cm(mod(RERE(i, 1), nColors) + 1, :);
+    plot([1; 0.75], round([RERE(i, 1); RERE(i, 2)]), ':', 'Color', colorThis);
 end
 
 % Restrict axes range
-ymax = max([RERE(:, 1); TCRE(:, 1); RETC(:, 1)]) + 1;
-ymin = min([RERE(:, 1); TCRE(:, 1); RETC(:, 1)]) - 1;
-if strcmp(plotmode, 'full')
-    axis([0.5 2.5 ymin ymax]);
-elseif strcmp(plotmode, 'part')
-    axis([0.5 2.5 ymin ymin+11]);
+ymax = apply_iteratively(@max, {RERE; TCRE; RETC}) + 1;
+ymin = apply_iteratively(@min, {RERE; TCRE; RETC}) - 1;
+if strcmp(plotMode, 'full')
+    axis([0.5, 2.5, ymin, ymax]);
+elseif strcmp(plotMode, 'part')
+    axis([0.5, 2.5, ymin, ymin + 11]);
 end
 
 % Set labels
@@ -163,13 +155,13 @@ ax = gca;
 set(ax, 'XTick', [1, 2]);
 set(ax, 'XTickLabel', {'RE', 'TC'});
 ylabel('Neuron number');
-title(['Network topology for ', replace(filebase, '_', '\_')]);
+title(['Network topology for ', replace(fileBase, '_', '\_')]);
 
 % Save figure
-if strcmp(plotmode, 'part')
-    figname = replace(figname, '.png', '_zoomed.png');
+if strcmp(plotMode, 'part')
+    figName = replace(figName, '.png', '_zoomed.png');
 end
-saveas(h, figname, 'png');
+saveas(h, figName, 'png');
 
 % Close figure
 % close(h);
@@ -178,6 +170,9 @@ saveas(h, figname, 'png');
 
 %{
 OLD CODE:
+
+ymax = max([RERE(:, 1); TCRE(:, 1); RETC(:, 1)]) + 1;
+ymin = min([RERE(:, 1); TCRE(:, 1); RETC(:, 1)]) - 1;
 
 %}
 
