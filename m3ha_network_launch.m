@@ -1,4 +1,4 @@
-%%function m3ha_network_launch(nCells, useHH, candidateIDs)
+function m3ha_network_launch(nCells, useHH, candidateIDs)
 %% Launches NEURON with simulation commands and plot output figures
 %
 % Requires:
@@ -47,6 +47,7 @@
 % 2018-04-26 Made nCells and useHH arguments
 % 2019-10-31 Now uses m3ha_net.hoc
 % 2019-10-31 Now uses run_neuron.m
+% 2019-11-04 Updated for m3ha_network_loop_launch_20191104.m
 % TODO: Plot gAMPA and gGABA instead of the i's for synaptic event monitoring
 % TODO: Make the network circular to lose edge effects
 % TODO: Perform simulations to generate a linear model
@@ -54,14 +55,14 @@
 %
 
 %% Arguments defined here temporarily
-nCells = 1;
+% nCells = 1;
 % nCells = 2;
 % nCells = 20;
 % nCells = 100;
-useHH = true;           % whether to use HH channels
+% useHH = true;           % whether to use HH channels
 % candidateIDs = [25, 36, 27];
 % candidateIDs = 25;
-candidateIDs = 22;
+% candidateIDs = 22;
 
 %% Experiment Name
 experimentName = 'm3ha';
@@ -91,7 +92,7 @@ loopMode = 'cross'; %grid;      % how to loop through parameters:
                                 %               combinations of parameters
 
 % Decide on what to save and plot
-savePlotMode = 'spikes&special';
+savePlotMode = 'spikes';
 saveAllVariablesFlag = false;
 % if nCells == 1 || nCells == 2
 %     savePlotMode = 'spikes&special';
@@ -348,7 +349,7 @@ pIsLog  = [0, 0];                   % whether increments of parameters is in log
 pNames  = {'pCond', 'gIncr'};       % names of parameters to loop through
 pLabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
 pMin    = [1, 30];                  % minimum values of parameters to loop through
-pMax    = [4, 60];                  % maximum values of parameters to loop through
+pMax    = [4, 90];                  % maximum values of parameters to loop through
 pInc    = [1, 30];                  % increments of parameters to loop through
 pIsLog  = [0, 0];                   % whether increments of parameters is in log
 
@@ -376,7 +377,9 @@ end
 %% Parameters for various GABA-B conductance profiles
 pCond = 1;      % Pharmacological condition
                 %   1 - Control; 2 - GAT 1 Block; 3 - GAT 3 Block; 4 - Dual Block
-gIncr = 100;    % GABA-B conductance amplitude scaling (%)
+% gIncr = 100;    % GABA-B conductance amplitude scaling (%)
+% gIncr = 15;    % GABA-B conductance amplitude scaling (%)
+gIncr = 60;    % GABA-B conductance amplitude scaling (%)
 
 %% Network parameters
 if nCells == 100 || nCells == 20

@@ -144,7 +144,7 @@ There are 1 MATLAB scripts in this directory:
 - [**create_labels_from_numbers.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_labels_from_numbers.m): Creates a cell array of labels from an array of numbers with an optional prefix or suffix
 - [**create_latex_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_latex_string.m): Creates a LaTeX string from an equation used for fitting
 - [**create_logical_array.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_logical_array.m): Creates a logical array from indices for true and dimensions
-- [**create_looped_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_looped_params.m): Construct parameters to change for each trial from loopMode, pNames, pIsLog, pmin, pmax, pinc 
+- [**create_looped_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_looped_params.m): Construct parameters to change for each trial from loopMode, pNames, pIsLog, pMin, pMax, pInc 
 - [**create_new_mscript.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_new_mscript.m): Creates a new MATLAB script starting from a function template
 - [**create_pleth_EEG_movies.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pleth_EEG_movies.m): Creates a synced movie from a .wmv file and a Spike2-exported .mat file in the current directory
 - [**create_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pulse.m): Creates a pulse vector
@@ -329,7 +329,7 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_log_errors_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_log_errors_params.m): Log errors and parameter values
 - [**m3ha_network_change_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_change_params.m): Change parameter values in a parameters table
 - [**m3ha_network_define_actmode.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_define_actmode.m): Determine what cells are stimulated in each activation mode
-- [**m3ha_network_launch.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_launch.m): function m3ha_network_launch(nCells, useHH, candidateIDs)
+- [**m3ha_network_launch.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_launch.m): Launches NEURON with simulation commands and plot output figures
 - [**m3ha_network_raster_plot.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_raster_plot.m): Shows a spike raster plot and compute numActive, latency, oscDur, nSpikes, actDur, actVel for each set of neurons (each .spi file in the inFolder)
 - [**m3ha_network_show_net.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_show_net.m): Shows network topology for each network (each .syn file in the inFolder)
 - [**m3ha_network_single_neuron.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_single_neuron.m): Shows single neuron traces for different neurons or for different properties in the same neuron

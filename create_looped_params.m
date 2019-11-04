@@ -1,19 +1,19 @@
-function [pchnames, pchvalues, nTrials, nump, pValues, nperp] = ...
+function [pchnames, pchvalues, nSims, nParams, pValues, nSimsEachParam] = ...
                 create_looped_params (loopMode, pNames, pLabels, pIsLog, ...
-                                    pmin, pmax, pinc, varargin)
-%% Construct parameters to change for each trial from loopMode, pNames, pIsLog, pmin, pmax, pinc 
-% Usage: [pchnames, pchvalues, nTrials, nump, pValues, nperp] = ...
+                                    pMin, pMax, pInc, varargin)
+%% Construct parameters to change for each trial from loopMode, pNames, pIsLog, pMin, pMax, pInc 
+% Usage: [pchnames, pchvalues, nSims, nParams, pValues, nSimsEachParam] = ...
 %               create_looped_params (loopMode, pNames, pLabels, pIsLog, ...
-%                                   pmin, pmax, pinc, varargin)
+%                                   pMin, pMax, pInc, varargin)
 % Outputs:    
 %       pchnames    - a cell array of parameter names or ordered pairs 
 %                       of parameter names for each trial
 %       pchvalues   - a numeric array of parameter values or a cell array 
 %                       of ordered paris of parameter values for each trial
-%       nTrials     - total number of trials
-%       nump        - number of different parameters
+%       nSims       - total number of simulations
+%       nParams     - number of different parameters
 %       pValues     - a cell array of arrays of parameter values
-%       nperp       - number of parameter values for each parameter
+%       nSimsEachParam  - number of parameter values for each parameter
 %
 % Arguments:    
 %       loopMode    - how to loop through parameters: 'cross' or 'grid'
@@ -29,11 +29,11 @@ function [pchnames, pchvalues, nTrials, nump, pValues, nperp] = ...
 %                   must be a cell array of strings or character arrays
 %       pIsLog      - whether increments of parameters is in log
 %                   must be a vector of logicals or 0s/1s
-%       pmin        - minimum values of parameters to loop through
+%       pMin        - minimum values of parameters to loop through
 %                   must be a numeric vector
-%       pmax        - maximum values of parameters to loop through
+%       pMax        - maximum values of parameters to loop through
 %                   must be a numeric vector
-%       pinc        - increments of parameters to loop through
+%       pInc        - increments of parameters to loop through
 %                   must be a numeric vector
 %       varargin    - 'OutFolder': directory to place outputs, 
 %                                   e.g. '/media/shareX/share/'
@@ -97,11 +97,11 @@ addRequired(iP, 'pLabels', ...  % labels of parameters to loop through
         'Second input must be a cell array of strings or character arrays!'));
 addRequired(iP, 'pIsLog', ...   % whether increments of parameters is in log
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary', 'vector'}));
-addRequired(iP, 'pmin', ...     % minimum values of parameters to loop through
+addRequired(iP, 'pMin', ...     % minimum values of parameters to loop through
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
-addRequired(iP, 'pmax', ...     % maximum values of parameters to loop through
+addRequired(iP, 'pMax', ...     % maximum values of parameters to loop through
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
-addRequired(iP, 'pinc', ...     % increments of parameters to loop through
+addRequired(iP, 'pInc', ...     % increments of parameters to loop through
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 
 % Add parameter-value pairs to the input Parser
@@ -119,7 +119,7 @@ addParameter(iP, 'ActMode', 0, ...      % activation mode
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'integer'}));
 
 % Read from the input Parser
-parse(iP, loopMode, pNames, pLabels, pIsLog, pmin, pmax, pinc, varargin{:});
+parse(iP, loopMode, pNames, pLabels, pIsLog, pMin, pMax, pInc, varargin{:});
 loopMode = validatestring(loopMode, possibleLoopmodes);
 outfolder = iP.Results.OutFolder;
 filelabel = iP.Results.FileLabel;
@@ -133,59 +133,57 @@ end
 
 % Check relationships between arguments
 if numel(unique([numel(pNames), numel(pLabels), numel(pIsLog), ...
-                numel(pmin), numel(pmax), numel(pinc)])) ~= 1
-    error('pNames, pLabels, pIsLog, pmin, pmax, pinc not all equal length!!');
+                numel(pMin), numel(pMax), numel(pInc)])) ~= 1
+    error('pNames, pLabels, pIsLog, pMin, pMax, pInc not all equal length!!');
 end
 
 %% Calculate number of parameters to loop through
-nump = numel(pNames);
-pValues = cell(1, nump);        % parameter values that will be used
-nperp = zeros(1, nump);            % number of trials per parameter type
-for p = 1:nump
+nParams = numel(pNames);
+pValues = cell(1, nParams);     % parameter values that will be used
+nSimsEachParam = zeros(1, nParams);      % number of simulations per parameter type
+for p = 1:nParams
     % Generate parameter values that will be used
     if pIsLog(p)
-        pValues{p} = exp(log(pmin(p)):log(pinc(p)):log(pmax(p)))';
-                                            % parameters used as a column vector
+        pValues{p} = exp(log(pMin(p)):log(pInc(p)):log(pMax(p)))';
     else
-        pValues{p} = (pmin(p):pinc(p):pmax(p))';
-                                            % parameters used as a column vector
+        pValues{p} = (pMin(p):pInc(p):pMax(p))';
     end
-    nperp(p) = length(pValues{p});
+    nSimsEachParam(p) = length(pValues{p});
 end
 
-%% Find total number of trials
+%% Find total number of simulations
 switch loopMode
 case 'cross'
-    % Total number of trials in 'cross' mode
-    nTrials = sum(nperp);
+    % Total number of simulations in 'cross' mode
+    nSims = sum(nSimsEachParam);
 case 'grid'
-    % Total number of trials in 'grid' mode
-    nTrials = prod(nperp);
+    % Total number of simulations in 'grid' mode
+    nSims = prod(nSimsEachParam);
 end
 
 %% Create pchnames & pchvalues
 switch loopMode
 case 'cross'
-    pchnames = cell(nTrials, 1);    % stores parameter name for each trial
-    pchvalues = zeros(nTrials, 1);  % stores parameter value for each trial
-    ct = 0;                         % counts number of trials used
-    for p = 1:nump
+    pchnames = cell(nSims, 1);    % stores parameter name for each trial
+    pchvalues = zeros(nSims, 1);  % stores parameter value for each trial
+    ct = 0;                         % counts number of simulations used
+    for p = 1:nParams
         % Store parameter names and values for each trial 
         %   (to keep things in order)
-        indices = (ct + 1):(ct + nperp(p));     % indices for this parameter
+        indices = (ct + 1):(ct + nSimsEachParam(p));     % indices for this parameter
         pchnames(indices) = repmat(pNames(p), 1, length(indices));
                                                 % parameter name for each trial
         pchvalues(indices) = (pValues{p})';     % parameter value for each trial 
 
         % Update count of number of files used
-        ct = ct + nperp(p);
+        ct = ct + nSimsEachParam(p);
     end
 case 'grid'
-    % Repeat each parameter name nperp times
-    pNamesRepeated = cell(1, nump);     % stores each parameter name 
-                                    %   repeated nperp times
-    for p = 1:nump
-        pNamesRepeated{p} = repmat(pNames(p), nperp(p), 1);
+    % Repeat each parameter name nSimsEachParam times
+    pNamesRepeated = cell(1, nParams);     % stores each parameter name 
+                                    %   repeated nSimsEachParam times
+    for p = 1:nParams
+        pNamesRepeated{p} = repmat(pNames(p), nSimsEachParam(p), 1);
     end
 
     % Construct all possible ordered pairs of values and corresponding names
@@ -203,8 +201,8 @@ end
 
 %% Save looping variables in a mat file named by the date & time
 save(fullfile(outfolder, sprintf('%s_%s', filelabel, loopedparamsfile)), ...
-    'loopMode', 'nTrials', 'nump', 'nperp', ...
-    'pNames', 'pLabels', 'pIsLog', 'pmin', 'pmax', 'pinc', ...
+    'loopMode', 'nSims', 'nParams', 'nSimsEachParam', ...
+    'pNames', 'pLabels', 'pIsLog', 'pMin', 'pMax', 'pInc', ...
     'pValues', 'pchnames', 'pchvalues', ...
     'nCells', 'actMode', '-v7.3');
 
