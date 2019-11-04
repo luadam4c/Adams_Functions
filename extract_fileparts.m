@@ -70,6 +70,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/create_pleth_EEG_movies.m
 %       cd/extract_common_directory.m
 %       cd/find_matching_files.m
+%       cd/m3ha_network_single_neuron.m
 %       cd/parse_atf_swd.m
 %       cd/parse_iox.m
 %       cd/plot_calcium_imaging_traces.m

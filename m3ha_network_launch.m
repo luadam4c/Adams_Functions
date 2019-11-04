@@ -56,6 +56,8 @@
 %% Experiment Name
 experimentName = 'm3ha';
 nCells = 1;
+% nCells = 2;
+% nCells = 20;
 % nCells = 100;
 useHH = true;
 % candidateIDs = [25, 36, 27];
@@ -77,14 +79,14 @@ onLargeMemFlag = false;         % whether to run on large memory nodes
 onHpcFlag = false;              % whether on high-performance computing server
 saveStdOutFlag = false;         % whether to always save standard outputs
 bicucullineFlag = true;         % whether GABA-A conductances are removed
-loopmode = 'cross'; %grid;      % how to loop through parameters: 
+loopMode = 'cross'; %grid;      % how to loop through parameters: 
                                 %   'cross' - Loop through each parameter 
                                 %               while fixing others
                                 %   'grid'  - Loop through all possible 
                                 %               combinations of parameters
 
 % Decide on what to save and plot
-savePlotMode = 'spikes';
+savePlotMode = 'spikes&special';
 saveAllVariablesFlag = false;
 % if nCells == 1 || nCells == 2
 %     savePlotMode = 'spikes&special';
@@ -95,7 +97,7 @@ saveAllVariablesFlag = false;
 % end
 
 %% Simulation modes
-simmode = 1;    % 1 - full simulation
+simMode = 1;    % 1 - full simulation
                 % 2 - short simulation
                 % 3 - medium simulation
 
@@ -178,7 +180,8 @@ switch nCells
 end
 
 %% For parpool
-if onLargeMemFlag || debugFlag || numel(simNumbers) == 1 || simmode == 2
+if onLargeMemFlag || debugFlag || numel(simNumbers) == 1 || ...
+        simMode == 2 || nCells == 1
     % No need renew parpool each batch if memory is not an issue
     renewParpoolFlagNeuron = 0;    % whether to renew parpool every batch to release memory
     maxNumWorkersNeuron = 20;      % maximum number of workers for running NEURON 
@@ -266,8 +269,6 @@ case 'spikes&special'
 end
 
 % Code not fixed yet
-saveNetwork = 1;
-plotNetwork = 1;
 plotTuning = 0;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -330,11 +331,20 @@ pinc    = [0.5, 0.05];              % increments of parameters to loop through
 pislog  = [0, 0];                   % whether increments of parameters is in log
 %}
 
+%{
 pnames  = {'pCond', 'gIncr'};       % names of parameters to loop through
 plabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
 pmin    = [1, 7.5];                 % minimum values of parameters to loop through
 pmax    = [4, 22.5];                % maximum values of parameters to loop through
 pinc    = [1, 7.5];                 % increments of parameters to loop through
+pislog  = [0, 0];                   % whether increments of parameters is in log
+%}
+
+pnames  = {'pCond', 'gIncr'};       % names of parameters to loop through
+plabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
+pmin    = [1, 15];                  % minimum values of parameters to loop through
+pmax    = [4, 45];                  % maximum values of parameters to loop through
+pinc    = [1, 15];                  % increments of parameters to loop through
 pislog  = [0, 0];                   % whether increments of parameters is in log
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -480,21 +490,21 @@ actWidth = 50;                  % width of Gaussian distribution for
 actMaxP = 0.5;                  % maximum likelihood of activation at center
 
 %% Simulation parameters
-if simmode == 1
+if simMode == 1
     tStop = 30000;              % total time of simulation (ms)
-elseif simmode == 2
+elseif simMode == 2
     tStop = 4000; %1000;        % total time of simulation (ms)
-elseif simmode == 3
+elseif simMode == 3
     tStop = 7000; %4000;        % total time of simulation (ms)
 end
 dt = 0.1;                       % time step of integration (ms)
 
 %% Recording parameters
-if simmode == 1
+if simMode == 1
     tStart = 0;                 % time to start plotting (ms)
-elseif simmode == 2
+elseif simMode == 2
     tStart = 0;                 % time to start plotting (ms)
-elseif simmode == 3
+elseif simMode == 3
     tStart = 0;                 % time to start plotting (ms)
 end
 REsp1cellID = actCellID;        % ID # of 1st special RE neuron to record
@@ -616,7 +626,7 @@ check_dir(outFolder);
 
 %% Construct looped parameters
 [pchnames, pchvalues, nSims, nump, pvalues, nperp] = ...
-    create_looped_params (loopmode, pnames, plabels, pislog, pmin, pmax, pinc, ...
+    create_looped_params (loopMode, pnames, plabels, pislog, pmin, pmax, pinc, ...
             'OutFolder', outFolder, 'FileLabel', fileLabel, ...
             'NCells', nCells, 'ActMode', actMode);
 
@@ -713,7 +723,7 @@ simParamNames = { ...
     'stimStart'; 'stimDur'; 'stimFreq'; ...
     'cpDur'; 'cpAmp'; 'cpPer'; 'cpNum'; ...
     'actCellV'; 'actWidth'; 'actMaxP'; ...
-    'simmode'; 'tStop'; ...
+    'simMode'; 'tStop'; ...
     'dt'; 'tStart'; ...
     'REsp1cellID'; 'REsp2cellID'; ...
     'TCsp1cellID'; 'TCsp2cellID'; ...
@@ -740,7 +750,7 @@ simParamsInit = [ ...
     stimStart; stimDur; stimFreq; ...
     cpDur; cpAmp; cpPer; cpNum; ...
     actCellV; actWidth; actMaxP; ...
-    simmode; tStop; ...
+    simMode; tStop; ...
     dt; tStart; ...
     REsp1cellID; REsp2cellID; TCsp1cellID; TCsp2cellID; ...
     act; actLeft1; actLeft2; far; ...

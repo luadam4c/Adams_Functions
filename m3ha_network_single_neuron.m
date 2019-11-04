@@ -1,8 +1,8 @@
-function [data] = m3ha_network_single_neuron (infolder, varargin)
+function [data] = m3ha_network_single_neuron (inFolder, varargin)
 %% Shows single neuron traces for different neurons or for different properties in the same neuron
-% USAGE: [data] = m3ha_network_single_neuron (infolder, varargin)
+% USAGE: [data] = m3ha_network_single_neuron (inFolder, varargin)
 % Arguments:
-%   infolder    - the name of the directory containing the .syn files, e.g. '20170317T1127_Ggaba_0.01'
+%   inFolder    - the name of the directory containing the .syn files, e.g. '20170317T1127_Ggaba_0.01'
 %            must be a character array
 %   varargin    - 'FigTypes': figure type(s) for saving; e.g., 'png', 'fig', or {'png', 'fig'}, etc.
 %            could be anything recognised by the built-in saveas() function
@@ -10,7 +10,7 @@ function [data] = m3ha_network_single_neuron (infolder, varargin)
 %            default == 'png'
 %            - 'OutFolder': the name of the directory that the plots will be placed
 %            must be a directory
-%            default: same as infolder
+%            default: same as inFolder
 %            - 'MaxNumWorkers': maximum number of workers for running NEURON 
 %            must a positive integer
 %            default: 20
@@ -37,18 +37,20 @@ function [data] = m3ha_network_single_neuron (infolder, varargin)
 %                       10 - chloride concentration (mM) in inner annuli trace
 %                       11 - chloride reversal potential trace
 %                       12 - GABA-A reversal potential trace
-%            NOTE: must be consistent with proplabels & net.hoc
+%            NOTE: must be consistent with propLabels & net.hoc
 %
 % Requires:
-%        cd/find_in_strings.m
-%        cd/isfigtype.m
-%        cd/save_all_figtypes.m
-%        infolder/*.singv OR infolder/*.singcli OR infolder/*.singsp
-%        infolder/['sim_params_', pstring, '.csv'] for all the possible parameter strings
-%        /home/Matlab/Downloaded_Functions/subaxis.m
+%       cd/all_files.m
+%       cd/extract_fileparts.m
+%       cd/find_in_strings.m
+%       cd/isfigtype.m
+%       cd/save_all_figtypes.m
+%       inFolder/*.singv OR inFolder/*.singcli OR inFolder/*.singsp
+%       inFolder/['sim_params_', pstring, '.csv'] for all the possible parameter strings
+%       /home/Matlab/Downloaded_Functions/subaxis.m
 %
 % Used by:
-%        cd/m3ha_launch.m
+%       cd/m3ha_launch.m
 
 % File History:
 % 2017-10-23 Modified from /RTCl/single_neuron.m
@@ -56,51 +58,53 @@ function [data] = m3ha_network_single_neuron (infolder, varargin)
 % 2017-11-03 Changed ylim for voltage [-100, 60] -> [-120, 60]
 % 2018-04-17 Fixed legend() to conform with R2017a
 % 2018-04-27 Now plots spikes on voltage traces of special neuron plots
-% TODO: Take useHH as an optional argument and change TCproplabels accordingly
+% 2019-11-04 Updated code to use all_files.m, extract_fileparts.m
+% TODO: Take useHH as an optional argument and change propLabelsTC accordingly
 %
 
-%% Set parameters
-nzooms = 4;         % number of different time intervals to plot for each data
-nppf = nzooms + 1;  % number of plots per file
+%% Hard-coded parameters
+% Set parameters
+nZooms = 4;                 % number of different time intervals to plot for each data
+nPlotsPerFile = nZooms + 1; % number of plots per file
 
-%% Set property labels
+% Set property labels
 %   Note: must be consistent with m3ha_net1.hoc
-RTproplabels = {'v (mV)', 'ina (mA/cm2)', 'ik (mA/cm2)', ...
+propLabelsRT = {'v (mV)', 'ina (mA/cm2)', 'ik (mA/cm2)', ...
                 'ica (mA/cm2)', 'iAMPA (nA)', 'iGABA (nA)', ...
                 'cai (mM)', 'cli (mM)', 'Gicl (nA)', 'Gihco3 (nA)', ...
                 'icl (mA/cm2)', 'cli1 (mM)', ...
                 'ecl (mV)', 'eGABA (mV)'};
-% TCproplabels = {'v (mV)', 'ina (mA/cm2)', 'ik (mA/cm2)', ...
-%                 'ica (mA/cm2)', 'iGABAA (nA)', 'iGABAB (nA)', ...
-%                 'cai (mM)', 'gGABAB (uS)'};
-% TCproplabels = {'v (mV)', 'inRefractory', 'ik (mA/cm2)', ...
-%                 'ica (mA/cm2)', 'iGABAA (nA)', 'iGABAB (nA)', ...
-%                 'cai (mM)', 'gGABAB (uS)'};
-TCproplabels = {'v (mV)', 'inSlopeWatching', 'ik (mA/cm2)', ...
+propLabelsTC = {'v (mV)', 'ina (mA/cm2)', 'ik (mA/cm2)', ...
                 'ica (mA/cm2)', 'iGABAA (nA)', 'iGABAB (nA)', ...
                 'cai (mM)', 'gGABAB (uS)'};
+% propLabelsTC = {'v (mV)', 'inRefractory', 'ik (mA/cm2)', ...
+%                 'ica (mA/cm2)', 'iGABAA (nA)', 'iGABAB (nA)', ...
+%                 'cai (mM)', 'gGABAB (uS)'};
+% propLabelsTC = {'v (mV)', 'inSlopeWatching', 'ik (mA/cm2)', ...
+%                 'ica (mA/cm2)', 'iGABAA (nA)', 'iGABAB (nA)', ...
+%                 'cai (mM)', 'gGABAB (uS)'};
 
-%% Set figure name suffices
-v_figsuffix = '_selected_soma_voltage.png';
-cli_figsuffix = '_selected_soma_cli.png';
-sp_figsuffix = '_alltraces.png';
+% Set figure name suffices
+figSuffixVoltage = '_selected_soma_voltage.png';
+figSuffixCli = '_selected_soma_cli.png';
+figSuffixSp = '_alltraces.png';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error('An infolder is required, type ''help m3ha_network_single_neuron'' for usage');
+    error(create_error_for_nargin(mfilename));
 end
 
 % Add required inputs to an Input Parser
 iP = inputParser;
-addRequired(iP, 'infolder', @isdir);    % the name of the directory containing the .syn files
+addRequired(iP, 'inFolder', @isdir);    % the name of the directory containing the .syn files
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'FigTypes', 'png', ... % figure type(s) for saving; e.g., 'png', 'fig', or {'png', 'fig'}, etc.
     @(x) min(isfigtype(x, 'ValidateMode', true)));
-addParameter(iP, 'OutFolder', '@infolder', @isdir);     % the name of the directory that the plots will be placed
+addParameter(iP, 'OutFolder', '@inFolder', @isdir);     % the name of the directory that the plots will be placed
 addParameter(iP, 'MaxNumWorkers', 20, ...               % maximum number of workers for running NEURON
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 addParameter(iP, 'RenewParpool', true, ...              % whether to renew parpool every batch to release memory
@@ -112,216 +116,233 @@ addParameter(iP, 'PropertiesToPlot', 1:1:12, ...        % property #s of special
                             '>', 0, '<', 13}));
 
 % Read from the Input Parser
-parse(iP, infolder, varargin{:});
+parse(iP, inFolder, varargin{:});
 [~, figtypes]    = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
-outfolder        = iP.Results.OutFolder;
-maxnumworkers    = iP.Results.MaxNumWorkers;
-renewparpool     = iP.Results.RenewParpool;
-cellstoplot      = iP.Results.CellsToPlot;
-propertiestoplot = iP.Results.PropertiesToPlot;
+outFolder        = iP.Results.OutFolder;
+maxNumWorkers    = iP.Results.MaxNumWorkers;
+renewParpool     = iP.Results.RenewParpool;
+cellsToPlot      = iP.Results.CellsToPlot;
+propertiesToPlot = iP.Results.PropertiesToPlot;
+renewParpool = false;
 
 % Change default arguments if necessary
-if strcmp(outfolder, '@infolder')
-    outfolder = infolder;
+if strcmp(outFolder, '@inFolder')
+    outFolder = inFolder;
 end
-
-%% Add directories to search path for required functions
-if exist('/home/Matlab/', 'dir') == 7
-    functionsdirectory = '/home/Matlab/';
-elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
-    functionsdirectory = '/scratch/al4ng/Matlab/';
-else
-    error('Valid functionsdirectory does not exist!');
-end
-addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));    % for subaxis.m
-addpath(fullfile(functionsdirectory, '/Adams_Functions/'));         % for isfigtype.m & find_in_strings.m
 
 %% Find all .singv, .singcli or .singsp files
-files = dir(fullfile(infolder, '*.sing*'));
-nfiles = length(files);
+% Find files
+[~, singPaths] = all_files('Directory', inFolder, 'Regexp', '.*.sing.*');
+
+% Count the number of files
+nFiles = numel(singPaths);
 
 %% Set up plots
-nplots = nfiles * nppf;
-filenames = cell(1, nplots);    % stores file name for each plot
-filetypes = cell(1, nplots);    % stores file type for each plot
-fullfignames = cell(1, nplots); % stores full figure names for each plot
-nCells = zeros(1, nplots);      % stores nCells for each plot
-tStarts = zeros(1, nplots);     % stores tStart for each plot
-tStops = zeros(1, nplots);      % stores tStop for each plot
-stimStarts = zeros(1, nplots); % stores stimStart for each plot
-stimDurs = zeros(1, nplots);   % stores stimDur for each plot
-stimFreqs = zeros(1, nplots);  % stores stimFreq for each plot
-useHH = zeros(1, nplots);       % stores useHH for each plot
-act = zeros(1, nplots);         % stores act for each plot
-actLeft1 = zeros(1, nplots);   % stores actLeft1 for each plot
-actLeft2 = zeros(1, nplots);   % stores actLeft2 for each plot
-far = zeros(1, nplots);         % stores far for each plot
-cellIDsToPlot = cell(1, nplots);     % stores default neuron ID #s to plot for each plot
-proplabels = cell(1, nplots);   % stores property labels for each plot
-for i = 1:nfiles
+nPlots = nFiles * nPlotsPerFile;
+fileNames = cell(nPlots, 1);    % stores file name for each plot
+fileTypes = cell(nPlots, 1);    % stores file type for each plot
+fullFigNames = cell(nPlots, 1); % stores full figure names for each plot
+nCells = zeros(nPlots, 1);      % stores nCells for each plot
+tStarts = zeros(nPlots, 1);     % stores tStart for each plot
+tStops = zeros(nPlots, 1);      % stores tStop for each plot
+stimStarts = zeros(nPlots, 1); % stores stimStart for each plot
+stimDurs = zeros(nPlots, 1);   % stores stimDur for each plot
+stimFreqs = zeros(nPlots, 1);  % stores stimFreq for each plot
+useHH = zeros(nPlots, 1);       % stores useHH for each plot
+act = zeros(nPlots, 1);         % stores act for each plot
+actLeft1 = zeros(nPlots, 1);   % stores actLeft1 for each plot
+actLeft2 = zeros(nPlots, 1);   % stores actLeft2 for each plot
+far = zeros(nPlots, 1);         % stores far for each plot
+cellIDsToPlot = cell(nPlots, 1);     % stores default neuron ID #s to plot for each plot
+propLabels = cell(nPlots, 1);   % stores property labels for each plot
+nPlotsSet = 0;
+for iFile = 1:nFiles
+    % Get the current file path
+    singPathThis = singPaths{iFile};
+
+    % Extract the file base and extension
+    fileName = extract_fileparts(singPathThis, 'name');
+    fileBase = extract_fileparts(singPathThis, 'base');
+    fileExt = extract_fileparts(singPathThis, 'extension');
+
+    % Set filetype according to filename
+    switch fileExt
+        case '.singv'
+            fileType = 'v';
+        case '.singcli'
+            fileType = 'cli';
+        case '.singsp'
+            fileType = 'sp';
+        otherwise
+            error('fileExt unrecognised!');
+    end
+
+    % Construct path to the simulation parameters spreadsheet
+    simParamsFileName = ['sim_params_', extractAfter(fileBase, '_'), '.csv'];
+    simParamsPath = fullfile(inFolder, simParamsFileName);
+
+    % Read the simulation parameters table
+    simParamsTable = readtable(simParamsPath, 'ReadRowNames', true);
+
     % Set property labels according to file name
-    fileName = files(i).name;
-    switch fileName(1:2)
+    switch fileBase(1:2)
     case 'RE'
-        proplabels{i} = RTproplabels;
+        propLabels{iFile} = propLabelsRT;
     case 'TC'
-        proplabels{i} = TCproplabels;
+        propLabels{iFile} = propLabelsTC;
     otherwise
         error('File name must include ''RE'' or ''TC''!');
     end
 
-    % Set things common for all time intervals to plot
-    for j = 1:nppf
-        % Find current index of plots
-        ci = nppf*(i-1)+j;      % current index of plots
+    % Find indices of plots corresponding to this file
+    indPlots = nPlotsSet + (1:nPlotsPerFile);
 
-        % Store file name
-        filenames{ci} = files(i).name;
+    % Extract parameters from the simulation parameters table
+    [nCellsThis, tStartThis, tStopThis, ...
+        stimStartThis, stimDurThis, stimFreqThis, ...
+        useHHThis, actThis, actLeft1This, ...
+        actLeft2This, farThis] = ...
+            argfun(@(x) simParamsTable{x, 'Value'}, ...
+                    'nCells', 'tStart', 'tStop', ...
+                    'stimStart', 'stimDur', 'stimFreq', ...
+                    'useHH', 'act', 'actLeft1', ...
+                    'actLeft2', 'far');
 
-        % Set filetype according to filename
-        if strfind(files(i).name, '.singv')
-            filetypes{ci} = 'v';
-        elseif strfind(files(i).name, '.singcli')
-            filetypes{ci} = 'cli';
-        elseif strfind(files(i).name, '.singsp')
-            filetypes{ci} = 'sp';
-        end
+    % Store file names and types
+    fileNames(indPlots) = repmat({fileName}, nPlotsPerFile, 1);
+    fileTypes(indPlots) = repmat({fileType}, nPlotsPerFile, 1);
 
-        % Extract parameters from sim_params file
-        [~, fileBase, ~] = fileparts(files(i).name);
-        tempArray = strsplit(fileBase, '_');
-        simFileName = ['sim_params_', strjoin(tempArray(2:end), '_'), '.csv'];
-        fid = fopen(fullfile(infolder, simFileName));
-        simFileContent = textscan(fid, '%s %f %s', 'Delimiter', ',');
-        paramNames = simFileContent{1};
-        paramValues = simFileContent{2};
-        nCells(ci) = paramValues(find_in_strings('nCells', paramNames, 'SearchMode', 'exact'));
-        tStarts(ci) = paramValues(find_in_strings('tStart', paramNames, 'SearchMode', 'exact'));
-        tStops(ci) = paramValues(find_in_strings('tStop', paramNames, 'SearchMode', 'exact'));
-        stimStarts(ci) = paramValues(find_in_strings('stimStart', paramNames, 'SearchMode', 'exact'));
-        stimDurs(ci) = paramValues(find_in_strings('stimDur', paramNames, 'SearchMode', 'exact'));
-        stimFreqs(ci) = paramValues(find_in_strings('stimFreq', paramNames, 'SearchMode', 'exact'));
-        useHH(ci) = paramValues(find_in_strings('useHH', paramNames, 'SearchMode', 'exact'));
-        act(ci) = paramValues(find_in_strings('act', paramNames, 'SearchMode', 'exact'));
-        actLeft1(ci) = paramValues(find_in_strings('actLeft1', paramNames, 'SearchMode', 'exact'));
-        actLeft2(ci) = paramValues(find_in_strings('actLeft2', paramNames, 'SearchMode', 'exact'));
-        far(ci) = paramValues(find_in_strings('far', paramNames, 'SearchMode', 'exact'));
-        fclose(fid);
+    % Store parameters
+    [nCells(indPlots), stimStarts(indPlots), ...
+        stimDurs(indPlots), stimFreqs(indPlots), ...
+        useHH(indPlots), act(indPlots), actLeft1(indPlots), ...
+        actLeft2(indPlots), far(indPlots)] = ...
+            argfun(@(x) repmat(x, nPlotsPerFile, 1), ...
+                    nCellsThis, stimStartThis, ...
+                    stimDurThis, stimFreqThis, ...
+                    useHHThis, actThis, actLeft1This, ...
+                    actLeft2This, farThis);
 
-        % Set default ID #s for neurons whose voltage is to be plotted
-        if ~isempty(cellstoplot)
-            cellIDsToPlot{ci} = cellstoplot;
-        else
-            cellIDsToPlot{ci} = [act(ci), actLeft1(ci), ...
-                                actLeft2(ci), far(ci)];
-        end
-
+    % Set default ID #s for neurons whose voltage is to be plotted
+    if ~isempty(cellsToPlot)
+        cellIDsToPlot(indPlots) = repmat({cellsToPlot}, nPlotsPerFile, 1);
+    else
+        cellIDsToPlot(indPlots) = ...
+            arrayfun(@(x) [act(x), actLeft1(x), actLeft2(x), far(x)], ...
+                    indPlots, 'UniformOutput', false);
     end
 
-    % Set general figure names according to filename
-    if strfind(files(i).name, '.singv')
-        figname = strrep(files(i).name, '.singv', v_figsuffix);
-    elseif strfind(files(i).name, '.singcli')
-        figname = strrep(files(i).name, '.singcli', cli_figsuffix);    
-    elseif strfind(files(i).name, '.singsp')
-        figname = strrep(files(i).name, '.singsp', sp_figsuffix);
+    % Set general figure names according to fileType
+    switch fileType
+        case 'v'
+            figSuffix = figSuffixVoltage;
+        case 'cli'
+            figSuffix = figSuffixCli;
+        case 'sp'
+            figSuffix = figSuffixSp;
     end
+    figName = [fileBase, figSuffix];
+    figPath = fullfile(outFolder, figName);
 
     % Create full figure names with modifications
-    fullfignames{nppf*(i-1)+1} = fullfile(outfolder, figname);
-    fullfignames{nppf*(i-1)+2} = strrep(fullfignames{nppf*(i-1)+1}, '.png', '_zoom1.png');
-    fullfignames{nppf*(i-1)+3} = strrep(fullfignames{nppf*(i-1)+1}, '.png', '_zoom2.png');
-    fullfignames{nppf*(i-1)+4} = strrep(fullfignames{nppf*(i-1)+1}, '.png', '_zoom3.png');
-    fullfignames{nppf*(i-1)+5} = strrep(fullfignames{nppf*(i-1)+1}, 'selected', 'heatmap');
+    fullFigNames{nPlotsSet+1} = figPath;
+    fullFigNames{nPlotsSet+2} = replace(figPath, '.png', '_zoom1.png');
+    fullFigNames{nPlotsSet+3} = replace(figPath, '.png', '_zoom2.png');
+    fullFigNames{nPlotsSet+4} = replace(figPath, '.png', '_zoom3.png');
+    fullFigNames{nPlotsSet+5} = replace(figPath, 'selected', 'heatmap');
 
-    % Create time limits for different time intervals to plot   % TODO: Change for m3ha
-    tStarts(nppf*(i-1)+1) = tStarts(ci);                                        % 0 ms
-    tStops(nppf*(i-1)+1) = tStops(ci);                                          % 30000 ms
-    tStarts(nppf*(i-1)+2) = max(stimStarts(ci)*2/3, tStarts(ci));              % 200 ms
-    tStops(nppf*(i-1)+2) = min(max(4000, stimStarts(ci)*40/3), tStops(ci));    % 30000 ms
-    tStarts(nppf*(i-1)+3) = max(stimStarts(ci) - 100, tStarts(ci));            % 2900 ms
-    tStops(nppf*(i-1)+3) = min(stimStarts(ci) + 400, tStops(ci));           % 4000 ms
-    tStarts(nppf*(i-1)+4) = max(stimStarts(ci) + stimDurs(ci), tStarts(ci));    % 500 ms
-    tStops(nppf*(i-1)+4) = min(stimStarts(ci) + stimDurs(ci) + 1000, tStops(ci));      % 1000 ms
+    % Create time limits for different time intervals to plot
+    %   TODO: Change for m3ha
+    tStarts(nPlotsSet+1) = tStartThis;                                          % 0 ms
+    tStops(nPlotsSet+1) = tStopThis;                                            % 30000 ms
+    tStarts(nPlotsSet+2) = max(stimStartThis*2/3, tStartThis);                  % 200 ms
+    tStops(nPlotsSet+2) = min(max(4000, stimStartThis*40/3), tStopThis);        % 30000 ms
+    tStarts(nPlotsSet+3) = max(stimStartThis - 100, tStartThis);                % 2900 ms
+    tStops(nPlotsSet+3) = min(stimStartThis + 400, tStopThis);                  % 4000 ms
+    tStarts(nPlotsSet+4) = max(stimStartThis + stimDurThis, tStartThis);        % 500 ms
+    tStops(nPlotsSet+4) = min(stimStartThis + stimDurThis + 1000, tStopThis);   % 1000 ms
 %{
-    tStarts(nppf*(i-1)+4) = max(stimStarts(ci) + stimDurs(ci) - 100, tStarts(ci));    % 500 ms
-    tStops(nppf*(i-1)+4) = min(stimStarts(ci) + stimDurs(ci) + 400, tStops(ci));      % 1000 ms
+    tStarts(nPlotsSet+4) = max(stimStartThis + stimDurThis - 100, tStartThis);  % 500 ms
+    tStops(nPlotsSet+4) = min(stimStartThis + stimDurThis + 400, tStopThis);    % 1000 ms
 %}
-    tStarts(nppf*(i-1)+5) = tStarts(ci);                                        % 0 ms
-    tStops(nppf*(i-1)+5) = tStops(ci);                                          % 233000 ms
+    tStarts(nPlotsSet+5) = tStartThis;                                              % 0 ms
+    tStops(nPlotsSet+5) = tStopThis;                                                % 233000 ms
+
+    % Update nPlotsSet
+    nPlotsSet = nPlotsPerFile .* iFile;
 end
 
 %% Create plots
-data = cell(1, nplots);     % some elements will be empty but the indexing is necessary for parfor
+data = cell(nPlots, 1);     % some elements will be empty but the indexing is necessary for parfor
 ct = 0;                     % counts number of trials completed
-poolobj = gcp('nocreate');  % get current parallel pool object without creating a new one
-if isempty(poolobj)
-    poolobj = parpool;      % create a default parallel pool object
-    oldnumworkers = poolobj.NumWorkers;         % number of workers in the default parallel pool object
+poolObj = gcp('nocreate');  % get current parallel pool object without creating a new one
+if isempty(poolObj)
+    poolObj = parpool;      % create a default parallel pool object
+    oldNumWorkers = poolObj.NumWorkers;         % number of workers in the default parallel pool object
 else
-    oldnumworkers = poolobj.NumWorkers;         % number of workers in the current parallel pool object
+    oldNumWorkers = poolObj.NumWorkers;         % number of workers in the current parallel pool object
 end
-numworkers = min(oldnumworkers, maxnumworkers); % number of workers to use for running NEURON
-if renewparpool
-    delete(poolobj);        % delete the parallel pool object to release memory
+numWorkers = min(oldNumWorkers, maxNumWorkers); % number of workers to use for running NEURON
+if renewParpool
+    delete(poolObj);        % delete the parallel pool object to release memory
 end
-while ct < nplots           % while not trials are completed yet
+while ct < nPlots           % while not trials are completed yet
     first = ct + 1;         % first trial in this batch
-    if renewparpool && ct + numworkers <= nplots% if memory is to be released
-        last = ct + numworkers;                 % limit the batch to numworkers
+    if renewParpool && ct + numWorkers <= nPlots% if memory is to be released
+        last = ct + numWorkers;                 % limit the batch to numWorkers
     else
-        last = nplots;
+        last = nPlots;
     end
-    if renewparpool
-        poolobj = parpool('local', numworkers); % recreate a parallel pool object 
+    if renewParpool
+        poolObj = parpool('local', numWorkers); % recreate a parallel pool object 
                             % using fewer workers to prevent running out of memory
     end
     parfor k = first:last
-        iFile = ceil(k/nppf);
-        if strcmp(filetypes{k}, 'v') || strcmp(filetypes{k}, 'cli')
+        iFile = ceil(k/nPlotsPerFile);
+        if strcmp(fileTypes{k}, 'v') || strcmp(fileTypes{k}, 'cli')
             % Plot voltage or chloride concentration traces
-            if mod(k, nppf) == 0
-                plot_heat_map(filetypes{k}, tStarts(k), tStops(k), filenames{k}, fullfignames{k}, ...
-                        stimStarts(k), stimDurs(k), stimFreqs(k), infolder, figtypes);
-            elseif mod(k, nppf) == 1
+            if mod(k, nPlotsPerFile) == 0
+                plot_heat_map(fileTypes{k}, tStarts(k), tStops(k), fileNames{k}, fullFigNames{k}, ...
+                        stimStarts(k), stimDurs(k), stimFreqs(k), inFolder, figtypes);
+            elseif mod(k, nPlotsPerFile) == 1
                 % data{k} = ...
-                    plot_single_neuron_data(filetypes{k}, nCells(k), useHH(k), ...
-                        tStarts(k), tStops(k), filenames{k}, fullfignames{k}, ...
+                    plot_single_neuron_data(fileTypes{k}, nCells(k), useHH(k), ...
+                        tStarts(k), tStops(k), fileNames{k}, fullFigNames{k}, ...
                         cellIDsToPlot{k}, stimStarts(k), stimDurs(k), stimFreqs(k), ...
-                        infolder, figtypes, proplabels{iFile});
+                        inFolder, figtypes, propLabels{iFile});
             else
-                plot_single_neuron_data(filetypes{k}, nCells(k), useHH(k), ...
-                    tStarts(k), tStops(k), filenames{k}, fullfignames{k}, ...
+                plot_single_neuron_data(fileTypes{k}, nCells(k), useHH(k), ...
+                    tStarts(k), tStops(k), fileNames{k}, fullFigNames{k}, ...
                     cellIDsToPlot{k}, stimStarts(k), stimDurs(k), stimFreqs(k), ...
-                    infolder, figtypes, proplabels{iFile});
+                    inFolder, figtypes, propLabels{iFile});
             end
-        elseif strcmp(filetypes{k}, 'sp')
+        elseif strcmp(fileTypes{k}, 'sp')
             % Plot other properties traces for special neurons
-            if mod(k, nppf) == 0
+            if mod(k, nPlotsPerFile) == 0
                 % No heat map; do nothing
-            elseif mod(k, nppf) == 1
+            elseif mod(k, nPlotsPerFile) == 1
                 % data{k} = ...
-                    plot_single_neuron_data(filetypes{k}, nCells(k), useHH(k), ...
-                        tStarts(k), tStops(k), filenames{k}, fullfignames{k}, ...
-                        propertiestoplot, stimStarts(k), stimDurs(k), stimFreqs(k), ...
-                        infolder, figtypes, proplabels{iFile});
+                    plot_single_neuron_data(fileTypes{k}, nCells(k), useHH(k), ...
+                        tStarts(k), tStops(k), fileNames{k}, fullFigNames{k}, ...
+                        propertiesToPlot, stimStarts(k), stimDurs(k), stimFreqs(k), ...
+                        inFolder, figtypes, propLabels{iFile});
             else
-                plot_single_neuron_data(filetypes{k}, nCells(k), useHH(k), ...
-                    tStarts(k), tStops(k), filenames{k}, fullfignames{k}, ...
-                    propertiestoplot, stimStarts(k), stimDurs(k), stimFreqs(k), ...
-                    infolder, figtypes, proplabels{iFile});
+                plot_single_neuron_data(fileTypes{k}, nCells(k), useHH(k), ...
+                    tStarts(k), tStops(k), fileNames{k}, fullFigNames{k}, ...
+                    propertiesToPlot, stimStarts(k), stimDurs(k), stimFreqs(k), ...
+                    inFolder, figtypes, propLabels{iFile});
             end
         end
 
         close all;
     end
-    if renewparpool
-        delete(poolobj);    % delete the parallel pool object to release memory
+    if renewParpool
+        delete(poolObj);    % delete the parallel pool object to release memory
     end
     ct = last;              % update number of trials completed
 end
-if renewparpool
-    poolobj = parpool('local', oldnumworkers);    % recreate a parallel pool object using the previous number of workers
+if renewParpool
+    poolObj = parpool('local', oldNumWorkers);    % recreate a parallel pool object using the previous number of workers
 end
 
 %% Remove empty elements from data
@@ -329,11 +350,11 @@ data = data(~cellfun(@isempty, data));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function data = plot_heat_map(filetype, tStart, tStop, filename, figname, stimStart, stimDur, stimFreq, infolder, figtypes)
+function data = plot_heat_map(filetype, tStart, tStop, filename, figName, stimStart, stimDur, stimFreq, inFolder, figtypes)
 %% Plot heat map
 
 % Load single neuron data
-data = load(fullfile(infolder, filename));
+data = load(fullfile(inFolder, filename));
 
 % Check (ID #s of neurons) to plot
 nCells = size(data, 2) - 1;        % total number of columns in the data minus the time vector
@@ -343,7 +364,7 @@ if nCells < 1
 end
 
 % Find range of data values to plot and load spike data
-[climits, spikes] = get_aux(filetype, filename, infolder);
+[climits, spikes] = get_aux(filetype, filename, inFolder);
 
 % Get the spike cell numbers if available
 if ~isempty(spikes)
@@ -391,19 +412,19 @@ xlabel(timelabel);
 ylabel('Neuron number');
 colorbar;
 if strcmp(filetype, 'v')
-    title(['Somatic voltage (mV) for ', strrep(filename, '_', '\_')]);
+    title(['Somatic voltage (mV) for ', replace(filename, '_', '\_')]);
 elseif strcmp(filetype, 'cli')
-    title(['Chloride concentration (mM) for ', strrep(filename, '_', '\_')]);
+    title(['Chloride concentration (mM) for ', replace(filename, '_', '\_')]);
 end
 
 % Save figure
-save_all_figtypes(h, figname, figtypes);
+save_all_figtypes(h, figName, figtypes);
 %close(h);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function data = plot_single_neuron_data(filetype, nCells, useHH, tStart, tStop, filename, figname, ToPl, stimStart, stimDur, stimFreq, infolder, figtypes, proplabels)
+function data = plot_single_neuron_data(filetype, nCells, useHH, tStart, tStop, filename, figName, ToPl, stimStart, stimDur, stimFreq, inFolder, figtypes, propLabels)
 %% Plot single neuron data
 
 %% Extract info from arguments
@@ -423,11 +444,11 @@ if strcmp(filetype, 'v') || strcmp(filetype, 'cli')
     end
 elseif strcmp(filetype, 'sp')
     % Set labels for properties of the special neuron to be plotted, must be consistent with net.hoc
-    labels = proplabels;
+    labels = propLabels;
 end
 
 % Load data
-data = load(fullfile(infolder, filename));
+data = load(fullfile(inFolder, filename));
 
 % Check (ID #s of neurons) or (properties of special neuron) to plot
 ncols = size(data, 2) - 1;        % total number of columns in the data minus the time vector
@@ -453,7 +474,7 @@ end
 % TODO: Do this for voltage plots too
 if strcmp(filetype, 'sp')
     % Load spike data for this condition
-    [~, spikes] = get_aux(filetype, filename, infolder);
+    [~, spikes] = get_aux(filetype, filename, inFolder);
 
     % If spikes are available, get the spikes for this special neuron
     if ~isempty(spikes)
@@ -486,15 +507,15 @@ if strcmp(filetype, 'sp') && ~isempty(indThis)
 
     % Find the corresponding voltage values for each neuron
     voltageThis = zeros(size(spiketimesThis));
-    for i = 1:length(spiketimesThis)
+    for iSpike = 1:length(spiketimesThis)
         % Find the last index of the time vector before spike time
-        idxTime = find(timevec <= spiketimesThis(i), 1, 'last');
+        idxTime = find(timevec <= spiketimesThis(iSpike), 1, 'last');
         if isempty(idxTime)
             idxTime = 1;
         end
 
         % Find the corresponding voltage value
-        voltageThis(i) = data(idxTime, ToPl(1) + 1);
+        voltageThis(iSpike) = data(idxTime, ToPl(1) + 1);
     end
 else
     % Change units of time axis from ms to s if the total time is > 10 seconds
@@ -508,19 +529,19 @@ h = figure(10000);
 clf(h);
 
 % Plot voltage trace for each neuron with iD # in ToPl
-for k = 1:nsubplots
+for iSubPlot = 1:nsubplots
     % Generate subplot
-    subaxis(nsubplots, 1, k, 'SpacingVert', 0.015)
+    subaxis(nsubplots, 1, iSubPlot, 'SpacingVert', 0.015)
     hold on;
     if strcmp(filetype, 'v') || strcmp(filetype, 'cli')
         % Trace for neuron #i is in the i+2nd column
         %   label for neuron #i is in the i+1st entry
-        p = plot(timevec, data(:, ToPl(k) + 2), 'b', ...
-            'DisplayName', strrep(labels{ToPl(k) + 1}, '_', '\_'));
+        p = plot(timevec, data(:, ToPl(iSubPlot) + 2), 'b', ...
+            'DisplayName', replace(labels{ToPl(iSubPlot) + 1}, '_', '\_'));
     elseif strcmp(filetype, 'sp')
         % Property #i is in the i+1st column
-        p = plot(timevec, data(:, ToPl(k) + 1), 'b', ...
-            'DisplayName', strrep(labels{ToPl(k)}, '_', '\_'));
+        p = plot(timevec, data(:, ToPl(iSubPlot) + 1), 'b', ...
+            'DisplayName', replace(labels{ToPl(iSubPlot)}, '_', '\_'));
     end
     xlim([xlim1, xlim2]);
     if strcmp(filetype, 'v')
@@ -530,7 +551,7 @@ for k = 1:nsubplots
     end
 
     % Remove X Tick Labels except for the last subplot
-    if k < nsubplots
+    if iSubPlot < nsubplots
         set(gca,'XTickLabel',[])
     end
 
@@ -543,7 +564,7 @@ for k = 1:nsubplots
 
     % For the voltage plot (subplot 1) of special neurons, 
     %   add spike times if available
-    if strcmp(filetype, 'sp') && ~isempty(indThis) && k == 1
+    if strcmp(filetype, 'sp') && ~isempty(indThis) && iSubPlot == 1
         plot(spiketimesThis, voltageThis, 'r*', 'MarkerSize', 3);
     end
 
@@ -551,21 +572,21 @@ for k = 1:nsubplots
     legend([p], 'Location', 'northeast');
 
     % Add a stimulation line & title for the first subplot and an x-axis label for the last subplot
-    if k == 1
+    if iSubPlot == 1
         if strcmp(filetype, 'v')
-            title(['Somatic voltage (mV) for ', strrep(filename, '_', '\_')]);
+            title(['Somatic voltage (mV) for ', replace(filename, '_', '\_')]);
         elseif strcmp(filetype, 'cli')
-            title(['Chloride concentration (mM) for ', strrep(filename, '_', '\_')]);
+            title(['Chloride concentration (mM) for ', replace(filename, '_', '\_')]);
         elseif strcmp(filetype, 'sp')
-            title(['Traces for ', strrep(filename, '_', '\_')]);
+            title(['Traces for ', replace(filename, '_', '\_')]);
         end
-    elseif k == nsubplots
+    elseif iSubPlot == nsubplots
         xlabel(timelabel);
     end
 end
 
 % Save figure
-save_all_figtypes(h, figname, figtypes);
+save_all_figtypes(h, figName, figtypes);
 %close(h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -603,22 +624,22 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [climits, spikes] = get_aux (filetype, filename, infolder)
+function [climits, spikes] = get_aux (filetype, filename, inFolder)
 
 % Based on filetype, find range of data values to plot 
 %   and spike time data filename
 if strcmp(filetype, 'v')
     climits = [-100, 50];
-    spifilename = strrep(filename, '.singv', '.spi');
+    spifilename = replace(filename, '.singv', '.spi');
 elseif strcmp(filetype, 'cli')
     climits = [0, 100];
-    spifilename = strrep(filename, '.singcli', '.spi');
+    spifilename = replace(filename, '.singcli', '.spi');
 elseif strcmp(filetype, 'sp')
     climits = [];
 
     % Start with something like TC[49]_gincr_7.5.singsp
     % First, replace the extension
-    temp1 = strrep(filename, '.singsp', '.spi');
+    temp1 = replace(filename, '.singsp', '.spi');
 
     % Next, split by ']', which yields a cell array
     temp2 = strsplit(temp1, ']');
@@ -637,12 +658,16 @@ elseif strcmp(filetype, 'sp')
 end
 
 % Load spike data
-spikes = load(fullfile(infolder, spifilename));
+spikes = load(fullfile(inFolder, spifilename));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+files = dir(fullfile(inFolder, '*.sing*'));
+nFiles = numel(files);
+fileName = files(i).name;
 
 %}
 
