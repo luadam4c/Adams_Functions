@@ -53,15 +53,18 @@
 % TODO: Update specs for m3ha_network_raster_plot.m
 %
 
-%% Experiment Name
-experimentName = 'm3ha';
+%% Arguments defined here temporarily
 nCells = 1;
 % nCells = 2;
 % nCells = 20;
 % nCells = 100;
-useHH = true;
+useHH = true;           % whether to use HH channels
 % candidateIDs = [25, 36, 27];
-candidateIDs = 25;
+% candidateIDs = 25;
+candidateIDs = 22;
+
+%% Experiment Name
+experimentName = 'm3ha';
 % experimentSuffix = 'stimstart_3000';
 experimentSuffix = ['ncells_', num2str(nCells), '_useHH_', num2str(useHH), ...
             '_templateIDs_', strjoin(strsplit(num2str(candidateIDs)), ',')];
@@ -69,7 +72,9 @@ experimentSuffix = ['ncells_', num2str(nCells), '_useHH_', num2str(useHH), ...
 %% Hard-coded parameters
 homeDirName = 'network_model';
 paramsDirName = fullfile('best_params', ...
-                'bestparams_20180424_singleneuronfitting21_Rivanna');
+                'bestparams_20171213_singleneuronfitting16_Rivanna');
+% paramsDirName = fullfile('best_params', ...
+%                 'bestparams_20180424_singleneuronfitting21_Rivanna');
 
 %% Flags
 debugFlag = false;              % whether to do a very short simulation
@@ -275,77 +280,77 @@ plotTuning = 0;
 
 %% Parameters to loop through
 %{
-pnames  = {'REdiam'};       % names of parameters to loop through
-plabels = {'REdiam (um)'};  % labels of parameters to loop through
-pmin    = [2];              % minimum values of parameters to loop through
-pmax    = [20];             % maximum values of parameters to loop through
-pinc    = [2];              % increments of parameters to loop through
-pislog  = [0];              % whether increments of parameters is in log
+pNames  = {'REdiam'};       % names of parameters to loop through
+pLabels = {'REdiam (um)'};  % labels of parameters to loop through
+pMin    = [2];              % minimum values of parameters to loop through
+pMax    = [20];             % maximum values of parameters to loop through
+pInc    = [2];              % increments of parameters to loop through
+pIsLog  = [0];              % whether increments of parameters is in log
 %}
 %{
-pnames  = {'REgabaGmax'};      % names of parameters to loop through
-plabels = {'REgabaGmax (uS)'}; % labels of parameters to loop through
-pmin    = [0.0025];         % minimum values of parameters to loop through
-pmax    = [0.045];          % maximum values of parameters to loop through
-pinc    = [0.0025];         % increments of parameters to loop through
-pislog  = [0];              % whether increments of parameters is in log
+pNames  = {'REgabaGmax'};      % names of parameters to loop through
+pLabels = {'REgabaGmax (uS)'}; % labels of parameters to loop through
+pMin    = [0.0025];         % minimum values of parameters to loop through
+pMax    = [0.045];          % maximum values of parameters to loop through
+pInc    = [0.0025];         % increments of parameters to loop through
+pIsLog  = [0];              % whether increments of parameters is in log
 %}
 %{
-pnames  = {'stimFreq'};    % names of parameters to loop through
-plabels = {'Stimulation Frequency (Hz)'};% labels of parameters to loop through
-pmin    = [1];              % minimum values of parameters to loop through
-pmax    = [128];            % maximum values of parameters to loop through
-pinc    = [2^(1/2)];        % increments of parameters to loop through
-pislog  = [1];              % whether increments of parameters is in log
+pNames  = {'stimFreq'};    % names of parameters to loop through
+pLabels = {'Stimulation Frequency (Hz)'};% labels of parameters to loop through
+pMin    = [1];              % minimum values of parameters to loop through
+pMax    = [128];            % maximum values of parameters to loop through
+pInc    = [2^(1/2)];        % increments of parameters to loop through
+pIsLog  = [1];              % whether increments of parameters is in log
 %}
 %{
-pnames  = {'REtauKCC2'};    % names of parameters to loop through
-plabels = {'Time constant of KCC2 (s)'};    % labels of parameters to loop through
-pmin    = [4];              % minimum values of parameters to loop through
-pmax    = [64];             % maximum values of parameters to loop through
-pinc    = [2^(1/4)];        % increments of parameters to loop through
-pislog  = [1];              % whether increments of parameters is in log
+pNames  = {'REtauKCC2'};    % names of parameters to loop through
+pLabels = {'Time constant of KCC2 (s)'};    % labels of parameters to loop through
+pMin    = [4];              % minimum values of parameters to loop through
+pMax    = [64];             % maximum values of parameters to loop through
+pInc    = [2^(1/4)];        % increments of parameters to loop through
+pIsLog  = [1];              % whether increments of parameters is in log
 %}
 %{
-pnames  = {'REdiam', 'REgabaGmax', 'stimFreq', 'REtauKCC2'};    % names of parameters to loop through
-plabels = {'REdiam (um)', 'REgabaGmax (uS)', 'Stimulation Frequency (Hz)', 'Time constant of KCC2 (s)'};    % labels of parameters to loop through
-pmin    = [4, 0.0025, 0.125, 0.25]; % minimum values of parameters to loop through
-pmax    = [15, 0.045, 256, 64];     % maximum values of parameters to loop through
-pinc    = [1, 0.0025, 2, sqrt(2)];  % increments of parameters to loop through
-pislog  = [0, 0, 1, 1];             % whether increments of parameters is in log
+pNames  = {'REdiam', 'REgabaGmax', 'stimFreq', 'REtauKCC2'};    % names of parameters to loop through
+pLabels = {'REdiam (um)', 'REgabaGmax (uS)', 'Stimulation Frequency (Hz)', 'Time constant of KCC2 (s)'};    % labels of parameters to loop through
+pMin    = [4, 0.0025, 0.125, 0.25]; % minimum values of parameters to loop through
+pMax    = [15, 0.045, 256, 64];     % maximum values of parameters to loop through
+pInc    = [1, 0.0025, 2, sqrt(2)];  % increments of parameters to loop through
+pIsLog  = [0, 0, 1, 1];             % whether increments of parameters is in log
 %}
 %{
-pnames  = {'stimFreq', 'REtauKCC2'};   % names of parameters to loop through
-plabels = {'Stimulation Frequency (Hz)', 'Time constant of KCC2 (s)'};    % labels of parameters to loop through
-pmin    = [16, 32*2^(1/4)];         % minimum values of parameters to loop through
-pmax    = [19, 64];                 % maximum values of parameters to loop through
-pinc    = [0.1, 2^(1/64)];          % increments of parameters to loop through
-pislog  = [0, 1];                   % whether increments of parameters is in log
+pNames  = {'stimFreq', 'REtauKCC2'};   % names of parameters to loop through
+pLabels = {'Stimulation Frequency (Hz)', 'Time constant of KCC2 (s)'};    % labels of parameters to loop through
+pMin    = [16, 32*2^(1/4)];         % minimum values of parameters to loop through
+pMax    = [19, 64];                 % maximum values of parameters to loop through
+pInc    = [0.1, 2^(1/64)];          % increments of parameters to loop through
+pIsLog  = [0, 1];                   % whether increments of parameters is in log
 %}
 %{
-pnames  = {'REdiam', 'REgabaGmax'};    % names of parameters to loop through
-plabels = {'REdiam (um)', 'REgabaGmax (uS)'};    % labels of parameters to loop through
-pmin    = [8, 0.1];                 % minimum values of parameters to loop through
-pmax    = [12, 0.5];                % maximum values of parameters to loop through
-pinc    = [0.5, 0.05];              % increments of parameters to loop through
-pislog  = [0, 0];                   % whether increments of parameters is in log
+pNames  = {'REdiam', 'REgabaGmax'};    % names of parameters to loop through
+pLabels = {'REdiam (um)', 'REgabaGmax (uS)'};    % labels of parameters to loop through
+pMin    = [8, 0.1];                 % minimum values of parameters to loop through
+pMax    = [12, 0.5];                % maximum values of parameters to loop through
+pInc    = [0.5, 0.05];              % increments of parameters to loop through
+pIsLog  = [0, 0];                   % whether increments of parameters is in log
 %}
 
 %{
-pnames  = {'pCond', 'gIncr'};       % names of parameters to loop through
-plabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
-pmin    = [1, 7.5];                 % minimum values of parameters to loop through
-pmax    = [4, 22.5];                % maximum values of parameters to loop through
-pinc    = [1, 7.5];                 % increments of parameters to loop through
-pislog  = [0, 0];                   % whether increments of parameters is in log
+pNames  = {'pCond', 'gIncr'};       % names of parameters to loop through
+pLabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
+pMin    = [1, 7.5];                 % minimum values of parameters to loop through
+pMax    = [4, 22.5];                % maximum values of parameters to loop through
+pInc    = [1, 7.5];                 % increments of parameters to loop through
+pIsLog  = [0, 0];                   % whether increments of parameters is in log
 %}
 
-pnames  = {'pCond', 'gIncr'};       % names of parameters to loop through
-plabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
-pmin    = [1, 15];                  % minimum values of parameters to loop through
-pmax    = [4, 45];                  % maximum values of parameters to loop through
-pinc    = [1, 15];                  % increments of parameters to loop through
-pislog  = [0, 0];                   % whether increments of parameters is in log
+pNames  = {'pCond', 'gIncr'};       % names of parameters to loop through
+pLabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
+pMin    = [1, 30];                  % minimum values of parameters to loop through
+pMax    = [4, 60];                  % maximum values of parameters to loop through
+pInc    = [1, 30];                  % increments of parameters to loop through
+pIsLog  = [0, 0];                   % whether increments of parameters is in log
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -394,7 +399,6 @@ synWeight = 1;      % synaptic weight (fraction of channels activated)
                 %     for simplicity assume channels are always activated and that 
                 %     channels have linearly additive effects
 
-% useHH = 0;      % whether to use HH channels
 
 %% RE neuron parameters
 REnsegs = 1;    % number of segments in an RE cell (1, 3 or 9)
@@ -573,11 +577,11 @@ if debugFlag
     tStop = 2000;
 
     % Minimize number of points
-    for p = 1:length(pnames)
-        if pislog(p)
-            pinc(p) = pmax(p)/pmin(p);
+    for p = 1:length(pNames)
+        if pIsLog(p)
+            pInc(p) = pMax(p)/pMin(p);
         else
-            pinc(p) = pmax(p) - pmin(p);
+            pInc(p) = pMax(p) - pMin(p);
         end
     end
 end
@@ -626,7 +630,7 @@ check_dir(outFolder);
 
 %% Construct looped parameters
 [pchnames, pchvalues, nSims, nump, pvalues, nperp] = ...
-    create_looped_params (loopMode, pnames, plabels, pislog, pmin, pmax, pinc, ...
+    create_looped_params (loopMode, pNames, pLabels, pIsLog, pMin, pMax, pInc, ...
             'OutFolder', outFolder, 'FileLabel', fileLabel, ...
             'NCells', nCells, 'ActMode', actMode);
 
