@@ -51,6 +51,7 @@ function [limits, axisRange] = compute_axis_limits (dataOrRange, axisType, varar
 %
 % Used by:
 %       cd/create_synced_movie_trace_plot_movie.m
+%       cd/m3ha_network_show_net.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_multiunit.m
 %       cd/plot_cfit_pulse_response.m

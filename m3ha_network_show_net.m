@@ -19,7 +19,7 @@ function [RERE, TCRE, RETC] = m3ha_network_show_net (inFolder, varargin)
 %
 % Requires:
 %       inFolder/*.syn
-%       cd/apply_iteratively.m
+%       cd/compute_axis_limits.m
 %       cd/set_figure_properties.m
 %
 % Used by:
@@ -28,6 +28,7 @@ function [RERE, TCRE, RETC] = m3ha_network_show_net (inFolder, varargin)
 % File History:
 % 2017-10-23 Modified from /RTCl/show_net.hoc
 % 2017-10-31 Now uses dir instead of dirr
+% 2019-11-03 Now uses set_figure_properties and compute_axis_limits
 
 
 %% Default values for optional arguments
@@ -98,23 +99,24 @@ for i = 1:nNetworks
     RETC{i} = load(fullfile(inFolder, RETCfilename));
 
     % Set figure name
-    figName = replace(REREfilename, '.syn', '.png');
-    figName = replace(figName, 'RERE', 'Topology');
-    figName = fullfile(outFolder, figName);
+    figName = replace(REREfilename, {'RERE', '.syn'}, {'Topology', '.png'});
+    figPath = fullfile(outFolder, figName);
+
+    % Set title base
+    [~, titleBase, ~] = fileparts(replace(REREfilename, 'RERE_', ''));
 
     % Plot data
-    [~, fileBase, ~] = fileparts(replace(REREfilename, 'RERE_', ''));
-    network_topology(RERE{i}, TCRE{i}, RETC{i}, figName, 'full', fileBase);
-    network_topology(RERE{i}, TCRE{i}, RETC{i}, figName, 'part', fileBase);
+    network_topology(RERE{i}, TCRE{i}, RETC{i}, figPath, 'full', titleBase);
+    network_topology(RERE{i}, TCRE{i}, RETC{i}, figPath, 'part', titleBase);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function network_topology(RERE, TCRE, RETC, figName, plotMode, fileBase)
+function network_topology(RERE, TCRE, RETC, figName, plotMode, titleBase)
 %% Plot network topology from connection data
 
 % Prepare the figure
-h = set_figure_properties('AlwaysNew', true);
+fig = set_figure_properties('AlwaysNew', true);
 hold on;
 
 % Define color map
@@ -141,13 +143,17 @@ for i = 1:size(RERE, 1)
     plot([1; 0.75], round([RERE(i, 1); RERE(i, 2)]), ':', 'Color', colorThis);
 end
 
-% Restrict axes range
-ymax = apply_iteratively(@max, {RERE; TCRE; RETC}) + 1;
-ymin = apply_iteratively(@min, {RERE; TCRE; RETC}) - 1;
-if strcmp(plotMode, 'full')
-    axis([0.5, 2.5, ymin, ymax]);
-elseif strcmp(plotMode, 'part')
-    axis([0.5, 2.5, ymin, ymin + 11]);
+% Set x axis limits
+xlim([0.5, 2.5]);
+
+% Set y axis limits
+yLimits = compute_axis_limits({RERE; TCRE; RETC}, 'y', 'Coverage', 98);
+if ~isempty(yLimits)
+    if strcmp(plotMode, 'full')
+        ylim(yLimits);
+    elseif strcmp(plotMode, 'part')
+        ylim(mean(yLimits) + range(yLimits)/20 * [-1, 1]);
+    end
 end
 
 % Set labels
@@ -155,16 +161,16 @@ ax = gca;
 set(ax, 'XTick', [1, 2]);
 set(ax, 'XTickLabel', {'RE', 'TC'});
 ylabel('Neuron number');
-title(['Network topology for ', replace(fileBase, '_', '\_')]);
+title(['Network topology for ', replace(titleBase, '_', '\_')]);
 
 % Save figure
 if strcmp(plotMode, 'part')
     figName = replace(figName, '.png', '_zoomed.png');
 end
-saveas(h, figName, 'png');
+saveas(fig, figName, 'png');
 
 % Close figure
-% close(h);
+% close(fig);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
