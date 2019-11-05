@@ -1,17 +1,43 @@
-function plot_FI (fileName, alldata, sius, outfolder)
+function plot_FI (varargin)
 %% From a current injection protocol, detect spikes for each sweep and make an F-I plot
-% Usage: plot_FI (fileName, alldata, sius, outfolder)
+% Usage: plot_FI (vVecs (opt), iVecs (opt), varargin)
+% Explanation:
+%       TODO
+%
+% Example(s):
+%       TODO
+%
+% Outputs:
+%       TODO
+%
 % Arguments:
-%       fileName    - must be either the full address or must be in current directory
-%                   .abf is not needed (e.g. 'B20160908_0004')
-%                   Uses abf2load, and if not found, uses abfload
-%       alldata     - (opt) full data
-%       sius        - (opt) sampling interval in microseconds
-%       outfolder   - (opt) the name of the directory that the plots will be placed
-%                   must be a character array
-%                   default == a subdirectory named by {fileName}_traces
+%       vVecs       - (opt) voltage vectors
+%                   must be a numeric array or a cell array of numeric vectors
+%                   default == read from .abf file(s)
+%       iVecs       - (opt) current vectors
+%                   must be a numeric array or a cell array of numeric vectors
+%                   default == read from .abf file(s)
+%       tVec        - (opt) time vector
+%                   must be a numeric array or a cell array of numeric vectors
+%                   default == read from .abf file(s)
+%       varargin    - 'Directory': the name of the directory containing 
+%                                   the abf files, e.g. '20161216'
+%                   must be a string scalar or a character vector
+%                   default == pwd
+%                   - 'FileNames': names of .abf files to detect
+%                   must be a cell array of character arrays or strings
+%                   default == detect from pwd
+%                   - 'OutFolder': the name of the directory that 
+%                                       plots will be placed
+%                   must be a string scalar or a character vector
+%                   default == same as directory
 %
 % Requires:
+% iscellnumeric
+% all_files
+% extract_fileparts
+% parse_abf
+% check_dir
 %       cd/construct_and_check_abfpath.m
 %       cd/identify_channels.m
 %       cd/identify_CI_protocol.m
@@ -19,7 +45,8 @@ function plot_FI (fileName, alldata, sius, outfolder)
 %
 % Used by:
 %       cd/plot_all_abfs.m
-% 
+
+% File History:
 % 2017-04-04 - Adapted from analyzeCI_20140730
 % 2017-04-04 - Used dirr.m to find all abf files
 % 2017-04-04 - Updated file names
@@ -29,8 +56,8 @@ function plot_FI (fileName, alldata, sius, outfolder)
 % 2017-04-11 - Cleaned code
 % 2017-04-11 - Changed the color map to lines
 % 2017-04-13 - BT - Marked on plot spike frequency time interval
-% 2017-04-13 - Added alldata, sius as optional arguments
-% 2017-05-01 - BT - Converted spif_time to use identify_CI_protocol.m
+% 2017-04-13 - Added alldata, siUs as optional arguments
+% 2017-05-01 - BT - Converted rangeCI to use identify_CI_protocol.m
 % 2017-06-16 - AL - Updated 
 % 2018-01-24 - Added isdeployed
 % TODO: Change the arguments structure
@@ -39,243 +66,305 @@ function plot_FI (fileName, alldata, sius, outfolder)
 % TODO: The injection period isn't right in some cases?
 %       See /media/ashleyX/Recordings/20180910/2018_09_10_A_0000_traces
 
+%% Hard-coded parameters
+verbose = true;
+
+%% Default values for optional arguments
+vVecsDefault = [];              % set later
+iVecsDefault = [];              % set later
+tVecDefault = [];               % set later
+directoryDefault = pwd;         % look for .abf files in 
+                                %   the present working directory by default
+fileNamesDefault = {};          % detect from pwd by default
+outFolderDefault = '';          % set later
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Check arguments
-if nargin < 1
-    error('No fileName specified!');
-elseif ~ischar(fileName)
-    error('Filename must be a char array in single quotes!');
+%% Deal with arguments
+% Set up Input Parser Scheme
+iP = inputParser;
+iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
+
+% Add optional inputs to the Input Parser
+addOptional(iP, 'vVecs', vVecsDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['vVecs must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
+addOptional(iP, 'iVecs', iVecsDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['iVecs must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
+addOptional(iP, 'tVec', tVecDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['iVecs must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'Directory', directoryDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FileNames', fileNamesDefault, ...
+    @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+
+% Read from the Input Parser
+parse(iP, varargin{:});
+vVecs = iP.Results.vVecs;
+iVecs = iP.Results.iVecs;
+tVec = iP.Results.tVec;
+directory = iP.Results.Directory;
+fileNames = iP.Results.FileNames;
+outFolder = iP.Results.OutFolder;
+
+%% Preparation
+% Prepare
+if isempty(vVecs) || isempty(iVecs) || isempty(tVec)
+    % Decide on the file(s) to use
+    if isempty(fileNames)
+        % Find all .abf files in the directory
+        [~, fileNames] = all_files('Directory', directory, ...
+                                    'Extension', '.abf', ...
+                                    'Verbose', verbose);
+    else
+        fileNames = construct_and_check_abfpath(fileNames, ...
+                                                'Directory', directory);
+    end
+
+    % If no files found, return
+    if isempty(fileNames)
+        fprintf('Type ''help %s'' for usage\n', mfilename);
+        return
+    end
+
+    % Extract the voltage and current data
+    % TODO: What if data is from multiple files
+    if iscell(fileNames)
+        disp('Not implemented yet!');
+        return
+    else
+        % Parse the .abf file
+        [parseParams, parsedData] = parse_abf(fileNames);
+
+        % Extract the time, current and voltage vectors
+        siUs = parseParams.siUs;
+        tVec = parsedData.tVec;
+        iVecs = parsedData.iVecs;
+        vVecs = parsedData.vVecs;
+    end
+else
+    % TODO: Organize code
+    [tVec, siMs] = match_time_info (tVec, siMs)
+    siUs = siMs * 1000;
 end
 
-%% Set defaults for optional arguments
-if nargin < 2
-    % Creates and checks full path to abf file robustly
-    [abfFullFileName, fileExists] = construct_and_check_abfpath(fileName);
-    if ~fileExists
-        return 
-    end
+if ~isempty(fileNames)
+    % Extract the directories and file bases
+    fileDirs = extract_fileparts(fileNames, 'directory');
+    fileBases = extract_fileparts(fileNames, 'base');
+else
+    fileDirs = directory;
+    fileBases = 'some_file';
+end
 
-    % Add directories to search path for abf2load.m
-    functionsDirectory = locate_functionsdir;
-    if ~isdeployed
-        addpath(fullfile(functionsDirectory, '/Downloaded_Functions/'));
-    end
+% Set default output folder(s)
+if isempty(outFolder)
+    outFolder = fullfile(fileDirs, strcat(fileBases, '_traces'));
+end
 
-    % Load abf file, si is in us
-    if exist('abf2load', 'file') == 2
-        [alldata, sius] = abf2load(abfFullFileName);
-    elseif exist('abfload', 'file') == 2
-        [alldata, sius] = abfload(abfFullFileName);
+% Create outFolder if not already exists
+check_dir(outFolder);
+
+% Count the number of sweeps
+nSweeps = size(vVecs, 2);
+
+% Count the number of samples
+nSamples = size(vVecs, 1);
+
+%% Detect spikes
+% Determine whether each sample point is a spike for each sweep
+isSpike = arrayfun(@(x) detect_spikes_one_sweep(vVecs(:, x)), ...
+                    transpose(1:nSweeps), 'UniformOutput', false);
+
+% Put together into a matrix
+isSpike = force_matrix(isSpike);
+
+% TODO: Organize code below
+%% Compute spike frequencies
+% Compute spike frequency for each sweep
+spikeFreq = zeros(1,nSweeps);
+[~, rangeCI] = identify_CI_protocol(iVecs, siUs);
+parfor iSwp = 1:nSweeps
+    cdata = vVecs(:, iSwp);
+    indSpikes = find(isSpike(:, iSwp));
+    indSpikesWithinRange = indSpikes(indSpikes > rangeCI(1) & ...
+                                        indSpikes < rangeCI(2));
+    if length(indSpikesWithinRange) > 1
+        spikeFreq(iSwp) = (length(indSpikesWithinRange) - 1) / ...
+                            ((tVec(rangeCI(2)) - tVec(rangeCI(1)))) * 1000;
+    else
+        spikeFreq(iSwp) = 0;
     end
 end
 
-[fileDir, fileBase, ~] = fileparts(fileName);
-if nargin < 4 || isempty(outfolder) 
-    outfolder = fullfile(fileDir, strcat(fileBase, '_traces'));
-end
-
-%% Create outfolder if not already exists
-if exist(outfolder, 'dir') ~= 7
-    mkdir(outfolder);
-    fprintf('New directory made: %s\n\n', outfolder);
-end
-
-% Extract data parameters
-nsweeps = size(alldata, 3);     % Number of sweeps
-ntimepoints = size(alldata, 1);  % Number of time points
-
-% Find all spikes
-is_local_maximum = zeros(size(alldata));
-is_local_minimum = zeros(size(alldata));
-is_spike = zeros(size(alldata));
-for i = 1:nsweeps
-    % Finds all local maxima and minima
-    for j = 2:ntimepoints-1
-        is_local_maximum(j,1,i) = alldata(j,1,i) > alldata(j-1,1,i) && alldata(j,1,i) >= alldata(j+1,1,i);
-        is_local_minimum(j,1,i) = alldata(j,1,i) < alldata(j-1,1,i) && alldata(j,1,i) <= alldata(j+1,1,i);
-    end
-
-    % Finds all spike peaks 
-    % Criteria for a spike: 
-    %  (1) Must be a local maximum 10 mV higher than the previous local minimum
-    for j = 2:ntimepoints-1
-        if is_local_maximum(j,1,i)
-            plmin = j-1;    % possible index of previous local minimum
-            while ~ (is_local_minimum(plmin,1,i) || plmin == 1) 
-                plmin = plmin - 1;
-            end
-            if plmin > 1
-                % Compare rise in membrane potential to thresholds (10 mV)
-                is_spike(j,1,i) = alldata(j,1,i) - alldata(plmin,1,i) > 10;
-            end
-        end
-    end
-    %  (2) Must be 5 mV higher than the minimum value between the spike and the following spike
-    for j = 2:ntimepoints-1
-        if is_spike(j,1,i)
-            fspike = j+1;     % possible index of following spike
-            while ~ (is_spike(fspike,1,i) || fspike == ntimepoints) 
-                fspike = fspike + 1;
-            end
-            is_spike(j,1,i) = alldata(j,1,i) - min(alldata(j:fspike,1,i)) > 5;
-        end
-    end
-end
-
-% Plot all data together
-timepoints = ( sius/1000 : sius/1000 : ntimepoints * sius/1000 )'; % vector for timepoints in msec
-h = figure(nsweeps + 1);
+%% Plots
+% Plot all sweeps together
+h = figure(nSweeps + 1);
 set(h, 'Visible', 'off');
 clf(h);
-figname = [fileBase, '_all'];
+figName = [fileBases, '_all'];
 cm = colormap(lines);
-for i = 1:nsweeps
-    cdata = alldata(:, 1, i);
-    plot(timepoints, cdata, 'Color', cm(mod(i, size(cm, 1)) + 1, :), ...
-        'Displayname', ['Sweep #', num2str(i)]);
+for iSwp = 1:nSweeps
+    plot(tVec, vVecs(:, iSwp), 'Color', cm(mod(iSwp, size(cm, 1)) + 1, :), ...
+        'Displayname', ['Sweep #', num2str(iSwp)]);
     hold on;
 end
-title(strrep(figname, '_', '\_'));
+title(strrep(figName, '_', '\_'));
 xlabel('Time (ms)')
 ylabel('Membrane Potential (mV)')
 legend('Location', 'northeast');
-saveas(h, fullfile(outfolder, figname), 'png');
+saveas(h, fullfile(outFolder, figName), 'png');
 close(h);
 
-% Compute spike frequency for each sweep
-spike_freq = zeros(1,nsweeps);
-iVecs = squeeze(alldata(:, 2, :));
-[~, spif_time] = identify_CI_protocol(iVecs, sius);    % time range to take spike frequency (10^-4 s)
-parfor i = 1:nsweeps
-    cdata = alldata(:,1,i);
-    spike_indices = find(is_spike(:,1,i));
-    spi_within_injection = spike_indices(spike_indices > spif_time(1) & spike_indices < spif_time(2));
-    if length(spi_within_injection) > 1
-        spike_freq(i) = (length(spi_within_injection) - 1) / ...
-                 ((timepoints(spif_time(2)) - timepoints(spif_time(1)))) * 1000;
-    else
-        spike_freq(i) = 0;
-    end
-end
-
 % Plot each sweep individually with detected spikes and computed spike frequency    
-parfor i = 1:nsweeps
-    cdata = alldata(:,1,i);
-    spike_indices = find(is_spike(:,1,i));
-    figname = [fileBase, '_sweep', num2str(i)];
+parfor iSwp = 1:nSweeps
+    indSpikes = find(isSpike(:, iSwp));
+    figName = [fileBases, '_sweep', num2str(iSwp)];
 
-    h = figure(i);
+    h = figure(iSwp);
     set(h, 'Visible', 'off');
     clf(h);
-    plot(timepoints, cdata, 'k')
+    plot(tVec, vVecs(:, iSwp), 'k')
     hold on;
-    plot(timepoints(spike_indices), cdata(spike_indices), 'xr');
+    plot(tVec(indSpikes), vVecs(indSpikes, iSwp), 'xr');
     y = ylim;
-    line([timepoints(spif_time(1)) timepoints(spif_time(1))], [y(1) y(2)]);
-    line([timepoints(spif_time(2)) timepoints(spif_time(2))], [y(1) y(2)]);
-    plot(timepoints(spike_indices(spike_indices > spif_time(1) & spike_indices < spif_time(2))), ...
-          cdata(spike_indices(spike_indices > spif_time(1) & spike_indices < spif_time(2))), 'xg');
-    if length(spike_indices) > 1
-        text(0.6, 0.85, ['Spike Frequency: ' num2str(spike_freq(i)) ' Hz'], 'Units', 'normalized');
+    line([tVec(rangeCI(1)) tVec(rangeCI(1))], [y(1) y(2)]);
+    line([tVec(rangeCI(2)) tVec(rangeCI(2))], [y(1) y(2)]);
+    plot(tVec(indSpikes(indSpikes > rangeCI(1) & indSpikes < rangeCI(2))), ...
+          vVecs(indSpikes(indSpikes > rangeCI(1) & indSpikes < rangeCI(2))), 'xg');
+    if length(indSpikes) > 1
+        text(0.6, 0.85, ['Spike Frequency: ' num2str(spikeFreq(iSwp)) ' Hz'], 'Units', 'normalized');
     else
         text(0.6, 0.85, ['Spike Frequency: 0 Hz'], 'Units', 'normalized');
     end
-    title(strrep(figname, '_', '\_'));
+    title(strrep(figName, '_', '\_'));
     xlabel('Time (ms)')
     ylabel('Membrane Potential (mV)')
-    saveas(h, fullfile(outfolder, figname), 'png');
+    saveas(h, fullfile(outFolder, figName), 'png');
     close(h);
 end
 
 % Plot spike frequency over current injected (F-I plot)
-figname_FI = [fileBase, '_FI'];
-channelTypes = identify_channels(alldata, 'ExpMode', 'patch');
-ind_cur = strcmpi('Current', channelTypes);
-currents = zeros(1, nsweeps);
-parfor i = 1:nsweeps
-    currents(i) = mean(alldata(spif_time(1):spif_time(2), ind_cur, i));    %%%TODO: after identify_CI_protocol.m is finished, use to find injection range
+figNameFI = [fileBases, '_FI'];
+currents = zeros(1, nSweeps);
+parfor iSwp = 1:nSweeps
+    currents(iSwp) = mean(iVecs(rangeCI(1):rangeCI(2), iSwp));
 end
 h = figure(999);
 set(h, 'Visible', 'off');
 clf(h);
-plot(currents, spike_freq);
-title(['F-I plot for ', strrep(fileBase, '_', '\_')]);
+plot(currents, spikeFreq);
+title(['F-I plot for ', strrep(fileBases, '_', '\_')]);
 xlabel('Current Injected (pA)');
 ylabel('Spike Frequency (Hz)');
-saveas(h, fullfile(outfolder, figname_FI), 'png');
+saveas(h, fullfile(outFolder, figNameFI), 'png');
 close(h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function isSpike = detect_spikes_one_sweep(vVec)
+%% Determines whether each sample point is a spike
+%   Note: Criteria for a spike: 
+%   (1) Must be a local maximum 10 mV higher than the previous local minimum
+%   (2) Must be 5 mV higher than the minimum value between the spike 
+%           and the following spike
+
+%% Hard-coded parameters
+minAmpBefore = 10;     % in mV
+minAmpAfter = 5;       % in mV
+
+%% Preparation
+% Count the number of samples
+nSamples = numel(vVec);
+
+% Initialize array
+isSpike = false(nSamples, 1);
+
+%% Do the job
+% No spikes if nSamples is less than 3
+if nSamples <= 2
+    return
+end
+
+% Determine whether each data point is a "local maximum" or a "local minimum" 
+%   in the general sense
+%   TODO: Use findpeaks instead?
+isLocalMaximum = [false; diff(vVec(1:end-1)) > 0 & diff(vVec(2:end)) <= 0; ...
+                    false];
+isLocalMinimum = [false; diff(vVec(1:end-1)) < 0 & diff(vVec(2:end)) >= 0; ...
+                    false];
+
+% Finds all peaks that satisfy criterion 1
+for idx = 2:nSamples-1
+    % Only check local maxima
+    if isLocalMaximum(idx)
+        % Find the index of the previous local minimum
+        idxPrevLocalMinimum = idx - 1;
+        while ~isLocalMinimum(idxPrevLocalMinimum) && idxPrevLocalMinimum > 1
+            idxPrevLocalMinimum = idxPrevLocalMinimum - 1;
+        end
+
+        % Make sure a previous local minimum was found
+        if idxPrevLocalMinimum > 1
+            % Determine whether criterion 1 is satisfied
+            isSpike(idx) = vVec(idx) - vVec(idxPrevLocalMinimum) > minAmpBefore;
+        end
+    end
+end
+
+% Finds all peaks that satisfy criterion 2 by filtering out those 
+%   that pass criterion 1 in reverse order
+for idx = nSamples-1:-1:2
+    % Only check peaks that satisfy criterion 1
+    if isSpike(idx)
+        % Find the index of the following spike
+        idxNextSpike = idx + 1;
+        while ~isSpike(idxNextSpike) && idxNextSpike < nSamples
+            idxNextSpike = idxNextSpike + 1;
+        end
+
+        % Determine whether criterion 2 is satisfied
+        isSpike(idx) = vVec(idx) - min(vVec(idx:idxNextSpike)) > minAmpAfter;
+    end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
-OLD CODE:    TODO: Move any old versions of the code here in case we need it back in the future
+OLD CODE:
 
-[alldata, si] = abf2load(fullfile(infolder, files(f).name)); % si is the sampling interval in usec
+isLocalMaximum = false(nSamples, nSweeps);
+isLocalMinimum = false(nSamples, nSweeps);
+for iSample = 2:nSamples-1
+    % Find local maxima
+    isLocalMaximum(iSample, :) = ...
+        alldata(iSample, :) > alldata(iSample-1, :) & ...
+        alldata(iSample, :) >= alldata(iSample+1, :);
 
-timepoints = ( si/1000 : si/1000 : ntimepoints * si/1000 )';
-
-plot_FI(infolder, outfolder)
-%        /home/Matlab/Downloaded_Functions/dirr.m
-%% Find all .abf files
-[~, ~, filenames] = dirr(infolder, '.abf', 'name');
-if isempty(filenames)
-    fprintf('No abf files in current directory!\n');
-    fprintf('Type ''help plot_FI'' for usage\n');
-end
-nfiles = numel(filenames);
-%parfor f = 1:nfiles            % TODO: Switch to parfor when the code is ready
-for f = 1:nfiles            % for debug
+    % Find local minima
+    isLocalMinimum(iSample, :) = ...
+        alldata(iSample, :) < alldata(iSample-1, :) & ...
+        alldata(iSample, :) <= alldata(iSample+1, :);
 end
 
-fileBase = [strrep(files(f).name, '.abf', ''), '_sweep', num2str(i)];
-fileBase = strrep(files(f).name, '.abf', '');
-title(strrep(fileBase, '_', '\_'));
-saveas(h, fullfile(outfolder, fileBase), 'png');
-fileBase = [strrep(files(f).name, '.abf', ''), '_spikecurrent'];
-title(strrep(fileBase, '_', '\_'));
-saveas(h, fullfile(outfolder, fileBase), 'png');
-
-legend1 = legend('Sweep #1','Sweep #2','Sweep #3','Sweep #4','Sweep #5','Sweep #6','Sweep #7','Sweep #8','Sweep #9','Sweep #10');
-set(legend1,'Position',[0.132589285714285 0.419345238095237 0.209821428571428 0.501488095238095]);
-%axis([0 10000 -160 40])
-%axis([0 4000 -160 40])
-
-            %             flmin = j+1; % possible index of following local minimum
-            %             while ~ (is_local_minimum(flmin,1,i) || flmin == ntimepoints) 
-            %                 flmin = flmin + 1;
-            %             end
-            %             flmax = j+1; % possible index of following local maximum
-            %             while ~ (is_local_maximum(flmax,1,i) || flmax == ntimepoints) 
-            %                 flmax = flmax + 1;
-            %             end
-            %             if plmin > 1 && flmin < ntimepoints
-            %                is_spike(j,1,i) = alldata(j,1,i) - alldata(plmin,1,i) > 20;
-            %                is_spike(j,1,i) = alldata(j,1,i) - alldata(plmin,1,i) > 10 && ...
-            %                     (alldata(j,1,i) - alldata(flmin,1,i) > 10 || alldata(flmax,1,i) - alldata(j,1,i) < 10);
-
-    hold off;
-
-% For debug
-c_is_local_maximum = is_local_maximum(:,:,1);
-c_is_local_minimum = is_local_minimum(:,:,1);
-c_is_spike = is_spike(:,:,1);
-c_data = alldata(:,1,1);
-
-    plot(timepoints, cdata, 'Color', jmap((i * floor(size(jmap,1)/10)), :), ...
-        'Displayname', ['Sweep #', num2str(i)]);
-
-jmap = colormap(jet);
-
-ind_cur = find(vcc == 2);
-
-%       cd/construct_abffilename.m
-% Creates full path to abf file robustly
-abfFullFileName = construct_abffilename(fileName);
-
-addpath(fullfile(functionsdirectory, '/Brians_Functions/'));
-                                            % for identify_channels.m
+isLocalMaximum = ...
+    [false(1, nSweeps); ...
+    diff(vVecs(1:end-1, :)) > 0 && diff(vVecs(2:end, :)) <= 0; ...
+    false(1, nSweeps)];
+isLocalMinimum = ...
+    [false(1, nSweeps); ...
+    diff(vVecs(1:end-1, :)) < 0 && diff(vVecs(2:end, :)) >= 0; ...
+    false(1, nSweeps)];
 
 %}
 

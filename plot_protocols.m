@@ -5,8 +5,10 @@ function [featuresFileTable, featuresSweepTable] = ...
 %               plot_protocols (protocolType, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       featuresFileTable   - features table for each file
 %                           specified as a 2-D table
@@ -59,7 +61,7 @@ function [featuresFileTable, featuresSweepTable] = ...
 %                   default == same as directory
 %                   - 'TimeUnits': units for time
 %                   must be a string scalar or a character vector
-%            plot_protocols       default == 's' for 2-data data and 'ms' for 3-data data
+%                   default == 's' for 2-data data and 'ms' for 3-data data
 %                   - 'ChannelTypes': the channel types
 %                   must be a cellstr with nChannels elements
 %                       each being one of the following:
