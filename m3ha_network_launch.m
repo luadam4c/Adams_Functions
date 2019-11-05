@@ -92,7 +92,7 @@ loopMode = 'cross'; %grid;      % how to loop through parameters:
                                 %               combinations of parameters
 
 % Decide on what to save and plot
-savePlotMode = 'spikes';
+savePlotMode = 'spikes&special';
 saveAllVariablesFlag = false;
 % if nCells == 1 || nCells == 2
 %     savePlotMode = 'spikes&special';
@@ -1050,7 +1050,6 @@ paramsTable{'simNumber', 'Value'} = simNumber;
 paramsTable = m3ha_network_change_params(paramsTable, pchname, pchvalue, ...
                                         'ExperimentName', experimentName);
 
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
