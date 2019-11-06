@@ -213,7 +213,6 @@ freqValues = compute_spike_frequency(idxSpikesWithinRange, siMs);
 %% Plots
 % Plot all sweeps together
 h = figure(nSweeps + 1);
-set(h, 'Visible', 'off');
 clf(h);
 figName = [fileBases, '_all'];
 cm = colormap(lines);
@@ -227,47 +226,39 @@ xlabel('Time (ms)')
 ylabel('Membrane Potential (mV)')
 legend('Location', 'northeast');
 saveas(h, fullfile(outFolder, figName), 'png');
-close(h);
 
 % Plot each sweep individually with detected spikes and computed spike frequency    
-parfor iSwp = 1:nSweeps
+for iSwp = 1:nSweeps
     indSpikes = find(isSpike(:, iSwp));
     figName = [fileBases, '_sweep', num2str(iSwp)];
 
     h = figure(iSwp);
-    set(h, 'Visible', 'off');
     clf(h);
     plot(tVec, vVecs(:, iSwp), 'k')
     hold on;
     plot(tVec(indSpikes), vVecs(indSpikes, iSwp), 'xr');
     y = ylim;
-    line([tVec(endPointsPulse(1)) tVec(endPointsPulse(1))], [y(1) y(2)]);
-    line([tVec(endPointsPulse(2)) tVec(endPointsPulse(2))], [y(1) y(2)]);
+    line([tVec(endPointsPulse(1)), tVec(endPointsPulse(1))], [y(1) y(2)]);
+    line([tVec(endPointsPulse(2)), tVec(endPointsPulse(2))], [y(1) y(2)]);
     plot(tVec(indSpikes(indSpikes > endPointsPulse(1) & indSpikes < endPointsPulse(2))), ...
           vVecs(indSpikes(indSpikes > endPointsPulse(1) & indSpikes < endPointsPulse(2))), 'xg');
-    if length(indSpikes) > 1
-        text(0.6, 0.85, ['Spike Frequency: ' num2str(freqValues(iSwp)) ' Hz'], 'Units', 'normalized');
-    else
-        text(0.6, 0.85, ['Spike Frequency: 0 Hz'], 'Units', 'normalized');
-    end
+    text(0.6, 0.85, ['Spike Frequency: ', num2str(freqValues(iSwp)), ' Hz'], ...
+        'Units', 'normalized');
     title(strrep(figName, '_', '\_'));
     xlabel('Time (ms)')
     ylabel('Membrane Potential (mV)')
     saveas(h, fullfile(outFolder, figName), 'png');
-    close(h);
 end
 
 % Plot spike frequency over current injected (F-I plot)
 figNameFI = [fileBases, '_FI'];
 h = figure(999);
-set(h, 'Visible', 'off');
 clf(h);
 plot(currentValues, freqValues);
 title(['F-I plot for ', strrep(fileBases, '_', '\_')]);
 xlabel('Current Injected (pA)');
 ylabel('Spike Frequency (Hz)');
 saveas(h, fullfile(outFolder, figNameFI), 'png');
-close(h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -287,12 +278,14 @@ end
 function spikeFreqHz = compute_spike_frequency_helper(indSpikes, siMs)
 %% Computes the spike frequency for one set of spike indices
 
+MS_PER_S = 1000;
+
 % Count the number of spikes
 nSpikes = numel(indSpikes);
 
 % If less than two spikes, spike frequency is zero
 if nSpikes < 2
-    spikeFreq = 0;
+    spikeFreqHz = 0;
     return
 end
 
