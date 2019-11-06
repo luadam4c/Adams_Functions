@@ -278,6 +278,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % 2019-10-13 Now uses create_subplots.m
 % 2019-10-16 Added 'PlotOnly' as an optional argument
 % 2019-10-16 Added 'LineStyle' as an optional argument
+% 2019-11-06 Changed figTypesDefault to {'png', 'epsc'}
 % TODO: dataToCompareColorMap
 % TODO: Number of horizontal bars shouldn't need to match nTraces
 
@@ -335,7 +336,7 @@ figHandleDefault = [];          % no existing figure by default
 figNumberDefault = [];          % no figure number by default
 figExpansionDefault = [];       % no figure expansion by default
 figNameDefault = '';            % don't save figure by default
-figTypesDefault = 'png';        % save as png file by default
+figTypesDefault = {'png', 'epsc'};  % save as both epsc and png by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

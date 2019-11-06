@@ -48,7 +48,7 @@ function varargout = parse_repetitive_pulses (vectors, siMs, varargin)
 %                   default = 0 ms
 %                   - 'FileBase': file base for output files
 %                   must be a string scalar or a character vector
-%                   default == TODO
+%                   default == match the trace file name
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:

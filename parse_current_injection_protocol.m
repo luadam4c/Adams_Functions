@@ -1,11 +1,11 @@
-function parse_current_injection_protocol (varargin)
-%% From a current injection protocol, detect spikes for each sweep and make an F-I plot
-% Usage: parse_current_injection_protocol (vVecs (opt), iVecs (opt), tVec (opt), varargin)
+function [parsedParams, parsedData] = parse_current_injection_protocol (varargin)
+%% From a family of current injections, detect current pulse times and amplitudes, detect spikes for each voltage response, and compute spike frequencies
+% Usage: [parsedParams, parsedData] = parse_current_injection_protocol (vVecs (opt), iVecs (opt), tVec (opt), varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       TODO
+%       parse_current_injection_protocol;
 %
 % Outputs:
 %       TODO
@@ -31,15 +31,28 @@ function parse_current_injection_protocol (varargin)
 %                                       plots will be placed
 %                   must be a string scalar or a character vector
 %                   default == same as directory
+%                   - 'OutFileBase': file base for output files
+%                   must be a string scalar or a character vector
+%                   default == match the file name
 %
 % Requires:
+% argfun
+% create_labels_from_numbers
+% match_row_count
+% count_vectors
 % iscellnumeric
 % all_files
+% force_column_cell
 % extract_fileparts
+% extract_common_prefix
 % extract_subvectors
 % match_time_info
+% set_figure_properties
+% plot_traces
+% plot_tuning_curve
 % parse_abf
 % check_dir
+%       cd/compute_spike_frequency.m
 %       cd/construct_and_check_abfpath.m
 %       cd/detect_spikes_current_clamp.m
 %       cd/identify_channels.m
@@ -59,7 +72,7 @@ function parse_current_injection_protocol (varargin)
 % 2017-04-11 - Changed the color map to lines
 % 2017-04-13 - BT - Marked on plot spike frequency time interval
 % 2017-04-13 - Added alldata, siUs as optional arguments
-% 2017-05-01 - BT - Converted endPointsPulse to use identify_CI_protocol.m
+% 2017-05-01 - BT - Converted pulseEndPoints to use identify_CI_protocol.m
 % 2017-06-16 - AL - Updated 
 % 2018-01-24 - Added isdeployed
 % 2019-11-05 - Changed the arguments structure
@@ -69,7 +82,14 @@ function parse_current_injection_protocol (varargin)
 %       See /media/ashleyX/Recordings/20180910/2018_09_10_A_0000_traces
 
 %% Hard-coded parameters
+% TODO: Make optional arguments
 verbose = true;
+plotRawData = true;
+plotSpikeDetection = true;
+plotSeparately = false;
+plotFI = true;
+parsedParamsSuffix = 'current_family_params';
+parsedDataSuffix = 'current_family_data';
 
 %% Default values for optional arguments
 vVecsDefault = [];              % set later
@@ -79,6 +99,7 @@ directoryDefault = pwd;         % look for .abf files in
                                 %   the present working directory by default
 fileNamesDefault = {};          % detect from pwd by default
 outFolderDefault = '';          % set later
+outFileBaseDefault = '';        % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -109,6 +130,8 @@ addParameter(iP, 'FileNames', fileNamesDefault, ...
     @(x) isempty(x) || ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'OutFileBase', outFileBaseDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -118,6 +141,7 @@ tVec = iP.Results.tVec;
 directory = iP.Results.Directory;
 fileNames = iP.Results.FileNames;
 outFolder = iP.Results.OutFolder;
+outFileBase = iP.Results.OutFileBase;
 
 %% Preparation
 % Prepare
@@ -146,13 +170,13 @@ if isempty(vVecs) || isempty(iVecs) || isempty(tVec)
         return
     else
         % Parse the .abf file
-        [parseParams, parsedData] = parse_abf(fileNames);
+        [abfParams, abfData] = parse_abf(fileNames);
 
         % Extract the time, current and voltage vectors
-        siMs = parseParams.siMs;
-        tVec = parsedData.tVec;
-        iVecs = parsedData.iVecs;
-        vVecs = parsedData.vVecs;
+        siMs = abfParams.siMs;
+        tVec = abfData.tVec;
+        iVecs = abfData.iVecs;
+        vVecs = abfData.vVecs;
     end
 else
     % Compute the sampling interval in ms
@@ -173,134 +197,188 @@ if isempty(outFolder)
     outFolder = fullfile(fileDirs, strcat(fileBases, '_traces'));
 end
 
+% Set output file base
+if isempty(outFileBase)
+    outFileBase = extract_common_prefix(fileBases);
+end
+
 % Create outFolder if not already exists
 check_dir(outFolder);
 
 % Count the number of sweeps
-nSweeps = size(vVecs, 2);
-
-% Count the number of samples
-nSamples = size(vVecs, 1);
+nSweeps = count_vectors(vVecs);
 
 %% Parse the current injection protocol
-% TODO: parse_current_injections.m
 % Identify the (common) current pulse endpoints
-[~, endPointsPulse] = identify_CI_protocol(iVecs, siMs);
+% TODO: Try using parse_pulse.m
+[~, pulseEndPoints] = identify_CI_protocol(iVecs, siMs);
 
 % Extract the current traces during the injection
-iVecsInjected = extract_subvectors(iVecs, 'EndPoints', endPointsPulse);
+iVecsInjected = extract_subvectors(iVecs, 'EndPoints', pulseEndPoints);
 
 % Compute current injection values 
-currentValues = transpose(mean(iVecsInjected, 1));
+currentInjected = transpose(mean(iVecsInjected, 1));
 
 %% Detect spikes
 [spikesParams, spikesData] = detect_spikes_current_clamp(vVecs);
-isSpike = spikesData.isSpike;
-idxSpikes = spikesData.idxSpikes;
+
+% Extract results
+minAmpBefore = spikesParams.minAmpBefore;
+minAmpAfter = spikesParams.minAmpAfter;
+indSpikes = spikesData.indSpikes;
 
 %% Compute spike frequencies during the injection
 % Force as a column cell array
-idxSpikes = force_column_cell(idxSpikes);
+indSpikes = force_column_cell(indSpikes);
 
-% Compute the spikes within range
-idxSpikesWithinRange = ...
-    cellfun(@(x) x(x > endPointsPulse(1) & x < endPointsPulse(2)), ...
-            idxSpikes, 'UniformOutput', false);
+% Restrict to spikes occuring within the current pulse
+indSpikesWithinPulse = extract_subvectors(indSpikes, 'Windows', pulseEndPoints);
 
 % Compute spike frequency for each sweep
-freqValues = compute_spike_frequency(idxSpikesWithinRange, siMs);
+spikeFrequencyHz = compute_spike_frequency(indSpikesWithinPulse, siMs);
+
+%% Return outputs as tables
+% Force as a column cell array
+[pulseEndPoints, timeVec, currentVec, voltageVec] = ...
+    argfun(@force_column_cell, pulseEndPoints, tVec, iVecs, vVecs);
+
+% Match row counts
+[minAmpBefore, minAmpAfter, pulseEndPoints, ...
+        timeVec, currentVec, voltageVec] = ...
+    argfun(@(x) match_row_count(x, nSweeps), ...
+            minAmpBefore, minAmpAfter, pulseEndPoints, ...
+            timeVec, currentVec, voltageVec);
+
+% Put together as tables
+parsedParams = table(currentInjected, spikeFrequencyHz, ...
+                    minAmpBefore, minAmpAfter);
+parsedData = table(timeVec, currentVec, voltageVec, ...
+                    indSpikes, indSpikesWithinPulse);
+
+%% Save tables
+% Create full paths to files
+sheetNameParams = fullfile(outFolder, [outFileBase, '_', ...
+                            parsedParamsSuffix, '.csv']);
+fileNameData = fullfile(outFolder, [outFileBase, '_', ...
+                            parsedDataSuffix, '.mat']);
+
+% Write the params into a spreadsheet
+writetable(parsedParams, sheetNameParams);
+
+% Save the data as a .mat file
+save(fileNameData, 'parsedData', '-v7.3');
 
 %% Plots
 % Plot all sweeps together
-h = figure(nSweeps + 1);
-clf(h);
-figName = [fileBases, '_all'];
-cm = colormap(lines);
-for iSwp = 1:nSweeps
-    plot(tVec, vVecs(:, iSwp), 'Color', cm(mod(iSwp, size(cm, 1)) + 1, :), ...
-        'Displayname', ['Sweep #', num2str(iSwp)]);
-    hold on;
+if plotRawData
+    % Plot all voltage traces
+    figHandleVoltage = set_figure_properties('AlwaysNew', true);
+    figNameAll = fullfile(outFolder, [outFileBase, '_raw_voltage_traces.png']);
+    plot_traces(timeVec, voltageVec, 'PlotMode', 'overlapped', ...
+                'XLabel', 'Time (ms)', 'YLabel', 'Membrane Potential (mV)', ...
+                'FigHandle', figHandleVoltage, 'FigName', figNameAll);
+
+    % Plot all current traces
+    figHandleCurrent = set_figure_properties('AlwaysNew', true);
+    figNameAll = fullfile(outFolder, [outFileBase, '_raw_current_traces.png']);
+    plot_traces(timeVec, currentVec, 'PlotMode', 'overlapped', ...
+                'XLabel', 'Time (ms)', 'YLabel', 'Current Injection (pA)', ...
+                'FigHandle', figHandleCurrent, 'FigName', figNameAll);
 end
-title(strrep(figName, '_', '\_'));
-xlabel('Time (ms)')
-ylabel('Membrane Potential (mV)')
-legend('Location', 'northeast');
-saveas(h, fullfile(outFolder, figName), 'png');
 
 % Plot each sweep individually with detected spikes and computed spike frequency    
-for iSwp = 1:nSweeps
-    indSpikes = find(isSpike(:, iSwp));
-    figName = [fileBases, '_sweep', num2str(iSwp)];
+if plotSpikeDetection
+    % Create figure handles
+    if plotSeparately
+        % Create figure and axes handles
+        [figHandlesSp, axHandlesSp] = ...
+            arrayfun(@(x) create_subplots(1, 1), ...
+                    transpose(1:nSweeps), 'UniformOutput', false);
+    else
+        % Create figure with subplots
+        [figHandleSp, axHandlesSp] = ...
+            create_subplots(nSweeps, 1, 'FigExpansion', [1, 3]);
 
-    h = figure(iSwp);
-    clf(h);
-    plot(tVec, vVecs(:, iSwp), 'k')
-    hold on;
-    plot(tVec(indSpikes), vVecs(indSpikes, iSwp), 'xr');
-    y = ylim;
-    line([tVec(endPointsPulse(1)), tVec(endPointsPulse(1))], [y(1) y(2)]);
-    line([tVec(endPointsPulse(2)), tVec(endPointsPulse(2))], [y(1) y(2)]);
-    plot(tVec(indSpikes(indSpikes > endPointsPulse(1) & indSpikes < endPointsPulse(2))), ...
-          vVecs(indSpikes(indSpikes > endPointsPulse(1) & indSpikes < endPointsPulse(2))), 'xg');
-    text(0.6, 0.85, ['Spike Frequency: ', num2str(freqValues(iSwp)), ' Hz'], ...
-        'Units', 'normalized');
-    title(strrep(figName, '_', '\_'));
-    xlabel('Time (ms)')
-    ylabel('Membrane Potential (mV)')
-    saveas(h, fullfile(outFolder, figName), 'png');
+        % Convert to cell array
+        axHandlesSp = num2cell(axHandlesSp);
+    end
+
+    % Create figure names and titles
+    if plotSeparately
+        figNamesSp = create_labels_from_numbers(1:nSweeps, ...
+                    'Prefix', fullfile(outFolder, [outFileBase, '_sweep']));
+
+        % Create figure titles
+        figTitlesSp = create_labels_from_numbers(1:nSweeps, ...
+                    'Prefix', 'Spike Detection for Sweep #', ...
+                    'Suffix', [' for ', outFileBase]);
+    else
+        figNameSp = fullfile(outFolder, [outFileBase, '_spike_detection.png']);
+        figTitleSp = ['Spike Detection for ', outFileBase];
+    end
+
+    % Plot spike detection for each sweep separately
+    cellfun(@(x, y, z, u, v, w) plot_spike_detection(x, y, z, u, v, w), ...
+            timeVec, voltageVec, indSpikes, indSpikesWithinPulseThis, ...
+            num2cell(spikeFrequencyHz), axHandlesSp);
+
+    % Save plots
+    if plotSeparately
+        for iSwp = 1:nSweeps
+            figure(figHandlesSp{iSwp});
+            title(figTitlesSp{iSwp});
+            save_all_figtypes(figHandlesSp{iSwp}, figNameSp, ...
+                                {'png', 'epsc'})
+        end
+    else
+        figure(figHandleSp);
+        suptitle(figTitleSp);
+        save_all_figtypes(figHandleSp, figNamesSp{iSwp}, {'png', 'epsc'})
+    end
 end
 
 % Plot spike frequency over current injected (F-I plot)
-figNameFI = [fileBases, '_FI'];
-h = figure(999);
-clf(h);
-plot(currentValues, freqValues);
-title(['F-I plot for ', strrep(fileBases, '_', '\_')]);
-xlabel('Current Injected (pA)');
-ylabel('Spike Frequency (Hz)');
-saveas(h, fullfile(outFolder, figNameFI), 'png');
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function spikeFreqs = compute_spike_frequency(indSpikes, siMs)
-%% Computes the spike frequency for sets of spike indices
-
-% Compute the spike frequency for each set of spike indices
-if iscell(indSpikes)
-    spikeFreqs = cellfun(@(x) compute_spike_frequency_helper(x, siMs), ...
-                        indSpikes);
-else
-    spikeFreqs = compute_spike_frequency_helper(indSpikes, siMs);
+if plotFI
+    xLabel = 'Current Injected (pA)';
+    yLabel = 'Spike Frequency (Hz)';
+    figTitle(['F-I plot for ', strrep(outFileBase, '_', '\_')]);
+    figHandleFI = set_figure_properties('AlwaysNew', true);
+    figNameFI = fullfile(outFolder, [outFileBase, '_FI.png']);
+    plot_tuning_curve(currentInjected, spikeFrequencyHz, ...
+                'XLabel', xLabel, 'YLabel', yLabel, 'FigTitle', figTitle,...
+                'FigHandle', figHandleFI, 'FigName', figNameFI);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function spikeFreqHz = compute_spike_frequency_helper(indSpikes, siMs)
-%% Computes the spike frequency for one set of spike indices
+function plot_spike_detection(tVec, vVec, indSpikes, indSpikesWithinPulse, ...
+                                spikeFrequencyHz, axHandle)
 
-MS_PER_S = 1000;
+% Go to appropriate axes
+axes(axHandle);
 
-% Count the number of spikes
-nSpikes = numel(indSpikes);
+% Hold on
+hold on;
 
-% If less than two spikes, spike frequency is zero
-if nSpikes < 2
-    spikeFreqHz = 0;
-    return
-end
+% Plot the voltage vector
+plot(tVec, vVec, 'k');
 
-% Otherwise, extract the first and last index
-idxFirst = indSpikes(1);
-idxLast = indSpikes(end);
+% Plot spikes with red crosses
+plot(tVec(indSpikes), vVecs(indSpikes), 'rx');
 
-% Compute the number of samples between the first and last spike
-nSamplesBetweenFirstAndLast = idxLast - idxFirst;
+% Plot spikes within pulse with green crosses
+plot(tVec(indSpikesWithinPulse)), vVecs(indSpikesWithinPulse), 'gx');
 
-% Compute the time in seconds between the first and last spike
-timeDiffSeconds = nSamplesBetweenFirstAndLast * siMs / MS_PER_S;
+% Plot pulse boundaries
+plot_window_boundaries(tVec(pulseEndPoints), 'BoundaryType', 'horizontalLines');
 
-% Compute the average spike frequency in Hz
-spikeFreqHz = (nSpikes - 1) / timeDiffSeconds;
+% Annotate spike frequency
+spikeFreqText = ['Spike Frequency: ', num2str(spikeFrequencyHz), ' Hz'];
+text(0.6, 0.85, spikeFreqText, 'Units', 'normalized');
+
+% Create labels
+xlabel('Time (ms)');
+ylabel('Membrane Potential (mV)');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -329,6 +407,27 @@ isLocalMinimum = ...
     [false(1, nSweeps); ...
     diff(vVecs(1:end-1, :)) < 0 && diff(vVecs(2:end, :)) >= 0; ...
     false(1, nSweeps)];
+
+indSpikesWithinPulse = ...
+    cellfun(@(x) x(x > pulseEndPoints(1) & x < pulseEndPoints(2)), ...
+            indSpikes, 'UniformOutput', false);
+
+h = figure(nSweeps + 1);
+clf(h);
+figName = [outFileBase, '_all'];
+cm = colormap(lines);
+for iSwp = 1:nSweeps
+    plot(tVec, vVecs(:, iSwp), 'Color', cm(mod(iSwp, size(cm, 1)) + 1, :), ...
+        'Displayname', ['Sweep #', num2str(iSwp)]);
+    hold on;
+end
+xlabel('Time (ms)')
+ylabel('Membrane Potential (mV)')
+legend('Location', 'northeast');
+saveas(h, fullfile(outFolder, figName), 'png');
+
+line([tVec(pulseEndPoints(1)), tVec(pulseEndPoints(1))], [y(1) y(2)]);
+line([tVec(pulseEndPoints(2)), tVec(pulseEndPoints(2))], [y(1) y(2)]);
 
 %}
 

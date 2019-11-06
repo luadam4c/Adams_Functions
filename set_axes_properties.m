@@ -36,6 +36,9 @@ function ax = set_axes_properties (varargin)
 %                                       relative to outerPosition
 %                   must be a nonnegative scalar or 2-element vector
 %                   default == [] (not changed from default)
+%                   - 'FigHandle': figure handle to look for axes
+%                   must be a empty or a figure object handle
+%                   default == []
 %                   - Any other parameter-value pair for the axes() function
 %
 % Requires:
@@ -55,6 +58,7 @@ function ax = set_axes_properties (varargin)
 % File History:
 % 2019-09-04 Adaped from set_figure_properties.m
 % 2019-09-19 Now defaults TickDir to 'out'
+% 2019-11-05 Added 'FigHandle' as an optional argument
 
 
 %% Hard-coded parameters
@@ -67,6 +71,7 @@ positionDefault = [];           % set later
 widthDefault = [];              % set later
 heightDefault = [];             % set later
 axesCoverageDefault = [];       % set later
+figHandleDefault = [];          % no existing figure by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -93,6 +98,7 @@ addParameter(iP, 'Height', heightDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive'}));
 addParameter(iP, 'AxesCoverage', axesCoverageDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'vector'}));
+addParameter(iP, 'FigHandle', figHandleDefault);
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -103,6 +109,7 @@ position = iP.Results.Position;
 width = iP.Results.Width;
 height = iP.Results.Height;
 axesCoverage = iP.Results.AxesCoverage;
+figHandle = iP.Results.FigHandle;
 
 % Keep unmatched arguments for the axes() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -110,6 +117,11 @@ otherArguments = struct2arglist(iP.Unmatched);
 %% Preparation
 
 %% Do the job
+% Go to the designated figure
+if ~isempty(figHandle)
+    figure(figHandle);
+end
+
 % Decide on the axes handle
 if ~isempty(axHandle)
     % Use the given axes

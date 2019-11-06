@@ -1,12 +1,12 @@
-function [isCI, endPointsPulse] = identify_CI_protocol (iVecs, siMs)
+function [isCI, pulseEndPoints] = identify_CI_protocol (iVecs, siMs)
 %% Identifies whether a set of current vectors is a current injection protocol, and if so, what the range of the current injection is
-% Usage: [isCI, endPointsPulse] = identify_CI_protocol (iVecs, siMs)
+% Usage: [isCI, pulseEndPoints] = identify_CI_protocol (iVecs, siMs)
 % Explanation:
 %       TODO: Explain strategy
 %
 % Outputs: TODO
 %       isCI            - boolean whether or not abfdata is a current injection
-%       endPointsPulse  - values representing the start and end of the injection
+%       pulseEndPoints  - values representing the start and end of the injection
 %
 % Arguments: TODO
 %       iVecs       - current vectors
@@ -57,7 +57,7 @@ nSweeps = size(iVecs, 2);
 % If there are no sweeps, this is not a current injection protocol
 if nSweeps == 0 || isempty(iVecs)
     isCI = false;
-    endPointsPulse = NaN;
+    pulseEndPoints = NaN;
     return;
 end
 
@@ -109,7 +109,7 @@ ciOptions = uniquetol(ciOptions, rangeTolerance, 'DataScale', 10);
 % AL - Added for a bug
 if ciOptions < 2
     isCI = false;
-    endPointsPulse = NaN;
+    pulseEndPoints = NaN;
     return
 end
 
@@ -140,7 +140,7 @@ idxPulseStart = possibleRangeCIs(likelyRangeSet, 1);
 idxPulseEnd = possibleRangeCIs(likelyRangeSet, 2);
 
 % Return pulse endpoints
-endPointsPulse = [idxPulseStart, idxPulseEnd];
+pulseEndPoints = [idxPulseStart, idxPulseEnd];
 
 % Derivatives of all current data over injection range
 injectionDataDiff = diff(iVecsFilt(idxPulseStart:idxPulseEnd, :), 1);

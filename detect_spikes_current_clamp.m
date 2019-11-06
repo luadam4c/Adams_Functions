@@ -14,7 +14,7 @@ function [spikesParams, spikesData] = detect_spikes_current_clamp (vVecs, vararg
 %                   specified as a scalar structure
 %       spikesData  - Detected spikes data, with fields:
 %                       isSpike
-%                       idxSpikes
+%                       indSpikes
 %                   specified as a scalar structure
 %
 % Arguments:
@@ -90,7 +90,7 @@ isSpike = cellfun(@(x) detect_spikes_one_sweep(x, ...
                     vVecs, 'UniformOutput', false);
 
 % Find the spike indices
-idxSpikes = cellfun(@(x) find(x), isSpike, 'UniformOutput', false);
+indSpikes = cellfun(@(x) find(x), isSpike, 'UniformOutput', false);
 
 % Force as a numeric array if a numeric array is passed in
 if wasNumeric
@@ -98,8 +98,8 @@ if wasNumeric
     isSpike = force_matrix(isSpike);
 
     % Extract from the first cell if only one vector is provided
-    if numel(idxSpikes) == 1
-        idxSpikes = idxSpikes{1};
+    if numel(indSpikes) == 1
+        indSpikes = indSpikes{1};
     end
 end
 
@@ -110,7 +110,7 @@ spikesParams.minAmpAfter = minAmpAfter;
 
 % Output vectors
 spikesData.isSpike = isSpike;
-spikesData.idxSpikes = idxSpikes;
+spikesData.indSpikes = indSpikes;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
