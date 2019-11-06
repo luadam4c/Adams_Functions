@@ -87,10 +87,10 @@ function [parsedParams, parsedData] = parse_current_family (varargin)
 %% Hard-coded parameters
 % TODO: Make optional arguments
 verbose = true;
-plotRawData = true;
-plotSpikeDetection = true;
+plotRawData = false; %true;
+plotSpikeDetection = false; %true;
 plotSeparately = false;
-plotFI = true;
+plotFI = false; %true;
 parsedParamsSuffix = 'current_family_params';
 parsedDataSuffix = 'current_family_data';
 
@@ -263,7 +263,7 @@ spikeFrequencyHz = compute_spike_frequency(indSpikesWithinPulse, siMs);
 parsedParams = table(currentInjected, spikeFrequencyHz, ...
                     minAmpBefore, minAmpAfter);
 parsedData = table(timeVec, currentVec, voltageVec, ...
-                    indSpikes, indSpikesWithinPulse);
+                    pulseEndPoints, indSpikes, indSpikesWithinPulse);
 
 %% Save tables
 % Create full paths to files
@@ -276,7 +276,7 @@ fileNameData = fullfile(outFolder, [outFileBase, '_', ...
 writetable(parsedParams, sheetNameParams);
 
 % Save the data as a .mat file
-save(fileNameData, 'parsedData', '-v7.3');
+save(fileNameData, 'parsedParams', 'parsedData', '-v7.3');
 
 %% Plots
 

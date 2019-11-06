@@ -22,7 +22,8 @@ function subVecs = extract_subvectors (vecs, varargin)
 %                       or a cell array of numeric vectors
 % Arguments:
 %       vecs        - vectors to extract
-%                   must be an array
+%                   must be a numeric array 
+%                       or a cell array of numeric vectors
 %       varargin    - 'Pattern': pattern for selecting indices
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'auto'  - use other options
