@@ -106,7 +106,7 @@ function [tVecAll, respAll, stimAll, featuresAll, h] = ...
 %       cd/save_all_figtypes.m
 %
 % Used by:
-%       cd/plot_protocols.m
+%       cd/plot_repetitive_protocols.m
 
 % File History:
 % 2018-12-19 - Modified from compute_and_plot_average_response.m

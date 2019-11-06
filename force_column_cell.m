@@ -78,7 +78,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 %       cd/plot_all_abfs.m
-%       cd/plot_protocols.m
+%       cd/plot_repetitive_protocols.m
 %       cd/plot_struct.m
 %       cd/plot_vertical_line.m
 %       cd/plot_vertical_shade.m

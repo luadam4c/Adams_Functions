@@ -64,7 +64,7 @@ function [allParsedParamsTable, allParsedDataTable, ...
 % Used by:
 %       cd/combine_data_from_same_slice.m
 %       cd/plot_all_abfs.m
-%       cd/plot_protocols.m
+%       cd/plot_repetitive_protocols.m
 
 % File History:
 % 2018-09-27 - Pulled code from plot_all_abfs.m

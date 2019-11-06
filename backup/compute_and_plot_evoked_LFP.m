@@ -56,7 +56,7 @@ function [tVecLfp, vVecLfp, iVecStim, features, h] = ...
 %       cd/save_all_figtypes.m
 %
 % Used by:    
-%       cd/plot_protocols.m
+%       cd/plot_repetitive_protocols.m
 
 % File History:
 % 2018-09-17 - Created by Adam Lu

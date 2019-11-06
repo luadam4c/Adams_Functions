@@ -76,10 +76,10 @@ function figs = plot_table (table, varargin)
 % Used by:
 %       cd/plot_measures.m
 %       cd/parse_multiunit.m
-%       cd/plot_protocols.m
+%       cd/plot_repetitive_protocols.m
 
 % File History:
-% 2018-12-18 Moved from plot_protocols.m
+% 2018-12-18 Moved from plot_repetitive_protocols.m
 % 2018-12-18 Now uses iP.KeepUnmatched
 % 2018-12-18 Now uses extract_common_directory.m
 % 2018-12-18 Now uses row names without processing if not file names

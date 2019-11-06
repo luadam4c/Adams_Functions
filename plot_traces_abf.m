@@ -91,7 +91,7 @@ function [data, siUs, timeVec, siPlot] = plot_traces_abf (fileName, varargin)
 %
 % Used by:
 %       cd/plot_all_abfs.m
-%       cd/plot_protocols.m
+%       cd/plot_repetitive_protocols.m
 %       cd/plot_traces_EEG.m
 %       /media/shareX/share/Adam/Sample_files_from_Katie/test_sweeps.m TODO: update this file
 

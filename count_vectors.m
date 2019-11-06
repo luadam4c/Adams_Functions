@@ -60,7 +60,7 @@ function nVectors = count_vectors (vectors, varargin)
 %       cd/parse_multiunit.m
 %       cd/parse_pulse_response.m
 %       cd/plot_measures.m
-%       cd/plot_protocols.m
+%       cd/plot_repetitive_protocols.m
 %       cd/plot_raster.m
 %       cd/plot_traces.m
 %       cd/save_all_zooms.m

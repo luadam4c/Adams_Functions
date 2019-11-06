@@ -1,8 +1,8 @@
 function [featuresFileTable, featuresSweepTable] = ...
-                plot_protocols (protocolType, varargin)
+                plot_repetitive_protocols (protocolType, varargin)
 %% Computes features for each file according to protocol type
 % Usage: [featuresFileTable, featuresSweepTable] = ...
-%               plot_protocols (protocolType, varargin)
+%               plot_repetitive_protocols (protocolType, varargin)
 % Explanation:
 %       TODO
 %

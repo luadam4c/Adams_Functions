@@ -106,11 +106,11 @@ function [tVecAvg, respAvg, stimAvg, featuresAvg, h] = ...
 %       cd/save_all_figtypes.m
 %
 % Used by:
-%       cd/plot_protocols.m
+%       cd/plot_repetitive_protocols.m
 
 % File History:
 % 2018-12-15 - Moved from compute_and_plot_evoked_LFP.m
-% 2018-12-15 - Now used directly in plot_protocols.m
+% 2018-12-15 - Now used directly in plot_repetitive_protocols.m
 % 2018-12-15 - Now uses the file name as the row name for the feature table
 % 2018-12-18 - Updated usage of plot_pulse_response_with_stimulus.m
 % 2018-12-28 - Added 'Verbose' as an optional argument

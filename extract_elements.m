@@ -58,7 +58,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/parse_multiunit.m
 %       cd/parse_pulse_response.m
 %       cd/parse_stim.m
-%       cd/plot_protocols.m
+%       cd/plot_repetitive_protocols.m
 %       cd/select_similar_values.m
 %       cd/adjust_edges.m
 

@@ -82,7 +82,7 @@ function varargout = all_files (varargin)
 %       cd/parse_all_swds.m
 %       cd/plot_all_abfs.m
 %       cd/plot_calcium_imaging_traces.m
-%       cd/plot_protocols.m
+%       cd/plot_repetitive_protocols.m
 %       cd/plot_traces_EEG.m
 %       /home/Matlab/plethR01/plethR01_analyze.m
 %       
