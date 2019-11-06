@@ -1,6 +1,6 @@
-function plot_FI (filename, alldata, sius, outfolder)
+function parse_current_injection_protocol (filename, alldata, sius, outfolder)
 %% From a current injection protocol, detect spikes for each sweep and make an F-I plot
-% Usage: plot_FI (filename, alldata, sius, outfolder)
+% Usage: parse_current_injection_protocol (filename, alldata, sius, outfolder)
 % Arguments:
 %       filename	- must be either the full address or must be in current directory
 %				.abf is not needed (e.g. 'B20160908_0004')
@@ -211,13 +211,13 @@ OLD CODE:	TODO: Move any old versions of the code here in case we need it back i
 
 timepoints = ( si/1000 : si/1000 : ntimepoints * si/1000 )';
 
-plot_FI(infolder, outfolder)
+parse_current_injection_protocol(infolder, outfolder)
 %		/home/Matlab/Downloaded_Functions/dirr.m
 %% Find all .abf files
 [~, ~, filenames] = dirr(infolder, '.abf', 'name');
 if isempty(filenames)
 	fprintf('No abf files in current directory!\n');
-	fprintf('Type ''help plot_FI'' for usage\n');
+	fprintf('Type ''help parse_current_injection_protocol'' for usage\n');
 end
 nfiles = numel(filenames);
 %parfor f = 1:nfiles			% TODO: Switch to parfor when the code is ready

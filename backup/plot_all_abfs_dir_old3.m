@@ -63,7 +63,7 @@ parfor k = 1:nfiles
 	if length(current_data) > 20000
 		injection_data = current_data(12000:20000,:,:);
 		if std(injection_data,0,1) < 4 & abs(max(max(injection_data)) - min(min(injection_data))) > 100
-			plot_FI(filenames{k}, d, sius);
+			parse_current_injection_protocol(filenames{k}, d, sius);
 		end
 	end
 end

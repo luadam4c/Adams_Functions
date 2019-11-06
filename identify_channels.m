@@ -37,7 +37,7 @@ function [channelTypes, channelUnits, channelLabels] = ...
 % Used by:
 %       cd/parse_abf.m
 %       TODO: use parse_abf instead for the following:
-%       cd/plot_FI.m
+%       cd/parse_current_injection_protocol.m
 %       cd/combine_sweeps.m
 %       /home/Matlab/minEASE/minEASE.m
 %

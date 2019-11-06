@@ -7,7 +7,7 @@ function abfFullFileName = construct_abffilename(filename)
 %
 % Used by:
 %		cd/parse_abf.m
-%		cd/plot_FI.m
+%		cd/parse_current_injection_protocol.m
 
 % File History: 
 % 2017-04-11 - Moved from plot_traces_abf.m

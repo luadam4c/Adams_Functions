@@ -54,7 +54,7 @@ parfor k = 1:nfiles
 	plot_traces_abf(filenames{k}, expmode);
 	% TODO: If it's a current injection protocol, detect spikes for each sweep and make an F-I plot
 	% if XXX
-	%	plot_FI(filenames{k});
+	%	parse_current_injection_protocol(filenames{k});
 	% end
 end
 

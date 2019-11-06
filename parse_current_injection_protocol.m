@@ -1,6 +1,6 @@
-function plot_FI (varargin)
+function parse_current_injection_protocol (varargin)
 %% From a current injection protocol, detect spikes for each sweep and make an F-I plot
-% Usage: plot_FI (vVecs (opt), iVecs (opt), tVec (opt), varargin)
+% Usage: parse_current_injection_protocol (vVecs (opt), iVecs (opt), tVec (opt), varargin)
 % Explanation:
 %       TODO
 %
@@ -44,7 +44,6 @@ function plot_FI (varargin)
 %       cd/detect_spikes_current_clamp.m
 %       cd/identify_channels.m
 %       cd/identify_CI_protocol.m
-%       /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
 %
 % Used by:
 %       cd/plot_all_abfs.m
@@ -184,6 +183,7 @@ nSweeps = size(vVecs, 2);
 nSamples = size(vVecs, 1);
 
 %% Parse the current injection protocol
+% TODO: parse_current_injections.m
 % Identify the (common) current pulse endpoints
 [~, endPointsPulse] = identify_CI_protocol(iVecs, siMs);
 

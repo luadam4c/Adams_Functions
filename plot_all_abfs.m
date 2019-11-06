@@ -86,7 +86,7 @@ function [abfParamsTable, abfDataTable, abfParamsStruct, ...
 %       cd/parse_all_abfs.m
 %       cd/plot_protocols.m
 %       cd/plot_traces_abf.m
-%       cd/plot_FI.m
+%       cd/parse_current_injection_protocol.m
 %       cd/isfigtype.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
 %
@@ -314,7 +314,7 @@ if identifyProtocols
             siUs = abfParams.siUs;
 
             % Detect spikes for each sweep and make an F-I plot
-            plot_FI(fileName, data, siUs);
+            parse_current_injection_protocol(fileName, data, siUs);
         end
         
         close all force hidden;
@@ -437,7 +437,7 @@ for file = files'
 
         injection_data = current_data(12000:20000,:,:);
         if std(injection_data,0,1) < 4 & abs(max(max(injection_data)) - min(min(injection_data))) > 100
-            plot_FI_bt(fileNames{iFile}, data, siUs);
+            parse_current_injection_protocol_bt(fileNames{iFile}, data, siUs);
         end
     if length(current_data) > 20000            % tests sweeps if values within injection time range are consistent
         
@@ -447,7 +447,7 @@ for file = files'
         [~, max_swp] = max(avgs_byswp);                    % highest sweep by average
         max_swp_peaks_avg = mean(findpeaks(injection_data(:, max_swp)));    % average peak value of greatest sweep
         if reduction < maxSwpSpacing & max_swp_peaks_avg > 100 & size(data, 3) > 1    % sweep avgs should be separated by constant
-            plot_FI(fileNames{iFile}, data, siUs);
+            parse_current_injection_protocol(fileNames{iFile}, data, siUs);
         end
     end
 
