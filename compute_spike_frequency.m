@@ -24,10 +24,10 @@ function spikeFreqs = compute_spike_frequency (indSpikes, siMs, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
-%       cd/parse_current_injection_protocol.m
+%       cd/parse_current_family.m
 
 % File History:
-% 2019-11-06 Moved from parse_current_injection_protocol.m
+% 2019-11-06 Moved from parse_current_family.m
 % 
 
 %% Hard-coded parameters

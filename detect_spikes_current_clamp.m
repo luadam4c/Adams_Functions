@@ -31,10 +31,10 @@ function [spikesParams, spikesData] = detect_spikes_current_clamp (vVecs, vararg
 %       cd/force_matrix.m
 %
 % Used by:
-%       cd/parse_current_injection_protocol.m
+%       cd/parse_current_family.m
 
 % File History:
-% 2019-11-05 Moved from parse_current_injection_protocol.m
+% 2019-11-05 Moved from parse_current_family.m
 % TODO: Make MinAmpBefore & MinAmpAfter optional arguments
 % TODO: Make SiMs, tVec, and PlotSpikeDetection optional arguments
 

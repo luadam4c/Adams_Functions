@@ -64,7 +64,7 @@ parfor k = 1:nfiles
 		   abs(current_data(15000,:,:) - current_data(16000,:,:)) < 4 & ...
 		   abs(current_data(16000,:,:) - current_data(17000,:,:)) < 4 & ...
 		   abs(current_data(13000,:,:) - current_data(20000,:,:)) < 4
-			parse_current_injection_protocol(filenames{k}, d, sius);
+			parse_current_family(filenames{k}, d, sius);
 		end
 	end
 end

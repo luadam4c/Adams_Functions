@@ -19,7 +19,7 @@ function [isCI, pulseEndPoints] = identify_CI_protocol (iVecs, siMs)
 %
 % Used by:
 %       cd/parse_abf.m
-%       cd/parse_current_injection_protocol.m
+%       cd/parse_current_family.m
 
 % File History:
 % 2017-04-26 Created by BT

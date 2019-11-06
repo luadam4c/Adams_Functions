@@ -1,11 +1,11 @@
-function [parsedParams, parsedData] = parse_current_injection_protocol (varargin)
+function [parsedParams, parsedData] = parse_current_family (varargin)
 %% From a family of current injections, detect current pulse times and amplitudes, detect spikes for each voltage response, and compute spike frequencies
-% Usage: [parsedParams, parsedData] = parse_current_injection_protocol (vVecs (opt), iVecs (opt), tVec (opt), varargin)
+% Usage: [parsedParams, parsedData] = parse_current_family (vVecs (opt), iVecs (opt), tVec (opt), varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       parse_current_injection_protocol;
+%       parse_current_family;
 %
 % Outputs:
 %       TODO

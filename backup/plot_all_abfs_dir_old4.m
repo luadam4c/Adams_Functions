@@ -68,7 +68,7 @@ parfor k = 1:nfiles
 		[~, max_swp] = max(avgs_byswp);					% highest sweep by average
 		max_swp_peaks_avg = mean(findpeaks(injection_data(:, max_swp)));	% average peak value of greatest sweep
 		if reduction < 2 & max_swp_peaks_avg > 100 & size(d,3) > 1	% sweep avgs should be separated by constant
-			parse_current_injection_protocol(filenames{k}, d, sius);
+			parse_current_family(filenames{k}, d, sius);
 		end
 	end
 end
@@ -99,6 +99,6 @@ for file = files'
 
 		injection_data = current_data(12000:20000,:,:);
 		if std(injection_data,0,1) < 4 & abs(max(max(injection_data)) - min(min(injection_data))) > 100
-			parse_current_injection_protocol_bt(filenames{k}, d, sius);
+			parse_current_family_bt(filenames{k}, d, sius);
 		end
 %}
