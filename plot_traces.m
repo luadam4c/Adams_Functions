@@ -216,6 +216,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       cd/create_indices.m
 %       cd/create_labels_from_numbers.m
 %       cd/decide_on_colormap.m
+%       cd/extract_fileparts.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/hold_off.m
@@ -279,6 +280,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % 2019-10-16 Added 'PlotOnly' as an optional argument
 % 2019-10-16 Added 'LineStyle' as an optional argument
 % 2019-11-06 Changed figTypesDefault to {'png', 'epsc'}
+% 2019-11-06 Fixed default color mode for non-'parallel' to 'ByPlot'
 % TODO: dataToCompareColorMap
 % TODO: Number of horizontal bars shouldn't need to match nTraces
 
@@ -568,7 +570,7 @@ if strcmpi(colorMode, 'auto')
             colorMode = 'byPlot';
         end
     else
-        colorMode = 'byTraceInPlot';
+        colorMode = 'byPlot';
     end
 end
 
@@ -677,7 +679,8 @@ if isempty(figTitle)
     if ~isempty(figName) && nPlots == 1
         figTitle = ['Traces for ', traceLabels{1}];
     elseif ~isempty(figName)
-        figTitle = ['Traces for ', figName];
+        figBase = extract_fileparts(figName, 'base');
+        figTitle = ['Traces for ', replace(figBase, '_', '\_')];
     elseif ischar(yLabel) && ~strcmp(plotMode, 'staggered')
         figTitle = [yLabel, ' over ', xLabel];
     else
@@ -985,7 +988,7 @@ case {'overlapped', 'staggered'}
         else
             p1 = arrayfun(@(x) plot(tVecsThis(:, x), dataThis(:, x), ...
                                     'LineStyle', lineStyle, ...
-                                    'Color', colorThis(:, x), ...
+                                    'Color', colorThis(x, :), ...
                                     otherArguments{:}), ...
                             transpose(1:nColorsThis));
         end
@@ -1494,6 +1497,8 @@ yLimits = yAmountToStagger * ([0, nPlots]  + 0.5);
 if nPlots > maxNPlotsForAnnotations
     subplotsqueeze(fig, subPlotSqeezeFactor);
 end
+
+colorMode = 'byTraceInPlot';
 
 %}
 

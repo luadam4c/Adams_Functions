@@ -48,6 +48,9 @@ function [parsedParams, parsedData] = parse_current_family (varargin)
 % extract_subvectors
 % match_time_info
 % set_figure_properties
+% create_subplots
+% save_all_figtypes
+% plot_window_boundaries
 % plot_traces
 % plot_tuning_curve
 % parse_abf
@@ -199,8 +202,15 @@ end
 
 % Set output file base
 if isempty(outFileBase)
-    outFileBase = extract_common_prefix(fileBases);
+    if iscell(fileBases)
+        outFileBase = extract_common_prefix(fileBases);
+    else
+        outFileBase = fileBases;
+    end
 end
+
+% Set output file base for titles
+outFileBaseTitle = replace(outFileBase, '_', '\_');
 
 % Create outFolder if not already exists
 check_dir(outFolder);
@@ -269,21 +279,28 @@ writetable(parsedParams, sheetNameParams);
 save(fileNameData, 'parsedData', '-v7.3');
 
 %% Plots
+
+% Determine x and y limits
+if plotRawData || plotSpikeDetection
+    xLimits = compute_axis_limits(timeVec, 'x');
+    yLimits = compute_axis_limits(voltageVec, 'y', 'Coverage', 90);
+end
+
 % Plot all sweeps together
 if plotRawData
     % Plot all voltage traces
     figHandleVoltage = set_figure_properties('AlwaysNew', true);
-    figNameAll = fullfile(outFolder, [outFileBase, '_raw_voltage_traces.png']);
+    figNameVoltage = fullfile(outFolder, [outFileBase, '_raw_voltage_traces.png']);
     plot_traces(timeVec, voltageVec, 'PlotMode', 'overlapped', ...
                 'XLabel', 'Time (ms)', 'YLabel', 'Membrane Potential (mV)', ...
-                'FigHandle', figHandleVoltage, 'FigName', figNameAll);
+                'FigHandle', figHandleVoltage, 'FigName', figNameVoltage);
 
     % Plot all current traces
     figHandleCurrent = set_figure_properties('AlwaysNew', true);
-    figNameAll = fullfile(outFolder, [outFileBase, '_raw_current_traces.png']);
+    figNameCurrent = fullfile(outFolder, [outFileBase, '_raw_current_traces.png']);
     plot_traces(timeVec, currentVec, 'PlotMode', 'overlapped', ...
                 'XLabel', 'Time (ms)', 'YLabel', 'Current Injection (pA)', ...
-                'FigHandle', figHandleCurrent, 'FigName', figNameAll);
+                'FigHandle', figHandleCurrent, 'FigName', figNameCurrent);
 end
 
 % Plot each sweep individually with detected spikes and computed spike frequency    
@@ -292,12 +309,12 @@ if plotSpikeDetection
     if plotSeparately
         % Create figure and axes handles
         [figHandlesSp, axHandlesSp] = ...
-            arrayfun(@(x) create_subplots(1, 1), ...
+            arrayfun(@(x) create_subplots(1, 1, 'AlwaysNew', true), ...
                     transpose(1:nSweeps), 'UniformOutput', false);
     else
         % Create figure with subplots
         [figHandleSp, axHandlesSp] = ...
-            create_subplots(nSweeps, 1, 'FigExpansion', [1, 3]);
+            create_subplots(nSweeps, 1, 'FigExpansion', [1, nSweeps / 3]);
 
         % Convert to cell array
         axHandlesSp = num2cell(axHandlesSp);
@@ -311,29 +328,40 @@ if plotSpikeDetection
         % Create figure titles
         figTitlesSp = create_labels_from_numbers(1:nSweeps, ...
                     'Prefix', 'Spike Detection for Sweep #', ...
-                    'Suffix', [' for ', outFileBase]);
+                    'Suffix', [' of ', outFileBaseTitle]);
     else
         figNameSp = fullfile(outFolder, [outFileBase, '_spike_detection.png']);
-        figTitleSp = ['Spike Detection for ', outFileBase];
+        figTitleSp = ['Spike Detection for ', outFileBaseTitle];
+    end
+
+    % Decide on x and y labels
+    if plotSeparately
+        xLabel = 'Time (ms)';
+        yLabel = 'Membrane Potential (mV)';
+    else
+        xLabel = '';
+        yLabel = '';
     end
 
     % Plot spike detection for each sweep separately
-    cellfun(@(x, y, z, u, v, w) plot_spike_detection(x, y, z, u, v, w), ...
-            timeVec, voltageVec, indSpikes, indSpikesWithinPulseThis, ...
-            num2cell(spikeFrequencyHz), axHandlesSp);
+    cellfun(@(a, b, c, d, e, f, g) ...
+                plot_spike_detection(a, b, c, d, e, f, g, ...
+                                    xLimits, yLimits, xLabel, yLabel), ...
+            timeVec, voltageVec, indSpikes, indSpikesWithinPulse, ...
+            pulseEndPoints, num2cell(spikeFrequencyHz), axHandlesSp);
 
     % Save plots
     if plotSeparately
         for iSwp = 1:nSweeps
             figure(figHandlesSp{iSwp});
             title(figTitlesSp{iSwp});
-            save_all_figtypes(figHandlesSp{iSwp}, figNameSp, ...
+            save_all_figtypes(figHandlesSp{iSwp}, figNamesSp{iSwp}, ...
                                 {'png', 'epsc'})
         end
     else
         figure(figHandleSp);
-        suptitle(figTitleSp);
-        save_all_figtypes(figHandleSp, figNamesSp{iSwp}, {'png', 'epsc'})
+%       suptitle(figTitleSp);
+        save_all_figtypes(figHandleSp, figNameSp, {'png', 'epsc'})
     end
 end
 
@@ -341,18 +369,20 @@ end
 if plotFI
     xLabel = 'Current Injected (pA)';
     yLabel = 'Spike Frequency (Hz)';
-    figTitle(['F-I plot for ', strrep(outFileBase, '_', '\_')]);
+    figTitleFI = ['F-I plot for ', outFileBaseTitle];
     figHandleFI = set_figure_properties('AlwaysNew', true);
     figNameFI = fullfile(outFolder, [outFileBase, '_FI.png']);
     plot_tuning_curve(currentInjected, spikeFrequencyHz, ...
-                'XLabel', xLabel, 'YLabel', yLabel, 'FigTitle', figTitle,...
+                'PLabel', xLabel, 'ReadoutLabel', yLabel, ...
+                'FigTitle', figTitleFI,...
                 'FigHandle', figHandleFI, 'FigName', figNameFI);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_spike_detection(tVec, vVec, indSpikes, indSpikesWithinPulse, ...
-                                spikeFrequencyHz, axHandle)
+                                pulseEndPoints, spikeFrequencyHz, axHandle, ...
+                                xLimits, yLimits, xLabel, yLabel)
 
 % Go to appropriate axes
 axes(axHandle);
@@ -364,21 +394,33 @@ hold on;
 plot(tVec, vVec, 'k');
 
 % Plot spikes with red crosses
-plot(tVec(indSpikes), vVecs(indSpikes), 'rx');
+plot(tVec(indSpikes), vVec(indSpikes), 'rx');
 
 % Plot spikes within pulse with green crosses
-plot(tVec(indSpikesWithinPulse)), vVecs(indSpikesWithinPulse), 'gx');
+plot(tVec(indSpikesWithinPulse), vVec(indSpikesWithinPulse), 'gx');
+
+% Set x and y limits
+if ~isempty(xLimits)
+    xlim(xLimits);
+end
+if ~isempty(yLimits)
+    ylim(yLimits);
+end
 
 % Plot pulse boundaries
-plot_window_boundaries(tVec(pulseEndPoints), 'BoundaryType', 'horizontalLines');
+plot_window_boundaries(tVec(pulseEndPoints), 'BoundaryType', 'verticalLines');
 
 % Annotate spike frequency
 spikeFreqText = ['Spike Frequency: ', num2str(spikeFrequencyHz), ' Hz'];
-text(0.6, 0.85, spikeFreqText, 'Units', 'normalized');
+text(0.2, 0.95, spikeFreqText, 'Units', 'normalized');
 
 % Create labels
-xlabel('Time (ms)');
-ylabel('Membrane Potential (mV)');
+if ~isempty(xLabel)
+    xlabel(xLabel);
+end
+if ~isempty(yLabel)
+    ylabel(yLabel);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

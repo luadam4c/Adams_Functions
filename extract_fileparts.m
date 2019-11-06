@@ -78,6 +78,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/plot_relative_events.m
 %       cd/plot_swd_histogram.m
 %       cd/plot_table.m
+%       cd/plot_traces.m
 %       cd/plot_traces_spike2_mat.m
 %       cd/save_all_zooms.m
 %       /home/Matlab/plethR01/plethR01_analyze.m
