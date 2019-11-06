@@ -476,7 +476,7 @@ end
 %% Identify protocols
 if identifyProtocols
     % Identify whether this is a current injection protocol
-    isCI = identify_CI_protocol(iVecs, siUs);
+    isCI = identify_CI_protocol(iVecs, siMs);
 
     % Identify whether this is an evoked LFP protocol
     isEvokedLfp = ...

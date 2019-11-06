@@ -1,6 +1,6 @@
 function plot_FI (varargin)
 %% From a current injection protocol, detect spikes for each sweep and make an F-I plot
-% Usage: plot_FI (vVecs (opt), iVecs (opt), varargin)
+% Usage: plot_FI (vVecs (opt), iVecs (opt), tVec (opt), varargin)
 % Explanation:
 %       TODO
 %
@@ -36,9 +36,12 @@ function plot_FI (varargin)
 % iscellnumeric
 % all_files
 % extract_fileparts
+% extract_subvectors
+% match_time_info
 % parse_abf
 % check_dir
 %       cd/construct_and_check_abfpath.m
+%       cd/detect_spikes_current_clamp.m
 %       cd/identify_channels.m
 %       cd/identify_CI_protocol.m
 %       /home/Matlab/Downloaded_Functions/abf2load.m or abfload.m
@@ -57,12 +60,12 @@ function plot_FI (varargin)
 % 2017-04-11 - Changed the color map to lines
 % 2017-04-13 - BT - Marked on plot spike frequency time interval
 % 2017-04-13 - Added alldata, siUs as optional arguments
-% 2017-05-01 - BT - Converted rangeCI to use identify_CI_protocol.m
+% 2017-05-01 - BT - Converted endPointsPulse to use identify_CI_protocol.m
 % 2017-06-16 - AL - Updated 
 % 2018-01-24 - Added isdeployed
-% TODO: Change the arguments structure
-% TODO: Improve documentation and code structure
-% TODO: Use parse_abf.m
+% 2019-11-05 - Changed the arguments structure
+% 2019-11-05 - Improved documentation and code structure
+% 2019-11-05 - Now uses parse_abf.m
 % TODO: The injection period isn't right in some cases?
 %       See /media/ashleyX/Recordings/20180910/2018_09_10_A_0000_traces
 
@@ -97,7 +100,7 @@ addOptional(iP, 'iVecs', iVecsDefault, ...
                     'or a cell array of numeric arrays!']));
 addOptional(iP, 'tVec', tVecDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
-                ['iVecs must be either a numeric array', ...
+                ['tVec must be either a numeric array', ...
                     'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
@@ -147,15 +150,14 @@ if isempty(vVecs) || isempty(iVecs) || isempty(tVec)
         [parseParams, parsedData] = parse_abf(fileNames);
 
         % Extract the time, current and voltage vectors
-        siUs = parseParams.siUs;
+        siMs = parseParams.siMs;
         tVec = parsedData.tVec;
         iVecs = parsedData.iVecs;
         vVecs = parsedData.vVecs;
     end
 else
-    % TODO: Organize code
-    [tVec, siMs] = match_time_info (tVec, siMs)
-    siUs = siMs * 1000;
+    % Compute the sampling interval in ms
+    [tVec, siMs] = match_time_info(tVec);
 end
 
 if ~isempty(fileNames)
@@ -181,31 +183,32 @@ nSweeps = size(vVecs, 2);
 % Count the number of samples
 nSamples = size(vVecs, 1);
 
+%% Parse the current injection protocol
+% Identify the (common) current pulse endpoints
+[~, endPointsPulse] = identify_CI_protocol(iVecs, siMs);
+
+% Extract the current traces during the injection
+iVecsInjected = extract_subvectors(iVecs, 'EndPoints', endPointsPulse);
+
+% Compute current injection values 
+currentValues = transpose(mean(iVecsInjected, 1));
+
 %% Detect spikes
-% Determine whether each sample point is a spike for each sweep
-isSpike = arrayfun(@(x) detect_spikes_one_sweep(vVecs(:, x)), ...
-                    transpose(1:nSweeps), 'UniformOutput', false);
+[spikesParams, spikesData] = detect_spikes_current_clamp(vVecs);
+isSpike = spikesData.isSpike;
+idxSpikes = spikesData.idxSpikes;
 
-% Put together into a matrix
-isSpike = force_matrix(isSpike);
+%% Compute spike frequencies during the injection
+% Force as a column cell array
+idxSpikes = force_column_cell(idxSpikes);
 
-% TODO: Organize code below
-%% Compute spike frequencies
+% Compute the spikes within range
+idxSpikesWithinRange = ...
+    cellfun(@(x) x(x > endPointsPulse(1) & x < endPointsPulse(2)), ...
+            idxSpikes, 'UniformOutput', false);
+
 % Compute spike frequency for each sweep
-spikeFreq = zeros(1,nSweeps);
-[~, rangeCI] = identify_CI_protocol(iVecs, siUs);
-parfor iSwp = 1:nSweeps
-    cdata = vVecs(:, iSwp);
-    indSpikes = find(isSpike(:, iSwp));
-    indSpikesWithinRange = indSpikes(indSpikes > rangeCI(1) & ...
-                                        indSpikes < rangeCI(2));
-    if length(indSpikesWithinRange) > 1
-        spikeFreq(iSwp) = (length(indSpikesWithinRange) - 1) / ...
-                            ((tVec(rangeCI(2)) - tVec(rangeCI(1)))) * 1000;
-    else
-        spikeFreq(iSwp) = 0;
-    end
-end
+freqValues = compute_spike_frequency(idxSpikesWithinRange, siMs);
 
 %% Plots
 % Plot all sweeps together
@@ -238,12 +241,12 @@ parfor iSwp = 1:nSweeps
     hold on;
     plot(tVec(indSpikes), vVecs(indSpikes, iSwp), 'xr');
     y = ylim;
-    line([tVec(rangeCI(1)) tVec(rangeCI(1))], [y(1) y(2)]);
-    line([tVec(rangeCI(2)) tVec(rangeCI(2))], [y(1) y(2)]);
-    plot(tVec(indSpikes(indSpikes > rangeCI(1) & indSpikes < rangeCI(2))), ...
-          vVecs(indSpikes(indSpikes > rangeCI(1) & indSpikes < rangeCI(2))), 'xg');
+    line([tVec(endPointsPulse(1)) tVec(endPointsPulse(1))], [y(1) y(2)]);
+    line([tVec(endPointsPulse(2)) tVec(endPointsPulse(2))], [y(1) y(2)]);
+    plot(tVec(indSpikes(indSpikes > endPointsPulse(1) & indSpikes < endPointsPulse(2))), ...
+          vVecs(indSpikes(indSpikes > endPointsPulse(1) & indSpikes < endPointsPulse(2))), 'xg');
     if length(indSpikes) > 1
-        text(0.6, 0.85, ['Spike Frequency: ' num2str(spikeFreq(iSwp)) ' Hz'], 'Units', 'normalized');
+        text(0.6, 0.85, ['Spike Frequency: ' num2str(freqValues(iSwp)) ' Hz'], 'Units', 'normalized');
     else
         text(0.6, 0.85, ['Spike Frequency: 0 Hz'], 'Units', 'normalized');
     end
@@ -256,14 +259,10 @@ end
 
 % Plot spike frequency over current injected (F-I plot)
 figNameFI = [fileBases, '_FI'];
-currents = zeros(1, nSweeps);
-parfor iSwp = 1:nSweeps
-    currents(iSwp) = mean(iVecs(rangeCI(1):rangeCI(2), iSwp));
-end
 h = figure(999);
 set(h, 'Visible', 'off');
 clf(h);
-plot(currents, spikeFreq);
+plot(currentValues, freqValues);
 title(['F-I plot for ', strrep(fileBases, '_', '\_')]);
 xlabel('Current Injected (pA)');
 ylabel('Spike Frequency (Hz)');
@@ -272,71 +271,43 @@ close(h);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function isSpike = detect_spikes_one_sweep(vVec)
-%% Determines whether each sample point is a spike
-%   Note: Criteria for a spike: 
-%   (1) Must be a local maximum 10 mV higher than the previous local minimum
-%   (2) Must be 5 mV higher than the minimum value between the spike 
-%           and the following spike
+function spikeFreqs = compute_spike_frequency(indSpikes, siMs)
+%% Computes the spike frequency for sets of spike indices
 
-%% Hard-coded parameters
-minAmpBefore = 10;     % in mV
-minAmpAfter = 5;       % in mV
+% Compute the spike frequency for each set of spike indices
+if iscell(indSpikes)
+    spikeFreqs = cellfun(@(x) compute_spike_frequency_helper(x, siMs), ...
+                        indSpikes);
+else
+    spikeFreqs = compute_spike_frequency_helper(indSpikes, siMs);
+end
 
-%% Preparation
-% Count the number of samples
-nSamples = numel(vVec);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Initialize array
-isSpike = false(nSamples, 1);
+function spikeFreqHz = compute_spike_frequency_helper(indSpikes, siMs)
+%% Computes the spike frequency for one set of spike indices
 
-%% Do the job
-% No spikes if nSamples is less than 3
-if nSamples <= 2
+% Count the number of spikes
+nSpikes = numel(indSpikes);
+
+% If less than two spikes, spike frequency is zero
+if nSpikes < 2
+    spikeFreq = 0;
     return
 end
 
-% Determine whether each data point is a "local maximum" or a "local minimum" 
-%   in the general sense
-%   TODO: Use findpeaks instead?
-isLocalMaximum = [false; diff(vVec(1:end-1)) > 0 & diff(vVec(2:end)) <= 0; ...
-                    false];
-isLocalMinimum = [false; diff(vVec(1:end-1)) < 0 & diff(vVec(2:end)) >= 0; ...
-                    false];
+% Otherwise, extract the first and last index
+idxFirst = indSpikes(1);
+idxLast = indSpikes(end);
 
-% Finds all peaks that satisfy criterion 1
-for idx = 2:nSamples-1
-    % Only check local maxima
-    if isLocalMaximum(idx)
-        % Find the index of the previous local minimum
-        idxPrevLocalMinimum = idx - 1;
-        while ~isLocalMinimum(idxPrevLocalMinimum) && idxPrevLocalMinimum > 1
-            idxPrevLocalMinimum = idxPrevLocalMinimum - 1;
-        end
+% Compute the number of samples between the first and last spike
+nSamplesBetweenFirstAndLast = idxLast - idxFirst;
 
-        % Make sure a previous local minimum was found
-        if idxPrevLocalMinimum > 1
-            % Determine whether criterion 1 is satisfied
-            isSpike(idx) = vVec(idx) - vVec(idxPrevLocalMinimum) > minAmpBefore;
-        end
-    end
-end
+% Compute the time in seconds between the first and last spike
+timeDiffSeconds = nSamplesBetweenFirstAndLast * siMs / MS_PER_S;
 
-% Finds all peaks that satisfy criterion 2 by filtering out those 
-%   that pass criterion 1 in reverse order
-for idx = nSamples-1:-1:2
-    % Only check peaks that satisfy criterion 1
-    if isSpike(idx)
-        % Find the index of the following spike
-        idxNextSpike = idx + 1;
-        while ~isSpike(idxNextSpike) && idxNextSpike < nSamples
-            idxNextSpike = idxNextSpike + 1;
-        end
-
-        % Determine whether criterion 2 is satisfied
-        isSpike(idx) = vVec(idx) - min(vVec(idx:idxNextSpike)) > minAmpAfter;
-    end
-end
+% Compute the average spike frequency in Hz
+spikeFreqHz = (nSpikes - 1) / timeDiffSeconds;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

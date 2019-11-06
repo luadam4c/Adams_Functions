@@ -3,11 +3,13 @@ function vecsFilt = medianfilter (vecs, varargin)
 % Usage: vecsFilt = medianfilter (vecs, filtWidth, si, varargin)
 % Explanation:
 %       Same as medfilt1() but with option of using a window in time units
+%
 % Example(s):
 %       medianfilter(magic(4))
 %       medianfilter(magic(4), 10, 10)
 %       medianfilter(magic(4), 10, 2)
 %       medianfilter(magic(4), 10, 1)
+%
 % Outputs:
 %       vecsFilt    - filtered vector(s)
 %                   specified as a numeric array
@@ -30,6 +32,7 @@ function vecsFilt = medianfilter (vecs, varargin)
 %
 % Used by:
 %       cd/find_passive_params.m
+%       cd/identify_CI_protocol.m
 %       cd/parse_LTS.m
 
 % File History:

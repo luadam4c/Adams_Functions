@@ -1,6 +1,6 @@
-function [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, varargin)
+function [spikesParams, spikesData] = detect_spikes_multiunit (vVec, siMs, varargin)
 %% Detects spikes from a multiunit recording
-% Usage: [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, varargin)
+% Usage: [spikesParams, spikesData] = detect_spikes_multiunit (vVec, siMs, varargin)
 % Explanation:
 %       Detects spikes from a multiunit recording via the following algorithm:
 %           1. (optional) bandpass filters signal at 'FiltFreq' Hz
@@ -19,6 +19,7 @@ function [spikesParams, spikesData] = detect_spikes_multiunit(vVec, siMs, vararg
 %                   iii. slope value is >= the slope threshold 
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       spikesParams- Used and detected parameters, with fields:
 %                       siMs

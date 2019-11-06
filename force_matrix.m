@@ -66,6 +66,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/compute_relative_event_times.m
 %       cd/create_indices.m
 %       cd/create_synced_movie_trace_plot_movie.m
+%       cd/detect_spikes_current_clamp.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_vector.m
 %       cd/m3ha_neuron_run_and_analyze.m
