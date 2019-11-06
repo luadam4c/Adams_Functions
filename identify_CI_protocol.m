@@ -64,7 +64,7 @@ end
 %% Do the job
 % Apply lowpass filter
 iVecsLowPass = freqfilter(iVecs, cutoffFreq, siMs / MS_PER_S, ...
-                            'FilterType', 'low', 'NPoles', nPoles);
+                            'FilterType', 'low', 'FilterOrder', nPoles);
 
 % Apply a 3rd order median filter to take out some noisy spikes
 iVecsFilt = medianfilter(iVecsLowPass);

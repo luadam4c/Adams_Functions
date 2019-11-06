@@ -27,7 +27,7 @@ function filteredData = freqfilter (data, fc, varargin)
 %                                       with cutoff frequencies fc(1) & fc(2)
 %                   default == 'low' if fc has one element and 
 %                           == 'bandpass' if fc has two elements
-%                   - 'NPoles': order of filter
+%                   - 'FilterOrder': order of filter
 %                       i.e., the number of poles in the transfer function
 %                       i.e., the order of the polynomial in the denominator 
 %                           of the transfer function
