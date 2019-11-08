@@ -48,6 +48,7 @@ function m3ha_network_launch(nCells, useHH, candidateIDs)
 % 2019-10-31 Now uses m3ha_net.hoc
 % 2019-10-31 Now uses run_neuron.m
 % 2019-11-04 Updated for m3ha_network_loop_launch_20191104.m
+% 2019-11-08 Fixed RERErad, TCRErad, RETCrad
 % TODO: Plot gAMPA and gGABA instead of the i's for synaptic event monitoring
 % TODO: Make the network circular to lose edge effects
 % TODO: Perform simulations to generate a linear model
@@ -83,6 +84,7 @@ seedNumber = 1;                 % number to seed random number generator
 simNumbers = []; %5;            % run only these simulation numbers
 onLargeMemFlag = false;         % whether to run on large memory nodes
 onHpcFlag = false;              % whether on high-performance computing server
+saveAllVariablesFlag = false;   % whether to save variables as a .mat file
 saveStdOutFlag = false;         % whether to always save standard outputs
 bicucullineFlag = true;         % whether GABA-A conductances are removed
 loopMode = 'cross'; %grid;      % how to loop through parameters: 
@@ -92,15 +94,14 @@ loopMode = 'cross'; %grid;      % how to loop through parameters:
                                 %               combinations of parameters
 
 % Decide on what to save and plot
-savePlotMode = 'spikes&special';
-saveAllVariablesFlag = false;
-% if nCells == 1 || nCells == 2
-%     savePlotMode = 'spikes&special';
-% elseif nCells == 20 || nCells == 100
-%     savePlotMode = 'spikes';    
-% else
-%     error('nCells = %d is not implemented yet!', nCells);
-% end
+if nCells == 1 || nCells == 2
+    savePlotMode = 'spikes&special';
+elseif nCells == 20 || nCells == 100
+    savePlotMode = 'spikes';    
+else
+    error('nCells = %d is not implemented yet!', nCells);
+end
+savePlotMode = 'spikes';
 
 %% Simulation modes
 simMode = 1;    % 1 - full simulation
@@ -187,7 +188,7 @@ end
 
 %% For parpool
 if onLargeMemFlag || debugFlag || numel(simNumbers) == 1 || ...
-        simMode == 2 || nCells == 1
+        simMode == 2 || nCells <= 2
     % No need renew parpool each batch if memory is not an issue
     renewParpoolFlagNeuron = 0;    % whether to renew parpool every batch to release memory
     maxNumWorkersNeuron = 20;      % maximum number of workers for running NEURON 
@@ -353,6 +354,13 @@ pMax    = [4, 90];                  % maximum values of parameters to loop throu
 pInc    = [1, 30];                  % increments of parameters to loop through
 pIsLog  = [0, 0];                   % whether increments of parameters is in log
 
+%% Parameters for various GABA-B conductance profiles
+pCond = 1;      % Pharmacological condition
+                %   1 - Control; 2 - GAT 1 Block; 3 - GAT 3 Block; 4 - Dual Block
+% gIncr = 100;    % GABA-B conductance amplitude scaling (%)
+% gIncr = 15;    % GABA-B conductance amplitude scaling (%)
+gIncr = 60;    % GABA-B conductance amplitude scaling (%)
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Global parameters to be defined at the start of NEURON
@@ -367,19 +375,12 @@ if nCells == 100 || nCells == 20
                     %   Sohal & Huguenard 2004 used 8
                     %   RTCl & Sohal & Huguenard 2003 used 4
 elseif nCells == 2
-    RERErad = 2;
-elseif nCells == 1
     RERErad = 1;
+elseif nCells == 1
+    RERErad = 0;
 else
     error('nCells unrecognized!');
 end
-
-%% Parameters for various GABA-B conductance profiles
-pCond = 1;      % Pharmacological condition
-                %   1 - Control; 2 - GAT 1 Block; 3 - GAT 3 Block; 4 - Dual Block
-% gIncr = 100;    % GABA-B conductance amplitude scaling (%)
-% gIncr = 15;    % GABA-B conductance amplitude scaling (%)
-gIncr = 60;    % GABA-B conductance amplitude scaling (%)
 
 %% Network parameters
 if nCells == 100 || nCells == 20
@@ -388,11 +389,11 @@ if nCells == 100 || nCells == 20
     RETCrad = 8; %4; % radius of RE-TC connections
                     %   Sohal & Huguenard 2004 used 4
 elseif nCells == 2
-    TCRErad = 2;
-    RETCrad = 2;
-elseif nCells == 1
     TCRErad = 1;
     RETCrad = 1;
+elseif nCells == 1
+    TCRErad = 0;
+    RETCrad = 0;
 else
     error('nCells unrecognized!');
 end
