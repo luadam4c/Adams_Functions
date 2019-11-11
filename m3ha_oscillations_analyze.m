@@ -25,22 +25,22 @@ saveMatFlag = false; % true;
 plotRawFlag = false; % true;
 plotSpikeDetectionFlag = false; %true;
 plotRasterFlag = false; % true;
-plotSpikeDensityFlag =  true;
+plotSpikeDensityFlag = false; % true;
 plotSpikeHistogramFlag = false; %true;
-plotMeasuresFlag = true;
-plotContourFlag = false; % true;
-plotCombinedFlag = false; %true;
+plotMeasuresFlag = false; %true;
+plotContourFlag = false; %true;
+plotCombinedFlag = true;
 
 parsePopulationAllFlag = false; %true;
-parsePopulationRestrictedFlag = true;
+parsePopulationRestrictedFlag = false; %true;
 plotAllMeasurePlotsFlag = false; %true;
-plotChevronFlag = true;
+plotChevronFlag = false; %true;
 plotByFileFlag = false; %true;
 plotByPhaseFlag = false; %true;
 plotNormByFileFlag = false; %true;
 plotNormByPhaseFlag = false; %true;
 plotPopAverageFlag = false; %true;
-plotSmoothNormPopAvgFlag = true;
+plotSmoothNormPopAvgFlag = false; %true;
 
 archiveScriptsFlag = true; %false;
 

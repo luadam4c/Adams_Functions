@@ -29,7 +29,9 @@ function paramsTable = m3ha_network_change_params (paramsTable, namesToChange, v
 %                       'noexp' - no experiment provided; do nothing
 %                   default == 'noexp'
 %
-% Requires:    
+% Requires:
+%       cd/argfun.m
+%       cd/force_column_vector.m
 %       cd/is_var_in_table.m
 %       cd/m3ha_network_update_dependent_params.m
 %
@@ -83,6 +85,11 @@ if ~is_var_in_table('Value', paramsTable)
     disp('"Value" must be a column of the table!');
     return
 end
+
+% Force as column vectors
+[namesToChange, valsToChange] = ...
+    argfun(@(x) force_column_vector(x, 'TreatCellAsArray', true), ...
+            namesToChange, valsToChange);
 
 %% Change parameter(s)
 % Update the table

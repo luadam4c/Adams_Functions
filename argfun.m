@@ -51,6 +51,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/m3ha_plot_simulated_traces.m
+%       cd/m3ha_network_change_params.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_network_raster_plot.m
 %       cd/m3ha_network_single_neuron.m

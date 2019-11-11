@@ -87,7 +87,7 @@ onHpcFlag = false;              % whether on high-performance computing server
 saveAllVariablesFlag = false;   % whether to save variables as a .mat file
 saveStdOutFlag = false;         % whether to always save standard outputs
 bicucullineFlag = true;         % whether GABA-A conductances are removed
-loopMode = 'cross'; %grid;      % how to loop through parameters: 
+loopMode = 'grid'; %cross;      % how to loop through parameters: 
                                 %   'cross' - Loop through each parameter 
                                 %               while fixing others
                                 %   'grid'  - Loop through all possible 
@@ -338,7 +338,25 @@ pInc    = [0.5, 0.05];              % increments of parameters to loop through
 pIsLog  = [0, 0];                   % whether increments of parameters is in log
 %}
 
+%% Parameters for various GABA-B conductance profiles
+% pCond = 1;      % Pharmacological condition
+                %   1 - Control; 2 - GAT 1 Block; 3 - GAT 3 Block; 4 - Dual Block
+% gIncr = 100;    % GABA-B conductance amplitude scaling (%)
+
 %{
+pCond = 1;
+gIncr = 60;
+pNames  = {'pCond', 'gIncr'};       % names of parameters to loop through
+pLabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
+pMin    = [1, 30];                  % minimum values of parameters to loop through
+pMax    = [4, 90];                  % maximum values of parameters to loop through
+pInc    = [1, 30];                  % increments of parameters to loop through
+pIsLog  = [0, 0];                   % whether increments of parameters is in log
+%}
+
+%{
+pCond = 1;
+gIncr = 15;
 pNames  = {'pCond', 'gIncr'};       % names of parameters to loop through
 pLabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
 pMin    = [1, 7.5];                 % minimum values of parameters to loop through
@@ -347,19 +365,14 @@ pInc    = [1, 7.5];                 % increments of parameters to loop through
 pIsLog  = [0, 0];                   % whether increments of parameters is in log
 %}
 
+pCond = 1;
+gIncr = 30;
 pNames  = {'pCond', 'gIncr'};       % names of parameters to loop through
 pLabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
-pMin    = [1, 30];                  % minimum values of parameters to loop through
-pMax    = [4, 90];                  % maximum values of parameters to loop through
-pInc    = [1, 30];                  % increments of parameters to loop through
+pMin    = [1, 5];                   % minimum values of parameters to loop through
+pMax    = [4, 60];                  % maximum values of parameters to loop through
+pInc    = [1, 5];                   % increments of parameters to loop through
 pIsLog  = [0, 0];                   % whether increments of parameters is in log
-
-%% Parameters for various GABA-B conductance profiles
-pCond = 1;      % Pharmacological condition
-                %   1 - Control; 2 - GAT 1 Block; 3 - GAT 3 Block; 4 - Dual Block
-% gIncr = 100;    % GABA-B conductance amplitude scaling (%)
-% gIncr = 15;    % GABA-B conductance amplitude scaling (%)
-gIncr = 60;    % GABA-B conductance amplitude scaling (%)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
