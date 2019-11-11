@@ -944,14 +944,14 @@ if plotCombinedFlag
 
     % Plot raw data with zoomWin1
     % TODO: Plot with oscillation duration bars
-    axes(axCombined(1, 1));
+    subplot(axCombined(1));
     plot_raw_multiunit(parsedData, parsedParams, ...
                         phaseBoundaries, fileBase, ...
                         'YAmountToStagger', yAmountToStagger, ...
                         'XLimits', zoomWin1);
 
     % Plot spike density with zoomWin1
-    axes(axCombined(1, 2));
+    subplot(axCombined(2));
     plot_spike_density_multiunit(parsedData, parsedParams, ...
                                  phaseBoundaries, fileBase, ...
                                  'XLimits', zoomWin1, ...
@@ -960,7 +960,7 @@ if plotCombinedFlag
                                  'MaxNYTicks', 20);
 
     % Plot oscillation duration
-    axes(axCombined(1, 3));
+    subplot(axCombined(3));
     plot_bar(oscDurationSec, ...
                 'ForceVectorAsRow', false, ...
                 'ReverseOrder', true, ...
@@ -973,14 +973,14 @@ if plotCombinedFlag
                 'IndSelected', indSelectedOscDur);
 
     % Plot raw data with zoomWin2
-    axes(axCombined(2, 1));
+    subplot(axCombined(4));
     plot_raw_multiunit(parsedData, parsedParams, ...
                         phaseBoundaries, fileBase, ...
                         'YAmountToStagger', yAmountToStagger, ...
                         'XLimits', zoomWin2);
 
     % Plot spike density with zoomWin2
-    axes(axCombined(2, 2));
+    subplot(axCombined(5));
     plot_spike_density_multiunit(parsedData, parsedParams, ...
                                  phaseBoundaries, fileBase, ...
                                  'XLimits', zoomWin2, ...
@@ -989,7 +989,7 @@ if plotCombinedFlag
                                  'MaxNYTicks', 20);
 
     % Plot oscillation period
-    axes(axCombined(2, 3));
+    subplot(axCombined(6));
     plot_bar(oscPeriod2Ms, ...
                 'ForceVectorAsRow', false, ...
                 'ReverseOrder', true, ...
@@ -1001,7 +1001,7 @@ if plotCombinedFlag
                 'IndSelected', indSelectedOscPeriod);
 
     % Plot spike detection
-    axes(axCombined(3, 1)); hold on;
+    subplot(axCombined(7)); hold on;
     plot(tVec, vVec, 'k');
     plot(tVec, vVecFilt, 'b');
     plot_raster(tVec(idxSpikes), 'YMid', yMid, 'VertBarWidth', vertBarWidth, ...
@@ -1016,12 +1016,12 @@ if plotCombinedFlag
     title(['Original voltage vector for ', figTitleBase]);
 
     % Plot spike histogram
-    axes(axCombined(3, 2));
+    subplot(axCombined(8));
     plot_spike_histogram(sampleDataStruct, sampleParamsStruct, ...
                             'XLimits', zoomWin2);
 
     % Plot autocorrelogram
-    axes(axCombined(3, 3));
+    subplot(axCombined(9));
     plot_autocorrelogram(sampleDataStruct, sampleParamsStruct, ...
                             'DataType', 'acfFiltered');
 
@@ -2088,12 +2088,11 @@ end
 
 %% Plot
 hold on
-fig = gcf;
 plot_traces(tVecsSec, vVecsFilt, 'DataToCompare', vVecs, 'Verbose', false, ...
             'PlotMode', 'staggered', 'YAmountToStagger', yAmountToStagger, ...
             'YLimits', bestYLimits, 'XLabel', xLabel, ...
             'YLabel', 'Trace #', 'TraceLabels', 'suppress', ...
-            'FigTitle', figTitle, 'FigHandle', fig, ...
+            'FigTitle', figTitle, ...
             'ColorMap', 'b', otherArguments{:});
 
 % Plot stimulation start

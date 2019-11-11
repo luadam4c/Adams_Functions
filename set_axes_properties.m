@@ -60,7 +60,6 @@ function ax = set_axes_properties (varargin)
 % 2019-09-19 Now defaults TickDir to 'out'
 % 2019-11-05 Added 'FigHandle' as an optional argument
 
-
 %% Hard-coded parameters
 
 %% Default values for optional arguments
@@ -155,6 +154,7 @@ end
 if ~isempty(outerPosition)
     set(ax, 'OuterPosition', outerPosition);
 end
+
 % If no margins, make the position the same as outer position
 if ~isempty(axesCoverage)
     outerPosition = get(ax, 'OuterPosition');

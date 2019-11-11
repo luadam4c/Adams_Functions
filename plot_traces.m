@@ -230,6 +230,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       cd/ispositivescalar.m
 %       cd/match_format_vector_sets.m
 %       cd/save_all_figtypes.m
+%       cd/set_figure_properties.m
 %       cd/struct2arglist.m
 %       cd/transform_vectors.m
 %       ~/Downloaded_Function/suplabel.m
@@ -281,6 +282,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 % 2019-10-16 Added 'LineStyle' as an optional argument
 % 2019-11-06 Changed figTypesDefault to {'png', 'epsc'}
 % 2019-11-06 Fixed default color mode for non-'parallel' to 'ByPlot'
+% 2019-11-10 Fixed axes selection under non-'parallel' modes
 % TODO: dataToCompareColorMap
 % TODO: Number of horizontal bars shouldn't need to match nTraces
 
@@ -837,18 +839,32 @@ case {'overlapped', 'staggered'}
     nRows = 1;
     nColumns = 1;
 case 'parallel'
-    if isempty(figExpansion) && nRows > nColumns * 4
-        figExpansion = [1, nRows/4];
-    else
-        figExpansion = [1, 1];
+    if isempty(figExpansion)
+        if nRows > nColumns * 4
+            figExpansion = [1, nRows/4];
+        else
+            figExpansion = [1, 1];
+        end
     end
 otherwise
 end
 
-% Create subplots
-[fig, ax] = create_subplots(nRows, nColumns, 'FigHandle', figHandle, ...
-                        'ClearFigure', false, ...
-                        'FigNumber', figNumber, 'FigExpansion', figExpansion);
+% Decide on figure and axes to plot on
+switch plotMode
+case {'overlapped', 'staggered'}
+    % Decide on figure to plot on
+    fig = set_figure_properties('FigHandle', figHandle, ...
+                    'FigNumber', figNumber, 'FigExpansion', figExpansion);
+
+    % Decide on axes to plot on
+    ax = set_axes_properties;
+case 'parallel'
+    % Create subplots
+    [fig, ax] = create_subplots(nRows, nColumns, 'FigHandle', figHandle, ...
+                    'ClearFigure', false, ...
+                    'FigNumber', figNumber, 'FigExpansion', figExpansion);
+otherwise
+end
 
 % Set the default time axis limits
 if isempty(xLimits)

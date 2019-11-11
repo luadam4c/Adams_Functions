@@ -69,6 +69,7 @@ function fig = set_figure_properties (varargin)
 %       cd/plot_histogram.m
 %       cd/plot_raster.m
 %       cd/plot_swd_histogram.m
+%       cd/plot_traces.m
 %       cd/plot_traces_spike2_mat.m
 %       cd/plot_tuning_curve.m
 %       cd/update_figure_for_corel.m
@@ -83,6 +84,7 @@ function fig = set_figure_properties (varargin)
 % 2019-09-06 Added 'AdjustPosition' and 'ClearFigure' as optional arguments
 % 2019-09-08 Added 'AlwaysNew' as an optional argument
 % 2019-09-12 Added 'ExpandFromDefault' as an optional argument
+% TODO: Change axes outerPosition by default?
 
 %% Hard-coded parameters
 
