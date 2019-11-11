@@ -73,6 +73,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/m3ha_plot_individual_traces.m
 %       cd/match_format_vector_sets.m
 %       cd/parse_atf_swd.m
+%       cd/parse_current_family.m
 %       cd/parse_iox.m
 %       cd/parse_multiunit.m
 %       cd/parse_pulse.m

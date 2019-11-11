@@ -244,6 +244,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %
 % Used by:
 %       cd/m3ha_network_tuning_curves.m
+%       cd/parse_current_family.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_chevron.m
 %       cd/plot_measures.m

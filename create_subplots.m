@@ -66,6 +66,7 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 %
 % Used by:
 %       cd/create_synced_movie_trace_plot_movie.m
+%       cd/parse_current_family.m
 %       cd/parse_multiunit.m
 %       cd/plot_relative_events.m
 %       cd/plot_traces.m

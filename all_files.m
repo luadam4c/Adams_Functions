@@ -80,6 +80,7 @@ function varargout = all_files (varargin)
 %       cd/parse_all_abfs.m
 %       cd/parse_all_multiunit.m
 %       cd/parse_all_swds.m
+%       cd/parse_current_family.m
 %       cd/plot_all_abfs.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_repetitive_protocols.m

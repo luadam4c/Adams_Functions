@@ -72,6 +72,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/find_matching_files.m
 %       cd/m3ha_network_single_neuron.m
 %       cd/parse_atf_swd.m
+%       cd/parse_current_family.m
 %       cd/parse_iox.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_measures.m

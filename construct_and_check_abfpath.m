@@ -25,7 +25,7 @@ function [abfPath, pathExists] = construct_and_check_abfpath (abfFileName, varar
 % Used by:
 %       cd/parse_abf.m
 %       cd/parse_assyst_swd.m
-%       cd/parse_current_family.m    % TODO: Use parse_abf.m instead
+%       cd/parse_current_family.m
 
 % File History:
 % 2018-11-21 Created by Adam Lu

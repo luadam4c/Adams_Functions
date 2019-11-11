@@ -33,6 +33,7 @@ function check_dir (directories, varargin)
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/parse_all_abfs.m
+%       cd/parse_current_family.m
 %       cd/parse_multiunit.m
 %       cd/plot_all_abfs.m
 %       cd/plot_measures.m

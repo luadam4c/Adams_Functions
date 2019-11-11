@@ -36,30 +36,30 @@ function [parsedParams, parsedData] = parse_current_family (varargin)
 %                   default == match the file name
 %
 % Requires:
-% argfun
-% create_labels_from_numbers
-% match_row_count
-% count_vectors
-% iscellnumeric
-% all_files
-% force_column_cell
-% extract_fileparts
-% extract_common_prefix
-% extract_subvectors
-% match_time_info
-% set_figure_properties
-% create_subplots
-% save_all_figtypes
-% plot_window_boundaries
-% plot_traces
-% plot_tuning_curve
-% parse_abf
-% check_dir
+%       cd/all_files.m
+%       cd/argfun.m
+%       cd/check_dir.m
 %       cd/compute_spike_frequency.m
 %       cd/construct_and_check_abfpath.m
+%       cd/count_vectors.m
+%       cd/create_labels_from_numbers.m
+%       cd/create_subplots.m
 %       cd/detect_spikes_current_clamp.m
+%       cd/extract_common_prefix.m
+%       cd/extract_fileparts.m
+%       cd/extract_subvectors.m
+%       cd/force_column_cell.m
 %       cd/identify_channels.m
 %       cd/identify_CI_protocol.m
+%       cd/iscellnumeric.m
+%       cd/match_row_count.m
+%       cd/match_time_info.m
+%       cd/parse_abf.m
+%       cd/plot_window_boundaries.m
+%       cd/plot_traces.m
+%       cd/plot_tuning_curve.m
+%       cd/set_figure_properties.m
+%       cd/save_all_figtypes.m
 %
 % Used by:
 %       cd/plot_all_abfs.m
