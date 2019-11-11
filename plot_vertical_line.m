@@ -66,6 +66,7 @@ function h = plot_vertical_line (xValue, varargin)
 % 2018-12-27 Now accepts datetime and duration arrays
 % 2019-01-24 Now accepts multiple y limits
 % 2019-08-30 Added 'ColorMap' as an optional argument
+% 2019-11-11 Fixed yLimits when horizontalInstead is true
 % TODO: Finish up 'HorizontalInstead' and use this in plot_horizontal_line
 % TODO: Allow 2-D arrays for x values
 % 
@@ -118,7 +119,11 @@ ax = set_axes_properties('AxesHandle', axesHandle);
 
 % Set default y value limits
 if isempty(yLimits)
-    yLimits = get(ax, 'YLim');
+    if horizontalInstead
+        yLimits = get(ax, 'XLim');
+    else
+        yLimits = get(ax, 'YLim');
+    end
 end
 
 % Force as a cell array of column vectors and match vectors
