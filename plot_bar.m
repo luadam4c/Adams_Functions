@@ -3,6 +3,7 @@ function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 % Usage: [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 % Explanation:
 %       TODO
+%
 % Example:
 %       load_examples;
 %       [bars, lines, fig] = plot_bar(val1, low1, high1);
@@ -14,6 +15,7 @@ function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 %       [bars, lines, fig] = plot_bar(val3, low3, high3, 'BarDirection', 'horizontal', 'PTickLabels', {'Mark', 'Ashley', 'Katie', 'Adam'});
 %       [bars, lines, fig] = plot_bar(val3, low3, high3, 'ReverseOrder', true, 'PTickLabels', {'Mark', 'Ashley', 'Katie', 'Adam'});
 %       [bars, lines, fig] = plot_bar(val1, low1, high1, 'ReverseOrder', true, 'BarDirection', 'horizontal');
+%
 % Outputs:
 %       bars    - bar objects (bars for each group or column is one bar object)
 %               specified as a vector of Bar object handles
@@ -24,6 +26,7 @@ function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 %               specified as an array of Primitive Line object handles
 %       fig     - figure handle
 %               specified as a Figure object handle
+%
 % Arguments:
 %       val     - mean values for the bar() function
 %                   each column is a different group
@@ -49,7 +52,12 @@ function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 %                   - 'CIBarWidth': TODO
 %                   - 'CILineWidth': TODO
 %                   - 'CIColor': TODO
-%                   - 'PValues': TODO
+%                   - 'PValues': parameter axis values for bar placement
+%                   must be a numeric array
+%                   default == 1:nCols
+%                   - 'PhaseVectors': phase information for each bar group TODO
+%                   must be a numeric matrix or a cell array of numeric vectors
+%                   default == {}
 %                   - 'PLimits': limits of parameter axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
@@ -73,15 +81,68 @@ function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 %                   - 'ReadoutLabel': label for the readout
 %                   must be a string scalar or a character vector
 %                   default == 'Readout'
-%                   - 'PBoundaries': parameter boundary values
+%                   - 'PhaseLabels': phase labels if phase vectors are provided TODO
+%                   must be a scalartext 
+%                       or a cell array of strings or character vectors
+%                   default == {'Phase #1', 'Phase #2', ...}
+%                   - 'PlotPhaseBoundaries': whether to plot phase boundaries TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true if PhaseVectors provided, false otherwise
+%                   - 'PlotPhaseAverages': whether to plot phase averages TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true if PhaseVectors provided, false otherwise
+%                   - 'PlotIndSelected': whether to plot selected indices TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true if PhaseVectors provided, false otherwise
+%                   - 'PBoundaries': parameter boundary values TODO
+%                       Note: each row is a set of boundaries
+%                   must be a numeric array
+%                   default == []
+%                   - 'PBoundaryType': type of parameter boundaries TODO
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'verticalLines'     - vertical dotted lines
+%                       'horizontalBars'    - horizontal bars
+%                       'verticalShades'    - vertical shades
+%                   default == 'verticalLines'
+%                   - 'RBoundaries': readout boundary values TODO
+%                       Note: each row is a set of boundaries
+%                   must be a numeric array
+%                   default == []
+%                   - 'RBoundaryType': type of readout boundaries TODO
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'horizontalLines'   - horizontal dotted lines
+%                       'verticalBars'      - vertical bars
+%                       'horizontalShades'  - horizontal shades
+%                   default == 'verticalLines'
+%                   - 'AverageWindows': windows to average values TODO
+%                       Note: If a matrix cell array, 
+%                           each column is for a curve and each row is for a phase
+%                   must be a numeric vector or a cell array of numeric vectors
+%                   default == []
+%                   - 'PhaseAverages': average values for each phase TODO
+%                       Note: If a matrix cell array, 
+%                           each column is for a curve and each row is for a phase
+%                   must be a numeric 2-D array
+%                   default == []
+%                   - 'IndSelected': selected indices to mark differently TODO
 %                   must be a numeric vector
 %                   default == []
-%                   - 'RBoundaries': readout boundary values
-%                   must be a numeric vector
-%                   default == []
-%                   - 'IndSelected': selected indices to mark differently
-%                   must be a numeric vector
-%                   default == []
+%                   - 'NLastOfPhase': number of values at the last of a phase TODO
+%                   must be a positive integer scalar
+%                   default == 10
+%                   - 'NToAverage': number of values to average TODO
+%                   must be a positive integer scalar
+%                   default == 5
+%                   - 'SelectionMethod': the selection method TODO
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'notNaN'        - select any non-NaN value
+%                       'maxRange2Mean' - select vales so that the maximum 
+%                                           range is within a percentage 
+%                                           of the mean
+%                   default == 'maxRange2Mean'
+%                   - 'MaxRange2Mean': maximum percentage of range versus mean TODO
+%                   must be a nonnegative scalar
+%                   default == 40%
 %                   - 'FigTitle': title for the figure
 %                   must be a string scalar or a character vector
 %                   default == TODO: ['Bar graph for ', figName]
@@ -581,7 +642,7 @@ if ~isempty(indSelected) && ~all(isnan(indSelected))
 
     % Reverse the order
     if reverseOrder
-        % Compute flipped boundaries
+        % Compute flipped indices
         indSelected = pValues(1) + pValues(end) - indSelected;
     end
 
