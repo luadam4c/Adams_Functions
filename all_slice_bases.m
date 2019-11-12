@@ -1,14 +1,17 @@
 function sliceBases = all_slice_bases (varargin)
-%% Retrieves all unique slice bases from the .abf files in the directory
+%% Retrieves all unique slice bases from the data files in the directory
 % Usage: sliceBases = all_slice_bases (varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       sliceBases = all_slice_bases;
 %       sliceBases = all_slice_bases();
+%
 % Outputs:
 %       sliceBases  - unique slice bases
 %                   specified as a cell array of character vectors
+%
 % Arguments:
 %       varargin    - 'Directory': the directory to search in
 %                   must be a string scalar or a character vector
@@ -90,15 +93,15 @@ regExpBase = iP.Results.RegExpBase;
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Do the job
-% Get all the abf file names
-[~, allAbfPaths] = ...
+% Get all the data file names
+[~, allDataPaths] = ...
     all_files('Directory', directory, 'Extension', extension, ...
                 'RegExp', regExpFile, 'SortBy', sortBy, ...
                 'ForceCellOutput', forceCellOutput, ...
                 otherArguments{:});
 
 % Extract all slice names
-allSliceNames = extract_fileparts(allAbfPaths, 'base', ...
+allSliceNames = extract_fileparts(allDataPaths, 'base', ...
                                     'RegExp', regExpBase);
 
 % Get unique slice bases

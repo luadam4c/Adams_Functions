@@ -12,7 +12,8 @@
 % 2019-10-18 Changed maxInterBurstIntervalMs from 1500 ms to 1000 ms
 
 %% Hard-coded parameters
-parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
+% parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
+parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', 'multiunit_m3ha');
 archiveDir = parentDir;
 dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'snap5114-final', 'dual-final'};
@@ -23,10 +24,10 @@ specificSlicesToAnalyze = {};
 parseIndividualFlag = true;
 saveMatFlag = false; % true;
 plotRawFlag = false; % true;
-plotSpikeDetectionFlag = false; %true;
+plotSpikeDetectionFlag = false; % true;
 plotRasterFlag = false; % true;
 plotSpikeDensityFlag = false; % true;
-plotSpikeHistogramFlag = false; %true;
+plotSpikeHistogramFlag = true;
 plotMeasuresFlag = false; %true;
 plotContourFlag = false; %true;
 plotCombinedFlag = true;
@@ -42,7 +43,7 @@ plotNormByPhaseFlag = false; %true;
 plotPopAverageFlag = false; %true;
 plotSmoothNormPopAvgFlag = false; %true;
 
-archiveScriptsFlag = true; %false;
+archiveScriptsFlag = false; %true; 
 
 % For compute_default_signal2noise.m
 relSnrThres2Max = 0.1;
@@ -58,10 +59,14 @@ resolutionMs = 5;
 % For compute_spike_histogram.m
 minBurstLengthMs = 20;          % bursts must be at least 20 ms by default
 maxFirstInterBurstIntervalMs = 2000;
-maxInterBurstIntervalMs = 1000; % bursts are no more than 
-                                %   1 second apart
-minSpikeRateInBurstHz = 100;    % bursts must have a spike rate of 
-                                %   at least 100 Hz by default
+% maxInterBurstIntervalMs = 1000; % bursts are no more than 
+%                                 %   1 second apart
+maxInterBurstIntervalMs = 1500; % bursts are no more than 
+                                %   1.5 seconds apart
+% minSpikeRateInBurstHz = 100;    % bursts must have a spike rate of 
+%                                 %   at least 100 Hz by default
+minSpikeRateInBurstHz = 50;    % bursts must have a spike rate of 
+                                %   at least 50 Hz by default
 
 % For compute_autocorrelogram.m
 filterWidthMs = 100;
