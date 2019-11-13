@@ -93,7 +93,10 @@ function [histParams, histData] = compute_spike_histogram (spikeTimesMs, varargi
 % File History:
 % 2019-05-13 Pulled from parse_multiunit.m
 % 2019-08-08 Added maxFirstInterBurstIntervalMs
-% 
+% 2019-11-13 Added stimStartMs as a fixed edge for compute_bins.m
+% 2019-11-13 Now does not consider an oscillation evoked 
+%               if the starting bin is more than maxFirstIbiBins away 
+%               from stimulation start
 
 % Hard-coded constants
 MS_PER_S = 1000;
@@ -207,7 +210,7 @@ end
 
 % Compute a spike histogram
 [spikeCounts, edgesMs] = compute_bins(spikeTimesMs, 'BinWidth', binWidthMs, ...
-                                        otherArguments{:});
+                                'FixedEdges', stimStartMs, otherArguments{:});
 
 % Compute the number of bins
 nBins = numel(spikeCounts);
@@ -344,6 +347,14 @@ else
     % Restrict the starting and ending bins vectors
     iBinBurstInOscStarts = iBinBurstStarts(1:nBurstsInOsc);
     iBinBurstInOscEnds = iBinBurstEnds(1:nBurstsInOsc);
+
+    % If the starting bin is more than maxFirstIbiBins away from stimulation
+    %   start, don't consider it an evoked oscillation
+    if ~isempty(iBinBurstInOscStarts) && iBinBurstInOscStarts > maxFirstIbiBins
+        nBurstsInOsc = 0;
+        iBinBurstInOscStarts = [];
+        iBinBurstInOscEnds = [];
+    end
 end
 
 % Compute burst statistics

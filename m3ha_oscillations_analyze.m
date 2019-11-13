@@ -66,8 +66,8 @@ maxInterBurstIntervalMs = 1500; % bursts are no more than
                                 %   1.5 seconds apart
 % minSpikeRateInBurstHz = 100;    % bursts must have a spike rate of 
 %                                   at least 100 Hz by default
-minSpikeRateInBurstHz = 50;    % bursts must have a spike rate of 
-                                %   at least 50 Hz by default
+minSpikeRateInBurstHz = 30;    % bursts must have a spike rate of 
+                                %   at least 30 Hz by default
 
 % For compute_autocorrelogram.m
 filterWidthMs = 100;

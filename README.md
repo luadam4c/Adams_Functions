@@ -464,6 +464,7 @@ There are 1 MATLAB scripts in this directory:
 - [**renamevars.m**](https://github.com/blabuva/Adams_Functions/blob/master/renamevars.m): Rename variable(s) in a table
 - [**rescale_vec.m**](https://github.com/blabuva/Adams_Functions/blob/master/rescale_vec.m): Rescale a vector (vec1) to be in the same ballpark as another vector (vec2),
 - [**restore_fields.m**](https://github.com/blabuva/Adams_Functions/blob/master/restore_fields.m): Set each field specified in varargin to previous values from the field strcat(field, '_prev')
+- [**rmfield_custom.m**](https://github.com/blabuva/Adams_Functions/blob/master/rmfield_custom.m): Removes field(s) from a structure array only if the field(s) exists
 - [**run_neuron.m**](https://github.com/blabuva/Adams_Functions/blob/master/run_neuron.m): Runs NEURON using a .hoc file and a cell array of simulation commands/files
 - [**save_all_figtypes.m**](https://github.com/blabuva/Adams_Functions/blob/master/save_all_figtypes.m): Save figures using all figure types provided
 - [**save_all_zooms.m**](https://github.com/blabuva/Adams_Functions/blob/master/save_all_zooms.m): Save a figure in various zoom windows

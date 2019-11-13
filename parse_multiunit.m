@@ -733,8 +733,8 @@ else
     fprintf('Parsing recording for %s ...\n', fileBase);
     parsedParamsCell = cell(nVectors, 1);
     parsedDataCell = cell(nVectors, 1);
-    parfor iVec = 1:nVectors
-%    for iVec = 1:nVectors
+%    parfor iVec = 1:nVectors
+    for iVec = 1:nVectors
     %for iVec = 1:1
         [parsedParamsCell{iVec}, parsedDataCell{iVec}] = ...
             parse_multiunit_helper(iVec, vVecs{iVec}, tVecs{iVec}, siMs(iVec), ...

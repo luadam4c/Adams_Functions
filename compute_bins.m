@@ -25,11 +25,12 @@ function [counts, edges] = compute_bins (stats, varargin)
 %                   - Any other parameter-value pair for histcounts()
 %
 % Requires:
+%       cd/adjust_edges.m
 %       cd/argfun.m
 %       cd/create_error_for_nargin.m
 %       cd/force_column_vector.m
+%       cd/rmfield_custom.m
 %       cd/struct2arglist.m
-%       cd/adjust_edges.m
 %
 % Used by:
 %       cd/compute_grouped_histcounts.m
@@ -41,6 +42,7 @@ function [counts, edges] = compute_bins (stats, varargin)
 % 
 
 %% Hard-coded parameters
+fieldsInConflictWithBinEdges = {'NumBins', 'BinWidth', 'BinMethod', 'BinLimits'};
 
 %% Default values for optional arguments
 edgesDefault = [];
@@ -78,16 +80,24 @@ edges = iP.Results.Edges;
 fixedEdges = iP.Results.FixedEdges;
 
 % Keep unmatched arguments for the histcounts() function
-otherArguments = struct2arglist(iP.Unmatched);
+otherArgumentsStruct = iP.Unmatched;
+
+%% Preparation
+if ~isempty(edges)
+    rmfield_custom(otherArgumentsStruct, fieldsInConflictWithBinEdges);    
+end
+
+% Convert to an arguments list
+otherArgumentsCell = struct2arglist(otherArgumentsStruct);
 
 %% Do the job
 % Compute bin counts and edges
 if ~isempty(edges)
     % Use provided bin edges
-    [counts, edges] = histcounts(stats, edges, otherArguments{:});
+    [counts, edges] = histcounts(stats, edges, otherArgumentsCell{:});
 else
     % Use default bin edges
-    [counts, edges] = histcounts(stats, otherArguments{:});
+    [counts, edges] = histcounts(stats, otherArgumentsCell{:});
 end
 
 % If the edges do not contain a fixed edge, shift so that it does
@@ -95,9 +105,16 @@ if ~isempty(fixedEdges)
     % Update edges if necessary
     [edgesNew, isUpdated] = adjust_edges(edges, 'FixedEdges', fixedEdges);
 
-    % Compute bins again
+    % Compute bins again if edges are updated
     if isUpdated
-        [counts, edges] = histcounts(stats, edgesNew, otherArguments{:});
+        % Remove any 
+        rmfield_custom(otherArgumentsStruct, fieldsInConflictWithBinEdges);    
+
+        % Update arguments list
+        otherArgumentsCell = struct2arglist(otherArgumentsStruct);
+
+        % Compute bins again
+        [counts, edges] = histcounts(stats, edgesNew, otherArgumentsCell{:});
     end
 end
 
