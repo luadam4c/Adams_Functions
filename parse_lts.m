@@ -5,7 +5,9 @@ function varargout = parse_lts (vVec0s, siMs, varargin)
 %       TODO
 %
 % Examples:
-%       TODO
+%       sweepName = 'C101210_0006_3';
+%       matFilesDir = '/media/adamX/m3ha/data_dclamp/take4/matfiles';
+%       [data, sweepInfo] = m3ha_import_raw_traces(sweepName, 'Directory', matFilesDir)
 %
 % Outputs: 
 %       parsedParams    - a table containing the parsed parameters, 

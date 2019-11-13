@@ -141,6 +141,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %               and consolidated the different types of responses
 % 2019-01-12 Now uses compute_combined_data.m
 % 2019-10-15 Fixed conversion of current pulse amplitude from swpInfo
+% 2019-11-13 Added siMs to swpInfo
 
 %% Hard-coded constants
 NS_PER_US = 1000;
@@ -654,7 +655,7 @@ end
 fprintf('Putting results into a table ... \n');
 
 % Output in sweepInfo tables
-sweepInfo = table(fileNames, currentPulseAmplitude, ...
+sweepInfo = table(fileNames, siMs, currentPulseAmplitude, ...
                     holdPotential, holdCurrent, baseNoise, ...
                     holdCurrentNoise, sweepWeights);
 
