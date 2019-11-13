@@ -84,6 +84,7 @@ function [simCommands, simCmdsFilePath] = ...
 %               of diamDend
 % 2019-11-12 Updated usage of build()
 % 2019-11-12 Removed T & h channels from passive fit
+% 2019-11-13 Restored usage of build()
 % 
 
 %% Hard-coded parameters
@@ -201,7 +202,7 @@ simCommands = cell(nSims, 1);
 parfor iSim = 1:nSims
 %for iSim = 1:nSims
     % Start with the build() command in singleneuron4compgabab.hoc
-    thisCmds = sprintf('build("%s", %g, %g, %g, %g, 0)\n', ...
+    thisCmds = sprintf('build("%s", %g, %g, %g, %g)\n', ...
                         simMode{iSim}, diamSoma(iSim), ...
                         LDend(iSim), diamDend(iSim), corrD(iSim));
 

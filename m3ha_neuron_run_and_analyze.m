@@ -674,6 +674,11 @@ sweepWeightsCpr = iP.Results.SweepWeightsCpr;
 sweepWeightsIpscr = iP.Results.SweepWeightsIpscr;
 
 %% Preparation
+% Initialize outputs
+errorStruct = struct;
+hFig = struct;
+simData = [];
+
 % Decide on simulation-mode-dependent variables
 if strcmpi(simMode, 'passive')
     realData = realDataCpr;
@@ -774,11 +779,17 @@ simCommands = m3ha_neuron_create_TC_commands(simParamsTable, ...
 
 %% Run NEURON
 % Run NEURON with the hocfile and attached simulation commands
-run_neuron(hocFile, 'SimCommands', simCommands, ...
+output = run_neuron(hocFile, 'SimCommands', simCommands, ...
                     'Prefix', prefix, 'OutFolder', outFolder, ...
                     'DebugFlag', debugFlag, 'OnHpcFlag', onHpcFlag, ...
                     'SaveStdOutFlag', saveStdOutFlag);
 
+% Check if there are errors
+if any(output.hasError)
+    fprintf('Simulations ran into error!\n');
+    return
+end
+                
 %% TODO: Break the function here into two
 
 %% Analyze results
@@ -797,7 +808,7 @@ expStrForTitle = strrep(expStr, '_', '\_');
 simDataOrig = load_neuron_outputs('FileNames', outFilePath, ...
                                 'RemoveAfterLoad', ~saveSimOutFlag);
 
-% If recorded data provided (tVecs not empty at this point), 
+% If recorded data provided (tVecs not empty at this point),
 %   interpolate simulated data to match the time points of recorded data
 % Note: This is necessary because CVODE (variable time step method) 
 %       is applied in NEURON

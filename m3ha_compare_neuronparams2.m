@@ -71,6 +71,9 @@ function m3ha_compare_neuronparams2 (paramValues, paramNames, suffices, varargin
 %       /home/Matlab/Adams_Functions/find_in_strings.m
 %       /home/Matlab/Adams_Functions/intersect_over_cells.m
 %
+% Used by:
+%       cd/m3ha_optimizer_4compgabab.m
+
 % File History:
 % 2017-08-09 - Created
 % 2017-08-10 - Finished

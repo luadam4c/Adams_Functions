@@ -32,6 +32,7 @@ function check_dir (directories, varargin)
 %       cd/log_arraytext.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_create_initial_params.m
+%       cd/m3ha_optimizer_4compgabab.m
 %       cd/parse_all_abfs.m
 %       cd/parse_current_family.m
 %       cd/parse_multiunit.m
@@ -41,7 +42,6 @@ function check_dir (directories, varargin)
 %       cd/plot_traces_EEG.m
 %       /media/adamX/m3ha/data_dclamp/initial_slopes.m
 %       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
-%       cd/m3ha_optimizer_4compgabab.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting42.m
 %       /home/Matlab/function_template.m
 

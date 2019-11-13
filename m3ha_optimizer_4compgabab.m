@@ -26,18 +26,20 @@ function [done, outparams, hfig] = m3ha_optimizer_4compgabab (outparams, hfig)
 %                     NEURON and FMINSEARCH2 (if in auto mode)
 %
 % Requires:
+%       cd/check_dir.m
+%       cd/find_in_strings.m
+%       cd/isemptystruct.m
+%       cd/locate_functionsdir.m
 %       cd/m3ha_compare_neuronparams2.m
+%       cd/m3ha_fminsearch3.m
+%       cd/m3ha_log_errors_params.m
+%       cd/m3ha_neuron_create_new_initial_params.m
+%       cd/m3ha_neuron_run_and_analyze.m
+%       cd/set_fields_zero.m
+%       cd/restore_fields.m
+%       cd/structs2vecs.m
 %       ~/Downloaded_Functions/subplotsqueeze.m
-%       ~/Adams_Functions/check_dir.m
-%       ~/Adams_Functions/find_in_strings.m
-%       ~/Adams_Functions/locate_functionsdir.m
-%       ~/Adams_Functions/m3ha_fminsearch3.m
-%       ~/Adams_Functions/m3ha_log_errors_params.m
-%       ~/Adams_Functions/m3ha_neuron_create_new_initial_params.m
-%       ~/Adams_Functions/m3ha_neuron_run_and_analyze.m
-%       ~/Adams_Functions/set_fields_zero.m
-%       ~/Adams_Functions/restore_fields.m
-%       ~/Adams_Functions/structs2vecs.m
+%
 % Used by:
 %       cd/singleneuronfitting42.m and later versions
 %       cd/m3ha_optimizergui_4compgabab.m
@@ -227,6 +229,9 @@ done = 1;
 function [errCpr, err, outparams, hfig] = runmanual(outparams, hfig)
 %% MANUAL or JITTER modes: Simulate each sweep once and compare with real data
 
+% Hard-coded parameters
+logFileSuffix = 'errors_and_params_log_manual.csv';
+
 % Update run counts
 switch outparams.runMode
 case {1, 2}         % manual mode is also run before and after auto mode
@@ -394,10 +399,11 @@ if outparams.fitActiveFlag
     %%%%%%%%%%%%%
     %%%%%% 
 
-    % Log errors and parameters and save parameters as .p file
-    logFileName = [outparams.dateTimeCellStamp, ...
-                '_errors_and_params_log_manual.csv'];
-    m3ha_log_errors_params(logFileName, outparams, err);
+    % Log errors and parameters and save parameters
+    if ~isemptystruct(err)
+        logFileName = [outparams.dateTimeCellStamp, '_', logFileSuffix];
+        m3ha_log_errors_params(logFileName, outparams, err);
+    end
 else
     if outparams.runnumTotal > 1    % if this is not the first run
         % Use errCpr from last run
