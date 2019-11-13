@@ -152,7 +152,7 @@ if isempty(fileNames)
     [~, fileNames] = ...
         all_files('Directory', directory, 'Extension', extension);
 else
-    % Make sure they are fulle paths
+    % Make sure they are full paths
     fileNames = construct_fullpath(fileNames, 'Directory', directory);
 end
 

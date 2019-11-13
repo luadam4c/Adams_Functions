@@ -1102,8 +1102,10 @@ if plotFlag
                 expStr);
 
         % Compute processed data
-        itm2hVecsSim = (itmVecsSim .^ 2) .* ithVecsSim;
-        itminf2hinfVecsSim = (itminfVecsSim .^ 2) .* ithinfVecsSim;
+        if strcmpi(simMode, 'active')
+            itm2hVecsSim = (itmVecsSim .^ 2) .* ithVecsSim;
+            itminf2hinfVecsSim = (itminfVecsSim .^ 2) .* ithinfVecsSim;
+        end
 
         % Select data to plot
         if strcmpi(simMode, 'passive')
@@ -1174,8 +1176,8 @@ if plotFlag
                         'FigTitle', figTitle, 'FigHandle', figHandle, ...
                         'FigName', figName, 'LineWidth', lineWidth);
 
-        handles = m3ha_plot_simulated_traces('Directory', outFolder, ...
-                                            'ColorMap', colorMapOverlapped);
+        % handles = m3ha_plot_simulated_traces('Directory', outFolder, ...
+        %                                     'ColorMap', colorMapOverlapped);
     end
 
     %% TODO TODO
