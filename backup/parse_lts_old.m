@@ -3,10 +3,8 @@ function varargout = parse_lts (vVec0s, siMs, varargin)
 % Usage: [parsedParams, parsedData] = parse_lts (tVec0, vVec0, varargin)
 % Explanation:
 %       TODO
-%
 % Examples:
 %       TODO
-%
 % Outputs: 
 %       parsedParams    - a table containing the parsed parameters, 
 %                           each row corresponding to a vector, with fields:
@@ -85,7 +83,6 @@ function varargout = parse_lts (vVec0s, siMs, varargin)
 %                   default == movingaveragefilter(vVec1, smoothWindowMs, siMs)
 %
 % Requires:
-%       cd/all_file_bases.m
 %       cd/argfun.m
 %       cd/check_subdir.m
 %       cd/compute_sampling_interval.m
@@ -95,14 +92,16 @@ function varargout = parse_lts (vVec0s, siMs, varargin)
 %       cd/create_labels_from_numbers.m
 %       cd/extract_elements.m
 %       cd/find_first_jump.m
-%       cd/find_in_strings.m
 %       cd/m3ha_locate_homedir.m
 %       cd/medianfilter.m
 %       cd/movingaveragefilter.m
 %
+% TODO: Move 
+% Requires:
+%       cd/all_file_bases.m
+%       cd/find_in_strings.m
+%
 % Used by:
-%       cd/compute_single_neuron_errors.m
-%       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:
 % 2019-01-13 Adapted from find_LTS.m

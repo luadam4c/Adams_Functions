@@ -253,6 +253,8 @@ function [errorStruct, hFig, simData] = ...
 %       cd/m3ha_neuron_create_simulation_params.m
 %       cd/m3ha_neuron_create_TC_commands.m
 %       cd/m3ha_plot_individual_traces.m
+%       cd/parse_ipsc.m
+%       cd/parse_lts.m
 %       cd/parse_pulse_response.m
 %       cd/plot_bar.m
 %       cd/run_neuron.m
@@ -1302,7 +1304,7 @@ elseif strcmpi(simMode, 'active')
     % Compute the minimum LTS peak delay
     minPeakDelayMs = stimPeakMs - stimStartMs;
 
-    % Parse the IPSC response
+    % Parse the LTS response
     featuresTable = parse_lts(vVecs, siMs, 'StimStartMs', stimStartMs, ...
                                 'MinPeakDelayMs', minPeakDelayMs);
 end

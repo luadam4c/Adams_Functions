@@ -66,6 +66,8 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %       cd/iscellnumericvector.m
 %       cd/isnumericvector.m
 %       cd/match_row_count.m
+%       cd/parse_ipsc.m
+%       cd/parse_lts.m
 %
 % Used by:
 %       cd/m3ha_neuron_run_and_analyze.m

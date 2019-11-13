@@ -9,8 +9,10 @@ function [histParams, histData] = compute_spike_histogram (spikeTimesMs, varargi
 %       3. 'Oscillation duration' is defined by the maximum contiguous stretch 
 %           of bursts starting from stimulation start, 
 %           with inter-burst intervals no greater than maxInterBurstIntervalMs.
+%
 % Example(s):
 %       [histParams, histData] = compute_spike_histogram(1000*rand(100, 1));
+%
 % Outputs:
 %       histParams  - spike histogram parameters, with fields:
 %                       stimStartMs
@@ -54,6 +56,7 @@ function [histParams, histData] = compute_spike_histogram (spikeTimesMs, varargi
 %                       timeBurstInOscStartsMs
 %                       timeBurstInOscEndsMs
 %                   specified as a scalar structure
+%
 % Arguments:
 %       spikeTimesMs    - spike times in milliseconds
 %                       must be a numeric vector

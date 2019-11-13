@@ -4,12 +4,15 @@ function fileBases = all_file_bases (varargin)
 % Explanation:
 %       This function is the same as all_files.m but returns just the 
 %           file base names
+%
 % Example(s):
 %       fileBases = all_file_bases;
 %       fileBases = all_file_bases('Recursive', true);
+%
 % Outputs:
 %       fileBases   - base names of files found
 %                   specified as a cell array of character arrays
+%
 % Arguments:
 %       varargin    - see all_files.m
 %

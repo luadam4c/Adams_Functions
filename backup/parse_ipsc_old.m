@@ -40,11 +40,15 @@ function [peakTimeMs, idxPeak, peakAmplitude, peakDelay] = parse_ipsc (tvec0, iv
 %       cd/check_subdir.m
 %
 % Used by:
-%       cd/compute_single_neuron_errors.m
 %       cd/m3ha_neuron_run_and_analyze.m
-
-% File History:
-% 2019-11-13 Adapted from find_IPSC_peak.m
+%       /media/adamX/m3ha/data_dclamp/dclampDataExtractor.m
+%
+%
+% 2016-10-05 Adapted from find_istart.m and dclampDataExtractor.m
+% 2016-10-13 Can now read more than one current vector at a time
+% 2016-10-16 Added back close(h)
+% 2016-10-27 Replace each directory with directories{k}
+% 2016-11-02 Moved check directories to check_subdir.m
 % 
 
 %% Directories for placing figures
