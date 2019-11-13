@@ -7,6 +7,7 @@ function [counts, edges] = compute_bins (stats, varargin)
 % Example(s):
 %       [counts, edges] = compute_bins(rand(100, 1))
 %       [counts, edges] = compute_bins(rand(100, 1), 'FixedEdges', 0.5)
+%       [counts, edges] = compute_bins(rand(100, 1), 'FixedEdges', 0.5, 'BinWidth', 1)
 %
 % Outputs:
 %       counts      - bin counts
@@ -84,7 +85,8 @@ otherArgumentsStruct = iP.Unmatched;
 
 %% Preparation
 if ~isempty(edges)
-    rmfield_custom(otherArgumentsStruct, fieldsInConflictWithBinEdges);    
+    otherArgumentsStruct = ...
+        rmfield_custom(otherArgumentsStruct, fieldsInConflictWithBinEdges);    
 end
 
 % Convert to an arguments list
@@ -108,7 +110,8 @@ if ~isempty(fixedEdges)
     % Compute bins again if edges are updated
     if isUpdated
         % Remove any 
-        rmfield_custom(otherArgumentsStruct, fieldsInConflictWithBinEdges);    
+        otherArgumentsStruct = ...
+            rmfield_custom(otherArgumentsStruct, fieldsInConflictWithBinEdges);    
 
         % Update arguments list
         otherArgumentsCell = struct2arglist(otherArgumentsStruct);
