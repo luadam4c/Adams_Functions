@@ -58,7 +58,7 @@ resolutionMs = 5;
 
 % For compute_spike_histogram.m
 % minBurstLengthMs = 20;          % bursts must be at least 20 ms by default
-minBurstLengthMs = 50;          % bursts must be at least 50 ms by default
+minBurstLengthMs = 100;          % bursts must be at least 100 ms by default
 maxFirstInterBurstIntervalMs = 2000;
 % maxInterBurstIntervalMs = 1000; % bursts are no more than 
 %                                 %   1 second apart
@@ -66,8 +66,8 @@ maxInterBurstIntervalMs = 1500; % bursts are no more than
                                 %   1.5 seconds apart
 % minSpikeRateInBurstHz = 100;    % bursts must have a spike rate of 
 %                                   at least 100 Hz by default
-minSpikeRateInBurstHz = 60;    % bursts must have a spike rate of 
-                                %   at least 60 Hz by default
+minSpikeRateInBurstHz = 50;    % bursts must have a spike rate of 
+                                %   at least 50 Hz by default
 
 % For compute_autocorrelogram.m
 filterWidthMs = 100;
