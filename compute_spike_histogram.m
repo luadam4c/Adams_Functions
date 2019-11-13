@@ -350,7 +350,8 @@ else
 
     % If the starting bin is more than maxFirstIbiBins away from stimulation
     %   start, don't consider it an evoked oscillation
-    if ~isempty(iBinBurstInOscStarts) && iBinBurstInOscStarts > maxFirstIbiBins
+    if ~isempty(iBinBurstInOscStarts) && ...
+            iBinBurstInOscStarts(1) > maxFirstIbiBins
         nBurstsInOsc = 0;
         iBinBurstInOscStarts = [];
         iBinBurstInOscEnds = [];
