@@ -91,7 +91,7 @@ function [done, outparams, hfig] = m3ha_optimizer_4compgabab (outparams, hfig)
 % 2017-05-22 - Changed line width and indentation
 % 2017-05-22 - Added outparams.fitTogetherFlag
 % 2017-05-23 - Removed modeselected from outparams and 
-%               replaced with updated outparams.runmode
+%               replaced with updated outparams.runMode
 % 2017-05-23 - Added otherwise to all switch statements
 % 2017-06-19 - Fixed runmode under runmanual
 % 2017-07-29 - Now saves the best parameters under /pfiles/ if err improves
@@ -145,14 +145,14 @@ end
 outparams.prefix = outparams.dateTimeCellStamp;
 
 % If in jitter mode and if parameter is checked, add jitter
-if outparams.runmode == 3
+if outparams.runMode == 3
     outparams.jitterFlag = true;
 else
     outparams.jitterFlag = false;
 end
 
 %% Run based on manual or auto mode
-switch outparams.runmode
+switch outparams.runMode
 case {1, 3}
     [~, ~, outparams, hfig] = runmanual(outparams, hfig);
 case 2
@@ -206,7 +206,7 @@ case 4                                       %%% TODO: Unfinished
     [~, ~, outparams, hfig] = ...
         runauto_w_jitter(outparams, hfig);
 otherwise
-    outparams.runmode = 1;
+    outparams.runMode = 1;
     fprintf('Warning: run mode out of range, changed to 1!\n\n');
 end
 
@@ -228,7 +228,7 @@ function [errCpr, err, outparams, hfig] = runmanual(outparams, hfig)
 %% MANUAL or JITTER modes: Simulate each sweep once and compare with real data
 
 % Update run counts
-switch outparams.runmode
+switch outparams.runMode
 case {1, 2}         % manual mode is also run before and after auto mode
     outparams.runnumManual = outparams.runnumManual + 1;
 case 3

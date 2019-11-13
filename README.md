@@ -279,3 +279,17 @@ There are 1 MATLAB scripts in this directory:
 - [**load_swd_sheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_swd_sheets.m): Loads SWD tables from SWD spreadsheets
 - [**locate_dir.m**](https://github.com/blabuva/Adams_Functions/blob/master/locate_dir.m): Locate the first directory that exists out of a list of candidates
 - [**locate_functionsdir.m**](https://github.com/blabuva/Adams_Functions/blob/master/locate_functionsdir.m): Locate the first shared functions directory that exists
+- [**log_arraytext.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_arraytext.m): Create a text file that logs the array information
+- [**log_matfile.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_matfile.m): Print variables in a MATfile to a comma-separated-value file
+- [**m3ha_autocorrelogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_autocorrelogram.m): Shows an m3ha_autocorrelogram for each set of neurons (each .spi file in the infolder)
+- [**m3ha_compare_and_plot_across_conditions.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_and_plot_across_conditions.m): Plot activation/inactivation and I-V curves across conditions
+- [**m3ha_compare_and_plot_across_IC2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_and_plot_across_IC2.m): Plot activation/inactivation and I-V curves across initial conditions
+- [**m3ha_compare_and_plot_across_IC.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_and_plot_across_IC.m): Plot activation/inactivation and I-V curves across initial conditions
+- [**m3ha_compare_neuronparams2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_neuronparams2.m): compare graphs across different sets of NEURON parameters
+- [**m3ha_compare_neuronparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_neuronparams.m): compare graphs across different sets of NEURON parameters
+- [**m3ha_compute_and_plot_all_IV2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_all_IV2.m): Plot I-V curves of all currents together
+- [**m3ha_compute_and_plot_all_IV.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_all_IV.m): Plot I-V curves of all currents together
+- [**m3ha_compute_and_plot_geometry2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_geometry2.m): Plot the geometry of the cell
+- [**m3ha_compute_and_plot_geometry.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_geometry.m): Plot the geometry of the cell
+- [**m3ha_compute_and_plot_IA2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_IA2.m): Plot activation/inactivation curves for the T-type calcium current
+- [**m3ha_compute_and_plot_IA.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_IA.m): Plot activation/inactivation curves for the T-type calcium current

@@ -316,7 +316,7 @@ function [errorStruct, hFig, simData] = ...
 %               plot_conductance_traces(), plot_current_traces() 
 %               && m3ha_plot_individual_traces()
 % 2017-05-22 - Changed line width and indentation
-% 2017-05-23 - Removed modeselected from outparams and replaced with updated outparams.runmode
+% 2017-05-23 - Removed modeselected from outparams and replaced with updated outparams.runMode
 % 2017-07-27 - Now extracts all NEURON parameters to workspace
 % 2017-07-28 - Added commands for calling adjust_globalpas, adjust_leak, 
 %               adjust_IT, adjust_Ih, adjust_IA, adjust_IKir, adjust_INaP
@@ -3041,7 +3041,7 @@ end
 
 % If in jitter mode and if parameter is checked, add jitter (default is 10%)
 %% TODO: Need to return jittered parameters to main gui
-if outparams.runmode == 3
+if outparams.runMode == 3
     for iSwp = 1:nSweeps
         for p = 1:numel(outparams.neuronparams)
             if outparams.neuronparams_use(p) ~= 0        % if parameter is checked

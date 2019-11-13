@@ -71,7 +71,7 @@ function [hfig] = m3ha_optimizergui_4compgabab (realdata_cpr, realData, hfig, va
 % 2017-05-17 - Renamed fitmode -> runmode
 % 2017-05-22 - Changed line width and indentation
 % 2017-05-23 - Fixed the placement of the rgb() function to be after addpath()
-% 2017-05-23 - Removed modeselected from outparams and replaced with updated outparams.runmode
+% 2017-05-23 - Removed modeselected from outparams and replaced with updated outparams.runMode
 % 2017-05-23 - Added otherwise to all switch statements
 % 2017-07-26 - Added scroll bar for NEURON parameters Panel (now Panel 8)
 % 2017-08-29 - Only show scroll bar for Panel 8 if necessary
@@ -161,7 +161,7 @@ end
 homeDirectory = outparams.homeDirectory;    % home directory for input/output folders
 cellname = outparams.cellname;              % name of current neuron to be fitted
 debugflag = outparams.debugflag;            % whether in debug mode
-runmode = outparams.runmode;                % run mode
+runmode = outparams.runMode;                % run mode
 filenames = outparams.filenames;            %% TODO: copy description from singleneuronfitting.m
 numswps = outparams.numswps;                %% TODO: copy description from singleneuronfitting.m
 default_swpuse = outparams.default_swpuse;        %% TODO: copy description from singleneuronfitting.m
@@ -530,7 +530,7 @@ case 4
     set(p3, 'SelectedObject', findall(p3, 'Tag', 'modebutton_auto_w_jitter'));
 otherwise
     set(p3, 'SelectedObject', findall(p3, 'Tag', 'modebutton_manual'));
-    outparams.runmode = 1;
+    outparams.runMode = 1;
     fprintf('Warning: run mode out of range, changed to 1!\n\n');
 end
 modebutton_selectionchange(p3);
@@ -969,7 +969,7 @@ close(get(hObject, 'Parent'));                              % close GUI
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function modebutton_selectionchange(hObject, ~)
-%% On change of Button Group 3, update outparams.runmode and enable/disable things in Panel 4/5 (NEURON parameters/AUTO)
+%% On change of Button Group 3, update outparams.runMode and enable/disable things in Panel 4/5 (NEURON parameters/AUTO)
 
 global outparams
 
@@ -991,21 +991,21 @@ case 'modebutton_manual'                            % for MANUAL mode
     set(p4children_sliders, 'Enable', 'on');            % can slide parameters to tweak them
     set(p4children_checkboxes, 'Enable', 'off');        % cannot select parameters; gray out check boxes
     set(p5children, 'Enable', 'off');                   % disable and gray out AUTO panel
-    outparams.runmode = 1;                              % update runmode
+    outparams.runMode = 1;                              % update runmode
 case 'modebutton_jitter'                            % for JITTER mode
     set(p4children_sliders, 'Enable', 'inactive');      % cannot slide parameters during jittering
     set(p4children_checkboxes, 'Enable', 'on');         % can select parameters to jitter
     set(p5children, 'Enable', 'off');                   % disable and gray out AUTO panel
-    outparams.runmode = 3;                              % update runmode
+    outparams.runMode = 3;                              % update runmode
 case {'modebutton_auto', 'modebutton_auto_w_jitter'}% for both AUTO & AUTO WITH JITTER modes
     set(p4children_sliders, 'Enable', 'inactive');      % cannot slide parameters during 
     set(p4children_checkboxes, 'Enable', 'on');         % can select parameters to optimize
     set(p5children, 'Enable', 'on');                    % enable AUTO panel
     switch modeselected
     case 'modebutton_auto'
-        outparams.runmode = 2;                          % update runmode
+        outparams.runMode = 2;                          % update runmode
     case 'modebutton_auto_w_jitter'
-        outparams.runmode = 4;                          % update runmode
+        outparams.runMode = 4;                          % update runmode
     end
 otherwise
     error('modeselected unrecognised!\n\n');
@@ -1087,7 +1087,7 @@ case togmax                 % if user toggles ON then send parameters to m3ha_op
     %##########
 
     % If on AUTO or AUTO WITH JITTER modes, update slider position based on optimized parameters
-    if outparams.runmode == 2 || outparams.runmode == 4
+    if outparams.runMode == 2 || outparams.runMode == 4
         update_sliders;                                     % update slider bounds
     end
 
