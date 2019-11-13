@@ -45,6 +45,7 @@ else
 end
 
 % Extract info from outparams
+simMode = outparams.simMode;
 logSwpErrFlag = outparams.logSwpErrFlag;
 logSwpWeightsFlag = outparams.logSwpWeightsFlag;
 logLtsWeightsFlag = outparams.logLtsWeightsFlag;
@@ -125,6 +126,7 @@ end
 logFilePath = fullfile(outFolderName, logFileName);
 if ~isfile(logFilePath)
     fid = fopen(logFilePath, 'w');        % create log file for writing
+    fprintf(fid, '%s, ', 'Simulation Mode');
     if isSimplex
         fprintf(fid, '%s, %s, %s, %s, %s, %s, ', ...
             'ctIterations', 'maxIterations', 'how', ...
@@ -191,6 +193,7 @@ end
 
 % Log errors and params
 fid = fopen(logFilePath, 'a');            % append
+fprintf(fid, '%s, ', simMode);
 if isSimplex
     fprintf(fid, '%6.4g, %6.4g, %s, %6.4g, %6.4g, %6.4g, ', ...
             ctIterations, maxIterations, lastHow, ctEvals, ...

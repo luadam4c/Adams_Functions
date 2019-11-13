@@ -241,6 +241,7 @@ function [errorStruct, hFig, simData] = ...
 %       cd/compute_sampling_interval.m
 %       cd/compute_single_neuron_errors.m
 %       cd/create_colormap.m
+%       cd/decide_on_colormap.m
 %       cd/extract_columns.m
 %       cd/extract_subvectors.m
 %       cd/find_IPSC_peak.m
@@ -1158,6 +1159,7 @@ if plotFlag
 
         % Expand the colormap if necessary
         if nSweeps > nRows
+            colorMap = decide_on_colormap([], 4);
             nColumns = ceil(nSweeps / nRows);
             nSlots = nColumns * nRows;
             colorMap = reshape(repmat(reshape(colorMap, 1, []), ...

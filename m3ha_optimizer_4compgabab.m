@@ -229,9 +229,6 @@ done = 1;
 function [errCpr, err, outparams, hfig] = runmanual(outparams, hfig)
 %% MANUAL or JITTER modes: Simulate each sweep once and compare with real data
 
-% Hard-coded parameters
-logFileSuffix = 'errors_and_params_log_manual.csv';
-
 % Update run counts
 switch outparams.runMode
 case {1, 2}         % manual mode is also run before and after auto mode
@@ -320,9 +317,9 @@ if outparams.fitPassiveFlag         % if fitting passive parameters
     %%%%%% 
 
     % Log errors and parameters and save parameters as .p file
-    logFileName = [outparams.dateTimeCellStamp, ...
-                '_errors_and_params_log_manual.csv'];
-    m3ha_log_errors_params(logFileName, outparams, errCpr);
+    if ~isemptystruct(errCpr)
+        m3ha_log_errors_params(outparams.logFileName, outparams, errCpr);
+    end
 else
     if outparams.runnumTotal > 1    % if this is not the first run
         % Use errCpr from last run
@@ -401,8 +398,7 @@ if outparams.fitActiveFlag
 
     % Log errors and parameters and save parameters
     if ~isemptystruct(err)
-        logFileName = [outparams.dateTimeCellStamp, '_', logFileSuffix];
-        m3ha_log_errors_params(logFileName, outparams, err);
+        m3ha_log_errors_params(outparams.logFileName, outparams, err);
     end
 else
     if outparams.runnumTotal > 1    % if this is not the first run

@@ -41,7 +41,7 @@ iP.FunctionName = mfilename;
 addRequired(iP, 'structArray');
 
 % Read from the Input Parser
-parse(iP, structArray, varargin{:});
+parse(iP, structArray);
 
 %% Do the job
 isEmptyStruct = isempty(fieldnames(structArray));
