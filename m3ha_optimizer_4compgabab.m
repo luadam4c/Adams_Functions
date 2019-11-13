@@ -107,6 +107,7 @@ function [done, outparams, hfig] = m3ha_optimizer_4compgabab (outparams, hfig)
 % 2018-08-16 - Now does not use parfor for active fitting
 % 2018-12-10 - Updated placement of jitterFlag
 % 2018-12-11 - Moved code to m3ha_neuron_create_new_initial_params.m
+% 2019-11-13 - Now copies final parameters without renaming
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -176,18 +177,18 @@ case 2
     outparams.prefix = prefixOrig;                         % restore original prefix
     drawnow
 
-    %% If error improved, save best parameters as 
-    %   bestparams_[cellName].p under /pfiles/
-%{
-    if outparams.fitActiveFlag && ...
-        outparams.err{outparams.runnumTotal}.totalError < outparams.err{1}.totalError && ...
-        ~outparams.debugFlag
-        copyfile(fullfile(outparams.outFolderName, ...
-                            [outparams.prefix, '_aft.p']), ...
-                            outparams.bestparamsPFile);
-        fprintf('Best parameters copied for %s!\n\n', outparams.prefix);
+    %% If error improved, copy final parameters to bestParamsDirectory
+    if ~outparams.debugFlag && ...
+            outparams.err{outparams.runnumTotal}.totalError < ...
+                outparams.err{1}.totalError       
+        % Get the final parameters file name for this cell
+        finalParamsFile = fullfile(outparams.outFolderName, ...
+                            [outparams.prefix, '_aft.p']);
+
+        % Copy to bestParamsDirectory
+        copyfile(finalParamsFile, outparams.bestParamsDirectory);
+        fprintf('Best parameters copied for %s!!\n\n', outparams.prefix);
     end
-%}    
 
     %% Compare NEURON parameters before and after 
     %   by plotting activation/inactivation & I-V curves

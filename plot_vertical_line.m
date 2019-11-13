@@ -117,13 +117,12 @@ otherArguments = iP.Unmatched;
 % Decide on the axes
 ax = set_axes_properties('AxesHandle', axesHandle);
 
-% Set default y value limits
-if isempty(yLimits)
-    if horizontalInstead
-        yLimits = get(ax, 'XLim');
-    else
-        yLimits = get(ax, 'YLim');
-    end
+% Decid on y value limits
+if iscell(yLimits)
+    yLimits = cellfun(@(x) decide_on_limits(x, ax, horizontalInstead), ...
+                        yLimits, 'UniformOutput', false);
+else
+    yLimits = decide_on_limits(yLimits, ax, horizontalInstead);
 end
 
 % Force as a cell array of column vectors and match vectors
@@ -201,6 +200,18 @@ yLimitsCell = force_column_cell(yLimits);
 
 % Expand y value accordingly
 xValueCell = repmat({xValue}, nLines, 1);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function yLimits = decide_on_limits(yLimits, ax, horizontalInstead)
+
+if isempty(yLimits)
+    if horizontalInstead
+        yLimits = get(ax, 'XLim');
+    else
+        yLimits = get(ax, 'YLim');
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
