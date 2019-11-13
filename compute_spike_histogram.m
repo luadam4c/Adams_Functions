@@ -224,7 +224,7 @@ minBinsInBurst = ceil(minBurstLengthMs ./ binWidthMs);
 % Compute the sliding window length in seconds
 slidingWinSec = minBinsInBurst * binWidthSec;
 
-% Compute the minimum spikes per sliding window if in a burst
+% Compute the minimum number of spikes per sliding window if in a burst
 minSpikesPerWindowInBurst = ceil(minSpikeRateInBurstHz * slidingWinSec);
 
 % Compute the maximum number of bins between the first two consecutive bursts

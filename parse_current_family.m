@@ -88,7 +88,7 @@ function [parsedParams, parsedData] = parse_current_family (varargin)
 % TODO: Make optional arguments
 verbose = true;
 plotRawData = false; %true;
-plotSpikeDetection = false; %true;
+plotSpikeDetection = false %true;
 plotSeparately = false;
 plotFI = false; %true;
 parsedParamsSuffix = 'current_family_params';
