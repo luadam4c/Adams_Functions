@@ -1,6 +1,6 @@
-function flag = set_default_flag(flag, varargin)
+function flag = set_default_flag (flag, varargin)
 %% Sets the default flag if empty according to an optional auxFlag
-% Usage: flag = set_default_flag(flag, auxFlag (opt))
+% Usage: flag = set_default_flag (flag, auxFlag (opt))
 % Explanation:
 %       If flag is already set, nothing is done
 %       If flag is empty, it is set to be true if auxFlag is true,
@@ -11,6 +11,8 @@ function flag = set_default_flag(flag, varargin)
 %       set_default_flag([], 0)
 %       set_default_flag([], true)
 %       set_default_flag([], [])
+%       set_default_flag(false, true)
+%       set_default_flag(true, false)
 %
 % Outputs:
 %       flag        - flag that has been set
@@ -26,6 +28,7 @@ function flag = set_default_flag(flag, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/m3ha_import_raw_traces.m
 %       cd/parse_multiunit.m
 %       cd/plot_measures.m
 %       cd/plot_tuning_curve.m

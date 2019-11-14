@@ -1,6 +1,6 @@
 function varargout = parse_lts (vVec0s, siMs, varargin)
 %% Finds, plots and classifies the most likely low-threshold spike (LTS) candidate in a voltage trace
-% Usage: [parsedParams, parsedData] = parse_lts (tVec0, vVec0, varargin)
+% Usage: [parsedParams, parsedData] = parse_lts (vVec0s, siMs, varargin)
 % Explanation:
 %       TODO
 %
@@ -8,6 +8,9 @@ function varargout = parse_lts (vVec0s, siMs, varargin)
 %       sweepName = 'C101210_0006_3';
 %       matFilesDir = '/media/adamX/m3ha/data_dclamp/take4/matfiles';
 %       [data, sweepInfo] = m3ha_import_raw_traces(sweepName, 'Directory', matFilesDir)
+%       vVecs = extract_columns(data, 2);
+%       siMs = sweepInfo.siMs;
+%       [parsedParams, parsedData] = parse_lts(vVecs, siMs);
 %
 % Outputs: 
 %       parsedParams    - a table containing the parsed parameters, 
@@ -62,7 +65,7 @@ function varargout = parse_lts (vVec0s, siMs, varargin)
 %                   must be a nonnegative scalar
 %                   default == 0 ms
 %                   - 'NoiseWindowMsOrMaxNoise': maximum noise in mV 
-%                                           or baseline window in ms
+%                                           or noise window in ms
 %                                           if numel == 1, maxNoise;
 %                                           if numel == 2, noiseWindowMs; 
 %                   must be a numeric vector
@@ -109,6 +112,28 @@ function varargout = parse_lts (vVec0s, siMs, varargin)
 % File History:
 % 2019-01-13 Adapted from find_LTS.m
 % 2019-02-19 Made siMs an optional argument
+
+%% Parameters used for data analysis
+medfiltWindowMs = 30;% width in ms for the median filter for spikes (voltage traces)
+smoothWindowMs = 30;% width in ms for the moving average filter for finding narrowest voltage peaks
+baseWidthMs = 20;   % width in ms for calculating baseline voltage (holding potential)
+ltsThr = -0.0023;        % 2nd derivative in V^2/s^2 below which defines an LTS peak
+ltsThrAlt = -0.0081823;  % 2nd derivative in V^2/s^2 above which is the "gray area"
+spThr = -45;        % Initial amplitude threshold in mV for detecting a spike 
+                    % Will be changed later when LTS peak amplitude is found
+                    % 2016-10-14 the highest LTS peak without bursts is -43.8867 mV
+                    % 2016-10-18 Note: the highest LTS peak without bursts is actually -48.0006 mV
+                    %           the previous value was for a spontaneous LTS, but because of median-filtering,
+                    %           -45 mV is probably a safer threshold
+spThrRelLts = 10;   % Relative amplitude threshold in mV for detecting a spike above an LTS 
+                    % 2016-10-19 The smallest relative amplitude of an action potential riding above the LTS
+                    %           is probably between 10~11 mV (see B091010_0006_19)
+siMsRes = 1;        % resampling interval in ms (1 kHz)
+minSp2PkTime = 0;   % minimum time from the first spike to the peak of the LTS (ms)
+slopeSpacing = 1;   % spacing in ms used to calculate slope
+mafw3Dv = 3;        % voltage change in mV corresponding to the moving average filter window for finding slopes
+%mafw3 = 5;         % width in ms for the moving average filter for finding slopes
+slopeSegYHalf = 5;  % how much voltage difference (mV) to plot maxslope line segment below maxslope point
 
 %% Default values for optional arguments
 siMsDefault = [];               % set later
@@ -259,15 +284,18 @@ else
 end
 
 % Decide on whether to compute maximum noise
-if numel(noiseWindowMsORmaxNoise) == 2 || ...
-        numel(noiseWindowMsORmaxNoise) == 2 * nVectors
-    noiseWindowMs = noiseWindowMsORmaxNoise;
-    maxNoise = NaN(nVectors, 1);
-    computeMaxNoiseFlag = true;
-else
+if numel(noiseWindowMsORmaxNoise) == 1 || ...
+        numel(noiseWindowMsORmaxNoise) == nVectors
     maxNoise = noiseWindowMsORmaxNoise;
     noiseWindowMs = NaN(2, nVectors);
     computeMaxNoiseFlag = false;
+else
+    noiseWindowMs = noiseWindowMsORmaxNoise;
+    if isempty(noiseWindowMs)
+        noiseWindowMs = [0; stimStartMs];
+    end
+    maxNoise = NaN(nVectors, 1);
+    computeMaxNoiseFlag = true;
 end
 
 % Compute the minimum peak time in ms
@@ -292,19 +320,22 @@ minPeakTimeMs = stimStartMs + minPeakDelayMs;
 % Parse all of them in a parfor loop
 parsedParamsCell = cell(nVectors, 1);
 parsedDataCell = cell(nVectors, 1);
-parfor iVec = 1:nVectors
+% parfor iVec = 1:nVectors
+for iVec = 1:nVectors
     [parsedParamsCell{iVec}, parsedDataCell{iVec}] = ...
         parse_lts_helper(verbose, plotFlag, computeActVholdFlag, ...
-                computeMaxNoiseFlag, outFolder, ...
-                tVec0s, tVec2s, vVec0s, vVec1s, vVec2s, vVec3s, ...
-                noiseWindowMs, searchWindow, fileBase, ...
-                siMs, maxNoise, stimStartMs, minPeakTimeMs, ...
-                fileBasesToOverride, idxMissedLtsByOrder, idxMissedLtsByShape, ...
-                idxSpikesPerBurstIncorrect, idxLooksLikeMissedLts, ...
-                idxLooksLikeLtsNotByProminence, ...
-                idxLooksLikeLtsNotByNarrowness, ...
-                idxNoiseInTrace, idxSpontLtsOrBurst, ...
-                idxWideLtsCouldBeNoise);
+            computeMaxNoiseFlag, outFolder, ...
+            tVec0s{iVec}, tVec2s{iVec}, vVec0s{iVec}, ...
+            vVec1s{iVec}, vVec2s{iVec}, vVec3s{iVec}, ...
+            noiseWindowMs{iVec}, searchWindow{iVec}, fileBase{iVec}, ...
+            siMs(iVec), maxNoise(iVec), stimStartMs(iVec), minPeakTimeMs(iVec), ...
+            fileBasesToOverride, idxMissedLtsByOrder, idxMissedLtsByShape, ...
+            idxSpikesPerBurstIncorrect, idxLooksLikeMissedLts, ...
+            idxLooksLikeLtsNotByProminence, idxLooksLikeLtsNotByNarrowness, ...
+            idxNoiseInTrace, idxSpontLtsOrBurst, idxWideLtsCouldBeNoise, ...
+            medfiltWindowMs, smoothWindowMs, baseWidthMs, ltsThr, ltsThrAlt, ...
+            spThr, spThrRelLts, siMsRes, minSp2PkTime, slopeSpacing, ...
+            mafw3Dv, slopeSegYHalf);
 end
 
 % Convert to a struct array
@@ -324,38 +355,18 @@ varargout{2} = parsedData;
 
 function [parsedParams, parsedData] = ...
         parse_lts_helper(verbose, plotFlag, computeActVholdFlag, ...
-                computeMaxNoiseFlag, outFolder, ...
-                tVec0, tVec2, vVec0, vVec1, vVec2, vVec3, ...
-                noiseWindowMs, searchWindow, fileBase, ...
-                siMs, maxNoise, stimStartMs, minPeakTimeMs, ...
-                fileBasesToOverride, idxMissedLtsByOrder, idxMissedLtsByShape, ...
-                idxSpikesPerBurstIncorrect, idxLooksLikeMissedLts, ...
-                idxLooksLikeLtsNotByProminence, ...
-                idxLooksLikeLtsNotByNarrowness, ...
-                idxNoiseInTrace, idxSpontLtsOrBurst, ...
-                idxWideLtsCouldBeNoise)
+            computeMaxNoiseFlag, outFolder, ...
+            tVec0, tVec2, vVec0, vVec1, vVec2, vVec3, ...
+            noiseWindowMs, searchWindow, fileBase, ...
+            siMs, maxNoise, stimStartMs, minPeakTimeMs, ...
+            fileBasesToOverride, idxMissedLtsByOrder, idxMissedLtsByShape, ...
+            idxSpikesPerBurstIncorrect, idxLooksLikeMissedLts, ...
+            idxLooksLikeLtsNotByProminence, idxLooksLikeLtsNotByNarrowness, ...
+            idxNoiseInTrace, idxSpontLtsOrBurst, idxWideLtsCouldBeNoise, ...
+            medfiltWindowMs, smoothWindowMs, baseWidthMs, ltsThr, ltsThrAlt, ...
+            spThr, spThrRelLts, siMsRes, minSp2PkTime, slopeSpacing, ...
+            mafw3Dv, slopeSegYHalf)
 
-%% Parameters used for data analysis
-medfiltWindowMs = 30;% width in ms for the median filter for spikes (voltage traces)
-smoothWindowMs = 30;% width in ms for the moving average filter for finding narrowest voltage peaks
-baseWidthMs = 20;   % width in ms for calculating baseline voltage (holding potential)
-ltsThr = -0.0023;        % 2nd derivative in V^2/s^2 below which defines an LTS peak
-ltsThrAlt = -0.0081823;  % 2nd derivative in V^2/s^2 above which is the "gray area"
-spThr = -45;        % Initial amplitude threshold in mV for detecting a spike 
-                    % Will be changed later when LTS peak amplitude is found
-                    % 2016-10-14 the highest LTS peak without bursts is -43.8867 mV
-                    % 2016-10-18 Note: the highest LTS peak without bursts is actually -48.0006 mV
-                    %           the previous value was for a spontaneous LTS, but because of median-filtering,
-                    %           -45 mV is probably a safer threshold
-spThrRelLts = 10;   % Relative amplitude threshold in mV for detecting a spike above an LTS 
-                    % 2016-10-19 The smallest relative amplitude of an action potential riding above the LTS
-                    %           is probably between 10~11 mV (see B091010_0006_19)
-siMsRes = 1;        % resampling interval in ms (1 kHz)
-minSp2PkTime = 0;   % minimum time from the first spike to the peak of the LTS (ms)
-slopeSpacing = 1;   % spacing in ms used to calculate slope
-mafw3Dv = 3;        % voltage change in mV corresponding to the moving average filter window for finding slopes
-%mafw3 = 5;         % width in ms for the moving average filter for finding slopes
-slopeSegYHalf = 5;  % how much voltage difference (mV) to plot maxslope line segment below maxslope point
 
 %% Subdirectories in outFolder for placing figures
 outSubDirs = {'vtraces', 'LTSanalysis', 'burstanalysis', ...
@@ -459,7 +470,7 @@ if computeActVholdFlag
         fprintf('Actual holding potential == %g mV\n', actVhold);
     end
 else
-    actVhold = [];
+    actVhold = NaN;
 end
 
 %% Set up the 2nd derivative of median-filtered voltage trace
@@ -1128,7 +1139,9 @@ parsedParams.isOverridden = isOverridden;
 parsedParams.couldHaveMissed = couldHaveMissed;
 
 % Store in parsedData structure
-parsedData.indBase = indBase;
+if computeActVholdFlag
+    parsedData.indBase = indBase;
+end
 parsedData.indSearch = indSearch;
 
 %% Plot figures

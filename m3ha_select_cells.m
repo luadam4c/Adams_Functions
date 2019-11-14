@@ -109,7 +109,6 @@ casesDir = iP.Results.CasesDir;
 %   Note: the file names are read in as row names
 if isempty(swpInfo)
     swpInfo = m3ha_load_sweep_info;
-    % TODO swpInfo = m3ha_load_sweep_info('HomeDirectory', homeDirectory);
 end
 
 % Generate a table of cell names from swpInfo if not provided

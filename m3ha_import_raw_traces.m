@@ -1,6 +1,9 @@
 function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargin)
 %% Imports raw traces from .mat files in the m3ha format
 % Usage: [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargin)
+% Explanation:
+%       TODO
+%
 % Examples:
 %       [data, sweepInfo, dataAll] = m3ha_import_raw_traces('D091710_0000_20');
 %
@@ -30,27 +33,33 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %                   - 'CreateLog': whether to create a log file
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'ImportMode': import mode
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'full'      - full trace without padding
+%                       'passive'   - current pulse response with padding
+%                       'active'    - IPSC response with padding
+%                   default == 'full'
 %                   - 'ToParsePulse': whether to parse pulses
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   default == set based on importMode
 %                   - 'ToMedianFilter': whether to median filter data
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   default == set based on importMode
 %                   - 'ToResample': whether to resample data
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
+%                   default == set based on importMode
 %                   - 'ToCorrectDcSteps': whether to correct unbalanced
 %                                            bridges in the pulse responses 
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true (only if ToParsePulse is also true)
+%                   default == true (only has effect if toParsePulse is true)
 %                   - 'ToAverageByVhold': whether to average pulse responses 
 %                                           according to VHold
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true (only if ToParsePulse is also true)
+%                   default == true (only has effect if toParsePulse is true)
 %                   - 'ToBootstrapByVhold': whether to bootstrap average 
 %                                           pulse responses within each VHold
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true (only if ToParsePulse is also true)
+%                   default == true (only has effect if toParsePulse is true)
 %                   - 'Directory': a full directory path, 
 %                       e.g. '/media/shareX/share/'
 %                   must be a string scalar or a character vector
@@ -62,19 +71,19 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %                                   (same units as the sampling interval 
 %                                       in the time data)
 %                   must be a nonnegative scalar
-%                   default == 0
+%                   default == set based on importMode
 %                   - 'ResponseWindow': window(s) of response vector
 %                       Note: this assumes that the values are nondecreasing
 %                   must be empty or a numeric vector with 2 elements,
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric arrays
-%                   default == []
+%                   default == set based on importMode
 %                   - 'StimStartWindow': window(s) of stimulation start
 %                       Note: this assumes that the values are nondecreasing
 %                   must be empty or a numeric vector with 2 elements,
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric arrays
-%                   default == []
+%                   default == set based on importMode
 %                   - 'EpasEstimate': estimate for the reversal potential (mV)
 %                   must be a numeric scalar
 %                   default == []
@@ -105,6 +114,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %       cd/correct_unbalanced_bridge.m
 %       cd/create_time_vectors.m
 %       cd/extract_columns.m
+%       cd/extract_elements.m
 %       cd/extract_subvectors.m
 %       cd/find_in_strings.m
 %       cd/find_window_endpoints.m
@@ -114,6 +124,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %       cd/print_cellstr.m
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_locate_homedir.m
+%       cd/set_default_flag.m
 %
 % Used by:
 %       cd/m3ha_xolotl_plot.m
@@ -142,18 +153,33 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 % 2019-01-12 Now uses compute_combined_data.m
 % 2019-10-15 Fixed conversion of current pulse amplitude from swpInfo
 % 2019-11-13 Added siMs to swpInfo
+% 2019-11-14 Added 'ImportMode' as an optional parameter
 
 %% Hard-coded constants
 NS_PER_US = 1000;
 PA_PER_NA = 1000;
 
 %% Hard-coded parameters
+validImportModes = {'full', 'active', 'passive'};
+
 % Parameters to be consistent with find_passive_params.m
 meanVoltageWindow = 0.5;    % width in ms for calculating mean voltage 
                             %   for input resistance calculations
 dataDirName = fullfile('data_dclamp', 'take4');
 matFilesDirName = 'matfiles';
 initialSlopesFileName = 'initial_slopes_nSamplesForPlot_2_threeStdMainComponent.mat';
+
+% The following must be consistent with singleneuron4compgabab.hoc
+timeToStabilize = 2000;     % time to make sure initial value of simulation is stabilized
+
+% The following must be consistent with dclampDataExtractor.m
+ipscTimeOrig = 1000;                % time of IPSC application (ms), original
+cpStartWindowOrig = [95, 105];      % window in which the current pulse start would lie (ms) 
+                                    %   (Supposed to be 100 ms but there will be offset)
+
+% The following must be consistent with both dclampDataExtractor.m & singleneuron4compgabab.hoc
+cprWinOrig = [0, 360];              % window in which the current pulse response would lie (ms), original
+ipscrWinOrig = [0, 8000];           % window in which the IPSC response would lie (ms), original
 
 % Parameters used for data reorganization
 %   Note: should be consistent with ResaveSweeps.m
@@ -163,19 +189,20 @@ mfw2 = 10;  % width in ms for the median filter for corrupted data (current trac
 mfw3 = 30;  % width in ms for the median filter for spikes (voltage traces)
 
 %% Default values for optional arguments
+importModeDefault = 'full';     % import full trace by default
 verboseDefault = true;          % print to standard output by default
 createLogDefault = false;       % don't create log file by default
-toParsePulseDefault = false;    % don't parse pulse by default
-toMedianFilterDefault = false;  % don't median filter data by default
-toResampleDefault = false;      % don't resample data by default
-toCorrectDcStepsDefault = true;
-toAverageByVholdDefault = true;
-toBootstrapByVholdDefault = true;
+toParsePulseDefault = [];       % set later
+toMedianFilterDefault = [];     % set later
+toResampleDefault = [];         % set later
+toCorrectDcStepsDefault = [];   % set later
+toAverageByVholdDefault = [];   % set later
+toBootstrapByVholdDefault = []; % set later
 directoryDefault = '';
 outFolderDefault = pwd;
-timeToPadDefault = 0;
-responseWindowDefault = [0, 360];       % [0, 8000]
-stimStartWindowDefault = [95, 105];     % 1000
+timeToPadDefault = [];          % set later
+responseWindowDefault = [];     % set later
+stimStartWindowDefault = [];    % set later
 epasEstimateDefault = [];
 rinEstimateDefault = [];
 swpInfoDefault = [];
@@ -205,6 +232,8 @@ addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'CreateLog', createLogDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ImportMode', importModeDefault, ...
+    @(x) any(validatestring(x, validImportModes)));
 addParameter(iP, 'ToParsePulse', toParsePulseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ToMedianFilter', toMedianFilterDefault, ...
@@ -244,6 +273,7 @@ addParameter(iP, 'InitialSlopesPath', initialSlopesPathDefault, ...
 parse(iP, fileNames, varargin{:});
 verbose = iP.Results.Verbose;
 createLog = iP.Results.CreateLog;
+importMode = validatestring(iP.Results.ImportMode, validImportModes);
 toParsePulse = iP.Results.ToParsePulse;
 toMedianFilter = iP.Results.ToMedianFilter;
 toResample = iP.Results.ToResample;
@@ -264,9 +294,94 @@ initialSlopesPath = iP.Results.InitialSlopesPath;
 % Print message
 fprintf('Preparing for import ... \n');
 
+% Decide whether to parse pulse
+if isempty(toParsePulse)
+    switch importMode
+        case 'passive'
+            toParsePulse = true;
+        case {'full', 'active'}
+            toParsePulse = false;
+        otherwise
+            error('importMode unrecognized!');
+    end
+end
+
+% Decide whether to median filter traces
+if isempty(toMedianFilter)
+    switch importMode
+        case 'active'
+            toMedianFilter = true;
+        case {'full', 'passive'}
+            toMedianFilter = false;
+        otherwise
+            error('importMode unrecognized!');
+    end
+end
+
+% Decide whether to resample traces
+if isempty(toResample)
+    switch importMode
+        case 'active'
+            toResample = true;
+        case {'full', 'passive'}
+            toResample = false;
+        otherwise
+            error('importMode unrecognized!');
+    end
+end
+
+% Decide whether to modify current pulse responses
+[toCorrectDcSteps, toAverageByVhold, toBootstrapByVhold] = ...
+    argfun(@(x) set_default_flag(x, toParsePulse), ...
+            toCorrectDcSteps, toAverageByVhold, toBootstrapByVhold);
+
+% Decide on the amount of time to pad in ms
+if isempty(timeToPad)
+    switch importMode
+        case 'full'
+            timeToPad = 0;
+        case {'active', 'passive'}
+            timeToPad = timeToStabilize;
+        otherwise
+            error('importMode unrecognized!');
+    end
+end
+
+% Decide on the response window in ms
+if isempty(responseWindowOrig)
+    switch importMode
+        case 'full'
+            responseWindowOrig = [0, Inf];
+        case 'active'
+            responseWindowOrig = ipscrWinOrig;
+        case 'passive'
+            responseWindowOrig = cprWinOrig;
+        otherwise
+            error('importMode unrecognized!');
+    end
+end
+
+% Decide on the stimulation start window in ms
+if isempty(stimStartWindowOrig)
+    switch importMode
+        case 'full'
+            stimStartWindowOrig = ipscTimeOrig;
+        case 'active'
+            stimStartWindowOrig = ipscTimeOrig;
+        case 'passive'
+            stimStartWindowOrig = cpStartWindowOrig;
+        otherwise
+            error('importMode unrecognized!');
+    end
+end
+
+% Locate the m3ha home directory if needed
+if isempty(matFilesDir) || isempty(initialSlopesPath) || isempty(swpInfoAll)
+    homeDirectory = m3ha_locate_homedir;
+end
+
 % Locate the data directory if needed
 if isempty(matFilesDir) || isempty(initialSlopesPath)
-    homeDirectory = m3ha_locate_homedir;
     dataDir = fullfile(homeDirectory, dataDirName);
 end
 
@@ -283,8 +398,7 @@ end
 % Load sweep information if not provided
 %   Note: the file names are read in as row names
 if isempty(swpInfoAll)
-    swpInfoAll = m3ha_load_sweep_info;
-    % TODO swpInfoAll = m3ha_load_sweep_info('HomeDirectory', homeDirectory);
+    swpInfoAll = m3ha_load_sweep_info('HomeDirectory', homeDirectory);
 end
 
 % Make sure fileNames is a column cell array
@@ -302,7 +416,7 @@ nSwps = numel(fileNames);
                                     'Verbose', verbose);
 
 % Get the cell name
-cellName = fileNames{1}(1:7);
+cellName = m3ha_extract_cell_name(fileNames);
 
 % If a matfile does not exist, return
 if ~all(pathExists)
@@ -316,12 +430,6 @@ end
 % Find the expected stimulation start time
 stimStartExpectedOrig = mean(stimStartWindowOrig);
 
-% Compute the expected baseline window length in ms
-baseLengthMs = stimStartExpectedOrig - responseWindowOrig(1);
-
-% Compute the expected response window length in ms
-responseLengthMs = responseWindowOrig(2) - stimStartExpectedOrig;
-
 % Find the length of the stimulation start time window
 if numel(stimStartWindowOrig) == 1
     stimStartWindowOrigLength = 0;
@@ -329,10 +437,6 @@ else
     stimStartWindowOrigLength = diff(stimStartWindowOrig);
 end
     
-% Expand by stimStartWindowOrigLength to get the approximate response window
-approxWindowOrig = [responseWindowOrig(1); ...
-                    responseWindowOrig(2) + stimStartWindowOrigLength];
-
 % Baseline window in simulation time
 baseWindow = timeToPad + [0, stimStartExpectedOrig];
 
@@ -388,18 +492,33 @@ iVecsOrig = cellfun(@(x) x / PA_PER_NA, iVecsOrig, 'UniformOutput', false);
 % Compute the sampling intervals in ms
 siMs = compute_sampling_interval(tVecsOrig);
 
+% Update the response window upper limit from the time vectors
+if isinf(responseWindowOrig(2))
+    % Get the last time point for each time vector
+    timeLasts = extract_elements(tVecsOrig, 'last');
+
+    % Set the upper limit of the response window to be 
+    %   the minimum of all last time points
+    responseWindowOrig(2) = min(timeLasts);
+end
+
+%% Restrict traces to the approximate response window
+% Expand by stimStartWindowOrigLength to get the approximate response window
+approxWindowOrig = [responseWindowOrig(1); ...
+                    responseWindowOrig(2) + stimStartWindowOrigLength];
+
+% Find the indices for the approximate current pulse response
+endPointsApprox = find_window_endpoints(approxWindowOrig, tVecsOrig);
+
+% Extract the approximate current pulse response regions
+[vVecsApprox, iVecsApprox, gVecsApprox] = ...
+    argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsApprox), ...
+            vVecsOrig, iVecsOrig, gVecsOrig);
+
 %% Process current pulses from the data vectors
 if toParsePulse
     % Print message
     fprintf('Processing current pulses from the original data vectors ... \n');
-
-    % Find the indices for the approximate current pulse response
-    endPointsApprox = find_window_endpoints(approxWindowOrig, tVecsOrig);
-
-    % Extract the approximate current pulse response regions
-    [vVecsApprox, iVecsApprox, gVecsApprox] = ...
-        argfun(@(x) extract_subvectors(x, 'Endpoints', endPointsApprox), ...
-                vVecsOrig, iVecsOrig, gVecsOrig);
 
     % Parse the pulse vectors
     pulseParams = parse_pulse(iVecsApprox);
@@ -438,9 +557,6 @@ if toParsePulse
 
     %}
 else
-    vVecsApprox = vVecsOrig;
-    iVecsApprox = iVecsOrig;
-    gVecsApprox = gVecsOrig;
     idxStimStart = convert_to_samples(stimStartExpectedOrig, siMs);
     currentPulseAmplitude = swpInfoAll{fileNames, 'currpulse'} / PA_PER_NA;
 end
@@ -489,6 +605,12 @@ end
 %% Reshape data vectors to be compared with simulations
 % Print message
 fprintf('Reshaping data vectors to be compared with simulations ... \n');
+
+% Compute the expected baseline window length in ms
+baseLengthMs = stimStartExpectedOrig - responseWindowOrig(1);
+
+% Compute the expected response window length in ms
+responseLengthMs = responseWindowOrig(2) - stimStartExpectedOrig;
 
 % Convert times to samples
 [baseLengthSamples, responseLengthSamples, ...
@@ -663,6 +785,12 @@ sweepInfo = table(fileNames, siMs, currentPulseAmplitude, ...
 if createLog
     fclose(fid);
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function cellName = m3ha_extract_cell_name (fileNames)
+
+cellName = fileNames{1}(1:7);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
