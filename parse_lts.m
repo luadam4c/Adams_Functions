@@ -1,6 +1,6 @@
-function varargout = parse_lts (vVec0s, siMs, varargin)
+function varargout = parse_lts (vVec0s, varargin)
 %% Finds, plots and classifies the most likely low-threshold spike (LTS) candidate in a voltage trace
-% Usage: [parsedParams, parsedData] = parse_lts (vVec0s, siMs, varargin)
+% Usage: [parsedParams, parsedData] = parse_lts (vVec0s, siMs (opt), varargin)
 % Explanation:
 %       TODO
 %
@@ -41,8 +41,8 @@ function varargout = parse_lts (vVec0s, siMs, varargin)
 %
 % Arguments:
 %       vVec0s      - original voltage vector(s) in mV
-%                   must be a numeric array with same length as tVec0
-%                       or a cell array of numeric arrays as such
+%                   must be a numeric array
+%                       or a cell array of numeric vectors
 %       siMs        - (opt) sampling interval in ms
 %                           If not provided, 'tVec0s' must be provided
 %                   must be a positive vector
@@ -77,6 +77,7 @@ function varargout = parse_lts (vVec0s, siMs, varargin)
 %                               tVec0(end) - medfiltWindowMs], where medfiltWindowMs is 30 ms
 %                   - 'tVec0s': original time vector(s)
 %                   must be a numeric array or a cell array of numeric arrays
+%                   default == created from siMs and vVec0s
 %                   - 'tVec2s': time vector(s) for resampling
 %                   must be a numeric array & within range of tVec0
 %                   default == siMsRes*(round(tVec0(1)/siMsRes):round(tVec0(end)/siMsRes))'
@@ -94,15 +95,15 @@ function varargout = parse_lts (vVec0s, siMs, varargin)
 %       cd/all_file_bases.m
 %       cd/argfun.m
 %       cd/check_subdir.m
-%       cd/compute_sampling_interval.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
-%       cd/create_time_vectors.m
 %       cd/create_labels_from_numbers.m
+%       cd/extract_common_prefix.m
 %       cd/extract_elements.m
 %       cd/find_first_jump.m
 %       cd/find_in_strings.m
 %       cd/m3ha_locate_homedir.m
+%       cd/match_time_info.m
 %       cd/medianfilter.m
 %       cd/movingaveragefilter.m
 %
@@ -114,7 +115,12 @@ function varargout = parse_lts (vVec0s, siMs, varargin)
 % 2019-01-13 Adapted from find_LTS.m
 % 2019-02-19 Made siMs an optional argument
 
-%% Parameters used for data analysis
+%% Hard-coded parameters
+% Subdirectories in outFolder for placing figures
+outSubDirs = {'vtraces', 'LTSanalysis', 'burstanalysis', ...
+            'vtraces_scaled', 'gray_area_traces', 'LTScouldbemissed'};
+
+% Parameters used for data analysis
 medfiltWindowMs = 30;% width in ms for the median filter for spikes (voltage traces)
 smoothWindowMs = 30;% width in ms for the moving average filter for finding narrowest voltage peaks
 baseWidthMs = 20;   % width in ms for calculating baseline voltage (holding potential)
@@ -156,7 +162,7 @@ vVec3sDefault = [];             % set later
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 2
+if nargin < 1
     error(create_error_for_nargin(mfilename));
 end
 
@@ -213,7 +219,8 @@ addParameter(iP, 'vVec3s', vVec3sDefault, ...
                     'or a cell array of numeric arrays!']));
 
 % Read from the Input Parser
-parse(iP, vVec0s, siMs, varargin{:});
+parse(iP, vVec0s, varargin{:});
+siMs = iP.Results.siMs;
 verbose = iP.Results.Verbose;
 plotFlag = iP.Results.PlotFlag;
 outFolder = iP.Results.OutFolder;
@@ -241,6 +248,16 @@ if isempty(fileBase)
                                             'Prefix', 'unnamed_');
 end
 
+% Extract common prefix
+commonPrefix = extract_common_prefix(fileBase);
+if verbose
+    if ~isempty(commonPrefix)
+        fprintf('ANALYZING voltage traces for %s ...\n', commonPrefix);
+    else
+        fprintf('ANALYZING voltage traces ...\n');
+    end
+end
+
 % Find files to override
 [fileBasesToOverride, idxMissedLtsByOrder, idxMissedLtsByShape, ...
     idxSpikesPerBurstIncorrect, idxLooksLikeMissedLts, ...
@@ -250,15 +267,11 @@ end
     idxWideLtsCouldBeNoise] = m3ha_find_files_to_override;
 
 % Compute sampling interval(s) and create time vector(s)
-if isempty(siMs) && ~isempty(tVec0s)
-    % Compute sampling interval(s) in ms
-    siMs = compute_sampling_interval(tVec0s);
-elseif isempty(tVec0s) && ~isempty(siMs)
-    % Create time vector(s)
-    tVec0s = create_time_vectors(nSamples, 'SamplingIntervalMs', siMs, ...
-                                    'TimeUnits', 'ms');
-else
+if isempty(siMs) && isempty(tVec0s)
     error('One of siMs and tVec0s must be provided!');
+else
+    [tVec0s, siMs, nSamples] = ...
+        match_time_info(tVec0s, siMs, nSamples, 'TimeUnits', 'ms')
 end
 
 % Compute the base of the time vector(s)
@@ -336,7 +349,7 @@ for iVec = 1:nVectors
             idxNoiseInTrace, idxSpontLtsOrBurst, idxWideLtsCouldBeNoise, ...
             medfiltWindowMs, smoothWindowMs, baseWidthMs, ltsThr, ltsThrAlt, ...
             spThr, spThrRelLts, siMsRes, minSp2PkTime, slopeSpacing, ...
-            mafw3Dv, slopeSegYHalf);
+            mafw3Dv, slopeSegYHalf, outSubDirs);
 end
 
 % Convert to a struct array
@@ -366,12 +379,8 @@ function [parsedParams, parsedData] = ...
             idxNoiseInTrace, idxSpontLtsOrBurst, idxWideLtsCouldBeNoise, ...
             medfiltWindowMs, smoothWindowMs, baseWidthMs, ltsThr, ltsThrAlt, ...
             spThr, spThrRelLts, siMsRes, minSp2PkTime, slopeSpacing, ...
-            mafw3Dv, slopeSegYHalf)
+            mafw3Dv, slopeSegYHalf, outSubDirs)
 
-
-%% Subdirectories in outFolder for placing figures
-outSubDirs = {'vtraces', 'LTSanalysis', 'burstanalysis', ...
-            'vtraces_scaled', 'gray_area_traces', 'LTScouldbemissed'};
 
 %% Preparation for each trace
 % Check relationships between arguments
@@ -1634,6 +1643,17 @@ idxPeak3EndOrig(iPeak3Sel) = idxPeak3End(iPeak3Sel);                 % ending in
 
 dvVec3 = diff(vVec3)./diff(tVec0);
 d2vVec3 = diff(dvVec3Sm)./diff(tVec0(2:end));
+
+if isempty(siMs) && ~isempty(tVec0s)
+    % Compute sampling interval(s) in ms
+    siMs = compute_sampling_interval(tVec0s);
+elseif isempty(tVec0s) && ~isempty(siMs)
+    % Create time vector(s)
+    tVec0s = create_time_vectors(nSamples, 'SamplingIntervalMs', siMs, ...
+                                    'TimeUnits', 'ms');
+else
+    error('One of siMs and tVec0s must be provided!');
+end
 
 %}
 

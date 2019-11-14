@@ -1,5 +1,5 @@
 function [IPSC_offset_old, IPSC_offset_old2, IPSC_ind_old, IPSC_ind_old2] = find_istart_old (tvec0, gvec1s, ivec0s, istartwin, plotflag, vvec0s, outfolder, filebase)
-%% Finds time of current application from a series of current vectors
+%% Finds time of current application from a series of current vectors (legacy, please use parse_ipsc.m instead)
 % Usage: [IPSC_offset_old, IPSC_offset_old2, IPSC_ind_old, IPSC_ind_old2] = find_istart_old (tvec0, gvec1s, ivec0s, istartwin, plotflag, vvec0s, outfolder, filebase)
 % Arguments:	
 %

@@ -39,6 +39,8 @@ function prefix = extract_common_prefix (strs, varargin)
 %       cd/extract_common_suffix.m
 %       cd/extract_fileparts.m
 %       cd/parse_current_family.m
+%       cd/parse_ipsc.m
+%       cd/parse_lts.m
 %       cd/plot_raster.m
 %       cd/plot_table.m
 

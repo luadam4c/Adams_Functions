@@ -1,13 +1,14 @@
 function [bl_mean, mnoise, npt, np2der, pk_prom, pk_width, pk_class, spp, ltsv, ltst, mxslv, mxslt, btime, spb, spthr, fspt, lspt, maxspi, minspi, spif, spia] = find_LTSs_many_sweeps (tvec0, vvec0, IPSC_start, ipeak_time, hrange, ltswin, plotLTSflag, outfolder, datfn, tvec2, vvec1, vvec2, vvec3)
-%% Calls find_LTS.m for many voltage traces
+%% Calls find_LTS.m for many voltage traces (legacy, please use parse_lts.m instead)
 % Usage: [bl_mean, mnoise, npt, np2der, pk_prom, pk_width, pk_class, spp, ltsv, ltst, mxslv, mxslt, btime, spb, maxspi, minspi, spif, spia] = find_LTSs_many_sweeps (tvec0, vvec0, IPSC_start, ipeak_time, hrange, ltswin, plotLTSflag, outfolder, datfn, tvec2, vvec1, vvec2, vvec3)
 % Arguments:    
 %
 % Used by:
 %        /media/adamX/m3ha/data_dclamp/dclampDataExtractor.m
-% Requires:
-%        /home/Matlab/Adams_Functions/find_LTS.m
 %
+% Requires:
+%        cd/find_LTS.m
+
 % 2016-11-07 Moved from dclampDataExtractor.m
 % 2017-12-21 Changed tabs to spaces
 % 2017-12-21 Added spthr, fspt, lspt

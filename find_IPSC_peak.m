@@ -1,5 +1,5 @@
 function [ipeak_time, ipeak_ind, ipeak_amp, ipeak_delay] = find_IPSC_peak (tvec0, ivec0s, istart, ipeakwin, plotflag, outfolder, filebase)
-%% Finds time of current peak from a an inhibitory current trace (must be negative current)
+%% Finds time of current peak from a an inhibitory current trace (must be negative current) (legacy, please use parse_ipsc.m instead)
 % Usage: [ipeak_time, ipeak_ind, ipeak_amp, ipeak_delay] = find_IPSC_peak (tvec0, ivec0s, istart, ipeakwin, plotflag, outfolder, filebase)
 % Outputs:	
 %		ipeak_time	- time of ipeak (tvec0(ipeak_ind)) in ms (a row vector)

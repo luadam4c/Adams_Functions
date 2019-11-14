@@ -23,6 +23,7 @@ function fileBases = all_file_bases (varargin)
 %
 % Used by:    
 %       cd/find_LTS.m
+%       cd/parse_lts.m
 
 % File History:
 % 2017-02-16 Created

@@ -1,5 +1,5 @@
 function [istart, istart_ind] = find_istart (tvec0, ivec0s, istartwin, plotflag, vvec0s, outfolder, filebase)
-%% Finds time of current application from a series of current vectors
+%% Finds time of current application from a series of current vectors (legacy, please use parse_ipsc.m instead)
 % Usage: [istart, istart_ind] = find_istart (tvec0, ivec0s, istartwin, plotflag, vvec0s, outfolder, filebase)
 % Arguments:	
 %		tvec0		- original time vector, must be a column vector in ms
@@ -25,7 +25,7 @@ function [istart, istart_ind] = find_istart (tvec0, ivec0s, istartwin, plotflag,
 %
 % Used by:
 %		/media/shareX/share/Adam/Sample_files_from_Katie/test_sweeps.m
-%
+
 % 2016-09-22 Adapted from dclampDataExtractor.m
 % 2016-10-05 Accounted for the case that tvec0 doesn't start from 0
 % 2016-10-16 Added back close(h)

@@ -1,5 +1,5 @@
 function [actVhold, maxnoise, peaktime, peak2ndder, peakprom, peakwidth, peakclass, spikesperpeak, ltspeaktime, ltspeakval, maxslopetime, maxslopeval, bursttime, spikesperburst, spikethreshold, firstspiketime, lastspiketime, maxspikeamp, minspikeamp, spikefrequency, spikeadaptation, LTScouldbemissed] = find_LTS (tvec0, vvec0, istart, ipeakt, hrangeORmaxnoise, ltswin, plotflag, outfolder, filebase, tvec2, vvec1, vvec2, vvec3)
-%% Find, plot and classify the most likely low-threshold spike (LTS) candidate in a voltage trace
+%% Find, plot and classify the most likely low-threshold spike (LTS) candidate in a voltage trace (legacy, please use parse_lts.m instead)
 % Usage: [actVhold, maxnoise, peaktime, peak2ndder, peakprom, peakwidth, peakclass, spikesperpeak, ltspeaktime, ltspeakval, maxslopetime, maxslopeval, bursttime, spikesperburst, spikethreshold, firstspiketime, lastspiketime, maxspikeamp, minspikeamp, spikefrequency, spikeadaptation, LTScouldbemissed] = find_LTS (tvec0, vvec0, istart, ipeakt, hrangeORmaxnoise, ltswin, plotflag, outfolder, filebase, tvec2, vvec1, vvec2, vvec3)
 % Arguments:    
 %       tvec0       - original time vector, must be a column vector in ms

@@ -13,7 +13,7 @@ function homeDirectory = m3ha_locate_homedir
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_network_launch.m
-%       cd/parse_LTS.m
+%       cd/parse_lts.m
 %       ~/m3ha/data_dclamp/dclampDataExtractor.m
 %       ~/m3ha/data_dclamp/dclampdatalog_analyze.m
 %       ~/m3ha/data_dclamp/dclampPassiveFitter.m

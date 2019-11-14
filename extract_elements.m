@@ -55,6 +55,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/extract_columns.m
 %       cd/is_overlapping.m
 %       cd/m3ha_import_raw_traces.m
+%       cd/parse_ipsc.m
 %       cd/parse_lts.m
 %       cd/parse_multiunit.m
 %       cd/parse_pulse_response.m

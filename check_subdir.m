@@ -29,6 +29,8 @@ function check_subdir (parentDirectory, subDirectories, varargin)
 %       cd/find_istart.m
 %       cd/find_IPSC_peak.m
 %       cd/find_LTS.m
+%       cd/parse_ipsc.m
+%       cd/parse_lts.m
 %       cd/parse_multiunit.m
 %       cd/save_all_zooms.m
 %       /media/adamX/m3ha/data_dclamp/take4/find_special_cases.m

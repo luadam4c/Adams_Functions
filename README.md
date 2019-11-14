@@ -195,11 +195,11 @@ There are 1 MATLAB scripts in this directory:
 - [**find_initial_slopes.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_initial_slopes.m): Find all initial slopes from a set of current pulse responses
 - [**find_in_list.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_in_list.m): Returns all indices of a candidate in a list
 - [**find_in_strings.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_in_strings.m): Returns all indices of a particular string (could be represented by substrings) in a list of strings
-- [**find_IPSC_peak.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_IPSC_peak.m): Finds time of current peak from a an inhibitory current trace (must be negative current)
-- [**find_istart.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_istart.m): Finds time of current application from a series of current vectors
-- [**find_istart_old.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_istart_old.m): Finds time of current application from a series of current vectors
-- [**find_LTS.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_LTS.m): Find, plot and classify the most likely low-threshold spike (LTS) candidate in a voltage trace
-- [**find_LTSs_many_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_LTSs_many_sweeps.m): Calls find_LTS.m for many voltage traces
+- [**find_IPSC_peak.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_IPSC_peak.m): Finds time of current peak from a an inhibitory current trace (must be negative current) (legacy, please use parse_ipsc.m instead)
+- [**find_istart.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_istart.m): Finds time of current application from a series of current vectors (legacy, please use parse_ipsc.m instead)
+- [**find_istart_old.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_istart_old.m): Finds time of current application from a series of current vectors (legacy, please use parse_ipsc.m instead)
+- [**find_LTS.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_LTS.m): Find, plot and classify the most likely low-threshold spike (LTS) candidate in a voltage trace (legacy, please use parse_lts.m instead)
+- [**find_LTSs_many_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_LTSs_many_sweeps.m): Calls find_LTS.m for many voltage traces (legacy, please use parse_lts.m instead)
 - [**find_matching_files.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_matching_files.m): Finds matching files from file parts
 - [**find_nearest_multiple.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_nearest_multiple.m): Finds the nearest integer multiple of base to target and the distance to between it and target
 - [**find_nearest_odd.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_nearest_odd.m): Returns the nearest odd integer to real number(s)
@@ -392,7 +392,7 @@ There are 1 MATLAB scripts in this directory:
 - [**parse_fitobject.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_fitobject.m): Extract information from a cfit or sfit object
 - [**parse_gas_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_gas_trace.m): Parses gas traces
 - [**parse_iox.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_iox.m): Parses a .iox.txt file and return a pulse table
-- [**parse_ipsc.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_ipsc.m): Finds time of current peak from a an inhibitory current trace (must be negative current)
+- [**parse_ipsc.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_ipsc.m): Finds time of current start and peak from a an inhibitory post-synaptic current trace (must be negative current)
 - [**parse_laser_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_laser_trace.m): Parses laser traces
 - [**parse_lts.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_lts.m): Finds, plots and classifies the most likely low-threshold spike (LTS) candidate in a voltage trace
 - [**parse_multiunit.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_multiunit.m): Parses multiunit recordings: detect spikes, computes spike histograms and autocorrelograms

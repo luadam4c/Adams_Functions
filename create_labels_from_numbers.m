@@ -51,6 +51,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_current_family.m
+%       cd/parse_ipsc.m
 %       cd/parse_lts.m
 %       cd/plot_chevron.m
 %       cd/plot_histogram.m

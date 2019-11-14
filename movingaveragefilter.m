@@ -3,14 +3,17 @@ function vecsFilt = movingaveragefilter (vecs, varargin)
 % Usage: vecsFilt = movingaveragefilter (vecs, filtWidth, si, varargin)
 % Explanation:
 %       Same as smooth() but with option of using a window in time units
+%
 % Example(s):
 %       movingaveragefilter(magic(5))
 %       movingaveragefilter(magic(5), 10, 10)
 %       movingaveragefilter(magic(5), 10, 2)
 %       movingaveragefilter(magic(5), 10, 1)
+%
 % Outputs:
 %       vecsFilt    - filtered vector(s)
 %                   specified as a numeric array
+%
 % Arguments:
 %       vecs        - vector(s) to moving average filter
 %                   must be a numeric array
@@ -31,6 +34,7 @@ function vecsFilt = movingaveragefilter (vecs, varargin)
 %
 % Used by:
 %       cd/compute_autocorrelogram.m
+%       cd/parse_ipsc.m
 %       cd/parse_lts.m
 
 % File History:

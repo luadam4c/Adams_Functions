@@ -69,7 +69,6 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %       cd/m3ha_xolotl_plot.m
 %       cd/match_time_info.m
 %       cd/parse_gas_trace.m
-%       cd/parse_lts.m
 %       cd/parse_multiunit.m
 %       cd/plot_traces_spike2_mat.m
 

@@ -1,12 +1,19 @@
 function [valJump, idxJumpStart] = find_first_jump (vector, varargin)
 %% Finds the index of the first jump in a time series
 % Usage: [valJump, idxJump] = find_first_jump (vector, varargin)
+% Explanation:
+%       TODO
+%
+% Examples:
+%       TODO
+%
 % Outputs:
 %       valJump     - value of the jump 
 %                       (large difference between consecutive points)
 %                   specified as a numeric scalar
 %       idxJumpStart - starting index of the jump
 %                   specified as a positive integer scalar
+%
 % Arguments:    
 %       vector      - a time series
 %                   must be a numeric vector

@@ -84,6 +84,7 @@ function varargout = find_in_strings (cand, strList, varargin)
 %       cd/m3ha_network_single_neuron.m
 %       cd/m3ha_network_tuning_curves.m
 %       cd/parse_iox.m
+%       cd/parse_lts.m
 %       cd/parse_spike2_mat.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_swd_raster.m

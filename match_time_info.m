@@ -3,9 +3,12 @@ function varargout = match_time_info (tVecs, varargin)
 % Usage: [tVecs, siMs, nSamples] = match_time_info (tVecs, siMs, nSamples, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       tVecs = match_time_info([], 0.1, 10)
 %       [~, siMs, nSamples] = match_time_info(1:10)
+%       [tVecs, siMs, nSamples] = match_time_info(tVecs, siMs, nSamples, 'TimeUnits', 'ms')
+%
 % Outputs:
 %       tVecs       - time vector(s)
 %                   specified as a numeric array 
@@ -42,6 +45,8 @@ function varargout = match_time_info (tVecs, varargin)
 % Used by:
 %       cd/create_synced_movie_trace_plot_movie.m
 %       cd/parse_current_family.m
+%       cd/parse_ipsc.m
+%       cd/parse_lts.m
 %       cd/parse_multiunit.m
 
 % File History:
