@@ -7,10 +7,11 @@ function varargout = parse_lts (vVec0s, siMs, varargin)
 % Examples:
 %       sweepName = 'C101210_0006_3';
 %       matFilesDir = '/media/adamX/m3ha/data_dclamp/take4/matfiles';
-%       [data, sweepInfo] = m3ha_import_raw_traces(sweepName, 'Directory', matFilesDir)
+%       [data, sweepInfo] = m3ha_import_raw_traces(sweepName, 'Directory', matFilesDir);
 %       vVecs = extract_columns(data, 2);
 %       siMs = sweepInfo.siMs;
-%       [parsedParams, parsedData] = parse_lts(vVecs, siMs);
+%       [parsedParams, parsedData] = parse_lts(vVecs, siMs, 'StimStartMs', 1000);
+%       [parsedParams, parsedData] = parse_lts(vVecs, siMs, 'StimStartMs', 1000, 'PlotFlag', true);
 %
 % Outputs: 
 %       parsedParams    - a table containing the parsed parameters, 
@@ -1146,6 +1147,10 @@ parsedData.indSearch = indSearch;
 
 %% Plot figures
 if plotFlag
+    % Turn off legend autoupdate for back compatibility
+    defaultLegendAutoUpdateOrig = get(groot, 'defaultLegendAutoUpdate');
+    set(groot, 'defaultLegendAutoUpdate', 'off');
+
     % Check if needed outSubDirs exist in outFolder
     check_subdir(outFolder, outSubDirs);
 
@@ -1551,6 +1556,9 @@ if plotFlag
     saveas(h, figname);
     hold off;
     % close(h);
+
+    % Reset default legend autoupdate
+    set(groot, 'defaultLegendAutoUpdate', defaultLegendAutoUpdateOrig);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -45,11 +45,12 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'homeDirectory', homeDirectoryDefault, ...
+addParameter(iP, 'HomeDirectory', homeDirectoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
+homeDirectory = iP.Results.HomeDirectory;
 
 %% Preparation
 % Decide on the home directory
