@@ -78,6 +78,7 @@ function [allParsedParamsTable, allParsedDataTable, ...
 % 2019-04-29 - Added saveMatFlag as an optional parameter
 % 2019-05-20 - Added saveSheetFlag as an optional parameter
 % 2019-08-23 Now passes unmatched optional arguments to parse_abf
+% 2019-11-14 Now sets 'AsArray' to be true for struct2table
 
 %% Hard-coded parameters
 tableSuffix = '_abfParams';
@@ -195,7 +196,8 @@ end
 
 % Convert to a table
 [allParsedParamsTable, allParsedDataTable] = ...
-    argfun(@struct2table, allParsedParamsStruct, allParsedDataStruct);
+    argfun(@(x) struct2table(x, 'AsArray', true), ...
+            allParsedParamsStruct, allParsedDataStruct);
 
 %% Save results
 if saveSheetFlag
