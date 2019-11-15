@@ -42,6 +42,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %       cd/match_format_vectors.m
 %       cd/match_time_info.m
 %       cd/parse_current_family.m
+%       cd/parse_ipsc.m
 %       cd/parse_spike2_mat.m
 %       cd/plot_struct.m
 %       cd/xolotl_add_current_injection.m

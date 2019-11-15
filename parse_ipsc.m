@@ -40,9 +40,11 @@ function varargout = parse_ipsc (iVecs, varargin)
 %                   - 'OutFolder': directory to place outputs
 %                   must be a string scalar or a character vector
 %                   default == pwd
-%                   - 'FileBase': base of filename (without extension)
-%                   must be a string scalar or a character vector
-%                   default == 'unnamed'
+%                   - 'FileBase': base of file name (without extension) 
+%                                   corresponding to each vector
+%                   must be a character vector, a string vector 
+%                       or a cell array of character vectors
+%                   default == 'unnamed_1', 'unnamed_2', ...
 %                   - 'StimStartWindowMs': window (ms) in which 
 %                                               IPSC start would lie
 %                   must be a positive scalar
@@ -63,15 +65,17 @@ function varargout = parse_ipsc (iVecs, varargin)
 %                   must be a numeric array with same length as vVec0
 %                   default == [] (not provided)
 %
-% Requires:    
+% Requires:
+%       cd/argfun.m
 %       cd/check_subdir.m
 %       cd/compute_combined_trace.m
-%       cd/create_labels_from_numbers.m
+%       cd/decide_on_filebases.m
 %       cd/extract_common_prefix.m
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
 %       cd/find_closest.m
 %       cd/find_window_endpoints.m
+%       cd/match_row_count.m
 %       cd/match_time_info.m
 %       cd/movingaveragefilter.m
 %       cd/set_figure_properties.m
@@ -83,6 +87,7 @@ function varargout = parse_ipsc (iVecs, varargin)
 % File History:
 % 2019-11-13 Adapted from find_IPSC_peak.m and find_istart.m
 % 2019-11-14 Now uses find_closest.m
+% 2019-11-15 Now uses match_row_count.m
 % TODO: Test this function, especially with PlotFlag true
 % 
 
@@ -137,7 +142,9 @@ addParameter(iP, 'PlotFlag', plotFlagDefault, ...
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FileBase', fileBaseDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['FileBase must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 addParameter(iP, 'StimStartWindowMs', stimStartWindowMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'StimStartMs', stimStartMsDefault, ...
@@ -174,10 +181,7 @@ nVectors = count_vectors(iVecs);
 nSamples = count_samples(iVecs);
 
 % Create file bases if not provided
-if isempty(fileBase)
-    fileBase = create_labels_from_numbers(transpose(1:nVectors), ...
-                                            'Prefix', 'unnamed_');
-end
+fileBase = decide_on_filebases(fileBase, nVectors);
 
 % Extract common prefix
 commonPrefix = extract_common_prefix(fileBase);
@@ -319,9 +323,18 @@ peakTimeMs = extract_elements(tVecs, 'specific', 'Index', idxPeak);
 peakDelayMs = peakTimeMs - stimStartMs;
 
 %% Organize results
+% Match row counts
+[idxStimStart, stimStartMs, idxPeak, ...
+        peakDelayMs, peakTimeMs, peakAmplitude] = ...
+    argfun(@(x) match_row_count(x, nVectors), ...
+            idxStimStart, stimStartMs, idxPeak, ...
+            peakDelayMs, peakTimeMs, peakAmplitude);
+
+% Put parameters in a table
 parsedParams = table(idxStimStart, stimStartMs, idxPeak, peakDelayMs, ...
                     peakTimeMs, peakAmplitude);
 
+% Put data in a structure
 parsedData.tVecs = tVecs;
 parsedData.iVecs = iVecs;
 if stimStartDetected

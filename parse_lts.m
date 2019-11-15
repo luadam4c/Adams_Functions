@@ -55,9 +55,11 @@ function varargout = parse_lts (vVec0s, varargin)
 %                   - 'OutFolder': directory to place outputs
 %                   must be a string scalar or a character vector
 %                   default == pwd
-%                   - 'FileBase': base of filename (without extension)
-%                   must be a string scalar or a character vector
-%                   default == 'unnamed'
+%                   - 'FileBase': base of filename (without extension) 
+%                                   corresponding to each vector
+%                   must be a character vector, a string vector 
+%                       or a cell array of character vectors
+%                   default == 'unnamed_1', 'unnamed_2', ...
 %                   - 'StimStartMs': time of stimulation start (ms)
 %                   must be a positive scalar
 %                   default == find_first_jump(vVec0s)
@@ -98,7 +100,7 @@ function varargout = parse_lts (vVec0s, varargin)
 %       cd/check_subdir.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
-%       cd/create_labels_from_numbers.m
+%       cd/decide_on_filebases.m
 %       cd/extract_common_prefix.m
 %       cd/extract_elements.m
 %       cd/find_first_jump.m
@@ -189,7 +191,9 @@ addParameter(iP, 'PlotFlag', plotFlagDefault, ...
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FileBase', fileBaseDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['FileBase must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 addParameter(iP, 'StimStartMs', stimStartMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'MinPeakDelayMs', minPeakDelayMsDefault, ...
@@ -244,10 +248,7 @@ nVectors = count_vectors(vVec0s);
 nSamples = count_samples(vVec0s);
 
 % Create file bases if not provided
-if isempty(fileBase)
-    fileBase = create_labels_from_numbers(transpose(1:nVectors), ...
-                                            'Prefix', 'unnamed_');
-end
+fileBase = decide_on_filebases(fileBase, nVectors);
 
 % Extract common prefix
 commonPrefix = extract_common_prefix(fileBase);

@@ -39,6 +39,11 @@ function [errorStruct, hFig, simData] = ...
 %                   - 'OutFolder': the directory where outputs will be placed
 %                   must be a string scalar or a character vector
 %                   default == pwd
+%                   - 'FileBase': base of filename (without extension) 
+%                                   corresponding to each vector
+%                   must be a character vector, a string vector 
+%                       or a cell array of character vectors
+%                   default == 'unnamed_1', 'unnamed_2', ...
 %                   - 'DebugFlag': whether debugging
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -245,6 +250,7 @@ function [errorStruct, hFig, simData] = ...
 %       cd/compute_single_neuron_errors.m
 %       cd/create_colormap.m
 %       cd/decide_on_colormap.m
+%       cd/decide_on_filebases.m
 %       cd/extract_columns.m
 %       cd/extract_subvectors.m
 %       cd/find_IPSC_peak.m
@@ -437,6 +443,7 @@ nSweepsDefault = [];            % set later
 prefixDefault = '';             % prepend nothing to file names by default
 outFolderDefault = pwd;         % use the present working directory for outputs
                                 %   by default
+fileBaseDefault = {};           % set later
 debugFlagDefault = false;       % not in debug mode by default
 customHoldCurrentFlagDefault = 0; % don't use custom hold current by default
 onHpcFlagDefault = false;       % not on a high performance computing
@@ -524,6 +531,10 @@ addParameter(iP, 'Prefix', prefixDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FileBase', fileBaseDefault, ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['FileBase must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 addParameter(iP, 'DebugFlag', debugFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'CustomHoldCurrentFlag', customHoldCurrentFlagDefault, ...
@@ -645,6 +656,7 @@ simMode = validatestring(iP.Results.SimMode, validSimModes);
 nSweepsUser = iP.Results.NSweeps;
 prefix = iP.Results.Prefix;
 outFolder = iP.Results.OutFolder;
+fileBase = iP.Results.FileBase;
 debugFlag = iP.Results.DebugFlag;
 customHoldCurrentFlag = iP.Results.CustomHoldCurrentFlag;
 onHpcFlag = iP.Results.OnHpcFlag;
@@ -744,6 +756,9 @@ end
 
 % Decide on the number of sweeps to run and compare
 nSweeps = decide_on_nSweeps(realData, nSweepsUser);
+
+% Create file bases if not provided
+fileBase = decide_on_filebases(fileBase, nSweeps);
 
 % Decide on x-axis limits for plotting
 if plotFlag
@@ -1042,7 +1057,8 @@ if ~isempty(realData)
                     'BaseWindow', baseWindow, 'BaseNoise', baseNoise, ...
                     'NormalizeError', normalize2InitErrFlag, ...
                     'InitSwpError', initSwpError, 'IpscTime', ipscTime, ...
-                    'IpscPeakWindow', ipscPeakWindow);
+                    'IpscPeakWindow', ipscPeakWindow, ...
+                    'FileBase', fileBase);
 
     % Extract just the sweep errors
     swpErrors = errorStruct.swpErrors;

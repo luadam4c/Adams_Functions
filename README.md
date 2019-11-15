@@ -160,6 +160,7 @@ There are 1 MATLAB scripts in this directory:
 - [**create_waveform_train.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_waveform_train.m): Creates a waveform train from a waveform, a frequency, and a total duration
 - [**crosscorr_profile.m**](https://github.com/blabuva/Adams_Functions/blob/master/crosscorr_profile.m): data: each channel is a column
 - [**decide_on_colormap.m**](https://github.com/blabuva/Adams_Functions/blob/master/decide_on_colormap.m): Decides on the color map to use
+- [**decide_on_filebases.m**](https://github.com/blabuva/Adams_Functions/blob/master/decide_on_filebases.m): Create filebases if empty, or extract file bases
 - [**decide_on_parpool.m**](https://github.com/blabuva/Adams_Functions/blob/master/decide_on_parpool.m): Creates or modifies a parallel pool object
 - [**decide_on_video_object.m**](https://github.com/blabuva/Adams_Functions/blob/master/decide_on_video_object.m): Decide on the video object given path or object
 - [**detect_spikes_current_clamp.m**](https://github.com/blabuva/Adams_Functions/blob/master/detect_spikes_current_clamp.m): Detects spikes from a current clamp recording

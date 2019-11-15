@@ -48,11 +48,10 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/create_row_labels.m
 %       cd/create_simulation_output_filenames.m
 %       cd/create_synced_movie_trace_plot_movie.m
+%       cd/decide_on_filebases.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_current_family.m
-%       cd/parse_ipsc.m
-%       cd/parse_lts.m
 %       cd/plot_chevron.m
 %       cd/plot_histogram.m
 %       cd/plot_raster.m

@@ -57,6 +57,11 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %                                       the peak delay is computed
 %                   must be a positive scalar
 %                   default == detected
+%                   - 'FileBase': base of filename (without extension) 
+%                                   corresponding to each vector
+%                   must be a character vector, a string vector 
+%                       or a cell array of character vectors
+%                   default == 'unnamed_1', 'unnamed_2', ...
 %
 % Requires:
 %       cd/argfun.m
@@ -65,6 +70,7 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %       cd/count_samples.m
 %       cd/count_vectors.m
 %       cd/create_time_vectors.m
+%       cd/decide_on_filebases.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_vector.m
@@ -99,6 +105,7 @@ normalizeErrorDefault = false;  % don't normalize errors by default
 initSwpErrorDefault = [];       % no initial error values by default
 ipscTimeDefault = [];           % set later
 ipscPeakWindowDefault = [];     % set later
+fileBaseDefault = {};           % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -158,6 +165,10 @@ addParameter(iP, 'IpscTime', ipscTimeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'IpscPeakWindow', ipscPeakWindowDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'FileBase', fileBaseDefault, ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['FileBase must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 
 % Read from the Input Parser
 parse(iP, vSim, vReal, varargin{:});
@@ -173,6 +184,7 @@ normalizeError = iP.Results.NormalizeError;
 initSwpError = iP.Results.InitSwpError;
 ipscTime = iP.Results.IpscTime;
 ipscPeakWindow = iP.Results.IpscPeakWindow;
+fileBase = iP.Results.FileBase;
 
 %% Preparation
 % Count the number of samples
@@ -182,6 +194,7 @@ nSamples = count_samples(vSim);
 if isempty(tBoth)
     tBoth = create_time_vectors(nSamples, 'TimeUnits', 'ms');
 end
+
 
 % Compute default windows, noise and weights
 [baseWindow, fitWindow, baseNoise, sweepWeights] = ...
@@ -196,6 +209,9 @@ end
 
 % Count the number of sweeps
 nSweeps = count_vectors(vSim);
+
+% Create file bases if not provided
+fileBase = decide_on_filebases(fileBase, nSweeps);
 
 % Match row counts for sweep-dependent variables with the number of sweeps
 [fitWindow, vReal, tBoth, iSim, iReal] = ...
@@ -235,7 +251,7 @@ switch errorMode
     case 'Sweep&LTS'
         % Analyze IPSC traces
         [ipscTableSim, ipscTableReal] = ...
-            argfun(@(x) parse_ipsc(x, 'tVecs', tBoth, ...
+            argfun(@(x) parse_ipsc(x, 'tVecs', tBoth, 'FileBase', fileBase, ...
                                     'StimStartMs', ipscTime, ...
                                     'PeakWindowMs', ipscPeakWindow), ...
                     iSim, iReal);
@@ -246,9 +262,11 @@ switch errorMode
 
         % Find and compute low-threshold spike features
         ltsFeaturesSim = parse_lts(vSim, 'MinPeakDelayMs', ipscDelaySim, ...
-                            'StimStartMs', ipscTime, 'tVecs', tBoth);
+                            'StimStartMs', ipscTime, 'tVecs', tBoth, ...
+                            'FileBase', fileBase);
         ltsFeaturesReal = parse_lts(vReal, 'MinPeakDelayMs', ipscDelayReal, ...
-                            'StimStartMs', ipscTime, 'tVecs', tBoth);
+                            'StimStartMs', ipscTime, 'tVecs', tBoth, ...
+                            'FileBase', fileBase);
 
         % TODO: compute_lts_errors.m
         % ltsErrors = compute_lts_errors(ltsFeaturesSim, ltsFeaturesReal, ...
