@@ -51,7 +51,7 @@ logSwpWeightsFlag = outparams.logSwpWeightsFlag;
 logLtsWeightsFlag = outparams.logLtsWeightsFlag;
 logSwpEndsFlag = outparams.logSwpEndsFlag;
 saveParamsFlag = outparams.saveParamsFlag;
-outFolderName = outparams.outFolderName;
+outFolderName = outparams.outFolder;
 prefix = outparams.prefix;
 simplexNum = outparams.simplexNum;
 fitWindowCpr = outparams.fitWindowCpr;
@@ -366,13 +366,13 @@ for k = 1:numel(ltsErrorFields)
     end
 end
 
-pfilename = fullfile(outparams.outFolderName, [outparams.prefix, '.p']);
+pfilename = fullfile(outparams.outFolder, [outparams.prefix, '.p']);
 %% Save parameters into a p file
 currentparams = [neuronParamNames', num2cell(neuronParamValues'), ...
     num2cell(neuronParamLowerBounds'), num2cell(neuronParamUpperBounds')];
 save(pfilename, 'currentparams');
 
-pfilename = fullfile(outparams.outFolderName, ...
+pfilename = fullfile(outparams.outFolder, ...
     [outparams.prefix, ...
     '_simplexrun_', num2str(outparams.simplexNum), ...
     '_iter_', num2str(simplexOut.ctIterations), '.p']);

@@ -675,6 +675,7 @@ baseNoiseCpr = iP.Results.BaseNoiseCpr;
 baseNoiseIpscr = iP.Results.BaseNoiseIpscr;
 sweepWeightsCpr = iP.Results.SweepWeightsCpr;
 sweepWeightsIpscr = iP.Results.SweepWeightsIpscr;
+ipscTime = iP.Results.IpscTime;
 
 %% Preparation
 % Initialize outputs
@@ -1016,7 +1017,7 @@ if ~isempty(realData)
                     'FitWindow', fitWindow, 'SweepWeights', sweepWeights, ...
                     'BaseWindow', baseWindow, 'BaseNoise', baseNoise, ...
                     'NormalizeError', normalize2InitErrFlag, ...
-                    'InitSwpError', initSwpError);
+                    'InitSwpError', initSwpError, 'StimStartMs', ipscTime);
 
     % Extract just the sweep errors
     swpErrors = errorStruct.swpErrors;

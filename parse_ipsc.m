@@ -141,7 +141,7 @@ addParameter(iP, 'FileBase', fileBaseDefault, ...
 addParameter(iP, 'StimStartWindowMs', stimStartWindowMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'StimStartMs', stimStartMsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'PeakWindowMs', peakWindowMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'tVecs', tVecsDefault, ...
@@ -290,7 +290,11 @@ end
 
 % Decide on the window to look for IPSC peak
 if isempty(peakWindowMs)
-    peakWindowMs = transpose([stimStartMs, tEnd]);
+    if ~isnan(stimStartMs)
+        peakWindowMs = transpose([stimStartMs, tEnd]);
+    else
+        peakWindowMs = transpose([tBase, tEnd]);
+    end
 end
 
 % Find the end points for peakWindowMs

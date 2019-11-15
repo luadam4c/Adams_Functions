@@ -207,7 +207,7 @@ ltsErrorFlag = outparams.ltsErrorFlag;
 showSimplexHistoryFlag = outparams.showSimplexHistoryFlag;
 autoLoggerFlag = outparams.autoLoggerFlag;
 
-outFolderName = outparams.outFolderName;
+outFolderName = outparams.outFolder;
 prefix = outparams.prefix;
 simplexNum = outparams.simplexNum;
 simMode = outparams.simMode;
@@ -866,7 +866,8 @@ fixedParams.prefix = [fixedParams.prefix, prefixMod];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [err, ctEvals] = eval_with_bounds(p, bounds, pIsLog, funcEvalsOld, fixedParams)
+function [err, ctEvals] = eval_with_bounds(p, bounds, pIsLog, ...
+                                            funcEvalsOld, fixedParams)
 %% Update neuronParamsTable and find associated errors
 
 % Initialize a table from the previously stored neuronParamsTable
@@ -1191,7 +1192,7 @@ end
 
 function [optimizedparams, simplexOut] = m3ha_fminsearch3(realData, outparams, outFolderName, tolfun)
 
-%err0 = run_neuron_once_2comp(realData,outparams,outFolderName);
+%err0 = run_neuron_once_2comp(realData,outparams.outFolder);
 
 % outparams.neuronparams = reshape(xtransform(x,bounds),[],1);
 paramnames = outparams.neuronparamnames;
@@ -1373,7 +1374,7 @@ simplexOut = update_simplexOut(simplexOut, how, ctIterations, ctEvals, fv, v, bo
 simplexOut.maxErrorChange = simplexOut.relativeErrorTolerance * 2;    % initialize to greater than simplexOut.tolf
 simplexOut.maxParamChange = simplexOut.relativeParamTolerance * 2;    % initialize to greater than simplexOut.tolx
 
-save(fullfile(outparams.outFolderName, ...
+save(fullfile(outparams.outFolder, ...
         [outparams.prefix, '_simplexrun_', num2str(outparams.simplexNum), '.mat']), ...
         'bestparams', 'simplexOut', 'outparams', '-v7.3');
 
@@ -1420,7 +1421,7 @@ figure(fig);
 
 bestparams = [outparams.neuronparamnames', num2cell(simplexOut.neuronParamsTable'), ...
     num2cell(outparams.neuronparams_min'), num2cell(outparams.neuronparams_max')];
-save(fullfile(outparams.outFolderName, [outparams.prefix, '_best.p']), 'bestparams');
+save(fullfile(outparams.outFolder, [outparams.prefix, '_best.p']), 'bestparams');
 
 %% Add directories to search path for required functions
 if exist('/home/Matlab/', 'dir') == 7
