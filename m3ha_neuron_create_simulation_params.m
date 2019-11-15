@@ -121,6 +121,13 @@ simParamsFromArguments = {'simMode', 'outFilePath', 'tstop' ...
                             'gababTfallFast', 'gababTfallSlow', ...
                             'gababWeight', 'customHoldCurrentFlag', ...
                             'holdCurrent', 'holdCurrentNoise'};
+
+% The following must be consistent with both dclampDataExtractor.m & ...
+%   singleneuron4compgabab.hoc
+cprWinOrig = [0, 360];          % current pulse response window (ms), original
+ipscrWinOrig = [0, 8000];       % IPSC response window (ms), original
+
+% The following must be consistent with singleneuron4compgabab.hoc
 timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
                                 %   of simulations are stabilized
 
@@ -130,8 +137,8 @@ outFolderDefault = pwd;         % use the present working directory for outputs
                                 %   by default
 saveParamsFlagDefault = true;   % save simulation parameters by default
 jitterFlagDefault = false;      % no jitter by default
-cprWindowDefault = [0, 360] + timeToStabilize;      % (ms)
-ipscrWindowDefault = [0, 8000] + timeToStabilize;   % (ms)
+cprWindowDefault = cprWinOrig + timeToStabilize;
+ipscrWindowDefault = ipscrWinOrig + timeToStabilize;
 nSimsDefault = 1;               % number of simulations by default
 
 %% Default values for simulation parameters

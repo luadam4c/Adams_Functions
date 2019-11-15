@@ -139,11 +139,11 @@ addParameter(iP, 'OutFolder', outFolderDefault, ...
 addParameter(iP, 'FileBase', fileBaseDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'StimStartWindowMs', stimStartWindowMsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'StimStartMs', stimStartMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'PeakWindowMs', peakWindowMsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'tVecs', tVecsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['tVecs must be either a numeric array', ...
@@ -402,15 +402,6 @@ end
 
 %{
 OLD CODE:
-
-IPSC_ind = round(ipscpwin(1)/siMs);     % Assume no IPSC offset % NOT ROBUST
-ind = IPSC_ind:round(ipscpwin(2)/siMs);     % indices of interest   % NOT ROBUST
-
-    [peakAmplitude, itemp1] = min(iVec0s_part1);    % peakAmplitude is the amplitude of ipeak
-    idxPeak = (ind(1) - 1) + itemp1;      % index of ipeak relative to iVecs
-    peakTimeMs = tVec0(idxPeak);          % time of ipeak in ms
-
-    close(fig);
 
 if isempty(stimStartWindowMs)
     if ~isempty(stimStartMs)

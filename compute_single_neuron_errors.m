@@ -52,7 +52,7 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %                   - 'InitSwpError': initial sweep errors
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == []
-%                   - 'StimStartMs': current stimulation start time (ms), 
+%                   - 'IpscTime': current stimulation start time (ms), 
 %                           Note: this is the time relative to which 
 %                                       the peak delay is computed
 %                   must be a positive scalar
@@ -80,7 +80,7 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 % File History:
 % 2018-10-24 Adapted from code in run_neuron_once_4compgabab.m
 % 2018-10-28 Now uses extract_subvectors.m
-% 2019-11-15 TODO: Add 'StimStartMs' as an optional argument
+% 2019-11-15 TODO: Add 'IpscTime' as an optional argument
 % 
 
 %% Hard-coded parameters
@@ -96,8 +96,9 @@ fitWindowDefault = [];          % set later
 baseNoiseDefault = [];          % set later
 sweepWeightsDefault = [];       % set later
 normalizeErrorDefault = false;  % don't normalize errors by default
-initSwpErrorDefault = [];   % no initial error values by default
-stimStartMsDefault = [];        % set later
+initSwpErrorDefault = [];       % no initial error values by default
+ipscTimeDefault = [];           % set later
+ipscPeakWindowDefault = [];     % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -153,8 +154,10 @@ addParameter(iP, 'NormalizeError', normalizeErrorDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'InitSwpError', initSwpErrorDefault, ...
     @(x) assert(isnumericvector(x), 'InitSwpError must be a numeric vector!'));
-addParameter(iP, 'StimStartMs', stimStartMsDefault, ...
+addParameter(iP, 'IpscTime', ipscTimeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'IpscPeakWindow', ipscPeakWindowDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
 
 % Read from the Input Parser
 parse(iP, vSim, vReal, varargin{:});
@@ -168,7 +171,8 @@ baseNoise = iP.Results.BaseNoise;
 sweepWeights = iP.Results.SweepWeights;
 normalizeError = iP.Results.NormalizeError;
 initSwpError = iP.Results.InitSwpError;
-stimStartMs = iP.Results.StimStartMs;
+ipscTime = iP.Results.IpscTime;
+ipscPeakWindow = iP.Results.IpscPeakWindow;
 
 %% Preparation
 % Count the number of samples
@@ -230,20 +234,21 @@ switch errorMode
         ltsErrors.avgLtsError = NaN;
     case 'Sweep&LTS'
         % Analyze IPSC traces
-        ipscTableSim = parse_ipsc(iSim, 'StimStartMs', stimStartMs, ...
-                                'tVecs', tBoth);
-        ipscTableReal = parse_ipsc(iReal, 'StimStartMs', stimStartMs, ...
-                                'tVecs', tBoth);
+        [ipscTableSim, ipscTableReal] = ...
+            argfun(@(x) parse_ipsc(x, 'tVecs', tBoth, ...
+                                    'StimStartMs', ipscTime, ...
+                                    'PeakWindowMs', ipscPeakWindow), ...
+                    iSim, iReal);
 
         % Find the peak delay of the IPSCs
-        peakDelayMsSim = ipscTableSim.peakDelayMs;
-        peakDelayMsReal = ipscTableReal.peakDelayMs;
+        [ipscDelaySim, ipscDelayReal] = ...
+            argfun(@(x) x.peakDelayMs, ipscTableSim, ipscTableReal);
 
         % Find and compute low-threshold spike features
-        ltsFeaturesSim = parse_lts(vSim, 'StimStartMs', stimStartMs, ...
-                            'MinPeakDelayMs', peakDelayMsSim, 'tVecs', tBoth);
-        ltsFeaturesReal = parse_lts(vReal, 'StimStartMs', stimStartMs, ...
-                            'MinPeakDelayMs', peakDelayMsReal, 'tVecs', tBoth);
+        ltsFeaturesSim = parse_lts(vSim, 'MinPeakDelayMs', ipscDelaySim, ...
+                            'StimStartMs', ipscTime, 'tVecs', tBoth);
+        ltsFeaturesReal = parse_lts(vReal, 'MinPeakDelayMs', ipscDelayReal, ...
+                            'StimStartMs', ipscTime, 'tVecs', tBoth);
 
         % TODO: compute_lts_errors.m
         % ltsErrors = compute_lts_errors(ltsFeaturesSim, ltsFeaturesReal, ...

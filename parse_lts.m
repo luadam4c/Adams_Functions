@@ -73,8 +73,9 @@ function varargout = parse_lts (vVec0s, varargin)
 %                   default == computed from the range [0, stimStartMs]
 %                   - 'SearchWindowMs': window to search for LTS (ms)
 %                   must be within range of tVec0
-%                   default == [sStimStartMs + minPeakDelayMs, 
-%                               tVec0(end) - medfiltWindowMs], where medfiltWindowMs is 30 ms
+%                   default == [StimStartMs + minPeakDelayMs, 
+%                               tVec0(end) - medfiltWindowMs], 
+%                                   where medfiltWindowMs is 30 ms
 %                   - 'tVec0s': original time vector(s)
 %                   must be a numeric array or a cell array of numeric arrays
 %                   default == created from siMs and vVec0s
@@ -151,7 +152,7 @@ fileBaseDefault = {};           % set later
 stimStartMsDefault = [];        % set later
 minPeakDelayMsDefault = 0;
 noiseWindowMsORmaxNoiseDefault = [];    % set later
-searchWindowDefault = [];       % set later
+searchWindowMsDefault = [];       % set later
 tVec0sDefault = [];             % set later
 tVec2sDefault = [];             % set later
 vVec1sDefault = [];             % set later
@@ -195,7 +196,7 @@ addParameter(iP, 'MinPeakDelayMs', minPeakDelayMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'NoiseWindowMsOrMaxNoise', noiseWindowMsORmaxNoiseDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
-addParameter(iP, 'SearchWindow', searchWindowDefault, ...
+addParameter(iP, 'SearchWindowMs', searchWindowMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'tVec0s', tVec0sDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
@@ -228,7 +229,7 @@ fileBase = iP.Results.FileBase;
 stimStartMs = iP.Results.StimStartMs;
 minPeakDelayMs = iP.Results.MinPeakDelayMs;
 noiseWindowMsORmaxNoise = iP.Results.NoiseWindowMsOrMaxNoise;
-searchWindow = iP.Results.SearchWindow;
+searchWindowMs = iP.Results.SearchWindowMs;
 tVec0s = iP.Results.tVec0s;
 tVec2s = iP.Results.tVec2s;
 vVec1s = iP.Results.vVec1s;
@@ -317,19 +318,19 @@ minPeakTimeMs = stimStartMs + minPeakDelayMs;
 
 % Force vectors to be a column cell array
 [tVec0s, tVec2s, vVec0s, vVec1s, vVec2s, vVec3s, ...
-    noiseWindowMs, searchWindow, fileBase] = ...
+    noiseWindowMs, searchWindowMs, fileBase] = ...
     argfun(@force_column_cell, ...
             tVec0s, tVec2s, vVec0s, vVec1s, vVec2s, vVec3s, ...
-            noiseWindowMs, searchWindow, fileBase);
+            noiseWindowMs, searchWindowMs, fileBase);
 
 % Make sure all parameters are column vectors with the same number of elements
 [siMs, maxNoise, stimStartMs, minPeakTimeMs, ...
     tVec0s, tVec2s, vVec0s, vVec1s, vVec2s, vVec3s, ...
-    noiseWindowMs, searchWindow, fileBase] = ...
+    noiseWindowMs, searchWindowMs, fileBase] = ...
     argfun(@(x) match_dimensions(x, [nVectors, 1]), ...
             siMs, maxNoise, stimStartMs, minPeakTimeMs, ...
             tVec0s, tVec2s, vVec0s, vVec1s, vVec2s, vVec3s, ...
-            noiseWindowMs, searchWindow, fileBase);
+            noiseWindowMs, searchWindowMs, fileBase);
 
 % Parse all of them in a parfor loop
 parsedParamsCell = cell(nVectors, 1);
@@ -341,7 +342,7 @@ for iVec = 1:nVectors
             computeMaxNoiseFlag, outFolder, ...
             tVec0s{iVec}, tVec2s{iVec}, vVec0s{iVec}, ...
             vVec1s{iVec}, vVec2s{iVec}, vVec3s{iVec}, ...
-            noiseWindowMs{iVec}, searchWindow{iVec}, fileBase{iVec}, ...
+            noiseWindowMs{iVec}, searchWindowMs{iVec}, fileBase{iVec}, ...
             siMs(iVec), maxNoise(iVec), stimStartMs(iVec), minPeakTimeMs(iVec), ...
             fileBasesToOverride, idxMissedLtsByOrder, idxMissedLtsByShape, ...
             idxSpikesPerBurstIncorrect, idxLooksLikeMissedLts, ...
@@ -371,7 +372,7 @@ function [parsedParams, parsedData] = ...
         parse_lts_helper(verbose, plotFlag, computeActVholdFlag, ...
             computeMaxNoiseFlag, outFolder, ...
             tVec0, tVec2, vVec0, vVec1, vVec2, vVec3, ...
-            noiseWindowMs, searchWindow, fileBase, ...
+            noiseWindowMs, searchWindowMs, fileBase, ...
             siMs, maxNoise, stimStartMs, minPeakTimeMs, ...
             fileBasesToOverride, idxMissedLtsByOrder, idxMissedLtsByShape, ...
             idxSpikesPerBurstIncorrect, idxLooksLikeMissedLts, ...
@@ -389,8 +390,8 @@ if ~isequal(numel(tVec0), numel(vVec0))
 end
 
 % Create default search window
-if isempty(searchWindow)
-    searchWindow = [minPeakTimeMs, tVec0(end) - medfiltWindowMs];    
+if isempty(searchWindowMs)
+    searchWindowMs = [minPeakTimeMs, tVec0(end) - medfiltWindowMs];    
 end
 
 % Display message
@@ -430,9 +431,9 @@ idxMinPeakTime = find(tVec0 >= minPeakTimeMs, 1);
 
 % Indices for searching for LTS
 %   Note: first index for LTS search must be after current peak
-idxSearchBegin = find(tVec0 >= searchWindow(1), 1);
+idxSearchBegin = find(tVec0 >= searchWindowMs(1), 1);
 idxSearchBegin = max(idxSearchBegin, idxMinPeakTime);
-idxSearchEnd = find(tVec0 <= searchWindow(2), 1, 'last'); 
+idxSearchEnd = find(tVec0 <= searchWindowMs(2), 1, 'last'); 
 
 % Indices for calculating maxNoise
 if computeMaxNoiseFlag
@@ -1301,7 +1302,7 @@ if plotFlag
     figure(h);
 %    ylim([-120 20]);
     plot(tVec0, vVec1, 'g-', 'LineWidth', 1);
-    xlimits = searchWindow;
+    xlimits = searchWindowMs;
     xlim(xlimits);
     ylim([-100 -40]);            % Fix y-axis to determine whether the trace is good for fitting
     %% TODO: Fix the legend: Label the plots and use 'Displayname' and legend(subset, ...)
@@ -1324,7 +1325,7 @@ if plotFlag
 
     % Plot LTS analysis
     % fprintf('Plotting LTS analysis ...\n');
-    xlimits = searchWindow;
+    xlimits = searchWindowMs;
     h = figure(5001);
     set(h, 'Visible', 'off');
     set(h, 'Name', 'LTS analysis, moving-average-filtered trace');

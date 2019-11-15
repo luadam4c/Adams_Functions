@@ -7,6 +7,8 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 % Example(s):
 %       [i, v] = find_closest(2:9, 5.6)
 %       [i, v] = find_closest(9:-2:1, 4)
+%       [i, v] = find_closest({5:-1:1, 8:-2:0}, 4)
+%       [i, v] = find_closest(5:-1:1, [3.2, 3.8])
 %
 % Outputs:
 %       idxClosest  - index(ices) of the closest value(s)
@@ -29,13 +31,11 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 %                   default == 'round'
 %
 % Requires:
-%       cd/argfun.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
-%       cd/force_column_cell.m
-%       cd/force_column_vector.m
+%       cd/match_format_vector_sets.m
 %
 % Used by:
 %       cd/parse_stim.m
@@ -80,15 +80,15 @@ parse(iP, vecs, target, varargin{:});
 direction = validatestring(iP.Results.Direction, validDirections);
 
 %% Preparation
-% Force as column vectors
-[vecs, target] = argfun(@force_column_vector, vecs, target);
+% Create a cell array
+targetCell = num2cell(target);
 
-% Force as column cell arrays of column vectors
-vecs = force_column_cell(vecs);
+% Match the number of rows
+[vecs, targetCell] = match_format_vector_sets(vecs, targetCell);
 
 %% Do the job
 % Create "time windows"
-windows = transpose([target, target]);
+windows = cellfun(@(x) [x; x], targetCell, 'UniformOutput', false);
 
 % Find endpoints that "include" the target value
 indClosest = find_window_endpoints(windows, vecs, 'BoundaryMode', 'inclusive');
@@ -105,8 +105,8 @@ valsClosest = extract_subvectors(vecs, 'Indices', indClosest);
 indClosest = cellfun(@(x, y) x(y), indClosest, origInd, 'UniformOutput', false);
 
 % Compute the absolute differences
-absDiffValues = cellfun(@(x, y) abs(x - y), num2cell(target), ...
-                    valsClosest, 'UniformOutput', false);
+absDiffValues = cellfun(@(x, y) abs(x - y), targetCell, valsClosest, ...
+                        'UniformOutput', false);
 
 % Choose the endpoint that is "closest"
 switch direction

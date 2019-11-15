@@ -66,7 +66,6 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/extract_columns.m
 %       cd/extract_fields.m
 %       cd/filter_and_extract_pulse_response.m
-%       cd/find_closest.m
 %       cd/find_pulse_endpoints.m
 %       cd/force_row_cell.m
 %       cd/force_column_vector.m

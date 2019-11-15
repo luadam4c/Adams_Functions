@@ -3,15 +3,19 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 % Usage: rmsErrors = compute_rms_error(vec1s, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       rmsErrors1 = compute_rms_error(1:5)
 %       rmsErrors2 = compute_rms_error(1:5, 2:6)
 %       rmsErrors3 = compute_rms_error({1:5, 2:6}, 'Endpoints', [1, 3])
 %       rmsErrors4 = compute_rms_error({1:5, 2:6}, 'Endpoints', {[1, 3], [2, 4]})
 %       rmsErrors5 = compute_rms_error(1:5, 2:6, 'Endpoints', {[1, 3], [2, 4]})
+%
 % Outputs:
-%       rmsErrors   - root mean squared error(s)
+%       rmsErrors   - root mean squared error(s) for each vector
+%                       or between each pair of vectors
 %                   specified as a numeric vector
+%
 % Arguments:
 %       vec1s       - the first set of vector(s)
 %                   Note: If a cell array, each element must be a vector

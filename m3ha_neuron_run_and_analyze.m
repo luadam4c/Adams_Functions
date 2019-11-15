@@ -122,6 +122,9 @@ function [errorStruct, hFig, simData] = ...
 %                   - 'CprWindow': current pulse response window in ms
 %                   must be a numeric vector with 2 elements
 %                   default == [2000, 2360]
+%                   - 'IpscTime': start time of IPSC in ms
+%                   must be a numeric scalar
+%                   default == 1000
 %                   - 'IpscrWindow': IPSC response window in ms
 %                   must be a numeric vector with 2 elements
 %                   default == [2000, 10000]
@@ -371,13 +374,27 @@ function [errorStruct, hFig, simData] = ...
 % 2019-01-14 - Added 'BootstrapCprFlag' as an optional parameter
 % 2019-05-08 - Updated usage of plot_bar.m
 % 2019-10-13 - Updated simulated data column numbers
+% 2019-11-15 - Added 'IpscTime' as an optional parameter
 
 %% Hard-coded parameters
 validSimModes = {'active', 'passive'};
 hocFile = 'singleneuron4compgabab.hoc';
-timeToStabilize = 2000;
 maxRowsWithOneOnly = 8;
 verbose = false;
+
+% The following must be consistent with both dclampDataExtractor.m & ...
+%   singleneuron4compgabab.hoc
+cprWinOrig = [0, 360];          % current pulse response window (ms), original
+ipscTimeOrig = 1000;            % time of IPSC application (ms), original
+ipscrWinOrig = [0, 8000];       % IPSC response window (ms), original
+ipscpWinOrig = [1000, 1300];    % window (ms) in which IPSC reaches peak 
+                                %   amplitude , original
+                                %   Based on observation, IPSCs are 
+                                %   not influenced by LTSs before 1300 ms
+
+% The following must be consistent with singleneuron4compgabab.hoc
+timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
+                                %   of simulations are stabilized
 
 %% Column numbers for recorded data
 %   Note: Must be consistent with ResaveSweeps.m
@@ -447,8 +464,10 @@ plotMarkFlagDefault = true;         % the way Mark wants plots to look
 showSweepsFlagDefault = true;       % whether to show sweep figures
 jitterFlagDefault = false;          % no jitter by default
 groupingDefault = [];               % no grouping by default
-cprWindowDefault = [0, 360] + timeToStabilize;      % (ms)
-ipscrWindowDefault = [0, 8000] + timeToStabilize;   % (ms)
+cprWindowDefault = cprWinOrig + timeToStabilize;
+ipscTimeDefault = ipscTimeOrig + timeToStabilize;
+ipscPeakWindowDefault = ipscpWinOrig + timeToStabilize;
+ipscrWindowDefault = ipscrWinOrig + timeToStabilize;
 outFilePathDefault = 'auto';    % set later
 tstopDefault = [];              % set later
 realDataIpscrDefault = [];      % no data to compare against by default
@@ -468,10 +487,10 @@ holdCurrentNoiseIpscrDefault = 0;% (nA)
 holdCurrentNoiseCprDefault = 0; % (nA)
 rowConditionsIpscrDefault = []; % set later
 rowConditionsCprDefault = [];   % set later
-fitWindowCprDefault = [100, 250] + timeToStabilize;     % (ms)
-fitWindowIpscrDefault = [980, 8000] + timeToStabilize;  % (ms)
-baseWindowCprDefault = [0, 100] + timeToStabilize;      % (ms)
-baseWindowIpscrDefault = [0, 980] + timeToStabilize;    % (ms)
+fitWindowCprDefault = [100, 250] + timeToStabilize;
+fitWindowIpscrDefault = [ipscTimeOrig, ipscrWinOrig(2)] + timeToStabilize;
+baseWindowCprDefault = [0, 100] + timeToStabilize;
+baseWindowIpscrDefault = [ipscrWinOrig(1), ipscTimeOrig] + timeToStabilize;
 baseNoiseCprDefault = [];        % set later
 baseNoiseIpscrDefault = [];      % set later
 sweepWeightsCprDefault = [];     % set later
@@ -554,6 +573,10 @@ addParameter(iP, 'JitterFlag', jitterFlagDefault, ...
 addParameter(iP, 'Grouping', groupingDefault);
 addParameter(iP, 'CprWindow', cprWindowDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 2}));
+addParameter(iP, 'IpscTime', ipscTimeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'IpscPeakWindow', ipscPeakWindowDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'IpscrWindow', ipscrWindowDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 2}));
 addParameter(iP, 'OutFilePath', outFilePathDefault, ...
@@ -647,6 +670,8 @@ showSweepsFlag = iP.Results.ShowSweepsFlag;
 jitterFlag = iP.Results.JitterFlag;
 grouping = iP.Results.Grouping;
 cprWindow = iP.Results.CprWindow;
+ipscTime = iP.Results.IpscTime;
+ipscPeakWindow = iP.Results.IpscPeakWindow;
 ipscrWindow = iP.Results.IpscrWindow;
 outFilePath = iP.Results.OutFilePath;
 tstop = iP.Results.Tstop;
@@ -675,7 +700,6 @@ baseNoiseCpr = iP.Results.BaseNoiseCpr;
 baseNoiseIpscr = iP.Results.BaseNoiseIpscr;
 sweepWeightsCpr = iP.Results.SweepWeightsCpr;
 sweepWeightsIpscr = iP.Results.SweepWeightsIpscr;
-ipscTime = iP.Results.IpscTime;
 
 %% Preparation
 % Initialize outputs
@@ -915,13 +939,13 @@ if generateDataFlag
     testResultsFile = fullfile(outFolder, [expStr, '_test_results.csv']);
 
     % Parse the simulated responses
-    featuresSim = analyze_response(vVecsSim, iVecsSim, siMs, ...
-                                    simMode, 'simulated');
+    featuresSim = analyze_response(vVecsSim, iVecsSim, siMs, simMode, ...
+                                    'simulated', ipscTime, ipscpWindow);
 
     % Parse the recorded responses
     if ~isempty(realData)
-        featuresRec = analyze_response(vVecsRec, iVecsRec, siMs, ...
-                                        simMode, 'recorded');
+        featuresRec = analyze_response(vVecsRec, iVecsRec, siMs, simMode, ...
+                                        'recorded', ipscTime, ipscpWindow);
 
         % Combine the features tables
         featuresTable = vertcat(featuresSim, featuresRec);
@@ -1017,7 +1041,8 @@ if ~isempty(realData)
                     'FitWindow', fitWindow, 'SweepWeights', sweepWeights, ...
                     'BaseWindow', baseWindow, 'BaseNoise', baseNoise, ...
                     'NormalizeError', normalize2InitErrFlag, ...
-                    'InitSwpError', initSwpError, 'StimStartMs', ipscTime);
+                    'InitSwpError', initSwpError, 'IpscTime', ipscTime, ...
+                    'IpscPeakWindow', ipscPeakWindow);
 
     % Extract just the sweep errors
     swpErrors = errorStruct.swpErrors;
@@ -1280,7 +1305,8 @@ vecs = force_matrix(vecs, 'AlignMethod', 'leftAdjustPad');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function featuresTable = analyze_response (vVecs, iVecs, siMs, simMode, dataType)
+function featuresTable = analyze_response (vVecs, iVecs, siMs, simMode, ...
+                                            dataType, ipscTime, ipscPeakWindow)
 
 % Hard-coded parameters
 meanVoltageWindow = 0.5;    % width in ms for calculating mean voltage 
@@ -1295,15 +1321,15 @@ if strcmpi(simMode, 'passive')
                                 'MeanValueWindowMs', meanVoltageWindow);
 elseif strcmpi(simMode, 'active')
     % Parse the IPSC current
-    ipscTable = parse_ipsc(iVecs, siMs);
+    ipscTable = parse_ipsc(iVecs, siMs, 'StimStartMs', ipscTime, ...
+                            'PeakWindowMs', ipscPeakWindow);
 
-    % Extract stim parameters
-    stimStartMs = ipscTable.stimStartMs;
-    peakDelayMs = ipscTable.peakDelayMs;
+    % Extract peak delay
+    ipscDelay = ipscTable.peakDelayMs;
 
     % Parse the LTS response
-    featuresTable = parse_lts(vVecs, siMs, 'StimStartMs', stimStartMs, ...
-                                'MinPeakDelayMs', peakDelayMs);
+    featuresTable = parse_lts(vVecs, siMs, 'StimStartMs', ipscTime, ...
+                                'MinPeakDelayMs', ipscDelay);
 end
 
 % Count the number of rows

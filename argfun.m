@@ -44,7 +44,6 @@ function varargout = argfun (myFunction, varargin)
 %       cd/create_indices.m
 %       cd/extract_subvectors.m
 %       cd/filter_and_extract_pulse_response.m
-%       cd/find_closest.m
 %       cd/find_passive_params.m
 %       cd/find_window_endpoints.m
 %       cd/m3ha_neuron_create_initial_params.m
