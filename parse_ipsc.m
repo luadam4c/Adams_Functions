@@ -68,6 +68,7 @@ function varargout = parse_ipsc (iVecs, varargin)
 %       cd/extract_common_prefix.m
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
+%       cd/find_closest.m
 %       cd/find_window_endpoints.m
 %       cd/match_time_info.m
 %       cd/movingaveragefilter.m
@@ -78,6 +79,7 @@ function varargout = parse_ipsc (iVecs, varargin)
 
 % File History:
 % 2019-11-13 Adapted from find_IPSC_peak.m and find_istart.m
+% 2019-11-14 Now uses find_closest.m
 % 
 
 %% Hard-coded parameters
@@ -268,7 +270,6 @@ if isempty(stimStartMs)
     end
 else
     % Use the indices of tVecs with values closest to stimStartMs
-    % TODO: find_closest.m
     idxStimStart = find_closest(tVecs, stimStartMs);
 end
 

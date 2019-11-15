@@ -1,6 +1,6 @@
 function [valJump, idxJumpStart] = find_first_jump (vector, varargin)
 %% Finds the index of the first jump in a time series
-% Usage: [valJump, idxJump] = find_first_jump (vector, varargin)
+% Usage: [valJump, idxJumpStart] = find_first_jump (vector, varargin)
 % Explanation:
 %       TODO
 %

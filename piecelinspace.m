@@ -1,12 +1,18 @@
 function vector = piecelinspace (nodes, nPoints, varargin)
 %% Generates a piece-wise linear row vector from nodes and number of points
 % Usage: vector = piecelinspace (nodes, nPoints, varargin)
+% Explanation:
+%       TODO
+%
+% Example(s):
+%       piecelinspace([4, 1, 6], 10)
 %
 % Arguments:    
-%       nodes     - nodes that must be included
+%       nodes       - nodes that must be included
 %                   must be a numeric vector
 %       nPoints     - total number of points in the vector
 %                   must be a positive integer scalar
+%
 % Requires:
 %       /home/Matlab/Adams_Functions/distribute_balls_into_boxes.m
 %

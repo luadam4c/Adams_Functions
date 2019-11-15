@@ -46,6 +46,7 @@ function [stimParams, pulseParams, pulseData] = parse_stim (pulseVecs, varargin)
 
 % File History:
 % 2019-05-14 Pulled from parse_multiunit.m
+% 2019-11-14 Now uses find_closest.m
 % 
 
 %% Hard-coded parameters
@@ -101,7 +102,6 @@ if ~isempty(stimStartMs)
     % Find the indices of stimulation start
     if ~isempty(tVecs)
         % Use the indices of tVecs with values closest to stimStartMs
-        % TODO: find_closest.m
         idxStimStart = find_closest(tVecs, stimStartMs);
     else
         % Assume tVecs start from 0 and use siMs

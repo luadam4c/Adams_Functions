@@ -1,6 +1,6 @@
-function nearestOdd = compute_nearest_odd (realNumber, varargin)
+function nearestOdd = find_nearest_odd (realNumber, varargin)
 %% Returns the nearest odd integer to real number(s)
-% Usage: nearestOdd = compute_nearest_odd (realNumber, varargin)
+% Usage: nearestOdd = find_nearest_odd (realNumber, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -13,9 +13,9 @@ function nearestOdd = compute_nearest_odd (realNumber, varargin)
 %                   must be a numeric vector
 %       varargin    - 'Direction': rounding direction
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'nearest' - round to 'nearest'
-%                       'down' - always round down
-%                       'up'  - always round up
+%                       'nearest'   - round to 'nearest'
+%                       'down'      - always round down
+%                       'up'        - always round up
 %                   default == 'round'
 %
 % Used by:
