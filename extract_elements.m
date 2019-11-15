@@ -53,6 +53,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/create_average_time_vector.m
 %       cd/create_indices.m
 %       cd/extract_columns.m
+%       cd/find_closest.m
 %       cd/is_overlapping.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/parse_ipsc.m

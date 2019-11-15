@@ -93,6 +93,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/extract_columns.m
 %       cd/extract_subvectors.m
 %       cd/fit_2exp.m
+%       cd/find_closest.m
 %       cd/force_column_cell.m
 %       cd/force_matrix.m
 %       cd/force_row_vector.m

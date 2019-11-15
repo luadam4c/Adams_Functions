@@ -306,7 +306,8 @@ peakTimeMs = extract_elements(tVecs, 'specific', 'Index', idxPeak);
 peakDelayMs = peakTimeMs - stimStartMs;
 
 %% Output results in tables
-% TODO
+parsedParams = table(idxStimStart, stimStartMs, idxPeak, peakDelayMs, ...
+                    peakTimeMs, peakAmplitude);
 
 %% Plot current trace
 if plotflag
@@ -315,8 +316,8 @@ if plotflag
 
     % Plot current traces
     fig = set_figure_properties('Name', 'Current analysis', ...
-                            'AlwaysNew', true);
-    if ~isempty(vVec0s)
+                                'AlwaysNew', true);
+    if ~isempty(vVecs)
         subplot(2,1,1);
     end
     for iSwp = 1:nVectors                   % Plot each current trace
@@ -336,14 +337,14 @@ if plotflag
     ylabel('Current (pA)')
     xlim(startWindowMs);
 %   ylim([-30 30]);             
-    if  ~isempty(vVec0s)
+    if  ~isempty(vVecs)
         subplot(2,1,2);
         for iSwp = 1:nVectors       % Plot each voltage trace
-            plot(tVecs(ind), vVec0s(ind, iSwp)); hold on; 
+            plot(tVecs(ind), vVecs(ind, iSwp)); hold on; 
         end
         if ~isempty(idxRelFirstChange)
             for iSwp = 1:nVectors
-                plot(tVecs(idxStimStart), vVec0s(idxStimStart, iSwp), ...
+                plot(tVecs(idxStimStart), vVecs(idxStimStart, iSwp), ...
                     'LineWidth', 2, 'Color', 'k', 'Marker', 'x', 'MarkerSize', 12);
             end
         end
@@ -357,11 +358,9 @@ if plotflag
     close(fig);
 
     % Plot current trace
-    fig = figure(4000);
-    set(fig, 'Visible', 'off');
-    set(fig, 'Name', 'IPSC peak amplitude analysis');
-    clf(fig);
-    for iSwp = 1:nVectors            % Plot each current trace and mark peak amplitude
+    fig = set_figure_properties('Name', 'IPSC peak amplitude analysis', ...
+                                'AlwaysNew', true);
+    for iSwp = 1:nVectors
         plot(tVec0(ind), iVecs(ind, iSwp)); hold on; 
         plot(tVec0(idxPeak(iSwp)), peakAmplitude(iSwp), 'Marker', 'x', 'MarkerSize', 12);
     end

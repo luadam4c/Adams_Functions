@@ -30,12 +30,12 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 %
 % Requires:
 %       cd/argfun.m
-%       cd/find_window_endpoints.m
+%       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
+%       cd/find_window_endpoints.m
 %       cd/force_column_cell.m
 %       cd/force_column_vector.m
-%       cd/create_error_for_nargin.m
 %
 % Used by:
 %       cd/parse_stim.m
