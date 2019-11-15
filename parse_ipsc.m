@@ -10,6 +10,7 @@ function varargout = parse_ipsc (iVecs, varargin)
 %       [data, sweepInfo] = m3ha_import_raw_traces(sweepName, 'Directory', matFilesDir);
 %       iVecs = extract_columns(data, 3);
 %       siMs = sweepInfo.siMs;
+%       [parsedParams, parsedData] = parse_ipsc(iVecs, siMs);
 %
 % Outputs: 
 %       parsedParams    - a table containing the parsed parameters, 
@@ -72,6 +73,7 @@ function varargout = parse_ipsc (iVecs, varargin)
 %       cd/find_window_endpoints.m
 %       cd/match_time_info.m
 %       cd/movingaveragefilter.m
+%       cd/set_figure_properties.m
 %
 % Used by:
 %       cd/compute_single_neuron_errors.m
@@ -182,20 +184,13 @@ commonPrefix = extract_common_prefix(fileBase);
 if isempty(siMs) && isempty(tVecs)
     error('One of siMs and tVecs must be provided!');
 else
-    [tVecs, siMs, nSamples] = ...
-        match_time_info(tVecs, siMs, nSamples, 'TimeUnits', 'ms')
+    [tVecs, siMs] = ...
+        match_time_info(tVecs, siMs, nSamples, 'TimeUnits', 'ms');
 end
 
 % Compute the base and end of the time vector(s)
 tBase = extract_elements(tVecs, 'first') - siMs;
 tEnd = extract_elements(tVecs, 'last');
-
-% For verbose
-if ~isempty(commonPrefix)
-    messageSuffix = ['for ', commonPrefix, ' '];
-else
-    messageSuffix = '';
-end
 
 % Display message
 if verbose
@@ -206,18 +201,23 @@ end
 %% Deal with IPSC start
 % Decide on the window to look for IPSC start
 if isempty(startWindowMs)
-    startWindowMs = [mean(tBase); mean(tEnd)]
+    startWindowMs = [mean(tBase); mean(tEnd)];
 end
 
 % Detect stimulation start time if not provided
+% TODO: Fit an exponential? if only one iVec is provided
 if isempty(stimStartMs)
+    % Save the detection status
+    stimStartDetected = true;
+    
     % Display message
     if verbose
         fprintf('FINDING common time of IPSC start for %s ...\n', ...
                 commonPrefix);
     end
 
-    % Compute the standard deviation trace over all vectors
+    % If there are more than one vectors, 
+    %   compute the standard deviation trace over all vectors
     iStdVec = compute_combined_trace(iVecs, 'std');
 
     % Compute an average sampling interval
@@ -234,7 +234,11 @@ if isempty(stimStartMs)
 
     % Use the first time vector
     %   TODO: What if time vectors are different?
-    tVec = tVecs{1};
+    if iscell(tVecs)
+        tVec = tVecs{1};
+    else
+        tVec = tVecs;
+    end
 
     % Find end points corresponding to startWindowMs
     endPointsToFindStart = find_window_endpoints(startWindowMs, tVec);
@@ -269,6 +273,9 @@ if isempty(stimStartMs)
         fprintf('Time of current application == %g ms\n', stimStartMs);
     end
 else
+    % Stimulation start not detected
+    stimStartDetected = false;
+
     % Use the indices of tVecs with values closest to stimStartMs
     idxStimStart = find_closest(tVecs, stimStartMs);
 end
@@ -291,7 +298,7 @@ endPointsToFindPeak = find_window_endpoints(peakWindowMs, tVecs);
 iVecsPart = extract_subvectors(iVecs, 'EndPoints', endPointsToFindPeak);
 
 % Find the minimum in each region
-[idxPeakRel, peakAmplitude] = cellfun(@min, iVecsPart);
+[peakAmplitude, idxPeakRel] = cellfun(@min, iVecsPart);
 
 % Compute the beginning index of the end points for peakWindowMs
 idxBegins = extract_elements(endPointsToFindPeak, 'first');
@@ -305,14 +312,27 @@ peakTimeMs = extract_elements(tVecs, 'specific', 'Index', idxPeak);
 % Compute IPSC peak delay in ms
 peakDelayMs = peakTimeMs - stimStartMs;
 
-%% Output results in tables
+%% Organize results
 parsedParams = table(idxStimStart, stimStartMs, idxPeak, peakDelayMs, ...
                     peakTimeMs, peakAmplitude);
 
-%% Plot current trace
-if plotflag
-    % Check if needed outSubDirs exist in outfolder
-    check_subdir(outfolder, outSubDirs);
+parsedData.tVecs = tVecs;
+parsedData.iVecs = iVecs;
+if stimStartDetected
+    parsedData.iStdVec = iStdVec;
+    parsedData.iStdVecSmooth = iStdVecSmooth;
+    parsedData.diffIStdVecsSmooth = diffIStdVecsSmooth;
+end
+
+%% Output results
+varargout{1} = parsedParams;
+varargout{2} = parsedData;
+
+%% Plot current traces
+% TODO: Not organized and tested:
+if plotFlag
+    % Check if needed outSubDirs exist in outFolder
+    check_subdir(outFolder, outSubDirs);
 
     % Plot current traces
     fig = set_figure_properties('Name', 'Current analysis', ...
@@ -353,7 +373,7 @@ if plotflag
         xlim(startWindowMs);
 %       ylim([-90 40]);             
     end
-    figname = fullfile(outfolder, directories{1}, [filebase, '_istart', '.png']);
+    figname = fullfile(outFolder, outSubDirs{1}, [filebase, '_istart', '.png']);
     saveas(fig, figname);
     close(fig);
 
@@ -367,7 +387,7 @@ if plotflag
     xlabel('Time (ms)')
     ylabel('Current (pA)')
     title(['IPSC peak amplitude analysis for ', strrep(filebase, '_', '\_')]);
-    figname = fullfile(outfolder, outSubDirs{2}, [filebase, '_IPSCpeak', '.png']);
+    figname = fullfile(outFolder, outSubDirs{2}, [filebase, '_IPSCpeak', '.png']);
     saveas(fig, figname);
     close(fig);
 end

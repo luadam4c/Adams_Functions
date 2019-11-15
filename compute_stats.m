@@ -96,6 +96,7 @@ function stats = compute_stats (vecs, statName, varargin)
 % 2019-08-07 Fixed 0.95 -> 0.96
 % 2019-08-20 Now always return NaN if empty
 % 2019-09-19 Added 'max' and 'min'
+% 2019-11-14 Fixed usage of std and nanstd
 % TODO: Combine with compute_weighted_average.m
 % 
 
@@ -188,9 +189,9 @@ switch statName
         end            
     case 'std'
         if ignoreNan
-            func = @(x) nanstd(x, dim);
+            func = @(x) nanstd(x, 0, dim);
         else
-            func = @(x) std(x, dim);
+            func = @(x) std(x, 0, dim);
         end            
     case 'stderr'
         if ignoreNan
@@ -212,15 +213,15 @@ switch statName
         end     
     case 'cov'
         if ignoreNan
-            func = @(x) nanstd(x, dim) ./ nanmean(x, dim);
+            func = @(x) nanstd(x, 0, dim) ./ nanmean(x, dim);
         else
-            func = @(x) std(x, dim) ./ mean(x, dim);
+            func = @(x) std(x, 0, dim) ./ mean(x, dim);
         end
     case 'zscore'
         if ignoreNan
-            func = @(x) nanmean(x, dim) ./ nanstd(x, dim);
+            func = @(x) nanmean(x, dim) ./ nanstd(x, 0, dim);
         else
-            func = @(x) mean(x, dim) ./ std(x, dim);
+            func = @(x) mean(x, dim) ./ std(x, 0, dim);
         end
     case 'max'
         func = @(x) max(x, [], dim);

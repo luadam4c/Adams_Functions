@@ -271,7 +271,7 @@ if isempty(siMs) && isempty(tVec0s)
     error('One of siMs and tVec0s must be provided!');
 else
     [tVec0s, siMs, nSamples] = ...
-        match_time_info(tVec0s, siMs, nSamples, 'TimeUnits', 'ms')
+        match_time_info(tVec0s, siMs, nSamples, 'TimeUnits', 'ms');
 end
 
 % Compute the base of the time vector(s)

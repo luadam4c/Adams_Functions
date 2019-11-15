@@ -163,3 +163,138 @@ There are 1 MATLAB scripts in this directory:
 - [**decide_on_parpool.m**](https://github.com/blabuva/Adams_Functions/blob/master/decide_on_parpool.m): Creates or modifies a parallel pool object
 - [**decide_on_video_object.m**](https://github.com/blabuva/Adams_Functions/blob/master/decide_on_video_object.m): Decide on the video object given path or object
 - [**detect_spikes_current_clamp.m**](https://github.com/blabuva/Adams_Functions/blob/master/detect_spikes_current_clamp.m): Detects spikes from a current clamp recording
+- [**detect_spikes_multiunit.m**](https://github.com/blabuva/Adams_Functions/blob/master/detect_spikes_multiunit.m): Detects spikes from a multiunit recording
+- [**distribute_balls_into_boxes.m**](https://github.com/blabuva/Adams_Functions/blob/master/distribute_balls_into_boxes.m): Returns the ways and number of ways to distribute identical/discrete balls into identical/discrete boxes
+- [**dlmwrite_with_header.m**](https://github.com/blabuva/Adams_Functions/blob/master/dlmwrite_with_header.m): Write a comma-separated value file with given header
+- [**draw_arrow.m**](https://github.com/blabuva/Adams_Functions/blob/master/draw_arrow.m): Draw an arrow from p1 to p2
+- [**error_unrecognized.m**](https://github.com/blabuva/Adams_Functions/blob/master/error_unrecognized.m): Throws an error for unrecognized string
+- [**estimate_passive_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/estimate_passive_params.m): Estimates passive parameters from fitted coefficients, current pulse amplitude and some constants
+- [**estimate_resting_potential.m**](https://github.com/blabuva/Adams_Functions/blob/master/estimate_resting_potential.m): Estimates the resting membrane potential (mV) and the input resistance (MOhm) from holding potentials and holding currents
+- [**examine_figure_objects.m**](https://github.com/blabuva/Adams_Functions/blob/master/examine_figure_objects.m): Examines figure objects
+- [**extract_channel.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_channel.m): Extracts vectors of a given type from a .abf file
+- [**extract_columns.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_columns.m): Extracts columns from arrays or a cell array of arrays
+- [**extract_common_directory.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_common_directory.m): Extracts the common parent directory of a cell array of file paths
+- [**extract_common_prefix.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_common_prefix.m): Extracts the common prefix of a cell array of strings
+- [**extract_common_suffix.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_common_suffix.m): Extracts the common suffix of a cell array of strings
+- [**extract_distinct_fileparts.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_distinct_fileparts.m): Extracts distinct file parts (removes common parent directory, common prefix and common suffix)
+- [**extract_elements.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_elements.m): Extracts elements from vectors using a certain mode ('first', 'last', 'min', 'max')
+- [**extract_fields.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fields.m): Extracts field(s) from an array of structures or a cell array of structures
+- [**extract_fileparts.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fileparts.m): Extracts directories, bases, extensions, distinct parts or the common directory from file paths, treating any path without an extension as a directory
+- [**extract_frame_times.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_frame_times.m): Extracts all the frame start times in a video file
+- [**extract_fullpaths.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fullpaths.m): Extracts full paths from a files structure array
+- [**extract_in_order.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_in_order.m): Reorganizes a set of vectors by the first vectors, the second vectors, ... and so on
+- [**extract_looped_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_looped_params.m): Extracts parameters that were looped in the simulation from loopedparams.mat
+- [**extract_subvectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_subvectors.m): Extracts subvectors from vectors, given either endpoints, value windows or a certain align mode ('leftAdjust', 'rightAdjust')
+- [**files2contents.m**](https://github.com/blabuva/Adams_Functions/blob/master/files2contents.m): Replaces file names with file contents in a cell array of strings
+- [**fill_markers.m**](https://github.com/blabuva/Adams_Functions/blob/master/fill_markers.m): Fills markers if any for the current axes
+- [**filter_and_extract_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/filter_and_extract_pulse_response.m): Filters and extracts pulse response(s) from a .abf file
+- [**find_closest.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_closest.m): Finds the element(s) in monotonic numeric vector(s) closest to target(s)
+- [**find_custom.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_custom.m): Same as find() but takes custom parameter-value pairs
+- [**find_first_deviant.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_first_deviant.m): Finds the index of the first deviant from preceding peers in a time series
+- [**find_first_jump.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_first_jump.m): Finds the index of the first jump in a time series
+- [**find_first_match.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_first_match.m): Returns the first matching index and match in an array for candidate(s)
+- [**find_initial_slopes.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_initial_slopes.m): Find all initial slopes from a set of current pulse responses
+- [**find_in_list.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_in_list.m): Returns all indices of a candidate in a list
+- [**find_in_strings.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_in_strings.m): Returns all indices of a particular string (could be represented by substrings) in a list of strings
+- [**find_IPSC_peak.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_IPSC_peak.m): Finds time of current peak from a an inhibitory current trace (must be negative current) (legacy, please use parse_ipsc.m instead)
+- [**find_istart.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_istart.m): Finds time of current application from a series of current vectors (legacy, please use parse_ipsc.m instead)
+- [**find_istart_old.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_istart_old.m): Finds time of current application from a series of current vectors (legacy, please use parse_ipsc.m instead)
+- [**find_LTS.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_LTS.m): Find, plot and classify the most likely low-threshold spike (LTS) candidate in a voltage trace (legacy, please use parse_lts.m instead)
+- [**find_LTSs_many_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_LTSs_many_sweeps.m): Calls find_LTS.m for many voltage traces (legacy, please use parse_lts.m instead)
+- [**find_matching_files.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_matching_files.m): Finds matching files from file parts
+- [**find_nearest_multiple.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_nearest_multiple.m): Finds the nearest integer multiple of base to target and the distance to between it and target
+- [**find_nearest_odd.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_nearest_odd.m): Returns the nearest odd integer to real number(s)
+- [**find_passive_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_passive_params.m): Extract passive parameters from both the rising and falling phase of a current pulse response
+- [**find_pulse_endpoints.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_pulse_endpoints.m): Returns the start and end indices of the first pulse from vector(s)
+- [**find_pulse_response_endpoints.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_pulse_response_endpoints.m): Returns the start and end indices of the first pulse response (from pulse start to 20 ms after pulse ends by default) from vector(s)
+- [**find_window_endpoints.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_window_endpoints.m): Returns the start and end indices of a time window in a time vector
+- [**fit_2exp.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_2exp.m): Fits a double exponential curve to data
+- [**fit_and_estimate_passive_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_and_estimate_passive_params.m): Uses a given pulse width and amplitude to fit and estimate passive parameters from a current pulse response
+- [**fitdist_initial_slopes.m**](https://github.com/blabuva/Adams_Functions/blob/master/fitdist_initial_slopes.m): Fits initial slope distributions
+- [**fit_gaussians_and_refine_threshold.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_gaussians_and_refine_threshold.m): Fits data to Gaussian mixture models and finds the optimal number of components
+- [**fit_IEI.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_IEI.m): Fit IEI data to curves
+- [**fit_kernel.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_kernel.m): Fits a kernel distribution to a data vector and determine the two primary peaks, the threshold and the void and spacing parameters
+- [**fit_logIEI.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_logIEI.m): Fit log(IEI) logData to curves
+- [**fit_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_pulse_response.m): Estimate short and long pulse response parameters from a double exponential fit to the rising/falling phase of a pulse response
+- [**fit_setup_2exp.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_setup_2exp.m): Constructs a fittype object and set initial conditions and bounds for a double exponential equation form
+- [**fit_setup_first_order_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_setup_first_order_response.m): Constructs a fittype object and set initial conditions and bounds for a first order response equation form
+- [**force_column_cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_column_cell.m): Transforms a row cell array or a non-cell array to a column cell array of non-cell vectors
+- [**force_column_vector.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_column_vector.m): Transform row vector(s) or array(s) to column vector(s)
+- [**force_logical.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_logical.m): Forces any numeric binary array to become a logical array
+- [**force_matrix.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_matrix.m): Forces vectors into a non-cell array matrix
+- [**force_row_cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_row_cell.m): Transforms a column cell array or a non-cell array to a row cell array of non-cell vectors
+- [**force_row_vector.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_row_vector.m): Transform column vector(s) or array(s) to row vector(s)
+- [**force_string_end.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_string_end.m): Force the string to end with a certain substring
+- [**force_string_start.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_string_start.m): Force the string to start with a certain substring
+- [**freqfilter.m**](https://github.com/blabuva/Adams_Functions/blob/master/freqfilter.m): Uses a Butterworth filter twice to filter data by a frequency band (each column is a vector of samples)
+- [**get_idxEnd.m**](https://github.com/blabuva/Adams_Functions/blob/master/get_idxEnd.m): Get the index of the end of an event
+- [**get_var_name.m**](https://github.com/blabuva/Adams_Functions/blob/master/get_var_name.m): Returns a variable's name as a string
+- [**Glucose_analyze.m**](https://github.com/blabuva/Adams_Functions/blob/master/Glucose_analyze.m): Analyzes all Glucose paper oscillations data
+- [**has_same_attributes.m**](https://github.com/blabuva/Adams_Functions/blob/master/has_same_attributes.m): Returns all row indices that have the same attributes (column values) combination as a given set of row names
+- [**histg.m**](https://github.com/blabuva/Adams_Functions/blob/master/histg.m): HISTG    'Grouped' univariate histogram
+- [**histproperties.m**](https://github.com/blabuva/Adams_Functions/blob/master/histproperties.m): Computes the area, edges of the histogram for given data array
+- [**hold_off.m**](https://github.com/blabuva/Adams_Functions/blob/master/hold_off.m): Holds off based on previous status
+- [**hold_on.m**](https://github.com/blabuva/Adams_Functions/blob/master/hold_on.m): Holds on and returns previous status
+- [**identify_channels.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_channels.m): Assigns voltage, current or conductance to each channel (2nd dim) in abfdata
+- [**identify_CI_protocol.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_CI_protocol.m): Identifies whether a set of current vectors is a current injection protocol, and if so, what the range of the current injection is
+- [**identify_eLFP_protocol.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_eLFP_protocol.m): Identifies whether a .abf file or a set of current vectors follows an eLFP protocol
+- [**identify_gabab_protocol.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_gabab_protocol.m): Identifies whether a .abf file or a set of voltage vectors follows a GABA-B IPSC protocol
+- [**identify_repetitive_pulses.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_repetitive_pulses.m): Identifies whether a set of vectors are repetitive pulses
+- [**increment_editbox.m**](https://github.com/blabuva/Adams_Functions/blob/master/increment_editbox.m): Increment or decrement editbox value based on direction
+- [**intersect_over_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/intersect_over_cells.m): Apply the intersect function over all contents of a cell array
+- [**isaninteger.m**](https://github.com/blabuva/Adams_Functions/blob/master/isaninteger.m): Returns whether each element of an array is an integer
+- [**isbinaryarray.m**](https://github.com/blabuva/Adams_Functions/blob/master/isbinaryarray.m): Returns whether the input is a binary array
+- [**isbinaryscalar.m**](https://github.com/blabuva/Adams_Functions/blob/master/isbinaryscalar.m): Returns whether an input is a binary scalar (may be empty)
+- [**iscellnonvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/iscellnonvector.m): Returns whether an input is a cell array of non-cell vectors (may be empty)
+- [**iscellnumeric.m**](https://github.com/blabuva/Adams_Functions/blob/master/iscellnumeric.m): Returns whether an input is a cell array of numeric arrays
+- [**iscellnumericvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/iscellnumericvector.m): Returns whether an input is a cell array of numeric vectors (may be empty)
+- [**iscellvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/iscellvector.m): Returns whether an input is a cell array of vectors (may be empty)
+- [**is_contained_in.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_contained_in.m): Checks whether all elements of the first set are elements of the second set and print the ones that aren't
+- [**isemptycell.m**](https://github.com/blabuva/Adams_Functions/blob/master/isemptycell.m): Returns whether each cell of a cell array is empty; if not a cell array, same as isempty()
+- [**isemptystruct.m**](https://github.com/blabuva/Adams_Functions/blob/master/isemptystruct.m): Returns whether a structure has no fields
+- [**isfigtype.m**](https://github.com/blabuva/Adams_Functions/blob/master/isfigtype.m): Check whether a string or each string in a cell array is a valid figure type accepted by saveas()
+- [**is_in_parallel.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_in_parallel.m): Checks whether in a parfor loop
+- [**islegendlocation.m**](https://github.com/blabuva/Adams_Functions/blob/master/islegendlocation.m): Check whether a string or each string in a cell array is a valid legend location or 'suppress' or 'auto'
+- [**islinestyle.m**](https://github.com/blabuva/Adams_Functions/blob/master/islinestyle.m): Check whether a string or each string in a cell array is a valid line style accepted by plot() or line()
+- [**is_matching_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_matching_string.m): Returns whether each element in a list of strings matches a candidate
+- [**ismatch.m**](https://github.com/blabuva/Adams_Functions/blob/master/ismatch.m): Returns whether each element in a list matches a candidate
+- [**ismember_custom.m**](https://github.com/blabuva/Adams_Functions/blob/master/ismember_custom.m): Returns whether a particular candidate is a member of a list
+- [**isnumericvector.m**](https://github.com/blabuva/Adams_Functions/blob/master/isnumericvector.m): Returns whether an input is a numeric vector (may be empty)
+- [**isnum.m**](https://github.com/blabuva/Adams_Functions/blob/master/isnum.m): Returns whether the input is numeric in the general sense (numeric, logical, datetime or duration)
+- [**is_on_path.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_on_path.m): Returns whether folder(s) are on the MATLAB path
+- [**is_out_of_range.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_out_of_range.m): Check if any of the value(s) are out of range
+- [**is_overlapping.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_overlapping.m): Returns whether a set of time windows are overlapping
+- [**ispositiveintegerarray.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositiveintegerarray.m): Returns whether an input is a positive integer array
+- [**ispositiveintegerscalar.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositiveintegerscalar.m): Returns whether an input is a positive integer scalar
+- [**ispositiveintegervector.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositiveintegervector.m): Returns whether an input is a positive integer vector
+- [**ispositivescalar.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositivescalar.m): Returns whether an input is a positive scalar
+- [**ispositivevector.m**](https://github.com/blabuva/Adams_Functions/blob/master/ispositivevector.m): Returns whether an input is a positive vector
+- [**is_row_in_table.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_row_in_table.m): Returns whether a row name is an existing row in a table
+- [**issheettype.m**](https://github.com/blabuva/Adams_Functions/blob/master/issheettype.m): Check whether a string or each string in a cell array is a valid spreadsheet type accepted by readtable()
+- [**istext.m**](https://github.com/blabuva/Adams_Functions/blob/master/istext.m): Returns whether the input is a character array, a string array or a cell array of character arrays
+- [**istype.m**](https://github.com/blabuva/Adams_Functions/blob/master/istype.m): Check whether a string or each string in a cell array is a valid type specified by validTypes
+- [**is_var_in_table.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_var_in_table.m): Returns whether a variable name is an existing column in a table
+- [**load_examples.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_examples.m): Loads example data structures for testing
+- [**load_matching_sheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_matching_sheets.m): Loads spreadsheets with matching strings before given suffixes (incomplete)
+- [**load_neuron_outputs.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_neuron_outputs.m): Loads .out files created by NEURON into a cell array
+- [**load_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_params.m): Loads parameters from file(s) into a table
+- [**load_swd_sheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_swd_sheets.m): Loads SWD tables from SWD spreadsheets
+- [**locate_dir.m**](https://github.com/blabuva/Adams_Functions/blob/master/locate_dir.m): Locate the first directory that exists out of a list of candidates
+- [**locate_functionsdir.m**](https://github.com/blabuva/Adams_Functions/blob/master/locate_functionsdir.m): Locate the first shared functions directory that exists
+- [**log_arraytext.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_arraytext.m): Create a text file that logs the array information
+- [**log_matfile.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_matfile.m): Print variables in a MATfile to a comma-separated-value file
+- [**m3ha_autocorrelogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_autocorrelogram.m): Shows an m3ha_autocorrelogram for each set of neurons (each .spi file in the infolder)
+- [**m3ha_compare_and_plot_across_conditions.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_and_plot_across_conditions.m): Plot activation/inactivation and I-V curves across conditions
+- [**m3ha_compare_and_plot_across_IC2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_and_plot_across_IC2.m): Plot activation/inactivation and I-V curves across initial conditions
+- [**m3ha_compare_and_plot_across_IC.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_and_plot_across_IC.m): Plot activation/inactivation and I-V curves across initial conditions
+- [**m3ha_compare_neuronparams2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_neuronparams2.m): compare graphs across different sets of NEURON parameters
+- [**m3ha_compare_neuronparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_neuronparams.m): compare graphs across different sets of NEURON parameters
+- [**m3ha_compute_and_plot_all_IV2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_all_IV2.m): Plot I-V curves of all currents together
+- [**m3ha_compute_and_plot_all_IV.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_all_IV.m): Plot I-V curves of all currents together
+- [**m3ha_compute_and_plot_geometry2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_geometry2.m): Plot the geometry of the cell
+- [**m3ha_compute_and_plot_geometry.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_geometry.m): Plot the geometry of the cell
+- [**m3ha_compute_and_plot_IA2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_IA2.m): Plot activation/inactivation curves for the T-type calcium current
+- [**m3ha_compute_and_plot_IA.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_IA.m): Plot activation/inactivation curves for the T-type calcium current
+- [**m3ha_compute_and_plot_Ih2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_Ih2.m): Plot activation/inactivation curves for the T-type calcium current
+- [**m3ha_compute_and_plot_Ih.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_Ih.m): Plot activation/inactivation curves for the T-type calcium current
+- [**m3ha_compute_and_plot_IKir2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_IKir2.m): Plot activation/inactivation curves for the T-type calcium current
