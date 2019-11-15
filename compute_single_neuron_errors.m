@@ -52,6 +52,11 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %                   - 'InitSwpError': initial sweep errors
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == []
+%                   - 'StimStartMs': current stimulation start time (ms), 
+%                           Note: this is the time relative to which 
+%                                       the peak delay is computed
+%                   must be a positive scalar
+%                   default == detected
 %
 % Requires:
 %       cd/argfun.m
@@ -75,6 +80,7 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 % File History:
 % 2018-10-24 Adapted from code in run_neuron_once_4compgabab.m
 % 2018-10-28 Now uses extract_subvectors.m
+% 2019-11-15 TODO: Add 'StimStartMs' as an optional argument
 % 
 
 %% Hard-coded parameters
@@ -91,10 +97,7 @@ baseNoiseDefault = [];          % set later
 sweepWeightsDefault = [];       % set later
 normalizeErrorDefault = false;  % don't normalize errors by default
 initSwpErrorDefault = [];   % no initial error values by default
-
-% errorModeDefault = ;          % default TODO: Description of param1
-% baseWindowDefault = ;       % default TODO: Description of param1
-% baseNoiseDefault = ;        % default TODO: Description of param1
+stimStartMsDefault = [];        % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -150,6 +153,8 @@ addParameter(iP, 'NormalizeError', normalizeErrorDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'InitSwpError', initSwpErrorDefault, ...
     @(x) assert(isnumericvector(x), 'InitSwpError must be a numeric vector!'));
+addParameter(iP, 'StimStartMs', stimStartMsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 
 % Read from the Input Parser
 parse(iP, vSim, vReal, varargin{:});
@@ -163,6 +168,7 @@ baseNoise = iP.Results.BaseNoise;
 sweepWeights = iP.Results.SweepWeights;
 normalizeError = iP.Results.NormalizeError;
 initSwpError = iP.Results.InitSwpError;
+stimStartMs = iP.Results.StimStartMs;
 
 %% Preparation
 % Count the number of samples
@@ -223,6 +229,27 @@ switch errorMode
         ltsErrors.avgLtsSlopeError = NaN;
         ltsErrors.avgLtsError = NaN;
     case 'Sweep&LTS'
+        % Analyze IPSC traces
+        ipscTableSim = parse_ipsc(iSim, 'StimStartMs', stimStartMs, ...
+                                'tVecs', tBoth);
+        ipscTableReal = parse_ipsc(iReal, 'StimStartMs', stimStartMs, ...
+                                'tVecs', tBoth);
+
+        % Find the peak delay of the IPSCs
+        peakDelayMsSim = ipscTableSim.peakDelayMs;
+        peakDelayMsReal = ipscTableReal.peakDelayMs;
+
+        % Find and compute low-threshold spike features
+        ltsFeaturesSim = parse_lts(vSim, 'StimStartMs', stimStartMs, ...
+                            'MinPeakDelayMs', peakDelayMsSim, 'tVecs', tBoth);
+        ltsFeaturesReal = parse_lts(vReal, 'StimStartMs', stimStartMs, ...
+                            'MinPeakDelayMs', peakDelayMsReal, 'tVecs', tBoth);
+
+        % TODO: compute_lts_errors.m
+        % ltsErrors = compute_lts_errors(ltsFeaturesSim, ltsFeaturesReal, ...
+        %                                 'SweepWeights', sweepWeights, ...
+        %                                 'NormalizeError', normalizeError, ...
+        %                                 'InitLtsError', initLtsError);
         % Set as NaN for other errors
         ltsErrors.ltsAmpErrors = NaN;
         ltsErrors.ltsDelayErrors = NaN;
@@ -232,17 +259,8 @@ switch errorMode
         ltsErrors.avgLtsSlopeError = NaN;
         ltsErrors.avgLtsError = NaN;
 
-        % TODO: Find the start and peak times of the IPSC
-        % Make parse_ipsc.m
+        error('Not implemented yet!');
 
-        % TODO: Find and compute low-threshold spike features
-        % Make parse_lts.m
-
-        % TODO: compute_lts_errors.m
-        % ltsErrors = compute_lts_errors(ltsFeaturesSim, ltsFeaturesReal, ...
-        %                                 'SweepWeights', sweepWeights, ...
-        %                                 'NormalizeError', normalizeError, ...
-        %                                 'InitLtsError', initLtsError);
     otherwise
         error('code logic error!');
 end

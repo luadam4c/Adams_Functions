@@ -33,7 +33,7 @@ function vecsFilt = medianfilter (vecs, varargin)
 % Used by:
 %       cd/find_passive_params.m
 %       cd/identify_CI_protocol.m
-%       cd/parse_LTS.m
+%       cd/parse_lts.m
 
 % File History:
 % 2019-01-14 Created by Adam Lu

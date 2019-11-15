@@ -1294,19 +1294,15 @@ if strcmpi(simMode, 'passive')
                                 'MeanValueWindowMs', meanVoltageWindow);
 elseif strcmpi(simMode, 'active')
     % Parse the IPSC current
-    % TODO
     ipscTable = parse_ipsc(iVecs, siMs);
 
     % Extract stim parameters
     stimStartMs = ipscTable.stimStartMs;
-    stimPeakMs = ipscTable.peakTimeMs;
-
-    % Compute the minimum LTS peak delay
-    minPeakDelayMs = stimPeakMs - stimStartMs;
+    peakDelayMs = ipscTable.peakDelayMs;
 
     % Parse the LTS response
     featuresTable = parse_lts(vVecs, siMs, 'StimStartMs', stimStartMs, ...
-                                'MinPeakDelayMs', minPeakDelayMs);
+                                'MinPeakDelayMs', peakDelayMs);
 end
 
 % Count the number of rows

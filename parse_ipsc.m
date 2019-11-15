@@ -43,7 +43,8 @@ function varargout = parse_ipsc (iVecs, varargin)
 %                   - 'FileBase': base of filename (without extension)
 %                   must be a string scalar or a character vector
 %                   default == 'unnamed'
-%                   - 'StartWindowMs': window (ms) in which IPSC start would lie
+%                   - 'StimStartWindowMs': window (ms) in which 
+%                                               IPSC start would lie
 %                   must be a positive scalar
 %                   default == [mean(tBase); mean(tEnd)]
 %                           Note: mh3a uses [1000, 1100]
@@ -82,6 +83,7 @@ function varargout = parse_ipsc (iVecs, varargin)
 % File History:
 % 2019-11-13 Adapted from find_IPSC_peak.m and find_istart.m
 % 2019-11-14 Now uses find_closest.m
+% TODO: Test this function, especially with PlotFlag true
 % 
 
 %% Hard-coded parameters
@@ -99,7 +101,7 @@ verboseDefault = true;          % print to standard output by default
 plotFlagDefault = false;
 outFolderDefault = pwd;
 fileBaseDefault = {};           % set later
-startWindowMsDefault = [];      % set later
+stimStartWindowMsDefault = [];      % set later
 stimStartMsDefault = [];        % set later
 peakWindowMsDefault = [];       % set later
 tVecsDefault = [];              % set later
@@ -136,7 +138,7 @@ addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FileBase', fileBaseDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'StartWindowMs', startWindowMsDefault, ...
+addParameter(iP, 'StimStartWindowMs', stimStartWindowMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'StimStartMs', stimStartMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
@@ -158,7 +160,7 @@ verbose = iP.Results.Verbose;
 plotFlag = iP.Results.PlotFlag;
 outFolder = iP.Results.OutFolder;
 fileBase = iP.Results.FileBase;
-startWindowMs = iP.Results.StartWindowMs;
+stimStartWindowMs = iP.Results.StimStartWindowMs;
 stimStartMs = iP.Results.StimStartMs;
 peakWindowMs = iP.Results.PeakWindowMs;
 tVecs = iP.Results.tVecs;
@@ -200,8 +202,8 @@ end
 
 %% Deal with IPSC start
 % Decide on the window to look for IPSC start
-if isempty(startWindowMs)
-    startWindowMs = [mean(tBase); mean(tEnd)];
+if isempty(stimStartWindowMs)
+    stimStartWindowMs = [mean(tBase); mean(tEnd)];
 end
 
 % Detect stimulation start time if not provided
@@ -240,10 +242,10 @@ if isempty(stimStartMs)
         tVec = tVecs;
     end
 
-    % Find end points corresponding to startWindowMs
-    endPointsToFindStart = find_window_endpoints(startWindowMs, tVec);
+    % Find end points corresponding to stimStartWindowMs
+    endPointsToFindStart = find_window_endpoints(stimStartWindowMs, tVec);
 
-    % Restrict to startWindowMs
+    % Restrict to stimStartWindowMs
     diffIStdVecsSmoothRestricted = extract_subvectors(diffIStdVecsSmooth, ...
                                             'EndPoints', endPointsToFindStart);
 
@@ -355,7 +357,7 @@ if plotFlag
     title(['Current analysis for ', strrep(filebase, '_', '\_')]);
     xlabel('Time (ms)')
     ylabel('Current (pA)')
-    xlim(startWindowMs);
+    xlim(stimStartWindowMs);
 %   ylim([-30 30]);             
     if  ~isempty(vVecs)
         subplot(2,1,2);
@@ -370,7 +372,7 @@ if plotFlag
         end
         xlabel('Time (ms)')
         ylabel('Voltage (mV)')
-        xlim(startWindowMs);
+        xlim(stimStartWindowMs);
 %       ylim([-90 40]);             
     end
     figname = fullfile(outFolder, outSubDirs{1}, [filebase, '_istart', '.png']);
@@ -406,12 +408,12 @@ ind = IPSC_ind:round(ipscpwin(2)/siMs);     % indices of interest   % NOT ROBUST
 
     close(fig);
 
-if isempty(startWindowMs)
+if isempty(stimStartWindowMs)
     if ~isempty(stimStartMs)
         stimStartMsRow = force_row_vector(stimStartMs);
-        startWindowMs = ones(2, 1) * stimStartMsRow;
+        stimStartWindowMs = ones(2, 1) * stimStartMsRow;
     else
-        startWindowMs = transpose([tBase, tEnd]);
+        stimStartWindowMs = transpose([tBase, tEnd]);
     end
 end
 
