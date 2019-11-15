@@ -3,6 +3,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 % Usage: endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       endPoints1 = find_window_endpoints([1.5, 3.5], 1:5, 'BoundaryMode', 'inclusive')
 %       endPoints2 = find_window_endpoints([1.5, 3.5], 1:5, 'BoundaryMode', 'leftadjust')
@@ -14,6 +15,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %       endPoints8 = find_window_endpoints({[0.5, 1.5], [2.5; 3.5]}, 0:2:4)
 %       endPoints9 = find_window_endpoints({[], [2.5; 3.5]}, 0:6)
 %       endPoints10 = find_window_endpoints([0.5, 1.5; 2.5, 3.5], [(0:6)', (1:7)'])
+%       endPoints11 = find_window_endpoints([3.5, 1.5], 5:-1:1, 'BoundaryMode', 'inclusive')
 %
 % Outputs:
 %       endPoints   - index(ices) of window endpoints
@@ -25,7 +27,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %                   must be empty or a numeric vector with 2 elements,
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
-%       timeVecs    - time vector(s)
+%       timeVecs    - time vector(s), must be monotonic
 %                   Note: If a cell array, each element must be a vector
 %                         If a non-vector array, each column is a vector
 %                   must be a numeric array or a cell array of numeric vectors
@@ -77,6 +79,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 % 2019-01-03 Now accepts a cell array of non-vector arrays and 
 %               added 'ForceMatrixOutput' as an optional argument
 % 2019-09-10 Added 'WarnFlag' as an optional flag
+% 2019-11-14 Now allows time vectors to be decreasing
 % 
 
 %% Hard-coded parameters
@@ -175,10 +178,24 @@ function endPoints = find_window_endpoints_helper (timeWindow, timeVec, ...
                                                     boundaryMode, warnFlag)
 %% Find the endPoints for one time vector
 
+% Compute the number of time points
+nTimePoints = numel(timeVec);
+
 % If the time window is empty, return the first and last indices
 if isempty(timeWindow)
-    endPoints = [1; length(timeVec)];
+    endPoints = [1; nTimePoints];
     return
+end
+
+% Make sure time window is increasing
+timeWindow = sort(timeWindow, 'ascend');
+
+% Force time vector to be increasing
+if timeVec(end) < timeVec(1)
+    timeVec = flip(timeVec);
+    vectorFlipped = true;
+else
+    vectorFlipped = false;
 end
 
 % Get the time to start
@@ -240,7 +257,11 @@ if isempty(idxStart) || isempty(idxEnd)
     end
     endPoints = [];
 else
-    endPoints = [idxStart; idxEnd];
+    if vectorFlipped
+        endPoints = nTimePoints - [idxEnd; idxStart] + 1;
+    else
+        endPoints = [idxStart; idxEnd];
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

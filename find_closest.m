@@ -5,8 +5,8 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 %       TODO
 %
 % Example(s):
-%       [i, v] = find_closest(1:9, 5.6);
-%       [i, v] = find_closest(9:-2:1, 5);
+%       [i, v] = find_closest(2:9, 5.6)
+%       [i, v] = find_closest(9:-2:1, 4)
 %
 % Outputs:
 %       idxClosest  - index(ices) of the closest value(s)
@@ -96,8 +96,12 @@ indClosest = find_window_endpoints(windows, vecs, 'BoundaryMode', 'inclusive');
 % Find corresponding values
 valsClosest = extract_subvectors(vecs, 'Indices', indClosest);
 
-% Sort the values in ascending order
-[valsClosest, origInd] = cellfun(@sort, valsClosest, 'UniformOutput', false);
+% Sort the values in descending order
+%   Note: Must be descending for 'nearest' to work
+[valsClosest, origInd] = ...
+    cellfun(@(x) sort(x, 'descend'), valsClosest, 'UniformOutput', false);
+
+% Reorder the indices in the same order
 indClosest = cellfun(@(x, y) x(y), indClosest, origInd, 'UniformOutput', false);
 
 % Compute the absolute differences
@@ -111,11 +115,11 @@ switch direction
         idxClosest = cellfun(@(x, y) x(y), indClosest, iClosest);
         valClosest = cellfun(@(x, y) x(y), valsClosest, iClosest);
     case 'down'
-        idxClosest = extract_elements(indClosest, 'first');
-        valClosest = extract_elements(valsClosest, 'first');
-    case 'up'
         idxClosest = extract_elements(indClosest, 'last');
         valClosest = extract_elements(valsClosest, 'last');
+    case 'up'
+        idxClosest = extract_elements(indClosest, 'first');
+        valClosest = extract_elements(valsClosest, 'first');
     otherwise
         error('direction unrecognized!!');
 end
