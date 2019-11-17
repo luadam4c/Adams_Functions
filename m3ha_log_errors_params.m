@@ -57,7 +57,7 @@ simplexNum = outparams.simplexNum;
 fitWindowCpr = outparams.fitWindowCpr;
 fitWindowIpscr = outparams.fitWindowIpscr;
 sweepWeightsIpscr = outparams.sweepWeightsIpscr;
-ltsWeights = outparams.ltsWeights;
+ltsFeatureWeights = outparams.ltsFeatureWeights;
 lts2SweepErrorRatio = outparams.lts2SweepErrorRatio;
 
 % Extract info from err
@@ -224,7 +224,7 @@ if logSwpWeightsFlag
     fprintf(fid, repmat('%6.4g, ', 1, nSweeps), sweepWeightsIpscr);
 end
 if all(hasLtsError) && logLtsWeightsFlag
-    fprintf(fid, repmat('%6.4g, ', 1, 3), ltsWeights);
+    fprintf(fid, repmat('%6.4g, ', 1, 3), ltsFeatureWeights);
     fprintf(fid, '%6.4g, ', lts2SweepErrorRatio);
 end
 fprintf(fid, '%6.4g, ', fitWindowCpr(1));
@@ -298,7 +298,7 @@ else
     fprintf(fid, repmat('%6.4g, ', 1, nParams), neuronParamValues);
 end
 if all(hasLtsError) && logLtsWeightsFlag
-    fprintf(fid, repmat('%6.4g, ', 1, 3), ltsWeights);
+    fprintf(fid, repmat('%6.4g, ', 1, 3), ltsFeatureWeights);
     fprintf(fid, '%6.4g, ', lts2SweepErrorRatio);
 end
 fprintf(fid, '\n');
@@ -322,7 +322,7 @@ fprintf(fid, repmat('%6.4e, ', 1, numel(outparams.neuronParamValues)), outparams
 fprintf(fid, repmat('%6.4f, ', 1, numel(outparams.swpw)), outparams.swpw);
 fprintf(fid, '%6.4e, ', err.totalError);
 fprintf(fid, repmat('%6.4e, ', 1, numel(err.swpErrors)), err.swpErrors);
-fprintf(fid, repmat('%6.4f, ', 1, numel(outparams.ltsWeights)), outparams.ltsWeights);
+fprintf(fid, repmat('%6.4f, ', 1, numel(outparams.ltsFeatureWeights)), outparams.ltsFeatureWeights);
 fprintf(fid, repmat('%6.4e, ', 1, 3), err.ltserrv, err.ltserrt, err.ltserrdvdtv);
 fprintf(fid,'\n');
 
