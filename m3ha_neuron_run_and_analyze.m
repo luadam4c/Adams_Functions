@@ -1,6 +1,6 @@
 function [errorStruct, hFig, simData] = ...
                 m3ha_neuron_run_and_analyze (neuronParamsTable, varargin)
-%% Runs "one iteration" of NEURON (once for each of the sweeps)
+%% Runs and analyzes "one iteration" of NEURON simulations (once for each of the sweeps)
 % Usage: [errorStruct, hFig, simData] = ...
 %               m3ha_neuron_run_and_analyze (neuronParamsTable, varargin)
 % Explanation:
@@ -43,7 +43,7 @@ function [errorStruct, hFig, simData] = ...
 %                                   corresponding to each vector
 %                   must be a character vector, a string vector 
 %                       or a cell array of character vectors
-%                   default == 'unnamed_1', 'unnamed_2', ...
+%                   default == set in decide_on_filebases.m
 %                   - 'DebugFlag': whether debugging
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -81,6 +81,12 @@ function [errorStruct, hFig, simData] = ...
 %                   default == true
 %                   - 'SaveSimOutFlag': whether to save simulation outputs
 %                                           when there are no errors
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'SaveLtsInfoFlag': whether to save LTS info
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'SaveLtsStatsFlag': whether to save LTS statistics
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %                   - 'PlotIndividualFlag': whether to plot individual traces
@@ -126,13 +132,16 @@ function [errorStruct, hFig, simData] = ...
 %                   default == []
 %                   - 'CprWindow': current pulse response window in ms
 %                   must be a numeric vector with 2 elements
-%                   default == [2000, 2360]
+%                   default == [0, 360] + timeToStabilize
 %                   - 'IpscTime': start time of IPSC in ms
 %                   must be a numeric scalar
-%                   default == 1000
+%                   default == 1000 + timeToStabilize
+%                   - 'IpscPeakWindow': window (ms) to look for IPSC peak
+%                   must be a numeric vector
+%                   default == [1000, 1300] + timeToStabilize
 %                   - 'IpscrWindow': IPSC response window in ms
 %                   must be a numeric vector with 2 elements
-%                   default == [2000, 10000]
+%                   default == [0, 8000] + timeToStabilize
 %                   - 'OutFilePath': path to NEURON output file(s)
 %                   must be a characeter vector, a string array 
 %                       or a cell array of character arrays
@@ -209,19 +218,19 @@ function [errorStruct, hFig, simData] = ...
 %                   - 'FitWindowCpr': time window to fit (ms)
 %                                       for current pulse response
 %                   must be a numeric vector with 2 elements
-%                   default == [2100, 2250]
+%                   default == [100, 250] + timeToStabilize
 %                   - 'FitWindowIpscr': time window to fit (ms)
 %                                       for IPSC response
 %                   must be a numeric vector with 2 elements
-%                   default == [2980, 10000]
+%                   default == [1000, 8000] + timeToStabilize
 %                   - 'BaseWindowCpr': baseline window (ms)
 %                                       for current pulse response
 %                   must be a numeric vector with 2 elements
-%                   default == [2000, 2100]
+%                   default == [0, 100] + timeToStabilize
 %                   - 'BaseWindowIpscr': baseline window (ms)
 %                                       for IPSC response
 %                   must be a numeric vector with 2 elements
-%                   default == [2000, 2980]
+%                   default == [0, 1000] + timeToStabilize
 %                   - 'BaseNoiseCpr': baseline noise (mV)
 %                                       for current pulse response
 %                   must be a numeric vector
@@ -238,6 +247,16 @@ function [errorStruct, hFig, simData] = ...
 %                                       for IPSC response
 %                   must be a numeric vector
 %                   default == 1
+%                   - 'LtsFeatureWeights': LTS feature weights for averaging
+%                   must be empty or a numeric vector with length == nSweeps
+%                   default == set in compute_lts_errors.m
+%                   - 'LtsExistError': a dimensionless error that penalizes 
+%                               a misprediction of the existence/absence of LTS
+%                   must be empty or a numeric vector with length == nSweeps
+%                   default == set in compute_lts_errors.m
+%                   - 'Lts2SweepErrorRatio': ratio of LTS error to sweep error
+%                   must be empty or a numeric vector with length == nSweeps
+%                   default == 2
 %
 % Requires:
 %       ~/m3ha/optimizer4gabab/singleneuron4compgabab.hoc
@@ -381,6 +400,8 @@ function [errorStruct, hFig, simData] = ...
 % 2019-05-08 - Updated usage of plot_bar.m
 % 2019-10-13 - Updated simulated data column numbers
 % 2019-11-15 - Added 'IpscTime' as an optional parameter
+% 2019-11-15 - Added 'IpscPeakWindow' as an optional parameter
+% 2019-11-15 - Added 'FileBase' as an optional parameter
 
 %% Hard-coded parameters
 validSimModes = {'active', 'passive'};
@@ -458,6 +479,8 @@ saveParamsFlagDefault = true;   % save simulation parameters by default
 saveSimCmdsFlagDefault = true;  % save simulation commands by default
 saveStdOutFlagDefault = true;   % save standard outputs by default
 saveSimOutFlagDefault = true;   % save simulation outputs by default
+saveLtsInfoFlagDefault = true;  % save LTS info by default
+saveLtsStatsFlagDefault = true; % save LTS statistics by default
 plotIndividualFlagDefault = true;   % all zoomed traces plotted by default
 plotResidualsFlagDefault = true;    % all residuals plotted by default
 plotOverlappedFlagDefault = true;   % all overlapped traces plotted by default
@@ -498,10 +521,13 @@ fitWindowCprDefault = [100, 250] + timeToStabilize;
 fitWindowIpscrDefault = [ipscTimeOrig, ipscrWinOrig(2)] + timeToStabilize;
 baseWindowCprDefault = [0, 100] + timeToStabilize;
 baseWindowIpscrDefault = [ipscrWinOrig(1), ipscTimeOrig] + timeToStabilize;
-baseNoiseCprDefault = [];        % set later
-baseNoiseIpscrDefault = [];      % set later
-sweepWeightsCprDefault = [];     % set later
-sweepWeightsIpscrDefault = [];   % set later
+baseNoiseCprDefault = [];       % set later
+baseNoiseIpscrDefault = [];     % set later
+sweepWeightsCprDefault = [];    % set later
+sweepWeightsIpscrDefault = [];  % set later
+ltsFeatureWeightsDefault = [];  % set later
+ltsExistErrorDefault = [];      % set later
+lts2SweepErrorRatioDefault = [];% set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -556,6 +582,10 @@ addParameter(iP, 'SaveSimCmdsFlag', saveSimCmdsFlagDefault, ...
 addParameter(iP, 'SaveStdOutFlag', saveStdOutFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SaveSimOutFlag', saveSimOutFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveLtsInfoFlag', saveLtsInfoFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveLtsStatsFlag', saveLtsStatsFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotIndividualFlag', plotIndividualFlagDefault, ...   
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -648,6 +678,12 @@ addParameter(iP, 'SweepWeightsCpr', sweepWeightsCprDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'SweepWeightsIpscr', sweepWeightsIpscrDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'LtsFeatureWeights', ltsFeatureWeightsDefault, ...
+    @(x) assert(isnumericvector(x), 'LtsFeatureWeights must be a numeric vector!'));
+addParameter(iP, 'LtsExistError', ltsExistErrorDefault, ...
+    @(x) assert(isnumericvector(x), 'LtsExistError must be a numeric vector!'));
+addParameter(iP, 'Lts2SweepErrorRatio', lts2SweepErrorRatioDefault, ...
+    @(x) assert(isnumericvector(x), 'InitLtsError must be a numeric vector!'));
 
 % Read from the Input Parser
 parse(iP, neuronParamsTable, varargin{:});
@@ -668,6 +704,8 @@ saveParamsFlag = iP.Results.SaveParamsFlag;
 saveSimCmdsFlag = iP.Results.SaveSimCmdsFlag;
 saveStdOutFlag = iP.Results.SaveStdOutFlag;
 saveSimOutFlag = iP.Results.SaveSimOutFlag;
+saveLtsInfoFlag = iP.Results.SaveLtsInfoFlag;
+saveLtsStatsFlag = iP.Results.SaveLtsStatsFlag;
 plotIndividualFlag = iP.Results.PlotIndividualFlag;
 plotResidualsFlag = iP.Results.PlotResidualsFlag;
 plotOverlappedFlag = iP.Results.PlotOverlappedFlag;
@@ -712,6 +750,9 @@ baseNoiseCpr = iP.Results.BaseNoiseCpr;
 baseNoiseIpscr = iP.Results.BaseNoiseIpscr;
 sweepWeightsCpr = iP.Results.SweepWeightsCpr;
 sweepWeightsIpscr = iP.Results.SweepWeightsIpscr;
+ltsFeatureWeights = iP.Results.LtsFeatureWeights;
+ltsExistError = iP.Results.LtsExistError;
+lts2SweepErrorRatio = iP.Results.Lts2SweepErrorRatio;
 
 %% Preparation
 % Initialize outputs
@@ -984,9 +1025,9 @@ if generateDataFlag
     end
 
     % Test the difference of features between dataType
-    testResults = test_var_difference(featuresTable, featuresToCompare, 'dataType', ...
-                                    'SheetName', testResultsFile, ...
-                                    'Prefix', expStr, 'OutFolder', outFolder);
+    testResults = test_var_difference(featuresTable, featuresToCompare, ...
+                                'dataType', 'SheetName', testResultsFile, ...
+                                'Prefix', expStr, 'OutFolder', outFolder);
 end
 
 % If requested, combine both recorded and simulated responses 
@@ -1044,7 +1085,10 @@ if ~isempty(realData)
     residuals = compute_residuals(vVecsSim, vVecsRec);
 
     % TODO: Fix this when normalize2InitErrFlag is true
-    initSwpError = 1;
+    %       initSwpError needs to be read from the previous errorStruct somehow
+    %       initLtsError needs to be read from the previous errorStruct somehow
+    initSwpError = NaN;
+    initLtsError = NaN;
     if normalize2InitErrFlag
         error('initSwpError needs to be fixed first!')
     end
@@ -1053,12 +1097,22 @@ if ~isempty(realData)
     errorStruct = compute_single_neuron_errors(vVecsSim, vVecsRec, ...
                     'ErrorMode', errorMode, 'TimeVecs', tVecs, ...
                     'IvecsSim', iVecsSim, 'IvecsReal', iVecsRec, ...
-                    'FitWindow', fitWindow, 'SweepWeights', sweepWeights, ...
-                    'BaseWindow', baseWindow, 'BaseNoise', baseNoise, ...
+                    'FitWindow', fitWindow, 'BaseWindow', baseWindow, ...
+                    'BaseNoise', baseNoise, 'SweepWeights', sweepWeights, ...
+                    'LtsFeatureWeights', ltsFeatureWeights, ...
+                    'LtsExistError', ltsExistError, ...
+                    'Lts2SweepErrorRatio', lts2SweepErrorRatio, ...
                     'NormalizeError', normalize2InitErrFlag, ...
-                    'InitSwpError', initSwpError, 'IpscTime', ipscTime, ...
-                    'IpscPeakWindow', ipscPeakWindow, ...
-                    'FileBase', fileBase);
+                    'InitSwpError', initSwpError, ...
+                    'InitLtsError', initLtsError, ...
+                    'IpscTime', ipscTime, 'IpscPeakWindow', ipscPeakWindow, ...
+                    'OutFolder', outFolder, 'FileBase', fileBase, ...
+                    'SaveLtsInfoFlag', saveLtsInfoFlag, ...
+                    'SaveLtsStatsFlag', saveLtsStatsFlag, ...
+                    'PlotIpeakFlag', plotIpeakFlag, ...
+                    'PlotLtsFlag', plotLtsFlag, ...
+                    'PlotStatisticsFlag', plotStatisticsFlag);
+
 
     % Extract just the sweep errors
     swpErrors = errorStruct.swpErrors;
@@ -1371,13 +1425,6 @@ ltsErrorFlag = outparams.ltsErrorFlag;
 plotIpeakFlag = outparams.plotIpeakFlag;
 plotLtsFlag = outparams.plotLtsFlag;
 plotStatisticsFlag = outparams.plotStatisticsFlag;
-isLtsError = outparams.isLtsError;
-
-if cprflag
-    sweepWeights = outparams.sweepWeightsCpr;
-else
-    sweepWeights = outparams.sweepWeightsIpscr;
-end
 
 % Needed no matter and convert to columns
 ioffset = outparams.ioffset;
@@ -1572,99 +1619,6 @@ end
 %% Compute LTS errors and total errors
 if ~cprflag && findLtsFlag && ltsErrorFlag
 
-    % Store LTS features in error structure
-    err.real_ltsv = real_ltsv;
-    err.sim_ltsv = sim_ltsv;
-    err.real_ltst = real_ltst;
-    err.sim_ltst = sim_ltst;
-    err.real_ltsdvdtv = real_ltsdvdtv;
-    err.sim_ltsdvdtv = sim_ltsdvdtv;
-
-    % Compute dimensionless LTS errors for each sweep
-    [err.ltsAmpErrors, outparams.ltsSwpw] = ...
-        compute_ltsdata_error (real_ltsv, sim_ltsv, baseNoise, isLtsError, sweepWeights);
-    [err.ltsDelayErrors, ~] = ...
-        compute_ltsdata_error (real_ltst, sim_ltst, peakwidth, isLtsError, sweepWeights);
-    slopeUncertainty = (2*baseNoise ./ peakprom + 2*ioffset ./ peakwidth) ...
-                            .* real_ltsdvdtv;
-    [err.ltsSlopeErrors, ~] = ...
-        compute_ltsdata_error (real_ltsdvdtv, sim_ltsdvdtv, ...
-                                slopeUncertainty, isLtsError, sweepWeights);
-
-    % Compute weighted-root-mean-squared-averaged LTS errors (dimensionless)
-    ltsSwpw = outparams.ltsSwpw;
-    ltsTotalSweepWeights = sum(outparams.ltsSwpw);
-    [err.avgLtsAmpError, outparams] = ...
-        compute_avgerror ('avgltsverr0', err.ltsAmpErrors, outparams, ltsSwpw, ltsTotalSweepWeights);
-    [err.avgLtsDelayError, outparams] = ...
-        compute_avgerror ('avgltsterr0', err.ltsDelayErrors, outparams, ltsSwpw, ltsTotalSweepWeights);
-    [err.avgLtsSlopeError, outparams] = ...
-        compute_avgerror ('avgltsdvdtverr0', err.ltsSlopeErrors, outparams, ltsSwpw, ltsTotalSweepWeights);
-    
-    % Average LTS error (dimensionless) is the weighted average of sweep error and lts error, 
-    %        weighted by outparams.ltsWeights (set by user)
-    err.avgLtsError = (ltsWeights' * [err.avgLtsAmpError; err.avgLtsDelayError; err.avgLtsSlopeError]) / totalltsw;
-
-    % Total error (dimensionless) is the weighted average of sweep error and lts error, 
-    %        weighted by outparams.lts2SweepErrorRatio (set by user)
-    err.toterr = (err.avgSwpError + lts2SweepErrorRatio * err.avgLtsError) / (1 + lts2SweepErrorRatio);
-
-else
-    % Total error (dimensionless) is just the weighted-root-mean-squared average of sweep error
-    err.toterr = err.avgSwpError;            
-
-    % Set other errors to -999 for debug
-    err.avgLtsAmpError = -999;
-    err.avgLtsDelayError = -999;
-    err.avgLtsSlopeError = -999;
-    err.avgLtsError = -999;
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [ltsswperr, ltsSwpw] = compute_ltsdata_error (real_ltsdata, sim_ltsdata, uncertainty, isLtsError, sweepWeights)
-% Compute LTS error for each sweep based on LTS existence
-%% TODO: Make functions out of this
-
-ltsswperr = zeros(size(real_ltsdata));
-ltsSwpw = sweepWeights;                        % initialize lts sweep weights to user-defined sweep weights
-for iSwp = 1:length(ltsswperr)
-    if isnan(real_ltsdata(iSwp)) && isnan(sim_ltsdata(iSwp))          % LTS does not exist in both cases
-        % Do not weigh this sweep in computing average error
-        ltsSwpw(iSwp) = 0;
-    elseif ~isnan(real_ltsdata(iSwp)) && ~isnan(sim_ltsdata(iSwp))    % LTS does exist in both cases
-        % Compute dimensionless LTS error by normalizing to uncertainty in measurement
-        ltsswperr(iSwp) = (real_ltsdata(iSwp) - sim_ltsdata(iSwp))/uncertainty(iSwp);
-    else                                % LTS existence mismatch
-        % Set to a predefined error (e.g., 10)
-        ltsswperr(iSwp) = isLtsError;
-    end
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [avgerror, outparams] = compute_avgerror (fieldnameIniterr, allErrors, outparams, allWeights, totalWeights)
-% Compute averaged error over all sweeps and normalized to initial error if normalize2InitErrFlag is true
-%% TODO: Make functions out of this
-
-% Compute weighted-root-mean-squared-averaged error over all sweeps
-avgerror = sqrt(sum(allWeights .* allErrors .^ 2) / totalWeights);
-
-% Record initial error and normalize if normalize2InitErrFlag is true
-if outparams.runnumtotal == 1
-    % Store as starting error
-    outparams.(fieldnameIniterr) = avgerror;
-
-    % Starting normalized error is 1
-    if outparams.normalize2InitErrFlag
-        avgerror = 1;
-    end
-else
-    % Divide by starting error
-    if outparams.normalize2InitErrFlag
-        avgerror = avgerror / outparams.(fieldnameIniterr);
-    end
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

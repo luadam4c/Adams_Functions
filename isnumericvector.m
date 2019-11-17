@@ -2,12 +2,14 @@ function isNumericVector = isnumericvector (x)
 %% Returns whether an input is a numeric vector (may be empty)
 % Usage: isNumericVector = isnumericvector (x)
 % Explanation:
-%       Tests whether the input is a cell array of numeric vectors
+%       Tests whether the input is a numeric vector that may be empty
+%
 % Example(s):
 %       isnumericvector([])
 %       isnumericvector(2:20)
 %       isnumericvector(magic(3))
 %       isnumericvector('sets')
+%
 % Outputs:
 %       isNumericVector - whether the input is a numeric vector (may be empty)
 %                       specified as a logical scalar
@@ -18,6 +20,7 @@ function isNumericVector = isnumericvector (x)
 %       cd/isnum.m
 %
 % Used by:
+%       cd/compute_lts_errors.m
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
 %       cd/compute_single_neuron_errors.m

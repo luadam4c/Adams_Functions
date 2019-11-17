@@ -33,7 +33,7 @@ function errorStruct = compute_sweep_errors (vSim, vReal, varargin)
 %                   default == entire trace
 %                   - 'SweepWeights': sweep weights for averaging
 %                   must be empty or a numeric vector with length == nSweeps
-%                   default == ones(nSweeps, 1)
+%                   default == set in compute_weighted_average.m
 %                   - 'NormalizeError': whether to normalize errors 
 %                                       by an initial error
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -65,7 +65,6 @@ function errorStruct = compute_sweep_errors (vSim, vReal, varargin)
 %       cd/compute_single_neuron_errors.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/m3ha_xolotl_plot.m
-%       ~/m3ha/optimizer4gabab/run_neuron_once_4compgabab.m
 
 % File History:
 % 2018-10-28 Adapted from compute_single_neuron_errors.m
@@ -77,7 +76,7 @@ function errorStruct = compute_sweep_errors (vSim, vReal, varargin)
 %% Default values for optional arguments
 timeVecsDefault = [];       % set later
 fitWindowDefault = [];      % use entire trace(s) by default
-sweepWeightsDefault = [];   % set later
+sweepWeightsDefault = [];   % set in compute_weighted_average.m
 normalizeErrorDefault = false;  % don't normalize errors by default
 initSwpErrorDefault = [];   % no initial error values by default
 
@@ -149,11 +148,6 @@ nSweeps = count_vectors(vSim);
 [fitWindow, vReal, tBoth] = ...
     argfun(@(x) match_row_count(x, nSweeps), fitWindow, vReal, tBoth);
 
-% Set default sweep weights for averaging
-if isempty(sweepWeights)
-    sweepWeights = ones(nSweeps, 1);
-end
-
 % Extract the start and end indices of the time vector for fitting
 endPoints = find_window_endpoints(fitWindow, tBoth);
 
@@ -167,7 +161,7 @@ swpErrors = compute_rms_error(vSim, vReal);
 
 % Compute a weighted root-mean-square error over all sweeps
 avgSwpError = compute_weighted_average(swpErrors, 'Weights', sweepWeights, ...
-                                        'AverageMethod', 'root-mean-square');
+                        'IgnoreNaN', true, 'AverageMethod', 'root-mean-square');
 
 % If requested, make errors dimensionless by 
 %   storing or dividing by an initial error value
@@ -178,10 +172,12 @@ end
 
 %% Store in output errors structure
 errorStruct.swpErrors = swpErrors;
+errorStruct.fitWindow = fitWindow;
+errorStruct.sweepWeights = sweepWeights;
 errorStruct.avgSwpError = avgSwpError;
 if normalizeError
-    errorStruct.normAvgSwpError = normAvgSwpError;
     errorStruct.initSwpError = initSwpError;
+    errorStruct.normAvgSwpError = normAvgSwpError;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -13,6 +13,7 @@ function avgValues = compute_weighted_average (values, varargin)
 %       compute_weighted_average([1; 10; 100], 'AverageMethod', 'exponential')
 %       compute_weighted_average([100; 10; 1], 'AverageMethod', 'exponential')
 %       compute_weighted_average([NaN, 3, 27; NaN, 4, 64], 'AverageMethod', 'geometric', 'DimToOperate', 2, 'IgnoreNan', true)
+%       compute_weighted_average([NaN; 10], 'Weight', [2, 1], 'AverageMethod', 'linear', 'IgnoreNaN', true)
 %
 % Outputs:
 %       avgValues   - averaged value(s)
@@ -53,6 +54,8 @@ function avgValues = compute_weighted_average (values, varargin)
 %
 % Used by:
 %       cd/test_normality.m
+%       cd/compute_lts_errors.m
+%       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %
 % Related functions:

@@ -84,6 +84,7 @@ function [simplexOut, exitFlag] = m3ha_fminsearch3(outparams)
 %       cd/m3ha_log_errors_params.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/save_params.m
+%       cd/set_default_flag.m
 %       cd/set_fields_zero.m
 %       cd/restore_fields.m
 %
@@ -203,7 +204,7 @@ onHpcFlag = iP.Results.OnHpcFlag;
 %% Extract from outparams
 % TODO: Change to use varargin
 multipleRunsFlag = outparams.multipleRunsFlag;
-ltsErrorFlag = outparams.ltsErrorFlag;
+ltsFeatureWeights = outparams.ltsFeatureWeights;
 showSimplexHistoryFlag = outparams.showSimplexHistoryFlag;
 autoLoggerFlag = outparams.autoLoggerFlag;
 
@@ -221,6 +222,10 @@ neuronParamsTableInit = outparams.neuronParamsTable;
 outparams.outFolder = outFolderName;
 
 %% Preparation
+]% Determine whether LTS errors are computed
+computeLtsError = set_default_flag([], strcmp(simMode, 'active') && ...
+                                ~all(ltsFeatureWeights == 0));
+
 % Extract from neuronParamsTableInit
 pNames = neuronParamsTableInit.Properties.RowNames;
 initValues = neuronParamsTableInit.Value;
@@ -406,7 +411,7 @@ errv = cell(1, n + 1);  % the error structures corresponding to each set of para
 
 % Update simplex performance figure
 update_errorhistory(simplexfigure, ctIterations, err0, cm, ...
-    multipleRunsFlag, ltsErrorFlag, simplexIterCount, simMode);
+    multipleRunsFlag, computeLtsError, simplexIterCount);
 
 % Place initial params in the simplex! (credit L.Pfeffer at Stanford)
 v(:, 1) = p0;
@@ -500,7 +505,7 @@ end
 
 % Update simplex performance figure
 update_errorhistory(simplexfigure, ctIterations, errv{1}, cm, ...
-    multipleRunsFlag, ltsErrorFlag, simplexIterCount, simMode);
+    multipleRunsFlag, computeLtsError, simplexIterCount);
 
 % Log errors and params
 if autoLoggerFlag
@@ -647,7 +652,7 @@ while ctIterations < maxIterations && ctEvals < maxFunctionEvaluations ...
 
     % Update simplex performance figure
     update_errorhistory(simplexfigure, ctIterations, errv{1}, cm, ...
-                multipleRunsFlag, ltsErrorFlag, simplexIterCount, simMode);
+                multipleRunsFlag, computeLtsError, simplexIterCount);
 
     % Log errors and params
     if autoLoggerFlag
@@ -751,7 +756,7 @@ simplexOut.paramsInUseValues = paramsInUseValues;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function update_errorhistory(fig, ctIterations, err, cm, ...
-                    multipleRunsFlag, ltsErrorFlag, simplexIterCount, simMode)
+                    multipleRunsFlag, computeLtsError, simplexIterCount)
 % Update simplex performance figure
 
 % Choose the iteration number
@@ -776,7 +781,7 @@ else
 end
 
 set(0, 'CurrentFigure', fig);
-if strcmpi(simMode, 'active') && ltsErrorFlag   % if lts error is computed
+if computeLtsError   % if lts error is computed
 
     % Plot the total error
     subplot(3, 2, 1);

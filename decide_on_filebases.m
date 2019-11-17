@@ -86,7 +86,8 @@ if isempty(fileStrings)
     fileBases = create_labels_from_numbers(transpose(1:nFiles), ...
                                             'Prefix', filePrefix);
 else
-    fileBases = extract_fileparts(fileStrings, 'base');
+    pathBases = extract_fileparts(fileStrings, 'pathbase');
+    fileBases = extract_fileparts(pathBases, 'dirbase');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

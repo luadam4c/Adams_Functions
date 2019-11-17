@@ -28,6 +28,8 @@ function flag = set_default_flag (flag, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/compute_single_neuron_errors.m
+%       cd/m3ha_fminsearch3.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/parse_multiunit.m
 %       cd/plot_measures.m

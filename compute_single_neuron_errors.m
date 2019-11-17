@@ -3,13 +3,17 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 % Usage: errors = compute_single_neuron_errors (vSim, vReal, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       errors      - a structure of all the errors computed, with fields:
 %                       totalError
 %                       fields returned by compute_sweep_errors.m
+%                       fields returned by compute_lts_errors.m
 %                   specified as a scalar structure
+%
 % Arguments:    
 %       vSim        - simulated voltage traces
 %                   must be a numeric vector or a cell array of numeric vectors
@@ -33,40 +37,76 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %                   must be empty or a numeric vector with 2 elements,
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
-%                   default == first half of the trace
+%                   default == set in compute_default_sweep_info.m
 %                   - 'FitWindow': time window to fit for each trace
 %                   must be empty or a numeric vector with 2 elements,
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric arrays
-%                   default == second half of the trace
+%                   default == set in compute_default_sweep_info.m
 %                   - 'BaseNoise': baseline noise value(s)
 %                   must be a numeric vector
-%                   default == apply compute_baseline_noise.m
+%                   default == set in compute_default_sweep_info.m
 %                   - 'SweepWeights': sweep weights for averaging
 %                   must be empty or a numeric vector with length == nSweeps
-%                   default == 1 ./ baseNoise
+%                   default == set in compute_default_sweep_info.m
+%                   - 'LtsFeatureWeights': LTS feature weights for averaging
+%                   must be empty or a numeric vector with length == nSweeps
+%                   default == set in compute_lts_errors.m
+%                   - 'LtsExistError': a dimensionless error that penalizes 
+%                               a misprediction of the existence/absence of LTS
+%                   must be empty or a numeric vector with length == nSweeps
+%                   default == set in compute_lts_errors.m
+%                   - 'Lts2SweepErrorRatio': ratio of LTS error to sweep error
+%                   must be empty or a numeric vector with length == nSweeps
+%                   default == 2
 %                   - 'NormalizeError': whether to normalize errors 
 %                                       by an initial error
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'InitSwpError': initial sweep errors
+%                   - 'InitSwpError': initial average sweep error
+%                   must be empty or a numeric vector with length == nSweeps
+%                   default == []
+%                   - 'InitLtsError': initial average LTS error
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == []
 %                   - 'IpscTime': current stimulation start time (ms), 
 %                           Note: this is the time relative to which 
 %                                       the peak delay is computed
 %                   must be a positive scalar
-%                   default == detected
+%                   default == set in parse_ipsc.m
+%                   - 'IpscPeakWindow': window (ms) to look for IPSC peak
+%                   must be a numeric vector
+%                   default == set in parse_ipsc.m
+%                   - 'OutFolder': the directory where outputs will be placed
+%                   must be a string scalar or a character vector
+%                   default == pwd
 %                   - 'FileBase': base of filename (without extension) 
 %                                   corresponding to each vector
 %                   must be a character vector, a string vector 
 %                       or a cell array of character vectors
-%                   default == 'unnamed_1', 'unnamed_2', ...
+%                   default == set in decide_on_filebases.m
+%                   - 'SaveLtsInfoFlag': whether to save LTS info
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'SaveLtsStatsFlag': whether to save LTS statistics
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'PlotIpeakFlag': whether to current peak analyses
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'PlotLtsFlag': whether to plot vtrace/LTS/burst analyses
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'PlotStatisticsFlag': whether to plot LTS statistics
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %
 % Requires:
 %       cd/argfun.m
 %       cd/compute_default_sweep_info.m
+%       cd/compute_lts_errors.m
 %       cd/compute_sweep_errors.m
+%       cd/compute_weighted_average.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
 %       cd/create_time_vectors.m
@@ -77,8 +117,10 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %       cd/iscellnumericvector.m
 %       cd/isnumericvector.m
 %       cd/match_row_count.m
+%       cd/merge_structs.m
 %       cd/parse_ipsc.m
 %       cd/parse_lts.m
+%       cd/set_default_flag.m
 %
 % Used by:
 %       cd/m3ha_neuron_run_and_analyze.m
@@ -86,11 +128,29 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 % File History:
 % 2018-10-24 Adapted from code in run_neuron_once_4compgabab.m
 % 2018-10-28 Now uses extract_subvectors.m
-% 2019-11-15 TODO: Add 'IpscTime' as an optional argument
+% 2019-11-15 Added 'IpscTime' as an optional argument
+% 2019-11-15 Added 'IpscPeakWindow' as an optional argument
+% 2019-11-15 Added 'FileBase' as an optional argument
+% 2019-11-16 Added 'LtsFeatureWeights' as an optional argument
+% 2019-11-16 Added 'LtsExistError' as an optional argument
+% 2019-11-16 Added 'Lts2SweepErrorRatio' as an optional argument
+% 2019-11-17 Added 'OutFolder' as an optional parameter
 % 
+% TODO:
+%   Implement saveLtsInfoFlag
+%   Implement saveLtsStatsFlag
+%   Implement plotStatisticsFlag
+%   Fix plotIpeakFlag
+%   Fix plotLtsFlag
 
 %% Hard-coded parameters
 validErrorModes = {'SweepOnly', 'Sweep&LTS'};
+
+% Consistent with singleneuronfittin58.m
+defaultLts2SweepErrorRatio = 2;         % default error ratio of LTS error 
+                                        %   to sweep error
+
+
 
 %% Default values for optional arguments
 errorModeDefault = 'SweepOnly'; %'Sweep&LTS'; % compute sweep & LTS errors by default
@@ -101,11 +161,22 @@ baseWindowDefault = [];         % set later
 fitWindowDefault = [];          % set later
 baseNoiseDefault = [];          % set later
 sweepWeightsDefault = [];       % set later
+ltsFeatureWeightsDefault = [];  % set later
+ltsExistErrorDefault = [];      % set later
+lts2SweepErrorRatioDefault = [];% set later
 normalizeErrorDefault = false;  % don't normalize errors by default
-initSwpErrorDefault = [];       % no initial error values by default
+initSwpErrorDefault = [];       % no initial sweep error values by default
+initLtsErrorDefault = [];       % no initial LTS error values by default
 ipscTimeDefault = [];           % set later
 ipscPeakWindowDefault = [];     % set later
+outFolderDefault = pwd;         % use the present working directory for outputs
+                                %   by default
 fileBaseDefault = {};           % set later
+saveLtsInfoFlagDefault = false;  % don't save LTS info by default
+saveLtsStatsFlagDefault = false; % don't save LTS statistics by default
+plotIpeakFlagDefault = false;
+plotLtsFlagDefault = false;
+plotStatisticsFlagDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -157,18 +228,38 @@ addParameter(iP, 'BaseNoise', baseNoiseDefault, ...
     @(x) assert(isnumericvector(x), 'BaseNoise must be a numeric vector!'));
 addParameter(iP, 'SweepWeights', sweepWeightsDefault, ...
     @(x) assert(isnumericvector(x), 'SweepWeights must be a numeric vector!'));
+addParameter(iP, 'LtsFeatureWeights', ltsFeatureWeightsDefault, ...
+    @(x) assert(isnumericvector(x), 'LtsFeatureWeights must be a numeric vector!'));
+addParameter(iP, 'LtsExistError', ltsExistErrorDefault, ...
+    @(x) assert(isnumericvector(x), 'LtsExistError must be a numeric vector!'));
+addParameter(iP, 'Lts2SweepErrorRatio', lts2SweepErrorRatioDefault, ...
+    @(x) assert(isnumericvector(x), 'InitLtsError must be a numeric vector!'));
 addParameter(iP, 'NormalizeError', normalizeErrorDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'InitSwpError', initSwpErrorDefault, ...
     @(x) assert(isnumericvector(x), 'InitSwpError must be a numeric vector!'));
+addParameter(iP, 'InitLtsError', initLtsErrorDefault, ...
+    @(x) assert(isnumericvector(x), 'InitLtsError must be a numeric vector!'));
 addParameter(iP, 'IpscTime', ipscTimeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'IpscPeakWindow', ipscPeakWindowDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FileBase', fileBaseDefault, ...
     @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
         ['FileBase must be a character array or a string array ', ...
             'or cell array of character arrays!']));
+addParameter(iP, 'SaveLtsInfoFlag', saveLtsInfoFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveLtsStatsFlag', saveLtsStatsFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotIpeakFlag', plotIpeakFlagDefault, ...   
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotLtsFlag', plotLtsFlagDefault, ...   
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotStatisticsFlag', plotStatisticsFlagDefault, ...   
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vSim, vReal, varargin{:});
@@ -180,13 +271,39 @@ baseWindow = iP.Results.BaseWindow;
 fitWindow = iP.Results.FitWindow;
 baseNoise = iP.Results.BaseNoise;
 sweepWeights = iP.Results.SweepWeights;
+ltsFeatureWeights = iP.Results.LtsFeatureWeights;
+ltsExistError = iP.Results.LtsExistError;
+lts2SweepErrorRatio = iP.Results.Lts2SweepErrorRatio;
 normalizeError = iP.Results.NormalizeError;
 initSwpError = iP.Results.InitSwpError;
+initLtsError = iP.Results.InitLtsError;
 ipscTime = iP.Results.IpscTime;
 ipscPeakWindow = iP.Results.IpscPeakWindow;
+outFolder = iP.Results.OutFolder;
 fileBase = iP.Results.FileBase;
+saveLtsInfoFlag = iP.Results.SaveLtsInfoFlag;
+saveLtsStatsFlag = iP.Results.SaveLtsStatsFlag;
+plotIpeakFlag = iP.Results.PlotIpeakFlag;
+plotLtsFlag = iP.Results.PlotLtsFlag;
+plotStatisticsFlag = iP.Results.PlotStatisticsFlag;
 
 %% Preparation
+% Set default LTS to sweep error ratio
+if isempty(lts2SweepErrorRatio)
+    lts2SweepErrorRatio = defaultLts2SweepErrorRatio;
+end
+
+% Determine whether LTS errors are computed
+computeLtsError = set_default_flag([], strcmp(errorMode, 'Sweep&LTS') && ...
+                                ~all(ltsFeatureWeights == 0));
+
+% Determine whether voltage traces needs to be parsed
+parseVoltage = set_default_flag([], computeLtsError || saveLtsInfoFlag || ...
+                        saveLtsStatsFlag || plotLtsFlag || plotStatisticsFlag);
+
+% Determine whether current traces needs to be parsed
+parseCurrent = set_default_flag([], parseVoltage || plotIpeakFlag);
+
 % Count the number of samples
 nSamples = count_samples(vSim);
 
@@ -194,7 +311,6 @@ nSamples = count_samples(vSim);
 if isempty(tBoth)
     tBoth = create_time_vectors(nSamples, 'TimeUnits', 'ms');
 end
-
 
 % Compute default windows, noise and weights
 [baseWindow, fitWindow, baseNoise, sweepWeights] = ...
@@ -218,17 +334,38 @@ fileBase = decide_on_filebases(fileBase, nSweeps);
     argfun(@(x) match_row_count(x, nSweeps), ...
             fitWindow, vReal, tBoth, iSim, iReal);
 
-% Extract the start and end indices of the time vector for fitting
-endPoints = find_window_endpoints(fitWindow, tBoth);
+%% Parse current traces
+if parseCurrent
+    % Analyze IPSC traces
+    [ipscTableSim, ipscTableReal] = ...
+        argfun(@(x) parse_ipsc(x, 'tVecs', tBoth, 'StimStartMs', ipscTime, ...
+                            'PeakWindowMs', ipscPeakWindow, ...
+                            'PlotFlag', plotIpeakFlag, ...
+                            'OutFolder', outFolder, 'FileBase', fileBase), ...
+                iSim, iReal);
+end
 
-% Extract the regions to fit
-[tBoth, vSim, vReal, iSim, iReal] = ...
-    argfun(@(x) extract_subvectors(x, 'Endpoints', endPoints), ...
-            tBoth, vSim, vReal, iSim, iReal);
+%% Parse voltage traces
+if parseVoltage
+    % Find the peak delay of the IPSCs
+    [ipscDelaySim, ipscDelayReal] = ...
+        argfun(@(x) x.peakDelayMs, ipscTableSim, ipscTableReal);
+
+    % Find and compute low-threshold spike features
+    ltsFeaturesSim = parse_lts(vSim, 'MinPeakDelayMs', ipscDelaySim, ...
+                        'StimStartMs', ipscTime, 'tVec0s', tBoth, ...
+                        'PlotFlag', plotLtsFlag, ...
+                        'OutFolder', outFolder, 'FileBase', fileBase), ...
+    ltsFeaturesReal = parse_lts(vReal, 'MinPeakDelayMs', ipscDelayReal, ...
+                        'StimStartMs', ipscTime, 'tVec0s', tBoth, ...
+                        'PlotFlag', plotLtsFlag, ...
+                        'OutFolder', outFolder, 'FileBase', fileBase), ...
+end
 
 %% Compute errors
 % Compute sweep errors
 swpErrors = compute_sweep_errors(vSim, vReal, 'TimeVecs', tBoth, ...
+                                'FitWindow', fitWindow, ...
                                 'SweepWeights', sweepWeights, ...
                                 'NormalizeError', normalizeError, ...
                                 'InitSwpError', initSwpError);
@@ -237,69 +374,37 @@ swpErrors = compute_sweep_errors(vSim, vReal, 'TimeVecs', tBoth, ...
 % TODO
 
 % Compute IPSC response feature errors
-% TODO
-switch errorMode
-    case 'SweepOnly'
-        % Set as NaN for other errors
-        ltsErrors.ltsAmpErrors = NaN;
-        ltsErrors.ltsDelayErrors = NaN;
-        ltsErrors.ltsSlopeErrors = NaN;
-        ltsErrors.avgLtsAmpError = NaN;
-        ltsErrors.avgLtsDelayError = NaN;
-        ltsErrors.avgLtsSlopeError = NaN;
-        ltsErrors.avgLtsError = NaN;
-    case 'Sweep&LTS'
-        % Analyze IPSC traces
-        [ipscTableSim, ipscTableReal] = ...
-            argfun(@(x) parse_ipsc(x, 'tVecs', tBoth, 'FileBase', fileBase, ...
-                                    'StimStartMs', ipscTime, ...
-                                    'PeakWindowMs', ipscPeakWindow), ...
-                    iSim, iReal);
-
-        % Find the peak delay of the IPSCs
-        [ipscDelaySim, ipscDelayReal] = ...
-            argfun(@(x) x.peakDelayMs, ipscTableSim, ipscTableReal);
-
-        % Find and compute low-threshold spike features
-        ltsFeaturesSim = parse_lts(vSim, 'MinPeakDelayMs', ipscDelaySim, ...
-                            'StimStartMs', ipscTime, 'tVec0s', tBoth, ...
-                            'FileBase', fileBase);
-        ltsFeaturesReal = parse_lts(vReal, 'MinPeakDelayMs', ipscDelayReal, ...
-                            'StimStartMs', ipscTime, 'tVec0s', tBoth, ...
-                            'FileBase', fileBase);
-
-        % TODO: compute_lts_errors.m
-        % ltsErrors = compute_lts_errors(ltsFeaturesSim, ltsFeaturesReal, ...
-        %                                 'SweepWeights', sweepWeights, ...
-        %                                 'NormalizeError', normalizeError, ...
-        %                                 'InitLtsError', initLtsError);
-        % Set as NaN for other errors
-        ltsErrors.ltsAmpErrors = NaN;
-        ltsErrors.ltsDelayErrors = NaN;
-        ltsErrors.ltsSlopeErrors = NaN;
-        ltsErrors.avgLtsAmpError = NaN;
-        ltsErrors.avgLtsDelayError = NaN;
-        ltsErrors.avgLtsSlopeError = NaN;
-        ltsErrors.avgLtsError = NaN;
-
-        error('Not implemented yet!');
-
-    otherwise
-        error('code logic error!');
+if computeLtsError
+    % Compute low-threshold spike errors
+    ltsErrors = compute_lts_errors(ltsFeaturesSim, ltsFeaturesReal, ...
+                                    'BaseNoise', baseNoise, ...
+                                    'SweepWeights', sweepWeights, ...
+                                    'LtsFeatureWeights', ltsFeatureWeights, ...
+                                    'LtsExistError', ltsExistError, ...
+                                    'NormalizeError', normalizeError, ...
+                                    'InitLtsError', initLtsError);
+else
+    % Set as NaN for other errors
+    ltsErrors.ltsAmpErrors = NaN;
+    ltsErrors.ltsDelayErrors = NaN;
+    ltsErrors.ltsSlopeErrors = NaN;
+    ltsErrors.ltsSweepWeights = NaN;
+    ltsErrors.avgLtsAmpError = NaN;
+    ltsErrors.avgLtsDelayError = NaN;
+    ltsErrors.avgLtsSlopeError = NaN;
+    ltsErrors.avgLtsError = NaN;
 end
 
-% Combine errors
-switch errorMode
-    case 'SweepOnly'
-        % Use the average sweep error as the total error
-        totalError = swpErrors.avgSwpError;
-    case 'Sweep&LTS'
-        %% TODO: Combine sweep and LTS errors
-        totalError = swpErrors.avgSwpError;
-        % totalError = combine_sweep_lts_errors();
-    otherwise
-        error('code logic error!');
-end
+% Combine the errors and weights
+errorsToAverage = [swpErrors.avgSwpError; ltsErrors.avgLtsError];
+weightsForErrors = [1; lts2SweepErrorRatio];
+
+% Total error (dimensionless) is the weighted average of sweep error 
+%   and LTS error, weighted by lts2SweepErrorRatio
+totalError = compute_weighted_average(errorsToAverage, ...
+                                    'IgnoreNan', true, ...
+                                    'Weights', weightsForErrors, ...
+                                    'AverageMethod', 'linear');
 
 %% Store in output errors structure
 errors.totalError = totalError;
@@ -311,23 +416,13 @@ errors = merge_structs(errors, ltsErrors);
 %{
 OLD CODE:
 
-% Make sure all windows, if a vector and not a matrix, are row vectors
-if isvector(fitWindow)
-    fitWindow = force_row_vector(fitWindow);
-end
-endPoints = find_window_endpoints(transpose(fitWindow), tBoth);
+% Extract the start and end indices of the time vector for fitting
+endPoints = find_window_endpoints(fitWindow, tBoth);
 
-%       cd/force_row_vector.m
-
-%                   default == ones(nSweeps, 1)
-% Set default sweep weights for averaging
-if isempty(sweepWeights)
-    sweepWeights = ones(nSweeps, 1);
-end
-
-% Force data arrays to become column cell arrays of column numeric vectors
-[tBoth, vSim, vReal, iSim, iReal, fitWindow] = ...
-    argfun(@force_column_cell, tBoth, vSim, vReal, iSim, iReal, fitWindow);
+% Extract the regions to fit
+[tBoth, vSim, vReal, iSim, iReal] = ...
+    argfun(@(x) extract_subvectors(x, 'Endpoints', endPoints), ...
+            tBoth, vSim, vReal, iSim, iReal);
 
 %}
 

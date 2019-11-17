@@ -18,6 +18,7 @@ function structNew = merge_structs (struct1, struct2, varargin)
 %                   default == TODO
 %
 % Used by:    
+%       cd/compute_single_neuron_errors.m
 %       cd/fit_and_estimate_passive_params.m
 %       cd/parse_stim.m
 %       ~/m3ha/optimizer4gabab/singleneuronfitting42.m

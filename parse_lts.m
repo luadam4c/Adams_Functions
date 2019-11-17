@@ -293,7 +293,7 @@ end
 if stimStartMs < tBase + baseWidthMs
     fprintf(['stimStartMs must be at least %g ms after tBase ', ...
                 'for baseline voltage computation!\n'], baseWidthMs);
-    fprintf('Actual holding potential will be empty!\n');
+    fprintf('Actual holding potential will be NaN!\n');
     computeActVholdFlag = false;
 else
     computeActVholdFlag = true;
@@ -336,8 +336,8 @@ minPeakTimeMs = stimStartMs + minPeakDelayMs;
 % Parse all of them in a parfor loop
 parsedParamsCell = cell(nVectors, 1);
 parsedDataCell = cell(nVectors, 1);
-% parfor iVec = 1:nVectors
-for iVec = 1:nVectors
+parfor iVec = 1:nVectors
+% for iVec = 1:nVectors
     [parsedParamsCell{iVec}, parsedDataCell{iVec}] = ...
         parse_lts_helper(verbose, plotFlag, computeActVholdFlag, ...
             computeMaxNoiseFlag, outFolder, ...

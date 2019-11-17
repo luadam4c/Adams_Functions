@@ -23,6 +23,7 @@ function [normalizedValue, initValue] = ...
 %       cd/match_dimensions.m
 %
 % Used by:    
+%       cd/compute_lts_errors.m
 %       cd/compute_sweep_errors.m
 
 % File History:
