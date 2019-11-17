@@ -162,7 +162,7 @@ maxNoiseReal = ltsTableReal.maxNoise;
 
 % Decide on baseline noise
 if isempty(baseNoise)
-    baseNoise = maxNoise;
+    baseNoise = maxNoiseReal;
 end
 
 % Compute default sweep weights
@@ -228,7 +228,7 @@ ltsSlopeErrors = compute_feature_error(maxSlopeValueReal, maxSlopeValueSim, ...
 % Compute weighted-root-mean-squared-averaged LTS errors (dimensionless)
 [avgLtsAmpError, avgLtsDelayError, avgLtsSlopeError] = ...
     argfun(@(x) compute_weighted_average(x, 'Weights', ltsSweepWeights, ...
-                        'IgnoreNaN', true, 'AverageMethod', 'root-mean-square');
+                        'IgnoreNaN', true, 'AverageMethod', 'root-mean-square'), ...
             ltsAmpErrors, ltsDelayErrors, ltsSlopeErrors);
 
 % Put the feature errors together
@@ -248,6 +248,15 @@ if normalizeError
 end
 
 %% Store in output errors structure
+errorStruct.ltsExistError = ltsExistError;
+errorStruct.baseNoise = baseNoise;
+errorStruct.sweepWeights = sweepWeights;
+errorStruct.ltsSweepWeights = ltsSweepWeights;
+errorStruct.ltsAmpUncertainty = ltsAmpUncertainty;
+errorStruct.ltsDelayUncertainty = ltsDelayUncertainty;
+errorStruct.peakPromNormError = peakPromNormError;
+errorStruct.peakWidthNormError = peakWidthNormError;
+errorStruct.slopeUncertainty = slopeUncertainty;
 errorStruct.ltsAmpErrors = ltsAmpErrors;
 errorStruct.ltsDelayErrors = ltsDelayErrors;
 errorStruct.ltsSlopeErrors = ltsSlopeErrors;

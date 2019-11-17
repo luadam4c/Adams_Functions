@@ -171,9 +171,9 @@ if normalizeError
 end
 
 %% Store in output errors structure
-errorStruct.swpErrors = swpErrors;
 errorStruct.fitWindow = fitWindow;
 errorStruct.sweepWeights = sweepWeights;
+errorStruct.swpErrors = swpErrors;
 errorStruct.avgSwpError = avgSwpError;
 if normalizeError
     errorStruct.initSwpError = initSwpError;
