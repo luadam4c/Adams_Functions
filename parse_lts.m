@@ -137,7 +137,7 @@ function varargout = parse_lts (vVec0s, varargin)
 
 %% Hard-coded parameters
 % Subdirectories in outFolder for placing figures
-outSubDirs = {'vtraces', 'LTSanalysis', 'burstanalysis', ...
+outSubDirsSuffix = {'vtraces', 'LTSanalysis', 'burstanalysis', ...
             'vtraces_scaled', 'gray_area_traces', 'LTScouldbemissed'};
 
 % Parameters used for data analysis
@@ -288,6 +288,13 @@ fileBase = decide_on_filebases(fileBase, nVectors);
 % Decide on prefix if not provided
 if isempty(prefix)
     prefix = extract_common_prefix(fileBase);
+end
+
+% Decide on output subdirectories
+if ~isempty(prefix)
+    outSubDirs = strcat(prefix, '_', outSubDirsSuffix);
+else
+    outSubDirs = outSubDirsSuffix;
 end
 
 % Display message

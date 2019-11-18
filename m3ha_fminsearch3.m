@@ -222,7 +222,7 @@ neuronParamsTableInit = outparams.neuronParamsTable;
 outparams.outFolder = outFolderName;
 
 %% Preparation
-]% Determine whether LTS errors are computed
+% Determine whether LTS errors are computed
 computeLtsError = set_default_flag([], strcmp(simMode, 'active') && ...
                                 ~all(ltsFeatureWeights == 0));
 
@@ -350,11 +350,11 @@ end
 % For parameters used for fitting, 
 % transform initial values into the range [3*pi/2 5*pi/2] nonlinearly using arctan
 % Also check for out-of-range initial values (heavily borrowed from D'Errico's code)
-p0_log = zeros(n, 1);        % stores parameter values transformed to log-values
-p0_n121 = zeros(n, 1);        % stores parameter values transformed to [-1 1]
-p0_n121corr = zeros(n, 1);    % p0_n121 corrected
-p0 = zeros(n, 1);        % stores parameter values transformed to [3*pi/2 5*pi/2]
-ct = 0;                % counts unfixed parameters
+p0Log = zeros(n, 1);        % stores parameter values transformed to log-values
+p0N121 = zeros(n, 1);       % stores parameter values transformed to [-1 1]
+p0N121Corr = zeros(n, 1);   % p0N121 corrected
+p0 = zeros(n, 1);       % stores parameter values transformed to [3*pi/2 5*pi/2]
+ct = 0;                 % counts unfixed parameters
 for i = 1:nParams
     switch bounds.BoundClass(i)
     case 3        % 'dual finite bounds' parameter
@@ -366,18 +366,18 @@ for i = 1:nParams
 
         % First transform [LB UB] or [log(LB) log(UB)] linearly to [-1 1]
         if pIsLog(i)
-            p0_n121(ct) = 2 * (log(initValues(i)) - log(bounds.LB(i))) / ...
+            p0N121(ct) = 2 * (log(initValues(i)) - log(bounds.LB(i))) / ...
                         (log(bounds.UB(i)) - log(bounds.LB(i))) - 1;
         else
-            p0_n121(ct) = 2 * (initValues(i) - bounds.LB(i)) / ...
+            p0N121(ct) = 2 * (initValues(i) - bounds.LB(i)) / ...
                         (bounds.UB(i) - bounds.LB(i)) - 1;
         end
 
         % Collapse to bounds if initial value out of bounds
-        p0_n121corr(ct) = max(-1, min(1, p0_n121(ct)));
+        p0N121Corr(ct) = max(-1, min(1, p0N121(ct)));
 
         % Then transform to [-pi/2 pi/2] nonlinearly with arctan
-        p0(ct) = atan(p0_n121corr(ct));
+        p0(ct) = atan(p0N121Corr(ct));
     case 4        % 'fixed' parameter
         % Drop before fminsearch sees it
         % count is not incremented for this parameter

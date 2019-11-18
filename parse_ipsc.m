@@ -98,8 +98,8 @@ function varargout = parse_ipsc (iVecs, varargin)
 
 %% Hard-coded parameters
 % Subdirectories in outFolder for placing figures
-% outSubDirs = {'IPSCstart', 'IPSCpeak'};
-outSubDirs = {'IPSCpeak'};
+% outSubDirsSuffix = {'IPSCstart', 'IPSCpeak'};
+outSubDirsSuffix = {'IPSCpeak'};
 
 % Parameters used for data analysis
 smoothWindowMs = 0.3;       % width in ms for the moving average filter
@@ -197,6 +197,13 @@ fileBase = decide_on_filebases(fileBase, nVectors);
 % Decide on prefix if not provided
 if isempty(prefix)
     prefix = extract_common_prefix(fileBase);
+end
+
+% Decide on output subdirectories
+if ~isempty(prefix)
+    outSubDirs = strcat(prefix, '_', outSubDirsSuffix);
+else
+    outSubDirs = outSubDirsSuffix;
 end
 
 % Compute sampling interval(s) and create time vector(s)
