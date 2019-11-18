@@ -27,6 +27,7 @@ function vecOut = apply_to_nonnan_part (myFunction, vecIn, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/medianfilter.m
 %       cd/movingaveragefilter.m
 
 % File History:

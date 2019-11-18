@@ -391,19 +391,20 @@ end
 
 % Convert to a table
 [parsedParams, parsedData] = ...
-    argfun(@struct2table, parsedParamsStruct, parsedDataStruct);
+    argfun(@(x) struct2table(x, 'AsArray', true), ...
+            parsedParamsStruct, parsedDataStruct);
 
 %% Save outputs
 if saveMatFlag
     % Create a path for the LTS data .mat file
-    ltsMatPath = fullfile(outFolder, [fileBase, ltsMatSuffix, '.mat']);
+    ltsMatPath = fullfile(outFolder, [commonPrefix, ltsMatSuffix, '.mat']);
 
     % Save outputs in the .mat file
     save(ltsMatPath, 'parsedParams', 'parsedData', '-v7.3');
 end
 if saveSheetFlag
     % Create a path for the LTS info spreadsheet file
-    ltsSheetPath = fullfile(outFolder, [fileBase, ltsSheetSuffix, ...
+    ltsSheetPath = fullfile(outFolder, [commonPrefix, ltsSheetSuffix, ...
                                         '.', sheetType]);
 
     % Save table to the spreadsheet file

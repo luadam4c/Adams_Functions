@@ -26,9 +26,11 @@ function vecsFilt = medianfilter (vecs, varargin)
 %                   - Any other parameter-value pair for the medfilt1() function
 %
 % Requires:
+%       cd/apply_to_nonnan_part.m
 %       cd/create_error_for_nargin.m
-%       cd/struct2arglist.m
 %       cd/find_nearest_odd.m
+%       cd/struct2arglist.m
+%       cd/vecfun.m
 %
 % Used by:
 %       cd/find_passive_params.m
@@ -91,8 +93,23 @@ otherArguments = struct2arglist(iP.Unmatched);
 filtWidthSamples = find_nearest_odd(filtWidth / si, 'Direction', 'down');
 
 % Median filter vectors
-vecsFilt = medfilt1(vecs, filtWidthSamples, otherArguments{:}, ...
-                    'omitnan', 'truncate');
+vecsFilt = vecfun(@(x) medianfilter_helper(x, filtWidthSamples, ...
+                                                otherArguments), ...
+                    vecs);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function vecFilt = medianfilter_helper(vec, filtWidthSamples, otherArguments)
+%% Applies a median filter to one vector
+
+% Create a custom medfilt1 function
+myFun = @(x) medfilt1(x, filtWidthSamples, otherArguments{:}, ...
+                        'omitnan', 'truncate');
+
+% Apply the custom smooth function to just the non-NaN part
+%   Note: If this filter is applied to leading and trailing NaNs,
+%           values become extrapolated, which is most likely not desired
+vecFilt = apply_to_nonnan_part(myFun, vec);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

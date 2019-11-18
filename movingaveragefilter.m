@@ -29,8 +29,8 @@ function vecsFilt = movingaveragefilter (vecs, varargin)
 % Requires:
 %       cd/apply_to_nonnan_part.m
 %       cd/create_error_for_nargin.m
-%       cd/struct2arglist.m
 %       cd/find_nearest_odd.m
+%       cd/struct2arglist.m
 %       cd/vecfun.m
 %
 % Used by:
