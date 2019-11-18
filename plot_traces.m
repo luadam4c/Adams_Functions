@@ -36,7 +36,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       varargin    - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
-%                   - 'OverWrite': whether to overwrite existing output
+%                   - 'OverWrite': whether to overwrite existing figure files
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %                   - 'PlotOnly': whether to plot the traces only
@@ -243,6 +243,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       cd/m3ha_plot_individual_traces.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_current_family.m
+%       cd/parse_ipsc.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_traces_abf.m
 

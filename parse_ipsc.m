@@ -78,6 +78,7 @@ function varargout = parse_ipsc (iVecs, varargin)
 %       cd/match_row_count.m
 %       cd/match_time_info.m
 %       cd/movingaveragefilter.m
+%       cd/plot_traces.m
 %       cd/set_figure_properties.m
 %
 % Used by:
@@ -93,7 +94,8 @@ function varargout = parse_ipsc (iVecs, varargin)
 
 %% Hard-coded parameters
 % Subdirectories in outFolder for placing figures
-outSubDirs = {'ipsc_start', 'ipsc_peak'};
+% outSubDirs = {'IPSCstart', 'IPSCpeak'};
+outSubDirs = {'IPSCpeak'};
 
 % Parameters used for data analysis
 smoothWindowMs = 0.3;       % width in ms for the moving average filter
@@ -353,25 +355,50 @@ if plotFlag
     % Check if needed outSubDirs exist in outFolder
     check_subdir(outFolder, outSubDirs);
 
-    % Plot current traces
-    fig = set_figure_properties('Name', 'Current analysis', ...
+    % Plot current peak analysis
+    figName = fullfile(outFolder, outSubDirs{1}, ...
+                        [commonPrefix, '_IPSCpeak', '.png']);
+    figTitle = ['IPSC peak amplitude analysis for ', ...
+                    replace(commonPrefix, '_', '\_')];
+    figHandle = set_figure_properties('AlwaysNew', true, 'Visible', 'off', ...
+                                'Name', 'IPSC peak amplitude analysis');
+    plot_traces(tVecs, iVecs, 'PlotMode', 'overlapped', ...
+                'XLimits', peakWindowMs, ...
+                'XLabel', 'Time (ms)', 'YLabel', 'Current (pA)', ...
+                'LegendLocation', 'suppress', ...
+                'FigHandle', figHandle, 'FigTitle', figTitle, ...
+                'LineWidth', 1);
+    hold on
+    arrayfun(@(x) plot(tVecs{x}(idxPeak(x)), peakAmplitude(x), ...
+                        'rx', 'MarkerSize', 8, 'LineWidth', 1), ...
+                        transpose(1:nVectors));
+    save_all_figtypes(figHandle, figName);
+    close(figHandle);
+
+    % Plot current and voltage traces
+    % TODO: fix
+%{
+    % Find the indices to plot
+    indToPlot = endPointsToFindPeak(1):endPointsToFindPeak(2);
+
+    figHandle = set_figure_properties('Name', 'Current analysis', ...
                                 'AlwaysNew', true);
     if ~isempty(vVecs)
         subplot(2,1,1);
     end
     for iSwp = 1:nVectors                   % Plot each current trace
-        plot(tVecs(ind), iVecs(ind, iSwp)); hold on; 
+        plot(tVecs(indToPlot), iVecs(indToPlot, iSwp)); hold on; 
     end
-    plot(tVecs(ind), iStdVec(ind), 'LineWidth', 2, 'Color', 'r');
-    plot(tVecs(ind), iStdVecSmooth(ind), 'LineWidth', 2, 'Color', 'g');
-    plot(tVecs(ind), diffIStdVecsSmooth(ind), 'LineWidth', 2, 'Color', 'b');
+    plot(tVecs(indToPlot), iStdVec(indToPlot), 'LineWidth', 2, 'Color', 'r');
+    plot(tVecs(indToPlot), iStdVecSmooth(indToPlot), 'LineWidth', 2, 'Color', 'g');
+    plot(tVecs(indToPlot), diffIStdVecsSmooth(indToPlot), 'LineWidth', 2, 'Color', 'b');
     if ~isempty(idxRelFirstChange)
         for iSwp = 1:nVectors
             plot(tVecs(idxStimStart), iVecs(idxStimStart, iSwp), ...
                 'LineWidth', 2, 'Color', 'k', 'Marker', 'x', 'MarkerSize', 12);
         end
     end
-    title(['Current analysis for ', strrep(filebase, '_', '\_')]);
+    title(['Current analysis for ', strrep(fileBase, '_', '\_')]);
     xlabel('Time (ms)')
     ylabel('Current (pA)')
     xlim(stimStartWindowMs);
@@ -379,7 +406,7 @@ if plotFlag
     if  ~isempty(vVecs)
         subplot(2,1,2);
         for iSwp = 1:nVectors       % Plot each voltage trace
-            plot(tVecs(ind), vVecs(ind, iSwp)); hold on; 
+            plot(tVecs(indToPlot), vVecs(indToPlot, iSwp)); hold on; 
         end
         if ~isempty(idxRelFirstChange)
             for iSwp = 1:nVectors
@@ -392,23 +419,11 @@ if plotFlag
         xlim(stimStartWindowMs);
 %       ylim([-90 40]);             
     end
-    figname = fullfile(outFolder, outSubDirs{1}, [filebase, '_istart', '.png']);
-    saveas(fig, figname);
-    close(fig);
+    figName = fullfile(outFolder, outSubDirs{1}, [fileBase, '_istart', '.png']);
+    saveas(figHandle, figName);
+    close(figHandle);
+%}
 
-    % Plot current trace
-    fig = set_figure_properties('Name', 'IPSC peak amplitude analysis', ...
-                                'AlwaysNew', true);
-    for iSwp = 1:nVectors
-        plot(tVec0(ind), iVecs(ind, iSwp)); hold on; 
-        plot(tVec0(idxPeak(iSwp)), peakAmplitude(iSwp), 'Marker', 'x', 'MarkerSize', 12);
-    end
-    xlabel('Time (ms)')
-    ylabel('Current (pA)')
-    title(['IPSC peak amplitude analysis for ', strrep(filebase, '_', '\_')]);
-    figname = fullfile(outFolder, outSubDirs{2}, [filebase, '_IPSCpeak', '.png']);
-    saveas(fig, figname);
-    close(fig);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

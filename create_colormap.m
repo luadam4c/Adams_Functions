@@ -38,7 +38,6 @@ function colorMap = create_colormap (varargin);
 %
 % Used by:
 %       cd/decide_on_colormap.m
-%       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:
 % 2018-10-29 Adapted from code in run_neuron_once_4compgabab.m

@@ -29,7 +29,7 @@ function [errorStruct, hFig, simData] = ...
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'passive' - simulate a current pulse response
 %                       'active'  - simulate an IPSC response
-%                   default == 'passive'
+%                   default == 'active'
 %                   - 'NSweeps': number of sweeps
 %                   must be a positive integer scalar
 %                   default == numel(realData) or 1
@@ -266,7 +266,6 @@ function [errorStruct, hFig, simData] = ...
 %       cd/compute_residuals.m
 %       cd/compute_sampling_interval.m
 %       cd/compute_single_neuron_errors.m
-%       cd/create_colormap.m
 %       cd/decide_on_colormap.m
 %       cd/decide_on_filebases.m
 %       cd/extract_columns.m
@@ -425,6 +424,7 @@ timeToStabilize = 2000;         % padded time (ms) to make sure initial value
 TIME_COL_REC = 1;
 VOLT_COL_REC = 2;
 CURR_COL_REC = 3;
+COND_COL_REC = 4;
 
 %% Column numbers for simulated data
 %   Note: Must be consistent with singleneuron4compgabab.hoc
@@ -456,7 +456,7 @@ INAPH_COL_SIM = 25;
 
 %% Default values for optional arguments
 hFigDefault = '';               % no prior hFig structure by default
-simModeDefault = 'active'; %'passive';     % simulate a current pulse response by default
+simModeDefault = 'active';      % simulate active responses by default
 nSweepsDefault = [];            % set later
 prefixDefault = '';             % prepend nothing to file names by default
 outFolderDefault = pwd;         % use the present working directory for outputs
@@ -633,9 +633,11 @@ addParameter(iP, 'HoldPotentialIpscr', holdPotentialIpscrDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'HoldPotentialCpr', holdPotentialCprDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
-addParameter(iP, 'CurrentPulseAmplitudeIpscr', currentPulseAmplitudeIpscrDefault, ...
+addParameter(iP, 'CurrentPulseAmplitudeIpscr', ...
+                currentPulseAmplitudeIpscrDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
-addParameter(iP, 'CurrentPulseAmplitudeCpr', currentPulseAmplitudeCprDefault, ...
+addParameter(iP, 'CurrentPulseAmplitudeCpr', ...
+                currentPulseAmplitudeCprDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'GababAmp', gababAmpDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
@@ -822,9 +824,17 @@ end
 [rowConditions, nRows] = ...
     decide_on_row_conditions(rowConditions, nSweeps, maxRowsWithOneOnly);
 
-% Decide on the colors for each row in the plots
-colorMapParallel = create_colormap(nRows);
+% Decide on the color map for individual and residual plots
 colorMapIndividual = decide_on_colormap('r', nRows);
+
+% Decide on the colors for parallel plots
+colorMapParallel = decide_on_colormap([], 4);
+if nSweeps > nRows
+    nColumns = ceil(nSweeps / nRows);
+    nSlots = nColumns * nRows;
+    colorMapParallel = reshape(repmat(reshape(colorMapParallel, 1, []), ...
+                        nColumns, 1), nSlots, 3);
+end
 
 % Create output file paths if not provided
 if strcmpi(outFilePath, 'auto')
@@ -857,8 +867,9 @@ simCommands = m3ha_neuron_create_TC_commands(simParamsTable, ...
 
 % Extract vectors from recorded data
 %   Note: these will be empty if realData not provided
-[tVecs, vVecsRec, iVecsRec] = ...
-    extract_columns(realData, [TIME_COL_REC, VOLT_COL_REC, CURR_COL_REC]);
+[tVecs, vVecsRec, iVecsRec, gVecsRec] = ...
+    extract_columns(realData, [TIME_COL_REC, VOLT_COL_REC, ...
+                                CURR_COL_REC, COND_COL_REC]);
 
 % Compute baseline noise and sweep weights if not provided
 [~, ~, baseNoise, sweepWeights] = ...
@@ -911,9 +922,10 @@ end
 % Extract vectors from simulated data
 %   Note: these are arrays with 25 columns
 if strcmpi(simMode, 'passive')
-    [tVecs, vVecsSim, iVecsSim, vVecsDend1, vVecsDend2] = ...
+    [tVecs, vVecsSim, gVecsSim, iVecsSim, vVecsDend1, vVecsDend2] = ...
         extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
-                        IEXT_COL_SIM, DEND1_COL_SIM, DEND2_COL_SIM]);
+                        GGABAB_COL_SIM, IEXT_COL_SIM, ...
+                        DEND1_COL_SIM, DEND2_COL_SIM]);
 elseif strcmpi(simMode, 'active')
     [tVecs, vVecsSim, gVecsSim, iVecsSim, icaVecsSim, ...
             itmVecsSim, itminfVecsSim, ithVecsSim, ithinfVecsSim, ...
@@ -953,12 +965,13 @@ if bootstrapCprFlag && ~isempty(realData) && strcmpi(simMode, 'passive')
                                     'ColNum', [VOLT_COL_SIM, IEXT_COL_SIM]);
 
     % Re-extract columns
-    [vVecsRec, iVecsRec] = ...
-        extract_columns(realData, [VOLT_COL_REC, CURR_COL_REC]);
+    [vVecsRec, iVecsRec, gVecsRec] = ...
+        extract_columns(realData, [VOLT_COL_REC, CURR_COL_REC, COND_COL_REC]);
     if strcmpi(simMode, 'passive')
-        [tVecs, vVecsSim, iVecsSim, vVecsDend1, vVecsDend2] = ...
+        [tVecs, vVecsSim, gVecsSim, iVecsSim, vVecsDend1, vVecsDend2] = ...
             extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
-                            IEXT_COL_SIM, DEND1_COL_SIM, DEND2_COL_SIM]);
+                            GGABAB_COL_SIM, IEXT_COL_SIM, ...
+                            DEND1_COL_SIM, DEND2_COL_SIM]);
     elseif strcmpi(simMode, 'active')
         [tVecs, vVecsSim, gVecsSim, iVecsSim, icaVecsSim, ...
                 itmVecsSim, itminfVecsSim, ithVecsSim, ithinfVecsSim, ...
@@ -1053,12 +1066,13 @@ if averageCprFlag && ~isempty(realData) && strcmpi(simMode, 'passive')
                                     'ColNum', [VOLT_COL_SIM, IEXT_COL_SIM]);
 
     % Re-extract columns
-    [vVecsRec, iVecsRec] = ...
-        extract_columns(realData, [VOLT_COL_REC, CURR_COL_REC]);
+    [vVecsRec, iVecsRec, gVecsRec] = ...
+        extract_columns(realData, [VOLT_COL_REC, CURR_COL_REC, COND_COL_REC]);
     if strcmpi(simMode, 'passive')
-        [tVecs, vVecsSim, iVecsSim, vVecsDend1, vVecsDend2] = ...
+        [tVecs, vVecsSim, gVecsSim, iVecsSim, vVecsDend1, vVecsDend2] = ...
             extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
-                            IEXT_COL_SIM, DEND1_COL_SIM, DEND2_COL_SIM]);
+                            GGABAB_COL_SIM, IEXT_COL_SIM, ...
+                            DEND1_COL_SIM, DEND2_COL_SIM]);
     elseif strcmpi(simMode, 'active')
         [tVecs, vVecsSim, gVecsSim, iVecsSim, icaVecsSim, ...
                 itmVecsSim, itminfVecsSim, ithVecsSim, ithinfVecsSim, ...
@@ -1143,22 +1157,22 @@ if plotFlag
 
     % Prepare vectors for plotting
     if strcmpi(simMode, 'passive')
-        [tVecs, residuals, gVecsRec, iVecsRec, vVecsRec, ...
-            gVecsSim, iVecsSim, vVecsSim, vVecsDend1, vVecsDend2] = ...
+        [tVecs, residuals, vVecsRec, iVecsRec, gVecsRec, ...
+            vVecsSim, iVecsSim, gVecsSim, vVecsDend1, vVecsDend2] = ...
             argfun(@(x) prepare_for_plotting(x, endPointsForPlots), ...
-                    tVecs, residuals, gVecsRec, iVecsRec, vVecsRec, ...
-                    gVecsSim, iVecsSim, vVecsSim, vVecsDend1, vVecsDend2);
+                    tVecs, residuals, vVecsRec, iVecsRec, gVecsRec, ...
+                    vVecsSim, iVecsSim, gVecsSim, vVecsDend1, vVecsDend2);
     elseif strcmpi(simMode, 'active')
-        [tVecs, residuals, gVecsRec, iVecsRec, vVecsRec, ...
-            gVecsSim, iVecsSim, vVecsSim, ...
+        [tVecs, residuals, vVecsRec, iVecsRec, gVecsRec, ...
+            vVecsSim, iVecsSim, gVecsSim, ...
             icaVecsSim, itmVecsSim, itminfVecsSim, ...
             ithVecsSim, ithinfVecsSim, ihVecsSim, ihmVecsSim, ...
             ikaVecsSim, iam1VecsSim, iah1VecsSim, ...
             iam2VecsSim, iah2VecsSim, ikkirVecsSim, ikirmVecsSim, ...
             inapnaVecsSim, inapmVecsSim, inaphVecsSim] = ...
             argfun(@(x) prepare_for_plotting(x, endPointsForPlots), ...
-                    tVecs, residuals, gVecsRec, iVecsRec, vVecsRec, ...
-                    gVecsSim, iVecsSim, vVecsSim, ...
+                    tVecs, residuals, vVecsRec, iVecsRec, gVecsRec, ...
+                    vVecsSim, iVecsSim, gVecsSim, ...
                     icaVecsSim, itmVecsSim, itminfVecsSim, ...
                     ithVecsSim, ithinfVecsSim, ihVecsSim, ihmVecsSim, ...
                     ikaVecsSim, iam1VecsSim, iah1VecsSim, ...
@@ -1373,15 +1387,6 @@ if plotOverlappedFlag
     % Construct matching time vectors
     tVecsForOverlapped = repmat({tVecs}, size(dataForOverlapped));
 
-    % Expand the colormap if necessary
-    if nSweeps > nRows
-        colorMap = decide_on_colormap([], 4);
-        nColumns = ceil(nSweeps / nRows);
-        nSlots = nColumns * nRows;
-        colorMap = reshape(repmat(reshape(colorMap, 1, []), ...
-                            nColumns, 1), nSlots, 3);
-    end
-
     % Decide on figure title and file name
     figTitle = sprintf('Overlapped traces for Experiment %s', ...
                         expStrForTitle);
@@ -1458,7 +1463,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function xLimits = decide_on_xlimits (fitWindow, baseWindow, simMode, plotMarkFlag)
+function xLimits = decide_on_xlimits (fitWindow, baseWindow, ...
+                                        simMode, plotMarkFlag)
 %% Decide on x-axis limits
 
 % Put all window endpoints together
@@ -1520,145 +1526,11 @@ nRows = height(featuresTable);
 % Add a column for dataType ('simulated' or 'recorded')
 featuresTable.dataType = repmat({dataType}, nRows, 1);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function hFig = plot_conductance_traces (realData, simData, outparams, hFig, nSweeps, colorMap, ncg, npercg, xlimitsMax)
-%% Update figure comparing current traces between real data and simulations
-%% TODO: Incorporate into plot_traces.m
-
-% See vMat of singleneuron4compgabab.hoc for simData columns
-fprintf('Plotting figure comparing current traces between real data and simulations for %s ...\n', outparams.prefix);
-if outparams.showSweepsFlag
-    if outparams.cprflag
-        hFig.GABABi_comparison = figure(102);
-    else
-        hFig.GABABi_comparison = figure(112);
-    end
-else
-    hFig.GABABi_comparison = figure('Visible', 'off');
-end
-set(hFig.GABABi_comparison, 'Name', 'GABAB currents');
-
-% Plot GABAB IPSC current traces from experiments
-clf(hFig.GABABi_comparison);
-subplot(2,1,1); hold on;
-for iSwp = 1:nSweeps  
-    cgn = ceil(iSwp/npercg);        % color group number
-    plot(realData{iSwp}(:, 1), realData{iSwp}(:, 3), 'Color', colorMap(cgn, :), 'LineStyle', '-');
-end
-if outparams.cprflag
-    title('Current pulses, recorded')        %% TODO: To fix: It's not showing the current pulse!
-else
-    title('GABAB IPSC currents, recorded')
-end
-xlim(xlimitsMax);
-if nSweeps == 4                % Legend only works if there are exactly 4 sweeps
-    legend('Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block')
-end
-xlabel('Time (ms)')
-ylabel('Current (nA)')
-
-% Plot current traces from simulations
-subplot(2,1,2); hold on;
-for iSwp = 1:nSweeps  
-    cgn = ceil(iSwp/npercg);        % color group number
-    if outparams.cprflag
-        % Plot current pulse traces from simulations
-        plot(simData{iSwp}(:, 1), simData{iSwp}(:, 11), 'Color', colorMap(cgn, :), 'LineStyle', '-');
-    else
-        % Plot GABAB IPSC current traces from simulations
-        plot(simData{iSwp}(:, 1), simData{iSwp}(:, 9), 'Color', colorMap(cgn, :), 'LineStyle', '-');
-    end
-end
-if outparams.cprflag
-    title('Current pulses, simulated')
-else
-    title('GABAB IPSC currents, simulated')
-end
-xlim(xlimitsMax);
-if nSweeps == 4                % Legend only works if there are exactly 4 sweeps
-    legend('Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block')
-end
-xlabel('Time (ms)')
-ylabel('Current (nA)')
-if outparams.cprflag
-    figName = fullfile(outparams.outFolder, [outparams.prefix, '_cpi_comparison.png']);
-else
-    figName = fullfile(outparams.outFolder, [outparams.prefix, '_GABABi_comparison.png']);
-end
-save_all_figtypes(hFig.GABABi_comparison, figName);
-% Copy figure handle so it won't be overwritten
-if outparams.cprflag
-    hFig.cpr_GABABi_comparison = hFig.GABABi_comparison;
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function hFig = plot_current_traces (realData, simData, outparams, hFig, nSweeps, colorMap, ncg, npercg, xlimitsMax)
-%% Update figure comparing current traces between real data and simulations
-%% TODO: Incorporate into plot_traces.m
-
-% See vMat of singleneuron4compgabab.hoc for simData columns
-fprintf('Plotting figure comparing current traces between real data and simulations for %s ...\n', outparams.prefix);
-if outparams.showSweepsFlag
-    if outparams.cprflag
-        hFig.GABABg_comparison = figure(103);
-    else
-        hFig.GABABg_comparison = figure(113);
-    end
-else
-    hFig.GABABg_comparison = figure('Visible', 'off');
-end
-set(hFig.GABABg_comparison, 'Name', 'GABAB conductances');
-clf(hFig.GABABg_comparison);
-subplot(2,1,1); hold on;
-for iSwp = 1:nSweeps
-    cgn = ceil(iSwp/npercg);        % color group number
-    plot(realData{iSwp}(:, 1), realData{iSwp}(:, 4), 'Color', colorMap(cgn, :), 'LineStyle', '-');    
-end
-if outparams.cprflag
-    title('Conductance during current pulse, recorded')
-else
-    title('GABAB IPSC conductances, recorded')
-end
-xlim(xlimitsMax);
-if nSweeps == 4                % Legend only works if there are exactly 4 sweeps
-    legend('Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block')
-end
-xlabel('Time (ms)')
-ylabel('Conductance (uS)')
-subplot(2,1,2); hold on;
-for iSwp = 1:nSweeps  
-    cgn = ceil(iSwp/npercg);        % color group number
-    plot(simData{iSwp}(:, 1), simData{iSwp}(:, 10), 'Color', colorMap(cgn, :), 'LineStyle', '-'); % 20160722 GABABg added
-end
-if outparams.cprflag
-    title('Conductance during current pulse, simulated')
-else
-    title('GABAB IPSC conductances, simulated')
-end
-xlim(xlimitsMax);
-if nSweeps == 4                % Legend only works if there are exactly 4 sweeps
-    legend('Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block')
-end
-xlabel('Time (ms)')
-ylabel('Conductance (uS)')
-if outparams.cprflag
-    figName = fullfile(outparams.outFolder, [outparams.prefix, '_cpg_comparison.png']);
-else
-    figName = fullfile(outparams.outFolder, [outparams.prefix, '_GABABg_comparison.png']);
-end
-save_all_figtypes(hFig.GABABg_comparison, figName);
-% Copy figure handle so it won't be overwritten
-if outparams.cprflag
-    hFig.cpr_GABABg_comparison = hFig.GABABg_comparison;
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
 
 %}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

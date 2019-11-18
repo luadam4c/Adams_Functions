@@ -293,14 +293,16 @@ end
 
 % Determine whether LTS errors are computed
 computeLtsError = set_default_flag([], strcmp(errorMode, 'Sweep&LTS') && ...
-                                ~all(ltsFeatureWeights == 0));
+                                    ~all(ltsFeatureWeights == 0));
 
 % Determine whether voltage traces needs to be parsed
-parseVoltage = set_default_flag([], computeLtsError || saveLtsInfoFlag || ...
-                        saveLtsStatsFlag || plotLtsFlag || plotStatisticsFlag);
+parseVoltage = set_default_flag([], strcmp(errorMode, 'Sweep&LTS') && ...
+                        (computeLtsError || saveLtsInfoFlag || ...
+                        saveLtsStatsFlag || plotLtsFlag || plotStatisticsFlag));
 
 % Determine whether current traces needs to be parsed
-parseCurrent = set_default_flag([], parseVoltage || plotIpeakFlag);
+parseCurrent = set_default_flag([], strcmp(errorMode, 'Sweep&LTS') && ...
+                                (parseVoltage || plotIpeakFlag));
 
 % Count the number of samples
 nSamples = count_samples(vSim);
