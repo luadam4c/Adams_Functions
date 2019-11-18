@@ -37,6 +37,8 @@ function vecsFilt = medianfilter (vecs, varargin)
 
 % File History:
 % 2019-01-14 Created by Adam Lu
+% 2019-11-18 Now sets nanflag to be 'omitnan'
+% 2019-11-18 Now sets padding to be 'truncate'
 % 
 
 %% Hard-coded parameters
@@ -89,7 +91,8 @@ otherArguments = struct2arglist(iP.Unmatched);
 filtWidthSamples = find_nearest_odd(filtWidth / si, 'Direction', 'down');
 
 % Median filter vectors
-vecsFilt = medfilt1(vecs, filtWidthSamples, otherArguments{:});
+vecsFilt = medfilt1(vecs, filtWidthSamples, otherArguments{:}, ...
+                    'omitnan', 'truncate');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

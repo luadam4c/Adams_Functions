@@ -27,6 +27,7 @@ function vecsFilt = movingaveragefilter (vecs, varargin)
 %                   - Any other parameter-value pair for the smooth() function
 %
 % Requires:
+%       cd/apply_to_nonnan_part.m
 %       cd/create_error_for_nargin.m
 %       cd/struct2arglist.m
 %       cd/find_nearest_odd.m
@@ -103,28 +104,13 @@ function vecFilt = movingaveragefilter_helper(vec, filtWidthSamples, ...
                                                 otherArguments)
 %% Applies a moving average filter to one vector
 
-% Initialize output with input
-vecFilt = vec;
+% Create a custom smooth function
+myFun = @(x) smooth(x, filtWidthSamples, otherArguments{:});
 
-% Determine whether each value is NaN
-isNan = isnan(vec);
-
-% If all values are NaNs, return NaNs
-if all(isNan)
-    return
-end
-
-% Get the starting index of values to smooth
-idxStart = find(~isNan, 1, 'first');
-
-% Get the ending index of values to smooth
-idxEnd = find(~isNan, 1, 'last');
-
-% Apply the moving average filter to just the indices of interest
+% Apply the custom smooth function to just the non-NaN part
 %   Note: If this filter is applied to leading and trailing NaNs,
 %           values become extrapolated, which is most likely not desired
-vecFilt(idxStart:idxEnd) = ...
-    smooth(vec(idxStart:idxEnd), filtWidthSamples, otherArguments{:});
+vecFilt = apply_to_nonnan_part(myFun, vec);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
