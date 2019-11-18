@@ -33,17 +33,17 @@ function [errorStruct, hFig, simData] = ...
 %                   - 'NSweeps': number of sweeps
 %                   must be a positive integer scalar
 %                   default == numel(realData) or 1
-%                   - 'Prefix': prefix to prepend to file names
-%                   must be a character array
-%                   default == ''
-%                   - 'OutFolder': the directory where outputs will be placed
-%                   must be a string scalar or a character vector
-%                   default == pwd
 %                   - 'FileBase': base of filename (without extension) 
 %                                   corresponding to each vector
 %                   must be a character vector, a string vector 
 %                       or a cell array of character vectors
 %                   default == set in decide_on_filebases.m
+%                   - 'OutFolder': the directory where outputs will be placed
+%                   must be a string scalar or a character vector
+%                   default == pwd
+%                   - 'Prefix': prefix to prepend to file names
+%                   must be a character array
+%                   default == extract_common_prefix(fileBase)
 %                   - 'DebugFlag': whether debugging
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -269,6 +269,7 @@ function [errorStruct, hFig, simData] = ...
 %       cd/decide_on_colormap.m
 %       cd/decide_on_filebases.m
 %       cd/extract_columns.m
+%       cd/extract_common_prefix.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/force_matrix.m
@@ -458,10 +459,10 @@ INAPH_COL_SIM = 25;
 hFigDefault = '';               % no prior hFig structure by default
 simModeDefault = 'active';      % simulate active responses by default
 nSweepsDefault = [];            % set later
-prefixDefault = '';             % prepend nothing to file names by default
+fileBaseDefault = {};           % set later
 outFolderDefault = pwd;         % use the present working directory for outputs
                                 %   by default
-fileBaseDefault = {};           % set later
+prefixDefault = '';             % set later
 debugFlagDefault = false;       % not in debug mode by default
 customHoldCurrentFlagDefault = 0; % don't use custom hold current by default
 onHpcFlagDefault = false;       % not on a high performance computing
@@ -550,14 +551,14 @@ addParameter(iP, 'SimMode', simModeDefault, ...
     @(x) any(validatestring(x, validSimModes)));
 addParameter(iP, 'NSweeps', nSweepsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
-addParameter(iP, 'Prefix', prefixDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'OutFolder', outFolderDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FileBase', fileBaseDefault, ...
     @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
         ['FileBase must be a character array or a string array ', ...
             'or cell array of character arrays!']));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'Prefix', prefixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'DebugFlag', debugFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'CustomHoldCurrentFlag', customHoldCurrentFlagDefault, ...
@@ -689,9 +690,9 @@ parse(iP, neuronParamsTable, varargin{:});
 hFig = iP.Results.HFig;
 simMode = validatestring(iP.Results.SimMode, validSimModes);
 nSweepsUser = iP.Results.NSweeps;
-prefix = iP.Results.Prefix;
-outFolder = iP.Results.OutFolder;
 fileBase = iP.Results.FileBase;
+outFolder = iP.Results.OutFolder;
+prefix = iP.Results.Prefix;
 debugFlag = iP.Results.DebugFlag;
 customHoldCurrentFlag = iP.Results.CustomHoldCurrentFlag;
 onHpcFlag = iP.Results.OnHpcFlag;
@@ -799,6 +800,11 @@ nSweeps = decide_on_nSweeps(realData, nSweepsUser);
 
 % Create file bases if not provided
 fileBase = decide_on_filebases(fileBase, nSweeps);
+
+% Decide on prefix if not provided
+if isempty(prefix)
+    prefix = extract_common_prefix(fileBase);
+end
 
 % Decide on x-axis limits for plotting
 if plotFlag
@@ -1009,8 +1015,8 @@ if generateDataFlag
     siMs = compute_sampling_interval(tVecs);
 
     % Decide on spreadsheet names
-    featuresFile = fullfile(outFolder, [expStr, '_features.csv']);
-    testResultsFile = fullfile(outFolder, [expStr, '_test_results.csv']);
+    featuresFile = fullfile(outFolder, [prefix, '_features.csv']);
+    testResultsFile = fullfile(outFolder, [prefix, '_test_results.csv']);
 
     % Parse the simulated responses
     featuresSim = analyze_response(vVecsSim, iVecsSim, siMs, simMode, ...
@@ -1046,7 +1052,7 @@ if generateDataFlag
     % Test the difference of features between dataType
     testResults = test_var_difference(featuresTable, featuresToCompare, ...
                                 'dataType', 'SheetName', testResultsFile, ...
-                                'Prefix', expStr, 'OutFolder', outFolder);
+                                'Prefix', prefix, 'OutFolder', outFolder);
 end
 
 % If requested, combine both recorded and simulated responses 
@@ -1116,7 +1122,7 @@ if ~isempty(realData)
     % Calculate errors (sweep errors, LTS errors, etc.)
     errorStruct = compute_single_neuron_errors(vVecsSim, vVecsRec, ...
                     'ErrorMode', errorMode, 'TimeVecs', tVecs, ...
-                    'IvecsSim', iVecsSim, 'IvecsReal', iVecsRec, ...
+                    'IvecsSim', iVecsSim, 'IvecsRec', iVecsRec, ...
                     'FitWindow', fitWindow, 'BaseWindow', baseWindow, ...
                     'BaseNoise', baseNoise, 'SweepWeights', sweepWeights, ...
                     'LtsFeatureWeights', ltsFeatureWeights, ...
@@ -1126,7 +1132,8 @@ if ~isempty(realData)
                     'InitSwpError', initSwpError, ...
                     'InitLtsError', initLtsError, ...
                     'IpscTime', ipscTime, 'IpscPeakWindow', ipscPeakWindow, ...
-                    'OutFolder', outFolder, 'FileBase', fileBase, ...
+                    'FileBase', fileBase, ...
+                    'OutFolder', outFolder, 'Prefix', prefix, ...
                     'SaveLtsInfoFlag', saveLtsInfoFlag, ...
                     'SaveLtsStatsFlag', saveLtsStatsFlag, ...
                     'PlotIpeakFlag', plotIpeakFlag, ...
@@ -1197,7 +1204,7 @@ if plotConductanceFlag
     yLabelsConductanceComparison = {'Conductance (uS)'; 'Conductance (uS)'};
 
     % Decide on figure name
-    figName = fullfile(outFolder, [expStr, '_conductance_comparison.png']);
+    figName = fullfile(outFolder, [prefix, '_conductance_comparison.png']);
 
     % Decide on figure titles for each subplot
     if strcmpi(simMode, 'passive')
@@ -1249,7 +1256,7 @@ if plotCurrentFlag
     yLabelsCurrentComparison = {'Current (nA)'; 'Current (nA)'};
 
     % Decide on figure name
-    figName = fullfile(outFolder, [expStr, '_current_comparison.png']);
+    figName = fullfile(outFolder, [prefix, '_current_comparison.png']);
 
     % Decide on figure titles for each subplot
     if strcmpi(simMode, 'passive')
@@ -1292,7 +1299,7 @@ if plotIndividualFlag
 
     % Decide on figure title and figure name
     figTitle = sprintf('All traces for Experiment %s', expStrForTitle);
-    figName = fullfile(outFolder, [expStr, '_individual.png']);
+    figName = fullfile(outFolder, [prefix, '_individual.png']);
 
     % Plot the individual traces
     figHandle = set_figure_properties('ClearFigure', true, ...
@@ -1319,7 +1326,7 @@ if plotResidualsFlag
 
     % Decide on figure title and file name
     figTitle = sprintf('Residuals for Experiment %s', expStrForTitle);
-    figName = fullfile(outFolder, [expStr, '_residuals.png']);
+    figName = fullfile(outFolder, [prefix, '_residuals.png']);
 
     % Plot the individual traces
     figHandle = set_figure_properties('ClearFigure', true, ...
@@ -1390,7 +1397,7 @@ if plotOverlappedFlag
     % Decide on figure title and file name
     figTitle = sprintf('Overlapped traces for Experiment %s', ...
                         expStrForTitle);
-    figName = fullfile(outFolder, [expStr, '_overlapped.png']);
+    figName = fullfile(outFolder, [prefix, '_overlapped.png']);
 
     % Plot overlapped traces
     % TODO: Integrate into m3ha_plot_simulated_traces.m

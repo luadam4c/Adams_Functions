@@ -62,14 +62,17 @@ function varargout = parse_lts (vVec0s, varargin)
 %                   - 'SaveSheetFlag': whether to save params as a spreadsheet
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
-%                   - 'OutFolder': directory to place outputs
-%                   must be a string scalar or a character vector
-%                   default == pwd
 %                   - 'FileBase': base of filename (without extension) 
 %                                   corresponding to each vector
 %                   must be a character vector, a string vector 
 %                       or a cell array of character vectors
 %                   default == 'unnamed_1', 'unnamed_2', ...
+%                   - 'OutFolder': directory to place outputs
+%                   must be a string scalar or a character vector
+%                   default == pwd
+%                   - 'Prefix': prefix to prepend to output file names
+%                   must be a character array
+%                   default == extract_common_prefix(fileBase)
 %                   - 'StimStartMs': time of stimulation start (ms)
 %                   must be a positive scalar
 %                   default == find_first_jump(vVec0s)
@@ -129,6 +132,8 @@ function varargout = parse_lts (vVec0s, varargin)
 % 2019-02-19 Made siMs an optional argument
 % 2019-11-17 Added 'SaveMatFlag' as an optional parameter
 % 2019-11-17 Added 'SaveSheetFlag' as an optional parameter
+% 2019-11-18 Added 'Prefix' as an optional parameter
+% 2019-11-18 Changed mean -> nanmean; std -> nanstd
 
 %% Hard-coded parameters
 % Subdirectories in outFolder for placing figures
@@ -160,7 +165,7 @@ slopeSegYHalf = 5;  % how much voltage difference (mV) to plot maxslope line seg
 % Parameters used for output files
 ltsSheetSuffix = '_ltsParams';
 ltsMatSuffix = '_ltsData';
-sheetType = '.csv';
+sheetType = 'csv';
 
 %% Default values for optional arguments
 siMsDefault = [];               % set later
@@ -168,8 +173,10 @@ verboseDefault = true;          % print to standard output by default
 plotFlagDefault = false;
 saveMatFlagDefault = false;     % don't save parsed data by default
 saveSheetFlagDefault = true;    % save parsed params by default
-outFolderDefault = pwd;
 fileBaseDefault = {};           % set later
+outFolderDefault = pwd;         % use the present working directory for outputs
+                                %   by default
+prefixDefault = '';             % set later
 stimStartMsDefault = [];        % set later
 minPeakDelayMsDefault = 0;
 noiseWindowMsORmaxNoiseDefault = [];    % set later
@@ -211,12 +218,14 @@ addParameter(iP, 'SaveMatFlag', saveMatFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SaveSheetFlag', saveSheetFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'OutFolder', outFolderDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FileBase', fileBaseDefault, ...
     @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
         ['FileBase must be a character array or a string array ', ...
             'or cell array of character arrays!']));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'Prefix', prefixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'StimStartMs', stimStartMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'MinPeakDelayMs', minPeakDelayMsDefault, ...
@@ -253,8 +262,9 @@ verbose = iP.Results.Verbose;
 plotFlag = iP.Results.PlotFlag;
 saveMatFlag = iP.Results.SaveMatFlag;
 saveSheetFlag = iP.Results.SaveSheetFlag;
-outFolder = iP.Results.OutFolder;
 fileBase = iP.Results.FileBase;
+outFolder = iP.Results.OutFolder;
+prefix = iP.Results.Prefix;
 stimStartMs = iP.Results.StimStartMs;
 minPeakDelayMs = iP.Results.MinPeakDelayMs;
 noiseWindowMsORmaxNoise = iP.Results.NoiseWindowMsOrMaxNoise;
@@ -275,11 +285,15 @@ nSamples = count_samples(vVec0s);
 % Create file bases if not provided
 fileBase = decide_on_filebases(fileBase, nVectors);
 
-% Extract common prefix
-commonPrefix = extract_common_prefix(fileBase);
+% Decide on prefix if not provided
+if isempty(prefix)
+    prefix = extract_common_prefix(fileBase);
+end
+
+% Display message
 if verbose
-    if ~isempty(commonPrefix)
-        fprintf('ANALYZING voltage traces for %s ...\n', commonPrefix);
+    if ~isempty(prefix)
+        fprintf('ANALYZING voltage traces for %s ...\n', prefix);
     else
         fprintf('ANALYZING voltage traces ...\n');
     end
@@ -397,14 +411,14 @@ end
 %% Save outputs
 if saveMatFlag
     % Create a path for the LTS data .mat file
-    ltsMatPath = fullfile(outFolder, [commonPrefix, ltsMatSuffix, '.mat']);
+    ltsMatPath = fullfile(outFolder, [prefix, ltsMatSuffix, '.mat']);
 
     % Save outputs in the .mat file
     save(ltsMatPath, 'parsedParams', 'parsedData', '-v7.3');
 end
 if saveSheetFlag
     % Create a path for the LTS info spreadsheet file
-    ltsSheetPath = fullfile(outFolder, [commonPrefix, ltsSheetSuffix, ...
+    ltsSheetPath = fullfile(outFolder, [prefix, ltsSheetSuffix, ...
                                         '.', sheetType]);
 
     % Save table to the spreadsheet file
@@ -517,7 +531,7 @@ spikesPerPeak = 0;  % all peaks are initially assumed to have no spikes
 %           moving-average-filtered trace is the maximum noise
 %       Assuming a Gaussian distribution of noise, should contain 95.45%
 if computeMaxNoiseFlag
-    maxNoise = 4 * std(vVec3(indNoise));
+    maxNoise = 4 * nanstd(vVec3(indNoise));
 end
 if verbose
     fprintf('Maximum noise == %g mV\n', maxNoise);
@@ -525,7 +539,7 @@ end
 
 % Calculate baseline voltage (holding potential)
 if computeActVholdFlag
-    actVhold = mean(vVec1(indBase));
+    actVhold = nanmean(vVec1(indBase));
     if verbose
         fprintf('Actual holding potential == %g mV\n', actVhold);
     end

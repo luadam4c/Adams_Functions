@@ -14,6 +14,7 @@ function avgValues = compute_weighted_average (values, varargin)
 %       compute_weighted_average([100; 10; 1], 'AverageMethod', 'exponential')
 %       compute_weighted_average([NaN, 3, 27; NaN, 4, 64], 'AverageMethod', 'geometric', 'DimToOperate', 2, 'IgnoreNan', true)
 %       compute_weighted_average([NaN; 10], 'Weight', [2, 1], 'AverageMethod', 'linear', 'IgnoreNaN', true)
+%       compute_weighted_average([2; NaN; 1], 'Weight', [2, 3, 1], 'AverageMethod', 'rms', 'IgnoreNaN', true)
 %
 % Outputs:
 %       avgValues   - averaged value(s)
@@ -70,6 +71,8 @@ function avgValues = compute_weighted_average (values, varargin)
 % 2019-10-12 Allow values to be a cell array
 % 2019-10-12 Fixed 'IgnoreNan' for matrices
 % 2019-11-17 Fixed root-mean-square computation
+% 2019-11-18 Now returns NaN if values is empty
+% 2019-11-18 Fixed 'IgnoreNan' for vectors
 % TODO: Simplify math if the weights are all the same 
 %       and use this function in compute_stats.m and compute_rms_error.m
 % 
@@ -140,32 +143,52 @@ if strcmpi(averageMethod, 'exponential') && ~isempty(valueWeights)
 end
 
 %% Preparation
+% Return NaN if values is empty
+if isempty(values)
+    avgValues = NaN;
+    return
+end
+
 % Remove NaN values if requested
 if ignoreNan && ~iscell(values)
     if isvector(values)
+        % Values is a vector
         if all(isnan(values))
+            % If all values are NaN, the average is defined as NaN
             avgValues = NaN;
             return
         else
-            values = values(~isnan(values));
+            % Otherwise, determine the indices to keep
+            indToKeep = ~isnan(values);
+            
+            % Restrict values to the indices to keep
+            values = values(indToKeep);
+
+            % Restrict weights to the indices to keep
             if ~isempty(valueWeights)
-                valueWeights = valueWeights(~isnan(values));
+                valueWeights = valueWeights(indToKeep);
             end
         end
     else
-        % Force as a cell array of column vectors
+        % Values is a non-vector array
+        % Align vectors along the dimension to operate 
         if dimToOperate == 1
-            values = force_column_vector(values, 'IgnoreNonvectors', false);
+            values = values;
         elseif dimToOperate == 2
-            values = force_column_vector(transpose(values), ...
-                                            'IgnoreNonvectors', false);
+            values = transpose(values);
+            dimToOperate = 1;
         else
             error('Not implemented yet!');
         end
+                
+        % Force values as a cell array of column vectors
+        values = force_column_vector(values, 'IgnoreNonvectors', false);
+
+        % Force weights as a column vector
+        % TODO: What if weights is a non-vector?
         if ~isempty(valueWeights)
             valueWeights = force_column_vector(valueWeights);
         end
-        dimToOperate = 1;
     end
 end
 

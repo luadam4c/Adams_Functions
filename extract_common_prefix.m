@@ -35,9 +35,11 @@ function prefix = extract_common_prefix (strs, varargin)
 %       cd/isemptycell.m
 %
 % Used by:
+%       cd/compute_single_neuron_errors.m
 %       cd/extract_common_directory.m
 %       cd/extract_common_suffix.m
 %       cd/extract_fileparts.m
+%       cd/m3ha_neuron_run_and_analyze.m
 %       cd/parse_current_family.m
 %       cd/parse_ipsc.m
 %       cd/parse_lts.m

@@ -1,6 +1,6 @@
-function errorStruct = compute_lts_errors (ltsTableSim, ltsTableReal, varargin)
+function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 %% Computes low-threshold spike errors for single neuron data
-% Usage: errorStruct = compute_lts_errors (ltsTableSim, ltsTableReal, varargin)
+% Usage: errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 % Explanation:
 %       TODO
 %
@@ -23,7 +23,7 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableReal, varargin)
 %                       ltsPeakTime
 %                       ltsPeakValue
 %                       maxSlopeValue
-%       ltsTableReal- a table of lts features from real voltage traces
+%       ltsTableRec - a table of lts features from recorded voltage traces
 %                   must be a table with columns:
 %                       ltsPeakTime
 %                       ltsPeakValue
@@ -72,7 +72,7 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableReal, varargin)
 % 2019-11-15 Adapted from compute_sweep_errors.m
 % 2019-11-16 Added 'FeatureWeights' as an optional argument
 % 2019-11-16 Added 'LtsExistError' as an optional argument
-% 
+% 2019-11-18 Fixed bug with noLTSInBoth 
 
 %% Hard-coded parameters
 % Consistent with singleneuronfittin58.m
@@ -106,7 +106,7 @@ iP.FunctionName = mfilename;
 % Add required inputs to the Input Parser
 addRequired(iP, 'ltsTableSim', ...
     @(x) validateattributes(x, {'table'}, {'2d'}));
-addRequired(iP, 'ltsTableReal', ...
+addRequired(iP, 'ltsTableRec', ...
     @(x) validateattributes(x, {'table'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
@@ -124,7 +124,7 @@ addParameter(iP, 'InitLtsError', initLtsErrorDefault, ...
     @(x) assert(isnumericvector(x), 'InitLtsError must be a numeric vector!'));
 
 % Read from the Input Parser
-parse(iP, ltsTableSim, ltsTableReal, varargin{:});
+parse(iP, ltsTableSim, ltsTableRec, varargin{:});
 baseNoise = iP.Results.BaseNoise;
 sweepWeights = iP.Results.SweepWeights;
 featureWeights = iP.Results.FeatureWeights;
@@ -149,20 +149,20 @@ ltsPeakTimeSim = ltsTableSim.ltsPeakTime;
 ltsPeakValueSim = ltsTableSim.ltsPeakValue;
 maxSlopeValueSim = ltsTableSim.maxSlopeValue;
 
-ltsPeakTimeReal = ltsTableReal.ltsPeakTime;
-ltsPeakValueReal = ltsTableReal.ltsPeakValue;
-maxSlopeValueReal = ltsTableReal.maxSlopeValue;
+ltsPeakTimeRec = ltsTableRec.ltsPeakTime;
+ltsPeakValueRec = ltsTableRec.ltsPeakValue;
+maxSlopeValueRec = ltsTableRec.maxSlopeValue;
 
 % Extract other feature values for uncertainty calculations
-peakWidthSim = ltsTableReal.peakWidth;
-peakWidthReal = ltsTableReal.peakWidth;
-peakPromSim = ltsTableReal.peakProm;
-peakPromReal = ltsTableReal.peakProm;
-maxNoiseReal = ltsTableReal.maxNoise;
+peakWidthSim = ltsTableSim.peakWidth;
+peakWidthRec = ltsTableRec.peakWidth;
+peakPromSim = ltsTableSim.peakProm;
+peakPromRec = ltsTableRec.peakProm;
+maxNoiseRec = ltsTableRec.maxNoise;
 
 % Decide on baseline noise
 if isempty(baseNoise)
-    baseNoise = maxNoiseReal;
+    baseNoise = maxNoiseRec;
 end
 
 % Compute default sweep weights
@@ -175,54 +175,57 @@ if isempty(sweepWeights)
 end
 
 % Count the number of sweeps
-nSweeps = max(height(ltsTableSim), height(ltsTableReal));
+nSweeps = max(height(ltsTableSim), height(ltsTableRec));
 
 % Match row counts for sweep-dependent variables with the number of sweeps
 [ltsPeakTimeSim, ltsPeakValueSim, maxSlopeValueSim, ...
-        ltsPeakTimeReal, ltsPeakValueReal, maxSlopeValueReal, ...
+        ltsPeakTimeRec, ltsPeakValueRec, maxSlopeValueRec, ...
         baseNoise, sweepWeights] = ...
     argfun(@(x) match_row_count(x, nSweeps), ...
             ltsPeakTimeSim, ltsPeakValueSim, maxSlopeValueSim, ...
-            ltsPeakTimeReal, ltsPeakValueReal, maxSlopeValueReal, ...
+            ltsPeakTimeRec, ltsPeakValueRec, maxSlopeValueRec, ...
             baseNoise, sweepWeights);
 
 %% Modify sweep weights for LTS errors
 % Initialize LTS sweep weights with sweep weights
 ltsSweepWeights = sweepWeights;
 
-% Determine whether each sweep has an LTS
-noLTS = any(isnan([ltsPeakTimeSim, ltsPeakValueSim, maxSlopeValueSim, ...
-                ltsPeakTimeReal, ltsPeakValueReal, maxSlopeValueReal]), 2);
+% Put the features side by side
+ltsFeaturesSim = [ltsPeakTimeSim, ltsPeakValueSim, maxSlopeValueSim];
+ltsFeaturesRec = [ltsPeakTimeRec, ltsPeakValueRec, maxSlopeValueRec];
+
+% Determine whether each sweep has no LTS in both simulated and recorded traces
+noLTSInBoth = any(isnan(ltsFeaturesSim), 2) & any(isnan(ltsFeaturesRec), 2);
 
 % Make the sweeps with no LTS weight zero
-%   Note: One cannot compute an error if both simulated and real traces
+%   Note: One cannot compute an error if both simulated and recorded traces
 %           don't have a LTS
-ltsSweepWeights(noLTS) = 0;
+ltsSweepWeights(noLTSInBoth) = 0;
 
 %% Compute feature uncertainties
 % The amplitude uncertainty should be close to baseline noise
 ltsAmpUncertainty = abs(baseNoise);
 
 % The peak delay uncertainty should be close to peak width
-ltsDelayUncertainty = abs(peakWidthReal);
+ltsDelayUncertainty = abs(peakWidthRec);
 
 % Compute the normalized error for peak prominence
-peakPromNormError = abs((peakPromSim - peakPromReal) ./ peakPromReal);
+peakPromNormError = abs((peakPromSim - peakPromRec) ./ peakPromRec);
 
 % Compute the normalized error for peak width
-peakWidthNormError = abs((peakWidthSim - peakWidthReal) ./ peakWidthReal);
+peakWidthNormError = abs((peakWidthSim - peakWidthRec) ./ peakWidthRec);
 
 % The slope uncertainty can be computed from a propagation of errors
 slopeUncertainty = sqrt(peakPromNormError .^ 2 + peakWidthNormError .^ 2) ...
-                    .* abs(maxSlopeValueReal);
+                    .* abs(maxSlopeValueRec);
 
 %% Compute errors
 % Compute dimensionless LTS errors for each sweep
-ltsAmpErrors = compute_feature_error(ltsPeakValueReal, ltsPeakValueSim, ...
+ltsAmpErrors = compute_feature_error(ltsPeakValueRec, ltsPeakValueSim, ...
                                             ltsAmpUncertainty, ltsExistError);
-ltsDelayErrors = compute_feature_error(ltsPeakTimeReal, ltsPeakTimeSim, ...
+ltsDelayErrors = compute_feature_error(ltsPeakTimeRec, ltsPeakTimeSim, ...
                                             ltsDelayUncertainty, ltsExistError);
-ltsSlopeErrors = compute_feature_error(maxSlopeValueReal, maxSlopeValueSim, ...
+ltsSlopeErrors = compute_feature_error(maxSlopeValueRec, maxSlopeValueSim, ...
                                             slopeUncertainty, ltsExistError);
 
 % Compute weighted-root-mean-squared-averaged LTS errors (dimensionless)
@@ -251,6 +254,7 @@ end
 errorStruct.ltsExistError = ltsExistError;
 errorStruct.baseNoise = baseNoise;
 errorStruct.sweepWeights = sweepWeights;
+errorStruct.noLTSInBoth = noLTSInBoth;
 errorStruct.ltsSweepWeights = ltsSweepWeights;
 errorStruct.ltsAmpUncertainty = ltsAmpUncertainty;
 errorStruct.ltsDelayUncertainty = ltsDelayUncertainty;
@@ -274,15 +278,15 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function featureError = compute_feature_error (valueReal, valueSim, ...
+function featureError = compute_feature_error (valueRec, valueSim, ...
                                                 uncertainty, featureExistError)
 %% Computes feature error based on feature existence for each sweep
 
 % Initialize errors
-featureError = nan(size(valueReal));
+featureError = nan(size(valueRec));
 
 % Put values side by side
-allValues = [valueReal, valueSim];
+allValues = [valueRec, valueSim];
 
 % Determine whether each sweep each condition has no features
 noFeature = isnan(allValues);
@@ -303,7 +307,8 @@ featureError(hasFeatureInOneOnly) = featureExistError;
 % Determine whether feature exists in both conditions
 hasFeatureInBoth = ~any(noFeature, 2);
 
-% Compute the normalized difference between simulated and real feature values
+% Compute the normalized difference between simulated and 
+%   recorded feature values
 normalizedDifference = diff(allValues, 1, 2) / abs(uncertainty);
 
 % The feature error is the normalized difference in this case

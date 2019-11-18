@@ -1,6 +1,6 @@
-function errors = compute_single_neuron_errors (vSim, vReal, varargin)
+function errors = compute_single_neuron_errors (vSim, vRec, varargin)
 %% Computes all errors for single neuron data
-% Usage: errors = compute_single_neuron_errors (vSim, vReal, varargin)
+% Usage: errors = compute_single_neuron_errors (vSim, vRec, varargin)
 % Explanation:
 %       TODO
 %
@@ -17,7 +17,7 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 % Arguments:    
 %       vSim        - simulated voltage traces
 %                   must be a numeric vector or a cell array of numeric vectors
-%       vReal       - recorded voltage traces
+%       vRec        - recorded voltage traces
 %                   must be a numeric vector or a cell array of numeric vectors
 %       varargin    - 'ErrorMode': error mode
 %                   must be an unambiguous, case-insensitive match to one of: 
@@ -30,7 +30,7 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %                   - 'IvecsSim': simulated current traces
 %                   must be a numeric vector or a cell array of numeric vectors
 %                   default == []
-%                   - 'IvecsReal': recorded current traces
+%                   - 'IvecsRec': recorded current traces
 %                   must be a numeric vector or a cell array of numeric vectors
 %                   default == []
 %                   - 'BaseWindow': baseline window for each trace
@@ -77,14 +77,17 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %                   - 'IpscPeakWindow': window (ms) to look for IPSC peak
 %                   must be a numeric vector
 %                   default == set in parse_ipsc.m
-%                   - 'OutFolder': the directory where outputs will be placed
-%                   must be a string scalar or a character vector
-%                   default == pwd
 %                   - 'FileBase': base of filename (without extension) 
 %                                   corresponding to each vector
 %                   must be a character vector, a string vector 
 %                       or a cell array of character vectors
 %                   default == set in decide_on_filebases.m
+%                   - 'OutFolder': the directory where outputs will be placed
+%                   must be a string scalar or a character vector
+%                   default == pwd
+%                   - 'Prefix': prefix to prepend to output file names
+%                   must be a character array
+%                   default == set in parse_ipsc.m and parse_lts.m
 %                   - 'SaveLtsInfoFlag': whether to save LTS info
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
@@ -111,6 +114,7 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 %       cd/count_vectors.m
 %       cd/create_time_vectors.m
 %       cd/decide_on_filebases.m
+%       cd/extract_common_prefix.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_vector.m
@@ -135,6 +139,7 @@ function errors = compute_single_neuron_errors (vSim, vReal, varargin)
 % 2019-11-16 Added 'LtsExistError' as an optional argument
 % 2019-11-16 Added 'Lts2SweepErrorRatio' as an optional argument
 % 2019-11-17 Added 'OutFolder' as an optional parameter
+% 2019-11-18 Added 'Prefix' as an optional parameter
 % 
 % TODO:
 %   Implement saveLtsStatsFlag
@@ -154,7 +159,7 @@ defaultLts2SweepErrorRatio = 2;         % default error ratio of LTS error
 errorModeDefault = 'SweepOnly'; %'Sweep&LTS'; % compute sweep & LTS errors by default
 timeVecsDefault = [];           % set later
 ivecsSimDefault = [];           % not provided by default
-ivecsRealDefault = [];          % not provided by default
+ivecsRecDefault = [];          % not provided by default
 baseWindowDefault = [];         % set later
 fitWindowDefault = [];          % set later
 baseNoiseDefault = [];          % set later
@@ -167,9 +172,10 @@ initSwpErrorDefault = [];       % no initial sweep error values by default
 initLtsErrorDefault = [];       % no initial LTS error values by default
 ipscTimeDefault = [];           % set later
 ipscPeakWindowDefault = [];     % set later
+fileBaseDefault = {};           % set later
 outFolderDefault = pwd;         % use the present working directory for outputs
                                 %   by default
-fileBaseDefault = {};           % set later
+prefixDefault = '';             % set later
 saveLtsInfoFlagDefault = false;  % don't save LTS info by default
 saveLtsStatsFlagDefault = false; % don't save LTS statistics by default
 plotIpeakFlagDefault = false;
@@ -194,9 +200,9 @@ addRequired(iP, 'vSim', ...
     @(x) assert(isnumericvector(x) || iscellnumericvector(x), ...
                 ['vSim must be either a numeric vector ', ...
                     'or a cell array of numeric vectors!']));
-addRequired(iP, 'vReal', ...
+addRequired(iP, 'vRec', ...
     @(x) assert(isnumericvector(x) || iscellnumericvector(x), ...
-                ['vReal must be either a numeric vector ', ...
+                ['vRec must be either a numeric vector ', ...
                     'or a cell array of numeric vectors!']));
 
 % Add parameter-value pairs to the Input Parser
@@ -210,9 +216,9 @@ addParameter(iP, 'IvecsSim', ivecsSimDefault, ...
     @(x) assert(isnumericvector(x) || iscellnumericvector(x), ...
                 ['IvecsSim must be either a numeric vector ', ...
                     'or a cell array of numeric vectors!']));
-addParameter(iP, 'IvecsReal', ivecsRealDefault, ...
+addParameter(iP, 'IvecsRec', ivecsRecDefault, ...
     @(x) assert(isnumericvector(x) || iscellnumericvector(x), ...
-                ['IvecsReal must be either a numeric vector ', ...
+                ['IvecsRec must be either a numeric vector ', ...
                     'or a cell array of numeric vectors!']));
 addParameter(iP, 'BaseWindow', baseWindowDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
@@ -242,12 +248,14 @@ addParameter(iP, 'IpscTime', ipscTimeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar'}));
 addParameter(iP, 'IpscPeakWindow', ipscPeakWindowDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
-addParameter(iP, 'OutFolder', outFolderDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FileBase', fileBaseDefault, ...
     @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
         ['FileBase must be a character array or a string array ', ...
             'or cell array of character arrays!']));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'Prefix', prefixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'SaveLtsInfoFlag', saveLtsInfoFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SaveLtsStatsFlag', saveLtsStatsFlagDefault, ...
@@ -260,11 +268,11 @@ addParameter(iP, 'PlotStatisticsFlag', plotStatisticsFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
-parse(iP, vSim, vReal, varargin{:});
+parse(iP, vSim, vRec, varargin{:});
 errorMode = validatestring(iP.Results.ErrorMode, validErrorModes);
 tBoth = iP.Results.TimeVecs;
 iSim = iP.Results.IvecsSim;
-iReal = iP.Results.IvecsReal;
+iRec = iP.Results.IvecsRec;
 baseWindow = iP.Results.BaseWindow;
 fitWindow = iP.Results.FitWindow;
 baseNoise = iP.Results.BaseNoise;
@@ -277,8 +285,9 @@ initSwpError = iP.Results.InitSwpError;
 initLtsError = iP.Results.InitLtsError;
 ipscTime = iP.Results.IpscTime;
 ipscPeakWindow = iP.Results.IpscPeakWindow;
-outFolder = iP.Results.OutFolder;
 fileBase = iP.Results.FileBase;
+outFolder = iP.Results.OutFolder;
+prefix = iP.Results.Prefix;
 saveLtsInfoFlag = iP.Results.SaveLtsInfoFlag;
 saveLtsStatsFlag = iP.Results.SaveLtsStatsFlag;
 plotIpeakFlag = iP.Results.PlotIpeakFlag;
@@ -314,14 +323,14 @@ end
 
 % Compute default windows, noise and weights
 [baseWindow, fitWindow, baseNoise, sweepWeights] = ...
-    compute_default_sweep_info(tBoth, vReal, ...
+    compute_default_sweep_info(tBoth, vRec, ...
             'BaseWindow', baseWindow, 'FitWindow', fitWindow, ...
             'BaseNoise', baseNoise, 'SweepWeights', sweepWeights);
 
 % Force data vectors to become column numeric vectors
-[tBoth, vSim, vReal, iSim, iReal, fitWindow] = ...
+[tBoth, vSim, vRec, iSim, iRec, fitWindow] = ...
     argfun(@(x) force_column_vector(x, 'ForceCellOutput', true), ...
-            tBoth, vSim, vReal, iSim, iReal, fitWindow);
+            tBoth, vSim, vRec, iSim, iRec, fitWindow);
 
 % Count the number of sweeps
 nSweeps = count_vectors(vSim);
@@ -329,15 +338,25 @@ nSweeps = count_vectors(vSim);
 % Create file bases if not provided
 fileBase = decide_on_filebases(fileBase, nSweeps);
 
-% Match row counts for sweep-dependent variables with the number of sweeps
-[fitWindow, vReal, tBoth, iSim, iReal] = ...
-    argfun(@(x) match_row_count(x, nSweeps), ...
-            fitWindow, vReal, tBoth, iSim, iReal);
+% Decide on prefix if not provided
+if isempty(prefix)
+    prefix = extract_common_prefix(fileBase);
+end
 
-% Create file bases for sim and real separately
+% Match row counts for sweep-dependent variables with the number of sweeps
+[fitWindow, vRec, tBoth, iSim, iRec] = ...
+    argfun(@(x) match_row_count(x, nSweeps), ...
+            fitWindow, vRec, tBoth, iSim, iRec);
+
+% Create stuff for simulated and recorded separately
 if parseCurrent || parseVoltage
-    [fileBaseReal, fileBaseSim] = ...
-        argfun(@(x) strcat(fileBase, x), '_real', '_sim');
+    % Create differenct file bases
+    [fileBaseRec, fileBaseSim] = ...
+        argfun(@(x) strcat(fileBase, x), '_rec', '_sim');
+
+    % Create differenct prefixes
+    [prefixRec, prefixSim] = ...
+        argfun(@(x) strcat(prefix, x), '_rec', '_sim');
 end
 
 %% Parse current traces
@@ -346,35 +365,41 @@ if parseCurrent
     ipscTableSim = parse_ipsc(iSim, 'tVecs', tBoth, ...
                 'StimStartMs', ipscTime, 'PeakWindowMs', ipscPeakWindow, ...
                 'Verbose', false, 'PlotFlag', plotIpeakFlag, ...
-                'OutFolder', outFolder, 'FileBase', fileBaseSim);
-    ipscTableReal = parse_ipsc(iReal, 'tVecs', tBoth, ...
+                'FileBase', fileBaseSim, 'OutFolder', outFolder, ...
+                'Prefix', prefixSim);
+    ipscTableRec = parse_ipsc(iRec, 'tVecs', tBoth, ...
                 'StimStartMs', ipscTime, 'PeakWindowMs', ipscPeakWindow, ...
                 'Verbose', false, 'PlotFlag', plotIpeakFlag, ...
-                'OutFolder', outFolder, 'FileBase', fileBaseReal);
+                'FileBase', fileBaseRec, 'OutFolder', outFolder, ...
+                'Prefix', prefixRec);
 end
 
 %% Parse voltage traces
 if parseVoltage
     % Find the peak delay of the IPSCs
-    [ipscDelaySim, ipscDelayReal] = ...
-        argfun(@(x) x.peakDelayMs, ipscTableSim, ipscTableReal);
+    [ipscDelaySim, ipscDelayRec] = ...
+        argfun(@(x) x.peakDelayMs, ipscTableSim, ipscTableRec);
 
     % Find and compute low-threshold spike features
     ltsFeaturesSim = parse_lts(vSim, 'MinPeakDelayMs', ipscDelaySim, ...
                         'StimStartMs', ipscTime, 'tVec0s', tBoth, ...
+                        'NoiseWindowMsOrMaxNoise', baseWindow, ...
                         'Verbose', false, 'PlotFlag', plotLtsFlag, ...
                         'SaveSheetFlag', saveLtsInfoFlag, ...
-                        'OutFolder', outFolder, 'FileBase', fileBaseSim);
-    ltsFeaturesReal = parse_lts(vReal, 'MinPeakDelayMs', ipscDelayReal, ...
+                        'FileBase', fileBaseSim, 'OutFolder', outFolder, ...
+                        'Prefix', prefixSim);
+    ltsFeaturesRec = parse_lts(vRec, 'MinPeakDelayMs', ipscDelayRec, ...
                         'StimStartMs', ipscTime, 'tVec0s', tBoth, ...
+                        'NoiseWindowMsOrMaxNoise', baseWindow, ...
                         'Verbose', false, 'PlotFlag', plotLtsFlag, ...
                         'SaveSheetFlag', saveLtsInfoFlag, ...
-                        'OutFolder', outFolder, 'FileBase', fileBaseReal);
+                        'FileBase', fileBaseRec, 'OutFolder', outFolder, ...
+                        'Prefix', prefixRec);
 end
 
 %% Compute errors
 % Compute sweep errors
-swpErrors = compute_sweep_errors(vSim, vReal, 'TimeVecs', tBoth, ...
+swpErrors = compute_sweep_errors(vSim, vRec, 'TimeVecs', tBoth, ...
                                 'FitWindow', fitWindow, ...
                                 'SweepWeights', sweepWeights, ...
                                 'NormalizeError', normalizeError, ...
@@ -386,7 +411,7 @@ swpErrors = compute_sweep_errors(vSim, vReal, 'TimeVecs', tBoth, ...
 % Compute IPSC response feature errors
 if computeLtsError
     % Compute low-threshold spike errors
-    ltsErrors = compute_lts_errors(ltsFeaturesSim, ltsFeaturesReal, ...
+    ltsErrors = compute_lts_errors(ltsFeaturesSim, ltsFeaturesRec, ...
                                     'BaseNoise', baseNoise, ...
                                     'SweepWeights', sweepWeights, ...
                                     'FeatureWeights', ltsFeatureWeights, ...
@@ -435,9 +460,9 @@ OLD CODE:
 endPoints = find_window_endpoints(fitWindow, tBoth);
 
 % Extract the regions to fit
-[tBoth, vSim, vReal, iSim, iReal] = ...
+[tBoth, vSim, vRec, iSim, iRec] = ...
     argfun(@(x) extract_subvectors(x, 'Endpoints', endPoints), ...
-            tBoth, vSim, vReal, iSim, iReal);
+            tBoth, vSim, vRec, iSim, iRec);
 
 %}
 

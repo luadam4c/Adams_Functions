@@ -37,14 +37,17 @@ function varargout = parse_ipsc (iVecs, varargin)
 %                   - 'PlotFlag': whether to plot traces
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'OutFolder': directory to place outputs
-%                   must be a string scalar or a character vector
-%                   default == pwd
 %                   - 'FileBase': base of file name (without extension) 
 %                                   corresponding to each vector
 %                   must be a character vector, a string vector 
 %                       or a cell array of character vectors
 %                   default == 'unnamed_1', 'unnamed_2', ...
+%                   - 'OutFolder': directory to place outputs
+%                   must be a string scalar or a character vector
+%                   default == pwd
+%                   - 'Prefix': prefix to prepend to output file names
+%                   must be a character array
+%                   default == extract_common_prefix(fileBase)
 %                   - 'StimStartWindowMs': window (ms) in which 
 %                                               IPSC start would lie
 %                   must be a positive scalar
@@ -89,6 +92,7 @@ function varargout = parse_ipsc (iVecs, varargin)
 % 2019-11-13 Adapted from find_IPSC_peak.m and find_istart.m
 % 2019-11-14 Now uses find_closest.m
 % 2019-11-15 Now uses match_row_count.m
+% 2019-11-18 Added 'Prefix' as an optional parameter
 % TODO: Test this function, especially with PlotFlag true
 % 
 
@@ -106,8 +110,10 @@ slopeThreshold = 5;         % slope threshold for finding stimStartMs
 siMsDefault = [];               % set later
 verboseDefault = true;          % print to standard output by default
 plotFlagDefault = false;
-outFolderDefault = pwd;
 fileBaseDefault = {};           % set later
+outFolderDefault = pwd;         % use the present working directory for outputs
+                                %   by default
+prefixDefault = '';             % set later
 stimStartWindowMsDefault = [];      % set later
 stimStartMsDefault = [];        % set later
 peakWindowMsDefault = [];       % set later
@@ -141,12 +147,14 @@ addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotFlag', plotFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'OutFolder', outFolderDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FileBase', fileBaseDefault, ...
     @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
         ['FileBase must be a character array or a string array ', ...
             'or cell array of character arrays!']));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'Prefix', prefixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'StimStartWindowMs', stimStartWindowMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'StimStartMs', stimStartMsDefault, ...
@@ -167,8 +175,9 @@ parse(iP, iVecs, varargin{:});
 siMs = iP.Results.siMs;
 verbose = iP.Results.Verbose;
 plotFlag = iP.Results.PlotFlag;
-outFolder = iP.Results.OutFolder;
 fileBase = iP.Results.FileBase;
+outFolder = iP.Results.OutFolder;
+prefix = iP.Results.Prefix;
 stimStartWindowMs = iP.Results.StimStartWindowMs;
 stimStartMs = iP.Results.StimStartMs;
 peakWindowMs = iP.Results.PeakWindowMs;
@@ -185,8 +194,10 @@ nSamples = count_samples(iVecs);
 % Create file bases if not provided
 fileBase = decide_on_filebases(fileBase, nVectors);
 
-% Extract common prefix
-commonPrefix = extract_common_prefix(fileBase);
+% Decide on prefix if not provided
+if isempty(prefix)
+    prefix = extract_common_prefix(fileBase);
+end
 
 % Compute sampling interval(s) and create time vector(s)
 if isempty(siMs) && isempty(tVecs)
@@ -202,7 +213,7 @@ tEnd = extract_elements(tVecs, 'last');
 
 % Display message
 if verbose
-    fprintf('ANALYZING IPSC traces for %s ...\n', commonPrefix);
+    fprintf('ANALYZING IPSC traces for %s ...\n', prefix);
     fprintf('Number of sweeps == %d\n', nVectors);
 end
 
@@ -220,8 +231,7 @@ if isempty(stimStartMs)
     
     % Display message
     if verbose
-        fprintf('FINDING common time of IPSC start for %s ...\n', ...
-                commonPrefix);
+        fprintf('FINDING common time of IPSC start for %s ...\n', prefix);
     end
 
     % If there are more than one vectors, 
@@ -290,7 +300,7 @@ end
 
 %% Deal with IPSC peak
 if verbose
-    fprintf('FINDING time of IPSC peak for %s ...\n', commonPrefix);
+    fprintf('FINDING time of IPSC peak for %s ...\n', prefix);
     fprintf('Sampling interval == %g ms\n', siMs);
 end
 
@@ -356,10 +366,9 @@ if plotFlag
     check_subdir(outFolder, outSubDirs);
 
     % Plot current peak analysis
-    figName = fullfile(outFolder, outSubDirs{1}, ...
-                        [commonPrefix, '_IPSCpeak', '.png']);
+    figName = fullfile(outFolder, outSubDirs{1}, [prefix, '_IPSCpeak', '.png']);
     figTitle = ['IPSC peak amplitude analysis for ', ...
-                    replace(commonPrefix, '_', '\_')];
+                    replace(prefix, '_', '\_')];
     figHandle = set_figure_properties('AlwaysNew', true, 'Visible', 'off', ...
                                 'Name', 'IPSC peak amplitude analysis');
     plot_traces(tVecs, iVecs, 'PlotMode', 'overlapped', ...
