@@ -1424,7 +1424,7 @@ if plotOverlappedFlag
 end
 
 % Print an empty line
-fprintf('\n');
+% fprintf('\n');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
