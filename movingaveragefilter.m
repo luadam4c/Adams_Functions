@@ -40,6 +40,7 @@ function vecsFilt = movingaveragefilter (vecs, varargin)
 % File History:
 % 2019-01-14 Created by Adam Lu
 % 2019-08-29 Now uses vecfun.m
+% 2019-11-18 Fixed the case with leading and trailing NaNs
 % 
 
 %% Hard-coded parameters
@@ -92,7 +93,38 @@ otherArguments = struct2arglist(iP.Unmatched);
 filtWidthSamples = find_nearest_odd(filtWidth / si, 'Direction', 'down');
 
 % Moving average filter vectors
-vecsFilt = vecfun(@(x) smooth(x, filtWidthSamples, otherArguments{:}), vecs);
+vecsFilt = vecfun(@(x) movingaveragefilter_helper(x, filtWidthSamples, ...
+                                                otherArguments), ...
+                    vecs);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function vecFilt = movingaveragefilter_helper(vec, filtWidthSamples, ...
+                                                otherArguments)
+%% Applies a moving average filter to one vector
+
+% Initialize output with input
+vecFilt = vec;
+
+% Determine whether each value is NaN
+isNan = isnan(vec);
+
+% If all values are NaNs, return NaNs
+if all(isNan)
+    return
+end
+
+% Get the starting index of values to smooth
+idxStart = find(~isNan, 1, 'first');
+
+% Get the ending index of values to smooth
+idxEnd = find(~isNan, 1, 'last');
+
+% Apply the moving average filter to just the indices of interest
+%   Note: If this filter is applied to leading and trailing NaNs,
+%           values become extrapolated, which is most likely not desired
+vecFilt(idxStart:idxEnd) = ...
+    smooth(vec(idxStart:idxEnd), filtWidthSamples, otherArguments{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

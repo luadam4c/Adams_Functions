@@ -12,6 +12,10 @@ function varargout = parse_lts (vVec0s, varargin)
 %       siMs = sweepInfo.siMs;
 %       [parsedParams, parsedData] = parse_lts(vVecs, siMs, 'StimStartMs', 1000);
 %       [parsedParams, parsedData] = parse_lts(vVecs, siMs, 'StimStartMs', 1000, 'PlotFlag', true);
+%       [data2, sweepInfo] = m3ha_import_raw_traces(sweepName, 'Directory', matFilesDir, 'ImportMode', 'active');
+%       vVecs2 = extract_columns(data2, 2);
+%       siMs = sweepInfo.siMs;
+%       [parsedParams, parsedData] = parse_lts(vVecs2, siMs, 'StimStartMs', 1000);
 %
 % Outputs: 
 %       parsedParams    - a table containing the parsed parameters, 
@@ -301,10 +305,14 @@ end
 tBase = extract_elements(tVec0s, 'first') - siMs;
 
 % Detect stimulation start time if not provided
+% TODO: Not tested
 if isempty(stimStartMs)
+    % Force as a cell array
+    vVec0sCell = force_column_cell(vVec0s);
+    
     % Look for the first deviant
     [~, idxStimStart] = ...
-        cellfun(@(x) find_first_jump(x, 'Signal2noise', 3), vVec0s);
+        cellfun(@(x) find_first_jump(x, 'Signal2noise', 3), vVec0sCell);
 
     % Compute the stimulation start in ms
     stimStartMs = idxStimStart .* siMs;
@@ -357,8 +365,8 @@ minPeakTimeMs = stimStartMs + minPeakDelayMs;
 % Parse all of them in a parfor loop
 parsedParamsCell = cell(nVectors, 1);
 parsedDataCell = cell(nVectors, 1);
-parfor iVec = 1:nVectors
-% for iVec = 1:nVectors
+%parfor iVec = 1:nVectors
+for iVec = 1:nVectors
     [parsedParamsCell{iVec}, parsedDataCell{iVec}] = ...
         parse_lts_helper(verbose, plotFlag, computeActVholdFlag, ...
             computeMaxNoiseFlag, outFolder, ...
