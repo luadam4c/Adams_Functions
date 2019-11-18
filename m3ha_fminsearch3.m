@@ -1,6 +1,6 @@
-function [simplexOut, exitFlag] = m3ha_fminsearch3(outparams)
+function [simplexOut, exitFlag] = m3ha_fminsearch3 (outparams)
 %% Applies the Nelder-Mead simplex algorithm to optimize parameters (modified version of fminsearch for the m3ha project)
-% Usage: [simplexOut, exitFlag] = m3ha_fminsearch3(outparams)
+% Usage: [simplexOut, exitFlag] = m3ha_fminsearch3 (outparams)
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -86,6 +86,7 @@ function [simplexOut, exitFlag] = m3ha_fminsearch3(outparams)
 %       cd/save_params.m
 %       cd/set_default_flag.m
 %       cd/set_fields_zero.m
+%       cd/set_figure_properties.m
 %       cd/restore_fields.m
 %
 % Used by:
@@ -117,7 +118,7 @@ function [simplexOut, exitFlag] = m3ha_fminsearch3(outparams)
 % 2017-05-02 - Added cprflag so that results can be saved separately
 % 2017-05-02 - Changed outparams.runnum_auto -> outparams.simplexNum
 % 2017-05-13 - Now gets outFolderName from outparams
-% 2017-05-15 - Added simplexLogFile and changed disp() to fprintf()
+% 2017-05-15 - Added simplexLogSuffix and changed disp() to fprintf()
 % 2017-05-15 - Changed outparams.prefix so that '_cpr' is already incorporated
 % 2017-05-15 - Now saves simplexParams as a .p file for each function evaluation
 % 2017-05-16 - Changed simplexOut.maxErrorChange so that it is relative to fv(1)
@@ -154,8 +155,12 @@ function [simplexOut, exitFlag] = m3ha_fminsearch3(outparams)
 % TODO: Make neuronParamsTable a required argument
 %
 
+%% Hard-coded parameters
 % Simplex log file
-simplexLogFile = 'simplexlog.txt';
+simplexLogSuffix = 'simplexlog.txt';
+
+% For plotting
+figNumberSimplexHistory = 301;
 
 %% Default options
 defaultopt = struct('PrintType', 'iter', ...        % what to put in log file
@@ -243,16 +248,20 @@ prefix = [prefix, '_simplexrun_', num2str(simplexNum)];
 % Create figure to track simplex performance
 fprintf('Plotting figure to track simplex performance for %s ...\n\n', prefix);
 if showSimplexHistoryFlag
-    simplexfigure = figure(301);
+    visibleStatus = 'on';
 else
-    simplexfigure = figure('Visible', 'off');
+    visibleStatus = 'off';
 end
-set(simplexfigure, 'Name', 'Simplex performance tracker');
-clf(simplexfigure);
-cm = colormap(lines);   % set color map with line colors
+simplexfigure = set_figure_properties('ClearFigure', true, ...
+                'Visible', visibleStatus, ...
+                'FigNumber', figNumberSimplexHistory, ...
+                'Name', 'Simplex performance tracker');
+
+% Set color map with line colors
+cm = colormap(lines);
 
 % Open log file
-fidLog = fopen(fullfile(outFolderName, [prefix, '_', simplexLogFile]), 'w');
+fidLog = fopen(fullfile(outFolderName, [prefix, '_', simplexLogSuffix]), 'w');
 
 %% Deal with simplex parameters
 % Initialize options

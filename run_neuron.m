@@ -58,6 +58,7 @@ function output = run_neuron (hocFile, varargin)
 %                   default == Inf
 %
 % Requires:
+%       cd/compile_mod_files.m
 %       cd/decide_on_parpool.m
 %       cd/files2contents.m
 %       cd/isaninteger.m
@@ -77,13 +78,20 @@ function output = run_neuron (hocFile, varargin)
 % 2019-10-31 Added 'RenewParpoolFlag' as an optional argument
 % 2019-10-31 Added 'MaxNumWorkers' as an optional argument
 % 2019-10-31 Added 'SimNumbers' as an optional argument
+% 2019-11-18 Added modifications for running on Windows
+% 2019-11-18 Now uses compile_mod_files.m
 % 
 
 %% Hard-coded parameters
-nrnivCommand = 'nrniv';
-nrnguiCommand = 'nrngui';
+nrnivCommandUnix = 'nrniv';
+nrnguiCommandUnix = 'nrngui';
+nrnivCommandWindows = 'nrniv.exe';
+nrnguiCommandWindows = 'nrngui.exe';
 specialFile = 'x86_64/special';
 noErrorsStr = 'No_Errors!';
+neuronPathWindows = 'C:\nrn\bin';
+quitFileWindows = 'quit.hoc';              % needed for Windows
+quitCommand = 'quit()';
 
 % The command on a high performance computing server 
 %   for loading modules required for NEURON to work when the code
@@ -100,6 +108,10 @@ moduleLoadCommandsHpc = sprintf([...
     'module load openmpi\n', ...
     '# Load the newest version of NEURON (7.4)\n', ...
     'module load neuron\n']);
+
+% TODO: Make optional argument
+verbose = false;
+homeDirectory = pwd;
 
 %% Default values for optional arguments
 simCommandsDefault = {};        % no simulation commands outside the .hoc file
@@ -178,6 +190,15 @@ maxNumWorkers = iP.Results.MaxNumWorkers;
 simCommands = force_column_cell(simCommands);
 
 %% Preparation
+% Decide on the command strings based on the operating system
+if isunix
+    nrnivCommand = nrnivCommandUnix;
+    nrnguiCommand = nrnguiCommandUnix;
+else
+    nrnivCommand = nrnivCommandWindows;
+    nrnguiCommand = nrnguiCommandWindows;
+end
+
 % Decide on the command for running NEURON
 if isempty(runCommand)
     if openGuiFlag
@@ -203,17 +224,22 @@ else                            % if on a local machine
 end
 
 % Compile .mod files if specialFile does not exist and custom .mod files exist
-if ~isfile(specialFile)
-    % Check if .mod files exist
-    modFiles = dir('*.mod');
+% Note: this only works for unix systems
+%       On Windows, one must compile manually beforehand
+if isunix && ~isfile(specialFile)
+    compile_mod_files(homeDirectory);
+end
 
-    % Compile custom .mod files if they exist
-    if ~isempty(modFiles)
-        % Note: this only works for unix systems
-        if isunix
-            unix('nrnivmodl');
-        end
-    end
+% Append NEURON folder to system path for Windows if not already done
+if ~isunix && ~any(strfind(getenv('PATH'), neuronPathWindows))
+    setenv('PATH', [getenv('PATH'), neuronPathWindows, ';']);
+end
+
+% Create quit file for Windows if it doesn't exist
+if ~isunix && ~isfile(quitFileWindows)
+    fid = fopen(quitFileWindows, 'w');
+    fprintf(fid, '%s\n', quitCommand);
+    fclose(fid)
 end
 
 % Start a timer
@@ -281,11 +307,25 @@ while nSimsCompleted < nSimsActual
 
         % Run NEURON, using a here document to append simulation commands
         %   Note: Any commands present in the .hoc file will also be run
-        [simStatus(iSim), simStdOut{iSim}] = ...
-            unix(sprintf(['%s\n', '%s %s - << here\n', ...
-                          '%s\n', 'print "%s"\n', 'here'], ...
-                         moduleLoadCommands, runCommand, ...
-                         hocFile, simCommandsStr{iSim}, noErrorsStr));
+        if isunix
+            [simStatus(iSim), simStdOut{iSim}] = ...
+                unix(sprintf(['%s\n', '%s %s - << here\n', ...
+                              '%s\n', 'print "%s"\n', 'here'], ...
+                             moduleLoadCommands, runCommand, ...
+                             hocFile, simCommandsStr{iSim}, noErrorsStr));
+        else
+            % Print the commands to a file
+            commandsFile = fullfile(outFolder, ...
+                                    ['sim_cmd_', num2str(iSim), '.hoc']);
+            fid = fopen(commandsFile, 'w');
+            fprintf(fid, '%s\nprint "%s"\n', simCommandsStr{iSim}, noErrorsStr);
+            fclose(fid);
+
+            % Run hoc file, then commands file
+            [simStatus(iSim), simStdOut{iSim}] = ...
+                dos(sprintf('%s %s %s %s', ...
+                    runCommand, hocFile, commandsFile, quitFileWindows));
+        end
 
         % End the timer
         timeTaken(iSim) = toc(timerOneSim);

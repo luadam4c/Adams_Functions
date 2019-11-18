@@ -4,6 +4,7 @@ function m3ha_network_launch(nCells, useHH, candidateIDs)
 % Requires:
 %       cd/argfun.m
 %       cd/check_dir.m
+%       cd/compile_mod_files.m
 %       cd/construct_fullpath.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_looped_params.m
@@ -49,6 +50,7 @@ function m3ha_network_launch(nCells, useHH, candidateIDs)
 % 2019-10-31 Now uses run_neuron.m
 % 2019-11-04 Updated for m3ha_network_loop_launch_20191104.m
 % 2019-11-08 Fixed RERErad, TCRErad, RETCrad
+% 2019-11-18 Added modifications for running on Windows
 % TODO: Plot gAMPA and gGABA instead of the i's for synaptic event monitoring
 % TODO: Make the network circular to lose edge effects
 % TODO: Perform simulations to generate a linear model
@@ -621,17 +623,8 @@ end
 parentDirectory = m3ha_locate_homedir;
 homeDirectory = fullfile(parentDirectory, homeDirName);
 
-% Test if there is a .mod file present in the home directory
-[~, modPaths] = all_files('Directory', homeDirectory, 'Extension', 'mod');
-
-% Change to the home directory and compile NEURON mod files
-if isempty(modPaths)
-    fprintf('There are no .mod files in %s!\n', homeDirectory);
-    return
-else
-    cd(homeDirectory);
-    unix('nrnivmodl');
-end
+% Compile or re-compile .mod files in the home directory
+compile_mod_files(homeDirectory);
 
 % Make directory to save all data
 %   Note: Use current date & time in the format: YYYYMMDDThhmm
@@ -666,7 +659,7 @@ nameValuePairs = cellfun(@(x, y) {x, y}, pchnames, pchvaluesCell, ...
 [simParamsPaths, sREREsynPaths, sTCREsynPaths, sRETCsynPaths, ...
     sREspikePaths, sTCspikePaths, sREvPaths, sTCvPaths, ...
     sREcliPaths, sREsp1Paths, sREsp2Paths, sTCsp1Paths, sTCsp2Paths, ...
-    sREleakPaths, sREparamsPaths, sTCparamsPaths, scmdsPaths] = ...
+    sREleakPaths, sREparamsPaths, sTCparamsPaths, simCmdPaths] = ...
         argfun(@(x) cellfun(@(y) construct_fullpath(x, ...
                                     'Directory', outFolder, ...
                                     'NameValuePairs', y), ...
@@ -675,6 +668,20 @@ nameValuePairs = cellfun(@(x, y) {x, y}, pchnames, pchvaluesCell, ...
                 sREspikeF, sTCspikeF, sREvF, sTCvF, ...
                 sREcliF, sREsp1F, sREsp2F, sTCsp1F, sTCsp2F, ...
                 sREleakF, sREparamsF, sTCparamsF, scmdsF);
+
+% If on Windows, convert all forward slashes to double forward slashes,
+%   so that these paths can be used in sprintf()
+if ~isunix
+    [sREREsynPaths, sTCREsynPaths, sRETCsynPaths, ...
+            sREspikePaths, sTCspikePaths, sREvPaths, sTCvPaths, ...
+            sREcliPaths, sREsp1Paths, sREsp2Paths, sTCsp1Paths, ...
+            sTCsp2Paths, sREleakPaths, sREparamsPaths, sTCparamsPaths] = ...
+        argfun(@(x) replace(x, '\', '\\'), ...
+                sREREsynPaths, sTCREsynPaths, sRETCsynPaths, ...
+                sREspikePaths, sTCspikePaths, sREvPaths, sTCvPaths, ...
+                sREcliPaths, sREsp1Paths, sREsp2Paths, sTCsp1Paths, ...
+                sTCsp2Paths, sREleakPaths, sREparamsPaths, sTCparamsPaths)
+end
 
 %% Create a table for simulation parameters
 simParamLabels = { ...
@@ -870,7 +877,7 @@ end
 %% Build simulation commands to be read by NEURON through the here-document
 % TODO: Might be too complicated to make into a function
 % simCommands = cellfun(@(x, y) create_simulation_commands(x, y), ...
-%                         simTables, scmdsPaths, 'UniformOutput', false);
+%                         simTables, simCmdPaths, 'UniformOutput', false);
 % function simCommand = create_simulation_commands(paramsTable, scmdsPath)
 simCommands = cell(nSims, 1);             % stores simulation commands
 for iSim = 1:nSims
@@ -992,7 +999,7 @@ for iSim = 1:nSims
                     sREparamsPaths{iSim}, sTCparamsPaths{iSim}, useHH, REnsegs, REcldnum, REconsyn)];
 
     % Print simulation commands to a text file
-    fid = fopen(scmdsPaths{iSim}, 'w');
+    fid = fopen(simCmdPaths{iSim}, 'w');
     fprintf(fid, '%s\n\n', simCommand);
     fclose(fid);
 

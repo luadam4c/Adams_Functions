@@ -173,7 +173,7 @@ if ignoreNan && ~iscell(values)
         % Values is a non-vector array
         % Align vectors along the dimension to operate 
         if dimToOperate == 1
-            values = values;
+            % Do nothing
         elseif dimToOperate == 2
             values = transpose(values);
             dimToOperate = 1;

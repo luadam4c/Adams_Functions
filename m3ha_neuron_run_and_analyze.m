@@ -420,6 +420,13 @@ ipscpWinOrig = [1000, 1300];    % window (ms) in which IPSC reaches peak
 timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
                                 %   of simulations are stabilized
 
+% For plotting
+figNumberConductance = 102;
+figNumberCurrent = 103;
+figNumberIndividual = 104;
+figNumberResiduals = 105;
+figNumberOverlapped = 106;
+
 %% Column numbers for recorded data
 %   Note: Must be consistent with ResaveSweeps.m
 TIME_COL_REC = 1;
@@ -811,19 +818,11 @@ if plotFlag
     xLimits = decide_on_xlimits(fitWindow, baseWindow, simMode, plotMarkFlag);
 end
 
-% Decide on figure numbers
+% Set figure visibility status
 if showSweepsFlag
-    figNumberConductance = 102;
-    figNumberCurrent = 103;
-    figNumberIndividual = 104;
-    figNumberResiduals = 105;
-    figNumberOverlapped = 106;
+    visibleStatus = 'on';
 else
-    figNumberConductance = [];
-    figNumberCurrent = [];
-    figNumberIndividual = [];
-    figNumberResiduals = [];
-    figNumberOverlapped = [];
+    visibleStatus = 'off';
 end
 
 % Decide on rowConditions and nRows
@@ -1218,6 +1217,7 @@ if plotConductanceFlag
 
     % Plot the conductance traces
     figHandle = set_figure_properties('ClearFigure', true, ...
+                    'Visible', visibleStatus, ...
                     'FigNumber', figNumberConductance, ...
                     'Name', 'Conductance traces');
     hFig.conductanceComparison = ...
@@ -1270,6 +1270,7 @@ if plotCurrentFlag
 
     % Plot the current traces
     figHandle = set_figure_properties('ClearFigure', true, ...
+                    'Visible', visibleStatus, ...
                     'FigNumber', figNumberCurrent, ...
                     'Name', 'Current traces');
     hFig.currentComparison = ...
@@ -1303,6 +1304,7 @@ if plotIndividualFlag
 
     % Plot the individual traces
     figHandle = set_figure_properties('ClearFigure', true, ...
+                    'Visible', visibleStatus, ...
                     'FigNumber', figNumberIndividual, ...
                     'Name', 'GABAB IPSC responses');
     hFig.individual = ...
@@ -1330,6 +1332,7 @@ if plotResidualsFlag
 
     % Plot the individual traces
     figHandle = set_figure_properties('ClearFigure', true, ...
+                    'Visible', visibleStatus, ...
                     'FigNumber', figNumberResiduals, ...
                     'Name', 'GABAB IPSC response residuals');
     hFig.residuals = ...
@@ -1403,6 +1406,7 @@ if plotOverlappedFlag
     % TODO: Integrate into m3ha_plot_simulated_traces.m
     nSubPlots = numel(yLabelsOverlapped);
     figHandle = set_figure_properties('AlwaysNew', true, ...
+                    'Visible', visibleStatus, ...
                     'FigNumber', figNumberOverlapped, ...
                     'FigExpansion', [1, nSubPlots/4], ...
                     'Name', 'All simulated traces');

@@ -70,6 +70,7 @@ function varargout = all_files (varargin)
 %       cd/all_swd_sheets.m
 %       cd/atf2sheet.m
 %       cd/combine_data_from_same_slice.m
+%       cd/compile_mod_files.m
 %       cd/create_pleth_EEG_movies.m
 %       cd/find_matching_files.m
 %       cd/force_string_start.m

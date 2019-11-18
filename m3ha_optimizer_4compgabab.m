@@ -183,12 +183,11 @@ case 2
     drawnow
 
     %% If error improved, copy final parameters to bestParamsDirectory
-    if ~outparams.debugFlag && ...
-            outparams.err{outparams.runnumTotal}.totalError < ...
+    if outparams.err{outparams.runnumTotal}.totalError < ...
                 outparams.err{1}.totalError       
         % Get the final parameters file name for this cell
         finalParamsFile = fullfile(outparams.outFolder, ...
-                            [outparams.prefix, '_aft.p']);
+                            [outparams.prefix, '_aft_params.csv']);
 
         % Copy to bestParamsDirectory
         copyfile(finalParamsFile, outparams.bestParamsDirectory);
@@ -213,15 +212,6 @@ case 4                                       %%% TODO: Unfinished
 otherwise
     outparams.runMode = 1;
     fprintf('Warning: run mode out of range, changed to 1!\n\n');
-end
-
-%% Make all figures visible and update
-if outparams.showSweepsFlag
-    figs = fieldnames(hfig);
-    for k = 1:numel(figs)
-        set(hfig.(figs{k}), 'Visible', 'on');
-        drawnow
-    end
 end
 
 %% Used for runbutton_toggle in m3ha_optimizergui_4compgabab.m
@@ -942,6 +932,15 @@ end
 
 %{
 OLD CODE:
+
+%% Make all figures visible and update
+if outparams.showSweepsFlag
+    figs = fieldnames(hfig);
+    for k = 1:numel(figs)
+        set(hfig.(figs{k}), 'Visible', 'on');
+        drawnow
+    end
+end
 
 %}
 
