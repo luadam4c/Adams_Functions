@@ -264,7 +264,6 @@ function [errorStruct, hFig, simData] = ...
 %       cd/compute_combined_data.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_residuals.m
-%       cd/compute_rms_error.m
 %       cd/compute_sampling_interval.m
 %       cd/compute_single_neuron_errors.m
 %       cd/create_colormap.m
@@ -272,8 +271,6 @@ function [errorStruct, hFig, simData] = ...
 %       cd/decide_on_filebases.m
 %       cd/extract_columns.m
 %       cd/extract_subvectors.m
-%       cd/find_IPSC_peak.m
-%       cd/find_LTS.m
 %       cd/find_window_endpoints.m
 %       cd/force_matrix.m
 %       cd/load_neuron_outputs.m
@@ -284,17 +281,14 @@ function [errorStruct, hFig, simData] = ...
 %       cd/parse_ipsc.m
 %       cd/parse_lts.m
 %       cd/parse_pulse_response.m
-%       cd/plot_bar.m
 %       cd/run_neuron.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
 %       cd/test_var_difference.m
 %
-%       cd/save_params.m TODO
-%
 % Used by:    
 %       cd/m3ha_fminsearch3.m
-%       ~/m3ha/optimizer4gabab/m3ha_optimizer_4compgabab.m
+%       cd/m3ha_optimizer_4compgabab.m
 
 % File History:
 % 2014-04-XX - Created by Christine
@@ -402,15 +396,15 @@ function [errorStruct, hFig, simData] = ...
 % 2019-11-15 - Added 'IpscTime' as an optional parameter
 % 2019-11-15 - Added 'IpscPeakWindow' as an optional parameter
 % 2019-11-15 - Added 'FileBase' as an optional parameter
-%   TODO: Use save_params.m
-%   TODO: plotConductanceFlag
-%   TODO: plotCurrentFlag
+% 2019-11-17 - Added 'PlotConductanceFlag' as an optional parameter
+% 2019-11-17 - Added 'PlotCurrentFlag' as an optional parameter
 
 %% Hard-coded parameters
 validSimModes = {'active', 'passive'};
 hocFile = 'singleneuron4compgabab.hoc';
 maxRowsWithOneOnly = 8;
 verbose = false;
+lineWidthParallel = 1;
 
 % The following must be consistent with both dclampDataExtractor.m & ...
 %   singleneuron4compgabab.hoc
@@ -811,9 +805,17 @@ end
 
 % Decide on figure numbers
 if showSweepsFlag
+    figNumberConductance = 102;
+    figNumberCurrent = 103;
     figNumberIndividual = 104;
+    figNumberResiduals = 105;
+    figNumberOverlapped = 106;
 else
+    figNumberConductance = [];
+    figNumberCurrent = [];
     figNumberIndividual = [];
+    figNumberResiduals = [];
+    figNumberOverlapped = [];
 end
 
 % Decide on rowConditions and nRows
@@ -821,7 +823,7 @@ end
     decide_on_row_conditions(rowConditions, nSweeps, maxRowsWithOneOnly);
 
 % Decide on the colors for each row in the plots
-colorMapOverlapped = create_colormap(nRows);
+colorMapParallel = create_colormap(nRows);
 colorMapIndividual = decide_on_colormap('r', nRows);
 
 % Create output file paths if not provided
@@ -1127,12 +1129,13 @@ else
 end
 
 %% Plot figures
+% Prepare for plotting
 if plotFlag
     % Print message
     if strcmpi(simMode, 'passive')
-        fprintf('UPDATING current pulse response figures for %s ...\n', prefix);
+        fprintf('UPDATING current pulse response figures for %s ...\n', expStr);
     elseif strcmpi(simMode, 'active')
-        fprintf('UPDATING GABAB IPSC response figures for %s ...\n', prefix);
+        fprintf('UPDATING GABAB IPSC response figures for %s ...\n', expStr);
     end
 
     % Find the indices of the x-axis limit endpoints
@@ -1140,174 +1143,276 @@ if plotFlag
 
     % Prepare vectors for plotting
     if strcmpi(simMode, 'passive')
-        [tVecs, vVecsSim, vVecsRec, residuals, ...
-            iVecsSim, vVecsDend1, vVecsDend2] = ...
+        [tVecs, residuals, gVecsRec, iVecsRec, vVecsRec, ...
+            gVecsSim, iVecsSim, vVecsSim, vVecsDend1, vVecsDend2] = ...
             argfun(@(x) prepare_for_plotting(x, endPointsForPlots), ...
-                    tVecs, vVecsSim, vVecsRec, residuals, ...
-                    iVecsSim, vVecsDend1, vVecsDend2);
+                    tVecs, residuals, gVecsRec, iVecsRec, vVecsRec, ...
+                    gVecsSim, iVecsSim, vVecsSim, vVecsDend1, vVecsDend2);
     elseif strcmpi(simMode, 'active')
-        [tVecs, residuals, vVecsRec, vVecsSim, gVecsSim, iVecsSim, ...
+        [tVecs, residuals, gVecsRec, iVecsRec, vVecsRec, ...
+            gVecsSim, iVecsSim, vVecsSim, ...
             icaVecsSim, itmVecsSim, itminfVecsSim, ...
             ithVecsSim, ithinfVecsSim, ihVecsSim, ihmVecsSim, ...
             ikaVecsSim, iam1VecsSim, iah1VecsSim, ...
             iam2VecsSim, iah2VecsSim, ikkirVecsSim, ikirmVecsSim, ...
             inapnaVecsSim, inapmVecsSim, inaphVecsSim] = ...
             argfun(@(x) prepare_for_plotting(x, endPointsForPlots), ...
-                    tVecs, residuals, vVecsRec, vVecsSim, gVecsSim, iVecsSim, ...
+                    tVecs, residuals, gVecsRec, iVecsRec, vVecsRec, ...
+                    gVecsSim, iVecsSim, vVecsSim, ...
                     icaVecsSim, itmVecsSim, itminfVecsSim, ...
                     ithVecsSim, ithinfVecsSim, ihVecsSim, ihmVecsSim, ...
                     ikaVecsSim, iam1VecsSim, iah1VecsSim, ...
                     iam2VecsSim, iah2VecsSim, ikkirVecsSim, ikirmVecsSim, ...
                     inapnaVecsSim, inapmVecsSim, inaphVecsSim);
     end
-
-    % Plot individual simulated traces against recorded traces
-    if plotIndividualFlag
-        % Print to standard output
-        fprintf('Plotting figure of individual voltage traces for %s ...\n', ...
-                expStr);
-
-        % Decide on figure title and file name
-        figTitle = sprintf('All traces for Experiment %s', expStrForTitle);
-        figName = fullfile(outFolder, [expStr, '_individual.png']);
-
-        % Plot the individual traces
-        hFig.individual = ...
-            m3ha_plot_individual_traces(tVecs, vVecsSim, ...
-                    'DataToCompare', vVecsRec, 'PlotMode', 'parallel', ...
-                    'SubplotOrder', 'bycolor', 'ColorMode', 'byRow', ...
-                    'ColorMap', colorMapIndividual, ...
-                    'XLimits', xLimits, 'LinkAxesOption', 'xy', ...
-                    'FitWindow', fitWindow, 'BaseWindow', baseWindow, ...
-                    'BaseNoise', baseNoise, 'SweepErrors', swpErrors, ...
-                    'FigTitle', figTitle, 'FigName', figName, ...
-                    'FigNumber', figNumberIndividual, ...
-                    'PlotSwpWeightsFlag', plotSwpWeightsFlag);
-    end
-    
-    % Plot residuals
-    if plotResidualsFlag
-        % Print to standard output
-        fprintf('Plotting figure of residual traces for %s ...\n', ...
-                expStr);
-
-        % Decide on figure title and file name
-        figTitle = sprintf('Residuals for Experiment %s', expStrForTitle);
-        figName = fullfile(outFolder, [expStr, '_residuals.png']);
-
-        % Plot the individual traces
-        hFig.residuals = ...
-            m3ha_plot_individual_traces(tVecs, residuals, ...
-                    'PlotMode', 'residuals', ...
-                    'SubplotOrder', 'bycolor', 'ColorMode', 'byRow', ...
-                    'ColorMap', colorMapIndividual, ...
-                    'XLimits', xLimits, 'LinkAxesOption', 'xy', ...
-                    'FitWindow', fitWindow, 'BaseWindow', baseWindow, ...
-                    'BaseNoise', baseNoise, 'SweepErrors', swpErrors, ...
-                    'FigTitle', figTitle, 'FigName', figName, ...
-                    'FigNumber', figNumberIndividual, ...
-                    'PlotSwpWeightsFlag', plotSwpWeightsFlag);
-    end    
-
-    % Plot different types of traces with different conditions overlapped
-    if plotOverlappedFlag
-        % Print to standard output
-        fprintf('Plotting figure of overlapped traces for %s ...\n', ...
-                expStr);
-
-        % Compute processed data
-        if strcmpi(simMode, 'active')
-            itm2hVecsSim = (itmVecsSim .^ 2) .* ithVecsSim;
-            itminf2hinfVecsSim = (itminfVecsSim .^ 2) .* ithinfVecsSim;
-        end
-
-        % Select data to plot
-        if strcmpi(simMode, 'passive')
-            dataForOverlapped = {vVecsSim; vVecsDend1; vVecsDend2; iVecsSim};
-        elseif strcmpi(simMode, 'active')
-            dataForOverlapped = {vVecsSim; gVecsSim; iVecsSim; ...
-                    icaVecsSim; itm2hVecsSim; itminf2hinfVecsSim; ...
-                    itmVecsSim; itminfVecsSim; ithVecsSim; ithinfVecsSim; ...
-                    ihVecsSim; ihmVecsSim; ...
-                    ikaVecsSim; iam1VecsSim; iah1VecsSim; ...
-                    iam2VecsSim; iah2VecsSim; ikkirVecsSim; ikirmVecsSim; ...
-                    inapnaVecsSim; inapmVecsSim; inaphVecsSim};
-        end
-
-
-        % Construct matching y labels
-        if strcmpi(simMode, 'passive')
-            yLabelsOverlapped = {'V_{soma} (mV)'; 'V_{dend1} (mV)'; ...
-                                'V_{dend2} (mV)'; 'I_{stim} (nA)'};
-        elseif strcmpi(simMode, 'active')
-            yLabelsOverlapped = {'V_{soma} (mV)'; 'g_{GABA_B} (uS)'; ...
-                    'I_{stim} (nA)'; 'I_{Ca} (mA/cm^2)'; ...
-                    'm^2h_{T}'; 'm_{\infty}^2h_{\infty,T}'; ...
-                    'm_{T}'; 'm_{\infty,T}'; 'h_{T}'; 'h_{\infty,T}'; ...
-                    'I_{h} (mA/cm^2)'; 'm_{h}'; 'I_{A} (mA/cm^2)'; ...
-                    'm_{1,A}'; 'h_{1,A}'; 'm_{2,A}'; 'h_{2,A}'; ...
-                    'I_{Kir} (mA/cm^2)'; 'm_{\infty,Kir}'; ...
-                    'I_{NaP} (mA/cm^2)'; 'm_{\infty,NaP}'; 'h_{NaP}'};
-        end
-
-        % Add recorded voltage on the top if exists
-        if ~isempty(vVecsRec)
-            dataForOverlapped = [{vVecsRec}; dataForOverlapped];
-            yLabelsOverlapped = [{'V_{rec} (mV)'}; yLabelsOverlapped];
-        end
-            
-        % Construct matching time vectors
-        tVecsForOverlapped = repmat({tVecs}, size(dataForOverlapped));
-
-        % Expand the colormap if necessary
-        if nSweeps > nRows
-            colorMap = decide_on_colormap([], 4);
-            nColumns = ceil(nSweeps / nRows);
-            nSlots = nColumns * nRows;
-            colorMap = reshape(repmat(reshape(colorMap, 1, []), ...
-                                nColumns, 1), nSlots, 3);
-        end
-
-        % Decide on figure title and file name
-        figTitle = sprintf('Overlapped traces for Experiment %s', ...
-                            expStrForTitle);
-        figName = fullfile(outFolder, [expStr, '_overlapped.png']);
-
-        % Plot overlapped traces
-        % TODO: Integrate into m3ha_plot_simulated_traces.m
-        lineWidth = 1;
-        nSubPlots = numel(yLabelsOverlapped);
-        figHandle = set_figure_properties('AlwaysNew', true, ...
-                        'FigExpansion', [1, nSubPlots/4]);
-        hFig.overlapped = ...
-            plot_traces(tVecsForOverlapped, dataForOverlapped, ...
-                        'Verbose', false, 'PlotMode', 'parallel', ...
-                        'SubplotOrder', 'list', 'ColorMode', 'byTraceInPlot', ...
-                        'LegendLocation', 'suppress', ...
-                        'ColorMap', colorMapOverlapped, ...
-                        'XLimits', xLimits, ...
-                        'LinkAxesOption', 'x', 'XUnits', 'ms', ...
-                        'YLabel', yLabelsOverlapped, ...
-                        'FigTitle', figTitle, 'FigHandle', figHandle, ...
-                        'FigName', figName, 'LineWidth', lineWidth);
-
-        % handles = m3ha_plot_simulated_traces('Directory', outFolder, ...
-        %                                     'ColorMap', colorMapOverlapped);
-    end
-
-    %% TODO TODO
-    % if plotConductanceFlag
-    %     hFig.conductance = ...
-    %         plot_conductance_traces(realData, simData, outparams, hFig, nSweeps, colorMap, ncg, npercg, xlimitsMax);
-    % end
-    % if plotCurrentFlag
-    %     hFig.current = ...
-    %         plot_current_traces(realData, simData, outparams, hFig, nSweeps, colorMap, ncg, npercg, xlimitsMax);
-    % end
-
-    % Print an empty line
-    fprintf('\n');
 end
+
+% Plot a comparison of simulated and recorded conductance traces
+if plotConductanceFlag
+    % Print to standard output
+    fprintf('Plotting figure of conductance trace comparison for %s ...\n', ...
+            expStr);
+
+    % Select data to plot
+    dataForConductanceComparison = {gVecsRec; gVecsSim};
+
+    % Construct matching time vectors
+    tVecsForConductanceComparison = repmat({tVecs}, [2, 1]);
+
+    % Construct matching y labels
+    yLabelsConductanceComparison = {'Conductance (uS)'; 'Conductance (uS)'};
+
+    % Decide on figure name
+    figName = fullfile(outFolder, [expStr, '_conductance_comparison.png']);
+
+    % Decide on figure titles for each subplot
+    if strcmpi(simMode, 'passive')
+        figSubTitles = {'Recorded conductance during current pulse', ...
+                        'Simulated conductance during current pulse'};
+    else
+        figSubTitles = {'Recorded GABA_B IPSC conductances', ...
+                        'Simulated GABA_B IPSC conductances'};
+    end
+    strcat(figSubTitles, 'for', ' ', expStrForTitle);
+
+    % Plot the conductance traces
+    figHandle = set_figure_properties('ClearFigure', true, ...
+                    'FigNumber', figNumberConductance, ...
+                    'Name', 'Conductance traces');
+    hFig.conductanceComparison = ...
+        plot_traces(tVecsForConductanceComparison, ...
+                    dataForConductanceComparison, ...
+                    'Verbose', false, 'PlotMode', 'parallel', ...
+                    'SubplotOrder', 'list', ...
+                    'ColorMode', 'byTraceInPlot', ...
+                    'LegendLocation', 'suppress', ...
+                    'ColorMap', colorMapParallel, ...
+                    'XLimits', xLimits, ...
+                    'LinkAxesOption', 'x', 'XUnits', 'ms', ...
+                    'YLabel', yLabelsConductanceComparison, ...
+                    'FigSubTitles', figSubTitles, 'FigHandle', figHandle, ...
+                    'FigName', figName, 'LineWidth', lineWidthParallel);
+
+    % TODO: Add this?
+    % if nSweeps == 4
+    %     legend('Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block')
+    % end
+end
+
+% Plot a comparison of simulated and recorded current traces
+if plotCurrentFlag
+    % Print to standard output
+    fprintf('Plotting figure of current trace comparison for %s ...\n', ...
+            expStr);
+
+    % Select data to plot
+    dataForCurrentComparison = {iVecsRec; iVecsSim};
+
+    % Construct matching time vectors
+    tVecsForCurrentComparison = repmat({tVecs}, [2, 1]);
+
+    % Construct matching y labels
+    yLabelsCurrentComparison = {'Current (nA)'; 'Current (nA)'};
+
+    % Decide on figure name
+    figName = fullfile(outFolder, [expStr, '_current_comparison.png']);
+
+    % Decide on figure titles for each subplot
+    if strcmpi(simMode, 'passive')
+        figSubTitles = {'Recorded current pulses', ...
+                        'Simulated current pulses'};
+    else
+        figSubTitles = {'Recorded GABA_B IPSC currents', ...
+                        'Simulated GABA_B IPSC currents'};
+    end
+    strcat(figSubTitles, 'for', ' ', expStrForTitle);
+
+    % Plot the current traces
+    figHandle = set_figure_properties('ClearFigure', true, ...
+                    'FigNumber', figNumberCurrent, ...
+                    'Name', 'Current traces');
+    hFig.currentComparison = ...
+        plot_traces(tVecsForCurrentComparison, dataForCurrentComparison, ...
+                    'Verbose', false, 'PlotMode', 'parallel', ...
+                    'SubplotOrder', 'list', ...
+                    'ColorMode', 'byTraceInPlot', ...
+                    'LegendLocation', 'suppress', ...
+                    'ColorMap', colorMapParallel, ...
+                    'XLimits', xLimits, ...
+                    'LinkAxesOption', 'x', 'XUnits', 'ms', ...
+                    'YLabel', yLabelsCurrentComparison, ...
+                    'FigSubTitles', figSubTitles, 'FigHandle', figHandle, ...
+                    'FigName', figName, 'LineWidth', lineWidthParallel);
+
+    % TODO: Add this?
+    % if nSweeps == 4
+    %     legend('Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block')
+    % end
+end
+
+% Plot individual simulated traces against recorded traces
+if plotIndividualFlag
+    % Print to standard output
+    fprintf('Plotting figure of individual voltage traces for %s ...\n', ...
+            expStr);
+
+    % Decide on figure title and figure name
+    figTitle = sprintf('All traces for Experiment %s', expStrForTitle);
+    figName = fullfile(outFolder, [expStr, '_individual.png']);
+
+    % Plot the individual traces
+    figHandle = set_figure_properties('ClearFigure', true, ...
+                    'FigNumber', figNumberIndividual, ...
+                    'Name', 'GABAB IPSC responses');
+    hFig.individual = ...
+        m3ha_plot_individual_traces(tVecs, vVecsSim, ...
+                'DataToCompare', vVecsRec, 'PlotMode', 'parallel', ...
+                'SubplotOrder', 'bycolor', 'ColorMode', 'byRow', ...
+                'ColorMap', colorMapIndividual, ...
+                'XLimits', xLimits, 'LinkAxesOption', 'xy', ...
+                'FitWindow', fitWindow, 'BaseWindow', baseWindow, ...
+                'BaseNoise', baseNoise, 'SweepErrors', swpErrors, ...
+                'FigTitle', figTitle, 'FigName', figName, ...
+                'FigHandle', figHandle, ...
+                'PlotSwpWeightsFlag', plotSwpWeightsFlag);
+end
+    
+% Plot residuals
+if plotResidualsFlag
+    % Print to standard output
+    fprintf('Plotting figure of residual traces for %s ...\n', ...
+            expStr);
+
+    % Decide on figure title and file name
+    figTitle = sprintf('Residuals for Experiment %s', expStrForTitle);
+    figName = fullfile(outFolder, [expStr, '_residuals.png']);
+
+    % Plot the individual traces
+    figHandle = set_figure_properties('ClearFigure', true, ...
+                    'FigNumber', figNumberResiduals, ...
+                    'Name', 'GABAB IPSC response residuals');
+    hFig.residuals = ...
+        m3ha_plot_individual_traces(tVecs, residuals, ...
+                'PlotMode', 'residuals', ...
+                'SubplotOrder', 'bycolor', 'ColorMode', 'byRow', ...
+                'ColorMap', colorMapIndividual, ...
+                'XLimits', xLimits, 'LinkAxesOption', 'xy', ...
+                'FitWindow', fitWindow, 'BaseWindow', baseWindow, ...
+                'BaseNoise', baseNoise, 'SweepErrors', swpErrors, ...
+                'FigTitle', figTitle, 'FigName', figName, ...
+                'FigHandle', figHandle, ...
+                'PlotSwpWeightsFlag', plotSwpWeightsFlag);
+end    
+
+% Plot different types of traces with different conditions overlapped
+if plotOverlappedFlag
+    % Print to standard output
+    fprintf('Plotting figure of overlapped traces for %s ...\n', ...
+            expStr);
+
+    % Compute processed data
+    if strcmpi(simMode, 'active')
+        itm2hVecsSim = (itmVecsSim .^ 2) .* ithVecsSim;
+        itminf2hinfVecsSim = (itminfVecsSim .^ 2) .* ithinfVecsSim;
+    end
+
+    % Select data to plot
+    if strcmpi(simMode, 'passive')
+        dataForOverlapped = {vVecsSim; vVecsDend1; vVecsDend2; iVecsSim};
+    elseif strcmpi(simMode, 'active')
+        dataForOverlapped = {vVecsSim; gVecsSim; iVecsSim; ...
+                icaVecsSim; itm2hVecsSim; itminf2hinfVecsSim; ...
+                itmVecsSim; itminfVecsSim; ithVecsSim; ithinfVecsSim; ...
+                ihVecsSim; ihmVecsSim; ...
+                ikaVecsSim; iam1VecsSim; iah1VecsSim; ...
+                iam2VecsSim; iah2VecsSim; ikkirVecsSim; ikirmVecsSim; ...
+                inapnaVecsSim; inapmVecsSim; inaphVecsSim};
+    end
+
+    % Construct matching y labels
+    if strcmpi(simMode, 'passive')
+        yLabelsOverlapped = {'V_{soma} (mV)'; 'V_{dend1} (mV)'; ...
+                            'V_{dend2} (mV)'; 'I_{stim} (nA)'};
+    elseif strcmpi(simMode, 'active')
+        yLabelsOverlapped = {'V_{soma} (mV)'; 'g_{GABA_B} (uS)'; ...
+                'I_{stim} (nA)'; 'I_{Ca} (mA/cm^2)'; ...
+                'm^2h_{T}'; 'm_{\infty}^2h_{\infty,T}'; ...
+                'm_{T}'; 'm_{\infty,T}'; 'h_{T}'; 'h_{\infty,T}'; ...
+                'I_{h} (mA/cm^2)'; 'm_{h}'; 'I_{A} (mA/cm^2)'; ...
+                'm_{1,A}'; 'h_{1,A}'; 'm_{2,A}'; 'h_{2,A}'; ...
+                'I_{Kir} (mA/cm^2)'; 'm_{\infty,Kir}'; ...
+                'I_{NaP} (mA/cm^2)'; 'm_{\infty,NaP}'; 'h_{NaP}'};
+    end
+
+    % Add recorded voltage on the top if exists
+    if ~isempty(vVecsRec)
+        dataForOverlapped = [{vVecsRec}; dataForOverlapped];
+        yLabelsOverlapped = [{'V_{rec} (mV)'}; yLabelsOverlapped];
+    end
+        
+    % Construct matching time vectors
+    tVecsForOverlapped = repmat({tVecs}, size(dataForOverlapped));
+
+    % Expand the colormap if necessary
+    if nSweeps > nRows
+        colorMap = decide_on_colormap([], 4);
+        nColumns = ceil(nSweeps / nRows);
+        nSlots = nColumns * nRows;
+        colorMap = reshape(repmat(reshape(colorMap, 1, []), ...
+                            nColumns, 1), nSlots, 3);
+    end
+
+    % Decide on figure title and file name
+    figTitle = sprintf('Overlapped traces for Experiment %s', ...
+                        expStrForTitle);
+    figName = fullfile(outFolder, [expStr, '_overlapped.png']);
+
+    % Plot overlapped traces
+    % TODO: Integrate into m3ha_plot_simulated_traces.m
+    nSubPlots = numel(yLabelsOverlapped);
+    figHandle = set_figure_properties('AlwaysNew', true, ...
+                    'FigNumber', figNumberOverlapped, ...
+                    'FigExpansion', [1, nSubPlots/4], ...
+                    'Name', 'All simulated traces');
+    hFig.overlapped = ...
+        plot_traces(tVecsForOverlapped, dataForOverlapped, ...
+                    'Verbose', false, 'PlotMode', 'parallel', ...
+                    'SubplotOrder', 'list', ...
+                    'ColorMode', 'byTraceInPlot', ...
+                    'LegendLocation', 'suppress', ...
+                    'ColorMap', colorMapParallel, ...
+                    'XLimits', xLimits, ...
+                    'LinkAxesOption', 'x', 'XUnits', 'ms', ...
+                    'YLabel', yLabelsOverlapped, ...
+                    'FigTitle', figTitle, 'FigHandle', figHandle, ...
+                    'FigName', figName, 'LineWidth', lineWidthParallel);
+
+    % handles = m3ha_plot_simulated_traces('Directory', outFolder, ...
+    %                                     'ColorMap', colorMapParallel);
+end
+
+% Print an empty line
+fprintf('\n');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1385,6 +1490,7 @@ function featuresTable = analyze_response (vVecs, iVecs, siMs, simMode, ...
 % Hard-coded parameters
 meanVoltageWindow = 0.5;    % width in ms for calculating mean voltage 
                             %   for input resistance calculations
+verbose = false;
 
 % Parse the response (generate statistics)
 if strcmpi(simMode, 'passive')
@@ -1396,14 +1502,16 @@ if strcmpi(simMode, 'passive')
 elseif strcmpi(simMode, 'active')
     % Parse the IPSC current
     ipscTable = parse_ipsc(iVecs, siMs, 'StimStartMs', ipscTime, ...
-                            'PeakWindowMs', ipscPeakWindow);
+                            'PeakWindowMs', ipscPeakWindow, ...
+                            'Verbose', verbose);
 
     % Extract peak delay
     ipscDelay = ipscTable.peakDelayMs;
 
     % Parse the LTS response
     featuresTable = parse_lts(vVecs, siMs, 'StimStartMs', ipscTime, ...
-                                'MinPeakDelayMs', ipscDelay);
+                                'MinPeakDelayMs', ipscDelay, ...
+                                'Verbose', verbose);
 end
 
 % Count the number of rows
@@ -1413,408 +1521,6 @@ nRows = height(featuresTable);
 featuresTable.dataType = repmat({dataType}, nRows, 1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [err, outparams] = errorcalc(realData, simData, outparams, nSweeps, colorMap, ncg, npercg)
-%% Error calculator
-%% TODO: Make functions out of this
-
-%% Compare LTS and burst statistics if GABAB IPSC response is simulated
-if ~cprflag && findLtsFlag && ltsBurstStatsFlag
-    % Save statistics first
-    if outparams.saveLtsInfoFlag
-        save(fullfile(outFolder, [prefix, '_LTS_info.mat']), ...
-            'real_ipeakt', 'real_ltsv', 'real_ltst', ...
-            'real_ltsdvdtv', 'real_ltsdvdtt', ...
-            'real_pkprom', 'real_pkwidth', 'real_pkclass', ...
-            'real_np2der', 'real_spp', 'real_btime', 'real_spb', ...
-            'sim_ipeakt', 'sim_ltsv', 'sim_ltst', ...
-            'sim_ltsdvdtv', 'sim_ltsdvdtt', ...
-            'sim_pkprom', 'sim_pkwidth', 'sim_pkclass', ...
-            'sim_np2der', 'sim_spp', 'sim_btime', 'sim_spb', ...
-            '-v7.3');
-    end
-    compute_and_compare_statistics(nSweeps, colorMap, ncg, npercg, ...
-        cellID, outparams, plotStatisticsFlag, ...
-        real_ipeakt, real_ltsv, real_ltst, real_ltsdvdtv, real_ltsdvdtt, ...
-        real_pkprom, real_pkwidth, real_pkclass, real_np2der, real_spp, real_btime, real_spb, ...
-        sim_ipeakt, sim_ltsv, sim_ltst, sim_ltsdvdtv, sim_ltsdvdtt, ...
-        sim_pkprom, sim_pkwidth, sim_pkclass, sim_np2der, sim_spp, sim_btime, sim_spb);
-end
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [ltst_all, ltst_mean_real, ltst_mean_sim, ltst_mean_all, ...
-    ltst_std_real, ltst_std_sim, ltst_cv_real, ltst_cv_sim, ltst_cv_all, ltst_max_dev_all, ...
-    ltsdvdtv_all, ltsdvdtv_mean_real, ltsdvdtv_mean_sim, ltsdvdtv_mean_all, ...
-    ltsdvdtv_std_real, ltsdvdtv_std_sim, ltsdvdtv_cv_real, ltsdvdtv_cv_sim, ...
-    ltsdvdtv_cv_all, ltsdvdtv_max_dev_all] ...
-        = compute_and_compare_statistics(nSweeps, colorMap, ncg, npercg, ...
-            cellID, outparams, plotStatisticsFlag, ...
-            real_ipeakt, real_ltsv, real_ltst, real_ltsdvdtv, real_ltsdvdtt, ...
-            real_pkprom, real_pkwidth, real_pkclass, real_np2der, real_spp, real_btime, real_spb, ...
-            sim_ipeakt, sim_ltsv, sim_ltst, sim_ltsdvdtv, sim_ltsdvdtt, ...
-            sim_pkprom, sim_pkwidth, sim_pkclass, sim_np2der, sim_spp, sim_btime, sim_spb)
-%% Calculate statistics and plot those of simulated data against real data
-%% TODO: Make functions out of this
-
-%% Extract from outparams
-outFolder = outparams.outFolder;
-prefix = outparams.prefix;
-
-%% Compute LTS statistics
-ltsp = zeros(ncg, 2);            % LTS probability
-ltsv_real = cell(ncg, 1);
-ltst_real = cell(ncg, 1);
-ltsdvdtv_real = cell(ncg, 1);
-ltsdvdtt_real = cell(ncg, 1);
-ltsv_sim = cell(ncg, 1);
-ltst_sim = cell(ncg, 1);
-ltsdvdtv_sim = cell(ncg, 1);
-ltsdvdtt_sim = cell(ncg, 1);
-both_has_lts_ct = zeros(ncg, 1);
-ltst_all = cell(ncg, 1);
-ltst_mean_real = zeros(ncg, 1);
-ltst_mean_sim = zeros(ncg, 1);
-ltst_mean_all = zeros(ncg, 1);
-ltst_std_real = zeros(ncg, 1);
-ltst_std_sim = zeros(ncg, 1);
-ltst_std_all = zeros(ncg, 1);
-ltst_cv_real = zeros(ncg, 1);
-ltst_cv_sim = zeros(ncg, 1);
-ltst_cv_all = zeros(ncg, 1);
-ltst_max_dev_all = zeros(ncg, 1);
-ltsdvdtv_all = cell(ncg, 1);
-ltsdvdtv_mean_real = zeros(ncg, 1);
-ltsdvdtv_mean_sim = zeros(ncg, 1);
-ltsdvdtv_mean_all = zeros(ncg, 1);
-ltsdvdtv_std_real = zeros(ncg, 1);
-ltsdvdtv_std_sim = zeros(ncg, 1);
-ltsdvdtv_std_all = zeros(ncg, 1);
-ltsdvdtv_cv_real = zeros(ncg, 1);
-ltsdvdtv_cv_sim = zeros(ncg, 1);
-ltsdvdtv_cv_all = zeros(ncg, 1);
-ltsdvdtv_max_dev_all = zeros(ncg, 1);
-for cgn = 1:ncg            % color group number
-    % LTS probability
-    ct_real = 0;    % counts sweeps with LTS
-    ct_sim = 0;    % counts sweeps with LTS
-    for iSwp = 1:nSweeps
-        if ceil(iSwp/npercg) == cgn && ~isnan(real_ltst(iSwp))
-            ct_real = ct_real + 1;
-        end
-        if ceil(iSwp/npercg) == cgn && ~isnan(sim_ltst(iSwp))
-            ct_sim = ct_sim + 1;
-        end
-    end
-    ltsp(cgn, 1) = ct_real/npercg;
-    ltsp(cgn, 2) = ct_sim/npercg;
-
-    % Data for those sweeps that have LTSs both in real and simulated conditions
-    ct = 0;         % counts sweeps with LTSs
-    for iSwp = 1:nSweeps
-        if ceil(iSwp/npercg) == cgn ...
-            && ~isnan(real_ltst(iSwp)) && ~isnan(sim_ltst(iSwp))  
-            ct = ct + 1;
-            ltsv_real{cgn}(1, ct) = real_ltsv(iSwp);
-            ltst_real{cgn}(1, ct) = real_ltst(iSwp);
-            ltsdvdtv_real{cgn}(1, ct) = real_ltsdvdtv(iSwp);
-            ltsdvdtt_real{cgn}(1, ct) = real_ltsdvdtt(iSwp);
-            ltsv_sim{cgn}(1, ct) = sim_ltsv(iSwp);
-            ltst_sim{cgn}(1, ct) = sim_ltst(iSwp);
-            ltsdvdtv_sim{cgn}(1, ct) = sim_ltsdvdtv(iSwp);
-            ltsdvdtt_sim{cgn}(1, ct) = sim_ltsdvdtt(iSwp);
-        end
-    end
-    both_has_lts_ct(cgn) = ct;
-    if both_has_lts_ct(cgn) > 0
-        % LTS peak time data
-        ltst_all{cgn} = [ltst_real{cgn} ltst_sim{cgn}];
-        ltst_mean_real(cgn) = mean(ltst_real{cgn});
-        ltst_mean_sim(cgn) = mean(ltst_sim{cgn});
-        ltst_mean_all(cgn) = mean(ltst_all{cgn});
-        ltst_std_real(cgn) = std(ltst_real{cgn});
-        ltst_std_sim(cgn) = std(ltst_sim{cgn});
-        ltst_std_all(cgn) = std([ltst_real{cgn} ltst_sim{cgn}]);
-        ltst_cv_real(cgn) = ltst_std_real(cgn)/ltst_mean_real(cgn);
-        ltst_cv_sim(cgn) = ltst_std_sim(cgn)/ltst_mean_sim(cgn);
-        ltst_cv_all(cgn) = ltst_std_all(cgn)/ltst_mean_all(cgn);
-        ltst_max_dev_all(cgn) = max(abs(ltst_all{cgn} - ltst_mean_all(cgn))/ltst_mean_all(cgn));
-
-        % LTS max slope data
-        ltsdvdtv_all{cgn} = [ltsdvdtv_real{cgn} ltsdvdtv_sim{cgn}];
-        ltsdvdtv_mean_real(cgn) = mean(ltsdvdtv_real{cgn});
-        ltsdvdtv_mean_sim(cgn) = mean(ltsdvdtv_sim{cgn});
-        ltsdvdtv_mean_all(cgn) = mean(ltsdvdtv_all{cgn});
-        ltsdvdtv_std_real(cgn) = std(ltsdvdtv_real{cgn});
-        ltsdvdtv_std_sim(cgn) = std(ltsdvdtv_sim{cgn});
-        ltsdvdtv_std_all(cgn) = std([ltsdvdtv_real{cgn} ltsdvdtv_sim{cgn}]);
-        ltsdvdtv_cv_real(cgn) = ltsdvdtv_std_real(cgn)/ltsdvdtv_mean_real(cgn);
-        ltsdvdtv_cv_sim(cgn) = ltsdvdtv_std_sim(cgn)/ltsdvdtv_mean_sim(cgn);
-        ltsdvdtv_cv_all(cgn) = ltsdvdtv_std_all(cgn)/ltsdvdtv_mean_all(cgn);
-        ltsdvdtv_max_dev_all(cgn) = max(abs(ltsdvdtv_all{cgn} - ltsdvdtv_mean_all(cgn))/ltsdvdtv_mean_all(cgn));
-    end
-end
-if outparams.saveLtsStatsFlag
-    save(fullfile(outFolder, [prefix, '_LTS_statistics.mat']), ...
-        'ltst_all', 'ltst_mean_real', 'ltst_mean_sim', 'ltst_mean_all', ...
-        'ltst_std_real', 'ltst_std_sim', 'ltst_cv_real', 'ltst_cv_sim', 'ltst_cv_all', 'ltst_max_dev_all', ...
-        'ltsdvdtv_all', 'ltsdvdtv_mean_real', 'ltsdvdtv_mean_sim', 'ltsdvdtv_mean_all', ...
-        'ltsdvdtv_std_real', 'ltsdvdtv_std_sim', 'ltsdvdtv_cv_real', 'ltsdvdtv_cv_sim', ...
-        'ltsdvdtv_cv_all', 'ltsdvdtv_max_dev_all', '-v7.3');
-end
-
-%% Compute LTS/burst statistics
-
-% Items to compute
-statstitle = {'LTS onset time (ms)', 'LTS time jitter (ms)', 'LTS probability', 'Spikes per LTS', ...
-        'Burst onset time (ms)', 'Burst time jitter (ms)', 'Burst probability', 'Spikes per burst'};
-statsfilename = {'lts_onset_time', 'lts_time_jitter', 'lts_probability', 'spikes_per_lts', ...
-                'burst_onset_time', 'burst_time_jitter', 'burst_probability', 'spikes_per_burst'};
-pplabel2 = {'Con', 'GAT1', 'GAT3', 'Dual'};
-
-% Initialize stats vectors
-all_stats_real = cell(1, length(statstitle));
-mean_stats_real = cell(1, length(statstitle));
-std_stats_real = cell(1, length(statstitle));
-ct_stats_real = cell(1, length(statstitle));
-err_stats_real = cell(1, length(statstitle));
-highbar_stats_real = cell(1, length(statstitle));
-lowbar_stats_real = cell(1, length(statstitle));
-all_stats_sim = cell(1, length(statstitle));
-mean_stats_sim = cell(1, length(statstitle));
-std_stats_sim = cell(1, length(statstitle));
-ct_stats_sim = cell(1, length(statstitle));
-err_stats_sim = cell(1, length(statstitle));
-highbar_stats_sim = cell(1, length(statstitle));
-lowbar_stats_sim = cell(1, length(statstitle));
-for bi = 1:length(statstitle)
-    all_stats_real{bi} = cell(ncg, 1);
-    mean_stats_real{bi} = zeros(ncg, 1);
-    std_stats_real{bi} = zeros(ncg, 1);
-    ct_stats_real{bi} = zeros(ncg, 1);
-    err_stats_real{bi} = zeros(ncg, 1);
-    highbar_stats_real{bi} = zeros(ncg, 1);
-    lowbar_stats_real{bi} = zeros(ncg, 1);
-
-    all_stats_sim{bi} = cell(ncg, 1);
-    mean_stats_sim{bi} = zeros(ncg, 1);
-    std_stats_sim{bi} = zeros(ncg, 1);
-    ct_stats_sim{bi} = zeros(ncg, 1);
-    err_stats_sim{bi} = zeros(ncg, 1);
-    highbar_stats_sim{bi} = zeros(ncg, 1);
-    lowbar_stats_sim{bi} = zeros(ncg, 1);
-end
-
-for cgn = 1:ncg            % color group number
-    thisp_ind = (cgn - 1) * npercg + (1:npercg);
-    [all_stats, mean_stats, std_stats, ct_stats, err_stats, highbar_stats, lowbar_stats] = ...
-        ltsburst_statistics(thisp_ind, cellID, real_ltst, real_spp, real_btime, real_spb);
-%    [all_stats, mean_stats, std_stats, ct_stats, err_stats, highbar_stats, lowbar_stats] = ...
-%        ltsburst_statistics(thisp_ind, cellID, outparams.ltspeaktime, outparams.spikesperpeak, outparams.bursttime, outparams.spikesperburst);
-    for bi = 1:length(statstitle)
-        all_stats_real{bi}{cgn} = all_stats{bi};
-        mean_stats_real{bi}(cgn) = mean_stats(bi);
-        std_stats_real{bi}(cgn) = std_stats(bi);
-        ct_stats_real{bi}(cgn) = ct_stats(bi);
-        err_stats_real{bi}(cgn) = err_stats(bi);
-        highbar_stats_real{bi}(cgn) = highbar_stats(bi);
-        lowbar_stats_real{bi}(cgn) = lowbar_stats(bi);
-    end
-    [all_stats, mean_stats, std_stats, ct_stats, err_stats, highbar_stats, lowbar_stats] = ...
-        ltsburst_statistics(thisp_ind, cellID, sim_ltst, sim_spp, sim_btime, sim_spb);
-    for bi = 1:length(statstitle)
-        all_stats_sim{bi}{cgn} = all_stats{bi};
-        mean_stats_sim{bi}(cgn) = mean_stats(bi);
-        std_stats_sim{bi}(cgn) = std_stats(bi);
-        ct_stats_sim{bi}(cgn) = ct_stats(bi);
-        err_stats_sim{bi}(cgn) = err_stats(bi);
-        highbar_stats_sim{bi}(cgn) = highbar_stats(bi);
-        lowbar_stats_sim{bi}(cgn) = lowbar_stats(bi);
-    end
-end
-
-% Plot statistics if plotStatisticsFlag == 1
-if plotStatisticsFlag
-
-    % Plot bar graph comparing LTS probabilities
-    fprintf('Plotting bar graph comparing LTS probabilities ...\n');
-    if outparams.showStatisticsFlag
-        hFig.ltstp_bar = figure(201);
-    else
-        hFig.ltstp_bar = figure('Visible', 'off');
-    end
-    set(hFig.ltstp_bar, 'Name', 'Low threshold spike probability');
-    clf(hFig.ltstp_bar);
-    bar(1:size(colorMap, 1), ltsp);
-    legend('Real data', 'Simulated data');
-    xlabel('Pharm condition #');
-    ylabel('LTS probability');
-    title('Low threshold spike probability');
-    figName = fullfile(outFolder, [prefix, '_ltstp_bar.png']);
-    save_all_figtypes(hFig.ltstp_bar, figName);
-
-    % Plot scatter plot of LTS onset times, don't save yet (axes not fixed)
-    fprintf('Plotting scatter plot of LTS onset times ...\n');
-    if outparams.showStatisticsFlag
-        hFig.ltstcorr = figure(202);
-    else
-        hFig.ltstcorr = figure('Visible', 'off');
-    end
-    set(hFig.ltstcorr, 'Name', 'LTS onset times (ms)');
-    clf(hFig.ltstcorr);
-    for cgn = 1:size(colorMap, 1)            % color group number
-        if both_has_lts_ct(cgn) > 0
-            if ncg == 4
-                subplot(2, 2, cgn); hold on;
-                title(['Pharm condition ', num2str(cgn)])
-            elseif ncg == 12
-                subplot(4, 3, cgn); hold on;
-                title(['Pharm condition ', num2str(floor(cgn/3) + 1)])
-            end
-            xlabel('Real data')
-            ylabel('Simulated data')
-            plot(ltst_real{cgn}, ltst_sim{cgn}, 'LineStyle', 'none', ...
-                'Marker', 'o', 'MarkerEdgeColor', colorMap(cgn, :), 'MarkerFaceColor', colorMap(cgn, :));
-        end
-    end
-    title('Correlation of LTS onset times (ms)')
-
-    % Plot scatter plot of LTS max slopes, don't save yet (axes not fixed)
-    fprintf('Plotting scatter plot of LTS max slopes ...\n');
-    if outparams.showStatisticsFlag
-        hFig.ltsdvdtvcorr = figure(203);
-    else
-        hFig.ltsdvdtvcorr = figure('Visible', 'off');
-    end
-    set(hFig.ltsdvdtvcorr, 'Name', 'LTS max slopes (mV/ms)');
-    clf(hFig.ltsdvdtvcorr);
-    for cgn = 1:size(colorMap, 1)            % color group number
-        if both_has_lts_ct(cgn) > 0
-            if ncg == 4
-                subplot(2, 2, cgn); hold on;
-                title(['Pharm condition ', num2str(cgn)])
-            elseif ncg == 12
-                subplot(4, 3, cgn); hold on;
-                title(['Pharm condition ', num2str(floor(cgn/3) + 1)])
-            end
-            xlabel('Real data')
-            ylabel('Simulated data')
-            plot(ltsdvdtv_real{cgn}, ltsdvdtv_sim{cgn}, 'LineStyle', 'none', ...
-                'Marker', 'o', 'MarkerEdgeColor', colorMap(cgn, :), 'MarkerFaceColor', colorMap(cgn, :));
-        end
-    end
-    title('Correlation of LTS max slopes (mV/ms)')
-    
-
-    % Fix axes to make the scales consistent among subplots
-    if sum(both_has_lts_ct) ~= 0
-        ltst_max_dev_all_max = max(ltst_max_dev_all);
-        ltst_std_all_max = max(ltst_std_all);
-        if ltst_max_dev_all_max > 3 * ltst_std_all_max
-            width = ltst_std_all_max;
-        else
-            width = ltst_max_dev_all_max;
-        end
-
-        % Don't let width be 0
-        if width == 0
-            width = 0.1;
-        end
-
-        set(0, 'CurrentFigure', hFig.ltstcorr);
-        for cgn = 1:ncg            % color group number
-            if both_has_lts_ct(cgn) > 0
-                if ncg == 4
-                    subplot(2, 2, cgn);
-                elseif ncg == 12
-                    subplot(4, 3, cgn);
-                end                
-                xmin = ltst_mean_all(cgn) * (1 - 1.1 * width);
-                xmax = ltst_mean_all(cgn) * (1 + 1.1 * width);
-                ymin = xmin;
-                ymax = xmax;
-                axis([xmin, xmax, ymin, ymax]);
-            end
-        end
-        figName = fullfile(outFolder, [prefix, '_ltstcorr.png']);
-        save_all_figtypes(hFig.ltstcorr, figName);
-
-        ltsdvdtv_max_dev_all_max = max(ltsdvdtv_max_dev_all);
-        ltsdvdtv_std_all_max = max(ltsdvdtv_std_all);
-        if ltsdvdtv_max_dev_all_max > 3 * ltsdvdtv_std_all_max
-            width = ltsdvdtv_std_all_max;
-        else
-            width = ltsdvdtv_max_dev_all_max;
-        end
-
-        % Don't let width be 0
-        if width == 0
-            width = 0.1;
-        end
-
-        set(0, 'CurrentFigure' , hFig.ltsdvdtvcorr);
-        for cgn = 1:ncg            % color group number
-            if both_has_lts_ct(cgn) > 0
-                if ncg == 4
-                    subplot(2, 2, cgn);
-                elseif ncg == 12
-                    subplot(4, 3, cgn);
-                end                
-                xmin = ltsdvdtv_mean_all(cgn) * (1 - 1.1 * width);
-                xmax = ltsdvdtv_mean_all(cgn) * (1 + 1.1 * width);
-                ymin = xmin;
-                ymax = xmax;
-                axis([xmin, xmax, ymin, ymax]);
-            end
-        end
-        figName = fullfile(outFolder, [prefix, '_ltsdvdtvcorr.png']);
-        save_all_figtypes(hFig.ltsdvdtvcorr, figName);
-    end
-
-    %% Create 2D bar graphs for LTS/burst statistics
-    ltsburst_stats = cell(1, length(statstitle));    % for parfor
-    parfor bi = 1:length(statstitle)
-        if outparams.showStatisticsFlag
-            ltsburst_stats{bi} = figure(210 + bi);
-        else
-            ltsburst_stats{bi} = figure('Visible', 'off');
-        end
-        fprintf('2D bar graph for %s ...\n', statsfilename{bi});
-        set(ltsburst_stats{bi}, 'Name', [statsfilename{bi}]);
-        clf(ltsburst_stats{bi});
-
-        % Plot means with 95% confidence intervals
-        plot_bar([mean_stats_real{bi}, mean_stats_sim{bi}], ...
-                    [lowbar_stats_real{bi}, lowbar_stats_sim{bi}], ...
-                    [highbar_stats_real{bi}, highbar_stats_sim{bi}], ...
-                    'PValues', (1:ncg)', 'PTickLabels', pplabel2, ...
-                    'FigHandle', ltsburst_stats{bi});
-
-        if bi == 1
-%            ylim([0 2500]);
-        elseif bi == 2
-%            ylim([0 800]);
-        elseif bi == 3
-%            ylim([0 1]);
-        elseif bi == 4
-%            ylim([0 6]);
-        end
-        legend('Real data', 'Simulated data');
-        xlabel('Pharm Condition');
-%        ylabel(statstitle{bi});
-        title(statstitle{bi});
-        figName = fullfile(outFolder, [prefix, '_', statsfilename{bi}]);
-%        save_all_figtypes(ltsburst_stats{bi}, figName, {'png', 'fig'});
-        save_all_figtypes(ltsburst_stats{bi}, figName, {'png'});
-    end
-
-    fprintf('\n');
-    hFig.ltsburst_stats = ltsburst_stats;
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 function hFig = plot_conductance_traces (realData, simData, outparams, hFig, nSweeps, colorMap, ncg, npercg, xlimitsMax)
 %% Update figure comparing current traces between real data and simulations

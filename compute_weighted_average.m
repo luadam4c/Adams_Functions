@@ -25,7 +25,7 @@ function avgValues = compute_weighted_average (values, varargin)
 %       varargin    - 'IgnoreNan': whether to ignore NaN entries
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'Weights': weights
+%                   - 'Weights': weights for averaging
 %                   must be a numeric array
 %                   default == ones(size(values))
 %                   - 'DimToOperate': dimension to compute averages on
@@ -69,7 +69,8 @@ function avgValues = compute_weighted_average (values, varargin)
 % 2019-10-10 Added 'IgnoreNan' as an optional argument
 % 2019-10-12 Allow values to be a cell array
 % 2019-10-12 Fixed 'IgnoreNan' for matrices
-% TODO: Simply math if the weights are all the same 
+% 2019-11-17 Fixed root-mean-square computation
+% TODO: Simplify math if the weights are all the same 
 %       and use this function in compute_stats.m and compute_rms_error.m
 % 
 
@@ -236,9 +237,15 @@ totalWeight = sum(valueWeights, dimToOperate);
 %           Averaging-types-What-s-the-difference/ta-p/364121
 switch averageMethod
     case {'rms', 'root-mean-square', 'energy'}
+        % Compute the squared values
+        squaredValues = values .* conj(values);
+
+        % Compute the weighted mean of squared values
+        meanSquaredValues = sum(valueWeights .* squaredValues, ...
+                                    dimToOperate) ./ totalWeight;
+
         % Compute the weighted root-mean-square average
-        avgValues = sqrt(sum(valueWeights .* values .^ 2, dimToOperate) ./ ...
-                        totalWeight);
+        avgValues = sqrt(meanSquaredValues);
     case {'linear', 'arithmetic'}
         % Compute the weighted linear average
         avgValues = sum(valueWeights .* values, dimToOperate) ./ totalWeight;

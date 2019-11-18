@@ -52,6 +52,12 @@ function varargout = parse_lts (vVec0s, varargin)
 %                   - 'PlotFlag': whether to plot traces
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'SaveMatFlag': whether to save data as mat file
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'SaveSheetFlag': whether to save params as a spreadsheet
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'OutFolder': directory to place outputs
 %                   must be a string scalar or a character vector
 %                   default == pwd
@@ -117,6 +123,8 @@ function varargout = parse_lts (vVec0s, varargin)
 % File History:
 % 2019-01-13 Adapted from find_LTS.m
 % 2019-02-19 Made siMs an optional argument
+% 2019-11-17 Added 'SaveMatFlag' as an optional parameter
+% 2019-11-17 Added 'SaveSheetFlag' as an optional parameter
 
 %% Hard-coded parameters
 % Subdirectories in outFolder for placing figures
@@ -145,10 +153,17 @@ mafw3Dv = 3;        % voltage change in mV corresponding to the moving average f
 %mafw3 = 5;         % width in ms for the moving average filter for finding slopes
 slopeSegYHalf = 5;  % how much voltage difference (mV) to plot maxslope line segment below maxslope point
 
+% Parameters used for output files
+ltsSheetSuffix = '_ltsParams';
+ltsMatSuffix = '_ltsData';
+sheetType = '.csv';
+
 %% Default values for optional arguments
 siMsDefault = [];               % set later
 verboseDefault = true;          % print to standard output by default
 plotFlagDefault = false;
+saveMatFlagDefault = false;     % don't save parsed data by default
+saveSheetFlagDefault = true;    % save parsed params by default
 outFolderDefault = pwd;
 fileBaseDefault = {};           % set later
 stimStartMsDefault = [];        % set later
@@ -187,6 +202,10 @@ addOptional(iP, 'siMs', siMsDefault, ...
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotFlag', plotFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveMatFlag', saveMatFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveSheetFlag', saveSheetFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
@@ -228,6 +247,8 @@ parse(iP, vVec0s, varargin{:});
 siMs = iP.Results.siMs;
 verbose = iP.Results.Verbose;
 plotFlag = iP.Results.PlotFlag;
+saveMatFlag = iP.Results.SaveMatFlag;
+saveSheetFlag = iP.Results.SaveSheetFlag;
 outFolder = iP.Results.OutFolder;
 fileBase = iP.Results.FileBase;
 stimStartMs = iP.Results.StimStartMs;
@@ -344,7 +365,8 @@ parfor iVec = 1:nVectors
             tVec0s{iVec}, tVec2s{iVec}, vVec0s{iVec}, ...
             vVec1s{iVec}, vVec2s{iVec}, vVec3s{iVec}, ...
             noiseWindowMs{iVec}, searchWindowMs{iVec}, fileBase{iVec}, ...
-            siMs(iVec), maxNoise(iVec), stimStartMs(iVec), minPeakTimeMs(iVec), ...
+            siMs(iVec), maxNoise(iVec), ...
+            stimStartMs(iVec), minPeakTimeMs(iVec), ...
             fileBasesToOverride, idxMissedLtsByOrder, idxMissedLtsByShape, ...
             idxSpikesPerBurstIncorrect, idxLooksLikeMissedLts, ...
             idxLooksLikeLtsNotByProminence, idxLooksLikeLtsNotByNarrowness, ...
@@ -362,6 +384,23 @@ end
 % Convert to a table
 [parsedParams, parsedData] = ...
     argfun(@struct2table, parsedParamsStruct, parsedDataStruct);
+
+%% Save outputs
+if saveMatFlag
+    % Create a path for the LTS data .mat file
+    ltsMatPath = fullfile(outFolder, [fileBase, ltsMatSuffix, '.mat']);
+
+    % Save outputs in the .mat file
+    save(ltsMatPath, 'parsedParams', 'parsedData', '-v7.3');
+end
+if saveSheetFlag
+    % Create a path for the LTS info spreadsheet file
+    ltsSheetPath = fullfile(outFolder, [fileBase, ltsSheetSuffix, ...
+                                        '.', sheetType]);
+
+    % Save table to the spreadsheet file
+    writetable(parsedParams, ltsSheetPath);
+end
 
 %% Outputs
 varargout{1} = parsedParams;
@@ -1021,9 +1060,9 @@ else
                 maxSpikeAmp = max(vVec0(indSpikes));
                 minSpikeAmp = min(vVec0(indSpikes));
                 if numel(indSpikes) >= 2
-                    spikeFrequency = 1000 * (numel(indSpikes)-1) / ( tVec0(indSpikes(end)) - tVec0(indSpikes(1)) );
-                                    % spike frequency (Hz) is 
-                                    % (# of spikes - 1)/(time between first and last spike)
+                    % Compute the spike frequency in Hz
+                    spikeFrequency = compute_spike_frequency(indSpikes, siMs);
+
                     if numel(indSpikes) >= 3
                         spikeAdaptation = 100 * (tVec0(indSpikes(end)) - tVec0(indSpikes(end-1))) ...
                                             / (tVec0(indSpikes(2)) - tVec0(indSpikes(1)));
@@ -1125,6 +1164,22 @@ end
 % fprintf('Spikes per burst == %d\n\n', spikesPerBurst);
 
 % Store in parsedParams structure
+parsedParams.fileBase = fileBase;
+parsedParams.siMs = siMs;
+parsedParams.stimStartMs = stimStartMs;
+parsedParams.minPeakTimeMs = minPeakTimeMs;
+parsedParams.medfiltWindowMs = medfiltWindowMs;
+parsedParams.smoothWindowMs = smoothWindowMs;
+parsedParams.baseWidthMs = baseWidthMs;
+parsedParams.ltsThr = ltsThr;
+parsedParams.ltsThrAlt = ltsThrAlt;
+parsedParams.spThr = spThr;
+parsedParams.spThrRelLts = spThrRelLts;
+parsedParams.siMsRes = siMsRes;
+parsedParams.minSp2PkTime = minSp2PkTime;
+parsedParams.slopeSpacing = slopeSpacing;
+parsedParams.mafw3Dv = mafw3Dv;
+parsedParams.slopeSegYHalf = slopeSegYHalf;
 parsedParams.actVhold = actVhold;
 parsedParams.maxNoise = maxNoise;
 parsedParams.peakTime = peakTime;
@@ -1151,6 +1206,14 @@ parsedParams.isOverridden = isOverridden;
 parsedParams.couldHaveMissed = couldHaveMissed;
 
 % Store in parsedData structure
+parsedData.tVec0 = tVec0;
+parsedData.tVec2 = tVec2;
+parsedData.vVec0 = vVec0;
+parsedData.vVec1 = vVec1;
+parsedData.vVec2 = vVec2;
+parsedData.vVec3 = vVec3;
+parsedData.noiseWindowMs = noiseWindowMs;
+parsedData.searchWindowMs = searchWindowMs;
 if computeActVholdFlag
     parsedData.indBase = indBase;
 end
@@ -1656,6 +1719,10 @@ elseif isempty(tVec0s) && ~isempty(siMs)
 else
     error('One of siMs and tVec0s must be provided!');
 end
+
+spikeFrequency = 1000 * (numel(indSpikes)-1) / ( tVec0(indSpikes(end)) - tVec0(indSpikes(1)) );
+% spike frequency (Hz) is 
+% (# of spikes - 1)/(time between first and last spike)
 
 %}
 

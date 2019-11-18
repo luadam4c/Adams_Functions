@@ -291,6 +291,7 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_compare_and_plot_across_IC.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_and_plot_across_IC.m): Plot activation/inactivation and I-V curves across initial conditions
 - [**m3ha_compare_neuronparams2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_neuronparams2.m): compare graphs across different sets of NEURON parameters
 - [**m3ha_compare_neuronparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_neuronparams.m): compare graphs across different sets of NEURON parameters
+- [**m3ha_compute_and_compare_lts_statistics.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_compare_lts_statistics.m): Computes statistics for LTS features and compares across (NOT FINISHED)
 - [**m3ha_compute_and_plot_all_IV2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_all_IV2.m): Plot I-V curves of all currents together
 - [**m3ha_compute_and_plot_all_IV.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_all_IV.m): Plot I-V curves of all currents together
 - [**m3ha_compute_and_plot_geometry2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_geometry2.m): Plot the geometry of the cell

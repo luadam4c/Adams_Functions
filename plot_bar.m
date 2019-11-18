@@ -177,7 +177,7 @@ function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 %       /home/Matlab/Downloaded_Functions/rgb.m
 %
 % Used by:
-%       cd/m3ha_neuron_run_and_analyze.m
+%       cd/m3ha_compute_and_compare_lts_statistics.m
 %       cd/plot_struct.m
 %       cd/ZG_fit_IEI_distributions.m
 %       /media/adamX/Paula_IEIs/paula_iei3.m

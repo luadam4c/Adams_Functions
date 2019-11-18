@@ -7,7 +7,7 @@ function m3ha_log_errors_params (logFileName, outparams, err, simplexOut)
 %
 % Used by:
 %       cd/m3ha_fminsearch3.m
-%       ~/m3ha/optimizer4gabab/m3ha_optimizer_4compgabab.m
+%       cd/m3ha_optimizer_4compgabab.m
 
 % File History:
 % 2017-01-17 Created
@@ -119,7 +119,6 @@ if isSimplex
 else 
     sheetName = fullfile(outFolderName, [prefix, '_params.csv']);
 end
-
 
 %% Do the job
 % Create file if not exist and print log header
@@ -304,7 +303,7 @@ end
 fprintf(fid, '\n');
 fclose(fid);
 
-%% Save parameters into a p file
+%% Save parameters into a spreadsheet file
 %   Note: Always do this if not in simplex mode
 if ~isSimplex || saveParamsFlag
     save_params(neuronParamsTable, 'FileName', sheetName);

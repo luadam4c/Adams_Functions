@@ -49,7 +49,6 @@ function [actVhold, maxnoise, peaktime, peak2ndder, peakprom, peakwidth, peakcla
 %
 % Used by:
 %       cd/find_LTSs_many_sweeps.m
-%       cd/m3ha_neuron_run_and_analyze.m
 %       /media/adamX/m3ha/data_dclamp/test_sweep.m
 %       /media/shareX/share/Adam/Sample_files_from_Katie/test_sweeps.m
 %

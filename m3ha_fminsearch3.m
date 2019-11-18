@@ -667,7 +667,7 @@ close(simplexfigure);
 
 %% Save best parameters for this simplex run (always do this)
 sheetPath = fullfile(outFolderName, ...
-                    [prefix, '_best_params.xlsx']);
+                    [prefix, '_best_params.csv']);
 save_params(simplexOut.neuronParamsTable, 'FileName', sheetPath);
 
 %% Generate exitFlag

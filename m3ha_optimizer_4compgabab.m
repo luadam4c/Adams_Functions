@@ -113,7 +113,7 @@ function [done, outparams, hfig] = m3ha_optimizer_4compgabab (outparams, hfig)
 % 2019-11-15 - Now passes in outparams for varargin 
 %                   for m3ha_neuron_run_and_analyze.m
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% If not compiled, add directories to search path for required functions
 if ~isdeployed
@@ -226,7 +226,7 @@ end
 %% Used for runbutton_toggle in m3ha_optimizergui_4compgabab.m
 done = 1;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [errCpr, err, outparams, hfig] = runmanual(outparams, hfig)
 %% MANUAL or JITTER modes: Simulate each sweep once and compare with real data
@@ -280,7 +280,9 @@ else
         errCpr = struct;
     end
 end
-outparams.errCpr{outparams.runnumTotal} = errCpr;         % store error structure in outparams
+
+% Store error structure in outparams
+outparams.errCpr{outparams.runnumTotal} = errCpr;
 
 % Simulate GABAB IPSC response only if outparams.fitActiveFlag is true
 if outparams.fitActiveFlag
@@ -308,13 +310,15 @@ else
         err = struct;
     end
 end
-outparams.err{outparams.runnumTotal} = err;                 % store error structure in outparams
+
+% Store error structure in outparams
+outparams.err{outparams.runnumTotal} = err;
 
 % Update error history plot
 % TODO: Fix
 % update_errorhistoryplot(hfig, outparams);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [errCpr, err, outparams, hfig] = runauto(outparams, hfig)
 %% AUTO mode: Find best parameters with m3ha_fminsearch3.m
@@ -644,7 +648,7 @@ outparams.err{outparams.runnumTotal} = err;
 % Update error history plot
 update_errorhistoryplot(hfig, outparams);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [errCpr, err, outparams, hfig] = runauto_w_jitter (outparams, hfig)
 %% AUTO WITH JITTER mode: TODO
@@ -653,9 +657,10 @@ function [errCpr, err, outparams, hfig] = runauto_w_jitter (outparams, hfig)
 outparams.runnumAutoWithJitter = outparams.runnumAutoWithJitter + 1;
 outparams.runnumTotal = outparams.runnumTotal + 1;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [outparams, prefixOrig, neuronParamsUseOrig] = prepare_outparams_passive (outparams)
+function [outparams, prefixOrig, neuronParamsUseOrig] = ...
+                prepare_outparams_passive (outparams)
 %% Prepare outparams for passive fit
 
 % Turn flag for passive-parameters-fitting on
@@ -678,9 +683,10 @@ outparams.neuronParamsTable{indParamsIsActive, 'InUse'} = ...
 % Set simplexParams to the passive ones
 outparams.simplexParams = outparams.simplexParamsPassive;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [outparams] = restore_outparams_passive (outparams, prefixOrig, neuronParamsUseOrig)
+function [outparams] = restore_outparams_passive (outparams, prefixOrig, ...
+                                                neuronParamsUseOrig)
 %% Restore outparams after passive fit
 
 % Turn flag for passive-parameters-fitting off
@@ -695,7 +701,7 @@ outparams.neuronParamsTable{:, 'InUse'} = neuronParamsUseOrig;
 % Reset outparams.simplexParams for safety
 outparams.simplexParams = [];
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [outparams, neuronParamsUseOrig] = prepare_outparams_active (outparams)
 %% Prepare outparams for active fit
@@ -713,7 +719,7 @@ outparams.neuronParamsTable{indParamsIsPassive, 'InUse'} = ...
 %Set simplexParams to the active ones
 outparams.simplexParams = outparams.simplexParamsActive;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function outparams = restore_outparams_active (outparams, neuronParamsUseOrig)
 %% Restore outparams after active fit
@@ -724,7 +730,7 @@ outparams.neuronParamsTable{:, 'InUse'} = neuronParamsUseOrig;
 % Reset outparams.simplexParams for safety
 outparams.simplexParams = [];
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function outparams = prepare_outparams_simplex (outparams, oldOutFolderName, ...
                                                 oldSimplexCt, initCondNum)
@@ -740,7 +746,7 @@ outparams.outFolder = ...
 % Make sure the directory exists
 check_dir(outparams.outFolder);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [initCond, outparams] = generate_IC (outparams, initCondNum)
 %% Generate randomized initial conditions, except for the first run
@@ -793,7 +799,7 @@ initCond.paramsInUseNames = paramsInUseNames;
 initCond.paramsInUseValues = paramsInUseNewValue;
 initCond.neuronParamsTable = newNeuronParamsTable;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [simplexOutBest, errBest] = ...
         find_best_params(simplexOutAll, initialConditionsAll, compareparamsfile)
@@ -855,7 +861,7 @@ simplexOutTotalErrors = simplexOutVecs{idxTotalError};
 simplexOutBest = simplexOutAll{best};
 errBest = simplexOutBest.err;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function update_errorhistoryplot(hfig, outparams)
 %% Shows and updates Error History figure
@@ -906,7 +912,7 @@ if ~isempty(err)
     end
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function update_subplot(x, y, x_label, y_label, markerstyle, color)
 % Update subplot

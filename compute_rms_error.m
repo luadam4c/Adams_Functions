@@ -30,6 +30,12 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 %                   must be a numeric vector with 2 elements
 %                       or a cell array of numeric vectors with 2 elements
 %                   default == find_window_endpoints([], vec1s)
+%                   - 'IgnoreNan': whether to ignore NaN entries
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'Weights': weights for averaging
+%                   must be a numeric array
+%                   default == set in compute_weighted_average.m
 %
 % Requires:
 %       cd/argfun.m
@@ -43,7 +49,6 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 % Used by:
 %       cd/compute_baseline_noise.m
 %       cd/compute_sweep_errors.m
-%       cd/m3ha_neuron_run_and_analyze.m
 %
 % Related functions:
 %       cd/compute_weighted_average.m
@@ -53,12 +58,13 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 % 2018-10-28 Now vectors do not need to have equal lengths
 % 2018-10-28 Now takes multiple vectors as arguments
 % 2018-10-28 Added 'Endpoints' as an optional argument
-% TODO: Use compute_weighted_average.m and add 'Weights' as an optional argument
-% 
+% 2019-11-17 Added 'IgnoreNan' and 'Weights' as optional arguments
 
 %% Default values for optional arguments
 vecs2Default = [];              % set later
 endPointsDefault = [];          % set in extract_subvectors.m
+ignoreNanDefault = true;        % ignores NaN by default
+weightsDefault = [];            % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -88,11 +94,17 @@ addParameter(iP, 'EndPoints', endPointsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumericvector(x), ...
                 ['EndPoints must be either a numeric vector ', ...
                     'or a cell array of numeric vectors!']));
+addParameter(iP, 'IgnoreNan', ignoreNanDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Weights', weightsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'3d'}));
 
 % Read from the Input Parser
 parse(iP, vec1s, varargin{:});
 vec2s = iP.Results.vec2s;
 endPoints = iP.Results.EndPoints;
+ignoreNan = iP.Results.IgnoreNan;
+valueWeights = iP.Results.Weights;
 
 %% Preparation
 % Force vec1s and vec2s to be a cell array of column vectors
@@ -114,7 +126,9 @@ vec2s = cellfun(@(x, y) set_vec2_if_empty(x, y), ...
                 vec1s, vec2s, 'UniformOutput', false);
 
 %% Do the job
-rmsErrors = cellfun(@(x, y) compute_rms_error_helper(x, y), vec1s, vec2s);
+rmsErrors = cellfun(@(x, y) compute_rms_error_helper(x, y, ...
+                                ignoreNan, valueWeights), ...
+                    vec1s, vec2s);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -127,22 +141,17 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function rmsError = compute_rms_error_helper (vec1, vec2)
+function rmsError = compute_rms_error_helper (vec1, vec2, ...
+                                                ignoreNan, valueWeights)
 %% Compute the root-mean-square error between two vectors
 
 % Compute errors at every sample point
 errors = vec1 - vec2;
 
-% TODO: Use compute_weighted_average(errors, 'AverageMethod', 'rms')
-
-% Compute the squared error
-squaredError = (errors) .* conj(errors);
-
-% Compute the mean-squared error
-meanSquaredError = nanmean(squaredError);
-
 % Compute the root-mean-squared error
-rmsError = sqrt(meanSquaredError);
+rmsError = compute_weighted_average(errors, 'IgnoreNan', ignoreNan, ...
+                                    'Weights', valueWeights, ...
+                                    'AverageMethod', 'root-mean-square');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -181,6 +190,15 @@ else
 end
 
 [vec1s, vec2s] = match_format_vector_sets(vec1s, vec2s, 'ForceCellOutputs', true);
+
+% Compute the squared error
+squaredError = errors .* conj(errors);
+
+% Compute the mean-squared error
+meanSquaredError = nanmean(squaredError);
+
+% Compute the root-mean-squared error
+rmsError = sqrt(meanSquaredError);
 
 %}
 

@@ -86,6 +86,7 @@ function fig = set_figure_properties (varargin)
 % 2019-09-06 Added 'AdjustPosition' and 'ClearFigure' as optional arguments
 % 2019-09-08 Added 'AlwaysNew' as an optional argument
 % 2019-09-12 Added 'ExpandFromDefault' as an optional argument
+% 2019-11-17 Fixed 'AlwaysNew' when 'FigNumber' is provided
 % TODO: Change axes outerPosition by default?
 
 %% Hard-coded parameters
@@ -183,7 +184,12 @@ if ~isempty(figHandle)
     % Use the given figure
     fig = figure(figHandle);
 elseif ~isempty(figNumber)
-    % Create and clear a new figure with given figure number
+    % Close any figure opened with the same number
+    if alwaysNew
+        close(figure(figNumber));
+    end
+
+    % Create or go to the figure with given figure number
     fig = figure(figNumber);
 elseif alwaysNew
     fig = figure;

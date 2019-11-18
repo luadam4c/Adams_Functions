@@ -1,6 +1,6 @@
-function spikeFreqs = compute_spike_frequency (indSpikes, siMs, varargin)
+function spikeFreqHz = compute_spike_frequency (indSpikes, siMs, varargin)
 %% Computes the spike frequency for sets of spike indices given a sampling interval
-% Usage: spikeFreqs = compute_spike_frequency (indSpikes, siMs, varargin)
+% Usage: spikeFreqHz = compute_spike_frequency (indSpikes, siMs, varargin)
 % Explanation:
 %       TODO
 %
@@ -8,7 +8,7 @@ function spikeFreqs = compute_spike_frequency (indSpikes, siMs, varargin)
 %       TODO
 %
 % Outputs:
-%       spikeFreqs  - spike frequency in Hz
+%       spikeFreqHz  - spike frequency in Hz
 %                   specified as a TODO
 %
 % Arguments:
@@ -67,10 +67,10 @@ parse(iP, indSpikes, siMs, varargin{:});
 %% Do the job
 % Compute the spike frequency for each set of spike indices
 if iscell(indSpikes)
-    spikeFreqs = cellfun(@(x) compute_spike_frequency_helper(x, siMs), ...
+    spikeFreqHz = cellfun(@(x) compute_spike_frequency_helper(x, siMs), ...
                         indSpikes);
 else
-    spikeFreqs = compute_spike_frequency_helper(indSpikes, siMs);
+    spikeFreqHz = compute_spike_frequency_helper(indSpikes, siMs);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
