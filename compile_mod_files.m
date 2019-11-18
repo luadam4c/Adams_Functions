@@ -35,6 +35,8 @@ function [status, cmdOut] = compile_mod_files (varargin)
 
 
 %% Hard-coded parameters
+% TODO: Make optional argument
+verbose = true;
 
 %% Default values for optional arguments
 directoryDefault = pwd;

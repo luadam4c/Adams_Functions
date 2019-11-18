@@ -30,7 +30,7 @@ function [hfig] = m3ha_optimizergui_4compgabab (realdata_cpr, realData, hfig, va
 %               hfig that is passed to and from functions
 % 2016-10-07 - outparams.currpulse(k) is now converted to nA
 % 2016-10-21 - moved files up one level to /media/adamX/m3ha/optimizer4gabab
-% 2016-10-21 - added functionsdirectory, homeDirectory, infolder
+% 2016-10-21 - added functionsdirectory, parentDirectory, infolder
 % 2016-10-21 - updated locations of folders and files
 % 2017-01-14 - Added numbuildparams and added build parameters to neuronparamnames, 
 %               neuronparams_max, neuronparams_min, paraminit, neuronparamislog
@@ -66,7 +66,7 @@ function [hfig] = m3ha_optimizergui_4compgabab (realdata_cpr, realData, hfig, va
 % 2017-05-12 - Move everything unrelated to GUI to singleneuronfitting.m
 % 2017-05-13 - Now updates outparams.runnumtotal in m3ha_optimizer_4compgabab.m
 % 2017-05-13 - Added outparams.cellname
-% 2017-05-13 - Now gets homeDirectory from outparams
+% 2017-05-13 - Now gets parentDirectory from outparams
 % 2017-05-15 - Made build params and other passive params a different background color on GUI
 % 2017-05-17 - Renamed fitmode -> runmode
 % 2017-05-22 - Changed line width and indentation
@@ -158,7 +158,7 @@ if ~isdeployed
 end
 
 %% Extract default values from outparams
-homeDirectory = outparams.homeDirectory;    % home directory for input/output folders
+parentDirectory = outparams.parentDirectory;    % parent directory for input/output folders
 cellname = outparams.cellname;              % name of current neuron to be fitted
 debugflag = outparams.debugflag;            % whether in debug mode
 runmode = outparams.runMode;                % run mode
@@ -462,13 +462,13 @@ end
 uicontrol(p4, 'Units', 'normalized', 'Position', pos_pfileload, ...
     'String', 'Load P-file', 'Style', 'togglebutton', 'Tag', 'parameterfileloadbutton', ...
     'BackgroundColor', buttoncolor_OFF, ...
-    'Callback', {@parameterfileloadbutton_toggle, homeDirectory, buttoncolor_ON, buttoncolor_OFF});
+    'Callback', {@parameterfileloadbutton_toggle, parentDirectory, buttoncolor_ON, buttoncolor_OFF});
 
 % Button for 'Save P-file'
 uicontrol(p4, 'Units', 'normalized', 'Position', pos_pfilesave, ...
     'String', 'Save P-file', 'Style', 'togglebutton', 'Tag', 'parameterfilesavebutton', ...
     'BackgroundColor', buttoncolor_OFF, ...
-    'Callback', {@parameterfilesavebutton_toggle, homeDirectory, buttoncolor_ON, buttoncolor_OFF});
+    'Callback', {@parameterfilesavebutton_toggle, parentDirectory, buttoncolor_ON, buttoncolor_OFF});
 
 % Button for 'Change Bounds'
 uicontrol(p4, 'Units', 'normalized', 'Position', pos_chbounds, ...
@@ -807,7 +807,7 @@ outparams.autoparams = cell2mat(tabdata(:, 2));            % update other auto m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function parameterfileloadbutton_toggle (hObject, ~, homeDirectory, buttoncolor_ON, buttoncolor_OFF)
+function parameterfileloadbutton_toggle (hObject, ~, parentDirectory, buttoncolor_ON, buttoncolor_OFF)
 %% On toggle of parameterfileloadbutton, open p-file
 
 global outparams
@@ -821,7 +821,7 @@ if togstate == togmax           % if toggled ON
 
     % Load file with selection box
     % File must be a 4 column matrix: parameter names, values, lower bounds, upper bounds
-    [pfilename, pfilepath] = uigetfile(fullfile(homeDirectory, '/optimizer4gabab/pfiles/*.p')); 
+    [pfilename, pfilepath] = uigetfile(fullfile(parentDirectory, '/optimizer4gabab/pfiles/*.p')); 
     if isequal(pfilename, 0)
         disp('User selected Cancel');
     else
@@ -844,7 +844,7 @@ set(hObject, 'BackgroundColor', buttoncolor_OFF);   % make button green
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function parameterfilesavebutton_toggle (hObject, ~, homeDirectory, buttoncolor_ON, buttoncolor_OFF)
+function parameterfilesavebutton_toggle (hObject, ~, parentDirectory, buttoncolor_ON, buttoncolor_OFF)
 %% On toggle of parameterfilesavebutton, open selection box to save p-file
 
 global outparams
@@ -857,7 +857,7 @@ if togstate == togmax           % if toggled ON
     set(hObject, 'BackgroundColor', buttoncolor_ON);
 
     % Load file with selection box
-    [pfilename, pfilepath] = uiputfile(fullfile(homeDirectory, '/optimizer4gabab/pfiles/*.p'));
+    [pfilename, pfilepath] = uiputfile(fullfile(parentDirectory, '/optimizer4gabab/pfiles/*.p'));
     if isequal(pfilename, 0)
         disp('User selected Cancel');
     else
