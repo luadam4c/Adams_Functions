@@ -365,8 +365,8 @@ minPeakTimeMs = stimStartMs + minPeakDelayMs;
 % Parse all of them in a parfor loop
 parsedParamsCell = cell(nVectors, 1);
 parsedDataCell = cell(nVectors, 1);
-%parfor iVec = 1:nVectors
-for iVec = 1:nVectors
+parfor iVec = 1:nVectors
+%for iVec = 1:nVectors
     [parsedParamsCell{iVec}, parsedDataCell{iVec}] = ...
         parse_lts_helper(verbose, plotFlag, computeActVholdFlag, ...
             computeMaxNoiseFlag, outFolder, ...
