@@ -57,6 +57,7 @@ function [tablesAll, sheetFullFileNames] = atf2sheet (varargin)
 % 2018-11-21 Changed default sheetType xlsx -> csv
 % 2018-11-29 Now uses parse_file_or_directory.m, all_files.m and check_dir.m
 % 2019-09-08 Updated default sheet name to have the ending _atf
+% 2019-11-18 Fixed the case if there is only one .atf file
 % TODO: Read in the second line, first field to determine nLinesToSkip
 % TODO: isdelimiter.m
 % 
@@ -123,7 +124,8 @@ check_dir(outFolder);
 if multipleFiles
     % List all the .atf files in the directory
     [~, allAtfPaths] = ...
-        all_files('Directory', atfDir, 'Extension', '.atf');
+        all_files('Directory', atfDir, 'Extension', '.atf', ...
+                    'ForceCellOutput', true);
 
     % If there are no files, return
     if isempty(allAtfPaths)

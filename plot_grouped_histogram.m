@@ -123,6 +123,7 @@ function [bars, fig, outlines] = plot_grouped_histogram (varargin)
 %       cd/construct_fullpath.m
 %       cd/create_default_grouping.m
 %       cd/create_error_for_nargin.m
+%       cd/create_labels_from_numbers.m
 %       cd/decide_on_colormap.m
 %       cd/islegendlocation.m
 %       cd/ispositiveintegerscalar.m
@@ -157,6 +158,10 @@ validStyles = {'side-by-side', 'stacked', 'overlapped'};
 barWidth = 1;                   % set this to 1 to make bars touch each other
 maxInFigure = 8;                % maximum number of groups to keep the legend
                                 %   inside the figure
+
+% TODO: Make optional argument
+xTickLocs = [];
+xTickLabels = {};
 
 %% Default values for optional arguments
 statsDefault = [];              % set later
@@ -390,6 +395,30 @@ end
 if ~isempty(yLimits) && ~strcmpi(yLimits, 'suppress')
     ylim(yLimits);
 end
+
+% Set appropriate x tick values
+if isempty(xTickLocs)
+    % Initialize x tick locations with edges
+    xTicks = edges; 
+    
+    % If there are too many x ticks, take some out
+    % TODO: Consult code in plot_chevron.m
+    % 	and make decide_on_tick_locations.m
+else
+    xTicks = xTickLocs;
+end
+
+% Update the x tick locations
+set(gca, 'XTick', xTicks);
+
+% Create default x tick labels
+if isempty(xTickLabels)
+    % Create x tick labels using xTicks
+    xTickLabels = create_labels_from_numbers(xTicks);
+end
+
+% Update x tick labels
+set(gca, 'XTickLabel', xTickLabels);
 
 % Generate a legend if there is more than one group
 if ~strcmpi(legendLocation, 'suppress')

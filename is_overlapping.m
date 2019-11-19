@@ -1,6 +1,6 @@
-function [isOverlapping, overLapsPrev] = is_overlapping (timeWindows, varargin)
+function varargout = is_overlapping (timeWindows, varargin)
 %% Returns whether a set of time windows are overlapping
-% Usage: [isOverlapping, overLapsPrev] = is_overlapping (timeWindows, varargin)
+% Usage: [isOverlapping, overlapsPrev, indOverlapsPrev] = is_overlapping (timeWindows, varargin)
 % Explanation:
 %       TODO
 %
@@ -11,9 +11,12 @@ function [isOverlapping, overLapsPrev] = is_overlapping (timeWindows, varargin)
 % Outputs:
 %       isOverlapping   - whether the time windows are overlapping
 %                       specified as a logical scalar
-%       overLapsPrev    - whether each time window overlaps the previous
+%       overlapsPrev    - whether each time window overlaps the previous
 %                           window
 %                       specified as a logical scalar
+%       indOverlapsPrev - indices of the time windows that overlap the 
+%                           previous window
+%                       specified as a positive integer vector
 %
 % Arguments:
 %       timeWindows - time window(s)
@@ -34,6 +37,7 @@ function [isOverlapping, overLapsPrev] = is_overlapping (timeWindows, varargin)
 
 % File History:
 % 2019-09-24 Created by Adam Lu
+% 2019-11-18 Added indOverlapsPrev as the thrid output
 % 
 
 %% Hard-coded parameters
@@ -73,7 +77,9 @@ nWindows = count_vectors(timeWindows);
  
 % Return in no more than one window
 if nWindows < 2
-    isOverlapping = false;
+    varargout{1} = false;
+    varargout{2} = false;
+    varargout{3} = [];
     return;
 end
 
@@ -88,11 +94,23 @@ endTimesSorted = endTimes(indOriginal);
 
 % Test whether each start time is before 
 %   the end time of the next window
-overLapsPrev = [false; startTimesSorted(2:end) < endTimesSorted(1:end-1)];
+overlapsPrev = [false; startTimesSorted(2:end) < endTimesSorted(1:end-1)];
 
 % Windows are overlapping if any start time is before 
 %   the end time of the next window
-isOverlapping = any(startTimesSorted(2:end) < endTimesSorted(1:end-1));
+isOverlapping = any(overlapsPrev);
+
+% Find the indices of the windows that overlaps the previous window
+if nargout >= 3
+    indOverlapsPrev = find(overlapsPrev);
+end
+
+%% Output results
+varargout{1} = isOverlapping;
+varargout{2} = overlapsPrev;
+if nargout >= 3
+    varargout{3} = indOverlapsPrev;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

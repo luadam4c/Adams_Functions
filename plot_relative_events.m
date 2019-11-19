@@ -333,7 +333,10 @@ case 'raster'
     % Count the appropriate number of subplots
     nSubplots = size(relEventTimes, 1);
 
-    if nSubplots == 1
+    % Count the number of files
+    nFiles = size(relEventTimes, 2);
+
+    if nSubplots == 1 && nFiles > 1
         legendLocation = 'eastoutside';
     else
         legendLocation = 'suppress';

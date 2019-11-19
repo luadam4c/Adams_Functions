@@ -36,6 +36,7 @@ function [swdManualTable, swdManualCsvFile] = ...
 %       cd/atf2sheet.m
 %       cd/construct_and_check_fullpath.m
 %       cd/create_error_for_nargin.m
+%       cd/create_label_from_sequence.m
 %       cd/extract_fileparts.m
 %       cd/force_column_cell.m
 %       cd/is_overlapping.m
@@ -173,10 +174,12 @@ startTime = startTimesMs / MS_PER_S;
 endTime = endTimesMs / MS_PER_S;
 
 % Make sure none of the windows overlap
-isOverlapping = is_overlapping(transpose([startTime, endTime]));
+[isOverlapping, ~, indOverlapPrev] = is_overlapping(transpose([startTime, endTime]));
 if isOverlapping
-    fprintf('The file %s cannot be parsed because windows overlap!\n', ...
-            originalEventFile);
+    fprintf(['The file %s cannot be parsed because the following ', ...
+                'window numbers overlap:\n'], originalEventFile);
+    fprintf('\t%s\n', create_label_from_sequence(indOverlapPrev));
+    fprintf('\n');
     return
 end
 

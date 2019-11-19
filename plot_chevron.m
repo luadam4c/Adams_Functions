@@ -368,6 +368,7 @@ if plotErrorBars
 end
 
 % Change the y tick locations and labels if data is log 2 ratio
+% TODO: decide_on_tick_locations.m
 if isLog2Data
     % Get the default y tick locations
     yTickLocs = get(axHandle, 'YTick');

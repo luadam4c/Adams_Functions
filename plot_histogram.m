@@ -575,7 +575,7 @@ set(gca, 'XTick', xTicks);
 % Create default x tick labels
 if isempty(xTickLabels)
     % Create x tick labels using xTickLabelNums
-    xTickLabels = create_labels_from_numbers(xTickLabelNums, 'Precision', 2);
+    xTickLabels = create_labels_from_numbers(xTickLabelNums);
 end
 
 % Update x tick labels

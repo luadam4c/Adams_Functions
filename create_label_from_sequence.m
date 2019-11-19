@@ -3,15 +3,18 @@ function label = create_label_from_sequence (integers, varargin)
 % Usage: label = create_label_from_sequence (integers, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       label = create_label_from_sequence([-1, 1, 2, 5, 6, 7])
 %       label = create_label_from_sequence([5; 3; 1; 8])
 %       label = create_label_from_sequence(magic(3))
 %       label = create_label_from_sequence([-1, 1, 2, 5], 'Suffix', ' Mississippi')
 %       label = create_label_from_sequence([-1, 1, 2, 5], 'Prefix', 'Traces ')
+%
 % Outputs:
 %       label       - label created
 %                   specified as a cell array of character vectors
+%
 % Arguments:
 %       integers    - integers
 %                   must be an array of one the following types:
@@ -23,12 +26,12 @@ function label = create_label_from_sequence (integers, varargin)
 %                   must be a string scalar or a character vector
 %                   default == ''
 %
-%
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/convert_to_char.m
 %
 % Used by:
+%       cd/parse_atf_swd.m
 %       cd/plot_measures.m
 %       cd/plot_relative_events.m
 %       /home/Matlab/plethR01/plethR01_analyze.m
