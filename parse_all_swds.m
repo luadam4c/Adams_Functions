@@ -23,6 +23,9 @@ function [swdTables, swdSheetPaths, ...
 %                   - 'ToCombine': whether to combine spreadsheets
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'Recursive': whether to search recursively
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'OutFolder': the name of the directory in which 
 %                                       plots will be placed
 %                   must be a string scalar or a character vector
@@ -56,6 +59,7 @@ function [swdTables, swdSheetPaths, ...
 % File History:
 % 2018-12-26 Modified from plot_swd_raster.m
 % 2019-09-08 Added 'ToCombine' as an optional parameter
+% 2019-11-19 Added 'Recursive' as an optional parameter
 % TODO: Combine SWD sheets with '_piece' in the name
 
 %% Hard-coded constants
@@ -74,6 +78,7 @@ sweepStr = '_sweep';            % string in file names that separate sweeps
 %% Default values for optional arguments
 verboseDefault = true;
 toCombineDefault = true;
+recursiveDefault = true;        % search recursively by default
 outFolderDefault = '';          % set later
 manualFolderDefault = '';       % set later
 sayliFolderDefault = '';        % set later
@@ -93,6 +98,8 @@ addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ToCombine', toCombineDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'Recursive', recursiveDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ManualFolder', manualFolderDefault, ...
@@ -108,6 +115,7 @@ addParameter(iP, 'SheetType', sheetTypeDefault, ...
 parse(iP, varargin{:});
 verbose = iP.Results.Verbose;
 toCombine = iP.Results.ToCombine;
+recursive = iP.Results.Recursive;
 outFolder = iP.Results.OutFolder;
 manualFolder = iP.Results.ManualFolder;
 sayliFolder = iP.Results.SayliFolder;
@@ -131,13 +139,13 @@ end
 
 % Find all .atf files in the manualFolder
 [manualFiles, manualPaths] = ...
-    all_files('Verbose', verbose, 'Recursive', true, ...
+    all_files('Verbose', verbose, 'Recursive', recursive, ...
                 'ForceCellOutput', true, 'Directory', manualFolder, ...
                 'Extension', '.atf');
 
 % Find all Assyst output files in the assystFolder
 [assystFiles, assystPaths] = ...
-    all_files('Verbose', verbose, 'Recursive', true, ...
+    all_files('Verbose', verbose, 'Recursive', recursive, ...
                 'ForceCellOutput', true, 'Directory', assystFolder, ...
                 'Suffix', assystStr, 'Extension', '.txt');
 
