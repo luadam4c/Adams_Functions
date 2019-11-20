@@ -27,11 +27,11 @@ function paramTables = load_params (fileNames, varargin)
 %       cd/issheettype.m
 %       cd/renamevars.m
 %
-% Used by:    
+% Used by:
 %       cd/m3ha_network_launch.m
+%       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_pfiles2csv.m
 %       cd/m3ha_xolotl_create_neuron.m
-%       ~/m3ha/optimizer4gabab/singleneuronfitting51.m and beyond
 
 % File History:
 % 2018-10-16 Created by Adam Lu

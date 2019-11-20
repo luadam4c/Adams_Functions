@@ -1,6 +1,6 @@
 function isMatch = is_matching_string (strList, cand, varargin)
 %% Returns whether each element in a list of strings matches a candidate
-% Usage: isMatch = is_matching_string(strList, cand, varargin)
+% Usage: isMatch = is_matching_string (strList, cand, varargin)
 % Explanation:
 %   There are three main search modes (parameter 'SearchMode'):
 %       'substrings': allows the candidate to be a substring or substrings 

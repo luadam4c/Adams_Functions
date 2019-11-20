@@ -66,7 +66,7 @@ function varargout = all_files (varargin)
 %       cd/construct_and_check_fullpath.m
 %       cd/extract_fullpaths.m
 %
-% Used by: 
+% Used by:
 %       cd/all_swd_sheets.m
 %       cd/atf2sheet.m
 %       cd/combine_data_from_same_slice.m
@@ -75,6 +75,7 @@ function varargout = all_files (varargin)
 %       cd/find_matching_files.m
 %       cd/force_string_start.m
 %       cd/load_matching_sheets.m
+%       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_network_single_neuron.m
 %       cd/m3ha_pfiles2csv.m
 %       cd/m3ha_plot_simulated_traces.m

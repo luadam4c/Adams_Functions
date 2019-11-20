@@ -103,7 +103,7 @@ elseif nCells == 20 || nCells == 100
 else
     error('nCells = %d is not implemented yet!', nCells);
 end
-savePlotMode = 'spikes';
+% savePlotMode = 'spikes';
 
 %% Simulation modes
 simMode = 1;    % 1 - full simulation
@@ -366,13 +366,22 @@ pMax    = [4, 22.5];                % maximum values of parameters to loop throu
 pInc    = [1, 7.5];                 % increments of parameters to loop through
 pIsLog  = [0, 0];                   % whether increments of parameters is in log
 %}
-
+%{
 pCond = 1;
 gIncr = 30;
 pNames  = {'pCond', 'gIncr'};       % names of parameters to loop through
 pLabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
 pMin    = [1, 5];                   % minimum values of parameters to loop through
 pMax    = [4, 60];                  % maximum values of parameters to loop through
+pInc    = [1, 5];                   % increments of parameters to loop through
+pIsLog  = [0, 0];                   % whether increments of parameters is in log
+%}
+pCond = 1;
+gIncr = 30;
+pNames  = {'pCond', 'gIncr'};       % names of parameters to loop through
+pLabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
+pMin    = [1, 15];                  % minimum values of parameters to loop through
+pMax    = [4, 25];                  % maximum values of parameters to loop through
 pInc    = [1, 5];                   % increments of parameters to loop through
 pIsLog  = [0, 0];                   % whether increments of parameters is in log
 
@@ -620,7 +629,8 @@ end
 
 %% Set folders for reading and saving files
 % Find parent and home directory
-parentDirectory = m3ha_locate_homedir;
+% parentDirectory = m3ha_locate_homedir;
+parentDirectory = '/media/adamX/m3ha';
 homeDirectory = fullfile(parentDirectory, homeDirName);
 
 % Compile or re-compile .mod files in the home directory

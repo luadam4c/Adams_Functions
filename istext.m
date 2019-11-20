@@ -3,8 +3,10 @@ function isText = istext (x, varargin)
 % Usage: isText = istext (x, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       isText      - whether the input is a text
 %                   specified as a logical scalar
@@ -17,6 +19,7 @@ function isText = istext (x, varargin)
 % Used by:
 %       cd/combine_data_from_same_slice.m
 %       cd/ismatch.m
+%       cd/m3ha_neuron_create_initial_params.m
 
 % File History:
 % 2019-01-11 Created by Adam Lu

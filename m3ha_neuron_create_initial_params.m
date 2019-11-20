@@ -1,41 +1,74 @@
-function [neuronParamsTables, neuronParamsFiles, ...
-                neuronParamsTableDefault, passiveParamsFile] = ...
+function [initParamTables, initParamFiles, otherParams] = ...
                 m3ha_neuron_create_initial_params (varargin)
 %% Creates initial NEURON parameters for each cell
-% Usage: [neuronParamsTables, neuronParamsFiles, ...
-%               neuronParamsTableDefault, passiveParamsFile] = ...
+% Usage: [initParamTables, initParamFiles, otherParams] = ...
 %               m3ha_neuron_create_initial_params (varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
-%       TODO
+%       m3ha_neuron_create_initial_params;
+%
 % Outputs:
-%       neuronParamsTables
-%                   - NEURON parameters table for each cell
-%                   specified as a cell array of tables
-%       neuronParamsFiles
-%                   - NEURON parameters file for each cell
-%                   specified as a cell array of character arrays
-% TODO
+%       initParamTables - initial NEURON parameters table for each cell
+%                       specified as a cell array of tables
+%       initParamFiles  - initial NEURON parameters file for each cell
+%                       specified as a cell array of character arrays
+%
 % Arguments:
 %       varargin    - 'PassiveFileName': the name of passive parameters file
 %                   must be a string scalar or a character vector
 %                   default == /media/adamX/m3ha/data_dclamp/take4/
 %                               dclampPassiveParams_byCells_tofit.xlsx
+%                   - 'CellNames': cell names to create initial parameters for
+%                   must be a string vector or a cell array of character vectors
+%                   default == all cells in passive file
 %                   - 'OutFolder': directory to place NEURON parameters files
 %                   must be a string scalar or a character vector
 %                   default == fullfile(pwd, 'initial_params')
-%                   
+%                   - 'ParamsToReplace': parameter names to replace from 
+%                                       custom tables or files
+%                   must be a string vector or a cell array of character vectors
+%                   default == all parameters provided
+%                   - 'CustomInitNames': custom initial parameter names
+%                                           that replaces default for each cell
+%                   must be a cell array of character vectors 
+%                       or a cell array of cell arrays of character vectors
+%                   default == none provided
+%                   - 'CustomInitValues': custom initial parameter values
+%                                           that replaces default for each cell
+%                   must be a numeric vector or a cell array of numeric vectors
+%                   default == none provided
+%                   - 'CustomInitTables': custom tables with initial parameter 
+%                                           values that replaces default
+%                   must be a cell array of tables
+%                   default == none provided
+%                   - 'CustomInitFiles': custom spreadsheet files with initial 
+%                                       parameter values that replaces default
+%                   must be a string vector or a cell array of character vectors
+%                   default == none provided
+%                   - 'CustomInitDirectory': custom directory containing
+%                                       spreadsheet files with initial 
+%                                       parameter values that replaces default
+%                   must be a string scalar or a character vector
+%                   default == none provided
 %
 % Requires:
+%       cd/all_files.m
 %       cd/argfun.m
 %       cd/check_dir.m
 %       cd/compute_gpas.m
 %       cd/compute_surface_area.m
 %       cd/construct_fullpath.m
 %       cd/copyvars.m
+%       cd/count_samples.m
+%       cd/extract_fileparts.m
 %       cd/force_column_vector.m
+%       cd/istext.m
+%       cd/load_params.m
+%       cd/m3ha_locate_homedir.m
 %       cd/save_params.m
+%       cd/struct2arglist.m
 %       cd/update_param_values.m
 %
 % Used by:    
@@ -46,35 +79,47 @@ function [neuronParamsTables, neuronParamsFiles, ...
 % 2018-12-11 Added the 'InitValue' column
 % 2018-12-11 Made binary arrays logical arrays
 % 2019-11-12 Removed T & h channels from passive fit
+% 2019-11-19 Added 'ParamsToReplace' as an optional parameter
+% 2019-11-19 Added 'CustomInitValues' as an optional parameter
+% 2019-11-19 Added 'CustomInitTables' as an optional parameter
+% 2019-11-19 Added 'CustomInitFiles' as an optional parameter
+% 2019-11-19 Added 'CellNames' as an optional parameter
+% TODO: Allow the option to read in specific parameters from a file
 % 
 
 %% Hard-coded parameters
 initialParamsFolderName = 'initial_params';
+outPrefix = 'initial_params';
+cellNamePattern = '[A-Z][0-9]{6}';
+defaultPassiveFileDir = fullfile('data_dclamp', 'take4');
+defaultPassiveFileName = 'dclampPassiveParams_byCells_tofit.xlsx';
+geomParamNames = {'diamSoma', 'LDend', 'diamDend', 'epas', 'gpas'};
 
 % Must be consistent with find_passive_params.m
 % Default parameter values (most from Destexhe & Neubig 1997)
 cmInit = 0.88;          % specific membrane capacitance [uF/cm^2]
 RaInit = 173;           % axial resistivity [Ohm-cm]
 corrDInit = 1;          % dendritic surface area correction factor
-% corrDInit = 7.954;    % dendritic surface area correction factor
-                        %   default value was estimated by fitting 
+                        %   set to 1 so that curve-fitted parameters
+                        %   from find_passive_params.m may be applied directly
+                        % Destexhe et al 1998a used 7.954,
+                        %   which was estimated by fitting 
                         %   voltage-clamp traces in Destexhe et al 1998a
 
 % Column names for the parameters table
 columnNames = {'Value', 'InitValue', 'LowerBound', 'UpperBound', 'Class', ...
                 'IsLog', 'IsPassive', 'UseAcrossTrials', 'UseAcrossCells'};
 
-% Initial parameter values
-% TODO: Replace this by input parser
+% Default parameter values if initial parameters not provided
 neuronParamsDefault = [ ...
     38.42, 84.67, 8.50, ...
     cmInit, RaInit, corrDInit, 2e-5, -70, ...
-    1.0e-9, 1.0e-9, 1.0e-9, ...
+    .2e-3, .2e-3, .2e-3, ...
     1, 1, 1, 1, ...
-    1.0e-9, 1.0e-9, 1.0e-9, -28, 0, ...
-    1.0e-9, 1.0e-9, 1.0e-9, ...
-    1.0e-9, 1.0e-9, 1.0e-9, ...
-    1.0e-9, 1.0e-9, 1.0e-9, ...
+    2.2e-5, 2.2e-5, 2.2e-5, -28, 0, ...
+    2.0e-5, 2.0e-5, 2.0e-5, ...
+    5.5e-3, 5.5e-3, 5.5e-3, ...
+    5.5e-6, 5.5e-6, 5.5e-6, ...
     ];
 
 % Names for each parameter
@@ -149,47 +194,28 @@ neuronParamsIsPassive = logical([ ...
     0, 0, 0, ...
     0, 0, 0, ...
     ]);
-% neuronParamsIsPassive = logical([ ...
-%     1, 1, 1, ...
-%     1, 1, 1, 1, 1, ...
-%     1, 1, 1, ...
-%     1, 1, 1, 1, ...
-%     1, 1, 1, 0, 1, ...
-%     0, 0, 0, ...
-%     0, 0, 0, ...
-%     0, 0, 0, ...
-%     ]);
 
 % Whether the parameter is varied when fitting across trials for each cell
+%   Note: All passive parameters and all active conductance densities
 neuronParamsUseAcrossTrials = logical([ ...
     1, 1, 1, ...
     0, 0, 0, 1, 1, ...
     1, 1, 1, ...
-    1, 1, 1, 1, ...
-    1, 1, 1, 0, 1, ...
+    0, 0, 0, 0, ...
+    1, 1, 1, 0, 0, ...
     1, 1, 1, ...
     1, 1, 1, ...
     1, 1, 1, ...
     ]);
 
-% neuronParamsUseAcrossTrials = logical([ ...
-%     1, 1, 1, ...
-%     0, 0, 0, 1, 0, ...
-%     1, 1, 1, ...
-%     1, 1, 1, 1, ...
-%     0, 0, 0, 0, 0, ...
-%     1, 1, 1, ...
-%     1, 1, 1, ...
-%     1, 1, 1, ...
-%     ]);
-
 % Whether the parameter varied when fitting across cells
+%   Note: All active conductance kinetics
 neuronParamsUseAcrossCells = logical([ ...
     0, 0, 0, ...
     0, 0, 0, 0, 0, ...
     0, 0, 0, ...
     1, 1, 1, 1, ...
-    0, 0, 0, 1, 0, ...
+    0, 0, 0, 1, 1, ...
     0, 0, 0, ...
     0, 0, 0, ...
     0, 0, 0, ...
@@ -199,7 +225,14 @@ neuronParamsUseAcrossCells = logical([ ...
 passiveFileNameDefault = ['/media/adamX/m3ha/data_dclamp/take4/', ...
                             'dclampPassiveParams_byCells_tofit.xlsx'];
                             % default passive parameters file name
-outFolderDefault = '';      % set later
+cellNamesDefault = {};              % set later
+outFolderDefault = '';              % set later
+paramsToReplaceDefault = {};        % set later
+customInitNamesDefault = {};        % set later
+customInitValuesDefault = {};       % set later
+customInitTablesDefault = {};       % set later
+customInitFilesDefault = {};        % set later
+customInitDirectoryDefault = '';    % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -212,13 +245,42 @@ iP.FunctionName = mfilename;
 addParameter(iP, 'PassiveFileName', passiveFileNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
                                                 % introduced after R2016b
+addParameter(iP, 'CellNames', cellNamesDefault, ...
+    @(x) assert(iscellstr(x) || isstring(x), ...
+                ['CellNames must be a cell array of character arrays ', ...
+                'or a string array!']));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));    
+addParameter(iP, 'ParamsToReplace', paramsToReplaceDefault, ...
+    @(x) assert(iscellstr(x) || isstring(x), ...
+                ['ParamsToReplace must be a cell array of character arrays ', ...
+                'or a string array!']));
+addParameter(iP, 'CustomInitNames', customInitNamesDefault, ...
+    @(x) assert(iscellstr(x) || isstring(x) || iscell(x), ...
+                ['CustomInitNames must be a cell array of character arrays ', ...
+                'or a string array!']));
+addParameter(iP, 'CustomInitValues', customInitValuesDefault, ...
+    @(x) validateattributes(x, {'cell', 'numeric'}, {'2d'}));    
+addParameter(iP, 'CustomInitTables', customInitTablesDefault, ...
+    @(x) validateattributes(x, {'cell'}, {'2d'}));    
+addParameter(iP, 'CustomInitFiles', customInitFilesDefault, ...
+    @(x) assert(iscellstr(x) || isstring(x), ...
+                ['CustomInitFiles must be a cell array of character arrays ', ...
+                'or a string array!']));
+addParameter(iP, 'CustomInitDirectory', customInitDirectoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));    
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 passiveFileName = iP.Results.PassiveFileName;
+cellNames = iP.Results.CellNames;
 outFolder = iP.Results.OutFolder;
+paramsToReplace = iP.Results.ParamsToReplace;
+customInitNames = iP.Results.CustomInitNames;
+customInitValues = iP.Results.CustomInitValues;
+customInitTables = iP.Results.CustomInitTables;
+customInitFiles = iP.Results.CustomInitFiles;
+customInitDirectory = iP.Results.CustomInitDirectory;
 
 %% Preparation
 % Set default output folder
@@ -226,14 +288,155 @@ if isempty(outFolder)
     outFolder = fullfile(pwd, initialParamsFolderName);
 end
 
+% Set default passive file
+if isempty(passiveFileName)
+    passiveFileName = fullfile(m3ha_locate_homedir, ...
+                        defaultPassiveFileDir, defaultPassiveFileName);
+end
+
 % Check if the output folder exists
 check_dir(outFolder);
 
-% Generate the default NEURON parameters from arguments
-% TODO: Replace by parsed inputs
+% Determine whether it's necessary to detect custom files
+toDetectFiles = ~isempty(customInitDirectory) && isempty(customInitFiles) && ...
+                    (isempty(cellNames) || isempty(customInitTables) && ...
+                    (isempty(customInitValues) || isempty(customInitNames)));
+
+% Detect custom files if needed
+if toDetectFiles
+    [~, customInitFiles] = all_files('Directory', customInitDirectory, ...
+                                        'Extension', 'csv');
+
+    % Extract just the file bases
+    customInitFileBases = extract_fileparts(customInitFiles, 'base');
+
+    % Extract the cell names based on cellNamePattern
+    % TODO: Make a function extract_substrings.m
+    customCellNamesTemp = regexp(customInitFileBases, cellNamePattern, 'match');
+    customCellNames = cellfun(@(x) x{1}, customCellNamesTemp, ...
+                                'UniformOutput', false);
+    
+    % Make sure the custom cell names are all unique
+    if numel(customCellNames) ~= numel(unique(customCellNames))
+        error('Cell names provided are not all unique!')
+    end
+end
+
+% Determine whether it's necessary to load the parameters tables
+toLoadTables = ~isempty(customInitFiles) && isempty(customInitTables) && ...
+                (isempty(customInitValues) || isempty(customInitNames));
+
+% Load the parameters tables from the custom files if needed
+if toLoadTables
+    customInitTables = load_params(customInitFiles);
+end
+
+% Determine whether it's necessary to read in parameter names and values
+toReadInitValues = ~isempty(customInitTables) && isempty(customInitValues);
+toReadInitNames = ~isempty(customInitTables) && isempty(customInitNames);
+
+% Read in custom initial names and values if needed
+if toReadInitValues
+    % Use the 'Value' column from the custom table
+    customInitValues = cellfun(@(x) x.Value, customInitTables, ...
+                                'UniformOutput', false);
+end
+if toReadInitNames
+    % Use the row names from the custom tables
+    customInitNames = cellfun(@(x) x.Properties.RowNames, customInitTables, ...
+                                'UniformOutput', false);
+end
+
+% Can't read in parameter names without values
+if ~isempty(customInitNames) && isempty(customInitValues)
+    error('Custom parameter values must be provided!');
+end
+
+% Set default custom initial names if still empty
+if isempty(customInitNames) && ~isempty(customInitValues)
+    % Count the number of initial values
+    nCustomInitValues = count_samples(customInitValues);
+
+    % This number can't be different across cells
+    uniqueNInitValues = unique(nCustomInitValues);
+    if numel(uniqueNInitValues) > 1
+        error('Custom initial parameter names must be provided!');
+    end
+
+    % Assume that all NEURON parameters are provided
+    % If the number of parameters provided is different, display error
+    if numel(neuronParamNames) ~= numel(uniqueNInitValues)
+        error('What parameters correspond to the initial values?');
+    else
+        customInitNames = neuronParamNames;
+    end
+end
+
+% Set default parameters to replace to be all those provided for the first cell
+if isempty(paramsToReplace) && ~isempty(customInitValues)
+    if iscell(customInitNames) && istext(customInitNames{1})
+        paramsToReplace = customInitNames{1};
+    else
+        paramsToReplace = customInitNames;
+    end
+end
+
+% Determine whether to update custom parameters
+toUpdateCustom = ~isempty(paramsToReplace);
+
+% Determine whether to update geometric parameters from passiveFile
+toUpdateGeometry = any(ismember(geomParamNames, paramsToReplace));
+
+% Determine whether to read in passive parameters table
+toReadPassive = toUpdateGeometry || ...
+                    isempty(cellNames) && isempty(customInitFiles);
+
+% Read in the passive parameters table if requested
+if toReadPassive
+    passiveTable = readtable(passiveFileName);
+end
+
+% Decide on cell names
+if isempty(cellNames) && ~isempty(customInitFiles)
+    % Use the cell names from the custom files
+    cellNames = customCellNames;
+elseif isempty(cellNames) && isempty(customInitFiles)
+    % Extract the cell names from the passive table
+    cellNames = passiveTable.cellName;
+elseif ~isempty(cellNames) && ~isempty(customInitFiles)
+    % Restrict to cell names provided
+    iCellInCustom = cellfun(@(x) find_in_strings(x, customCellNames, ...
+                            'MaxNum', 1), cellNames);
+    % customInitFiles = customInitFiles(iCellInCustom);
+    % customInitTables = customInitTables(iCellInCustom);
+    customInitNames = customInitNames(iCellInCustom);
+    customInitValues = customInitValues(iCellInCustom);
+else
+    % Do nothing
+end
+
+% Make sure the cell names are all unique
+if numel(cellNames) ~= numel(unique(cellNames))
+    error('Cell names provided are not all unique!')
+end
+
+% Count the number of cells
+nCells = numel(cellNames);
+
+% Match the number of custom initial parameters if provided
+if ~isempty(customInitNames) && istext(customInitNames)
+    customInitNames = repmat({customInitNames}, [nCells, 1]);
+end
+if ~isempty(customInitValues) && isnumeric(customInitNames)
+    customInitValues = repmat({customInitValues}, [nCells, 1]);
+end
+
+%% Create initial parameters table
+% Display message
+fprintf('Creating initial set of NEURON parameters for all cells ... \n');
 
 % Force as column vectors
-[neuronParamsValue, neuronParamsLowerBound, ...
+[neuronParamsDefault, neuronParamsLowerBound, ...
     neuronParamsUpperBound, neuronParamsClass, ...
     neuronParamsIsLog, neuronParamsIsPassive, ...
     neuronParamsUseAcrossTrials, neuronParamsUseAcrossCells] = ...
@@ -242,81 +445,132 @@ check_dir(outFolder);
             neuronParamsUpperBound, neuronParamsClass, ...
             neuronParamsIsLog, neuronParamsIsPassive, ...
             neuronParamsUseAcrossTrials, neuronParamsUseAcrossCells);
-            
-% Create the default neuronParamsTable
-neuronParamsTableDefault = ...
-    table(neuronParamsValue, neuronParamsValue, neuronParamsLowerBound, ...
-            neuronParamsUpperBound, neuronParamsClass, ...
-            neuronParamsIsLog, neuronParamsIsPassive, ...
-            neuronParamsUseAcrossTrials, neuronParamsUseAcrossCells, ...
-            'RowNames', neuronParamNames, 'VariableNames', columnNames);
 
-%% Do the job
-% Print message
-fprintf('Creating initial set of NEURON parameters for all cells ... \n');
+% Create the default table
+defaultTable = table(neuronParamsDefault, neuronParamsDefault, ...
+                neuronParamsLowerBound, neuronParamsUpperBound, ...
+                neuronParamsClass, neuronParamsIsLog, neuronParamsIsPassive, ...
+                neuronParamsUseAcrossTrials, neuronParamsUseAcrossCells, ...
+                'RowNames', neuronParamNames, 'VariableNames', columnNames);
 
-% Read in the passive parameters table
-passiveTable = readtable(passiveFileName);
-
-% Count the number of cells
-nCells = width(passiveTable);
-
-% Extract the cell names
-cellNameAllCells = passiveTable.cellName;
-
-% Extract the passive parameters needed
-%   cf. m3ha_neuron_create_TC_commands.m
-radiusSomaAllCells = passiveTable.radiusSoma;
-diamDendAllCells = passiveTable.diameterDendrite;
-LDendAllCells = passiveTable.lengthDendrite;
-epasAllCells = passiveTable.epasEstimate;
-RinAllCells = passiveTable.Rinput;
-% RinAllCells = passiveTable.RinEstimate;
-
-% Compute the diameter of the somas
-diamSomaAllCells = 2 * radiusSomaAllCells;
-
-% Force as column vectors
-[diamSomaAllCells, LDendAllCells, diamDendAllCells] = ...
-    argfun(@force_column_vector, diamSomaAllCells, ...
-            LDendAllCells, diamDendAllCells);
-
-% Compute the surface area for each cell
-areaAllCells = compute_surface_area([diamSomaAllCells, LDendAllCells], ...
-                                    [diamSomaAllCells, diamDendAllCells]);
-
-% Estimate the passive conductances from the input resistances
-gpasAllCells = compute_gpas(RinAllCells, areaAllCells);
-
-% Create initial parameter tables by updating the default table
-neuronParamsTables = ...
-    arrayfun(@(x, y, z, w, v) update_param_values(neuronParamsTableDefault, ...
-            'diamSoma', x, 'LDend', y, 'diamDend', z, 'epas', w, 'gpas', v), ...
-            diamSomaAllCells, LDendAllCells, diamDendAllCells, ...
-            epasAllCells, gpasAllCells, 'UniformOutput', false);
-
-% Update the initValue column as well
-valueStr = columnNames{1};
-initValueStr = columnNames{2};
-neuronParamsTables = ...
-    cellfun(@(x) copyvars(x, valueStr, initValueStr), ...
-            neuronParamsTables, 'UniformOutput', false);
-
-% Construct parameter file names
-paramsFileNames = cellfun(@(x) ['initial_params_', x, '.csv'], ...
-                            cellNameAllCells, 'UniformOutput', false);
-
-% Construct full paths
-paramsFilePaths = construct_fullpath(paramsFileNames, 'Directory', outFolder);
-
-% Save as parameter files
-neuronParamsFiles = cellfun(@(x, y) save_params(x, 'FileName', y), ...
-                            neuronParamsTables, paramsFilePaths, ...
+% Repeat for all cells
+initParamTables = arrayfun(@(x) defaultTable, transpose(1:nCells), ...
                             'UniformOutput', false);
 
-%% Deal with outputs
+%% Update geometric parameters if needed
+if toUpdateGeometry
+    % Display message
+    fprintf('Updating geometric parameters from %s ... \n', passiveFileName);
+
+    % Extract the cell names
+    cellNameAllCells = passiveTable.cellName;
+
+    % Extract the passive parameters needed
+    %   Note: Must be consistent with m3ha_neuron_create_TC_commands.m
+    radiusSomaAllCells = passiveTable.radiusSoma;
+    diamDendAllCells = passiveTable.diameterDendrite;
+    LDendAllCells = passiveTable.lengthDendrite;
+    epasAllCells = passiveTable.epasEstimate;
+    RinAllCells = passiveTable.Rinput;
+
+    % Find the cells of interest in all cell names
+    iCellOfInterest = cellfun(@(x) find_in_strings(x, cellNameAllCells, ...
+                                'MaxNum', 1), cellNames);
+
+    % Reorder by the cells of interest
+    [radiusSoma, diamDend, LDend, epas, Rin] = ...
+        argfun(@(x) x(iCellOfInterest), ...
+            radiusSomaAllCells, diamDendAllCells, LDendAllCells, ...
+            epasAllCells, RinAllCells);
+
+    % Compute the diameter of the somas
+    diamSoma = 2 * radiusSoma;
+
+    % Force as column vectors
+    [diamSoma, LDend, diamDend] = ...
+        argfun(@force_column_vector, diamSoma, LDend, diamDend);
+
+    % Compute the surface area for each cell
+    surfaceArea = compute_surface_area([diamSoma, LDend], ...
+                                        [diamSoma, diamDend]);
+
+    % Estimate the passive conductances from the input resistances
+    gpas = compute_gpas(Rin, surfaceArea);
+
+    % Create name value pairs for geometric parameters
+    nameValuePairsGeom = ...
+        arrayfun(@(x, y, z, w, v) {'diamSoma', x, 'LDend', y, ...
+                    'diamDend', z, 'epas', w, 'gpas', v}, ...
+                diamSoma, LDend, diamDend, epas, gpas, ...
+                'UniformOutput', false);
+
+    % Update the initial parameters table
+    initParamTables = ...
+        cellfun(@(x, y) update_param_values(x, y{:}), ...
+                initParamTables, nameValuePairsGeom, 'UniformOutput', false);
+end
+
+%% Update other parameters
+if toUpdateCustom
+    % Display message
+    fprintf('Updating custom NEURON parameters for all cells ... \n');
+
+    % Create name value pairs for the custom parameters to replace
+    nameValuePairsCustom = ...
+        cellfun(@(x, y) create_name_value_pairs(x, y, paramsToReplace), ...
+                customInitNames, customInitValues, 'UniformOutput', false);
+
+    % Update the initial parameters table
+    initParamTables = ...
+        cellfun(@(x, y) update_param_values(x, y{:}), ...
+                initParamTables, nameValuePairsCustom, 'UniformOutput', false);
+end
+
+%% Update the initValue column with the value column
+valueStr = columnNames{1};
+initValueStr = columnNames{2};
+initParamTables = cellfun(@(x) copyvars(x, valueStr, initValueStr), ...
+                            initParamTables, 'UniformOutput', false);
+
+%% Save outputs
+% Construct initial parameter file names
+initFileNames = cellfun(@(x) [outPrefix, '_', x, '.csv'], ...
+                            cellNames, 'UniformOutput', false);
+
+% Construct full paths
+initFilePaths = construct_fullpath(initFileNames, 'Directory', outFolder);
+
+% Save as parameter files
+initParamFiles = cellfun(@(x, y) save_params(x, 'FileName', y), ...
+                            initParamTables, initFilePaths, ...
+                            'UniformOutput', false);
+
+%% Return outputs
 % Save the passive parameters file name
-passiveParamsFile = passiveFileName;
+otherParams.passiveFileName = passiveFileName;
+otherParams.defaultTable = defaultTable;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function nameValuePairs = create_name_value_pairs (allNames, allValues, ...
+                                                    namesOfInterest)
+%% Create name value pairs
+% TODO: Pull out to a function create_name_value_pairs.m
+
+% Put allValues in a cell array
+valuesCell = num2cell(allValues);
+
+% Combine into a single-row table
+tempTable = table(valuesCell{:}, 'VariableNames', allNames);
+
+% Restrict to namesOfInterest
+tempTable = tempTable(:, namesOfInterest);
+
+% Transform to structure arrays
+tempStruct = table2struct(tempTable);
+
+% Update the parameters to replace 
+nameValuePairs = struct2arglist(tempStruct);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -344,8 +598,8 @@ neuronParamsDefault = [ ...
 columnNames = {'Value', 'LowerBound', 'UpperBound', 'Class', ...
                 'IsLog', 'IsPassive', 'UseAcrossTrials', 'UseAcrossCells'};
 
-neuronParamsTableDefault = ...
-    table(neuronParamsValue, neuronParamsLowerBound, ...
+customInitTablesDefault = ...
+    table(neuronParamsInitValue, neuronParamsLowerBound, ...
             neuronParamsUpperBound, neuronParamsClass, ...
             neuronParamsIsLog, neuronParamsIsPassive, ...
             neuronParamsUseAcrossTrials, neuronParamsUseAcrossCells, ...
@@ -454,6 +708,53 @@ neuronParamsLowerBound = [ ...
     1.0e-8, 1.0e-8, 1.0e-8, ...
     ];
 
+neuronParamsDefault = [ ...
+    38.42, 84.67, 8.50, ...
+    cmInit, RaInit, corrDInit, 2e-5, -70, ...
+    1.0e-9, 1.0e-9, 1.0e-9, ...
+    1, 1, 1, 1, ...
+    1.0e-9, 1.0e-9, 1.0e-9, -28, 0, ...
+    1.0e-9, 1.0e-9, 1.0e-9, ...
+    1.0e-9, 1.0e-9, 1.0e-9, ...
+    1.0e-9, 1.0e-9, 1.0e-9, ...
+    ];
+
+neuronParamsIsPassive = logical([ ...
+    1, 1, 1, ...
+    1, 1, 1, 1, 1, ...
+    1, 1, 1, ...
+    1, 1, 1, 1, ...
+    1, 1, 1, 0, 1, ...
+    0, 0, 0, ...
+    0, 0, 0, ...
+    0, 0, 0, ...
+    ]);
+
+neuronParamsUseAcrossTrials = logical([ ...
+    1, 1, 1, ...
+    0, 0, 0, 1, 1, ...
+    1, 1, 1, ...
+    1, 1, 1, 1, ...
+    1, 1, 1, 0, 1, ...
+    1, 1, 1, ...
+    1, 1, 1, ...
+    1, 1, 1, ...
+    ]);
+
+neuronParamsUseAcrossTrials = logical([ ...
+    1, 1, 1, ...
+    0, 0, 0, 1, 0, ...
+    1, 1, 1, ...
+    1, 1, 1, 1, ...
+    0, 0, 0, 0, 0, ...
+    1, 1, 1, ...
+    1, 1, 1, ...
+    1, 1, 1, ...
+    ]);
+
+RinAllCells = passiveTable.RinEstimate;
+
 %}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

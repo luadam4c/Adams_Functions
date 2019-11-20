@@ -1,16 +1,19 @@
-function isAllMembers = is_contained_in (members, setToCheck, varargin)
+function isSubset = is_contained_in (setSmall, setLarge, varargin)
 %% Checks whether all elements of the first set are elements of the second set and print the ones that aren't
-% Usage: isAllMembers = is_contained_in (members, setToCheck, varargin)
+% Usage: isSubset = is_contained_in (setSmall, setLarge, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
-%       isAllMembers    - whether all elements of members are part of set
+%       isSubset    - whether all elements of setSmall are part of setLarge
+%
 % Arguments:
-%       members     - values that should be a member of the set
+%       setSmall    - the first set (to be checked whether contained)
 %                   must be recognized by the ismember() function
-%       setToCheck  - set of data values
+%       setLarge    - the second set (to be checked whether contains)
 %                   must be recognized by the ismember() function
 %       varargin    - 'SuppressOutput': whether to suppress standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -21,6 +24,7 @@ function isAllMembers = is_contained_in (members, setToCheck, varargin)
 
 % File History:
 % 2018-11-14 Created by Adam Lu
+% TODO: Rename as is_subset.m
 
 %% Default values for optional arguments
 suppressOutputDefault = false;          % whether to suppress standard output
@@ -30,8 +34,7 @@ suppressOutputDefault = false;          % whether to suppress standard output
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 2
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
@@ -48,7 +51,7 @@ suppressOutput = iP.Results.SuppressOutput;
 
 %% Do the job
 % Return whether each parameter name exist in the table
-existsInSet = ismember(members, setToCheck);
+existsInSet = ismember(setSmall, setLarge);
 
 % If any of the parameters does not exist, print the parameter(s)
 if ~all(existsInSet)
@@ -56,10 +59,10 @@ if ~all(existsInSet)
     if ~suppressOutput
         for iElement = find(~existsInSet)
             % Get the current member
-            if iscell(members)
-                thisElement = members{iElement};
+            if iscell(setSmall)
+                thisElement = setSmall{iElement};
             else
-                thisElement = num2str(members(iElement));
+                thisElement = num2str(setSmall(iElement));
             end
 
             % Print message
@@ -68,10 +71,10 @@ if ~all(existsInSet)
     end
 
     % Return false
-    isAllMembers = false;
+    isSubset = false;
 else
     % Return true
-    isAllMembers = true;
+    isSubset = true;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

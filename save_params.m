@@ -40,6 +40,9 @@ function varargout = save_params (paramsTable, varargin)
 %% Hard-coded parameters
 suffixDefault = '_params.csv';
 
+% TODO: Make optional parameter
+verbose = false;
+
 %% Default values for optional arguments
 fileNameDefault = strcat(create_time_stamp, suffixDefault);
 outFolderDefault = '';      % set in construct_fullpath.m
@@ -82,6 +85,9 @@ fullPath = construct_fullpath(fileName, 'Directory', outFolder);
 [~, ~, fileExt] = fileparts(fullPath);
 
 %% Do the job
+if verbose
+    fprintf('Saving file %s ... \n', fullPath);
+end
 if issheettype(fileExt)
     % Write the table to the spreadsheet file
     writetable(paramsTable, fullPath, ...

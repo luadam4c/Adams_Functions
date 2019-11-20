@@ -24,6 +24,7 @@ function argList = struct2arglist (structure, varargin)
 %       cd/combine_phase_numbers.m
 %       cd/compute_bins.m
 %       cd/convert_to_rank.m
+%       cd/m3ha_neuron_create_initial_params.m
 %       cd/medianfilter.m
 %       cd/plot_bar.m
 %       cd/plot_calcium_imaging_traces.m
