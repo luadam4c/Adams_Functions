@@ -25,8 +25,8 @@ function handles = plot_spectrogram (spectData, timeInstants, freqHz, varargin)
 %                   must be a empty or a axes object handle
 %                   default == []
 %                   - 'YLimits': limits of y axis, 
-%                               suppress by setting value to 'suppress'
-%                   must be 'suppress' or a 2-element increasing numeric vector
+%                               suppress by setting value to empty
+%                   must be a 2-element increasing numeric vector
 %                   default == uses compute_axis_limits.m
 %                   - 'ColorMap': a color map
 %                   must be a numeric array with 3 columns

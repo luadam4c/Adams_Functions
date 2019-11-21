@@ -14,6 +14,7 @@ function varargout = parse_all_multiunit(varargin)
 % Outputs:
 %       muParams    - parsed multiunit parameters
 %       muData      - parsed multiunit data
+%
 % Arguments:
 %       varargin    - 'Directory': working directory
 %                   must be a string scalar or a character vector

@@ -22,9 +22,9 @@ function [spectData, freqHz, timeInstantsSeconds] = ...
 %                   must be a TODO
 %       siSeconds   - TODO: Description of siSeconds
 %                   must be a TODO
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'BinWidthSeconds': bin width in seconds
+%                   must be a numeric scalar
+%                   default == 1
 %                   - Any other parameter-value pair for spectrogram()
 %
 % Requires:
@@ -41,11 +41,10 @@ function [spectData, freqHz, timeInstantsSeconds] = ...
 
 %% Hard-coded parameters
 % TODO: Make optional arguments
-binWidthSeconds = 1;             % 1 second windows
 overlapSeconds = [];
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+binWidthSecondsDefault = 1;     % 1 second bins by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -65,12 +64,12 @@ addRequired(iP, 'eegValues');
 addRequired(iP, 'siSeconds');
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default, ...
-%     % TODO: validation function %);
+addParameter(iP, 'BinWidthSeconds', binWidthSecondsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 
 % Read from the Input Parser
 parse(iP, eegValues, siSeconds, varargin{:});
-% param1 = iP.Results.param1;
+binWidthSeconds = iP.Results.BinWidthSeconds;
 
 % Keep unmatched arguments for the spectrogram() function
 otherArguments = struct2arglist(iP.Unmatched);

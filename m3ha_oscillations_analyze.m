@@ -13,7 +13,7 @@
 
 %% Hard-coded parameters
 % parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
-parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', 'multiunit_m3ha');
+parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', 'parse_multiunit_m3ha');
 archiveDir = parentDir;
 dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'snap5114-final', 'dual-final'};
@@ -23,14 +23,15 @@ specificSlicesToAnalyze = {};
 
 parseIndividualFlag = true;
 saveMatFlag = false; % true;
-plotRawFlag = false; % true;
+plotRawFlag = true; %false; % true;
 plotSpikeDetectionFlag = false; % true;
 plotRasterFlag = false; % true;
 plotSpikeDensityFlag = false; % true;
-plotSpikeHistogramFlag = true;
-plotMeasuresFlag = false; %true;
-plotContourFlag = false; %true;
-plotCombinedFlag = true;
+plotSpikeHistogramFlag = false; % true;
+plotAutoCorrFlag = false; % true;
+plotMeasuresFlag = false; % true;
+plotContourFlag = false; % true;
+plotCombinedFlag = false; % true;
 
 parsePopulationAllFlag = false; %true;
 parsePopulationRestrictedFlag = false; %true;
@@ -43,7 +44,7 @@ plotNormByPhaseFlag = false; %true;
 plotPopAverageFlag = false; %true;
 plotSmoothNormPopAvgFlag = false; %true;
 
-archiveScriptsFlag = true; 
+archiveScriptsFlag = false; %true; 
 
 % For compute_default_signal2noise.m
 relSnrThres2Max = 0.1;
@@ -120,6 +121,7 @@ for iDir = 1:numel(dirsToAnalyze)
                 'PlotRasterFlag', plotRasterFlag, ...
                 'PlotSpikeDensityFlag', plotSpikeDensityFlag, ...
                 'PlotSpikeHistogramFlag', plotSpikeHistogramFlag, ...
+                'PlotAutoCorrFlag', plotAutoCorrFlag, ...
                 'PlotMeasuresFlag', plotMeasuresFlag, ...
                 'PlotContourFlag', plotContourFlag, ...
                 'PlotCombined', plotCombinedFlag, ...
