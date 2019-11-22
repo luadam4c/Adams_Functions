@@ -73,7 +73,10 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 % 2019-11-16 Added 'FeatureWeights' as an optional argument
 % 2019-11-16 Added 'LtsExistError' as an optional argument
 % 2019-11-18 Fixed bug with noLTSInBoth 
-% 2019-11-21 Fixed bug for the computation of normalizedDifference 
+% 2019-11-21 For singleneuronfitting61, fixed bug for the computation of 
+%               normalizedDifference. It was fitting with only ltsExistError
+%               in singleneuronfitting60
+% TODO: Possibly change the target amp error for singleneuronfitting62
 
 %% Hard-coded parameters
 % Consistent with singleneuronfittin58.m
