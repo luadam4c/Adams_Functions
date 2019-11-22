@@ -1,5 +1,5 @@
-function G = compute_conductance (t, Tlast, amp, Trise, TfallFast, TfallSlow, w)
-% Compute theoretical conductance curve for the GABA_B IPSC used by dynamic clamp
+function G = compute_gabab_conductance (t, Tlast, amp, Trise, TfallFast, TfallSlow, w)
+%% Computes theoretical conductance curve for the GABA_B IPSC used by dynamic clamp
 % Arguments:
 % 		t	- Time vector (ms)
 % 		Tlast	- Time of IPSC start (ms)
@@ -10,12 +10,13 @@ function G = compute_conductance (t, Tlast, amp, Trise, TfallFast, TfallSlow, w)
 % 		w 	- weight of fast falling phase in the falling phase
 %
 % Used by:	
-%		/media/adamX/m3ha/data_dclamp/trace_comparison.m
-%		/media/adamX/m3ha/data_dclamp/ResaveSweeps.m
-%
+%		cd/m3ha_trace_comparison.m
+%		/media/adamX/m3ha/data_dclamp/m3ha_resave_sweeps.m
+
+% File History:
 % 2016-11-07 Moved from /media/adamX/m3ha/data_dclamp/trace_comparison.m
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 ndp = length(t);		% number of time points
 sims = t(2) - t(1);		% sampling interval (ms)

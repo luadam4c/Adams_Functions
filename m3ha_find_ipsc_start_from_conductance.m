@@ -1,11 +1,12 @@
-function [IPSC_offset_old, IPSC_offset_old2, IPSC_ind_old, IPSC_ind_old2] = find_istart_old (tvec0, gvec1s, ivec0s, istartwin, plotflag, vvec0s, outfolder, filebase)
-%% Finds time of current application from a series of current vectors (legacy, please use parse_ipsc.m instead)
-% Usage: [IPSC_offset_old, IPSC_offset_old2, IPSC_ind_old, IPSC_ind_old2] = find_istart_old (tvec0, gvec1s, ivec0s, istartwin, plotflag, vvec0s, outfolder, filebase)
+function [IPSC_offset_old, IPSC_offset_old2, IPSC_ind_old, IPSC_ind_old2] = m3ha_find_ipsc_start_from_conductance (tvec0, gvec1s, ivec0s, istartwin, plotflag, vvec0s, outfolder, filebase)
+%% Finds time of current application from a series of conductance vectors (legacy, please use parse_ipsc.m instead)
+% Usage: [IPSC_offset_old, IPSC_offset_old2, IPSC_ind_old, IPSC_ind_old2] = m3ha_find_ipsc_start_from_conductance (tvec0, gvec1s, ivec0s, istartwin, plotflag, vvec0s, outfolder, filebase)
 % Arguments:	
 %
 % Used by:
-%		/media/adamX/m3ha/data_dclamp/dclampDataExtractor.m
-%
+%		cd/m3ha_dclampDataExtractor.m
+
+% File History:
 % 2016-11-07 Moved from dclampDataExtractor.m
 
 mafw1 = 5;	% width in ms for the moving average filter for finding IPSC offsets

@@ -1,3 +1,4 @@
+%% Analyzes current-injection protocols (legacy, please use parse_current_family.m instead)
 % function [alldata] = analyzeCI(date)	
 date = '20140729';
 

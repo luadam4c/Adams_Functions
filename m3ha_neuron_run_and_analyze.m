@@ -311,7 +311,7 @@ function [errorStruct, hFig, simData] = ...
 %               hFig that is passed to and from functions
 % 2016-10-07 - outparams.currpulse(iSwp) is now already in nA
 % 2016-10-07 - Added cprflag, findLtsFlag, ltsBurstStatsFlag, ltsErrorFlag
-% 2016-10-14 - Updated outputs for find_IPSC_peak & find_LTS
+% 2016-10-14 - Updated outputs for m3ha_find_ipsc_peak & m3ha_find_lts
 % 2016-10-14 - Fixed outparams.fitreg to fitreg inside parfor loop
 % 2016-10-14 - Changed from root mean-squared error to mean-squared error
 % 2017-01-14 - Added build() to simCommands
@@ -363,7 +363,7 @@ function [errorStruct, hFig, simData] = ...
 % 2017-08-29 - Removed dend0
 % 2017-11-09 - Replaced saveas with save_all_figtypes
 % 2017-11-09 - Now uses plot_bar.m instead of errorbar
-% 2017-12-21 - Added some more output ~s to find_LTS.m 
+% 2017-12-21 - Added some more output ~s to m3ha_find_lts.m 
 % 2018-01-24 - Added isdeployed
 % 2018-03-02 - Added runNeuronCommand, moduleLoadCommands, moduleLoadCommandsHpc
 % 2018-03-02 - Added onHpcFlag as an optional argument
@@ -428,7 +428,7 @@ figNumberResiduals = 105;
 figNumberOverlapped = 106;
 
 %% Column numbers for recorded data
-%   Note: Must be consistent with ResaveSweeps.m
+%   Note: Must be consistent with m3ha_resave_sweeps.m
 TIME_COL_REC = 1;
 VOLT_COL_REC = 2;
 CURR_COL_REC = 3;

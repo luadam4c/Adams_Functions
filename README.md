@@ -32,7 +32,7 @@ There are 1 MATLAB scripts in this directory:
 - [**all_swd_sheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/all_swd_sheets.m): Returns all files ending with '_SWDs.csv' under a directory recursively
 - [**alternate_elements.m**](https://github.com/blabuva/Adams_Functions/blob/master/alternate_elements.m): Alternate elements between two vectors to create a single vector
 - [**analyze_adicht.m**](https://github.com/blabuva/Adams_Functions/blob/master/analyze_adicht.m): Read in the data from the .adicht file
-- [**analyzeCI.m**](https://github.com/blabuva/Adams_Functions/blob/master/analyzeCI.m): function [alldata] = analyzeCI(date)	
+- [**analyzeCI.m**](https://github.com/blabuva/Adams_Functions/blob/master/analyzeCI.m): Analyzes current-injection protocols (legacy, please use parse_current_family.m instead)
 - [**analyze_cobalt.m**](https://github.com/blabuva/Adams_Functions/blob/master/analyze_cobalt.m): Clear workspace
 - [**annotation_in_plot.m**](https://github.com/blabuva/Adams_Functions/blob/master/annotation_in_plot.m): A wrapper function for the annotation() function that accepts x and y values normalized to the axes
 - [**apply_iteratively.m**](https://github.com/blabuva/Adams_Functions/blob/master/apply_iteratively.m): Applies a function iteratively to an array until it becomes a non-cell array result
@@ -82,7 +82,7 @@ There are 1 MATLAB scripts in this directory:
 - [**compute_centers_from_edges.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_centers_from_edges.m): Computes bin centers from bin edges
 - [**compute_combined_data.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_combined_data.m): Average data according column numbers to average and to a grouping vector
 - [**compute_combined_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_combined_trace.m): Computes a combined trace from a set of traces
-- [**compute_conductance.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_conductance.m): Compute theoretical conductance curve for the GABA_B IPSC used by dynamic clamp
+- [**compute_conductance.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_conductance.m): Computes theoretical conductance curve for the GABA_B IPSC used by dynamic clamp
 - [**compute_default_signal2noise.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_default_signal2noise.m): Computes a default signal-to-noise ratio
 - [**compute_default_sweep_info.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_default_sweep_info.m): Computes default windows, noise, weights and errors
 - [**compute_elcurr.m**](https://github.com/blabuva/Adams_Functions/blob/master/compute_elcurr.m): Computes electrode current from conductance & voltage
@@ -155,7 +155,7 @@ There are 1 MATLAB scripts in this directory:
 - [**create_pulse_train_series.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_pulse_train_series.m): Creates a pulse train series (a theta burst stimulation by default)
 - [**create_row_labels.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_row_labels.m): Creates row labels for table(s)
 - [**create_simulation_output_filenames.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_simulation_output_filenames.m): Creates simulation output file names
-- [**create_subdir_copy_files.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_subdir_copy_files.m): Create subdirectory and copy figure files
+- [**create_subdir_copy_files.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_subdir_copy_files.m): Creates subdirectories and copies figure files
 - [**create_subplots.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_subplots.m): Creates subplots with maximal fit
 - [**create_synced_movie_trace_plot_movie.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_synced_movie_trace_plot_movie.m): Creates a plot movie showing a movie and a trace in synchrony
 - [**create_time_stamp.m**](https://github.com/blabuva/Adams_Functions/blob/master/create_time_stamp.m): Creates a time stamp (default format yyyymmddTHHMM)
@@ -200,11 +200,6 @@ There are 1 MATLAB scripts in this directory:
 - [**find_initial_slopes.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_initial_slopes.m): Find all initial slopes from a set of current pulse responses
 - [**find_in_list.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_in_list.m): Returns all indices of a candidate in a list
 - [**find_in_strings.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_in_strings.m): Returns all indices of a particular string (could be represented by substrings) in a list of strings
-- [**find_IPSC_peak.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_IPSC_peak.m): Finds time of current peak from a an inhibitory current trace (must be negative current) (legacy, please use parse_ipsc.m instead)
-- [**find_istart.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_istart.m): Finds time of current application from a series of current vectors (legacy, please use parse_ipsc.m instead)
-- [**find_istart_old.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_istart_old.m): Finds time of current application from a series of current vectors (legacy, please use parse_ipsc.m instead)
-- [**find_LTS.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_LTS.m): Find, plot and classify the most likely low-threshold spike (LTS) candidate in a voltage trace (legacy, please use parse_lts.m instead)
-- [**find_LTSs_many_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_LTSs_many_sweeps.m): Calls find_LTS.m for many voltage traces (legacy, please use parse_lts.m instead)
 - [**find_matching_files.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_matching_files.m): Finds matching files from file parts
 - [**find_nearest_multiple.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_nearest_multiple.m): Finds the nearest integer multiple of base to target and the distance to between it and target
 - [**find_nearest_odd.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_nearest_odd.m): Returns the nearest odd integer to real number(s)
@@ -239,6 +234,10 @@ There are 1 MATLAB scripts in this directory:
 - [**histproperties.m**](https://github.com/blabuva/Adams_Functions/blob/master/histproperties.m): Computes the area, edges of the histogram for given data array
 - [**hold_off.m**](https://github.com/blabuva/Adams_Functions/blob/master/hold_off.m): Holds off based on previous status
 - [**hold_on.m**](https://github.com/blabuva/Adams_Functions/blob/master/hold_on.m): Holds on and returns previous status
+- [**hpc_test_matlab_figures.m**](https://github.com/blabuva/Adams_Functions/blob/master/hpc_test_matlab_figures.m): Test whether MATLAB figures can be suppressed on a high performance computing server
+- [**hpc_test_matlab_unix_neuron.m**](https://github.com/blabuva/Adams_Functions/blob/master/hpc_test_matlab_unix_neuron.m): Tests whether MATLAB can call NEURON with the unix command
+- [**hpc_test_parallel_matlab_figures.m**](https://github.com/blabuva/Adams_Functions/blob/master/hpc_test_parallel_matlab_figures.m): Set up parallel pool and run hpc_test_matlab_figures.m on Rivanna
+- [**hpc_test_parallel_matlab_unix_neuron.m**](https://github.com/blabuva/Adams_Functions/blob/master/hpc_test_parallel_matlab_unix_neuron.m): Tests whether MATLAB can call NEURON with the unix command under parallel loop on a high performance computing server
 - [**identify_channels.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_channels.m): Assigns voltage, current or conductance to each channel (2nd dim) in abfdata
 - [**identify_CI_protocol.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_CI_protocol.m): Identifies whether a set of current vectors is a current injection protocol, and if so, what the range of the current injection is
 - [**identify_eLFP_protocol.m**](https://github.com/blabuva/Adams_Functions/blob/master/identify_eLFP_protocol.m): Identifies whether a .abf file or a set of current vectors follows an eLFP protocol
@@ -293,6 +292,8 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_compare_and_plot_across_IC.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_and_plot_across_IC.m): Plot activation/inactivation and I-V curves across initial conditions
 - [**m3ha_compare_neuronparams2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_neuronparams2.m): compare graphs across different sets of NEURON parameters
 - [**m3ha_compare_neuronparams.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_neuronparams.m): compare graphs across different sets of NEURON parameters
+- [**m3ha_compare_sse.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_sse.m): m3ha_compare_sse.m
+- [**m3ha_compare_statistics.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_statistics.m): Used to find and copy traces with new stats such as peak classifications, LTS peak times and spikes per peak
 - [**m3ha_compute_and_compare_lts_statistics.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_compare_lts_statistics.m): Computes statistics for LTS features and compares across (NOT FINISHED)
 - [**m3ha_compute_and_plot_all_IV2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_all_IV2.m): Plot I-V curves of all currents together
 - [**m3ha_compute_and_plot_all_IV.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_all_IV.m): Plot I-V curves of all currents together
@@ -312,6 +313,7 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_compute_hinf_IA.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_hinf_IA.m): Compute the steady state value of the inactivation gating variable of IA
 - [**m3ha_compute_hinf_INaP.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_hinf_INaP.m): Compute the steady state value of the inactivation gating variable of INaP
 - [**m3ha_compute_hinf_IT.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_hinf_IT.m): Compute the steady state value of the inactivation gating variable of IT
+- [**m3ha_compute_ltsburst_statistics.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_ltsburst_statistics.m): Computes LTS and burst statistics for some indices (this_ind) in ltspeaktime, spikesperpeak, bursttime & spikesperburst
 - [**m3ha_compute_m1inf_IA.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_m1inf_IA.m): Compute the steady state value of the activation gating variable of IA
 - [**m3ha_compute_m2inf_IA.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_m2inf_IA.m): Compute the steady state value of the activation gating variable of IA
 - [**m3ha_compute_minf_Ih.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_minf_Ih.m): Compute the steady state value of the activation gating variable of Ih
@@ -326,13 +328,26 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_compute_taum_Ih.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_taum_Ih.m): Compute the time constant for the activation gating variable of IT
 - [**m3ha_compute_taum_IT.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_taum_IT.m): Compute the time constant for the activation gating variable of IT
 - [**m3ha_correct_unbalanced_bridge.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_correct_unbalanced_bridge.m): Fix current pulse response traces that may have out-of-balance bridges
+- [**m3ha_CountSweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_CountSweeps.m): Counts total number of usable cells, sets and sweeps, generate filenames and record sweep properties
+- [**m3ha_dclampDataExtractor.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_dclampDataExtractor.m): dclampDataExtractor.m
+- [**m3ha_dclampdatalog_analyze_addendum.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_dclampdatalog_analyze_addendum.m): m3ha_dclampdatalog_analyze_addendum.m
+- [**m3ha_dclampdatalog_analyze.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_dclampdatalog_analyze.m): Plot bar graphs for LTS and burst statistics
+- [**m3ha_dclampPassiveFitter.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_dclampPassiveFitter.m): Estimates passive parameters for each cell from dclamp data recorded by Mark & Christine
 - [**m3ha_determine_row_conditions.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_determine_row_conditions.m): Determine the conditions for each row
 - [**m3ha_find_files_to_take_out.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_files_to_take_out.m): Returns all the file names of files to take out from .png files in 'TAKE_OUT_*' folders of a special cases directory
 - [**m3ha_find_ind_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ind_to_fit.m): Find indices of fnrow in dclampdatalog_take4.mat that will be used for fitting
+- [**m3ha_find_ipsc_peak.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ipsc_peak.m): Finds time of current peak from a an inhibitory current trace (must be negative current) (legacy, please use parse_ipsc.m instead)
+- [**m3ha_find_ipsc_start_from_conductance.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ipsc_start_from_conductance.m): Finds time of current application from a series of conductance vectors (legacy, please use parse_ipsc.m instead)
+- [**m3ha_find_ipsc_start_from_current.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ipsc_start_from_current.m): Finds time of current application from a series of current vectors (legacy, please use parse_ipsc.m instead)
+- [**m3ha_find_lts.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_lts.m): Find, plot and classify the most likely low-threshold spike (LTS) candidate in a voltage trace (legacy, please use parse_lts.m instead)
+- [**m3ha_find_lts_many_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_lts_many_sweeps.m): Calls m3ha_find_lts.m for many voltage traces (legacy, please use parse_lts.m instead)
+- [**m3ha_find_special_cases.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_special_cases.m): Looks for special cases and put traces in corresponding folder
 - [**m3ha_fminsearch3.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_fminsearch3.m): Applies the Nelder-Mead simplex algorithm to optimize parameters (modified version of fminsearch for the m3ha project)
 - [**m3ha_generate_cell_info.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_generate_cell_info.m): Generates a table of cell information from the sweep information table
+- [**m3ha_GenerateLTSInfo.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_GenerateLTSInfo.m): Generates vectors of peak features restricted to those with LTS
 - [**m3ha_histograms_across_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_histograms_across_cells.m): Plots histograms across cells for single neuron fitting
 - [**m3ha_import_raw_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_import_raw_traces.m): Imports raw traces from .mat files in the m3ha format
+- [**m3ha_initial_slopes.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_initial_slopes.m): Computes and plots histograms of slopes right after current pulse start and end
 - [**m3ha_load_sweep_info.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_load_sweep_info.m): Loads sweep info (default is homeDirectory/data_dclamp/take4/dclampdatalog_take4.csv)
 - [**m3ha_locate_homedir.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_locate_homedir.m): Locate the first home directory that exists for the GAT blockade project
 - [**m3ha_log_errors_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_log_errors_params.m): Log errors and parameter values
@@ -356,14 +371,22 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_oscillations_analyze.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_oscillations_analyze.m): Analyzes all GAT blocker oscillations data
 - [**m3ha_parse_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_parse_mat.m): Parses and loads a set of matfiles for the GAT blockade project
 - [**m3ha_pfiles2csv.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_pfiles2csv.m): Converts the old m3ha .p files to spreadsheet files
+- [**m3ha_phase_plane_analysis.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_phase_plane_analysis.m): Plots phase planes from an m3ha .mat file
+- [**m3ha_PlotCorrelations.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_PlotCorrelations.m): Plot Correlation diagrams for data that will be used for fitting
 - [**m3ha_plot_example_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_example_traces.m): 
+- [**m3ha_PlotHistogramsRefineThreshold.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_PlotHistogramsRefineThreshold.m): Plot histograms for sweep information & passive fit results that will be used for fitting
 - [**m3ha_plot_individual_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_individual_traces.m): Plots individual voltage traces
 - [**m3ha_plot_oscillations.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_oscillations.m): Shows a swarm plot for each set of neurons (each .spi file in the infolder)
 - [**m3ha_plot_simulated_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_simulated_traces.m): Plots simulated traces from NEURON output files
+- [**m3ha_plot_traces_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_traces_mat.m): Plot traces from mat file
+- [**m3ha_resave_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_resave_sweeps.m): Extracts .abf data and resave as .mat file in the m3ha format
 - [**m3ha_select_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_cells.m): Selects cells with sweeps to fit for all pharm-gIncr pairs
 - [**m3ha_select_raw_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_raw_traces.m): Select raw traces to import
 - [**m3ha_select_sweeps_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_sweeps_to_fit.m): Find file names and row indices in swpInfo that will be used for fitting
 - [**m3ha_specs_for_fitmode.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_specs_for_fitmode.m): Specifications depending on fitMode for the GAT blockade project
+- [**m3ha_test_phase_plane_analysis.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_test_phase_plane_analysis.m): m3ha_test_phase_plane_analysis.m
+- [**m3ha_test_sweep.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_test_sweep.m): m3ha_test_sweep.m
+- [**m3ha_trace_comparison.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_trace_comparison.m): m3ha_trace_comparison.m
 - [**m3ha_xolotl_create_neuron.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_xolotl_create_neuron.m): Creates a xolotl object for a 3-compartment neuron based on a parameters table
 - [**m3ha_xolotl_plot.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_xolotl_plot.m): Plots the simulation results from a xolotl object against recorded data
 - [**m3ha_xolotl_test.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_xolotl_test.m): m3ha_xolotl_test
@@ -447,7 +470,6 @@ There are 1 MATLAB scripts in this directory:
 - [**plot_traces_abf.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_abf.m): Takes an abf file and plots all traces
 - [**plot_traces_EEG.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_EEG.m): Plots EEG traces from a .abf file
 - [**plot_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces.m): Plots traces all in one place, overlapped or in parallel
-- [**plot_traces_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_mat.m): Plot traces from mat file
 - [**plot_traces_spike2_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_traces_spike2_mat.m): Plots traces from a Spike2-exported .mat file
 - [**plot_tuning_curve.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_curve.m): Plot 1-dimensional tuning curve(s), can include confidence intervals or test p values
 - [**plot_tuning_map.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_map.m): Plot a 2-dimensional tuning map

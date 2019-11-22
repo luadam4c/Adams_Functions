@@ -108,7 +108,7 @@ meanVoltageWindow = 0.5;    % width in ms for calculating mean voltage
                             %   for input resistance calculations
 
 % Parameters used for data reorganization
-%   Note: should be consistent with ResaveSweeps.m
+%   Note: should be consistent with m3ha_resave_sweeps.m
 rsims = 1;  % resampling interval in ms (1 kHz)
 mfw1 = 2.5; % width in ms for the median filter for PClamp noise (conductance traces)
 mfw2 = 10;  % width in ms for the median filter for corrupted data (current traces)
@@ -529,7 +529,7 @@ else
     % Extract actual holding potentials for each file from swpInfo
     %   Note: This was averaged over 20 ms before IPSC start 
     %           for the median filtered trace
-    %           See find_LTS.m for specifics.
+    %           See m3ha_find_lts.m for specifics.
     holdPotential = swpInfo{fileNames, 'actVhold'};
 end
 

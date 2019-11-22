@@ -1,14 +1,15 @@
-function [bl_mean, mnoise, npt, np2der, pk_prom, pk_width, pk_class, spp, ltsv, ltst, mxslv, mxslt, btime, spb, spthr, fspt, lspt, maxspi, minspi, spif, spia] = find_LTSs_many_sweeps (tvec0, vvec0, IPSC_start, ipeak_time, hrange, ltswin, plotLTSflag, outfolder, datfn, tvec2, vvec1, vvec2, vvec3)
-%% Calls find_LTS.m for many voltage traces (legacy, please use parse_lts.m instead)
-% Usage: [bl_mean, mnoise, npt, np2der, pk_prom, pk_width, pk_class, spp, ltsv, ltst, mxslv, mxslt, btime, spb, maxspi, minspi, spif, spia] = find_LTSs_many_sweeps (tvec0, vvec0, IPSC_start, ipeak_time, hrange, ltswin, plotLTSflag, outfolder, datfn, tvec2, vvec1, vvec2, vvec3)
+function [bl_mean, mnoise, npt, np2der, pk_prom, pk_width, pk_class, spp, ltsv, ltst, mxslv, mxslt, btime, spb, spthr, fspt, lspt, maxspi, minspi, spif, spia] = m3ha_find_lts_many_sweeps (tvec0, vvec0, IPSC_start, ipeak_time, hrange, ltswin, plotLTSflag, outfolder, datfn, tvec2, vvec1, vvec2, vvec3)
+%% Calls m3ha_find_lts.m for many voltage traces (legacy, please use parse_lts.m instead)
+% Usage: [bl_mean, mnoise, npt, np2der, pk_prom, pk_width, pk_class, spp, ltsv, ltst, mxslv, mxslt, btime, spb, maxspi, minspi, spif, spia] = m3ha_find_lts_many_sweeps (tvec0, vvec0, IPSC_start, ipeak_time, hrange, ltswin, plotLTSflag, outfolder, datfn, tvec2, vvec1, vvec2, vvec3)
 % Arguments:    
 %
-% Used by:
-%        /media/adamX/m3ha/data_dclamp/dclampDataExtractor.m
-%
 % Requires:
-%        cd/find_LTS.m
+%       cd/m3ha_find_lts.m
+%
+% Used by:
+%       cd/m3ha_dclampDataExtractor.m
 
+% File History:
 % 2016-11-07 Moved from dclampDataExtractor.m
 % 2017-12-21 Changed tabs to spaces
 % 2017-12-21 Added spthr, fspt, lspt
@@ -54,7 +55,7 @@ parfor swp = 1:nswps            % FOR each sweep
     mxslt(swp), mxslv(swp), btime(swp), spb(swp), ...
     spthr(swp), fspt(swp), lspt(swp), ...
     maxspi(swp), minspi(swp), spif(swp), spia(swp)] = ...
-        find_LTS (tvec0, vvec0_now, IPSC_start, ...
+        m3ha_find_lts (tvec0, vvec0_now, IPSC_start, ...
         ipeak_time(swp), hrange, ltswin, ...
         plotLTSflag, outfolder, filebase, ...
         tvec2, vvec1_now, vvec2_now, vvec3_now);

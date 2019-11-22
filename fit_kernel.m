@@ -41,8 +41,8 @@ function [model, pdfModel, peak1Model, peak2Model, thresholdModel, voidModel, sp
 %       /home/Matlab/Adams_Functions/plot_pdf.m
 %
 % Used by:
-%       /media/adamX/m3ha/data_dclamp/initial_slopes.m
-%
+%       cd/fitdist_initial_slopes.m
+
 % File History:
 % 2018-06-12 Adapted from code in fit_IEI.m
 % 2018-07-22 Improved mode determination

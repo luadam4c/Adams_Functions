@@ -44,10 +44,10 @@ function [newData, rowsToKeep] = remove_outliers (oldData, varargin)
 %
 % Used by:
 %       cd/compute_stats.m
+%       cd/fitdist_initial_slopes.m
 %       cd/plot_histogram.m
 %       cd/plot_tuning_curve.m
-%       /media/adamX/m3ha/data_dclamp/compare_sse.m
-%       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
+%       cd/m3ha_compare_sse.m
 
 % File History:
 % 2016-12-08 Created

@@ -18,62 +18,64 @@ function [varargout] = histg (x, c, varargin)
 % ORIGINAL AUTHOR  : Dimitri Shvorob, dimitri.shvorob@vanderbilt.edu, 4/10/07
 %
 % Used by:
-%		/home/Matlab/Adams_Functions/plot_and_save_histogram.m
-%		/home/Matlab/Adams_Functions/fit_gaussians_and_refine_threshold.m
-%		/media/adamX/Paula_IEIs/paula_iei4.m
-%
+%       cd/plot_and_save_histogram.m
+%       cd/fit_gaussians_and_refine_threshold.m
+%       /media/adamX/Paula_IEIs/paula_iei4.m
+
+% File History:
 % 20160930 - Added edges & group_names as options
 % 20160930 - Changed histc to histcounts
 % 20160930 - Added nbins as an option
+% TODO: Phase out this function and use plot_histogram instead
 
 if nargin < 1
-	error('Input argument "x" is undefined')
+    error('Input argument "x" is undefined')
 end
 if nargin < 2
-	error('Input argument "c" is undefined')
+    error('Input argument "c" is undefined')
 end
 x = squeeze(x);
 if ~isvector(x)
-	error('Input argument "x" must be a vector')
+    error('Input argument "x" must be a vector')
 end 
 if ~isvector(c)
-	error('Input argument "c" must be a vector')
+    error('Input argument "c" must be a vector')
 end 
 if length(x) ~= length(c)
-	error('Input arguments "x" and "c" must be vectors of common length')
+    error('Input arguments "x" and "c" must be vectors of common length')
 end 
 if nargin > 2
-	opt = varargin{1};
-	if ~isstruct(opt)
-		error('Input "opt" must be a structure')
-	end
-	if ~isset('xmin'), opt.xmin = -Inf; end
-	if ~isset('xmax'), opt.xmax = Inf;  end
-	if ~isset('pmin'), opt.pmin = 1;    end
-	if ~isset('pmax'), opt.pmax = 99;   end
-	if opt.pmin < 0 || opt.pmin > 100
-		error('Lower cut-off percentile out of [0,100] range')
-	end 
-	if opt.pmax < 0 || opt.pmax > 100
-		error('Upper cut-off percentile out of [0,100] range')
-	end 
-	if opt.pmin > opt.pmax
-		error('Lower cut-off percentile exceeds upper cut-off percentile')
-	end
-	if opt.xmin > opt.xmax
-		error('Lower x-axis limit exceeds upper x-axis limit')
-	end
-else			% I don't think this part does anything
-	opt.xmin = -Inf;
-	opt.xmax = Inf;
-	opt.pmin = 0;
-	opt.pmax = 100;
+    opt = varargin{1};
+    if ~isstruct(opt)
+        error('Input "opt" must be a structure')
+    end
+    if ~isset('xmin'), opt.xmin = -Inf; end
+    if ~isset('xmax'), opt.xmax = Inf;  end
+    if ~isset('pmin'), opt.pmin = 1;    end
+    if ~isset('pmax'), opt.pmax = 99;   end
+    if opt.pmin < 0 || opt.pmin > 100
+        error('Lower cut-off percentile out of [0,100] range')
+    end 
+    if opt.pmax < 0 || opt.pmax > 100
+        error('Upper cut-off percentile out of [0,100] range')
+    end 
+    if opt.pmin > opt.pmax
+        error('Lower cut-off percentile exceeds upper cut-off percentile')
+    end
+    if opt.xmin > opt.xmax
+        error('Lower x-axis limit exceeds upper x-axis limit')
+    end
+else            % I don't think this part does anything
+    opt.xmin = -Inf;
+    opt.xmax = Inf;
+    opt.pmin = 0;
+    opt.pmax = 100;
 end
 
 try
-	q = prctile(x, [opt.pmin opt.pmax]);
+    q = prctile(x, [opt.pmin opt.pmax]);
 catch
-	error('Invalid percentiles supplied')
+    error('Invalid percentiles supplied')
 end
 ind = isfinite(x) & isfinite(c) & x >= q(1) & x <= q(2);
 x = x(ind);
@@ -81,33 +83,33 @@ c = c(ind);
 n = length(x);
 
 if nargin > 0 && ~isset('dx') || nargin == 0
-	opt.dx = (q(2) - q(1))/10;
-	if opt.dx == 0
-		opt.dx = 1;
-	end   
+    opt.dx = (q(2) - q(1))/10;
+    if opt.dx == 0
+        opt.dx = 1;
+    end   
 end
 
 if nargin > 0 && isset('nbins')
-	[cts_all, opt.edges] = histcounts(x, opt.nbins);
+    [cts_all, opt.edges] = histcounts(x, opt.nbins);
 end
 
 xmin = opt.xmin; if ~isfinite(xmin), xmin = q(1); end
 xmax = opt.xmax; if ~isfinite(xmax), xmax = q(2); end
 e = (xmin - opt.dx):opt.dx:(xmax + opt.dx);
 if nargin > 0 && isset('edges')
-	e = opt.edges;
-	opt.dx = opt.edges(2) - opt.edges(1);
-	opt.xmin = opt.edges(1) - opt.dx;
-	opt.xmax = opt.edges(end) + opt.dx;
+    e = opt.edges;
+    opt.dx = opt.edges(2) - opt.edges(1);
+    opt.xmin = opt.edges(1) - opt.dx;
+    opt.xmax = opt.edges(end) + opt.dx;
 end
 %cts_all = histc(x, e)/n;  
-[cts_all, ~] = histcounts(x, e);			% absolute count
+[cts_all, ~] = histcounts(x, e);            % absolute count
 
 u = unique(c);
 %m = length(u);
 m = max(u);
 if nargin > 0 && isset('group_names')
-	m = max(max(u), numel(opt.group_names));
+    m = max(max(u), numel(opt.group_names));
 end
 b = length(e);
 F = zeros(m, b-1);
@@ -116,53 +118,53 @@ for i = 1:m
 %    xi = x(c == u(i));
     xi = x(c == i);
 %    F(:, i) = histc(xi, e)/n;
-    F(i, :) = histcounts(xi, e);  		% absolute count
+    F(i, :) = histcounts(xi, e);          % absolute count
 end    
-h = bar(e(1:b-1) + opt.dx/2, F', 1, 'stacked');	% bars centered at e+opt.dx/2, relative bar width is 1
+h = bar(e(1:b-1) + opt.dx/2, F', 1, 'stacked');    % bars centered at e+opt.dx/2, relative bar width is 1
 
 if nargout > 0
-	varargout(1) = {h};
+    varargout(1) = {h};
 end
 hold on;
 
 if nargin > 0 && ~isset('ymax') || nargin == 0
-%	opt.ymax = min(.01 + 1.1*max(cts_all), 1);
-	opt.ymax = 1.1*max(cts_all);
+%    opt.ymax = min(.01 + 1.1*max(cts_all), 1);
+    opt.ymax = 1.1*max(cts_all);
 end
 
 if nargin > 0 && isset('xmrk')
-	line([opt.xmrk opt.xmrk], [0 opt.ymax])
+    line([opt.xmrk opt.xmrk], [0 opt.ymax])
 end
 
 if nargin > 0 && isset('group_names')
-	% check if group_names has the correct length
-	if numel(opt.group_names) ~= m
-		error('group_names does not have the correct length!')
-	end
-	set(h, {'DisplayName'}, opt.group_names);
+    % check if group_names has the correct length
+    if numel(opt.group_names) ~= m
+        error('group_names does not have the correct length!')
+    end
+    set(h, {'DisplayName'}, opt.group_names);
 end
-%hold off					% might want to plot more things afterwards
+%hold off                    % might want to plot more things afterwards
 
 axis([opt.xmin opt.xmax 0 opt.ymax])
 
-	function [y] = isset(field)
-		if ~isfield(opt, field)
-			y = false;
-		else
-			f = opt.(field);
-			if ~strcmp(field, 'edges') && ~strcmp(field, 'group_names')
-				if ~isscalar(f)
-					error([field ' must be a scalar'])
-				end 
-				if isempty(f) || ~isfinite(f)
-					y = false;
-				else
-					y = true;
-				end 
-			else
-				y = true;
-			end
-		end  
-	end
+    function [y] = isset(field)
+        if ~isfield(opt, field)
+            y = false;
+        else
+            f = opt.(field);
+            if ~strcmp(field, 'edges') && ~strcmp(field, 'group_names')
+                if ~isscalar(f)
+                    error([field ' must be a scalar'])
+                end 
+                if isempty(f) || ~isfinite(f)
+                    y = false;
+                else
+                    y = true;
+                end 
+            else
+                y = true;
+            end
+        end  
+    end
 
 end

@@ -22,7 +22,7 @@ function fileBases = all_file_bases (varargin)
 %       cd/extract_fileparts.m
 %
 % Used by:    
-%       cd/find_LTS.m
+%       cd/m3ha_find_lts.m
 %       cd/parse_lts.m
 
 % File History:

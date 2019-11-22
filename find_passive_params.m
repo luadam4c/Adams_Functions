@@ -103,10 +103,10 @@ function [passiveParams, fitResults, fitObject, ...
 %       ~/Downloaded_Functions/subplotsqueeze.m
 %
 % Used by:
-%       ~/m3ha/data_dclamp/dclampDataExtractor.m
-%       ~/m3ha/data_dclamp/dclampPassiveFitter.m
+%       cd/m3ha_dclampDataExtractor.m
+%       cd/m3ha_dclampPassiveFitter.m
 %
-% 2016-10-27 - Adapted from find_IPSC_peak.m and dclampDataExtractor.m
+% 2016-10-27 - Adapted from m3ha_find_ipsc_peak.m and dclampDataExtractor.m
 % 2016-10-31 - Changed equation form of aFittype to 
 %                   'a*(exp(-x/b)-1)+c*(exp(-x/d)-1)' 
 %                   from 'a*exp(-x/b)+c*exp(-x/d)+e'

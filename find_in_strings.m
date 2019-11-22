@@ -90,7 +90,10 @@ function varargout = find_in_strings (cand, strList, varargin)
 %       cd/plot_swd_raster.m
 %       cd/plot_traces_spike2_mat.m
 %       cd/renamevars.m
+%       cd/m3ha_compare_statistics.m
+%       cd/m3ha_dclampPassiveFitter.m
 %       cd/m3ha_network_update_dependent_params.m
+%       cd/m3ha_PlotHistogramsRefineThreshold.m
 %       cd/validate_string.m
 %       cd/xolotl_compartment_index.m
 %       cd/ZG_extract_all_IEIs.m
@@ -102,11 +105,6 @@ function varargout = find_in_strings (cand, strList, varargin)
 %       /home/Matlab/minEASE/gui_examine_events.m
 %       /home/Matlab/EEG_gui/EEG_gui.m
 %       /home/Matlab/EEG_gui/plot_EEG_event_raster.m
-%       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
-%       /media/adamX/m3ha/data_dclamp/PlotHistogramsRefineThreshold.m
-%       /media/adamX/m3ha/data_dclamp/test_sweep.m
-%       /media/adamX/m3ha/data_dclamp/remove_E092810_0000.m
-%       /media/adamX/m3ha/data_dclamp/compare_statistics.m
 %       /media/adamX/RTCl/neuronlaunch.m
 %       /media/adamX/RTCl/m3ha_network_raster_plot.m
 %       /media/adamX/RTCl/tuning_curves.m

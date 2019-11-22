@@ -17,11 +17,11 @@ function [startSlopes, endSlopes, avgSlopes, isUnbalancedAll, indUsedForPlot] = 
 %       cd/compute_initial_slopes.m
 %
 % Used by:
-%       /media/adamX/m3ha/data_dclamp/initial_slopes.m
+%       cd/m3ha_initial_slopes.m
 %
 
 % File History:
-% 2018-09-11 Moved from /media/adamX/m3ha/data_dclamp/initial_slopes.m
+% 2018-09-11 Moved from cd/m3ha_initial_slopes.m
 % 2018-09-12 Added useCurrentFlag
 
 %% Default values for optional arguments

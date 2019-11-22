@@ -1,12 +1,13 @@
-function [tvec0, gvec0, ivec0, vvec0, tvec1, gvec1, ivec1, vvec1, tvec2, gvec2, ivec2, vvec2, tvec3, gvec3, ivec3, vvec3] = plot_traces_mat (filename, xlimits)
+function [tvec0, gvec0, ivec0, vvec0, tvec1, gvec1, ivec1, vvec1, tvec2, gvec2, ivec2, vvec2, tvec3, gvec3, ivec3, vvec3] = m3ha_plot_traces_mat (filename, xlimits)
 %% Plot traces from mat file
-% Usage: [tvec0, gvec0, ivec0, vvec0, tvec1, gvec1, ivec1, vvec1, tvec2, gvec2, ivec2, vvec2, tvec3, gvec3, ivec3, vvec3] = plot_traces_mat (filename, xlimits)
-% Arguments:	filename	- either full path or within current directory, 
-%					e.g. '/media/adamX/m3ha/data_dclamp/take4/matfiles/D091710_0007_15.mat'
-%		xlimits		- (opt) time interval to show, e.g., [1800 2000]
+% Usage: [tvec0, gvec0, ivec0, vvec0, tvec1, gvec1, ivec1, vvec1, tvec2, gvec2, ivec2, vvec2, tvec3, gvec3, ivec3, vvec3] = m3ha_plot_traces_mat (filename, xlimits)
+% Arguments:
+%       filename    - either full path or within current directory, 
+%                    e.g. '/media/adamX/m3ha/data_dclamp/take4/matfiles/D091710_0007_15.mat'
+%       xlimits        - (opt) time interval to show, e.g., [1800 2000]
 %
 % Used by:
-%		/media/adamX/m3ha/data_dclamp/test_sweep.m
+%       cd/m3ha_test_sweep.m
 
 % 20160729 - Created
 % 20160909 - Added mfmaf
@@ -16,20 +17,20 @@ function [tvec0, gvec0, ivec0, vvec0, tvec1, gvec1, ivec1, vvec1, tvec2, gvec2, 
 
 %% Check for required arguments
 if nargin < 1
-	error('No filename specified!');
+    error('No filename specified!');
 elseif ~ischar(filename)
-	error('Filename must be a char array in single quotes!');
+    error('Filename must be a char array in single quotes!');
 end
 
 %% Create full path to abf file robustly
 [filepath, filebase, ~] = fileparts(filename);
 matfilename = strcat(filebase, '.mat');
 if isempty(filepath)
-	filepath = pwd;
+    filepath = pwd;
 end
 filename_full = fullfile(filepath, matfilename);
 if exist(filename_full) ~= 2
-	error('This mat file doesn''t exist!');
+    error('This mat file doesn''t exist!');
 end
 fprintf('Full path to mat file: %s\n', filename_full);
 
@@ -56,7 +57,7 @@ vvec3 = m.d_mfmaf(:, 4);
 sims = tvec0(2) - tvec0(1);
 sims2 = tvec2(2) - tvec2(1);
 if nargin < 2
-	xlimits = [tvec2(1) tvec2(end)];
+    xlimits = [tvec2(1) tvec2(end)];
 end
 ind = round(xlimits(1)/sims):round(xlimits(2)/sims);
 ind2 = round(xlimits(1)/sims2):round(xlimits(2)/sims2);

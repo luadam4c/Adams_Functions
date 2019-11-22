@@ -1,6 +1,6 @@
-function [istart, istart_ind] = find_istart (tvec0, ivec0s, istartwin, plotflag, vvec0s, outfolder, filebase)
+function [istart, istart_ind] = m3ha_find_ipsc_start_from_current (tvec0, ivec0s, istartwin, plotflag, vvec0s, outfolder, filebase)
 %% Finds time of current application from a series of current vectors (legacy, please use parse_ipsc.m instead)
-% Usage: [istart, istart_ind] = find_istart (tvec0, ivec0s, istartwin, plotflag, vvec0s, outfolder, filebase)
+% Usage: [istart, istart_ind] = m3ha_find_ipsc_start_from_current (tvec0, ivec0s, istartwin, plotflag, vvec0s, outfolder, filebase)
 % Arguments:	
 %		tvec0		- original time vector, must be a column vector in ms
 %		ivec0s		- original current vectors
@@ -26,6 +26,7 @@ function [istart, istart_ind] = find_istart (tvec0, ivec0s, istartwin, plotflag,
 % Used by:
 %		/media/shareX/share/Adam/Sample_files_from_Katie/test_sweeps.m
 
+% File History:
 % 2016-09-22 Adapted from dclampDataExtractor.m
 % 2016-10-05 Accounted for the case that tvec0 doesn't start from 0
 % 2016-10-16 Added back close(h)
@@ -44,7 +45,7 @@ directories = {'/istart/'};
 
 %% Check arguments
 if nargin < 2
-	error('Not enough input arguments, type ''help find_istart'' for usage');
+	error('Not enough input arguments, type ''help m3ha_find_ipsc_start_from_current'' for usage');
 elseif isempty(tvec0) || isempty(ivec0s)
 	error('First two inputs cannot be empty!');
 elseif ~isnumeric(tvec0) || ~isnumeric(ivec0s)

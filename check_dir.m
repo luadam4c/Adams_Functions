@@ -30,6 +30,8 @@ function check_dir (directories, varargin)
 %       cd/create_input_file.m
 %       cd/create_new_mscript.m
 %       cd/log_arraytext.m
+%       cd/m3ha_initial_slopes.m
+%       cd/m3ha_dclampPassiveFitter.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_optimizer_4compgabab.m
@@ -40,8 +42,6 @@ function check_dir (directories, varargin)
 %       cd/plot_measures.m
 %       cd/plot_traces_abf.m
 %       cd/plot_traces_EEG.m
-%       /media/adamX/m3ha/data_dclamp/initial_slopes.m
-%       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting42.m
 %       /home/Matlab/function_template.m
 

@@ -3,11 +3,11 @@ function [fileSuffix, titleModifier] = m3ha_specs_for_fitmode (fitMode)
 % Usage: [fileSuffix, titleModifier] = m3ha_specs_for_fitmode (fitMode)
 %
 % Used by:
-%       ~/m3ha/data_dclamp/dclampdatalog_analyze.m
-%       ~/m3ha/data_dclamp/dclampPassiveFitter.m
-%       ~/m3ha/data_dclamp/PlotHistogramsRefineThreshold.m
-%       ~/m3ha/data_dclamp/PlotCorrelations.m
-%
+%       cd/m3ha_dclampdatalog_analyze.m
+%       cd/m3ha_dclampPassiveFitter.m
+%       cd/m3ha_PlotHistogramsRefineThreshold.m
+%       cd/m3ha_PlotCorrelations.m
+
 % File History:
 % 2016-10-31 Created
 % 2017-05-22 AL - Renamed function SpecsForFitmode() -> specs_for_fitmode()

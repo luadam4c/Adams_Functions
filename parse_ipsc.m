@@ -89,7 +89,7 @@ function varargout = parse_ipsc (iVecs, varargin)
 %       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:
-% 2019-11-13 Adapted from find_IPSC_peak.m and find_istart.m
+% 2019-11-13 Adapted from m3ha_find_ipsc_peak.m and m3ha_find_ipsc_start_from_current.m
 % 2019-11-14 Now uses find_closest.m
 % 2019-11-15 Now uses match_row_count.m
 % 2019-11-18 Added 'Prefix' as an optional parameter

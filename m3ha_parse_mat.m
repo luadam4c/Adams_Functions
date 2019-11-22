@@ -35,9 +35,8 @@ function [parsedParams, parsedData] = m3ha_parse_mat (matfiles, varargin)
 %       cd/print_cellstr.m
 %
 % Used by:
-%		~/m3ha/data_dclamp/dclampPassiveFitter.m
-%		~/m3ha/data_dclamp/dclampDataExtractor.m    TODO
-% 
+%       cd/m3ha_dclampDataExtractor.m
+%       cd/m3ha_dclampPassiveFitter.m
 
 % File History:
 % 2016-11-07 Moved from dclampDataExtractor.m
@@ -183,27 +182,27 @@ ivec2s = zeros(nSamplesToLoad2, nFiles);
 vvec2s = zeros(nSamplesToLoad2, nFiles);
 gvec3s = zeros(nSamplesToLoad, nFiles);
 ivec3s = zeros(nSamplesToLoad, nFiles);
-vvec3s = zeros(nSamplesToLoad, nFiles);			
-parfor iFile = 1:nFiles		% FOR each sweep
+vvec3s = zeros(nSamplesToLoad, nFiles);            
+parfor iFile = 1:nFiles        % FOR each sweep
     % Get the path to this .mat file
     thisFile = matfiles{iFile};
     
     % Load this .mat file
-	m = matfile(thisFile);
+    m = matfile(thisFile);
 
-	% Extract vectors
-	gvec0s(:, iFile) = m.d_orig(indToLoad, 2);
-	ivec0s(:, iFile) = m.d_orig(indToLoad, 3);
-	vvec0s(:, iFile) = m.d_orig(indToLoad, 4);
-	gvec1s(:, iFile) = m.d_mf(indToLoad, 2);
-	ivec1s(:, iFile) = m.d_mf(indToLoad, 3);
-	vvec1s(:, iFile) = m.d_mf(indToLoad, 4);
-	gvec2s(:, iFile) = m.d_mfrs(indToLoad2, 2);
-	ivec2s(:, iFile) = m.d_mfrs(indToLoad2, 3);
-	vvec2s(:, iFile) = m.d_mfrs(indToLoad2, 4);
+    % Extract vectors
+    gvec0s(:, iFile) = m.d_orig(indToLoad, 2);
+    ivec0s(:, iFile) = m.d_orig(indToLoad, 3);
+    vvec0s(:, iFile) = m.d_orig(indToLoad, 4);
+    gvec1s(:, iFile) = m.d_mf(indToLoad, 2);
+    ivec1s(:, iFile) = m.d_mf(indToLoad, 3);
+    vvec1s(:, iFile) = m.d_mf(indToLoad, 4);
+    gvec2s(:, iFile) = m.d_mfrs(indToLoad2, 2);
+    ivec2s(:, iFile) = m.d_mfrs(indToLoad2, 3);
+    vvec2s(:, iFile) = m.d_mfrs(indToLoad2, 4);
     gvec3s(:, iFile) = m.d_mfmaf(indToLoad, 2);
     ivec3s(:, iFile) = m.d_mfmaf(indToLoad, 3);
-	vvec3s(:, iFile) = m.d_mfmaf(indToLoad, 4);
+    vvec3s(:, iFile) = m.d_mfmaf(indToLoad, 4);
 end
 
 %% Store outputs

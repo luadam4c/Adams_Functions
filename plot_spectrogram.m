@@ -44,7 +44,11 @@ function handles = plot_spectrogram (spectData, timeInstants, freqHz, varargin)
 
 % File History:
 % 2019-10-15 Moved from plot_traces_spike2_mat.m
-% 
+% TODO: Allow option to plot the following:
+%           (1) FFT amplitude
+%           (2) FFT power
+%           (3) power spectral density (make this default)
+%           (4) decibel
 
 %% Hard-coded parameters
 spectColorMapFile = '/media/adamX/Settings_Matlab/spectrogram_colormap.mat';
@@ -105,7 +109,7 @@ end
 % Set the colormap
 colormap(ax, colorMap);
 
-% Plot the spectrogram
+% Plot the spectrogram (magnitude of FFT)
 im = imagesc(ax, timeInstants, freqHz, abs(spectData), otherArguments{:});
 
 % Flip the Y Axis so lower frequencies are at the bottom

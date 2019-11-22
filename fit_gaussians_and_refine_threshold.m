@@ -9,11 +9,13 @@ function [modelBest, numComponents, muBest, stdevBest, proportionBest, minAIC, n
 %           threshold plot must have figname rmse_*R/F*_row_Fit_threshold
 % 
 % Requires:    
-%        /home/Matlab/Adams_Functions/histg.m
-% Used by:    
-%        /media/adamX/m3ha/data_dclamp/PlotHistogramsRefineThreshold.m
-%        /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
+%       cd/histg.m
 %
+% Used by:    
+%       cd/fitdist_initial_slopes.m
+%       cd/m3ha_PlotHistogramsRefineThreshold.m
+
+% File History:
 % 2016-08-03 - Created
 % 2016-09-15 - Added fitmode
 % 2016-09-30 - Added peakclass & peakclassLabels

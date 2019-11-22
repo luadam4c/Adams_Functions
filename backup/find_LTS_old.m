@@ -1,6 +1,6 @@
-function [actVhold, maxnoise, peaktime, peak2ndder, peakprom, peakwidth, peakclass, spikesperpeak, ltspeaktime, ltspeakval, maxslopetime, maxslopeval, bursttime, spikesperburst, spikethreshold, firstspiketime, lastspiketime, maxspikeamp, minspikeamp, spikefrequency, spikeadaptation, LTScouldbemissed] = find_LTS (tvec0, vvec0, istart, ipeakt, hrangeORmaxnoise, ltswin, plotflag, outfolder, filebase, tvec2, vvec1, vvec2, vvec3)
+function [actVhold, maxnoise, peaktime, peak2ndder, peakprom, peakwidth, peakclass, spikesperpeak, ltspeaktime, ltspeakval, maxslopetime, maxslopeval, bursttime, spikesperburst, spikethreshold, firstspiketime, lastspiketime, maxspikeamp, minspikeamp, spikefrequency, spikeadaptation, LTScouldbemissed] = m3ha_find_lts (tvec0, vvec0, istart, ipeakt, hrangeORmaxnoise, ltswin, plotflag, outfolder, filebase, tvec2, vvec1, vvec2, vvec3)
 %% Find, plot and classify the most likely low-threshold spike (LTS) candidate in a voltage trace
-% Usage: [actVhold, maxnoise, peaktime, peak2ndder, peakprom, peakwidth, peakclass, spikesperpeak, ltspeaktime, ltspeakval, maxslopetime, maxslopeval, bursttime, spikesperburst, spikethreshold, firstspiketime, lastspiketime, maxspikeamp, minspikeamp, spikefrequency, spikeadaptation, LTScouldbemissed] = find_LTS (tvec0, vvec0, istart, ipeakt, hrangeORmaxnoise, ltswin, plotflag, outfolder, filebase, tvec2, vvec1, vvec2, vvec3)
+% Usage: [actVhold, maxnoise, peaktime, peak2ndder, peakprom, peakwidth, peakclass, spikesperpeak, ltspeaktime, ltspeakval, maxslopetime, maxslopeval, bursttime, spikesperburst, spikethreshold, firstspiketime, lastspiketime, maxspikeamp, minspikeamp, spikefrequency, spikeadaptation, LTScouldbemissed] = m3ha_find_lts (tvec0, vvec0, istart, ipeakt, hrangeORmaxnoise, ltswin, plotflag, outfolder, filebase, tvec2, vvec1, vvec2, vvec3)
 % Arguments:    
 %       tvec0       - original time vector, must be a column vector in ms
 %       vvec0       - original voltage vector, must be a column vector in mV
@@ -48,7 +48,7 @@ function [actVhold, maxnoise, peaktime, peak2ndder, peakprom, peakwidth, peakcla
 %        cd/find_in_strings.m
 %
 % Used by:
-%       cd/find_LTSs_many_sweeps.m
+%       cd/m3ha_find_lts_many_sweeps.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       /media/adamX/m3ha/data_dclamp/test_sweep.m
 %       /media/shareX/share/Adam/Sample_files_from_Katie/test_sweeps.m
@@ -152,7 +152,7 @@ traces_to_override_strs = {
 
 %% Check arguments
 if nargin < 5
-    error('Not enough input arguments, type ''help find_LTS'' for usage');
+    error('Not enough input arguments, type ''help m3ha_find_lts'' for usage');
 elseif isempty(tvec0) || isempty(vvec0) || isempty(istart) || isempty(ipeakt) || isempty(hrangeORmaxnoise) 
     error('First five inputs cannot be empty!');
 elseif ~isnumeric(tvec0) || ~isnumeric(vvec0) || ~isnumeric(istart) || ~isnumeric(ipeakt) || ~isnumeric(hrangeORmaxnoise) 

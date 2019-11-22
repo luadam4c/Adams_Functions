@@ -44,7 +44,7 @@ function [peakTimeMs, idxPeak, peakAmplitude, peakDelay] = parse_ipsc (tvec0, iv
 %       /media/adamX/m3ha/data_dclamp/dclampDataExtractor.m
 %
 %
-% 2016-10-05 Adapted from find_istart.m and dclampDataExtractor.m
+% 2016-10-05 Adapted from m3ha_find_ipsc_start_from_current.m and dclampDataExtractor.m
 % 2016-10-13 Can now read more than one current vector at a time
 % 2016-10-16 Added back close(h)
 % 2016-10-27 Replace each directory with directories{k}

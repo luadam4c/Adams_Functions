@@ -32,11 +32,11 @@ function dlmwrite_with_header (filename, M, varargin)
 %
 % Used by:    
 %       cd/m3ha_autocorrelogram.m
+%       cd/m3ha_initial_slopes.m
 %       cd/spike2Mat2Text.m
 %       /home/Matlab/minEASE/minEASE.m
 %       /home/Matlab/minEASE/combine_eventInfo.m
 %       /home/Matlab/minEASE/filter_minEASE_output.m
-%       /media/adamX/m3ha/data_dclamp/initial_slopes.m
 %
 % File History:
 % 2017-07-24 Moved from examine_gapfree_events

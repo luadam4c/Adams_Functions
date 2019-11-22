@@ -128,7 +128,7 @@ function varargout = parse_lts (vVec0s, varargin)
 %       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:
-% 2019-01-13 Adapted from find_LTS.m
+% 2019-01-13 Adapted from m3ha_find_lts.m
 % 2019-02-19 Made siMs an optional argument
 % 2019-11-17 Added 'SaveMatFlag' as an optional parameter
 % 2019-11-17 Added 'SaveSheetFlag' as an optional parameter

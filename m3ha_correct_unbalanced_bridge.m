@@ -9,15 +9,15 @@ function vvecsNew = m3ha_correct_unbalanced_bridge(fileNames, vvecsOld, ivecsOld
 %       ivecsOld    - Corresponding current vectors
 %                   must be a numeric vector
 %       initialSlopesFile - path to initial slopes file
-%                   must be a string scalar or a character vector
+%                           must be a string scalar or a character vector
 %
 % Requires:
 %       cd/correct_unbalanced_bridge.m
 %       cd/find_in_strings.m
 %
 % Used by:    
-%       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
-%       cd/m3ha_import_raw_traces.m TODO
+%       cd/m3ha_dclampPassiveFitter.m
+%       TODO: cd/m3ha_import_raw_traces.m 
 
 % File History:
 % 2018-10-15 Adapted from cd/m3ha_import_raw_traces.m

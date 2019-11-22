@@ -12,11 +12,11 @@ function indtofit = m3ha_find_ind_to_fit (fnrow, cellID, pharm, gincr, ...
 %                   must be a directory
 %                   default == //media/adamX/m3ha/data_dclamp/take4/
 %
-% Used by:    
-%       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
-%       /media/adamX/m3ha/data_dclamp/PlotHistogramsRefineThreshold.m
-%       /media/adamX/m3ha/data_dclamp/PlotCorrelations.m
-%       /media/adamX/m3ha/data_dclamp/dclampdatalog_analyze.m
+% Used by:
+%       cd/m3ha_dclampPassiveFitter.m
+%       cd/m3ha_PlotHistogramsRefineThreshold.m
+%       cd/m3ha_PlotCorrelations.m
+%       cd/m3ha_dclampdatalog_analyze.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting4.m 
 %           and later versions
 

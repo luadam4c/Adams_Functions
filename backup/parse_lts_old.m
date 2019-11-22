@@ -104,7 +104,7 @@ function varargout = parse_lts (vVec0s, siMs, varargin)
 % Used by:
 
 % File History:
-% 2019-01-13 Adapted from find_LTS.m
+% 2019-01-13 Adapted from m3ha_find_lts.m
 % 2019-02-19 Made siMs an optional argument
 
 %% Default values for optional arguments

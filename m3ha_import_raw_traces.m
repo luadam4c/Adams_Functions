@@ -154,6 +154,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 % 2019-10-15 Fixed conversion of current pulse amplitude from swpInfo
 % 2019-11-13 Added siMs to swpInfo
 % 2019-11-14 Added 'ImportMode' as an optional parameter
+% TODO: Use m3ha_correct_unbalanced_bridge.m to not correct for all sweeps
 
 %% Hard-coded constants
 NS_PER_US = 1000;
@@ -182,7 +183,7 @@ cprWinOrig = [0, 360];              % window in which the current pulse response
 ipscrWinOrig = [0, 8000];           % window in which the IPSC response would lie (ms), original
 
 % Parameters used for data reorganization
-%   Note: should be consistent with ResaveSweeps.m
+%   Note: should be consistent with m3ha_resave_sweeps.m
 rsims = 1;  % resampling interval in ms (1 kHz)
 mfw1 = 2.5; % width in ms for the median filter for PClamp noise (conductance traces)
 mfw2 = 10;  % width in ms for the median filter for corrupted data (current traces)
@@ -743,7 +744,7 @@ else
     % Extract actual holding potentials for each file from swpInfoAll
     %   Note: This was averaged over 20 ms before IPSC start 
     %           for the median filtered trace
-    %           See find_LTS.m for specifics.
+    %           See m3ha_find_lts.m for specifics.
     holdPotential = swpInfoAll{fileNames, 'actVhold'};
 end
 

@@ -1,6 +1,6 @@
-function [ipeak_time, ipeak_ind, ipeak_amp, ipeak_delay] = find_IPSC_peak (tvec0, ivec0s, istart, ipeakwin, plotflag, outfolder, filebase)
+function [ipeak_time, ipeak_ind, ipeak_amp, ipeak_delay] = m3ha_find_ipsc_peak (tvec0, ivec0s, istart, ipeakwin, plotflag, outfolder, filebase)
 %% Finds time of current peak from a an inhibitory current trace (must be negative current) (legacy, please use parse_ipsc.m instead)
-% Usage: [ipeak_time, ipeak_ind, ipeak_amp, ipeak_delay] = find_IPSC_peak (tvec0, ivec0s, istart, ipeakwin, plotflag, outfolder, filebase)
+% Usage: [ipeak_time, ipeak_ind, ipeak_amp, ipeak_delay] = m3ha_find_ipsc_peak (tvec0, ivec0s, istart, ipeakwin, plotflag, outfolder, filebase)
 % Outputs:	
 %		ipeak_time	- time of ipeak (tvec0(ipeak_ind)) in ms (a row vector)
 % 		ipeak_ind	- index of ipeak relative to ivec0s (a row vector)
@@ -31,11 +31,10 @@ function [ipeak_time, ipeak_ind, ipeak_amp, ipeak_delay] = find_IPSC_peak (tvec0
 %		cd/check_subdir.m
 %
 % Used by:
-%       cd/m3ha_neuron_run_and_analyze.m
-%		/media/adamX/m3ha/data_dclamp/dclampDataExtractor.m
-%
-%
-% 2016-10-05 Adapted from find_istart.m and dclampDataExtractor.m
+%		cd/m3ha_dclampDataExtractor.m
+
+% File History:
+% 2016-10-05 Adapted from m3ha_find_ipsc_start_from_current.m and dclampDataExtractor.m
 % 2016-10-13 Can now read more than one current vector at a time
 % 2016-10-16 Added back close(h)
 % 2016-10-27 Replace each directory with directories{k}
@@ -49,7 +48,7 @@ directories = {'/IPSCpeak/'};
 
 %% Check arguments
 if nargin < 2
-	error('Not enough input arguments, type ''help find_IPSC_peak'' for usage');
+	error('Not enough input arguments, type ''help m3ha_find_ipsc_peak'' for usage');
 elseif isempty(tvec0) || isempty(ivec0s)
 	error('First two inputs cannot be empty!');
 elseif ~isnumeric(tvec0) || ~isnumeric(ivec0s)

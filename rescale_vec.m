@@ -8,7 +8,7 @@ function [vec1_rescaled, scaling_factor] = rescale_vec (vec1, vec2, precision)
 %
 % Used by:	
 %		/media/adamX/m3ha/data_dclamp/trace_comparison.m
-%		/media/adamX/m3ha/data_dclamp/ResaveSweeps.m
+%		/media/adamX/m3ha/data_dclamp/m3ha_resave_sweeps.m
 %
 % 2016-11-07 Created
 

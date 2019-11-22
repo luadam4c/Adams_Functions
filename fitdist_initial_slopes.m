@@ -37,15 +37,15 @@ function [bestModels, pdfModels, peak1s, peak2s, peak3s, ...
 %
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/fit_kernel.m
-%       /home/Matlab/Adams_Functions/fit_gaussians_and_refine_threshold.m
-%       /home/Matlab/Adams_Functions/remove_outliers.m
+%       cd/fit_kernel.m
+%       cd/fit_gaussians_and_refine_threshold.m
+%       cd/remove_outliers.m
 %
 % Used by:
-%       /media/adamX/m3ha/data_dclamp/initial_slopes.m
+%       cd/m3ha_initial_slopes.m
 
 % File History:
-% 2018-09-11 Moved from /media/adamX/m3ha/data_dclamp/initial_slopes.m
+% 2018-09-11 Moved from cd/m3ha_initial_slopes.m
 
 %% Hard-coded parameters (must be consistent with dataDclampExtractor.m)
 validMethods = {'kernelVoid', 'threeStdMainComponent'};

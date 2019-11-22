@@ -26,9 +26,9 @@ function check_subdir (parentDirectory, subDirectories, varargin)
 %       cd/create_subdir_copy_files.m
 %       cd/create_input_file.m
 %       cd/find_passive_params.m
-%       cd/find_istart.m
-%       cd/find_IPSC_peak.m
-%       cd/find_LTS.m
+%       cd/m3ha_find_ipsc_start_from_current.m
+%       cd/m3ha_find_ipsc_peak.m
+%       cd/m3ha_find_lts.m
 %       cd/parse_ipsc.m
 %       cd/parse_lts.m
 %       cd/parse_multiunit.m

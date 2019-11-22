@@ -15,10 +15,10 @@ function homeDirectory = m3ha_locate_homedir
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/parse_lts.m
-%       ~/m3ha/data_dclamp/dclampDataExtractor.m
-%       ~/m3ha/data_dclamp/dclampdatalog_analyze.m
-%       ~/m3ha/data_dclamp/dclampPassiveFitter.m
-%       ~/m3ha/data_dclamp/PlotHistogramsRefineThreshold.m
+%       cd/m3ha_dclampDataExtractor.m
+%       cd/m3ha_dclampdatalog_analyze.m
+%       cd/m3ha_dclampPassiveFitter.m
+%       cd/m3ha_PlotHistogramsRefineThreshold.m
 %       ~/m3ha/optimizer4gabab/singleneuronfitting42.m and beyond
 
 % File History:
