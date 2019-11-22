@@ -73,6 +73,7 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 % 2019-11-16 Added 'FeatureWeights' as an optional argument
 % 2019-11-16 Added 'LtsExistError' as an optional argument
 % 2019-11-18 Fixed bug with noLTSInBoth 
+% 2019-11-21 Fixed bug for the computation of normalizedDifference 
 
 %% Hard-coded parameters
 % Consistent with singleneuronfittin58.m
@@ -95,8 +96,7 @@ initLtsErrorDefault = [];   % no initial error values by default
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 2
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
@@ -309,7 +309,7 @@ hasFeatureInBoth = ~any(noFeature, 2);
 
 % Compute the normalized difference between simulated and 
 %   recorded feature values
-normalizedDifference = diff(allValues, 1, 2) / abs(uncertainty);
+normalizedDifference = diff(allValues, 1, 2) ./ abs(uncertainty);
 
 % The feature error is the normalized difference in this case
 featureError(hasFeatureInBoth) = normalizedDifference(hasFeatureInBoth);

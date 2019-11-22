@@ -837,14 +837,20 @@ drawnow
 function update_subplot(x, y, xLabel, yLabel, markerstyle, color, ctIterations, multipleRunsFlag)
 % Update subplot
 
+% Set an appropriate upper y limit value
+if y > 0
+    yLimitsMax = y * 1.1;
+else
+    yLimitsMax = 1;
+end
+
 % Plot new marker
 plot(x, y, 'Marker', markerstyle, 'Color', color, 'MarkerFaceColor', 'auto');
 
 % Adjust y limits
 if ctIterations == 0
     hold on;
-    initymax = y * 1.1;        % initial ymax
-    ylim([0 initymax]);
+    ylim([0, yLimitsMax]);
     if ~isempty(xLabel)
         xlabel(xLabel); 
     end
@@ -854,12 +860,12 @@ if ctIterations == 0
 else
     ylimits = get(gca, 'YLim');
     if ylimits(2) < y        % rescale axes if error is greater than axis limit
-        ylim([0, y * 1.1]);
+        ylim([0, yLimitsMax]);
     end
 end
 if multipleRunsFlag            % if simplex method is run multiple times
     if ylimits(2) > y * 10        % rescale axes if error is much smaller than initial error
-        ylim([0, y * 1.1]);
+        ylim([0, yLimitsMax]);
     end
 end
 

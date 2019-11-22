@@ -187,8 +187,7 @@ plotStatisticsFlagDefault = false;
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 2
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme
@@ -436,10 +435,8 @@ weightsForErrors = [1; lts2SweepErrorRatio];
 
 % Total error (dimensionless) is the weighted average of sweep error 
 %   and LTS error, weighted by lts2SweepErrorRatio
-totalError = compute_weighted_average(errorsToAverage, ...
-                                    'IgnoreNan', true, ...
-                                    'Weights', weightsForErrors, ...
-                                    'AverageMethod', 'linear');
+totalError = compute_weighted_average(errorsToAverage, 'IgnoreNan', true, ...
+                        'Weights', weightsForErrors, 'AverageMethod', 'linear');
 
 %% Store in output errors structure
 errors.totalError = totalError;
