@@ -23,15 +23,15 @@ specificSlicesToAnalyze = {};
 
 parseIndividualFlag = true;
 saveMatFlag = false; % true;
-plotRawFlag = true; %false; % true;
+plotRawFlag = false; % true;
 plotSpikeDetectionFlag = false; % true;
 plotRasterFlag = false; % true;
 plotSpikeDensityFlag = false; % true;
 plotSpikeHistogramFlag = false; % true;
 plotAutoCorrFlag = false; % true;
 plotMeasuresFlag = false; % true;
-plotContourFlag = false; % true;
-plotCombinedFlag = false; % true;
+plotContourFlag = true;
+plotCombinedFlag = true;
 
 parsePopulationAllFlag = false; %true;
 parsePopulationRestrictedFlag = false; %true;

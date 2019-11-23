@@ -117,7 +117,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   default == 'suppress' if nTraces == 1 
 %                               'northeast' if nTraces is 2~9
 %                               'eastoutside' if nTraces is 10+
-%                   - 'PlotOnly': whether to plot the curve only
+%                   - 'PlotOnly': whether to plot the curves only
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'PlotPhaseBoundaries': whether to plot phase boundaries
@@ -577,12 +577,6 @@ if plotOnly
     legendLocation = 'suppress';
 end
 
-% Count number of entries
-nEntries = length(pValues);
-
-% Count number of columns
-nCols = size(readout, 2);
-
 % Decide whether to plot phase-related stuff
 [plotPhaseBoundaries, plotPhaseAverages, ...
     plotIndSelected, plotAverageWindows] = ...
@@ -599,6 +593,12 @@ nCols = size(readout, 2);
                 isempty(averageWindows), ...
             plotPhaseAverages && isempty(phaseAverages), ...
             plotIndSelected && isempty(indSelected));
+
+% Count number of entries
+nEntries = length(pValues);
+
+% Count number of columns
+nCols = size(readout, 2);
 
 % Deal with phase vectors
 if ~isempty(phaseVectors)

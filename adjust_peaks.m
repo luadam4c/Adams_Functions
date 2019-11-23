@@ -49,7 +49,7 @@ rightBoundsDefault = [];            % default right boundaries (samples)
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 4
-    error('Not enough input arguments, type ''help adjust_peaks'' for usage');
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme

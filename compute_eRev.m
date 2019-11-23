@@ -27,8 +27,7 @@ R = 8.31441;        % Universal gas constant [J/K mol], used by NEURON
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 5
-    error(['Not enough input arguments, ', ...
-            'type ''help compute_Erev'' for usage']);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Make sure all arrays are the same length

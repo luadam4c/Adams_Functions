@@ -89,7 +89,7 @@ addpath(fullfile(functionsdirectory, '/Adams_Functions/'));        % for isfigty
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error('Not enough input arguments, type ''help m3ha_network_tuning_curves'' for usage');
+    error(create_error_for_nargin(mfilename));
 end
 
 %% Check to see if infolders is a cell array; if not, make it a cell array

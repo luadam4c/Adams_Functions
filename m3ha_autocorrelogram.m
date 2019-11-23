@@ -77,7 +77,7 @@ addpath(fullfile(functionsdirectory, '/Adams_Functions/'));
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error('An infolder is required, type ''help show_RTnet'' for usage');
+    error(create_error_for_nargin(mfilename));
 end
 
 % Add required inputs to an Input Parser

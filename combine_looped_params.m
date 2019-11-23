@@ -20,7 +20,7 @@ loopedparamsfile = 'loopedparams.mat';
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 3
-	error('Not enough input arguments, type ''help combine_looped_params'' for usage');
+    error(create_error_for_nargin(mfilename));
 end
 
 % TODO: Input Parser scheme

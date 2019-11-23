@@ -1,6 +1,6 @@
 function [initParamTables, initParamFiles, otherParams] = ...
                 m3ha_neuron_create_initial_params (varargin)
-%% Creates initial NEURON parameters for each cell
+%% Creates initial NEURON parameters for each cell recorded in dynamic clamp experiments
 % Usage: [initParamTables, initParamFiles, otherParams] = ...
 %               m3ha_neuron_create_initial_params (varargin)
 % Explanation:

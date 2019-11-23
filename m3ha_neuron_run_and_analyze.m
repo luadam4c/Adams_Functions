@@ -234,19 +234,19 @@ function [errorStruct, hFig, simData] = ...
 %                   - 'BaseNoiseCpr': baseline noise (mV)
 %                                       for current pulse response
 %                   must be a numeric vector
-%                   default == 1 mV
+%                   default == set in compute_default_sweep_info.m
 %                   - 'BaseNoiseIpscr': baseline noise (mV)
 %                                       for IPSC response
 %                   must be a numeric vector
-%                   default == 1 mV
+%                   default == set in compute_default_sweep_info.m
 %                   - 'SweepWeightsCpr': sweep weights 
 %                                       for current pulse response
 %                   must be a numeric vector
-%                   default == 1
+%                   default == set in compute_default_sweep_info.m
 %                   - 'SweepWeightsIpscr': sweep weights
 %                                       for IPSC response
 %                   must be a numeric vector
-%                   default == 1
+%                   default == set in compute_default_sweep_info.m
 %                   - 'LtsFeatureWeights': LTS feature weights for averaging
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == set in compute_lts_errors.m
@@ -539,8 +539,7 @@ lts2SweepErrorRatioDefault = [];% set later
 %% Deal with arguments
 % Check number of required arguments
 if nargin < 1
-    error(['Not enough input arguments, ', ...
-            'type ''help %s'' for usage'], mfilename);
+    error(create_error_for_nargin(mfilename));
 end
 
 % Set up Input Parser Scheme

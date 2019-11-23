@@ -367,7 +367,10 @@ varsNeeded = {'sliceBase', 'vVecsSl', 'siMsSl', 'iVecsSl', ...
                 'phaseBoundaries', 'phaseStrs'};
 channelTypes = {'voltage', 'current'};
 channelUnits = {'uV', 'arb'};
-            
+
+% TODO: Make optional argument
+figTypes = {'epsc2', 'png'};
+
 %% Default values for optional arguments
 siMsDefault = 0.1;                      % 0.1 ms by default
 plotAllFlagDefault = false;
@@ -1054,7 +1057,7 @@ if plotContourFlag
                         'MaxNYTicks', 10);
 
     % Save the figure as an eps file
-    save_all_figtypes(figs(5), figBaseContour, {'epsc2', 'png'});
+    save_all_figtypes(figs(5), figBaseContour, figTypes);
 end
 
 %% Plot time series of measures

@@ -85,6 +85,9 @@ function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 %                   must be a scalartext 
 %                       or a cell array of strings or character vectors
 %                   default == {'Phase #1', 'Phase #2', ...}
+%                   - 'PlotOnly': whether to plot the bars only
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'PlotPhaseBoundaries': whether to plot phase boundaries TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true if PhaseVectors provided, false otherwise
@@ -94,25 +97,28 @@ function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 %                   - 'PlotIndSelected': whether to plot selected indices TODO
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true if PhaseVectors provided, false otherwise
+%                   - 'PlotAverageWindows': whether to plot average windows TODO
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true if PhaseVectors provided, false otherwise
 %                   - 'PBoundaries': parameter boundary values TODO
 %                       Note: each row is a set of boundaries
 %                   must be a numeric array
 %                   default == []
 %                   - 'PBoundaryType': type of parameter boundaries TODO
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'verticalLines'     - vertical dotted lines
-%                       'horizontalBars'    - horizontal bars
-%                       'verticalShades'    - vertical shades
-%                   default == 'verticalLines'
+%                       'horizontalLines'   - horizontal dotted lines
+%                       'verticalBars'      - vertical bars
+%                       'horizontalShades'  - horizontal shades
+%                   default == 'horizontalLines'
 %                   - 'RBoundaries': readout boundary values TODO
 %                       Note: each row is a set of boundaries
 %                   must be a numeric array
 %                   default == []
 %                   - 'RBoundaryType': type of readout boundaries TODO
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'horizontalLines'   - horizontal dotted lines
-%                       'verticalBars'      - vertical bars
-%                       'horizontalShades'  - horizontal shades
+%                       'verticalLines'     - vertical dotted lines
+%                       'horizontalBars'    - horizontal bars
+%                       'verticalShades'    - vertical shades
 %                   default == 'verticalLines'
 %                   - 'AverageWindows': windows to average values TODO
 %                       Note: If a matrix cell array, 
@@ -202,11 +208,14 @@ function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 % 2019-05-11 Added 'ReverseOrder' as an optional argument
 % 2019-05-11 Added 'FigTitle' as an optional argument
 % 2019-06-10 Added 'PBoundaries' and 'RBoundaries' as optional arguments
+% 2019-11-23 Added 'PhaseVectors' and other dependent optional arguments
 % TODO: Add 'BarColors' as an optional argument
 % TODO: Change usage in all functions using this
 
 %% Hard-coded parameters
 validBarDirections = {'vertical', 'horizontal'};
+validPBoundaryTypes = {'horizontalLines', 'verticalBars', 'horizontalShades'};
+validRBoundaryTypes = {'verticalLines', 'horizontalBars', 'verticalShades'};
 
 %% Default values for optional arguments
 lowDefault = [];
@@ -219,6 +228,7 @@ cIBarWidthDefault = [];
 cILineWidthDefault = 2;             % default line width for CIs
 cIColorDefault = '';
 pValuesDefault = [];
+phaseVectorsDefault = {};           % no phase vectors by default
 pLimitsDefault = [];
 readoutLimitsDefault = [];
 pTicksDefault = [];
@@ -226,9 +236,25 @@ pTickLabelsDefault = {};
 pTickAngleDefault = [];
 pLabelDefault = 'Parameter';
 readoutLabelDefault = 'Readout';
+phaseLabelsDefault = '';            % set later
+plotOnlyDefault = false;            % setup default labels by default
+plotPhaseBoundariesDefault = [];    % set later
+plotPhaseAveragesDefault = [];      % set later
+plotIndSelectedDefault = [];        % set later
+plotAverageWindowsDefault = [];     % set later
 pBoundariesDefault = [];
+pBoundaryTypeDefault = 'horizontalLines';
 rBoundariesDefault = [];
+rBoundaryTypeDefault = 'verticalLines';
+averageWindowsDefault = {};         % set later
+phaseAveragesDefault = [];          % set later
 indSelectedDefault = [];
+nLastOfPhaseDefault = 10;           % select from last 10 values by default
+nToAverageDefault = 5;              % select 5 values by default
+selectionMethodDefault = 'maxRange2Mean';   
+                                    % select using maxRange2Mean by default
+maxRange2MeanDefault = 40;          % range is not more than 40% of mean by default
+figTitleDefault = '';               % set later
 figTitleDefault = '';               % set later
 figHandleDefault = [];              % no existing figure by default
 figNumberDefault = [];              % no figure number by default
@@ -274,6 +300,10 @@ addParameter(iP, 'CILineWidth', cILineWidthDefault, ...
 addParameter(iP, 'CIColor', cIColorDefault);
 addParameter(iP, 'PValues', pValuesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'PhaseVectors', phaseVectorsDefault, ...
+    @(x) assert(isnum(x) || iscellnumericvector(x), ...
+                ['PhaseVectors must be a numeric array ', ...
+                    'or a cell array of numeric vectors!']));
 addParameter(iP, 'PLimits', pLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
@@ -290,12 +320,40 @@ addParameter(iP, 'PLabel', pLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ReadoutLabel', readoutLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'PhaseLabels', phaseLabelsDefault, ...
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'PlotOnly', plotOnlyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotPhaseBoundaries', plotPhaseBoundariesDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotPhaseAverages', plotPhaseAveragesDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotIndSelected', plotIndSelectedDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotAverageWindows', plotAverageWindowsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PBoundaries', pBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'PBoundaryType', pBoundaryTypeDefault, ...
+    @(x) any(validatestring(x, validPBoundaryTypes)));
 addParameter(iP, 'RBoundaries', rBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'IndSelected', indSelectedDefault, ...
+addParameter(iP, 'RBoundaryType', rBoundaryTypeDefault, ...
+    @(x) any(validatestring(x, validRBoundaryTypes)));
+addParameter(iP, 'AverageWindows', averageWindowsDefault, ...
+    @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
+addParameter(iP, 'PhaseAverages', phaseAveragesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'IndSelected', indSelectedDefault, ...
+    @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
+addParameter(iP, 'NLastOfPhase', nLastOfPhaseDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'NToAverage', nToAverageDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'SelectionMethod', selectionMethodDefault, ...
+    @(x) any(validatestring(x, validSelectionMethods)));
+addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigHandle', figHandleDefault);
@@ -319,6 +377,7 @@ cIBarWidth = iP.Results.CIBarWidth;
 cILineWidth = iP.Results.CILineWidth;
 cIColor = iP.Results.CIColor;
 pValues = iP.Results.PValues;
+phaseVectors = iP.Results.PhaseVectors;
 pLimits = iP.Results.PLimits;
 readoutLimits = iP.Results.ReadoutLimits;
 pTicks = iP.Results.PTicks;
@@ -326,9 +385,24 @@ pTickLabels = iP.Results.PTickLabels;
 pTickAngle = iP.Results.PTickAngle;
 pLabel = iP.Results.PLabel;
 readoutLabel = iP.Results.ReadoutLabel;
+phaseLabels = iP.Results.PhaseLabels;
+plotOnly = iP.Results.PlotOnly;
+plotPhaseBoundaries = iP.Results.PlotPhaseBoundaries;
+plotPhaseAverages = iP.Results.PlotPhaseAverages;
+plotIndSelected = iP.Results.PlotIndSelected;
+plotAverageWindows = iP.Results.PlotAverageWindows;
 pBoundaries = iP.Results.PBoundaries;
+pBoundaryType = validatestring(iP.Results.PBoundaryType, validPBoundaryTypes);
 rBoundaries = iP.Results.RBoundaries;
+rBoundaryType = validatestring(iP.Results.RBoundaryType, validRBoundaryTypes);
+averageWindows = iP.Results.AverageWindows;
+phaseAverages = iP.Results.PhaseAverages;
 indSelected = iP.Results.IndSelected;
+nLastOfPhase = iP.Results.NLastOfPhase;
+nToAverage = iP.Results.NToAverage;
+selectionMethod = validatestring(iP.Results.SelectionMethod, ...
+                                    validSelectionMethods);
+maxRange2Mean = iP.Results.MaxRange2Mean;
 figTitle = iP.Results.FigTitle;
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
@@ -349,6 +423,32 @@ if ~isempty(pTicks) && ~isempty(pTickLabels) && ...
 end
 
 %% Preparation
+% If plotting curve only, change some defaults
+if plotOnly
+    pLabel = 'suppress';
+    readoutLabel = 'suppress';
+    figTitle = 'suppress';
+    pLimits = 'suppress';
+    readoutLimits = 'suppress';
+end
+
+% Decide whether to plot phase-related stuff
+[plotPhaseBoundaries, plotPhaseAverages, ...
+    plotIndSelected, plotAverageWindows] = ...
+    argfun(@(x) set_default_flag(x, ~isempty(phaseVectors)), ...
+            plotPhaseBoundaries, plotPhaseAverages, ...
+            plotIndSelected, plotAverageWindows);
+
+% Decide on compute flags
+[computePhaseBoundaries, computeAverageWindows, ...
+        computePhaseAverages, computeIndSelected] = ...
+    argfun(@(x) set_default_flag([], x), ...
+            plotPhaseBoundaries && isempty(pBoundaries), ...
+            (plotAverageWindows || plotPhaseAverages) && ...
+                isempty(averageWindows), ...
+            plotPhaseAverages && isempty(phaseAverages), ...
+            plotIndSelected && isempty(indSelected));
+
 % Either force all vectors as row vectors
 %   or make the vectors consistent
 %   Note: This will cause each value of a vector to be plotted as separately
