@@ -35,8 +35,8 @@ function [parsedParams, parsedData] = m3ha_parse_mat (matfiles, varargin)
 %       cd/print_cellstr.m
 %
 % Used by:
-%       cd/m3ha_dclampDataExtractor.m
-%       cd/m3ha_dclampPassiveFitter.m
+%       cd/m3ha_parse_dclamp_data.m
+%       cd/m3ha_estimate_passive_params.m
 
 % File History:
 % 2016-11-07 Moved from dclampDataExtractor.m

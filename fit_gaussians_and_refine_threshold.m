@@ -13,7 +13,7 @@ function [modelBest, numComponents, muBest, stdevBest, proportionBest, minAIC, n
 %
 % Used by:    
 %       cd/fitdist_initial_slopes.m
-%       cd/m3ha_PlotHistogramsRefineThreshold.m
+%       cd/m3ha_plot_histograms_refine_threshold.m
 
 % File History:
 % 2016-08-03 - Created

@@ -16,7 +16,7 @@ function vvecsNew = m3ha_correct_unbalanced_bridge(fileNames, vvecsOld, ivecsOld
 %       cd/find_in_strings.m
 %
 % Used by:    
-%       cd/m3ha_dclampPassiveFitter.m
+%       cd/m3ha_estimate_passive_params.m
 %       TODO: cd/m3ha_import_raw_traces.m 
 
 % File History:

@@ -31,7 +31,7 @@ function [ipeak_time, ipeak_ind, ipeak_amp, ipeak_delay] = m3ha_find_ipsc_peak (
 %		cd/check_subdir.m
 %
 % Used by:
-%		cd/m3ha_dclampDataExtractor.m
+%		cd/m3ha_parse_dclamp_data.m
 
 % File History:
 % 2016-10-05 Adapted from m3ha_find_ipsc_start_from_current.m and dclampDataExtractor.m

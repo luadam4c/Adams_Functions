@@ -1,6 +1,6 @@
-function cellInfo = m3ha_generate_cell_info (varargin)
-%% Generates a table of cell information from the sweep information table
-% Usage: cellInfo = m3ha_generate_cell_info (varargin)
+function cellInfo = m3ha_create_cell_info_table (varargin)
+%% Creates a table of cell information from the sweep information table
+% Usage: cellInfo = m3ha_create_cell_info_table (varargin)
 % Explanation:
 %       TODO
 % Example(s):

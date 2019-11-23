@@ -1,6 +1,6 @@
-function m3ha_PlotHistogramsRefineThreshold (fitmode, infolder, outfolder, groupmode)
+function m3ha_plot_histograms_refine_threshold (fitmode, infolder, outfolder, groupmode)
 %% Plot histograms for sweep information & passive fit results that will be used for fitting
-% Usage: m3ha_PlotHistogramsRefineThreshold (fitmode, infolder, outfolder, groupmode)
+% Usage: m3ha_plot_histograms_refine_threshold (fitmode, infolder, outfolder, groupmode)
 % Arguments: 
 %       fitmode     - 0 - all data
 %                   - 1 - all of g incr = 100%, 200%, 400%
@@ -31,7 +31,7 @@ function m3ha_PlotHistogramsRefineThreshold (fitmode, infolder, outfolder, group
 %       cd/structs2vecs.m
 %
 % Used by:
-%       cd/m3ha_dclampDataExtractor.m
+%       cd/m3ha_parse_dclamp_data.m
 %
 
 % File History:
@@ -99,9 +99,9 @@ VholdBC_labels = {'-62.5 mV', '-67.5 mV', '-72.5 mV'};    % for legend
 
 %% Check arguments
 if nargin < 1
-    error('A fitmode is required, type ''help m3ha_PlotHistogramsRefineThreshold'' for usage');
+    error('A fitmode is required, type ''help m3ha_plot_histograms_refine_threshold'' for usage');
 elseif isempty(fitmode) || ~isnumeric(fitmode) || ~(fitmode == 0 || fitmode == 1 || fitmode == 2)
-    error('fitmode out of range!, type ''help m3ha_PlotHistogramsRefineThreshold'' for usage');
+    error('fitmode out of range!, type ''help m3ha_plot_histograms_refine_threshold'' for usage');
 elseif nargin >= 2 && ~isdir(infolder)
     error('infolder must be a directory!');
 elseif nargin >= 3 && ~isdir(outfolder)

@@ -1,11 +1,11 @@
 function [all_stats, mean_stats, std_stats, ct_stats, err_stats, ...
             highbar_stats, lowbar_stats] = ...
-                ltsburst_statistics (this_ind, cellID, ltspeaktime, ...
+                m3ha_compute_ltsburst_statistics (this_ind, cellID, ltspeaktime, ...
                                     spikesperpeak, bursttime, spikesperburst)
 %% Computes LTS and burst statistics for some indices (this_ind) in ltspeaktime, spikesperpeak, bursttime & spikesperburst
 %
 % Used by:    
-%        cd/m3ha_dclampdatalog_analyze.m
+%        cd/m3ha_compute_and_plot_statistics.m
 
 % File History:
 % 2016-08-19 Created

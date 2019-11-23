@@ -8,7 +8,7 @@ function [vectors, vector_names] = structs2vecs(structs)
 %	structs		- a cell array (either column or row) of structures that contain an equal number of fields
 %
 % Used by:	
-%		cd/m3ha_PlotHistogramsRefineThreshold.m
+%		cd/m3ha_plot_histograms_refine_threshold.m
 %		cd/m3ha_optimizer_4compgabab.m
 %
 % 2016-12-05 Moved from PlotHistogramsRefineThreshold.m, originally Brian Truong's code

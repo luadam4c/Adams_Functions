@@ -1,5 +1,5 @@
-% dclampDataExtractor.m
-%% DCLAMPDATAEXTRACTOR: Extracts all dynamic clamp data recorded by Christine
+% m3ha_parse_dclamp_data.m
+%% Parses all dynamic clamp data recorded by Christine
 % Explanation:
 %       Extract all dclamp data recorded by Christine between 
 %           2010-09-17 to 2010-10-13 (11 folders' worth)
@@ -7,20 +7,19 @@
 %       Also save sweep properties in a .csv file 
 %
 % Requires:
-%       cd/m3ha_CountSweeps.m
-%       cd/m3ha_find_ipsc_start_from_conductance.m
-%       cd/find_passive_params.m
+%       cd/m3ha_append_lts_properties.m
 %       cd/m3ha_find_ipsc_peak.m
+%       cd/m3ha_find_ipsc_start_from_conductance.m
 %       cd/m3ha_find_lts_many_sweeps.m
-%       cd/m3ha_ResaveSweeps.m
-%       cd/m3ha_GenerateLTSInfo.m
-%       cd/m3ha_PlotHistogramsRefineThreshold.m
-%       cd/m3ha_PlotCorrelations.m
-%       cd/m3ha_dclampDataExtractor.m
-%       cd/m3ha_dclampPassiveFitter.m
 %       cd/m3ha_locate_homedir.m
 %       cd/m3ha_parse_mat.m
-%
+%       cd/m3ha_parse_sweep_settings.m
+%       cd/find_passive_params.m
+%       cd/m3ha_resave_sweeps.m
+%       cd/m3ha_plot_correlations.m
+%       cd/m3ha_plot_histograms_refine_threshold.m
+%       cd/m3ha_compute_and_plot_statistics.m
+%       cd/m3ha_estimate_passive_params.m
 
 % File History:
 % 2016-07-28 Modified from Christine's code
@@ -56,11 +55,11 @@
 % 2016-10-27 BT - Added 'maxspikeamp', 'minspikeamp', 'spikefrequency', 'spikeadaptation'
 % 2016-10-27 Combined all the Rinput detection to find_passive_params.m under /home/Matlab/Adams_Functions
 % 2016-10-31 Renamed narrowpeaktime & narrowpeak2ndder as peaktime & peak2ndder
-% 2016-10-31 Added GenerateLTSInfo.m, which generates vectors of peak features restricted to those with LTS
+% 2016-10-31 Added m3ha_append_lts_properties.m, which generates vectors of peak features restricted to those with LTS
 % 2016-11-01 Added compute flags
-% 2016-11-01 Added plotpassive2flag (for dclampPassiveFitter.m)
+% 2016-11-01 Added plotpassive2flag (for m3ha_estimate_passive_params.m)
 % 2016-11-07 Added cpa_ap, g_sc, i_sc
-% 2016-11-07 Reorganized code to make more efficient; created CountSweeps.m & ResaveSweeps.m
+% 2016-11-07 Reorganized code to make more efficient; created m3ha_parse_sweep_settings.m & m3ha_resave_sweeps.m
 % 2016-11-30 maxsets was changed from 347 to 346; maxswps was changed from 7455 to 7430
 % 2016-12-13 Reversed sign of LJP
 % 2017-01-16 Changed current pulse response to last just 150 ms (cprwin is changed from [95, 500] to [95, 260])
@@ -69,7 +68,7 @@
 % 2017-12-21 Change tabs to spaces
 % 2017-12-21 Added spikethreshold, firstspiketime and lastspiketime
 % 2018-08-06 Made /tmp/data/m3ha/ the first priority home directory
-% 2018-08-06 Updated usage of CountSweeps.m
+% 2018-08-06 Updated usage of m3ha_parse_sweep_settings.m
 % 2018-10-04 Now uses m3ha_parse_mat.m
 
 %% Flags
@@ -235,7 +234,7 @@ elseif isfolder('/scratch/al4ng/Matlab/')
 else
     error('Valid functionsdirectory does not exist!');
 end
-addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));% for abf2load.m for ResaveSweeps.m
+addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));% for abf2load.m for m3ha_resave_sweeps.m
 addpath(fullfile(functionsdirectory, '/Adams_Functions/'));     % for m3ha_find_ipsc_peak.m, m3ha_find_lts.m, etc.
 
 %% Locate home directory
@@ -257,13 +256,13 @@ if preallocateflag == 1
         cellnames, abffullfn, nswps_cpv, nswps_used, ...
         fnrow, cellidrow, prow, vrow, grow, swpnrow, ...
         gabab_amp, gabab_Trise, gabab_TfallFast, gabab_TfallSlow, gabab_w, actIhold] = ...
-        CountSweeps (infolder, ljp, debugflag, debug_files, preallocateflag, maxcells, maxsets, maxswps);
+        m3ha_parse_sweep_settings (infolder, ljp, debugflag, debug_files, preallocateflag, maxcells, maxsets, maxswps);
 else
     [numcells, numsets, numswps, ...
         cellnames, abffullfn, nswps_cpv, nswps_used, ...
         fnrow, cellidrow, prow, vrow, grow, swpnrow, ...
         gabab_amp, gabab_Trise, gabab_TfallFast, gabab_TfallSlow, gabab_w, actIhold] = ...
-        CountSweeps (infolder, ljp, debugflag, debug_files, preallocateflag);
+        m3ha_parse_sweep_settings (infolder, ljp, debugflag, debug_files, preallocateflag);
 end
 
 %% Extract .abf data and resave as .mat file
@@ -296,7 +295,7 @@ if resavedataflag == 1
 
         % Extract .abf data and resave as .mat file
         fprintf(['RESAVING .abf into .mat files for the set ', datfn, ' ...\n']);
-        [cpa_ap{sn}, g_sc{sn}, i_sc{sn}] = ResaveSweeps(abffullfn{sn}, nswps, ljp, ...
+        [cpa_ap{sn}, g_sc{sn}, i_sc{sn}] = m3ha_resave_sweeps(abffullfn{sn}, nswps, ljp, ...
             IPSC_start_time, gabab_amp_now, gabab_Trise_now, ...
             gabab_TfallFast_now, gabab_TfallSlow_now, gabab_w_now, cpmid, outfolder);
 
@@ -559,7 +558,7 @@ if saveswpinfoflag == 1
 end
 
 %% Generate vectors of peak features restricted to those with LTS
-GenerateLTSInfo(swpdatafn);
+m3ha_append_lts_properties(swpdatafn);
 
 %% Refine spike threshold
 noburstind = find(isnan(bursttime));        % indices of sweeps with no bursts
@@ -570,40 +569,40 @@ fnrow(noburstind(find(ltspeakval(noburstind) >= -48.1)))
 
 %% Extract passive parameters for each cell, Vhold set
 if plotpassive2flag == 1
-    dclampPassiveFitter(0, outfolder, outfolder);
-    dclampPassiveFitter(1, outfolder, outfolder);
+    m3ha_estimate_passive_params(0, outfolder, outfolder);
+    m3ha_estimate_passive_params(1, outfolder, outfolder);
     if ~debugflag
-        dclampPassiveFitter(2, outfolder, outfolder);
+        m3ha_estimate_passive_params(2, outfolder, outfolder);
     end
 end
 
 %% Plot histograms and refine threshold to use to define an LTS
 if plothistogramsflag == 1
     fprintf('Plotting histograms and refining threshold ...\n');
-    PlotHistogramsRefineThreshold(0, outfolder, outfolder);
-    PlotHistogramsRefineThreshold(1, outfolder, outfolder);
+    m3ha_plot_histograms_refine_threshold(0, outfolder, outfolder);
+    m3ha_plot_histograms_refine_threshold(1, outfolder, outfolder);
     if ~debugflag
-        PlotHistogramsRefineThreshold(2, outfolder, outfolder);
+        m3ha_plot_histograms_refine_threshold(2, outfolder, outfolder);
     end
 end
 
 %% Plot correlation diagrams
 if plotcorrelationsflag == 1
     fprintf('Plotting correlation diagrams ...\n');
-    PlotCorrelations(0, outfolder, outfolder);
-    PlotCorrelations(1, outfolder, outfolder);
+    m3ha_plot_correlations(0, outfolder, outfolder);
+    m3ha_plot_correlations(1, outfolder, outfolder);
     if ~debugflag
-        PlotCorrelations(2, outfolder, outfolder);
+        m3ha_plot_correlations(2, outfolder, outfolder);
     end
 end
 
 %% Plot bar graphs
 if plotbargraphsflag == 1
     fprintf('Plotting bar graphs ...\n');
-    m3ha_dclampDataExtractor(0, outfolder, outfolder);
-    m3ha_dclampDataExtractor(1, outfolder, outfolder);
+    m3ha_compute_and_plot_statistics(0, outfolder, outfolder);
+    m3ha_compute_and_plot_statistics(1, outfolder, outfolder);
     if ~debugflag
-        m3ha_dclampDataExtractor(2, outfolder, outfolder);
+        m3ha_compute_and_plot_statistics(2, outfolder, outfolder);
     end
 end
 

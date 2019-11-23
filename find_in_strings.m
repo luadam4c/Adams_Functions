@@ -91,9 +91,9 @@ function varargout = find_in_strings (cand, strList, varargin)
 %       cd/plot_traces_spike2_mat.m
 %       cd/renamevars.m
 %       cd/m3ha_compare_statistics.m
-%       cd/m3ha_dclampPassiveFitter.m
+%       cd/m3ha_estimate_passive_params.m
 %       cd/m3ha_network_update_dependent_params.m
-%       cd/m3ha_PlotHistogramsRefineThreshold.m
+%       cd/m3ha_plot_histograms_refine_threshold.m
 %       cd/validate_string.m
 %       cd/xolotl_compartment_index.m
 %       cd/ZG_extract_all_IEIs.m

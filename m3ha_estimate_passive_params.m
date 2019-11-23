@@ -1,11 +1,11 @@
 function [passiveParams, fitResults, fitObject, goodnessOfFit, ...
             algorithmInfo, decision, allResults] = ...
-                    m3ha_dclampPassiveFitter (fitMode, ...
+                    m3ha_estimate_passive_params (fitMode, ...
                         infolder, outFolder, plotpassiveflag, groupmode)
 %% Estimates passive parameters for each cell from dclamp data recorded by Mark & Christine
 % Usage: [passiveParams, fitResults, fitObject, goodnessOfFit, ...
 %           algorithmInfo, decision, allResults] = ...
-%                   m3ha_dclampPassiveFitter (fitMode, ...
+%                   m3ha_estimate_passive_params (fitMode, ...
 %                       infolder, outFolder, plotpassiveflag, groupmode)
 % Side effects:
 %       Saves results in .mat files
@@ -41,7 +41,7 @@ function [passiveParams, fitResults, fitObject, goodnessOfFit, ...
 %       cd/m3ha_specs_for_fitmode.m
 %
 % Used by:
-%       cd/m3ha_dclampDataExtractor.m
+%       cd/m3ha_parse_dclamp_data.m
 
 % File History:
 % 2016-11-01 Adapted from PlotHistogramsRefineThreshold.m
@@ -179,9 +179,9 @@ end
 % Check arguments
 % TODO
 if nargin < 1
-    error('A fitMode is required, type ''help m3ha_dclampPassiveFitter'' for usage');
+    error('A fitMode is required, type ''help m3ha_estimate_passive_params'' for usage');
 elseif isempty(fitMode) || ~isnumeric(fitMode) || ~(fitMode == 0 || fitMode == 1 || fitMode == 2)
-    error('fitMode out of range!, type ''help m3ha_dclampPassiveFitter'' for usage');
+    error('fitMode out of range!, type ''help m3ha_estimate_passive_params'' for usage');
 elseif nargin >= 2 && ~isdir(infolder)
     error('infolder must be a directory!');
 elseif nargin >= 3 && ~isdir(outFolder)

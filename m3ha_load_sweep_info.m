@@ -19,7 +19,7 @@ function swpInfo = m3ha_load_sweep_info(varargin)
 %       cd/m3ha_locate_homedir.m
 %
 % Used by:
-%       cd/m3ha_generate_cell_info.m
+%       cd/m3ha_create_cell_info_table.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_organize_sweep_indices.m
 %       cd/m3ha_select_cells.m

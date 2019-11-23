@@ -103,8 +103,8 @@ function [passiveParams, fitResults, fitObject, ...
 %       ~/Downloaded_Functions/subplotsqueeze.m
 %
 % Used by:
-%       cd/m3ha_dclampDataExtractor.m
-%       cd/m3ha_dclampPassiveFitter.m
+%       cd/m3ha_parse_dclamp_data.m
+%       cd/m3ha_estimate_passive_params.m
 %
 % 2016-10-27 - Adapted from m3ha_find_ipsc_peak.m and dclampDataExtractor.m
 % 2016-10-31 - Changed equation form of aFittype to 

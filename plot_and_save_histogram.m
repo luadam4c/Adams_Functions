@@ -5,7 +5,7 @@ function plot_and_save_histogram (h, vec, veclabel, countlabel, outfolder, filen
 % Requires:    
 %       cd/histg.m
 % Used by:    
-%       cd/m3ha_PlotHistogramsRefineThreshold.m
+%       cd/m3ha_plot_histograms_refine_threshold.m
 % 
 % 2016-??-?? Created
 % 2016-10-14 Moved to /home/Matlab/Adams_Functions/

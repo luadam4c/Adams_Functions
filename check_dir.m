@@ -31,7 +31,7 @@ function check_dir (directories, varargin)
 %       cd/create_new_mscript.m
 %       cd/log_arraytext.m
 %       cd/m3ha_initial_slopes.m
-%       cd/m3ha_dclampPassiveFitter.m
+%       cd/m3ha_estimate_passive_params.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_optimizer_4compgabab.m

@@ -5,7 +5,7 @@ function plot_and_save_boxplot (h, vec, veclabel, outfolder, filename, title_mod
 % Requires:	
 %
 % Used by:	
-%		cd/m3ha_PlotHistogramsRefineThreshold.m
+%		cd/m3ha_plot_histograms_refine_threshold.m
 % 
 % 2016-12-08 Adapted from plot_and_save_histogram.m
 % TODO FOR UNDERGRAD: Convert to plot_boxplot.m 

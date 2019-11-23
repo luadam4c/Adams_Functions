@@ -1,4 +1,4 @@
-% m3ha_dclampdatalog_analyze_addendum.m
+% m3ha_compute_and_plot_statistics_addendum.m
 %% Analyzes additional aspects of dclampdatalog_take4.mat
 %
 % 2016-11-10 Created

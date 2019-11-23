@@ -1,6 +1,6 @@
-function m3ha_dclampdatalog_analyze (fitmode, infolder, outfolder)
+function m3ha_compute_and_plot_statistics (fitmode, infolder, outfolder)
 %% Plot bar graphs for LTS and burst statistics
-% Usage: m3ha_dclampdatalog_analyze (fitmode, infolder, outfolder)
+% Usage: m3ha_compute_and_plot_statistics (fitmode, infolder, outfolder)
 % Arguments: 
 %        fitmode        - 0 - all data
 %                - 1 - all of g incr = 100%, 200%, 400%
@@ -23,7 +23,7 @@ function m3ha_dclampdatalog_analyze (fitmode, infolder, outfolder)
 %       cd/m3ha_locate_homedir.m
 %
 % Used by:    
-%       cd/m3ha_dclampDataExtractor.m
+%       cd/m3ha_parse_dclamp_data.m
 %
 
 % File History:
@@ -75,7 +75,7 @@ ss = 1:1:5;                 % Possible within condition sweep #s
 
 %% Check arguments
 if nargin < 1
-    error('A fitmode is required, type ''help m3ha_dclampdatalog_analyze'' for usage');
+    error('A fitmode is required, type ''help m3ha_compute_and_plot_statistics'' for usage');
 elseif isempty(fitmode) || ~isnumeric(fitmode) || ~(fitmode == 0 || fitmode == 1 || fitmode == 2)
     error('fitmode out of range!');
 elseif nargin >= 2 && ~isdir(infolder)
@@ -220,7 +220,7 @@ for vi = 1:length(vv)
             end
             % Find/calculate LTS/burst statistics for each group
             [all_stats, mean_stats, std_stats, ct_stats, err_stats, highbar_stats, lowbar_stats] = ...
-                ltsburst_statistics(vgp_ind, cellID, ltspeaktime, ...
+                m3ha_compute_ltsburst_statistics(vgp_ind, cellID, ltspeaktime, ...
                             spikesperpeak, bursttime, spikesperburst);
             for bi = 1:length(statstitle)
                 all_stats_vgp{bi}{hi, gi, vi} = all_stats{bi};
@@ -286,7 +286,7 @@ for gi = 1:length(gg)
         end
         % Find/calculate LTS/burst statistics for each group
         [all_stats, mean_stats, std_stats, ct_stats, err_stats, highbar_stats, lowbar_stats] = ...
-            ltsburst_statistics(gp_ind, cellID, ltspeaktime, spikesperpeak, bursttime, spikesperburst);
+            m3ha_compute_ltsburst_statistics(gp_ind, cellID, ltspeaktime, spikesperpeak, bursttime, spikesperburst);
         for bi = 1:length(statstitle)
             all_stats_gp{bi}{hi, gi} = all_stats{bi};
             mean_stats_gp{bi}(hi, gi) = mean_stats(bi);
@@ -435,7 +435,7 @@ end
 
 % Save variables as .mat file
 fprintf('Saving variables ... \n');
-matFile = fullfile(outfolder_bar, ['ltsburst_statistics', suffix, '.mat']);
+matFile = fullfile(outfolder_bar, ['m3ha_compute_ltsburst_statistics', suffix, '.mat']);
 save(matFile, 'statstitle', 'statsfilename', 'scpgv_ind', ...
     'all_stats_vgp', 'mean_stats_vgp', 'std_stats_vgp', ...
     'ct_stats_vgp', 'err_stats_vgp', 'highbar_stats_vgp', 'lowbar_stats_vgp', ...
@@ -779,7 +779,7 @@ if fitmode == 1 || fitmode == 2
                 vgp_indtofit = intersect(vgp_ind, indtofit);
             if fitmode == 1 || fitmode == 2
                 [all_stats, mean_stats, std_stats, ct_stats, err_stats, highbar_stats, lowbar_stats] = ...
-                    ltsburst_statistics(vgp_indtofit, cellID, ...
+                    m3ha_compute_ltsburst_statistics(vgp_indtofit, cellID, ...
                         ltspeaktime, spikesperpeak, bursttime, spikesperburst);
             else
             end
@@ -790,7 +790,7 @@ if fitmode == 1 || fitmode == 2
 
 if fitmode == 0
 elseif fitmode == 1 || fitmode == 2
-    save(fullfile(outfolder_bar, 'ltsburst_statistics_tofit.mat'), 'statstitle', 'statsfilename', 'scpgv_indtofit', ...
+    save(fullfile(outfolder_bar, 'm3ha_compute_ltsburst_statistics_tofit.mat'), 'statstitle', 'statsfilename', 'scpgv_indtofit', ...
         'all_stats_vgp', 'mean_stats_vgp', 'std_stats_vgp', ...
         'ct_stats_vgp', 'err_stats_vgp', 'highbar_stats_vgp', 'lowbar_stats_vgp', ...
         'all_stats_gp', 'mean_stats_gp', 'std_stats_gp', ...
@@ -803,7 +803,7 @@ end
         if fitmode == 0
         elseif fitmode == 1 || fitmode == 2
             [all_stats, mean_stats, std_stats, ct_stats, err_stats, highbar_stats, lowbar_stats] = ...
-                ltsburst_statistics(gp_indtofit, cellID, ltspeaktime, spikesperpeak, bursttime, spikesperburst);
+                m3ha_compute_ltsburst_statistics(gp_indtofit, cellID, ltspeaktime, spikesperpeak, bursttime, spikesperburst);
         end
 
 %}

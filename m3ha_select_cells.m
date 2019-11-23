@@ -43,7 +43,7 @@ function [cellIdsSelected, cellInfo, swpInfo] = m3ha_select_cells (varargin)
 % Requires:
 %       cd/isemptycell.m
 %       cd/ispositiveintegervector.m
-%       cd/m3ha_generate_cell_info.m
+%       cd/m3ha_create_cell_info_table.m
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_organize_sweep_indices.m
 %       cd/m3ha_select_sweeps_to_fit.m
@@ -114,7 +114,7 @@ end
 % Generate a table of cell names from swpInfo if not provided
 %   TODO? and sweep indices organized by pharm-gIncr-vHold-sweepNumber
 if isempty(cellInfo)
-    cellInfo = m3ha_generate_cell_info('SwpInfo', swpInfo);
+    cellInfo = m3ha_create_cell_info_table('SwpInfo', swpInfo);
 end
 
 %% Select cell IDs to fit

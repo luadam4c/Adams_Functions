@@ -4,7 +4,7 @@ function [IPSC_offset_old, IPSC_offset_old2, IPSC_ind_old, IPSC_ind_old2] = m3ha
 % Arguments:	
 %
 % Used by:
-%		cd/m3ha_dclampDataExtractor.m
+%		cd/m3ha_parse_dclamp_data.m
 
 % File History:
 % 2016-11-07 Moved from dclampDataExtractor.m

@@ -20,9 +20,9 @@ function [cpa_ap, g_sc, i_sc] = m3ha_resave_sweeps (abffullfn, nswps_supposed, l
 %		cd/rescale_vec.m
 %
 % Used by:
-%		/media/adamX/m3ha/data_dclamp/dclampDataExtractor.m
+%		cd/m3ha_parse_dclamp_data.m
 %
-% 2016-11-07 Moved from dclampDataExtractor.m
+% 2016-11-07 Moved from m3ha_parse_dclamp_data.m
 % 2016-12-13 Reversed sign of LJP
 
 %% Parameters used for data reorganization

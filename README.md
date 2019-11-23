@@ -286,6 +286,7 @@ There are 1 MATLAB scripts in this directory:
 - [**locate_functionsdir.m**](https://github.com/blabuva/Adams_Functions/blob/master/locate_functionsdir.m): Locate the first shared functions directory that exists
 - [**log_arraytext.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_arraytext.m): Create a text file that logs the array information
 - [**log_matfile.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_matfile.m): Print variables in a MATfile to a comma-separated-value file
+- [**m3ha_append_lts_properties.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_append_lts_properties.m): Generates vectors of peak features restricted to those with LTS
 - [**m3ha_autocorrelogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_autocorrelogram.m): Shows an m3ha_autocorrelogram for each set of neurons (each .spi file in the infolder)
 - [**m3ha_compare_and_plot_across_conditions.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_and_plot_across_conditions.m): Plot activation/inactivation and I-V curves across conditions
 - [**m3ha_compare_and_plot_across_IC2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_and_plot_across_IC2.m): Plot activation/inactivation and I-V curves across initial conditions
@@ -309,6 +310,8 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_compute_and_plot_INaP.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_INaP.m): Plot activation/inactivation curves for the T-type calcium current
 - [**m3ha_compute_and_plot_IT2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_IT2.m): Plot activation/inactivation curves for the T-type calcium current
 - [**m3ha_compute_and_plot_IT.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_IT.m): Plot activation/inactivation curves for the T-type calcium current
+- [**m3ha_compute_and_plot_statistics_addendum.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_statistics_addendum.m): m3ha_compute_and_plot_statistics_addendum.m
+- [**m3ha_compute_and_plot_statistics.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_and_plot_statistics.m): Plot bar graphs for LTS and burst statistics
 - [**m3ha_compute_fixed_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_fixed_params.m): Compute fixed parameters that are used in the model
 - [**m3ha_compute_hinf_IA.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_hinf_IA.m): Compute the steady state value of the inactivation gating variable of IA
 - [**m3ha_compute_hinf_INaP.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_hinf_INaP.m): Compute the steady state value of the inactivation gating variable of INaP
@@ -328,12 +331,9 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_compute_taum_Ih.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_taum_Ih.m): Compute the time constant for the activation gating variable of IT
 - [**m3ha_compute_taum_IT.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_taum_IT.m): Compute the time constant for the activation gating variable of IT
 - [**m3ha_correct_unbalanced_bridge.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_correct_unbalanced_bridge.m): Fix current pulse response traces that may have out-of-balance bridges
-- [**m3ha_CountSweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_CountSweeps.m): Counts total number of usable cells, sets and sweeps, generate filenames and record sweep properties
-- [**m3ha_dclampDataExtractor.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_dclampDataExtractor.m): dclampDataExtractor.m
-- [**m3ha_dclampdatalog_analyze_addendum.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_dclampdatalog_analyze_addendum.m): m3ha_dclampdatalog_analyze_addendum.m
-- [**m3ha_dclampdatalog_analyze.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_dclampdatalog_analyze.m): Plot bar graphs for LTS and burst statistics
-- [**m3ha_dclampPassiveFitter.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_dclampPassiveFitter.m): Estimates passive parameters for each cell from dclamp data recorded by Mark & Christine
+- [**m3ha_create_cell_info_table.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_create_cell_info_table.m): Creates a table of cell information from the sweep information table
 - [**m3ha_determine_row_conditions.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_determine_row_conditions.m): Determine the conditions for each row
+- [**m3ha_estimate_passive_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_estimate_passive_params.m): Estimates passive parameters for each cell from dclamp data recorded by Mark & Christine
 - [**m3ha_find_files_to_take_out.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_files_to_take_out.m): Returns all the file names of files to take out from .png files in 'TAKE_OUT_*' folders of a special cases directory
 - [**m3ha_find_ind_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ind_to_fit.m): Find indices of fnrow in dclampdatalog_take4.mat that will be used for fitting
 - [**m3ha_find_ipsc_peak.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ipsc_peak.m): Finds time of current peak from a an inhibitory current trace (must be negative current) (legacy, please use parse_ipsc.m instead)
@@ -343,8 +343,6 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_find_lts_many_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_lts_many_sweeps.m): Calls m3ha_find_lts.m for many voltage traces (legacy, please use parse_lts.m instead)
 - [**m3ha_find_special_cases.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_special_cases.m): Looks for special cases and put traces in corresponding folder
 - [**m3ha_fminsearch3.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_fminsearch3.m): Applies the Nelder-Mead simplex algorithm to optimize parameters (modified version of fminsearch for the m3ha project)
-- [**m3ha_generate_cell_info.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_generate_cell_info.m): Generates a table of cell information from the sweep information table
-- [**m3ha_GenerateLTSInfo.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_GenerateLTSInfo.m): Generates vectors of peak features restricted to those with LTS
 - [**m3ha_histograms_across_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_histograms_across_cells.m): Plots histograms across cells for single neuron fitting
 - [**m3ha_import_raw_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_import_raw_traces.m): Imports raw traces from .mat files in the m3ha format
 - [**m3ha_initial_slopes.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_initial_slopes.m): Computes and plots histograms of slopes right after current pulse start and end
@@ -369,12 +367,14 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_optimizergui_4compgabab.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_optimizergui_4compgabab.m): OPTIMIZERGUI  The GUI interface for OPTIMIZER.m, which runs NEURON
 - [**m3ha_organize_sweep_indices.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_organize_sweep_indices.m): Organize sweep indices by g incr, pharm conditions for each cell
 - [**m3ha_oscillations_analyze.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_oscillations_analyze.m): Analyzes all GAT blocker oscillations data
+- [**m3ha_parse_dclamp_data.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_parse_dclamp_data.m): m3ha_parse_dclamp_data.m
 - [**m3ha_parse_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_parse_mat.m): Parses and loads a set of matfiles for the GAT blockade project
+- [**m3ha_parse_sweep_settings.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_parse_sweep_settings.m): Counts total number of usable cells, sets and sweeps, generate filenames and record sweep properties
 - [**m3ha_pfiles2csv.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_pfiles2csv.m): Converts the old m3ha .p files to spreadsheet files
 - [**m3ha_phase_plane_analysis.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_phase_plane_analysis.m): Plots phase planes from an m3ha .mat file
-- [**m3ha_PlotCorrelations.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_PlotCorrelations.m): Plot Correlation diagrams for data that will be used for fitting
+- [**m3ha_plot_correlations.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_correlations.m): Plot Correlation diagrams for data that will be used for fitting
 - [**m3ha_plot_example_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_example_traces.m): 
-- [**m3ha_PlotHistogramsRefineThreshold.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_PlotHistogramsRefineThreshold.m): Plot histograms for sweep information & passive fit results that will be used for fitting
+- [**m3ha_plot_histograms_refine_threshold.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_histograms_refine_threshold.m): Plot histograms for sweep information & passive fit results that will be used for fitting
 - [**m3ha_plot_individual_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_individual_traces.m): Plots individual voltage traces
 - [**m3ha_plot_oscillations.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_oscillations.m): Shows a swarm plot for each set of neurons (each .spi file in the infolder)
 - [**m3ha_plot_simulated_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_simulated_traces.m): Plots simulated traces from NEURON output files

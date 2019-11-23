@@ -1,12 +1,12 @@
-function m3ha_GenerateLTSInfo (fullmatfilepath)
+function m3ha_append_lts_properties (fullmatfilepath)
 %% Generates vectors of peak features restricted to those with LTS
-% Usage: m3ha_GenerateLTSInfo (fullmatfilepath)
+% Usage: m3ha_append_lts_properties (fullmatfilepath)
 % Arguments: 
 %		fullmatfilepath	- (opt) full path to matfile to alter
 %				default: //media/adamX/m3ha/data_dclamp/take4/dclampdatalog_take4.mat
 %		
 % Used by:	
-%		cd/m3ha_dclampDataExtractor.m
+%		cd/m3ha_parse_dclamp_data.m
 
 % File History:
 % 2016-10-31 Created
@@ -71,7 +71,7 @@ m.logvariables = [m.logvariables, newvariables];
 %{
 %% OLD CODE
 
-% This will create problems if m3ha_GenerateLTSInfo is ran more than once
+% This will create problems if m3ha_append_lts_properties is ran more than once
 m.logheader = {m.logheader, newheaderentries};
 m.logheader = {m.logvariables, newvariables};
 

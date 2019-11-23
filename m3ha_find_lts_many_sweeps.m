@@ -7,7 +7,7 @@ function [bl_mean, mnoise, npt, np2der, pk_prom, pk_width, pk_class, spp, ltsv, 
 %       cd/m3ha_find_lts.m
 %
 % Used by:
-%       cd/m3ha_dclampDataExtractor.m
+%       cd/m3ha_parse_dclamp_data.m
 
 % File History:
 % 2016-11-07 Moved from dclampDataExtractor.m
