@@ -59,6 +59,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/compute_sampsizepwr.m
 %       cd/combine_swd_sheets.m
 %       cd/construct_fullpath.m
+%       cd/copy_into.m
 %       cd/create_average_time_vector.m
 %       cd/create_indices.m
 %       cd/create_subplots.m

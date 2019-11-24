@@ -25,6 +25,8 @@ function [bestParamsTable, bestParamsLabel] = ...
 %                       'passive' - simulate a current pulse response
 %                       'active'  - simulate an IPSC response
 %                   default == 'active'
+%                   - Any other parameter-value pair for 
+%                           m3ha_neuron_run_and_analyze()
 %
 % Requires:
 %       cd/create_error_for_nargin.m

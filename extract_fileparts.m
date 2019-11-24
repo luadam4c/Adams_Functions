@@ -67,6 +67,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/combine_data_from_same_slice.m
 %       cd/combine_swd_sheets.m
 %       cd/combine_variables_across_tables.m
+%       cd/copy_into.m
 %       cd/create_pleth_EEG_movies.m
 %       cd/decide_on_filebases.m
 %       cd/extract_common_directory.m

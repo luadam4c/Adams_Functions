@@ -128,6 +128,7 @@ There are 1 MATLAB scripts in this directory:
 - [**convert_to_char.m**](https://github.com/blabuva/Adams_Functions/blob/master/convert_to_char.m): Converts other data types to character arrays or a cell array of character arrays
 - [**convert_to_rank.m**](https://github.com/blabuva/Adams_Functions/blob/master/convert_to_rank.m): Creates a positive integer array from an array showing the ranks of each element
 - [**convert_to_samples.m**](https://github.com/blabuva/Adams_Functions/blob/master/convert_to_samples.m): Converts time(s) from a time unit to samples based on a sampling interval in the same time unit
+- [**copy_into.m**](https://github.com/blabuva/Adams_Functions/blob/master/copy_into.m): Copies source directories and files into a destination folder
 - [**copyvars.m**](https://github.com/blabuva/Adams_Functions/blob/master/copyvars.m): Copies variable 1 of a table to variable 2 of the same table
 - [**correct_unbalanced_bridge.m**](https://github.com/blabuva/Adams_Functions/blob/master/correct_unbalanced_bridge.m): Shifts a current pulse response to correct the unbalanced bridge
 - [**count_A_each_C.m**](https://github.com/blabuva/Adams_Functions/blob/master/count_A_each_C.m): Counts the number of (A)s in each (C) based on the number of (A)s in each (B) and the number of (B)s in each (C)
