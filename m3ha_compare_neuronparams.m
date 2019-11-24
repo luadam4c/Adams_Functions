@@ -61,6 +61,7 @@ function m3ha_compare_neuronparams (paramValues, paramNames, suffices, varargin)
 %                   default == pwd
 %
 % Requires:
+%       cd/find_in_strings.m
 %       cd/m3ha_compute_and_plot_geometry.m
 %       cd/m3ha_compute_and_plot_IT.m
 %       cd/m3ha_compute_and_plot_Ih.m
@@ -68,7 +69,6 @@ function m3ha_compare_neuronparams (paramValues, paramNames, suffices, varargin)
 %       cd/m3ha_compute_and_plot_IA.m
 %       cd/m3ha_compute_and_plot_INaP.m
 %       cd/m3ha_compute_and_plot_all_IV.m
-%       /home/Matlab/Adams_Functions/find_in_strings.m
 %
 % File History:
 % 2017-08-09 Created

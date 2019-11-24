@@ -462,6 +462,7 @@ There are 1 MATLAB scripts in this directory:
 - [**plot_raster.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_raster.m): Make a raster plot from a cell array of event time arrays
 - [**plot_relative_events.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_relative_events.m): Binary file /home/Matlab/Adams_Functions/plot_relative_events.m matches
 - [**plot_repetitive_protocols.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_repetitive_protocols.m): Computes features for each file according to protocol type
+- [**plot_selected.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_selected.m): Plots selected values
 - [**plot_signals.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_signals.m): Plots signals (TO BE MERGED WITH plot_traces.m)
 - [**plot_small_chevrons.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_small_chevrons.m): Plots two chevron tables
 - [**plot_spectrogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_spectrogram.m): Plots the spectrogram data computed by compute_spectrogram.m
@@ -548,4 +549,3 @@ There are 1 MATLAB scripts in this directory:
 - [**ZG_extract_all_data.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_all_data.m): Extract each cell and concatenate sweeps into a single file under a subdirectory of its own
 - [**ZG_extract_all_IEIs.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_all_IEIs.m): Extract all the inter-event intervals from a directory containing multiple minEASE output subdirectories
 - [**ZG_extract_IEI_thresholds.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_IEI_thresholds.m): Extract/compute inter-event-interval distribution thresholds, separating events from spikes
-- [**ZG_fit_IEI_distributions.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_fit_IEI_distributions.m): Fit inter-event-interval distributions and log distributions

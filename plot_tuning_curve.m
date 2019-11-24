@@ -57,6 +57,9 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   - 'LineSpec': line specification
 %                   must be a character array
 %                   default == '-'
+%                   - 'LineWidth': line width
+%                   must be a positive scalar
+%                   default == 2
 %                   - 'PisLog': whether parameter values are to be plotted 
 %                               log-scaled
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -233,6 +236,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
 %       cd/plot_horizontal_line.m
+%       cd/plot_selected.m
 %       cd/plot_vertical_line.m
 %       cd/plot_window_boundaries.m
 %       cd/remove_outliers.m
@@ -1125,8 +1129,9 @@ if plotIndSelected && ~isempty(indSelected)
         end
     else
         selected = plot_selected(pValues, readoutToPlot, indSelected, ...
-                                selectedMarker, selectedColorMap(1, :), ...
-                                selectedLineWidth);
+                                'Marker', selectedMarker, ...
+                                'Color', selectedColorMap(1, :), ...
+                                'LineWidth', selectedLineWidth);
     end
 end
 
@@ -1224,23 +1229,6 @@ function indices = add_next_index(indices, lastIndex)
 if indices(end) < lastIndex
     indices = [indices; indices(end) + 1];
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function selected = plot_selected (pValues, readout, indSelected, ...
-                            selectedMarker, selectedColor, selectedLineWidth)
-% TODO: Pull this out to its own function
-
-% Selected x locations
-xLocsSelected = pValues(indSelected);
-
-% Selected y locations
-yLocsSelected = readout(indSelected, :);
-
-% Plot values
-selected = plot(xLocsSelected, yLocsSelected, ...
-                'LineStyle', 'none', 'Marker', selectedMarker, ...
-                'Color', selectedColor, 'LineWidth', selectedLineWidth);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
