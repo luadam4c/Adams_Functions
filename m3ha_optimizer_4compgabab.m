@@ -38,12 +38,12 @@ function [done, outparams, hfig] = m3ha_optimizer_4compgabab (outparams, hfig)
 %       cd/set_fields_zero.m
 %       cd/restore_fields.m
 %       cd/structs2vecs.m
-%       ~/Downloaded_Functions/subplotsqueeze.m
 %
 % Used by:
 %       cd/singleneuronfitting42.m and later versions
 %       cd/m3ha_optimizergui_4compgabab.m
-% 
+
+% File History:
 % By Christine Lee Kyuyoung 2011-01-16
 % last modified by CLK 2014-04
 % 2016-07-15 - Added MANUAL WITH JITTER
@@ -115,18 +115,6 @@ function [done, outparams, hfig] = m3ha_optimizer_4compgabab (outparams, hfig)
 % 2019-11-18 - Fixe fields that are set to zero during fitting
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% If not compiled, add directories to search path for required functions
-if ~isdeployed
-    % Locate the functions directory
-    functionsDirectory = locate_functionsdir;
-
-    % Add path for check_dir.m, etc.
-    addpath(fullfile(functionsDirectory, 'Adams_Functions')); 
-
-    % Add path for subplotsqueeze.m, etc.
-    addpath(fullfile(functionsDirectory, 'Downloaded_Functions')); 
-end
 
 %% Preparation
 % Change fitting flags if necessary
@@ -447,9 +435,9 @@ if outparams.fitTogetherFlag        % passive and active fitting done together f
 
 
     % Print time elapsed
-    time_taken_allfit = toc(tstartAllFit);
+    timeTakenAllFit = toc(tstartAllFit);
     fprintf('It took %g seconds to run the simplex method on %d initial conditions!!\n', ...
-            time_taken_allfit, nInitConds);
+            timeTakenAllFit, nInitConds);
     fprintf('\n');
 
 else                                % do passive fitting, find best params, then do active fitting

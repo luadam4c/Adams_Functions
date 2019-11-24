@@ -29,6 +29,7 @@ function paramTables = load_params (fileNames, varargin)
 %
 % Used by:
 %       cd/m3ha_network_launch.m
+%       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_pfiles2csv.m
 %       cd/m3ha_xolotl_create_neuron.m

@@ -1,32 +1,42 @@
-function [output1] = m3ha_neuron_choose_best_params (candParams, varargin)
+function [bestParamsTable, bestParamsLabel] = ...
+                m3ha_neuron_choose_best_params (candParamsTablesOrFiles, varargin)
 %% Chooses among candidates the NEURON parameters that fits a cell's data the best
-% Usage: [output1] = m3ha_neuron_choose_best_params (candParams, varargin)
+% Usage: [bestParamsTable, bestParamsLabel] = ...
+%               m3ha_neuron_choose_best_params (candParamsTablesOrFiles, varargin)
 % Explanation:
-%       TODO
+%       Computes errors for more than one candidate sets of NEURON parameters
+%            and choose the one with the least total error as the best 
 %
 % Example(s):
 %       TODO
 %
 % Outputs:
-%       output1     - TODO: Description of output1
-%                   specified as a TODO
+%       bestParamsTable - the NEURON table for best parameters
+%                       specified as a table
+%       bestParamsLabel - file name or table name for the best parameters
+%                       specified as a character vector
 %
 % Arguments:
-%       candParams  - candidate sets of NEURON parameters
-%                       or tables or spreadsheet names
-%                   must be a cell array
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
-%                   - Any other parameter-value pair for TODO()
+%       candParamsTablesOrFiles  - candidate sets of NEURON parameter
+%                                   tables or spreadsheet file names
+%                   must be a cell array or string array
+%       varargin    - 'SimMode': simulation mode
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'passive' - simulate a current pulse response
+%                       'active'  - simulate an IPSC response
+%                   default == 'active'
 %
 % Requires:
-%       ~/Adams_Functions/create_error_for_nargin.m
-%       ~/Adams_Functions/struct2arglist.m
-%       /TODO:dir/TODO:file
+%       cd/create_error_for_nargin.m
+%       cd/create_label_from_numbers.m
+%       cd/extract_fields.m
+%       cd/istext.m
+%       cd/load_params.m
+%       cd/m3ha_neuron_run_and_analyze.m
+%       cd/set_fields_zero.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       /media/adamX/m3ha/optimizer4compgabab/singleneuronfitting63.m
 
 % File History:
 % 2019-11-23 Created by Adam Lu
@@ -35,7 +45,7 @@ function [output1] = m3ha_neuron_choose_best_params (candParams, varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-param1Default = [];             % default TODO: Description of param1
+simModeDefault = 'active';      % simulate active responses by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -51,33 +61,74 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'candParams', ...                  % TODO: Description of candParams
-    % TODO: validation function %);
+addRequired(iP, 'candParamsTablesOrFiles', ...
+    @(x) validateattributes(x, {'cell', 'string'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'param1', param1Default, ...
-    % TODO: validation function %);
+addParameter(iP, 'SimMode', simModeDefault, ...
+    @(x) any(validatestring(x, validSimModes)));
 
 % Read from the Input Parser
-parse(iP, candParams, varargin{:});
-param1 = iP.Results.param1;
+parse(iP, candParamsTablesOrFiles, varargin{:});
+simMode = validatestring(iP.Results.SimMode, validSimModes);
 
-% Keep unmatched arguments for the TODO() function
+% Keep unmatched arguments for the m3ha_neuron_run_and_analyze() function
 otherArguments = iP.Unmatched;
-otherArguments = struct2arglist(iP.Unmatched);
-
-% Check relationships between arguments
-% TODO
 
 %% Preparation
-% TODO
+% Parse first argument
+if istext(candParamsTablesOrFiles)
+    candParamsFiles = candParamsTablesOrFiles;
+    candParamsTables = {};
+else
+    candParamsTables = candParamsTablesOrFiles;
+    candParamsFiles = {};
+end
+
+% Load parameters if necessary
+if isempty(candParamsTables)
+    candParamsTables = cellfun(@load_params, candParamsTablesOrFiles, ...
+                                'UniformOutput', false);
+end
+
+% Count the number of tables
+nTables = numel(candParamsTables);
+
+% Decide on table labels
+if isempty(candParamsFiles)
+    tableLabels = create_label_from_numbers(1:nTables, 'Prefix', 'table');
+else
+    tableLabels = candParamsFiles;
+end
+
+% Turn off all flags for stats and plots
+otherArguments = ...
+    set_fields_zero(otherArguments, ...
+        'saveLtsInfoFlag', 'saveLtsStatsFlag', ...
+        'saveSimCmdsFlag', 'saveStdOutFlag', 'saveSimOutFlag', ...
+        'plotConductanceFlag', 'plotCurrentFlag', ...
+        'plotIndividualFlag', 'plotResidualsFlag', 'plotOverlappedFlag', ...
+        'plotIpeakFlag', 'plotLtsFlag', 'plotStatisticsFlag', ...
+        'plotSwpWeightsFlag');
 
 %% Do the job
-% TODO
-m3ha_neuron_run_and_analyze (neuronParamsTable
+% Compute errors for all tables
+errorStructs = cellfun(@(x) m3ha_neuron_run_and_analyze(x, ...
+                        'SimMode', simMode, otherArguments), candParamsTables);
+
+% Extract all total errors
+totalErrors = extract_fields(errorStructs, 'totalError');
+
+% Find the index of the table with the least error
+[totalErrorBest, iTableBest] = min(totalErrors);
 
 %% Output results
-% TODO
+% Return the table with the least error
+bestParamsTable = candParamsTables{iTableBest};
+bestParamsLabel = tableLabels{iTableBest}
+
+% Display result
+fprintf('%s has the least error: %g!\n', bestParamsLabel, totalErrorBest);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

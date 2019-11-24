@@ -7,6 +7,7 @@ function [structure] = set_fields_zero (structure, varargin)
 %
 % Used by:
 %       cd/m3ha_fminsearch3.m
+%       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_optimizergui_4compgabab.m
 %       cd/m3ha_optimizer_4compgabab.m
 %       /home/Matlab/minEASE.m

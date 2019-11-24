@@ -5,14 +5,17 @@ function [simParamsTable, simParamsPath] = ...
 %               m3ha_neuron_create_simulation_params (neuronParamsTable, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       simParamsTable  - table of simulation parameters, 
 %                           with each row being a simulation
 %                       specified as a 2d table
 %       simParamsPath   - file path for saved simulation parameters
 %                       specified as a character vector
+%
 % Arguments:
 %       neuronParamsTable   
 %                   - table(s) of single neuron parameters with 
@@ -343,8 +346,6 @@ end
 
 % Check if any other simulation parameter that's not a scalar has the 
 %   same number of elements as the number of simulations
-%   If it's a scalar, repmat it to the number of simulations
-%% TODO: Use match_row_counts.m and argfun.m instead
 for iParam = 1:nSimParamsFromArguments
     % Get this parameter name
     thisParam = simParamsFromArguments{iParam};
@@ -389,7 +390,7 @@ end
 
 function simParamsTable = ...
                 neuronParams2simParams (neuronParamsTable, nSims, jitterFlag)
-%% Extracts neuron parameters and initialize as simParamsTable
+%% Extracts NEURON parameters and initialize as simParamsTable
 
 % Check if the number of neuron parameter tables is the 
 %   same as the number of simulations
@@ -399,7 +400,7 @@ if iscell(neuronParamsTable) && numel(neuronParamsTable) > 1
     end
 end
 
-% Extract neuron parameters and initialize as simParamsTable
+% Extract NEURON parameters and initialize as simParamsTable
 if iscell(neuronParamsTable) && numel(neuronParamsTable) > 1
     % Extract just the value column to get simpler tables
     neuronParamValuesTable = ...

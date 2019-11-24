@@ -67,6 +67,7 @@ function [initParamTables, initParamFiles, otherParams] = ...
 %       cd/istext.m
 %       cd/load_params.m
 %       cd/m3ha_locate_homedir.m
+%       cd/print_cellstr.m
 %       cd/save_params.m
 %       cd/struct2arglist.m
 %       cd/update_param_values.m
@@ -404,9 +405,27 @@ elseif isempty(cellNames) && isempty(customInitFiles)
     % Extract the cell names from the passive table
     cellNames = passiveTable.cellName;
 elseif ~isempty(cellNames) && ~isempty(customInitFiles)
+    % Force as a cell array
+    if ischar(cellNames)
+        cellNames = {cellNames};
+    end
+
     % Restrict to cell names provided
     iCellInCustom = cellfun(@(x) find_in_strings(x, customCellNames, ...
-                            'MaxNum', 1), cellNames);
+                            'MaxNum', 1, 'ReturnNan', true), cellNames);
+
+    % Check if custom providers for all cells requested are provided
+    if any(isnan(iCellInCustom))
+        % Get names of all cells without custom values
+        cellNamesMissing = cellNames(isnan(iCellInCustom));
+
+        % Display error
+        error('These cells are missing custom values: %s', ...
+                print_cellstr(cellNamesMissing, 'ToPrint', false));
+    end
+
+    % Reorder customInitNames and customInitValues
+    %   to match requested cell names
     % customInitFiles = customInitFiles(iCellInCustom);
     % customInitTables = customInitTables(iCellInCustom);
     customInitNames = customInitNames(iCellInCustom);
@@ -432,9 +451,6 @@ if ~isempty(customInitValues) && isnumeric(customInitNames)
 end
 
 %% Create initial parameters table
-% Display message
-fprintf('Creating initial set of NEURON parameters for all cells ... \n');
-
 % Force as column vectors
 [neuronParamsDefault, neuronParamsLowerBound, ...
     neuronParamsUpperBound, neuronParamsClass, ...

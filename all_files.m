@@ -8,6 +8,7 @@ function varargout = all_files (varargin)
 %       [files, fullPaths] = all_files;
 %       [files, fullPaths] = all_files('SortBy', 'date');
 %       [files, fullPaths] = all_files('Recursive', true);
+%       files = all_files('Dir', {'parse_lts', 'plot_relative_events'}, 'Recursive', true)
 %
 % Outputs:
 %       files       - file structure(s) for the files
@@ -34,8 +35,9 @@ function varargout = all_files (varargin)
 %                   - 'ForceCellOutput': whether to force output as a cell array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'Directory': the directory to search in
-%                   must be a string scalar or a character vector
+%                   - 'Directory': the directory(ies) to search in
+%                   must be empty or a character vector or a string vector
+%                       or a cell array of character vectors
 %                   default == pwd
 %                   - 'Prefix': prefix the file name must have
 %                   must be a string scalar or a character vector
@@ -88,6 +90,7 @@ function varargout = all_files (varargin)
 %       cd/plot_repetitive_protocols.m
 %       cd/plot_traces_EEG.m
 %       /home/Matlab/plethR01/plethR01_analyze.m
+%       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting63.m
 %       
 
 % File History:
@@ -99,7 +102,7 @@ function varargout = all_files (varargin)
 % 2019-05-16 Added 'WarnFlag' as an optional flag
 % 2019-05-21 Added 'SortBy' as an optional argument
 % 2019-09-05 Add 'MaxNum' as an optional argument
-% TODO: use force_string_start.m to make sure extension starts with a dot
+% 2019-11-24 Now allows 'Directory' to be multiple directories
 % TODO: Fix bug when a dot is in the folder name
 
 %% Hard-coded parameters
@@ -136,7 +139,9 @@ addParameter(iP, 'Recursive', recursiveDefault, ...
 addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Directory', directoryDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['Directory must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 addParameter(iP, 'Prefix', prefixDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'Keyword', keywordDefault, ...
@@ -170,7 +175,7 @@ maxNum = iP.Results.MaxNum;
 
 % Make sure the directory is an existing full path
 [directory, dirExists] = construct_and_check_fullpath(directory);
-if ~dirExists
+if ~all(dirExists)
     varargout{1} = [];
     varargout{2} = {};
     return
@@ -206,14 +211,8 @@ else
     end
 end
 
-if recursive
-    % Get a list of all files and subdirectories in this directory 
-    %   and all subdirectories
-    filesOrDirs = dir(fullfile(directory, '**'));
-else
-    % Get a list of all files and subdirectories in this directory only
-    filesOrDirs = dir(directory);
-end
+% Get a list of all files and subdirectories in this directory 
+filesOrDirs = all_files_or_dirs(directory, recursive);
 
 % Get a logical vector that tells which entries are directories
 isDir = transpose([filesOrDirs.isdir]);
@@ -268,19 +267,45 @@ end
 nFiles = numel(files);
 
 % Print appropriate message
+directoryStr = print_cellstr(directory, 'OmitNewline', true, ...
+                            'OmitBraces', true, 'OmitQuotes', true, ...
+                            'ToPrint', false);
 if nFiles == 0 && warnFlag
-    fprintf('No files with pattern %s found in %s!!\n', regExp, directory);
+    fprintf('No files with pattern %s found in %s!!\n', regExp, directoryStr);
 elseif verbose
     fprintf('%d files with pattern %s found in %s!\n', ...
-            nFiles, regExp, directory);
+            nFiles, regExp, directoryStr);
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function filesOrDirs = all_files_or_dirs (directory, recursive)
+
+% Look under subdirectories if requested
+if recursive
+    directoryForDir = fullfile(directory, '**');
+else
+    directoryForDir = directory;
+end
+
+% Use dir repeatedly
+if iscell(directoryForDir)
+    % Use dir repeatedly
+    filesOrDirsAll = cellfun(@dir, directoryForDir, 'UniformOutput', false);
+elseif isstring(directoryForDir)
+    % Use dir repeatedly
+    filesOrDirsAll = arrayfun(@dir, directoryForDir, 'UniformOutput', false);
+else
+    filesOrDirsAll = {dir(directoryForDir)};
+end
+
+% Vertically concatenate all File objects
+filesOrDirs = vertcat(filesOrDirsAll{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
-
-
 
 %}
 

@@ -11,7 +11,7 @@ function [fileNames, rowConditions, figurePositions] = ...
 %
 % Used by:
 %       cd/singleneuronfitting42.m and later versions
-%
+
 % File History:
 % 2017-05-20 Moved from singleneuronfitting2.m
 % 2017-05-22 Changed line width and indentation

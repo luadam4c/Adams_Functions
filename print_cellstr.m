@@ -5,7 +5,12 @@ function string = print_cellstr (cellStr, varargin)
 %       TODO
 %
 % Example(s):
-%       TODO
+%       print_cellstr({'a', 'b', 'c'})
+%       print_cellstr('a')
+%       print_cellstr({'a', 'b', 'c'}, 'ToPrint', false)
+%       print_cellstr({'a', 'b', 'c'}, 'OmitQuotes', true)
+%       print_cellstr({'a', 'b', 'c'}, 'OmitBraces', true)
+%       print_cellstr({'a', 'b', 'c'}, 'OmitNewline', true)
 %
 % Side Effects:
 %       Prints to standard output or a file with given FileID
@@ -55,6 +60,7 @@ function string = print_cellstr (cellStr, varargin)
 %       cd/atfwrite.m
 %       cd/compute_sampsizepwr.m
 %       cd/m3ha_import_raw_traces.m
+%       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_parse_mat.m
 %       cd/m3ha_select_cells.m
 %       cd/m3ha_xolotl_create_neuron.m

@@ -21,6 +21,8 @@ function [errorStruct, hFig, simData] = ...
 %                       'JitterPercentage': jitter percentage of the parameter
 %                       'IsLog': whether the parameter is 
 %                                   to be varied on a log scale
+%                       Note: Only the 'Value' column is needed
+%                               if jitterFlag is false
 %                   must be a 2d table or a cell array of 2d tables
 %       varargin    - 'Hfig': handles structure for figures
 %                   must be a TODO
@@ -288,6 +290,7 @@ function [errorStruct, hFig, simData] = ...
 %
 % Used by:    
 %       cd/m3ha_fminsearch3.m
+%       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_optimizer_4compgabab.m
 
 % File History:

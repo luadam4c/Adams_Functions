@@ -32,6 +32,7 @@ function varargout = extract_fields (structs, varargin)
 %
 % Used by:
 %       cd/create_synced_movie_trace_plot_movie.m
+%       cd/m3ha_neuron_choose_best_params.m
 %       cd/parse_spike2_mat.m
 
 % File History:
