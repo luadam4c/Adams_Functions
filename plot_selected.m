@@ -46,6 +46,7 @@ function handles = plot_selected (xValues, yValues, indSelected, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/plot_bar.m
 %       cd/plot_tuning_curve.m
 
 % File History:

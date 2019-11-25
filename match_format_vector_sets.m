@@ -80,6 +80,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %       cd/find_window_endpoints.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/match_and_combine_vectors.m
+%       cd/parse_phase_info.m
 %       cd/plot_vertical_line.m
 %       cd/plot_vertical_shade.m
 %       cd/plot_traces.m

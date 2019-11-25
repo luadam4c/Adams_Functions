@@ -1006,6 +1006,7 @@ if plotSmoothNormPopAvgFlag
             smoothNormPopAvgTables, varsToPlot, varLabelsNorm, ...
             figTitlesPopAvg, figNamesSmoothNormPopAvg);
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function myTable = create_time_rel_to_drugon(myTable, sweepLengthSec)

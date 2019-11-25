@@ -9,7 +9,7 @@ function boundaryValues = compute_index_boundaries (varargin)
 %       compute_index_boundaries('Grouping', [1 1 1 2 2 3 3 3])
 %       compute_index_boundaries('Grouping', [NaN NaN 1 1 NaN NaN 2 2 NaN NaN 3 3 NaN NaN])
 %       compute_index_boundaries('Grouping', [NaN NaN 1 1 NaN NaN 2 2 NaN NaN 3 3 NaN NaN], 'TreatNaNsAsGroup', false)
-%       compute_index_boundaries('Grouping', {[1 1 1 2 2 3 3 3], [2; 2; 4; 4]})
+%       compute_index_boundaries('Grouping', {[1 1 1 2 2 3 3 3]; [2; 2; 4; 4]})
 %       compute_index_boundaries('NEachGroup', [3, 2, 3])
 %
 % Outputs:
@@ -35,7 +35,7 @@ function boundaryValues = compute_index_boundaries (varargin)
 %
 % Used by:
 %       cd/combine_abf_data.m
-%       cd/plot_tuning_curve.m
+%       cd/parse_phase_info.m
 
 % File History:
 % 2019-08-21 Created by Adam Lu

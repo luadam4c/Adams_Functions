@@ -30,7 +30,6 @@ function vectors = force_row_vector (vectors, varargin)
 %       cd/plot_tuning_curve.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/plot_histogram.m
-%       cd/plot_struct.m
 %       cd/run_neuron.m
 %       cd/unique_groups.m
 

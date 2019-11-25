@@ -5,19 +5,19 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       TODO
 % 
 % Examples:
-%       pValue = transpose(1:10); %(aka x-values)
-%       readout1 = randi(numel(pValue), 10, 1); %(aka y-values)
-%       upperCI1 = readout1 + randi(numel(pValue), 10, 1) / 10;
-%       lowerCI1 = readout1 - randi(numel(pValue), 10, 1) / 10;
-%       readout2 = randi(numel(pValue), 10, 1);
-%       upperCI2 = readout2 + randi(numel(pValue), 10, 1) / 10;
-%       lowerCI2 = readout2 - randi(numel(pValue), 10, 1) / 10;
+%       pValues = transpose(1:10);
+%       readout1 = randi(numel(pValues), size(pValues));
+%       upperCI1 = readout1 + randi(numel(pValues), 10, 1) / 10;
+%       lowerCI1 = readout1 - randi(numel(pValues), 10, 1) / 10;
+%       readout2 = randi(numel(pValues), size(pValues));
+%       upperCI2 = readout2 + randi(numel(pValues), 10, 1) / 10;
+%       lowerCI2 = readout2 - randi(numel(pValues), 10, 1) / 10;
 %       readoutAll = [readout1, readout2];
 %       upperCIAll = [upperCI1, upperCI2];
 %       lowerCIAll = [lowerCI1, lowerCI2];
 %       
-%       plot_tuning_curve(pValue, readout1, 'UpperCI', upperCI1, 'LowerCI', lowerCI1);
-%       plot_tuning_curve(pValue, readoutAll, 'UpperCI', upperCIAll, 'LowerCI', lowerCIAll, 'ColorMap', hsv(2));
+%       plot_tuning_curve(pValues, readout1, 'UpperCI', upperCI1, 'LowerCI', lowerCI1);
+%       plot_tuning_curve(pValues, readoutAll, 'UpperCI', upperCIAll, 'LowerCI', lowerCIAll, 'ColorMap', hsv(2));
 %
 % Outputs:
 %       handles     - handles structure with fields:
@@ -28,7 +28,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                       selected    - selected values
 %                   specified as a scalar structure
 % Arguments:
-%       pValues     - column vector of parameter values
+%       pValues     - a column vector of parameter values
 %                   must be a numeric vector
 %       readout     - a readout matrix where each column is a readout vector
 %                   must be a numeric 2-D array
@@ -171,21 +171,22 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   must be a numeric vector or a cell array of numeric vectors
 %                   default == []
 %                   - 'NLastOfPhase': number of values at the last of a phase
-%                   must be a positive integer scalar
-%                   default == 10
+%                   must be empty or a positive integer scalar
+%                   default == set in parse_phase_info.m
 %                   - 'NToAverage': number of values to average
-%                   must be a positive integer scalar
-%                   default == 5
+%                   must be empty or a positive integer scalar
+%                   default == set in select_similar_values.m
 %                   - 'SelectionMethod': the selection method
 %                   must be an unambiguous, case-insensitive match to one of: 
+%                       'auto'          - set in select_similar_values.m
 %                       'notNaN'        - select any non-NaN value
 %                       'maxRange2Mean' - select vales so that the maximum 
 %                                           range is within a percentage 
 %                                           of the mean
-%                   default == 'maxRange2Mean'
+%                   default == 'auto'
 %                   - 'MaxRange2Mean': maximum percentage of range versus mean
-%                   must be a nonnegative scalar
-%                   default == 40%
+%                   must be empty or a nonnegative scalar
+%                   default == set in select_similar_values.m
 %                   - 'FigTitle': title for the figure
 %                   must be a string scalar or a character vector
 %                   default == ['Traces for ', figName]
@@ -219,8 +220,6 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % Requires:
 %       ~/Downloaded_Functions/rgb.m
 %       cd/cell2num.m
-%       cd/compute_index_boundaries.m
-%       cd/compute_phase_average.m
 %       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
@@ -228,13 +227,13 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/set_axes_properties.m
 %       cd/set_figure_properties.m
 %       cd/fill_markers.m
-%       cd/force_column_vector.m
 %       cd/force_matrix.m
 %       cd/force_row_vector.m
 %       cd/hold_off.m
 %       cd/hold_on.m
 %       cd/isfigtype.m
 %       cd/islegendlocation.m
+%       cd/parse_phase_info.m
 %       cd/plot_horizontal_line.m
 %       cd/plot_selected.m
 %       cd/plot_vertical_line.m
@@ -242,7 +241,6 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/remove_outliers.m
 %       cd/save_all_figtypes.m
 %       cd/set_default_flag.m
-%       cd/trim_nans.m
 %       cd/unique_custom.m
 %       cd/union_over_cells.m
 %
@@ -295,12 +293,13 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-10-02 Now plots a star if significant
 % 2019-10-04 Now plots 'NS' if not significant
 % 2019-10-07 Now plots 'NS' or star in black
+% 2019-11-24 Moved code to parse_phase_info.m
 
 %% Hard-coded constants
 WHITE = [1, 1, 1];
 
 %% Hard-coded parameters
-validSelectionMethods = {'notNaN', 'maxRange2Mean'};
+validSelectionMethods = {'auto', 'notNaN', 'maxRange2Mean'};
 validPBoundaryTypes = {'verticalLines', 'horizontalBars', 'verticalShades'};
 validRBoundaryTypes = {'horizontalLines', 'verticalBars', 'horizontalShades'};
 
@@ -369,11 +368,10 @@ rBoundaryTypeDefault = 'horizontalLines';
 averageWindowsDefault = {};         % set later
 phaseAveragesDefault = [];          % set later
 indSelectedDefault = [];
-nLastOfPhaseDefault = 10;           % select from last 10 values by default
-nToAverageDefault = 5;              % select 5 values by default
-selectionMethodDefault = 'maxRange2Mean';   
-                                    % select using maxRange2Mean by default
-maxRange2MeanDefault = 40;          % range is not more than 40% of mean by default
+nLastOfPhaseDefault = [];           % set in parse_phase_info.m
+nToAverageDefault = [];             % set in select_similar_values.m
+selectionMethodDefault = 'auto';    % set in select_similar_values.m
+maxRange2MeanDefault = [];          % set in select_similar_values.m
 figTitleDefault = '';               % set later
 figHandleDefault = [];              % no existing figure by default
 figNumberDefault = [];              % no figure number by default
@@ -481,13 +479,19 @@ addParameter(iP, 'PhaseAverages', phaseAveragesDefault, ...
 addParameter(iP, 'IndSelected', indSelectedDefault, ...
     @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
 addParameter(iP, 'NLastOfPhase', nLastOfPhaseDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                ['NLastOfPhase must be either empty ', ...
+                    'or a positive integer scalar!']));
 addParameter(iP, 'NToAverage', nToAverageDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                ['NToAverage must be either empty ', ...
+                    'or a positive integer scalar!']));
 addParameter(iP, 'SelectionMethod', selectionMethodDefault, ...
     @(x) any(validatestring(x, validSelectionMethods)));
 addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+    @(x) assert(isempty(x) || isscalar(x) && x >= 0, ...
+                ['MaxRange2Mean must be either empty ', ...
+                    'or a nonnegative scalar!']));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigHandle', figHandleDefault);
@@ -571,6 +575,12 @@ if ~isempty(pTicks) && ~isempty(pTickLabels) && ...
     return
 end
 
+% Display 
+if isempty(phaseVectors) && colorByPhase
+    fprintf('Warning: Cannot color by phase if phase vectors not provided!\n');    
+    colorByPhase = false;
+end
+
 % If plotting curve only, change some defaults
 if plotOnly
     pLabel = 'suppress';
@@ -598,6 +608,14 @@ end
             plotPhaseAverages && isempty(phaseAverages), ...
             plotIndSelected && isempty(indSelected));
 
+% If phase-related stuff are to be computed, phase vectors must be provided
+if isempty(phaseVectors) && ...
+        (computePhaseBoundaries || computeAverageWindows || ...
+        computePhaseAverages || computeIndSelected)
+    fprintf('Phase vectors must be provided!\n');
+    return
+end
+
 % Count number of entries
 nEntries = length(pValues);
 
@@ -606,122 +624,69 @@ nCols = size(readout, 2);
 
 % Deal with phase vectors
 if ~isempty(phaseVectors)
-    % Force as a cell array of column vectors
-    phaseVectors = force_column_vector(phaseVectors, 'ForceCellOutput', true);
+    % Parse phase-related stuff
+    if computeIndSelected
+        [uniquePhases, phaseBoundaries, averageWindows, ...
+                phaseAverages, indSelected] = ...
+            parse_phase_info(pValues, readout, phaseVectors, ...
+                            'NLastOfPhase', nLastOfPhase, ...
+                            'NToAverage', nToAverage, ...
+                            'SelectionMethod', selectionMethod, ...
+                            'MaxRange2Mean', maxRange2Mean);
+    elseif computePhaseAverages
+        [uniquePhases, phaseBoundaries, averageWindows, phaseAverages] = ...
+            parse_phase_info(pValues, readout, phaseVectors, ...
+                            'NLastOfPhase', nLastOfPhase, ...
+                            'NToAverage', nToAverage, ...
+                            'SelectionMethod', selectionMethod, ...
+                            'MaxRange2Mean', maxRange2Mean);
+    elseif computeAverageWindows
+        [uniquePhases, phaseBoundaries, averageWindows] = ...
+            parse_phase_info(pValues, readout, phaseVectors, ...
+                            'NLastOfPhase', nLastOfPhase, ...
+                            'NToAverage', nToAverage, ...
+                            'SelectionMethod', selectionMethod, ...
+                            'MaxRange2Mean', maxRange2Mean);
+    elseif computePhaseBoundaries
+        [uniquePhases, phaseBoundaries] = ...
+            parse_phase_info(pValues, readout, phaseVectors, ...
+                            'NLastOfPhase', nLastOfPhase, ...
+                            'NToAverage', nToAverage, ...
+                            'SelectionMethod', selectionMethod, ...
+                            'MaxRange2Mean', maxRange2Mean);
+    else
+        uniquePhases = ...
+            parse_phase_info(pValues, readout, phaseVectors, ...
+                            'NLastOfPhase', nLastOfPhase, ...
+                            'NToAverage', nToAverage, ...
+                            'SelectionMethod', selectionMethod, ...
+                            'MaxRange2Mean', maxRange2Mean);
+    end
 
-    % Make sure the number of phase vectors matchs the number of readout columns
-    phaseVectors = match_row_count(phaseVectors, nCols);
+    % Generate phase boundaries to be plotted if requested
+    if plotPhaseBoundaries && computePhaseBoundaries
+        % Pool all phase boundaries together
+        if iscell(pBoundaries)
+            phaseBoundaries = union_over_cells(phaseBoundaries);
+        end
 
-    % Get the unique phases for each readout column
-    uniquePhases = cellfun(@(x) unique_custom(x, 'stable', ...
-                                                'IgnoreNaN', true), ...
-                            phaseVectors, 'UniformOutput', false);
+        % Force as a row vector
+        phaseBoundaries = force_row_vector(phaseBoundaries);
+
+        % Add to parameter boundaries to plot
+        pBoundaries = [pBoundaries; phaseBoundaries];
+    end
 
     % Count the number of phases for each readout column
     nPhases = count_samples(uniquePhases);
 
     % Compute the maximum number of phases
     maxNPhases = max(nPhases);
+end
 
-    % Create phase labels
-    if isempty(phaseLabels)
-        phaseLabels = create_labels_from_numbers(1:maxNPhases, ...
-                                                'Prefix', 'Phase #');
-    end
-
-    % Generate phase boundaries to be plotted if requested
-    if computePhaseBoundaries || computeAverageWindows || ...
-            computePhaseAverages || computeIndSelected
-        % TODO: Make function [valueBoundaries, indBoundaries] = compute_value_boundaries(values, grouping)
-        % Compute all possible index boundaries for the phases
-        indBoundariesAll = ...
-            compute_index_boundaries('Grouping', phaseVectors, ...
-                                        'TreatNaNsAsGroup', false);
-
-        % Convert to the parameter units
-        phaseBoundariesAll = ...
-            extract_subvectors(pValues, 'Indices', indBoundariesAll);
-
-        % Force as a column cell array of column vectors
-        [readoutCell, indBoundariesAllCell] = ...
-            argfun(@force_column_cell, readout, indBoundariesAll);
-
-        % If there is any trailing NaNs, remove them
-        readoutCell = cellfun(@(x) trim_nans(x, 'trailing'), ...
-                                readoutCell, 'UniformOutput', false);
-    end
-
-    % Generate phase boundaries to be plotted if requested
-    % TODO: Add to it instead?
-    if plotPhaseBoundaries
-        % Pool all phase boundaries together
-        pBoundaries = union_over_cells(phaseBoundariesAll);
-
-        % Force as a row vector
-        pBoundaries = force_row_vector(pBoundaries);
-    end
-
-    % Compute averaging windows
-    if computeAverageWindows
-        % Compute the last index of each window
-        iLastEachWindowAll = ...
-            cellfun(@(x, y) [x - 0.5; numel(y)], ...
-                    indBoundariesAllCell, readoutCell, 'UniformOutput', false);
-
-        % Compute the first index of each window
-        iFirstEachWindowAll = ...
-            cellfun(@(x) x - nLastOfPhase + 1, ...
-                    iLastEachWindowAll, 'UniformOutput', false);
-
-        % Compute each averaging window
-        averageWindows = ...
-            cellfun(@(x, y) ...
-                    arrayfun(@(u, v) extract_subvectors(pValues, ...
-                                                    'Indices', [u; v]), ...
-                            x, y, 'UniformOutput', false), ...
-            iFirstEachWindowAll, iLastEachWindowAll, 'UniformOutput', false);
-
-        % Force as a matrix
-        averageWindows = force_matrix(averageWindows, 'TreatCellAsArray', true);
-    end
-
-    % Generate phase averages to be plotted if requested
-    if computePhaseAverages || computeIndSelected        
-        % Compute phase averages
-        %   Note: this generates a cell array of cell arrays of vectors
-        [phaseAveragesCellCell, indSelectedCellCell] = ...
-            cellfun(@(x, y, z) ...
-                arrayfun(@(w) compute_phase_average(x, ...
-                            'ReturnLastTrial', true, ...
-                            'PhaseBoundaries', y, ...
-                            'PhaseNumber', w, ...
-                            'NLastOfPhase', nLastOfPhase, ...
-                            'NToAverage', nToAverage, ...
-                            'SelectionMethod', selectionMethod, ...
-                            'MaxRange2Mean', maxRange2Mean), z, ...
-                'UniformOutput', false), ...
-            readoutCell, indBoundariesAllCell, uniquePhases, ...
-            'UniformOutput', false);
-
-        % Reorganize so that outputs are a matrix cell array
-        %   Note: each row is a phase and each column is a curve
-        [phaseAveragesCell, indSelectedCell] = ...
-            argfun(@force_matrix, phaseAveragesCellCell, indSelectedCellCell);
-
-        % Take scalar phase averages out of the cell array
-        phaseAverages = cell2num(phaseAveragesCell);
-        indSelected = indSelectedCell;
-    end
-else
-    if colorByPhase || computePhaseBoundaries || ...
-            computeAverageWindows || computePhaseAverages || ...
-            computeIndSelected
-        fprintf('Phase vectors must be provided!\n');
-        return
-    end
-    uniquePhases = {};
-    nPhases = [];
-    maxNPhases = 1;
+% Create default phase labels
+if isempty(phaseLabels) && ~isempty(phaseVectors)
+    phaseLabels = create_labels_from_numbers(1:maxNPhases, 'Prefix', 'Phase #');
 end
 
 % Decide on the number of curves to plot per phase
@@ -773,7 +738,7 @@ end
 
 % Set default columns to plot
 if isempty(columnsToPlot)
-    columnsToPlot = 1:size(readout, 2);
+    columnsToPlot = transpose(1:nCols);
 end
 
 % Set column labels
@@ -798,7 +763,6 @@ end
 % Count the number of boundaries
 nPBoundaries = size(pBoundaries, 2);
 nRBoundaries = size(rBoundaries, 2);
-% nBoundaries = nPBoundaries + nRBoundaries;
 
 % Set the default figure title
 if isempty(figTitle) && ~strcmpi(figTitle, 'suppress')
@@ -838,7 +802,7 @@ if isempty(confIntColorMap)
     confIntColorMap = WHITE - (WHITE - colorMap) * confIntFadePercentage;
 end
 
-% Decide on the confidence interval color map to use
+% Decide on the selected values color map to use
 if isempty(selectedColorMap)
     selectedColorMap = colorMap;
 end
@@ -1096,7 +1060,8 @@ if plotIndSelected && ~isempty(indSelected)
             arrayfun(@(x) ...
                 cellfun(@(y) plot_selected(pValues, ...
                             readoutToPlot(:, columnsToPlot(x)), y, ...
-                            selectedMarker, 'r', selectedLineWidth), ...
+                            'Marker', selectedMarker, 'ColorMap', 'r', ...
+                            'LineWidth', selectedLineWidth), ...
                         indSelected(:, columnsToPlot(x))), ...
                 1:nColumnsToPlot, 'UniformOutput', false);            
 
@@ -1130,7 +1095,7 @@ if plotIndSelected && ~isempty(indSelected)
     else
         selected = plot_selected(pValues, readoutToPlot, indSelected, ...
                                 'Marker', selectedMarker, ...
-                                'Color', selectedColorMap(1, :), ...
+                                'ColorMap', selectedColorMap(1, :), ...
                                 'LineWidth', selectedLineWidth);
     end
 end
@@ -1431,6 +1396,8 @@ set(curves(iPlot, iPhase), 'DisplayName', ...
 
 set(curves(iPlot, 1), 'DisplayName', ...
     replace(columnLabels{col}, '_', '\_'));
+
+nBoundaries = nPBoundaries + nRBoundaries;
 
 %}
 

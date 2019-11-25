@@ -32,6 +32,7 @@ function flag = set_default_flag (flag, varargin)
 %       cd/m3ha_fminsearch3.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/parse_multiunit.m
+%       cd/parse_phase_info.m
 %       cd/plot_measures.m
 %       cd/plot_tuning_curve.m
 %       cd/plot_vertical_shade.m

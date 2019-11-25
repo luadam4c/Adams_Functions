@@ -34,21 +34,22 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 %                   must be a positive integer scalar
 %                   default == 1
 %                   - 'NLastOfPhase': number of values at the last of a phase
-%                   must be a positive integer scalar
+%                   must be empty or a positive integer scalar
 %                   default == 10
 %                   - 'NToAverage': number of values to average
-%                   must be a positive integer scalar
-%                   default == 5
+%                   must be empty or a positive integer scalar
+%                   default == set in select_similar_values.m
 %                   - 'SelectionMethod': the selection method
 %                   must be an unambiguous, case-insensitive match to one of: 
+%                       'auto'          - set in select_similar_values.m
 %                       'notNaN'        - select any non-NaN value
 %                       'maxRange2Mean' - select vales so that the maximum 
 %                                           range is within a percentage 
 %                                           of the mean
-%                   default == 'maxRange2Mean'
+%                   default == 'auto'
 %                   - 'MaxRange2Mean': maximum percentage of range versus mean
-%                   must be a nonnegative scalar
-%                   default == 40%
+%                   must be empty or a nonnegative scalar
+%                   default == set in select_similar_values.m
 %                   - Any other parameter-value pair for 
 %                       the select_similar_values() function
 %
@@ -58,9 +59,8 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/parse_phase_info.m
 %       cd/plot_measures.m
-%       cd/plot_struct.m
-%       cd/plot_tuning_curve.m
 
 % File History:
 % 2019-05-13 Created by Adam Lu
@@ -72,7 +72,8 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 % 
 
 %% Hard-coded parameters
-validSelectionMethods = {'notNaN', 'maxRange2Mean'};
+validSelectionMethods = {'auto', 'notNaN', 'maxRange2Mean'};
+defaultNLastOfPhase = 10;
 
 %% Default values for optional arguments
 returnLastTrialDefault = false; % return NaN if criteria not met by default
@@ -80,12 +81,10 @@ indicesDefault = [];            % set in extract_subvectors.m
 phaseBoundariesDefault = [];    % no phase boundaries by default
 phaseNumberDefault = 1;         % the first phase by default
 endPointsDefault = [];          % set in select_similar_values.m
-nLastOfPhaseDefault = 10;       % select from last 10 values by default
-nToAverageDefault = 5;          % select 5 values by default
-selectionMethodDefault = 'maxRange2Mean';   
-                                % select using maxRange2Mean by default
-maxRange2MeanDefault = 40;      % range is not more than 40% of mean by default
-% maxRange2MeanDefault = 200;
+nLastOfPhaseDefault = [];       % set later
+nToAverageDefault = [];         % set in select_similar_values.m
+selectionMethodDefault = 'auto';% set in select_similar_values.m
+maxRange2MeanDefault = [];      % set in select_similar_values.m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -120,13 +119,19 @@ addParameter(iP, 'EndPoints', endPointsDefault, ...
                 ['EndPoints must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'NLastOfPhase', nLastOfPhaseDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                ['NLastOfPhase must be either empty ', ...
+                    'or a positive integer scalar!']));
 addParameter(iP, 'NToAverage', nToAverageDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                ['NToAverage must be either empty ', ...
+                    'or a positive integer scalar!']));
 addParameter(iP, 'SelectionMethod', selectionMethodDefault, ...
     @(x) any(validatestring(x, validSelectionMethods)));
 addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+    @(x) assert(isempty(x) || isscalar(x) && x >= 0, ...
+                ['MaxRange2Mean must be either empty ', ...
+                    'or a nonnegative scalar!']));
 
 % Read from the Input Parser
 parse(iP, values, varargin{:});
@@ -145,6 +150,12 @@ maxRange2Mean = iP.Results.MaxRange2Mean;
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
+% Decide on nLastOfPhase
+if isempty(nLastOfPhase)
+    nLastOfPhase = defaultNLastOfPhase;
+end
+
+%% Compute end points for the last of phase
 if isempty(endPoints) && ~isempty(phaseBoundaries)
     % Number of entries
     nEntries = numel(values);
@@ -165,7 +176,7 @@ if isempty(endPoints) && ~isempty(phaseBoundaries)
     endPoints = [idxFirst, idxLast];
 end
 
-%% Do the job
+%% Compute average of values over the last of phase
 % Select values similar to the last phase value
 [valSelected, indSelected] = ...
     select_similar_values(values, 'ReturnLastTrial', returnLastTrial, ...

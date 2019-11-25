@@ -55,6 +55,7 @@ function [y, ia, ic] = unique_custom (x, varargin)
 %       cd/convert_to_rank.m
 %       cd/create_default_grouping.m
 %       cd/extract_subvectors.m
+%       cd/parse_phase_info.m
 %       cd/plot_measures.m
 %       cd/plot_tuning_curve.m
 %       cd/unique_groups.m

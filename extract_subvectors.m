@@ -119,6 +119,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/parse_current_family.m
 %       cd/parse_ipsc.m
+%       cd/parse_phase_info.m
 %       cd/parse_multiunit.m
 %       cd/parse_pulse_response.m
 %       cd/parse_spike2_mat.m

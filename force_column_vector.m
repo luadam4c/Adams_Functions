@@ -111,7 +111,6 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/plot_error_bar.m
 %       cd/plot_histogram.m
 %       cd/plot_raster.m
-%       cd/plot_tuning_curve.m
 %       cd/plot_window_boundaries.m
 %       cd/remove_outliers.m
 %       cd/select_similar_values.m

@@ -427,6 +427,7 @@ There are 1 MATLAB scripts in this directory:
 - [**parse_laser_trace.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_laser_trace.m): Parses laser traces
 - [**parse_lts.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_lts.m): Finds, plots and classifies the most likely low-threshold spike (LTS) candidate in a voltage trace
 - [**parse_multiunit.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_multiunit.m): Parses multiunit recordings: detect spikes, computes spike histograms and autocorrelograms
+- [**parse_phase_info.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_phase_info.m): Parses phase-related information from parameter and readout values
 - [**parse_pulse.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_pulse.m): Parses pulse widths, endpoints, amplitudes for vector(s) containing a pulse
 - [**parse_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_pulse_response.m): Parses pulse response widths, endpoints, amplitudes for vector(s) containing a pulse response
 - [**parse_repetitive_pulses.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_repetitive_pulses.m): Parses repetitive pulses
@@ -549,3 +550,4 @@ There are 1 MATLAB scripts in this directory:
 - [**ZG_extract_all_data.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_all_data.m): Extract each cell and concatenate sweeps into a single file under a subdirectory of its own
 - [**ZG_extract_all_IEIs.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_all_IEIs.m): Extract all the inter-event intervals from a directory containing multiple minEASE output subdirectories
 - [**ZG_extract_IEI_thresholds.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_extract_IEI_thresholds.m): Extract/compute inter-event-interval distribution thresholds, separating events from spikes
+- [**ZG_fit_IEI_distributions.m**](https://github.com/blabuva/Adams_Functions/blob/master/ZG_fit_IEI_distributions.m): Fit inter-event-interval distributions and log distributions

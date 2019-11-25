@@ -1,6 +1,6 @@
-function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
+function handles = plot_bar (val, varargin)
 %% Plots a bar graph (grouped or not) with or without confidence intervals
-% Usage: [bars, lines, fig, boundaries] = plot_bar (val, varargin)
+% Usage: handles = plot_bar (val, varargin)
 % Explanation:
 %       TODO
 %
@@ -17,15 +17,18 @@ function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 %       [bars, lines, fig] = plot_bar(val1, low1, high1, 'ReverseOrder', true, 'BarDirection', 'horizontal');
 %
 % Outputs:
-%       bars    - bar objects (bars for each group or column is one bar object)
-%               specified as a vector of Bar object handles
-%       lines   - error bar lines
-%                   1st dim: connecting (1), upper limit (2), lower limit (3)
-%                   2nd dim: sample number
-%                   3rd dim: group number
-%               specified as an array of Primitive Line object handles
-%       fig     - figure handle
-%               specified as a Figure object handle
+%       handles - handles structure with fields:
+%                   bars    - bar objects (bars for each group or 
+%                                           column is one bar object)
+%                           specified as a vector of Bar object handles
+%                   lines   - error bar lines
+%                               1st dim: connecting (1), upper limit (2), lower limit (3)
+%                               2nd dim: sample number
+%                               3rd dim: group number
+%                           specified as an array of Primitive Line object handles
+%                   fig     - figure handle
+%                           specified as a Figure object handle
+%               specified as a structure
 %
 % Arguments:
 %       val     - mean values for the bar() function
@@ -110,45 +113,46 @@ function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 %                       'verticalBars'      - vertical bars
 %                       'horizontalShades'  - horizontal shades
 %                   default == 'horizontalLines'
-%                   - 'RBoundaries': readout boundary values TODO
+%                   - 'RBoundaries': readout boundary values
 %                       Note: each row is a set of boundaries
 %                   must be a numeric array
 %                   default == []
-%                   - 'RBoundaryType': type of readout boundaries TODO
+%                   - 'RBoundaryType': type of readout boundaries
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'verticalLines'     - vertical dotted lines
 %                       'horizontalBars'    - horizontal bars
 %                       'verticalShades'    - vertical shades
 %                   default == 'verticalLines'
-%                   - 'AverageWindows': windows to average values TODO
+%                   - 'AverageWindows': windows to average values
 %                       Note: If a matrix cell array, 
 %                           each column is for a curve and each row is for a phase
 %                   must be a numeric vector or a cell array of numeric vectors
 %                   default == []
-%                   - 'PhaseAverages': average values for each phase TODO
+%                   - 'PhaseAverages': average values for each phase
 %                       Note: If a matrix cell array, 
 %                           each column is for a curve and each row is for a phase
 %                   must be a numeric 2-D array
 %                   default == []
-%                   - 'IndSelected': selected indices to mark differently TODO
+%                   - 'IndSelected': selected indices to mark differently
 %                   must be a numeric vector
 %                   default == []
-%                   - 'NLastOfPhase': number of values at the last of a phase TODO
-%                   must be a positive integer scalar
-%                   default == 10
-%                   - 'NToAverage': number of values to average TODO
-%                   must be a positive integer scalar
-%                   default == 5
-%                   - 'SelectionMethod': the selection method TODO
+%                   - 'NLastOfPhase': number of values at the last of a phase
+%                   must be empty or a positive integer scalar
+%                   default == set in parse_phase_info.m
+%                   - 'NToAverage': number of values to average
+%                   must be empty or a positive integer scalar
+%                   default == set in select_similar_values.m
+%                   - 'SelectionMethod': the selection method
 %                   must be an unambiguous, case-insensitive match to one of: 
+%                       'auto'          - set in select_similar_values.m
 %                       'notNaN'        - select any non-NaN value
 %                       'maxRange2Mean' - select vales so that the maximum 
 %                                           range is within a percentage 
 %                                           of the mean
-%                   default == 'maxRange2Mean'
-%                   - 'MaxRange2Mean': maximum percentage of range versus mean TODO
-%                   must be a nonnegative scalar
-%                   default == 40%
+%                   default == 'auto'
+%                   - 'MaxRange2Mean': maximum percentage of range versus mean
+%                   must be empty or a nonnegative scalar
+%                   default == set in select_similar_values.m
 %                   - 'FigTitle': title for the figure
 %                   must be a string scalar or a character vector
 %                   default == TODO: ['Bar graph for ', figName]
@@ -177,6 +181,7 @@ function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 %       cd/force_column_vector.m
 %       cd/isfigtype.m
 %       cd/plot_horizontal_line.m
+%       cd/plot_selected.m
 %       cd/plot_vertical_line.m
 %       cd/save_all_figtypes.m
 %       cd/struct2arglist.m
@@ -187,7 +192,7 @@ function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 %       cd/plot_struct.m
 %       cd/ZG_fit_IEI_distributions.m
 %       /media/adamX/Paula_IEIs/paula_iei3.m
-%
+
 % File History: 
 % 2017-10-19 Moved from paula_iei3.m
 % 2017-10-19 Added input parser and various optional arguments
@@ -209,11 +214,14 @@ function [bars, lines, fig, boundaries] = plot_bar (val, varargin)
 % 2019-05-11 Added 'FigTitle' as an optional argument
 % 2019-06-10 Added 'PBoundaries' and 'RBoundaries' as optional arguments
 % 2019-11-23 Added 'PhaseVectors' and other dependent optional arguments
+% 2019-11-24 Now returns handles structure as output
+% TODO: Finish implementation of 'PhaseVectors' as in plot_tuning_curve
 % TODO: Add 'BarColors' as an optional argument
 % TODO: Change usage in all functions using this
 
 %% Hard-coded parameters
 validBarDirections = {'vertical', 'horizontal'};
+validSelectionMethods = {'auto', 'notNaN', 'maxRange2Mean'};
 validPBoundaryTypes = {'horizontalLines', 'verticalBars', 'horizontalShades'};
 validRBoundaryTypes = {'verticalLines', 'horizontalBars', 'verticalShades'};
 
@@ -249,12 +257,10 @@ rBoundaryTypeDefault = 'verticalLines';
 averageWindowsDefault = {};         % set later
 phaseAveragesDefault = [];          % set later
 indSelectedDefault = [];
-nLastOfPhaseDefault = 10;           % select from last 10 values by default
-nToAverageDefault = 5;              % select 5 values by default
-selectionMethodDefault = 'maxRange2Mean';   
-                                    % select using maxRange2Mean by default
-maxRange2MeanDefault = 40;          % range is not more than 40% of mean by default
-figTitleDefault = '';               % set later
+nLastOfPhaseDefault = [];           % set in parse_phase_info.m
+nToAverageDefault = [];             % set in select_similar_values.m
+selectionMethodDefault = 'auto';    % set in select_similar_values.m
+maxRange2MeanDefault = [];          % set in select_similar_values.m
 figTitleDefault = '';               % set later
 figHandleDefault = [];              % no existing figure by default
 figNumberDefault = [];              % no figure number by default
@@ -347,13 +353,19 @@ addParameter(iP, 'PhaseAverages', phaseAveragesDefault, ...
 addParameter(iP, 'IndSelected', indSelectedDefault, ...
     @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
 addParameter(iP, 'NLastOfPhase', nLastOfPhaseDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                ['NLastOfPhase must be either empty ', ...
+                    'or a positive integer scalar!']));
 addParameter(iP, 'NToAverage', nToAverageDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                ['NToAverage must be either empty ', ...
+                    'or a positive integer scalar!']));
 addParameter(iP, 'SelectionMethod', selectionMethodDefault, ...
     @(x) any(validatestring(x, validSelectionMethods)));
 addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+    @(x) assert(isempty(x) || isscalar(x) && x >= 0, ...
+                ['MaxRange2Mean must be either empty ', ...
+                    'or a nonnegative scalar!']));
 addParameter(iP, 'FigTitle', figTitleDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigHandle', figHandleDefault);
@@ -412,17 +424,17 @@ figName = iP.Results.FigName;
 % Keep unmatched arguments for the bar() function
 otherArguments = struct2arglist(iP.Unmatched);
 
+%% Preparation
+% Initialize output
+handles = struct;
+
 % Check relationships between arguments
 if ~isempty(pTicks) && ~isempty(pTickLabels) && ...
         numel(pTicks) ~= numel(pTickLabels)
     fprintf('PTicks and PTickLabels must have the same number of elements!\n');
-    bars = gobjects;
-    lines = gobjects;
-    fig = gobjects;
     return
 end
 
-%% Preparation
 % If plotting curve only, change some defaults
 if plotOnly
     pLabel = 'suppress';
@@ -448,6 +460,14 @@ end
                 isempty(averageWindows), ...
             plotPhaseAverages && isempty(phaseAverages), ...
             plotIndSelected && isempty(indSelected));
+
+% If phase-related stuff are to be computed, phase vectors must be provided
+if isempty(phaseVectors) && ...
+        (computePhaseBoundaries || computeAverageWindows || ...
+        computePhaseAverages || computeIndSelected)
+    fprintf('Phase vectors must be provided!\n');
+    return
+end
 
 % Either force all vectors as row vectors
 %   or make the vectors consistent
@@ -535,11 +555,6 @@ switch barDirection
         yLabel = pLabel;
 end
 
-% Count the number of boundaries
-nPBoundaries = size(pBoundaries, 2);
-nRBoundaries = size(rBoundaries, 2);
-nBoundaries = nPBoundaries + nRBoundaries;
-
 % Set the default figure title
 if isempty(figTitle)
     if ~strcmpi(readoutLabel, 'suppress') && ~strcmpi(pLabel, 'suppress')
@@ -550,6 +565,72 @@ if isempty(figTitle)
         figTitle = 'Readout vs. parameter';
     end
 end
+
+% Deal with phase vectors
+if ~isempty(phaseVectors)
+    % Parse phase-related stuff
+    if computeIndSelected
+        [uniquePhases, phaseBoundaries, averageWindows, ...
+                phaseAverages, indSelected] = ...
+            parse_phase_info(pValues, readout, phaseVectors, ...
+                            'NLastOfPhase', nLastOfPhase, ...
+                            'NToAverage', nToAverage, ...
+                            'SelectionMethod', selectionMethod, ...
+                            'MaxRange2Mean', maxRange2Mean);
+    elseif computePhaseAverages
+        [uniquePhases, phaseBoundaries, averageWindows, phaseAverages] = ...
+            parse_phase_info(pValues, readout, phaseVectors, ...
+                            'NLastOfPhase', nLastOfPhase, ...
+                            'NToAverage', nToAverage, ...
+                            'SelectionMethod', selectionMethod, ...
+                            'MaxRange2Mean', maxRange2Mean);
+    elseif computeAverageWindows
+        [uniquePhases, phaseBoundaries, averageWindows] = ...
+            parse_phase_info(pValues, readout, phaseVectors, ...
+                            'NLastOfPhase', nLastOfPhase, ...
+                            'NToAverage', nToAverage, ...
+                            'SelectionMethod', selectionMethod, ...
+                            'MaxRange2Mean', maxRange2Mean);
+    elseif computePhaseBoundaries
+        [uniquePhases, phaseBoundaries] = ...
+            parse_phase_info(pValues, readout, phaseVectors, ...
+                            'NLastOfPhase', nLastOfPhase, ...
+                            'NToAverage', nToAverage, ...
+                            'SelectionMethod', selectionMethod, ...
+                            'MaxRange2Mean', maxRange2Mean);
+    else
+        uniquePhases = ...
+            parse_phase_info(pValues, readout, phaseVectors, ...
+                            'NLastOfPhase', nLastOfPhase, ...
+                            'NToAverage', nToAverage, ...
+                            'SelectionMethod', selectionMethod, ...
+                            'MaxRange2Mean', maxRange2Mean);
+    end
+
+    % Generate phase boundaries to be plotted if requested
+    if plotPhaseBoundaries && computePhaseBoundaries
+        % Pool all phase boundaries together
+        if iscell(pBoundaries)
+            phaseBoundaries = union_over_cells(phaseBoundaries);
+        end
+
+        % Force as a row vector
+        phaseBoundaries = force_row_vector(phaseBoundaries);
+
+        % Add to parameter boundaries to plot
+        pBoundaries = [pBoundaries; phaseBoundaries];
+    end
+
+    % Count the number of phases for each readout column
+    nPhases = count_samples(uniquePhases);
+
+    % Compute the maximum number of phases
+    maxNPhases = max(nPhases);
+end
+
+% Count the number of boundaries
+nPBoundaries = size(pBoundaries, 2);
+nRBoundaries = size(rBoundaries, 2);
 
 %% Plot bars
 % Decide on the figure to plot on
@@ -721,7 +802,7 @@ if nPBoundaries > 0
 
     hold on
     pBoundaries = plot_horizontal_line(pBoundaries, 'LineWidth', 0.5, ...
-                                'LineStyle', '--', 'Color', 'g');
+                                        'LineStyle', '--', 'Color', 'g');
 else
     pBoundaries = gobjects;
 end
@@ -730,30 +811,47 @@ end
 if nRBoundaries > 0
     hold on
     rBoundaries = plot_vertical_line(rBoundaries, 'LineWidth', 0.5, ...
-                                'LineStyle', '--', 'Color', 'r');
+                                        'LineStyle', '--', 'Color', 'r');
 else
     rBoundaries = gobjects;
 end
 
 % Plot selected values if any
 if ~isempty(indSelected) && ~all(isnan(indSelected))
-    % Get the selected values
-    valSelected = val(indSelected);
-
-    % Reverse the order
-    if reverseOrder
-        % Compute flipped indices
-        indSelected = pValues(1) + pValues(end) - indSelected;
-    end
-
-    % Plot red crosses
     hold on
-    plot(valSelected, indSelected, 'rx', 'LineWidth', 2, 'MarkerSize', 6);
+    if iscell(indSelected)
+        % Reverse the order
+        if reverseOrder
+            % Compute flipped indices
+            indSelected = cellfun(@(x) pValues(1) + pValues(end) - x, ...
+                                    indSelected, 'UniformOutput', false);
+        end
+
+        % Plot selected values
+        selected = cellfun(@(y) plot_selected(val, pValues, y), ...
+                            indSelected);            
+    else
+        % Reverse the order
+        if reverseOrder
+            % Compute flipped indices
+            indSelected = pValues(1) + pValues(end) - indSelected;
+        end
+
+        % Plot selected values
+        selected = plot_selected(val, pValues, indSelected);
+    end
 end
 
 %% Post-plotting
 % Return boundaries
 boundaries = transpose(vertcat(pBoundaries, rBoundaries));
+
+% Save in output
+handles.bars = bars;
+handles.lines = lines;
+handles.fig = fig;
+handles.boundaries = boundaries;
+handles.selected = selected;
 
 % Save figure if figName provided
 if ~isempty(figName)
@@ -884,6 +982,15 @@ set(gca, 'YTickLabel', pTickLabels);
 % Compute the minimum and maximum pValue
 minPValue = min(pValues);
 maxPValue = max(pValues);
+
+nBoundaries = nPBoundaries + nRBoundaries;
+
+% Get the selected values
+valSelected = val(indSelected);
+
+% Plot red crosses
+hold on
+plot(valSelected, indSelected, 'rx', 'LineWidth', 2, 'MarkerSize', 6);
 
 %}
 

@@ -14,7 +14,7 @@ function newVec = trim_nans (oldVec, varargin)
 %                   specified as a TODO
 %
 % Arguments:
-%       oldVec      - originial vector(s)
+%       oldVec      - original vector(s)
 %                   must be a TODO
 %       trimMethod  - (opt) method for trimming
 %                   must be an unambiguous, case-insensitive match to one of: 
@@ -34,7 +34,7 @@ function newVec = trim_nans (oldVec, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
-%       cd/plot_tuning_curve.m
+%       cd/parse_phase_info.m
 
 % File History:
 % 2019-08-22 Created by Adam Lu

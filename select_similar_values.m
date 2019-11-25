@@ -23,8 +23,8 @@ function [valSelected, indSelected] = select_similar_values (values, varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'NToSelect': number of values to select
-%                   must be a positive integer scalar
-%                   default == 5
+%                   must be empty or a positive integer scalar
+%                   default == half of all values, rounding up
 %                   - 'Indices': indices for the subvectors to extract 
 %                       Note: if provided, would override 'EndPoints'
 %                   must be a numeric vector with 2 elements
@@ -49,7 +49,7 @@ function [valSelected, indSelected] = select_similar_values (values, varargin)
 %                       'backward'  - select from the last indices
 %                   default == 'forward'
 %                   - 'MaxRange2Mean': maximum percentage of range versus mean
-%                   must be a nonnegative scalar
+%                   must be empty or a nonnegative scalar
 %                   default == 40%
 %                   - Any other parameter-value pair for the TODO() function
 %
@@ -70,21 +70,26 @@ function [valSelected, indSelected] = select_similar_values (values, varargin)
 % 2019-05-15 Add 'SelectionMethod' as an optional argument
 %               with possible values 'notNaN', 'maxRange2Mean'
 % 2019-05-16 Add 'ReturnLastTrial' as an optional argument
+% 2019-11-24 Changed default nToSelect from 5 to half of all values, rounding up
+% 2019-11-24 Now accepts empty 'auto' for selectionMethod
+%               and [] for nToSelect, maxRange2Mean
 % 
 
 %% Hard-coded parameters
-validSelectionMethods = {'notNaN', 'maxRange2Mean'};
+validSelectionMethods = {'auto', 'notNaN', 'maxRange2Mean'};
 validDirections = {'forward', 'backward'};
+defaultSelectionMethod = 'maxRange2Mean';
+                                % select using maxRange2Mean by default
+defaultMaxRange2Mean = 40;      % range is not more than 40% of mean by default
 
 %% Default values for optional arguments
 returnLastTrialDefault = false; % return NaN if criteria not met by default
-nToSelectDefault = 5;           % select 5 values by default
+nToSelectDefault = [];          % select half of all values by default
 indicesDefault = [];            % set in extract_subvectors.m
 endPointsDefault = [];          % set later
-selectionMethodDefault = 'maxRange2Mean';   
-                                % select using maxRange2Mean by default
+selectionMethodDefault = 'auto';% set later
 directionDefault = 'forward';   % select from the first indices by default
-maxRange2MeanDefault = 40;      % range is not more than 40% of mean by default
+maxRange2MeanDefault = [];      % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -107,7 +112,9 @@ addRequired(iP, 'values', ...
 addParameter(iP, 'ReturnLastTrial', returnLastTrialDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'NToSelect', nToSelectDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                ['NToSelect must be either empty ', ...
+                    'or a positive integer scalar!']));
 addParameter(iP, 'Indices', indicesDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['Indices must be either a numeric array ', ...
@@ -121,7 +128,9 @@ addParameter(iP, 'SelectionMethod', selectionMethodDefault, ...
 addParameter(iP, 'Direction', directionDefault, ...
     @(x) any(validatestring(x, validDirections)));
 addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+    @(x) assert(isempty(x) || isscalar(x) && x >= 0, ...
+                ['MaxRange2Mean must be either empty ', ...
+                    'or a nonnegative scalar!']));
 
 % Read from the Input Parser
 parse(iP, values, varargin{:});
@@ -138,9 +147,20 @@ maxRange2Mean = iP.Results.MaxRange2Mean;
 % otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
+% Decide on the selection method
+if strcmp(selectionMethod, 'auto')
+    selectionMethod = defaultSelectionMethod;
+end
+
+% Decide on maxRange2Mean
+if isempty(maxRange2Mean)
+    maxRange2Mean = defaultMaxRange2Mean;
+end
+
 % Restrict to end points
 valuesRestricted = extract_subvectors(values, 'EndPoints', endPoints, ...
                                         'Indices', indices);
+
 % Save first index
 if ~isempty(indices)
     idxFirst = indices(1);
@@ -165,6 +185,11 @@ end
 
 % Count the number of values
 nValues = count_samples(valuesOfInterest);
+
+% Decide on default nToSelect
+if isempty(nToSelect)
+    nToSelect = ceil(nValues ./ 2);
+end
 
 % Check if there are enough values to select from
 if nToSelect > nValues

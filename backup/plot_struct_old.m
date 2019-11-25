@@ -3,14 +3,11 @@ function [figs, lines] = plot_struct (structArray, varargin)
 % Usage: [figs, lines] = plot_struct (structArray, varargin)
 % Explanation:
 %       TODO
-%
 % Example(s):
 %       TODO
-%
 % Outputs:
 %       figs        - figure handle(s) for the created figure(s)
 %                   specified as a figure object handle column vector
-%
 % Arguments:    
 %       structArray - a structure array containing scalar fields
 %                   must be a 2-D structure array
@@ -19,6 +16,30 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %                       'tuning'    - circles
 %                       'bar'       - horizontal bars
 %                   default == 'tuning'
+%                   - 'PBoundaries': parameter boundary values
+%                       if a matrix, each row is for a different field
+%                   must be a numeric array
+%                   default == []
+%                   - 'RBoundaries': readout boundary values
+%                       if a matrix, each row is for a different field
+%                   must be a numeric array
+%                   default == []
+%                   - 'NLastOfPhase': number of values at the last of a phase
+%                   must be a positive integer scalar
+%                   default == 10
+%                   - 'NToAverage': number of values to average
+%                   must be a positive integer scalar
+%                   default == 5
+%                   - 'SelectionMethod': the selection method
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'notNaN'        - select any non-NaN value
+%                       'maxRange2Mean' - select vales so that the maximum 
+%                                           range is within a percentage 
+%                                           of the mean
+%                   default == 'maxRange2Mean'
+%                   - 'MaxRange2Mean': maximum percentage of range versus mean
+%                   must be a nonnegative scalar
+%                   default == 40%
 %                   - 'LineSpec': line specification
 %                   must be a character array
 %                   default == '-'
@@ -67,9 +88,11 @@ function [figs, lines] = plot_struct (structArray, varargin)
 %
 % Requires:
 %       ~/Downloaded_Functions/rgb.m
+%       cd/compute_phase_average.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/force_column_cell.m
+%       cd/force_row_vector.m
 %       cd/isfigtype.m
 %       cd/ispositiveintegervector.m
 %       cd/match_row_count.m
@@ -90,7 +113,6 @@ function [figs, lines] = plot_struct (structArray, varargin)
 % 2019-05-08 Added 'PlotType' as an optional argument
 % 2019-05-11 Added 'RBoundaries' as an optional argument
 % 2019-06-11 Moved boundary plotting code to plot_bar.m and plot_tuning_curve.m
-% 2019-11-24 Moved phase average computing code to plot_bar.m
 % TODO: Return handles to plots
 % TODO: Pass in figNames or figNumbers when plotting separately
 % 
@@ -104,6 +126,13 @@ barReverseOrder = true;
 
 %% Default values for optional arguments
 plotTypeDefault = 'tuning';
+pBoundariesDefault = [];
+rBoundariesDefault = [];
+nLastOfPhaseDefault = 10;       % select from last 10 values by default
+nToAverageDefault = 5;          % select 5 values by default
+selectionMethodDefault = 'maxRange2Mean';   
+                                % select using maxRange2Mean by default
+maxRange2MeanDefault = 40;      % range is not more than 40% of mean by default
 lineSpecDefault = 'o';
 lineWidthDefault = [];
 markerEdgeColorDefault = [];
@@ -141,6 +170,18 @@ addRequired(iP, 'structArray', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'PlotType', plotTypeDefault, ...
     @(x) any(validatestring(x, validPlotTypes)));
+addParameter(iP, 'PBoundaries', pBoundariesDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'RBoundaries', rBoundariesDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'NLastOfPhase', nLastOfPhaseDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'NToAverage', nToAverageDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'SelectionMethod', selectionMethodDefault, ...
+    @(x) any(validatestring(x, validSelectionMethods)));
+addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
 addParameter(iP, 'LineSpec', lineSpecDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'LineWidth', lineWidthDefault);
@@ -174,6 +215,13 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 % Read from the Input Parser
 parse(iP, structArray, varargin{:});
 plotType = validatestring(iP.Results.PlotType, validPlotTypes);
+pBoundaries = iP.Results.PBoundaries;
+rBoundaries = iP.Results.RBoundaries;
+nLastOfPhase = iP.Results.NLastOfPhase;
+nToAverage = iP.Results.NToAverage;
+selectionMethod = validatestring(iP.Results.SelectionMethod, ...
+                                    validSelectionMethods);
+maxRange2Mean = iP.Results.MaxRange2Mean;
 lineSpec = iP.Results.LineSpec;
 lineWidth = iP.Results.LineWidth;
 markerEdgeColor = iP.Results.MarkerEdgeColor;
@@ -284,12 +332,51 @@ end
 % Convert the data to a homogeneous array, with each column being a field
 fieldData = table2array(struct2table(scalarStructArray));
 
+% Match the parameter boundaries
+if iscolumn(pBoundaries) && numel(pBoundaries) ~= nFields
+    pBoundaries = force_row_vector(pBoundaries);
+end
+pBoundaries = match_row_count(pBoundaries, nFields);
+
+% Compute baseline averages if no readout boundaries provided
+% TODO: Move to plot_bar.m
+indSelected = cell(nFields, 1);
+if isempty(rBoundaries)
+    rBoundaries = nan(nFields, 1);
+    for iField = 1:nFields
+        % Compute the baseline average and indices selected for this field
+        [rBoundaries(iField, 1), indSelected{iField}] = ...
+            compute_phase_average(fieldData(:, iField), ...
+                        'ReturnLastTrial', true, ...
+                        'PhaseBoundaries', pBoundaries(iField, :), ...
+                        'PhaseNumber', 1, ...
+                        'NLastOfPhase', nLastOfPhase, ...
+                        'NToAverage', nToAverage, ...
+                        'SelectionMethod', selectionMethod, ...
+                        'MaxRange2Mean', maxRange2Mean);
+    end
+end
+
+% Match the readout boundaries
+if iscolumn(rBoundaries) && numel(rBoundaries) ~= nFields
+    rBoundaries = force_row_vector(rBoundaries);
+end
+rBoundaries = match_row_count(rBoundaries, nFields);
+
+% Count the number of boundaries
+nPBoundaries = size(pBoundaries, 2);
+nRBoundaries = size(rBoundaries, 2);
+nBoundaries = nPBoundaries + nRBoundaries;
+
 %% Plot all fields
 figs = gobjects(nFields, 1);
 lines = gobjects(nFields, nBoundaries);
 for iField = 1:nFields
     % Get the field value vector for this field
     fieldVals = fieldData(:, iField);
+    pBoundariesThis = pBoundaries(iField, :);
+    rBoundariesThis = rBoundaries(iField, :);
+    indSelectedThis = indSelected{iField};
 
     % Set the field label for this field
     if ~isempty(fieldLabels)
@@ -341,14 +428,17 @@ for iField = 1:nFields
                         'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
                         'MarkerEdgeColor', markerEdgeColor, ...
                         'MarkerFaceColor', markerFaceColor, ...
+                        'PBoundaries', pBoundariesThis, ...
+                        'RBoundaries', rBoundariesThis, ...
+                        'IndSelected', indSelectedThis, ...
                         otherArguments);
         figThis = handles.fig;
-        linesThis = handles.boundaries;
+        linesThis = handles.curves;
     case 'bar'
         % Plot horizontal bars
         % TODO: Deal with pIsLog
         % TODO: Implement singlecolor
-        handles = ...
+        [~, ~, figThis, linesThis] = ...
             plot_bar(fieldVals, 'ForceVectorAsRow', false, ...
                         'ReverseOrder', barReverseOrder, ...
                         'BarDirection', barDirection, ...
@@ -357,9 +447,10 @@ for iField = 1:nFields
                         'PTickAngle', pTickAngle, ...
                         'PLabel', pLabel, 'ReadoutLabel', fieldLabel, ...
                         'FigTitle', figTitle, 'FigHandle', figThis, ...
+                        'PBoundaries', pBoundariesThis, ...
+                        'RBoundaries', rBoundariesThis, ...
+                        'IndSelected', indSelectedThis, ...
                         otherArguments);
-        figThis = handles.fig;
-        linesThis = handles.boundaries;
     otherwise
         error('plotType unrecognized!')
     end
@@ -376,6 +467,43 @@ end
 
 %{
 OLD CODE:
+
+@(x) validateattributes(x, {'numeric'}, ...
+                        {'increasing', 'vector', 'numel', 2}));
+
+pTickLabels = arrayfun(@(x) num2str(x), pTicks, ...
+                        'UniformOutput', false);
+
+singleColorDefault = [0, 0, 1];
+
+% Create a figure
+figs(iField) = figure;
+
+'FigName', figName, 'FigTypes', figtypes, ...
+
+%                   - 'XLimits': limits of x axis
+%                               suppress by setting value to 'suppress'
+%                   must be 'suppress' or a 2-element increasing numeric vector
+%                   default == expand by a little bit
+%                   - 'YLimits': limits of y axis
+%                   must be a 2-element increasing numeric vector
+%                   default == []
+xlimitsDefault = [];
+ylimitsDefault = [];
+addParameter(iP, 'XLimits', xlimitsDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
+addParameter(iP, 'YLimits', ylimitsDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
+'XLimits', xLimits, 'YLimits', yLimits, ...
+xLimits = iP.Results.XLimits;
+yLimits = iP.Results.YLimits;
+
+% Set a figure number if not provided
+if isempty(figNumber)
+    figNumber = 10000 + iField;
+end
 
 %}
 
