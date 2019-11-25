@@ -151,6 +151,7 @@ function [simplexOut, exitFlag] = m3ha_fminsearch3 (outparams)
 % 2017-05-23 - Added otherwise to all switch statements
 % 2018-01-24 - Added isdeployed
 % 2018-03-02 - Added onHpcFlag as an optional argument
+% 2019-11-25 - Improved titel for simplex history figure
 % TODO: Change all contents of outparams used to varargin
 % TODO: Make neuronParamsTable a required argument
 %
@@ -669,7 +670,8 @@ while ctIterations < maxIterations && ctEvals < maxFunctionEvaluations ...
 end
 
 %% Save optimization performance figure and close it
-suptitle(['Simplex run #', num2str(simplexNum)])
+suptitle(['Simplex run #', num2str(simplexNum), ...
+        ' for ', replace(prefix, '_', '\_')]);
 saveas(simplexfigure, fullfile(outFolderName, [prefix, '_history.png']));
 close(simplexfigure);
 

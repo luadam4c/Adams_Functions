@@ -29,9 +29,9 @@ plotRasterFlag = false; % true;
 plotSpikeDensityFlag = false; % true;
 plotSpikeHistogramFlag = false; % true;
 plotAutoCorrFlag = false; % true;
-plotMeasuresFlag = false; % true;
-plotContourFlag = true;
-plotCombinedFlag = true;
+plotMeasuresFlag = true;
+plotContourFlag = false; % true;
+plotCombinedFlag = false; % true;
 
 parsePopulationAllFlag = false; %true;
 parsePopulationRestrictedFlag = false; %true;

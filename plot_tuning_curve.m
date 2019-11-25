@@ -38,9 +38,6 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   - 'UpperCI': upper bounds of confidence intervals
 %                   must be a numeric 2-D array
 %                   default == []
-%                   - 'PhaseVectors': phase information for each readout vector
-%                   must be a numeric matrix or a cell array of numeric vectors
-%                   default == {}
 %                   - 'RemoveOutliers': whether to remove outliers
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -155,21 +152,27 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                       'verticalBars'      - vertical bars
 %                       'horizontalShades'  - horizontal shades
 %                   default == 'verticalLines'
+%                   - 'PhaseVectors': phase information for each readout vector
+%                   must be a numeric matrix or a cell array of numeric vectors
+%                   default == {}
+%                   - 'PhaseBoundaries': vector of phase boundaries
+%                   must be a numeric vector
+%                   default == set in parse_phase_info.m
 %                   - 'AverageWindows': windows to average values
 %                       Note: If a matrix cell array, 
 %                           each column is for a curve and each row is for a phase
 %                   must be a numeric vector or a cell array of numeric vectors
-%                   default == []
+%                   default == set in parse_phase_info.m
 %                   - 'PhaseAverages': average values for each phase
 %                       Note: If a matrix cell array, 
 %                           each column is for a curve and each row is for a phase
 %                   must be a numeric 2-D array
-%                   default == []
+%                   default == set in parse_phase_info.m
 %                   - 'IndSelected': selected indices to mark differently
 %                       Note: If a matrix cell array, 
 %                           each column is for a curve and each row is for a phase
 %                   must be a numeric vector or a cell array of numeric vectors
-%                   default == []
+%                   default == set in parse_phase_info.m
 %                   - 'NLastOfPhase': number of values at the last of a phase
 %                   must be empty or a positive integer scalar
 %                   default == set in parse_phase_info.m
@@ -294,6 +297,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-10-04 Now plots 'NS' if not significant
 % 2019-10-07 Now plots 'NS' or star in black
 % 2019-11-24 Moved code to parse_phase_info.m
+% TODO: phaseBoundaries needs to be provided into parse_phase_info.m
 
 %% Hard-coded constants
 WHITE = [1, 1, 1];
@@ -334,7 +338,6 @@ rankTestYLocStar = 0.8;
 %% Default values for optional arguments
 lowerCIDefault = [];
 upperCIDefault = [];
-phaseVectorsDefault = {};           % no phase vectors by default
 removeOutliersDefault = false;      % don't remove outliers by default
 runTTestDefault = false;            % don't run paired t-test by default
 runRankTestDefault = false;         % don't run paired signed-rank test by default
@@ -365,9 +368,11 @@ pBoundariesDefault = [];
 pBoundaryTypeDefault = 'verticalLines';
 rBoundariesDefault = [];
 rBoundaryTypeDefault = 'horizontalLines';
-averageWindowsDefault = {};         % set later
-phaseAveragesDefault = [];          % set later
-indSelectedDefault = [];
+phaseVectorsDefault = {};           % no phase vectors by default
+phaseBoundariesDefault = [];        % set in parse_phase_info.m
+averageWindowsDefault = {};         % set in parse_phase_info.m
+phaseAveragesDefault = [];          % set in parse_phase_info.m
+indSelectedDefault = [];            % set in parse_phase_info.m
 nLastOfPhaseDefault = [];           % set in parse_phase_info.m
 nToAverageDefault = [];             % set in select_similar_values.m
 selectionMethodDefault = 'auto';    % set in select_similar_values.m
@@ -409,10 +414,6 @@ addParameter(iP, 'LowerCI', lowerCIDefault, ...
 addParameter(iP, 'UpperCI', upperCIDefault, ...
     @(x) validateattributes(x, {'numeric', 'logical', ...
                                 'datetime', 'duration'}, {'2d'}));
-addParameter(iP, 'PhaseVectors', phaseVectorsDefault, ...
-    @(x) assert(isnum(x) || iscellnumericvector(x), ...
-                ['PhaseVectors must be a numeric array ', ...
-                    'or a cell array of numeric vectors!']));
 addParameter(iP, 'RemoveOutliers', removeOutliersDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RunTTest', runTTestDefault, ...
@@ -472,6 +473,12 @@ addParameter(iP, 'RBoundaries', rBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'RBoundaryType', rBoundaryTypeDefault, ...
     @(x) any(validatestring(x, validRBoundaryTypes)));
+addParameter(iP, 'PhaseVectors', phaseVectorsDefault, ...
+    @(x) assert(isnum(x) || iscellnumericvector(x), ...
+                ['PhaseVectors must be a numeric array ', ...
+                    'or a cell array of numeric vectors!']));
+addParameter(iP, 'PhaseBoundaries', phaseBoundariesDefault, ...
+    @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
 addParameter(iP, 'AverageWindows', averageWindowsDefault, ...
     @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
 addParameter(iP, 'PhaseAverages', phaseAveragesDefault, ...
@@ -512,7 +519,6 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 parse(iP, pValues, readout, varargin{:});
 lowerCI = iP.Results.LowerCI;
 upperCI = iP.Results.UpperCI;
-phaseVectors = iP.Results.PhaseVectors;
 removeOutliers = iP.Results.RemoveOutliers;
 runTTest = iP.Results.RunTTest;
 runRankTest = iP.Results.RunRankTest;
@@ -544,6 +550,8 @@ pBoundaries = iP.Results.PBoundaries;
 pBoundaryType = validatestring(iP.Results.PBoundaryType, validPBoundaryTypes);
 rBoundaries = iP.Results.RBoundaries;
 rBoundaryType = validatestring(iP.Results.RBoundaryType, validRBoundaryTypes);
+phaseVectors = iP.Results.PhaseVectors;
+phaseBoundaries = iP.Results.PhaseBoundaries;
 averageWindows = iP.Results.AverageWindows;
 phaseAverages = iP.Results.PhaseAverages;
 indSelected = iP.Results.IndSelected;
@@ -591,82 +599,77 @@ if plotOnly
     legendLocation = 'suppress';
 end
 
-% Decide whether to plot phase-related stuff
-[plotPhaseBoundaries, plotPhaseAverages, ...
-    plotIndSelected, plotAverageWindows] = ...
-    argfun(@(x) set_default_flag(x, ~isempty(phaseVectors)), ...
-            plotPhaseBoundaries, plotPhaseAverages, ...
-            plotIndSelected, plotAverageWindows);
-
-% Decide on compute flags
-[computePhaseBoundaries, computeAverageWindows, ...
-        computePhaseAverages, computeIndSelected] = ...
-    argfun(@(x) set_default_flag([], x), ...
-            plotPhaseBoundaries && isempty(pBoundaries), ...
-            (plotAverageWindows || plotPhaseAverages) && ...
-                isempty(averageWindows), ...
-            plotPhaseAverages && isempty(phaseAverages), ...
-            plotIndSelected && isempty(indSelected));
-
-% If phase-related stuff are to be computed, phase vectors must be provided
-if isempty(phaseVectors) && ...
-        (computePhaseBoundaries || computeAverageWindows || ...
-        computePhaseAverages || computeIndSelected)
-    fprintf('Phase vectors must be provided!\n');
-    return
-end
-
 % Count number of entries
 nEntries = length(pValues);
 
 % Count number of columns
 nCols = size(readout, 2);
 
-% Deal with phase vectors
-if ~isempty(phaseVectors)
-    % Parse phase-related stuff
+% Decide whether to plot phase-related stuff
+[plotPhaseBoundaries, plotPhaseAverages, ...
+    plotIndSelected, plotAverageWindows] = ...
+    argfun(@(x) set_default_flag(x, ~isempty(phaseVectors) || ...
+                                    ~isempty(phaseBoundaries)), ...
+            plotPhaseBoundaries, plotPhaseAverages, ...
+            plotIndSelected, plotAverageWindows);
+
+% Decide on compute flags
+[computePhaseInfo, computePhaseBoundaries, computeAverageWindows, ...
+        computePhaseAverages, computeIndSelected] = ...
+    argfun(@(x) set_default_flag([], x), ...
+            ~isempty(phaseVectors) || ~isempty(phaseBoundaries), ...
+            plotPhaseBoundaries && isempty(phaseBoundaries), ...
+            (plotAverageWindows || plotPhaseAverages) && ...
+                isempty(averageWindows), ...
+            plotPhaseAverages && isempty(phaseAverages), ...
+            plotIndSelected && isempty(indSelected));
+
+% If phase-related stuff are to be computed, phase vectors 
+%   or phase boundaries must be provided
+if isempty(phaseVectors) && isempty(phaseBoundaries) && ...
+        (computePhaseBoundaries || computeAverageWindows || ...
+        computePhaseAverages || computeIndSelected)
+    fprintf('Phase vectors must be provided!\n');
+    return
+end
+
+% Compute phase-related stuff
+if computePhaseInfo
+    % Store arguments list
+    parsePhaseInfoArgs = ...
+        {pValues, readout, phaseVectors, ...
+        'PhaseBoundaries', phaseBoundaries, ...
+        'AverageWindows', averageWindows, ...
+        'PhaseAverages', phaseAverages, ...
+        'IndSelected', indSelected, ...
+        'NLastOfPhase', nLastOfPhase, ...
+        'NToAverage', nToAverage, ...
+        'SelectionMethod', selectionMethod, ...
+        'MaxRange2Mean', maxRange2Mean};
+
+    % Parse phase-related stuff only if needed
     if computeIndSelected
         [uniquePhases, phaseBoundaries, averageWindows, ...
                 phaseAverages, indSelected] = ...
-            parse_phase_info(pValues, readout, phaseVectors, ...
-                            'NLastOfPhase', nLastOfPhase, ...
-                            'NToAverage', nToAverage, ...
-                            'SelectionMethod', selectionMethod, ...
-                            'MaxRange2Mean', maxRange2Mean);
+            parse_phase_info(parsePhaseInfoArgs{:});
     elseif computePhaseAverages
         [uniquePhases, phaseBoundaries, averageWindows, phaseAverages] = ...
-            parse_phase_info(pValues, readout, phaseVectors, ...
-                            'NLastOfPhase', nLastOfPhase, ...
-                            'NToAverage', nToAverage, ...
-                            'SelectionMethod', selectionMethod, ...
-                            'MaxRange2Mean', maxRange2Mean);
+            parse_phase_info(parsePhaseInfoArgs{:});
     elseif computeAverageWindows
         [uniquePhases, phaseBoundaries, averageWindows] = ...
-            parse_phase_info(pValues, readout, phaseVectors, ...
-                            'NLastOfPhase', nLastOfPhase, ...
-                            'NToAverage', nToAverage, ...
-                            'SelectionMethod', selectionMethod, ...
-                            'MaxRange2Mean', maxRange2Mean);
+            parse_phase_info(parsePhaseInfoArgs{:});
     elseif computePhaseBoundaries
         [uniquePhases, phaseBoundaries] = ...
-            parse_phase_info(pValues, readout, phaseVectors, ...
-                            'NLastOfPhase', nLastOfPhase, ...
-                            'NToAverage', nToAverage, ...
-                            'SelectionMethod', selectionMethod, ...
-                            'MaxRange2Mean', maxRange2Mean);
+            parse_phase_info(parsePhaseInfoArgs{:});
     else
         uniquePhases = ...
-            parse_phase_info(pValues, readout, phaseVectors, ...
-                            'NLastOfPhase', nLastOfPhase, ...
-                            'NToAverage', nToAverage, ...
-                            'SelectionMethod', selectionMethod, ...
-                            'MaxRange2Mean', maxRange2Mean);
+            parse_phase_info(parsePhaseInfoArgs{:});
     end
 
     % Generate phase boundaries to be plotted if requested
-    if plotPhaseBoundaries && computePhaseBoundaries
+    if plotPhaseBoundaries
         % Pool all phase boundaries together
-        if iscell(pBoundaries)
+        if iscell(phaseBoundaries)
             phaseBoundaries = union_over_cells(phaseBoundaries);
         end
 
@@ -684,8 +687,12 @@ if ~isempty(phaseVectors)
     maxNPhases = max(nPhases);
 end
 
+% Count the number of boundaries
+nPBoundaries = size(pBoundaries, 2);
+nRBoundaries = size(rBoundaries, 2);
+
 % Create default phase labels
-if isempty(phaseLabels) && ~isempty(phaseVectors)
+if isempty(phaseLabels) && computePhaseInfo
     phaseLabels = create_labels_from_numbers(1:maxNPhases, 'Prefix', 'Phase #');
 end
 
@@ -759,10 +766,6 @@ if strcmpi(legendLocation, 'auto')
         legendLocation = 'suppress';
     end
 end
-
-% Count the number of boundaries
-nPBoundaries = size(pBoundaries, 2);
-nRBoundaries = size(rBoundaries, 2);
 
 % Set the default figure title
 if isempty(figTitle) && ~strcmpi(figTitle, 'suppress')

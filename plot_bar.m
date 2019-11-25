@@ -6,15 +6,15 @@ function handles = plot_bar (val, varargin)
 %
 % Example:
 %       load_examples;
-%       [bars, lines, fig] = plot_bar(val1, low1, high1);
-%       [bars, lines, fig] = plot_bar(val2, low2, high2);
-%       [bars, lines, fig] = plot_bar(val2, low2, high2, 'ForceVectorAsRow', true);
-%       [bars, lines, fig] = plot_bar(val2, low2, high2, 'BarDirection', 'horizontal');
-%       [bars, lines, fig] = plot_bar(val1, low1, high1, 'BarDirection', 'horizontal', 'ForceVectorAsRow', false);
-%       [bars, lines, fig] = plot_bar(val3, low3, high3, 'PTickLabels', {'Mark', 'Ashley', 'Katie', 'Adam'});
-%       [bars, lines, fig] = plot_bar(val3, low3, high3, 'BarDirection', 'horizontal', 'PTickLabels', {'Mark', 'Ashley', 'Katie', 'Adam'});
-%       [bars, lines, fig] = plot_bar(val3, low3, high3, 'ReverseOrder', true, 'PTickLabels', {'Mark', 'Ashley', 'Katie', 'Adam'});
-%       [bars, lines, fig] = plot_bar(val1, low1, high1, 'ReverseOrder', true, 'BarDirection', 'horizontal');
+%       handles = plot_bar(val1, low1, high1);
+%       handles = plot_bar(val2, low2, high2);
+%       handles = plot_bar(val2, low2, high2, 'ForceVectorAsRow', true);
+%       handles = plot_bar(val2, low2, high2, 'BarDirection', 'horizontal');
+%       handles = plot_bar(val1, low1, high1, 'BarDirection', 'horizontal', 'ForceVectorAsRow', false);
+%       handles = plot_bar(val3, low3, high3, 'PTickLabels', {'Mark', 'Ashley', 'Katie', 'Adam'});
+%       handles = plot_bar(val3, low3, high3, 'BarDirection', 'horizontal', 'PTickLabels', {'Mark', 'Ashley', 'Katie', 'Adam'});
+%       handles = plot_bar(val3, low3, high3, 'ReverseOrder', true, 'PTickLabels', {'Mark', 'Ashley', 'Katie', 'Adam'});
+%       handles = plot_bar(val1, low1, high1, 'ReverseOrder', true, 'BarDirection', 'horizontal');
 %
 % Outputs:
 %       handles - handles structure with fields:
@@ -58,9 +58,6 @@ function handles = plot_bar (val, varargin)
 %                   - 'PValues': parameter axis values for bar placement
 %                   must be a numeric array
 %                   default == 1:nCols
-%                   - 'PhaseVectors': phase information for each bar group TODO
-%                   must be a numeric matrix or a cell array of numeric vectors
-%                   default == {}
 %                   - 'PLimits': limits of parameter axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
@@ -91,7 +88,7 @@ function handles = plot_bar (val, varargin)
 %                   - 'PlotOnly': whether to plot the bars only
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'PlotPhaseBoundaries': whether to plot phase boundaries TODO
+%                   - 'PlotPhaseBoundaries': whether to plot phase boundaries
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true if PhaseVectors provided, false otherwise
 %                   - 'PlotPhaseAverages': whether to plot phase averages TODO
@@ -123,19 +120,27 @@ function handles = plot_bar (val, varargin)
 %                       'horizontalBars'    - horizontal bars
 %                       'verticalShades'    - vertical shades
 %                   default == 'verticalLines'
+%                   - 'PhaseVectors': phase information for each readout vector
+%                   must be a numeric matrix or a cell array of numeric vectors
+%                   default == {}
+%                   - 'PhaseBoundaries': vector of phase boundaries
+%                   must be a numeric vector
+%                   default == set in parse_phase_info.m
 %                   - 'AverageWindows': windows to average values
 %                       Note: If a matrix cell array, 
 %                           each column is for a curve and each row is for a phase
 %                   must be a numeric vector or a cell array of numeric vectors
-%                   default == []
+%                   default == set in parse_phase_info.m
 %                   - 'PhaseAverages': average values for each phase
 %                       Note: If a matrix cell array, 
 %                           each column is for a curve and each row is for a phase
 %                   must be a numeric 2-D array
-%                   default == []
+%                   default == set in parse_phase_info.m
 %                   - 'IndSelected': selected indices to mark differently
-%                   must be a numeric vector
-%                   default == []
+%                       Note: If a matrix cell array, 
+%                           each column is for a curve and each row is for a phase
+%                   must be a numeric vector or a cell array of numeric vectors
+%                   default == set in parse_phase_info.m
 %                   - 'NLastOfPhase': number of values at the last of a phase
 %                   must be empty or a positive integer scalar
 %                   default == set in parse_phase_info.m
@@ -189,6 +194,7 @@ function handles = plot_bar (val, varargin)
 %
 % Used by:
 %       cd/m3ha_compute_and_compare_lts_statistics.m
+%       cd/parse_multiunit.m
 %       cd/plot_struct.m
 %       cd/ZG_fit_IEI_distributions.m
 %       /media/adamX/Paula_IEIs/paula_iei3.m
@@ -215,6 +221,7 @@ function handles = plot_bar (val, varargin)
 % 2019-06-10 Added 'PBoundaries' and 'RBoundaries' as optional arguments
 % 2019-11-23 Added 'PhaseVectors' and other dependent optional arguments
 % 2019-11-24 Now returns handles structure as output
+% TODO: phaseBoundaries needs to be provided into parse_phase_info.m
 % TODO: Finish implementation of 'PhaseVectors' as in plot_tuning_curve
 % TODO: Add 'BarColors' as an optional argument
 % TODO: Change usage in all functions using this
@@ -236,7 +243,6 @@ cIBarWidthDefault = [];
 cILineWidthDefault = 2;             % default line width for CIs
 cIColorDefault = '';
 pValuesDefault = [];
-phaseVectorsDefault = {};           % no phase vectors by default
 pLimitsDefault = [];
 readoutLimitsDefault = [];
 pTicksDefault = [];
@@ -254,9 +260,11 @@ pBoundariesDefault = [];
 pBoundaryTypeDefault = 'horizontalLines';
 rBoundariesDefault = [];
 rBoundaryTypeDefault = 'verticalLines';
-averageWindowsDefault = {};         % set later
-phaseAveragesDefault = [];          % set later
-indSelectedDefault = [];
+phaseVectorsDefault = {};           % no phase vectors by default
+phaseBoundariesDefault = [];        % set in parse_phase_info.m
+averageWindowsDefault = {};         % set in parse_phase_info.m
+phaseAveragesDefault = [];          % set in parse_phase_info.m
+indSelectedDefault = [];            % set in parse_phase_info.m
 nLastOfPhaseDefault = [];           % set in parse_phase_info.m
 nToAverageDefault = [];             % set in select_similar_values.m
 selectionMethodDefault = 'auto';    % set in select_similar_values.m
@@ -306,10 +314,6 @@ addParameter(iP, 'CILineWidth', cILineWidthDefault, ...
 addParameter(iP, 'CIColor', cIColorDefault);
 addParameter(iP, 'PValues', pValuesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'PhaseVectors', phaseVectorsDefault, ...
-    @(x) assert(isnum(x) || iscellnumericvector(x), ...
-                ['PhaseVectors must be a numeric array ', ...
-                    'or a cell array of numeric vectors!']));
 addParameter(iP, 'PLimits', pLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
@@ -346,6 +350,12 @@ addParameter(iP, 'RBoundaries', rBoundariesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'RBoundaryType', rBoundaryTypeDefault, ...
     @(x) any(validatestring(x, validRBoundaryTypes)));
+addParameter(iP, 'PhaseVectors', phaseVectorsDefault, ...
+    @(x) assert(isnum(x) || iscellnumericvector(x), ...
+                ['PhaseVectors must be a numeric array ', ...
+                    'or a cell array of numeric vectors!']));
+addParameter(iP, 'PhaseBoundaries', phaseBoundariesDefault, ...
+    @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
 addParameter(iP, 'AverageWindows', averageWindowsDefault, ...
     @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
 addParameter(iP, 'PhaseAverages', phaseAveragesDefault, ...
@@ -389,7 +399,6 @@ cIBarWidth = iP.Results.CIBarWidth;
 cILineWidth = iP.Results.CILineWidth;
 cIColor = iP.Results.CIColor;
 pValues = iP.Results.PValues;
-phaseVectors = iP.Results.PhaseVectors;
 pLimits = iP.Results.PLimits;
 readoutLimits = iP.Results.ReadoutLimits;
 pTicks = iP.Results.PTicks;
@@ -407,6 +416,8 @@ pBoundaries = iP.Results.PBoundaries;
 pBoundaryType = validatestring(iP.Results.PBoundaryType, validPBoundaryTypes);
 rBoundaries = iP.Results.RBoundaries;
 rBoundaryType = validatestring(iP.Results.RBoundaryType, validRBoundaryTypes);
+phaseVectors = iP.Results.PhaseVectors;
+phaseBoundaries = iP.Results.PhaseBoundaries;
 averageWindows = iP.Results.AverageWindows;
 phaseAverages = iP.Results.PhaseAverages;
 indSelected = iP.Results.IndSelected;
@@ -442,31 +453,6 @@ if plotOnly
     figTitle = 'suppress';
     pLimits = 'suppress';
     readoutLimits = 'suppress';
-end
-
-% Decide whether to plot phase-related stuff
-[plotPhaseBoundaries, plotPhaseAverages, ...
-    plotIndSelected, plotAverageWindows] = ...
-    argfun(@(x) set_default_flag(x, ~isempty(phaseVectors)), ...
-            plotPhaseBoundaries, plotPhaseAverages, ...
-            plotIndSelected, plotAverageWindows);
-
-% Decide on compute flags
-[computePhaseBoundaries, computeAverageWindows, ...
-        computePhaseAverages, computeIndSelected] = ...
-    argfun(@(x) set_default_flag([], x), ...
-            plotPhaseBoundaries && isempty(pBoundaries), ...
-            (plotAverageWindows || plotPhaseAverages) && ...
-                isempty(averageWindows), ...
-            plotPhaseAverages && isempty(phaseAverages), ...
-            plotIndSelected && isempty(indSelected));
-
-% If phase-related stuff are to be computed, phase vectors must be provided
-if isempty(phaseVectors) && ...
-        (computePhaseBoundaries || computeAverageWindows || ...
-        computePhaseAverages || computeIndSelected)
-    fprintf('Phase vectors must be provided!\n');
-    return
 end
 
 % Either force all vectors as row vectors
@@ -521,15 +507,6 @@ if isempty(pValues)
     end
 end
 
-% Reverse the order of pValues if requested
-if reverseOrder
-    % Save the old parameter values
-    pValuesOld = pValues;
-
-    % Reverse the order of pValues
-    pValues = flip(pValuesOld);
-end
-
 % Set the default parameter tick angle
 if isempty(pTickAngle)
     if singleGroup && ~isempty(pTickLabels)
@@ -566,51 +543,71 @@ if isempty(figTitle)
     end
 end
 
-% Deal with phase vectors
-if ~isempty(phaseVectors)
-    % Parse phase-related stuff
+% Decide whether to plot phase-related stuff
+[plotPhaseBoundaries, plotPhaseAverages, ...
+    plotIndSelected, plotAverageWindows] = ...
+    argfun(@(x) set_default_flag(x, ~isempty(phaseVectors) || ...
+                                    ~isempty(phaseBoundaries)), ...
+            plotPhaseBoundaries, plotPhaseAverages, ...
+            plotIndSelected, plotAverageWindows);
+
+% Decide on compute flags
+[computePhaseInfo, computePhaseBoundaries, computeAverageWindows, ...
+        computePhaseAverages, computeIndSelected] = ...
+    argfun(@(x) set_default_flag([], x), ...
+            ~isempty(phaseVectors) || ~isempty(phaseBoundaries), ...
+            plotPhaseBoundaries && isempty(phaseBoundaries), ...
+            (plotAverageWindows || plotPhaseAverages) && ...
+                isempty(averageWindows), ...
+            plotPhaseAverages && isempty(phaseAverages), ...
+            plotIndSelected && isempty(indSelected));
+
+% If phase-related stuff are to be computed, phase vectors 
+%   or phase boundaries must be provided
+if isempty(phaseVectors) && isempty(phaseBoundaries) && ...
+        (computePhaseBoundaries || computeAverageWindows || ...
+        computePhaseAverages || computeIndSelected)
+    fprintf('Phase vectors must be provided!\n');
+    return
+end
+
+% Compute phase-related stuff
+if computePhaseInfo
+    % Store arguments list
+    parsePhaseInfoArgs = ...
+        {pValues, val, phaseVectors, ...
+        'PhaseBoundaries', phaseBoundaries, ...
+        'AverageWindows', averageWindows, ...
+        'PhaseAverages', phaseAverages, ...
+        'IndSelected', indSelected, ...
+        'NLastOfPhase', nLastOfPhase, ...
+        'NToAverage', nToAverage, ...
+        'SelectionMethod', selectionMethod, ...
+        'MaxRange2Mean', maxRange2Mean};
+
+    % Parse phase-related stuff only if needed
     if computeIndSelected
         [uniquePhases, phaseBoundaries, averageWindows, ...
                 phaseAverages, indSelected] = ...
-            parse_phase_info(pValues, readout, phaseVectors, ...
-                            'NLastOfPhase', nLastOfPhase, ...
-                            'NToAverage', nToAverage, ...
-                            'SelectionMethod', selectionMethod, ...
-                            'MaxRange2Mean', maxRange2Mean);
+            parse_phase_info(parsePhaseInfoArgs{:});
     elseif computePhaseAverages
         [uniquePhases, phaseBoundaries, averageWindows, phaseAverages] = ...
-            parse_phase_info(pValues, readout, phaseVectors, ...
-                            'NLastOfPhase', nLastOfPhase, ...
-                            'NToAverage', nToAverage, ...
-                            'SelectionMethod', selectionMethod, ...
-                            'MaxRange2Mean', maxRange2Mean);
+            parse_phase_info(parsePhaseInfoArgs{:});
     elseif computeAverageWindows
         [uniquePhases, phaseBoundaries, averageWindows] = ...
-            parse_phase_info(pValues, readout, phaseVectors, ...
-                            'NLastOfPhase', nLastOfPhase, ...
-                            'NToAverage', nToAverage, ...
-                            'SelectionMethod', selectionMethod, ...
-                            'MaxRange2Mean', maxRange2Mean);
+            parse_phase_info(parsePhaseInfoArgs{:});
     elseif computePhaseBoundaries
         [uniquePhases, phaseBoundaries] = ...
-            parse_phase_info(pValues, readout, phaseVectors, ...
-                            'NLastOfPhase', nLastOfPhase, ...
-                            'NToAverage', nToAverage, ...
-                            'SelectionMethod', selectionMethod, ...
-                            'MaxRange2Mean', maxRange2Mean);
+            parse_phase_info(parsePhaseInfoArgs{:});
     else
         uniquePhases = ...
-            parse_phase_info(pValues, readout, phaseVectors, ...
-                            'NLastOfPhase', nLastOfPhase, ...
-                            'NToAverage', nToAverage, ...
-                            'SelectionMethod', selectionMethod, ...
-                            'MaxRange2Mean', maxRange2Mean);
+            parse_phase_info(parsePhaseInfoArgs{:});
     end
 
     % Generate phase boundaries to be plotted if requested
-    if plotPhaseBoundaries && computePhaseBoundaries
+    if plotPhaseBoundaries
         % Pool all phase boundaries together
-        if iscell(pBoundaries)
+        if iscell(phaseBoundaries)
             phaseBoundaries = union_over_cells(phaseBoundaries);
         end
 
@@ -636,6 +633,13 @@ nRBoundaries = size(rBoundaries, 2);
 % Decide on the figure to plot on
 fig = set_figure_properties('FigHandle', figHandle, 'FigNumber', figNumber);
 
+% Reverse the order of pValues on the plot if requested
+if reverseOrder
+    pValuesToPlot = flip(pValues);
+else
+    pValuesToPlot = pValues;
+end
+
 % Draw bar graph
 switch barDirection
     case 'vertical'
@@ -643,17 +647,17 @@ switch barDirection
             % One sample per group, but the bar() function
             %   will automatically construe it as one group. 
             %   Therefore, plot a stacked grouped bar graph to do the trick
-            bars = bar(pValues, diag(val), 'stacked', otherArguments{:});
+            bars = bar(pValuesToPlot, diag(val), 'stacked', otherArguments{:});
         else
             % Just use the bar() function
-            bars = bar(pValues, val, otherArguments{:});
+            bars = bar(pValuesToPlot, val, otherArguments{:});
         end
     case 'horizontal'
         if oneSamplePerGroup
-            bars = barh(pValues, diag(val), 'stacked', otherArguments{:});
+            bars = barh(pValuesToPlot, diag(val), 'stacked', otherArguments{:});
         else
             % Just use the barh() function
-            bars = barh(pValues, val, otherArguments{:});
+            bars = barh(pValuesToPlot, val, otherArguments{:});
         end
     otherwise
         error('barDirection unrecognized!');
@@ -688,7 +692,7 @@ if reverseOrder
             xTickLabelsOld = get(gca, 'XTickLabel');
 
             % Flip the ticks and labels
-            xTicksNew = flip(pValuesOld(1) + pValuesOld(end) - xTicksOld);
+            xTicksNew = flip(pValues(1) + pValues(end) - xTicksOld);
             xTickLabelsNew = flip(xTickLabelsOld);
 
             % Set new ticks and labels
@@ -700,7 +704,7 @@ if reverseOrder
             yTickLabelsOld = get(gca, 'YTickLabel');
 
             % Flip the ticks and labels
-            yTicksNew = flip(pValuesOld(1) + pValuesOld(end) - yTicksOld);
+            yTicksNew = flip(pValues(1) + pValues(end) - yTicksOld);
             yTickLabelsNew = flip(yTickLabelsOld);
 
             % Set new ticks and labels
@@ -746,7 +750,7 @@ if ~isempty(low) || ~isempty(high)
     hold on;
     if singleGroup || oneSamplePerGroup
         % Draw error bars
-        lines = plot_error_bar(pValues, low, high, ...
+        lines = plot_error_bar(pValuesToPlot, low, high, ...
                                 'BarDirection', barDirection, ...
                                 'BarWidth', cIBarWidth, ...
                                 'Color', cIColor, 'LineWidth', cILineWidth);
@@ -759,7 +763,7 @@ if ~isempty(low) || ~isempty(high)
 
             for iRow = 1:nRows                  % for each sample
                 % Compute parameter position
-                pPos = pValues(iRow) + pOffset;
+                pPos = pValuesToPlot(iRow) + pOffset;
 
                 % Draw error bar
                 lines(:, iRow, iCol) = ...
@@ -795,62 +799,66 @@ end
 
 % Plot parameter boundaries
 if nPBoundaries > 0
+    % Compute flipped boundaries if requested
     if reverseOrder
-        % Compute flipped boundaries
-        pBoundaries = pValues(1) + pValues(end) - pBoundaries;
+        pBoundariesToPlot = pValues(1) + pValues(end) - pBoundaries;
+    else
+        pBoundariesToPlot = pBoundaries;
     end
 
     hold on
-    pBoundaries = plot_horizontal_line(pBoundaries, 'LineWidth', 0.5, ...
+    pLines = plot_horizontal_line(pBoundariesToPlot, 'LineWidth', 0.5, ...
                                         'LineStyle', '--', 'Color', 'g');
 else
-    pBoundaries = gobjects;
+    pLines = gobjects;
 end
 
 % Plot readout boundaries
 if nRBoundaries > 0
     hold on
-    rBoundaries = plot_vertical_line(rBoundaries, 'LineWidth', 0.5, ...
+    rLines = plot_vertical_line(rBoundariesToPlot, 'LineWidth', 0.5, ...
                                         'LineStyle', '--', 'Color', 'r');
 else
-    rBoundaries = gobjects;
+    rLines = gobjects;
 end
 
 % Plot selected values if any
-if ~isempty(indSelected) && ~all(isnan(indSelected))
+if ~isempty(indSelected)
     hold on
     if iscell(indSelected)
-        % Reverse the order
+        % Compute flipped indices if requested
         if reverseOrder
-            % Compute flipped indices
-            indSelected = cellfun(@(x) pValues(1) + pValues(end) - x, ...
-                                    indSelected, 'UniformOutput', false);
+            indSelectedToPlot = cellfun(@(x) 1 + nRows - x, ...
+                                        indSelected, 'UniformOutput', false);
+        else
+            indSelectedToPlot = indSelected;
         end
 
         % Plot selected values
-        selected = cellfun(@(y) plot_selected(val, pValues, y), ...
-                            indSelected);            
+        selected = cellfun(@(y) plot_selected(val, pValuesToPlot, y), ...
+                            indSelectedToPlot);            
     else
         % Reverse the order
         if reverseOrder
             % Compute flipped indices
-            indSelected = pValues(1) + pValues(end) - indSelected;
+            indSelectedToPlot = 1 + nRows - indSelected;
+        else
+            indSelectedToPlot = indSelected;
         end
 
         % Plot selected values
-        selected = plot_selected(val, pValues, indSelected);
+        selected = plot_selected(val, pValuesToPlot, indSelectedToPlot);
     end
+else
+    selected = gobjects;
 end
 
 %% Post-plotting
-% Return boundaries
-boundaries = transpose(vertcat(pBoundaries, rBoundaries));
-
 % Save in output
 handles.bars = bars;
 handles.lines = lines;
 handles.fig = fig;
-handles.boundaries = boundaries;
+handles.boundaries = transpose(vertcat(pLines, rLines));
 handles.selected = selected;
 
 % Save figure if figName provided
@@ -991,6 +999,8 @@ valSelected = val(indSelected);
 % Plot red crosses
 hold on
 plot(valSelected, indSelected, 'rx', 'LineWidth', 2, 'MarkerSize', 6);
+
+~all(isnan(indSelected))
 
 %}
 

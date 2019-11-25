@@ -30,7 +30,25 @@ function varargout = parse_phase_info (pValues, readout, phaseVectors, varargin)
 %                   must be a numeric matrix or a cell array of numeric vectors
 %       phaseVectors- phase vector(s) corresponding to each readout vector
 %                   must be a numeric matrix or a cell array of numeric vectors
-%       varargin    - 'NLastOfPhase': number of values at the last of a phase
+%       varargin    - 'PhaseBoundaries': vector of phase boundaries
+%                   must be a numeric vector
+%                   default == set in parse_phase_info.m
+%                   - 'AverageWindows': windows to average values
+%                       Note: If a matrix cell array, 
+%                           each column is for a curve and each row is for a phase
+%                   must be a numeric vector or a cell array of numeric vectors
+%                   default == set in parse_phase_info.m
+%                   - 'PhaseAverages': average values for each phase
+%                       Note: If a matrix cell array, 
+%                           each column is for a curve and each row is for a phase
+%                   must be a numeric 2-D array
+%                   default == set in parse_phase_info.m
+%                   - 'IndSelected': selected indices to mark differently
+%                       Note: If a matrix cell array, 
+%                           each column is for a curve and each row is for a phase
+%                   must be a numeric vector or a cell array of numeric vectors
+%                   default == set in parse_phase_info.m
+%                   - 'NLastOfPhase': number of values at the last of a phase
 %                   must be empty or a positive integer scalar
 %                   default == 10
 %                   - 'NToAverage': number of values to average
@@ -52,8 +70,10 @@ function varargout = parse_phase_info (pValues, readout, phaseVectors, varargin)
 %       cd/argfun.m
 %       cd/compute_phase_average.m
 %       cd/compute_index_boundaries.m
+%       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_subvectors.m
+%       cd/find_closest.m
 %       cd/force_matrix.m
 %       cd/match_format_vector_sets.m
 %       cd/unique_custom.m
@@ -66,6 +86,7 @@ function varargout = parse_phase_info (pValues, readout, phaseVectors, varargin)
 
 % File History:
 % 2019-11-24 Moved from plot_tuning_curve.m
+% 2019-11-25 Added phaseBoundaries, averageWindows, etc. as optional arguments
 % TODO: Deal with the case when the number of phases are different
 
 %% Hard-coded parameters
@@ -73,6 +94,10 @@ validSelectionMethods = {'auto', 'notNaN', 'maxRange2Mean'};
 defaultNLastOfPhase = 10;
 
 %% Default values for optional arguments
+phaseBoundariesDefault = [];    % set later
+averageWindowsDefault = {};     % set later
+phaseAveragesDefault = [];      % set later
+indSelectedDefault = [];        % set later
 nLastOfPhaseDefault = [];       % set later
 nToAverageDefault = [];         % set in select_similar_values.m
 selectionMethodDefault = 'auto';% set in select_similar_values.m
@@ -103,6 +128,14 @@ addRequired(iP, 'phaseVectors', ...
                     'or a cell array of numeric vectors!']));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'PhaseBoundaries', phaseBoundariesDefault, ...
+    @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
+addParameter(iP, 'AverageWindows', averageWindowsDefault, ...
+    @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
+addParameter(iP, 'PhaseAverages', phaseAveragesDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'IndSelected', indSelectedDefault, ...
+    @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
 addParameter(iP, 'NLastOfPhase', nLastOfPhaseDefault, ...
     @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
                 ['NLastOfPhase must be either empty ', ...
@@ -120,6 +153,10 @@ addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
 
 % Read from the Input Parser
 parse(iP, pValues, readout, phaseVectors, varargin{:});
+phaseBoundaries = iP.Results.PhaseBoundaries;
+averageWindows = iP.Results.AverageWindows;
+phaseAverages = iP.Results.PhaseAverages;
+indSelected = iP.Results.IndSelected;
 nLastOfPhase = iP.Results.NLastOfPhase;
 nToAverage = iP.Results.NToAverage;
 selectionMethod = validatestring(iP.Results.SelectionMethod, ...
@@ -136,20 +173,39 @@ end
 [computePhaseBoundaries, computeAverageWindows, ...
         computePhaseAverages, computeIndSelected] = ...
     argfun(@(x) set_default_flag([], x), ...
-            nargout >= 2, nargout >= 3, nargout >= 4, nargout >= 4);
+            nargout >= 2 && isempty(phaseBoundaries), ...
+            nargout >= 3 && isempty(averageWindows), ...
+            nargout >= 4 && isempty(phaseAverages), ...
+            nargout >= 4 && isempty(indSelected));
 
 % Force as cell arrays of numeric vectors
-[readout, phaseVectors] = match_format_vector_sets(readout, phaseVectors);
+if ~isempty(phaseBoundaries)
+    [readout, phaseBoundaries] = match_format_vector_sets(readout, ...
+                                    phaseBoundaries, 'ForceCellOutputs', true);
+else
+    % Force as cell arrays of numeric vectors
+    [readout, phaseVectors] = match_format_vector_sets(readout, ...
+                                    phaseVectors, 'ForceCellOutputs', true);
+end
 
 % If there is any trailing NaNs, remove them
 %   TODO: Make trim_nans accept cell arrays
 readout = cellfun(@(x) trim_nans(x, 'trailing'), ...
                     readout, 'UniformOutput', false);
 
-%% Count phases
-% Get the unique phases across all phase vectors
-uniquePhases = cellfun(@(x) unique_custom(x, 'stable', 'IgnoreNaN', true), ...
-                        phaseVectors, 'UniformOutput', false);
+%% Get unique phases
+if ~isempty(phaseBoundaries)
+    % Count the number of phases for each vector
+    nPhases = count_samples(phaseBoundaries) + 1;
+
+    % Set the unique phases to be 1:nPhases
+    uniquePhases = arrayfun(@(x) transpose(1:x), ...
+                            nPhases, 'UniformOutput', false);
+else
+    % Get the unique phases across all phase vectors
+    uniquePhases = cellfun(@(x) unique_custom(x, 'stable', 'IgnoreNaN', true), ...
+                            phaseVectors, 'UniformOutput', false);
+end
 
 % Count the number of phases for each readout column
 % nPhases = count_samples(uniquePhases);
@@ -157,7 +213,13 @@ uniquePhases = cellfun(@(x) unique_custom(x, 'stable', 'IgnoreNaN', true), ...
 % Compute the maximum number of phases
 % maxNPhases = max(nPhases);
 
-%% Compute phase boundaries
+%% Compute phase vectors from boundaries
+% if isempty(phaseVectors) && ~isempty(phaseBoundaries)
+%     phaseVectors = ...
+%         compute_phase_vectors_from_boundaries(pValues, phaseBoundaries);
+% end
+
+%% Compute phase boundaries and corresponding indices
 if computePhaseBoundaries
     % TODO: Make function [valueBoundaries, indBoundaries] = ...
     %                       compute_value_boundaries(values, grouping)
@@ -167,6 +229,10 @@ if computePhaseBoundaries
 
     % Convert to phase units
     phaseBoundaries = extract_subvectors(pValues, 'Indices', indBoundaries);
+elseif ~isempty(phaseBoundaries)
+    % Compute index boundaries
+    indBoundaries = cellfun(@(x) find_closest(pValues, x), phaseBoundaries, ...
+                            'UniformOutput', false);
 end
 
 %% Compute averaging windows
@@ -181,6 +247,7 @@ if computeAverageWindows
 end
 
 %% Compute phase averages and selected indices
+% TODO: Use averageWindows if provided
 if computePhaseAverages || computeIndSelected        
     % Compute all phase averages for each vector
     %   Note: this generates a cell array of cell arrays of vectors
@@ -253,6 +320,15 @@ function [phaseAverages, indSelected] = ...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function phaseVectors = ...
+                compute_phase_vectors_from_boundaries(pValues, phaseBoundaries)
+
+% TODO
+if iscell(phaseBoundaries)
+else
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
 OLD CODE:
 

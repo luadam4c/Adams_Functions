@@ -1,6 +1,6 @@
-function [figs, lines] = plot_struct (structArray, varargin)
+function figs = plot_struct (structArray, varargin)
 %% Plot all fields in a structure array as tuning curves
-% Usage: [figs, lines] = plot_struct (structArray, varargin)
+% Usage: figs = plot_struct (structArray, varargin)
 % Explanation:
 %       TODO
 %
@@ -96,7 +96,6 @@ function [figs, lines] = plot_struct (structArray, varargin)
 % 
 
 %% Hard-coded parameters
-validSelectionMethods = {'notNaN', 'maxRange2Mean'};
 validPlotTypes = {'tuning', 'bar'};
 maxNPTicks = 10;
 barDirection = 'horizontal';
@@ -286,7 +285,6 @@ fieldData = table2array(struct2table(scalarStructArray));
 
 %% Plot all fields
 figs = gobjects(nFields, 1);
-lines = gobjects(nFields, nBoundaries);
 for iField = 1:nFields
     % Get the field value vector for this field
     fieldVals = fieldData(:, iField);
@@ -343,7 +341,6 @@ for iField = 1:nFields
                         'MarkerFaceColor', markerFaceColor, ...
                         otherArguments);
         figThis = handles.fig;
-        linesThis = handles.boundaries;
     case 'bar'
         % Plot horizontal bars
         % TODO: Deal with pIsLog
@@ -359,7 +356,6 @@ for iField = 1:nFields
                         'FigTitle', figTitle, 'FigHandle', figThis, ...
                         otherArguments);
         figThis = handles.fig;
-        linesThis = handles.boundaries;
     otherwise
         error('plotType unrecognized!')
     end
@@ -368,7 +364,6 @@ for iField = 1:nFields
         save_all_figtypes(figThis, figName, figtypes);
     end
 
-    lines(iField, :) = linesThis;
     figs(iField, 1) = figThis;
 end
 

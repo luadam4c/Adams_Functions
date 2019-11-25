@@ -82,6 +82,7 @@ function nSamples = count_samples (vectors, varargin)
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_lts.m
 %       cd/parse_multiunit.m
+%       cd/parse_phase_info.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 %       cd/parse_spike2_mat.m

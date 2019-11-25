@@ -38,6 +38,7 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 %       cd/match_format_vector_sets.m
 %
 % Used by:
+%       cd/parse_phase_info.m
 %       cd/parse_stim.m
 %       cd/parse_ipsc.m
 

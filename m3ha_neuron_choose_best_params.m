@@ -45,6 +45,7 @@ function [bestParamsTable, bestParamsLabel] = ...
 % 
 
 %% Hard-coded parameters
+validSimModes = {'active', 'passive'};
 
 %% Default values for optional arguments
 simModeDefault = 'active';      % simulate active responses by default
@@ -119,7 +120,7 @@ errorStructs = cellfun(@(x) m3ha_neuron_run_and_analyze(x, ...
                         'SimMode', simMode, otherArguments), candParamsTables);
 
 % Extract all total errors
-totalErrors = extract_fields(errorStructs, 'totalError');
+totalErrors = extract_fields(errorStructs, 'totalError', 'UniformOutput', true);
 
 % Find the index of the table with the least error
 [totalErrorBest, iTableBest] = min(totalErrors);
@@ -127,7 +128,7 @@ totalErrors = extract_fields(errorStructs, 'totalError');
 %% Output results
 % Return the table with the least error
 bestParamsTable = candParamsTables{iTableBest};
-bestParamsLabel = tableLabels{iTableBest}
+bestParamsLabel = tableLabels{iTableBest};
 
 % Display result
 fprintf('%s has the least error: %g!\n', bestParamsLabel, totalErrorBest);

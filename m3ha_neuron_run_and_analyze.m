@@ -843,6 +843,14 @@ if nSweeps > nRows
                         nColumns, 1), nSlots, 3);
 end
 
+% Create an experiment identifier
+expStr = prefix;
+
+% Print to standard output
+if verbose
+    fprintf('Preparing to run simulations for %s ...\n', expStr);
+end
+
 % Create output file paths if not provided
 if strcmpi(outFilePath, 'auto')
     outFilePath = create_simulation_output_filenames(nSweeps, ...
@@ -885,6 +893,11 @@ simCommands = m3ha_neuron_create_TC_commands(simParamsTable, ...
             'SweepWeights', sweepWeights);
 
 %% Run NEURON
+% Print to standard output
+if verbose
+    fprintf('Running simulations for %s ...\n', expStr);
+end
+
 % Run NEURON with the hocfile and attached simulation commands
 output = run_neuron(hocFile, 'SimCommands', simCommands, ...
                     'Prefix', prefix, 'OutFolder', outFolder, ...
@@ -902,11 +915,8 @@ end
 %% Analyze results
 % Print to standard output
 if verbose
-    fprintf('Extracting simulation results ... \n');
+    fprintf('Extracting simulation results for %s ...\n', expStr);
 end
-
-% Create an experiment identifier
-expStr = prefix;
 
 % Create an experiment identifier for title
 expStrForTitle = strrep(expStr, '_', '\_');
@@ -955,7 +965,7 @@ end
 if bootstrapCprFlag && ~isempty(realData) && strcmpi(simMode, 'passive')
     % Print to standard output
     if verbose
-        fprintf('Bootstrap-averaging results ... \n');
+        fprintf('Bootstrap-averaging results for %s ...\n', expStr);
     end
 
     % Decide on the combination method
@@ -1009,7 +1019,7 @@ end
 if generateDataFlag
     % Print to standard output
     if verbose
-        fprintf('Analyzing responses ... \n');
+        fprintf('Analyzing responses for %s ...\n', expStr);
     end
 
     % Compute the sampling interval
@@ -1039,7 +1049,8 @@ if generateDataFlag
 
     % Print to standard output
     if verbose
-        fprintf('Comparing simulated versus recorded responses ... \n');
+        fprintf('Comparing simulated versus recorded responses for %s ...\n', ...
+                expStr);
     end
 
     % Do the appropriate comparison test
@@ -1108,6 +1119,11 @@ end
 
 % Compare with recorded data
 if ~isempty(realData)
+    % Display message
+    if verbose
+        fprintf('Computing errors for %s ...\n', expStr);
+    end
+
     % Calculate voltage residuals (simulated - recorded)
     residuals = compute_residuals(vVecsSim, vVecsRec);
 

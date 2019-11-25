@@ -170,8 +170,8 @@ case 2
     outparams.prefix = prefixOrig;                         % restore original prefix
     drawnow
 
-    %% If error improved, copy final parameters to bestParamsDirectory
-    if outparams.err{outparams.runnumTotal}.totalError < ...
+    %% If error is not worse, copy final parameters to bestParamsDirectory
+    if outparams.err{outparams.runnumTotal}.totalError <= ...
                 outparams.err{1}.totalError       
         % Get the final parameters file name for this cell
         finalParamsFile = fullfile(outparams.outFolder, ...
