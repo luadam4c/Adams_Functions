@@ -9,6 +9,7 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 %       [i, v] = find_closest(9:-2:1, 4)
 %       [i, v] = find_closest({5:-1:1, 8:-2:0}, 4)
 %       [i, v] = find_closest(5:-1:1, [3.2, 3.8])
+%       [i, v] = find_closest(5:-1:1, [3.2, 3.8], 'Direction', 'none')
 %
 % Outputs:
 %       idxClosest  - index(ices) of the closest value(s)
@@ -28,7 +29,8 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 %                       'nearest'   - round to 'nearest'
 %                       'down'      - always round down
 %                       'up'        - always round up
-%                   default == 'round'
+%                       'none'      - no rounding, use interpolation
+%                   default == 'nearest'
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -44,10 +46,11 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 
 % File History:
 % 2019-11-14 Created by Adam Lu
+% 2019-11-25 Added 'none' as a direction
 % 
 
 %% Hard-coded parameters
-validDirections = {'nearest', 'down', 'up'};
+validDirections = {'nearest', 'down', 'up', 'none'};
 
 %% Default values for optional arguments
 directionDefault = 'nearest';
@@ -121,6 +124,10 @@ switch direction
     case 'up'
         idxClosest = extract_elements(indClosest, 'first');
         valClosest = extract_elements(valsClosest, 'first');
+    case 'none'
+        valClosest = target(:);
+        idxClosest = cellfun(@(x, y, z) interp1(x, y, z), ...
+                            valsClosest, indClosest, targetCell);
     otherwise
         error('direction unrecognized!!');
 end

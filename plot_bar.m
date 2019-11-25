@@ -231,6 +231,8 @@ validBarDirections = {'vertical', 'horizontal'};
 validSelectionMethods = {'auto', 'notNaN', 'maxRange2Mean'};
 validPBoundaryTypes = {'horizontalLines', 'verticalBars', 'horizontalShades'};
 validRBoundaryTypes = {'verticalLines', 'horizontalBars', 'verticalShades'};
+averagesLineStyle = ':';
+averagesLineWidth = 2;
 
 %% Default values for optional arguments
 lowDefault = [];
@@ -822,32 +824,34 @@ else
     rLines = gobjects;
 end
 
-% Plot selected values if any
-if ~isempty(indSelected)
-    hold on
-    if iscell(indSelected)
-        % Compute flipped indices if requested
-        if reverseOrder
-            indSelectedToPlot = cellfun(@(x) 1 + nRows - x, ...
-                                        indSelected, 'UniformOutput', false);
-        else
-            indSelectedToPlot = indSelected;
-        end
-
-        % Plot selected values
-        selected = cellfun(@(y) plot_selected(val, pValuesToPlot, y), ...
-                            indSelectedToPlot);            
+% Plot phase averages if any
+if plotPhaseAverages && ~isempty(phaseAverages) && ~isempty(averageWindows)
+    % Compute flipped indices if requested
+    if reverseOrder
+        averageWindowsToPlot = cellfun(@(x) pValues(1) + pValues(end) - x, ...
+                                        averageWindows, 'UniformOutput', false);    
     else
-        % Reverse the order
-        if reverseOrder
-            % Compute flipped indices
-            indSelectedToPlot = 1 + nRows - indSelected;
-        else
-            indSelectedToPlot = indSelected;
-        end
+        averageWindowsToPlot = averageWindows;
+    end
 
-        % Plot selected values
-        selected = plot_selected(val, pValuesToPlot, indSelectedToPlot);
+    % Plot the phase averages as horizontal lines
+    averages = ...
+        arrayfun(@(x) plot_vertical_line(phaseAverages(x), ...
+                                'YLimits', averageWindowsToPlot{x}, ...
+                                'LineStyle', averagesLineStyle, ...
+                                'LineWidth', averagesLineWidth), ...
+            transpose(1:size(phaseAverages, 1)), 'UniformOutput', false);
+end
+
+% Plot selected values if any
+if plotIndSelected && ~isempty(indSelected)
+    hold on
+    % Plot selected values
+    if iscell(indSelected)
+        selected = cellfun(@(y) plot_selected(val, pValuesToPlot, y), ...
+                            indSelected);            
+    else
+        selected = plot_selected(val, pValuesToPlot, indSelected);
     end
 else
     selected = gobjects;
@@ -859,6 +863,7 @@ handles.bars = bars;
 handles.lines = lines;
 handles.fig = fig;
 handles.boundaries = transpose(vertcat(pLines, rLines));
+handles.averages = averages;
 handles.selected = selected;
 
 % Save figure if figName provided

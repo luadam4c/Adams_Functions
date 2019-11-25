@@ -31,7 +31,7 @@ plotSpikeHistogramFlag = false; % true;
 plotAutoCorrFlag = false; % true;
 plotMeasuresFlag = true;
 plotContourFlag = false; % true;
-plotCombinedFlag = false; % true;
+plotCombinedFlag = true;
 
 parsePopulationAllFlag = false; %true;
 parsePopulationRestrictedFlag = false; %true;

@@ -68,6 +68,7 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 % 2019-05-16 Add 'ReturnLastTrial' as an optional argument
 % 2019-05-16 Now uses nanmean() instead of mean()
 % 2019-07-25 Added 'PhaseBoundaries' and 'PhaseNumber' as optional arguments
+% TODO: Make 'AverageWindows' as an optional argument and use compute_average_windows.m
 % TODO: Return value no matter what?
 % 
 
@@ -163,14 +164,23 @@ if isempty(endPoints) && ~isempty(phaseBoundaries)
     % Create indices
     pValues = 1:nEntries;
 
+    % Find the left boundaries for each phase
+    phaseLeftBounds = [1; phaseBoundaries(:)];
+
     % Find the right boundaries for each phase
     phaseRightBounds = [phaseBoundaries(:); nEntries];
 
-    % Find the last index to average for the selected phase
-    idxLast = find(pValues <= phaseRightBounds(phaseNumber), 1, 'last');
+    % Find the first index for the selected phase
+    idxFirstOfPhase = find(pValues >= phaseLeftBounds(phaseNumber), 1, 'first');
 
-    % Find the first acceptable baseline index
-    idxFirst = max(1, idxLast - nLastOfPhase + 1);
+    % Find the last index for the selected phase
+    idxLastOfPhase = find(pValues <= phaseRightBounds(phaseNumber), 1, 'last');
+
+    % Find the last index to average for the selected phase
+    idxLast = idxLastOfPhase;
+
+    % Find the first index to average for the selected phase
+    idxFirst = max(idxFirstOfPhase, idxLast - nLastOfPhase + 1);
 
     % Find the end points for the last of phase
     endPoints = [idxFirst, idxLast];

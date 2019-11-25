@@ -10,6 +10,7 @@ function varargout = parse_phase_info (pValues, readout, phaseVectors, varargin)
 %       phaseVectors = {[1; 1; 2; 2; 2; 2; 2; 2; 3; 3], [1; 1; 1; 1; 2; 2; 3; 3; 3; 3], [1; 1; 1; 1; 1; 1; 2; 2; 3; 3]};
 %       TODO: phaseVectors = {[1; 1; 2; 2; 2; 2; 2; 2; 3; 3], [1; 1; 1; 1; 2; 2; 3; 3; 3; 3], [1; 1; 1; 1; 1; 2; 2; 2; 2; 2]};
 %       [uniquePhases, phaseBoundaries, averageWindows, phaseAverages, indSelected] = parse_phase_info(pValues, readout, phaseVectors)
+%       [uniquePhases, phaseBoundaries, averageWindows, phaseAverages, indSelected] = parse_phase_info(pValues, readout, {}, 'PhaseBoundaries', phaseBoundaries)
 %
 % Outputs:
 %       uniquePhases    - TODO
@@ -231,15 +232,15 @@ if computePhaseBoundaries
     phaseBoundaries = extract_subvectors(pValues, 'Indices', indBoundaries);
 elseif ~isempty(phaseBoundaries)
     % Compute index boundaries
-    indBoundaries = cellfun(@(x) find_closest(pValues, x), phaseBoundaries, ...
-                            'UniformOutput', false);
+    indBoundaries = cellfun(@(x) find_closest(pValues, x, 'Direction', 'none'), ...
+                            phaseBoundaries, 'UniformOutput', false);
 end
 
 %% Compute averaging windows
 if computeAverageWindows
     % Compute averaging windows for each set of phase boundaries
     averageWindows = ...
-        cellfun(@(x) compute_average_window(pValues, x, nLastOfPhase), ...
+        cellfun(@(x) compute_average_windows(pValues, x, nLastOfPhase), ...
                 indBoundaries, 'UniformOutput', false);
 
     % Force as a matrix
@@ -286,18 +287,27 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function averageWindow = compute_average_window(pValues, indBoundaries, ...
+function averageWindows = compute_average_windows (pValues, indBoundaries, ...
                                                     nLastOfPhase)
 %% Computes windows to compute phase averages
+% TODO: Pull out as its own function
+% TODO: Take either indBoundaries or phaseBoundaries as optional arguments
+
+% Compute the first index of each phase
+iFirstEachPhase = [1; indBoundaries + 0.5];
+
+% Compute the last index of each phase
+iLastEachPhase = [indBoundaries - 0.5; numel(pValues)];
 
 % Compute the last index of each window
-iLastEachWindow = [indBoundaries - 0.5; numel(pValues)];
+iLastEachWindow = iLastEachPhase;
 
 % Compute the first index of each window
-iFirstEachWindow = iLastEachWindow - nLastOfPhase + 1;
+iFirstEachWindow = ...
+    max([iFirstEachPhase, iLastEachWindow - nLastOfPhase + 1], [], 2);
 
 % Compute each averaging window
-averageWindow = ...
+averageWindows = ...
     arrayfun(@(u, v) extract_subvectors(pValues, 'Indices', [u; v]), ...
             iFirstEachWindow, iLastEachWindow, 'UniformOutput', false);
 

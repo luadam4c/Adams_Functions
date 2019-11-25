@@ -76,6 +76,7 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 % 2019-11-21 For singleneuronfitting61, fixed bug for the computation of 
 %               normalizedDifference. It was fitting with only ltsExistError
 %               in singleneuronfitting60
+% 2019-11-25 LTS amplitude uncertainty is now half of peak prominence
 % TODO: Possibly change the target amp error for singleneuronfitting62
 
 %% Hard-coded parameters
@@ -206,8 +207,8 @@ noLTSInBoth = any(isnan(ltsFeaturesSim), 2) & any(isnan(ltsFeaturesRec), 2);
 ltsSweepWeights(noLTSInBoth) = 0;
 
 %% Compute feature uncertainties
-% The amplitude uncertainty should be close to baseline noise
-ltsAmpUncertainty = abs(baseNoise);
+% The amplitude uncertainty should be close to half of peak prominence
+ltsAmpUncertainty = abs(peakPromRec ./ 2);
 
 % The peak delay uncertainty should be close to peak width
 ltsDelayUncertainty = abs(peakWidthRec);
@@ -337,6 +338,9 @@ errorStruct.initLtsDelayError = initLtsDelayError;
 errorStruct.normAvgLtsDelayError = normAvgLtsDelayError;
 errorStruct.initLtsSlopeError = initLtsSlopeError;
 errorStruct.normAvgLtsSlopeError = normAvgLtsSlopeError;
+
+% The amplitude uncertainty should be close to baseline noise
+ltsAmpUncertainty = abs(baseNoise * 10);
 
 %}
 
