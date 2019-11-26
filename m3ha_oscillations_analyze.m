@@ -10,22 +10,23 @@
 % 2019-10-18 Changed minSpikeRateInBurstHz from 100 Hz to 200 Hz
 % 2019-10-18 Changed minSpikeRateInBurstHz from 200 Hz to 100 Hz
 % 2019-10-18 Changed maxInterBurstIntervalMs from 1500 ms to 1000 ms
+% 2019-11-25 Added plotFigure1Population
 
 %% Hard-coded parameters
 figure01Dir = fullfile('/media', 'adamX', 'm3ha', 'manuscript', 'figures', 'Figure01');
 parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
 % parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', 'parse_multiunit_m3ha');
 archiveDir = parentDir;
-% dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
+dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'no711-final'};
-dirsToAnalyze = {'dual-final'};
+% dirsToAnalyze = {'dual-final'};
 specificSlicesToAnalyze = {};
 
 plotFigure1Individual = false;
 plotFigure1Population = false; %true;
 
-parseIndividualFlag = true;
+parseIndividualFlag = false; %true;
 saveMatFlag = false; % true;
 plotRawFlag = false; % true;
 plotSpikeDetectionFlag = false; % true;
@@ -33,13 +34,13 @@ plotRasterFlag = false; % true;
 plotSpikeDensityFlag = false; % true;
 plotSpikeHistogramFlag = false; % true;
 plotAutoCorrFlag = false; % true;
-plotMeasuresFlag = true;
-plotContourFlag = true;
-plotCombinedFlag = true;
+plotMeasuresFlag = false; % true;
+plotContourFlag = false; % true;
+plotCombinedFlag = false; % true;
 
 parsePopulationAllFlag = false; %true;
-parsePopulationRestrictedFlag = false; %true;
-plotAllMeasurePlotsFlag = false; %true;
+parsePopulationRestrictedFlag = true;
+plotAllMeasurePlotsFlag = true;
 plotChevronFlag = false; %true;
 plotByFileFlag = false; %true;
 plotByPhaseFlag = false; %true;

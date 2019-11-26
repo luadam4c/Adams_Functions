@@ -752,11 +752,15 @@ if computeSmoothNormPopAverageFlag
 end
 
 %% Plot Chevron plots
-if plotChevronFlag
+if plotChevronFlag || plotNormChevronFlag
     % Generate figure titles for Chevron plots
     figTitlesChevron = strcat(varLabels, [' avg over ', ...
                                 num2str(nSweepsToAverage), ' of last ', ...
                                 num2str(nSweepsLastOfPhase), ' sweeps']);
+end
+
+% Plot regular Chevron plots
+if plotChevronFlag
 
     % Generate variable labels
     varLabelsChevron = varLabels;
@@ -780,7 +784,7 @@ if plotChevronFlag
             tableLabels, figTitlesChevron, figNamesAvgd);
 end
 
-%% Plot Normalized Chevron plots
+% Plot Normalized Chevron plots
 if plotNormChevronFlag
     close all;
     fprintf('Plotting Normalized Chevron plots ...\n');

@@ -676,6 +676,7 @@ nMeasures = numel(measuresToPlot);
 % Initialize figures array
 figs = gobjects(nMeasures + 4, 1);
 
+% Match time information
 if ~isfile(resultsPath)
     fprintf('Match time information for %s ...\n', fileBase);
     % Count the number of vectors

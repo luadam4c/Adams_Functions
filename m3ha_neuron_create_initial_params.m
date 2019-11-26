@@ -63,6 +63,7 @@ function [initParamTables, initParamFiles, otherParams] = ...
 %       cd/copyvars.m
 %       cd/count_samples.m
 %       cd/extract_fileparts.m
+%       cd/extract_substrings.m
 %       cd/force_column_vector.m
 %       cd/istext.m
 %       cd/load_params.m
@@ -312,11 +313,9 @@ if toDetectFiles
     customInitFileBases = extract_fileparts(customInitFiles, 'base');
 
     % Extract the cell names based on cellNamePattern
-    % TODO: Make a function extract_substrings.m
-    customCellNamesTemp = regexp(customInitFileBases, cellNamePattern, 'match');
-    customCellNames = cellfun(@(x) x{1}, customCellNamesTemp, ...
-                                'UniformOutput', false);
-    
+    customCellNames = ...
+        extract_substrings(customInitFileBases, 'RegExp', cellNamePattern);
+
     % Make sure the custom cell names are all unique
     if numel(customCellNames) ~= numel(unique(customCellNames))
         error('Cell names provided are not all unique!')
@@ -769,6 +768,10 @@ neuronParamsUseAcrossTrials = logical([ ...
     ]);
 
 RinAllCells = passiveTable.RinEstimate;
+
+customCellNamesTemp = regexp(customInitFileBases, cellNamePattern, 'match');
+customCellNames = cellfun(@(x) x{1}, customCellNamesTemp, ...
+                            'UniformOutput', false);
 
 %}
 

@@ -127,6 +127,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %       cd/set_default_flag.m
 %
 % Used by:
+%       cd/m3ha_plot_example_jitter.m.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/singleneuronfitting47.m and later versions
 

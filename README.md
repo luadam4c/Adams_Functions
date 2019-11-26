@@ -189,6 +189,7 @@ There are 1 MATLAB scripts in this directory:
 - [**extract_fullpaths.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fullpaths.m): Extracts full paths from a files structure array
 - [**extract_in_order.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_in_order.m): Reorganizes a set of vectors by the first vectors, the second vectors, ... and so on
 - [**extract_looped_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_looped_params.m): Extracts parameters that were looped in the simulation from loopedparams.mat
+- [**extract_substrings.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_substrings.m): Extracts substrings from strings
 - [**extract_subvectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_subvectors.m): Extracts subvectors from vectors, given either endpoints, value windows or a certain align mode ('leftAdjust', 'rightAdjust')
 - [**files2contents.m**](https://github.com/blabuva/Adams_Functions/blob/master/files2contents.m): Replaces file names with file contents in a cell array of strings
 - [**fill_markers.m**](https://github.com/blabuva/Adams_Functions/blob/master/fill_markers.m): Fills markers if any for the current axes
@@ -375,7 +376,8 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_pfiles2csv.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_pfiles2csv.m): Converts the old m3ha .p files to spreadsheet files
 - [**m3ha_phase_plane_analysis.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_phase_plane_analysis.m): Plots phase planes from an m3ha .mat file
 - [**m3ha_plot_correlations.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_correlations.m): Plot Correlation diagrams for data that will be used for fitting
-- [**m3ha_plot_example_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_example_traces.m): 
+- [**m3ha_plot_example_jitter.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_example_jitter.m): m3ha_plot_example_jitter.m
+- [**m3ha_plot_figure02.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_figure02.m): m3ha_plot_figure02.m
 - [**m3ha_plot_histograms_refine_threshold.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_histograms_refine_threshold.m): Plot histograms for sweep information & passive fit results that will be used for fitting
 - [**m3ha_plot_individual_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_individual_traces.m): Plots individual voltage traces
 - [**m3ha_plot_oscillations.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_oscillations.m): Shows a swarm plot for each set of neurons (each .spi file in the infolder)

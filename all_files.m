@@ -80,6 +80,7 @@ function varargout = all_files (varargin)
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_network_single_neuron.m
 %       cd/m3ha_pfiles2csv.m
+%       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_all_abfs.m
 %       cd/parse_all_multiunit.m

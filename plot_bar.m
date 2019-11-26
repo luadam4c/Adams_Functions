@@ -848,8 +848,10 @@ if plotIndSelected && ~isempty(indSelected)
     hold on
     % Plot selected values
     if iscell(indSelected)
-        selected = cellfun(@(y) plot_selected(val, pValuesToPlot, y), ...
-                            indSelected);            
+        % TODO: Make cellfun_custom.m
+        selectedCell = cellfun(@(y) plot_selected(val, pValuesToPlot, y), ...
+                            indSelected, 'UniformOutput', false);
+        selected = vertcat(selectedCell{:});
     else
         selected = plot_selected(val, pValuesToPlot, indSelected);
     end

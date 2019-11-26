@@ -30,6 +30,7 @@ function [statuses, messages, messageIds] = ...
 %       cd/force_column_cell.m
 %
 % Used by:
+%       cd/m3ha_plot_figure02.m
 %       /media/adamX/m3ha/optimizer4compgabab/singleneuronfitting63.m
 
 % File History:
