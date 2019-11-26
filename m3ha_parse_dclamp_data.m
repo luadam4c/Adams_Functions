@@ -599,10 +599,10 @@ end
 %% Plot bar graphs
 if plotbargraphsflag == 1
     fprintf('Plotting bar graphs ...\n');
-    m3ha_compute_and_plot_statistics(0, outfolder, outfolder);
-    m3ha_compute_and_plot_statistics(1, outfolder, outfolder);
+    m3ha_compute_and_plot_statistics('DataMode', 0, 'Directory', outfolder);
+    m3ha_compute_and_plot_statistics('DataMode', 1, 'Directory', outfolder);
     if ~debugflag
-        m3ha_compute_and_plot_statistics(2, outfolder, outfolder);
+        m3ha_compute_and_plot_statistics('DataMode', 2, 'Directory', outfolder);
     end
 end
 

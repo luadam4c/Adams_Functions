@@ -35,7 +35,7 @@ function indtofit = m3ha_find_ind_to_fit (fnrow, cellID, pharm, gincr, ...
 % 2018-10-01 infolder is now a relative path
 % 2018-10-15 Renamed function find_ind_to_fit -> m3ha_find_ind_to_fit()
 %               and moved to /home/Matlab/Adams_Functions
-% 
+% TODO: To be replaced by m3ha_select_sweeps_to_fit
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

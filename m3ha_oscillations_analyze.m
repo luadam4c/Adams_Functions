@@ -10,27 +10,31 @@
 % 2019-10-18 Changed minSpikeRateInBurstHz from 100 Hz to 200 Hz
 % 2019-10-18 Changed minSpikeRateInBurstHz from 200 Hz to 100 Hz
 % 2019-10-18 Changed maxInterBurstIntervalMs from 1500 ms to 1000 ms
+% 2019-11-?? Changed minBurstLengthMs from 20 to 100 ms
+% 2019-11-?? Changed minSpikeRateInBurstHz from 100 Hz to 30 Hz
 % 2019-11-25 Added plotFigure1Population
+% 2019-11-26 Changed minSpikeRateInBurstHz from 30 Hz to 50 Hz
+% 2019-11-26 Changed maxInterBurstIntervalMs from 2000 ms to 1500 ms
 
 %% Hard-coded parameters
 figure01Dir = fullfile('/media', 'adamX', 'm3ha', ...
                         'manuscript', 'figures', 'Figure01');
-% parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
-parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', ...
-                      'parse_multiunit_m3ha');
+parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
+% parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', ...
+%                       'parse_multiunit_m3ha');
 archiveDir = parentDir;
-% dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
+dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'no711-final'};
 % dirsToAnalyze = {'dual-final'};
-% dirsToAnalyze = {'no711-test', 'snap5114-test', 'dual-test'};
-dirsToAnalyze = {'no711-test', 'snap5114-test'};
+% dirsToAnalyze = {'dual-test', 'no711-test', 'snap5114-test'};
+% dirsToAnalyze = {'no711-test', 'snap5114-test'};
 % dirsToAnalyze = {'snap5114-test'};
 % dirsToAnalyze = {'dual-test'};
 specificSlicesToAnalyze = {};
 
 plotFigure1Individual = false;
-plotFigure1Population = false; % true;
+plotFigure1Population = true;
 
 parseIndividualFlag = true;
 saveMatFlag = false; % true;
@@ -44,7 +48,7 @@ plotMeasuresFlag = false; % true;
 plotContourFlag = false; % true;
 plotCombinedFlag = true;
 
-parsePopulationRestrictedFlag = false; %true;
+parsePopulationRestrictedFlag = true;
 plotChevronFlag = true;
 plotByFileFlag = true;
 plotByPhaseFlag = true;
@@ -71,14 +75,15 @@ resolutionMs = 5;
 % For compute_spike_histogram.m
 % minBurstLengthMs = 20;          % bursts must be at least 20 ms by default
 minBurstLengthMs = 100;          % bursts must be at least 100 ms by default
-maxFirstInterBurstIntervalMs = 2000;
+maxFirstInterBurstIntervalMs = 1500;
+% maxFirstInterBurstIntervalMs = 2000;
 maxInterBurstIntervalMs = 1000; % bursts are no more than 
                                 %   1 second apart
 % maxInterBurstIntervalMs = 1500; % bursts are no more than 
 %                                %   1.5 seconds apart
 % minSpikeRateInBurstHz = 100;    % bursts must have a spike rate of 
 %                                   at least 100 Hz by default
-minSpikeRateInBurstHz = 50; %30;    % bursts must have a spike rate of 
+minSpikeRateInBurstHz = 50; %30;     % bursts must have a spike rate of 
                                 %   at least 30 Hz by default
 
 % For compute_autocorrelogram.m

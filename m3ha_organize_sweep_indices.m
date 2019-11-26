@@ -9,14 +9,13 @@ function [swpIndByCondAllCells, conditions] = m3ha_organize_sweep_indices (varar
 %
 % Arguments:
 %       varargin    - 'SwpInfo': a table of sweep info, with each row named by 
-%                               the matfile name containing the raw data
-%                   must a 2D table with row names being file names
+%                               the matfile base containing the raw data
+%                   must a 2D table with row names being file bases
 %                       and with the fields:
 %                       cellidrow   - cell ID
 %                       prow        - pharmacological condition
 %                       grow        - conductance amplitude scaling
-%                   default == loaded from 
-%                       ~/m3ha/data_dclamp/take4/dclampdatalog_take4.csv
+%                   default == m3ha_load_sweep_info
 %                   - 'ToFit' - whether to fit each sweep
 %                   must be a binary vector
 %                   default == true(nRows, 1)

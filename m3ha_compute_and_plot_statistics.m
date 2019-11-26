@@ -1,32 +1,43 @@
-function m3ha_compute_and_plot_statistics (fitMode, inFolder, outFolder)
+function m3ha_compute_and_plot_statistics (varargin)
 %% Plot bar graphs for LTS and burst statistics
-% Usage: m3ha_compute_and_plot_statistics (fitMode, inFolder, outFolder)
+% Usage: m3ha_compute_and_plot_statistics (varargin)
 %
 % Arguments: 
-%       fitMode     
-%       inFolder    - (opt) the directory that contains the matfile to read
-%                   must be a directory
-%                   default == //media/adamX/m3ha/data_dclamp/take4/
-%       outFolder   - (opt) the directory to output bar graphs
-%                   (different subdirectories will be created for each fitMode)
-%                   must be a directory
-%                   default == //media/adamX/m3ha/data_dclamp/take4/
-%       varargin    - 'FitMode': fitting mode
+%       varargin    - 'DataMode': data mode
 %                   must be one of:
-%                           - 0 - all data
-%                           - 1 - all of g incr = 100%, 200%, 400%
-%                           - 2 - all of g incr = 100%, 200%, 400% 
-%                                   but exclude cell-pharm-g_incr sets 
-%                                   containing problematic sweeps
+%                       0 - all data
+%                       1 - all of g incr = 100%, 200%, 400%
+%                       2 - all of g incr = 100%, 200%, 400% 
+%                               but exclude cell-pharm-g_incr sets 
+%                               containing problematic sweeps
 %                   default == 0
-%
+%                   - 'Directory': working directory
+%                   must be a string scalar or a character vector
+%                   default == pwd
+%                   - 'InFolder': directory to read files from
+%                   must be a string scalar or a character vector
+%                   default == same as directory
+%                   - 'OutFolder': directory to place output files
+%                   must be a string scalar or a character vector
+%                   default == same as inFolder
+%                   - 'SwpInfo': a table of sweep info, with each row named by 
+%                               the matfile base containing the raw data
+%                   must a 2D table with row names being file bases
+%                       and with the fields:
+%                       cellidrow   - cell ID
+%                       prow        - pharmacological condition
+%                       grow        - conductance amplitude scaling
+%                   default == m3ha_load_sweep_info
+%                   
 % Requires:
 %       "inFolder"/dclampdatalog_take4.mat
 %       cd/check_dir.m
 %       cd/m3ha_compute_ltsburst_statistics.m
-%       cd/m3ha_find_ind_to_fit.m
-%       cd/m3ha_specs_for_fitmode.m
+%       cd/m3ha_find_ind_to_fit.m TODO: Replace this
+%       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_locate_homedir.m
+%       cd/m3ha_select_sweeps_to_fit.m
+%       cd/m3ha_specs_for_fitmode.m
 %
 % Used by:
 %       cd/m3ha_parse_dclamp_data.m
@@ -37,11 +48,11 @@ function m3ha_compute_and_plot_statistics (fitMode, inFolder, outFolder)
 % 2016-09-05 - Changed method of data import
 % 2016-09-06 - Added ANOVA
 % 2016-09-08 - Added sum(ct_g) ~= 0 condition 
-% 2016-09-13 - Added fitMode
+% 2016-09-13 - Added dataMode
 % 2016-09-14 - Added maxnoise & peakclass
-% 2016-10-14 - Added suffix; changed the directory name for fitMode == 0 to include suffix ‘_all’
+% 2016-10-14 - Added suffix; changed the directory name for dataMode == 0 to include suffix ‘_all’
 % 2016-10-15 - Made inFolder and outFolder optional arguments
-% 2016-10-15 - Fixed error when passing fitMode == 0 to m3ha_find_ind_to_fit.m
+% 2016-10-15 - Fixed error when passing dataMode == 0 to m3ha_find_ind_to_fit.m
 % 2016-10-31 - Placed suffix into specs_for_fitmode.m
 % 2017-01-24 - Plotted data points overlaying boxplots and bargraphs
 % 2017-01-24 - Corrected the error bars on the bar graphs (it was half the value previously)
@@ -61,11 +72,11 @@ dataFileName = 'dclampdatalog_take4.csv';
 figTypes = {'png', 'epsc2'};
 
 % Items to compute
-statsTitle = {'LTS onset time (ms)', 'LTS time jitter (ms)', ...
+measureTitle = {'LTS onset time (ms)', 'LTS time jitter (ms)', ...
                 'LTS probability', 'Spikes per LTS', ...
                 'Burst onset time (ms)', 'Burst time jitter (ms)', ...
                 'Burst probability', 'Spikes per burst'};
-statsFileName = {'lts_onset_time', 'lts_time_jitter', ...
+measureStr = {'lts_onset_time', 'lts_time_jitter', ...
                     'lts_probability', 'spikes_per_lts', ...
                     'burst_onset_time', 'burst_time_jitter', ...
                     'burst_probability', 'spikes_per_burst'};
@@ -84,7 +95,11 @@ cc = 1:1:49;                % Possible cell ID #s
 ss = 1:1:5;                 % Possible within condition sweep #s
 
 %% Default values for optional arguments
-param1Default = [];             % default TODO: Description of fitMode
+dataModeDefault = 0;
+directoryDefault = '';                  % set later
+inFolderDefault = '';                   % set later
+outFolderDefault = '';                  % set later
+swpInfoDefault = table.empty;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -94,44 +109,44 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'fitMode', param1Default, ...
-    % TODO: validation function %);
+addParameter(iP, 'DataMode', dataModeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
+addParameter(iP, 'Directory', directoryDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'InFolder', inFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'SwpInfo', swpInfoDefault, ...
+    @(x) validateattributes(x, {'table'}, {'2d'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
-fitMode = iP.Results.fitMode;
+dataMode = iP.Results.DataMode;
+directory = iP.Results.Directory;
+inFolder = iP.Results.InFolder;
+outFolder = iP.Results.OutFolder;
+swpInfo = iP.Results.SwpInfo;
 
-%% Check arguments
-if nargin < 1
-    error('A fitMode is required, type ''help m3ha_compute_and_plot_statistics'' for usage');
-elseif isempty(fitMode) || ~isnumeric(fitMode) || ~(fitMode == 0 || fitMode == 1 || fitMode == 2)
-    error('fitMode out of range!');
-elseif nargin >= 2 && ~isdir(inFolder)
-    error('inFolder must be a directory!');
-elseif nargin >= 3 && ~isdir(outFolder)
-    error('outFolder must be a directory!');
+%% Preparation
+% Set home directory
+if isempty(directory)
+    directory = fullfile(m3ha_locate_homedir, 'data_dclamp', 'take4');
 end
 
-%% Locate home directory
-homeDirectory = m3ha_locate_homedir;
-
-%% Set defaults for optional arguments
-if nargin < 2
-    if debugFlag
-        inFolder = fullfile(homeDirectory, '/data_dclamp/take4/');
-    else
-        inFolder = fullfile(homeDirectory, '/data_dclamp/take4/');
-    end
-end
-if nargin < 3
-    if debugFlag
-        outFolder = fullfile(homeDirectory, '/data_dclamp/take4/debug/');
-    else
-        outFolder = fullfile(homeDirectory, '/data_dclamp/take4/');
-    end
+% Set input directory
+if isempty(inFolder)
+    inFolder = directory;
 end
 
-%% Set font size
+% Set output directory
+if debugFlag
+    outFolder = fullfile(directory, 'debug');
+else
+    outFolder = directory;
+end
+
+% Set font size
 if bigFontFlag
     axisFontSize = 20;
     textFontSize = 20;
@@ -144,78 +159,86 @@ else
     markerSize = 6;
 end
 
-%% Find path of data file to use
+% Find path to data file to use
 dataPath = fullfile(inFolder, dataFileName);
 
-%% Print user specifications
-fprintf('Using fit mode == %d ... \n', fitMode);
+% Display user specifications
+fprintf('Using fit mode == %d ... \n', dataMode);
 fprintf('Using data file == %s ... \n', dataPath);
-fprintf('Using significane level == %g ... \n', sigLevel);
+fprintf('Using significance level == %g ... \n', sigLevel);
 
-%% Set suffix according to fitMode
-suffix = m3ha_specs_for_fitmode(fitMode);
+% Decide on suffix according to dataMode
+suffix = m3ha_specs_for_fitmode(dataMode);
 
-%% Set conductance amplitude scaling % labels for each fitMode
-if fitMode == 0
+% Decide on conductance amplitude scaling % labels
+if dataMode == 0
     gglabel = ggLabelOrig;
-elseif fitMode == 1 || fitMode == 2
+elseif dataMode == 1 || dataMode == 2
     gglabel = ggLabelToFit;
 end
 
-%% Set folders for reading and saving files
-outFolderBar = fullfile(outFolder, ['bargraphs', suffix]);
-check_dir(outFolderBar);
+% Create folder for output figures
+figFolder = fullfile(outFolder, strcat('bargraphs', suffix));
+check_dir(figFolder);
 
 %% Import data
 fprintf('Importing data ... \n');
 
+% Read the sweep info data
+if isempty(swpInfo)
+    swpInfo = m3ha_load_sweep_info('FileName', dataPath);
+end
+
+% Select the sweeps to fit based on data mode
+[swpInfo, fileBasesToFit] = m3ha_select_sweeps_to_fit('DataMode', dataMode);
+
+%% TODO: Organize below:
 
 % For m3ha_find_ind_to_fit
-fnrow = m.fnrow;
-ntraces = numel(fnrow);
+fnrow = swpInfo.fnrow;
 
 % For grouping conditions and for m3ha_find_ind_to_fit
-cellID = m.cellidrow;
-pharm = m.prow;
-gincr = m.grow;
+cellID = swpInfo.cellidrow;
+pharm = swpInfo.prow;
+gincr = swpInfo.grow;
 
 % For grouping conditions
-vhold = m.vrow;
-swpn = m.swpnrow;
+vhold = swpInfo.vrow;
+swpn = swpInfo.swpnrow;
 
 % Statistics to be plotted
-ltspeaktime = m.ltspeaktime;
-spikesperpeak = m.spikesperpeak;
+ltspeaktime = swpInfo.ltspeaktime;
+spikesperpeak = swpInfo.spikesperpeak;
 
-bursttime = m.bursttime;
-spikesperburst = m.spikesperburst;
+bursttime = swpInfo.bursttime;
+spikesperburst = swpInfo.spikesperburst;
 
 % Other LTS features that might be of interest
 %%% TODO
-ltspeakval = m.ltspeakval;
-maxslopeval = m.maxslopeval;
-ltspeak2ndder = m.ltspeak2ndder;
-ltspeakprom = m.ltspeakprom;
-ltspeakwidth = m.ltspeakwidth;
+ltspeakval = swpInfo.ltspeakval;
+maxslopeval = swpInfo.maxslopeval;
+ltspeak2ndder = swpInfo.ltspeak2ndder;
+ltspeakprom = swpInfo.ltspeakprom;
+ltspeakwidth = swpInfo.ltspeakwidth;
 
 % Other burst features that might be of interest
 %%% TODO
-maxspikeamp = m.maxspikeamp;
-minspikeamp = m.minspikeamp;
-spikefrequency = m.spikefrequency;
-spikeadaptation = m.spikeadaptation;
+maxspikeamp = swpInfo.maxspikeamp;
+minspikeamp = swpInfo.minspikeamp;
+spikefrequency = swpInfo.spikefrequency;
+spikeadaptation = swpInfo.spikeadaptation;
 
 %% Find/calculate LTS & burst statistics
 % Initialize vgp-grouped stats vectors
 fprintf('Analyzing data grouped by Vhold-g incr-pharm ... \n');
-all_stats_vgp = cell(1, length(statsTitle));
-mean_stats_vgp = cell(1, length(statsTitle));
-std_stats_vgp = cell(1, length(statsTitle));
-ct_stats_vgp = cell(1, length(statsTitle));
-err_stats_vgp = cell(1, length(statsTitle));
-highbar_stats_vgp = cell(1, length(statsTitle));
-lowbar_stats_vgp = cell(1, length(statsTitle));
-for bi = 1:length(statsTitle)
+all_stats_vgp = cell(1, length(measureTitle));
+mean_stats_vgp = cell(1, length(measureTitle));
+std_stats_vgp = cell(1, length(measureTitle));
+ct_stats_vgp = cell(1, length(measureTitle));
+err_stats_vgp = cell(1, length(measureTitle));
+highbar_stats_vgp = cell(1, length(measureTitle));
+lowbar_stats_vgp = cell(1, length(measureTitle));
+for bi = 1:length(measureTitle)
     all_stats_vgp{bi} = cell(length(pp), length(gg), length(vv));
     mean_stats_vgp{bi} = zeros(length(pp), length(gg), length(vv));
     std_stats_vgp{bi} = zeros(length(pp), length(gg), length(vv));
@@ -227,19 +250,19 @@ end
 
 % Group by Vhold, then by g incr, then by pharm condition
 scpgv_ind = zeros(length(ss), length(cc), length(pp), length(gg), length(vv));
-if fitMode ~= 0
-    indtofit = m3ha_find_ind_to_fit(fnrow, cellID, pharm, gincr, fitMode, inFolder);
+if dataMode ~= 0
+    indtofit = m3ha_find_ind_to_fit(fnrow, cellID, pharm, gincr, dataMode, inFolder);
 end
 for vi = 1:length(vv)
     v_ind = find(vhold == vv(vi));
     for gi = 1:length(gg)
-        if (fitMode == 1 || fitMode == 2) && ~(gi == 3 || gi == 4 || gi == 5)
+        if (dataMode == 1 || dataMode == 2) && ~(gi == 3 || gi == 4 || gi == 5)
             continue;
         end
         g_ind = find(gincr == gg(gi));
         for hi = 1:length(pp)
             p_ind = find(pharm == pp(hi));
-            if fitMode == 0
+            if dataMode == 0
                 vgp_ind = intersect(intersect(v_ind, g_ind), p_ind);
             else
                 vgp_ind = intersect(intersect(intersect(v_ind, g_ind), p_ind), indtofit);
@@ -248,7 +271,7 @@ for vi = 1:length(vv)
             [all_stats, mean_stats, std_stats, ct_stats, err_stats, highbar_stats, lowbar_stats] = ...
                 m3ha_compute_ltsburst_statistics(vgp_ind, cellID, ltspeaktime, ...
                             spikesperpeak, bursttime, spikesperburst);
-            for bi = 1:length(statsTitle)
+            for bi = 1:length(measureTitle)
                 all_stats_vgp{bi}{hi, gi, vi} = all_stats{bi};
                 mean_stats_vgp{bi}(hi, gi, vi) = mean_stats(bi);
                 std_stats_vgp{bi}(hi, gi, vi) = std_stats(bi);
@@ -264,7 +287,7 @@ for vi = 1:length(vv)
                 vgpc_ind = intersect(vgp_ind, c_ind);
                 for si = 1:length(ss)
                     s_ind = find(swpn == ss(si));
-                    if fitMode == 0
+                    if dataMode == 0
                         unique_ind = intersect(vgpc_ind, s_ind);
                     else
                         unique_ind = intersect(intersect(vgpc_ind, s_ind), indtofit);
@@ -280,14 +303,14 @@ end
 
 % Initialize gp-grouped stats vectors
 fprintf('Analyzing data grouped by g incr-pharm ... \n');
-all_stats_gp = cell(1, length(statsTitle));
-mean_stats_gp = cell(1, length(statsTitle));
-std_stats_gp = cell(1, length(statsTitle));
-ct_stats_gp = cell(1, length(statsTitle));
-err_stats_gp = cell(1, length(statsTitle));
-highbar_stats_gp = cell(1, length(statsTitle));
-lowbar_stats_gp = cell(1, length(statsTitle));
-for bi = 1:length(statsTitle)
+all_stats_gp = cell(1, length(measureTitle));
+mean_stats_gp = cell(1, length(measureTitle));
+std_stats_gp = cell(1, length(measureTitle));
+ct_stats_gp = cell(1, length(measureTitle));
+err_stats_gp = cell(1, length(measureTitle));
+highbar_stats_gp = cell(1, length(measureTitle));
+lowbar_stats_gp = cell(1, length(measureTitle));
+for bi = 1:length(measureTitle)
     all_stats_gp{bi} = cell(length(pp), length(gg));
     mean_stats_gp{bi} = zeros(length(pp), length(gg));
     std_stats_gp{bi} = zeros(length(pp), length(gg));
@@ -299,13 +322,13 @@ end
 
 % Group by g incr, then by pharm condition
 for gi = 1:length(gg)
-    if (fitMode == 1 || fitMode == 2) && ~(gi == 3 || gi == 4 || gi == 5)
+    if (dataMode == 1 || dataMode == 2) && ~(gi == 3 || gi == 4 || gi == 5)
         continue;
     end
     g_ind = find(gincr == gg(gi));
     for hi = 1:length(pp)
         p_ind = find(pharm == pp(hi));
-        if fitMode == 0
+        if dataMode == 0
             gp_ind = intersect(g_ind, p_ind);
         else
             gp_ind = intersect(intersect(g_ind, p_ind), indtofit);
@@ -313,7 +336,7 @@ for gi = 1:length(gg)
         % Find/calculate LTS/burst statistics for each group
         [all_stats, mean_stats, std_stats, ct_stats, err_stats, highbar_stats, lowbar_stats] = ...
             m3ha_compute_ltsburst_statistics(gp_ind, cellID, ltspeaktime, spikesperpeak, bursttime, spikesperburst);
-        for bi = 1:length(statsTitle)
+        for bi = 1:length(measureTitle)
             all_stats_gp{bi}{hi, gi} = all_stats{bi};
             mean_stats_gp{bi}(hi, gi) = mean_stats(bi);
             std_stats_gp{bi}(hi, gi) = std_stats(bi);
@@ -327,23 +350,23 @@ end
 
 % For each statistic, perform ANOVA across pharmacological conditions and compute p values
 fprintf('Performing ANOVA ... \n');
-pvalue_vg = zeros(length(statsTitle), length(gg), length(vv));
+pvalue_vg = zeros(length(measureTitle), length(gg), length(vv));
                         % p value across pharm conditions for each vg-condition
-pvalue_g = zeros(length(statsTitle), length(gg));
+pvalue_g = zeros(length(measureTitle), length(gg));
                         % p value across pharm conditions for each g incr
-table_vg = cell(length(statsTitle), length(gg), length(vv));
-table_g = cell(length(statsTitle), length(gg));
+table_vg = cell(length(measureTitle), length(gg), length(vv));
+table_g = cell(length(measureTitle), length(gg));
 %{ 
 %For Multiple comparison test (multcompare(stats))
-stats_vg = cell(length(statsTitle), length(gg), length(vv));
-stats_g = cell(length(statsTitle), length(gg));
+stats_vg = cell(length(measureTitle), length(gg), length(vv));
+stats_g = cell(length(measureTitle), length(gg));
 %}
 ct_vg = zeros(length(pp), 1);
 ct_g = zeros(length(pp), 1);
-for bi = 1:length(statsTitle)
+for bi = 1:length(measureTitle)
     for gi = 1:length(gg)
-        % If under fitMode 1 & 2, only do this for G incr = 100%, 200%, 400%
-        if (fitMode == 1 || fitMode == 2) && ~(gi == 3 || gi == 4 || gi == 5)
+        % If under dataMode 1 & 2, only do this for G incr = 100%, 200%, 400%
+        if (dataMode == 1 || dataMode == 2) && ~(gi == 3 || gi == 4 || gi == 5)
             continue;
         end
 
@@ -393,12 +416,12 @@ for bi = 1:length(statsTitle)
         end
         text(0.751, ax.YLim(2)*0.95, ['p value = ', num2str(pvalue_g(bi, gi))], ...
             'Color', textcolor, 'FontSize', textFontSize);
-        ylabel(statsTitle{bi}, 'FontSize', ylabelFontSize);
+        ylabel(measureTitle{bi}, 'FontSize', ylabelFontSize);
         if ~bigFontFlag
             xlabel('Pharm Condition');
             title(['All traces with G scaled at ', num2str(gg(gi)), '%']);
         end
-        figname = fullfile(outFolderBar, [statsFileName{bi}, '_', num2str(gg(gi)), 'g_boxplot', suffix, '.png']);
+        figname = fullfile(figFolder, [measureStr{bi}, '_', num2str(gg(gi)), 'g_boxplot', suffix, '.png']);
         save_all_figtypes(h, figname, figTypes);
         close(h);
 
@@ -447,12 +470,12 @@ for bi = 1:length(statsTitle)
             end
             text(0.751, ax.YLim(2)*0.95, ['p value = ', num2str(pvalue_vg(bi, gi, vi))], ...
                 'Color', textcolor, 'FontSize', textFontSize);
-            ylabel(statsTitle{bi}, 'FontSize', ylabelFontSize);
+            ylabel(measureTitle{bi}, 'FontSize', ylabelFontSize);
             if ~bigFontFlag
                 xlabel('Pharm Condition');
                 title(['Vhold = ', num2str(vv(vi)), ' mV with G scaled at ', num2str(gg(gi)), '%']);
             end
-            figname = fullfile(outFolderBar, [statsFileName{bi}, ...
+            figname = fullfile(figFolder, [measureStr{bi}, ...
                 '_', num2str(gg(gi)), 'g_v', num2str(vv(vi)), '_boxplot', suffix,'.png']);
             save_all_figtypes(h, figname, figTypes);
         end
@@ -461,8 +484,8 @@ end
 
 % Save variables as .mat file
 fprintf('Saving variables ... \n');
-matFile = fullfile(outFolderBar, ['ltsburst_statistics', suffix, '.mat']);
-save(matFile, 'statsTitle', 'statsFileName', 'scpgv_ind', ...
+matFile = fullfile(figFolder, ['ltsburst_statistics', suffix, '.mat']);
+save(matFile, 'measureTitle', 'measureStr', 'scpgv_ind', ...
     'all_stats_vgp', 'mean_stats_vgp', 'std_stats_vgp', ...
     'ct_stats_vgp', 'err_stats_vgp', 'highbar_stats_vgp', 'lowbar_stats_vgp', ...
     'all_stats_gp', 'mean_stats_gp', 'std_stats_gp', ...
@@ -477,15 +500,15 @@ end
 
 %% Create 3D bar graph for burst statistics for each Vhold value (Figure 3.4 in Christine's thesis)
 fprintf('Plotting 3D bar graphs for burst statistics for each Vhold value ... \n');
-parfor bi = 1:length(statsTitle)
+parfor bi = 1:length(measureTitle)
     for vi = 1:length(vv)
         h = figure('Visible', 'off');
-        set(h, 'Name', [statsFileName{bi}, '_', num2str(vv(vi))]);
+        set(h, 'Name', [measureStr{bi}, '_', num2str(vv(vi))]);
         clf(h);
         % Plot means
-        if fitMode == 0
+        if dataMode == 0
             bar3(1:length(pp), mean_stats_vgp{bi}(:, :, vi), 0.12, 'detached'); hold on;
-        elseif fitMode == 1 || fitMode == 2
+        elseif dataMode == 1 || dataMode == 2
             bar3(1:length(pp), mean_stats_vgp{bi}(:, 3:5, vi), 0.12, 'detached'); hold on;
         end
         % Plot 95% confidence intervals
@@ -503,9 +526,9 @@ parfor bi = 1:length(statsTitle)
         set(gca, 'YTickLabel', ppLabel);
          xlabel('IPSC conductance amplitude scaling');
 %        ylabel('Pharm Condition');
-        zlabel(statsTitle{bi});
+        zlabel(measureTitle{bi});
         title(['Vm = ', vvLabel{vi}]);
-        figname = fullfile(outFolderBar, [statsFileName{bi}, '_', num2str(vv(vi)), suffix, '.png']);
+        figname = fullfile(figFolder, [measureStr{bi}, '_', num2str(vv(vi)), suffix, '.png']);
         save_all_figtypes(h, figname, figTypes);
         close(h);
     end
@@ -514,14 +537,14 @@ end
 %% Create 2D bar graph for burst statistics for each Vhold value with IPSC conductance amplitude scaling fixed (Figure 3.5 in Christine's thesis)
 fprintf('Plotting 2D bar graphs for burst statistics for each Vhold value with IPSC conductance amplitude scaling fixed ... \n');
 for gi = 1:length(gg)
-    % If under fitMode 1 & 2, only do this for G incr = 100%, 200%, 400%
-    if (fitMode == 1 || fitMode == 2) && ~(gi == 3 || gi == 4 || gi == 5)
+    % If under dataMode 1 & 2, only do this for G incr = 100%, 200%, 400%
+    if (dataMode == 1 || dataMode == 2) && ~(gi == 3 || gi == 4 || gi == 5)
         continue;
     end        
 
-    parfor bi = 1:length(statsTitle)
+    parfor bi = 1:length(measureTitle)
         h = figure('Visible', 'off');
-        set(h, 'Name', [statsFileName{bi}, '_vsep_', num2str(gg(gi)), 'g']);
+        set(h, 'Name', [measureStr{bi}, '_vsep_', num2str(gg(gi)), 'g']);
         clf(h);
         oldpos = get(h, 'Position');
         newpos = [oldpos(1)-oldpos(3) oldpos(2)-oldpos(4) 3*oldpos(3) 2*oldpos(4)];
@@ -566,11 +589,11 @@ for gi = 1:length(gg)
             end            
             xlabel('Pharm Condition');
             if vi == 1
-                ylabel(statsTitle{bi});
+                ylabel(measureTitle{bi});
             end
             title(['Vm = ', vvLabel{vi}]);
         end
-        figname = fullfile(outFolderBar, [statsFileName{bi}, '_vsep_', num2str(gg(gi)), 'g', suffix, '.png']);
+        figname = fullfile(figFolder, [measureStr{bi}, '_vsep_', num2str(gg(gi)), 'g', suffix, '.png']);
         save_all_figtypes(h, figname, figTypes);
         close(h);
     end
@@ -578,14 +601,14 @@ end
 
 %% Create 3D bar graph for burst statistics
 fprintf('Plotting 3D bar graphs for all burst statistics ... \n');
-parfor bi = 1:length(statsTitle)
+parfor bi = 1:length(measureTitle)
     h = figure('Visible', 'off');
-    set(h, 'Name', statsFileName{bi});
+    set(h, 'Name', measureStr{bi});
     clf(h);
     % Plot means
-    if fitMode == 0
+    if dataMode == 0
         bar3(1:length(pp), mean_stats_gp{bi}(:, :), 0.12, 'detached'); hold on;
-    elseif fitMode == 1 || fitMode == 2
+    elseif dataMode == 1 || dataMode == 2
         bar3(1:length(pp), mean_stats_gp{bi}(:, 3:5), 0.12, 'detached'); hold on;
     end
     % Plot 95% confidence intervals
@@ -601,9 +624,9 @@ parfor bi = 1:length(statsTitle)
     set(gca, 'YTickLabel', ppLabel);
      xlabel('IPSC conductance amplitude scaling');
 %        ylabel('Pharm Condition');
-    zlabel(statsTitle{bi});
+    zlabel(measureTitle{bi});
     title('All traces');
-    figname = fullfile(outFolderBar, [statsFileName{bi}, suffix, '.png']);
+    figname = fullfile(figFolder, [measureStr{bi}, suffix, '.png']);
     save_all_figtypes(h, figname, figTypes);
     close(h);
 end
@@ -611,18 +634,18 @@ end
 %% Create 2D bar graph for burst statistics with IPSC conductance amplitude scaling fixed
 fprintf('Plotting 2D bar graphs for all burst statistics with IPSC conductance amplitude scaling fixed ... \n');
 for gi = 1:length(gg)
-    % If under fitMode 1 & 2, only do this for G incr = 100%, 200%, 400%
-    if (fitMode == 1 || fitMode == 2) && ~(gi == 3 || gi == 4 || gi == 5)
+    % If under dataMode 1 & 2, only do this for G incr = 100%, 200%, 400%
+    if (dataMode == 1 || dataMode == 2) && ~(gi == 3 || gi == 4 || gi == 5)
         continue;
     end        
 
-    parfor bi = 1:length(statsTitle)
+    parfor bi = 1:length(measureTitle)
         % Count the number of cells in each pharm group
         ct_g = cellfun(@length, all_stats_gp{bi}(:, gi));
 
         % Create a 2D bar graph
         h = figure('Visible', 'off');
-        set(h, 'Name', [statsFileName{bi}, '_', num2str(gg(gi)), 'g']);
+        set(h, 'Name', [measureStr{bi}, '_', num2str(gg(gi)), 'g']);
         clf(h);
 
         % Plot means
@@ -656,9 +679,9 @@ for gi = 1:length(gg)
             text(1, ax.YLim(2)*0.9, ['p value = ', num2str(pvalue_g(bi, gi))], 'Color', 'k');
         end
         xlabel('Pharm Condition');
-        ylabel(statsTitle{bi});
+        ylabel(measureTitle{bi});
         title(['All traces with G scaled at ', num2str(gg(gi)), '%']);
-        figname = fullfile(outFolderBar, [statsFileName{bi}, '_', num2str(gg(gi)), 'g', suffix, '.png']);
+        figname = fullfile(figFolder, [measureStr{bi}, '_', num2str(gg(gi)), 'g', suffix, '.png']);
         save_all_figtypes(h, figname, figTypes);
         close(h);
     end

@@ -91,14 +91,13 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %                   must be a nonnegative scalar
 %                   default == []
 %                   - 'SweepInfoAll': a table of sweep info, with each row named by 
-%                               the matfile name containing the raw data
-%                   must a 2D table with row names being file names
+%                               the matfile base containing the raw data
+%                   must a 2D table with row names being file bases
 %                       and with the fields:
 %                       cellidrow   - cell ID
 %                       prow        - pharmacological condition
 %                       grow        - conductance amplitude scaling
-%                   default == loaded from 
-%                       ~/m3ha/data_dclamp/take4/dclampdatalog_take4.csv
+%                   default == m3ha_load_sweep_info
 %                   - 'InitialSlopesPath': path to the initial slopes .mat file
 %                   must be a string scalar or a character vector
 %                   default == ~/m3ha/data_dclamp/take4/initial_slopes_nSamplesForPlot_2_threeStdMainComponent.mat
@@ -114,7 +113,9 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %       cd/correct_unbalanced_bridge.m
 %       cd/create_time_vectors.m
 %       cd/extract_columns.m
+%       cd/extract_common_prefix.m
 %       cd/extract_elements.m
+%       cd/extract_fileparts.m
 %       cd/extract_subvectors.m
 %       cd/find_in_strings.m
 %       cd/find_window_endpoints.m
@@ -399,7 +400,7 @@ end
 % Load sweep information if not provided
 %   Note: the file names are read in as row names
 if isempty(swpInfoAll)
-    swpInfoAll = m3ha_load_sweep_info('HomeDirectory', homeDirectory);
+    swpInfoAll = m3ha_load_sweep_info('Directory', homeDirectory);
 end
 
 % Make sure fileNames is a column cell array
@@ -408,16 +409,19 @@ fileNames = force_column_cell(fileNames);
 % Make sure fileNames all end in .mat
 fileNames = force_string_end(fileNames, '.mat');
 
+% Extract file bases
+fileBases = extract_fileparts(fileNames, 'base');
+
 % Count the total number of sweeps to import
-nSwps = numel(fileNames);
+nSwps = numel(fileBases);
 
 % Construct full paths to matfiles and check if they exist
 [filePaths, pathExists] = ...
     construct_and_check_fullpath(fileNames, 'Directory', matFilesDir, ...
-                                    'Verbose', verbose);
+                                'Verbose', verbose, 'Extension', 'mat');
 
 % Get the cell name
-cellName = m3ha_extract_cell_name(fileNames);
+cellName = m3ha_extract_cell_name(fileBases);
 
 % If a matfile does not exist, return
 if ~all(pathExists)
@@ -463,7 +467,7 @@ fprintf('Importing raw traces for this cell ... \n');
 % Print usage message
 if createLog
     for iSwp = 1:nSwps
-        fprintf(fid, 'Using trace %s ... \n', fileNames{iSwp});
+        fprintf(fid, 'Using trace %s ... \n', fileBases{iSwp});
     end
 end
 
@@ -686,7 +690,7 @@ if toParsePulse && (toAverageByVhold || toBootstrapByVhold)
     fprintf('Averaging the current pulse responses according to vHold ... \n');
 
     % Extract holding voltage conditions for each file from swpInfoAll
-    vHoldCond = swpInfoAll{fileNames, 'vrow'};
+    vHoldCond = swpInfoAll{fileBases, 'vrow'};
 
     % Average the data by holding voltage conditions
     if toAverageByVhold
@@ -698,7 +702,7 @@ if toParsePulse && (toAverageByVhold || toBootstrapByVhold)
         filePrefix = strcat(cellName, '_vhold');
 
         % Define file names by the unique vhold level
-        fileNames = create_labels_from_numbers(vUnique, 'Prefix', filePrefix);
+        fileBases = create_labels_from_numbers(vUnique, 'Prefix', filePrefix);
     elseif toBootstrapByVhold
         [data, vUnique] = ...
             compute_combined_data(data, 'bootmean', 'Grouping', vHoldCond, ...
@@ -708,7 +712,7 @@ if toParsePulse && (toAverageByVhold || toBootstrapByVhold)
         filePrefix = strcat(cellName, '_resampled_vhold_');
 
         % Rename files by the vhold level for each file 
-        fileNames = create_labels_from_numbers(vHoldCond, 'Prefix', filePrefix);
+        fileBases = create_labels_from_numbers(vHoldCond, 'Prefix', filePrefix);
     else
         error('Code logic error!');
     end
@@ -745,7 +749,7 @@ else
     %   Note: This was averaged over 20 ms before IPSC start 
     %           for the median filtered trace
     %           See m3ha_find_lts.m for specifics.
-    holdPotential = swpInfoAll{fileNames, 'actVhold'};
+    holdPotential = swpInfoAll{fileBases, 'actVhold'};
 end
 
 %% Compute the baseline noise and sweep weights
@@ -778,7 +782,7 @@ end
 fprintf('Putting results into a table ... \n');
 
 % Output in sweepInfo tables
-sweepInfo = table(fileNames, siMs, currentPulseAmplitude, ...
+sweepInfo = table(fileBases, fileNames, siMs, currentPulseAmplitude, ...
                     holdPotential, holdCurrent, baseNoise, ...
                     holdCurrentNoise, sweepWeights);
 
@@ -790,8 +794,18 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function cellName = m3ha_extract_cell_name (fileNames)
+%% Extract the cell name from a list of file names
 
-cellName = fileNames{1}(1:7);
+% Extract the common prefix
+commonPrefix = extract_common_prefix(fileNames)
+
+% 
+if numel(commonPrefix) < 7
+    error('Cannot find common cell name!');
+end
+
+% The cell name is the first 7 characters
+cellName = commonPrefix(1:7);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

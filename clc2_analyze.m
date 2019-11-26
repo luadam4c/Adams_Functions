@@ -14,14 +14,16 @@
 %% Hard-coded parameters
 archiveDir = '/media/adamX/CLC2/data';
 parentDir = '/media/adamX/CLC2/data/blinded';
-dirsToAnalyze = {'drug-clean', 'control-clean'};
+% dirsToAnalyze = {'drug-clean', 'control-clean'};
+dirsToAnalyze = {'drug-clean'};
+% dirsToAnalyze = {'control-clean'};
 
-parseIndividualFlag = true;
-saveMatFlag = true;
-plotSpikeDetectionFlag = true;
-plotMeasuresFlag = true;
-plotSpikeDensityFlag = true;
-plotContourFlag = true;
+parseIndividualFlag = false; %true;
+saveMatFlag = false; %true;
+plotSpikeDetectionFlag = false; %true;
+plotMeasuresFlag = false; %true;
+plotSpikeDensityFlag = false; %true;
+plotContourFlag = false; %true;
 
 parsePopulationFlag = true;
 plotChevronFlag = true;

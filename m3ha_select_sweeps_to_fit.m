@@ -1,31 +1,33 @@
-function [swpInfo, fileNamesToFit] = m3ha_select_sweeps_to_fit (varargin)
+function [swpInfo, fileBasesToFit] = m3ha_select_sweeps_to_fit (varargin)
 %% Find file names and row indices in swpInfo that will be used for fitting
-% Usage: [swpInfo, fileNamesToFit] = m3ha_select_sweeps_to_fit (varargin)
+% Usage: [swpInfo, fileBasesToFit] = m3ha_select_sweeps_to_fit (varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
-%       swpInfo     - same as input swpInfo table but with the additional field:
-%                       toFit   - whether the sweep is to be fitted
-%       fileNamesToFit  - file names of sweeps to fit
+%       swpInfo         - same as input swpInfo table but with the additional field:
+%                           toFit   - whether the sweep is to be fitted
+%       fileBasesToFit  - file bases of sweeps to fit
 %                       specified as a cell array
 % Arguments:
 %       varargin    - 'SwpInfo': a table of sweep info, with each row named by 
-%                               the matfile name containing the raw data
-%                   must a 2D table with row names being file names
+%                               the matfile base containing the raw data
+%                   must a 2D table with row names being file bases
 %                       and with the fields:
-%                       cellidrow - cell ID
-%                       prow      - pharmacological condition
-%                       grow      - conductance amplitude scaling (%)
-%                   default == loaded from 
-%                       ~/m3ha/data_dclamp/take4/dclampdatalog_take4.csv
+%                       cellidrow   - cell ID
+%                       prow        - pharmacological condition
+%                       grow        - conductance amplitude scaling
+%                   default == m3ha_load_sweep_info
 %                   - 'DataMode': data mode
 %                   must be a one of:
+%                       0 - all data
 %                       1 - all of g incr = 100%, 200%, 400%
 %                       2 - all of g incr = 100%, 200%, 400% 
-%                           but exclude cell-pharm-g_incr sets 
-%                           containing problematic sweeps
+%                               but exclude cell-pharm-g_incr sets 
+%                               containing problematic sweeps
 %                   default == 2
 %                   - 'CasesDir' - the directory that contains 
 %                                   'TAKE_OUT_*' folders with special cases
@@ -38,6 +40,8 @@ function [swpInfo, fileNamesToFit] = m3ha_select_sweeps_to_fit (varargin)
 %       cd/m3ha_load_sweep_info.m
 %
 % Used by:
+%       cd/m3ha_compute_and_plot_statistics.m
+%       cd/m3ha_compute_ltsburst_statistics.m
 %       cd/m3ha_select_cells.m
 
 % TODO:
@@ -49,7 +53,7 @@ function [swpInfo, fileNamesToFit] = m3ha_select_sweeps_to_fit (varargin)
 % File History:
 % 2018-11-18 Adapted from m3ha_find_ind_to_fit()
 % 2018-12-06 Now adds a toFit column to sweep info
-% 
+% 2019-11-26 Added dataMode == 0
 
 %% Hard-coded parameters
 attributesToMatch = {'cellidrow', 'prow', 'grow'};
@@ -108,7 +112,7 @@ if dataMode == 2
     % If there are no files, return with message
     if isempty(fileNamesToTakeOut)
         fprintf('There are no files to take out under %s!\n', casesDir);
-        fileNamesToFit = {};
+        fileBasesToFit = {};
         swpIndicesToFit = [];
         return
     end
@@ -120,7 +124,9 @@ if dataMode == 2
 end
 
 % Find the sweep indices to fit
-if dataMode == 1
+if dataMode == 0
+    toFit = true(height(swpInfo), 1);
+elseif dataMode == 1
     toFit = isGcondToFit;
 elseif dataMode == 2
     toFit = isGcondToFit & ~isNotToFit;
@@ -130,74 +136,16 @@ end
 % Place in swpInfo
 swpInfo = addvars(swpInfo, toFit);
 
-% Extract all the row names
-fileNames = swpInfo.Properties.RowNames;
+% Extract all the file bases
+fileBases = swpInfo.Properties.RowNames;
 
-% Find the file names to fit
-fileNamesToFit = fileNames(toFit);
+% Find the file bases to fit
+fileBasesToFit = fileBases(toFit);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
-
-% Find the indices of all sweeps of the same cell-pharm-g incr group
-indSameCellId = find(cellId == cellId(iSwp));
-indSamePharm = find(pharm == pharm(iSwp));
-indSameGIncr = find(grow == grow(iSwp));
-indSameGroup = intersect(indSameCellId, ...
-                intersect(indSamePharm, indSameGIncr));
-
-swpIndSameGroup = cell(nSweeps, 1);
-
-parfor iSwp = 1:nSweeps
-    if ismember(fileNames(iSwp), fileNamesToTakeOut)
-        % If a sweep to take out, find the indices of all sweeps 
-        %   of the same cell-pharm-g incr group
-        swpIndSameGroup{iSwp} = ...
-            find(cellId == cellId(iSwp) & pharm == pharm(iSwp) & ...
-                grow == grow(iSwp));
-    else
-        % Otherwise, return nothing
-        swpIndSameGroup{iSwp} = [];
-    end
-end
-
-swpIndNotToFit = unique(union_over_cells(swpIndSameGroup));
-
-% Check if this sweep is not yet included in swpIndNotToFit
-isNotIncluded = isempty(find(swpIndNotToFit == iSwp, 1));
-
-% Sort swpIndNotToFit
-swpIndNotToFit = sort(swpIndNotToFit);
-
-% Extract from table
-cellId = table.cellidrow;
-pharm = table.prow;
-grow = table.grow;
-
-[fileNamesToFit, swpIndicesToFit] = m3ha_select_sweeps_to_fit (varargin)
-%       swpIndicesToFit - row indices in swpInfo of sweeps to fit
-%                       specified as a positive integer vector
-
-% Find all the sweep indices with the same cell ID, pharm condition
-%   and conductance amplitude scaling as the files to take out
-swpIndNotToFit = find_rows_with_same_attributes(swpInfo, fileNamesToTakeOut, ...
-                                    attributesToMatch);
-
-if dataMode == 1
-    swpIndicesToFit = swpIndGIncrToFit;
-elseif dataMode == 2
-    swpIndicesToFit = setdiff(swpIndGIncrToFit, swpIndNotToFit);
-end
-
-% Find the sweep indices for 
-%   conductance amplitudes with 100%, 200% or 400% scaling 
-%   (these are present in all experiments)
-swpIndGIncrToFit = find(isGcondToFit);
-
-% Find the file names to fit
-fileNamesToFit = fileNames(swpIndicesToFit);
 
 %}
 

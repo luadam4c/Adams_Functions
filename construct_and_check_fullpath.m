@@ -1,6 +1,9 @@
 function [fullPath, pathExists] = construct_and_check_fullpath (pathName, varargin)
 %% Constructs the full path to the file or directory and checks whether it exists
 % Usage: [fullPath, pathExists] = construct_and_check_fullpath (pathName, varargin)
+% Explanation:
+%       TODO
+%
 % Examples:
 %       [abfFullfilename, fileExists] = ...
 %           construct_and_check_fullpath(pathName, 'Extension', '.abf');

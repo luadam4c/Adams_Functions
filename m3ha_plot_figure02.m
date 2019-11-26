@@ -5,6 +5,8 @@
 %       cd/all_files.m
 %       cd/copy_into.m
 %       cd/extract_substrings.m
+%       cd/m3ha_create_cell_info_table.m
+%       cd/m3ha_load_sweep_info.m
 
 % File History:
 % 2019-11-25 Created by Adam Lu
@@ -32,7 +34,7 @@ plotBarPlotsFlag = true;
 
 % Plot settings
 exampleGincr = 200;
-exampleXlimits = [800, 2400];
+exampleXlimits = [800, 2200];
 exampleYlimits = [-100, 20];
 pharmLabels = {'Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block'};
 figTypes = {'png', 'epsc2'};
@@ -41,12 +43,7 @@ figTypes = {'png', 'epsc2'};
 
 %% Load sweep info
 % Read from datalogPath
-swpInfo = readtable(datalogPath, 'HeaderLines', 1, 'ReadVariableNames', true);
-
-% Extract file bases as row names
-fileNames = swpInfo.fnrow;
-fileBases = extractBefore(fileNames, '.');
-swpInfo.Properties.RowNames = fileBases;
+swpInfo = m3ha_load_sweep_info('Directory', figure02Dir);
 
 % Look for all import logs
 [~, exampleLogPaths] = all_files('Directory', figure02Dir, ...
@@ -55,6 +52,9 @@ swpInfo.Properties.RowNames = fileBases;
 % Extract example cell names
 exampleCellNames = ...
     extract_substrings(exampleLogPaths, 'Regexp', cellNamePattern);
+
+%% Compute statistics
+% TODO
 
 %% Create cell info table
 if saveCellInfo

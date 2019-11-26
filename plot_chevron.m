@@ -111,6 +111,7 @@ meanLineWidthRatio = 1;
 meanLineStyle = '--';
 meanMarkerSizeRatio = 2;
 meanColorMap = [];                  % set later
+meanMarkerFaceColor = 'none';
 
 %% Default values for optional arguments
 isLog2DataDefault = false;
@@ -356,7 +357,7 @@ if plotErrorBars
     % Plot the means
     plot(axHandle, pValues, means, 'o', 'Color', meanColorMap, ...
         'LineStyle', meanLineStyle, 'LineWidth', meanLineWidth, ...
-        'MarkerSize', meanMarkerSize);
+        'MarkerSize', meanMarkerSize, 'MarkerFaceColor', meanMarkerFaceColor);
 
     % Plot error bars
     plot_error_bar(pValues, lower95s, upper95s, 'Color', meanColorMap, ...

@@ -495,7 +495,13 @@ end
 fprintf('Finding all spreadsheets ...\n');
 [~, sliceParamSheets] = all_files('Directory', inFolder, 'Keyword', 'slice', ...
                                 'Suffix', 'params', 'ForceCellOutput', true);
-                                
+
+% If nothing found, return
+if isempty(sliceParamSheets)
+    fprintf('There are no slice-dependent spreadsheets in %s!\n', inFolder);
+    return
+end
+
 % Extract the common prefix
 prefix = extract_fileparts(sliceParamSheets, 'commonprefix');
 

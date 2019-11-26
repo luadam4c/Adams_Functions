@@ -15,17 +15,15 @@ function cellInfo = m3ha_create_cell_info_table (varargin)
 %                                       conditions
 % Arguments:
 %       varargin    - 'SwpInfo': a table of sweep info, with each row named by 
-%                       the matfile name containing the raw data
-%                   must be a 2D table with row names being file names
+%                               the matfile base containing the raw data
+%                   must a 2D table with row names being file bases
 %                       and with the fields:
 %                       cellidrow   - cell ID
-%                       TODO?
 %                       prow        - pharmacological condition
 %                       grow        - conductance amplitude scaling
-%                       vrow        - holding voltage level (mV)
 %                       swpnrow     - sweep number
-%                   default == loaded from 
-%                       ~/m3ha/data_dclamp/take4/dclampdatalog_take4.csv
+%                       TODO?
+%                   default == m3ha_load_sweep_info
 %                   - 'param1': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
@@ -35,6 +33,7 @@ function cellInfo = m3ha_create_cell_info_table (varargin)
 %
 % Used by:
 %       cd/m3ha_select_cells.m
+%       cd/m3ha_plot_figure02.m
 
 % File History:
 % 2018-11-19 Created by Adam Lu
@@ -78,8 +77,8 @@ fprintf('Generating cell name info ... \n');
 % Extract all cell IDs
 cellIdAllRows = swpInfo{:, 'cellidrow'};
 
-% Extract all file names
-fileNames = swpInfo.Properties.RowNames;
+% Extract all file bases
+fileBases = swpInfo.Properties.RowNames;
 
 % Get the maximum cell ID
 maxCellId = max(cellIdAllRows);
@@ -92,7 +91,7 @@ indFirstRow = arrayfun(@(x) find(cellIdAllRows == x, 1), ...
                         transpose(1:maxCellId), 'UniformOutput', false);
 
 % Find the appropriate cell names for each row
-cellNames = cellfun(@(x) find_cell_name(x, fileNames), indFirstRow, ...
+cellNames = cellfun(@(x) find_cell_name(x, fileBases), indFirstRow, ...
                     'UniformOutput', false);
 
 % Put in a table
@@ -107,7 +106,7 @@ fprintf('Organizing sweep indices ... \n');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function cellName = find_cell_name (idxFirstRow, fileNames)
+function cellName = find_cell_name (idxFirstRow, fileBases)
 %% Find the appropriate cell name
 
 % Decide on the appropriate cell name
@@ -116,7 +115,7 @@ if isempty(idxFirstRow)
     cellName = 'none';
 else
     %   Otherwise, use the first 7 characters of the file name
-    cellName = fileNames{idxFirstRow}(1:7);
+    cellName = fileBases{idxFirstRow}(1:7);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
