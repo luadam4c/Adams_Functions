@@ -1,6 +1,6 @@
-function swpInfo = m3ha_load_sweep_info(varargin)
+function swpInfo = m3ha_load_sweep_info (varargin)
 %% Loads sweep info (default is homeDirectory/data_dclamp/take4/dclampdatalog_take4.csv)
-% Usage: swpInfo = m3ha_load_sweep_info(varargin)
+% Usage: swpInfo = m3ha_load_sweep_info (varargin)
 % Explanation:
 %       TODO
 %

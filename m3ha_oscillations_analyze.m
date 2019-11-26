@@ -21,35 +21,37 @@ dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'no711-final'};
 % dirsToAnalyze = {'dual-final'};
+% dirsToAnalyze = {'no711-test', 'snap5114-test'};
+% dirsToAnalyze = {'snap5114-test'};
 specificSlicesToAnalyze = {};
 
 plotFigure1Individual = false;
-plotFigure1Population = false; %true;
+plotFigure1Population = false; % true;
 
-parseIndividualFlag = false; %true;
+parseIndividualFlag = true;
 saveMatFlag = false; % true;
 plotRawFlag = false; % true;
 plotSpikeDetectionFlag = false; % true;
 plotRasterFlag = false; % true;
-plotSpikeDensityFlag = false; % true;
-plotSpikeHistogramFlag = false; % true;
+plotSpikeDensityFlag = true;
+plotSpikeHistogramFlag = true;
 plotAutoCorrFlag = false; % true;
-plotMeasuresFlag = false; % true;
+plotMeasuresFlag = true;
 plotContourFlag = false; % true;
-plotCombinedFlag = false; % true;
+plotCombinedFlag = true;
 
-parsePopulationAllFlag = false; %true;
 parsePopulationRestrictedFlag = true;
-plotAllMeasurePlotsFlag = true;
-plotChevronFlag = false; %true;
-plotByFileFlag = false; %true;
-plotByPhaseFlag = false; %true;
-plotNormByFileFlag = false; %true;
-plotNormByPhaseFlag = false; %true;
-plotPopAverageFlag = false; %true;
-plotSmoothNormPopAvgFlag = false; %true;
+plotChevronFlag = true;
+plotByFileFlag = true;
+plotByPhaseFlag = true;
+plotNormByFileFlag = true;
+plotNormByPhaseFlag = true;
+plotPopAverageFlag = true;
+plotSmoothNormPopAvgFlag = true;
+parsePopulationAllFlag = false; %true;
+plotAllMeasurePlotsFlag = false; %true;
 
-archiveScriptsFlag = false; %true; 
+archiveScriptsFlag = true; 
 
 % For compute_default_signal2noise.m
 relSnrThres2Max = 0.1;
@@ -66,10 +68,10 @@ resolutionMs = 5;
 % minBurstLengthMs = 20;          % bursts must be at least 20 ms by default
 minBurstLengthMs = 100;          % bursts must be at least 100 ms by default
 maxFirstInterBurstIntervalMs = 2000;
-% maxInterBurstIntervalMs = 1000; % bursts are no more than 
-%                                 %   1 second apart
-maxInterBurstIntervalMs = 1500; % bursts are no more than 
-                                %   1.5 seconds apart
+maxInterBurstIntervalMs = 1000; % bursts are no more than 
+                                %   1 second apart
+% maxInterBurstIntervalMs = 1500; % bursts are no more than 
+%                                %   1.5 seconds apart
 % minSpikeRateInBurstHz = 100;    % bursts must have a spike rate of 
 %                                   at least 100 Hz by default
 minSpikeRateInBurstHz = 30;    % bursts must have a spike rate of 
@@ -245,7 +247,7 @@ measureName = extractAfter(extractBefore(figBase, '_chevron'), 'Phase2_');
 % Decide on measure-dependent stuff
 switch measureName
     case 'oscDurationSec'
-        readoutLimits = [0, 20];
+        readoutLimits = [0, 25];
         readoutLabel = 'Oscillation Duration (s)';
     case 'oscPeriod2Ms'
         readoutLimits = [400, 1000];

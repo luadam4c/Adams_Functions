@@ -97,6 +97,7 @@ function stats = compute_stats (vecs, statName, varargin)
 % 2019-08-20 Now always return NaN if empty
 % 2019-09-19 Added 'max' and 'min'
 % 2019-11-14 Fixed usage of std and nanstd
+% TODO: Update confidence intervals to use t-distribution
 % TODO: Combine with compute_weighted_average.m
 % 
 

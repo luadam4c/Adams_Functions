@@ -38,10 +38,14 @@ function cellInfo = m3ha_create_cell_info_table (varargin)
 
 % File History:
 % 2018-11-19 Created by Adam Lu
+% 2019-11-25 Added cellId as a variable
+% 2019-11-25 Made cell names row names
+% TODO: Organize sweep indices by pharm, g incr, vHold, sweep # for each cell
 % 
 
 %% Hard-coded parameters
 cellNameStr = 'cellName';
+cellIdStr = 'cellId';
 
 %% Default values for optional arguments
 swpInfoDefault = [];
@@ -80,6 +84,9 @@ fileNames = swpInfo.Properties.RowNames;
 % Get the maximum cell ID
 maxCellId = max(cellIdAllRows);
 
+% List all cell IDs
+cellIds = transpose(1:maxCellId);
+
 % For each possible cell ID, look for the first row with the cell ID in question
 indFirstRow = arrayfun(@(x) find(cellIdAllRows == x, 1), ...
                         transpose(1:maxCellId), 'UniformOutput', false);
@@ -89,7 +96,9 @@ cellNames = cellfun(@(x) find_cell_name(x, fileNames), indFirstRow, ...
                     'UniformOutput', false);
 
 % Put in a table
-cellInfo = table(cellNames, 'VariableName', {cellNameStr});
+cellInfo = table(cellNames, cellIds, ...
+                    'VariableNames', {cellNameStr, cellIdStr}, ...
+                    'RowNames', cellNames);
 
 %% Organize sweep indices by pharm, g incr, vHold, sweep # for each cell
 % TODO?

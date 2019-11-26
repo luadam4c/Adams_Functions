@@ -1902,8 +1902,8 @@ check_dir(outFolder);
     argfun(@table2struct, parsedParams, parsedData);
 
 % Plot histograms
-for iVec = 1:nVectors
-% parfor iVec = 1:nVectors
+% for iVec = 1:nVectors
+parfor iVec = 1:nVectors
     thisParams = parsedParamsStruct(iVec);
     thisData = parsedDataStruct(iVec);
 

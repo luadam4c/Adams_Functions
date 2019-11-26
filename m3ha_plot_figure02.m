@@ -4,6 +4,7 @@
 % Requires:
 %       cd/all_files.m
 %       cd/copy_into.m
+%       cd/extract_substrings.m
 
 % File History:
 % 2019-11-25 Created by Adam Lu
@@ -19,7 +20,7 @@ datalogPath = fullfile(figure02Dir, 'dclampdatalog_take4.csv');
 cellNamePattern = '[A-Z][0-9]{6}';
 
 % Sizes
-exampleHeight = 1;
+exampleHeight = 4;
 exampleWidth = 3;
 
 % Flags
@@ -30,9 +31,9 @@ plotBoxPlotsFlag = true;
 plotBarPlotsFlag = true;
 
 % Plot settings
-stimStartWindow = 1000;
-responseWindow = [800, 2000];
-gincrExamples = 200;
+exampleGincr = 200;
+exampleXlimits = [800, 2400];
+exampleYlimits = [-100, 20];
 pharmLabels = {'Control', 'GAT1', 'GAT3', 'Dual'};
 figTypes = {'png', 'epsc2'};
 
@@ -40,7 +41,7 @@ figTypes = {'png', 'epsc2'};
 
 %% Load sweep info
 % Read from datalogPath
-swpInfo = readtable(datalogPath, 'HeaderLines', 1);
+swpInfo = readtable(datalogPath, 'HeaderLines', 1, 'ReadVariableNames', true);
 
 % Extract file bases as row names
 fileNames = swpInfo.fnrow;
@@ -69,37 +70,13 @@ end
 
 %% Plot example traces
 if plotExamplesFlag
-    % Look for all .mat files
-    [~, matPathsAll] = all_files('Directory', figure02Dir, ...
-                            'KeyWord', exampleCellNames{1}, 'Extension', 'mat');
-
-    % Extract file bases
-    matBasesAll = extract_fileparts(matPathsAll, 'base');
-
-    % Get all the conductance amplitudes
-    gIncrAll = swpInfo(matBasesAll, 'grow');
-
-    % Restrict to the conductance amplitude of interest
-    exampleBases = matBasesAll(gIncrAll == gincrExamples);
-
-    % Import traces
-    data = m3ha_import_raw_traces(exampleBases, 'Directory', matFilesDir, ...
-                                'StimStartWindow', stimStartWindow, ...
-                                'ResponseWindow', responseWindow);
-
-    % Extract time and voltage vectors
-    [tVecs, vVecs] = extract_columns(data, 1:2);
-
-    % Create figure
-    fig = set_figure_properties;
-
-    % Plot the traces
-    plot_traces(tVecs, vVecs, ...
-                'PlotMode', 'parallel', 'LineWidth', 2, ...
-                'LinkAxesOption', 'xy', 'FigTitle', 'suppress', ...
-                'XLabel', 'suppress', 'YLabel', pharmLabels, ...
-                'LegendLocation', 'suppress', ...
-                'FigHandle', fig);
+    % Plot example traces for each cell
+    figs = cellfun(@(x) m3ha_plot_example_traces(x, figure02Dir, ...
+                                            swpInfo, exampleGincr, ...
+                                            exampleXlimits, exampleYlimits, ...
+                                            pharmLabels, ...
+                                            exampleHeight, exampleWidth), ...
+                    exampleCellNames);
 
 end
 
@@ -133,6 +110,66 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function fig = m3ha_plot_example_traces (cellName, figure02Dir, ...
+                                            swpInfo, gIncrOfInterest, ...
+                                            xLimits, ylimits, ...
+                                            yLabels, ...
+                                            figHeight, figWidth)
+%% Plots example traces
+% TODO: Pull out as its own function with only cellName as the required argument
+
+% Look for all .mat files
+[~, matPathsAll] = all_files('Directory', figure02Dir, ...
+                        'KeyWord', cellName, 'Extension', 'mat');
+
+% Extract file bases
+matBasesAll = extract_fileparts(matPathsAll, 'base');
+
+% Get all the conductance amplitudes
+gIncrAll = swpInfo{matBasesAll, 'grow'};
+
+% Restrict to the conductance amplitude of interest
+exampleBases = matBasesAll(gIncrAll == gIncrOfInterest);
+
+% Get all the pharm conditions
+pharmAll = swpInfo{exampleBases, 'prow'};
+
+% Sort according to pharm condition
+[~, origInd] = sort(pharmAll);
+exampleBases = exampleBases(origInd);
+
+% Import traces
+data = m3ha_import_raw_traces(exampleBases, 'Directory', figure02Dir);
+
+% Extract time and voltage vectors
+[tVecs, vVecs] = extract_columns(data, 1:2);
+
+% Create figure
+fig = set_figure_properties('AlwaysNew', true);
+
+% Plot the traces
+plot_traces(tVecs, vVecs, ...
+            'PlotMode', 'parallel', 'LineWidth', 1, ...
+            'LinkAxesOption', 'xy', 'FigTitle', 'suppress', ...
+            'XLimits', xLimits, 'Ylimits', ylimits, ...
+            'XLabel', 'suppress', 'YLabel', yLabels, ...
+            'LegendLocation', 'suppress', ...
+            'FigHandle', fig);
+
+% Update figure for CorelDraw
+update_figure_for_corel(fig, 'Units', 'inches', ...
+                        'Height', figHeight, 'Width', figWidth);
+
+% Create figure base
+figBase = sprintf('%s_gincr_%g_examples', cellName, gIncrOfInterest);
+figPathBase = fullfile(figure02Dir, figBase);
+
+% Save the figure
+save_all_figtypes(fig, figPathBase, {'png', 'epsc2'});
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
 OLD CODE:
 
