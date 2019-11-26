@@ -98,6 +98,16 @@ colorMap = iP.Results.ColorMap;
 % Keep unmatched arguments for the plot() function
 otherArguments = iP.Unmatched;
 
+%% Preparation
+% Remove NaN values from indices
+indSelected = indSelected(~isnan(indSelected));
+
+% If no indices remaining, return
+if isempty(indSelected)
+    handles = gobjects;
+    return
+end
+
 %% Do the job
 % Selected x locations
 xLocsSelected = xValues(indSelected);
