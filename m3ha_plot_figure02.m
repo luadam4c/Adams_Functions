@@ -34,7 +34,7 @@ plotBarPlotsFlag = true;
 exampleGincr = 200;
 exampleXlimits = [800, 2400];
 exampleYlimits = [-100, 20];
-pharmLabels = {'Control', 'GAT1', 'GAT3', 'Dual'};
+pharmLabels = {'Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block'};
 figTypes = {'png', 'epsc2'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

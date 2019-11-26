@@ -97,7 +97,7 @@ function stats = compute_stats (vecs, statName, varargin)
 % 2019-08-20 Now always return NaN if empty
 % 2019-09-19 Added 'max' and 'min'
 % 2019-11-14 Fixed usage of std and nanstd
-% TODO: Update confidence intervals to use t-distribution
+% 2019-11-26 Updated confidence intervals to use t-distribution
 % TODO: Combine with compute_weighted_average.m
 % 
 
@@ -200,18 +200,32 @@ switch statName
         else
             func = @(x) stderr(x, dim);
         end            
-    case 'lower95'
+    case {'lower95', 'upper95'}
+        % Compute the number of samples along the dimension
         if ignoreNan
-            func = @(x) nanmean(x, dim) - 1.96 .* nanstderr(x, dim);
+            nFunc = @(x) sum(ones(size(x)), dim) - sum(isnan(x), dim);
         else
-            func = @(x) mean(x, dim) - 1.96 .* stderr(x, dim);
-        end            
-    case 'upper95'
-        if ignoreNan
-            func = @(x) nanmean(x, dim) + 1.96 .* nanstderr(x, dim);
-        else
-            func = @(x) mean(x, dim) + 1.96 .* stderr(x, dim);
-        end     
+            nFunc = @(x) sum(ones(size(x)), dim);
+        end
+
+        % Compute the multiple of standard errors for the t distribution 95% 
+        %   confidence interval
+        tFunc = @(x) arrayfun(@(y) tinv(0.975, y), nFunc(x));
+
+        switch statName
+        case 'lower95'
+            if ignoreNan
+                func = @(x) nanmean(x, dim) - tFunc(x) .* nanstderr(x, dim);
+            else
+                func = @(x) mean(x, dim) - tFunc(x) .* stderr(x, dim);
+            end            
+        case 'upper95'
+            if ignoreNan
+                func = @(x) nanmean(x, dim) + tFunc(x) .* nanstderr(x, dim);
+            else
+                func = @(x) mean(x, dim) + tFunc(x) .* stderr(x, dim);
+            end     
+        end
     case 'cov'
         if ignoreNan
             func = @(x) nanstd(x, 0, dim) ./ nanmean(x, dim);
@@ -265,6 +279,19 @@ end
 
 %{
 OLD CODE:
+
+case 'lower95'
+    if ignoreNan
+        func = @(x) nanmean(x, dim) - 1.96 .* nanstderr(x, dim);
+    else
+        func = @(x) mean(x, dim) - 1.96 .* stderr(x, dim);
+    end            
+case 'upper95'
+    if ignoreNan
+        func = @(x) nanmean(x, dim) + 1.96 .* nanstderr(x, dim);
+    else
+        func = @(x) mean(x, dim) + 1.96 .* stderr(x, dim);
+    end     
 
 %}
 

@@ -1,28 +1,34 @@
 function m3ha_compute_and_plot_statistics (fitMode, inFolder, outFolder)
 %% Plot bar graphs for LTS and burst statistics
 % Usage: m3ha_compute_and_plot_statistics (fitMode, inFolder, outFolder)
-% Arguments: 
-%        fitMode    - 0 - all data
-%                   - 1 - all of g incr = 100%, 200%, 400%
-%                   - 2 - all of g incr = 100%, 200%, 400% 
-%                       but exclude cell-pharm-g_incr sets containing problematic sweeps
-%        inFolder    - (opt) the directory that contains the matfile to read
-%                must be a directory
-%                default == //media/adamX/m3ha/data_dclamp/take4/
-%        outFolder    - (opt) the directory to output bar graphs
-%                    (different subdirectories will be created for each fitMode)
-%                must be a directory
-%                default == //media/adamX/m3ha/data_dclamp/take4/
-% 
 %
-% Requires:    
+% Arguments: 
+%       fitMode     
+%       inFolder    - (opt) the directory that contains the matfile to read
+%                   must be a directory
+%                   default == //media/adamX/m3ha/data_dclamp/take4/
+%       outFolder   - (opt) the directory to output bar graphs
+%                   (different subdirectories will be created for each fitMode)
+%                   must be a directory
+%                   default == //media/adamX/m3ha/data_dclamp/take4/
+%       varargin    - 'FitMode': fitting mode
+%                   must be one of:
+%                           - 0 - all data
+%                           - 1 - all of g incr = 100%, 200%, 400%
+%                           - 2 - all of g incr = 100%, 200%, 400% 
+%                                   but exclude cell-pharm-g_incr sets 
+%                                   containing problematic sweeps
+%                   default == 0
+%
+% Requires:
 %       "inFolder"/dclampdatalog_take4.mat
+%       cd/check_dir.m
 %       cd/m3ha_compute_ltsburst_statistics.m
 %       cd/m3ha_find_ind_to_fit.m
 %       cd/m3ha_specs_for_fitmode.m
 %       cd/m3ha_locate_homedir.m
 %
-% Used by:    
+% Used by:
 %       cd/m3ha_parse_dclamp_data.m
 %
 
@@ -43,14 +49,14 @@ function m3ha_compute_and_plot_statistics (fitMode, inFolder, outFolder)
 % 2018-02-04 - Copy matfile to /take4/ if the suffix is '_all'
 
 %% Flags
-debugflag = 0;
-bigfontflag = 1; %0;
+debugFlag = false; %true;
+bigFontFlag = true; %false;
 
 %% Parameters used in analysis
 sigLevel = 0.05;             % p value threshold for determining significance
 
 %% Specify which matfile to use; assumed to be in inFolder
-dataFileName = 'dclampdatalog_take4.mat';
+dataFileName = 'dclampdatalog_take4.csv';
 
 figTypes = {'png', 'epsc2'};
 
@@ -66,18 +72,34 @@ statsFileName = {'lts_onset_time', 'lts_time_jitter', ...
 
 %% Fixed parameters used in the experiments
 vv = [-60; -65; -70];       % Possible Vhold values (mV, LJP-corrected)
-vvlabel = {'-60 mV', '-65 mV', '-70 mV'};
+vvLabel = {'-60 mV', '-65 mV', '-70 mV'};
 gg = [25; 50; 100; 200; 400; 800];  
                             % All possible conductance amplitude scaling %
-gglabel_orig = {'25%', '50%', '100%', '200%', '400%', '800%'};
-gglabel_tofit = {'100%', '200%', '400%'};
+ggLabelOrig = {'25%', '50%', '100%', '200%', '400%', '800%'};
+ggLabelToFit = {'100%', '200%', '400%'};
 pp = [1; 2; 3; 4];          % Possible pharm conditions (1 - Control; 2 - GAT1 Block; 3 - GAT3 Block; 4 - Dual Block)
-pplabel = {'Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block'};
-pplabel2 = {'Con', 'GAT1', 'GAT3', 'Dual'};
+ppLabel = {'Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block'};
+ppLabel2 = {'Con', 'GAT1', 'GAT3', 'Dual'};
 cc = 1:1:49;                % Possible cell ID #s
 ss = 1:1:5;                 % Possible within condition sweep #s
 
+%% Default values for optional arguments
+param1Default = [];             % default TODO: Description of fitMode
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Deal with arguments
+% Set up Input Parser Scheme
+iP = inputParser;
+iP.FunctionName = mfilename;
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'fitMode', param1Default, ...
+    % TODO: validation function %);
+
+% Read from the Input Parser
+parse(iP, varargin{:});
+fitMode = iP.Results.fitMode;
 
 %% Check arguments
 if nargin < 1
@@ -95,36 +117,35 @@ homeDirectory = m3ha_locate_homedir;
 
 %% Set defaults for optional arguments
 if nargin < 2
-    if debugflag
-        inFolder = fullfile(homedirectory, '/data_dclamp/take4/');
+    if debugFlag
+        inFolder = fullfile(homeDirectory, '/data_dclamp/take4/');
     else
-        inFolder = fullfile(homedirectory, '/data_dclamp/take4/');
+        inFolder = fullfile(homeDirectory, '/data_dclamp/take4/');
     end
 end
 if nargin < 3
-    if debugflag
-        outFolder = fullfile(homedirectory, '/data_dclamp/take4/debug/');
+    if debugFlag
+        outFolder = fullfile(homeDirectory, '/data_dclamp/take4/debug/');
     else
-        outFolder = fullfile(homedirectory, '/data_dclamp/take4/');
+        outFolder = fullfile(homeDirectory, '/data_dclamp/take4/');
     end
 end
 
 %% Set font size
-if bigfontflag
-    axisfontsize = 20;
-    textfontsize = 20;
-    ylabelfontsize = 20;
-    markersize = 20;
+if bigFontFlag
+    axisFontSize = 20;
+    textFontSize = 20;
+    ylabelFontSize = 20;
+    markerSize = 20;
 else
-    axisfontsize = 10;
-    textfontsize = 10;
-    ylabelfontsize = 11;
-    markersize = 6;
+    axisFontSize = 10;
+    textFontSize = 10;
+    ylabelFontSize = 11;
+    markerSize = 6;
 end
 
-%% Find path of matfile to use
+%% Find path of data file to use
 dataPath = fullfile(inFolder, dataFileName);
-m = matfile(dataPath);
 
 %% Print user specifications
 fprintf('Using fit mode == %d ... \n', fitMode);
@@ -136,20 +157,19 @@ suffix = m3ha_specs_for_fitmode(fitMode);
 
 %% Set conductance amplitude scaling % labels for each fitMode
 if fitMode == 0
-    gglabel = gglabel_orig;
+    gglabel = ggLabelOrig;
 elseif fitMode == 1 || fitMode == 2
-    gglabel = gglabel_tofit;
+    gglabel = ggLabelToFit;
 end
 
 %% Set folders for reading and saving files
 outFolderBar = fullfile(outFolder, ['bargraphs', suffix]);
-if exist(outFolderBar, 'dir') ~= 7
-    mkdir(outFolderBar);
-    fprintf('Made directory %s \n', outFolderBar);
-end
+check_dir(outFolderBar);
 
 %% Import data
 fprintf('Importing data ... \n');
+
+
 % For m3ha_find_ind_to_fit
 fnrow = m.fnrow;
 ntraces = numel(fnrow);
@@ -346,7 +366,7 @@ for bi = 1:length(statsTitle)
             anova1(all_stats_curr, group, 'off');               % compute p-value of ANOVA
         h = figure('Visible', 'off');    
         b = boxplot(all_stats_curr, group, 'Notch', 'on');      % create boxplot
-        if bigfontflag
+        if bigFontFlag
             set(b, 'LineWidth', 3);
         end
         hold on;
@@ -360,21 +380,21 @@ for bi = 1:length(statsTitle)
                 for i = 1:ct_g(hi)
                     % Plot a black dot for each cell
                     plot(xtick(hin0)+(i-(ct_g(hi)+1)/2)/(2*ct_g(hi)), all_stats_gp{bi}{hi, gi}(i), ...
-                        'k.', 'MarkerSize', markersize);
+                        'k.', 'MarkerSize', markerSize);
                 end
             end
         end
-        set(ax, 'XTickLabel', pplabel2);    % label x axis by pharm conditions
-        set(ax, 'FontSize', axisfontsize);
+        set(ax, 'XTickLabel', ppLabel2);    % label x axis by pharm conditions
+        set(ax, 'FontSize', axisFontSize);
         if pvalue_g(bi, gi) < sigLevel       % label the pvalue, make red if significant
             textcolor = 'r';
         else
             textcolor = 'k';
         end
         text(0.751, ax.YLim(2)*0.95, ['p value = ', num2str(pvalue_g(bi, gi))], ...
-            'Color', textcolor, 'FontSize', textfontsize);
-        ylabel(statsTitle{bi}, 'FontSize', ylabelfontsize);
-        if ~bigfontflag
+            'Color', textcolor, 'FontSize', textFontSize);
+        ylabel(statsTitle{bi}, 'FontSize', ylabelFontSize);
+        if ~bigFontFlag
             xlabel('Pharm Condition');
             title(['All traces with G scaled at ', num2str(gg(gi)), '%']);
         end
@@ -414,21 +434,21 @@ for bi = 1:length(statsTitle)
                         % Plot a black dot for each cell
                         plot(xtick(hin0)+(i-(ct_g(hi)+1)/2)/(2*ct_vg(hi)), ...
                             all_stats_vgp{bi}{hi, gi, vi}(i), ...
-                            'k.', 'MarkerSize', markersize);
+                            'k.', 'MarkerSize', markerSize);
                     end
                 end
             end
-            set(ax, 'XTickLabel', pplabel2);
-            set(ax, 'FontSize', axisfontsize);
+            set(ax, 'XTickLabel', ppLabel2);
+            set(ax, 'FontSize', axisFontSize);
             if pvalue_g(bi, gi) < sigLevel            % label the pvalue, make red if significant
                 textcolor = 'r';
             else
                 textcolor = 'k';
             end
             text(0.751, ax.YLim(2)*0.95, ['p value = ', num2str(pvalue_vg(bi, gi, vi))], ...
-                'Color', textcolor, 'FontSize', textfontsize);
-            ylabel(statsTitle{bi}, 'FontSize', ylabelfontsize);
-            if ~bigfontflag
+                'Color', textcolor, 'FontSize', textFontSize);
+            ylabel(statsTitle{bi}, 'FontSize', ylabelFontSize);
+            if ~bigFontFlag
                 xlabel('Pharm Condition');
                 title(['Vhold = ', num2str(vv(vi)), ' mV with G scaled at ', num2str(gg(gi)), '%']);
             end
@@ -480,11 +500,11 @@ parfor bi = 1:length(statsTitle)
             end
         end
         set(gca, 'XTickLabel', gglabel);
-        set(gca, 'YTickLabel', pplabel);
+        set(gca, 'YTickLabel', ppLabel);
          xlabel('IPSC conductance amplitude scaling');
 %        ylabel('Pharm Condition');
         zlabel(statsTitle{bi});
-        title(['Vm = ', vvlabel{vi}]);
+        title(['Vm = ', vvLabel{vi}]);
         figname = fullfile(outFolderBar, [statsFileName{bi}, '_', num2str(vv(vi)), suffix, '.png']);
         save_all_figtypes(h, figname, figTypes);
         close(h);
@@ -517,7 +537,7 @@ for gi = 1:length(gg)
             % Plot 95% confidence intervals
             errorbar(mean_stats_vgp{bi}(:, gi, vi), err_stats_vgp{bi}(:, gi, vi), 'k.')
             ax = gca;
-            set(ax, 'XTickLabel', pplabel2);
+            set(ax, 'XTickLabel', ppLabel2);
             xtick = get(ax, 'XTick');            % get the location of tick labels on the x axis
             for hi = 1:length(pp)
                 for i = 1:ct_vg(hi)
@@ -548,7 +568,7 @@ for gi = 1:length(gg)
             if vi == 1
                 ylabel(statsTitle{bi});
             end
-            title(['Vm = ', vvlabel{vi}]);
+            title(['Vm = ', vvLabel{vi}]);
         end
         figname = fullfile(outFolderBar, [statsFileName{bi}, '_vsep_', num2str(gg(gi)), 'g', suffix, '.png']);
         save_all_figtypes(h, figname, figTypes);
@@ -578,7 +598,7 @@ parfor bi = 1:length(statsTitle)
         end
     end
     set(gca, 'XTickLabel', gglabel);
-    set(gca, 'YTickLabel', pplabel);
+    set(gca, 'YTickLabel', ppLabel);
      xlabel('IPSC conductance amplitude scaling');
 %        ylabel('Pharm Condition');
     zlabel(statsTitle{bi});
@@ -619,7 +639,7 @@ for gi = 1:length(gg)
                     'r.', 'MarkerSize', 6);
             end
         end
-        set(ax, 'XTickLabel', pplabel2);
+        set(ax, 'XTickLabel', ppLabel2);
         if bi == 1
             ylim([0 2500]);
         elseif bi == 2
@@ -648,6 +668,9 @@ end
 
 %{
 OLD CODE:
+
+m = matfile(dataPath);
+dataFileName = 'dclampdatalog_take4.mat';
 
 %}
 

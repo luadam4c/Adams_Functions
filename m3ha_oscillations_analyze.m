@@ -13,16 +13,20 @@
 % 2019-11-25 Added plotFigure1Population
 
 %% Hard-coded parameters
-figure01Dir = fullfile('/media', 'adamX', 'm3ha', 'manuscript', 'figures', 'Figure01');
-parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
-% parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', 'parse_multiunit_m3ha');
+figure01Dir = fullfile('/media', 'adamX', 'm3ha', ...
+                        'manuscript', 'figures', 'Figure01');
+% parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
+parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', ...
+                      'parse_multiunit_m3ha');
 archiveDir = parentDir;
-dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
+% dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'no711-final'};
 % dirsToAnalyze = {'dual-final'};
-% dirsToAnalyze = {'no711-test', 'snap5114-test'};
+% dirsToAnalyze = {'no711-test', 'snap5114-test', 'dual-test'};
+dirsToAnalyze = {'no711-test', 'snap5114-test'};
 % dirsToAnalyze = {'snap5114-test'};
+% dirsToAnalyze = {'dual-test'};
 specificSlicesToAnalyze = {};
 
 plotFigure1Individual = false;
@@ -33,14 +37,14 @@ saveMatFlag = false; % true;
 plotRawFlag = false; % true;
 plotSpikeDetectionFlag = false; % true;
 plotRasterFlag = false; % true;
-plotSpikeDensityFlag = true;
-plotSpikeHistogramFlag = true;
+plotSpikeDensityFlag = false; % true;
+plotSpikeHistogramFlag = false; % true;
 plotAutoCorrFlag = false; % true;
-plotMeasuresFlag = true;
+plotMeasuresFlag = false; % true;
 plotContourFlag = false; % true;
 plotCombinedFlag = true;
 
-parsePopulationRestrictedFlag = true;
+parsePopulationRestrictedFlag = false; %true;
 plotChevronFlag = true;
 plotByFileFlag = true;
 plotByPhaseFlag = true;
@@ -51,7 +55,7 @@ plotSmoothNormPopAvgFlag = true;
 parsePopulationAllFlag = false; %true;
 plotAllMeasurePlotsFlag = false; %true;
 
-archiveScriptsFlag = true; 
+archiveScriptsFlag = false; %true;
 
 % For compute_default_signal2noise.m
 relSnrThres2Max = 0.1;
@@ -74,7 +78,7 @@ maxInterBurstIntervalMs = 1000; % bursts are no more than
 %                                %   1.5 seconds apart
 % minSpikeRateInBurstHz = 100;    % bursts must have a spike rate of 
 %                                   at least 100 Hz by default
-minSpikeRateInBurstHz = 30;    % bursts must have a spike rate of 
+minSpikeRateInBurstHz = 50; %30;    % bursts must have a spike rate of 
                                 %   at least 30 Hz by default
 
 % For compute_autocorrelogram.m
