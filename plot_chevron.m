@@ -105,9 +105,8 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 % TODO: Combine with plot_table.m?
 
 %% Hard-coded parameters
-lineWidth = 1;
-% markerSize = 4;
-markerSize = 2;
+
+% TODO: Make optional arguments
 meanLineWidthRatio = 1;
 meanLineStyle = '--';
 meanMarkerSizeRatio = 2;

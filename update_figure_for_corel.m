@@ -29,6 +29,9 @@ function figHandle = update_figure_for_corel (varargin)
 %                   - 'PlotLineWidth': line width of main plot
 %                   must be empty or a positive scalar
 %                   default == [] (don't change)
+%                   - 'PlotMarkerSize': marker size of main plot
+%                   must be empty or a positive scalar
+%                   default == [] (don't change)
 %                   - Any other parameter-value pair for set_figure_properties()
 %
 % Requires:
@@ -64,6 +67,7 @@ removeLegendsDefault = false;  % set later
 xTickLocsDefault = 'suppress';  % don't change by default
 yTickLocsDefault = 'suppress';  % don't change by default
 plotLineWidthDefault = [];
+plotMarkerSizeDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -94,6 +98,8 @@ addParameter(iP, 'YTickLocs', yTickLocsDefault, ...
         'YTickLocs must be ''suppress'' or a numeric vector!'));
 addParameter(iP, 'PlotLineWidth', plotLineWidthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'PlotMarkerSize', plotMarkerSizeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -103,6 +109,7 @@ removeLegends = iP.Results.RemoveLegends;
 xTickLocs = iP.Results.XTickLocs;
 yTickLocs = iP.Results.YTickLocs;
 plotLineWidth = iP.Results.PlotLineWidth;
+plotMarkerSize = iP.Results.PlotMarkerSize;
 
 % Keep unmatched arguments for set_figure_properties()
 otherArguments = iP.Unmatched;
@@ -185,6 +192,13 @@ if ~isempty(plotLineWidth)
     lines = findobj(figHandle, 'Type', 'Line');
     plots = lines(arrayfun(@(x) is_plot(x), lines));
     set(plots, 'LineWidth', plotLineWidth);
+end
+
+% Update marker sizes
+if ~isempty(plotMarkerSize)
+    lines = findobj(figHandle, 'Type', 'Line');
+    plots = lines(arrayfun(@(x) is_plot(x), lines));
+    set(plots, 'MarkerSize', plotMarkerSize);
 end
 
 % Update annotation line widths

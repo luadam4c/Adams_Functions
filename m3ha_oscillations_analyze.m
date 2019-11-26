@@ -12,14 +12,18 @@
 % 2019-10-18 Changed maxInterBurstIntervalMs from 1500 ms to 1000 ms
 
 %% Hard-coded parameters
-% parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
-parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', 'parse_multiunit_m3ha');
+figure01Dir = fullfile('/media', 'adamX', 'm3ha', 'manuscript', 'figures', 'Figure01');
+parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
+% parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', 'parse_multiunit_m3ha');
 archiveDir = parentDir;
-dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
+% dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'no711-final'};
-% dirsToAnalyze = {'dual-final'};
+dirsToAnalyze = {'dual-final'};
 specificSlicesToAnalyze = {};
+
+plotFigure1Individual = false;
+plotFigure1Population = false; %true;
 
 parseIndividualFlag = true;
 saveMatFlag = false; % true;
@@ -31,7 +35,7 @@ plotSpikeHistogramFlag = false; % true;
 plotAutoCorrFlag = false; % true;
 plotMeasuresFlag = true;
 plotContourFlag = false; % true;
-plotCombinedFlag = true;
+plotCombinedFlag = false; % true;
 
 parsePopulationAllFlag = false; %true;
 parsePopulationRestrictedFlag = false; %true;
@@ -105,6 +109,24 @@ varLabels = {'Oscillatory Index 4'; 'Oscillation Period 2 (ms)'; ...
                 'Number of Spikes Per Burst in Oscillation'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Plot Chevron plots for Figure 01
+if plotFigure1Population
+    % Get all paths to Chevron tables
+    [~, allSheetPaths] = all_files('Directory', figure01Dir, ...
+                                'Suffix', 'chevron', 'Extension', 'csv');
+                            
+	% Read in all Chevron tables
+    allChevronTables = cellfun(@(x) readtable(x, 'ReadRowNames', true), ...
+                                allSheetPaths, 'UniformOutput', false);
+
+    % Create figure names
+    figPathBasesChevron = extract_fileparts(allSheetPaths, 'pathbase');
+                            
+	% Plot and save all Chevron tables
+    cellfun(@(x, y) plot_and_save_chevron(x, y), ...
+            allChevronTables, figPathBasesChevron);
+end
 
 % Run through all directories
 for iDir = 1:numel(dirsToAnalyze)
@@ -198,6 +220,56 @@ end
 % Archive all scripts for this run
 if archiveScriptsFlag
     archive_dependent_scripts(mfilename, 'OutFolder', archiveDir);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function plot_and_save_chevron(chevronTable, figPathBase)
+
+% Extract figure base
+figBase = extract_fileparts(figPathBase, 'dirbase');
+
+% Extract drug name
+drugName = extractBefore(figBase, '-');
+
+% Make drug name all caps
+drugNameAllCaps = upper(drugName);
+
+% Create parameter tick labels
+pTickLabels = {'Baseline'; drugNameAllCaps};
+
+% Extract readout measure
+measureName = extractAfter(extractBefore(figBase, '_chevron'), 'Phase2_');
+
+% Decide on measure-dependent stuff
+switch measureName
+    case 'oscDurationSec'
+        readoutLimits = [0, 20];
+        readoutLabel = 'Oscillation Duration (s)';
+    case 'oscPeriod2Ms'
+        readoutLimits = [400, 1000];
+        readoutLabel = 'Oscillation Period (ms)';
+    otherwise
+        error('measureName unrecognized!');
+end
+
+% Create figure
+fig = set_figure_properties('AlwaysNew', true);
+
+% Plot Chevron
+plot_chevron(chevronTable, 'PlotMeanDifference', true, 'PlotErrorBars', true, ...
+                'ColorMap', 'k', 'ReadoutLimits', readoutLimits, ...
+                'PTickLabels', pTickLabels, ...
+                'ReadoutLabel', readoutLabel, 'FigTitle', 'suppress', ...
+                'LegendLocation', 'suppress');
+
+% Update figure for CorelDraw
+update_figure_for_corel(fig, 'Units', 'inches', 'Width', 1.3, 'Height', 1, ...
+                        'PlotMarkerSize', 2);
+            
+% Save figure
+save_all_figtypes(fig, figPathBase, {'png', 'epsc'});
+
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
