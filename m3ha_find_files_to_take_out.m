@@ -15,10 +15,10 @@ function fileNamesToTakeOut = m3ha_find_files_to_take_out (varargin)
 %                   default == ~/m3ha/data_dclamp/take4/special_cases
 %
 % Used by:
-%       cd/m3ha_select_sweeps_to_fit.m
+%       cd/m3ha_select_sweeps.m
 
 % File History:
-% 2018-11-19 Moved from m3ha_select_sweeps_to_fit.m
+% 2018-11-19 Moved from m3ha_select_sweeps.m
 % 
 
 %% Hard-coded parameters

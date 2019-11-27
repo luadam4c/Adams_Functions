@@ -25,10 +25,10 @@ function [hasSameAttributes, rowIndices] = ...
 %
 %
 % Used by:
-%       cd/m3ha_select_sweeps_to_fit.m
+%       cd/m3ha_select_sweeps.m
 
 % File History:
-% 2018-11-19 Adapted from code in m3ha_select_sweeps_to_fit.m
+% 2018-11-19 Adapted from code in m3ha_select_sweeps.m
 % 2018-12-06 Changed find_rows_with_same_attributes() -> has_same_attributes()
 % 2018-12-06 Now outputs a logical vector
 % 

@@ -1,5 +1,5 @@
 function product = outer_product (X, Y)
-%% Returns the outer product of two vectors (could be cell arrays of character arrays)
+%% Returns the outer product of two vectors (could be cell arrays)
 % Usage: product = outer_product (X, Y)
 % Explanation:
 %       TODO
@@ -8,10 +8,12 @@ function product = outer_product (X, Y)
 % Example(s):
 %       outer_product({'a', 'b'}, {'1', '2', '3'})
 %       outer_product(1:3, 4:6)
+%       product = outer_product(num2cell(1:4), num2cell([100; 200; 400]))
 %
 % Outputs:
 %       product     - TODO: Description of product
 %                   specified as a TODO
+%
 % Arguments:
 %       reqarg1     - TODO: Description of reqarg1
 %                   must be a TODO
@@ -63,7 +65,7 @@ iP.FunctionName = mfilename;
 % TODO
 
 %% Do the job
-if iscellstr(X) && iscellstr(Y)
+if iscell(X) && iscell(Y)
     % Count the number of elements
     nX = numel(X);
     nY = numel(Y);
@@ -81,8 +83,13 @@ if iscellstr(X) && iscellstr(Y)
     Yrepeated = repmat(Y, [nX, 1]);
 
     % Join the strings
-    product = cellfun(@(x, y) [x, ', ', y], Xrepeated, Yrepeated, ...
-                    'UniformOutput', false);
+    if iscellstr(Xrepeated) && iscellstr(Yrepeated)
+        product = cellfun(@(x, y) [x, ', ', y], Xrepeated, Yrepeated, ...
+                        'UniformOutput', false);
+    else
+        product = cellfun(@(x, y) {x, y}, Xrepeated, Yrepeated, ...
+                            'UniformOutput', false);
+    end
 else
     % Use the cross function
     product = cross(X, Y);

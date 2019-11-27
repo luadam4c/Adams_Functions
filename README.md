@@ -337,7 +337,7 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_determine_row_conditions.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_determine_row_conditions.m): Determine the conditions for each row
 - [**m3ha_estimate_passive_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_estimate_passive_params.m): Estimates passive parameters for each cell from dclamp data recorded by Mark & Christine
 - [**m3ha_find_files_to_take_out.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_files_to_take_out.m): Returns all the file names of files to take out from .png files in 'TAKE_OUT_*' folders of a special cases directory
-- [**m3ha_find_ind_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ind_to_fit.m): Finds indices of fnrow in dclampdatalog_take4.mat that will be used for fitting (legacy, please use m3ha_select_sweeps_to_fit.m instead)
+- [**m3ha_find_ind_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ind_to_fit.m): Finds indices of fnrow in dclampdatalog_take4.mat that will be used for fitting (legacy, please use m3ha_select_sweeps.m instead)
 - [**m3ha_find_ipsc_peak.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ipsc_peak.m): Finds time of current peak from a an inhibitory current trace (must be negative current) (legacy, please use parse_ipsc.m instead)
 - [**m3ha_find_ipsc_start_from_conductance.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ipsc_start_from_conductance.m): Finds time of current application from a series of conductance vectors (legacy, please use parse_ipsc.m instead)
 - [**m3ha_find_ipsc_start_from_current.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ipsc_start_from_current.m): Finds time of current application from a series of current vectors (legacy, please use parse_ipsc.m instead)
@@ -386,7 +386,7 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_resave_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_resave_sweeps.m): Extracts .abf data and resave as .mat file in the m3ha format
 - [**m3ha_select_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_cells.m): Selects cells with sweeps to use for all pharm-gIncr pairs
 - [**m3ha_select_raw_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_raw_traces.m): Select raw traces to import
-- [**m3ha_select_sweeps_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_sweeps_to_fit.m): Selects file bases and row indices in swpInfo that will be used
+- [**m3ha_select_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_sweeps.m): Selects file bases and row indices in swpInfo that will be used
 - [**m3ha_specs_for_fitmode.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_specs_for_fitmode.m): Specifications depending on fitMode for the GAT blockade project
 - [**m3ha_test_phase_plane_analysis.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_test_phase_plane_analysis.m): m3ha_test_phase_plane_analysis.m
 - [**m3ha_test_sweep.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_test_sweep.m): m3ha_test_sweep.m
@@ -413,7 +413,7 @@ There are 1 MATLAB scripts in this directory:
 - [**my_closereq.m**](https://github.com/blabuva/Adams_Functions/blob/master/my_closereq.m): Close request function that displays a question dialog box
 - [**nanstderr.m**](https://github.com/blabuva/Adams_Functions/blob/master/nanstderr.m): Calculate the standard error of the mean excluding NaN values
 - [**normalize_by_initial_value.m**](https://github.com/blabuva/Adams_Functions/blob/master/normalize_by_initial_value.m): Normalize value(s) by the initial value(s) provided, or store initial value(s) if the latter is empty
-- [**outer_product.m**](https://github.com/blabuva/Adams_Functions/blob/master/outer_product.m): Returns the outer product of two vectors (could be cell arrays of character arrays)
+- [**outer_product.m**](https://github.com/blabuva/Adams_Functions/blob/master/outer_product.m): Returns the outer product of two vectors (could be cell arrays)
 - [**parse_abf.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_abf.m): Loads and parses an abf file
 - [**parse_all_abfs.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_all_abfs.m): Parses all abf files in the directory
 - [**parse_all_multiunit.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_all_multiunit.m): Runs the parse_multiunit function on all slices in the present working directory

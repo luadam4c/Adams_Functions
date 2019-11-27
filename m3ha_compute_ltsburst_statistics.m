@@ -2,9 +2,22 @@ function statsTable = m3ha_compute_ltsburst_statistics (varargin)
 %% Computes LTS and burst statistics for some indices (indOfInterest) in ltsDelays, spikesPerPeak, burstDelays & spikesPerBurst
 % Usage: statsTable = m3ha_compute_ltsburst_statistics (varargin)
 %
+% Explanation:
+%       TODO
+%
+% Example(s):
+%       statsTable = m3ha_compute_ltsburst_statistics
+%       statsTable = m3ha_compute_ltsburst_statistics('DataMode', 2)
+%       statsTable = m3ha_compute_ltsburst_statistics('PharmConditions', 1)
+%       statsTable = m3ha_compute_ltsburst_statistics('PharmConditions', 1:4)
+%       statsTable = m3ha_compute_ltsburst_statistics('PharmConditions', 1:4, 'GIncrCondition', [100; 200; 400])
+%
 % Requires:
+%       cd/argfun.m
+%       cd/compute_stats.m
+%       cd/match_row_count.m
 %       cd/m3ha_load_sweep_info.m
-%       cd/m3ha_select_sweeps_to_fit.m
+%       cd/m3ha_select_sweeps.m
 %
 % Used by:
 %       cd/m3ha_compute_and_plot_statistics.m
@@ -18,21 +31,14 @@ function statsTable = m3ha_compute_ltsburst_statistics (varargin)
 %                           nValues
 %                           meanValue
 %                           stdValue
+%                           stderrValue
 %                           errValue
 %                           upper95Value
 %                           lower95Value
 %                   specified as a table
 %
 % Arguments:
-%       varargin    - 'DataMode': data mode
-%                   must be one of:
-%                       0 - all data
-%                       1 - all of g incr = 100%, 200%, 400%
-%                       2 - all of g incr = 100%, 200%, 400% 
-%                               but exclude cell-pharm-g_incr sets 
-%                               containing problematic sweeps
-%                   default == 0
-%                   - 'SwpInfo': a table of sweep info, with each row named by 
+%       varargin    - 'SwpInfo': a table of sweep info, with each row named by 
 %                               the matfile base containing the raw data
 %                   must a 2D table with row names being file bases
 %                       and with the fields:
@@ -42,15 +48,33 @@ function statsTable = m3ha_compute_ltsburst_statistics (varargin)
 %                       bursttimes      - burst delays
 %                       spikesperburst  - action potentials per burst
 %                   default == m3ha_load_sweep_info
-%                   - 'PharmCondition': pharm condition
-%                   must be a positive integer scalar
-%                   default == not provided
-%                   - 'GIncrCondition': gIncr condition
-%                   must be a scalar
-%                   default == not provided
-%                   - 'VHoldCondition': vHold condition
-%                   must be a scalar
-%                   default == not provided
+%                   - 'DataMode': data mode
+%                   must be one of:
+%                       0 - all data
+%                       1 - all of g incr = 100%, 200%, 400%
+%                       2 - all of g incr = 100%, 200%, 400% 
+%                               but exclude cell-pharm-g_incr sets 
+%                               containing problematic sweeps
+%                   default == 0
+%                   - 'PharmConditions': pharmacological condition(s)
+%                                           to restrict to
+%                   must be empty or some of:
+%                       1 - control
+%                       2 - GAT1 blockade
+%                       3 - GAT3 blockade
+%                       4 - dual blockade
+%                       or a cell array of them (will become 1st dimension)
+%                   default == no restrictions
+%                   - 'GIncrCondition': conductance amplitude condition(s) (%)
+%                                           to restrict to
+%                   must be empty or some of: 25, 50, 100, 200, 400, 800
+%                       or a cell array of them (will become 2nd dimension)
+%                   default == no restrictions
+%                   - 'VHoldConditions': holding potential condition(s) (mV)
+%                                           to restrict to
+%                   must be empty or some of: -60, -65, -70
+%                       or a cell array of them (will become 3rd dimension)
+%                   default == no restrictions
 
 % File History:
 % 2016-08-19 Created
@@ -60,8 +84,19 @@ function statsTable = m3ha_compute_ltsburst_statistics (varargin)
 % 2019-11-26 Improved code structure
 % 2019-11-27 Now computes means of all measures from the data points
 %               for each cell (rather than for each sweep)
-% 2019-11-27 Added 'PharmCondition', 'GIncrCondition' & 'VHoldCondition'
+% 2019-11-27 Added 'PharmConditions', 'GIncrConditions' & 'VHoldConditions'
 %               as optional arguments
+% TODO: Other LTS features that might be of interest
+%    ltspeakval = swpInfo.ltspeakval;
+%    maxslopeval = swpInfo.maxslopeval;
+%    ltspeak2ndder = swpInfo.ltspeak2ndder;
+%    ltspeakprom = swpInfo.ltspeakprom;
+%    ltspeakwidth = swpInfo.ltspeakwidth;
+% TODO: Other burst features that might be of interest
+%    maxspikeamp = swpInfo.maxspikeamp;
+%    minspikeamp = swpInfo.minspikeamp;
+%    spikefrequency = swpInfo.spikefrequency;
+%    spikeadaptation = swpInfo.spikeadaptation;
 
 %% Hard-coded parameters
 % Items to compute
@@ -75,22 +110,19 @@ measureStr = {'ltsOnsetTime'; 'ltsTimeJitter'; ...
                     'burstOnsetTime'; 'burstTimeJitter'; ...
                     'burstProbability'; 'spikesPerBurst'};
 cellIdStr = 'cellidrow';
-ltsDelayStr = 'ltspeaktimes';
+ltsDelayStr = 'ltspeaktime';
 spikesPerPeakStr = 'spikesperpeak';
-burstDelayStr = 'bursttimes';
+burstDelayStr = 'bursttime';
 spikesPerBurstStr = 'spikesperburst';
 
 %% Default values for optional arguments
-dataModeDefault = 0;
 swpInfoDefault = table.empty;
-pharmConditionDefault = [];
-gIncrConditionDefault = [];
-vHoldConditionDefault = [];
+dataModeDefault = 0;
+pharmConditionsDefault = [];
+gIncrConditionsDefault = [];
+vHoldConditionsDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Fixed parameters used in the experiments
-cc = 1:1:49;                % Possible cell ID #s
 
 %% Deal with arguments
 % Set up Input Parser Scheme
@@ -98,24 +130,24 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'DataMode', dataModeDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
 addParameter(iP, 'SwpInfo', swpInfoDefault, ...
     @(x) validateattributes(x, {'table'}, {'2d'}));
-addParameter(iP, 'PharmCondition', pharmConditionDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
-addParameter(iP, 'GIncrCondition', gIncrConditionDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
-addParameter(iP, 'VHoldCondition', vHoldConditionDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar'}));
+addParameter(iP, 'DataMode', dataModeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'integer', 'scalar'}));
+addParameter(iP, 'PharmConditions', pharmConditionsDefault, ...
+    @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
+addParameter(iP, 'GIncrConditions', gIncrConditionsDefault, ...
+    @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
+addParameter(iP, 'VHoldConditions', vHoldConditionsDefault, ...
+    @(x) validateattributes(x, {'numeric', 'cell'}, {'2d'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
-dataMode = iP.Results.DataMode;
 swpInfo = iP.Results.SwpInfo;
-pharmCondition = iP.Results.PharmCondition;
-gIncrCondition = iP.Results.GIncrCondition;
-vHoldCondition = iP.Results.VHoldCondition;
+dataMode = iP.Results.DataMode;
+pharmConditionsUser = iP.Results.PharmConditions;
+gIncrConditionsUser = iP.Results.GIncrConditions;
+vHoldConditionsUser = iP.Results.VHoldConditions;
 
 % Count the items to compute
 nMeasures = numel(measureTitle);
@@ -123,16 +155,107 @@ nMeasures = numel(measureTitle);
 %% Preparation
 % Read the sweep info data
 if isempty(swpInfo)
-    swpInfo = m3ha_load_sweep_info('FileName', dataPath);
+    swpInfo = m3ha_load_sweep_info;
 end
+
+%% Create all conditions
+if iscell(pharmCondition) || iscell(gIncrCondition) || ...
+        iscell(vHoldCondition)
+    % Count the number of values for each type of condition
+    nPharm = numel(pharmConditionsUser)
+
+    % Create all set of conditions
+    pharmCondition
+    gIncrCondition
+    vHoldCondition
+
+    % Set flag
+    manyConditionsFlag = true;
+else
+    % There is only one set of conditions
+    pharmCondition = pharmConditionsUser;
+    gIncrCondition = gIncrConditionsUser;
+    vHoldCondition = vHoldConditionsUser;
+
+    % Set flag
+    manyConditionsFlag = false;
+end
+
+%% Compute statistics
+if manyConditionsFlag
+    % Compute statistics for each set of conditions
+    %   Note: This will return a nPharm x nGIncr x nVhold cell array 
+    %           where each element is either a nMeasures x 1 column cell vector
+    %            or a nMeasures x 1 column numeric vector
+    [allValues, nValues, meanValue, stdValue, ...
+            stderrValue, errValue, upper95Value, lower95Value] = ...
+        cellfun(@(x, y, z) ...
+                m3ha_compute_ltsburst_statistics_helper(swpInfo, dataMode, ...
+                x, y, z, cellIdStr, ltsDelayStr, spikesPerPeakStr, ...
+                burstDelayStr, spikesPerBurstStr), ...
+                pharmCondition, gIncrCondition, vHoldCondition, ...
+                'UniformOutput', false);
+
+    % Reorganize cell arrays of cell arrays 
+    %   so that measures are grouped together
+    %   Note: This will return a nMeasures x 1 cell array,
+    %           where each element is a nPharm x nGIncr x nVhold cell array
+    allValues = extract_columns(allValues, transpose(1:nMeasures), ...
+                            'TreatCnvAsColumns', true, 'OutputMode', 'single');
+
+    % Reorganize cell arrays of numeric vectors 
+    %   so that measures are grouped together
+    %   Note: This will return a nMeasures x 1 cell array,
+    %           where each element is a nPharm x nGIncr x nVhold numeric array
+    [nValues, meanValue, stdValue, ...
+            stderrValue, errValue, upper95Value, lower95Value] = ...
+        argfun(@(x) ...
+                arrayfun(@(y) extract_elements(x, 'specific', 'Index', y), ...
+                        transpose(1:nMeasures), 'UniformOutput', true), ...
+            nValues, meanValue, stdValue, ...
+            stderrValue, errValue, upper95Value, lower95Value);
+else
+    % Compute statistics for this set of conditions
+    %   Note: this will return either a nMeasures x 1 column cell vector
+    %            or a nMeasures x 1 column numeric vector
+    [allValues, nValues, meanValue, stdValue, ...
+            stderrValue, errValue, upper95Value, lower95Value] = ...
+        m3ha_compute_ltsburst_statistics_helper(swpInfo, dataMode, ...
+                pharmCondition, gIncrCondition, vHoldCondition, ...
+                cellIdStr, ltsDelayStr, spikesPerPeakStr, ...
+                burstDelayStr, spikesPerBurstStr);
+end
+
+%% Output results
+% Match the number of rows
+[dataMode, pharmCondition, gIncrCondition, vHoldCondition] = ...
+    argfun(@(x) match_row_count(x, nMeasures), ...
+            dataMode, pharmCondition, gIncrCondition, vHoldCondition);
+
+% Create a statistics table
+statsTable = table(measureTitle, measureStr, dataMode, ...
+                    pharmCondition, gIncrCondition, vHoldCondition, ...
+                    allValues, nValues, meanValue, stdValue, ...
+                    stderrValue, errValue, upper95Value, lower95Value, ...
+                    'RowNames', measureStr);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [allValues, nValues, meanValue, stdValue, ...
+                    stderrValue, errValue, upper95Value, lower95Value] = ...
+                m3ha_compute_ltsburst_statistics_helper(swpInfo, dataMode, ...
+                            pharmConditions, gIncrConditions, vHoldConditions, ...
+                            cellIdStr, ltsDelayStr, spikesPerPeakStr, ...
+                            burstDelayStr, spikesPerBurstStr)
+%% Computes LTS and burst statistics for one condition
 
 %% Select sweeps
 % Select the sweeps based on data mode
-swpInfo = m3ha_select_sweeps_to_fit('SwpInfo', swpInfo, ...
-                                    'DataMode', dataMode, ...
-                                    'PharmCondition', pharmCondition, ...
-                                    'GIncrCondition', gIncrCondition, ...
-                                    'VHoldCondition', vHoldCondition);
+swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'Verbose', false, ...
+                                'DataMode', dataMode, ...
+                                'PharmConditions', pharmConditions, ...
+                                'GIncrConditions', gIncrConditions, ...
+                                'VHoldConditions', vHoldConditions);
 
 % Extract whether to use the sweep
 toUse = swpInfo.toUse;
@@ -146,9 +269,6 @@ cellIdRow = swpInfoToUse.(cellIdStr);
 
 % Find unique cell IDs
 uniqueCellIds = unique(cellIdRow);
-
-% Count the number of cells
-nCells = numel(uniqueCellIds);
 
 %% Extract measures
 % Extract the measures
@@ -184,21 +304,20 @@ burstProbability = arrayfun(@(x) sum(cellIdRow == x & hasBurst) / ...
 % Collect all values for each measure
 %   Note: Each element of the cell array contains a nCells by 1 numeric vector
 %           that may contain NaNs
-allValues = cellfun(@(x) eval(x), measureStr);
+%   Note: cellfun won't work here because of namespace differences
+allValues = cell(nMeasures, 1);
+for iMeasure = 1:nMeasures
+    allValues{iMeasure} = eval(measureStr{iMeasure});
+end
 
 % Compute effective n's (number of values that are not NaNs)
 nValues = cellfun(@(x) sum(~isnan(x)), allValues);
 
 % Compute overall statistics
-[meanValue, stdValue, errValue, upper95Value, lower95Value] = ...
+[meanValue, stdValue, stderrValue, errValue, upper95Value, lower95Value] = ...
     argfun(@(x) cellfun(@(y) compute_stats(y, x, 'IgnoreNan', true), ...
                         allValues), ...
-            'mean', 'std', 'err', 'upper95', 'lower95');
-
-%% Output results
-statsTable = table(measureTitle, measureStr, allValues, nValues, ...
-                    meanValue, stdValue, errValue, upper95Value, ...
-                    lower95Value, 'RowNames', measureStr);
+            'mean', 'std', 'stderr', 'err', 'upper95', 'lower95');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

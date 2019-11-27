@@ -46,7 +46,7 @@ function [cellIdsSelected, cellInfo, swpInfo] = m3ha_select_cells (varargin)
 %       cd/m3ha_create_cell_info_table.m
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_organize_sweep_indices.m
-%       cd/m3ha_select_sweeps_to_fit.m
+%       cd/m3ha_select_sweeps.m
 %       cd/print_cellstr.m
 %
 % Used by:
@@ -120,7 +120,7 @@ end
 
 %% Select cell IDs to fit
 % Update swpInfo so that there is a toUse column
-%   using m3ha_select_sweeps_to_fit if rowsToUse not provided
+%   using m3ha_select_sweeps if rowsToUse not provided
 if ~isempty(rowsToUse)
     if ismember(toUseStr, swpInfo.Properties.VariableNames)
         % Print message
@@ -139,9 +139,8 @@ if ~isempty(rowsToUse)
 else
     % Select the sweep indices that will be fitted
     %   Remove gIncr == 15%, 50%, 800% and problematic traces
-    swpInfo = m3ha_select_sweeps_to_fit('SwpInfo', swpInfo, ...
-                                            'DataMode', dataMode, ...
-                                            'CasesDir', casesDir);
+    swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'DataMode', dataMode, ...
+                                    'CasesDir', casesDir);
 end
 
 % Organize sweep indices by g incr, pharm conditions for each cell

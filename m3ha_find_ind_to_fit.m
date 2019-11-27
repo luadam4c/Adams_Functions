@@ -1,6 +1,6 @@
 function indtofit = m3ha_find_ind_to_fit (fnrow, cellID, pharm, gincr, ...
                                             fitmode, infolder)
-%% Finds indices of fnrow in dclampdatalog_take4.mat that will be used for fitting (legacy, please use m3ha_select_sweeps_to_fit.m instead)
+%% Finds indices of fnrow in dclampdatalog_take4.mat that will be used for fitting (legacy, please use m3ha_select_sweeps.m instead)
 % Usage: indtofit = m3ha_find_ind_to_fit (fnrow, cellID, pharm, gincr, ...
 %                                          fitmode, infolder)
 % Arguments: 
@@ -34,7 +34,7 @@ function indtofit = m3ha_find_ind_to_fit (fnrow, cellID, pharm, gincr, ...
 % 2018-10-01 infolder is now a relative path
 % 2018-10-15 Renamed function find_ind_to_fit -> m3ha_find_ind_to_fit()
 %               and moved to /home/Matlab/Adams_Functions
-% TODO: To be replaced by m3ha_select_sweeps_to_fit
+% TODO: To be replaced by m3ha_select_sweeps
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

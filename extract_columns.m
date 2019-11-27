@@ -9,7 +9,8 @@ function varargout = extract_columns (arrays, varargin)
 %       [a, b] = extract_columns({magic(3); ones(4)}, [1:3])
 %       [a, b] = extract_columns({magic(3); ones(3); zeros(4)}, ...
 %                               {[2, 3], [1:3], [1, 3]})
-%       a = extract_columns({magic(3); ones(4)}, [1:3], 'OutputMode', 'single')
+%       c = extract_columns({magic(3); ones(4)}, [1:3], 'OutputMode', 'single')
+%       d = extract_columns({{[1, 2]; [2, 1]}, {[4, 5], [3, 2]}}, 1:2, 'TreatCnvAsColumns', true, 'OutputMode', 'single')
 %
 % Outputs:
 %       varargout   - extracted column #1s, column #2s, etc.

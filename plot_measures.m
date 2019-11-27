@@ -97,10 +97,11 @@ function plot_measures (varargin)
 %                   default == same as directory
 %                   - 'OutFolder': directory to place output spreadsheet files
 %                   must be a string scalar or a character vector
-%                   default == fullfile(inFolder, [create_time_stamp, '_', outDirSuffix])
+%                   default == fullfile(inFolder, [create_time_stamp, '_', ...
+%                                           outDirSuffix])
 %                   - 'FigFolder': directory to place figures
 %                   must be a string scalar or a character vector
-%                   default == outFolder
+%                   default == same as outFolder
 %                   - 'PhaseNumbers': phase numbers to restrict to
 %                   must be a numeric vector
 %                   default == []

@@ -20,18 +20,19 @@
 % Folders
 figure01Dir = fullfile('/media', 'adamX', 'm3ha', ...
                         'manuscript', 'figures', 'Figure01');
-% parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
-parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', ...
-                      'parse_multiunit_m3ha');
+parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
+% parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', ...
+%                       'parse_multiunit_m3ha');
 archiveDir = parentDir;
-% dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
+dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'no711-final'};
 % dirsToAnalyze = {'dual-final'};
-dirsToAnalyze = {'snap5114-test', 'no711-test', 'dual-test'};
+% dirsToAnalyze = {'snap5114-test', 'no711-test', 'dual-test'};
 % dirsToAnalyze = {'no711-test', 'snap5114-test'};
 % dirsToAnalyze = {'snap5114-test'};
 % dirsToAnalyze = {'dual-test'};
+% dirsToAnalyze = {'important-cases'};
 specificSlicesToAnalyze = {};
 
 % Flags
@@ -41,23 +42,23 @@ plotFigure1Population = false; % true;
 parseIndividualFlag = true;
 saveMatFlag = false; % true;
 plotRawFlag = false; % true;
-plotSpikeDetectionFlag = false; % true;
+plotSpikeDetectionFlag = true;
 plotRasterFlag = false; % true;
-plotSpikeDensityFlag = false; % true;
+plotSpikeDensityFlag = true;
 plotSpikeHistogramFlag = true;
 plotAutoCorrFlag = true;
-plotMeasuresFlag = false; % true;
-plotContourFlag = false; % true;
+plotMeasuresFlag = true;
+plotContourFlag = true;
 plotCombinedFlag = true;
 
-parsePopulationRestrictedFlag = false; %true;
-plotChevronFlag = false; %true;
-plotByFileFlag = false; %true;
-plotByPhaseFlag = false; %true;
-plotNormByFileFlag = false; %true;
-plotNormByPhaseFlag = false; %true;
-plotPopAverageFlag = false; %true;
-plotSmoothNormPopAvgFlag = false; %true;
+parsePopulationRestrictedFlag = true;
+plotChevronFlag = true;
+plotByFileFlag = true;
+plotByPhaseFlag = true;
+plotNormByFileFlag = true;
+plotNormByPhaseFlag = true;
+plotPopAverageFlag = true;
+plotSmoothNormPopAvgFlag = true;
 parsePopulationAllFlag = false; %true;
 plotAllMeasurePlotsFlag = false; %true;
 
@@ -83,10 +84,10 @@ maxFirstInterBurstIntervalMs = 2000;
 %                                 %   1 second apart
 % maxInterBurstIntervalMs = 1100; % bursts are no more than 
 %                                 %   1.1 seconds apart
-maxInterBurstIntervalMs = 1500; % bursts are no more than 
-                                %   1.5 seconds apart
-% maxInterBurstIntervalMs = 2000; % bursts are no more than 
-%                                 %   2 seconds apart
+% maxInterBurstIntervalMs = 1500; % bursts are no more than 
+%                                 %   1.5 seconds apart
+maxInterBurstIntervalMs = 2000; % bursts are no more than 
+                                %   2 seconds apart
 % minSpikeRateInBurstHz = 100;    % bursts must have a spike rate of 
 %                                   at least 100 Hz by default
 minSpikeRateInBurstHz = 100; %50; %30;     % bursts must have a spike rate of 

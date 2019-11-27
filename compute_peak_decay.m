@@ -5,13 +5,16 @@ function [peakDecaySamples, idxPeakDecay, peakDecayValue] = ...
 %               compute_peak_decay (vectors, idxPeak, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       peakDecaySamples    - peak half widths in samples
 %                           specified as a nonnegative vector
 %       idxPeakDecay        - indices of start and end of half widths
 %                           specified as a positive integer vector
+%
 % Arguments:
 %       vectors     - vectors with peaks
 %                   Note: If a cell array, each element must be a vector

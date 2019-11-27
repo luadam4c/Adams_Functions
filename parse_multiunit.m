@@ -177,6 +177,10 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %                   - 'OutFolder': directory to place output files
 %                   must be a string scalar or a character vector
 %                   default == same as inFolder
+%                   - 'FigFolder': directory to place figures
+%                   must be a string scalar or a character vector
+%                   default == fullfile(outFolder, [create_time_stamp, '_', ...
+%                                   outDirSuffix])
 %                   - 'FileBase': base of filename (without extension)
 %                   must be a string scalar or a character vector
 %                   default == 'unnamed'
@@ -272,6 +276,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
 %       cd/create_subplots.m
+%       cd/create_time_stamp.m
 %       cd/create_time_vectors.m
 %       cd/detect_spikes_multiunit.m
 %       cd/extract_elements.m
@@ -334,17 +339,19 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 % 2019-08-09 Now saves contour plots as epsc2 instead of eps
 % 2019-08-13 Expanded combined plot
 % 2019-08-13 Now uses alternate_elements.m
+% 2019-08-29 Added 'FigFolder' as an optional argument
 
 %% Hard-coded parameters
 validSelectionMethods = {'notNaN', 'maxRange2Mean'};
 plotTypeMeasures = 'bar'; %'tuning';
+figDirSuffix = 'individual_measures';
 yAmountToStagger = [];                  % y amount to stagger for the raw plots
 % yAmountToStagger = 10;
 zoomWinRelStimStartSec = [-1; 20];      % for zoom window 1
 % zoomWinRelStimStartSec = [-1; 10];
 zoomWinRelDetectStartSec = [-0.2; 2];   % for zoom window 2
 zoomWinRelFirstSpikeSec = [0; 0.1];     % for zoom window 3
-sweepDurationSec = 60;                  % sweep duration in seconds
+% sweepDurationSec = 60;                  % sweep duration in seconds
 rawDir = 'raw';
 rasterDir = 'rasters';
 autoCorrDir = 'autocorrelograms';
@@ -389,6 +396,7 @@ saveResultsFlagDefault = false;
 directoryDefault = pwd;
 inFolderDefault = '';                   % set later
 outFolderDefault = '';                  % set later
+figFolderDefault = '';                  % set later
 fileBaseDefault = 'unnamed';            % set later
 stimStartMsDefault = [];                % set later
 pulseVectorsDefault = [];               % don't use pulse vectors by default
@@ -478,6 +486,8 @@ addParameter(iP, 'InFolder', inFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigFolder', figFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FileBase', fileBaseDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'StimStartMs', stimStartMsDefault, ...
@@ -550,6 +560,7 @@ saveResultsFlag = iP.Results.SaveResultsFlag;
 directory = iP.Results.Directory;
 inFolder = iP.Results.InFolder;
 outFolder = iP.Results.OutFolder;
+figFolder = iP.Results.FigFolder;
 fileBase = iP.Results.FileBase;
 stimStartMs = iP.Results.StimStartMs;
 pulseVectors = iP.Results.PulseVectors;
@@ -585,6 +596,11 @@ end
 % Decide on the output directory
 if isempty(outFolder)
     outFolder = inFolder;
+end
+
+% Decide on the figure directory
+if isempty(figFolder)
+    figFolder = fullfile(outFolder, [create_time_stamp, '_', figDirSuffix]);
 end
 
 % Deal with the first argument
@@ -698,8 +714,7 @@ else
     % Detect stimulation start time if not provided
     %   Otherwise find the corresponding index in the time vector
     fprintf('Detecting stimulation start for %s ...\n', fileBase);
-    [stimParams, stimData] = ...
-        parse_stim(pulseVectors, 'SamplingIntervalMs', siMs, ...
+    stimParams = parse_stim(pulseVectors, 'SamplingIntervalMs', siMs, ...
                         'StimStartMs', stimStartMs, 'tVecs', tVecs);
 
     idxStimStart = stimParams.idxStimStart;
@@ -802,32 +817,32 @@ if plotSpikeDetectionFlag
     fprintf('Plotting all spike detection plots for %s ...\n', fileBase);
 
     % Create output directory
-    outFolderSpikeDetection = fullfile(outFolder, spikeDetectionDir);
+    figFolderSpikeDetection = fullfile(figFolder, spikeDetectionDir);
 
     % Plot and save figures
-    plot_all_spike_detections(parsedData, parsedParams, outFolderSpikeDetection);
+    plot_all_spike_detections(parsedData, parsedParams, figFolderSpikeDetection);
 end
 
 %% Plot spike histograms
 if plotSpikeHistogramFlag
     fprintf('Plotting all spike histograms for %s ...\n', fileBase);
     % Create output directory
-    outFolderHist = fullfile(outFolder, spikeHistDir);
+    figFolderHist = fullfile(figFolder, spikeHistDir);
 
     % Plot and save figures
-    plot_all_spike_histograms(parsedData, parsedParams, outFolderHist);
+    plot_all_spike_histograms(parsedData, parsedParams, figFolderHist);
 end
 
 %% Plot autocorrelograms
 if plotAutoCorrFlag
     fprintf('Plotting all autocorrelograms for %s ...\n', fileBase);
     % Create output directories
-    outFolderAutoCorr = fullfile(outFolder, autoCorrDir);
-    outFolderAcf = fullfile(outFolder, acfDir);
+    figFolderAutoCorr = fullfile(figFolder, autoCorrDir);
+    figFolderAcf = fullfile(figFolder, acfDir);
 
     % Plot and save figures
     plot_all_autocorrelograms(parsedData, parsedParams, ...
-                                outFolderAutoCorr, outFolderAcf);
+                                figFolderAutoCorr, figFolderAcf);
 end
 
 %% Plot raw traces
@@ -837,7 +852,7 @@ if plotRawFlag
     figExpansion = 2;
 
     % Create a figure base
-    figBaseRaw = fullfile(outFolder, rawDir, [fileBase, '_raw']);
+    figBaseRaw = fullfile(figFolder, rawDir, [fileBase, '_raw']);
 
     % Plot figure
     figs(1) = figure(1); clf
@@ -855,7 +870,7 @@ if plotRasterFlag
     fprintf('Plotting raster plot for %s ...\n', fileBase);
 
     % Create a figure base
-    figBaseRaster = fullfile(outFolder, rasterDir, [fileBase, '_raster']);
+    figBaseRaster = fullfile(figFolder, rasterDir, [fileBase, '_raster']);
 
     % Plot figure
     figs(2) = figure(2); clf
@@ -871,7 +886,7 @@ if plotSpikeDensityFlag
     fprintf('Plotting spike density plot for %s ...\n', fileBase);
 
     % Create a figure base
-    figBaseSpikeDensity = fullfile(outFolder, spikeDensityDir, ...
+    figBaseSpikeDensity = fullfile(figFolder, spikeDensityDir, ...
                                     [fileBase, '_spike_density']);
 
     % Plot figure
@@ -896,11 +911,11 @@ if plotCombinedFlag
     vertBarWidth2Range = 1/10;
 
     % Create output directory and subdirectories for each measure
-    outFolderCombined = fullfile(outFolder, combinedDir);
-    check_dir(outFolderCombined);
+    figFolderCombined = fullfile(figFolder, combinedDir);
+    check_dir(figFolderCombined);
 
     % Create a figure base
-    figBaseCombined = fullfile(outFolderCombined, [fileBase, '_combined']);
+    figBaseCombined = fullfile(figFolderCombined, [fileBase, '_combined']);
 
     % Extract the oscillation durations and periods
     oscDurationSec = parsedParams.oscDurationSec;
@@ -1020,8 +1035,8 @@ if plotContourFlag
     fprintf('Plotting contour plot for %s ...\n', fileBase);
 
     % Create a figure base
-    check_subdir(outFolder, contourDir);
-    figBaseContour = fullfile(outFolder, contourDir, ...
+    check_subdir(figFolder, contourDir);
+    figBaseContour = fullfile(figFolder, contourDir, ...
                                 [fileBase, '_contour']);
 
     % Plot figure
@@ -1045,14 +1060,14 @@ if plotMeasuresFlag
     fprintf('Plotting time series of measures for %s ...\n', fileBase);    
 
     % Create output directory and subdirectories for each measure
-    outFolderMeasures = fullfile(outFolder, measuresDir);
+    figFolderMeasures = fullfile(figFolder, measuresDir);
 
     % Check if output directory exists
-    check_dir(outFolderMeasures);
-    check_subdir(outFolderMeasures, measuresToPlot);
+    check_dir(figFolderMeasures);
+    check_subdir(figFolderMeasures, measuresToPlot);
 
     % Create full figure paths
-    figPathsMeasures = fullfile(outFolderMeasures, measuresToPlot, ...
+    figPathsMeasures = fullfile(figFolderMeasures, measuresToPlot, ...
                                 strcat(fileBase, '_', measuresToPlot));
 
     % Create custom figure titles
@@ -1072,6 +1087,7 @@ if plotMeasuresFlag
                     'FigTitles', figTitlesMeasures, ...
                     'NLastOfPhase', nSweepsLastOfPhase, ...
                     'NToAverage', nSweepsToAverage, ...
+                    'SelectionMethod', selectionMethod, ...
                     'MaxRange2Mean', maxRange2Mean);
 end
 
@@ -1799,7 +1815,7 @@ ylim(yLimits);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_all_spike_detections(parsedData, parsedParams, outFolder)
+function plot_all_spike_detections(parsedData, parsedParams, figFolder)
 
 % Retrieve data for plotting
 tVec = parsedData.tVec;
@@ -1822,7 +1838,7 @@ figTitleBase = parsedParams.figTitleBase;
 figPathBase = parsedParams.figPathBase;
 
 % Check if output directory exists
-check_dir(outFolder);
+check_dir(figFolder);
 
 % Count the number of sweeps
 nVectors = height(parsedParams);
@@ -1838,7 +1854,7 @@ parfor iVec = 1:nVectors
                             [], figTitleBase{iVec});
 
     % Get the current figure path base
-    figBaseThis = fullfile(outFolder, figPathBase{iVec});
+    figBaseThis = fullfile(figFolder, figPathBase{iVec});
 
     % Set zoom windows
     zoomWin1 = stimStartMs(iVec) + [0; 1e4];
@@ -1862,7 +1878,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_all_spike_histograms(parsedData, parsedParams, outFolder)
+function plot_all_spike_histograms(parsedData, parsedParams, figFolder)
 
 %% Preparation
 % Count the number of sweeps
@@ -1894,7 +1910,7 @@ largestSpikeCount = apply_iteratively(@max, spikeCountsOfInterest);
 yLimitsHist = [0, largestSpikeCount * 1.2];
 
 % Check if output directory exists
-check_dir(outFolder);
+check_dir(figFolder);
 
 %% Do the job
 % Convert to structure arrays
@@ -1913,7 +1929,7 @@ parfor iVec = 1:nVectors
                                 'XLimits', xLimitsHist, ...
                                 'YLimits', yLimitsHist);
 
-    saveas(histFig, fullfile(outFolder, ...
+    saveas(histFig, fullfile(figFolder, ...
                     [figPathBase{iVec}, '_spike_histogram']), 'png');
     close all force hidden
 end
@@ -1921,7 +1937,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_all_autocorrelograms(parsedData, parsedParams, ...
-                                    outFolderAutoCorr, outFolderAcf)
+                                    figFolderAutoCorr, figFolderAcf)
 
 % Retrieve data
 acf = parsedData.acf;
@@ -1961,8 +1977,8 @@ yLimitsAcfFiltered = compute_axis_limits([0, bestUpperLimit], ...
 yOscDur = -(bestUpperLimit * 0.025);
 
 % Check if output directory exists
-check_dir(outFolderAutoCorr);
-check_dir(outFolderAcf);
+check_dir(figFolderAutoCorr);
+check_dir(figFolderAcf);
 
 %% Do the job
 % Convert to structure arrays
@@ -1979,7 +1995,7 @@ parfor iVec = 1:nVectors
             'DataType', 'autocorrelogram', ...
             'XLimits', xLimitsAutoCorr, ...
             'YLimits', yLimitsAutoCorr);
-    saveas(autoCorrFig, fullfile(outFolderAutoCorr, ...
+    saveas(autoCorrFig, fullfile(figFolderAutoCorr, ...
             [figPathBase{iVec}, '_autocorrelogram']), 'png');
 
     acfFig = figure('Visible', 'off');
@@ -1988,7 +2004,7 @@ parfor iVec = 1:nVectors
             'XLimits', xLimitsAcfFiltered, ...
             'YLimits', yLimitsAcfFiltered, ...
             'BarYValue', yOscDur);
-    saveas(acfFig, fullfile(outFolderAcf, ...
+    saveas(acfFig, fullfile(figFolderAcf, ...
             [figPathBase{iVec}, '_autocorrelation_function']), 'png');
 
     close all force hidden
@@ -2042,9 +2058,11 @@ otherArguments = struct2arglist(iP.Unmatched);
 %% Preparation
 % Extract parameters
 stimStartSec = parsedParams.stimStartSec;
-detectStartSec = parsedParams.detectStartSec;
-firstSpikeSec = parsedParams.firstSpikeSec;
-timeOscEndSec = parsedParams.timeOscEndSec;
+
+% TODO: Plot oscillation duration
+% detectStartSec = parsedParams.detectStartSec;
+% firstSpikeSec = parsedParams.firstSpikeSec;
+% timeOscEndSec = parsedParams.timeOscEndSec;
 
 % Extract parameters
 tVecs = parsedData.tVec;
@@ -2127,7 +2145,8 @@ burstWindows = ...
             'UniformOutput', false);
 
 % Create colors
-nSweeps = numel(spikeTimesSec);
+% TODO
+% nSweeps = numel(spikeTimesSec);
 
 % Create a figure title base
 titleBase = replace(fileBase, '_', '\_');

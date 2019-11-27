@@ -29,7 +29,7 @@ function swpInfo = m3ha_load_sweep_info (varargin)
 %       cd/m3ha_organize_sweep_indices.m
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_select_cells.m
-%       cd/m3ha_select_sweeps_to_fit.m
+%       cd/m3ha_select_sweeps.m
 
 % File History:
 % 2018-12-05 Adapted from code in singleneuronfitting42.m

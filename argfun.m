@@ -47,6 +47,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/filter_and_extract_pulse_response.m
 %       cd/find_passive_params.m
 %       cd/find_window_endpoints.m
+%       cd/m3ha_compute_ltsburst_statistics.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_neuron_create_simulation_params.m
 %       cd/m3ha_import_raw_traces.m
