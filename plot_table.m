@@ -3,11 +3,14 @@ function figs = plot_table (table, varargin)
 % Usage: figs = plot_table (table, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       figs        - figure handle(s) for the created figure(s)
 %                   specified as a figure object handle column vector
+%
 % Arguments:
 %       table       - a table with variables to plot
 %                   must be a table
@@ -64,6 +67,7 @@ function figs = plot_table (table, varargin)
 %                       or the plot_tuning_curve() function
 %
 % Requires:
+%       cd/char2rgb.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_common_directory.m
 %       cd/extract_common_prefix.m
@@ -71,7 +75,6 @@ function figs = plot_table (table, varargin)
 %       cd/plot_struct.m
 %       cd/plot_tuning_curve.m
 %       cd/struct2arglist.m
-%       ~/Downloaded_Functions/rgb.m
 %
 % Used by:
 %       cd/plot_measures.m
@@ -98,13 +101,13 @@ function figs = plot_table (table, varargin)
 validPlotTypes = {'tuning', 'bar'};
 lineSpecSeparate = 'o';
 lineWidthSeparate = 1;
-markerEdgeColorSeparate = rgb('DarkOrchid');
-markerFaceColorSeparate = rgb('LightSkyBlue');
+markerEdgeColorSeparate = char2rgb('DarkOrchid');
+markerFaceColorSeparate = char2rgb('LightSkyBlue');
 
 lineSpecTogether = '-';
 lineWidthTogether = 1;
-markerEdgeColorTogether = rgb('DarkOrchid');
-markerFaceColorTogether = rgb('LightSkyBlue');
+markerEdgeColorTogether = char2rgb('DarkOrchid');
+markerFaceColorTogether = char2rgb('LightSkyBlue');
 
 %% Default values for optional arguments
 plotTypeDefault = 'tuning';
@@ -128,15 +131,6 @@ outFolderDefault = pwd;
 figNameDefault = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% If not compiled, add directories to search path for required functions
-if ~isdeployed
-    % Locate the functions directory
-    functionsDirectory = locate_functionsdir;
-
-    % Add path for rgb.m
-    addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions'));
-end
 
 %% Deal with arguments
 % Check number of required arguments

@@ -125,6 +125,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %       cd/print_cellstr.m
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_locate_homedir.m
+%       cd/m3ha_plot_figure02.m
 %       cd/set_default_flag.m
 %
 % Used by:

@@ -62,6 +62,7 @@ function varargout = extract_columns (arrays, varargin)
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_plot_example_jitter.m.m
+%       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_simulated_traces.m
 
 % File History:

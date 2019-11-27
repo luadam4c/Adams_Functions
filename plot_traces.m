@@ -241,6 +241,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %
 % Used by:
 %       cd/m3ha_plot_example_jitter.m.m
+%       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_current_family.m

@@ -21,6 +21,7 @@ function tiffPaths = sld2ometiff (varargin)
 %
 % Requires:
 % TODO
+%       ~/bfmatlab/
 %       cd/all_files.m
 %       cd/check_dir.m
 %       cd/create_labels_from_numbers.m

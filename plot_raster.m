@@ -110,7 +110,6 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 %                   - Any other parameter-value pair for the line() function
 %
 % Requires:
-%       /home/Matlab/Downloaded_Functions/rgb.m
 %       cd/apply_iteratively.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_error_for_nargin.m
@@ -170,15 +169,6 @@ clearFigureDefault = false;     % don't clear figure by default
 alwaysNewDefault = false;       % don't always create new figure
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% If not compiled, add directories to search path for required functions
-if ~isdeployed
-    % Locate the functions directory
-    functionsDirectory = locate_functionsdir;
-
-    % Add path for Downloaded_Functions
-    addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions'));
-end
 
 %% Deal with arguments
 % Check number of required arguments

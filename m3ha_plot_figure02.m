@@ -4,9 +4,16 @@
 % Requires:
 %       cd/all_files.m
 %       cd/copy_into.m
+%       cd/extract_columns.m
+%       cd/extract_fileparts.m
 %       cd/extract_substrings.m
 %       cd/m3ha_create_cell_info_table.m
+%       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_load_sweep_info.m
+%       cd/plot_traces.m
+%       cd/save_all_figtypes.m
+%       cd/set_figure_properties.m
+%       cd/update_figure_for_corel.m
 
 % File History:
 % 2019-11-25 Created by Adam Lu
@@ -21,10 +28,6 @@ matFilesDir = fullfile(parentDirectory, 'data_dclamp', 'take4', 'matfiles');
 datalogPath = fullfile(figure02Dir, 'dclampdatalog_take4.csv');
 cellNamePattern = '[A-Z][0-9]{6}';
 
-% Sizes
-exampleHeight = 4;
-exampleWidth = 3;
-
 % Flags
 saveCellInfo = false;
 copyExampleFiles = false; %true;
@@ -34,6 +37,9 @@ plotBarPlotsFlag = true;
 
 % Plot settings
 exampleGincr = 200;
+exampleHeight = 4;
+exampleWidth = 3;
+exampleLineWidth = 0.5;
 exampleXlimits = [800, 2200];
 exampleYlimits = [-100, 20];
 pharmLabels = {'Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block'};
@@ -74,7 +80,7 @@ if plotExamplesFlag
     figs = cellfun(@(x) m3ha_plot_example_traces(x, figure02Dir, ...
                                             swpInfo, exampleGincr, ...
                                             exampleXlimits, exampleYlimits, ...
-                                            pharmLabels, ...
+                                            pharmLabels, exampleLineWidth, ...
                                             exampleHeight, exampleWidth), ...
                     exampleCellNames);
 
@@ -113,7 +119,7 @@ end
 function fig = m3ha_plot_example_traces (cellName, figure02Dir, ...
                                             swpInfo, gIncrOfInterest, ...
                                             xLimits, ylimits, ...
-                                            yLabels, ...
+                                            yLabels, lineWidth, ...
                                             figHeight, figWidth)
 %% Plots example traces
 % TODO: Pull out as its own function with only cellName as the required argument
@@ -149,7 +155,7 @@ fig = set_figure_properties('AlwaysNew', true);
 
 % Plot the traces
 plot_traces(tVecs, vVecs, ...
-            'PlotMode', 'parallel', 'LineWidth', 1, ...
+            'PlotMode', 'parallel', 'LineWidth', lineWidth, ...
             'LinkAxesOption', 'xy', 'FigTitle', 'suppress', ...
             'XLimits', xLimits, 'Ylimits', ylimits, ...
             'XLabel', 'suppress', 'YLabel', yLabels, ...

@@ -16,11 +16,12 @@ function varargout = addpath_custom (folder, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/char2rgb.m
 
 % File History:
 % 2019-01-10 Created by Adam Lu
-% 
+% 2019-11-27 Now checks if the folder exists
+% TODO FOR SHINSHIN: Go through all files change all uses of addpath to this
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -32,7 +33,8 @@ end
 
 %% Do the job
 % Add path for each folder if it does not already exist on the MATLAB path
-if ~is_on_path(folder)
+%   and it exists
+if ~is_on_path(folder) && isfolder(folder)
     varargout{:} = addpath(folder, varargin{:});
 end
 

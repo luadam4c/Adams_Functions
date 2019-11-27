@@ -25,6 +25,9 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %       varargin    - 'IsLog2Data': whether data is log 2-scaled
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'PlotMeanValues': whether to plot the mean values
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'PlotMeanDifference': whether to plot the mean difference
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -93,6 +96,7 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %       cd/plot_error_bar.m
 %       cd/plot_tuning_curve.m
 %       cd/set_axes_properties.m
+%       cd/set_figure_properties.m
 %
 % Used by:
 %       cd/plot_relative_events.m
@@ -102,7 +106,9 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 % 2019-10-03 Made many things optional arguments
 % 2019-10-07 Now plots means with open circles
 % 2019-10-08 Added 'IsLog2Data' as an optional argument
-% TODO: Combine with plot_table.m?
+% 2019-11-27 Added 'PlotMeanValues' as an optional argument
+% 2019-11-27 Now adds transparency to mean circles
+% TODO: Use this in plot_table.m?
 
 %% Hard-coded parameters
 
@@ -111,10 +117,12 @@ meanLineWidthRatio = 1;
 meanLineStyle = '--';
 meanMarkerSizeRatio = 2;
 meanColorMap = [];                  % set later
-meanMarkerFaceColor = 'none';
+meanMarkerFaceColor = 'flat';
+meanMarkerFaceAlpha = 0.25;
 
 %% Default values for optional arguments
 isLog2DataDefault = false;
+plotMeanValuesDefault = true;
 plotMeanDifferenceDefault = false;
 plotErrorBarsDefault = false;
 runTTestDefault = true;
@@ -128,7 +136,7 @@ colorMapDefault = [];               % set later
 markerSizeDefault = 6;
 lineWidthDefault = 1;
 legendLocationDefault = 'eastoutside';
-figExpansionDefault = [1, 0.6];
+figExpansionDefault = [];
 axHandleDefault = [];               % gca by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -150,6 +158,8 @@ addRequired(iP, 'data', ...
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'IsLog2Data', isLog2DataDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotMeanValues', plotMeanValuesDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotMeanDifference', plotMeanDifferenceDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -184,6 +194,7 @@ addParameter(iP, 'AxesHandle', axHandleDefault);
 % Read from the Input Parser
 parse(iP, data, varargin{:});
 isLog2Data = iP.Results.IsLog2Data;
+plotMeanValues = iP.Results.PlotMeanValues;
 plotMeanDifference = iP.Results.PlotMeanDifference;
 plotErrorBars = iP.Results.PlotErrorBars;
 runTTest = iP.Results.RunTTest;
@@ -293,8 +304,11 @@ meanMarkerSize = ceil(meanMarkerSizeRatio * markerSize);
 meanLineWidth = meanLineWidthRatio * lineWidth;
 
 %% Do the job
+% Decide on the figure
+figHandle = set_figure_properties('FigExpansion', figExpansion);
+
 % Decide on the axes
-axHandle = set_axes_properties('AxesHandle', axHandle);
+axHandle = set_axes_properties('AxesHandle', axHandle, 'FigHandle', figHandle);
 
 % Plot a tuning curve
 handles = plot_tuning_curve(pValues, transpose(dataValues), ...
@@ -304,7 +318,7 @@ handles = plot_tuning_curve(pValues, transpose(dataValues), ...
                     'ColumnLabels', columnLabels, ...
                     'ColorMap', colorMap, ...
                     'LegendLocation', legendLocation, ...
-                    'FigExpansion', figExpansion, 'AxesHandle', axHandle, ...                    
+                    'AxesHandle', axHandle, ...                    
                     'LineWidth', lineWidth, ...
                     'Marker', 'o', 'MarkerSize', markerSize, ...
                     otherArguments);
@@ -334,8 +348,7 @@ if plotMeanDifference && nConds == 2
     handlesMean = plot_tuning_curve(pValues, meanValues, 'PlotOnly', true, ...
                     'LowerCI', lower95Values, 'UpperCI', upper95Values, ...
                     'LineWidth', meanLineWidth, 'ColorMap', meanColorMap, ...
-                    'Marker', 'o', 'MarkerSize', meanMarkerSize, ...
-                    'AxesHandle', axHandle);
+                    'Marker', 'none', 'AxesHandle', axHandle);
 
     % Hold off
     hold_off(wasHold);
@@ -344,24 +357,38 @@ else
 end
 
 % Plot error bars if requested
+% TODO: Plot mean circle and error bar without overlap
 if plotErrorBars
     % Compute the mean, lower and upper confidence interval bounds
-    [means, lower95s, upper95s] = ...
+    [lower95s, upper95s] = ...
         argfun(@(x) compute_stats(dataValues, x, 'IgnoreNan', true), ...
-                'mean', 'lower95', 'upper95');
+                'lower95', 'upper95');
 
     % Hold on
     wasHold = hold_on;
 
-    % TODO: Plot mean circle and error bar without overlap and fill the circle with transparency
-    % Plot the means
-    plot(axHandle, pValues, means, 'o', 'Color', meanColorMap, ...
-        'LineStyle', meanLineStyle, 'LineWidth', meanLineWidth, ...
-        'MarkerSize', meanMarkerSize, 'MarkerFaceColor', meanMarkerFaceColor);
-
     % Plot error bars
     plot_error_bar(pValues, lower95s, upper95s, 'Color', meanColorMap, ...
                     'LineWidth', meanLineWidth, 'AxesHandle', axHandle);
+
+    % Hold off
+    hold_off(wasHold);
+end
+
+% Plot mean circles if requested
+if plotMeanValues
+    % Compute the mean, lower and upper confidence interval bounds
+    means = compute_stats(dataValues, 'mean', 'IgnoreNan', true);
+
+    % Hold on
+    wasHold = hold_on;
+
+    % Plot the means with circles with transparency
+    %   Note: Use scatter to set MarkerFaceAlpha
+    scatter(axHandle, pValues, means, meanMarkerSize^2, meanColorMap, ...
+            'Marker', 'o', 'LineWidth', meanLineWidth, ...
+            'MarkerFaceColor', meanMarkerFaceColor, ...
+            'MarkerFaceAlpha', meanMarkerFaceAlpha);
 
     % Hold off
     hold_off(wasHold);

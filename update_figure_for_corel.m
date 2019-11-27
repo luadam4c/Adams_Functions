@@ -39,6 +39,7 @@ function figHandle = update_figure_for_corel (varargin)
 %       cd/set_figure_properties.m
 %
 % Used by:
+%       cd/m3ha_plot_figure02.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_traces_spike2_mat.m
 %       /home/Matlab/plethR01/plethR01_analyze.m

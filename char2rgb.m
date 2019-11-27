@@ -19,12 +19,15 @@ function rgbValue = char2rgb (colorStr, varargin)
 %                   default == TODO
 %
 % Requires:
+%       cd/addpath_custom.m
 %       cd/create_error_for_nargin.m
 %       cd/find_in_strings.m
+%       cd/locate_functionsdir.m
 %       ~/Downloaded_Functions/rgb.m
 %
 % Used by:
 %       cd/decide_on_colormap.m
+%       cd/plot_table.m
 
 % File History:
 % 2019-08-22 Adapted from https://stackoverflow.com/questions/4922383/how-can-i-convert-a-color-name-to-a-3-element-rgb-vector
@@ -37,6 +40,18 @@ matlabColorStrings = {'k', 'r', 'g', 'y', 'b', 'm', 'c', 'w'};
 % param1Default = [];             % default TODO: Description of param1
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% If not compiled, add directories to search path for required functions
+%   Note: If addpath is used, adding `if ~isdeployed` is important to 
+%          avoid errors if the function is used as part of a compiled program
+%   Note: addpath takes a long time, so use addpath_custom for checking
+if ~isdeployed
+    % Locate the functions directory
+    functionsDirectory = locate_functionsdir;
+
+    % Add path for rgb.m
+    addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions'));
+end
 
 %% Deal with arguments
 % Check number of required arguments
