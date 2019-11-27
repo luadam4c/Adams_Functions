@@ -16,6 +16,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       compute_stats(data, 'zscore')
 %       compute_stats(data, 'mean', 2)
 %       compute_stats(data, 'max', 2)
+%       compute_stats(data, 'mean', 'IgnoreNan', true)
 %
 % Outputs:
 %       stats       - the computed statistic for each vector
@@ -98,11 +99,13 @@ function stats = compute_stats (vecs, statName, varargin)
 % 2019-09-19 Added 'max' and 'min'
 % 2019-11-14 Fixed usage of std and nanstd
 % 2019-11-26 Updated confidence intervals to use t-distribution
+% 2019-11-27 Added 'err'
 % TODO: Combine with compute_weighted_average.m
 % 
 
 %% Hard-coded parameters
-validStatNames = {'average', 'mean', 'std', 'stderr', 'lower95', 'upper95', ...
+validStatNames = {'average', 'mean', 'std', 'stderr', 'err', ...
+                    'lower95', 'upper95', ...
                     'cov', 'zscore', 'max', 'min', 'range', 'range2mean'};
 
 %% Default values for optional arguments
@@ -199,8 +202,8 @@ switch statName
             func = @(x) nanstderr(x, dim);
         else
             func = @(x) stderr(x, dim);
-        end            
-    case {'lower95', 'upper95'}
+        end
+    case {'err', 'lower95', 'upper95'}
         % Compute the number of samples along the dimension
         if ignoreNan
             nFunc = @(x) sum(ones(size(x)), dim) - sum(isnan(x), dim);
@@ -213,18 +216,24 @@ switch statName
         tFunc = @(x) arrayfun(@(y) tinv(0.975, y), nFunc(x));
 
         switch statName
+        case 'err'
+            if ignoreNan
+                func = @(x) tFunc(x) .* nanstderr(x, dim);
+            else
+                func = @(x) tFunc(x) .* stderr(x, dim);
+            end
         case 'lower95'
             if ignoreNan
                 func = @(x) nanmean(x, dim) - tFunc(x) .* nanstderr(x, dim);
             else
                 func = @(x) mean(x, dim) - tFunc(x) .* stderr(x, dim);
-            end            
+            end
         case 'upper95'
             if ignoreNan
                 func = @(x) nanmean(x, dim) + tFunc(x) .* nanstderr(x, dim);
             else
                 func = @(x) mean(x, dim) + tFunc(x) .* stderr(x, dim);
-            end     
+            end
         end
     case 'cov'
         if ignoreNan

@@ -1,9 +1,9 @@
 function [cellIdsSelected, cellInfo, swpInfo] = m3ha_select_cells (varargin)
-%% Selects cells with sweeps to fit for all pharm-gIncr pairs
+%% Selects cells with sweeps to use for all pharm-gIncr pairs
 % Usage: [cellIdsSelected, cellInfo, swpInfo] = m3ha_select_cells (varargin)
 % Explanation: 
 %   Finds all cell IDs and cell names (from 'CellInfo') for the rows 
-%       restricted by 'RowsToFit' in 'SwpInfo'
+%       restricted by 'ToUse' in 'SwpInfo'
 %
 % Outputs:
 %       TODO
@@ -23,13 +23,14 @@ function [cellIdsSelected, cellInfo, swpInfo] = m3ha_select_cells (varargin)
 %                       cellidrow   - cell ID
 %                       prow        - pharmacological condition
 %                       grow        - conductance amplitude scaling
+%                       toUse       - whether the sweep is to be used (optional)
 %                   default == m3ha_load_sweep_info
 %                   - 'CellInfo': cell name info
 %                   must a 2D table with row indices being cell IDs 
 %                       and with fields:
 %                       cellName - cell names
 %                   default == detected from swpInfo
-%                   - 'RowsToFit' - row indices or row names in swpInfo 
+%                   - 'RowsToUse' - row indices or row names in swpInfo 
 %                                       of sweeps to fit
 %                   must be a positive integer vector, a string array 
 %                       or a cell array of character vectors
@@ -60,18 +61,19 @@ function [cellIdsSelected, cellInfo, swpInfo] = m3ha_select_cells (varargin)
 % 2018-11-15 Improved documentation
 % 2018-11-15 CellIds is now a numeric array
 % 2018-11-19 Moved code out to m3ha_organize_sweep_indices.m
-% 2018-12-05 Now allows rowsToFit to be a cellstr
+% 2018-12-05 Now allows rowsToUse to be a cellstr
 % 2018-12-05 Made everything optional arguments
 % 2018-12-05 Now selects cells that have sweeps for all conditions
 
 %% Hard-coded parameters
 cellNameStr = 'cellName';
+toUseStr = 'toUse';
 
 %% Default values for optional arguments
 dataModeDefault = 2;
 swpInfoDefault = table.empty;
 cellInfoDefault = table.empty;
-rowsToFitDefault = [];
+rowsToUseDefault = [];
 casesDirDefault = '~/m3ha/data_dclamp/take4/special_cases';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -88,7 +90,7 @@ addParameter(iP, 'SwpInfo', swpInfoDefault, ...
     @(x) validateattributes(x, {'table'}, {'2d'}));
 addParameter(iP, 'CellInfo', cellInfoDefault, ...
     @(x) validateattributes(x, {'table'}, {'2d'}));
-addParameter(iP, 'RowsToFit', rowsToFitDefault, ...
+addParameter(iP, 'RowsToUse', rowsToUseDefault, ...
     @(x) assert(ispositiveintegervector(x) || iscellstr(x) || isstring(x), ...
                 ['strs5 must be either a positive integer vector, ', ...
                     'a string array or a cell array of character arrays!']));
@@ -100,7 +102,7 @@ parse(iP, varargin{:});
 dataMode = iP.Results.DataMode;
 swpInfo = iP.Results.SwpInfo;
 cellInfo = iP.Results.CellInfo;
-rowsToFit = iP.Results.RowsToFit;
+rowsToUse = iP.Results.RowsToUse;
 casesDir = iP.Results.CasesDir;
 
 %% Preparation
@@ -117,22 +119,22 @@ if isempty(cellInfo)
 end
 
 %% Select cell IDs to fit
-% Update swpInfo so that there is a toFit column
-%   using m3ha_select_sweeps_to_fit if rowsToFit not provided
-if ~isempty(rowsToFit)
-    if ismember('toFit', swpInfo.Properties.VariableNames)
+% Update swpInfo so that there is a toUse column
+%   using m3ha_select_sweeps_to_fit if rowsToUse not provided
+if ~isempty(rowsToUse)
+    if ismember(toUseStr, swpInfo.Properties.VariableNames)
         % Print message
-        fprintf('Warning: toFit column already exists in swpInfo.\n');
-        fprintf('RowsToFit will be ignored!\n');
+        fprintf('Warning: toUse column already exists in swpInfo.\n');
+        fprintf('RowsToUse will be ignored!\n');
     else
         % Initialize all rows to not be fitted
-        toFit = false(nRows, 1);
+        toUse = false(nRows, 1);
 
         % Add this to swpInfo
-        swpInfo = addvars(swpInfo, toFit);
+        swpInfo = addvars(swpInfo, toUse);
 
-        % If rowsToFit is not empty, turn toFit on for those to fit
-        swpInfo{rowsToFit, 'toFit'} = true;
+        % If rowsToUse is not empty, turn toUse on for those to fit
+        swpInfo{rowsToUse, toUseStr} = true;
     end
 else
     % Select the sweep indices that will be fitted
@@ -176,7 +178,7 @@ print_cellstr(cellNamesSelected, 'Delimiter', '\n', ...
 %{
 OLD CODE:
 
-for k = 1:nCellsToFit
+for k = 1:nCellsToUse
     fprintf('%s\n', cellNamesSelected{k});
 end
 fprintf('\n');
@@ -188,7 +190,7 @@ if isempty(swpIndThisCell{iGIncr, iPCond})
 end
 
 % Count the total number of cells to fit
-nCellsToFit = ctSelected;
+nCellsToUse = ctSelected;
 
 % Initialize a variable to count selected cells
 ctSelected = 0;
@@ -207,7 +209,7 @@ for iCell = 1:nCells
 
             % Find indices of traces for this pharm-g incr pair
             swpIndThisCell{iGIncr, iPCond} = ...
-                intersect(indGincrPcond, rowsToFit, 'sorted');
+                intersect(indGincrPcond, rowsToUse, 'sorted');
         end
     end
 
@@ -238,9 +240,9 @@ nSelected = ctSelected;
 
 @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'vector'}));
 
-if ~isempty(rowsToFit)
+if ~isempty(rowsToUse)
     % Extract just the cell IDs for the sweeps to fit
-    cellIdAllRows = swpInfoToFit{rowsToFit, cellidrowStr};
+    cellIdAllRows = swpInfoToUse{rowsToUse, cellidrowStr};
 
     % Get the sorted unique cell IDs
     cellIdsSelected = sort(unique(cellIdAllRows));
@@ -250,26 +252,26 @@ else
 end
 
 % Count the number of gIncr conditions to fit
-nGrowToFit = length(growToFit);
+nGrowToUse = length(growToUse);
 
 % Count the number of pharm conditions to fit
-nProwToFit = length(prowToFit);
+nProwToUse = length(prowToUse);
 
 % Possible conductance amplitude scaling percentages for fitting
-growToFit = [100; 200; 400]; 
+growToUse = [100; 200; 400]; 
 
 % Possible pharm conditions for fitting
 %   1 - Control
 %   2 - GAT1 Block
 %   3 - GAT3 Block
 %   4 - Dual Block
-prowToFit = [1; 2; 3; 4];
+prowToUse = [1; 2; 3; 4];
 
 % Restrict table to rows to fit
-if ~isempty(rowsToFit)
-    swpInfoToFit = swpInfo{rowsToFit, :};
+if ~isempty(rowsToUse)
+    swpInfoToUse = swpInfo{rowsToUse, :};
 else
-    swpInfoToFit = swpInfo;
+    swpInfoToUse = swpInfo;
 end
 
 % Count the number of cells
@@ -282,11 +284,11 @@ nCells = height(cellInfo);
 nRows = height(swpInfo);
 
 % Generate a logical vector
-toFit = false(nRows, 1);
-toFit(rowsToFit) = true;
+toUse = false(nRows, 1);
+toUse(rowsToUse) = true;
 
 % Add the logical vector as a column to the table
-swpInfo = addvars(swpInfo, toFit);
+swpInfo = addvars(swpInfo, toUse);
 
 %}
 

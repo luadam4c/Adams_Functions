@@ -318,8 +318,7 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_compute_hinf_IA.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_hinf_IA.m): Compute the steady state value of the inactivation gating variable of IA
 - [**m3ha_compute_hinf_INaP.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_hinf_INaP.m): Compute the steady state value of the inactivation gating variable of INaP
 - [**m3ha_compute_hinf_IT.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_hinf_IT.m): Compute the steady state value of the inactivation gating variable of IT
-- [**m3ha_compute_ltsburst_statistics.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_ltsburst_statistics.m): Computes LTS and burst statistics for some indices (indOfInterest) in ltspeaktime, spikesperpeak, bursttime & spikesperburst
-- [**m3ha_compute_ltsburst_statistics_new.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_ltsburst_statistics_new.m): Computes LTS and burst statistics for some indices (indOfInterest) in ltsPeakTimes, spikesPerPeak, burstTimes & spikesPerBurst
+- [**m3ha_compute_ltsburst_statistics.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_ltsburst_statistics.m): Computes LTS and burst statistics for some indices (indOfInterest) in ltsDelays, spikesPerPeak, burstDelays & spikesPerBurst
 - [**m3ha_compute_m1inf_IA.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_m1inf_IA.m): Compute the steady state value of the activation gating variable of IA
 - [**m3ha_compute_m2inf_IA.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_m2inf_IA.m): Compute the steady state value of the activation gating variable of IA
 - [**m3ha_compute_minf_Ih.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compute_minf_Ih.m): Compute the steady state value of the activation gating variable of Ih
@@ -338,7 +337,7 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_determine_row_conditions.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_determine_row_conditions.m): Determine the conditions for each row
 - [**m3ha_estimate_passive_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_estimate_passive_params.m): Estimates passive parameters for each cell from dclamp data recorded by Mark & Christine
 - [**m3ha_find_files_to_take_out.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_files_to_take_out.m): Returns all the file names of files to take out from .png files in 'TAKE_OUT_*' folders of a special cases directory
-- [**m3ha_find_ind_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ind_to_fit.m): Find indices of fnrow in dclampdatalog_take4.mat that will be used for fitting
+- [**m3ha_find_ind_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ind_to_fit.m): Finds indices of fnrow in dclampdatalog_take4.mat that will be used for fitting (legacy, please use m3ha_select_sweeps_to_fit.m instead)
 - [**m3ha_find_ipsc_peak.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ipsc_peak.m): Finds time of current peak from a an inhibitory current trace (must be negative current) (legacy, please use parse_ipsc.m instead)
 - [**m3ha_find_ipsc_start_from_conductance.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ipsc_start_from_conductance.m): Finds time of current application from a series of conductance vectors (legacy, please use parse_ipsc.m instead)
 - [**m3ha_find_ipsc_start_from_current.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ipsc_start_from_current.m): Finds time of current application from a series of current vectors (legacy, please use parse_ipsc.m instead)
@@ -385,9 +384,9 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_plot_simulated_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_simulated_traces.m): Plots simulated traces from NEURON output files
 - [**m3ha_plot_traces_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_traces_mat.m): Plot traces from mat file
 - [**m3ha_resave_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_resave_sweeps.m): Extracts .abf data and resave as .mat file in the m3ha format
-- [**m3ha_select_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_cells.m): Selects cells with sweeps to fit for all pharm-gIncr pairs
+- [**m3ha_select_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_cells.m): Selects cells with sweeps to use for all pharm-gIncr pairs
 - [**m3ha_select_raw_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_raw_traces.m): Select raw traces to import
-- [**m3ha_select_sweeps_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_sweeps_to_fit.m): Find file names and row indices in swpInfo that will be used for fitting
+- [**m3ha_select_sweeps_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_sweeps_to_fit.m): Selects file bases and row indices in swpInfo that will be used
 - [**m3ha_specs_for_fitmode.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_specs_for_fitmode.m): Specifications depending on fitMode for the GAT blockade project
 - [**m3ha_test_phase_plane_analysis.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_test_phase_plane_analysis.m): m3ha_test_phase_plane_analysis.m
 - [**m3ha_test_sweep.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_test_sweep.m): m3ha_test_sweep.m

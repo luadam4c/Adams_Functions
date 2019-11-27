@@ -1,10 +1,10 @@
 function [fileNames, rowConditions, figurePositions] = ...
                 m3ha_select_raw_traces (rowMode, columnMode, ...
-                    attemptNumber, cellIdToFit, swpInfo, cellInfo)
+                    attemptNumber, cellIdToUse, swpInfo, cellInfo)
 %% Select raw traces to import
 % Usage: [fileNames, rowConditions, figurePositions] = ...
 %               m3ha_select_raw_traces (rowMode, columnMode, ...
-%                   attemptNumber, cellIdToFit, swpInfo, cellInfo)
+%                   attemptNumber, cellIdToUse, swpInfo, cellInfo)
 %
 % Requires:
 %       cd/m3ha_determine_row_conditions.m
@@ -21,15 +21,15 @@ function [fileNames, rowConditions, figurePositions] = ...
 % 2017-08-21 Added maxNoise as an argument
 % 2018-11-15 Moved to Adams_Functions
 % 2018-11-15 Improved documentation and code clarity
-% 2018-12-06 Now uses cellIdThis, fileNamesToFit, swpInfo, cellInfo
+% 2018-12-06 Now uses cellIdThis, fileNamesToUse, swpInfo, cellInfo
 
 %% Hard-coded parameters
-prowStr = 'prow';
-growStr = 'grow';
-burstTimeStr = 'bursttime';
-ltsPeakTimeStr = 'ltspeaktime';
+pharmStr = 'prow';
+gIncrStr = 'grow';
+burstDelayStr = 'bursttime';
+ltsDelayStr = 'ltspeaktime';
 maxNoiseStr = 'maxnoise';
-toFitStr = 'toFit';
+toUseStr = 'toUse';
 cellNameStr = 'cellName';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -37,27 +37,27 @@ cellNameStr = 'cellName';
 %% Preparation
 % Extract from swpInfo
 fnrow = swpInfo.Properties.RowNames;
-grow = swpInfo{:, growStr};
-prow = swpInfo{:, prowStr};
-burstTime = swpInfo{:, burstTimeStr};
-ltsPeakTime = swpInfo{:, ltsPeakTimeStr};
+grow = swpInfo{:, gIncrStr};
+prow = swpInfo{:, pharmStr};
+burstTime = swpInfo{:, burstDelayStr};
+ltsPeakTime = swpInfo{:, ltsDelayStr};
 maxNoise = swpInfo{:, maxNoiseStr};
-toFit = swpInfo{:, toFitStr};
+toUse = swpInfo{:, toUseStr};
 
 % Get all unique conductance amplitude scaling percentages to fit
-gCondToFit = unique(swpInfo{toFit, growStr});
+gCondToUse = unique(swpInfo{toUse, gIncrStr});
 
 % Get all unique pharmacological conditions to fit
-pCondToFit = unique(swpInfo{toFit, prowStr});
+pCondToUse = unique(swpInfo{toUse, pharmStr});
 
 % Count the number of distinct conductance amplitude scaling percentages
-nGCondToFit = length(gCondToFit);
+nGCondToUse = length(gCondToUse);
 
 % Count the number of distinct pharmacological conditions 
-nPCondToFit = length(pCondToFit);
+nPCondToUse = length(pCondToUse);
 
 % Get the current cell name(s) from cellInfo
-cellName = cellInfo{cellIdToFit, cellNameStr};
+cellName = cellInfo{cellIdToUse, cellNameStr};
 if numel(cellName) == 1
     cellName = cellName{1};
 end
@@ -66,7 +66,7 @@ end
 % Determine what each row would be
 rowConditions = ...
     m3ha_determine_row_conditions(rowMode, columnMode, attemptNumber, ...
-                                    gCondToFit, pCondToFit);
+                                    gCondToUse, pCondToUse);
 
 % Count the number of rows
 nRows = size(rowConditions, 1);
@@ -84,11 +84,11 @@ fromCell = contains(fnrow, cellName);
 
 % Determine whether each sweep is of each pharm condition
 %   Note: isPCond is a cell array of logical vectors
-isPCond = arrayfun(@(x) prow == x, pCondToFit, 'UniformOutput', false);
+isPCond = arrayfun(@(x) prow == x, pCondToUse, 'UniformOutput', false);
 
 % Determine whether each sweep is of each gIncr condition
 %   Note: isGCond is a cell array of logical vectors
-isGCond = arrayfun(@(x) grow == x, gCondToFit, 'UniformOutput', false);
+isGCond = arrayfun(@(x) grow == x, gCondToUse, 'UniformOutput', false);
 
 % Determine whether each sweep satisfies the conditions for each row
 %   Note: isRowCond is a cell array of logical vectors
@@ -122,11 +122,11 @@ nColumns = 0;
 
 % Initialize various schemes
 % TODO
-swpIndTemp1 = cell(1, nPCondToFit);
-swpIndTemp2 = cell(1, nPCondToFit);
-swpIndTemp3 = cell(1, nPCondToFit);
-swpIndTemp4 = cell(1, nPCondToFit);
-swpIndTemp5 = cell(nGCondToFit, nPCondToFit);
+swpIndTemp1 = cell(1, nPCondToUse);
+swpIndTemp2 = cell(1, nPCondToUse);
+swpIndTemp3 = cell(1, nPCondToUse);
+swpIndTemp4 = cell(1, nPCondToUse);
+swpIndTemp5 = cell(nGCondToUse, nPCondToUse);
 
 % Decide on the sweeps to use for each condition
 switch columnMode
@@ -148,7 +148,7 @@ case 1
 
         % Find the sweep indices for each pharmacological condition 
         %   @ 200% g_incr from this cell to be fitted
-        swpIndRow = cellfun(@(x) find(x & isGCond{2} & fromCell & toFit), ...
+        swpIndRow = cellfun(@(x) find(x & isGCond{2} & fromCell & toUse), ...
                                 isPCond, 'UniformOutput', false);
 
         % Check if there is enough data or not
@@ -170,7 +170,7 @@ case 1
 
         % Find the sweep indices for each row condition
         %   from this cell to be fitted
-        swpIndRow = cellfun(@(x) find(x & fromCell & toFit), ...
+        swpIndRow = cellfun(@(x) find(x & fromCell & toUse), ...
                             isRowCond, 'UniformOutput', false);
 
         % Check if there is enough data or not
@@ -195,10 +195,10 @@ case 1
                 swpIndThisRow = [];
 
                 % Get three traces
-                for iG = 1:nGCondToFit
+                for iG = 1:nGCondToUse
                     % Determine whether each sweep is this condition
                     isThisCond = isGCond{iG} & isPCond{iPThis} & ...
-                                    fromCell & toFit;
+                                    fromCell & toUse;
 
                     % Select the "most representative trace"
                     swpIdxSelected = ...
@@ -216,7 +216,7 @@ case 1
                 swpIndRow{iRow} = swpIndThisRow;
             end
         elseif size(rowConditions, 2) == 2
-            swpIndRow = arrayfun(@(x) select_trace(x & fromCell & toFit, ...
+            swpIndRow = arrayfun(@(x) select_trace(x & fromCell & toUse, ...
                                             hasLts, hasBurst, maxNoise), ...
                                 isRowCond, 'UniformOutput', false);
         end
@@ -244,7 +244,7 @@ case 2
         ct = 0;                 % counts cells with an lts for all pharm conditions
         for iC = 1:length(cellIdAll)
             toUse = true;
-            for iP = 1:nPCondToFit       % for each pharmacological condition @ 200% g_incr
+            for iP = 1:nPCondToUse       % for each pharmacological condition @ 200% g_incr
                 swpIndTemp1{iP} = ...
                     intersect(swpIdxSCPGV(:, iC, iP, 4, :), swpIndHasLts, 'sorted');
                 if isempty(swpIndTemp1{iP})
@@ -254,7 +254,7 @@ case 2
             end
             if toUse
                 ct = ct + 1;
-                for iP = 1:nPCondToFit   % for each pharmacological condition @ 200% g_incr
+                for iP = 1:nPCondToUse   % for each pharmacological condition @ 200% g_incr
                     swpIndRow{iP}(ct) = swpIndTemp1{iP}(1);
                 end
             end
@@ -267,7 +267,7 @@ case 2
         ct = 0;                % counts cells with an lts for all pharm conditions
         for iC = 1:length(cellIdAll)
             toUse = true;
-            for iP = 1:nPCondToFit       % for each pharmacological condition @ 200% g_incr
+            for iP = 1:nPCondToUse       % for each pharmacological condition @ 200% g_incr
                 swpIndTemp1{iP} = ...
                     intersect(swpIdxSCPGV(:, iC, iP, 4, :), swpIndHasBursts, 'sorted');
                 if isempty(swpIndTemp1{iP})
@@ -277,7 +277,7 @@ case 2
             end
             if toUse
                 ct = ct + 1;
-                for iP = 1:nPCondToFit   % for each pharmacological condition @ 200% g_incr
+                for iP = 1:nPCondToUse   % for each pharmacological condition @ 200% g_incr
                     swpIndRow{iP}(ct) = swpIndTemp1{iP}(1);
                 end
             end
@@ -293,7 +293,7 @@ case 2
         for iC = 1:length(cellIdAll)
             toUse = true;
             ngoodb = 0;
-            for iP = 1:nPCondToFit       % for each pharmacological condition @ 200% g_incr
+            for iP = 1:nPCondToUse       % for each pharmacological condition @ 200% g_incr
                 swpIndTemp2{iP} = ...
                     intersect(swpIdxSCPGV(:, iC, iP, 4, :), ...
                                 swpIndHasBursts, 'sorted');
@@ -314,7 +314,7 @@ case 2
             end
             if toUse
                 ct = ct + 1;
-                for iP = 1:nPCondToFit   % for each pharmacological condition @ 200% g_incr
+                for iP = 1:nPCondToUse   % for each pharmacological condition @ 200% g_incr
                     if ~isempty(swpIndTemp2{iP})
                         swpIndRow{iP}(ct) = swpIndTemp2{iP}(1);
                     elseif ~isempty(swpIndTemp3{iP})
@@ -333,11 +333,11 @@ case 2
         ct = 0;                % counts cells
         for iC = 1:length(cellIdAll)
             toUse = true;
-            for iP = 1:nPCondToFit       % for each pharmacological condition
-                for iG = 1:nGCondToFit    % for each g_incr
+            for iP = 1:nPCondToUse       % for each pharmacological condition
+                for iG = 1:nGCondToUse    % for each g_incr
                     swpIndTemp5{iG, iP} = ...
                         intersect(swpIdxSCPGV(:, iC, iP, iG + 2, :), ...
-                                    swpIndToFit, 'sorted');
+                                    swpIndToUse, 'sorted');
                     if isempty(swpIndTemp5{iG, iP})
                         toUse = false;
                         break;
@@ -347,8 +347,8 @@ case 2
             if toUse 
                 ct = ct + 1;
                 iRow = 0;
-                for iP = 1:nPCondToFit   % for each pharmacological condition
-                    for iG = 1:nGCondToFit    % for each g incr
+                for iP = 1:nPCondToUse   % for each pharmacological condition
+                    for iG = 1:nGCondToUse    % for each g incr
                         iRow = iRow + 1;
                         swpIndRow{iRow}(ct) = swpIndTemp5{iG, iP}(1);
                     end
@@ -357,11 +357,11 @@ case 2
         end
         nColumns = ct;                % In our data set, nColumns == 36
     case 5
-        % Attempt #5: Choose the "most representative" sweep from each cell in iCellToFit
+        % Attempt #5: Choose the "most representative" sweep from each cell in iCellToUse
         fprintf(['Attempt #5: Choose the "most representative" sweep for each cell ', ...
-                    'in cells #%d to #%d ... \n'], iCellToFit(1), iCellToFit(end));
+                    'in cells #%d to #%d ... \n'], iCellToUse(1), iCellToUse(end));
         % Get number of cells to fit
-        ncellstofit = length(iCellToFit);
+        ncellstofit = length(iCellToUse);
 
         % Take a trace from each cell for each condition
         %   with priority given to a trace with bursts,
@@ -375,8 +375,8 @@ case 2
                 swpIndRow{iRow} = [];     
 
                 % Build swpIndRow
-                for iG = 1:nGCondToFit   % for each g incr
-                    for iFit = iCellToFit             % for each cell to fit
+                for iG = 1:nGCondToUse   % for each g incr
+                    for iFit = iCellToUse             % for each cell to fit
 
                         indThisCond = swpIndByCondition{iFit}{iG, iPEachRow(iRow)};
 
@@ -403,7 +403,7 @@ case 2
                 swpIndRow{iRow} = [];     
 
                 % Build swpIndRow
-                for iFit = iCellToFit             % for each cell to fit
+                for iFit = iCellToUse             % for each cell to fit
                     % TODO
                     indThisCond = swpIndByCondition{iFit}{iGEachRow(iRow), ...
                                                             iPEachRow(iRow)};
@@ -569,7 +569,7 @@ end
 
 for iRow = 1:nRows
     swpIndRow{iRow} = [];
-    for iG = 1:nGCondToFit
+    for iG = 1:nGCondToUse
         swpIndRow{iRow} = [swpIndRow{iRow}; ...
                     swpIndGincrPcond{iG, iPEachRow(iRow)}];
     end
@@ -606,26 +606,26 @@ end
 swpIndE091710 = find(~cellfun(@isempty, strfind(fnrow, 'E091710')));
 
 % Get the sweep indices for each g incr-pharm condition
-swpIndGincrPcond = swpIndByCondition{iCellToFit};
+swpIndGincrPcond = swpIndByCondition{iCellToUse};
 
 [fileNames, swpIndices, figurePositions] = ...
                 m3ha_select_raw_traces (columnMode, rowConditions, ...
-                    attemptNumber, iCellToFit, swpIdxSCPGV, swpIndToFit, ...
-                    swpIndByConditionAllCells, cellNamesToFit, swpInfo)
+                    attemptNumber, iCellToUse, swpIdxSCPGV, swpIndToUse, ...
+                    swpIndByConditionAllCells, cellNamesToUse, swpInfo)
 
 cellIdAll = 1:1:49;         % possible cell ID #s
 
 fnrow = swpInfo.fnrow;
 
-cellName = cellNamesToFit{iCellToFit};
+cellName = cellNamesToUse{iCellToUse};
 
 % Get the sweep indices for each g incr-pharm condition
-swpIndGincrPcond = swpIndByConditionAllCells{iCellToFit};
+swpIndGincrPcond = swpIndByConditionAllCells{iCellToUse};
 
 swpIndG200P{iP} = ...
     intersect(swpIdxSCPGV(:, :, iP, 4, :), swpIndE091710, 'sorted');
 
-for iP = 1:nPCondToFit        % for each pharmacological condition
+for iP = 1:nPCondToUse        % for each pharmacological condition
     swpIndPCond{iP} = ...
         intersect(swpIdxSCPGV(:, :, iP, :, :), swpIndE091710, 'sorted');
     if isempty(swpIndPCond{iP})
@@ -645,8 +645,8 @@ end
 % Find all sweeps for the cell E091710
 swpIndE091710 = find(isE091710);
 
-swpIndG200P = cell(1, nPCondToFit);
-swpIndPCond = cell(1, nPCondToFit);
+swpIndG200P = cell(1, nPCondToUse);
+swpIndPCond = cell(1, nPCondToUse);
 
 if ~isempty(swpIndG200P{1})
     swpIndices(ct) = swpIndG200P{iRow}(iCol);
@@ -659,8 +659,8 @@ end
 swpIndRow = cell(1, nRows);
 
 % The following must be consistent with dclampDataExtractor.m
-gCondToFit = [100; 200; 400]; % possible conductance amplitude scaling percentages
-pCondToFit = [1; 2; 3; 4];    % possible pharm conditions 
+gCondToUse = [100; 200; 400]; % possible conductance amplitude scaling percentages
+pCondToUse = [1; 2; 3; 4];    % possible pharm conditions 
                             %   1 - Control
                             %   2 - GAT1 Block
                             %   3 - GAT3 Block
@@ -692,11 +692,11 @@ indThisCond = swpIndGincrPcond{iGEachRow(iRow), iPEachRow(iRow)};
 
 if strcmpi(rowType, 'pharm')
     % Each row is a pharmacological condition
-    swpIndRow = arrayfun(@(x) find(isPCond{x} & fromCell & toFit), ...
+    swpIndRow = arrayfun(@(x) find(isPCond{x} & fromCell & toUse), ...
                         iPEachRow, 'UniformOutput', false);
 elseif strcmpi(rowType, 'pharm-gincr') 
     swpIndRow = arrayfun(@(x, y) find(isGCond{x} & isPCond{y} & ...
-                                        fromCell & toFit), ...
+                                        fromCell & toUse), ...
                         iGEachRow, iPEachRow, 'UniformOutput', false);
 end
 
@@ -716,7 +716,7 @@ if strcmpi(rowType, 'pharm')
     % Take only the first trace from each condition
     for iRow = 1:nRows
         swpIndRow{iRow} = [];
-        for iG = 1:nGCondToFit
+        for iG = 1:nGCondToUse
             % 
             indThisCond = swpIndGincrPcond{iG, iPEachRow(iRow)};
 
@@ -744,7 +744,7 @@ elseif strcmpi(rowType, 'pharm-gincr')
 
         % Find the indices for this condition
         indThisCond = find(isGCond{iGThis} & isPCond{iPThis} & ...
-                            fromCell & toFit);
+                            fromCell & toUse);
 
         % Select "most representative trace"
         swpIdxSelected = select_trace(indThisCond, swpIndHasLts, ...
@@ -769,7 +769,7 @@ for iRow = 1:nRows
     iPThis = iPEachRow(iRow);
 
     % Find the indices for this condition
-    indThisCond = isGCond{iGThis} & isPCond{iPThis} & fromCell & toFit;
+    indThisCond = isGCond{iGThis} & isPCond{iPThis} & fromCell & toUse;
 
     % Select "most representative trace"
     swpIdxSelected = select_trace(indThisCond, swpIndHasLts, ...

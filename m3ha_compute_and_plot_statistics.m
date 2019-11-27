@@ -87,7 +87,7 @@ vvLabel = {'-60 mV', '-65 mV', '-70 mV'};
 gg = [25; 50; 100; 200; 400; 800];  
                             % All possible conductance amplitude scaling %
 ggLabelOrig = {'25%', '50%', '100%', '200%', '400%', '800%'};
-ggLabelToFit = {'100%', '200%', '400%'};
+ggLabelToUse = {'100%', '200%', '400%'};
 pp = [1; 2; 3; 4];          % Possible pharm conditions (1 - Control; 2 - GAT1 Block; 3 - GAT3 Block; 4 - Dual Block)
 ppLabel = {'Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block'};
 ppLabel2 = {'Con', 'GAT1', 'GAT3', 'Dual'};
@@ -174,7 +174,7 @@ suffix = m3ha_specs_for_fitmode(dataMode);
 if dataMode == 0
     gglabel = ggLabelOrig;
 elseif dataMode == 1 || dataMode == 2
-    gglabel = ggLabelToFit;
+    gglabel = ggLabelToUse;
 end
 
 % Create folder for output figures
@@ -190,7 +190,7 @@ if isempty(swpInfo)
 end
 
 % Select the sweeps to fit based on data mode
-[swpInfo, fileBasesToFit] = m3ha_select_sweeps_to_fit('DataMode', dataMode);
+[swpInfo, fileBasesToUse] = m3ha_select_sweeps_to_fit('DataMode', dataMode);
 
 %% TODO: Organize below:
 

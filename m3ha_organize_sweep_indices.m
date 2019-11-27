@@ -15,12 +15,13 @@ function [swpIndByCondAllCells, conditions] = m3ha_organize_sweep_indices (varar
 %                       cellidrow   - cell ID
 %                       prow        - pharmacological condition
 %                       grow        - conductance amplitude scaling
+%                       toUse       - whether the sweep is to be used (optional)
 %                   default == m3ha_load_sweep_info
-%                   - 'ToFit' - whether to fit each sweep
+%                   - 'ToUse' - whether to fit each sweep
 %                   must be a binary vector
 %                   default == true(nRows, 1)
-%                   - 'RowsToFit' - row indices or row names in swpInfo 
-%                                       of sweeps to fit
+%                   - 'RowsToUse' - row indices or row names in swpInfo 
+%                                       of sweeps to use
 %                   must be a positive integer vector, a string array 
 %                       or a cell array of character vectors
 %                   default == []
@@ -36,19 +37,19 @@ function [swpIndByCondAllCells, conditions] = m3ha_organize_sweep_indices (varar
 % File History:
 % 2018-11-19 Moved from m3ha_select_cells.m
 % 2018-12-05 Now returns indices grouped for all possible cells
-% 2018-12-05 Now uses SwpInfo and RowsToFit
-% 2018-12-06 Now uses a toFit column in SwpInfo
+% 2018-12-05 Now uses SwpInfo and RowsToUse
+% 2018-12-06 Now uses a toUse column in SwpInfo
 
 %% Hard-coded parameters
 cellidrowStr = 'cellidrow';
 prowStr = 'prow';
 growStr = 'grow';
-toFitStr = 'toFit';
+toUseStr = 'toUse';
 
 %% Default values for optional arguments
 swpInfoDefault = [];
-toFitDefault = [];
-rowsToFitDefault = [];
+toUseDefault = [];
+rowsToUseDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -60,18 +61,18 @@ iP.FunctionName = mfilename;
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'SwpInfo', swpInfoDefault, ...
     @(x) validateattributes(x, {'table'}, {'2d'}));
-addParameter(iP, 'ToFit', toFitDefault, ...
+addParameter(iP, 'ToUse', toUseDefault, ...
     @(x) validateattributes(x, {'numeric', 'logical'}, {'binary', 'vector'}));
-addParameter(iP, 'RowsToFit', rowsToFitDefault, ...
+addParameter(iP, 'RowsToUse', rowsToUseDefault, ...
     @(x) assert(ispositiveintegervector(x) || iscellstr(x) || isstring(x), ...
-                ['RowsToFit must be either a positive integer vector, ', ...
+                ['RowsToUse must be either a positive integer vector, ', ...
                     'a string array or a cell array of character arrays!']));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 swpInfo = iP.Results.SwpInfo;
-toFit = iP.Results.ToFit;
-rowsToFit = iP.Results.RowsToFit;
+toUse = iP.Results.ToUse;
+rowsToUse = iP.Results.RowsToUse;
 
 %% Preparation
 % Read in swpInfo if not provided
@@ -83,26 +84,26 @@ end
 nRows = height(swpInfo);
 
 % Decide whether to fit each sweep if not provided
-if isempty(toFit)
-    % Decide based on whether swpInfo contains a toFit column
-    %   then whether rowsToFit is provided
-    if ismember(toFitStr, swpInfo.Properties.VariableNames)
-        toFit = swpInfo{:, toFitStr};
-    elseif ~isempty(rowsToFit)
+if isempty(toUse)
+    % Decide based on whether swpInfo contains a toUse column
+    %   then whether rowsToUse is provided
+    if ismember(toUseStr, swpInfo.Properties.VariableNames)
+        toUse = swpInfo{:, toUseStr};
+    elseif ~isempty(rowsToUse)
         % Initialize all rows to not be fitted
-        toFit = false(nRows, 1);
+        toUse = false(nRows, 1);
 
         % Add this to swpInfo
-        swpInfo = addvars(swpInfo, toFit);
+        swpInfo = addvars(swpInfo, toUse);
 
-        % If rowsToFit is not empty, turn toFit on for those to fit
-        swpInfo{rowsToFit, toFitStr} = true;
+        % If rowsToUse is not empty, turn toUse on for those to fit
+        swpInfo{rowsToUse, toUseStr} = true;
 
         % Extract from swpInfo
-        toFit = swpInfo{:, toFitStr};
+        toUse = swpInfo{:, toUseStr};
     else
         % All rows will fitted
-        toFit = true(nRows, 1);
+        toUse = true(nRows, 1);
     end
 end
 
@@ -118,16 +119,16 @@ grow = swpInfo{:, growStr};
 prow = swpInfo{:, prowStr};
 
 % Get all unique conductance amplitude scaling percentages to fit
-gCondToFit = unique(swpInfo{toFit, growStr});
+gCondToUse = unique(swpInfo{toUse, growStr});
 
 % Get all unique pharmacological conditions to fit
-pCondToFit = unique(swpInfo{toFit, prowStr});
+pCondToUse = unique(swpInfo{toUse, prowStr});
 
 % Count the number of distinct conductance amplitude scaling percentages
-nGCondToFit = length(gCondToFit);
+nGCondToUse = length(gCondToUse);
 
 % Count the number of distinct pharmacological conditions 
-nPCondToFit = length(pCondToFit);
+nPCondToUse = length(pCondToUse);
 
 % Initialize a cell array to store sweep indices for each cell
 swpIndByCondAllCells = cell(maxCellId, 1);
@@ -137,30 +138,30 @@ swpIndByCondAllCells = cell(maxCellId, 1);
 fprintf('Organizing sweep indices for all cells ... \n');
 
 % Generate strings for the conditions
-gCondToFitStrs = insertBefore(cellstr(num2str(gCondToFit)), 1, ...
+gCondToUseStrs = insertBefore(cellstr(num2str(gCondToUse)), 1, ...
                                 'Conductance amplitude % = ');
-pCondToFitStrs = insertBefore(cellstr(num2str(pCondToFit)), 1, ...
+pCondToUseStrs = insertBefore(cellstr(num2str(pCondToUse)), 1, ...
                                 'Pharm condition = ');
 
 % Store the conditions used
-conditions = outer_product(gCondToFitStrs, pCondToFitStrs);
+conditions = outer_product(gCondToUseStrs, pCondToUseStrs);
 
 % Loop through all possible cells
 for cellIdThis = 1:maxCellId
     % Initialize a cell array to store sweep indices for each condition
-    swpIndThisCell = cell(nGCondToFit, nPCondToFit);
+    swpIndThisCell = cell(nGCondToUse, nPCondToUse);
 
     % Loop through each pharm-gIncr pair
-    for iG = 1:nGCondToFit
-        for iP = 1:nPCondToFit
+    for iG = 1:nGCondToUse
+        for iP = 1:nPCondToUse
             % Get the current pharm and gIncr conditions
-            gThis = gCondToFit(iG);
-            pThis = pCondToFit(iP);
+            gThis = gCondToUse(iG);
+            pThis = pCondToUse(iP);
 
             % Find the sweep indices that match 
             %   this cell, pharm and gIncr condition
             swpIndThisCell{iG, iP} = ...
-                find(toFit & cellIdrow == cellIdThis & ...
+                find(toUse & cellIdrow == cellIdThis & ...
                         grow == gThis & prow == pThis);
         end
     end
@@ -176,17 +177,17 @@ end
 OLD CODE:
 
 swpIndByCondAllCells = ...
-    m3ha_organize_sweep_indices (swpIdxBySCPGV, swpIndToFit, cellIdsToFit)
+    m3ha_organize_sweep_indices (swpIdxBySCPGV, swpIndToUse, cellIdsToUse)
 
 % Count the number of possible cells
-nCellsToFit = length(cellIdsToFit);
+nCellsToUse = length(cellIdsToUse);
 
 % Initialize a cell array to store sweep indices for each cell
-swpIndByCondAllCells = cell(nCellsToFit, 1);
+swpIndByCondAllCells = cell(nCellsToUse, 1);
 
-for iCellToFit = 1:nCellsToFit
+for iCellToUse = 1:nCellsToUse
     % Store sweep indices for all pharm-g incr pairs of this cell
-    swpIndByCondAllCells{iCellToFit} = swpIndThisCell; 
+    swpIndByCondAllCells{iCellToUse} = swpIndThisCell; 
 end
 
 % Count the number of cells
@@ -206,14 +207,14 @@ for iPCond = 1:nPCond       % for each pharmacological condition
 
         % Find indices of traces for this pharm-g incr pair
         swpIndThisCell{iGIncr, iPCond} = ...
-            intersect(indGincrPcond, swpIndToFit, 'sorted');
+            intersect(indGincrPcond, swpIndToUse, 'sorted');
     end
 end
 
-if iscellstr(rowsToFit) || isstring(rowsToFit)
+if iscellstr(rowsToUse) || isstring(rowsToUse)
     swpInfo.Properties.RowNames
 else
-    toFit(rowsToFit) = true;
+    toUse(rowsToUse) = true;
 end
 
 %       cd/singleneuronfitting42.m and later versions

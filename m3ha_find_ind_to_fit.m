@@ -1,6 +1,6 @@
 function indtofit = m3ha_find_ind_to_fit (fnrow, cellID, pharm, gincr, ...
                                             fitmode, infolder)
-%% Find indices of fnrow in dclampdatalog_take4.mat that will be used for fitting
+%% Finds indices of fnrow in dclampdatalog_take4.mat that will be used for fitting (legacy, please use m3ha_select_sweeps_to_fit.m instead)
 % Usage: indtofit = m3ha_find_ind_to_fit (fnrow, cellID, pharm, gincr, ...
 %                                          fitmode, infolder)
 % Arguments: 
@@ -16,7 +16,6 @@ function indtofit = m3ha_find_ind_to_fit (fnrow, cellID, pharm, gincr, ...
 %       cd/m3ha_estimate_passive_params.m
 %       cd/m3ha_plot_histograms_refine_threshold.m
 %       cd/m3ha_plot_correlations.m
-%       cd/m3ha_compute_and_plot_statistics.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting4.m 
 %           and later versions
 

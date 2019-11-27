@@ -1,8 +1,8 @@
 function rowConditions = m3ha_determine_row_conditions (rowMode, colMode, ...
-                                        attemptNumber, gCondToFit, pCondToFit)
+                                        attemptNumber, gIncrToUse, pharmToUse)
 %% Determine the conditions for each row
 % Usage: rowConditions = m3ha_determine_row_conditions (rowMode, colMode, ...
-%                                       attemptNumber, gCondToFit, pCondToFit)
+%                                       attemptNumber, gIncrToUse, pharmToUse)
 % 
 % Explanation: 
 %       TODO
@@ -31,17 +31,17 @@ function rowConditions = m3ha_determine_row_conditions (rowMode, colMode, ...
 
 %% Preparation
 % Count the number of possible conductance amplitude scaling percentages
-nGIncr = length(gCondToFit);
+nGIncr = length(gIncrToUse);
 
 % Count the number of possible pharm conditions 
-nPCond = length(pCondToFit);
+nPCond = length(pharmToUse);
 
 %% Do the job
 if rowMode == 1 || ...
     (colMode == 1 && attemptNumber <= 2) || ...
     (colMode == 2 && attemptNumber <= 3)
     % Each row is one pharm condition
-    rowConditions = pCondToFit;
+    rowConditions = pharmToUse;
 elseif rowMode == 2
     % Each row is a pharm condition paired with a g incr
     nRows = nPCond * nGIncr;
@@ -49,10 +49,10 @@ elseif rowMode == 2
     % Find each row condition
     rowConditions = zeros(nRows, 2);
     for iRow = 1:nRows
-        % Find pharm condition of each row (index in pCondToFit)
+        % Find pharm condition of each row (index in pharmToUse)
         rowConditions(iRow, 1) = floor((iRow-1) / nGIncr) + 1;    
 
-        % Find g-incr condition of each row (index in gCondToFit)
+        % Find g-incr condition of each row (index in gIncrToUse)
         rowConditions(iRow, 2) = mod(iRow - 1, nGIncr) + 1;        
     end
 else
@@ -70,8 +70,8 @@ rowMode = 1;
     nRows = nPCond;
 
 % The following must be consistent with dclampDataExtractor.m
-gCondToFit = [100; 200; 400]; % possible conductance amplitude scaling percentages
-pCondToFit = [1; 2; 3; 4];    % possible pharm conditions 
+gIncrToUse = [100; 200; 400]; % possible conductance amplitude scaling percentages
+pharmToUse = [1; 2; 3; 4];    % possible pharm conditions 
                             %   1 - Control
                             %   2 - GAT1 Block
                             %   3 - GAT3 Block
