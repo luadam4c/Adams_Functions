@@ -45,6 +45,7 @@ function nVectors = count_vectors (vectors, varargin)
 %       cd/combine_abf_data.m
 %       cd/compute_all_pulse_responses.m
 %       cd/compute_combined_trace.m
+%       cd/compute_lts_errors.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sampsizepwr.m
 %       cd/compute_sweep_errors.m

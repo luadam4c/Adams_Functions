@@ -7,10 +7,13 @@ function errorStruct = compute_sweep_errors (vSim, vReal, varargin)
 %       TODO
 % Outputs:
 %       errorStruct - a structure of all the errors computed, with fields:
-%                       swpErrors       - all sweep errors
-%                       avgSwpError     - average sweep error
+%                       normalizeError
 %                       normAvgSwpError - normalized average sweep error
 %                       initSwpError    - initial sweep error
+%                       avgSwpError     - average sweep error
+%                       swpErrors       - all sweep errors
+%                       fitWindow
+%                       sweepWeights
 %                   specified as a scalar structure
 % Arguments:    
 %       vSim        - simulated voltage traces
@@ -170,14 +173,23 @@ if normalizeError
 end
 
 %% Store in output errors structure
+if normalizeError
+    errorStruct.normalizeError = normalizeError;
+    errorStruct.normAvgSwpError = normAvgSwpError;
+    errorStruct.initSwpError = initSwpError;
+end
+errorStruct.avgSwpError = avgSwpError;
+errorStruct.swpErrors = swpErrors;
 errorStruct.fitWindow = fitWindow;
 errorStruct.sweepWeights = sweepWeights;
-errorStruct.swpErrors = swpErrors;
-errorStruct.avgSwpError = avgSwpError;
-if normalizeError
-    errorStruct.initSwpError = initSwpError;
-    errorStruct.normAvgSwpError = normAvgSwpError;
-end
+
+
+
+
+
+
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

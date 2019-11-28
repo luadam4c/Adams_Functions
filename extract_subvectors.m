@@ -101,6 +101,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/unique_custom.m
 %
 % Used by:
+%       cd/compute_lts_errors.m
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
 %       cd/compute_relative_event_times.m

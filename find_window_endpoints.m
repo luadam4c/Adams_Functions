@@ -58,6 +58,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %
 % Used by:
 %       cd/compute_baseline_noise.m
+%       cd/compute_lts_errors.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/extract_subvectors.m

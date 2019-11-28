@@ -3,10 +3,12 @@ function isCellNumericVector = iscellnumericvector (x)
 % Usage: isCellNumericVector = iscellnumericvector (x)
 % Explanation:
 %       Tests whether the input is a cell array of numeric vectors
+%
 % Example(s):
 %       iscellnumericvector({1:10, 2:20})
 %       iscellnumericvector({magic(3), 2:20})
 %       iscellnumericvector({'sets', 'lasts'})
+%
 % Outputs:
 %       isCellNumericVector   
 %                       - whether the input is a cell array of numeric vectors
@@ -19,6 +21,7 @@ function isCellNumericVector = iscellnumericvector (x)
 %
 % Used by:
 %       cd/compute_combined_trace.m
+%       cd/compute_lts_errors.m
 %       cd/compute_rms_error.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m

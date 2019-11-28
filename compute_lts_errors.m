@@ -9,13 +9,27 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 %
 % Outputs:
 %       errorStruct - a structure of all the errors computed, with fields:
-%                       ltsAmpErrors
-%                       ltsDelayErrors
-%                       ltsSlopeErrors
+%                       normalizeError (only if normalizeError is true)
+%                       normAvgLtsError (only if normalizeError is true)
+%                       initLtsError (only if normalizeError is true)
+%                       avgLtsError
 %                       avgLtsAmpError
 %                       avgLtsDelayError
 %                       avgLtsSlopeError
-%                       avgLtsError
+%                       ltsExistError
+%                       ltsFeatureWeights
+%                       ltsAmpErrors
+%                       ltsDelayErrors
+%                       ltsSlopeErrors
+%                       ltsSweepWeights
+%                       noLTSInBoth
+%                       ltsAmpUncertainty
+%                       ltsDelayUncertainty
+%                       peakPromNormError
+%                       peakWidthNormError
+%                       slopeUncertainty
+%                       baseNoise
+%                       sweepWeights
 %                   specified as a scalar structure
 % Arguments:    
 %       ltsTableSim - a table of lts features from simulated voltage traces
@@ -50,7 +64,6 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 %                   default == []
 %
 % Requires:
-% TODO
 %       cd/argfun.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
@@ -255,30 +268,32 @@ if normalizeError
 end
 
 %% Store in output errors structure
+% Store normalized errors
+if normalizeError
+    errorStruct.normalizeError = normalizeError;
+    errorStruct.normAvgLtsError = normAvgLtsError;
+    errorStruct.initLtsError = initLtsError;
+end
+
+% Store other errors in descending order of importance
+errorStruct.avgLtsError = avgLtsError;
+errorStruct.avgLtsAmpError = avgLtsAmpError;
+errorStruct.avgLtsDelayError = avgLtsDelayError;
+errorStruct.avgLtsSlopeError = avgLtsSlopeError;
 errorStruct.ltsExistError = ltsExistError;
-errorStruct.baseNoise = baseNoise;
-errorStruct.sweepWeights = sweepWeights;
-errorStruct.noLTSInBoth = noLTSInBoth;
+errorStruct.ltsFeatureWeights = featureWeights;
+errorStruct.ltsAmpErrors = ltsAmpErrors;
+errorStruct.ltsDelayErrors = ltsDelayErrors;
+errorStruct.ltsSlopeErrors = ltsSlopeErrors;
 errorStruct.ltsSweepWeights = ltsSweepWeights;
+errorStruct.noLTSInBoth = noLTSInBoth;
 errorStruct.ltsAmpUncertainty = ltsAmpUncertainty;
 errorStruct.ltsDelayUncertainty = ltsDelayUncertainty;
 errorStruct.peakPromNormError = peakPromNormError;
 errorStruct.peakWidthNormError = peakWidthNormError;
 errorStruct.slopeUncertainty = slopeUncertainty;
-errorStruct.ltsAmpErrors = ltsAmpErrors;
-errorStruct.ltsDelayErrors = ltsDelayErrors;
-errorStruct.ltsSlopeErrors = ltsSlopeErrors;
-errorStruct.ltsSweepWeights = ltsSweepWeights;
-errorStruct.avgLtsAmpError = avgLtsAmpError;
-errorStruct.avgLtsDelayError = avgLtsDelayError;
-errorStruct.avgLtsSlopeError = avgLtsSlopeError;
-errorStruct.avgLtsError = avgLtsError;
-
-% Store normalized errors
-if normalizeError
-    errorStruct.initLtsError = initLtsError;
-    errorStruct.normAvgLtsError = normAvgLtsError;
-end
+errorStruct.baseNoise = baseNoise;
+errorStruct.sweepWeights = sweepWeights;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

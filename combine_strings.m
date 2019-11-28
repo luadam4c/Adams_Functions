@@ -17,7 +17,10 @@ function finalString = combine_strings (varargin)
 %       finalString    - a string (may be empty) that is a final substring
 %
 % Arguments:
-%       varargin    - 'ForceClean': whether the delimiter is 
+%       varargin    - 'Delimiter': delimiter used
+%                   must be a string scalar or a character vector
+%                   default == '_'
+%                   - 'ForceClean': whether the delimiter is 
 %                                   not to be repeated between substrings
 %                                   and trimmed at either ends
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -47,6 +50,7 @@ function finalString = combine_strings (varargin)
 %       cd/construct_fullpath.m
 %       cd/m3ha_autocorrelogram.m
 %       cd/m3ha_network_raster_plot.m
+%       cd/m3ha_neuron_choose_best_params.m
 %       /media/adamX/RTCl/raster_plot.m
 
 % File History:
@@ -59,10 +63,9 @@ function finalString = combine_strings (varargin)
 %           (default == true), where the delimiter is checked not to be repeated
 
 %% Hard-coded parameters
-% TODO: Make optional arguments
-delimiter = '_';
 
 %% Default values for optional arguments
+delimiterDefault = '_';
 forceCleanDefault = true;
 beginWithDelimiterDefault = false;
 endWithDelimiterDefault = false;
@@ -77,6 +80,8 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the input Parser
+addParameter(iP, 'Delimiter', delimiterDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ForceClean', forceCleanDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'BeginWithDelimiter', beginWithDelimiterDefault, ...
@@ -93,6 +98,7 @@ addParameter(iP, 'NameValuePairs', nameValuePairsDefault, ...
 
 % Read from the input Parser
 parse(iP, varargin{:});
+delimiter = iP.Results.Delimiter;
 forceClean = iP.Results.ForceClean;
 beginWithDelimiter = iP.Results.BeginWithDelimiter;
 endWithDelimiter = iP.Results.EndWithDelimiter;

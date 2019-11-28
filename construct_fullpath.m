@@ -9,7 +9,9 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %       construct_fullpath('funny', 'Directory', '/path/to')
 %       construct_fullpath('funny', 'Directory', '/path/to', 'Suffix', 'man')
 %       construct_fullpath('funny', 'Directory', '/path/to', 'Suffix', 'man')
+%       construct_fullpath('funny', 'Prefixes', {'tall', 'man'})
 %       construct_fullpath('funny', 'Suffixes', {'tall', 'man'})
+%       construct_fullpath('funny', 'Extension', 'png')
 %
 % Outputs:
 %       fullPath    - the full path(s) to file(s) or directory(s) constructed
@@ -34,26 +36,33 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %                       e.g. '/media/shareX/share/'
 %                   must be a string scalar or a character vector
 %                   default == pwd
-%                   - 'Suffixes': suffix(es) to add to fileBase
+%                   - 'Prefixes': prefix(es) to add to fileBase
 %                   must be a string/character array or a cell array 
 %                       of strings/character arrays
 %                   default == ''
-%                   - 'Extension': file extension to use
-%                   must be a string scalar or a character vector
-%                   default == whatever is provided by the file name
-%   TODO: Change this to 'SuffixNameValuePairs'
-%                   - 'NameValuePairs': Name-Value pairs that are changed
+%                   - 'PrefixNameValuePairs': name-value pairs to add to prefix
 %                   must be a 2-element cell array whose first element 
 %                       is a string/char array or cell array 
 %                       and whose second element is a numeric array
 %                   default == {'', NaN}
+%                   - 'Suffixes': suffix(es) to add to fileBase
+%                   must be a string/character array or a cell array 
+%                       of strings/character arrays
+%                   default == ''
+%                   - 'SuffixNameValuePairs': name-value pairs to add to suffix
+%                   must be a 2-element cell array whose first element 
+%                       is a string/char array or cell array 
+%                       and whose second element is a numeric array
+%                   default == {'', NaN}
+%                   - 'Extension': file extension to use
+%                   must be a string scalar or a character vector
+%                   default == whatever is provided by the file name
 %        
 %
 % Requires:
 %       cd/argfun.m
 %       cd/combine_strings.m
 %       cd/force_column_cell.m
-%       cd/force_string_start.m
 %       cd/match_format_vector_sets.m
 %
 % Used by:
@@ -75,7 +84,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 % 2017-03-27 Created
 % 2017-05-04 Removed ntrials
 % 2017-05-04 Added input Parser scheme
-% 2017-05-04 Changed paramname, paramvalue -> 'NameValuePairs' 
+% 2017-05-04 Changed paramname, paramvalue -> 'SuffixNameValuePairs' 
 %                and made it a parameter 
 % 2017-05-04 Made 'suffixes' a parameter 
 % 2018-05-08 Changed tabs to spaces and limited width to 80
@@ -86,14 +95,17 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 % 2018-10-03 Now accepts a cell array of paths as input
 % 2018-11-01 Now uses argfun.m, force_column_cell.m, match_format_vector_sets.m
 % 2019-10-07 Now uses force_string_start.m on file extension
+% 2019-11-28 Now uses combine_strings.m
 % TODO: Add 'Prefixes' as an optional argument
 
 %% Default values for optional arguments
 verboseDefault = false;             % don't print to standard output by default
 directoryDefault = '';              % set later
+prefixesDefault = '';
+prefixNameValuePairsDefault = {'', NaN};
 suffixesDefault = '';
+suffixNameValuePairsDefault = {'', NaN};
 extensionDefault = '';              % set later
-nameValuePairsDefault = {'', NaN};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -118,34 +130,40 @@ addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-                                                    % introduced after R2016B
+addParameter(iP, 'Prefixes', prefixesDefault, ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+                ['Suffixes must be either a string/character array ', ...
+                    'or a cell array of strings/character arrays!']));
+addParameter(iP, 'PrefixNameValuePairs', prefixNameValuePairsDefault, ...
+    @(x) assert(iscell(x) && numel(x) == 2 ...
+            && (ischar(x{1}) || iscell(x{1}) || isstring(x{1})) ...
+            && isnumeric(x{2}), ...
+        ['PrefixNameValuePairs must be a 2-element cell array whose ', ...
+            'first element is a string/char array or cell array ', ...
+            'and whose second element is a numeric array!']));
 addParameter(iP, 'Suffixes', suffixesDefault, ...
     @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
                 ['Suffixes must be either a string/character array ', ...
                     'or a cell array of strings/character arrays!']));
-addParameter(iP, 'Extension', extensionDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-                                                    % introduced after R2016B
-addParameter(iP, 'NameValuePairs', nameValuePairsDefault, ...
+addParameter(iP, 'SuffixNameValuePairs', suffixNameValuePairsDefault, ...
     @(x) assert(iscell(x) && numel(x) == 2 ...
             && (ischar(x{1}) || iscell(x{1}) || isstring(x{1})) ...
             && isnumeric(x{2}), ...
-        ['NameValuePairs must be a 2-element cell array whose ', ...
+        ['SuffixNameValuePairs must be a 2-element cell array whose ', ...
             'first element is a string/char array or cell array ', ...
             'and whose second element is a numeric array!']));
+addParameter(iP, 'Extension', extensionDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the input Parser
 parse(iP, pathName, varargin{:});
 verbose = iP.Results.Verbose;
 directory = iP.Results.Directory;
+prefixes = iP.Results.Prefixes;
+prefixNameValuePairs = iP.Results.PrefixNameValuePairs;
 suffixes = iP.Results.Suffixes;
-suffixNameValuePairs = iP.Results.NameValuePairs;
+suffixNameValuePairs = iP.Results.SuffixNameValuePairs;
 extension = iP.Results.Extension;
-
-% TODO: Make optional arguments
-prefixes = '';
-prefixNameValuePairs = {'', NaN};
-
 
 %% Preparation
 % Match the number of pathNames to directory and extension
@@ -189,8 +207,10 @@ function [fullPath, pathType] = ...
 
 % Decide on the file extension
 if ~isempty(extension)
+    fileExt = extension;
     % Make sure the file extension, if provided, starts with a dot
-    fileExt = force_string_start(extension, '.');
+    % TODO: May not be necessary now that combine_strings is used
+    % fileExt = force_string_start(extension, '.');
 else
     % Use the detected file extension 
     %   Note: this could be empty in case of a directory
@@ -216,17 +236,23 @@ if isempty(directory)
 end
 
 % Construct final prefix
-finalPrefix = combine_strings('EndWithDelimiter', true, ...
-                                'Substrings', prefixes, ...
+finalPrefix = combine_strings('ForceClean', true, 'Substrings', prefixes, ...
                                 'NameValuePairs', prefixNameValuePairs);
 
 % Construct final suffix
-finalSuffix = combine_strings('BeginWithDelimiter', true, ...
-                                'Substrings', suffixes, ...
+finalSuffix = combine_strings('ForceClean', true, 'Substrings', suffixes, ...
                                 'NameValuePairs', suffixNameValuePairs);
 
-% Construct full path based on directory, fileBase, final suffix and fileExt
-fullPath = fullfile(directory, [finalPrefix, fileBase, finalSuffix, fileExt]);
+% Construct final file base
+finalFileBase = combine_strings('ForceClean', true, ...
+                            'Substrings', {finalPrefix, fileBase, finalSuffix});
+
+% Construct final file name
+finalFileName = combine_strings('ForceClean', true, 'Delimiter', '.', ...
+                                'Substrings', {finalFileBase, fileExt});
+
+% Construct full path based on directory and file name
+fullPath = fullfile(directory, finalFileName);
 
 % Print message
 if verbose

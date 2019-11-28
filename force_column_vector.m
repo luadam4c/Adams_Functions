@@ -79,6 +79,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/compute_bins.m
 %       cd/compute_default_sweep_info.m
 %       cd/compute_grouped_histcounts.m
+%       cd/compute_lts_errors.m
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
 %       cd/compute_relative_event_times.m

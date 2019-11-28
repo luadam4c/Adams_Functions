@@ -48,6 +48,7 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 %
 % Used by:
 %       cd/compute_baseline_noise.m
+%       cd/compute_lts_errors.m
 %       cd/compute_sweep_errors.m
 %
 % Related functions:

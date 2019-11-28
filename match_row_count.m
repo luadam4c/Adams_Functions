@@ -32,6 +32,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/compute_lts_errors.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sampsizepwr.m
 %       cd/compute_sweep_errors.m

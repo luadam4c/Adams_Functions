@@ -440,13 +440,13 @@ totalError = compute_weighted_average(errorsToAverage, 'IgnoreNan', true, ...
 
 %% Store in output errors structure
 errors.totalError = totalError;
+errors.lts2SweepErrorRatio = lts2SweepErrorRatio;
+errors = merge_structs(errors, ltsErrors);
+errors = merge_structs(errors, swpErrors);
 errors.baseWindow = baseWindow;
 errors.fitWindow = fitWindow;
 errors.baseNoise = baseNoise;
 errors.sweepWeights = sweepWeights;
-errors.lts2SweepErrorRatio = lts2SweepErrorRatio;
-errors = merge_structs(errors, swpErrors);
-errors = merge_structs(errors, ltsErrors);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

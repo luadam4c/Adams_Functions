@@ -37,6 +37,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sampsizepwr.m
 %       cd/compute_sweep_errors.m
+%       cd/compute_lts_errors.m
 %       cd/construct_fullpath.m
 %       cd/copy_into.m
 %       cd/create_average_time_vector.m
@@ -48,6 +49,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/find_passive_params.m
 %       cd/find_window_endpoints.m
 %       cd/m3ha_compute_ltsburst_statistics.m
+%       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_neuron_create_simulation_params.m
 %       cd/m3ha_import_raw_traces.m

@@ -1,4 +1,4 @@
-function [bestParamsTable, bestParamsLabel] = ...
+function [bestParamsTable, bestParamsLabel, errorTable] = ...
                 m3ha_neuron_choose_best_params (candParamsTablesOrFiles, varargin)
 %% Chooses among candidates the NEURON parameters that fits a cell's data the best
 % Usage: [bestParamsTable, bestParamsLabel] = ...
@@ -35,6 +35,8 @@ function [bestParamsTable, bestParamsLabel] = ...
 %                           m3ha_neuron_run_and_analyze()
 %
 % Requires:
+%       cd/argfun.m
+%       cd/combine_strings.m
 %       cd/create_error_for_nargin.m
 %       cd/create_label_from_numbers.m
 %       cd/extract_fields.m
@@ -144,12 +146,6 @@ if numel(uniqueCellNames) > 2
     error('Candidate parameters must all come from the same cell!');
 end
 
-% Get cell name
-cellName = uniqueCellNames{1};
-
-% Create parameters table labels
-paramTableLabels = strcat(cellNames, '_from_', iterStrs);
-
 % Turn off all flags for stats and plots except plotIndividualFlag
 otherArguments = ...
     set_fields_zero(otherArguments, ...
@@ -160,31 +156,39 @@ otherArguments = ...
         'plotIpeakFlag', 'plotLtsFlag', 'plotStatisticsFlag', ...
         'plotSwpWeightsFlag');
 
-figPrefix = combine_strings('Substrings', {prefix, iterStrs});
+% Create candidate labels
+candLabels = combine_strings('Substrings', {prefix, 'from', iterStrs});
 
 %% Do the job
 % Compute errors for all tables
 errorStructs = cellfun(@(x, y) m3ha_neuron_run_and_analyze(x, ...
-                        'PlotIndividualFlag', true, ...
-                        'SimMode', simMode, 'OutFolder', outFolder, ...
-                        'Prefix', y, otherArguments), ...
-                        candParamsTables, figPrefix);
+                            'PlotIndividualFlag', true, ...
+                            'SimMode', simMode, 'OutFolder', outFolder, ...
+                            'Prefix', y, otherArguments), ...
+                            candParamsTables, candLabels);
 
-% Extract all total errors
-totalErrors = extract_fields(errorStructs, 'totalError', 'UniformOutput', true);
+% Extract fields of interest
+%   Note: must be consistent with compute_single_neuron_errors.m
+[totalError, lts2SweepErrorRatio, ltsExistError, ...
+        avgSwpError, avgLtsError, ltsFeatureWeights, ...
+        avgLtsAmpError, avgLtsDelayError, avgLtsSlopeError, ...
+        swpErrors, ltsAmpErrors, ltsDelayErrors, ltsSlopeErrors] = ...
+    argfun(@(x) extract_fields(errorStructs, x, 'UniformOutput', true), ...
+            'totalError', 'lts2SweepErrorRatio', 'ltsExistError', ...
+            'avgSwpError', 'avgLtsError', 'ltsFeatureWeights', ...
+            'avgLtsAmpError', 'avgLtsDelayError', 'avgLtsSlopeError', ...
+            'swpErrors', 'ltsAmpErrors', 'ltsDelayErrors', 'ltsSlopeErrors');
 
 % Find the index of the table with the least error
-[totalErrorBest, iTableBest] = min(totalErrors);
-
-% Convert error struct array to a table
-errorTable = struct2table(errorStructs, 'AsArray', true);
-
-% Make iterStrs row names
-errorTable.Properties.RowNames = iterStrs;
+[totalErrorBest, iTableBest] = min(totalError);
 
 % Add variables in the beginning
-errorTable = addvars(errorTable, paramTableLabels, cellNames, ...
-                        iterStrs, 'Before', 1);
+errorTable = table(candLabels, cellNames, iterStrs, ...
+                    totalError, lts2SweepErrorRatio, ltsExistError, ...
+                    avgSwpError, avgLtsError, ltsFeatureWeights, ...
+                    avgLtsAmpError, avgLtsDelayError, avgLtsSlopeError, ...
+                    swpErrors, ltsAmpErrors, ltsDelayErrors, ltsSlopeErrors, ...
+                    'RowNames', iterStrs);
 
 %% Save results
 % Create full path to error sheet file
@@ -196,7 +200,7 @@ writetable(errorTable, sheetPath);
 %% Output results
 % Return the table with the least error
 bestParamsTable = candParamsTables{iTableBest};
-bestParamsLabel = paramTableLabels{iTableBest};
+bestParamsLabel = candLabels{iTableBest};
 
 % Display result
 fprintf('%s has the least error: %g!\n', bestParamsLabel, totalErrorBest);
@@ -205,6 +209,16 @@ fprintf('%s has the least error: %g!\n', bestParamsLabel, totalErrorBest);
 
 %{
 OLD CODE:
+
+% Convert error struct array to a table
+errorTable = struct2table(errorStructs, 'AsArray', true);
+% Make iterStrs row names
+errorTable.Properties.RowNames = iterStrs;
+% Add variables in the beginning
+errorTable = addvars(errorTable, candLabels, cellNames, ...
+                        iterStrs, 'Before', 1);
+% Create candidate labels
+candLabels = strcat(cellNames, '_from_', iterStrs);
 
 %}
 

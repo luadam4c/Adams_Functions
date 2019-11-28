@@ -27,22 +27,7 @@ function [fullPath, pathExists] = construct_and_check_fullpath (pathName, vararg
 %       varargin    - 'Verbose': whether to write to standard output
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
-%                   - 'Directory': a full directory path, 
-%                       e.g. '/media/shareX/share/'
-%                   must be a string scalar or a character vector
-%                   default == ''
-%                   - 'Suffixes': suffix(ces) to add to fileBase
-%                   must be a string/character array or a cell array 
-%                       of strings/character arrays
-%                   default == ''
-%                   - 'Extension': file extension to use
-%                   must be a string scalar or a character vector
-%                   default == whatever is provided by the file name
-%                   - 'NameValuePairs': Name-Value pairs that are changed
-%                   must be a 2-element cell array whose first element 
-%                       is a string/char array or cell array 
-%                       and whose second element is a numeric array
-%                   default == {'', NaN}
+%                   - Any other parameter-value pair for construct_fullpath()
 %
 % Requires:
 %       cd/check_fullpath.m
@@ -69,14 +54,11 @@ function [fullPath, pathExists] = construct_and_check_fullpath (pathName, vararg
 % 2018-10-03 - Renamed construct_and_check_fullfilename -> 
 %                   construct_and_check_fullpath
 % 2018-11-21 - Updated Used by
+% 2019-11-28 - Now passes other arguments to construct_fullpath.m
 % 
 
 %% Default values for optional arguments
 verboseDefault = false;             % don't print to standard output by default
-directoryDefault = '';
-suffixesDefault = '';
-extensionDefault = '';              % set later
-nameValuePairsDefault = {'', NaN};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -89,6 +71,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to an input Parser
 addRequired(iP, 'pathName', ...
@@ -99,41 +82,17 @@ addRequired(iP, 'pathName', ...
 % Add parameter-value pairs to the input Parser
 addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'Directory', directoryDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-                                                    % introduced after R2016B
-addParameter(iP, 'Suffixes', suffixesDefault, ...
-    @(x) assert(ischar(x) || iscell(x) && (min(cellfun(@ischar, x)) || ...
-                min(cellfun(@isstring, x))) || isstring(x), ...
-                ['Suffixes must be either a string/character array ', ...
-                    'or a cell array of strings/character arrays!']));
-addParameter(iP, 'Extension', extensionDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-                                                    % introduced after R2016B
-addParameter(iP, 'NameValuePairs', nameValuePairsDefault, ...
-    @(x) assert(iscell(x) && numel(x) == 2 ...
-            && (ischar(x{1}) || iscell(x{1}) || isstring(x{1})) ...
-            && isnumeric(x{2}), ...
-        ['NameValuePairs must be a 2-element cell array whose ', ...
-            'first element is a string/char array or cell array ', ...
-            'and whose second element is a numeric array!']));
 
 % Read from the input Parser
 parse(iP, pathName, varargin{:});
 verbose = iP.Results.Verbose;
-directory = iP.Results.Directory;
-suffixes = iP.Results.Suffixes;
-extension = iP.Results.Extension;
-namevaluepairs = iP.Results.NameValuePairs;
+
+% Keep unmatched arguments for the construct_fullpath() function
+otherArguments = iP.Unmatched;
 
 %% Create full path(s) to file(s) robustly
-[fullPath, pathType] = construct_fullpath(pathName, ...
-                                'Verbose', verbose, ...
-                                'Directory', directory, ...
-                                'Suffixes', suffixes, ...
-                                'Extension', extension, ...
-                                'NameValuePairs', namevaluepairs);
-
+[fullPath, pathType] = construct_fullpath(pathName, 'Verbose', verbose, ...
+                                            otherArguments);
 
 %% Check whether the full path(s) exist(s)
 pathExists = check_fullpath(fullPath, 'Verbose', verbose, ...
@@ -143,26 +102,6 @@ pathExists = check_fullpath(fullPath, 'Verbose', verbose, ...
 
 %{
 OLD CODE:
-
-fprintf('Full path to abf file: %s\n', abfFullFileName);
-if exist(abfFullFileName, 'file') ~= 2
-    fprintf('This abf file doesn''t exist!');
-    return;
-end
-
-%% Constructs the full file name to an abf file robustly based on pathName and display message if doesn't exist
-
-if exist(abfFullFileName, 'file') ~= 2
-    fileExists = false;
-else
-    fileExists = true;
-end
-
-% Get the file directory and file base, ignoring the file extension
-[fileDir, filebase, ~] = fileparts(pathName);
-
-% Append .abf to the file base, then reconstruct the full file name
-abffilename = fullfile(fileDir, strcat(filebase, '.abf')];
 
 %}
 
