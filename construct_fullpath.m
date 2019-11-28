@@ -167,8 +167,8 @@ extension = iP.Results.Extension;
 
 %% Preparation
 % Match the number of pathNames to directory and extension
-pathName = match_format_vector_sets(pathName, directory, 'ForceCellOutputs', false);
-pathName = match_format_vector_sets(pathName, extension, 'ForceCellOutputs', false);
+[pathName, directory] = match_format_vector_sets(pathName, directory, 'ForceCellOutputs', false);
+[pathName, extension] = match_format_vector_sets(pathName, extension, 'ForceCellOutputs', false);
 
 %% Do the job for all paths
 if iscell(pathName)

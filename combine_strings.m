@@ -8,6 +8,7 @@ function finalString = combine_strings (varargin)
 %       combine_strings
 %       combine_strings('Substrings', {'_yes__', '_no_'})
 %       combine_strings('Substrings', {'_yes__', '_no_'}, 'ForceClean', false)
+%       combine_strings('Substrings', {'', 'test', ''})
 %       combine_strings('Substrings', {{'funny', 'boy'}, 'test'})
 %       combine_strings('Substrings', {{'funny', 'boy'}, {'high', 'low'}})
 %       combine_strings('NameValuePairs', {{'a', 'b'}, [1, 2]})
@@ -249,13 +250,13 @@ elseif isstring(inStr) && ...
                         inStr, 'UniformOutput', true);
 else
     % Compute the number of characters in each string
-    nCharsOriginal = strlength(inStr);
-    nCharsDelimiter = strlength(subStr);
+    nCharsInStr = strlength(inStr);
+    nCharsSubStr = strlength(subStr);
 
     % Only take out subStr if it exists
-    if nCharsOriginal >= nCharsDelimiter
+    if nCharsInStr >= nCharsSubStr
         % Count the number of characters to extract
-        nCharsToExtract = nCharsOriginal - nCharsOriginal;
+        nCharsToExtract = nCharsInStr - nCharsSubStr;
 
         % Extract everything before the next character
         outStr = extractBefore(inStr, nCharsToExtract + 1);

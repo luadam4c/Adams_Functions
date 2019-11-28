@@ -45,6 +45,7 @@ function cellInfo = m3ha_create_cell_info_table (varargin)
 %% Hard-coded parameters
 cellNameStr = 'cellName';
 cellIdStr = 'cellId';
+cellIdRowStr = 'cellidrow';
 
 %% Default values for optional arguments
 swpInfoDefault = [];
@@ -68,6 +69,10 @@ swpInfo = iP.Results.SwpInfo;
 % Read in swpInfo if not provided
 if isempty(swpInfo)
     swpInfo = m3ha_load_sweep_info;
+    
+    if isempty(swpInfo)
+        error('Sweep info table must be provided!');
+    end
 end
 
 %% Generate cell name info
@@ -75,7 +80,7 @@ end
 fprintf('Generating cell name info ... \n');
 
 % Extract all cell IDs
-cellIdAllRows = swpInfo{:, 'cellidrow'};
+cellIdAllRows = swpInfo{:, cellIdRowStr};
 
 % Extract all file bases
 fileBases = swpInfo.Properties.RowNames;
