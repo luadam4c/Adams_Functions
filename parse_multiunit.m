@@ -600,7 +600,11 @@ end
 
 % Decide on the figure directory
 if isempty(figFolder)
-    figFolder = fullfile(outFolder, [create_time_stamp, '_', figDirSuffix]);
+    % Create time stamp
+    dateStamp = create_time_stamp('FormatOut', 'yyyymmdd');
+
+    % Create figure folder name
+    figFolder = fullfile(outFolder, [dateStamp, '_', figDirSuffix]);
 end
 
 % Deal with the first argument

@@ -15,6 +15,8 @@ function statsTable = m3ha_compute_ltsburst_statistics (varargin)
 % Requires:
 %       cd/argfun.m
 %       cd/compute_stats.m
+%       cd/force_column_cell.m
+%       cd/force_column_vector.m
 %       cd/match_row_count.m
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_select_sweeps.m
@@ -161,13 +163,33 @@ end
 %% Create all conditions
 if iscell(pharmCondition) || iscell(gIncrCondition) || ...
         iscell(vHoldCondition)
+    % Force as cell arrays of column vectors
+    [pharmConditionsUser, gIncrConditionsUser, vHoldConditionsUser] = ...
+        argfun(@(x) force_column_vector(x, 'ToLinearize', true, ...
+                                        'ForceCellOutput', true), ...
+                pharmConditionsUser, gIncrConditionsUser, vHoldConditionsUser);
+
+    % Force as column cell arrays
+    [pharmConditionsUser, gIncrConditionsUser, vHoldConditionsUser] = ...
+        argfun(@force_column_cell, ...
+                pharmConditionsUser, gIncrConditionsUser, vHoldConditionsUser);
+
     % Count the number of values for each type of condition
-    nPharm = numel(pharmConditionsUser)
+    nPharm = numel(pharmConditionsUser);
+    nGIncr = numel(gIncrConditionsUser);
+    nVHold = numel(vHoldConditionsUser);
+
+    % Create condition labels for each condition
+    conditionLabel = cell(nPharm, nGIncr, nVHold);
+    for iPharm = 1:nPharm
 
     % Create all set of conditions
-    pharmCondition
-    gIncrCondition
-    vHoldCondition
+    pharmCondition = arrayfun(nPharm, nGIncr, nVHold, ...
+                                'UniformOutput', false);
+    gIncrCondition = arrayfun(nPharm, nGIncr, nVHold, ...
+                                'UniformOutput', false);
+    vHoldCondition = arrayfun(nPharm, nGIncr, nVHold, ...
+                                'UniformOutput', false);
 
     % Set flag
     manyConditionsFlag = true;
