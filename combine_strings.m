@@ -43,6 +43,7 @@ function finalString = combine_strings (varargin)
 %                   default == {'', NaN}
 %        
 % Requires:
+%       cd/isemptycell.m
 %       cd/force_string_end.m
 %       cd/force_string_start.m
 %
@@ -159,9 +160,9 @@ else
 end
 
 %% Construct final substring
-if isempty(allSubstrings)            % if nothing provided
+if all(isemptycell(allSubstrings))            % if nothing provided
     % Final substring is empty too
-    finalString = allSubstrings;
+    finalString = '';
 else
     if iscell(allSubstrings)
         % If there might be more than one substrings provided,
@@ -190,6 +191,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function joinedStrs = strjoin_custom(subStrs, delimiter, forceClean)
+%% Joins strings 
 
 % Modify parts
 if forceClean
@@ -212,18 +214,55 @@ else
 end
 
 % Remove the ending delimiter
-nCharsToExtract = strlength(joinedStrsWithEndDelimiter) - strlength(delimiter);
-joinedStrs = extractBefore(joinedStrsWithEndDelimiter, nCharsToExtract + 1);
+joinedStrs = remove_if_end(joinedStrsWithEndDelimiter, delimiter);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function subStrs = strip_custom(subStrs, delimiter)
+function outStr = strip_custom (inStr, stripCharacter)
+%% Strips a character from all strings in first argument
+% Example: 
+%           strip_custom({{'a1', 'b1'}, 'c1'}, '1')
+% TODO: Pull out as a strip_custom.m
 
-if iscell(subStrs)
-    subStrs = cellfun(@(x) strip_custom(x, delimiter), subStrs, ...
+if iscell(inStr)
+    outStr = cellfun(@(x) strip_custom(x, stripCharacter), inStr, ...
                         'UniformOutput', false);
 else
-    subStrs = strip(subStrs, delimiter);
+    outStr = strip(inStr, stripCharacter);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function outStr = remove_if_end (inStr, subStr)
+%% Removes a substring from strings if it is at the end
+% TODO: Pull out as a function remove_if_end.m
+% TODO: make remove_if_start.m
+
+if iscell(inStr)
+    % Do this for each string separately
+    outStr = cellfun(@(x) remove_if_end(x, subStr), ...
+                        inStr, 'UniformOutput', false);
+elseif isstring(inStr) && ...
+        numel(inStr) > 1
+    % Do this for each string separately
+    outStr = arrayfun(@(x) remove_if_end(x, subStr), ...
+                        inStr, 'UniformOutput', true);
+else
+    % Compute the number of characters in each string
+    nCharsOriginal = strlength(inStr);
+    nCharsDelimiter = strlength(subStr);
+
+    % Only take out subStr if it exists
+    if nCharsOriginal >= nCharsDelimiter
+        % Count the number of characters to extract
+        nCharsToExtract = nCharsOriginal - nCharsOriginal;
+
+        % Extract everything before the next character
+        outStr = extractBefore(inStr, nCharsToExtract + 1);
+    else
+        % Don't extract anything
+        outStr = inStr;
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
