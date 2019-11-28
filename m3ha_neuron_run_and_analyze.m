@@ -272,6 +272,7 @@ function [errorStruct, hFig, simData] = ...
 %       cd/decide_on_filebases.m
 %       cd/extract_columns.m
 %       cd/extract_common_prefix.m
+%       cd/extract_fileparts.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/force_matrix.m
@@ -812,7 +813,13 @@ fileBase = decide_on_filebases(fileBase, nSweeps);
 
 % Decide on prefix if not provided
 if isempty(prefix)
+    % Try extracting the common prefix from the file bases
     prefix = extract_common_prefix(fileBase);
+
+    % If still empty, use the output folder base name
+    if isempty(prefix)
+        prefix = extract_fileparts(outFolder, 'dirbase');
+    end
 end
 
 % Decide on x-axis limits for plotting

@@ -28,7 +28,7 @@ function [hfig] = m3ha_optimizergui_4compgabab (realdata_cpr, realData, hfig, va
 % 2016-10-06 - Started to reorganize code
 % 2016-10-06 - Renamed figure handles so that they are now all in a structure 
 %               hfig that is passed to and from functions
-% 2016-10-07 - outparams.currpulse(k) is now converted to nA
+% 2016-10-07 - outParams.currpulse(k) is now converted to nA
 % 2016-10-21 - moved files up one level to /media/adamX/m3ha/optimizer4gabab
 % 2016-10-21 - added functionsdirectory, parentDirectory, infolder
 % 2016-10-21 - updated locations of folders and files
@@ -39,8 +39,8 @@ function [hfig] = m3ha_optimizergui_4compgabab (realdata_cpr, realData, hfig, va
 % 2017-01-16 - Added rowmode so that each pharm, gincr pair is a row for rowmode == 2
 % 2017-01-17 - Make cm and Ra fixed values
 % 2017-01-18 - Changed 'MaxIter' & 'MaxFunEvals' to 200
-% 2017-01-25 - Added outparams.numIC
-% 2017-01-27 - Added outparams.plotMarkflag to plot figures for Mark's talk
+% 2017-01-25 - Added outParams.numIC
+% 2017-01-27 - Added outParams.plotMarkflag to plot figures for Mark's talk
 % 2017-02-06 - Changed range of epas from [-120 -30] to [-90 -50]
 % 2017-04-19 - Replaced across_trials & across_cells with colmode
 % 2017-04-19 - Added plotwin
@@ -53,7 +53,7 @@ function [hfig] = m3ha_optimizergui_4compgabab (realdata_cpr, realData, hfig, va
 % 2017-04-20 - Now updates neuronparams_use whenever check box is selected or non-selected
 % 2017-04-21 - Added outfoldername to file names
 % 2017-04-22 - Added callbacks for all check boxes and editable text fields
-% 2017-04-22 - outparams.ltserrorflag is now dependent on default_ltsuse and default_ltsw
+% 2017-04-22 - outParams.ltserrorflag is now dependent on default_ltsuse and default_ltsw
 % 2017-04-24 - Removed the handles structure and cleaned code
 % 2017-04-25 - Added my_closereq.m
 % 2017-05-01 - Fixed across_cells attempt #4 to include all g incr 
@@ -64,14 +64,14 @@ function [hfig] = m3ha_optimizergui_4compgabab (realdata_cpr, realData, hfig, va
 % 2017-05-01 - Created log_arraytext.m
 % 2017-05-01 - Added autoparams to Panel 5
 % 2017-05-12 - Move everything unrelated to GUI to singleneuronfitting.m
-% 2017-05-13 - Now updates outparams.runnumtotal in m3ha_optimizer_4compgabab.m
-% 2017-05-13 - Added outparams.cellname
-% 2017-05-13 - Now gets parentDirectory from outparams
+% 2017-05-13 - Now updates outParams.runnumtotal in m3ha_optimizer_4compgabab.m
+% 2017-05-13 - Added outParams.cellname
+% 2017-05-13 - Now gets parentDirectory from outParams
 % 2017-05-15 - Made build params and other passive params a different background color on GUI
 % 2017-05-17 - Renamed fitmode -> runmode
 % 2017-05-22 - Changed line width and indentation
 % 2017-05-23 - Fixed the placement of the rgb() function to be after addpath()
-% 2017-05-23 - Removed modeselected from outparams and replaced with updated outparams.runMode
+% 2017-05-23 - Removed modeselected from outParams and replaced with updated outParams.runMode
 % 2017-05-23 - Added otherwise to all switch statements
 % 2017-07-26 - Added scroll bar for NEURON parameters Panel (now Panel 8)
 % 2017-08-29 - Only show scroll bar for Panel 8 if necessary
@@ -79,7 +79,7 @@ function [hfig] = m3ha_optimizergui_4compgabab (realdata_cpr, realData, hfig, va
 % 2018-08-10 - Changed swpedges to fitwin (ms) and added fitwinCpr (ms)
 %% TODO: Add 'ColMode' as a parameter-value pair
 
-global outparams
+global outParams
 
 %% Parameters used for GUI construction
 % General GUI appearance
@@ -157,36 +157,36 @@ if ~isdeployed
                                     % for rgb.m
 end
 
-%% Extract default values from outparams
-parentDirectory = outparams.parentDirectory;    % parent directory for input/output folders
-cellname = outparams.cellname;              % name of current neuron to be fitted
-debugflag = outparams.debugflag;            % whether in debug mode
-runmode = outparams.runMode;                % run mode
-filenames = outparams.filenames;            %% TODO: copy description from singleneuronfitting.m
-numswps = outparams.numswps;                %% TODO: copy description from singleneuronfitting.m
-default_swpuse = outparams.default_swpuse;        %% TODO: copy description from singleneuronfitting.m
-default_swpw = outparams.default_swpw;            %% TODO: copy description from singleneuronfitting.m
-fitwin = outparams.fitwin;                %% TODO: copy description from singleneuronfitting.m
-fitwinCpr = outparams.fitwinCpr;                %% TODO: copy description from singleneuronfitting.m
-ltsProperties = outparams.ltsProperties;        %% TODO: copy description from singleneuronfitting.m
-default_ltsuse = outparams.default_ltsuse;        %% TODO: copy description from singleneuronfitting.m
-default_ltsw = outparams.default_ltsw;            %% TODO: copy description from singleneuronfitting.m
-default_errratio = outparams.lts_to_swp_errratio;    %% TODO: copy description from singleneuronfitting.m
-numparams = outparams.numparams;            %% TODO: copy description from singleneuronfitting.m
-neuronparams_val = outparams.neuronparams;        %% TODO: copy description from singleneuronfitting.m
-neuronparams_use = outparams.neuronparams_use;        %% TODO: copy description from singleneuronfitting.m
-neuronparams_min = outparams.neuronparams_min;        %% TODO: copy description from singleneuronfitting.m
-neuronparams_max = outparams.neuronparams_max;        %% TODO: copy description from singleneuronfitting.m
-neuronparamnames = outparams.neuronparamnames;        %% TODO: copy description from singleneuronfitting.m
-neuronparamclass = outparams.neuronparamclass;    %% TODO: copy description from singleneuronfitting.m
-neuronparamislog = outparams.neuronparamislog;        %% TODO: copy description from singleneuronfitting.m
-neuronparamispas = outparams.neuronparamispas;        %% TODO: copy description from singleneuronfitting.m
-neuronparams_jit = outparams.neuronparams_jit;        %% TODO: copy description from singleneuronfitting.m
-simplexparamnames = outparams.simplexparamnames;    %% TODO: copy description from singleneuronfitting.m
-simplexparamsinit = outparams.simplexparams;        %% TODO: copy description from singleneuronfitting.m
-autoparamnames = outparams.autoparamnames;        %% TODO: copy description from singleneuronfitting.m
-autoparamsinit = outparams.autoparams;            %% TODO: copy description from singleneuronfitting.m
-autologgerflag = outparams.autologgerflag;        %% TODO: copy description from singleneuronfitting.m
+%% Extract default values from outParams
+parentDirectory = outParams.parentDirectory;    % parent directory for input/output folders
+cellname = outParams.cellname;              % name of current neuron to be fitted
+debugflag = outParams.debugflag;            % whether in debug mode
+runmode = outParams.runMode;                % run mode
+filenames = outParams.filenames;            %% TODO: copy description from singleneuronfitting.m
+numswps = outParams.numswps;                %% TODO: copy description from singleneuronfitting.m
+default_swpuse = outParams.default_swpuse;        %% TODO: copy description from singleneuronfitting.m
+default_swpw = outParams.default_swpw;            %% TODO: copy description from singleneuronfitting.m
+fitwin = outParams.fitwin;                %% TODO: copy description from singleneuronfitting.m
+fitwinCpr = outParams.fitwinCpr;                %% TODO: copy description from singleneuronfitting.m
+ltsProperties = outParams.ltsProperties;        %% TODO: copy description from singleneuronfitting.m
+default_ltsuse = outParams.default_ltsuse;        %% TODO: copy description from singleneuronfitting.m
+default_ltsw = outParams.default_ltsw;            %% TODO: copy description from singleneuronfitting.m
+default_errratio = outParams.lts_to_swp_errratio;    %% TODO: copy description from singleneuronfitting.m
+numparams = outParams.numparams;            %% TODO: copy description from singleneuronfitting.m
+neuronparams_val = outParams.neuronparams;        %% TODO: copy description from singleneuronfitting.m
+neuronparams_use = outParams.neuronparams_use;        %% TODO: copy description from singleneuronfitting.m
+neuronparams_min = outParams.neuronparams_min;        %% TODO: copy description from singleneuronfitting.m
+neuronparams_max = outParams.neuronparams_max;        %% TODO: copy description from singleneuronfitting.m
+neuronparamnames = outParams.neuronparamnames;        %% TODO: copy description from singleneuronfitting.m
+neuronparamclass = outParams.neuronparamclass;    %% TODO: copy description from singleneuronfitting.m
+neuronparamislog = outParams.neuronparamislog;        %% TODO: copy description from singleneuronfitting.m
+neuronparamispas = outParams.neuronparamispas;        %% TODO: copy description from singleneuronfitting.m
+neuronparams_jit = outParams.neuronparams_jit;        %% TODO: copy description from singleneuronfitting.m
+simplexparamnames = outParams.simplexparamnames;    %% TODO: copy description from singleneuronfitting.m
+simplexparamsinit = outParams.simplexparams;        %% TODO: copy description from singleneuronfitting.m
+autoparamnames = outParams.autoparamnames;        %% TODO: copy description from singleneuronfitting.m
+autoparamsinit = outParams.autoparams;            %% TODO: copy description from singleneuronfitting.m
+autologgerflag = outParams.autologgerflag;        %% TODO: copy description from singleneuronfitting.m
 
 %% CREATE GUI
 % Initialize and hide the GUI as it is being constructed
@@ -530,7 +530,7 @@ case 4
     set(p3, 'SelectedObject', findall(p3, 'Tag', 'modebutton_auto_w_jitter'));
 otherwise
     set(p3, 'SelectedObject', findall(p3, 'Tag', 'modebutton_manual'));
-    outparams.runMode = 1;
+    outParams.runMode = 1;
     fprintf('Warning: run mode out of range, changed to 1!\n\n');
 end
 modebutton_selectionchange(p3);
@@ -540,7 +540,7 @@ set(hfig.gui, 'Visible', 'on');
 fprintf('OPTIMIZER GUI for %s is ready!\n\n', cellname);
 drawnow;                % Update GUI
 
-if outparams.autorunflag
+if outParams.autorunflag
     %% RUN ONCE
     fprintf('RUNNING!\n\n');
     set(runbutton, 'Value', runbutton.Max);
@@ -562,24 +562,24 @@ fprintf('Close GUI when done ... \n\n');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function update_flags
-%% Update flags when outparams.ltsw is changed
+%% Update flags when outParams.ltsw is changed
 
-global outparams
+global outParams
 
 % Determine whether LTS error needs to be computed
-if all(outparams.ltsw == 0)
+if all(outParams.ltsw == 0)
     % Not computed when no LTS property is checked or all have zero weights
-    outparams.ltserrorflag = 0;     
+    outParams.ltserrorflag = 0;     
 
     % Use user's findltsflag in this case
-    outparams.findltsflag = outparams.findltsflag_user;
+    outParams.findltsflag = outParams.findltsflag_user;
 else
     % Computed when at least one LTS property is checked and has non-zero weight
-    outparams.ltserrorflag = 1;   
+    outParams.ltserrorflag = 1;   
 
     % Force find LTS in this case
-    if ~outparams.findltsflag_user
-        outparams.findltsflag = 1;
+    if ~outParams.findltsflag_user
+        outParams.findltsflag = 1;
         fprintf('Warning: findltsflag changed to true because ltsw is not all 0!\n\n');
     end
 end
@@ -589,31 +589,31 @@ end
 function update_sliders
 %% On changing bounds/initial values, update sliders
 
-global outparams
+global outParams
 
 % Initialize new slider bounds and values
-slidermin = outparams.neuronparams_min;
-slidermax = outparams.neuronparams_max;
-sliderval = outparams.neuronparams;
+slidermin = outParams.neuronparams_min;
+slidermax = outParams.neuronparams_max;
+sliderval = outParams.neuronparams;
 
 % Update slider bounds and values for each parameter
-for k = 1:numel(outparams.neuronparams)
+for k = 1:numel(outParams.neuronparams)
     % Change to log scale if designated
-    if outparams.neuronparamislog(k)
-        slidermin(k) = log10(outparams.neuronparams_min(k));
-        slidermax(k) = log10(outparams.neuronparams_max(k));
-        sliderval(k) = log10(outparams.neuronparams(k));
+    if outParams.neuronparamislog(k)
+        slidermin(k) = log10(outParams.neuronparams_min(k));
+        slidermax(k) = log10(outParams.neuronparams_max(k));
+        sliderval(k) = log10(outParams.neuronparams(k));
     end
     
     % Adapt current parameter value to new bounds
     if sliderval(k) < slidermin(k)        %if trying to set lower bound such that current param val is out of bounds
         % Force set current parameter value to lower bound value
         sliderval(k) = slidermin(k);
-        outparams.neuronparams(k) = outparams.neuronparams_min(k);  
+        outParams.neuronparams(k) = outParams.neuronparams_min(k);  
     elseif sliderval(k) > slidermax(k)
         % Force set current parameter value to upper bound value
         sliderval(k) = slidermax(k);
-        outparams.neuronparams(k) = outparams.neuronparams_max(k);
+        outParams.neuronparams(k) = outParams.neuronparams_max(k);
     end
 
     % Update slider bounds and values
@@ -622,10 +622,10 @@ for k = 1:numel(outparams.neuronparams)
     set(paramslider_k, 'Min', slidermin(k));
     set(paramslider_k, 'Max', slidermax(k));
     set(paramslider_k, 'Value', sliderval(k));
-    if outparams.neuronparamislog(k)
-        set(paramvaltext_k, 'String', num2str(outparams.neuronparams(k), '%5.2e'));
+    if outParams.neuronparamislog(k)
+        set(paramvaltext_k, 'String', num2str(outParams.neuronparams(k), '%5.2e'));
     else
-        set(paramvaltext_k, 'String', num2str(outparams.neuronparams(k), 3));
+        set(paramvaltext_k, 'String', num2str(outParams.neuronparams(k), 3));
     end
 end
 
@@ -634,9 +634,9 @@ end
 function update_errortext (err, ltsProperties)
 %% On finishing a simulation/optimization, update error texts on GUI
 
-global outparams
+global outParams
 
-for k = 1:outparams.numswps
+for k = 1:outParams.numswps
     set(findobj('Tag', ['swperrtext', num2str(k)]), 'String', num2str(err.swperr(k)));
 end
 set(findobj('Tag', 'totswperrtext'), 'String', num2str(err.avgswperr, 3));
@@ -655,62 +655,62 @@ set(findobj('Tag', 'toterrtext'), 'String', num2str(err.toterr, 3));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function update_swpuse (hObject, ~, k)
-%% On check box click of sweep use, update sweep weight in outparams
+%% On check box click of sweep use, update sweep weight in outParams
 
-global outparams
+global outParams
 
 % Find the corresponding sweep weight text field
 p1 = get(hObject, 'Parent');
 swpw_k = findall(p1, 'Tag', ['swpw', num2str(k)]);
 
-% Update sweep weight in outparams
-outparams.swpw(k) = get(hObject, 'Value') * str2double(get(swpw_k, 'String'));
+% Update sweep weight in outParams
+outParams.swpw(k) = get(hObject, 'Value') * str2double(get(swpw_k, 'String'));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function update_swpw (hObject, ~, k)
-%% On text field edit of sweep weight, update sweep weight in outparams
+%% On text field edit of sweep weight, update sweep weight in outParams
 
-global outparams 
+global outParams 
 
 % Find the corresponding sweep use check box
 p1 = get(hObject, 'Parent');
 swpuse_k = findall(p1, 'Tag', ['swpuse', num2str(k)]);
 
-% Update sweep weight in outparams
-outparams.swpw(k) = get(swpuse_k, 'Value') * str2double(get(hObject, 'String'));
+% Update sweep weight in outParams
+outParams.swpw(k) = get(swpuse_k, 'Value') * str2double(get(hObject, 'String'));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function update_swpleftedge (hObject, ~, k)
 %% On text field edit, update sweep left edge
 
-global outparams 
+global outParams 
 
-outparams.fitwin(k, 1) = str2double(get(hObject, 'String'));
+outParams.fitwin(k, 1) = str2double(get(hObject, 'String'));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function update_swprightedge (hObject, ~, k)
 %% On text field edit, update sweep left edge
 
-global outparams 
+global outParams 
 
-outparams.fitwin(k, 2) = str2double(get(hObject, 'String'));
+outParams.fitwin(k, 2) = str2double(get(hObject, 'String'));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function update_ltsuse (hObject, ~, k)
-%% On check box click of LTS use, update LTS weight in outparams
+%% On check box click of LTS use, update LTS weight in outParams
 
-global outparams
+global outParams
 
 % Find the corresponding LTS weight text field
 p1 = get(hObject, 'Parent');
 ltsw_k = findall(p1, 'Tag', ['ltsw', num2str(k)]);
 
-% Update LTS weight in outparams
-outparams.ltsw(k) = get(hObject, 'Value') * str2double(get(ltsw_k, 'String'));
+% Update LTS weight in outParams
+outParams.ltsw(k) = get(hObject, 'Value') * str2double(get(ltsw_k, 'String'));
 
 % Update flags if needed
 update_flags;
@@ -718,16 +718,16 @@ update_flags;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function update_ltsw (hObject, ~, k)
-%% On text field edit of LTS weight, update LTS weight in outparams
+%% On text field edit of LTS weight, update LTS weight in outParams
 
-global outparams
+global outParams
 
 % Find the corresponding LTS use check box
 p1 = get(hObject, 'Parent');
 ltsuse_k = findall(p1, 'Tag', ['ltsuse', num2str(k)]);
 
-% Update LTS weight in outparams
-outparams.ltsw(k) = get(ltsuse_k, 'Value') * str2double(get(hObject, 'String'));
+% Update LTS weight in outParams
+outParams.ltsw(k) = get(ltsuse_k, 'Value') * str2double(get(hObject, 'String'));
 
 % Update flags if needed
 update_flags;
@@ -737,16 +737,16 @@ update_flags;
 function update_errratio (hObject, ~)
 %% On text field edit, update LTS to sweep error ratio
 
-global outparams
+global outParams
 
-outparams.lts_to_swp_errratio = str2double(get(hObject, 'String'));
+outParams.lts_to_swp_errratio = str2double(get(hObject, 'String'));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function update_neuronparams (hObject, ~, k)
 %% On slider movement, get value, update slider text, and update NEURON parameter value
 
-global outparams
+global outParams
 
 % Get corresponding text field
 p4 = get(hObject, 'Parent');
@@ -756,7 +756,7 @@ paramvaltext_k = findall(p4, 'Tag', ['paramvaltext', num2str(k)]);
 sliderval = get(hObject, 'Value');    % the slider value may be log scaled
 
 % Update slider text and value
-if outparams.neuronparamislog(k)
+if outParams.neuronparamislog(k)
     trueval = 10^sliderval;        % the true value 
     set(paramvaltext_k, 'String', num2str(trueval, '%5.2e'));
 else
@@ -765,52 +765,52 @@ else
 end
 
 % Update NEURON parameter value
-outparams.neuronparams(k) = trueval;
+outParams.neuronparams(k) = trueval;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function update_neuronparams_use (hObject, ~, k)
 %% On check box click, update whether NEURON parameter needs to be used
 
-global outparams
+global outParams
 
-outparams.neuronparams_use(k) = get(hObject, 'Value');
+outParams.neuronparams_use(k) = get(hObject, 'Value');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function update_autologger (hObject, ~)
 %% On check box click, update whether to log simplex errors and parameters
 
-global outparams
+global outParams
 
-outparams.autologgerflag = get(hObject, 'Value');
+outParams.autologgerflag = get(hObject, 'Value');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function update_simplexparams (hObject, ~)
 %% On table edit, update simplex parameters to be used
 
-global outparams
+global outParams
 
 tabdata = get(hObject, 'Data');
-outparams.simplexparams = cell2mat(tabdata(:, 2));        % update simplex parameters
+outParams.simplexparams = cell2mat(tabdata(:, 2));        % update simplex parameters
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function update_autoparams (hObject, ~)
 %% On table edit, update other auto mode parameters to be used
 
-global outparams
+global outParams
 
 tabdata = get(hObject, 'Data');
-outparams.autoparams = cell2mat(tabdata(:, 2));            % update other auto mode parameters
+outParams.autoparams = cell2mat(tabdata(:, 2));            % update other auto mode parameters
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function parameterfileloadbutton_toggle (hObject, ~, parentDirectory, buttoncolor_ON, buttoncolor_OFF)
 %% On toggle of parameterfileloadbutton, open p-file
 
-global outparams
+global outParams
 
 togstate = get(hObject, 'Value');
 togmax = get(hObject, 'Max');
@@ -827,13 +827,13 @@ if togstate == togmax           % if toggled ON
     else
         pfiledata = importdata(fullfile(pfilepath, pfilename));
         for k = 1:size(pfiledata, 1)
-            pn = find(strcmp(outparams.neuronparamnames, pfiledata{k, 1}) == 1);
+            pn = find(strcmp(outParams.neuronparamnames, pfiledata{k, 1}) == 1);
             if isempty(pn)                  % if parameter is not fitted anymore
                 fprintf('The parameter %s is not fitted anymore!\n\n', pfiledata{k, 1});
             else
-                outparams.neuronparams(pn) = pfiledata{k, 2};
-                outparams.neuronparams_min(pn) = pfiledata{k, 3};
-                outparams.neuronparams_max(pn) = pfiledata{k, 4};
+                outParams.neuronparams(pn) = pfiledata{k, 2};
+                outParams.neuronparams_min(pn) = pfiledata{k, 3};
+                outParams.neuronparams_max(pn) = pfiledata{k, 4};
             end
         end
         update_sliders;         % update slider bounds
@@ -847,7 +847,7 @@ set(hObject, 'BackgroundColor', buttoncolor_OFF);   % make button green
 function parameterfilesavebutton_toggle (hObject, ~, parentDirectory, buttoncolor_ON, buttoncolor_OFF)
 %% On toggle of parameterfilesavebutton, open selection box to save p-file
 
-global outparams
+global outParams
 
 togstate = get(hObject, 'Value');
 togmax = get(hObject, 'Max');
@@ -862,8 +862,8 @@ if togstate == togmax           % if toggled ON
         disp('User selected Cancel');
     else
         % Save a 4 column matrix: parameter names, values, lower bounds, upper bounds
-        tosave = [outparams.neuronparamnames', num2cell(outparams.neuronparams'), ...
-            num2cell(outparams.neuronparams_min'), num2cell(outparams.neuronparams_max')];
+        tosave = [outParams.neuronparamnames', num2cell(outParams.neuronparams'), ...
+            num2cell(outParams.neuronparams_min'), num2cell(outParams.neuronparams_max')];
         save(fullfile(pfilepath, pfilename), 'tosave');
     end
 end
@@ -875,7 +875,7 @@ set(hObject, 'BackgroundColor', buttoncolor_OFF);   % make button green
 function boundsbutton_toggle (hObject, ~, buttoncolor_ON, buttoncolor_OFF)
 %% On toggle of boundsbutton, open little GUI to update bounds and initial values
 
-global outparams
+global outParams
 
 togstate = get(hObject, 'Value');
 togmax = get(hObject, 'Max');
@@ -892,8 +892,8 @@ case togmax        % if toggled ON
 
     % Table of parameter values and bounds
     uitable(fbounds, 'Data', ...
-        [outparams.neuronparamnames', num2cell(outparams.neuronparams_min'), ...
-        num2cell(outparams.neuronparams_max'), num2cell(outparams.neuronparams')], ...
+        [outParams.neuronparamnames', num2cell(outParams.neuronparams_min'), ...
+        num2cell(outParams.neuronparams_max'), num2cell(outParams.neuronparams')], ...
         'Units', 'normalized', 'Position', [0.02, 0.275, 0.96, 0.7], 'Tag', 'boundstable', ...
         'ColumnWidth', {100, 90, 90, 90}, 'ColumnEditable', logical([0, 1, 1, 1]), ...
         'ColumnName', {'Parameter', 'Lower bound', 'Upper bound', 'Initial value'});
@@ -928,13 +928,13 @@ end
 function boundsdonebutton_push (hObject, ~, boundsbutton, buttoncolor_OFF)
 % Save new bounds and initial values upon pressing 'Save & close' of 'Choose bounds and initial values' GUI
 
-global outparams
+global outParams
 
 % Retrieve bounds and initial values set by user
 tabdata = get(findobj('Tag', 'boundstable'), 'Data');
 
 % Check bounds and initial values
-for p = 1:outparams.numparams
+for p = 1:outParams.numparams
     if ~(tabdata{p, 2} <= tabdata{p, 4} && tabdata{p, 4} <= tabdata{p, 3})
         % Pop up warning dialog box asking to change value for this parameter
         warndlg('Initial values outside of bounds!', ...
@@ -944,9 +944,9 @@ for p = 1:outparams.numparams
 end
 
 % Update bounds and initial values and slider bounds and positions
-outparams.neuronparams_min = reshape(cell2mat(tabdata(:, 2)), 1, []);   % update lower bounds
-outparams.neuronparams_max = reshape(cell2mat(tabdata(:, 3)), 1, []);   % update upper bounds
-outparams.neuronparams = reshape(cell2mat(tabdata(:, 4)), 1, []);       % update initial vals
+outParams.neuronparams_min = reshape(cell2mat(tabdata(:, 2)), 1, []);   % update lower bounds
+outParams.neuronparams_max = reshape(cell2mat(tabdata(:, 3)), 1, []);   % update upper bounds
+outParams.neuronparams = reshape(cell2mat(tabdata(:, 4)), 1, []);       % update initial vals
 update_sliders;                                             % update slider bounds
 
 % Reset 'Change Bounds' button
@@ -969,9 +969,9 @@ close(get(hObject, 'Parent'));                              % close GUI
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function modebutton_selectionchange(hObject, ~)
-%% On change of Button Group 3, update outparams.runMode and enable/disable things in Panel 4/5 (NEURON parameters/AUTO)
+%% On change of Button Group 3, update outParams.runMode and enable/disable things in Panel 4/5 (NEURON parameters/AUTO)
 
-global outparams
+global outParams
 
 % Get the selected button and store in modeselected
 modeselected = get(get(hObject, 'SelectedObject'), 'Tag');
@@ -991,21 +991,21 @@ case 'modebutton_manual'                            % for MANUAL mode
     set(p4children_sliders, 'Enable', 'on');            % can slide parameters to tweak them
     set(p4children_checkboxes, 'Enable', 'off');        % cannot select parameters; gray out check boxes
     set(p5children, 'Enable', 'off');                   % disable and gray out AUTO panel
-    outparams.runMode = 1;                              % update runmode
+    outParams.runMode = 1;                              % update runmode
 case 'modebutton_jitter'                            % for JITTER mode
     set(p4children_sliders, 'Enable', 'inactive');      % cannot slide parameters during jittering
     set(p4children_checkboxes, 'Enable', 'on');         % can select parameters to jitter
     set(p5children, 'Enable', 'off');                   % disable and gray out AUTO panel
-    outparams.runMode = 3;                              % update runmode
+    outParams.runMode = 3;                              % update runmode
 case {'modebutton_auto', 'modebutton_auto_w_jitter'}% for both AUTO & AUTO WITH JITTER modes
     set(p4children_sliders, 'Enable', 'inactive');      % cannot slide parameters during 
     set(p4children_checkboxes, 'Enable', 'on');         % can select parameters to optimize
     set(p5children, 'Enable', 'on');                    % enable AUTO panel
     switch modeselected
     case 'modebutton_auto'
-        outparams.runMode = 2;                          % update runmode
+        outParams.runMode = 2;                          % update runmode
     case 'modebutton_auto_w_jitter'
-        outparams.runMode = 4;                          % update runmode
+        outParams.runMode = 4;                          % update runmode
     end
 otherwise
     error('modeselected unrecognised!\n\n');
@@ -1032,7 +1032,7 @@ function runbutton_toggle (hObject, ~, hfig, realdata_cpr, realData, ltsProperti
 %% On toggle of runbutton: ALL SYSTEMS GO (OR KILL)
 %% TODO: Isolate run part to bypass GUI
 
-global outparams
+global outParams
 
 % Find all other buttons, sliders, checkboxes & editable text fields
 p1 = findobj('Tag', 'p1');
@@ -1081,18 +1081,18 @@ case togmax                 % if user toggles ON then send parameters to m3ha_op
     %##############
 
     % Call m3ha_optimizer_4compgabab.m to SIMULATE or OPTIMIZE
-    [done, outparams, hfig] = m3ha_optimizer_4compgabab(realdata_cpr, realData, outparams, hfig); 
+    [done, outParams, hfig] = m3ha_optimizer_4compgabab(realdata_cpr, realData, outParams, hfig); 
 
     %##############
     %##########
 
     % If on AUTO or AUTO WITH JITTER modes, update slider position based on optimized parameters
-    if outparams.runMode == 2 || outparams.runMode == 4
+    if outParams.runMode == 2 || outParams.runMode == 4
         update_sliders;                                     % update slider bounds
     end
 
     % Update error text on GUI
-    update_errortext(outparams.err{outparams.runnumtotal}, ltsProperties);
+    update_errortext(outParams.err{outParams.runnumtotal}, ltsProperties);
 
     % Reset flags and button if done
     if done
@@ -1142,10 +1142,10 @@ function twiddlebutton_toggle (hObject, ~, hfig, realdata_cpr, realData, buttonc
 % Knob twiddling
 % TODO: FIGURE OUT WHAT THIS DOES
 
-global outparams
+global outParams
 
-%[done err outparams] = optimizer(outfoldername,d, outparams,handles); % the business end of things
-%outparams.err{outparams.runnum_auto + outparams.runnum_manual} = err;
+%[done err outParams] = optimizer(outfoldername,d, outParams,handles); % the business end of things
+%outParams.err{outParams.runnum_auto + outParams.runnum_manual} = err;
 
 %neuronparamnames = {'pcabar1', 'pcabar2', 'actshift_itGHK', 'shift_itGHK', 'ghbar1', 'ghbar2', 'shift_ih', 'gpas', 'epas'};
 
@@ -1160,7 +1160,7 @@ global outparams
 % twiddleparams{9} = [-75 -70 -65 -60 -55];
 
 % Don't plot figures if knobtwiddler is used
-[outparams] = set_fields_zero(outparams, ...
+[outParams] = set_fields_zero(outParams, ...
             'plotzoomedflag', 'plotoverlappedflag', 'plotconductanceflag', 'plotcurrentflag', ...
             'plotipeakflag', 'plotLTSflag', 'plotstatisticsflag');
 
@@ -1191,9 +1191,9 @@ for tw5 = 1:numel(twiddleparams{5})
                 nowparams(8) = twiddleparams{8}(tw8);
                 for tw9 = 1:numel(twiddleparams{9})
                     nowparams(9) = twiddleparams{9}(tw9);
-                    outparams.neuronparams = nowparams;
+                    outParams.neuronparams = nowparams;
                                         
-%                     [done err outparams] = optimizer_comp(outfoldername,d, outparams,handles); 
+%                     [done err outParams] = optimizer_comp(outfoldername,d, outParams,handles); 
                      
                     %allerr = [allerr; err];
                 end
@@ -1203,7 +1203,7 @@ for tw5 = 1:numel(twiddleparams{5})
 end
 
 % Restore plot flags
-[outparams] = restore_fields(outparams, ...
+[outParams] = restore_fields(outParams, ...
         'plotzoomedflag', 'plotoverlappedflag', 'plotconductanceflag', 'plotcurrentflag', ...
         'plotipeakflag', 'plotLTSflag', 'plotstatisticsflag');
 
@@ -1238,8 +1238,8 @@ end
 
 bgcolor1 = [0.9, 0.9, 0.9];        % background color of sliders
 
-    if strcmp(outparams.modeselected, 'modebutton_auto') == 1 ...
-        || strcmp(outparams.modeselected, 'modebutton_auto_w_jitter') == 1
+    if strcmp(outParams.modeselected, 'modebutton_auto') == 1 ...
+        || strcmp(outParams.modeselected, 'modebutton_auto_w_jitter') == 1
 
     if neuronparamisbuild(k)
         bgcolor = rgb(bgcolor1);
@@ -1248,6 +1248,6 @@ bgcolor1 = [0.9, 0.9, 0.9];        % background color of sliders
     else
         bgcolor = rgb(bgcolor3);
     end
-neuronparamisbuild = outparams.neuronparamisbuild;    %% TODO: copy description from singleneuronfitting.m
+neuronparamisbuild = outParams.neuronparamisbuild;    %% TODO: copy description from singleneuronfitting.m
 
 %}

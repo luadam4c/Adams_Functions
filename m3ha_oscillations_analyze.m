@@ -16,6 +16,9 @@
 % 2019-11-26 Changed minSpikeRateInBurstHz from 30 Hz to 50 Hz
 % 2019-11-26 Changed maxInterBurstIntervalMs from 2000 ms to 1500 ms
 % 2019-11-28 Fixed the usage of selectionMethod for plot_measures
+% 2019-11-28 Changed minBurstLengthMs from 100 ms to 60 ms
+% 2019-11-28 Changed maxInterBurstIntervalMs from 1500 ms to 2000 ms
+% 2019-11-28 Changed minSpikeRateInBurstHz from 50 Hz to 100 Hz
 
 %% Hard-coded parameters
 % Folders
@@ -25,7 +28,7 @@ parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
 % parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', ...
 %                       'parse_multiunit_m3ha');
 archiveDir = parentDir;
-dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
+dirsToAnalyze = {'dual-final', 'snap5114-final', 'no711-final'};
 % dirsToAnalyze = {'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'no711-final'};
 % dirsToAnalyze = {'dual-final'};
@@ -34,13 +37,14 @@ dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'snap5114-test'};
 % dirsToAnalyze = {'dual-test'};
 % dirsToAnalyze = {'important-cases'};
+% dirsToAnalyze = {'difficult-cases'};
 specificSlicesToAnalyze = {};
 
 % Flags
 plotFigure1Individual = false;
-plotFigure1Population = false; % true;
+plotFigure1Population = true;
 
-parseIndividualFlag = true;
+parseIndividualFlag = false; % true;
 saveMatFlag = false; % true;
 plotRawFlag = false; % true;
 plotSpikeDetectionFlag = false; % true;
@@ -52,7 +56,7 @@ plotMeasuresFlag = false; % true;
 plotContourFlag = false; % true;
 plotCombinedFlag = true;
 
-parsePopulationRestrictedFlag = true;
+parsePopulationRestrictedFlag = false; %true;
 plotChevronFlag = true;
 plotByFileFlag = true;
 plotByPhaseFlag = true;
@@ -77,24 +81,12 @@ binWidthMs = 10;                % use a bin width of 10 ms by default
 resolutionMs = 5;
 
 % For compute_spike_histogram.m
-% minBurstLengthMs = 20;          % bursts must be at least 20 ms by default
-% minBurstLengthMs = 100;          % bursts must be at least 100 ms by default
-% minBurstLengthMs = 50;          % bursts must be at least 50 ms by default
 minBurstLengthMs = 60;          % bursts must be at least 60 ms by default
-% maxFirstInterBurstIntervalMs = 1500;
 maxFirstInterBurstIntervalMs = 2000;
-% maxInterBurstIntervalMs = 1000; % bursts are no more than 
-%                                 %   1 second apart
-% maxInterBurstIntervalMs = 1100; % bursts are no more than 
-%                                 %   1.1 seconds apart
-% maxInterBurstIntervalMs = 1500; % bursts are no more than 
-%                                 %   1.5 seconds apart
 maxInterBurstIntervalMs = 2000; % bursts are no more than 
                                 %   2 seconds apart
-% minSpikeRateInBurstHz = 100;    % bursts must have a spike rate of 
-%                                   at least 100 Hz by default
-minSpikeRateInBurstHz = 100; %50; %30;     % bursts must have a spike rate of 
-                                %   at least 30 Hz by default
+minSpikeRateInBurstHz = 100;    % bursts must have a spike rate of 
+                                %   at least 100 Hz by default
 
 % For compute_autocorrelogram.m
 filterWidthMs = 100;
@@ -253,7 +245,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_and_save_chevron(chevronTable, figPathBase)
+function plot_and_save_chevron(chevronTable, figPathBase, ...
+                                chevronWidth, chevronHeight, chevronMarkerSize)
 
 % Extract figure base
 figBase = extract_fileparts(figPathBase, 'dirbase');
@@ -286,7 +279,8 @@ end
 fig = set_figure_properties('AlwaysNew', true);
 
 % Plot Chevron
-plot_chevron(chevronTable, 'PlotMeanDifference', true, 'PlotErrorBars', true, ...
+plot_chevron(chevronTable, 'PlotMeanValues', true, ...
+                'PlotMeanDifference', true, 'PlotErrorBars', false, ...
                 'ColorMap', 'k', 'ReadoutLimits', readoutLimits, ...
                 'PTickLabels', pTickLabels, ...
                 'ReadoutLabel', readoutLabel, 'FigTitle', 'suppress', ...

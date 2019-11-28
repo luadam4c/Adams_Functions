@@ -1,24 +1,24 @@
-function [done, outparams, hfig] = m3ha_optimizer_4compgabab (outparams, hfig)
+function [done, outParams, hfig] = m3ha_optimizer_4compgabab (outParams, hfig)
 % OPTIMIZER  Passes parameters to NEURON (which runs simulations and saves
 % data as .dat files), loads .dat file data, plots data and compares with
 % experimental data. Save all this as well (timestamp for now)
 %
 % realData  Experimental data from OPTIMIZERGUI.m
 % 
-% outparams   GUI parameters from OPTIMIZERGUI.m
-%   outparams.swpWeights : weights of sweeps
-%   outparams.swpedges : left and right edges of sweep region to analyze
-%   outparams.ltsWeights : weights of LTS parameters
-%   outparams.modeselected : mode to run OPTIMIZER.m in (either
+% outParams   GUI parameters from OPTIMIZERGUI.m
+%   outParams.swpWeights : weights of sweeps
+%   outParams.swpedges : left and right edges of sweep region to analyze
+%   outParams.ltsWeights : weights of LTS parameters
+%   outParams.modeselected : mode to run OPTIMIZER.m in (either
 %       'modebutton_auto' or 'modebutton_manual')
-%   outparams.neuronparams : values of parameters for NEURON 
-%   outparams.neuronparamnames : names of parameters for NEURON (e.g. pcabar1,
+%   outParams.neuronparams : values of parameters for NEURON 
+%   outParams.neuronparamnames : names of parameters for NEURON (e.g. pcabar1,
 %       actshift_itGHK, etc)
-%   outparams.simplexParams : values of simplex parameters for
+%   outParams.simplexParams : values of simplex parameters for
 %   FMINSEARCH2.m
-%   outparams.simplexParamNames : names of simplex parameters for
+%   outParams.simplexParamNames : names of simplex parameters for
 %   FMINSEARCH2.m
-%   outparams.sortedswpnum : sweep numbers of sweeps called into
+%   outParams.sortedswpnum : sweep numbers of sweeps called into
 %   OPTIMIZER.m; use to figure out amplitude of current injected during CCIV
 %   protocol
 % 
@@ -54,7 +54,7 @@ function [done, outparams, hfig] = m3ha_optimizer_4compgabab (outparams, hfig)
 % 2016-10-03 - Added current pulse response
 % 2016-10-06 - Reorganized code
 % 2016-10-06 - Moved update_sliderposition to optimizergui_4compgabab.m
-% 2016-10-06 - xlimits now uses outparams.fitreg instead of outparams.swpedges
+% 2016-10-06 - xlimits now uses outParams.fitreg instead of outParams.swpedges
 % 2016-10-06 - Renamed lots of figures
 % 2016-10-06 - Renamed figure handles so that they are now all in a structure 
 %               hfig that is passed to and from functions
@@ -70,30 +70,30 @@ function [done, outparams, hfig] = m3ha_optimizer_4compgabab (outparams, hfig)
 % 2017-04-21 - Added outFolderName to output file names
 % 2017-05-02 - Now uses parfor to run through all initial conditions
 % 2017-05-02 - Added 'Iteration #' to compare_params.csv
-% 2017-05-02 - Changed simplex count to outparams.simplexNum and 
+% 2017-05-02 - Changed simplex count to outParams.simplexNum and 
 %               fixed the fact that it wasn't updated during active fitting
 % 2017-05-12 - Now saves runauto_results in outfolder
-% 2017-05-13 - Now updates outparams.runnumTotal here
-% 2017-05-13 - Now returns errCpr & err in outparams
-% 2017-05-13 - Now gets outFolderName from outparams
-% 2017-05-13 - Now updates outparams.neuronparams to 
+% 2017-05-13 - Now updates outParams.runnumTotal here
+% 2017-05-13 - Now returns errCpr & err in outParams
+% 2017-05-13 - Now gets outFolderName from outParams
+% 2017-05-13 - Now updates outParams.neuronparams to 
 %               initCond.neuronparams in generate_IC()
 % 2017-05-13 - Now initializes outparams0 within parfor loop
-% 2017-05-15 - Now changes outparams.prefix so that '_cpr' is already 
+% 2017-05-15 - Now changes outParams.prefix so that '_cpr' is already 
 %               incorporated before passive fitting
 % 2017-05-15 - Now changes neuronparams_use before calling fminsearch3_4compgabab 
 %               to reflect passive or active
 % 2017-05-16 - Now runs NEURON with full plots both before and after fitting
-% 2017-05-16 - parfor is now conditional on outparams.MaxNumWorkersIC
+% 2017-05-16 - parfor is now conditional on outParams.MaxNumWorkersIC
 % 2017-05-17 - update_errorhistoryplot() now plots lts errors if computed
-% 2017-05-17 - Added outparams.fitPassiveFlag & outparams.fitActiveFlag
+% 2017-05-17 - Added outParams.fitPassiveFlag & outParams.fitActiveFlag
 % 2017-05-17 - Moved update_sweeps_figures() to m3ha_neuron_run_and_analyze.m
 % 2017-05-19 - Fixed the fact that simplex.initError was used to select  
 %               best simplex; simplex.error is now simplex.totalError
 % 2017-05-22 - Changed line width and indentation
-% 2017-05-22 - Added outparams.fitTogetherFlag
-% 2017-05-23 - Removed modeselected from outparams and 
-%               replaced with updated outparams.runMode
+% 2017-05-22 - Added outParams.fitTogetherFlag
+% 2017-05-23 - Removed modeselected from outParams and 
+%               replaced with updated outParams.runMode
 % 2017-05-23 - Added otherwise to all switch statements
 % 2017-06-19 - Fixed runmode under runmanual
 % 2017-07-29 - Now saves the best parameters under /pfiles/ if err improves
@@ -105,12 +105,12 @@ function [done, outparams, hfig] = m3ha_optimizer_4compgabab (outparams, hfig)
 % 2018-08-08 - Now makes sure plotOverlappedFlag is false during fitting
 % 2018-08-08 - Now forces constrains all initial conditions for 
 %               epas and gpas according to epasEstimate and RinEstimate
-% 2018-08-10 - Changed outparams.fitregCpr to use outparams.fitwinCpr
+% 2018-08-10 - Changed outParams.fitregCpr to use outParams.fitwinCpr
 % 2018-08-16 - Now does not use parfor for active fitting
 % 2018-12-10 - Updated placement of jitterFlag
 % 2018-12-11 - Moved code to m3ha_neuron_create_new_initial_params.m
 % 2019-11-13 - Now copies final parameters without renaming
-% 2019-11-15 - Now passes in outparams for varargin 
+% 2019-11-15 - Now passes in outParams for varargin 
 %                   for m3ha_neuron_run_and_analyze.m
 % 2019-11-18 - Fixe fields that are set to zero during fitting
 
@@ -120,85 +120,87 @@ function [done, outparams, hfig] = m3ha_optimizer_4compgabab (outparams, hfig)
 % Change fitting flags if necessary
 % TODO: Fix
 %{
-if outparams.fitPassiveFlag && ...
-    ~any(neuronparamispas .* outparams.neuronparams_use)
-    outparams.fitPassiveFlag = false;
+if outParams.fitPassiveFlag && ...
+    ~any(neuronparamispas .* outParams.neuronparams_use)
+    outParams.fitPassiveFlag = false;
     fprintf(['No passive parameter is fitted, ', ...
             'so passive fitting is turned OFF!\n\n']);
 end
-if outparams.fitActiveFlag && ...
-    ~any(~neuronparamispas .* outparams.neuronparams_use)
-    outparams.fitActiveFlag = false;
+if outParams.fitActiveFlag && ...
+    ~any(~neuronparamispas .* outParams.neuronparams_use)
+    outParams.fitActiveFlag = false;
     fprintf(['No active parameter is fitted, ', ...
             'so active fitting is turned OFF!\n\n']);
 end
 %}
 
 % Initialize the prefix as the date-time-cell stamp
-outparams.prefix = outparams.dateTimeCellStamp;
+if ~isfield(outParams, 'prefix')
+    outParams.prefix = outParams.dateTimeCellStamp;
+end
 
 % If in jitter mode and if parameter is checked, add jitter
-if outparams.runMode == 3
-    outparams.jitterFlag = true;
+if outParams.runMode == 3
+    outParams.jitterFlag = true;
 else
-    outparams.jitterFlag = false;
+    outParams.jitterFlag = false;
 end
 
 %% Run based on manual or auto mode
-switch outparams.runMode
+switch outParams.runMode
 case {1, 3}
-    [~, ~, outparams, hfig] = runmanual(outparams, hfig);
+    [~, ~, outParams, hfig] = runmanual(outParams, hfig);
 case 2
     %% Save old NEURON parameters
-    oldNeuronParams = outparams.neuronParamsTable.Value;
+    oldNeuronParams = outParams.neuronParamsTable.Value;
 
     %% Run NEURON with baseline parameters with full plots
-    prefixOrig = outparams.prefix;                         % save original prefix
-    outparams.prefix = [outparams.prefix, '_bef'];          % change prefix for "before fitting"
-    [~, ~, outparams, hfig] = runmanual(outparams, hfig);
-    outparams.prefix = prefixOrig;                         % restore original prefix
+    prefixOrig = outParams.prefix;                         % save original prefix
+    outParams.prefix = [outParams.prefix, '_bef'];          % change prefix for "before fitting"
+    [~, ~, outParams, hfig] = runmanual(outParams, hfig);
+    outParams.prefix = prefixOrig;                         % restore original prefix
     drawnow
 
     %% Optimize parameters
-    [~, ~, outparams, hfig] = runauto(outparams, hfig);
+    [~, ~, outParams, hfig] = runauto(outParams, hfig);
     drawnow
 
     %% Run NEURON with best parameters again with full plots
-    prefixOrig = outparams.prefix;                         % save original prefix
-    outparams.prefix = [outparams.prefix, '_aft'];          % change prefix for "after fitting"
-    [~, ~, outparams, hfig] = runmanual(outparams, hfig);
-    outparams.prefix = prefixOrig;                         % restore original prefix
+    prefixOrig = outParams.prefix;                         % save original prefix
+    outParams.prefix = [outParams.prefix, '_aft'];          % change prefix for "after fitting"
+    [~, ~, outParams, hfig] = runmanual(outParams, hfig);
+    outParams.prefix = prefixOrig;                         % restore original prefix
     drawnow
 
     %% If error is not worse, copy final parameters to bestParamsDirectory
-    if outparams.err{outparams.runnumTotal}.totalError <= ...
-                outparams.err{1}.totalError       
+    if outParams.err{outParams.runnumTotal}.totalError <= ...
+                outParams.err{1}.totalError       
         % Get the final parameters file name for this cell
-        finalParamsFile = fullfile(outparams.outFolder, ...
-                            [outparams.prefix, '_aft_params.csv']);
+        finalParamsFile = fullfile(outParams.outFolder, ...
+                            [outParams.prefix, '_aft_params.csv']);
 
         % Copy to bestParamsDirectory
-        copyfile(finalParamsFile, outparams.bestParamsDirectory);
-        fprintf('Best parameters copied for %s!!\n\n', outparams.prefix);
+        copyfile(finalParamsFile, outParams.bestParamsDirectory);
+        fprintf('Best parameters copied for %s!!\n\n', outParams.prefix);
     end
 
     %% Compare NEURON parameters before and after 
     %   by plotting activation/inactivation & I-V curves
-    newNeuronParams = outparams.neuronParamsTable.Value;
-    neuronParamNames = outparams.neuronParamsTable.Properties.RowNames;
+    newNeuronParams = outParams.neuronParamsTable.Value;
+    neuronParamNames = outParams.neuronParamsTable.Properties.RowNames;
     bothParamValues = {oldNeuronParams, newNeuronParams};
     bothParamNames = {neuronParamNames, neuronParamNames};
-    suffixes = {['_', outparams.prefix, '_bef'], ...
-                ['_', outparams.prefix, '_aft']};
+    suffixes = {['_', outParams.prefix, '_bef'], ...
+                ['_', outParams.prefix, '_aft']};
 % TODO: Fix
 %     m3ha_compare_neuronparams2(bothParamValues, bothParamNames, suffixes, ...
-%                         'OutFolder', outparams.outFolder);
+%                         'OutFolder', outParams.outFolder);
 
 case 4                                       %%% TODO: Unfinished
-    [~, ~, outparams, hfig] = ...
-        runauto_w_jitter(outparams, hfig);
+    [~, ~, outParams, hfig] = ...
+        runauto_w_jitter(outParams, hfig);
 otherwise
-    outparams.runMode = 1;
+    outParams.runMode = 1;
     fprintf('Warning: run mode out of range, changed to 1!\n\n');
 end
 
@@ -207,116 +209,116 @@ done = 1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [errCpr, err, outparams, hfig] = runmanual(outparams, hfig)
+function [errCpr, err, outParams, hfig] = runmanual(outParams, hfig)
 %% MANUAL or JITTER modes: Simulate each sweep once and compare with real data
 
 % Update run counts
-switch outparams.runMode
+switch outParams.runMode
 case {1, 2}         % manual mode is also run before and after auto mode
-    outparams.runnumManual = outparams.runnumManual + 1;
+    outParams.runnumManual = outParams.runnumManual + 1;
 case 3
-    outparams.runnumJitter = outparams.runnumJitter + 1;
+    outParams.runnumJitter = outParams.runnumJitter + 1;
 otherwise
     error('runmode should be 1 or 3!\n');
 end
-outparams.runnumTotal = outparams.runnumTotal + 1;
+outParams.runnumTotal = outParams.runnumTotal + 1;
 
-% Simulate current pulse response only if outparams.fitPassiveFlag is true
-if outparams.fitPassiveFlag         % if fitting passive parameters
+% Simulate current pulse response only if outParams.fitPassiveFlag is true
+if outParams.fitPassiveFlag         % if fitting passive parameters
     %%%%%% 
     %%%%%%%%%%%%%
     % Set sim mode
-    outparams.simMode = 'passive';
+    outParams.simMode = 'passive';
 
     % Save original prefix
-    prefixOrig = outparams.prefix;
+    prefixOrig = outParams.prefix;
 
     % Change prefix for passive-parameters-fitting
-    outparams.prefix = [outparams.prefix, '_cpr'];
+    outParams.prefix = [outParams.prefix, '_cpr'];
 
     % Set grouping vector to be vhold
-    outparams.grouping = outparams.vhold;
+    outParams.grouping = outParams.vhold;
 
     % Run all simulations once
-    [errCpr, outparams.hfig] = ...
-        m3ha_neuron_run_and_analyze(outparams.neuronParamsTable, outparams);
+    [errCpr, outParams.hfig] = ...
+        m3ha_neuron_run_and_analyze(outParams.neuronParamsTable, outParams);
 
     % Change prefix back
-    outparams.prefix = prefixOrig;
+    outParams.prefix = prefixOrig;
     %%%%%%%%%%%%%
     %%%%%% 
 
     % Log errors and parameters and save parameters as .p file
     if ~isemptystruct(errCpr)
-        m3ha_log_errors_params(outparams.logFileName, outparams, errCpr);
+        m3ha_log_errors_params(outParams.logFileName, outParams, errCpr);
     end
 else
-    if outparams.runnumTotal > 1    % if this is not the first run
+    if outParams.runnumTotal > 1    % if this is not the first run
         % Use errCpr from last run
-        errCpr = outparams.errCpr{outparams.runnumTotal-1};   
+        errCpr = outParams.errCpr{outParams.runnumTotal-1};   
     else                            % if this is the first run
         % Use empty structure
         errCpr = struct;
     end
 end
 
-% Store error structure in outparams
-outparams.errCpr{outparams.runnumTotal} = errCpr;
+% Store error structure in outParams
+outParams.errCpr{outParams.runnumTotal} = errCpr;
 
-% Simulate GABAB IPSC response only if outparams.fitActiveFlag is true
-if outparams.fitActiveFlag
+% Simulate GABAB IPSC response only if outParams.fitActiveFlag is true
+if outParams.fitActiveFlag
     %%%%%% 
     %%%%%%%%%%%%%
     % Set sim mode
-    outparams.simMode = 'active';
+    outParams.simMode = 'active';
 
     % Run all simulations once
-    [err, outparams.hfig] = ...
-        m3ha_neuron_run_and_analyze(outparams.neuronParamsTable, outparams);              
+    [err, outParams.hfig] = ...
+        m3ha_neuron_run_and_analyze(outParams.neuronParamsTable, outParams);              
     %%%%%%%%%%%%%
     %%%%%% 
 
     % Log errors and parameters and save parameters
     if ~isemptystruct(err)
-        m3ha_log_errors_params(outparams.logFileName, outparams, err);
+        m3ha_log_errors_params(outParams.logFileName, outParams, err);
     end
 else
-    if outparams.runnumTotal > 1    % if this is not the first run
+    if outParams.runnumTotal > 1    % if this is not the first run
         % Use errCpr from last run
-        err = outparams.err{outparams.runnumTotal-1};   
+        err = outParams.err{outParams.runnumTotal-1};   
     else                            % if this is the first run
         % Use empty structure
         err = struct;
     end
 end
 
-% Store error structure in outparams
-outparams.err{outparams.runnumTotal} = err;
+% Store error structure in outParams
+outParams.err{outParams.runnumTotal} = err;
 
 % Update error history plot
 % TODO: Fix
-% update_errorhistoryplot(hfig, outparams);
+% update_errorhistoryplot(hfig, outParams);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [errCpr, err, outparams, hfig] = runauto(outparams, hfig)
+function [errCpr, err, outParams, hfig] = runauto(outParams, hfig)
 %% AUTO mode: Find best parameters with m3ha_fminsearch3.m
 
 % Update run counts
-outparams.runnumAuto = outparams.runnumAuto + 1;
-outparams.runnumTotal = outparams.runnumTotal + 1;
+outParams.runnumAuto = outParams.runnumAuto + 1;
+outParams.runnumTotal = outParams.runnumTotal + 1;
 
-% Extract constants from outparams
-cellName = outparams.cellName;
-oldOutFolderName = outparams.outFolder;
+% Extract constants from outParams
+cellName = outParams.cellName;
+oldOutFolderName = outParams.outFolder;
 
 % Extract number of initial conditions
-idxNInitConds = find_in_strings('nInitConds', outparams.autoParamNames);
-nInitConds = outparams.autoParams(idxNInitConds);
+idxNInitConds = find_in_strings('nInitConds', outParams.autoParamNames);
+nInitConds = outParams.autoParams(idxNInitConds);
 
 % Turn off all flags for stats and plots for fminsearch
-[outparams] = ...
-    set_fields_zero(outparams, ...
+[outParams] = ...
+    set_fields_zero(outParams, ...
         'saveLtsInfoFlag', 'saveLtsStatsFlag', ...
         'saveSimCmdsFlag', 'saveStdOutFlag', 'saveSimOutFlag', ...
         'plotConductanceFlag', 'plotCurrentFlag', ...
@@ -325,7 +327,7 @@ nInitConds = outparams.autoParams(idxNInitConds);
         'plotSwpWeightsFlag');
 
 % Fit parameters
-if outparams.fitTogetherFlag        % passive and active fitting done together from single initCond
+if outParams.fitTogetherFlag        % passive and active fitting done together from single initCond
     % Prepare for fitting
     fprintf('Fitting all parameters for cell %s ... \n', cellName);
     tstartAllFit = tic();          % tracks time for all-parameters-fitting
@@ -341,10 +343,10 @@ if outparams.fitTogetherFlag        % passive and active fitting done together f
     parfor iInitCond = 1:nInitConds
 %    for iInitCond = 1:nInitConds
         % Initialize outparams0 for parfor
-        outparams0 = outparams;
+        outparams0 = outParams;
 
         % Store the old simplex count
-        oldSimplexCt = outparams.simplexNum;
+        oldSimplexCt = outParams.simplexNum;
 
         % Prepare outparams0 for passive fit
         [outparams0, prefixOrig, neuronParamsUseOrig] = ...
@@ -399,38 +401,38 @@ if outparams.fitTogetherFlag        % passive and active fitting done together f
     end
 
     % Update # of simplex runs and # of simplex steps
-    outparams.simplexNum = outparams.simplexNum + nInitConds * 2;
-    outparams.simplexIterCount = ...
-        outparams.simplexIterCount + ...
+    outParams.simplexNum = outParams.simplexNum + nInitConds * 2;
+    outParams.simplexIterCount = ...
+        outParams.simplexIterCount + ...
         sum(cellfun(@(x) x.ctIterations, cprSimplexOutAll)) + ...
         sum(cellfun(@(x) x.ctIterations, simplexOutAll));
 
     % Find best of the optimized parameters
     cprCompareparamsfile = fullfile(oldOutFolderName, ...
-                                    [outparams.prefix, '_cpr_compare_params_IC_', ...
-                                    num2str(outparams.simplexNum - nInitConds * 2 + 1), ...
-                                    'to', num2str(outparams.simplexNum - nInitConds), '.csv']);
+                                    [outParams.prefix, '_cpr_compare_params_IC_', ...
+                                    num2str(outParams.simplexNum - nInitConds * 2 + 1), ...
+                                    'to', num2str(outParams.simplexNum - nInitConds), '.csv']);
     [cprSimplexOutBest, errCpr] = ...
         find_best_params(cprSimplexOutAll, cprInitialConditionsAll, cprCompareparamsfile);
     compareparamsfile = fullfile(oldOutFolderName, ...
-                                [outparams.prefix, '_compare_params_IC_', ...
-                                num2str(outparams.simplexNum - nInitConds + 1), ...
-                                'to', num2str(outparams.simplexNum), '.csv']);
+                                [outParams.prefix, '_compare_params_IC_', ...
+                                num2str(outParams.simplexNum - nInitConds + 1), ...
+                                'to', num2str(outParams.simplexNum), '.csv']);
     [simplexOutBest, err] = ...
         find_best_params(simplexOutAll, initialConditionsAll, compareparamsfile);
 
-    % Update outparams.neuronParamsTable to the best of the optimized parameters
-    outparams.neuronParamsTable = simplexOutBest.neuronParamsTable;
+    % Update outParams.neuronParamsTable to the best of the optimized parameters
+    outParams.neuronParamsTable = simplexOutBest.neuronParamsTable;
 
     % Save outputs in matfile
-    if outparams.saveMatFileFlag
+    if outParams.saveMatFileFlag
         save(fullfile(oldOutFolderName, ...
-                        [outparams.prefix, '_runauto_results_IC_', ...
-                        num2str(outparams.simplexNum - nInitConds + 1), ...
-                        'to', num2str(outparams.simplexNum), '.mat']), ...
+                        [outParams.prefix, '_runauto_results_IC_', ...
+                        num2str(outParams.simplexNum - nInitConds + 1), ...
+                        'to', num2str(outParams.simplexNum), '.mat']), ...
             'cprInitialConditionsAll', 'cprSimplexOutAll', 'cprExitFlagAll', ...
             'initialConditionsAll', 'simplexOutAll', 'exitFlagAll', ...
-            'outparams', '-v7.3');
+            'outParams', '-v7.3');
     end
 
 
@@ -442,15 +444,15 @@ if outparams.fitTogetherFlag        % passive and active fitting done together f
 
 else                                % do passive fitting, find best params, then do active fitting
     % Fit passive parameters
-    if outparams.fitPassiveFlag && ~outparams.fitTogetherFlag
+    if outParams.fitPassiveFlag && ~outParams.fitTogetherFlag
         % Prepare for passive-parameters-fitting
         fprintf('Fitting passive parameters for cell %s ... \n', cellName);
         tStartPassiveFit = tic();      % tracks time for passive-parameters-fitting
         fprintf('\n');
 
-        % Prepare outparams for passive fit
-        [outparams, prefixOrig, neuronParamsUseOrig] = ...
-            prepare_outparams_passive(outparams);
+        % Prepare outParams for passive fit
+        [outParams, prefixOrig, neuronParamsUseOrig] = ...
+            prepare_outparams_passive(outParams);
         
         % Optimize passive parameters by fitting to current pulse response
         cprInitialConditionsAll = cell(1, nInitConds);            % stores the initial parameters for each simplex run
@@ -459,10 +461,10 @@ else                                % do passive fitting, find best params, then
 %        parfor iInitCond = 1:nInitConds
         for iInitCond = 1:nInitConds
             % Initialize outparams0 for parfor
-            outparams0 = outparams;
+            outparams0 = outParams;
 
             % Store the old simplex count
-            oldSimplexCt = outparams.simplexNum;
+            oldSimplexCt = outParams.simplexNum;
 
             % Prepare outparams0 for simplex
             [outparams0] = ...
@@ -480,35 +482,35 @@ else                                % do passive fitting, find best params, then
             %%%%%%
         end
 
-        % Restore outparams after passive fit
-        [outparams] = ...
-            restore_outparams_passive(outparams, prefixOrig, neuronParamsUseOrig);
+        % Restore outParams after passive fit
+        [outParams] = ...
+            restore_outparams_passive(outParams, prefixOrig, neuronParamsUseOrig);
 
         % Update # of simplex runs and # of simplex steps
-        outparams.simplexNum = outparams.simplexNum + nInitConds;    
-        outparams.simplexIterCount = outparams.simplexIterCount + ...
+        outParams.simplexNum = outParams.simplexNum + nInitConds;    
+        outParams.simplexIterCount = outParams.simplexIterCount + ...
                                         sum(cellfun(@(x) x.ctIterations, cprSimplexOutAll));
 
         % Find best of the optimized parameters
         cprCompareparamsfile = fullfile(oldOutFolderName, ...
-                                        [outparams.prefix, '_compare_params_IC_', ...
-                                        num2str(outparams.simplexNum - nInitConds + 1), ...
-                                        'to', num2str(outparams.simplexNum), '.csv']);
+                                        [outParams.prefix, '_compare_params_IC_', ...
+                                        num2str(outParams.simplexNum - nInitConds + 1), ...
+                                        'to', num2str(outParams.simplexNum), '.csv']);
         [cprSimplexOutBest, errCpr] = ...
             find_best_params(cprSimplexOutAll, cprInitialConditionsAll, cprCompareparamsfile);
 
-        % Update outparams.neuronParamsTable to the best of the optimized parameters
-        outparams.neuronParamsTable = cprSimplexOutBest.neuronParamsTable;
+        % Update outParams.neuronParamsTable to the best of the optimized parameters
+        outParams.neuronParamsTable = cprSimplexOutBest.neuronParamsTable;
 
         % Save outputs in matfile
-        if outparams.saveMatFileFlag
+        if outParams.saveMatFileFlag
             save(fullfile(oldOutFolderName, ...
-                            [outparams.prefix, '_runauto_results_IC_', ...
-                            num2str(outparams.simplexNum - nInitConds + 1), ...
-                            'to', num2str(outparams.simplexNum), '.mat']), ...
+                            [outParams.prefix, '_runauto_results_IC_', ...
+                            num2str(outParams.simplexNum - nInitConds + 1), ...
+                            'to', num2str(outParams.simplexNum), '.mat']), ...
                 'cprInitialConditionsAll', 'cprSimplexOutAll', ...
                 'cprExitFlagAll', 'cprSimplexOutBest', 'errCpr', ...
-                'outparams', '-v7.3');
+                'outParams', '-v7.3');
         end
 
         % Print time elapsed
@@ -517,21 +519,21 @@ else                                % do passive fitting, find best params, then
                 timeTakenPassiveFit, nInitConds);
         fprintf('\n');
     else
-        if outparams.runnumTotal > 1    % if this is not the first run
-            errCpr = outparams.errCpr{outparams.runnumTotal-1};       % use errCpr from last run    
+        if outParams.runnumTotal > 1    % if this is not the first run
+            errCpr = outParams.errCpr{outParams.runnumTotal-1};       % use errCpr from last run    
         else                            % if this is the first run
             errCpr = struct;                                           % empty structure
         end
     end
 
     % Fit active parameters
-    if outparams.fitActiveFlag && ~outparams.fitTogetherFlag
+    if outParams.fitActiveFlag && ~outParams.fitTogetherFlag
         % Prepare for active-parameters-fitting
         fprintf('Performing active-parameters-fitting for cell %s ... \n', cellName);
         tStartActiveFit = tic();                % tracks time for active-parameters-fitting
 
-        % Prepare outparams for active fit
-        [outparams, neuronParamsUseOrig] = prepare_outparams_active(outparams);
+        % Prepare outParams for active fit
+        [outParams, neuronParamsUseOrig] = prepare_outparams_active(outParams);
 
         % Optimize active parameters by fitting to IPSC response
         initialConditionsAll = cell(1, nInitConds);                % stores the initial parameters for each simplex run
@@ -540,10 +542,10 @@ else                                % do passive fitting, find best params, then
 %        parfor iInitCond = 1:nInitConds
         for iInitCond = 1:nInitConds
             % Initialize outparams0 for parfor
-            outparams0 = outparams;
+            outparams0 = outParams;
 
             % Store the old simplex count
-            oldSimplexCt = outparams.simplexNum;
+            oldSimplexCt = outParams.simplexNum;
 
             % Prepare outparams0 for simplex
             [outparams0] = ...
@@ -562,35 +564,35 @@ else                                % do passive fitting, find best params, then
             %%%%%%
         end
 
-        % Restore outparams after active fit
-        outparams = restore_outparams_active(outparams, neuronParamsUseOrig);
+        % Restore outParams after active fit
+        outParams = restore_outparams_active(outParams, neuronParamsUseOrig);
 
         % Update # of simplex runs and # of simplex steps
-        outparams.simplexNum = outparams.simplexNum + nInitConds;
-        outparams.simplexIterCount = ...
-            outparams.simplexIterCount + ...
+        outParams.simplexNum = outParams.simplexNum + nInitConds;
+        outParams.simplexIterCount = ...
+            outParams.simplexIterCount + ...
             sum(cellfun(@(x) x.ctIterations, simplexOutAll));
 
         % Find best of the optimized parameters
         compareparamsfile = fullfile(oldOutFolderName, ...
-                                    [outparams.prefix, '_compare_params_IC_', ...
-                                    num2str(outparams.simplexNum - nInitConds + 1), ...
-                                    'to', num2str(outparams.simplexNum), '.csv']);
+                                    [outParams.prefix, '_compare_params_IC_', ...
+                                    num2str(outParams.simplexNum - nInitConds + 1), ...
+                                    'to', num2str(outParams.simplexNum), '.csv']);
         [simplexOutBest, err] = ...
             find_best_params(simplexOutAll, initialConditionsAll, compareparamsfile);
 
-        % Update outparams.neuronParamsTable to the best of the optimized parameters
-        outparams.neuronParamsTable = simplexOutBest.neuronParamsTable;
+        % Update outParams.neuronParamsTable to the best of the optimized parameters
+        outParams.neuronParamsTable = simplexOutBest.neuronParamsTable;
 
         % Save outputs in matfile
-        if outparams.saveMatFileFlag
+        if outParams.saveMatFileFlag
             save(fullfile(oldOutFolderName, ...
-                            [outparams.prefix, '_runauto_results_IC_', ...
-                            num2str(outparams.simplexNum - nInitConds + 1), ...
-                            'to', num2str(outparams.simplexNum), '.mat']), ...
+                            [outParams.prefix, '_runauto_results_IC_', ...
+                            num2str(outParams.simplexNum - nInitConds + 1), ...
+                            'to', num2str(outParams.simplexNum), '.mat']), ...
                 'initialConditionsAll', 'simplexOutAll', 'exitFlagAll', ...
                 'simplexOutBest', 'err', ...
-                'outparams', '-v7.3');
+                'outParams', '-v7.3');
         end
 
         % Print time elapsed
@@ -599,9 +601,9 @@ else                                % do passive fitting, find best params, then
                     timeTakenActiveFit, nInitConds);
         fprintf('\n');
     else
-        if outparams.runnumTotal > 1    % if this is not the first run
+        if outParams.runnumTotal > 1    % if this is not the first run
             % Use err from last run
-            err = outparams.err{outparams.runnumTotal - 1};
+            err = outParams.err{outParams.runnumTotal - 1};
         else                            % if this is the first run
             % Use empty structure
             err = struct;
@@ -609,13 +611,13 @@ else                                % do passive fitting, find best params, then
     end
 end
 
-% Store error structure in outparams
-outparams.errCpr{outparams.runnumTotal} = errCpr;
-outparams.err{outparams.runnumTotal} = err;        
+% Store error structure in outParams
+outParams.errCpr{outParams.runnumTotal} = errCpr;
+outParams.err{outParams.runnumTotal} = err;        
 
 % Restore flags for stats and plots and parameter usage
-[outparams] = ...
-    restore_fields(outparams, ...
+[outParams] = ...
+    restore_fields(outParams, ...
         'saveLtsInfoFlag', 'saveLtsStatsFlag', ...
         'saveSimCmdsFlag', 'saveStdOutFlag', 'saveSimOutFlag', ...
         'plotConductanceFlag', 'plotCurrentFlag', ...
@@ -624,115 +626,115 @@ outparams.err{outparams.runnumTotal} = err;
         'plotSwpWeightsFlag');
 
 % Update error history plot
-update_errorhistoryplot(hfig, outparams);
+update_errorhistoryplot(hfig, outParams);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [errCpr, err, outparams, hfig] = runauto_w_jitter (outparams, hfig)
+function [errCpr, err, outParams, hfig] = runauto_w_jitter (outParams, hfig)
 %% AUTO WITH JITTER mode: TODO
 
 % Update run counts
-outparams.runnumAutoWithJitter = outparams.runnumAutoWithJitter + 1;
-outparams.runnumTotal = outparams.runnumTotal + 1;
+outParams.runnumAutoWithJitter = outParams.runnumAutoWithJitter + 1;
+outParams.runnumTotal = outParams.runnumTotal + 1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [outparams, prefixOrig, neuronParamsUseOrig] = ...
-                prepare_outparams_passive (outparams)
-%% Prepare outparams for passive fit
+function [outParams, prefixOrig, neuronParamsUseOrig] = ...
+                prepare_outparams_passive (outParams)
+%% Prepare outParams for passive fit
 
 % Turn flag for passive-parameters-fitting on
-outparams.simMode = 'passive';          
+outParams.simMode = 'passive';          
 
 % Change prefix for passive-parameters-fitting
-prefixOrig = outparams.prefix;
-outparams.prefix = [outparams.prefix, '_cpr'];
+prefixOrig = outParams.prefix;
+outParams.prefix = [outParams.prefix, '_cpr'];
 
 % Save original parameter usage
-neuronParamsUseOrig = outparams.neuronParamsTable{:, 'InUse'};
+neuronParamsUseOrig = outParams.neuronParamsTable{:, 'InUse'};
 
 % Look for all active parameters
-indParamsIsActive = find(~outparams.neuronParamsTable.IsPassive);
+indParamsIsActive = find(~outParams.neuronParamsTable.IsPassive);
 
 % Turn off active parameters
-outparams.neuronParamsTable{indParamsIsActive, 'InUse'} = ...
+outParams.neuronParamsTable{indParamsIsActive, 'InUse'} = ...
     zeros(length(indParamsIsActive), 1);
 
 % Set simplexParams to the passive ones
-outparams.simplexParams = outparams.simplexParamsPassive;
+outParams.simplexParams = outParams.simplexParamsPassive;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [outparams] = restore_outparams_passive (outparams, prefixOrig, ...
+function [outParams] = restore_outparams_passive (outParams, prefixOrig, ...
                                                 neuronParamsUseOrig)
-%% Restore outparams after passive fit
+%% Restore outParams after passive fit
 
 % Turn flag for passive-parameters-fitting off
-outparams.simMode = 'active';
+outParams.simMode = 'active';
 
 % Restore prefix
-outparams.prefix = prefixOrig;
+outParams.prefix = prefixOrig;
 
 % Restore original parameter usage
-outparams.neuronParamsTable{:, 'InUse'} = neuronParamsUseOrig;
+outParams.neuronParamsTable{:, 'InUse'} = neuronParamsUseOrig;
 
-% Reset outparams.simplexParams for safety
-outparams.simplexParams = [];
+% Reset outParams.simplexParams for safety
+outParams.simplexParams = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [outparams, neuronParamsUseOrig] = prepare_outparams_active (outparams)
-%% Prepare outparams for active fit
+function [outParams, neuronParamsUseOrig] = prepare_outparams_active (outParams)
+%% Prepare outParams for active fit
 
 % Save original parameter usage
-neuronParamsUseOrig = outparams.neuronParamsTable.InUse;
+neuronParamsUseOrig = outParams.neuronParamsTable.InUse;
 
 % Look for all passive parameters
-indParamsIsPassive = find(outparams.neuronParamsTable.IsPassive);
+indParamsIsPassive = find(outParams.neuronParamsTable.IsPassive);
 
 % Turn off passive parameters
-outparams.neuronParamsTable{indParamsIsPassive, 'InUse'} = ...
+outParams.neuronParamsTable{indParamsIsPassive, 'InUse'} = ...
     zeros(length(indParamsIsPassive), 1);
 
 %Set simplexParams to the active ones
-outparams.simplexParams = outparams.simplexParamsActive;
+outParams.simplexParams = outParams.simplexParamsActive;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function outparams = restore_outparams_active (outparams, neuronParamsUseOrig)
-%% Restore outparams after active fit
+function outParams = restore_outparams_active (outParams, neuronParamsUseOrig)
+%% Restore outParams after active fit
 
 % Restore original parameter usage
-outparams.neuronParamsTable{:, 'InUse'} = neuronParamsUseOrig;
+outParams.neuronParamsTable{:, 'InUse'} = neuronParamsUseOrig;
 
-% Reset outparams.simplexParams for safety
-outparams.simplexParams = [];
+% Reset outParams.simplexParams for safety
+outParams.simplexParams = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function outparams = prepare_outparams_simplex (outparams, oldOutFolderName, ...
+function outParams = prepare_outparams_simplex (outParams, oldOutFolderName, ...
                                                 oldSimplexCt, initCondNum)
-% Prepare outparams for simplex
+% Prepare outParams for simplex
 
 % Update simplex number
-outparams.simplexNum = oldSimplexCt + initCondNum;
+outParams.simplexNum = oldSimplexCt + initCondNum;
 
 % Create a subfolder for simplex outputs and update outFolderName
-outparams.outFolder = ...
-    fullfile(oldOutFolderName, ['simplex_', num2str(outparams.simplexNum)]);
+outParams.outFolder = ...
+    fullfile(oldOutFolderName, ['simplex_', num2str(outParams.simplexNum)]);
 
 % Make sure the directory exists
-check_dir(outparams.outFolder);
+check_dir(outParams.outFolder);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [initCond, outparams] = generate_IC (outparams, initCondNum)
+function [initCond, outParams] = generate_IC (outParams, initCondNum)
 %% Generate randomized initial conditions, except for the first run
 
-% Retrieve from outparams
-prevNeuronParamsTable = outparams.neuronParamsTable;
-simplexNum = outparams.simplexNum;
-% RinEstimate = outparams.RinEstimate;
+% Retrieve from outParams
+prevNeuronParamsTable = outParams.neuronParamsTable;
+simplexNum = outParams.simplexNum;
+% RinEstimate = outParams.RinEstimate;
 
 % Set up initial parameters for this initial condition
 if initCondNum == 1
@@ -762,9 +764,9 @@ paramsInUseNames = cellfun(@(x) strcat(x, '_0'), paramsInUseNames, ...
 % Get the values of all parameters in use
 paramsInUseNewValue = newNeuronParamsTable{isInUse, 'InitValue'};
 
-%% Update outparams structure
-% Update outparams to these initial parameters
-outparams.neuronParamsTable = newNeuronParamsTable;
+%% Update outParams structure
+% Update outParams to these initial parameters
+outParams.neuronParamsTable = newNeuronParamsTable;
 
 %% Store in initCond structure
 % Store the seed of the random number generator
@@ -841,26 +843,26 @@ errBest = simplexOutBest.err;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function update_errorhistoryplot(hfig, outparams)
+function update_errorhistoryplot(hfig, outParams)
 %% Shows and updates Error History figure
 
-rn = outparams.runnumTotal;     % current run number
-if outparams.fitActiveFlag
-    err = outparams.err{rn};        % current error structure
-elseif outparams.fitPassiveFlag
-    err = outparams.errCpr{rn};
+rn = outParams.runnumTotal;     % current run number
+if outParams.fitActiveFlag
+    err = outParams.err{rn};        % current error structure
+elseif outParams.fitPassiveFlag
+    err = outParams.errCpr{rn};
 end
 
 % Make the plot the current figure
-if outparams.fitActiveFlag
+if outParams.fitActiveFlag
     set(0, 'CurrentFigure', hfig.errorhistory);
-elseif outparams.fitPassiveFlag
+elseif outParams.fitPassiveFlag
     set(0, 'CurrentFigure', hfig.cprerrorhistory);
 end
 
 % Plot the error
 if ~isempty(err)
-    if outparams.fitActiveFlag
+    if outParams.fitActiveFlag
         % Plot the total error
         subplot(3, 2, 1);
         update_subplot(rn, err.totalError, [], 'total error', 'o', 'b');
@@ -922,7 +924,7 @@ end
 OLD CODE:
 
 %% Make all figures visible and update
-if outparams.showSweepsFlag
+if outParams.showSweepsFlag
     figs = fieldnames(hfig);
     for k = 1:numel(figs)
         set(hfig.(figs{k}), 'Visible', 'on');

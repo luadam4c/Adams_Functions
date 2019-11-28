@@ -297,6 +297,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-10-04 Now plots 'NS' if not significant
 % 2019-10-07 Now plots 'NS' or star in black
 % 2019-11-24 Moved code to parse_phase_info.m
+% 2019-11-28 Now plots confidence intervals with transparency
 % TODO: phaseBoundaries needs to be provided into parse_phase_info.m
 
 %% Hard-coded constants
@@ -309,8 +310,10 @@ validRBoundaryTypes = {'horizontalLines', 'verticalBars', 'horizontalShades'};
 
 % TODO: Make optional arguments
 sigLevel = 0.05;                    % significance level for tests
-confIntFadePercentage = 0.25;       % fade percentage for confidence interval colors
+confIntFadePercentage = 1;          % fade percentage for confidence interval colors
 confIntLineStyle = 'none';
+confIntFaceAlpha = 0.25;
+confIntEdgeAlpha = 0.25;
 selectedLineWidth = 3;              % line width for selected values markers
 selectedMarker = 'o';
 outlierMethod = 'fiveStds';
@@ -914,7 +917,9 @@ for iPlot = 1:nColumnsToPlot
             %   with confIntColorMap
             confInts(iPlot, 1) = fill(confIntXValues, confIntYValues, ...
                                         confIntColorMap(iPlot, :), ...
-                                        'LineStyle', confIntLineStyle);
+                                        'LineStyle', confIntLineStyle, ...
+                                        'FaceAlpha', confIntFaceAlpha, ...
+                                        'EdgeAlpha', confIntEdgeAlpha);
 
             % Plot tuning curve again
             curves(iPlot, 1) = plot_one_line(pIsLog, pValues, readoutThis, ...

@@ -74,6 +74,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/find_matching_files.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_create_initial_params.m
+%       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_network_single_neuron.m
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_select_sweeps.m

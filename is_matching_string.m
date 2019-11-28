@@ -4,7 +4,7 @@ function isMatch = is_matching_string (strList, cand, varargin)
 % Explanation:
 %   There are three main search modes (parameter 'SearchMode'):
 %       'substrings': allows the candidate to be a substring or substrings 
-%                       of a match in strList.
+%                       of a match in strList. (cf. matches())
 %       'exact': candidate must be an exact match
 %       'regexp': candidate is a regular expression
 %   The latter two cases are similar to strcmp()/strcmpi() or regexp()/regexpi()

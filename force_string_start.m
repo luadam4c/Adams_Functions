@@ -22,6 +22,7 @@ function newStr = force_string_start (oldStr, subStr, varargin)
 % Arguments:    
 %       oldStr      - original string
 %                   must be a string scalar or a character vector
+%                       or a cell array of them
 %       subStr      - substring to end with
 %                   must be a string scalar or a character vector
 %       varargin    - 'OnlyIfNonempty': whether to append substring

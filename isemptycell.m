@@ -25,6 +25,7 @@ function isEmpty = isemptycell (cellArray)
 %       cd/extract_distinct_fileparts.m
 %       cd/find_in_strings.m
 %       cd/istype.m
+%       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/m3ha_select_cells.m
 %       cd/plot_traces.m

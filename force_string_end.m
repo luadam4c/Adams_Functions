@@ -21,6 +21,7 @@ function newStr = force_string_end (oldStr, subStr, varargin)
 % Arguments:    
 %       oldStr      - original string
 %                   must be a string scalar or a character vector
+%                       or a cell array of them
 %       subStr      - substring to end with
 %                   must be a string scalar or a character vector
 %       varargin    - 'OnlyIfNonempty': whether to append substring
@@ -54,6 +55,7 @@ function newStr = force_string_end (oldStr, subStr, varargin)
 % 2019-01-01 Now allows oldStr and subStr to be cell arrays
 % 2019-06-03 Now escapes the metacharacter .
 % 2019-09-06 Added 'StringStartInstead' as an optional argument
+% TODO: Use endsWith() and startsWith() to simplify code?
 % TODO: Escape all metacharacters for regexp
 % TODO: Deal with the case when substr is more than one character
 % TODO: force_string_start.m
@@ -79,7 +81,7 @@ iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'oldStr', ...
-    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x) || iscell(x), ...
         ['oldStr must be a character array or a string array ', ...
             'or cell array of character arrays!']));
 addRequired(iP, 'subStr', ...
@@ -105,8 +107,9 @@ stringStartInstead = iP.Results.StringStartInstead;
 
 %% Do the job
 if iscell(oldStr)
-    newStr = cellfun(@(x, y) force_string_end_helper(x, y, ...
-                                    onlyIfNonempty, stringStartInstead), ...
+    newStr = cellfun(@(x, y) force_string_end(x, y, ...
+                                'OnlyIfNonempty', onlyIfNonempty, ...
+                                'StringStartInstead', stringStartInstead), ...
                     oldStr, subStr, 'UniformOutput', false);
 else
     newStr = force_string_end_helper(oldStr, subStr, ...

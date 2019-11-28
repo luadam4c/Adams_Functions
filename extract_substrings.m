@@ -10,6 +10,7 @@ function subStrs = extract_substrings (strs, varargin)
 %       extract_substrings('98765test01234', 'RegExp', '[\d]*')
 %       strs = {'Many_A105034_later', 'Mary_B203491_now'};
 %       extract_substrings(strs, 'RegExp', '[A-Z][0-9]{6}')
+%       extract_substrings({'test', 'test23', '45test'}, 'RegExp', '[\d]*')
 %
 % Outputs:
 %       subStrs     - substrings extracted
@@ -29,13 +30,13 @@ function subStrs = extract_substrings (strs, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_plot_figure02.m
-%       cd/singleneuronfitting64.m
 
 % File History:
 % 2019-11-25 Created by Adam Lu
-% 
+% 2019-11-28 Fixed the case when no substrings are found
 
 %% Hard-coded parameters
 
@@ -79,13 +80,14 @@ regExp = iP.Results.RegExp;
 %% Do the job
 if ~isempty(regExp)
     % Match the regular expression
-    matchedCell = regexp(strs, regExp, 'match');
+    matchedSubStrs = regexp(strs, regExp, 'match');
 
     % Extract the first match
-    if iscellstr(matchedCell)
-        subStrs = matchedCell{1};
+    if iscellstr(matchedSubStrs)
+        subStrs = extract_first_substr(matchedSubStrs);
     else
-        subStrs = cellfun(@(x) x{1}, matchedCell, 'UniformOutput', false);
+        subStrs = cellfun(@extract_first_substr, matchedSubStrs, ...
+                            'UniformOutput', false);
     end
 else
     subStrs = strs;
@@ -93,6 +95,16 @@ end
 
 %% Output results
 % TODO
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function subStr = extract_first_substr(matchedSubStrs)
+
+if isempty(matchedSubStrs)
+    subStr = '';
+else
+    subStr = matchedSubStrs{1};
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
