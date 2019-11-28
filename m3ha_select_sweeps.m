@@ -62,6 +62,7 @@ function [swpInfo, fileBasesToUse] = m3ha_select_sweeps (varargin)
 %                   default == no restrictions
 %                   
 % Requires:
+%       cd/extract_fileparts.m
 %       cd/has_same_attributes.m
 %       cd/is_var_in_table.m
 %       cd/m3ha_find_files_to_take_out.m
@@ -184,23 +185,23 @@ if dataMode == 2
     if isempty(fileNamesToTakeOut)
         fprintf('There are no files to take out under %s!\n', casesDir);
         fileBasesToUse = {};
-        swpIndicesToUse = [];
         return
     end
 
+    % Extract file bases
+    fileBasesToTakeOut = extract_fileparts(fileNamesToTakeOut, 'base');
+
     % Determine whether each sweep as the same cell ID, pharm condition
     %   and conductance amplitude scaling as any of the files to take out
-    isNotToUse = has_same_attributes(swpInfo, fileNamesToTakeOut, ...
+    isNotToUse = has_same_attributes(swpInfo, fileBasesToTakeOut, ...
                                         attributesToMatch);
 end
 
 % Find the sweep indices to fit
-if dataMode == 0
-    toUse = true(height(swpInfo), 1);
-elseif dataMode == 1
-    toUse = isGIncrToUse;
+if dataMode == 1
+    toUse = toUse & isGIncrToUse;
 elseif dataMode == 2
-    toUse = isGIncrToUse & ~isNotToUse;
+    toUse = toUse & isGIncrToUse & ~isNotToUse;
 end
 
 %% Update toUse according to the conditions requested
@@ -212,7 +213,11 @@ toUse = restrict_to_conditions(toUse, swpInfo, repNumStr, repNums);
 
 %% Output results
 % Place in swpInfo
-swpInfo = addvars(swpInfo, toUse);
+if is_var_in_table(toUseStr, swpInfo)
+    swpInfo.(toUseStr) = toUse;
+else
+    swpInfo = addvars(swpInfo, toUse);
+end
 
 % Extract all the file bases
 fileBases = swpInfo.Properties.RowNames;

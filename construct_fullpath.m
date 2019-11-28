@@ -1,8 +1,15 @@
 function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %% Constructs full path(s) based on file/directory name(s) and optional directory, suffixes or extension
 % Usage: [fullPath, pathType] = construct_fullpath (pathName, varargin)
+% Explanation:
+%       TODO
+%
 % Examples:
 %       fullpaths = construct_fullpath(files, 'Directory', directory);
+%       construct_fullpath('funny', 'Directory', '/path/to')
+%       construct_fullpath('funny', 'Directory', '/path/to', 'Suffix', 'man')
+%       construct_fullpath('funny', 'Directory', '/path/to', 'Suffix', 'man')
+%       construct_fullpath('funny', 'Suffixes', {'tall', 'man'})
 %
 % Outputs:
 %       fullPath    - the full path(s) to file(s) or directory(s) constructed
@@ -44,7 +51,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %
 % Requires:
 %       cd/argfun.m
-%       cd/construct_suffix.m
+%       cd/combine_strings.m
 %       cd/force_column_cell.m
 %       cd/force_string_start.m
 %       cd/match_format_vector_sets.m
@@ -79,6 +86,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 % 2018-10-03 Now accepts a cell array of paths as input
 % 2018-11-01 Now uses argfun.m, force_column_cell.m, match_format_vector_sets.m
 % 2019-10-07 Now uses force_string_start.m on file extension
+% TODO: Add 'Prefixes' as an optional argument
 
 %% Default values for optional arguments
 verboseDefault = false;             % don't print to standard output by default
@@ -131,8 +139,13 @@ parse(iP, pathName, varargin{:});
 verbose = iP.Results.Verbose;
 directory = iP.Results.Directory;
 suffixes = iP.Results.Suffixes;
-extension = iP.Results.Extension;
 suffixNameValuePairs = iP.Results.NameValuePairs;
+extension = iP.Results.Extension;
+
+% TODO: Make optional arguments
+prefixes = '';
+prefixNameValuePairs = {'', NaN};
+
 
 %% Preparation
 % Match the number of pathNames to directory and extension
@@ -146,25 +159,29 @@ if iscell(pathName)
     
     % Match the number of directories and extensions to pathName
     [directory, extension] = ...
-        argfun(@(x) match_format_vector_sets(x, pathName, 'ForceCellOutputs', true), ...
+        argfun(@(x) match_format_vector_sets(x, pathName, ...
+                                            'ForceCellOutputs', true), ...
             directory, extension);
 
     % Do for each path
     [fullPath, pathType] = ...
         cellfun(@(x, y, z) construct_fullpath_helper(x, verbose, y, ...
-                            suffixes, z, suffixNameValuePairs), ...
+                            prefixes, prefixNameValuePairs, ...
+                            suffixes, suffixNameValuePairs, z), ...
                 pathName, directory, extension, 'UniformOutput', false);
 else
     [fullPath, pathType] = ...
         construct_fullpath_helper(pathName, verbose, directory, ...
-                                    suffixes, extension, suffixNameValuePairs);
+                                prefixes, prefixNameValuePairs, ...
+                                suffixes, suffixNameValuePairs, extension);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [fullPath, pathType] = ...
             construct_fullpath_helper (pathName, verbose, directory, ...
-                                        suffixes, extension, suffixNameValuePairs)
+                                    prefixes, prefixNameValuePairs, ...
+                                    suffixes, suffixNameValuePairs, extension)
 %% Create full path to file robustly
 
 % Separate fileDir, fileBase and fileExt from pathName
@@ -198,13 +215,18 @@ if isempty(directory)
     end
 end
 
+% Construct final prefix
+finalPrefix = combine_strings('EndWithDelimiter', true, ...
+                                'Substrings', prefixes, ...
+                                'NameValuePairs', prefixNameValuePairs);
+
 % Construct final suffix
-finalSuffix = construct_suffix('BeginWithDelimiter', true, ...
-                                'Suffixes', suffixes, ...
+finalSuffix = combine_strings('BeginWithDelimiter', true, ...
+                                'Substrings', suffixes, ...
                                 'NameValuePairs', suffixNameValuePairs);
 
 % Construct full path based on directory, fileBase, final suffix and fileExt
-fullPath = fullfile(directory, [fileBase, finalSuffix, fileExt]);
+fullPath = fullfile(directory, [finalPrefix, fileBase, finalSuffix, fileExt]);
 
 % Print message
 if verbose

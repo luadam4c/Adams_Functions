@@ -26,6 +26,12 @@ function [initParamTables, initParamFiles, otherParams] = ...
 %                   - 'OutFolder': directory to place NEURON parameters files
 %                   must be a string scalar or a character vector
 %                   default == fullfile(pwd, 'initial_params')
+%                   - 'OutPrefix': prefix for output file
+%                   must be a string scalar or a character vector
+%                   default == 'initial_params_'
+%                   - 'OutSuffix': suffix for output file
+%                   must be a string scalar or a character vector
+%                   default == ''
 %                   - 'ParamsToReplace': parameter names to replace from 
 %                                       custom tables or files
 %                   must be a string vector or a cell array of character vectors
@@ -91,7 +97,6 @@ function [initParamTables, initParamFiles, otherParams] = ...
 
 %% Hard-coded parameters
 initialParamsFolderName = 'initial_params';
-outPrefix = 'initial_params';
 cellNamePattern = '[A-Z][0-9]{6}';
 defaultPassiveFileDir = fullfile('data_dclamp', 'take4');
 defaultPassiveFileName = 'dclampPassiveParams_byCells_tofit.xlsx';
@@ -229,6 +234,8 @@ passiveFileNameDefault = ['/media/adamX/m3ha/data_dclamp/take4/', ...
                             % default passive parameters file name
 cellNamesDefault = {};              % set later
 outFolderDefault = '';              % set later
+outPrefixDefault = 'initial_params_';
+outSuffixDefault = '';
 paramsToReplaceDefault = {};        % set later
 customInitNamesDefault = {};        % set later
 customInitValuesDefault = {};       % set later
@@ -252,6 +259,10 @@ addParameter(iP, 'CellNames', cellNamesDefault, ...
                 ['CellNames must be a cell array of character arrays ', ...
                 'or a string array!']));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));    
+addParameter(iP, 'OutPrefix', outPrefixDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));    
+addParameter(iP, 'OutSuffix', outSuffixDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));    
 addParameter(iP, 'ParamsToReplace', paramsToReplaceDefault, ...
     @(x) assert(iscellstr(x) || isstring(x), ...
@@ -277,6 +288,8 @@ parse(iP, varargin{:});
 passiveFileName = iP.Results.PassiveFileName;
 cellNames = iP.Results.CellNames;
 outFolder = iP.Results.OutFolder;
+outPrefix = iP.Results.OutPrefix;
+outSuffix = iP.Results.OutSuffix;
 paramsToReplace = iP.Results.ParamsToReplace;
 customInitNames = iP.Results.CustomInitNames;
 customInitValues = iP.Results.CustomInitValues;
@@ -549,7 +562,7 @@ initParamTables = cellfun(@(x) copyvars(x, valueStr, initValueStr), ...
 
 %% Save outputs
 % Construct initial parameter file names
-initFileNames = cellfun(@(x) [outPrefix, '_', x, '.csv'], ...
+initFileNames = cellfun(@(x) [outPrefix, x, outSuffix, '.csv'], ...
                             cellNames, 'UniformOutput', false);
 
 % Construct full paths

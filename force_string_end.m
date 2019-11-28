@@ -34,6 +34,7 @@ function newStr = force_string_end (oldStr, subStr, varargin)
 %
 % Used by:
 %       cd/archive_dependent_scripts.m
+%       cd/combine_strings.m
 %       cd/combine_swd_sheets.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_simulation_output_filenames.m

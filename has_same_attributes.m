@@ -5,13 +5,16 @@ function [hasSameAttributes, rowIndices] = ...
 %               has_same_attributes (table, rowNames, attributes, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       hasSameAttributes   - whether each row has matching attributes
 %                           specified as a logical vector
 %       rowIndices  - row indices with matching attributes
 %                   specified as a positive integer vector
+%
 % Arguments:
 %       table       - a table
 %                   must be a 2D table

@@ -21,6 +21,7 @@ function [outTables, outSheetPaths] = ...
 %                   specified as a cell array of tables
 %       outSheetPaths   - file names for saved tables
 %                   specified as a cell array of character vectors
+%
 % Arguments:
 %       inputs      - tables organized with each measure as a column
 %                       or file names containing those tables
@@ -202,7 +203,7 @@ nRows = size(varNames, 1);
 if saveFlag
     % Combine all variable names that will be used for each file
     %   as a single suffix
-    % TODO: Use construct_suffix.m
+    % TODO: Use combine_strings.m
     varNamesEachFile = arrayfun(@(x) strjoin(varNames(x, :), '_'), ...
                                 transpose(1:nRows), 'UniformOutput', false);
 

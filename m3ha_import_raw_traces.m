@@ -564,7 +564,7 @@ if toParsePulse
     %}
 else
     idxStimStart = convert_to_samples(stimStartExpectedOrig, siMs);
-    currentPulseAmplitude = swpInfoAll{fileNames, 'currpulse'} / PA_PER_NA;
+    currentPulseAmplitude = swpInfoAll{fileBases, 'currpulse'} / PA_PER_NA;
 end
 
 %% Fix current pulse response traces that may have out-of-balance bridges
@@ -704,6 +704,7 @@ if toParsePulse && (toAverageByVhold || toBootstrapByVhold)
 
         % Define file names by the unique vhold level
         fileBases = create_labels_from_numbers(vUnique, 'Prefix', filePrefix);
+        fileNames = strcat(fileBases, '.mat');
     elseif toBootstrapByVhold
         [data, vUnique] = ...
             compute_combined_data(data, 'bootmean', 'Grouping', vHoldCond, ...
@@ -714,6 +715,7 @@ if toParsePulse && (toAverageByVhold || toBootstrapByVhold)
 
         % Rename files by the vhold level for each file 
         fileBases = create_labels_from_numbers(vHoldCond, 'Prefix', filePrefix);
+        fileNames = strcat(fileBases, '.mat');
     else
         error('Code logic error!');
     end
@@ -785,7 +787,7 @@ fprintf('Putting results into a table ... \n');
 % Output in sweepInfo tables
 sweepInfo = table(fileBases, fileNames, siMs, currentPulseAmplitude, ...
                     holdPotential, holdCurrent, baseNoise, ...
-                    holdCurrentNoise, sweepWeights);
+                    holdCurrentNoise, sweepWeights, 'RowNames', fileBases);
 
 % Close log file
 if createLog
@@ -798,7 +800,7 @@ function cellName = m3ha_extract_cell_name (fileNames)
 %% Extract the cell name from a list of file names
 
 % Extract the common prefix
-commonPrefix = extract_common_prefix(fileNames)
+commonPrefix = extract_common_prefix(fileNames);
 
 % 
 if numel(commonPrefix) < 7

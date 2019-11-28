@@ -5,6 +5,9 @@ function subStrs = extract_substrings (strs, varargin)
 %       TODO
 %
 % Example(s):
+%       extract_substrings('test')
+%       extract_substrings('test01234', 'RegExp', '[\d]*')
+%       extract_substrings('98765test01234', 'RegExp', '[\d]*')
 %       strs = {'Many_A105034_later', 'Mary_B203491_now'};
 %       extract_substrings(strs, 'RegExp', '[A-Z][0-9]{6}')
 %
@@ -28,6 +31,7 @@ function subStrs = extract_substrings (strs, varargin)
 % Used by:
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_plot_figure02.m
+%       cd/singleneuronfitting64.m
 
 % File History:
 % 2019-11-25 Created by Adam Lu
@@ -78,8 +82,13 @@ if ~isempty(regExp)
     matchedCell = regexp(strs, regExp, 'match');
 
     % Extract the first match
-    subStrs = cellfun(@(x) x{1}, matchedCell, ...
-                                'UniformOutput', false);
+    if iscellstr(matchedCell)
+        subStrs = matchedCell{1};
+    else
+        subStrs = cellfun(@(x) x{1}, matchedCell, 'UniformOutput', false);
+    end
+else
+    subStrs = strs;
 end
 
 %% Output results

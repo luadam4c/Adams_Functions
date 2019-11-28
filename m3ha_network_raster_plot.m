@@ -36,6 +36,7 @@ function [REspikes, TCspikes, numActiveTC, numActiveRE, ...
 %
 % Requires:
 %       cd/argfun.m
+%       cd/combine_strings.m
 %       cd/find_in_strings.m
 %       cd/extract_looped_params.m
 %       cd/isfigtype.m
@@ -190,9 +191,9 @@ while ct < nSims                  % while not trials are completed yet
         % Construct current parameter string
         pstring = '';               % initialize for parfor
         if iscell(pchvalues)
-            pstring = construct_suffix('NameValuePairs', {pchnames{i}, pchvalues{i}});
+            pstring = combine_strings('NameValuePairs', {pchnames{i}, pchvalues{i}});
         elseif isnumeric(pchvalues)
-            pstring = construct_suffix('NameValuePairs', {pchnames{i}, pchvalues(i)});
+            pstring = combine_strings('NameValuePairs', {pchnames{i}, pchvalues(i)});
         end
         pspifile = [pstring, '.spi'];
 

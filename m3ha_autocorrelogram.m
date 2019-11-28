@@ -27,6 +27,7 @@ function [oscillatoryPeriod, oscillatoryIndex] = m3ha_autocorrelogram (infolder,
 %               default == true
 %
 % Requires:
+%       cd/combine_strings.m
 %       cd/tuning_curves.m
 %       cd/tuning_maps.m
 %       cd/m3ha_network_define_actmode.m
@@ -58,6 +59,7 @@ labels = {'Left Electrode', 'Middle Electrode', 'Right Electrode'};
 elecPos = [100/6, 100/6*3, 100/6*5] + 0.5;
 colors = {'b', 'r', 'g'};
 colheader = {'Left Period', 'Middle Period', 'Right Period', 'Left Index', 'Middle Index', 'Right Index'}; % for csv
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Add directories to search path for required functions
@@ -172,9 +174,9 @@ while ct < ntrials                  % while not trials are completed yet
         % Construct current parameter string
         pstring = '';               % initialize for parfor
         if iscell(pchvalues)
-            pstring = construct_suffix('NameValuePairs', {pchnames{i}, pchvalues{i}});
+            pstring = combine_strings('NameValuePairs', {pchnames{i}, pchvalues{i}});
         elseif isnumeric(pchvalues)
-            pstring = construct_suffix('NameValuePairs', {pchnames{i}, pchvalues(i)});
+            pstring = combine_strings('NameValuePairs', {pchnames{i}, pchvalues(i)});
         end
         pspifile = [pstring, '.spi'];
 

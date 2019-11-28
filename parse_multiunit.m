@@ -609,6 +609,9 @@ if isempty(figFolder)
     figFolder = fullfile(outFolder, [dateStamp, '_', figDirSuffix]);
 end
 
+% Check if output directories exist
+check_dir({outFolder, figFolder});
+
 % Deal with the first argument
 if ischar(vVecsOrSlice) || isstring(vVecsOrSlice)
     % The first argument is the slice name

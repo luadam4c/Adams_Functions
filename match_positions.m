@@ -3,13 +3,16 @@ function element = match_positions(array, cellStr, strToMatch, varargin)
 % Usage: element = match_positions(array, cellStr, strToMatch, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       match_positions({45, 15, 2}, {'cars', 'dogs', 'be'}, {'a', 'o'});
 %       label = match_positions(labels, types, type);
 %       tau1 = match_positions(coeffValues, coeffNames, 'b');
 %       tau2 = match_positions(coeffValues, coeffNames, 'd');
+%
 % Outputs:
 %       element     - matched elements
+%
 % Arguments:
 %       array       - an array
 %                   must be an array
