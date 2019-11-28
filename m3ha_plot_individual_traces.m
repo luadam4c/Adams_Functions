@@ -87,6 +87,12 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 %                   - 'FigName': figure name for saving
 %                   must be a string scalar or a character vector
 %                   default == ''
+%                   - 'FigTypes': figure type(s) for saving; 
+%                               e.g., 'png', 'fig', or {'png', 'fig'}, etc.
+%                   could be anything recognised by 
+%                       the built-in saveas() function
+%                   (see isfigtype.m under Adams_Functions)
+%                   default == 'png'
 %                   - 'BaseWindow': baseline window for each trace
 %                   must be empty or a numeric vector with 2 elements,
 %                       or a numeric array with 2 rows
@@ -128,6 +134,7 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 %       cd/isbinaryscalar.m
 %       cd/iscellnumeric.m
 %       cd/isemptycell.m
+%       cd/isfigtype.m
 %       cd/isnumericvector.m
 %       cd/ispositiveintegerscalar.m
 %       cd/match_format_vector_sets.m
@@ -152,6 +159,7 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 % 2019-01-08 Added 'residuals' as a possible plot mode
 % 2019-01-08 Added 'LinkAxesOption' as an optional parameter
 % 2019-10-17 Now defaults autoUpdateYLimits to false
+% 2019-11-28 Added 'FigTypes' as an optional parameter
 % 
 
 %% Hard-coded parameters
@@ -163,8 +171,6 @@ textFontSize = 8;
 
 % TODO: Why was this true before?
 autoUpdateYLimits = false;
-
-figTypes = {'png', 'epsc'};
 lineWidth = 1;
 
 %% Default values for optional arguments
@@ -187,6 +193,7 @@ sweepWeightsDefault = [];       % set later
 baseErrorsDefault = [];         % set later
 sweepErrorsDefault = [];        % set later
 plotSwpWeightsFlagDefault = 'auto'; % set later
+figTypesDefault = {'png', 'epsc'};  % save as both epsc and png by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -239,6 +246,8 @@ addParameter(iP, 'FigNumber', figNumberDefault, ...
                 'FigNumber must be a empty or a positive integer scalar!'));
 addParameter(iP, 'FigName', figNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigTypes', figTypesDefault, ...
+    @(x) all(isfigtype(x, 'ValidateMode', true)));
 addParameter(iP, 'BaseWindow', baseWindowDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['BaseWindow must be either a numeric array ', ...
@@ -274,6 +283,7 @@ figTitle = iP.Results.FigTitle;
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
 figName = iP.Results.FigName;
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 baseWindow = iP.Results.BaseWindow;
 fitWindow = iP.Results.FitWindow;
 baseNoise = iP.Results.BaseNoise;

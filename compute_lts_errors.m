@@ -90,6 +90,8 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 %               normalizedDifference. It was fitting with only ltsExistError
 %               in singleneuronfitting60
 % 2019-11-25 LTS amplitude uncertainty is now half of peak prominence
+% 2019-11-28 Now computes LTS amplitude error assymetrically so that
+%               negative errors are penalized more
 % TODO: Possibly change the target amp error for singleneuronfitting62
 
 %% Hard-coded parameters
@@ -245,10 +247,14 @@ ltsDelayErrors = compute_feature_error(ltsPeakTimeRec, ltsPeakTimeSim, ...
 ltsSlopeErrors = compute_feature_error(maxSlopeValueRec, maxSlopeValueSim, ...
                                             slopeUncertainty, ltsExistError);
 
+% Modify LTS amplitude errors so that negative errors are penalized 
+%   twice as much
+ltsAmpErrors(ltsAmpErrors < 0) = ltsAmpErrors(ltsAmpErrors < 0) * 2;
+
 % Compute weighted-root-mean-squared-averaged LTS errors (dimensionless)
 [avgLtsAmpError, avgLtsDelayError, avgLtsSlopeError] = ...
     argfun(@(x) compute_weighted_average(x, 'Weights', ltsSweepWeights, ...
-                        'IgnoreNaN', true, 'AverageMethod', 'root-mean-square'), ...
+                    'IgnoreNaN', true, 'AverageMethod', 'root-mean-square'), ...
             ltsAmpErrors, ltsDelayErrors, ltsSlopeErrors);
 
 % Put the feature errors together

@@ -7,8 +7,8 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 % Examples:
 %       fullpaths = construct_fullpath(files, 'Directory', directory);
 %       construct_fullpath('funny', 'Directory', '/path/to')
-%       construct_fullpath('funny', 'Directory', '/path/to', 'Suffix', 'man')
-%       construct_fullpath('funny', 'Directory', '/path/to', 'Suffix', 'man')
+%       construct_fullpath('funny', 'Directory', '/path/to', 'Suffixes', 'man')
+%       construct_fullpath('funny', 'Directory', '/path/to', 'Suffixes', 'man')
 %       construct_fullpath('funny', 'Prefixes', {'tall', 'man'})
 %       construct_fullpath('funny', 'Suffixes', {'tall', 'man'})
 %       construct_fullpath('funny', 'Extension', 'png')
