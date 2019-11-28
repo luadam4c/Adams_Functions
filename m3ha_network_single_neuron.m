@@ -84,7 +84,7 @@ propLabelsTC = {'v (mV)', 'ina (mA/cm2)', 'ik (mA/cm2)', ...
 %                 'ica (mA/cm2)', 'iGABAA (nA)', 'iGABAB (nA)', ...
 %                 'cai (mM)', 'gGABAB (uS)'};
 
-% Set figure name suffices
+% Set figure name suffixes
 figSuffixVoltage = '_selected_soma_voltage.png';
 figSuffixCli = '_selected_soma_cli.png';
 figSuffixSp = '_alltraces.png';

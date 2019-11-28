@@ -1,7 +1,7 @@
-function m3ha_compute_and_plot_geometry2(outFolder, suffices, diamSoma, LDend1, LDend2, linewidth)
+function m3ha_compute_and_plot_geometry2(outFolder, suffixes, diamSoma, LDend1, LDend2, linewidth)
 %% Plot the geometry of the cell
 % TODO: Input parser
-% TODO: Make sure that if suffices is a cell array
+% TODO: Make sure that if suffixes is a cell array
 %       then diamSoma, LDend, diamDendToSoma, distDendPercent are also arrays of the same length
 
 % File History:
@@ -24,33 +24,33 @@ iP.FunctionName = mfilename;
 % Add required inputs to the Input Parser
 addRequired(iP, 'outFolder', ...
     @(x) validateattributes(x, {'char', 'string'}, {'nonempty'}));
-addRequired(iP, 'suffices', ...         % corresponding suffices
+addRequired(iP, 'suffixes', ...         % corresponding suffixes
 	@(x) validateattributes(x, {'char', 'string', 'cell'}, {'nonempty'}));
 
-parse(iP, outFolder, suffices);
+parse(iP, outFolder, suffixes);
 outFolder = iP.Results.outFolder;
-suffices = iP.Results.suffices;
+suffixes = iP.Results.suffixes;
 validfn = @(x) validateattributes(x, {'numeric'}, ...
-                                    {'vector', 'numel', numel(suffices)});
+                                    {'vector', 'numel', numel(suffixes)});
 addRequired(iP, 'diamSoma', validfn);
 addRequired(iP, 'LDend1', validfn);
 addRequired(iP, 'LDend2', validfn);
-parse(iP, outFolder, suffices, diamSoma, LDend1, LDend2);
+parse(iP, outFolder, suffixes, diamSoma, LDend1, LDend2);
 diamSoma = iP.Results.diamSoma;
 Ldend1 = iP.Results.LDend1;
 Ldend2 = iP.Results.LDend2;
 
 % Deal with arguments TODO
-if iscell(suffices)         % many conditions are passed in
-    % Concatenate all suffices together into a new suffix
-    nSuffices = numel(suffices);
+if iscell(suffixes)         % many conditions are passed in
+    % Concatenate all suffixes together into a new suffix
+    nSuffixes = numel(suffixes);
     suffix = '';
-    for iSuffix = 1:nSuffices
-        suffix = [suffix, suffices{iSuffix}];
+    for iSuffix = 1:nSuffixes
+        suffix = [suffix, suffixes{iSuffix}];
     end
 else                        % only one condition is passed in
-    nSuffices = 1;
-    suffix = suffices;
+    nSuffixes = 1;
+    suffix = suffixes;
 end
 
 % Create figure
@@ -67,7 +67,7 @@ diamDend1 = diamSoma .* 0.5;
 diamDend2 = diamSoma .* 0.3;
 
 % Plot geometry
-for iSuffix = 1:nSuffices
+for iSuffix = 1:nSuffixes
     % Plot soma
     rectangle('Position', [-diamSoma(iSuffix)/2, -diamSoma(iSuffix)/2, ...
                             diamSoma(iSuffix), diamSoma(iSuffix)], ...
@@ -91,14 +91,14 @@ end
 % Create title, legend and save figure
 title(['Geometry for ', strrep(suffix(2:end), '_', '\_')]);
 hold on;
-colorTemp = zeros(nSuffices, 1);
-sufficesClean = cell(nSuffices, 1);
-for iSuffix = 1:nSuffices
+colorTemp = zeros(nSuffixes, 1);
+suffixesClean = cell(nSuffixes, 1);
+for iSuffix = 1:nSuffixes
 	colorTemp(iSuffix) = plot(NaN, NaN, 'LineWidth', linewidth, ...
 	                            'Color', color(iSuffix,:));
-    sufficesClean{iSuffix} = strrep(suffices{iSuffix}, '_', '');
+    suffixesClean{iSuffix} = strrep(suffixes{iSuffix}, '_', '');
 end
-legend(colorTemp, sufficesClean, 'location', 'eastoutside');
+legend(colorTemp, suffixesClean, 'location', 'eastoutside');
 % set(gca, 'FontSize', 20);
 xlim([-30, 260]);
 ylim([-30, 30]);
@@ -113,14 +113,14 @@ close(hfig);
 %{ 
 OLD CODE:
 
-    % Make suffices into a cell array
-    suffices = cell;
-    suffices{1} = suffix;
+    % Make suffixes into a cell array
+    suffixes = cell;
+    suffixes{1} = suffix;
     @(x) assert((iscell(x) && (min(cellfun(@ischar, x)) ...
                                 || min(cellfun(@isstring, x)))) ||
 				(isscalar(x) && ischar(x)), ...
-        'suffices must be a cell array of strings/character arrays or scalar text!'));
-legend(suffices, 'location', 'northwest');
+        'suffixes must be a cell array of strings/character arrays or scalar text!'));
+legend(suffixes, 'location', 'northwest');
 
 hfig.Visible = 'off';
 
@@ -130,12 +130,12 @@ LDend1 = LDend .* (1 - distDendPercent./100);
 LDend2 = LDend .* distDendPercent./100;
 
 outFolder = iP.Results.outFolder;
-suffices = iP.Results.suffices;
-validfn = @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', numel(suffices)});
+suffixes = iP.Results.suffixes;
+validfn = @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', numel(suffixes)});
 addRequired(iP, 'diamSoma', validfn);
 addRequired(iP, 'LDend', validfn);
 addRequired(iP, 'distDendPercent', validfn);
-parse(iP, outFolder, suffices, diamSoma, LDend, diamDendToSoma, distDendPercent);
+parse(iP, outFolder, suffixes, diamSoma, LDend, diamDendToSoma, distDendPercent);
 diamSoma = iP.Results.diamSoma;
 Ldend = iP.Results.LDend;
 diamDendToSoma = iP.Results.diamDendToSoma;

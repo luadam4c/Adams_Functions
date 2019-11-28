@@ -301,7 +301,7 @@ if across_conditions
             sim_params_files = dirr(fullfile(infolders{k}, ...
                 ['sim_params_', pnames{p}, '*']), '.csv');    
                             % all sim_params files for the current looped parameter
-            fid = fopen(fullfile(infolders{k}, sim_params_files(1).name));        % the first file suffices
+            fid = fopen(fullfile(infolders{k}, sim_params_files(1).name));        % the first file suffixes
             simfilecontent = textscan(fid, '%s %f %s', 'Delimiter', ',');
             paramnames = simfilecontent{1};
             params_val = simfilecontent{2};

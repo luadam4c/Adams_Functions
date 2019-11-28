@@ -21,11 +21,11 @@
 % Folders
 figure01Dir = fullfile('/media', 'adamX', 'm3ha', ...
                         'manuscript', 'figures', 'Figure01');
-parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
-% parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', ...
-%                       'parse_multiunit_m3ha');
+% parentDir = fullfile('/media', 'adamX', 'm3ha', 'oscillations');
+parentDir = fullfile('/media', 'shareX', 'Data_for_test_analysis', ...
+                      'parse_multiunit_m3ha');
 archiveDir = parentDir;
-dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
+% dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'no711-final'};
 % dirsToAnalyze = {'dual-final'};
@@ -33,14 +33,14 @@ dirsToAnalyze = {'no711-final', 'snap5114-final', 'dual-final'};
 % dirsToAnalyze = {'no711-test', 'snap5114-test'};
 % dirsToAnalyze = {'snap5114-test'};
 % dirsToAnalyze = {'dual-test'};
-% dirsToAnalyze = {'important-cases'};
+dirsToAnalyze = {'important-cases'};
 specificSlicesToAnalyze = {};
 
 % Flags
 plotFigure1Individual = false;
 plotFigure1Population = false; % true;
 
-parseIndividualFlag = false; % true;
+parseIndividualFlag = true;
 saveMatFlag = false; % true;
 plotRawFlag = false; % true;
 plotSpikeDetectionFlag = false; % true;
@@ -52,7 +52,7 @@ plotMeasuresFlag = false; % true;
 plotContourFlag = false; % true;
 plotCombinedFlag = true;
 
-parsePopulationRestrictedFlag = true;
+parsePopulationRestrictedFlag = false; %true;
 plotChevronFlag = true;
 plotByFileFlag = true;
 plotByPhaseFlag = true;
@@ -78,7 +78,8 @@ resolutionMs = 5;
 
 % For compute_spike_histogram.m
 % minBurstLengthMs = 20;          % bursts must be at least 20 ms by default
-minBurstLengthMs = 100;          % bursts must be at least 100 ms by default
+% minBurstLengthMs = 100;          % bursts must be at least 100 ms by default
+minBurstLengthMs = 50;          % bursts must be at least 50 ms by default
 % maxFirstInterBurstIntervalMs = 1500;
 maxFirstInterBurstIntervalMs = 2000;
 % maxInterBurstIntervalMs = 1000; % bursts are no more than 

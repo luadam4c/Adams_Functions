@@ -158,7 +158,7 @@ elseif strcmp(groupmode, 'cell')
     passive_file = passive_file_bycells;
 end
 
-%% Add suffices to files
+%% Add suffixes to files
 swpinfo_files{3} = strrep(swpinfo_files{3}, '_suffix', suffix);
 passive_file = strrep(passive_file, '_suffix', suffix);
 

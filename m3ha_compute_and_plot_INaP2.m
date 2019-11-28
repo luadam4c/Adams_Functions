@@ -18,7 +18,7 @@ function [v, minf, hinf, tauh, IMax, IInit, IInf] = m3ha_compute_and_plot_INaP2(
 %                   - 'OutFolder': output directory
 %                   must be a string scalar or a character vector
 %                   default == pwd
-%                   - 'Suffices': suffices for figure names (includes underscore)
+%                   - 'Suffixes': suffixes for figure names (includes underscore)
 %                   must be a string scalar or a character vector
 %                   default == ''
 %                   - 'PlotInfFlag': whether to plot steady state curves
@@ -41,7 +41,7 @@ function [v, minf, hinf, tauh, IMax, IInit, IInf] = m3ha_compute_and_plot_INaP2(
 %
 % File History:
 % 2017-09-22 BT - Adapted from m3ha_compute_and_plot_INaP2.m
-% 2017-10-04 BT - Inputs must be size == numel(suffices), except celsius and eNa
+% 2017-10-04 BT - Inputs must be size == numel(suffixes), except celsius and eNa
 % 2018-03-08 AL - Made figures invisible upon creation
 
 %% Voltage vector limits and steps
@@ -54,7 +54,7 @@ celsiusDefault = 33;        % default temperature of simulation [degC]
 gnabarDefault = 5.5e-6;     % default maximum conductance of INaP [S/cm2]
 eNaDefault = 88;            % default Na+ reversal potential [mV]
 outFolderDefault = pwd;     % default output directory
-sufficesDefault = '';         % default suffices for figure names
+suffixesDefault = '';         % default suffixes for figure names
 plotInfFlagDefault = true;  % whether to plot steady state curves by default
 plotTauFlagDefault = true;  % whether to plot time constant curves by default
 plotIVFlagDefault = true;   % whether to plot I-V curves by default
@@ -66,18 +66,18 @@ plotIVFlagDefault = true;   % whether to plot I-V curves by default
 iP = inputParser;         
 iP.FunctionName = 'm3ha_compute_and_plot_INaP2';
 
-% Check if Suffices is scalar or cell array
-addParameter(iP, 'Suffices', sufficesDefault, ...
+% Check if Suffixes is scalar or cell array
+addParameter(iP, 'Suffixes', suffixesDefault, ...
 	@(x) validateattributes(x, {'char', 'string', 'cell'}, {'nonempty'}));
-potSufficesInd = find(strcmp(varargin, 'Suffices'));	% potential index for Suffices string
-if ~isempty(potSufficesInd)
-	parse(iP, varargin{potSufficesInd}, varargin{potSufficesInd+1});	% parse suffices if exists
+potSuffixesInd = find(strcmp(varargin, 'Suffixes'));	% potential index for Suffixes string
+if ~isempty(potSuffixesInd)
+	parse(iP, varargin{potSuffixesInd}, varargin{potSuffixesInd+1});	% parse suffixes if exists
 else
 	parse(iP);
 end
-suffices = iP.Results.Suffices;
-if ~iscell(suffices) & numel(suffices) == 1	% if scalar text, convert to cell
-	suffices = {suffices};
+suffixes = iP.Results.Suffixes;
+if ~iscell(suffixes) & numel(suffixes) == 1	% if scalar text, convert to cell
+	suffixes = {suffixes};
 end
 
 % Add optional inputs to the Input Parser
@@ -85,11 +85,11 @@ addOptional(iP, 'v', [], ...
     @(x) validateattributes(x, {'numeric'}, {'increasing', 'vector'}));
 
 % Add parameter-value pairs to the Input Parser
-validfn_suff = @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', numel(suffices)});	% size match to numel(suffices)
+validfn_suff = @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', numel(suffixes)});	% size match to numel(suffixes)
 validfn_single = @(x) validateattributes(x, {'numeric'}, {'scalar'});	% celsius and eNa are single
-%celsiusDefault = ones(1,numel(suffices)) * celsiusDefault;
-gnabarDefault = ones(1,numel(suffices)) * gnabarDefault;
-%eNaDefault = ones(1,numel(suffices)) * eNaDefault;
+%celsiusDefault = ones(1,numel(suffixes)) * celsiusDefault;
+gnabarDefault = ones(1,numel(suffixes)) * gnabarDefault;
+%eNaDefault = ones(1,numel(suffixes)) * eNaDefault;
 addParameter(iP, 'Celsius', celsiusDefault, validfn_single);
 addParameter(iP, 'Gnabar', gnabarDefault, validfn_suff);
 addParameter(iP, 'Ena', eNaDefault, validfn_single);
@@ -111,7 +111,7 @@ celsius = iP.Results.Celsius;
 gnabar = iP.Results.Gnabar;
 eNa = iP.Results.Ena;
 outFolder = iP.Results.OutFolder;
-% suffices = iP.Results.Suffices;
+% suffixes = iP.Results.Suffixes;
 plotInfFlag = iP.Results.PlotInfFlag;
 plotTauFlag = iP.Results.PlotTauFlag;
 plotIVFlag = iP.Results.PlotIVFlag;
@@ -134,7 +134,7 @@ hinf = m3ha_compute_hinf_INaP (v);
 tauh = m3ha_compute_tauh_INaP (v, celsius);
 
 % Compute maximum current possible
-for iSuffix = 1:numel(suffices)
+for iSuffix = 1:numel(suffixes)
 	IMax{iSuffix} = gnabar(iSuffix) .* (v - eNa);
 	IInit{iSuffix} = IMax{iSuffix} .* minf;
 	IInf{iSuffix} = IMax{iSuffix} .* minf .* hinf;
@@ -180,9 +180,9 @@ if plotIVFlag
 	xlim([vMin, vMax]);
 	xlabel('Membrane potential (mV)');
 	ylabel('Current (mA/cm^2)');
-	title(['I-V relationship of IA for ' strrep([suffices{:}], '_', '\_')]);
+	title(['I-V relationship of IA for ' strrep([suffixes{:}], '_', '\_')]);
 	% set(gca, 'FontSize', 15);
-	for iSuffix = 1:numel(suffices)
+	for iSuffix = 1:numel(suffixes)
 		hfig3 = figure('Visible', 'off');
 		clf(hfig3);
 		hold on;
@@ -195,22 +195,22 @@ if plotIVFlag
 		xlim([vMin, vMax]);
 		xlabel('Membrane potential (mV)');
 		ylabel('Current (mA/cm^2)');
-		title(['I-V relationship of INaP for ', strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		title(['I-V relationship of INaP for ', strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 		legend('location', 'northwest');
 		% set(gca, 'FontSize', 15);
-		saveas(hfig3, fullfile(outFolder, ['INaP_I-V', suffices{iSuffix}]), 'png');
+		saveas(hfig3, fullfile(outFolder, ['INaP_I-V', suffixes{iSuffix}]), 'png');
 
 		set(0, 'CurrentFigure', hfig3_all);
 		hold on;
 		plot(v, IMax{iSuffix}, 'k', 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, ...
-		    'DisplayName', ['I_{max}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		    'DisplayName', ['I_{max}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 		plot(v, IInit{iSuffix}, 'b', 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, ...
-		    'DisplayName', ['m_{\infty}I_{max}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		    'DisplayName', ['m_{\infty}I_{max}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 		plot(v, IInf{iSuffix}, 'c', 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, ...
-		    'DisplayName', ['m_{\infty}h_{\infty}I_{max}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		    'DisplayName', ['m_{\infty}h_{\infty}I_{max}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	end
 	legend('location', 'eastoutside');
-	saveas(hfig3_all, fullfile(outFolder, ['INaP_I-V' suffices{:}]), 'png');
+	saveas(hfig3_all, fullfile(outFolder, ['INaP_I-V' suffixes{:}]), 'png');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

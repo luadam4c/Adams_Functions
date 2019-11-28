@@ -42,7 +42,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %                       'base'      - file base name without the extension
 %                       'pathbase'  - full file path without the extension
 %                       'extension' - file extension including the leading '.'
-%       varargin    - 'Delimiter': delimiter used for file suffices
+%       varargin    - 'Delimiter': delimiter used for file suffixes
 %                   must be a string scalar or a character vector
 %                   default == '_'
 %                   - 'RegExp': regular expression to match
@@ -162,7 +162,7 @@ case {'commonprefix', 'commonsuffix'}
     % First, extract file bases
     fileBases = extract_simple_fileparts(paths, 'base');
 
-    % Next, extract file prefixes or suffices
+    % Next, extract file prefixes or suffixes
     switch partType
         case 'commonprefix'
             parts = extract_common_prefix(fileBases, 'Delimiter', delimiter);

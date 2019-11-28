@@ -10,7 +10,7 @@ function m3ha_compare_and_plot_across_conditions (dirIdentifier, varargin)
 
 % File History:
 % 2017-09-15 Adapted from m3ha_compare_and_plot_across_IC2.m
-% 2017-09-20 BT - Find pFileNames in dir by suffices and 
+% 2017-09-20 BT - Find pFileNames in dir by suffixes and 
 %                   load into m3ha_compare_neuronparams2
 % 2018-08-17 AL - Improved code legibility
 % 2018-08-17 AL - Made identifier an optional arguement
@@ -20,7 +20,7 @@ subDirPattern = '^\d{8}T\d{4}_\w\d{6}$';
 cellNamePattern = '_\w\d{6}';
 
 %% Default values for optional arguments
-sufficesDefault = {'_bef'; '_aft'};
+suffixesDefault = {'_bef'; '_aft'};
 outFolderDefault = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -40,14 +40,14 @@ addRequired(iP, 'dirIdentifier', ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'Suffices', sufficesDefault, ...
+addParameter(iP, 'Suffixes', suffixesDefault, ...
     @(x) validateattributes(x, {'cell'}, {'nonempty'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, dirIdentifier, varargin{:});
-suffices = iP.Results.Suffices;
+suffixes = iP.Results.Suffixes;
 outFolder = iP.Results.OutFolder;
 
 %% Preparation
@@ -63,7 +63,7 @@ else
 end
 
 % Decide on the .p file regexp patterns
-pfilePatterns = cellfun(@(x) [x, '\.p$'], suffices, 'UniformOutput', false);
+pfilePatterns = cellfun(@(x) [x, '\.p$'], suffixes, 'UniformOutput', false);
 
 % Decide on the output directory
 if isempty(outFolder)
@@ -134,10 +134,10 @@ parfor iSubDirs = 1:nSubDirs
 
     % Only do anything if pFileNames exist
     if ~isempty(pFileNames)
-        % Preallocate paramNames, paramValues and suffices
+        % Preallocate paramNames, paramValues and suffixes
         paramNames = cell(nPFiles, 1);
         paramValues = cell(nPFiles, 1);
-        sufficesActual = cell(nPFiles, 1);
+        suffixesActual = cell(nPFiles, 1);
 
         % Import p file data in turn
         for iPFile = 1:nPFiles
@@ -154,11 +154,11 @@ parfor iSubDirs = 1:nSubDirs
             % Decide on the actual suffix
             if iPFile <= 2
                 % Use the cellName and suffix for the first two p files
-                sufficesActual{iPFile} = ['_', cellName, suffices{iPFile}]; 
+                suffixesActual{iPFile} = ['_', cellName, suffixes{iPFile}]; 
             else
                 % Use the entire pfile base for other p files
                 % Note: For future use
-                sufficesActual{iPFile} = ['_', pFileBase];
+                suffixesActual{iPFile} = ['_', pFileBase];
             end
 
             % Load p file
@@ -172,7 +172,7 @@ parfor iSubDirs = 1:nSubDirs
         end
 
         % Compare the parameters and plot output in outFolder
-        m3ha_compare_neuronparams2 (paramValues, paramNames, sufficesActual, ...
+        m3ha_compare_neuronparams2 (paramValues, paramNames, suffixesActual, ...
                                     'OutFolder', outFolder);
     else
         fprintf('pFileNames doesn''t exist for %s!\n', subDirPath);
@@ -194,12 +194,12 @@ OLD CODE:
 addRequired(iP, 'identifier', ...
     @(x) validateattributes(x, {'char', 'string'}, {'nonempty'}));
 
-m3ha_compare_neuronparams2 (paramValues, paramNames, suffices, ...
+m3ha_compare_neuronparams2 (paramValues, paramNames, suffixes, ...
                             'OutFolder', [outFolder subDirNames{iSubDirs}]);
 
 pFileNames = subFiles(cellfun(@(x) any(regexp(x, '\.p$')), subFiles) == 1);
 
-addParameter(iP, 'Suffices', sufficesDefault, ...
+addParameter(iP, 'Suffixes', suffixesDefault, ...
     @(x) validateattributes(x, {'cell'}, {'nonempty'}));
 
 paramNames = {};
@@ -236,7 +236,7 @@ dirIdentifierDefault = '';
 
 inputDirectoryPattern = ['*', dirIdentifier, '*'];
 
-m3ha_compare_neuronparams2 (paramValues, paramNames, suffices, ...
+m3ha_compare_neuronparams2 (paramValues, paramNames, suffixes, ...
                             'OutFolder', outFolder);
 
 pFileNames2 = ...
@@ -248,13 +248,13 @@ pFileNames = [pFileNames1, pFileNames2];
 
 if iPFile == 1
     % Use the cellName and suffix for the first p file
-    sufficesActual{iPFile} = ['_', cellName, suffices{1}]; 
-elseif iPFile == 2 && numel(suffices) >= 2
+    suffixesActual{iPFile} = ['_', cellName, suffixes{1}]; 
+elseif iPFile == 2 && numel(suffixes) >= 2
     % Use the suffix only for the second p file
-    sufficesActual{iPFile} = suffices{2};
+    suffixesActual{iPFile} = suffixes{2};
 else
     % Use the entire pfile base for other p files
-    sufficesActual{iPFile} = ['_', pFileBase];
+    suffixesActual{iPFile} = ['_', pFileBase];
 end
 
 pFileNames = union_over_cells(pFileNamesAll, 'SetOrder', 'stable');

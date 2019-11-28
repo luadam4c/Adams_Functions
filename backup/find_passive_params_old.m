@@ -217,7 +217,7 @@ end
 
 %% Only do the following if fitmode is used
 if nargin >= 11
-	% Set suffices and title modifications for each fitmode
+	% Set suffixes and title modifications for each fitmode
 	[suffix, title_mod] = specs_for_fitmode (fitmode);
 
 	% Change directory names to make it specific to each fitmode

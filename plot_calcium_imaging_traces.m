@@ -249,7 +249,7 @@ if nChannelsToCombine > 0 && nChannelsToCombine <= 2
         find_in_strings(channelFirst, meanVarNames, 'SearchMode', 'substrings');
                                 
     % Extract trace labels
-    traceSuffices = extractAfter(namesFirstVars, channelFirst);
+    traceSuffixes = extractAfter(namesFirstVars, channelFirst);
 
     % Get the name of the second channel
     channelNext = channelsToCombine{2};
@@ -257,7 +257,7 @@ if nChannelsToCombine > 0 && nChannelsToCombine <= 2
     % Find all variables for this channel
     [indSecondVars, namesSecondVars] = ...
         cellfun(@(x) find_in_strings({channelNext, x}, meanVarNames, ...
-                    'SearchMode', 'substrings'), traceSuffices, 'UniformOutput', false);
+                    'SearchMode', 'substrings'), traceSuffixes, 'UniformOutput', false);
     indSecondVars = cell2num(indSecondVars);
 
     % Combine the traces in turn
@@ -268,7 +268,7 @@ if nChannelsToCombine > 0 && nChannelsToCombine <= 2
     meanValues = force_matrix(combinedTraces);
     
     % TODO: Make this better
-    traceLabels = extractAfter(extractBefore(traceSuffices, meanStr), '_');
+    traceLabels = extractAfter(extractBefore(traceSuffixes, meanStr), '_');
 elseif nChannelsToCombine > 0
     error('Not implemented yet!');
 end

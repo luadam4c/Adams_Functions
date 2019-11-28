@@ -57,7 +57,7 @@ function [v, IInitIT, IInfIT, IInfIh, IInfIKir, IInitIA, IInfIA, IInitINaP, IInf
 %                   - 'OutFolder': output directory
 %                   must be a string scalar or a character vector
 %                   default == pwd
-%                   - 'Suffices': suffices for figure names (includes underscore)
+%                   - 'Suffixes': suffixes for figure names (includes underscore)
 %                   must be a string scalar or a character vector
 %                   default == ''
 %                   - 'PlotInfFlag': whether to plot steady state curves only
@@ -78,7 +78,7 @@ function [v, IInitIT, IInfIT, IInfIh, IInfIKir, IInitIA, IInfIA, IInitINaP, IInf
 %
 % File History:
 % 2017-09-22 BT - Adapted from m3ha_compute_and_plot_INaP2.m
-% 2017-10-04 BT - Inputs must be size == numel(suffices), except celsius and eNa
+% 2017-10-04 BT - Inputs must be size == numel(suffixes), except celsius and eNa
 % 2018-03-08 AL - Made figures invisible upon creation
 
 %% Default voltage vector limits and steps
@@ -104,7 +104,7 @@ gkbarIKirDefault = 2.0e-5;  % default maximum conductance of IKir [S/cm2]
 gkbarIADefault = 5.5e-3;    % default maximum conductance of IA [S/cm2]
 gnabarINaPDefault = 5.5e-6; % default maximum conductance of INaP [S/cm2]
 outFolderDefault = pwd;     % default output directory
-sufficesDefault = '';         % default suffices for figure names
+suffixesDefault = '';         % default suffixes for figure names
 plotInfFlagDefault = true;  % whether to plot steady state curves only
 plotAllFlagDefault = true;  % whether to plot all I-V curves by default
 
@@ -115,18 +115,18 @@ plotAllFlagDefault = true;  % whether to plot all I-V curves by default
 iP = inputParser;         
 iP.FunctionName = 'm3ha_compute_and_plot_all_IV2';
 
-% Check if Suffices is scalar or cell array
-addParameter(iP, 'Suffices', sufficesDefault, ...
+% Check if Suffixes is scalar or cell array
+addParameter(iP, 'Suffixes', suffixesDefault, ...
 	@(x) validateattributes(x, {'char', 'string', 'cell'}, {'nonempty'}));
-potSufficesInd = find(strcmp(varargin, 'Suffices'));	% potential index for Suffices string
-if ~isempty(potSufficesInd)
-	parse(iP, varargin{potSufficesInd}, varargin{potSufficesInd+1});	% parse suffices if exists
+potSuffixesInd = find(strcmp(varargin, 'Suffixes'));	% potential index for Suffixes string
+if ~isempty(potSuffixesInd)
+	parse(iP, varargin{potSuffixesInd}, varargin{potSuffixesInd+1});	% parse suffixes if exists
 else
 	parse(iP);
 end
-suffices = iP.Results.Suffices;
-if ~iscell(suffices) & numel(suffices) == 1	% if scalar text, convert to cell
-	suffices = {suffices};
+suffixes = iP.Results.Suffixes;
+if ~iscell(suffixes) & numel(suffixes) == 1	% if scalar text, convert to cell
+	suffixes = {suffixes};
 end
 
 % Add optional inputs to the Input Parser
@@ -134,24 +134,24 @@ addOptional(iP, 'v', [], ...
     @(x) validateattributes(x, {'numeric'}, {'increasing', 'vector'}));
 
 % Add parameter-value pairs to the Input Parser
-validfn_suff = @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', numel(suffices)});	% size match to numel(suffices)
+validfn_suff = @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', numel(suffixes)});	% size match to numel(suffixes)
 validfn_single = @(x) validateattributes(x, {'numeric'}, {'scalar'});	% celsius, eK, eNa, eh, caOut, caIn are single
-%celsiusDefault = ones(1,numel(suffices)) * celsiusDefault;
-%eKDefault = ones(1,numel(suffices)) * eKDefault;
-%eNaDefault = ones(1,numel(suffices)) * eNaDefault;
-%ehDefault = ones(1,numel(suffices)) * ehDefault;
-%caOutDefault = ones(1,numel(suffices)) * caOutDefault;
-%caInDefault = ones(1,numel(suffices)) * caInDefault;
-pcabarITDefault = ones(1,numel(suffices)) * pcabarITDefault;
-shiftmITDefault = ones(1,numel(suffices)) * shiftmITDefault;
-shifthITDefault = ones(1,numel(suffices)) * shifthITDefault;
-slopemITDefault = ones(1,numel(suffices)) * slopemITDefault;
-slopehITDefault = ones(1,numel(suffices)) * slopehITDefault;
-ghbarIhDefault = ones(1,numel(suffices)) * ghbarIhDefault;
-shiftmIhDefault = ones(1,numel(suffices)) * shiftmIhDefault;
-gkbarIKirDefault = ones(1,numel(suffices)) * gkbarIKirDefault;
-gkbarIADefault = ones(1,numel(suffices)) * gkbarIADefault;
-gnabarINaPDefault = ones(1,numel(suffices)) * gnabarINaPDefault;
+%celsiusDefault = ones(1,numel(suffixes)) * celsiusDefault;
+%eKDefault = ones(1,numel(suffixes)) * eKDefault;
+%eNaDefault = ones(1,numel(suffixes)) * eNaDefault;
+%ehDefault = ones(1,numel(suffixes)) * ehDefault;
+%caOutDefault = ones(1,numel(suffixes)) * caOutDefault;
+%caInDefault = ones(1,numel(suffixes)) * caInDefault;
+pcabarITDefault = ones(1,numel(suffixes)) * pcabarITDefault;
+shiftmITDefault = ones(1,numel(suffixes)) * shiftmITDefault;
+shifthITDefault = ones(1,numel(suffixes)) * shifthITDefault;
+slopemITDefault = ones(1,numel(suffixes)) * slopemITDefault;
+slopehITDefault = ones(1,numel(suffixes)) * slopehITDefault;
+ghbarIhDefault = ones(1,numel(suffixes)) * ghbarIhDefault;
+shiftmIhDefault = ones(1,numel(suffixes)) * shiftmIhDefault;
+gkbarIKirDefault = ones(1,numel(suffixes)) * gkbarIKirDefault;
+gkbarIADefault = ones(1,numel(suffixes)) * gkbarIADefault;
+gnabarINaPDefault = ones(1,numel(suffixes)) * gnabarINaPDefault;
 addParameter(iP, 'Celsius', celsiusDefault, validfn_single);
 addParameter(iP, 'Ek', eKDefault, validfn_single);
 addParameter(iP, 'Ena', eNaDefault, validfn_single);
@@ -197,7 +197,7 @@ gkbarIKir = iP.Results.GkbarIKir;
 gkbarIA = iP.Results.GkbarIA;
 gnabarINaP = iP.Results.GnabarINaP;
 outFolder = iP.Results.OutFolder;
-%suffices = iP.Results.Suffices;
+%suffixes = iP.Results.Suffixes;
 plotInfFlag = iP.Results.PlotInfFlag;
 plotAllFlag = iP.Results.PlotAllFlag;
 
@@ -211,25 +211,25 @@ end
 
 % Compute IV curves for each current without plotting
 [~, ~, ~, ~, ~, IMaxIT, IInitIT, IInfIT] = ...
-    m3ha_compute_and_plot_IT2(v, 'Suffices', suffices, 'Celsius', celsius, ...
+    m3ha_compute_and_plot_IT2(v, 'Suffixes', suffixes, 'Celsius', celsius, ...
             'Cout', caOut, 'Cin', caIn, 'Pcabar', pcabarIT, ...
             'Shiftm', shiftmIT, 'Shifth', shifthIT, ...
             'Slopem', slopemIT, 'Slopeh', slopehIT, ...
             'PlotInfFlag', false, 'PlotTauFlag', false, 'PlotIVFlag', false);
 [~, ~, ~, IMaxIh, IInfIh] = ...
-    m3ha_compute_and_plot_Ih2(v, 'Suffices', suffices, 'Celsius', celsius, ...
+    m3ha_compute_and_plot_Ih2(v, 'Suffixes', suffixes, 'Celsius', celsius, ...
             'Ghbar', ghbarIh, 'Erev', eh, 'Shiftm', shiftmIh, ...
             'PlotInfFlag', false, 'PlotTauFlag', false, 'PlotIVFlag', false);
 [~, ~, IMaxIKir, IInfIKir] = ...
-    m3ha_compute_and_plot_IKir2(v, 'Suffices', suffices, 'Celsius', celsius, ...
+    m3ha_compute_and_plot_IKir2(v, 'Suffixes', suffixes, 'Celsius', celsius, ...
             'Gkbar', gkbarIKir, 'Ek', eK, ...
             'PlotInfFlag', false, 'PlotIVFlag', false);
 [~, ~, ~, ~, ~, ~, ~, IMaxIA, IInitIA, IInfIA] = ...
-    m3ha_compute_and_plot_IA2(v, 'Suffices', suffices, 'Celsius', celsius, ...
+    m3ha_compute_and_plot_IA2(v, 'Suffixes', suffixes, 'Celsius', celsius, ...
             'Gkbar', gkbarIA, 'Ek', eK, ...
             'PlotInfFlag', false, 'PlotTauFlag', false, 'PlotIVFlag', false);
 [~, ~, ~, ~, IMaxINaP, IInitINaP, IInfINaP] = ...
-    m3ha_compute_and_plot_INaP2(v, 'Suffices', suffices, 'Celsius', celsius, ...
+    m3ha_compute_and_plot_INaP2(v, 'Suffixes', suffixes, 'Celsius', celsius, ...
             'GNabar', gnabarINaP, 'ENa', eNa, ...
             'PlotInfFlag', false, 'PlotTauFlag', false, 'PlotIVFlag', false);
 
@@ -238,25 +238,25 @@ IAllInit = cellfun(@(a,b,c,d,f) a + b + c + d + f, IInitIT, IInfIh, IInfIKir, II
 IAllInf = cellfun(@(a,b,c,d,f) a + b + c + d + f, IInfIT, IInfIh, IInfIKir, IInfIA, IInfINaP, 'UniformOutput', false);
 
 % Plot summary I-V curves
-compute_and_plot_summary_IV(outFolder, suffices, v, IInitIT, IInfIT, IInfIh, ...
+compute_and_plot_summary_IV(outFolder, suffixes, v, IInitIT, IInfIT, IInfIh, ...
                 IInfIKir, IInitIA, IInfIA, IInitINaP, IInfINaP, IAllInit, IAllInf);
 
 % Plot steady state I-V curves only
-compute_and_plot_steady_IV(outFolder, suffices, v, IInfIT, IInfIh, ...
+compute_and_plot_steady_IV(outFolder, suffixes, v, IInfIT, IInfIh, ...
                 IInfIKir, IInfIA, IInfINaP, IAllInf);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function hfig = compute_and_plot_summary_IV (outFolder, suffices, v, IInitIT, IInfIT, IInfIh, IInfIKir, IInitIA, IInfIA, IInitINaP, IInfINaP, IAllInit, IAllInf)
+function hfig = compute_and_plot_summary_IV (outFolder, suffixes, v, IInitIT, IInfIT, IInfIh, IInfIKir, IInitIA, IInfIA, IInitINaP, IInfINaP, IAllInit, IAllInf)
 linestyles = {'--', '-'};
 hfig_all = figure('Visible', 'off');
 xlim([min(v), max(v)]);
 xlabel('Membrane potential (mV)');
 ylabel('Current (mA/cm^2)');
-title(['I-V relationships for ' strrep([suffices{:}], '_', '\_')]);
+title(['I-V relationships for ' strrep([suffixes{:}], '_', '\_')]);
 % set(gca, 'FontSize', 20);
-for iSuffix = 1:numel(suffices)
-	fprintf('Plotting summary I-V curve for %s ... \n\n', suffices{iSuffix}(2:end));
+for iSuffix = 1:numel(suffixes)
+	fprintf('Plotting summary I-V curve for %s ... \n\n', suffixes{iSuffix}(2:end));
 	hfig = figure('Visible', 'off');
 	clf(hfig);
 	hold on;
@@ -284,51 +284,51 @@ for iSuffix = 1:numel(suffices)
 	xlim([min(v), max(v)]);
 	xlabel('Membrane potential (mV)');
 	ylabel('Current (mA/cm^2)');
-	title(['I-V relationships for ', strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+	title(['I-V relationships for ', strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	legend('location', 'northwest');
 	% set(gca, 'FontSize', 20);
-	saveas(hfig, fullfile(outFolder, ['I-V_all', suffices{iSuffix}]), 'png');
+	saveas(hfig, fullfile(outFolder, ['I-V_all', suffixes{iSuffix}]), 'png');
 
 	set(0, 'CurrentFigure', hfig_all);
 	hold on;
 	cm2 = colormap(jet(8));
 	plot(v, IInitIT{iSuffix}, 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, 'Color', cm2(1, :), ...
-		'DisplayName', ['I_{T,init}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		'DisplayName', ['I_{T,init}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	plot(v, IInfIT{iSuffix}, 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, 'Color', cm2(2, :), ...
-		'DisplayName', ['I_{T,\infty}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		'DisplayName', ['I_{T,\infty}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	plot(v, IInfIh{iSuffix}, 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, 'Color', cm2(3, :), ...
-		'DisplayName', ['I_{h,\infty}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		'DisplayName', ['I_{h,\infty}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	plot(v, IInfIKir{iSuffix}, 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, 'Color', cm2(4, :), ...
-		'DisplayName', ['I_{Kir,\infty}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		'DisplayName', ['I_{Kir,\infty}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	plot(v, IInitIA{iSuffix}, 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, 'Color', cm2(5, :), ...
-		'DisplayName', ['I_{A,init}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		'DisplayName', ['I_{A,init}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	plot(v, IInfIA{iSuffix}, 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, 'Color', cm2(6, :), ...
-		'DisplayName', ['I_{A,\infty}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		'DisplayName', ['I_{A,\infty}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	plot(v, IInitINaP{iSuffix}, 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, 'Color', cm2(7, :), ...
-		'DisplayName', ['I_{NaP,init}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		'DisplayName', ['I_{NaP,init}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	plot(v, IInfINaP{iSuffix}, 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, 'Color', cm2(8, :), ...
-		'DisplayName', ['I_{NaP,\infty}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		'DisplayName', ['I_{NaP,\infty}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	plot(v, IAllInit{iSuffix}, 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, 'Color', 'k', ...
-		'DisplayName', ['I_{All,init}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		'DisplayName', ['I_{All,init}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	plot(v, IAllInf{iSuffix}, 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, 'Color', [0.1 0.1 0.1], ...
-		'DisplayName', ['I_{All,\infty}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		'DisplayName', ['I_{All,\infty}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 end
 legend('location', 'eastoutside');
-saveas(hfig_all, fullfile(outFolder, ['I-V_all', suffices{:}]), 'png');
+saveas(hfig_all, fullfile(outFolder, ['I-V_all', suffixes{:}]), 'png');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function hfig = compute_and_plot_steady_IV (outFolder, suffices, v, IInfIT, IInfIh, IInfIKir, IInfIA, IInfINaP, IAllInf)
+function hfig = compute_and_plot_steady_IV (outFolder, suffixes, v, IInfIT, IInfIh, IInfIKir, IInfIA, IInfINaP, IAllInf)
 
 linestyles = {'--', '-'};
 hfig_all = figure('Visible', 'off');
 xlim([min(v), max(v)]);
 xlabel('Membrane potential (mV)');
 ylabel('Current (mA/cm^2)');
-title(['I-V relationships for ' strrep([suffices{:}], '_', '\_')]);
+title(['I-V relationships for ' strrep([suffixes{:}], '_', '\_')]);
 % set(gca, 'FontSize', 20);
-for iSuffix = 1:numel(suffices)
-	fprintf('Plotting steady state I-V curve for %s ... \n\n', suffices{iSuffix}(2:end));
+for iSuffix = 1:numel(suffixes)
+	fprintf('Plotting steady state I-V curve for %s ... \n\n', suffixes{iSuffix}(2:end));
 	hfig = figure('Visible', 'off');
 	clf(hfig);
 	hold on;
@@ -348,28 +348,28 @@ for iSuffix = 1:numel(suffices)
 	xlim([min(v), max(v)]);
 	xlabel('Membrane potential (mV)');
 	ylabel('Current (mA/cm^2)');
-	title(['I-V relationships for ', strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+	title(['I-V relationships for ', strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	legend('location', 'southeast');
 	% set(gca, 'FontSize', 20);
-	saveas(hfig, fullfile(outFolder, ['I-V_steady', suffices{iSuffix}]), 'png');
+	saveas(hfig, fullfile(outFolder, ['I-V_steady', suffixes{iSuffix}]), 'png');
 
 	set(0, 'CurrentFigure', hfig_all);
 	hold on;
 	plot(v, IInfIT{iSuffix}, 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, 'Color', cm(1, :), ...
-		'DisplayName', ['I_{T,\infty}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		'DisplayName', ['I_{T,\infty}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	plot(v, IInfIh{iSuffix}, 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, 'Color', cm(2, :), ...
-		'DisplayName', ['I_{h,\infty}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		'DisplayName', ['I_{h,\infty}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	plot(v, IInfIKir{iSuffix}, 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, 'Color', cm(3, :), ...
-		'DisplayName', ['I_{Kir,\infty}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		'DisplayName', ['I_{Kir,\infty}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	plot(v, IInfIA{iSuffix}, 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, 'Color', cm(4, :), ...
-		'DisplayName', ['I_{A,\infty}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		'DisplayName', ['I_{A,\infty}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	plot(v, IInfINaP{iSuffix}, 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, 'Color', cm(5, :), ...
-		'DisplayName', ['I_{NaP,\infty}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		'DisplayName', ['I_{NaP,\infty}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	plot(v, IAllInf{iSuffix}, 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, 'Color', 'k', ...
-		'DisplayName', ['I_{All,\infty}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		'DisplayName', ['I_{All,\infty}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 end
 legend('location', 'eastoutside');
-saveas(hfig_all, fullfile(outFolder, ['I-V_steady', suffices{:}]), 'png');
+saveas(hfig_all, fullfile(outFolder, ['I-V_steady', suffixes{:}]), 'png');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

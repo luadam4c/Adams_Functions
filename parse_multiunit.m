@@ -272,6 +272,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %       cd/compute_spike_histogram.m
 %       cd/compute_time_window.m
 %       cd/compute_stats.m
+%       cd/copy_into.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
@@ -377,7 +378,8 @@ channelTypes = {'voltage', 'current'};
 channelUnits = {'uV', 'arb'};
 
 % TODO: Make optional argument
-figTypes = {'epsc2', 'png'};
+backupSheets = true;
+figTypes = {'epsc2', 'png'}; % default: {'png'}
 
 %% Default values for optional arguments
 siMsDefault = 0.1;                      % 0.1 ms by default
@@ -786,6 +788,11 @@ else
 
     % Save the parsed parameters table
     writetable(parsedParams, paramsPath);
+
+    % Backup the spreadsheet in the figure folder
+    if backupSheets
+        copy_into(paramsPath, figFolder);
+    end
 
     % Save the results
     if saveResultsFlag

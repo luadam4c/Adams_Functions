@@ -654,7 +654,7 @@ eval(command);
 
 numswps = length(fnrow);                % total number of sweeps of interest
 
-%% Set suffices for each fitMode
+%% Set suffixes for each fitMode
 [suffix, ~] = SpecsForFitmode (fitMode);
 
 %% Create folders for saving files

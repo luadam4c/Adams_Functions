@@ -154,6 +154,7 @@ function plot_measures (varargin)
 %       cd/combine_variables_across_tables.m
 %       cd/compute_phase_average.m
 %       cd/compute_population_average.m
+%       cd/copy_into.m
 %       cd/count_vectors.m
 %       cd/create_label_from_sequence.m
 %       cd/create_indices.m
@@ -201,6 +202,9 @@ validSelectionMethods = {'notNaN', 'maxRange2Mean'};
 validPlotTypes = {'tuning', 'bar'};
 outDirSuffix = 'population_measures';
 smoothFunc = @(x) movingaveragefilter(x, 5, 1);
+
+%% TODO: Make optional argument
+backupSheets = true;
 
 % Must be consistent with parse_multiunit.m
 varsToPlotAll = {'oscIndex1'; 'oscIndex2'; 'oscIndex3'; 'oscIndex4'; ...
@@ -592,6 +596,11 @@ check_dir({outFolder, figFolder});
 fprintf('Reading measure spreadsheets ...\n');
 sliceParamsTables = cellfun(@readtable, sliceParamSheets, ...
                             'UniformOutput', false);
+
+% Backup the spreadsheets in the figure folder
+if backupSheets
+    copy_into(sliceParamSheets, figFolder);
+end
 
 % Create a time column (time in minutes since drug on)
 fprintf('Creating time columns ...\n');

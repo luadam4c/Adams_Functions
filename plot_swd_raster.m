@@ -109,7 +109,7 @@ animalStr = '_rat'; %'_animal'  % string in file names for animals
 channelStr = '_channel';        % string in file names that separate channels
 pieceStr = '_piece';            % string in file names that separate pieces
 sweepStr = '_sweep';            % string in file names that separate sweeps
-possibleSuffices = {manualStr, assystStr, sayliStr, autoStr, ...
+possibleSuffixes = {manualStr, assystStr, sayliStr, autoStr, ...
                     animalStr, channelStr, pieceStr, sweepStr};
 
 %% Default values for optional arguments
@@ -220,12 +220,12 @@ if ~isempty(swdSheetPaths)
     [~, swdSheetBases, ~] = cellfun(@fileparts, swdSheetPaths, ...
                                     'UniformOutput', false);
 
-    % Remove everything beyond possible suffices
+    % Remove everything beyond possible suffixes
     %   This will be the original data file bases
     dataFileBases = swdSheetBases;
-    for iSuffix = 1:numel(possibleSuffices)
+    for iSuffix = 1:numel(possibleSuffixes)
         % Get the current suffix
-        thisSuffix = possibleSuffices{iSuffix};
+        thisSuffix = possibleSuffixes{iSuffix};
 
         % Split the file bases by the current suffix
         tempCells = cellfun(@(x) strsplit(x, thisSuffix, ...

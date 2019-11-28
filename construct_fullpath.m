@@ -1,5 +1,5 @@
 function [fullPath, pathType] = construct_fullpath (pathName, varargin)
-%% Constructs full path(s) based on file/directory name(s) and optional directory, suffices or extension
+%% Constructs full path(s) based on file/directory name(s) and optional directory, suffixes or extension
 % Usage: [fullPath, pathType] = construct_fullpath (pathName, varargin)
 % Examples:
 %       fullpaths = construct_fullpath(files, 'Directory', directory);
@@ -27,7 +27,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %                       e.g. '/media/shareX/share/'
 %                   must be a string scalar or a character vector
 %                   default == pwd
-%                   - 'Suffices': suffix(ces) to add to fileBase
+%                   - 'Suffixes': suffix(es) to add to fileBase
 %                   must be a string/character array or a cell array 
 %                       of strings/character arrays
 %                   default == ''
@@ -70,7 +70,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 % 2017-05-04 Added input Parser scheme
 % 2017-05-04 Changed paramname, paramvalue -> 'NameValuePairs' 
 %                and made it a parameter 
-% 2017-05-04 Made 'suffices' a parameter 
+% 2017-05-04 Made 'suffixes' a parameter 
 % 2018-05-08 Changed tabs to spaces and limited width to 80
 % 2018-10-03 Now accepts file names that are full paths
 % 2018-10-03 Added 'Extension' as an optional parameter
@@ -83,7 +83,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 %% Default values for optional arguments
 verboseDefault = false;             % don't print to standard output by default
 directoryDefault = '';              % set later
-sufficesDefault = '';
+suffixesDefault = '';
 extensionDefault = '';              % set later
 nameValuePairsDefault = {'', NaN};
 
@@ -111,9 +111,9 @@ addParameter(iP, 'Verbose', verboseDefault, ...
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
                                                     % introduced after R2016B
-addParameter(iP, 'Suffices', sufficesDefault, ...
+addParameter(iP, 'Suffixes', suffixesDefault, ...
     @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
-                ['Suffices must be either a string/character array ', ...
+                ['Suffixes must be either a string/character array ', ...
                     'or a cell array of strings/character arrays!']));
 addParameter(iP, 'Extension', extensionDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
@@ -130,7 +130,7 @@ addParameter(iP, 'NameValuePairs', nameValuePairsDefault, ...
 parse(iP, pathName, varargin{:});
 verbose = iP.Results.Verbose;
 directory = iP.Results.Directory;
-suffices = iP.Results.Suffices;
+suffixes = iP.Results.Suffixes;
 extension = iP.Results.Extension;
 suffixNameValuePairs = iP.Results.NameValuePairs;
 
@@ -152,19 +152,19 @@ if iscell(pathName)
     % Do for each path
     [fullPath, pathType] = ...
         cellfun(@(x, y, z) construct_fullpath_helper(x, verbose, y, ...
-                            suffices, z, suffixNameValuePairs), ...
+                            suffixes, z, suffixNameValuePairs), ...
                 pathName, directory, extension, 'UniformOutput', false);
 else
     [fullPath, pathType] = ...
         construct_fullpath_helper(pathName, verbose, directory, ...
-                                    suffices, extension, suffixNameValuePairs);
+                                    suffixes, extension, suffixNameValuePairs);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [fullPath, pathType] = ...
             construct_fullpath_helper (pathName, verbose, directory, ...
-                                        suffices, extension, suffixNameValuePairs)
+                                        suffixes, extension, suffixNameValuePairs)
 %% Create full path to file robustly
 
 % Separate fileDir, fileBase and fileExt from pathName
@@ -199,20 +199,12 @@ if isempty(directory)
 end
 
 % Construct final suffix
-finalSuffix = construct_suffix('Suffices', suffices, ...
+finalSuffix = construct_suffix('BeginWithDelimiter', true, ...
+                                'Suffixes', suffixes, ...
                                 'NameValuePairs', suffixNameValuePairs);
 
-
-% Construct full file name
-if isempty(finalSuffix)                % if nothing provided
-    % Construct path based on directory, fileBase and fileExt
-    fullPath = fullfile(directory, ...
-                            [fileBase, fileExt]);    
-elseif ~isempty(finalSuffix)              % suffix(ces) is(are) provided
-    % Construct path based on directory, fileBase, final suffix and fileExt
-    fullPath = fullfile(directory, ...
-                            [fileBase, '_', finalSuffix, fileExt]);
-end
+% Construct full path based on directory, fileBase, final suffix and fileExt
+fullPath = fullfile(directory, [fileBase, finalSuffix, fileExt]);
 
 % Print message
 if verbose
@@ -226,7 +218,7 @@ OLD CODE:
 
 @(x) assert(ischar(x) || iscell(x) && (min(cellfun(@ischar, x)) || ...
             min(cellfun(@isstring, x))) || isstring(x), ...
-            ['Suffices must be either a string/character array ', ...
+            ['Suffixes must be either a string/character array ', ...
                 'or a cell array of strings/character arrays!']));
 
 %}

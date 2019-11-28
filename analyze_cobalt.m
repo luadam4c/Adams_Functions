@@ -155,11 +155,11 @@ if bandpassFilterFlag
     % Compute the number of bands to filter
     nBands = length(lowCutoffs);
 
-    % Construct file suffices
-    fileSuffices = cell(nBands, 1);
+    % Construct file suffixes
+    fileSuffixes = cell(nBands, 1);
     figTitles = cell(nBands, 1);
     parfor iBand = 1:nBands
-        fileSuffices{iBand} = ['_', bandName{iBand}, '_band'];
+        fileSuffixes{iBand} = ['_', bandName{iBand}, '_band'];
         figTitles{iBand} = ['Data filtered ', ...
                             num2str(lowCutoffs(iBand)), ...
                             '~', num2str(highCutoffs(iBand)), ...
@@ -252,7 +252,7 @@ if plotFilteredFlag
         mkdir(figFolder);
     end
     for iBand = 1:nBands
-        figName = fullfile(figFolder, [fileBase, fileSuffices{iBand}, '.jpg']);
+        figName = fullfile(figFolder, [fileBase, fileSuffixes{iBand}, '.jpg']);
         h = figure(10000 + iBand);
         clf(h)
         plot_signals(timeVec, dataFiltered{iBand}, ...

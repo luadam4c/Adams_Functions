@@ -18,7 +18,7 @@ function [v, m1inf, m2inf, hinf, taum, tauh1, tauh2, IMax, IInit, IInf] = m3ha_c
 %                   - 'OutFolder': output directory
 %                   must be a string scalar or a character vector
 %                   default == pwd
-%                   - 'Suffices': suffices for figure names (includes underscore)
+%                   - 'Suffixes': suffixes for figure names (includes underscore)
 %                   must be a string scalar or a character vector
 %                   default == ''
 %                   - 'PlotInfFlag': whether to plot steady state curves
@@ -44,7 +44,7 @@ function [v, m1inf, m2inf, hinf, taum, tauh1, tauh2, IMax, IInit, IInf] = m3ha_c
 %
 % File History:
 % 2017-09-22 BT - Adapted from m3ha_compute_and_plot_IA.m
-% 2017-10-04 BT - Inputs must be size == numel(suffices), except celsius and eK
+% 2017-10-04 BT - Inputs must be size == numel(suffixes), except celsius and eK
 % 2018-03-08 AL - Made figures invisible upon creation
 
 %% Voltage vector limits and steps
@@ -57,7 +57,7 @@ celsiusDefault = 33;        % default temperature of simulation [degC]
 gkbarDefault = 5.5e-3;      % default maximum conductance of IA [S/cm2]
 eKDefault = -100;           % default K+ reversal potential [mV]
 outFolderDefault = pwd;     % default output directory
-sufficesDefault = '';         % default suffix for figure names
+suffixesDefault = '';         % default suffix for figure names
 plotInfFlagDefault = true;  % whether to plot steady state curves by default
 plotTauFlagDefault = true;  % whether to plot time constant curves by default
 plotIVFlagDefault = true;   % whether to plot I-V curves by default
@@ -69,18 +69,18 @@ plotIVFlagDefault = true;   % whether to plot I-V curves by default
 iP = inputParser;         
 iP.FunctionName = 'm3ha_compute_and_plot_IA2';
 
-% Check if Suffices is scalar or cell array
-addParameter(iP, 'Suffices', sufficesDefault, ...
+% Check if Suffixes is scalar or cell array
+addParameter(iP, 'Suffixes', suffixesDefault, ...
 	@(x) validateattributes(x, {'char', 'string', 'cell'}, {'nonempty'}));
-potSufficesInd = find(strcmp(varargin, 'Suffices'));	% potential index for Suffices string
-if ~isempty(potSufficesInd)
-	parse(iP, varargin{potSufficesInd}, varargin{potSufficesInd+1});	% parse suffices if exists
+potSuffixesInd = find(strcmp(varargin, 'Suffixes'));	% potential index for Suffixes string
+if ~isempty(potSuffixesInd)
+	parse(iP, varargin{potSuffixesInd}, varargin{potSuffixesInd+1});	% parse suffixes if exists
 else
 	parse(iP);
 end
-suffices = iP.Results.Suffices;
-if ~iscell(suffices) & numel(suffices) == 1	% if scalar text, convert to cell
-	suffices = {suffices};
+suffixes = iP.Results.Suffixes;
+if ~iscell(suffixes) & numel(suffixes) == 1	% if scalar text, convert to cell
+	suffixes = {suffixes};
 end
 
 % Add optional inputs to the Input Parser
@@ -88,11 +88,11 @@ addOptional(iP, 'v', [], ...
     @(x) validateattributes(x, {'numeric'}, {'increasing', 'vector'}));
 
 % Add parameter-value pairs to the Input Parser
-validfn_suff = @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', numel(suffices)});	% size match to numel(suffices)
+validfn_suff = @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', numel(suffixes)});	% size match to numel(suffixes)
 validfn_single = @(x) validateattributes(x, {'numeric'}, {'scalar'});	% celsius and Ek are single
-%celsiusDefault = ones(1,numel(suffices)) * celsiusDefault;	% change default values to size of suffices
-gkbarDefault = ones(1,numel(suffices)) * gkbarDefault;
-%eKDefault = ones(1,numel(suffices)) * eKDefault;
+%celsiusDefault = ones(1,numel(suffixes)) * celsiusDefault;	% change default values to size of suffixes
+gkbarDefault = ones(1,numel(suffixes)) * gkbarDefault;
+%eKDefault = ones(1,numel(suffixes)) * eKDefault;
 addParameter(iP, 'Celsius', celsiusDefault, validfn_single);
 addParameter(iP, 'Gkbar', gkbarDefault, validfn_suff);
 addParameter(iP, 'Ek', eKDefault, validfn_single);
@@ -144,7 +144,7 @@ tauh1 = m3ha_compute_tauh1_IA (v, celsius);
 tauh2 = m3ha_compute_tauh2_IA (v, celsius);
 
 % Compute maximum current possible
-for iSuffix = 1:numel(suffices)
+for iSuffix = 1:numel(suffixes)
 	IMax{iSuffix} = gkbar(iSuffix) .* (v - eK);
 	IInit{iSuffix} = IMax{iSuffix} .* (0.6 * m1infquad + 0.4 * m2infquad);
 	IInf{iSuffix} = IMax{iSuffix} .* (0.6 * m1infquad .* hinf + 0.4 * m2infquad .* hinf);
@@ -193,9 +193,9 @@ if plotIVFlag
 	xlim([vMin, vMax]);
 	xlabel('Membrane potential (mV)');
 	ylabel('Current (mA/cm^2)');
-	title(['I-V relationship of IA for ' strrep([suffices{:}], '_', '\_')]);
+	title(['I-V relationship of IA for ' strrep([suffixes{:}], '_', '\_')]);
 	% set(gca, 'FontSize', 15);
-	for iSuffix = 1:numel(suffices)
+	for iSuffix = 1:numel(suffixes)
 		% Plot and save the maximum current-voltage relationship
 		hfig3 = figure('Visible', 'off');
 		clf(hfig3);
@@ -209,22 +209,22 @@ if plotIVFlag
 		xlim([vMin, vMax]);
 		xlabel('Membrane potential (mV)');
 		ylabel('Current (mA/cm^2)');
-		title(['I-V relationship of IA for ', strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		title(['I-V relationship of IA for ', strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 		legend('location', 'northwest');
 		% set(gca, 'FontSize', 15);
-		saveas(hfig3, fullfile(outFolder, ['IA_I-V', suffices{iSuffix}]), 'png');
+		saveas(hfig3, fullfile(outFolder, ['IA_I-V', suffixes{iSuffix}]), 'png');
 		
 		set(0, 'CurrentFigure', hfig3_all);
 		hold on;
 		plot(v, IMax{iSuffix}, 'k', 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, ...
-		    'DisplayName', ['I_{max}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		    'DisplayName', ['I_{max}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 		plot(v, IInit{iSuffix}, 'b', 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, ...
-		    'DisplayName', ['(0.6m_{1,\infty}^4+0.4m_{1,\infty}^4)I_{max}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		    'DisplayName', ['(0.6m_{1,\infty}^4+0.4m_{1,\infty}^4)I_{max}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 		plot(v, IInf{iSuffix}, 'c', 'LineStyle', linestyles{iSuffix}, 'LineWidth', 2, ...
-		    'DisplayName', ['(0.6m_{1,\infty}^4+0.4m_{1,\infty}^4)h_{\infty}I_{max}' strrep(suffices{iSuffix}(2:end), '_', '\_')]);
+		    'DisplayName', ['(0.6m_{1,\infty}^4+0.4m_{1,\infty}^4)h_{\infty}I_{max}' strrep(suffixes{iSuffix}(2:end), '_', '\_')]);
 	end
 	legend('location', 'eastoutside');
-	saveas(hfig3_all, fullfile(outFolder, ['IA_I-V' suffices{:}]), 'png');
+	saveas(hfig3_all, fullfile(outFolder, ['IA_I-V' suffixes{:}]), 'png');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -235,7 +235,7 @@ OLD CODE:
     @(x) assert((iscell(x) && (min(cellfun(@ischar, x)) ...
                                 || min(cellfun(@isstring, x)))) || ...
 				(isscalar(x) && ischar(x)), ...
-        'suffices must be a cell array of strings/character arrays or scalar text!'));
+        'suffixes must be a cell array of strings/character arrays or scalar text!'));
 % IMax = gkbar .* (v - eK);
 % IInit = IMax .* (0.6 * m1infquad + 0.4 * m2infquad);
 % IInf = IMax .* (0.6 * m1infquad .* hinf + 0.4 * m2infquad .* hinf);

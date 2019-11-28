@@ -168,7 +168,7 @@ else
 end
 
 %% Perform task
-% Prepend prefices and append suffices
+% Prepend prefices and append suffixes
 cellStr = strcat(prefix, cellStr, suffix);
 
 % Print elements of cellStr in a single string delimited by delimiter

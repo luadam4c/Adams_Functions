@@ -37,6 +37,7 @@ function newStr = force_string_start (oldStr, subStr, varargin)
 %       cd/all_files.m
 %       cd/combine_swd_sheets.m
 %       cd/construct_fullpath.m
+%       cd/construct_suffix.m
 %       cd/create_labels_from_numbers.m
 
 % File History:
