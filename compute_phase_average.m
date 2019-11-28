@@ -3,11 +3,14 @@ function [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 % Usage: [phaseAverage, indSelected] = compute_phase_average (values, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       compute_phase_average(randn(30, 1), 'PhaseBoundaries', [15.5, 25.5])
+%
 % Outputs:
 %       phaseAverage    - average value over the last of the phase
 %                       specified as a numeric scalar
+%
 % Arguments:
 %       values      - values for a phase 
 %                       or all values if phaseBoundaries provided

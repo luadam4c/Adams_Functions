@@ -3,6 +3,7 @@ function [valSelected, indSelected] = select_similar_values (values, varargin)
 % Usage: [valSelected, indSelected] = select_similar_values (values, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       values = [10, NaN, 100, 12, 8, 90, 11, 9, 10]
 %       [v, i] = select_similar_values(values)
@@ -10,11 +11,13 @@ function [valSelected, indSelected] = select_similar_values (values, varargin)
 %       [v, i] = select_similar_values(values, 'NToSelect', 3)
 %       [v, i] = select_similar_values(values, 'Direction', 'backward')
 %       [v, i] = select_similar_values(values, 'NToSelect', 3, 'MaxRange2Mean', 20)
+%
 % Outputs:
 %       valSelected - selected values
 %                   specified as a numeric vector
 %       indSelected - indices of selected values
 %                   specified as a positive integer vector
+%
 % Arguments:
 %       values      - values to select from
 %                   must be a numeric vector
