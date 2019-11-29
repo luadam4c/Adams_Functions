@@ -252,13 +252,18 @@ function [errorStruct, hFig, simData] = ...
 %                   - 'LtsFeatureWeights': LTS feature weights for averaging
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == set in compute_lts_errors.m
-%                   - 'LtsExistError': a dimensionless error that penalizes 
-%                               a misprediction of the existence/absence of LTS
+%                   default == set in compute_lts_errors.m
+%                   - 'MissedLtsError': a dimensionless error that penalizes 
+%                                       a misprediction of the existence of LTS
+%                   must be empty or a numeric vector with length == nSweeps
+%                   default == set in compute_lts_errors.m
+%                   - 'FalseLtsError': a dimensionless error that penalizes 
+%                                       a misprediction of the absence of LTS
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == set in compute_lts_errors.m
 %                   - 'Lts2SweepErrorRatio': ratio of LTS error to sweep error
 %                   must be empty or a numeric vector with length == nSweeps
-%                   default == 2
+%                   default == set in compute_single_neuron_errors.m
 %
 % Requires:
 %       ~/m3ha/optimizer4gabab/singleneuron4compgabab.hoc
@@ -535,9 +540,10 @@ baseNoiseCprDefault = [];       % set later
 baseNoiseIpscrDefault = [];     % set later
 sweepWeightsCprDefault = [];    % set later
 sweepWeightsIpscrDefault = [];  % set later
-ltsFeatureWeightsDefault = [];  % set later
-ltsExistErrorDefault = [];      % set later
-lts2SweepErrorRatioDefault = [];% set later
+ltsFeatureWeightsDefault = [];  % set in compute_lts_errors.m
+missedLtsErrorDefault = [];     % set in compute_lts_errors.m
+falseLtsErrorDefault = [];      % set in compute_lts_errors.m
+lts2SweepErrorRatioDefault = [];% set in compute_single_neuron_errors.m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -691,8 +697,10 @@ addParameter(iP, 'SweepWeightsIpscr', sweepWeightsIpscrDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'LtsFeatureWeights', ltsFeatureWeightsDefault, ...
     @(x) assert(isnumericvector(x), 'LtsFeatureWeights must be a numeric vector!'));
-addParameter(iP, 'LtsExistError', ltsExistErrorDefault, ...
-    @(x) assert(isnumericvector(x), 'LtsExistError must be a numeric vector!'));
+addParameter(iP, 'MissedLtsError', missedLtsErrorDefault, ...
+    @(x) assert(isnumericvector(x), 'MissedLtsError must be a numeric vector!'));
+addParameter(iP, 'FalseLtsError', falseLtsErrorDefault, ...
+    @(x) assert(isnumericvector(x), 'FalseLtsError must be a numeric vector!'));
 addParameter(iP, 'Lts2SweepErrorRatio', lts2SweepErrorRatioDefault, ...
     @(x) assert(isnumericvector(x), 'InitLtsError must be a numeric vector!'));
 
@@ -762,7 +770,8 @@ baseNoiseIpscr = iP.Results.BaseNoiseIpscr;
 sweepWeightsCpr = iP.Results.SweepWeightsCpr;
 sweepWeightsIpscr = iP.Results.SweepWeightsIpscr;
 ltsFeatureWeights = iP.Results.LtsFeatureWeights;
-ltsExistError = iP.Results.LtsExistError;
+missedLtsError = iP.Results.MissedLtsError;
+falseLtsError = iP.Results.FalseLtsError;
 lts2SweepErrorRatio = iP.Results.Lts2SweepErrorRatio;
 
 %% Preparation
@@ -1151,7 +1160,8 @@ if ~isempty(realData)
                     'FitWindow', fitWindow, 'BaseWindow', baseWindow, ...
                     'BaseNoise', baseNoise, 'SweepWeights', sweepWeights, ...
                     'LtsFeatureWeights', ltsFeatureWeights, ...
-                    'LtsExistError', ltsExistError, ...
+                    'MissedLtsError', missedLtsError, ...
+                    'FalseLtsError', falseLtsError, ...
                     'Lts2SweepErrorRatio', lts2SweepErrorRatio, ...
                     'NormalizeError', normalize2InitErrFlag, ...
                     'InitSwpError', initSwpError, ...

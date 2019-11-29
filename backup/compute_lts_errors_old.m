@@ -13,18 +13,16 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 %                       normAvgLtsError (only if normalizeError is true)
 %                       initLtsError (only if normalizeError is true)
 %                       avgLtsError
-%                       ltsMisMatchError
 %                       avgLtsAmpError
 %                       avgLtsDelayError
 %                       avgLtsSlopeError
-%                       missedLtsError
-%                       falseLtsError
+%                       ltsExistError
 %                       ltsFeatureWeights
 %                       ltsAmpErrors
 %                       ltsDelayErrors
 %                       ltsSlopeErrors
 %                       ltsSweepWeights
-%                       hasLtsInBoth
+%                       noLTSInBoth
 %                       ltsAmpUncertainty
 %                       ltsDelayUncertainty
 %                       peakPromNormError
@@ -52,15 +50,11 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 %                   default == set in compute_weighted_average.m
 %                   - 'FeatureWeights': LTS feature weights for averaging
 %                   must be empty or a numeric vector with length == nSweeps
-%                   default == [2, 3, 1]
-%                   - 'MissedLtsError': a dimensionless error that penalizes 
-%                                       a misprediction of the existence of LTS
+%                   default == [1, 1, 1]
+%                   - 'LtsExistError': a dimensionless error that penalizes 
+%                               a misprediction of the existence/absence of LTS
 %                   must be empty or a numeric vector with length == nSweeps
-%                   default == 1
-%                   - 'FalseLtsError': a dimensionless error that penalizes 
-%                                       a misprediction of the absence of LTS
-%                   must be empty or a numeric vector with length == nSweeps
-%                   default == 0.5
+%                   default == 20
 %                   - 'NormalizeError': whether to normalize errors 
 %                                       by an initial error
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -91,32 +85,28 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 % 2019-11-15 Adapted from compute_sweep_errors.m
 % 2019-11-16 Added 'FeatureWeights' as an optional argument
 % 2019-11-16 Added 'LtsExistError' as an optional argument
-% 2019-11-18 Fixed bug with hasLtsInBoth 
+% 2019-11-18 Fixed bug with noLTSInBoth 
 % 2019-11-21 For singleneuronfitting61, fixed bug for the computation of 
-%               normalizedDifference. It was fitting with only ltsMisMatchError
+%               normalizedDifference. It was fitting with only ltsExistError
 %               in singleneuronfitting60
 % 2019-11-25 LTS amplitude uncertainty is now half of peak prominence
 % 2019-11-28 Now computes LTS amplitude error assymetrically so that
-%               negative errors are penalized 3 times as much
-% 2019-11-29 Added ltsMisMatchError
+%               negative errors are penalized more
+% TODO: Possibly change the target amp error for singleneuronfitting62
 
 %% Hard-coded parameters
-% Consistent with singleneuronfitting69.m
-defaultLtsFeatureWeights = [2; 3; 1];   % default weights for optimizing 
+% Consistent with singleneuronfittin58.m
+defaultLtsFeatureWeights = [1; 2; 3];   % default weights for optimizing 
                                         %   LTS statistics
-defaultMissedLtsError = 1;              % how much error (dimensionless) to 
+defaultLtsExistError = 20;              % how much error (dimensionless) to 
                                         %   penalize a sweep that mispredicted 
-                                        %   the existence of an LTS
-defaultFalseLtsError = 0.5;             % how much error (dimensionless) to 
-                                        %   penalize a sweep that mispredicted 
-                                        %   the absence of an LTS
+                                        %   the existence/absence of LTS
 
 %% Default values for optional arguments
 baseNoiseDefault = [];          % set later
 sweepWeightsDefault = [];       % set in compute_weighted_average.m
 featureWeightsDefault = [];     % set later
-missedLtsErrorDefault = [];     % set later
-falseLtsErrorDefault = [];      % set later
+ltsExistErrorDefault = [];      % set later
 normalizeErrorDefault = false;  % don't normalize errors by default
 initLtsErrorDefault = [];   % no initial error values by default
 
@@ -145,10 +135,8 @@ addParameter(iP, 'SweepWeights', sweepWeightsDefault, ...
     @(x) assert(isnumericvector(x), 'SweepWeights must be a numeric vector!'));
 addParameter(iP, 'FeatureWeights', featureWeightsDefault, ...
     @(x) assert(isnumericvector(x), 'FeatureWeights must be a numeric vector!'));
-addParameter(iP, 'MissedLtsError', missedLtsErrorDefault, ...
-    @(x) assert(isnumericvector(x), 'MissedLtsError must be a numeric vector!'));
-addParameter(iP, 'FalseLtsError', falseLtsErrorDefault, ...
-    @(x) assert(isnumericvector(x), 'FalseLtsError must be a numeric vector!'));
+addParameter(iP, 'LtsExistError', ltsExistErrorDefault, ...
+    @(x) assert(isnumericvector(x), 'LtsExistError must be a numeric vector!'));
 addParameter(iP, 'NormalizeError', normalizeErrorDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'InitLtsError', initLtsErrorDefault, ...
@@ -159,8 +147,7 @@ parse(iP, ltsTableSim, ltsTableRec, varargin{:});
 baseNoise = iP.Results.BaseNoise;
 sweepWeights = iP.Results.SweepWeights;
 featureWeights = iP.Results.FeatureWeights;
-missedLtsError = iP.Results.MissedLtsError;
-falseLtsError = iP.Results.FalseLtsError;
+ltsExistError = iP.Results.LtsExistError;
 normalizeError = iP.Results.NormalizeError;
 initLtsError = iP.Results.InitLtsError;
 
@@ -170,14 +157,9 @@ if isempty(featureWeights)
     featureWeights = defaultLtsFeatureWeights;
 end
 
-% Decide on missed LTS error
-if isempty(missedLtsError)
-    missedLtsError = defaultMissedLtsError;
-end
-
-% Decide on false LTS error
-if isempty(falseLtsError)
-    falseLtsError = defaultFalseLtsError;
+% Decide on LTS existence error
+if isempty(ltsExistError)
+    ltsExistError = defaultLtsExistError;
 end
 
 % Extract low-threshold spike feature values to compute error for 
@@ -231,24 +213,13 @@ ltsSweepWeights = sweepWeights;
 ltsFeaturesSim = [ltsPeakTimeSim, ltsPeakValueSim, maxSlopeValueSim];
 ltsFeaturesRec = [ltsPeakTimeRec, ltsPeakValueRec, maxSlopeValueRec];
 
-% Determine whether each sweep has an LTS in both simulated and recorded traces
-hasLtsInBoth = all(~isnan(ltsFeaturesSim), 2) & all(~isnan(ltsFeaturesRec), 2);
+% Determine whether each sweep has no LTS in both simulated and recorded traces
+noLTSInBoth = any(isnan(ltsFeaturesSim), 2) & any(isnan(ltsFeaturesRec), 2);
 
-% Make the sweeps without both no LTS weight zero
-%   Note: One cannot compute a feature error if either the simulated or 
-%           the recorded trace doesn't have an LTS
-ltsSweepWeights(~hasLtsInBoth) = 0;
-
-%% Compute the LTS mismatch error
-% Determine whether each sweep has an LTS in recorded but not simulated traces
-hasMissedLts = any(isnan(ltsFeaturesSim), 2) & all(~isnan(ltsFeaturesRec), 2);
-
-% Determine whether each sweep has an LTS in simulated but not recorded traces
-hasFalseLts = all(~isnan(ltsFeaturesSim), 2) & any(isnan(ltsFeaturesRec), 2);
-
-% Compute the LTS mismatch error
-ltsMisMatchError = missedLtsError .* sum(hasMissedLts) + ...
-                    falseLtsError .* sum(hasFalseLts);
+% Make the sweeps with no LTS weight zero
+%   Note: One cannot compute an error if both simulated and recorded traces
+%           don't have a LTS
+ltsSweepWeights(noLTSInBoth) = 0;
 
 %% Compute feature uncertainties
 % The amplitude uncertainty should be close to half of peak prominence
@@ -270,15 +241,15 @@ slopeUncertainty = sqrt(peakPromNormError .^ 2 + peakWidthNormError .^ 2) ...
 %% Compute errors
 % Compute dimensionless LTS errors for each sweep
 ltsAmpErrors = compute_feature_error(ltsPeakValueRec, ltsPeakValueSim, ...
-                                            ltsAmpUncertainty);
+                                            ltsAmpUncertainty, ltsExistError);
 ltsDelayErrors = compute_feature_error(ltsPeakTimeRec, ltsPeakTimeSim, ...
-                                            ltsDelayUncertainty);
+                                            ltsDelayUncertainty, ltsExistError);
 ltsSlopeErrors = compute_feature_error(maxSlopeValueRec, maxSlopeValueSim, ...
-                                            slopeUncertainty);
+                                            slopeUncertainty, ltsExistError);
 
 % Modify LTS amplitude errors so that negative errors are penalized 
-%   3 times as much
-ltsAmpErrors(ltsAmpErrors < 0) = ltsAmpErrors(ltsAmpErrors < 0) * 3;
+%   twice as much
+ltsAmpErrors(ltsAmpErrors < 0) = ltsAmpErrors(ltsAmpErrors < 0) * 2;
 
 % Compute weighted-root-mean-squared-averaged LTS errors (dimensionless)
 [avgLtsAmpError, avgLtsDelayError, avgLtsSlopeError] = ...
@@ -290,12 +261,10 @@ ltsAmpErrors(ltsAmpErrors < 0) = ltsAmpErrors(ltsAmpErrors < 0) * 3;
 featureErrors = [avgLtsAmpError; avgLtsDelayError; avgLtsSlopeError];
 
 % Average LTS error (dimensionless) is the weighted average of 
-%   the LTS feature errors, weighted by featureWeights, 
-%   plus the LTS existence error
+%   the LTS feature errors, weighted by featureWeights
 avgLtsError = compute_weighted_average(featureErrors, ...
                 'Weights', featureWeights, ...
-                'AverageMethod', 'linear', 'IgnoreNaN', true) + ...
-                ltsMisMatchError;
+                'AverageMethod', 'linear', 'IgnoreNaN', true);
 
 % If requested, make errors dimensionless by 
 %   storing or dividing by an initial error value
@@ -314,18 +283,16 @@ end
 
 % Store other errors in descending order of importance
 errorStruct.avgLtsError = avgLtsError;
-errorStruct.ltsMisMatchError = ltsMisMatchError;
 errorStruct.avgLtsAmpError = avgLtsAmpError;
 errorStruct.avgLtsDelayError = avgLtsDelayError;
 errorStruct.avgLtsSlopeError = avgLtsSlopeError;
-errorStruct.missedLtsError = missedLtsError;
-errorStruct.falseLtsError = falseLtsError;
+errorStruct.ltsExistError = ltsExistError;
 errorStruct.ltsFeatureWeights = featureWeights;
 errorStruct.ltsAmpErrors = ltsAmpErrors;
 errorStruct.ltsDelayErrors = ltsDelayErrors;
 errorStruct.ltsSlopeErrors = ltsSlopeErrors;
 errorStruct.ltsSweepWeights = ltsSweepWeights;
-errorStruct.hasLtsInBoth = hasLtsInBoth;
+errorStruct.noLTSInBoth = noLTSInBoth;
 errorStruct.ltsAmpUncertainty = ltsAmpUncertainty;
 errorStruct.ltsDelayUncertainty = ltsDelayUncertainty;
 errorStruct.peakPromNormError = peakPromNormError;
@@ -336,8 +303,9 @@ errorStruct.sweepWeights = sweepWeights;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function featureError = compute_feature_error (valueRec, valueSim, uncertainty)
-%% Computes a dimensionless feature error relative to the uncertainty
+function featureError = compute_feature_error (valueRec, valueSim, ...
+                                                uncertainty, featureExistError)
+%% Computes feature error based on feature existence for each sweep
 
 % Initialize errors
 featureError = nan(size(valueRec));
@@ -348,14 +316,21 @@ allValues = [valueRec, valueSim];
 % Determine whether each sweep each condition has no features
 noFeature = isnan(allValues);
 
-% Determine whether feature does not exist in either condition
-noFeatureInEither = any(noFeature, 2);
+% Determine whether feature does not exist in either conditions
+noFeatureInBoth = all(noFeature, 2);
 
 % The feature error is not available in this case
-featureError(noFeatureInEither) = NaN;
+featureError(noFeatureInBoth) = NaN;
+
+% Determine whether feature exists in one condition but not the other
+hasFeatureInOneOnly = any(noFeature, 2) & ~all(noFeature, 2);
+
+% The feature error is a fixed feature existence error 
+%   (higher than typical errors) in this case
+featureError(hasFeatureInOneOnly) = featureExistError;
 
 % Determine whether feature exists in both conditions
-hasFeatureInBoth = ~noFeatureInEither;
+hasFeatureInBoth = ~any(noFeature, 2);
 
 % Compute the normalized difference between simulated and 
 %   recorded feature values

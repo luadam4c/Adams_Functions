@@ -15,6 +15,7 @@ function avgValues = compute_weighted_average (values, varargin)
 %       compute_weighted_average([NaN, 3, 27; NaN, 4, 64], 'AverageMethod', 'geometric', 'DimToOperate', 2, 'IgnoreNan', true)
 %       compute_weighted_average([NaN; 10], 'Weight', [2, 1], 'AverageMethod', 'linear', 'IgnoreNaN', true)
 %       compute_weighted_average([2; NaN; 1], 'Weight', [2, 3, 1], 'AverageMethod', 'rms', 'IgnoreNaN', true)
+%       compute_weighted_average(-2, 'AverageMethod', 'rms')
 %
 % Outputs:
 %       avgValues   - averaged value(s)
@@ -73,6 +74,7 @@ function avgValues = compute_weighted_average (values, varargin)
 % 2019-11-17 Fixed root-mean-square computation
 % 2019-11-18 Now returns NaN if values is empty
 % 2019-11-18 Fixed 'IgnoreNan' for vectors
+% 2019-11-29 Fixed rms average for a single negative value
 % TODO: Simplify math if the weights are all the same 
 %       and use this function in compute_stats.m and compute_rms_error.m
 % 
@@ -213,8 +215,14 @@ function avgValues = compute_weighted_average_helper (values, valueWeights, ...
 
 %% Preparation
 % If there is only one value, return it
+%   Note: This is not true for rms
 if numel(values) <= 1
-    avgValues = values;
+    switch averageMethod
+        case {'rms', 'root-mean-square', 'energy'}
+            avgValues = abs(values);
+        otherwise
+            avgValues = values;
+    end
     return
 end
 

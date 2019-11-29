@@ -476,7 +476,7 @@ end
 
 %% First iteration of simplex: set up simplex near the initial set of parameters
 % Following improvement suggested by L. Pfeffer at Stanford
-for j = 1:n    % for each parameter
+for j = 1:n    % for each parame  ter
     % Construct a set of parameters with this parameter altered only
     y = p0;            % start with initial set of parameters; all values are within [-pi/2 pi/2]
     y(j) = y(j) + usualDelta * pi;    % increment parameter j by usualDelta * pi
@@ -768,7 +768,6 @@ simplexOut.paramsInUseValues = paramsInUseValues;
 function update_errorhistory(fig, ctIterations, err, cm, ...
                     multipleRunsFlag, computeLtsError, simplexIterCount)
 % Update simplex performance figure
-% TODO: Merge with code in m3ha_optimizer_4compgabab.m
 
 % Choose the iteration number
 if multipleRunsFlag
@@ -793,6 +792,7 @@ end
 
 set(0, 'CurrentFigure', fig);
 if computeLtsError   % if lts error is computed
+
     % Plot the total error
     subplot(3, 2, 1);
     update_subplot(iter, err.totalError, [], 'total error', ...
@@ -805,7 +805,7 @@ if computeLtsError   % if lts error is computed
 
     % Plot the average LTS error
     subplot(3, 2, 3);
-    update_subplot(iter, err.ltsMisMatchError, [], 'match error', ...
+    update_subplot(iter, err.avgLtsError, [], 'LTS error', ...
             markerstyle, color, ctIterations, multipleRunsFlag);
 
     % Plot the average LTS amp error

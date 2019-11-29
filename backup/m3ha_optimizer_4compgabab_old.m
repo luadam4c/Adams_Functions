@@ -863,47 +863,29 @@ end
 % Plot the error
 if ~isempty(err)
     if outParams.fitActiveFlag
-        % Extract error ratios from outParams struct
-        errorWeights = outParams.errorWeights;
-        missedLtsError = outParams.missedLtsError;
-        falseLtsError = outParams.falseLtsError;
-
-        % Create y-axis labels
-        totalErrorLabel = 'total error';
-        avgSwpErrorLabel = sprintf('sweep error (%d)', errorWeights(1));
-        ltsMisMatchErrorLabel = sprintf('match error (+%d, %d)', ...
-                                missedLtsError, falseLtsError);
-        avgLtsAmpErrorLabel = sprintf('amp error (%d)', errorWeights(2));
-        avgLtsDelayErrorLabel = sprintf('time error (%d)', errorWeights(3));
-        avgLtsSlopeErrorLabel = sprintf('slope error (%d)', errorWeights(4));
-
         % Plot the total error
         subplot(3, 2, 1);
-        update_subplot(rn, err.totalError, [], totalErrorLabel, 'o', 'b');
+        update_subplot(rn, err.totalError, [], 'total error', 'o', 'b');
 
         % Plot the average sweep error
         subplot(3, 2, 2);
-        update_subplot(rn, err.avgSwpError, [], avgSwpErrorLabel, 'o', 'b');
+        update_subplot(rn, err.avgSwpError, [], 'sweep error', 'o', 'b');
 
-        % Plot the LTS mismatch error
+        % Plot the average LTS error
         subplot(3, 2, 3);
-        update_subplot(rn, err.ltsMisMatchError, [], ...
-                        ltsMisMatchErrorLabel, 'o', 'b');
+        update_subplot(rn, err.avgLtsError, [], 'LTS error', 'o', 'b');
 
         % Plot the average LTS amp error
         subplot(3, 2, 4);
-        update_subplot(rn, err.avgLtsAmpError, [], ...
-                        avgLtsAmpErrorLabel, 'o', 'b');
+        update_subplot(rn, err.avgLtsAmpError, [], 'amp error', 'o', 'b');
 
         % Plot the average LTS time error
         subplot(3, 2, 5);
-        update_subplot(rn, err.avgLtsDelayError, [], ...
-                        avgLtsDelayErrorLabel, 'o', 'b');
+        update_subplot(rn, err.avgLtsDelayError, [], 'time error', 'o', 'b');
 
         % Plot the average LTS slope error
         subplot(3, 2, 6);
-        update_subplot(rn, err.avgLtsSlopeError, [], ...
-                        avgLtsSlopeErrorLabel, 'o', 'b');
+        update_subplot(rn, err.avgLtsSlopeError, [], 'slope error', 'o', 'b');
     else                % if no lts error
         % Just plot the total error
         update_subplot(rn, err.totalError, 'run number', 'total error', 'o', 'b');
@@ -912,7 +894,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function update_subplot(x, y, xLabel, yLabel, markerstyle, color)
+function update_subplot(x, y, x_label, y_label, markerstyle, color)
 % Update subplot
 
 % Plot new marker
@@ -921,19 +903,17 @@ plot(x, y, 'Marker', markerstyle, 'Color', color, 'MarkerFaceColor', 'auto');
 % Adjust y limits
 if x == 1
     hold on;
-    % Initialize ymax
-    initymax = y * 1.1;
-    ylim([0, initymax]);
-    if ~isempty(xLabel)
-        xlabel(xLabel); 
+    initymax = y * 1.1;             % initial ymax
+    ylim([0 initymax]);
+    if ~isempty(x_label)
+        xlabel(x_label); 
     end
-    if ~isempty(yLabel)
-        ylabel(yLabel);
+    if ~isempty(y_label)
+        ylabel(y_label);
     end
 else
     ylimits = get(gca, 'YLim');
-    % Rescale axes if error is greater than axis limit
-    if ylimits(2) < y
+    if ylimits(2) < y               % rescale axes if error is greater than axis limit
         ylim([0, y * 1.1]);
     end
 end

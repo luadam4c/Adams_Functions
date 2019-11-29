@@ -52,12 +52,8 @@ function errors = compute_single_neuron_errors (vSim, vRec, varargin)
 %                   - 'LtsFeatureWeights': LTS feature weights for averaging
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == set in compute_lts_errors.m
-%                   - 'MissedLtsError': a dimensionless error that penalizes 
-%                                       a misprediction of the existence of LTS
-%                   must be empty or a numeric vector with length == nSweeps
-%                   default == set in compute_lts_errors.m
-%                   - 'FalseLtsError': a dimensionless error that penalizes 
-%                                       a misprediction of the absence of LTS
+%                   - 'LtsExistError': a dimensionless error that penalizes 
+%                               a misprediction of the existence/absence of LTS
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == set in compute_lts_errors.m
 %                   - 'Lts2SweepErrorRatio': ratio of LTS error to sweep error
@@ -163,14 +159,13 @@ defaultLts2SweepErrorRatio = 2;         % default error ratio of LTS error
 errorModeDefault = 'SweepOnly'; %'Sweep&LTS'; % compute sweep & LTS errors by default
 timeVecsDefault = [];           % set later
 ivecsSimDefault = [];           % not provided by default
-ivecsRecDefault = [];           % not provided by default
+ivecsRecDefault = [];          % not provided by default
 baseWindowDefault = [];         % set later
 fitWindowDefault = [];          % set later
 baseNoiseDefault = [];          % set later
 sweepWeightsDefault = [];       % set later
-ltsFeatureWeightsDefault = [];  % set in compute_lts_errors.m
-missedLtsErrorDefault = [];     % set in compute_lts_errors.m
-falseLtsErrorDefault = [];      % set in compute_lts_errors.m
+ltsFeatureWeightsDefault = [];  % set later
+ltsExistErrorDefault = [];      % set later
 lts2SweepErrorRatioDefault = [];% set later
 normalizeErrorDefault = false;  % don't normalize errors by default
 initSwpErrorDefault = [];       % no initial sweep error values by default
@@ -238,10 +233,8 @@ addParameter(iP, 'SweepWeights', sweepWeightsDefault, ...
     @(x) assert(isnumericvector(x), 'SweepWeights must be a numeric vector!'));
 addParameter(iP, 'LtsFeatureWeights', ltsFeatureWeightsDefault, ...
     @(x) assert(isnumericvector(x), 'LtsFeatureWeights must be a numeric vector!'));
-addParameter(iP, 'MissedLtsError', missedLtsErrorDefault, ...
-    @(x) assert(isnumericvector(x), 'MissedLtsError must be a numeric vector!'));
-addParameter(iP, 'FalseLtsError', falseLtsErrorDefault, ...
-    @(x) assert(isnumericvector(x), 'FalseLtsError must be a numeric vector!'));
+addParameter(iP, 'LtsExistError', ltsExistErrorDefault, ...
+    @(x) assert(isnumericvector(x), 'LtsExistError must be a numeric vector!'));
 addParameter(iP, 'Lts2SweepErrorRatio', lts2SweepErrorRatioDefault, ...
     @(x) assert(isnumericvector(x), 'InitLtsError must be a numeric vector!'));
 addParameter(iP, 'NormalizeError', normalizeErrorDefault, ...
@@ -284,8 +277,7 @@ fitWindow = iP.Results.FitWindow;
 baseNoise = iP.Results.BaseNoise;
 sweepWeights = iP.Results.SweepWeights;
 ltsFeatureWeights = iP.Results.LtsFeatureWeights;
-missedLtsError = iP.Results.MissedLtsError;
-falseLtsError = iP.Results.FalseLtsError;
+ltsExistError = iP.Results.LtsExistError;
 lts2SweepErrorRatio = iP.Results.Lts2SweepErrorRatio;
 normalizeError = iP.Results.NormalizeError;
 initSwpError = iP.Results.InitSwpError;
@@ -422,8 +414,7 @@ if computeLtsError
                                     'BaseNoise', baseNoise, ...
                                     'SweepWeights', sweepWeights, ...
                                     'FeatureWeights', ltsFeatureWeights, ...
-                                    'MissedLtsError', missedLtsError, ...
-                                    'FalseLtsError', falseLtsError, ...
+                                    'LtsExistError', ltsExistError, ...
                                     'NormalizeError', normalizeError, ...
                                     'InitLtsError', initLtsError);
 else
@@ -435,7 +426,6 @@ else
     ltsErrors.avgLtsAmpError = NaN;
     ltsErrors.avgLtsDelayError = NaN;
     ltsErrors.avgLtsSlopeError = NaN;
-    ltsErrors.ltsMisMatchError = NaN;
     ltsErrors.avgLtsError = NaN;
 end
 

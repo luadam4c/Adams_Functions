@@ -22,7 +22,6 @@ function m3ha_log_errors_params (logFileName, outparams, err, simplexOut)
 % 2017-05-17 If lts not computed, do not show errors
 % 2018-08-10 Updated fitreg -> fitWindow
 % 2018-11-16 Reorganized code and made logFileName the first argument
-% 2019-11-29 Added ltsMisMatchError
 % TODO: Make each iteration a new column instead of a new row
 % TODO: Change this to using tables
 
@@ -71,7 +70,6 @@ ltsSlopeErrors = err.ltsSlopeErrors;
 avgLtsAmpError = err.avgLtsAmpError;
 avgLtsDelayError = err.avgLtsDelayError;
 avgLtsSlopeError = err.avgLtsSlopeError;
-ltsMisMatchError = err.ltsMisMatchError;
 avgLtsError = err.avgLtsError;
 totalError = err.totalError;
 
@@ -146,11 +144,10 @@ if ~isfile(logFilePath)
     fprintf(fid, '%s, %s, ', ...
             'Total error', 'Average sweep error');
     if all(hasLtsError)
-        fprintf(fid, '%s, %s, %s, %s, %s, ', ...
+        fprintf(fid, '%s, %s, %s, %s, ', ...
             'Average LTS amp error', ...
             'Average LTS time error', ...
             'Average LTS slope error', ...
-            'LTS mismatch error', ...
             'Average LTS error');
     end
     fprintf(fid, repmat('%s, ', 1, nParams), neuronParamNames{:});
@@ -211,9 +208,8 @@ if isSimplex
 end
 fprintf(fid, '%6.4g, %6.4g, ', totalError, avgSwpError);
 if all(hasLtsError)
-    fprintf(fid, '%6.4g, %6.4g, %6.4g, %6.4g, %6.4g, ', ...
-            avgLtsAmpError, avgLtsDelayError, avgLtsSlopeError, ...
-            ltsMisMatchError, avgLtsError);
+    fprintf(fid, '%6.4g, %6.4g, %6.4g, %6.4g, ', ...
+            avgLtsAmpError, avgLtsDelayError, avgLtsSlopeError, avgLtsError);
 end
 fprintf(fid, repmat('%6.4g, ', 1, nParams), neuronParamValues);
 if logSwpErrFlag
@@ -260,11 +256,10 @@ if ~isfile(conciseFilePath)
     end
     fprintf(fid, '%s, ', 'Average sweep error');
     if all(hasLtsError)
-        fprintf(fid, '%s, %s, %s, %s, %s, ', ...
+        fprintf(fid, '%s, %s, %s, %s, ', ...
             'Average LTS amp error', ...
             'Average LTS time error', ...
             'Average LTS slope error', ...
-            'LTS mismatch error', ...
             'Average LTS error');
     end
     if isSimplex
@@ -294,9 +289,8 @@ else
 end
 fprintf(fid, '%6.4g, ', avgSwpError);
 if all(hasLtsError)
-    fprintf(fid, '%6.4g, %6.4g, %6.4g, %6.4g, %6.4g, ', ...
-            avgLtsAmpError, avgLtsDelayError, avgLtsSlopeError, ...
-            ltsMisMatchError, avgLtsError);
+    fprintf(fid, '%6.4g, %6.4g, %6.4g, %6.4g, ', ...
+            avgLtsAmpError, avgLtsDelayError, avgLtsSlopeError, avgLtsError);
 end
 if isSimplex
     fprintf(fid, repmat('%6.4g, ', 1, nInUse), paramsInUseValues);
