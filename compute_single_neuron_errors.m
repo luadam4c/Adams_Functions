@@ -62,7 +62,7 @@ function errors = compute_single_neuron_errors (vSim, vRec, varargin)
 %                   default == set in compute_lts_errors.m
 %                   - 'Lts2SweepErrorRatio': ratio of LTS error to sweep error
 %                   must be empty or a numeric vector with length == nSweeps
-%                   default == 2
+%                   default == 3
 %                   - 'NormalizeError': whether to normalize errors 
 %                                       by an initial error
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -153,8 +153,8 @@ function errors = compute_single_neuron_errors (vSim, vRec, varargin)
 %% Hard-coded parameters
 validErrorModes = {'SweepOnly', 'Sweep&LTS'};
 
-% Consistent with singleneuronfittin58.m
-defaultLts2SweepErrorRatio = 2;         % default error ratio of LTS error 
+% Consistent with singleneuronfittin71.m
+defaultLts2SweepErrorRatio = 3;         % default error ratio of LTS error 
                                         %   to sweep error
 
 

@@ -52,11 +52,11 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 %                   default == set in compute_weighted_average.m
 %                   - 'FeatureWeights': LTS feature weights for averaging
 %                   must be empty or a numeric vector with length == nSweeps
-%                   default == [2, 3, 1]
+%                   default == [2; 2; 2]
 %                   - 'MissedLtsError': a dimensionless error that penalizes 
 %                                       a misprediction of the existence of LTS
 %                   must be empty or a numeric vector with length == nSweeps
-%                   default == 1
+%                   default == 2
 %                   - 'FalseLtsError': a dimensionless error that penalizes 
 %                                       a misprediction of the absence of LTS
 %                   must be empty or a numeric vector with length == nSweeps
@@ -99,12 +99,15 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 % 2019-11-28 Now computes LTS amplitude error assymetrically so that
 %               negative errors are penalized 3 times as much
 % 2019-11-29 Added ltsMisMatchError
+% 2019-11-29 Now computes LTS amplitude error assymetrically so that
+%               positive errors are penalized 10 times less
+% 2019-11-29 LTS amplitude uncertainty is now 1/4 of peak prominence
 
 %% Hard-coded parameters
-% Consistent with singleneuronfitting69.m
-defaultLtsFeatureWeights = [2; 3; 1];   % default weights for optimizing 
+% Consistent with singleneuronfitting71.m
+defaultLtsFeatureWeights = [2; 2; 2];   % default weights for optimizing 
                                         %   LTS statistics
-defaultMissedLtsError = 1;              % how much error (dimensionless) to 
+defaultMissedLtsError = 2;              % how much error (dimensionless) to 
                                         %   penalize a sweep that mispredicted 
                                         %   the existence of an LTS
 defaultFalseLtsError = 0.5;             % how much error (dimensionless) to 
@@ -251,8 +254,8 @@ ltsMisMatchError = missedLtsError .* sum(hasMissedLts) + ...
                     falseLtsError .* sum(hasFalseLts);
 
 %% Compute feature uncertainties
-% The amplitude uncertainty should be close to half of peak prominence
-ltsAmpUncertainty = abs(peakPromRec ./ 2);
+% The amplitude uncertainty should be close to 1/4 of peak prominence
+ltsAmpUncertainty = abs(peakPromRec ./ 4);
 
 % The peak delay uncertainty should be close to peak width
 ltsDelayUncertainty = abs(peakWidthRec);
@@ -276,9 +279,9 @@ ltsDelayErrors = compute_feature_error(ltsPeakTimeRec, ltsPeakTimeSim, ...
 ltsSlopeErrors = compute_feature_error(maxSlopeValueRec, maxSlopeValueSim, ...
                                             slopeUncertainty);
 
-% Modify LTS amplitude errors so that negative errors are penalized 
-%   3 times as much
-ltsAmpErrors(ltsAmpErrors < 0) = ltsAmpErrors(ltsAmpErrors < 0) * 3;
+% Modify LTS amplitude errors so that positive errors are penalized 
+%   10 times less
+ltsAmpErrors(ltsAmpErrors >= 0) = ltsAmpErrors(ltsAmpErrors >= 0) ./ 10;
 
 % Compute weighted-root-mean-squared-averaged LTS errors (dimensionless)
 [avgLtsAmpError, avgLtsDelayError, avgLtsSlopeError] = ...
@@ -289,13 +292,19 @@ ltsAmpErrors(ltsAmpErrors < 0) = ltsAmpErrors(ltsAmpErrors < 0) * 3;
 % Put the feature errors together
 featureErrors = [avgLtsAmpError; avgLtsDelayError; avgLtsSlopeError];
 
+% Compute the weighted average of 
+%   the LTS feature errors, weighted by featureWeights
+avgLtsFeatureError = compute_weighted_average(featureErrors, ...
+                        'Weights', featureWeights, ...
+                        'AverageMethod', 'linear', 'IgnoreNaN', true);
+
 % Average LTS error (dimensionless) is the weighted average of 
-%   the LTS feature errors, weighted by featureWeights, 
-%   plus the LTS existence error
-avgLtsError = compute_weighted_average(featureErrors, ...
-                'Weights', featureWeights, ...
-                'AverageMethod', 'linear', 'IgnoreNaN', true) + ...
-                ltsMisMatchError;
+%   the LTS feature errors plus the LTS existence error
+if isnan(avgLtsFeatureError)
+    avgLtsError = ltsMisMatchError;
+else
+    avgLtsError = avgLtsFeatureError + ltsMisMatchError;
+end
 
 % If requested, make errors dimensionless by 
 %   storing or dividing by an initial error value
