@@ -90,6 +90,7 @@ function varargout = all_files (varargin)
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_repetitive_protocols.m
 %       cd/plot_traces_EEG.m
+%       cd/update_slice_base_in_matfiles.m
 %       /home/Matlab/plethR01/plethR01_analyze.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting63.m
 %       

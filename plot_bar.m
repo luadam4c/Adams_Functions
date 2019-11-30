@@ -432,7 +432,7 @@ figTitle = iP.Results.FigTitle;
 figHandle = iP.Results.FigHandle;
 figNumber = iP.Results.FigNumber;
 figName = iP.Results.FigName;
-[~, figtypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Keep unmatched arguments for the bar() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -870,7 +870,7 @@ handles.selected = selected;
 
 % Save figure if figName provided
 if ~isempty(figName)
-    save_all_figtypes(fig, figName, figtypes);
+    save_all_figtypes(fig, figName, figTypes);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -258,6 +258,12 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %                   - 'MaxRange2Mean': maximum percentage of range versus mean
 %                   must be a nonnegative scalar
 %                   default == 40%
+%                   - 'FigTypes': figure type(s) for saving; 
+%                               e.g., 'png', 'fig', or {'png', 'fig'}, etc.
+%                   could be anything recognised by 
+%                       the built-in save_all_figtypes() function
+%                   (see isfigtype.m under Adams_Functions)
+%                   default == 'png'
 %
 % Requires:
 %       cd/alternate_elements.m
@@ -286,6 +292,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %       cd/force_column_cell.m
 %       cd/force_matrix.m
 %       cd/iscellnumeric.m
+%       cd/isfigtype.m
 %       cd/ispositivescalar.m
 %       cd/match_time_info.m
 %       cd/parse_stim.m
@@ -293,6 +300,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %       cd/plot_horizontal_line.m
 %       cd/plot_raster.m
 %       cd/plot_table.m
+%       cd/save_all_figtypes.m
 %       cd/save_all_zooms.m
 %       cd/set_default_flag.m
 %       cd/transform_vectors.m
@@ -341,6 +349,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 % 2019-08-13 Expanded combined plot
 % 2019-08-13 Now uses alternate_elements.m
 % 2019-08-29 Added 'FigFolder' as an optional argument
+% 2019-11-30 Added 'FigTypes' as an optional argument
 
 %% Hard-coded parameters
 validSelectionMethods = {'notNaN', 'maxRange2Mean'};
@@ -379,7 +388,6 @@ channelUnits = {'uV', 'arb'};
 
 % TODO: Make optional argument
 backupSheets = true;
-figTypes = {'epsc2', 'png'}; % default: {'png'}
 
 %% Default values for optional arguments
 siMsDefault = 0.1;                      % 0.1 ms by default
@@ -432,6 +440,9 @@ selectionMethodDefault = 'maxRange2Mean';
                                         % select using maxRange2Mean by default
 maxRange2MeanDefault = 40;              % range is not more than 40% of mean 
                                         %   by default
+
+% Figure stuff
+figTypesDefault = 'png';                % plot just as .png files by default 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -543,6 +554,8 @@ addParameter(iP, 'SelectionMethod', selectionMethodDefault, ...
     @(x) any(validatestring(x, validSelectionMethods)));
 addParameter(iP, 'MaxRange2Mean', maxRange2MeanDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'scalar'}));
+addParameter(iP, 'FigTypes', figTypesDefault, ...
+    @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, vVecsOrSlice, varargin{:});
@@ -586,6 +599,7 @@ nSweepsToAverage = iP.Results.NSweepsToAverage;
 selectionMethod = validatestring(iP.Results.SelectionMethod, ...
                                     validSelectionMethods);
 maxRange2Mean = iP.Results.MaxRange2Mean;
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 %% Preparation
 fprintf('Decide on the file base ...\n');
@@ -834,7 +848,8 @@ if plotSpikeDetectionFlag
     figFolderSpikeDetection = fullfile(figFolder, spikeDetectionDir);
 
     % Plot and save figures
-    plot_all_spike_detections(parsedData, parsedParams, figFolderSpikeDetection);
+    plot_all_spike_detections(parsedData, parsedParams, ...
+                                figFolderSpikeDetection, figTypes);
 end
 
 %% Plot spike histograms
@@ -844,7 +859,8 @@ if plotSpikeHistogramFlag
     figFolderHist = fullfile(figFolder, spikeHistDir);
 
     % Plot and save figures
-    plot_all_spike_histograms(parsedData, parsedParams, figFolderHist);
+    plot_all_spike_histograms(parsedData, parsedParams, ...
+                                figFolderHist, figTypes);
 end
 
 %% Plot autocorrelograms
@@ -856,7 +872,7 @@ if plotAutoCorrFlag
 
     % Plot and save figures
     plot_all_autocorrelograms(parsedData, parsedParams, ...
-                                figFolderAutoCorr, figFolderAcf);
+                                figFolderAutoCorr, figFolderAcf, figTypes);
 end
 
 %% Plot raw traces
@@ -876,7 +892,7 @@ if plotRawFlag
                         'FigExpansion', figExpansion);
 
     % Save the figure zoomed to several x limits
-    save_all_zooms(figs(1), figBaseRaw, zoomWinsMulti);
+    save_all_zooms(figs(1), figBaseRaw, zoomWinsMulti, 'FigTypes', figTypes);
 end
 
 %% Plot raster plot
@@ -892,7 +908,7 @@ if plotRasterFlag
                             phaseBoundaries, fileBase);
 
     % Save the figure zoomed to several x limits
-    save_all_zooms(figs(2), figBaseRaster, zoomWinsMulti);
+    save_all_zooms(figs(2), figBaseRaster, zoomWinsMulti, 'FigTypes', figTypes);
 end
 
 %% Plot spike density plot
@@ -912,7 +928,8 @@ if plotSpikeDensityFlag
                                  'MaxNYTicks', 20);
 
     % Save the figure zoomed to several x limits
-    save_all_zooms(figs(3), figBaseSpikeDensity, zoomWinsMulti);
+    save_all_zooms(figs(3), figBaseSpikeDensity, zoomWinsMulti, ...
+                    'FigTypes', figTypes);
 end
 
 %% Plot combined plots
@@ -1038,7 +1055,7 @@ if plotCombinedFlag
                             'DataType', 'acfFiltered');
 
     % Save the figure
-    saveas(figCombined, figBaseCombined, 'png');
+    save_all_figtypes(figCombined, figBaseCombined, figTypes);
 
     % Output figure
     figs(4) = figCombined;
@@ -1056,7 +1073,7 @@ if plotContourFlag
     % Plot figure
     figs(5) = figure(5); clf
     figPosition = [300, 300, 1100, 300];
-    xLimitsSeconds = [2.2, 10];
+    xLimitsSeconds = [2.2, 20];
     plot_spike_density_multiunit(parsedData, parsedParams, ...
                         phaseBoundaries, fileBase, ...
                         'XLimits', xLimitsSeconds, ...
@@ -1065,7 +1082,7 @@ if plotContourFlag
                         'BoundaryType', 'verticalBars', ...
                         'MaxNYTicks', 10);
 
-    % Save the figure as an eps file
+    % Save the figure
     save_all_figtypes(figs(5), figBaseContour, figTypes);
 end
 
@@ -1829,7 +1846,8 @@ ylim(yLimits);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_all_spike_detections(parsedData, parsedParams, figFolder)
+function plot_all_spike_detections(parsedData, parsedParams, ...
+                                        figFolder, figTypes)
 
 % Retrieve data for plotting
 tVec = parsedData.tVec;
@@ -1884,7 +1902,7 @@ parfor iVec = 1:nVectors
     zoomWins = [zoomWin1, zoomWin2, zoomWin3];
 
     % Save the figure zoomed to several x limits
-    save_all_zooms(fig, figBaseThis, zoomWins);
+    save_all_zooms(fig, figBaseThis, zoomWins, 'FigTypes', figTypes);
 
     % Close all figures
     close all force hidden
@@ -1892,7 +1910,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_all_spike_histograms(parsedData, parsedParams, figFolder)
+function plot_all_spike_histograms(parsedData, parsedParams, ...
+                                        figFolder, figTypes)
 
 %% Preparation
 % Count the number of sweeps
@@ -1937,21 +1956,23 @@ parfor iVec = 1:nVectors
     thisParams = parsedParamsStruct(iVec);
     thisData = parsedDataStruct(iVec);
 
+    % Plot the histogram
     histFig = figure('Visible', 'off');
     [histBars, histFig] = ...
         plot_spike_histogram(thisData, thisParams, ...
                                 'XLimits', xLimitsHist, ...
                                 'YLimits', yLimitsHist);
 
-    saveas(histFig, fullfile(figFolder, ...
-                    [figPathBase{iVec}, '_spike_histogram']), 'png');
+    % Save the figure
+    save_all_figtypes(histFig, fullfile(figFolder, ...
+                    [figPathBase{iVec}, '_spike_histogram']), figTypes);
     close all force hidden
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_all_autocorrelograms(parsedData, parsedParams, ...
-                                    figFolderAutoCorr, figFolderAcf)
+                                    figFolderAutoCorr, figFolderAcf, figTypes)
 
 % Retrieve data
 acf = parsedData.acf;
@@ -2009,8 +2030,8 @@ parfor iVec = 1:nVectors
             'DataType', 'autocorrelogram', ...
             'XLimits', xLimitsAutoCorr, ...
             'YLimits', yLimitsAutoCorr);
-    saveas(autoCorrFig, fullfile(figFolderAutoCorr, ...
-            [figPathBase{iVec}, '_autocorrelogram']), 'png');
+    save_all_figtypes(autoCorrFig, fullfile(figFolderAutoCorr, ...
+            [figPathBase{iVec}, '_autocorrelogram']), figTypes);
 
     acfFig = figure('Visible', 'off');
     plot_autocorrelogram(thisData, thisParams, ...
@@ -2018,8 +2039,8 @@ parfor iVec = 1:nVectors
             'XLimits', xLimitsAcfFiltered, ...
             'YLimits', yLimitsAcfFiltered, ...
             'BarYValue', yOscDur);
-    saveas(acfFig, fullfile(figFolderAcf, ...
-            [figPathBase{iVec}, '_autocorrelation_function']), 'png');
+    save_all_figtypes(acfFig, fullfile(figFolderAcf, ...
+            [figPathBase{iVec}, '_autocorrelation_function']), figTypes);
 
     close all force hidden
 end

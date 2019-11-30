@@ -69,7 +69,8 @@ saveMatFlag = true;
 % TODO: matFileSuffix = '_multiunit_data';?
 varsNeeded = {'sliceBase', 'vVecsSl', 'siMsSl', 'iVecsSl', ...
                 'phaseBoundaries', 'phaseStrs'};
-regexpSliceMatFile = '.*slice[0-9]*.mat';
+regExpSliceBase = '.*slice[0-9]*';
+regexpSliceMatFile = '.*slice[0-9]*.*.mat';
 regexpSliceAbfFile = '.*slice[0-9]*.*.abf';
 channelTypes = {'voltage', 'current'};
 channelUnits = {'uV', 'arb'};
@@ -128,13 +129,13 @@ end
 sliceBasesMat = all_slice_bases('Directory', inFolder, ...
                                 'RegExpFile', regexpSliceMatFile, ...
                                 'ForceCellOutput', true, 'SortBy', 'date', ...
-                                'RegExpBase', '.*slice[0-9]*');
+                                'RegExpBase', regExpSliceBase);
 
 % Get all the slice bases with .abf data
 sliceBasesAbf = all_slice_bases('Directory', inFolder, ...
                                 'RegExpFile', regexpSliceAbfFile, ...
                                 'ForceCellOutput', true, 'SortBy', 'date', ...
-                                'RegExpBase', '.*slice[0-9]*');
+                                'RegExpBase', regExpSliceBase);
 
 
 % Either combine data from .abf files or load .mat files

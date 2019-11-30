@@ -89,6 +89,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/plot_traces.m
 %       cd/plot_traces_spike2_mat.m
 %       cd/save_all_zooms.m
+%       cd/update_slice_base_in_matfiles.m
 %       /home/Matlab/plethR01/plethR01_analyze.m
 
 % File History:

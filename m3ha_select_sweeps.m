@@ -46,7 +46,7 @@ function [swpInfo, fileBasesToUse] = m3ha_select_sweeps (varargin)
 %                       3 - GAT3 blockade
 %                       4 - dual blockade
 %                   default == no restrictions
-%                   - 'GIncrCondition': conductance amplitude condition(s) (%)
+%                   - 'GIncrConditions': conductance amplitude condition(s) (%)
 %                                           to restrict to
 %                   must be empty or some of: 25, 50, 100, 200, 400, 800
 %                   default == no restrictions
@@ -83,7 +83,7 @@ function [swpInfo, fileBasesToUse] = m3ha_select_sweeps (varargin)
 % 2018-11-18 Adapted from m3ha_find_ind_to_fit()
 % 2018-12-06 Now adds a toUse column to sweep info
 % 2019-11-26 Added dataMode == 0
-% 2019-11-27 Added 'PharmConditions', 'GIncrCondition', 'VHoldConditions', ...
+% 2019-11-27 Added 'PharmConditions', 'GIncrConditions', 'VHoldConditions', ...
 %               & 'CellIds' & 'RepNums' as optional arguments
 
 %% Hard-coded parameters
@@ -124,7 +124,7 @@ addParameter(iP, 'CasesDir', casesDirDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));    
 addParameter(iP, 'PharmConditions', pharmConditionsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'GIncrCondition', gIncrConditionsDefault, ...
+addParameter(iP, 'GIncrConditions', gIncrConditionsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'VHoldConditions', vHoldConditionsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
@@ -139,8 +139,8 @@ verbose = iP.Results.Verbose;
 swpInfo = iP.Results.SwpInfo;
 dataMode = iP.Results.DataMode;
 casesDir = iP.Results.CasesDir;
-pharmConditionss = iP.Results.PharmConditions;
-gIncrConditions = iP.Results.GIncrCondition;
+pharmConditions = iP.Results.PharmConditions;
+gIncrConditions = iP.Results.GIncrConditions;
 vHoldConditions = iP.Results.VHoldConditions;
 cellIds = iP.Results.CellIds;
 repNums = iP.Results.RepNums;
@@ -205,7 +205,7 @@ elseif dataMode == 2
 end
 
 %% Update toUse according to the conditions requested
-toUse = restrict_to_conditions(toUse, swpInfo, pharmStr, pharmConditionss);
+toUse = restrict_to_conditions(toUse, swpInfo, pharmStr, pharmConditions);
 toUse = restrict_to_conditions(toUse, swpInfo, gIncrStr, gIncrConditions);
 toUse = restrict_to_conditions(toUse, swpInfo, vHoldStr, vHoldConditions);
 toUse = restrict_to_conditions(toUse, swpInfo, cellIdStr, cellIds);
