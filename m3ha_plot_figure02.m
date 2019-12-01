@@ -171,7 +171,7 @@ subPlots = handles.subPlots;
 set(subPlots, 'XTick', []);
 
 % Plot a time bar
-% TODO: plot_unit_bar.m
+% TODO: plot_scale_bar.m
 barLengthMs = 100;
 barText = '100 ms';
 barColor = 'k';

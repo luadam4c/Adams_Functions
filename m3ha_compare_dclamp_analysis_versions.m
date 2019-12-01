@@ -1,7 +1,7 @@
-function m3ha_compare_statistics(new_vn, old_vn)
+function m3ha_compare_dclamp_analysis_versions(new_vn, old_vn)
 % Used to find and copy traces with new stats such as peak classifications, LTS peak times and spikes per peak
-% Usage: m3ha_compare_statistics(new_vn, old_vn)
-%%% TODO: Please test m3ha_compare_statistics(14, 13)
+% Usage: m3ha_compare_dclamp_analysis_versions(new_vn, old_vn)
+%%% TODO: Please test m3ha_compare_dclamp_analysis_versions(14, 13)
 % Arguments:	new_vn	- new version number
 %			must be an integer between 1 and max_vn
 %		old_vn	- old version number
@@ -196,8 +196,8 @@ fprintf('There are %d files with peakclass different from before!\n', ct);
 %{
 OLD CODE:
 
-function m3ha_compare_statistics(varargin)
-% Usage: m3ha_compare_statistics(varargin)
+function m3ha_compare_dclamp_analysis_versions(varargin)
+% Usage: m3ha_compare_dclamp_analysis_versions(varargin)
 
 %% Set version number to compare against
 vn = 13;			% version number
