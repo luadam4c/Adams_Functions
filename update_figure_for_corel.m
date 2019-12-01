@@ -50,16 +50,19 @@ function figHandle = update_figure_for_corel (varargin)
 % 2019-10-04 Added 'RemoveLegends' as an optional argument
 % 2019-10-05 Add textFontSize
 % 2019-10-06 Changed default labelsFontSize from 8 to 7
+% 2019-11-30 Changed default labelsFontSize from 7 to 10
+% 2019-11-30 Changed default axisFontSize from 6 to 8
+% 2019-11-30 Changed default textFontSize from 6 to 8
 
 %% Hard-coded parameters
 % TODO: Make optional parameters
-labelsFontSize = 7;
-axisFontSize = 6; 
-textFontSize = 6;
+labelsFontSize = 10;
+axisFontSize = 8; 
+textFontSize = 8;
 annotationLineWidth = 1;
 rulerLineWidth = 1;
 units = 'inches';
-tickLengthsUnits = [0.025, 0.025];
+tickLengthsInches = [0.025, 0.025];
 
 %% Default values for optional arguments
 figHandleDefault = [];
@@ -213,7 +216,7 @@ for iAx = 1:nAx
     axisLengthUnits = max(axPosition(3:4) .* figPosition(3:4));
 
     % Convert to units relative to longest axis
-    tickLengthsRel = tickLengthsUnits / axisLengthUnits;
+    tickLengthsRel = tickLengthsInches / axisLengthUnits;
 
     % Set new tick lengths
     set(ax(iAx), 'TickLength', tickLengthsRel);

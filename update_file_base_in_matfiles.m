@@ -1,6 +1,6 @@
-function update_slice_base_in_matfiles (varargin)
+function update_file_base_in_matfiles (varargin)
 %% Updates slice bases in .mat files to match the file name if changed
-% Usage: update_slice_base_in_matfiles (varargin)
+% Usage: update_file_base_in_matfiles (varargin)
 % Explanation:
 %       TODO
 %
@@ -64,10 +64,18 @@ function update_one_file (matPath)
 m = matfile(matPath, 'Writable', true);
 
 % Extract new slice base
-newSliceBase = extract_fileparts(matPath, 'base');
+newFileBase = extract_fileparts(matPath, 'base');
+
+% Get all
+%   Note: this is much faster than who or whos
+allVarNames = fieldnames(m);
 
 % Update slice base in the file
-m.sliceBase = newSliceBase;
+if ismember('sliceBase', allVarNames)
+    m.sliceBase = newFileBase;
+elseif ismember('fileBase', allVarNames)
+    m.fileBase = newFileBase;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
