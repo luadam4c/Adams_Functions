@@ -60,10 +60,10 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %                                           pulse responses within each VHold
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true (only has effect if toParsePulse is true)
-%                   - 'Directory': a full directory path, 
+%                   - 'Directory': a directory for .mat files
 %                       e.g. '/media/shareX/share/'
 %                   must be a string scalar or a character vector
-%                   default == ''
+%                   default == fullfile(dataDir, matFilesDirName);
 %                   - 'OutFolder': directory to place outputs
 %                   must be a string scalar or a character vector
 %                   default == pwd

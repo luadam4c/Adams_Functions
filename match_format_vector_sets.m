@@ -4,7 +4,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 % Explanation:
 %       This function takes two sets of vectors as input arguments
 %       If there is more than one vector in one of the sets, 
-%           this function forces both sets as column cell arrays of the same 
+%           this function forces both sets as cell arrays of the same 
 %           number of vectors so that cellfun() can be used
 %       Otherwise, this function puts character vectors or numeric vectors 
 %           in a cell array only if 'ForceCellOutputs' is set to true
@@ -13,6 +13,7 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 % Example(s):
 %       [a, b] = match_format_vector_sets((2:5)', 1:5)
 %       [a, b] = match_format_vector_sets({1:5, 2:6}, 1:5)
+%       [a, b] = match_format_vector_sets({1:5, 2:6; [], 5:-1:1}, 1:5)
 %       [a, b] = match_format_vector_sets({1:5, [2:6]'}, 1:5)
 %       [a, b] = match_format_vector_sets([[1:5]', [2:6]'], [1:5]')
 %       [a, b] = match_format_vector_sets({'yes'}, 1:5)
@@ -97,8 +98,9 @@ function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 % 2019-01-04 Added 'TreatCharAsScalar' (default == 'true')
 % 2019-01-04 Fixed bug
 % 2019-10-03 Added 'TreatCellNumAsArray' as an optional argument
-% TODO: Include the option to not force as column cell arrays
-%           i.e., match 2D cell arrays
+% 2019-12-01 Now does not necessarily force as column cell arrays
+%               i.e., match 2D cell arrays
+% TODO: Add 'ForceColumnOutput' as an optional argument
 % TODO: Accept more than two vector sets
 % 
 
@@ -177,16 +179,20 @@ if is_vector(vecs1, treatCellNumAsArray, treatCellStrAsArray, ...
         [vecs1, vecs2] = match_format_vectors(vecs1, vecs2);
     end
 else
-    % Force vecs1/vecs2 to become column cell arrays of column vectors
-    [vecs1, vecs2] = argfun(@force_column_cell, vecs1, vecs2);
+    % Force vecs1/vecs2 to become cell arrays of vectors
+    [vecs1, vecs2] = ...
+        argfun(@(x) force_column_cell(x, 'IgnoreNonVectors', true), vecs1, vecs2);
 
     % Find the maximum number of rows
-    maxVecs = max(numel(vecs1), numel(vecs2));
+    maxRows = max(size(vecs1, 1), size(vecs2, 1));
 
+    % Find the maximum number of columns
+    maxColumns = max(size(vecs1, 2), size(vecs2, 2));
+    
     % Match up the vector counts
     % TODO: Incorporate comparison into match_dimensions.m
     [vecs1, vecs2] = ...
-        argfun(@(x) match_dimensions(x, [maxVecs, 1]), vecs1, vecs2);
+        argfun(@(x) match_dimensions(x, [maxRows, maxColumns]), vecs1, vecs2);
     
     % Match vectors if requested
     if matchVectors

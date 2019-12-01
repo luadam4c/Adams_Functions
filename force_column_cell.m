@@ -23,6 +23,8 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       force_column_cell(myCellStr2D, 'ToLinear', true)
 %       force_column_cell(myNumeric2D)
 %       force_column_cell(myNumeric3D)
+%       force_column_cell(myCellStr2D)
+%       force_column_cell(myCellStr2D, 'IgnoreNonVectors', true)
 %
 % Outputs:
 %       vectorsCell - vectors as a column cell array
@@ -38,6 +40,9 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'RowInstead': whether to force as row vector instead
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'IgnoreNonVectors': whether to ignore non-vectors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'TreatVectorAsElement': whether to treat numeric vector
@@ -105,12 +110,14 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 % 2019-01-09 Now forces string arrays to become cell arrays of character vectors
 % 2019-01-13 Added 'RowInstead' as an optional argument
 % 2019-01-22 Now makes the vector format consistent
+% 2019-12-01 Added 'IgnoreNonVectors' as an optional argument
 % 
 
 %% Default values for optional arguments
 toLinearizeDefault = false;     % whether to linearize a nonvector cell array
 rowInsteadDefault = false;      % whether to force as row vector instead
-treatVectorAsElementDefault = true;    % treat vectors as element by default
+ignoreNonVectorsDefault = false;	% don't ignore non-vectors by default
+treatVectorAsElementDefault = true; % treat vectors as element by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -132,6 +139,8 @@ addParameter(iP, 'ToLinearize', toLinearizeDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RowInstead', rowInsteadDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'IgnoreNonVectors', ignoreNonVectorsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatVectorAsElement', treatVectorAsElementDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
@@ -139,13 +148,16 @@ addParameter(iP, 'TreatVectorAsElement', treatVectorAsElementDefault, ...
 parse(iP, vectorsOrig, varargin{:});
 toLinearize = iP.Results.ToLinearize;
 rowInstead = iP.Results.RowInstead;
+ignoreNonVectors = iP.Results.IgnoreNonVectors;
 treatVectorAsElement = iP.Results.TreatVectorAsElement;
 
 %% Do the job
 if isempty(vectorsOrig) || iscell(vectorsOrig) && ...
         (rowInstead && isrow(vectorsOrig) || ...
-        ~rowInstead && iscolumn(vectorsOrig))
+        ~rowInstead && iscolumn(vectorsOrig) || ...
+        ignoreNonVectors && ~isvector(vectorsOrig))
     % Place in a cell array if not already so
+    %   Otherwise, do nothing
     if ~iscell(vectorsOrig)
         vectorsCell = {vectorsOrig};
     else

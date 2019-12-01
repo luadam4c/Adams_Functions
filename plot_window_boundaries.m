@@ -202,9 +202,9 @@ if isempty(colorMap)
         case 'horizontalLines' 
             colorMap = 'r';
         case 'verticalBars'
-            colorMap = 'DarkRed';
+            colorMap = [0.5, 0, 0];
         case 'horizontalBars'
-            colorMap = 'DarkGreen';
+            colorMap = [0, 0.5, 0];
         case 'verticalShades'
             colorMap = 'LightGreen';
         case 'horizontalShades'

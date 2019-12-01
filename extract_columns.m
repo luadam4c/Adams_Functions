@@ -11,6 +11,7 @@ function varargout = extract_columns (arrays, varargin)
 %                               {[2, 3], [1:3], [1, 3]})
 %       c = extract_columns({magic(3); ones(4)}, [1:3], 'OutputMode', 'single')
 %       d = extract_columns({{[1, 2]; [2, 1]}, {[4, 5], [3, 2]}}, 1:2, 'TreatCnvAsColumns', true, 'OutputMode', 'single')
+%       e = extract_columns(repmat({{[1, 2]; [2, 1]}}, 2, 2), 1:2, 'TreatCnvAsColumns', true, 'OutputMode', 'single')
 %
 % Outputs:
 %       varargout   - extracted column #1s, column #2s, etc.
@@ -77,6 +78,7 @@ function varargout = extract_columns (arrays, varargin)
 %               as a single array when 'TreatCnvAsColumns' is true
 % 2019-01-13 Added 'AsRowVectors' as an optional argument
 % 2019-01-22 Now uses iscellnumericvector instead of iscellvector
+% 2019-12-01 Now allows arrays to be a matrix cell array
 
 %% Hard-coded parameters
 validOutputModes = {'multiple', 'single'};
@@ -157,10 +159,10 @@ end
 % Count the number of columns for each array
 if ~iscell(arrays) || treatCellAsArray
     nColumns = size(arrays, 2);
-elseif treatCnvAsColumns
+elseif treatCnvAsColumns && iscellnumericvector(arrays)
     nColumns = count_vectors(arrays);
 else
-    nColumns = cellfun(@(x) size(x, 2), arrays);
+    nColumns = cellfun(@count_vectors, arrays);
 end
 
 % Make sure provided column numbers are within range
@@ -183,7 +185,7 @@ elseif isnumeric(colNums)
     maxColNumber = max(colNums);
 
     % Get the minimum number of columns
-    minNCols = min(nColumns);
+    minNCols = min(min(min(nColumns)));
 
     % If the maximum column number is greater than 
     %   the minimum number of columns, return error
@@ -275,8 +277,8 @@ if treatCellAsArray || ~iscell(arrays) || ...
                             colNums, 'UniformOutput', false);
 else
     % Count the minimum number of columns requested
-    nColNumbers = count_samples(colNums);
-    nColsToExtract = min(nColNumbers);
+    nColNumbers = count_samples(colNums, 'ForceColumnOutput', false);
+    nColsToExtract = min(min(min(nColNumbers)));
 
     % Create iColsToExtract
     if asRowVectors

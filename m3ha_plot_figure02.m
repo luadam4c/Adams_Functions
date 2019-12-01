@@ -37,9 +37,9 @@ plotBarPlotsFlag = true;
 
 % Plot settings
 exampleGincr = 200;
-exampleHeight = 4;
-exampleWidth = 3;
-exampleLineWidth = 0.5;
+exampleHeight = 11;
+exampleWidth = 8.5;             % in centimeters
+exampleLineWidth = 0.5;         % in centimeters
 exampleXlimits = [800, 2200];
 exampleYlimits = [-100, 20];
 pharmLabels = {'Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block'};
@@ -81,7 +81,8 @@ if plotExamplesFlag
                                             swpInfo, exampleGincr, ...
                                             exampleXlimits, exampleYlimits, ...
                                             pharmLabels, exampleLineWidth, ...
-                                            exampleHeight, exampleWidth), ...
+                                            exampleHeight, exampleWidth, ...
+                                            figTypes), ...
                     exampleCellNames);
 
 end
@@ -118,9 +119,9 @@ end
 
 function fig = m3ha_plot_example_traces (cellName, figure02Dir, ...
                                             swpInfo, gIncrOfInterest, ...
-                                            xLimits, ylimits, ...
+                                            xLimits, yLimits, ...
                                             yLabels, lineWidth, ...
-                                            figHeight, figWidth)
+                                            figHeight, figWidth, figTypes)
 %% Plots example traces
 % TODO: Pull out as its own function with only cellName as the required argument
 
@@ -145,7 +146,8 @@ pharmAll = swpInfo{exampleBases, 'prow'};
 exampleBases = exampleBases(origInd);
 
 % Import traces
-data = m3ha_import_raw_traces(exampleBases, 'Directory', figure02Dir);
+data = m3ha_import_raw_traces(exampleBases, 'SweepInfoAll', swpInfo, ...
+                                'OutFolder', figure02Dir);
 
 % Extract time and voltage vectors
 [tVecs, vVecs] = extract_columns(data, 1:2);
@@ -154,16 +156,41 @@ data = m3ha_import_raw_traces(exampleBases, 'Directory', figure02Dir);
 fig = set_figure_properties('AlwaysNew', true);
 
 % Plot the traces
-plot_traces(tVecs, vVecs, ...
+handles = plot_traces(tVecs, vVecs, ...
             'PlotMode', 'parallel', 'LineWidth', lineWidth, ...
             'LinkAxesOption', 'xy', 'FigTitle', 'suppress', ...
-            'XLimits', xLimits, 'Ylimits', ylimits, ...
+            'XLimits', xLimits, 'Ylimits', yLimits, ...
             'XLabel', 'suppress', 'YLabel', yLabels, ...
             'LegendLocation', 'suppress', ...
             'FigHandle', fig);
 
+% Retrieve the subplots
+subPlots = handles.subPlots;
+
+% Remove x axis
+set(subPlots, 'XTick', []);
+
+% Plot a time bar
+% TODO: plot_unit_bar.m
+barLengthMs = 100;
+barText = '100 ms';
+barColor = 'k';
+barLineWidth = 1;
+xPosNormalized = 0.8;
+yPosBarNormalized = 0.1;
+yPosTextNormalized = 0.05;
+xPosBar = xLimits(1) + xPosNormalized * diff(xLimits);
+yPosBar = yLimits(1) + yPosBarNormalized * diff(yLimits);
+xPosText = xLimits(1) + xPosNormalized * diff(xLimits);
+yPosText = yLimits(1) + yPosTextNormalized * diff(yLimits);
+xLimitsBar = xPosBar + [0, barLengthMs];
+plot_horizontal_line(yPosBar, 'XLimits', xLimitsBar, ...
+                    'Color', barColor, 'LineWidth', barLineWidth, ...
+                    'AxesHandle', subPlots(end));
+text(xPosText, yPosText, barText);
+
 % Update figure for CorelDraw
-update_figure_for_corel(fig, 'Units', 'inches', ...
+update_figure_for_corel(fig, 'Units', 'centimeters', ...
                         'Height', figHeight, 'Width', figWidth);
 
 % Create figure base
@@ -171,7 +198,7 @@ figBase = sprintf('%s_gincr_%g_examples', cellName, gIncrOfInterest);
 figPathBase = fullfile(figure02Dir, figBase);
 
 % Save the figure
-save_all_figtypes(fig, figPathBase, {'png', 'epsc2'});
+save_all_figtypes(fig, figPathBase, figTypes);
 
 end
 

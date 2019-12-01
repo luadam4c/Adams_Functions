@@ -299,6 +299,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %       cd/plot_bar.m
 %       cd/plot_horizontal_line.m
 %       cd/plot_raster.m
+%       cd/plot_spike_density_multiunit.m
 %       cd/plot_table.m
 %       cd/save_all_figtypes.m
 %       cd/save_all_zooms.m
@@ -922,7 +923,6 @@ if plotSpikeDensityFlag
     % Plot figure
     figs(3) = figure(3); clf
     plot_spike_density_multiunit(parsedData, parsedParams, ...
-                                 phaseBoundaries, fileBase, ...
                                  'PlotStimStart', true, ...
                                  'BoundaryType', 'horizontalLines', ...
                                  'MaxNYTicks', 20);
@@ -986,7 +986,6 @@ if plotCombinedFlag
     % Plot spike density with zoomWin1
     subplot(axCombined(2));
     plot_spike_density_multiunit(parsedData, parsedParams, ...
-                                 phaseBoundaries, fileBase, ...
                                  'XLimits', zoomWin1, ...
                                  'PlotStimStart', true, ...
                                  'BoundaryType', 'horizontalLines', ...
@@ -1013,7 +1012,6 @@ if plotCombinedFlag
     % Plot spike density with zoomWin2
     subplot(axCombined(5));
     plot_spike_density_multiunit(parsedData, parsedParams, ...
-                                 phaseBoundaries, fileBase, ...
                                  'XLimits', zoomWin2, ...
                                  'PlotStimStart', true, ...
                                  'BoundaryType', 'horizontalLines', ...
@@ -1071,13 +1069,11 @@ if plotContourFlag
                                 [fileBase, '_contour']);
 
     % Plot figure
-    figs(5) = figure(5); clf
-    figPosition = [300, 300, 1100, 300];
+    figs(5) = set_figure_properties('ClearFigure', true, ...
+                                    'Width', 1100, 'Height', 300);
     xLimitsSeconds = [2.2, 20];
     plot_spike_density_multiunit(parsedData, parsedParams, ...
-                        phaseBoundaries, fileBase, ...
                         'XLimits', xLimitsSeconds, ...
-                        'FigPosition', figPosition, ...
                         'PlotStimStart', false, ...
                         'BoundaryType', 'verticalBars', ...
                         'MaxNYTicks', 10);
@@ -2204,149 +2200,6 @@ if ~isempty(phaseBoundaries)
     yBoundaries = nVectors - phaseBoundaries + 1;
     horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
                                     'LineStyle', '--', 'LineWidth', 2);
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function plot_spike_density_multiunit (parsedData, parsedParams, ...
-                                        phaseBoundaries, fileBase, ...
-                                        varargin)
-%% Plots a spike density plot from parsed multiunit data
-
-%% Hard-coded parameters
-validBoundaryTypes = {'horizontalLines', 'verticalBars'};
-
-% Default values for optional arguments
-figPositionDefault = [];
-xLimitsDefault = [];
-plotStimStartDefault = true;
-boundaryTypeDefault = 'horizontalLines';
-maxNYTicksDefault = 20;
-
-% Set up Input Parser Scheme
-iP = inputParser;
-iP.FunctionName = mfilename;
-iP.KeepUnmatched = true;                        % allow extraneous options
-
-% Add parameter-value pairs to the Input Parser
-addParameter(iP, 'FigPosition', figPositionDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'XLimits', xLimitsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'PlotStimStart', plotStimStartDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'BoundaryType', boundaryTypeDefault, ...
-    @(x) any(validatestring(x, validBoundaryTypes)));
-addParameter(iP, 'MaxNYTicks', maxNYTicksDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'2d'}));
-
-% Read from the Input Parser
-parse(iP, varargin{:});
-figPosition = iP.Results.FigPosition;
-xLimits = iP.Results.XLimits;
-plotStimStart = iP.Results.PlotStimStart;
-boundaryType = validatestring(iP.Results.BoundaryType, validBoundaryTypes);
-maxNYTicks = iP.Results.MaxNYTicks;
-
-% Retrieve data for plotting
-spikeDensityHz = parsedData.spikeDensityHz;
-
-siSeconds = parsedParams.siSeconds;
-minTimeSec = parsedParams.minTimeSec;
-maxTimeSec = parsedParams.maxTimeSec;
-stimStartSec = parsedParams.stimStartSec;
-
-% Create a figure title base
-titleBase = replace(fileBase, '_', '\_');
-
-% Plot as a heatmap
-hold on
-% TODO: plot_heat_map(spikeDensityHz);
-
-% Compute stimulation start
-meanStimStartSec = mean(stimStartSec);
-
-% Count traces
-nSweeps = numel(spikeDensityHz);
-
-% Get the average sampling interval in seconds
-siSeconds = mean(siSeconds);
-
-% Set x and y end points
-xEnds = [min(minTimeSec); max(maxTimeSec)];
-yEnds = [1; nSweeps];
-
-% Set x and y limits
-if isempty(xLimits)
-    xLimits = [xEnds(1) - 0.5 * siSeconds; xEnds(2) + 0.5 * siSeconds];
-end
-yLimits = [yEnds(1) - 0.5; yEnds(2) + 0.5];
-
-% Decide on y ticks and labels
-yTicks = create_indices('IndexEnd', nSweeps, 'MaxNum', maxNYTicks, ...
-                        'AlignMethod', 'left');
-yTickLabels = create_labels_from_numbers(nSweeps - yTicks + 1);
-
-% Force as a matrix and transpose it so that
-%   each trace is a row
-spikeDensityMatrix = transpose(force_matrix(spikeDensityHz));
-
-% Set a gray-scale color map
-% colormap(flipud(gray));
-% colormap(jet);
-cm = create_colormap('ColorMapFunc', @gray, 'ReverseOrder', true, ...
-                     'HighContrast', true);
-colormap(cm);
-
-% Generate plot
-imagesc(xEnds, flipud(yEnds), spikeDensityMatrix);
-
-% Set the y ticks and labels
-yticks(yTicks);
-yticklabels(yTickLabels);
-
-% Plot stimulation start
-if plotStimStart
-    stimStartLine = plot_vertical_line(meanStimStartSec, 'Color', rgb('Green'), ...
-                                    'LineStyle', '--', 'LineWidth', 0.5, ...
-                                    'YLimits', yLimits);
-end
-
-% Plot phase boundaries
-if ~isempty(phaseBoundaries)
-    % Compute y values for phase boundaries
-    yBoundaries = nSweeps - phaseBoundaries + 1;
-
-    % Plot phase boundaries
-    % TODO: Use plot_window_boundaries.m
-    switch boundaryType
-        case 'horizontalLines'
-            boundaryLine = plot_horizontal_line(yBoundaries, ...
-                                    'Color', rgb('Green'), ...
-                                    'LineStyle', '--', 'LineWidth', 2, ...
-                                    'XLimits', xLimits);
-        case 'verticalBars'
-            boundaryLine = plot_vertical_line(meanStimStartSec - 0.1, ...
-                                    'Color', rgb('Green'), ...
-                                    'LineStyle', '-', 'LineWidth', 3, ...
-                                    'YLimits', yBoundaries);
-        otherwise
-            error('boundaryType unrecognized!');
-    end
-end
-
-xlim(xLimits);
-ylim(yLimits);
-xlabel('Time (s)');
-ylabel('Trace #');
-title(['Spike density (Hz) for ', titleBase]);
-
-% Show a scale bar
-colorbar;
-
-% Set figure position if requested
-if ~isempty(figPosition)
-    set(gcf, 'Position', figPosition);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -1,5 +1,4 @@
-function [fig, subPlots, plotsData, plotsDataToCompare] = ...
-                plot_traces (tVecs, data, varargin)
+function handles = plot_traces (tVecs, data, varargin)
 %% Plots traces all in one place, overlapped or in parallel
 % Usage: [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %               plot_traces (tVecs, data, varargin)
@@ -823,6 +822,12 @@ else
                         subPlotSqeezeFactor, ...
                         otherArguments);
 end
+
+%% Output results
+handles.fig = fig;
+handles.subPlots = subPlots;
+handles.plotsData = plotsData;
+handles.plotsDataToCompare = plotsDataToCompare;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

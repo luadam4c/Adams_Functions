@@ -429,8 +429,7 @@ else
 end
 
 % Plot traces
-[fig, subPlots, plotsData, plotsDataToCompare] = ...
-    plot_traces(tVecs, data, 'DataToCompare', dataToCompare, ...
+handles = plot_traces(tVecs, data, 'DataToCompare', dataToCompare, ...
                 'LineStyleToCompare', lineStyleToCompare, ...
                 'LineWidth', lineWidth, ...
                 'ColorMap', colorMap, 'XLimits', xLimits, ...
@@ -439,6 +438,10 @@ end
                 'PlotMode', plotModeTraces, 'LinkAxesOption', linkAxesOption, ...
                 'FigHandle', figHandle, 'FigNumber', figNumber, ...
                 otherArguments);
+fig = handles.fig;
+subPlots = handles.subPlots;
+plotsData = handles.plotsData;
+plotsDataToCompare = handles.plotsDataToCompare;
 
 % Show sweep info and error as a subplot title 
 %   TODO: make a function plot_title(subPlots, titles)
@@ -538,10 +541,6 @@ handles.baseWindow = baseWindow;
 handles.fitWindow = fitWindow;
 handles.baseNoise = baseNoise;
 handles.sweepWeights = sweepWeights;
-handles.fig = fig;
-handles.subPlots = subPlots;
-handles.plotsData = plotsData;
-handles.plotsDataToCompare = plotsDataToCompare;
 handles.subTitles = subTitles;
 handles.boundaries = boundaries;
 handles.yLimits = yLimits;

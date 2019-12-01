@@ -11,6 +11,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       extract_elements({[3; 5; 4], [], [1, 2, -1]}, 'max')
 %       extract_elements({[3; 5; 4], [], [1, 2, -1]}, 'firstdiff')
 %       extract_elements({[3; 5; 4], [], [1, 2, -1]}, 'center')
+%       extract_elements({[3; 5], []; [], [1, 2]}, 'specific', 'Index', 1)
 %
 % Outputs:
 %       elements    - element(s) from each vector extracted
@@ -73,6 +74,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % 2019-03-14 Now returns NaN if the vector is not long enough
 % 2019-09-08 Added 'center' as a possible extract mode
 % 2019-10-04 Fixed bug
+% 2019-12-01 Now allows vecs to be a matrix cell array
 % TODO: Add 'TreatCellAsArray' as a parameter
 % TODO: Add 'MaxNum' as an optional argument with default Inf
 % TODO: Add 'Indices', 'Endpoints' and 'Windows' as optional arguments

@@ -55,11 +55,13 @@ function figHandle = update_figure_for_corel (varargin)
 % 2019-11-30 Changed default textFontSize from 6 to 7
 
 %% Hard-coded parameters
+BLACK = [0, 0, 0];
+
 % TODO: Make optional parameters
 labelsFontSize = 8;
 axisFontSize = 7; 
 textFontSize = 7;
-annotationLineWidth = 1;
+annotationLineWidth = 1; % TODO
 rulerLineWidth = 1;
 units = 'inches';
 tickLengthsInches = [0.025, 0.025];
@@ -181,6 +183,7 @@ set(ax, 'FontSize', axisFontSize);
 set(ax, 'TitleFontSizeMultiplier', titleFontSizeMultiplier);
 set(ax, 'TitleFontWeight', 'normal');
 set(ax, 'LabelFontSizeMultiplier', labelFontSizeMultiplier);
+set(ax, 'XColor', BLACK, 'YColor', BLACK, 'ZColor', BLACK);
 
 % Change the fontsize of texts
 texts = findobj(figHandle, 'Type', 'Text');
@@ -204,6 +207,13 @@ if ~isempty(plotMarkerSize)
     plots = lines(arrayfun(@(x) is_plot(x), lines));
     set(plots, 'MarkerSize', plotMarkerSize);
 end
+
+% Update all face alphas to 1
+%   Note: If not 1, CorelDraw can't import the figure as vector graphics
+dots = findobj(figHandle, 'Type', 'Scatter');
+set(dots, 'MarkerFaceAlpha', 1);
+patches = findobj(figHandle, 'Type', 'Patch');
+set(patches, 'FaceAlpha', 1, 'EdgeAlpha', 1);
 
 % Update annotation line widths
 % TODO: How to distinguish?

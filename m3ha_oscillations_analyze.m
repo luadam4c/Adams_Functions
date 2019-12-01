@@ -41,14 +41,14 @@ dirsToAnalyze = {'dual-final', 'snap5114-final', 'no711-final'};
 specificSlicesToAnalyze = {};
 
 % Flags
-plotFigure1Individual = false; % true;
+plotFigure1Individual = true;
 parseExamplesFlag = false;
 plotExampleSpikeDetectionFlag = false; % true;
 plotExampleSpikeHistogramFlag = false; % true;
 plotExampleAutoCorrFlag = false; % true;
 plotExampleContourFlag = true;
 
-plotFigure1Population = true;
+plotFigure1Population = false; % true;
 
 parseIndividualFlag = false; % true;
 saveMatFlag = false; % true;
@@ -128,10 +128,10 @@ varLabels = {'Oscillatory Index 4'; 'Oscillation Period 2 (ms)'; ...
                 'Number of Spikes Per Burst in Oscillation'};
 
 % Plot settings
+figTypes = {'png', 'epsc2'};
 chevronWidth = 4;               % figure width in cm
 chevronHeight = 4;              % figure height in cm
 chevronMarkerSize = 1;          % marker size in points
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -158,15 +158,62 @@ if plotFigure1Individual
                 'MaxRange2Mean', maxRange2Mean);
     end
 
-    if plotExampleContourFlag
-        
-    end
+    % Find all parsed files
+    [~, parsePaths] = ...
+        all_files('Directory', figure01Dir, 'KeyWord', 'slice', ...
+                    'Extension', 'mat', 'Suffix', 'parsed');
 
-    if plotExampleSpikeDetectionFlag
-    end
-    if plotExampleSpikeHistogramFlag
-    end
-    if plotExampleAutoCorrFlag
+    % Plot stuff
+    for iFile = 1:numel(parsePaths)
+        % Get the matfile of interest
+        thisPath = parsePaths{iFile};
+
+        % Load parsed data
+        fprintf('Loading parsed data from %s ...\n', thisPath);
+        load(thisPath, 'parsedParams', 'parsedData', 'fileBase');
+
+        % Plot contour plot
+        if plotExampleContourFlag
+            fprintf('Plotting contour plot for %s ...\n', fileBase);
+
+            % Create a figure base
+            figBaseContour = fullfile(figure01Dir, [fileBase, '_contour']);
+
+            % Create figure
+            fig = set_figure_properties('AlwaysNew', true, ...
+                                        'Width', 1100, 'Height', 300);
+
+            % Plot spike density
+            xLimitsSeconds = [2.2, 20];
+            plot_spike_density_multiunit(parsedData, parsedParams, ...
+                                'XLimits', xLimitsSeconds, ...
+                                'PlotStimStart', false, ...
+                                'BoundaryType', 'verticalBars', ...
+                                'MaxNYTicks', 4);
+
+            % Plot time bar
+            % TODO: Use plot_unit_bar.m
+
+            % Remove x axis
+            set(gca, 'XTick', []);
+
+            % Update figure for CorelDraw
+            update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                                    'Width', 11, 'Height', 3);
+
+            % Save the figure
+            save_all_figtypes(fig, figBaseContour, figTypes);
+        end
+
+        if plotExampleSpikeDetectionFlag
+        end
+        if plotExampleSpikeHistogramFlag
+        end
+        if plotExampleAutoCorrFlag
+        end
+
+        % Remove data
+        clear parsedParams parsedData
     end
 end
 
@@ -182,10 +229,10 @@ if plotFigure1Population
 
     % Create figure names
     figPathBasesChevron = extract_fileparts(allSheetPaths, 'pathbase');
-                            
-	% Plot and save all Chevron tables
-    cellfun(@(x, y) plot_and_save_chevron(x, y, chevronWidth, chevronHeight, ...
-                                            chevronMarkerSize), ...
+ 
+    % Plot and save all Chevron tables
+    cellfun(@(x, y) plot_and_save_chevron(x, y, figTypes, ...
+                    chevronWidth, chevronHeight, chevronMarkerSize), ...
             allChevronTables, figPathBasesChevron);
 end
 
@@ -286,7 +333,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_and_save_chevron(chevronTable, figPathBase, ...
+function plot_and_save_chevron(chevronTable, figPathBase, figTypes, ...
                                 chevronWidth, chevronHeight, chevronMarkerSize)
 
 % Extract figure base
@@ -333,7 +380,7 @@ update_figure_for_corel(fig, 'Units', 'centimeters', ...
                         'PlotMarkerSize', chevronMarkerSize);
 
 % Save figure
-save_all_figtypes(fig, figPathBase, {'png', 'epsc'});
+save_all_figtypes(fig, figPathBase, figTypes);
 
 end
 
