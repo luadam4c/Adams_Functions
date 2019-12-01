@@ -38,7 +38,7 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 %       cd/argfun.m
 %       cd/combine_strings.m
 %       cd/create_error_for_nargin.m
-%       cd/create_label_from_numbers.m
+%       cd/create_labels_from_numbers.m
 %       cd/extract_fields.m
 %       cd/extract_substrings.m
 %       cd/isemptycell.m
@@ -126,9 +126,17 @@ end
 % Count the number of tables
 nTables = numel(candParamsTables);
 
+% If there are no tables, return
+if nTables == 0
+    bestParamsTable = table.empty;
+    bestParamsLabel = '';
+    errorTable = table.empty;
+    return
+end
+
 % Decide on iteration strings and cell names
 if isempty(candParamsFiles)
-    iterStrs = create_label_from_numbers(1:nTables, 'Prefix', 'table');
+    iterStrs = create_labels_from_numbers(1:nTables, 'Prefix', 'table');
     cellNames = repmat({'some_cell'}, nTables, 1);
 else
     % Extract the chosen iteration string
