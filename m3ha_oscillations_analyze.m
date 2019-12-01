@@ -41,14 +41,14 @@ dirsToAnalyze = {'dual-final', 'snap5114-final', 'no711-final'};
 specificSlicesToAnalyze = {};
 
 % Flags
-plotFigure1Individual = true;
+plotFigure1Individual = false; % true;
 parseExamplesFlag = false;
 plotExampleSpikeDetectionFlag = false; % true;
 plotExampleSpikeHistogramFlag = false; % true;
 plotExampleAutoCorrFlag = false; % true;
 plotExampleContourFlag = true;
 
-plotFigure1Population = false; % true;
+plotFigure1Population = true;
 
 parseIndividualFlag = false; % true;
 saveMatFlag = false; % true;

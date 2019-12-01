@@ -50,15 +50,15 @@ function figHandle = update_figure_for_corel (varargin)
 % 2019-10-04 Added 'RemoveLegends' as an optional argument
 % 2019-10-05 Add textFontSize
 % 2019-10-06 Changed default labelsFontSize from 8 to 7
-% 2019-11-30 Changed default labelsFontSize from 7 to 10
-% 2019-11-30 Changed default axisFontSize from 6 to 8
-% 2019-11-30 Changed default textFontSize from 6 to 8
+% 2019-11-30 Changed default labelsFontSize from 7 to 8
+% 2019-11-30 Changed default axisFontSize from 6 to 7
+% 2019-11-30 Changed default textFontSize from 6 to 7
 
 %% Hard-coded parameters
 % TODO: Make optional parameters
-labelsFontSize = 10;
-axisFontSize = 8; 
-textFontSize = 8;
+labelsFontSize = 8;
+axisFontSize = 7; 
+textFontSize = 7;
 annotationLineWidth = 1;
 rulerLineWidth = 1;
 units = 'inches';
