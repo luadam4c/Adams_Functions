@@ -3,10 +3,13 @@
 %
 % Requires:
 %       cd/all_files.m
+%       cd/argfun.m
 %       cd/copy_into.m
+%       cd/decide_on_colormap.m
 %       cd/extract_columns.m
 %       cd/extract_fileparts.m
 %       cd/extract_substrings.m
+%       cd/m3ha_compute_statistics.m
 %       cd/m3ha_create_cell_info_table.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_load_sweep_info.m
@@ -43,16 +46,23 @@ measuresOfInterest = {'ltsOnsetTime'; 'ltsProbability'; 'spikesPerLts'; ...
 
 % Plot settings
 exampleGincr = 200;
-exampleHeight = 11;
+exampleHeight = 11;             % in centimeters
 exampleWidth = 8.5;             % in centimeters
-exampleLineWidth = 0.5;         % in centimeters
+exampleLineWidth = 0.5;
 exampleXlimits = [800, 2200];
 exampleYlimits = [-100, 20];
-pharmLabels = {'Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block'};
-figTypes = {'png', 'epsc2'};
+
+conditionLabel = 'pharm_1-4_gincr_all';
 pharmAll = [1; 2; 3; 4];          
+pharmLabels = {'Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block'};
 gIncrAll = [25; 50; 100; 200; 400; 800];
-vHoldAll = [-60; -65; -70];
+gIncrLabels = {'25%', '50%', '100%', '200%', '400%', '800%'};
+
+bar3FigHeight = 6;              % in centimeters
+bar3FigWidth = 6;               % in centimeters
+bar3Width = 0.2;
+
+figTypes = {'png', 'epsc2'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -95,12 +105,30 @@ end
 
 %% Compute statistics
 if plotBoxPlotsFlag || plotBarPlotsFlag
-    % Compute statistics for all features
-    statsTable = m3ha_compute_statistics('PharmConditions', num2cell(pharmAll), ...
-                                'GIncrCondition', num2cell(gIncrAll));
+    % Construct stats table path
+    statsPath = fullfile(figure02Dir, strcat(conditionLabel, '_stats.mat'));
 
-    % Restrict to measures of interest
-    statsTable = statsTable(measuresOfInterest, :);
+    % Load or compute statistics
+    if isfile(statsPath)
+        % Load stats table
+        disp('Loading statistics for all features ...');
+        load(statsPath, 'statsTable');
+    else
+        % Decide on the pharm conditions on the first axis
+        pCond = num2cell(pharmAll);
+        gCond = num2cell(gIncrAll);
+
+        % Compute statistics for all features
+        disp('Computing statistics for all features ...');
+        statsTable = m3ha_compute_statistics('PharmConditions', pCond, ...
+                                                'GIncrCondition', gCond);
+
+        % Restrict to measures of interest
+        statsTable = statsTable(measuresOfInterest, :);
+
+        % Save stats table
+        save(statsPath, 'statsTable', '-v7.3');
+    end
 end
 
 %% Plot 2D box plots
@@ -110,11 +138,25 @@ end
 %% Plot 3D bar plots
 if plotBarPlotsFlag
     % Extract the means
+    allMeasureTitles = statsTable.measureTitle;
+    allMeasureStrs = statsTable.measureStr;
     allMeanValues = statsTable.meanValue;
+    allLower95Values = statsTable.lower95Value;
+    allUpper95Values = statsTable.upper95Value;
 
-    cellfun()
+    % Create figure bases
+    allFigBases = combine_strings({allMeasureStrs, conditionLabel});
 
-    bar3(1:length(pharmAll), mean_stats_vgp{bi}(:, 3:5, vi), 0.12, 'detached');
+    % Create full path bases
+    allFigPathBases = fullfile(figure02Dir, allFigBases);
+
+    % Plot all 3D bar plots
+    disp('Plotting 3-D bar plots ...');
+    cellfun(@(a, b, c, d, e) m3ha_plot_bar3(a, b, c, d, ...
+                    pharmLabels, gIncrLabels, ...
+                    bar3Width, e, bar3FigHeight, bar3FigWidth, figTypes), ...
+            allMeanValues, allLower95Values, allUpper95Values, ...
+            allMeasureTitles, allFigPathBases);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -262,6 +304,47 @@ save_all_figtypes(figG, figPathBase, figTypes);
 % Output figure handles
 handles.figG = figG;
 handles.figV = figV;
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function m3ha_plot_bar3(meanValue, lower95Value, upper95Value, ...
+                        measureTitle, pharmLabels, gIncrLabels, ...
+                        bar3Width, figPathBase, figHeight, figWidth, figTypes)
+
+% Create figure for conductance traces
+fig = set_figure_properties('AlwaysNew', true);
+
+% Flip the g incr axis
+[meanValue, lower95Value, upper95Value, gIncrLabels] = ...
+    argfun(@fliplr, meanValue, lower95Value, upper95Value, gIncrLabels);
+
+% TODO: Add the following to plot_bar.m
+% Decide on the color map
+cm = decide_on_colormap([], 4);
+
+% Set the color map
+colormap(cm);
+
+% Plot the means as bars
+bar3(transpose(meanValue), bar3Width, 'detached');
+
+% Plot z axis label
+zlabel(measureTitle);
+
+% Set x tick labels
+set(gca, 'XTickLabel', pharmLabels);
+
+% Set y tick labels
+set(gca, 'YTickLabel', gIncrLabels);
+
+% Update figure for CorelDraw
+update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                        'Height', figHeight, 'Width', figWidth);
+
+% Save the figure
+save_all_figtypes(fig, figPathBase, figTypes);
 
 end
 

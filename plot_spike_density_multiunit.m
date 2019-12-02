@@ -127,6 +127,7 @@ titleBase = replace(fileBase, '_', '\_');
 phaseBoundaries = compute_index_boundaries('Grouping', phaseVector, ...
                                             'TreatNaNsAsGroup', false);
 
+
 %% Do the job
 % Plot as a heatmap
 hold on
@@ -150,6 +151,9 @@ if isempty(xLimits)
     xLimits = [xEnds(1) - 0.5 * siSeconds; xEnds(2) + 0.5 * siSeconds];
 end
 yLimits = [yEnds(1) - 0.5; yEnds(2) + 0.5];
+
+% Compute bar X position if it is used
+barXPosition = mean([xLimits(1), meanStimStartSec]);
 
 % Decide on y ticks and labels
 yTicks = create_indices('IndexEnd', nSweeps, 'MaxNum', maxNYTicks, ...
@@ -188,9 +192,11 @@ if ~isempty(phaseBoundaries)
 
     % Plot phase boundaries
     boundaryLine = ...
-        plot_window_boundaries(yBoundaries, 'BoundaryType', boundaryType);
+        plot_window_boundaries(yBoundaries, 'BoundaryType', boundaryType, ...
+                                'BarValue', barXPosition);
 end
 
+% Update x limits and labels
 xlim(xLimits);
 ylim(yLimits);
 xlabel('Time (s)');

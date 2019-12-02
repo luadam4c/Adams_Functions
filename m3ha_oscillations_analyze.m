@@ -1,9 +1,13 @@
+% m3ha_oscillations_analyze.m
 %% Analyzes all GAT blocker oscillations data
 %
 % Requires:
 %       cd/archive_dependent_scripts.m
 %       cd/parse_all_multiunit.m
 %       cd/plot_measures.m
+%       cd/plot_scale_bar.m
+%       cd/update_figure_for_corel.m
+%       cd/save_all_figtypes.m
 
 % File History:
 % 2019-10-17 Adapted from Glucose_analyze.m
@@ -129,6 +133,8 @@ varLabels = {'Oscillatory Index 4'; 'Oscillation Period 2 (ms)'; ...
 
 % Plot settings
 figTypes = {'png', 'epsc2'};
+contourWidth = 11;
+contourHeight = 3;
 chevronWidth = 4;               % figure width in cm
 chevronHeight = 4;              % figure height in cm
 chevronMarkerSize = 1;          % marker size in points
@@ -184,22 +190,27 @@ if plotFigure1Individual
                                         'Width', 1100, 'Height', 300);
 
             % Plot spike density
-            xLimitsSeconds = [2.2, 20];
+            xLimitsSeconds = [2, 20];
             plot_spike_density_multiunit(parsedData, parsedParams, ...
                                 'XLimits', xLimitsSeconds, ...
                                 'PlotStimStart', false, ...
                                 'BoundaryType', 'verticalBars', ...
                                 'MaxNYTicks', 4);
 
-            % Plot time bar
-            % TODO: Use plot_scale_bar.m
-
-            % Remove x axis
-            set(gca, 'XTick', []);
+            % Plot scale bars
+            plot_scale_bar('xy', 'XBarLength', 1, 'XBarUnits', 'sec', ...
+                            'YBarLength', 10, 'YBarUnits', 'min', ...
+                            'XPosNormalized', 0.8, ...
+                            'YPosNormalized', 0.2);
 
             % Update figure for CorelDraw
             update_figure_for_corel(fig, 'Units', 'centimeters', ...
-                                    'Width', 11, 'Height', 3);
+                                    'Width', contourWidth, ...
+                                    'Height', contourHeight, ...
+                                    'RemoveXTicks', true, ...
+                                    'RemoveXLabel', true, ...
+                                    'RemoveYTicks', true, ...
+                                    'RemoveYLabel', true);
 
             % Save the figure
             save_all_figtypes(fig, figBaseContour, figTypes);

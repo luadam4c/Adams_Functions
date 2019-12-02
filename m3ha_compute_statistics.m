@@ -24,12 +24,17 @@ function statsTable = m3ha_compute_statistics (varargin)
 %
 % Used by:
 %       cd/m3ha_compute_and_plot_statistics.m
+%       cd/m3ha_plot_figure02.m
 %
 % Outputs:
 %       statsTable  - a table containing measures as row names
 %                       and the following variables:
 %                           measureTitle
 %                           measureStr
+%                           dataMode
+%                           pharmCondition
+%                           gIncrCondition
+%                           vHoldCondition
 %                           allValues
 %                           nValues
 %                           meanValue

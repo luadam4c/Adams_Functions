@@ -1,6 +1,6 @@
 function finalString = combine_strings (varargin)
 %% Constructs a final string based on optional substrings and/or Name-Value pairs
-% Usage: finalString = combine_strings (varargin)
+% Usage: finalString = combine_strings (strs (opt), varargin)
 % Explanation:
 %       TODO
 %
@@ -18,6 +18,7 @@ function finalString = combine_strings (varargin)
 %       finalString    - a string (may be empty) that is a final substring
 %
 % Arguments:
+%       strs     - (opt) either 'Substrings' or 'NameValuePairs'
 %       varargin    - 'Delimiter': delimiter used
 %                   must be a string scalar or a character vector
 %                   default == '_'
@@ -59,14 +60,17 @@ function finalString = combine_strings (varargin)
 % 2017-05-04 Moved from construct_fullfilename.m
 % 2018-05-08 Changed tabs to spaces and limited width to 80
 % 2019-11-28 Now accepts a cell array of strings for parts
-% TODO: Change specification of NameValuePairs to just one cell array
-%       or a structure and use struct2arglist.m
 % 2019-11-28 Added 'ForceClean' as an optional argument 
 %           (default == true), where the delimiter is checked not to be repeated
+% TODO Modify the optional argument 'strs' that could be 
+%               interpreted as either 'Substrings' or 'NameValuePairs'
+% TODO: Change specification of NameValuePairs to just one cell array
+%       or a structure and use struct2arglist.m
 
 %% Hard-coded parameters
 
 %% Default values for optional arguments
+strsDefault = {};
 delimiterDefault = '_';
 forceCleanDefault = true;
 beginWithDelimiterDefault = false;
@@ -80,6 +84,10 @@ nameValuePairsDefault = {'', NaN};
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+
+% Add optional arguments to the input Parser
+addOptional(iP, 'strs', strsDefault, ...
+    @(x) validateattributes(x, {'cell'}, {'2d'}));
 
 % Add parameter-value pairs to the input Parser
 addParameter(iP, 'Delimiter', delimiterDefault, ...
@@ -100,12 +108,23 @@ addParameter(iP, 'NameValuePairs', nameValuePairsDefault, ...
 
 % Read from the input Parser
 parse(iP, varargin{:});
+strs = iP.Results.strs;
 delimiter = iP.Results.Delimiter;
 forceClean = iP.Results.ForceClean;
 beginWithDelimiter = iP.Results.BeginWithDelimiter;
 endWithDelimiter = iP.Results.EndWithDelimiter;
 substrings = iP.Results.Substrings;
 nameValuePairs = iP.Results.NameValuePairs;
+
+%% Determine what the first argument is
+if ~isempty(strs)
+    substrings = strs;
+    % if iscellstr(strs) || TODO
+    %     substrings = strs;
+    % else
+    %     nameValuePairs = strs;
+    % end
+end
 
 %% Find all substrings
 if isempty(substrings) && isempty(nameValuePairs{1})

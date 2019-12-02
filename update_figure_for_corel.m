@@ -17,6 +17,21 @@ function figHandle = update_figure_for_corel (varargin)
 %       varargin    - 'RemoveTicks': whether to remove all ticks
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'RemoveXTicks': whether to remove all x ticks
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'RemoveYTicks': whether to remove all y ticks
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'RemoveXLabels': whether to remove x labels
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'RemoveYLabels': whether to remove y labels
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'RemoveTitles': whether to remove titles
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'RemoveLegends': whether to remove all legends
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -39,6 +54,7 @@ function figHandle = update_figure_for_corel (varargin)
 %       cd/set_figure_properties.m
 %
 % Used by:
+%       cd/m3ha_oscillations_analyze.m
 %       cd/m3ha_plot_figure02.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_traces_spike2_mat.m
@@ -53,6 +69,7 @@ function figHandle = update_figure_for_corel (varargin)
 % 2019-11-30 Changed default labelsFontSize from 7 to 8
 % 2019-11-30 Changed default axisFontSize from 6 to 7
 % 2019-11-30 Changed default textFontSize from 6 to 7
+% 2019-12-01 Added 'RemoveXLabels' as an optional argument
 
 %% Hard-coded parameters
 BLACK = [0, 0, 0];
@@ -68,8 +85,13 @@ tickLengthsInches = [0.025, 0.025];
 
 %% Default values for optional arguments
 figHandleDefault = [];
-removeTicksDefault = false;  % set later
-removeLegendsDefault = false;  % set later
+removeTicksDefault = false;     % set later
+removeXTicksDefault = false;    % set later
+removeYTicksDefault = false;    % set later
+removeXLabelsDefault = false;   % set later
+removeYLabelsDefault = false;   % set later
+removeTitlesDefault = false;    % set later
+removeLegendsDefault = false;   % set later
 xTickLocsDefault = 'suppress';  % don't change by default
 yTickLocsDefault = 'suppress';  % don't change by default
 plotLineWidthDefault = [];
@@ -94,6 +116,16 @@ addOptional(iP, 'figHandle', figHandleDefault);
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'RemoveTicks', removeTicksDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RemoveXTicks', removeXTicksDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RemoveYTicks', removeYTicksDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RemoveXLabels', removeXLabelsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RemoveYLabels', removeYLabelsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RemoveTitles', removeTitlesDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveLegends', removeLegendsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'XTickLocs', xTickLocsDefault, ...
@@ -111,6 +143,11 @@ addParameter(iP, 'PlotMarkerSize', plotMarkerSizeDefault, ...
 parse(iP, varargin{:});
 figHandle = iP.Results.figHandle;
 removeTicks = iP.Results.RemoveTicks;
+removeXTicks = iP.Results.RemoveXTicks;
+removeYTicks = iP.Results.RemoveYTicks;
+removeXLabels = iP.Results.RemoveXLabels;
+removeYLabels = iP.Results.RemoveYLabels;
+removeTitles = iP.Results.RemoveTitles;
 removeLegends = iP.Results.RemoveLegends;
 xTickLocs = iP.Results.XTickLocs;
 yTickLocs = iP.Results.YTickLocs;
@@ -128,6 +165,12 @@ labelFontSizeMultiplier = labelsFontSize / axisFontSize;
 % Check if the figure handle is valid
 if ~isempty(figHandle) && ~isvalid(figHandle)
     error('figHandle is not valid!');
+end
+
+% Update flags
+if removeTicks
+    removeXTicks = true;
+    removeYTicks = true;
 end
 
 %% Set figure properties
@@ -155,20 +198,39 @@ end
 % Make all ticks go outward
 set(ax, 'TickDir', 'out', 'TickDirMode', 'manual');
 
-% Remove x and y axis ticks
-if removeTicks
+% Deal with x axis ticks
+if removeXTicks
     set(ax, 'XTick', []);
-    set(ax, 'YTick', []);
 else
     % Change the x tick values
     if ~ischar(xTickLocs) || ~strcmpi(xTickLocs, 'suppress')
         set(ax, 'XTick', xTickLocs);
     end
+end
 
+% Deal with y axis ticks
+if removeYTicks
+    set(ax, 'YTick', []);
+else
     % Change the y tick values
     if ~ischar(yTickLocs) || ~strcmpi(yTickLocs, 'suppress')
         set(ax, 'YTick', yTickLocs);
     end
+end
+
+% Remove x labels if requested
+if removeXLabels
+    ax.XLabel.String = '';
+end
+
+% Remove y labels if requested
+if removeYLabels
+    ax.YLabel.String = '';
+end
+
+% Remove titles if requested
+if removeTitles
+    ax.Title.String = '';
 end
 
 % Remove legends if requested

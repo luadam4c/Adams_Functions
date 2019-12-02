@@ -38,6 +38,16 @@ function handles = plot_scale_bar (varargin)
 %                   - 'YBarUnits': y scale bar units
 %                   must be a string scalar or a character vector
 %                   default == same as barUnits
+%                   - 'XPosNormalized': x position in normalized units
+%                   must be a numeric scalar
+%                   default == 0.1
+%                   - 'YPosNormalized': y position in normalized units
+%                   must be a numeric scalar
+%                   default == 0.8
+%                   - 'Bar2TextOffsetNormalized': bar to text offset
+%                                                   in normalized units
+%                   must be a numeric scalar
+%                   default == 0.05
 %                   - Any other parameter-value pair 
 %                       for plot_window_boundaries()
 %
@@ -45,6 +55,7 @@ function handles = plot_scale_bar (varargin)
 %       cd/plot_window_boundaries.m
 %
 % Used by:
+%       cd/m3ha_oscillations_analyze.m
 %       cd/m3ha_plot_figure02.m
 
 % File History:
@@ -58,8 +69,8 @@ validAxisTypes = {'x', 'y', 'xy'};
 barColor = 'k';
 barLineWidth = 1;
 relativeBarLength = 0.2;
-xPosXBarNormalized = 0.1;
-yPosXBarNormalized = 0.8;
+xPosNormalized = 0.1;
+yPosNormalized = 0.8;
 bar2TextOffsetNormalized = 0.05;
 
 %% Default values for optional arguments
@@ -70,6 +81,9 @@ yBarLengthDefault = [];             % set later
 barUnitsDefault = 'units';
 xBarUnitsDefault = '';              % set later
 yBarUnitsDefault = '';              % set later
+xPosNormalizedDefault = 0.1;
+yPosNormalizedDefault = 0.8;
+bar2TextOffsetNormalizedDefault = 0.05;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -96,6 +110,12 @@ addParameter(iP, 'XBarUnits', xBarUnitsDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'YBarUnits', yBarUnitsDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'XPosNormalized', xPosNormalizedDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
+addParameter(iP, 'YPosNormalized', yPosNormalizedDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
+addParameter(iP, 'Bar2TextOffsetNormalized', bar2TextOffsetNormalizedDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -106,6 +126,9 @@ yBarLength = iP.Results.YBarLength;
 barUnits = iP.Results.BarUnits;
 xBarUnits = iP.Results.XBarUnits;
 yBarUnits = iP.Results.YBarUnits;
+xPosNormalized = iP.Results.XPosNormalized;
+yPosNormalized = iP.Results.YPosNormalized;
+bar2TextOffsetNormalized = iP.Results.Bar2TextOffsetNormalized;
 
 % Keep unmatched arguments for the plot_window_boundaries() function
 otherArguments = iP.Unmatched;
@@ -157,8 +180,8 @@ if plotXScaleBar
     xBarLabel = sprintf('%g %s', xBarLength, xBarUnits);
 
     % Decide on the x and y position for the x scale bar
-    xPosXBar = xLimits(1) + xPosXBarNormalized * diff(xLimits);
-    yPosXBar = yLimits(1) + yPosXBarNormalized * diff(yLimits);
+    xPosXBar = xLimits(1) + xPosNormalized * diff(xLimits);
+    yPosXBar = yLimits(1) + yPosNormalized * diff(yLimits);
 
     % Decide on the x bar limits
     xLimitsXBar = xPosXBar + [0, xBarLength];
@@ -194,8 +217,8 @@ if plotYScaleBar
     yBarLabel = sprintf('%g %s', yBarLength, yBarUnits);
 
     % Decide on the x and y position for the y scale bar
-    xPosYBar = xLimits(1) + xPosXBarNormalized * diff(xLimits) + xBarLength;
-    yPosYBar = yLimits(1) + yPosXBarNormalized * diff(yLimits);
+    xPosYBar = xLimits(1) + xPosNormalized * diff(xLimits) + xBarLength;
+    yPosYBar = yLimits(1) + yPosNormalized * diff(yLimits);
 
     % Decide on the y bar limits
     yLimitsYBar = yPosYBar + [0, yBarLength];
