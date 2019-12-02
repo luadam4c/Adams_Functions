@@ -31,7 +31,7 @@ function dlmwrite_with_header (filename, M, varargin)
 %                   default == false
 %
 % Used by:    
-%       cd/m3ha_autocorrelogram.m
+%       cd/m3ha_network_autocorrelogram.m
 %       cd/m3ha_initial_slopes.m
 %       cd/spike2Mat2Text.m
 %       /home/Matlab/minEASE/minEASE.m

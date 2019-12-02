@@ -1,6 +1,6 @@
-function m3ha_plot_oscillations (infolder, oscFile)
+function m3ha_network_plot_oscillations (infolder, oscFile)
 %% Shows a swarm plot for each set of neurons (each .spi file in the infolder)
-% USAGE: function m3ha_plot_oscillations (infolder, varargin)
+% USAGE: function m3ha_network_plot_oscillations (infolder, varargin)
 % Arguments:
 %    infolder           - the name of the directory containing the .syn files, e.g. '20170317T1127_Ggaba_0.01'
 %                       must be a directory
@@ -8,7 +8,7 @@ function m3ha_plot_oscillations (infolder, oscFile)
 %                       must be a csv
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/m3ha_autocorrelogram.m
+%       /home/Matlab/Adams_Functions/m3ha_network_autocorrelogram.m
 %       /home/Matlab/Adams_Functions/save_all_figtypes.m
 %       /home/Matlab/Downloaded_Functions/plotSpread/plotSpread.m
 % 

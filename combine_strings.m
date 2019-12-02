@@ -51,7 +51,7 @@ function finalString = combine_strings (varargin)
 %
 % Used by:
 %       cd/construct_fullpath.m
-%       cd/m3ha_autocorrelogram.m
+%       cd/m3ha_network_autocorrelogram.m
 %       cd/m3ha_network_raster_plot.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       /media/adamX/RTCl/raster_plot.m

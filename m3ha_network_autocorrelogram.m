@@ -1,6 +1,6 @@
-function [oscillatoryPeriod, oscillatoryIndex] = m3ha_autocorrelogram (infolder, varargin)
-%% Shows an m3ha_autocorrelogram for each set of neurons (each .spi file in the infolder)
-% Usage: [oscillatoryPeriod, oscillatoryIndex] = m3ha_autocorrelogram (infolder, varargin)
+function [oscillatoryPeriod, oscillatoryIndex] = m3ha_network_autocorrelogram (infolder, varargin)
+%% Shows an m3ha_network_autocorrelogram for each set of neurons (each .spi file in the infolder)
+% Usage: [oscillatoryPeriod, oscillatoryIndex] = m3ha_network_autocorrelogram (infolder, varargin)
 %
 % Arguments:
 %    infolder   - the name of the directory containing the .syn files, e.g. '20170317T1127_Ggaba_0.01'
@@ -44,7 +44,7 @@ function [oscillatoryPeriod, oscillatoryIndex] = m3ha_autocorrelogram (infolder,
 %       /home/Matlab/Adams_Functions/extract_looped_params.m
 %
 % Used by:
-%       /home/Matlab/Adams_Functions/m3ha_plot_oscillations.m
+%       /home/Matlab/Adams_Functions/m3ha_network_plot_oscillations.m
 
 % 2018-02-09 BT - Adapted from raster_plot.m
 % 2018-04-03 BT - Correlogram made using weighted, binned spikes 

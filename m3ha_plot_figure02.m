@@ -52,7 +52,8 @@ exampleLineWidth = 0.5;
 exampleXlimits = [800, 2200];
 exampleYlimits = [-100, 20];
 
-conditionLabel = 'pharm_1-4_gincr_all';
+conditionLabel2D = 'pharm_1-4';
+conditionLabel3D = 'pharm_1-4_gincr_all';
 pharmAll = [1; 2; 3; 4];          
 pharmLabels = {'Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block'};
 gIncrAll = [25; 50; 100; 200; 400; 800];
@@ -102,41 +103,68 @@ if plotExamplesFlag
 
 end
 
-%% Compute statistics
-if plotBoxPlotsFlag || plotBarPlotsFlag
+%% Plot 2D box plots
+if plotBoxPlotsFlag
     % Construct stats table path
-    statsPath = fullfile(figure02Dir, strcat(conditionLabel, '_stats.mat'));
+    statsPath2D = fullfile(figure02Dir, strcat(conditionLabel2D, '_stats.mat'));
 
     % Load or compute statistics
-    if isfile(statsPath)
+    if isfile(statsPath2D)
         % Load stats table
-        disp('Loading statistics for all features ...');
-        load(statsPath, 'statsTable');
+        disp('Loading statistics for 2D box plots ...');
+        load(statsPath2D, 'statsTable');
     else
         % Decide on the pharm conditions on the first axis
         pCond = num2cell(pharmAll);
         gCond = num2cell(gIncrAll);
 
         % Compute statistics for all features
-        disp('Computing statistics for all features ...');
-        statsTable = m3ha_compute_statistics('PharmConditions', pCond, ...
-                                                'GIncrCondition', gCond);
-
-        % Restrict to measures of interest
-        statsTable = statsTable(measuresOfInterest, :);
+        disp('Computing statistics for 2D box plots ...');
+        statsTable = m3ha_compute_statistics('PharmConditions', pCond);
 
         % Save stats table
-        save(statsPath, 'statsTable', '-v7.3');
+        save(statsPath2D, 'statsTable', '-v7.3');
     end
-end
 
-%% Plot 2D box plots
-if plotBoxPlotsFlag
+    % Restrict to measures of interest
+    statsTable = statsTable(measuresOfInterest, :);
+
+    % Extract variables
+    allMeasureTitles = statsTable.measureTitle;
+    allMeasureStrs = statsTable.measureStr;
+    allValues = statsTable.allValues;
+
+
 end
 
 %% Plot 3D bar plots
 if plotBarPlotsFlag
-    % Extract the means
+    % Construct stats table path
+    statsPath3D = fullfile(figure02Dir, strcat(conditionLabel3D, '_stats.mat'));
+
+    % Load or compute statistics
+    if isfile(statsPath3D)
+        % Load stats table
+        disp('Loading statistics for 3D bar plots ...');
+        load(statsPath3D, 'statsTable');
+    else
+        % Decide on the pharm conditions on the first axis
+        pCond = num2cell(pharmAll);
+        gCond = num2cell(gIncrAll);
+
+        % Compute statistics for all features
+        disp('Computing statistics for 3D bar plots ...');
+        statsTable = m3ha_compute_statistics('PharmConditions', pCond, ...
+                                                'GIncrCondition', gCond);
+
+        % Save stats table
+        save(statsPath3D, 'statsTable', '-v7.3');
+    end
+
+    % Restrict to measures of interest
+    statsTable = statsTable(measuresOfInterest, :);
+
+    % Extract variables
     allMeasureTitles = statsTable.measureTitle;
     allMeasureStrs = statsTable.measureStr;
     allMeanValues = statsTable.meanValue;
@@ -322,7 +350,7 @@ fig = set_figure_properties('AlwaysNew', true);
 xTickLabels = pharmLabels;
 yTickLabels = gIncrLabels;
 
-% TODO: Add the following to plot_bar.m
+% TODO: Add the following to plot_bar.m?
 % Hard-coded parameters
 relativeBarWidth = 0.2;
 xTickAngle = 320;
