@@ -44,16 +44,43 @@ dirsToAnalyze = {'dual-final', 'snap5114-final', 'no711-final'};
 % dirsToAnalyze = {'difficult-cases'};
 specificSlicesToAnalyze = {};
 
-% Flags
+% For manuscript
+figTypesForVis = {'png'};
+figTypesForCorel = {'epsc2'};
+
 plotFigure1Individual = true;
 parseExamplesFlag = false;
+plotExampleContourFlag = false; % true;
+contourXLimitsSeconds = [2, 20];
+contourWidth = 11;
+contourHeight = 3;
+plotExampleRawTracesFlag = false; % true;
+rawPlotLineWidth = 0.25;
+rawSweepNumbers = [16, 56];
+rawWidth = 8;
+rawHeight = 3;
+rawXLimits = [2, 15];
+rawYLimits = [-5, 5];
 plotExampleSpikeDetectionFlag = false; % true;
-plotExampleSpikeHistogramFlag = false; % true;
+sampleXLimits = [2, 10];
+sampleSweepNumber = 16;
+samplePlotLineWidth = 0.25;
+sampleRasterLineWidth = 0.25;
+spikeDetWidth = 11;
+spikeDetHeight = 3;
+plotExampleSpikeHistogramFlag = true;
+spikeHistWidth = 11;
+spikeHistHeight = 3;
 plotExampleAutoCorrFlag = false; % true;
-plotExampleContourFlag = true;
+autoCorrWidth = 11;
+autoCorrHeight = 3;
 
-plotFigure1Population = false; % true;
+plotFigure1Population = false;  % true;
+chevronWidth = 4;               % figure width in cm
+chevronHeight = 4;              % figure height in cm
+chevronMarkerSize = 1;          % marker size in points
 
+% Flags
 parseIndividualFlag = false; % true;
 saveMatFlag = false; % true;
 plotRawFlag = false; % true;
@@ -131,14 +158,6 @@ varLabels = {'Oscillatory Index 4'; 'Oscillation Period 2 (ms)'; ...
                 'Number of Spikes Per Burst'; ...
                 'Number of Spikes Per Burst in Oscillation'};
 
-% Plot settings
-figTypes = {'png', 'epsc2'};
-contourWidth = 11;
-contourHeight = 3;
-chevronWidth = 4;               % figure width in cm
-chevronHeight = 4;              % figure height in cm
-chevronMarkerSize = 1;          % marker size in points
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Plot raster plots for Figure 01
@@ -169,7 +188,7 @@ if plotFigure1Individual
         all_files('Directory', figure01Dir, 'KeyWord', 'slice', ...
                     'Extension', 'mat', 'Suffix', 'parsed');
 
-    % Plot stuff
+    % Plot for each file
     for iFile = 1:numel(parsePaths)
         % Get the matfile of interest
         thisPath = parsePaths{iFile};
@@ -178,9 +197,16 @@ if plotFigure1Individual
         fprintf('Loading parsed data from %s ...\n', thisPath);
         load(thisPath, 'parsedParams', 'parsedData', 'fileBase');
 
-        % Plot contour plot
+        % Extract the data and params for the sample traces
+        [parsedParamsStruct, parsedDataStruct] = ...
+            argfun(@table2struct, parsedParams, parsedData);
+        sampleDataStruct = parsedDataStruct(sampleSweepNumber);
+        sampleParamsStruct = parsedParamsStruct(sampleSweepNumber);
+        sampleBase = strcat(fileBase, '_trace', num2str(sampleSweepNumber));
+
+        % Plot example contour plots
         if plotExampleContourFlag
-            fprintf('Plotting contour plot for %s ...\n', fileBase);
+            fprintf('Plotting example contour plot for %s ...\n', fileBase);
 
             % Create a figure base
             figBaseContour = fullfile(figure01Dir, [fileBase, '_contour']);
@@ -190,37 +216,175 @@ if plotFigure1Individual
                                         'Width', 1100, 'Height', 300);
 
             % Plot spike density
-            xLimitsSeconds = [2, 20];
             plot_spike_density_multiunit(parsedData, parsedParams, ...
-                                'XLimits', xLimitsSeconds, ...
+                                'XLimits', contourXLimitsSeconds, ...
                                 'PlotStimStart', false, ...
                                 'BoundaryType', 'verticalBars', ...
                                 'MaxNYTicks', 4);
 
+            % Save the figure
+            save_all_figtypes(fig, figBaseContour, figTypesForVis);
+
             % Plot scale bars
             plot_scale_bar('xy', 'XBarLength', 1, 'XBarUnits', 'sec', ...
                             'YBarLength', 10, 'YBarUnits', 'min', ...
-                            'XPosNormalized', 0.8, ...
-                            'YPosNormalized', 0.2);
+                            'XPosNormalized', 0.8, 'YPosNormalized', 0.2);
 
             % Update figure for CorelDraw
             update_figure_for_corel(fig, 'Units', 'centimeters', ...
-                                    'Width', contourWidth, ...
-                                    'Height', contourHeight, ...
-                                    'RemoveXTicks', true, ...
-                                    'RemoveXLabel', true, ...
-                                    'RemoveYTicks', true, ...
-                                    'RemoveYLabel', true);
+                            'Width', contourWidth, 'Height', contourHeight, ...
+                            'RemoveXTicks', true, 'RemoveXLabel', true, ...
+                            'RemoveYTicks', true, 'RemoveYLabel', true);
 
             % Save the figure
-            save_all_figtypes(fig, figBaseContour, figTypes);
+            save_all_figtypes(fig, figBaseContour, figTypesForCorel);
         end
 
+        % Plot example raw traces
+        if plotExampleRawTracesFlag
+            fprintf('Plotting example raw traces for %s ...\n', fileBase);
+
+            % Create a figure base
+            figBaseRaw = fullfile(figure01Dir, [fileBase, '_raw_examples']);
+
+            % Create figure
+            fig = set_figure_properties('AlwaysNew', true);
+
+            % Plot raw traces
+            plot_raw_multiunit(parsedData, parsedParams, ...
+                            'PlotFiltered', false, 'PlotMode', 'parallel', ...
+                            'PlotStim', false, 'SweepNumbers', rawSweepNumbers, ...
+                            'XLimits', rawXLimits, 'YLimits', rawYLimits, ...
+                            'LineWidth', rawPlotLineWidth);
+
+            % Save the figure
+            save_all_figtypes(fig, figBaseRaw, figTypesForVis);
+
+            % Plot scale bars
+            plot_scale_bar('xy', 'XBarLength', 2, 'XBarUnits', 'sec', ...
+                            'YBarLength', 5, 'YBarUnits', 'uV', ...
+                            'XPosNormalized', 0.8, 'YPosNormalized', 0.2);
+
+            % Update figure for CorelDraw
+            update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                            'Width', rawWidth, 'Height', rawHeight, ...
+                            'RemoveTicks', true, 'RemoveLabels', true, ...
+                            'RemoveRulers', true, 'RemoveTitles', true);
+
+            % Save the figure
+            save_all_figtypes(fig, figBaseRaw, figTypesForCorel);
+        end
+
+        % Plot sample spike detection plot
         if plotExampleSpikeDetectionFlag
+            fprintf('Plotting sample spike detection traces for %s ...\n', ...
+                    sampleBase);
+
+            % Create a figure base
+            figBaseSpikeDet = fullfile(figure01Dir, ...
+                                [sampleBase, '_spike_detection']);
+
+            % Create figure
+            fig = set_figure_properties('AlwaysNew', true);
+
+            % TODO: Use plot_spike_detection.m
+            % Hard-coded parameters
+            MS_PER_S = 1000;
+            vertBarWidth2Range = 1/10;
+
+            % Extract from structures
+            tVec = sampleDataStruct.tVec;
+            vVec = sampleDataStruct.vVec;
+            idxSpikes = sampleDataStruct.idxSpikes;
+            vRange = sampleParamsStruct.vRange;
+            vMax = sampleParamsStruct.vMax;
+            vMin = sampleParamsStruct.vMin;
+            figTitleBase = sampleParamsStruct.figTitleBase;
+
+            % Compute for spike detection plot
+            vertBarWidth = vRange * vertBarWidth2Range;
+            yMid = vMax + vertBarWidth;
+            yLimits = compute_axis_limits([vMin, yMid], 'y', 'Coverage', 100);
+
+            % Convert to seconds
+            tVec = tVec ./ MS_PER_S;
+
+            % Plot raw trace
+            plot(tVec, vVec, 'k', 'LineWidth', samplePlotLineWidth);
+
+            % Plot spike detection
+            plot_raster(tVec(idxSpikes), 'PlotOnly', true, ...
+                        'YMid', yMid, 'VertBarWidth', vertBarWidth, ...
+                        'LineWidth', sampleRasterLineWidth, 'ColorMap', 'r');
+
+            % Set x limits, labels and title
+            xlim(sampleXLimits);
+            ylim(yLimits);
+            xlabel('Time (ms)');
+            ylabel('Voltage (mV)');
+            title(['Spike Detection for ', figTitleBase]);
+
+            % Save the figure
+            save_all_figtypes(fig, figBaseSpikeDet, figTypesForVis);
+
+            % Update figure for CorelDraw
+            update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                        'Width', spikeDetWidth, 'Height', spikeDetHeight);
+
+            % Save the figure
+            save_all_figtypes(fig, figBaseSpikeDet, figTypesForCorel);
         end
+
+        % Plot sample spike histogram plot
         if plotExampleSpikeHistogramFlag
+            fprintf('Plotting sample spike histogram traces for %s ...\n', ...
+                    sampleBase);
+
+            % Create a figure base
+            figBaseSpikeHist = fullfile(figure01Dir, ...
+                                [sampleBase, '_spike_histogram']);
+
+            % Create figure
+            fig = set_figure_properties('AlwaysNew', true);
+
+            % Plot spike histogram
+            plot_spike_histogram(sampleDataStruct, sampleParamsStruct, ...
+                                'XLimits', sampleXLimits);
+
+            % Save the figure
+            save_all_figtypes(fig, figBaseSpikeHist, figTypesForVis);
+
+            % Update figure for CorelDraw
+            update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                            'Width', spikeHistWidth, 'Height', spikeHistHeight);
+
+            % Save the figure
+            save_all_figtypes(fig, figBaseSpikeHist, figTypesForCorel);
         end
+
+        % Plot sample autocorrelation function plot
         if plotExampleAutoCorrFlag
+            fprintf('Plotting sample autocorr traces for %s ...\n', sampleBase);
+
+            % Create a figure base
+            figBaseAutoCorr = fullfile(figure01Dir, [sampleBase, '_autocorr']);
+
+            % Create figure
+            fig = set_figure_properties('AlwaysNew', true);
+
+            % Plot autocorrelation function
+            plot_autocorrelogram(sampleDataStruct, sampleParamsStruct, ...
+                                    'DataType', 'acfFiltered');
+
+            % Save the figure
+            save_all_figtypes(fig, figBaseAutoCorr, figTypesForVis);
+
+            % Update figure for CorelDraw
+            update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                            'Width', autoCorrWidth, 'Height', autoCorrHeight);
+
+            % Save the figure
+            save_all_figtypes(fig, figBaseAutoCorr, figTypesForCorel);
         end
 
         % Remove data
@@ -242,7 +406,7 @@ if plotFigure1Population
     figPathBasesChevron = extract_fileparts(allSheetPaths, 'pathbase');
  
     % Plot and save all Chevron tables
-    cellfun(@(x, y) plot_and_save_chevron(x, y, figTypes, ...
+    cellfun(@(x, y) plot_and_save_chevron(x, y, figTypesForCorel, ...
                     chevronWidth, chevronHeight, chevronMarkerSize), ...
             allChevronTables, figPathBasesChevron);
 end
@@ -344,7 +508,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_and_save_chevron(chevronTable, figPathBase, figTypes, ...
+function plot_and_save_chevron(chevronTable, figPathBase, figTypesForCorel, ...
                                 chevronWidth, chevronHeight, chevronMarkerSize)
 
 % Extract figure base
@@ -391,7 +555,7 @@ update_figure_for_corel(fig, 'Units', 'centimeters', ...
                         'PlotMarkerSize', chevronMarkerSize);
 
 % Save figure
-save_all_figtypes(fig, figPathBase, figTypes);
+save_all_figtypes(fig, figPathBase, figTypesForCorel);
 
 end
 

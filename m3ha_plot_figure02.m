@@ -36,8 +36,8 @@ cellNamePattern = '[A-Z][0-9]{6}';
 saveCellInfo = false;
 copyExampleFiles = false; %true;
 plotExamplesFlag = false; %true;
-plotBoxPlotsFlag = false; %true;
-plotBarPlotsFlag = true;
+plotBoxPlotsFlag = true;
+plotBarPlotsFlag = false; %true;
 
 % Analysis settings
 % Note: must be consistent with m3ha_compute_statistics.m
@@ -56,9 +56,12 @@ conditionLabel2D = 'pharm_1-4';
 conditionLabel3D = 'pharm_1-4_gincr_all';
 pharmAll = [1; 2; 3; 4];          
 pharmLabels = {'Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block'};
+pharmLabelsShort = {'Con', 'GAT1', 'GAT3', 'Dual'};
 gIncrAll = [25; 50; 100; 200; 400; 800];
 gIncrLabels = {'25%', '50%', '100%', '200%', '400%', '800%'};
 
+box2FigHeight = 4;              % in centimeters
+box2FigWidth = 4;               % in centimeters
 bar3FigHeight = 6;              % in centimeters
 bar3FigWidth = 6;               % in centimeters
 
@@ -134,7 +137,17 @@ if plotBoxPlotsFlag
     allMeasureStrs = statsTable.measureStr;
     allValues = statsTable.allValues;
 
+    % Create figure bases
+    allFigBases2D = combine_strings({allMeasureStrs, conditionLabel2D});
 
+    % Create full path bases
+    allFigPathBases2D = fullfile(figure02Dir, allFigBases2D);
+
+    % Plot all 2D box plots
+    disp('Plotting 2-D box plots ...');
+    cellfun(@(a, b, c) m3ha_plot_box2(a, b, pharmLabelsShort, c, ...
+                                    box2FigHeight, box2FigWidth, figTypes), ...
+            allValues, allMeasureTitles, allFigPathBases2D);
 end
 
 %% Plot 3D bar plots
@@ -171,10 +184,10 @@ if plotBarPlotsFlag
     allUpper95Values = statsTable.upper95Value;
 
     % Create figure bases
-    allFigBases = combine_strings({allMeasureStrs, conditionLabel});
+    allFigBases3D = combine_strings({allMeasureStrs, conditionLabel3D});
 
     % Create full path bases
-    allFigPathBases = fullfile(figure02Dir, allFigBases);
+    allFigPathBases3D = fullfile(figure02Dir, allFigBases3D);
 
     % Plot all 3D bar plots
     disp('Plotting 3-D bar plots ...');
@@ -182,7 +195,7 @@ if plotBarPlotsFlag
                     pharmLabels, gIncrLabels, ...
                     d, bar3FigHeight, bar3FigWidth, figTypes), ...
             allMeanValues, allUpper95Values, ...
-            allMeasureTitles, allFigPathBases);
+            allMeasureTitles, allFigPathBases3D);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -330,6 +343,47 @@ save_all_figtypes(figG, figPathBase, figTypes);
 % Output figure handles
 handles.figG = figG;
 handles.figV = figV;
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function m3ha_plot_box2(allValues, measureTitle, pharmLabels, figPathBase, ...
+                        figHeight, figWidth, figTypes)
+
+% Create figure for conductance traces
+fig = set_figure_properties('AlwaysNew', true);
+
+% Decide on the color map
+cm = decide_on_colormap([], 4);
+
+% Set the color map
+colormap(cm);
+
+% TODO: plot_violin.m
+% TODO: plot_jitter.m
+
+% Force as a numeric array
+allValues = force_matrix(allValues);
+
+% Plot a violin plot
+violinplot(allValues, pharmLabels);
+
+% Plot the data points for each cell
+% plotSpread(allValues);
+
+% Set x tick labels
+% xticklabels(pharmLabels);
+
+% Set title
+title(measureTitle);
+
+% Update figure for CorelDraw
+update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                        'Height', figHeight, 'Width', figWidth);
+
+% Save the figure
+save_all_figtypes(fig, figPathBase, figTypes);
 
 end
 

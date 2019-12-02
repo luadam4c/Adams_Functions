@@ -45,6 +45,8 @@ function prefix = extract_common_prefix (strs, varargin)
 %       cd/parse_ipsc.m
 %       cd/parse_lts.m
 %       cd/plot_raster.m
+%       cd/plot_raw_multiunit.m
+%       cd/plot_spike_density_multiunit.m
 %       cd/plot_table.m
 
 % File History:

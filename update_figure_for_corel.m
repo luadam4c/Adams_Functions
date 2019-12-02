@@ -23,6 +23,18 @@ function figHandle = update_figure_for_corel (varargin)
 %                   - 'RemoveYTicks': whether to remove all y ticks
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'RemoveRulers': whether to remove all rulers
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'RemoveXRulers': whether to remove all x rulers
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'RemoveYRulers': whether to remove all y rulers
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'RemoveLabels': whether to remove x and y labels
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'RemoveXLabels': whether to remove x labels
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -70,6 +82,7 @@ function figHandle = update_figure_for_corel (varargin)
 % 2019-11-30 Changed default axisFontSize from 6 to 7
 % 2019-11-30 Changed default textFontSize from 6 to 7
 % 2019-12-01 Added 'RemoveXLabels' as an optional argument
+% 2019-12-02 Fixed bug when there are multiple labels of the same type
 
 %% Hard-coded parameters
 BLACK = [0, 0, 0];
@@ -88,6 +101,10 @@ figHandleDefault = [];
 removeTicksDefault = false;     % set later
 removeXTicksDefault = false;    % set later
 removeYTicksDefault = false;    % set later
+removeRulersDefault = false;    % set later
+removeXRulersDefault = false;   % set later
+removeYRulersDefault = false;   % set later
+removeLabelsDefault = false;    % set later
 removeXLabelsDefault = false;   % set later
 removeYLabelsDefault = false;   % set later
 removeTitlesDefault = false;    % set later
@@ -120,6 +137,14 @@ addParameter(iP, 'RemoveXTicks', removeXTicksDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveYTicks', removeYTicksDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RemoveRulers', removeRulersDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RemoveXRulers', removeXRulersDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RemoveYRulers', removeYRulersDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RemoveLabels', removeLabelsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveXLabels', removeXLabelsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveYLabels', removeYLabelsDefault, ...
@@ -145,6 +170,10 @@ figHandle = iP.Results.figHandle;
 removeTicks = iP.Results.RemoveTicks;
 removeXTicks = iP.Results.RemoveXTicks;
 removeYTicks = iP.Results.RemoveYTicks;
+removeRulers = iP.Results.RemoveRulers;
+removeXRulers = iP.Results.RemoveXRulers;
+removeYRulers = iP.Results.RemoveYRulers;
+removeLabels = iP.Results.RemoveLabels;
 removeXLabels = iP.Results.RemoveXLabels;
 removeYLabels = iP.Results.RemoveYLabels;
 removeTitles = iP.Results.RemoveTitles;
@@ -171,6 +200,14 @@ end
 if removeTicks
     removeXTicks = true;
     removeYTicks = true;
+end
+if removeRulers
+    removeXRulers = true;
+    removeYRulers = true;
+end
+if removeLabels
+    removeXLabels = true;
+    removeYLabels = true;
 end
 
 %% Set figure properties
@@ -218,19 +255,34 @@ else
     end
 end
 
+% Remove x axis if requested
+if removeXRulers
+    xAxises = get(ax, 'XAxis');
+    cellfun(@set_visible_off, xAxises);
+end
+
+% Remove y axis if requested
+if removeYRulers
+    yAxises = get(ax, 'YAxis');
+    cellfun(@set_visible_off, yAxises);
+end
+
 % Remove x labels if requested
 if removeXLabels
-    ax.XLabel.String = '';
+    xLabels = get(ax, 'XLabel');
+    cellfun(@set_string_empty, xLabels);
 end
 
 % Remove y labels if requested
 if removeYLabels
-    ax.YLabel.String = '';
+    yLabels = get(ax, 'YLabel');
+    cellfun(@set_string_empty, yLabels);
 end
 
 % Remove titles if requested
 if removeTitles
-    ax.Title.String = '';
+    titles = get(ax, 'Title');
+    cellfun(@set_string_empty, titles);
 end
 
 % Remove legends if requested
@@ -312,6 +364,18 @@ zData = lineObject.ZData;
 
 % The line is a plot if there are more than two data points
 isPlot = numel(xData) > 2 || numel(yData) > 2 || numel(zData) > 2;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function set_string_empty (textObject)
+
+textObject.String = '';
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function set_visible_off (object)
+
+set(object, 'Visible', 'off');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

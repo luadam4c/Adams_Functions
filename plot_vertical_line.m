@@ -55,9 +55,11 @@ function h = plot_vertical_line (xValue, varargin)
 %       cd/plot_horizontal_line.m
 %       cd/plot_psth.m
 %       cd/plot_pulse_response_with_stimulus.m
-%       cd/plot_tuning_curve.m
+%       cd/plot_raw_multiunit.m
+%       cd/plot_spike_density_multiunit.m
 %       cd/plot_swd_histogram.m
 %       cd/plot_traces_spike2_mat.m
+%       cd/plot_tuning_curve.m
 %       cd/plot_window_boundaries.m
 %       cd/set_axes_properties.m
 

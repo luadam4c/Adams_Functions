@@ -3,16 +3,19 @@ function vecs = transform_vectors (vecs, amount, method, varargin)
 % Usage: vecs = transform_vectors (vecs, amount, method, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       transform_vectors(1:10, 2*ones(10, 1), 'add')
 %       transform_vectors(1:10, 2*ones(10, 1), 'subtract')
 %       transform_vectors(1:10, 2*ones(10, 1), 'multiply')
 %       transform_vectors(1:10, 2*ones(10, 1), 'divide')
 %       transform_vectors({1:10, 3:3:30}, 2*ones(10, 1), 'add')
+%
 % Outputs:
 %       vecs        - transformed vectors
 %                   specified as a numeric array 
 %                       or a cell array of numeric arrays
+%
 % Arguments:
 %       vecs        - vectors to transform
 %                   must be a numeric array or a cell array of numeric arrays

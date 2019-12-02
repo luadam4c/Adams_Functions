@@ -299,6 +299,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %       cd/plot_bar.m
 %       cd/plot_horizontal_line.m
 %       cd/plot_raster.m
+%       cd/plot_raw_multiunit.m
 %       cd/plot_spike_density_multiunit.m
 %       cd/plot_table.m
 %       cd/save_all_figtypes.m
@@ -893,7 +894,7 @@ if plotRawFlag
     % Plot figure
     figs(1) = figure(1); clf
     plot_raw_multiunit(parsedData, parsedParams, ...
-                        phaseBoundaries, fileBase, ...
+                        'PlotFiltered', true, 'PlotMode', 'staggered', ...
                         'YAmountToStagger', yAmountToStagger, ...
                         'FigExpansion', figExpansion);
 
@@ -984,7 +985,7 @@ if plotCombinedFlag
     % TODO: Plot with oscillation duration bars
     subplot(axCombined(1));
     plot_raw_multiunit(parsedData, parsedParams, ...
-                        phaseBoundaries, fileBase, ...
+                        'PlotFiltered', true, 'PlotMode', 'staggered', ...
                         'YAmountToStagger', yAmountToStagger, ...
                         'XLimits', zoomWin1);
 
@@ -1010,7 +1011,7 @@ if plotCombinedFlag
     % Plot raw data with zoomWin2
     subplot(axCombined(4));
     plot_raw_multiunit(parsedData, parsedParams, ...
-                        phaseBoundaries, fileBase, ...
+                        'PlotFiltered', true, 'PlotMode', 'staggered', ...
                         'YAmountToStagger', yAmountToStagger, ...
                         'XLimits', zoomWin2);
 
@@ -1037,10 +1038,7 @@ if plotCombinedFlag
     plot(tVec, vVec, 'k');
     plot(tVec, vVecFilt, 'b');
     plot_raster(tVec(idxSpikes), 'YMid', yMid, 'VertBarWidth', vertBarWidth, ...
-                        'LineWidth', 0.5, 'ColorMap', 'Red', ...
-                        'YLimits', 'suppress', 'XLabel', 'suppress', ...
-                        'YTickLocs', 'suppress', 'YTickLabels', 'suppress', ...
-                        'FigTitle', 'suppress');
+                'LineWidth', 0.5, 'ColorMap', 'Red', 'PlotOnly', true);
     xlim(zoomWin2 * MS_PER_S);
     ylim(yLimits);
     xlabel('Time (ms)');
@@ -1528,7 +1526,7 @@ linkaxes(ax, 'x');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [histBars, histFig] = ...
-                plot_spike_histogram(spHistData, spHistParams, varargin)
+                plot_spike_histogram (spHistData, spHistParams, varargin)
 %% Plots a spike histogram from the results of compute_spike_histogram
 
 %                   - 'XLimits': x-axis limits
@@ -1631,9 +1629,11 @@ if isempty(yLimits)
     yLimits = [0, largestSpikeCount * 1.2];
 end
 
-%% Plot
-% Plot figure
-hold on;
+%% Plot histogram
+% Hold on
+wasHold = hold_on;
+
+% Plot histogram
 [histBars, histFig] = ...
     plot_histogram([], 'Counts', spikeCounts, 'Edges', edgesSec, ...
                     'XLimits', xLimits, 'YLimits', yLimits, ...
@@ -1641,13 +1641,21 @@ hold on;
                     'YLabel', 'Spike Count per 10 ms', ...
                     'FigTitle', ['Spike histogram for ', figTitleBase], ...
                     otherArguments{:});
+
+% Show oscillation duration
 text(0.2, 0.95, sprintf('Oscillation Duration = %.2g seconds', ...
     oscDurationSec), 'Units', 'normalized');
+
+% Show number of spikes in oscillation
 text(0.2, 0.9, sprintf('Number of spikes in oscillation = %d', ...
     nSpikesInOsc), 'Units', 'normalized');
+
+% Plot burst windows
 plot_horizontal_line(0, 'XLimits', burstWindows, ...
                     'Color', 'r', 'LineStyle', '-', 'LineWidth', 3);
-hold off;
+
+% Hold off
+hold_off(wasHold);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -2045,109 +2053,6 @@ parfor iVec = 1:nVectors
 
     close all force hidden
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function plot_raw_multiunit (parsedData, parsedParams, ...
-                                phaseBoundaries, fileBase, ...
-                                varargin)
-
-%       varargin    - 'YAmountToStagger': amount to stagger 
-%                                           if 'plotmode' is 'stagger'
-%                   must be a positive scalar
-%                   default == uses the original y axis range
-%                   - Any other parameter-value pair for plot_traces()
-
-%% Hard-coded constants
-MS_PER_S = 1000;
-
-%% Default values for optional arguments
-yAmountToStaggerDefault = [];   % set later  
-
-%% Deal with arguments
-% Check number of required arguments
-if nargin < 4
-    error(create_error_for_nargin(mfilename));
-end
-
-% Set up Input Parser Scheme
-iP = inputParser;
-iP.FunctionName = mfilename;
-iP.KeepUnmatched = true;                        % allow extraneous options
-
-% Add required inputs to an Input Parser
-% TODO
-
-% Add parameter-value pairs to the Input Parser
-addParameter(iP, 'YAmountToStagger', yAmountToStaggerDefault, ...
-    @(x) assert(isempty(x) || ispositivescalar(x), ...
-                ['YAmountToStagger must be either a empty ', ...
-                    'or a positive scalar!']));
-
-% Read from the Input Parser
-parse(iP, varargin{:});
-yAmountToStagger = iP.Results.YAmountToStagger;
-
-% Keep unmatched arguments for the plot_traces() function
-otherArguments = struct2arglist(iP.Unmatched);
-
-%% Preparation
-% Extract parameters
-stimStartSec = parsedParams.stimStartSec;
-
-% TODO: Plot oscillation duration
-% detectStartSec = parsedParams.detectStartSec;
-% firstSpikeSec = parsedParams.firstSpikeSec;
-% timeOscEndSec = parsedParams.timeOscEndSec;
-
-% Extract parameters
-tVecs = parsedData.tVec;
-vVecs = parsedData.vVec;
-vVecsFilt = parsedData.vVecFilt;
-
-% Count the number of sweeps
-nVectors = height(parsedParams);
-
-% Convert time vector to seconds
-tVecsSec = transform_vectors(tVecs, MS_PER_S, 'divide');
-
-% Prepare for the plot
-xLabel = 'Time (s)';
-titleBase = replace(fileBase, '_', '\_');
-figTitle = ['Raw and Filtered traces for ', titleBase];
-
-% Compute the original y limits from data
-bestYLimits = compute_axis_limits(vVecs, 'y', 'AutoZoom', true);
-
-% Compute a default amount of y to stagger if not provided
-if isempty(yAmountToStagger)
-    yAmountToStagger = range(bestYLimits);
-end
-
-%% Plot
-hold on
-plot_traces(tVecsSec, vVecsFilt, 'DataToCompare', vVecs, 'Verbose', false, ...
-            'PlotMode', 'staggered', 'YAmountToStagger', yAmountToStagger, ...
-            'YLimits', bestYLimits, 'XLabel', xLabel, ...
-            'YLabel', 'Trace #', 'TraceLabels', 'suppress', ...
-            'FigTitle', figTitle, ...
-            'ColorMap', 'b', otherArguments{:});
-
-% Plot stimulation start
-vertLine = plot_vertical_line(mean(stimStartSec), 'Color', 'g', ...
-                                'LineStyle', '--', 'LineWidth', 0.5);
-
-% Plot phase boundaries
-if ~isempty(phaseBoundaries)
-    yBoundaries = (nVectors - phaseBoundaries + 1) * yAmountToStagger;
-    horzLine = plot_horizontal_line(yBoundaries, 'Color', 'g', ...
-                                    'LineStyle', '--', 'LineWidth', 2);
-end
-
-%{
-OLD CODE:
-
-%}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

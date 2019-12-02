@@ -70,7 +70,7 @@ function varargout = parse_phase_info (pValues, readout, phaseVectors, varargin)
 % Requires:
 %       cd/argfun.m
 %       cd/compute_phase_average.m
-%       cd/compute_index_boundaries.m
+%       cd/compute_value_boundaries.m
 %       cd/count_samples.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_subvectors.m
@@ -222,14 +222,10 @@ end
 
 %% Compute phase boundaries and corresponding indices
 if computePhaseBoundaries
-    % TODO: Make function [valueBoundaries, indBoundaries] = ...
-    %                       compute_value_boundaries(values, grouping)
-    % Compute all possible index boundaries for the phases
-    indBoundaries = compute_index_boundaries('Grouping', phaseVectors, ...
-                                                'TreatNaNsAsGroup', false);
-
-    % Convert to phase units
-    phaseBoundaries = extract_subvectors(pValues, 'Indices', indBoundaries);
+    % Compute index and phase boundaries for the phases
+    [phaseBoundaries, indBoundaries] = ...
+        compute_value_boundaries(pValues, phaseVectors, ...
+                                'TreatNaNsAsGroup', false);
 elseif ~isempty(phaseBoundaries)
     % Compute index boundaries
     indBoundaries = cellfun(@(x) find_closest(pValues, x, 'Direction', 'none'), ...

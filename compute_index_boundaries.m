@@ -35,7 +35,9 @@ function boundaryValues = compute_index_boundaries (varargin)
 %
 % Used by:
 %       cd/combine_abf_data.m
-%       cd/parse_phase_info.m
+%       cd/compute_value_boundaries.m
+%       cd/plot_raw_multiunit.m
+%       cd/plot_spike_density_multiunit.m
 
 % File History:
 % 2019-08-21 Created by Adam Lu

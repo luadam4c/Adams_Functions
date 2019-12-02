@@ -7,6 +7,8 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 %
 % Example(s):
 %       data = {magic(3), 5, (1:5)'};
+%       plot_raster(data);
+%       plot_raster(data, 'PlotOnly', true);
 %       [hRaster, eventTimes, yEnds] = ...
 %           plot_raster(data, 'VertBarWidth', 0.6, ...
 %                       'LineStyle', '-', 'LineWidth', 2, ...
@@ -32,7 +34,10 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 % Arguments:    
 %       data        - event time arrays
 %                   must be a numeric array or a cell array of numeric arrays
-%       varargin    - 'HorzBarWindows': horizontal bar windows
+%       varargin    - 'PlotOnly': whether to plot the curves only
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'HorzBarWindows': horizontal bar windows
 %                   must be empty or a cell array of numeric vectors
 %                           with the same length as nVectors
 %                   default == []
@@ -138,6 +143,7 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 % 2019-09-11 Updated to not use parfor
 % 2019-10-07 Added 'XTickLocs' as an optional argument
 % 2019-10-07 Updated default y limits
+% 2019-12-02 Added 'PlotOnly' as an optional argument
 % TODO: Distinguish plot_raster.m vs plot_raster_plot.m?
 % 
 
@@ -145,6 +151,7 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 maxNYTicks = 20;             % maximum number of Y ticks
 
 %% Default values for optional arguments
+plotOnlyDefault = false;        % setup default labels by default
 horzBarWindowsDefault = [];     % no horizontal bars by default
 yMidDefault = [];               % set later
 vertBarWidthDefault = 0.6;      % default bar width relative to y value increments
@@ -188,6 +195,8 @@ addRequired(iP, 'data', ...             % a cell array of event time arrays
                     'or a cell array of numeric arrays!']));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'PlotOnly', plotOnlyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'HorzBarWindows', horzBarWindowsDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['HorzBarWindows must be either a numeric array ', ...
@@ -239,6 +248,7 @@ addParameter(iP, 'AlwaysNew', alwaysNewDefault, ...
 
 % Read from the Input Parser
 parse(iP, data, varargin{:});
+plotOnly = iP.Results.PlotOnly;
 horzBarWindows = iP.Results.HorzBarWindows;
 yMidUser = iP.Results.YMid;
 vertBarWidth = iP.Results.VertBarWidth;
@@ -265,6 +275,19 @@ alwaysNew = iP.Results.AlwaysNew;
 otherArguments = iP.Unmatched;
 
 %% Prepare for plotting
+% If plotting curve only, change some defaults
+if plotOnly
+    xLimits = 'suppress';
+    yLimits = 'suppress';
+    xLabel = 'suppress';
+    yLabel = 'suppress';
+    xTickLocs = 'suppress';
+    yTickLocs = 'suppress';
+    yTickLabels = 'suppress';
+    legendLocation = 'suppress';
+    figTitle = 'suppress';
+end
+
 % If numeric, force as a column cell array of column vectors
 if isnumeric(data)
     data = force_column_vector(data, 'IgnoreNonVectors', false, ...

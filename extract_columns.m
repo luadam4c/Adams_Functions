@@ -6,6 +6,7 @@ function varargout = extract_columns (arrays, varargin)
 %       By default, cell arrays are not considered as arrays
 %
 % Example(s):
+%       extract_columns(magic(3), [1, 3], 'OutputMode', 'single')
 %       [a, b] = extract_columns({magic(3); ones(4)}, [1:3])
 %       [a, b] = extract_columns({magic(3); ones(3); zeros(4)}, ...
 %                               {[2, 3], [1:3], [1, 3]})

@@ -108,6 +108,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/compute_rms_error.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
+%       cd/compute_value_boundaries.m
 %       cd/extract_columns.m
 %       cd/extract_common_directory.m
 %       cd/find_closest.m

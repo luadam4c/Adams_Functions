@@ -17,6 +17,8 @@ function hold_off (wasHold)
 %
 % Used by:
 %       cd/plot_chevron.m
+%       cd/plot_raw_multiunit.m
+%       cd/plot_spike_density_multiunit.m
 %       cd/plot_traces.m
 %       cd/plot_tuning_curve.m
 

@@ -81,6 +81,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/plot_error_bar.m
 %       cd/plot_histogram.m
 %       cd/plot_measures.m
+%       cd/plot_raw_multiunit.m
 %       cd/plot_repetitive_protocols.m
 %       cd/plot_relative_events.m
 %       cd/plot_traces.m

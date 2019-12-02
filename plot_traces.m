@@ -246,6 +246,7 @@ function handles = plot_traces (tVecs, data, varargin)
 %       cd/parse_current_family.m
 %       cd/parse_ipsc.m
 %       cd/plot_calcium_imaging_traces.m
+%       cd/plot_raw_multiunit.m
 %       cd/plot_traces_abf.m
 
 % File History:
@@ -291,6 +292,7 @@ function handles = plot_traces (tVecs, data, varargin)
 % 2019-11-06 Fixed default color mode for non-'parallel' to 'ByPlot'
 % 2019-11-10 Fixed axes selection under non-'parallel' modes
 % 2019-11-17 Added 'FigSubTitles' as an optional argument
+% TODO: Add 'TraceNumbers' as an optional argument
 % TODO: dataToCompareColorMap
 % TODO: Number of horizontal bars shouldn't need to match nTraces
 

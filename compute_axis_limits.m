@@ -58,6 +58,7 @@ function [limits, axisRange] = compute_axis_limits (dataOrRange, axisType, varar
 %       cd/plot_pulse.m
 %       cd/plot_pulse_response.m
 %       cd/plot_pulse_response_with_stimulus.m
+%       cd/plot_raw_multiunit.m
 %       cd/plot_traces.m
 
 % File History:

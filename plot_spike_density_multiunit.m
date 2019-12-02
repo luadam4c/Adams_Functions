@@ -8,7 +8,7 @@ function handles = plot_spike_density_multiunit (parsedData, parsedParams, varar
 %       TODO
 %
 % Outputs:
-%       handles     - a structure with field:
+%       handles     - a structure with fields:
 %                       im
 %                       boundaryLine
 %                       stimStartLine
@@ -16,9 +16,16 @@ function handles = plot_spike_density_multiunit (parsedData, parsedParams, varar
 %
 % Arguments:
 %       parsedData  - parsed data
-%                   must be a table
+%                   must be a table with fields:
+%                       spikeDensityHz
 %       parsedParams- parsed parameters
-%                   must be a table
+%                   must be a table with fields:
+%                       siSeconds
+%                       minTimeSec
+%                       maxTimeSec
+%                       stimStartSec
+%                       phaseNumber
+%                       figPathBase
 %       varargin    - 'FigPosition':
 %                   must be a TODO
 %                   default == TODO
@@ -37,26 +44,31 @@ function handles = plot_spike_density_multiunit (parsedData, parsedParams, varar
 %                   - Any other parameter-value pair for imagesc()
 %
 % Requires:
-%       cd/create_error_for_nargin.m
-%       cd/struct2arglist.m
-%       TODO
-%       cd/extract_common_prefix.m
 %       cd/compute_index_boundaries.m
 %       cd/create_indices.m
+%       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
+%       cd/decide_on_colormap.m
+%       cd/extract_common_prefix.m
 %       cd/force_matrix.m
-%       cd/create_colormap.m
+%       cd/hold_off.m
+%       cd/hold_on.m
 %       cd/plot_vertical_line.m
 %       cd/plot_window_boundaries.m
+%       cd/struct2arglist.m
 %
 % Used by:
 %       cd/parse_multiunit.m
 
 % File History:
 % 2019-11-30 Moved from parse_multiunit.m
+% TODO: Pull out code as function plot_heat_map(spikeDensityHz);
 
 %% Hard-coded parameters
 validBoundaryTypes = {'horizontalLines', 'verticalBars'};
+
+% TODO: Make optional argument
+colorMap = [];
 
 % Default values for optional arguments
 figPositionDefault = [];
@@ -79,7 +91,10 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to an input Parser
-% TODO
+addRequired(iP, 'parsedData', ..
+    @(x) validateattributes(x, {'table'}, {'2d'}));
+addRequired(iP, 'parsedParams', ...
+    @(x) validateattributes(x, {'table'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'FigPosition', figPositionDefault, ...
@@ -94,8 +109,7 @@ addParameter(iP, 'MaxNYTicks', maxNYTicksDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 
 % Read from the Input Parser
-% parse(iP, parsedData, parsedParams, varargin{:});
-parse(iP, varargin{:});
+parse(iP, parsedData, parsedParams, varargin{:});
 figPosition = iP.Results.FigPosition;
 xLimits = iP.Results.XLimits;
 plotStimStart = iP.Results.PlotStimStart;
@@ -123,15 +137,12 @@ fileBase = extract_common_prefix(figPathBase);
 titleBase = replace(fileBase, '_', '\_');
 
 % Compute the phase boundaries
-% TODO: use compute_value_boundaries.m and unique(phaseVector)
 phaseBoundaries = compute_index_boundaries('Grouping', phaseVector, ...
                                             'TreatNaNsAsGroup', false);
 
-
-%% Do the job
-% Plot as a heatmap
-hold on
-% TODO: plot_heat_map(spikeDensityHz);
+%% Plot as a heatmap
+% Hold on
+wasHold = hold_on;
 
 % Compute stimulation start
 meanStimStartSec = mean(stimStartSec);
@@ -167,8 +178,8 @@ spikeDensityMatrix = transpose(force_matrix(spikeDensityHz));
 % Set a gray-scale color map
 % colormap(flipud(gray));
 % colormap(jet);
-cm = create_colormap('ColorMapFunc', @gray, 'ReverseOrder', true, ...
-                     'HighContrast', true);
+cm = decide_on_colormap(colorMap, 'ColorMapFunc', @gray, ...
+                        'ReverseOrder', true, 'HighContrast', true);
 colormap(cm);
 
 % Generate plot
@@ -211,7 +222,10 @@ if ~isempty(figPosition)
     set(gcf, 'Position', figPosition);
 end
 
-% Save output
+% Hold off
+hold_off(wasHold);
+
+%% Save output
 handles.im = im;
 if exist('boundaryLine', 'var')
     handles.boundaryLine = boundaryLine;

@@ -89,13 +89,14 @@ function indices = create_indices (varargin)
 %       cd/match_format_vectors.m
 %
 % Used by:
-%       cd/plot_measures.m
 %       cd/compute_peak_decay.m
 %       cd/extract_columns.m
 %       cd/extract_subvectors.m
 %       cd/fit_2exp.m
 %       cd/compute_combined_data.m
 %       cd/parse_pulse_response.m
+%       cd/plot_measures.m
+%       cd/plot_spike_density_multiunit.m
 %       cd/plot_traces.m
 
 % File History:

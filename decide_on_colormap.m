@@ -43,6 +43,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 %       cd/plot_grouped_histogram.m
 %       cd/plot_raster.m
 %       cd/plot_spectrogram.m
+%       cd/plot_spike_density_multiunit.m
 %       cd/plot_traces.m
 %       cd/plot_vertical_shade.m
 

@@ -66,6 +66,7 @@ function h = plot_window_boundaries (win, varargin)
 %       cd/m3ha_plot_individual_traces.m
 %       cd/parse_current_family.m
 %       cd/plot_scale_bar.m
+%       cd/plot_spike_density_multiunit.m
 %       cd/plot_traces_spike2_mat.m
 %       cd/plot_tuning_curve.m
 

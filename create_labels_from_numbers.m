@@ -57,6 +57,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/plot_grouped_histogram.m
 %       cd/plot_histogram.m
 %       cd/plot_raster.m
+%       cd/plot_spike_density_multiunit.m
 %       cd/plot_struct.m
 %       cd/plot_swd_raster.m
 %       cd/plot_traces.m
