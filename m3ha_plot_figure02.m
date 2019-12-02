@@ -37,7 +37,7 @@ plotBoxPlotsFlag = false; %true;
 plotBarPlotsFlag = true;
 
 % Analysis settings
-% Note: must be consistent with m3ha_compute_ltsburst_statistics.m
+% Note: must be consistent with m3ha_compute_statistics.m
 measuresOfInterest = {'ltsOnsetTime'; 'ltsProbability'; 'spikesPerLts'; ...
                     'burstOnsetTime'; 'burstProbability'; 'spikesPerBurst'};
 
@@ -50,6 +50,9 @@ exampleXlimits = [800, 2200];
 exampleYlimits = [-100, 20];
 pharmLabels = {'Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block'};
 figTypes = {'png', 'epsc2'};
+pharmAll = [1; 2; 3; 4];          
+gIncrAll = [25; 50; 100; 200; 400; 800];
+vHoldAll = [-60; -65; -70];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -93,9 +96,8 @@ end
 %% Compute statistics
 if plotBoxPlotsFlag || plotBarPlotsFlag
     % Compute statistics for all features
-    statsTable = ...
-        m3ha_compute_ltsburst_statistics('PharmConditions', num2cell(1:4), ...
-                                'GIncrCondition', num2cell([100; 200; 400]));
+    statsTable = m3ha_compute_statistics('PharmConditions', num2cell(pharmAll), ...
+                                'GIncrCondition', num2cell(gIncrAll));
 
     % Restrict to measures of interest
     statsTable = statsTable(measuresOfInterest, :);
@@ -103,12 +105,16 @@ end
 
 %% Plot 2D box plots
 if plotBoxPlotsFlag
-    
 end
 
 %% Plot 3D bar plots
 if plotBarPlotsFlag
-    
+    % Extract the means
+    allMeanValues = statsTable.meanValue;
+
+    cellfun()
+
+    bar3(1:length(pharmAll), mean_stats_vgp{bi}(:, 3:5, vi), 0.12, 'detached');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

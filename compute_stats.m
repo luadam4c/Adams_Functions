@@ -75,7 +75,7 @@ function stats = compute_stats (vecs, statName, varargin)
 %       cd/compute_combined_trace.m
 %       cd/compute_population_average.m
 %       cd/compute_sampsizepwr.m
-%       cd/m3ha_compute_ltsburst_statistics.m
+%       cd/m3ha_compute_statistics.m
 %       cd/parse_multiunit.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m

@@ -23,7 +23,7 @@ function swpInfo = m3ha_load_sweep_info (varargin)
 %
 % Used by:
 %       cd/m3ha_compute_and_plot_statistics.m
-%       cd/m3ha_compute_ltsburst_statistics.m
+%       cd/m3ha_compute_statistics.m
 %       cd/m3ha_create_cell_info_table.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_organize_sweep_indices.m

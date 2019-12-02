@@ -70,7 +70,7 @@ function [swpInfo, fileBasesToUse] = m3ha_select_sweeps (varargin)
 %
 % Used by:
 %       cd/m3ha_compute_and_plot_statistics.m
-%       cd/m3ha_compute_ltsburst_statistics.m
+%       cd/m3ha_compute_statistics.m
 %       cd/m3ha_select_cells.m
 
 % TODO:

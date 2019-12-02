@@ -32,7 +32,7 @@ function m3ha_compute_and_plot_statistics (varargin)
 % Requires:
 %       "inFolder"/dclampdatalog_take4.mat
 %       cd/check_dir.m
-%       cd/m3ha_compute_ltsburst_statistics.m
+%       cd/m3ha_compute_statistics.m
 %       cd/m3ha_find_ind_to_fit.m TODO: Replace this
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_locate_homedir.m
@@ -73,7 +73,7 @@ dataFileName = 'dclampdatalog_take4.csv';
 figTypes = {'png', 'epsc2'};
 
 % Items to compute
-%   Note: Must be consistent with m3ha_compute_ltsburst_statistics.m
+%   Note: Must be consistent with m3ha_compute_statistics.m
 measureTitle = {'LTS onset time (ms)', 'LTS time jitter (ms)', ...
                 'LTS probability', 'Spikes per LTS', ...
                 'Burst onset time (ms)', 'Burst time jitter (ms)', ...

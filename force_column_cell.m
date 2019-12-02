@@ -75,7 +75,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/find_pulse_endpoints.m
 %       cd/force_row_cell.m
 %       cd/force_column_vector.m
-%       cd/m3ha_compute_ltsburst_statistics.m
+%       cd/m3ha_compute_statistics.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_individual_traces.m
 %       cd/match_format_vector_sets.m

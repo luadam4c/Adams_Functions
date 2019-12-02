@@ -98,7 +98,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/force_matrix.m
 %       cd/force_row_vector.m
 %       cd/collapse_identical_vectors.m
-%       cd/m3ha_compute_ltsburst_statistics.m
+%       cd/m3ha_compute_statistics.m
 %       cd/match_format_vectors.m
 %       cd/match_format_vector_sets.m
 %       cd/match_reciprocals.m
