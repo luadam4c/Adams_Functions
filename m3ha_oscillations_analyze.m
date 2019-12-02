@@ -192,7 +192,7 @@ if plotFigure1Individual
                                 'MaxNYTicks', 4);
 
             % Plot time bar
-            % TODO: Use plot_unit_bar.m
+            % TODO: Use plot_scale_bar.m
 
             % Remove x axis
             set(gca, 'XTick', []);

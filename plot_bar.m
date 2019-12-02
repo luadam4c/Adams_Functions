@@ -225,6 +225,7 @@ function handles = plot_bar (val, varargin)
 % TODO: Finish implementation of 'PhaseVectors' as in plot_tuning_curve
 % TODO: Add 'BarColors' as an optional argument
 % TODO: Change usage in all functions using this
+% TODO: Expand to use bar3()
 
 %% Hard-coded parameters
 validBarDirections = {'vertical', 'horizontal'};

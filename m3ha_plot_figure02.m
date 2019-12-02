@@ -10,6 +10,7 @@
 %       cd/m3ha_create_cell_info_table.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_load_sweep_info.m
+%       cd/plot_scale_bar.m
 %       cd/plot_traces.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
@@ -31,8 +32,8 @@ cellNamePattern = '[A-Z][0-9]{6}';
 % Flags
 saveCellInfo = false;
 copyExampleFiles = false; %true;
-plotExamplesFlag = true;
-plotBoxPlotsFlag = true;
+plotExamplesFlag = false; %true;
+plotBoxPlotsFlag = false; %true;
 plotBarPlotsFlag = true;
 
 % Analysis settings
@@ -64,13 +65,6 @@ swpInfo = m3ha_load_sweep_info('Directory', figure02Dir);
 exampleCellNames = ...
     extract_substrings(exampleLogPaths, 'Regexp', cellNamePattern);
 
-%% Compute statistics
-% Compute statistics for all features
-statsTable = m3ha_compute_ltsburst_statistics('PharmConditions', num2cell(1:4), 'GIncrCondition', num2cell([100; 200; 400]))
-
-% Restrict to measures of interest
-statsTable = statsTable(measuresOfInterest, :);
-
 %% Create cell info table
 if saveCellInfo
     cellInfo = m3ha_create_cell_info_table('SwpInfo', swpInfo);
@@ -86,14 +80,25 @@ end
 %% Plot example traces
 if plotExamplesFlag
     % Plot example traces for each cell
-    figs = cellfun(@(x) m3ha_plot_example_traces(x, figure02Dir, ...
+    handles = cellfun(@(x) m3ha_plot_example_traces(x, figure02Dir, ...
                                             swpInfo, exampleGincr, ...
                                             exampleXlimits, exampleYlimits, ...
                                             pharmLabels, exampleLineWidth, ...
                                             exampleHeight, exampleWidth, ...
                                             figTypes), ...
-                    exampleCellNames);
+                        exampleCellNames);
 
+end
+
+%% Compute statistics
+if plotBoxPlotsFlag || plotBarPlotsFlag
+    % Compute statistics for all features
+    statsTable = ...
+        m3ha_compute_ltsburst_statistics('PharmConditions', num2cell(1:4), ...
+                                'GIncrCondition', num2cell([100; 200; 400]));
+
+    % Restrict to measures of interest
+    statsTable = statsTable(measuresOfInterest, :);
 end
 
 %% Plot 2D box plots
@@ -126,13 +131,21 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function fig = m3ha_plot_example_traces (cellName, figure02Dir, ...
+function handles = m3ha_plot_example_traces (cellName, figure02Dir, ...
                                             swpInfo, gIncrOfInterest, ...
                                             xLimits, yLimits, ...
-                                            yLabels, lineWidth, ...
+                                            pharmLabels, lineWidth, ...
                                             figHeight, figWidth, figTypes)
 %% Plots example traces
 % TODO: Pull out as its own function with only cellName as the required argument
+
+NS_PER_US = 1000;
+
+%% Hard-coded parameters
+conductanceLabel = 'Conductance (nS)';
+conductanceYLimits = [0, 10];
+timeBarLength = 100;
+timeBarUnits = 'ms';
 
 % Look for all .mat files
 [~, matPathsAll] = all_files('Directory', figure02Dir, ...
@@ -158,31 +171,99 @@ exampleBases = exampleBases(origInd);
 data = m3ha_import_raw_traces(exampleBases, 'SweepInfoAll', swpInfo, ...
                                 'OutFolder', figure02Dir);
 
-% Extract time and voltage vectors
-[tVecs, vVecs] = extract_columns(data, 1:2);
+% Extract time, voltage and conductance vectors
+[tVecs, vVecs, gVecs] = extract_columns(data, [1:2, 4]);
 
-% Create figure
-fig = set_figure_properties('AlwaysNew', true);
+% Create figure for voltage traces
+figV = set_figure_properties('AlwaysNew', true);
 
-% Plot the traces
-handles = plot_traces(tVecs, vVecs, ...
+% Plot the voltage traces
+tracesV = plot_traces(tVecs, vVecs, ...
             'PlotMode', 'parallel', 'LineWidth', lineWidth, ...
             'LinkAxesOption', 'xy', 'FigTitle', 'suppress', ...
             'XLimits', xLimits, 'Ylimits', yLimits, ...
-            'XLabel', 'suppress', 'YLabel', yLabels, ...
+            'XLabel', 'suppress', 'YLabel', pharmLabels, ...
             'LegendLocation', 'suppress', ...
-            'FigHandle', fig);
+            'FigHandle', figV);
 
-% Retrieve the subplots
-subPlots = handles.subPlots;
+% Get voltage subplots
+axV = tracesV.subPlots;
 
 % Remove x axis
-set(subPlots, 'XTick', []);
+set(axV, 'XTick', []);
 
 % Plot a time bar
-% TODO: plot_scale_bar.m
-barLengthMs = 100;
-barText = '100 ms';
+plot_scale_bar('x', 'BarLength', timeBarLength, 'BarUnits', timeBarUnits);
+
+% Update figure for CorelDraw
+update_figure_for_corel(figV, 'Units', 'centimeters', ...
+                        'Height', figHeight, 'Width', figWidth);
+
+% Create figure base
+figBase = sprintf('%s_gincr_%g_examples', cellName, gIncrOfInterest);
+figPathBase = fullfile(figure02Dir, figBase);
+
+% Save the figure
+save_all_figtypes(figV, figPathBase, figTypes);
+
+% Create figure for conductance traces
+%   Note: prevent the legend from updating
+figG = set_figure_properties('AlwaysNew', true, 'defaultLegendAutoUpdate', 'off');
+
+% Convert conductance to nS
+% TODO: use convert_units.m
+gVecs = cellfun(@(x) x .* NS_PER_US, gVecs, 'UniformOutput', false);
+
+% Plot the conductance traces
+tracesG = plot_traces(tVecs, gVecs, ...
+            'PlotMode', 'overlapped', 'LineWidth', lineWidth, ...
+            'FigTitle', 'suppress', ...
+            'XLimits', xLimits, 'YLimits', conductanceYLimits, ...
+            'XLabel', 'suppress', 'YLabel', conductanceLabel, ...
+            'TraceLabels', pharmLabels, ...
+            'LegendLocation', 'northeast', ...
+            'FigHandle', figG);
+
+% Get conductance trace axes
+axG = tracesG.subPlots;
+
+% Remove x axis
+set(axG, 'XTick', []);
+
+% Plot a time bar
+plot_scale_bar('x', 'BarLength', timeBarLength, 'BarUnits', timeBarUnits);
+
+% TODO: match_axes_size.m 
+%   match_axes_size(axG, axV(1), 'width')
+
+% Get the axes width for the voltage plot
+voltageSubPlotPosition = get(axV(1), 'Position');
+
+% Update axes width to be consistent with the voltage plot
+set_axes_properties('AxesHandle', axG, 'Width', voltageSubPlotPosition(3));
+
+% Update figure for CorelDraw
+update_figure_for_corel(figG, 'Units', 'centimeters', ...
+                        'Height', figHeight / 4, 'Width', figWidth);
+
+% Create figure base
+figBase = sprintf('%s_gincr_%g_conductance', cellName, gIncrOfInterest);
+figPathBase = fullfile(figure02Dir, figBase);
+
+% Save the figure
+save_all_figtypes(figG, figPathBase, figTypes);
+
+% Output figure handles
+handles.figG = figG;
+handles.figV = figV;
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%{
+OLD CODE:
+
 barColor = 'k';
 barLineWidth = 1;
 xPosNormalized = 0.8;
@@ -197,23 +278,6 @@ plot_horizontal_line(yPosBar, 'XLimits', xLimitsBar, ...
                     'Color', barColor, 'LineWidth', barLineWidth, ...
                     'AxesHandle', subPlots(end));
 text(xPosText, yPosText, barText);
-
-% Update figure for CorelDraw
-update_figure_for_corel(fig, 'Units', 'centimeters', ...
-                        'Height', figHeight, 'Width', figWidth);
-
-% Create figure base
-figBase = sprintf('%s_gincr_%g_examples', cellName, gIncrOfInterest);
-figPathBase = fullfile(figure02Dir, figBase);
-
-% Save the figure
-save_all_figtypes(fig, figPathBase, figTypes);
-
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%{
-OLD CODE:
 
 %}
 

@@ -43,7 +43,7 @@ function h = plot_window_boundaries (win, varargin)
 %                   - 'BarRelValue': value for bars relative to current axis
 %                   must be empty or a positive scalar
 %                   default == barRelValue relative to current axis
-%                   - 'BarValue': value for bars
+%                   - 'BarValue': value for bars on current axis
 %                   must be empty or a numeric scalar
 %                   default == barRelValue relative to current axis
 %                   - 'ColorMap': color map passed in
@@ -65,6 +65,7 @@ function h = plot_window_boundaries (win, varargin)
 % Used by:    
 %       cd/m3ha_plot_individual_traces.m
 %       cd/parse_current_family.m
+%       cd/plot_scale_bar.m
 %       cd/plot_traces_spike2_mat.m
 %       cd/plot_tuning_curve.m
 
