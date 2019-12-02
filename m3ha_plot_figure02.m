@@ -35,6 +35,11 @@ plotExamplesFlag = true;
 plotBoxPlotsFlag = true;
 plotBarPlotsFlag = true;
 
+% Analysis settings
+% Note: must be consistent with m3ha_compute_ltsburst_statistics.m
+measuresOfInterest = {'ltsOnsetTime'; 'ltsProbability'; 'spikesPerLts'; ...
+                    'burstOnsetTime'; 'burstProbability'; 'spikesPerBurst'};
+
 % Plot settings
 exampleGincr = 200;
 exampleHeight = 11;
@@ -60,7 +65,11 @@ exampleCellNames = ...
     extract_substrings(exampleLogPaths, 'Regexp', cellNamePattern);
 
 %% Compute statistics
-% TODO
+% Compute statistics for all features
+statsTable = m3ha_compute_ltsburst_statistics('PharmConditions', num2cell(1:4), 'GIncrCondition', num2cell([100; 200; 400]))
+
+% Restrict to measures of interest
+statsTable = statsTable(measuresOfInterest, :);
 
 %% Create cell info table
 if saveCellInfo

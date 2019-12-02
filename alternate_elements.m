@@ -5,8 +5,11 @@ function outVec = alternate_elements (varargin)
 %       TODO
 % Example(s):
 %       alternate_elements(1:5, 21:25)
+%       alternate_elements(1:5, 21:23)
 %       alternate_elements('Vectors', {1:5; 21:25; -5:-1})
 %       alternate_elements([], [])
+%       alternate_elements(1, [])
+%       alternate_elements([], 1)
 %       alternate_elements([], [], 'ReturnNaNIfEmpty', true)
 %
 % Outputs:
@@ -28,7 +31,6 @@ function outVec = alternate_elements (varargin)
 %
 % Requires:
 %       cd/argfun.m
-%       cd/count_vectors.m
 %       cd/force_matrix.m
 %       cd/iscellnumeric.m
 %
@@ -37,7 +39,7 @@ function outVec = alternate_elements (varargin)
 
 % File History:
 % 2019-08-13 Adapted from parse_multiunit.m
-% 
+% 2019-12-01 Fixed bugs
 
 %% Hard-coded parameters
 
@@ -75,28 +77,25 @@ vectors = iP.Results.Vectors;
 returnNaNIfEmpty = iP.Results.ReturnNaNIfEmpty;
 
 %% Preparation
-% Count the vectors
-if returnNaNIfEmpty 
-    if ~isempty(vectors)
-        nVectors = count_vectors(vectors);
-    else
-        nVectors = 2;
-    end
-end
-
 % Put vectors together
 if isempty(vectors)
     vectors = {vec1, vec2};
 end
 
 %% Do the job
+% Return empty if all empty
+if all(isemptycell(vectors))
+    % Force NaN values for empty vectors if requested
+    if returnNaNIfEmpty
+        outVec = nan(numel(vectors), 1);
+    else
+        outVec = vectors{1};
+    end
+    return
+end
+
 % Force as a matrix
 vectors = force_matrix(vectors, 'AlignMethod', 'leftAdjustPad');
-
-% Force NaN values for empty vectors if requested
-if returnNaNIfEmpty && isempty(vectors)
-    vectors = nan(1, nVectors);
-end
 
 % Transpose it so that each vector is a row
 form1 = transpose(vectors);
@@ -108,6 +107,13 @@ outVec = reshape(form1, [], 1);
 
 %{
 OLD CODE:
+
+% Replace all remaining empty vectors with a single NaN
+vectors = cellfun(@replace_empty_with_nan, vectors, 'UniformOutput', false);
+function vec = replace_empty_with_nan(vec)
+if isempty(vec)
+    vec = NaN;
+end
 
 %}
 

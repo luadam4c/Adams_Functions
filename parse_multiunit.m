@@ -649,7 +649,12 @@ paramsPath = fullfile(outFolder, [fileBase, paramsSuffix]);
 resultsPath = fullfile(outFolder, [fileBase, resultsSuffix]);
 
 % Extract data only if results not provided
-if toExtractData && ~isfile(resultsPath)
+if ~isfile(resultsPath)
+    toExtractData = false;
+end
+
+% Extract data if needed
+if toExtractData
     % Construct the .mat file expected to exist
     regexpSliceMatFile = ['.*', fileBase, '.mat'];
 
@@ -691,7 +696,7 @@ if toExtractData && ~isfile(resultsPath)
 end
 
 % Return if no data loaded
-if isempty(vVecs)
+if toExtractData && isempty(vVecs)
     fprintf('No data for %s found!\n', fileBase);
     return
 end
@@ -2184,12 +2189,12 @@ titleBase = replace(fileBase, '_', '\_');
 
 % Create figure and plot
 hold on
-hLines = plot_raster(spikeTimesSec, 'MeasureBars', burstWindows, ...
+hLines = plot_raster(spikeTimesSec, 'HorzBarWindows', burstWindows, ...
                     'LineWidth', 0.5, 'ColorMap', 'Black', ...
                     'XLabel', 'Time (s)', 'YLabel', 'Trace #', ...
                     'FigTitle', ['Spike times for ', titleBase]);
 % [hLines, eventTimes, yEnds, yTicksTable] = ...
-%     plot_raster(spikeTimesSec, 'MeasureBars', oscWindow, ...
+%     plot_raster(spikeTimesSec, 'HorzBarWindows', oscWindow, ...
 %                 'LineWidth', 0.5, 'Colors', colorsRaster);
 
 % Plot stimulation start

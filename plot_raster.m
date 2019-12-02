@@ -296,7 +296,7 @@ colorMap = decide_on_colormap(colorMap, nArrays);
 
 % Create labels if not provided
 if isempty(labels)
-    labels = create_labels_from_numbers(nArrays, 'Prefix', 'Group #');
+    labels = create_labels_from_numbers(1:nArrays, 'Prefix', 'Group #');
 end
 
 % Get the number of vectors in each event time array
