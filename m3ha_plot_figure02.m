@@ -60,7 +60,6 @@ gIncrLabels = {'25%', '50%', '100%', '200%', '400%', '800%'};
 
 bar3FigHeight = 6;              % in centimeters
 bar3FigWidth = 6;               % in centimeters
-bar3Width = 0.2;
 
 figTypes = {'png', 'epsc2'};
 
@@ -141,7 +140,6 @@ if plotBarPlotsFlag
     allMeasureTitles = statsTable.measureTitle;
     allMeasureStrs = statsTable.measureStr;
     allMeanValues = statsTable.meanValue;
-    allLower95Values = statsTable.lower95Value;
     allUpper95Values = statsTable.upper95Value;
 
     % Create figure bases
@@ -152,10 +150,10 @@ if plotBarPlotsFlag
 
     % Plot all 3D bar plots
     disp('Plotting 3-D bar plots ...');
-    cellfun(@(a, b, c, d, e) m3ha_plot_bar3(a, b, c, d, ...
+    cellfun(@(a, b, c, d) m3ha_plot_bar3(a, b, c, ...
                     pharmLabels, gIncrLabels, ...
-                    bar3Width, e, bar3FigHeight, bar3FigWidth, figTypes), ...
-            allMeanValues, allLower95Values, allUpper95Values, ...
+                    d, bar3FigHeight, bar3FigWidth, figTypes), ...
+            allMeanValues, allUpper95Values, ...
             allMeasureTitles, allFigPathBases);
 end
 
@@ -309,35 +307,79 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function m3ha_plot_bar3(meanValue, lower95Value, upper95Value, ...
+function m3ha_plot_bar3(meanValue, upper95Value, ...
                         measureTitle, pharmLabels, gIncrLabels, ...
-                        bar3Width, figPathBase, figHeight, figWidth, figTypes)
+                        figPathBase, figHeight, figWidth, figTypes)
 
 % Create figure for conductance traces
 fig = set_figure_properties('AlwaysNew', true);
 
 % Flip the g incr axis
-[meanValue, lower95Value, upper95Value, gIncrLabels] = ...
-    argfun(@fliplr, meanValue, lower95Value, upper95Value, gIncrLabels);
+[meanValue, upper95Value, gIncrLabels] = ...
+    argfun(@fliplr, meanValue, upper95Value, gIncrLabels);
+
+% Set x and y tick labels
+xTickLabels = pharmLabels;
+yTickLabels = gIncrLabels;
 
 % TODO: Add the following to plot_bar.m
+% Hard-coded parameters
+relativeBarWidth = 0.2;
+xTickAngle = 320;
+barSeparation = 1;
+
 % Decide on the color map
 cm = decide_on_colormap([], 4);
 
 % Set the color map
 colormap(cm);
 
+% Prepare for bar3
+meanValueTransposed = transpose(meanValue);
+upper95ValueTransposed = transpose(upper95Value);
+
 % Plot the means as bars
-bar3(transpose(meanValue), bar3Width, 'detached');
+bar3(meanValueTransposed, relativeBarWidth, 'detached');
+
+% Plot error bars
+% TODO: Incorporate into plot_error_bar.m?
+
+% Set the relative error bar width to be the same as the bars themselves
+%   Note: error bar width must not exceed the bar width, 
+%           otherwise the edges would be cut off
+relativeErrorBarWidth = relativeBarWidth;
+
+% Compute the actual error bar width
+errorBarWidth = relativeErrorBarWidth * barSeparation;
+
+% Compute the x and y values corresponding to each data point
+[xValues, yValues] = meshgrid(1:numel(xTickLabels), 1:numel(yTickLabels));
+
+% Compute the left and right positions of the horizontal parts of the error bars
+xPosBarLeft = xValues - errorBarWidth / 2;
+xPosBarRight = xValues + errorBarWidth / 2;
+
+% Plot the vertical part of the error bars
+arrayfun(@(a, b, c, d, e, f) line([a, b], [c, d], [e, f], 'Color', 'k'), ...
+            xValues, xValues, yValues, yValues, ...
+            meanValueTransposed, upper95ValueTransposed);
+
+% Plot the horizontal part of the error bars
+arrayfun(@(a, b, c, d, e, f) line([a, b], [c, d], [e, f], 'Color', 'k'), ...
+            xPosBarLeft, xPosBarRight, yValues, yValues, ...
+            upper95ValueTransposed, upper95ValueTransposed);
 
 % Plot z axis label
 zlabel(measureTitle);
 
 % Set x tick labels
-set(gca, 'XTickLabel', pharmLabels);
+set(gca, 'XTickLabel', xTickLabels);
+
+% Set x tick angle
+xtickangle(xTickAngle);
 
 % Set y tick labels
-set(gca, 'YTickLabel', gIncrLabels);
+set(gca, 'YTickLabel', yTickLabels);
 
 % Update figure for CorelDraw
 update_figure_for_corel(fig, 'Units', 'centimeters', ...
