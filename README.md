@@ -473,6 +473,7 @@ There are 1 MATLAB scripts in this directory:
 - [**plot_small_chevrons.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_small_chevrons.m): Plots two chevron tables
 - [**plot_spectrogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_spectrogram.m): Plots the spectrogram data computed by compute_spectrogram.m
 - [**plot_spike_density_multiunit.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_spike_density_multiunit.m): Plots a spike density plot from parsed multiunit data
+- [**plot_spike_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_spike_histogram.m): Plots a spike histogram from the results of compute_spike_histogram.m
 - [**plot_struct.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_struct.m): Plot all fields in a structure array as tuning curves
 - [**plot_swd_histogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_swd_histogram.m): Plots SWD start times in a histogram
 - [**plot_swd_raster.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_swd_raster.m): Compares all SWD start times in a directory as a raster plot

@@ -21,8 +21,10 @@ function [bars, fig] = plot_histogram (varargin)
 %                   specified as a Bar object array
 %       fig         - figure handle for the created figure
 %                   specified as a figure object handle
+%
 % Side Effects:
 %       Plots a histogram
+%
 % Arguments:
 %       X           - (opt) data to distribute among bins
 %                   must be an array of one the following types:
@@ -162,6 +164,7 @@ function [bars, fig] = plot_histogram (varargin)
 %
 % Used by:    
 %       cd/plot_psth.m
+%       cd/plot_spike_histogram.m
 %       cd/plot_swd_histogram.m
 %       /home/Matlab/Marks_Functions/paula/Oct2017/zgRasterFigureMaker.m
 %       /media/adamX/m3ha/data_dclamp/initial_slopes.m

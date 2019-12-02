@@ -41,6 +41,7 @@ function result = apply_iteratively (myFunction, array, varargin)
 %       cd/plot_raster.m
 %       cd/plot_relative_events.m
 %       cd/plot_traces.m
+%       cd/plot_spike_histogram.m
 %       cd/plot_swd_histogram.m
 
 % File History:

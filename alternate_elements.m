@@ -36,6 +36,7 @@ function outVec = alternate_elements (varargin)
 %
 % Used by:
 %       cd/parse_multiunit.m
+%       cd/plot_spike_histogram.m
 
 % File History:
 % 2019-08-13 Adapted from parse_multiunit.m

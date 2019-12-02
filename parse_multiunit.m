@@ -301,6 +301,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %       cd/plot_raster.m
 %       cd/plot_raw_multiunit.m
 %       cd/plot_spike_density_multiunit.m
+%       cd/plot_spike_histogram.m
 %       cd/plot_table.m
 %       cd/save_all_figtypes.m
 %       cd/save_all_zooms.m
@@ -1435,13 +1436,14 @@ parsedData.halfPeriodsToMultiple = halfPeriodsToMultiple;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [fig, ax, lines, markers, raster] = ...
-                plot_spike_detection(tVec, vVec, vVecFilt, ...
+function handles = plot_spike_detection(tVec, vVec, vVecFilt, ...
                                     slopes, idxSpikes, ...
                                     baseSlopeNoise, slopeThreshold, ...
                                     vMin, vMax, vRange, slopeMin, slopeMax, ...
                                     figHandle, figTitle)
 %% Plots the spike detection
+% TODO: Organize arguments to use parsedParams and parsedData instead
+% TODO: Pull out as a function
 
 % Hard-coded constants
 vertBarWidth2Range = 1/10;
@@ -1523,139 +1525,12 @@ suptitle(figTitle);
 % Link the x axes
 linkaxes(ax, 'x');
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [histBars, histFig] = ...
-                plot_spike_histogram (spHistData, spHistParams, varargin)
-%% Plots a spike histogram from the results of compute_spike_histogram
-
-%                   - 'XLimits': x-axis limits
-%                               suppress by setting value to 'suppress'
-%                   must be 'suppress' or a 2-element increasing numeric vector
-%                   default == minimum and maximum edges of bins
-%                   - 'YLimits': limits of y axis, 
-%                               suppress by setting value to 'suppress'
-%                   must be 'suppress' or a 2-element increasing numeric vector
-%                   default == 'suppress'
-%                   - Any other parameter-value pair for the plot_histogram() function
-
-%% Hard-coded parameters
-minNXTicks = 5;
-
-%% Default values for optional arguments
-xLimitsDefault = [];            % set later
-yLimitsDefault = [];            % set later
-
-%% Deal with arguments
-% Check number of required arguments
-if nargin < 2
-    error(create_error_for_nargin(mfilename));
-end
-
-% Set up Input Parser Scheme
-iP = inputParser;
-iP.FunctionName = mfilename;
-iP.KeepUnmatched = true;                        % allow extraneous options
-
-% Add required inputs to the Input Parser
-addRequired(iP, 'spHistData', ...
-    @(x) validateattributes(x, {'struct'}, {'scalar'}));
-addRequired(iP, 'spHistParams', ...
-    @(x) validateattributes(x, {'struct'}, {'scalar'}));
-
-% Add parameter-value pairs to the Input Parser
-addParameter(iP, 'XLimits', xLimitsDefault, ...
-    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
-        isvector(x) && length(x) == 2);
-addParameter(iP, 'YLimits', yLimitsDefault, ...
-    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
-        isnumeric(x) && isvector(x) && length(x) == 2);
-
-% Read from the Input Parser
-parse(iP, spHistData, spHistParams, varargin{:});
-xLimits = iP.Results.XLimits;
-yLimits = iP.Results.YLimits;
-
-% Keep unmatched arguments for the plot_histogram() function
-otherArguments = struct2arglist(iP.Unmatched);
-
-%% Preparation
-% Extract from spHistData
-spikeCounts = spHistData.spikeCounts;
-edgesSec = spHistData.edgesSec;
-timeBurstStartsSec = spHistData.timeBurstStartsSec;
-timeBurstEndsSec = spHistData.timeBurstEndsSec;
-
-% Extract from spHistParams
-oscDurationSec = spHistParams.oscDurationSec;
-nSpikesInOsc = spHistParams.nSpikesInOsc;
-figTitleBase = spHistParams.figTitleBase;
-
-% Compute burst windows
-burstWindows = alternate_elements(timeBurstStartsSec, timeBurstEndsSec, ...
-                                    'ReturnNaNIfEmpty', true);
-
-% Compute default x limits
-if isempty(xLimits)
-    % Extract parameters
-    histLeftSec = spHistParams.histLeftSec;
-    timeOscEndSec = spHistParams.timeOscEndSec;
-    maxInterBurstIntervalSec = spHistParams.maxInterBurstIntervalSec;
-
-    % Compute left and right ends of histogram to show
-    histLeft = min(histLeftSec);
-    histRight = timeOscEndSec + 1.5 * max(maxInterBurstIntervalSec);
-    % histRight = 10;
-
-    % Find appropriate x limits
-    xLimits = [histLeft, histRight];
-end
-
-% Compute x tick locations
-xTickLocs = linspace(xLimits(1), xLimits(2), minNXTicks);
-
-% Compute default y limits
-if isempty(yLimits)
-    % Extract parameters
-    binWidthSec = spHistParams.binWidthSec;
-
-    % Find the last bin to show for all traces
-    lastBinToShow = floor(range(xLimits) ./ binWidthSec) + 1;
-
-    % Find appropriate y limits
-    spikeCountsOfInterest = extract_subvectors(spikeCounts, ...
-                            'IndexEnd', lastBinToShow);
-    largestSpikeCount = apply_iteratively(@max, spikeCountsOfInterest);
-    yLimits = [0, largestSpikeCount * 1.2];
-end
-
-%% Plot histogram
-% Hold on
-wasHold = hold_on;
-
-% Plot histogram
-[histBars, histFig] = ...
-    plot_histogram([], 'Counts', spikeCounts, 'Edges', edgesSec, ...
-                    'XLimits', xLimits, 'YLimits', yLimits, ...
-                    'XTickLocs', xTickLocs, 'XLabel', 'Time (seconds)', ...
-                    'YLabel', 'Spike Count per 10 ms', ...
-                    'FigTitle', ['Spike histogram for ', figTitleBase], ...
-                    otherArguments{:});
-
-% Show oscillation duration
-text(0.2, 0.95, sprintf('Oscillation Duration = %.2g seconds', ...
-    oscDurationSec), 'Units', 'normalized');
-
-% Show number of spikes in oscillation
-text(0.2, 0.9, sprintf('Number of spikes in oscillation = %d', ...
-    nSpikesInOsc), 'Units', 'normalized');
-
-% Plot burst windows
-plot_horizontal_line(0, 'XLimits', burstWindows, ...
-                    'Color', 'r', 'LineStyle', '-', 'LineWidth', 3);
-
-% Hold off
-hold_off(wasHold);
+%% Save handles in a structure
+handles.fig = fig;
+handles.ax = ax;
+handles.lines = lines;
+handles.markers = markers;
+handles.raster = raster;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1886,8 +1761,7 @@ nVectors = height(parsedParams);
 
 parfor iVec = 1:nVectors
     % Plot spike detection
-    [fig, ax, lines, markers, raster] = ...
-        plot_spike_detection(tVec{iVec}, vVec{iVec}, vVecFilt{iVec}, ...
+    plot_spike_detection(tVec{iVec}, vVec{iVec}, vVecFilt{iVec}, ...
                             slopes{iVec}, idxSpikes{iVec}, ...
                             baseSlopeNoise(iVec), slopeThreshold(iVec), ...
                             vMin(iVec), vMax(iVec), vRange(iVec), ...
@@ -1967,10 +1841,8 @@ parfor iVec = 1:nVectors
 
     % Plot the histogram
     histFig = figure('Visible', 'off');
-    [histBars, histFig] = ...
-        plot_spike_histogram(thisData, thisParams, ...
-                                'XLimits', xLimitsHist, ...
-                                'YLimits', yLimitsHist);
+    plot_spike_histogram(thisData, thisParams, 'XLimits', xLimitsHist, ...
+                        'YLimits', yLimitsHist);
 
     % Save the figure
     save_all_figtypes(histFig, fullfile(figFolder, ...
