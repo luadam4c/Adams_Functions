@@ -384,6 +384,7 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_plot_individual_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_individual_traces.m): Plots individual voltage traces
 - [**m3ha_plot_simulated_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_simulated_traces.m): Plots simulated traces from NEURON output files
 - [**m3ha_plot_traces_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_traces_mat.m): Plot traces from mat file
+- [**m3ha_rank_neurons.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_rank_neurons.m): function [output1] = m3ha_rank_neurons (reqarg1, varargin)
 - [**m3ha_resave_sweeps.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_resave_sweeps.m): Extracts .abf data and resave as .mat file in the m3ha format
 - [**m3ha_select_cells.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_cells.m): Selects cells with sweeps to use for all pharm-gIncr pairs
 - [**m3ha_select_raw_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_select_raw_traces.m): Select raw traces to import

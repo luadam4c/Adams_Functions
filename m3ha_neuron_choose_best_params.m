@@ -54,6 +54,7 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 % 2019-11-23 Created by Adam Lu
 % 2019-11-28 Now saves error table and plots individual plots for each set
 %               of parameters
+% TODO: Create a combined error file and rank the errors
 % 
 
 %% Hard-coded parameters

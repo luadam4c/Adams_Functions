@@ -35,17 +35,22 @@ function [errorStruct, hFig, simData] = ...
 %                   - 'NSweeps': number of sweeps
 %                   must be a positive integer scalar
 %                   default == numel(realData) or 1
-%                   - 'FileBase': base of filename (without extension) 
+%                   - 'FileNames': file names provided
+%                   must be a character vector, a string vector 
+%                       or a cell array of character vectors
+%                   default == none provided
+%                   - 'FileBases': base of filenames (without extension) 
 %                                   corresponding to each vector
 %                   must be a character vector, a string vector 
 %                       or a cell array of character vectors
-%                   default == set in decide_on_filebases.m
+%                   default == read from provided data file names
+%                               or set in decide_on_filebases.m
 %                   - 'OutFolder': the directory where outputs will be placed
 %                   must be a string scalar or a character vector
 %                   default == pwd
 %                   - 'Prefix': prefix to prepend to file names
 %                   must be a character array
-%                   default == extract_common_prefix(fileBase)
+%                   default == extract_common_prefix(fileBases)
 %                   - 'DebugFlag': whether debugging
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -404,9 +409,10 @@ function [errorStruct, hFig, simData] = ...
 % 2019-10-13 - Updated simulated data column numbers
 % 2019-11-15 - Added 'IpscTime' as an optional parameter
 % 2019-11-15 - Added 'IpscPeakWindow' as an optional parameter
-% 2019-11-15 - Added 'FileBase' as an optional parameter
+% 2019-11-15 - Added 'FileBases' as an optional parameter
 % 2019-11-17 - Added 'PlotConductanceFlag' as an optional parameter
 % 2019-11-17 - Added 'PlotCurrentFlag' as an optional parameter
+% 2019-12-03 - Added 'FileNames' as an optional parameter
 
 %% Hard-coded parameters
 validSimModes = {'active', 'passive'};
@@ -429,6 +435,13 @@ ipscpWinOrig = [1000, 1300];    % window (ms) in which IPSC reaches peak
 % The following must be consistent with singleneuron4compgabab.hoc
 timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
                                 %   of simulations are stabilized
+
+% Default time windows to fit
+%   Note: must be consistent with singleneuronfitting.m
+baseWinCprOrig      = [0, 100];     % window in which the current pulse response base line woule lie (ms), original
+fitWinCprOrig    = [100, 250];      % time window to fit for current pulse response (ms), original
+baseWinIpscrOrig    = [0, 1000];    % window in which the IPSC response base line woule lie (ms), original
+fitWinIpscrOrig  = [1000, 8000];    % time window to fit for IPSC response (ms), original
 
 % For plotting
 figNumberConductance = 102;
@@ -476,7 +489,8 @@ INAPH_COL_SIM = 25;
 hFigDefault = '';               % no prior hFig structure by default
 simModeDefault = 'active';      % simulate active responses by default
 nSweepsDefault = [];            % set later
-fileBaseDefault = {};           % set later
+fileNamesDefault = {};          % none provided by default
+fileBasesDefault = {};          % set later
 outFolderDefault = pwd;         % use the present working directory for outputs
                                 %   by default
 prefixDefault = '';             % set later
@@ -532,10 +546,10 @@ holdCurrentNoiseIpscrDefault = 0;% (nA)
 holdCurrentNoiseCprDefault = 0; % (nA)
 rowConditionsIpscrDefault = []; % set later
 rowConditionsCprDefault = [];   % set later
-fitWindowCprDefault = [100, 250] + timeToStabilize;
-fitWindowIpscrDefault = [ipscTimeOrig, ipscrWinOrig(2)] + timeToStabilize;
-baseWindowCprDefault = [0, 100] + timeToStabilize;
-baseWindowIpscrDefault = [ipscrWinOrig(1), ipscTimeOrig] + timeToStabilize;
+fitWindowCprDefault = fitWinCprOrig + timeToStabilize;
+fitWindowIpscrDefault = fitWinIpscrOrig + timeToStabilize;
+baseWindowCprDefault = baseWinCprOrig + timeToStabilize;
+baseWindowIpscrDefault = baseWinIpscrOrig + timeToStabilize;
 baseNoiseCprDefault = [];       % set later
 baseNoiseIpscrDefault = [];     % set later
 sweepWeightsCprDefault = [];    % set later
@@ -568,9 +582,13 @@ addParameter(iP, 'SimMode', simModeDefault, ...
     @(x) any(validatestring(x, validSimModes)));
 addParameter(iP, 'NSweeps', nSweepsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
-addParameter(iP, 'FileBase', fileBaseDefault, ...
+addParameter(iP, 'FileNames', fileNamesDefault, ...
     @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
-        ['FileBase must be a character array or a string array ', ...
+        ['FileNames must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
+addParameter(iP, 'FileBases', fileBasesDefault, ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['FileBases must be a character array or a string array ', ...
             'or cell array of character arrays!']));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
@@ -709,7 +727,8 @@ parse(iP, neuronParamsTable, varargin{:});
 hFig = iP.Results.HFig;
 simMode = validatestring(iP.Results.SimMode, validSimModes);
 nSweepsUser = iP.Results.NSweeps;
-fileBase = iP.Results.FileBase;
+fileNames = iP.Results.FileNames;
+fileBases = iP.Results.FileBases;
 outFolder = iP.Results.OutFolder;
 prefix = iP.Results.Prefix;
 debugFlag = iP.Results.DebugFlag;
@@ -782,6 +801,36 @@ simData = [];
 
 % Decide on simulation-mode-dependent variables
 if strcmpi(simMode, 'passive')
+    % Import data to compare if not provided but file names provided
+    if isempty(realDataCpr) && ~isempty(fileNames)
+        % Import data
+        [realDataCpr, sweepInfoCpr] = ...
+            m3ha_import_raw_traces(fileNames, 'ImportMode', 'passive', ...
+                        'Verbose', verbose, 'OutFolder', outFolder);
+
+        % If not generating data, don't set hold current noise
+        if ~generateDataFlag
+            nSweepsCpr = height(sweepInfoCpr);
+            sweepInfoCpr{:, 'holdCurrentNoise'} = zeros(nSweepsCpr, 1);
+        end
+
+        % Append suffices to variable names
+        sweepInfoCpr.Properties.VariableNames = ...
+            strcat(sweepInfoCpr.Properties.VariableNames, 'Cpr');
+
+        % Convert sweep info tables to scalar structures
+        sweepInfoCprStruct = table2struct(sweepInfoCpr, 'ToScalar', true);
+
+        % Extract from structure
+        currentPulseAmplitudeCpr = sweepInfoCprStruct.currentPulseAmplitudeCpr;
+        holdPotentialCpr = sweepInfoCprStruct.holdPotentialCpr;
+        holdCurrentCpr = sweepInfoCprStruct.holdCurrentCpr;
+        holdCurrentNoiseCpr = sweepInfoCprStruct.holdCurrentNoiseCpr;
+        baseNoiseCpr = sweepInfoCprStruct.baseNoiseCpr;
+        sweepWeightsCpr = sweepInfoCprStruct.sweepWeightsCpr;
+    end
+
+    % Read passive fit data and params
     realData = realDataCpr;
     currentPulseAmplitude = currentPulseAmplitudeCpr;
     holdPotential = holdPotentialCpr;
@@ -794,6 +843,36 @@ if strcmpi(simMode, 'passive')
     sweepWeights = sweepWeightsCpr;
     errorMode = 'SweepOnly';
 elseif strcmpi(simMode, 'active')
+    % Import data to compare if not provided but file names provided
+    if isempty(realDataIpscr) && ~isempty(fileNames)
+        % Import data
+        [realDataIpscr, sweepInfoIpscr] = ...
+            m3ha_import_raw_traces(fileNames, 'ImportMode', 'active', ...
+                        'Verbose', verbose, 'OutFolder', outFolder);
+
+        % If not generating data, don't set hold current noise
+        if ~generateDataFlag
+            nSweepsIpscr = height(sweepInfoIpscr);
+            sweepInfoIpscr{:, 'holdCurrentNoise'} = zeros(nSweepsIpscr, 1);
+        end
+
+        % Append suffices to variable names
+        sweepInfoIpscr.Properties.VariableNames = ...
+            strcat(sweepInfoIpscr.Properties.VariableNames, 'Ipscr');
+
+        % Convert sweep info tables to scalar structures
+        sweepInfoIpscrStruct = table2struct(sweepInfoIpscr, 'ToScalar', true);
+
+        % Extract from structure
+        currentPulseAmplitudeIpscr = sweepInfoCprStruct.currentPulseAmplitudeIpscr;
+        holdPotentialIpscr = sweepInfoCprStruct.holdPotentialIpscr;
+        holdCurrentIpscr = sweepInfoCprStruct.holdCurrentIpscr;
+        holdCurrentNoiseIpscr = sweepInfoCprStruct.holdCurrentNoiseIpscr;
+        baseNoiseIpscr = sweepInfoCprStruct.baseNoiseIpscr;
+        sweepWeightsIpscr = sweepInfoCprStruct.sweepWeightsIpscr;
+    end
+
+    % Read active fit data and params
     realData = realDataIpscr;
     currentPulseAmplitude = currentPulseAmplitudeIpscr;
     holdPotential = holdPotentialIpscr;
@@ -819,12 +898,12 @@ end
 nSweeps = decide_on_nSweeps(realData, nSweepsUser);
 
 % Create file bases if not provided
-fileBase = decide_on_filebases(fileBase, nSweeps);
+fileBases = decide_on_filebases(fileNames, nSweeps);
 
 % Decide on prefix if not provided
 if isempty(prefix)
     % Try extracting the common prefix from the file bases
-    prefix = extract_common_prefix(fileBase);
+    prefix = extract_common_prefix(fileBases);
 
     % If still empty, use the output folder base name
     if isempty(prefix)
@@ -1167,7 +1246,7 @@ if ~isempty(realData)
                     'InitSwpError', initSwpError, ...
                     'InitLtsError', initLtsError, ...
                     'IpscTime', ipscTime, 'IpscPeakWindow', ipscPeakWindow, ...
-                    'FileBase', fileBase, ...
+                    'FileBase', fileBases, ...
                     'OutFolder', outFolder, 'Prefix', prefix, ...
                     'SaveLtsInfoFlag', saveLtsInfoFlag, ...
                     'SaveLtsStatsFlag', saveLtsStatsFlag, ...
