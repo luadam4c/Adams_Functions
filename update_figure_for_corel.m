@@ -65,10 +65,15 @@ function figHandle = update_figure_for_corel (varargin)
 %                   - 'RulerLineWidth': axis ruler line width in points
 %                   must be a positive integer scalar
 %                   default == 1
-%                   - 'PlotLineWidth': line width of main plot
+%                   - 'PlotLineWidth': line width of Line objects that 
+%                                       have more than two data points
 %                   must be empty or a positive scalar
 %                   default == [] (don't change)
-%                   - 'PlotMarkerSize': marker size of main plot
+%                   - 'PlotMarkerSize': marker size of Line objects that 
+%                                       have more than two data points
+%                   must be empty or a positive scalar
+%                   default == [] (don't change)
+%                   - 'ScatterMarkerSize': marker size of Scatter objects
 %                   must be empty or a positive scalar
 %                   default == [] (don't change)
 %                   - Any other parameter-value pair for set_figure_properties()
@@ -129,6 +134,7 @@ textFontSizeDefault = 7;
 rulerLineWidthDefault = 1;
 plotLineWidthDefault = [];
 plotMarkerSizeDefault = [];
+scatterMarkerSizeDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -187,6 +193,8 @@ addParameter(iP, 'PlotLineWidth', plotLineWidthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'PlotMarkerSize', plotMarkerSizeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'ScatterMarkerSize', scatterMarkerSizeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -210,6 +218,7 @@ textFontSize = iP.Results.TextFontSize;
 rulerLineWidth = iP.Results.RulerLineWidth;
 plotLineWidth = iP.Results.PlotLineWidth;
 plotMarkerSize = iP.Results.PlotMarkerSize;
+scatterMarkerSize = iP.Results.ScatterMarkerSize;
 
 % Keep unmatched arguments for set_figure_properties()
 otherArguments = iP.Unmatched;
@@ -348,6 +357,12 @@ if ~isempty(plotMarkerSize)
     lines = findobj(figHandle, 'Type', 'Line');
     plots = lines(arrayfun(@(x) is_plot(x), lines));
     set(plots, 'MarkerSize', plotMarkerSize);
+end
+
+% Update Scatter object marker sizes
+if ~isempty(scatterMarkerSize)
+    scatters = findobj(figHandle, 'Type', 'Scatter');
+    set(scatters, 'SizeData', scatterMarkerSize^2);
 end
 
 % Update all face alphas to 1

@@ -36,7 +36,7 @@ cellNamePattern = '[A-Z][0-9]{6}';
 saveCellInfo = false;
 copyExampleFiles = false; %true;
 plotExamplesFlag = false; %true;
-plotBoxPlotsFlag = true;
+plotBoxPlotsFlag = false; %true;
 plotBarPlotsFlag = false; %true;
 
 % Analysis settings
@@ -60,8 +60,8 @@ pharmLabelsShort = {'Con', 'GAT1', 'GAT3', 'Dual'};
 gIncrAll = [25; 50; 100; 200; 400; 800];
 gIncrLabels = {'25%', '50%', '100%', '200%', '400%', '800%'};
 
-box2FigHeight = 4;              % in centimeters
-box2FigWidth = 4;               % in centimeters
+box2FigHeight = 2.8;            % in centimeters
+box2FigWidth = 2.9;             % in centimeters
 bar3FigHeight = 6;              % in centimeters
 bar3FigWidth = 6;               % in centimeters
 
@@ -348,16 +348,33 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function m3ha_plot_box2(allValues, measureTitle, pharmLabels, figPathBase, ...
+function m3ha_plot_box2 (allValues, measureTitle, pharmLabels, figPathBase, ...
                         figHeight, figWidth, figTypes)
+
+% Hard-coded parameters
+MS_PER_S = 1000;
+xTickAngle = 320;
 
 % Create figure for conductance traces
 fig = set_figure_properties('AlwaysNew', true);
 
+% Count the number of groups
+nGroups = numel(pharmLabels);
+
+% Convert onset times from ms to seconds
+if contains(measureTitle, 'onset')
+    % Update values
+    allValues = cellfun(@(x) x ./ MS_PER_S, allValues, 'UniformOutput', false);
+
+    % Update title
+    measureTitle = replace(measureTitle, 'ms', 's');
+end
+
 % Decide on the color map
-cm = decide_on_colormap([], 4);
+cm = decide_on_colormap([], nGroups);
 
 % Set the color map
+%   TODO: Apply this in violinplot?
 colormap(cm);
 
 % TODO: plot_violin.m
@@ -371,16 +388,25 @@ violinplot(allValues, pharmLabels);
 
 % Plot the data points for each cell
 % plotSpread(allValues);
-
 % Set x tick labels
 % xticklabels(pharmLabels);
 
-% Set title
-title(measureTitle);
+% Modify x limits
+xlim([0.5, nGroups + 0.5]);
+
+% Modify x tick angle
+xtickangle(xTickAngle);
+
+% Set y label
+ylabel(measureTitle);
+
+% Save the figure
+save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
 
 % Update figure for CorelDraw
 update_figure_for_corel(fig, 'Units', 'centimeters', ...
-                        'Height', figHeight, 'Width', figWidth);
+                        'Height', figHeight, 'Width', figWidth, ...
+                        'ScatterMarkerSize', 3);
 
 % Save the figure
 save_all_figtypes(fig, figPathBase, figTypes);

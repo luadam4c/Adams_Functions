@@ -30,6 +30,7 @@
 % 2019-11-28 Changed minBurstLengthMs from 100 ms to 60 ms
 % 2019-11-28 Changed maxInterBurstIntervalMs from 1500 ms to 2000 ms
 % 2019-11-28 Changed minSpikeRateInBurstHz from 50 Hz to 100 Hz
+% 2019-12-03 Added bar insets
 
 %% Hard-coded parameters
 % Folders
@@ -85,7 +86,7 @@ autoCorrHeight = 3;
 autoCorrXLimits = [0, 5];       % Good for 20190525_slice4_gat3_trace16
 autoCorrYLimits = [-75, 1500];  % Good for 20190525_slice4_gat3_trace16
 
-plotFigure1Population = true;
+plotFigure1Population = false; % true;
 chevronWidth = 4;               % figure width in cm
 chevronHeight = 4;              % figure height in cm
 chevronMarkerSize = 1;          % marker size in points
