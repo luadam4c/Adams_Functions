@@ -218,9 +218,10 @@ otherArguments = iP.Unmatched;
 %% Preparation
 % Decide on data values
 if istable(data)
-    % Extract values so that each column is a parameter
+    % Extract values
     dataValues = table2array(data);
 
+    % Make sure each column is a parameter and transpose if necessary
     nRows = size(dataValues, 1);
     nColumns = size(dataValues, 2);
     if nRows < nColumns

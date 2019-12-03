@@ -68,6 +68,7 @@ function fig = set_figure_properties (varargin)
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_current_family.m
 %       cd/parse_ipsc.m
+%       cd/plot_autocorrelogram.m
 %       cd/plot_bar.m
 %       cd/plot_chevron.m
 %       cd/plot_frame.m

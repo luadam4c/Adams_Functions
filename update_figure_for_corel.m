@@ -53,6 +53,18 @@ function figHandle = update_figure_for_corel (varargin)
 %                   - 'YTickLocs': locations of Y ticks
 %                   must be 'suppress' or a numeric vector
 %                   default == 'suppress'
+%                   - 'LabelsFontSize': labels and titles font size in points
+%                   must be a positive integer scalar
+%                   default == 8
+%                   - 'AxisFontSize': axis font size in points
+%                   must be a positive integer scalar
+%                   default == 7
+%                   - 'TextFontSize': text font size in points
+%                   must be a positive integer scalar
+%                   default == 7
+%                   - 'RulerLineWidth': axis ruler line width in points
+%                   must be a positive integer scalar
+%                   default == 1
 %                   - 'PlotLineWidth': line width of main plot
 %                   must be empty or a positive scalar
 %                   default == [] (don't change)
@@ -91,10 +103,10 @@ BLACK = [0, 0, 0];
 labelsFontSize = 8;
 axisFontSize = 7; 
 textFontSize = 7;
-annotationLineWidth = 1; % TODO
 rulerLineWidth = 1;
 units = 'inches';
 tickLengthsInches = [0.025, 0.025];
+annotationLineWidth = 1; % TODO
 
 %% Default values for optional arguments
 figHandleDefault = [];
@@ -111,6 +123,10 @@ removeTitlesDefault = false;    % set later
 removeLegendsDefault = false;   % set later
 xTickLocsDefault = 'suppress';  % don't change by default
 yTickLocsDefault = 'suppress';  % don't change by default
+labelsFontSizeDefault = 8;
+axisFontSizeDefault = 7;
+textFontSizeDefault = 7;
+rulerLineWidthDefault = 1;
 plotLineWidthDefault = [];
 plotMarkerSizeDefault = [];
 
@@ -159,6 +175,14 @@ addParameter(iP, 'XTickLocs', xTickLocsDefault, ...
 addParameter(iP, 'YTickLocs', yTickLocsDefault, ...
     @(x) assert(ischar(x) && strcmpi(x, 'suppress') || isnumericvector(x), ...
         'YTickLocs must be ''suppress'' or a numeric vector!'));
+addParameter(iP, 'LabelsFontSize', labelsFontSizeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'AxisFontSize', axisFontSizeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'TextFontSize', textFontSizeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
+addParameter(iP, 'RulerLineWidth', rulerLineWidthDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'PlotLineWidth', plotLineWidthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'PlotMarkerSize', plotMarkerSizeDefault, ...
@@ -180,6 +204,10 @@ removeTitles = iP.Results.RemoveTitles;
 removeLegends = iP.Results.RemoveLegends;
 xTickLocs = iP.Results.XTickLocs;
 yTickLocs = iP.Results.YTickLocs;
+labelsFontSize = iP.Results.LabelsFontSize;
+axisFontSize = iP.Results.AxisFontSize;
+textFontSize = iP.Results.TextFontSize;
+rulerLineWidth = iP.Results.RulerLineWidth;
 plotLineWidth = iP.Results.PlotLineWidth;
 plotMarkerSize = iP.Results.PlotMarkerSize;
 
@@ -258,31 +286,31 @@ end
 % Remove x axis if requested
 if removeXRulers
     xAxises = get(ax, 'XAxis');
-    cellfun(@set_visible_off, xAxises);
+    set_visible_off(xAxises);
 end
 
 % Remove y axis if requested
 if removeYRulers
     yAxises = get(ax, 'YAxis');
-    cellfun(@set_visible_off, yAxises);
+    set_visible_off(yAxises);
 end
 
 % Remove x labels if requested
 if removeXLabels
     xLabels = get(ax, 'XLabel');
-    cellfun(@set_string_empty, xLabels);
+    set_string_empty(xLabels);
 end
 
 % Remove y labels if requested
 if removeYLabels
     yLabels = get(ax, 'YLabel');
-    cellfun(@set_string_empty, yLabels);
+    set_string_empty(yLabels);
 end
 
 % Remove titles if requested
 if removeTitles
     titles = get(ax, 'Title');
-    cellfun(@set_string_empty, titles);
+    set_string_empty(titles);
 end
 
 % Remove legends if requested
@@ -369,13 +397,21 @@ isPlot = numel(xData) > 2 || numel(yData) > 2 || numel(zData) > 2;
 
 function set_string_empty (textObject)
 
-textObject.String = '';
+if iscell(textObject)
+    cellfun(@set_string_empty, textObject);
+else
+    textObject.String = '';
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function set_visible_off (object)
 
-set(object, 'Visible', 'off');
+if iscell(textObject)
+    cellfun(@set_visible_off, object);
+else
+    set(object, 'Visible', 'off');
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

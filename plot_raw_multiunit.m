@@ -61,6 +61,7 @@ function handles = plot_raw_multiunit (parsedData, parsedParams, varargin)
 %       cd/plot_horizontal_line.m
 %
 % Used by:
+%       cd/m3ha_oscillations_analyze.m
 %       cd/parse_multiunit.m
 
 % File History:

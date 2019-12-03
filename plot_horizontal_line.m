@@ -41,6 +41,7 @@ function h = plot_horizontal_line (yValue, varargin)
 %
 % Used by:
 %       cd/parse_multiunit.m
+%       cd/plot_autocorrelogram.m
 %       cd/plot_bar.m
 %       cd/plot_error_bar.m
 %       cd/plot_raw_multiunit.m

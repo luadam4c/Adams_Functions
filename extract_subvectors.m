@@ -125,6 +125,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/parse_multiunit.m
 %       cd/parse_pulse_response.m
 %       cd/parse_spike2_mat.m
+%       cd/plot_autocorrelogram.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_histogram.m
 %       cd/plot_relative_events.m

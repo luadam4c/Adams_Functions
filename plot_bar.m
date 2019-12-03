@@ -15,6 +15,7 @@ function handles = plot_bar (val, varargin)
 %       handles = plot_bar(val3, low3, high3, 'BarDirection', 'horizontal', 'PTickLabels', {'Mark', 'Ashley', 'Katie', 'Adam'});
 %       handles = plot_bar(val3, low3, high3, 'ReverseOrder', true, 'PTickLabels', {'Mark', 'Ashley', 'Katie', 'Adam'});
 %       handles = plot_bar(val1, low1, high1, 'ReverseOrder', true, 'BarDirection', 'horizontal');
+%       plot_bar([1, 2], 'ColorMap', {'Red', 'Green'})
 %
 % Outputs:
 %       handles - handles structure with fields:
@@ -85,6 +86,9 @@ function handles = plot_bar (val, varargin)
 %                   must be a scalartext 
 %                       or a cell array of strings or character vectors
 %                   default == {'Phase #1', 'Phase #2', ...}
+%                   - 'ColorMap' - color map used when nColumnsToPlot > 1
+%                   must be a 2-D numeric array with 3 columns
+%                   default == set by the bar() function
 %                   - 'PlotOnly': whether to plot the bars only
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -182,6 +186,7 @@ function handles = plot_bar (val, varargin)
 %
 % Requires:
 %       cd/argfun.m
+%       cd/decide_on_colormap.m
 %       cd/set_figure_properties.m
 %       cd/force_column_vector.m
 %       cd/isfigtype.m
@@ -194,6 +199,7 @@ function handles = plot_bar (val, varargin)
 %
 % Used by:
 %       cd/m3ha_compute_and_compare_lts_statistics.m
+%       cd/m3ha_oscillations_analyze.m
 %       cd/parse_multiunit.m
 %       cd/plot_struct.m
 %       cd/ZG_fit_IEI_distributions.m
@@ -221,9 +227,9 @@ function handles = plot_bar (val, varargin)
 % 2019-06-10 Added 'PBoundaries' and 'RBoundaries' as optional arguments
 % 2019-11-23 Added 'PhaseVectors' and other dependent optional arguments
 % 2019-11-24 Now returns handles structure as output
+% 2019-12-03 Added 'ColorMap' as an optional argument
 % TODO: phaseBoundaries needs to be provided into parse_phase_info.m
 % TODO: Finish implementation of 'PhaseVectors' as in plot_tuning_curve
-% TODO: Add 'BarColors' as an optional argument
 % TODO: Change usage in all functions using this
 % TODO: Expand to use bar3()
 
@@ -254,6 +260,7 @@ pTickAngleDefault = [];
 pLabelDefault = 'Parameter';
 readoutLabelDefault = 'Readout';
 phaseLabelsDefault = '';            % set later
+colorMapDefault = [];               % set later
 plotOnlyDefault = false;            % setup default labels by default
 plotPhaseBoundariesDefault = [];    % set later
 plotPhaseAveragesDefault = [];      % set later
@@ -335,6 +342,7 @@ addParameter(iP, 'ReadoutLabel', readoutLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'PhaseLabels', phaseLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
+addParameter(iP, 'ColorMap', colorMapDefault);
 addParameter(iP, 'PlotOnly', plotOnlyDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotPhaseBoundaries', plotPhaseBoundariesDefault, ...
@@ -410,6 +418,7 @@ pTickAngle = iP.Results.PTickAngle;
 pLabel = iP.Results.PLabel;
 readoutLabel = iP.Results.ReadoutLabel;
 phaseLabels = iP.Results.PhaseLabels;
+colorMap = iP.Results.ColorMap;
 plotOnly = iP.Results.PlotOnly;
 plotPhaseBoundaries = iP.Results.PlotPhaseBoundaries;
 plotPhaseAverages = iP.Results.PlotPhaseAverages;
@@ -489,6 +498,13 @@ singleGroup = nCols == 1;
 
 % Decide whether there is one sample per group
 oneSamplePerGroup = nRows == 1;
+
+% Decide on the color map
+%   Note: Only do this when colorMap is nonempty so that
+%           the default of bar() will be applied otherwise
+if ~isempty(colorMap)
+    colorMap = decide_on_colormap(colorMap, nCols);
+end
 
 % Set the default confidence interval line color
 if isempty(cIColor)
@@ -743,10 +759,14 @@ if isempty(cIBarWidth)
 end
 
 % Set the color for each Bar object
-% TODO
-% for iBar = 1:numel(bars)
-%     set(bars(iBar), 'CData', barColors{iBar});
-% end
+% TODO: Make edgeColor an optional argument
+% TODO: Edge color can't seem to be set different for each bar?
+if ~isempty(colorMap)
+    for iBar = 1:numel(bars)
+        set(bars(iBar), 'FaceColor', colorMap(iBar, :), ...
+            'EdgeColor', 'none');
+    end
+end
 
 % Plot error bars
 if ~isempty(low) || ~isempty(high)
@@ -862,12 +882,20 @@ end
 
 %% Post-plotting
 % Save in output
-handles.bars = bars;
-handles.lines = lines;
 handles.fig = fig;
-handles.boundaries = transpose(vertcat(pLines, rLines));
-handles.averages = averages;
-handles.selected = selected;
+handles.bars = bars;
+if exist('lines', 'var')
+    handles.lines = lines;
+end
+if exist('pLines', 'var') && exist('rLines', 'var')
+    handles.boundaries = transpose(vertcat(pLines, rLines));
+end
+if exist('averages', 'var')
+    handles.averages = averages;
+end
+if exist('selected', 'var')
+    handles.selected = selected;
+end
 
 % Save figure if figName provided
 if ~isempty(figName)

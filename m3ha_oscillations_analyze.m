@@ -3,9 +3,16 @@
 %
 % Requires:
 %       cd/archive_dependent_scripts.m
+%       cd/force_row_vector.m
 %       cd/parse_all_multiunit.m
+%       cd/plot_autocorrelogram.m
+%       cd/plot_bar.m
 %       cd/plot_measures.m
+%       cd/plot_raster.m
+%       cd/plot_raw_multiunit.m
 %       cd/plot_scale_bar.m
+%       cd/plot_spike_density_multiunit.m
+%       cd/plot_spike_histogram.m
 %       cd/update_figure_for_corel.m
 %       cd/save_all_figtypes.m
 
@@ -48,7 +55,7 @@ specificSlicesToAnalyze = {};
 figTypesForVis = {'png'};
 figTypesForCorel = {'epsc2'};
 
-plotFigure1Individual = true;
+plotFigure1Individual = false; % true;
 parseExamplesFlag = false;
 plotExampleContourFlag = false; % true;
 contourXLimitsSeconds = [2, 20];
@@ -58,7 +65,7 @@ plotExampleRawTracesFlag = false; % true;
 rawPlotLineWidth = 0.25;
 rawSweepNumbers = [16, 56];
 rawWidth = 8;
-rawHeight = 3;
+rawHeight = 2.75;
 rawXLimits = [2, 15];
 rawYLimits = [-5, 5];
 plotExampleSpikeDetectionFlag = false; % true;
@@ -67,18 +74,23 @@ sampleSweepNumber = 16;
 samplePlotLineWidth = 0.25;
 sampleRasterLineWidth = 0.25;
 spikeDetWidth = 11;
-spikeDetHeight = 3;
-plotExampleSpikeHistogramFlag = true;
+spikeDetHeight = 2;
+plotExampleSpikeHistogramFlag = false; % true;
 spikeHistWidth = 11;
-spikeHistHeight = 3;
+spikeHistHeight = 2;
+spikeHistYLimits = [0, 8];
 plotExampleAutoCorrFlag = false; % true;
-autoCorrWidth = 11;
+autoCorrWidth = 7.6;
 autoCorrHeight = 3;
+autoCorrXLimits = [0, 5];       % Good for 20190525_slice4_gat3_trace16
+autoCorrYLimits = [-75, 1500];  % Good for 20190525_slice4_gat3_trace16
 
-plotFigure1Population = false;  % true;
+plotFigure1Population = true;
 chevronWidth = 4;               % figure width in cm
 chevronHeight = 4;              % figure height in cm
 chevronMarkerSize = 1;          % marker size in points
+barInsetWidth = 1.5;            % figure width in cm
+barInsetHeight = 1.5;           % figure height in cm
 
 % Flags
 parseIndividualFlag = false; % true;
@@ -320,16 +332,21 @@ if plotFigure1Individual
             % Set x limits, labels and title
             xlim(sampleXLimits);
             ylim(yLimits);
-            xlabel('Time (ms)');
+            xlabel('Time (sec)');
             ylabel('Voltage (mV)');
             title(['Spike Detection for ', figTitleBase]);
 
             % Save the figure
             save_all_figtypes(fig, figBaseSpikeDet, figTypesForVis);
 
+            % Plot scale bars
+            plot_scale_bar('x', 'XBarLength', 1, 'XBarUnits', 'sec', ...
+                            'XPosNormalized', 0.8, 'YPosNormalized', 0.2);
+
             % Update figure for CorelDraw
             update_figure_for_corel(fig, 'Units', 'centimeters', ...
-                        'Width', spikeDetWidth, 'Height', spikeDetHeight);
+                        'Width', spikeDetWidth, 'Height', spikeDetHeight, ...
+                        'RemoveXTicks', true, 'RemoveXLabels', true);
 
             % Save the figure
             save_all_figtypes(fig, figBaseSpikeDet, figTypesForCorel);
@@ -349,14 +366,19 @@ if plotFigure1Individual
 
             % Plot spike histogram
             plot_spike_histogram(sampleDataStruct, sampleParamsStruct, ...
-                                'XLimits', sampleXLimits);
+                        'XLimits', sampleXLimits, 'YLimits', spikeHistYLimits);
 
             % Save the figure
             save_all_figtypes(fig, figBaseSpikeHist, figTypesForVis);
 
+            % Plot scale bars
+            plot_scale_bar('x', 'XBarLength', 1, 'XBarUnits', 'sec', ...
+                            'XPosNormalized', 0.8, 'YPosNormalized', 0.2);
+
             % Update figure for CorelDraw
             update_figure_for_corel(fig, 'Units', 'centimeters', ...
-                            'Width', spikeHistWidth, 'Height', spikeHistHeight);
+                        'Width', spikeHistWidth, 'Height', spikeHistHeight, ...
+                        'RemoveXTicks', true, 'RemoveXLabels', true);
 
             % Save the figure
             save_all_figtypes(fig, figBaseSpikeHist, figTypesForCorel);
@@ -374,7 +396,16 @@ if plotFigure1Individual
 
             % Plot autocorrelation function
             plot_autocorrelogram(sampleDataStruct, sampleParamsStruct, ...
-                                    'DataType', 'acfFiltered');
+                            'PlotType', 'acfFiltered', 'PlotFiltered', false, ...
+                            'PlotPeaks', false, 'PlotTroughs', false, ...
+                            'PlotDuration', true, 'PlotText', false, ...
+                            'XLimits', autoCorrXLimits, ...
+                            'YLimits', autoCorrYLimits);
+            % plot_autocorrelogram(sampleDataStruct, sampleParamsStruct, ...
+            %                 'PlotType', 'acfFiltered', 'PlotFiltered', true, ...
+            %                 'PlotPeaks', true, 'PlotTroughs', true, ...
+            %                 'PlotDuration', true, 'PlotText', true, ...
+            %                 'XLimits', [], 'YLimits', []);
 
             % Save the figure
             save_all_figtypes(fig, figBaseAutoCorr, figTypesForVis);
@@ -407,7 +438,8 @@ if plotFigure1Population
  
     % Plot and save all Chevron tables
     cellfun(@(x, y) plot_and_save_chevron(x, y, figTypesForCorel, ...
-                    chevronWidth, chevronHeight, chevronMarkerSize), ...
+                            chevronWidth, chevronHeight, chevronMarkerSize, ...
+                            barInsetWidth, barInsetHeight), ...
             allChevronTables, figPathBasesChevron);
 end
 
@@ -509,7 +541,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_and_save_chevron(chevronTable, figPathBase, figTypesForCorel, ...
-                                chevronWidth, chevronHeight, chevronMarkerSize)
+                            chevronWidth, chevronHeight, chevronMarkerSize, ...
+                            barInsetWidth, barInsetHeight)
 
 % Extract figure base
 figBase = extract_fileparts(figPathBase, 'dirbase');
@@ -517,11 +550,23 @@ figBase = extract_fileparts(figPathBase, 'dirbase');
 % Extract drug name
 drugName = extractBefore(figBase, '-');
 
-% Make drug name all caps
-drugNameAllCaps = upper(drugName);
+% Modify stuff based on drug name
+switch drugName
+    case 'no711'
+        condLabel = 'NO-711';
+        colorMap = decide_on_colormap({'Black'; 'Blue'}, 2);
+    case 'snap5114'
+        condLabel = 'SNAP-5114';
+        colorMap = decide_on_colormap({'Black'; 'Red'}, 2);
+    case 'dual'
+        condLabel = 'Dual';
+        colorMap = decide_on_colormap({'Black'; 'Purple'}, 2);
+    otherwise
+        error('drugName unrecognized!');
+end
 
 % Create parameter tick labels
-pTickLabels = {'Baseline'; drugNameAllCaps};
+pTickLabels = {'Baseline'; condLabel};
 
 % Extract readout measure
 measureName = extractAfter(extractBefore(figBase, '_chevron'), 'Phase2_');
@@ -539,7 +584,7 @@ switch measureName
 end
 
 % Create figure
-fig = set_figure_properties('AlwaysNew', true);
+fig1 = set_figure_properties('AlwaysNew', true);
 
 % Plot Chevron
 plot_chevron(chevronTable, 'PlotMeanValues', true, ...
@@ -549,13 +594,56 @@ plot_chevron(chevronTable, 'PlotMeanValues', true, ...
                 'ReadoutLabel', readoutLabel, 'FigTitle', 'suppress', ...
                 'LegendLocation', 'suppress');
 
+% Save figure
+save_all_figtypes(fig1, figPathBase, 'png');
+
 % Update figure for CorelDraw
-update_figure_for_corel(fig, 'Units', 'centimeters', ...
+update_figure_for_corel(fig1, 'Units', 'centimeters', ...
                         'Width', chevronWidth, 'Height', chevronHeight, ...
                         'PlotMarkerSize', chevronMarkerSize);
 
 % Save figure
-save_all_figtypes(fig, figPathBase, figTypesForCorel);
+save_all_figtypes(fig1, figPathBase, figTypesForCorel);
+
+% Create figure for bar inset
+fig2 = set_figure_properties('AlwaysNew', true);
+
+% Create figure path base for bar inset
+figPathBaseBar = strcat(figPathBase, '_bar_inset');
+
+% Plot bar inset
+% TODO: plot_chevron_bar_inset.m
+
+% Extract values so that each column is a parameter
+dataValues = table2array(chevronTable);
+
+% Compute means
+means = compute_stats(dataValues, 'mean', 2);
+
+% Compute normalized means
+normalizedMeans = (means ./ means(1)) .* 100;
+
+% Force as a row so that bars are different groups
+normalizedMeans = force_row_vector(normalizedMeans);
+
+% Plot bar inset
+plot_bar(normalizedMeans, 'PTickLabels', pTickLabels, ...
+        'ReadoutLabel', '% Baseline', 'PLabel', 'suppress', ...
+        'PLimits', [0.5, 2.5], 'FigTitle', 'suppress', ...
+        'ColorMap', colorMap);
+
+% Save figure
+save_all_figtypes(fig2, figPathBaseBar, 'png');
+
+% Update figure for CorelDraw
+update_figure_for_corel(fig2, 'Units', 'centimeters', ...
+                        'Width', barInsetWidth, 'Height', barInsetHeight, ...
+                        'RulerLineWidth', 0.5, 'AxisFontSize', 5, ...
+                        'LabelsFontSize', 6, ...
+                        'RemoveXTicks', true, 'RemoveTitles', true);
+
+% Save figure
+save_all_figtypes(fig2, figPathBaseBar, figTypesForCorel);
 
 end
 
@@ -566,6 +654,9 @@ OLD CODE:
 
 parentDir = fullfile('/media', 'adamX', 'Glucose', 'oscillations', 'metformin');
 lastSweepToMeasure = 45;        % select between sweeps 1:45
+
+% Make drug name all caps
+drugLabel = upper(drugName);
 
 %}
 

@@ -13,6 +13,7 @@ function wasHold = hold_on
 %                   specified as a logical scalar
 %
 % Used by:
+%       cd/plot_autocorrelogram.m
 %       cd/plot_chevron.m
 %       cd/plot_raw_multiunit.m
 %       cd/plot_spike_density_multiunit.m

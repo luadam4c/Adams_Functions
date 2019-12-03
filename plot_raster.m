@@ -126,6 +126,7 @@ function [hRaster, eventTimes, yEnds, yTicksTable] = plot_raster (data, varargin
 %       cd/set_figure_properties.m
 %
 % Used by:    
+%       cd/m3ha_oscillations_analyze.m
 %       cd/parse_multiunit.m
 %       cd/plot_relative_events.m
 %       cd/plot_swd_raster.m

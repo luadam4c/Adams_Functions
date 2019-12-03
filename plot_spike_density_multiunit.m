@@ -58,6 +58,7 @@ function handles = plot_spike_density_multiunit (parsedData, parsedParams, varar
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/m3ha_oscillations_analyze.m
 %       cd/parse_multiunit.m
 
 % File History:
