@@ -193,7 +193,7 @@ There are 1 MATLAB scripts in this directory:
 - [**extract_looped_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_looped_params.m): Extracts parameters that were looped in the simulation from loopedparams.mat
 - [**extract_substrings.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_substrings.m): Extracts substrings from strings
 - [**extract_subvectors.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_subvectors.m): Extracts subvectors from vectors, given either endpoints, value windows or a certain align mode ('leftAdjust', 'rightAdjust')
-- [**extract_vars.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_vars.m): Extracts epas and Rin from the passive parameters results
+- [**extract_vars.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_vars.m): Extracts variable(s) (column(s)) from a table
 - [**files2contents.m**](https://github.com/blabuva/Adams_Functions/blob/master/files2contents.m): Replaces file names with file contents in a cell array of strings
 - [**fill_markers.m**](https://github.com/blabuva/Adams_Functions/blob/master/fill_markers.m): Fills markers if any for the current axes
 - [**filter_and_extract_pulse_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/filter_and_extract_pulse_response.m): Filters and extracts pulse response(s) from a .abf file

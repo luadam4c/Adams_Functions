@@ -434,7 +434,7 @@ end
 % Extract estimated epas if available
 if isempty(epasEstimate) && isfile(passiveParamsPath) && ~isempty(cellName)
     epasEstimate = extract_vars(passiveParamsPath, 'epasEstimate', ...
-                                'RowsToExtract', cellName);
+                                'RowConditions', {'cellName', cellName});
 end
 
 % Extract estimated Rin if available

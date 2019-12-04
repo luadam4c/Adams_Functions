@@ -1,11 +1,14 @@
 function varExtracted = extract_vars (tableOrPath, varName, varargin)
-%% Extracts epas and Rin from the passive parameters results
+%% Extracts variable(s) (column(s)) from a table
 % Usage: varExtracted = extract_vars (tableOrPath, varName, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       TODO
+%       load_examples;
+%       extract_vars(myTable1, 'Var')
+%       extract_vars(myTable1, 'Var', 'RowsToExtract', [1, 3, 4])
+%       extract_vars(myTable1, 'Var', 'RowConditions', {'Key', 'b'})
 %
 % Outputs:
 %       varExtracted    - variable contents extracted
@@ -39,6 +42,8 @@ function varExtracted = extract_vars (tableOrPath, varName, varargin)
 
 % File History:
 % 2019-12-03 Moved from singleneuronfitting.m
+% TODO: Output a cell array if extracting more than one variable
+% TODO: Add 'OutputMode' to optionally extract as many outputs
 
 %% Hard-coded parameters
 
@@ -88,7 +93,7 @@ else
 end      
 
 % Restrict to the rows of interest
-if ~(isnumeric(rowsToExtract) && strcmpi(rowsToExtract, 'all'))
+if isnumeric(rowsToExtract)
     tableOfVars = tableOfVars(rowsToExtract, :);
 elseif ~isempty(rowConditions)
     % Find rows to restrict to based on conditions if provided
