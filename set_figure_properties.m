@@ -7,6 +7,7 @@ function fig = set_figure_properties (varargin)
 % Example(s):
 %       fig = set_figure_properties;
 %       fig = set_figure_properties('Width', 200);
+%       fig = set_figure_properties('Units', 'centimeters', 'Width', 2, 'Height', 1);
 %       fig = set_figure_properties('Height', 300);
 %       fig = set_figure_properties('FigExpansion', [2, 2]);
 %

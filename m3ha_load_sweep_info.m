@@ -81,6 +81,7 @@ end
 
 % Return if path doesn't exist
 if ~pathExists
+    fprintf('Warning: %s doesn''t exist!', dataPath);
     swpInfo = table.empty;
     return
 end

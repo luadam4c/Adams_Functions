@@ -864,12 +864,13 @@ elseif strcmpi(simMode, 'active')
         sweepInfoIpscrStruct = table2struct(sweepInfoIpscr, 'ToScalar', true);
 
         % Extract from structure
-        currentPulseAmplitudeIpscr = sweepInfoCprStruct.currentPulseAmplitudeIpscr;
-        holdPotentialIpscr = sweepInfoCprStruct.holdPotentialIpscr;
-        holdCurrentIpscr = sweepInfoCprStruct.holdCurrentIpscr;
-        holdCurrentNoiseIpscr = sweepInfoCprStruct.holdCurrentNoiseIpscr;
-        baseNoiseIpscr = sweepInfoCprStruct.baseNoiseIpscr;
-        sweepWeightsIpscr = sweepInfoCprStruct.sweepWeightsIpscr;
+        currentPulseAmplitudeIpscr = ...
+            sweepInfoIpscrStruct.currentPulseAmplitudeIpscr;
+        holdPotentialIpscr = sweepInfoIpscrStruct.holdPotentialIpscr;
+        holdCurrentIpscr = sweepInfoIpscrStruct.holdCurrentIpscr;
+        holdCurrentNoiseIpscr = sweepInfoIpscrStruct.holdCurrentNoiseIpscr;
+        baseNoiseIpscr = sweepInfoIpscrStruct.baseNoiseIpscr;
+        sweepWeightsIpscr = sweepInfoIpscrStruct.sweepWeightsIpscr;
     end
 
     % Read active fit data and params

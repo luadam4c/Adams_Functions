@@ -3,11 +3,14 @@ function argList = struct2arglist (structure, varargin)
 % Usage: argList = struct2arglist (structure, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       argList     - argument list (parameter value pairs)
 %                   specified as a cell array of character vectors
+%
 % Arguments:
 %       structure   - structure with field names as parameters
 %                   must be a scalar structure

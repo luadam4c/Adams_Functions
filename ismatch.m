@@ -62,9 +62,10 @@ function varargout = ismatch (list, cand, varargin)
 %       cd/istext.m
 %
 % Used by:
-%       cd/plot_measures.m
+%       cd/extract_vars.m
 %       cd/find_in_strings.m
 %       cd/ismember_custom.m
+%       cd/plot_measures.m
 %       cd/unique_groups.m
 
 % File History:

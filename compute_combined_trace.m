@@ -89,6 +89,7 @@ function [combTrace, paramsUsed] = ...
 %       cd/compute_combined_data.m
 %       cd/compute_maximum_trace.m
 %       cd/compute_minimum_trace.m
+%       cd/extract_vars.m
 %       cd/find_in_strings.m
 %       cd/parse_ipsc.m
 

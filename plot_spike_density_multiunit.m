@@ -92,7 +92,7 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to an input Parser
-addRequired(iP, 'parsedData', ..
+addRequired(iP, 'parsedData', ...
     @(x) validateattributes(x, {'table'}, {'2d'}));
 addRequired(iP, 'parsedParams', ...
     @(x) validateattributes(x, {'table'}, {'2d'}));

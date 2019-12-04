@@ -189,7 +189,7 @@ switch plotMode
 
         % Create figure titles
         titleBase = replace(fileBase, '_', '\_');
-        figTitle = strcat(titlePrefix, {' for '}, titleBase);
+        figTitle = strcat(titlePrefix, ' for ', titleBase);
         figSubTitles = {};
     otherwise
         error('plotMode unrecognized!');

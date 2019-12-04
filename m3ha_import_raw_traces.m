@@ -117,6 +117,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %       cd/extract_elements.m
 %       cd/extract_fileparts.m
 %       cd/extract_subvectors.m
+%       cd/extract_vars.m
 %       cd/find_in_strings.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_cell.m
@@ -172,6 +173,7 @@ meanVoltageWindow = 0.5;    % width in ms for calculating mean voltage
 dataDirName = fullfile('data_dclamp', 'take4');
 matFilesDirName = 'matfiles';
 initialSlopesFileName = 'initial_slopes_nSamplesForPlot_2_threeStdMainComponent.mat';
+passiveFileName = 'dclampPassiveParams_byCells_tofit.xlsx';
 
 % The following must be consistent with singleneuron4compgabab.hoc
 timeToStabilize = 2000;     % time to make sure initial value of simulation is stabilized
@@ -401,7 +403,7 @@ end
 % Load sweep information if not provided
 %   Note: the file names are read in as row names
 if isempty(swpInfoAll)
-    swpInfoAll = m3ha_load_sweep_info('Directory', homeDirectory);
+    swpInfoAll = m3ha_load_sweep_info('Directory', dataDir);
 end
 
 % Make sure fileNames is a column cell array
@@ -423,6 +425,24 @@ nSwps = numel(fileBases);
 
 % Get the cell name
 cellName = m3ha_extract_cell_name(fileBases);
+
+% Locate the passive parameters file
+if isempty(epasEstimate) || isempty(RinEstimate)
+    passiveParamsPath = fullfile(dataDir, passiveFileName);
+end
+
+% Extract estimated epas if available
+if isempty(epasEstimate) && isfile(passiveParamsPath) && ~isempty(cellName)
+    epasEstimate = extract_vars(passiveParamsPath, 'epasEstimate', ...
+                                'RowsToExtract', cellName);
+end
+
+% Extract estimated Rin if available
+if isempty(RinEstimate) && isfile(passiveParamsPath) && ~isempty(cellName)
+    RinEstimate = extract_vars(passiveParamsPath, 'Rinput', ...
+                                'RowsToExtract', cellName);
+
+end
 
 % If a matfile does not exist, return
 if ~all(pathExists)
