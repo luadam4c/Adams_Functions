@@ -94,6 +94,7 @@ function statsTable = m3ha_compute_statistics (varargin)
 %               for each cell (rather than for each sweep)
 % 2019-11-27 Added 'PharmConditions', 'GIncrConditions' & 'VHoldConditions'
 %               as optional arguments
+% TODO: Add 'MeasuresToCompute' as an optional argument
 % TODO: Other LTS features that might be of interest
 %    ltspeakval = swpInfo.ltspeakval;
 %    maxslopeval = swpInfo.maxslopeval;

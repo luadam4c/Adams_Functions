@@ -236,8 +236,8 @@ if outParams.fitPassiveFlag         % if fitting passive parameters
     % Change prefix for passive-parameters-fitting
     outParams.prefix = [outParams.prefix, '_cpr'];
 
-    % Set grouping vector to be vhold
-    outParams.grouping = outParams.vhold;
+    % Set grouping vector to be vHold
+    outParams.grouping = outParams.vHold;
 
     % Run all simulations once
     [errCpr, outParams.hfig] = ...

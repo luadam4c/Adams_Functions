@@ -113,11 +113,6 @@ else
     candParamsFiles = {};
 end
 
-% Decide on prefix if not provided
-if isempty(prefix)
-    prefix = extract_fileparts(outFolder, 'dirbase');
-end
-
 % Load parameters if necessary
 if isempty(candParamsTables)
     candParamsTables = cellfun(@load_params, candParamsTablesOrFiles, ...
@@ -153,9 +148,12 @@ uniqueCellNames = unique(cellNames);
 % Check if all cell names are the same
 if numel(uniqueCellNames) > 2
     error('Candidate parameters must all come from the same cell!');
+else
+    cellName = uniqueCellNames{1};
 end
 
 % Turn off all flags for stats and plots except plotIndividualFlag
+% TODO: CHange this to use input parser for case-insensitivity
 otherArguments = ...
     set_fields_zero(otherArguments, ...
         'saveLtsInfoFlag', 'saveLtsStatsFlag', ...
@@ -164,6 +162,25 @@ otherArguments = ...
         'plotResidualsFlag', 'plotOverlappedFlag', ...
         'plotIpeakFlag', 'plotLtsFlag', 'plotStatisticsFlag', ...
         'plotSwpWeightsFlag');
+otherArguments = ...
+    set_fields_zero(otherArguments, ...
+        'SaveLtsInfoFlag', 'SaveLtsStatsFlag', ...
+        'SaveSimCmdsFlag', 'SaveStdOutFlag', 'SaveSimOutFlag', ...
+        'PlotConductanceFlag', 'PlotCurrentFlag', ...
+        'PlotResidualsFlag', 'PlotOverlappedFlag', ...
+        'PlotIpeakFlag', 'PlotLtsFlag', 'PlotStatisticsFlag', ...
+        'PlotSwpWeightsFlag');
+
+% Decide on prefix if not provided
+if isempty(prefix)
+    % Use the cell name
+    prefix = cellName;
+
+    % If no cell name, use the directory base
+    if isempty(prefix)
+        prefix = extract_fileparts(outFolder, 'dirbase');
+    end
+end
 
 % Create candidate labels
 candLabels = combine_strings('Substrings', {prefix, 'from', iterStrs});

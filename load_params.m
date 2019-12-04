@@ -39,9 +39,13 @@ function paramTables = load_params (fileNames, varargin)
 % 2018-10-21 Now returns a table
 % 2018-10-22 Now reads in .p files too
 % 2018-10-22 Now standardizes the variable names
-% 
+% 2019-12-04 Added default extension
 
 %% Hard-coded parameters
+defaultExtension = 'csv';
+
+% TODO: Make optional argument
+directory = '';
 
 %% Default values for optional arguments
 
@@ -69,7 +73,15 @@ parse(iP, fileNames, varargin{:});
 %% Preparation
 % Construct full paths and check whether the files exist
 %   TODO: Expand to accept optional 'Directory', 'Suffix', etc.
-[fullPaths, pathExists] = construct_and_check_fullpath(fileNames);
+[fullPaths, pathExists] = ...
+    construct_and_check_fullpath(fileNames, 'Directory', directory);
+
+% If no path exists, try adding the default extension to the end of all paths
+if ~all(pathExists)
+    [fullPaths, pathExists] = ...
+        construct_and_check_fullpath(fileNames, 'Directory', directory, ...
+                                        'Extension', defaultExtension);
+end
 
 % Return if not all paths exist
 if ~all(pathExists)

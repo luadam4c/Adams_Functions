@@ -43,6 +43,7 @@ function varExtracted = extract_vars (tableOrPath, varName, varargin)
 % File History:
 % 2019-12-03 Moved from singleneuronfitting.m
 % TODO: Output a cell array if extracting more than one variable
+% TODO: Allow other strings for rowsToExtract, such as 'first', 'last', etc.
 % TODO: Add 'OutputMode' to optionally extract as many outputs
 
 %% Hard-coded parameters
@@ -95,6 +96,8 @@ end
 % Restrict to the rows of interest
 if isnumeric(rowsToExtract)
     tableOfVars = tableOfVars(rowsToExtract, :);
+elseif ischar(rowsToExtract) && ~strcmpi(rowsToExtract, 'all')
+    error('Not implemented yet!');
 elseif ~isempty(rowConditions)
     % Find rows to restrict to based on conditions if provided
     % Force rowConditions as a scalar structure

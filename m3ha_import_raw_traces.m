@@ -12,13 +12,21 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %                       Do this to extract:
 %                       [tVecs, vVecs, iVecs, gVecs] = extract_columns(data, 1:4);
 %       sweepInfo   - sweep info table, with fields:
+%                       fileBases
 %                       fileNames
+%                       siMs
 %                       currentPulseAmplitude
+%                       vHold
 %                       holdPotential
 %                       holdCurrent
 %                       baseNoise
 %                       holdCurrentNoise
 %                       sweepWeights
+%                       gababAmp
+%                       gababTrise
+%                       gababTfallFast
+%                       gababTfallSlow
+%                       gababWeight
 %       dataAll     - all imported raw traces
 %
 % Arguments:
@@ -99,8 +107,18 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %                       grow        - conductance amplitude scaling
 %                   default == m3ha_load_sweep_info
 %                   - 'InitialSlopesPath': path to the initial slopes .mat file
+%                                   that contains the following variables:
+%                                       'filenamesSorted'
+%                                       'iThreshold1Balanced'
+%                                       'iThreshold2Balanced'
 %                   must be a string scalar or a character vector
 %                   default == ~/m3ha/data_dclamp/take4/initial_slopes_nSamplesForPlot_2_threeStdMainComponent.mat
+%                   - 'PassiveParamsPath': path to passive parameters .xlsx file
+%                                   that contains the following columns
+%                                       'epas'
+%                                       'Rin'
+%                   must be a string scalar or a character vector
+%                   default == ~/m3ha/data_dclamp/take4/dclampPassiveParams_byCells_tofit.xlsx
 %
 % Requires:
 %       cd/apply_or_return.m
@@ -158,6 +176,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 % 2019-10-15 Fixed conversion of current pulse amplitude from swpInfo
 % 2019-11-13 Added siMs to swpInfo
 % 2019-11-14 Added 'ImportMode' as an optional parameter
+% 2019-12-04 Now imports the GABA-B IPSC parameters used in dynamic clamp
 % TODO: Use m3ha_correct_unbalanced_bridge.m to not correct for all sweeps
 
 %% Hard-coded constants
@@ -213,6 +232,7 @@ epasEstimateDefault = [];
 rinEstimateDefault = [];
 swpInfoDefault = [];
 initialSlopesPathDefault = '';
+passiveParamsPathDefault = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -273,6 +293,8 @@ addParameter(iP, 'SweepInfoAll', swpInfoDefault, ...
     @(x) validateattributes(x, {'table'}, {'2d'}));
 addParameter(iP, 'InitialSlopesPath', initialSlopesPathDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'PassiveParamsPath', passiveParamsPathDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the input Parser
 parse(iP, fileNames, varargin{:});
@@ -294,6 +316,7 @@ epasEstimate = iP.Results.EpasEstimate;
 RinEstimate = iP.Results.RinEstimate;
 swpInfoAll = iP.Results.SweepInfoAll;
 initialSlopesPath = iP.Results.InitialSlopesPath;
+passiveParamsPath = iP.Results.PassiveParamsPath;
 
 %% Prepare
 % Print message
@@ -406,6 +429,11 @@ if isempty(swpInfoAll)
     swpInfoAll = m3ha_load_sweep_info('Directory', dataDir);
 end
 
+% Locate the passive parameters file
+if isempty(passiveParamsPath)
+    passiveParamsPath = fullfile(dataDir, passiveFileName);
+end
+
 % Make sure fileNames is a column cell array
 fileNames = force_column_cell(fileNames);
 
@@ -426,11 +454,6 @@ nSwps = numel(fileBases);
 % Get the cell name
 cellName = m3ha_extract_cell_name(fileBases);
 
-% Locate the passive parameters file
-if isempty(epasEstimate) || isempty(RinEstimate)
-    passiveParamsPath = fullfile(dataDir, passiveFileName);
-end
-
 % Extract estimated epas if available
 if isempty(epasEstimate) && isfile(passiveParamsPath) && ~isempty(cellName)
     epasEstimate = extract_vars(passiveParamsPath, 'epasEstimate', ...
@@ -440,7 +463,7 @@ end
 % Extract estimated Rin if available
 if isempty(RinEstimate) && isfile(passiveParamsPath) && ~isempty(cellName)
     RinEstimate = extract_vars(passiveParamsPath, 'Rinput', ...
-                                'RowsToExtract', cellName);
+                                'RowConditions', {'cellName', cellName});
 
 end
 
@@ -480,6 +503,18 @@ if createLog
     % Open the log file
     fid = fopen(logPath, 'w');
 end
+
+%% Extract information from dynamic clamp experiments if available
+% Extract GABA-B IPSC waveform used in dynamic clamp
+%   Note: GABA-B conductance amplitudes are converted to from nS to uS
+gababAmp = swpInfoAll{fileBases, 'gabab_amp'} / NS_PER_US;
+gababTrise = swpInfoAll{fileBases, 'gabab_Trise'};
+gababTfallFast = swpInfoAll{fileBases, 'gabab_TfallFast'};
+gababTfallSlow = swpInfoAll{fileBases, 'gabab_TfallSlow'};
+gababWeight = swpInfoAll{fileBases, 'gabab_w'};
+
+% Extract the holding voltage conditions for each file
+vHold = swpInfoAll{fileBases, 'vrow'};
 
 %% Import raw traces
 % Print message
@@ -710,31 +745,28 @@ if toParsePulse && (toAverageByVhold || toBootstrapByVhold)
     % Print message
     fprintf('Averaging the current pulse responses according to vHold ... \n');
 
-    % Extract holding voltage conditions for each file from swpInfoAll
-    vHoldCond = swpInfoAll{fileBases, 'vrow'};
-
     % Average the data by holding voltage conditions
     if toAverageByVhold
         [data, vUnique] = ...
-            compute_combined_data(data, 'mean', 'Grouping', vHoldCond, ...
+            compute_combined_data(data, 'mean', 'Grouping', vHold, ...
                                 'ColNumToCombine', 2);
 
         % Create a new file prefix
         filePrefix = strcat(cellName, '_vhold');
 
-        % Define file names by the unique vhold level
+        % Define file names by the unique vHold level
         fileBases = create_labels_from_numbers(vUnique, 'Prefix', filePrefix);
         fileNames = strcat(fileBases, '.mat');
     elseif toBootstrapByVhold
         [data, vUnique] = ...
-            compute_combined_data(data, 'bootmean', 'Grouping', vHoldCond, ...
+            compute_combined_data(data, 'bootmean', 'Grouping', vHold, ...
                                 'ColNumToCombine', 2);
 
         % Create a new file prefix
         filePrefix = strcat(cellName, '_resampled_vhold_');
 
-        % Rename files by the vhold level for each file 
-        fileBases = create_labels_from_numbers(vHoldCond, 'Prefix', filePrefix);
+        % Rename files by the vHold level for each file 
+        fileBases = create_labels_from_numbers(vHold, 'Prefix', filePrefix);
         fileNames = strcat(fileBases, '.mat');
     else
         error('Code logic error!');
@@ -752,6 +784,16 @@ if toParsePulse && (toAverageByVhold || toBootstrapByVhold)
     % Use an averaged current pulse amplitude for 
     %   the new set of current pulse responses
     currentPulseAmplitude = mean(currentPulseAmplitude) * ones(nSwps, 1);
+
+    % Update holding potential conditions
+    vHold = vUnique;
+
+    % Set GABAB IPSC parameters to all zeros
+    gababAmp = zeros(nSwps, 1);
+    gababTrise = zeros(nSwps, 1);
+    gababTfallFast = zeros(nSwps, 1);
+    gababTfallSlow = zeros(nSwps, 1);
+    gababWeight = zeros(nSwps, 1);
 end
 
 %% Compute the actual holding potentials 
@@ -791,10 +833,10 @@ if ~isempty(epasEstimate) && ~isempty(RinEstimate)
     % Estimate the holding currents (nA) based on 
     %   estimated input resistance (MOhm) and resting membrane potential (mV)
     %   I = (V - epas) / R
-    holdCurrent = (holdPotential - epasEstimate) / RinEstimate;
+    holdCurrent = (holdPotential - epasEstimate) ./ RinEstimate;
 
     % Estimate the corresponding variations in holding current (nA)
-    holdCurrentNoise = (baseNoise / RinEstimate) * 5;
+    holdCurrentNoise = (baseNoise ./ RinEstimate) * 5;
 else
     holdCurrent = NaN(nSwps, 1);
     holdCurrentNoise = NaN(nSwps, 1);
@@ -806,8 +848,10 @@ fprintf('Putting results into a table ... \n');
 
 % Output in sweepInfo tables
 sweepInfo = table(fileBases, fileNames, siMs, currentPulseAmplitude, ...
-                    holdPotential, holdCurrent, baseNoise, ...
-                    holdCurrentNoise, sweepWeights, 'RowNames', fileBases);
+                    vHold, holdPotential, holdCurrent, baseNoise, ...
+                    holdCurrentNoise, sweepWeights, ...
+                    gababAmp, gababTrise, gababTfallFast, ...
+                    gababTfallSlow, gababWeight, 'RowNames', fileBases);
 
 % Close log file
 if createLog
@@ -839,7 +883,7 @@ OLD CODE:
 [tVecs, vVecs, iVecs, gVecs] = extract_columns(data, 1:4);
 
 % Find unique vHold values
-vUnique = unique(vHoldCond, 'sorted');
+vUnique = unique(vHold, 'sorted');
 
 % Count the number of unique holding voltage conditions
 nVHoldCond = length(vUnique);
@@ -849,13 +893,13 @@ nVHoldCond = length(vUnique);
 % TODO: Use compute_average_trace with modifications to pass group
 vVecsAveraged = cell(nVHoldCond, 1);
 for iVhold = 1:nVHoldCond
-    % Get the current vHoldCond value
+    % Get the current vHold value
     vnow = vUnique(iVhold);
 
-    % Collect all cpr traces with this vHoldCond value
-    vVecsGroupedThisVhold = vVecs(vHoldCond == vnow);
+    % Collect all cpr traces with this vHold value
+    vVecsGroupedThisVhold = vVecs(vHold == vnow);
 
-    % Average the voltage traces from this vHoldCond group
+    % Average the voltage traces from this vHold group
     vVecAveragedThis = compute_average_trace(vVecsGroupedThisVhold);
 
     % Save in arrays

@@ -413,6 +413,8 @@ function [errorStruct, hFig, simData] = ...
 % 2019-11-17 - Added 'PlotConductanceFlag' as an optional parameter
 % 2019-11-17 - Added 'PlotCurrentFlag' as an optional parameter
 % 2019-12-03 - Added 'FileNames' as an optional parameter
+% 2019-12-04 - If 'FileNames' is passed in, use the same GABA-B IPSC parameters
+%               as those used in dynamic clamp
 
 %% Hard-coded parameters
 validSimModes = {'active', 'passive'};

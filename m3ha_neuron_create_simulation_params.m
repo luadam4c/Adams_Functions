@@ -53,7 +53,7 @@ function [simParamsTable, simParamsPath] = ...
 %                       'passive' - simulate a current pulse response
 %                       'active'  - simulate an IPSC response
 %                       or a cell array of them TODO
-%                   default == 'passive'
+%                   default == 'active'
 %                   - 'OutFilePath': path to output file(s)
 %                   must be a characeter vector, a string array 
 %                       or a cell array of character arrays
@@ -113,6 +113,7 @@ function [simParamsTable, simParamsPath] = ...
 % 2018-10-22 Adapted from code in run_neuron_once_4compgabab.m
 % 2018-11-12 Now set the default gababAmp for passive fits to be 0, 
 %               but retain the other gabab parameters
+% 2019-12-04 Changed the default simMode to 'active'
 % TODO: Remove the Cpr parameters and decide on them before
 % 
 
@@ -145,7 +146,7 @@ ipscrWindowDefault = ipscrWinOrig + timeToStabilize;
 nSimsDefault = 1;               % number of simulations by default
 
 %% Default values for simulation parameters
-simModeDefault = 'passive';     % simulate a current pulse response by default
+simModeDefault = 'active';      % simulate a IPSC response by default
 outFilePathDefault = 'auto';    % set later
 tstopDefault = [];              % set later
 holdPotentialDefault = -70;     % (mV)
@@ -291,14 +292,14 @@ if isempty(gababAmp)
         gababAmp = 0;
     else
         % Use all possible combinations from the template
-        gababAmp = gIncr * gababAmpTemplate';
+        gababAmp = gIncr * transpose(gababAmpTemplate);
     end
 
-    % Use all possible combinations from the templates
-    gababTrise = gIncr * gababTriseTemplate';
-    gababTfallFast = gIncr * gababTfallFastTemplate';
-    gababTfallSlow = gIncr * gababTfallSlowTemplate';
-    gababWeight = gIncr * gababWeightTemplate';
+    % Match gababAmp
+    [gababTrise, gababTfallFast, gababTfallSlow, gababWeight] = ...
+        argfun(@(x) ones(size(gIncr)) * transpose(x), ...
+                gababTriseTemplate, gababTfallFastTemplate, ...
+                gababTfallSlowTemplate, gababWeightTemplate);
 end
 
 % Force as a column vector
