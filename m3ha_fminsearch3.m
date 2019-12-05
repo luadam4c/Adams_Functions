@@ -208,6 +208,11 @@ onHpcFlag = iP.Results.OnHpcFlag;
 
 %% Extract from outparams
 % TODO: Change to use varargin
+if isfield(outparams, 'initialSimplexMode')
+    initialSimplexMode = outparams.initialSimplexMode;
+else
+    initialSimplexMode = 0;
+end
 multipleRunsFlag = outparams.multipleRunsFlag;
 ltsFeatureWeights = outparams.ltsFeatureWeights;
 showSimplexHistoryFlag = outparams.showSimplexHistoryFlag;
@@ -479,7 +484,22 @@ end
 for j = 1:n    % for each parameter
     % Construct a set of parameters with this parameter altered only
     y = p0;            % start with initial set of parameters; all values are within [-pi/2 pi/2]
-    y(j) = y(j) + usualDelta * pi;    % increment parameter j by usualDelta * pi
+
+    % Decide on the change for the new vertex
+    if initialSimplexMode == 0
+        % Increment parameter j by usualDelta * pi
+        y(j) = y(j) + usualDelta * pi;
+    elseif initialSimplexMode == 1
+        % Increment all parameters but j by usualDelta * pi
+        for iParam = 1:n
+            if iParam ~= j
+                y(iParam) = y(iParam) + usualDelta * pi;
+            end
+        end
+    else 
+        error('Initial Simplex Mode %d has not been implemented!', ...
+                initialSimplexMode);
+    end
 
     % Place new set of parameters in simplex and evaluate its associated errors
     v(:, j+1) = y;
