@@ -122,7 +122,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %       figs        - figure handles
 %                   specified as a Figure object handle array
 % Arguments:
-%       vVecsOrSlice - original voltage vector(s) in mV
+%       vVecsOrSlice - original voltage vector(s) in uV
 %                       or the slice name
 %                   must be a numeric array or a cell array of numeric arrays
 %                       or a string scalar or a character vector
@@ -354,6 +354,7 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 % 2019-08-13 Now uses alternate_elements.m
 % 2019-08-29 Added 'FigFolder' as an optional argument
 % 2019-11-30 Added 'FigTypes' as an optional argument
+% 2019-12-05 Fixed units of Voltage label to uV
 
 %% Hard-coded parameters
 validSelectionMethods = {'notNaN', 'maxRange2Mean'};
@@ -1044,7 +1045,7 @@ if plotCombinedFlag
     xlim(zoomWin2 * MS_PER_S);
     ylim(yLimits);
     xlabel('Time (ms)');
-    ylabel('Voltage (mV)');
+    ylabel('Voltage (uV)');
     title(['Original voltage vector for ', figTitleBase]);
 
     % Plot spike histogram
@@ -1504,7 +1505,7 @@ else
     markers(2) = gobjects(1);
 end
 ylim(yLimits2);
-ylabel('Voltage (mV)');
+ylabel('Voltage (uV)');
 title('Corresponding positions in the voltage vector');
 
 % Plot the original trace with spike raster
@@ -1519,7 +1520,7 @@ raster = plot_raster(tVec(idxSpikes), 'YMid', yMid, 'VertBarWidth', vertBarWidth
                     'FigTitle', 'suppress');
 ylim(yLimits3);
 xlabel('Time (ms)');
-ylabel('Voltage (mV)');
+ylabel('Voltage (uV)');
 title('Original voltage vector with spikes');
 
 % Create an overarching title

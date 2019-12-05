@@ -36,7 +36,7 @@ cellNamePattern = '[A-Z][0-9]{6}';
 % Flags
 saveCellInfo = false;
 copyExampleFiles = false; %true;
-plotExamplesFlag = true;
+plotExamplesFlag = false; %true;
 plotViolinPlotsFlag = false; %true;
 plotBarPlotsFlag = false; %true;
 

@@ -339,7 +339,7 @@ if plotFigure1Individual
             xlim(sampleXLimits);
             ylim(yLimits);
             xlabel('Time (sec)');
-            ylabel('Voltage (mV)');
+            ylabel('Voltage (uV)');
             title(['Spike Detection for ', figTitleBase]);
 
             % Save the figure
