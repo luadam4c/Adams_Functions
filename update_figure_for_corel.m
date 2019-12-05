@@ -47,6 +47,9 @@ function figHandle = update_figure_for_corel (varargin)
 %                   - 'RemoveLegends': whether to remove all legends
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'RemoveTexts': whether to remove all texts
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'XTickLocs': locations of X ticks
 %                   must be 'suppress' or a numeric vector
 %                   default == 'suppress'
@@ -100,6 +103,7 @@ function figHandle = update_figure_for_corel (varargin)
 % 2019-11-30 Changed default textFontSize from 6 to 7
 % 2019-12-01 Added 'RemoveXLabels' as an optional argument
 % 2019-12-02 Fixed bug when there are multiple labels of the same type
+% 2019-12-04 Added 'RemoveTexts' as an optional argument
 
 %% Hard-coded parameters
 BLACK = [0, 0, 0];
@@ -126,6 +130,7 @@ removeXLabelsDefault = false;   % set later
 removeYLabelsDefault = false;   % set later
 removeTitlesDefault = false;    % set later
 removeLegendsDefault = false;   % set later
+removeTextsDefault = false;     % set later
 xTickLocsDefault = 'suppress';  % don't change by default
 yTickLocsDefault = 'suppress';  % don't change by default
 labelsFontSizeDefault = 8;
@@ -175,6 +180,8 @@ addParameter(iP, 'RemoveTitles', removeTitlesDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveLegends', removeLegendsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RemoveTexts', removeTextsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'XTickLocs', xTickLocsDefault, ...
     @(x) assert(ischar(x) && strcmpi(x, 'suppress') || isnumericvector(x), ...
         'XTickLocs must be ''suppress'' or a numeric vector!'));
@@ -210,6 +217,7 @@ removeXLabels = iP.Results.RemoveXLabels;
 removeYLabels = iP.Results.RemoveYLabels;
 removeTitles = iP.Results.RemoveTitles;
 removeLegends = iP.Results.RemoveLegends;
+removeTexts = iP.Results.RemoveTexts;
 xTickLocs = iP.Results.XTickLocs;
 yTickLocs = iP.Results.YTickLocs;
 labelsFontSize = iP.Results.LabelsFontSize;
@@ -326,6 +334,12 @@ end
 if removeLegends
     lgds = findobj(gcf, 'Type', 'Legend');
     delete(lgds);
+end
+
+% Remove texts if requested
+if removeTexts
+    texts = findobj(gcf, 'Type', 'Text');
+    delete(texts);
 end
 
 % Set font

@@ -10,6 +10,7 @@ function [fileNames, rowConditions, figurePositions] = ...
 %       cd/m3ha_determine_row_conditions.m
 %
 % Used by:
+%       cd/m3ha_rank_neurons.m
 %       cd/singleneuronfitting42.m and later versions
 
 % File History:

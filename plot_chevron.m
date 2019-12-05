@@ -64,6 +64,9 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %                   - 'ColorMap': color map used when nColumnsToPlot > 1
 %                   must be a 2-D numeric array with 3 columns
 %                   default == set in decide_on_colormap.m
+%                   - 'MeanColorMap': color map for the mean
+%                   must be a 2-D numeric array with 3 columns
+%                   default == 'r' if colorMap is black; 'k' otherwise
 %                   - 'MarkerSize': marker size for individual data
 %                   must be empty or a positive scalar
 %                   default == 6
@@ -108,6 +111,7 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 % 2019-10-08 Added 'IsLog2Data' as an optional argument
 % 2019-11-27 Added 'PlotMeanValues' as an optional argument
 % 2019-11-27 Now adds transparency to mean circles
+% 2019-11-27 Added 'MeanColorMap' as an optional argument
 % TODO: Use this in plot_table.m?
 
 %% Hard-coded parameters
@@ -133,6 +137,7 @@ pTickLabelsDefault = {};            % set later
 pLabelDefault = 'suppress';
 columnLabelsDefault = '';           % set later
 colorMapDefault = [];               % set later
+meanColorMapDefault = [];           % set later
 markerSizeDefault = 6;
 lineWidthDefault = 1;
 legendLocationDefault = 'eastoutside';
@@ -181,6 +186,7 @@ addParameter(iP, 'PLabel', pLabelDefault, ...
 addParameter(iP, 'ColumnLabels', columnLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'ColorMap', colorMapDefault);
+addParameter(iP, 'MeanColorMap', meanColorMapDefault);
 addParameter(iP, 'MarkerSize', markerSizeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 addParameter(iP, 'LineWidth', lineWidthDefault, ...
@@ -205,6 +211,7 @@ pTickLabels = iP.Results.PTickLabels;
 pLabel = iP.Results.PLabel;
 columnLabels = iP.Results.ColumnLabels;
 colorMap = iP.Results.ColorMap;
+meanColorMap = iP.Results.MeanColorMap;
 markerSize = iP.Results.MarkerSize;
 lineWidth = iP.Results.LineWidth;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
@@ -247,10 +254,14 @@ nSamples = size(dataValues, 1);
 colorMap = decide_on_colormap(colorMap, nSamples);
 
 % Decide on the mean color map
-if all(all(colorMap == 0))
-    meanColorMap = decide_on_colormap('r', 1);
+if isempty(meanColorMap)
+    if all(all(colorMap == 0))
+        meanColorMap = decide_on_colormap('r', 1);
+    else
+        meanColorMap = [0, 0, 0];
+    end
 else
-    meanColorMap = [0, 0, 0];
+    meanColorMap = decide_on_colormap(meanColorMap, 1);
 end
 
 % Compute parameter values for the plot

@@ -48,6 +48,7 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 %       cd/set_fields_zero.m
 %
 % Used by:
+%       cd/m3ha_rank_neurons.m
 %       /media/adamX/m3ha/optimizer4compgabab/singleneuronfitting63.m
 
 % File History:
@@ -61,7 +62,8 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 validSimModes = {'active', 'passive'};
 iterStrPattern = 'singleneuronfitting[\d]*';
 cellNamePattern = '[A-Z][0-9]{6}';
-errorSheetSuffix = '_error_comparison.csv';
+errorSheetSuffix = 'error_comparison';
+errorSheetExtension = 'csv';
 
 %% Default values for optional arguments
 simModeDefault = 'active';      % simulate active responses by default
@@ -132,18 +134,18 @@ end
 
 % Decide on iteration strings and cell names
 if isempty(candParamsFiles)
-    iterStrs = create_labels_from_numbers(1:nTables, 'Prefix', 'table');
-    cellNames = repmat({'some_cell'}, nTables, 1);
+    iterStr = create_labels_from_numbers(1:nTables, 'Prefix', 'table');
+    cellName = repmat({'some_cell'}, nTables, 1);
 else
     % Extract the chosen iteration string
-    iterStrs = extract_substrings(candParamsFiles, 'RegExp', iterStrPattern);
+    iterStr = extract_substrings(candParamsFiles, 'RegExp', iterStrPattern);
 
     % Extract the cell names
-    cellNames = extract_substrings(candParamsFiles, 'RegExp', cellNamePattern);
+    cellName = extract_substrings(candParamsFiles, 'RegExp', cellNamePattern);
 end
 
 % Get unique cell names
-uniqueCellNames = unique(cellNames);
+uniqueCellNames = unique(cellName);
 
 % Check if all cell names are the same
 if numel(uniqueCellNames) > 2
@@ -183,7 +185,7 @@ if isempty(prefix)
 end
 
 % Create candidate labels
-candLabels = combine_strings('Substrings', {prefix, 'from', iterStrs});
+candLabel = combine_strings('Substrings', {prefix, 'from', iterStr});
 
 %% Do the job
 % Compute errors for all tables
@@ -191,7 +193,7 @@ errorStructs = cellfun(@(x, y) m3ha_neuron_run_and_analyze(x, ...
                             'PlotIndividualFlag', true, ...
                             'SimMode', simMode, 'OutFolder', outFolder, ...
                             'Prefix', y, otherArguments), ...
-                            candParamsTables, candLabels);
+                            candParamsTables, candLabel);
 
 % Extract scalar fields of interest
 %   Note: must be consistent with compute_single_neuron_errors.m
@@ -216,17 +218,18 @@ errorStructs = cellfun(@(x, y) m3ha_neuron_run_and_analyze(x, ...
 [totalErrorBest, iTableBest] = min(totalError);
 
 % Add variables in the beginning
-errorTable = table(candLabels, cellNames, iterStrs, ...
+errorTable = table(candLabel, cellName, iterStr, ...
                     totalError, lts2SweepErrorRatio, ...
                     avgSwpError, avgLtsError, ltsMisMatchError, ...
                     missedLtsError, falseLtsError, ltsFeatureWeights, ...
                     avgLtsAmpError, avgLtsDelayError, avgLtsSlopeError, ...
                     swpErrors, ltsAmpErrors, ltsDelayErrors, ltsSlopeErrors, ...
-                    'RowNames', iterStrs);
+                    'RowNames', iterStr);
 
 %% Save results
 % Create full path to error sheet file
-sheetPath = fullfile(outFolder, strcat(prefix, errorSheetSuffix));
+sheetName = strcat(prefix, '_', errorSheetSuffix, '.', errorSheetExtension);
+sheetPath = fullfile(outFolder, sheetName);
 
 % Save the error table
 writetable(errorTable, sheetPath);
@@ -234,7 +237,7 @@ writetable(errorTable, sheetPath);
 %% Output results
 % Return the table with the least error
 bestParamsTable = candParamsTables{iTableBest};
-bestParamsLabel = candLabels{iTableBest};
+bestParamsLabel = candLabel{iTableBest};
 
 % Display result
 fprintf('%s has the least error: %g!\n', bestParamsLabel, totalErrorBest);
@@ -246,13 +249,13 @@ OLD CODE:
 
 % Convert error struct array to a table
 errorTable = struct2table(errorStructs, 'AsArray', true);
-% Make iterStrs row names
-errorTable.Properties.RowNames = iterStrs;
+% Make iterStr row names
+errorTable.Properties.RowNames = iterStr;
 % Add variables in the beginning
-errorTable = addvars(errorTable, candLabels, cellNames, ...
-                        iterStrs, 'Before', 1);
+errorTable = addvars(errorTable, candLabel, cellName, ...
+                        iterStr, 'Before', 1);
 % Create candidate labels
-candLabels = strcat(cellNames, '_from_', iterStrs);
+candLabel = strcat(cellName, '_from_', iterStr);
 
 %}
 

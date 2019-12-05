@@ -26,6 +26,7 @@ function [status, cmdOut] = compile_mod_files (varargin)
 %
 % Used by:
 %       cd/m3ha_network_launch.m
+%       cd/m3ha_rank_neurons.m
 %       cd/run_neuron.m
 %       /media/adamX/optimizer4compgabab/singleneuronfitting59.m
 

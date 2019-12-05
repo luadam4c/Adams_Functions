@@ -14,6 +14,7 @@ function [counts, edges] = compute_bins (stats, varargin)
 %                   specified as a numeric array
 %       edges       - bin edges
 %                   specified as a numeric, logical, datetime or duration vector
+%
 % Arguments:
 %       stats       - a statistics vector
 %                   must be a numeric, logical, datetime or duration vector
@@ -40,6 +41,7 @@ function [counts, edges] = compute_bins (stats, varargin)
 % File History:
 % 2018-12-28 Moved from plot_grouped_histogram.m
 % 2019-09-08 Added 'FixedEdges' as an optional argument
+% TODO: Change edges input to nBinsOrEdges
 % 
 
 %% Hard-coded parameters

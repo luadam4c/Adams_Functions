@@ -20,12 +20,11 @@
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
-%       cd/create_error_for_nargin.m
-%       /TODO:dir/TODO:file
-% TODO
 %       cd/check_dir.m
 %       cd/compile_mod_files.m
+%       cd/convert_to_char.m
 %       cd/copy_into.m
+%       cd/create_error_for_nargin.m
 %       cd/m3ha_locate_homedir.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_select_cells.m
@@ -39,6 +38,11 @@
 % 
 
 %% Hard-coded parameters
+% Flags
+chooseBestParamsFlag = false;
+plotErrorHistoryFlag = true; %TODO
+rankNeuronsFlag = true;
+
 % Fitting parameters 
 %   Note: Must be consistent with singleneuronfitting75.m
 dataMode = 2;                       % data mode:
@@ -80,8 +84,19 @@ matFilesDirName = 'matfiles';
 specialCasesDirName = 'special_cases';
 defaultOutFolderName = 'ranked';
 
+% File info
+cellNamePattern = '[A-Z][0-9]{6}';
+
+%   Note: Must be consistent with m3ha_neuron_choose_best_params.m
+errorSheetSuffix = 'error_comparison';
+errorSheetExtension = 'csv';
+
+rankPrefix = 'singleneuronfitting60-73';
+rankSheetSuffix = 'ranked';
+rankSheetExtension = 'csv';
+
 % Default parameters used in computing errors
-%   Note: should be consistent with singleneuronfitting75.m
+%   Note: Should be consistent with singleneuronfitting75.m
 %       & compute_lts_errors.m & compute_single_neuron_errors.m
 ltsFeatureStrings = {'peak amp', 'peak time', 'max slope value'};
 ltsFeatureWeights = [2; 2; 2];  % default weights for optimizing LTS statistics
@@ -137,14 +152,6 @@ parentDirectory = parentDirectoryTemp;
 % Locate the fit directory
 fitDirectory = fullfile(parentDirectory, fitDirName);
 
-% Locate the data directory
-dataDir = fullfile(parentDirectory, dataDirName);
-
-% Construct full paths to other directories used 
-%   and previously analyzed results under dataDir
-[matFilesDir, specialCasesDir] = ...
-    argfun(@(x) fullfile(dataDir, x), matFilesDirName, specialCasesDirName);
-
 % Decide on output folder
 if isempty(outFolder)
     outFolder = fullfile(fitDirectory, defaultOutFolderName);
@@ -153,91 +160,209 @@ end
 % Check if output folder exists
 check_dir(outFolder);
 
-% Decide on candidate parameters directory(ies)
-paramDirs = fullfile(fitDirectory, paramDirNames);
-
-%% Backup and compile
-% Display message
-fprintf('Backing up parameters ... \n');
-
-% Copy the candidate params directory(ies) over for backup
-copy_into(paramDirs, outFolder);
-
-% Display message
-fprintf('Compiling all .mod files ... \n');
-
-% Compile or re-compile .mod files in the fitting directory
-compile_mod_files(fitDirectory);
-
-%% Select recorded data
-% Display message
-fprintf('Selecting sweeps to fit for all cells ... \n');
-
-% Select cells with sweeps to fit for all pharm-gIncr pairs
-[cellIdsToFit, cellInfo, swpInfo] = ...
-    m3ha_select_cells('DataMode', dataMode, 'CasesDir', specialCasesDir);
-
-% Get all cell names to fit
-cellNamesToFit = cellInfo{cellIdsToFit, 'cellName'};
-
-% Count the number of cells that were fitted 
-nCellsToFit = numel(cellNamesToFit);
-
-% Select the raw traces to import for each cell to fit
-[fileNamesToFit, rowConditionsToFit] = ...
-    arrayfun(@(x) m3ha_select_raw_traces(rowmodeAcrossTrials, ...
-                    fitMode, attemptNumberAcrossTrials, ...
-                    x, swpInfo, cellInfo), ...
-            cellIdsToFit, 'UniformOutput', false);
-
 %% Choose the best parameters for each cell
-% Find all the possible initial parameters files for each cell to fit
-[~, customInitPathsToFit] = ...
-    cellfun(@(x) all_files('Directory', paramDirs, 'Keyword', x), ...
-                            cellNamesToFit, 'UniformOutput', false);
+if chooseBestParamsFlag
+    %% Preparation
+    % Locate the data directory
+    dataDir = fullfile(parentDirectory, dataDirName);
 
-% Find the best parameters for each cell
-for iCellToFit = 1:nCellsToFit
-    % Extract stuff for this cell
-    cellNameThis = cellNamesToFit{iCellToFit};
-    fileNamesThis = fileNamesToFit{iCellToFit};
-    rowConditionsThis = rowConditionsToFit{iCellToFit};
-    customInitPathsThis = customInitPathsToFit{iCellToFit};
+    % Construct full paths to other directories used 
+    %   and previously analyzed results under dataDir
+    [matFilesDir, specialCasesDir] = ...
+        argfun(@(x) fullfile(dataDir, x), matFilesDirName, specialCasesDirName);
+
+    % Decide on candidate parameters directory(ies)
+    paramDirs = fullfile(fitDirectory, paramDirNames);
+
+    %% Backup and compile
+    % Display message
+    fprintf('Backing up parameters ... \n');
+
+    % Copy the candidate params directory(ies) over for backup
+    copy_into(paramDirs, outFolder);
 
     % Display message
-    fprintf('Choosing initial parameters for cell %s ... \n', cellNameThis);
+    fprintf('Compiling all .mod files ... \n');
 
-    % Choose the best initial parameters for each cell among all the
-    %   custom files
-    [previousBestParamsTable, chosenTableLabel] = ...
-        m3ha_neuron_choose_best_params(customInitPathsThis, ...
-            'OutFolder', outFolder, 'FileNames', fileNamesThis, ...
-            'SimMode', 'active', 'RowConditionsIpscr', rowConditionsThis, ...
-            'SweepWeightsIpscr', sweepWeights, ...
-            'LtsFeatureWeights', ltsFeatureWeights, ...
-            'MissedLtsError', missedLtsError, ...
-            'FalseLtsError', falseLtsError, ...
-            'Lts2SweepErrorRatio', lts2SweepErrorRatio, ...
-            'Normalize2InitErrFlag', normalize2InitErrFlag, ...
-            'SaveLtsInfoFlag', false, 'SaveLtsStatsFlag', false, ...
-            'SaveSimCmdsFlag', false, 'SaveStdOutFlag', false, ...
-            'SaveSimOutFlag', false, 'PlotIndividualFlag', true, ...
-            'PlotConductanceFlag', false, 'PlotCurrentFlag', false, ...
-            'PlotResidualsFlag', false, 'PlotOverlappedFlag', false, ...
-            'PlotIpeakFlag', false, 'PlotLtsFlag', false, ...
-            'PlotStatisticsFlag', false, 'PlotSwpWeightsFlag', false);
+    % Compile or re-compile .mod files in the fitting directory
+    compile_mod_files(fitDirectory);
+
+    %% Select recorded data
+    % Display message
+    fprintf('Selecting sweeps to fit for all cells ... \n');
+
+    % Select cells with sweeps to fit for all pharm-gIncr pairs
+    [cellIdsToFit, cellInfo, swpInfo] = ...
+        m3ha_select_cells('DataMode', dataMode, 'CasesDir', specialCasesDir);
+
+    % Get all cell names to fit
+    cellNamesToFit = cellInfo{cellIdsToFit, 'cellName'};
+
+    % Count the number of cells that were fitted 
+    nCellsToFit = numel(cellNamesToFit);
+
+    % Select the raw traces to import for each cell to fit
+    [fileNamesToFit, rowConditionsToFit] = ...
+        arrayfun(@(x) m3ha_select_raw_traces(rowmodeAcrossTrials, ...
+                        fitMode, attemptNumberAcrossTrials, ...
+                        x, swpInfo, cellInfo), ...
+                cellIdsToFit, 'UniformOutput', false);
+
+    %% Find the best parameters for each cell
+    % Find all the possible initial parameters files for each cell to fit
+    [~, customInitPathsToFit] = ...
+        cellfun(@(x) all_files('Directory', paramDirs, 'Keyword', x), ...
+                                cellNamesToFit, 'UniformOutput', false);
+
+    % Find the best parameters for each cell
+    for iCellToFit = 1:nCellsToFit
+        % Extract stuff for this cell
+        cellNameThis = cellNamesToFit{iCellToFit};
+        fileNamesThis = fileNamesToFit{iCellToFit};
+        rowConditionsThis = rowConditionsToFit{iCellToFit};
+        customInitPathsThis = customInitPathsToFit{iCellToFit};
+
+        % Display message
+        fprintf('Choosing initial parameters for cell %s ... \n', cellNameThis);
+
+        % Choose the best initial parameters for each cell among all the
+        %   custom files
+        [previousBestParamsTable, chosenTableLabel] = ...
+            m3ha_neuron_choose_best_params(customInitPathsThis, ...
+                'PlotIndividualFlag', true, ...
+                'OutFolder', outFolder, 'FileNames', fileNamesThis, ...
+                'SimMode', 'active', 'RowConditionsIpscr', rowConditionsThis, ...
+                'SweepWeightsIpscr', sweepWeights, ...
+                'LtsFeatureWeights', ltsFeatureWeights, ...
+                'MissedLtsError', missedLtsError, ...
+                'FalseLtsError', falseLtsError, ...
+                'Lts2SweepErrorRatio', lts2SweepErrorRatio, ...
+                'Normalize2InitErrFlag', normalize2InitErrFlag, ...
+                'SaveParamsFlag', false, 'SaveSimCmdsFlag', false, ...
+                'SaveSimOutFlag', false, 'SaveStdOutFlag', false, ...
+                'SaveLtsInfoFlag', false, 'SaveLtsStatsFlag', false, ...
+                'PlotConductanceFlag', false, 'PlotCurrentFlag', false, ...
+                'PlotResidualsFlag', false, 'PlotOverlappedFlag', false, ...
+                'PlotIpeakFlag', false, 'PlotLtsFlag', false, ...
+                'PlotStatisticsFlag', false, 'PlotSwpWeightsFlag', false);
+    end
 end
 
-%% Do the job
+%% Plot the error history for each cell
+if plotErrorHistoryFlag
+end
 
+%% Combine the errors and rank neurons
+if rankNeuronsFlag
+    % Display message
+    fprintf('Ranking all cells ... \n');
+
+    % Locate all individual error spreadsheets
+    [~, sheetPaths] = all_files('Directory', outFolder, ...
+                                'Suffix', errorSheetSuffix, ...
+                                'Extension', errorSheetExtension);
+
+    % Read all error tables
+    errorTables = cellfun(@readtable, sheetPaths, 'UniformOutput', false);
+
+    % Restrict to the row with the minimal error
+    minimalErrorTables = cellfun(@(x, y) process_table_for_ranking(x), ...
+                                errorTables, 'UniformOutput', false);
+
+    % Combine into a single table
+    minimalErrorTableCombined = vertcat(minimalErrorTables{:});
+
+    % Sort by total error, with minimal error first
+    rankTable = sortrows(minimalErrorTableCombined, 'totalError', 'ascend');
+
+    % Set ranking
+    ranking = transpose(1:height(rankTable));
+
+    % Add a column for ranking
+    rankTable = addvars(rankTable, ranking, 'Before', 1);
+
+    % Create a path for the combined spreadsheet
+    rankName = [rankPrefix, '_', rankSheetSuffix, '.', rankSheetExtension];
+    rankPath = fullfile(outFolder, rankName);
+
+    % Save the rank table
+    writetable(rankTable, rankPath);
+
+    % Copy and rename .png files according to ranking
+    copy_and_rename_png_files(rankTable, outFolder, outFolder);
+
+    % Plot a histogram for total error
+    figure;
+    plot_histogram(rankTable.('totalError'), 'Edges', 0:0.5:6, ...
+                        'XLabel', 'Total Error', 'YLabel', 'Cell Count', ...
+                        'FigTitle', 'Total Error Distribution');
+    figure;
+    plot_histogram(rankTable.('ltsMisMatchError'), 'Edges', 0:0.5:6, ...
+                        'XLabel', 'LTS Mismatch Error', 'YLabel', 'Cell Count', ...
+                        'FigTitle', 'LTS Mismatch Error Distribution');
+    figure;
+    plot_histogram(rankTable.('avgSwpError'), 'Edges', 0:1:10, ...
+                        'XLabel', 'Average Sweep Error', 'YLabel', 'Cell Count', ...
+                        'FigTitle', 'Average Sweep Error Distribution');
+
+end
 
 %% Output results
 % TODO
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function errorTable = process_table_for_ranking(errorTable)
+%% Restricts table to row of minimal error
+
+% Extract the total errors
+totalError = errorTable.totalError;
+
+% Extract the row number with the minimal error
+[~, rowMinimalError] = min(totalError);
+
+% Restrict table to that row
+errorTable = errorTable(rowMinimalError, :);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function copy_and_rename_png_files (rankTable, inFolder, outFolder)
+%% Copy and rename png files associated with candidate labels
+
+% Extract candidate labels
+candLabels = rankTable.candLabel;
+
+% Extract rankings
+ranking = rankTable.ranking;
+
+% Convert rankings to strings so that 1 becomes '01'
+rankingStrs = convert_to_char(ranking, 'FormatSpec', '%2.f');
+
+% Construct old paths
+oldPngPaths = fullfile(inFolder, strcat(candLabels, '_individual.png'));
+
+% Construct new paths
+newPngPaths = fullfile(inFolder, strcat('rank_', rankingStrs, '_', ...
+                                        candLabels, '_individual.png'));
+
+% Copy files 
+cellfun(@(x, y) copyfile(x, y), oldPngPaths, newPngPaths, ...
+        'UniformOutput', false);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %{
 OLD CODE:
+
+% Force as a cell array
+cellName = force_column_cell(cellName);
+
+% Add a column for cell name
+errorTable = addvars(errorTable, cellName, 'Before', 1);
 
 %}
 

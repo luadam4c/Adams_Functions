@@ -165,7 +165,7 @@ texts(2) = text(0.2, 0.9, sprintf('Number of spikes in oscillation = %d', ...
 
 % Plot burst windows
 horzLines = plot_horizontal_line(0, 'XLimits', burstWindows, ...
-                            'Color', 'r', 'LineStyle', '-', 'LineWidth', 3);
+                            'Color', 'g', 'LineStyle', '-', 'LineWidth', 3);
 
 % Hold off
 hold_off(wasHold);

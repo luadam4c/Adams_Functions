@@ -20,7 +20,7 @@ newheader = {'LTS peak time (ms)', 'LTS peak 2nd derivative (V^2/s^2)', ...
 	        'LTS peak prominence (mV)', 'LTS peak width at half-prom (ms)'};
 newvariables = {'ltspeaktime', 'ltspeak2ndder', 'ltspeakprom', 'ltspeakwidth'};
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Check arguments
 if nargin >= 1 && exist(fullmatfilepath, 'file') ~= 2
@@ -68,8 +68,10 @@ end
 m.logheader = [m.logheader, newheader];
 m.logvariables = [m.logvariables, newvariables];
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %{
-%% OLD CODE
+OLD CODE:
 
 % This will create problems if m3ha_append_lts_properties is ran more than once
 m.logheader = {m.logheader, newheaderentries};
@@ -84,3 +86,4 @@ newheaderentries = {'LTS peak time (ms)', 'LTS peak 2nd derivative (V^2/s^2)', .
 
 %}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

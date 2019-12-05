@@ -3,6 +3,7 @@
 %
 % Requires:
 %       cd/all_files.m
+%       cd/apply_iteratively.m
 %       cd/argfun.m
 %       cd/copy_into.m
 %       cd/decide_on_colormap.m
@@ -35,33 +36,49 @@ cellNamePattern = '[A-Z][0-9]{6}';
 % Flags
 saveCellInfo = false;
 copyExampleFiles = false; %true;
-plotExamplesFlag = false; %true;
-plotBoxPlotsFlag = false; %true;
+plotExamplesFlag = true;
+plotViolinPlotsFlag = false; %true;
 plotBarPlotsFlag = false; %true;
 
 % Analysis settings
 % Note: must be consistent with m3ha_compute_statistics.m
-measuresOfInterest = {'ltsOnsetTime'; 'ltsProbability'; 'spikesPerLts'; ...
-                    'burstOnsetTime'; 'burstProbability'; 'spikesPerBurst'};
+measuresOfInterest = {'ltsAmplitude'; 'ltsMaxSlope'; ...
+                    'ltsConcavity'; 'ltsProminence'; ...
+                    'ltsWidth'; 'ltsOnsetTime'; 'ltsTimeJitter'; ...
+                    'ltsProbability'; 'spikesPerLts'; ...
+                    'spikeMaxAmp'; 'spikeMinAmp'; ...
+                    'spikeFrequency'; 'spikeAdaptation'
+                    'burstOnsetTime'; 'burstTimeJitter'; ...
+                    'burstProbability'; 'spikesPerBurst'};
 
 % Plot settings
 exampleGincr = 200;
-exampleHeight = 11;             % in centimeters
+exampleHeight = 9;             % in centimeters
 exampleWidth = 8.5;             % in centimeters
 exampleLineWidth = 0.5;
 exampleXlimits = [800, 2200];
-exampleYlimits = [-100, 20];
+exampleYlimits = [-100, 10];
+exampleYTicks = [-80, -50, -20];
 
-conditionLabel2D = 'pharm_1-4';
-conditionLabel3D = 'pharm_1-4_gincr_all';
 pharmAll = [1; 2; 3; 4];          
-pharmLabels = {'Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block'};
-pharmLabelsShort = {'Con', 'GAT1', 'GAT3', 'Dual'};
+pharmLabels = {'{\it d}-Control', '{\it d}-GAT1 Block', ...
+                '{\it d}-GAT3 Block', '{\it d}-Dual Block'};
+pharmLabelsShort = {'{\it d}-Con', '{\it d}-GAT1', ...
+                    '{\it d}-GAT3', '{\it d}-Dual'};
 gIncrAll = [25; 50; 100; 200; 400; 800];
 gIncrLabels = {'25%', '50%', '100%', '200%', '400%', '800%'};
+conditionLabel2D = 'pharm_1-4_gincr_200';
+pCond2D = num2cell(pharmAll);
+gCond2D = 200;
+conditionLabel3D = 'pharm_1-4_gincr_all';
+pCond3D = num2cell(pharmAll);
+gCond3D = num2cell(gIncrAll);
 
-box2FigHeight = 2.8;            % in centimeters
-box2FigWidth = 2.9;             % in centimeters
+violinFigHeight = 5;            % in centimeters
+violinFigWidth = 3.4;           % in centimeters
+violinRelativeBandWidth = 0.1;  % bandwidth relative to data range
+medianColor = rgb('GreenYellow');     % color of median circle
+medianSize = 6;                % size of median circle in points
 bar3FigHeight = 6;              % in centimeters
 bar3FigWidth = 6;               % in centimeters
 
@@ -97,33 +114,29 @@ end
 if plotExamplesFlag
     % Plot example traces for each cell
     handles = cellfun(@(x) m3ha_plot_example_traces(x, figure02Dir, ...
-                                            swpInfo, exampleGincr, ...
-                                            exampleXlimits, exampleYlimits, ...
-                                            pharmLabels, exampleLineWidth, ...
-                                            exampleHeight, exampleWidth, ...
-                                            figTypes), ...
+                            swpInfo, exampleGincr, ...
+                            exampleXlimits, exampleYlimits, ...
+                            exampleYTicks, pharmLabels, exampleLineWidth, ...
+                            exampleHeight, exampleWidth, figTypes), ...
                         exampleCellNames);
 
 end
 
-%% Plot 2D box plots
-if plotBoxPlotsFlag
+%% Plot 2D violin plots
+if plotViolinPlotsFlag
     % Construct stats table path
     statsPath2D = fullfile(figure02Dir, strcat(conditionLabel2D, '_stats.mat'));
 
     % Load or compute statistics
     if isfile(statsPath2D)
         % Load stats table
-        disp('Loading statistics for 2D box plots ...');
+        disp('Loading statistics for 2D violin plots ...');
         load(statsPath2D, 'statsTable');
     else
-        % Decide on the pharm conditions on the first axis
-        pCond = num2cell(pharmAll);
-        gCond = num2cell(gIncrAll);
-
         % Compute statistics for all features
-        disp('Computing statistics for 2D box plots ...');
-        statsTable = m3ha_compute_statistics('PharmConditions', pCond);
+        disp('Computing statistics for 2D violin plots ...');
+        statsTable = m3ha_compute_statistics('PharmConditions', pCond2D, ...
+                                                'GIncrConditions', gCond2D);
 
         % Save stats table
         save(statsPath2D, 'statsTable', '-v7.3');
@@ -143,10 +156,16 @@ if plotBoxPlotsFlag
     % Create full path bases
     allFigPathBases2D = fullfile(figure02Dir, allFigBases2D);
 
-    % Plot all 2D box plots
-    disp('Plotting 2-D box plots ...');
-    cellfun(@(a, b, c) m3ha_plot_box2(a, b, pharmLabelsShort, c, ...
-                                    box2FigHeight, box2FigWidth, figTypes), ...
+    % Plot all 2D violin plots
+    disp('Plotting 2D violin plots ...');
+    % cellfun(@(a, b, c) m3ha_plot_violin(a, violinRelativeBandWidth, b, ...
+    %                             pharmLabels, c, ...
+    %                             violinFigHeight, violinFigWidth, figTypes), ...
+    %         allValues, allMeasureTitles, allFigPathBases2D);
+    cellfun(@(a, b, c) m3ha_plot_violin(a, violinRelativeBandWidth, ...
+                                medianColor, medianSize, b, ...
+                                pharmLabelsShort, c, ...
+                                violinFigHeight, violinFigWidth, figTypes), ...
             allValues, allMeasureTitles, allFigPathBases2D);
 end
 
@@ -161,14 +180,10 @@ if plotBarPlotsFlag
         disp('Loading statistics for 3D bar plots ...');
         load(statsPath3D, 'statsTable');
     else
-        % Decide on the pharm conditions on the first axis
-        pCond = num2cell(pharmAll);
-        gCond = num2cell(gIncrAll);
-
         % Compute statistics for all features
         disp('Computing statistics for 3D bar plots ...');
-        statsTable = m3ha_compute_statistics('PharmConditions', pCond, ...
-                                                'GIncrCondition', gCond);
+        statsTable = m3ha_compute_statistics('PharmConditions', pCond3D, ...
+                                                'GIncrConditions', gCond3D);
 
         % Save stats table
         save(statsPath3D, 'statsTable', '-v7.3');
@@ -190,7 +205,7 @@ if plotBarPlotsFlag
     allFigPathBases3D = fullfile(figure02Dir, allFigBases3D);
 
     % Plot all 3D bar plots
-    disp('Plotting 3-D bar plots ...');
+    disp('Plotting 3D bar plots ...');
     cellfun(@(a, b, c, d) m3ha_plot_bar3(a, b, c, ...
                     pharmLabels, gIncrLabels, ...
                     d, bar3FigHeight, bar3FigWidth, figTypes), ...
@@ -220,7 +235,7 @@ end
 
 function handles = m3ha_plot_example_traces (cellName, figure02Dir, ...
                                             swpInfo, gIncrOfInterest, ...
-                                            xLimits, yLimits, ...
+                                            xLimits, yLimits, yTicks, ...
                                             pharmLabels, lineWidth, ...
                                             figHeight, figWidth, figTypes)
 %% Plots example traces
@@ -284,6 +299,7 @@ plot_scale_bar('x', 'BarLength', timeBarLength, 'BarUnits', timeBarUnits);
 
 % Update figure for CorelDraw
 update_figure_for_corel(figV, 'Units', 'centimeters', ...
+                        'YTickLocs', yTicks, ...
                         'Height', figHeight, 'Width', figWidth);
 
 % Create figure base
@@ -320,6 +336,10 @@ set(axG, 'XTick', []);
 % Plot a time bar
 plot_scale_bar('x', 'BarLength', timeBarLength, 'BarUnits', timeBarUnits);
 
+% Update figure for CorelDraw
+update_figure_for_corel(figG, 'Units', 'centimeters', ...
+                        'Height', figHeight / 4, 'Width', figWidth);
+
 % TODO: match_axes_size.m 
 %   match_axes_size(axG, axV(1), 'width')
 
@@ -328,10 +348,6 @@ voltageSubPlotPosition = get(axV(1), 'Position');
 
 % Update axes width to be consistent with the voltage plot
 set_axes_properties('AxesHandle', axG, 'Width', voltageSubPlotPosition(3));
-
-% Update figure for CorelDraw
-update_figure_for_corel(figG, 'Units', 'centimeters', ...
-                        'Height', figHeight / 4, 'Width', figWidth);
 
 % Create figure base
 figBase = sprintf('%s_gincr_%g_conductance', cellName, gIncrOfInterest);
@@ -348,8 +364,10 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function m3ha_plot_box2 (allValues, measureTitle, pharmLabels, figPathBase, ...
-                        figHeight, figWidth, figTypes)
+function m3ha_plot_violin (allValues, violinRelativeBandWidth, ...
+                            medianColor, medianSize, ...
+                            measureTitle, pharmLabels, ...
+                            figPathBase, figHeight, figWidth, figTypes)
 
 % Hard-coded parameters
 MS_PER_S = 1000;
@@ -362,6 +380,7 @@ fig = set_figure_properties('AlwaysNew', true);
 nGroups = numel(pharmLabels);
 
 % Convert onset times from ms to seconds
+%{
 if contains(measureTitle, 'onset')
     % Update values
     allValues = cellfun(@(x) x ./ MS_PER_S, allValues, 'UniformOutput', false);
@@ -369,6 +388,7 @@ if contains(measureTitle, 'onset')
     % Update title
     measureTitle = replace(measureTitle, 'ms', 's');
 end
+%}
 
 % Decide on the color map
 cm = decide_on_colormap([], nGroups);
@@ -383,8 +403,15 @@ colormap(cm);
 % Force as a numeric array
 allValues = force_matrix(allValues);
 
+% Compute range of all values
+rangeValues = apply_iteratively(@max, allValues) - apply_iteratively(@min, allValues);
+
+% Compute the bandwidth for the kernel density estimates
+bandWidth = violinRelativeBandWidth * rangeValues;
+
 % Plot a violin plot
-violinplot(allValues, pharmLabels);
+% violinplot(allValues, pharmLabels);
+violinplot(allValues, pharmLabels, 'BandWidth', bandWidth);
 
 % Plot the data points for each cell
 % plotSpread(allValues);
@@ -400,6 +427,11 @@ xtickangle(xTickAngle);
 % Set y label
 ylabel(measureTitle);
 
+% Find all median scatters and make the face color green and size bigger
+medianScatters = findobj(gca, 'Type', 'Scatter', ...
+                        'MarkerEdgeColor', [0.5, 0.5, 0.5]);
+set(medianScatters, 'MarkerFaceColor', medianColor);
+
 % Save the figure
 save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
 
@@ -407,6 +439,12 @@ save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
 update_figure_for_corel(fig, 'Units', 'centimeters', ...
                         'Height', figHeight, 'Width', figWidth, ...
                         'ScatterMarkerSize', 3);
+
+% Fix axes position
+set(gca, 'Position', [0.2356, 0.1947, 0.6694, 0.7303]);
+
+% Update median size
+set(medianScatters, 'SizeData', medianSize^2);
 
 % Save the figure
 save_all_figtypes(fig, figPathBase, figTypes);
@@ -517,6 +555,9 @@ plot_horizontal_line(yPosBar, 'XLimits', xLimitsBar, ...
                     'Color', barColor, 'LineWidth', barLineWidth, ...
                     'AxesHandle', subPlots(end));
 text(xPosText, yPosText, barText);
+
+measuresOfInterest = {'ltsOnsetTime'; 'ltsProbability'; 'spikesPerLts'; ...
+                    'burstOnsetTime'; 'burstProbability'; 'spikesPerBurst'};
 
 %}
 

@@ -873,6 +873,11 @@ elseif strcmpi(simMode, 'active')
         holdCurrentNoiseIpscr = sweepInfoIpscrStruct.holdCurrentNoiseIpscr;
         baseNoiseIpscr = sweepInfoIpscrStruct.baseNoiseIpscr;
         sweepWeightsIpscr = sweepInfoIpscrStruct.sweepWeightsIpscr;
+        gababAmp = sweepInfoIpscrStruct.gababAmpIpscr;
+        gababTrise = sweepInfoIpscrStruct.gababTriseIpscr;
+        gababTfallFast = sweepInfoIpscrStruct.gababTfallFastIpscr;
+        gababTfallSlow = sweepInfoIpscrStruct.gababTfallSlowIpscr;
+        gababWeight = sweepInfoIpscrStruct.gababWeightIpscr;
     end
 
     % Read active fit data and params

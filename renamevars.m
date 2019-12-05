@@ -3,11 +3,14 @@ function table = renamevars (table, prevNames, newNames, varargin)
 % Usage: table = renamevars (table, prevNames, newNames, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       table       - new table
 %                   specified as a 2-D table
+%
 % Arguments:
 %       table       - old table
 %                   must be a 2-D table

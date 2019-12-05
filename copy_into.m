@@ -31,6 +31,7 @@ function [statuses, messages, messageIds] = ...
 %
 % Used by:
 %       cd/m3ha_plot_figure02.m
+%       cd/m3ha_rank_neurons.m
 %       cd/parse_multiunit.m
 %       cd/plot_measures.m
 %       /media/adamX/m3ha/optimizer4compgabab/singleneuronfitting63.m

@@ -50,6 +50,7 @@ function [cellIdsSelected, cellInfo, swpInfo] = m3ha_select_cells (varargin)
 %       cd/print_cellstr.m
 %
 % Used by:
+%       cd/m3ha_rank_neurons.m
 %       ~/m3ha/optimizer4gabab/singleneuronfitting42.m and beyond
 
 % File History:

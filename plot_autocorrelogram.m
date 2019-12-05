@@ -253,12 +253,12 @@ switch plotType
 
         % Plot filtered acf if requested
         if plotFiltered
-            lines(2) = plot(tAcf, acfFiltered, 'g', 'LineWidth', 1);
+            lines(2) = plot(tAcf, acfFiltered, 'r', 'LineWidth', 1);
         end
 
         % Plot detected peaks if requested
         if plotPeaks
-            plot(timePeaksSec, ampPeaks, 'ro', 'LineWidth', 2);
+            plot(timePeaksSec, ampPeaks, 'go', 'LineWidth', 2);
         end
 
         % Plot detected troughs if requested
@@ -269,7 +269,7 @@ switch plotType
         % Plot oscillation duration if requested
         if plotDuration
             plot_horizontal_line(barYValue, 'XLimits', xLimitsOscDur, ...
-                                'Color', 'r', 'LineStyle', '-', 'LineWidth', 2);
+                                'Color', 'g', 'LineStyle', '-', 'LineWidth', 2);
         end
 
         % Plot analyzed numbers as text if requested
