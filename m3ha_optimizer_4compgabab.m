@@ -86,12 +86,12 @@ function [done, outParams, hfig] = m3ha_optimizer_4compgabab (outParams, hfig)
 % 2017-05-16 - Now runs NEURON with full plots both before and after fitting
 % 2017-05-16 - parfor is now conditional on outParams.MaxNumWorkersIC
 % 2017-05-17 - update_errorhistoryplot() now plots lts errors if computed
-% 2017-05-17 - Added outParams.fitPassiveFlag & outParams.fitActiveFlag
+% 2017-05-17 - Added outParams.fitCprFlag & outParams.fitIpscrFlag
 % 2017-05-17 - Moved update_sweeps_figures() to m3ha_neuron_run_and_analyze.m
 % 2017-05-19 - Fixed the fact that simplex.initError was used to select  
 %               best simplex; simplex.error is now simplex.totalError
 % 2017-05-22 - Changed line width and indentation
-% 2017-05-22 - Added outParams.fitTogetherFlag
+% 2017-05-22 - Added outParams.oldFitTogetherFlag
 % 2017-05-23 - Removed modeselected from outParams and 
 %               replaced with updated outParams.runMode
 % 2017-05-23 - Added otherwise to all switch statements
@@ -120,15 +120,15 @@ function [done, outParams, hfig] = m3ha_optimizer_4compgabab (outParams, hfig)
 % Change fitting flags if necessary
 % TODO: Fix
 %{
-if outParams.fitPassiveFlag && ...
+if outParams.fitCprFlag && ...
     ~any(neuronparamispas .* outParams.neuronparams_use)
-    outParams.fitPassiveFlag = false;
+    outParams.fitCprFlag = false;
     fprintf(['No passive parameter is fitted, ', ...
             'so passive fitting is turned OFF!\n\n']);
 end
-if outParams.fitActiveFlag && ...
+if outParams.fitIpscrFlag && ...
     ~any(~neuronparamispas .* outParams.neuronparams_use)
-    outParams.fitActiveFlag = false;
+    outParams.fitIpscrFlag = false;
     fprintf(['No active parameter is fitted, ', ...
             'so active fitting is turned OFF!\n\n']);
 end
@@ -223,8 +223,8 @@ otherwise
 end
 outParams.runnumTotal = outParams.runnumTotal + 1;
 
-% Simulate current pulse response only if outParams.fitPassiveFlag is true
-if outParams.fitPassiveFlag         % if fitting passive parameters
+% Simulate current pulse response only if outParams.fitCprFlag is true
+if outParams.fitCprFlag         % if fitting passive parameters
     %%%%%% 
     %%%%%%%%%%%%%
     % Set sim mode
@@ -265,8 +265,8 @@ end
 % Store error structure in outParams
 outParams.errCpr{outParams.runnumTotal} = errCpr;
 
-% Simulate GABAB IPSC response only if outParams.fitActiveFlag is true
-if outParams.fitActiveFlag
+% Simulate GABAB IPSC response only if outParams.fitIpscrFlag is true
+if outParams.fitIpscrFlag
     %%%%%% 
     %%%%%%%%%%%%%
     % Set sim mode
@@ -327,7 +327,91 @@ nInitConds = outParams.autoParams(idxNInitConds);
         'plotSwpWeightsFlag');
 
 % Fit parameters
-if outParams.fitTogetherFlag        % passive and active fitting done together from single initCond
+if outParams.fitMode == 5
+    % Don't run current pulse response
+    if outParams.runnumTotal > 1
+        % If this is not the first run, use errCpr from last run
+        errCpr = outParams.errCpr{outParams.runnumTotal - 1};
+    else
+        % If this is the first run, use empty structure
+        errCpr = struct;
+    end
+
+    % Prepare for active-parameters-fitting
+    fprintf('Fitting to IPSC responses for cell %s ... \n', cellName);
+    tStartActiveFit = tic();
+
+    % Set simplexParams to the active ones
+    outParams.simplexParams = outParams.simplexParamsActive;
+
+    % Optimize active parameters by fitting to IPSC response
+    initialConditionsAll = cell(1, nInitConds);
+    simplexOutAll = cell(1, nInitConds);
+    exitFlagAll = zeros(1, nInitConds);
+%    parfor iInitCond = 1:nInitConds
+    for iInitCond = 1:nInitConds
+        % Initialize outparams0 for parfor
+        outparams0 = outParams;
+
+        % Store the old simplex count
+        oldSimplexCt = outParams.simplexNum;
+
+        % Prepare outparams0 for simplex
+        outparams0 = prepare_outparams_simplex(outparams0, oldOutFolderName, ...
+                                                oldSimplexCt, iInitCond);
+
+        % Generate initial parameters for this run
+        [initialConditionsAll{iInitCond}, outparams0] = ...
+            generate_IC(outparams0, iInitCond);
+
+        % Run fminsearch for GABAB IPSC response
+        %%%%%%
+        %%%%%%%%%%%%%
+        [simplexOutAll{iInitCond}, exitFlagAll(iInitCond)] = ...
+            m3ha_fminsearch3(outparams0);
+        %%%%%%%%%%%%%
+        %%%%%%
+    end
+
+    % Reset outParams.simplexParams for safety
+    outParams.simplexParams = [];
+
+    % Update # of simplex runs and # of simplex steps
+    outParams.simplexNum = outParams.simplexNum + nInitConds;
+    outParams.simplexIterCount = ...
+        outParams.simplexIterCount + ...
+        sum(cellfun(@(x) x.ctIterations, simplexOutAll));
+
+    % Find best of the optimized parameters
+    compareparamsfile = fullfile(oldOutFolderName, ...
+                            [outParams.prefix, '_compare_params_IC_', ...
+                            num2str(outParams.simplexNum - nInitConds + 1), ...
+                            'to', num2str(outParams.simplexNum), '.csv']);
+    [simplexOutBest, err] = ...
+        find_best_params(simplexOutAll, initialConditionsAll, ...
+                        compareparamsfile);
+
+    % Update outParams.neuronParamsTable to the best of the optimized parameters
+    outParams.neuronParamsTable = simplexOutBest.neuronParamsTable;
+
+    % Save outputs in matfile
+    if outParams.saveMatFileFlag
+        save(fullfile(oldOutFolderName, ...
+                        [outParams.prefix, '_runauto_results_IC_', ...
+                        num2str(outParams.simplexNum - nInitConds + 1), ...
+                        'to', num2str(outParams.simplexNum), '.mat']), ...
+            'initialConditionsAll', 'simplexOutAll', 'exitFlagAll', ...
+            'simplexOutBest', 'err', ...
+            'outParams', '-v7.3');
+    end
+
+    % Print time elapsed
+    timeTakenActiveFit = toc(tStartActiveFit);
+    fprintf('It took %g seconds to run the simplex method on %d initial conditions!!\n', ...
+                timeTakenActiveFit, nInitConds);
+    fprintf('\n');
+elseif outParams.fitMode == 4
+    % Passive and active fitting done together from single initial conditions
     % Prepare for fitting
     fprintf('Fitting all parameters for cell %s ... \n', cellName);
     tstartAllFit = tic();          % tracks time for all-parameters-fitting
@@ -441,10 +525,10 @@ if outParams.fitTogetherFlag        % passive and active fitting done together f
     fprintf('It took %g seconds to run the simplex method on %d initial conditions!!\n', ...
             timeTakenAllFit, nInitConds);
     fprintf('\n');
-
-else                                % do passive fitting, find best params, then do active fitting
+else
+    % Do passive fitting, find best params, then do active fitting
     % Fit passive parameters
-    if outParams.fitPassiveFlag && ~outParams.fitTogetherFlag
+    if outParams.fitMode == 1 || outParams.fitMode == 3
         % Prepare for passive-parameters-fitting
         fprintf('Fitting passive parameters for cell %s ... \n', cellName);
         tStartPassiveFit = tic();      % tracks time for passive-parameters-fitting
@@ -520,14 +604,14 @@ else                                % do passive fitting, find best params, then
         fprintf('\n');
     else
         if outParams.runnumTotal > 1    % if this is not the first run
-            errCpr = outParams.errCpr{outParams.runnumTotal-1};       % use errCpr from last run    
+            errCpr = outParams.errCpr{outParams.runnumTotal-1};       % use errCpr from last run
         else                            % if this is the first run
-            errCpr = struct;                                           % empty structure
+            errCpr = struct;                                          % empty structure
         end
     end
 
     % Fit active parameters
-    if outParams.fitActiveFlag && ~outParams.fitTogetherFlag
+    if outParams.fitMode == 2 || outParams.fitMode == 3
         % Prepare for active-parameters-fitting
         fprintf('Performing active-parameters-fitting for cell %s ... \n', cellName);
         tStartActiveFit = tic();                % tracks time for active-parameters-fitting
@@ -609,6 +693,10 @@ else                                % do passive fitting, find best params, then
             err = struct;
         end
     end
+else
+    % Use empty structures
+    errCpr = struct;
+    err = struct;
 end
 
 % Store error structure in outParams
@@ -644,7 +732,7 @@ function [outParams, prefixOrig, neuronParamsUseOrig] = ...
 %% Prepare outParams for passive fit
 
 % Turn flag for passive-parameters-fitting on
-outParams.simMode = 'passive';          
+outParams.simMode = 'passive';
 
 % Change prefix for passive-parameters-fitting
 prefixOrig = outParams.prefix;
@@ -696,7 +784,7 @@ indParamsIsPassive = find(outParams.neuronParamsTable.IsPassive);
 outParams.neuronParamsTable{indParamsIsPassive, 'InUse'} = ...
     zeros(length(indParamsIsPassive), 1);
 
-%Set simplexParams to the active ones
+% Set simplexParams to the active ones
 outParams.simplexParams = outParams.simplexParamsActive;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -847,22 +935,22 @@ function update_errorhistoryplot(hfig, outParams)
 %% Shows and updates Error History figure
 
 rn = outParams.runnumTotal;     % current run number
-if outParams.fitActiveFlag
+if outParams.fitIpscrFlag
     err = outParams.err{rn};        % current error structure
-elseif outParams.fitPassiveFlag
+elseif outParams.fitCprFlag
     err = outParams.errCpr{rn};
 end
 
 % Make the plot the current figure
-if outParams.fitActiveFlag
+if outParams.fitIpscrFlag
     set(0, 'CurrentFigure', hfig.errorhistory);
-elseif outParams.fitPassiveFlag
+elseif outParams.fitCprFlag
     set(0, 'CurrentFigure', hfig.cprerrorhistory);
 end
 
 % Plot the error
 if ~isempty(err)
-    if outParams.fitActiveFlag
+    if outParams.fitIpscrFlag
         % Extract error ratios from outParams struct
         errorWeights = outParams.errorWeights;
         missedLtsError = outParams.missedLtsError;

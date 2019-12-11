@@ -321,18 +321,18 @@ for k = 1:nParams
         % Check if parameter has dual finite bounds, otherwise exit fitting
         if isfinitenum(pLowerBound(k)) ...
             && isfinitenum(pUpperBound(k)) ...
-            bounds.BoundClass(k) = 3;                   % 'dual finite bounds'
-            bounds.LB(k) = pLowerBound(k);   % lower bound
-            bounds.UB(k) = pUpperBound(k);   % upper bound
+            bounds.BoundClass(k) = 3;       % 'dual finite bounds'
+            bounds.LB(k) = pLowerBound(k);  % lower bound
+            bounds.UB(k) = pUpperBound(k);  % upper bound
         else
             fprintf('Parameter #%d must have dual finite bounds!', k);
             exitFlag = -1;
             return
         end
-    else                                % parameter should be fixed
-        bounds.BoundClass(k) = 4;                       % 'fixed'
-        bounds.LB(k) = initValues(k);           % use initial value
-        bounds.UB(k) = bounds.LB(k);                        % use initial value
+    else            % parameter should be fixed
+        bounds.BoundClass(k) = 4;           % 'fixed'
+        bounds.LB(k) = initValues(k);       % use initial value
+        bounds.UB(k) = bounds.LB(k);        % use initial value
     end
 end
 

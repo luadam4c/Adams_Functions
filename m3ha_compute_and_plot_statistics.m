@@ -37,7 +37,7 @@ function m3ha_compute_and_plot_statistics (varargin)
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_locate_homedir.m
 %       cd/m3ha_select_sweeps.m
-%       cd/m3ha_specs_for_fitmode.m
+%       cd/m3ha_specs_for_datamode.m
 %
 % Used by:
 %       cd/m3ha_parse_dclamp_data.m
@@ -179,7 +179,7 @@ fprintf('Using data file == %s ... \n', dataPath);
 fprintf('Using significance level == %g ... \n', sigLevel);
 
 % Decide on suffix according to dataMode
-suffix = m3ha_specs_for_fitmode(dataMode);
+suffix = m3ha_specs_for_datamode(dataMode);
 
 % Decide on conductance amplitude scaling % labels
 if dataMode == 0

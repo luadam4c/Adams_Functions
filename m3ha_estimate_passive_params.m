@@ -1,17 +1,17 @@
 function [passiveParams, fitResults, fitObject, goodnessOfFit, ...
             algorithmInfo, decision, allResults] = ...
-                    m3ha_estimate_passive_params (fitMode, ...
-                        infolder, outFolder, plotpassiveflag, groupmode)
+                    m3ha_estimate_passive_params (dataMode, ...
+                        infolder, outFolder, plotFlag, groupMode)
 %% Estimates passive parameters for each cell from dclamp data recorded by Mark & Christine
 % Usage: [passiveParams, fitResults, fitObject, goodnessOfFit, ...
 %           algorithmInfo, decision, allResults] = ...
-%                   m3ha_estimate_passive_params (fitMode, ...
-%                       infolder, outFolder, plotpassiveflag, groupmode)
+%                   m3ha_estimate_passive_params (dataMode, ...
+%                       infolder, outFolder, plotFlag, groupMode)
 % Side effects:
 %       Saves results in .mat files
 %
 % Arguments: 
-%       fitMode     - 0 - all data
+%       dataMode    - 0 - all data
 %                   - 1 - all of g incr = 100%, 200%, 400%
 %                   - 2 - all of g incr = 100%, 200%, 400% 
 %                   but exclude cell-pharm-g_incr sets containing problematic sweeps
@@ -19,12 +19,12 @@ function [passiveParams, fitResults, fitObject, goodnessOfFit, ...
 %                   must be a directory
 %                   default == //media/adamX/m3ha/data_dclamp/take4/
 %       outFolder   - (opt) the directory to output graphs 
-%                       (different subdirectories will be created for each fitMode)
+%                       (different subdirectories will be created for each dataMode)
 %                   must be a directory
 %                   default == //media/adamX/m3ha/data_dclamp/take4/
-%       plotpassiveflag    - (opt) whether to plot graphs
+%       plotFlag    - (opt) whether to plot graphs
 %                   default == true
-%       groupmode   must be one of the following:
+%       groupMode   must be one of the following:
 %                       'cell_actVhold'
 %                       'cell'
 %                   default == 'cell'
@@ -38,7 +38,7 @@ function [passiveParams, fitResults, fitObject, goodnessOfFit, ...
 %       cd/m3ha_find_ind_to_fit.m
 %       cd/m3ha_locate_homedir.m
 %       cd/m3ha_parse_mat.m
-%       cd/m3ha_specs_for_fitmode.m
+%       cd/m3ha_specs_for_datamode.m
 %
 % Used by:
 %       cd/m3ha_parse_dclamp_data.m
@@ -48,7 +48,7 @@ function [passiveParams, fitResults, fitObject, goodnessOfFit, ...
 % 2016-11-08 Changed from using Vhold to using actVhold for binning
 % 2016-11-10 Nows saves set info linearly in _set and 2-dimensionally in _cv
 % 2016-11-10 Added fn_set & fn_cv
-% 2016-12-01 Added groupmode, made default to be grouping by cell only
+% 2016-12-01 Added groupMode, made default to be grouping by cell only
 % 2016-12-04 Changed current pulse response to last just 150 ms 
 %               (cprWin is changed from [95, 500] to [95, 260])
 % 2016-12-04 Added logheaderSwpInfo && logvariablesSwpInfo
@@ -134,7 +134,7 @@ logvariablesParams = {'C0', ...
             'rad_dend', ...
             'length_dend'};
 
-% logheaderSwpInfo && logvariablesSwpInfo depend on groupmode
+% logheaderSwpInfo && logvariablesSwpInfo depend on groupMode
 logheaderSwpInfoCellActVHold = {'Data filename', 'Cell #', 'Set #', ...
             'Rough holding potential (mV)', ...
             'Current pulse amplitude (pA)', 'Pulse width (ms)', ...
@@ -178,19 +178,19 @@ end
 % Check arguments
 % TODO
 if nargin < 1
-    error('A fitMode is required, type ''help m3ha_estimate_passive_params'' for usage');
-elseif isempty(fitMode) || ~isnumeric(fitMode) || ~(fitMode == 0 || fitMode == 1 || fitMode == 2)
-    error('fitMode out of range!, type ''help m3ha_estimate_passive_params'' for usage');
+    error('A dataMode is required, type ''help m3ha_estimate_passive_params'' for usage');
+elseif isempty(dataMode) || ~isnumeric(dataMode) || ~(dataMode == 0 || dataMode == 1 || dataMode == 2)
+    error('dataMode out of range!, type ''help m3ha_estimate_passive_params'' for usage');
 elseif nargin >= 2 && ~isdir(infolder)
     error('infolder must be a directory!');
 elseif nargin >= 3 && ~isdir(outFolder)
     error('outFolder must be a directory!');
-elseif nargin >= 4 && ~islogical(plotpassiveflag)
-    error('plotpassiveflag must be either true (1) or false (0)!')
-elseif nargin >= 5 && ~ischar(groupmode)
-    error('groupmode must be either ''cell_actVhold'' or ''cell''!')
-elseif nargin >= 5 && ischar(groupmode) && (~strcmp(groupmode, 'cell_actVhold') || ~strcmp(groupmode, 'cell'))
-    error('groupmode must be either ''cell_actVhold'' or ''cell''!')
+elseif nargin >= 4 && ~islogical(plotFlag)
+    error('plotFlag must be either true (1) or false (0)!')
+elseif nargin >= 5 && ~ischar(groupMode)
+    error('groupMode must be either ''cell_actVhold'' or ''cell''!')
+elseif nargin >= 5 && ischar(groupMode) && (~strcmp(groupMode, 'cell_actVhold') || ~strcmp(groupMode, 'cell'))
+    error('groupMode must be either ''cell_actVhold'' or ''cell''!')
 end
 
 % Set defaults for optional arguments
@@ -205,10 +205,10 @@ if nargin < 3
     end
 end
 if nargin < 4
-    plotpassiveflag = 1;
+    plotFlag = 1;
 end
 if nargin < 5
-    groupmode = 'cell';
+    groupMode = 'cell';
 end
 
 % Check if output directories exist
@@ -220,15 +220,15 @@ dataDirectory = fullfile(infolder, dataDirectoryName);
 initialSlopesPath = fullfile(infolder, initialSlopesFile);
 sweepInfoPath = fullfile(infolder, sweepInfoFile);
 
-% Set suffix and title modification according to fitMode
-[suffix, titleMod] = m3ha_specs_for_fitmode(fitMode);
-fprintf('Using fit mode == %d ... \n', fitMode);
+% Set suffix and title modification according to dataMode
+[suffix, titleMod] = m3ha_specs_for_datamode(dataMode);
+fprintf('Using fit mode == %d ... \n', dataMode);
 
-% Set logheaderSwpInfo && logvariablesSwpInfo depending on groupmode
-if strcmp(groupmode, 'cell_actVhold')
+% Set logheaderSwpInfo && logvariablesSwpInfo depending on groupMode
+if strcmp(groupMode, 'cell_actVhold')
     logheaderSwpInfo = logheaderSwpInfoCellActVHold;
     logvariablesSwpInfo = logvariablesSwpInfoCellActVHold;
-elseif strcmp(groupmode, 'cell')
+elseif strcmp(groupMode, 'cell')
     logheaderSwpInfo = logheaderSwpInfoCell;
     logvariablesSwpInfo = logvariablesSwpInfoCell;
 end
@@ -243,15 +243,15 @@ cellidrow = sweepInfo.cellidrow;
 actVhold = sweepInfo.actVhold;
 actIhold = sweepInfo.actIhold;
 
-% Restrict data to fit if fitMode > 0
-if fitMode > 0
+% Restrict data to fit if dataMode > 0
+if dataMode > 0
     % Find indices of fnrow in dclampdatalog_take4.mat that will be used for fitting
     fnrow_old = sweepInfo.fnrow;            % file names for each sweep, used for indtofit
     cellidrow_old = sweepInfo.cellidrow;    % Cell ID # for each sweep, used for indtofit
     prow_old = sweepInfo.prow;              % Pharm condition for each sweep, used for indtofit
     grow_old = sweepInfo.grow;              % G incr for each sweep, used for indtofit
     indtofit = m3ha_find_ind_to_fit(fnrow_old, cellidrow_old, prow_old, ...
-                                    grow_old, fitMode, infolder);
+                                    grow_old, dataMode, infolder);
 
     % Restrict vectors
     fnrow = fnrow(indtofit);
@@ -267,7 +267,7 @@ nTotalSweeps = numel(fnrow);
 dataFilesAll = construct_fullpath(fnrow, 'Directory', dataDirectory);
 
 %% Do the passive fitting
-if strcmp(groupmode, 'cell')        % Group the sweeps by cellidrow
+if strcmp(groupMode, 'cell')        % Group the sweeps by cellidrow
     % Get all the unique cell IDs recorded 
     cellId = transpose(unique(cellidrow));
 
@@ -361,7 +361,7 @@ if strcmp(groupmode, 'cell')        % Group the sweeps by cellidrow
                                      'HoldCurrent', actIhold, ...
                                      'PulseWindow', cpWin, ...
                                      'PulseResponseWindow', cprWin, ...
-                                     'PlotFlag', plotpassiveflag, ...
+                                     'PlotFlag', plotFlag, ...
                                      'OutFolder', outFolder, ...
                                      'FileBase', fileBase{iCell}, ...
                                      'Ivec1s', ivec1s, ...
@@ -372,7 +372,7 @@ if strcmp(groupmode, 'cell')        % Group the sweeps by cellidrow
         toc;
         fprintf('\n');
     end
-elseif strcmp(groupmode, 'cell_actVhold')           % TODO: Fix everything 
+elseif strcmp(groupMode, 'cell_actVhold')           % TODO: Fix everything 
 % TODO TODO TODO
     % Group the sweeps by cellidrow and vrow
     maxCellNumber = max(cellidrow);                % total number of cells recorded 
@@ -442,7 +442,7 @@ elseif strcmp(groupmode, 'cell_actVhold')           % TODO: Fix everything
             [passiveParams{iSet}, cpa_set{iSet}, pw_set{iSet}, dvrec_set{iSet}, rmse_R_set{iSet}, rmse_F_set{iSet}, ...
                 params_L_F2_set{iSet}, params_S_R2_set{iSet}, params_L_F1_set{iSet}, params_S_R1_set{iSet}] = ...
                 find_passive_params (tvec0, ivec0s, vvec0s, ...
-                    cpWin, cprWin, cpMid, plotpassiveflag, outFolder, fn_set{iSet}, ivec1s, fitMode);
+                    cpWin, cprWin, cpMid, plotFlag, outFolder, fn_set{iSet}, ivec1s, dataMode);
 
             [passiveParams{iSet}, fitResults{iSet}, fitObject{iSet}, ...
                 goodnessOfFit{iSet}, algorithmInfo{iSet}, ...
@@ -450,7 +450,7 @@ elseif strcmp(groupmode, 'cell_actVhold')           % TODO: Fix everything
                 find_passive_params (tvec0, ivec0s, vvec0s, ...
                                      'PulseWindow', cpWin, ...
                                      'PulseResponseWindow', cprWin, ...
-                                     'PlotFlag', plotpassiveflag, ...
+                                     'PlotFlag', plotFlag, ...
                                      'OutFolder', outFolder, ...
                                      'FileBase', fn_set{iSet}, ...
                                      'Ivec1s', ivec1s, ...
@@ -510,7 +510,7 @@ writetable(resultsTable, fullfile(outFolder, outSheetNameMod));
 %                 fitResultsTable, goodnessOfFitTable, algorithmInfoTable];
 
 % Save variables for each set/cell
-if strcmp(groupmode, 'cell')        % Group the sweeps by cellidrow
+if strcmp(groupMode, 'cell')        % Group the sweeps by cellidrow
     save(fullfile(outFolder, outMatNameByCellsMod), ...
             'cellId', 'cellName', 'fileBase', ...
             'dataFileNames', 'dataFilePaths', ...
@@ -519,7 +519,7 @@ if strcmp(groupmode, 'cell')        % Group the sweeps by cellidrow
             'logheaderSwpInfo', 'logvariablesSwpInfo', ...
             'logheaderParams', 'logvariablesParams', ...
             '-v7.3');
-elseif strcmp(groupmode, 'cell_actVhold')           % TODO: Fix everything 
+elseif strcmp(groupMode, 'cell_actVhold')           % TODO: Fix everything 
     save(fullfile(outFolder, outMatNameBySetsMod), ...
             'cellId', 'VholdBC', 'cellName', 'fileBase', ...
             'dataFileNames', 'dataFilePaths', ...
@@ -545,7 +545,7 @@ function resave_variables_for_sweep (outFolder, ...
             suffix, nTotalSweeps, dataFileName, ...
             dataFileNamesSet, cellIdSet, passiveParams, allResults)
 % Resave fitted variables for each sweep from grouped data for each set/cell
-%   Note: holdPotential is empty for groupmode == 'cell'
+%   Note: holdPotential is empty for groupMode == 'cell'
 
 % Construct output file name
 outputfilename = ['dclampPassiveLog_bySwps', suffix, '.mat'];
@@ -654,8 +654,8 @@ eval(command);
 
 numswps = length(fnrow);                % total number of sweeps of interest
 
-%% Set suffixes for each fitMode
-[suffix, ~] = SpecsForFitmode (fitMode);
+%% Set suffixes for each dataMode
+[suffix, ~] = SpecsForFitmode (dataMode);
 
 %% Create folders for saving files
 outfolder_pass = fullfile(outFolder, ['/passive', suffix, '/']);
@@ -698,7 +698,7 @@ end
 [params_cell{iCell}, cpa_cell{iCell}, pw_cell{iCell}, dvrec_cell{iCell}, rmse_R_cell{iCell}, rmse_F_cell{iCell}, ...
     params_L_F2_cell{iCell}, params_S_R2_cell{iCell}, params_L_F1_cell{iCell}, params_S_R1_cell{iCell}] = ...
     find_passive_params (tvec0, ivec0s, vvec0s, ...
-        cpWin, cprWin, cpMid, plotpassiveflag, outFolder, fileBase{iCell}, ivec1s, fitMode);
+        cpWin, cprWin, cpMid, plotFlag, outFolder, fileBase{iCell}, ivec1s, dataMode);
 
 if preallocateflag
     filesCell = cell(1, nCells);            % stores files for each cell
@@ -746,15 +746,15 @@ rmse_R_cell = cell(1, nCells);% stores a vector of root-mean-squared errors (mV)
 rmse_F_cell = cell(1, nCells);% stores a vector of root-mean-squared errors (mV) in the falling phase for each sweep
                 %        for each sweep in the cell
 
-% Preallocate according to the fitMode and groupmode
+% Preallocate according to the dataMode and groupMode
 %%% NOT FINISHED
 if preallocateflag
     nCells = 49;
-    if fitMode == 0
+    if dataMode == 0
         numsets = 3*49;            % Total number of cell-Vhold conditions recorded
-    elseif fitMode == 1
+    elseif dataMode == 1
         numsets = 88;
-    elseif fitMode == 2
+    elseif dataMode == 2
         numsets = 88;
     end
 end
@@ -841,9 +841,9 @@ resave_variables_for_sweep(outFolder, logheaderSwpInfo, logvariablesSwpInfo, ...
             suffix, nTotalSweeps, fnrow, numsets, dataFileNames, celln_set, ...
             cpa_set, pw_set, dvrec_set, rmse_R_set, rmse_F_set, passiveParams, holdPotential)
 
-if strcmp(groupmode, 'cell')        % Group the sweeps by cellidrow
+if strcmp(groupMode, 'cell')        % Group the sweeps by cellidrow
     nSets = nCells;
-elseif strcmp(groupmode, 'cell_actVhold')           % TODO: Fix everything 
+elseif strcmp(groupMode, 'cell_actVhold')           % TODO: Fix everything 
     nSets = numsets;
 end
 

@@ -112,7 +112,7 @@ function [passiveParams, fitResults, fitObject, ...
 %                   from 'a*exp(-x/b)+c*exp(-x/d)+e'
 % 2016-10-31 - Removed '- round(0.5/siMs)' from the definition of indBaseline
 % 2016-10-31 - Made sure tau1 >= tau2
-% 2016-11-01 - Added fitMode so that the titles and filenames can change
+% 2016-11-01 - Added dataMode so that the titles and filenames can change
 % 2016-11-01 - Exclude faulty traces, including those with spontaneous spikes, 
 %                   from the fitting
 % 2016-11-01 - Added pulse width
@@ -143,10 +143,9 @@ function [passiveParams, fitResults, fitObject, ...
 % 2018-10-10 - Changed voltageChange to be steady - base
 % 2018-10-12 - Moved code to its own functions
 % 2018-10-14 - Added the combined phase
-% 2018-10-15 - Removed dependence to fitMode and added Suffix and TitleMod
+% 2018-10-15 - Removed dependence to dataMode and added Suffix and TitleMod
 %               as optional arguments instead
 % 2018-11-13 - Updated usage of parse_pulse_response.m
-%  
 
 %% Flags
 
@@ -1037,8 +1036,8 @@ if strcmp(phaseName, 'falling')
     line(xLimits, [dvss_L dvss_L], 'Color', 'm', 'LineStyle', '--', 'LineWidth', 0.5);
 end
 
-if nargin < 10 || (nargin >= 10 && isempty(fitMode))
-    fitMode = 0;
+if nargin < 10 || (nargin >= 10 && isempty(dataMode))
+    dataMode = 0;
 end
 
 fitObject = cell(1, nSweeps);                % double exponential fit
@@ -1143,9 +1142,9 @@ for k = 1:numel(directories)
     directories{k} = [ '/', strrep(temp, '/', [suffix, '/']) ];
 end
 
-%% Only do the following if fitMode is used
+%% Only do the following if dataMode is used
 
-function [passiveParams, pulseAmplitude, pulseWidth, voltageChange, rmseRising, rmseFalling, params_L_F2, params_S_R2, params_L_F1, paramsAllRising] = find_passive_params (tvec0, ivec0s, vvec0s, pulseWindow, pulseResponseWindow, pulseMidpoint, plotFlag, outFolder, fileBase, ivec1s, fitMode)
+function [passiveParams, pulseAmplitude, pulseWidth, voltageChange, rmseRising, rmseFalling, params_L_F2, params_S_R2, params_L_F1, paramsAllRising] = find_passive_params (tvec0, ivec0s, vvec0s, pulseWindow, pulseResponseWindow, pulseMidpoint, plotFlag, outFolder, fileBase, ivec1s, dataMode)
 
 % Median filter current vectors
 ivec1s = zeros(nSamples, nSweeps);
@@ -1572,7 +1571,7 @@ plot_geometry_and_passive_params(paramsAllRising, paramsAllFalling);
 subplot(3,2,6);
 plot_geometry_and_passive_params(paramsAvgRising, paramsAvgFalling);
 
-%                   - 'FitMode': fitting mode
+%                   - 'DataMode': data mode
 %                   must be one of the following
 %                       -1 - none
 %                       0 - all data
@@ -1582,17 +1581,17 @@ plot_geometry_and_passive_params(paramsAvgRising, paramsAvgFalling);
 %                               containing problematic sweeps
 %                   default == -1
 
-%       cd/m3ha_specs_for_fitmode.m (if fitMode is used)
+%       cd/m3ha_specs_for_datamode.m (if dataMode is used)
 
-addParameter(iP, 'FitMode', fitModeDefault, ...
+addParameter(iP, 'DataMode', dataModeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
-fitModeDefault = 0;
-fitMode = iP.Results.FitMode;
-elseif fitMode ~= 0 && fitMode ~= 1 && fitMode ~= 2
-    error('fitMode out of range!');
+dataModeDefault = 0;
+dataMode = iP.Results.DataMode;
+elseif dataMode ~= 0 && dataMode ~= 1 && dataMode ~= 2
+    error('dataMode out of range!');
 
-% Set suffix and title modification according to fitMode
-[suffix, titleMod] = m3ha_specs_for_fitmode(fitMode);
+% Set suffix and title modification according to dataMode
+[suffix, titleMod] = m3ha_specs_for_datamode(dataMode);
 
 [idxStart, idxEnd] = find_window_endpoints(pulseResponseWindow, tvec0);
 indCpr = transpose(idxStart:idxEnd);

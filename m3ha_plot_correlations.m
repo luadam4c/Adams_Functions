@@ -18,7 +18,7 @@ function m3ha_plot_correlations (fitmode, infolder, outfolder)
 %       "infolder"/dclampdatalog_take4.mat
 %       cd/find_in_strings.m
 %       cd/m3ha_find_ind_to_fit.m
-%       cd/m3ha_specs_for_fitmode.m
+%       cd/m3ha_specs_for_datamode.m
 %
 % Used by:    
 %       cd/m3ha_parse_dclamp_data.m
@@ -106,7 +106,7 @@ fprintf('Using fit mode == %d ... \n', fitmode);
 fprintf('Using matfile == %s ... \n', fullmatfilepath);
 
 %% Set suffix according to fitmode
-suffix = m3ha_specs_for_fitmode(fitmode);
+suffix = m3ha_specs_for_datamode(fitmode);
 
 %% Create output folders for saving files
 outfolderCorr = fullfile(outfolder, ['correlations', suffix]);

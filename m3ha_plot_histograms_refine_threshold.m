@@ -23,7 +23,7 @@ function m3ha_plot_histograms_refine_threshold (fitmode, infolder, outfolder, gr
 %       "infolder"/trace_comparison.mat
 %       cd/m3ha_find_ind_to_fit.m
 %       cd/m3ha_locate_homedir.m
-%       cd/m3ha_specs_for_fitmode.m
+%       cd/m3ha_specs_for_datamode.m
 %       cd/fit_gaussians_and_refine_threshold.m
 %       cd/plot_and_save_histogram.m
 %       cd/plot_and_save_boxplot.m
@@ -149,7 +149,7 @@ if nargin < 4
 end
 
 % Set suffix and title modification according to fitmode
-[suffix, titleMod] = m3ha_specs_for_fitmode(fitmode);
+[suffix, titleMod] = m3ha_specs_for_datamode(fitmode);
 
 %% Choose passive file
 if strcmp(groupmode, 'cell_actVhold')
