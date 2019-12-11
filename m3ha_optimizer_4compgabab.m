@@ -693,10 +693,6 @@ else
             err = struct;
         end
     end
-else
-    % Use empty structures
-    errCpr = struct;
-    err = struct;
 end
 
 % Store error structure in outParams
