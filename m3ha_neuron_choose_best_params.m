@@ -133,6 +133,7 @@ if nTables == 0
 end
 
 % Decide on iteration strings and cell names
+%   Note: Make sure iterStr and cellName have nTables rows
 if isempty(candParamsFiles)
     iterStr = create_labels_from_numbers(1:nTables, 'Prefix', 'table');
     cellName = repmat({'some_cell'}, nTables, 1);
@@ -151,7 +152,7 @@ uniqueCellNames = unique(cellName);
 if numel(uniqueCellNames) > 2
     error('Candidate parameters must all come from the same cell!');
 else
-    cellName = uniqueCellNames{1};
+    uniqueCellName = uniqueCellNames{1};
 end
 
 % Turn off all flags for stats and plots except plotIndividualFlag
@@ -176,7 +177,7 @@ otherArguments = ...
 % Decide on prefix if not provided
 if isempty(prefix)
     % Use the cell name
-    prefix = cellName;
+    prefix = uniqueCellName;
 
     % If no cell name, use the directory base
     if isempty(prefix)
