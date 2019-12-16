@@ -1,6 +1,6 @@
-% function [output1] = m3ha_rank_neurons (reqarg1, varargin)
-%% Ranks neurons according to how well they are fitted
-% Usage: [output1] = m3ha_rank_neurons (reqarg1, varargin)
+% function [output1] = m3ha_simulate_ipsc_response (reqarg1, varargin)
+%% Generates simulated IPSC responses that can be compared with recorded data
+% Usage: [output1] = m3ha_simulate_ipsc_response (reqarg1, varargin)
 % Explanation:
 %       TODO
 %
@@ -29,73 +29,47 @@
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_select_cells.m
 %       cd/m3ha_select_raw_traces.m
+% TODO
+%       cd/create_labels_from_numbers.m
+%       cd/find_matching_files.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
 
 % File History:
-% 2019-12-03 Created by Adam Lu
+% 2019-12-11 Created by Adam Lu
 % 
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = false;
-plotErrorHistoryFlag = true; %TODO
-rankNeuronsFlag = false; %true;
+chooseBestNeuronsFlag = true;
+simulateFlag = false;
+computeStatsFlag = false;
 
-% Fitting parameters 
-%   Note: Must be consistent with singleneuronfitting75.m
+% Selection parameters
+nCellsToSim = 10;
+
+% Simulation parameters 
 simMode = 'active';
-dataMode = 2;                       % data mode:
+dataMode = 0;                       % data mode:
+                                    %   0 - all data
                                     %   1 - all of g incr = 100%, 200%, 400% 
                                     %   2 - same g incr but exclude 
                                     %       cell-pharm-g_incr sets 
                                     %       containing problematic sweeps
-columnMode = 1;                     % optimization mode:
-                                    %   1 - across trials
-                                    %   2 - across cells TODO
-rowmodeAcrossTrials = 1;            % row mode when fitting across trials:
-                                    %   1 - each row is a pharm condition
-                                    %   2 - each row is a pharm, g incr pair
-attemptNumberAcrossTrials = 4;      % attempt number for across trials:
-                                    %   1 - Use 4 traces of each cell to fit 
-                                    %           @ 200% g_incr
-                                    %   2 - Use all traces of each cell to fit 
-                                    %           @ 200% g_incr
-                                    %   3 - Use all traces of each cell to fit 
-                                    %           for this data mode
-                                    %   4 - Use 12 traces of each cell to fit 
-                                    %       (one trial each for 4 pharm conditions 
-                                    %           X 100%, 200%, 400% g_incr)
-                                    %   TODO: 5 - Same as 3 for passive fitting
-                                    %       but same as 4 for active fitting
 
 % Directory names
 parentDirectoryTemp = '/media/adamX/m3ha';
 fitDirName = 'optimizer4gabab';
-paramDirNames = fullfile('best_params', ...
-                        {'bestparams_20191120_singleneuronfitting60', ...
-                        'bestparams_20191122_singleneuronfitting61', ...
-                        'bestparams_20191123_singleneuronfitting62', ...
-                        'bestparams_20191125_singleneuronfitting63', ...
-                        'bestparams_20191129_singleneuronfitting72', ...
-                        'bestparams_20191201_singleneuronfitting73', ...
-                        'bestparams_20191203_singleneuronfitting74'});
+rankDirName = 'ranked';
 dataDirName = fullfile('data_dclamp', 'take4');
 matFilesDirName = 'matfiles';
 specialCasesDirName = 'special_cases';
-defaultOutFolderName = 'ranked';
+defaultOutFolderName = 'simulated';
 
 % File info
 cellNamePattern = '[A-Z][0-9]{6}';
-
-%   Note: Must be consistent with m3ha_neuron_choose_best_params.m
-errorSheetSuffix = 'error_comparison';
-errorSheetExtension = 'csv';
-
-rankPrefix = 'singleneuronfitting60-73';
-rankSheetSuffix = 'ranked';
-rankSheetExtension = 'csv';
+iterStrPattern = 'singleneuronfitting[0-9]*';
 
 % Default parameters used in computing errors
 %   Note: Should be consistent with singleneuronfitting75.m
@@ -154,6 +128,9 @@ parentDirectory = parentDirectoryTemp;
 % Locate the fit directory
 fitDirectory = fullfile(parentDirectory, fitDirName);
 
+% Locate the ranked directory
+rankDirectory = fullfile(fitDirectory, rankDirName);
+
 % Decide on output folder
 if isempty(outFolder)
     outFolder = fullfile(fitDirectory, defaultOutFolderName);
@@ -162,8 +139,34 @@ end
 % Check if output folder exists
 check_dir(outFolder);
 
-%% Choose the best parameters for each cell
-if chooseBestParamsFlag
+%% Choose the best cells and the best parameters for each cell
+if chooseBestNeuronsFlag
+    % Create rank number prefixes
+    rankPrefixes = create_labels_from_numbers(1:nCellsToSim, 'Prefix', 'rank_', ...
+                                            'Suffix', '_');
+
+    % Find png files matching the rank prefixes
+    [~, pngPaths] = find_matching_files(rankPrefixes, 'PartType', 'Prefix', ...
+                            'Directory', rankDirectory, 'Extension', 'png', ...
+                            'ExtractDistinct', false);
+
+    % Extract the cell names
+    cellNames = extract_substrings(pngPaths, 'RegExp', cellNamePattern);
+
+    % Extract the iteration numbers
+    iterStrs = extract_substrings(pngPaths, 'RegExp', iterStrPattern);
+
+    % Find the parameter file directories
+    paramDirs = 
+
+    % Find the parameter files 
+    [~, pngPaths] = find_matching_files(rankPrefixes, 'PartType', 'Prefix', ...
+                            'Directory', rankDirectory, 'Extension', 'png', ...
+                            'ExtractDistinct', false);
+
+end
+
+if false
     %% Preparation
     % Locate the data directory
     dataDir = fullfile(parentDirectory, dataDirName);
@@ -250,12 +253,12 @@ if chooseBestParamsFlag
     end
 end
 
-%% Plot the error history for each cell
-if plotErrorHistoryFlag
+%% Simulate
+if simulateFlag
 end
 
 %% Combine the errors and rank neurons
-if rankNeuronsFlag
+if computeStatsFlag
     % Display message
     fprintf('Ranking all cells ... \n');
 

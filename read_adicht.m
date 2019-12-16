@@ -4,11 +4,14 @@ function [data, file, dataAll] = read_adicht(fileName)
 % Explanation:
 %       TODO
 %       Note: This function only works under Windows!!
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       output1     - TODO: Description of output1
 %                   specified as a TODO
+%
 % Arguments:
 %       reqarg1     - TODO: Description of reqarg1
 %                   must be a TODO

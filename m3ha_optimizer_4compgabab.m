@@ -434,7 +434,7 @@ elseif outParams.fitMode == 4
 
         % Prepare outparams0 for passive fit
         [outparams0, prefixOrig, neuronParamsUseOrig] = ...
-            prepare_outparams_passive(outparams0);
+            prepare_outparams_cpr(outparams0);
 
         % Prepare outparams0 for simplex
         [outparams0] = ...
@@ -454,14 +454,14 @@ elseif outParams.fitMode == 4
 
         % Restore outparams0 after passive fitting
         [outparams0] = ...
-            restore_outparams_passive(outparams0, prefixOrig, neuronParamsUseOrig);
+            restore_outparams_cpr(outparams0, prefixOrig, neuronParamsUseOrig);
 
         % Use the optimized parameters
         outparams0.neuronParamsTable = cprSimplexOutAll{iInitCond}.neuronParamsTable;
 
         % Prepare outparams0 for active fit
         [outparams0, neuronParamsUseOrig] = ...
-            prepare_outparams_active(outparams0);
+            prepare_outparams_ipscr(outparams0);
 
         % Prepare outparams0 for simplex
         [outparams0] = ...
@@ -481,7 +481,7 @@ elseif outParams.fitMode == 4
         %%%%%%
 
         % Restore outparams0 after active fit
-        outparams0 = restore_outparams_active(outparams0, neuronParamsUseOrig);
+        outparams0 = restore_outparams_ipscr(outparams0, neuronParamsUseOrig);
     end
 
     % Update # of simplex runs and # of simplex steps
@@ -536,7 +536,7 @@ else
 
         % Prepare outParams for passive fit
         [outParams, prefixOrig, neuronParamsUseOrig] = ...
-            prepare_outparams_passive(outParams);
+            prepare_outparams_cpr(outParams);
         
         % Optimize passive parameters by fitting to current pulse response
         cprInitialConditionsAll = cell(1, nInitConds);            % stores the initial parameters for each simplex run
@@ -568,7 +568,7 @@ else
 
         % Restore outParams after passive fit
         [outParams] = ...
-            restore_outparams_passive(outParams, prefixOrig, neuronParamsUseOrig);
+            restore_outparams_cpr(outParams, prefixOrig, neuronParamsUseOrig);
 
         % Update # of simplex runs and # of simplex steps
         outParams.simplexNum = outParams.simplexNum + nInitConds;    
@@ -617,7 +617,7 @@ else
         tStartActiveFit = tic();                % tracks time for active-parameters-fitting
 
         % Prepare outParams for active fit
-        [outParams, neuronParamsUseOrig] = prepare_outparams_active(outParams);
+        [outParams, neuronParamsUseOrig] = prepare_outparams_ipscr(outParams);
 
         % Optimize active parameters by fitting to IPSC response
         initialConditionsAll = cell(1, nInitConds);                % stores the initial parameters for each simplex run
@@ -649,7 +649,7 @@ else
         end
 
         % Restore outParams after active fit
-        outParams = restore_outparams_active(outParams, neuronParamsUseOrig);
+        outParams = restore_outparams_ipscr(outParams, neuronParamsUseOrig);
 
         % Update # of simplex runs and # of simplex steps
         outParams.simplexNum = outParams.simplexNum + nInitConds;
@@ -724,8 +724,8 @@ outParams.runnumTotal = outParams.runnumTotal + 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [outParams, prefixOrig, neuronParamsUseOrig] = ...
-                prepare_outparams_passive (outParams)
-%% Prepare outParams for passive fit
+                prepare_outparams_cpr (outParams)
+%% Prepare outParams for fitting to current pulse response
 
 % Turn flag for passive-parameters-fitting on
 outParams.simMode = 'passive';
@@ -749,9 +749,9 @@ outParams.simplexParams = outParams.simplexParamsPassive;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [outParams] = restore_outparams_passive (outParams, prefixOrig, ...
+function [outParams] = restore_outparams_cpr (outParams, prefixOrig, ...
                                                 neuronParamsUseOrig)
-%% Restore outParams after passive fit
+%% Restore outParams after fitting to current pulse response
 
 % Turn flag for passive-parameters-fitting off
 outParams.simMode = 'active';
@@ -767,8 +767,8 @@ outParams.simplexParams = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [outParams, neuronParamsUseOrig] = prepare_outparams_active (outParams)
-%% Prepare outParams for active fit
+function [outParams, neuronParamsUseOrig] = prepare_outparams_ipscr (outParams)
+%% Prepare outParams for fitting to IPSC response
 
 % Save original parameter usage
 neuronParamsUseOrig = outParams.neuronParamsTable.InUse;
@@ -785,8 +785,8 @@ outParams.simplexParams = outParams.simplexParamsActive;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function outParams = restore_outparams_active (outParams, neuronParamsUseOrig)
-%% Restore outParams after active fit
+function outParams = restore_outparams_ipscr (outParams, neuronParamsUseOrig)
+%% Restore outParams after fitting to IPSC response
 
 % Restore original parameter usage
 outParams.neuronParamsTable{:, 'InUse'} = neuronParamsUseOrig;

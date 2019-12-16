@@ -32,6 +32,10 @@ function varargout = all_files (varargin)
 %                   - 'Recursive': whether to search recursively
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'SubDirInstead': whether to look for 
+%                                       subdirectories instead
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'ForceCellOutput': whether to force output as a cell array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -69,6 +73,7 @@ function varargout = all_files (varargin)
 %       cd/extract_fullpaths.m
 %
 % Used by:
+%       cd/all_subdirs.m
 %       cd/all_swd_sheets.m
 %       cd/atf2sheet.m
 %       cd/combine_data_from_same_slice.m
@@ -105,6 +110,7 @@ function varargout = all_files (varargin)
 % 2019-05-21 Added 'SortBy' as an optional argument
 % 2019-09-05 Add 'MaxNum' as an optional argument
 % 2019-11-24 Now allows 'Directory' to be multiple directories
+% 2019-12-13 Added 'SubDirInstead' as an optional argument 
 % TODO: Fix bug when a dot is in the folder name
 
 %% Hard-coded parameters
@@ -114,6 +120,7 @@ validSortBys = {'name', 'date', 'bytes'};
 verboseDefault = false;         % don't print to standard output by default
 warnFlagDefault = true;         % warn if no files found by default
 recursiveDefault = false;       % don't search recursively by default
+subDirInsteadDefault = false;   % look for files by default
 forceCellOutputDefault = false; % don't force output as a cell array by default
 directoryDefault = '';          % construct_and_check_fullpath('') == pwd
 prefixDefault = '';             % set later
@@ -137,6 +144,8 @@ addParameter(iP, 'Verbose', verboseDefault, ...
 addParameter(iP, 'WarnFlag', warnFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Recursive', recursiveDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SubDirInstead', subDirInsteadDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -165,6 +174,7 @@ parse(iP, varargin{:});
 verbose = iP.Results.Verbose;
 warnFlag = iP.Results.WarnFlag;
 recursive = iP.Results.Recursive;
+subDirInstead = iP.Results.SubDirInstead;
 forceCellOutput = iP.Results.ForceCellOutput;
 directory = iP.Results.Directory;
 prefix = iP.Results.Prefix;
@@ -186,6 +196,12 @@ end
 %% Preparation
 % Make sure the extension begins with a dot
 extension = force_string_start(extension, '.', 'OnlyIfNonempty', true);
+
+if subDirInstead
+    detectType = 'subdirectories';
+else
+    detectType = 'files';
+end
 
 %% Find files
 % Get or check the regular expression to match
@@ -219,11 +235,11 @@ filesOrDirs = all_files_or_dirs(directory, recursive);
 % Get a logical vector that tells which entries are directories
 isDir = transpose([filesOrDirs.isdir]);
 
+% Get all file or directory names
+names = transpose({filesOrDirs.name});
+
 % Get a logical vector that tells which entries matches the regular expression
 if ~isempty(regExp)
-    % Get all file or directory names
-    names = transpose({filesOrDirs.name});
-
     % Test whether each matches the regular expression
     isMatch = cellfun(@any, regexpi(names, regExp));
 else
@@ -231,9 +247,16 @@ else
     isMatch = true(size(filesOrDirs));
 end
 
+% Get a logical vector that tells which entries are irrelevant ('.' or '..')
+isIrrelevant = cellfun(@(x) any(strcmp(x, {'.', '..'})), names);
+
 % Keep only those that are not directories and 
 %   are matches to the regular expression
-files = filesOrDirs(~isDir & isMatch);
+if subDirInstead
+    files = filesOrDirs(isDir & ~isIrrelevant & isMatch);
+else
+    files = filesOrDirs(~isDir & isMatch);
+end
 
 % Sort by date or bytes if requested
 if ~strcmpi(sortBy, 'name')
@@ -273,10 +296,11 @@ directoryStr = print_cellstr(directory, 'OmitNewline', true, ...
                             'OmitBraces', true, 'OmitQuotes', true, ...
                             'ToPrint', false);
 if nFiles == 0 && warnFlag
-    fprintf('No files with pattern %s found in %s!!\n', regExp, directoryStr);
+    fprintf('No %s with pattern %s found in %s!!\n', ...
+            detectType, regExp, directoryStr);
 elseif verbose
-    fprintf('%d files with pattern %s found in %s!\n', ...
-            nFiles, regExp, directoryStr);
+    fprintf('%d %s with pattern %s found in %s!\n', ...
+            nFiles, detectType, regExp, directoryStr);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

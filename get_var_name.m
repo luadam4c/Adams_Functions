@@ -3,11 +3,14 @@ function variableName = get_var_name (variable)
 % Usage: variableName = get_var_name (variable)
 % Explanation:
 %       get_var_name (myVar) == 'myVar'
+%
 % Example(s):
 %       get_var_name (myVar)
+%
 % Outputs:
 %       variableName    - name of variable
 %                       specified as a character vector
+%
 % Arguments:    
 %       variable        - variable in workspace
 %

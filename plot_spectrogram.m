@@ -27,7 +27,11 @@ function handles = plot_spectrogram (spectData, timeInstants, freqHz, varargin)
 %                   - 'YLimits': limits of y axis, 
 %                               suppress by setting value to empty
 %                   must be a 2-element increasing numeric vector
-%                   default == uses compute_axis_limits.m
+%                   default == [1, 50]
+%                   - 'CLimits': limits of color axis, 
+%                               suppress by setting value to empty
+%                   must be a 2-element increasing numeric vector
+%                   default == set by built-in imagesc()
 %                   - 'ColorMap': a color map
 %                   must be a numeric array with 3 columns
 %                   default == '/media/adamX/Settings_Matlab/spectrogram_colormap.mat'
@@ -44,6 +48,8 @@ function handles = plot_spectrogram (spectData, timeInstants, freqHz, varargin)
 
 % File History:
 % 2019-10-15 Moved from plot_traces_spike2_mat.m
+% 2019-12-11 Added color axis limits
+% TODO: Default x label, y label, title and PlotOnly flag
 % TODO: Allow option to plot the following:
 %           (1) FFT amplitude
 %           (2) FFT power
@@ -56,6 +62,7 @@ spectColorMapFile = '/media/adamX/Settings_Matlab/spectrogram_colormap.mat';
 %% Default values for optional arguments
 axHandleDefault = [];           % gca by default
 yLimitsDefault = [1, 50];       % Look at 1-50 Hz by default
+cLimitsDefault = [];            % use imagesc() defaults
 colorMapDefault = [];           % set later
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -82,12 +89,16 @@ addParameter(iP, 'AxesHandle', axHandleDefault);
 addParameter(iP, 'YLimits', yLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
+addParameter(iP, 'CLimits', cLimitsDefault, ...
+    @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'ColorMap', colorMapDefault);
 
 % Read from the Input Parser
 parse(iP, spectData, timeInstants, freqHz, varargin{:});
 axHandle = iP.Results.AxesHandle;
 yLimits = iP.Results.YLimits;
+cLimits = iP.Results.CLimits;
 colorMap = iP.Results.ColorMap;
 
 % Keep unmatched arguments for the imagesc() function
@@ -110,7 +121,12 @@ end
 colormap(ax, colorMap);
 
 % Plot the spectrogram (magnitude of FFT)
-im = imagesc(ax, timeInstants, freqHz, abs(spectData), otherArguments{:});
+if ~isempty(cLimits)
+    im = imagesc(ax, timeInstants, freqHz, abs(spectData), ...
+                cLimits, otherArguments{:});
+else
+    im = imagesc(ax, timeInstants, freqHz, abs(spectData), otherArguments{:});
+end
 
 % Flip the Y Axis so lower frequencies are at the bottom
 set(ax, 'YDir', 'normal');

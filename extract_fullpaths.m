@@ -19,7 +19,6 @@ function fullPaths = extract_fullpaths (files, varargin)
 %
 % Used by:
 %       cd/all_files.m
-%       cd/all_subdirs.m
 
 % File History:
 % 2018-09-27 Created by Adam Lu

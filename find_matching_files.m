@@ -1,6 +1,6 @@
-function varargout = find_matching_files (fileParts, varargin)
-%% Finds matching files from file parts
-% Usage: [files, fullPaths, distinctParts] = find_matching_files (fileParts, varargin)
+function varargout = find_matching_files (fileStrs, varargin)
+%% Finds matching files from file strings
+% Usage: [files, fullPaths, distinctParts] = find_matching_files (fileStrs, varargin)
 % Explanation:
 %       TODO
 %
@@ -24,7 +24,7 @@ function varargout = find_matching_files (fileParts, varargin)
 %                   specified as a column cell array of character vectors
 %
 % Arguments:
-%       fileParts   - file parts to match (can be full paths)
+%       fileStrs   - file strings to match (can be full paths)
 %                   must be empty or a character vector or a string vector
 %                       or a cell array of character vectors
 %       varargin    - 'PartType': part type to match
@@ -34,6 +34,9 @@ function varargout = find_matching_files (fileParts, varargin)
 %                       'Suffix'    - match the suffix
 %                       'Extension' - match the extension
 %                   default == 'Keyword'
+%                   - 'ExtractDistinct': whether to extract distinct parts
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'ForceCellOutput': whether to force output as a cell array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -54,6 +57,7 @@ function varargout = find_matching_files (fileParts, varargin)
 % 2019-09-25 Created by Adam Lu
 % 2019-09-30 Now maintains character vectors as character vectors
 % 2019-10-15 Added 'ForceCellOutput' as an optional argument
+% TODO: Add 'Delimiter' as an optional argument
 % TODO: 'MaxNum' not always 1
 % 
 
@@ -62,6 +66,7 @@ validPartTypes = {'Prefix', 'Keyword', 'Suffix', 'Extension'};
 
 %% Default values for optional arguments
 partTypeDefault = 'Keyword';
+extractDistinctDefault = true;  % extract distinct parts by default
 forceCellOutputDefault = false; % don't force output as a cell array by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -78,7 +83,7 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'fileParts', ...
+addRequired(iP, 'fileStrs', ...
     @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
         ['strs5 must be a character array or a string array ', ...
             'or cell array of character arrays!']));
@@ -86,12 +91,15 @@ addRequired(iP, 'fileParts', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'PartType', partTypeDefault, ...
     @(x) any(validatestring(x, validPartTypes)));
+addParameter(iP, 'ExtractDistinct', extractDistinctDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
-parse(iP, fileParts, varargin{:});
+parse(iP, fileStrs, varargin{:});
 partType = validatestring(iP.Results.PartType, validPartTypes);
+extractDistinct = iP.Results.ExtractDistinct;
 forceCellOutput = iP.Results.ForceCellOutput;
 
 % Keep unmatched arguments for the all_files() function
@@ -99,15 +107,19 @@ otherArguments = iP.Unmatched;
 
 %% Extract distinct parts
 % Force as a cell array
-if ischar(fileParts)
-    fileParts = force_column_cell(fileParts);
+if ischar(fileStrs)
+    fileStrs = force_column_cell(fileStrs);
     wasChar = true;
 else
     wasChar = false;
 end
 
-% Extract distinct file parts
-distinctParts = extract_distinct_fileparts(fileParts);
+% Extract distinct file strings
+if extractDistinct
+    distinctParts = extract_distinct_fileparts(fileStrs);
+else
+    distinctParts = fileStrs;
+end
 
 % Extract the base
 distinctPartsBase = extract_fileparts(distinctParts, 'dirbase');
@@ -116,7 +128,7 @@ distinctPartsBase = extract_fileparts(distinctParts, 'dirbase');
 distinctPartsDir = extract_fileparts(distinctParts, 'parentdir');
 
 %% Do the job
-% Find one matching file for each file part
+% Find one matching file for each file string
 [filesCell, fullPaths] = ...
     cellfun(@(x, y) all_files('Directory', x, partType, y, 'MaxNum', 1, ...
                         'ForceCellOutput', false, otherArguments), ...

@@ -358,7 +358,7 @@ spia = cell(1, numsets);        % Spike adaptation (%)
 parfor sn = 1:numsets
 %for sn = 1:numsets
     % Start timer
-    tic;                
+    tic;
 
     % Extract name of set and number of sweeps
     [~, datfn, ~] = fileparts(abffullfn{sn});
