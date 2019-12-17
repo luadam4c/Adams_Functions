@@ -23,6 +23,7 @@ function [fileNames, rowConditions, figurePositions] = ...
 % 2018-11-15 Moved to Adams_Functions
 % 2018-11-15 Improved documentation and code clarity
 % 2018-12-06 Now uses cellIdThis, fileNamesToUse, swpInfo, cellInfo
+% 2019-12-17 Now selects the "best trace" for Attempt #1 across trials
 
 %% Hard-coded parameters
 pharmStr = 'prow';
@@ -137,28 +138,50 @@ case 1
 
     % Decide on the indices based on attempt number
     switch attemptNumber
-    case {1, 2}
+    case {1, 2, 5}
         % Print message
         if attemptNumber == 1
-            fprintf('Attempt #1: Using 4 traces of %s @ 200% gIncr ... \n', ...
+            fprintf('Attempt #1: Using 4 traces of %s @ 200%% gIncr ... \n', ...
                     cellName);
         elseif attemptNumber == 2
-            fprintf('Attempt #2: Using all traces of %s @ 200% gIncr ... \n', ...
+            fprintf('Attempt #2: Using all traces of %s @ 200%% gIncr ... \n', ...
+                    cellName);
+        elseif attemptNumber == 5
+            fprintf('Attempt #5: Using 4 traces of %s @ 400%% gIncr ... \n', ...
                     cellName);
         end
+
+        % Return whether gCondToUse is 200
+        isGIncr200 = gCondToUse == 200;
+
+        % Return whether gCondToUse is 400
+        isGIncr400 = gCondToUse == 400;
 
         % Find the sweep indices for each pharmacological condition 
         %   @ 200% g_incr from this cell to be fitted
-        swpIndRow = cellfun(@(x) find(x & isGCond{2} & fromCell & toUse), ...
-                                isPCond, 'UniformOutput', false);
+        if attemptNumber == 1
+            swpIndRow = cellfun(@(x) select_trace(x & isGCond{isGIncr200} & ...
+                                                    fromCell & toUse, ...
+                                                hasLts, hasBurst, maxNoise), ...
+                                    isPCond, 'UniformOutput', false);
+        elseif attemptNumber == 2
+            swpIndRow = cellfun(@(x) find(x & isGCond{isGIncr200} & ...
+                                            fromCell & toUse), ...
+                                    isPCond, 'UniformOutput', false);
+        elseif attemptNumber == 5
+            swpIndRow = cellfun(@(x) select_trace(x & isGCond{isGIncr400} & ...
+                                                    fromCell & toUse, ...
+                                                hasLts, hasBurst, maxNoise), ...
+                                    isPCond, 'UniformOutput', false);
+        end
 
         % Check if there is enough data or not
         if any(cellfun(@isempty, swpIndRow))
-            error('There is not enough data for %s @ 200% gIncr!', cellName);
+            error('There is not enough data for %s @ 200%% gIncr!', cellName);
         end
 
         % Decide on the number of columns per row
-        if attemptNumber == 1
+        if attemptNumber == 1 || attemptNumber == 5
             % Use only the first column
             nColumns = 1;
         elseif attemptNumber == 2
@@ -469,6 +492,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function swpIdxSelected = select_trace(isThisCond, hasLts, hasBursts, maxNoise)
+%% Selects the most representative trace based on majority rule
 
 % Return error if there are no traces for this condition
 if ~any(isThisCond)

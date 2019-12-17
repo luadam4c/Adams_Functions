@@ -20,18 +20,21 @@
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
+% TODO
+%       cd/all_subdirs.m
+%       cd/all_files.m
 %       cd/check_dir.m
 %       cd/compile_mod_files.m
-%       cd/convert_to_char.m
 %       cd/copy_into.m
 %       cd/create_error_for_nargin.m
-%       cd/m3ha_locate_homedir.m
-%       cd/m3ha_neuron_choose_best_params.m
-%       cd/m3ha_select_cells.m
-%       cd/m3ha_select_raw_traces.m
-% TODO
 %       cd/create_labels_from_numbers.m
+%       cd/create_time_stamp.m
 %       cd/find_matching_files.m
+%       cd/extract_substrings.m
+%       cd/m3ha_load_sweep_info.m
+%       cd/m3ha_locate_homedir.m
+%       cd/m3ha_select_sweeps.m
+%       cd/print_cellstr.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -43,7 +46,7 @@
 %% Hard-coded parameters
 % Flags
 chooseBestNeuronsFlag = true;
-simulateFlag = false;
+simulateFlag = true;
 computeStatsFlag = false;
 
 % Selection parameters
@@ -65,7 +68,7 @@ rankDirName = 'ranked';
 dataDirName = fullfile('data_dclamp', 'take4');
 matFilesDirName = 'matfiles';
 specialCasesDirName = 'special_cases';
-defaultOutFolderName = 'simulated';
+defaultOutFolderSuffix = '_simulated';
 
 % File info
 cellNamePattern = '[A-Z][0-9]{6}';
@@ -131,9 +134,17 @@ fitDirectory = fullfile(parentDirectory, fitDirName);
 % Locate the ranked directory
 rankDirectory = fullfile(fitDirectory, rankDirName);
 
+% Load sweep info
+swpInfo = m3ha_load_sweep_info;
+
 % Decide on output folder
 if isempty(outFolder)
-    outFolder = fullfile(fitDirectory, defaultOutFolderName);
+    % Create output folder name
+    oufFolderName = strcat(create_time_stamp('FormatOut', 'yyyymmdd'), ...
+                            defaultOutFolderSuffix);
+
+    % Create full path to output folder
+    outFolder = fullfile(fitDirectory, oufFolderName);
 end
 
 % Check if output folder exists
@@ -142,8 +153,8 @@ check_dir(outFolder);
 %% Choose the best cells and the best parameters for each cell
 if chooseBestNeuronsFlag
     % Create rank number prefixes
-    rankPrefixes = create_labels_from_numbers(1:nCellsToSim, 'Prefix', 'rank_', ...
-                                            'Suffix', '_');
+    rankPrefixes = create_labels_from_numbers(1:nCellsToSim, ...
+                                        'Prefix', 'rank_', 'Suffix', '_');
 
     % Find png files matching the rank prefixes
     [~, pngPaths] = find_matching_files(rankPrefixes, 'PartType', 'Prefix', ...
@@ -157,17 +168,43 @@ if chooseBestNeuronsFlag
     iterStrs = extract_substrings(pngPaths, 'RegExp', iterStrPattern);
 
     % Find the parameter file directories
-    paramDirs = 
+    [~, paramDirs] = cellfun(@(x) all_subdirs('Directory', rankDirectory, ...
+                                        'RegExp', x, 'MaxNum', 1), ...
+                        iterStrs, 'UniformOutput', false);
 
-    % Find the parameter files 
-    [~, pngPaths] = find_matching_files(rankPrefixes, 'PartType', 'Prefix', ...
-                            'Directory', rankDirectory, 'Extension', 'png', ...
-                            'ExtractDistinct', false);
+    % Find the parameter files for each cell
+    [~, paramPaths] = cellfun(@(x, y) all_files('Directory', x, ...
+                            'Keyword', y, 'Suffix', 'params', 'MaxNum', 1), ...
+                            paramDirs, cellNames, 'UniformOutput', false);
 
+    % Copy the parameter files into 
+    copy_into(paramPaths, outFolder);
 end
 
-if false
-    %% Preparation
+%% Simulate
+if simulateFlag
+    %% Decide on the candidate parameter files and cells
+    % Decide on candidate parameters files
+    [~, paramPaths] = all_files('Directory', outFolder, 'Suffix', 'params');
+
+    % Extract the cell names
+    cellNames = extract_substrings(paramPaths, 'RegExp', cellNamePattern);
+
+    % Display message
+    fprintf('All sweeps from the following cells will be simulated: \n');
+    print_cellstr(cellNames, 'OmitBraces', true, 'Delimiter', '\n');
+
+    %% Compile
+    % Display message
+    fprintf('Compiling all .mod files ... \n');
+
+    % Compile or re-compile .mod files in the fitting directory
+    compile_mod_files(fitDirectory);
+
+    %% Select recorded data
+    % Display message
+    fprintf('Selecting recorded sweeps for all cells ... \n');
+
     % Locate the data directory
     dataDir = fullfile(parentDirectory, dataDirName);
 
@@ -176,22 +213,21 @@ if false
     [matFilesDir, specialCasesDir] = ...
         argfun(@(x) fullfile(dataDir, x), matFilesDirName, specialCasesDirName);
 
-    % Decide on candidate parameters directory(ies)
-    paramDirs = fullfile(fitDirectory, paramDirNames);
+    % Select the sweep indices that will be simulated
+    swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'DataMode', dataMode, ...
+                                    'CasesDir', specialCasesDir);
 
-    %% Backup and compile
-    % Display message
-    fprintf('Backing up parameters ... \n');
+    % Select the raw traces to import for each cell to fit
+    [fileNamesToFit, rowConditionsToFit] = ...
+        arrayfun(@(x) m3ha_select_raw_traces(rowmodeAcrossTrials, ...
+                        columnMode, attemptNumberAcrossTrials, ...
+                        x, swpInfo, cellInfo), ...
+                cellNamesToFit, 'UniformOutput', false);
 
-    % Copy the candidate params directory(ies) over for backup
-    copy_into(paramDirs, outFolder);
 
-    % Display message
-    fprintf('Compiling all .mod files ... \n');
+end
 
-    % Compile or re-compile .mod files in the fitting directory
-    compile_mod_files(fitDirectory);
-
+if false
     %% Select recorded data
     % Display message
     fprintf('Selecting sweeps to fit for all cells ... \n');
@@ -251,10 +287,6 @@ if false
                 'PlotIpeakFlag', false, 'PlotLtsFlag', false, ...
                 'PlotStatisticsFlag', false, 'PlotSwpWeightsFlag', false);
     end
-end
-
-%% Simulate
-if simulateFlag
 end
 
 %% Combine the errors and rank neurons
@@ -328,33 +360,6 @@ totalError = errorTable.totalError;
 
 % Restrict table to that row
 errorTable = errorTable(rowMinimalError, :);
-
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function copy_and_rename_png_files (rankTable, inFolder, outFolder)
-%% Copy and rename png files associated with candidate labels
-
-% Extract candidate labels
-candLabels = rankTable.candLabel;
-
-% Extract rankings
-ranking = rankTable.ranking;
-
-% Convert rankings to strings so that 1 becomes '01'
-rankingStrs = convert_to_char(ranking, 'FormatSpec', '%2.f');
-
-% Construct old paths
-oldPngPaths = fullfile(inFolder, strcat(candLabels, '_individual.png'));
-
-% Construct new paths
-newPngPaths = fullfile(inFolder, strcat('rank_', rankingStrs, '_', ...
-                                        candLabels, '_individual.png'));
-
-% Copy files 
-cellfun(@(x, y) copyfile(x, y), oldPngPaths, newPngPaths, ...
-        'UniformOutput', false);
 
 end
 

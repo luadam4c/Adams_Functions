@@ -178,21 +178,21 @@ function [errorStruct, hFig, simData] = ...
 %                   - 'CurrentPulseAmplitudeCpr': current pulse amplitude (nA)
 %                   must be a numeric vector
 %                   default == -0.050 nA
-%                   - 'GababAmp': GABA-B IPSC amplitude (uS)
+%                   - 'GababAmpIpscr': GABA-B IPSC amplitude (uS)
 %                   must be a numeric vector
 %                   default == set of all 12 input waveforms
-%                   - 'GababTrise': GABA-B IPSC rising time constant (ms)
+%                   - 'GababTriseIpscr': GABA-B IPSC rising time constant (ms)
 %                   must be a numeric vector
 %                   default == set of all 12 input waveforms
-%                   - 'GababTfallFast': GABA-B IPSC falling phase 
+%                   - 'GababTfallFastIpscr': GABA-B IPSC falling phase 
 %                                           fast component time constant (ms)
 %                   must be a numeric vector
 %                   default == set of all 12 input waveforms
-%                   - 'GababTfallSlow': GABA-B IPSC falling phase 
+%                   - 'GababTfallSlowIpscr': GABA-B IPSC falling phase 
 %                                           slow component time constant (ms)
 %                   must be a numeric vector
 %                   default == set of all 12 input waveforms
-%                   - 'GababWeight': GABA-B IPSC falling phase 
+%                   - 'GababWeightIpscr': GABA-B IPSC falling phase 
 %                                           fast component weight
 %                   must be a numeric vector
 %                   default == set of all 12 input waveforms
@@ -415,6 +415,7 @@ function [errorStruct, hFig, simData] = ...
 % 2019-12-03 - Added 'FileNames' as an optional parameter
 % 2019-12-04 - If 'FileNames' is passed in, use the same GABA-B IPSC parameters
 %               as those used in dynamic clamp
+% 2019-12-17 - Fixed GABAB parameter bug
 
 %% Hard-coded parameters
 validSimModes = {'active', 'passive'};
@@ -537,11 +538,11 @@ holdPotentialIpscrDefault = -70;% (mV)
 holdPotentialCprDefault = -70;  % (mV)
 currentPulseAmplitudeIpscrDefault = -0.050;  % (nA)
 currentPulseAmplitudeCprDefault = -0.050;  % (nA)
-gababAmpDefault = [];           % set later
-gababTriseDefault = [];         % set later
-gababTfallFastDefault = [];     % set later
-gababTfallSlowDefault = [];     % set later
-gababWeightDefault = [];        % set later
+gababAmpIpscrDefault = [];           % set later
+gababTriseIpscrDefault = [];         % set later
+gababTfallFastIpscrDefault = [];     % set later
+gababTfallSlowIpscrDefault = [];     % set later
+gababWeightIpscrDefault = [];        % set later
 holdCurrentIpscrDefault = 0;    % (nA)
 holdCurrentCprDefault = 0;      % (nA)
 holdCurrentNoiseIpscrDefault = 0;% (nA)
@@ -677,15 +678,15 @@ addParameter(iP, 'CurrentPulseAmplitudeIpscr', ...
 addParameter(iP, 'CurrentPulseAmplitudeCpr', ...
                 currentPulseAmplitudeCprDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
-addParameter(iP, 'GababAmp', gababAmpDefault, ...
+addParameter(iP, 'GababAmpIpscr', gababAmpIpscrDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'GababTrise', gababTriseDefault, ...
+addParameter(iP, 'GababTriseIpscr', gababTriseIpscrDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'GababTfallFast', gababTfallFastDefault, ...
+addParameter(iP, 'GababTfallFastIpscr', gababTfallFastIpscrDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'GababTfallSlow', gababTfallSlowDefault, ...
+addParameter(iP, 'GababTfallSlowIpscr', gababTfallSlowIpscrDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
-addParameter(iP, 'GababWeight', gababWeightDefault, ...
+addParameter(iP, 'GababWeightIpscr', gababWeightIpscrDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'HoldCurrentIpscr', holdCurrentIpscrDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
@@ -771,11 +772,11 @@ holdPotentialIpscr = iP.Results.HoldPotentialIpscr;
 holdPotentialCpr = iP.Results.HoldPotentialCpr;
 currentPulseAmplitudeIpscr = iP.Results.CurrentPulseAmplitudeIpscr;
 currentPulseAmplitudeCpr = iP.Results.CurrentPulseAmplitudeCpr;
-gababAmp = iP.Results.GababAmp;
-gababTrise = iP.Results.GababTrise;
-gababTfallFast = iP.Results.GababTfallFast;
-gababTfallSlow = iP.Results.GababTfallSlow;
-gababWeight = iP.Results.GababWeight;
+gababAmpIpscr = iP.Results.GababAmpIpscr;
+gababTriseIpscr = iP.Results.GababTriseIpscr;
+gababTfallFastIpscr = iP.Results.GababTfallFastIpscr;
+gababTfallSlowIpscr = iP.Results.GababTfallSlowIpscr;
+gababWeightIpscr = iP.Results.GababWeightIpscr;
 holdCurrentIpscr = iP.Results.HoldCurrentIpscr;
 holdCurrentCpr = iP.Results.HoldCurrentCpr;
 holdCurrentNoiseIpscr = iP.Results.HoldCurrentNoiseIpscr;
@@ -873,11 +874,11 @@ elseif strcmpi(simMode, 'active')
         holdCurrentNoiseIpscr = sweepInfoIpscrStruct.holdCurrentNoiseIpscr;
         baseNoiseIpscr = sweepInfoIpscrStruct.baseNoiseIpscr;
         sweepWeightsIpscr = sweepInfoIpscrStruct.sweepWeightsIpscr;
-        gababAmp = sweepInfoIpscrStruct.gababAmpIpscr;
-        gababTrise = sweepInfoIpscrStruct.gababTriseIpscr;
-        gababTfallFast = sweepInfoIpscrStruct.gababTfallFastIpscr;
-        gababTfallSlow = sweepInfoIpscrStruct.gababTfallSlowIpscr;
-        gababWeight = sweepInfoIpscrStruct.gababWeightIpscr;
+        gababAmpIpscr = sweepInfoIpscrStruct.gababAmpIpscr;
+        gababTriseIpscr = sweepInfoIpscrStruct.gababTriseIpscr;
+        gababTfallFastIpscr = sweepInfoIpscrStruct.gababTfallFastIpscr;
+        gababTfallSlowIpscr = sweepInfoIpscrStruct.gababTfallSlowIpscr;
+        gababWeightIpscr = sweepInfoIpscrStruct.gababWeightIpscr;
     end
 
     % Read active fit data and params
@@ -971,10 +972,11 @@ simParamsTable = m3ha_neuron_create_simulation_params(neuronParamsTable, ...
                         'OutFilePath', outFilePath, 'Tstop', tstop, ...
                         'HoldPotential', holdPotential, ...
                         'CurrentPulseAmplitude', currentPulseAmplitude, ...
-                        'GababAmp', gababAmp, 'GababTrise', gababTrise, ...
-                        'GababTfallFast', gababTfallFast, ...
-                        'GababTfallSlow', gababTfallSlow, ...
-                        'GababWeight', gababWeight, ...
+                        'GababAmp', gababAmpIpscr, ...
+                        'GababTrise', gababTriseIpscr, ...
+                        'GababTfallFast', gababTfallFastIpscr, ...
+                        'GababTfallSlow', gababTfallSlowIpscr, ...
+                        'GababWeight', gababWeightIpscr, ...
                         'CustomHoldCurrentFlag', customHoldCurrentFlag, ...
                         'HoldCurrent', holdCurrent, ...
                         'HoldCurrentNoise', holdCurrentNoise);
@@ -1533,7 +1535,7 @@ if plotOverlappedFlag
     figHandle = set_figure_properties('AlwaysNew', true, ...
                     'Visible', visibleStatus, ...
                     'FigNumber', figNumberOverlapped, ...
-                    'FigExpansion', [1, nSubPlots/4], ...
+                    'FigExpansion', [1, nSubPlots/16], ...
                     'Name', 'All simulated traces');
     hFig.overlapped = ...
         plot_traces(tVecsForOverlapped, dataForOverlapped, ...

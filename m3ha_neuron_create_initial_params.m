@@ -321,18 +321,18 @@ toDetectFiles = ~isempty(customInitDirectory) && isempty(customInitFiles) && ...
 if toDetectFiles
     [~, customInitFiles] = all_files('Directory', customInitDirectory, ...
                                         'Extension', 'csv');
+end
 
-    % Extract just the file bases
-    customInitFileBases = extract_fileparts(customInitFiles, 'base');
+% Extract just the file bases
+customInitFileBases = extract_fileparts(customInitFiles, 'base');
 
-    % Extract the cell names based on cellNamePattern
-    customCellNames = ...
-        extract_substrings(customInitFileBases, 'RegExp', cellNamePattern);
+% Extract the cell names based on cellNamePattern
+customCellNames = ...
+    extract_substrings(customInitFileBases, 'RegExp', cellNamePattern);
 
-    % Make sure the custom cell names are all unique
-    if numel(customCellNames) ~= numel(unique(customCellNames))
-        error('Cell names provided are not all unique!')
-    end
+% Make sure the custom cell names are all unique
+if numel(customCellNames) ~= numel(unique(customCellNames))
+    error('Cell names provided are not all unique!')
 end
 
 % Determine whether it's necessary to load the parameters tables
