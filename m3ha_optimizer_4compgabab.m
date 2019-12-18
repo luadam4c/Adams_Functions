@@ -955,7 +955,7 @@ if ~isempty(err)
         % Create y-axis labels
         totalErrorLabel = 'total error';
         avgSwpErrorLabel = sprintf('sweep error (%d)', errorWeights(1));
-        ltsMisMatchErrorLabel = sprintf('match error (+%d, %d)', ...
+        ltsMatchErrorLabel = sprintf('match error (+%d, %d)', ...
                                 missedLtsError, falseLtsError);
         avgLtsAmpErrorLabel = sprintf('amp error (%d)', errorWeights(2));
         avgLtsDelayErrorLabel = sprintf('time error (%d)', errorWeights(3));
@@ -971,8 +971,8 @@ if ~isempty(err)
 
         % Plot the LTS mismatch error
         subplot(3, 2, 3);
-        update_subplot(rn, err.ltsMisMatchError, [], ...
-                        ltsMisMatchErrorLabel, 'o', 'b');
+        update_subplot(rn, err.ltsMatchError, [], ...
+                        ltsMatchErrorLabel, 'o', 'b');
 
         % Plot the average LTS amp error
         subplot(3, 2, 4);

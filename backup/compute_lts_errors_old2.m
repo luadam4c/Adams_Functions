@@ -25,7 +25,6 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 %                       initLtsError (only if normalizeError is true)
 %                       avgLtsError
 %                       ltsMatchError
-%                       avgLtsFeatureError
 %                       avgLtsAmpError
 %                       avgLtsDelayError
 %                       avgLtsSlopeError
@@ -73,10 +72,6 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 %                                       a misprediction of the absence of LTS
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == 0.5
-%                   - 'Match2FeatureErrorRatio': ratio of LTS match error to 
-%                                                   LTS feature error
-%                   must be empty or a numeric vector with length == nSweeps
-%                   default == 1
 %                   - 'NormalizeError': whether to normalize errors 
 %                                       by an initial error
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -118,7 +113,6 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 % 2019-11-29 Now computes LTS amplitude error assymetrically so that
 %               positive errors are penalized 10 times less
 % 2019-11-29 LTS amplitude uncertainty is now 1/4 of peak prominence
-% 2019-12-18 Added 'Match2FeatureErrorRatio' as an optional parameter
 
 %% Hard-coded parameters
 % Consistent with singleneuronfitting71.m
@@ -130,8 +124,6 @@ defaultMissedLtsError = 2;              % how much error (dimensionless) to
 defaultFalseLtsError = 0.5;             % how much error (dimensionless) to 
                                         %   penalize a sweep that mispredicted 
                                         %   the absence of an LTS
-defaultMatch2FeatureErrorRatio = 1;     % default error ratio between
-                                        %   match error and avg feature error
 
 %% Default values for optional arguments
 baseNoiseDefault = [];          % set later
@@ -139,7 +131,6 @@ sweepWeightsDefault = [];       % set in compute_weighted_average.m
 featureWeightsDefault = [];     % set later
 missedLtsErrorDefault = [];     % set later
 falseLtsErrorDefault = [];      % set later
-match2FeatureErrorRatioDefault = []; % set later
 normalizeErrorDefault = false;  % don't normalize errors by default
 initLtsErrorDefault = [];   % no initial error values by default
 
@@ -172,8 +163,6 @@ addParameter(iP, 'MissedLtsError', missedLtsErrorDefault, ...
     @(x) assert(isnumericvector(x), 'MissedLtsError must be a numeric vector!'));
 addParameter(iP, 'FalseLtsError', falseLtsErrorDefault, ...
     @(x) assert(isnumericvector(x), 'FalseLtsError must be a numeric vector!'));
-addParameter(iP, 'Match2FeatureErrorRatio', match2FeatureErrorRatioDefault, ...
-    @(x) assert(isnumericvector(x), 'Match2FeatureErrorRatio must be a numeric vector!'));
 addParameter(iP, 'NormalizeError', normalizeErrorDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'InitLtsError', initLtsErrorDefault, ...
@@ -186,7 +175,6 @@ sweepWeights = iP.Results.SweepWeights;
 featureWeights = iP.Results.FeatureWeights;
 missedLtsError = iP.Results.MissedLtsError;
 falseLtsError = iP.Results.FalseLtsError;
-match2FeatureErrorRatio = iP.Results.Match2FeatureErrorRatio;
 normalizeError = iP.Results.NormalizeError;
 initLtsError = iP.Results.InitLtsError;
 
@@ -204,11 +192,6 @@ end
 % Decide on false LTS error
 if isempty(falseLtsError)
     falseLtsError = defaultFalseLtsError;
-end
-
-% Decide on LTS match to feature error ratio
-if isempty(match2FeatureErrorRatio)
-    match2FeatureErrorRatio = defaultMatch2FeatureErrorRatio;
 end
 
 % Extract low-threshold spike feature values to compute error for 
@@ -327,7 +310,7 @@ avgLtsFeatureError = compute_weighted_average(featureErrors, ...
                         'AverageMethod', 'linear', 'IgnoreNaN', true);
 
 % Average LTS error (dimensionless) is the weighted average of 
-%   the average LTS feature error and the LTS match error
+%   the LTS feature errors plus the LTS existence error
 if isnan(avgLtsFeatureError)
     avgLtsError = ltsMatchError;
 else
@@ -352,7 +335,6 @@ end
 % Store other errors in descending order of importance
 errorStruct.avgLtsError = avgLtsError;
 errorStruct.ltsMatchError = ltsMatchError;
-errorStruct.avgLtsFeatureError = avgLtsFeatureError;
 errorStruct.avgLtsAmpError = avgLtsAmpError;
 errorStruct.avgLtsDelayError = avgLtsDelayError;
 errorStruct.avgLtsSlopeError = avgLtsSlopeError;

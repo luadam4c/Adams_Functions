@@ -825,7 +825,7 @@ if computeLtsError   % if lts error is computed
 
     % Plot the average LTS error
     subplot(3, 2, 3);
-    update_subplot(iter, err.ltsMisMatchError, [], 'match error', ...
+    update_subplot(iter, err.ltsMatchError, [], 'match error', ...
             markerstyle, color, ctIterations, multipleRunsFlag);
 
     % Plot the average LTS amp error

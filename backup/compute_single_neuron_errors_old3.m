@@ -75,10 +75,6 @@ function errors = compute_single_neuron_errors (vSim, vRec, varargin)
 %                                       a misprediction of the absence of LTS
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == set in compute_lts_errors.m
-%                   - 'Match2FeatureErrorRatio': ratio of LTS match error to 
-%                                                   LTS feature error
-%                   must be empty or a numeric vector with length == nSweeps
-%                   default == set in compute_lts_errors.m
 %                   - 'Lts2SweepErrorRatio': ratio of LTS error to sweep error
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == 3
@@ -163,7 +159,6 @@ function errors = compute_single_neuron_errors (vSim, vRec, varargin)
 % 2019-11-16 Added 'Lts2SweepErrorRatio' as an optional argument
 % 2019-11-17 Added 'OutFolder' as an optional parameter
 % 2019-11-18 Added 'Prefix' as an optional parameter
-% 2019-12-18 Added 'Match2FeatureErrorRatio' as an optional parameter
 % 
 % TODO:
 %   Implement saveLtsStatsFlag
@@ -191,7 +186,6 @@ sweepWeightsDefault = [];       % set later
 ltsFeatureWeightsDefault = [];  % set in compute_lts_errors.m
 missedLtsErrorDefault = [];     % set in compute_lts_errors.m
 falseLtsErrorDefault = [];      % set in compute_lts_errors.m
-match2FeatureErrorRatioDefault = []; % set in compute_lts_errors.m
 lts2SweepErrorRatioDefault = [];% set later
 normalizeErrorDefault = false;  % don't normalize errors by default
 initSwpErrorDefault = [];       % no initial sweep error values by default
@@ -263,8 +257,6 @@ addParameter(iP, 'MissedLtsError', missedLtsErrorDefault, ...
     @(x) assert(isnumericvector(x), 'MissedLtsError must be a numeric vector!'));
 addParameter(iP, 'FalseLtsError', falseLtsErrorDefault, ...
     @(x) assert(isnumericvector(x), 'FalseLtsError must be a numeric vector!'));
-addParameter(iP, 'Match2FeatureErrorRatio', match2FeatureErrorRatioDefault, ...
-    @(x) assert(isnumericvector(x), 'Match2FeatureErrorRatio must be a numeric vector!'));
 addParameter(iP, 'Lts2SweepErrorRatio', lts2SweepErrorRatioDefault, ...
     @(x) assert(isnumericvector(x), 'InitLtsError must be a numeric vector!'));
 addParameter(iP, 'NormalizeError', normalizeErrorDefault, ...
@@ -309,7 +301,6 @@ sweepWeights = iP.Results.SweepWeights;
 ltsFeatureWeights = iP.Results.LtsFeatureWeights;
 missedLtsError = iP.Results.MissedLtsError;
 falseLtsError = iP.Results.FalseLtsError;
-match2FeatureErrorRatio = iP.Results.Match2FeatureErrorRatio;
 lts2SweepErrorRatio = iP.Results.Lts2SweepErrorRatio;
 normalizeError = iP.Results.NormalizeError;
 initSwpError = iP.Results.InitSwpError;
