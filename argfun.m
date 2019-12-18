@@ -61,6 +61,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/m3ha_network_raster_plot.m
 %       cd/m3ha_network_single_neuron.m
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/m3ha_rank_neurons.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/match_format_vector_sets.m
 %       cd/match_reciprocals.m

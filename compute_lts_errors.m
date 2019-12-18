@@ -2,18 +2,28 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 %% Computes low-threshold spike errors for single neuron data
 % Usage: errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 % Explanation:
-%       avgLtsError = ltsMatchError + avgLtsFeatureError = ...
-%           ltsMatchError + ...
-%           avgLtsAmpError * (featureWeights(1)/sum(featureWeights)) + ...
-%           avgLtsDelayError * (featureWeights(2)/sum(featureWeights)) + ...
-%           avgLtsSlopeError * (featureWeights(3)/sum(featureWeights))
-%           
+%       Let b = (1/(1+match2FeatureErrorRatio))
+%           c = featureWeights(1)/sum(featureWeights)
+%           d = featureWeights(2)/sum(featureWeights)
+%           e = featureWeights(3)/sum(featureWeights)
+%
+%       Then:
+%       avgLtsError = 
+%           ltsMatchError * (1 - b) + ...
+%           avgLtsFeatureError * b
 %       ltsMatchError = missedLtsError .* sum(hasMissedLts) + ...
 %                           falseLtsError .* sum(hasFalseLts);
 %       avgLtsFeatureError = ...
-%           avgLtsAmpError * (featureWeights(1)/sum(featureWeights)) + ...
-%           avgLtsDelayError * (featureWeights(2)/sum(featureWeights)) + ...
-%           avgLtsSlopeError * (featureWeights(3)/sum(featureWeights))
+%           avgLtsAmpError * c + ...
+%           avgLtsDelayError * d + ...
+%           avgLtsSlopeError * e
+%
+%       In more detail:
+%       avgLtsError = 
+%           ltsMatchError* (1 - b) + ...
+%           avgLtsAmpError* b * c + ...
+%           avgLtsDelayError* b * d + ...
+%           avgLtsSlopeError* b * e
 %
 % Example(s):
 %       TODO
@@ -29,9 +39,10 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 %                       avgLtsAmpError
 %                       avgLtsDelayError
 %                       avgLtsSlopeError
+%                       featureWeights
 %                       missedLtsError
 %                       falseLtsError
-%                       ltsFeatureWeights
+%                       match2FeatureErrorRatio
 %                       ltsAmpErrors
 %                       ltsDelayErrors
 %                       ltsSlopeErrors
@@ -326,13 +337,15 @@ avgLtsFeatureError = compute_weighted_average(featureErrors, ...
                         'Weights', featureWeights, ...
                         'AverageMethod', 'linear', 'IgnoreNaN', true);
 
+% Combine the errors and weights
+errorsToAverage = [avgLtsFeatureError; ltsMatchError];
+weightsForErrors = [1; match2FeatureErrorRatio];
+
 % Average LTS error (dimensionless) is the weighted average of 
-%   the average LTS feature error and the LTS match error
-if isnan(avgLtsFeatureError)
-    avgLtsError = ltsMatchError;
-else
-    avgLtsError = avgLtsFeatureError + ltsMatchError;
-end
+%   the average LTS feature error and the LTS match error, 
+%   weighted by match2FeatureErrorRatio
+avgLtsError = compute_weighted_average(errorsToAverage, 'IgnoreNan', true, ...
+                        'Weights', weightsForErrors, 'AverageMethod', 'linear');
 
 % If requested, make errors dimensionless by 
 %   storing or dividing by an initial error value
@@ -356,9 +369,10 @@ errorStruct.avgLtsFeatureError = avgLtsFeatureError;
 errorStruct.avgLtsAmpError = avgLtsAmpError;
 errorStruct.avgLtsDelayError = avgLtsDelayError;
 errorStruct.avgLtsSlopeError = avgLtsSlopeError;
+errorStruct.ltsFeatureWeights = featureWeights;
 errorStruct.missedLtsError = missedLtsError;
 errorStruct.falseLtsError = falseLtsError;
-errorStruct.ltsFeatureWeights = featureWeights;
+errorStruct.match2FeatureErrorRatio = match2FeatureErrorRatio;
 errorStruct.ltsAmpErrors = ltsAmpErrors;
 errorStruct.ltsDelayErrors = ltsDelayErrors;
 errorStruct.ltsSlopeErrors = ltsSlopeErrors;
@@ -406,25 +420,6 @@ featureError(hasFeatureInBoth) = normalizedDifference(hasFeatureInBoth);
 
 %{
 OLD CODE:
-
-if normalizeError
-    [normAvgLtsAmpError, initLtsAmpError] = ...
-        normalize_by_initial_value(avgLtsAmpError, initLtsAmpError);
-    [normAvgLtsDelayError, initLtsDelayError] = ...
-        normalize_by_initial_value(avgLtsDelayError, initLtsDelayError);
-    [normAvgLtsSlopeError, initLtsSlopeError] = ...
-        normalize_by_initial_value(avgLtsSlopeError, initLtsSlopeError);
-end
-featureErrors = [normAvgLtsAmpError; normAvgLtsDelayError; normAvgLtsSlopeError];
-errorStruct.initLtsAmpError = initLtsAmpError;
-errorStruct.normAvgLtsAmpError = normAvgLtsAmpError;
-errorStruct.initLtsDelayError = initLtsDelayError;
-errorStruct.normAvgLtsDelayError = normAvgLtsDelayError;
-errorStruct.initLtsSlopeError = initLtsSlopeError;
-errorStruct.normAvgLtsSlopeError = normAvgLtsSlopeError;
-
-% The amplitude uncertainty should be close to baseline noise
-ltsAmpUncertainty = abs(baseNoise * 10);
 
 %}
 

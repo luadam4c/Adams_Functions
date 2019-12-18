@@ -52,6 +52,10 @@ function handles = plot_bar (val, varargin)
 %                       'vertical'   - vertical bars
 %                       'horizontal' - horizontal bars
 %                   default == 'vertical'
+%                   - 'GroupStyle': bar group style
+%                   must be recognizable as the 'style' parameter of the 
+%                       built-in bar() function
+%                   default == 'grouped'
 %                   - 'CIRelativeBarWidth': TODO
 %                   - 'CIBarWidth': TODO
 %                   - 'CILineWidth': TODO
@@ -82,6 +86,11 @@ function handles = plot_bar (val, varargin)
 %                   - 'ReadoutLabel': label for the readout
 %                   must be a string scalar or a character vector
 %                   default == 'Readout'
+%                   - 'ColumnLabels': labels for the readout columns (groups), 
+%                               suppress by setting value to {'suppress'}
+%                   must be a scalartext 
+%                       or a cell array of strings or character vectors
+%                   default == {'Column #1', 'Column #2', ...}
 %                   - 'PhaseLabels': phase labels if phase vectors are provided TODO
 %                   must be a scalartext 
 %                       or a cell array of strings or character vectors
@@ -89,6 +98,14 @@ function handles = plot_bar (val, varargin)
 %                   - 'ColorMap' - color map used when nColumnsToPlot > 1
 %                   must be a 2-D numeric array with 3 columns
 %                   default == set by the bar() function
+%                   - 'LegendLocation': location for legend
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'auto'      - use default
+%                       'suppress'  - no legend
+%                       anything else recognized by the legend() function
+%                   default == 'suppress' if nTraces == 1 
+%                               'northeast' if nTraces is 2~9
+%                               'eastoutside' if nTraces is 10+
 %                   - 'PlotOnly': whether to plot the bars only
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -190,6 +207,7 @@ function handles = plot_bar (val, varargin)
 %       cd/set_figure_properties.m
 %       cd/force_column_vector.m
 %       cd/isfigtype.m
+%       cd/islegendlocation.m
 %       cd/plot_horizontal_line.m
 %       cd/plot_selected.m
 %       cd/plot_vertical_line.m
@@ -199,6 +217,7 @@ function handles = plot_bar (val, varargin)
 %
 % Used by:
 %       cd/m3ha_compute_and_compare_lts_statistics.m
+%       cd/m3ha_rank_neurons.m
 %       cd/m3ha_oscillations_analyze.m
 %       cd/parse_multiunit.m
 %       cd/plot_struct.m
@@ -228,6 +247,9 @@ function handles = plot_bar (val, varargin)
 % 2019-11-23 Added 'PhaseVectors' and other dependent optional arguments
 % 2019-11-24 Now returns handles structure as output
 % 2019-12-03 Added 'ColorMap' as an optional argument
+% 2019-12-18 Added 'GroupStyle' as an optional argument
+% 2019-12-18 Added 'LegendLocation' as an optional argument
+% 2019-12-18 Added 'ColumnLabels' as an optional argument
 % TODO: phaseBoundaries needs to be provided into parse_phase_info.m
 % TODO: Finish implementation of 'PhaseVectors' as in plot_tuning_curve
 % TODO: Change usage in all functions using this
@@ -247,6 +269,7 @@ highDefault = [];
 forceVectorAsRowDefault = false;
 reverseOrderDefault = false;        % don't reverse order by default
 barDirectionDefault = 'vertical';
+groupStyleDefault = 'grouped';
 cIRelativeBarWidthDefault = 0.33;   % default bar width relative to separation
 cIBarWidthDefault = [];
 cILineWidthDefault = 2;             % default line width for CIs
@@ -259,8 +282,10 @@ pTickLabelsDefault = {};
 pTickAngleDefault = [];
 pLabelDefault = 'Parameter';
 readoutLabelDefault = 'Readout';
+columnLabelsDefault = '';           % set later
 phaseLabelsDefault = '';            % set later
 colorMapDefault = [];               % set later
+legendLocationDefault = 'auto';     % set later
 plotOnlyDefault = false;            % setup default labels by default
 plotPhaseBoundariesDefault = [];    % set later
 plotPhaseAveragesDefault = [];      % set later
@@ -315,6 +340,7 @@ addParameter(iP, 'ReverseOrder', reverseOrderDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'BarDirection', barDirectionDefault, ...
     @(x) any(validatestring(x, validBarDirections)));
+addParameter(iP, 'GroupStyle', groupStyleDefault);
 addParameter(iP, 'CIRelativeBarWidth', cIRelativeBarWidthDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive'}));
 addParameter(iP, 'CIBarWidth', cIBarWidthDefault, ...
@@ -340,9 +366,13 @@ addParameter(iP, 'PLabel', pLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'ReadoutLabel', readoutLabelDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'ColumnLabels', columnLabelsDefault, ...
+    @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'PhaseLabels', phaseLabelsDefault, ...
     @(x) ischar(x) || iscellstr(x) || isstring(x));
 addParameter(iP, 'ColorMap', colorMapDefault);
+addParameter(iP, 'LegendLocation', legendLocationDefault, ...
+    @(x) all(islegendlocation(x, 'ValidateMode', true)));
 addParameter(iP, 'PlotOnly', plotOnlyDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotPhaseBoundaries', plotPhaseBoundariesDefault, ...
@@ -405,6 +435,7 @@ high = iP.Results.high;
 forceVectorAsRow = iP.Results.ForceVectorAsRow;
 reverseOrder = iP.Results.ReverseOrder;
 barDirection = validatestring(iP.Results.BarDirection, validBarDirections);
+groupStyle = iP.Results.GroupStyle;
 cIRelativeBarWidth = iP.Results.CIRelativeBarWidth;
 cIBarWidth = iP.Results.CIBarWidth;
 cILineWidth = iP.Results.CILineWidth;
@@ -417,8 +448,11 @@ pTickLabels = iP.Results.PTickLabels;
 pTickAngle = iP.Results.PTickAngle;
 pLabel = iP.Results.PLabel;
 readoutLabel = iP.Results.ReadoutLabel;
+columnLabels = iP.Results.ColumnLabels;
 phaseLabels = iP.Results.PhaseLabels;
 colorMap = iP.Results.ColorMap;
+[~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
+                                        'ValidateMode', true);
 plotOnly = iP.Results.PlotOnly;
 plotPhaseBoundaries = iP.Results.PlotPhaseBoundaries;
 plotPhaseAverages = iP.Results.PlotPhaseAverages;
@@ -465,6 +499,7 @@ if plotOnly
     figTitle = 'suppress';
     pLimits = 'suppress';
     readoutLimits = 'suppress';
+    legendLocation = 'suppress';
 end
 
 % Either force all vectors as row vectors
@@ -549,6 +584,25 @@ switch barDirection
         yLimits = pLimits;
         xLabel = readoutLabel;
         yLabel = pLabel;
+end
+
+% Set column (group) labels
+if isempty(columnLabels)
+    columnLabels = cell(1, nCols);
+    for iGroup = 1:nCols
+        columnLabels{iPlot} = ['Group #', num2str(iGroup)];
+    end
+end
+
+% Set legend location based on number of traces
+if strcmpi(legendLocation, 'auto')
+    if nCols > 1 && nCols < 10
+        legendLocation = 'northeast';
+    elseif nCols >= 10
+        legendLocation = 'eastoutside';
+    else
+        legendLocation = 'suppress';
+    end
 end
 
 % Set the default figure title
@@ -662,21 +716,21 @@ end
 % Draw bar graph
 switch barDirection
     case 'vertical'
-        if oneSamplePerGroup
+        if oneSamplePerGroup && strcmp(groupStyle, 'grouped')
             % One sample per group, but the bar() function
             %   will automatically construe it as one group. 
             %   Therefore, plot a stacked grouped bar graph to do the trick
             bars = bar(pValuesToPlot, diag(val), 'stacked', otherArguments{:});
         else
             % Just use the bar() function
-            bars = bar(pValuesToPlot, val, otherArguments{:});
+            bars = bar(pValuesToPlot, val, groupStyle, otherArguments{:});
         end
     case 'horizontal'
-        if oneSamplePerGroup
+        if oneSamplePerGroup && strcmp(groupStyle, 'grouped')
             bars = barh(pValuesToPlot, diag(val), 'stacked', otherArguments{:});
         else
             % Just use the barh() function
-            bars = barh(pValuesToPlot, val, otherArguments{:});
+            bars = barh(pValuesToPlot, val, groupStyle, otherArguments{:});
         end
     otherwise
         error('barDirection unrecognized!');
@@ -699,6 +753,13 @@ if ~isempty(pTickLabels)
             xticklabels(pTickLabels);
         case 'horizontal'
             yticklabels(pTickLabels);
+    end
+end
+
+% Set display name
+if ~strcmpi(columnLabels, 'suppress')
+    for iGroup = 1:nCols
+        set(curves(iGroup, 1), 'DisplayName', columnLabels{iGroup});
     end
 end
 
@@ -881,6 +942,13 @@ else
 end
 
 %% Post-plotting
+% Generate a legend for the curves only if there is more than one trace
+if ~strcmpi(legendLocation, 'suppress') && nColumnsToPlot > 1
+    lgd = legend(bars, 'location', legendLocation);
+
+    set(lgd, 'AutoUpdate', 'off', 'Interpreter', 'none');
+end
+
 % Save in output
 handles.fig = fig;
 handles.bars = bars;

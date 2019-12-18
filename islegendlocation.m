@@ -31,6 +31,7 @@ function [results, legendLocations] = islegendlocation (candidates, varargin)
 %       cd/istype.m
 %
 % Used by:
+%       cd/plot_bar.m
 %       cd/plot_cfit_pulse_response.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_traces.m

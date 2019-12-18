@@ -2,22 +2,24 @@ function errors = compute_single_neuron_errors (vSim, vRec, varargin)
 %% Computes the average total error for a single neuron
 % Usage: errors = compute_single_neuron_errors (vSim, vRec, varargin)
 % Explanation:
-%       Let alpha = (1/(1+lts2SweepErrorRatio))
-%           beta = featureWeights(1)/sum(featureWeights)
-%           gamma = featureWeights(2)/sum(featureWeights)
-%           delta = featureWeights(3)/sum(featureWeights)
+%       Let a = (1/(1+lts2SweepErrorRatio))
+%           b = (1/(1+match2FeatureErrorRatio))
+%           c = featureWeights(1)/sum(featureWeights)
+%           d = featureWeights(2)/sum(featureWeights)
+%           e = featureWeights(3)/sum(featureWeights)
+%
 %       Then:
 %       totalError = ...
-%           avgSwpError * alpha + ...
-%           avgLtsError * (1 - alpha)
+%           avgSwpError * a + ...
+%           avgLtsError * (1 - a)
 %
 %       In more detail:
 %       totalError = ...
-%           avgSwpError * alpha + ...
-%           ltsMatchError * (1 - alpha) + ...
-%           avgLtsAmpError * beta * (1 - alpha) + ...
-%           avgLtsDelayError * gamma * (1 - alpha) + ...
-%           avgLtsSlopeError * delta * (1 - alpha)
+%           avgSwpError * a + ...
+%           ltsMatchError * (1 - a) * (1 - b) + ...
+%           avgLtsAmpError * (1 - a) * b * c + ...
+%           avgLtsDelayError * (1 - a) * b * d + ...
+%           avgLtsSlopeError * (1 - a) * b * e
 %
 % Example(s):
 %       TODO
@@ -27,6 +29,11 @@ function errors = compute_single_neuron_errors (vSim, vRec, varargin)
 %                       totalError
 %                       fields returned by compute_sweep_errors.m
 %                       fields returned by compute_lts_errors.m
+%                       baseWindow
+%                       fitWindow
+%                       baseNoise
+%                       sweepWeights
+%                       errorWeights
 %                   specified as a scalar structure
 %
 % Arguments:    
@@ -164,7 +171,8 @@ function errors = compute_single_neuron_errors (vSim, vRec, varargin)
 % 2019-11-17 Added 'OutFolder' as an optional parameter
 % 2019-11-18 Added 'Prefix' as an optional parameter
 % 2019-12-18 Added 'Match2FeatureErrorRatio' as an optional parameter
-% 
+% 2019-12-18 Added errorWeights in output
+%
 % TODO:
 %   Implement saveLtsStatsFlag
 %   Implement plotStatisticsFlag
@@ -472,6 +480,34 @@ weightsForErrors = [1; lts2SweepErrorRatio];
 totalError = compute_weighted_average(errorsToAverage, 'IgnoreNan', true, ...
                         'Weights', weightsForErrors, 'AverageMethod', 'linear');
 
+%% Compute normalized error weights for ease of plotting
+
+% Compute coefficients
+%   Note:
+%       Let a = (1/(1+lts2SweepErrorRatio))
+%           b = (1/(1+match2FeatureErrorRatio))
+%           c = featureWeights(1)/sum(featureWeights)
+%           d = featureWeights(2)/sum(featureWeights)
+%           e = featureWeights(3)/sum(featureWeights)
+a = (1/(1+lts2SweepErrorRatio));
+b = (1/(1+match2FeatureErrorRatio));
+c = featureWeights(1)/sum(featureWeights);
+d = featureWeights(2)/sum(featureWeights);
+e = featureWeights(3)/sum(featureWeights);
+
+% Compute weights
+%   Note:
+%       totalError = ...
+%           avgSwpError * a + ...
+%           ltsMatchError * (1 - a) * (1 - b) + ...
+%           avgLtsAmpError * (1 - a) * b * c + ...
+%           avgLtsDelayError * (1 - a) * b * d + ...
+%           avgLtsSlopeError * (1 - a) * b * e
+errorWeights = [a; (1 - a) * (1 - b); ...
+                (1 - a) * b * c; ...
+                (1 - a) * b * d; ...
+                (1 - a) * b * e];
+
 %% Store in output errors structure
 errors.totalError = totalError;
 errors.lts2SweepErrorRatio = lts2SweepErrorRatio;
@@ -481,6 +517,7 @@ errors.baseWindow = baseWindow;
 errors.fitWindow = fitWindow;
 errors.baseNoise = baseNoise;
 errors.sweepWeights = sweepWeights;
+errors.errorWeights = errorWeights;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -20,6 +20,8 @@
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
+%       cd/argfun.m
+%       cd/create_subplots.m
 %       cd/check_dir.m
 %       cd/compile_mod_files.m
 %       cd/convert_to_char.m
@@ -29,6 +31,7 @@
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_select_cells.m
 %       cd/m3ha_select_raw_traces.m
+%       cd/plot_bar.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -90,6 +93,7 @@ dataDirName = fullfile('data_dclamp', 'take4');
 matFilesDirName = 'matfiles';
 specialCasesDirName = 'special_cases';
 defaultOutFolderName = 'ranked';
+barFigName = 
 
 % File info
 cellNamePattern = '[A-Z][0-9]{6}';
@@ -99,25 +103,34 @@ errorSheetSuffix = 'error_comparison';
 errorSheetExtension = 'csv';
 
 rankPrefix = 'singleneuronfitting60-76';
-rankSheetSuffix = 'ranked';
+rankSuffix = 'ranked';
 rankSheetExtension = 'csv';
+barFigTypes = {'png', 'epsc2'};
 
 % Default parameters used in computing errors
-%   Note: Should be consistent with singleneuronfitting75.m
+%   Note: Should be consistent with singleneuronfitting79.m
 %       & compute_lts_errors.m & compute_single_neuron_errors.m
 ltsFeatureStrings = {'peak amp', 'peak time', 'max slope value'};
-ltsFeatureWeights = [2; 2; 2];  % default weights for optimizing LTS statistics
+ltsFeatureWeights = [1; 1; 1];  % weights for LTS feature errors
 missedLtsError = 1.5;           % how much error (dimensionless) to 
                                 %   penalize a sweep that failed to match 
                                 %   a recorded LTS existence
 falseLtsError = 0.5;            % how much error (dimensionless) to 
                                 %   penalize a sweep that produced an LTS 
                                 %   that is not recorded
-lts2SweepErrorRatio = 3;        % ratio of LTS error to sweep error
 match2FeatureErrorRatio = 1;    % ratio of LTS match error to LTS feature error
+lts2SweepErrorRatio = 6;        % ratio of LTS error to sweep error
 normalize2InitErrFlag = 0;      % whether to normalize errors to initial values
 % sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 sweepWeights = [];
+totalErrorStr = 'totalError';
+avgSwpErrorStr = 'avgSwpError';
+ltsMatchErrorStr = 'ltsMatchError';
+avgLtsAmpErrorStr = 'avgLtsAmpError';
+avgLtsDelayErrorStr = 'avgLtsDelayError';
+avgLtsSlopeErrorStr = 'avgLtsSlopeError';
+errorWeightsStr = 'errorWeights';
+cellNameStr = 'cellName';
 
 % TODO: Make optional argument
 outFolder = '';
@@ -170,8 +183,9 @@ end
 check_dir(outFolder);
 
 % Create a path for the combined spreadsheet
-rankName = [rankPrefix, '_', rankSheetSuffix, '.', rankSheetExtension];
-rankPath = fullfile(outFolder, rankName);
+rankBase = [rankPrefix, '_', rankSuffix];
+rankPathBase = fullfile(outFolder, rankBase);
+rankSheetPath = [rankPathBase, '.', rankSheetExtension];
 
 %% Choose the best parameters for each cell
 if chooseBestParamsFlag
@@ -264,6 +278,7 @@ end
 
 %% Plot the error history for each cell
 if plotErrorHistoryFlag
+    TODO
 end
 
 %% Combine the errors and rank neurons
@@ -280,8 +295,9 @@ if rankNeuronsFlag
     errorTables = cellfun(@readtable, sheetPaths, 'UniformOutput', false);
 
     % Restrict to the row with the minimal error
-    minimalErrorTables = cellfun(@(x, y) process_table_for_ranking(x), ...
-                                errorTables, 'UniformOutput', false);
+    minimalErrorTables = ...
+        cellfun(@(x, y) process_table_for_ranking(x, totalErrorStr), ...
+                errorTables, 'UniformOutput', false);
 
     % Combine into a single table
     minimalErrorTableCombined = vertcat(minimalErrorTables{:});
@@ -296,7 +312,7 @@ if rankNeuronsFlag
     rankTable = addvars(rankTable, ranking, 'Before', 1);
 
     % Save the rank table
-    writetable(rankTable, rankPath);
+    writetable(rankTable, rankSheetPath);
 
     % Copy and rename .png files according to ranking
     copy_and_rename_png_files(rankTable, outFolder, outFolder);
@@ -305,29 +321,80 @@ end
 %% Plot histograms
 if plotHistogramsFlag
     % Read the rank table
-    rankTable = readtable(rankPath);
+    rankTable = readtable(rankSheetPath);
 
     % Plot histograms for error
     % TODO: Pass in 'NBins', 10, instead
     figure;
-    plot_histogram(rankTable.('totalError'), 'Edges', 0:0.5:6, ...
+    plot_histogram(rankTable.(totalErrorStr), 'Edges', 0:0.5:6, ...
                     'XLabel', 'Total Error', 'YLabel', 'Cell Count', ...
                     'FigTitle', 'Total Error Distribution');
     figure;
-    plot_histogram(rankTable.('ltsMatchError'), 'Edges', 0:0.5:6, ...
-                    'XLabel', 'LTS Mismatch Error', 'YLabel', 'Cell Count', ...
-                    'FigTitle', 'LTS Mismatch Error Distribution');
-    figure;
-    plot_histogram(rankTable.('avgSwpError'), 'Edges', 0:1:10, ...
+    plot_histogram(rankTable.(avgSwpErrorStr), 'Edges', 0:1:10, ...
                     'XLabel', 'Average Sweep Error', 'YLabel', 'Cell Count', ...
                     'FigTitle', 'Average Sweep Error Distribution');
+    figure;
+    plot_histogram(rankTable.(ltsMatchErrorStr), 'Edges', 0:0.5:6, ...
+                    'XLabel', 'LTS Mismatch Error', 'YLabel', 'Cell Count', ...
+                    'FigTitle', 'LTS Mismatch Error Distribution');
+
+
 end
 
 %% Plot a stacked horizontal bar plot comparing errors
 if plotBarPlotFlag
     % Read the rank table
-    rankTable = readtable(rankPath);
+    rankTable = readtable(rankSheetPath);
 
+    % Count the number of cells (number of rows)
+    nCells = height(rankTable)
+
+    % Extract the fields
+    [totalErrors, avgSwpErrors, ltsMatchErrors, ...
+            avgLtsAmpErrors, avgLtsDelayErrors, avgLtsSlopeErrors, ...
+            errorWeights, cellNames] = ...
+        argfun(@(x) rankTable.(x), ...
+                totalErrorStr, avgSwpErrorStr, ltsMatchErrorStr, ...
+                avgLtsAmpErrorStr, avgLtsDelayErrorStr, avgLtsSlopeErrorStr, ...
+                errorWeightsStr, cellNameStr);
+
+    % Make sure error weights are normalized
+    errorWeights = errorWeights ./ sum(errorWeights);
+
+    % Compute components of total error
+    %   Note: must match groupLabels
+    componentErrors = [avgSwpErrors, ltsMatchErrors, avgLtsAmpErrors, ...
+                        avgLtsDelayErrors, avgLtsSlopeErrors] .* ...
+                        repmat(transpose(errorWeights), nCells, 1);
+   
+    % Decide on group labels
+    %   Note: must match componentErrors
+    groupLabels = {'Sweep Error', 'LTS Match Error', 'LTS Amp Error', ...
+                    'LTS Time Error', 'LTS Slope Error'};
+
+    % Decide on tick labels
+    pTickLabels = cellNames;
+
+    % Create a figure with two subplots
+    [fig, ax] = create_subplots(1, 2, 'AlwaysNew', true);
+
+    % Plot components of total error stacked
+    subplot(ax(1));
+    plot_bar(componentErrors, 'BarDirection', 'horizontal', ...
+            'GroupStyle', 'stacked', ...
+            'PLabel', 'suppress', 'ReadoutLabel', 'Error (dimensionless)' ...
+            'PTickLabels', pTickLabels, 'ColumnLabels', groupLabels, ...
+            'FigTitle', 'Total error separated by components');
+
+    % Plot total error for verification
+    subplot(ax(2));
+    plot_bar(totalErrors, 'BarDirection', 'horizontal', ...
+            'PLabel', 'suppress', 'ReadoutLabel', 'Error (dimensionless)' ...
+            'PTickLabels', pTickLabels, 'ColumnLabels', groupLabels, ...
+            'FigTitle', 'Total error');
+
+    % Save figure
+    save_all_figtypes(fig, rankPathBase, barFigTypes);
 end
 
 %% Output results
@@ -335,11 +402,11 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function errorTable = process_table_for_ranking(errorTable)
+function errorTable = process_table_for_ranking(errorTable, totalErrorStr)
 %% Restricts table to row of minimal error
 
 % Extract the total errors
-totalError = errorTable.totalError;
+totalError = errorTable.(totalErrorStr);
 
 % Extract the row number with the minimal error
 [~, rowMinimalError] = min(totalError);
@@ -360,8 +427,9 @@ candLabels = rankTable.candLabel;
 % Extract rankings
 ranking = rankTable.ranking;
 
-% Convert rankings to strings so that 1 becomes '01'
-rankingStrs = convert_to_char(ranking, 'FormatSpec', '%2.f');
+% Convert rankings to strings
+% rankingStrs = convert_to_char(ranking, 'FormatSpec', '%2.f');
+rankingStrs = convert_to_char(ranking, 'FormatSpec', '%d');
 
 % Construct old paths
 oldPngPaths = fullfile(inFolder, strcat(candLabels, '_individual.png'));
