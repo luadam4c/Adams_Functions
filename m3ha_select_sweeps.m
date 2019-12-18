@@ -33,6 +33,9 @@ function [swpInfo, fileBasesToUse] = m3ha_select_sweeps (varargin)
 %                       2 - all of g incr = 100%, 200%, 400% 
 %                               but exclude cell-pharm-g_incr sets 
 %                               containing problematic sweeps
+%                       3 - all data 
+%                               but exclude cell-pharm-g_incr sets 
+%                               containing problematic sweeps
 %                   default == 2
 %                   - 'CasesDir' - the directory that contains 
 %                                   'TAKE_OUT_*' folders with special cases
@@ -85,6 +88,7 @@ function [swpInfo, fileBasesToUse] = m3ha_select_sweeps (varargin)
 % 2019-11-26 Added dataMode == 0
 % 2019-11-27 Added 'PharmConditions', 'GIncrConditions', 'VHoldConditions', ...
 %               & 'CellIds' & 'RepNums' as optional arguments
+% 2019-12-18 Added dataMode == 3
 
 %% Hard-coded parameters
 pharmStr = 'prow';
@@ -177,7 +181,7 @@ end
 % Get the file names of files to take out from specialCasesDir
 %   Note: these are labelled with 'TAKE_OUT_*' and were
 %           the result of voting by blab
-if dataMode == 2
+if dataMode == 2 || dataMode == 3
     % Find all files to take out
     fileNamesToTakeOut = m3ha_find_files_to_take_out('CasesDir', casesDir);
 
@@ -202,6 +206,8 @@ if dataMode == 1
     toUse = toUse & isGIncrToUse;
 elseif dataMode == 2
     toUse = toUse & isGIncrToUse & ~isNotToUse;
+elseif dataMode == 3
+    toUse = toUse & ~isNotToUse;
 end
 
 %% Update toUse according to the conditions requested

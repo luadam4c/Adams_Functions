@@ -1,11 +1,18 @@
 function [fileNames, rowConditions, figurePositions] = ...
                 m3ha_select_raw_traces (rowMode, columnMode, ...
                     attemptNumber, cellIdToUse, swpInfo, cellInfo)
-%% Select raw traces to import
+%% Select raw traces to import (must only use this after a toUse column is present in swpInfo)
 % Usage: [fileNames, rowConditions, figurePositions] = ...
 %               m3ha_select_raw_traces (rowMode, columnMode, ...
 %                   attemptNumber, cellIdToUse, swpInfo, cellInfo)
-%
+% Arguments: TODO
+%       attemptNumber   - attempt number for across trials:
+%                           1 - Use 4 traces @ 200% gIncr for this data mode
+%                           2 - Use all traces @ 200% gIncr for this data mode
+%                           3 - Use all traces for this data mode
+%                           4 - Use 1 trace for each pharm x gIncr 
+%                                   for this data mode
+%                           5 - Use 4 traces @ 400% gIncr for this data mode
 % Requires:
 %       cd/m3ha_determine_row_conditions.m
 %
@@ -206,7 +213,7 @@ case 1
         nColumns = min(cellfun(@length, swpIndRow));
     case 4
         % Print message
-        fprintf('Attempt #4: Using 12 traces (one "best trial" for each ');
+        fprintf('Attempt #4: Using one "best trial" for each ');
         fprintf('condition) of %s ... \n', cellName);
 
         % Take only the most representative trace from each condition

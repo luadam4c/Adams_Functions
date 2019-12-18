@@ -1,8 +1,23 @@
 function errors = compute_single_neuron_errors (vSim, vRec, varargin)
-%% Computes all errors for single neuron data
+%% Computes the average total error for a single neuron
 % Usage: errors = compute_single_neuron_errors (vSim, vRec, varargin)
 % Explanation:
-%       TODO
+%       Let alpha = (1/(1+lts2SweepErrorRatio))
+%           beta = featureWeights(1)/sum(featureWeights)
+%           gamma = featureWeights(2)/sum(featureWeights)
+%           delta = featureWeights(3)/sum(featureWeights)
+%       Then:
+%       totalError = ...
+%           avgSwpError * alpha + ...
+%           avgLtsError * (1 - alpha)
+%
+%       In more detail:
+%       totalError = ...
+%           avgSwpError * alpha + ...
+%           ltsMisMatchError * (1 - alpha) + ...
+%           avgLtsAmpError * beta * (1 - alpha) + ...
+%           avgLtsDelayError * gamma * (1 - alpha) + ...
+%           avgLtsSlopeError * delta * (1 - alpha)
 %
 % Example(s):
 %       TODO

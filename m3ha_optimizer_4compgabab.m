@@ -327,7 +327,7 @@ nInitConds = outParams.autoParams(idxNInitConds);
         'plotSwpWeightsFlag');
 
 % Fit parameters
-if outParams.fitMode == 5
+if outParams.fitMode == 5 || outParams.fitMode == 6
     % Don't run current pulse response
     if outParams.runnumTotal > 1
         % If this is not the first run, use errCpr from last run

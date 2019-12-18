@@ -39,36 +39,39 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = false;
-plotErrorHistoryFlag = true; %TODO
-rankNeuronsFlag = false; %true;
+chooseBestParamsFlag = true;
+plotErrorHistoryFlag = true;
+rankNeuronsFlag = true;
+plotHistogramsFlag = true;
 
 % Fitting parameters 
 %   Note: Must be consistent with singleneuronfitting75.m
 simMode = 'active';
-dataMode = 2;                       % data mode:
+dataMode = 0; %3;                   % data mode:
+                                    %   0 - all data
                                     %   1 - all of g incr = 100%, 200%, 400% 
                                     %   2 - same g incr but exclude 
+                                    %       cell-pharm-g_incr sets 
+                                    %       containing problematic sweeps
+                                    %   3 - all data but exclude 
                                     %       cell-pharm-g_incr sets 
                                     %       containing problematic sweeps
 columnMode = 1;                     % optimization mode:
                                     %   1 - across trials
                                     %   2 - across cells TODO
-rowmodeAcrossTrials = 1;            % row mode when fitting across trials:
+rowModeAcrossTrials = 1;            % row mode when fitting across trials:
                                     %   1 - each row is a pharm condition
                                     %   2 - each row is a pharm, g incr pair
 attemptNumberAcrossTrials = 4;      % attempt number for across trials:
-                                    %   1 - Use 4 traces of each cell to fit 
-                                    %           @ 200% g_incr
-                                    %   2 - Use all traces of each cell to fit 
-                                    %           @ 200% g_incr
-                                    %   3 - Use all traces of each cell to fit 
+                                    %   1 - Use 4 traces @ 200% gIncr 
                                     %           for this data mode
-                                    %   4 - Use 12 traces of each cell to fit 
-                                    %       (one trial each for 4 pharm conditions 
-                                    %           X 100%, 200%, 400% g_incr)
-                                    %   TODO: 5 - Same as 3 for passive fitting
-                                    %       but same as 4 for active fitting
+                                    %   2 - Use all traces @ 200% gIncr 
+                                    %           for this data mode
+                                    %   3 - Use all traces for this data mode
+                                    %   4 - Use 1 trace for each pharm x gIncr 
+                                    %           for this data mode
+                                    %   5 - Use 4 traces @ 400% gIncr 
+                                    %       for this data mode
 
 % Directory names
 parentDirectoryTemp = '/media/adamX/m3ha';
@@ -80,7 +83,9 @@ paramDirNames = fullfile('best_params', ...
                         'bestparams_20191125_singleneuronfitting63', ...
                         'bestparams_20191129_singleneuronfitting72', ...
                         'bestparams_20191201_singleneuronfitting73', ...
-                        'bestparams_20191203_singleneuronfitting74'});
+                        'bestparams_20191203_singleneuronfitting74', ...
+                        'bestparams_20191205_singleneuronfitting75', ...
+                        'bestparams_20191211_singleneuronfitting76'});
 dataDirName = fullfile('data_dclamp', 'take4');
 matFilesDirName = 'matfiles';
 specialCasesDirName = 'special_cases';
@@ -93,7 +98,7 @@ cellNamePattern = '[A-Z][0-9]{6}';
 errorSheetSuffix = 'error_comparison';
 errorSheetExtension = 'csv';
 
-rankPrefix = 'singleneuronfitting60-73';
+rankPrefix = 'singleneuronfitting60-76';
 rankSheetSuffix = 'ranked';
 rankSheetExtension = 'csv';
 
@@ -108,9 +113,10 @@ missedLtsError = 1.5;           % how much error (dimensionless) to
 falseLtsError = 0.5;            % how much error (dimensionless) to 
                                 %   penalize a sweep that produced an LTS 
                                 %   that is not recorded
-lts2SweepErrorRatio = 3;        % default ratio of LTS error to sweep error
+lts2SweepErrorRatio = 3;        % ratio of LTS error to sweep error
 normalize2InitErrFlag = 0;      % whether to normalize errors to initial values
-sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
+% sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
+sweepWeights = [];
 
 % TODO: Make optional argument
 outFolder = '';
@@ -162,6 +168,10 @@ end
 % Check if output folder exists
 check_dir(outFolder);
 
+% Create a path for the combined spreadsheet
+rankName = [rankPrefix, '_', rankSheetSuffix, '.', rankSheetExtension];
+rankPath = fullfile(outFolder, rankName);
+
 %% Choose the best parameters for each cell
 if chooseBestParamsFlag
     %% Preparation
@@ -205,7 +215,7 @@ if chooseBestParamsFlag
 
     % Select the raw traces to import for each cell to fit
     [fileNamesToFit, rowConditionsToFit] = ...
-        arrayfun(@(x) m3ha_select_raw_traces(rowmodeAcrossTrials, ...
+        arrayfun(@(x) m3ha_select_raw_traces(rowModeAcrossTrials, ...
                         columnMode, attemptNumberAcrossTrials, ...
                         x, swpInfo, cellInfo), ...
                 cellIdsToFit, 'UniformOutput', false);
@@ -283,29 +293,38 @@ if rankNeuronsFlag
     % Add a column for ranking
     rankTable = addvars(rankTable, ranking, 'Before', 1);
 
-    % Create a path for the combined spreadsheet
-    rankName = [rankPrefix, '_', rankSheetSuffix, '.', rankSheetExtension];
-    rankPath = fullfile(outFolder, rankName);
-
     % Save the rank table
     writetable(rankTable, rankPath);
 
     % Copy and rename .png files according to ranking
     copy_and_rename_png_files(rankTable, outFolder, outFolder);
+end
 
-    % Plot a histogram for total error
+%% Plot histograms
+if plotHistogramsFlag
+    % Read the rank table
+    rankTable = readtable(rankPath);
+
+    % Plot histograms for error
+    % TODO: Pass in 'NBins', 10, instead
     figure;
     plot_histogram(rankTable.('totalError'), 'Edges', 0:0.5:6, ...
-                        'XLabel', 'Total Error', 'YLabel', 'Cell Count', ...
-                        'FigTitle', 'Total Error Distribution');
+                    'XLabel', 'Total Error', 'YLabel', 'Cell Count', ...
+                    'FigTitle', 'Total Error Distribution');
     figure;
     plot_histogram(rankTable.('ltsMisMatchError'), 'Edges', 0:0.5:6, ...
-                        'XLabel', 'LTS Mismatch Error', 'YLabel', 'Cell Count', ...
-                        'FigTitle', 'LTS Mismatch Error Distribution');
+                    'XLabel', 'LTS Mismatch Error', 'YLabel', 'Cell Count', ...
+                    'FigTitle', 'LTS Mismatch Error Distribution');
     figure;
     plot_histogram(rankTable.('avgSwpError'), 'Edges', 0:1:10, ...
-                        'XLabel', 'Average Sweep Error', 'YLabel', 'Cell Count', ...
-                        'FigTitle', 'Average Sweep Error Distribution');
+                    'XLabel', 'Average Sweep Error', 'YLabel', 'Cell Count', ...
+                    'FigTitle', 'Average Sweep Error Distribution');
+end
+
+%% Plot a stacked horizontal bar plot comparing errors
+if plotBarPlotFlag
+    % Read the rank table
+    rankTable = readtable(rankPath);
 
 end
 
