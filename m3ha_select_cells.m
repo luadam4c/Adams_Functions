@@ -11,10 +11,14 @@ function [cellIdsSelected, cellInfo, swpInfo] = m3ha_select_cells (varargin)
 % Arguments:
 %       varargin    - 'DataMode': data mode
 %                   must be a one of:
+%                       0 - all data
 %                       1 - all of g incr = 100%, 200%, 400%
 %                       2 - all of g incr = 100%, 200%, 400% 
-%                           but exclude cell-pharm-g_incr sets 
-%                           containing problematic sweeps
+%                               but exclude cell-pharm-g_incr sets 
+%                               containing problematic sweeps
+%                       3 - all data 
+%                               but exclude cell-pharm-g_incr sets 
+%                               containing problematic sweeps
 %                   default == 2
 %                   - 'SwpInfo': a table of sweep info, with each row named by 
 %                               the matfile base containing the raw data
@@ -86,7 +90,7 @@ iP.FunctionName = mfilename;
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'DataMode', dataModeDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'integer'}));
 addParameter(iP, 'SwpInfo', swpInfoDefault, ...
     @(x) validateattributes(x, {'table'}, {'2d'}));
 addParameter(iP, 'CellInfo', cellInfoDefault, ...

@@ -103,9 +103,9 @@ function handles = plot_bar (val, varargin)
 %                       'auto'      - use default
 %                       'suppress'  - no legend
 %                       anything else recognized by the legend() function
-%                   default == 'suppress' if nTraces == 1 
-%                               'northeast' if nTraces is 2~9
-%                               'eastoutside' if nTraces is 10+
+%                   default == 'suppress' if nGroups == 1 or oneSamplePerGroup
+%                               'northeast' if nGroups is 2~9
+%                               'eastoutside' if nGroups is 10+
 %                   - 'PlotOnly': whether to plot the bars only
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -217,6 +217,7 @@ function handles = plot_bar (val, varargin)
 %
 % Used by:
 %       cd/m3ha_compute_and_compare_lts_statistics.m
+%       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_rank_neurons.m
 %       cd/m3ha_oscillations_analyze.m
 %       cd/parse_multiunit.m
@@ -594,14 +595,14 @@ if isempty(columnLabels)
     end
 end
 
-% Set legend location based on number of traces
+% Set legend location based on number of groups
 if strcmpi(legendLocation, 'auto')
-    if nCols > 1 && nCols < 10
-        legendLocation = 'northeast';
-    elseif nCols >= 10
-        legendLocation = 'eastoutside';
-    else
+    if oneSamplePerGroup || nCols == 1
         legendLocation = 'suppress';
+    elseif nCols > 1 && nCols < 10
+        legendLocation = 'northeast';
+    else
+        legendLocation = 'eastoutside';
     end
 end
 

@@ -23,6 +23,7 @@ function m3ha_log_errors_params (logFileName, outparams, err, simplexOut)
 % 2018-08-10 Updated fitreg -> fitWindow
 % 2018-11-16 Reorganized code and made logFileName the first argument
 % 2019-11-29 Added ltsMatchError
+% 2019-12-18 Added missedLtsError, falseLtsError, match2FeatureErrorRatio
 % TODO: Make each iteration a new column instead of a new row
 % TODO: Change this to using tables
 
@@ -60,6 +61,9 @@ fitWindowCpr = outparams.fitWindowCpr;
 fitWindowIpscr = outparams.fitWindowIpscr;
 sweepWeightsIpscr = outparams.sweepWeightsIpscr;
 ltsFeatureWeights = outparams.ltsFeatureWeights;
+missedLtsError = outparmas.missedLtsError;
+falseLtsError = outparmas.falseLtsError;
+match2FeatureErrorRatio = outparams.match2FeatureErrorRatio;
 lts2SweepErrorRatio = outparams.lts2SweepErrorRatio;
 
 % Extract info from err
@@ -150,7 +154,7 @@ if ~isfile(logFilePath)
             'Average LTS amp error', ...
             'Average LTS time error', ...
             'Average LTS slope error', ...
-            'LTS mismatch error', ...
+            'LTS match error', ...
             'Average LTS error');
     end
     fprintf(fid, repmat('%s, ', 1, nParams), neuronParamNames{:});
@@ -174,6 +178,8 @@ if ~isfile(logFilePath)
         fprintf(fid, repmat('%s, ', 1, 3), ...
             'LTS amp weight', 'LTS time weight', ...
             'LTS slope weight');
+        fprintf(fid, '%s, %s, ', 'Missed LTS error', 'False LTS error');
+        fprintf(fid, '%s, ', 'LTS match to feature error ratio');
         fprintf(fid, '%s, ', 'LTS to sweep error ratio');
     end
     fprintf(fid, '%s, %s, %s, %s, ', ...
@@ -229,6 +235,8 @@ if logSwpWeightsFlag
 end
 if all(hasLtsError) && logLtsWeightsFlag
     fprintf(fid, repmat('%6.4g, ', 1, 3), ltsFeatureWeights);
+    fprintf(fid, '%6.4g, %6.4g, ', missedLtsError, falseLtsError);
+    fprintf(fid, '%6.4g, ', match2FeatureErrorRatio);    
     fprintf(fid, '%6.4g, ', lts2SweepErrorRatio);
 end
 fprintf(fid, '%6.4g, ', fitWindowCpr(1));
@@ -264,7 +272,7 @@ if ~isfile(conciseFilePath)
             'Average LTS amp error', ...
             'Average LTS time error', ...
             'Average LTS slope error', ...
-            'LTS mismatch error', ...
+            'LTS match error', ...
             'Average LTS error');
     end
     if isSimplex
@@ -276,6 +284,8 @@ if ~isfile(conciseFilePath)
         fprintf(fid, repmat('%s, ', 1, 3), ...
             'LTS amp weight', 'LTS time weight', ...
             'LTS slope weight');
+        fprintf(fid, '%s, %s, ', 'Missed LTS error', 'False LTS error');
+        fprintf(fid, '%s, ', 'LTS match to feature error ratio');
         fprintf(fid, '%s, ', 'LTS to sweep error ratio');
     end
     fprintf(fid, '\n');
@@ -305,6 +315,8 @@ else
 end
 if all(hasLtsError) && logLtsWeightsFlag
     fprintf(fid, repmat('%6.4g, ', 1, 3), ltsFeatureWeights);
+    fprintf(fid, '%6.4g, %6.4g, ', missedLtsError, falseLtsError);
+    fprintf(fid, '%6.4g, ', match2FeatureErrorRatio);    
     fprintf(fid, '%6.4g, ', lts2SweepErrorRatio);
 end
 fprintf(fid, '\n');

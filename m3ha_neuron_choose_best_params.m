@@ -25,6 +25,9 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 %                       'passive' - simulate a current pulse response
 %                       'active'  - simulate an IPSC response
 %                   default == 'active'
+%                   - 'PlotErrorHistoryFlag': whether to plot error history
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'OutFolder': the directory where outputs will be placed
 %                   must be a string scalar or a character vector
 %                   default == pwd
@@ -39,12 +42,15 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 %       cd/combine_strings.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
+%       cd/create_subplots.m
 %       cd/extract_fields.m
 %       cd/extract_substrings.m
 %       cd/isemptycell.m
 %       cd/istext.m
 %       cd/load_params.m
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/plot_bar.m
+%       cd/save_all_figtypes.m
 %       cd/set_fields_zero.m
 %
 % Used by:
@@ -55,18 +61,22 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 % 2019-11-23 Created by Adam Lu
 % 2019-11-28 Now saves error table and plots individual plots for each set
 %               of parameters
-% TODO: Create a combined error file and rank the errors
+% 2019-12-19 Added 'PlotErrorHistoryFlag' as an optional argument
 % 
 
 %% Hard-coded parameters
 validSimModes = {'active', 'passive'};
 iterStrPattern = 'singleneuronfitting[\d]*';
 cellNamePattern = '[A-Z][0-9]{6}';
+
+% TODO: Make optional argument
 errorSheetSuffix = 'error_comparison';
 errorSheetExtension = 'csv';
+figTypes = {'png'};
 
 %% Default values for optional arguments
 simModeDefault = 'active';      % simulate active responses by default
+plotErrorHistoryFlagDefault = false;
 outFolderDefault = pwd;         % use the present working directory for outputs
                                 %   by default
 prefixDefault = '';             % set later
@@ -91,6 +101,8 @@ addRequired(iP, 'candParamsTablesOrFiles', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'SimMode', simModeDefault, ...
     @(x) any(validatestring(x, validSimModes)));
+addParameter(iP, 'PlotErrorHistoryFlag', plotErrorHistoryFlagDefault, ...   
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'Prefix', prefixDefault, ...
@@ -99,6 +111,7 @@ addParameter(iP, 'Prefix', prefixDefault, ...
 % Read from the Input Parser
 parse(iP, candParamsTablesOrFiles, varargin{:});
 simMode = validatestring(iP.Results.SimMode, validSimModes);
+plotErrorHistoryFlag = iP.Results.PlotErrorHistoryFlag;
 outFolder = iP.Results.OutFolder;
 prefix = iP.Results.Prefix;
 
@@ -198,42 +211,117 @@ errorStructs = cellfun(@(x, y) m3ha_neuron_run_and_analyze(x, ...
 
 % Extract scalar fields of interest
 %   Note: must be consistent with compute_single_neuron_errors.m
-[totalError, lts2SweepErrorRatio, avgSwpError, avgLtsError, ...
-        ltsMatchError, missedLtsError, falseLtsError, ...
+[totalError, lts2SweepErrorRatio, match2FeatureErrorRatio, ...
+        avgSwpError, avgLtsError, ltsMatchError, ...
+        missedLtsError, falseLtsError, ...
         avgLtsAmpError, avgLtsDelayError, avgLtsSlopeError] = ...
     argfun(@(x) extract_fields(errorStructs, x, 'UniformOutput', true), ...
-            'totalError', 'lts2SweepErrorRatio', 'avgSwpError', ...
-            'avgLtsError', 'ltsMatchError', ...
+            'totalError', 'lts2SweepErrorRatio', 'match2FeatureErrorRatio', ...
+            'avgSwpError', 'avgLtsError', 'ltsMatchError', ...
             'missedLtsError', 'falseLtsError', ...
             'avgLtsAmpError', 'avgLtsDelayError', 'avgLtsSlopeError');
 
 % Extract vector fields of interest
 %   Note: must be consistent with compute_single_neuron_errors.m
-[ltsFeatureWeights, swpErrors, ltsAmpErrors, ...
-        ltsDelayErrors, ltsSlopeErrors] = ...
+[errorWeights, ltsFeatureWeights, swpErrors, ...
+        ltsAmpErrors, ltsDelayErrors, ltsSlopeErrors] = ...
     argfun(@(x) extract_fields(errorStructs, x, 'UniformOutput', false), ...
-            'ltsFeatureWeights', 'swpErrors', 'ltsAmpErrors', ...
-            'ltsDelayErrors', 'ltsSlopeErrors');
+            'errorWeights', 'ltsFeatureWeights', 'swpErrors', ...
+            'ltsAmpErrors', 'ltsDelayErrors', 'ltsSlopeErrors');
 
 % Find the index of the table with the least error
 [totalErrorBest, iTableBest] = min(totalError);
 
+% Create iteration numbers
+iterNumber = transpose(1:nTables);
+
 % Add variables in the beginning
-errorTable = table(candLabel, cellName, iterStr, ...
-                    totalError, lts2SweepErrorRatio, ...
-                    avgSwpError, avgLtsError, ltsMatchError, ...
-                    missedLtsError, falseLtsError, ltsFeatureWeights, ...
-                    avgLtsAmpError, avgLtsDelayError, avgLtsSlopeError, ...
-                    swpErrors, ltsAmpErrors, ltsDelayErrors, ltsSlopeErrors, ...
-                    'RowNames', iterStr);
+errorTable = table(iterNumber, candLabel, cellName, iterStr, ...
+                totalError, avgSwpError, avgLtsError, ltsMatchError, ...
+                avgLtsAmpError, avgLtsDelayError, avgLtsSlopeError, ...
+                lts2SweepErrorRatio, missedLtsError, falseLtsError, ...
+                match2FeatureErrorRatio, ltsFeatureWeights, errorWeights, ...
+                swpErrors, ltsAmpErrors, ltsDelayErrors, ltsSlopeErrors, ...
+                'RowNames', iterStr);
 
 %% Save results
 % Create full path to error sheet file
-sheetName = strcat(prefix, '_', errorSheetSuffix, '.', errorSheetExtension);
-sheetPath = fullfile(outFolder, sheetName);
+sheetBase = [prefix, '_', errorSheetSuffix];
+sheetPathBase = fullfile(outFolder, sheetBase);
+sheetPath = [sheetPathBase, '.', errorSheetExtension];
 
 % Save the error table
 writetable(errorTable, sheetPath);
+
+%% Plot error history
+if plotErrorHistoryFlag
+    % Display message
+    fprintf('Plotting error history for %s ... \n', uniqueCellName);
+
+    % Create figure
+    fig1 = create_subplots(3, 2, 'FigNumber', 105, 'ClearFigure', true);
+
+    % Plot the total error
+    subplot(3, 2, 1);
+    plot_bar(transpose(totalError), 'BarDirection', 'vertical', ...
+            'GroupStyle', 'grouped', 'PLabel', 'Iteration Number', ...
+            'ReadoutLabel', 'Total Error', 'FigTitle', 'suppress');
+
+    % Plot the average sweep error
+    subplot(3, 2, 2);
+    plot_bar(transpose(avgSwpError), 'BarDirection', 'vertical', ...
+            'GroupStyle', 'grouped', 'PLabel', 'Iteration Number', ...
+            'ReadoutLabel', 'Sweep Error', 'FigTitle', 'suppress');
+
+    % Plot the average LTS error
+    subplot(3, 2, 3);
+    plot_bar(transpose(ltsMatchError), 'BarDirection', 'vertical', ...
+            'GroupStyle', 'grouped', 'PLabel', 'Iteration Number', ...
+            'ReadoutLabel', 'Match Error', 'FigTitle', 'suppress');
+
+    % Plot the average LTS amp error
+    subplot(3, 2, 4);
+    plot_bar(transpose(avgLtsAmpError), 'BarDirection', 'vertical', ...
+            'GroupStyle', 'grouped', 'PLabel', 'Iteration Number', ...
+            'ReadoutLabel', 'Amp Error', 'FigTitle', 'suppress');
+
+    % Plot the average LTS time error
+    subplot(3, 2, 5);
+    plot_bar(transpose(avgLtsDelayError), 'BarDirection', 'vertical', ...
+            'GroupStyle', 'grouped', 'PLabel', 'Iteration Number', ...
+            'ReadoutLabel', 'Time Error', 'FigTitle', 'suppress');
+
+    % Plot the average LTS slope error
+    subplot(3, 2, 6);
+    plot_bar(transpose(avgLtsSlopeError), 'BarDirection', 'vertical', ...
+            'GroupStyle', 'grouped', 'PLabel', 'Iteration Number', ...
+            'ReadoutLabel', 'Slope Error', 'FigTitle', 'suppress');
+
+    % Create an overarching title
+    suptitle(['Error History for ', uniqueCellName]);
+
+    % Save figure
+    save_all_figtypes(fig1, strcat(sheetPathBase, '_separate'), figTypes);
+
+    % Create figure
+    fig2 = create_subplots(1, 1, 'FigNumber', 106, 'ClearFigure', true);
+
+    % Compute components of total error
+    %   Note: must match groupLabels
+    componentErrors = [avgSwpErrors, ltsMatchErrors, avgLtsAmpErrors, ...
+                        avgLtsDelayErrors, avgLtsSlopeErrors] .* ...
+                        repmat(transpose(errorWeights), nCells, 1);
+    
+    % Plot components of total error stacked
+    plot_bar(componentErrors, 'BarDirection', 'horizontal', ...
+            'GroupStyle', 'stacked', ...
+            'PLabel', 'suppress', 'ReadoutLabel', 'Error (dimensionless)', ...
+            'PTickLabels', pTickLabels, 'ColumnLabels', groupLabels, ...
+            'FigTitle', ['Error History for ', uniqueCellName]);
+
+    % Save figure
+    save_all_figtypes(fig2, strcat(sheetPathBase, '_together'), figTypes);
+end
 
 %% Output results
 % Return the table with the least error

@@ -491,9 +491,9 @@ totalError = compute_weighted_average(errorsToAverage, 'IgnoreNan', true, ...
 %           e = featureWeights(3)/sum(featureWeights)
 a = (1/(1+lts2SweepErrorRatio));
 b = (1/(1+match2FeatureErrorRatio));
-c = featureWeights(1)/sum(featureWeights);
-d = featureWeights(2)/sum(featureWeights);
-e = featureWeights(3)/sum(featureWeights);
+c = ltsFeatureWeights(1)/sum(ltsFeatureWeights);
+d = ltsFeatureWeights(2)/sum(ltsFeatureWeights);
+e = ltsFeatureWeights(3)/sum(ltsFeatureWeights);
 
 % Compute weights
 %   Note:

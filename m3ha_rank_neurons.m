@@ -32,6 +32,7 @@
 %       cd/m3ha_select_cells.m
 %       cd/m3ha_select_raw_traces.m
 %       cd/plot_bar.m
+%       cd/save_all_figtypes.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -44,13 +45,15 @@
 % Flags
 chooseBestParamsFlag = true;
 plotErrorHistoryFlag = true;
-rankNeuronsFlag = true;
-plotHistogramsFlag = true;
+plotIndividualFlag = true;
+rankNeuronsFlag = false; %true;
+plotHistogramsFlag = false; %true;
+plotBarPlotFlag = false; %true;
 
 % Fitting parameters 
 %   Note: Must be consistent with singleneuronfitting75.m
 simMode = 'active';
-dataMode = 0; %3;                   % data mode:
+dataMode = 2; %0; %3;                   % data mode:
                                     %   0 - all data
                                     %   1 - all of g incr = 100%, 200%, 400% 
                                     %   2 - same g incr but exclude 
@@ -93,7 +96,6 @@ dataDirName = fullfile('data_dclamp', 'take4');
 matFilesDirName = 'matfiles';
 specialCasesDirName = 'special_cases';
 defaultOutFolderName = 'ranked';
-barFigName = 
 
 % File info
 cellNamePattern = '[A-Z][0-9]{6}';
@@ -256,7 +258,8 @@ if chooseBestParamsFlag
         %   custom files
         [previousBestParamsTable, chosenTableLabel] = ...
             m3ha_neuron_choose_best_params(customInitPathsThis, ...
-                'PlotIndividualFlag', true, ...
+                'PlotErrorHistoryFlag', plotErrorHistoryFlag, ...
+                'PlotIndividualFlag', plotIndividualFlag, ...
                 'OutFolder', outFolder, 'FileNames', fileNamesThis, ...
                 'SimMode', simMode, 'RowConditionsIpscr', rowConditionsThis, ...
                 'SweepWeightsIpscr', sweepWeights, ...
@@ -276,23 +279,18 @@ if chooseBestParamsFlag
     end
 end
 
-%% Plot the error history for each cell
-if plotErrorHistoryFlag
-    TODO
-end
-
 %% Combine the errors and rank neurons
 if rankNeuronsFlag
     % Display message
     fprintf('Ranking all cells ... \n');
 
     % Locate all individual error spreadsheets
-    [~, sheetPaths] = all_files('Directory', outFolder, ...
+    [~, errorSheetPaths] = all_files('Directory', outFolder, ...
                                 'Suffix', errorSheetSuffix, ...
                                 'Extension', errorSheetExtension);
 
     % Read all error tables
-    errorTables = cellfun(@readtable, sheetPaths, 'UniformOutput', false);
+    errorTables = cellfun(@readtable, errorSheetPaths, 'UniformOutput', false);
 
     % Restrict to the row with the minimal error
     minimalErrorTables = ...
@@ -320,6 +318,9 @@ end
 
 %% Plot histograms
 if plotHistogramsFlag
+    % Display message
+    fprintf('Plotting histograms ... \n');
+
     % Read the rank table
     rankTable = readtable(rankSheetPath);
 
@@ -343,13 +344,16 @@ end
 
 %% Plot a stacked horizontal bar plot comparing errors
 if plotBarPlotFlag
+    % Display message
+    fprintf('Plotting bar plot ... \n');
+
     % Read the rank table
     rankTable = readtable(rankSheetPath);
 
     % Count the number of cells (number of rows)
-    nCells = height(rankTable)
+    nCells = height(rankTable);
 
-    % Extract the fields
+    % Extract fields
     [totalErrors, avgSwpErrors, ltsMatchErrors, ...
             avgLtsAmpErrors, avgLtsDelayErrors, avgLtsSlopeErrors, ...
             errorWeights, cellNames] = ...
@@ -382,14 +386,14 @@ if plotBarPlotFlag
     subplot(ax(1));
     plot_bar(componentErrors, 'BarDirection', 'horizontal', ...
             'GroupStyle', 'stacked', ...
-            'PLabel', 'suppress', 'ReadoutLabel', 'Error (dimensionless)' ...
+            'PLabel', 'suppress', 'ReadoutLabel', 'Error (dimensionless)', ...
             'PTickLabels', pTickLabels, 'ColumnLabels', groupLabels, ...
             'FigTitle', 'Total error separated by components');
 
     % Plot total error for verification
     subplot(ax(2));
     plot_bar(totalErrors, 'BarDirection', 'horizontal', ...
-            'PLabel', 'suppress', 'ReadoutLabel', 'Error (dimensionless)' ...
+            'PLabel', 'suppress', 'ReadoutLabel', 'Error (dimensionless)', ...
             'PTickLabels', pTickLabels, 'ColumnLabels', groupLabels, ...
             'FigTitle', 'Total error');
 
@@ -435,7 +439,7 @@ rankingStrs = convert_to_char(ranking, 'FormatSpec', '%d');
 oldPngPaths = fullfile(inFolder, strcat(candLabels, '_individual.png'));
 
 % Construct new paths
-newPngPaths = fullfile(inFolder, strcat('rank_', rankingStrs, '_', ...
+newPngPaths = fullfile(outFolder, strcat('rank_', rankingStrs, '_', ...
                                         candLabels, '_individual.png'));
 
 % Copy files 
@@ -454,6 +458,13 @@ cellName = force_column_cell(cellName);
 
 % Add a column for cell name
 errorTable = addvars(errorTable, cellName, 'Before', 1);
+
+% All cell names should be the same
+if numel(unique(cellNames)) ~= 1
+    error('Cell name not all the same in %s!', errorSheetPaths{iTable});
+else
+    cellName = cellNames{1};
+end
 
 %}
 

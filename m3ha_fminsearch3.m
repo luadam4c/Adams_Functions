@@ -854,7 +854,6 @@ drawnow
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
 function update_subplot(x, y, xLabel, yLabel, markerstyle, color, ctIterations, multipleRunsFlag)
 % Update subplot
 

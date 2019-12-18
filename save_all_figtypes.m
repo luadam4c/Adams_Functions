@@ -21,10 +21,12 @@ function save_all_figtypes (fig, filename, varargin)
 %       cd/compute_and_plot_average_response.m
 %       cd/create_waveform_train.m
 %       cd/create_pulse_train_series.m
+%       cd/m3ha_neuron_choose_best_params.m
+%       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_plot_example_jitter.m.m
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_individual_traces.m
-%       cd/m3ha_neuron_run_and_analyze.m
+%       cd/m3ha_rank_neurons.m
 %       cd/parse_current_family.m
 %       cd/plot_bar.m
 %       cd/plot_calcium_imaging_traces.m
