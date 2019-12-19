@@ -41,15 +41,16 @@
 
 % File History:
 % 2019-12-03 Created by Adam Lu
+% 2019-12-18 Added bar plots and error history
 % 
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = false; %true;
-plotErrorHistoryFlag = false; %true;
-plotIndividualFlag = false; %true;
-rankNeuronsFlag = false; %true;
-plotHistogramsFlag = false; %true;
+chooseBestParamsFlag = true;
+plotErrorHistoryFlag = true;
+plotIndividualFlag = true;
+rankNeuronsFlag = true;
+plotHistogramsFlag = true;
 plotBarPlotFlag = true;
 
 % Fitting parameters 
