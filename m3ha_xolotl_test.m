@@ -237,7 +237,7 @@ if saveFigure
 end
 
 %% Manipulate
-%{
+
 % Set up the plots to be manipulated
 m3ha.manipulate_plot_func = ...
     {@(x) m3ha_xolotl_plot(x, 'DataToCompare', dataToCompare, ...
@@ -256,7 +256,7 @@ m3ha.manipulate({'soma.len', 'soma.radius', 'soma.Leak.gbar', ...
 % m3ha.manipulate({'*Leak*', '*length*'})
 manip = gcf;
 manip.Position(2) = manip.Position(2) - 200;
-%}
+
 
 % Displays a list of properties
 % properties(xolotl)

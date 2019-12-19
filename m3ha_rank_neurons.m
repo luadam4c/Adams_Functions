@@ -46,11 +46,11 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = true;
-plotErrorHistoryFlag = true;
-plotIndividualFlag = true;
-rankNeuronsFlag = true;
-plotHistogramsFlag = true;
+chooseBestParamsFlag = false; %true;
+plotErrorHistoryFlag = false; %true;
+plotIndividualFlag = false; %true;
+rankNeuronsFlag = false; %true;
+plotHistogramsFlag = false; %true;
 plotBarPlotFlag = true;
 
 % Fitting parameters 

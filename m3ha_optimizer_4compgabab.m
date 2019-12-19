@@ -256,7 +256,9 @@ end
 outParams.errCpr{outParams.runnumTotal} = errCpr;
 
 % Update error history plot
-update_errorhistoryplot(hfig, outParams);
+if outParams.runMode == 2
+    update_errorhistoryplot(hfig, outParams);
+end
 
 % Simulate GABAB IPSC response if requested
 if outParams.simIpscrFlag
@@ -294,7 +296,9 @@ end
 outParams.err{outParams.runnumTotal} = err;
 
 % Update error history plot
-update_errorhistoryplot(hfig, outParams);
+if outParams.runMode == 2
+    update_errorhistoryplot(hfig, outParams);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
