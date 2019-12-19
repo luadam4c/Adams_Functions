@@ -96,7 +96,7 @@ outFolderDefault = '';          % set later
 %TODO
 expStr = '';
 colorMap = [];
-simMode = 'active';
+buildMode = 'active';
 residuals = [];
 vVecsRec = [];
 figTypes = {'png', 'epsc2'};
@@ -189,11 +189,11 @@ simData = load_neuron_outputs('FileNames', fileNames);
 
 % Extract vectors from simulated data
 %   Note: these are arrays with 25 columns
-if strcmpi(simMode, 'passive')
+if strcmpi(buildMode, 'passive')
     [tVecs, vVecsSim, iVecsSim, vVecsDend1, vVecsDend2] = ...
         extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
                         IEXT_COL_SIM, DEND1_COL_SIM, DEND2_COL_SIM]);
-elseif strcmpi(simMode, 'active')
+elseif strcmpi(buildMode, 'active')
     [tVecs, vVecsSim, gVecsSim, iVecsSim, icaVecsSim, ...
             itmVecsSim, itminfVecsSim, ithVecsSim, ithinfVecsSim, ...
             ihVecsSim, ihmVecsSim, ikaVecsSim, iam1VecsSim, iah1VecsSim, ...
@@ -213,13 +213,13 @@ end
 endPointsForPlots = find_window_endpoints(xLimits, tVecs);
 
 % Prepare vectors for plotting
-if strcmpi(simMode, 'passive')
+if strcmpi(buildMode, 'passive')
     [tVecs, vVecsSim, vVecsRec, residuals, ...
         iVecsSim, vVecsDend1, vVecsDend2] = ...
         argfun(@(x) prepare_for_plotting(x, endPointsForPlots), ...
                 tVecs, vVecsSim, vVecsRec, residuals, ...
                 iVecsSim, vVecsDend1, vVecsDend2);
-elseif strcmpi(simMode, 'active')
+elseif strcmpi(buildMode, 'active')
     [tVecs, residuals, vVecsRec, vVecsSim, gVecsSim, iVecsSim, ...
         icaVecsSim, itmVecsSim, itminfVecsSim, ...
         ithVecsSim, ithinfVecsSim, ihVecsSim, ihmVecsSim, ...
@@ -240,9 +240,9 @@ itm2hVecsSim = (itmVecsSim .^ 2) .* ithVecsSim;
 itminf2hinfVecsSim = (itminfVecsSim .^ 2) .* ithinfVecsSim;
 
 % Select data to plot
-if strcmpi(simMode, 'passive')
+if strcmpi(buildMode, 'passive')
     dataForOverlapped = {vVecsSim; vVecsDend1; vVecsDend2; iVecsSim};
-elseif strcmpi(simMode, 'active')
+elseif strcmpi(buildMode, 'active')
     dataForOverlapped = {vVecsSim; gVecsSim; iVecsSim; ...
             icaVecsSim; itm2hVecsSim; itminf2hinfVecsSim; ...
             itmVecsSim; itminfVecsSim; ithVecsSim; ithinfVecsSim; ...
@@ -250,10 +250,10 @@ elseif strcmpi(simMode, 'active')
 end
 
 % Construct matching y labels
-if strcmpi(simMode, 'passive')
+if strcmpi(buildMode, 'passive')
     yLabelsOverlapped = {'V_{soma} (mV)'; 'V_{dend1} (mV)'; ...
                         'V_{dend2} (mV)'; 'I_{stim} (nA)'};
-elseif strcmpi(simMode, 'active')
+elseif strcmpi(buildMode, 'active')
     yLabelsOverlapped = {'V_{soma} (mV)'; 'g_{GABA_B} (uS)'; ...
             'I_{stim} (nA)'; 'I_{Ca} (mA/cm^2)'; ...
             'm^2h_{T}'; 'm_{\infty}^2h_{\infty,T}'; ...

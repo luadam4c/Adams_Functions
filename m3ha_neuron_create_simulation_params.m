@@ -48,6 +48,12 @@ function [simParamsTable, simParamsPath] = ...
 %                   - 'NSims': number of simulations
 %                   must be a positive integer scalar
 %                   default == 1
+%                   - 'BuildMode': TC neuron build mode
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'passive' - insert leak channels only
+%                       'active'  - insert both passive and active channels
+%                       or a cell array of them TODO
+%                   default == 'active'
 %                   - 'SimMode': simulation mode
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'passive' - simulate a current pulse response
@@ -114,12 +120,15 @@ function [simParamsTable, simParamsPath] = ...
 % 2018-11-12 Now set the default gababAmp for passive fits to be 0, 
 %               but retain the other gabab parameters
 % 2019-12-04 Changed the default simMode to 'active'
+% 2019-12-19 Added 'buildMode'
 % TODO: Remove the Cpr parameters and decide on them before
 % 
 
 %% Hard-coded parameters
+validBuildModes = {'active', 'passive'};
+validSimModes = {'active', 'passive'};
 simParamsFileName = 'simulation_parameters.csv';
-simParamsFromArguments = {'simMode', 'outFilePath', 'tstop' ...
+simParamsFromArguments = {'buildMode', 'simMode', 'outFilePath', 'tstop' ...
                             'holdPotential', 'currentPulseAmplitude', ...
                             'gababAmp', 'gababTrise', ...
                             'gababTfallFast', 'gababTfallSlow', ...
@@ -146,6 +155,7 @@ ipscrWindowDefault = ipscrWinOrig + timeToStabilize;
 nSimsDefault = 1;               % number of simulations by default
 
 %% Default values for simulation parameters
+buildModeDefault = 'active';    % insert active channels by default
 simModeDefault = 'active';      % simulate a IPSC response by default
 outFilePathDefault = 'auto';    % set later
 tstopDefault = [];              % set later
@@ -202,8 +212,10 @@ addParameter(iP, 'IpscrWindow', ipscrWindowDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 2}));
 addParameter(iP, 'NSims', nSimsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+addParameter(iP, 'BuildMode', buildModeDefault, ...
+    @(x) any(validatestring(x, validBuildModes)));
 addParameter(iP, 'SimMode', simModeDefault, ...
-    @(x) ischar(x) || isstring(x) || iscellstr(x));
+    @(x) any(validatestring(x, validSimModes)));
 addParameter(iP, 'OutFilePath', outFilePathDefault, ...
     @(x) ischar(x) || isstring(x) || iscellstr(x));
 addParameter(iP, 'Tstop', tstopDefault, ...
@@ -238,7 +250,8 @@ jitterFlag = iP.Results.JitterFlag;
 cprWindow = iP.Results.CprWindow;
 ipscrWindow = iP.Results.IpscrWindow;
 nSims = iP.Results.NSims;
-simMode = iP.Results.SimMode;
+buildMode = validatestring(iP.Results.BuildMode, validBuildModes);
+simMode = validatestring(iP.Results.SimMode, validSimModes);
 outFilePath = iP.Results.OutFilePath;
 tstop = iP.Results.Tstop;
 holdPotential = iP.Results.HoldPotential;
@@ -259,13 +272,13 @@ prefix = force_string_end(prefix, '_', 'OnlyIfNonempty', true);
 % Count the number of simulation parameters from arguments
 nSimParamsFromArguments = numel(simParamsFromArguments);
 
-% Decide on a passiveFlag based on simMode
+% Decide on a cprFlag based on simMode
 % TODO: case when simMode is already a cell array
 switch simMode
     case 'passive'
-        passiveFlag = true;
+        cprFlag = true;
     case 'active'
-        passiveFlag = false;
+        cprFlag = false;
     otherwise
         error('simMode unrecognized!');
 end
@@ -275,7 +288,7 @@ simMode = {simMode};
 
 % Decide on the end time of simulations
 if isempty(tstop)
-    if passiveFlag
+    if cprFlag
         % Simulate until the end of the current pulse response
         tstop = cprWindow(2);
     else
@@ -286,8 +299,8 @@ end
 
 % Decide on GABAB parameters
 if isempty(gababAmp)
-    % Set the amplitude based on whether passiveFlag is on
-    if passiveFlag
+    % Set the amplitude based on whether cprFlag is on
+    if cprFlag
         % Set to zero
         gababAmp = 0;
     else
@@ -331,7 +344,7 @@ if ~isempty(nSims)
     end
 else
     % Use the length of either currentPulseAmplitude or gababAmp
-    if passiveFlag
+    if cprFlag
         nSims = length(currentPulseAmplitude);
     else
         nSims = length(gababAmp);
@@ -515,7 +528,7 @@ neuronParamValuesTableTransposed = ...
 % Unpack info from outparams
 currentPulseAmplitude = outparams.currentPulseAmplitude;
 gababsyn = outparams.gabab;
-passiveFlag = outparams.passiveFlag;
+cprFlag = outparams.cprFlag;
 holdPotential = outparams.holdPotentialCpr;
 holdCurrent = outparams.holdCurrentCpr;
 holdCurrentNoise = outparams.holdCurrentNoiseCpr;
@@ -540,11 +553,11 @@ simParamsTable.outFilePath = outFilePath;
 cprFlagDefault = true; %false;  % fit active parameters by default
 addParameter(iP, 'CprFlag', cprFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-passiveFlag = iP.Results.CprFlag;
+cprFlag = iP.Results.CprFlag;
 
 % Decide on the simulation mode and make it a cell array
 if strcmpi(simMode, 'auto')
-    if passiveFlag
+    if cprFlag
         simMode = 'passive';
     else
         simMode = 'active';
@@ -590,7 +603,7 @@ holdCurrentNoiseCpr = iP.Results.HoldCurrentNoiseCpr;
                         'HoldCurrentNoiseCpr', holdCurrentNoiseCpr, ...
 
 % Decide on the holding potentials and holding currents
-if passiveFlag
+if cprFlag
 end
 
 % Get the number of elements
@@ -610,7 +623,7 @@ gababWeight = 0;
 
 % If simulating IPSC responses, make sure the length of gababAmp
 %   match up with the number of simulations
-if ~passiveFlag
+if ~cprFlag
 
 %       cd/force_column_vector.m
 gababAmp = force_column_vector(gIncr * gababAmpTemplate');

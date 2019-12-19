@@ -58,6 +58,10 @@ function [initParamTables, initParamFiles, otherParams] = ...
 %                                       parameter values that replaces default
 %                   must be a string scalar or a character vector
 %                   default == none provided
+%                   - 'MinimalActiveChannels': whether to set all 
+%                                           active channels to the minimum value
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/all_files.m
@@ -242,6 +246,7 @@ customInitValuesDefault = {};       % set later
 customInitTablesDefault = {};       % set later
 customInitFilesDefault = {};        % set later
 customInitDirectoryDefault = '';    % set later
+minimalActiveChannelsDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -282,6 +287,8 @@ addParameter(iP, 'CustomInitFiles', customInitFilesDefault, ...
                 'or a string array!']));
 addParameter(iP, 'CustomInitDirectory', customInitDirectoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));    
+addParameter(iP, 'MinimalActiveChannels', minimalActiveChannelsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -296,6 +303,7 @@ customInitValues = iP.Results.CustomInitValues;
 customInitTables = iP.Results.CustomInitTables;
 customInitFiles = iP.Results.CustomInitFiles;
 customInitDirectory = iP.Results.CustomInitDirectory;
+minimalActiveChannels = iP.Results.MinimalActiveChannels;
 
 %% Preparation
 % Set default output folder
@@ -552,6 +560,24 @@ if toUpdateCustom
     initParamTables = ...
         cellfun(@(x, y) update_param_values(x, y{:}), ...
                 initParamTables, nameValuePairsCustom, 'UniformOutput', false);
+end
+
+%% Set all active channel conductances to minimum if requested
+if minimalActiveChannels
+    % Create name value pairs for active channel parameters
+    nameValuePairsActiveExample = ...
+        {'pcabarITSoma', 0, 'pcabarITDend1', 0, 'pcabarITDend2', 0, ...
+        'ghbarIhSoma', 0, 'ghbarIhDend1', 0, 'ghbarIhDend2', 0, ...
+        'gkbarIKirSoma', 0, 'gkbarIKirDend1', 0, 'gkbarIKirDend2', 0, ...
+        'gkbarIASoma', 0, 'gkbarIADend1', 0, 'gkbarIADend2', 0, ...
+        'gnabarINaPSoma', 0, 'gnabarINaPDend1', 0, 'gnabarINaPDend2', 0};
+    nameValuePairsActive = ...
+        repmat(nameValuePairsActiveExample, size(initParamTables));
+
+    % Update the initial parameters table
+    initParamTables = ...
+        cellfun(@(x, y) update_param_values(x, y{:}), ...
+                initParamTables, nameValuePairsActive, 'UniformOutput', false);    
 end
 
 %% Update the initValue column with the value column

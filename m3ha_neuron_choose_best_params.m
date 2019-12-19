@@ -66,6 +66,7 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 % 
 
 %% Hard-coded parameters
+validBuildModes = {'active', 'passive'};
 validSimModes = {'active', 'passive'};
 iterStrPattern = 'singleneuronfitting[\d]*';
 cellNamePattern = '[A-Z][0-9]{6}';
@@ -83,6 +84,7 @@ errorSheetExtension = 'csv';
 figTypes = {'png'};
 
 %% Default values for optional arguments
+buildModeDefault = 'active';    % insert active channels by default
 simModeDefault = 'active';      % simulate active responses by default
 plotErrorHistoryFlagDefault = false;
 outFolderDefault = pwd;         % use the present working directory for outputs
@@ -107,6 +109,8 @@ addRequired(iP, 'candParamsTablesOrFiles', ...
     @(x) validateattributes(x, {'cell', 'string'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'BuildMode', buildModeDefault, ...
+    @(x) any(validatestring(x, validBuildModes)));
 addParameter(iP, 'SimMode', simModeDefault, ...
     @(x) any(validatestring(x, validSimModes)));
 addParameter(iP, 'PlotErrorHistoryFlag', plotErrorHistoryFlagDefault, ...   
@@ -118,6 +122,7 @@ addParameter(iP, 'Prefix', prefixDefault, ...
 
 % Read from the Input Parser
 parse(iP, candParamsTablesOrFiles, varargin{:});
+buildMode = validatestring(iP.Results.BuildMode, validBuildModes);
 simMode = validatestring(iP.Results.SimMode, validSimModes);
 plotErrorHistoryFlag = iP.Results.PlotErrorHistoryFlag;
 outFolder = iP.Results.OutFolder;
@@ -213,7 +218,8 @@ candLabel = combine_strings('Substrings', {prefix, 'from', iterStr});
 % Compute errors for all tables
 errorStructs = cellfun(@(x, y) m3ha_neuron_run_and_analyze(x, ...
                             'PlotIndividualFlag', true, ...
-                            'SimMode', simMode, 'OutFolder', outFolder, ...
+                            'BuildMode', buildMode, 'SimMode', simMode, ...
+                            'OutFolder', outFolder, ...
                             'Prefix', y, otherArguments), ...
                             candParamsTables, candLabel);
 

@@ -45,7 +45,7 @@ function [simCommands, simCmdsFilePath] = ...
 %                               gnabarINaPSoma
 %                               gnabarINaPDend1
 %                               gnabarINaPDend2
-%                               simMode
+%                               buildMode
 %                               outFilePath
 %                               tstop
 %                               holdPotential
@@ -85,6 +85,7 @@ function [simCommands, simCmdsFilePath] = ...
 % 2019-11-12 Updated usage of build()
 % 2019-11-12 Removed T & h channels from passive fit
 % 2019-11-13 Restored usage of build()
+% 2019-12-19 Renamed simMode -> buildMode
 % 
 
 %% Hard-coded parameters
@@ -181,7 +182,7 @@ gkbarIADend2 = simParamsTable.gkbarIADend2;
 gnabarINaPSoma = simParamsTable.gnabarINaPSoma;
 gnabarINaPDend1 = simParamsTable.gnabarINaPDend1;
 gnabarINaPDend2 = simParamsTable.gnabarINaPDend2;
-simMode = simParamsTable.simMode;
+buildMode = simParamsTable.buildMode;
 outFilePath = simParamsTable.outFilePath;
 tstop = simParamsTable.tstop;
 holdPotential = simParamsTable.holdPotential;
@@ -202,7 +203,7 @@ parfor iSim = 1:nSims
 %for iSim = 1:nSims
     % Start with the build() command in singleneuron4compgabab.hoc
     thisCmds = sprintf('build("%s", %g, %g, %g, %g)\n', ...
-                        simMode{iSim}, diamSoma(iSim), ...
+                        buildMode{iSim}, diamSoma(iSim), ...
                         LDend(iSim), diamDend(iSim), corrD(iSim));
 
     % Command to adjust global passive parameters
@@ -214,7 +215,7 @@ parfor iSim = 1:nSims
                                     gpas(iSim), epas(iSim), corrD(iSim))];
 
     % Add more commands if in active fit mode
-    if strcmp(simMode{iSim}, 'active')
+    if strcmp(buildMode{iSim}, 'active')
         % Command to adjust H channel parameters
         thisCmds = [thisCmds, ...
                     sprintf('adjust_Ih(%g, %g, %g, %g, %g, %g)\n', ...
@@ -254,7 +255,7 @@ parfor iSim = 1:nSims
     thisCmds = [thisCmds, ...
                 sprintf(['sim("%s", "%s", %d, %g, %g, ', ...
                         '%g, %g, %g, %g, %g, %d, %g, %g)\n'], ...
-                        simMode{iSim}, outFilePath{iSim}, tstop(iSim), ...
+                        buildMode{iSim}, outFilePath{iSim}, tstop(iSim), ...
                         holdPotential(iSim), currentPulseAmplitude(iSim), ...
                         gababAmp(iSim), gababTrise(iSim), ...
                         gababTfallFast(iSim), gababTfallSlow(iSim), ...

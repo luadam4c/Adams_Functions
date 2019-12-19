@@ -61,8 +61,8 @@ fitWindowCpr = outparams.fitWindowCpr;
 fitWindowIpscr = outparams.fitWindowIpscr;
 sweepWeightsIpscr = outparams.sweepWeightsIpscr;
 ltsFeatureWeights = outparams.ltsFeatureWeights;
-missedLtsError = outparmas.missedLtsError;
-falseLtsError = outparmas.falseLtsError;
+missedLtsError = outparams.missedLtsError;
+falseLtsError = outparams.falseLtsError;
 match2FeatureErrorRatio = outparams.match2FeatureErrorRatio;
 lts2SweepErrorRatio = outparams.lts2SweepErrorRatio;
 
@@ -132,6 +132,7 @@ end
 logFilePath = fullfile(outFolderName, logFileName);
 if ~isfile(logFilePath)
     fid = fopen(logFilePath, 'w');        % create log file for writing
+    fprintf(fid, '%s, ', 'TC Neuron Build Mode');
     fprintf(fid, '%s, ', 'Simulation Mode');
     if isSimplex
         fprintf(fid, '%s, %s, %s, %s, %s, %s, ', ...
@@ -202,6 +203,7 @@ end
 
 % Log errors and params
 fid = fopen(logFilePath, 'a');            % append
+fprintf(fid, '%s, ', buildMode);
 fprintf(fid, '%s, ', simMode);
 if isSimplex
     fprintf(fid, '%6.4g, %6.4g, %s, %6.4g, %6.4g, %6.4g, ', ...

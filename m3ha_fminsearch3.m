@@ -214,7 +214,7 @@ else
     initialSimplexMode = 0;
 end
 multipleRunsFlag = outparams.multipleRunsFlag;
-ltsFeatureWeights = outparams.ltsFeatureWeights;
+lts2SweepErrorRatio = outparams.lts2SweepErrorRatio;
 showSimplexHistoryFlag = outparams.showSimplexHistoryFlag;
 autoLoggerFlag = outparams.autoLoggerFlag;
 
@@ -234,7 +234,7 @@ outparams.outFolder = outFolderName;
 %% Preparation
 % Determine whether LTS errors are computed
 computeLtsError = set_default_flag([], strcmp(simMode, 'active') && ...
-                                ~all(ltsFeatureWeights == 0));
+                                    lts2SweepErrorRatio ~= 0);
 
 % Extract from neuronParamsTableInit
 pNames = neuronParamsTableInit.Properties.RowNames;

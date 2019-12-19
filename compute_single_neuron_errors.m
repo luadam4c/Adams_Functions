@@ -344,7 +344,7 @@ end
 
 % Determine whether LTS errors are computed
 computeLtsError = set_default_flag([], strcmp(errorMode, 'Sweep&LTS') && ...
-                                    ~all(ltsFeatureWeights == 0));
+                                    lts2SweepErrorRatio ~= 0);
 
 % Determine whether voltage traces needs to be parsed
 parseVoltage = set_default_flag([], strcmp(errorMode, 'Sweep&LTS') && ...

@@ -173,8 +173,9 @@ case 2
     drawnow
 
     %% If error is not worse, copy final parameters to bestParamsDirectory
-    if outParams.err{outParams.runnumTotal}.totalError <= ...
-                outParams.err{1}.totalError       
+    if outParams.fitIpscrFlag && ...
+            outParams.err{outParams.runnumTotal}.totalError <= ...
+            outParams.err{1}.totalError
         % Get the final parameters file name for this cell
         finalParamsFile = fullfile(outParams.outFolder, ...
                             [outParams.prefix, '_aft_params.csv']);
@@ -230,14 +231,19 @@ if outParams.fitCprFlag         % if fitting passive parameters
     % Set sim mode
     outParams.simMode = 'passive';
 
+    % Set build mode
+    if ~isfield(outParams, 'buildMode') || outParams.buildMode == 'auto'
+        outParams.buildMode = 'passive';
+    end
+
     % Save original prefix
     prefixOrig = outParams.prefix;
 
     % Change prefix for passive-parameters-fitting
     outParams.prefix = [outParams.prefix, '_cpr'];
 
-    % Set grouping vector to be vHold
-    outParams.grouping = outParams.vHold;
+    % Set grouping vector to be vHoldCpr
+    outParams.grouping = outParams.vHoldCpr;
 
     % Run all simulations once
     [errCpr, outParams.hfig] = ...
@@ -271,6 +277,11 @@ if outParams.fitIpscrFlag
     %%%%%%%%%%%%%
     % Set sim mode
     outParams.simMode = 'active';
+
+    % Set build mode
+    if ~isfield(outParams, 'buildMode') || outParams.buildMode == 'auto'
+        outParams.buildMode = 'active';
+    end
 
     % Run all simulations once
     [err, outParams.hfig] = ...
@@ -327,7 +338,8 @@ nInitConds = outParams.autoParams(idxNInitConds);
         'plotSwpWeightsFlag');
 
 % Fit parameters
-if outParams.fitMode == 5 || outParams.fitMode == 6
+switch outParams.fitMode
+case {5, 6, 7, 8}
     % Don't run current pulse response
     if outParams.runnumTotal > 1
         % If this is not the first run, use errCpr from last run
@@ -340,6 +352,15 @@ if outParams.fitMode == 5 || outParams.fitMode == 6
     % Prepare for active-parameters-fitting
     fprintf('Fitting to IPSC responses for cell %s ... \n', cellName);
     tStartActiveFit = tic();
+
+    % Set simulation mode
+    outParams.simMode = 'active';
+
+    % Set build mode
+    if ~isfield(outParams, 'buildMode') || outParams.buildMode == 'auto'
+        outParams.buildMode = 'active';
+        outParams.oldBuildMode = 'auto';
+    end
 
     % Set simplexParams to the active ones
     outParams.simplexParams = outParams.simplexParamsActive;
@@ -410,7 +431,7 @@ if outParams.fitMode == 5 || outParams.fitMode == 6
     fprintf('It took %g seconds to run the simplex method on %d initial conditions!!\n', ...
                 timeTakenActiveFit, nInitConds);
     fprintf('\n');
-elseif outParams.fitMode == 4
+case {4}
     % Passive and active fitting done together from single initial conditions
     % Prepare for fitting
     fprintf('Fitting all parameters for cell %s ... \n', cellName);
@@ -525,7 +546,7 @@ elseif outParams.fitMode == 4
     fprintf('It took %g seconds to run the simplex method on %d initial conditions!!\n', ...
             timeTakenAllFit, nInitConds);
     fprintf('\n');
-else
+case {1, 2, 3}
     % Do passive fitting, find best params, then do active fitting
     % Fit passive parameters
     if outParams.fitMode == 1 || outParams.fitMode == 3
@@ -693,6 +714,8 @@ else
             err = struct;
         end
     end
+otherwise
+    error('fitMode not implemented yet!');
 end
 
 % Store error structure in outParams
@@ -727,8 +750,14 @@ function [outParams, prefixOrig, neuronParamsUseOrig] = ...
                 prepare_outparams_cpr (outParams)
 %% Prepare outParams for fitting to current pulse response
 
-% Turn flag for passive-parameters-fitting on
+% Set simulation mode
 outParams.simMode = 'passive';
+
+% Set build mode
+if ~isfield(outParams, 'buildMode') || outParams.buildMode == 'auto'
+    outParams.buildMode = 'passive';
+    outParams.oldBuildMode = 'auto';
+end
 
 % Change prefix for passive-parameters-fitting
 prefixOrig = outParams.prefix;
@@ -753,8 +782,10 @@ function [outParams] = restore_outparams_cpr (outParams, prefixOrig, ...
                                                 neuronParamsUseOrig)
 %% Restore outParams after fitting to current pulse response
 
-% Turn flag for passive-parameters-fitting off
-outParams.simMode = 'active';
+% Restore build mode
+if isfield(outParams, 'oldBuildMode')
+    outParams.buildMode = outParams.oldBuildMode;
+end
 
 % Restore prefix
 outParams.prefix = prefixOrig;
@@ -769,6 +800,15 @@ outParams.simplexParams = [];
 
 function [outParams, neuronParamsUseOrig] = prepare_outparams_ipscr (outParams)
 %% Prepare outParams for fitting to IPSC response
+
+% Set simulation mode
+outParams.simMode = 'active';
+
+% Set build mode
+if ~isfield(outParams, 'buildMode') || outParams.buildMode == 'auto'
+    outParams.buildMode = 'active';
+    outParams.oldBuildMode = 'auto';
+end
 
 % Save original parameter usage
 neuronParamsUseOrig = outParams.neuronParamsTable.InUse;
@@ -787,6 +827,11 @@ outParams.simplexParams = outParams.simplexParamsActive;
 
 function outParams = restore_outparams_ipscr (outParams, neuronParamsUseOrig)
 %% Restore outParams after fitting to IPSC response
+
+% Restore build mode
+if isfield(outParams, 'oldBuildMode')
+    outParams.buildMode = outParams.oldBuildMode;
+end
 
 % Restore original parameter usage
 outParams.neuronParamsTable{:, 'InUse'} = neuronParamsUseOrig;
@@ -949,17 +994,14 @@ if ~isempty(err)
     if outParams.fitIpscrFlag
         % Extract error ratios from outParams struct
         errorWeights = outParams.errorWeights;
-        missedLtsError = outParams.missedLtsError;
-        falseLtsError = outParams.falseLtsError;
 
         % Create y-axis labels
         totalErrorLabel = 'total error';
         avgSwpErrorLabel = sprintf('sweep error (%d)', errorWeights(1));
-        ltsMatchErrorLabel = sprintf('match error (+%d, %d)', ...
-                                missedLtsError, falseLtsError);
-        avgLtsAmpErrorLabel = sprintf('amp error (%d)', errorWeights(2));
-        avgLtsDelayErrorLabel = sprintf('time error (%d)', errorWeights(3));
-        avgLtsSlopeErrorLabel = sprintf('slope error (%d)', errorWeights(4));
+        ltsMatchErrorLabel = sprintf('match error (%d)', errorWeights(2));
+        avgLtsAmpErrorLabel = sprintf('amp error (%d)', errorWeights(3));
+        avgLtsDelayErrorLabel = sprintf('time error (%d)', errorWeights(4));
+        avgLtsSlopeErrorLabel = sprintf('slope error (%d)', errorWeights(5));
 
         % Plot the total error
         subplot(3, 2, 1);
