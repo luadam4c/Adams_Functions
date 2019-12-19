@@ -283,7 +283,8 @@ switch simMode
         error('simMode unrecognized!');
 end
 
-% Make simMode a cell array
+% Make buildMode and simMode cell arrays
+buildMode = {buildMode};
 simMode = {simMode};
 
 % Decide on the end time of simulations

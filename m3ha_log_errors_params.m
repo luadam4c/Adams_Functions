@@ -48,6 +48,7 @@ else
 end
 
 % Extract info from outparams
+buildMode = outparams.buildMode;
 simMode = outparams.simMode;
 logSwpErrFlag = outparams.logSwpErrFlag;
 logSwpWeightsFlag = outparams.logSwpWeightsFlag;

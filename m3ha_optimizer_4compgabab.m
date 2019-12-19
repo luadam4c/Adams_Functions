@@ -232,7 +232,7 @@ if outParams.fitCprFlag         % if fitting passive parameters
     outParams.simMode = 'passive';
 
     % Set build mode
-    if ~isfield(outParams, 'buildMode') || outParams.buildMode == 'auto'
+    if ~isfield(outParams, 'buildMode') || strcmp(outParams.buildMode, 'auto')
         outParams.buildMode = 'passive';
     end
 
@@ -279,7 +279,7 @@ if outParams.fitIpscrFlag
     outParams.simMode = 'active';
 
     % Set build mode
-    if ~isfield(outParams, 'buildMode') || outParams.buildMode == 'auto'
+    if ~isfield(outParams, 'buildMode') || strcmp(outParams.buildMode, 'auto')
         outParams.buildMode = 'active';
     end
 
@@ -357,7 +357,7 @@ case {5, 6, 7, 8}
     outParams.simMode = 'active';
 
     % Set build mode
-    if ~isfield(outParams, 'buildMode') || outParams.buildMode == 'auto'
+    if ~isfield(outParams, 'buildMode') || strcmp(outParams.buildMode, 'auto')
         outParams.buildMode = 'active';
         outParams.oldBuildMode = 'auto';
     end
@@ -754,7 +754,7 @@ function [outParams, prefixOrig, neuronParamsUseOrig] = ...
 outParams.simMode = 'passive';
 
 % Set build mode
-if ~isfield(outParams, 'buildMode') || outParams.buildMode == 'auto'
+if ~isfield(outParams, 'buildMode') || strcmp(outParams.buildMode, 'auto')
     outParams.buildMode = 'passive';
     outParams.oldBuildMode = 'auto';
 end
@@ -805,7 +805,7 @@ function [outParams, neuronParamsUseOrig] = prepare_outparams_ipscr (outParams)
 outParams.simMode = 'active';
 
 % Set build mode
-if ~isfield(outParams, 'buildMode') || outParams.buildMode == 'auto'
+if ~isfield(outParams, 'buildMode') || strcmp(outParams.buildMode, 'auto')
     outParams.buildMode = 'active';
     outParams.oldBuildMode = 'auto';
 end
