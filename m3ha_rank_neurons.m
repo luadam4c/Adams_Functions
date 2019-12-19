@@ -95,7 +95,8 @@ paramDirNames = fullfile('best_params', ...
                         'bestparams_20191201_singleneuronfitting73', ...
                         'bestparams_20191203_singleneuronfitting74', ...
                         'bestparams_20191205_singleneuronfitting75', ...
-                        'bestparams_20191211_singleneuronfitting76'});
+                        'bestparams_20191211_singleneuronfitting76', ...
+                        'bestparams_20191218_singleneuronfitting78'});
 dataDirName = fullfile('data_dclamp', 'take4');
 matFilesDirName = 'matfiles';
 specialCasesDirName = 'special_cases';
@@ -108,27 +109,31 @@ cellNamePattern = '[A-Z][0-9]{6}';
 errorSheetSuffix = 'error_comparison';
 errorSheetExtension = 'csv';
 
-rankPrefix = 'singleneuronfitting60-76';
+rankPrefix = 'singleneuronfitting60-78';
 rankSuffix = 'ranked';
 rankSheetExtension = 'csv';
 barFigTypes = {'png', 'epsc2'};
 
 % Default parameters used in computing errors
-%   Note: Should be consistent with singleneuronfitting79.m
+%   Note: Should be consistent with singleneuronfitting78.m
 %       & compute_lts_errors.m & compute_single_neuron_errors.m
 ltsFeatureStrings = {'peak amp', 'peak time', 'max slope value'};
-ltsFeatureWeights = [1; 1; 1];  % weights for LTS feature errors
+sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
+%sweepWeights = [];
+errorWeights = [1; 3; 1; 1; 1];
+ltsFeatureWeights = errorWeights(3:5);  
+                                % weights for LTS feature errors
 missedLtsError = 1.5;           % how much error (dimensionless) to 
                                 %   penalize a sweep that failed to match 
                                 %   a recorded LTS existence
 falseLtsError = 0.5;            % how much error (dimensionless) to 
                                 %   penalize a sweep that produced an LTS 
                                 %   that is not recorded
-match2FeatureErrorRatio = 1;    % ratio of LTS match error to LTS feature error
-lts2SweepErrorRatio = 6;        % ratio of LTS error to sweep error
+match2FeatureErrorRatio = errorWeights(2) / sum(ltsFeatureWeights);
+                                % ratio of LTS match error to LTS feature error
+lts2SweepErrorRatio = sum(errorWeights(2:5)) / errorWeights(1);
+                                % ratio of LTS error to sweep error
 normalize2InitErrFlag = 0;      % whether to normalize errors to initial values
-% sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
-sweepWeights = [];
 
 %   Note: The following must be consistent with compute_single_neuron_errors.m
 idxSweep = 1;

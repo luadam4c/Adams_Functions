@@ -86,7 +86,7 @@ function [done, outParams, hfig] = m3ha_optimizer_4compgabab (outParams, hfig)
 % 2017-05-16 - Now runs NEURON with full plots both before and after fitting
 % 2017-05-16 - parfor is now conditional on outParams.MaxNumWorkersIC
 % 2017-05-17 - update_errorhistoryplot() now plots lts errors if computed
-% 2017-05-17 - Added outParams.fitCprFlag & outParams.fitIpscrFlag
+% 2017-05-17 - Added outParams.simCprFlag & outParams.simIpscrFlag
 % 2017-05-17 - Moved update_sweeps_figures() to m3ha_neuron_run_and_analyze.m
 % 2017-05-19 - Fixed the fact that simplex.initError was used to select  
 %               best simplex; simplex.error is now simplex.totalError
@@ -120,15 +120,15 @@ function [done, outParams, hfig] = m3ha_optimizer_4compgabab (outParams, hfig)
 % Change fitting flags if necessary
 % TODO: Fix
 %{
-if outParams.fitCprFlag && ...
+if outParams.simCprFlag && ...
     ~any(neuronparamispas .* outParams.neuronparams_use)
-    outParams.fitCprFlag = false;
+    outParams.simCprFlag = false;
     fprintf(['No passive parameter is fitted, ', ...
             'so passive fitting is turned OFF!\n\n']);
 end
-if outParams.fitIpscrFlag && ...
+if outParams.simIpscrFlag && ...
     ~any(~neuronparamispas .* outParams.neuronparams_use)
-    outParams.fitIpscrFlag = false;
+    outParams.simIpscrFlag = false;
     fprintf(['No active parameter is fitted, ', ...
             'so active fitting is turned OFF!\n\n']);
 end
@@ -173,7 +173,7 @@ case 2
     drawnow
 
     %% If error is not worse, copy final parameters to bestParamsDirectory
-    if outParams.fitIpscrFlag && ...
+    if outParams.simIpscrFlag && ...
             outParams.err{outParams.runnumTotal}.totalError <= ...
             outParams.err{1}.totalError
         % Get the final parameters file name for this cell
@@ -224,8 +224,8 @@ otherwise
 end
 outParams.runnumTotal = outParams.runnumTotal + 1;
 
-% Simulate current pulse response only if outParams.fitCprFlag is true
-if outParams.fitCprFlag         % if fitting passive parameters
+% Simulate current pulse response if requested
+if outParams.simCprFlag
     %%%%%% 
     %%%%%%%%%%%%%
     % Set sim mode
@@ -260,7 +260,7 @@ if outParams.fitCprFlag         % if fitting passive parameters
     end
 else
     if outParams.runnumTotal > 1    % if this is not the first run
-        % Use errCpr from last run
+        % Use error from last run
         errCpr = outParams.errCpr{outParams.runnumTotal-1};   
     else                            % if this is the first run
         % Use empty structure
@@ -271,8 +271,11 @@ end
 % Store error structure in outParams
 outParams.errCpr{outParams.runnumTotal} = errCpr;
 
-% Simulate GABAB IPSC response only if outParams.fitIpscrFlag is true
-if outParams.fitIpscrFlag
+% Update error history plot
+update_errorhistoryplot(hfig, outParams);
+
+% Simulate GABAB IPSC response if requested
+if outParams.simIpscrFlag
     %%%%%% 
     %%%%%%%%%%%%%
     % Set sim mode
@@ -295,7 +298,7 @@ if outParams.fitIpscrFlag
     end
 else
     if outParams.runnumTotal > 1    % if this is not the first run
-        % Use errCpr from last run
+        % Use error from last run
         err = outParams.err{outParams.runnumTotal-1};   
     else                            % if this is the first run
         % Use empty structure
@@ -307,8 +310,7 @@ end
 outParams.err{outParams.runnumTotal} = err;
 
 % Update error history plot
-% TODO: Fix
-% update_errorhistoryplot(hfig, outParams);
+update_errorhistoryplot(hfig, outParams);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -976,22 +978,22 @@ function update_errorhistoryplot(hfig, outParams)
 %% Shows and updates Error History figure
 
 rn = outParams.runnumTotal;     % current run number
-if outParams.fitIpscrFlag
+if strcmp(outParams.simMode, 'active')
     err = outParams.err{rn};        % current error structure
-elseif outParams.fitCprFlag
+elseif strcmp(outParams.simMode, 'passive')
     err = outParams.errCpr{rn};
 end
 
 % Make the plot the current figure
-if outParams.fitIpscrFlag
+if strcmp(outParams.simMode, 'active')
     set(0, 'CurrentFigure', hfig.errorhistory);
-elseif outParams.fitCprFlag
+elseif strcmp(outParams.simMode, 'passive')
     set(0, 'CurrentFigure', hfig.cprerrorhistory);
 end
 
 % Plot the error
 if ~isempty(err)
-    if outParams.fitIpscrFlag
+    if strcmp(outParams.simMode, 'active')
         % Extract error ratios from outParams struct
         errorWeights = outParams.errorWeights;
 
