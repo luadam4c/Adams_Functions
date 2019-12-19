@@ -591,7 +591,7 @@ end
 if isempty(columnLabels)
     columnLabels = cell(1, nCols);
     for iGroup = 1:nCols
-        columnLabels{iPlot} = ['Group #', num2str(iGroup)];
+        columnLabels{iGroup} = ['Group #', num2str(iGroup)];
     end
 end
 
@@ -760,7 +760,7 @@ end
 % Set display name
 if ~strcmpi(columnLabels, 'suppress')
     for iGroup = 1:nCols
-        set(curves(iGroup, 1), 'DisplayName', columnLabels{iGroup});
+        set(bars(iGroup), 'DisplayName', columnLabels{iGroup});
     end
 end
 
@@ -943,8 +943,8 @@ else
 end
 
 %% Post-plotting
-% Generate a legend for the curves only if there is more than one trace
-if ~strcmpi(legendLocation, 'suppress') && nColumnsToPlot > 1
+% Generate a legend if requested
+if ~strcmpi(legendLocation, 'suppress')
     lgd = legend(bars, 'location', legendLocation);
 
     set(lgd, 'AutoUpdate', 'off', 'Interpreter', 'none');

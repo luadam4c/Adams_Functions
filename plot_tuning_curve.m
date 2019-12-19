@@ -19,6 +19,8 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       plot_tuning_curve(pValues, readout1, 'UpperCI', upperCI1, 'LowerCI', lowerCI1);
 %       plot_tuning_curve(pValues, readoutAll, 'UpperCI', upperCIAll, 'LowerCI', lowerCIAll, 'ColorMap', hsv(2));
 %
+%       plot_tuning_curve(1:5, 2:6);
+%
 % Outputs:
 %       handles     - handles structure with fields:
 %                       fig         - figure handle for the created figure
@@ -28,9 +30,11 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                       selected    - selected values
 %                   specified as a scalar structure
 % Arguments:
-%       pValues     - a column vector of parameter values
-%                   must be a numeric vector
-%       readout     - a readout matrix where each column is a readout vector
+%       pValues     - vector(s) of parameter values
+%                       each column is a readout vector
+%                   must be a numeric 2-D array
+%       readout     - vector(s) of readout values 
+%                       each column is a readout vector
 %                   must be a numeric 2-D array
 %       varargin    - 'LowerCI': lower bounds of confidence intervals
 %                   must be a numeric 2-D array
@@ -298,6 +302,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-10-07 Now plots 'NS' or star in black
 % 2019-11-24 Moved code to parse_phase_info.m
 % 2019-11-28 Now plots confidence intervals with transparency
+% 2019-12-18 Now allows pValues to be multiple vectors
 % TODO: phaseBoundaries needs to be provided into parse_phase_info.m
 
 %% Hard-coded constants
@@ -603,10 +608,18 @@ if plotOnly
 end
 
 % Count number of entries
-nEntries = length(pValues);
+nEntries = size(readout, 1);
 
 % Count number of columns
 nCols = size(readout, 2);
+
+% Make sure pValues as the correct number of entries
+if size(pValues, 1) ~= nEntries
+    error('Number of rows in pValues does not match that of readout!');
+end
+
+% Get all unique parameter values
+pValuesAll = unique(pValues);
 
 % Decide whether to plot phase-related stuff
 [plotPhaseBoundaries, plotPhaseAverages, ...
@@ -708,10 +721,13 @@ end
 
 % Remove outliers when plotting if requested
 if removeOutliers
-    readoutToPlot = remove_outliers(readout, 'OutlierMethod', outlierMethod, ...
+    [readoutToPlot, rowsToKeep] = ...
+        remove_outliers(readout, 'OutlierMethod', outlierMethod, ...
                                     'ReplaceWithNans', true);
+    pValuesToPlot = pValues(rowsToKeep, :);
 else
     readoutToPlot = readout;
+    pValuesToPlot = pValues;
 end
 
 % Run paired t-tests if requested
@@ -851,6 +867,11 @@ wasHold = hold_on;
 for iPlot = 1:nColumnsToPlot
     % Get the column to plot
     col = columnsToPlot(iPlot);
+    if size(pValuesToPlot, 2) > 1
+        pValuesThis = pValuesToPlot(:, col);
+    else
+        pValuesThis = pValuesToPlot;
+    end
     readoutThis = readoutToPlot(:, col);
 
     % Plot the tuning curve for this column
@@ -873,10 +894,10 @@ for iPlot = 1:nColumnsToPlot
 
         % Plot readout vector for all phases
         curves(iPlot, 1:nPhasesThis) = ...
-            cellfun(@(x) plot_one_line(pIsLog, pValues(x), readoutToPlot(x, col), ...
+            cellfun(@(x) plot_one_line(pIsLog, pValuesThis(x), readoutThis(x), ...
                         lineSpec, lineWidth, otherArguments), phaseIndices);
     else
-        curves(iPlot, 1) = plot_one_line(pIsLog, pValues, readoutThis, ...
+        curves(iPlot, 1) = plot_one_line(pIsLog, pValuesThis, readoutThis, ...
                                         lineSpec, lineWidth, otherArguments);
     end
 
@@ -910,7 +931,7 @@ for iPlot = 1:nColumnsToPlot
             delete(curves(iPlot, 1));
 
             % The x and y values for the confidence intervals
-            confIntXValues = [pValues; flipud(pValues)];
+            confIntXValues = [pValuesThis; flipud(pValuesThis)];
             confIntYValues = [upperCIThis; flipud(lowerCIThis)];
 
             % Fill the area between lowerCIThis and upperCIThis 
@@ -922,7 +943,7 @@ for iPlot = 1:nColumnsToPlot
                                         'EdgeAlpha', confIntEdgeAlpha);
 
             % Plot tuning curve again
-            curves(iPlot, 1) = plot_one_line(pIsLog, pValues, readoutThis, ...
+            curves(iPlot, 1) = plot_one_line(pIsLog, pValuesThis, readoutThis, ...
                                         lineSpec, lineWidth, otherArguments);
 
             % Display tick marks and grid lines over graphics objects.
@@ -969,10 +990,10 @@ if ~isempty(pLimits)
     end
 else
     if nEntries > 1 && nEntries < 4
-        xlim(compute_axis_limits(pValues, 'x', 'Coverage', 90));
+        xlim(compute_axis_limits(pValuesAll, 'x', 'Coverage', 90));
     elseif nEntries >= 4
-        xlim([pValues(1) - (pValues(2) - pValues(1)), ...
-            pValues(end) + (pValues(end) - pValues(end-1))]);
+        xlim([pValuesAll(1) - (pValuesAll(2) - pValuesAll(1)), ...
+            pValuesAll(end) + (pValuesAll(end) - pValuesAll(end-1))]);
     end
 end
 
@@ -1066,7 +1087,8 @@ if plotIndSelected && ~isempty(indSelected)
         % Color arbitrarily first
         selectedCell = ...
             arrayfun(@(x) ...
-                cellfun(@(y) plot_selected(pValues, ...
+                cellfun(@(y) plot_selected(...
+                            pValuesToPlot(:, columnsToPlot(x)), ...
                             readoutToPlot(:, columnsToPlot(x)), y, ...
                             'Marker', selectedMarker, 'ColorMap', 'r', ...
                             'LineWidth', selectedLineWidth), ...
@@ -1101,7 +1123,7 @@ if plotIndSelected && ~isempty(indSelected)
             end
         end
     else
-        selected = plot_selected(pValues, readoutToPlot, indSelected, ...
+        selected = plot_selected(pValuesToPlot, readoutToPlot, indSelected, ...
                                 'Marker', selectedMarker, ...
                                 'ColorMap', selectedColorMap(1, :), ...
                                 'LineWidth', selectedLineWidth);
@@ -1129,14 +1151,14 @@ end
 if ~isempty(tTestPValues)
     plot_test_result(tTestPValues, tTestPString, ...
                     tTestYLocText, tTestYLocStar, ...
-                    testXLocRel, starXLocRel, pValues, sigLevel);
+                    testXLocRel, starXLocRel, pValuesAll, sigLevel);
 end
 
 % Plot rank test p values if any
 if ~isempty(rankTestPValues)
     plot_test_result(rankTestPValues, rankTestPString, ...
                     rankTestYLocText, rankTestYLocStar, ...
-                    testXLocRel, starXLocRel, pValues, sigLevel);
+                    testXLocRel, starXLocRel, pValuesAll, sigLevel);
 end
 
 % Hold off
@@ -1206,12 +1228,12 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_test_result (tTestPValues, pString, yLocTextRel, yLocStarRel, ...
-                            xLocTextRel, xLocStarRel, pValues, sigLevel)
+                            xLocTextRel, xLocStarRel, pValuesAll, sigLevel)
 %% Plots p values and star if significant
 
 % Decide on the x locations
-xLocsText = pValues(1:end-1) + (pValues(2) - pValues(1)) * xLocTextRel;
-xLocsStar = pValues(1:end-1) + (pValues(2) - pValues(1)) * xLocStarRel;
+xLocsText = pValuesAll(1:end-1) + (pValuesAll(2) - pValuesAll(1)) * xLocTextRel;
+xLocsStar = pValuesAll(1:end-1) + (pValuesAll(2) - pValuesAll(1)) * xLocStarRel;
 
 % Get current y axis limits
 yLimitsNow = get(gca, 'YLim');
