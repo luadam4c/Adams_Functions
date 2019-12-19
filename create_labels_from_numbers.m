@@ -51,6 +51,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/decide_on_filebases.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_choose_best_params.m
+%       cd/m3ha_rank_neurons.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_current_family.m
 %       cd/plot_chevron.m

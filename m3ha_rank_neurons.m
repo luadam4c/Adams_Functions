@@ -33,6 +33,8 @@
 %       cd/m3ha_select_raw_traces.m
 %       cd/plot_bar.m
 %       cd/save_all_figtypes.m
+%       cd/create_labels_from_numbers.m
+%       cd/force_matrix.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -43,12 +45,12 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = true;
-plotErrorHistoryFlag = true;
-plotIndividualFlag = true;
+chooseBestParamsFlag = false; %true;
+plotErrorHistoryFlag = false; %true;
+plotIndividualFlag = false; %true;
 rankNeuronsFlag = false; %true;
 plotHistogramsFlag = false; %true;
-plotBarPlotFlag = false; %true;
+plotBarPlotFlag = true;
 
 % Fitting parameters 
 %   Note: Must be consistent with singleneuronfitting75.m
@@ -125,6 +127,13 @@ lts2SweepErrorRatio = 6;        % ratio of LTS error to sweep error
 normalize2InitErrFlag = 0;      % whether to normalize errors to initial values
 % sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 sweepWeights = [];
+
+%   Note: The following must be consistent with compute_single_neuron_errors.m
+idxSweep = 1;
+idxMatch = 2;
+idxAmp = 3;
+idxTime = 4;
+idxSlope = 5;
 totalErrorStr = 'totalError';
 avgSwpErrorStr = 'avgSwpError';
 ltsMatchErrorStr = 'ltsMatchError';
@@ -356,38 +365,51 @@ if plotBarPlotFlag
     % Extract fields
     [totalErrors, avgSwpErrors, ltsMatchErrors, ...
             avgLtsAmpErrors, avgLtsDelayErrors, avgLtsSlopeErrors, ...
-            errorWeights, cellNames] = ...
+            cellNames] = ...
         argfun(@(x) rankTable.(x), ...
                 totalErrorStr, avgSwpErrorStr, ltsMatchErrorStr, ...
                 avgLtsAmpErrorStr, avgLtsDelayErrorStr, avgLtsSlopeErrorStr, ...
-                errorWeightsStr, cellNameStr);
+                cellNameStr);
+
+    % Create error weight labels
+    errorWeightsStrs = create_labels_from_numbers(1:5, ...
+                                            'Prefix', [errorWeightsStr, '_']);
+
+    % Extract errorWeights
+    errorWeights = cellfun(@(x) rankTable.(x), errorWeightsStrs, ...
+                            'UniformOutput', false);
+    errorWeights = force_matrix(errorWeights);
 
     % Make sure error weights are normalized
-    errorWeights = errorWeights ./ sum(errorWeights);
+    errorWeights = errorWeights ./ repmat(sum(errorWeights, 2), 1, ...
+                                            size(errorWeights, 2));
 
     % Compute components of total error
     %   Note: must match groupLabels
-    componentErrors = [avgSwpErrors, ltsMatchErrors, avgLtsAmpErrors, ...
+    componentErrors = [ltsMatchErrors, avgSwpErrors, avgLtsAmpErrors, ...
                         avgLtsDelayErrors, avgLtsSlopeErrors] .* ...
-                        repmat(transpose(errorWeights), nCells, 1);
+            errorWeights(:, [idxMatch, idxSweep, idxAmp, idxTime, idxSlope]);
    
     % Decide on group labels
     %   Note: must match componentErrors
-    groupLabels = {'Sweep Error', 'LTS Match Error', 'LTS Amp Error', ...
+    groupLabels = {'LTS Match Error', 'Sweep Error', 'LTS Amp Error', ...
                     'LTS Time Error', 'LTS Slope Error'};
 
-    % Decide on tick labels
+    % Decide on ticks and tick labels
+    pTicks = transpose(1:nCells);
     pTickLabels = cellNames;
 
     % Create a figure with two subplots
-    [fig, ax] = create_subplots(1, 2, 'AlwaysNew', true);
+    [fig, ax] = create_subplots(1, 2, 'AlwaysNew', true, ...
+                                'FigExpansion', [2.4, 1.2]);
 
     % Plot components of total error stacked
     subplot(ax(1));
     plot_bar(componentErrors, 'BarDirection', 'horizontal', ...
             'ReverseOrder', true, 'GroupStyle', 'stacked', ...
             'PLabel', 'suppress', 'ReadoutLabel', 'Error (dimensionless)', ...
-            'PTickLabels', pTickLabels, 'ColumnLabels', groupLabels, ...
+            'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
+            'ColumnLabels', groupLabels, ...
             'FigTitle', 'Total error separated by components');
 
     % Plot total error for verification
@@ -395,7 +417,8 @@ if plotBarPlotFlag
     plot_bar(totalErrors, 'BarDirection', 'horizontal', ...
             'ReverseOrder', true, ...
             'PLabel', 'suppress', 'ReadoutLabel', 'Error (dimensionless)', ...
-            'PTickLabels', pTickLabels, 'ColumnLabels', groupLabels, ...
+            'PTicks', pTicks, ...
+            'ColumnLabels', groupLabels, ...
             'FigTitle', 'Total error');
 
     % Save figure

@@ -10,7 +10,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 %       decide_on_colormap({'Red', 'Blue', 'Green'})
 %       decide_on_colormap({'Red', 'Green'}, 2)
 %       decide_on_colormap([], 4)
-%       decide_on_colormap([], 4, 'ColorMapFunc', @hsv)
+%       decide_on_colormap(@hsv, 4)
 %
 % Outputs:
 %       colorMap    - color map created
@@ -21,6 +21,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 %                   must be empty or a string/character vector
 %                       or an n-by-3 numeric array
 %                       or a cell array of n-by-3 numeric arrays
+%                       or a function handle
 %       nColors     - (opt) number of colors
 %                   must be a positive integer vector
 %                   default == 64
@@ -52,6 +53,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 % File History:
 % 2019-08-22 Created by Adam Lu
 % 2019-10-12 Now allows colorMap to be a cell array
+% 2019-12-18 Now allows colorMap to be a function handle
 % 
 
 %% Hard-coded parameters
@@ -95,6 +97,10 @@ otherArguments = iP.Unmatched;
 if isempty(colorMap)
     % Set default color map
     colorMap = create_colormap(nColors, otherArguments);
+elseif isa(colorMap, 'function_handle')
+    % Set default color map
+    colorMap = create_colormap(nColors, 'ColorMapFunc', colorMap, ...
+                                otherArguments);
 elseif ischar(colorMap)
     % Convert to a numeric array
     colorMap = char2rgb(colorMap);

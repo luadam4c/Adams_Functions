@@ -10,7 +10,7 @@ function [passiveParams, fitResults, fitObject, goodnessOfFit, ...
 % Side effects:
 %       Saves results in .mat files
 %
-% Arguments: 
+% Arguments:
 %       dataMode    - 0 - all data
 %                   - 1 - all of g incr = 100%, 200%, 400%
 %                   - 2 - all of g incr = 100%, 200%, 400% 

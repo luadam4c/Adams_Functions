@@ -71,6 +71,7 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/force_column_vector.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/m3ha_rank_neurons.m
 %       cd/parse_multiunit.m
 %       cd/parse_phase_info.m
 %       cd/plot_chevron.m

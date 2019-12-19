@@ -72,13 +72,13 @@ addOptional(iP, 'fieldNames', fieldNamesDefault, ...
             'or cell array of character arrays!']));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'uniformOutput', uniformOutputDefault, ...
+addParameter(iP, 'UniformOutput', uniformOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, structs, varargin{:});
 fieldNames = iP.Results.fieldNames;
-uniformOutput = iP.Results.uniformOutput;
+uniformOutput = iP.Results.UniformOutput;
 
 %% Preparation
 if isempty(fieldNames)

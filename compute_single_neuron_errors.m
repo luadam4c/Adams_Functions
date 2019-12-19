@@ -172,6 +172,7 @@ function errors = compute_single_neuron_errors (vSim, vRec, varargin)
 % 2019-11-18 Added 'Prefix' as an optional parameter
 % 2019-12-18 Added 'Match2FeatureErrorRatio' as an optional parameter
 % 2019-12-18 Added errorWeights in output
+% 2019-12-19 Fixed errorWeights when LTS is not present or all mismatched
 %
 % TODO:
 %   Implement saveLtsStatsFlag
@@ -467,6 +468,7 @@ else
     ltsErrors.avgLtsAmpError = NaN;
     ltsErrors.avgLtsDelayError = NaN;
     ltsErrors.avgLtsSlopeError = NaN;
+    ltsErrors.avgLtsFeatureError = NaN;
     ltsErrors.ltsMatchError = NaN;
     ltsErrors.avgLtsError = NaN;
 end
@@ -503,10 +505,16 @@ e = ltsFeatureWeights(3)/sum(ltsFeatureWeights);
 %           avgLtsAmpError * (1 - a) * b * c + ...
 %           avgLtsDelayError * (1 - a) * b * d + ...
 %           avgLtsSlopeError * (1 - a) * b * e
-errorWeights = [a; (1 - a) * (1 - b); ...
-                (1 - a) * b * c; ...
-                (1 - a) * b * d; ...
-                (1 - a) * b * e];
+if isnan(ltsErrors.avgLtsError)
+    errorWeights = [1; 0; 0; 0; 0];
+elseif isnan(ltsErrors.avgLtsFeatureError)
+    errorWeights = [a; (1 - a); 0; 0; 0];
+else
+    errorWeights = [a; (1 - a) * (1 - b); ...
+                    (1 - a) * b * c; ...
+                    (1 - a) * b * d; ...
+                    (1 - a) * b * e];
+end
 
 %% Store in output errors structure
 errors.totalError = totalError;

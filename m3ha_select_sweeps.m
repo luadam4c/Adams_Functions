@@ -60,6 +60,10 @@ function [swpInfo, fileBasesToUse] = m3ha_select_sweeps (varargin)
 %                   - 'CellIds': original cell ID(s) to restrict to
 %                   must be empty or integer(s) between 1 and 49
 %                   default == no restrictions
+%                   - 'CellNames': original cell name(s) to restrict to
+%                   must be empty or a character vector
+%                       or a cell array of character vectors
+%                   default == no restrictions
 %                   - 'RepNums': repetition number(s) to restrict to
 %                   must be empty or integer(s) between 1 and 5
 %                   default == no restrictions
@@ -89,6 +93,7 @@ function [swpInfo, fileBasesToUse] = m3ha_select_sweeps (varargin)
 % 2019-11-27 Added 'PharmConditions', 'GIncrConditions', 'VHoldConditions', ...
 %               & 'CellIds' & 'RepNums' as optional arguments
 % 2019-12-18 Added dataMode == 3
+% 2019-12-18 Added 'CellNames'  as an optional argument
 
 %% Hard-coded parameters
 pharmStr = 'prow';
@@ -108,6 +113,7 @@ pharmConditionsDefault = [];
 gIncrConditionsDefault = [];
 vHoldConditionsDefault = [];
 cellIdsDefault = [];
+cellNamesDefault = {};
 repNumsDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -134,6 +140,10 @@ addParameter(iP, 'VHoldConditions', vHoldConditionsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'CellIds', cellIdsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
+addParameter(iP, 'CellNames', cellNamesDefault, ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['CellNames must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 addParameter(iP, 'RepNums', repNumsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 
@@ -147,6 +157,7 @@ pharmConditions = iP.Results.PharmConditions;
 gIncrConditions = iP.Results.GIncrConditions;
 vHoldConditions = iP.Results.VHoldConditions;
 cellIds = iP.Results.CellIds;
+cellNames = iP.Results.CellNames;
 repNums = iP.Results.RepNums;
 
 %% Preparation
@@ -164,6 +175,9 @@ if is_var_in_table(toUseStr, swpInfo)
 else
     toUse = true(height(swpInfo), 1);
 end
+
+% Extract all the file bases
+fileBases = swpInfo.Properties.RowNames;
 
 %% Do the job
 % Print message
@@ -217,6 +231,11 @@ toUse = restrict_to_conditions(toUse, swpInfo, vHoldStr, vHoldConditions);
 toUse = restrict_to_conditions(toUse, swpInfo, cellIdStr, cellIds);
 toUse = restrict_to_conditions(toUse, swpInfo, repNumStr, repNums);
 
+%% Update toUse if cellNames provided
+if ~isempty(cellNames)
+    toUse = toUse & contains(fileBases, cellNames);
+end
+
 %% Output results
 % Place in swpInfo
 if is_var_in_table(toUseStr, swpInfo)
@@ -224,9 +243,6 @@ if is_var_in_table(toUseStr, swpInfo)
 else
     swpInfo = addvars(swpInfo, toUse);
 end
-
-% Extract all the file bases
-fileBases = swpInfo.Properties.RowNames;
 
 % Find the file bases to fit
 fileBasesToUse = fileBases(toUse);
