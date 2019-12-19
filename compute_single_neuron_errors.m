@@ -2,8 +2,8 @@ function errors = compute_single_neuron_errors (vSim, vRec, varargin)
 %% Computes the average total error for a single neuron
 % Usage: errors = compute_single_neuron_errors (vSim, vRec, varargin)
 % Explanation:
-%       Let a = (1/(1+lts2SweepErrorRatio))
-%           b = (1/(1+match2FeatureErrorRatio))
+%       Let a = (1 / (1 + lts2SweepErrorRatio))
+%           b = (1 / (1 + match2FeatureErrorRatio))
 %           c = featureWeights(1)/sum(featureWeights)
 %           d = featureWeights(2)/sum(featureWeights)
 %           e = featureWeights(3)/sum(featureWeights)
@@ -11,15 +11,16 @@ function errors = compute_single_neuron_errors (vSim, vRec, varargin)
 %       Then:
 %       totalError = ...
 %           avgSwpError * a + ...
-%           avgLtsError * (1 - a)
-%
-%       In more detail:
-%       totalError = ...
-%           avgSwpError * a + ...
 %           ltsMatchError * (1 - a) * (1 - b) + ...
 %           avgLtsAmpError * (1 - a) * b * c + ...
 %           avgLtsDelayError * (1 - a) * b * d + ...
 %           avgLtsSlopeError * (1 - a) * b * e
+%
+%       Note: If any of the 5 types of errors is NaN, 
+%               the weights are renormalized across the remaining values
+%           Therefore, in some cases the following will not be true
+%       totalError = avgSwpError * a + avgLtsError * (1 - a)
+%
 %
 % Example(s):
 %       TODO
@@ -27,13 +28,14 @@ function errors = compute_single_neuron_errors (vSim, vRec, varargin)
 % Outputs:
 %       errors      - a structure of all the errors computed, with fields:
 %                       totalError
+%                       errorsToAverage
+%                       errorWeights
 %                       fields returned by compute_sweep_errors.m
 %                       fields returned by compute_lts_errors.m
 %                       baseWindow
 %                       fitWindow
 %                       baseNoise
 %                       sweepWeights
-%                       errorWeights
 %                   specified as a scalar structure
 %
 % Arguments:    
@@ -473,51 +475,53 @@ else
     ltsErrors.avgLtsError = NaN;
 end
 
-% Combine the errors and weights
-errorsToAverage = [swpErrors.avgSwpError; ltsErrors.avgLtsError];
-weightsForErrors = [1; lts2SweepErrorRatio];
-
-% Total error (dimensionless) is the weighted average of sweep error 
-%   and LTS error, weighted by lts2SweepErrorRatio
-totalError = compute_weighted_average(errorsToAverage, 'IgnoreNan', true, ...
-                        'Weights', weightsForErrors, 'AverageMethod', 'linear');
-
-%% Compute normalized error weights for ease of plotting
+%% Compute normalized error weights
+% Combine the errors
+errorsToAverage = [swpErrors.avgSwpError; ltsErrors.ltsMatchError; ...
+                    ltsErrors.avgLtsAmpError; ltsErrors.avgLtsDelayError; ...
+                    ltsErrors.avgLtsSlopeError];
 
 % Compute coefficients
 %   Note:
-%       Let a = (1/(1+lts2SweepErrorRatio))
-%           b = (1/(1+match2FeatureErrorRatio))
+%       Let a = (1 / (1 + lts2SweepErrorRatio))
+%           b = (1 / (1 + match2FeatureErrorRatio))
 %           c = featureWeights(1)/sum(featureWeights)
 %           d = featureWeights(2)/sum(featureWeights)
 %           e = featureWeights(3)/sum(featureWeights)
-a = (1/(1+lts2SweepErrorRatio));
-b = (1/(1+match2FeatureErrorRatio));
+a = (1 / (1 + lts2SweepErrorRatio));
+b = (1 / (1 + match2FeatureErrorRatio));
 c = ltsFeatureWeights(1)/sum(ltsFeatureWeights);
 d = ltsFeatureWeights(2)/sum(ltsFeatureWeights);
 e = ltsFeatureWeights(3)/sum(ltsFeatureWeights);
 
 % Compute weights
-%   Note:
+%   Note: Assuming all errors are not NaN, we have
 %       totalError = ...
 %           avgSwpError * a + ...
 %           ltsMatchError * (1 - a) * (1 - b) + ...
 %           avgLtsAmpError * (1 - a) * b * c + ...
 %           avgLtsDelayError * (1 - a) * b * d + ...
 %           avgLtsSlopeError * (1 - a) * b * e
-if isnan(ltsErrors.avgLtsError)
-    errorWeights = [1; 0; 0; 0; 0];
-elseif isnan(ltsErrors.avgLtsFeatureError)
-    errorWeights = [a; (1 - a); 0; 0; 0];
-else
-    errorWeights = [a; (1 - a) * (1 - b); ...
-                    (1 - a) * b * c; ...
-                    (1 - a) * b * d; ...
-                    (1 - a) * b * e];
+errorWeights = [a; (1 - a) * (1 - b); ...
+                (1 - a) * b * c; ...
+                (1 - a) * b * d; ...
+                (1 - a) * b * e];
+
+% Renormalize weights if some are NaN
+if any(isnan(errorsToAverage))
+    errorWeights(isnan(errorsToAverage)) = 0;
+    errorWeights = errorWeights ./ sum(errorWeights);
 end
+
+% Total error (dimensionless) is the weighted average of sweep error, 
+%   LTS match error, LTS amp error, LTS time error and LTS slope error
+totalError = compute_weighted_average(errorsToAverage, 'IgnoreNan', true, ...
+                        'Weights', errorWeights, 'AverageMethod', 'linear');
 
 %% Store in output errors structure
 errors.totalError = totalError;
+errors.errorsToAverage = errorsToAverage;
+errors.errorWeights = errorWeights;
 errors.lts2SweepErrorRatio = lts2SweepErrorRatio;
 errors = merge_structs(errors, ltsErrors);
 errors = merge_structs(errors, swpErrors);
@@ -525,7 +529,6 @@ errors.baseWindow = baseWindow;
 errors.fitWindow = fitWindow;
 errors.baseNoise = baseNoise;
 errors.sweepWeights = sweepWeights;
-errors.errorWeights = errorWeights;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -539,6 +542,15 @@ endPoints = find_window_endpoints(fitWindow, tBoth);
 [tBoth, vSim, vRec, iSim, iRec] = ...
     argfun(@(x) extract_subvectors(x, 'Endpoints', endPoints), ...
             tBoth, vSim, vRec, iSim, iRec);
+
+% Combine the errors and weights
+errorsToAverage = [swpErrors.avgSwpError; ltsErrors.avgLtsError];
+weightsForErrors = [1; lts2SweepErrorRatio];
+
+% Total error (dimensionless) is the weighted average of sweep error 
+%   and LTS error, weighted by lts2SweepErrorRatio
+totalError = compute_weighted_average(errorsToAverage, 'IgnoreNan', true, ...
+                        'Weights', weightsForErrors, 'AverageMethod', 'linear');
 
 %}
 
