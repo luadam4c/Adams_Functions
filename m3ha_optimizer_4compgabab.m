@@ -35,6 +35,7 @@ function [done, outParams, hfig] = m3ha_optimizer_4compgabab (outParams, hfig)
 %       cd/m3ha_log_errors_params.m
 %       cd/m3ha_neuron_create_new_initial_params.m
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/set_default_flag.m
 %       cd/set_fields_zero.m
 %       cd/restore_fields.m
 %       cd/structs2vecs.m
@@ -117,23 +118,6 @@ function [done, outParams, hfig] = m3ha_optimizer_4compgabab (outParams, hfig)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Preparation
-% Change fitting flags if necessary
-% TODO: Fix
-%{
-if outParams.simCprFlag && ...
-    ~any(neuronparamispas .* outParams.neuronparams_use)
-    outParams.simCprFlag = false;
-    fprintf(['No passive parameter is fitted, ', ...
-            'so passive fitting is turned OFF!\n\n']);
-end
-if outParams.simIpscrFlag && ...
-    ~any(~neuronparamispas .* outParams.neuronparams_use)
-    outParams.simIpscrFlag = false;
-    fprintf(['No active parameter is fitted, ', ...
-            'so active fitting is turned OFF!\n\n']);
-end
-%}
-
 % Initialize the prefix as the date-time-cell stamp
 if ~isfield(outParams, 'prefix')
     outParams.prefix = outParams.dateTimeCellStamp;
@@ -991,9 +975,13 @@ elseif strcmp(outParams.simMode, 'passive')
     set(0, 'CurrentFigure', hfig.cprerrorhistory);
 end
 
+% Determine whether LTS errors are computed
+computeLtsError = set_default_flag([], strcmp(outParams.simMode, 'active') && ...
+                                    outParams.lts2SweepErrorRatio ~= 0);
+
 % Plot the error
 if ~isempty(err)
-    if strcmp(outParams.simMode, 'active')
+    if computeLtsError
         % Extract error ratios from outParams struct
         errorWeights = outParams.errorWeights;
 
