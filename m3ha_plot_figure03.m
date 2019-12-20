@@ -42,12 +42,14 @@ dataMode = 2;
 passiveLogSuffix = 'dclampPassiveLog';
 
 % Plot settings
+somaColor = rgb('DarkGreen');
+dendriteColor = rgb('DarkOrange');
 curveFigWidth = 8.5;
 curveFigHeight = 4;
 curveXLimits = [0, 60];
 curveYLimits = [-1.2, 0];
-ballStickFigWidth = 4.5;
-ballStickFigHeight = 2;
+geomFigWidth = 4.5;
+geomFigHeight = 4;
 
 figTypes = {'png', 'epsc2'};
 
@@ -74,9 +76,10 @@ if plotCurveFit
 
 
     cellfun(@(x, y) plot_curve_fit_results(x, y, figure03Dir, figTypes, ...
-                                    curveFigWidth, curveFigHeight, ...
-                                    curveXLimits, curveYLimits, ...
-                                    ballStickFigWidth, ballStickFigHeight), ...
+                            somaColor, dendriteColor, ...
+                            curveFigWidth, curveFigHeight, ...
+                            curveXLimits, curveYLimits, ...
+                            geomFigWidth, geomFigHeight), ...
             exampleCellNames, passiveLogPaths);
 end
 
@@ -157,14 +160,13 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_curve_fit_results(cellName, passiveLogPath, ...
-                outFolder, figTypes, curveFigWidth, curveFigHeight, ...
-                curveXLimits, curveYLimits, ...
-                ballStickFigWidth, ballStickFigHeight)
+                outFolder, figTypes, somaColor, dendriteColor, ...
+                curveFigWidth, curveFigHeight, curveXLimits, curveYLimits, ...
+                geomFigWidth, geomFigHeight)
 
 % Decide on the figure name
 figPathBaseCurveFit = fullfile(outFolder, [cellName, '_curve_fit']);
-figPathBaseBallStick = fullfile(outFolder, [cellName, '_ball_stick']);
-figPathBaseGeometry = fullfile(outFolder, [cellName, '_geometry']);
+figPathBaseGeom = fullfile(outFolder, [cellName, '_geometry']);
 
 % Read the passive log file
 m = matfile(passiveLogPath);
@@ -179,7 +181,7 @@ passiveParams = m.passiveParams;
 
 %% Plot curve fit
 % Create the figure
-figCF = set_figure_properties('AlwaysNew', true);
+figCurveFit = set_figure_properties('AlwaysNew', true);
 
 % Plot curve fit
 plot_cfit_pulse_response(tVecFitted, vVecFitted, ...
@@ -187,7 +189,9 @@ plot_cfit_pulse_response(tVecFitted, vVecFitted, ...
                         'FitResults', fitResults, ...
                         'GoodnessOfFit', goodnessOfFit, ...
                         'PassiveParams', passiveParams, ...
-                        'LegendLocation', 'suppress');
+                        'LegendLocation', 'suppress', ...
+                        'Component1Color', somaColor, ...
+                        'Component2Color', dendriteColor);
 
 % Set axis limits
 xlim(curveXLimits)
@@ -197,38 +201,57 @@ ylim(curveYLimits)
 title(['Curve Fit for ', cellName]);
 
 % Remove texts
-update_figure_for_corel(figCF, 'RemoveTexts', true);
+update_figure_for_corel(figCurveFit, 'RemoveTexts', true);
 
 % Plot a scale bar
 plot_scale_bar('xy', 'XBarUnits', 'ms', 'YBarUnits', 'mV', ...
                 'XPosNormalized', 0.6, 'YPosNormalized', 0.2);
 
 % Update figure for CorelDraw
-update_figure_for_corel(figCF, 'Units', 'centimeters', ...
+update_figure_for_corel(figCurveFit, 'Units', 'centimeters', ...
                         'Width', curveFigWidth, 'Height', curveFigHeight, ...
                         'RemoveRulers', true, 'RemoveLabels', true);
 
 % Save the figure
-save_all_figtypes(figCF, figPathBaseCurveFit, figTypes);
+save_all_figtypes(figCurveFit, figPathBaseCurveFit, figTypes);
 
 %% Plot ball-and-stick model
 % Create the figure
-figBS = set_figure_properties('AlwaysNew', true);
+[figGeom, axGeom] = create_subplots(2, 1, 'AlwaysNew', true);
 
-% Save the figure
-plot_ball_stick('GeomParams', passiveParams);
+% Top subplot
+subplot(axGeom(1));
+
+% Plot ball-and-stick model
+plot_ball_stick('GeomParams', passiveParams, ...
+                'BallEdgeColor', somaColor, 'StickEdgeColor', dendriteColor, ...
+                'FaceColor', 'none', 'LineWidth', 1);
+
+% Set title
+title(['Ball-stick model for ', cellName]);
 
 % Plot a scale bar
 plot_scale_bar('xy', 'XBarUnits', 'um', 'YBarUnits', 'um', ...
                 'XPosNormalized', 0.6, 'YPosNormalized', 0.2);
 
+% Bottom subplot
+subplot(axGeom(2));
+
+% Plot final geometry TODO
+plot_ball_stick('GeomParams', passiveParams, ...
+                'BallEdgeColor', somaColor, 'StickEdgeColor', dendriteColor, ...
+                'FaceColor', 'none', 'LineWidth', 1);
+
+% Link axes
+linkaxes(axGeom, 'xy');
+
 % Update figure for CorelDraw
-update_figure_for_corel(figBS, 'Units', 'centimeters', ...
-                'Width', ballStickFigWidth, 'Height', ballStickFigHeight, ...
+update_figure_for_corel(figGeom, 'Units', 'centimeters', ...
+                'Width', geomFigWidth, 'Height', geomFigHeight, ...
                 'RemoveRulers', true);
 
 % Save the figure
-save_all_figtypes(figBS, figPathBaseBallStick, figTypes);
+save_all_figtypes(figGeom, figPathBaseGeom, figTypes);
 
 end
 

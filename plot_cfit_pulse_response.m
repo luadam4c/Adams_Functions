@@ -59,6 +59,12 @@ function h = plot_cfit_pulse_response (xVec, yVec, varargin)
 %                       'suppress'  - no legend
 %                       anything else recognized by the legend() function
 %                   default == 'northeast'
+%                   - 'Component1Color': color for component 1
+%                   must be a character vector or 3-element numeric array
+%                   default == rgb('Turquoise')
+%                   - 'Component2Color': color for component 2
+%                   must be a character vector or 3-element numeric array
+%                   default == rgb('DarkGreen')
 %
 % Requires:
 %       cd/argfun.m
@@ -67,7 +73,6 @@ function h = plot_cfit_pulse_response (xVec, yVec, varargin)
 %       cd/fit_and_estimate_passive_params.m
 %       cd/force_column_vector.m
 %       cd/islegendlocation.m
-%       ~/Downloaded_Functions/rgb.m
 %
 % Used by:    
 %       cd/find_passive_params.m
@@ -81,13 +86,11 @@ function h = plot_cfit_pulse_response (xVec, yVec, varargin)
 %% Hard-coded parameters
 yCoverage = 90;                 % coverage of y axis (%)
 nSigFig = 3;                    % number of significant figures for Rinput
-sprColor = 'Crimson';
-lprColor = 'MediumOrchid';
-rmseColor = 'Navy';
-asymptoteColor = 'Navy';
-component1Color = 'Turquoise';
-component2Color = 'DarkGreen';
-RinColor = 'Indigo';
+sprColor = [0.8594, 0.0781, 0.2344];    % rgb('Crimson');
+lprColor = [0.7266, 0.3320, 0.8242];    % rgb('MediumOrchid');
+rmseColor = [0, 0, 0.5000];             % rgb('Navy');
+asymptoteColor = [0, 0, 0.5000];        % rgb('Navy');
+RinColor = [0.2930, 0, 0.5078];         % rgb('Indigo');
 lineWidth = 2;
 
 %% Default values for optional arguments
@@ -100,17 +103,10 @@ pulseAmplitudeDefault = [];     % set later
 xLimitsDefault = [];            % set later
 yLimitsDefault = [];            % set later
 legendLocationDefault = 'northeast';
+component1ColorDefault = [0.2500, 0.8750, 0.8125];  % rgb('Turquoise');
+component2ColorDefault = [0, 0.3906, 0];            % rgb('DarkGreen');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% If not compiled, add directories to search path for required functions
-if ~isdeployed
-    % Locate the functions directory
-    functionsDirectory = locate_functionsdir;
-
-    % Add path for rgb.m
-    addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions')); 
-end
 
 %% Deal with arguments
 % Check number of required arguments
@@ -149,6 +145,8 @@ addParameter(iP, 'YLimits', yLimitsDefault, ...
         isnumeric(x) && isvector(x) && length(x) == 2);
 addParameter(iP, 'LegendLocation', legendLocationDefault, ...
     @(x) all(islegendlocation(x, 'ValidateMode', true)));
+addParameter(iP, 'Component1Color', component1ColorDefault);
+addParameter(iP, 'Component2Color', component2ColorDefault);
 
 % Read from the Input Parser
 parse(iP, xVec, yVec, varargin{:});
@@ -162,6 +160,8 @@ xLimits = iP.Results.XLimits;
 yLimits = iP.Results.YLimits;
 [~, legendLocation] = islegendlocation(iP.Results.LegendLocation, ...
                                         'ValidateMode', true);
+component1Color = iP.Results.Component1Color;
+component2Color = iP.Results.Component2Color;
 
 % Check relationships between arguments
 % TODO
@@ -323,10 +323,10 @@ case 'rising'
     yVecRisingComp2 = ampRising2 * (1 - exp(-xVecRising/tau2));
 
     % Plot the components
-    plot(xVecRising, yVecRisingComp1, 'Color', rgb(component1Color), ...
+    plot(xVecRising, yVecRisingComp1, 'Color', component1Color, ...
             'LineStyle', '--', 'DisplayName', 'Comp1', ...
             'LineWidth', lineWidth);
-    plot(xVecRising, yVecRisingComp2, 'Color', rgb(component2Color), ...
+    plot(xVecRising, yVecRisingComp2, 'Color', component2Color, ...
             'LineStyle', '--', 'DisplayName', 'Comp2', ...
             'LineWidth', lineWidth);
 case {'falling', 'combined'}
@@ -376,10 +376,10 @@ case {'falling', 'combined'}
     yVecComp2 = [yVecRisingComp2; yVecFallingComp2];
 
     % Plot the components
-    plot(xVecCombined, yVecComp1, 'Color', rgb(component1Color), ...
+    plot(xVecCombined, yVecComp1, 'Color', component1Color, ...
             'LineStyle', '--', 'DisplayName', 'Comp1', ...
             'LineWidth', lineWidth);
-    plot(xVecCombined, yVecComp2, 'Color', rgb(component2Color), ...
+    plot(xVecCombined, yVecComp2, 'Color', component2Color, ...
             'LineStyle', '--', 'DisplayName', 'Comp2', ...
             'LineWidth', lineWidth);
 
@@ -402,7 +402,7 @@ end
 
 % Plot a line for the asymptotic response
 line(xLimits, responseAmplitude * [1, 1], ...
-        'Color', rgb(asymptoteColor), 'LineStyle', '--', 'LineWidth', 0.5, ...
+        'Color', asymptoteColor, 'LineStyle', '--', 'LineWidth', 0.5, ...
         'DisplayName', 'Amp');
 
 % Define starting x and y positions for texts
@@ -422,7 +422,7 @@ end
 
 % Show the root-mean-square error
 text(xpos, ypos, ['root-mean-square error = ', num2str(rmse), ' mV'], ...
-    'FontSize', 8, 'Color', rgb(rmseColor), ...
+    'FontSize', 8, 'Color', rmseColor, ...
     'Units', 'normalized');
 
 % Show the short-pulse response equation for all phases
@@ -430,25 +430,25 @@ text(xpos, ypos, ['root-mean-square error = ', num2str(rmse), ' mV'], ...
 if strcmp(phaseName, 'rising') || strcmp(phaseName, 'falling')
     ypos = ypos - (1/15);
     text(xpos, ypos, eqnSLatex, ...
-        'FontSize', 8, 'Color', rgb(sprColor), ...
+        'FontSize', 8, 'Color', sprColor, ...
         'Interpreter', 'latex', 'Units', 'normalized');
 elseif strcmp(phaseName, 'combined')
     % Show the first part of the equation
     ypos = ypos - (1/15);
     text(xpos, ypos, eqnSPart1Latex, ...
-        'FontSize', 8, 'Color', rgb(sprColor), ...
+        'FontSize', 8, 'Color', sprColor, ...
         'Interpreter', 'latex', 'Units', 'normalized');
 
     % Show the second part of the equation
     ypos = ypos - (1/15);
     text(xpos, ypos, eqnSPart2Latex, ...
-        'FontSize', 8, 'Color', rgb(sprColor), ...
+        'FontSize', 8, 'Color', sprColor, ...
         'Interpreter', 'latex', 'Units', 'normalized');
 
     % Show the third part of the equation
     ypos = ypos - (1/15);
     text(xpos, ypos, eqnSPart3Latex, ...
-        'FontSize', 8, 'Color', rgb(sprColor), ...
+        'FontSize', 8, 'Color', sprColor, ...
         'Interpreter', 'latex', 'Units', 'normalized');
 end
 
@@ -456,7 +456,7 @@ end
 if strcmp(phaseName, 'falling')
     ypos = ypos - (1/15);
     text(xpos, ypos, eqnLLatex, ...
-        'FontSize', 8, 'Color', rgb(lprColor), ...
+        'FontSize', 8, 'Color', lprColor, ...
         'Interpreter', 'latex', 'Units', 'normalized');
 end
 
@@ -464,7 +464,7 @@ end
 ypos = ypos - (1/15);
 text(xpos, ypos, ...
     ['Rin = ', num2str(Rinput, nSigFig), ' MOhm'], ...
-    'FontSize', 8, 'Color', rgb(RinColor), ...
+    'FontSize', 8, 'Color', RinColor, ...
     'Units', 'normalized');
 
 % Add axes labels

@@ -38,6 +38,12 @@ function objects = plot_ball_stick (varargin)
 %                   - 'StickEdgeColor': edge color for stick
 %                   must be a character vector or 3-element numeric array
 %                   default == rgb('DarkOrange')
+%                   - 'BallColor': ball color for both edge and face
+%                   must be a character vector or 3-element numeric array
+%                   default == [] (not set)
+%                   - 'StickColor': stick color for both edge and face
+%                   must be a character vector or 3-element numeric array
+%                   default == [] (not set)
 %                   - 'FaceColor': face color for both ball and stick
 %                   must be a character vector or 3-element numeric array
 %                   default == [] (not set)
@@ -71,6 +77,8 @@ ballFaceColorDefault = [0, 0, 0.8008];      % rgb('MediumBlue')
 ballEdgeColorDefault = [0, 0, 0.8008];      % rgb('MediumBlue')
 stickFaceColorDefault = [1, 0.5469, 0];     % rgb('DarkOrange')
 stickEdgeColorDefault = [1, 0.5469, 0];     % rgb('DarkOrange')
+ballColorDefault = [];
+stickColorDefault = [];
 faceColorDefault = [];
 edgeColorDefault = [];
 
@@ -97,6 +105,8 @@ addParameter(iP, 'BallFaceColor', ballFaceColorDefault);
 addParameter(iP, 'BallEdgeColor', ballEdgeColorDefault);
 addParameter(iP, 'StickFaceColor', stickFaceColorDefault);
 addParameter(iP, 'StickEdgeColor', stickEdgeColorDefault);
+addParameter(iP, 'BallColor', ballColorDefault);
+addParameter(iP, 'StickColor', stickColorDefault);
 addParameter(iP, 'FaceColor', faceColorDefault);
 addParameter(iP, 'EdgeColor', edgeColorDefault);
 
@@ -110,6 +120,8 @@ ballFaceColor = iP.Results.BallFaceColor;
 ballEdgeColor = iP.Results.BallEdgeColor;
 stickFaceColor = iP.Results.StickFaceColor;
 stickEdgeColor = iP.Results.StickEdgeColor;
+ballColor = iP.Results.BallColor;
+stickColor = iP.Results.StickColor;
 faceColor = iP.Results.FaceColor;
 edgeColor = iP.Results.EdgeColor;
 
@@ -117,7 +129,18 @@ edgeColor = iP.Results.EdgeColor;
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
-% Replace default colors with user's choice
+% Replace ball or stick colors with user's choice
+if ~isempty(ballColor)
+    ballFaceColor = ballColor;
+    ballEdgeColor = ballColor;
+end
+if ~isempty(stickColor)
+    stickFaceColor = stickColor;
+    stickEdgeColor = stickColor;
+end
+
+% Replace face or edge colors with user's choice
+%   Note: This has precedence over ballColor or stickColor
 if ~isempty(faceColor)
     ballFaceColor = faceColor;
     stickFaceColor = faceColor;
