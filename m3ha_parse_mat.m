@@ -36,6 +36,7 @@ function [parsedParams, parsedData] = m3ha_parse_mat (matfiles, varargin)
 %
 % Used by:
 %       cd/m3ha_parse_dclamp_data.m
+%       cd/m3ha_plot_figure03.m
 %       cd/m3ha_estimate_passive_params.m
 
 % File History:

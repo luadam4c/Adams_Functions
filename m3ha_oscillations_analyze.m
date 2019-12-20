@@ -1,5 +1,5 @@
 % m3ha_oscillations_analyze.m
-%% Analyzes all GAT blocker oscillations data
+%% Analyzes all GAT blocker oscillations data and plots Figure 01 for the GAT Blocker paper
 %
 % Requires:
 %       cd/archive_dependent_scripts.m

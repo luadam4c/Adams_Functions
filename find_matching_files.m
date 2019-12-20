@@ -36,7 +36,7 @@ function varargout = find_matching_files (fileStrs, varargin)
 %                   default == 'Keyword'
 %                   - 'ExtractDistinct': whether to extract distinct parts
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == false
 %                   - 'ForceCellOutput': whether to force output as a cell array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -51,12 +51,15 @@ function varargout = find_matching_files (fileStrs, varargin)
 % Used by:
 %       cd/create_pleth_EEG_movies.m
 %       cd/load_matching_sheets.m
+%       cd/m3ha_plot_figure03.m
+%       cd/m3ha_simulate_ipsc_response.m
 %       cd/plot_traces_spike2_mat.m
 
 % File History:
 % 2019-09-25 Created by Adam Lu
 % 2019-09-30 Now maintains character vectors as character vectors
 % 2019-10-15 Added 'ForceCellOutput' as an optional argument
+% 2019-12-20 Changed default extractDistinct to false
 % TODO: Add 'Delimiter' as an optional argument
 % TODO: 'MaxNum' not always 1
 % 
@@ -66,7 +69,7 @@ validPartTypes = {'Prefix', 'Keyword', 'Suffix', 'Extension'};
 
 %% Default values for optional arguments
 partTypeDefault = 'Keyword';
-extractDistinctDefault = true;  % extract distinct parts by default
+extractDistinctDefault = false; % don't extract distinct parts by default
 forceCellOutputDefault = false; % don't force output as a cell array by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -7,6 +7,7 @@ function [fileSuffix, titleModifier] = m3ha_specs_for_datamode (dataMode)
 %       cd/m3ha_estimate_passive_params.m
 %       cd/m3ha_plot_histograms_refine_threshold.m
 %       cd/m3ha_plot_correlations.m
+%       cd/m3ha_plot_figure03.m
 
 % File History:
 % 2016-10-31 Created

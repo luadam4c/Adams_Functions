@@ -1,10 +1,12 @@
 function [passiveParams, fitResults, fitObject, ...
-            goodnessOfFit, algorithmInfo, decision, allResults] = ...
-            find_passive_params (tvec0, ivec0s, vvec0s, varargin)
+            goodnessOfFit, algorithmInfo, decision, ...
+            tVecFitted, vVecFitted, allResults] = ...
+                find_passive_params (tvec0, ivec0s, vvec0s, varargin)
 %% Extract passive parameters from both the rising and falling phase of a current pulse response
 % Usage: [passiveParams, fitResults, fitObject, ...
-%           goodnessOfFit, algorithmInfo, decision, allResults] = ...
-%           find_passive_params (tvec0, ivec0s, vvec0s, varargin)
+%           goodnessOfFit, algorithmInfo, decision, ...
+%           tVecFitted, vVecFitted, allResults] = ...
+%               find_passive_params (tvec0, ivec0s, vvec0s, varargin)
 % Outputs:
 %       passiveParams   - passive parameters returned by 
 %                           fit_and_estimate_passive_params.m
@@ -27,6 +29,8 @@ function [passiveParams, fitResults, fitObject, ...
 %                           for the phase given by decision
 %       decision        - a string of what phase/averaging method combination
 %                           was used for fitting and parameter estimation
+%       tVecFitted      - time vector(s) that was used for the curve fit
+%       vVecFitted      - voltage vector(s) that was used for the curve fit
 %       allResults  - a structure of other results along the way, with fields:
 %                       pulseAmplitude - vector of current pulse amplitudes (pA)
 %                                           for each sweep
@@ -104,8 +108,10 @@ function [passiveParams, fitResults, fitObject, ...
 %
 % Used by:
 %       cd/m3ha_parse_dclamp_data.m
+%       cd/m3ha_plot_figure03.m
 %       cd/m3ha_estimate_passive_params.m
-%
+
+% File History:
 % 2016-10-27 - Adapted from m3ha_find_ipsc_peak.m and dclampDataExtractor.m
 % 2016-10-31 - Changed equation form of aFittype to 
 %                   'a*(exp(-x/b)-1)+c*(exp(-x/d)-1)' 
@@ -146,6 +152,7 @@ function [passiveParams, fitResults, fitObject, ...
 % 2018-10-15 - Removed dependence to dataMode and added Suffix and TitleMod
 %               as optional arguments instead
 % 2018-11-13 - Updated usage of parse_pulse_response.m
+% 2019-12-20 - Added tVecFitted, vVecFitted as outputs
 
 %% Flags
 
@@ -606,6 +613,8 @@ end
 %       5. rising phase of average trace
 %       6. rising phase of pooled data
 if isstruct(paramsAvgCombined)
+    tVecFitted = tAvgCombined;
+    vVecFitted = vAvgCombined;
     passiveParams = paramsAvgCombined;
     fitResults = fitResultsAvgCombined;
     fitObject = cfitAvgCombined;
@@ -613,6 +622,8 @@ if isstruct(paramsAvgCombined)
     algorithmInfo = algInfoAvgCombined;
     decision = 'combined phase of average trace';
 elseif isstruct(paramsAllCombined)
+    tVecFitted = tAllCombined;
+    vVecFitted = vAllCombined;
     passiveParams = paramsAllCombined;
     fitResults = fitResultsAllCombined;
     fitObject = cfitAllCombined;
@@ -620,6 +631,8 @@ elseif isstruct(paramsAllCombined)
     algorithmInfo = algInfoAllCombined;
     decision = 'combined phase of pooled data';
 elseif isstruct(paramsAvgFalling)
+    tVecFitted = tAvgFalling;
+    vVecFitted = vAvgFalling;
     passiveParams = paramsAvgFalling;
     fitResults = fitResultsAvgFalling;
     fitObject = cfitAvgFalling;
@@ -627,6 +640,8 @@ elseif isstruct(paramsAvgFalling)
     algorithmInfo = algInfoAvgFalling;
     decision = 'falling phase of average trace';
 elseif isstruct(paramsAllFalling)
+    tVecFitted = tAllFalling;
+    vVecFitted = vAllFalling;
     passiveParams = paramsAllFalling;
     fitResults = fitResultsAllFalling;
     fitObject = cfitAllFalling;
@@ -634,6 +649,8 @@ elseif isstruct(paramsAllFalling)
     algorithmInfo = algInfoAllFalling;
     decision = 'falling phase of pooled data';
 elseif isstruct(paramsAvgRising)
+    tVecFitted = tAvgRising;
+    vVecFitted = vAvgRising;
     passiveParams = paramsAvgRising;
     fitResults = fitResultsAvgRising;
     fitObject = cfitAvgRising;
@@ -641,6 +658,8 @@ elseif isstruct(paramsAvgRising)
     algorithmInfo = algInfoAvgRising;
     decision = 'rising phase of average trace';
 elseif isstruct(paramsAllRising)
+    tVecFitted = tAllRising;
+    vVecFitted = vAllRising;
     passiveParams = paramsAllRising;
     fitResults = fitResultsAllRising;
     fitObject = cfitAllRising;
@@ -861,26 +880,54 @@ allResults.holdPotential = holdPotential;
 allResults.maxVoltage = maxVoltage;
 allResults.voltageChange = voltageChange;
 allResults.toUse = toUse;
-allResults.paramsAvgFalling = paramsAvgFalling;
-allResults.fitResultsAvgFalling = fitResultsAvgFalling;
-allResults.cfitAvgFalling = cfitAvgFalling;
-allResults.gofAvgFalling = gofAvgFalling;
-allResults.algInfoAvgFalling = algInfoAvgFalling;
-allResults.paramsAllFalling = paramsAllFalling;
-allResults.fitResultsAllFalling = fitResultsAllFalling;
-allResults.cfitAllFalling = cfitAllFalling;
-allResults.gofAllFalling = gofAllFalling;
-allResults.algInfoAllFalling = algInfoAllFalling;
+
+allResults.tAvgRising = tAvgRising;
+allResults.vAvgRising = vAvgRising;
 allResults.paramsAvgRising = paramsAvgRising;
 allResults.fitResultsAvgRising = fitResultsAvgRising;
 allResults.cfitAvgRising = cfitAvgRising;
 allResults.gofAvgRising = gofAvgRising;
 allResults.algInfoAvgRising = algInfoAvgRising;
+
+allResults.tAllRising = tAllRising;
+allResults.vAllRising = vAllRising;
 allResults.paramsAllRising = paramsAllRising;
 allResults.fitResultsAllRising = fitResultsAllRising;
 allResults.cfitAllRising = cfitAllRising;
 allResults.gofAllRising = gofAllRising;
 allResults.algInfoAllRising = algInfoAllRising;
+
+allResults.tAvgFalling = tAvgFalling;
+allResults.vAvgFalling = vAvgFalling;
+allResults.paramsAvgFalling = paramsAvgFalling;
+allResults.fitResultsAvgFalling = fitResultsAvgFalling;
+allResults.cfitAvgFalling = cfitAvgFalling;
+allResults.gofAvgFalling = gofAvgFalling;
+allResults.algInfoAvgFalling = algInfoAvgFalling;
+
+allResults.tAllFalling = tAllFalling;
+allResults.vAllFalling = vAllFalling;
+allResults.paramsAllFalling = paramsAllFalling;
+allResults.fitResultsAllFalling = fitResultsAllFalling;
+allResults.cfitAllFalling = cfitAllFalling;
+allResults.gofAllFalling = gofAllFalling;
+allResults.algInfoAllFalling = algInfoAllFalling;
+
+allResults.tAllCombined = tAllCombined;
+allResults.vAllCombined = vAllCombined;
+allResults.paramsAllCombined = paramsAllCombined;
+allResults.fitResultsAllCombined = fitResultsAllCombined;
+allResults.cfitAllCombined = cfitAllCombined;
+allResults.gofAllCombined = gofAllCombined;
+allResults.algInfoAllCombined = algInfoAllCombined;
+
+allResults.tAvgCombined = tAvgCombined;
+allResults.vAvgCombined = vAvgCombined;
+allResults.paramsAvgCombined = paramsAvgCombined;
+allResults.fitResultsAvgCombined = fitResultsAvgCombined;
+allResults.cfitAvgCombined = cfitAvgCombined;
+allResults.gofAvgCombined = gofAvgCombined;
+allResults.algInfoAvgCombined = algInfoAvgCombined;
 
 %{
 allResults.rmseRising = rmseRising;

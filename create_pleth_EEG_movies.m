@@ -87,7 +87,8 @@ end
 if isempty(wmvPaths)
     [~, wmvPaths] = ...
         find_matching_files(spike2MatPaths, 'PartType', 'keyword', ...
-                            'Extension', 'wmv', 'ForceCellOutput', true);
+                            'Extension', 'wmv', 'ForceCellOutput', true, ...
+                            'ExtractDistinct', true);
 end
 
 %% Do the job

@@ -270,7 +270,7 @@ elseif strcmpi(stimType, 'gas')
 elseif strcmpi(stimType, 'laser')
     [~, stimTablePath] = ...
         find_matching_files(spike2Path, 'Suffix', stimTableSuffixLaser, ...
-                            'Extension', 'csv');
+                            'Extension', 'csv', 'ExtractDistinct', true);
     if isempty(stimTablePath)
         parseLaser = true;
     end

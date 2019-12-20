@@ -28,6 +28,7 @@ function swpInfo = m3ha_load_sweep_info (varargin)
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_organize_sweep_indices.m
 %       cd/m3ha_plot_figure02.m
+%       cd/m3ha_plot_figure03.m
 %       cd/m3ha_select_cells.m
 %       cd/m3ha_select_sweeps.m
 
