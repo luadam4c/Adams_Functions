@@ -436,7 +436,7 @@ end
 
 function set_visible_off (object)
 
-if iscell(textObject)
+if iscell(object)
     cellfun(@set_visible_off, object);
 else
     set(object, 'Visible', 'off');

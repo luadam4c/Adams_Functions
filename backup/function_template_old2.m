@@ -92,8 +92,8 @@ elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
 else
     error('Valid functionsDirectory does not exist!');
 end
-addpath(fullfile(functionsDirectory, '/Adams_Functions/')); % for isfigtype.m
-addpath(fullfile(functionsDirectory, '/Marks_Functions/')); % for TODO
+addpath_custom(fullfile(functionsDirectory, '/Adams_Functions/')); % for isfigtype.m
+addpath_custom(fullfile(functionsDirectory, '/Marks_Functions/')); % for TODO
 
 %% Deal with arguments
 % Check number of required arguments

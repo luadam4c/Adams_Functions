@@ -9,6 +9,8 @@
 %       cd/m3ha_parse_mat.m
 %       cd/m3ha_select_sweeps.m
 %       cd/m3ha_specs_for_datamode.m
+%       cd/plot_ball_stick.m
+%       cd/plot_scale_bar.m
 
 % File History:
 % 2019-12-18 Created by Adam Lu
@@ -27,7 +29,7 @@ datalogPath = fullfile(figure02Dir, sweepInfoFile);
 initialSlopesPath = fullfile(figure03Dir, initialSlopesFile);
 
 % Flags
-estimatePassiveParams = true;
+estimatePassiveParams = false; %true;
 plotCurveFit = true;
 
 % Analysis settings
@@ -40,6 +42,13 @@ dataMode = 2;
 passiveLogSuffix = 'dclampPassiveLog';
 
 % Plot settings
+curveFigWidth = 8.5;
+curveFigHeight = 4;
+curveXLimits = [0, 60];
+curveYLimits = [-1.2, 0];
+ballStickFigWidth = 4.5;
+ballStickFigHeight = 2;
+
 figTypes = {'png', 'epsc2'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -56,7 +65,7 @@ if estimatePassiveParams
             exampleCellNames);
 end
 
-%% Plot curve fits
+%% Plot curve fitting results
 if plotCurveFit
     % Find passive log paths
     [~, passiveLogPaths] = ...
@@ -64,7 +73,10 @@ if plotCurveFit
                             'Suffix', passiveLogSuffix, 'Extension', 'mat');
 
 
-    cellfun(@(x, y) plot_curve_fit(x, y, figure03Dir, figTypes), ...
+    cellfun(@(x, y) plot_curve_fit_results(x, y, figure03Dir, figTypes, ...
+                                    curveFigWidth, curveFigHeight, ...
+                                    curveXLimits, curveYLimits, ...
+                                    ballStickFigWidth, ballStickFigHeight), ...
             exampleCellNames, passiveLogPaths);
 end
 
@@ -144,10 +156,15 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_curve_fit(cellName, passiveLogPath, outFolder, figTypes)
+function plot_curve_fit_results(cellName, passiveLogPath, ...
+                outFolder, figTypes, curveFigWidth, curveFigHeight, ...
+                curveXLimits, curveYLimits, ...
+                ballStickFigWidth, ballStickFigHeight)
 
 % Decide on the figure name
-figPathBase = fullfile(outFolder, [cellName, '_curve_fit']);
+figPathBaseCurveFit = fullfile(outFolder, [cellName, '_curve_fit']);
+figPathBaseBallStick = fullfile(outFolder, [cellName, '_ball_stick']);
+figPathBaseGeometry = fullfile(outFolder, [cellName, '_geometry']);
 
 % Read the passive log file
 m = matfile(passiveLogPath);
@@ -160,8 +177,9 @@ fitResults = m.fitResults;
 goodnessOfFit = m.goodnessOfFit;
 passiveParams = m.passiveParams;
 
+%% Plot curve fit
 % Create the figure
-fig = set_figure_properties('AlwaysNew', true);
+figCF = set_figure_properties('AlwaysNew', true);
 
 % Plot curve fit
 plot_cfit_pulse_response(tVecFitted, vVecFitted, ...
@@ -171,8 +189,46 @@ plot_cfit_pulse_response(tVecFitted, vVecFitted, ...
                         'PassiveParams', passiveParams, ...
                         'LegendLocation', 'suppress');
 
+% Set axis limits
+xlim(curveXLimits)
+ylim(curveYLimits)
+
+% Set title
+title(['Curve Fit for ', cellName]);
+
+% Remove texts
+update_figure_for_corel(figCF, 'RemoveTexts', true);
+
+% Plot a scale bar
+plot_scale_bar('xy', 'XBarUnits', 'ms', 'YBarUnits', 'mV', ...
+                'XPosNormalized', 0.6, 'YPosNormalized', 0.2);
+
+% Update figure for CorelDraw
+update_figure_for_corel(figCF, 'Units', 'centimeters', ...
+                        'Width', curveFigWidth, 'Height', curveFigHeight, ...
+                        'RemoveRulers', true, 'RemoveLabels', true);
+
 % Save the figure
-save_all_figtypes(fig, figPathBase, figTypes);
+save_all_figtypes(figCF, figPathBaseCurveFit, figTypes);
+
+%% Plot ball-and-stick model
+% Create the figure
+figBS = set_figure_properties('AlwaysNew', true);
+
+% Save the figure
+plot_ball_stick('GeomParams', passiveParams);
+
+% Plot a scale bar
+plot_scale_bar('xy', 'XBarUnits', 'um', 'YBarUnits', 'um', ...
+                'XPosNormalized', 0.6, 'YPosNormalized', 0.2);
+
+% Update figure for CorelDraw
+update_figure_for_corel(figBS, 'Units', 'centimeters', ...
+                'Width', ballStickFigWidth, 'Height', ballStickFigHeight, ...
+                'RemoveRulers', true);
+
+% Save the figure
+save_all_figtypes(figBS, figPathBaseBallStick, figTypes);
 
 end
 

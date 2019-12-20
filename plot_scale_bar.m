@@ -8,6 +8,7 @@ function handles = plot_scale_bar (varargin)
 %       figure; plot(1:10, randi(10, 1, 10));
 %       plot_scale_bar;
 %       plot_scale_bar('x', 'BarLength', 1, 'BarUnits', 'cm');
+%       plot_scale_bar('xy', 'XBarUnits', 'ms', 'YBarUnits', 'mV');
 %
 % Outputs:
 %       handles     - TODO: Description of handles
@@ -57,6 +58,7 @@ function handles = plot_scale_bar (varargin)
 % Used by:
 %       cd/m3ha_oscillations_analyze.m
 %       cd/m3ha_plot_figure02.m
+%       cd/m3ha_plot_figure03.m
 
 % File History:
 % 2019-12-01 Created by Adam Lu

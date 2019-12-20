@@ -137,9 +137,9 @@ if ~isdeployed
     else
         error('Valid functionsdirectory does not exist!');
     end
-    addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));
+    addpath_custom(fullfile(functionsdirectory, '/Downloaded_Functions/'));
                                             % for abf2load.m or abfload.m
-    addpath(fullfile(functionsdirectory, '/Brians_Functions/'));
+    addpath_custom(fullfile(functionsdirectory, '/Brians_Functions/'));
                                             % for identify_channels.m
                                             %   and identify_CI.m
 end

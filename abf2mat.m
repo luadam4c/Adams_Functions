@@ -102,7 +102,7 @@ if ~isdeployed
     else
         error('Valid functionsDirectory does not exist!');
     end
-    addpath(fullfile(functionsDirectory, 'Downloaded_Functions')); 
+    addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions')); 
                                             % for abf2load.m
 end
 

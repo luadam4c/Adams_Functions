@@ -60,7 +60,7 @@ elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
 else
     error('Valid functionsdirectory does not exist!');
 end
-addpath(fullfile(functionsdirectory, '/Adams_Functions/'));        % for isfigtype.m, extract_looped_params.m,
+addpath_custom(fullfile(functionsdirectory, '/Adams_Functions/'));        % for isfigtype.m, extract_looped_params.m,
                                     %     vec2array.m
                                     %    & plot_tuning_map.m
 %% Check arguments

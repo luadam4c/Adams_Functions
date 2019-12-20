@@ -21,7 +21,6 @@ function varargout = addpath_custom (folder, varargin)
 % File History:
 % 2019-01-10 Created by Adam Lu
 % 2019-11-27 Now checks if the folder exists
-% TODO FOR SHINSHIN: Go through all files change all uses of addpath to this
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -42,7 +42,7 @@ elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
 else
 	error('Valid functionsdirectory does not exist!');
 end
-addpath(fullfile(functionsdirectory, '/Brians_Functions/'));		% for reorder.m
+addpath_custom(fullfile(functionsdirectory, '/Brians_Functions/'));		% for reorder.m
 
 %% Take out spontaneous spikes (peak class == 3)
 ind_nospont = find(peakclass ~= 3);

@@ -161,15 +161,6 @@ logvariablesSwpInfoCell = {'dataFileName', 'cellId', 'setNumber', ...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% If not compiled, add directories to search path for required functions
-if ~isdeployed
-    % Locate the functions directory
-    functionsDirectory = locate_functionsdir;
-
-    % Add path for find_passive_params.m, etc.
-    addpath(fullfile(functionsDirectory, 'Adams_Functions')); 
-end
-
 % Locate the home directory
 homeDirectory = m3ha_locate_homedir;
 

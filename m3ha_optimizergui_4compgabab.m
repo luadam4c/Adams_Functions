@@ -150,10 +150,10 @@ else
     error('Valid functionsdirectory does not exist!');
 end
 if ~isdeployed
-    addpath(fullfile(functionsdirectory, '/Adams_Functions/'));        
+    addpath_custom(fullfile(functionsdirectory, '/Adams_Functions/'));        
                                     % for set_fields_zero.m, restore_fields.m,
                                     % find_in_strings.m, my_closereq.m
-    addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));        
+    addpath_custom(fullfile(functionsdirectory, '/Downloaded_Functions/'));        
                                     % for rgb.m
 end
 

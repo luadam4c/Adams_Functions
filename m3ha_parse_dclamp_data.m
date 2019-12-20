@@ -226,17 +226,6 @@ if debugflag && preallocateflag
     fprintf('WARNING: preallocateflag cannot be used in debug mode\n')
 end
 
-%% Add directories to search path for required functions
-if isfolder('/home/Matlab/')
-    functionsdirectory = '/home/Matlab/';
-elseif isfolder('/scratch/al4ng/Matlab/')
-    functionsdirectory = '/scratch/al4ng/Matlab/';
-else
-    error('Valid functionsdirectory does not exist!');
-end
-addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));% for abf2load.m for m3ha_resave_sweeps.m
-addpath(fullfile(functionsdirectory, '/Adams_Functions/'));     % for m3ha_find_ipsc_peak.m, m3ha_find_lts.m, etc.
-
 %% Locate home directory
 homeDirectory = m3ha_locate_homedir;
 

@@ -299,8 +299,8 @@ plot_scale_bar('x', 'BarLength', timeBarLength, 'BarUnits', timeBarUnits);
 
 % Update figure for CorelDraw
 update_figure_for_corel(figV, 'Units', 'centimeters', ...
-                        'YTickLocs', yTicks, ...
-                        'Height', figHeight, 'Width', figWidth);
+                        'Height', figHeight, 'Width', figWidth, ...
+                        'YTickLocs', yTicks);
 
 % Create figure base
 figBase = sprintf('%s_gincr_%g_examples', cellName, gIncrOfInterest);

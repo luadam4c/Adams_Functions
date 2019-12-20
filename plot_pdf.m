@@ -42,13 +42,13 @@ function [xValues, pdfValues] = plot_pdf (X, varargin)
 %                   default == []
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/histproperties.m
-%       /home/Matlab/Downloaded_Functions/rgb.m
+%       cd/histproperties.m
+%       ~/Downloaded_Functions/rgb.m
 %
 % Used by:    
-%       /home/Matlab/Adams_Functions/fit_kernel.m
-%       /media/adamX/m3ha/data_dclamp/find_initial_slopes.m
-%
+%       cd/fit_kernel.m
+%       cd/m3ha_initial_slopes.m
+
 % File History:
 % 2018-06-12 Adapted from fit_IEI.m 
 % 
@@ -61,19 +61,13 @@ linesToPlotDefault = [];        % do not plot lines by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Add directories to search path for required functions across servers
+%% If not compiled, add directories to search path for required functions
 if ~isdeployed
-    if exist(fullfile(pwd, 'Downloaded_Functions'), 'dir') == 7
-        functionsdirectory = pwd;
-    elseif exist('/home/Matlab/', 'dir') == 7
-        functionsDirectory = '/home/Matlab/';
-    elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
-        functionsDirectory = '/scratch/al4ng/Matlab/';
-    else
-        error('Valid functionsDirectory does not exist!');
-    end
-    addpath(fullfile(functionsDirectory, 'Downloaded_Functions')); 
-                                            % for rgb.m
+    % Locate the functions directory
+    functionsDirectory = locate_functionsdir;
+
+    % Add path for rgb.m
+    addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions')); 
 end
 
 %% Deal with arguments

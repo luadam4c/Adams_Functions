@@ -608,7 +608,7 @@ dataCpr{ct}(:, 4) = vertcat(gvecToPad, gvecShifted);    % conductance vector of 
 holdPotentialCpr = zeros(nSweeps, 1);          % stores the holding potentials right before cp application (mV)
 
 %       /home/Matlab/Kojis_Functions/rms_Gaussian.m
-    addpath(fullfile(functionsDirectory, 'Kojis_Functions')); 
+    addpath_custom(fullfile(functionsDirectory, 'Kojis_Functions')); 
                                             % for rms_Gaussian.m
     baseNoiseIpscr(ct) = rms_Gaussian(baseline);
     cprBaselineNoise = rms_Gaussian(baselineCprThis);
@@ -983,7 +983,7 @@ if ~isdeployed
 
     % Add path for compute_rms_error.m, correct_unbalanced_bridge, 
     %   find_in_strings.m, print_cellstr.m
-    addpath(fullfile(functionsDirectory, 'Adams_Functions')); 
+    addpath_custom(fullfile(functionsDirectory, 'Adams_Functions')); 
 end
 
 % Group the traces by unique vHold values, then average the grouped traces

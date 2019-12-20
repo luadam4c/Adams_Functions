@@ -38,8 +38,8 @@ outFolder = fullfile(homeDir, 'output');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Add functions to search path
-addpath(eeglabDir);
-addpath(scriptsPath);
+addpath_custom(eeglabDir);
+addpath_custom(scriptsPath);
 
 %% Preparation
 nChannels = length(channelsOfInterest);

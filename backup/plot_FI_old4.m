@@ -67,8 +67,8 @@ elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
 else
 	error('Valid functionsdirectory does not exist!');
 end
-addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));	% for abf2load.m or abfload.m
-addpath(fullfile(functionsdirectory, '/Brians_Functions/'));		% for identify_channels.m
+addpath_custom(fullfile(functionsdirectory, '/Downloaded_Functions/'));	% for abf2load.m or abfload.m
+addpath_custom(fullfile(functionsdirectory, '/Brians_Functions/'));		% for identify_channels.m
 
 %% Create outfolder if not already exists
 if exist(outfolder, 'dir') ~= 7

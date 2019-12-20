@@ -59,7 +59,7 @@ if nargin < 2
     % Add directories to search path for abf2load.m
     functionsDirectory = locate_functionsdir;
     if ~isdeployed
-        addpath(fullfile(functionsDirectory, '/Downloaded_Functions/'));
+        addpath_custom(fullfile(functionsDirectory, '/Downloaded_Functions/'));
     end
 
     % Load abf file, si is in us
@@ -274,7 +274,7 @@ ind_cur = find(vcc == 2);
 % Creates full path to abf file robustly
 abfFullFileName = construct_abffilename(fileName);
 
-addpath(fullfile(functionsdirectory, '/Brians_Functions/'));
+addpath_custom(fullfile(functionsdirectory, '/Brians_Functions/'));
                                             % for identify_channels.m
 
 %}

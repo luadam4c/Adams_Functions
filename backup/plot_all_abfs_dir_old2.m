@@ -40,7 +40,7 @@ elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
 else
 	error('Valid functionsdirectory does not exist!');
 end
-addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));	% for dirr.m, abf2load.m or abfload.m
+addpath_custom(fullfile(functionsdirectory, '/Downloaded_Functions/'));	% for dirr.m, abf2load.m or abfload.m
 
 %% Find all .abf files
 [~, ~, filenames] = dirr(directory, '.abf', 'name');

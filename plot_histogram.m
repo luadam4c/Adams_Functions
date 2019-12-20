@@ -163,11 +163,11 @@ function [bars, fig] = plot_histogram (varargin)
 %       cd/test_var_difference.m
 %
 % Used by:    
+%       cd/m3ha_initial_slopes.m
 %       cd/plot_psth.m
 %       cd/plot_spike_histogram.m
 %       cd/plot_swd_histogram.m
 %       /home/Matlab/Marks_Functions/paula/Oct2017/zgRasterFigureMaker.m
-%       /media/adamX/m3ha/data_dclamp/initial_slopes.m
 
 % File History:
 % 2017-12-12 Created by Adam Lu

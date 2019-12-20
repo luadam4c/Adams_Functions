@@ -38,7 +38,7 @@ function [model, pdfModel, peak1Model, peak2Model, thresholdModel, voidModel, sp
 %                       'left'  - negative x direction
 %                   default == 'right'
 % Requires:
-%       /home/Matlab/Adams_Functions/plot_pdf.m
+%       cd/plot_pdf.m
 %
 % Used by:
 %       cd/fitdist_initial_slopes.m

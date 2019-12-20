@@ -123,9 +123,9 @@ elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
 else
     error('Valid functionsdirectory does not exist!');
 end
-addpath(fullfile(functionsdirectory, '/Adams_Functions/'));        % for %%%
-addpath(fullfile(functionsdirectory, '/Downloaded_Functions/'));    % for %%%
-addpath(fullfile(functionsdirectory, '/Brians_Functions/'));        % for reorder.m
+addpath_custom(fullfile(functionsdirectory, '/Adams_Functions/'));        % for %%%
+addpath_custom(fullfile(functionsdirectory, '/Downloaded_Functions/'));    % for %%%
+addpath_custom(fullfile(functionsdirectory, '/Brians_Functions/'));        % for reorder.m
 
 %% Set defaults for optional arguments
 if nargin < 2

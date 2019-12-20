@@ -30,6 +30,7 @@ function argList = struct2arglist (structure, varargin)
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/medianfilter.m
 %       cd/plot_autocorrelogram.m
+%       cd/plot_ball_stick.m
 %       cd/plot_bar.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_grouped_histogram.m

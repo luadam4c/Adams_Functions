@@ -99,6 +99,7 @@ function [passiveParams, fitResults, fitObject, ...
 %       cd/medianfilter.m
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
+%       cd/plot_ball_stick.m
 %       cd/plot_cfit_pulse_response.m
 %       cd/plot_pulse.m
 %       cd/plot_pulse_response.m
@@ -222,7 +223,7 @@ if ~isdeployed
     functionsDirectory = locate_functionsdir;
 
     % Add path for subplotsqueeze.m
-    addpath(fullfile(functionsDirectory, 'Downloaded_Functions')); 
+    addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions')); 
 end
 
 %% Deal with arguments
@@ -970,11 +971,12 @@ function plot_geometry_and_passive_params (params1, params2)
 %% Plots geometry of model cell from both the combined phase parameters and the falling phase parameters
 
 % Plot model cell #1
-plot_ball_stick(params1, 'r');
+plot_ball_stick('GeomParams', params1, 'EdgeColor', 'r', 'FaceColor', 'none');
 
 % Plot model cell #2 if exists
 if ~isempty(params2)
-    plot_ball_stick(params2, 'm');
+    plot_ball_stick('GeomParams', params2, 'EdgeColor', 'm', ...
+                        'FaceColor', 'none');
 end
 
 % Add axes labels
@@ -1037,28 +1039,6 @@ text(xpos, ypos - (13/15) * yRange, ...
 text(xpos, ypos - (14/15) * yRange, ...
     ['Rm_2 = ', num2str(params2.Rm), ' Ohm-cm^2'], ...
     'FontSize', 8, 'Color', 'm');
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function plot_ball_stick (params, edgeColor)
-%% Plots geometry of model cell (ball-and-stick) based on fitted parameters
-
-% Extract parameters from params
-radiusSoma = params.radiusSoma;
-radiusDendrite = params.radiusDendrite;
-lengthDendrite = params.lengthDendrite;
-
-% Multiple plots
-hold on;
-
-% Plot soma
-rectangle('Position', radiusSoma * [-1, -1, 2, 2], ...
-        'Curvature', [1 1], 'EdgeColor', edgeColor);
-
-% Plot dendrite
-rectangle('Position', [radiusSoma, -radiusDendrite, ...
-                        lengthDendrite, 2*radiusDendrite], ...
-        'Curvature', [0 0], 'EdgeColor', edgeColor);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

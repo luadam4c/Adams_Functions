@@ -43,8 +43,8 @@ function m3ha_initial_slopes (varargin)
 %       cd/dlmwrite_with_header.m
 %       cd/find_initial_slopes.m
 %       cd/fitdist_initial_slopes.m
-%       /home/Matlab/Adams_Functions/plot_histogram.m
-%       /home/Matlab/Adams_Functions/plot_pdf.m
+%       cd/plot_histogram.m
+%       cd/plot_pdf.m
 
 % File History:
 % 2018-05-24 BT - Created
@@ -113,19 +113,6 @@ thresMethodDefault = 'threeStdMainComponent';
 useCurrentFlagDefault = true;      % use the current trace by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Add directories to search path for required functions
-if ~isdeployed
-    if exist('/home/Matlab/', 'dir') == 7
-        functionsdirectory = '/home/Matlab/';
-    elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
-        functionsdirectory = '/scratch/al4ng/Matlab/';
-    else
-        error('Valid functionsdirectory does not exist!');
-    end
-    addpath(fullfile(functionsdirectory, 'Adams_Functions'));
-                                        % for plot_histogram.m
-end
 
 % Paths to functions on Windows
 % addpath(fullfile('\\128.143.17.146\MatlabFishFish', 'Adams_Functions'))

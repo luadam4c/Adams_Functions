@@ -59,7 +59,7 @@ if ~isdeployed
     else
         error('Valid functionsdirectory does not exist!');
     end
-    addpath(fullfile(functionsdirectory, '/Adams_Functions/'));    % for histg.m
+    addpath_custom(fullfile(functionsdirectory, '/Adams_Functions/'));    % for histg.m
 end
 
 %% Deal with arguments
@@ -497,7 +497,7 @@ if find(remove_cells == -1) > 0            % above/below threshold RMSE plot
        length(unique(peakclass)) ~= length(peakclassLabels)    % if peakclasses are removed/absent from peakclass
         newPeakclass = reorder(newPeakclass);        % see reorder.m in /home/Matlab/Brians_Functions/ e.g. [1 2 4 4 5] -> [1 2 3 3 4]
     end
-addpath(fullfile(functionsdirectory, '/Brians_Functions/'));    % for reorder.m
+addpath_custom(fullfile(functionsdirectory, '/Brians_Functions/'));    % for reorder.m
 %        /home/Matlab/Brians_Functions/reorder.m
 function [modelBest, numComponents, muBest, stdevBest, proportionBest, minAIC, newThr1, newThr2, newPeakclass, minThreshold] = fit_gaussians_and_refine_threshold (data, maxNumComponents, oldThr, thrMin, label, outfolder, fileName, fitmode, peakclass, peakclassLabels, minThreshold)
 

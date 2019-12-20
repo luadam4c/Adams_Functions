@@ -265,7 +265,7 @@ else
     error('Valid functionsDirectory does not exist!');
 end
 if ~isdeployed
-    addpath(fullfile(functionsDirectory, '/Adams_Functions/')); 
+    addpath_custom(fullfile(functionsDirectory, '/Adams_Functions/')); 
                                     % for find_in_strings.m
 end
 

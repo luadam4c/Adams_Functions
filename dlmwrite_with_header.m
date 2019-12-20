@@ -37,7 +37,7 @@ function dlmwrite_with_header (filename, M, varargin)
 %       /home/Matlab/minEASE/minEASE.m
 %       /home/Matlab/minEASE/combine_eventInfo.m
 %       /home/Matlab/minEASE/filter_minEASE_output.m
-%
+
 % File History:
 % 2017-07-24 Moved from examine_gapfree_events
 % 2019-09-02 Renamed csvwrite_with_header -> dlmwrite_with_header.m

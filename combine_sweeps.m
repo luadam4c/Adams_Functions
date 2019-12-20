@@ -109,7 +109,7 @@ if ~isdeployed
     functionsDirectory = locate_functionsdir;
 
     % Add path for abf2load.m, abfload.m
-    addpath(fullfile(functionsDirectory, 'Downloaded_Functions'));
+    addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions'));
 end
                                                 
 % Set up Input Parser Scheme

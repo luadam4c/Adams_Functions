@@ -60,7 +60,7 @@ elseif exist('/scratch/al4ng/Matlab/', 'dir') == 7
 else
     error('Valid functionsdirectory does not exist!');
 end
-addpath(fullfile(functionsdirectory, '/Adams_Functions/'));        % for m3ha_find_ipsc_peak.m, m3ha_find_lts.m, etc.
+addpath_custom(fullfile(functionsdirectory, '/Adams_Functions/'));        % for m3ha_find_ipsc_peak.m, m3ha_find_lts.m, etc.
 
 %% Set folders for reading and saving files
 if exist('/media/adamX/m3ha/', 'dir') == 7

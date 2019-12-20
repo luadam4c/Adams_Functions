@@ -43,7 +43,7 @@ if ~isdeployed
     functionsDirectory = locate_functionsdir;
 
     % Add path for adi.m
-    addpath(fullfile(functionsDirectory, 'Downloaded_Functions', ...
+    addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions', ...
                     'adinstruments_sdk_matlab')); 
 end
 
