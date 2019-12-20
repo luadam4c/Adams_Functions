@@ -1043,7 +1043,9 @@ if x == 1
     hold on;
     % Initialize ymax
     initymax = y * 1.1;
-    ylim([0, initymax]);
+    if ~isnan(initymax)
+        ylim([0, initymax]);
+    end
     if ~isempty(xLabel)
         xlabel(xLabel); 
     end

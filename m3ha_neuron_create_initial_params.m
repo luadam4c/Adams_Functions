@@ -4,7 +4,12 @@ function [initParamTables, initParamFiles, otherParams] = ...
 % Usage: [initParamTables, initParamFiles, otherParams] = ...
 %               m3ha_neuron_create_initial_params (varargin)
 % Explanation:
-%       TODO
+%       Initial parameters table created through the following steps:
+%           1. All cells start out with the default from Destexhe et al 1998a
+%           2. Replace geometric parameters and gpas with curve-fitted values
+%                   if requested
+%           3. Replace ParamsToReplace by custom values if provided
+%           4. Make active channel conductances minimal if requested
 %
 % Example(s):
 %       m3ha_neuron_create_initial_params;
@@ -102,7 +107,7 @@ function [initParamTables, initParamFiles, otherParams] = ...
 % 2019-11-19 Added 'CellNames' as an optional parameter
 % 2019-12-19 No longer updates epas from passiveParamsPath
 % 2019-12-19 No longer fits epas by default
-% TODO: Allow the option to read in specific parameters from a file
+% TODO: 'MinimalIT', 'MinimalIA', etc.
 % 
 
 %% Hard-coded parameters
