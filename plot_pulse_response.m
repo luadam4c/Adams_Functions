@@ -225,7 +225,7 @@ if nToUse == nVectors
     plot(timeVec, responseVecs, '-', otherArguments);
 else
     % Plot vectors as dotted line if not used
-    parfor iVec = 1:nVectors
+    for iVec = 1:nVectors
         if toUse(iVec)
             plot(timeVec, responseVecs(:, iVec), '-', otherArguments);
         else

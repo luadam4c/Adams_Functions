@@ -166,6 +166,7 @@ function varargout = parse_pulse_response (vectors, siMs, varargin)
 % 2019-01-09 Added 'DetectPeak' as an optional argument
 % 2019-01-09 Added 'FitResponse' as an optional argument
 % 2019-01-16 Added maxTau2ResponseLengthRatio to constrain the 2exp fit
+% 2019-12-20 Fixed bug in computing tvecsFalling
 % TODO: Compute maxSlope
 
 %% Hard-coded parameters
@@ -437,7 +438,7 @@ if nargout > 1
                             vectors, indRising, baseValueCell, ...
                             'UniformOutput', false);
     tvecsFalling = arrayfun(@(x, y) transpose((1:x) - 1) * y, ...
-                            nSamplesRising, siMs, 'UniformOutput', false);
+                            nSamplesFalling, siMs, 'UniformOutput', false);
     vvecsFalling = cellfun(@(x, y, z) x(y) - z, ...
                             vectors, indFalling, baseValueCell, ...
                             'UniformOutput', false);

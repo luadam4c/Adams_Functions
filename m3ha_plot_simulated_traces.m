@@ -45,7 +45,8 @@ function handles = m3ha_plot_simulated_traces (varargin)
 
 % File History:
 % 2019-10-14 Created by Adam Lu
-% 
+% TODO: PlotType
+%           validPlotTypes = {'individual', 'residual', 'overlapped'};
 
 %% Hard-coded parameters
 % Column numbers for simulated data

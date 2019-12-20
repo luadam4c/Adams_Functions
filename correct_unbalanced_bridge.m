@@ -11,7 +11,6 @@ function vvecNew = correct_unbalanced_bridge (vvecOld, ivecOld, varargin)
 %                   default == true
 %
 % Requires:
-%       cd/find_pulse_endpoints.m
 %       cd/compute_initial_slopes.m
 %
 % Used by:

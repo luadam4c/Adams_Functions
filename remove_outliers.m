@@ -30,7 +30,7 @@ function [newData, rowsToKeep] = remove_outliers (oldData, varargin)
 %                                       more than 3 standard deviations away
 %                       'twoStds'   - Take out data points 
 %                                       more than 2 standard deviations away
-%                   default == 'isoutlier'
+%                   default == 'boxplot'
 %                   - 'ReplaceWithNans': whether to replace with NaNs
 %                                           instead of removal
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -62,7 +62,7 @@ validOutlierMethods = {'boxplot', 'isoutlier', ...
 
 %% Default values for optional arguments
 wl2iqrDefault = 1.5;                % same as the Matlab function boxplot()
-outlierMethodDefault = 'boxplot';   % use built-in isoutlier function
+outlierMethodDefault = 'boxplot';   % use built-in boxplot function
 replaceWithNansDefault = false;     % remove by default
 plotFlagDefault = false;            % don't plot box plots by default
 
