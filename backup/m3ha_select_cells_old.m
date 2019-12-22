@@ -5,9 +5,6 @@ function [cellIdsSelected, cellInfo, swpInfo] = m3ha_select_cells (varargin)
 %   Finds all cell IDs and cell names (from 'CellInfo') for the rows 
 %       restricted by 'ToUse' in 'SwpInfo'
 %
-% Examples: 
-%       TODO
-%
 % Outputs:
 %       TODO
 %
@@ -38,7 +35,7 @@ function [cellIdsSelected, cellInfo, swpInfo] = m3ha_select_cells (varargin)
 %                       cellName - cell names
 %                   default == detected from swpInfo
 %                   - 'RowsToUse' - row indices or row names in swpInfo 
-%                                       to be used
+%                                       of sweeps to fit
 %                   must be a positive integer vector, a string array 
 %                       or a cell array of character vectors
 %                   default == []
@@ -121,14 +118,35 @@ if isempty(swpInfo)
 end
 
 % Generate a table of cell names from swpInfo if not provided
+%   TODO? and sweep indices organized by pharm-gIncr-vHold-sweepNumber
 if isempty(cellInfo)
     cellInfo = m3ha_create_cell_info_table('SwpInfo', swpInfo);
 end
 
 %% Select cell IDs to fit
 % Update swpInfo so that there is a toUse column
-swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'RowsToUse', rowsToUse, ...
-                                'DataMode', dataMode, 'CasesDir', casesDir);
+%   using m3ha_select_sweeps if rowsToUse not provided
+if ~isempty(rowsToUse)
+    if ismember(toUseStr, swpInfo.Properties.VariableNames)
+        % Print message
+        fprintf('Warning: toUse column already exists in swpInfo.\n');
+        fprintf('RowsToUse will be ignored!\n');
+    else
+        % Initialize all rows to not be fitted
+        toUse = false(nRows, 1);
+
+        % Add this to swpInfo
+        swpInfo = addvars(swpInfo, toUse);
+
+        % If rowsToUse is not empty, turn toUse on for those to fit
+        swpInfo{rowsToUse, toUseStr} = true;
+    end
+else
+    % Select the sweep indices that will be fitted
+    %   Remove gIncr == 15%, 50%, 800% and problematic traces
+    swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'DataMode', dataMode, ...
+                                    'CasesDir', casesDir);
+end
 
 % Organize sweep indices by g incr, pharm conditions for each cell
 sweepIndicesByCondition = m3ha_organize_sweep_indices('SwpInfo', swpInfo);
@@ -163,6 +181,118 @@ print_cellstr(cellNamesSelected, 'Delimiter', '\n', ...
 
 %{
 OLD CODE:
+
+for k = 1:nCellsToUse
+    fprintf('%s\n', cellNamesSelected{k});
+end
+fprintf('\n');
+
+% If no indices found, don't use this cell
+if isempty(swpIndThisCell{iGIncr, iPCond})
+    toUse = false;
+    break;
+end
+
+% Count the total number of cells to fit
+nCellsToUse = ctSelected;
+
+% Initialize a variable to count selected cells
+ctSelected = 0;
+
+% Loop through all possible cells
+for iCell = 1:nCells   
+    % First assume the cell will be used
+    toUse = true;
+    
+    % Look for all traces that can be fitted for this cell
+    swpIndThisCell = cell(nGIncr, nPCond);
+    for iPCond = 1:nPCond       % for each pharmacological condition
+        for iGIncr = 1:nGIncr   % for each g incr in 100%, 200%, 400%
+            % Get the indices for all traces of this g incr x pharm condition
+            indGincrPcond = swpIdxSCPGV(:, iCell, iPCond, iGIncr + 2, :);
+
+            % Find indices of traces for this pharm-g incr pair
+            swpIndThisCell{iGIncr, iPCond} = ...
+                intersect(indGincrPcond, rowsToUse, 'sorted');
+        end
+    end
+
+    % If any pharm-g incr pair has no trace found, don't use this cell
+    if any(any(isemptycell(swpIndThisCell)))
+        toUse = false;
+    end
+
+    % If the cell is still to be used
+    if toUse
+        % Update cell count
+        ctSelected = ctSelected + 1;
+
+        % Store cell ID #
+        cellIdsSelected(ctSelected) = iCell;             
+
+        % Store cell name
+        %   Note: This takes the first 7 characters of the first sweep's name
+        %           e.g., A100810
+        cellNamesSelected{ctSelected} = fileNames{swpIndThisCell{1, 1}(1)}(1:7);
+
+        % Store sweep indices for all pharm-g incr pairs of this cell
+        sweepIndicesByCondition{ctSelected} = swpIndThisCell; 
+    end
+end
+
+nSelected = ctSelected;
+
+@(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'vector'}));
+
+if ~isempty(rowsToUse)
+    % Extract just the cell IDs for the sweeps to fit
+    cellIdAllRows = swpInfoToUse{rowsToUse, cellidrowStr};
+
+    % Get the sorted unique cell IDs
+    cellIdsSelected = sort(unique(cellIdAllRows));
+else
+    % Select all cells by default
+    cellIdsSelected = transpose(1:nCells);
+end
+
+% Count the number of gIncr conditions to fit
+nGrowToUse = length(growToUse);
+
+% Count the number of pharm conditions to fit
+nProwToUse = length(prowToUse);
+
+% Possible conductance amplitude scaling percentages for fitting
+growToUse = [100; 200; 400]; 
+
+% Possible pharm conditions for fitting
+%   1 - Control
+%   2 - GAT1 Block
+%   3 - GAT3 Block
+%   4 - Dual Block
+prowToUse = [1; 2; 3; 4];
+
+% Restrict table to rows to fit
+if ~isempty(rowsToUse)
+    swpInfoToUse = swpInfo{rowsToUse, :};
+else
+    swpInfoToUse = swpInfo;
+end
+
+% Count the number of cells
+nCells = height(cellInfo);
+
+
+[cellIdsSelected, cellNamesSelected] = m3ha_select_cells (varargin)
+
+% Compute the number of rows
+nRows = height(swpInfo);
+
+% Generate a logical vector
+toUse = false(nRows, 1);
+toUse(rowsToUse) = true;
+
+% Add the logical vector as a column to the table
+swpInfo = addvars(swpInfo, toUse);
 
 %}
 

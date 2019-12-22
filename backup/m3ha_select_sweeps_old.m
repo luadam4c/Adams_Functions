@@ -26,11 +26,6 @@ function [swpInfo, fileBasesToUse] = m3ha_select_sweeps (varargin)
 %                       grow        - conductance amplitude scaling
 %                       toUse       - whether the sweep is to be used (optional)
 %                   default == m3ha_load_sweep_info
-%                   - 'RowsToUse' - row indices or row names in swpInfo 
-%                                       of sweeps to fit
-%                   must be a positive integer vector, a string array 
-%                       or a cell array of character vectors
-%                   default == []
 %                   - 'DataMode': data mode
 %                   must be a one of:
 %                       0 - all data
@@ -85,7 +80,6 @@ function [swpInfo, fileBasesToUse] = m3ha_select_sweeps (varargin)
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_select_cells.m
-%       cd/m3ha_select_raw_traces.m
 
 % TODO:
 %       /media/adamX/m3ha/data_dclamp/dclampPassiveFitter.m
@@ -100,9 +94,7 @@ function [swpInfo, fileBasesToUse] = m3ha_select_sweeps (varargin)
 % 2019-11-27 Added 'PharmConditions', 'GIncrConditions', 'VHoldConditions', ...
 %               & 'CellIds' & 'RepNums' as optional arguments
 % 2019-12-18 Added dataMode == 3
-% 2019-12-18 Added 'CellNames' as an optional argument
-% 2019-12-21 Added 'RowsToUse' as an optional argument
-% 2019-12-21 Changed default dataMode to 0
+% 2019-12-18 Added 'CellNames'  as an optional argument
 
 %% Hard-coded parameters
 pharmStr = 'prow';
@@ -112,14 +104,12 @@ cellIdStr = 'cellidrow';
 repNumStr = 'swpnrow';
 toUseStr = 'toUse';
 attributesToMatch = {cellIdStr, pharmStr, gIncrStr};
-defaultCasesDir = '~/m3ha/data_dclamp/take4/special_cases';
 
 %% Default values for optional arguments
 verboseDefault = true;             % print to standard output by default
 swpInfoDefault = [];
-rowsToUseDefault = [];
-dataModeDefault = 0;
-casesDirDefault = '';               % set later
+dataModeDefault = 2;
+casesDirDefault = '~/m3ha/data_dclamp/take4/special_cases';
 pharmConditionsDefault = [];
 gIncrConditionsDefault = [];
 vHoldConditionsDefault = [];
@@ -139,10 +129,6 @@ addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SwpInfo', swpInfoDefault, ...
     @(x) validateattributes(x, {'table'}, {'2d'}));
-addParameter(iP, 'RowsToUse', rowsToUseDefault, ...
-    @(x) assert(ispositiveintegervector(x) || iscellstr(x) || isstring(x), ...
-                ['strs5 must be either a positive integer vector, ', ...
-                    'a string array or a cell array of character arrays!']));
 addParameter(iP, 'DataMode', dataModeDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'integer'}));
 addParameter(iP, 'CasesDir', casesDirDefault, ...
@@ -166,7 +152,6 @@ addParameter(iP, 'RepNums', repNumsDefault, ...
 parse(iP, varargin{:});
 verbose = iP.Results.Verbose;
 swpInfo = iP.Results.SwpInfo;
-rowsToUse = iP.Results.RowsToUse;
 dataMode = iP.Results.DataMode;
 casesDir = iP.Results.CasesDir;
 pharmConditions = iP.Results.PharmConditions;
@@ -185,47 +170,21 @@ end
 % Extract the conductance amplitude scaling percentages
 gIncrRow = swpInfo.(gIncrStr);
 
+% Initialize toUse
+if is_var_in_table(toUseStr, swpInfo)
+    toUse = swpInfo.(toUseStr);
+else
+    toUse = true(height(swpInfo), 1);
+end
+
 % Extract all the file bases
 fileBases = swpInfo.Properties.RowNames;
-
-% Set default special cases directory
-if isempty(casesDir)
-    casesDir = defaultCasesDir;
-end
 
 %% Do the job
 % Print message
 if verbose
     fprintf('Selecting the sweeps to use ... \n');
 end
-
-% Make sure a toUse column exists in the table
-if ~is_var_in_table(toUseStr, swpInfo)
-    % Record whether toUse column exists before
-    toUseExistsBefore = false;
-
-    % Initialize all sweeps to be used
-    toUse = true(height(swpInfo), 1);
-
-    % Place in swpInfo
-    swpInfo = addvars(swpInfo, toUse);
-else
-    toUseExistsBefore = true;
-end
-
-% Replace with user's choice of rows to use
-if ~isempty(rowsToUse)
-    if toUseExistsBefore
-        % Print message
-        fprintf('Warning: toUse column already exists in swpInfo.\n');
-        fprintf('RowsToUse will replace it!\n');
-    end
-    swpInfo{rowsToUse, toUseStr} = true;
-    swpInfo{~rowsToUse, toUseStr} = false;
-end
-
-% Read the initial state of the toUse column
-toUse = swpInfo.(toUseStr);
 
 % Determine whether each sweep has
 %   conductance amplitudes with 100%, 200% or 400% scaling 
@@ -279,8 +238,12 @@ if ~isempty(cellNames)
 end
 
 %% Output results
-% Update the toUse column
-swpInfo.(toUseStr) = toUse;
+% Place in swpInfo
+if is_var_in_table(toUseStr, swpInfo)
+    swpInfo.(toUseStr) = toUse;
+else
+    swpInfo = addvars(swpInfo, toUse);
+end
 
 % Find the file bases to fit
 fileBasesToUse = fileBases(toUse);
@@ -303,10 +266,6 @@ end
 
 %{
 OLD CODE:
-
-% Print message
-fprintf('Warning: toUse column already exists in swpInfo.\n');
-fprintf('RowsToUse will be ignored!\n');
 
 %}
 

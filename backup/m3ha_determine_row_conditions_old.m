@@ -1,8 +1,8 @@
-function rowConditions = ...
-                m3ha_determine_row_conditions (rowMode, pharmToUse, gIncrToUse)
+function rowConditions = m3ha_determine_row_conditions (rowMode, colMode, ...
+                                        attemptNumber, gIncrToUse, pharmToUse)
 %% Determine the conditions for each row
-% Usage: rowConditions = ...
-%               m3ha_determine_row_conditions (rowMode, pharmToUse, gIncrToUse)
+% Usage: rowConditions = m3ha_determine_row_conditions (rowMode, colMode, ...
+%                                       attemptNumber, gIncrToUse, pharmToUse)
 % 
 % Explanation: 
 %       TODO
@@ -24,22 +24,22 @@ function rowConditions = ...
 % 2017-05-22 Changed line width and indentation
 % 2018-11-15 Moved to Adams_Functions
 % 2018-11-15 Improved documentation
-% 2019-12-21 No longer depends on colMode and attemptNumber
-% TODO: Make this depend only on nPCond and nGIncr?
 
 %% Hard-coded parameters
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Preparation
-% Count the number of possible pharm conditions 
-nPCond = length(pharmToUse);
-
 % Count the number of possible conductance amplitude scaling percentages
 nGIncr = length(gIncrToUse);
 
+% Count the number of possible pharm conditions 
+nPCond = length(pharmToUse);
+
 %% Do the job
-if rowMode == 1
+if rowMode == 1 || ...
+    (colMode == 1 && attemptNumber <= 2) || ...
+    (colMode == 2 && attemptNumber <= 3)
     % Each row is one pharm condition
     rowConditions = pharmToUse;
 elseif rowMode == 2
@@ -63,6 +63,21 @@ end
 
 %{
 OLD CODE:
+
+global outparams
+rowMode = 1;
+
+    nRows = nPCond;
+
+% The following must be consistent with dclampDataExtractor.m
+gIncrToUse = [100; 200; 400]; % possible conductance amplitude scaling percentages
+pharmToUse = [1; 2; 3; 4];    % possible pharm conditions 
+                            %   1 - Control
+                            %   2 - GAT1 Block
+                            %   3 - GAT3 Block
+                            %   4 - Dual Block
+
+%       cd/singleneuronfitting42.m and later versions
 
 %}
 

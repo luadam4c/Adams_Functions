@@ -22,6 +22,7 @@ function isText = istext (x, varargin)
 %       cd/ismatch.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_neuron_create_initial_params.m
+%       cd/m3ha_select_raw_traces.m
 
 % File History:
 % 2019-01-11 Created by Adam Lu

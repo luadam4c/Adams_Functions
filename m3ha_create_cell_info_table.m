@@ -3,8 +3,10 @@ function cellInfo = m3ha_create_cell_info_table (varargin)
 % Usage: cellInfo = m3ha_create_cell_info_table (varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       cellInfo    - a table of cell info
 %                   specified as a 2D table with row indices being cell IDs 
@@ -32,7 +34,9 @@ function cellInfo = m3ha_create_cell_info_table (varargin)
 %       cd/m3ha_load_sweep_info.m
 %
 % Used by:
+%       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_select_cells.m
+%       cd/m3ha_select_raw_traces.m
 %       cd/m3ha_plot_figure02.m
 
 % File History:
@@ -40,6 +44,7 @@ function cellInfo = m3ha_create_cell_info_table (varargin)
 % 2019-11-25 Added cellId as a variable
 % 2019-11-25 Made cell names row names
 % TODO: Organize sweep indices by pharm, g incr, vHold, sweep # for each cell
+%       Note: can use m3ha_select_sweeps.m
 % 
 
 %% Hard-coded parameters

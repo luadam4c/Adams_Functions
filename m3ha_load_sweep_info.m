@@ -1,15 +1,20 @@
-function swpInfo = m3ha_load_sweep_info (varargin)
+function [swpInfo, varargout] = m3ha_load_sweep_info (varargin)
 %% Loads sweep info (default is m3ha_locate_homedir/data_dclamp/take4/dclampdatalog_take4.csv)
-% Usage: swpInfo = m3ha_load_sweep_info (varargin)
+% Usage: [swpInfo, cellInfo] = m3ha_load_sweep_info (varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       TODO
+%       swpInfo = m3ha_load_sweep_info;
+%       [swpInfo, cellInfo] = m3ha_load_sweep_info;
 %
 % Outputs:
 %       swpInfo     - a table containing sweep information
 %                   specified as a table
+%       cellInfo    - a table of cell info
+%                   specified as a 2D table with fields specified in
+%                       m3ha_create_cell_info_table.m
+%
 % Arguments:
 %       varargin    - 'Directory': home directory containing sweep info
 %                   must be a string scalar or a character vector
@@ -30,6 +35,7 @@ function swpInfo = m3ha_load_sweep_info (varargin)
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_select_cells.m
+%       cd/m3ha_select_raw_traces.m
 %       cd/m3ha_select_sweeps.m
 
 % File History:
@@ -100,6 +106,15 @@ fileBases = extractBefore(fileNames, '.');
 
 % Set the file bases as row names
 swpInfo.Properties.RowNames = fileBases;
+
+%% Create cell info table if requested
+if nargout >= 2
+    % Create cell info table
+    cellInfo = m3ha_create_cell_info_table('SwpInfo', swpInfo);
+
+    % Output
+    varargout{1} = cellInfo;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
