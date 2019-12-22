@@ -19,7 +19,9 @@
 parentDir = fullfile('/media', 'katieX', 'Glucose_Paper', 'Data', 'Oscillations');
 archiveDir = parentDir;
 % dirsToAnalyze = {fullfile('Adrug', 'clean')};
-dirsToAnalyze = {fullfile('10mM_metformin', 'clean')};
+% dirsToAnalyze = {fullfile('10mM_metformin', 'clean')};
+dirsToAnalyze = {fullfile('2-DG', 'slices_population')};
+
 specificSlicesToAnalyze = {};
 % specificSlicesToAnalyze = {'20190819_slice1'};
 

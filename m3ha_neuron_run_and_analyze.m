@@ -6,6 +6,9 @@ function [errorStruct, hFig, simData] = ...
 % Explanation:
 %       TODO
 % 
+% Examples:
+%       [err, hFig, simData] = m3ha_neuron_run_and_analyze('20191218T1135_D101310_aft_params');
+% 
 % Outputs: 
 %       TODO
 %       simData     - simulated data
@@ -40,6 +43,18 @@ function [errorStruct, hFig, simData] = ...
 %                       'passive' - simulate a current pulse response
 %                       'active'  - simulate an IPSC response
 %                   default == 'active'
+%                   - 'ColumnMode': column mode
+%                   must be recognized by m3ha_select_raw_traces.m
+%                   default == set in m3ha_select_raw_traces.m
+%                   - 'RowMode': row mode
+%                   must be recognized by m3ha_select_raw_traces.m
+%                   default == set in m3ha_select_raw_traces.m
+%                   - 'AttemptNumber': attempt number
+%                   must be recognized by m3ha_select_raw_traces.m
+%                   default == set in m3ha_select_raw_traces.m
+%                   - 'DataMode': data mode
+%                   must be recognized by m3ha_select_raw_traces.m
+%                   default == set in m3ha_select_raw_traces.m
 %                   - 'NSweeps': number of sweeps
 %                   must be a positive integer scalar
 %                   default == numel(realData) or 1
@@ -92,8 +107,9 @@ function [errorStruct, hFig, simData] = ...
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %                   - 'SaveStdOutFlag': whether to save standard outputs
+%                                           when there are no errors
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == false
 %                   - 'SaveSimOutFlag': whether to save simulation outputs
 %                                           when there are no errors
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -104,34 +120,37 @@ function [errorStruct, hFig, simData] = ...
 %                   - 'SaveLtsStatsFlag': whether to save LTS statistics
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
+%                   - 'PlotAllFlag': whether to plot all types of plots
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'PlotIndividualFlag': whether to plot individual traces
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == false
 %                   - 'PlotResidualsFlag': whether to plot residuals
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == false
 %                   - 'PlotOverlappedFlag': whether to plot overlapped traces
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == false
 %                   - 'PlotConductanceFlag': whether to plot conductance traces
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == false
 %                   - 'PlotCurrentFlag': whether to plot current traces
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == false
 %                   - 'PlotIpeakFlag': whether to current peak analyses
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == false
 %                   - 'PlotLtsFlag': whether to plot vtrace/LTS/burst analyses
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == false
 %                   - 'PlotStatisticsFlag': whether to plot LTS statistics
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == false
 %                   - 'PlotSwpWeightsFlag': whether to show a green 'ON' 
-%                                       for sweeps in use
+%                                               for sweeps in use
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
+%                   default == set in m3ha_plot_individual_traces.m
 %                   - 'PlotMarkFlag': whether to plot the way Mark 
 %                                       wants plots to look
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -220,6 +239,10 @@ function [errorStruct, hFig, simData] = ...
 %                                               for current pulse response
 %                   must be a numeric vector
 %                   default == 0 nA
+%                   - 'RowConditions': row conditions for plotting
+%                       Note: each row is assigned a different color
+%                   must be a numeric 2D array
+%                   default == RowConditionsIpscr or RowConditionsCpr
 %                   - 'RowConditionsIpscr': row conditions for plotting
 %                                               IPSC response
 %                       Note: each row is assigned a different color
@@ -306,6 +329,7 @@ function [errorStruct, hFig, simData] = ...
 %       cd/m3ha_neuron_create_simulation_params.m
 %       cd/m3ha_neuron_create_TC_commands.m
 %       cd/m3ha_plot_individual_traces.m
+%       cd/m3ha_select_raw_traces.m
 %       cd/parse_ipsc.m
 %       cd/parse_lts.m
 %       cd/parse_pulse_response.m
@@ -434,6 +458,8 @@ function [errorStruct, hFig, simData] = ...
 % 2019-12-18 - Added 'Match2FeatureErrorRatio' as an optional parameter
 % 2019-12-19 - Now distinguishes buildMode from simMode
 % 2019-12-19 - Removed y axis link for current pulse response plots
+% 2019-12-21 - Added 'PlotAllFlag' as an optional argument and change
+%                   default to not plot anything
 
 %% Hard-coded parameters
 validBuildModes = {'active', 'passive'};
@@ -511,6 +537,10 @@ INAPH_COL_SIM = 25;
 hFigDefault = '';               % no prior hFig structure by default
 buildModeDefault = 'active';    % insert active channels by default
 simModeDefault = 'active';      % simulate active responses by default
+columnModeDefault = [];         % set in m3ha_select_raw_traces.m
+rowModeDefault = [];            % set in m3ha_select_raw_traces.m
+attemptNumberDefault = [];      % set in m3ha_select_raw_traces.m
+dataModeDefault = [];           % set in m3ha_select_raw_traces.m
 nSweepsDefault = [];            % set later
 fileNamesDefault = {};          % none provided by default
 fileBasesDefault = {};          % set later
@@ -529,18 +559,19 @@ bootstrapCprFlagDefault = false;% don't bootstrap-average current pulse
 normalize2InitErrFlagDefault = false;
 saveParamsFlagDefault = true;   % save simulation parameters by default
 saveSimCmdsFlagDefault = true;  % save simulation commands by default
-saveStdOutFlagDefault = true;   % save standard outputs by default
+saveStdOutFlagDefault = false;  % save standard outputs only if error by default
 saveSimOutFlagDefault = true;   % save simulation outputs by default
 saveLtsInfoFlagDefault = true;  % save LTS info by default
 saveLtsStatsFlagDefault = true; % save LTS statistics by default
-plotIndividualFlagDefault = true;   % all zoomed traces plotted by default
-plotResidualsFlagDefault = true;    % all residuals plotted by default
-plotOverlappedFlagDefault = true;   % all overlapped traces plotted by default
-plotConductanceFlagDefault = true;  % all conductance traces plotted by default
-plotCurrentFlagDefault = true;      % all current traces plotted by default
-plotIpeakFlagDefault = true;        % current peak analyses plotted by default
-plotLtsFlagDefault = true;          % LTS/burst analyses plotted by default
-plotStatisticsFlagDefault = true;   % LTS & burst statistics plotted by default
+plotAllFlagDefault = false;         % plot nothing by default
+plotIndividualFlagDefault = [];     % set later
+plotResidualsFlagDefault = [];      % set later
+plotOverlappedFlagDefault = [];     % set later
+plotConductanceFlagDefault = [];    % set later
+plotCurrentFlagDefault = [];        % set later
+plotIpeakFlagDefault = [];          % set later
+plotLtsFlagDefault = [];            % set later
+plotStatisticsFlagDefault = [];     % set later
 plotSwpWeightsFlagDefault = 'auto'; % set in m3ha_plot_inidividual_traces.m
 plotMarkFlagDefault = true;         % the way Mark wants plots to look
 showSweepsFlagDefault = true;       % whether to show sweep figures
@@ -567,6 +598,7 @@ holdCurrentIpscrDefault = 0;    % (nA)
 holdCurrentCprDefault = 0;      % (nA)
 holdCurrentNoiseIpscrDefault = 0;% (nA)
 holdCurrentNoiseCprDefault = 0; % (nA)
+rowConditionsDefault = []; % set later
 rowConditionsIpscrDefault = []; % set later
 rowConditionsCprDefault = [];   % set later
 fitWindowCprDefault = fitWinCprOrig + timeToStabilize;
@@ -606,6 +638,14 @@ addParameter(iP, 'BuildMode', buildModeDefault, ...
     @(x) any(validatestring(x, validBuildModes)));
 addParameter(iP, 'SimMode', simModeDefault, ...
     @(x) any(validatestring(x, validSimModes)));
+addParameter(iP, 'ColumnMode', columnModeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer'}));
+addParameter(iP, 'RowMode', rowModeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer'}));
+addParameter(iP, 'AttemptNumber', attemptNumberDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer'}));
+addParameter(iP, 'DataMode', dataModeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'integer'}));
 addParameter(iP, 'NSweeps', nSweepsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 addParameter(iP, 'FileNames', fileNamesDefault, ...
@@ -645,6 +685,8 @@ addParameter(iP, 'SaveSimOutFlag', saveSimOutFlagDefault, ...
 addParameter(iP, 'SaveLtsInfoFlag', saveLtsInfoFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SaveLtsStatsFlag', saveLtsStatsFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'PlotAllFlag', plotAllFlagDefault, ...   
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotIndividualFlag', plotIndividualFlagDefault, ...   
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -719,6 +761,8 @@ addParameter(iP, 'HoldCurrentNoiseIpscr', holdCurrentNoiseIpscrDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'HoldCurrentNoiseCpr', holdCurrentNoiseCprDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'RowConditions', rowConditionsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'RowConditionsIpscr', rowConditionsIpscrDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'RowConditionsCpr', rowConditionsCprDefault, ...
@@ -755,6 +799,10 @@ parse(iP, neuronParamsTableOrFile, varargin{:});
 hFig = iP.Results.HFig;
 buildMode = validatestring(iP.Results.BuildMode, validBuildModes);
 simMode = validatestring(iP.Results.SimMode, validSimModes);
+columnMode = iP.Results.ColumnMode;
+rowMode = iP.Results.RowMode;
+attemptNumber = iP.Results.AttemptNumber;
+dataMode = iP.Results.DataMode;
 nSweepsUser = iP.Results.NSweeps;
 fileNames = iP.Results.FileNames;
 fileBases = iP.Results.FileBases;
@@ -773,6 +821,7 @@ saveStdOutFlag = iP.Results.SaveStdOutFlag;
 saveSimOutFlag = iP.Results.SaveSimOutFlag;
 saveLtsInfoFlag = iP.Results.SaveLtsInfoFlag;
 saveLtsStatsFlag = iP.Results.SaveLtsStatsFlag;
+plotAllFlag = iP.Results.PlotAllFlag;
 plotIndividualFlag = iP.Results.PlotIndividualFlag;
 plotResidualsFlag = iP.Results.PlotResidualsFlag;
 plotOverlappedFlag = iP.Results.PlotOverlappedFlag;
@@ -807,6 +856,7 @@ holdCurrentIpscr = iP.Results.HoldCurrentIpscr;
 holdCurrentCpr = iP.Results.HoldCurrentCpr;
 holdCurrentNoiseIpscr = iP.Results.HoldCurrentNoiseIpscr;
 holdCurrentNoiseCpr = iP.Results.HoldCurrentNoiseCpr;
+rowConditions = iP.Results.RowConditions;
 rowConditionsIpscr = iP.Results.RowConditionsIpscr;
 rowConditionsCpr = iP.Results.RowConditionsCpr;
 fitWindowCpr = iP.Results.FitWindowCpr;
@@ -837,6 +887,12 @@ if istext(neuronParamsTableOrFile)
     % Look for a cell name
     cellName = m3ha_extract_cell_name(neuronParamsTableOrFile, ...
                                         'ForceSingleOutput', true);
+
+    % Use the common prefix as the prefix
+    if isempty(prefix)
+        paramFileBases = extract_fileparts(neuronParamsTableOrFile, 'base');
+        prefix = extract_common_prefix(paramFileBases);
+    end
 else
     % The first argument is(are) the parameter table(s)
     neuronParamsTable = neuronParamsTableOrFile;
@@ -847,12 +903,27 @@ end
 
 % Choose data files to compare against if cell name provided
 if isempty(fileNames) && ~isempty(cellName)
-    % TODO
-
+    % Select data files
+    [fileNames, rowConditions] = ...
+        m3ha_select_raw_traces(cellName, 'ColumnMode', columnMode, ...
+                        'RowMode', rowMode, 'AttemptNumber', attemptNumber, ...
+                        'DataMode', dataMode);
 elseif isempty(cellName)
     % Look for a cell name
     cellName = m3ha_extract_cell_name(fileNames, 'ForceSingleOutput', true);
 end
+
+% Update flags
+if verbose
+    fprintf('Setting default flags for %s ...\n', fileBase);
+end
+[plotIndividualFlag, plotResidualsFlag, plotOverlappedFlag, ...
+plotConductanceFlag, plotCurrentFlag, plotIpeakFlag, ...
+plotLtsFlag, plotStatisticsFlag] = ...
+    argfun(@(x) set_default_flag(x, plotAllFlag), ...
+                plotIndividualFlag, plotResidualsFlag, plotOverlappedFlag, ...
+                plotConductanceFlag, plotCurrentFlag, plotIpeakFlag, ...
+                plotLtsFlag, plotStatisticsFlag);
 
 % Decide on simulation-mode-dependent variables
 if strcmpi(simMode, 'passive')
@@ -891,7 +962,6 @@ if strcmpi(simMode, 'passive')
     holdPotential = holdPotentialCpr;
     holdCurrent = holdCurrentCpr;
     holdCurrentNoise = holdCurrentNoiseCpr;
-    rowConditions = rowConditionsCpr;
     fitWindow = fitWindowCpr;
     baseWindow = baseWindowCpr;
     baseNoise = baseNoiseCpr;
@@ -939,12 +1009,18 @@ elseif strcmpi(simMode, 'active')
     holdPotential = holdPotentialIpscr;
     holdCurrent = holdCurrentIpscr;
     holdCurrentNoise = holdCurrentNoiseIpscr;
-    rowConditions = rowConditionsIpscr;
     fitWindow = fitWindowIpscr;
     baseWindow = baseWindowIpscr;
     baseNoise = baseNoiseIpscr;
     sweepWeights = sweepWeightsIpscr;
     errorMode = 'Sweep&LTS';
+end
+
+% Decide on row conditions
+if strcmpi(simMode, 'passive')
+    rowConditions = rowConditionsCpr;
+elseif strcmpi(simMode, 'active')
+    rowConditions = rowConditionsIpscr;
 end
 
 % Decide whether to plot anything

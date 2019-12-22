@@ -75,7 +75,7 @@ function errors = compute_single_neuron_errors (vSim, vRec, varargin)
 %                   default == set in compute_default_sweep_info.m
 %                   - 'LtsFeatureWeights': LTS feature weights for averaging
 %                   must be empty or a numeric vector with length == nSweeps
-%                   default == set in compute_lts_errors.m
+%                   default == [1, 1, 1]
 %                   - 'MissedLtsError': a dimensionless error that penalizes 
 %                                       a misprediction of the existence of LTS
 %                   must be empty or a numeric vector with length == nSweeps
@@ -87,7 +87,7 @@ function errors = compute_single_neuron_errors (vSim, vRec, varargin)
 %                   - 'Match2FeatureErrorRatio': ratio of LTS match error to 
 %                                                   LTS feature error
 %                   must be empty or a numeric vector with length == nSweeps
-%                   default == set in compute_lts_errors.m
+%                   default == 1
 %                   - 'Lts2SweepErrorRatio': ratio of LTS error to sweep error
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == 3
@@ -175,7 +175,7 @@ function errors = compute_single_neuron_errors (vSim, vRec, varargin)
 % 2019-12-18 Added 'Match2FeatureErrorRatio' as an optional parameter
 % 2019-12-18 Added errorWeights in output
 % 2019-12-19 Fixed errorWeights when LTS is not present or all mismatched
-%
+% 2019-12-22 Now sets all default errorWeights
 % TODO:
 %   Implement saveLtsStatsFlag
 %   Implement plotStatisticsFlag
@@ -184,7 +184,11 @@ function errors = compute_single_neuron_errors (vSim, vRec, varargin)
 %% Hard-coded parameters
 validErrorModes = {'SweepOnly', 'Sweep&LTS'};
 
-% Consistent with singleneuronfittin71.m
+% Consistent with singleneuronfitting71.m
+defaultLtsFeatureWeights = [1; 1; 1];   % default weights for optimizing 
+                                        %   LTS statistics
+defaultMatch2FeatureErrorRatio = 1;     % default error ratio between
+                                        %   match error and avg feature error
 defaultLts2SweepErrorRatio = 3;         % default error ratio of LTS error 
                                         %   to sweep error
 
@@ -199,11 +203,11 @@ baseWindowDefault = [];         % set later
 fitWindowDefault = [];          % set later
 baseNoiseDefault = [];          % set later
 sweepWeightsDefault = [];       % set later
-ltsFeatureWeightsDefault = [];  % set in compute_lts_errors.m
+ltsFeatureWeightsDefault = [];  % set later
 missedLtsErrorDefault = [];     % set in compute_lts_errors.m
 falseLtsErrorDefault = [];      % set in compute_lts_errors.m
-match2FeatureErrorRatioDefault = []; % set in compute_lts_errors.m
-lts2SweepErrorRatioDefault = [];% set later
+match2FeatureErrorRatioDefault = [];    % set later
+lts2SweepErrorRatioDefault = [];        % set later
 normalizeErrorDefault = false;  % don't normalize errors by default
 initSwpErrorDefault = [];       % no initial sweep error values by default
 initLtsErrorDefault = [];       % no initial LTS error values by default
@@ -337,7 +341,17 @@ plotLtsFlag = iP.Results.PlotLtsFlag;
 plotStatisticsFlag = iP.Results.PlotStatisticsFlag;
 
 %% Preparation
-% Set default LTS to sweep error ratio
+% Decide on LTS feature weights
+if isempty(ltsFeatureWeights)
+    ltsFeatureWeights = defaultLtsFeatureWeights;
+end
+
+% Decide on LTS match to feature error ratio
+if isempty(match2FeatureErrorRatio)
+    match2FeatureErrorRatio = defaultMatch2FeatureErrorRatio;
+end
+
+% Decide on LTS to sweep error ratio
 if isempty(lts2SweepErrorRatio)
     lts2SweepErrorRatio = defaultLts2SweepErrorRatio;
 end

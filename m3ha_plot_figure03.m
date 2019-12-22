@@ -2,6 +2,8 @@
 %% Plots Figure 03 for the GAT Blocker paper
 %
 % Requires:
+%       cd/check_dir.m
+%       cd/extract_fileparts.m
 %       cd/find_matching_files.m
 %       cd/find_passive_params.m
 %       cd/m3ha_correct_unbalanced_bridge.m
@@ -14,8 +16,18 @@
 
 % File History:
 % 2019-12-18 Created by Adam Lu
+% 2019-12-20 Added plotCurveFit
+% 2019-12-21 Added simulateCpr and simulateIpscr
 
 %% Hard-coded parameters
+% Flags
+estimatePassiveParams = false; %true;
+plotCurveFit = false; %true;
+simulateCpr = true;
+plotCpr = false; %true;
+simulateIpscr = false; %true;
+plotIpscr = false; %true;
+
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
 figure02Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure02');
@@ -27,19 +39,35 @@ sweepInfoFile = 'dclampdatalog_take4.csv';
 initialSlopesFile = 'initial_slopes_nSamplesForPlot_2_threeStdMainComponent.mat';
 datalogPath = fullfile(figure02Dir, sweepInfoFile);
 initialSlopesPath = fullfile(figure03Dir, initialSlopesFile);
-
-% Flags
-estimatePassiveParams = false; %true;
-plotCurveFit = true;
+passiveLogSuffix = 'dclampPassiveLog';
+paramFileSuffix = 'params';
 
 % Analysis settings
 exampleCellNames = {'D101310', 'C101210'};
 
-% Data mode
-dataMode = 2;
-
-% Output files
-passiveLogSuffix = 'dclampPassiveLog';
+% Simulation settings
+dataModeCpr = 1;                    % data mode for current pulse response
+dataModeIpscr = 2;                  % data mode for IPSC response
+                                    %   0 - all data
+                                    %   1 - all of g incr = 100%, 200%, 400% 
+                                    %   2 - same g incr but exclude 
+                                    %       cell-pharm-g_incr sets 
+                                    %       containing problematic sweeps
+rowmodeCpr = 1;                     % row mode for current pulse response
+rowmodeIpscr = 1;                   % row mode for IPSC response
+                                    %   1 - each row is a pharm condition
+                                    %   2 - each row is a pharm, g incr pair
+attemptNumberCpr = 3;               % attempt number for current pulse response
+attemptNumberIpscr = 4;             % attempt number for IPSC response
+                                    %   1 - Use 4 traces @ 200% gIncr 
+                                    %           for this data mode
+                                    %   2 - Use all traces @ 200% gIncr 
+                                    %           for this data mode
+                                    %   3 - Use all traces for this data mode
+                                    %   4 - Use 1 trace for each pharm x gIncr 
+                                    %           pair for this data mode
+                                    %   5 - Use 4 traces @ 400% gIncr 
+                                    %       for this data mode
 
 % Plot settings
 somaColor = rgb('DarkGreen');
@@ -77,6 +105,7 @@ if plotCurveFit
                             'Suffix', passiveLogSuffix, 'Extension', 'mat');
 
 
+    % Plot curve fitting results
     cellfun(@(x, y) plot_curve_fit_results(x, y, figure03Dir, figTypes, ...
                             somaColor, dendriteColor, ...
                             curveFigWidth, curveFigHeight, ...
@@ -85,6 +114,44 @@ if plotCurveFit
                             geomXLimits, geomYLimits), ...
             exampleCellNames, passiveLogPaths);
 end
+
+%% Find NEURON parameter tables
+if simulateCpr || simulateIpscr
+    % Find NEURON parameter tables
+    [~, exampleParamPaths] = ...
+        find_matching_files(exampleCellNames, 'Directory', figure03Dir, ...
+                            'Suffix', paramFileSuffix, 'Extension', 'csv');
+
+    % Extract file bases
+    exampleParamFileBases = extract_fileparts(exampleParamPaths, 'base');
+
+    % Extract example labels
+    exampleLabels = extractBefore(exampleParamFileBases, ...
+                                    ['_', paramFileSuffix]);
+end
+
+%% Simulate current pulse responses
+if simulateCpr
+    cellfun(@(x, y) simulate_cpr(x, y, dataModeCpr, rowmodeCpr, ...
+                                attemptNumberCpr, figure03Dir), ...
+            exampleLabels, exampleParamPaths);
+end
+
+%% Plot current pulse responses
+if plotCpr
+end
+
+%% Simulate IPSC responses
+if simulateIpscr
+    cellfun(@(x, y) simulate_ipscr(x, y, dataModeIpscr, rowmodeIpscr, ...
+                                attemptNumberIpscr, figure03Dir), ...
+            exampleLabels, exampleParamPaths);
+end
+
+%% Plot IPSC responses
+if plotIpscr
+end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -265,6 +332,53 @@ update_figure_for_corel(figGeom, 'Units', 'centimeters', ...
 
 % Save the figure
 save_all_figtypes(figGeom, figPathBaseGeom, figTypes);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function simulate_cpr(label, neuronParamsFile, dataMode, ...
+                        rowmode, attemptNumber, parentDir)
+
+% Update the label
+label = [label, '_cpr'];
+
+% Create an output folder
+outFolder = fullfile(parentDir, label);
+check_dir(outFolder);
+
+% Simulate
+m3ha_neuron_run_and_analyze(neuronParamsFile, ...
+                        'OutFolder', outFolder, 'Prefix', label, ...
+                        'BuildMode', 'passive', 'SimMode', 'passive', ...
+                        'DataMode', dataMode, 'ColumnMode', 1, ...
+                        'Rowmode', rowmode, 'AttemptNumber', attemptNumber, ...
+                        'PlotAllFlag', false, 'PlotIndividualFlag', true, ...
+                        'SaveSimOutFlag', true);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function simulate_ipscr(label, neuronParamsFile, dataMode, ...
+                        rowmode, attemptNumber, parentDir)
+
+% Update the label
+label = [label, '_ipscr'];
+
+% Create an output folder and check for existence
+outFolder = fullfile(parentDir, label);
+check_dir(outFolder);
+
+% Simulate
+m3ha_neuron_run_and_analyze(neuronParamsFile, ...
+                        'OutFolder', outFolder, 'Prefix', label, ...
+                        'BuildMode', 'active', 'SimMode', 'active', ...
+                        'DataMode', dataMode, 'ColumnMode', 1, ...
+                        'Rowmode', rowmode, 'AttemptNumber', attemptNumber, ...
+                        'PlotAllFlag', false, 'PlotIndividualFlag', true, ...
+                        'SaveSimOutFlag', true);
+
 
 end
 

@@ -133,7 +133,7 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 
 %% Hard-coded parameters
 % Consistent with singleneuronfitting71.m
-defaultLtsFeatureWeights = [2; 2; 2];   % default weights for optimizing 
+defaultLtsFeatureWeights = [1; 1; 1];   % default weights for optimizing 
                                         %   LTS statistics
 defaultMissedLtsError = 2;              % how much error (dimensionless) to 
                                         %   penalize a sweep that mispredicted 

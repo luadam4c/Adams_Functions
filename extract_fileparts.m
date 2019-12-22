@@ -72,11 +72,13 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/decide_on_filebases.m
 %       cd/extract_common_directory.m
 %       cd/find_matching_files.m
+%       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_network_single_neuron.m
 %       cd/m3ha_plot_figure02.m
+%       cd/m3ha_plot_figure03.m
 %       cd/m3ha_select_sweeps.m
 %       cd/parse_atf_swd.m
 %       cd/parse_current_family.m

@@ -1,11 +1,12 @@
 function cellNames = m3ha_extract_cell_name (strs, varargin)
-%% Extracts the cell name from strings
+%% Extracts the cell name from strings but ignores anything before filesep
 % Usage: cellNames = m3ha_extract_cell_name (strs, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
 %       m3ha_extract_cell_name({'D101310_13', 'D101310_15'})
+%       m3ha_extract_cell_name({'ACB123456/D101310_13', 'ACB123456/D101310_15'})
 %       m3ha_extract_cell_name({'D101310_13', 'D101310_15'}, 'ForceSingleOutput', true)
 %
 % Outputs:
@@ -24,6 +25,7 @@ function cellNames = m3ha_extract_cell_name (strs, varargin)
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/extract_common_prefix.m
+%       cd/extract_fileparts.m
 %       cd/extract_substrings.m
 %
 % Used by:
@@ -74,6 +76,10 @@ forceSingleOutput = iP.Results.forceSingleOutput;
 % otherArguments = struct2arglist(iP.Unmatched);
 
 %% Do the job
+% Ignore anything before filesep
+strs = extract_fileparts(strs, 'pathbase');
+strs = extract_fileparts(strs, 'dirbase');
+
 % Extract the cell names
 cellNames = extract_substrings(strs, 'RegExp', cellNamePattern);
 

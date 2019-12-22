@@ -18,18 +18,18 @@ function [fileNames, rowConditions, figurePositions] = ...
 %                   must be a character vector or a string scalar
 %                       or a numeric scalar
 %       varargin    - 'ColumnMode': column mode
-%                   must be a one of:
+%                   must be empty or one of:
 %                       1 - across trials
 %                       2 - across cells TODO
 %                   default == 1
 %                   - 'RowMode': row mode
-%                   must be a one of:
+%                   must be empty or one of:
 %                       1 - each row is a pharm condition
 %                       2 - each row is a pharm, g incr pair
 %                   default == 1 if columnMode == 1
 %                              2 if columnMode == 2
 %                   - 'AttemptNumber': attempt number
-%                   must be a one of:
+%                   must be empty or one of:
 %                       FOR columnMode == 1
 %                           1 - Use 4 traces @ 200% gIncr for this data mode
 %                           2 - Use all traces @ 200% gIncr for this data mode
@@ -51,7 +51,7 @@ function [fileNames, rowConditions, figurePositions] = ...
 %                   default == 4 if columnMode == 1
 %                              5 if columnMode == 2
 %                   - 'DataMode': data mode
-%                   must be a one of:
+%                   must be empty or one of:
 %                       0 - all data
 %                       1 - all of g incr = 100%, 200%, 400%
 %                       2 - all of g incr = 100%, 200%, 400% 
@@ -93,6 +93,7 @@ function [fileNames, rowConditions, figurePositions] = ...
 %       cd/m3ha_select_sweeps.m
 %
 % Used by:
+%       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_rank_neurons.m
 %       cd/singleneuronfitting42.m and later versions
 
@@ -119,10 +120,10 @@ toUseStr = 'toUse';
 cellNameStr = 'cellName';
 
 %% Default values for optional arguments
-columnModeDefault = 1;
+columnModeDefault = [];
 rowModeDefault = [];
 attemptNumberDefault = [];
-dataModeDefault = 2;
+dataModeDefault = [];
 swpInfoDefault = table.empty;
 cellInfoDefault = table.empty;
 rowsToUseDefault = [];
@@ -146,13 +147,13 @@ addRequired(iP, 'cellNameOrId', ...
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ColumnMode', columnModeDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'RowMode', rowModeDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'AttemptNumber', attemptNumberDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'DataMode', dataModeDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'integer'}));
+    @(x) validateattributes(x, {'numeric'}, {'2d'}));
 addParameter(iP, 'SwpInfo', swpInfoDefault, ...
     @(x) validateattributes(x, {'table'}, {'2d'}));
 addParameter(iP, 'CellInfo', cellInfoDefault, ...
@@ -182,7 +183,7 @@ if isempty(swpInfo)
     swpInfo = m3ha_load_sweep_info;
 end
 
-]% Update swpInfo so that there is a toUse column
+% Update swpInfo so that there is a toUse column
 swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'RowsToUse', rowsToUse, ...
                                 'DataMode', dataMode, 'CasesDir', casesDir);
 
@@ -222,6 +223,11 @@ nGCondToUse = length(gCondToUse);
 % Count the number of distinct pharmacological conditions 
 nPCondToUse = length(pCondToUse);
 
+% Set default column mode
+if isempty(columnMode)
+    columnMode = 1;
+end
+
 % Set default row mode
 if isempty(rowMode)
     if columnMode == 1
@@ -238,6 +244,11 @@ if isempty(attemptNumber)
     else
         attemptNumber = 5;
     end
+end
+
+% Set default data mode
+if isempty(dataMode)
+    dataMode = 2;
 end
 
 %% Determine row conditions

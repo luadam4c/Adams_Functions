@@ -75,7 +75,6 @@ function [cellIdsSelected, cellInfo, swpInfo] = m3ha_select_cells (varargin)
 
 %% Hard-coded parameters
 cellNameStr = 'cellName';
-toUseStr = 'toUse';
 
 %% Default values for optional arguments
 dataModeDefault = 2;
