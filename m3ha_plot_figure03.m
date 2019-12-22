@@ -23,7 +23,7 @@
 % Flags
 estimatePassiveParams = false; %true;
 plotCurveFit = false; %true;
-simulateCpr = false; %true;
+simulateCpr = true;
 plotCpr = false; %true;
 simulateIpscr = true;
 plotIpscr = false; %true;

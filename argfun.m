@@ -41,6 +41,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/construct_fullpath.m
 %       cd/copy_into.m
 %       cd/create_average_time_vector.m
+%       cd/create_labels_from_numbers.m
 %       cd/create_looped_params.m
 %       cd/create_pleth_EEG_movies.m
 %       cd/create_indices.m

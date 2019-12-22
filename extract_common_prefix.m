@@ -51,6 +51,7 @@ function prefix = extract_common_prefix (strs, varargin)
 %       cd/m3ha_extract_iteration_string.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_current_family.m
 %       cd/parse_ipsc.m
 %       cd/parse_lts.m

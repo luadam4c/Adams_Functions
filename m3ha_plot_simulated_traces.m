@@ -22,6 +22,9 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %                   - 'Directory': the directory to search in
 %                   must be a string scalar or a character vector
 %                   default == set in all_files.m
+%                   - 'ExpStr': experiment string file names
+%                   must be a character array
+%                   default == extract_common_prefix(fileNames)
 %                   - 'FileNames': paths to simulated data
 %                   must be a string array or a cell array of character vectors
 %                   default == detected from Directory
@@ -43,8 +46,10 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/construct_fullpath.m
 %       cd/decide_on_colormap.m
 %       cd/extract_columns.m
+%       cd/extract_common_prefix.m
 %       cd/load_neuron_outputs.m
 %       cd/plot_traces.m
+%       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
 %
 % Used by:
@@ -52,12 +57,196 @@ function handles = m3ha_plot_simulated_traces (varargin)
 
 % File History:
 % 2019-10-14 Created by Adam Lu
-% TODO: PlotType
-%           validPlotTypes = {'individual', 'residual', 'overlapped'};
+% 2019-12-22 Added 'PlotType' as an optional argument
 
 %% Hard-coded parameters
 validPlotTypes = {'individual', 'residual', 'overlapped'};
+maxRowsWithOneOnly = 8;
+%TODO
+lineWidthParallel = 1;
 
+%% Default values for optional arguments
+plotTypeDefault = 'individual';
+directoryDefault = '';          % set in all_files.m
+fileNamesDefault = {};
+extensionDefault = 'out';       % 
+% xLimitsDefault = [];            % set later
+xLimitsDefault = [2800, 4500];
+outFolderDefault = '';          % set later
+expStrDefault = '';             % set later
+tVecsDefault = [];
+vVecsRecDefault = [];
+%TODO
+colorMap = [];
+buildMode = 'active';
+residuals = [];
+figTypes = {'png', 'epsc2'};
+lineWidth = 1;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Deal with arguments
+% Set up Input Parser Scheme
+iP = inputParser;
+iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
+
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'PlotType', plotTypeDefault, ...
+    @(x) any(validatestring(x, validPlotTypes)));
+addParameter(iP, 'Directory', directoryDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FileNames', fileNamesDefault, ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['fileNames must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
+addParameter(iP, 'Extension', extensionDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'XLimits', xLimitsDefault, ...
+    @(x) isempty(x) || iscell(x) || ischar(x) && strcmpi(x, 'suppress') || ...
+        isnumeric(x) && isvector(x) && length(x) == 2);
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'ExpStr', expStrDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'tVecs', tVecsDefault, ...
+    @(x) assert(isempty(x) || isnumeric(x) || iscellnumeric(x), ...
+                ['tVecs must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
+addParameter(iP, 'vVecsRec', vVecsRecDefault, ...
+    @(x) assert(isempty(x) || isnumeric(x) || iscellnumeric(x), ...
+                ['vVecsRec must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
+
+% Read from the Input Parser
+parse(iP, varargin{:});
+plotType = validatestring(iP.Results.PlotType, validPlotTypes);
+directory = iP.Results.Directory;
+fileNames = iP.Results.FileNames;
+extension = iP.Results.Extension;
+xLimits = iP.Results.XLimits;
+outFolder = iP.Results.OutFolder;
+expStr = iP.Results.ExpStr;
+tVecs = iP.Results.tVecs;
+vVecsRec = iP.Results.vVecsRec;
+
+% Keep unmatched arguments for the plot_traces() function
+otherArguments = iP.Unmatched;
+
+%% Preparation
+% Use the present working directory for both inputs and output by default
+if isempty(directory)
+    directory = pwd;
+end
+
+% Set default output directory
+if isempty(outFolder)
+    outFolder = directory;
+end
+
+% Decide on input paths
+if isempty(fileNames)
+    [~, fileNames] = ...
+        all_files('Directory', directory, 'Extension', extension);
+else
+    % Make sure they are full paths
+    fileNames = construct_fullpath(fileNames, 'Directory', directory);
+end
+
+% Use the common expStr as the experiment string
+if isempty(expStr)
+    expStr = extract_common_prefix(fileNames);
+end
+
+% Create an experiment identifier for title
+expStrForTitle = strrep(expStr, '_', '\_');
+
+% Count the number of files
+nFiles = numel(fileNames);
+
+% Decide on rowConditions and nRows
+[rowConditions, nRows] = ...
+    decide_on_row_conditions(rowConditions, nFiles, maxRowsWithOneOnly);
+
+% Decide on the color map if not provided
+if isempty(colorMap)
+    switch plotType
+        case {'individual', 'residual'}
+            % Decide on the color map for individual and residual plots
+            colorMap = decide_on_colormap('r', nRows);
+        case 'overlapped'
+            % Decide on the colors for parallel plots
+            colorMap = decide_on_colormap([], 4);
+            if nSweeps > nRows
+                nColumns = ceil(nSweeps / nRows);
+                nSlots = nColumns * nRows;
+                colorMap = reshape(repmat(reshape(colorMap, 1, []), ...
+                                    nColumns, 1), nSlots, 3);
+            end
+        otherwise
+            % Decide on the colors for each row in the plots
+            colorMap = decide_on_colormap(colorMap, nFiles);
+        end
+    end
+end
+
+%% Do the job
+% Load simulated data
+simData = load_neuron_outputs('FileNames', fileNames);
+% simDataOrig = load_neuron_outputs('FileNames', fileNames);
+
+% If recorded data provided (tVecs not empty at this point),
+%   interpolate simulated data to match the time points of recorded data
+% Note: This is necessary because CVODE (variable time step method) 
+%       is applied in NEURON
+if ~isempty(tVecs)
+    simData = cellfun(@(x, y) match_time_points(x, y), ...
+                        simDataOrig, tVecs, 'UniformOutput', false);
+else
+    simData = simDataOrig;
+end
+
+% Plot according to plot type
+switch plotType
+    case 'individual'
+        handles = m3ha_plot_individual_traces(simData, buildMode, xLimits, colorMap);
+    case 'residual'
+        handles = m3ha_plot_residual_traces(simData, buildMode, xLimits, colorMap);
+    case 'overlapped'
+        handles = m3ha_plot_overlapped_traces(simData, buildMode, xLimits, colorMap);
+    otherwise
+        error('plotType unrecognized!');
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [rowConditions, nRows] = ...
+                decide_on_row_conditions (rowConditions, nSweeps, ...
+                                            maxRowsWithOneOnly)
+%% Decide on rowConditions and nRows
+
+% Place each sweep on its own row if rowConditions not provided
+if isempty(rowConditions)
+    % Decide on the number of rows
+    if nSweeps <= maxRowsWithOneOnly
+        nRows = nSweeps;
+    else
+        nRows = floor(sqrt(nSweeps));
+    end
+
+    % Label the rows 1, 2, ..., nRows
+    rowConditions = transpose(1:nRows);
+else
+    % Get the number of rows for plotting
+    nRows = size(rowConditions, 1);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function handles = m3ha_plot_overlapped_traces (simData, buildMode, xLimits, colorMap, ...
+                tVecs, residuals, vVecsRec)
+
+%% Hard-coded parameters
 % Column numbers for simulated data
 %   Note: Must be consistent with singleneuron4compgabab.hoc
 TIME_COL_SIM = 1;
@@ -96,125 +285,7 @@ labelsAll = {'Time (ms)'; 'V_{soma} (mV)'; 'V_{dend1} (mV)'; ...
         'I_{Kir} (mA/cm^2)'; 'm_{\infty,Kir}'; ...
         'I_{NaP} (mA/cm^2)'; 'm_{\infty,NaP}'; 'h_{NaP}'};
 
-%% Default values for optional arguments
-plotTypeDefault = 'individual';
-directoryDefault = '';          % set in all_files.m
-fileNamesDefault = {};
-extensionDefault = 'out';       % 
-% xLimitsDefault = [];            % set later
-xLimitsDefault = [2800, 4500];
-outFolderDefault = '';          % set later
-%TODO
-expStr = '';
-colorMap = [];
-buildMode = 'active';
-residuals = [];
-vVecsRec = [];
-figTypes = {'png', 'epsc2'};
-lineWidth = 1;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% Deal with arguments
-% Set up Input Parser Scheme
-iP = inputParser;
-iP.FunctionName = mfilename;
-iP.KeepUnmatched = true;                        % allow extraneous options
-
-% Add parameter-value pairs to the Input Parser
-addParameter(iP, 'PlotType', plotTypeDefault, ...
-    @(x) any(validatestring(x, validPlotTypes)));
-addParameter(iP, 'Directory', directoryDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'FileNames', fileNamesDefault, ...
-    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
-        ['fileNames must be a character array or a string array ', ...
-            'or cell array of character arrays!']));
-addParameter(iP, 'Extension', extensionDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-addParameter(iP, 'XLimits', xLimitsDefault, ...
-    @(x) isempty(x) || iscell(x) || ischar(x) && strcmpi(x, 'suppress') || ...
-        isnumeric(x) && isvector(x) && length(x) == 2);
-addParameter(iP, 'OutFolder', outFolderDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
-
-% Read from the Input Parser
-parse(iP, varargin{:});
-plotType = validatestring(iP.Results.PlotType, validPlotTypes);
-directory = iP.Results.Directory;
-fileNames = iP.Results.FileNames;
-extension = iP.Results.Extension;
-xLimits = iP.Results.XLimits;
-outFolder = iP.Results.OutFolder;
-
-% Keep unmatched arguments for the plot_traces() function
-otherArguments = iP.Unmatched;
-
 %% Preparation
-% Use the present working directory for both inputs and output by default
-if isempty(directory)
-    directory = pwd;
-end
-
-% Set default output directory
-if isempty(outFolder)
-    outFolder = directory;
-end
-
-% Decide on input paths
-if isempty(fileNames)
-    [~, fileNames] = ...
-        all_files('Directory', directory, 'Extension', extension);
-else
-    % Make sure they are full paths
-    fileNames = construct_fullpath(fileNames, 'Directory', directory);
-end
-
-% Use the common prefix as the experiment string
-if isempty(expStr)
-    expStr = extract_fileparts(fileNames, 'commonprefix');
-end
-
-% Create an experiment identifier for title
-expStrForTitle = strrep(expStr, '_', '\_');
-
-% Count the number of files
-nFiles = numel(fileNames);
-
-% Decide on the colors for each row in the plots
-colorMap = decide_on_colormap(colorMap, nFiles);
-
-%% Do the job
-% Load simulated data
-simData = load_neuron_outputs('FileNames', fileNames);
-% simDataOrig = load_neuron_outputs('FileNames', fileNames);
-
-% If recorded data provided (tVecs not empty at this point), 
-%   interpolate simulated data to match the time points of recorded data
-% Note: This is necessary because CVODE (variable time step method) 
-%       is applied in NEURON
-% TODO
-% if ~isempty(tVecs)
-%     simData = cellfun(@(x, y) match_time_points(x, y), ...
-%                         simDataOrig, tVecs, 'UniformOutput', false);
-% else
-%     simData = simDataOrig;
-% end
-
-% Plot according to plot type
-switch plotType
-    case 'individual'
-    case 'residual'
-    case 'overlapped'
-        m3ha_plot_overlapped_traces(simData)
-    otherwise
-        error('plotType unrecognized!');
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function m3ha_plot_overlapped_traces (simData)
-
 % Extract vectors from simulated data
 %   Note: these are arrays with 25 columns
 if strcmpi(buildMode, 'passive')
@@ -304,12 +375,13 @@ figName = fullfile(outFolder, [expStr, '_simulated.png']);
 % Count the number of subplots
 nSubPlots = numel(yLabelsOverlapped);
 
+%% Plots
 % Create figure
-figHandle = set_figure_properties('AlwaysNew', true, ...
+figOverlapped = set_figure_properties('AlwaysNew', true, ...
                 'FigExpansion', [1, nSubPlots/4]);
 
 % Plot overlapped traces
-handles = ...
+handlesOverlapped = ...
     plot_traces(tVecsForOverlapped, dataForOverlapped, ...
                 'Verbose', false, 'PlotMode', 'parallel', ...
                 'SubplotOrder', 'list', 'ColorMode', 'byTraceInPlot', ...
@@ -317,17 +389,17 @@ handles = ...
                 'ColorMap', colorMap, 'XLimits', xLimits, ...
                 'LinkAxesOption', 'x', 'XUnits', 'ms', ...
                 'YLabel', yLabelsOverlapped, ...
-                'FigTitle', figTitle, 'FigHandle', figHandle, ...
+                'FigTitle', figTitle, 'FigHandle', figOverlapped, ...
                 'FigName', figName, 'FigTypes', figTypes, ...
                 'LineWidth', lineWidth, ...
                 otherArguments);
 
-fig2 = set_figure_properties('AlwaysNew', true, ...
+figM2h = set_figure_properties('AlwaysNew', true, ...
                 'FigExpansion', [1, 1/2]);
 
 figNameM2h = fullfile(outFolder, [expStr, '_simulated_m2h.png']);
 
-handles1 = ...
+handlesM2h = ...
     plot_traces(tVecs, itm2hVecsSim, ...
                 'LineStyle', '-', 'LineWidth', lineWidth, ...
                 'Verbose', false, 'PlotMode', 'overlapped', ...
@@ -335,7 +407,7 @@ handles1 = ...
                 'ColorMap', colorMap, 'XLimits', xLimits, ...
                 'LinkAxesOption', 'x', 'XUnits', 'ms', ...
                 'YLabel', 'm^2h', ...
-                'FigTitle', 'suppress', 'FigHandle', fig2, ...
+                'FigTitle', 'suppress', 'FigHandle', figM2h, ...
                 otherArguments);
 hold on;
 plot_traces(tVecs, itminf2hinfVecsSim, ...
@@ -343,12 +415,16 @@ plot_traces(tVecs, itminf2hinfVecsSim, ...
                 'LineStyle', '--', 'LineWidth', lineWidth, ...
                 'Verbose', false, 'PlotMode', 'overlapped', ...
                 'ColorMap', colorMap, 'XLimits', xLimits, ...
-                'FigHandle', fig2, otherArguments);
+                'FigHandle', figM2h, otherArguments);
 
 set(gca, 'YLim', [1e-6, 1]);
 set(gca, 'YScale', 'log');
 
-save_all_figtypes(fig2, figNameM2h, figTypes);
+save_all_figtypes(figM2h, figNameM2h, figTypes);
+
+%% Outputs
+handles.handlesOverlapped = handlesOverlapped;
+handle.handlesM2h = handlesM2h;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

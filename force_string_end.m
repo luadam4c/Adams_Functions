@@ -18,6 +18,7 @@ function newStr = force_string_end (oldStr, subStr, varargin)
 % Outputs:
 %       newStr      - resulting string
 %                   specified as a string scalar or a character vector
+%
 % Arguments:    
 %       oldStr      - original string
 %                   must be a string scalar or a character vector

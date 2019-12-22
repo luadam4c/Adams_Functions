@@ -3,8 +3,10 @@ function arrayNew = match_dimensions (arrayOld, dimNew, varargin)
 % Usage: arrayNew = match_dimensions (arrayOld, dimNew, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
-%       TODO
+%       match_dimensions({'a'}, [3, 2])
+%
 % Outputs:
 %       arrayNew    - array matched
 %                   specified as a numeric, logical, cell or struct array
@@ -20,6 +22,7 @@ function arrayNew = match_dimensions (arrayOld, dimNew, varargin)
 %
 % Used by:    
 %       cd/compute_weighted_average.m
+%       cd/create_labels_from_numbers.m
 %       cd/create_time_vectors.m
 %       cd/extract_columns.m
 %       cd/extract_elements.m

@@ -313,6 +313,7 @@ function [errorStruct, hFig, simData] = ...
 %       cd/compute_residuals.m
 %       cd/compute_sampling_interval.m
 %       cd/compute_single_neuron_errors.m
+%       cd/create_simulation_output_filenames.m
 %       cd/decide_on_colormap.m
 %       cd/decide_on_filebases.m
 %       cd/extract_columns.m
@@ -879,6 +880,9 @@ errorStruct = struct;
 hFig = struct;
 simData = [];
 
+% Create an experiment identifier
+expStr = prefix;
+
 % Parse first argument
 if istext(neuronParamsTableOrFile)
     % Read in the table
@@ -888,10 +892,10 @@ if istext(neuronParamsTableOrFile)
     cellName = m3ha_extract_cell_name(neuronParamsTableOrFile, ...
                                         'ForceSingleOutput', true);
 
-    % Use the common prefix as the prefix
-    if isempty(prefix)
+    % Use the common prefix as the expStr
+    if isempty(expStr)
         paramFileBases = extract_fileparts(neuronParamsTableOrFile, 'base');
-        prefix = extract_common_prefix(paramFileBases);
+        expStr = extract_common_prefix(paramFileBases);
     end
 else
     % The first argument is(are) the parameter table(s)
@@ -932,7 +936,8 @@ if strcmpi(simMode, 'passive')
         % Import data
         [realDataCpr, sweepInfoCpr] = ...
             m3ha_import_raw_traces(fileNames, 'ImportMode', 'passive', ...
-                        'Verbose', verbose, 'OutFolder', outFolder);
+                        'Verbose', verbose, 'OutFolder', outFolder, ...
+                        'CreateLog', true);
 
         % If not generating data, don't set hold current noise
         if ~generateDataFlag
@@ -1039,14 +1044,14 @@ nSweeps = decide_on_nSweeps(realData, nSweepsUser);
 % Create file bases if not provided
 fileBases = decide_on_filebases(fileNames, nSweeps);
 
-% Decide on prefix if not provided
-if isempty(prefix)
+% Decide on expStr if not provided
+if isempty(expStr)
     % Try extracting the common prefix from the file bases
-    prefix = extract_common_prefix(fileBases);
+    expStr = extract_common_prefix(fileBases);
 
     % If still empty, use the output folder base name
-    if isempty(prefix)
-        prefix = extract_fileparts(outFolder, 'dirbase');
+    if isempty(expStr)
+        expStr = extract_fileparts(outFolder, 'dirbase');
     end
 end
 
@@ -1078,9 +1083,6 @@ if nSweeps > nRows
                         nColumns, 1), nSlots, 3);
 end
 
-% Create an experiment identifier
-expStr = prefix;
-
 % Print to standard output
 if verbose
     fprintf('Preparing to run simulations for %s ...\n', expStr);
@@ -1089,12 +1091,12 @@ end
 % Create output file paths if not provided
 if strcmpi(outFilePath, 'auto')
     outFilePath = create_simulation_output_filenames(nSweeps, ...
-                            'OutFolder', outFolder, 'Prefix', prefix);
+                            'OutFolder', outFolder, 'Prefix', expStr);
 end
 
 % Create a table of simulation parameters
 simParamsTable = m3ha_neuron_create_simulation_params(neuronParamsTable, ...
-                        'Prefix', prefix, 'OutFolder', outFolder, ...
+                        'Prefix', expStr, 'OutFolder', outFolder, ...
                         'SaveParamsFlag', saveParamsFlag, ...
                         'JitterFlag', jitterFlag, 'NSims', nSweeps, ...
                         'CprWindow', cprWindow, 'IpscrWindow', ipscrWindow, ...
@@ -1113,7 +1115,7 @@ simParamsTable = m3ha_neuron_create_simulation_params(neuronParamsTable, ...
 
 % Create simulation commands to be read by NEURON
 simCommands = m3ha_neuron_create_TC_commands(simParamsTable, ...
-                        'Prefix', prefix, 'OutFolder', outFolder, ...
+                        'Prefix', expStr, 'OutFolder', outFolder, ...
                         'SaveSimCmdsFlag', saveSimCmdsFlag);
 
 % Extract vectors from recorded data
@@ -1136,7 +1138,7 @@ end
 
 % Run NEURON with the hocfile and attached simulation commands
 output = run_neuron(hocFile, 'SimCommands', simCommands, ...
-                    'Prefix', prefix, 'OutFolder', outFolder, ...
+                    'Prefix', expStr, 'OutFolder', outFolder, ...
                     'DebugFlag', debugFlag, 'OnHpcFlag', onHpcFlag, ...
                     'SaveStdOutFlag', saveStdOutFlag);
 
@@ -1262,8 +1264,8 @@ if generateDataFlag
     siMs = compute_sampling_interval(tVecs);
 
     % Decide on spreadsheet names
-    featuresFile = fullfile(outFolder, [prefix, '_features.csv']);
-    testResultsFile = fullfile(outFolder, [prefix, '_test_results.csv']);
+    featuresFile = fullfile(outFolder, [expStr, '_features.csv']);
+    testResultsFile = fullfile(outFolder, [expStr, '_test_results.csv']);
 
     % Parse the simulated responses
     featuresSim = analyze_response(vVecsSim, iVecsSim, siMs, simMode, ...
@@ -1300,7 +1302,7 @@ if generateDataFlag
     % Test the difference of features between dataType
     testResults = test_var_difference(featuresTable, featuresToCompare, ...
                                 'dataType', 'SheetName', testResultsFile, ...
-                                'Prefix', prefix, 'OutFolder', outFolder);
+                                'Prefix', expStr, 'OutFolder', outFolder);
 end
 
 % If requested, combine both recorded and simulated responses 
@@ -1388,7 +1390,7 @@ if ~isempty(realData)
                     'InitLtsError', initLtsError, ...
                     'IpscTime', ipscTime, 'IpscPeakWindow', ipscPeakWindow, ...
                     'FileBase', fileBases, ...
-                    'OutFolder', outFolder, 'Prefix', prefix, ...
+                    'OutFolder', outFolder, 'Prefix', expStr, ...
                     'SaveLtsInfoFlag', saveLtsInfoFlag, ...
                     'SaveLtsStatsFlag', saveLtsStatsFlag, ...
                     'PlotIpeakFlag', plotIpeakFlag, ...
@@ -1459,7 +1461,7 @@ if plotConductanceFlag
     yLabelsConductanceComparison = {'Conductance (uS)'; 'Conductance (uS)'};
 
     % Decide on figure name
-    figName = fullfile(outFolder, [prefix, '_conductance_comparison.png']);
+    figName = fullfile(outFolder, [expStr, '_conductance_comparison.png']);
 
     % Decide on figure titles for each subplot
     if strcmpi(simMode, 'passive')
@@ -1513,7 +1515,7 @@ if plotCurrentFlag
     yLabelsCurrentComparison = {'Current (nA)'; 'Current (nA)'};
 
     % Decide on figure name
-    figName = fullfile(outFolder, [prefix, '_current_comparison.png']);
+    figName = fullfile(outFolder, [expStr, '_current_comparison.png']);
 
     % Decide on figure titles for each subplot
     if strcmpi(simMode, 'passive')
@@ -1558,7 +1560,7 @@ if plotIndividualFlag
 
     % Decide on figure title and figure name
     figTitle = sprintf('All traces for Experiment %s', expStrForTitle);
-    figName = fullfile(outFolder, [prefix, '_individual.png']);
+    figName = fullfile(outFolder, [expStr, '_individual.png']);
 
     % Decide on the axes to be linked
     if strcmp(simMode, 'passive')
@@ -1593,7 +1595,7 @@ if plotResidualsFlag
 
     % Decide on figure title and file name
     figTitle = sprintf('Residuals for Experiment %s', expStrForTitle);
-    figName = fullfile(outFolder, [prefix, '_residuals.png']);
+    figName = fullfile(outFolder, [expStr, '_residuals.png']);
 
     % Plot the individual traces
     figHandle = set_figure_properties('ClearFigure', true, ...
@@ -1665,7 +1667,7 @@ if plotOverlappedFlag
     % Decide on figure title and file name
     figTitle = sprintf('Overlapped traces for Experiment %s', ...
                         expStrForTitle);
-    figName = fullfile(outFolder, [prefix, '_overlapped.png']);
+    figName = fullfile(outFolder, [expStr, '_overlapped.png']);
 
     % Plot overlapped traces
     % TODO: Integrate into m3ha_plot_simulated_traces.m

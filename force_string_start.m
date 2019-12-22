@@ -39,6 +39,7 @@ function newStr = force_string_start (oldStr, subStr, varargin)
 %       cd/combine_strings.m
 %       cd/combine_swd_sheets.m
 %       cd/create_labels_from_numbers.m
+%       cd/create_simulation_output_filenames.m
 
 % File History:
 % 2019-09-06 Modified from force_string_end.m

@@ -15,16 +15,21 @@ function outFilePaths = create_simulation_output_filenames (nSims, varargin)
 %       varargin    - 'Prefix': prefix to prepend to file names
 %                   must be a string scalar or a character vector
 %                   default == ''
+%                   - 'Suffix': suffix to append to file names
+%                   must be a string scalar or a character vector
+%                   default == ''
 %                   - 'OutFolder': the directory where outputs will be placed
 %                   must be a string scalar or a character vector
 %                   default == pwd
-%
+%                   
 % Requires:
 %       cd/create_labels_from_numbers.m
+%       cd/force_string_start.m
 %       cd/force_string_end.m
 %
-% Used by:    
+% Used by:
 %       cd/m3ha_neuron_create_simulation_params.m
+%       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:
 % 2018-10-22 Created by Adam Lu
@@ -36,7 +41,7 @@ function outFilePaths = create_simulation_output_filenames (nSims, varargin)
 
 %% Hard-coded parameters
 suffix = '';
-extension = '.out';
+extension = 'out';
 
 %% Default values for optional arguments
 prefixDefault = '';             % prepend nothing to file names by default
@@ -75,14 +80,14 @@ outFolder = iP.Results.OutFolder;
 prefix = force_string_end(prefix, '_', 'OnlyIfNonempty', true);
 
 % Make sure the suffix starts with a '_'
-% prefix = force_string_start(suffix, '_', 'OnlyIfNonempty', true);
+suffix = force_string_start(suffix, '_', 'OnlyIfNonempty', true);
 
 %% Do the job
 % Generate a complete prefix including the path of the directory
-prefixComplete = fullfile(outFolder, [prefix, 'sim']);
+prefixComplete = fullfile(outFolder, strcat(prefix, 'sim'));
 
 % Generate a complete suffix including the suffix and the file extension
-suffixComplete = [suffix, extension];
+suffixComplete = strcat(suffix, '.', extension);
 
 % Create the file names iteratively
 outFilePaths = create_labels_from_numbers(1:nSims, 'Prefix', prefixComplete, ...

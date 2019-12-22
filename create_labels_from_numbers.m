@@ -8,9 +8,11 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       labels = create_labels_from_numbers([3, 7, 5])
 %       labels = create_labels_from_numbers(1:3, 'Suffix', ' Mississippi')
 %       labels = create_labels_from_numbers(1:3, 'Prefix', 'Husband #')
-%       labels = create_labels_from_numbers(1:3, 'Prefix', 'Katie ')
+%       labels = create_labels_from_numbers(1:3, 'Prefix', "Katie ")
 %       labels = create_labels_from_numbers(1:3, 'Prefix', 'Katie', 'Delimiter', '_')
 %       labels = create_labels_from_numbers(1:3, 'Prefix', 'Make', 'Suffix', 'Wish', 'Delimiter', ' ')
+%       labels = create_labels_from_numbers(1:3, 'Prefix', ["Katie ", "Mark ", "Matt "])
+%       labels = create_labels_from_numbers(1:3, 'Suffix', {' one', ' two', ' three'})
 %
 % Outputs:
 %       labels     - labels created
@@ -24,9 +26,11 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %                   default == true
 %                   - 'Prefix': string to place before each number
 %                   must be a string scalar or a character vector
+%                       or a cell array of character vectors
 %                   default == ''
 %                   - 'Suffix': string to place after each number
 %                   must be a string scalar or a character vector
+%                       or a cell array of character vectors
 %                   default == ''
 %                   - 'Delimiter': delimiter used
 %                   must be a string scalar or a character vector
@@ -35,10 +39,12 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %
 %
 % Requires:
+%       cd/argfun.m
 %       cd/create_error_for_nargin.m
 %       cd/convert_to_char.m
 %       cd/force_string_end.m
 %       cd/force_string_start.m
+%       cd/match_dimensions.m
 %
 % Used by:
 %       cd/atfwrite.m
@@ -69,7 +75,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 % File History:
 % 2018-12-17 Created by Adam Lu
 % 2019-09-06 Added 'Delimiter' as an optional argument
-% 
+% 2019-12-22 Now allows prefix and suffix to be cell arrays as well
 
 %% Hard-coded parameters
 
@@ -101,9 +107,13 @@ addRequired(iP, 'numbers', ...
 addParameter(iP, 'ForceColumnOutput', forceColumnOutputDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Prefix', prefixDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['Prefix must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 addParameter(iP, 'Suffix', suffixDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['Suffix must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 addParameter(iP, 'Delimiter', delimiterDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
@@ -127,26 +137,35 @@ end
 prefix = force_string_end(prefix, delimiter, 'OnlyIfNonempty', true);
 suffix = force_string_start(suffix, delimiter, 'OnlyIfNonempty', true);
 
+% Force as a cell array
+if ischar(prefix)
+    prefix = {prefix};
+end
+if ischar(suffix)
+    suffix = {suffix};
+end
+
+% Match the dimensions with numbers
+[prefix, suffix] = ...
+    argfun(@(x) match_dimensions(x, size(numbers)), prefix, suffix);
+
 %% Do the job
 % Create the labels
-labels = ...
-    arrayfun(@(x) [prefix, convert_to_char(x, otherArguments{:}), suffix], ...
-                    numbers, 'UniformOutput', false);
+%   Note: don't use strcat() as it omits spaces in some cases
+if iscell(prefix) && iscell(suffix)
+    labels = ...
+        cellfun(@(x, y, z) [x, convert_to_char(y, otherArguments{:}), z], ...
+                    prefix, num2cell(numbers), suffix, 'UniformOutput', false);
+else
+    labels = ...
+        arrayfun(@(x, y, z) [x, convert_to_char(y, otherArguments{:}), z], ...
+                    prefix, numbers, suffix, 'UniformOutput', false);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
-
-addRequired(iP, 'nLabels', ...
-    @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
-
-labels = arrayfun(@(x) [prefix, num2str(x), suffix], transpose(1:nLabels), ...
-                        'UniformOutput', false);
-
-% strcat omits spaces in some cases
-labels = arrayfun(@(x) strcat(prefix, convert_to_char(x), suffix), ...
-                    numbers, 'UniformOutput', false);
 
 %}
 
