@@ -3,20 +3,26 @@ function outFilePaths = create_simulation_output_filenames (nSims, varargin)
 % Usage: outFilePaths = create_simulation_output_filenames (nSims, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
+%       outFilePaths = create_simulation_output_filenames(5);
 %       outFilePaths = create_simulation_output_filenames(nSims, ...
 %                                   'OutFolder', outFolder, 'Prefix', prefix);
+%
 % Outputs:
 %       outFilePaths - output file paths
 %                   specified as a cell array of character vectors
+%
 % Arguments:    
 %       nSims       - number of simulations
 %                   must be a positive integer scalar
 %       varargin    - 'Prefix': prefix to prepend to file names
 %                   must be a string scalar or a character vector
+%                       or a cell array of character vectors
 %                   default == ''
 %                   - 'Suffix': suffix to append to file names
 %                   must be a string scalar or a character vector
+%                       or a cell array of character vectors
 %                   default == ''
 %                   - 'OutFolder': the directory where outputs will be placed
 %                   must be a string scalar or a character vector
@@ -34,17 +40,17 @@ function outFilePaths = create_simulation_output_filenames (nSims, varargin)
 % File History:
 % 2018-10-22 Created by Adam Lu
 % 2018-12-17 Now uses create_labels_from_numbers.m
-% TODO: Use force_string_start.m
-% TODO (EASY): Make 'Suffix' an optional parameter with default ''
+% 2019-12-22 Made 'Suffix' an optional parameter with default ''
+% 2019-12-22 Now allows prefix and suffix to be cell arrays as well
 % TODO (EASY): Make 'Extension' an optional parameter with default '.out'
 % 
 
 %% Hard-coded parameters
-suffix = '';
 extension = 'out';
 
 %% Default values for optional arguments
 prefixDefault = '';             % prepend nothing to file names by default
+suffixDefault = '';             % append nothing to file names by default
 outFolderDefault = pwd;         % use the present working directory for outputs
                                 %   by default
 
@@ -66,13 +72,20 @@ addRequired(iP, 'nSims', ...                  % number of simulations
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'Prefix', prefixDefault, ...
-    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['Prefix must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
+addParameter(iP, 'Suffix', suffixDefault, ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['Suffix must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
 parse(iP, nSims, varargin{:});
 prefix = iP.Results.Prefix;
+suffix = iP.Results.Suffix;
 outFolder = iP.Results.OutFolder;
 
 %% Preparation

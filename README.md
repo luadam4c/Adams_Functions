@@ -339,7 +339,8 @@ There are 1 MATLAB scripts in this directory:
 - [**m3ha_determine_row_conditions.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_determine_row_conditions.m): Determine the conditions for each row
 - [**m3ha_estimate_passive_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_estimate_passive_params.m): Estimates passive parameters for each cell from dclamp data recorded by Mark & Christine
 - [**m3ha_extract_cell_name.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_extract_cell_name.m): Extracts the cell name from strings but ignores anything before filesep
-- [**m3ha_extract_iteration_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_extract_iteration_string.m): Extracts the cell name from strings
+- [**m3ha_extract_iteration_string.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_extract_iteration_string.m): Extracts the iteration string from strings
+- [**m3ha_extract_sweep_name.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_extract_sweep_name.m): Extracts the sweep name from strings but ignores anything before filesep
 - [**m3ha_find_files_to_take_out.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_files_to_take_out.m): Returns all the file names of files to take out from .png files in 'TAKE_OUT_*' folders of a special cases directory
 - [**m3ha_find_ind_to_fit.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ind_to_fit.m): Finds indices of fnrow in dclampdatalog_take4.mat that will be used for fitting (legacy, please use m3ha_select_sweeps.m instead)
 - [**m3ha_find_ipsc_peak.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_find_ipsc_peak.m): Finds time of current peak from a an inhibitory current trace (must be negative current) (legacy, please use parse_ipsc.m instead)

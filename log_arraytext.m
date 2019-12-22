@@ -14,8 +14,9 @@ function fid = log_arraytext (filename, array, varargin)
 % Requires:
 %       cd/check_dir.m
 %
-% Used by:    
-%        cd/m3ha_optimizergui_4compgabab.m
+% Used by:
+%       cd/m3ha_neuron_run_and_analyze.m
+%       cd/m3ha_optimizergui_4compgabab.m
 
 % File History:
 % 2017-05-01 Created by Adam Lu

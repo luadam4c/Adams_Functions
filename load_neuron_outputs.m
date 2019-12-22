@@ -25,11 +25,15 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 %                                           after loading
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'tVecs': time vectors to match
+%                   must be a numeric array or a cell array of numeric arrays
+%                   default == [] (none provided)
 %
 % Requires:
 %       cd/construct_and_check_fullpath.m
 %       cd/is_in_parallel.m
 %       cd/m3ha_plot_simulated_traces.m
+%       cd/match_time_points.m
 %
 % Used by:    
 %       cd/m3ha_neuron_run_and_analyze.m
@@ -47,6 +51,7 @@ directoriesDefault = '';            % set later
 fileNamesDefault = {};              % detect from pwd by default
 verboseDefault = false;             % print to standard output by default
 removeAfterLoadDefault = false;     % don't remove .out files by default
+tVecsDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -64,6 +69,10 @@ addParameter(iP, 'Verbose', verboseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveAfterLoad', removeAfterLoadDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'tVecs', tVecsDefault, ...
+    @(x) assert(isempty(x) || isnumeric(x) || iscellnumeric(x), ...
+                ['tVecs must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -71,6 +80,7 @@ directories = iP.Results.Directories;
 fileNames = iP.Results.FileNames;
 verbose = iP.Results.Verbose;
 removeAfterLoad = iP.Results.RemoveAfterLoad;
+tVecs = iP.Results.tVecs;
 
 %% Preparation
 % Decide on the files to use
@@ -132,6 +142,12 @@ else
     parfor iFile = 1:nFiles
         outputs{iFile} = load(fullPaths{iFile});
     end
+end
+
+% If tVecs not empty, interpolate simulated data to match the time points
+if ~isempty(tVecs)
+    outputs = cellfun(@(x, y) match_time_points(x, y), ...
+                        outputs, tVecs, 'UniformOutput', false);
 end
 
 %% Remove files

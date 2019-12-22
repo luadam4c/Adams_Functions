@@ -2,6 +2,7 @@
 %% Plots Figure 03 for the GAT Blocker paper
 %
 % Requires:
+%       cd/argfun.m
 %       cd/check_dir.m
 %       cd/extract_fileparts.m
 %       cd/find_matching_files.m
@@ -23,10 +24,10 @@
 % Flags
 estimatePassiveParams = false; %true;
 plotCurveFit = false; %true;
-simulateCpr = true;
-plotCpr = false; %true;
-simulateIpscr = true;
-plotIpscr = false; %true;
+simulateCpr = false; %true;
+plotCpr = true;
+simulateIpscr = false; %true;
+plotIpscr = true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -43,7 +44,7 @@ passiveLogSuffix = 'dclampPassiveLog';
 paramFileSuffix = 'params';
 
 % Analysis settings
-exampleCellNames = {'D101310', 'C101210'};
+exampleCellNames = {'D101310'; 'C101210'};
 
 % Simulation settings
 dataModeCpr = 1;                    % data mode for current pulse response
@@ -128,24 +129,37 @@ if simulateCpr || simulateIpscr
     % Extract example labels
     exampleLabels = extractBefore(exampleParamFileBases, ...
                                     ['_', paramFileSuffix]);
+
+    % Update labels for each type of simulation
+    [exampleLabelsCpr, exampleLabelsIpscr] = ...
+        argfun(@(x) strcat(exampleLabels, x), '_cpr', '_ipscr');
+
+    % Create and check output folders
+    [outFoldersCpr, outFoldersIpscr] = ...
+        argfun(@(x) fullfile(figure03Dir, x), ...
+                exampleLabelsCpr, exampleLabelsIpscr);
+    check_dir(outFoldersCpr);
+    check_dir(outFoldersIpscr);
 end
 
 %% Simulate current pulse responses
 if simulateCpr
-    cellfun(@(x, y) simulate_cpr(x, y, dataModeCpr, rowmodeCpr, ...
-                                attemptNumberCpr, figure03Dir), ...
-            exampleLabels, exampleParamPaths);
+    cellfun(@(x, y, z) simulate_cpr(x, y, z, dataModeCpr, rowmodeCpr, ...
+                                attemptNumberCpr), ...
+            exampleLabelsCpr, exampleParamPaths, outFoldersCpr);
 end
 
 %% Plot current pulse responses
 if plotCpr
+    cellfun(@(x, y) plot_cpr(x, y), ...
+            exampleLabelsIpscr, outFoldersIpscr);
 end
 
 %% Simulate IPSC responses
 if simulateIpscr
-    cellfun(@(x, y) simulate_ipscr(x, y, dataModeIpscr, rowmodeIpscr, ...
-                                attemptNumberIpscr, figure03Dir), ...
-            exampleLabels, exampleParamPaths);
+    cellfun(@(x, y, z) simulate_ipscr(x, y, z, dataModeIpscr, rowmodeIpscr, ...
+                                attemptNumberIpscr), ...
+            exampleLabelsIpscr, exampleParamPaths, outFoldersIpscr);
 end
 
 %% Plot IPSC responses
@@ -337,15 +351,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function simulate_cpr(label, neuronParamsFile, dataMode, ...
-                        rowmode, attemptNumber, parentDir)
-
-% Update the label
-label = [label, '_cpr'];
-
-% Create an output folder
-outFolder = fullfile(parentDir, label);
-check_dir(outFolder);
+function simulate_cpr(label, neuronParamsFile, outFolder, ...
+                        dataMode, rowmode, attemptNumber)
 
 % Simulate
 m3ha_neuron_run_and_analyze(neuronParamsFile, ...
@@ -360,15 +367,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function simulate_ipscr(label, neuronParamsFile, dataMode, ...
-                        rowmode, attemptNumber, parentDir)
-
-% Update the label
-label = [label, '_ipscr'];
-
-% Create an output folder and check for existence
-outFolder = fullfile(parentDir, label);
-check_dir(outFolder);
+function simulate_ipscr(label, neuronParamsFile, outFolder, ...
+                        dataMode, rowmode, attemptNumber)
 
 % Simulate
 m3ha_neuron_run_and_analyze(neuronParamsFile, ...
@@ -381,6 +381,12 @@ m3ha_neuron_run_and_analyze(neuronParamsFile, ...
 
 
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function plot_cpr(label, directory)
+
+m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', label);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -11,6 +11,7 @@ function subStrs = extract_substrings (strs, varargin)
 %       strs = {'Many_A105034_later', 'Mary_B203491_now'};
 %       extract_substrings(strs, 'RegExp', '[A-Z][0-9]{6}')
 %       extract_substrings({'test', 'test23', '45test'}, 'RegExp', '[\d]*')
+%       extract_substrings({'test45', 'test23'}, 'ForceSingleOutput', true)
 %
 % Outputs:
 %       subStrs     - substrings extracted
@@ -25,14 +26,24 @@ function subStrs = extract_substrings (strs, varargin)
 %                   must be a character vector or a string vector
 %                       or a cell array of character vectors
 %                   default == none
-%
+%                   - 'FromBaseName': whether to restrict to the base name
+%                                       (remove everything before last filesep
+%                                        and after last .)
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ForceSingleOutput': whether to force as a single output
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/extract_common_prefix.m
 %
 % Used by:
 %       cd/extract_common_prefix.m
 %       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_extract_iteration_string.m
+%       cd/m3ha_extract_sweep_name.m
 %       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:
@@ -43,6 +54,8 @@ function subStrs = extract_substrings (strs, varargin)
 
 %% Default values for optional arguments
 regExpDefault = '';
+fromBaseNameDefault = false;
+forceSingleOutputDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -67,18 +80,23 @@ addParameter(iP, 'RegExp', regExpDefault, ...
     @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
         ['regExp must be empty or a character array or a string array ', ...
             'or cell array of character arrays!']));
+addParameter(iP, 'FromBaseName', fromBaseNameDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ForceSingleOutput', forceSingleOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, strs, varargin{:});
 regExp = iP.Results.RegExp;
-
-% Check relationships between arguments
-% TODO
-
-%% Preparation
-% TODO
+fromBaseName = iP.Results.FromBaseName;
+forceSingleOutput = iP.Results.ForceSingleOutput;
 
 %% Do the job
+% Restrict to base name if requested
+if fromBaseName
+    strs = extract_fileparts(strs, 'base');
+end
+
 if ~isempty(regExp)
     % Match the regular expression
     matchedSubStrs = regexp(strs, regExp, 'match');
@@ -94,8 +112,17 @@ else
     subStrs = strs;
 end
 
-%% Output results
-% TODO
+% Reduce to one cell name if requested
+if forceSingleOutput
+    % Extract the common prefix
+    subStrs = extract_common_prefix(subStrs);
+    
+    % If doesn't exist, change it to 'mixed'
+    if isempty(subStrs)
+        fprintf('Warning: Common substring doesn''t exist!\n');
+        subStrs = 'mixed';
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -6,9 +6,12 @@ function parts = extract_fileparts (paths, partType, varargin)
 %
 % Example(s):
 %       [~, paths] = all_files('Directory', pwd);
+%       paths = {'a/b/c.m', 'a/b/c'}
 %       extract_fileparts(paths, 'directory')
 %       extract_fileparts(paths, 'dirbase')
 %       extract_fileparts(paths, 'parentdir')
+%       extract_fileparts(paths, 'filename')
+%       extract_fileparts(paths, 'filebase')
 %       extract_fileparts(paths, 'name')
 %       extract_fileparts(paths, 'base')
 %       extract_fileparts(paths, 'pathbase')
@@ -72,7 +75,6 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/decide_on_filebases.m
 %       cd/extract_common_directory.m
 %       cd/find_matching_files.m
-%       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_neuron_run_and_analyze.m
@@ -105,13 +107,16 @@ function parts = extract_fileparts (paths, partType, varargin)
 % 2019-08-12 Added 'pathbase' as a part type
 % 2019-09-10 Fixed 'dirbase' when the input is a cell array
 % 2019-09-30 Added 'parentdir' as a part type
+% 2019-12-22 Now makes 'base' different from 'filebase'
+%                       and 'name' different from 'filename'
 % TODO: Make the first argument accept a files structure array too
 % 
 
 %% Hard-coded parameters
 validPartTypes = {'commondirectory', 'commonprefix', 'commonsuffix', ...
                     'distinct', 'directory', 'dirbase', 'parentdir', ...
-                    'name', 'base', 'pathbase', 'extension'};
+                    'name', 'base', 'filename', 'filebase', ...
+                    'pathbase', 'extension'};
 
 %% Default values for optional arguments
 delimiterDefault = '_';
@@ -159,7 +164,7 @@ partType = validatestring(partType, validPartTypes);
 %% Do the job
 switch partType
 case {'directory', 'dirbase', 'parentdir', ...
-        'name', 'base', 'pathbase', 'extension'}
+        'name', 'base', 'filename', 'filebase', 'pathbase', 'extension'}
     parts = extract_simple_fileparts(paths, partType);
 case 'commondirectory'
     parts = extract_common_directory(paths, varargin{:});
@@ -188,21 +193,26 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [fileDir, fileBase, fileExtension] = fileparts_custom (filePath)
+function [fileDir, fileBase, fileExtension] = ...
+                fileparts_custom (filePath, useOriginal)
 %% Same as fileparts but treats anything without an extension as a directory
 
-% Use the original fileparts to get the extension
-[fileDirTentative, fileBaseTentative, fileExtension] = fileparts(filePath);
-
-% Check if there is an extension
-if isempty(fileExtension)
-    % If there is no extension, it is a directory
-    fileDir = fullfile(fileDirTentative, fileBaseTentative);
-    fileBase = '';
+if useOriginal
+    [fileDir, fileBase, fileExtension] = fileparts(filePath);
 else
-    % If there is an extension, it is a file
-    fileDir = fileDirTentative;
-    fileBase = fileBaseTentative;
+    % Use the original fileparts to get the extension
+    [fileDirTentative, fileBaseTentative, fileExtension] = fileparts(filePath);
+
+    % Check if there is an extension
+    if isempty(fileExtension)
+        % If there is no extension, it is a directory
+        fileDir = fullfile(fileDirTentative, fileBaseTentative);
+        fileBase = '';
+    else
+        % If there is an extension, it is a file
+        fileDir = fileDirTentative;
+        fileBase = fileBaseTentative;
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -210,11 +220,22 @@ end
 function parts = extract_simple_fileparts(paths, partType)
 % Separate the paths with fileparts_custom()
 
+% Decide whether to use the original fileparts directly
+switch partType
+    case {'base', 'name', 'pathbase'}
+        useOriginal = true;
+    otherwise
+        useOriginal = false;
+end
+
+% Separate file parts
 if iscell(paths)
     [fileDirs, fileBases, fileExtensions] = ...
-        cellfun(@(x) fileparts_custom(x), paths, 'UniformOutput', false);
+        cellfun(@(x) fileparts_custom(x, useOriginal), ...
+                paths, 'UniformOutput', false);
 else
-    [fileDirs, fileBases, fileExtensions] = fileparts_custom(paths);
+    [fileDirs, fileBases, fileExtensions] = ...
+        fileparts_custom(paths, useOriginal);
 end
 
 % Return results
@@ -225,14 +246,16 @@ switch partType
         parts = extract_simple_fileparts(strcat(fileDirs, '.dum'), 'base');
     case 'parentdir'
         parts = extract_simple_fileparts(strcat(fileDirs, '.dum'), 'directory');
-    case 'name'
+    case {'filename', 'name'}
         parts = strcat(fileBases, fileExtensions);
-    case 'base'
+    case {'filebase', 'base'}
         parts = fileBases;
     case 'pathbase'
         parts = fullfile(fileDirs, fileBases);        
     case 'extension'
         parts = fileExtensions;
+    otherwise
+        error('partType unrecognized!');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -55,7 +55,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/m3ha_neuron_create_simulation_params.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_figure02.m
-%       cd/plot_fitted_traces.m
+%       cd/m3ha_plot_figure03.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_network_change_params.m
 %       cd/m3ha_network_launch.m
@@ -81,6 +81,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/plot_chevron.m
 %       cd/plot_cfit_pulse_response.m
 %       cd/plot_error_bar.m
+%       cd/plot_fitted_traces.m
 %       cd/plot_histogram.m
 %       cd/plot_measures.m
 %       cd/plot_raw_multiunit.m

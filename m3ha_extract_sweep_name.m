@@ -1,14 +1,14 @@
-function iterStrs = m3ha_extract_iteration_string (strs, varargin)
-%% Extracts the iteration string from strings
-% Usage: iterStrs = m3ha_extract_iteration_string (strs, varargin)
+function sweepNames = m3ha_extract_sweep_name (strs, varargin)
+%% Extracts the sweep name from strings but ignores anything before filesep
+% Usage: sweepNames = m3ha_extract_sweep_name (strs, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       m3ha_extract_iteration_string({'singleneuronfitting15_12', 'singleneuronfitting15_13'})
+%       m3ha_extract_sweep_name({'FUN_D101310_0001_13', 'FUN_D101310_0001_13'})
 %
 % Outputs:
-%       iterStrs    - iteration strings
+%       sweepNames    - sweep names
 %                   specified as a character vector
 %
 % Arguments:
@@ -22,15 +22,14 @@ function iterStrs = m3ha_extract_iteration_string (strs, varargin)
 %       cd/extract_substrings.m
 %
 % Used by:
-%       cd/m3ha_neuron_choose_best_params.m
-%       cd/m3ha_simulate_ipsc_response.m
+%       cd/m3ha_plot_simulated_traces.m
 
 % File History:
-% 2019-12-21 Created by Adam Lu
+% 2019-12-22 Created by Adam Lu
 % 
 
 %% Hard-coded parameters
-iterStrPattern = 'singleneuronfitting[\d]*';
+sweepNamePattern = '[A-Z][0-9]{6}_[0-9]{4}_[0-9]*';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -58,9 +57,9 @@ parse(iP, strs, varargin{:});
 otherArguments = iP.Unmatched;
 
 %% Do the job
-% Extract the iteration strings
-iterStrs = extract_substrings(strs, 'FromBaseName', true, ...
-                                'RegExp', iterStrPattern, otherArguments);
+% Extract the sweep names
+sweepNames = extract_substrings(strs, 'FromBaseName', true, ...
+                                'RegExp', sweepNamePattern, otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

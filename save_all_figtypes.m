@@ -25,7 +25,6 @@ function save_all_figtypes (fig, filename, varargin)
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_plot_example_jitter.m.m
 %       cd/m3ha_plot_figure02.m
-%       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_rank_neurons.m
 %       cd/parse_current_family.m
 %       cd/plot_bar.m

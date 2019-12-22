@@ -325,7 +325,7 @@ function [errorStruct, hFig, simData] = ...
 %       cd/force_matrix.m
 %       cd/load_neuron_outputs.m
 %       cd/load_params.m
-%       cd/match_time_points.m
+%       cd/log_arraytext.m
 %       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_neuron_create_simulation_params.m
 %       cd/m3ha_neuron_create_TC_commands.m
@@ -470,6 +470,7 @@ maxRowsWithOneOnly = 8;
 verbose = false;
 lineWidthParallel = 1;
 figTypes = 'png';
+importedSuffix = 'imported_files';
 
 % The following must be consistent with both dclampDataExtractor.m & ...
 %   singleneuron4compgabab.hoc
@@ -883,6 +884,9 @@ simData = [];
 % Create an experiment identifier
 expStr = prefix;
 
+% Create output paths
+importedPath = fullfile(outFolder, [expStr, '_', importedSuffix, '.txt']);
+
 % Parse first argument
 if istext(neuronParamsTableOrFile)
     % Read in the table
@@ -933,11 +937,21 @@ plotLtsFlag, plotStatisticsFlag] = ...
 if strcmpi(simMode, 'passive')
     % Import data to compare if not provided but file names provided
     if isempty(realDataCpr) && ~isempty(fileNames)
+        % Log names of files imported
+        log_arraytext(importedPath, fileNames);
+
         % Import data
         [realDataCpr, sweepInfoCpr] = ...
             m3ha_import_raw_traces(fileNames, 'ImportMode', 'passive', ...
-                        'Verbose', verbose, 'OutFolder', outFolder, ...
-                        'CreateLog', true);
+                        'Verbose', verbose, 'OutFolder', outFolder);
+
+        % Update file names
+        fileNames = sweepInfoCpr.fileNames;
+
+        % Update row conditions if needed
+        if numel(fileNames) <= 3
+            rowConditions = transpose(1:3);
+        end
 
         % If not generating data, don't set hold current noise
         if ~generateDataFlag
@@ -975,10 +989,16 @@ if strcmpi(simMode, 'passive')
 elseif strcmpi(simMode, 'active')
     % Import data to compare if not provided but file names provided
     if isempty(realDataIpscr) && ~isempty(fileNames)
+        % Log names of files imported
+        log_arraytext(importedPath, fileNames);
+
         % Import data
         [realDataIpscr, sweepInfoIpscr] = ...
             m3ha_import_raw_traces(fileNames, 'ImportMode', 'active', ...
                         'Verbose', verbose, 'OutFolder', outFolder);
+
+        % Update file names
+        fileNames = sweepInfoIpscr.fileNames;
 
         % If not generating data, don't set hold current noise
         if ~generateDataFlag
@@ -1091,7 +1111,8 @@ end
 % Create output file paths if not provided
 if strcmpi(outFilePath, 'auto')
     outFilePath = create_simulation_output_filenames(nSweeps, ...
-                            'OutFolder', outFolder, 'Prefix', expStr);
+                        'OutFolder', outFolder, 'Prefix', expStr, ...
+                        'Suffix', fileBases);
 end
 
 % Create a table of simulation parameters
@@ -1160,19 +1181,12 @@ end
 expStrForTitle = strrep(expStr, '_', '\_');
 
 % Load .out files created by NEURON
-simDataOrig = load_neuron_outputs('FileNames', outFilePath, ...
-                                'RemoveAfterLoad', ~saveSimOutFlag);
-
 % If recorded data provided (tVecs not empty at this point),
 %   interpolate simulated data to match the time points of recorded data
 % Note: This is necessary because CVODE (variable time step method) 
 %       is applied in NEURON
-if ~isempty(tVecs)
-    simData = cellfun(@(x, y) match_time_points(x, y), ...
-                        simDataOrig, tVecs, 'UniformOutput', false);
-else
-    simData = simDataOrig;
-end
+simData = load_neuron_outputs('FileNames', outFilePath, 'tVecs', tVecs, ...
+                                'RemoveAfterLoad', ~saveSimOutFlag);
 
 % Extract vectors from simulated data
 %   Note: these are arrays with 25 columns
@@ -1573,7 +1587,7 @@ if plotIndividualFlag
     figHandle = set_figure_properties('ClearFigure', true, ...
                     'Visible', visibleStatus, ...
                     'FigNumber', figNumberIndividual, ...
-                    'Name', 'GABAB IPSC responses');
+                    'Name', 'All traces');
     hFig.individual = ...
         plot_fitted_traces(tVecs, vVecsSim, ...
                 'DataToCompare', vVecsRec, 'PlotMode', 'parallel', ...
@@ -1601,7 +1615,7 @@ if plotResidualsFlag
     figHandle = set_figure_properties('ClearFigure', true, ...
                     'Visible', visibleStatus, ...
                     'FigNumber', figNumberResiduals, ...
-                    'Name', 'GABAB IPSC response residuals');
+                    'Name', 'Residual traces');
     hFig.residuals = ...
         plot_fitted_traces(tVecs, residuals, ...
                 'PlotMode', 'residuals', ...

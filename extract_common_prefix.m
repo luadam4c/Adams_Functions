@@ -38,6 +38,7 @@ function prefix = extract_common_prefix (strs, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/extract_substrings.m
 %       cd/extract_subvectors.m
 %       cd/isemptycell.m
 %
@@ -47,8 +48,6 @@ function prefix = extract_common_prefix (strs, varargin)
 %       cd/extract_common_suffix.m
 %       cd/extract_fileparts.m
 %       cd/extract_substrings.m
-%       cd/m3ha_extract_cell_name.m
-%       cd/m3ha_extract_iteration_string.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_plot_simulated_traces.m
