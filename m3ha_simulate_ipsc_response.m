@@ -30,7 +30,8 @@
 %       cd/create_labels_from_numbers.m
 %       cd/create_time_stamp.m
 %       cd/find_matching_files.m
-%       cd/extract_substrings.m
+%       cd/m3ha_extract_cell_name.m
+%       cd/m3ha_extract_iteration_string.m
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_locate_homedir.m
 %       cd/m3ha_select_sweeps.m
@@ -72,9 +73,6 @@ specialCasesDirName = 'special_cases';
 defaultOutFolderSuffix = '_simulated';
 
 % File info
-cellNamePattern = '[A-Z][0-9]{6}';
-iterStrPattern = 'singleneuronfitting[0-9]*';
-
 % Default parameters used in computing errors
 %   Note: Should be consistent with singleneuronfitting75.m
 %       & compute_lts_errors.m & compute_single_neuron_errors.m
@@ -163,10 +161,10 @@ if chooseBestNeuronsFlag
                             'ExtractDistinct', false);
 
     % Extract the cell names
-    cellNames = extract_substrings(pngPaths, 'RegExp', cellNamePattern);
+    cellNames = m3ha_extract_cell_name(pngPaths);
 
     % Extract the iteration numbers
-    iterStrs = extract_substrings(pngPaths, 'RegExp', iterStrPattern);
+    iterStrs = m3ha_extract_iteration_string(pngPaths);
 
     % Find the parameter file directories
     [~, paramDirs] = cellfun(@(x) all_subdirs('Directory', rankDirectory, ...
@@ -189,7 +187,7 @@ if simulateFlag
     [~, paramPaths] = all_files('Directory', outFolder, 'Suffix', 'params');
 
     % Extract the cell names
-    cellNames = extract_substrings(paramPaths, 'RegExp', cellNamePattern);
+    cellNames = m3ha_extract_cell_name(paramPaths);
 
     % Display message
     fprintf('All sweeps from the following cells will be simulated: \n');

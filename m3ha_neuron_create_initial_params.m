@@ -82,7 +82,7 @@ function [initParamTables, initParamFiles, otherParams] = ...
 %       cd/copyvars.m
 %       cd/count_samples.m
 %       cd/extract_fileparts.m
-%       cd/extract_substrings.m
+%       cd/m3ha_extract_cell_name.m
 %       cd/force_column_vector.m
 %       cd/istext.m
 %       cd/load_params.m
@@ -112,7 +112,6 @@ function [initParamTables, initParamFiles, otherParams] = ...
 
 %% Hard-coded parameters
 initialParamsFolderName = 'initial_params';
-cellNamePattern = '[A-Z][0-9]{6}';
 defaultPassiveFileDir = fullfile('data_dclamp', 'take4');
 defaultPassiveFileName = 'dclampPassiveParams_byCells_tofit.xlsx';
 curveFitParamNames = {'diamSoma', 'LDend', 'diamDend', 'gpas'};
@@ -349,9 +348,8 @@ end
 % Extract just the file bases
 customInitFileBases = extract_fileparts(customInitFiles, 'base');
 
-% Extract the cell names based on cellNamePattern
-customCellNames = ...
-    extract_substrings(customInitFileBases, 'RegExp', cellNamePattern);
+% Extract the cell names
+customCellNames = m3ha_extract_cell_name(customInitFileBases);
 
 % Make sure the custom cell names are all unique
 if numel(customCellNames) ~= numel(unique(customCellNames))

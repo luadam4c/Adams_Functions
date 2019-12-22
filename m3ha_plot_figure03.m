@@ -48,8 +48,10 @@ curveFigWidth = 8.5;
 curveFigHeight = 4;
 curveXLimits = [0, 60];
 curveYLimits = [-1.2, 0];
-geomFigWidth = 4.5;
-geomFigHeight = 4;
+geomFigWidth = 4;
+geomFigHeight = 7;
+geomXLimits = [-100, 100];
+geomYLimits = [-100, 100];
 
 figTypes = {'png', 'epsc2'};
 
@@ -79,7 +81,8 @@ if plotCurveFit
                             somaColor, dendriteColor, ...
                             curveFigWidth, curveFigHeight, ...
                             curveXLimits, curveYLimits, ...
-                            geomFigWidth, geomFigHeight), ...
+                            geomFigWidth, geomFigHeight, ...
+                            geomXLimits, geomYLimits), ...
             exampleCellNames, passiveLogPaths);
 end
 
@@ -162,7 +165,7 @@ end
 function plot_curve_fit_results(cellName, passiveLogPath, ...
                 outFolder, figTypes, somaColor, dendriteColor, ...
                 curveFigWidth, curveFigHeight, curveXLimits, curveYLimits, ...
-                geomFigWidth, geomFigHeight)
+                geomFigWidth, geomFigHeight, geomXLimits, geomYLimits)
 
 % Decide on the figure name
 figPathBaseCurveFit = fullfile(outFolder, [cellName, '_curve_fit']);
@@ -205,6 +208,7 @@ update_figure_for_corel(figCurveFit, 'RemoveTexts', true);
 
 % Plot a scale bar
 plot_scale_bar('xy', 'XBarUnits', 'ms', 'YBarUnits', 'mV', ...
+                'XBarLength', 5, 'YBarLength', 0.1, ...
                 'XPosNormalized', 0.6, 'YPosNormalized', 0.2);
 
 % Update figure for CorelDraw
@@ -227,20 +231,29 @@ plot_ball_stick('GeomParams', passiveParams, ...
                 'BallEdgeColor', somaColor, 'StickEdgeColor', dendriteColor, ...
                 'FaceColor', 'none', 'LineWidth', 1);
 
+% Set axis limits
+xlim(geomXLimits)
+ylim(geomYLimits)
+
 % Set title
 title(['Ball-stick model for ', cellName]);
 
 % Plot a scale bar
 plot_scale_bar('xy', 'XBarUnits', 'um', 'YBarUnits', 'um', ...
+                'XBarLength', 30, 'YBarLength', 30, ...
                 'XPosNormalized', 0.6, 'YPosNormalized', 0.2);
 
 % Bottom subplot
 subplot(axGeom(2));
 
-% Plot final geometry TODO
+% Plot final geometry
 plot_ball_stick('GeomParams', passiveParams, ...
+                'BallCurvature', [0, 0], 'NStickSegments', 2, ...
                 'BallEdgeColor', somaColor, 'StickEdgeColor', dendriteColor, ...
                 'FaceColor', 'none', 'LineWidth', 1);
+
+% Set title
+title(['Final geometry for ', cellName]);
 
 % Link axes
 linkaxes(axGeom, 'xy');

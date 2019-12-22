@@ -50,6 +50,12 @@ function objects = plot_ball_stick (varargin)
 %                   - 'EdgeColor': edge color for both ball and stick
 %                   must be a character vector or 3-element numeric array
 %                   default == [] (not set)
+%                   - 'BallCurvature': curvature for the ball
+%                   must be a character vector or 3-element numeric array
+%                   default == [1, 1] (circle)
+%                   - 'NStickSegments': number of stick segments
+%                   must be a positive integer scalar
+%                   default == 1
 %                   - Any other parameter-value pair for rectangle()
 %
 % Requires:
@@ -64,7 +70,8 @@ function objects = plot_ball_stick (varargin)
 
 % File History:
 % 2019-12-20 Moved code from find_passive_params.m
-% 
+% 2019-12-21 Added 'BallCurvature' as an optional argument
+% 2019-12-21 Added 'NStickSegments' as an optional argument
 
 %% Hard-coded parameters
 
@@ -81,6 +88,8 @@ ballColorDefault = [];
 stickColorDefault = [];
 faceColorDefault = [];
 edgeColorDefault = [];
+ballCurvatureDefault = [1, 1];
+nStickSegmentsDefault = 1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -109,6 +118,9 @@ addParameter(iP, 'BallColor', ballColorDefault);
 addParameter(iP, 'StickColor', stickColorDefault);
 addParameter(iP, 'FaceColor', faceColorDefault);
 addParameter(iP, 'EdgeColor', edgeColorDefault);
+addParameter(iP, 'BallCurvature', ballCurvatureDefault);
+addParameter(iP, 'NStickSegments', nStickSegmentsDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -124,6 +136,8 @@ ballColor = iP.Results.BallColor;
 stickColor = iP.Results.StickColor;
 faceColor = iP.Results.FaceColor;
 edgeColor = iP.Results.EdgeColor;
+ballCurvature = iP.Results.BallCurvature;
+nStickSegments = iP.Results.NStickSegments;
 
 % Keep unmatched arguments for the rectangle() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -161,22 +175,32 @@ if isempty(radiusSoma) || isempty(radiusDend) || isempty(lengthDend)
     end
 end
 
+% Compute the length of each dendritic segment
+lengthSegment = lengthDend / nStickSegments;
+
 %% Do the job
 % Hold on
 wasHold = hold_on;
 
 % Plot soma as a circle
 objects(1) = rectangle('Position', radiusSoma * [-1, -1, 2, 2], ...
-                        'Curvature', [1, 1], 'FaceColor', ballFaceColor, ...
-                        'EdgeColor', ballEdgeColor, ...
-                        otherArguments{:});
+                    'Curvature', ballCurvature, 'FaceColor', ballFaceColor, ...
+                    'EdgeColor', ballEdgeColor, ...
+                    otherArguments{:});
 
-% Plot dendrite as a rectangle
-objects(2) = rectangle('Position', [radiusSoma, -radiusDend, ...
-                                    lengthDend, 2 * radiusDend], ...
-                        'Curvature', [0, 0], 'FaceColor', stickFaceColor, ...
-                        'EdgeColor', stickEdgeColor, ...
-                        otherArguments{:});
+% Plot dendrite(s) as a rectangle
+for iSegment = 1:nStickSegments
+    % Compute the left end point for the dendritic segment
+    posLeft = radiusSoma + lengthSegment * (iSegment - 1);
+
+    % Plot the dendritic segment as a rectangle
+    objects(1 + iSegment) = ...
+        rectangle('Position', [posLeft, -radiusDend, ...
+                                lengthSegment, 2 * radiusDend], ...
+                    'Curvature', [0, 0], 'FaceColor', stickFaceColor, ...
+                    'EdgeColor', stickEdgeColor, ...
+                    otherArguments{:});
+end
 
 % Adjust data aspect ratio so that the x and y unit lengths are the same
 daspect([1, 1, 1]);

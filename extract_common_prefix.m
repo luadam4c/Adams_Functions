@@ -11,6 +11,9 @@ function prefix = extract_common_prefix (strs, varargin)
 %       extract_common_prefix({'a_c', 'b_d'})
 %       extract_common_prefix({'a_c', 'b_d'}, 'KeepDelimiter', true)
 %       extract_common_prefix({'', ''}, 'KeepDelimiter', true)
+%       extract_common_prefix('a_b_c')
+%       extract_common_prefix('a_b_c', 'KeepDelimiter', true)
+%       extract_common_prefix({'a1_c', 'a1_d'}, 'RegExp', '\w')
 %
 % Outputs:
 %       prefix      - the common prefix
@@ -22,12 +25,16 @@ function prefix = extract_common_prefix (strs, varargin)
 %       varargin    - 'Delimiter': delimiter used
 %                   must be a string scalar or a character vector
 %                   default == '_'
-%                   - 'KeepDelimiter': whether to keep the preceding delimiter
+%                   - 'KeepDelimiter': whether to keep the trailing delimiter
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'SuffixInstead': extract common suffix instead
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'RegExp': regular expression to match
+%                   must be a character vector or a string vector
+%                       or a cell array of character vectors
+%                   default == none
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -39,6 +46,9 @@ function prefix = extract_common_prefix (strs, varargin)
 %       cd/extract_common_directory.m
 %       cd/extract_common_suffix.m
 %       cd/extract_fileparts.m
+%       cd/extract_substrings.m
+%       cd/m3ha_extract_cell_name.m
+%       cd/m3ha_extract_iteration_string.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/parse_current_family.m
@@ -54,6 +64,8 @@ function prefix = extract_common_prefix (strs, varargin)
 % 2018-12-26 Added 'Delimiter' and 'SuffixInstead' as optional arguments
 % 2018-12-27 Added 'KeepDelimiter' as an optional argument
 % 2019-08-23 Now uses isemptycell.m
+% 2019-12-21 Fixed the case when there is only one string
+% 2019-12-21 Added 'RegExp' as an optional argument 
 % 
 
 %% Hard-coded parameters
@@ -62,6 +74,7 @@ function prefix = extract_common_prefix (strs, varargin)
 delimiterDefault = '_';
 keepDelimiterDefault = false;   % don't keep the preceding delimiter by default
 suffixInsteadDefault = false;
+regExpDefault = '';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -88,12 +101,17 @@ addParameter(iP, 'KeepDelimiter', keepDelimiterDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SuffixInstead', suffixInsteadDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'RegExp', regExpDefault, ...
+    @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
+        ['regExp must be empty or a character array or a string array ', ...
+            'or cell array of character arrays!']));
 
 % Read from the Input Parser
 parse(iP, strs, varargin{:});
 delimiter = iP.Results.Delimiter;
 keepDelimiter = iP.Results.KeepDelimiter;
 suffixInstead = iP.Results.SuffixInstead;
+regExp = iP.Results.RegExp;
 
 %% Preparation
 if suffixInstead
@@ -109,76 +127,87 @@ if isemptycell(strs)
     return
 end
 
-% Split all strings by delimiter to get parts
-%   Note: split() can take both a cell and a string as the argument
-%           and returns a column cell array
-parts = arrayfun(@(x) split(x, delimiter), strs, 'UniformOutput', false);
-
-% Extract the same number of elements from each cell array
-partsAligned = extract_subvectors(parts, 'AlignMethod', alignMethod, ...
-                                    'TreatCellStrAsArray', true);
-
-% Place all parts together in a 2-D cell array
-%   Each column is an original string
-%   Each row is a level
-partsArray = horzcat(partsAligned{:});
-
-% Separate parts by level
-partsByLevel = extract_rows(partsArray);
-
-% Find the number of unique elements in each row
-nUniqueEachLevel = count_unique_elements(partsByLevel);
-
-if suffixInstead
-    % Find the last row that has more than one unique element
-    levelLastDifference = find(nUniqueEachLevel > 1, 1, 'last');
-
-    % If every row has more than one unique element, 
-    %   the common suffix is empty
-    if levelLastDifference == numel(nUniqueEachLevel)
-        prefix = '';
-        return
-    end
-
-    % Use the next row number
-    if isempty(levelLastDifference) 
-        levelFirstCommon = 1;
-    else
-        levelFirstCommon = levelLastDifference + 1;
-    end
-
-    % Construct the common suffix
-    tempCell = join(partsAligned{1}(levelFirstCommon:end), delimiter);
-    prefix = tempCell{1};
-
-    % Add the delimiter if requested
-    if keepDelimiter
-        prefix = [delimiter, prefix];
-    end
+% Only do anything complicated if there is more than one string
+if ischar(strs) || isstring(strs) && numel(strs) == 1
+    prefix = strs;
+elseif numel(strs) == 1
+    prefix = strs{1};
 else
-    % Find the first row that has more than one unique element
-    levelFirstDifference = find(nUniqueEachLevel > 1, 1, 'first');
+    % Split all strings by delimiter to get parts
+    %   Note: split() can take both a cell and a string as the argument
+    %           and returns a column cell array
+    parts = arrayfun(@(x) split(x, delimiter), strs, 'UniformOutput', false);
 
-    % If every row has more than one unique element, 
-    %   the common prefix is empty
-    if levelFirstDifference == 1
-        prefix = '';
-        return
-    end
+    % Extract the same number of elements from each cell array
+    partsAligned = extract_subvectors(parts, 'AlignMethod', alignMethod, ...
+                                        'TreatCellStrAsArray', true);
 
-    % Use the previous row number
-    if isempty(levelFirstDifference)
-        levelLastCommon = numel(nUniqueEachLevel);
+    % Place all parts together in a 2-D cell array
+    %   Each column is an original string
+    %   Each row is a level
+    partsArray = horzcat(partsAligned{:});
+
+    % Separate parts by level
+    partsByLevel = extract_rows(partsArray);
+
+    % Find the number of unique elements in each row
+    nUniqueEachLevel = count_unique_elements(partsByLevel);
+
+    if suffixInstead
+        % Find the last row that has more than one unique element
+        levelLastDifference = find(nUniqueEachLevel > 1, 1, 'last');
+
+        % If every row has more than one unique element, 
+        %   the common suffix is empty
+        if levelLastDifference == numel(nUniqueEachLevel)
+            prefix = '';
+            return
+        end
+
+        % Use the next row number
+        if isempty(levelLastDifference) 
+            levelFirstCommon = 1;
+        else
+            levelFirstCommon = levelLastDifference + 1;
+        end
+
+        % Construct the common suffix
+        tempCell = join(partsAligned{1}(levelFirstCommon:end), delimiter);
+        prefix = tempCell{1};
     else
-        levelLastCommon = levelFirstDifference - 1;
+        % Find the first row that has more than one unique element
+        levelFirstDifference = find(nUniqueEachLevel > 1, 1, 'first');
+
+        % If every row has more than one unique element, 
+        %   the common prefix is empty
+        if levelFirstDifference == 1
+            prefix = '';
+            return
+        end
+
+        % Use the previous row number
+        if isempty(levelFirstDifference)
+            levelLastCommon = numel(nUniqueEachLevel);
+        else
+            levelLastCommon = levelFirstDifference - 1;
+        end
+
+        % Construct the common prefix
+        tempCell = join(partsAligned{1}(1:levelLastCommon), delimiter);
+        prefix = tempCell{1};
     end
+end
 
-    % Construct the common prefix
-    tempCell = join(partsAligned{1}(1:levelLastCommon), delimiter);
-    prefix = tempCell{1};
+% Match regular expression if requested
+if ~isempty(regExp)
+    prefix = extract_substrings(prefix, 'RegExp', regExp);
+end
 
-    % Add the delimiter if requested
-    if keepDelimiter
+% Add the delimiter if requested
+if keepDelimiter
+    if suffixInstead
+        prefix = [delimiter, prefix];
+    else
         prefix = [prefix, delimiter];
     end
 end

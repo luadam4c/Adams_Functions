@@ -1,8 +1,8 @@
 function [errorStruct, hFig, simData] = ...
-                m3ha_neuron_run_and_analyze (neuronParamsTable, varargin)
+                m3ha_neuron_run_and_analyze (neuronParamsTableOrFile, varargin)
 %% Runs and analyzes "one iteration" of NEURON simulations (once for each of the sweeps)
 % Usage: [errorStruct, hFig, simData] = ...
-%               m3ha_neuron_run_and_analyze (neuronParamsTable, varargin)
+%               m3ha_neuron_run_and_analyze (neuronParamsTableOrFile, varargin)
 % Explanation:
 %       TODO
 % 
@@ -12,8 +12,8 @@ function [errorStruct, hFig, simData] = ...
 %                   specified as a numeric array
 %                       or a cell array of numeric arrays
 % Arguments:
-%       neuronParamsTable   
-%                   - table(s) of single neuron parameters with 
+%       neuronParamsTableOrFile
+%                   - table(s) of file(s) of single neuron parameters with 
 %                       parameter names as 'RowNames' and with variables:
 %                       'Value': value of the parameter
 %                       'LowerBound': lower bound of the parameter
@@ -24,6 +24,8 @@ function [errorStruct, hFig, simData] = ...
 %                       Note: Only the 'Value' column is needed
 %                               if jitterFlag is false
 %                   must be a 2d table or a cell array of 2d tables
+%                       or a character vector or a string 
+%                       or a cell array of character vectors
 %       varargin    - 'Hfig': handles structure for figures
 %                   must be a TODO
 %                   default == TODO
@@ -279,7 +281,6 @@ function [errorStruct, hFig, simData] = ...
 %                   - 'Lts2SweepErrorRatio': ratio of LTS error to sweep error
 %                   must be empty or a numeric vector with length == nSweeps
 %                   default == set in compute_single_neuron_errors.m
-
 %
 % Requires:
 %       ~/m3ha/optimizer4gabab/singleneuron4compgabab.hoc
@@ -294,11 +295,14 @@ function [errorStruct, hFig, simData] = ...
 %       cd/extract_columns.m
 %       cd/extract_common_prefix.m
 %       cd/extract_fileparts.m
+%       cd/extract_substrings.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
 %       cd/force_matrix.m
 %       cd/load_neuron_outputs.m
+%       cd/load_params.m
 %       cd/match_time_points.m
+%       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_neuron_create_simulation_params.m
 %       cd/m3ha_neuron_create_TC_commands.m
 %       cd/m3ha_plot_individual_traces.m
@@ -593,8 +597,8 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'neuronParamsTable', ...
-    @(x) validateattributes(x, {'table', 'cell'}, {'2d'}));
+addRequired(iP, 'neuronParamsTableOrFile', ...
+    @(x) validateattributes(x, {'table', 'char', 'string', 'cell'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'HFig', hFigDefault);
@@ -747,7 +751,7 @@ addParameter(iP, 'Lts2SweepErrorRatio', lts2SweepErrorRatioDefault, ...
     @(x) assert(isnumericvector(x), 'Lts2SweepErrorRatio must be a numeric vector!'));
 
 % Read from the Input Parser
-parse(iP, neuronParamsTable, varargin{:});
+parse(iP, neuronParamsTableOrFile, varargin{:});
 hFig = iP.Results.HFig;
 buildMode = validatestring(iP.Results.BuildMode, validBuildModes);
 simMode = validatestring(iP.Results.SimMode, validSimModes);
@@ -824,6 +828,31 @@ lts2SweepErrorRatio = iP.Results.Lts2SweepErrorRatio;
 errorStruct = struct;
 hFig = struct;
 simData = [];
+
+% Parse first argument
+if istext(neuronParamsTableOrFile)
+    % Read in the table
+    neuronParamsTable = load_params(neuronParamsTableOrFile);
+
+    % Look for a cell name
+    cellName = m3ha_extract_cell_name(neuronParamsTableOrFile, ...
+                                        'ForceSingleOutput', true);
+else
+    % The first argument is(are) the parameter table(s)
+    neuronParamsTable = neuronParamsTableOrFile;
+    
+    % Cell name is not provided yet at this stage
+    cellName = '';
+end
+
+% Choose data files to compare against if cell name provided
+if isempty(fileNames) && ~isempty(cellName)
+    % TODO
+
+elseif isempty(cellName)
+    % Look for a cell name
+    cellName = m3ha_extract_cell_name(fileNames, 'ForceSingleOutput', true);
+end
 
 % Decide on simulation-mode-dependent variables
 if strcmpi(simMode, 'passive')

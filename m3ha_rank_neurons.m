@@ -103,8 +103,6 @@ specialCasesDirName = 'special_cases';
 defaultOutFolderName = 'ranked';
 
 % File info
-cellNamePattern = '[A-Z][0-9]{6}';
-
 %   Note: Must be consistent with m3ha_neuron_choose_best_params.m
 errorSheetSuffix = 'error_comparison';
 errorSheetExtension = 'csv';

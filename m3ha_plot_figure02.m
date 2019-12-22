@@ -9,9 +9,9 @@
 %       cd/decide_on_colormap.m
 %       cd/extract_columns.m
 %       cd/extract_fileparts.m
-%       cd/extract_substrings.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_create_cell_info_table.m
+%       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_load_sweep_info.m
 %       cd/plot_scale_bar.m
@@ -31,7 +31,6 @@ matFilesDir = fullfile(parentDirectory, 'data_dclamp', 'take4', 'matfiles');
 
 % Files
 datalogPath = fullfile(figure02Dir, 'dclampdatalog_take4.csv');
-cellNamePattern = '[A-Z][0-9]{6}';
 
 % Flags
 saveCellInfo = false;
@@ -95,8 +94,7 @@ swpInfo = m3ha_load_sweep_info('Directory', figure02Dir);
                         'Suffix', 'imported_files', 'Extension', 'txt');
 
 % Extract example cell names
-exampleCellNames = ...
-    extract_substrings(exampleLogPaths, 'Regexp', cellNamePattern);
+exampleCellNames = m3ha_extract_cell_name(exampleLogPaths);
 
 %% Create cell info table
 if saveCellInfo

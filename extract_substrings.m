@@ -1,5 +1,5 @@
 function subStrs = extract_substrings (strs, varargin)
-%% Extracts substrings from strings
+%% Extracts substring(s) from strings
 % Usage: subStrs = extract_substrings (strs, varargin)
 % Explanation:
 %       TODO
@@ -30,9 +30,10 @@ function subStrs = extract_substrings (strs, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
-%       cd/m3ha_neuron_choose_best_params.m
-%       cd/m3ha_neuron_create_initial_params.m
-%       cd/m3ha_plot_figure02.m
+%       cd/extract_common_prefix.m
+%       cd/m3ha_extract_cell_name.m
+%       cd/m3ha_extract_iteration_string.m
+%       cd/m3ha_neuron_run_and_analyze.m
 
 % File History:
 % 2019-11-25 Created by Adam Lu

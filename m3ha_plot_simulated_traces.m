@@ -49,6 +49,8 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %           validPlotTypes = {'individual', 'residual', 'overlapped'};
 
 %% Hard-coded parameters
+validPlotTypes = {'individual', 'residual', 'overlapped'};
+
 % Column numbers for simulated data
 %   Note: Must be consistent with singleneuron4compgabab.hoc
 TIME_COL_SIM = 1;

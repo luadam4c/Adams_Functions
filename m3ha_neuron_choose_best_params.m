@@ -44,11 +44,12 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 %       cd/create_labels_from_numbers.m
 %       cd/create_subplots.m
 %       cd/extract_fields.m
-%       cd/extract_substrings.m
 %       cd/force_matrix.m
 %       cd/isemptycell.m
 %       cd/istext.m
 %       cd/load_params.m
+%       cd/m3ha_extract_cell_name.m
+%       cd/m3ha_extract_iteration_string.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/plot_bar.m
 %       cd/save_all_figtypes.m
@@ -68,8 +69,6 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 %% Hard-coded parameters
 validBuildModes = {'active', 'passive'};
 validSimModes = {'active', 'passive'};
-iterStrPattern = 'singleneuronfitting[\d]*';
-cellNamePattern = '[A-Z][0-9]{6}';
 
 %   Note: The following must be consistent with compute_single_neuron_errors.m
 idxSweep = 1;
@@ -165,10 +164,10 @@ if isempty(candParamsFiles)
     cellName = repmat({'some_cell'}, nTables, 1);
 else
     % Extract the chosen iteration string
-    iterStr = extract_substrings(candParamsFiles, 'RegExp', iterStrPattern);
+    iterStr = m3ha_extract_iteration_string(candParamsFiles);
 
     % Extract the cell names
-    cellName = extract_substrings(candParamsFiles, 'RegExp', cellNamePattern);
+    cellName = m3ha_extract_cell_name(candParamsFiles);
 end
 
 % Get unique cell names
