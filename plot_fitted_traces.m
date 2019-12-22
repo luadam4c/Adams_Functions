@@ -1,6 +1,6 @@
-function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
-%% Plots individual voltage traces
-% Usage: handles = m3ha_plot_individual_traces (tVecs, data, varargin)
+function handles = plot_fitted_traces (tVecs, data, varargin)
+%% Plots individual fitted traces
+% Usage: handles = plot_fitted_traces (tVecs, data, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -121,7 +121,6 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 %                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
-%       ~/Downloaded_Functions.m/rgb.m
 %       cd/argfun.m
 %       cd/compute_baseline_noise.m
 %       cd/compute_default_sweep_info.m
@@ -160,6 +159,7 @@ function handles = m3ha_plot_individual_traces (tVecs, data, varargin)
 % 2019-01-08 Added 'LinkAxesOption' as an optional parameter
 % 2019-10-17 Now defaults autoUpdateYLimits to false
 % 2019-11-28 Added 'FigTypes' as an optional parameter
+% 2019-12-22 Renamed function to plot_fitted_traces
 % 
 
 %% Hard-coded parameters
@@ -473,9 +473,9 @@ if plotSwpWeightsFlag
 
         % Decide on the text color
         if sweepWeight ~= 0
-            colorText = rgb('DarkGreen');
+            colorText = [0, 0.3906, 0];     % rgb('DarkGreen');
         else
-            colorText = rgb('Gray');
+            colorText = [0.5, 0.5, 0.5];    % rgb('Gray');
         end
 
         % Show sweep weight

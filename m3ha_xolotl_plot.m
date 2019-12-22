@@ -78,7 +78,7 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 %       cd/find_in_strings.m
 %       cd/find_window_endpoints.m
 %       cd/force_row_vector.m
-%       cd/m3ha_plot_individual_traces.m
+%       cd/plot_fitted_traces.m
 %       cd/parse_xolotl_object.m
 %
 % Used by:
@@ -106,9 +106,9 @@ compToPatchDefault = '';        % set later
 timeToStabilizeDefault = 1000;  % simulate for 1000 ms by default
 holdingPotentialDefault = [];   % set later
 xLimitsDefault = [];            % for current pulse
-colorMapDefault = [];           % set in m3ha_plot_individual_traces.m
+colorMapDefault = [];           % set in plot_fitted_traces.m
 figTitleDefault = 'Simulation by xolotl';
-figNumberDefault = [];          % set in m3ha_plot_individual_traces.m
+figNumberDefault = [];          % set in plot_fitted_traces.m
 figNameDefault = '';            % don't save figure by default
 baseWindowDefault = [];         % set later
 fitWindowDefault = [];          % set later
@@ -277,7 +277,7 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
             'PaperUnits', 'points', 'PaperSize', [1200, 600]); hold on
 
     % Initialize the plot by using NaN data
-    individual = m3ha_plot_individual_traces(tVec, nanData, ...
+    individual = plot_fitted_traces(tVec, nanData, ...
                                     'DataToCompare', dataToCompare, ...
                                     'XLimits', xLimits, ...
                                     'XUnits', xUnits, ...
@@ -527,7 +527,7 @@ xlim(xLimits)
 'FigName', figName, ...
 
 % Plot the traces
-    m3ha_plot_individual_traces(tVec, data, ...
+    plot_fitted_traces(tVec, data, ...
                                 'DataToCompare', dataToCompare, ...
                                 'XLimits', xLimits, ...
                                 'ColorMap', colorMap, ...

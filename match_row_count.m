@@ -40,7 +40,7 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %       cd/decide_on_colormap.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_neuron_create_simulation_params.m
-%       cd/m3ha_plot_individual_traces.m
+%       cd/plot_fitted_traces.m
 %       cd/match_format_vectors.m
 %       cd/match_time_info.m
 %       cd/parse_current_family.m

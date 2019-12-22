@@ -36,7 +36,7 @@ function isCellNumeric = iscellnumeric (x)
 %       cd/force_matrix.m
 %       cd/force_row_vector.m
 %       cd/extract_columns.m
-%       cd/m3ha_plot_individual_traces.m
+%       cd/plot_fitted_traces.m
 %       cd/match_array_counts.m
 %       cd/match_format_vector_sets.m
 %       cd/parse_current_family.m

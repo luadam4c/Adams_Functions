@@ -32,7 +32,7 @@ function isNumericVector = isnumericvector (x)
 %       cd/find_window_endpoints.m
 %       cd/iscellnumericvector.m
 %       cd/m3ha_neuron_create_simulation_params.m
-%       cd/m3ha_plot_individual_traces.m
+%       cd/plot_fitted_traces.m
 %       cd/match_format_vector_sets.m
 %       cd/plot_histogram.m
 %       cd/plot_struct.m

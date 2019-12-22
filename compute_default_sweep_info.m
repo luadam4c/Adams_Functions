@@ -49,12 +49,12 @@ function [baseWindow, fitWindow, baseNoise, sweepWeights] = ...
 % Used by:
 %       cd/compute_single_neuron_errors.m
 %       cd/m3ha_import_raw_traces.m
-%       cd/m3ha_plot_individual_traces.m
+%       cd/plot_fitted_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_xolotl_test.m
 
 % File History:
-% 2018-11-01 Moved from m3ha_plot_individual_traces.m
+% 2018-11-01 Moved from plot_fitted_traces.m
 % 2018-11-28 Default window(s) for fitting must now be after baseline window(s)
 % 
 

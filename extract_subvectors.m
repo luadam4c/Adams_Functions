@@ -117,7 +117,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/force_matrix.m
 %       cd/iscellvector.m
 %       cd/m3ha_import_raw_traces.m
-%       cd/m3ha_plot_individual_traces.m
+%       cd/plot_fitted_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/parse_current_family.m
 %       cd/parse_ipsc.m

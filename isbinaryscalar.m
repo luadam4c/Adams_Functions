@@ -19,7 +19,7 @@ function isBinaryScalar = isbinaryscalar (x)
 %       cd/isbinaryarray.m
 %
 % Used by:
-%       cd/m3ha_plot_individual_traces.m
+%       cd/plot_fitted_traces.m
 
 % File History:
 % 2018-10-31 Modified from isnumericvector.m

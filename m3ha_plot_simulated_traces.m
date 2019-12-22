@@ -12,7 +12,14 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %                   specified as a TODO
 %
 % Arguments:
-%       varargin    - 'Directory': the directory to search in
+%       varargin    - 'PlotType': type of plot
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'individual'    - individual traces on separate subplots
+%                       'residual'      - residual traces 
+%                                               between simulated and recorded
+%                       'overlapped'    - individual traces overlapped
+%                   default == 'individual'
+%                   - 'Directory': the directory to search in
 %                   must be a string scalar or a character vector
 %                   default == set in all_files.m
 %                   - 'FileNames': paths to simulated data
@@ -90,6 +97,7 @@ labelsAll = {'Time (ms)'; 'V_{soma} (mV)'; 'V_{dend1} (mV)'; ...
         'I_{NaP} (mA/cm^2)'; 'm_{\infty,NaP}'; 'h_{NaP}'};
 
 %% Default values for optional arguments
+plotTypeDefault = 'individual';
 directoryDefault = '';          % set in all_files.m
 fileNamesDefault = {};
 extensionDefault = 'out';       % 
@@ -114,6 +122,8 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'PlotType', plotTypeDefault, ...
+    @(x) any(validatestring(x, validPlotTypes)));
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FileNames', fileNamesDefault, ...
@@ -130,6 +140,7 @@ addParameter(iP, 'OutFolder', outFolderDefault, ...
 
 % Read from the Input Parser
 parse(iP, varargin{:});
+plotType = validatestring(iP.Results.PlotType, validPlotTypes);
 directory = iP.Results.Directory;
 fileNames = iP.Results.FileNames;
 extension = iP.Results.Extension;
@@ -190,6 +201,20 @@ simData = load_neuron_outputs('FileNames', fileNames);
 %     simData = simDataOrig;
 % end
 
+% Plot according to plot type
+switch plotType
+    case 'individual'
+    case 'residual'
+    case 'overlapped'
+        m3ha_plot_overlapped_traces(simData)
+    otherwise
+        error('plotType unrecognized!');
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function m3ha_plot_overlapped_traces (simData)
+
 % Extract vectors from simulated data
 %   Note: these are arrays with 25 columns
 if strcmpi(buildMode, 'passive')
@@ -212,6 +237,7 @@ elseif strcmpi(buildMode, 'active')
                         IKKIR_COL_SIM, IKIRM_COL_SIM, ...
                         INAPNA_COL_SIM, INAPM_COL_SIM, INAPH_COL_SIM]);
 end
+
 % Find the indices of the x-axis limit endpoints
 endPointsForPlots = find_window_endpoints(xLimits, tVecs);
 
@@ -239,8 +265,10 @@ elseif strcmpi(buildMode, 'active')
 end
 
 % Compute processed data
-itm2hVecsSim = (itmVecsSim .^ 2) .* ithVecsSim;
-itminf2hinfVecsSim = (itminfVecsSim .^ 2) .* ithinfVecsSim;
+if strcmpi(buildMode, 'active')
+    itm2hVecsSim = (itmVecsSim .^ 2) .* ithVecsSim;
+    itminf2hinfVecsSim = (itminfVecsSim .^ 2) .* ithinfVecsSim;
+end
 
 % Select data to plot
 if strcmpi(buildMode, 'passive')

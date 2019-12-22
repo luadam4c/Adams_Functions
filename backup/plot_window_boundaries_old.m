@@ -63,7 +63,7 @@ function h = plot_window_boundaries (win, varargin)
 %       cd/plot_vertical_shade.m
 %
 % Used by:    
-%       cd/m3ha_plot_individual_traces.m
+%       cd/plot_fitted_traces.m
 %       cd/plot_tuning_curve.m
 
 % File History:

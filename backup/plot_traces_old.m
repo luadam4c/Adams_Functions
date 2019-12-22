@@ -187,7 +187,7 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
 %       ~/Downloaded_Function/subplotsqueeze.m
 %
 % Used by:
-%       cd/m3ha_plot_individual_traces.m
+%       cd/plot_fitted_traces.m
 %       cd/plot_traces_abf.m
 
 % File History:

@@ -65,7 +65,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %       cd/find_closest.m
 %       cd/find_passive_params.m
 %       cd/m3ha_import_raw_traces.m
-%       cd/m3ha_plot_individual_traces.m
+%       cd/plot_fitted_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_ipsc.m
