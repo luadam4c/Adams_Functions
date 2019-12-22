@@ -1017,10 +1017,12 @@ elseif strcmpi(simMode, 'active')
 end
 
 % Decide on row conditions
-if strcmpi(simMode, 'passive')
-    rowConditions = rowConditionsCpr;
-elseif strcmpi(simMode, 'active')
-    rowConditions = rowConditionsIpscr;
+if isempty(rowConditions)
+    if strcmpi(simMode, 'passive')
+        rowConditions = rowConditionsCpr;
+    elseif strcmpi(simMode, 'active')
+        rowConditions = rowConditionsIpscr;
+    end
 end
 
 % Decide whether to plot anything
