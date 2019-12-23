@@ -183,6 +183,11 @@ if isempty(swpInfo)
     swpInfo = m3ha_load_sweep_info;
 end
 
+% Set default data mode
+if isempty(dataMode)
+    dataMode = 2;
+end
+
 % Update swpInfo so that there is a toUse column
 swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'RowsToUse', rowsToUse, ...
                                 'DataMode', dataMode, 'CasesDir', casesDir);
@@ -244,11 +249,6 @@ if isempty(attemptNumber)
     else
         attemptNumber = 5;
     end
-end
-
-% Set default data mode
-if isempty(dataMode)
-    dataMode = 2;
 end
 
 %% Determine row conditions
