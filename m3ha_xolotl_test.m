@@ -247,12 +247,12 @@ m3ha.manipulate_plot_func = ...
                             'TimeToStabilize', timeToStabilize)};
 
 % Manipulate leak channel parameters
-m3ha.manipulate({'soma.len', 'soma.radius', 'soma.Leak.gbar', ...
-                 'dend1.len', 'dend1.radius', ...
-                 'dend2.len', 'dend2.radius'})
+% m3ha.manipulate({'soma.len', 'soma.radius', 'soma.Leak.gbar', ...
+%                   'dend1.len', 'dend1.radius', ...
+%                   'dend2.len', 'dend2.radius'})
 % m3ha.manipulate('*gbar')
 % m3ha.manipulate('*Leak*')
-% m3ha.manipulate('*E')
+m3ha.manipulate('*E')
 % m3ha.manipulate({'*Leak*', '*length*'})
 manip = gcf;
 manip.Position(2) = manip.Position(2) - 200;
