@@ -8,8 +8,6 @@ function m3ha_compute_and_plot_geometry2(outFolder, suffixes, diamSoma, LDend1, 
 % 2017-09-01 BT - Implemented Input Parser
 % 2018-03-08 AL - Made figures invisible upon creation
 % 2018-08-15 AL - Updated geometry parameters
-% TODO: Update geometry parameters to diamDend and LDend
-% TODO: Use plot_ball_stick.m
 
 color = [0 0 1	% blue
 		 1 0 0	% red

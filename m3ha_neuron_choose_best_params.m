@@ -165,6 +165,9 @@ if isempty(candParamsFiles)
 else
     % Extract the chosen iteration string
     iterStr = m3ha_extract_iteration_string(candParamsFiles);
+    if any(isemptycell(iterStr))
+        error('Iteration string not found!');
+    end
 
     % Extract the cell names
     cellName = m3ha_extract_cell_name(candParamsFiles);

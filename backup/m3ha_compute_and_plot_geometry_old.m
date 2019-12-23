@@ -1,12 +1,8 @@
 function m3ha_compute_and_plot_geometry(outFolder, suffix, diamSoma, LDend1, LDend2, color, linewidth)
 %% Plot the geometry of the cell
 %
-
-% File History:
 % 2018-03-08 Made figures invisible
 % 2018-08-15 Updated geometry parameters
-% TODO: Update geometry parameters to diamDend and LDend
-% TODO: Use plot_ball_stick.m
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

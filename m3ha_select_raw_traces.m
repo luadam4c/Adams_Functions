@@ -328,6 +328,10 @@ swpIndTemp5 = cell(nGCondToUse, nPCondToUse);
 % Decide on the sweeps to use for each condition
 switch columnMode
 case 1
+    if iscell(cellName)
+        cellName = cellName{1};
+    end
+
     % Print message
     fprintf('Fitting across trials of cell %s ... \n', cellName);
 

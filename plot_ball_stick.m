@@ -165,13 +165,44 @@ if ~isempty(edgeColor)
 end
 
 % Read from geomParams if needed
-if isempty(radiusSoma) || isempty(radiusDend) || isempty(lengthDend)
+% TODO: use extract_field(geomParams, {...}, 'FirstOnly', true)
+if isempty(radiusSoma)
     if ~isempty(geomParams)
-        radiusSoma = geomParams.radiusSoma;
-        radiusDend = geomParams.radiusDendrite;
-        lengthDend = geomParams.lengthDendrite;
+        if isfield(geomParams, 'radiusSoma')
+            radiusSoma = geomParams.radiusSoma;
+        elseif isfield(geomParams, 'diamSoma')
+            radiusSoma = geomParams.diamSoma / 2;
+        end
     else
-        error('No geometric parameters passed in!');
+        error('No ball radius passed in!');
+    end
+end
+if isempty(radiusDend)
+    if ~isempty(geomParams)
+        if isfield(geomParams, 'radiusDendrite')
+            radiusDend = geomParams.radiusDendrite;
+        elseif isfield(geomParams, 'radiusDend')
+            radiusDend = geomParams.radiusDend;
+        elseif isfield(geomParams, 'diamDendrite')
+            radiusDend = geomParams.diamDendrite / 2;
+        elseif isfield(geomParams, 'diamDend')
+            radiusDend = geomParams.diamDend / 2;
+        end
+    else
+        error('No stick radius passed in!');
+    end
+end
+if isempty(lengthDend)
+    if ~isempty(geomParams)
+        if isfield(geomParams, 'lengthDendrite')
+            lengthDend = geomParams.lengthDendrite;
+        elseif isfield(geomParams, 'lengthDend')
+            lengthDend = geomParams.lengthDend;
+        elseif isfield(geomParams, 'LDend')
+            lengthDend = geomParams.LDend;
+        end
+    else
+        error('No stick radius passed in!');
     end
 end
 

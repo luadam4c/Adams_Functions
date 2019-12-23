@@ -21,7 +21,8 @@ function tableNew = transpose_table (tableOld, varargin)
 %                       or a cell array of character vectors
 %                   default == old row names
 %
-% Used by:    
+% Used by:
+%       cd/extract_param_values.m
 %       cd/m3ha_neuron_create_simulation_params.m
 
 % File History:

@@ -545,6 +545,8 @@ attemptNumberDefault = [];      % set in m3ha_select_raw_traces.m
 dataModeDefault = [];           % set in m3ha_select_raw_traces.m
 nSweepsDefault = [];            % set later
 fileNamesDefault = {};          % none provided by default
+fileNamesCprDefault = {};       % none provided by default
+fileNamesIpscrDefault = {};     % none provided by default
 fileBasesDefault = {};          % set later
 outFolderDefault = pwd;         % use the present working directory for outputs
                                 %   by default
@@ -600,9 +602,9 @@ holdCurrentIpscrDefault = 0;    % (nA)
 holdCurrentCprDefault = 0;      % (nA)
 holdCurrentNoiseIpscrDefault = 0;% (nA)
 holdCurrentNoiseCprDefault = 0; % (nA)
-rowConditionsDefault = []; % set later
-rowConditionsIpscrDefault = []; % set later
-rowConditionsCprDefault = [];   % set later
+rowConditionsDefault = [];          % set later
+rowConditionsIpscrDefault = [];     % set later
+rowConditionsCprDefault = [];       % set later
 fitWindowCprDefault = fitWinCprOrig + timeToStabilize;
 fitWindowIpscrDefault = fitWinIpscrOrig + timeToStabilize;
 baseWindowCprDefault = baseWinCprOrig + timeToStabilize;
@@ -653,6 +655,14 @@ addParameter(iP, 'NSweeps', nSweepsDefault, ...
 addParameter(iP, 'FileNames', fileNamesDefault, ...
     @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
         ['FileNames must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
+addParameter(iP, 'FileNamesCpr', fileNamesCprDefault, ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['FileNamesCpr must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
+addParameter(iP, 'FileNamesIpscr', fileNamesIpscrDefault, ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['FileNamesIpscr must be a character array or a string array ', ...
             'or cell array of character arrays!']));
 addParameter(iP, 'FileBases', fileBasesDefault, ...
     @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
@@ -807,6 +817,8 @@ attemptNumber = iP.Results.AttemptNumber;
 dataMode = iP.Results.DataMode;
 nSweepsUser = iP.Results.NSweeps;
 fileNames = iP.Results.FileNames;
+fileNamesCpr = iP.Results.FileNamesCpr;
+fileNamesIpscr = iP.Results.FileNamesIpscr;
 fileBases = iP.Results.FileBases;
 outFolder = iP.Results.OutFolder;
 prefix = iP.Results.Prefix;
@@ -910,12 +922,18 @@ else
 end
 
 % Choose data files to compare against if cell name provided
-if isempty(fileNames) && ~isempty(cellName)
-    % Select data files
-    [fileNames, rowConditions] = ...
-        m3ha_select_raw_traces(cellName, 'ColumnMode', columnMode, ...
-                        'RowMode', rowMode, 'AttemptNumber', attemptNumber, ...
-                        'DataMode', dataMode);
+if isempty(fileNames)
+    if strcmpi(simMode, 'passive') && ~isempty(fileNamesCpr)
+        fileNames = fileNamesCpr;
+    elseif strcmpi(simMode, 'active') && ~isempty(fileNamesIpscr)
+        fileNames = fileNamesIpscr;
+    elseif ~isempty(cellName)
+        % Select data files
+        [fileNames, rowConditions] = ...
+            m3ha_select_raw_traces(cellName, 'ColumnMode', columnMode, ...
+                            'RowMode', rowMode, 'AttemptNumber', attemptNumber, ...
+                            'DataMode', dataMode);
+    end
 elseif isempty(cellName)
     % Look for a cell name
     cellName = m3ha_extract_cell_name(fileNames, 'ForceSingleOutput', true);
@@ -1062,7 +1080,9 @@ end
 nSweeps = decide_on_nSweeps(realData, nSweepsUser);
 
 % Create file bases if not provided
-fileBases = decide_on_filebases(fileNames, nSweeps);
+if isempty(fileBases)
+    fileBases = decide_on_filebases(fileNames, nSweeps);
+end
 
 % Decide on expStr if not provided
 if isempty(expStr)

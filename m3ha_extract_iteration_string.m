@@ -59,7 +59,7 @@ otherArguments = iP.Unmatched;
 
 %% Do the job
 % Extract the iteration strings
-iterStrs = extract_substrings(strs, 'FromBaseName', true, ...
+iterStrs = extract_substrings(strs, 'FromBaseName', false, ...
                                 'RegExp', iterStrPattern, otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

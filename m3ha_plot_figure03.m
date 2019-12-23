@@ -6,8 +6,10 @@
 %       cd/check_dir.m
 %       cd/create_subplots.m
 %       cd/extract_fileparts.m
+%       cd/extract_param_values.m
 %       cd/find_matching_files.m
 %       cd/find_passive_params.m
+%       cd/load_params.m
 %       cd/m3ha_correct_unbalanced_bridge.m
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_parse_mat.m
@@ -30,9 +32,10 @@
 estimatePassiveParams = false; %true;
 plotCurveFit = false; %true;
 simulateCpr = false; %true;
-plotCpr = true;
+plotCpr = false; %true;
 simulateIpscr = false; %true;
 plotIpscr = false; %true;
+plotGeometry = false; %true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -83,13 +86,17 @@ curveFigWidth = 8.5;
 curveFigHeight = 4;
 curveXLimits = [0, 60];
 curveYLimits = [-1.2, 0];
-geomFigWidth = 4;
-geomFigHeight = 7;
-geomXLimits = [-100, 100];
-geomYLimits = [-100, 100];
+% geomFigWidth = 4;
+% geomFigHeight = 10.5;
+geomFigWidth = 10;
+geomFigHeight = 26.25;
+% geomXLimits = [-100, 100];
+% geomYLimits = [-100, 100];
+geomXLimits = [-250, 250];
+geomYLimits = [-250, 250];
 cprFigWidth = 8.5;
 cprFigHeight = 6;
-cprXLimits = [2000, 2360];
+cprXLimits = [2070, 2250];
 cprYLimits = [];
 ipscrFigWidth = 8.5;
 ipscrFigHeight = 7;
@@ -112,26 +119,25 @@ if estimatePassiveParams
             exampleCellNames);
 end
 
-%% Plot curve fitting results
-if plotCurveFit
-    % Find passive log paths
+%% Find passive log paths
+if plotCurveFit || plotGeometry
     [~, passiveLogPaths] = ...
         find_matching_files(exampleCellNames, 'Directory', figure03Dir, ...
                             'Suffix', passiveLogSuffix, 'Extension', 'mat');
+end
 
-
+%% Plot curve fit
+if plotCurveFit
     % Plot curve fitting results
-    cellfun(@(x, y) plot_curve_fit_results(x, y, figure03Dir, figTypes, ...
+    cellfun(@(x, y) plot_curve_fit(x, y, figure03Dir, figTypes, ...
                             somaColor, dendriteColor, ...
                             curveFigWidth, curveFigHeight, ...
-                            curveXLimits, curveYLimits, ...
-                            geomFigWidth, geomFigHeight, ...
-                            geomXLimits, geomYLimits), ...
+                            curveXLimits, curveYLimits), ...
             exampleCellNames, passiveLogPaths);
 end
 
 %% Find NEURON parameter tables
-if simulateCpr || simulateIpscr || plotCpr || plotIpscr
+if plotGeometry || simulateCpr || simulateIpscr || plotCpr || plotIpscr
     % Find NEURON parameter tables
     [~, exampleParamPaths] = ...
         find_matching_files(exampleCellNames, 'Directory', figure03Dir, ...
@@ -154,6 +160,16 @@ if simulateCpr || simulateIpscr || plotCpr || plotIpscr
                 exampleLabelsCpr, exampleLabelsIpscr);
     check_dir(outFoldersCpr);
     check_dir(outFoldersIpscr);
+end
+
+%% Plot geometry
+if plotGeometry
+    % Plot curve fitting results
+    cellfun(@(x, y, z) plot_geometry(x, y, z, figure03Dir, figTypes, ...
+                            somaColor, dendriteColor, ...
+                            geomFigWidth, geomFigHeight, ...
+                            geomXLimits, geomYLimits), ...
+            exampleCellNames, passiveLogPaths, exampleParamPaths);
 end
 
 %% Simulate current pulse responses
@@ -262,14 +278,12 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_curve_fit_results(cellName, passiveLogPath, ...
+function plot_curve_fit(cellName, passiveLogPath, ...
                 outFolder, figTypes, somaColor, dendriteColor, ...
-                curveFigWidth, curveFigHeight, curveXLimits, curveYLimits, ...
-                geomFigWidth, geomFigHeight, geomXLimits, geomYLimits)
+                curveFigWidth, curveFigHeight, curveXLimits, curveYLimits)
 
 % Decide on the figure name
 figPathBaseCurveFit = fullfile(outFolder, [cellName, '_curve_fit']);
-figPathBaseGeom = fullfile(outFolder, [cellName, '_geometry']);
 
 % Read the passive log file
 m = matfile(passiveLogPath);
@@ -319,9 +333,32 @@ update_figure_for_corel(figCurveFit, 'Units', 'centimeters', ...
 % Save the figure
 save_all_figtypes(figCurveFit, figPathBaseCurveFit, figTypes);
 
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function plot_geometry(cellName, passiveLogPath, fittedParamsFile, ...
+                outFolder, figTypes, somaColor, dendriteColor, ...
+                geomFigWidth, geomFigHeight, geomXLimits, geomYLimits)
+
+% Decide on the figure name
+figPathBaseGeom = fullfile(outFolder, [cellName, '_geometry']);
+
+% Read the passive log file
+m = matfile(passiveLogPath);
+
+% Load passive params from curve-fit
+passiveParams = m.passiveParams;
+
+% Load fitted NEURON params
+fittedParamsTable = load_params(fittedParamsFile);
+
+% Extract parameter values as a structure
+fittedParamsStruct = extract_param_values(fittedParamsTable);
+
 %% Plot ball-and-stick model
 % Create the figure
-[figGeom, axGeom] = create_subplots(2, 1, 'AlwaysNew', true);
+[figGeom, axGeom] = create_subplots(3, 1, 'AlwaysNew', true);
 
 % Top subplot
 subplot(axGeom(1));
@@ -331,10 +368,6 @@ plot_ball_stick('GeomParams', passiveParams, ...
                 'BallEdgeColor', somaColor, 'StickEdgeColor', dendriteColor, ...
                 'FaceColor', 'none', 'LineWidth', 1);
 
-% Set axis limits
-xlim(geomXLimits)
-ylim(geomYLimits)
-
 % Set title
 title(['Ball-stick model for ', cellName]);
 
@@ -343,25 +376,42 @@ plot_scale_bar('xy', 'XBarUnits', 'um', 'YBarUnits', 'um', ...
                 'XBarLength', 30, 'YBarLength', 30, ...
                 'XPosNormalized', 0.6, 'YPosNormalized', 0.2);
 
-% Bottom subplot
+% Middle subplot
 subplot(axGeom(2));
 
-% Plot final geometry
+% Plot converted NEURON geometry
 plot_ball_stick('GeomParams', passiveParams, ...
                 'BallCurvature', [0, 0], 'NStickSegments', 2, ...
                 'BallEdgeColor', somaColor, 'StickEdgeColor', dendriteColor, ...
                 'FaceColor', 'none', 'LineWidth', 1);
 
 % Set title
-title(['Final geometry for ', cellName]);
+title(['Converted geometry for ', cellName]);
+
+% Bottom subplot
+subplot(axGeom(3));
+
+% Plot fitted NEURON geometry
+plot_ball_stick('GeomParams', fittedParamsStruct, ...
+                'BallCurvature', [0, 0], 'NStickSegments', 2, ...
+                'BallEdgeColor', somaColor, 'StickEdgeColor', dendriteColor, ...
+                'FaceColor', 'none', 'LineWidth', 1);
+
+% Set title
+title(['Fitted geometry for ', cellName]);
 
 % Link axes
 linkaxes(axGeom, 'xy');
 
+% Set axis limits
+xlim(geomXLimits)
+ylim(geomYLimits)
+
 % Update figure for CorelDraw
 update_figure_for_corel(figGeom, 'Units', 'centimeters', ...
                 'Width', geomFigWidth, 'Height', geomFigHeight, ...
-                'RemoveRulers', true);
+                'RemoveRulers', false);
+%                'RemoveRulers', true);
 
 % Save the figure
 save_all_figtypes(figGeom, figPathBaseGeom, figTypes);

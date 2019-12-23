@@ -14,6 +14,7 @@ function paramTables = load_params (fileNames, varargin)
 %                           LowerBound
 %                           UpperBound
 %                   specified as a 2d table or a cell array of 2d tables
+%
 % Arguments:    
 %       fileNames   - parameter file name(s)
 %                       Note: If it's a spreadsheet file, 
@@ -33,6 +34,7 @@ function paramTables = load_params (fileNames, varargin)
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_pfiles2csv.m
+%       cd/m3ha_plot_figure03.m
 %       cd/m3ha_xolotl_create_neuron.m
 
 % File History:
