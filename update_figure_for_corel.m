@@ -84,10 +84,12 @@ function figHandle = update_figure_for_corel (varargin)
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/set_figure_properties.m
+%       cd/set_visible_off.m
 %
 % Used by:
 %       cd/m3ha_oscillations_analyze.m
 %       cd/m3ha_plot_figure02.m
+%       cd/m3ha_plot_figure03.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_traces_spike2_mat.m
 %       /home/Matlab/plethR01/plethR01_analyze.m
@@ -430,16 +432,6 @@ if iscell(textObject)
     cellfun(@set_string_empty, textObject);
 else
     textObject.String = '';
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function set_visible_off (object)
-
-if iscell(object)
-    cellfun(@set_visible_off, object);
-else
-    set(object, 'Visible', 'off');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

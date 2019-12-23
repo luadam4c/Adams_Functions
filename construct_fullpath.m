@@ -97,6 +97,7 @@ function [fullPath, pathType] = construct_fullpath (pathName, varargin)
 % 2019-10-07 Now uses force_string_start.m on file extension
 % 2019-11-28 Now uses combine_strings.m
 % TODO: Add 'Prefixes' as an optional argument
+% TODO: Improve performance
 
 %% Default values for optional arguments
 verboseDefault = false;             % don't print to standard output by default

@@ -76,6 +76,7 @@ function h = plot_cfit_pulse_response (xVec, yVec, varargin)
 %
 % Used by:    
 %       cd/find_passive_params.m
+%       cd/m3ha_plot_figure03.m
 
 % File History:
 % 2018-10-12 Modified from find_passive_params.m

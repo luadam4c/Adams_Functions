@@ -81,7 +81,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/extract_common_prefix.m
 %       cd/isemptycell.m
 %       cd/load_neuron_outputs.m
-%       cd/m3ha_extract_sweep_names.m
+%       cd/m3ha_extract_sweep_name.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/plot_traces.m
 %
@@ -100,8 +100,12 @@ maxRowsWithOneOnly = 8;
 lineWidthParallel = 1;
 lineWidthIndividual = 0.5;
 
-% Note: Must be consistent with m3ha_neuron_run_and_analyze.m
+% Note: The following must be consistent with m3ha_neuron_run_and_analyze.m
 importedSuffix = 'imported_files';
+
+% Note: The following must be consistent with singleneuron4compgabab.hoc
+timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
+                                %   of simulations are stabilized
 
 %% Column numbers for recorded data
 %   Note: Must be consistent with m3ha_resave_sweeps.m
@@ -129,8 +133,7 @@ directoryDefault = '';          % set in all_files.m
 fileNamesDefault = {};
 extensionDefault = 'out';       % 
 colorMapDefault = [];
-% xLimitsDefault = [];          % set later
-xLimitsDefault = [2800, 4500];
+xLimitsDefault = [];          % set later
 outFolderDefault = '';          % set later
 expStrDefault = '';             % set later
 tVecsDefault = [];
@@ -230,11 +233,15 @@ end
 % Decide on input paths
 if isempty(fileNames)
     [~, fileNames] = ...
-        all_files('Directory', directory, 'Extension', extension);
+        all_files('Directory', directory, 'Extension', extensionDefault, ...
+                    'Keyword', 'sim', 'ForceCellOutput', true);
 else
     % Make sure they are full paths
     fileNames = construct_fullpath(fileNames, 'Directory', directory);
 end
+
+% Reorder the input paths correctly
+fileNames = reorder_simulation_output_files(fileNames);
 
 % Use the common expStr as the experiment string
 if isempty(expStr)
@@ -264,11 +271,20 @@ end
 % Create an experiment identifier for title
 expStrForTitle = replace(expStr, '_', '\_');
 
+% Decide on xLimits
+if isempty(xLimits)
+    if strcmp(simMode, 'active')
+        xLimits = [2800, 4500];
+    else
+        xLimits = [timeToStabilize, Inf];
+    end
+end
+
 % Count the number of files
 nFiles = numel(fileNames);
 
 % Decide on nRows
-nRows = decide_on_nrows(nFiles, maxRowsWithOneOnly);
+nRows = decide_on_nrows(nFiles, simMode, maxRowsWithOneOnly);
 
 % Decide on the color map if not provided
 if isempty(colorMap)
@@ -304,9 +320,9 @@ if isempty(lineWidth)
 end
 
 %% Data
-% Look for matching recorded data
-[~, importedPath] = all_files('Prefix', expStr, 'Suffix', importedSuffix, ...
-                                'MaxNum', 1);
+% Look for the imported files log
+[~, importedPath] = all_files('Directory', directory, 'Prefix', expStr, ...
+                                'Suffix', importedSuffix, 'MaxNum', 1);
 
 % Look for matching recorded sweep names
 if ~isempty(importedPath)
@@ -317,8 +333,10 @@ if ~isempty(importedPath)
 
     % Extract sweep names
     sweepNames = logTable.Var1;
+
+    % TODO: Reorder simulated fileNames to match recorded ones
 else
-    sweepNames = m3ha_extract_sweep_names(fileNames);
+    sweepNames = m3ha_extract_sweep_name(fileNames);
 end
 
 % Import and extract from recorded data
@@ -382,16 +400,42 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function nRows = decide_on_nrows(nFiles, maxRowsWithOneOnly)
+function fileNames = reorder_simulation_output_files(fileNames)
+
+% Return if there is only one file name
+if ischar(fileNames) || numel(fileNames) == 1
+    return
+end
+
+% Extract the simulation number strings with 'sim'
+simStrs = extract_substrings(fileNames, 'Regexp', 'sim[\d]*');
+
+% Extract the simulation numbers (still in string form)
+simNumStrs = extractAfter(simStrs, 'sim');
+
+% Convert numeric strings to numbers
+simNums = str2double(simNumStrs);
+
+% Sort the numbers
+[~, origIndex] = sort(simNums);
+
+% Reorder the file names
+fileNames = fileNames(origIndex);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function nRows = decide_on_nrows(nFiles, simMode, maxRowsWithOneOnly)
 %% Decide on the number of rows
 
 % Decide on the number of rows
-if mod(nFiles, 4) == 0
+if mod(nFiles, 4) == 0 && strcmp(simMode, 'active')
     nRows = 4;
+elseif nFiles <= 3 && strcmp(simMode, 'passive')
+    nRows = 3;
 elseif nFiles <= maxRowsWithOneOnly
     nRows = nFiles;
 else
-    nRows = floor(sqrt(nSweeps));
+    nRows = floor(sqrt(nFiles));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -419,7 +463,7 @@ end
 fprintf('Plotting figure of individual voltage traces for %s ...\n', expStr);
 
 % Plot the individual traces
-handles = plot_fitted_traces(tVecs, vVecsSim, ...
+handles = plot_fitted_traces(tVecs, vVecsSim, 'ToAnnotate', false, ...
             'DataToCompare', vVecsRec, 'PlotMode', 'parallel', ...
             'SubplotOrder', 'bycolor', 'ColorMode', 'byRow', ...
             'ColorMap', colorMap, 'XLimits', xLimits, ...
@@ -449,7 +493,7 @@ figTitle = sprintf('Residuals for Experiment %s', expStrForTitle);
 fprintf('Plotting figure of residual traces for %s ...\n', expStr);
 
 % Plot the individual traces
-handles = plot_fitted_traces(tVecs, residuals, ...
+handles = plot_fitted_traces(tVecs, residuals, 'ToAnnotate', false, ...
             'PlotMode', 'residuals', ...
             'SubplotOrder', 'bycolor', 'ColorMode', 'byRow', ...
             'ColorMap', colorMap, 'XLimits', xLimits, ...
@@ -658,8 +702,7 @@ handlesInstantaneous = ...
                 'YLabel', 'm^2h', 'FigTitle', figTitle, otherArguments);
 hold on;
 handlesSteadyState = ...
-    plot_traces(tVecs, itminf2hinfVecsSim, ...
-                'PlotOnly', true, ...
+    plot_traces(tVecs, itminf2hinfVecsSim, 'PlotOnly', true, ...
                 'LineStyle', '--', 'LineWidth', lineWidth, ...
                 'Verbose', false, 'PlotMode', 'overlapped', ...
                 'ColorMap', colorMap, 'XLimits', xLimits, otherArguments);

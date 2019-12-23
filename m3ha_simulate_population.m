@@ -1,6 +1,6 @@
-% function [output1] = m3ha_simulate_ipsc_response (reqarg1, varargin)
+% function [output1] = m3ha_simulate_population (reqarg1, varargin)
 %% Generates simulated IPSC responses that can be compared with recorded data
-% Usage: [output1] = m3ha_simulate_ipsc_response (reqarg1, varargin)
+% Usage: [output1] = m3ha_simulate_population (reqarg1, varargin)
 % Explanation:
 %       TODO
 %
@@ -70,7 +70,7 @@ rankDirName = 'ranked';
 dataDirName = fullfile('data_dclamp', 'take4');
 matFilesDirName = 'matfiles';
 specialCasesDirName = 'special_cases';
-defaultOutFolderSuffix = '_simulated';
+defaultOutFolderSuffix = '_population';
 
 % File info
 % Default parameters used in computing errors

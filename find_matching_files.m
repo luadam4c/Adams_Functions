@@ -52,7 +52,7 @@ function varargout = find_matching_files (fileStrs, varargin)
 %       cd/create_pleth_EEG_movies.m
 %       cd/load_matching_sheets.m
 %       cd/m3ha_plot_figure03.m
-%       cd/m3ha_simulate_ipsc_response.m
+%       cd/m3ha_simulate_population.m
 %       cd/plot_traces_spike2_mat.m
 
 % File History:

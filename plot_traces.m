@@ -50,6 +50,11 @@ function handles = plot_traces (tVecs, data, varargin)
 %                   - 'ReverseOrder': whether to reverse the order of the traces
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'MinimalLabels': whether to have only the first
+%                                       column and the last row have tick labels
+%                                       for parallel plots
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'PlotMode': plotting mode for multiple traces
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'parallel'      - in parallel in subPlots
@@ -207,6 +212,9 @@ function handles = plot_traces (tVecs, data, varargin)
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
+%                   - 'AxesHandle': axes handle for created axes
+%                   must be a empty or a axes object handle
+%                   default == []
 %                   - Any other parameter-value pair for the plot() function
 %
 % Requires:
@@ -233,8 +241,11 @@ function handles = plot_traces (tVecs, data, varargin)
 %       cd/ispositivescalar.m
 %       cd/match_format_vector_sets.m
 %       cd/save_all_figtypes.m
+%       cd/set_axes_properties.m
 %       cd/set_figure_properties.m
+%       cd/set_visible_off.m
 %       cd/struct2arglist.m
+%       cd/suptitle.m
 %       cd/transform_vectors.m
 %       ~/Downloaded_Function/suplabel.m
 %
@@ -321,6 +332,8 @@ overWriteDefault = true;        % overwrite previous plots by default
 plotOnlyDefault = false;        % setup default labels by default
 autoZoomDefault = false;        % don't zoom in on y axis by default
 reverseOrderDefault = false;    % don't reverse order by default
+minimalLabelsDefault = false;   % don't apply parsimonious labels for parallel
+                                %   by default
 plotModeDefault = 'overlapped'; % plot traces overlapped by default
 subplotOrderDefault = 'auto';   % set later
 colorModeDefault = 'auto';      % set later
@@ -352,6 +365,7 @@ figNumberDefault = [];          % no figure number by default
 figExpansionDefault = [];       % no figure expansion by default
 figNameDefault = '';            % don't save figure by default
 figTypesDefault = {'png', 'epsc'};  % save as both epsc and png by default
+axHandleDefault = [];           % gca by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -386,6 +400,8 @@ addParameter(iP, 'PlotOnly', plotOnlyDefault, ...
 addParameter(iP, 'AutoZoom', autoZoomDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ReverseOrder', reverseOrderDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'MinimalLabels', minimalLabelsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotMode', plotModeDefault, ...
     @(x) any(validatestring(x, validPlotModes)));
@@ -464,6 +480,7 @@ addParameter(iP, 'FigName', figNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FigTypes', figTypesDefault, ...
     @(x) all(isfigtype(x, 'ValidateMode', true)));
+addParameter(iP, 'AxesHandle', axHandleDefault);
 
 % Read from the Input Parser
 parse(iP, tVecs, data, varargin{:});
@@ -472,6 +489,7 @@ overWrite = iP.Results.OverWrite;
 plotOnly = iP.Results.PlotOnly;
 autoZoom = iP.Results.AutoZoom;
 reverseOrder = iP.Results.ReverseOrder;
+minimalLabels = iP.Results.MinimalLabels;
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
 subplotOrder = validatestring(iP.Results.SubplotOrder, validSubplotOrders);
 colorMode = validatestring(iP.Results.ColorMode, validColorModes);
@@ -506,6 +524,7 @@ figNumber = iP.Results.FigNumber;
 figExpansion = iP.Results.FigExpansion;
 figName = iP.Results.FigName;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
+axHandles = iP.Results.AxesHandle;
 
 % Keep unmatched arguments for the plot() function
 otherArguments = struct2arglist(iP.Unmatched);
@@ -667,7 +686,9 @@ case {'overlapped', 'staggered'}
     end
 case 'parallel'
     % Force as column cell array and match up to nPlots elements
-    yLabel = match_format_vector_sets(yLabel, data);
+    if iscell(yLabel)
+        yLabel = match_format_vector_sets(yLabel, data);
+    end
 otherwise
     error(['The plot mode ', plotMode, ' has not been implemented yet!']);
 end
@@ -779,13 +800,13 @@ if iscell(xLimits)
                         yTickLocs, yTickLabels, colorMap, ...
                         legendLocation, figTitleThis, figSubTitles, ...
                         figHandle, figExpansion, figNumber, ...
-                        figNameThis, figTypes, ...
+                        figNameThis, figTypes, axHandles, ...
                         nPlots, nRows, nColumns, nTracesPerPlot, ...
                         maxNPlotsForAnnotations, maxNYLabels, ...
                         maxNColsForTicks, maxNColsForXTickLabels, ...
                         maxNRowsForTicks, maxNRowsForYTickLabels, ...
                         maxNRowsForXAxis, maxNColsForYAxis, ...
-                        maxNYTicks, ...
+                        maxNYTicks, minimalLabels, ...
                         subPlotSqeezeFactor, ...
                         otherArguments);
             
@@ -814,13 +835,13 @@ else
                         yTickLocs, yTickLabels, colorMap, ...
                         legendLocation, figTitle, figSubTitles, ...
                         figHandle, figExpansion, figNumber, ...
-                        figName, figTypes, ...
+                        figName, figTypes, axHandles, ...
                         nPlots, nRows, nColumns, nTracesPerPlot, ...
                         maxNPlotsForAnnotations, maxNYLabels, ...
                         maxNColsForTicks, maxNColsForXTickLabels, ...
                         maxNRowsForTicks, maxNRowsForYTickLabels, ...
                         maxNRowsForXAxis, maxNColsForYAxis, ...
-                        maxNYTicks, ...
+                        maxNYTicks, minimalLabels, ...
                         subPlotSqeezeFactor, ...
                         otherArguments);
 end
@@ -845,12 +866,12 @@ function [fig, subPlots, plotsData, plotsDataToCompare] = ...
                     yTickLocs, yTickLabels, colorMap, ...
                     legendLocation, figTitle, figSubTitles, ...
                     figHandle, figExpansion, figNumber, figName, figTypes, ...
-                    nPlots, nRows, nColumns, nTracesPerPlot, ...
+                    axHandles, nPlots, nRows, nColumns, nTracesPerPlot, ...
                     maxNPlotsForAnnotations, maxNYLabels, ...
                     maxNColsForTicks, maxNColsForXTickLabels, ...
                     maxNRowsForTicks, maxNRowsForYTickLabels, ...
                     maxNRowsForXAxis, maxNColsForYAxis, ...
-                    maxNYTicks, ...
+                    maxNYTicks, minimalLabels, ...
                     subPlotSqeezeFactor, ...
                     otherArguments)
 
@@ -872,17 +893,21 @@ end
 % Decide on figure and axes to plot on
 switch plotMode
 case {'overlapped', 'staggered'}
-    % Decide on figure to plot on
+    % Decide on the figure to plot on
     fig = set_figure_properties('FigHandle', figHandle, ...
                     'FigNumber', figNumber, 'FigExpansion', figExpansion);
 
-    % Decide on axes to plot on
-    ax = set_axes_properties;
+    % Decide on the axes to plot on
+    ax = set_axes_properties('AxesHandle', axHandles);
 case 'parallel'
-    % Create subplots
-    [fig, ax] = create_subplots(nRows, nColumns, 'FigHandle', figHandle, ...
-                    'ClearFigure', false, ...
-                    'FigNumber', figNumber, 'FigExpansion', figExpansion);
+    if numel(axHandles) == nRows * nColumns
+        ax = axHandles;
+    else
+        % Create subplots
+        [fig, ax] = create_subplots(nRows, nColumns, 'FigHandle', figHandle, ...
+                        'ClearFigure', false, ...
+                        'FigNumber', figNumber, 'FigExpansion', figExpansion);
+    end
 otherwise
 end
 
@@ -1156,7 +1181,7 @@ case 'parallel'
     % Plot each trace as a different subplot
     %   Note: the number of rows is based on the number of rows in the color map
     for iPlot = 1:nPlots
-        % Create a subplot and hold on
+        % Go to the subplot and hold on
         axThis = subplot(ax(iPlot)); hold on
 
         % Get the current tVecs and data
@@ -1259,7 +1284,7 @@ case 'parallel'
 
         % Generate a y-axis label
         % TODO: Make it horizontal if more than 3? Center it?
-        if ~strcmpi(yLabel{iPlot}, 'suppress') && ...
+        if iscell(yLabel) && ~strcmpi(yLabel{iPlot}, 'suppress') && ...
                 ismember(thisRowNumber, rowsWithYLabels)
             % if nRows > 3
             %     ylabel(yLabel{iPlot}, 'Rotation', 0);
@@ -1276,62 +1301,45 @@ case 'parallel'
         % Remove x ticks if too many columns
         if nColumns > maxNColsForTicks
             set(axThis, 'XTick', []);
-            set(axThis, 'TickLength', [0, 0]);
+            % set(axThis, 'TickLength', [0, 0]);
         end
 
         % Remove y ticks if too many rows
         if nRows > maxNRowsForTicks
             set(axThis, 'YTick', []);
-            set(axThis, 'TickLength', [0, 0]);
+            % set(axThis, 'TickLength', [0, 0]);
         end
 
         % Remove x tick labels except for the last row
         %   or if too many columns
-        if thisRowNumber ~= nRows || nColumns > maxNColsForXTickLabels
+        if nColumns > maxNColsForXTickLabels || ...
+                minimalLabels && thisRowNumber ~= nRows
             set(axThis, 'XTickLabel', []);
         end
 
         % Remove x tick labels except for the first column
         %   or if too many rows
-        if thisColNumber ~= 1 || nRows > maxNRowsForYTickLabels
+        if nRows > maxNRowsForYTickLabels || ...
+                minimalLabels && thisColNumber ~= 1
             set(axThis, 'YTickLabel', []);
         end
 
-        % TODO: Hide the X axis ruler if too many rows
+        % Hide the X axis ruler if too many rows
         if nRows > maxNRowsForXAxis
-            % axThis.XRuler.Axle.Visible = 'off';
-            xTick = get(axThis, 'XTick');
-            xTickLabel = get(axThis, 'XTickLabel');
-            set(axThis.XAxis, 'Color', 'none');
-            set(axThis.XAxis.Label, 'Color', 'k');
-            set(axThis.XAxis.Label, 'Visible', 'on');
-            set(axThis, 'XTick', xTick);
-            set(axThis, 'XTickLabel', xTickLabel);
+            xAxises = get(axThis, 'XAxis');
+            set_visible_off(xAxises);
         end
 
         % Hide the Y axis ruler if too many columns
         if nColumns > maxNColsForYAxis
-            % set(axThis.YAxis, 'Color', 'r');
-            % set(axThis.YAxis.Label, 'Color', 'k');
-            % set(axThis.YAxis.Label, 'Visible', 'on');
-        end
-
-        % Create a title for the first subplot
-        if ~strcmpi(figTitle, 'suppress') && ...
-            nColumns == 1 && iPlot == 1
-            title(figTitle);
+            yAxises = get(axThis, 'YAxis');
+            set_visible_off(yAxises);
         end
 
         % Create a subtitle for this subplot
         % TODO: Conflict with figTitle?
         if ~isempty(figSubTitles)
             title(figSubTitles{iPlot});
-        end
-
-        % Create a label for the X axis only for the last row
-        if ~strcmpi(xLabel, 'suppress') && nColumns == 1 && ...
-                iPlot == nPlots
-            xlabel(xLabel);
         end
 
         % Store handles in array
@@ -1342,15 +1350,20 @@ case 'parallel'
         end
     end
     
-    % Create an overarching title
-    if ~strcmpi(figTitle, 'suppress') && nColumns > 1
-        suptitle(figTitle);
+    % Create an overarching x-axis label
+    if ~strcmpi(xLabel, 'suppress') && nColumns <= maxNPlotsForAnnotations
+        suplabel(xLabel, 'x');
     end
 
-    % Create an overarching x-axis label
-    if ~strcmpi(xLabel, 'suppress') && nColumns > 1 && ...
-            nColumns < maxNPlotsForAnnotations
-        suplabel(xLabel, 'x');
+    % Create an overarching y-axis label
+    if ischar(yLabel) && ~strcmpi(yLabel, 'suppress') && ...
+            nRows <= maxNPlotsForAnnotations
+        suplabel(yLabel, 'y');
+    end
+
+    % Create an overarching title
+    if ~strcmpi(figTitle, 'suppress')
+        suptitle(figTitle);
     end
 otherwise
     error(['The plot mode ', plotMode, ' has not been implemented yet!']);
@@ -1541,6 +1554,38 @@ if nPlots > maxNPlotsForAnnotations
 end
 
 colorMode = 'byTraceInPlot';
+
+% Create a title for the first subplot
+if ~strcmpi(figTitle, 'suppress') && ...
+    nColumns == 1 && iPlot == 1
+    title(figTitle);
+end
+% Create a label for the x axis only for the last row
+if ~strcmpi(xLabel, 'suppress') && nColumns == 1 && ...
+        iPlot == nPlots
+    xlabel(xLabel);
+end
+% Create an overarching title
+if ~strcmpi(figTitle, 'suppress') && nColumns > 1
+    suptitle(figTitle);
+end
+% Create an overarching x-axis label
+if ~strcmpi(xLabel, 'suppress') && nColumns > 1 && ...
+        nColumns < maxNPlotsForAnnotations
+    suplabel(xLabel, 'x');
+end
+
+% axThis.XRuler.Axle.Visible = 'off';
+xTick = get(axThis, 'XTick');
+xTickLabel = get(axThis, 'XTickLabel');
+set(axThis.XAxis, 'Color', 'none');
+set(axThis.XAxis.Label, 'Color', 'k');
+set(axThis.XAxis.Label, 'Visible', 'on');
+set(axThis, 'XTick', xTick);
+set(axThis, 'XTickLabel', xTickLabel);
+set(axThis.YAxis, 'Color', 'r');
+set(axThis.YAxis.Label, 'Color', 'k');
+set(axThis.YAxis.Label, 'Visible', 'on');
 
 %}
 

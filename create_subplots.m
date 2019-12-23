@@ -68,6 +68,7 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 %       cd/create_synced_movie_trace_plot_movie.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_rank_neurons.m
+%       cd/m3ha_plot_figure03.m
 %       cd/parse_current_family.m
 %       cd/parse_multiunit.m
 %       cd/plot_relative_events.m

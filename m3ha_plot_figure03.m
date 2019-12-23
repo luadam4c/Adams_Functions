@@ -4,6 +4,7 @@
 % Requires:
 %       cd/argfun.m
 %       cd/check_dir.m
+%       cd/create_subplots.m
 %       cd/extract_fileparts.m
 %       cd/find_matching_files.m
 %       cd/find_passive_params.m
@@ -13,7 +14,11 @@
 %       cd/m3ha_select_sweeps.m
 %       cd/m3ha_specs_for_datamode.m
 %       cd/plot_ball_stick.m
+%       cd/plot_cfit_pulse_response.m
 %       cd/plot_scale_bar.m
+%       cd/save_all_figtypes.m
+%       cd/set_figure_properties.m
+%       cd/update_figure_for_corel.m
 
 % File History:
 % 2019-12-18 Created by Adam Lu
@@ -27,7 +32,7 @@ plotCurveFit = false; %true;
 simulateCpr = false; %true;
 plotCpr = true;
 simulateIpscr = false; %true;
-plotIpscr = true;
+plotIpscr = false; %true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -45,6 +50,7 @@ paramFileSuffix = 'params';
 
 % Analysis settings
 exampleCellNames = {'D101310'; 'C101210'};
+% exampleCellNames = {'C101210'};
 
 % Simulation settings
 dataModeCpr = 1;                    % data mode for current pulse response
@@ -81,6 +87,14 @@ geomFigWidth = 4;
 geomFigHeight = 7;
 geomXLimits = [-100, 100];
 geomYLimits = [-100, 100];
+cprFigWidth = 8.5;
+cprFigHeight = 6;
+cprXLimits = [2000, 2360];
+cprYLimits = [];
+ipscrFigWidth = 8.5;
+ipscrFigHeight = 7;
+ipscrXLimits = [2800, 4500];
+ipscrYLimits = [-100, -20];
 
 figTypes = {'png', 'epsc2'};
 
@@ -117,7 +131,7 @@ if plotCurveFit
 end
 
 %% Find NEURON parameter tables
-if simulateCpr || simulateIpscr
+if simulateCpr || simulateIpscr || plotCpr || plotIpscr
     % Find NEURON parameter tables
     [~, exampleParamPaths] = ...
         find_matching_files(exampleCellNames, 'Directory', figure03Dir, ...
@@ -151,8 +165,10 @@ end
 
 %% Plot current pulse responses
 if plotCpr
-    cellfun(@(x, y) plot_cpr(x, y), ...
-            exampleLabelsIpscr, outFoldersIpscr);
+    cellfun(@(x, y) plot_cpr(x, y, figure03Dir, figTypes, ...
+                                cprFigWidth, cprFigHeight, ...
+                                cprXLimits, cprYLimits), ...
+            exampleLabelsCpr, outFoldersCpr);
 end
 
 %% Simulate IPSC responses
@@ -164,8 +180,11 @@ end
 
 %% Plot IPSC responses
 if plotIpscr
+    cellfun(@(x, y) plot_ipscr(x, y, figure03Dir, figTypes, ...
+                                ipscrFigWidth, ipscrFigHeight, ...
+                                ipscrXLimits, ipscrYLimits), ...
+            exampleLabelsIpscr, outFoldersIpscr);
 end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -379,14 +398,72 @@ m3ha_neuron_run_and_analyze(neuronParamsFile, ...
                         'PlotAllFlag', false, 'PlotIndividualFlag', true, ...
                         'SaveSimOutFlag', true);
 
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function plot_cpr(expStr, directory, outFolder, figTypes, ...
+                    figWidth, figHeight, xLimits, yLimits)
+
+% Create a figure name
+figPathBaseIndividual = fullfile(outFolder, [expStr, '_individual']);
+
+% Create the figure
+figIndividual = set_figure_properties('AlwaysNew', true);
+
+% Plot traces
+m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
+                    'PlotType', 'individual', 'FigHandle', figIndividual, ...
+                    'XLimits', xLimits, 'YLimits', yLimits);
+
+% Plot a scale bar
+subplot(3, 1, 1)
+hold on
+plot_scale_bar('x', 'XBarUnits', 'ms', ...
+                'XPosNormalized', 0.1, 'YPosNormalized', 0.8);
+% 'XBarLength', [], 
+
+% Update figure for CorelDraw
+update_figure_for_corel(figIndividual, 'Units', 'centimeters', ...
+                'Width', figWidth, 'Height', figHeight, ...
+                'RemoveXTicks', true, 'RemoveXRulers', true);
+
+% Save the figure
+save_all_figtypes(figIndividual, figPathBaseIndividual, figTypes);
 
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_cpr(label, directory)
+function plot_ipscr(expStr, directory, outFolder, figTypes, ...
+                    figWidth, figHeight, xLimits, yLimits)
 
-m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', label);
+% Create a figure name
+figPathBaseIndividual = fullfile(outFolder, [expStr, '_individual']);
+
+% Create the figure
+figIndividual = set_figure_properties('AlwaysNew', true);
+
+% Plot traces
+m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
+                'PlotType', 'individual', 'FigHandle', figIndividual, ...
+                'XLimits', xLimits, 'YLimits', yLimits);
+
+% Plot a scale bar
+hold on
+plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 400, ...
+                'XPosNormalized', 0.1, 'YPosNormalized', 0.8);
+
+% Update figure for CorelDraw
+update_figure_for_corel(figIndividual, 'Units', 'centimeters', ...
+                'Width', figWidth, 'Height', figHeight, ...
+                'RemoveXTicks', true, 'RemoveXRulers', true);
+
+
+% Save the figure
+save_all_figtypes(figIndividual, figPathBaseIndividual, figTypes);
+
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

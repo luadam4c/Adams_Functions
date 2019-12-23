@@ -41,6 +41,10 @@ function handles = plot_fitted_traces (tVecs, data, varargin)
 %                                               against a dotted zero line
 %                   must be consistent with plot_traces.m
 %                   default == 'parallel'
+%                   - 'ToAnnotate': whether to annotate
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true if nTraces <= maxNTracesForAnnotations
+%                               false otherwise
 %                   - 'XLimits': limits of x axis
 %                               suppress by setting value to 'suppress'
 %                   must be 'suppress' or a 2-element increasing numeric vector
@@ -118,7 +122,7 @@ function handles = plot_fitted_traces (tVecs, data, varargin)
 %                   - 'PlotSwpWeightsFlag': whether to plot sweep weights
 %                   must be numeric/logical 1 (true) or 0 (false) or 'auto'
 %                   default == 'auto'
-%                   - Any other parameter-value pair for the plot() function
+%                   - Any other parameter-value pair for the plot_traces() function
 %
 % Requires:
 %       cd/argfun.m
@@ -175,6 +179,7 @@ lineWidth = 1;
 
 %% Default values for optional arguments
 dataToCompareDefault = [];      % no data to compare against by default
+toAnnotateDefault = [];         % set later
 plotModeDefault = 'parallel';   % plot traces in parallel by default
 xLimitsDefault = [];            % set later
 linkAxesOptionDefault = 'x';    % link x axes by default
@@ -225,6 +230,8 @@ addParameter(iP, 'DataToCompare', dataToCompareDefault, ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'PlotMode', plotModeDefault, ...
     @(x) any(validatestring(x, validPlotModes)));
+addParameter(iP, 'ToAnnotate', toAnnotateDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'XLimits', xLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
@@ -272,6 +279,7 @@ addParameter(iP, 'PlotSwpWeightsFlag', plotSwpWeightsFlagDefault, ...
 parse(iP, tVecs, data, varargin{:});
 dataToCompare = iP.Results.DataToCompare;
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
+toAnnotate = iP.Results.ToAnnotate;
 xLimits = iP.Results.XLimits;
 linkAxesOption = validatestring(iP.Results.LinkAxesOption, ...
                                 validLinkAxesOptions);
@@ -292,7 +300,7 @@ baseErrors = iP.Results.BaseErrors;
 sweepErrors = iP.Results.SweepErrors;
 plotSwpWeightsFlag = iP.Results.PlotSwpWeightsFlag;
 
-% Keep unmatched arguments for the plot() function
+% Keep unmatched arguments for the plot_traces() function
 otherArguments = iP.Unmatched;
 
 %% Preparation
@@ -316,10 +324,12 @@ else
 end
 
 % Decide whether to annotate at all
-if nSweeps <= maxNTracesForAnnotations
-    toAnnotate = true;
-else
-    toAnnotate = false;
+if isempty(toAnnotate)
+    if nSweeps <= maxNTracesForAnnotations
+        toAnnotate = true;
+    else
+        toAnnotate = false;
+    end
 end
 
 % Decide whether to plot sweep weights
@@ -430,14 +440,14 @@ end
 
 % Plot traces
 handles = plot_traces(tVecs, data, 'DataToCompare', dataToCompare, ...
-                'LineStyleToCompare', lineStyleToCompare, ...
-                'LineWidth', lineWidth, ...
-                'ColorMap', colorMap, 'XLimits', xLimits, ...
-                'XUnits', xUnits, 'XLabel', xLabel, 'YLabel', yLabel, ...
-                'LegendLocation', 'suppress', ...
-                'PlotMode', plotModeTraces, 'LinkAxesOption', linkAxesOption, ...
-                'FigHandle', figHandle, 'FigNumber', figNumber, ...
-                otherArguments);
+            'LineStyleToCompare', lineStyleToCompare, ...
+            'LineWidth', lineWidth, ...
+            'ColorMap', colorMap, 'XLimits', xLimits, ...
+            'XUnits', xUnits, 'XLabel', xLabel, 'YLabel', yLabel, ...
+            'LegendLocation', 'suppress', ...
+            'PlotMode', plotModeTraces, 'LinkAxesOption', linkAxesOption, ...
+            'FigHandle', figHandle, 'FigNumber', figNumber, ...
+            otherArguments);
 fig = handles.fig;
 subPlots = handles.subPlots;
 plotsData = handles.plotsData;
@@ -526,7 +536,7 @@ for iSwp = 1:nSweeps
     yLimits(iSwp, :) = yLimitsThis;
 end
 
-% Create a title
+% Create a title above all subplots
 suptitle(figTitle);
 
 %% Output results
