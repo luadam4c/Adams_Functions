@@ -16,15 +16,19 @@ function valueStructs = extract_param_values (paramTables, varargin)
 %                       row names and at least these variables:
 %                           Value
 %                   specified as a 2d table or a cell array of 2d tables
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'RowsToExtract' - row indices or row names in swpInfo 
+%                                       to be used
+%                   must be a positive integer vector, a string array 
+%                       or a cell array of character vectors
+%                   default == []
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/ispositiveintegervector.m
 %       cd/transpose_table.m
 %
 % Used by:
+%       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_plot_figure03.m
 
 % File History:
@@ -34,7 +38,7 @@ function valueStructs = extract_param_values (paramTables, varargin)
 %% Hard-coded parameters
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+rowsToExtractDefault = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -53,34 +57,39 @@ addRequired(iP, 'paramTables', ...
     @(x) validateattributes(x, {'cell', 'table'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default, ...
-%     % TODO: validation function %);
+addParameter(iP, 'RowsToExtract', rowsToExtractDefault, ...
+    @(x) assert(ispositiveintegervector(x) || iscellstr(x) || isstring(x), ...
+                ['strs5 must be either a positive integer vector, ', ...
+                    'a string array or a cell array of character arrays!']));
 
 % Read from the Input Parser
 parse(iP, paramTables, varargin{:});
-% param1 = iP.Results.param1;
+rowsToExtract = iP.Results.RowsToExtract;
 
 %% Do the job
 % Do for each table
 if iscell(paramTables)
-    valueStructs = cellfun(@(x) extract_param_values_helper(x), paramTables);
+    valueStructs = cellfun(@(x) epv_helper(x, rowsToExtract), paramTables);
 else
-    valueStructs = extract_param_values_helper(paramTables);
+    valueStructs = epv_helper(paramTables, rowsToExtract);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function valueStruct = extract_param_values_helper (paramTable)
+function valueStruct = epv_helper (paramTable, rowsToExtract)
+%% Extracts parameter names and values as a structure
+
+% Restrict to the requested rows
+tableFiltered = paramTable(rowsToExtract, :);
 
 % Restrict to the Value column
-paramTableRestricted = paramTable(:, 'Value');
+tableSelected = tableFiltered(:, 'Value');
 
 % Transpose the table, with no new row names
-paramTableTransposed = transpose_table(paramTableRestricted, ...
-                                        'RowNames', 'suppress');
+tableTransposed = transpose_table(tableSelected, 'RowNames', 'suppress');
 
 % Convert to a structure
-valueStruct = table2struct(paramTableTransposed);
+valueStruct = table2struct(tableTransposed);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

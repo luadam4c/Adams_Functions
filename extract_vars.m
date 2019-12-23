@@ -1,6 +1,6 @@
-function varExtracted = extract_vars (tableOrPath, varName, varargin)
+function varExtracted = extract_vars (tableOrPath, varNames, varargin)
 %% Extracts variable(s) (column(s)) from a table
-% Usage: varExtracted = extract_vars (tableOrPath, varName, varargin)
+% Usage: varExtracted = extract_vars (tableOrPath, varNames, varargin)
 % Explanation:
 %       TODO
 %
@@ -15,34 +15,40 @@ function varExtracted = extract_vars (tableOrPath, varName, varargin)
 %                       specified as a column vector
 %
 % Arguments:
-%       tableOrPath     - table or spreadsheet path
-%                       must be a table 
-%                           or a string scalar or a character vector
-%       varName         - variable name to extract
-%                       must be a string scalar or a character vector
-%       varargin        - 'RowsToExtract': rows to extract
-%                       must be a numeric array,
-%                           a string scalar or a character vector, 
-%                           or a cell array of character vectors
-%                       default == 'all' (no restrictions)
-%                       - 'RowConditions': conditions (name-value pairs) 
-%                                           for row selection
-%                       must be a scalar struct or a cell array
-%                       default == [] (no restrictions)
+%       tableOrPath - table or spreadsheet path
+%                   must be a table 
+%                       or a string scalar or a character vector
+%       varNames    - variable name(s) to extract
+%                   must be a string scalar or a character vector
+%                       or a cell array of character vectors
+%       varargin    - 'RowsToExtract': rows to extract
+%                   must be a numeric array,
+%                       a string scalar or a character vector, 
+%                       or a cell array of character vectors
+%                   default == 'all' (no restrictions)
+%                   - 'RowConditions': conditions (name-value pairs) 
+%                                       for row selection
+%                   must be a scalar struct or a cell array
+%                   default == [] (no restrictions)
+%                   - 'ForceCellOutput': whether to force output as a cell array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/arglist2struct.m
 %       cd/compute_combined_trace.m
 %       cd/create_error_for_nargin.m
 %       cd/ismatch.m
+%       cd/ispositiveintegervector.m
 %
 % Used by:
 %       cd/m3ha_import_raw_traces.m
+%       cd/m3ha_neuron_choose_best_params.m
 %       ~/m3ha/optimizer4gabab/singleneuronfitting75.m
 
 % File History:
 % 2019-12-03 Moved from singleneuronfitting.m
-% TODO: Output a cell array if extracting more than one variable
+% 2019-12-23 Now outputs a cell array if extracting more than one variable
 % TODO: Allow other strings for rowsToExtract, such as 'first', 'last', etc.
 % TODO: Add 'OutputMode' to optionally extract as many outputs
 
@@ -51,6 +57,7 @@ function varExtracted = extract_vars (tableOrPath, varName, varargin)
 %% Default values for optional arguments
 rowsToExtractDefault = 'all';
 rowConditionsDefault = [];
+forceCellOutputDefault = false; % don't force output as a cell array by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -65,19 +72,30 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-% TODO: Validation
-addRequired(iP, 'tableOrPath');
-addRequired(iP, 'varName');
+addRequired(iP, 'tableOrPath', ...
+    @(x) assert(ischar(x) || isstring(x) || istable(x), ...
+        ['tableOrPath must be a character array or a string array ', ...
+            'or a table!']));
+addRequired(iP, 'varNames', ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['varNames must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
 
 % Add parameter-value pairs to the Input Parser
 % TODO: Validation
-addParameter(iP, 'RowsToExtract', rowsToExtractDefault);
+addParameter(iP, 'RowsToExtract', rowsToExtractDefault, ...
+    @(x) assert(ispositiveintegervector(x) || iscellstr(x) || isstring(x), ...
+                ['strs5 must be either a positive integer vector, ', ...
+                    'a string array or a cell array of character arrays!']));
 addParameter(iP, 'RowConditions', rowConditionsDefault);
+addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
-parse(iP, tableOrPath, varName, varargin{:});
+parse(iP, tableOrPath, varNames, varargin{:});
 rowsToExtract = iP.Results.RowsToExtract;
 rowConditions = iP.Results.RowConditions;
+forceCellOutput = iP.Results.ForceCellOutput;
 
 %% Do the job
 % Parse the first argument
@@ -121,7 +139,18 @@ elseif ~isempty(rowConditions)
 end
 
 % Extract variable
-varExtracted = tableOfVars{:, varName};
+if (iscellstr(varNames) || isstring(varNames)) && ...
+        (numel(varNames) > 1 || forceCellOutput)
+    if iscell(varNames)
+        varExtracted = cellfun(@(x) tableOfVars{:, x}, varNames, ...
+                                'UniformOutput', false);
+    else
+        varExtracted = arrayfun(@(x) tableOfVars{:, x}, varNames, ...
+                                'UniformOutput', false);
+    end
+else
+    varExtracted = tableOfVars{:, varNames};
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -1766,7 +1766,7 @@ if isempty(rowConditions)
     if nSweeps <= maxRowsWithOneOnly
         nRows = nSweeps;
     else
-        nRows = floor(sqrt(nSweeps));
+        nRows = ceil(sqrt(nSweeps));
     end
 
     % Label the rows 1, 2, ..., nRows

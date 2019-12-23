@@ -10,7 +10,7 @@ function h = plot_tuning_map (pValues, readout, varargin)
 %       readout     - a readout matrix corresponding to the parameter-pairs
 %                   must be a 2-dimensional numeric array with dimensions 
 %                   given by the lengths of elements of pValues
-%       varargin    - 'PisLog': whether parameter values are to be plotted 
+%       varargin    - 'PIsLog': whether parameter values are to be plotted 
 %                               log-scaled
 %                   must be a 2-element binary array
 %                   default == [false, false];
@@ -56,7 +56,7 @@ function h = plot_tuning_map (pValues, readout, varargin)
 % 
 
 %% Default values for optional arguments
-pislogDefault = [false, false];
+pIsLogDefault = [false, false];
 pLabelsDefault = {'Parameter1', 'Parameter2'};
 readoutLabelDefault = 'Readout';
 xlimitsDefault = [];
@@ -86,7 +86,7 @@ addRequired(iP, 'readout', ...              % a readout matrix
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'PisLog', pislogDefault, ...
+addParameter(iP, 'PIsLog', pIsLogDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, ...
                                 {'binary', 'vector', 'numel', 2}));
 addParameter(iP, 'PLabels', pLabelsDefault, ...
@@ -112,7 +112,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 
 % Read from the Input Parser
 parse(iP, pValues, readout, varargin{:});
-pIsLog = iP.Results.PisLog;
+pIsLog = iP.Results.PIsLog;
 pLabels = iP.Results.PLabels;
 readoutLabel = iP.Results.ReadoutLabel;
 xlimits = iP.Results.XLimits;

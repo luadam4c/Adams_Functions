@@ -77,6 +77,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/force_column_vector.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_import_raw_traces.m
+%       cd/m3ha_neuron_choose_best_params.m
 %       cd/plot_fitted_traces.m
 %       cd/match_format_vector_sets.m
 %       cd/parse_atf_swd.m

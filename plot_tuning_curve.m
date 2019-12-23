@@ -20,6 +20,8 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       plot_tuning_curve(pValues, readoutAll, 'UpperCI', upperCIAll, 'LowerCI', lowerCIAll, 'ColorMap', hsv(2));
 %
 %       plot_tuning_curve(1:5, 2:6);
+%       plot_tuning_curve(1:20, 20:-1:1, 'ColorMap', @lines);
+%       plot_tuning_curve(1:100, randi(100, 1, 100), 'ColorMap', @parula);
 %
 % Outputs:
 %       handles     - handles structure with fields:
@@ -61,7 +63,11 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %                   - 'LineWidth': line width
 %                   must be a positive scalar
 %                   default == 2
-%                   - 'PisLog': whether parameter values are to be plotted 
+%                   - 'PIsLog': whether parameter values are to be plotted 
+%                               log-scaled
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'ReadoutIsLog': whether readout values are to be plotted 
 %                               log-scaled
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -253,6 +259,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %
 % Used by:
 %       cd/m3ha_network_tuning_curves.m
+%       cd/m3ha_neuron_choose_best_params.m
 %       cd/parse_current_family.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_chevron.m
@@ -303,6 +310,8 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 % 2019-11-24 Moved code to parse_phase_info.m
 % 2019-11-28 Now plots confidence intervals with transparency
 % 2019-12-18 Now allows pValues to be multiple vectors
+% 2019-12-23 Fixed colorMap argument
+% 2019-12-23 Added 'ReadoutIsLog' as an optional argument
 % TODO: phaseBoundaries needs to be provided into parse_phase_info.m
 
 %% Hard-coded constants
@@ -352,7 +361,8 @@ runRankTestDefault = false;         % don't run paired signed-rank test by defau
 columnsToPlotDefault = [];          % set later
 lineSpecDefault = '-';
 lineWidthDefault = 2;
-pislogDefault = false;
+pIsLogDefault = false;
+readoutIsLogDefault = false;
 pLimitsDefault = [];
 readoutLimitsDefault = [];
 pTicksDefault = [];
@@ -433,7 +443,9 @@ addParameter(iP, 'ColumnsToPlot', columnsToPlotDefault, ...
 addParameter(iP, 'LineSpec', lineSpecDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'LineWidth', lineWidthDefault);
-addParameter(iP, 'PisLog', pislogDefault, ...
+addParameter(iP, 'PIsLog', pIsLogDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ReadoutIsLog', readoutIsLogDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PLimits', pLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
@@ -533,7 +545,8 @@ runRankTest = iP.Results.RunRankTest;
 columnsToPlot = iP.Results.ColumnsToPlot;
 lineSpec = iP.Results.LineSpec;
 lineWidth = iP.Results.LineWidth;
-pIsLog = iP.Results.PisLog;
+pIsLog = iP.Results.PIsLog;
+readoutIsLog = iP.Results.ReadoutIsLog;
 pLimits = iP.Results.PLimits;
 readoutLimits = iP.Results.ReadoutLimits;
 pTicks = iP.Results.PTicks;
@@ -806,16 +819,25 @@ nColumnsToPlot = length(columnsToPlot);
 
 % Decide on the color map to use
 if colorByPhase
-    % Generate a color map for phases
-    colorMap = decide_on_colormap(colorMap, maxNPhases, 'ColorMapFunc', @hsv);
-else
-    % Generate a color map for traces
-    if nColumnsToPlot == 1 && isempty(colorMap)
-        colorMap = rgb('SkyBlue');
-    else
-        colorMap = decide_on_colormap(colorMap, nColumnsToPlot, ...
-                                        'ColorMapFunc', @jet);
+    % Use the hsv color map by default
+    if isempty(colorMap)
+        colorMap = @hsv;
     end
+    
+    % Update the color map based on maxNPhases
+    colorMap = decide_on_colormap(colorMap, maxNPhases);
+else
+    % Use the jet color map by default
+    if isempty(colorMap)
+        if nColumnsToPlot == 1
+            colorMap = rgb('SkyBlue');
+        else
+            colorMap = @jet;
+        end
+    end
+    
+    % Update the color map based on nColumnsToPlot
+    colorMap = decide_on_colormap(colorMap, nColumnsToPlot);
 end
 
 % Decide on the confidence interval color map to use
@@ -894,11 +916,14 @@ for iPlot = 1:nColumnsToPlot
 
         % Plot readout vector for all phases
         curves(iPlot, 1:nPhasesThis) = ...
-            cellfun(@(x) plot_one_line(pIsLog, pValuesThis(x), readoutThis(x), ...
-                        lineSpec, lineWidth, otherArguments), phaseIndices);
+            cellfun(@(x) plot_one_line(pIsLog, readoutIsLog, ...
+                                    pValuesThis(x), readoutThis(x), ...
+                                    lineSpec, lineWidth, otherArguments), ...
+                    phaseIndices);
     else
-        curves(iPlot, 1) = plot_one_line(pIsLog, pValuesThis, readoutThis, ...
-                                        lineSpec, lineWidth, otherArguments);
+        curves(iPlot, 1) = plot_one_line(pIsLog, readoutIsLog, ...
+                                    pValuesThis, readoutThis, ...
+                                    lineSpec, lineWidth, otherArguments);
     end
 
     % If provided, plot a confidence interval for this column
@@ -943,7 +968,8 @@ for iPlot = 1:nColumnsToPlot
                                         'EdgeAlpha', confIntEdgeAlpha);
 
             % Plot tuning curve again
-            curves(iPlot, 1) = plot_one_line(pIsLog, pValuesThis, readoutThis, ...
+            curves(iPlot, 1) = plot_one_line(pIsLog, readoutIsLog, ...
+                                        pValuesThis, readoutThis, ...
                                         lineSpec, lineWidth, otherArguments);
 
             % Display tick marks and grid lines over graphics objects.
@@ -1203,12 +1229,18 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function p = plot_one_line(pIsLog, pValues, readout, lineSpec, ...
+function p = plot_one_line(pIsLog, readoutIsLog, pValues, readout, lineSpec, ...
                             lineWidth, otherArguments)
 
-if pIsLog
-    % Note: can't have hold on before semilogx
+% Note: can't have hold on before loglog, semilogx or semilogy
+if pIsLog && readoutIsLog
+    p = loglog(pValues, readout, lineSpec, ...
+                    'LineWidth', lineWidth, otherArguments);
+elseif pIsLog && ~readoutIsLog
     p = semilogx(pValues, readout, lineSpec, ...
+                    'LineWidth', lineWidth, otherArguments);
+elseif ~pIsLog && readoutIsLog
+    p = semilogy(pValues, readout, lineSpec, ...
                     'LineWidth', lineWidth, otherArguments);
 else
     p = plot(pValues, readout, lineSpec, ...

@@ -83,6 +83,7 @@ function varargout = find_in_strings (cand, strList, varargin)
 %       cd/m3ha_network_raster_plot.m
 %       cd/m3ha_network_single_neuron.m
 %       cd/m3ha_network_tuning_curves.m
+%       cd/m3ha_neuron_choose_best_params.m
 %       cd/parse_iox.m
 %       cd/parse_lts.m
 %       cd/parse_spike2_mat.m
