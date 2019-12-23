@@ -536,10 +536,11 @@ case {4}
     fprintf('It took %g seconds to run the simplex method on %d initial conditions!!\n', ...
             timeTakenAllFit, nInitConds);
     fprintf('\n');
-case {1, 2, 3}
+case {1, 2, 3, 9}
     % Do passive fitting, find best params, then do active fitting
     % Fit passive parameters
-    if outParams.fitMode == 1 || outParams.fitMode == 3
+    if outParams.fitMode == 1 || outParams.fitMode == 3 || ...
+            outParams.fitMode == 9
         % Prepare for passive-parameters-fitting
         fprintf('Fitting passive parameters for cell %s ... \n', cellName);
         tStartPassiveFit = tic();      % tracks time for passive-parameters-fitting
@@ -1043,7 +1044,7 @@ if x == 1
     hold on;
     % Initialize ymax
     initymax = y * 1.1;
-    if ~isnan(initymax)
+    if ~isnan(initymax) && initymax > 0
         ylim([0, initymax]);
     end
     if ~isempty(xLabel)

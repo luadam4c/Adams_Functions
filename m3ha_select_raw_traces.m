@@ -52,7 +52,7 @@ function [fileNames, rowConditions, figurePositions] = ...
 %                              5 if columnMode == 2
 %                   - 'DataMode': data mode
 %                   must be empty or one of:
-%                       0 - all data
+%                       0 - all data (no restrictions)
 %                       1 - all of g incr = 100%, 200%, 400%
 %                       2 - all of g incr = 100%, 200%, 400% 
 %                               but exclude cell-pharm-g_incr sets 
@@ -60,7 +60,7 @@ function [fileNames, rowConditions, figurePositions] = ...
 %                       3 - all data 
 %                               but exclude cell-pharm-g_incr sets 
 %                               containing problematic sweeps
-%                   default == 2
+%                   default == 0
 %                   - 'SwpInfo': a table of sweep info, with each row named by 
 %                               the matfile base containing the raw data
 %                   must a 2D table with row names being file bases
@@ -109,6 +109,8 @@ function [fileNames, rowConditions, figurePositions] = ...
 % 2018-12-06 Now uses cellIdThis, fileNamesToUse, swpInfo, cellInfo
 % 2019-12-17 Now selects the "best trace" for Attempt #1 across trials
 % 2019-12-21 Now uses input parser
+% 2019-12-23 Fixed default dataMode to be 0 so that the toUse column
+%               already set in swpInfo would be respected
 
 %% Hard-coded parameters
 pharmStr = 'prow';
@@ -185,7 +187,7 @@ end
 
 % Set default data mode
 if isempty(dataMode)
-    dataMode = 2;
+    dataMode = 0;
 end
 
 % Update swpInfo so that there is a toUse column
