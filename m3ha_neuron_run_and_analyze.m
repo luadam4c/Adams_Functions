@@ -100,6 +100,9 @@ function [errorStruct, hFig, simData] = ...
 %                                               to initial errors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'SaveImportLogFlag': whether to log imported files
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'SaveParamsFlag': whether to save simulation parameters
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
@@ -461,6 +464,8 @@ function [errorStruct, hFig, simData] = ...
 % 2019-12-19 - Removed y axis link for current pulse response plots
 % 2019-12-21 - Added 'PlotAllFlag' as an optional argument and change
 %                   default to not plot anything
+% 2019-12-23 - Added 'SaveImportLogFlag' as an optional parameter
+
 
 %% Hard-coded parameters
 validBuildModes = {'active', 'passive'};
@@ -561,6 +566,7 @@ averageCprFlagDefault = false;  % don't average current pulse responses
 bootstrapCprFlagDefault = false;% don't bootstrap-average current pulse  
                                 %   responses according to vHold by default
 normalize2InitErrFlagDefault = false;
+saveImportLogFlagDefault = true;    % save imported file log by default
 saveParamsFlagDefault = true;   % save simulation parameters by default
 saveSimCmdsFlagDefault = true;  % save simulation commands by default
 saveStdOutFlagDefault = false;  % save standard outputs only if error by default
@@ -685,6 +691,8 @@ addParameter(iP, 'AverageCprFlag', averageCprFlagDefault, ...
 addParameter(iP, 'BootstrapCprFlag', bootstrapCprFlagDefault, ...   
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Normalize2InitErrFlag', normalize2InitErrFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'SaveImportLogFlag', saveImportLogFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SaveParamsFlag', saveParamsFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -829,6 +837,7 @@ generateDataFlag = iP.Results.GenerateDataFlag;
 averageCprFlag = iP.Results.AverageCprFlag;
 bootstrapCprFlag = iP.Results.BootstrapCprFlag;
 normalize2InitErrFlag = iP.Results.Normalize2InitErrFlag;
+saveImportLogFlag = iP.Results.SaveImportLogFlag;
 saveParamsFlag = iP.Results.SaveParamsFlag;
 saveSimCmdsFlag = iP.Results.SaveSimCmdsFlag;
 saveStdOutFlag = iP.Results.SaveStdOutFlag;
@@ -956,7 +965,9 @@ if strcmpi(simMode, 'passive')
     % Import data to compare if not provided but file names provided
     if isempty(realDataCpr) && ~isempty(fileNames)
         % Log names of files imported
-        log_arraytext(importedPath, fileNames);
+        if saveImportLogFlag
+            log_arraytext(importedPath, fileNames);
+        end
 
         % Import data
         [realDataCpr, sweepInfoCpr] = ...
