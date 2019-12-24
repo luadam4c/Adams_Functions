@@ -444,9 +444,9 @@ addParameter(iP, 'LineSpec', lineSpecDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'LineWidth', lineWidthDefault);
 addParameter(iP, 'PIsLog', pIsLogDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary', 'scalar'}));
 addParameter(iP, 'ReadoutIsLog', readoutIsLogDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary', 'scalar'}));
 addParameter(iP, 'PLimits', pLimitsDefault, ...
     @(x) isempty(x) || ischar(x) && strcmpi(x, 'suppress') || ...
         isnumeric(x) && isvector(x) && length(x) == 2);
@@ -916,13 +916,11 @@ for iPlot = 1:nColumnsToPlot
 
         % Plot readout vector for all phases
         curves(iPlot, 1:nPhasesThis) = ...
-            cellfun(@(x) plot_one_line(pIsLog, readoutIsLog, ...
-                                    pValuesThis(x), readoutThis(x), ...
+            cellfun(@(x) plot_one_line(pValuesThis(x), readoutThis(x), ...
                                     lineSpec, lineWidth, otherArguments), ...
                     phaseIndices);
     else
-        curves(iPlot, 1) = plot_one_line(pIsLog, readoutIsLog, ...
-                                    pValuesThis, readoutThis, ...
+        curves(iPlot, 1) = plot_one_line(pValuesThis, readoutThis, ...
                                     lineSpec, lineWidth, otherArguments);
     end
 
@@ -941,7 +939,7 @@ for iPlot = 1:nColumnsToPlot
         end
 
         % Plot the confidence interval
-        if colorByPhase || pIsLog
+        if colorByPhase || pIsLog || readoutIsLog
             fprintf('Not Supported Yet!\n');
         else
             % Get the current Y limits
@@ -968,8 +966,7 @@ for iPlot = 1:nColumnsToPlot
                                         'EdgeAlpha', confIntEdgeAlpha);
 
             % Plot tuning curve again
-            curves(iPlot, 1) = plot_one_line(pIsLog, readoutIsLog, ...
-                                        pValuesThis, readoutThis, ...
+            curves(iPlot, 1) = plot_one_line(pValuesThis, readoutThis, ...
                                         lineSpec, lineWidth, otherArguments);
 
             % Display tick marks and grid lines over graphics objects.
@@ -1190,6 +1187,16 @@ end
 % Hold off
 hold_off(wasHold);
 
+% Modify axes scale if requested
+%   Note: this must occur after holding off
+if pIsLog && readoutIsLog
+    set(gca, 'XScale', 'log', 'YScale', 'log');
+elseif pIsLog && ~readoutIsLog
+    set(gca, 'XScale', 'log');
+elseif ~pIsLog && readoutIsLog
+    set(gca, 'YScale', 'log');
+end
+
 %% Post-plotting
 % Generate a legend for the curves only if there is more than one trace
 if ~strcmpi(legendLocation, 'suppress') && nColumnsToPlot > 1
@@ -1229,23 +1236,11 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function p = plot_one_line(pIsLog, readoutIsLog, pValues, readout, lineSpec, ...
+function p = plot_one_line(pValues, readout, lineSpec, ...
                             lineWidth, otherArguments)
 
-% Note: can't have hold on before loglog, semilogx or semilogy
-if pIsLog && readoutIsLog
-    p = loglog(pValues, readout, lineSpec, ...
-                    'LineWidth', lineWidth, otherArguments);
-elseif pIsLog && ~readoutIsLog
-    p = semilogx(pValues, readout, lineSpec, ...
-                    'LineWidth', lineWidth, otherArguments);
-elseif ~pIsLog && readoutIsLog
-    p = semilogy(pValues, readout, lineSpec, ...
-                    'LineWidth', lineWidth, otherArguments);
-else
-    p = plot(pValues, readout, lineSpec, ...
-                    'LineWidth', lineWidth, otherArguments);
-end
+p = plot(pValues, readout, lineSpec, ...
+                'LineWidth', lineWidth, otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1460,6 +1455,21 @@ set(curves(iPlot, 1), 'DisplayName', ...
     replace(columnLabels{col}, '_', '\_'));
 
 nBoundaries = nPBoundaries + nRBoundaries;
+
+% Note: can't have hold on before loglog, semilogx or semilogy
+if pIsLog && readoutIsLog
+    p = loglog(pValues, readout, lineSpec, ...
+                    'LineWidth', lineWidth, otherArguments);
+elseif pIsLog && ~readoutIsLog
+    p = semilogx(pValues, readout, lineSpec, ...
+                    'LineWidth', lineWidth, otherArguments);
+elseif ~pIsLog && readoutIsLog
+    p = semilogy(pValues, readout, lineSpec, ...
+                    'LineWidth', lineWidth, otherArguments);
+else
+    p = plot(pValues, readout, lineSpec, ...
+                    'LineWidth', lineWidth, otherArguments);
+end
 
 %}
 

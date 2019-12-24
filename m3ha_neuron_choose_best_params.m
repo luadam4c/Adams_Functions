@@ -159,7 +159,7 @@ errorsToPlot = {'totalError'; 'avgSwpError'; 'ltsMatchError'; ...
                 'avgLtsAmpError'; 'avgLtsDelayError'; 'avgLtsSlopeError'};
 errorLabelsToPlot = {'Total Error'; 'Sweep Error'; 'Match Error'; ...
             'Amp Error'; 'Time Error'; 'Slope Error'};
-paramsToPlot = paramsToSave(1:15);
+paramsToPlot = paramsToSave([1:5, 6:3:18, 7:3:19, 8:3:20]);
 paramLabelsToPlot = paramsToPlot;
 
 errorYLimits = [0, Inf];
@@ -316,6 +316,11 @@ end
 % Create candidate labels
 candLabel = combine_strings('Substrings', {prefix, 'from', iterStr});
 
+% Create full path to error sheet file
+sheetBase = [prefix, '_', errorParamSheetSuffix];
+sheetPathBase = fullfile(outFolder, sheetBase);
+sheetPath = [sheetPathBase, '.', sheetExtension];
+
 %% Do the job
 % Display message
 fprintf('Choosing best parameters for %s ... \n', uniqueCellName);
@@ -380,15 +385,27 @@ candParamValueTable = addvars(candParamValueTable, iterNumber, 'Before', 1);
 errorParamTable = join(errorTable, candParamValueTable);
 
 %% Save results
-% Create full path to error sheet file
-sheetBase = [prefix, '_', errorParamSheetSuffix];
-sheetPathBase = fullfile(outFolder, sheetBase);
-sheetPath = [sheetPathBase, '.', sheetExtension];
-
 % Save the errors-parameters table
 writetable(errorParamTable, sheetPath);
 
 %% Plot error history
+% TODO: FOR DEBUG but transfer to m3ha_plot_error_history.m
+errorParamTable = readtable(sheetPath);
+iterNumber = errorParamTable.iterNumber;
+errorWeights = [errorParamTable.errorWeights_1; 
+                errorParamTable.errorWeights_2;
+                errorParamTable.errorWeights_3;
+                errorParamTable.errorWeights_4;
+                errorParamTable.errorWeights_5];
+ltsMatchError = errorParamTable.ltsMatchError;
+avgSwpError = errorParamTable.avgSwpError;
+avgLtsAmpError = errorParamTable.avgLtsAmpError;
+avgLtsDelayError = errorParamTable.avgLtsDelayError;
+avgLtsSlopeError = errorParamTable.avgLtsSlopeError;
+
+
+%% Make m3ha_plot_error_history.m
+%   m3ha_plot_error_history(errorParamPath)
 if plotErrorHistoryFlag
     % Display message
     fprintf('Plotting error history for %s ... \n', uniqueCellName);
@@ -414,12 +431,13 @@ if plotErrorComparisonFlag
 
     % Force as a matrix with each column corresponding to a type of error
     errorWeights = transpose(force_matrix(errorWeights));
+    indComponentErrors = [idxMatch, idxSweep, idxAmp, idxTime, idxSlope];
 
     % Compute components of total error
     %   Note: must match groupLabels
     componentErrors = [ltsMatchError, avgSwpError, avgLtsAmpError, ...
                         avgLtsDelayError, avgLtsSlopeError] .* ...
-            errorWeights(:, [idxMatch, idxSweep, idxAmp, idxTime, idxSlope]);
+                        errorWeights(:, indComponentErrors);
     
     % Decide on group labels
     %   Note: must match componentErrors
@@ -461,14 +479,15 @@ if plotParamHistoryFlag
     paramYLimits = force_column_cell(neuronParamsYLimits(:, indParamsToPlot));
 
     % Determine whether each parameter should be plotted in a log scale
-    paramIsLog = neuronParamsIsLog(indParamsToPlot);
+    paramIsLog = transpose(neuronParamsIsLog(indParamsToPlot));
 
     % Construct all error and parameter y limits
     errorParamYLimits = [repmat({errorYLimits}, 5, 1); paramYLimits];
+    errorParamIsLog = [false(5, 1); paramIsLog];
 
     % Plot error & parameter history
     plot_history_table(errorParamTable, errorParamToPlot,...
-                         iterNumber, paramIsLog, [], ...
+                         iterNumber, errorParamIsLog, [], ...
                          errorParamYLimits, errorParamXTicks, ...
                          [], errorParamLabels, errorParamFigTitle, ...
                          errorParamFigNumber, errorParamFigName, figTypes);
@@ -481,6 +500,12 @@ bestParamsLabel = candLabel{iTableBest};
 
 % Display result
 fprintf('%s has the least error: %g!\n', bestParamsLabel, totalErrorBest);
+
+%{
+% TODO: FOR DEBUG
+bestParamsTable = [];
+bestParamsLabel = [];
+%}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -534,7 +559,7 @@ end
 % Decide on whether to plot on a log scale
 if isempty(paramIsLog)
     paramIsLog = repmat({false}, nVarsToPlot, 1);
-elseif isnumeric(paramIsLog)
+elseif ~iscell(paramIsLog)
     paramIsLog = num2cell(paramIsLog);
 end
 

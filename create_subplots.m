@@ -80,7 +80,7 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 % 2019-09-06 Added 'FigPosition' and 'CenterPosition' as optional arguments
 % 2019-09-06 Added gridPositions as an optional argument
 % 2019-09-11 Added more figure properties as optional arguments
-% 
+% TODO: Added 'TransposeOrder' as an optional argument
 
 %% Hard-coded parameters
 horizontalDeadSpace = 0.25;     % relative dead space at the edges of figure 
