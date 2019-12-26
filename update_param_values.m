@@ -101,7 +101,7 @@ if is_contained_in({upperBoundStr, lowerBoundStr}, ...
 
     % Check if each value is within bounds
     [isAllWithinBounds, isWithinBound] = ...
-        check_within_bounds(paramValues, lowerBounds, upperBounds)
+        check_within_bounds(paramValues, lowerBounds, upperBounds);
 
     % Only update the parameter values within bounds
     if ~isAllWithinBounds
