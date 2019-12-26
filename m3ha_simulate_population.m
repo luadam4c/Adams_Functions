@@ -56,12 +56,18 @@ nCellsToSim = 10;
 % Simulation parameters 
 buildMode = 'active';
 simMode = 'active';
-dataMode = 0;                       % data mode:
-                                    %   0 - all data
-                                    %   1 - all of g incr = 100%, 200%, 400% 
-                                    %   2 - same g incr but exclude 
-                                    %       cell-pharm-g_incr sets 
-                                    %       containing problematic sweeps
+dataMode = 0;           % data mode:
+                        %   0 - all data
+                        %   1 - all of g incr = 100%, 200%, 400% 
+                        %   2 - same g incr but exclude 
+                        %       cell-pharm-g_incr sets 
+                        %       containing problematic sweeps
+attemptNumber = 3;      %   1 - Use 4 traces @ 200% gIncr for this data mode
+                        %   2 - Use all traces @ 200% gIncr for this data mode
+                        %   3 - Use all traces for this data mode
+                        %   4 - Use 1 trace for each pharm x gIncr 
+                        %           for this data mode
+                        %   5 - Use 4 traces @ 400% gIncr for this data mode
 
 % Directory names
 parentDirectoryTemp = '/media/adamX/m3ha';
@@ -186,6 +192,7 @@ if simulateFlag
     % Decide on candidate parameters files
     [~, paramPaths] = all_files('Directory', outFolder, 'Suffix', 'params');
 
+%{
     % Extract the cell names
     cellNames = m3ha_extract_cell_name(paramPaths);
 
@@ -222,9 +229,16 @@ if simulateFlag
                         columnMode, attemptNumberAcrossTrials, ...
                         x, swpInfo, cellInfo), ...
                 cellNamesToFit, 'UniformOutput', false);
+%}
 
-
+    cellfun(@(x) m3ha_neuron_run_and_analyze (x, 'DataMode', dataMode, ...
+                    'BuildMode', buildMode, 'SimMode', simMode, ...
+                    'AttemptNumber', attemptNumber, ...
+                    'PlotIndividualFlag', true, 'SaveSimOutFlag', true, ...
+                    'SaveLtsInfoFlag', true), ...
+            paramPaths);
 end
+
 
 if false
     %% Select recorded data

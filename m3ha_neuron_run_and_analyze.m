@@ -553,8 +553,7 @@ fileNamesDefault = {};          % none provided by default
 fileNamesCprDefault = {};       % none provided by default
 fileNamesIpscrDefault = {};     % none provided by default
 fileBasesDefault = {};          % set later
-outFolderDefault = pwd;         % use the present working directory for outputs
-                                %   by default
+outFolderDefault = '' ;         % set later
 prefixDefault = '';             % set later
 debugFlagDefault = false;       % not in debug mode by default
 customHoldCurrentFlagDefault = 0; % don't use custom hold current by default
@@ -905,9 +904,6 @@ simData = [];
 % Create an experiment identifier
 expStr = prefix;
 
-% Create output paths
-importedPath = fullfile(outFolder, [expStr, '_', importedSuffix, '.txt']);
-
 % Parse first argument
 if istext(neuronParamsTableOrFile)
     % Read in the table
@@ -917,10 +913,27 @@ if istext(neuronParamsTableOrFile)
     cellName = m3ha_extract_cell_name(neuronParamsTableOrFile, ...
                                         'ForceSingleOutput', true);
 
-    % Use the common prefix as the expStr
+    % Set a default expStr
     if isempty(expStr)
+        % Try extracting a common prefix
         paramFileBases = extract_fileparts(neuronParamsTableOrFile, 'base');
-        expStr = extract_common_prefix(paramFileBases);
+        commonPrefix = extract_common_prefix(paramFileBases);
+
+        % Decide on the prefix
+        if ~isempty(commonPrefix)
+            expStrPrefix = commonPrefix;
+        elseif ~isempty(cellName)
+            expStrPrefix = cellName;
+        else
+            expStrPrefix = 'unnamed';
+        end
+
+        % Decide on the suffix
+        if strcmpi(simMode, 'passive')
+            expStr = strcat(expStrPrefix, '_cpr');
+        else
+            expStr = strcat(expStrPrefix, '_ipscr');
+        end
     end
 else
     % The first argument is(are) the parameter table(s)
@@ -947,6 +960,21 @@ elseif isempty(cellName)
     % Look for a cell name
     cellName = m3ha_extract_cell_name(fileNames, 'ForceSingleOutput', true);
 end
+
+% Create a default output folder
+if isempty(outFolder)
+    if ~isempty(expStr)
+        outFolder = expStr;
+    else
+        outFolder = pwd;
+    end
+end
+
+% Make sure the output folder exists
+check_dir(outFolder);
+
+% Create output paths
+importedPath = fullfile(outFolder, [expStr, '_', importedSuffix, '.txt']);
 
 % Update flags
 if verbose

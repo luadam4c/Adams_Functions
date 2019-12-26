@@ -47,6 +47,7 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 % Requires:
 %       cd/argfun.m
 %       cd/combine_strings.m
+%       cd/count_strings.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_subplots.m
@@ -526,14 +527,8 @@ if isempty(iterNumbers)
     iterNumbers = transpose(1:nIters);
 end
 
-% TODO FOR SHINSHIN: count_strings.m
-% Force character arrays as cell arrays
-if ischar(errorParamToPlot)
-    errorParamToPlot = {errorParamToPlot};
-end
-
 % Count the number of variables
-nVarsToPlot = numel(errorParamToPlot);
+nVarsToPlot = count_strings(errorParamToPlot);
 
 % Decide on the number of rows for subplots
 nSubplotRows = ceil(sqrt(nVarsToPlot));
