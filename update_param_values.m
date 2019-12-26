@@ -99,10 +99,14 @@ if is_contained_in({upperBoundStr, lowerBoundStr}, ...
     upperBounds = paramsTable{paramNames, upperBoundStr};
     lowerBounds = paramsTable{paramNames, lowerBoundStr};
 
-    % Check if all values are within bounds
-    if ~check_within_bounds(paramValues, lowerBounds, upperBounds)
-        fprintf('Original parameters table returned!\n');
-        return
+    % Check if each value is within bounds
+    [isAllWithinBounds, isWithinBound] = ...
+        check_within_bounds(paramValues, lowerBounds, upperBounds)
+
+    % Only update the parameter values within bounds
+    if ~isAllWithinBounds
+        paramNames = paramNames(isWithinBound);
+        paramValuesCell = paramValuesCell(isWithinBound);
     end
 end
 
@@ -113,6 +117,11 @@ paramsTable(paramNames, {'Value'}) = paramValuesCell;
 
 %{
 OLD CODE:
+
+if ~check_within_bounds(paramValues, lowerBounds, upperBounds)
+    fprintf('Original parameters table returned!\n');
+    return
+end
 
 %}
 

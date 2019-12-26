@@ -1,7 +1,7 @@
-function isAllWithinBounds = ...
+function [isAllWithinBounds, isWithinBound] = ...
                 check_within_bounds (values, lowerBounds, upperBounds, varargin)
 %% Checks whether all values are within bounds and print the ones that aren't
-% Usage: isAllWithinBounds = ...
+% Usage: [isAllWithinBounds, isWithinBound] = ...
 %               check_within_bounds (values, lowerBounds, upperBounds, varargin)
 % Explanation:
 %       TODO
@@ -25,6 +25,7 @@ function isAllWithinBounds = ...
 
 % File History:
 % 2018-11-14 Created by Adam Lu
+% 2019-12-25 Now makes isWithinBound the second output
 
 %% Default values for optional arguments
 suppressOutputDefault = false;          % whether to suppress standard output
