@@ -46,7 +46,7 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = true;
+chooseBestParamsFlag = false; %true;
 plotErrorHistoryFlag = true;
 plotErrorComparisonFlag = true;
 plotParamHistoryFlag = true;
@@ -111,10 +111,10 @@ defaultOutFolderName = 'ranked';
 
 % File info
 %   Note: Must be consistent with m3ha_neuron_choose_best_params.m
-errorSheetSuffix = 'error_comparison';
+errorSheetSuffix = 'error_param_table';
 errorSheetExtension = 'csv';
 
-rankPrefix = 'singleneuronfitting60-78';
+rankPrefix = 'singleneuronfitting0-86';
 rankSuffix = 'ranked';
 rankSheetExtension = 'csv';
 barFigTypes = {'png', 'epsc2'};
