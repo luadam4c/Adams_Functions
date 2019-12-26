@@ -913,6 +913,9 @@ if istext(neuronParamsTableOrFile)
     cellName = m3ha_extract_cell_name(neuronParamsTableOrFile, ...
                                         'ForceSingleOutput', true);
 
+    % Extract the parent directory
+    parentDir = extract_fileparts(neuronParamsTableOrFile, 'directory');
+
     % Set a default expStr
     if isempty(expStr)
         % Try extracting a common prefix
@@ -938,7 +941,10 @@ if istext(neuronParamsTableOrFile)
 else
     % The first argument is(are) the parameter table(s)
     neuronParamsTable = neuronParamsTableOrFile;
-    
+ 
+    % There is no parent directory known
+    parentDir = '';
+
     % Cell name is not provided yet at this stage
     cellName = '';
 end
@@ -964,7 +970,11 @@ end
 % Create a default output folder
 if isempty(outFolder)
     if ~isempty(expStr)
-        outFolder = expStr;
+        if ~isempty(parentDir)
+            outFolder = fullfile(parentDir, expStr);
+        else
+            outFolder = fullfile(pwd, expStr);
+        end
     else
         outFolder = pwd;
     end

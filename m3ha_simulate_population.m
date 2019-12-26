@@ -68,6 +68,7 @@ attemptNumber = 3;      %   1 - Use 4 traces @ 200% gIncr for this data mode
                         %   4 - Use 1 trace for each pharm x gIncr 
                         %           for this data mode
                         %   5 - Use 4 traces @ 400% gIncr for this data mode
+% TODO:useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
 
 % Directory names
 parentDirectoryTemp = '/media/adamX/m3ha';
@@ -234,11 +235,9 @@ if simulateFlag
     cellfun(@(x) m3ha_neuron_run_and_analyze (x, 'DataMode', dataMode, ...
                     'BuildMode', buildMode, 'SimMode', simMode, ...
                     'AttemptNumber', attemptNumber, ...
-                    'PlotIndividualFlag', true, 'SaveSimOutFlag', true, ...
-                    'SaveLtsInfoFlag', true), ...
+                    'SaveSimOutFlag', true, 'SaveLtsInfoFlag', true), ...
             paramPaths);
 end
-
 
 if false
     %% Select recorded data
