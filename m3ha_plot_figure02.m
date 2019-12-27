@@ -179,7 +179,7 @@ if plotBarPlotsFlag
         statsTable = m3ha_compute_statistics('PharmConditions', pCond3D, ...
                                                 'GIncrConditions', gCond3D);
 
-        % Condition label
+        % Generate a condition label
         conditionLabel = conditionLabel3D;
 
         % Save stats table

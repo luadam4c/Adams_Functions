@@ -1,6 +1,6 @@
-function [output1] = m3ha_plot_bar3 (statsPath, varargin)
+function handles = m3ha_plot_bar3 (statsPath, varargin)
 %% Plots 3-dimensional bar plots from a statistics table returned by m3ha_compute_statistics.m
-% Usage: [output1] = m3ha_plot_bar3 (statsPath, varargin)
+% Usage: handles = m3ha_plot_bar3 (statsPath, varargin)
 % Explanation:
 %       TODO
 %
@@ -8,12 +8,21 @@ function [output1] = m3ha_plot_bar3 (statsPath, varargin)
 %       TODO
 %
 % Outputs:
-%       output1     - TODO: Description of output1
-%                   specified as a TODO
+%       handles     - structures with fields:
+%                       fig
+%                       bars
+%                       errorBarVert
+%                       errorBarHorz
+%                   specified as a structure array
 %
 % Arguments:
-%       statsPath  - a statistics table returned by m3ha_compute_statistics.m
-%                   must be a table
+%       statsPath  - path to a .mat file containing the variables:
+%                       statsTable - statistics table 
+%                                       returned by m3ha_compute_statistics.m
+%                       pharmLabels
+%                       gIncrLabels
+%                       conditionLabel
+%                   must be a string scalar or a character vector
 %       varargin    - 'RowsToPlot': rows to extract
 %                   must be a numeric array,
 %                       a string scalar or a character vector, 
@@ -67,7 +76,7 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'statsPath', ...
-    @(x) validateattributes(x, {'table'}, {'2d'}));
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'RowsToPlot', rowsToPlotDefault, ...
@@ -86,6 +95,9 @@ outFolder = iP.Results.OutFolder;
 otherArguments = struct2arglist(iP.Unmatched);
 
 %% Preparation
+% Initialize output
+handles = struct;
+
 % Set default output directory
 if isempty(outFolder)
     outFolder = extract_fileparts(statsPath, 'directory');
@@ -93,7 +105,13 @@ end
 
 % Load stats table
 disp('Loading statistics for 3D bar plots ...');
-load(statsPath, 'statsTable', 'pharmLabels', 'gIncrLabels', 'conditionLabel');
+if isfile(statsPath)
+    load(statsPath, 'statsTable', 'pharmLabels', ...
+        'gIncrLabels', 'conditionLabel');
+else
+    fprintf('%s does not exist!\n', statsPath);
+    return;
+end
 
 % Extract variables
 allMeasureTitles = statsTable.measureTitle;

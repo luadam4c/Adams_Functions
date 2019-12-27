@@ -47,8 +47,8 @@
 chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
 combineFeatureTablesFlag = false; %true;
-computeStatsFlag = true;
-plotStatsFlag = false; %true;
+computeStatsFlag = false; %true;
+plotStatsFlag = true;
 
 % Selection parameters
 nCellsToSim = 10;
@@ -285,6 +285,8 @@ if computeStatsFlag
                                             'PharmConditions', pCond3D, ...
                                             'GIncrConditions', gCond3D, ...
                                             'DataMode', dataMode);
+    % Generate a condition label
+    conditionLabel = conditionLabel3D;
 
     % Save stats table
     save(stats3dPath, 'statsTable', 'pharmLabels', ...
