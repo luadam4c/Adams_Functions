@@ -78,8 +78,8 @@ violinFigWidth = 3.4;           % in centimeters
 violinRelativeBandWidth = 0.1;  % bandwidth relative to data range
 medianColor = rgb('GreenYellow');     % color of median circle
 medianSize = 6;                % size of median circle in points
-% bar3FigHeight = 6;              % in centimeters
-% bar3FigWidth = 6;               % in centimeters
+bar3FigHeight = 6;              % in centimeters
+bar3FigWidth = 6;               % in centimeters
 
 figTypes = {'png', 'epsc2'};
 
@@ -123,13 +123,13 @@ end
 %% Plot 2D violin plots
 if plotViolinPlotsFlag
     % Construct stats table path
-    stats2dPath = fullfile(figure02Dir, strcat(conditionLabel2D, '_stats.mat'));
+    statsPath2D = fullfile(figure02Dir, strcat(conditionLabel2D, '_stats.mat'));
 
     % Load or compute statistics
-    if isfile(stats2dPath)
+    if isfile(statsPath2D)
         % Load stats table
         disp('Loading statistics for 2D violin plots ...');
-        load(stats2dPath, 'statsTable');
+        load(statsPath2D, 'statsTable');
     else
         % Compute statistics for all features
         disp('Computing statistics for 2D violin plots ...');
@@ -137,7 +137,7 @@ if plotViolinPlotsFlag
                                                 'GIncrConditions', gCond2D);
 
         % Save stats table
-        save(stats2dPath, 'statsTable', '-v7.3');
+        save(statsPath2D, 'statsTable', '-v7.3');
     end
 
     % Restrict to measures of interest
@@ -170,26 +170,45 @@ end
 %% Plot 3D bar plots
 if plotBarPlotsFlag
     % Construct stats table path
-    stats3dPath = fullfile(figure02Dir, strcat(conditionLabel3D, '_stats.mat'));
+    statsPath3D = fullfile(figure02Dir, strcat(conditionLabel3D, '_stats.mat'));
 
-    % Compute statistics if not done already
-    if ~isfile(stats3dPath)
+    % Load or compute statistics
+    if isfile(statsPath3D)
+        % Load stats table
+        disp('Loading statistics for 3D bar plots ...');
+        load(statsPath3D, 'statsTable');
+    else
         % Compute statistics for all features
         disp('Computing statistics for 3D bar plots ...');
         statsTable = m3ha_compute_statistics('PharmConditions', pCond3D, ...
                                                 'GIncrConditions', gCond3D);
 
-        % Condition label
-        conditionLabel = conditionLabel3D;
-
         % Save stats table
-        save(stats3dPath, 'statsTable', 'pharmLabels', ...
-                        'gIncrLabels', 'conditionLabel', '-v7.3');
+        save(statsPath3D, 'statsTable', '-v7.3');
     end
 
-    % Plot bar plots
-    m3ha_plot_bar3(stats3dPath, 'RowsToPlot', measuresOfInterest, ...
-                    'OutFolder', figure02Dir);
+    % Restrict to measures of interest
+    statsTable = statsTable(measuresOfInterest, :);
+
+    % Extract variables
+    allMeasureTitles = statsTable.measureTitle;
+    allMeasureStrs = statsTable.measureStr;
+    allMeanValues = statsTable.meanValue;
+    allUpper95Values = statsTable.upper95Value;
+
+    % Create figure bases
+    allFigBases3D = combine_strings({allMeasureStrs, conditionLabel3D});
+
+    % Create full path bases
+    allFigPathBases3D = fullfile(figure02Dir, allFigBases3D);
+
+    % Plot all 3D bar plots
+    disp('Plotting 3D bar plots ...');
+    cellfun(@(a, b, c, d) m3ha_plot_bar3(a, b, c, ...
+                    pharmLabels, gIncrLabels, ...
+                    d, bar3FigHeight, bar3FigWidth, figTypes), ...
+            allMeanValues, allUpper95Values, ...
+            allMeasureTitles, allFigPathBases3D);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -432,8 +451,111 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function m3ha_plot_bar3(meanValue, upper95Value, ...
+                        measureTitle, pharmLabels, gIncrLabels, ...
+                        figPathBase, figHeight, figWidth, figTypes)
+
+% Create figure for conductance traces
+fig = set_figure_properties('AlwaysNew', true);
+
+% Flip the g incr axis
+[meanValue, upper95Value, gIncrLabels] = ...
+    argfun(@fliplr, meanValue, upper95Value, gIncrLabels);
+
+% Set x and y tick labels
+xTickLabels = pharmLabels;
+yTickLabels = gIncrLabels;
+
+% TODO: Add the following to plot_bar.m?
+% Hard-coded parameters
+relativeBarWidth = 0.2;
+xTickAngle = 320;
+barSeparation = 1;
+
+% Decide on the color map
+cm = decide_on_colormap([], 4);
+
+% Set the color map
+colormap(cm);
+
+% Prepare for bar3
+meanValueTransposed = transpose(meanValue);
+upper95ValueTransposed = transpose(upper95Value);
+
+% Plot the means as bars
+bar3(meanValueTransposed, relativeBarWidth, 'detached');
+
+% Plot error bars
+% TODO: Incorporate into plot_error_bar.m?
+
+% Set the relative error bar width to be the same as the bars themselves
+%   Note: error bar width must not exceed the bar width, 
+%           otherwise the edges would be cut off
+relativeErrorBarWidth = relativeBarWidth;
+
+% Compute the actual error bar width
+errorBarWidth = relativeErrorBarWidth * barSeparation;
+
+% Compute the x and y values corresponding to each data point
+[xValues, yValues] = meshgrid(1:numel(xTickLabels), 1:numel(yTickLabels));
+
+% Compute the left and right positions of the horizontal parts of the error bars
+xPosBarLeft = xValues - errorBarWidth / 2;
+xPosBarRight = xValues + errorBarWidth / 2;
+
+% Plot the vertical part of the error bars
+arrayfun(@(a, b, c, d, e, f) line([a, b], [c, d], [e, f], 'Color', 'k'), ...
+            xValues, xValues, yValues, yValues, ...
+            meanValueTransposed, upper95ValueTransposed);
+
+% Plot the horizontal part of the error bars
+arrayfun(@(a, b, c, d, e, f) line([a, b], [c, d], [e, f], 'Color', 'k'), ...
+            xPosBarLeft, xPosBarRight, yValues, yValues, ...
+            upper95ValueTransposed, upper95ValueTransposed);
+
+% Plot z axis label
+zlabel(measureTitle);
+
+% Set x tick labels
+set(gca, 'XTickLabel', xTickLabels);
+
+% Set x tick angle
+xtickangle(xTickAngle);
+
+% Set y tick labels
+set(gca, 'YTickLabel', yTickLabels);
+
+% Update figure for CorelDraw
+update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                        'Height', figHeight, 'Width', figWidth);
+
+% Save the figure
+save_all_figtypes(fig, figPathBase, figTypes);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %{
 OLD CODE:
+
+barColor = 'k';
+barLineWidth = 1;
+xPosNormalized = 0.8;
+yPosBarNormalized = 0.1;
+yPosTextNormalized = 0.05;
+xPosBar = xLimits(1) + xPosNormalized * diff(xLimits);
+yPosBar = yLimits(1) + yPosBarNormalized * diff(yLimits);
+xPosText = xLimits(1) + xPosNormalized * diff(xLimits);
+yPosText = yLimits(1) + yPosTextNormalized * diff(yLimits);
+xLimitsBar = xPosBar + [0, barLengthMs];
+plot_horizontal_line(yPosBar, 'XLimits', xLimitsBar, ...
+                    'Color', barColor, 'LineWidth', barLineWidth, ...
+                    'AxesHandle', subPlots(end));
+text(xPosText, yPosText, barText);
+
+measuresOfInterest = {'ltsOnsetTime'; 'ltsProbability'; 'spikesPerLts'; ...
+                    'burstOnsetTime'; 'burstProbability'; 'spikesPerBurst'};
 
 %}
 

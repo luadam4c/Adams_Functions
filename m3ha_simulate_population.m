@@ -48,7 +48,7 @@ chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
 combineFeatureTablesFlag = false; %true;
 computeStatsFlag = true;
-plotStatsFlag = true;
+plotStatsFlag = false; %true;
 
 % Selection parameters
 nCellsToSim = 10;
@@ -81,7 +81,6 @@ simStr = 'sim';
 ltsParamsSuffix = '_ltsParams';
 simLtsParamsSuffix = strcat(simStr, '_ltsParams');
 simSwpInfoSuffix = strcat(simStr, '_swpInfo');
-stats3dSuffix = strcat(simStr, '_swpInfo');
 
 % Note: The following must be consistent with m3ha_parse_dclamp_data.m
 condVarStrs = {'cellidrow', 'prow', 'vrow', 'grow', 'swpnrow', ...
@@ -100,6 +99,7 @@ gCond2D = 200;
 conditionLabel3D = 'pharm_1-4_gincr_all';
 pCond3D = num2cell(pharmAll);
 gCond3D = num2cell(gIncrAll);
+stats3dSuffix = strcat(simStr, '_', conditionLabel3D, '_stats.mat');
 
 % TODO: Make optional argument
 outFolder = '';
@@ -287,19 +287,13 @@ if computeStatsFlag
                                             'DataMode', dataMode);
 
     % Save stats table
-    save(stats3dPath, 'statsTable', '-v7.3');
+    save(stats3dPath, 'statsTable', 'pharmLabels', ...
+                    'gIncrLabels', 'conditionLabel', '-v7.3');
 end
 
 %% Plot statistics
 if plotStatsFlag
-    % Load stats table
-    disp('Loading statistics for 3D bar plots ...');
-    load(stats3dPath, 'statsTable');
-
-    % Restrict to measures of interest
-    statsTable = statsTable(measuresOfInterest, :);
-
-
+    m3ha_plot_bar3(stats3dPath, 'RowsToPlot', measuresOfInterest);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
