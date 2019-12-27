@@ -48,6 +48,9 @@ function [simParamsTable, simParamsPath] = ...
 %                   - 'NSims': number of simulations
 %                   must be a positive integer scalar
 %                   default == 1
+%                   - 'UseHH': whether to use HH channels
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'BuildMode': TC neuron build mode
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'passive' - insert leak channels only
@@ -121,6 +124,7 @@ function [simParamsTable, simParamsPath] = ...
 %               but retain the other gabab parameters
 % 2019-12-04 Changed the default simMode to 'active'
 % 2019-12-19 Added 'buildMode'
+% 2019-12-27 Added 'useHH'
 % TODO: Remove the Cpr parameters and decide on them before
 % 
 
@@ -128,7 +132,8 @@ function [simParamsTable, simParamsPath] = ...
 validBuildModes = {'active', 'passive'};
 validSimModes = {'active', 'passive'};
 simParamsFileName = 'simulation_parameters.csv';
-simParamsFromArguments = {'buildMode', 'simMode', 'outFilePath', 'tstop' ...
+simParamsFromArguments = {'useHH', 'buildMode', 'simMode', ...
+                            'outFilePath', 'tstop' ...
                             'holdPotential', 'currentPulseAmplitude', ...
                             'gababAmp', 'gababTrise', ...
                             'gababTfallFast', 'gababTfallSlow', ...
@@ -155,6 +160,7 @@ ipscrWindowDefault = ipscrWinOrig + timeToStabilize;
 nSimsDefault = 1;               % number of simulations by default
 
 %% Default values for simulation parameters
+useHHDefault = false;           % don't use HH channels by default
 buildModeDefault = 'active';    % insert active channels by default
 simModeDefault = 'active';      % simulate a IPSC response by default
 outFilePathDefault = 'auto';    % set later
@@ -212,6 +218,8 @@ addParameter(iP, 'IpscrWindow', ipscrWindowDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 2}));
 addParameter(iP, 'NSims', nSimsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+addParameter(iP, 'UseHH', useHHDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'BuildMode', buildModeDefault, ...
     @(x) any(validatestring(x, validBuildModes)));
 addParameter(iP, 'SimMode', simModeDefault, ...
@@ -250,6 +258,7 @@ jitterFlag = iP.Results.JitterFlag;
 cprWindow = iP.Results.CprWindow;
 ipscrWindow = iP.Results.IpscrWindow;
 nSims = iP.Results.NSims;
+useHH = iP.Results.UseHH;
 buildMode = validatestring(iP.Results.BuildMode, validBuildModes);
 simMode = validatestring(iP.Results.SimMode, validSimModes);
 outFilePath = iP.Results.OutFilePath;

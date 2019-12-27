@@ -86,6 +86,7 @@ function [simCommands, simCmdsFilePath] = ...
 % 2019-11-12 Removed T & h channels from passive fit
 % 2019-11-13 Restored usage of build()
 % 2019-12-19 Renamed simMode -> buildMode
+% 2019-12-27 Made useHH an argument of build()
 % 
 
 %% Hard-coded parameters
@@ -161,6 +162,7 @@ Ra = simParamsTable.Ra;
 gpas = simParamsTable.gpas;
 epas = simParamsTable.epas;
 corrD = simParamsTable.corrD;
+useHH = simParamsTable.useHH;
 pcabarITSoma = simParamsTable.pcabarITSoma;
 pcabarITDend1 = simParamsTable.pcabarITDend1;
 pcabarITDend2 = simParamsTable.pcabarITDend2;
@@ -202,9 +204,9 @@ simCommands = cell(nSims, 1);
 parfor iSim = 1:nSims
 %for iSim = 1:nSims
     % Start with the build() command in singleneuron4compgabab.hoc
-    thisCmds = sprintf('build("%s", %g, %g, %g, %g)\n', ...
-                        buildMode{iSim}, diamSoma(iSim), ...
-                        LDend(iSim), diamDend(iSim), corrD(iSim));
+    thisCmds = sprintf('build("%s", %g, %g, %g, %g, %g)\n', ...
+                        buildMode{iSim}, diamSoma(iSim), LDend(iSim), ...
+                        diamDend(iSim), corrD(iSim), useHH(iSim));
 
     % Command to adjust global passive parameters
     thisCmds = [thisCmds, sprintf('adjust_globalpas(%g, %g, %g)\n', ...
