@@ -34,12 +34,14 @@ function lineStrs = read_lines_from_file (filePath, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/count_strings.m
 %       cd/force_column_cell.m
 %       cd/ispositiveintegerscalar.m
 %       cd/struct2arglist.m
 %       /TODO:dir/TODO:file
 %
 % Used by:
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/parse_atf_swd.m
 %       cd/parse_iox.m
 
@@ -122,7 +124,8 @@ if ~isempty(lineNumber)
 end
 
 %% Do the job
-if isunix
+% if isunix
+if false
     if ~isempty(lineNumber)
         [~, unixOut] = unix(sprintf('sed -n ''%dp'' %s', lineNumber, filePath));
     else
@@ -143,7 +146,8 @@ if isunix
         lineStrs = lineStrs(1:end-1);
     end
 else
-    lineStrs = read_lines_from_files_slow(filePath, lineNumber, keyword, maxNum);
+    lineStrs = read_lines_from_file_alt(filePath, lineNumber, keyword, maxNum);
+%     lineStrs = read_lines_from_files_slow(filePath, lineNumber, keyword, maxNum);
 end
 
 %% Output results
@@ -154,16 +158,40 @@ else
     lineStrs = force_column_cell(lineStrs);
 end
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [lineStrThis, fid, nRead] = read_and_increment (fid, nRead)
-%% Read line and increment counter
+function lineStrs = read_lines_from_file_alt (filePath, lineNumber, ...
+                                                keyword, maxNum)
 
-% Read new line
-lineStrThis = fgetl(fid);
+% Read the file as a table
+tableOfStrs = readtable(filePath, 'FileType', 'text', ...
+                        'ReadVariableNames', false, 'Delimiter', '\n', ...
+                        'HeaderLines', 0);
 
-% Increment counter
-nRead = nRead + 1;
+% Extract strings
+if ~isempty(lineNumber)
+    lineStrs = tableOfStrs{lineNumber, 'Var1'};
+else
+    lineStrs = tableOfStrs{:, 'Var1'};
+end
+
+% Restrict to specific keyword(s) if requested
+if ~isempty(keyword)
+    % Test whether each string contains a keyword
+    containsKeyword = contains(lineStrs, keyword);
+
+    % Restrict to those strings
+    lineStrs = lineStrs(containsKeyword);
+end
+
+% Count how many lines are in lineStrs
+nLines = count_strings(lineStrs);
+
+% If there are more lines than maxNum, restrict to the first maxNum lines
+if nLines > maxNum
+    lineStrs = lineStrs(1:maxNum);    
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -205,6 +233,17 @@ end
 
 % Close the trace file
 fclose(fid);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [lineStrThis, fid, nRead] = read_and_increment (fid, nRead)
+%% Read line and increment counter
+
+% Read new line
+lineStrThis = fgetl(fid);
+
+% Increment counter
+nRead = nRead + 1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

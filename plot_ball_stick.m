@@ -60,6 +60,7 @@ function objects = plot_ball_stick (varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/first_matching_field.m
 %       cd/hold_on.m
 %       cd/hold_off.m
 %       cd/struct2arglist.m
@@ -72,8 +73,12 @@ function objects = plot_ball_stick (varargin)
 % 2019-12-20 Moved code from find_passive_params.m
 % 2019-12-21 Added 'BallCurvature' as an optional argument
 % 2019-12-21 Added 'NStickSegments' as an optional argument
+% 2019-12-26 Now uses first_matching_field.m
 
 %% Hard-coded parameters
+radiusDendriteStr = {'radiusDendrite', 'radiusDend'};
+diamDendriteStr = {'diamDendrite', 'diamDend'};
+lengthDendriteStr = {'lengthDendrite', 'lengthDend', 'LDend'};
 
 %% Default values for optional arguments
 radiusSomaDefault = [];
@@ -165,13 +170,14 @@ if ~isempty(edgeColor)
 end
 
 % Read from geomParams if needed
-% TODO: use extract_field(geomParams, {...}, 'FirstOnly', true)
 if isempty(radiusSoma)
     if ~isempty(geomParams)
         if isfield(geomParams, 'radiusSoma')
             radiusSoma = geomParams.radiusSoma;
         elseif isfield(geomParams, 'diamSoma')
             radiusSoma = geomParams.diamSoma / 2;
+        else
+            error('No ball radius provided in geomParams!');
         end
     else
         error('No ball radius passed in!');
@@ -179,14 +185,20 @@ if isempty(radiusSoma)
 end
 if isempty(radiusDend)
     if ~isempty(geomParams)
-        if isfield(geomParams, 'radiusDendrite')
-            radiusDend = geomParams.radiusDendrite;
-        elseif isfield(geomParams, 'radiusDend')
-            radiusDend = geomParams.radiusDend;
-        elseif isfield(geomParams, 'diamDendrite')
-            radiusDend = geomParams.diamDendrite / 2;
-        elseif isfield(geomParams, 'diamDend')
-            radiusDend = geomParams.diamDend / 2;
+        % Look for a dendritic radius
+        radiusDend = first_matching_field(geomParams, radiusDendriteStr);
+
+        % If not found, look for a dendritic diameter
+        if isempty(radiusDend)
+            % Look for a dendritic diameter
+            diamDend = first_matching_field(geomParams, diamDendriteStr);
+
+            % Compute the dendritic radius
+            if ~isempty(diamDend)
+                radiusDend = diamDend ./ 2;
+            else
+                error('No stick radius provided in geomParams!');
+            end
         end
     else
         error('No stick radius passed in!');
@@ -194,15 +206,15 @@ if isempty(radiusDend)
 end
 if isempty(lengthDend)
     if ~isempty(geomParams)
-        if isfield(geomParams, 'lengthDendrite')
-            lengthDend = geomParams.lengthDendrite;
-        elseif isfield(geomParams, 'lengthDend')
-            lengthDend = geomParams.lengthDend;
-        elseif isfield(geomParams, 'LDend')
-            lengthDend = geomParams.LDend;
+        % Look for a dendritic length
+        lengthDend = first_matching_field(geomParams, lengthDendriteStr);
+
+        % If not found, return error
+        if isempty(lengthDend)
+            error('No stick length provided in geomParams!');
         end
     else
-        error('No stick radius passed in!');
+        error('No stick length passed in!');
     end
 end
 

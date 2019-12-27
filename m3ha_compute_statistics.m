@@ -16,6 +16,7 @@ function statsTable = m3ha_compute_statistics (varargin)
 % Requires:
 %       cd/argfun.m
 %       cd/compute_stats.m
+%       cd/first_matching_field.m
 %       cd/force_column_cell.m
 %       cd/force_column_vector.m
 %       cd/match_row_count.m
@@ -25,6 +26,7 @@ function statsTable = m3ha_compute_statistics (varargin)
 % Used by:
 %       cd/m3ha_compute_and_plot_statistics.m
 %       cd/m3ha_plot_figure02.m
+%       cd/m3ha_simulate_population.m
 %
 % Outputs:
 %       statsTable  - a table containing measures as row names
@@ -122,19 +124,19 @@ measureStr = {'ltsAmplitude'; 'ltsMaxSlope'; ...
 
 % Columns defined in swpInfo
 cellIdStr = 'cellidrow';
-ltsAmplitudeStr = 'ltspeakval';
-ltsMaxSlopeStr = 'maxslopeval';
-ltsConcavityStr = 'peak2ndder';
-ltsProminenceStr = 'peakprom';
-ltsWidthStr = 'peakwidth';
-ltsOnsetTimeStr = 'ltspeaktime';
-spikesPerLtsStr = 'spikesperpeak';
-spikeMaxAmpStr = 'maxspikeamp';
-spikeMinAmpStr = 'minspikeamp';
-spikeFrequencyStr = 'spikefrequency';
-spikeAdaptationStr = 'spikeadaptation';
-burstOnsetTimeStr = 'bursttime';
-spikesPerBurstStr = 'spikesperburst';
+ltsAmplitudeStr = {'ltspeakval', 'ltsPeakValue'};
+ltsMaxSlopeStr = {'maxslopeval', 'maxSlopeValue'};
+ltsConcavityStr = {'peak2ndder', 'peak2ndDer'};
+ltsProminenceStr = {'peakprom', 'peakProm'};
+ltsWidthStr = {'peakwidth', 'peakWidth'};
+ltsOnsetTimeStr = {'ltspeaktime', 'ltsPeakTime'};
+spikesPerLtsStr = {'spikesperpeak', 'spikesPerPeak'};
+spikeMaxAmpStr = {'maxspikeamp', 'maxSpikeAmp'};
+spikeMinAmpStr = {'minspikeamp', 'minSpikeAmp'};
+spikeFrequencyStr = {'spikefrequency', 'spikeFrequency'};
+spikeAdaptationStr = {'spikeadaptation', 'spikeAdaptation'};
+burstOnsetTimeStr = {'bursttime', 'burstTime'};
+spikesPerBurstStr = {'spikesperburst', 'spikesPerBurst'};
 
 %% Default values for optional arguments
 swpInfoDefault = table.empty;
@@ -341,7 +343,7 @@ uniqueCellIds = unique(cellIdRow);
         spikesPerLtsEachSwp, spikeMaxAmpEachSwp, spikeMinAmpEachSwp, ...
         spikeFrequencyEachSwp, spikeAdaptationEachSwp, ...
         burstOnsetTimeEachSwp, spikesPerBurstEachSwp] = ...
-    argfun(@(x) swpInfoToUse.(x), ...
+    argfun(@(x) first_matching_field(swpInfoToUse, x), ...
             ltsAmplitudeStr, ltsMaxSlopeStr, ltsConcavityStr, ...
             ltsProminenceStr, ltsWidthStr, ltsOnsetTimeStr, ...
             spikesPerLtsStr, spikeMaxAmpStr, spikeMinAmpStr, ...
@@ -426,6 +428,7 @@ swpInfoStrs = {ltsAmplitudeStr; ltsMaxSlopeStr; ltsConcavityStr; ...
                 spikesPerLtsStr; spikeMaxAmpStr; spikeMinAmpStr; ...
                 spikeFrequencyStr; spikeAdaptationStr; ...
                 burstOnsetTimeStr; spikesPerBurstStr};
+swpInfoToUse.(x)
 
 %}
 

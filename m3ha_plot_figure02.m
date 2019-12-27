@@ -123,13 +123,13 @@ end
 %% Plot 2D violin plots
 if plotViolinPlotsFlag
     % Construct stats table path
-    statsPath2D = fullfile(figure02Dir, strcat(conditionLabel2D, '_stats.mat'));
+    stats2dPath = fullfile(figure02Dir, strcat(conditionLabel2D, '_stats.mat'));
 
     % Load or compute statistics
-    if isfile(statsPath2D)
+    if isfile(stats2dPath)
         % Load stats table
         disp('Loading statistics for 2D violin plots ...');
-        load(statsPath2D, 'statsTable');
+        load(stats2dPath, 'statsTable');
     else
         % Compute statistics for all features
         disp('Computing statistics for 2D violin plots ...');
@@ -137,7 +137,7 @@ if plotViolinPlotsFlag
                                                 'GIncrConditions', gCond2D);
 
         % Save stats table
-        save(statsPath2D, 'statsTable', '-v7.3');
+        save(stats2dPath, 'statsTable', '-v7.3');
     end
 
     % Restrict to measures of interest
@@ -170,13 +170,13 @@ end
 %% Plot 3D bar plots
 if plotBarPlotsFlag
     % Construct stats table path
-    statsPath3D = fullfile(figure02Dir, strcat(conditionLabel3D, '_stats.mat'));
+    stats3dPath = fullfile(figure02Dir, strcat(conditionLabel3D, '_stats.mat'));
 
     % Load or compute statistics
-    if isfile(statsPath3D)
+    if isfile(stats3dPath)
         % Load stats table
         disp('Loading statistics for 3D bar plots ...');
-        load(statsPath3D, 'statsTable');
+        load(stats3dPath, 'statsTable');
     else
         % Compute statistics for all features
         disp('Computing statistics for 3D bar plots ...');
@@ -184,7 +184,7 @@ if plotBarPlotsFlag
                                                 'GIncrConditions', gCond3D);
 
         % Save stats table
-        save(statsPath3D, 'statsTable', '-v7.3');
+        save(stats3dPath, 'statsTable', '-v7.3');
     end
 
     % Restrict to measures of interest

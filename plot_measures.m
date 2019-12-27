@@ -161,6 +161,7 @@ function plot_measures (varargin)
 %       cd/extract_common_directory.m
 %       cd/extract_fileparts.m
 %       cd/force_matrix.m
+%       cd/is_var_in_table.m
 %       cd/ismatch.m
 %       cd/modify_table.m
 %       cd/plot_table.m
@@ -1063,12 +1064,8 @@ function outTable = ...
 % Note: all distinct identifiers must have a matching phase variable column
 % TODO: Fix
 
-% Get all variable names
-allVarNames = inTable.Properties.VariableNames;
-
 % Remove the Time column if exists
-% TODO FOR UNDERGRAD: is_variable_of_table.m
-if ismember('Time', allVarNames)
+if is_var_in_table('Time', inTable)
     inTable = removevars(inTable, 'Time');
 end
 

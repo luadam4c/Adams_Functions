@@ -1356,7 +1356,6 @@ set(gca, 'XTick', pTicks);
 set(gca, 'XTickLabel', pTickLabels);
 pTickAngle = 60;                % x tick angle in degrees
 
-% TODO FOR UNDERGRAD: Create unique_custom.m with the option 'IgnoreNan'
 phaseVectorsNoNaN = cellfun(@(x) x(~isnan(x)), phaseVectors, ...
                             'UniformOutput', false);
 uniquePhases = cellfun(@(x) unique(x, 'stable'), phaseVectorsNoNaN, ...

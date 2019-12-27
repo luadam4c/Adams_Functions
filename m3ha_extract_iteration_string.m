@@ -24,6 +24,7 @@ function iterStrs = m3ha_extract_iteration_string (strs, varargin)
 % Used by:
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_simulate_population.m
+%       cd/m3ha_simulate_population.m
 
 % File History:
 % 2019-12-21 Created by Adam Lu

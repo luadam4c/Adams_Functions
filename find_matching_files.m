@@ -54,6 +54,7 @@ function varargout = find_matching_files (fileStrs, varargin)
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_simulate_population.m
 %       cd/plot_traces_spike2_mat.m
+%       cd/m3ha_simulate_population.m
 
 % File History:
 % 2019-09-25 Created by Adam Lu

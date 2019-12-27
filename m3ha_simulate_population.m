@@ -20,22 +20,20 @@
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
-% TODO
-%       cd/all_subdirs.m
 %       cd/all_files.m
-%       cd/check_dir.m
-%       cd/compile_mod_files.m
+%       cd/all_subdirs.m
 %       cd/copy_into.m
-%       cd/create_error_for_nargin.m
-%       cd/create_labels_from_numbers.m
 %       cd/create_time_stamp.m
+%       cd/create_labels_from_numbers.m
 %       cd/find_matching_files.m
+%       cd/m3ha_compute_statistics.m
 %       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_extract_iteration_string.m
+%       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_load_sweep_info.m
-%       cd/m3ha_locate_homedir.m
-%       cd/m3ha_select_sweeps.m
 %       cd/print_cellstr.m
+%       cd/renamevars.m
+%       cd/vertcat_spreadsheets.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -46,9 +44,11 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestNeuronsFlag = true;
-simulateFlag = true;
-computeStatsFlag = false;
+chooseBestNeuronsFlag = false; %true;
+simulateFlag = false; %true;
+combineFeatureTablesFlag = false; %true;
+computeStatsFlag = true;
+plotStatsFlag = true;
 
 % Selection parameters
 nCellsToSim = 10;
@@ -74,29 +74,46 @@ attemptNumber = 3;      %   1 - Use 4 traces @ 200% gIncr for this data mode
 parentDirectoryTemp = '/media/adamX/m3ha';
 fitDirName = 'optimizer4gabab';
 rankDirName = 'ranked';
-dataDirName = fullfile('data_dclamp', 'take4');
-matFilesDirName = 'matfiles';
-specialCasesDirName = 'special_cases';
 defaultOutFolderSuffix = '_population';
 
-% File info
-% Default parameters used in computing errors
-%   Note: Should be consistent with singleneuronfitting75.m
-%       & compute_lts_errors.m & compute_single_neuron_errors.m
-ltsFeatureStrings = {'peak amp', 'peak time', 'max slope value'};
-ltsFeatureWeights = [2; 2; 2];  % default weights for optimizing LTS statistics
-missedLtsError = 1.5;           % how much error (dimensionless) to 
-                                %   penalize a sweep that failed to match 
-                                %   a recorded LTS existence
-falseLtsError = 0.5;            % how much error (dimensionless) to 
-                                %   penalize a sweep that produced an LTS 
-                                %   that is not recorded
-lts2SweepErrorRatio = 3;        % default ratio of LTS error to sweep error
-normalize2InitErrFlag = 0;      % whether to normalize errors to initial values
-sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
+% File names
+simStr = 'sim';
+ltsParamsSuffix = '_ltsParams';
+simLtsParamsSuffix = strcat(simStr, '_ltsParams');
+simSwpInfoSuffix = strcat(simStr, '_swpInfo');
+stats3dSuffix = strcat(simStr, '_swpInfo');
+
+% Note: The following must be consistent with m3ha_parse_dclamp_data.m
+condVarStrs = {'cellidrow', 'prow', 'vrow', 'grow', 'swpnrow', ...
+                'gabab_amp', 'gabab_Trise', 'gabab_TfallFast', ...
+                'gabab_TfallSlow', 'gabab_w'};
+pharmAll = [1; 2; 3; 4];          
+pharmLabels = {'{\it d}-Control', '{\it d}-GAT1 Block', ...
+                '{\it d}-GAT3 Block', '{\it d}-Dual Block'};
+pharmLabelsShort = {'{\it d}-Con', '{\it d}-GAT1', ...
+                    '{\it d}-GAT3', '{\it d}-Dual'};
+gIncrAll = [25; 50; 100; 200; 400; 800];
+gIncrLabels = {'25%', '50%', '100%', '200%', '400%', '800%'};
+conditionLabel2D = 'pharm_1-4_gincr_200';
+pCond2D = num2cell(pharmAll);
+gCond2D = 200;
+conditionLabel3D = 'pharm_1-4_gincr_all';
+pCond3D = num2cell(pharmAll);
+gCond3D = num2cell(gIncrAll);
 
 % TODO: Make optional argument
 outFolder = '';
+
+% Plot settings
+% Note: must be consistent with m3ha_compute_statistics.m
+measuresOfInterest = {'ltsAmplitude'; 'ltsMaxSlope'; ...
+                    'ltsConcavity'; 'ltsProminence'; ...
+                    'ltsWidth'; 'ltsOnsetTime'; 'ltsTimeJitter'; ...
+                    'ltsProbability'; 'spikesPerLts'; ...
+                    'spikeMaxAmp'; 'spikeMinAmp'; ...
+                    'spikeFrequency'; 'spikeAdaptation'
+                    'burstOnsetTime'; 'burstTimeJitter'; ...
+                    'burstProbability'; 'spikesPerBurst'};
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -140,9 +157,6 @@ fitDirectory = fullfile(parentDirectory, fitDirName);
 % Locate the ranked directory
 rankDirectory = fullfile(fitDirectory, rankDirName);
 
-% Load sweep info
-swpInfo = m3ha_load_sweep_info;
-
 % Decide on output folder
 if isempty(outFolder)
     % Create output folder name
@@ -155,6 +169,13 @@ end
 
 % Check if output folder exists
 check_dir(outFolder);
+
+% Extract output folder base name
+outFolderName = extract_fileparts(outFolder, 'dirbase');
+
+% Construct path to simulated LTS info
+simSwpInfoPath = fullfile(outFolder, [outFolderName, '_', simSwpInfoSuffix, '.csv']);
+stats3dPath = fullfile(outFolder, [outFolderName, '_', stats3dSuffix, '.mat']);
 
 %% Choose the best cells and the best parameters for each cell
 if chooseBestNeuronsFlag
@@ -176,7 +197,7 @@ if chooseBestNeuronsFlag
     % Find the parameter file directories
     [~, paramDirs] = cellfun(@(x) all_subdirs('Directory', rankDirectory, ...
                                         'RegExp', x, 'MaxNum', 1), ...
-                        iterStrs, 'UniformOutput', false);
+                            iterStrs, 'UniformOutput', false);
 
     % Find the parameter files for each cell
     [~, paramPaths] = cellfun(@(x, y) all_files('Directory', x, ...
@@ -189,11 +210,9 @@ end
 
 %% Simulate
 if simulateFlag
-    %% Decide on the candidate parameter files and cells
     % Decide on candidate parameters files
     [~, paramPaths] = all_files('Directory', outFolder, 'Suffix', 'params');
 
-%{
     % Extract the cell names
     cellNames = m3ha_extract_cell_name(paramPaths);
 
@@ -201,178 +220,85 @@ if simulateFlag
     fprintf('All sweeps from the following cells will be simulated: \n');
     print_cellstr(cellNames, 'OmitBraces', true, 'Delimiter', '\n');
 
-    %% Compile
-    % Display message
-    fprintf('Compiling all .mod files ... \n');
-
-    % Compile or re-compile .mod files in the fitting directory
-    compile_mod_files(fitDirectory);
-
-    %% Select recorded data
-    % Display message
-    fprintf('Selecting recorded sweeps for all cells ... \n');
-
-    % Locate the data directory
-    dataDir = fullfile(parentDirectory, dataDirName);
-
-    % Construct full paths to other directories used 
-    %   and previously analyzed results under dataDir
-    [matFilesDir, specialCasesDir] = ...
-        argfun(@(x) fullfile(dataDir, x), matFilesDirName, specialCasesDirName);
-
-    % Select the sweep indices that will be simulated
-    swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'DataMode', dataMode, ...
-                                    'CasesDir', specialCasesDir);
-
-    % Select the raw traces to import for each cell to fit
-    [fileNamesToFit, rowConditionsToFit] = ...
-        arrayfun(@(x) m3ha_select_raw_traces(rowmodeAcrossTrials, ...
-                        columnMode, attemptNumberAcrossTrials, ...
-                        x, swpInfo, cellInfo), ...
-                cellNamesToFit, 'UniformOutput', false);
-%}
-
+    % Run simulations for each parameter file
     cellfun(@(x) m3ha_neuron_run_and_analyze (x, 'DataMode', dataMode, ...
                     'BuildMode', buildMode, 'SimMode', simMode, ...
                     'AttemptNumber', attemptNumber, ...
                     'SaveSimOutFlag', true, 'SaveLtsInfoFlag', true), ...
             paramPaths);
+
+    % Find all simulated LTS stats spreadsheets
+    [~, simLtsParamPaths] = ...
+        all_files('Directory', outFolder, 'Recursive', true, ...
+                    'Suffix', simLtsParamsSuffix, 'Extension', 'csv');
+
+    % Copy over the spreadsheets
+    copy_into(simLtsParamPaths, outFolder);
 end
 
-if false
-    %% Select recorded data
+%% Combine LTS & burst feature tables
+if combineFeatureTablesFlag
     % Display message
-    fprintf('Selecting sweeps to fit for all cells ... \n');
+    fprintf('Combining LTS & burst statistics ... \n');
 
-    % Select cells with sweeps to fit for all pharm-gIncr pairs
-    [cellIdsToFit, cellInfo, swpInfo] = ...
-        m3ha_select_cells('DataMode', dataMode, 'CasesDir', specialCasesDir);
+    % Find all simulated LTS stats spreadsheets
+    [~, simLtsParamPaths] = ...
+        all_files('Directory', outFolder, 'Suffix', simLtsParamsSuffix, ...
+                    'Extension', 'csv');
 
-    % Get all cell names to fit
-    cellNamesToFit = cellInfo{cellIdsToFit, 'cellName'};
+    % Combine the spreadsheets
+    simSwpInfo = vertcat_spreadsheets(simLtsParamPaths);
 
-    % Count the number of cells that were fitted 
-    nCellsToFit = numel(cellNamesToFit);
+    % Rename variables
+    simSwpInfo = renamevars(simSwpInfo, 'fileBase', 'simFileBase');
 
-    % Select the raw traces to import for each cell to fit
-    [fileNamesToFit, rowConditionsToFit] = ...
-        arrayfun(@(x) m3ha_select_raw_traces(rowmodeAcrossTrials, ...
-                        columnMode, attemptNumberAcrossTrials, ...
-                        x, swpInfo, cellInfo), ...
-                cellIdsToFit, 'UniformOutput', false);
+    % Extract the simulation file bases
+    simFileBase = simSwpInfo.simFileBase;
 
-    %% Find the best parameters for each cell
-    % Find all the possible initial parameters files for each cell to fit
-    [~, customInitPathsToFit] = ...
-        cellfun(@(x) all_files('Directory', paramDirs, 'Keyword', x), ...
-                                cellNamesToFit, 'UniformOutput', false);
+    % Extract the original file bases
+    fileBase = extractBefore(simFileBase, '_sim');
 
-    % Find the best parameters for each cell
-    for iCellToFit = 1:nCellsToFit
-        % Extract stuff for this cell
-        cellNameThis = cellNamesToFit{iCellToFit};
-        fileNamesThis = fileNamesToFit{iCellToFit};
-        rowConditionsThis = rowConditionsToFit{iCellToFit};
-        customInitPathsThis = customInitPathsToFit{iCellToFit};
+    % Make the original sweep name the row name
+    simSwpInfo.Properties.RowNames = fileBase;
 
-        % Display message
-        fprintf('Choosing initial parameters for cell %s ... \n', cellNameThis);
+    % Load original sweep info
+    origSwpInfo = m3ha_load_sweep_info;
 
-        % Choose the best initial parameters for each cell among all the
-        %   custom files
-        [previousBestParamsTable, chosenTableLabel] = ...
-            m3ha_neuron_choose_best_params(customInitPathsThis, ...
-                'PlotIndividualFlag', true, ...
-                'OutFolder', outFolder, 'FileNames', fileNamesThis, ...
-                'BuildMode', buildMode, 'SimMode', simMode, ...
-                'RowConditionsIpscr', rowConditionsThis, ...
-                'SweepWeightsIpscr', sweepWeights, ...
-                'LtsFeatureWeights', ltsFeatureWeights, ...
-                'MissedLtsError', missedLtsError, ...
-                'FalseLtsError', falseLtsError, ...
-                'Lts2SweepErrorRatio', lts2SweepErrorRatio, ...
-                'Normalize2InitErrFlag', normalize2InitErrFlag, ...
-                'SaveParamsFlag', false, 'SaveSimCmdsFlag', false, ...
-                'SaveSimOutFlag', false, 'SaveStdOutFlag', false, ...
-                'SaveLtsInfoFlag', false, 'SaveLtsStatsFlag', false, ...
-                'PlotConductanceFlag', false, 'PlotCurrentFlag', false, ...
-                'PlotResidualsFlag', false, 'PlotOverlappedFlag', false, ...
-                'PlotIpeakFlag', false, 'PlotLtsFlag', false, ...
-                'PlotStatisticsFlag', false, 'PlotSwpWeightsFlag', false);
-    end
+    % Extract the condition info
+    condInfo = origSwpInfo(:, condVarStrs);
+
+    % Join the condition info
+    simSwpInfo = join(simSwpInfo, condInfo, 'Keys', 'Row');
+
+    % Save the simulated sweep info table
+    writetable(simSwpInfo, simSwpInfoPath);
 end
 
-%% Combine the errors and rank neurons
+%% Compute statistics
 if computeStatsFlag
-    % Display message
-    fprintf('Ranking all cells ... \n');
+    % Load sweep info
+    simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
 
-    % Locate all individual error spreadsheets
-    [~, sheetPaths] = all_files('Directory', outFolder, ...
-                                'Suffix', errorSheetSuffix, ...
-                                'Extension', errorSheetExtension);
+    % Compute statistics for all features
+    disp('Computing statistics for 3D bar plots ...');
+    statsTable = m3ha_compute_statistics('SwpInfo', simSwpInfo, ...
+                                            'PharmConditions', pCond3D, ...
+                                            'GIncrConditions', gCond3D, ...
+                                            'DataMode', dataMode);
 
-    % Read all error tables
-    errorTables = cellfun(@readtable, sheetPaths, 'UniformOutput', false);
-
-    % Restrict to the row with the minimal error
-    minimalErrorTables = cellfun(@(x, y) process_table_for_ranking(x), ...
-                                errorTables, 'UniformOutput', false);
-
-    % Combine into a single table
-    minimalErrorTableCombined = vertcat(minimalErrorTables{:});
-
-    % Sort by total error, with minimal error first
-    rankTable = sortrows(minimalErrorTableCombined, 'totalError', 'ascend');
-
-    % Set ranking
-    ranking = transpose(1:height(rankTable));
-
-    % Add a column for ranking
-    rankTable = addvars(rankTable, ranking, 'Before', 1);
-
-    % Create a path for the combined spreadsheet
-    rankName = [rankPrefix, '_', rankSheetSuffix, '.', rankSheetExtension];
-    rankPath = fullfile(outFolder, rankName);
-
-    % Save the rank table
-    writetable(rankTable, rankPath);
-
-    % Copy and rename .png files according to ranking
-    copy_and_rename_png_files(rankTable, outFolder, outFolder);
-
-    % Plot a histogram for total error
-    figure;
-    plot_histogram(rankTable.('totalError'), 'Edges', 0:0.5:6, ...
-                        'XLabel', 'Total Error', 'YLabel', 'Cell Count', ...
-                        'FigTitle', 'Total Error Distribution');
-    figure;
-    plot_histogram(rankTable.('ltsMatchError'), 'Edges', 0:0.5:6, ...
-                        'XLabel', 'LTS Mismatch Error', 'YLabel', 'Cell Count', ...
-                        'FigTitle', 'LTS Mismatch Error Distribution');
-    figure;
-    plot_histogram(rankTable.('avgSwpError'), 'Edges', 0:1:10, ...
-                        'XLabel', 'Average Sweep Error', 'YLabel', 'Cell Count', ...
-                        'FigTitle', 'Average Sweep Error Distribution');
-
+    % Save stats table
+    save(stats3dPath, 'statsTable', '-v7.3');
 end
 
-%% Output results
-% TODO
+%% Plot statistics
+if plotStatsFlag
+    % Load stats table
+    disp('Loading statistics for 3D bar plots ...');
+    load(stats3dPath, 'statsTable');
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Restrict to measures of interest
+    statsTable = statsTable(measuresOfInterest, :);
 
-function errorTable = process_table_for_ranking(errorTable)
-%% Restricts table to row of minimal error
-
-% Extract the total errors
-totalError = errorTable.totalError;
-
-% Extract the row number with the minimal error
-[~, rowMinimalError] = min(totalError);
-
-% Restrict table to that row
-errorTable = errorTable(rowMinimalError, :);
 
 end
 
@@ -381,11 +307,35 @@ end
 %{
 OLD CODE:
 
-% Force as a cell array
-cellName = force_column_cell(cellName);
+%% Compile
+% Display message
+fprintf('Compiling all .mod files ... \n');
 
-% Add a column for cell name
-errorTable = addvars(errorTable, cellName, 'Before', 1);
+% Compile or re-compile .mod files in the fitting directory
+compile_mod_files(fitDirectory);
+
+%% Select recorded data
+% Display message
+fprintf('Selecting recorded sweeps for all cells ... \n');
+
+% Locate the data directory
+dataDir = fullfile(parentDirectory, dataDirName);
+
+% Construct full paths to other directories used 
+%   and previously analyzed results under dataDir
+[matFilesDir, specialCasesDir] = ...
+    argfun(@(x) fullfile(dataDir, x), matFilesDirName, specialCasesDirName);
+
+% Select the sweep indices that will be simulated
+swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'DataMode', dataMode, ...
+                                'CasesDir', specialCasesDir);
+
+% Select the raw traces to import for each cell to fit
+[fileNamesToFit, rowConditionsToFit] = ...
+    arrayfun(@(x) m3ha_select_raw_traces(rowmodeAcrossTrials, ...
+                    columnMode, attemptNumberAcrossTrials, ...
+                    x, swpInfo, cellInfo), ...
+            cellNamesToFit, 'UniformOutput', false);
 
 %}
 

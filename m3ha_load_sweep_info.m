@@ -37,6 +37,7 @@ function [swpInfo, varargout] = m3ha_load_sweep_info (varargin)
 %       cd/m3ha_select_cells.m
 %       cd/m3ha_select_raw_traces.m
 %       cd/m3ha_select_sweeps.m
+%       cd/m3ha_simulate_population.m
 
 % File History:
 % 2018-12-05 Adapted from code in singleneuronfitting42.m

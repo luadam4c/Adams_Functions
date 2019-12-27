@@ -5,14 +5,17 @@ function varargout = find_first_match (candidates, array, varargin)
 %       TODO
 %   Use find_in_strings.m to treat each element of cand
 %       as a part of a candidate
+%
 % Example(s):
 %       find_first_match({'dog'; 'cat'}, ["dog"; "fly"; "cat"])
 %       find_first_match(["dog", "fly", "cat"], {'dog'; 'cat'})
+%
 % Outputs:
 %       index       - the index with matching element in the array
 %                   specified as a positive integer array (may contain NaN)
 %       matched     - matching element in the array
 %                   specified as an array of the same type as elements of array
+%
 % Arguments:
 %       candidates  - candidates to be matched
 %       array       - an array

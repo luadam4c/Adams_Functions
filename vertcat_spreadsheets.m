@@ -23,6 +23,7 @@ function outputTable = vertcat_spreadsheets (inputFileNames, varargin)
 %
 % Used by:
 %       cd/combine_swd_sheets.m
+%       cd/m3ha_simulate_population.m
 %       cd/parse_all_swds.m
 %       /home/Matlab/EEG_gui/combine_EEG_gui_outputs.m
 %

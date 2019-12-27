@@ -64,6 +64,7 @@ function string = print_cellstr (cellStr, varargin)
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_parse_mat.m
 %       cd/m3ha_select_cells.m
+%       cd/m3ha_simulate_population.m
 %       cd/m3ha_xolotl_create_neuron.m
 %       cd/print_or_show_message.m
 %       cd/print_and_show_message.m

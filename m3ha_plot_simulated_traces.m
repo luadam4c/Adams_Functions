@@ -84,6 +84,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/m3ha_extract_sweep_name.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/plot_traces.m
+%       cd/read_lines_from_file.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -326,13 +327,8 @@ end
 
 % Look for matching recorded sweep names
 if ~isempty(importedPath)
-    % TODO FOR SHINSHIN: read_log.m
-    % Read the log file
-    logTable = readtable(importedPath, 'ReadVariableNames', false, ...
-                            'Delimiter', ' ');
-
     % Extract sweep names
-    sweepNames = logTable.Var1;
+    sweepNames = read_lines_from_file(importedPath);
 
     % TODO: Reorder simulated fileNames to match recorded ones
 else

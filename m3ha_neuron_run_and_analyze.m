@@ -346,6 +346,7 @@ function [errorStruct, hFig, simData] = ...
 %       cd/m3ha_fminsearch3.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_optimizer_4compgabab.m
+%       cd/m3ha_simulate_population.m
 
 % File History:
 % 2014-04-XX - Created by Christine

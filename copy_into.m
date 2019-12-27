@@ -34,6 +34,7 @@ function [statuses, messages, messageIds] = ...
 %       cd/m3ha_rank_neurons.m
 %       cd/parse_multiunit.m
 %       cd/plot_measures.m
+%       cd/m3ha_simulate_population.m
 %       /media/adamX/m3ha/optimizer4compgabab/singleneuronfitting63.m
 
 % File History:

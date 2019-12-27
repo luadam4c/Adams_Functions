@@ -71,6 +71,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/plot_tuning_curve.m
 %       cd/renamevars.m
 %       cd/save_all_zooms.m
+%       cd/m3ha_simulate_population.m
 
 % File History:
 % 2018-12-17 Created by Adam Lu

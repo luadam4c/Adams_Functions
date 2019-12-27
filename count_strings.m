@@ -27,6 +27,7 @@ function nStrings = count_strings (strs, varargin)
 %
 % Used by:
 %       cd/m3ha_neuron_choose_best_params.m
+%       cd/read_lines_from_files.m
 
 % File History:
 % 2019-12-26 Created by Shin-Shin Nien

@@ -11,6 +11,7 @@ function isInTable = is_var_in_table (varName, table, varargin)
 % Outputs:
 %       isInTable   - whether the variable is an existing column in the table
 %                   specified as a logical scalar
+%
 % Arguments:
 %       varName     - variable (column) name to look for
 %                   must be a string scalar or a character vector
@@ -25,9 +26,11 @@ function isInTable = is_var_in_table (varName, table, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
+%       cd/first_matching_field.m
 %       cd/is_row_in_table.m
 %       cd/m3ha_network_change_params.m
 %       cd/m3ha_select_sweeps.m
+%       cd/plot_measures.m
 %       /media/adamX/m3ha/optimizer4compgabab/singleneuronfitting59.m
 
 % File History:
