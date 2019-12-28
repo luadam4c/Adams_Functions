@@ -3,10 +3,7 @@
 %
 % Requires:
 %       cd/all_files.m
-%       cd/apply_iteratively.m
-%       cd/argfun.m
 %       cd/copy_into.m
-%       cd/decide_on_colormap.m
 %       cd/extract_columns.m
 %       cd/extract_fileparts.m
 %       cd/m3ha_compute_statistics.m
@@ -14,6 +11,8 @@
 %       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_load_sweep_info.m
+%       cd/m3ha_plot_bar3.m
+%       cd/m3ha_plot_violin.m
 %       cd/plot_scale_bar.m
 %       cd/plot_traces.m
 %       cd/save_all_figtypes.m
@@ -60,8 +59,8 @@ exampleYlimits = [-100, 10];
 exampleYTicks = [-80, -50, -20];
 
 pharmAll = [1; 2; 3; 4];          
-pharmLabels = {'{\it d}-Control', '{\it d}-GAT1 Block', ...
-                '{\it d}-GAT3 Block', '{\it d}-Dual Block'};
+pharmLabelsLong = {'{\it d}-Control', '{\it d}-GAT1 Block', ...
+                    '{\it d}-GAT3 Block', '{\it d}-Dual Block'};
 pharmLabelsShort = {'{\it d}-Con', '{\it d}-GAT1', ...
                     '{\it d}-GAT3', '{\it d}-Dual'};
 gIncrAll = [25; 50; 100; 200; 400; 800];
@@ -73,11 +72,11 @@ conditionLabel3D = 'pharm_1-4_gincr_all';
 pCond3D = num2cell(pharmAll);
 gCond3D = num2cell(gIncrAll);
 
-violinFigHeight = 5;            % in centimeters
-violinFigWidth = 3.4;           % in centimeters
-violinRelativeBandWidth = 0.1;  % bandwidth relative to data range
-medianColor = rgb('GreenYellow');     % color of median circle
-medianSize = 6;                % size of median circle in points
+% violinFigHeight = 5;            % in centimeters
+% violinFigWidth = 3.4;           % in centimeters
+% violinRelativeBandWidth = 0.1;  % bandwidth relative to data range
+% medianColor = rgb('GreenYellow');     % color of median circle
+% medianSize = 6;                % size of median circle in points
 % bar3FigHeight = 6;              % in centimeters
 % bar3FigWidth = 6;               % in centimeters
 
@@ -125,46 +124,25 @@ if plotViolinPlotsFlag
     % Construct stats table path
     stats2dPath = fullfile(figure02Dir, strcat(conditionLabel2D, '_stats.mat'));
 
-    % Load or compute statistics
-    if isfile(stats2dPath)
-        % Load stats table
-        disp('Loading statistics for 2D violin plots ...');
-        load(stats2dPath, 'statsTable');
-    else
+    % Compute statistics if not done already
+    if ~isfile(stats2dPath)
         % Compute statistics for all features
-        disp('Computing statistics for 2D violin plots ...');
+        disp('Computing statistics for violin plots ...');
         statsTable = m3ha_compute_statistics('PharmConditions', pCond2D, ...
                                                 'GIncrConditions', gCond2D);
 
+        % Generate labels
+        conditionLabel = conditionLabel2D;
+        pharmLabels = pharmLabelsShort;
+
         % Save stats table
-        save(stats2dPath, 'statsTable', '-v7.3');
+        save(stats2dPath, 'statsTable', 'pharmLabels', ...
+                            'conditionLabel', '-v7.3');
     end
 
-    % Restrict to measures of interest
-    statsTable = statsTable(measuresOfInterest, :);
-
-    % Extract variables
-    allMeasureTitles = statsTable.measureTitle;
-    allMeasureStrs = statsTable.measureStr;
-    allValues = statsTable.allValues;
-
-    % Create figure bases
-    allFigBases2D = combine_strings({allMeasureStrs, conditionLabel2D});
-
-    % Create full path bases
-    allFigPathBases2D = fullfile(figure02Dir, allFigBases2D);
-
-    % Plot all 2D violin plots
-    disp('Plotting 2D violin plots ...');
-    % cellfun(@(a, b, c) m3ha_plot_violin(a, violinRelativeBandWidth, b, ...
-    %                             pharmLabels, c, ...
-    %                             violinFigHeight, violinFigWidth, figTypes), ...
-    %         allValues, allMeasureTitles, allFigPathBases2D);
-    cellfun(@(a, b, c) m3ha_plot_violin(a, violinRelativeBandWidth, ...
-                                medianColor, medianSize, b, ...
-                                pharmLabelsShort, c, ...
-                                violinFigHeight, violinFigWidth, figTypes), ...
-            allValues, allMeasureTitles, allFigPathBases2D);
+    % Plot violin plots
+    m3ha_plot_violin(stats2dPath, 'RowsToPlot', measuresOfInterest, ...
+                    'OutFolder', figure02Dir);
 end
 
 %% Plot 3D bar plots
@@ -179,8 +157,9 @@ if plotBarPlotsFlag
         statsTable = m3ha_compute_statistics('PharmConditions', pCond3D, ...
                                                 'GIncrConditions', gCond3D);
 
-        % Generate a condition label
+        % Generate labels
         conditionLabel = conditionLabel3D;
+        pharmLabels = pharmLabelsLong;
 
         % Save stats table
         save(stats3dPath, 'statsTable', 'pharmLabels', ...
@@ -338,95 +317,6 @@ save_all_figtypes(figG, figPathBase, figTypes);
 % Output figure handles
 handles.figG = figG;
 handles.figV = figV;
-
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function m3ha_plot_violin (allValues, violinRelativeBandWidth, ...
-                            medianColor, medianSize, ...
-                            measureTitle, pharmLabels, ...
-                            figPathBase, figHeight, figWidth, figTypes)
-
-% Hard-coded parameters
-MS_PER_S = 1000;
-xTickAngle = 320;
-
-% Create figure for conductance traces
-fig = set_figure_properties('AlwaysNew', true);
-
-% Count the number of groups
-nGroups = numel(pharmLabels);
-
-% Convert onset times from ms to seconds
-%{
-if contains(measureTitle, 'onset')
-    % Update values
-    allValues = cellfun(@(x) x ./ MS_PER_S, allValues, 'UniformOutput', false);
-
-    % Update title
-    measureTitle = replace(measureTitle, 'ms', 's');
-end
-%}
-
-% Decide on the color map
-cm = decide_on_colormap([], nGroups);
-
-% Set the color map
-%   TODO: Apply this in violinplot?
-colormap(cm);
-
-% TODO: plot_violin.m
-% TODO: plot_jitter.m
-
-% Force as a numeric array
-allValues = force_matrix(allValues);
-
-% Compute range of all values
-rangeValues = apply_iteratively(@max, allValues) - apply_iteratively(@min, allValues);
-
-% Compute the bandwidth for the kernel density estimates
-bandWidth = violinRelativeBandWidth * rangeValues;
-
-% Plot a violin plot
-% violinplot(allValues, pharmLabels);
-violinplot(allValues, pharmLabels, 'BandWidth', bandWidth);
-
-% Plot the data points for each cell
-% plotSpread(allValues);
-% Set x tick labels
-% xticklabels(pharmLabels);
-
-% Modify x limits
-xlim([0.5, nGroups + 0.5]);
-
-% Modify x tick angle
-xtickangle(xTickAngle);
-
-% Set y label
-ylabel(measureTitle);
-
-% Find all median scatters and make the face color green and size bigger
-medianScatters = findobj(gca, 'Type', 'Scatter', ...
-                        'MarkerEdgeColor', [0.5, 0.5, 0.5]);
-set(medianScatters, 'MarkerFaceColor', medianColor);
-
-% Save the figure
-save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
-
-% Update figure for CorelDraw
-update_figure_for_corel(fig, 'Units', 'centimeters', ...
-                        'Height', figHeight, 'Width', figWidth, ...
-                        'ScatterMarkerSize', 3);
-
-% Fix axes position
-set(gca, 'Position', [0.2356, 0.1947, 0.6694, 0.7303]);
-
-% Update median size
-set(medianScatters, 'SizeData', medianSize^2);
-
-% Save the figure
-save_all_figtypes(fig, figPathBase, figTypes);
 
 end
 

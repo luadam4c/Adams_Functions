@@ -79,8 +79,10 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_network_single_neuron.m
+%       cd/m3ha_plot_bar3.m
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_figure03.m
+%       cd/m3ha_plot_violin.m
 %       cd/m3ha_select_sweeps.m
 %       cd/parse_atf_swd.m
 %       cd/parse_current_family.m

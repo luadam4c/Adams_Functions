@@ -28,6 +28,8 @@ function argList = struct2arglist (structure, varargin)
 %       cd/compute_bins.m
 %       cd/convert_to_rank.m
 %       cd/m3ha_neuron_create_initial_params.m
+%       cd/m3ha_plot_bar3.m
+%       cd/m3ha_plot_violin.m
 %       cd/medianfilter.m
 %       cd/plot_autocorrelogram.m
 %       cd/plot_ball_stick.m

@@ -34,27 +34,29 @@ function handles = m3ha_plot_bar3 (statsPath, varargin)
 %                   - Any other parameter-value pair for bar3()
 %
 % Requires:
-%       cd/create_error_for_nargin.m
-%       cd/struct2arglist.m
-%       TODO:
+%       cd/argfun.m
 %       cd/combine_strings.m
+%       cd/create_error_for_nargin.m
 %       cd/decide_on_colormap.m
 %       cd/extract_fileparts.m
 %       cd/ispositiveintegervector.m
+%       cd/struct2arglist.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
 %       cd/update_figure_for_corel.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/m3ha_plot_figure02.m
+%       cd/m3ha_simulate_population.m
 
 % File History:
 % 2019-12-27 Moved from m3ha_plot_figure02.m
 % 
 
 %% Hard-coded parameters
-bar3FigHeight = 6;              % in centimeters
-bar3FigWidth = 6;               % in centimeters
+% TODO: Make optional argument
+figHeight = 6;                  % in centimeters
+figWidth = 6;                   % in centimeters
 figTypes = {'png', 'epsc2'};
 
 %% Default values for optional arguments
@@ -80,7 +82,8 @@ addRequired(iP, 'statsPath', ...
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'RowsToPlot', rowsToPlotDefault, ...
-    @(x) assert(ispositiveintegervector(x) || iscellstr(x) || isstring(x), ...
+    @(x) assert(ispositiveintegervector(x) || ischar(x) || ...
+                    iscellstr(x) || isstring(x), ...
                 ['RowsToPlot must be either a positive integer vector, ', ...
                     'a string array or a cell array of character arrays!']));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
@@ -113,6 +116,11 @@ else
     return;
 end
 
+% Restrict to measures to plot
+if ~(ischar(rowsToPlot) && strcmp(rowsToPlot, 'all'))
+    statsTable = statsTable(rowsToPlot, :);
+end
+
 % Extract variables
 allMeasureTitles = statsTable.measureTitle;
 allMeasureStrs = statsTable.measureStr;
@@ -120,20 +128,20 @@ allMeanValues = statsTable.meanValue;
 allUpper95Values = statsTable.upper95Value;
 
 % Create figure bases
-allFigBases3D = combine_strings({allMeasureStrs, conditionLabel});
+allFigBases = combine_strings({allMeasureStrs, conditionLabel});
 
 % Create full path bases
-allFigPathBases3D = fullfile(outFolder, allFigBases3D);
+allFigPathBases = fullfile(outFolder, allFigBases);
 
 %% Do the job
 % Plot all 3D bar plots
 disp('Plotting 3D bar plots ...');
 handles = cellfun(@(a, b, c, d) m3ha_plot_bar3_helper(a, b, c, ...
                                 pharmLabels, gIncrLabels, ...
-                                d, bar3FigHeight, bar3FigWidth, ...
+                                d, figHeight, figWidth, ...
                                 figTypes, otherArguments), ...
                 allMeanValues, allUpper95Values, ...
-                allMeasureTitles, allFigPathBases3D);
+                allMeasureTitles, allFigPathBases);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

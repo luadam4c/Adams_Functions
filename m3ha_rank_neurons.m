@@ -21,20 +21,21 @@
 %
 % Requires:
 %       cd/argfun.m
+%       cd/create_labels_from_numbers.m
 %       cd/create_subplots.m
+%       cd/create_time_stamp.m
 %       cd/check_dir.m
 %       cd/compile_mod_files.m
 %       cd/convert_to_char.m
 %       cd/copy_into.m
 %       cd/create_error_for_nargin.m
+%       cd/force_matrix.m
 %       cd/m3ha_locate_homedir.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_select_cells.m
 %       cd/m3ha_select_raw_traces.m
 %       cd/plot_bar.m
 %       cd/save_all_figtypes.m
-%       cd/create_labels_from_numbers.m
-%       cd/force_matrix.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -89,6 +90,7 @@ attemptNumberAcrossTrials = 4;      % attempt number for across trials:
 % Directory names
 parentDirectoryTemp = '/media/adamX/m3ha';
 fitDirName = 'optimizer4gabab';
+rankPrefix = 'singleneuronfitting0-90';
 paramDirNames = fullfile('best_params', ...
                         {'bestparams_20191112_singleneuronfitting0', ...
                         'bestparams_20191112_singleneuronfitting1', ...
@@ -109,14 +111,13 @@ paramDirNames = fullfile('best_params', ...
 dataDirName = fullfile('data_dclamp', 'take4');
 matFilesDirName = 'matfiles';
 specialCasesDirName = 'special_cases';
-defaultOutFolderName = 'ranked';
+defaultOutFolderSuffix = 'ranked';
 
 % File info
 %   Note: Must be consistent with m3ha_neuron_choose_best_params.m
 errorSheetSuffix = 'error_param_table';
 errorSheetExtension = 'csv';
 
-rankPrefix = 'singleneuronfitting0-90';
 rankSuffix = 'ranked';
 rankSheetExtension = 'csv';
 barFigTypes = {'png', 'epsc2'};
@@ -201,7 +202,12 @@ fitDirectory = fullfile(parentDirectory, fitDirName);
 
 % Decide on output folder
 if isempty(outFolder)
-    outFolder = fullfile(fitDirectory, defaultOutFolderName);
+    % Create output folder name
+    outFolderName = strcat(create_time_stamp('FormatOut', 'yyyymmdd'), ...
+                            '_', defaultOutFolderSuffix);
+
+    % Create full path to output folder
+    outFolder = fullfile(fitDirectory, outFolderName);
 end
 
 % Check if output folder exists

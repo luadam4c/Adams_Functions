@@ -87,7 +87,7 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 % 2019-11-28 Now saves error table and plots individual plots for each set
 %               of parameters
 % 2019-12-19 Added 'PlotErrorHistoryFlag' as an optional argument
-% 
+% 2019-12-27 Updated bounds
 
 %% Hard-coded parameters
 validBuildModes = {'active', 'passive'};

@@ -25,6 +25,8 @@ function isPositiveIntegerVector = ispositiveintegervector (x)
 %       cd/match_dimensions.m
 %       cd/match_time_info.m
 %       cd/m3ha_select_cells.m
+%       cd/m3ha_plot_bar3.m
+%       cd/m3ha_plot_violin.m
 %       cd/plot_struct.m
 %       cd/run_neuron.m
 %       cd/set_axes_properties.m

@@ -21,10 +21,11 @@ function timeStamp = create_time_stamp (varargin)
 %       cd/archive_dependent_scripts.m
 %       cd/atfwrite.m
 %       cd/m3ha_network_launch.m
+%       cd/m3ha_rank_neurons.m
+%       cd/m3ha_simulate_population.m
 %       cd/parse_multiunit.m
 %       cd/plot_psth.m
 %       cd/save_params.m
-%       cd/m3ha_simulate_population.m
 %       /media/adamX/m3ha/optimizer4gabab/singleneuronfitting54.m
 
 % File History:

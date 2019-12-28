@@ -15,6 +15,7 @@ function functionsDirectory = locate_functionsdir
 %       cd/combine_sweeps.m
 %       cd/create_colormap.m
 %       cd/find_passive_params.m
+%       cd/m3ha_plot_violin.m
 %       cd/minEASE.m
 %       cd/parse_abf.m
 %       ~/m3ha/data_dclamp/dclampPassiveFitter.m

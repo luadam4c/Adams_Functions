@@ -31,6 +31,8 @@
 %       cd/m3ha_extract_iteration_string.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_load_sweep_info.m
+%       cd/m3ha_plot_bar3.m
+%       cd/m3ha_plot_violin.m
 %       cd/print_cellstr.m
 %       cd/renamevars.m
 %       cd/vertcat_spreadsheets.m
@@ -46,11 +48,12 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestNeuronsFlag = false; %true;
+chooseBestNeuronsFlag = true;
 simulateFlag = false; %true;
 combineFeatureTablesFlag = false; %true;
 computeStatsFlag = false; %true;
-plotStatsFlag = true;
+plotViolinPlotsFlag = false; %true;
+plotBarPlotsFlag = false; %true;
 
 % Selection parameters
 nCellsToSim = 10;
@@ -75,8 +78,8 @@ attemptNumber = 3;      %   1 - Use 4 traces @ 200% gIncr for this data mode
 % Directory names
 parentDirectoryTemp = '/media/adamX/m3ha';
 fitDirName = 'optimizer4gabab';
-rankDirName = 'ranked';
-defaultOutFolderSuffix = '_population';
+rankDirName = '20191227_ranked_singleneuronfitting0-90';
+defaultOutFolderSuffix = 'population';
 
 % File names
 simStr = 'sim';
@@ -89,8 +92,8 @@ condVarStrs = {'cellidrow', 'prow', 'vrow', 'grow', 'swpnrow', ...
                 'gabab_amp', 'gabab_Trise', 'gabab_TfallFast', ...
                 'gabab_TfallSlow', 'gabab_w'};
 pharmAll = [1; 2; 3; 4];          
-pharmLabels = {'{\it d}-Control', '{\it d}-GAT1 Block', ...
-                '{\it d}-GAT3 Block', '{\it d}-Dual Block'};
+pharmLabelsLong = {'{\it d}-Control', '{\it d}-GAT1 Block', ...
+                    '{\it d}-GAT3 Block', '{\it d}-Dual Block'};
 pharmLabelsShort = {'{\it d}-Con', '{\it d}-GAT1', ...
                     '{\it d}-GAT3', '{\it d}-Dual'};
 gIncrAll = [25; 50; 100; 200; 400; 800];
@@ -98,13 +101,11 @@ gIncrLabels = {'25%', '50%', '100%', '200%', '400%', '800%'};
 conditionLabel2D = 'pharm_1-4_gincr_200';
 pCond2D = num2cell(pharmAll);
 gCond2D = 200;
+stats2dSuffix = strcat(simStr, '_', conditionLabel2D, '_stats.mat');
 conditionLabel3D = 'pharm_1-4_gincr_all';
 pCond3D = num2cell(pharmAll);
 gCond3D = num2cell(gIncrAll);
 stats3dSuffix = strcat(simStr, '_', conditionLabel3D, '_stats.mat');
-
-% TODO: Make optional argument
-outFolder = '';
 
 % Plot settings
 % Note: must be consistent with m3ha_compute_statistics.m
@@ -116,6 +117,12 @@ measuresOfInterest = {'ltsAmplitude'; 'ltsMaxSlope'; ...
                     'spikeFrequency'; 'spikeAdaptation'
                     'burstOnsetTime'; 'burstTimeJitter'; ...
                     'burstProbability'; 'spikesPerBurst'};
+
+% TODO: Make optional argument
+outFolder = '';
+prefix = '';
+% outFolder = '20191227_population_rank1-10_useHH_true';
+% prefix = '20191227_population';
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -162,22 +169,26 @@ rankDirectory = fullfile(fitDirectory, rankDirName);
 % Decide on output folder
 if isempty(outFolder)
     % Create output folder name
-    oufFolderName = strcat(create_time_stamp('FormatOut', 'yyyymmdd'), ...
-                            defaultOutFolderSuffix);
+    outFolderName = strcat(create_time_stamp('FormatOut', 'yyyymmdd'), ...
+                            '_', defaultOutFolderSuffix);
 
     % Create full path to output folder
-    outFolder = fullfile(fitDirectory, oufFolderName);
+    outFolder = fullfile(fitDirectory, outFolderName);
 end
 
 % Check if output folder exists
 check_dir(outFolder);
 
-% Extract output folder base name
-outFolderName = extract_fileparts(outFolder, 'dirbase');
+% Decide on output prefix
+if isempty(prefix)
+    % Extract output folder base name
+    prefix = extract_fileparts(outFolder, 'dirbase');
+end
 
 % Construct path to simulated LTS info
-simSwpInfoPath = fullfile(outFolder, [outFolderName, '_', simSwpInfoSuffix, '.csv']);
-stats3dPath = fullfile(outFolder, [outFolderName, '_', stats3dSuffix, '.mat']);
+simSwpInfoPath = fullfile(outFolder, [prefix, '_', simSwpInfoSuffix, '.csv']);
+stats2dPath = fullfile(outFolder, [prefix, '_', stats2dSuffix, '.mat']);
+stats3dPath = fullfile(outFolder, [prefix, '_', stats3dSuffix, '.mat']);
 
 %% Choose the best cells and the best parameters for each cell
 if chooseBestNeuronsFlag
@@ -276,27 +287,56 @@ if combineFeatureTablesFlag
     writetable(simSwpInfo, simSwpInfoPath);
 end
 
-%% Compute statistics
-if computeStatsFlag
-    % Load sweep info
-    simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
+%% Plot violin plots
+if plotViolinPlotsFlag
+    % Compute statistics if not done already
+    if ~isfile(stats2dPath)
+        % Load sweep info
+        simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
 
-    % Compute statistics for all features
-    disp('Computing statistics for 3D bar plots ...');
-    statsTable = m3ha_compute_statistics('SwpInfo', simSwpInfo, ...
-                                            'PharmConditions', pCond3D, ...
-                                            'GIncrConditions', gCond3D, ...
-                                            'DataMode', dataMode);
-    % Generate a condition label
-    conditionLabel = conditionLabel3D;
+        % Compute statistics for all features
+        disp('Computing statistics for violin plots ...');
+        statsTable = m3ha_compute_statistics('SwpInfo', simSwpInfo, ...
+                                                'PharmConditions', pCond2D, ...
+                                                'GIncrConditions', gCond2D, ...
+                                                'DataMode', dataMode);
 
-    % Save stats table
-    save(stats3dPath, 'statsTable', 'pharmLabels', ...
-                    'gIncrLabels', 'conditionLabel', '-v7.3');
+        % Generate labels
+        conditionLabel = conditionLabel2D;
+        pharmLabels = pharmLabelsShort;
+
+        % Save stats table
+        save(stats2dPath, 'statsTable', 'pharmLabels', ...
+                            'conditionLabel', '-v7.3');
+    end
+
+    % Plot all 2D violin plots
+    m3ha_plot_violin(stats2dPath, 'RowsToPlot', measuresOfInterest);
 end
 
-%% Plot statistics
-if plotStatsFlag
+%% Plot bar plots
+if plotBarPlotsFlag
+    % Compute statistics if not done already
+    if ~isfile(stats3dPath)
+        % Load sweep info
+        simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
+
+        % Compute statistics for all features
+        disp('Computing statistics for 3D bar plots ...');
+        statsTable = m3ha_compute_statistics('SwpInfo', simSwpInfo, ...
+                                                'PharmConditions', pCond3D, ...
+                                                'GIncrConditions', gCond3D, ...
+                                                'DataMode', dataMode);
+        % Generate a condition label
+        pharmLabels = pharmLabelsLong;
+        conditionLabel = conditionLabel3D;
+
+        % Save stats table
+        save(stats3dPath, 'statsTable', 'pharmLabels', ...
+                        'gIncrLabels', 'conditionLabel', '-v7.3');
+    end
+
+    % Plot all 3D bar plots
     m3ha_plot_bar3(stats3dPath, 'RowsToPlot', measuresOfInterest);
 end
 

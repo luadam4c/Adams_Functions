@@ -88,8 +88,10 @@ function figHandle = update_figure_for_corel (varargin)
 %
 % Used by:
 %       cd/m3ha_oscillations_analyze.m
+%       cd/m3ha_plot_bar3.m
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_figure03.m
+%       cd/m3ha_plot_violin.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_traces_spike2_mat.m
 %       /home/Matlab/plethR01/plethR01_analyze.m
