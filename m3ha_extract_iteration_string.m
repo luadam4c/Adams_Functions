@@ -15,7 +15,12 @@ function iterStrs = m3ha_extract_iteration_string (strs, varargin)
 %       strs        - strings
 %                   must be a character vector or a string vector
 %                       or a cell array of character vectors
-%       varargin    - Any other parameter-value pair for extract_substrings()
+%       varargin    - 'FromBaseName': whether to restrict to the base name
+%                                       (remove everything before last filesep
+%                                        and after last .)
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - Any other parameter-value pair for extract_substrings()
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -32,6 +37,9 @@ function iterStrs = m3ha_extract_iteration_string (strs, varargin)
 
 %% Hard-coded parameters
 iterStrPattern = 'singleneuronfitting[\d]*';
+
+%% Default values for optional arguments
+fromBaseNameDefault = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -52,15 +60,20 @@ addRequired(iP, 'strs', ...
         ['strs5 must be a character array or a string array ', ...
             'or cell array of character arrays!']));
 
+% Add parameter-value pairs to the Input Parser
+addParameter(iP, 'FromBaseName', fromBaseNameDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+
 % Read from the Input Parser
 parse(iP, strs, varargin{:});
+fromBaseName = iP.Results.FromBaseName;
 
 % Keep unmatched arguments for the extract_substrings() function
 otherArguments = iP.Unmatched;
 
 %% Do the job
 % Extract the iteration strings
-iterStrs = extract_substrings(strs, 'FromBaseName', false, ...
+iterStrs = extract_substrings(strs, 'FromBaseName', fromBaseName, ...
                                 'RegExp', iterStrPattern, otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

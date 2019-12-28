@@ -49,14 +49,11 @@
 %% Hard-coded parameters
 % Flags
 chooseBestNeuronsFlag = true;
-simulateFlag = false; %true;
-combineFeatureTablesFlag = false; %true;
-computeStatsFlag = false; %true;
-plotViolinPlotsFlag = false; %true;
-plotBarPlotsFlag = false; %true;
-
-% Selection parameters
-nCellsToSim = 10;
+simulateFlag = true;
+combineFeatureTablesFlag = true;
+computeStatsFlag = true;
+plotViolinPlotsFlag = true;
+plotBarPlotsFlag = true;
 
 % Simulation parameters
 useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
@@ -78,7 +75,6 @@ attemptNumber = 3;      %   1 - Use 4 traces @ 200% gIncr for this data mode
 % Directory names
 parentDirectoryTemp = '/media/adamX/m3ha';
 fitDirName = 'optimizer4gabab';
-rankDirName = '20191227_ranked_singleneuronfitting0-90';
 defaultOutFolderSuffix = 'population';
 
 % File names
@@ -123,6 +119,10 @@ outFolder = '';
 prefix = '';
 % outFolder = '20191227_population_rank1-10_useHH_true';
 % prefix = '20191227_population';
+rankNumsToSim = [1, 2, 5, 6, 8, 9, 10, 11, 23, 34];
+% rankNumsToSim = [];
+maxRankToSim = 10;
+rankDirName = '20191227_ranked_singleneuronfitting0-90';
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -192,8 +192,13 @@ stats3dPath = fullfile(outFolder, [prefix, '_', stats3dSuffix, '.mat']);
 
 %% Choose the best cells and the best parameters for each cell
 if chooseBestNeuronsFlag
+    % Decide on the ranking numbers of cells to simulate
+    if isempty(rankNumsToSim)
+        rankNumsToSim = 1:maxRankToSim;
+    end
+
     % Create rank number prefixes
-    rankPrefixes = create_labels_from_numbers(1:nCellsToSim, ...
+    rankPrefixes = create_labels_from_numbers(rankNumsToSim, ...
                                         'Prefix', 'rank_', 'Suffix', '_');
 
     % Find png files matching the rank prefixes
@@ -202,10 +207,10 @@ if chooseBestNeuronsFlag
                             'ExtractDistinct', false);
 
     % Extract the cell names
-    cellNames = m3ha_extract_cell_name(pngPaths);
+    cellNames = m3ha_extract_cell_name(pngPaths, 'FromBaseName', true);
 
     % Extract the iteration numbers
-    iterStrs = m3ha_extract_iteration_string(pngPaths);
+    iterStrs = m3ha_extract_iteration_string(pngPaths, 'FromBaseName', true);
 
     % Find the parameter file directories
     [~, paramDirs] = cellfun(@(x) all_subdirs('Directory', rankDirectory, ...
