@@ -4,6 +4,7 @@
 % Requires:
 %       cd/argfun.m
 %       cd/check_dir.m
+%       cd/compile_mod_files.m
 %       cd/create_subplots.m
 %       cd/extract_fileparts.m
 %       cd/extract_param_values.m
@@ -29,6 +30,7 @@
 
 %% Hard-coded parameters
 % Flags
+updateScripts = true;
 estimatePassiveParams = false; %true;
 plotCurveFit = false; %true;
 simulateCpr = false; %true;
@@ -42,6 +44,7 @@ parentDirectory = fullfile('/media', 'adamX', 'm3ha');
 figure02Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure02');
 figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 matFilesDir = fullfile(parentDirectory, 'data_dclamp', 'take4', 'matfiles');
+fitDirectory = fullfile(parentDirectory, 'optimizer4compgabab');
 
 % Files
 sweepInfoFile = 'dclampdatalog_take4.csv';
@@ -106,6 +109,18 @@ ipscrYLimits = [-100, -20];
 figTypes = {'png', 'epsc2'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Mak
+if updateScripts
+    % Make sure NEURON scripts are up to date
+    if isunix
+        unix(sprintf('rsync -avhu %s/*.tem %s/*.mod %s/*.hoc %s', ...
+                    fitDirectory, fitDirectory, fitDirectory, figure03Dir));
+    end
+
+    % Compile .mod scripts and change to that directory
+    compile_mod_files(figure03Dir);
+end
 
 %% Load sweep info
 % Read from datalogPath
