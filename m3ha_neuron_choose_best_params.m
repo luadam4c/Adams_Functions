@@ -20,10 +20,19 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 %       candParamsTablesOrFiles  - candidate sets of NEURON parameter
 %                                   tables or spreadsheet file names
 %                   must be a cell array or string array
-%       varargin    - 'SimMode': simulation mode
+%       varargin    - 'UseHH': whether to use HH channels
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'SimMode': simulation mode
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'passive' - simulate a current pulse response
 %                       'active'  - simulate an IPSC response
+%                   default == 'active'
+%                   - 'BuildMode': TC neuron build mode
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'passive' - insert leak channels only
+%                       'active'  - insert both passive and active channels
+%                       or a cell array of them TODO
 %                   default == 'active'
 %                   - 'PlotErrorHistoryFlag': whether to plot error history
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -176,6 +185,7 @@ sheetExtension = 'csv';
 figTypes = {'png'};
 
 %% Default values for optional arguments
+useHHDefault = false;           % don't use HH channels by default
 buildModeDefault = 'active';    % insert active channels by default
 simModeDefault = 'active';      % simulate active responses by default
 plotErrorHistoryFlagDefault = false;
@@ -203,6 +213,8 @@ addRequired(iP, 'candParamsTablesOrFiles', ...
     @(x) validateattributes(x, {'cell', 'string'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'UseHH', useHHDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'BuildMode', buildModeDefault, ...
     @(x) any(validatestring(x, validBuildModes)));
 addParameter(iP, 'SimMode', simModeDefault, ...
@@ -220,6 +232,7 @@ addParameter(iP, 'Prefix', prefixDefault, ...
 
 % Read from the Input Parser
 parse(iP, candParamsTablesOrFiles, varargin{:});
+useHH = iP.Results.UseHH;
 buildMode = validatestring(iP.Results.BuildMode, validBuildModes);
 simMode = validatestring(iP.Results.SimMode, validSimModes);
 plotErrorHistoryFlag = iP.Results.PlotErrorHistoryFlag;
@@ -331,7 +344,7 @@ errorStructs = cellfun(@(x, y) m3ha_neuron_run_and_analyze(x, ...
                             'SaveImportLogFlag', false, ...
                             'PlotIndividualFlag', true, ...
                             'BuildMode', buildMode, 'SimMode', simMode, ...
-                            'OutFolder', outFolder, ...
+                            'UseHH', useHH, 'OutFolder', outFolder, ...
                             'Prefix', y, otherArguments), ...
                             candParamsTables, candLabel);
 

@@ -40,20 +40,23 @@
 
 % File History:
 % 2019-12-11 Created by Adam Lu
+% 2019-12-26 Completed
+% 2019-12-27 Added HH channels
 % 
 
 %% Hard-coded parameters
 % Flags
-chooseBestNeuronsFlag = false; %true;
-simulateFlag = false; %true;
-combineFeatureTablesFlag = false; %true;
-computeStatsFlag = false; %true;
+chooseBestNeuronsFlag = true;
+simulateFlag = true;
+combineFeatureTablesFlag = true;
+computeStatsFlag = true;
 plotStatsFlag = true;
 
 % Selection parameters
 nCellsToSim = 10;
 
-% Simulation parameters 
+% Simulation parameters
+useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
 buildMode = 'active';
 simMode = 'active';
 dataMode = 0;           % data mode:
@@ -67,8 +70,7 @@ attemptNumber = 3;      %   1 - Use 4 traces @ 200% gIncr for this data mode
                         %   3 - Use all traces for this data mode
                         %   4 - Use 1 trace for each pharm x gIncr 
                         %           for this data mode
-                        %   5 - Use 4 traces @ 400% gIncr for this data mode
-% TODO:useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
+                        %   5 - Use 4 traces @ 400% gIncr for this data mode         
 
 % Directory names
 parentDirectoryTemp = '/media/adamX/m3ha';
@@ -223,7 +225,7 @@ if simulateFlag
     % Run simulations for each parameter file
     cellfun(@(x) m3ha_neuron_run_and_analyze (x, 'DataMode', dataMode, ...
                     'BuildMode', buildMode, 'SimMode', simMode, ...
-                    'AttemptNumber', attemptNumber, ...
+                    'UseHH', useHH, 'AttemptNumber', attemptNumber, ...
                     'SaveSimOutFlag', true, 'SaveLtsInfoFlag', true), ...
             paramPaths);
 
