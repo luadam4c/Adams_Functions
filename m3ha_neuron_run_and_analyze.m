@@ -1065,7 +1065,9 @@ elseif strcmpi(simMode, 'active')
     % Import data to compare if not provided but file names provided
     if isempty(realDataIpscr) && ~isempty(fileNames)
         % Log names of files imported
-        log_arraytext(importedPath, fileNames);
+        if saveImportLogFlag
+            log_arraytext(importedPath, fileNames);
+        end
 
         % Import data
         [realDataIpscr, sweepInfoIpscr] = ...

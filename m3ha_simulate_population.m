@@ -46,10 +46,10 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestNeuronsFlag = true;
-simulateFlag = true;
-combineFeatureTablesFlag = true;
-computeStatsFlag = true;
+chooseBestNeuronsFlag = false; %true;
+simulateFlag = false; %true;
+combineFeatureTablesFlag = false; %true;
+computeStatsFlag = false; %true;
 plotStatsFlag = true;
 
 % Selection parameters
