@@ -87,7 +87,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/read_lines_from_file.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/m3ha_plot_figure03.m
 
 % File History:
 % 2019-10-14 Created by Adam Lu

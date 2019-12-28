@@ -14,6 +14,7 @@
 %       cd/m3ha_correct_unbalanced_bridge.m
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_parse_mat.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_select_sweeps.m
 %       cd/m3ha_specs_for_datamode.m
 %       cd/plot_ball_stick.m
@@ -27,24 +28,28 @@
 % 2019-12-18 Created by Adam Lu
 % 2019-12-20 Added plotCurveFit
 % 2019-12-21 Added simulateCpr and simulateIpscr
+% 2019-12-28 Added updateScripts
 
 %% Hard-coded parameters
 % Flags
-updateScripts = true;
-estimatePassiveParams = false; %true;
-plotCurveFit = false; %true;
+updateScripts = false; %true;
+plotGeometry = false; %true;
 simulateCpr = false; %true;
 plotCpr = false; %true;
 simulateIpscr = false; %true;
 plotIpscr = false; %true;
-plotGeometry = false; %true;
+plotOverlapped = true;
+
+% Flags (ALREADY DONE!)
+estimatePassiveParams = false; %true;
+plotCurveFit = false; %true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
 figure02Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure02');
 figure03Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure03');
 matFilesDir = fullfile(parentDirectory, 'data_dclamp', 'take4', 'matfiles');
-fitDirectory = fullfile(parentDirectory, 'optimizer4compgabab');
+fitDirectory = fullfile(parentDirectory, 'optimizer4gabab');
 
 % Files
 sweepInfoFile = 'dclampdatalog_take4.csv';
@@ -105,6 +110,10 @@ ipscrFigWidth = 8.5;
 ipscrFigHeight = 7;
 ipscrXLimits = [2800, 4500];
 ipscrYLimits = [-100, -20];
+overlappedFigWidth = [];
+overlappedFigHeight = [];
+overlappedXLimits = [];
+overlappedYLimits = [];
 
 figTypes = {'png', 'epsc2'};
 
@@ -152,7 +161,8 @@ if plotCurveFit
 end
 
 %% Find NEURON parameter tables
-if plotGeometry || simulateCpr || simulateIpscr || plotCpr || plotIpscr
+if plotGeometry || simulateCpr || simulateIpscr || ...
+        plotCpr || plotIpscr || plotOverlapped
     % Find NEURON parameter tables
     [~, exampleParamPaths] = ...
         find_matching_files(exampleCellNames, 'Directory', figure03Dir, ...
@@ -214,6 +224,14 @@ if plotIpscr
     cellfun(@(x, y) plot_ipscr(x, y, figure03Dir, figTypes, ...
                                 ipscrFigWidth, ipscrFigHeight, ...
                                 ipscrXLimits, ipscrYLimits), ...
+            exampleLabelsIpscr, outFoldersIpscr);
+end
+
+%% Plot overlapped traces
+if plotOverlapped
+    cellfun(@(x, y) plot_overlapped(x, y, figure03Dir, figTypes, ...
+                                overlappedFigWidth, overlappedFigHeight, ...
+                                overlappedXLimits, overlappedYLimits), ...
             exampleLabelsIpscr, outFoldersIpscr);
 end
 
@@ -524,6 +542,37 @@ update_figure_for_corel(figIndividual, 'Units', 'centimeters', ...
 
 % Save the figure
 save_all_figtypes(figIndividual, figPathBaseIndividual, figTypes);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function plot_overlapped(expStr, directory, outFolder, figTypes, ...
+                            figWidth, figHeight, xLimits, yLimits)
+
+% Create a figure name
+figPathBaseOverlapped = fullfile(outFolder, [expStr, '_overlapped']);
+
+% Create the figure
+figOverlapped = set_figure_properties('AlwaysNew', true);
+
+% Plot traces
+m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
+                'PlotType', 'overlapped', 'FigHandle', figOverlapped, ...
+                'XLimits', xLimits, 'YLimits', yLimits);
+
+% % Plot a scale bar
+% hold on
+% plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 400, ...
+%                 'XPosNormalized', 0.1, 'YPosNormalized', 0.8);
+
+% % Update figure for CorelDraw
+% update_figure_for_corel(figOverlapped, 'Units', 'centimeters', ...
+%                 'Width', figWidth, 'Height', figHeight, ...
+%                 'RemoveXTicks', true, 'RemoveXRulers', true);
+
+% Save the figure
+save_all_figtypes(figOverlapped, figPathBaseOverlapped, figTypes);
 
 end
 

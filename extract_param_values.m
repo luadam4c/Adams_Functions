@@ -20,7 +20,7 @@ function valueStructs = extract_param_values (paramTables, varargin)
 %                                       to be used
 %                   must be a positive integer vector, a string array 
 %                       or a cell array of character vectors
-%                   default == []
+%                   default == 'all'
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -33,7 +33,7 @@ function valueStructs = extract_param_values (paramTables, varargin)
 
 % File History:
 % 2019-12-23 Created by Adam Lu
-% 
+% 2019-12-28 Now only extract rows if rowsToExtract is nonempty
 
 %% Hard-coded parameters
 
@@ -80,7 +80,11 @@ function valueStruct = epv_helper (paramTable, rowsToExtract)
 %% Extracts parameter names and values as a structure
 
 % Restrict to the requested rows
-tableFiltered = paramTable(rowsToExtract, :);
+if ~isempty(rowsToExtract)
+    tableFiltered = paramTable(rowsToExtract, :);
+else
+    tableFiltered = paramTable;
+end
 
 % Restrict to the Value column
 tableSelected = tableFiltered(:, 'Value');
