@@ -47,14 +47,14 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = false; %true;
-plotErrorHistoryFlag = false; %true;
-plotErrorComparisonFlag = false; %true;
-plotParamHistoryFlag = false; %true;
-plotIndividualFlag = false; %true;
-rankNeuronsFlag = false; %true;
-plotHistogramsFlag = false; %true;
-plotBarPlotFlag = false; %true;
+chooseBestParamsFlag = true;
+plotErrorHistoryFlag = true;
+plotErrorComparisonFlag = true;
+plotParamHistoryFlag = true;
+plotIndividualFlag = true;
+rankNeuronsFlag = true;
+plotHistogramsFlag = true;
+plotBarPlotFlag = true;
 plotParamComparisonFlag = true; % TODO
 
 % Fitting parameters 
@@ -91,7 +91,7 @@ attemptNumberAcrossTrials = 4;      % attempt number for across trials:
 % Directory names
 parentDirectoryTemp = '/media/adamX/m3ha';
 fitDirName = 'optimizer4gabab';
-rankPrefix = 'singleneuronfitting0-90';
+rankPrefix = 'singleneuronfitting0-91';
 paramDirNames = fullfile('best_params', ...
                         {'bestparams_20191112_singleneuronfitting0', ...
                         'bestparams_20191112_singleneuronfitting1', ...
@@ -108,7 +108,8 @@ paramDirNames = fullfile('best_params', ...
                         'bestparams_20191218_singleneuronfitting78', ...
                         'bestparams_20191219_singleneuronfitting85', ...
                         'bestparams_20191221_singleneuronfitting86', ...
-                        'bestparams_20191225_singleneuronfitting90'});
+                        'bestparams_20191225_singleneuronfitting90', ...
+                        'bestparams_20191227_singleneuronfitting91'});
 dataDirName = fullfile('data_dclamp', 'take4');
 matFilesDirName = 'matfiles';
 specialCasesDirName = 'special_cases';
@@ -450,8 +451,11 @@ if plotBarPlotFlag
     save_all_figtypes(fig, rankPathBase, barFigTypes);
 end
 
-%% Output results
-% TODO
+%% Plot an error and parameter comparison plot
+if plotParamComparisonFlag
+    % TODO
+end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
