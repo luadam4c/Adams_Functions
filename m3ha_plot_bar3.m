@@ -31,6 +31,18 @@ function handles = m3ha_plot_bar3 (statsPath, varargin)
 %                   - 'OutFolder': the directory where plots will be placed
 %                   must be a string scalar or a character vector
 %                   default == pwd
+%                   - 'FigWidth': figure width
+%                   must be a positive scalar
+%                   default == 6 cm
+%                   - 'FigHeight': figure height
+%                   must be a positive scalar
+%                   default == 6 cm
+%                   - 'FigTypes': figure type(s) for saving; 
+%                               e.g., 'png', 'fig', or {'png', 'fig'}, etc.
+%                   could be anything recognised by 
+%                       the built-in saveas() function
+%                   (see isfigtype.m under Adams_Functions)
+%                   default == 'png'
 %                   - Any other parameter-value pair for bar3()
 %
 % Requires:
@@ -39,6 +51,7 @@ function handles = m3ha_plot_bar3 (statsPath, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/decide_on_colormap.m
 %       cd/extract_fileparts.m
+%       cd/isfigtype.m
 %       cd/ispositiveintegervector.m
 %       cd/struct2arglist.m
 %       cd/save_all_figtypes.m
@@ -51,17 +64,18 @@ function handles = m3ha_plot_bar3 (statsPath, varargin)
 
 % File History:
 % 2019-12-27 Moved from m3ha_plot_figure02.m
+% 2019-12-28 Added 'FigTypes' as an optional argument
+% 2019-12-28 Added 'FigHeight' and 'FigWidth' as optional arguments
 % 
 
 %% Hard-coded parameters
-% TODO: Make optional argument
-figHeight = 6;                  % in centimeters
-figWidth = 6;                   % in centimeters
-figTypes = {'png', 'epsc2'};
 
 %% Default values for optional arguments
 rowsToPlotDefault = 'all';
 outFolderDefault = '';          % set later
+figWidthDefault = 6;
+figHeightDefault = 6;
+figTypesDefault = {'png', 'epsc2'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -88,11 +102,22 @@ addParameter(iP, 'RowsToPlot', rowsToPlotDefault, ...
                     'a string array or a cell array of character arrays!']));
 addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigWidth', figWidthDefault, ...
+    @(x) assert(isempty(x) || ispositivescalar(x), ...
+                'FigWidth must be a empty or a positive scalar!'));
+addParameter(iP, 'FigHeight', figHeightDefault, ...
+    @(x) assert(isempty(x) || ispositivescalar(x), ...
+                'FigHeight must be a empty or a positive scalar!'));
+addParameter(iP, 'FigTypes', figTypesDefault, ...
+    @(x) all(isfigtype(x, 'ValidateMode', true)));
 
 % Read from the Input Parser
 parse(iP, statsPath, varargin{:});
 rowsToPlot = iP.Results.RowsToPlot;
 outFolder = iP.Results.OutFolder;
+figWidth = iP.Results.FigWidth;
+figHeight = iP.Results.FigHeight;
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Keep unmatched arguments for the bar3() function
 otherArguments = struct2arglist(iP.Unmatched);

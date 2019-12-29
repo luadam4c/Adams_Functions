@@ -4,7 +4,6 @@
 % Requires:
 %       cd/argfun.m
 %       cd/check_dir.m
-%       cd/compile_mod_files.m
 %       cd/create_subplots.m
 %       cd/extract_fileparts.m
 %       cd/extract_param_values.m
@@ -23,6 +22,7 @@
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
 %       cd/update_figure_for_corel.m
+%       cd/update_neuron_scripts.m
 
 % File History:
 % 2019-12-18 Created by Adam Lu
@@ -119,16 +119,9 @@ figTypes = {'png', 'epsc2'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Mak
+%% Make sure NEURON scripts are up to date in figure03Dir
 if updateScripts
-    % Make sure NEURON scripts are up to date
-    if isunix
-        unix(sprintf('rsync -avhu %s/*.tem %s/*.mod %s/*.hoc %s', ...
-                    fitDirectory, fitDirectory, fitDirectory, figure03Dir));
-    end
-
-    % Compile .mod scripts and change to that directory
-    compile_mod_files(figure03Dir);
+    update_neuron_scripts(fitDirectory, figure03Dir);
 end
 
 %% Load sweep info
@@ -166,7 +159,8 @@ if plotGeometry || simulateCpr || simulateIpscr || ...
     % Find NEURON parameter tables
     [~, exampleParamPaths] = ...
         find_matching_files(exampleCellNames, 'Directory', figure03Dir, ...
-                            'Suffix', paramFileSuffix, 'Extension', 'csv');
+                            'Suffix', paramFileSuffix, 'Extension', 'csv', ...
+                            'Recursive', false);
 
     % Extract file bases
     exampleParamFileBases = extract_fileparts(exampleParamPaths, 'base');

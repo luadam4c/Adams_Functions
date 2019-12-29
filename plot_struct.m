@@ -188,7 +188,7 @@ figTitles = iP.Results.FigTitles;
 figNumber = iP.Results.FigNumber;
 outFolder = iP.Results.OutFolder;
 figNames = iP.Results.FigNames;
-[~, figtypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
+[~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
 % Keep unmatched arguments for the plot_tuning_curve() or plot_bar() function
 otherArguments = iP.Unmatched;
@@ -361,7 +361,7 @@ for iField = 1:nFields
     end
 
     if ~isempty(figName)
-        save_all_figtypes(figThis, figName, figtypes);
+        save_all_figtypes(figThis, figName, figTypes);
     end
 
     figs(iField, 1) = figThis;

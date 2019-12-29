@@ -47,14 +47,15 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = true;
-plotErrorHistoryFlag = true;
-plotErrorComparisonFlag = true;
-plotParamHistoryFlag = true;
-plotIndividualFlag = true;
-rankNeuronsFlag = true;
-plotHistogramsFlag = true;
-plotBarPlotFlag = true;
+chooseBestParamsFlag = false; %true;
+plotErrorHistoryFlag = false; %true;
+plotErrorComparisonFlag = false; %true;
+plotParamHistoryFlag = false; %true;
+plotIndividualFlag = false; %true;
+rankNeuronsFlag = false; %true;
+plotHistogramsFlag = false; %true;
+plotBarPlotFlag = false; %true;
+plotParamComparisonFlag = true; % TODO
 
 % Fitting parameters 
 %   Note: Must be consistent with singleneuronfitting91.m

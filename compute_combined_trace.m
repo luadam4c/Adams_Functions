@@ -16,6 +16,7 @@ function [combTrace, paramsUsed] = ...
 %       compute_combined_trace(vecs2, 'bootmean', 'Group', {'b', 'a', 'b'})
 %       compute_combined_trace({[1; NaN], [3; 4]}, 'max')
 %       compute_combined_trace({[NaN 1 2 NaN]; [NaN 1 NaN 3]}, 'unique')
+%       compute_combined_trace({{[1; 3], [2; 4]}, {[4; 2], [1; 3]}}, 'max')
 %
 % Outputs:
 %       combTrace       - the combined trace(s)
