@@ -26,7 +26,7 @@ function nStrings = count_strings (strs, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
-%       cd/plot_history_table.m
+%       cd/plot_table_parallel.m
 %       cd/read_lines_from_files.m
 
 % File History:

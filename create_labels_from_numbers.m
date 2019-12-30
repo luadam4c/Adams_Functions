@@ -63,7 +63,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/plot_chevron.m
 %       cd/plot_grouped_histogram.m
 %       cd/plot_histogram.m
-%       cd/plot_history_table.m
+%       cd/plot_table_parallel.m
 %       cd/plot_raster.m
 %       cd/plot_spike_density_multiunit.m
 %       cd/plot_struct.m

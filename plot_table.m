@@ -1,31 +1,38 @@
-function figs = plot_table (table, varargin)
-%% Plots all variables in a table as tuning curves
-% Usage: figs = plot_table (table, varargin)
+function handles = plot_table (myTable, varargin)
+%% Plots variables (columns) in a table
+% Usage: handles = plot_table (myTable, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       TODO
+%       load_examples
+%       plot_table(myTableNumeric)
+%       plot_table(myTableNumeric, 'PlotMode', 'separate')
+%       TODO: plot_table(myTableNumeric, 'PlotMode', 'parallel')
 %
 % Outputs:
-%       figs        - figure handle(s) for the created figure(s)
-%                   specified as a figure object handle column vector
+%       handles     - structure with fields:
+%                       fig - figure handle(s) for the created figure(s)
+%                   specified as a scalar structure
 %
 % Arguments:
-%       table       - a table with variables to plot
+%       myTable     - a table with variables to plot
 %                   must be a table
 %       varargin    - 'PlotType': type of plot
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'tuning'    - circles
 %                       'bar'       - horizontal bars
 %                   default == 'tuning'
-%                   - 'VariableNames': variable (column) names of the table
+%                   - 'PlotMode': plotting mode for multiple columns
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'overlapped'    - overlapped in a single plot
+%                       'parallel'      - in parallel in subPlots
+%                       'separate'      - in separate figures
+%                   default == 'overlapped'
+%                   - 'VarsToPlot': variable (column) names of the table
 %                   must be empty or a character vector or a string vector
 %                       or a cell array of character vectors
 %                   default == plot all variables
-%                   - 'PlotSeparately': whether to plot each column separately
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == false
 %                   - 'VarLabels': variable labels
 %                   must be empty or a character vector or a string vector
 %                       or a cell array of character vectors
@@ -74,7 +81,6 @@ function figs = plot_table (table, varargin)
 %       cd/extract_fileparts.m
 %       cd/plot_struct.m
 %       cd/plot_tuning_curve.m
-%       cd/struct2arglist.m
 %
 % Used by:
 %       cd/plot_measures.m
@@ -93,30 +99,39 @@ function figs = plot_table (table, varargin)
 % 2019-05-08 Added 'PlotType' as an optional argument
 % 2019-08-07 Added 'PTickLabels' as an optional argument
 % 2019-08-07 Added 'PTicks' as an optional argument
+% 2019-12-30 Changed 'PlotSeparately' to 'PlotMode'
+% TODO: Merge with plot_table_parallel.m
 % TODO: Return handles to plots
 % TODO: Pass in figNames or figNumbers when plotting separately
 % 
 
 %% Hard-coded parameters
 validPlotTypes = {'tuning', 'bar'};
+validPlotModes = {'overlapped', 'parallel', 'separate'};
+
+lineSpecOverlapped = '-';
+lineWidthOverlapped = 1;
+markerEdgeColorOverlapped = char2rgb('DarkOrchid');
+markerFaceColorOverlapped = char2rgb('LightSkyBlue');
+
+lineSpecParallel = [];
+lineWidthParallel = [];
+markerEdgeColorParallel = [];
+markerFaceColorParallel = [];
+
 lineSpecSeparate = 'o';
 lineWidthSeparate = 1;
 markerEdgeColorSeparate = char2rgb('DarkOrchid');
 markerFaceColorSeparate = char2rgb('LightSkyBlue');
 
-lineSpecTogether = '-';
-lineWidthTogether = 1;
-markerEdgeColorTogether = char2rgb('DarkOrchid');
-markerFaceColorTogether = char2rgb('LightSkyBlue');
-
 %% Default values for optional arguments
 plotTypeDefault = 'tuning';
+plotModeDefault = 'overlapped'; % plot columns overlapped by default
 lineSpecDefault = '';
 lineWidthDefault = [];
 markerEdgeColorDefault = [];
 markerFaceColorDefault = [];
-variableNamesDefault = {};      % plot all variables by default
-plotSeparatelyDefault = false;  % plot variables together by default
+varsToPlotDefault = {};         % plot all variables by default
 varLabelsDefault = {};          % set later
 distinctPartsDefault = true;    % extract distinct parts of variable names
                                 %   by default
@@ -144,23 +159,23 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'table', ...
+addRequired(iP, 'myTable', ...
     @(x) validateattributes(x, {'table', 'timetable'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'PlotType', plotTypeDefault, ...
     @(x) any(validatestring(x, validPlotTypes)));
+addParameter(iP, 'PlotMode', plotModeDefault, ...
+    @(x) any(validatestring(x, validPlotModes)));
 addParameter(iP, 'LineSpec', lineSpecDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'LineWidth', lineWidthDefault);
 addParameter(iP, 'MarkerEdgeColor', markerEdgeColorDefault);
 addParameter(iP, 'MarkerFaceColor', markerFaceColorDefault);
-addParameter(iP, 'VariableNames', variableNamesDefault, ...
+addParameter(iP, 'VarsToPlot', varsToPlotDefault, ...
     @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
-        ['VariableNames must be empty or a character array or a string array ', ...
+        ['VarsToPlot must be empty or a character array or a string array ', ...
             'or cell array of character arrays!']));
-addParameter(iP, 'PlotSeparately', plotSeparatelyDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'VarLabels', varLabelsDefault, ...
     @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
         ['VarLabels must be empty or a character array or a string array ', ...
@@ -169,7 +184,7 @@ addParameter(iP, 'DistinctParts', distinctPartsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PhaseVariables', phaseVariablesDefault, ...
     @(x) assert(isempty(x) || ischar(x) || iscellstr(x) || isstring(x), ...
-        ['VariableNames must be empty or a character array or a string array ', ...
+        ['VarsToPlot must be empty or a character array or a string array ', ...
             'or cell array of character arrays!']));
 addParameter(iP, 'Delimiter', delimiterDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
@@ -189,14 +204,14 @@ addParameter(iP, 'FigName', figNameDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 
 % Read from the Input Parser
-parse(iP, table, varargin{:});
+parse(iP, myTable, varargin{:});
 plotType = validatestring(iP.Results.PlotType, validPlotTypes);
+plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
 lineSpec = iP.Results.LineSpec;
 lineWidth = iP.Results.LineWidth;
 markerEdgeColor = iP.Results.MarkerEdgeColor;
 markerFaceColor = iP.Results.MarkerFaceColor;
-varsToPlot = iP.Results.VariableNames;
-plotSeparately = iP.Results.PlotSeparately;
+varsToPlot = iP.Results.VarsToPlot;
 varLabels = iP.Results.VarLabels;
 distinctParts = iP.Results.DistinctParts;
 phaseVariables = iP.Results.PhaseVariables;
@@ -210,7 +225,7 @@ outFolder = iP.Results.OutFolder;
 figName = iP.Results.FigName;
 
 % Keep unmatched arguments for the line() function
-otherArguments = struct2arglist(iP.Unmatched);
+otherArguments = iP.Unmatched;
 
 %% Preparation
 % Check if output directory exists
@@ -218,10 +233,10 @@ check_dir(outFolder);
 
 % Restrict to variables to plot or extract the variable names
 if ~isempty(varsToPlot)
-    tableToPlot = table(:, varsToPlot);
+    tableToPlot = myTable(:, varsToPlot);
 else
-    tableToPlot = table;
-    varsToPlot = table.Properties.VariableNames;
+    tableToPlot = myTable;
+    varsToPlot = myTable.Properties.VarsToPlot;
 end
 
 % If provided, make sure there are an equal number of phase variables
@@ -234,7 +249,7 @@ if ~isempty(phaseVariables)
     phaseVariables = match_row_count(phaseVariables, numel(varsToPlot));
 
     % Extract the phase vectors
-    phaseVectors = cellfun(@(x) table{:, x}, phaseVariables, ...
+    phaseVectors = cellfun(@(x) myTable{:, x}, phaseVariables, ...
                             'UniformOutput', false);
 else
     phaseVectors = {};
@@ -260,10 +275,10 @@ end
 
 % Decide on pTickLabels
 if isempty(pTickLabels)
-    if isfield(table.Properties, 'RowNames') && ...
-            iscell(table.Properties.RowNames)
+    if isfield(myTable.Properties, 'RowNames') && ...
+            iscell(myTable.Properties.RowNames)
         % Get the row names
-        rowNames = table.Properties.RowNames;
+        rowNames = myTable.Properties.RowNames;
 
         % If all row names are file names, process them
         %   Otherwise, just use the row names as the x tick labels
@@ -285,61 +300,52 @@ end
 
 % Decide on lineSpec
 if isempty(lineSpec)
-    if plotSeparately
-        lineSpec = lineSpecSeparate;
-    else
-        lineSpec = lineSpecTogether;
+    switch plotMode
     end
 end
 
 % Decide on lineWidth
 if isempty(lineWidth)
-    if plotSeparately
+    switch plotMode
+    case 'overlapped'
+        lineWidth = lineWidthOverlapped;
+    case 'parallel'
+        lineWidth = lineWidthParallel;
+    case 'separate'
         lineWidth = lineWidthSeparate;
-    else
-        lineWidth = lineWidthTogether;
     end
 end
 
 % Decide on markerEdgeColor
 if isempty(markerEdgeColor)
-    if plotSeparately
+    switch plotMode
+    case 'overlapped'
+        markerEdgeColor = markerEdgeColorOverlapped;
+    case 'parallel'
+        markerEdgeColor = markerEdgeColorParallel;
+    case 'separate'
         markerEdgeColor = markerEdgeColorSeparate;
-    else
-        markerEdgeColor = markerEdgeColorTogether;
     end
 end
 
 % Decide on markerFaceColor
 if isempty(markerFaceColor)
-    if plotSeparately
+    switch plotMode
+    case 'overlapped'
+        markerFaceColor = markerFaceColorOverlapped;
+    case 'parallel'
+        markerFaceColor = markerFaceColorParallel;
+    case 'separate'
         markerFaceColor = markerFaceColorSeparate;
-    else
-        markerFaceColor = markerFaceColorTogether;
     end
 end
 
 %% Do the job
-if plotSeparately
-    % Convert to a structure array
-    myStruct = table2struct(tableToPlot);
-
-    % Plot fields
-    figs = plot_struct(myStruct, 'OutFolder', outFolder, ...
-                        'PhaseVectors', phaseVectors, ...
-                        'PlotType', plotType, ...
-                        'FieldLabels', varLabels, ...
-                        'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
-                        'PLabel', pLabel, ...
-                        'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
-                        'MarkerEdgeColor', markerEdgeColor, ...
-                        'MarkerFaceColor', markerFaceColor, ...
-                         otherArguments{:});
-else
+switch plotMode
+case 'overlapped'
     % Create a figure name if empty
     if isempty(figName)
         figName = fullfile(outFolder, [tableLabel, '.png']);
-        figName = fullfile(outFolder, [tableLabel, '.epsc']);
     end
 
     % Convert to an array
@@ -380,25 +386,46 @@ else
 
     % Plot a tuning curve
     switch plotType
-        case 'tuning'
-            handles = plot_tuning_curve(xValues, myArray, 'FigName', figName, ...
-                            'PhaseVectors', phaseVectors, ...
-                            'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
-                            'PLabel', pLabel, ...
-                            'ReadoutLabel', readoutLabel, ...
-                            'ColumnLabels', varLabels, ...
-                            'FigTitle', figTitle, ...
-                            'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
-                            'MarkerEdgeColor', markerEdgeColor, ...
-                            'MarkerFaceColor', markerFaceColor, ...
-                            otherArguments{:});
-            figs = handles.fig;
-        case 'bar'
-            % TODO
-        otherwise
-            error('plotType unrecognized!')
+    case 'tuning'
+        handles = plot_tuning_curve(xValues, myArray, 'FigName', figName, ...
+                        'PhaseVectors', phaseVectors, ...
+                        'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
+                        'PLabel', pLabel, ...
+                        'ReadoutLabel', readoutLabel, ...
+                        'ColumnLabels', varLabels, ...
+                        'FigTitle', figTitle, ...
+                        'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
+                        'MarkerEdgeColor', markerEdgeColor, ...
+                        'MarkerFaceColor', markerFaceColor, ...
+                        otherArguments);
+    case 'bar'
+        % TODO
+    otherwise
+        error('plotType unrecognized!')
     end
+case 'parallel'
+    % TODO: Use plot_table_parallel.m
+case 'separate'
+    % Convert to a structure array
+    myStruct = table2struct(tableToPlot);
+
+    % Plot fields
+    fig = plot_struct(myStruct, 'OutFolder', outFolder, ...
+                        'PhaseVectors', phaseVectors, ...
+                        'PlotType', plotType, ...
+                        'FieldLabels', varLabels, ...
+                        'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
+                        'PLabel', pLabel, ...
+                        'LineSpec', lineSpec, 'LineWidth', lineWidth, ...
+                        'MarkerEdgeColor', markerEdgeColor, ...
+                        'MarkerFaceColor', markerFaceColor, ...
+                         otherArguments);
+    handles.fig = fig;
+otherwise
+    error('plotMode unrecognized!');
 end
+
+%% Outputs
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -419,12 +446,20 @@ if isempty(pTicks) && ~isempty(pTickLabels)
 end
 
 % Does not work if pTicks is not also set
-elseif isfield(table.Properties, 'RowTimes')
+elseif isfield(myTable.Properties, 'RowTimes')
     % Convert time to minutes
-    timeVec = minutes(table.Properties.RowTimes);
+    timeVec = minutes(myTable.Properties.RowTimes);
 
     % Convert to a cell array of character vectors
     pTickLabels = convert_to_char(timeVec);
+
+%                   - 'PlotSeparately': whether to plot each column separately
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+plotSeparatelyDefault = false;  % plot variables together by default
+addParameter(iP, 'PlotSeparately', plotSeparatelyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+plotSeparately = iP.Results.PlotSeparately;
 
 %}
 

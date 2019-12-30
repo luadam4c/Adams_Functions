@@ -43,7 +43,7 @@ function varExtracted = extract_vars (tableOrPath, varNames, varargin)
 %
 % Used by:
 %       cd/m3ha_import_raw_traces.m
-%       cd/plot_history_table.m
+%       cd/plot_table_parallel.m
 %       ~/m3ha/optimizer4gabab/singleneuronfitting75.m
 
 % File History:

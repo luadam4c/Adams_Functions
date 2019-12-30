@@ -194,6 +194,10 @@ myTable2 = table({'a'; 'b'; 'd'; 'e'}, [4; 5; 6; 7], ...
 myTable3 = table({'a'; 'b'; 'c'; 'h'}, [4; 5; 6; 7], ...
                     'VariableNames', {'Key', 'Var'});
 myCellTable = {myTable1; myTable2; myTable3};
+apples = randn(10, 1);
+bananas = 5 * randn(10, 1) + 5;
+oranges = 0.1 * randn(10, 1) + 0.5;
+myTableNumeric = table(apples, bananas, oranges);
 
 %% TimeTables
 time = seconds(1:1:5);

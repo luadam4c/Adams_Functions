@@ -1,6 +1,6 @@
-function handles = plot_history_table (historyTable, varargin)
-%% Plots the history of variables given a table where each row is an iteration
-% Usage: handles = plot_history_table (historyTable, varargin)
+function handles = plot_table_parallel (historyTable, varargin)
+%% Plots the variables in a table in separate subplots using markers
+% Usage: handles = plot_table_parallel (historyTable, varargin)
 % Explanation:
 %       TODO
 %
@@ -105,6 +105,7 @@ function handles = plot_history_table (historyTable, varargin)
 % File History:
 % 2019-12-29 Moved from m3ha_neuron_choose_best_params.m
 % TODO: Rename as plot_comparison_table?
+% TODO: Merge with plot_table.m
 
 %% Hard-coded parameters
 defaultXLabel = 'Iteration Number';

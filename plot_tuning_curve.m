@@ -263,7 +263,7 @@ function handles = plot_tuning_curve (pValues, readout, varargin)
 %       cd/parse_current_family.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_chevron.m
-%       cd/plot_history_table.m
+%       cd/plot_table_parallel.m
 %       cd/plot_measures.m
 %       cd/plot_struct.m
 %       cd/plot_table.m

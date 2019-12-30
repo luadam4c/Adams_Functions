@@ -639,6 +639,7 @@ else
 end
 
 % Combine currents
+% TODO: Multiply by surface area
 sum_across_cells = ...
     @(x, y, z) cellfun(@(a, b, c) a + b + c, x, y, z, 'UniformOutput', false);
 iPasTotal = sum_across_cells(iPasSoma, iPasDend1, iPasDend2);

@@ -32,7 +32,7 @@ function elements1 = match_positions (array1, array2, elements2, varargin)
 % Used by:
 %       cd/compute_peak_decay.m
 %       cd/extract_channel.m
-%       cd/plot_history_table.m
+%       cd/plot_table_parallel.m
 
 % File History:
 % 2018-12-15 Created by Adam Lu

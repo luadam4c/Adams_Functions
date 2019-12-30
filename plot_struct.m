@@ -25,7 +25,7 @@ function figs = plot_struct (structArray, varargin)
 %                   - 'PIsLog': whether parameter values are to be plotted 
 %                               log-scaled
 %                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == [false, false];
+%                   default == false;
 %                   - 'PTicks': x tick values for the parameter values
 %                   must be a numeric vector
 %                   default == []
@@ -107,7 +107,7 @@ lineSpecDefault = 'o';
 lineWidthDefault = [];
 markerEdgeColorDefault = [];
 markerFaceColorDefault = [];
-pIsLogDefault = [false, false];
+pIsLogDefault = false;
 pTicksDefault = [];
 pTickLabelsDefault = {};
 pTickAngleDefault = 0;

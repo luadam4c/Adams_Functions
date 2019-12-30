@@ -236,7 +236,8 @@ if any(all(isnan(allValues), 1))
 end
 
 % Compute range of all values
-rangeValues = apply_iteratively(@max, allValues) - apply_iteratively(@min, allValues);
+rangeValues = apply_iteratively(@max, allValues) - ...
+                apply_iteratively(@min, allValues);
 
 % Compute the bandwidth for the kernel density estimates
 bandWidth = violinRelativeBandWidth * rangeValues;
