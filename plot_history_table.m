@@ -85,14 +85,16 @@ function handles = plot_history_table (historyTable, varargin)
 %
 % Requires:
 %       cd/count_strings.m
+%       cd/create_labels_from_numbers.m
 %       cd/create_subplots.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_vars.m
-%       cd/find_in_strings.m
+%       cd/find_first_match.m
 %       cd/force_column_vector.m
 %       cd/islegendlocation.m
 %       cd/ispositiveintegervector.m
 %       cd/match_format_vector_sets.m
+%       cd/match_positions.m
 %       cd/plot_tuning_curve.m
 %       cd/save_all_figtypes.m
 %
@@ -102,10 +104,13 @@ function handles = plot_history_table (historyTable, varargin)
 
 % File History:
 % 2019-12-29 Moved from m3ha_neuron_choose_best_params.m
-% 
+% TODO: Rename as plot_comparison_table?
 
 %% Hard-coded parameters
 defaultXLabel = 'Iteration Number';
+
+% TODO: Make optional argument
+xTickLabels = {};
 
 %% Default values for optional arguments
 varsToPlotDefault = 'all';      % plot all variables by default
@@ -205,27 +210,35 @@ otherArguments = iP.Unmatched;
 
 %% Preparation
 % Count the number of rows
-nRows = height(historyTable);
+nRowsOrig = height(historyTable);
+
+% Get all row names
+allRowNames = historyTable.Properties.RowNames;
 
 % Restrict to rows to plot if requested
 if ischar(rowsToPlot) && strcmp(rowsToPlot, 'all')
-    rowsToPlot = transpose(1:nRows);
+    rowsToPlot = transpose(1:nRowsOrig);
 else
     % Restrict to those rows
     historyTable = historyTable(rowsToPlot, :);
 
     % Convert rowsToPlot to numeric values
     if ~isnumeric(rowsToPlot)
-        allRowNames = historyTable.Properties.RowNames;
-        rowsToPlot = ...
-            cellfun(@(x) find_in_strings(x, allRowNames, 'MaxNum', 1), ...
-                    rowsToPlot);
+        if ~isempty(allRowNames)
+            rowsToPlot = find_first_match(rowsToPlot, allRowNames, ...
+                                'MatchMode', 'exact', 'IgnoreCase', false);
+        else
+            error('rowsToPlot can''t be text if row names are not present!');
+        end
     end
 end
 
+% Count the new number of rows
+nRows = numel(rowsToPlot);
+
 % Create x values if not provided
 if isempty(xValues)
-    xValues = force_column_vector(rowsToPlot);
+    xValues = transpose(1:nRows);
 end
 
 % Decide on the variables to plot
@@ -264,7 +277,17 @@ end
 
 % Decide on tick locations
 if isempty(xTicks)
-    xTicks = xValues;
+    xTicks = force_column_vector(xValues);
+end
+
+% Decide on tick labels
+if isempty(xTickLabels)
+    if ~isempty(allRowNames)
+        rowLabels = allRowNames(rowsToPlot);
+    else
+        rowLabels = create_labels_from_numbers(rowsToPlot);
+    end
+    xTickLabels = {match_positions(rowLabels, xValues, xTicks)};
 end
 
 % Decide on whether to plot on a log scale
@@ -279,9 +302,9 @@ end
 dataToPlot = extract_vars(historyTable, varsToPlot);
 
 % Match the number of items with dataToPlot
-[varIsLog, xLimits, yLimits, xTicks, colorMap, yLabel] = ...
+[varIsLog, xLimits, yLimits, xTicks, xTickLabels, colorMap, yLabel] = ...
     argfun(@(x) match_format_vector_sets(x, dataToPlot), ...
-            varIsLog, xLimits, yLimits, xTicks, colorMap, yLabel);
+            varIsLog, xLimits, yLimits, xTicks, xTickLabels, colorMap, yLabel);
 
 % Decide whether to clear figure
 if ~isempty(figName)
@@ -296,11 +319,11 @@ end
                 'FigExpansion', [nSubplotColumns / 2, nSubplotRows / 3]);
 
 % Plot each variable on a separate subplot
-dots = cellfun(@(a, b, c, d, e, f, g, h) ...
+dots = cellfun(@(a, b, c, d, e, f, g, h, i) ...
                 update_subplot(a, xValues, b, c, d, e, f, g, ...
-                                xLabel, h, otherArguments), ...
+                                xLabel, h, i, otherArguments), ...
                 num2cell(ax), dataToPlot, varIsLog, xLimits, yLimits, ...
-                xTicks, colorMap, yLabel, 'UniformOutput', false);
+                xTicks, colorMap, yLabel, xTickLabels, 'UniformOutput', false);
 
 % Create an overarching title
 if ~isempty(figTitle)
@@ -327,7 +350,8 @@ handles.dots = dots;
 
 function dots = update_subplot(axHandle, iterNumber, vecToPlot, ...
                                 varIsLog, xLimits, yLimits, xTicks, ...
-                                colorMap, xLabel, yLabel, otherArguments)
+                                colorMap, xLabel, yLabel, xTickLabels, ...
+                                otherArguments)
 
 % Put the current subplot in focus
 subplot(axHandle);
@@ -336,9 +360,9 @@ subplot(axHandle);
 dots = plot_tuning_curve(transpose(iterNumber), transpose(vecToPlot), ...
                         'ReadoutIsLog', varIsLog, ...
                         'PLimits', xLimits, 'ReadOutLimits', yLimits, ...
-                        'PTicks', xTicks, 'ColorMap', colorMap, ...
+                        'PTicks', xTicks, 'PTickLabels', xTickLabels, ...
                         'PLabel', xLabel, 'ReadoutLabel', yLabel, ...
-                        'FigTitle', 'suppress', ...
+                        'ColorMap', colorMap, 'FigTitle', 'suppress', ...
                         'LegendLocation', 'suppress', otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

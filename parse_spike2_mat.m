@@ -51,7 +51,7 @@ function parsedDataTable = parse_spike2_mat (spike2MatPath, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/extract_fields.m
 %       cd/extract_subvectors.m
-%       cd/find_in_strings.m
+%       cd/find_first_match.m
 %       cd/force_string_end.m
 %       cd/match_row_count.m
 %       cd/parse_gas_trace.m
@@ -143,12 +143,12 @@ else
     allChannelStructs = all_fields(spike2FileContents, 'OutputType', 'value');
 
     % Extract all channel names
-    allChannelNames = extract_fields(allChannelStructs, 'title', 'UniformOutput', false);
+    allChannelNames = extract_fields(allChannelStructs, 'title', ...
+                                    'UniformOutput', false);
 
     % Find the channels of interest
-    indOfInterest = cellfun(@(x) find_in_strings(x, allChannelNames, ...
-                                    'SearchMode', 'exact', 'MaxNum', 1, ...
-                                    'ReturnNaN', true), channelNamesUser);
+    indOfInterest = find_first_match(channelNamesUser, allChannelNames, ...
+                                    'MatchMode', 'exact', 'IgnoreCase', true);
     
     % Restrict to the channels of interest
     channelStructs = allChannelStructs(indOfInterest);
@@ -359,6 +359,10 @@ for iChannel = 1:nChannels
     % Find the current channel struct
     spike2MatFile
 end
+
+indOfInterest = cellfun(@(x) find_in_strings(x, allChannelNames, ...
+                                'SearchMode', 'exact', 'MaxNum', 1, ...
+                                'ReturnNaN', true), channelNamesUser);
 
 %}
 

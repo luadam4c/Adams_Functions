@@ -329,7 +329,7 @@ nInitConds = outParams.autoParams(idxNInitConds);
 
 % Fit parameters
 switch outParams.fitMode
-case {5, 6, 7, 8}
+case {5, 6, 7, 8, 10}
     % Don't run current pulse response
     if outParams.runnumTotal > 1
         % If this is not the first run, use errCpr from last run

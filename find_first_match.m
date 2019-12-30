@@ -7,6 +7,7 @@ function varargout = find_first_match (candidates, array, varargin)
 %       as a part of a candidate
 %
 % Example(s):
+%       find_first_match([2, 5, 1], 5:-1:1)
 %       find_first_match({'dog'; 'cat'}, ["dog"; "fly"; "cat"])
 %       find_first_match(["dog", "fly", "cat"], {'dog'; 'cat'})
 %
@@ -34,6 +35,13 @@ function varargout = find_first_match (candidates, array, varargin)
 %       cd/ismember_custom.m
 %
 % Used by:
+%       cd/match_positions.m
+%       cd/m3ha_decide_on_plot_vars.m
+%       cd/m3ha_neuron_create_initial_params.m
+%       cd/m3ha_xolotl_plot.m
+%       cd/parse_spike2_mat.m
+%       cd/plot_calcium_imaging_traces.m
+%       cd/plot_history_table.m
 
 % File History:
 % 2019-01-09 Created by Adam Lu

@@ -26,6 +26,7 @@ function figs = plot_calcium_imaging_traces (varargin)
 %       cd/compute_stats.m
 %       cd/extract_fileparts.m
 %       cd/extract_subvectors.m
+%       cd/find_first_match.m
 %       cd/find_in_strings.m
 %       cd/freqfilter.m
 %       cd/isfigtype.m
@@ -171,8 +172,8 @@ timeStr = '_ms';
 varNames = traceTable.Properties.VariableNames;
 
 % Find all variable names with the timeStr
-idxTimeVar = find_in_strings(timeStr, varNames, 'SearchMode', 'substrings', ...
-                            'MaxNum', 1);
+idxTimeVar = find_first_match(timeStr, varNames, ...
+                            'MatchMode', 'parts', 'IgnoreCase', true);
 
 % Extract time vectors in milliseconds
 timeVecMs = traceTable{:, idxTimeVar};

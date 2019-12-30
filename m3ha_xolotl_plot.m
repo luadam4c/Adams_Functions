@@ -75,7 +75,7 @@ function xolotlObject = m3ha_xolotl_plot (xolotlObject, varargin)
 %       cd/count_samples.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_time_vectors.m
-%       cd/find_in_strings.m
+%       cd/find_first_match.m
 %       cd/find_window_endpoints.m
 %       cd/force_row_vector.m
 %       cd/plot_fitted_traces.m
@@ -216,10 +216,9 @@ compsToLabel = [dendStrs; {'soma'}];
 
 % Find the indices for compartments to label in xolotl
 if all(ismember(compsToLabel, compartments))
-    idxInXolotl = ...
-        cellfun(@(x) find_in_strings(x, compartments, 'IgnoreCase', true, ...
-                                    'SearchMode', 'substrings', 'MaxNum', 1), ...
-                compsToLabel);
+    idxInXolotl = find_first_match(compsToLabel, compartments, ...
+                                    'MatchMode', 'parts', 'IgnoreCase', true);
+
 else
     idxInXolotl = 1:numel(compartments);
 end
@@ -253,9 +252,8 @@ if isempty(xHandles) || ~isfield(xHandles, 'individual')
     currentProtocol = xolotlObject.I_ext;
 
     % Find the idx for the compartment to patch
-    idxCompToPatch = ...
-        find_in_strings(compToPatch, compartments, 'MaxNum', 1, ...
-                            'SearchMode', 'substrings', 'IgnoreCase', true);
+    idxCompToPatch = find_first_match(compToPatch, compartments, ...
+                                    'MatchMode', 'parts', 'IgnoreCase', true);
 
     % Save the stimulation protocol
     iStim = currentProtocol(:, idxCompToPatch);

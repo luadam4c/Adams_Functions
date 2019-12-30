@@ -78,14 +78,8 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'cand', ...             % a string/substrings of interest
-    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
-        ['cand must be a character array or a string array ', ...
-            'or cell array of character arrays!']));
-addRequired(iP, 'list', ...          % a list of strings
-    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
-        ['list must be a character array or a string array ', ...
-            'or cell array of character arrays!']));
+addRequired(iP, 'cand');
+addRequired(iP, 'list');
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'MatchMode', matchModeDefault, ...   % the search mode

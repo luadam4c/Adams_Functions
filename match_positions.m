@@ -1,40 +1,43 @@
-function element = match_positions(array, cellStr, strToMatch, varargin)
-%% Finds element(s) of an array that matches the positions of elements of a cell array containing specified string(s)
-% Usage: element = match_positions(array, cellStr, strToMatch, varargin)
+function elements1 = match_positions (array1, array2, elements2, varargin)
+%% Finds element(s) of an array that matches the positions of elements in a second list
+% Usage: elements1 = match_positions (array1, array2, elements2, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       match_positions({45, 15, 2}, {'cars', 'dogs', 'be'}, {'a', 'o'});
+%       match_positions({45, 15, 2}, {'cars', 'dogs', 'bat'}, {'o', 'a', 's'})
 %       label = match_positions(labels, types, type);
 %       tau1 = match_positions(coeffValues, coeffNames, 'b');
 %       tau2 = match_positions(coeffValues, coeffNames, 'd');
 %
 % Outputs:
-%       element     - matched elements
+%       elements1   - matched elements
 %
 % Arguments:
-%       array       - an array
+%       array1      - an array
 %                   must be an array
-%       cellStr     - a cell array of strings
-%                   must be a cell array of strings/character arrays
-%       strToMatch  - string(s) to match in the cell array
-%                   must be a string/character array or 
-%                       a cell array of strings/character arrays
+%       array2      - a second array
+%                   must be an array
+%       elements2   - elements in the second array
+%                   must be an array
 %       varargin    - 'MaxNum': maximum number of positions to match
 %                   must be a positive integer scalar or Inf
 %                   default == Inf
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/find_first_match.m
+%       cd/ispositiveintegerscalar.m
 %
 % Used by:
 %       cd/compute_peak_decay.m
 %       cd/extract_channel.m
+%       cd/plot_history_table.m
 
 % File History:
 % 2018-12-15 Created by Adam Lu
 % 2018-12-24 Now accepts any array type as the first element
+% 2019-12-30 Now accepts any array type as the second and third arguments
 % 
 
 %% Default values for optional arguments
@@ -53,39 +56,33 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'array');
-addRequired(iP, 'cellStr', ...
-    @(x) assert(iscellstr(x) || isstring(x), ...
-                ['cellStr must be a cell array of character arrays ', ...
-                'or a string array!']));
-addRequired(iP, 'strToMatch', ...
-    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
-                ['strToMatch must be either a string/character array ', ...
-                    'or a cell array of strings/character arrays!']));
+addRequired(iP, 'array1');
+addRequired(iP, 'array2');
+addRequired(iP, 'elements2');
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'MaxNum', maxNumDefault, ...
     @(x) isinf(x) || ispositiveintegerscalar(x));
 
 % Read from the Input Parser
-parse(iP, array, cellStr, strToMatch);
+parse(iP, array1, array2, elements2);
 maxNum = iP.Results.MaxNum;
 
 %% Do the job
-% Determine whether each position in cellStr matches one of strToMatch
-isMatched = contains(cellStr, strToMatch);
+% For each element in elements2, find the index of the first match in array2
+idxMatch = find_first_match(elements2, array2);
 
-% Get all the elements of array in this position
-element = array(isMatched);
+% Get all the elements of array1 in this position
+elements1 = array1(idxMatch);
 
 % Restrict to the maximum number of elements
-if numel(array) > maxNum
-    element = array(1:maxNum);
+if numel(array1) > maxNum
+    elements1 = array1(1:maxNum);
 end
 
 % If a cell array, return as an element if there is only one element
-if iscell(element) && numel(element) == 1
-    element = element{1};
+if iscell(elements1) && numel(elements1) == 1
+    elements1 = elements1{1};
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

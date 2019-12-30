@@ -119,10 +119,12 @@ outFolder = '';
 prefix = '';
 % outFolder = '20191227_population_rank1-10_useHH_true';
 % prefix = '20191227_population';
-rankNumsToSim = [1, 2, 5, 6, 8, 9, 10, 11, 23, 34];
 % rankNumsToSim = [];
-maxRankToSim = 10;
-rankDirName = '20191227_ranked_singleneuronfitting0-90';
+% maxRankToSim = 10;
+% rankNumsToSim = [1, 2, 5, 6, 8, 9, 10, 11, 23, 34];
+% rankDirName = '20191227_ranked_singleneuronfitting0-90';
+rankNumsToSim = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
+rankDirName = '20191229_ranked_singleneuronfitting0-91';
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1

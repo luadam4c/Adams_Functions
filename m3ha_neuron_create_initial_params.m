@@ -82,6 +82,7 @@ function [initParamTables, initParamFiles, otherParams] = ...
 %       cd/copyvars.m
 %       cd/count_samples.m
 %       cd/extract_fileparts.m
+%       cd/find_first_match.m
 %       cd/force_column_vector.m
 %       cd/istext.m
 %       cd/load_params.m
@@ -333,8 +334,8 @@ elseif ~isempty(cellNames) && ~isempty(customInitFiles)
     end
 
     % Restrict to cell names provided
-    iCellInCustom = cellfun(@(x) find_in_strings(x, customCellNames, ...
-                            'MaxNum', 1, 'ReturnNan', true), cellNames);
+    iCellInCustom = find_first_match(cellNames, customCellNames, ...
+                        'MatchMode', 'exact', 'IgnoreCase', true);
 
     % Check if custom providers for all cells requested are provided
     if any(isnan(iCellInCustom))
@@ -394,8 +395,8 @@ if useCurveFitParams
     RinAllCells = passiveTable.Rinput;
 
     % Find the cells of interest in all cell names
-    iCellOfInterest = cellfun(@(x) find_in_strings(x, cellNameAllCells, ...
-                                'MaxNum', 1), cellNames);
+    iCellOfInterest = find_first_match(cellNames, cellNameAllCells, ...
+                        'MatchMode', 'exact', 'IgnoreCase', true);
 
     % Reorder by the cells of interest
     [radiusSoma, diamDend, LDend, Rin] = ...

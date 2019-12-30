@@ -15,7 +15,7 @@ function [varsToPlot, varLabelsToPlot, yLimitsToPlot, varIsLogToPlot] = ...
 % Arguments:
 %
 % Requires:
-%       cd/find_in_strings.m
+%       cd/find_first_match.m
 %       cd/force_column_cell.m
 %       cd/m3ha_neuron_create_default_params.m
 %
@@ -63,8 +63,8 @@ neuronParamsIsLog = defaultTable.(isLogStr);
 neuronParamsYLimits = transpose([neuronParamsLowerBound, neuronParamsUpperBound]);
 
 % Get the original index for each parameter to plot
-indParamsToPlot = cellfun(@(x) find_in_strings(x, neuronParamNames, ...
-                        'SearchMode', 'exact', 'MaxNum', 1), paramsToPlot);
+indParamsToPlot = find_first_match(paramsToPlot, neuronParamNames, ...
+                    'MatchMode', 'exact', 'IgnoreCase', true);
 
 % Extract the y limits for each parameter
 paramYLimits = force_column_cell(neuronParamsYLimits(:, indParamsToPlot));
