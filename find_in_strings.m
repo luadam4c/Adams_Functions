@@ -88,10 +88,12 @@ function varargout = find_in_strings (cand, strList, varargin)
 %       cd/parse_lts.m
 %       cd/parse_spike2_mat.m
 %       cd/plot_calcium_imaging_traces.m
+%       cd/plot_history_table.m
 %       cd/plot_swd_raster.m
 %       cd/plot_traces_spike2_mat.m
 %       cd/renamevars.m
 %       cd/m3ha_compare_dclamp_analysis_versions.m
+%       cd/m3ha_decide_on_plot_vars.m
 %       cd/m3ha_estimate_passive_params.m
 %       cd/m3ha_network_update_dependent_params.m
 %       cd/m3ha_plot_histograms_refine_threshold.m

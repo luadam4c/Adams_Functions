@@ -30,11 +30,13 @@
 %       cd/copy_into.m
 %       cd/create_error_for_nargin.m
 %       cd/force_matrix.m
+%       cd/m3ha_decide_on_plot_vars.m
 %       cd/m3ha_locate_homedir.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_select_cells.m
 %       cd/m3ha_select_raw_traces.m
 %       cd/plot_bar.m
+%       cd/plot_history_table.m
 %       cd/save_all_figtypes.m
 %
 % Used by:
@@ -43,6 +45,7 @@
 % File History:
 % 2019-12-03 Created by Adam Lu
 % 2019-12-18 Added bar plots and error history
+% 2019-12-30 Added error param comparison across cells
 % 
 
 %% Hard-coded parameters
@@ -163,6 +166,9 @@ cellNameStr = 'cellName';
 % TODO: Make optional argument
 outFolder = '';
 outFolder = '20191229_ranked';
+figTypes = {'png', 'epsc2'};
+cellRanksToPlot = 1:10;
+errorParamXTicks = [];
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -454,7 +460,28 @@ end
 
 %% Plot an error and parameter comparison plot
 if plotParamComparisonFlag
-    % TODO
+    % Display message
+    fprintf('Plotting error parameter comparison ... \n');
+
+    % Read the rank table
+    rankTable = readtable(rankSheetPath);
+
+    % Create figure title and file name
+    errorParamFigTitle = ['Error & Parameter Comparison for the best ', ...
+                            num2str(numel(cellRanksToPlot)), ' cells'];
+    errorParamFigName = strcat(rankPathBase, '_param_comparison');
+
+    % Decide on the errors and parameters to plot
+    [errorParamToPlot, errorParamLabels, ...
+            errorParamYLimits, errorParamIsLog] = m3ha_decide_on_plot_vars;
+
+    % Plot error & parameter comparison
+    plot_history_table(rankTable, 'VarsToPlot', errorParamToPlot, ...
+            'RowsToPlot', cellRanksToPlot, 'VarIsLog', errorParamIsLog, ...
+            'YLimits', errorParamYLimits, 'XTicks', errorParamXTicks, ...
+            'XLabel', 'Cell Number', 'YLabel', errorParamLabels, ...
+            'FigTitle', errorParamFigTitle, 'FigTypes', figTypes, ...
+            'FigName', errorParamFigName);
 end
 
 

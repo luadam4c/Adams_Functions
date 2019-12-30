@@ -20,7 +20,7 @@ function handles = m3ha_plot_violin (statsPath, varargin)
 %                       pharmLabels
 %                       conditionLabel
 %                   must be a string scalar or a character vector
-%       varargin    - 'RowsToPlot': rows to extract
+%       varargin    - 'RowsToPlot': rows to plot
 %                   must be a numeric array,
 %                       a string scalar or a character vector, 
 %                       or a cell array of character vectors

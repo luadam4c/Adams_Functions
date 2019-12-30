@@ -22,10 +22,15 @@ function handles = plot_history_table (historyTable, varargin)
 %                       a string scalar or a character vector, 
 %                       or a cell array of character vectors
 %                   default == 'all' (no restrictions)
+%                   - 'RowsToPlot': rows to plot
+%                   must be a numeric array,
+%                       a string scalar or a character vector, 
+%                       or a cell array of character vectors
+%                   default == 'all' (no restrictions)
 %                   - 'XValues': x axis values corresponding to 
 %                               each row of the table
 %                   must be empty or a numeric vector
-%                   default == 1:height(historyTable)
+%                   default == rowsToPlot
 %                   - 'VarIsLog': whether variable values are to be plotted 
 %                               log-scaled
 %                   must be a cell array or a numeric array of 
@@ -83,6 +88,8 @@ function handles = plot_history_table (historyTable, varargin)
 %       cd/create_subplots.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_vars.m
+%       cd/find_in_strings.m
+%       cd/force_column_vector.m
 %       cd/islegendlocation.m
 %       cd/ispositiveintegervector.m
 %       cd/match_format_vector_sets.m
@@ -91,6 +98,7 @@ function handles = plot_history_table (historyTable, varargin)
 %
 % Used by:
 %       cd/m3ha_neuron_choose_best_params.m
+%       cd/m3ha_rank_neurons.m
 
 % File History:
 % 2019-12-29 Moved from m3ha_neuron_choose_best_params.m
@@ -101,6 +109,7 @@ defaultXLabel = 'Iteration Number';
 
 %% Default values for optional arguments
 varsToPlotDefault = 'all';      % plot all variables by default
+rowsToPlotDefault = 'all';      % plot all rows by default
 xValuesDefault = [];            % set later
 varIsLogDefault = [];           % set later
 xLimitsDefault = [];            % set later
@@ -130,13 +139,18 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'historyTable', ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+    @(x) validateattributes(x, {'table'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'VarsToPlot', varsToPlotDefault, ...
     @(x) assert(ispositiveintegervector(x) || ischar(x) || ...
                     iscellstr(x) || isstring(x), ...
                 ['VarsToPlot must be either a positive integer vector, ', ...
+                    'a string array or a cell array of character arrays!']));
+addParameter(iP, 'RowsToPlot', rowsToPlotDefault, ...
+    @(x) assert(ispositiveintegervector(x) || ischar(x) || ...
+                    iscellstr(x) || isstring(x), ...
+                ['RowsToPlot must be either a positive integer vector, ', ...
                     'a string array or a cell array of character arrays!']));
 addParameter(iP, 'XValues', xValuesDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'2d'}));
@@ -170,6 +184,7 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 % Read from the Input Parser
 parse(iP, historyTable, varargin{:});
 varsToPlot = iP.Results.VarsToPlot;
+rowsToPlot = iP.Results.RowsToPlot;
 xValues = iP.Results.XValues;
 varIsLog = iP.Results.VarIsLog;
 xLimits = iP.Results.XLimits;
@@ -189,16 +204,32 @@ figTypes = iP.Results.FigTypes;
 otherArguments = iP.Unmatched;
 
 %% Preparation
-% Count the number of iterations
-nIters = height(historyTable);
+% Count the number of rows
+nRows = height(historyTable);
 
-% Create iteration numbers if not provided
+% Restrict to rows to plot if requested
+if ischar(rowsToPlot) && strcmp(rowsToPlot, 'all')
+    rowsToPlot = transpose(1:nRows);
+else
+    % Restrict to those rows
+    historyTable = historyTable(rowsToPlot, :);
+
+    % Convert rowsToPlot to numeric values
+    if ~isnumeric(rowsToPlot)
+        allRowNames = historyTable.Properties.RowNames;
+        rowsToPlot = ...
+            cellfun(@(x) find_in_strings(x, allRowNames, 'MaxNum', 1), ...
+                    rowsToPlot);
+    end
+end
+
+% Create x values if not provided
 if isempty(xValues)
-    xValues = transpose(1:nIters);
+    xValues = force_column_vector(rowsToPlot);
 end
 
 % Decide on the variables to plot
-if ~(ischar(varsToPlot) && strcmp(varsToPlot, 'all'))
+if ischar(varsToPlot) && strcmp(varsToPlot, 'all')
     varsToPlot = historyTable.Properties.VariableNames;
 end
 
