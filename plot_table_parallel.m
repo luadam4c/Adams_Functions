@@ -52,7 +52,7 @@ function handles = plot_table_parallel (myTable, varargin)
 %                   - 'XLabel': label for the x axis, 
 %                               suppress by setting value to 'suppress'
 %                   must be a string scalar or a character vector 
-%                   default == 'Iteration Number'
+%                   default == 'Row Number'
 %                   - 'YLabel': label(s) for the y axis, 
 %                               suppress by setting value to 'suppress'
 %                   must be a string scalar or a character vector 
@@ -105,11 +105,12 @@ function handles = plot_table_parallel (myTable, varargin)
 
 % File History:
 % 2019-12-29 Moved from m3ha_neuron_choose_best_params.m
-% TODO: Rename as plot_comparison_table?
+% 2019-12-30 Changed the default x label to 'row number'
 % TODO: Merge with plot_table.m
+% TODO: 
 
 %% Hard-coded parameters
-defaultXLabel = 'Iteration Number';
+defaultXLabel = 'Row Number';
 
 % TODO: Make optional argument
 xTickLabels = {};
@@ -245,7 +246,7 @@ end
 
 % Decide on the variables to plot
 if ischar(varsToPlot) && strcmp(varsToPlot, 'all')
-    varsToPlot = myTable.Properties.VariableNames;
+    varsToPlot = force_column_vector(myTable.Properties.VariableNames);
 end
 
 % Count the number of variables
@@ -320,11 +321,19 @@ end
                 'FigNumber', figNumber, 'ClearFigure', clearFigure, ...
                 'FigExpansion', [nSubplotColumns / 2, nSubplotRows / 3]);
 
+% Only use as many subplots as needed
+axToUse = ax(1:nVarsToPlot);
+
+% Delete extra subplots
+if numel(ax) > nVarsToPlot
+    delete(ax(nVarsToPlot + 1:end));
+end
+            
 % Plot each variable on a separate subplot
 dots = cellfun(@(a, b, c, d, e, f, g, h, i) ...
                 update_subplot(a, xValues, b, c, d, e, f, g, ...
                                 xLabel, h, i, otherArguments), ...
-                num2cell(ax), dataToPlot, varIsLog, xLimits, yLimits, ...
+                num2cell(axToUse), dataToPlot, varIsLog, xLimits, yLimits, ...
                 xTicks, colorMap, yLabel, xTickLabels, 'UniformOutput', false);
 
 % Create an overarching title
