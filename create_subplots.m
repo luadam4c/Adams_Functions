@@ -65,6 +65,7 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/align_subplots.m
 %       cd/create_synced_movie_trace_plot_movie.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_rank_neurons.m
@@ -230,8 +231,10 @@ while any(~isvalid(ax))
                     transpose(1:nSubPlots));
 end
 
-% Future updates will not change the axes position
-% set(ax, 'ActivePositionProperty', 'Position');
+% Decide whether future updates should not change the axes position
+% TODO: Use update_figure_for_corel when needed instead?
+% activePositionProperty = 'Position'
+% set(ax, 'ActivePositionProperty', activePositionProperty);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

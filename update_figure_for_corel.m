@@ -14,7 +14,10 @@ function figHandle = update_figure_for_corel (varargin)
 % Arguments:
 %       figHandle   - (opt) figure handle to update
 %                   must be a Figure object handle
-%       varargin    - 'RemoveTicks': whether to remove all ticks
+%       varargin    - 'AlignSubplots': whether to align subplots
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'RemoveTicks': whether to remove all ticks
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %                   - 'RemoveXTicks': whether to remove all x ticks
@@ -82,6 +85,7 @@ function figHandle = update_figure_for_corel (varargin)
 %                   - Any other parameter-value pair for set_figure_properties()
 %
 % Requires:
+%       cd/align_subplots.m
 %       cd/create_error_for_nargin.m
 %       cd/set_figure_properties.m
 %       cd/set_visible_off.m
@@ -108,6 +112,7 @@ function figHandle = update_figure_for_corel (varargin)
 % 2019-12-01 Added 'RemoveXLabels' as an optional argument
 % 2019-12-02 Fixed bug when there are multiple labels of the same type
 % 2019-12-04 Added 'RemoveTexts' as an optional argument
+% 2019-12-29 Added 'AlignSubplots' as an optional argument
 
 %% Hard-coded parameters
 BLACK = [0, 0, 0];
@@ -123,18 +128,19 @@ annotationLineWidth = 1; % TODO
 
 %% Default values for optional arguments
 figHandleDefault = [];
-removeTicksDefault = false;     % set later
-removeXTicksDefault = false;    % set later
-removeYTicksDefault = false;    % set later
-removeRulersDefault = false;    % set later
-removeXRulersDefault = false;   % set later
-removeYRulersDefault = false;   % set later
-removeLabelsDefault = false;    % set later
-removeXLabelsDefault = false;   % set later
-removeYLabelsDefault = false;   % set later
-removeTitlesDefault = false;    % set later
-removeLegendsDefault = false;   % set later
-removeTextsDefault = false;     % set later
+alignSubplotsDefault = false;   % don't align by default
+removeTicksDefault = false;     % don't remove by default
+removeXTicksDefault = false;    % don't remove by default
+removeYTicksDefault = false;    % don't remove by default
+removeRulersDefault = false;    % don't remove by default
+removeXRulersDefault = false;   % don't remove by default
+removeYRulersDefault = false;   % don't remove by default
+removeLabelsDefault = false;    % don't remove by default
+removeXLabelsDefault = false;   % don't remove by default
+removeYLabelsDefault = false;   % don't remove by default
+removeTitlesDefault = false;    % don't remove by default
+removeLegendsDefault = false;   % don't remove by default
+removeTextsDefault = false;     % don't remove by default
 xTickLocsDefault = 'suppress';  % don't change by default
 yTickLocsDefault = 'suppress';  % don't change by default
 labelsFontSizeDefault = 8;
@@ -162,6 +168,8 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 addOptional(iP, 'figHandle', figHandleDefault);
 
 % Add parameter-value pairs to the Input Parser
+addParameter(iP, 'AlignSubplots', alignSubplotsDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveTicks', removeTicksDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'RemoveXTicks', removeXTicksDefault, ...
@@ -210,6 +218,7 @@ addParameter(iP, 'ScatterMarkerSize', scatterMarkerSizeDefault, ...
 % Read from the Input Parser
 parse(iP, varargin{:});
 figHandle = iP.Results.figHandle;
+alignSubplots = iP.Results.AlignSubplots;
 removeTicks = iP.Results.RemoveTicks;
 removeXTicks = iP.Results.RemoveXTicks;
 removeYTicks = iP.Results.RemoveYTicks;
@@ -275,6 +284,11 @@ ax = findall(figHandle, 'type', 'axes');
 
 % Count the number of axes
 nAx = numel(ax);
+
+% Make axes the same size if requested
+if alignSubplots
+    align_subplots(figHandle);
+end
 
 % Remove boxes
 for iAx = 1:nAx

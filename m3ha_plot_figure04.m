@@ -62,12 +62,12 @@ attemptNumberIpscr = 1;             % attempt number for IPSC response
                                     %       for this data mode
 
 % Plot settings
-overlappedFigWidth = 8.5;
-overlappedFigHeight = 2 * 26;
-overlappedXLimits = [2800, 4500];
+overlappedFigWidth = 6;
+overlappedFigHeightPerSubplot = 1.5;
+overlappedXLimits = [2800, 4000];
 overlappedYLimits = [];
-m2hFigWidth = 8.5;
-m2hFigHeight = 4;
+m2hFigWidth = 6;
+m2hFigHeight = 3;
 m2hXLimits = [2800, 4500];
 m2hYLimits = [1e-5, 0.1];
 
@@ -85,7 +85,7 @@ end
 swpInfo = m3ha_load_sweep_info('Directory', figure02Dir);
 
 %% Find NEURON parameter tables
-if simulateIpscr || plotOverlapped
+if simulateIpscr || plotOverlapped || plotM2h
     % Find NEURON parameter tables
     [~, exampleParamPaths] = ...
         find_matching_files(exampleCellNames, 'Directory', figure04Dir, ...
@@ -116,13 +116,29 @@ end
 
 %% Plot overlapped traces
 if plotOverlapped
-    cellfun(@(x, y) plot_overlapped(x, y, figure04Dir, figTypes, ...
-                                overlappedFigWidth, overlappedFigHeight, ...
-                                overlappedXLimits, overlappedYLimits), ...
+    % Plot all voltages
+    cellfun(@(x, y) plot_overlapped(x, y, 'allvoltages', ...
+                    figure04Dir, figTypes, ...
+                    overlappedFigWidth, 7 * overlappedFigHeightPerSubplot, ...
+                    overlappedXLimits, overlappedYLimits), ...
+            exampleLabelsIpscr, outFoldersIpscr);
+
+    % Plot all currents
+    cellfun(@(x, y) plot_overlapped(x, y, 'allcurrents', ...
+                    figure04Dir, figTypes, ...
+                    overlappedFigWidth, 10 * overlappedFigHeightPerSubplot, ...
+                    overlappedXLimits, overlappedYLimits), ...
+            exampleLabelsIpscr, outFoldersIpscr);
+
+    % Plot all T channel properties
+    cellfun(@(x, y) plot_overlapped(x, y, 'dend2ITproperties', ...
+                    figure04Dir, figTypes, ...
+                    overlappedFigWidth, 5 * overlappedFigHeightPerSubplot, ...
+                    overlappedXLimits, overlappedYLimits), ...
             exampleLabelsIpscr, outFoldersIpscr);
 end
 
-%% Plot m2h
+%% Plot m2h in dendrite 2 against its steady state
 if plotM2h
     cellfun(@(x, y) plot_m2h(x, y, figure04Dir, figTypes, ...
                                 m2hFigWidth, m2hFigHeight, ...
@@ -148,24 +164,24 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_overlapped(expStr, directory, outFolder, figTypes, ...
+function plot_overlapped(expStr, directory, plotType, outFolder, figTypes, ...
                             figWidth, figHeight, xLimits, yLimits)
 
-% Create a figure name
-figPathBaseOverlappedOrig = fullfile(outFolder, [expStr, '_overlapped_orig']);
-figPathBaseOverlapped = fullfile(outFolder, [expStr, '_overlapped']);
+% Create figure names
+figPathBaseOrig = fullfile(outFolder, [expStr, '_', plotType, '_orig']);
+figPathBase = fullfile(outFolder, [expStr, '_', plotType]);
 
 % Create the figure
-figOverlapped = set_figure_properties('AlwaysNew', true);
+fig = set_figure_properties('AlwaysNew', true);
 
 % Plot traces
 m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
-                'PlotType', 'overlapped', 'FigHandle', figOverlapped, ...
-                'FigTitle', 'suppress', ...
+                'PlotType', plotType, 'FigHandle', fig, ...
+                'FigTitle', 'suppress', 'XLabel', 'suppress', ...
                 'XLimits', xLimits, 'YLimits', yLimits);
 
 % Save the figure
-save_all_figtypes(figOverlapped, figPathBaseOverlappedOrig, 'png');
+save_all_figtypes(fig, figPathBaseOrig, 'png');
 
 % Plot a scale bar
 hold on
@@ -173,12 +189,13 @@ plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 400, ...
                 'XPosNormalized', 0.1, 'YPosNormalized', 0.8);
 
 % Update figure for CorelDraw
-update_figure_for_corel(figOverlapped, 'Units', 'centimeters', ...
+update_figure_for_corel(fig, 'Units', 'centimeters', ...
                 'Width', figWidth, 'Height', figHeight, ...
+                'AlignSubplots', true, ...
                 'RemoveXTicks', true, 'RemoveXRulers', true);
 
 % Save the figure
-save_all_figtypes(figOverlapped, figPathBaseOverlapped, figTypes);
+save_all_figtypes(fig, figPathBase, figTypes);
 
 end
 
@@ -211,6 +228,7 @@ plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 400, ...
 % Update figure for CorelDraw
 update_figure_for_corel(figM2h, 'Units', 'centimeters', ...
                 'Width', figWidth, 'Height', figHeight, ...
+                'AlignSubplots', true, ...
                 'RemoveXTicks', true, 'RemoveXRulers', true);
 
 % Save the figure

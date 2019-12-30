@@ -40,6 +40,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 % Requires:
 %       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
+%       cd/force_column_vector.m
 %       cd/isaninteger.m
 %       cd/iscellnumericvector.m
 %       cd/isnumericvector.m
@@ -47,6 +48,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       cd/match_format_vector_sets.m
 %
 % Used by:
+%       cd/align_subplots.m
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
 %       cd/compute_sampsizepwr.m
@@ -165,6 +167,9 @@ case 'specific'
         % Count the number of vectors
         nVectors = count_vectors(vecs);
 
+        % Force as a column vector
+        vecs = force_column_vector(vecs, 'IgnoreNonVectors', true);
+        
         % Match the number of indices
         index = match_dimensions(index, [nVectors, 1]);
 

@@ -469,7 +469,7 @@ function [errorStruct, hFig, simData] = ...
 % 2019-12-21 - Added 'PlotAllFlag' as an optional argument and change
 %                   default to not plot anything
 % 2019-12-23 - Added 'SaveImportLogFlag' as an optional parameter
-% 2019-12-29 - Reordered simulated ouptut columns to include ipas
+
 
 %% Hard-coded parameters
 validBuildModes = {'active', 'passive'};
@@ -526,28 +526,23 @@ IDCLAMP_COL_SIM = 5;
 GGABAB_COL_SIM = 6;
 iCP_COL_SIM = 7;
 IEXT_COL_SIM = 8;
-
-IPAS_SOMA = 9;
-IPAS_DEND1 = 10;
-IPAS_DEND2 = 11;
-
-ICA_COL_SIM = 12;
-ITM_COL_SIM = 13;
-ITMINF_COL_SIM = 14;
-ITH_COL_SIM = 15;
-ITHINF_COL_SIM = 16;
-IH_COL_SIM = 17;
-IHM_COL_SIM = 18;
-IKA_COL_SIM = 19;
-IAM1_COL_SIM = 20;
-IAH1_COL_SIM = 21;
-IAM2_COL_SIM = 22;
-IAH2_COL_SIM = 23;
-IKKIR_COL_SIM = 24;
-IKIRM_COL_SIM = 25;
-INAPNA_COL_SIM = 26;
-INAPM_COL_SIM = 27;
-INAPH_COL_SIM = 28;
+ICA_COL_SIM = 9;
+ITM_COL_SIM = 10;
+ITMINF_COL_SIM = 11;
+ITH_COL_SIM = 12;
+ITHINF_COL_SIM = 13;
+IH_COL_SIM = 14;
+IHM_COL_SIM = 15;
+IKA_COL_SIM = 16;
+IAM1_COL_SIM = 17;
+IAH1_COL_SIM = 18;
+IAM2_COL_SIM = 19;
+IAH2_COL_SIM = 20;
+IKKIR_COL_SIM = 21;
+IKIRM_COL_SIM = 22;
+INAPNA_COL_SIM = 23;
+INAPM_COL_SIM = 24;
+INAPH_COL_SIM = 25;
 
 %% Default values for optional arguments
 hFigDefault = '';               % no prior hFig structure by default

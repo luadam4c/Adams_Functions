@@ -23,6 +23,7 @@ function varargout = argfun (myFunction, varargin)
 %
 % Used by:
 %       cd/adjust_edges.m
+%       cd/align_subplots.m
 %       cd/alternate_elements.m
 %       cd/annotation_in_plot.m
 %       cd/combine_abf_data.m

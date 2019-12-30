@@ -92,6 +92,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/create_looped_params.m
 %       cd/detect_spikes_current_clamp.m
 %       cd/extract_columns.m
+%       cd/extract_elements.m
 %       cd/extract_subvectors.m
 %       cd/fit_2exp.m
 %       cd/force_column_cell.m

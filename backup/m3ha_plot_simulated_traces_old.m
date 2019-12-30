@@ -95,7 +95,6 @@ function handles = m3ha_plot_simulated_traces (varargin)
 % 2019-12-22 Added 'PlotType' as an optional argument
 % 2019-12-29 Added 'allvoltages', 'allcurrents', 'allITproperties', 
 %               and 'dend2ITproperties' 
-% 2019-12-29 Reordered simulated ouptut columns to include ipas
 
 %% Hard-coded parameters
 validPlotTypes = {'individual', 'residual', 'overlapped', ...
@@ -533,63 +532,59 @@ GGABAB_COL_SIM = 6;
 iCP_COL_SIM = 7;
 IEXT_COL_SIM = 8;
 
-IPAS_SOMA = 9;
-IPAS_DEND1 = 10;
-IPAS_DEND2 = 11;
+IT_SOMA = 9;
+IT_M_SOMA = 10;
+IT_MINF_SOMA = 11;
+IT_H_SOMA = 12;
+IT_HINF_SOMA = 13;
+IH_SOMA = 14;
+IH_M_SOMA = 15;
+IA_SOMA = 16;
+IA_M1_SOMA = 17;
+IA_H1_SOMA = 18;
+IA_M2_SOMA = 19;
+IA_H2_SOMA = 20;
+IKIR_SOMA = 21;
+IKIR_M_SOMA = 22;
+INAP_SOMA = 23;
+INAP_M_SOMA = 24;
+INAP_H_SOMA = 25;
 
-IT_SOMA = 12;
-IT_M_SOMA = 13;
-IT_MINF_SOMA = 14;
-IT_H_SOMA = 15;
-IT_HINF_SOMA = 16;
-IH_SOMA = 17;
-IH_M_SOMA = 18;
-IA_SOMA = 19;
-IA_M1_SOMA = 20;
-IA_H1_SOMA = 21;
-IA_M2_SOMA = 22;
-IA_H2_SOMA = 23;
-IKIR_SOMA = 24;
-IKIR_M_SOMA = 25;
-INAP_SOMA = 26;
-INAP_M_SOMA = 27;
-INAP_H_SOMA = 28;
+IT_DEND1 = 26;
+IT_M_DEND1 = 27;
+IT_MINF_DEND1 = 28;
+IT_H_DEND1 = 29;
+IT_HINF_DEND1 = 30;
+IH_DEND1 = 31;
+IH_M_DEND1 = 32;
+IA_DEND1 = 33;
+IA_M1_DEND1 = 34;
+IA_H1_DEND1 = 35;
+IA_M2_DEND1 = 36;
+IA_H2_DEND1 = 37;
+IKIR_DEND1 = 38;
+IKIR_M_DEND1 = 39;
+INAP_DEND1 = 40;
+INAP_M_DEND1 = 41;
+INAP_H_DEND1 = 42;
 
-IT_DEND1 = 29;
-IT_M_DEND1 = 30;
-IT_MINF_DEND1 = 31;
-IT_H_DEND1 = 32;
-IT_HINF_DEND1 = 33;
-IH_DEND1 = 34;
-IH_M_DEND1 = 35;
-IA_DEND1 = 36;
-IA_M1_DEND1 = 37;
-IA_H1_DEND1 = 38;
-IA_M2_DEND1 = 39;
-IA_H2_DEND1 = 40;
-IKIR_DEND1 = 41;
-IKIR_M_DEND1 = 42;
-INAP_DEND1 = 43;
-INAP_M_DEND1 = 44;
-INAP_H_DEND1 = 45;
-
-IT_DEND2 = 46;
-IT_M_DEND2 = 47;
-IT_MINF_DEND2 = 48;
-IT_H_DEND2 = 49;
-IT_HINF_DEND2 = 50;
-IH_DEND2 = 51;
-IH_M_DEND2 = 52;
-IA_DEND2 = 53;
-IA_M1_DEND2 = 54;
-IA_H1_DEND2 = 55;
-IA_M2_DEND2 = 56;
-IA_H2_DEND2 = 57;
-IKIR_DEND2 = 58;
-IKIR_M_DEND2 = 59;
-INAP_DEND2 = 60;
-INAP_M_DEND2 = 61;
-INAP_H_DEND2 = 62;
+IT_DEND2 = 43;
+IT_M_DEND2 = 44;
+IT_MINF_DEND2 = 45;
+IT_H_DEND2 = 46;
+IT_HINF_DEND2 = 47;
+IH_DEND2 = 48;
+IH_M_DEND2 = 49;
+IA_DEND2 = 50;
+IA_M1_DEND2 = 51;
+IA_H1_DEND2 = 52;
+IA_M2_DEND2 = 53;
+IA_H2_DEND2 = 54;
+IKIR_DEND2 = 55;
+IKIR_M_DEND2 = 56;
+INAP_DEND2 = 57;
+INAP_M_DEND2 = 58;
+INAP_H_DEND2 = 59;
 
 %% Preparation
 % Initialize handles
@@ -598,15 +593,12 @@ handles = struct;
 % Extract vectors from simulated data
 %   Note: these are arrays with 25 columns
 if strcmpi(buildMode, 'passive')
-    [tVecs, vVecsSim, vVecsDend1, vVecsDend2, iExtSim, ...
-            iPasSoma, iPasDend1, iPasDend2] = ...
+    [tVecs, vVecsSim, iExtSim, vVecsDend1, vVecsDend2] = ...
         extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
-                        DEND1_COL_SIM, DEND2_COL_SIM, IEXT_COL_SIM, ...
-                        IPAS_SOMA, IPAS_DEND1, IPAS_DEND2]);
-else
+                        IEXT_COL_SIM, DEND1_COL_SIM, DEND2_COL_SIM]);
+elseif strcmpi(buildMode, 'active')
     [tVecs, vVecsSim, vVecsDend1, ...
             vVecsDend2, gCmdSim, iExtSim, ...
-            iPasSoma, iPasDend1, iPasDend2, ...
             itSoma, itmSoma, itminfSoma, ithSoma, ithinfSoma, ...
             ihSoma, ihmSoma, ikirSoma, ikirmSoma, ...
             iaSoma, iam1Soma, iah1Soma, iam2Soma, iah2Soma, ...
@@ -622,7 +614,6 @@ else
         extract_columns(simData, ...
             [TIME_COL_SIM, VOLT_COL_SIM, DEND1_COL_SIM, ...
             DEND2_COL_SIM, GGABAB_COL_SIM, IEXT_COL_SIM, ...
-            IPAS_SOMA, IPAS_DEND1, IPAS_DEND2, ...
             IT_SOMA, IT_M_SOMA, IT_MINF_SOMA, IT_H_SOMA, IT_HINF_SOMA, ...
             IH_SOMA, IH_M_SOMA, IKIR_SOMA, IKIR_M_SOMA, ...
             IA_SOMA, IA_M1_SOMA, IA_H1_SOMA, IA_M2_SOMA, IA_H2_SOMA, ...
@@ -640,32 +631,27 @@ end
 % Combine currents
 sum_across_cells = ...
     @(x, y, z) cellfun(@(a, b, c) a + b + c, x, y, z, 'UniformOutput', false);
-iPasTotal = sum_across_cells(iPasSoma, iPasDend1, iPasDend2);
-if strcmpi(buildMode, 'active')
-    itTotal = sum_across_cells(itSoma, itDend1, itDend2);
-    ihTotal = sum_across_cells(ihSoma, ihDend1, ihDend2);
-    iaTotal = sum_across_cells(iaSoma, iaDend1, iaDend2);
-    ikirTotal = sum_across_cells(ikirSoma, ikirDend1, ikirDend2);
-    inapTotal = sum_across_cells(inapSoma, inapDend1, inapDend2);
+itTotal = sum_across_cells(itSoma, itDend1, itDend2);
+ihTotal = sum_across_cells(ihSoma, ihDend1, ihDend2);
+iaTotal = sum_across_cells(iaSoma, iaDend1, iaDend2);
+ikirTotal = sum_across_cells(ikirSoma, ikirDend1, ikirDend2);
+inapTotal = sum_across_cells(inapSoma, inapDend1, inapDend2);
 
-    iIntTotal = cellfun(@(a, b, c, d, e, f) a + b + c + d + e + f, ...
-                    iPasTotal, itTotal, ihTotal, iaTotal, ikirTotal, inapTotal, ...
-                    'UniformOutput', false);
-end
+iIntTotal = cellfun(@(a, b, c, d, e) a + b + c + d + e, ...
+                itTotal, ihTotal, iaTotal, ikirTotal, inapTotal, ...
+                'UniformOutput', false);
 
 % Find the indices of the x-axis limit endpoints
 endPointsForPlots = find_window_endpoints(xLimits, tVecs);
 
 % Prepare vectors for plotting
 if strcmpi(buildMode, 'passive')
-    [tVecs, vVecsRec, vVecsSim, vVecsDend1, vVecsDend2, ...
-            iExtSim, iPasTotal] = ...
+    [tVecs, vVecsRec, vVecsSim, vVecsDend1, vVecsDend2, iExtSim] = ...
         argfun(@(x) prepare_for_plotting(x, endPointsForPlots), ...
-                tVecs, vVecsRec, vVecsSim, vVecsDend1, vVecsDend2, ...
-                iExtSim, iPasTotal);
+                tVecs, vVecsRec, vVecsSim, vVecsDend1, vVecsDend2, iExtSim);
 elseif strcmpi(buildMode, 'active')
     [tVecs, vVecsRec, vVecsSim, vVecsDend1, ...
-            vVecsDend2, gCmdSim, iExtSim, iPasTotal, iIntTotal, ...
+            vVecsDend2, gCmdSim, iExtSim, iIntTotal, ...
             itTotal, ihTotal, iaTotal, ikirTotal, inapTotal, ...
             itSoma, itmSoma, itminfSoma, ithSoma, ithinfSoma, ...
             ihSoma, ihmSoma, ikirSoma, ikirmSoma, ...
@@ -681,7 +667,7 @@ elseif strcmpi(buildMode, 'active')
             inapDend2, inapmDend2, inaphDend2] = ...
         argfun(@(x) prepare_for_plotting(x, endPointsForPlots), ...
                 tVecs, vVecsRec, vVecsSim, vVecsDend1, ...
-                vVecsDend2, gCmdSim, iExtSim, iPasTotal, iIntTotal, ...
+                vVecsDend2, gCmdSim, iExtSim, iIntTotal, ...
                 itTotal, ihTotal, iaTotal, ikirTotal, inapTotal, ...
                 itSoma, itmSoma, itminfSoma, ithSoma, ithinfSoma, ...
                 ihSoma, ihmSoma, ikirSoma, ikirmSoma, ...
@@ -699,10 +685,10 @@ end
 
 % List all possible items to plot
 if strcmpi(buildMode, 'passive')
-    vecsAll = {vVecsRec; vVecsSim; vVecsDend1; vVecsDend2; iExtSim; iPasTotal}
+    vecsAll = {vVecsRec; vVecsSim; vVecsDend1; vVecsDend2; iExtSim}
 else
     vecsAll = {vVecsRec; vVecsSim; vVecsDend1; ...
-                vVecsDend2; iExtSim; gCmdSim; iIntTotal; iPasTotal; ...
+                vVecsDend2; iExtSim; gCmdSim; ...
                 itTotal; ihTotal; iaTotal; ikirTotal; inapTotal; ...
                 itSoma; itDend1; itDend2; ...
                 itmSoma; itminfSoma; ithSoma; ithinfSoma; ...
@@ -713,11 +699,10 @@ end
 % List corresponding labels
 if strcmpi(buildMode, 'passive')
     labelsAll = {'V_{rec} (mV)'; 'V_{soma} (mV)'; 'V_{dend1} (mV)'; ...
-                'V_{dend2} (mV)'; 'I_{stim} (nA)'; 'I_{pas} (nA)'};
+                'V_{dend2} (mV)'; 'I_{stim} (nA)'};
 else
     labelsAll = {'V_{rec} (mV)'; 'V_{soma} (mV)'; 'V_{dend1} (mV)'; ...
                 'V_{dend2} (mV)'; 'I_{stim} (nA)'; 'g_{GABA_B} (uS)'; ...
-                'I_{int} (nA)'; 'I_{pas} (nA)'; ...
                 'I_{T} (mA/cm^2)'; 'I_{h} (mA/cm^2)'; 'I_{A} (mA/cm^2)'; ...
                 'I_{Kir} (mA/cm^2)'; 'I_{NaP} (mA/cm^2)'; ...
                 'I_{T,soma} (mA/cm^2)'; 'I_{T,dend1} (mA/cm^2)'; ...
@@ -756,16 +741,16 @@ else
             end
         case 'allvoltages'
             if ~isempty(vVecsRec)
-                indToPlot = 1:7;
+                indToPlot = 1:6;
             else
-                indToPlot = 2:7;
+                indToPlot = 2:6;
             end
         case 'allcurrents'
-            indToPlot = 7:16;
+            indToPlot = 7:14;
         case 'allITproperties'
-            indToPlot = 17:28;
+            indToPlot = 15:26;
         case 'dend2ITproperties'
-            indToPlot = [16, 25:28];
+            indToPlot = 23:26;
         otherwise
             error('plotType unrecognized!');
     end
@@ -806,14 +791,14 @@ function handles = m3ha_plot_m2h (simData, buildMode, ...
 % Column numbers for simulated data
 %   Note: Must be consistent with singleneuron4compgabab.hoc
 TIME_COL_SIM = 1;
-% IT_M_SOMA = 13;
-% IT_MINF_SOMA = 14;
-% IT_H_SOMA = 15;
-% IT_HINF_SOMA = 16;
-IT_M_DEND2 = 47;
-IT_MINF_DEND2 = 48;
-IT_H_DEND2 = 49;
-IT_HINF_DEND2 = 50;
+% IT_M_SOMA = 10;
+% IT_MINF_SOMA = 11;
+% IT_H_SOMA = 12;
+% IT_HINF_SOMA = 13;
+IT_M_DEND2 = 44;
+IT_MINF_DEND2 = 45;
+IT_H_DEND2 = 46;
+IT_HINF_DEND2 = 47;
 
 % Only do this for active mode
 if strcmpi(buildMode, 'passive')
