@@ -152,7 +152,6 @@ function [simplexOut, exitFlag] = m3ha_fminsearch3 (outparams)
 % 2018-01-24 - Added isdeployed
 % 2018-03-02 - Added onHpcFlag as an optional argument
 % 2019-11-25 - Improved titel for simplex history figure
-% 2019-12-30 - Fixed arctan/tan transformation
 % TODO: Change all contents of outparams used to varargin
 % TODO: Make neuronParamsTable a required argument
 %
@@ -170,7 +169,7 @@ defaultopt = struct('PrintType', 'iter', ...        % what to put in log file
     'MaxFunEvals', '200*numberOfVariables', ...     % maximum number of function evaluations
     'TolFunRel', 0.01, ...  % relative error tolerance (w.r.t. smallest error)
     'TolXRel', 0.01, ...    % relative parameter change tolerance (w.r.t. best set of parameters)
-    'UsualDelta', 0.75, ... % increment for transformed parameters as a multiple of pi/2 (must be in [0, 1])
+    'UsualDelta', 0.75, ... % increment for transformed parameters multiple of pi (must be in (0 1))
     'Rho', 1, ...           % used in the computation of the "reflection point" and others
     'Chi', 2, ...           % used in the computation of the "expansion point"
     'Psi', 0.5, ...         % used in the computation of the "contraction points"
@@ -363,7 +362,7 @@ end
 
 %% Initialize parameters
 % For parameters used for fitting, 
-% transform initial values into the range [-pi/4, pi/4] nonlinearly using arctan
+% transform initial values into the range [3*pi/2 5*pi/2] nonlinearly using arctan
 % Also check for out-of-range initial values (heavily borrowed from D'Errico's code)
 p0Log = zeros(n, 1);        % stores parameter values transformed to log-values
 p0N121 = zeros(n, 1);       % stores parameter values transformed to [-1 1]
@@ -379,7 +378,7 @@ for i = 1:nParams
         % Record parameter name
         simplexOut.paramsInUseNames{ct} = pNames{i};
 
-        % First transform [LB, UB] or [log(LB), log(UB)] linearly to [-1, 1]
+        % First transform [LB UB] or [log(LB) log(UB)] linearly to [-1 1]
         if pIsLog(i)
             p0N121(ct) = 2 * (log(initValues(i)) - log(bounds.LB(i))) / ...
                         (log(bounds.UB(i)) - log(bounds.LB(i))) - 1;
@@ -391,7 +390,7 @@ for i = 1:nParams
         % Collapse to bounds if initial value out of bounds
         p0N121Corr(ct) = max(-1, min(1, p0N121(ct)));
 
-        % Then transform to [-pi/4, pi/4] nonlinearly with arctan
+        % Then transform to [-pi/2 pi/2] nonlinearly with arctan
         p0(ct) = atan(p0N121Corr(ct));
     case 4        % 'fixed' parameter
         % Drop before fminsearch sees it
@@ -484,19 +483,17 @@ end
 % Following improvement suggested by L. Pfeffer at Stanford
 for j = 1:n    % for each parameter
     % Construct a set of parameters with this parameter altered only
-
-    % Start with initial set of parameters; all values are within [-pi/4, pi/4]
-    y = p0;
+    y = p0;            % start with initial set of parameters; all values are within [-pi/2 pi/2]
 
     % Decide on the change for the new vertex
     if initialSimplexMode == 0
-        % Increment parameter j by usualDelta * pi/2 
-        y(j) = y(j) + usualDelta * pi/2;
+        % Increment parameter j by usualDelta * pi
+        y(j) = y(j) + usualDelta * pi;
     elseif initialSimplexMode == 1
-        % Increment all parameters but j by usualDelta * pi/2
+        % Increment all parameters but j by usualDelta * pi
         for iParam = 1:n
             if iParam ~= j
-                y(iParam) = y(iParam) + usualDelta * pi/2;
+                y(iParam) = y(iParam) + usualDelta * pi;
             end
         end
     else 
@@ -764,7 +761,7 @@ if ctIterations == 0        % simplex has not been set up
     simplexOut.maxParamChange = NaN;
 else
     simplexOut.maxErrorChange = max(abs(fv(1) - fv(2:ncp+1))) / fv(1);
-    simplexOut.maxParamChange = max(max(abs(v(:, 2:ncp+1) - v(:, ones(1, ncp))) ./ (pi/2)));
+    simplexOut.maxParamChange = max(max(abs(v(:, 2:ncp+1) - v(:, ones(1, ncp))) ./ pi));
 end
 
 % Save first maximum error change, maximum parameter change, used in m3ha_optimizer_4compgabab.m
@@ -942,7 +939,7 @@ LB = bounds.LB;
 % Initialize variables
 numinuse = numel(p);        % number of parameters in use
 nParams = numel(LB);      % number of original parameters
-pIn01 = zeros(numinuse, 1);    % stores parameters transformed to [0, 1]
+p_01 = zeros(numinuse, 1);    % stores parameters transformed to [0 1]
 xpart = zeros(numinuse, 1);    % stores transformed parameters
 x = zeros(nParams, 1);    % stores transformed parameters and original parameters
 
@@ -953,14 +950,14 @@ for i = 1:numel(bounds.LB)
         % Increment count
         ct = ct + 1;
 
-        % First transform back to [0, 1]
-        pIn01(ct) = (my_tan_cot(p(ct)) + 1) / 2;
+        % First transform back to [0 1]
+        p_01(ct) = (tan(p(ct)) + 1) / 2;
 
         % Then transform linearly to original interval [LB UB] or [log(LB) log(UB)]
         if pIsLog(i)
-            x(i) = exp(pIn01(ct) * (log(UB(i)) - log(LB(i))) + log(LB(i)));
+            x(i) = exp(p_01(ct) * (log(UB(i)) - log(LB(i))) + log(LB(i)));
         else
-            x(i) = pIn01(ct) * (UB(i) - LB(i)) + LB(i);
+            x(i) = p_01(ct) * (UB(i) - LB(i)) + LB(i);
         end
 
         % Just in case of any floating point problems
@@ -972,23 +969,6 @@ for i = 1:numel(bounds.LB)
         x(i) = LB(i);
     otherwise
     end
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function y = my_tan_cot(x)
-%% Transforms any number to within [-1, 1] 
-
-% Compute the tangent of x
-tanX = tan(x);
-
-% Test if the tangent is within [-1, 1] 
-if abs(tanX) <= 1
-    % Return the tangent
-    y = tanX;
-else
-    % Return the cotangent
-    y = 1/tanX;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
