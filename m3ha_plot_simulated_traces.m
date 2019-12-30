@@ -83,6 +83,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/load_neuron_outputs.m
 %       cd/m3ha_extract_sweep_name.m
 %       cd/m3ha_import_raw_traces.m
+%       cd/m3ha_plot_figure04.m
 %       cd/plot_traces.m
 %       cd/read_lines_from_file.m
 %

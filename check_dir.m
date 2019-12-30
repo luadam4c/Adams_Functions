@@ -37,6 +37,7 @@ function check_dir (directories, varargin)
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_optimizer_4compgabab.m
 %       cd/m3ha_plot_figure03.m
+%       cd/m3ha_plot_figure04.m
 %       cd/m3ha_rank_neurons.m
 %       cd/parse_all_abfs.m
 %       cd/parse_current_family.m

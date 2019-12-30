@@ -95,6 +95,7 @@ function figHandle = update_figure_for_corel (varargin)
 %       cd/m3ha_plot_bar3.m
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_figure03.m
+%       cd/m3ha_plot_figure04.m
 %       cd/m3ha_plot_violin.m
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_traces_spike2_mat.m

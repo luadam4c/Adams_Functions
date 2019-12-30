@@ -59,6 +59,7 @@ function handles = plot_scale_bar (varargin)
 %       cd/m3ha_oscillations_analyze.m
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_figure03.m
+%       cd/m3ha_plot_figure04.m
 
 % File History:
 % 2019-12-01 Created by Adam Lu

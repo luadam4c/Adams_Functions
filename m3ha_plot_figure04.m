@@ -185,7 +185,7 @@ save_all_figtypes(fig, figPathBaseOrig, 'png');
 
 % Plot a scale bar
 hold on
-plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 400, ...
+plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 200, ...
                 'XPosNormalized', 0.1, 'YPosNormalized', 0.8);
 
 % Update figure for CorelDraw
@@ -222,7 +222,7 @@ save_all_figtypes(figM2h, figPathBaseM2hOrig, 'png');
 
 % Plot a scale bar
 hold on
-plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 400, ...
+plot_scale_bar('x', 'XBarUnits', 'ms', 'XBarLength', 200, ...
                 'XPosNormalized', 0.1, 'YPosNormalized', 0.8);
 
 % Update figure for CorelDraw
