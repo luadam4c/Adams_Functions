@@ -47,14 +47,14 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = true;
-plotErrorHistoryFlag = true;
-plotErrorComparisonFlag = true;
-plotParamHistoryFlag = true;
-plotIndividualFlag = true;
-rankNeuronsFlag = true;
-plotHistogramsFlag = true;
-plotBarPlotFlag = true;
+chooseBestParamsFlag = false; % true;
+plotErrorHistoryFlag = false; % true;
+plotErrorComparisonFlag = false; % true;
+plotParamHistoryFlag = false; % true;
+plotIndividualFlag = false; % true;
+rankNeuronsFlag = false; % true;
+plotHistogramsFlag = false; % true;
+plotBarPlotFlag = false; % true;
 plotParamComparisonFlag = true; % TODO
 
 % Fitting parameters 
@@ -162,6 +162,7 @@ cellNameStr = 'cellName';
 
 % TODO: Make optional argument
 outFolder = '';
+outFolder = '20191229_ranked';
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1

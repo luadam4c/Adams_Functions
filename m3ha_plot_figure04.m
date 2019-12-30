@@ -62,13 +62,13 @@ attemptNumberIpscr = 1;             % attempt number for IPSC response
                                     %       for this data mode
 
 % Plot settings
-overlappedFigWidth = 6;
+overlappedFigWidth = 5.7;
 overlappedFigHeightPerSubplot = 1.5;
 overlappedXLimits = [2800, 4000];
 overlappedYLimits = [];
-m2hFigWidth = 6;
+m2hFigWidth = 5.7;
 m2hFigHeight = 3;
-m2hXLimits = [2800, 4500];
+m2hXLimits = [2800, 4000];
 m2hYLimits = [1e-5, 0.1];
 
 figTypes = {'png', 'epsc2'};

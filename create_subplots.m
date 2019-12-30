@@ -72,6 +72,7 @@ function [fig, ax] = create_subplots (nRows, nColumns, varargin)
 %       cd/m3ha_plot_figure03.m
 %       cd/parse_current_family.m
 %       cd/parse_multiunit.m
+%       cd/plot_history_table.m
 %       cd/plot_relative_events.m
 %       cd/plot_traces.m
 %       cd/plot_traces_spike2_mat.m

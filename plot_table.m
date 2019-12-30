@@ -195,7 +195,7 @@ lineSpec = iP.Results.LineSpec;
 lineWidth = iP.Results.LineWidth;
 markerEdgeColor = iP.Results.MarkerEdgeColor;
 markerFaceColor = iP.Results.MarkerFaceColor;
-varToPlot = iP.Results.VariableNames;
+varsToPlot = iP.Results.VariableNames;
 plotSeparately = iP.Results.PlotSeparately;
 varLabels = iP.Results.VarLabels;
 distinctParts = iP.Results.DistinctParts;
@@ -217,11 +217,11 @@ otherArguments = struct2arglist(iP.Unmatched);
 check_dir(outFolder);
 
 % Restrict to variables to plot or extract the variable names
-if ~isempty(varToPlot)
-    tableToPlot = table(:, varToPlot);
+if ~isempty(varsToPlot)
+    tableToPlot = table(:, varsToPlot);
 else
     tableToPlot = table;
-    varToPlot = table.Properties.VariableNames;
+    varsToPlot = table.Properties.VariableNames;
 end
 
 % If provided, make sure there are an equal number of phase variables
@@ -231,7 +231,7 @@ if ~isempty(phaseVariables)
     phaseVariables = force_column_cell(phaseVariables);
 
     % Match the number of phase variables to the number of variables to plot
-    phaseVariables = match_row_count(phaseVariables, numel(varToPlot));
+    phaseVariables = match_row_count(phaseVariables, numel(varsToPlot));
 
     % Extract the phase vectors
     phaseVectors = cellfun(@(x) table{:, x}, phaseVariables, ...
@@ -242,15 +242,15 @@ end
 
 % Extract distinct parts if requested
 if distinctParts
-    varLabels = extract_fileparts(varToPlot, 'distinct', 'Delimiter', delimiter);
+    varLabels = extract_fileparts(varsToPlot, 'distinct', 'Delimiter', delimiter);
 else
-    varLabels = varToPlot;
+    varLabels = varsToPlot;
 end
 
 % Decide on table label
 if isempty(tableLabel)
     % First try to extract a common prefix from the variables to plot
-    tableLabel = extract_common_prefix(varToPlot, 'Delimiter', delimiter);
+    tableLabel = extract_common_prefix(varsToPlot, 'Delimiter', delimiter);
 
     % If no such prefix exists, use the table variable name
     if isempty(tableLabel)

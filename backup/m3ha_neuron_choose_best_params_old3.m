@@ -56,22 +56,25 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 % Requires:
 %       cd/argfun.m
 %       cd/combine_strings.m
+%       cd/count_strings.m
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_subplots.m
 %       cd/extract_fields.m
 %       cd/extract_param_values.m
+%       cd/extract_vars.m
 %       cd/find_in_strings.m
 %       cd/force_column_cell.m
 %       cd/force_matrix.m
 %       cd/isemptycell.m
 %       cd/istext.m
 %       cd/load_params.m
+%       cd/match_format_vector_sets.m
 %       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_extract_iteration_string.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/plot_bar.m
-%       cd/plot_history_table.m
+%       cd/plot_tuning_curve.m
 %       cd/save_all_figtypes.m
 %       cd/set_fields_zero.m
 %
@@ -170,10 +173,10 @@ paramsToPlot = paramsToSave([1:5, 6:3:18, 7:3:19, 8:3:20]);
 paramLabelsToPlot = paramsToPlot;
 
 errorYLimits = [0, Inf];
-errorXTicks = [];
+errorXTicks = 'auto';
 errorFigNumber = 1105;
 
-errorParamXTicks = [];
+errorParamXTicks = 'auto';
 errorParamFigNumber = 1107;
 
 % TODO: Make optional argument
@@ -426,12 +429,10 @@ if plotErrorHistoryFlag
     errorFigName = strcat(sheetPathBase, '_error_history');
 
     % Plot error history
-    plot_history_table(errorParamTable, 'VarsToPlot', errorsToPlot,...
-                 'XValues', iterNumber, 'XLabel', 'Iteration Number', ...
-                 'YLimits', errorYLimits, 'XTicks', errorXTicks, ...
-                 'YLabel', errorLabelsToPlot, 'FigTitle', errorFigTitle, ...
-                 'FigNumber', errorFigNumber, 'FigName', errorFigName, ...
-                 'FigTypes', figTypes);
+    plot_history_table(errorParamTable, errorsToPlot,...
+                         iterNumber, [], [], errorYLimits, errorXTicks, ...
+                         [], errorLabelsToPlot, errorFigTitle, ...
+                         errorFigNumber, errorFigName, figTypes);
 end
 
 %% Plot error comparison
@@ -499,12 +500,11 @@ if plotParamHistoryFlag
     errorParamIsLog = [false(5, 1); paramIsLog];
 
     % Plot error & parameter history
-    plot_history_table(errorParamTable, 'VarsToPlot', errorParamToPlot,...
-             'XValues', iterNumber, 'VarIsLog', errorParamIsLog, ...
-             'YLimits', errorParamYLimits, 'XTicks', errorParamXTicks, ...
-             'XLabel', 'Iteration Number', 'YLabel', errorParamLabels, ...
-             'FigTitle', errorParamFigTitle, 'FigTypes', figTypes, ...
-             'FigNumber', errorParamFigNumber, 'FigName', errorParamFigName);
+    plot_history_table(errorParamTable, errorParamToPlot,...
+                         iterNumber, errorParamIsLog, [], ...
+                         errorParamYLimits, errorParamXTicks, ...
+                         [], errorParamLabels, errorParamFigTitle, ...
+                         errorParamFigNumber, errorParamFigName, figTypes);
 end
 
 %% Output results
@@ -523,8 +523,168 @@ bestParamsLabel = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function handles = plot_history_table(historyTable, errorParamToPlot, ...
+                        iterNumbers, paramIsLog, xLimits, yLimits, xTicks, ...
+                        colorMap, yLabels, figTitle, ...
+                        figNumber, figName, figTypes)
+%% Plots the history of variables given a table where each row is an iteration
+% TODO: Pull out as its own function
+% TODO: Make everything except historyTable optional arguments
+
+%% Preparation
+% Count the number of iterations
+nIters = height(historyTable);
+
+% Create iteration numbers if not provided
+if isempty(iterNumbers)
+    iterNumbers = transpose(1:nIters);
+end
+
+% Count the number of variables
+nVarsToPlot = count_strings(errorParamToPlot);
+
+% Decide on the number of rows for subplots
+nSubplotRows = ceil(sqrt(nVarsToPlot));
+
+% Compute the number of columns
+nSubplotColumns = ceil(nVarsToPlot/nSubplotRows);
+
+% Decide on axis limits
+if isempty(xLimits)
+    xLimits = [0, nIters + 1];
+end
+
+% Decide on color map
+if isempty(colorMap)
+    colorMap = {@lines};
+end
+
+% Decide on tick locations
+if ischar(xTicks) && strcmp(xTicks, 'auto')
+    xTicks = iterNumbers;
+end
+
+% Decide on whether to plot on a log scale
+if isempty(paramIsLog)
+    paramIsLog = repmat({false}, nVarsToPlot, 1);
+elseif ~iscell(paramIsLog)
+    paramIsLog = num2cell(paramIsLog);
+end
+
+%% Do the job
+% Extract variables from table
+dataToPlot = extract_vars(historyTable, errorParamToPlot);
+
+% Match the number of items with dataToPlot
+[paramIsLog, xLimits, yLimits, xTicks, colorMap, yLabels] = ...
+    argfun(@(x) match_format_vector_sets(x, dataToPlot), ...
+            paramIsLog, xLimits, yLimits, xTicks, colorMap, yLabels);
+
+% Create figure
+[fig, ax] = create_subplots(nSubplotRows, nSubplotColumns, ...
+                'FigNumber', figNumber, 'ClearFigure', true, ...
+                'FigExpansion', [nSubplotColumns / 2, nSubplotRows / 3]);
+
+% Plot each variable on a separate subplot
+dots = cellfun(@(a, b, c, d, e, f, g, h) ...
+                    update_subplot(a, iterNumbers, b, c, d, e, f, g, h), ...
+                num2cell(ax), dataToPlot, paramIsLog, xLimits, yLimits, ...
+                xTicks, colorMap, yLabels, 'UniformOutput', false);
+
+% Create an overarching title
+suptitle(figTitle);
+
+% Save figure
+save_all_figtypes(fig, figName, figTypes);
+
+%% Outputs
+handles.fig = fig;
+handles.ax = ax;
+handles.dots = dots;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function dots = update_subplot(axHandle, iterNumber, vecToPlot, ...
+                        paramIsLog, xLimits, yLimits, xTicks, colorMap, yLabel)
+
+% Create x axis label
+xLabel = 'Iteration Number';
+
+% Put the current subplot in focus
+subplot(axHandle);
+
+% Plot each iteration as a different color
+dots = plot_tuning_curve(transpose(iterNumber), transpose(vecToPlot), ...
+        'ReadoutIsLog', paramIsLog, ...
+        'PLimits', xLimits, 'ReadOutLimits', yLimits, ...
+        'PTicks', xTicks, 'ColorMap', colorMap, ...
+        'PLabel', xLabel, 'ReadoutLabel', yLabel, ...
+        'FigTitle', 'suppress', 'LegendLocation', 'suppress');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %{
 OLD CODE:
+
+% Convert error struct array to a table
+errorTable = struct2table(errorStructs, 'AsArray', true);
+% Make iterStr row names
+errorTable.Properties.RowNames = iterStr;
+% Add variables in the beginning
+errorTable = addvars(errorTable, candLabel, cellName, ...
+                        iterStr, 'Before', 1);
+% Create candidate labels
+candLabel = strcat(cellName, '_from_', iterStr);
+
+subplot(3, 2, 1);
+plot_tuning_curve(transpose(iterNumber), transpose(totalError), ...
+        'PLimits', xLimits, 'ReadOutLimits', yLimits, ...
+        'PTicks', xTicks, 'ColorMap', colorMap, ...
+        'PLabel', 'Iteration Number', 'LegendLocation', 'suppress', ...
+        'ReadoutLabel', 'Total Error', 'FigTitle', 'suppress');
+% Plot the total error
+subplot(3, 2, 1);
+plot_tuning_curve(transpose(iterNumber), transpose(totalError), ...
+        'PLimits', xLimits, 'ReadOutLimits', yLimits, ...
+        'PTicks', xTicks, 'ColorMap', colorMap, ...
+        'PLabel', 'Iteration Number', 'LegendLocation', 'suppress', ...
+        'ReadoutLabel', 'Total Error', 'FigTitle', 'suppress');
+% Plot the average sweep error
+subplot(3, 2, 2);
+plot_tuning_curve(transpose(iterNumber), transpose(avgSwpError), ...
+        'PLimits', xLimits, 'ReadOutLimits', yLimits, ...
+        'PTicks', xTicks, 'ColorMap', colorMap, ...
+        'PLabel', 'Iteration Number', 'LegendLocation', 'suppress', ...
+        'ReadoutLabel', 'Sweep Error', 'FigTitle', 'suppress');
+% Plot the average LTS error
+subplot(3, 2, 3);
+plot_tuning_curve(transpose(iterNumber), transpose(ltsMatchError), ...
+        'PLimits', xLimits, 'ReadOutLimits', yLimits, ...
+        'PTicks', xTicks, 'ColorMap', colorMap, ...
+        'PLabel', 'Iteration Number', 'LegendLocation', 'suppress', ...
+        'ReadoutLabel', 'Match Error', 'FigTitle', 'suppress');
+% Plot the average LTS amp error
+subplot(3, 2, 4);
+plot_tuning_curve(transpose(iterNumber), transpose(avgLtsAmpError), ...
+        'PLimits', xLimits, 'ReadOutLimits', yLimits, ...
+        'PTicks', xTicks, 'ColorMap', colorMap, ...
+        'PLabel', 'Iteration Number', 'LegendLocation', 'suppress', ...
+        'ReadoutLabel', 'Amp Error', 'FigTitle', 'suppress');
+% Plot the average LTS time error
+subplot(3, 2, 5);
+plot_tuning_curve(transpose(iterNumber), transpose(avgLtsDelayError), ...
+        'PLimits', xLimits, 'ReadOutLimits', yLimits, ...
+        'PTicks', xTicks, 'ColorMap', colorMap, ...
+        'PLabel', 'Iteration Number', 'LegendLocation', 'suppress', ...
+        'ReadoutLabel', 'Time Error', 'FigTitle', 'suppress');
+% Plot the average LTS slope error
+subplot(3, 2, 6);
+plot_tuning_curve(transpose(iterNumber), transpose(avgLtsSlopeError), ...
+        'PLimits', xLimits, 'ReadOutLimits', yLimits, ...
+        'PTicks', xTicks, 'ColorMap', colorMap, ...
+        'PLabel', 'Iteration Number', 'LegendLocation', 'suppress', ...
+        'ReadoutLabel', 'Slope Error', 'FigTitle', 'suppress');
+
 
 %}
 

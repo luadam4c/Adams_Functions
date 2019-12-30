@@ -26,7 +26,7 @@ function nStrings = count_strings (strs, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
-%       cd/m3ha_neuron_choose_best_params.m
+%       cd/plot_history_table.m
 %       cd/read_lines_from_files.m
 
 % File History:
