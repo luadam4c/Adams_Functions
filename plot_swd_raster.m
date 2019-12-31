@@ -3,10 +3,13 @@ function [fig, lines] = plot_swd_raster (varargin)
 % Usage: [fig, lines] = plot_swd_raster (varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Side Effects:
 %       TODO
+%
 % Outputs:
 %       fig         - handle to created figure
 %                   specified as a figure object handle   

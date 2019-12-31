@@ -64,6 +64,7 @@ function varargout = ismatch (list, cand, varargin)
 % Used by:
 %       cd/extract_vars.m
 %       cd/find_in_strings.m
+%       cd/is_var_in_table.m
 %       cd/ismember_custom.m
 %       cd/plot_measures.m
 %       cd/unique_groups.m

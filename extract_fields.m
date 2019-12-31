@@ -1,5 +1,5 @@
 function varargout = extract_fields (structs, varargin)
-%% Extracts field(s) from an array of structures or a cell array of structures
+%% Extracts field(s) from an array of structures/tables/objects or a cell array of structures/tables/objects
 % Usage: varargout = extract_fields (structs, fieldNames (opt), varargin)
 % Explanation:
 %       TODO
@@ -18,8 +18,9 @@ function varargout = extract_fields (structs, varargin)
 %                   specified as TODO
 %
 % Arguments:
-%       structs     - structures to extract from
-%                   must be a struct array or a cell array
+%       genStructs  - structures in the general sense
+%                       (structures/tables/objects) to extract from
+%                   must be a struct/table/object array or a cell array
 %       fieldNames  - (opt) name(s) of field(s) to extract
 %                   must be a character vector, a string array 
 %                       or a cell array of character vectors
@@ -31,16 +32,19 @@ function varargout = extract_fields (structs, varargin)
 % Requires:
 %       cd/create_error_for_nargin.m
 %       cd/force_column_cell.m
+%       cd/is_field.m
 %
 % Used by:
 %       cd/create_synced_movie_trace_plot_movie.m
 %       cd/m3ha_neuron_choose_best_params.m
+%       cd/m3ha_plot_violin.m
 %       cd/parse_spike2_mat.m
 
 % File History:
 % 2019-09-03 Created by Adam Lu
 % 2019-09-06 Updated so that [] is returned instead of NaN 
 %               if UniformOutput is false
+% 2019-12-30 Now allows the first argument to be objects or tables
 % TODO: accept substrings
 % TODO: OutputMode
 % 
@@ -64,8 +68,7 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'structs', ...
-    @(x) validateattributes(x, {'struct', 'cell'}, {'2d'}));
+addRequired(iP, 'structs');
 
 % Add optional inputs to the Input Parser
 addOptional(iP, 'fieldNames', fieldNamesDefault, ...
@@ -109,7 +112,7 @@ end
 function field = get_field (myStruct, fieldName, uniformOutput)
 
 % Get the field or return NaN
-if isfield(myStruct, fieldName)
+if is_field(myStruct, fieldName)
     field = myStruct.(fieldName);
 else
     if uniformOutput

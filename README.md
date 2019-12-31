@@ -187,7 +187,7 @@ There are 1 MATLAB scripts in this directory:
 - [**extract_common_suffix.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_common_suffix.m): Extracts the common suffix of a cell array of strings
 - [**extract_distinct_fileparts.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_distinct_fileparts.m): Extracts distinct file parts (removes common parent directory, common prefix and common suffix)
 - [**extract_elements.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_elements.m): Extracts elements from vectors using a certain mode ('first', 'last', 'min', 'max')
-- [**extract_fields.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fields.m): Extracts field(s) from an array of structures or a cell array of structures
+- [**extract_fields.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fields.m): Extracts field(s) from an array of structures/tables/objects or a cell array of structures/tables/objects
 - [**extract_fileparts.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fileparts.m): Extracts directories, bases, extensions, distinct parts or the common directory from file paths, treating any path without an extension as a directory
 - [**extract_frame_times.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_frame_times.m): Extracts all the frame start times in a video file
 - [**extract_fullpaths.m**](https://github.com/blabuva/Adams_Functions/blob/master/extract_fullpaths.m): Extracts full paths from a files structure array
@@ -215,7 +215,7 @@ There are 1 MATLAB scripts in this directory:
 - [**find_pulse_endpoints.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_pulse_endpoints.m): Returns the start and end indices of the first pulse from vector(s)
 - [**find_pulse_response_endpoints.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_pulse_response_endpoints.m): Returns the start and end indices of the first pulse response (from pulse start to 20 ms after pulse ends by default) from vector(s)
 - [**find_window_endpoints.m**](https://github.com/blabuva/Adams_Functions/blob/master/find_window_endpoints.m): Returns the start and end indices of a time window in a time vector
-- [**first_matching_field.m**](https://github.com/blabuva/Adams_Functions/blob/master/first_matching_field.m): Extracts the first matching field (or variable) of a structure (or table) from a list of candidate field (variable) names
+- [**first_matching_field.m**](https://github.com/blabuva/Adams_Functions/blob/master/first_matching_field.m): Extracts the first matching field/variable/property of a structure/table/property from a list of candidate names
 - [**fit_2exp.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_2exp.m): Fits a double exponential curve to data
 - [**fit_and_estimate_passive_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_and_estimate_passive_params.m): Uses a given pulse width and amplitude to fit and estimate passive parameters from a current pulse response
 - [**fitdist_initial_slopes.m**](https://github.com/blabuva/Adams_Functions/blob/master/fitdist_initial_slopes.m): Fits initial slope distributions
@@ -228,6 +228,7 @@ There are 1 MATLAB scripts in this directory:
 - [**fit_setup_first_order_response.m**](https://github.com/blabuva/Adams_Functions/blob/master/fit_setup_first_order_response.m): Constructs a fittype object and set initial conditions and bounds for a first order response equation form
 - [**force_column_cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_column_cell.m): Transforms a row cell array or a non-cell array to a column cell array of non-cell vectors
 - [**force_column_vector.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_column_vector.m): Transform row vector(s) or array(s) to column vector(s)
+- [**force_data_as_matrix.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_data_as_matrix.m): Forces data values as a numeric matrix where each group is a column and each row is a sample
 - [**force_logical.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_logical.m): Forces any numeric binary array to become a logical array
 - [**force_matrix.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_matrix.m): Forces vectors into a non-cell array matrix
 - [**force_row_cell.m**](https://github.com/blabuva/Adams_Functions/blob/master/force_row_cell.m): Transforms a column cell array or a non-cell array to a row cell array of non-cell vectors
@@ -264,6 +265,7 @@ There are 1 MATLAB scripts in this directory:
 - [**is_contained_in.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_contained_in.m): Checks whether all elements of the first set are elements of the second set and print the ones that aren't
 - [**isemptycell.m**](https://github.com/blabuva/Adams_Functions/blob/master/isemptycell.m): Returns whether each cell of a cell array is empty; if not a cell array, same as isempty()
 - [**isemptystruct.m**](https://github.com/blabuva/Adams_Functions/blob/master/isemptystruct.m): Returns whether a structure has no fields
+- [**is_field.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_field.m): Tests whether a name is a field (in the general sense) in a structure/table/object
 - [**isfigtype.m**](https://github.com/blabuva/Adams_Functions/blob/master/isfigtype.m): Check whether a string or each string in a cell array is a valid figure type accepted by saveas()
 - [**is_in_parallel.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_in_parallel.m): Checks whether in a parfor loop
 - [**islegendlocation.m**](https://github.com/blabuva/Adams_Functions/blob/master/islegendlocation.m): Check whether a string or each string in a cell array is a valid legend location or 'suppress' or 'auto'
@@ -505,6 +507,7 @@ There are 1 MATLAB scripts in this directory:
 - [**plot_tuning_map.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_tuning_map.m): Plot a 2-dimensional tuning map
 - [**plot_vertical_line.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_vertical_line.m): Plots vertical line(s)
 - [**plot_vertical_shade.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_vertical_shade.m): Plots a shaded area at specific x values, either between specific y values or extend to the current y-axis limits
+- [**plot_violin.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_violin.m): Plots a violin (unpaired comparison) plot from data
 - [**plot_window_boundaries.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_window_boundaries.m): Plots window boundaries as separating lines, duration bars or background shades
 - [**print_and_show_message.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_and_show_message.m): Print to standard output and show message box at the same time
 - [**print_cellstr.m**](https://github.com/blabuva/Adams_Functions/blob/master/print_cellstr.m): Prints and returns a string for the contents stored in a cell array

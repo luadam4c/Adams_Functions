@@ -69,13 +69,13 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/detect_spikes_current_clamp.m
 %       cd/find_window_endpoints.m
 %       cd/force_column_vector.m
+%       cd/force_data_as_matrix.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_plot_violin.m
 %       cd/m3ha_rank_neurons.m
 %       cd/parse_multiunit.m
 %       cd/parse_phase_info.m
-%       cd/plot_chevron.m
 %       cd/plot_measures.m
 %       cd/plot_spike_density_multiunit.m
 %       cd/plot_swd_histogram.m

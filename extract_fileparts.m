@@ -91,6 +91,7 @@ function parts = extract_fileparts (paths, partType, varargin)
 %       cd/plot_calcium_imaging_traces.m
 %       cd/plot_measures.m
 %       cd/plot_relative_events.m
+%       cd/plot_small_chevrons.m
 %       cd/plot_swd_histogram.m
 %       cd/plot_table.m
 %       cd/plot_traces.m

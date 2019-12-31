@@ -17,7 +17,7 @@ function varargout = addpath_custom (folder, varargin)
 %
 % Used by:
 %       cd/char2rgb.m
-%       cd/m3ha_plot_violin.m
+%       cd/plot_violin.m
 
 % File History:
 % 2019-01-10 Created by Adam Lu

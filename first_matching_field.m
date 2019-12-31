@@ -1,8 +1,8 @@
 function [fieldValue, fieldName] = ...
-                first_matching_field (structsOrtable, candNames, varargin)
-%% Extracts the first matching field (or variable) of a structure (or table) from a list of candidate field (variable) names
+                first_matching_field (genStructs, candNames, varargin)
+%% Extracts the first matching field/variable/property of a structure/table/property from a list of candidate names
 % Usage: [fieldValue, fieldName] = ...
-%               first_matching_field (structsOrtable, candNames, varargin)
+%               first_matching_field (genStructs, candNames, varargin)
 % Explanation:
 %       TODO
 %
@@ -20,8 +20,9 @@ function [fieldValue, fieldName] = ...
 %                   specified as a character array
 %
 % Arguments:
-%       structsOrtable     - structures to extract from
-%                   must be a struct array or a table
+%       genStructs  - structures in the general sense
+%                       (structures/tables/objects) to extract from
+%                   must be a struct/table/object array
 %       candNames   - candidate field names
 %                   must be a character vector, a string array 
 %                       or a cell array of character vectors
@@ -32,7 +33,7 @@ function [fieldValue, fieldName] = ...
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/is_var_in_table.m
+%       cd/is_field.m
 %
 % Used by:
 %       cd/m3ha_compute_statistics.m
@@ -60,8 +61,7 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'structsOrtable', ...
-    @(x) validateattributes(x, {'struct', 'table'}, {'2d'}));
+addRequired(iP, 'genStructs');
 addRequired(iP, 'candNames', ...
     @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
         ['candNames must be a character array or a string array ', ...
@@ -71,13 +71,13 @@ addRequired(iP, 'candNames', ...
 % addParameter(iP, 'param1', param1Default);
 
 % Read from the Input Parser
-parse(iP, structsOrtable, candNames, varargin{:});
+parse(iP, genStructs, candNames, varargin{:});
 % param1 = iP.Results.param1;
 
 %% Do the job
 if ischar(candNames)
     fieldName = candNames;
-    fieldValue = structsOrtable.(candNames);
+    fieldValue = genStructs.(candNames);
 else
     % Count the number of candidates
     nCands = numel(candNames);
@@ -93,9 +93,9 @@ else
         end
 
         % Test whether it's a valid field
-        if is_field_or_var(structsOrtable, candNameThis)
+        if is_field(genStructs, candNameThis)
             fieldName = candNameThis;
-            fieldValue = structsOrtable.(candNameThis);
+            fieldValue = genStructs.(candNameThis);
             found = true;
             break;
         end
@@ -106,16 +106,6 @@ else
         fieldName = '';
         fieldValue = [];
     end
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function isFieldOrVar = is_field_or_var(structsOrtable, candName)
-
-if isstruct(structsOrtable)
-    isFieldOrVar = isfield(structsOrtable, candName);
-else
-    isFieldOrVar = is_var_in_table(candName, structsOrtable);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

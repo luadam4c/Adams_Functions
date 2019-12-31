@@ -41,7 +41,6 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_plot_bar3.m
 %       cd/m3ha_plot_simulated_traces.m
-%       cd/m3ha_plot_violin.m
 %       cd/plot_bar.m
 %       cd/plot_chevron.m
 %       cd/plot_grouped_histogram.m
@@ -50,6 +49,7 @@ function colorMap = decide_on_colormap (colorMap, varargin)
 %       cd/plot_spike_density_multiunit.m
 %       cd/plot_traces.m
 %       cd/plot_vertical_shade.m
+%       cd/plot_violin.m
 
 % File History:
 % 2019-08-22 Created by Adam Lu

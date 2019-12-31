@@ -93,7 +93,7 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/create_labels_from_numbers.m
 %       cd/decide_on_colormap.m
-%       cd/force_matrix.m
+%       cd/force_data_as_matrix.m
 %       cd/hold_off.m
 %       cd/hold_on.m
 %       cd/plot_error_bar.m
@@ -103,6 +103,7 @@ function [handles, handlesMean] = plot_chevron (data, varargin)
 %
 % Used by:
 %       cd/plot_relative_events.m
+%       cd/plot_small_chevrons.m
 
 % File History:
 % 2019-10-01 Created by Adam Lu
@@ -223,29 +224,12 @@ axHandle = iP.Results.AxesHandle;
 otherArguments = iP.Unmatched;
 
 %% Preparation
-% Decide on data values
-if istable(data)
-    % Extract values
-    dataValues = table2array(data);
+% Force data values as a numeric matrix 
+%   where each group is a column and each row is a sample
+[dataValues, groupLabelsAuto, sampleLabelsAuto] = force_data_as_matrix(data);
 
-    % Make sure each column is a parameter and transpose if necessary
-    nRows = size(dataValues, 1);
-    nColumns = size(dataValues, 2);
-    if nRows < nColumns
-        dataValues = transpose(dataValues);
-        tableTransposed = true;
-        nRows = size(dataValues, 1);
-        nColumns = size(dataValues, 2);
-    else
-        tableTransposed = false;
-    end
-else
-    % Force as a matrix
-    dataValues = force_matrix(data, 'AlignMethod', 'leftadjustpad');
-end
-
-% Count the number of conditions
-nConds = size(dataValues, 2);
+% Count the number of groups
+nGroups = size(dataValues, 2);
 
 % Count the number of samples
 nSamples = size(dataValues, 1);
@@ -265,7 +249,7 @@ else
 end
 
 % Compute parameter values for the plot
-pValues = transpose(1:nConds);
+pValues = transpose(1:nGroups);
 
 % Compute parameter axis limits
 if isempty(pLimits)
@@ -279,36 +263,12 @@ end
 
 % Decide on parameter tick labels
 if isempty(pTickLabels)
-    if istable(data)
-        % Extract variable names if any
-        if tableTransposed && ~isempty(data.Properties.RowNames)
-            pTickLabels = data.Properties.RowNames;
-        else
-            pTickLabels = data.Properties.VariableNames;
-        end
-    else
-        % Create labels
-        pTickLabels = create_labels_from_numbers(pValues, 'Prefix', 'param');
-    end
+    pTickLabels = groupLabelsAuto;
 end
 
 % Decide on column labels
 if isempty(columnLabels)
-    if istable(data) 
-        if tableTransposed
-            columnLabels = data.Properties.VariableNames;
-        elseif ~isempty(data.Properties.RowNames)
-            % Extract row names if any
-            columnLabels = data.Properties.RowNames;
-        else
-            % Create labels
-            columnLabels = create_labels_from_numbers(1:nSamples, ...
-                                                    'Prefix', 'data');
-        end
-    else
-        % Create labels
-        columnLabels = create_labels_from_numbers(1:nSamples, 'Prefix', 'data');
-    end
+    columnLabels = sampleLabelsAuto;
 end
 
 % Decide on the mean marker size
@@ -336,8 +296,8 @@ handles = plot_tuning_curve(pValues, transpose(dataValues), ...
                     otherArguments);
 
 % Plot the mean and confidence intervals of the differences
-%   TODO: Does it ever make sense for more than 2 conditions?
-if plotMeanDifference && nConds == 2
+%   TODO: Does it ever make sense for more than 2 groups?
+if plotMeanDifference && nGroups == 2
     % Compute the mean of the baseline values
     baseMean = compute_stats(dataValues(:, 1), 'mean');
 

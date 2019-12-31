@@ -40,19 +40,17 @@ function handles = m3ha_plot_violin (statsPath, varargin)
 %                       the built-in saveas() function
 %                   (see isfigtype.m under Adams_Functions)
 %                   default == 'png'
-%                   - Any other parameter-value pair for violinplot.m
+%                   - Any other parameter-value pair for plot_violin.m
 %
 % Requires:
-%       cd/addpath_custom.m
-%       cd/apply_iteratively.m
 %       cd/combine_strings.m
 %       cd/create_error_for_nargin.m
-%       cd/decide_on_colormap.m
+%       cd/extract_fields.m
 %       cd/extract_fileparts.m
 %       cd/force_matrix.m
-%       cd/locate_functionsdir.m
 %       cd/isfigtype.m
 %       cd/ispositiveintegervector.m
+%       cd/plot_violin.m
 %       cd/struct2arglist.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
@@ -83,16 +81,6 @@ figHeightDefault = 3.4;
 figTypesDefault = {'png', 'epsc2'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% If not compiled, add directories to search path for required functions
-if ~isdeployed
-    % Locate the functions directory
-    functionsDirectory = locate_functionsdir;
-
-    % Add path for violinplot()
-    addpath_custom(fullfile(functionsDirectory, 'Downloaded_Functions', ...
-                    'Violinplot'));
-end
 
 %% Deal with arguments
 % Check number of required arguments
@@ -134,8 +122,8 @@ figWidth = iP.Results.FigWidth;
 figHeight = iP.Results.FigHeight;
 [~, figTypes] = isfigtype(iP.Results.FigTypes, 'ValidateMode', true);
 
-% Keep unmatched arguments for the violinplot() function
-otherArguments = struct2arglist(iP.Unmatched);
+% Keep unmatched arguments for the plot_violin() function
+otherArguments = iP.Unmatched;
 
 %% Preparation
 % Initialize output
@@ -184,11 +172,11 @@ handles = cellfun(@(a, b, c) m3ha_plot_violin_helper(...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function handles = m3ha_plot_violin_helper (allValues, violinRelativeBandWidth, ...
-                            medianColor, medianSize, ...
-                            measureTitle, pharmLabels, ...
-                            figPathBase, figHeight, figWidth, ...
-                            figTypes, otherArguments)
+function handles = m3ha_plot_violin_helper (allValues, relativeBandWidth, ...
+                                            medianColor, medianSize, ...
+                                            measureTitle, pharmLabels, ...
+                                            figPathBase, figHeight, figWidth, ...
+                                            figTypes, otherArguments)
 
 % Hard-coded parameters
 MS_PER_S = 1000;
@@ -196,9 +184,6 @@ xTickAngle = 320;
 
 % Create figure for conductance traces
 fig = set_figure_properties('AlwaysNew', true);
-
-% Count the number of groups
-nGroups = numel(pharmLabels);
 
 % Convert onset times from ms to seconds
 %{
@@ -211,60 +196,17 @@ if contains(measureTitle, 'onset')
 end
 %}
 
-% Decide on the color map
-cm = decide_on_colormap([], nGroups);
-
-% Set the color map
-%   TODO: Apply this in violinplot?
-colormap(cm);
-
-% TODO: plot_violin.m
+% Plot groups as a violin plot
+violins = plot_violin(allValues, 'XTickLabels', pharmLabels, ...
+                        'RelativeBandWidth', relativeBandWidth, ...
+                        'MedianColor', medianColor, ...
+                        'XTickAngle', xTickAngle, 'YLabel', measureTitle, ...
+                        otherArguments);
 % TODO: plot_jitter.m
-
-% Force as a numeric array
-allValues = force_matrix(allValues);
-
-% If there is any column with all NaN values, remove it from the violin plot
-if any(all(isnan(allValues), 1))
-    % Test whether each column has no values
-    noValues = all(isnan(allValues), 1);
-
-    % Remove those columns
-    disp('Groups with all NaN values are removed!');
-    allValues = allValues(:, ~noValues);
-    pharmLabels = pharmLabels(~noValues);
-end
-
-% Compute range of all values
-rangeValues = apply_iteratively(@max, allValues) - ...
-                apply_iteratively(@min, allValues);
-
-% Compute the bandwidth for the kernel density estimates
-bandWidth = violinRelativeBandWidth * rangeValues;
-
-% Plot a violin plot
-% violinplot(allValues, pharmLabels);
-violins = violinplot(allValues, pharmLabels, 'BandWidth', bandWidth, ...
-                        otherArguments{:});
-
 % Plot the data points for each cell
 % plotSpread(allValues);
 % Set x tick labels
 % xticklabels(pharmLabels);
-
-% Modify x limits
-xlim([0.5, nGroups + 0.5]);
-
-% Modify x tick angle
-xtickangle(xTickAngle);
-
-% Set y label
-ylabel(measureTitle);
-
-% Find all median scatters and make the face color green and size bigger
-medianScatters = findobj(gca, 'Type', 'Scatter', ...
-                        'MarkerEdgeColor', [0.5, 0.5, 0.5]);
-set(medianScatters, 'MarkerFaceColor', medianColor);
 
 % Save the figure
 save_all_figtypes(fig, [figPathBase, '_orig'], 'png');
@@ -278,7 +220,8 @@ update_figure_for_corel(fig, 'Units', 'centimeters', ...
 set(gca, 'Position', [0.2356, 0.1947, 0.6694, 0.7303]);
 
 % Update median size
-set(medianScatters, 'SizeData', medianSize^2);
+medianPlots = extract_fields(violins, 'MedianPlot');
+set(medianPlots, 'SizeData', medianSize^2);
 
 % Save the figure
 save_all_figtypes(fig, figPathBase, figTypes);

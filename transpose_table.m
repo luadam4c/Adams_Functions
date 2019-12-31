@@ -3,12 +3,15 @@ function tableNew = transpose_table (tableOld, varargin)
 % Usage: tableNew = transpose_table (tableOld, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       tableNew = transpose_table(tableOld)
 %       tableNew = transpose_table(tableOld, 'RowNames', 'suppress')
+%
 % Outputs:
 %       tableNew    - new table
 %                   specified as a 2d table or a cell array of 2d tables
+%
 % Arguments:    
 %       tableOld    - old table
 %                   must be a 2d table or a cell array of 2d tables
@@ -20,6 +23,9 @@ function tableNew = transpose_table (tableOld, varargin)
 %                   must be a character vector 
 %                       or a cell array of character vectors
 %                   default == old row names
+%
+% Requires:
+%       cd/create_labels_from_numbers.m
 %
 % Used by:
 %       cd/extract_param_values.m
@@ -91,8 +97,17 @@ elseif ~isempty(variableNames)
     % Use the user provided variable names
     tableNew.Properties.VariableNames = variableNames;
 else
-    % Use the old row names
-    tableNew.Properties.VariableNames = tableOld.Properties.RowNames;
+    if ~isempty(tableOld.Properties.RowNames)
+        % Use the old row names
+        tableNew.Properties.VariableNames = tableOld.Properties.RowNames;
+    else
+        % Count the number of rows in the old table
+        nRowsOld = height(tableOld);
+
+        % Create old row names
+        tableNew.Properties.VariableNames = ...
+            create_labels_from_numbers(1:nRowsOld, 'Prefix', 'oldRow');
+    end
 end
 
 % Decide on the new row names

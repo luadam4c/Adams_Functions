@@ -30,7 +30,6 @@ function handles = plot_small_chevrons (chevronSheetPath, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-% TODO: Add to doc:
 %       cd/create_subplots.m
 %       cd/extract_fileparts.m
 %       cd/plot_chevron.m
@@ -95,12 +94,7 @@ yLimitsLog2Ratio = iP.Results.YLimitsLog2Ratio;
 % Keep unmatched arguments for the plot_chevron() function
 otherArguments = iP.Unmatched;
 
-% Check relationships between arguments
-% TODO
-
 %% Preparation
-% TODO
-
 % Extract the file base
 chevronPathBase = extract_fileparts(chevronSheetPath, 'pathbase');
 

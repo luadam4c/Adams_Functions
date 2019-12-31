@@ -17,6 +17,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 % Outputs:
 %       labels     - labels created
 %                   specified as a cell array of character vectors
+%
 % Arguments:
 %       numbers     - numbers
 %                   must be an array of one the following types:
@@ -55,6 +56,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/create_simulation_output_filenames.m
 %       cd/create_synced_movie_trace_plot_movie.m
 %       cd/decide_on_filebases.m
+%       cd/force_data_as_matrix.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_rank_neurons.m
@@ -72,6 +74,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/plot_tuning_curve.m
 %       cd/renamevars.m
 %       cd/save_all_zooms.m
+%       cd/transpose_table.m
 %       cd/m3ha_simulate_population.m
 
 % File History:

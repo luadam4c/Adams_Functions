@@ -24,9 +24,10 @@ function isInTable = is_var_in_table (varName, table, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/ismatch.m
 %
 % Used by:
-%       cd/first_matching_field.m
+%       cd/is_field.m
 %       cd/is_row_in_table.m
 %       cd/m3ha_network_change_params.m
 %       cd/m3ha_select_sweeps.m

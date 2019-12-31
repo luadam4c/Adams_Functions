@@ -38,12 +38,12 @@ function result = apply_iteratively (myFunction, array, varargin)
 %       cd/create_default_grouping.m
 %       cd/extract_subvectors.m
 %       cd/identify_channels.m
-%       cd/m3ha_plot_violin.m
 %       cd/plot_raster.m
 %       cd/plot_relative_events.m
 %       cd/plot_traces.m
 %       cd/plot_spike_histogram.m
 %       cd/plot_swd_histogram.m
+%       cd/plot_violin.m
 
 % File History:
 % 2018-12-19 Created by Adam Lu
