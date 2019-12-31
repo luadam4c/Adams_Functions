@@ -1,9 +1,7 @@
-% m3ha_plot_figure04.m
-%% Plots Figure 04 for the GAT Blocker paper
+% m3ha_plot_figure05.m
+%% Plots Figure 05 for the GAT Blocker paper
 %
 % Requires:
-%       cd/update_neuron_scripts.m
-% TODO
 %       cd/check_dir.m
 %       cd/extract_fileparts.m
 %       cd/find_matching_files.m
@@ -12,6 +10,7 @@
 %       cd/plot_scale_bar.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
+%       cd/update_neuron_scripts.m
 %       cd/update_figure_for_corel.m
 
 % File History:
@@ -19,8 +18,8 @@
 
 %% Hard-coded parameters
 % Flags
-updateScripts = false; %true;
-simulateIpscr = false; %true;
+updateScripts = true;
+simulateIpscr = true;
 plotOverlapped = true;
 plotM2h = true;
 
@@ -36,8 +35,8 @@ datalogPath = fullfile(figure02Dir, sweepInfoFile);
 paramFileSuffix = 'params';
 
 % Analysis settings
-exampleCellNames = {'D101310'; 'C101210'};
-% exampleCellNames = {'D101310'};
+% exampleCellNames = {'D101310'; 'C101210'};
+exampleCellNames = {'D101310'};
 % exampleCellNames = {'C101210'};
 
 % Simulation settings

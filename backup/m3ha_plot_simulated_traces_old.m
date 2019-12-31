@@ -88,7 +88,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %
 % Used by:
 %       cd/m3ha_plot_figure03.m
-%       cd/m3ha_plot_figure04.m
+%       cd/m3ha_plot_figure05.m
 
 % File History:
 % 2019-10-14 Created by Adam Lu

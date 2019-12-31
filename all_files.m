@@ -112,6 +112,7 @@ function varargout = all_files (varargin)
 % 2019-09-05 Add 'MaxNum' as an optional argument
 % 2019-11-24 Now allows 'Directory' to be multiple directories
 % 2019-12-13 Added 'SubDirInstead' as an optional argument 
+% 2019-12-31 Fixed usage of the 'Prefix' option
 % TODO: Fix bug when a dot is in the folder name
 
 %% Hard-coded parameters
@@ -209,10 +210,10 @@ end
 if isempty(regExp)
     if ~isempty(extension)
         % Match the prefix, keyword, suffix and extension
-        regExp = sprintf('%s.*%s.*%s%s$', prefix, keyword, suffix, extension);
+        regExp = sprintf('^%s.*%s.*%s%s$', prefix, keyword, suffix, extension);
     else
         % Match the prefix, keyword, suffix
-        regExp = sprintf('%s.*%s.*%s[.].*$', prefix, keyword, suffix);
+        regExp = sprintf('^%s.*%s.*%s[.].*$', prefix, keyword, suffix);
     end
 else
     % Display warning if an extension is provided

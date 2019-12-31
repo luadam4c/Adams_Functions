@@ -3,8 +3,10 @@ function errorText = create_error_for_nargin (functionName, varargin)
 % Usage: errorText = create_error_for_nargin (functionName, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
-%       TODO
+%       create_error_for_nargin('create_error_for_nargin')
+%
 % Outputs:
 %       errorText   - documentation text
 %                   specified as a character array

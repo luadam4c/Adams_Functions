@@ -14,11 +14,11 @@ function objects = plot_ball_stick (varargin)
 %                   specified as rectangle objects
 %
 % Arguments:
-%       radiusSoma  - radius of soma
+%       radiusSoma  - (opt) radius of soma
 %                   must be a nonegative scalar
-%       radiusDend  - radius of dendrite
+%       radiusDend  - (opt) radius of dendrite
 %                   must be a nonegative scalar
-%       lengthDend  - length of dendrite
+%       lengthDend  - (opt) length of dendrite
 %                   must be a nonegative scalar
 %       varargin    - 'GeomParams': geometric parameters
 %                   must be a scalar struct with fields:
@@ -59,8 +59,7 @@ function objects = plot_ball_stick (varargin)
 %                   - Any other parameter-value pair for rectangle()
 %
 % Requires:
-%       cd/create_error_for_nargin.m
-%       cd/first_matching_field.m
+%       cd/decide_on_geom_params.m
 %       cd/hold_on.m
 %       cd/hold_off.m
 %       cd/struct2arglist.m
@@ -73,12 +72,8 @@ function objects = plot_ball_stick (varargin)
 % 2019-12-20 Moved code from find_passive_params.m
 % 2019-12-21 Added 'BallCurvature' as an optional argument
 % 2019-12-21 Added 'NStickSegments' as an optional argument
-% 2019-12-26 Now uses first_matching_field.m
 
 %% Hard-coded parameters
-radiusDendriteStr = {'radiusDendrite', 'radiusDend'};
-diamDendriteStr = {'diamDendrite', 'diamDend'};
-lengthDendriteStr = {'lengthDendrite', 'lengthDend', 'LDend'};
 
 %% Default values for optional arguments
 radiusSomaDefault = [];
@@ -170,53 +165,8 @@ if ~isempty(edgeColor)
 end
 
 % Read from geomParams if needed
-if isempty(radiusSoma)
-    if ~isempty(geomParams)
-        if isfield(geomParams, 'radiusSoma')
-            radiusSoma = geomParams.radiusSoma;
-        elseif isfield(geomParams, 'diamSoma')
-            radiusSoma = geomParams.diamSoma / 2;
-        else
-            error('No ball radius provided in geomParams!');
-        end
-    else
-        error('No ball radius passed in!');
-    end
-end
-if isempty(radiusDend)
-    if ~isempty(geomParams)
-        % Look for a dendritic radius
-        radiusDend = first_matching_field(geomParams, radiusDendriteStr);
-
-        % If not found, look for a dendritic diameter
-        if isempty(radiusDend)
-            % Look for a dendritic diameter
-            diamDend = first_matching_field(geomParams, diamDendriteStr);
-
-            % Compute the dendritic radius
-            if ~isempty(diamDend)
-                radiusDend = diamDend ./ 2;
-            else
-                error('No stick radius provided in geomParams!');
-            end
-        end
-    else
-        error('No stick radius passed in!');
-    end
-end
-if isempty(lengthDend)
-    if ~isempty(geomParams)
-        % Look for a dendritic length
-        lengthDend = first_matching_field(geomParams, lengthDendriteStr);
-
-        % If not found, return error
-        if isempty(lengthDend)
-            error('No stick length provided in geomParams!');
-        end
-    else
-        error('No stick length passed in!');
-    end
-end
+[radiusSoma, radiusDend, lengthDend] = ...
+    decide_on_geom_params(geomParams, radiusSoma, radiusDend, lengthDend);
 
 % Compute the length of each dendritic segment
 lengthSegment = lengthDend / nStickSegments;

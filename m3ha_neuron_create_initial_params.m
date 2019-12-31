@@ -412,7 +412,7 @@ if useCurveFitParams
 
     % Compute the surface area for each cell
     surfaceArea = compute_surface_area([diamSoma, LDend], ...
-                                        [diamSoma, diamDend]);
+                                [diamSoma, diamDend], 'EachCompartment', false);
 
     % Estimate the passive conductances from the input resistances
     gpas = compute_gpas(Rin, surfaceArea);
