@@ -376,9 +376,8 @@ if computeOpenProbabilityFlag
     minf2hinf = (minf .^ 2) .* hinf;
 
     % Compute the rms error between m2h and minf2hinf
-    openProbabilityDiscrepancy = compute_rms_error(m2h, minf2hinf);
-    openProbabilityDiscrepancy = ...
-        force_column_vector(openProbabilityDiscrepancy);
+    openProbabilityDiscrepancy = compute_rms_error(m2h, minf2hinf, ...
+                                                    'ForceColumnOutput', true);
     
     % Add variable
     simSwpInfo = addvars(simSwpInfo, openProbabilityDiscrepancy);

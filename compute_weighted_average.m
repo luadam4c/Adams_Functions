@@ -28,7 +28,7 @@ function avgValues = compute_weighted_average (values, varargin)
 %       varargin    - 'IgnoreNan': whether to ignore NaN entries
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
-%                   - 'ForceColumnOutput': whether to force as column output
+%                   - 'ForceColumnOutput': whether to force output as a column
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %                   - 'Weights': weights for averaging
@@ -81,6 +81,7 @@ function avgValues = compute_weighted_average (values, varargin)
 % 2019-11-18 Now returns NaN if values is empty
 % 2019-11-18 Fixed 'IgnoreNan' for vectors
 % 2019-11-29 Fixed rms average for a single negative value
+% 2020-01-02 Added 'ForceColumnOutput' (default == 'true')
 % TODO: Simplify math if the weights are all the same 
 %       and use this function in compute_stats.m and compute_rms_error.m
 % 
@@ -92,6 +93,7 @@ validAverageMethods = {'rms', 'root-mean-square', 'energy', ...
 
 %% Default values for optional arguments
 ignoreNanDefault = false;       % don't ignore NaN by default
+forceColumnOutputDefault = true;% force output as a column by default
 weightsDefault = [];            % set later
 dimToOperateDefault = [];       % use the sum() function default by default
 averageMethodDefault = 'rms';   % use the root-mean-square average by default
@@ -116,6 +118,8 @@ addRequired(iP, 'values', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'IgnoreNan', ignoreNanDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'ForceColumnOutput', forceColumnOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Weights', weightsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'3d'}));
 addParameter(iP, 'DimToOperate', dimToOperateDefault, ...
@@ -132,6 +136,7 @@ addParameter(iP, 'ExponentialWeightingFactor', ...
 % Read from the Input Parser
 parse(iP, values, varargin{:});
 ignoreNan = iP.Results.IgnoreNan;
+forceColumnOutput = iP.Results.ForceColumnOutput;
 valueWeights = iP.Results.Weights;
 dimToOperate = iP.Results.DimToOperate;
 averageMethod = validatestring(iP.Results.AverageMethod, validAverageMethods);
@@ -185,7 +190,7 @@ if ignoreNan && ~iscell(values)
 
         if ~any(toKeep)
             % Set the average to be NaN
-            if columnOutput
+            if columnOutput || forceColumnOutput
                 avgValues = NaN(size(values, 2), 1);
             else
                 avgValues = NaN(1, size(values, 2));
@@ -211,7 +216,7 @@ if ignoreNan && ~iscell(values)
             values = force_column_vector(values, 'IgnoreNonvectors', false);
 
             % Force values as a column or row cell array accordingly
-            if ~columnOutput
+            if ~(columnOutput || forceColumnOutput)
                 values = force_row_cell(values);
             end
 
