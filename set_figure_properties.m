@@ -69,6 +69,7 @@ function fig = set_figure_properties (varargin)
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_plot_violin.m
+%       cd/m3ha_simulate_population.m
 %       cd/parse_current_family.m
 %       cd/parse_ipsc.m
 %       cd/plot_autocorrelogram.m

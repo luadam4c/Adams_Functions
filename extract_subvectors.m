@@ -11,6 +11,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       subVecs4 = extract_subvectors({1:5, 2:6}, 'Windows', [2.5, 6.5])
 %       subVecs5 = extract_subvectors(magic(3), 'EndPoints', {[1,Inf], [2,Inf], [3,Inf]})
 %       subVecs6 = extract_subvectors({{1:5, 2:6}, {1:2}}, 'TreatCellNumAsArray', true)
+%       subVecs7 = extract_subvectors(magic(3), 'EndPoints', [1, 1, 1; 2, 2, 2])
 %       extract_subvectors(3:3:18, 'Indices', [2.5, 5.5])
 %       extract_subvectors(3:3:18, 'Indices', {3.5; [2.5, 5.5]})
 %       extract_subvectors({1:5, 2:6}, 'Pattern', 'odd')
@@ -84,6 +85,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %
 % Requires:
 %       cd/apply_iteratively.m
+%       cd/array_fun.m
 %       cd/argfun.m
 %       cd/create_default_endpoints.m
 %       cd/count_samples.m
@@ -156,6 +158,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 % 2019-09-07 Added 'ForceCellOutput' as an optional argument
 % 2019-10-03 Added 'TreatCellNumAsArray' as an optional argument
 % 2019-10-04 Added 'Pattern' as an optional argument
+% 2020-01-01 Now returns original vectors if no custom inputs
 % TODO: check if all endpoints have 2 elements
 % 
 
@@ -245,6 +248,14 @@ treatCellNumAsArray = iP.Results.TreatCellNumAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 forceCellOutput = iP.Results.ForceCellOutput;
 
+% If none of indices, endPoints or windows provided, return original vectors
+if strcmpi(pattern, 'auto') && isempty(indices) && isempty(endPoints) && ...
+        isempty(indexStart) && isempty(indexEnd) && isinf(maxNum) && ...
+        isempty(windows) && ~need_to_align(alignMethod, vecs)
+    subVecs = vecs;
+    return
+end
+
 % If indices is provided and endPoints or windows is also provided, 
 %   display warning
 if ~isempty(indices) && (~isempty(endPoints) || ~isempty(windows) || ...
@@ -266,7 +277,11 @@ if isempty(vecs) || ...
         isempty(indices) && isempty(endPoints) && isempty(windows) && ...
             isempty(indexStart) && isempty(indexEnd) && ...
             strcmpi('AlignMethod', 'none')
-    subVecs = vecs;
+    if forceCellOutput
+        subVecs = force_column_cell(subVecs);
+    else
+        subVecs = vecs;
+    end
     return
 end
 
@@ -320,7 +335,7 @@ switch pattern
         indices = force_column_vector(indices, 'IgnoreNonVectors', false);
 
         % Restrict indices by given pattern
-        indices = cellfun(@(x) restrict_indices(x, pattern), ...
+        indices = array_fun(@(x) restrict_indices(x, pattern), ...
                         indices, 'UniformOutput', false);
 
         % Force as a numeric matrix
@@ -342,10 +357,12 @@ if isempty(indices)
     end
 else
     % If there is a alignment method used, apply it to indices
-    indices = align_subvectors(indices, alignMethod);
+    if need_to_align(alignMethod, indices)
+        indices = align_subvectors(indices, alignMethod);
+    end
 
     % If one of indices and vecs is a cell array, 
-    %   match the formats of indices and vecs so that cellfun can be used
+    %   match the formats of indices and vecs so that array_fun can be used
     if iscell(indices) || iscell(vecs)
         [indices, vecs] = ...
             match_format_vector_sets(indices, vecs, ...
@@ -357,12 +374,12 @@ else
 
     % Extract subvectors
     if iscellnumeric(vecs) && ~treatCellNumAsArray
-        subVecs = cellfun(@(x, y) extract_subvectors_helper(x, y), ...
+        subVecs = array_fun(@(x, y) extract_subvectors_helper(x, y), ...
                             vecs, indices, 'UniformOutput', false);
     elseif iscell(vecs) && ~treatCellAsArray && ...
                 ~(iscellnumeric(vecs) && treatCellNumAsArray) && ...
                 ~(iscellstr(vecs) && treatCellStrAsArray)
-        subVecs = cellfun(@(x, y) extract_subvectors(x, 'Indices', y, ...
+        subVecs = array_fun(@(x, y) extract_subvectors(x, 'Indices', y, ...
                                 'TreatCellAsArray', treatCellAsArray, ...
                                 'TreatCellNumAsArray', treatCellNumAsArray, ...
                                 'TreatCellStrAsArray', treatCellStrAsArray), ...
@@ -436,7 +453,7 @@ subVec = create_empty_match(vec, 'NRows', nRows, 'NColumns', nColumns);
 if nIndices == 1
     withoutNaNs = find(~isnan(indices));
 else
-    withoutNaNs = arrayfun(@(x) find(~isnan(indices(:, x))), ...
+    withoutNaNs = array_fun(@(x) find(~isnan(indices(:, x))), ...
                             transpose(1:nIndices), 'UniformOutput', false);
 end
 
@@ -448,25 +465,17 @@ elseif nIndices == 1
     subVec(withoutNaNs, :) = extract_one_subvector(vec, indices(withoutNaNs));
 else
     for iCol = 1:nColumns
-        % Get the indices for this column
-        indicesThis = indices(:, iCol);
-
-        % Get the parts without NaNs for the indices of this column
-        withoutNaNsThis = withoutNaNs{iCol};
-
-        % Extract this column
-        vecThis = vec(:, iCol);
-
         % Replace the parts of this column that are not NaNs
-        subVec(withoutNaNsThis, iCol) = ...
-            extract_one_subvector(vecThis, indicesThis(withoutNaNsThis));
+        subVec(withoutNaNs{iCol}, iCol) = ...
+            extract_one_subvector(vec(:, iCol), ...
+                                    indices(withoutNaNs{iCol}, iCol));
     end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function subVec = extract_one_subvector (vec, indices)
-% Extract just one subvector
+% Extract subvector(s) fro just one set of indices
 
 if ispositiveintegervector(indices)
     % Just get the subvector
@@ -549,7 +558,7 @@ case {'leftAdjustPad', 'rightAdjustPad'}
 
     % Add NaNs to indices
     if iscell(indices)
-        indices = cellfun(@(x, y) padarray_custom(x, y, NaN, padDirection), ...
+        indices = array_fun(@(x, y) padarray_custom(x, y, NaN, padDirection), ...
                             indices, num2cell(nRowsToPad), ...
                             'UniformOutput', false);
     else
@@ -576,7 +585,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function indices = restrict_indices(indices, pattern)
-% Restrict a set of indices
+%% Restrict a set of indices
 
 switch pattern
     case 'odd'
@@ -585,6 +594,14 @@ switch pattern
         indices = indices(mod(indices, 2) == 0);
     otherwise
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function needToAlign = need_to_align (alignMethod, vecs)
+%% Determine whether it is necessary to align vectors
+
+needToAlign = ~strcmp(alignMethod, 'none') && iscell(vecs) && ...
+                    numel(unique(count_samples(vecs))) > 1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -600,14 +617,14 @@ addParameter(iP, 'EndPoints', endPointsDefault, ...
     match_format_vector_sets(endPoints, vecs, 'ForceCellOutputs', false);
 
 % If one of endPoints and vecs is a cell function, match the formats of 
-%   endPoints and vecs so that cellfun can be used
+%   endPoints and vecs so that array_fun can be used
 if iscell(endPoints) || iscell(vecs)
     [endPoints, vecs] = ...
         match_format_vector_sets(endPoints, vecs, 'ForceCellOutputs', true);
 end
 
 if iscell(vecs)
-    subVecs = cellfun(@(x, y) extract_subvectors_helper(x, y), ...
+    subVecs = array_fun(@(x, y) extract_subvectors_helper(x, y), ...
                         vecs, endPoints, 'UniformOutput', false);
 else
     subVecs = extract_subvectors_helper(vecs, endPoints);
@@ -650,6 +667,21 @@ uniqueNSamples = unique(nSamples);
 
 subVec(withoutNaNs, :) = vec(indices(withoutNaNs), :);
 subVec(withoutNaNsThis, iCol) = vecThis(indicesThis(withoutNaNsThis));
+
+for iCol = 1:nColumns
+    % Get the indices for this column
+    indicesThis = indices(:, iCol);
+
+    % Get the parts without NaNs for the indices of this column
+    withoutNaNsThis = withoutNaNs{iCol};
+
+    % Extract this column
+    vecThis = vec(:, iCol);
+
+    % Replace the parts of this column that are not NaNs
+    subVec(withoutNaNsThis, iCol) = ...
+        extract_one_subvector(vecThis, indicesThis(withoutNaNsThis));
+end
 
 %}
 

@@ -19,6 +19,7 @@ function varargout = argfun (myFunction, varargin)
 %       varargin    - input arguments
 %
 % Requires:
+%       cd/array_fun.m
 %       cd/create_error_for_nargin.m
 %
 % Used by:
@@ -64,6 +65,7 @@ function varargout = argfun (myFunction, varargin)
 %       cd/m3ha_network_single_neuron.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_rank_neurons.m
+%       cd/m3ha_simulate_population.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/match_format_vector_sets.m
 %       cd/match_reciprocals.m
@@ -130,7 +132,7 @@ end
 
 %% Do the job
 % Extract all fields from the structure
-varargout = cellfun(myFunction, varargin, 'UniformOutput', false);
+varargout = array_fun(myFunction, varargin, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

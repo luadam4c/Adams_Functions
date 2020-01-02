@@ -22,20 +22,31 @@
 % Requires:
 %       cd/all_files.m
 %       cd/all_subdirs.m
+%       cd/argfun.m
 %       cd/copy_into.m
+%       cd/compute_rms_error.m
 %       cd/create_time_stamp.m
 %       cd/create_labels_from_numbers.m
+%       cd/create_label_from_sequence.m
+%       cd/extract_columns.m
 %       cd/find_matching_files.m
+%       cd/force_matrix.m
+%       cd/is_field.m
+%       cd/load_neuron_outputs.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_extract_iteration_string.m
+%       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_load_sweep_info.m
 %       cd/m3ha_plot_bar3.m
 %       cd/m3ha_plot_violin.m
+%       cd/plot_violin.m
 %       cd/print_cellstr.m
 %       cd/renamevars.m
 %       cd/vertcat_spreadsheets.m
+%       cd/save_all_figtypes.m
+%       cd/set_figure_properties.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -51,7 +62,8 @@
 chooseBestNeuronsFlag = true;
 simulateFlag = true;
 combineFeatureTablesFlag = true;
-computeStatsFlag = true;
+computeOpenProbabilityFlag = true;
+plotOpenProbabilityFlag = true;
 plotViolinPlotsFlag = true;
 plotBarPlotsFlag = true;
 
@@ -59,7 +71,7 @@ plotBarPlotsFlag = true;
 useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
 buildMode = 'active';
 simMode = 'active';
-dataMode = 0;           % data mode:
+dataMode = 1; %0;           % data mode:
                         %   0 - all data
                         %   1 - all of g incr = 100%, 200%, 400% 
                         %   2 - same g incr but exclude 
@@ -75,13 +87,24 @@ attemptNumber = 3;      %   1 - Use 4 traces @ 200% gIncr for this data mode
 % Directory names
 parentDirectoryTemp = '/media/adamX/m3ha';
 fitDirName = 'optimizer4gabab';
-defaultOutFolderSuffix = 'population';
+defaultOutFolderStr = 'population';
 
 % File names
 simStr = 'sim';
 ltsParamsSuffix = '_ltsParams';
 simLtsParamsSuffix = strcat(simStr, '_ltsParams');
 simSwpInfoSuffix = strcat(simStr, '_swpInfo');
+openProbSuffix = strcat(simStr, '_openProbabilityDiscrepancy_vs_hasLTS');
+simOutExtension = 'out';
+
+TIME_COL_REC = 1;
+
+% Column numbers for simulated data
+%   Note: Must be consistent with singleneuron4compgabab.hoc
+IT_M_DEND2 = 47;
+IT_MINF_DEND2 = 48;
+IT_H_DEND2 = 49;
+IT_HINF_DEND2 = 50;
 
 % Note: The following must be consistent with m3ha_parse_dclamp_data.m
 condVarStrs = {'cellidrow', 'prow', 'vrow', 'grow', 'swpnrow', ...
@@ -117,14 +140,17 @@ measuresOfInterest = {'ltsAmplitude'; 'ltsMaxSlope'; ...
 % TODO: Make optional argument
 outFolder = '';
 prefix = '';
+figTypes = {'png', 'epsc2'};
 % outFolder = '20191227_population_rank1-10_useHH_true';
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ...
+%         '20191230_population_singleneuronfitting0-91_rank1-2,5,7-10,13,17,34');
 % prefix = '20191227_population';
 % rankNumsToSim = [];
 % maxRankToSim = 10;
 % rankNumsToSim = [1, 2, 5, 6, 8, 9, 10, 11, 23, 34];
 % rankDirName = '20191227_ranked_singleneuronfitting0-90';
-rankNumsToSim = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
 rankDirName = '20191229_ranked_singleneuronfitting0-91';
+rankNumsToSim = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -168,11 +194,24 @@ fitDirectory = fullfile(parentDirectory, fitDirName);
 % Locate the ranked directory
 rankDirectory = fullfile(fitDirectory, rankDirName);
 
+% Decide on the ranking numbers of cells to simulate
+if isempty(rankNumsToSim)
+    rankNumsToSim = 1:maxRankToSim;
+end
+
 % Decide on output folder
 if isempty(outFolder)
+    % Create a rank string
+    rankStr = ['rank', create_label_from_sequence(rankNumsToSim)];
+
+    % Create a data mode string
+    dataModeStr = ['dataMode', num2str(dataMode)];
+    attemptNumberStr = ['attemptNumber', num2str(attemptNumber)];
+
     % Create output folder name
     outFolderName = strcat(create_time_stamp('FormatOut', 'yyyymmdd'), ...
-                            '_', defaultOutFolderSuffix);
+                            '_', defaultOutFolderStr, '_', rankStr, ...
+                            '_', dataModeStr, '_', attemptNumberStr);
 
     % Create full path to output folder
     outFolder = fullfile(fitDirectory, outFolderName);
@@ -187,24 +226,20 @@ if isempty(prefix)
     prefix = extract_fileparts(outFolder, 'dirbase');
 end
 
-% Construct path to simulated LTS info
+% Construct full paths
 simSwpInfoPath = fullfile(outFolder, [prefix, '_', simSwpInfoSuffix, '.csv']);
 stats2dPath = fullfile(outFolder, [prefix, '_', stats2dSuffix, '.mat']);
 stats3dPath = fullfile(outFolder, [prefix, '_', stats3dSuffix, '.mat']);
+openProbPathBase = fullfile(outFolder, [prefix, '_', openProbSuffix]);
 
 %% Choose the best cells and the best parameters for each cell
 if chooseBestNeuronsFlag
-    % Decide on the ranking numbers of cells to simulate
-    if isempty(rankNumsToSim)
-        rankNumsToSim = 1:maxRankToSim;
-    end
-
     % Create rank number prefixes
     rankPrefixes = create_labels_from_numbers(rankNumsToSim, ...
                                         'Prefix', 'rank_', 'Suffix', '_');
 
     % Find png files matching the rank prefixes
-    [~, pngPaths] = find_matching_files(rankPrefixes, 'PartType', 'Prefix', ...
+    [~, pngPaths] = find_matching_files(rankPrefixes, 'PartType', 'prefix', ...
                             'Directory', rankDirectory, 'Extension', 'png', ...
                             'ExtractDistinct', false);
 
@@ -278,7 +313,8 @@ if combineFeatureTablesFlag
     % Extract the original file bases
     fileBase = extractBefore(simFileBase, '_sim');
 
-    % Make the original sweep name the row name
+    % Make the original sweep names the row names
+    simSwpInfo = addvars(simSwpInfo, fileBase, 'Before', 1);
     simSwpInfo.Properties.RowNames = fileBase;
 
     % Load original sweep info
@@ -291,11 +327,124 @@ if combineFeatureTablesFlag
     simSwpInfo = join(simSwpInfo, condInfo, 'Keys', 'Row');
 
     % Save the simulated sweep info table
-    writetable(simSwpInfo, simSwpInfoPath);
+    writetable(simSwpInfo, simSwpInfoPath, 'WriteRowNames', true);
 end
+
+%% Compute the rms error between open probability and its steady state
+if computeOpenProbabilityFlag
+    % Make sure the simulated sweep info table exists
+    if ~isfile(simSwpInfoPath)
+        error('Save a simulated sweep info table first!');
+    end
+
+    % Read the simulated sweep info table
+    simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
+
+    % Extract the file bases
+    fileBases = simSwpInfo.Properties.RowNames;
+
+    % Locate the matching simulated output files
+    [~, simOutPaths] = find_matching_files(fileBases, 'PartType', 'suffix', ...
+                                        'Directory', outFolder, ...
+                                        'Recursive', true, ...
+                                        'Extension', simOutExtension);
+
+    % Import one recorded trace for the time vector
+    realData = m3ha_import_raw_traces(fileBases{1}, 'ImportMode', simMode, ...
+                                'Verbose', false, 'OutFolder', outFolder);
+
+    % Extract time vectors from recorded data
+    tVecsRec = extract_columns(realData, TIME_COL_REC);
+
+    % Load corresponding simulated data
+    % If recorded data provided (tVecs not empty at this point),
+    %   interpolate simulated data to match the time points of recorded data
+    % Note: This is necessary because CVODE (variable time step method) 
+    %       is applied in NEURON
+    simData = load_neuron_outputs('FileNames', simOutPaths, 'tVecs', tVecsRec);
+
+    % Extract vectors from simulated data
+    [m, minf, h, hinf] = ...
+        extract_columns(simData, [IT_M_DEND2, IT_MINF_DEND2, ...
+                                    IT_H_DEND2, IT_HINF_DEND2]);
+
+    % Force as matrices
+    [m, minf, h, hinf] = argfun(@force_matrix, m, minf, h, hinf);
+
+    % Compute m2h and minf2hinf
+    m2h = (m .^ 2) .* h;
+    minf2hinf = (minf .^ 2) .* hinf;
+
+    % Compute the rms error between m2h and minf2hinf
+    openProbabilityDiscrepancy = compute_rms_error(m2h, minf2hinf);
+    openProbabilityDiscrepancy = ...
+        force_column_vector(openProbabilityDiscrepancy);
+    
+    % Add variable
+    simSwpInfo = addvars(simSwpInfo, openProbabilityDiscrepancy);
+
+    % Resave the simulated sweep info table
+    writetable(simSwpInfo, simSwpInfoPath, 'WriteRowNames', true);
+end
+
+%% Plot open probability discrepancy against LTS presence
+if plotOpenProbabilityFlag
+    % Make sure the simulated sweep info table exists
+    if ~isfile(simSwpInfoPath)
+        error('Save a simulated sweep info table first!');
+    end
+
+    % Read the simulated sweep info table
+    simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
+
+    % Read the LTS peak times
+    if ~is_field(simSwpInfo, 'ltsPeakTime')
+        error('ltsPeakTime does not exist!');
+    else
+        ltsPeakTime = simSwpInfo.ltsPeakTime;
+    end
+
+    % Read the LTS peak times
+    if ~is_field(simSwpInfo, 'openProbabilityDiscrepancy')
+        error('openProbabilityDiscrepancy does not exist yet!');
+    else
+        openProbabilityDiscrepancy = simSwpInfo.openProbabilityDiscrepancy;
+    end
+
+    % Determine whether each sweep has an LTS
+    noLts = isnan(ltsPeakTime);
+
+    % Separate into two groups
+    twoGroups = {openProbabilityDiscrepancy(noLts); ...
+                    openProbabilityDiscrepancy(~noLts)};
+
+    % Create figure
+    fig = set_figure_properties('AlwaysNew', true);
+
+    % Plot violin plot
+    violins = plot_violin(twoGroups, 'XTickLabels', {'No LTS', 'With LTS'}, ...
+                            'YLabel', 'rms(m^2h - m_{inf}^2h_{inf})');
+
+    % Create a title
+    title(sprintf('Open Probability Discrepancy for %s', ...
+            replace(prefix, '_', '\_')));
+
+    % Set y axis to be on a log scale
+    set(gca, 'YScale', 'log');
+
+    % Save figure
+    save_all_figtypes(fig, openProbPathBase, figTypes);
+end 
 
 %% Plot violin plots
 if plotViolinPlotsFlag
+    % Make sure the simulated sweep info table exists
+    if ~isfile(simSwpInfoPath)
+        error('Save a simulated sweep info table first!');
+    end
+
+    % Read the simulated sweep info table
+    simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
     % Compute statistics if not done already
     if ~isfile(stats2dPath)
         % Load sweep info
@@ -323,6 +472,13 @@ end
 
 %% Plot bar plots
 if plotBarPlotsFlag
+    % Make sure the simulated sweep info table exists
+    if ~isfile(simSwpInfoPath)
+        error('Save a simulated sweep info table first!');
+    end
+
+    % Read the simulated sweep info table
+    simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
     % Compute statistics if not done already
     if ~isfile(stats3dPath)
         % Load sweep info

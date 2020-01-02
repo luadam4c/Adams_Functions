@@ -29,10 +29,11 @@ function varargout = find_matching_files (fileStrs, varargin)
 %                       or a cell array of character vectors
 %       varargin    - 'PartType': part type to match
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'prefix'    - match the prefix
-%                       'keyword'   - match any part of the file name
-%                       'suffix'    - match the suffix
-%                   default == 'keyword'
+%                       'Prefix'    - match the prefix
+%                       'Keyword'   - match any part of the file name
+%                       'Suffix'    - match the suffix
+%                       'Extension' - match the extension
+%                   default == 'Keyword'
 %                   - 'ExtractDistinct': whether to extract distinct parts
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -46,16 +47,16 @@ function varargout = find_matching_files (fileStrs, varargin)
 %       cd/create_error_for_nargin.m
 %       cd/extract_distinct_fileparts.m
 %       cd/extract_fileparts.m
-%       cd/find_first_match.m
-%       cd/force_string_end.m
 %
 % Used by:
 %       cd/create_pleth_EEG_movies.m
+%       cd/decide_on_geom_params.m
 %       cd/load_matching_sheets.m
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_plot_figure05.m
 %       cd/m3ha_simulate_population.m
 %       cd/plot_traces_spike2_mat.m
+%       cd/m3ha_simulate_population.m
 
 % File History:
 % 2019-09-25 Created by Adam Lu
@@ -67,10 +68,10 @@ function varargout = find_matching_files (fileStrs, varargin)
 % 
 
 %% Hard-coded parameters
-validPartTypes = {'prefix', 'keyword', 'suffix'};
+validPartTypes = {'Prefix', 'Keyword', 'Suffix', 'Extension'};
 
 %% Default values for optional arguments
-partTypeDefault = 'keyword';
+partTypeDefault = 'Keyword';
 extractDistinctDefault = false; % don't extract distinct parts by default
 forceCellOutputDefault = false; % don't force output as a cell array by default
 
@@ -126,56 +127,26 @@ else
     distinctParts = fileStrs;
 end
 
-% Extract the base name within distinct parts
-distinctPartsBase = extract_fileparts(distinctParts, 'base');
+% Extract the base
+distinctPartsBase = extract_fileparts(distinctParts, 'dirbase');
 
-% Extract the directory name within distinct parts
-distinctPartsDir = extractBefore(distinctParts, distinctPartsBase);
-
-% Decide if all files are from the same directory
-if ischar(distinctPartsDir)
-    commonDir = distinctPartsDir;
-    findFilesOneByOne = false;
-else
-    uniqueDirs = unique(distinctPartsDir);
-    if numel(uniqueDirs) == 1
-        commonDir = uniqueDirs{1};
-        findFilesOneByOne = false;
-    else
-        findFilesOneByOne = true;
-    end
-end
+% Extract the parent directory
+distinctPartsDir = extract_fileparts(distinctParts, 'parentdir');
 
 %% Do the job
-if findFilesOneByOne
-    % Find one matching file for each file string
-    [filesCell, fullPaths] = ...
-        cellfun(@(x, y) all_files('Directory', x, partType, y, 'MaxNum', 1, ...
-                            'ForceCellOutput', false, otherArguments), ...
-                distinctPartsDir, distinctPartsBase, 'UniformOutput', false);
+% Find one matching file for each file string
+[filesCell, fullPaths] = ...
+    cellfun(@(x, y) all_files('Directory', x, partType, y, 'MaxNum', 1, ...
+                        'ForceCellOutput', false, otherArguments), ...
+            distinctPartsDir, distinctPartsBase, 'UniformOutput', false);
 
-    % Try to convert to an array
-    %   Note: this fails if a cell is empty
-    try
-        files = cellfun(@(x) x, filesCell);
-    catch
-        disp([mfilename, ': Some files were not found!']);
-        files = filesCell;
-    end
-else
-    % Find all files under the common directory
-    [files, fullPaths] = ...
-        all_files('Directory', commonDir, 'ForceCellOutput', false, ...
-                    otherArguments);
-
-    % Extract just the file bases
-    fileBases = extract_fileparts(fullPaths, 'base');
-
-    % Find the first matching file
-    indMatched = find_first_match(distinctPartsBase, fileBases, ...
-                                        'MatchMode', partType);
-    files = files(indMatched);
-    fullPaths = fullPaths(indMatched);
+% Try to convert to an array
+%   Note: this fails if a cell is empty
+try
+    files = cellfun(@(x) x, filesCell);
+catch
+    disp([mfilename, ': Some files were not found!']);
+    files = filesCell;
 end
 
 % Extract the character array if it was one

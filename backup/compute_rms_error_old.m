@@ -9,10 +9,8 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 %       rmsErrors2 = compute_rms_error(1:5, 2:6)
 %       rmsErrors3 = compute_rms_error({1:5, 2:6}, 'Endpoints', [1, 3])
 %       rmsErrors4 = compute_rms_error({1:5, 2:6}, 'Endpoints', {[1, 3], [2, 4]})
-%       rmsErrors2 = compute_rms_error({1:5, 2:4}, {2:6, 3:5})
 %       rmsErrors5 = compute_rms_error(1:5, 2:6, 'Endpoints', {[1, 3], [2, 4]})
 %       rmsErrors6 = compute_rms_error(magic(3), magic(3) + 1)
-%       rmsErrors7 = compute_rms_error(magic(3))
 %
 % Outputs:
 %       rmsErrors   - root mean squared error(s) for each vector
@@ -42,13 +40,11 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 %
 % Requires:
 %       cd/argfun.m
-%       cd/array_fun.m
 %       cd/iscellnumeric.m
 %       cd/iscellnumericvector.m
 %       cd/isemptycell.m
 %       cd/extract_subvectors.m
-%       cd/force_matrix.m
-%       cd/force_column_vector.m
+%       cd/force_column_cell.m
 %       cd/match_format_vector_sets.m
 %
 % Used by:
@@ -66,7 +62,6 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 % 2018-10-28 Now takes multiple vectors as arguments
 % 2018-10-28 Added 'Endpoints' as an optional argument
 % 2019-11-17 Added 'IgnoreNan' and 'Weights' as optional arguments
-% 2020-01-01 Now forces vectors as a matrix instead
 
 %% Default values for optional arguments
 vecs2Default = [];              % set later
@@ -114,44 +109,28 @@ ignoreNan = iP.Results.IgnoreNan;
 valueWeights = iP.Results.Weights;
 
 %% Preparation
-% Force row vectors as column vectors
-[vec1s, vec2s] = ...
-    argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', true), vec1s, vec2s);
+% Force vec1s and vec2s to be a cell array of column vectors
+[vec1s, vec2s] = argfun(@force_column_cell, vec1s, vec2s);
 
-% Force vec1s and vec2s to be numeric matrices,
-%   unless the number of samples in each vector are different
-if iscell(vec1s) || iscell(vec2s)
-    [vec1s, vec2s] = ...
-        argfun(@(x) force_matrix(x, 'AlignMethod', 'none', ...
-                                'Verbose', false), ...
-                vec1s, vec2s);
-end
+% Make sure vec1s and vec2s are both column cell arrays
+%   with the same number of vectors
+[vec1s, vec2s] = match_format_vector_sets(vec1s, vec2s, 'ForceCellOutput', true);
+
+% Restrict to the given end points
+%   Note: default is first and last indices
+[vec1s, vec2s] = ...
+    argfun(@(x) extract_subvectors(x, 'Endpoints', endPoints), ...
+            vec1s, vec2s);
 
 % If not provided, set default vec2s to be the means of each vector
 %   Otherwise, restrict to the same endpoints
-vec2s = set_vec2_if_empty(vec1s, vec2s);
-
-% Restrict to the given end points if needed
-if ~isempty(endPoints)
-    [vec1s, vec2s] = ...
-        argfun(@(x) extract_subvectors(x, 'Endpoints', endPoints), ...
-                vec1s, vec2s);
-end
+vec2s = cellfun(@(x, y) set_vec2_if_empty(x, y), ...
+                vec1s, vec2s, 'UniformOutput', false);
 
 %% Do the job
-if iscell(vec1s) || iscell(vec2s)
-    % Make sure vec1s and vec2s are both column cell arrays
-    %   with the same number of vectors
-    [vec1s, vec2s] = match_format_vector_sets(vec1s, vec2s, ...
-                    'ForceCellOutput', true);
-
-    % Compute the root-mean_square error for each pair of vectors
-    rmsErrors = array_fun(@(x, y) compute_rms_error_helper(x, y, ...
-                                    ignoreNan, valueWeights), ...
-                            vec1s, vec2s);
-else
-    rmsErrors = compute_rms_error_helper(vec1s, vec2s, ignoreNan, valueWeights);
-end
+rmsErrors = cellfun(@(x, y) compute_rms_error_helper(x, y, ...
+                                ignoreNan, valueWeights), ...
+                    vec1s, vec2s);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -159,16 +138,7 @@ function vec2 = set_vec2_if_empty (vec1, vec2)
 %% Set the default second vector to be the mean values of the first vector
 
 if isempty(vec2) || iscell(vec2) && all(all(isemptycell(vec2)))
-    if iscell(vec1)
-        vec2 = array_fun(@(x, y) set_vec2_if_empty(x, y), ...
-                        vec1, vec2, 'UniformOutput', false);
-    else
-        % Count the number of rows
-        nRows = size(vec1, 1);
-
-        % Replace each column with the nanmean of that column
-        vec2 = repmat(nanmean(vec1, 1), nRows, 1);
-    end
+    vec2 = nanmean(vec1) * ones(size(vec1));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

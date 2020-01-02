@@ -44,7 +44,7 @@ function [totalCurrent, compCurrents] = ...
 % 
 
 %% Hard-coded parameters
-NA_PER_MA = 1000;
+NA_PER_MA = 1e6;
 
 %% Default values for optional arguments
 lengthsDefault = [];

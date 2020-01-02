@@ -40,14 +40,20 @@ function isMatch = is_matching_string (strList, cand, varargin)
 %                       a cell array of strings/character arrays
 %       varargin    - 'MatchMode': the search mode
 %                   must be an unambiguous, case-insensitive match to one of:
-%                       'exact'  - cand must be identical to the members
-%                       'parts'  - cand can be parts of the members
-%                       'regexp' - cand is a regular expression
+%                       'exact'     - cand must be identical to the members
+%                       'parts'     - cand can be parts of the members
+%                       'prefix'    - cand is the prefix of the members
+%                       'keyword'   - cand is a part of the members
+%                       'suffix'    - cand is the suffix of the members
+%                       'regexp'    - cand is a regular expression
 %                   if search mode is 'exact' or 'regexp', 
 %                       cand cannot have more than one elements
 %                   default == 'parts'
 %                   - 'IgnoreCase': whether to ignore differences in letter case
 %                   must be logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'MatchOnce': whether to match only once
+%                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %
 % Requires:
@@ -61,13 +67,16 @@ function isMatch = is_matching_string (strList, cand, varargin)
 % File History:
 % 2019-01-10 Moved from find_in_strings.m
 % 2019-01-11 Removed 2nd and 3rd outputs
+% 2020-01-01 Added 'prefix', 'keyword', 'suffix' as match modes
+% TODO: Implement matchOnce for all conditions
 
 %% Hard-coded constants
-validMatchModes = {'exact', 'parts', 'regexp'};
+validMatchModes = {'exact', 'parts', 'prefix', 'keyword', 'suffix', 'regexp'};
 
 %% Default values for optional arguments
 matchModeDefault = 'parts';     % match string parts by default
 ignoreCaseDefault = false;      % case-sensitive by default
+matchOnceDefault = false;       % no restrictions by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -96,18 +105,20 @@ addParameter(iP, 'MatchMode', matchModeDefault, ...
     @(x) any(validatestring(x, validMatchModes)));
 addParameter(iP, 'IgnoreCase', ignoreCaseDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'MatchOnce', matchOnceDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, strList, cand, varargin{:});
 matchMode = validatestring(iP.Results.MatchMode, validMatchModes);
 ignoreCase = iP.Results.IgnoreCase;
+matchOnce = iP.Results.MatchOnce;
 
 %% Preparation
 % Check relationships between arguments
-if ~ischar(cand) && numel(cand) > 1 && ...
-    (strcmp(matchMode, 'exact') || strcmp(matchMode, 'regexp'))
+if ~ischar(cand) && numel(cand) > 1 && ~strcmp(matchMode, 'parts')
     error(['Second input cannot have more than one members if ', ...
-            '''MatchMode'' is ''exact'' or ''regexp''!']);
+            '''MatchMode'' is not ''parts''!']);
 end
 
 %% Find the indices
@@ -141,17 +152,41 @@ case 'exact'        % cand must be an exact match
     else
         isMatch = strcmp(strList, cand);
     end
-case 'regexp'       % cand is considered a regular expression
-    % Returns the starting index that matches the regular expression
-    %   for each string in strList
-    if ignoreCase
-        startIndices = regexpi(strList, cand);
-    else
-        startIndices = regexp(strList, cand);
+case {'prefix', 'keyword', 'suffix', 'regexp'}
+    % Construct a regular expression
+    switch matchMode
+        case 'prefix'
+            regExp = ['^', cand, '.*'];
+        case 'keyword'
+            regExp = ['.*', cand, '.*'];
+        case 'suffix'
+            regExp = ['.*', cand, '$'];
+        case 'regexp'
+            regExp = cand;
+        otherwise
+            error('matchMode unrecognized!')
     end
 
+    % Decide on options for regexpi
+    if matchOnce
+        matchOption = 'once';
+    else
+        matchOption = 'all';
+    end
+    if ignoreCase
+        caseOption = 'ignorecase';
+    else
+        caseOption = 'matchcase';
+    end
+
+    % Returns the matched string that matches the regular expression
+    %   for each string in strList
+    matchedStrings = regexpi(strList, regExp, 'match', caseOption, matchOption);
+
     % Test whether each string in strList matches the regular expression
-    isMatch = ~isemptycell(startIndices);
+    isMatch = ~isemptycell(matchedStrings);
+otherwise
+    error('matchMode unrecognized!')
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

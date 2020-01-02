@@ -68,6 +68,7 @@ function [combTrace, paramsUsed] = ...
 %                   default == []
 %                   
 % Requires:
+%       cd/array_fun.m
 %       cd/cell2num.m
 %       cd/compute_stats.m
 %       cd/count_samples.m
@@ -200,7 +201,7 @@ if iscellnumericvector(traces) || ~iscell(traces)
 else
     % Compute combined traces for many sets of vectors
     [combTrace, paramsUsed] = ...
-        cellfun(@(x) compute_combined_trace_helper(x, nSamples, grouping, ...
+        array_fun(@(x) compute_combined_trace_helper(x, nSamples, grouping, ...
                     seeds, alignMethod, combineMethod, ...
                     treatRowAsMatrix, ignoreNan, consistentFormat), ...
                 traces, 'UniformOutput', false);
@@ -469,8 +470,8 @@ combTraces = horzcat(combTraceCell{:});
 %{
 OLD CODE:
 
-if iscell(traces) && ~all(cellfun(@iscolumn, traces))
-    traces = cellfun(@(x) x(:), traces, 'UniformOutput', false);
+if iscell(traces) && ~all(array_fun(@iscolumn, traces))
+    traces = array_fun(@(x) x(:), traces, 'UniformOutput', false);
 end
 
 error('The align method %s is not implemented yet!!', alignMethod);
@@ -479,7 +480,7 @@ switch alignMethod
 case 'leftadjust'
     % Always start from 1
     if iscell(traces)
-        tracesAligned = cellfun(@(x) x(1:nSamples), traces, ...
+        tracesAligned = array_fun(@(x) x(1:nSamples), traces, ...
                                     'UniformOutput', false);
     else
         tracesAligned = traces(1:nSamples, :);
@@ -487,7 +488,7 @@ case 'leftadjust'
 case 'rightadjust'
     % Always end at end
     if iscell(traces)
-        tracesAligned = cellfun(@(x) x((end-nSamples+1):end), traces, ...
+        tracesAligned = array_fun(@(x) x((end-nSamples+1):end), traces, ...
                                     'UniformOutput', false);
     else
         tracesAligned = traces((end-nSamples+1):end, :);
@@ -517,7 +518,7 @@ traces = force_column_vector(traces, 'IgnoreNonVectors', true);
 
 if iscell(traces)
     % Apply length() to each element
-    nSamplesEachTrace = cellfun(@length, traces);
+    nSamplesEachTrace = array_fun(@length, traces);
 else
     % Whether multiple vectors or not, nSamplesEachTrace is the number of rows
     nSamplesEachTrace = size(traces, 1);

@@ -27,6 +27,7 @@ function isField = is_field (genStruct, candName, varargin)
 % Used by:
 %       cd/extract_fields.m
 %       cd/first_matching_field.m
+%       cd/m3ha_simulate_population.m
 
 % File History:
 % 2019-12-30 Moved from first_matching_field.m

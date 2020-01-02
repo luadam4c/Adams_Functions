@@ -14,6 +14,7 @@ function answer = is_in_parallel ()
 % Arguments:
 %
 % Used by:
+%       cd/array_fun.m
 %       cd/load_neuron_outputs.m
 
 % File History:

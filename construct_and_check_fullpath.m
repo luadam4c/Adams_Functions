@@ -89,13 +89,20 @@ verbose = iP.Results.Verbose;
 % Keep unmatched arguments for the construct_fullpath() function
 otherArguments = iP.Unmatched;
 
-%% Create full path(s) to file(s) robustly
-[fullPath, pathType] = construct_fullpath(pathName, 'Verbose', verbose, ...
-                                            otherArguments);
+%% Check whether the path(s) exist(s)
+pathExists = check_fullpath(pathName, 'Verbose', verbose);
 
-%% Check whether the full path(s) exist(s)
-pathExists = check_fullpath(fullPath, 'Verbose', verbose, ...
-                            'PathType', pathType);
+%% Create full path(s) to file(s) robustly
+if any(~pathExists)
+    [fullPath, pathType] = construct_fullpath(pathName, 'Verbose', verbose, ...
+                                                otherArguments);
+
+    %% Check whether the full path(s) exist(s)
+    pathExists = check_fullpath(fullPath, 'Verbose', verbose, ...
+                                'PathType', pathType);
+else
+    fullPath = pathName;
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

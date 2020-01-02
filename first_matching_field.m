@@ -36,6 +36,7 @@ function [fieldValue, fieldName] = ...
 %       cd/is_field.m
 %
 % Used by:
+%       cd/decide_on_geom_params.m
 %       cd/m3ha_compute_statistics.m
 %       cd/plot_ball_stick.m
 

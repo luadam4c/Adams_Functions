@@ -488,11 +488,11 @@ if plotParamComparisonFlag
             'FigName', errorParamFigName);
 
     % Create a rank string
-    rankStr = create_label_from_sequence(rankNumsToPlot);
+    rankStr = ['rank', create_label_from_sequence(rankNumsToPlot)];
 
     % Create figure title and file name
     selectedFigTitle = ['Error & Parameter Comparison for cells with ranks ', rankStr];
-    selectedFigName = strcat(rankPathBase, '_param_comparison_rank', rankStr);
+    selectedFigName = strcat(rankPathBase, '_param_comparison_', rankStr);
 
     % Decide on x ticks
     selectedXTicks = 1:numel(rankNumsToPlot);

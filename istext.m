@@ -20,6 +20,7 @@ function isText = istext (x, varargin)
 %       cd/arglist2struct.m
 %       cd/combine_data_from_same_slice.m
 %       cd/ismatch.m
+%       cd/ismember_custom.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_select_raw_traces.m

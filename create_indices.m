@@ -264,11 +264,17 @@ end
 % If original vectors are provided, 
 %   fix indices if they are out of range
 if ~(isempty(vectors) || iscell(vectors) && all(all(isemptycell(vectors))))
-    % Count the number of samples in each vector
-    nSamples = count_samples(vectors, 'TreatCellAsArray', treatCellAsArray, ...
+    if iscell(vectors)
+        % Count the number of samples in each vector
+        nSamples = count_samples(vectors, 'TreatCellAsArray', treatCellAsArray, ...
                                 'TreatCellNumAsArray', treatCellNumAsArray, ...
                                 'TreatCellStrAsArray', treatCellStrAsArray);
 
+    else
+        % Count the number of rows
+        nSamples = size(vectors, 1);
+    end
+    
     % Match the vector counts
     [idxStart, idxEnd] = ...
         argfun(@(x) match_format_vector_sets(x, nSamples, 'MatchVectors', true), ...

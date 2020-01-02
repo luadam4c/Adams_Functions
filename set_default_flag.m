@@ -29,6 +29,7 @@ function flag = set_default_flag (flag, varargin)
 %
 % Used by:
 %       cd/compute_single_neuron_errors.m
+%       cd/ismatch.m
 %       cd/m3ha_fminsearch3.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_optimizer_4compgabab.m

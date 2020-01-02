@@ -30,18 +30,22 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 %                   default == [] (none provided)
 %
 % Requires:
+%       cd/array_fun.m
 %       cd/construct_and_check_fullpath.m
 %       cd/is_in_parallel.m
-%       cd/m3ha_plot_simulated_traces.m
+%       cd/match_format_vector_sets.m
 %       cd/match_time_points.m
 %
 % Used by:    
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/m3ha_plot_simulated_traces.m
+%       cd/m3ha_simulate_population.m
 
 % File History:
 % 2018-10-23 Adapted from code in run_neuron_once_4compgabab.m
 % 2018-10-31 Went back to using parfor for loading
 % 2018-11-16 Fixed directories and allowed it to be a cell array TODO: fix all_files?
+% 2020-01-01 Now uses array_fun.m
 
 %% Hard-coded parameters
 outputExtension = '.out';
@@ -102,25 +106,14 @@ elseif ischar(fileNames)
     fileNames = {fileNames};
 end
 
-% Decide on the directories
-if isempty(directories)
-    if ~isempty(fileNames)
-        % Use the directories associated with the file names
-        directories = cellfun(@fileparts, fileNames, 'UniformOutput', false);
-    else
-        % Use the present working directory
-        directories = pwd;
-    end
-end
-
 % Construct full paths and check whether the files exist
 %   TODO: Expand to accept optional Suffix', etc.
-%   TODO: Allow directories to be passed
 [fullPaths, pathExists] = ...
-    construct_and_check_fullpath(fileNames, 'Directory', directories{1});
+    construct_and_check_fullpath(fileNames, 'Directory', directories);
 
 % Return if not all paths exist
 if ~all(pathExists)
+    fprintf('Some of the output paths do not exist!\n');
     outputs = {};
     fullPaths = {};
     return
@@ -128,32 +121,22 @@ end
 
 %% Load files
 % Load the data saved by NEURON to a .out file into a cell array
-% TODO: Make a wrapper function parcellfun.m
-%       That uses parfor if not is_in_parallel
-if is_in_parallel
-    % Use cellfun
-    outputs = cellfun(@load, fullPaths, 'UniformOutput', false);
-else
-    % Count the number of output files
-    nFiles = numel(fullPaths);
-
-    % Use parfor
-    outputs = cell(nFiles, 1);
-    parfor iFile = 1:nFiles
-        outputs{iFile} = load(fullPaths{iFile});
-    end
-end
+outputs = array_fun(@load, fullPaths, 'UniformOutput', false);
 
 % If tVecs not empty, interpolate simulated data to match the time points
 if ~isempty(tVecs)
-    outputs = cellfun(@(x, y) match_time_points(x, y), ...
+    % Match the number of time vectors and simulated outputs
+    [tVecs, outputs] = match_format_vector_sets(tVecs, outputs);
+
+    % Interpolated simulated data
+    outputs = array_fun(@(x, y) match_time_points(x, y), ...
                         outputs, tVecs, 'UniformOutput', false);
 end
 
 %% Remove files
 % Remove .out files created by NEURON if not to be saved
 if removeAfterLoad
-    cellfun(@delete, fullPaths, 'UniformOutput', false);
+    array_fun(@delete, fullPaths, 'UniformOutput', false);
 end
 
 

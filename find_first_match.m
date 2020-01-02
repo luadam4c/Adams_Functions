@@ -22,9 +22,12 @@ function varargout = find_first_match (candidates, array, varargin)
 %       array       - an array
 %       varargin    - 'MatchMode': the matching mode
 %                   must be an unambiguous, case-insensitive match to one of:
-%                       'exact'  - cand must be identical to the members
-%                       'parts'  - cand can be parts of the members
-%                       'regexp' - cand is a regular expression
+%                       'exact'     - cand must be identical to the members
+%                       'parts'     - cand can be parts of the members
+%                       'prefix'    - cand is the prefix of the members
+%                       'keyword'   - cand is a part of the members
+%                       'suffix'    - cand is the suffix of the members
+%                       'regexp'    - cand is a regular expression
 %                   default == 'parts'
 %                   - 'IgnoreCase': whether to ignore differences in letter case
 %                   must be logical 1 (true) or 0 (false)
@@ -35,6 +38,7 @@ function varargout = find_first_match (candidates, array, varargin)
 %       cd/ismember_custom.m
 %
 % Used by:
+%       cd/find_matching_files.m
 %       cd/match_positions.m
 %       cd/m3ha_decide_on_plot_vars.m
 %       cd/m3ha_neuron_create_initial_params.m
@@ -46,10 +50,10 @@ function varargout = find_first_match (candidates, array, varargin)
 % File History:
 % 2019-01-09 Created by Adam Lu
 % 2019-01-10 Now returns matched
-% 
+% 2020-01-01 Added 'prefix', 'keyword', 'suffix' as match modes
 
 %% Hard-coded parameters
-validMatchModes = {'exact', 'parts', 'regexp'};
+validMatchModes = {'exact', 'parts', 'prefix', 'keyword', 'suffix', 'regexp'};
 
 %% Default values for optional arguments
 matchModeDefault = 'parts';         % can be parts by default

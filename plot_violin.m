@@ -59,6 +59,7 @@ function violins = plot_violin (data, varargin)
 %
 % Used by:
 %       cd/m3ha_plot_violin.m
+%       cd/m3ha_simulate_population.m
 
 % File History:
 % 2019-12-30 Moved from m3ha_plot_violin.m

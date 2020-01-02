@@ -38,6 +38,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %                   default == []
 %
 % Requires:
+%       cd/array_fun.m
 %       cd/count_vectors.m
 %       cd/create_error_for_nargin.m
 %       cd/force_column_vector.m
@@ -128,19 +129,19 @@ case {'first', 'last', 'center', 'min', 'max', 'firstdiff'}
     % Extract from a position
     if iscellnumericvector(vecs) && ~treatCellAsArray
         [elements, idxElement] = ...
-            cellfun(@(x) extract_by_position(x, extractMode), vecs);
+            array_fun(@(x) extract_by_position(x, extractMode), vecs);
     elseif iscell(vecs) && ~treatCellAsArray
         try
             [elements, idxElement] = ...
-                cellfun(@(x) extract_elements(x, extractMode), vecs);
+                array_fun(@(x) extract_elements(x, extractMode), vecs);
         catch
             [elements, idxElement] = ...
-                cellfun(@(x) extract_elements(x, extractMode), vecs, ...
+                array_fun(@(x) extract_elements(x, extractMode), vecs, ...
                         'UniformOutput', false);
         end
     else
         [elements, idxElement] = ...
-            arrayfun(@(x) extract_by_position(vecs(:, x), extractMode), ...
+            array_fun(@(x) extract_by_position(vecs(:, x), extractMode), ...
                     transpose(1:size(vecs, 2)));
     end
 case 'specific'
@@ -162,7 +163,7 @@ case 'specific'
 
         % Extract by index on each vector
         [elements, idxElement] = ...
-            cellfun(@(x, y) extract_by_index(x, y), vecs, index);
+            array_fun(@(x, y) extract_by_index(x, y), vecs, index);
     else
         % Count the number of vectors
         nVectors = count_vectors(vecs);
@@ -175,7 +176,7 @@ case 'specific'
 
         % Extract by index on each comlumn
         [elements, idxElement] = ...
-            arrayfun(@(x, y) extract_by_index(vecs(:, x), y), ...
+            array_fun(@(x, y) extract_by_index(vecs(:, x), y), ...
                     transpose(1:nVectors), index);
     end
 otherwise
@@ -281,7 +282,7 @@ addRequired(iP, 'vecs', ...                  % vectors to extract
                     'or a cell array of vectors!']));
 
         [elements, idxElement] = ...
-            cellfun(@(x) extract_elements(x, extractMode), vecs, ...
+            array_fun(@(x) extract_elements(x, extractMode), vecs, ...
                     'UniformOutput', false);
 %}
 

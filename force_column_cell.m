@@ -60,7 +60,6 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/all_dependent_functions.m
 %       cd/combine_data_from_same_slice.m
 %       cd/combine_variables_across_tables.m
-%       cd/compute_rms_error.m
 %       cd/compute_sampsizepwr.m
 %       cd/combine_swd_sheets.m
 %       cd/construct_fullpath.m
@@ -78,7 +77,6 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_decide_on_plot_vars.m
 %       cd/m3ha_import_raw_traces.m
-%       cd/plot_fitted_traces.m
 %       cd/match_format_vector_sets.m
 %       cd/parse_atf_swd.m
 %       cd/parse_current_family.m
@@ -87,6 +85,7 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       cd/parse_pulse.m
 %       cd/parse_pulse_response.m
 %       cd/plot_all_abfs.m
+%       cd/plot_fitted_traces.m
 %       cd/plot_repetitive_protocols.m
 %       cd/plot_struct.m
 %       cd/plot_vertical_line.m

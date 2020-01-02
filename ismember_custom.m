@@ -39,17 +39,22 @@ function varargout = ismember_custom (cand, list, varargin)
 %       list        - a list
 %       varargin    - 'MatchMode': the matching mode
 %                   must be an unambiguous, case-insensitive match to one of:
-%                       'exact'  - cand must be identical to the members
-%                       'parts'  - cand can be parts of the members
-%                       'regexp' - cand is a regular expression
+%                       'exact'     - cand must be identical to the members
+%                       'parts'     - cand can be parts of the members
+%                       'prefix'    - cand is the prefix of the members
+%                       'keyword'   - cand is a part of the members
+%                       'suffix'    - cand is the suffix of the members
+%                       'regexp'    - cand is a regular expression
 %                   default == 'parts'
 %                   - 'IgnoreCase': whether to ignore differences in letter case
 %                   must be logical 1 (true) or 0 (false)
 %                   default == false
 %
 % Requires:
+%       cd/array_fun.m
 %       cd/create_error_for_nargin.m
 %       cd/ismatch.m
+%       cd/istext.m
 %
 % Used by:
 %       cd/find_first_match.m
@@ -57,9 +62,10 @@ function varargout = ismember_custom (cand, list, varargin)
 
 % File History:
 % 2019-01-10 Modified from find_in_strings.m
+% 2020-01-01 Added 'prefix', 'keyword', 'suffix' as match modes
 
 %% Hard-coded constants
-validMatchModes = {'exact', 'parts', 'regexp'};
+validMatchModes = {'exact', 'parts', 'prefix', 'keyword', 'suffix', 'regexp'};
 
 %% Default values for optional arguments
 matchModeDefault = 'parts';         % can be parts by default
@@ -94,34 +100,21 @@ ignoreCase = iP.Results.IgnoreCase;
 
 %% Do the job
 % Test whether each member of list matches cand
-if (ischar(cand) || iscellstr(cand) || isstring(cand)) && ...
-        (ignoreCase || ~strcmp(matchMode, 'exact'))
+if istext(cand) && (ignoreCase || ~strcmp(matchMode, 'exact'))
     % Make sure cand is either a string or a cell array
     if ischar(cand)
         cand = {cand};
     end
 
     % Test whether each member of cand has a match in list
-    if nargout >= 2
-        % Find the first index of the matching element in list too
-        if iscell(cand)
-            [isMember, index] = ...
-                cellfun(@(x) is_in_strings(x, list, matchMode, ...
-                                            ignoreCase), cand);
-        else
-            [isMember, index] = ...
-                arrayfun(@(x) is_in_strings(x, list, matchMode, ...
-                                            ignoreCase), cand);
-        end
-    else
+    if nargout <= 1
         % Just test whether each member of cand has a match in list
-        if iscell(cand)
-            isMember = cellfun(@(x) is_in_strings(x, list, matchMode, ...
-                                                    ignoreCase), cand);
-        else
-            isMember = arrayfun(@(x) is_in_strings(x, list, matchMode, ...
-                                                    ignoreCase), cand);
-        end
+        isMember = ...
+            array_fun(@(x) is_in_strings(x, list, matchMode, ignoreCase), cand);
+    else
+        % Find the first index of the matching element in list too
+        [isMember, index] = ...
+            array_fun(@(x) is_in_strings(x, list, matchMode, ignoreCase), cand);
     end
 else
     % Test whether each candidate is a member in the list
@@ -152,12 +145,13 @@ function varargout = is_in_strings (cand, list, matchMode, ignoreCase)
 
 % Test whether each member of list matches cand
 if nargout == 1
-    isMatch = ismatch(list, cand, 'MaxNum', 1, 'ReturnNan', true, ...
-                            'MatchMode', matchMode, 'IgnoreCase', ignoreCase);
+    isMatch = ...
+        ismatch(list, cand, 'MaxNum', 1, 'ReturnNan', true, ...
+                'MatchMode', matchMode, 'IgnoreCase', ignoreCase);
 elseif nargout == 2
     [isMatch, index] = ...
         ismatch(list, cand, 'MaxNum', 1, 'ReturnNan', true, ...
-                            'MatchMode', matchMode, 'IgnoreCase', ignoreCase);
+                'MatchMode', matchMode, 'IgnoreCase', ignoreCase);
 end
 
 % See if any member is a match

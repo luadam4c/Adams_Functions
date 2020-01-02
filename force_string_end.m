@@ -34,12 +34,16 @@ function newStr = force_string_end (oldStr, subStr, varargin)
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
 %
+% Requires:
+%       cd/array_fun.m
+%
 % Used by:
 %       cd/archive_dependent_scripts.m
 %       cd/combine_strings.m
 %       cd/combine_swd_sheets.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_simulation_output_filenames.m
+%       cd/find_matching_files.m
 %       cd/force_string_start.m
 %       cd/run_neuron.m
 %       cd/match_format_vector_sets.m
@@ -108,7 +112,7 @@ stringStartInstead = iP.Results.StringStartInstead;
 
 %% Do the job
 if iscell(oldStr)
-    newStr = cellfun(@(x, y) force_string_end(x, y, ...
+    newStr = array_fun(@(x, y) force_string_end(x, y, ...
                                 'OnlyIfNonempty', onlyIfNonempty, ...
                                 'StringStartInstead', stringStartInstead), ...
                     oldStr, subStr, 'UniformOutput', false);

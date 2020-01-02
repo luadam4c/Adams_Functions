@@ -47,6 +47,7 @@ function varargout = extract_columns (arrays, varargin)
 %                   default == false
 %
 % Requires:
+%       cd/array_fun.m
 %       cd/count_samples.m
 %       cd/count_vectors.m
 %       cd/create_indices.m
@@ -67,6 +68,7 @@ function varargout = extract_columns (arrays, varargin)
 %       cd/m3ha_plot_example_jitter.m.m
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_simulated_traces.m
+%       cd/m3ha_simulate_population.m
 
 % File History:
 % 2018-10-24 Created by Adam Lu
@@ -80,6 +82,7 @@ function varargout = extract_columns (arrays, varargin)
 % 2019-01-13 Added 'AsRowVectors' as an optional argument
 % 2019-01-22 Now uses iscellnumericvector instead of iscellvector
 % 2019-12-01 Now allows arrays to be a matrix cell array
+% 2020-01-01 Now uses array_fun.m
 
 %% Hard-coded parameters
 validOutputModes = {'multiple', 'single'};
@@ -163,13 +166,13 @@ if ~iscell(arrays) || treatCellAsArray
 elseif treatCnvAsColumns && iscellnumericvector(arrays)
     nColumns = count_vectors(arrays);
 else
-    nColumns = cellfun(@count_vectors, arrays);
+    nColumns = array_fun(@count_vectors, arrays);
 end
 
 % Make sure provided column numbers are within range
 if iscell(colNums)
     % Get the maximum column numbers
-    maxColNumbers = cellfun(@max, colNums);
+    maxColNumbers = array_fun(@max, colNums);
 
     % If any maximum column number is greater than 
     %   the corresponding number of columns, return error
@@ -272,7 +275,7 @@ function colExtracted = extract_columns_helper(colNums, arrays, ...
 if treatCellAsArray || ~iscell(arrays) || ...
         (treatCnvAsColumns && iscellnumericvector(arrays))
     % Treat arrays as a single array
-    colExtracted = arrayfun(@(x) extract_from_one_array(x, arrays, ...
+    colExtracted = array_fun(@(x) extract_from_one_array(x, arrays, ...
                                     treatCellAsArray, treatCnvAsColumns, ...
                                     asRowVectors), ...
                             colNums, 'UniformOutput', false);
@@ -289,7 +292,7 @@ else
     end
 
     % Treat each cell content as a different array
-    colExtracted = arrayfun(@(x) extract_specific_column(x, colNums, arrays, ...
+    colExtracted = array_fun(@(x) extract_specific_column(x, colNums, arrays, ...
                                     treatCellAsArray, treatCnvAsColumns, ...
                                     asRowVectors), ...
                             iColsToExtract, 'UniformOutput', false);
@@ -309,9 +312,9 @@ colNumsThis = match_dimensions(colNumsThis, size(arrays));
 
 % Extract this column from each array
 colExtracted = ...
-    cellfun(@(x, y) extract_from_one_array(x, y, ...
+    array_fun(@(x, y) extract_from_one_array(x, y, ...
                     treatCellAsArray, treatCnvAsColumns, asRowVectors), ...
-            num2cell(colNumsThis), arrays, 'UniformOutput', false);
+                num2cell(colNumsThis), arrays, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

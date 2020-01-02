@@ -241,7 +241,7 @@ if strcmpi(stimType, 'auto')
         % Try finding the corresponding gas stim table
         [~, stimTablePath] = ...
             find_matching_files(spike2Path, 'Suffix', stimTableSuffixGas, ...
-                                'Extension', 'csv');
+                                'Extension', 'csv', 'ExtractDistinct', true);
 
         % Otherwise, try finding the corresponding laser stim table
         if ~isempty(stimTablePath)
@@ -249,7 +249,7 @@ if strcmpi(stimType, 'auto')
         else
             [~, stimTablePath] = ...
                 find_matching_files(spike2Path, 'Suffix', stimTableSuffixLaser, ...
-                                    'Extension', 'csv');
+                                    'Extension', 'csv', 'ExtractDistinct', true);
                                 
             % If not found, don't align to stimulus
             if ~isempty(stimTablePath)
@@ -263,7 +263,7 @@ if strcmpi(stimType, 'auto')
 elseif strcmpi(stimType, 'gas')
     [~, stimTablePath] = ...
         find_matching_files(spike2Path, 'Suffix', stimTableSuffixGas, ...
-                            'Extension', 'csv');
+                            'Extension', 'csv', 'ExtractDistinct', true);
     if isempty(stimTablePath)
         parseGas = true;
     end
@@ -418,7 +418,7 @@ if alignToStim
     % Find corresponding stim table
     [~, stimTablePath] = ...
         find_matching_files(spike2Path, 'Suffix', stimTableSuffix, ...
-                            'Extension', 'csv');
+                            'Extension', 'csv', 'ExtractDistinct', true);
 
     % Extract the first stim start time from the stim table
     stimTable = readtable(stimTablePath);

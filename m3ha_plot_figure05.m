@@ -18,15 +18,18 @@
 
 %% Hard-coded parameters
 % Flags
-updateScripts = true;
-simulateIpscr = true;
-plotOverlapped = true;
+updateScripts = false; %true;
+simulateIpscr = false; %true;
+plotAllVoltages = true;
+plotAllTotalCurrents = true;
+plotAllComponentCurrents = true;
+plotDend2ITproperties = true;
 plotM2h = true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
 figure02Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure02');
-figure04Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure04');
+figure05Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure05');
 fitDirectory = fullfile(parentDirectory, 'optimizer4gabab');
 
 % Files
@@ -68,15 +71,15 @@ overlappedYLimits = [];
 m2hFigWidth = 5.7;
 m2hFigHeight = 3;
 m2hXLimits = [2800, 4000];
-m2hYLimits = [1e-5, 0.1];
+m2hYLimits = [];
 
 figTypes = {'png', 'epsc2'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Make sure NEURON scripts are up to date in figure04Dir
+%% Make sure NEURON scripts are up to date in figure05Dir
 if updateScripts
-    update_neuron_scripts(fitDirectory, figure04Dir);
+    update_neuron_scripts(fitDirectory, figure05Dir);
 end
 
 %% Load sweep info
@@ -84,10 +87,11 @@ end
 swpInfo = m3ha_load_sweep_info('Directory', figure02Dir);
 
 %% Find NEURON parameter tables
-if simulateIpscr || plotOverlapped || plotM2h
+if simulateIpscr || plotAllVoltages || plotAllTotalCurrents || ...
+        plotAllComponentCurrents || plotDend2ITproperties || plotM2h
     % Find NEURON parameter tables
     [~, exampleParamPaths] = ...
-        find_matching_files(exampleCellNames, 'Directory', figure04Dir, ...
+        find_matching_files(exampleCellNames, 'Directory', figure05Dir, ...
                             'Suffix', paramFileSuffix, 'Extension', 'csv', ...
                             'Recursive', false);
 
@@ -102,7 +106,7 @@ if simulateIpscr || plotOverlapped || plotM2h
     exampleLabelsIpscr = strcat(exampleLabels, '_ipscr');
 
     % Create and check output folders
-    outFoldersIpscr = fullfile(figure04Dir, exampleLabelsIpscr);
+    outFoldersIpscr = fullfile(figure05Dir, exampleLabelsIpscr);
     check_dir(outFoldersIpscr);
 end
 
@@ -113,25 +117,37 @@ if simulateIpscr
             exampleLabelsIpscr, exampleParamPaths, outFoldersIpscr);
 end
 
-%% Plot overlapped traces
-if plotOverlapped
-    % Plot all voltages
-    cellfun(@(x, y) plot_overlapped(x, y, 'allvoltages', ...
-                    figure04Dir, figTypes, ...
+%% Plot all voltages
+if plotAllVoltages
+    cellfun(@(x, y) plot_overlapped(x, y, 'allVoltages', ...
+                    figure05Dir, figTypes, ...
+                    overlappedFigWidth, 8 * overlappedFigHeightPerSubplot, ...
+                    overlappedXLimits, overlappedYLimits), ...
+            exampleLabelsIpscr, outFoldersIpscr);
+end
+
+%% Plot all currents
+if plotAllTotalCurrents
+    cellfun(@(x, y) plot_overlapped(x, y, 'allTotalCurrents', ...
+                    figure05Dir, figTypes, ...
                     overlappedFigWidth, 7 * overlappedFigHeightPerSubplot, ...
                     overlappedXLimits, overlappedYLimits), ...
             exampleLabelsIpscr, outFoldersIpscr);
+end
 
-    % Plot all currents
-    cellfun(@(x, y) plot_overlapped(x, y, 'allcurrents', ...
-                    figure04Dir, figTypes, ...
-                    overlappedFigWidth, 10 * overlappedFigHeightPerSubplot, ...
+%% Plot component currents
+if plotAllComponentCurrents
+    cellfun(@(x, y) plot_overlapped(x, y, 'allComponentCurrents', ...
+                    figure05Dir, figTypes, ...
+                    overlappedFigWidth, 7 * overlappedFigHeightPerSubplot, ...
                     overlappedXLimits, overlappedYLimits), ...
             exampleLabelsIpscr, outFoldersIpscr);
+end
 
-    % Plot all T channel properties
+%% Plot all T channel properties
+if plotDend2ITproperties
     cellfun(@(x, y) plot_overlapped(x, y, 'dend2ITproperties', ...
-                    figure04Dir, figTypes, ...
+                    figure05Dir, figTypes, ...
                     overlappedFigWidth, 5 * overlappedFigHeightPerSubplot, ...
                     overlappedXLimits, overlappedYLimits), ...
             exampleLabelsIpscr, outFoldersIpscr);
@@ -139,7 +155,7 @@ end
 
 %% Plot m2h in dendrite 2 against its steady state
 if plotM2h
-    cellfun(@(x, y) plot_m2h(x, y, figure04Dir, figTypes, ...
+    cellfun(@(x, y) plot_m2h(x, y, figure05Dir, figTypes, ...
                                 m2hFigWidth, m2hFigHeight, ...
                                 m2hXLimits, m2hYLimits), ...
             exampleLabelsIpscr, outFoldersIpscr);

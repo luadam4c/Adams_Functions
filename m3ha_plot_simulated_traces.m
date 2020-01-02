@@ -94,13 +94,14 @@ function handles = m3ha_plot_simulated_traces (varargin)
 % File History:
 % 2019-10-14 Created by Adam Lu
 % 2019-12-22 Added 'PlotType' as an optional argument
-% 2019-12-29 Added 'allvoltages', 'allcurrents', 'allITproperties', 
+% 2019-12-29 Added 'allVoltages', 'allTotalCurrents', 'allITproperties', 
 %               and 'dend2ITproperties' 
 % 2019-12-29 Reordered simulated ouptut columns to include ipas
 
 %% Hard-coded parameters
 validPlotTypes = {'individual', 'residual', 'overlapped', ...
-                    'allvoltages', 'allcurrents', 'allITproperties', ...
+                    'allVoltages', 'allTotalCurrents', ...
+                    'allComponentCurrents', 'allITproperties', ...
                     'dend2ITproperties', 'm2h'};
 validBuildModes = {'', 'active', 'passive'};
 validSimModes = {'', 'active', 'passive'};
@@ -110,14 +111,14 @@ lineWidthIndividual = 0.5;
 
 % Note: The following must be consistent with m3ha_neuron_run_and_analyze.m
 importedSuffix = 'imported_files';
-paramsSuffix = 'params';
+paramsSuffix = 'simulation_parameters';
 
 % Note: The following must be consistent with singleneuron4compgabab.hoc
 timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
                                 %   of simulations are stabilized
 
 % TODO: Make optional argument
-neuronParamsTable = [];
+simParamsTable = [];
 
 %% Column numbers for recorded data
 %   Note: Must be consistent with m3ha_resave_sweeps.m
@@ -232,6 +233,15 @@ lineWidth = iP.Results.LineWidth;
 otherArguments = iP.Unmatched;
 
 %% Preparation
+% Determine whether recorded traces needs to be imported
+switch plotType
+    case {'individual', 'residual', 'overlapped', 'allVoltages'}
+        toImportRecorded = true;
+    case {'allTotalCurrents', 'allComponentCurrents', 'allITproperties', ...
+            'dend2ITproperties', 'm2h'}
+        toImportRecorded = false;
+end
+
 % Use the present working directory for both inputs and output by default
 if isempty(directory)
     directory = pwd;
@@ -245,7 +255,7 @@ end
 % Decide on input paths
 if isempty(fileNames)
     [~, fileNames] = ...
-        all_files('Directory', directory, 'Extension', extensionDefault, ...
+        all_files('Directory', directory, 'Extension', extension, ...
                     'Keyword', 'sim', 'ForceCellOutput', true);
 else
     % Make sure they are full paths
@@ -304,8 +314,9 @@ if isempty(colorMap)
         case {'individual', 'residual'}
             % Decide on the color map for individual and residual plots
             colorMap = decide_on_colormap('r', nRows);
-        case {'overlapped', 'allvoltages', 'allcurrents', ...
-                'allITproperties', 'dend2ITproperties', 'm2h'}
+        case {'overlapped', 'allVoltages', 'allTotalCurrents', ...
+                'allComponentCurrents', 'allITproperties', ...
+                'dend2ITproperties', 'm2h'}
             % Decide on the colors for parallel plots
             colorMap = decide_on_colormap([], 4);
             if nFiles > nRows
@@ -325,8 +336,9 @@ if isempty(lineWidth)
     switch plotType
         case {'individual', 'residual'}
             lineWidth = lineWidthIndividual;
-        case {'overlapped', 'allvoltages', 'allcurrents', ...
-                'allITproperties', 'dend2ITproperties', 'm2h'}
+        case {'overlapped', 'allVoltages', 'allTotalCurrents', ...
+                'allComponentCurrents', 'allITproperties', ...
+                'dend2ITproperties', 'm2h'}
             lineWidth = lineWidthParallel;
         otherwise
             error('plotType unrecognized!');
@@ -334,45 +346,44 @@ if isempty(lineWidth)
 end
 
 % Decide on the neuron parameters table
-if isempty(neuronParamsTable)
-    % Extract the cell name
-    cellName = m3ha_extract_cell_name(fileNames);
-
+if isempty(simParamsTable)
     % Find the corresponding parameters file
-    paramsPath = all_files('Directory', directory, 'Keyword', cellName, ...
+    [~, simParamsPath] = all_files('Directory', directory, 'Keyword', expStr, ...
                             'Suffix', paramsSuffix, 'Extension', 'csv', ...
                             'MaxNum', 1);
 
-    % Load the parameters table
-    neuronParamsTable = load_params(paramsPath);
+    % Load the simulation parameters table
+    simParamsTable = readtable(simParamsPath);
 end
 
 %% Data
-% Look for the imported files log
-[~, importedPath] = all_files('Directory', directory, 'Prefix', expStr, ...
-                                'Suffix', importedSuffix, 'MaxNum', 1);
+if toImportRecorded
+    % Look for the imported files log
+    [~, importedPath] = all_files('Directory', directory, 'Prefix', expStr, ...
+                                    'Suffix', importedSuffix, 'MaxNum', 1);
 
-% Look for matching recorded sweep names
-if ~isempty(importedPath)
-    % Extract sweep names
-    sweepNames = read_lines_from_file(importedPath);
+    % Look for matching recorded sweep names
+    if ~isempty(importedPath)
+        % Extract sweep names
+        sweepNames = read_lines_from_file(importedPath);
 
-    % TODO: Reorder simulated fileNames to match recorded ones
-else
-    sweepNames = m3ha_extract_sweep_name(fileNames);
-end
+        % TODO: Reorder simulated fileNames to match recorded ones
+    else
+        sweepNames = m3ha_extract_sweep_name(fileNames);
+    end
 
-% Import and extract from recorded data
-if ~all(isemptycell(sweepNames))
-    % Import recorded traces
-    realData = m3ha_import_raw_traces(sweepNames, 'ImportMode', simMode, ...
+    % Import and extract from recorded data
+    if ~all(isemptycell(sweepNames))
+        % Import recorded traces
+        realData = m3ha_import_raw_traces(sweepNames, 'ImportMode', simMode, ...
                                     'Verbose', true, 'OutFolder', outFolder);
 
-    % Extract vectors from recorded data
-    %   Note: these will be empty if realData not provided
-    [tVecs, vVecsRec, iVecsRec, gVecsRec] = ...
-        extract_columns(realData, [TIME_COL_REC, VOLT_COL_REC, ...
-                                    CURR_COL_REC, COND_COL_REC]);
+        % Extract vectors from recorded data
+        %   Note: these will be empty if realData not provided
+        [tVecs, vVecsRec, iVecsRec, gVecsRec] = ...
+            extract_columns(realData, [TIME_COL_REC, VOLT_COL_REC, ...
+                                        CURR_COL_REC, COND_COL_REC]);
+    end
 end
 
 % Load simulated data
@@ -383,10 +394,7 @@ end
 simData = load_neuron_outputs('FileNames', fileNames, 'tVecs', tVecs);
 
 % Extract vectors from simulated data
-[tVecs, vVecsSim, gCmdSim, iExtSim, vVecsDend1, vVecsDend2] = ...
-    extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM, ...
-                    GGABAB_COL_SIM, IEXT_COL_SIM, ...
-                    DEND1_COL_SIM, DEND2_COL_SIM]);
+[tVecs, vVecsSim] = extract_columns(simData, [TIME_COL_SIM, VOLT_COL_SIM]);
 
 %% Plots
 % Plot according to plot type
@@ -399,11 +407,10 @@ switch plotType
         handles = m3ha_plot_residual_traces(tVecs, vVecsSim, vVecsRec, ...
                                     residuals, xLimits, colorMap, lineWidth, ...
                                     expStr, expStrForTitle, otherArguments);
-    case {'overlapped', 'allvoltages', 'allcurrents', ...
-            'allITproperties', 'dend2ITproperties'}
+    case {'overlapped', 'allVoltages', 'allTotalCurrents', ...
+            'allComponentCurrents', 'allITproperties', 'dend2ITproperties'}
         handles = m3ha_plot_overlapped_traces(simData, vVecsRec, ...
-                                    neuronParamsTable, ...
-                                    plotType, buildMode, ...
+                                    simParamsTable, plotType, buildMode, ...
                                     xLimits, colorMap, lineWidth, ...
                                     expStr, expStrForTitle, otherArguments);
     case 'm2h'
@@ -537,8 +544,7 @@ handles = plot_fitted_traces(tVecs, residuals, 'ToAnnotate', false, ...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function handles = m3ha_plot_overlapped_traces (simData, vVecsRec, ...
-                                        neuronParamsTable, ...
-                                        plotType, buildMode, ...
+                                        simParamsTable, plotType, buildMode, ...
                                         xLimits, colorMap, lineWidth, ...
                                         expStr, expStrForTitle, otherArguments)
 
@@ -658,11 +664,13 @@ else
             INAP_DEND2, INAP_M_DEND2, INAP_H_DEND2]);
 end
 
+% Convert the table to a structure array
+simParamsStructArray = table2struct(simParamsTable);
+
 % Calculate total currents from current densities
 compute_current_across_cells = @(x, y, z) ...
-    cellfun(@(a, b, c) compute_total_current([a, b, c], ...
-                        'GeomParams', neuronParamsTable), ...
-            x, y, z, 'UniformOutput', false);
+    cellfun(@(a, b, c, d) compute_total_current([a, b, c], 'GeomParams', d), ...
+            x, y, z, num2cell(simParamsStructArray), 'UniformOutput', false);
 iPasTotal = compute_current_across_cells(iPasSoma, iPasDend1, iPasDend2);
 if strcmpi(buildMode, 'active')
     % Compute total and component currents (nA)
@@ -677,17 +685,30 @@ if strcmpi(buildMode, 'active')
     [inapTotal, inapTotalEachCompartment] = ...
         compute_current_across_cells(inapSoma, inapDend1, inapDend2);
 
-    iIntTotal = cellfun(@(a, b, c, d, e, f) a + b + c + d + e + f, ...
-                    iPasTotal, itTotal, ihTotal, iaTotal, ikirTotal, inapTotal, ...
-                    'UniformOutput', false);
 
     % Extract component currents (nA) for each compartment
     [itTotalSoma, itTotalDend1, itTotalDend2] = ...
         extract_columns(itTotalEachCompartment, 1:3);
     [iaTotalSoma, iaTotalDend1, iaTotalDend2] = ...
         extract_columns(iaTotalEachCompartment, 1:3);
+
+    % Compute the total current
+    itaTotal = cellfun(@(a, b) a + b, itTotal, iaTotal, 'UniformOutput', false);
 end
 
+% Compute the total intrinsic current
+if strcmpi(buildMode, 'passive')
+    iIntTotal = iPasTotal;
+else
+    iIntTotal = cellfun(@(a, b, c, d, e, f) a + b + c + d + e + f, ...
+                        iPasTotal, itTotal, ihTotal, ...
+                        iaTotal, ikirTotal, inapTotal, ...
+                        'UniformOutput', false);
+end
+
+% Compute the total current
+% TODO: Use combine_traces.m?
+iTotal = cellfun(@(a, b) a + b, iExtSim, iIntTotal, 'UniformOutput', false);
 
 % Find the indices of the x-axis limit endpoints
 endPointsForPlots = find_window_endpoints(xLimits, tVecs);
@@ -695,16 +716,16 @@ endPointsForPlots = find_window_endpoints(xLimits, tVecs);
 % Extract region of interest and force as a matrix
 if strcmpi(buildMode, 'passive')
     [tVecs, vVecsRec, vVecsSim, vVecsDend1, vVecsDend2, ...
-            iExtSim, iPasTotal] = ...
+            iTotal, iExtSim, iIntTotal, iPasTotal] = ...
         argfun(@(x) prepare_for_plotting(x, endPointsForPlots), ...
                 tVecs, vVecsRec, vVecsSim, vVecsDend1, vVecsDend2, ...
-                iExtSim, iPasTotal);
+                iTotal, iExtSim, iIntTotal, iPasTotal);
 elseif strcmpi(buildMode, 'active')
     [tVecs, vVecsRec, vVecsSim, vVecsDend1, ...
-            vVecsDend2, gCmdSim, iExtSim, iPasTotal, iIntTotal, ...
-            itTotal, ihTotal, iaTotal, ikirTotal, inapTotal, ...
-            itTotalSoma; itTotalDend1; itTotalDend2; ...
-            iaTotalSoma; iaTotalDend1; iaTotalDend2; ...
+            vVecsDend2, gCmdSim, iTotal, iExtSim, iIntTotal, iPasTotal, ...
+            itTotal, ihTotal, iaTotal, ikirTotal, inapTotal, itaTotal, ...
+            itTotalSoma, itTotalDend1, itTotalDend2, ...
+            iaTotalSoma, iaTotalDend1, iaTotalDend2, ...
             itSoma, itmSoma, itminfSoma, ithSoma, ithinfSoma, ...
             ihSoma, ihmSoma, ikirSoma, ikirmSoma, ...
             iaSoma, iam1Soma, iah1Soma, iam2Soma, iah2Soma, ...
@@ -719,10 +740,10 @@ elseif strcmpi(buildMode, 'active')
             inapDend2, inapmDend2, inaphDend2] = ...
         argfun(@(x) prepare_for_plotting(x, endPointsForPlots), ...
                 tVecs, vVecsRec, vVecsSim, vVecsDend1, ...
-                vVecsDend2, gCmdSim, iExtSim, iPasTotal, iIntTotal, ...
-                itTotal, ihTotal, iaTotal, ikirTotal, inapTotal, ...
-                itTotalSoma; itTotalDend1; itTotalDend2; ...
-                iaTotalSoma; iaTotalDend1; iaTotalDend2; ...
+                vVecsDend2, gCmdSim, iTotal, iExtSim, iIntTotal, iPasTotal, ...
+                itTotal, ihTotal, iaTotal, ikirTotal, inapTotal, itaTotal, ...
+                itTotalSoma, itTotalDend1, itTotalDend2, ...
+                iaTotalSoma, iaTotalDend1, iaTotalDend2, ...
                 itSoma, itmSoma, itminfSoma, ithSoma, ithinfSoma, ...
                 ihSoma, ihmSoma, ikirSoma, ikirmSoma, ...
                 iaSoma, iam1Soma, iah1Soma, iam2Soma, iah2Soma, ...
@@ -739,11 +760,12 @@ end
 
 % List all possible items to plot
 if strcmpi(buildMode, 'passive')
-    vecsAll = {vVecsRec; vVecsSim; vVecsDend1; vVecsDend2; iExtSim; iPasTotal}
+    vecsAll = {vVecsRec; vVecsSim; vVecsDend1; vVecsDend2; iExtSim; iPasTotal};
 else
     vecsAll = {vVecsRec; vVecsSim; vVecsDend1; ...
-                vVecsDend2; iExtSim; gCmdSim; iIntTotal; iPasTotal; ...
-                itTotal; ihTotal; iaTotal; ikirTotal; inapTotal; ...
+                vVecsDend2; iTotal; iExtSim; ...
+                gCmdSim; iIntTotal; iPasTotal; ...
+                itTotal; ihTotal; iaTotal; ikirTotal; inapTotal; itaTotal; ...
                 itTotalSoma; itTotalDend1; itTotalDend2; ...
                 iaTotalSoma; iaTotalDend1; iaTotalDend2; ...
                 itmSoma; itminfSoma; ithSoma; ithinfSoma; ...
@@ -754,13 +776,14 @@ end
 % List corresponding labels
 if strcmpi(buildMode, 'passive')
     labelsAll = {'V_{rec} (mV)'; 'V_{soma} (mV)'; 'V_{dend1} (mV)'; ...
-                'V_{dend2} (mV)'; 'I_{stim} (nA)'; 'I_{pas} (nA)'};
+                'V_{dend2} (mV)'; 'I_{total} (nA)'; 'I_{stim} (nA)'; ...
+                'g_{GABA_B} (uS)'; 'I_{int} (nA)'; 'I_{pas} (nA)'};
 else
     labelsAll = {'V_{rec} (mV)'; 'V_{soma} (mV)'; 'V_{dend1} (mV)'; ...
-                'V_{dend2} (mV)'; 'I_{stim} (nA)'; 'g_{GABA_B} (uS)'; ...
-                'I_{int} (nA)'; 'I_{pas} (nA)'; ...
+                'V_{dend2} (mV)'; 'I_{total} (nA)'; 'I_{stim} (nA)'; ...
+                'g_{GABA_B} (uS)'; 'I_{int} (nA)'; 'I_{pas} (nA)'; ...
                 'I_{T} (nA)'; 'I_{h} (nA)'; 'I_{A} (nA)'; ...
-                'I_{Kir} (nA)'; 'I_{NaP} (nA)'; ...
+                'I_{Kir} (nA)'; 'I_{NaP} (nA)'; 'I_{T} + I_{A} (nA)'; ...
                 'I_{T,soma} (nA)'; 'I_{T,dend1} (nA)'; 'I_{T,dend2} (nA)'; ...
                 'I_{A,soma} (nA)'; 'I_{A,dend1} (nA)'; 'I_{A,dend2} (nA)'; ...
                 'm_{T,soma}'; 'm_{\infty,T,soma}'; ...
@@ -771,16 +794,63 @@ else
                 'h_{T,dend2}'; 'h_{\infty,T,dend2}'};
 end
 
+% List indices
+IDX_VREC = 1;
+IDX_VSOMA = 2;
+IDX_VDEND1 = 3;
+IDX_VDEND2 = 4;
+IDX_ITOTAL = 5;
+IDX_ISTIM = 6;
+IDX_GGABAB = 7;
+IDX_IINT = 8;
+IDX_IPAS = 9;
+IDX_IT = 10;
+IDX_IH = 11;
+IDX_IA = 12;
+IDX_IKIR = 13;
+IDX_INAP = 14;
+IDX_ITA = 15;
+IDX_IT_SOMA = 16;
+IDX_IT_DEND1 = 17;
+IDX_IT_DEND2 = 18;
+IDX_IA_SOMA = 19;
+IDX_IA_DEND1 = 20;
+IDX_IA_DEND2 = 21;
+IDX_MT_SOMA = 22;
+IDX_MINFT_SOMA = 23;
+IDX_HT_SOMA = 24;
+IDX_HINFT_SOMA = 25;
+IDX_MT_DEND1 = 26;
+IDX_MINFT_DEND1 = 27;
+IDX_HT_DEND1 = 28;
+IDX_HINFT_DEND1 = 29;
+IDX_MT_DEND2 = 30;
+IDX_MINFT_DEND2 = 31;
+IDX_HT_DEND2 = 32;
+IDX_HINFT_DEND2 = 33;
+
+% Error check
+if numel(labelsAll) ~= IDX_HINFT_DEND2
+    error('Index numbers needs to be updated!');
+end
+
 % Select data to plot
 if strcmpi(buildMode, 'passive')
     switch plotType
-        case {'overlapped', 'allvoltages'}
+        case 'overlapped'
             if ~isempty(vVecsRec)
-                indToPlot = 1:numel(vecsAll);
+                indToPlot = IDX_VREC:numel(vecsAll);
             else
-                indToPlot = 2:numel(vecsAll);
+                indToPlot = IDX_VSOMA:numel(vecsAll);
             end
-        case {'allcurrents', 'allITproperties', 'dend2ITproperties'}
+        case 'allVoltages'
+            if ~isempty(vVecsRec)
+                indToPlot = IDX_VREC:IDX_IINT;
+            else
+                indToPlot = IDX_VSOMA:IDX_IINT;
+            end
+        case {'allTotalCurrents', 'allComponentCurrents', ...
+                'allITproperties', 'dend2ITproperties'}
             fprintf(['No currents or channel properties are ', ...
                         'saved in passive sim mode!\n']);
             return
@@ -791,22 +861,25 @@ else
     switch plotType
         case 'overlapped'
             if ~isempty(vVecsRec)
-                indToPlot = 1:numel(vecsAll);
+                indToPlot = IDX_VREC:numel(vecsAll);
             else
-                indToPlot = 2:numel(vecsAll);
+                indToPlot = IDX_VSOMA:numel(vecsAll);
             end
-        case 'allvoltages'
+        case 'allVoltages'
             if ~isempty(vVecsRec)
-                indToPlot = 1:7;
+                indToPlot = IDX_VREC:IDX_IINT;
             else
-                indToPlot = 2:7;
+                indToPlot = IDX_VSOMA:IDX_IINT;
             end
-        case 'allcurrents'
-            indToPlot = 7:16;
+        case 'allTotalCurrents'
+            indToPlot = [IDX_IINT, IDX_ITA, IDX_IPAS:IDX_INAP];
+        case 'allComponentCurrents'
+            indToPlot = [IDX_IT, IDX_IT_SOMA:IDX_IT_DEND2, ...
+                            IDX_IA, IDX_IA_SOMA:IDX_IA_DEND2];
         case 'allITproperties'
-            indToPlot = 17:28;
+            indToPlot = IDX_MT_SOMA:IDX_HINFT_DEND2;
         case 'dend2ITproperties'
-            indToPlot = [16, 25:28];
+            indToPlot = [IDX_IT_DEND2, IDX_MT_DEND2:IDX_HINFT_DEND2];
         otherwise
             error('plotType unrecognized!');
     end

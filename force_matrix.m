@@ -11,6 +11,7 @@ function vecs = force_matrix (vecs, varargin)
 %       force_matrix({1:5, magic(3)})
 %       force_matrix({{1:3, 1:3}, {1:3, 1:3}})
 %       force_matrix({1:5, 1:3, []})
+%       force_matrix({[], [], []})
 %       force_matrix({{'a', 'b'}; {'b'; 'c'; 'd'}})
 %       force_matrix({{'a', 'b'}; {'b'; 'c'; 'd'}}, 'AlignMethod', 'leftadjust')
 %       load_examples;
@@ -53,6 +54,7 @@ function vecs = force_matrix (vecs, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/create_empty_match.m
 %       cd/extract_subvectors.m
 %       cd/force_column_vector.m
 %       cd/iscellnumeric.m
@@ -70,10 +72,12 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/find_window_endpoints.m
 %       cd/force_column_vector.m
 %       cd/force_data_as_matrix.m
+%       cd/compute_rms_error.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_plot_violin.m
 %       cd/m3ha_rank_neurons.m
+%       cd/m3ha_simulate_population.m
 %       cd/parse_multiunit.m
 %       cd/parse_phase_info.m
 %       cd/plot_measures.m
@@ -187,10 +191,11 @@ minNSamples = min(nSamples);
 % Put together as an array
 if maxNSamples == minNSamples
     if maxNSamples == 0
-        % Don't force as matrix
+        % Return an empty match
+        vecs = create_empty_match(vecs{1});
         if verbose
             disp(['Warning: Vector lengths are all zero, ', ...
-                    'concatenation aborted!']);
+                    'an empty match returned!']);
         end
     else
         vecs = horzcat(vecs{:});

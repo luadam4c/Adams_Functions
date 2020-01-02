@@ -22,6 +22,9 @@ function pathExists = check_fullpath (fullPath, varargin)
 %                       or a cell array of them
 %                   default == based on whether the path has an extension
 %
+% Requires:
+%       cd/array_fun.m
+%
 % Used by:    
 %       cd/construct_and_check_fullpath.m
 %       cd/load_swd_sheets.m
@@ -76,7 +79,7 @@ end
 
 % Check all paths
 if iscell(fullPath)
-    pathExists = cellfun(@(x, y) check_fullpath_helper(x, y, verbose), ...
+    pathExists = array_fun(@(x, y) check_fullpath_helper(x, y, verbose), ...
                             fullPath, pathType);
 else
     pathExists = check_fullpath_helper(fullPath, pathType, verbose);

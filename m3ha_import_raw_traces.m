@@ -150,6 +150,7 @@ function [data, sweepInfo, dataAll] = m3ha_import_raw_traces (fileNames, varargi
 %
 % Used by:
 %       cd/m3ha_plot_example_jitter.m.m
+%       cd/m3ha_simulate_population.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/singleneuronfitting47.m and later versions
 

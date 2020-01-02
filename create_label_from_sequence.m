@@ -32,6 +32,7 @@ function label = create_label_from_sequence (integers, varargin)
 %
 % Used by:
 %       cd/m3ha_rank_neurons.m
+%       cd/m3ha_simulate_population.m
 %       cd/parse_atf_swd.m
 %       cd/plot_measures.m
 %       cd/plot_relative_events.m

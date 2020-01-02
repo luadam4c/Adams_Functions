@@ -23,6 +23,7 @@ function outVecs = vecfun (myFunction, inVecs, varargin)
 %                   - Any other parameter-value pair for cellfun() or arrayfun()
 %
 % Requires:
+%       cd/array_fun.m
 %       cd/create_error_for_nargin.m
 %       cd/force_matrix.m
 %       cd/struct2arglist.m
@@ -71,14 +72,14 @@ otherArguments = struct2arglist(iP.Unmatched);
 %% Do the job
 if iscellvector(inVecs)
     % Apply myFunction to each cell and always return a cell array
-    outVecs = cellfun(myFunction, inVecs, 'UniformOutput', false, ...
+    outVecs = array_fun(myFunction, inVecs, 'UniformOutput', false, ...
                         otherArguments{:});
 else
     % Count the number of columns
     nColumns = size(inVecs, 2);
 
     % Apply the myFunction to each column and return things in a cell array
-    outVecsCell = arrayfun(@(x) myFunction(inVecs(:, x)), ...
+    outVecsCell = array_fun(@(x) myFunction(inVecs(:, x)), ...
                         transpose(1:nColumns), 'UniformOutput', false, ...
                         otherArguments{:});
 
