@@ -3,10 +3,13 @@ function varargout = match_format_vectors (varargin)
 % Usage: varargout = match_format_vectors (varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       varargout   - matched outputs
+%
 % Arguments:
 %       varargin    - vectors to be matched
 %

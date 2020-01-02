@@ -27,6 +27,9 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %                       'patchZeros'    - patch with zeros
 %                       'patchOnes'    - patch with ones
 %                   default == 'repeat'
+%                   - 'DimToMatch': dimension to match
+%                   must be empty or a positive integer scalar
+%                   default == 1 (match rows)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
@@ -38,9 +41,11 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %       cd/compute_sweep_errors.m
 %       cd/count_samples.m
 %       cd/decide_on_colormap.m
+%       cd/match_format_vector_sets.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_neuron_create_simulation_params.m
 %       cd/plot_fitted_traces.m
+%       cd/match_column_count.m
 %       cd/match_format_vectors.m
 %       cd/match_time_info.m
 %       cd/parse_current_family.m
@@ -56,13 +61,15 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 % 2019-02-20 Now uses create_error_for_nargin
 % 2019-08-15 Added 'ExpansionMethod' as an optional argument
 % 2019-08-15 Implemented 'patchNaNs', 'patchZeros', 'patchOnes'
-% 
+% 2020-01-02 Added 'DimToMatch' as an optional argument
+% 2020-01-02 Now accepts any array type
 
 %% Hard-coded parameters
 validExpansionMethods = {'repeat', 'patchNaNs', 'patchZeros', 'patchOnes'};
 
 %% Default values for optional arguments
 expansionMethodDefault = 'repeat';
+dimToMatchDefault = [];       % use the sum() function default by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -77,22 +84,31 @@ iP = inputParser;
 iP.FunctionName = mfilename;
 
 % Add required inputs to the Input Parser
-addRequired(iP, 'arrayOld', ...
-    @(x) validateattributes(x, {'numeric', 'logical', 'cell', 'struct'}, {'3d'}));
+addRequired(iP, 'arrayOld');
 addRequired(iP, 'nRowsNew', ...
     @(x) validateattributes(x, {'numeric'}, {'positive', 'integer', 'scalar'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'ExpansionMethod', expansionMethodDefault, ...
     @(x) any(validatestring(x, validExpansionMethods)));
+addParameter(iP, 'DimToMatch', dimToMatchDefault, ...
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                ['DimToMatch must be either empty ', ...
+                    'or a positive integer scalar!']));
 
 % Read from the Input Parser
 parse(iP, arrayOld, nRowsNew, varargin{:});
 expansionMethod = validatestring(iP.Results.ExpansionMethod, validExpansionMethods);
+dimToMatch = iP.Results.DimToMatch;
 
 %% Preparation
+% Set default dimension to match
+if isempty(dimToMatch)
+    dimToMatch = 1;
+end
+
 % Query the old number of rows
-nRowsOld = size(arrayOld, 1);
+nRowsOld = size(arrayOld, dimToMatch);
 
 % If arrayOld is empty 
 %   or if the new number of rows are the same as the old ones, 
@@ -117,25 +133,60 @@ if nRowsNew > nRowsOld
 
         % Expand array by repetition
         if nDims == 2
-            % First expand by factorToExpand
-            arrayNew = repmat(arrayOld, [factorToExpand, 1]);
+            switch dimToMatch
+            case 1
+                % First expand rows by factorToExpand
+                arrayNew = repmat(arrayOld, [factorToExpand, 1]);
 
-            % Fill in remaining rows by the first rows
-            arrayNew = vertcat(arrayNew, arrayOld(1:remainingNRows, :));
+                % Fill in remaining rows by the first rows
+                arrayNew = cat(1, arrayNew, arrayOld(1:remainingNRows, :));
+            case 2
+                % First expand columns by factorToExpand
+                arrayNew = repmat(arrayOld, [1, factorToExpand]);
+
+                % Fill in remaining columns by the first columns
+                arrayNew = cat(2, arrayNew, arrayOld(:, 1:remainingNRows));
+            case 3
+                % First expand columns by factorToExpand
+                arrayNew = repmat(arrayOld, [1, 1, factorToExpand]);
+            otherwise
+                error('dimToMatch unrecognized!');
+            end
         elseif nDims == 3
-            % First expand by factorToExpand
-            arrayNew = repmat(arrayOld, [factorToExpand, 1, 1]);
+            switch dimToMatch
+            case 1
+                % First expand by factorToExpand
+                arrayNew = repmat(arrayOld, [factorToExpand, 1, 1]);
 
-            % Fill in remaining rows by the first rows
-            arrayNew = vertcat(arrayNew, arrayOld(1:remainingNRows, :, :));
+                % Fill in remaining rows by the first rows
+                arrayNew = cat(1, arrayNew, arrayOld(1:remainingNRows, :, :));
+            case 2
+                % First expand columns by factorToExpand
+                arrayNew = repmat(arrayOld, [1, factorToExpand, 1]);
+
+                % Fill in remaining columns by the first columns
+                arrayNew = cat(2, arrayNew, arrayOld(:, 1:remainingNRows, :));
+            case 3
+                % First expand by factorToExpand
+                arrayNew = repmat(arrayOld, [1, 1, factorToExpand]);
+
+                % Fill in remaining rows by the first rows
+                arrayNew = cat(3, arrayNew, arrayOld(:, :, 1:remainingNRows));
+            otherwise
+                error('dimToMatch unrecognized!');
+            end
         end
     case {'patchNaNs', 'patchZeros'}
         % Get the old dimensions
         dimOld = size(arrayOld);
 
         % Set new dimensions
-        dimNew = dimOld;
-        dimNew(1) = nRowsNew;
+        if dimToMatch > nDims
+            dimNew = [dimOld, 1];
+        else
+            dimNew = dimOld;
+            dimNew(dimToMatch) = nRowsNew;
+        end
 
         % Initialize as NaNs or zeros
         switch expansionMethod
@@ -149,9 +200,27 @@ if nRowsNew > nRowsOld
 
         % Expand array by patching with NaNs
         if nDims == 2
-            arrayNew(1:nRowsOld, :) = arrayOld;
+            switch dimToMatch
+            case 1
+                arrayNew(1:nRowsOld, :) = arrayOld;
+            case 2
+                arrayNew(:, 1:nRowsOld) = arrayOld;
+            case 3
+                arrayNew(:, :, 1) = arrayOld;
+            otherwise
+                error('dimToMatch unrecognized!');
+            end
         elseif nDims == 3
-            arrayNew(1:nRowsOld, :, :) = arrayOld;
+            switch dimToMatch
+            case 1
+                arrayNew(1:nRowsOld, :, :) = arrayOld;
+            case 2
+                arrayNew(:, 1:nRowsOld, :) = arrayOld;
+            case 3
+                arrayNew(:, :, 1:nRowsOld) = arrayOld;
+            otherwise
+                error('dimToMatch unrecognized!');
+            end
         end
     otherwise
         error('ExpansionMethod unrecognized!');
@@ -159,9 +228,27 @@ if nRowsNew > nRowsOld
 elseif nRowsNew < nRowsOld
     % Truncate array
     if nDims == 2
-        arrayNew = arrayOld(1:nRowsNew, :);
+        switch dimToMatch
+        case 1
+            arrayNew = arrayOld(1:nRowsNew, :);
+        case 2
+            arrayNew = arrayOld(:, 1:nRowsNew);
+        case 3
+            arrayNew = arrayOld(:, :, 1:nRowsNew);
+        otherwise
+            error('dimToMatch unrecognized!');
+        end
     elseif nDims == 3
-        arrayNew = arrayOld(1:nRowsNew, :, :);
+        switch dimToMatch
+        case 1
+            arrayNew = arrayOld(1:nRowsNew, :, :);
+        case 2
+            arrayNew = arrayOld(:, 1:nRowsNew, :);
+        case 3
+            arrayNew = arrayOld(:, :, 1:nRowsNew);
+        otherwise
+            error('dimToMatch unrecognized!');
+        end
     end
 end
 

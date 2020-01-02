@@ -51,16 +51,16 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = false; % true;
-plotErrorHistoryFlag = false; % true;
-plotErrorComparisonFlag = false; % true;
-plotParamHistoryFlag = false; % true;
-plotIndividualFlag = false; % true;
-rankNeuronsFlag = false; % true;
-plotHistogramsFlag = false; % true;
-plotBarPlotFlag = false; % true;
+chooseBestParamsFlag = true;
+plotErrorHistoryFlag = true;
+plotErrorComparisonFlag = true;
+plotParamHistoryFlag = true;
+plotIndividualFlag = true;
+rankNeuronsFlag = true;
+plotHistogramsFlag = true;
+plotBarPlotFlag = true;
 plotParamViolinsFlag = true;
-plotErrorParamComparisonFlag = false; % true;
+plotErrorParamComparisonFlag = true;
 
 % Fitting parameters 
 %   Note: Must be consistent with singleneuronfitting91.m
@@ -157,7 +157,7 @@ outFolder = '';
 figTypes = {'png', 'epsc2'};
 rankNumsToPlot = 1:10;
 errorParamXTicks = 6:6:36;
-rankPrefix = 'singleneuronfitting0-91';
+rankPrefix = 'singleneuronfitting0-94';
 paramDirNames = fullfile('best_params', ...
                         {'bestparams_20191112_singleneuronfitting0', ...
                         'bestparams_20191112_singleneuronfitting1', ...
@@ -175,10 +175,10 @@ paramDirNames = fullfile('best_params', ...
                         'bestparams_20191219_singleneuronfitting85', ...
                         'bestparams_20191221_singleneuronfitting86', ...
                         'bestparams_20191225_singleneuronfitting90', ...
-                        'bestparams_20191227_singleneuronfitting91'});
-
-outFolder = '20191229_ranked_singleneuronfitting0-91';
-rankNumsToPlot = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
+                        'bestparams_20191227_singleneuronfitting91', ...
+                        'bestparams_20191230_singleneuronfitting92', ...
+                        'bestparams_20191231_singleneuronfitting93', ...
+                        'bestparams_20191231_singleneuronfitting94'});
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1

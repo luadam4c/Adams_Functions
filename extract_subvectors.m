@@ -601,7 +601,8 @@ function needToAlign = need_to_align (alignMethod, vecs)
 %% Determine whether it is necessary to align vectors
 
 needToAlign = ~strcmp(alignMethod, 'none') && iscell(vecs) && ...
-                    numel(unique(count_samples(vecs))) > 1;
+                    (iscell(count_samples(vecs)) || ...
+                       numel(unique(count_samples(vecs))) > 1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

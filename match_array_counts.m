@@ -4,10 +4,12 @@ function [arrays1, arrays2] = match_array_counts (arrays1, arrays2, varargin)
 % Explanation:
 %       TODO
 %       cf. match_format_vector_sets.m
+%
 % Example(s):
 %       [a, b] = match_array_counts({1:5, 2:6}, 1:5)
 %       [a, b] = match_array_counts({1:5, [2:6]'}, 1:5)
 %       [a, b] = match_array_counts([[1:5]', [2:6]'], [1:5]')
+%
 % Outputs:
 %       arrays1     - new first set of arrays
 %                   specified as a numeric array 
@@ -15,6 +17,7 @@ function [arrays1, arrays2] = match_array_counts (arrays1, arrays2, varargin)
 %       arrays2     - new second set of arrays
 %                   specified as a numeric array 
 %                       or a cell array of numeric arrays
+%
 % Arguments:    
 %       arrays1     - first set of arrays
 %                   must be a numeric array or a cell array of numeric arrays

@@ -35,6 +35,7 @@ function varargout = array_fun (myFunc, varargin)
 %       cd/extract_elements.m
 %       cd/extract_fields.m
 %       cd/extract_subvectors.m
+%       cd/find_window_endpoints.m
 %       cd/force_string_end.m
 %       cd/ismember_custom.m
 %       cd/load_neuron_outputs.m
@@ -70,7 +71,7 @@ addRequired(iP, 'myFunc', ...
 parse(iP, myFunc);
 
 %% Do the job
-if is_in_parallel || numel(varargin{1}) <= minItemsForParfor
+if is_in_parallel || numel(varargin{1}) < minItemsForParfor
     % Use cellfun or arrayfun
     if iscell(varargin{1})
         [varargout{1:nargout}] = cellfun(myFunc, varargin{:});

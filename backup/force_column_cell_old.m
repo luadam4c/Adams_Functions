@@ -9,10 +9,11 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %           of column cell arrays
 %           However, if 'ToLinear' is true, it will simply be linearized 
 %           as a column cell vector
-%       3. A non-matrix numeric array or a character array is 
-%           simply placed in a cell array
-%       4. A numeric non-vector array is transformed to a column cell vector
-%           of column numeric vectors
+%       3. An empty numeric array or a character array are placed in a cell array
+%       4. A numeric vector is forced as a column vector
+%           (force_column_vector.m is used), then placed in a cell array
+%       5. A numeric non-vector array is transformed to a column cell vector
+%           of column numeric vectors based on the first dimension
 %
 % Example(s):
 %       load_examples;
@@ -24,7 +25,6 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %       force_column_cell(myNumeric3D)
 %       force_column_cell(myCellStr2D)
 %       force_column_cell(myCellStr2D, 'IgnoreNonVectors', true)
-%       force_column_cell(1:5)
 %
 % Outputs:
 %       vectorsCell - vectors as a column cell array
@@ -47,10 +47,6 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 %                   default == false
 %                   - 'TreatVectorAsElement': whether to treat numeric vector
 %                                           as an element
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
-%                   - 'TreatRowVecAsOne': whether to treat row vectors
-%                                           as a single vector
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
 %
@@ -116,8 +112,6 @@ function vectorsCell = force_column_cell (vectorsOrig, varargin)
 % 2019-01-13 Added 'RowInstead' as an optional argument
 % 2019-01-22 Now makes the vector format consistent
 % 2019-12-01 Added 'IgnoreNonVectors' as an optional argument
-% 2020-01-02 Simplified code for non-matrix arrays
-% 2020-01-02 Added 'TreatRowVecAsOne' as an optional argument
 % 
 
 %% Default values for optional arguments
@@ -125,7 +119,6 @@ toLinearizeDefault = false;     % whether to linearize a nonvector cell array
 rowInsteadDefault = false;      % whether to force as row vector instead
 ignoreNonVectorsDefault = false;	% don't ignore non-vectors by default
 treatVectorAsElementDefault = true; % treat vectors as element by default
-treatRowVecAsOneDefault = true;     % treat row vectors as one vector by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -151,8 +144,6 @@ addParameter(iP, 'IgnoreNonVectors', ignoreNonVectorsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatVectorAsElement', treatVectorAsElementDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'TreatRowVecAsOne', treatRowVecAsOneDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vectorsOrig, varargin{:});
@@ -160,7 +151,6 @@ toLinearize = iP.Results.ToLinearize;
 rowInstead = iP.Results.RowInstead;
 ignoreNonVectors = iP.Results.IgnoreNonVectors;
 treatVectorAsElement = iP.Results.TreatVectorAsElement;
-treatRowVecAsOne = iP.Results.TreatRowVecAsOne;
 
 %% Do the job
 if isempty(vectorsOrig) || iscell(vectorsOrig) && ...
@@ -180,8 +170,7 @@ elseif ischar(vectorsOrig) || isstring(vectorsOrig)
 
     % Pass to this function again
     vectorsCell = force_column_cell(vectorsCell, 'ToLinearize', toLinearize, ...
-                                    'RowInstead', rowInstead, ...
-                                    'TreatRowVecAsOne', treatRowVecAsOne);
+                                    'RowInstead', rowInstead);
 elseif iscell(vectorsOrig) && (isvector(vectorsOrig) || toLinearize)
     % Reassign as a column
     vectorsCell = vectorsOrig(:);
@@ -192,31 +181,34 @@ elseif iscell(vectorsOrig) && (isvector(vectorsOrig) || toLinearize)
     end
 elseif ~iscell(vectorsOrig) || ...
         iscell(vectorsOrig) && ~isvector(vectorsOrig) && ~toLinearize
-    % Convert to a cell array or a cell vector
-    if ~iscell(vectorsOrig) && ~treatVectorAsElement
-        % Convert to a cell array
-        vectorsCell = num2cell(vectorsOrig);
-    elseif ~iscell(vectorsOrig) && ...
-            (iscolumn(vectorsOrig) || isrow(vectorsOrig) && treatRowVecAsOne)
-        % Put in a cell array
-        vectorsCell = {vectorsOrig};
-    elseif ~iscell(vectorsOrig) && isrow(vectorsOrig) && ~treatRowVecAsOne
-        % Convert to a cell array
-        vectorsCell = num2cell(vectorsOrig);
+    % Force any non-cell vector as a column vector
+    if ~iscell(vectorsOrig)
+        % If vectorsOrig is a row vector, columns will be extracted as row vectors
+        if isrow(vectorsOrig)
+            asRowVectors = true;
+        else
+            asRowVectors = false;
+        end
+        
+        % Force as a column vector
+        vectorsOrig = force_column_vector(vectorsOrig, 'IgnoreNonVectors', true);
     else
-        % Either a non-cell non-vector array or a cell non-vector array
-        %   Columns will be extract as column vectors and placed
-        %   in a column cell array
-        vectorsCell = extract_columns(vectorsOrig, 'all', ...
-                        'OutputMode', 'single', 'TreatCellAsArray', true, ...
-                        'TreatRowVecAsOne', treatRowVecAsOne, ...
-                        'AsRowVectors', false);
+        % Columns will be extract as column vectors
+        asRowVectors = false;
     end
 
-    % Pass to this function again (for resolving rowInstead and toLinearize)
+    % Extract as a cell array or use num2cell
+    if treatVectorAsElement
+        vectorsCell = extract_columns(vectorsOrig, 'all', ...
+                                'OutputMode', 'single', 'TreatCellAsArray', true, ...
+                                'AsRowVectors', asRowVectors);
+    else
+        vectorsCell = num2cell(vectorsOrig);
+    end
+
+    % Pass to this function again
     vectorsCell = force_column_cell(vectorsCell, 'ToLinearize', toLinearize, ...
-                                    'RowInstead', rowInstead, ...
-                                    'TreatRowVecAsOne', treatRowVecAsOne);
+                                    'RowInstead', rowInstead);
 else
     % Should not occur
     error('Code logic error!');
@@ -226,6 +218,35 @@ end
 
 %{
 OLD CODE:
+
+nVectors = size(vectorsOrig, 2);
+
+% Reassign as a column
+vectorsCell = vectorsCell(:);
+
+if iscell(vectorsOrig) && ~iscolumn(vectorsOrig)
+
+%       cd/count_vectors.m
+% Count the number of vectors
+nVectors = count_vectors(vectorsOrig);
+
+% Extract as a cell array
+vectorsCell = arrayfun(@(x) vectorsOrig(:, x), ...
+                        transpose(1:nVectors), ...
+                        'UniformOutput', false);
+
+elseif ischar(vectorsOrig) || isnum(vectorsOrig) && isempty(vectorsOrig)
+    % Place in a cell array
+    vectorsCell = {vectorsOrig};
+
+%       cd/isnum.m
+addRequired(iP, 'vectorsOrig', ...
+    @(x) isnum(x) || iscell(x) || ischar(x) || isstring(x));
+
+% Extract as a cell array
+vectorsCell = extract_columns(vectorsOrig, 'all', ...
+                        'OutputMode', 'single', 'TreatCellAsArray', true, ...
+                        'AsRowVectors', rowInstead);
 
 %}
 

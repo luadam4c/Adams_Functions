@@ -27,6 +27,7 @@ function vectors = force_row_vector (vectors, varargin)
 % Used by:    
 %       cd/compute_centers_from_edges.m
 %       cd/compute_relative_event_times.m
+%       cd/extract_columns.m
 %       cd/m3ha_oscillations_analyze.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/plot_histogram.m
@@ -47,17 +48,6 @@ function vectors = force_row_vector (vectors, varargin)
 if nargin < 1
     error(create_error_for_nargin(mfilename));
 end
-
-% Set up Input Parser Scheme
-iP = inputParser;
-iP.FunctionName = mfilename;
-iP.KeepUnmatched = true;                        % allow extraneous options
-
-% Add required inputs to the Input Parser
-addRequired(iP, 'vectors');
-
-% Read from the Input Parser
-parse(iP, vectors, varargin{:});
 
 %% Do the job
 vectors = force_column_vector(vectors, 'RowInstead', true, varargin{:});

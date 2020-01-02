@@ -1,9 +1,9 @@
-function [vecs1, vecs2] = match_format_vector_sets_new (vecs1, vecs2, varargin)
+function [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 %% Matches two sets of vectors so that they are both cell arrays of the same number of column vectors
-% Usage: [vecs1, vecs2] = match_format_vector_sets_new (vecs1, vecs2, varargin)
+% Usage: [vecs1, vecs2] = match_format_vector_sets (vecs1, vecs2, varargin)
 % Explanation:
 %       This function takes two sets of vectors as input arguments
-%       If one of the sets is a cell array of vectors, 
+%       If there is more than one vector in one of the sets, 
 %           this function forces both sets as cell arrays of the same 
 %           number of vectors so that cellfun() can be used
 %       Otherwise, this function puts character vectors or numeric vectors 
@@ -11,22 +11,17 @@ function [vecs1, vecs2] = match_format_vector_sets_new (vecs1, vecs2, varargin)
 %       cf. match_array_counts.m
 %
 % Example(s):
-%       [a, b] = match_format_vector_sets_new((2:5)', 1:5)
-%       [a, b] = match_format_vector_sets_new((2:5)', 1:5, 'MatchVectors', true)
-%       [a, b] = match_format_vector_sets_new({1:5, 2:6}, 1:5)
-%       [a, b] = match_format_vector_sets_new({1:5, 2:6}, 1:5, 'MatchVectors', true)
-%       [a, b] = match_format_vector_sets_new({1:5, 2:6; [], 5:-1:1}, 1:5)
-%       [a, b] = match_format_vector_sets_new({1:5, [2:6]'}, 1:5)
-%       [a, b] = match_format_vector_sets_new([[1:5]', [2:6]'], [1:5]')
-%       [a, b] = match_format_vector_sets_new({'yes'}, 1:5)
-%       [a, b] = match_format_vector_sets_new({'yes'}, 1:5, 'TreatRowVecAsOne', false)
-%       [a, b] = match_format_vector_sets_new('yes', magic(3))
-%       [a, b] = match_format_vector_sets_new('apple', 1:5)
-%       [a, b] = match_format_vector_sets_new('apple', 1:5, 'TreatRowVecAsOne', false)
-%       [a, b] = match_format_vector_sets_new('apple', 'banana')
-%       [a, b] = match_format_vector_sets_new('apple', '')
-%       [a, b] = match_format_vector_sets_new(@lines, magic(3))
-%       [a, b] = match_format_vector_sets_new({'apple'}, '')
+%       [a, b] = match_format_vector_sets((2:5)', 1:5)
+%       [a, b] = match_format_vector_sets({1:5, 2:6}, 1:5)
+%       [a, b] = match_format_vector_sets({1:5, 2:6; [], 5:-1:1}, 1:5)
+%       [a, b] = match_format_vector_sets({1:5, [2:6]'}, 1:5)
+%       [a, b] = match_format_vector_sets([[1:5]', [2:6]'], [1:5]')
+%       [a, b] = match_format_vector_sets({'yes'}, 1:5)
+%       [a, b] = match_format_vector_sets('yes', magic(3))
+%       [a, b] = match_format_vector_sets('apple', 'banana')
+%       [a, b] = match_format_vector_sets('apple', '')
+%       [a, b] = match_format_vector_sets({@lines}, magic(3))
+%       [a, b] = match_format_vector_sets({'apple'}, '')
 %
 % Outputs:
 %       vecs1       - new first set of vectors
@@ -62,10 +57,6 @@ function [vecs1, vecs2] = match_format_vector_sets_new (vecs1, vecs2, varargin)
 %                                           as scalars
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == true
-%                   - 'TreatRowVecAsOne': whether to treat row vectors
-%                                           as a single vector
-%                   must be numeric/logical 1 (true) or 0 (false)
-%                   default == true
 %
 % Requires:
 %       cd/apply_or_return.m
@@ -76,10 +67,8 @@ function [vecs1, vecs2] = match_format_vector_sets_new (vecs1, vecs2, varargin)
 %       cd/iscellnumeric.m
 %       cd/isnum.m
 %       cd/isnumericvector.m
-%       cd/match_column_count.m
 %       cd/match_dimensions.m
 %       cd/match_format_vectors.m
-%       cd/match_row_count.m
 %
 % Used by:
 %       cd/compute_default_sweep_info.m
@@ -118,7 +107,6 @@ function [vecs1, vecs2] = match_format_vector_sets_new (vecs1, vecs2, varargin)
 % 2019-12-01 Now does not necessarily force as column cell arrays
 %               i.e., match 2D cell arrays
 % 2019-12-23 Now lets the vectors be any type
-% 2020-01-02 Added 'TreatRowVecAsOne' as an optional argument
 % TODO: Add 'ForceColumnOutput' as an optional argument
 % TODO: Accept more than two vector sets
 % 
@@ -134,7 +122,6 @@ treatCellNumAsArrayDefault = false; % treat cell arrays of numeric arrays
 treatCellStrAsArrayDefault = false; % treat cell arrays of character arrays
                                     %   as an array by default
 treatCharAsScalarDefault = true;% treat character arrays as scalars by default
-treatRowVecAsOneDefault = true;     % treat row vectors as one vector by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -165,8 +152,6 @@ addParameter(iP, 'TreatCellStrAsArray', treatCellStrAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCharAsScalar', treatCharAsScalarDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
-addParameter(iP, 'TreatRowVecAsOne', treatRowVecAsOneDefault, ...
-    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, vecs1, vecs2, varargin{:});
@@ -176,63 +161,29 @@ treatCellAsArray = iP.Results.TreatCellAsArray;
 treatCellNumAsArray = iP.Results.TreatCellNumAsArray;
 treatCellStrAsArray = iP.Results.TreatCellStrAsArray;
 treatCharAsScalar = iP.Results.TreatCharAsScalar;
-treatRowVecAsOne = iP.Results.TreatRowVecAsOne;
 
 %% Do the job
+% If the vecs1 or vecs2 is a numeric vector, make sure it is a column vector
+[vecs1, vecs2] = ...
+    argfun(@(x) apply_or_return(isnumericvector(x), ...
+                                @force_column_vector, x), ...
+            vecs1, vecs2);
+
 % If there are more than one vectors in either vecs1 or vecs2, 
 %   put things in a format so cellfun can be used
 if is_vector(vecs1, treatCellNumAsArray, treatCellStrAsArray, ...
-                treatCellAsArray, treatRowVecAsOne) && ...
+                treatCellAsArray) && ...
         is_vector(vecs2, treatCellNumAsArray, treatCellStrAsArray, ...
-                    treatCellAsArray, treatRowVecAsOne)
+                    treatCellAsArray)
     % Match vectors if requested
     if matchVectors
-        % TODO: Pass in treatCharAsScalar && treatRowVecAsOne
+        % TODO: Pass in treatCharAsScalar
         [vecs1, vecs2] = match_format_vectors(vecs1, vecs2);
-    end
-
-    % Force outputs to be cell arrays if requested
-    if forceCellOutputs
-        if ~iscell(vecs1)
-            vecs1 = {vecs1};
-        end
-        if ~iscell(vecs2)
-            vecs2 = {vecs2};
-        end
-    end
-elseif ~forceCellOutputs && ...
-            is_concatable(vecs1, treatCellNumAsArray, ...
-                                treatCellStrAsArray, treatCellAsArray) && ...
-            is_concatable(vecs2, treatCellNumAsArray, ...
-                                treatCellStrAsArray, treatCellAsArray)
-    % Force any row vector to be a column vector
-    if treatRowVecAsOne
-        [vecs1, vecs2] = ...
-            argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', true), ...
-                     vecs1, vecs2);
-    end
-
-    % Find the maximum number of columns
-    maxColumns = max(size(vecs1, 2), size(vecs2, 2));
-
-    % Force vecs1/vecs2 to have the same number of columns
-    [vecs1, vecs2] = ...
-        argfun(@(x) match_column_count(x, maxColumns), vecs1, vecs2);
-
-    % Match vectors if requested
-    if matchVectors
-        % Find the maximum number of rows
-        maxRows = max(size(vecs1, 1), size(vecs2, 1));
-
-        % Force vecs1/vecs2 to have the same number of rows
-        [vecs1, vecs2] = argfun(@(x) match_row_count(x, maxRows), vecs1, vecs2);
     end
 else
     % Force vecs1/vecs2 to become cell arrays of vectors
     [vecs1, vecs2] = ...
-        argfun(@(x) force_column_cell(x, 'IgnoreNonVectors', true, ...
-                                    'TreatRowVecAsOne', treatRowVecAsOne), ...
-                vecs1, vecs2);
+        argfun(@(x) force_column_cell(x, 'IgnoreNonVectors', true), vecs1, vecs2);
 
     % Find the maximum number of rows
     maxRows = max(size(vecs1, 1), size(vecs2, 1));
@@ -246,55 +197,77 @@ else
         argfun(@(x) match_dimensions(x, [maxRows, maxColumns]), vecs1, vecs2);
     
     % Match vectors if requested
-    % TODO: Pass in treatCharAsScalar && treatRowVecAsOne
     if matchVectors
         [vecs1, vecs2] = cellfun(@(x, y) match_format_vectors(x, y), ...
                                 vecs1, vecs2, 'UniformOutput', false);
     end
 end
 
+% Force outputs to be cell arrays if requested
+if forceCellOutputs
+    if ~iscell(vecs1)
+        vecs1 = {vecs1};
+    end
+    if ~iscell(vecs2)
+        vecs2 = {vecs2};
+    end
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function isVector = is_vector(array, ...
-                                treatCellNumAsArray, treatCellStrAsArray, ...
-                                treatCellAsArray, treatRowVecAsOne)
-%% Tests whether an array is considered a vector
+function isVector = is_vector(vecs1, treatCellNumAsArray, ...
+                                treatCellStrAsArray, treatCellAsArray)
+%% Tests whether
 % TODO: Use this in other functions?
 % TODO: Test is_vector?
 
-isVector = (isempty(array) || iscolumn(array) || ...
-                    isrow(array) && treatRowVecAsOne) && ...
-                is_non_cell(array, treatCellNumAsArray, ...
-                            treatCellStrAsArray, treatCellAsArray);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function isConcatable = is_concatable (array, ...
-                                treatCellNumAsArray, treatCellStrAsArray, ...
-                                treatCellAsArray)
-%% Tests whether an array can be concatenated the usual way
-%   Note: character arrays and function handles
-
-isConcatable = ~ischar(array) && ~isa(array, 'function_handle') && ...
-                        is_non_cell(array, treatCellNumAsArray, ...
-                            treatCellStrAsArray, treatCellAsArray);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function isNonCell = is_non_cell (array, treatCellNumAsArray, ...
-                                    treatCellStrAsArray, treatCellAsArray)
-%% Tests whether an array is considered a non-cell array
-% TODO: Use this in other functions?
-
-isNonCell = ~iscell(array) || ...
-            iscellnumeric(array) && treatCellNumAsArray || ...
-            iscellstr(array) && treatCellStrAsArray || ...
-            iscell(array) && treatCellAsArray;
+isVector = (isempty(vecs1) || isvector(vecs1)) && ~iscell(vecs1) || ...
+        iscellnumeric(vecs1) && treatCellNumAsArray || ...
+        iscellstr(vecs1) && treatCellStrAsArray || ...
+        iscell(vecs1) && treatCellAsArray;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+% Force vecs1/vecs2 to become column vectors
+[vecs1, vecs2] = ...
+    argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', false), ...
+            vecs1, vecs2);
+
+[vecs1, vecs2] = argfun(@force_column_cell, vecs1, vecs2);
+
+% Count the vectors
+[nVecs1, nVecs2] = ...
+    argfun(@(x) count_vectors(x, 'TreatCellAsArray', treatCellAsArray, ...
+                    'TreatCellStrAsArray', treatCellStrAsArray), ...
+            vecs1, vecs2);
+
+% Find the maximum number of vector counts
+maxVecs = max(nVecs1, nVecs2);
+
+addRequired(iP, 'vecs1', ...
+    @(x) assert(isnum(x) || ischar(x) || isstring(x) || iscell(x), ...
+                ['vecs1 must be either a numeric array, ', ...
+                    'a character array, a string array or a cell array!']));
+addRequired(iP, 'vecs2', ...
+    @(x) assert(isnum(x) || ischar(x) || isstring(x) || iscell(x), ...
+                ['vecs2 must be either a numeric array, ', ...
+                    'a character array, a string array or a cell array!']));
+
+function isVector = is_vector(vecs1, treatCellNumAsArray, ...
+                                treatCellStrAsArray, treatCellAsArray, ...
+                                treatCharAsScalar)
+isVector = isvector(vecs1) && ~iscell(vecs1) || ...
+        iscellnumeric(vecs1) && treatCellNumAsArray || ...
+        iscellstr(vecs1) && treatCellStrAsArray || ...
+        iscell(vecs1) && treatCellAsArray || ...
+        ischar(vecs1) && treatCharAsScalar;
+if is_vector(vecs1, treatCellNumAsArray, treatCellStrAsArray, ...
+                treatCellAsArray, treatCharAsScalar) && ...
+        is_vector(vecs2, treatCellNumAsArray, treatCellStrAsArray, ...
+                    treatCellAsArray, treatCharAsScalar)
 
 %}
 

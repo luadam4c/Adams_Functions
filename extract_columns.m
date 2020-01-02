@@ -13,6 +13,7 @@ function varargout = extract_columns (arrays, varargin)
 %       c = extract_columns({magic(3); ones(4)}, [1:3], 'OutputMode', 'single')
 %       d = extract_columns({{[1, 2]; [2, 1]}, {[4, 5], [3, 2]}}, 1:2, 'TreatCnvAsColumns', true, 'OutputMode', 'single')
 %       e = extract_columns(repmat({{[1, 2]; [2, 1]}}, 2, 2), 1:2, 'TreatCnvAsColumns', true, 'OutputMode', 'single')
+%       [a, b] = extract_columns({magic(3); ones(4)}, [1:3], 'AsRowVectors', true)
 %
 % Outputs:
 %       varargout   - extracted column #1s, column #2s, etc.
@@ -42,6 +43,10 @@ function varargout = extract_columns (arrays, varargin)
 %                                           of the same array
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'TreatRowVecAsOne': whether to treat row vectors
+%                                           as a single vector
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'AsRowVectors': whether to extract as row vectors
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
@@ -54,6 +59,7 @@ function varargout = extract_columns (arrays, varargin)
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
 %       cd/force_column_cell.m
+%       cd/force_row_vector.m
 %       cd/match_dimensions.m
 %       cd/iscellnumeric.m
 %       cd/iscellnumericvector.m
@@ -83,6 +89,7 @@ function varargout = extract_columns (arrays, varargin)
 % 2019-01-22 Now uses iscellnumericvector instead of iscellvector
 % 2019-12-01 Now allows arrays to be a matrix cell array
 % 2020-01-01 Now uses array_fun.m
+% TODO: Implement treatRowVecAsOne
 
 %% Hard-coded parameters
 validOutputModes = {'multiple', 'single'};
@@ -93,6 +100,7 @@ outputModeDefault = 'multiple'; % separate outputs by default
 treatCellAsArrayDefault = false;% treat cell arrays as many arrays by default
 treatCnvAsColumnsDefault = false;   % treat cell arrays of numeric vectors as 
                                     % many arrays by default
+treatRowVecAsOneDefault = true;     % treat row vectors as one vector by default
 asRowVectorsDefault = false;    % extract as column vectors by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -126,6 +134,8 @@ addParameter(iP, 'TreatCellAsArray', treatCellAsArrayDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TreatCnvAsColumns', treatCnvAsColumnsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TreatRowVecAsOne', treatRowVecAsOneDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'AsRowVectors', asRowVectorsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
@@ -135,6 +145,7 @@ colNums = iP.Results.colNums;
 outputMode = validatestring(iP.Results.OutputMode, validOutputModes);
 treatCellAsArray = iP.Results.TreatCellAsArray;
 treatCnvAsColumns = iP.Results.TreatCnvAsColumns;
+treatRowVecAsOne = iP.Results.TreatRowVecAsOne;
 asRowVectors = iP.Results.AsRowVectors;
 
 % Make sure colNums are column vectors
