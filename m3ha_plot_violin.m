@@ -59,6 +59,7 @@ function handles = m3ha_plot_violin (statsPath, varargin)
 %
 % Used by:
 %       cd/m3ha_plot_figure02.m
+%       cd/m3ha_plot_figure04.m
 %       cd/m3ha_simulate_population.m
 
 % File History:
@@ -220,7 +221,7 @@ update_figure_for_corel(fig, 'Units', 'centimeters', ...
 set(gca, 'Position', [0.2356, 0.1947, 0.6694, 0.7303]);
 
 % Update median size
-medianPlots = extract_fields(violins, 'MedianPlot');
+medianPlots = extract_fields(violins, 'MedianPlot', 'UniformOutput', true);
 set(medianPlots, 'SizeData', medianSize^2);
 
 % Save the figure

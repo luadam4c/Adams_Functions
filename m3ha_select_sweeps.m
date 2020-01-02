@@ -84,6 +84,7 @@ function [swpInfo, fileBasesToUse] = m3ha_select_sweeps (varargin)
 %       cd/m3ha_compute_and_plot_statistics.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_plot_figure03.m
+%       cd/m3ha_plot_figure04.m
 %       cd/m3ha_select_cells.m
 %       cd/m3ha_select_raw_traces.m
 

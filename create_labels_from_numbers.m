@@ -59,7 +59,10 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/force_data_as_matrix.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_choose_best_params.m
+%       cd/m3ha_plot_figure04.m
+%       cd/m3ha_plot_figure05.m
 %       cd/m3ha_rank_neurons.m
+%       cd/m3ha_simulate_population.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_current_family.m
 %       cd/plot_chevron.m
@@ -75,7 +78,6 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/renamevars.m
 %       cd/save_all_zooms.m
 %       cd/transpose_table.m
-%       cd/m3ha_simulate_population.m
 
 % File History:
 % 2018-12-17 Created by Adam Lu

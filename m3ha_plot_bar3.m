@@ -60,6 +60,7 @@ function handles = m3ha_plot_bar3 (statsPath, varargin)
 %
 % Used by:
 %       cd/m3ha_plot_figure02.m
+%       cd/m3ha_plot_figure04.m
 %       cd/m3ha_simulate_population.m
 
 % File History:

@@ -39,10 +39,13 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 %                   - 'Weights': weights for averaging
 %                   must be a numeric array
 %                   default == set in compute_weighted_average.m
+%                   - Any other parameter-value pair for 
+%                           compute_weighted_average()
 %
 % Requires:
 %       cd/argfun.m
 %       cd/array_fun.m
+%       cd/compute_weighted_average.m
 %       cd/iscellnumeric.m
 %       cd/iscellnumericvector.m
 %       cd/isemptycell.m
@@ -56,9 +59,6 @@ function rmsErrors = compute_rms_error(vec1s, varargin)
 %       cd/compute_lts_errors.m
 %       cd/compute_sweep_errors.m
 %       cd/m3ha_simulate_population.m
-%
-% Related functions:
-%       cd/compute_weighted_average.m
 
 % File History:
 % 2018-07-09 Modified from the built-in rms.m
@@ -85,6 +85,7 @@ end
 % Set up Input Parser Scheme
 iP = inputParser;
 iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'vec1s', ...
@@ -112,6 +113,9 @@ vec2s = iP.Results.vec2s;
 endPoints = iP.Results.EndPoints;
 ignoreNan = iP.Results.IgnoreNan;
 valueWeights = iP.Results.Weights;
+
+% Keep unmatched arguments for the compute_weighted_average() function
+otherArguments = iP.Unmatched;
 
 %% Preparation
 % Force row vectors as column vectors
@@ -147,10 +151,11 @@ if iscell(vec1s) || iscell(vec2s)
 
     % Compute the root-mean_square error for each pair of vectors
     rmsErrors = array_fun(@(x, y) compute_rms_error_helper(x, y, ...
-                                    ignoreNan, valueWeights), ...
+                                ignoreNan, valueWeights, otherArguments), ...
                             vec1s, vec2s);
 else
-    rmsErrors = compute_rms_error_helper(vec1s, vec2s, ignoreNan, valueWeights);
+    rmsErrors = compute_rms_error_helper(vec1s, vec2s, ignoreNan, ...
+                                        valueWeights, otherArguments);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -173,8 +178,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function rmsError = compute_rms_error_helper (vec1, vec2, ...
-                                                ignoreNan, valueWeights)
+function rmsError = compute_rms_error_helper (vec1, vec2, ignoreNan, ...
+                                                valueWeights, otherArguments)
 %% Compute the root-mean-square error between two vectors
 
 % Compute errors at every sample point
@@ -183,7 +188,8 @@ errors = vec1 - vec2;
 % Compute the root-mean-squared error
 rmsError = compute_weighted_average(errors, 'IgnoreNan', ignoreNan, ...
                                     'Weights', valueWeights, ...
-                                    'AverageMethod', 'root-mean-square');
+                                    'AverageMethod', 'root-mean-square', ...
+                                    otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

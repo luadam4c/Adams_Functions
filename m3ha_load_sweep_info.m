@@ -34,6 +34,7 @@ function [swpInfo, varargout] = m3ha_load_sweep_info (varargin)
 %       cd/m3ha_organize_sweep_indices.m
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_figure03.m
+%       cd/m3ha_plot_figure04.m
 %       cd/m3ha_plot_figure05.m
 %       cd/m3ha_select_cells.m
 %       cd/m3ha_select_raw_traces.m

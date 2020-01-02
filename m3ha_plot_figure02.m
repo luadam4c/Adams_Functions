@@ -48,6 +48,12 @@ measuresOfInterest = {'ltsAmplitude'; 'ltsMaxSlope'; ...
                     'spikeFrequency'; 'spikeAdaptation'
                     'burstOnsetTime'; 'burstTimeJitter'; ...
                     'burstProbability'; 'spikesPerBurst'};
+dataMode = 0;           % data mode:
+                        %   0 - all data
+                        %   1 - all of g incr = 100%, 200%, 400% 
+                        %   2 - same g incr but exclude 
+                        %       cell-pharm-g_incr sets 
+                        %       containing problematic sweeps
 
 % Plot settings
 exampleGincr = 200;
@@ -129,7 +135,8 @@ if plotViolinPlotsFlag
         % Compute statistics for all features
         disp('Computing statistics for violin plots ...');
         statsTable = m3ha_compute_statistics('PharmConditions', pCond2D, ...
-                                                'GIncrConditions', gCond2D);
+                                                'GIncrConditions', gCond2D, ...
+                                                'DataMode', dataMode);
 
         % Generate labels
         conditionLabel = conditionLabel2D;
@@ -155,7 +162,8 @@ if plotBarPlotsFlag
         % Compute statistics for all features
         disp('Computing statistics for 3D bar plots ...');
         statsTable = m3ha_compute_statistics('PharmConditions', pCond3D, ...
-                                                'GIncrConditions', gCond3D);
+                                                'GIncrConditions', gCond3D, ...
+                                                'DataMode', dataMode);
 
         % Generate labels
         conditionLabel = conditionLabel3D;

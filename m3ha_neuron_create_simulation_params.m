@@ -51,6 +51,14 @@ function [simParamsTable, simParamsPath] = ...
 %                   - 'UseHH': whether to use HH channels
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'TauhMode': mode for simulating tauh
+%                   must be one of:
+%                       0 - original curve
+%                       1 - the same as taum
+%                       2 - 10 times smaller amplitude
+%                       3 - 10 times larger amplitude
+%                       consistent with IT.mod
+%                   default == 0
 %                   - 'BuildMode': TC neuron build mode
 %                   must be an unambiguous, case-insensitive match to one of: 
 %                       'passive' - insert leak channels only
@@ -125,6 +133,7 @@ function [simParamsTable, simParamsPath] = ...
 % 2019-12-04 Changed the default simMode to 'active'
 % 2019-12-19 Added 'buildMode'
 % 2019-12-27 Added 'useHH'
+% 2020-01-02 Added 'tauhMode'
 % TODO: Remove the Cpr parameters and decide on them before
 % 
 
@@ -132,7 +141,7 @@ function [simParamsTable, simParamsPath] = ...
 validBuildModes = {'active', 'passive'};
 validSimModes = {'active', 'passive'};
 simParamsFileName = 'simulation_parameters.csv';
-simParamsFromArguments = {'useHH', 'buildMode', 'simMode', ...
+simParamsFromArguments = {'useHH', 'tauhMode', 'buildMode', 'simMode', ...
                             'outFilePath', 'tstop' ...
                             'holdPotential', 'currentPulseAmplitude', ...
                             'gababAmp', 'gababTrise', ...
@@ -161,6 +170,7 @@ nSimsDefault = 1;               % number of simulations by default
 
 %% Default values for simulation parameters
 useHHDefault = false;           % don't use HH channels by default
+tauhModeDefault = 0;            % regular tauh by default
 buildModeDefault = 'active';    % insert active channels by default
 simModeDefault = 'active';      % simulate a IPSC response by default
 outFilePathDefault = 'auto';    % set later
@@ -220,6 +230,8 @@ addParameter(iP, 'NSims', nSimsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
 addParameter(iP, 'UseHH', useHHDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'TauhMode', tauhModeDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative', 'integer'}));
 addParameter(iP, 'BuildMode', buildModeDefault, ...
     @(x) any(validatestring(x, validBuildModes)));
 addParameter(iP, 'SimMode', simModeDefault, ...
@@ -259,6 +271,7 @@ cprWindow = iP.Results.CprWindow;
 ipscrWindow = iP.Results.IpscrWindow;
 nSims = iP.Results.NSims;
 useHH = iP.Results.UseHH;
+tauhMode = iP.Results.TauhMode;
 buildMode = validatestring(iP.Results.BuildMode, validBuildModes);
 simMode = validatestring(iP.Results.SimMode, validSimModes);
 outFilePath = iP.Results.OutFilePath;

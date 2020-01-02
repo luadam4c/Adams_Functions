@@ -53,6 +53,7 @@ function varargout = find_matching_files (fileStrs, varargin)
 %       cd/create_pleth_EEG_movies.m
 %       cd/load_matching_sheets.m
 %       cd/m3ha_plot_figure03.m
+%       cd/m3ha_plot_figure04.m
 %       cd/m3ha_plot_figure05.m
 %       cd/m3ha_simulate_population.m
 %       cd/plot_traces_spike2_mat.m
@@ -165,7 +166,7 @@ if findFilesOneByOne
 else
     % Find all files under the common directory
     [files, fullPaths] = ...
-        all_files('Directory', commonDir, 'ForceCellOutput', false, ...
+        all_files('Directory', commonDir, 'ForceCellOutput', true, ...
                     otherArguments);
 
     % Extract just the file bases

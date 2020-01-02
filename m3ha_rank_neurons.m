@@ -59,7 +59,8 @@ plotIndividualFlag = false; % true;
 rankNeuronsFlag = false; % true;
 plotHistogramsFlag = false; % true;
 plotBarPlotFlag = false; % true;
-plotParamComparisonFlag = false; % true;
+plotParamViolinsFlag = true;
+plotErrorParamComparisonFlag = false; % true;
 
 % Fitting parameters 
 %   Note: Must be consistent with singleneuronfitting91.m
@@ -107,7 +108,6 @@ errorSheetExtension = 'csv';
 
 rankSuffix = 'ranked';
 rankSheetExtension = 'csv';
-barFigTypes = {'png', 'epsc2'};
 
 % Default parameters used in computing errors
 %   Note: Should be consistent with singleneuronfitting78.m
@@ -176,6 +176,9 @@ paramDirNames = fullfile('best_params', ...
                         'bestparams_20191221_singleneuronfitting86', ...
                         'bestparams_20191225_singleneuronfitting90', ...
                         'bestparams_20191227_singleneuronfitting91'});
+
+outFolder = '20191229_ranked_singleneuronfitting0-91';
+rankNumsToPlot = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -460,11 +463,31 @@ if plotBarPlotFlag
             'FigTitle', 'Total error');
 
     % Save figure
-    save_all_figtypes(fig, rankPathBase, barFigTypes);
+    save_all_figtypes(fig, rankPathBase, figTypes);
+end
+
+%% Plot a parameters as violin plots
+if plotParamViolinsFlag
+    % Display message
+    fprintf('Plotting parameters as violin plots ... \n');
+
+    % Plot violin plot for geometric parameters
+
+    % Plot violin plot for conductances
+    % Create figure
+    fig = set_figure_properties('AlwaysNew', true);
+
+    % Plot violin plot
+    % TODO: Same plot? Standardize y axis?
+    % violins = plot_violin(paramValues, 'XTickLabels', paramNames, ...
+    %                         'YLabel', );
+
+    % Save figure
+    save_all_figtypes(fig, paramViolinPathBase, figTypes);
 end
 
 %% Plot an error and parameter comparison plot
-if plotParamComparisonFlag
+if plotErrorParamComparisonFlag
     % Display message
     fprintf('Plotting error parameter comparison ... \n');
 

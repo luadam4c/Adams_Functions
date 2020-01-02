@@ -6,8 +6,10 @@ function [simCommands, simCmdsFilePath] = ...
 %               m3ha_neuron_create_TC_commands (simParamsTable, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       simCommands     - simulation commands
 %                       specified as a cell array of character vectors
@@ -24,6 +26,8 @@ function [simCommands, simCmdsFilePath] = ...
 %                               gpas
 %                               epas
 %                               corrD
+%                               useHH
+%                               tauhMode
 %                               pcabarITSoma
 %                               pcabarITDend1
 %                               pcabarITDend2
@@ -87,6 +91,7 @@ function [simCommands, simCmdsFilePath] = ...
 % 2019-11-13 Restored usage of build()
 % 2019-12-19 Renamed simMode -> buildMode
 % 2019-12-27 Made useHH an argument of build()
+% 2020-01-02 Made tauhMode an argument of adjust_IT()
 % 
 
 %% Hard-coded parameters
@@ -163,6 +168,7 @@ gpas = simParamsTable.gpas;
 epas = simParamsTable.epas;
 corrD = simParamsTable.corrD;
 useHH = simParamsTable.useHH;
+tauhMode = simParamsTable.tauhMode;
 pcabarITSoma = simParamsTable.pcabarITSoma;
 pcabarITDend1 = simParamsTable.pcabarITDend1;
 pcabarITDend2 = simParamsTable.pcabarITDend2;
@@ -227,11 +233,11 @@ parfor iSim = 1:nSims
 
         % Command to adjust T-type calcium channel parameters
         thisCmds = [thisCmds, ...
-                    sprintf('adjust_IT(%g, %g, %g, %g, %g, %g, %g, %g)\n', ...
+                    sprintf('adjust_IT(%g, %g, %g, %g, %g, %g, %g, %g, %g)\n', ...
                             pcabarITSoma(iSim), pcabarITDend1(iSim), ...
                             pcabarITDend2(iSim), shiftmIT(iSim), ...
                             shifthIT(iSim), slopemIT(iSim), ...
-                            slopehIT(iSim), corrD(iSim))];
+                            slopehIT(iSim), corrD(iSim), tauhMode(iSim))];
 
         % Command to adjust inward-rectifying potassium channel parameters
         thisCmds = [thisCmds, ...

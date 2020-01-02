@@ -63,6 +63,7 @@ function avgValues = compute_weighted_average (values, varargin)
 % Used by:
 %       cd/test_normality.m
 %       cd/compute_lts_errors.m
+%       cd/compute_rms_error.m
 %       cd/compute_single_neuron_errors.m
 %       cd/compute_sweep_errors.m
 %
@@ -82,8 +83,9 @@ function avgValues = compute_weighted_average (values, varargin)
 % 2019-11-18 Fixed 'IgnoreNan' for vectors
 % 2019-11-29 Fixed rms average for a single negative value
 % 2020-01-02 Added 'ForceColumnOutput' (default == 'true')
+% 2020-01-02 Now uses the built-in rms() when possible
 % TODO: Simplify math if the weights are all the same 
-%       and use this function in compute_stats.m and compute_rms_error.m
+%       and use this function in compute_stats.m
 % 
 tic;
 
@@ -244,6 +246,11 @@ else
                     dimToOperate, averageMethod, expWeightingFactor);
 end
 
+% Force as a column vector if requested
+if forceColumnOutput
+    avgValues = force_column_vector(avgValues);
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function avgValues = compute_weighted_average_helper (values, valueWeights, ...
@@ -301,19 +308,21 @@ end
 %           Averaging-types-What-s-the-difference/ta-p/364121
 switch averageMethod
     case {'rms', 'root-mean-square', 'energy'}
-        % Compute the squared values
-        squaredValues = values .* conj(values);
-
-        % Compute the weighted mean of squared values
+        % Compute the root-mean-square level
         if ~isempty(valueWeights)
+            % Compute the squared values
+            squaredValues = values .* conj(values);
+
+            % Compute the weighted mean of squared values
             meanSquaredValues = sum(valueWeights .* squaredValues, ...
                                         dimToOperate) ./ totalWeight;
-        else
-            meanSquaredValues = mean(squaredValues, dimToOperate);
-        end
 
-        % Compute the weighted root-mean-square average
-        avgValues = sqrt(meanSquaredValues);
+            % Compute the weighted root-mean-square average
+            avgValues = sqrt(meanSquaredValues);
+        else
+            % Just use the built-in function
+            avgValues = rms(values, dimToOperate);
+        end
     case {'linear', 'arithmetic'}
         % Compute the weighted linear average
         if ~isempty(valueWeights)

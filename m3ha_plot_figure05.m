@@ -3,6 +3,7 @@
 %
 % Requires:
 %       cd/check_dir.m
+%       cd/create_labels_from_numbers.m
 %       cd/extract_fileparts.m
 %       cd/find_matching_files.m
 %       cd/m3ha_load_sweep_info.m
@@ -18,13 +19,14 @@
 
 %% Hard-coded parameters
 % Flags
-updateScripts = false; %true;
+updateScripts = true;
 simulateIpscr = false; %true;
-plotAllVoltages = true;
-plotAllTotalCurrents = true;
-plotAllComponentCurrents = true;
-plotDend2ITproperties = true;
-plotM2h = true;
+plotAllVoltages = false; %true;
+plotAllTotalCurrents = false; %true;
+plotAllComponentCurrents = false; %true;
+plotDend2ITproperties = false; %true;
+plotM2h = false; %true;
+simulateTauhModes = true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -62,6 +64,8 @@ attemptNumberIpscr = 1;             % attempt number for IPSC response
                                     %           pair for this data mode
                                     %   5 - Use 4 traces @ 400% gIncr 
                                     %       for this data mode
+% tauhModesAll = 4:5;
+tauhModesAll = 1:5;
 
 % Plot settings
 overlappedFigWidth = 5.7;
@@ -88,12 +92,13 @@ swpInfo = m3ha_load_sweep_info('Directory', figure02Dir);
 
 %% Find NEURON parameter tables
 if simulateIpscr || plotAllVoltages || plotAllTotalCurrents || ...
-        plotAllComponentCurrents || plotDend2ITproperties || plotM2h
+        plotAllComponentCurrents || plotDend2ITproperties || plotM2h || ...
+        simulateTauhModes
     % Find NEURON parameter tables
     [~, exampleParamPaths] = ...
         find_matching_files(exampleCellNames, 'Directory', figure05Dir, ...
                             'Suffix', paramFileSuffix, 'Extension', 'csv', ...
-                            'Recursive', false);
+                            'Recursive', false, 'ForceCellOutput', true);
 
     % Extract file bases
     exampleParamFileBases = extract_fileparts(exampleParamPaths, 'base');
@@ -102,18 +107,28 @@ if simulateIpscr || plotAllVoltages || plotAllTotalCurrents || ...
     exampleLabels = extractBefore(exampleParamFileBases, ...
                                     ['_', paramFileSuffix]);
 
+
+    % Create tauhMode suffixes
+    tauhModeSuffixes = create_labels_from_numbers(tauhModesAll, ...
+                                                    'Prefix', '_tauhmode');
+
     % Update labels for each type of simulation
     exampleLabelsIpscr = strcat(exampleLabels, '_ipscr');
+    exampleLabelsModeAll = cellfun(@(x) strcat(exampleLabels, x), ...
+                                    tauhModeSuffixes, 'UniformOutput', false);
 
     % Create and check output folders
     outFoldersIpscr = fullfile(figure05Dir, exampleLabelsIpscr);
-    check_dir(outFoldersIpscr);
+    outFoldersModeAll = cellfun(@(x) fullfile(figure05Dir, x), ...
+                                exampleLabelsModeAll, 'UniformOutput', false);
+
+    check_dir([outFoldersIpscr, outFoldersModeAll{:}]);
 end
 
-%% Simulate IPSC responses
+%% Simulate regular IPSC responses
 if simulateIpscr
-    cellfun(@(x, y, z) simulate_ipscr(x, y, z, dataModeIpscr, rowmodeIpscr, ...
-                                attemptNumberIpscr), ...
+    cellfun(@(x, y, z) simulate_ipscr(x, y, z, 0, dataModeIpscr, ...
+                                    rowmodeIpscr, attemptNumberIpscr), ...
             exampleLabelsIpscr, exampleParamPaths, outFoldersIpscr);
 end
 
@@ -161,17 +176,28 @@ if plotM2h
             exampleLabelsIpscr, outFoldersIpscr);
 end
 
+%% Simulate tauhMode == 1, 2 and 3
+if simulateTauhModes
+    for iMode = 1:numel(tauhModesAll)
+        cellfun(@(x, y, z) simulate_ipscr(x, y, z, tauhModesAll(iMode), ...
+                    dataModeIpscr, rowmodeIpscr, attemptNumberIpscr), ...
+                exampleLabelsModeAll{iMode}, exampleParamPaths, ...
+                outFoldersModeAll{iMode});
+    end
+end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function simulate_ipscr(label, neuronParamsFile, outFolder, ...
-                        dataMode, rowmode, attemptNumber)
+                        tauhMode, dataMode, rowmode, attemptNumber)
 
 % Simulate
 m3ha_neuron_run_and_analyze(neuronParamsFile, ...
                         'OutFolder', outFolder, 'Prefix', label, ...
                         'BuildMode', 'active', 'SimMode', 'active', ...
-                        'DataMode', dataMode, 'ColumnMode', 1, ...
-                        'Rowmode', rowmode, 'AttemptNumber', attemptNumber, ...
+                        'TauhMode', tauhMode, 'DataMode', dataMode, ...
+                        'ColumnMode', 1, 'Rowmode', rowmode, ...
+                        'AttemptNumber', attemptNumber, ...
                         'PlotAllFlag', false, 'PlotIndividualFlag', true, ...
                         'SaveSimOutFlag', true);
 

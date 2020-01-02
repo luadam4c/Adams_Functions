@@ -66,7 +66,7 @@ if isstruct(genStruct)
     isField = isfield(genStruct, candName);
 elseif istable(genStruct)
     isField = is_var_in_table(candName, genStruct, otherArguments);
-elseif isobject(myStruct)
+elseif isobject(genStruct)
     isField = isprop(genStruct, candName);
 else
     error('myStruct type unrecognized!');

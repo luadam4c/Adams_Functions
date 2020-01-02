@@ -15,6 +15,7 @@ function statsTable = m3ha_compute_statistics (varargin)
 %
 % Requires:
 %       cd/argfun.m
+%       cd/array_fun.m
 %       cd/compute_stats.m
 %       cd/first_matching_field.m
 %       cd/force_column_cell.m
@@ -26,6 +27,7 @@ function statsTable = m3ha_compute_statistics (varargin)
 % Used by:
 %       cd/m3ha_compute_and_plot_statistics.m
 %       cd/m3ha_plot_figure02.m
+%       cd/m3ha_plot_figure04.m
 %       cd/m3ha_simulate_population.m
 %
 % Outputs:
@@ -239,7 +241,7 @@ if manyConditionsFlag
     %            or a nMeasures x 1 column numeric vector
     [allValues, nValues, meanValue, stdValue, ...
             stderrValue, errValue, upper95Value, lower95Value] = ...
-        cellfun(@(x, y, z) ...
+        array_fun(@(x, y, z) ...
                     m3ha_compute_statistics_helper(swpInfo, dataMode, ...
                         x, y, z, cellIdStr, measureStr, ...
                         ltsAmplitudeStr, ltsMaxSlopeStr, ltsConcavityStr, ...

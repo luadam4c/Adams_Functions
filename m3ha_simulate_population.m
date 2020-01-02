@@ -59,13 +59,13 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestNeuronsFlag = true;
-simulateFlag = true;
-combineFeatureTablesFlag = true;
-computeOpenProbabilityFlag = true;
-plotOpenProbabilityFlag = true;
-plotViolinPlotsFlag = true;
-plotBarPlotsFlag = true;
+chooseBestNeuronsFlag = false; %true;
+simulateFlag = false; %true;
+combineFeatureTablesFlag = false; %true;
+computeOpenProbabilityFlag = false; %true;
+plotOpenProbabilityFlag = false; %true;
+plotViolinPlotsFlag = false; %true;
+plotBarPlotsFlag = false; %true;
 
 % Simulation parameters
 useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
@@ -111,17 +111,22 @@ condVarStrs = {'cellidrow', 'prow', 'vrow', 'grow', 'swpnrow', ...
                 'gabab_amp', 'gabab_Trise', 'gabab_TfallFast', ...
                 'gabab_TfallSlow', 'gabab_w'};
 pharmAll = [1; 2; 3; 4];          
-pharmLabelsLong = {'{\it d}-Control', '{\it d}-GAT1 Block', ...
-                    '{\it d}-GAT3 Block', '{\it d}-Dual Block'};
-pharmLabelsShort = {'{\it d}-Con', '{\it d}-GAT1', ...
-                    '{\it d}-GAT3', '{\it d}-Dual'};
-gIncrAll = [25; 50; 100; 200; 400; 800];
-gIncrLabels = {'25%', '50%', '100%', '200%', '400%', '800%'};
-conditionLabel2D = 'pharm_1-4_gincr_200';
+pharmLabelsLong = {'{\it s}-Control', '{\it s}-GAT1 Block', ...
+                    '{\it s}-GAT3 Block', '{\it s}-Dual Block'};
+pharmLabelsShort = {'{\it s}-Con', '{\it s}-GAT1', ...
+                    '{\it s}-GAT3', '{\it s}-Dual'};
+if dataMode == 0
+    gIncrAll = [25; 50; 100; 200; 400; 800];
+    gIncrLabels = {'25%', '50%', '100%', '200%', '400%', '800%'};
+elseif dataMode == 1 || dataMode == 2
+    gIncrAll = [100; 200; 400];
+    gIncrLabels = {'100%', '200%', '400%'};
+end
+conditionLabel2D = 'pharm_1-4_gincr_200_sim';
 pCond2D = num2cell(pharmAll);
 gCond2D = 200;
 stats2dSuffix = strcat(simStr, '_', conditionLabel2D, '_stats.mat');
-conditionLabel3D = 'pharm_1-4_gincr_all';
+conditionLabel3D = 'pharm_1-4_gincr_all_sim';
 pCond3D = num2cell(pharmAll);
 gCond3D = num2cell(gIncrAll);
 stats3dSuffix = strcat(simStr, '_', conditionLabel3D, '_stats.mat');
@@ -145,12 +150,12 @@ figTypes = {'png', 'epsc2'};
 % outFolder = fullfile(parentDirectoryTemp, fitDirName, ...
 %         '20191230_population_singleneuronfitting0-91_rank1-2,5,7-10,13,17,34');
 % prefix = '20191227_population';
-% rankNumsToSim = [];
+% rankNumsToUse = [];
 % maxRankToSim = 10;
-% rankNumsToSim = [1, 2, 5, 6, 8, 9, 10, 11, 23, 34];
+% rankNumsToUse = [1, 2, 5, 6, 8, 9, 10, 11, 23, 34];
 % rankDirName = '20191227_ranked_singleneuronfitting0-90';
 rankDirName = '20191229_ranked_singleneuronfitting0-91';
-rankNumsToSim = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
+rankNumsToUse = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -195,14 +200,14 @@ fitDirectory = fullfile(parentDirectory, fitDirName);
 rankDirectory = fullfile(fitDirectory, rankDirName);
 
 % Decide on the ranking numbers of cells to simulate
-if isempty(rankNumsToSim)
-    rankNumsToSim = 1:maxRankToSim;
+if isempty(rankNumsToUse)
+    rankNumsToUse = 1:maxRankToSim;
 end
 
 % Decide on output folder
 if isempty(outFolder)
     % Create a rank string
-    rankStr = ['rank', create_label_from_sequence(rankNumsToSim)];
+    rankStr = ['rank', create_label_from_sequence(rankNumsToUse)];
 
     % Create a data mode string
     dataModeStr = ['dataMode', num2str(dataMode)];
@@ -235,7 +240,7 @@ openProbPathBase = fullfile(outFolder, [prefix, '_', openProbSuffix]);
 %% Choose the best cells and the best parameters for each cell
 if chooseBestNeuronsFlag
     % Create rank number prefixes
-    rankPrefixes = create_labels_from_numbers(rankNumsToSim, ...
+    rankPrefixes = create_labels_from_numbers(rankNumsToUse, ...
                                         'Prefix', 'rank_', 'Suffix', '_');
 
     % Find png files matching the rank prefixes
@@ -337,6 +342,9 @@ if computeOpenProbabilityFlag
         error('Save a simulated sweep info table first!');
     end
 
+    % Display message
+    fprintf('Computing open probability discrepancies ... \n');
+
     % Read the simulated sweep info table
     simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
 
@@ -392,6 +400,9 @@ if plotOpenProbabilityFlag
     if ~isfile(simSwpInfoPath)
         error('Save a simulated sweep info table first!');
     end
+
+    % Display message
+    fprintf('Plotting open probability discrepancies ... \n');
 
     % Read the simulated sweep info table
     simSwpInfo = readtable(simSwpInfoPath, 'ReadRowNames', true);
