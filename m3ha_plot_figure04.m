@@ -15,18 +15,20 @@
 % 2020-01-02 Modified from m3ha_plot_figure02.m
 
 %% Hard-coded parameters
+% Flags
+plotViolinPlotsFlag = true;
+plotBarPlotsFlag = true;
+
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
 figure02Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure02');
 figure04Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure04');
-matFilesDir = fullfile(parentDirectory, 'data_dclamp', 'take4', 'matfiles');
+fitDirName = 'optimizer4gabab';
+rankDirName = '20191229_ranked_singleneuronfitting0-91';
+rankNumsToUse = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
 
 % Files
 datalogPath = fullfile(figure02Dir, 'dclampdatalog_take4.csv');
-
-% Flags
-plotViolinPlotsFlag = false; %true;
-plotBarPlotsFlag = false; %true;
 
 % Analysis settings
 % Note: must be consistent with m3ha_compute_statistics.m
@@ -44,10 +46,6 @@ dataMode = 1;           % data mode:
                         %   2 - same g incr but exclude 
                         %       cell-pharm-g_incr sets 
                         %       containing problematic sweeps
-parentDirectoryTemp = '/media/adamX/m3ha';
-fitDirName = 'optimizer4gabab';
-rankDirName = '20191229_ranked_singleneuronfitting0-91';
-rankNumsToUse = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
 
 % Plot settings
 pharmAll = [1; 2; 3; 4];
@@ -82,10 +80,6 @@ figTypes = {'png', 'epsc2'};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Preparation
-% Locate the home directory
-% parentDirectory = m3ha_locate_homedir;
-parentDirectory = parentDirectoryTemp;
-
 % Locate the fit directory
 fitDirectory = fullfile(parentDirectory, fitDirName);
 
