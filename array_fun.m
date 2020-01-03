@@ -41,6 +41,7 @@ function varargout = array_fun (myFunc, varargin)
 %       cd/ismember_custom.m
 %       cd/load_neuron_outputs.m
 %       cd/m3ha_compute_statistics.m
+%       cd/m3ha_import_raw_traces.m
 %       cd/vecfun.m
 
 % File History:

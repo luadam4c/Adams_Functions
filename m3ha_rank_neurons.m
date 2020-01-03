@@ -48,19 +48,19 @@
 % 2019-12-03 Created by Adam Lu
 % 2019-12-18 Added bar plots and error history
 % 2019-12-30 Added error param comparison across cells
-% 
+% 2020-01-03 Restricted fitting window
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = false; %true;
+chooseBestParamsFlag = true;
 plotErrorHistoryFlag = true;
 plotErrorComparisonFlag = true;
 plotParamHistoryFlag = true;
 plotIndividualFlag = true;
-rankNeuronsFlag = false; %true;
-plotHistogramsFlag = false; %true;
-plotBarPlotFlag = false; %true;
-plotParamViolinsFlag = false; %true;
+rankNeuronsFlag = true;
+plotHistogramsFlag = true;
+plotBarPlotFlag = true;
+plotParamViolinsFlag = true;
 plotErrorParamComparisonFlag = true;
 
 % Fitting parameters 
@@ -115,8 +115,9 @@ rankSheetExtension = 'csv';
 %       & compute_lts_errors.m & compute_single_neuron_errors.m
 ltsFeatureStrings = {'peak amp', 'peak time', 'max slope value'};
 sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
-%sweepWeights = [];
-errorWeights = [1; 3; 1; 1; 1];
+% sweepWeights = [];
+% errorWeights = [1; 3; 1; 1; 1];
+errorWeights = [1; 6; 5; 1; 1];
 ltsFeatureWeights = errorWeights(3:5);  
                                 % weights for LTS feature errors
 missedLtsError = 1.5;           % how much error (dimensionless) to 
@@ -130,6 +131,11 @@ match2FeatureErrorRatio = errorWeights(2) / sum(ltsFeatureWeights);
 lts2SweepErrorRatio = sum(errorWeights(2:5)) / errorWeights(1);
                                 % ratio of LTS error to sweep error
 normalize2InitErrFlag = 0;      % whether to normalize errors to initial values
+
+% Fitting window
+ipscrWindow = [2000, 4800];     % only simulate up to that time
+fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
+                                %   recorded LTS would lie
 
 %   Note: The following must be consistent with compute_single_neuron_errors.m
 idxSweep = 1;
@@ -153,6 +159,11 @@ cellNameStr = 'cellName';
 
 % outFolder = '20191229_ranked_singleneuronfitting0-91';
 % rankNumsToPlot = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
+
+% outFolder = '20200102_ranked_singleneuronfitting0-94';
+% rankNumsToPlot = [1:6, 21, 36];
+% rankNumsToPlot = [1:6, 8, 10, 11, 13:18, 21, 22, 24, 27, 28, 36];
+% rankNumsToPlot = [1:6, 8:12, 13:18, 21, 22, 24, 26:32, 34, 36];
 
 outFolder = '';
 figTypes = {'png', 'epsc2'};
@@ -180,10 +191,6 @@ paramDirNames = fullfile('best_params', ...
                         'bestparams_20191230_singleneuronfitting92', ...
                         'bestparams_20191231_singleneuronfitting93', ...
                         'bestparams_20191231_singleneuronfitting94'});
-outFolder = '20200102_ranked_singleneuronfitting0-94';
-% rankNumsToPlot = [1:6, 21, 36];
-% rankNumsToPlot = [1:6, 8, 10, 11, 13:18, 21, 22, 24, 27, 28, 36];
-rankNumsToPlot = [1:6, 8:12, 13:18, 21, 22, 24, 26:32, 34, 36];
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -321,6 +328,8 @@ if chooseBestParamsFlag
                 'OutFolder', outFolder, 'FileNames', fileNamesThis, ...
                 'BuildMode', buildMode, 'SimMode', simMode, ...
                 'UseHH', useHH, 'RowConditionsIpscr', rowConditionsThis, ...
+                'IpscrWindow', ipscrWindow, ...
+                'FitWindowIpscr', fitWindowIpscr, ...
                 'SweepWeightsIpscr', sweepWeights, ...
                 'LtsFeatureWeights', ltsFeatureWeights, ...
                 'MissedLtsError', missedLtsError, ...

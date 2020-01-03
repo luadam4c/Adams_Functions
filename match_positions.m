@@ -26,6 +26,7 @@ function elements1 = match_positions (array1, array2, elements2, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/extract_subvectors.m
 %       cd/find_first_match.m
 %       cd/ispositiveintegerscalar.m
 %
@@ -38,7 +39,9 @@ function elements1 = match_positions (array1, array2, elements2, varargin)
 % 2018-12-15 Created by Adam Lu
 % 2018-12-24 Now accepts any array type as the first element
 % 2019-12-30 Now accepts any array type as the second and third arguments
-% 
+% TODO: Use interp1_custom if only numeric arrays passed in
+%       Note: Change the argument order to be consistent with interp1
+%               Should be array2, array1, elements2
 
 %% Default values for optional arguments
 maxNumDefault = Inf;
@@ -73,7 +76,7 @@ maxNum = iP.Results.MaxNum;
 idxMatch = find_first_match(elements2, array2);
 
 % Get all the elements of array1 in this position
-elements1 = array1(idxMatch);
+elements1 = extract_subvectors(array1, 'Indices', idxMatch);
 
 % Restrict to the maximum number of elements
 if numel(array1) > maxNum

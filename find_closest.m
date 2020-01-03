@@ -163,13 +163,7 @@ switch direction
         valClosest = valsClosest(1, :);
     case 'none'
         valClosest = target;
-        if isvector(valsClosest)
-            idxClosest = interp1_custom(valsClosest, indClosest, valClosest);
-        else
-            idxClosest = array_fun(@(x) interp1_custom(valsClosest(:, x), ...
-                                        indClosest(:, x), valClosest(x)), ...
-                                    1:size(valsClosest, 2));
-        end
+        idxClosest = interp1_custom(valsClosest, indClosest, valClosest);
     otherwise
         error('direction unrecognized!!');
 end
@@ -177,6 +171,19 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function vq = interp1_custom (x, v, xq)
+%% TODO: Pull out as its own function
+
+if isvector(x)
+    vq = interp1_custom_helper(x, v, xq);
+else
+    vq = array_fun(@(a) interp1_custom_helper(x(:, a), v(:, a), xq(a)), ...
+                    1:size(x, 2));
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function vq = interp1_custom_helper (x, v, xq)
+%% Uses interp1 but allows v to have only one sample
 
 uniqueV = unique(v);
 

@@ -16,6 +16,8 @@ function handles = plot_bar (val, varargin)
 %       handles = plot_bar(val3, low3, high3, 'ReverseOrder', true, 'PTickLabels', {'Mark', 'Ashley', 'Katie', 'Adam'});
 %       handles = plot_bar(val1, low1, high1, 'ReverseOrder', true, 'BarDirection', 'horizontal');
 %       plot_bar([1, 2], 'ColorMap', {'Red', 'Green'})
+%       testValues = (20:-1:1);
+%       plot_bar(testValues, 'ReverseOrder', true, 'BarDirection', 'horizontal', 'PTickLabels', create_labels_from_numbers(testValues))
 %
 % Outputs:
 %       handles - handles structure with fields:
@@ -749,13 +751,24 @@ if ~isempty(pTicks)
 end
 
 % Change pTickLabels if provided
-% TODO: Make sure there are enough ticks for the labels!
 if ~isempty(pTickLabels)
+    % Get current tick positions
     switch barDirection
         case 'vertical'
-            xticklabels(pTickLabels);
+            pTicksNow = get(gca, 'XTick');
         case 'horizontal'
-            yticklabels(pTickLabels);
+            pTicksNow = get(gca, 'YTick');
+    end
+
+    % Extract the corresponding tick labels
+    pTickLabelsNeeded = match_positions(pTickLabels, pValues, pTicksNow);
+
+    % Plot the tick locations
+    switch barDirection
+        case 'vertical'
+            xticklabels(pTickLabelsNeeded);
+        case 'horizontal'
+            yticklabels(pTickLabelsNeeded);
     end
 end
 

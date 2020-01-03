@@ -1037,7 +1037,8 @@ if strcmpi(simMode, 'passive')
         % Import data
         [realDataCpr, sweepInfoCpr] = ...
             m3ha_import_raw_traces(fileNames, 'ImportMode', 'passive', ...
-                        'Verbose', verbose, 'OutFolder', outFolder);
+                        'Verbose', verbose, 'OutFolder', outFolder, ...
+                        'ResponseWindow', cprWindow - timeToStabilize);
 
         % Update file names
         fileNames = sweepInfoCpr.fileNames;
@@ -1091,7 +1092,8 @@ elseif strcmpi(simMode, 'active')
         % Import data
         [realDataIpscr, sweepInfoIpscr] = ...
             m3ha_import_raw_traces(fileNames, 'ImportMode', 'active', ...
-                        'Verbose', verbose, 'OutFolder', outFolder);
+                        'Verbose', verbose, 'OutFolder', outFolder, ...
+                        'ResponseWindow', ipscrWindow - timeToStabilize);
 
         % Update file names
         fileNames = sweepInfoIpscr.fileNames;

@@ -50,6 +50,13 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 %                   - 'Prefix': prefix to prepend to file names
 %                   must be a character array
 %                   default == extract_common_prefix(fileBase)
+%                   - 'FileNames': data file names to import
+%                   must be a character vector, a string vector 
+%                       or a cell array of character vectors
+%                   default == none provided
+%                   - 'IpscrWindow': IPSC response window in ms
+%                   must be a numeric vector with 2 elements
+%                   default == [0, 8000] + timeToStabilize
 %                   - Any other parameter-value pair for 
 %                           m3ha_neuron_run_and_analyze()
 %
@@ -96,6 +103,14 @@ idxAmp = 3;
 idxTime = 4;
 idxSlope = 5;
 
+% The following must be consistent with both dclampDataExtractor.m & ...
+%   singleneuron4compgabab.hoc
+ipscrWinOrig = [0, 8000];       % IPSC response window (ms), original
+
+% The following must be consistent with singleneuron4compgabab.hoc
+timeToStabilize = 2000;         % padded time (ms) to make sure initial value 
+                                %   of simulations are stabilized
+
 % Spreadsheet settings
 paramsToSave = { ...
     'diamSoma'; 'LDend'; 'diamDend'; 'gpas'; 'epas'; ...
@@ -136,6 +151,8 @@ plotParamHistoryFlagDefault = false;
 outFolderDefault = pwd;         % use the present working directory for outputs
                                 %   by default
 prefixDefault = '';             % set later
+fileNamesDefault = {};          % none provided by default
+ipscrWindowDefault = ipscrWinOrig + timeToStabilize;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -171,6 +188,12 @@ addParameter(iP, 'OutFolder', outFolderDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'Prefix', prefixDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FileNames', fileNamesDefault, ...
+    @(x) assert(ischar(x) || iscellstr(x) || isstring(x), ...
+        ['FileNames must be a character array or a string array ', ...
+            'or cell array of character arrays!']));
+addParameter(iP, 'IpscrWindow', ipscrWindowDefault, ...
+    @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 2}));
 
 % Read from the Input Parser
 parse(iP, candParamsTablesOrFiles, varargin{:});
@@ -182,6 +205,8 @@ plotErrorComparisonFlag = iP.Results.PlotErrorComparisonFlag;
 plotParamHistoryFlag = iP.Results.PlotParamHistoryFlag;
 outFolder = iP.Results.OutFolder;
 prefix = iP.Results.Prefix;
+fileNames = iP.Results.FileNames;
+ipscrWindow = iP.Results.IpscrWindow;
 
 % Keep unmatched arguments for the m3ha_neuron_run_and_analyze() function
 otherArguments = iP.Unmatched;
@@ -281,8 +306,29 @@ sheetPath = [sheetPathBase, '.', sheetExtension];
 % Display message
 fprintf('Choosing best parameters for %s ... \n', uniqueCellName);
 
+% Import data
+if ~isempty(fileNames)
+    [realDataIpscr, sweepInfoIpscr] = ...
+        m3ha_import_raw_traces(fileNames, 'ImportMode', 'active', ...
+                    'Verbose', false, 'OutFolder', outFolder, ...
+                    'ResponseWindow', ipscrWindow - timeToStabilize);
+
+    nSweepsIpscr = height(sweepInfoIpscr);
+    sweepInfoIpscr{:, 'holdCurrentNoise'} = zeros(nSweepsIpscr, 1);
+
+    sweepInfoIpscr.Properties.VariableNames = ...
+        strcat(sweepInfoIpscr.Properties.VariableNames, 'Ipscr');
+
+    sweepInfoIpscrStruct = table2struct(sweepInfoIpscr, 'ToScalar', true);
+
+    otherArguments = merge_structs(otherArguments, sweepInfoIpscrStruct);
+end
+
 % Compute errors for all tables
 errorStructs = cellfun(@(x, y) m3ha_neuron_run_and_analyze(x, ...
+                            'RealDataIpscr', realDataIpscr, ...
+                            'FileNames', fileNames, ...
+                            'IpscrWindow', ipscrWindow, ...
                             'SaveImportLogFlag', false, ...
                             'PlotIndividualFlag', true, ...
                             'BuildMode', buildMode, 'SimMode', simMode, ...
@@ -402,14 +448,16 @@ if plotErrorComparisonFlag
     groupLabels = {'LTS Match Error', 'Sweep Error', 'LTS Amp Error', ...
                     'LTS Time Error', 'LTS Slope Error'};
 
-    % Decide on tick labels
+    % Decide on ticks and tick labels
+    pTicks = 1:numel(iterStr);
     pTickLabels = iterStr;
 
     % Plot components of total error stacked
     plot_bar(componentErrors, 'BarDirection', 'horizontal', ...
             'ReverseOrder', true, 'GroupStyle', 'stacked', ...
             'PLabel', 'suppress', 'ReadoutLabel', 'Error (dimensionless)', ...
-            'PTickLabels', pTickLabels, 'ColumnLabels', groupLabels, ...
+            'PTicks', pTicks, 'PTickLabels', pTickLabels, ...
+            'ColumnLabels', groupLabels, ...
             'FigTitle', ['Error Comparison for ', uniqueCellName]);
 
     % Save figure

@@ -22,6 +22,7 @@ function dataNew = match_time_points (dataOld, timeNew)
 %
 % File History:
 % 2018-08-10 Adapted from code in run_neuron_once_4compgabab.m
+% 2020-01-13 Changed interp1q() to interp1()
 % TODO: Input parser
 %
 
@@ -60,7 +61,7 @@ timeOld = dataOld(:, 1);
 [timeUnique, indUnique] = unique(timeOld);
 
 % Interpolate all other columns
-dataNew(:, 2:end) = interp1q(timeUnique, dataOld(indUnique, 2:end), timeNew);
+dataNew(:, 2:end) = interp1(timeUnique, dataOld(indUnique, 2:end), timeNew);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -74,7 +75,7 @@ parfor iCol = 2:nCols
     vecOld = dataOld(indUnique, iCol);
 
     % Interpolate to make a new column vector
-    vecNew = interp1q(timeUnique, vecOld, timeNew);
+    vecNew = interp1(timeUnique, vecOld, timeNew);
 
     % Place the new column vector in the new data array
     dataNew(:, iCol) = vecNew;

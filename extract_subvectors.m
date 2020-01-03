@@ -121,8 +121,8 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/force_matrix.m
 %       cd/iscellvector.m
 %       cd/m3ha_import_raw_traces.m
-%       cd/plot_fitted_traces.m
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/match_positions.m
 %       cd/parse_current_family.m
 %       cd/parse_ipsc.m
 %       cd/parse_phase_info.m
@@ -131,6 +131,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/parse_spike2_mat.m
 %       cd/plot_autocorrelogram.m
 %       cd/plot_calcium_imaging_traces.m
+%       cd/plot_fitted_traces.m
 %       cd/plot_histogram.m
 %       cd/plot_relative_events.m
 %       cd/plot_spike_histogram.m
@@ -473,21 +474,6 @@ else
     subVec(~isNan) = newValues;
 end
 
-% elseif ~any(any(any(isNan)))
-%     % Just extract the subvector(s)
-%     subVec = extract_subvec(vec, indices);
-% else
-%     % Count the number of different indices vectors
-%     nIndices = size(indices, 2);
-
-%     % Use interpolation
-%     outVecs = array_fun(@(x) interp_indices(vec(:, x), indices(:, x)), ...
-%                         1:nIndices, 'UniformOutput', false);
-
-%     % Concatenate
-%     subVec = horzcat(outVecs{:});
-% end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function subVec = extract_subvec (vec, indices)
@@ -510,6 +496,7 @@ function subVec = interp_indices (vec, indices)
 allIndices = transpose(1:size(vec, 1));
 
 % Interpolate
+% TODO: Use interp1_custom.m in case vec has a single value
 subVec = interp1(allIndices, vec, indices);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

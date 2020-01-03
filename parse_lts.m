@@ -233,7 +233,9 @@ addParameter(iP, 'MinPeakDelayMs', minPeakDelayMsDefault, ...
 addParameter(iP, 'NoiseWindowMsOrMaxNoise', noiseWindowMsORmaxNoiseDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
 addParameter(iP, 'SearchWindowMs', searchWindowMsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'vector'}));
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['tVec0s must be either a numeric array', ...
+                    'or a cell array of numeric arrays!']));
 addParameter(iP, 'tVec0s', tVec0sDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['tVec0s must be either a numeric array', ...
@@ -501,9 +503,12 @@ idxMinPeakTime = find(tVec0 >= minPeakTimeMs, 1);
 
 % Indices for searching for LTS
 %   Note: first index for LTS search must be after current peak
-idxSearchBegin = find(tVec0 >= searchWindowMs(1), 1);
-idxSearchBegin = max(idxSearchBegin, idxMinPeakTime);
-idxSearchEnd = find(tVec0 <= searchWindowMs(2), 1, 'last'); 
+%   Note: last index for LTS search must be at least medfiltWindowMs
+%           away from the end of the trace
+idxSearchBeginTemp = find(tVec0 >= searchWindowMs(1), 1);
+idxSearchBegin = max(idxSearchBeginTemp, idxMinPeakTime);
+idxSearchEndTemp = find(tVec0 <= searchWindowMs(2), 1, 'last'); 
+idxSearchEnd = min(idxSearchEndTemp, numel(tVec0) - ceil(medfiltWindowMs / siMs));
 
 % Indices for calculating maxNoise
 if computeMaxNoiseFlag

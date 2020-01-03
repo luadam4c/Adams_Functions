@@ -40,6 +40,8 @@ function gGabab = compute_gabab_conductance (tVec, timeStart, amplitude, ...
 
 % File History:
 % 2016-11-07 Moved from /media/adamX/m3ha/data_dclamp/trace_comparison.m
+% 2020-01-03 Now accepts multiple time vectors and/or parameters
+%               at the same time
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
