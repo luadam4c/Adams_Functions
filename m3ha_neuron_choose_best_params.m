@@ -57,6 +57,7 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 %       cd/argfun.m
 %       cd/combine_strings.m
 %       cd/create_error_for_nargin.m
+%       cd/create_indices.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_subplots.m
 %       cd/extract_fields.m
@@ -427,6 +428,15 @@ if plotParamHistoryFlag
     % Decide on the errors and parameters to plot
     [errorParamToPlot, errorParamLabels, ...
             errorParamYLimits, errorParamIsLog] = m3ha_decide_on_plot_vars;
+
+    % Decide on x tick locations
+    if isempty(errorParamXTicks)
+        % Count the number of iterations
+        nIters = numel(iterNumber);
+
+        % Set indices
+        errorParamXTicks = create_indices([1, nIters], 'MaxNum', 18);
+    end
 
     % Plot error & parameter history
     plot_table_parallel(errorParamTable, 'VarsToPlot', errorParamToPlot,...

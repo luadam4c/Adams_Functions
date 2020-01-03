@@ -94,6 +94,7 @@ function indices = create_indices (varargin)
 %       cd/extract_subvectors.m
 %       cd/fit_2exp.m
 %       cd/compute_combined_data.m
+%       cd/m3ha_neuron_choose_best_params.m
 %       cd/parse_pulse_response.m
 %       cd/plot_measures.m
 %       cd/plot_spike_density_multiunit.m
@@ -215,15 +216,22 @@ else
     rowInstead = false;
 end
 
-% Make sure endPoints, indexStartUser, indexEndUser are in columns
-[endPoints, indexStartUser, indexEndUser] = ...
-    argfun(@(x) force_column_vector(x, 'IgnoreNonVectors', true), ...
-            endPoints, indexStartUser, indexEndUser);
 
 %% Do the job
-% Extract the starting and ending indices from provided end points
-[idxStartFromEndPoints, idxEndFromEndPoints] = ...
-    argfun(@(x) extract_elements(endPoints, x), 'first', 'last');
+% Extract stard and end indices from end points if needed
+if isempty(indexStartUser) || isempty(indexEndUser)
+    if isnumeric(endPoints) && isvector(endPoints)
+        indexStartUser = endPoints(1);
+        indexEndUser = endPoints(end);
+    else
+        % Make sure endPoints are in columns
+        endPoints = force_column_vector(endPoints, 'IgnoreNonVectors', true);
+
+        % Extract the starting and ending indices from provided end points
+        [idxStartFromEndPoints, idxEndFromEndPoints] = ...
+            argfun(@(x) extract_elements(endPoints, x), 'first', 'last');
+    end
+end
 
 % Replace with indexStartUser if provided
 if ~isempty(indexStartUser)
@@ -238,6 +246,9 @@ if ~isempty(indexEndUser)
 else
     idxEnd = idxEndFromEndPoints;
 end
+
+% Make sure idxStart, idxEnd are column vectors
+[idxStart, idxEnd] = argfun(@force_column_vector, idxStart, idxEnd);
 
 % If one of idxStart and idxEnd is empty, create the other
 if isempty(idxStart) && ~isempty(idxEnd)
@@ -258,12 +269,15 @@ if isempty(idxStart) && isempty(idxEnd)
 end
 
 % Match the formats of idxStart and idxEnd
-[idxStart, idxEnd] = ...
-    match_format_vector_sets(idxStart, idxEnd, 'MatchVectors', true);
+if ~isequal(size(idxStart), size(idxStart))
+    [idxStart, idxEnd] = ...
+        match_format_vector_sets(idxStart, idxEnd, 'MatchVectors', true);
+end
 
 % If original vectors are provided, 
 %   fix indices if they are out of range
-if ~(isempty(vectors) || iscell(vectors) && all(all(isemptycell(vectors))))
+if ~isempty(vectors) && ...
+        ~(iscell(vectors) && all(all(isemptycell(vectors))))
     if iscell(vectors)
         % Count the number of samples in each vector
         nSamples = count_samples(vectors, 'TreatCellAsArray', treatCellAsArray, ...

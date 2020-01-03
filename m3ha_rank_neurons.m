@@ -37,6 +37,7 @@
 %       cd/m3ha_select_cells.m
 %       cd/m3ha_select_raw_traces.m
 %       cd/plot_bar.m
+%       cd/plot_histogram.m
 %       cd/plot_table_parallel.m
 %       cd/save_all_figtypes.m
 %
@@ -51,15 +52,15 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = true;
+chooseBestParamsFlag = false; %true;
 plotErrorHistoryFlag = true;
 plotErrorComparisonFlag = true;
 plotParamHistoryFlag = true;
 plotIndividualFlag = true;
-rankNeuronsFlag = true;
-plotHistogramsFlag = true;
-plotBarPlotFlag = true;
-plotParamViolinsFlag = true;
+rankNeuronsFlag = false; %true;
+plotHistogramsFlag = false; %true;
+plotBarPlotFlag = false; %true;
+plotParamViolinsFlag = false; %true;
 plotErrorParamComparisonFlag = true;
 
 % Fitting parameters 
@@ -179,6 +180,10 @@ paramDirNames = fullfile('best_params', ...
                         'bestparams_20191230_singleneuronfitting92', ...
                         'bestparams_20191231_singleneuronfitting93', ...
                         'bestparams_20191231_singleneuronfitting94'});
+outFolder = '20200102_ranked_singleneuronfitting0-94';
+% rankNumsToPlot = [1:6, 21, 36];
+% rankNumsToPlot = [1:6, 8, 10, 11, 13:18, 21, 22, 24, 27, 28, 36];
+rankNumsToPlot = [1:6, 8:12, 13:18, 21, 22, 24, 26:32, 34, 36];
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -237,6 +242,8 @@ rankBase = [iterSetStr, '_', rankSuffix];
 rankPathBase = fullfile(outFolder, rankBase);
 rankSheetPath = [rankPathBase, '.', rankSheetExtension];
 
+paramViolinPathBase = [rankPathBase, '_params_violin'];
+
 %% Choose the best parameters for each cell
 if chooseBestParamsFlag
     %% Preparation
@@ -293,7 +300,7 @@ if chooseBestParamsFlag
                                 cellNamesToFit, 'UniformOutput', false);
 
     % Find the best parameters for each cell
-    for iCellToFit = nCellsToFit:-1:1
+     for iCellToFit = nCellsToFit:-1:1
         % Extract stuff for this cell
         cellNameThis = cellNamesToFit{iCellToFit};
         fileNamesThis = fileNamesToFit{iCellToFit};

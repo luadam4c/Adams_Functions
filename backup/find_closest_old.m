@@ -1,16 +1,16 @@
-function [idxClosest, valClosest] = find_closest_new (vecs, target, varargin)
+function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 %% Finds the element(s) in monotonic numeric vector(s) closest to target(s)
-% Usage: [idxClosest, valClosest] = find_closest_new (vecs, target, varargin)
+% Usage: [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       [i, v] = find_closest_new(2:9, 5.6)
-%       [i, v] = find_closest_new(9:-2:1, 4)
-%       [i, v] = find_closest_new({5:-1:1, 8:-2:0}, 4)
-%       [i, v] = find_closest_new(5:-1:1, [3.2, 3.8])
-%       [i, v] = find_closest_new(5:-1:1, [3.2, 3.8], 'Direction', 'none')
-%       [i, v] = find_closest_new(1:100000, 5489)
+%       [i, v] = find_closest(2:9, 5.6)
+%       [i, v] = find_closest([1, 2, 3; 4, 5, 6; 7, 8, 9], 5)
+%       [i, v] = find_closest(9:-2:1, 4)
+%       [i, v] = find_closest({5:-1:1, 8:-2:0}, 4)
+%       [i, v] = find_closest(5:-1:1, [3.2, 3.8])
+%       [i, v] = find_closest(5:-1:1, [3.2, 3.8], 'Direction', 'none')
 %
 % Outputs:
 %       idxClosest  - index(ices) of the closest value(s)
@@ -41,7 +41,6 @@ function [idxClosest, valClosest] = find_closest_new (vecs, target, varargin)
 %       cd/match_format_vector_sets.m
 %
 % Used by:
-%       cd/compute_gabab_conductance.m
 %       cd/parse_phase_info.m
 %       cd/parse_stim.m
 %       cd/parse_ipsc.m
@@ -51,7 +50,6 @@ function [idxClosest, valClosest] = find_closest_new (vecs, target, varargin)
 % 2019-11-25 Added 'none' as a direction
 % 
 
-tic;
 %% Hard-coded parameters
 validDirections = {'nearest', 'down', 'up', 'none'};
 
@@ -87,30 +85,15 @@ parse(iP, vecs, target, varargin{:});
 direction = validatestring(iP.Results.Direction, validDirections);
 
 %% Preparation
-% Match the number of vecs with the number of targets
-if iscell(vecs)
-    % Create a cell array
-    targets = num2cell(target);
+% Create a cell array
+targetCell = num2cell(target);
 
-    % Match the number of vecs and the number of targets
-    [vecs, targets] = match_format_vector_sets(vecs, targets);
-else
-    % Count the number of items desired
-    nDesired = max(size(vecs, 2), numel(target));
-
-    % Match the number of vecs and the number of targets
-    [vecs, targets] = argfun(@(x) match_row_counts(x, ), vecs, target);
-end
-
-toc;
-tic;
+% Match the number of rows
+[vecs, targetCell] = match_format_vector_sets(vecs, targetCell);
 
 %% Do the job
 % Create "time windows"
-windows = cellfun(@(x) [x; x], targets, 'UniformOutput', false);
-
-toc;
-tic;
+windows = cellfun(@(x) [x; x], targetCell, 'UniformOutput', false);
 
 % Find endpoints that "include" the target value
 indClosest = find_window_endpoints(windows, vecs, 'BoundaryMode', 'inclusive');
@@ -127,11 +110,8 @@ valsClosest = extract_subvectors(vecs, 'Indices', indClosest);
 indClosest = cellfun(@(x, y) x(y), indClosest, origInd, 'UniformOutput', false);
 
 % Compute the absolute differences
-absDiffValues = cellfun(@(x, y) abs(x - y), targets, valsClosest, ...
+absDiffValues = cellfun(@(x, y) abs(x - y), targetCell, valsClosest, ...
                         'UniformOutput', false);
-
-toc;
-tic;
 
 % Choose the endpoint that is "closest"
 switch direction
@@ -148,12 +128,10 @@ switch direction
     case 'none'
         valClosest = target(:);
         idxClosest = cellfun(@(x, y, z) interp1(x, y, z), ...
-                            valsClosest, indClosest, targets);
+                            valsClosest, indClosest, targetCell);
     otherwise
         error('direction unrecognized!!');
 end
-
-toc;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

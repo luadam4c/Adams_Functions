@@ -164,6 +164,7 @@ function [bars, fig] = plot_histogram (varargin)
 %
 % Used by:    
 %       cd/m3ha_initial_slopes.m
+%       cd/m3ha_rank_neurons.m
 %       cd/plot_psth.m
 %       cd/plot_spike_histogram.m
 %       cd/plot_swd_histogram.m

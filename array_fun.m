@@ -35,6 +35,7 @@ function varargout = array_fun (myFunc, varargin)
 %       cd/extract_elements.m
 %       cd/extract_fields.m
 %       cd/extract_subvectors.m
+%       cd/find_closest.m
 %       cd/find_window_endpoints.m
 %       cd/force_string_end.m
 %       cd/ismember_custom.m

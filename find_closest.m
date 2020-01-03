@@ -6,10 +6,15 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 %
 % Example(s):
 %       [i, v] = find_closest(2:9, 5.6)
+%       [i, v] = find_closest([1, 2, 3; 4, 5, 6; 7, 8, 9], 5)
+%       [i, v] = find_closest([1, 2, 3; 4, 5, 6; 7, 8, 9], 5, 'Direction', 'down')
+%       [i, v] = find_closest([1, 2, 3; 4, 5, 6; 7, 8, 9], 5, 'Direction', 'up')
+%       [i, v] = find_closest([1, 2, 3; 4, 5, 6; 7, 8, 9], 5, 'Direction', 'none')
 %       [i, v] = find_closest(9:-2:1, 4)
 %       [i, v] = find_closest({5:-1:1, 8:-2:0}, 4)
 %       [i, v] = find_closest(5:-1:1, [3.2, 3.8])
 %       [i, v] = find_closest(5:-1:1, [3.2, 3.8], 'Direction', 'none')
+%       [i, v] = find_closest(1:100000, 5489)
 %
 % Outputs:
 %       idxClosest  - index(ices) of the closest value(s)
@@ -33,13 +38,17 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 %                   default == 'nearest'
 %
 % Requires:
+%       cd/argfun.m
+%       cd/array_fun.m
 %       cd/create_error_for_nargin.m
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
 %       cd/find_window_endpoints.m
+%       cd/force_column_vector.m
 %       cd/match_format_vector_sets.m
 %
 % Used by:
+%       cd/compute_gabab_conductance.m
 %       cd/parse_phase_info.m
 %       cd/parse_stim.m
 %       cd/parse_ipsc.m
@@ -47,6 +56,7 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 % File History:
 % 2019-11-14 Created by Adam Lu
 % 2019-11-25 Added 'none' as a direction
+% 2020-01-03 Improved performance
 % 
 
 %% Hard-coded parameters
@@ -84,15 +94,23 @@ parse(iP, vecs, target, varargin{:});
 direction = validatestring(iP.Results.Direction, validDirections);
 
 %% Preparation
-% Create a cell array
-targetCell = num2cell(target);
+% Make sure target is a row vector
+target = force_row_vector(target);
 
-% Match the number of rows
-[vecs, targetCell] = match_format_vector_sets(vecs, targetCell);
+% Make sure vecs is not a row vector
+vecs = force_column_vector(vecs, 'IgnoreNonVectors', true);
+
+% Match the number of vecs with the number of targets
+[vecs, target] = ...
+    match_format_vector_sets(vecs, target, 'TreatRowVecAsOne', false);
 
 %% Do the job
 % Create "time windows"
-windows = cellfun(@(x) [x; x], targetCell, 'UniformOutput', false);
+if iscell(target)
+    windows = cellfun(@(x) [x; x], target, 'UniformOutput', false);
+else
+    windows = repmat(target, [2, 1]);
+end
 
 % Find endpoints that "include" the target value
 indClosest = find_window_endpoints(windows, vecs, 'BoundaryMode', 'inclusive');
@@ -100,36 +118,72 @@ indClosest = find_window_endpoints(windows, vecs, 'BoundaryMode', 'inclusive');
 % Find corresponding values
 valsClosest = extract_subvectors(vecs, 'Indices', indClosest);
 
+% Decide on the closest
+if iscell(target)
+    [idxClosest, valClosest] = ...
+        array_fun(@(x, y, z) find_closest_helper(x, y, z, direction), ...
+                    target, valsClosest, indClosest);
+else
+    [idxClosest, valClosest] = ...
+        find_closest_helper(target, valsClosest, indClosest, direction);
+end
+
+% Force outputs as column vectors
+[idxClosest, valClosest] = argfun(@force_column_vector, idxClosest, valClosest);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [idxClosest, valClosest] = ...
+                find_closest_helper (target, valsClosest, indClosest, direction)
 % Sort the values in descending order
 %   Note: Must be descending for 'nearest' to work
-[valsClosest, origInd] = ...
-    cellfun(@(x) sort(x, 'descend'), valsClosest, 'UniformOutput', false);
+[valsClosest, origInd] = sort(valsClosest, 'descend');
 
 % Reorder the indices in the same order
-indClosest = cellfun(@(x, y) x(y), indClosest, origInd, 'UniformOutput', false);
+indClosest = extract_subvectors(indClosest, 'Indices', origInd);
 
 % Compute the absolute differences
-absDiffValues = cellfun(@(x, y) abs(x - y), targetCell, valsClosest, ...
-                        'UniformOutput', false);
+absDiffValues = abs(target - valsClosest);
 
 % Choose the endpoint that is "closest"
 switch direction
     case 'nearest'
-        [~, iClosest] = cellfun(@min, absDiffValues, 'UniformOutput', false);
-        idxClosest = cellfun(@(x, y) x(y), indClosest, iClosest);
-        valClosest = cellfun(@(x, y) x(y), valsClosest, iClosest);
+        % For each column, find the row with minimum absolute difference
+        [~, iChoice] = min(absDiffValues, [], 1);
+
+        % Choose the row for each column
+        [idxClosest, valClosest] = ...
+            argfun(@(x) extract_elements(x, 'specific', 'Index', iChoice), ...
+                    indClosest, valsClosest);
     case 'down'
-        idxClosest = extract_elements(indClosest, 'last');
-        valClosest = extract_elements(valsClosest, 'last');
+        idxClosest = indClosest(end, :);
+        valClosest = valsClosest(end, :);
     case 'up'
-        idxClosest = extract_elements(indClosest, 'first');
-        valClosest = extract_elements(valsClosest, 'first');
+        idxClosest = indClosest(1, :);
+        valClosest = valsClosest(1, :);
     case 'none'
-        valClosest = target(:);
-        idxClosest = cellfun(@(x, y, z) interp1(x, y, z), ...
-                            valsClosest, indClosest, targetCell);
+        valClosest = target;
+        if isvector(valsClosest)
+            idxClosest = interp1_custom(valsClosest, indClosest, valClosest);
+        else
+            idxClosest = array_fun(@(x) interp1_custom(valsClosest(:, x), ...
+                                        indClosest(:, x), valClosest(x)), ...
+                                    1:size(valsClosest, 2));
+        end
     otherwise
         error('direction unrecognized!!');
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function vq = interp1_custom (x, v, xq)
+
+uniqueV = unique(v);
+
+if numel(uniqueV) == 1
+    vq = uniqueV;
+else
+    vq = interp1(x, v, xq);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

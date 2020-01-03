@@ -16,7 +16,6 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       extract_subvectors(3:3:18, 'Indices', {3.5; [2.5, 5.5]})
 %       extract_subvectors({1:5, 2:6}, 'Pattern', 'odd')
 %       extract_subvectors({1:5, 2:6}, 'Pattern', 'even')
-%       extract_subvectors(magic(3), 'Indices', [1, 2, 3; 2, 3, 1])
 %
 % Outputs:
 %       subVecs     - subvectors extracted
@@ -99,7 +98,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/get_var_name.m
 %       cd/iscellnumeric.m
 %       cd/isnumericvector.m
-%       cd/ispositiveintegerarray.m
+%       cd/ispositiveintegervector.m
 %       cd/match_format_vector_sets.m
 %       cd/unique_custom.m
 %
@@ -278,9 +277,10 @@ if isempty(vecs) || ...
         isempty(indices) && isempty(endPoints) && isempty(windows) && ...
             isempty(indexStart) && isempty(indexEnd) && ...
             strcmpi('AlignMethod', 'none')
-    subVecs = vecs;
     if forceCellOutput
         subVecs = force_column_cell(subVecs);
+    else
+        subVecs = vecs;
     end
     return
 end
@@ -447,69 +447,46 @@ end
 % Initialize subVec with NaNs
 subVec = create_empty_match(vec, 'NRows', nRows, 'NColumns', nColumns);
 
-% Just return the NaNs if no indices provided
-if nIndices == 0
-    return
+% Find the parts of indices without NaNs
+% TODO: Make this a function find_nonempty_indices.m
+%       and return without NaTs if necessary
+if nIndices == 1
+    withoutNaNs = find(~isnan(indices));
+else
+    withoutNaNs = array_fun(@(x) find(~isnan(indices(:, x))), ...
+                            transpose(1:nIndices), 'UniformOutput', false);
 end
-
-% Determine whether each index is NaN
-isNan = isnan(indices);
 
 % Extract the subvectors
-if nIndices == 1
+if nIndices == 0
+    % do nothing
+elseif nIndices == 1
     % Replace the parts that are not NaNs
-    subVec(~isNan, :) = extract_subvec(vec, indices(~isNan));
+    subVec(withoutNaNs, :) = extract_one_subvector(vec, indices(withoutNaNs));
 else
-    % Extract from each column separately
-    outVecs = array_fun(@(x) extract_subvec(vec(:, x), indices(~isNan(:, x), x)), ...
-                        1:nIndices, 'UniformOutput', false);
-
-    % Concatenate into a single vector
-    newValues = vertcat(outVecs{:});
-
-    % Replace the parts that are not NaNs
-    %   Note: this works because of linear indexing
-    subVec(~isNan) = newValues;
+    for iCol = 1:nColumns
+        % Replace the parts of this column that are not NaNs
+        subVec(withoutNaNs{iCol}, iCol) = ...
+            extract_one_subvector(vec(:, iCol), ...
+                                    indices(withoutNaNs{iCol}, iCol));
+    end
 end
-
-% elseif ~any(any(any(isNan)))
-%     % Just extract the subvector(s)
-%     subVec = extract_subvec(vec, indices);
-% else
-%     % Count the number of different indices vectors
-%     nIndices = size(indices, 2);
-
-%     % Use interpolation
-%     outVecs = array_fun(@(x) interp_indices(vec(:, x), indices(:, x)), ...
-%                         1:nIndices, 'UniformOutput', false);
-
-%     % Concatenate
-%     subVec = horzcat(outVecs{:});
-% end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function subVec = extract_subvec (vec, indices)
-% Extract subvector(s) from indices
+function subVec = extract_one_subvector (vec, indices)
+% Extract subvector(s) fro just one set of indices
 
-if ispositiveintegerarray(indices)
-    % Apply to each column
+if ispositiveintegervector(indices)
+    % Just get the subvector
     subVec = vec(indices, :);
 else
-    % Use interpolation
-    subVec = interp_indices (vec, indices);
+    % Set up indices
+    allIndices = 1:size(vec, 1);
+
+    % Interpolate
+    subVec = interp1(allIndices, vec, indices);
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function subVec = interp_indices (vec, indices)
-% Extract subvector(s) from one set of indices using interpolation
-
-% Set up indices
-allIndices = transpose(1:size(vec, 1));
-
-% Interpolate
-subVec = interp1(allIndices, vec, indices);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -704,7 +681,7 @@ for iCol = 1:nColumns
 
     % Replace the parts of this column that are not NaNs
     subVec(withoutNaNsThis, iCol) = ...
-        extract_subvec(vecThis, indicesThis(withoutNaNsThis));
+        extract_one_subvector(vecThis, indicesThis(withoutNaNsThis));
 end
 
 %}

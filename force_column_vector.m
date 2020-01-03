@@ -78,6 +78,7 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/compute_combined_trace.m
 %       cd/compute_bins.m
 %       cd/compute_default_sweep_info.m
+%       cd/compute_gabab_conductance.m
 %       cd/compute_grouped_histcounts.m
 %       cd/compute_lts_errors.m
 %       cd/compute_peak_decay.m
@@ -96,6 +97,8 @@ function vectors = force_column_vector (vectors, varargin)
 %       cd/extract_elements.m
 %       cd/extract_subvectors.m
 %       cd/fit_2exp.m
+%       cd/find_closest.m
+%       cd/find_window_endpoints.m
 %       cd/force_column_cell.m
 %       cd/force_data_as_matrix.m
 %       cd/force_matrix.m

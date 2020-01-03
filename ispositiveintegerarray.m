@@ -20,6 +20,7 @@ function isPositiveIntegerArray = ispositiveintegerarray (x)
 %
 % Used by:
 %       cd/extract_columns.m
+%       cd/extract_subvectors.m
 
 % File History:
 % 2019-01-12 Modified from ispositiveintegervector.m

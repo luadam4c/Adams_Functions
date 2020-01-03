@@ -31,6 +31,7 @@ function gGabab = compute_gabab_conductance (tVec, timeStart, amplitude, ...
 %
 % Requires:
 %       cd/find_closest.m
+%       cd/force_column_vector.m
 %
 % Used by:    
 %       cd/m3ha_resave_sweeps.m
@@ -42,22 +43,34 @@ function gGabab = compute_gabab_conductance (tVec, timeStart, amplitude, ...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Preparation
+% Make sure time vectors are column vectors
+tVec = force_column_vector(tVec);
+
+% Make sure parameters are row vectors
+[amplitude, tauRise, tauFallFast, tauFallSlow, weight] = ...
+    argfun(@force_row_vector, ...
+            amplitude, tauRise, tauFallFast, tauFallSlow, weight);
+
 % Compute the number of samples
-nSamples = numel(tVec);
+nSamples = size(tVec, 1);
 
 % Compute the index of the starting time
 idxTimeStart = find_closest(tVec, timeStart);
 
+% Compute the shifted time vectors
+timeShifted = tVec(idxTimeStart:nSamples) - timeStart;
+
+[Ron, RoffFast, RoffSlow] = ...
+    argfun(@(x) exp(-timeShifted ./ x), tauRise, tauFallFast, tauFallSlow);
+ = exp(-timeShifted / );
+ = exp(-timeShifted / );
+
 gGabab = zeros(nSamples, 1);
-for k = 1:nSamples
-    if k <= idxTimeStart
-        gGabab(k) = 0;
-    else
-        Ron(k) = exp(-(tVec(k)-timeStart)/tauRise);
-        RoffFast(k) = exp(-(tVec(k)-timeStart)/tauFallFast);
-        RoffSlow(k) = exp(-(tVec(k)-timeStart)/tauFallSlow);
-        gGabab(k) = amplitude * (1 - Ron(k))^ 8 * (RoffFast(k)*weight + RoffSlow(k)*(1-weight));  
-    end
+for k = idxTimeStart:nSamples
+    Ron(k) = exp(-(tVec(k)-timeStart)/tauRise);
+    RoffFast(k) = exp(-(tVec(k)-timeStart)/tauFallFast);
+    RoffSlow(k) = exp(-(tVec(k)-timeStart)/tauFallSlow);
+    gGabab(k) = amplitude * (1 - Ron(k))^ 8 * (RoffFast(k)*weight + RoffSlow(k)*(1-weight));  
 end
 
 

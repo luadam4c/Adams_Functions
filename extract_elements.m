@@ -12,6 +12,7 @@ function [elements, idxElement] = extract_elements (vecs, extractMode, varargin)
 %       extract_elements({[3; 5; 4], [], [1, 2, -1]}, 'firstdiff')
 %       extract_elements({[3; 5; 4], [], [1, 2, -1]}, 'center')
 %       extract_elements({[3; 5], []; [], [1, 2]}, 'specific', 'Index', 1)
+%       extract_elements([2, 3], 'first')
 %
 % Outputs:
 %       elements    - element(s) from each vector extracted

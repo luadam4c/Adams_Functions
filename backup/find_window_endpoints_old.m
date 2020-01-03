@@ -20,8 +20,8 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %
 % Outputs:
 %       endPoints   - index(ices) of window endpoints
-%                   specified as a 2-row numeric matrix
-%                       or a cell array of 2-row numeric matrices
+%                   specified as a positive integer column vector
+%                       or a cell array of positive integer column vectors
 %
 % Arguments:
 %       timeWindows - time window(s); if empty, returns the first and last index
@@ -51,10 +51,8 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %                   default == true
 %
 % Requires:
-%       cd/argfun.m
 %       cd/array_fun.m
 %       cd/count_samples.m
-%       cd/force_column_vector.m
 %       cd/force_matrix.m
 %       cd/iscellnumeric.m
 %       cd/iscellnumericvector.m
@@ -86,7 +84,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %               added 'ForceMatrixOutput' as an optional argument
 % 2019-09-10 Added 'WarnFlag' as an optional flag
 % 2019-11-14 Now allows time vectors to be decreasing
-% 2020-01-02 Now returns matrices if inputs are all matrices
+% 
 
 %% Hard-coded parameters
 validBoundaryModes = {'inclusive', 'leftadjust', 'rightadjust', 'restrictive'};
@@ -147,15 +145,10 @@ end
 [timeWindows, timeVecs] = ...
     match_format_vector_sets(timeWindows, timeVecs, 'ForceCellOutputs', false);
 
-% Force as column vectors
-[timeWindows, timeVecs] = ...
-    argfun(@(x) force_column_vector(x, 'IgnoreNonVector', true), ...
-            timeWindows, timeVecs);
-
 % If the time window is a nonempty numeric array, make sure it has two rows
 if ~isempty(timeWindows) && isnumeric(timeWindows) && ...
     size(timeWindows, 1) ~= 2
-    error('Time windows must have only two rows!');
+    error('Time windows must have only two elements!');
 end
 
 %% Do the job
@@ -188,11 +181,13 @@ function endPoints = find_window_endpoints_helper (timeWindow, timeVec, ...
                                                     boundaryMode, warnFlag)
 %% Find the endPoints for time vector(s)
 
+% Force as column vectors
+[timeWindow, timeVec] = ...
+    argfun(@(x) force_column_vector(x, 'IgnoreNonVector', true), ...
+            timeWindow, timeVec);
+
 % Compute the number of time points
 nTimePoints = size(timeVec, 1);
-
-% Compute the number of vectors
-nVectors = size(timeVec, 2);
 
 % If the time window is empty, return the first and last indices
 if isempty(timeWindow)
@@ -216,32 +211,6 @@ timeStart = timeWindow(1, :);
 
 % Get the time to end
 timeEnd = timeWindow(2, :);
-
-% Decide on first and last indices for each vector based on boundaryMode
-%   Note: this should return row vectors
-[idxStart, idxEnd] = ...
-    array_fun(@(x) decide_on_endpoints(timeVec(:, x), ...
-                    timeStart(x), timeEnd(x), boundaryMode, warnFlag), ...
-                1:nVectors, 'UniformOutput', true);
-
-% Create endpoints
-if vectorFlipped
-    endPoints = nTimePoints - [idxEnd; idxStart] + 1;
-else
-    endPoints = [idxStart; idxEnd];
-end
-
-% If all end points are NaN, return empty
-if all(all(all(isnan(endPoints))))
-    endPoints = [];
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [idxStart, idxEnd] = ...
-                decide_on_endpoints (timeVec, timeStart, timeEnd, ...
-                                    boundaryMode, warnFlag)
-%% Decide on endpoints for a single vector
 
 % Decide on endPoints based on boundary mode:
 %   'inclusive'   - the time endPoints must include the time window
@@ -289,13 +258,18 @@ switch boundaryMode
 end
 
 % If either is empty, the time window is out of range, 
-%   so print message and return NaNs
+%   so print message and return empty arrays
 if isempty(idxStart) || isempty(idxEnd)
     if warnFlag
         fprintf('Time window is out of range!\n\n');
     end
-    idxStart = NaN;
-    idxEnd = NaN;
+    endPoints = [];
+else
+    if vectorFlipped
+        endPoints = nTimePoints - [idxEnd; idxStart] + 1;
+    else
+        endPoints = [idxStart; idxEnd];
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
