@@ -99,7 +99,7 @@ fitDirName = 'optimizer4gabab';
 dataDirName = fullfile('data_dclamp', 'take4');
 matFilesDirName = 'matfiles';
 specialCasesDirName = 'special_cases';
-defaultOutFolderSuffix = 'ranked';
+defaultOutFolderStr = 'ranked';
 
 % File info
 %   Note: Must be consistent with m3ha_neuron_choose_best_params.m
@@ -148,7 +148,7 @@ cellNameStr = 'cellName';
 % TODO: Make optional argument
 % outFolder = '20191227_ranked_singleneuronfitting0-90';
 % rankNumsToPlot = [1, 2, 5, 6, 8, 9, 10, 11, 23, 34];
-% rankPrefix = 'singleneuronfitting0-90';
+% iterSetStr = 'singleneuronfitting0-90';
 
 % outFolder = '20191229_ranked_singleneuronfitting0-91';
 % rankNumsToPlot = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
@@ -157,7 +157,7 @@ outFolder = '';
 figTypes = {'png', 'epsc2'};
 rankNumsToPlot = 1:10;
 errorParamXTicks = 6:6:36;
-rankPrefix = 'singleneuronfitting0-94';
+iterSetStr = 'singleneuronfitting0-94';
 paramDirNames = fullfile('best_params', ...
                         {'bestparams_20191112_singleneuronfitting0', ...
                         'bestparams_20191112_singleneuronfitting1', ...
@@ -223,7 +223,7 @@ fitDirectory = fullfile(parentDirectory, fitDirName);
 if isempty(outFolder)
     % Create output folder name
     outFolderName = strcat(create_time_stamp('FormatOut', 'yyyymmdd'), ...
-                            '_', defaultOutFolderSuffix);
+                            '_', defaultOutFolderStr, '_', iterSetStr);
 
     % Create full path to output folder
     outFolder = fullfile(fitDirectory, outFolderName);
@@ -233,7 +233,7 @@ end
 check_dir(outFolder);
 
 % Create a path for the combined spreadsheet
-rankBase = [rankPrefix, '_', rankSuffix];
+rankBase = [iterSetStr, '_', rankSuffix];
 rankPathBase = fullfile(outFolder, rankBase);
 rankSheetPath = [rankPathBase, '.', rankSheetExtension];
 

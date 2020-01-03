@@ -13,6 +13,7 @@ function avgValues = compute_weighted_average (values, varargin)
 %       compute_weighted_average([1; 10; 100], 'AverageMethod', 'exponential')
 %       compute_weighted_average([100; 10; 1], 'AverageMethod', 'exponential')
 %       compute_weighted_average([NaN, 3, 27; NaN, 4, 64], 'AverageMethod', 'geometric', 'DimToOperate', 2, 'IgnoreNan', true)
+%       compute_weighted_average([NaN, 3, 27; NaN, 4, 64], 'Weight', [1; 2; 1], 'DimToOperate', 2, 'IgnoreNan', true)
 %       compute_weighted_average([NaN; 10], 'Weight', [2, 1], 'AverageMethod', 'linear', 'IgnoreNaN', true)
 %       compute_weighted_average([2; NaN; 1], 'Weight', [2, 3, 1], 'AverageMethod', 'rms', 'IgnoreNaN', true)
 %       compute_weighted_average(-2, 'AverageMethod', 'rms')
@@ -169,9 +170,9 @@ if ignoreNan && ~iscell(values)
     isNan = isnan(values);
 
     % Remove NaN values if there is any
-    if any(isNan)
+    if any(any(any(isNan)))
         % Otherwise, determine whether to keep each value
-        toKeep = isNan;
+        toKeep = ~isNan;
 
         % Decide on the dimension to operate
         dimToOperate = decide_on_dimension_to_operate(dimToOperate, values);
@@ -189,7 +190,7 @@ if ignoreNan && ~iscell(values)
             error('Not implemented yet!');
         end
 
-        if ~any(toKeep)
+        if ~any(any(any(toKeep)))
             % Set the average to be NaN
             if columnOutput || forceColumnOutput
                 avgValues = NaN(size(values, 2), 1);

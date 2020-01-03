@@ -135,8 +135,9 @@ end
 
 %% Remove files
 % Remove .out files created by NEURON if not to be saved
+%   Note: Never use parfor here, so don't use array_fun 
 if removeAfterLoad
-    array_fun(@delete, fullPaths, 'UniformOutput', false);
+    cellfun(@delete, fullPaths, 'UniformOutput', false);
 end
 
 
