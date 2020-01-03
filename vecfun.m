@@ -15,11 +15,10 @@ function outVecs = vecfun (myFunction, inVecs, varargin)
 % Arguments:
 %       myFunction  - a custom function
 %                   must be a function handle
-%       inVecs     - input vectors
+%       inVecs      - input vectors
 %                   must be an array or a cell array of vectors
-%       varargin    - 'param1': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - TODO: 2nd to last input arguments for myFunction
+%                           See code in array_fun.m
 %                   - Any other parameter-value pair for cellfun() or arrayfun()
 %
 % Requires:
@@ -78,7 +77,7 @@ else
     % Count the number of columns
     nColumns = size(inVecs, 2);
 
-    % Apply the myFunction to each column and return things in a cell array
+    % Apply myFunction to each column and return things in a cell array
     outVecsCell = array_fun(@(x) myFunction(inVecs(:, x)), ...
                         transpose(1:nColumns), 'UniformOutput', false, ...
                         otherArguments{:});

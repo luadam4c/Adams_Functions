@@ -32,6 +32,7 @@ function gGabab = compute_gabab_conductance (tVec, timeStart, amplitude, ...
 % Requires:
 %       cd/find_closest.m
 %       cd/force_column_vector.m
+%       cd/force_row_vector.m
 %
 % Used by:    
 %       cd/m3ha_resave_sweeps.m
@@ -47,40 +48,33 @@ function gGabab = compute_gabab_conductance (tVec, timeStart, amplitude, ...
 tVec = force_column_vector(tVec);
 
 % Make sure parameters are row vectors
-[amplitude, tauRise, tauFallFast, tauFallSlow, weight] = ...
+[timeStart, amplitude, tauRise, tauFallFast, tauFallSlow, weight] = ...
     argfun(@force_row_vector, ...
-            amplitude, tauRise, tauFallFast, tauFallSlow, weight);
+            timeStart, amplitude, tauRise, tauFallFast, tauFallSlow, weight);
 
-% Compute the number of samples
-nSamples = size(tVec, 1);
+% Compute the shifted time vectors
+timeShifted = tVec - timeStart;
+
+% Compute the exponential components
+[expRise, expFallFast, expFallSlow] = ...
+    argfun(@(x) exp(-timeShifted ./ x), tauRise, tauFallFast, tauFallSlow);
+
+% Compute the GABA-B conductance
+gGabab = amplitude .* (1 - expRise) .^ 8 * ...
+                (expFallFast .* weight + expFallSlow .* (1 - weight));  
 
 % Compute the index of the starting time
 idxTimeStart = find_closest(tVec, timeStart);
 
-% Compute the shifted time vectors
-timeShifted = tVec(idxTimeStart:nSamples) - timeStart;
-
-[Ron, RoffFast, RoffSlow] = ...
-    argfun(@(x) exp(-timeShifted ./ x), tauRise, tauFallFast, tauFallSlow);
- = exp(-timeShifted / );
- = exp(-timeShifted / );
-
-gGabab = zeros(nSamples, 1);
-for k = idxTimeStart:nSamples
-    Ron(k) = exp(-(tVec(k)-timeStart)/tauRise);
-    RoffFast(k) = exp(-(tVec(k)-timeStart)/tauFallFast);
-    RoffSlow(k) = exp(-(tVec(k)-timeStart)/tauFallSlow);
-    gGabab(k) = amplitude * (1 - Ron(k))^ 8 * (RoffFast(k)*weight + RoffSlow(k)*(1-weight));  
+% For each column, set everything before timeStart to be zero
+for iColumn = 1:size(gGabab, 2)
+    gGabab(1:idxTimeStart(iColumn), iColumn) = 0;
 end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
-
-siMs = tVec(2) - tVec(1);        % sampling interval (ms)
-idxTimeStart = round(timeStart/siMs);
 
 %}
 

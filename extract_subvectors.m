@@ -17,6 +17,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       extract_subvectors({1:5, 2:6}, 'Pattern', 'odd')
 %       extract_subvectors({1:5, 2:6}, 'Pattern', 'even')
 %       extract_subvectors(magic(3), 'Indices', [1, 2, 3; 2, 3, 1])
+%       extract_subvectors(magic(3), 'Indices', [1, NaN, 3; NaN, 3, 1])
 %
 % Outputs:
 %       subVecs     - subvectors extracted
