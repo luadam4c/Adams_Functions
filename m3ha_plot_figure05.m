@@ -7,6 +7,7 @@
 %       cd/extract_fileparts.m
 %       cd/find_matching_files.m
 %       cd/m3ha_load_sweep_info.m
+%       cd/m3ha_plot_gabab_ipsc.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/plot_scale_bar.m
 %       cd/save_all_figtypes.m
@@ -19,14 +20,15 @@
 
 %% Hard-coded parameters
 % Flags
-updateScripts = true;
+updateScripts = false; %true;
 simulateIpscr = false; %true;
 plotAllVoltages = false; %true;
 plotAllTotalCurrents = false; %true;
 plotAllComponentCurrents = false; %true;
 plotDend2ITproperties = false; %true;
 plotM2h = false; %true;
-simulateTauhModes = true;
+simulateTauhModes = false; %true;
+plotGababCond = true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -184,6 +186,11 @@ if simulateTauhModes
                 exampleLabelsModeAll{iMode}, exampleParamPaths, ...
                 outFoldersModeAll{iMode});
     end
+end
+
+%% 
+if plotGababCond
+    m3ha_plot_gabab_ipsc(figure05Dir);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

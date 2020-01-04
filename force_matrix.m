@@ -73,10 +73,10 @@ function vecs = force_matrix (vecs, varargin)
 %       cd/force_column_vector.m
 %       cd/force_data_as_matrix.m
 %       cd/compute_rms_error.m
+%       cd/m3ha_extract_component_errors.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_plot_violin.m
-%       cd/m3ha_rank_neurons.m
 %       cd/m3ha_simulate_population.m
 %       cd/parse_multiunit.m
 %       cd/parse_phase_info.m

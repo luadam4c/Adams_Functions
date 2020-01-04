@@ -218,11 +218,11 @@ end
 
 
 %% Do the job
-% Extract stard and end indices from end points if needed
+% Extract start and end indices from end points if needed
 if isempty(indexStartUser) || isempty(indexEndUser)
     if isnumeric(endPoints) && isvector(endPoints)
-        indexStartUser = endPoints(1);
-        indexEndUser = endPoints(end);
+        idxStartFromEndPoints = endPoints(1);
+        idxEndFromEndPoints = endPoints(end);
     else
         % Make sure endPoints are in columns
         endPoints = force_column_vector(endPoints, 'IgnoreNonVectors', true);

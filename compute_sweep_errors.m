@@ -183,14 +183,6 @@ errorStruct.swpErrors = swpErrors;
 errorStruct.fitWindow = fitWindow;
 errorStruct.sweepWeights = sweepWeights;
 
-
-
-
-
-
-
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{

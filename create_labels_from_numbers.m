@@ -57,11 +57,11 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/create_synced_movie_trace_plot_movie.m
 %       cd/decide_on_filebases.m
 %       cd/force_data_as_matrix.m
+%       cd/m3ha_extract_component_errors.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_plot_figure04.m
 %       cd/m3ha_plot_figure05.m
-%       cd/m3ha_rank_neurons.m
 %       cd/m3ha_simulate_population.m
 %       cd/m3ha_xolotl_plot.m
 %       cd/parse_current_family.m

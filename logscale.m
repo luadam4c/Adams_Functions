@@ -1,0 +1,71 @@
+function values = logscale (base, target, scaleFactors, varargin)
+%% Creates scaled values between base and target based on the log scale
+% Usage: values = logscale (base, target, scaleFactors, varargin)
+% Explanation:
+%       TODO
+%
+% Example(s):
+%       logscale(1, 2, -1:5)
+%       logscale(5, 12, 0:0.1:1)
+%
+% Outputs:
+%       values     - TODO: Description of values
+%                   specified as a TODO
+%
+% Arguments:
+%       reqarg1     - TODO: Description of reqarg1
+%                   must be a TODO
+%       varargin    - 'param1': TODO: Description of param1
+%                   must be a TODO
+%                   default == TODO
+%
+% Requires:
+%       cd/create_error_for_nargin.m
+%
+% Used by:
+%       cd/m3ha_plot_gabab_ipsc.m
+
+% File History:
+% 2020-01-04 Created by Adam Lu
+% 
+
+%% Hard-coded parameters
+
+%% Default values for optional arguments
+% param1Default = [];             % default TODO: Description of param1
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% Deal with arguments
+% Check number of required arguments
+if nargin < 3
+    error(create_error_for_nargin(mfilename));
+end
+
+% Set up Input Parser Scheme
+iP = inputParser;
+iP.FunctionName = mfilename;
+
+% Add required inputs to the Input Parser
+addRequired(iP, 'base');
+addRequired(iP, 'target');
+addRequired(iP, 'scaleFactors');
+
+% Add parameter-value pairs to the Input Parser
+% addParameter(iP, 'param1', param1Default);
+
+% Read from the Input Parser
+parse(iP, base, target, scaleFactors, varargin{:});
+% param1 = iP.Results.param1;
+
+%% Do the job
+values = exp(log(base) + (log(target) - log(base)) .* scaleFactors);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%{
+OLD CODE:
+
+%}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -64,8 +64,8 @@ simulateFlag = false; %true;
 combineFeatureTablesFlag = false; %true;
 computeOpenProbabilityFlag = false; %true;
 plotOpenProbabilityFlag = false; %true;
-plotViolinPlotsFlag = false; %true;
-plotBarPlotsFlag = false; %true;
+plotViolinPlotsFlag = true;
+plotBarPlotsFlag = true;
 
 % Simulation parameters
 useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
@@ -151,11 +151,13 @@ figTypes = {'png', 'epsc2'};
 %         '20191230_population_singleneuronfitting0-91_rank1-2,5,7-10,13,17,34');
 % prefix = '20191227_population';
 % rankNumsToUse = [];
-% maxRankToSim = 10;
+% maxRankToSim = 11;
 % rankNumsToUse = [1, 2, 5, 6, 8, 9, 10, 11, 23, 34];
 % rankDirName = '20191227_ranked_singleneuronfitting0-90';
-rankDirName = '20191229_ranked_singleneuronfitting0-91';
-rankNumsToUse = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
+% rankDirName = '20191229_ranked_singleneuronfitting0-91';
+% rankNumsToUse = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
+rankDirName = '20200103_ranked_singleneuronfitting0-94';
+rankNumsToUse = 1:11;
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1

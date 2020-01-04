@@ -5,6 +5,7 @@ function endPoints = find_window_endpoints (timeWindows, timeVecs, varargin)
 %       TODO
 %
 % Example(s):
+%       endPoints1 = find_window_endpoints([2.5, 2.5], 1:5, 'BoundaryMode', 'inclusive')
 %       endPoints1 = find_window_endpoints([1.5, 3.5], 1:5, 'BoundaryMode', 'inclusive')
 %       endPoints2 = find_window_endpoints([1.5, 3.5], 1:5, 'BoundaryMode', 'leftadjust')
 %       endPoints3 = find_window_endpoints([1.5, 3.5], 1:5, 'BoundaryMode', 'rightadjust')

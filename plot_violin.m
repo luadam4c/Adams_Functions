@@ -209,7 +209,9 @@ if ~isempty(medianColorMap)
 
     % Updated median scatter face color
     for iGroup = 1:nGroups
-        violins(iGroup).MedianColor = medianColorMap(iGroup, :);
+        if ishandle(violins(iGroup).MedianPlot)
+            violins(iGroup).MedianColor = medianColorMap(iGroup, :);
+        end
 %        thisColor = medianColorMap(iGroup, :);
 %        set(medianScatters(iGroup), 'MarkerFaceColor', medianColorMap(iGroup, :));
     end

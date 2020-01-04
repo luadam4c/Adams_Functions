@@ -294,6 +294,9 @@ if isempty(prefix)
     end
 end
 
+% Create candidate labels
+candLabel = combine_strings('Substrings', {prefix, 'from', iterStr});
+
 % Create full path to error sheet file
 sheetBase = [prefix, '_', errorParamSheetSuffix];
 sheetPathBase = fullfile(outFolder, sheetBase);
@@ -304,9 +307,6 @@ if ~isfile(sheetPath)
     %% Run through all parameters
     % Display message
     fprintf('Choosing best parameters for %s ... \n', uniqueCellName);
-
-    % Create candidate labels
-    candLabel = combine_strings('Substrings', {prefix, 'from', iterStr});
 
     % Import data
     if ~isempty(fileNames)
@@ -360,6 +360,9 @@ if ~isfile(sheetPath)
                     'errorWeights', 'ltsFeatureWeights', 'swpErrors', ...
                     'ltsAmpErrors', 'ltsDelayErrors', 'ltsSlopeErrors');
 
+    % Find the index of the table with the least error
+    [totalErrorBest, iTableBest] = min(totalError);
+
     % Create iteration numbers
     iterNumber = transpose(1:nTables);
 
@@ -395,9 +398,18 @@ end
 %% Plot error history
 % TODO: FOR DEBUG but transfer to m3ha_plot_error_history.m
 errorParamTable = readtable(sheetPath);
-candLabel = errorParamTable.candLabel;
-iterStr = errorParamTable.iterStr;
 iterNumber = errorParamTable.iterNumber;
+errorWeights = [errorParamTable.errorWeights_1; 
+                errorParamTable.errorWeights_2;
+                errorParamTable.errorWeights_3;
+                errorParamTable.errorWeights_4;
+                errorParamTable.errorWeights_5];
+avgSwpError = errorParamTable.avgSwpError;
+ltsMatchError = errorParamTable.ltsMatchError;
+avgLtsAmpError = errorParamTable.avgLtsAmpError;
+avgLtsDelayError = errorParamTable.avgLtsDelayError;
+avgLtsSlopeError = errorParamTable.avgLtsSlopeError;
+
 
 %% Make m3ha_plot_error_history.m
 %   m3ha_plot_error_history(errorParamPath)
@@ -426,9 +438,20 @@ if plotErrorComparisonFlag
     % Create figure
     fig2 = create_subplots(1, 1, 'FigNumber', 1106, 'ClearFigure', true);
 
-    % Extract component errors
-    [componentErrors, groupLabels] = ...
-        m3ha_extract_component_errors(errorParamTable);
+    % Force as a matrix with each column corresponding to a type of error
+    errorWeights = transpose(force_matrix(errorWeights));
+    indComponentErrors = [idxMatch, idxSweep, idxAmp, idxTime, idxSlope];
+
+    % Compute components of total error
+    %   Note: must match groupLabels
+    componentErrors = [ltsMatchError, avgSwpError, avgLtsAmpError, ...
+                        avgLtsDelayError, avgLtsSlopeError] .* ...
+                        errorWeights(:, indComponentErrors);
+    
+    % Decide on group labels
+    %   Note: must match componentErrors
+    groupLabels = {'LTS Match Error', 'Sweep Error', 'LTS Amp Error', ...
+                    'LTS Time Error', 'LTS Slope Error'};
 
     % Decide on ticks and tick labels
     pTicks = 1:numel(iterStr);
@@ -477,13 +500,7 @@ if plotParamHistoryFlag
              'FigNumber', errorParamFigNumber, 'FigName', errorParamFigName);
 end
 
-%% Choose best parameters
-% Extract total errors
-totalError = errorParamTable. totalError;
-
-% Find the index of the table with the least error
-[totalErrorBest, iTableBest] = min(totalError);
-
+%% Output results
 % Return the table with the least error
 bestParamsTable = candParamsTables{iTableBest};
 bestParamsLabel = candLabel{iTableBest};

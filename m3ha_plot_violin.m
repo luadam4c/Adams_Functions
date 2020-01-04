@@ -222,6 +222,7 @@ set(gca, 'Position', [0.2356, 0.1947, 0.6694, 0.7303]);
 
 % Update median size
 medianPlots = extract_fields(violins, 'MedianPlot', 'UniformOutput', true);
+medianPlots = medianPlots(ishandle(medianPlots));
 set(medianPlots, 'SizeData', medianSize^2);
 
 % Save the figure

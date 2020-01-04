@@ -15,6 +15,7 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 %       [i, v] = find_closest(5:-1:1, [3.2, 3.8])
 %       [i, v] = find_closest(5:-1:1, [3.2, 3.8], 'Direction', 'none')
 %       [i, v] = find_closest(1:100000, 5489)
+%       [i, v] = find_closest(9:-2:1, 11)
 %
 % Outputs:
 %       idxClosest  - index(ices) of the closest value(s)
@@ -114,6 +115,11 @@ end
 
 % Find endpoints that "include" the target value
 indClosest = find_window_endpoints(windows, vecs, 'BoundaryMode', 'inclusive');
+
+% If not found, the candidates are the endpoints of the vecs
+if isempty(indClosest)
+    indClosest = find_window_endpoints([], vecs);
+end
 
 % Find corresponding values
 valsClosest = extract_subvectors(vecs, 'Indices', indClosest);

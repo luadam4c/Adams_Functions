@@ -34,7 +34,8 @@ function gGabab = compute_gabab_conductance (tVec, timeStart, amplitude, ...
 %       cd/force_column_vector.m
 %       cd/force_row_vector.m
 %
-% Used by:    
+% Used by:
+%       cd/m3ha_plot_gabab_ipsc.m
 %       cd/m3ha_resave_sweeps.m
 %       cd/m3ha_trace_comparison.m
 
@@ -62,15 +63,19 @@ timeShifted = tVec - timeStart;
     argfun(@(x) exp(-timeShifted ./ x), tauRise, tauFallFast, tauFallSlow);
 
 % Compute the GABA-B conductance
-gGabab = amplitude .* (1 - expRise) .^ 8 * ...
+gGabab = amplitude .* (1 - expRise) .^ 8 .* ...
                 (expFallFast .* weight + expFallSlow .* (1 - weight));  
 
 % Compute the index of the starting time
 idxTimeStart = find_closest(tVec, timeStart);
 
 % For each column, set everything before timeStart to be zero
-for iColumn = 1:size(gGabab, 2)
-    gGabab(1:idxTimeStart(iColumn), iColumn) = 0;
+if numel(idxTimeStart) > 1
+    for iColumn = 1:size(gGabab, 2)
+        gGabab(1:idxTimeStart(iColumn), iColumn) = 0;
+    end
+else
+    gGabab(1:idxTimeStart, :) = 0;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

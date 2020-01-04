@@ -10,7 +10,7 @@ function [peakDecaySamples, idxPeakDecay, peakDecayValue] = ...
 %       TODO
 %
 % Outputs:
-%       peakDecaySamples    - peak half widths in samples
+%       peakDecaySamples    - peak decay in samples
 %                           specified as a nonnegative vector
 %       idxPeakDecay        - indices of start and end of half widths
 %                           specified as a positive integer vector
@@ -27,9 +27,10 @@ function [peakDecaySamples, idxPeakDecay, peakDecayValue] = ...
 %                   default == first value of each vector
 %                   - 'DecayMethod': method for alignment/truncation
 %                   must be an unambiguous, case-insensitive match to one of: 
-%                       'exp'  - exponential decay to one time constant
-%                       '2exp' - double exponential decay to exp(-1)
-%                       '90%'  - decay to 90% of original
+%                       'exp'       - exponential decay to one time constant
+%                       '2exp'      - double exponential decay to exp(-1)
+%                       'empirical' - empirical decay to one time constant
+%                       '90%'       - decay to 90% of original
 %                   default == 'exponential'
 %
 % Requires:
@@ -45,6 +46,7 @@ function [peakDecaySamples, idxPeakDecay, peakDecayValue] = ...
 %       cd/match_positions.m
 %
 % Used by:
+%       cd/compute_time_constant.m
 %       cd/parse_pulse_response.m
 
 % File History:
@@ -52,7 +54,7 @@ function [peakDecaySamples, idxPeakDecay, peakDecayValue] = ...
 % 
 
 %% Hard-coded parameters
-validDecayMethods = {'exp', '2exp', '90%'};
+validDecayMethods = {'exp', '2exp', 'empirical', '90%'};
 
 %% Default values for optional arguments
 baseValueDefault = [];             % set later
@@ -188,9 +190,17 @@ switch decayMethod
                 end
             end
         end
-    case '90%'
+    case {'empirical', '90%'}
+        switch decayMethod
+            case 'empirical'
+                decayLevel = exp(-1);
+            case '90%'
+                decayLevel = 0.1;
+            otherwise
+        end
+
         % Compute the expected value at 90% decay
-        peakDecayValue = baseValue * 0.9 + peakValue * 0.1;
+        peakDecayValue = baseValue * (1 - decayLevel) + peakValue * decayLevel;
 
         % Find the first index that reaches the value at 90% decay
         %   This is the 90% decay time in samples

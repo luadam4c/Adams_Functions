@@ -21,7 +21,6 @@
 %
 % Requires:
 %       cd/argfun.m
-%       cd/create_labels_from_numbers.m
 %       cd/create_label_from_sequence.m
 %       cd/create_subplots.m
 %       cd/create_time_stamp.m
@@ -30,8 +29,8 @@
 %       cd/convert_to_char.m
 %       cd/copy_into.m
 %       cd/create_error_for_nargin.m
-%       cd/force_matrix.m
 %       cd/m3ha_decide_on_plot_vars.m
+%       cd/m3ha_extract_component_errors.m
 %       cd/m3ha_locate_homedir.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_select_cells.m
@@ -53,15 +52,15 @@
 %% Hard-coded parameters
 % Flags
 chooseBestParamsFlag = true;
-plotErrorHistoryFlag = true;
+plotErrorHistoryFlag = false; %true;
 plotErrorComparisonFlag = true;
-plotParamHistoryFlag = true;
-plotIndividualFlag = true;
-rankNeuronsFlag = true;
-plotHistogramsFlag = true;
-plotBarPlotFlag = true;
-plotParamViolinsFlag = true;
-plotErrorParamComparisonFlag = true;
+plotParamHistoryFlag = false; %true;
+plotIndividualFlag = false; %true;
+rankNeuronsFlag = false; %true;
+plotHistogramsFlag = false; %true;
+plotBarPlotFlag = false; %true;
+plotParamViolinsFlag = false; %true;
+plotErrorParamComparisonFlag = false; %true;
 
 % Fitting parameters 
 %   Note: Must be consistent with singleneuronfitting91.m
@@ -138,18 +137,12 @@ fitWindowIpscr = [3000, 4800];  % the time window (ms) where all
                                 %   recorded LTS would lie
 
 %   Note: The following must be consistent with compute_single_neuron_errors.m
-idxSweep = 1;
-idxMatch = 2;
-idxAmp = 3;
-idxTime = 4;
-idxSlope = 5;
 totalErrorStr = 'totalError';
 avgSwpErrorStr = 'avgSwpError';
 ltsMatchErrorStr = 'ltsMatchError';
 avgLtsAmpErrorStr = 'avgLtsAmpError';
 avgLtsDelayErrorStr = 'avgLtsDelayError';
 avgLtsSlopeErrorStr = 'avgLtsSlopeError';
-errorWeightsStr = 'errorWeights';
 cellNameStr = 'cellName';
 
 % TODO: Make optional argument
@@ -191,6 +184,7 @@ paramDirNames = fullfile('best_params', ...
                         'bestparams_20191230_singleneuronfitting92', ...
                         'bestparams_20191231_singleneuronfitting93', ...
                         'bestparams_20191231_singleneuronfitting94'});
+rankNumsToPlot = 1:11;
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -319,8 +313,7 @@ if chooseBestParamsFlag
 
         % Choose the best initial parameters for each cell among all the
         %   custom files
-        [previousBestParamsTable, chosenTableLabel] = ...
-            m3ha_neuron_choose_best_params(customInitPathsThis, ...
+        m3ha_neuron_choose_best_params(customInitPathsThis, ...
                 'PlotErrorHistoryFlag', plotErrorHistoryFlag, ...
                 'PlotErrorComparisonFlag', plotErrorComparisonFlag, ...
                 'PlotParamHistoryFlag', plotParamHistoryFlag, ...
@@ -419,38 +412,12 @@ if plotBarPlotFlag
     % Count the number of cells (number of rows)
     nCells = height(rankTable);
 
-    % Extract fields
-    [totalErrors, avgSwpErrors, ltsMatchErrors, ...
-            avgLtsAmpErrors, avgLtsDelayErrors, avgLtsSlopeErrors, ...
-            cellNames] = ...
-        argfun(@(x) rankTable.(x), ...
-                totalErrorStr, avgSwpErrorStr, ltsMatchErrorStr, ...
-                avgLtsAmpErrorStr, avgLtsDelayErrorStr, avgLtsSlopeErrorStr, ...
-                cellNameStr);
+    % Extract component errors
+    [componentErrors, groupLabels] = m3ha_extract_component_errors(rankTable);
 
-    % Create error weight labels
-    errorWeightsStrs = create_labels_from_numbers(1:5, ...
-                                            'Prefix', [errorWeightsStr, '_']);
-
-    % Extract errorWeights
-    errorWeights = cellfun(@(x) rankTable.(x), errorWeightsStrs, ...
-                            'UniformOutput', false);
-    errorWeights = force_matrix(errorWeights);
-
-    % Make sure error weights are normalized
-    errorWeights = errorWeights ./ repmat(sum(errorWeights, 2), 1, ...
-                                            size(errorWeights, 2));
-
-    % Compute components of total error
-    %   Note: must match groupLabels
-    componentErrors = [ltsMatchErrors, avgSwpErrors, avgLtsAmpErrors, ...
-                        avgLtsDelayErrors, avgLtsSlopeErrors] .* ...
-            errorWeights(:, [idxMatch, idxSweep, idxAmp, idxTime, idxSlope]);
-   
-    % Decide on group labels
-    %   Note: must match componentErrors
-    groupLabels = {'LTS Match Error', 'Sweep Error', 'LTS Amp Error', ...
-                    'LTS Time Error', 'LTS Slope Error'};
+    % Extract cell names and total errors
+    [totalErrors, cellNames] = ...
+        argfun(@(x) rankTable.(x), totalErrorStr, cellNameStr);
 
     % Decide on ticks and tick labels
     pTicks = transpose(1:nCells);
