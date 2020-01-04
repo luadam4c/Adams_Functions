@@ -54,6 +54,7 @@ function allData = combine_abf_data (abfPaths, varargin)
 % File History:
 % 2019-08-23 Pulled from combine_data_from_same_slice.m
 % 2019-08-23 Now passes unmatched optional arguments to parse_all_abfs
+% 2020-01-04 Fixed the ordering of trace numbers
 % TODO: Combine gVecs as well
 % 
 
@@ -152,7 +153,8 @@ siMsSl = mean(siMsSorted);
 % TODO: Fix force_matrix.m to accept cell arrays of non-vectors with an
 % optional argument
 % [vVecsCombined, iVecsCombined] = argfun(@force_matrix, vVecsSorted, iVecsSorted);
-[vVecsCombined, iVecsCombined] = argfun(@(x) horzcat(x{:}), vVecsSorted, iVecsSorted);
+[vVecsCombined, iVecsCombined] = ...
+    argfun(@(x) horzcat(x{:}), vVecsSorted, iVecsSorted);
 
 %% Create phase boundaries
 % Count the number of phase boundaries

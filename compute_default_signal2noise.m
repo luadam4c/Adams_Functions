@@ -1,6 +1,6 @@
 function signal2Noise = compute_default_signal2noise(data, varargin)
 %% Computes a default signal-to-noise ratio
-% Usage: signal2Noise = compute_default_signal2noise(data, siMs (opt), tVecs (opt), varargin)
+% Usage: signal2Noise = compute_default_signal2noise(data, varargin)
 % Explanation:
 %       TODO
 % Example(s):
@@ -79,7 +79,7 @@ relSnrThres2MaxDefault = [];    % set later
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 2
+if nargin < 1
     error(create_error_for_nargin(mfilename));
 end
 
@@ -158,7 +158,7 @@ end
 % Construct default baseline windows
 if isempty(baseWindows)
     % Convert to the time of stimulation start
-    stimStartMs = extract_elements(tVecs, 'Index', idxStimStart);
+    stimStartMs = extract_elements(tVecs, 'specific', 'Index', idxStimStart);
 
     % Compute baseline windows
     baseWindows = compute_time_window(tVecs, 'TimeEnd', stimStartMs);

@@ -103,6 +103,7 @@ function [spikesParams, spikesData] = detect_spikes_multiunit (vVec, siMs, varar
 % 2019-05-14 Added 'MaxDelayMs' as an optional argument
 % 2019-05-30 Changed signal-to-noise default to be dependent on maximum slope
 % 2019-07-22 Added maxRangeOfInterestMs and fixed MaxDelayMs
+% TODO: Detect stimulation start by default
 % TODO: Finish documentation
 % 
 
@@ -115,7 +116,7 @@ idxEndOfInterest = [];          % set later
 %% Default values for optional arguments
 filtFreqDefault = NaN;          % set later
 baseWindowDefault = [];         % set later
-idxStimStartDefault = 1;
+idxStimStartDefault = 1;        % TODO: Change this
 minDelayMsDefault = 25;         % 25 ms
 maxDelayMsDefault = [];         % set later
 idxDetectStartDefault = [];     % set later
