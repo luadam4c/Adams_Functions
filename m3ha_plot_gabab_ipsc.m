@@ -131,7 +131,6 @@ plot_conductance(tVec, gVecs, colorMap);
 legend(create_labels_from_numbers(weightTest, 'Prefix', 'weight = '));
 save_all_figtypes(fig, figPathBase, figTypes);
 
-
 %% Plot original GABAB IPSC conductances from Christine's thesis & old network model
 figs(1) = set_figure_properties('AlwaysNew', true);
 defaultPosition = get(figs(1), 'Position');

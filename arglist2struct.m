@@ -1,5 +1,5 @@
 function structure = arglist2struct (argList, varargin)
-%% Converts an argument list tp a scalar structure
+%% Converts an argument list to a scalar structure
 % Usage: structure = arglist2struct (argList, varargin)
 % Explanation:
 %       TODO

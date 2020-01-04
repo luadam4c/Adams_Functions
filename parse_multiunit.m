@@ -1569,6 +1569,9 @@ check_dir(figFolder);
 nVectors = height(parsedParams);
 
 parfor iVec = 1:nVectors
+    % Create a figure
+    fig = set_figure_properties;
+    
     % Plot spike detection
     plot_spike_detection(tVec{iVec}, vVec{iVec}, vVecFilt{iVec}, ...
                             slopes{iVec}, idxSpikes{iVec}, ...

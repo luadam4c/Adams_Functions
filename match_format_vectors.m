@@ -5,7 +5,9 @@ function varargout = match_format_vectors (varargin)
 %       TODO
 %
 % Example(s):
-%       TODO
+%       [a, b] = match_format_vectors(1:5, (2:6)')
+%       [a, b] = match_format_vectors(1:5, 2)
+%       [a, b] = match_format_vectors(1:5, 2:3)
 %
 % Outputs:
 %       varargout   - matched outputs
