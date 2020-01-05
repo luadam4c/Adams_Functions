@@ -2,8 +2,11 @@
 %% Plots Figure 04 for the GAT Blocker paper
 %
 % Requires:
+%       cd/argfun.m
+%       cd/create_label_from_sequence.m
 %       cd/create_labels_from_numbers.m
 %       cd/find_matching_files.m
+%       cd/force_string_end.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_extract_cell_name.m
 %       cd/m3ha_load_sweep_info.m
@@ -24,8 +27,12 @@ parentDirectory = fullfile('/media', 'adamX', 'm3ha');
 figure02Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure02');
 figure04Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure04');
 fitDirName = 'optimizer4gabab';
-rankDirName = '20191229_ranked_singleneuronfitting0-91';
-rankNumsToUse = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
+
+% rankDirName = '20191229_ranked_singleneuronfitting0-91';
+% rankNumsToUse = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
+
+rankDirName = '20200103_ranked_singleneuronfitting0-94';
+rankNumsToUse = 1:11;
 
 % Files
 datalogPath = fullfile(figure02Dir, 'dclampdatalog_take4.csv');
@@ -92,6 +99,14 @@ swpInfo = m3ha_load_sweep_info('Directory', figure02Dir);
 % Create rank number prefixes
 rankPrefixes = create_labels_from_numbers(rankNumsToUse, ...
                                     'Prefix', 'rank_', 'Suffix', '_');
+
+% Create a cell choice string
+cellsStr = [rankDirName, '_rank', create_label_from_sequence(rankNumsToUse)];
+
+% Update condition labels
+[conditionLabel2D, conditionLabel3D] = ...
+    argfun(@(x) force_string_end(x, ['_', cellsStr]), ...
+            conditionLabel2D, conditionLabel3D);
 
 % Find png files matching the rank prefixes
 [~, pngPaths] = find_matching_files(rankPrefixes, 'PartType', 'prefix', ...

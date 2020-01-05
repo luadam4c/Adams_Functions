@@ -91,9 +91,9 @@ uniformOutput = iP.Results.UniformOutput;
 %% Preparation
 if isempty(fieldNames)
     if iscell(structs)
-        fieldNames = fieldnames(structs{1});
+        fieldNames = field_names(structs{1});
     else
-        fieldNames = fieldnames(structs(1));
+        fieldNames = field_names(structs(1));
     end
 else
     fieldNames = force_column_cell(fieldNames);
@@ -127,6 +127,19 @@ else
     else
         field = [];
     end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function fieldNames = field_names (genStruct)
+% TODO: Pull out as its own function
+
+if isstruct(genStruct) || isobject(genStruct)
+    fieldNames = fieldnames(genStruct);
+elseif istable(genStruct)
+    fieldNames = genStruct.Properties.VariableNames;
+else
+    error('myStruct type unrecognized!');
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

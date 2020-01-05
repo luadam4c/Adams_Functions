@@ -26,6 +26,8 @@ function varargout = array_fun (myFunc, varargin)
 %
 % Used by:
 %       cd/argfun.m
+%       cd/extract_parameter_value_pairs.m
+%       cd/m3ha_compute_gabab_ipsc.m
 %       cd/check_fullpath.m
 %       cd/compute_combined_trace.m
 %       cd/compute_rms_error.m
@@ -160,42 +162,6 @@ function outputList = apply_func(myFunc, argList, nArgOut)
 %% Applies a function to inputs from a cell array and returns outputs in a cell array
 
 [outputList{1:nArgOut}] = myFunc(argList{:});
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [paramsStruct, argList] = extract_parameter_value_pairs(argList)
-%% Extracts parameter-value pairs from an argument list and return remaining
-% TODO: Pull out as its own function
-% TODO: Right now this assumes parameters are char but not string
-
-% Initialize starting index of parameter-value pairs
-idxParamsStart = NaN;
-
-% Initialize content tested
-contentTested = argList;
-
-% While there is still at least two element left, examine in pairs
-while numel(contentTested) >= 2
-    if ischar(contentTested{end - 1})
-        idxParamsStart = numel(contentTested) - 1;
-    end
-
-    contentTested = contentTested(1:end-2);
-end
-
-% Divide up the content
-if ~isnan(idxParamsStart)
-    % Create a parameters list
-    paramsList = argList(idxParamsStart:end);
-
-    % Output as a parameters structure
-    paramsStruct = arglist2struct(paramsList);
-
-    % Truncate the original argument list
-    argList = argList(1:idxParamsStart - 1);
-else
-    paramsStruct = struct.empty;
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

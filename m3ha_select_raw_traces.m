@@ -692,7 +692,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function swpIdxSelected = select_trace(isThisCond, hasLts, hasBursts, maxNoise)
+function swpIdxSelected = select_trace (isThisCond, hasLts, hasBursts, maxNoise)
 %% Selects the most representative trace based on majority rule
 
 % Return error if there are no traces for this condition

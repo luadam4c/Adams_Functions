@@ -28,7 +28,8 @@ plotAllComponentCurrents = false; %true;
 plotDend2ITproperties = false; %true;
 plotM2h = false; %true;
 simulateTauhModes = false; %true;
-plotGababCond = true;
+computeIpscVariation = true;
+simulateIpscVariation = true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -45,6 +46,9 @@ paramFileSuffix = 'params';
 % exampleCellNames = {'D101310'; 'C101210'};
 exampleCellNames = {'D101310'};
 % exampleCellNames = {'C101210'};
+gababIpscSheetBases = {'gababipsc_vary_dual_to_gat3_to_gat1', ...
+                        'gababipsc_dual_vary_tau', ...
+                        'gababipsc_original'};
 
 % Simulation settings
 dataModeIpscr = 2;                  % data mode for IPSC response
@@ -95,7 +99,7 @@ swpInfo = m3ha_load_sweep_info('Directory', figure02Dir);
 %% Find NEURON parameter tables
 if simulateIpscr || plotAllVoltages || plotAllTotalCurrents || ...
         plotAllComponentCurrents || plotDend2ITproperties || plotM2h || ...
-        simulateTauhModes
+        simulateTauhModes || simulateIpscVariation
     % Find NEURON parameter tables
     [~, exampleParamPaths] = ...
         find_matching_files(exampleCellNames, 'Directory', figure05Dir, ...
@@ -112,23 +116,26 @@ if simulateIpscr || plotAllVoltages || plotAllTotalCurrents || ...
 
     % Create tauhMode suffixes
     tauhModeSuffixes = create_labels_from_numbers(tauhModesAll, ...
-                                                    'Prefix', '_tauhmode');
+                                                    'Prefix', 'tauhmode');
 
     % Update labels for each type of simulation
     exampleLabelsIpscr = strcat(exampleLabels, '_ipscr');
-    exampleLabelsModeAll = cellfun(@(x) strcat(exampleLabels, x), ...
+    exampleLabelsModeAll = cellfun(@(x) strcat(exampleLabels, '_', x), ...
                                     tauhModeSuffixes, 'UniformOutput', false);
+    exampleLabelsVaryAll = cellfun(@(x) strcat(exampleLabels, '_', x), ...
+                                gababIpscSheetBases, 'UniformOutput', false);
 
-    % Create and check output folders
+    % Create output folder names
     outFoldersIpscr = fullfile(figure05Dir, exampleLabelsIpscr);
     outFoldersModeAll = cellfun(@(x) fullfile(figure05Dir, x), ...
                                 exampleLabelsModeAll, 'UniformOutput', false);
-
-    check_dir([outFoldersIpscr, outFoldersModeAll{:}]);
+    outFoldersVaryAll = cellfun(@(x) fullfile(figure05Dir, x), ...
+                                exampleLabelsVaryAll, 'UniformOutput', false);
 end
 
 %% Simulate regular IPSC responses
 if simulateIpscr
+    check_dir(outFoldersIpscr);
     cellfun(@(x, y, z) simulate_ipscr(x, y, z, 0, dataModeIpscr, ...
                                     rowmodeIpscr, attemptNumberIpscr), ...
             exampleLabelsIpscr, exampleParamPaths, outFoldersIpscr);
@@ -180,6 +187,7 @@ end
 
 %% Simulate tauhMode == 1, 2 and 3
 if simulateTauhModes
+    check_dir([outFoldersModeAll{:}]);
     for iMode = 1:numel(tauhModesAll)
         cellfun(@(x, y, z) simulate_ipscr(x, y, z, tauhModesAll(iMode), ...
                     dataModeIpscr, rowmodeIpscr, attemptNumberIpscr), ...
@@ -188,9 +196,25 @@ if simulateTauhModes
     end
 end
 
-%% 
-if plotGababCond
+%% Compute all GABAB IPSC parameters and plot them
+if computeIpscVariation
     m3ha_compute_gabab_ipsc(figure05Dir);
+end
+
+%% Simulate IPSC variation
+if simulateIpscVariation
+    for iSheet = 1:numel(gababIpscSheetBases)
+        % Read GABA-B IPSC parameters table
+        gababTable = readtable([gababIpscSheetBases{iSheet}, '.csv']);
+
+        % Convert to a scalar structure
+        gababStruct = table2struct(gababTable, 'ToScalar', true);
+
+        % Simulate for each cell
+        cellfun(@(x, y, z) simulate_variation(x, y, z, gababStruct), ...
+                exampleLabelsVaryAll{iSheet}, exampleParamPaths, ...
+                outFoldersVaryAll{iSheet});
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -207,6 +231,20 @@ m3ha_neuron_run_and_analyze(neuronParamsFile, ...
                         'AttemptNumber', attemptNumber, ...
                         'PlotAllFlag', false, 'PlotIndividualFlag', true, ...
                         'SaveSimOutFlag', true);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function simulate_variation(label, neuronParamsFile, outFolder, gababParams)
+
+% Simulate
+m3ha_neuron_run_and_analyze(neuronParamsFile, ...
+                        'OutFolder', outFolder, 'Prefix', label, ...
+                        'BuildMode', 'active', 'SimMode', 'active', ...
+                        'PlotAllFlag', false, 'PlotOverlappedFlag', true, ...
+                        'SaveSimOutFlag', true, 'NoRealDataFlag', true, ...
+                        gababParams);
 
 end
 

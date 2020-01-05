@@ -6,6 +6,7 @@ function varargout = match_format_vectors (varargin)
 %
 % Example(s):
 %       [a, b] = match_format_vectors(1:5, (2:6)')
+%       [a, b] = match_format_vectors(1:5, (2:6)', 'RowInstead', true)
 %       [a, b] = match_format_vectors(1:5, 2)
 %       [a, b] = match_format_vectors(1:5, 2:3)
 %
@@ -14,19 +15,30 @@ function varargout = match_format_vectors (varargin)
 %
 % Arguments:
 %       varargin    - vectors to be matched
+%                   - 'RowInstead': whether to force as row vector instead
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
+%       cd/compute_maximum_numel.m
 %       cd/create_error_for_nargin.m
+%       cd/extract_parameter_value_pairs.m
+%       cd/first_matching_field.m
 %       cd/force_column_vector.m
 %       cd/match_row_count.m
 %
 % Used by:
+%       cd/compute_gabab_conductance.m
 %       cd/compute_time_window.m
 %       cd/create_indices.m
 %       cd/create_time_vectors.m
+%       cd/m3ha_compute_gabab_ipsc.m
 
 % File History:
 % 2018-12-16 Created by Adam Lu
+
+%% Default values for optional arguments
+rowInsteadDefault = false;      % whether to force as row vector instead
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -37,25 +49,50 @@ if nargin < nargout
     error(create_error_for_nargin(mfilename));
 end
 
+%% Preparation
+% % Look for 'RowInstead' in the argument list
+[params, varargin] = extract_parameter_value_pairs(varargin);
+if ~isempty(params)
+    rowInstead = first_matching_field(params, {'RowInstead', 'rowInstead'});
+
+    if isempty(rowInstead)
+        rowInstead = rowInsteadDefault;
+    end
+else
+    rowInstead = rowInsteadDefault;
+end
+
+% Decide on the dimension to match
+if rowInstead
+    dimToMatch = 2;
+else
+    dimToMatch = 1;
+end
+        
 %% Do the job
 % Force as column vectors
-vararginTransformed = cellfun(@force_column_vector, varargin, ...
-                                'UniformOutput', false);
+vararginTransformed = ...
+    cellfun(@(x) force_column_vector(x, 'RowInstead', rowInstead), ...
+            varargin, 'UniformOutput', false);
 
-% Count the number of values in each vector
-nValues = cellfun(@numel, varargin);
-
-% Compute the maximum number of values
-maxNValues = max(nValues);
+% Compute the maximum number of values over all vectors
+maxNValues = compute_maximum_numel(vararginTransformed);
 
 % Match the number of rows to maxNValues for each vector
-varargout = cellfun(@(x) match_row_count(x, maxNValues), ...
+varargout = cellfun(@(x) match_row_count(x, maxNValues, ...
+                                        'DimToMatch', dimToMatch), ...
                     vararginTransformed, 'UniformOutput', false);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+% Count the number of values in each vector
+nValues = cellfun(@numel, vararginTransformed);
+
+% Compute the maximum number of values
+maxNValues = max(nValues);
 
 %}
 

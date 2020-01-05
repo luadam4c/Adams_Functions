@@ -89,6 +89,10 @@ function [errorStruct, hFig, simData] = ...
 %                   - 'DebugFlag': whether debugging
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'NoRealDataFlag': whether to not load recorded data
+%                                       when a cell name is present
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'CustomHoldCurrentFlag': whether to use a custom 
 %                                               holding current
 %                   must be numeric 1 or 0
@@ -325,6 +329,7 @@ function [errorStruct, hFig, simData] = ...
 %       cd/argfun.m
 %       cd/compute_combined_data.m
 %       cd/compute_default_sweep_info.m
+%       cd/compute_maximum_numel.m
 %       cd/compute_residuals.m
 %       cd/compute_sampling_interval.m
 %       cd/compute_single_neuron_errors.m
@@ -459,27 +464,29 @@ function [errorStruct, hFig, simData] = ...
 % 2018-11-16 - Separated 'RealDataCpr' from 'RealDataIpscr'
 % 2019-01-08 - Reorganized code so that one can run a single simulation easily
 %                   from a set of parameters
-% 2019-01-09 - Added 'GenerateDataFlag' as an optional parameter
-% 2019-01-14 - Added 'BootstrapCprFlag' as an optional parameter
+% 2019-01-09 - Added 'GenerateDataFlag' as an optional argument
+% 2019-01-14 - Added 'BootstrapCprFlag' as an optional argument
 % 2019-05-08 - Updated usage of plot_bar.m
 % 2019-10-13 - Updated simulated data column numbers
-% 2019-11-15 - Added 'IpscTime' as an optional parameter
-% 2019-11-15 - Added 'IpscPeakWindow' as an optional parameter
-% 2019-11-15 - Added 'FileBases' as an optional parameter
-% 2019-11-17 - Added 'PlotConductanceFlag' as an optional parameter
-% 2019-11-17 - Added 'PlotCurrentFlag' as an optional parameter
-% 2019-12-03 - Added 'FileNames' as an optional parameter
+% 2019-11-15 - Added 'IpscTime' as an optional argument
+% 2019-11-15 - Added 'IpscPeakWindow' as an optional argument
+% 2019-11-15 - Added 'FileBases' as an optional argument
+% 2019-11-17 - Added 'PlotConductanceFlag' as an optional argument
+% 2019-11-17 - Added 'PlotCurrentFlag' as an optional argument
+% 2019-12-03 - Added 'FileNames' as an optional argument
 % 2019-12-04 - If 'FileNames' is passed in, use the same GABA-B IPSC parameters
 %               as those used in dynamic clamp
 % 2019-12-17 - Fixed GABAB parameter bug
-% 2019-12-18 - Added 'Match2FeatureErrorRatio' as an optional parameter
+% 2019-12-18 - Added 'Match2FeatureErrorRatio' as an optional argument
 % 2019-12-19 - Now distinguishes buildMode from simMode
 % 2019-12-19 - Removed y axis link for current pulse response plots
 % 2019-12-21 - Added 'PlotAllFlag' as an optional argument and change
 %                   default to not plot anything
-% 2019-12-23 - Added 'SaveImportLogFlag' as an optional parameter
+% 2019-12-23 - Added 'SaveImportLogFlag' as an optional argument
 % 2019-12-29 - Reordered simulated ouptut columns to include ipas
-% 2020-01-02 Added 'tauhMode'
+% 2020-01-02 - Added 'tauhMode'
+% 2020-01-05 - Added 'noRealDataFlag' as an optional argument
+% 2020-01-05 - Fixed the determination of nSweeps when no realData is passed in
 
 %% Hard-coded parameters
 validBuildModes = {'active', 'passive'};
@@ -577,6 +584,7 @@ fileBasesDefault = {};          % set later
 outFolderDefault = '' ;         % set later
 prefixDefault = '';             % set later
 debugFlagDefault = false;       % not in debug mode by default
+noRealDataFlagDefault = false;  % compare against real data by default
 customHoldCurrentFlagDefault = 0; % don't use custom hold current by default
 onHpcFlagDefault = false;       % not on a high performance computing
                                 %   server by default
@@ -703,6 +711,8 @@ addParameter(iP, 'OutFolder', outFolderDefault, ...
 addParameter(iP, 'Prefix', prefixDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'DebugFlag', debugFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'NoRealDataFlag', noRealDataFlagDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'CustomHoldCurrentFlag', customHoldCurrentFlagDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'binary'}));
@@ -857,6 +867,7 @@ fileBases = iP.Results.FileBases;
 outFolder = iP.Results.OutFolder;
 prefix = iP.Results.Prefix;
 debugFlag = iP.Results.DebugFlag;
+noRealDataFlag = iP.Results.NoRealDataFlag;
 customHoldCurrentFlag = iP.Results.CustomHoldCurrentFlag;
 onHpcFlag = iP.Results.OnHpcFlag;
 generateDataFlag = iP.Results.GenerateDataFlag;
@@ -982,7 +993,7 @@ if isempty(fileNames)
         fileNames = fileNamesCpr;
     elseif strcmpi(simMode, 'active') && ~isempty(fileNamesIpscr)
         fileNames = fileNamesIpscr;
-    elseif ~isempty(cellName)
+    elseif ~isempty(cellName) && ~noRealDataFlag
         % Select data files
         [fileNames, rowConditions] = ...
             m3ha_select_raw_traces(cellName, 'ColumnMode', columnMode, ...
@@ -1139,6 +1150,21 @@ elseif strcmpi(simMode, 'active')
     errorMode = 'Sweep&LTS';
 end
 
+% Save input conditions
+inputConditions.holdPotentialIpscr = holdPotentialIpscr;
+inputConditions.holdPotentialCpr = holdPotentialCpr;
+inputConditions.currentPulseAmplitudeIpscr = currentPulseAmplitudeIpscr;
+inputConditions.currentPulseAmplitudeCpr = currentPulseAmplitudeCpr;
+inputConditions.gababAmpIpscr = gababAmpIpscr;
+inputConditions.gababTriseIpscr = gababTriseIpscr;
+inputConditions.gababTfallFastIpscr = gababTfallFastIpscr;
+inputConditions.gababTfallSlowIpscr = gababTfallSlowIpscr;
+inputConditions.gababWeightIpscr = gababWeightIpscr;
+inputConditions.holdCurrentIpscr = holdCurrentIpscr;
+inputConditions.holdCurrentCpr = holdCurrentCpr;
+inputConditions.holdCurrentNoiseIpscr = holdCurrentNoiseIpscr;
+inputConditions.holdCurrentNoiseCpr = holdCurrentNoiseCpr;
+
 % Decide on row conditions
 if isempty(rowConditions)
     if strcmpi(simMode, 'passive')
@@ -1157,7 +1183,7 @@ else
 end
 
 % Decide on the number of sweeps to run and compare
-nSweeps = decide_on_nSweeps(realData, nSweepsUser);
+nSweeps = decide_on_nSweeps(realData, nSweepsUser, inputConditions);
 
 % Create file bases if not provided
 if isempty(fileBases)
@@ -1817,7 +1843,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function nSweeps = decide_on_nSweeps (realData, nSweepsUser)
+function nSweeps = decide_on_nSweeps (realData, nSweepsUser, inputConditions)
 %% Returns the number of sweeps to run and compare
 
 if ~isempty(realData)
@@ -1831,7 +1857,7 @@ if ~isempty(realData)
 elseif ~isempty(nSweepsUser)
     nSweeps = nSweepsUser;
 else
-    nSweeps = 1;
+    nSweeps = compute_maximum_numel(inputConditions);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

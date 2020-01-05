@@ -16,7 +16,9 @@ function [fieldValue, fieldName] = ...
 %
 % Outputs:
 %       fieldValue  - extracted field value
+%                       if not found, [] is returned
 %       fieldName   - original field name
+%                       if not found, '' is returned
 %                   specified as a character array
 %
 % Arguments:

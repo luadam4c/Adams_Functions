@@ -57,6 +57,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/create_synced_movie_trace_plot_movie.m
 %       cd/decide_on_filebases.m
 %       cd/force_data_as_matrix.m
+%       cd/m3ha_compute_gabab_ipsc.m
 %       cd/m3ha_extract_component_errors.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_choose_best_params.m

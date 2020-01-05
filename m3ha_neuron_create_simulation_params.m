@@ -120,6 +120,7 @@ function [simParamsTable, simParamsPath] = ...
 %       cd/create_simulation_output_filenames.m
 %       cd/force_string_end.m
 %       cd/isnumericvector.m
+%       cd/ispositiveintegerscalar.m
 %       cd/match_row_count.m
 %       cd/transpose_table.m
 %
@@ -134,6 +135,7 @@ function [simParamsTable, simParamsPath] = ...
 % 2019-12-19 Added 'buildMode'
 % 2019-12-27 Added 'useHH'
 % 2020-01-02 Added 'tauhMode'
+% 2020-01-05 Fixe nSimsDefault
 % TODO: Remove the Cpr parameters and decide on them before
 % 
 
@@ -166,7 +168,7 @@ saveParamsFlagDefault = true;   % save simulation parameters by default
 jitterFlagDefault = false;      % no jitter by default
 cprWindowDefault = cprWinOrig + timeToStabilize;
 ipscrWindowDefault = ipscrWinOrig + timeToStabilize;
-nSimsDefault = 1;               % number of simulations by default
+nSimsDefault = [];              % set later
 
 %% Default values for simulation parameters
 useHHDefault = false;           % don't use HH channels by default
@@ -227,7 +229,8 @@ addParameter(iP, 'CprWindow', cprWindowDefault, ...
 addParameter(iP, 'IpscrWindow', ipscrWindowDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector', 'numel', 2}));
 addParameter(iP, 'NSims', nSimsDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                'NSims must be empty or a positive integer scalar!'));
 addParameter(iP, 'UseHH', useHHDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'TauhMode', tauhModeDefault, ...
