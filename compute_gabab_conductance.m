@@ -35,7 +35,7 @@ function gGabab = compute_gabab_conductance (tVec, timeStart, amplitude, ...
 %       cd/force_row_vector.m
 %
 % Used by:
-%       cd/m3ha_plot_gabab_ipsc.m
+%       cd/m3ha_compute_gabab_ipsc.m
 %       cd/m3ha_resave_sweeps.m
 %       cd/m3ha_trace_comparison.m
 

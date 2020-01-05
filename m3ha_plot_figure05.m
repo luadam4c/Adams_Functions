@@ -7,7 +7,7 @@
 %       cd/extract_fileparts.m
 %       cd/find_matching_files.m
 %       cd/m3ha_load_sweep_info.m
-%       cd/m3ha_plot_gabab_ipsc.m
+%       cd/m3ha_compute_gabab_ipsc.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/plot_scale_bar.m
 %       cd/save_all_figtypes.m
@@ -190,7 +190,7 @@ end
 
 %% 
 if plotGababCond
-    m3ha_plot_gabab_ipsc(figure05Dir);
+    m3ha_compute_gabab_ipsc(figure05Dir);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

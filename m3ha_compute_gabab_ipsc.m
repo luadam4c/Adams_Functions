@@ -1,5 +1,5 @@
-function varargout = m3ha_plot_gabab_ipsc (outFolder, varargin)
-%% m3ha_plot_gabab_ipsc.m
+function varargout = m3ha_compute_gabab_ipsc (outFolder, varargin)
+%% m3ha_compute_gabab_ipsc.m
 % Requires:
 %       cd/compute_gabab_conductance.m
 %       cd/logscale.m
@@ -31,13 +31,13 @@ weight = [0.952; 0.952; 0.775; 0.629];
 figTypes = {'png', 'epsc2'};
 colorMap = [];
 
-plotOriginal = false;
-plotVaryWeight = false;
+plotOriginal = true;
+plotVaryWeight = true;
 plotVaryTau = true;
-plotVaryTauFall = false; %true;
-plotVaryShapeOld = false;
-plotVaryDualtoGAT3 = false;
-plotVaryDualtoGAT3toGAT1 = false; %true;
+plotVaryTauFall = true;
+plotVaryShapeOld = true;
+plotVaryDualtoGAT3 = true;
+plotVaryDualtoGAT3toGAT1 = true;
 plotOldFigures = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -117,7 +117,7 @@ if plotOriginal
     plot_conductance(tVec, gVecs, colorMap);
     % legend('Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block')
     legend(create_labels_from_numbers(tauEmpirical, 'Prefix', 'tau = '));
-    title('GABAB IPSC conductances from thesis & old network model')
+    title('GABAB IPSC conductances from thesis & old network model');
     save_all_figtypes(fig, figPathBase, figTypes);
 end
 
@@ -130,6 +130,7 @@ if plotVaryWeight
                                 tauFallFastDual, tauFallSlowDual, weightTest);
     plot_conductance(tVec, gVecs, colorMap);
     legend(create_labels_from_numbers(weightTest, 'Prefix', 'weight = '));
+    title('Dual Blockade GABAB IPSC conductance with weight varied');
     save_all_figtypes(fig, figPathBase, figTypes);
 end
 
@@ -147,6 +148,7 @@ if plotVaryTau
     plot_conductance(tVec, gVecs, colorMap);
     tauEmpirical = siMs .* compute_time_constant(gVecs, 'DecayMethod', 'empirical');
     legend(create_labels_from_numbers(tauEmpirical, 'Prefix', 'tau = '));
+    title('Dual Blockade GABAB IPSC conductance with all time constant varied');
     save_all_figtypes(fig, figPathBase, figTypes);
 end
 
@@ -163,6 +165,7 @@ if plotVaryTauFall
     plot_conductance(tVec, gVecs, colorMap);
     tauEmpirical = siMs .* compute_time_constant(gVecs, 'DecayMethod', 'empirical');
     legend(create_labels_from_numbers(tauEmpirical, 'Prefix', 'tau = '));
+    title('Dual Blockade GABAB IPSC conductance with falling time constants varied');
     save_all_figtypes(fig, figPathBase, figTypes);
 end
 
@@ -181,6 +184,7 @@ if plotVaryShapeOld
     tauEmpirical = siMs .* compute_time_constant(gVecs, 'DecayMethod', 'empirical');
     plot_conductance(tVec, gVecs, colorMap);
     legend(create_labels_from_numbers(tauEmpirical, 'Prefix', 'tau = '));
+    title('Dual Blockade GABAB IPSC conductance with falling time constants varied, fixing AUC');
     save_all_figtypes(fig, figPathBase, figTypes);
 end
 
@@ -203,6 +207,7 @@ if plotVaryDualtoGAT3
     tauEmpirical = siMs .* compute_time_constant(gVecs, 'DecayMethod', 'empirical');
     plot_conductance(tVec, gVecs, colorMap);
     legend(create_labels_from_numbers(tauEmpirical, 'Prefix', 'tau = '));
+    title('GABAB IPSC conductance transitioning from Dual to GAT3 blockade');
     save_all_figtypes(fig, figPathBase, figTypes);
 end
 
@@ -239,6 +244,7 @@ if plotVaryDualtoGAT3toGAT1
     tauEmpirical = siMs .* compute_time_constant(gVecs, 'DecayMethod', 'empirical');
     plot_conductance(tVec, gVecs, colorMap);
     legend(create_labels_from_numbers(tauEmpirical, 'Prefix', 'tau = '));
+    title('GABAB IPSC conductance transitioning from Dual to GAT3 to GAT1 blockade');
     save_all_figtypes(fig, figPathBase, figTypes);
 end
 

@@ -23,7 +23,7 @@ function values = logscale (base, target, scaleFactors, varargin)
 %       cd/create_error_for_nargin.m
 %
 % Used by:
-%       cd/m3ha_plot_gabab_ipsc.m
+%       cd/m3ha_compute_gabab_ipsc.m
 
 % File History:
 % 2020-01-04 Created by Adam Lu
