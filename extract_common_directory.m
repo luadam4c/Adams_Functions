@@ -31,6 +31,7 @@ function parentDir = extract_common_directory (paths, varargin)
 %       cd/extract_fileparts.m
 %
 % Used by:
+%       cd/parse_all_abfs.m
 %       cd/all_dependent_functions.m
 %       cd/extract_distinct_fileparts.m
 %       cd/extract_fileparts.m

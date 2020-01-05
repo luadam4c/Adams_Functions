@@ -25,6 +25,7 @@ function [allParsedParamsTable, allParsedDataTable, ...
 %       allParsedDataStruct   - a structure array of parsedData
 %       allParsedParamsCell   - a cell array of parsedParams
 %       allParsedDataCell     - a cell array of parsedData
+%
 % Arguments:
 %       varargin    - 'Directory': the name of the directory containing 
 %                                   the abf files, e.g. '20161216'
@@ -57,6 +58,9 @@ function [allParsedParamsTable, allParsedDataTable, ...
 % Requires:
 %       cd/all_files.m
 %       cd/argfun.m
+%       cd/create_time_stamp.m
+%       cd/extract_common_directory.m
+%       cd/extract_common_prefix.m
 %       cd/parse_abf.m
 %       cd/remove_empty.m
 %       cd/issheettype.m
@@ -79,9 +83,13 @@ function [allParsedParamsTable, allParsedDataTable, ...
 % 2019-05-20 - Added saveSheetFlag as an optional parameter
 % 2019-08-23 Now passes unmatched optional arguments to parse_abf
 % 2019-11-14 Now sets 'AsArray' to be true for struct2table
+% 2020-01-04 Changed the default outPrefix
 
 %% Hard-coded parameters
-tableSuffix = '_abfParams';
+tableSuffix = 'abfParams';
+
+% TODO: Make optional argument
+outPrefix = '';
 
 %% Default values for optional arguments
 directoryDefault = pwd;             % look for .abf files in 
@@ -163,11 +171,17 @@ if isempty(fileNames)
     if verbose
         fprintf('Parsing all .abf files in %s ...\n', directory);
     end
+
+    % All files detected from same directory
+    allInDirectory = true;
 else
     % Print message
     if verbose
-        fprintf('Parsing all .abf files ...\n');
+        fprintf('Parsing all provided .abf files ...\n');
     end
+
+    % Save whether automatically detected from all files in a directory
+    allInDirectory = false;
 end
 
 % Place in cell array
@@ -201,11 +215,32 @@ end
 
 %% Save results
 if saveSheetFlag
-    % Get the directory name
-    [~, directoryName, ~] = fileparts(directory);
+    % Decide on a prefix
+    if isempty(outPrefix)
+        if allInDirectory
+            % Use the directory name
+            [~, outPrefix, ~] = fileparts(directory);
+        else
+            % Try extracting a prefix from the file names
+            commonPrefix = extract_common_prefix(fileNames);
+            [~, outPrefix, ~] = fileparts(commonPrefix);                
+
+            % If empty, use the common directory name
+            if isempty(outPrefix)
+                commonDir = extract_common_directory(fileNames);
+                [~, outPrefix, ~] = fileparts(commonDir);                
+            end
+
+            % If still empty, apply a timestamp
+            if isempty(outPrefix)
+                outPrefix = create_time_stamp;
+            end
+        end
+    end
 
     % Set a file name for the params table
-    sheetName = fullfile(outFolder, [directoryName, tableSuffix, '.', sheetType]);
+    sheetName = fullfile(outFolder, [outPrefix, '_', ...
+                        tableSuffix, '.', sheetType]);
 
     % Print the parsed params as a table to a file
     writetable(allParsedParamsTable, sheetName);

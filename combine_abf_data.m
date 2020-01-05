@@ -54,7 +54,7 @@ function allData = combine_abf_data (abfPaths, varargin)
 % File History:
 % 2019-08-23 Pulled from combine_data_from_same_slice.m
 % 2019-08-23 Now passes unmatched optional arguments to parse_all_abfs
-% 2020-01-04 Fixed the ordering of trace numbers
+% TODO: 2020-01-04 Fixed the ordering of trace numbers
 % TODO: Combine gVecs as well
 % 
 

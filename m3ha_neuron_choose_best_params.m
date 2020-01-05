@@ -295,8 +295,8 @@ if isempty(prefix)
 end
 
 % Create full path to error sheet file
-sheetBase = [prefix, '_', errorParamSheetSuffix];
-sheetPathBase = fullfile(outFolder, sheetBase);
+outPathPrefix = fullfile(outFolder, prefix);
+sheetPathBase = [outPathPrefix, '_', errorParamSheetSuffix];
 sheetPath = [sheetPathBase, '.', sheetExtension];
 
 %% Generate an error-params spreadsheet
@@ -407,7 +407,7 @@ if plotErrorHistoryFlag
 
     % Create figure title and file name
     errorFigTitle = ['Error History for ', uniqueCellName];
-    errorFigName = strcat(sheetPathBase, '_error_history');
+    errorFigName = strcat(outPathPrefix, '_error_history');
 
     % Plot error history
     plot_table_parallel(errorParamTable, 'VarsToPlot', errorsToPlot,...
@@ -443,7 +443,7 @@ if plotErrorComparisonFlag
             'FigTitle', ['Error Comparison for ', uniqueCellName]);
 
     % Save figure
-    save_all_figtypes(fig2, strcat(sheetPathBase, '_error_comparison'), figTypes);
+    save_all_figtypes(fig2, strcat(outPathPrefix, '_error_comparison'), figTypes);
 end
 
 %% Plot parameter history
@@ -453,7 +453,7 @@ if plotParamHistoryFlag
 
     % Create figure title and file name
     errorParamFigTitle = ['Error & Parameter History for ', uniqueCellName];
-    errorParamFigName = strcat(sheetPathBase, '_param_history');
+    errorParamFigName = strcat(outPathPrefix, '_param_history');
 
     % Decide on the errors and parameters to plot
     [errorParamToPlot, errorParamLabels, ...
@@ -490,12 +490,6 @@ bestParamsLabel = candLabel{iTableBest};
 
 % Display result
 fprintf('%s has the least error: %g!\n', bestParamsLabel, totalErrorBest);
-
-%{
-% TODO: FOR DEBUG
-bestParamsTable = [];
-bestParamsLabel = [];
-%}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -23,6 +23,7 @@ function timeStamp = create_time_stamp (varargin)
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_rank_neurons.m
 %       cd/m3ha_simulate_population.m
+%       cd/parse_all_abfs.m
 %       cd/parse_multiunit.m
 %       cd/plot_psth.m
 %       cd/save_params.m

@@ -47,6 +47,9 @@ function allData = combine_multiunit_data (varargin)
 %% Hard-coded parameters
 validChannelTypes = {'Voltage', 'Current', 'Conductance', 'Other'};
 
+% TODO: Make optional argument
+expMode = 'patch';
+
 %% Default values for optional arguments
 channelTypesDefault = {'voltage', 'current'};
 channelUnitsDefault = {'uV', 'arb'};
@@ -82,7 +85,8 @@ end
 
 %% Do the job
 allData = combine_data_from_same_slice('ChannelTypes', channelTypes, ...
-                            'ChannelUnits', channelUnits, otherArguments{:});
+                            'ChannelUnits', channelUnits, ...
+                            'ExpMode', expMode, otherArguments{:});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

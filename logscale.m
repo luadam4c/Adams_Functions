@@ -27,7 +27,7 @@ function values = logscale (base, target, scaleFactors, varargin)
 
 % File History:
 % 2020-01-04 Created by Adam Lu
-% 
+% TODO for SHINSHIN: Make linscale.m and use it here
 
 %% Hard-coded parameters
 
