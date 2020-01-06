@@ -18,6 +18,11 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %                       'residual'      - residual traces 
 %                                               between simulated and recorded
 %                       'overlapped'    - all traces of interest overlapped
+%                       'allVoltages'
+%                       'allTotalCurrents'
+%                       'allComponentCurrents'
+%                       'allITproperties'
+%                       'dend2ITproperties'
 %                       'm2h'           - m2h plot
 %                   default == 'individual'
 %                   - 'BuildMode': TC neuron build mode

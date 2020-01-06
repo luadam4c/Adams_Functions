@@ -22,14 +22,14 @@
 % Flags
 updateScripts = false; %true;
 simulateIpscr = false; %true;
+simulateTauhModes = false; %true;
+computeIpscVariation = false; %true;
+simulateIpscVariation = false; %true;
 plotAllVoltages = false; %true;
 plotAllTotalCurrents = false; %true;
 plotAllComponentCurrents = false; %true;
 plotDend2ITproperties = false; %true;
 plotM2h = false; %true;
-simulateTauhModes = false; %true;
-computeIpscVariation = true;
-simulateIpscVariation = true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -46,16 +46,13 @@ paramFileSuffix = 'params';
 % exampleCellNames = {'D101310'; 'C101210'};
 exampleCellNames = {'D101310'};
 % exampleCellNames = {'C101210'};
-% gababIpscSheetBases = {'gababipsc_gat3_vary_amp2', ...
-%                         'gababipsc_gat3_vary_amp', ...
-%                         'gababipsc_dual_vary_amp', ...
-%                         'gababipsc_gat3_vary_tau', ...
-%                         'gababipsc_dual_vary_tau', ...
-%                         'gababipsc_vary_dual_to_gat3_to_gat1', ...
-%                         'gababipsc_original'};
 gababIpscSheetBases = {'gababipsc_gat3_vary_amp2', ...
                         'gababipsc_gat3_vary_amp', ...
-                        'gababipsc_dual_vary_amp'};
+                        'gababipsc_dual_vary_amp', ...
+                        'gababipsc_gat3_vary_tau', ...
+                        'gababipsc_dual_vary_tau', ...
+                        'gababipsc_vary_dual_to_gat3_to_gat1', ...
+                        'gababipsc_original'};
 
 % Simulation settings
 dataModeIpscr = 2;                  % data mode for IPSC response
@@ -104,9 +101,9 @@ end
 swpInfo = m3ha_load_sweep_info('Directory', figure02Dir);
 
 %% Find NEURON parameter tables
-if simulateIpscr || plotAllVoltages || plotAllTotalCurrents || ...
-        plotAllComponentCurrents || plotDend2ITproperties || plotM2h || ...
-        simulateTauhModes || simulateIpscVariation
+if simulateIpscr || simulateTauhModes || simulateIpscVariation || ...
+        plotAllVoltages || plotAllTotalCurrents || ...
+        plotAllComponentCurrents || plotDend2ITproperties || plotM2h        
     % Find NEURON parameter tables
     [~, exampleParamPaths] = ...
         find_matching_files(exampleCellNames, 'Directory', figure05Dir, ...
@@ -146,6 +143,38 @@ if simulateIpscr
     cellfun(@(x, y, z) simulate_ipscr(x, y, z, 0, dataModeIpscr, ...
                                     rowmodeIpscr, attemptNumberIpscr), ...
             exampleLabelsIpscr, exampleParamPaths, outFoldersIpscr);
+end
+
+%% Simulate tauhMode == 1, 2 and 3
+if simulateTauhModes
+    check_dir([outFoldersModeAll{:}]);
+    for iMode = 1:numel(tauhModesAll)
+        cellfun(@(x, y, z) simulate_ipscr(x, y, z, tauhModesAll(iMode), ...
+                    dataModeIpscr, rowmodeIpscr, attemptNumberIpscr), ...
+                exampleLabelsModeAll{iMode}, exampleParamPaths, ...
+                outFoldersModeAll{iMode});
+    end
+end
+
+%% Compute all GABAB IPSC parameters and plot them
+if computeIpscVariation
+    m3ha_compute_gabab_ipsc(figure05Dir);
+end
+
+%% Simulate IPSC variation
+if simulateIpscVariation
+    for iSheet = 1:numel(gababIpscSheetBases)
+        % Read GABA-B IPSC parameters table
+        gababTable = readtable([gababIpscSheetBases{iSheet}, '.csv']);
+
+        % Convert to a scalar structure
+        gababStruct = table2struct(gababTable, 'ToScalar', true);
+
+        % Simulate for each cell
+        cellfun(@(x, y, z) simulate_variation(x, y, z, gababStruct), ...
+                exampleLabelsVaryAll{iSheet}, exampleParamPaths, ...
+                outFoldersVaryAll{iSheet});
+    end
 end
 
 %% Plot all voltages
@@ -190,39 +219,8 @@ if plotM2h
                                 m2hFigWidth, m2hFigHeight, ...
                                 m2hXLimits, m2hYLimits), ...
             exampleLabelsIpscr, outFoldersIpscr);
-end
 
-%% Simulate tauhMode == 1, 2 and 3
-if simulateTauhModes
-    check_dir([outFoldersModeAll{:}]);
-    for iMode = 1:numel(tauhModesAll)
-        cellfun(@(x, y, z) simulate_ipscr(x, y, z, tauhModesAll(iMode), ...
-                    dataModeIpscr, rowmodeIpscr, attemptNumberIpscr), ...
-                exampleLabelsModeAll{iMode}, exampleParamPaths, ...
-                outFoldersModeAll{iMode});
-    end
-end
-
-%% Compute all GABAB IPSC parameters and plot them
-if computeIpscVariation
-    m3ha_compute_gabab_ipsc(figure05Dir);
-end
-
-%% Simulate IPSC variation
-if simulateIpscVariation
     for iSheet = 1:numel(gababIpscSheetBases)
-        % Read GABA-B IPSC parameters table
-        gababTable = readtable([gababIpscSheetBases{iSheet}, '.csv']);
-
-        % Convert to a scalar structure
-        gababStruct = table2struct(gababTable, 'ToScalar', true);
-
-        % Simulate for each cell
-        cellfun(@(x, y, z) simulate_variation(x, y, z, gababStruct), ...
-                exampleLabelsVaryAll{iSheet}, exampleParamPaths, ...
-                outFoldersVaryAll{iSheet});
-
-        % Plot m2h in dendrite 2 against its steady state
         cellfun(@(x, y) plot_m2h(x, y, figure05Dir, figTypes, ...
                                     m2hFigWidth, m2hFigHeight, ...
                                     m2hXLimits, m2hYLimits), ...

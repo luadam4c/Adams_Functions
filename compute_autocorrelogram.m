@@ -7,12 +7,12 @@ function [autoCorrParams, autoCorrData] = compute_autocorrelogram (spikeTimesMs,
 %       [autoCorrParams, autoCorrData] = compute_autocorrelogram(1000*rand(100, 1));
 % Outputs:
 %       autoCorrParams  - autocorrelogram parameters, with fields:
-%                           oscIndex1
+%                           oscIndex1 (Sohal 2003)
 %                           oscIndex2
 %                           oscIndex3
-%                           oscIndex4
-%                           oscPeriod1Ms
-%                           oscPeriod2Ms
+%                           oscIndex4 (ClC2, m3ha)
+%                           oscPeriod1Ms (Sohal 2003)
+%                           oscPeriod2Ms (ClC2, m3ha)
 %                           minOscPeriod2Bins
 %                           maxOscPeriod2Bins
 %                       specified as a scalar structure
