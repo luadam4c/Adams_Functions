@@ -2,7 +2,10 @@ function values = linscale (base, target, scaleFactors, varargin)
 %% Creates scaled values between base and target based on a linear scale
 % Usage: values = linscale (base, target, scaleFactors, varargin)
 % Explanation:
-%       TODO
+%       Computes a vectors of values that are spaced on a linear scale,
+%           where the base value is scaleFactor == 0
+%           and the target value is scaleFactor == 1
+%       For example, linscale(1, 2, 0:0.5:1) == [1, 1.5, 2]
 %
 % Example(s):
 %       linscale(1, 2, -1:5)

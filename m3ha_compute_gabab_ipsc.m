@@ -52,6 +52,7 @@ plotDualVaryTau = true;
 plotGat3VaryTau = true;
 plotDualVaryAmp = true;
 plotGat3VaryAmp = true;
+plotGat3VaryAmp2 = true;
 plotOldFigures = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -140,10 +141,10 @@ tauDual = tauOrig(4);
 
 %% Decide on the empirical amplitudes and time constants to test
 % ampEmpTest = [ampEmpDual/2, ampEmpDual, ampEmpGat1, ampEmpGat3];
-ampEmpTest = [ampEmpDual/2, ampEmpDual, ampEmpGat1, ampEmpGat3, ...
-                ampEmpGat3 * 5/4, ampEmpGat3 * 3/2, ...
-                ampEmpGat3 * 7/4, ampEmpGat3 * 2];
+ampEmpTest = [ampEmpDual/2, ampEmpDual, ampEmpGat1, ampEmpGat3];
 nAmpsToTest = numel(ampEmpTest) + (numel(ampEmpTest) - 1) * 3;
+ampEmpTest2 = ampEmpGat3 .* [0, 1, 2, 3, 4];
+nAmpsToTest2 = numel(ampEmpTest2) + (numel(ampEmpTest2) - 1) * 3;
 tauTest = [tauGat1/2, tauGat1, tauGat3, (tauGat3 + tauDual)/2, tauDual];
 nTausToTest = numel(tauTest) + (numel(tauTest) - 1) * 3;
 
@@ -371,6 +372,23 @@ if plotGat3VaryAmp
     plot_conductance(tVec, gVecs, colorMap);
     legend(create_labels_from_numbers(ampEmpirical, 'Prefix', 'amp = '));
     title('Gat3 Blockade, amplitude varied');
+    save_all_figtypes(fig, figPathBase, figTypes);
+end
+
+%% Plot GAT3 blockade GABAB IPSC as amplitude is varied even more
+if plotGat3VaryAmp2
+    figPathBase = fullfile(outFolder, 'gababipsc_gat3_vary_amp2');
+    scaleFactors = piecelinspace(ampEmpTest2 / ampEmpGat3, nAmpsToTest2);
+    ampTest2 = ampGat3 .* scaleFactors;
+    gVecs = compute_gabab_conductance(tVec, ipscStart, ampTest2, tauRiseGat3, ...
+                            tauFallFastGat3, tauFallSlowGat3, weightGat3, ...
+                            'SheetName', [figPathBase, '.csv']);
+    ampEmpirical = max(gVecs);
+
+    fig = set_figure_properties('AlwaysNew', true);
+    plot_conductance(tVec, gVecs, colorMap);
+    legend(create_labels_from_numbers(ampEmpirical, 'Prefix', 'amp = '));
+    title('Gat3 Blockade, amplitude varied even more');
     save_all_figtypes(fig, figPathBase, figTypes);
 end
 

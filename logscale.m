@@ -2,7 +2,10 @@ function values = logscale (base, target, scaleFactors, varargin)
 %% Creates scaled values between base and target based on a log scale
 % Usage: values = logscale (base, target, scaleFactors, varargin)
 % Explanation:
-%       TODO
+%       Computes a vectors of values that are spaced on a log scale
+%           where the base value is scaleFactor == 0
+%           and the target value is scaleFactor == 1
+%       For example, logscale(1, 2, 0:0.5:1) == [1, sqrt(2), 2]
 %
 % Example(s):
 %       logscale(1, 2, -1:5)
