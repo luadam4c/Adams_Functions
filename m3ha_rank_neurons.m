@@ -51,9 +51,9 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = true;
+chooseBestParamsFlag = false; %true;
 plotErrorHistoryFlag = false; %true;
-plotErrorComparisonFlag = true;
+plotErrorComparisonFlag = false; %true;
 plotParamHistoryFlag = false; %true;
 plotIndividualFlag = false; %true;
 rankNeuronsFlag = false; %true;
@@ -185,6 +185,7 @@ paramDirNames = fullfile('best_params', ...
                         'bestparams_20191231_singleneuronfitting93', ...
                         'bestparams_20191231_singleneuronfitting94'});
 rankNumsToPlot = 1:11;
+outFolder = '20200103_ranked_singleneuronfitting0-94';
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1

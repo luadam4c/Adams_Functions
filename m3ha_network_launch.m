@@ -75,10 +75,12 @@ experimentSuffix = ['ncells_', num2str(nCells), '_useHH_', num2str(useHH), ...
 
 %% Hard-coded parameters
 homeDirName = 'network_model';
-paramsDirName = fullfile('best_params', ...
-                'bestparams_20171213_singleneuronfitting16_Rivanna');
-% paramsDirName = fullfile('best_params', ...
+% paramsDirName = fullfile('optimizer4gabab', 'best_params', ...
+%                 'bestparams_20171213_singleneuronfitting16_Rivanna');
+% paramsDirName = fullfile('optimizer4gabab', 'best_params', ...
 %                 'bestparams_20180424_singleneuronfitting21_Rivanna');
+paramsDirName = fullfile('optimizer4gabab', 'best_params', ...
+                    'bestparams_20200103_ranked_singleneuronfitting0-94');
 
 %% Flags
 debugFlag = false;              % whether to do a very short simulation
@@ -173,6 +175,8 @@ templateNames = {'D091710'; 'E091710'; 'B091810'; 'D091810'; ...
 %candidateIDs = 10;                 % 'C092710'
 %candidateIDs = 21;                 % 'A100810'
 %candidateIDs = 3;                  % 'B091810'
+
+%candidateIDs = 32;                 % 'D101310'
 
 %% hoc file names
 switch nCells
@@ -632,6 +636,7 @@ end
 % parentDirectory = m3ha_locate_homedir;
 parentDirectory = '/media/adamX/m3ha';
 homeDirectory = fullfile(parentDirectory, homeDirName);
+paramsDirectory = fullfile(parentDirectory, paramsDirName);
 
 % Compile or re-compile .mod files in the home directory
 compile_mod_files(homeDirectory);
@@ -845,7 +850,7 @@ templateNamesUsed = templateNames(templateIDsUsed);
 templateFileNames = strcat('bestparams_', templateNamesUsed, '.csv');
 
 % Create full paths to the template files
-templatePaths = fullfile(homeDirectory, paramsDirName, templateFileNames);
+templatePaths = fullfile(paramsDirectory, templateFileNames);
 
 % Import NEURON parameters
 TCparamTables = load_params(templatePaths);

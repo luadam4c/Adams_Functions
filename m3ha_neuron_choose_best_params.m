@@ -62,12 +62,14 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 %
 % Requires:
 %       cd/argfun.m
+%       cd/check_dir.m
 %       cd/combine_strings.m
 %       cd/create_error_for_nargin.m
 %       cd/create_indices.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_subplots.m
 %       cd/extract_fields.m
+%       cd/extract_fileparts.m
 %       cd/extract_param_values.m
 %       cd/force_matrix.m
 %       cd/isemptycell.m
@@ -137,6 +139,7 @@ errorParamXTicks = [];
 errorParamFigNumber = 1107;
 
 % TODO: Make optional argument
+bestParamsDirPrefix = 'bestparams';
 errorParamSheetSuffix = 'error_param_table';
 sheetExtension = 'csv';
 figTypes = {'png'};
@@ -241,8 +244,14 @@ end
 % Decide on iteration strings and cell names
 %   Note: Make sure iterStr and cellName have nTables rows
 if isempty(candParamsFiles)
+    if ~isempty(fileNames)
+        cellNameTemp = m3ha_extract_cell_name(fileNames{1});
+    else
+        cellNameTemp = 'some_cell';
+    end
+    cellName = repmat({cellNameTemp}, nTables, 1);
+
     iterStr = create_labels_from_numbers(1:nTables, 'Prefix', 'table');
-    cellName = repmat({'some_cell'}, nTables, 1);
 else
     % Extract the chosen iteration string
     iterStr = m3ha_extract_iteration_string(candParamsFiles);
@@ -283,6 +292,9 @@ otherArguments = ...
         'PlotIpeakFlag', 'PlotLtsFlag', 'PlotStatisticsFlag', ...
         'PlotSwpWeightsFlag');
 
+% Extract name of output folder
+outFolderName = extract_fileparts(outFolder, 'dirbase');
+
 % Decide on prefix if not provided
 if isempty(prefix)
     % Use the cell name
@@ -290,7 +302,7 @@ if isempty(prefix)
 
     % If no cell name, use the directory base
     if isempty(prefix)
-        prefix = extract_fileparts(outFolder, 'dirbase');
+        prefix = outFolderName;
     end
 end
 
@@ -298,6 +310,13 @@ end
 outPathPrefix = fullfile(outFolder, prefix);
 sheetPathBase = [outPathPrefix, '_', errorParamSheetSuffix];
 sheetPath = [sheetPathBase, '.', sheetExtension];
+
+% Create best parameters directory name
+bestParamsDirName = [bestParamsDirPrefix, '_', outFolderName];
+bestParamsDir = fullfile(outFolder, bestParamsDirName);
+
+% Check directory
+check_dir(bestParamsDir);
 
 %% Generate an error-params spreadsheet
 if ~isfile(sheetPath)
@@ -479,7 +498,7 @@ end
 
 %% Choose best parameters
 % Extract total errors
-totalError = errorParamTable. totalError;
+totalError = errorParamTable.totalError;
 
 % Find the index of the table with the least error
 [totalErrorBest, iTableBest] = min(totalError);
@@ -487,6 +506,20 @@ totalError = errorParamTable. totalError;
 % Return the table with the least error
 bestParamsTable = candParamsTables{iTableBest};
 bestParamsLabel = candLabel{iTableBest};
+
+% Save or copy the table with least error to the bestParamsDir
+if isempty(candParamsFiles)
+    % Create a new path to params table file
+    bestParamsPath = fullfile(bestParamsDir, ...
+                                [bestParamsDirName, '_', uniqueCellName]);
+
+    % Save the file
+    save_params(bestParamsTable, 'FileName', bestParamsPath);
+else
+    % Copy the file
+    bestParamsFile = candParamsFiles{iTableBest};
+    copy_into(bestParamsFile, bestParamsDir);
+end
 
 % Display result
 fprintf('%s has the least error: %g!\n', bestParamsLabel, totalErrorBest);
