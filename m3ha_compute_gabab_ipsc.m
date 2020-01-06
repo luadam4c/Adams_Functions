@@ -7,6 +7,7 @@ function varargout = m3ha_compute_gabab_ipsc (outFolder, varargin)
 %       cd/create_labels_from_numbers.m
 %       cd/logscale.m
 %       cd/match_format_vectors.m
+%       cd/piecelinspace.m
 %       cd/plot_traces.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
@@ -17,7 +18,7 @@ function varargout = m3ha_compute_gabab_ipsc (outFolder, varargin)
 
 % File History:
 % 2020-01-03 Moved from plot_gababipsc.m
-% 2020-01-04 Added plotVaryTau and plotVaryDualtoGAT3toGAT1 
+% 2020-01-04 Added plotDualVaryTau and plotVaryDualtoGAT3toGAT1 
 % 2020-01-05 Changed ipscStart to 1000
 
 %% Hard-coded parameters
@@ -40,13 +41,16 @@ ipscStart = ipscTimeOrig;                                       % (ms)
 figTypes = {'png', 'epsc2'};
 colorMap = [];
 
-plotOriginal = true;
-plotVaryWeight = true;
-plotVaryTau = true;
-plotVaryTauFall = true;
-plotVaryShapeOld = true;
-plotVaryDualtoGAT3 = true;
-plotVaryDualtoGAT3toGAT1 = true;
+plotOriginal = false; %true;
+plotDualVaryWeight = false; %true;
+plotDualVaryShapeOld = false; %true;
+plotVaryDualtoGAT3 = false; %true;
+plotVaryDualtoGAT3toGAT1 = false; %true;
+plotDualVaryTauFall = true;
+plotDualVaryTau = false; %true;
+plotGat3VaryTau = false; %true;
+plotDualVaryAmp = false; %true;
+plotGat3VaryAmp = false; %true;
 plotOldFigures = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -97,6 +101,7 @@ fprintf('aucGat3 = %g\n', aucGat3);
 aucDual = compute_ipsc_area(tVec, ipscStart, ampDual, tauRiseDual, ...
                             tauFallFastDual, tauFallSlowDual, weightDual);
 fprintf('aucDual = %g\n', aucDual);
+aucOrig = [aucCon; aucGat1; aucGat3; aucDual];
 
 %% Compute the GAT1 or GAT3 amplitude necessary to reach the same area 
 %   under the curve as Dual blockade
@@ -111,19 +116,41 @@ aucGat3New = compute_ipsc_area(tVec, ipscStart, ampGat3New, tauRiseGat3, ...
                             tauFallFastGat3, tauFallSlowGat3, weightGat3);
 fprintf('aucGat3New = %g\n', aucGat3New);
 
+% Compute original conductance vectors
+figPathBase = fullfile(outFolder, 'gababipsc_original');
+gVecsOrig = compute_gabab_conductance(tVec, ipscStart, ampOrig, tauRiseOrig, ...
+                                tauFallFastOrig, tauFallSlowOrig, weight, ...
+                                'SheetName', [figPathBase, '.csv']);
+if min(min(max(gVecsOrig, 1))) ~= 1; error('Parameter error!'); end
+
+% Compute empirical amplitude amp
+ampEmpOrig = max(gVecsOrig);
+ampEmpCon = ampEmpOrig(1);
+ampEmpGat1 = ampEmpOrig(2);
+ampEmpGat3 = ampEmpOrig(3);
+ampEmpDual = ampEmpOrig(4);
+
+% Compute empirical time constant tau
+tauOrig = siMs .* compute_time_constant(gVecsOrig, 'DecayMethod', 'empirical');
+tauCon = tauOrig(1);
+tauGat1 = tauOrig(2);
+tauGat3 = tauOrig(3);
+tauDual = tauOrig(4);
+
+%% Decide on the empirical amplitudes and time constants to test
+ampEmpTest = [ampEmpDual/2, ampEmpDual, ampEmpGat1, ampEmpGat3];
+tauTest = [tauGat1/2, tauGat1, tauGat3, (tauGat3 + tauDual)/2, tauDual];
+
 %% Plot original GABAB IPSC conductances from Christine's thesis & old network model
 if plotOriginal
-    figPathBase = fullfile(outFolder, 'gababipsc_original');
-    gVecs = compute_gabab_conductance(tVec, ipscStart, ampOrig, tauRiseOrig, ...
-                                    tauFallFastOrig, tauFallSlowOrig, weight, ...
-                                    'SheetName', [figPathBase, '.csv']);
-    if min(min(max(gVecs, 1))) ~= 1; error('Parameter error!'); end
-    tauEmpirical = siMs .* compute_time_constant(gVecs, 'DecayMethod', 'empirical');
-
     fig = set_figure_properties('AlwaysNew', true);
-    plot_conductance(tVec, gVecs, colorMap);
-    % legend('Control', 'GAT1 Block', 'GAT3 Block', 'Dual Block')
-    legend(create_labels_from_numbers(tauEmpirical, 'Prefix', 'tau = '));
+    plot_conductance(tVec, gVecsOrig, colorMap);
+    labels1 = {'Control'; 'GAT1 Block'; 'GAT3 Block'; 'Dual Block'};
+    labels2 = create_labels_from_numbers(ampEmpOrig, 'Prefix', 'amp = ');
+    labels3 = create_labels_from_numbers(tauOrig, 'Prefix', 'tau = ');
+    labels4 = create_labels_from_numbers(aucOrig, 'Prefix', 'AUC = ');
+    labelsFinal = strcat(labels1, ": ", labels2, ", ", labels3, ", ", labels4);
+    legend(labelsFinal);
     title('GABAB IPSC conductances from Christine''s thesis');
     save_all_figtypes(fig, figPathBase, figTypes);
 
@@ -134,11 +161,12 @@ if plotOriginal
 end
 
 %% Plot as weight is varied
-if plotVaryWeight
+if plotDualVaryWeight
     figPathBase = fullfile(outFolder, 'gababipsc_dual_vary_weight');
     weightTest = 0:0.1:1;
     gVecs = compute_gabab_conductance(tVec, ipscStart, ampDual, tauRiseDual, ...
-                                tauFallFastDual, tauFallSlowDual, weightTest);
+                                tauFallFastDual, tauFallSlowDual, weightTest, ...
+                                'SheetName', [figPathBase, '.csv']);
 
     fig = set_figure_properties('AlwaysNew', true);
     plot_conductance(tVec, gVecs, colorMap);
@@ -147,48 +175,9 @@ if plotVaryWeight
     save_all_figtypes(fig, figPathBase, figTypes);
 end
 
-%% Plot as all taus are varied with the same
-%   relative value and weights
-if plotVaryTau
-    figPathBase = fullfile(outFolder, 'gababipsc_dual_vary_tau');
-    scaleFactors = 0.1:0.1:1;
-    tauRiseTest = tauRiseDual * scaleFactors;
-    tauFallFastTest = tauFallFastDual * scaleFactors;
-    tauFallSlowTest = tauFallSlowDual * scaleFactors;
-    gVecs = compute_gabab_conductance(tVec, ipscStart, ampDual, tauRiseTest, ...
-                            tauFallFastTest, tauFallSlowTest, weightDual, ...
-                            'SheetName', [figPathBase, '.csv']);
-    tauEmpirical = siMs .* compute_time_constant(gVecs, 'DecayMethod', 'empirical');
-
-    fig = set_figure_properties('AlwaysNew', true);
-    plot_conductance(tVec, gVecs, colorMap);
-    legend(create_labels_from_numbers(tauEmpirical, 'Prefix', 'tau = '));
-    title('Dual Blockade, all time constant varied');
-    save_all_figtypes(fig, figPathBase, figTypes);
-end
-
-%% Plot as tauFallFastDual and tauFallSlowDual are varied with the same
-%   relative value and weights
-if plotVaryTauFall
-    figPathBase = fullfile(outFolder, 'gababipsc_dual_vary_taufall');
-    scaleFactors = 0.1:0.1:1;
-    tauFallFastTest = tauFallFastDual * scaleFactors;
-    tauFallSlowTest = tauFallSlowDual * scaleFactors;
-    gVecs = compute_gabab_conductance(tVec, ipscStart, ampDual, tauRiseDual, ...
-                                tauFallFastTest, tauFallSlowTest, weightDual, ...
-                                'SheetName', [figPathBase, '.csv']);
-    tauEmpirical = siMs .* compute_time_constant(gVecs, 'DecayMethod', 'empirical');
-
-    fig = set_figure_properties('AlwaysNew', true);
-    plot_conductance(tVec, gVecs, colorMap);
-    legend(create_labels_from_numbers(tauEmpirical, 'Prefix', 'tau = '));
-    title('Dual Blockade, falling time constants varied');
-    save_all_figtypes(fig, figPathBase, figTypes);
-end
-
 %% Plot as tauFallFastDual and tauFallSlowDual are varied
 %   while keeping the area under the curve constant
-if plotVaryShapeOld
+if plotDualVaryShapeOld
     figPathBase = fullfile(outFolder, 'gababipsc_dual_vary_shape_old');
     tauFallFastTest = tauFallFastDual .* 2 .^ (-3:6);
     tauFallSlowInit = tauFallFastTest .* 5;
@@ -211,7 +200,7 @@ end
 %   while keeping the area under the curve constant
 if plotVaryDualtoGAT3
     figPathBase = fullfile(outFolder, 'gababipsc_vary_dual_to_gat3');
-    scaleFactors = -0.8:0.2:1.4;
+    scaleFactors = linspace(-0.8, 1.4, 12);
     ampTest = logscale(ampDual, ampGat3New, scaleFactors);
     tauRiseTest = logscale(tauRiseDual, tauRiseGat3, scaleFactors);
     tauFallFastTest = logscale(tauFallFastDual, tauFallFastGat3, scaleFactors);
@@ -236,6 +225,7 @@ end
 %   while keeping the area under the curve constant
 if plotVaryDualtoGAT3toGAT1
     figPathBase = fullfile(outFolder, 'gababipsc_vary_dual_to_gat3_to_gat1');
+%{
     scalesDualToGat3 = 0:0.2:1;
     ampTest1 = logscale(ampDual, ampGat3New, scalesDualToGat3);
     tauRiseTest1 = logscale(tauRiseDual, tauRiseGat3, scalesDualToGat3);
@@ -260,6 +250,17 @@ if plotVaryDualtoGAT3toGAT1
     tauFallSlowInit = [tauFallSlowInit1, tauFallSlowInit2];
     weightTest = [weightTest1, weightTest2];
     tauFallSlowTest = [tauFallSlowTest1, tauFallSlowTest2];
+%}
+    ampTest = piecelinspace([ampDual, ampGat3New, ampGat1New], 12);
+    tauRiseTest = piecelinspace([tauRiseDual, tauRiseGat3, tauRiseGat1], 12);
+    tauFallFastTest = piecelinspace([tauFallFastDual, tauFallFastGat3, ...
+                                    tauFallFastGat1], 12);
+    tauFallSlowInit = piecelinspace([tauFallSlowDual, tauFallSlowGat3, ...
+                                    tauFallSlowGat1], 12);
+    weightTest = piecelinspace([weightDual, weightGat3, weightGat1], 12);
+    tauFallSlowTest = compute_matching_tauFallSlow(aucDual, tauFallSlowInit, ...
+                                    tVec, ipscStart, ampTest, tauRiseTest, ...
+                                    tauFallFastTest, weightTest);
 
     gVecs = compute_gabab_conductance(tVec, ipscStart, ampTest, tauRiseTest, ...
                             tauFallFastTest, tauFallSlowTest, weightTest, ...
@@ -270,6 +271,99 @@ if plotVaryDualtoGAT3toGAT1
     plot_conductance(tVec, gVecs, colorMap);
     legend(create_labels_from_numbers(tauEmpirical, 'Prefix', 'tau = '));
     title('Transition from Dual to GAT3 to GAT1 blockade, fixed AUC');
+    save_all_figtypes(fig, figPathBase, figTypes);
+end
+
+%% Plot as tauFallFastDual and tauFallSlowDual are varied with the same
+%   relative value and weights
+if plotDualVaryTauFall
+    figPathBase = fullfile(outFolder, 'gababipsc_dual_vary_taufall');
+    scaleFactors = piecelinspace(tauTest, 17) / tauDual;
+    tauFallFastTest = tauFallFastDual * scaleFactors;
+    tauFallSlowTest = tauFallSlowDual * scaleFactors;
+    gVecs = compute_gabab_conductance(tVec, ipscStart, ampDual, tauRiseDual, ...
+                                tauFallFastTest, tauFallSlowTest, weightDual, ...
+                                'SheetName', [figPathBase, '.csv']);
+    tauEmpirical = siMs .* compute_time_constant(gVecs, 'DecayMethod', 'empirical');
+
+    fig = set_figure_properties('AlwaysNew', true);
+    plot_conductance(tVec, gVecs, colorMap);
+    legend(create_labels_from_numbers(tauEmpirical, 'Prefix', 'tau = '));
+    title('Dual Blockade, falling time constants varied');
+    save_all_figtypes(fig, figPathBase, figTypes);
+end
+
+%% Plot Dual blockade GABAB IPSC as all taus are varied with the same
+%   relative value and weights
+if plotDualVaryTau
+    figPathBase = fullfile(outFolder, 'gababipsc_dual_vary_tau');
+    scaleFactors = piecelinspace(tauTest, 17) / tauDual;
+    tauRiseTest = tauRiseDual * scaleFactors;
+    tauFallFastTest = tauFallFastDual * scaleFactors;
+    tauFallSlowTest = tauFallSlowDual * scaleFactors;
+    gVecs = compute_gabab_conductance(tVec, ipscStart, ampDual, tauRiseTest, ...
+                            tauFallFastTest, tauFallSlowTest, weightDual, ...
+                            'SheetName', [figPathBase, '.csv']);
+    tauEmpirical = siMs .* compute_time_constant(gVecs, 'DecayMethod', 'empirical');
+
+    fig = set_figure_properties('AlwaysNew', true);
+    plot_conductance(tVec, gVecs, colorMap);
+    legend(create_labels_from_numbers(tauEmpirical, 'Prefix', 'tau = '));
+    title('Dual Blockade, all time constants varied');
+    save_all_figtypes(fig, figPathBase, figTypes);
+end
+
+%% Plot GAT3 blockade GABAB IPSC as all taus are varied with the same
+%   relative value and weights
+if plotGat3VaryTau
+    figPathBase = fullfile(outFolder, 'gababipsc_gat3_vary_tau');
+    scaleFactors = piecelinspace(tauTest, 17) / tauGat3;
+    tauRiseTest = tauRiseGat3 * scaleFactors;
+    tauFallFastTest = tauFallFastGat3 * scaleFactors;
+    tauFallSlowTest = tauFallSlowGat3 * scaleFactors;
+    gVecs = compute_gabab_conductance(tVec, ipscStart, ampGat3, tauRiseTest, ...
+                            tauFallFastTest, tauFallSlowTest, weightGat3, ...
+                            'SheetName', [figPathBase, '.csv']);
+    tauEmpirical = siMs .* compute_time_constant(gVecs, 'DecayMethod', 'empirical');
+
+    fig = set_figure_properties('AlwaysNew', true);
+    plot_conductance(tVec, gVecs, colorMap);
+    legend(create_labels_from_numbers(tauEmpirical, 'Prefix', 'tau = '));
+    title('Gat3 Blockade, all time constants varied');
+    save_all_figtypes(fig, figPathBase, figTypes);
+end
+
+%% Plot Dual blockade GABAB IPSC as amplitude is varied
+if plotDualVaryAmp
+    figPathBase = fullfile(outFolder, 'gababipsc_dual_vary_amp');
+    scaleFactors = piecelinspace(ampEmpTest / ampEmpDual, 13);
+    ampTest = ampDual .* scaleFactors;
+    gVecs = compute_gabab_conductance(tVec, ipscStart, ampTest, tauRiseDual, ...
+                            tauFallFastDual, tauFallSlowDual, weightDual, ...
+                            'SheetName', [figPathBase, '.csv']);
+    ampEmpirical = max(gVecs);
+
+    fig = set_figure_properties('AlwaysNew', true);
+    plot_conductance(tVec, gVecs, colorMap);
+    legend(create_labels_from_numbers(ampEmpirical, 'Prefix', 'amp = '));
+    title('Dual Blockade, amplitude varied');
+    save_all_figtypes(fig, figPathBase, figTypes);
+end
+
+%% Plot GAT3 blockade GABAB IPSC as amplitude is varied
+if plotGat3VaryAmp
+    figPathBase = fullfile(outFolder, 'gababipsc_gat3_vary_amp');
+    scaleFactors = piecelinspace(ampEmpTest / ampEmpGat3, 13);
+    ampTest = ampGat3 .* scaleFactors;
+    gVecs = compute_gabab_conductance(tVec, ipscStart, ampTest, tauRiseGat3, ...
+                            tauFallFastGat3, tauFallSlowGat3, weightGat3, ...
+                            'SheetName', [figPathBase, '.csv']);
+    ampEmpirical = max(gVecs);
+
+    fig = set_figure_properties('AlwaysNew', true);
+    plot_conductance(tVec, gVecs, colorMap);
+    legend(create_labels_from_numbers(ampEmpirical, 'Prefix', 'amp = '));
+    title('Gat3 Blockade, amplitude varied');
     save_all_figtypes(fig, figPathBase, figTypes);
 end
 

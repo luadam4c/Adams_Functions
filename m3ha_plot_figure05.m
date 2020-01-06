@@ -28,7 +28,7 @@ plotAllComponentCurrents = false; %true;
 plotDend2ITproperties = false; %true;
 plotM2h = false; %true;
 simulateTauhModes = false; %true;
-computeIpscVariation = true;
+computeIpscVariation = false; %true;
 simulateIpscVariation = true;
 
 % Directories
@@ -46,8 +46,11 @@ paramFileSuffix = 'params';
 % exampleCellNames = {'D101310'; 'C101210'};
 exampleCellNames = {'D101310'};
 % exampleCellNames = {'C101210'};
-gababIpscSheetBases = {'gababipsc_vary_dual_to_gat3_to_gat1', ...
+gababIpscSheetBases = {'gababipsc_gat3_vary_amp', ...
+                        'gababipsc_dual_vary_amp', ...
+                        'gababipsc_gat3_vary_tau', ...
                         'gababipsc_dual_vary_tau', ...
+                        'gababipsc_vary_dual_to_gat3_to_gat1', ...
                         'gababipsc_original'};
 
 % Simulation settings

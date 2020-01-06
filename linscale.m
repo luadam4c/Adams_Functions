@@ -1,12 +1,12 @@
-function values = logscale (base, target, scaleFactors, varargin)
-%% Creates scaled values between base and target based on a log scale
-% Usage: values = logscale (base, target, scaleFactors, varargin)
+function values = linscale (base, target, scaleFactors, varargin)
+%% Creates scaled values between base and target based on a linear scale
+% Usage: values = linscale (base, target, scaleFactors, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
-%       logscale(1, 2, -1:5)
-%       logscale(5, 12, 0:0.1:1)
+%       linscale(1, 2, -1:5)
+%       linscale(5, 12, 0:0.1:1)
 %
 % Outputs:
 %       values     - TODO: Description of values
@@ -21,14 +21,12 @@ function values = logscale (base, target, scaleFactors, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
-%       cd/linscale.m
 %
 % Used by:
-%       cd/m3ha_compute_gabab_ipsc.m
+%       cd/logscale.m
 
 % File History:
-% 2020-01-04 Created by Adam Lu
-% TODO for SHINSHIN: Make linscale.m and use it here
+% 2020-01-05 Created by Adam Lu
 
 %% Hard-coded parameters
 
@@ -60,7 +58,7 @@ parse(iP, base, target, scaleFactors, varargin{:});
 % param1 = iP.Results.param1;
 
 %% Do the job
-values = exp(linscale(log(base), log(target), scaleFactors));
+values = base + (target - base) .* scaleFactors;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

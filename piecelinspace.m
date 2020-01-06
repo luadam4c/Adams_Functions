@@ -1,11 +1,16 @@
 function vector = piecelinspace (nodes, nPoints, varargin)
-%% Generates a piece-wise linear row vector from nodes and number of points
+%% Generates a piece-wise linear vector from nodes and number of points
 % Usage: vector = piecelinspace (nodes, nPoints, varargin)
 % Explanation:
 %       TODO
 %
 % Example(s):
 %       piecelinspace([4, 1, 6], 10)
+%       piecelinspace([4; 1; 6], 10)
+%
+% Outputs:    
+%       vector      - vector spanning nodes
+%                   must be a numeric vector
 %
 % Arguments:    
 %       nodes       - nodes that must be included
@@ -14,13 +19,17 @@ function vector = piecelinspace (nodes, nPoints, varargin)
 %                   must be a positive integer scalar
 %
 % Requires:
-%       /home/Matlab/Adams_Functions/distribute_balls_into_boxes.m
+%       cd/distribute_balls_into_boxes.m
+%       cd/force_row_vector.m
 %
 % Used by:
+%       cd/m3ha_compute_gabab_ipsc.m
 %       /media/adamX/m3ha/data_dclamp/CountSweeps.m
 
 % File History:
 %   2018-08-06 - Created by Adam Lu
+%   2020-01-05 - Now returns a column vector if nodes is a column vector
+% TODO: Add 'ForceRowOutput' as an optional argument
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -44,8 +53,16 @@ addRequired(iP, 'nPoints', ...      % total number of points in the vector
 parse(iP, nodes, nPoints, varargin{:});
 
 %% Preparation
+% Save row or column status and force as a row vector
+if iscolumn(nodes)
+    wasColumn = true;
+    nodes = force_row_vector(nodes);
+else
+    wasColumn = false;
+end
+
 % Count the number of nodes
-nNodes = length(nodes);
+nNodes = numel(nodes);
 
 % Make sure the number of points are at least the number of nodes
 if nPoints < nNodes
@@ -86,6 +103,11 @@ vectorWithoutEnd = cat(2, allSegmentsTrimmed{:});
 
 % Add the very last node back
 vector = [vectorWithoutEnd, nodes(end)];
+
+% Force as a column vector
+if wasColumn
+    vector = vector(:);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

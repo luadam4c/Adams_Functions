@@ -31,6 +31,7 @@ function vectors = force_row_vector (vectors, varargin)
 %       cd/extract_columns.m
 %       cd/m3ha_oscillations_analyze.m
 %       cd/m3ha_xolotl_plot.m
+%       cd/piecelinspace.m
 %       cd/plot_histogram.m
 %       cd/plot_tuning_curve.m
 %       cd/run_neuron.m

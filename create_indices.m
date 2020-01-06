@@ -247,9 +247,6 @@ else
     idxEnd = idxEndFromEndPoints;
 end
 
-% Make sure idxStart, idxEnd are column vectors
-[idxStart, idxEnd] = argfun(@force_column_vector, idxStart, idxEnd);
-
 % If one of idxStart and idxEnd is empty, create the other
 if isempty(idxStart) && ~isempty(idxEnd)
     % Start the indices from 1

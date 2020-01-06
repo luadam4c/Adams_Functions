@@ -294,6 +294,7 @@ There are 1 MATLAB scripts in this directory:
 - [**istext.m**](https://github.com/blabuva/Adams_Functions/blob/master/istext.m): Returns whether the input is a character array, a string array or a cell array of character arrays
 - [**istype.m**](https://github.com/blabuva/Adams_Functions/blob/master/istype.m): Check whether a string or each string in a cell array is a valid type specified by validTypes
 - [**is_var_in_table.m**](https://github.com/blabuva/Adams_Functions/blob/master/is_var_in_table.m): Returns whether a variable name is an existing column in a table
+- [**linscale.m**](https://github.com/blabuva/Adams_Functions/blob/master/linscale.m): Creates scaled values between base and target based on a linear scale
 - [**load_examples.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_examples.m): Loads example data structures for testing
 - [**load_matching_sheets.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_matching_sheets.m): Loads spreadsheets with matching strings before given suffixes (incomplete)
 - [**load_neuron_outputs.m**](https://github.com/blabuva/Adams_Functions/blob/master/load_neuron_outputs.m): Loads .out files created by NEURON into a cell array
@@ -303,7 +304,7 @@ There are 1 MATLAB scripts in this directory:
 - [**locate_functionsdir.m**](https://github.com/blabuva/Adams_Functions/blob/master/locate_functionsdir.m): Locate the first shared functions directory that exists
 - [**log_arraytext.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_arraytext.m): Create a text file that logs the array information
 - [**log_matfile.m**](https://github.com/blabuva/Adams_Functions/blob/master/log_matfile.m): Print variables in a MATfile to a comma-separated-value file
-- [**logscale.m**](https://github.com/blabuva/Adams_Functions/blob/master/logscale.m): Creates scaled values between base and target based on the log scale
+- [**logscale.m**](https://github.com/blabuva/Adams_Functions/blob/master/logscale.m): Creates scaled values between base and target based on a log scale
 - [**m3ha_append_lts_properties.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_append_lts_properties.m): Generates vectors of peak features restricted to those with LTS
 - [**m3ha_compare_and_plot_across_conditions.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_and_plot_across_conditions.m): Plot activation/inactivation and I-V curves across conditions
 - [**m3ha_compare_and_plot_across_IC2.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_compare_and_plot_across_IC2.m): Plot activation/inactivation and I-V curves across initial conditions
@@ -466,7 +467,7 @@ There are 1 MATLAB scripts in this directory:
 - [**parse_spike2_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_spike2_mat.m): Parses a Spike2-exported MATLAB file
 - [**parse_stim.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_stim.m): Detects the index and time of stimulation start from pulse vectors
 - [**parse_xolotl_object.m**](https://github.com/blabuva/Adams_Functions/blob/master/parse_xolotl_object.m): Parses a xolotl object
-- [**piecelinspace.m**](https://github.com/blabuva/Adams_Functions/blob/master/piecelinspace.m): Generates a piece-wise linear row vector from nodes and number of points
+- [**piecelinspace.m**](https://github.com/blabuva/Adams_Functions/blob/master/piecelinspace.m): Generates a piece-wise linear vector from nodes and number of points
 - [**play_frames.m**](https://github.com/blabuva/Adams_Functions/blob/master/play_frames.m): TODO: A summary of what the function does (must be a single unbreaked line)
 - [**plot_all_abfs.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_all_abfs.m): Plots all abf files in a directory
 - [**plot_all_GABA_B.m**](https://github.com/blabuva/Adams_Functions/blob/master/plot_all_GABA_B.m): plot_all_GABA_B.m

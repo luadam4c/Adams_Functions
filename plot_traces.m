@@ -50,6 +50,10 @@ function handles = plot_traces (tVecs, data, varargin)
 %                   - 'ReverseOrder': whether to reverse the order of the traces
 %                   must be numeric/logical 1 (true) or 0 (false)
 %                   default == false
+%                   - 'AlreadyRestricted': whether to skip restriction of 
+%                                           vectors to xLimits
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'MinimalLabels': whether to have only the first
 %                                       column and the last row have tick labels
 %                                       for parallel plots
@@ -304,6 +308,7 @@ function handles = plot_traces (tVecs, data, varargin)
 % 2019-11-06 Fixed default color mode for non-'parallel' to 'ByPlot'
 % 2019-11-10 Fixed axes selection under non-'parallel' modes
 % 2019-11-17 Added 'FigSubTitles' as an optional argument
+% 2020-01-05 Added 'AlreadyRestricted' as an optional argument
 % TODO: Add 'TraceNumbers' as an optional argument
 % TODO: dataToCompareColorMap
 % TODO: Number of horizontal bars shouldn't need to match nTraces
@@ -333,6 +338,7 @@ overWriteDefault = true;        % overwrite previous plots by default
 plotOnlyDefault = false;        % setup default labels by default
 autoZoomDefault = false;        % don't zoom in on y axis by default
 reverseOrderDefault = false;    % don't reverse order by default
+alreadyRestrictedDefault = false;   % not already restricted by default
 minimalLabelsDefault = false;   % don't apply parsimonious labels for parallel
                                 %   by default
 plotModeDefault = 'overlapped'; % plot traces overlapped by default
@@ -401,6 +407,8 @@ addParameter(iP, 'PlotOnly', plotOnlyDefault, ...
 addParameter(iP, 'AutoZoom', autoZoomDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'ReverseOrder', reverseOrderDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
+addParameter(iP, 'AlreadyRestricted', alreadyRestrictedDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'MinimalLabels', minimalLabelsDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
@@ -490,6 +498,7 @@ overWrite = iP.Results.OverWrite;
 plotOnly = iP.Results.PlotOnly;
 autoZoom = iP.Results.AutoZoom;
 reverseOrder = iP.Results.ReverseOrder;
+alreadyRestricted = iP.Results.AlreadyRestricted;
 minimalLabels = iP.Results.MinimalLabels;
 plotMode = validatestring(iP.Results.PlotMode, validPlotModes);
 subplotOrder = validatestring(iP.Results.SubplotOrder, validSubplotOrders);
@@ -555,7 +564,7 @@ if ~overWrite && check_fullpath(figName, 'Verbose', verbose)
 end
 
 % Restrict to x limits for faster processing
-if ~isempty(xLimits) && isnumeric(xLimits)
+if ~isempty(xLimits) && isnumeric(xLimits) && ~alreadyRestricted
     % Find the end points
     endPoints = find_window_endpoints(xLimits, tVecs);
 
