@@ -41,17 +41,17 @@ ipscStart = ipscTimeOrig;                                       % (ms)
 figTypes = {'png', 'epsc2'};
 colorMap = [];
 
-plotOriginal = false; %true;
-plotDualVaryWeight = false; %true;
-plotDualVaryShapeOld = false; %true;
-plotVaryDualtoGAT3 = false; %true;
-plotVaryDualtoGAT3toGAT1 = false; %true;
-plotVaryGAT3toGAT1toDual = true;
-plotDualVaryTauFall = false; %true;
-plotDualVaryTau = false; %true;
-plotGat3VaryTau = false; %true;
-plotDualVaryAmp = false; %true;
-plotGat3VaryAmp = false; %true;
+plotOriginal = true;
+plotDualVaryWeight = false;
+plotDualVaryShapeOld = false;
+plotVaryDualtoGAT3 = false;
+plotVaryDualtoGAT3toGAT1 = true;
+plotVaryGAT3toGAT1toDual = false;
+plotDualVaryTauFall = false;
+plotDualVaryTau = true;
+plotGat3VaryTau = true;
+plotDualVaryAmp = true;
+plotGat3VaryAmp = true;
 plotOldFigures = false;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -139,8 +139,13 @@ tauGat3 = tauOrig(3);
 tauDual = tauOrig(4);
 
 %% Decide on the empirical amplitudes and time constants to test
-ampEmpTest = [ampEmpDual/2, ampEmpDual, ampEmpGat1, ampEmpGat3];
+% ampEmpTest = [ampEmpDual/2, ampEmpDual, ampEmpGat1, ampEmpGat3];
+ampEmpTest = [ampEmpDual/2, ampEmpDual, ampEmpGat1, ampEmpGat3, ...
+                ampEmpGat3 * 5/4, ampEmpGat3 * 3/2, ...
+                ampEmpGat3 * 7/4, ampEmpGat3 * 2];
+nAmpsToTest = numel(ampEmpTest) + (numel(ampEmpTest) - 1) * 3;
 tauTest = [tauGat1/2, tauGat1, tauGat3, (tauGat3 + tauDual)/2, tauDual];
+nTausToTest = numel(tauTest) + (numel(tauTest) - 1) * 3;
 
 %% Plot original GABAB IPSC conductances from Christine's thesis & old network model
 if plotOriginal
@@ -280,7 +285,7 @@ end
 %   relative value and weights
 if plotDualVaryTauFall
     figPathBase = fullfile(outFolder, 'gababipsc_dual_vary_taufall');
-    scaleFactors = piecelinspace(tauTest, 17) / tauDual;
+    scaleFactors = piecelinspace(tauTest, nTausToTest) / tauDual;
     tauFallFastTest = tauFallFastDual * scaleFactors;
     tauFallSlowTest = tauFallSlowDual * scaleFactors;
     gVecs = compute_gabab_conductance(tVec, ipscStart, ampDual, tauRiseDual, ...
@@ -299,7 +304,7 @@ end
 %   relative value and weights
 if plotDualVaryTau
     figPathBase = fullfile(outFolder, 'gababipsc_dual_vary_tau');
-    scaleFactors = piecelinspace(tauTest, 17) / tauDual;
+    scaleFactors = piecelinspace(tauTest, nTausToTest) / tauDual;
     tauRiseTest = tauRiseDual * scaleFactors;
     tauFallFastTest = tauFallFastDual * scaleFactors;
     tauFallSlowTest = tauFallSlowDual * scaleFactors;
@@ -319,7 +324,7 @@ end
 %   relative value and weights
 if plotGat3VaryTau
     figPathBase = fullfile(outFolder, 'gababipsc_gat3_vary_tau');
-    scaleFactors = piecelinspace(tauTest, 17) / tauGat3;
+    scaleFactors = piecelinspace(tauTest, nTausToTest) / tauGat3;
     tauRiseTest = tauRiseGat3 * scaleFactors;
     tauFallFastTest = tauFallFastGat3 * scaleFactors;
     tauFallSlowTest = tauFallSlowGat3 * scaleFactors;
@@ -338,7 +343,7 @@ end
 %% Plot Dual blockade GABAB IPSC as amplitude is varied
 if plotDualVaryAmp
     figPathBase = fullfile(outFolder, 'gababipsc_dual_vary_amp');
-    scaleFactors = piecelinspace(ampEmpTest / ampEmpDual, 13);
+    scaleFactors = piecelinspace(ampEmpTest / ampEmpDual, nAmpsToTest);
     ampTest = ampDual .* scaleFactors;
     gVecs = compute_gabab_conductance(tVec, ipscStart, ampTest, tauRiseDual, ...
                             tauFallFastDual, tauFallSlowDual, weightDual, ...
@@ -355,7 +360,7 @@ end
 %% Plot GAT3 blockade GABAB IPSC as amplitude is varied
 if plotGat3VaryAmp
     figPathBase = fullfile(outFolder, 'gababipsc_gat3_vary_amp');
-    scaleFactors = piecelinspace(ampEmpTest / ampEmpGat3, 13);
+    scaleFactors = piecelinspace(ampEmpTest / ampEmpGat3, nAmpsToTest);
     ampTest = ampGat3 .* scaleFactors;
     gVecs = compute_gabab_conductance(tVec, ipscStart, ampTest, tauRiseGat3, ...
                             tauFallFastGat3, tauFallSlowGat3, weightGat3, ...
