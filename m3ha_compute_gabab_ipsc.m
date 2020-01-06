@@ -46,7 +46,8 @@ plotDualVaryWeight = false; %true;
 plotDualVaryShapeOld = false; %true;
 plotVaryDualtoGAT3 = false; %true;
 plotVaryDualtoGAT3toGAT1 = false; %true;
-plotDualVaryTauFall = true;
+plotVaryGAT3toGAT1toDual = true;
+plotDualVaryTauFall = false; %true;
 plotDualVaryTau = false; %true;
 plotGat3VaryTau = false; %true;
 plotDualVaryAmp = false; %true;
@@ -225,32 +226,6 @@ end
 %   while keeping the area under the curve constant
 if plotVaryDualtoGAT3toGAT1
     figPathBase = fullfile(outFolder, 'gababipsc_vary_dual_to_gat3_to_gat1');
-%{
-    scalesDualToGat3 = 0:0.2:1;
-    ampTest1 = logscale(ampDual, ampGat3New, scalesDualToGat3);
-    tauRiseTest1 = logscale(tauRiseDual, tauRiseGat3, scalesDualToGat3);
-    tauFallFastTest1 = logscale(tauFallFastDual, tauFallFastGat3, scalesDualToGat3);
-    tauFallSlowInit1 = logscale(tauFallSlowDual, tauFallSlowGat3, scalesDualToGat3);
-    weightTest1 = logscale(weightDual, weightGat3, scalesDualToGat3);
-    tauFallSlowTest1 = compute_matching_tauFallSlow(aucDual, tauFallSlowInit1, ...
-                                    tVec, ipscStart, ampTest1, tauRiseTest1, ...
-                                    tauFallFastTest1, weightTest1);
-    scalesGat3ToGat1 = 0.2:0.2:1;
-    ampTest2 = logscale(ampGat3New, ampGat1New, scalesGat3ToGat1);
-    tauRiseTest2 = logscale(tauRiseGat3, tauRiseGat1, scalesGat3ToGat1);
-    tauFallFastTest2 = logscale(tauFallFastGat3, tauFallFastGat1, scalesGat3ToGat1);
-    tauFallSlowInit2 = logscale(tauFallSlowGat3, tauFallSlowGat1, scalesGat3ToGat1);
-    weightTest2 = logscale(weightGat3, weightGat1, scalesGat3ToGat1);
-    tauFallSlowTest2 = compute_matching_tauFallSlow(aucDual, tauFallSlowInit2, ...
-                                    tVec, ipscStart, ampTest2, tauRiseTest2, ...
-                                    tauFallFastTest2, weightTest2);
-    ampTest = [ampTest1, ampTest2];
-    tauRiseTest = [tauRiseTest1, tauRiseTest2];
-    tauFallFastTest = [tauFallFastTest1, tauFallFastTest2];
-    tauFallSlowInit = [tauFallSlowInit1, tauFallSlowInit2];
-    weightTest = [weightTest1, weightTest2];
-    tauFallSlowTest = [tauFallSlowTest1, tauFallSlowTest2];
-%}
     ampTest = piecelinspace([ampDual, ampGat3New, ampGat1New], 12);
     tauRiseTest = piecelinspace([tauRiseDual, tauRiseGat3, tauRiseGat1], 12);
     tauFallFastTest = piecelinspace([tauFallFastDual, tauFallFastGat3, ...
@@ -271,6 +246,33 @@ if plotVaryDualtoGAT3toGAT1
     plot_conductance(tVec, gVecs, colorMap);
     legend(create_labels_from_numbers(tauEmpirical, 'Prefix', 'tau = '));
     title('Transition from Dual to GAT3 to GAT1 blockade, fixed AUC');
+    save_all_figtypes(fig, figPathBase, figTypes);
+end
+
+%% Plot as all parameters are varied between GAT3 -> GAT1 -> Dual shapes
+%   while keeping the area under the curve constant
+if plotVaryGAT3toGAT1toDual
+    figPathBase = fullfile(outFolder, 'gababipsc_vary_gat3_to_gat1_to_dual');
+    ampTest = piecelinspace([ampGat3New, ampGat1New, ampDual], 12);
+    tauRiseTest = piecelinspace([tauRiseGat3, tauRiseGat1, tauRiseDual], 12);
+    tauFallFastTest = piecelinspace([tauFallFastGat3, tauFallFastGat1, ...
+                                        tauFallFastDual], 12);
+    tauFallSlowInit = piecelinspace([tauFallSlowGat3, tauFallSlowGat1, ...
+                                        tauFallSlowDual], 12);
+    weightTest = piecelinspace([weightGat3, weightGat1, weightDual], 12);
+    tauFallSlowTest = compute_matching_tauFallSlow(aucDual, tauFallSlowInit, ...
+                                    tVec, ipscStart, ampTest, tauRiseTest, ...
+                                    tauFallFastTest, weightTest);
+
+    gVecs = compute_gabab_conductance(tVec, ipscStart, ampTest, tauRiseTest, ...
+                            tauFallFastTest, tauFallSlowTest, weightTest, ...
+                            'SheetName', [figPathBase, '.csv']);
+    tauEmpirical = siMs .* compute_time_constant(gVecs, 'DecayMethod', 'empirical');
+
+    fig = set_figure_properties('AlwaysNew', true);
+    plot_conductance(tVec, gVecs, colorMap);
+    legend(create_labels_from_numbers(tauEmpirical, 'Prefix', 'tau = '));
+    title('Transition from GAT3 to GAT1 to Dual blockade, fixed AUC');
     save_all_figtypes(fig, figPathBase, figTypes);
 end
 
@@ -565,6 +567,31 @@ OLD CODE:
 % Count the maximum number of conditions
 nConds = max([numel(tauFallSlowInit), numel(ipscStart), numel(amp), ...
                 numel(tauRise), numel(tauFallFast), numel(weight)]);
+
+scalesDualToGat3 = 0:0.2:1;
+ampTest1 = logscale(ampDual, ampGat3New, scalesDualToGat3);
+tauRiseTest1 = logscale(tauRiseDual, tauRiseGat3, scalesDualToGat3);
+tauFallFastTest1 = logscale(tauFallFastDual, tauFallFastGat3, scalesDualToGat3);
+tauFallSlowInit1 = logscale(tauFallSlowDual, tauFallSlowGat3, scalesDualToGat3);
+weightTest1 = logscale(weightDual, weightGat3, scalesDualToGat3);
+tauFallSlowTest1 = compute_matching_tauFallSlow(aucDual, tauFallSlowInit1, ...
+                                tVec, ipscStart, ampTest1, tauRiseTest1, ...
+                                tauFallFastTest1, weightTest1);
+scalesGat3ToGat1 = 0.2:0.2:1;
+ampTest2 = logscale(ampGat3New, ampGat1New, scalesGat3ToGat1);
+tauRiseTest2 = logscale(tauRiseGat3, tauRiseGat1, scalesGat3ToGat1);
+tauFallFastTest2 = logscale(tauFallFastGat3, tauFallFastGat1, scalesGat3ToGat1);
+tauFallSlowInit2 = logscale(tauFallSlowGat3, tauFallSlowGat1, scalesGat3ToGat1);
+weightTest2 = logscale(weightGat3, weightGat1, scalesGat3ToGat1);
+tauFallSlowTest2 = compute_matching_tauFallSlow(aucDual, tauFallSlowInit2, ...
+                                tVec, ipscStart, ampTest2, tauRiseTest2, ...
+                                tauFallFastTest2, weightTest2);
+ampTest = [ampTest1, ampTest2];
+tauRiseTest = [tauRiseTest1, tauRiseTest2];
+tauFallFastTest = [tauFallFastTest1, tauFallFastTest2];
+tauFallSlowInit = [tauFallSlowInit1, tauFallSlowInit2];
+weightTest = [weightTest1, weightTest2];
+tauFallSlowTest = [tauFallSlowTest1, tauFallSlowTest2];
 
 %}
 

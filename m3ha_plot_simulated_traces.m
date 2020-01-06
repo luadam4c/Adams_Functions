@@ -451,7 +451,7 @@ function nRows = decide_on_nrows(nFiles, simMode, maxRowsWithOneOnly)
 %% Decide on the number of rows
 
 % Decide on the number of rows
-if mod(nFiles, 4) == 0 && strcmp(simMode, 'active')
+if nFiles > 1 && strcmp(simMode, 'active')
     nRows = 4;
 elseif nFiles <= 3 && strcmp(simMode, 'passive')
     nRows = 3;
@@ -978,7 +978,9 @@ handlesSteadyState = ...
                 'Verbose', false, 'PlotMode', 'overlapped', ...
                 'ColorMap', colorMap, 'XLimits', xLimits, otherArguments);
 
-set(gca, 'YLim', [1e-6, 1]);
+% set(gca, 'YLim', [1e-6, 1]);
+
+% Set the y axis to be log-scaled
 set(gca, 'YScale', 'log');
 
 handles.handlesInstantaneous = handlesInstantaneous;
