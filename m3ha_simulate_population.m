@@ -60,10 +60,10 @@
 %% Hard-coded parameters
 % Flags
 chooseBestNeuronsFlag = false; %true;
-simulateFlag = false; %true;
-combineFeatureTablesFlag = false; %true;
-computeOpenProbabilityFlag = false; %true;
-plotOpenProbabilityFlag = false; %true;
+simulateFlag = true;
+combineFeatureTablesFlag = true;
+computeOpenProbabilityFlag = true;
+plotOpenProbabilityFlag = true;
 plotViolinPlotsFlag = true;
 plotBarPlotsFlag = true;
 
@@ -158,6 +158,7 @@ figTypes = {'png', 'epsc2'};
 % rankNumsToUse = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
 rankDirName = '20200103_ranked_singleneuronfitting0-94';
 rankNumsToUse = 1:11;
+% TODO: Simulate up to 5000 ms only
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1

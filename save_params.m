@@ -3,8 +3,10 @@ function varargout = save_params (paramsTable, varargin)
 % Usage: fullPath = save_params (paramsTable, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       fullPath    - full path to file
 %                   must be a string scalar or a character vector
@@ -27,6 +29,7 @@ function varargout = save_params (paramsTable, varargin)
 %       cd/m3ha_fminsearch3.m
 %       cd/m3ha_log_errors_params.m
 %       cd/m3ha_network_launch.m
+%       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_neuron_create_initial_params.m
 %       cd/m3ha_pfiles2csv.m
 

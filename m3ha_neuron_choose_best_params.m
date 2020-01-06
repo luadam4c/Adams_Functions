@@ -81,6 +81,7 @@ function [bestParamsTable, bestParamsLabel, errorTable] = ...
 %       cd/plot_bar.m
 %       cd/plot_table_parallel.m
 %       cd/save_all_figtypes.m
+%       cd/save_params.m
 %       cd/set_fields_zero.m
 %
 % Used by:

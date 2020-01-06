@@ -10,6 +10,7 @@ function m3ha_network_launch(nCells, useHH, candidateIDs)
 %       cd/create_looped_params.m
 %       cd/create_time_stamp.m
 %       cd/find_in_strings.m
+%       cd/find_matching_files.m
 %       cd/load_params.m
 %       cd/m3ha_locate_homedir.m
 %       cd/m3ha_network_change_params.m
@@ -51,6 +52,8 @@ function m3ha_network_launch(nCells, useHH, candidateIDs)
 % 2019-11-04 Updated for m3ha_network_loop_launch_20191104.m
 % 2019-11-08 Fixed RERErad, TCRErad, RETCrad
 % 2019-11-18 Added modifications for running on Windows
+% 2020-01-06 Fixed bug for using new parameters
+% 2020-01-06 Changed the action potential threshold from 0 to -30 mV
 % TODO: Plot gAMPA and gGABA instead of the i's for synaptic event monitoring
 % TODO: Make the network circular to lose edge effects
 % TODO: Perform simulations to generate a linear model
@@ -425,7 +428,8 @@ elseif nCells == 1
 else
     error('nCells unrecognized!');
 end
-spThr = 0;     % action potential threshold (mV)
+% spThr = 0;     % action potential threshold (mV)
+spThr = -30;     % action potential threshold (mV)
 synDel = 1;    % synaptic delay (ms)
 synWeight = 1;      % synaptic weight (fraction of channels activated)
                 %     for simplicity assume channels are always activated and that 
@@ -846,14 +850,18 @@ templateIDsUsed = candidateIDs(randi(nCandidates, nCells, 1));
 % Select templates for each TC neuron
 templateNamesUsed = templateNames(templateIDsUsed);
 
-% Create template file names
-templateFileNames = strcat('bestparams_', templateNamesUsed, '.csv');
-
 % Create full paths to the template files
-templatePaths = fullfile(paramsDirectory, templateFileNames);
+[~, templatePaths] = find_matching_files(templateNamesUsed, ...
+                                    'Directory', paramsDirectory);
 
 % Import NEURON parameters
 TCparamTables = load_params(templatePaths);
+
+% Test if any parameters table is missing
+if any(isemptycell(TCparamTables))
+    disp('Some parameter tables are missing!');
+    return
+end
 
 % Create paths to NEURON parameter tables
 TCparamFileNames = create_labels_from_numbers(TCcellID, 'Prefix', 'Cell', ...
@@ -887,6 +895,11 @@ end
 % Create parameters from old parameters
 if ~exist('TCdiamDend', 'var') 
     TCdiamDend = TCdiamDendToSoma .* TCdiamSoma;
+end
+
+% Create obsolete parameters for new parameters
+if ~exist('TCdistDendPercent', 'var')
+    TCdistDendPercent = 50 * ones(size(TCdiamSoma));
 end
 
 %% Build simulation commands to be read by NEURON through the here-document
@@ -1186,6 +1199,9 @@ simParamNames = paramsTable.Properties.RowNames;
 paramsOut = m3ha_network_change_params(pchname, pchvalue, ...
                     simParamNames, paramsIn, 'ExperimentName', experimentName);
 paramsTable{:, 'Value'} = paramsOut;
+
+% Create template file names
+templateFileNames = strcat('bestparams_', templateNamesUsed, '.csv');
 
 %}
 

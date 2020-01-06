@@ -52,6 +52,7 @@ function varargout = find_matching_files (fileStrs, varargin)
 % Used by:
 %       cd/create_pleth_EEG_movies.m
 %       cd/load_matching_sheets.m
+%       cd/m3ha_network_launch.m
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_plot_figure04.m
 %       cd/m3ha_plot_figure05.m

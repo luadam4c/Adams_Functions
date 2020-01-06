@@ -103,6 +103,7 @@ function [spikesParams, spikesData] = detect_spikes_multiunit (vVec, siMs, varar
 % 2019-05-14 Added 'MaxDelayMs' as an optional argument
 % 2019-05-30 Changed signal-to-noise default to be dependent on maximum slope
 % 2019-07-22 Added maxRangeOfInterestMs and fixed MaxDelayMs
+% 2020-01-06 MB - Now saves tVec in spikesData
 % TODO: Detect stimulation start by default
 % TODO: Finish documentation
 % 
@@ -337,6 +338,7 @@ spikesParams.slopeMax = slopeMax;
 spikesParams.slopeRange = slopeRange;
 
 spikesData.vVecFilt = vVecFilt;
+spikesData.tVec = tVec;
 spikesData.slopes = slopes;
 spikesData.isPeakSlope = isPeakSlope;
 spikesData.isSpike = isSpike;

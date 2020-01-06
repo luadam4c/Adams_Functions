@@ -158,6 +158,9 @@ cellNameStr = 'cellName';
 % rankNumsToPlot = [1:6, 8, 10, 11, 13:18, 21, 22, 24, 27, 28, 36];
 % rankNumsToPlot = [1:6, 8:12, 13:18, 21, 22, 24, 26:32, 34, 36];
 
+% outFolder = '20200103_ranked_singleneuronfitting0-94';
+% rankNumsToPlot = 1:11;
+
 outFolder = '';
 figTypes = {'png', 'epsc2'};
 rankNumsToPlot = 1:10;
@@ -184,8 +187,6 @@ paramDirNames = fullfile('best_params', ...
                         'bestparams_20191230_singleneuronfitting92', ...
                         'bestparams_20191231_singleneuronfitting93', ...
                         'bestparams_20191231_singleneuronfitting94'});
-rankNumsToPlot = 1:11;
-outFolder = '20200103_ranked_singleneuronfitting0-94';
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
