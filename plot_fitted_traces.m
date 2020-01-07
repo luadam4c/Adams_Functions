@@ -148,6 +148,7 @@ function handles = plot_fitted_traces (tVecs, data, varargin)
 %
 % Used by:    
 %       cd/m3ha_neuron_run_and_analyze.m
+%       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_xolotl_plot.m
 
 % File History:
@@ -164,7 +165,6 @@ function handles = plot_fitted_traces (tVecs, data, varargin)
 % 2019-10-17 Now defaults autoUpdateYLimits to false
 % 2019-11-28 Added 'FigTypes' as an optional parameter
 % 2019-12-22 Renamed function to plot_fitted_traces
-% 
 
 %% Hard-coded parameters
 validPlotModes = {'overlapped', 'parallel', 'residuals'};
@@ -438,6 +438,12 @@ else
     endPointsToPlot = find_window_endpoints([], tVecs);
 end
 
+% Create figure if not already done so
+if isempty(figHandle)
+    figHandle = set_figure_properties('FigNumber', figNumber, ...
+                                        'AlwaysNew', true);
+end
+
 % Plot traces
 handles = plot_traces(tVecs, data, 'DataToCompare', dataToCompare, ...
             'LineStyleToCompare', lineStyleToCompare, ...
@@ -446,8 +452,7 @@ handles = plot_traces(tVecs, data, 'DataToCompare', dataToCompare, ...
             'XUnits', xUnits, 'XLabel', xLabel, 'YLabel', yLabel, ...
             'LegendLocation', 'suppress', ...
             'PlotMode', plotModeTraces, 'LinkAxesOption', linkAxesOption, ...
-            'FigHandle', figHandle, 'FigNumber', figNumber, ...
-            otherArguments);
+            'FigHandle', figHandle, otherArguments);
 fig = handles.fig;
 subPlots = handles.subPlots;
 plotsData = handles.plotsData;

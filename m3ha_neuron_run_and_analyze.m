@@ -487,6 +487,8 @@ function [errorStruct, hFig, simData] = ...
 % 2020-01-02 - Added 'tauhMode'
 % 2020-01-05 - Added 'noRealDataFlag' as an optional argument
 % 2020-01-05 - Fixed the determination of nSweeps when no realData is passed in
+% 2020-01-06 - Now makes the individual plot figure size proportional to the 
+%               number of rows and columns
 
 %% Hard-coded parameters
 validBuildModes = {'active', 'passive'};
@@ -1227,6 +1229,8 @@ if nSweeps > nRows
     nSlots = nColumns * nRows;
     colorMapParallel = reshape(repmat(reshape(colorMapParallel, 1, []), ...
                         nColumns, 1), nSlots, 3);
+else
+    nColumns = 1;
 end
 
 % Print to standard output
@@ -1710,10 +1714,14 @@ if plotIndividualFlag
         linkAxesOption = 'xy';
     end
 
+    % Decide on the figure width and height
+    figExpansion = [nColumns / 3, nRows / 4];
+
     % Plot the individual traces
-    figHandle = set_figure_properties('ClearFigure', true, ...
-                    'Visible', visibleStatus, ...
+    figHandle = set_figure_properties('Visible', visibleStatus, ...
+                    'AlwaysNew', true, ...
                     'FigNumber', figNumberIndividual, ...
+                    'FigExpansion', figExpansion, ...
                     'Name', 'All traces');
     hFig.individual = ...
         plot_fitted_traces(tVecs, vVecsSim, 'MinimalLabels', true, ...

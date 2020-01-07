@@ -85,6 +85,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/all_files.m
 %       cd/argfun.m
 %       cd/construct_fullpath.m
+%       cd/count_vectors.m
 %       cd/decide_on_colormap.m
 %       cd/extract_columns.m
 %       cd/extract_common_prefix.m
@@ -93,6 +94,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/m3ha_extract_sweep_name.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_plot_figure05.m
+%       cd/plot_fitted_traces.m
 %       cd/plot_traces.m
 %       cd/read_lines_from_file.m
 %       cd/set_default_flag.m
@@ -107,6 +109,8 @@ function handles = m3ha_plot_simulated_traces (varargin)
 % 2019-12-29 Added 'allVoltages', 'allTotalCurrents', 'allITproperties', 
 %               and 'dend2ITproperties' 
 % 2019-12-29 Reordered simulated ouptut columns to include ipas
+% 2020-01-06 - Now makes the individual plot figure size proportional to the 
+%               number of rows and columns
 
 %% Hard-coded parameters
 validPlotTypes = {'individual', 'residual', 'overlapped', ...
@@ -508,6 +512,17 @@ endPointsForPlots = find_window_endpoints(xLimits, tVecs);
 % Print to standard output
 fprintf('Plotting figure of individual voltage traces for %s ...\n', expStr);
 
+% Decide on the figure width and height
+nSweeps = count_vectors(vVecsSim);
+nRows = 4;
+nColumns = ceil(nSweeps / nRows);
+figExpansion = [nColumns / 3, nRows / 4];
+
+% Plot the individual traces
+figHandle = set_figure_properties('Visible', visibleStatus, ...
+                'AlwaysNew', true, 'FigExpansion', figExpansion, ...
+                'Name', 'All traces');
+
 % Plot the individual traces
 handles = plot_fitted_traces(tVecs, vVecsSim, 'ToAnnotate', false, ...
             'DataToCompare', vVecsRec, 'PlotMode', 'parallel', ...
@@ -515,7 +530,7 @@ handles = plot_fitted_traces(tVecs, vVecsSim, 'ToAnnotate', false, ...
             'ColorMap', colorMap, 'XLimits', xLimits, ...
             'LineWidth', lineWidth, 'LinkAxesOption', linkAxesOption, ...
             'FigTitle', figTitle, 'PlotSwpWeightsFlag', plotSwpWeightsFlag, ...
-            otherArguments);
+            'FigHandle', figHandle, otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -547,6 +562,17 @@ endPointsForPlots = find_window_endpoints(xLimits, tVecs);
 % Print to standard output
 fprintf('Plotting figure of residual traces for %s ...\n', expStr);
 
+% Decide on the figure width and height
+nSweeps = count_vectors(residuals);
+nRows = 4;
+nColumns = ceil(nSweeps / nRows);
+figExpansion = [nColumns / 3, nRows / 4];
+
+% Plot the individual traces
+figHandle = set_figure_properties('Visible', visibleStatus, ...
+                'AlwaysNew', true, 'FigExpansion', figExpansion, ...
+                'Name', 'All traces');
+
 % Plot the individual traces
 handles = plot_fitted_traces(tVecs, residuals, 'ToAnnotate', false, ...
             'PlotMode', 'residuals', ...
@@ -554,7 +580,7 @@ handles = plot_fitted_traces(tVecs, residuals, 'ToAnnotate', false, ...
             'ColorMap', colorMap, 'XLimits', xLimits, ...
             'LineWidth', lineWidth, 'LinkAxesOption', 'xy', ...
             'FigTitle', figTitle, 'PlotSwpWeightsFlag', plotSwpWeightsFlag, ...
-            otherArguments);
+            'FigHandle', figHandle, otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

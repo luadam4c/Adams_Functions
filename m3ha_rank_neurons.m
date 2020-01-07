@@ -51,16 +51,16 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = false; %true;
-plotErrorHistoryFlag = false; %true;
-plotErrorComparisonFlag = false; %true;
-plotParamHistoryFlag = false; %true;
-plotIndividualFlag = false; %true;
-rankNeuronsFlag = false; %true;
-plotHistogramsFlag = false; %true;
-plotBarPlotFlag = false; %true;
-plotParamViolinsFlag = false; %true;
-plotErrorParamComparisonFlag = false; %true;
+chooseBestParamsFlag = true;
+plotErrorHistoryFlag = true;
+plotErrorComparisonFlag = true;
+plotParamHistoryFlag = true;
+plotIndividualFlag = true;
+rankNeuronsFlag = true;
+plotHistogramsFlag = true;
+plotBarPlotFlag = true;
+plotParamViolinsFlag = true;
+plotErrorParamComparisonFlag = true;
 
 % Fitting parameters 
 %   Note: Must be consistent with singleneuronfitting91.m
@@ -162,6 +162,7 @@ cellNameStr = 'cellName';
 % rankNumsToPlot = 1:11;
 
 outFolder = '';
+outFolder = '20200106_ranked_singleneuronfitting0-95';
 figTypes = {'png', 'epsc2'};
 rankNumsToPlot = 1:11;
 errorParamXTicks = 6:6:36;
