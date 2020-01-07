@@ -54,6 +54,7 @@ function m3ha_network_launch(nCells, useHH, candidateIDs)
 % 2019-11-18 Added modifications for running on Windows
 % 2020-01-06 Fixed bug for using new parameters
 % 2020-01-06 Changed the action potential threshold from 0 to -30 mV
+% 2020-01-07 Added simMode, etc. to fileSuffix
 % TODO: Plot gAMPA and gGABA instead of the i's for synaptic event monitoring
 % TODO: Make the network circular to lose edge effects
 % TODO: Perform simulations to generate a linear model
@@ -72,9 +73,6 @@ function m3ha_network_launch(nCells, useHH, candidateIDs)
 
 %% Experiment Name
 experimentName = 'm3ha';
-% experimentSuffix = 'stimstart_3000';
-experimentSuffix = ['ncells_', num2str(nCells), '_useHH_', num2str(useHH), ...
-            '_templateIDs_', strjoin(strsplit(num2str(candidateIDs)), ',')];
 
 %% Hard-coded parameters
 homeDirName = 'network_model';
@@ -111,9 +109,10 @@ end
 % savePlotMode = 'spikes';
 
 %% Simulation modes
-simMode = 1;    % 1 - full simulation
+simMode = 4;    % 1 - full simulation
                 % 2 - short simulation
                 % 3 - medium simulation
+                % 4 - no TC -> RT
 
 %% Activation modes
 % 1 - Activate a single RE cell by injecting a train of current pulses
@@ -180,6 +179,7 @@ templateNames = {'D091710'; 'E091710'; 'B091810'; 'D091810'; ...
 %candidateIDs = 3;                  % 'B091810'
 
 %candidateIDs = 32;                 % 'D101310'
+
 
 %% hoc file names
 switch nCells
@@ -286,6 +286,13 @@ end
 
 % Code not fixed yet
 plotTuning = 0;
+
+% Decide on the file label suffix
+% fileSuffix = 'stimstart_3000';
+fileSuffix = ['ncells_', num2str(nCells), '_useHH_', num2str(useHH), ...
+            '_templateIDs_', create_label_from_sequence(candidateIDs), ...
+            '_simMode_', num2str(simMode), '_actMode_', num2str(actMode), ...
+            '_', savePlotMode];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -653,7 +660,7 @@ if nCandidates > 1
 else
     templateLabel = templateNames{candidateIDs(1)};
 end
-fileLabel = [timeStamp, '_', templateLabel, '_', experimentSuffix];
+fileLabel = [timeStamp, '_', templateLabel, '_', fileSuffix];
 outFolder = fullfile(homeDirectory, fileLabel);     
 check_dir(outFolder);
 

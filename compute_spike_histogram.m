@@ -70,11 +70,10 @@ function [histParams, histData] = compute_spike_histogram (spikeTimesMs, varargi
 %                   must be a positive scalar
 %                   default == 20 ms
 %                   - 'MaxFirstInterBurstIntervalMs': maximum inter-burst interval (ms)
-%                                                   between the first two bursts
+%                               between stimulation start and the first burst
 %                   must be a positive scalar
 %                   default == 2000 ms
 %                   - 'MaxInterBurstIntervalMs': maximum inter-burst interval (ms)
-%                                                   after the second burst
 %                   must be a positive scalar
 %                   default == 1000 ms
 %                   - 'MinSpikeRateInBurstHz': minimum spike rate in a burst (Hz)
@@ -109,8 +108,8 @@ stimStartMsDefault = 0;             % stimulation start is at 0 ms by default
 binWidthMsDefault = 10;             % use a bin width of 10 ms by default
 minBurstLengthMsDefault = 20;       % bursts must be at least 20 ms by default
 maxFirstInterBurstIntervalMsDefault = 2000;
-                                    % first two bursts are no more than 
-                                    %   2 seconds apart by default
+                                    % first burst is not more than 2 seconds 
+                                    %   after stimulation start by default
 maxInterBurstIntervalMsDefault = 1000;  % subsequent bursts are no more than 
                                         %   1 second apart by default
 minSpikeRateInBurstHzDefault = 100; % bursts must have a spike rate of 
@@ -233,7 +232,8 @@ slidingWinSec = minBinsInBurst * binWidthSec;
 % Compute the minimum number of spikes per sliding window if in a burst
 minSpikesPerWindowInBurst = ceil(minSpikeRateInBurstHz * slidingWinSec);
 
-% Compute the maximum number of bins between the first two consecutive bursts
+% Compute the maximum number of bins between the stimulation start 
+%   and the first burst
 maxFirstIbiBins = floor(maxFirstInterBurstIntervalMs ./ binWidthMs);
 
 % Compute the maximum number of bins between subsequent consecutive bursts
