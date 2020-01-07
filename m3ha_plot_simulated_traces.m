@@ -923,7 +923,7 @@ else
                 indToPlot = [IDX_VREC, indToPlot];
             end
         case 'essential'
-            indToPlot = [IDX_VSOMA, IDX_GGABAB, IDX_ISTIM, IDX_ITA, ...
+            indToPlot = [IDX_VSOMA, IDX_GGABAB, IDX_ISTIM, IDX_IT, ...
                             IDX_M2H_DEND2, IDX_MINF2HINF_DEND2];
             if ~isempty(vVecsRec)
                 indToPlot = [IDX_VREC, indToPlot];

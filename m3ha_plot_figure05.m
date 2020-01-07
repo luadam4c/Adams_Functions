@@ -20,17 +20,17 @@
 
 %% Hard-coded parameters
 % Flags
-updateScripts = true;
-simulateIpscr = true;
-simulateTauhModes = true;
-computeIpscVariation = true;
-simulateIpscVariation = true;
+updateScripts = false; %true;
+simulateIpscr = false; %true;
+simulateTauhModes = false; %true;
+computeIpscVariation = false; %true;
+simulateIpscVariation = false; %true;
 plotEssential = true;
-plotAllVoltages = true;
-plotAllTotalCurrents = true;
-plotAllComponentCurrents = true;
-plotDend2ITproperties = true;
-plotM2h = true;
+plotAllVoltages = false; %true;
+plotAllTotalCurrents = false; %true;
+plotAllComponentCurrents = false; %true;
+plotDend2ITproperties = false; %true;
+plotM2h = false; %true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
