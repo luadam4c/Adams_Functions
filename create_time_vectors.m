@@ -65,6 +65,7 @@ function timeVecs = create_time_vectors (nSamples, varargin)
 %       cd/create_average_time_vector.m
 %       cd/create_pleth_EEG_movies.m
 %       cd/create_synced_movie_trace_plot_movie.m
+%       cd/detect_spikes_multiunit.m
 %       cd/find_pulse_response_endpoints.m
 %       cd/m3ha_import_raw_traces.m
 %       cd/m3ha_xolotl_plot.m

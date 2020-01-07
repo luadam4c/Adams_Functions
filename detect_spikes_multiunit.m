@@ -90,6 +90,7 @@ function [spikesParams, spikesData] = detect_spikes_multiunit (vVec, siMs, varar
 % Requires:
 %       cd/compute_baseline_noise.m
 %       cd/create_error_for_nargin.m
+%       cd/create_time_vectors.m
 %       cd/create_logical_array.m
 %
 % Used by:
@@ -104,6 +105,7 @@ function [spikesParams, spikesData] = detect_spikes_multiunit (vVec, siMs, varar
 % 2019-05-30 Changed signal-to-noise default to be dependent on maximum slope
 % 2019-07-22 Added maxRangeOfInterestMs and fixed MaxDelayMs
 % 2020-01-06 MB - Now saves tVec in spikesData
+% 2020-01-07 Fixed usage of create_time_vectors.m
 % TODO: Detect stimulation start by default
 % TODO: Finish documentation
 % 
@@ -189,7 +191,8 @@ if isempty(tVec)
     nSamples = count_samples(vVec);
        
     % Create time vector(s)
-    tVec = create_time_vectors(nSamples, 'SamplingIntervalMs', siMs);
+    tVec = create_time_vectors(nSamples, 'SamplingIntervalMs', siMs, ...
+                                'TimeUnits', 'ms');
 end
 
 % Find the starting index for detecting a spike
