@@ -130,16 +130,15 @@ function errorStruct = compute_lts_errors (ltsTableSim, ltsTableRec, varargin)
 %               positive errors are penalized 10 times less
 % 2019-11-29 LTS amplitude uncertainty is now 1/4 of peak prominence
 % 2019-12-18 Added 'Match2FeatureErrorRatio' as an optional parameter
-% 2020-01-06 Now averages LTSmatch errors over all sweeps
 
 %% Hard-coded parameters
-% Consistent with singleneuronfitting96.m
-defaultLtsFeatureWeights = [5; 1; 1];   % default weights for optimizing 
+% Consistent with singleneuronfitting71.m
+defaultLtsFeatureWeights = [1; 1; 1];   % default weights for optimizing 
                                         %   LTS statistics
-defaultMissedLtsError = 18;             % how much error (dimensionless) to 
+defaultMissedLtsError = 2;              % how much error (dimensionless) to 
                                         %   penalize a sweep that mispredicted 
                                         %   the existence of an LTS
-defaultFalseLtsError = 6;               % how much error (dimensionless) to 
+defaultFalseLtsError = 0.5;             % how much error (dimensionless) to 
                                         %   penalize a sweep that mispredicted 
                                         %   the absence of an LTS
 defaultMatch2FeatureErrorRatio = 1;     % default error ratio between
@@ -290,9 +289,8 @@ hasMissedLts = any(isnan(ltsFeaturesSim), 2) & all(~isnan(ltsFeaturesRec), 2);
 hasFalseLts = all(~isnan(ltsFeaturesSim), 2) & any(isnan(ltsFeaturesRec), 2);
 
 % Compute the LTS mismatch error
-ltsMatchError = (missedLtsError .* hasMissedLts .* sweepWeights) + ...
-                    falseLtsError .* hasFalseLts  .* sweepWeights) / ...
-                sum(sweepWeights);
+ltsMatchError = missedLtsError .* sum(hasMissedLts) + ...
+                    falseLtsError .* sum(hasFalseLts);
 
 %% Compute feature uncertainties
 % The amplitude uncertainty should be close to 1/4 of peak prominence
@@ -422,9 +420,6 @@ featureError(hasFeatureInBoth) = normalizedDifference(hasFeatureInBoth);
 
 %{
 OLD CODE:
-
-ltsMatchError = missedLtsError .* sum(hasMissedLts) + ...
-                    falseLtsError .* sum(hasFalseLts);
 
 %}
 

@@ -20,17 +20,17 @@
 
 %% Hard-coded parameters
 % Flags
-updateScripts = false; %true;
-simulateIpscr = false; %true;
-simulateTauhModes = false; %true;
-computeIpscVariation = false; %true;
-simulateIpscVariation = false; %true;
+updateScripts = true;
+simulateIpscr = true;
+simulateTauhModes = true;
+computeIpscVariation = true;
+simulateIpscVariation = true;
 plotEssential = true;
-plotAllVoltages = false; %true;
-plotAllTotalCurrents = false; %true;
-plotAllComponentCurrents = false; %true;
-plotDend2ITproperties = false; %true;
-plotM2h = false; %true;
+plotAllVoltages = true;
+plotAllTotalCurrents = true;
+plotAllComponentCurrents = true;
+plotDend2ITproperties = true;
+plotM2h = true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -81,11 +81,11 @@ tauhModesAll = 1:5;
 % Plot settings
 overlappedFigWidth = 5.7;
 overlappedFigHeightPerRow = 1.5;
-overlappedXLimits = [2800, 4000];
+overlappedXLimits = [2800, 4800]; %[2800, 4000];
 overlappedYLimits = [];
 m2hFigWidth = 5.7;
 m2hFigHeight = 3;
-m2hXLimits = [2800, 4000];
+m2hXLimits = [2800, 4800]; %[2800, 4000];
 m2hYLimits = [];
 
 figTypes = {'png', 'epsc2'};

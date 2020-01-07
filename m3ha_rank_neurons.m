@@ -67,7 +67,7 @@ plotErrorParamComparisonFlag = false; %true;
 useHH = false;
 buildMode = 'active';
 simMode = 'active';
-dataMode = 2; %0; %3;                   % data mode:
+dataMode = 2; %3;                   % data mode:
                                     %   0 - all data
                                     %   1 - all of g incr = 100%, 200%, 400% 
                                     %   2 - same g incr but exclude 
@@ -82,7 +82,7 @@ columnMode = 1;                     % optimization mode:
 rowModeAcrossTrials = 1;            % row mode when fitting across trials:
                                     %   1 - each row is a pharm condition
                                     %   2 - each row is a pharm, g incr pair
-attemptNumberAcrossTrials = 4;      % attempt number for across trials:
+attemptNumberAcrossTrials = 3;      % attempt number for across trials:
                                     %   1 - Use 4 traces @ 200% gIncr 
                                     %           for this data mode
                                     %   2 - Use all traces @ 200% gIncr 
@@ -113,16 +113,16 @@ rankSheetExtension = 'csv';
 %   Note: Should be consistent with singleneuronfitting78.m
 %       & compute_lts_errors.m & compute_single_neuron_errors.m
 ltsFeatureStrings = {'peak amp', 'peak time', 'max slope value'};
-sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
-% sweepWeights = [];
+% sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
+sweepWeights = [];
 % errorWeights = [1; 3; 1; 1; 1];
 errorWeights = [1; 6; 5; 1; 1];
 ltsFeatureWeights = errorWeights(3:5);  
                                 % weights for LTS feature errors
-missedLtsError = 1.5;           % how much error (dimensionless) to 
+missedLtsError = 18;            % how much error (dimensionless) to 
                                 %   penalize a sweep that failed to match 
                                 %   a recorded LTS existence
-falseLtsError = 0.5;            % how much error (dimensionless) to 
+falseLtsError = 6;              % how much error (dimensionless) to 
                                 %   penalize a sweep that produced an LTS 
                                 %   that is not recorded
 match2FeatureErrorRatio = errorWeights(2) / sum(ltsFeatureWeights);
@@ -163,9 +163,9 @@ cellNameStr = 'cellName';
 
 outFolder = '';
 figTypes = {'png', 'epsc2'};
-rankNumsToPlot = 1:10;
+rankNumsToPlot = 1:11;
 errorParamXTicks = 6:6:36;
-iterSetStr = 'singleneuronfitting0-94';
+iterSetStr = 'singleneuronfitting0-95';
 paramDirNames = fullfile('best_params', ...
                         {'bestparams_20191112_singleneuronfitting0', ...
                         'bestparams_20191112_singleneuronfitting1', ...
@@ -186,7 +186,8 @@ paramDirNames = fullfile('best_params', ...
                         'bestparams_20191227_singleneuronfitting91', ...
                         'bestparams_20191230_singleneuronfitting92', ...
                         'bestparams_20191231_singleneuronfitting93', ...
-                        'bestparams_20191231_singleneuronfitting94'});
+                        'bestparams_20191231_singleneuronfitting94', ...
+                        'bestparams_20200103_singleneuronfitting95'});
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1

@@ -71,7 +71,7 @@ plotBarPlotsFlag = true;
 useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
 buildMode = 'active';
 simMode = 'active';
-dataMode = 1; %0;           % data mode:
+dataMode = 0;           % data mode:
                         %   0 - all data
                         %   1 - all of g incr = 100%, 200%, 400% 
                         %   2 - same g incr but exclude 
@@ -115,7 +115,7 @@ pharmLabelsLong = {'{\it s}-Control', '{\it s}-GAT1 Block', ...
                     '{\it s}-GAT3 Block', '{\it s}-Dual Block'};
 pharmLabelsShort = {'{\it s}-Con', '{\it s}-GAT1', ...
                     '{\it s}-GAT3', '{\it s}-Dual'};
-if dataMode == 0
+if dataMode == 0 || dataMode == 3
     gIncrAll = [25; 50; 100; 200; 400; 800];
     gIncrLabels = {'25%', '50%', '100%', '200%', '400%', '800%'};
 elseif dataMode == 1 || dataMode == 2
@@ -158,7 +158,9 @@ figTypes = {'png', 'epsc2'};
 % rankNumsToUse = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
 rankDirName = '20200103_ranked_singleneuronfitting0-94';
 rankNumsToUse = 1:11;
-% TODO: Simulate up to 5000 ms only
+ipscrWindow = [2000, 4800];     % only simulate up to that time
+fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
+                                %   recorded LTS would lie
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -285,6 +287,8 @@ if simulateFlag
 
     % Run simulations for each parameter file
     cellfun(@(x) m3ha_neuron_run_and_analyze (x, 'DataMode', dataMode, ...
+                    'IpscrWindow', ipscrWindow, ...
+                    'FitWindowIpscr', fitWindowIpscr, ...
                     'BuildMode', buildMode, 'SimMode', simMode, ...
                     'UseHH', useHH, 'AttemptNumber', attemptNumber, ...
                     'SaveSimOutFlag', true, 'SaveLtsInfoFlag', true), ...

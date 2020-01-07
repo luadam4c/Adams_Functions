@@ -310,7 +310,8 @@ expStrForTitle = replace(expStr, '_', '\_');
 % Decide on xLimits
 if isempty(xLimits)
     if strcmp(simMode, 'active')
-        xLimits = [2800, 4500];
+%        xLimits = [2800, 4500]; 
+        xLimits = [2800, 4800];
     else
         xLimits = [timeToStabilize, Inf];
     end
