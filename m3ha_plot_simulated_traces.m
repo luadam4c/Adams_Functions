@@ -35,6 +35,10 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %                       'passive' - simulated a current pulse response
 %                       'active'  - simulated an IPSC response
 %                   default == detected
+%                   - 'CompareWithRecorded': whether to compare with recorded
+%                                               data when available
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - 'Directory': the directory to search in
 %                   must be a string scalar or a character vector
 %                   default == set in all_files.m
@@ -91,6 +95,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 %       cd/m3ha_plot_figure05.m
 %       cd/plot_traces.m
 %       cd/read_lines_from_file.m
+%       cd/set_default_flag.m
 %
 % Used by:
 %       cd/m3ha_plot_figure03.m
@@ -105,7 +110,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 
 %% Hard-coded parameters
 validPlotTypes = {'individual', 'residual', 'overlapped', ...
-                    'allVoltages', 'allTotalCurrents', ...
+                    'essential', 'allVoltages', 'allTotalCurrents', ...
                     'allComponentCurrents', 'allITproperties', ...
                     'dend2ITproperties', 'm2h'};
 validBuildModes = {'', 'active', 'passive'};
@@ -147,6 +152,7 @@ IEXT_COL_SIM = 8;
 plotTypeDefault = 'individual';
 buildModeDefault = '';          % set later
 simModeDefault = '';            % set later
+compareWithRecordedDefault = true;
 directoryDefault = '';          % set in all_files.m
 fileNamesDefault = {};
 extensionDefault = 'out';       % 
@@ -176,6 +182,8 @@ addParameter(iP, 'BuildMode', buildModeDefault, ...
     @(x) any(validatestring(x, validBuildModes)));
 addParameter(iP, 'SimMode', simModeDefault, ...
     @(x) any(validatestring(x, validSimModes)));
+addParameter(iP, 'CompareWithRecorded', compareWithRecordedDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'Directory', directoryDefault, ...
     @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'FileNames', fileNamesDefault, ...
@@ -220,6 +228,7 @@ parse(iP, varargin{:});
 plotType = validatestring(iP.Results.PlotType, validPlotTypes);
 buildMode = validatestring(iP.Results.BuildMode, validBuildModes);
 simMode = validatestring(iP.Results.SimMode, validSimModes);
+compareWithRecorded = iP.Results.CompareWithRecorded;
 directory = iP.Results.Directory;
 fileNames = iP.Results.FileNames;
 extension = iP.Results.Extension;
@@ -241,9 +250,9 @@ otherArguments = iP.Unmatched;
 % Determine whether recorded traces needs to be imported
 switch plotType
     case {'individual', 'residual', 'overlapped', 'allVoltages'}
-        toImportRecorded = true;
-    case {'allTotalCurrents', 'allComponentCurrents', 'allITproperties', ...
-            'dend2ITproperties', 'm2h'}
+        toImportRecorded = set_default_flag([], compareWithRecorded);
+    case {'essential', 'allTotalCurrents', 'allComponentCurrents', ...
+            'allITproperties', 'dend2ITproperties', 'm2h'}
         toImportRecorded = false;
 end
 
@@ -319,7 +328,7 @@ if isempty(colorMap)
         case {'individual', 'residual'}
             % Decide on the color map for individual and residual plots
             colorMap = decide_on_colormap('r', nRows);
-        case {'overlapped', 'allVoltages', 'allTotalCurrents', ...
+        case {'overlapped', 'essential', 'allVoltages', 'allTotalCurrents', ...
                 'allComponentCurrents', 'allITproperties', ...
                 'dend2ITproperties', 'm2h'}
             % Decide on the colors for parallel plots
@@ -341,7 +350,7 @@ if isempty(lineWidth)
     switch plotType
         case {'individual', 'residual'}
             lineWidth = lineWidthIndividual;
-        case {'overlapped', 'allVoltages', 'allTotalCurrents', ...
+        case {'overlapped', 'essential', 'allVoltages', 'allTotalCurrents', ...
                 'allComponentCurrents', 'allITproperties', ...
                 'dend2ITproperties', 'm2h'}
             lineWidth = lineWidthParallel;
@@ -412,7 +421,7 @@ switch plotType
         handles = m3ha_plot_residual_traces(tVecs, vVecsSim, vVecsRec, ...
                                     residuals, xLimits, colorMap, lineWidth, ...
                                     expStr, expStrForTitle, otherArguments);
-    case {'overlapped', 'allVoltages', 'allTotalCurrents', ...
+    case {'overlapped', 'essential', 'allVoltages', 'allTotalCurrents', ...
             'allComponentCurrents', 'allITproperties', 'dend2ITproperties'}
         handles = m3ha_plot_overlapped_traces(simData, vVecsRec, ...
                                     simParamsTable, plotType, buildMode, ...
@@ -763,6 +772,10 @@ elseif strcmpi(buildMode, 'active')
                 inapDend2, inapmDend2, inaphDend2);
 end
 
+% Compute m2h
+itm2hDend2 = (itmDend2 .^ 2) .* ithDend2;
+itminf2hinfDend2 = (itminfDend2 .^ 2) .* ithinfDend2;
+
 % List all possible items to plot
 if strcmpi(buildMode, 'passive')
     vecsAll = {vVecsRec; vVecsSim; vVecsDend1; vVecsDend2; iExtSim; iPasTotal};
@@ -775,7 +788,8 @@ else
                 iaTotalSoma; iaTotalDend1; iaTotalDend2; ...
                 itmSoma; itminfSoma; ithSoma; ithinfSoma; ...
                 itmDend1; itminfDend1; ithDend1; ithinfDend1; ...
-                itmDend2; itminfDend2; ithDend2; ithinfDend2};
+                itmDend2; itminfDend2; ithDend2; ithinfDend2; ...
+                itm2hDend2; itminf2hinfDend2};
 end
 
 % List corresponding labels
@@ -796,7 +810,9 @@ else
                 'm_{T,dend1}'; 'm_{\infty,T,dend1}'; ...
                 'h_{T,dend1}'; 'h_{\infty,T,dend1}'; ...
                 'm_{T,dend2}'; 'm_{\infty,T,dend2}'; ...
-                'h_{T,dend2}'; 'h_{\infty,T,dend2}'};
+                'h_{T,dend2}'; 'h_{\infty,T,dend2}'; ...
+                'm_{T,dend2}^2h_{T,dend2}'; ...
+                'm_{\infty,T,dend2}^2h_{\infty,T,dend2}'};
 end
 
 % List indices
@@ -833,9 +849,11 @@ IDX_MT_DEND2 = 30;
 IDX_MINFT_DEND2 = 31;
 IDX_HT_DEND2 = 32;
 IDX_HINFT_DEND2 = 33;
+IDX_M2H_DEND2 = 34;
+IDX_MINF2HINF_DEND2 = 35;
 
 % Error check
-if numel(labelsAll) ~= IDX_HINFT_DEND2
+if numel(labelsAll) ~= IDX_MINF2HINF_DEND2
     error('Index numbers needs to be updated!');
 end
 
@@ -843,18 +861,26 @@ end
 if strcmpi(buildMode, 'passive')
     switch plotType
         case 'overlapped'
+            indToPlot = IDX_VSOMA:numel(vecsAll);
             if ~isempty(vVecsRec)
-                indToPlot = IDX_VREC:numel(vecsAll);
-            else
-                indToPlot = IDX_VSOMA:numel(vecsAll);
+                indToPlot = [IDX_VREC, indToPlot];
+            end
+        case 'essential'
+            indToPlot = [IDX_VSOMA, IDX_VDEND1, IDX_VDEND2, IDX_ISTIM, IDX_IINT];
+            if ~isempty(vVecsRec)
+                indToPlot = [IDX_VREC, indToPlot];
             end
         case 'allVoltages'
+            indToPlot = IDX_VSOMA:IDX_IINT;
             if ~isempty(vVecsRec)
-                indToPlot = IDX_VREC:IDX_IINT;
-            else
-                indToPlot = IDX_VSOMA:IDX_IINT;
+                indToPlot = [IDX_VREC, indToPlot];
             end
-        case {'allTotalCurrents', 'allComponentCurrents', ...
+        case 'allTotalCurrents'
+            indToPlot = [IDX_VSOMA, IDX_ITOTAL, IDX_ISTIM, IDX_IINT, IDX_IPAS];
+            if ~isempty(vVecsRec)
+                indToPlot = [IDX_VREC, indToPlot];
+            end
+        case {'allComponentCurrents', ...
                 'allITproperties', 'dend2ITproperties'}
             fprintf(['No currents or channel properties are ', ...
                         'saved in passive sim mode!\n']);
@@ -865,16 +891,20 @@ if strcmpi(buildMode, 'passive')
 else
     switch plotType
         case 'overlapped'
+            indToPlot = IDX_VSOMA:numel(vecsAll);
             if ~isempty(vVecsRec)
-                indToPlot = IDX_VREC:numel(vecsAll);
-            else
-                indToPlot = IDX_VSOMA:numel(vecsAll);
+                indToPlot = [IDX_VREC, indToPlot];
+            end
+        case 'essential'
+            indToPlot = [IDX_VSOMA, IDX_GGABAB, IDX_ISTIM, IDX_ITA, ...
+                            IDX_M2H_DEND2, IDX_MINF2HINF_DEND2];
+            if ~isempty(vVecsRec)
+                indToPlot = [IDX_VREC, indToPlot];
             end
         case 'allVoltages'
+            indToPlot = IDX_VSOMA:IDX_IINT;
             if ~isempty(vVecsRec)
-                indToPlot = IDX_VREC:IDX_IINT;
-            else
-                indToPlot = IDX_VSOMA:IDX_IINT;
+                indToPlot = [IDX_VREC, indToPlot];
             end
         case 'allTotalCurrents'
             indToPlot = [IDX_IINT, IDX_ITA, IDX_IPAS:IDX_INAP];
@@ -882,9 +912,9 @@ else
             indToPlot = [IDX_IT, IDX_IT_SOMA:IDX_IT_DEND2, ...
                             IDX_IA, IDX_IA_SOMA:IDX_IA_DEND2];
         case 'allITproperties'
-            indToPlot = IDX_MT_SOMA:IDX_HINFT_DEND2;
+            indToPlot = IDX_MT_SOMA:IDX_MINF2HINF_DEND2;
         case 'dend2ITproperties'
-            indToPlot = [IDX_IT_DEND2, IDX_MT_DEND2:IDX_HINFT_DEND2];
+            indToPlot = [IDX_IT_DEND2, IDX_MT_DEND2:IDX_MINF2HINF_DEND2];
         otherwise
             error('plotType unrecognized!');
     end
