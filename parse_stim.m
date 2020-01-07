@@ -42,6 +42,7 @@ function [stimParams, pulseParams, pulseData] = parse_stim (pulseVecs, varargin)
 %
 % Used by:
 %       cd/compute_oscillation_duration.m
+%       cd/detect_spikes_multiunit.m
 %       cd/parse_multiunit.m
 
 % File History:

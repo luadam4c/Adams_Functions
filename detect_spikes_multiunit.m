@@ -59,14 +59,17 @@ function [spikesParams, spikesData] = detect_spikes_multiunit (vVec, siMs, varar
 %                                   for a bandpass filter
 %                   must be a numeric a two-element vector
 %                   default == none
+%                   - 'StimVec': stimulation vector
+%                   must be a numeric array or a cell array of numeric arrays
+%                   default == []
+%                   - 'IdxStimStart': index of stimulation start
+%                   must be a positive integer scalar
+%                   default == detected from StimVec
 %                   - 'BaseWindow': baseline window for each trace
 %                   must be empty or a numeric vector with 2 elements,
 %                       or a numeric array with 2 rows
 %                       or a cell array of numeric vectors with 2 elements
-%                   default == first half of the trace
-%                   - 'IdxStimStart': index of stimulation start
-%                   must be a positive integer scalar
-%                   default == 1
+%                   default == [0, stimStartMs]
 %                   - 'MinDelayMs': minimum delay after stim start (ms)
 %                   must be a nonnegative scalar
 %                   default == 25 ms
@@ -92,6 +95,7 @@ function [spikesParams, spikesData] = detect_spikes_multiunit (vVec, siMs, varar
 %       cd/create_error_for_nargin.m
 %       cd/create_time_vectors.m
 %       cd/create_logical_array.m
+%       cd/parse_stim.m
 %
 % Used by:
 %       cd/compute_oscillation_duration.m
@@ -106,7 +110,10 @@ function [spikesParams, spikesData] = detect_spikes_multiunit (vVec, siMs, varar
 % 2019-07-22 Added maxRangeOfInterestMs and fixed MaxDelayMs
 % 2020-01-06 MB - Now saves tVec in spikesData
 % 2020-01-07 Fixed usage of create_time_vectors.m
-% TODO: Detect stimulation start by default
+% 2020-01-07 Now detects stimulation start if 'StimVec' is passed in
+%               and idxStimStart not provided
+% 2020-01-07 Now returns error if idxStimStart is 1 and 
+%               baseWindow not provided
 % TODO: Finish documentation
 % 
 
@@ -118,14 +125,16 @@ idxEndOfInterest = [];          % set later
 
 %% Default values for optional arguments
 filtFreqDefault = NaN;          % set later
+stimVecDefault = [];            % set later
 baseWindowDefault = [];         % set later
-idxStimStartDefault = 1;        % TODO: Change this
+idxStimStartDefault = [];       % TODO: Change this
 minDelayMsDefault = 25;         % 25 ms
 maxDelayMsDefault = [];         % set later
 idxDetectStartDefault = [];     % set later
 idxDetectEndDefault = [];       % set later
 signal2NoiseDefault = [];       % set later
 tVecDefault = [];               % set later
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -151,12 +160,18 @@ addRequired(iP, 'siMs', ...
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'FiltFreq', filtFreqDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'vector'}));
+addParameter(iP, 'StimVec', stimVecDefault, ...
+    @(x) assert(isnumeric(x) || iscellnumeric(x), ...
+                ['StimVec must be either a numeric array ', ...
+                    'or a cell array of numeric arrays!']));
 addParameter(iP, 'BaseWindow', baseWindowDefault, ...
     @(x) assert(isnumeric(x) || iscellnumeric(x), ...
                 ['BaseWindow must be either a numeric array ', ...
                     'or a cell array of numeric arrays!']));
 addParameter(iP, 'IdxStimStart', idxStimStartDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+    @(x) assert(isempty(x) || isscalarpositiveinteger(x), ...
+                ['IdxStimStart must be either empty ', ...
+                    'or a positive integer scalar!']));
 addParameter(iP, 'MinDelayMs', minDelayMsDefault, ...
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
 addParameter(iP, 'MaxDelayMs', maxDelayMsDefault, ...
@@ -175,6 +190,7 @@ addParameter(iP, 'tVec', tVecDefault, ...
 % Read from the Input Parser
 parse(iP, vVec, siMs, varargin{:});
 filtFreq = iP.Results.FiltFreq;
+stimVec = iP.Results.StimVec;
 baseWindow = iP.Results.BaseWindow;
 idxStimStart = iP.Results.IdxStimStart;
 minDelayMs = iP.Results.MinDelayMs;
@@ -193,6 +209,29 @@ if isempty(tVec)
     % Create time vector(s)
     tVec = create_time_vectors(nSamples, 'SamplingIntervalMs', siMs, ...
                                 'TimeUnits', 'ms');
+end
+
+% Decide on the stimulation start index if not provided
+if isempty(idxStimStart)
+    if ~isempty(stimVec)
+        % Detect the stimulation start index from the provided stim vector
+        stimParams = parse_stim(stimVec, 'SamplingIntervalMs', siMs);
+        idxStimStart = stimParams.idxStimStart;
+    else
+        % Assume stimulation started at index 1
+        idxStimStart = 1;
+    end
+end
+stimStartMs = tVec(idxStimStart);
+
+% Decide on the baseline window
+if isempty(baseWindow)
+    if idxStimStart == 1
+        error(['Please pass in a baseline window if stimulation starts ', ...
+                'at the beginning of the vector!']);
+    else
+        baseWindow = [0, stimStartMs];
+    end
 end
 
 % Find the starting index for detecting a spike

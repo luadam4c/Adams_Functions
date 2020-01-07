@@ -1,4 +1,4 @@
-function m3ha_network_launch(nCells, useHH, candidateIDs)
+function m3ha_network_launch (nCells, useHH, candidateIDs)
 %% Launches NEURON with simulation commands and plot output figures
 %
 % Requires:
@@ -6,6 +6,7 @@ function m3ha_network_launch(nCells, useHH, candidateIDs)
 %       cd/check_dir.m
 %       cd/compile_mod_files.m
 %       cd/construct_fullpath.m
+%       cd/create_label_from_sequence.m
 %       cd/create_labels_from_numbers.m
 %       cd/create_looped_params.m
 %       cd/create_time_stamp.m
@@ -197,7 +198,7 @@ end
 
 %% For parpool
 if onLargeMemFlag || debugFlag || numel(simNumbers) == 1 || ...
-        simMode == 2 || nCells <= 2
+        simMode == 2 || simMode == 4 || nCells <= 2
     % No need renew parpool each batch if memory is not an issue
     renewParpoolFlagNeuron = 0;    % whether to renew parpool every batch to release memory
     maxNumWorkersNeuron = 20;      % maximum number of workers for running NEURON 
@@ -459,42 +460,60 @@ REgpasUB = 5.5e-5;  % upper bound for passive leak conductance (S/cm^2) in RE ce
                 %     Jedlicka et al 2011 used 2e-4 S/cm^2 %%% What should we use?
 
 %% Synapse parameters
+% Set the maximal conductance (uS) of the GABA-A receptor on RE cells
+%   Note: Sohal & Huguenard 2003 varied between 5~12.5 nS
+%       RTCl used 0.02 nS
 if bicucullineFlag
     REgabaGmax = 0;
 else
-    REgabaGmax = 0.005; %0;     % maximal conductance (uS) of the GABA-A receptor on RE cells
-                            %   Sohal & Huguenard 2003 varied between 5~12.5 nS
-                            %   RTCl used 0.02 nS
+    REgabaGmax = 0.005;
 end
-%REampaGmax = 0.007 * (2*TCRErad + 1);
-REampaGmax = 0.007;
-                            % maximal conductance (uS) of the AMPA receptor on RE cells
-                            %   Deleuze & Huguenard 2016 has about 7 nS per synapse 
-                            %       (a minimal stimulation protocol was used)
-                            %   Sohal & Huguenard 2004 used 0.05 uS
-TCgabaaErev = -80;          % reversal potential (mV) of the GABA-A receptor on TC cells
-                            %   Sohal & Huguenard 2004 used -85 mV; Traub 2005 used -81 mV
-                            %   Peter's measurement gave -80 mV                           
+
+% Set the maximal conductance (uS) of the AMPA receptor on RE cells
+%   Note: Deleuze & Huguenard 2016 has about 7 nS per synapse 
+%           (a minimal stimulation protocol was used)
+%       Sohal & Huguenard 2004 used 0.05 uS
+if simMode == 4
+    REampaGmax = 0;
+else
+    if nCells == 2
+        REampaGmax = 0.007;
+    else
+        REampaGmax = 0.007 * (2*TCRErad + 1);
+    end
+end
+
+% Set the reversal potential (mV) of the GABA-A receptor on TC cells
+%   Note: Sohal & Huguenard 2004 used -85 mV; Traub 2005 used -81 mV
+%         Peter's measurement gave -80 mV                           
+TCgabaaErev = -80;          
+
+% Set the maximal conductance (uS) of the GABA-A receptor on TC cells 
+%   Note: Sohal & Huguenard 2004 used 0.1 uS
+%           The maximal GABA-B conductance is 0.00448 uS
+%       Based on Huguenard & Prince, 1994, 
+%           the maximal GABA-A conductance is about 
+%           5 times that of GABA-B away from Erev
+%           and about 2 times that of GABA-B close to Erev
+%       This must be consistent with cd/m3ha_network_update_dependent_params.m
 if bicucullineFlag
     TCgabaaGmax = 0;
 else
-    TCgabaaGmax = 0.00896;  % maximal conductance (uS) of the GABA-A receptor on TC cells 
-                            %   Sohal & Huguenard 2004 used 0.1 uS
-                            %   The maximal GABA-B conductance is 0.00448 uS
-                            %   Based on Huguenard & Prince, 1994, 
-                            %       the maximal GABA-A conductance is about 5 times that of GABA-B away from Erev
-                            %       and about 2 time that of GABA-B close to Erev
-                            %   This must be consistent with /home/Matlab/Adams_Functions/m3ha_network_update_dependent_params.m
+    TCgabaaGmax = 0.00896;  
 end
-TCgababErev = -100; %-105; %-115        % reversal potential (mV) of the GABA-B receptor on TC cells
-                            %   Christine used -115 mV in dynamic clamp experiments
-                            %   Huguenard & Prince 1994 has -105 mV
-                            %   ek is -100 mV
-TCgababAmp = 0.016;         % conductance amplitude (uS) of the GABA-B receptor on TC cells
-TCgababTrise = 52;          % rising phase time constant (ms) of the GABA-B receptor on TC cells
-TCgababTfallFast = 90.1;    % fast decay time constant (ms) of the GABA-B receptor on TC cells
-TCgababTfallSlow = 1073.2;  % slow decay time constant (ms) of the GABA-B receptor on TC cells
-TCgababW = 0.952;           % weight (1) of the fast decay of the GABA-B receptor on TC cells
+
+% Set the reversal potential (mV) of the GABA-B receptor on TC cells
+%   Note: Christine used -115 mV in dynamic clamp experiments
+%       Huguenard & Prince 1994 has -105 mV
+%       ek is -100 mV
+TCgababErev = -100; %-105; %-115
+
+% Set initial GABA-B receptor parameters to be the Control, 100% gIncr values
+TCgababAmp = 0.016;         % conductance amplitude (uS)
+TCgababTrise = 52;          % rising phase time constant (ms)
+TCgababTfallFast = 90.1;    % fast decay time constant (ms)
+TCgababTfallSlow = 1073.2;  % slow decay time constant (ms)
+TCgababW = 0.952;           % weight (1) of the fast decay
 
 %% Initial ion concentrations
 cai0 = 2.4e-4;  % initial intracellular [Ca++] (mM), Destexhe et al
@@ -515,11 +534,11 @@ clo0 = 130.5;   % initial extracellular [Cl-] (mM), Peter's value (Jedlicka et a
 
 %% Activation parameters for actMode == 1~3, 6~9
 actCellID = floor(nCells/2);    % ID # of central neuron to activate
-stimStart = 3000; %300;        % stimulation delay (ms)
-stimDur = 40;                  % stimulation duration (ms)
-stimFreq = 0.1;                % stimulation frequency (Hz),
+stimStart = 3000;               % stimulation delay (ms)
+stimDur = 40;                   % stimulation duration (ms)
+stimFreq = 0.1;                 % stimulation frequency (Hz),
                                 %   must be less than 1000/cpDur
-cpDur = 40;                    % current pulse duration (ms)
+cpDur = 40;                     % current pulse duration (ms)
 
 % The following must be consistent with m3ha_network_update_dependent_params.m
 cpAmp = 0.2*(REdiam/10)^2;     % current pulse amplitude (nA),
@@ -543,17 +562,13 @@ elseif simMode == 2
     tStop = 4000; %1000;        % total time of simulation (ms)
 elseif simMode == 3
     tStop = 7000; %4000;        % total time of simulation (ms)
+elseif simMode == 4
+    tStop = 4800; %4000;        % total time of simulation (ms)
 end
 dt = 0.1;                       % time step of integration (ms)
 
 %% Recording parameters
-if simMode == 1
-    tStart = 0;                 % time to start plotting (ms)
-elseif simMode == 2
-    tStart = 0;                 % time to start plotting (ms)
-elseif simMode == 3
-    tStart = 0;                 % time to start plotting (ms)
-end
+tStart = 0;                     % start time of simulation (ms)
 REsp1cellID = actCellID;        % ID # of 1st special RE neuron to record
 if nCells > 1
     REsp2cellID = actCellID - 1;    % ID # of 2nd special RE neuron to record
@@ -591,7 +606,7 @@ end
 
 %% Arguments for plotting (not logged in sim_params)
 propertiesToPlot = 1:8;         % property #s of special neuron to record to be plotted (maximum range: 1~8, must be consistent with net.hoc)
-%[1, 5, 6, 8]; 
+% propertiesToPlot = [1, 5, 6, 8]; 
 cellsToPlot = [act, actLeft1, actLeft2, far]; % ID #s for neurons whose voltage is to be plotted
 
 %% Set output file names; must have only one '.' (not logged in sim_params)
