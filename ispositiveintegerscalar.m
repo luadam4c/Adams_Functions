@@ -20,6 +20,7 @@ function isPositiveIntegerScalar = ispositiveintegerscalar (x)
 % Used by:
 %       cd/compute_weighted_average.m
 %       cd/convert_to_char.m
+%       cd/detect_spikes_multiunit.m
 %       cd/find_in_strings.m
 %       cd/m3ha_neuron_create_simulation_params.m
 %       cd/match_positions.m

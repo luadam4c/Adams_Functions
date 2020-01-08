@@ -31,11 +31,12 @@ function windows = compute_time_window (timeVecs, varargin)
 %
 % Used by:
 %       cd/compute_oscillation_duration.m
+%       cd/detect_spikes_multiunit.m
 %       cd/parse_multiunit.m
 
 % File History:
 % 2019-05-14 Created by Adam Lu
-% 
+% TODO: Fix time window to start from tBase if timeStart is 1?
 
 %% Hard-coded parameters
 

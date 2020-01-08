@@ -51,7 +51,7 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = true;
+chooseBestParamsFlag = false; %true;
 plotErrorHistoryFlag = true;
 plotErrorComparisonFlag = true;
 plotParamHistoryFlag = true;

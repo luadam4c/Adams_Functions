@@ -50,6 +50,7 @@ function [idxClosest, valClosest] = find_closest (vecs, target, varargin)
 %
 % Used by:
 %       cd/compute_gabab_conductance.m
+%       cd/detect_spikes_multiunit.m
 %       cd/parse_phase_info.m
 %       cd/parse_stim.m
 %       cd/parse_ipsc.m
