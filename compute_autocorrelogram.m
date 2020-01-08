@@ -38,14 +38,14 @@ function [autoCorrParams, autoCorrData] = compute_autocorrelogram (spikeTimesMs,
 %                   default == 10 ms
 %                   - 'MinBurstLengthMs': minimum burst length (ms)
 %                   must be a positive scalar
-%                   default == 20 ms
+%                   default == 60 ms
 %                   - 'MaxFirstInterBurstIntervalMs': maximum inter-burst interval (ms)
-%                                                   between the first two bursts
+%                               between stimulation start and the first burst
 %                   must be a positive scalar
 %                   default == 2000 ms
 %                   - 'MaxInterBurstIntervalMs': maximum inter-burst interval (ms)
 %                   must be a positive scalar
-%                   default == 1000 ms
+%                   default == 2000 ms
 %                   - 'MinSpikeRateInBurstHz': minimum spike rate in a burst (Hz)
 %                   must be a positive scalar
 %                   default == 100 ms
@@ -75,6 +75,8 @@ function [autoCorrParams, autoCorrData] = compute_autocorrelogram (spikeTimesMs,
 % File History:
 % 2019-07-23 Moved from parse_multiunit.m
 % 2019-08-01 Fixed missing return
+% 2020-01-08 Changed default minBurstLengthMs from 10 to 60
+% 2020-01-08 Changed default maxInterBurstIntervalMs from 1000 to 2000
 % TODO: allow input to be non-event data as well
 % 
 
@@ -84,12 +86,12 @@ MS_PER_S = 1000;
 %% Default values for optional arguments
 stimStartMsDefault = 0;             % stimulation start is at 0 ms by default
 binWidthMsDefault = 10;             % use a bin width of 10 ms by default
-minBurstLengthMsDefault = 20;       % bursts must be at least 20 ms by default
+minBurstLengthMsDefault = 60;       % bursts must be at least 60 ms by default
 maxFirstInterBurstIntervalMsDefault = 2000;
-                                    % first two bursts are no more than 
-                                    %   2 seconds apart by default
-maxInterBurstIntervalMsDefault = 1000;  % bursts are no more than 
-                                        %   1 second apart by default
+                                    % first burst is not more than 2 seconds 
+                                    %   after stimulation start by default
+maxInterBurstIntervalMsDefault = 2000;  % subsequent bursts are no more than 
+                                        %   2 seconds apart by default
 minSpikeRateInBurstHzDefault = 100; % bursts must have a spike rate of 
                                     %   at least 100 Hz by default
 filterWidthMsDefault = 100;

@@ -69,14 +69,14 @@ function [histParams, histData] = compute_spike_histogram (spikeTimesMs, varargi
 %                   default == 10 ms
 %                   - 'MinBurstLengthMs': minimum burst length (ms)
 %                   must be a positive scalar
-%                   default == 20 ms
+%                   default == 60 ms
 %                   - 'MaxFirstInterBurstIntervalMs': maximum inter-burst interval (ms)
 %                               between stimulation start and the first burst
 %                   must be a positive scalar
 %                   default == 2000 ms
 %                   - 'MaxInterBurstIntervalMs': maximum inter-burst interval (ms)
 %                   must be a positive scalar
-%                   default == 1000 ms
+%                   default == 2000 ms
 %                   - 'MinSpikeRateInBurstHz': minimum spike rate in a burst (Hz)
 %                   must be a positive scalar
 %                   default == 100 ms
@@ -100,6 +100,9 @@ function [histParams, histData] = compute_spike_histogram (spikeTimesMs, varargi
 % 2019-11-13 Now does not consider an oscillation evoked 
 %               if the starting bin is more than maxFirstIbiBins away 
 %               from stimulation start
+% 2020-01-08 Now saves all the fields required in plot_spike_histogram.m
+% 2020-01-08 Changed default minBurstLengthMs from 10 to 60
+% 2020-01-08 Changed default maxInterBurstIntervalMs from 1000 to 2000
 
 % Hard-coded constants
 MS_PER_S = 1000;
@@ -107,12 +110,12 @@ MS_PER_S = 1000;
 %% Default values for optional arguments
 stimStartMsDefault = 0;             % stimulation start is at 0 ms by default
 binWidthMsDefault = 10;             % use a bin width of 10 ms by default
-minBurstLengthMsDefault = 20;       % bursts must be at least 20 ms by default
+minBurstLengthMsDefault = 60;       % bursts must be at least 60 ms by default
 maxFirstInterBurstIntervalMsDefault = 2000;
                                     % first burst is not more than 2 seconds 
                                     %   after stimulation start by default
-maxInterBurstIntervalMsDefault = 1000;  % subsequent bursts are no more than 
-                                        %   1 second apart by default
+maxInterBurstIntervalMsDefault = 2000;  % subsequent bursts are no more than 
+                                        %   2 seconds apart by default
 minSpikeRateInBurstHzDefault = 100; % bursts must have a spike rate of 
                                     %   at least 100 Hz by default
 
