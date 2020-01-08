@@ -222,17 +222,17 @@ function varargout = parse_multiunit (vVecsOrSlice, varargin)
 %                   default == 10 ms
 %                   - 'MinBurstLengthMs': minimum burst length (ms)
 %                   must be a positive scalar
-%                   default == 20 ms
+%                   default == 60 ms
 %                   - 'MaxFirstInterBurstIntervalMs': maximum inter-burst interval (ms)
-%                                                   between the first two bursts
+%                               between stimulation start and the first burst
 %                   must be a positive scalar
 %                   default == 2000 ms
 %                   - 'MaxInterBurstIntervalMs': maximum inter-burst interval (ms)
 %                   must be a positive scalar
-%                   default == 1000 ms
+%                   default == 2000 ms
 %                   - 'MinSpikeRateInBurstHz': minimum spike rate in a burst (Hz)
 %                   must be a positive scalar
-%                   default == 100 Hz
+%                   default == 100 ms
 %                   - 'FilterWidthMs': filter width (ms) for 
 %                                       moving average filter when computing
 %                                       smoothed autocorrelogram
@@ -426,15 +426,14 @@ resolutionMsDefault = 5;                % 5 ms resolution by default
 filtFreqDefault = [100, 1000];
 minDelayMsDefault = 25;
 binWidthMsDefault = 10;                 % use a bin width of 10 ms by default
-minBurstLengthMsDefault = 20;           % bursts must be at least 20 ms by default
+minBurstLengthMsDefault = 60;       % bursts must be at least 60 ms by default
 maxFirstInterBurstIntervalMsDefault = 2000;
-                                    % first two bursts are no more than 
-                                    %   2 seconds apart by default
-maxInterBurstIntervalMsDefault = 1000;  % bursts are no more than 
-                                        %   1 second apart by default
-minSpikeRateInBurstHzDefault = 100;     % bursts must have a spike rate of 
-                                        %   at least 100 Hz by default
-
+                                    % first burst is not more than 2 seconds 
+                                    %   after stimulation start by default
+maxInterBurstIntervalMsDefault = 2000;  % subsequent bursts are no more than 
+                                        %   2 seconds apart by default
+minSpikeRateInBurstHzDefault = 100; % bursts must have a spike rate of 
+                                    %   at least 100 Hz by default
 filterWidthMsDefault = 100;
 minRelPromDefault = 0.02;
 
@@ -1570,7 +1569,7 @@ nVectors = height(parsedParams);
 
 parfor iVec = 1:nVectors
     % Create a figure
-    fig = set_figure_properties;
+    figHandle = set_figure_properties;
     
     % Plot spike detection
     plot_spike_detection(tVec{iVec}, vVec{iVec}, vVecFilt{iVec}, ...
@@ -1578,7 +1577,7 @@ parfor iVec = 1:nVectors
                             baseSlopeNoise(iVec), slopeThreshold(iVec), ...
                             vMin(iVec), vMax(iVec), vRange(iVec), ...
                             slopeMin(iVec), slopeMax(iVec), ...
-                            [], figTitleBase{iVec});
+                            figHandle, figTitleBase{iVec});
 
     % Get the current figure path base
     figBaseThis = fullfile(figFolder, figPathBase{iVec});
@@ -1597,7 +1596,7 @@ parfor iVec = 1:nVectors
     zoomWins = [zoomWin1, zoomWin2, zoomWin3];
 
     % Save the figure zoomed to several x limits
-    save_all_zooms(fig, figBaseThis, zoomWins, 'FigTypes', figTypes);
+    save_all_zooms(figHandle, figBaseThis, zoomWins, 'FigTypes', figTypes);
 
     % Close all figures
     close all force hidden

@@ -20,6 +20,7 @@
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
+%       cd/apply_over_cells.m
 %       cd/argfun.m
 %       cd/create_label_from_sequence.m
 %       cd/create_subplots.m
@@ -56,7 +57,7 @@ plotErrorHistoryFlag = true;
 plotErrorComparisonFlag = true;
 plotParamHistoryFlag = true;
 plotIndividualFlag = true;
-rankNeuronsFlag = true;
+rankNeuronsFlag = false; %true;
 plotHistogramsFlag = true;
 plotBarPlotFlag = true;
 plotParamViolinsFlag = true;
@@ -363,7 +364,8 @@ if rankNeuronsFlag
                 errorTables, 'UniformOutput', false);
 
     % Combine into a single table
-    minimalErrorTableCombined = vertcat(minimalErrorTables{:});
+    minimalErrorTableCombined = ...
+        apply_over_cells(@outerjoin, minimalErrorTables, 'MergeKeys', true);
 
     % Sort by total error, with minimal error first
     rankTable = sortrows(minimalErrorTableCombined, 'totalError', 'ascend');

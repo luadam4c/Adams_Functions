@@ -10,6 +10,7 @@ function [bars, fig] = plot_histogram (varargin)
 %
 % Example(s):
 %       plot_histogram([-100, randn(1, 100) + 4, 100])
+%       plot_histogram([-100, randn(1, 100) + 4, 100], 'PlotOnly', true)
 %       plot_histogram([randn(100, 3); [100, -200, 300]])
 %       plot_histogram('Counts', (1:5)', 'Edges', (1:6)')
 %
@@ -29,14 +30,7 @@ function [bars, fig] = plot_histogram (varargin)
 %       X           - (opt) data to distribute among bins
 %                   must be an array of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
-%       varargin    - 'PlotOutliers': whether to plot outliers separately
-%                   must be logical 1 (true) or 0 (false)
-%                   default == true
-%                   - 'UseBuiltIn': whether to use built in histogram() function
-%                                   Note: this will not work if data is grouped
-%                   must be logical 1 (true) or 0 (false)
-%                   default == false
-%                   - 'Counts': bin counts, with each group 
+%       varargin    - 'Counts': bin counts, with each group 
 %                                   being a different column
 %                   must be an array of one the following types:
 %                       'numeric', 'logical', 'datetime', 'duration'
@@ -56,6 +50,16 @@ function [bars, fig] = plot_histogram (varargin)
 %                       'stacked'       - same as 'stacked' bar graph
 %                       'overlapped'    - overlapped histograms
 %                   default == 'stacked'
+%                   - 'PlotOutliers': whether to plot outliers separately
+%                   must be logical 1 (true) or 0 (false)
+%                   default == true
+%                   - 'UseBuiltIn': whether to use built in histogram() function
+%                                   Note: this will not work if data is grouped
+%                   must be logical 1 (true) or 0 (false)
+%                   default == false
+%                   - 'PlotOnly': whether to plot the histogram only
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %                   - 'SpecialColor': color of expanded bins
 %                   must be a 3-element numeric vector:
 %                   default == [0 0.8 0.8] (light blue)
@@ -186,6 +190,7 @@ function [bars, fig] = plot_histogram (varargin)
 % 2019-09-08 Made X an optional argument (allow passing in of just 
 %               'Counts' and 'Edges')
 % 2019-09-08 Now uses set_figure_properties.m
+% 2020-01-08 Added 'PlotOnly' as an optional argument
 
 %% Hard-coded parameters
 validOutlierMethods = {'boxplot', 'isoutlier', ...
@@ -198,12 +203,13 @@ dateTimeNegInf = datetime(-Inf, 'ConvertFrom', 'datenum');
 
 %% Default values for optional arguments
 XDefault = [];                          % set later
-plotOutliersDefault = true;             % plot outliers by default
-useBuiltInDefault = false;              % use plot_grouped_histogram by default
 countsDefault = [];                     % set later
 edgesDefault = [];                      % set later
 groupingDefault = [];                   % set later
 groupedStyleDefault = 'stacked';        % grouped bars are stacked by default
+plotOnlyDefault = false;                % setup default labels by default
+plotOutliersDefault = true;             % plot outliers by default
+useBuiltInDefault = false;              % use plot_grouped_histogram by default
 specialColorDefault = [0, 0.8, 0.8];    % light blue
 outlierMethodDefault = 'isoutlier';     % use built-in isoutlier function
 xLimitsDefault = [];                    % set later
@@ -250,6 +256,8 @@ addParameter(iP, 'Grouping', groupingDefault, ...
                                 'datetime', 'duration'}, {'2d'}));
 addParameter(iP, 'GroupedStyle', groupedStyleDefault, ...
     @(x) any(validatestring(x, validGroupedStyles)));
+addParameter(iP, 'PlotOnly', plotOnlyDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'PlotOutliers', plotOutliersDefault, ...
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'UseBuiltIn', useBuiltInDefault, ...
@@ -303,12 +311,13 @@ addParameter(iP, 'FigTypes', figTypesDefault, ...
 % Read from the Input Parser
 parse(iP, varargin{:});
 X = iP.Results.X;
-plotOutliers = iP.Results.PlotOutliers;
-useBuiltIn = iP.Results.UseBuiltIn;
 counts = iP.Results.Counts;
 edgesUser = iP.Results.Edges;
 grouping = iP.Results.Grouping;
 groupedStyle = validatestring(iP.Results.GroupedStyle, validGroupedStyles);
+plotOnly = iP.Results.PlotOnly;
+plotOutliers = iP.Results.PlotOutliers;
+useBuiltIn = iP.Results.UseBuiltIn;
 specialColor = iP.Results.SpecialColor;
 outlierMethod = validatestring(iP.Results.OutlierMethod, validOutlierMethods);
 xLimits = iP.Results.XLimits;
@@ -347,6 +356,16 @@ if isempty(X) && (isempty(counts) || isempty(edgesUser))
     fig = gobjects;
     disp('There is no data to plot!');
     return
+end
+
+% If plotting curve only, change some defaults
+if plotOnly
+    xLabel = 'suppress';
+    yLabel = 'suppress';
+    xTickLocs = 'suppress';
+    xTickLabels = 'suppress';
+    legendLocation = 'suppress';
+    figTitle = 'suppress';
 end
 
 % Force rows as columns
@@ -538,7 +557,7 @@ end
 nGroups = numel(bars);
 
 % Set default x tick locations
-if isempty(xTickLocs)
+if isempty(xTickLocs) && ~(ischar(xTickLocs) && strcmp(xTickLocs, 'suppress'))
     % Initialize x tick locations with old locations
     xTicks = get(gca, 'XTick'); 
 
@@ -574,16 +593,20 @@ else
 end
 
 % Update the x tick locations
-set(gca, 'XTick', xTicks);
+if ~isequal(xTicks, 'suppress')
+    set(gca, 'XTick', xTicks);
+end
 
 % Create default x tick labels
-if isempty(xTickLabels)
+if isempty(xTickLabels) && ~isequal(xTickLabels, 'suppress')
     % Create x tick labels using xTickLabelNums
     xTickLabels = create_labels_from_numbers(xTickLabelNums);
 end
 
 % Update x tick labels
-set(gca, 'XTickLabel', xTickLabels);
+if ~strcmp(xTickLabels, 'suppress')
+    set(gca, 'XTickLabel', xTickLabels);
+end
 
 % Store hold status
 wasHold = ishold;
@@ -592,7 +615,8 @@ wasHold = ishold;
 hold on;
 
 % Plot expanded bins
-if ~isempty(xTickLabelNums) && isinf(xTickLabelNums(1))
+if ~isempty(xTickLabelNums) && isinf(xTickLabelNums(1)) && ...
+        ~isequal(xTickLabelNums, 'suppress')
     if useBuiltIn
         bars(nGroups + 1) = ...
             histogram(edgesPlot(1) * ones(1, counts(1)), ...
@@ -609,7 +633,8 @@ if ~isempty(xTickLabelNums) && isinf(xTickLabelNums(1))
 else
     bars(nGroups + 1) = gobjects(1);
 end
-if ~isempty(xTickLabelNums) && isinf(xTickLabelNums(end))
+if ~isempty(xTickLabelNums) && isinf(xTickLabelNums(end)) && ...
+        ~isequal(xTickLabelNums, 'suppress')
     if useBuiltIn
         bars(nGroups + 2) = ...
             histogram(edgesPlot(end-1) * ones(1, counts(end)), ...
