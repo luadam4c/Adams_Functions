@@ -17,6 +17,7 @@ function [histParams, histData] = compute_spike_histogram (spikeTimesMs, varargi
 %       histParams  - spike histogram parameters, with fields:
 %                       stimStartMs
 %                       binWidthMs
+%                       binWidthSec
 %                       minBurstLengthMs
 %                       maxInterBurstIntervalMs
 %                       minSpikeRateInBurstHz
@@ -400,10 +401,22 @@ end
 % Compute the oscillation duration in ms
 oscDurationMs = timeOscEndMs - stimStartMs;
 
+% Convert to seconds
+[binWidthSec, maxInterBurstIntervalSec, ...
+    histLeftSec, timeOscEndSec, oscDurationSec, ...
+    edgesSec, timeBurstStartsSec, timeBurstEndsSec] = ...
+    argfun(@(x) x ./ MS_PER_S, ...
+            binWidthMs, maxInterBurstIntervalMs, ...
+            histLeftMs, timeOscEndMs, oscDurationMs, ...
+            edgesMs, timeBurstStartsMs, timeBurstEndsMs);
+
 %% Output results
+histParams.binWidthSec = binWidthSec;
+histParams.maxInterBurstIntervalSec = maxInterBurstIntervalSec;
 histParams.nBins = nBins;
 histParams.halfNBins = halfNBins;
 histParams.histLeftMs = histLeftMs;
+histParams.histLeftSec = histLeftSec;
 histParams.nBurstsTotal = nBurstsTotal;
 histParams.nBurstsIn10s = nBurstsIn10s;
 histParams.nBurstsInOsc = nBurstsInOsc;
@@ -416,10 +429,13 @@ histParams.nSpikesPerBurstInOsc = nSpikesPerBurstInOsc;
 histParams.nSpikesIn10s = nSpikesIn10s;
 histParams.nSpikesInOsc = nSpikesInOsc;
 histParams.timeOscEndMs = timeOscEndMs;
+histParams.timeOscEndSec = timeOscEndSec;
 histParams.oscDurationMs = oscDurationMs;
+histParams.oscDurationSec = oscDurationSec;
 
 histData.spikeCounts = spikeCounts;
 histData.edgesMs = edgesMs;
+histData.edgesSec = edgesSec;
 histData.iBinBurstStarts = iBinBurstStarts;
 histData.iBinBurstEnds = iBinBurstEnds;
 histData.iBinBurstIn10sStarts = iBinBurstIn10sStarts;
@@ -430,7 +446,9 @@ histData.spikeCountsEachBurst = spikeCountsEachBurst;
 histData.spikeCountsEachBurstIn10s = spikeCountsEachBurstIn10s;
 histData.spikeCountsEachBurstInOsc = spikeCountsEachBurstInOsc;
 histData.timeBurstStartsMs = timeBurstStartsMs;
+histData.timeBurstStartsSec = timeBurstStartsSec;
 histData.timeBurstEndsMs = timeBurstEndsMs;
+histData.timeBurstEndsSec = timeBurstEndsSec;
 histData.timeBurstIn10sStartsMs = timeBurstIn10sStartsMs;
 histData.timeBurstIn10sEndsMs = timeBurstIn10sEndsMs;
 histData.timeBurstInOscStartsMs = timeBurstInOscStartsMs;

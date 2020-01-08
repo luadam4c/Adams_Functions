@@ -22,6 +22,10 @@ function handles = plot_spike_histogram (spHistData, spHistParams, varargin)
 %       spHistParams    - spike histogram parameters
 %                       must be a scalar structure with fields:
 %                           oscDurationSec
+%                           histLeftSec
+%                           timeOscEndSec
+%                           binWidthSec
+%                           maxInterBurstIntervalSec
 %                           nSpikesInOsc
 %                           figTitleBase
 %       varargin    - 'XLimits': x-axis limits
@@ -102,7 +106,13 @@ timeBurstEndsSec = spHistData.timeBurstEndsSec;
 % Extract from spHistParams
 oscDurationSec = spHistParams.oscDurationSec;
 nSpikesInOsc = spHistParams.nSpikesInOsc;
-figTitleBase = spHistParams.figTitleBase;
+
+% Decide on figure title base
+if isfield(spHistParams, 'figTitleBase')
+    figTitleBase = spHistParams.figTitleBase;
+else
+    figTitleBase = 'unnamed data';
+end
 
 % Compute burst windows
 burstWindows = alternate_elements(timeBurstStartsSec, timeBurstEndsSec, ...
