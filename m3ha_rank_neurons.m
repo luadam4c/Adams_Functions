@@ -52,12 +52,12 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = false; %true;
+chooseBestParamsFlag = true;
 plotErrorHistoryFlag = true;
 plotErrorComparisonFlag = true;
 plotParamHistoryFlag = true;
 plotIndividualFlag = true;
-rankNeuronsFlag = false; %true;
+rankNeuronsFlag = true;
 plotHistogramsFlag = true;
 plotBarPlotFlag = true;
 plotParamViolinsFlag = true;
@@ -68,7 +68,7 @@ plotErrorParamComparisonFlag = true;
 useHH = false;
 buildMode = 'active';
 simMode = 'active';
-dataMode = 2; %3;                   % data mode:
+dataMode = 3;                       % data mode:
                                     %   0 - all data
                                     %   1 - all of g incr = 100%, 200%, 400% 
                                     %   2 - same g incr but exclude 
@@ -162,8 +162,11 @@ cellNameStr = 'cellName';
 % outFolder = '20200103_ranked_singleneuronfitting0-94';
 % rankNumsToPlot = 1:11;
 
+% outFolder = '20200106_ranked_singleneuronfitting0-95';
+% rankNumsToPlot = 1:11;
+
 outFolder = '';
-outFolder = '20200106_ranked_singleneuronfitting0-95';
+outFolder = '20200108_ranked_singleneuronfitting0-95';
 figTypes = {'png', 'epsc2'};
 rankNumsToPlot = 1:11;
 errorParamXTicks = 6:6:36;

@@ -5,7 +5,18 @@ function handles = plot_spike_density_multiunit (parsedData, parsedParams, varar
 %       TODO
 %
 % Example(s):
-%       TODO
+%       spikeDensityHzTrace1 = compute_spike_density([4, 4, 4, 5, 8, 9, 9, 10]); 
+%       spikeDensityHzTrace2 = compute_spike_density([6, 6, 6, 7, 7, 7]); 
+%       spikeDensityHz = {spikeDensityHzTrace1, spikeDensityHzTrace2};
+%       parsedData = table(spikeDensityHz);
+%       siSeconds = [1; 1];
+%       minTimeSec = [0; 0.1];
+%       stimStartSec = [3; 3.1];
+%       maxTimeSec = [20; 20.1];
+%       phaseNumber = [1; 2];
+%       figPathBase = {'test_plot_spike_density_multiunit_trace1'; 'test_plot_spike_density_multiunit_trace2'};
+%       parsedParams = table(siSeconds, minTimeSec, stimStartSec, maxTimeSec, phaseNumber, figPathBase);
+%       handles = plot_spike_density_multiunit (parsedData, parsedParams);
 %
 % Outputs:
 %       handles     - a structure with fields:
@@ -82,7 +93,7 @@ maxNYTicksDefault = 20;
 
 %% Deal with arguments
 % Check number of required arguments
-if nargin < 4
+if nargin < 2
     error(create_error_for_nargin(mfilename));
 end
 

@@ -135,14 +135,20 @@ sweepIndicesByCondition = m3ha_organize_sweep_indices('SwpInfo', swpInfo);
 % Print message
 fprintf('Selecting the cells to fit ... \n');
 
-% Decide whether each cell is to be selected (has sweeps for all conditions)
-isSelected = cellfun(@(x) ~any(isemptycell(x(:))), sweepIndicesByCondition);
+% Decide whether each cell is to be selected 
+%   (has sweeps for all pharm conditions for some gIncr conditions)
+isSelected = cellfun(@(x) decide_whether_to_select(x, dataMode), ...
+                    sweepIndicesByCondition);
 
 % Store in cellInfo
 cellInfo = addvars(cellInfo, sweepIndicesByCondition, isSelected);
 
 % Find the cell IDs to be selected
 cellIdsSelected = find(isSelected);
+
+% Update the toUse column in swpInfo for consistency
+swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'CellIds', cellIdsSelected);
+
 
 %% Print results to standard output
 % Count the number of selected cells
@@ -160,8 +166,26 @@ print_cellstr(cellNamesSelected, 'Delimiter', '\n', ...
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function toSelect = decide_whether_to_select (sweepIndicesByCondition, dataMode)
+
+if dataMode == 2
+    toSelect = ~any(isemptycell(sweepIndicesByCondition(:)));
+else
+    % Determine whether each row (gIncr) has all columns (pharm) nonempty
+    toSelectRow = ~any(isemptycell(sweepIndicesByCondition), 2);
+
+    % Select if gIncr 100%, 200%, 400% has all column (pharm) nonempty
+    toSelect = is_contained_in(3:5, find(toSelectRow));
+
+    % Select if there is a row (gIncr) with all columns (pharm) nonempty
+    % toSelect = any(toSelectRow, 1);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %{
 OLD CODE:
+
 
 %}
 

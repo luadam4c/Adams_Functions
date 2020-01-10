@@ -3,8 +3,10 @@ function [autoCorrParams, autoCorrData] = compute_autocorrelogram (spikeTimesMs,
 % Usage: [autoCorrParams, autoCorrData] = compute_autocorrelogram (spikeTimesMs, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       [autoCorrParams, autoCorrData] = compute_autocorrelogram(1000*rand(100, 1));
+%
 % Outputs:
 %       autoCorrParams  - autocorrelogram parameters, with fields:
 %                           oscIndex1 (Sohal 2003)
@@ -27,6 +29,7 @@ function [autoCorrParams, autoCorrData] = compute_autocorrelogram (spikeTimesMs,
 %                           ampTroughs
 %                           halfPeriodsToMultiple
 %                       specified as a scalar structure
+%
 % Arguments:
 %       spikeTimesMs    - spike times in milliseconds
 %                       must be a numeric vector
@@ -178,6 +181,11 @@ spikeCounts = spikeHistData.spikeCounts;
 
 % Compute the bin width in seconds
 binWidthSec = binWidthMs ./ MS_PER_S;
+
+% Save parameters
+autoCorrParams = spikeHistParams;
+autoCorrParams.filterWidthMs = filterWidthMs;
+autoCorrParams.minRelProm = minRelProm;
 
 %% Do the job
 if isempty(spikeTimesMs)

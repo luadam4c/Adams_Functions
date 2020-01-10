@@ -111,6 +111,8 @@ function [fileNames, rowConditions, figurePositions] = ...
 % 2019-12-21 Now uses input parser
 % 2019-12-23 Fixed default dataMode to be 0 so that the toUse column
 %               already set in swpInfo would be respected
+% 2020-01-08 Fixed gCondToUse for columnMode == 1 so that it may be different
+%               for each cell
 
 %% Hard-coded parameters
 pharmStr = 'prow';
@@ -218,8 +220,16 @@ ltsPeakTime = swpInfo{:, ltsDelayStr};
 maxNoise = swpInfo{:, maxNoiseStr};
 toUse = swpInfo{:, toUseStr};
 
+% Determine whether each sweep is from the cell(s) to fit
+%   Note: cellName may have more than one elements
+fromCell = contains(fnrow, cellName);
+
 % Get all unique conductance amplitude scaling percentages to fit
-gCondToUse = unique(swpInfo{toUse, gIncrStr});
+if columnMode == 1
+    gCondToUse = unique(swpInfo{toUse & fromCell, gIncrStr});
+else
+    gCondToUse = unique(swpInfo{toUse, gIncrStr});
+end
 
 % Get all unique pharmacological conditions to fit
 pCondToUse = unique(swpInfo{toUse, pharmStr});
@@ -276,10 +286,6 @@ hasBurst = burstTime > 0;
 
 % Determine whether each sweep has LTSs
 hasLts = ltsPeakTime > 0;
-
-% Determine whether each sweep is from the cell(s) to fit
-%   Note: cellName may have more than one elements
-fromCell = contains(fnrow, cellName);
 
 % Determine whether each sweep is of each pharm condition
 %   Note: isPCond is a cell array of logical vectors
@@ -408,7 +414,7 @@ case 1
     case 4
         % Print message
         fprintf('Attempt #4: Using one "best trial" for each ');
-        fprintf('condition) of %s ... \n', cellName);
+        fprintf('pharm x gIncr condition of %s ... \n', cellName);
 
         % Take only the most representative trace from each condition
         if size(rowConditions, 2) == 1

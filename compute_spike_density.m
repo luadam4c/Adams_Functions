@@ -3,11 +3,14 @@ function spikeDensityHz = compute_spike_density (spikeTimes, varargin)
 % Usage: spikeDensityHz = compute_spike_density (spikeTimes, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
-%       compute_spike_density([1, 1, 2, 4, 8, 9, 9, 10]);
+%       spikeDensityHz = compute_spike_density([1, 1, 2, 4, 8, 9, 9, 10])
+%
 % Outputs:
 %       spikeDensityHz  - spike density in Hz
 %                       specified as a numeric vector
+%
 % Arguments:
 %       spikeTimes      - spike times
 %                       must be a numeric vector

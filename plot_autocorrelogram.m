@@ -19,8 +19,10 @@ function handles = plot_autocorrelogram (autoCorrData, autoCorrParams, varargin)
 %       autoCorrParams  - autocorrelogram parameters
 %                       must be a scalar structure with fields:
 %                       TODO
-%       varargin    - 'PlotType': TODO
-%                   must be one of TODO
+%       varargin    - 'PlotType': type of plot
+%                   must be an unambiguous, case-insensitive match to one of: 
+%                       'autocorrelogram' - two-sided autocorr
+%                       'acfFiltered'     - one-sided autocorrelation function
 %                   default == 'autocorrelogram'
 %                   - 'PlotFiltered': whether to plot filtered acf
 %                   must be numeric/logical 1 (true) or 0 (false)
@@ -165,7 +167,13 @@ oscPeriod2Ms = autoCorrParams.oscPeriod2Ms;
 oscPeriod1Ms = autoCorrParams.oscPeriod1Ms;
 oscDurationSec = autoCorrParams.oscDurationSec;
 nSpikesInOsc = autoCorrParams.nSpikesInOsc;
-figTitleBase = autoCorrParams.figTitleBase;
+
+% Decide on figure title base
+if isfield(autoCorrParams, 'figTitleBase')
+    figTitleBase = autoCorrParams.figTitleBase;
+else
+    figTitleBase = 'unnamed data';
+end
 
 % Create time values 
 if nBins > 1
