@@ -391,14 +391,25 @@ pMax    = [4, 60];                  % maximum values of parameters to loop throu
 pInc    = [1, 5];                   % increments of parameters to loop through
 pIsLog  = [0, 0];                   % whether increments of parameters is in log
 %}
+%{
 pCond = 1;
-gIncr = 30;
+gIncr = 20;
 pNames  = {'pCond', 'gIncr'};       % names of parameters to loop through
 pLabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
 pMin    = [1, 15];                  % minimum values of parameters to loop through
 pMax    = [4, 25];                  % maximum values of parameters to loop through
 pInc    = [1, 5];                   % increments of parameters to loop through
 pIsLog  = [0, 0];                   % whether increments of parameters is in log
+%}
+
+pCond = 1;
+gIncr = 20;
+pNames  = {'pCond'};                % names of parameters to loop through
+pLabels = {'Pharm Condition'};      % labels of parameters to loop through
+pMin    = 1;                        % minimum values of parameters to loop through
+pMax    = 4;                        % maximum values of parameters to loop through
+pInc    = 1;                        % increments of parameters to loop through
+pIsLog  = 0;                        % whether increments of parameters is in log
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
