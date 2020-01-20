@@ -113,8 +113,6 @@ function [fileNames, rowConditions, figurePositions] = ...
 %               already set in swpInfo would be respected
 % 2020-01-08 Fixed gCondToUse for columnMode == 1 so that it may be different
 %               for each cell
-% 2020-01-20 Now restricts gCondToUse to only those with data for 
-%               all pCondToUse present
 
 %% Hard-coded parameters
 pharmStr = 'prow';
@@ -194,11 +192,6 @@ if isempty(dataMode)
     dataMode = 0;
 end
 
-% Set default column mode
-if isempty(columnMode)
-    columnMode = 1;
-end
-
 % Update swpInfo so that there is a toUse column
 swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'RowsToUse', rowsToUse, ...
                                 'DataMode', dataMode, 'CasesDir', casesDir);
@@ -218,11 +211,6 @@ else
     error('cellNameOrId unrecognized!');
 end
 
-% Restrict sweeps to use to the cell name(s)
-if columnMode == 1
-    swpInfo = m3ha_select_sweeps('SwpInfo', swpInfo, 'CellName', cellName);
-end
-
 % Extract from swpInfo
 fnrow = swpInfo.Properties.RowNames;
 grow = swpInfo{:, gIncrStr};
@@ -232,9 +220,19 @@ ltsPeakTime = swpInfo{:, ltsDelayStr};
 maxNoise = swpInfo{:, maxNoiseStr};
 toUse = swpInfo{:, toUseStr};
 
-% Decide on pharm and gIncr conditions
-[pCondToUse, gCondToUse] = ...
-    decide_on_cond_to_use(swpInfo, toUseStr, pharmStr, gIncrStr);
+% Determine whether each sweep is from the cell(s) to fit
+%   Note: cellName may have more than one elements
+fromCell = contains(fnrow, cellName);
+
+% Get all unique conductance amplitude scaling percentages to fit
+if columnMode == 1
+    gCondToUse = unique(swpInfo{toUse & fromCell, gIncrStr});
+else
+    gCondToUse = unique(swpInfo{toUse, gIncrStr});
+end
+
+% Get all unique pharmacological conditions to fit
+pCondToUse = unique(swpInfo{toUse, pharmStr});
 
 % Count the number of distinct conductance amplitude scaling percentages
 nGCondToUse = length(gCondToUse);
@@ -242,6 +240,10 @@ nGCondToUse = length(gCondToUse);
 % Count the number of distinct pharmacological conditions 
 nPCondToUse = length(pCondToUse);
 
+% Set default column mode
+if isempty(columnMode)
+    columnMode = 1;
+end
 
 % Set default row mode
 if isempty(rowMode)
@@ -366,15 +368,16 @@ case 1
         %   @ 200% g_incr from this cell to be fitted
         if attemptNumber == 1
             swpIndRow = cellfun(@(x) select_trace(x & isGCond{isGIncr200} & ...
-                                                    toUse, ...
+                                                    fromCell & toUse, ...
                                                 hasLts, hasBurst, maxNoise), ...
                                     isPCond, 'UniformOutput', false);
         elseif attemptNumber == 2
-            swpIndRow = cellfun(@(x) find(x & isGCond{isGIncr200} & toUse), ...
+            swpIndRow = cellfun(@(x) find(x & isGCond{isGIncr200} & ...
+                                            fromCell & toUse), ...
                                     isPCond, 'UniformOutput', false);
         elseif attemptNumber == 5
             swpIndRow = cellfun(@(x) select_trace(x & isGCond{isGIncr400} & ...
-                                                    toUse, ...
+                                                    fromCell & toUse, ...
                                                 hasLts, hasBurst, maxNoise), ...
                                     isPCond, 'UniformOutput', false);
         end
@@ -398,7 +401,7 @@ case 1
 
         % Find the sweep indices for each row condition
         %   from this cell to be fitted
-        swpIndRow = cellfun(@(x) find(x & toUse), ...
+        swpIndRow = cellfun(@(x) find(x & fromCell & toUse), ...
                             isRowCond, 'UniformOutput', false);
 
         % Check if there is enough data or not
@@ -425,7 +428,8 @@ case 1
                 % Get three traces
                 for iG = 1:nGCondToUse
                     % Determine whether each sweep is this condition
-                    isThisCond = isGCond{iG} & isPCond{iPThis} & toUse;
+                    isThisCond = isGCond{iG} & isPCond{iPThis} & ...
+                                    fromCell & toUse;
 
                     % Select the "most representative trace"
                     swpIdxSelected = ...
@@ -443,7 +447,7 @@ case 1
                 swpIndRow{iRow} = swpIndThisRow;
             end
         elseif size(rowConditions, 2) == 2
-            swpIndRow = arrayfun(@(x) select_trace(x & toUse, ...
+            swpIndRow = arrayfun(@(x) select_trace(x & fromCell & toUse, ...
                                             hasLts, hasBurst, maxNoise), ...
                                 isRowCond, 'UniformOutput', false);
         end
@@ -455,7 +459,7 @@ case 1
 
         % Find the number of traces per row desired
         if size(rowConditions, 2) == 1
-            nColumns = nGCondToUse;
+            nColumns = 3;
         elseif size(rowConditions, 2) == 2
             nColumns = 1;
         end
@@ -747,46 +751,12 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [pCondToUse, gCondToUse] = ...
-                decide_on_cond_to_use (swpInfo, toUseStr, pharmStr, gIncrStr)
-%% Decide on the conductance amplitude scalings to use
-
-% Extract from swpInfo
-toUse = swpInfo{:, toUseStr};
-prow = swpInfo{:, pharmStr};
-grow = swpInfo{:, gIncrStr};
-
-% Get all unique pharmacological conditions to fit
-pCondToUse = unique(swpInfo{toUse, pharmStr});
-
-% Get all the unique conductance amplitude scalings to use
-gCondToUse = unique(swpInfo{toUse, gIncrStr});
-
-% If there is a conductance amplitude scaling without data to use for 
-%   all pharm conditions, remove it
-toUseGCond = arrayfun(@(y) all(arrayfun(@(x) any(toUse & grow == y & ...
-                                                prow == x), ...
-                                        pCondToUse)), ...
-                        gCondToUse);
-gCondToUse = gCondToUse(toUseGCond);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %{
 OLD CODE:
 
 % Make sure cell name is not a cell array
 if iscell(cellName) && numel(cellName) == 1
     cellName = cellName{1};
-end
-
-% Determine whether each sweep is from the cell(s) to fit
-%   Note: cellName may have more than one elements
-fromCell = contains(fnrow, cellName);
-
-% Restrict the the cell to fit if column mode is 1
-if columnMode == 1
-    toUse = toUse & fromCell;
 end
 
 %}
