@@ -33,8 +33,8 @@ function [output1] = m3ha_network_compare_ipsc (reqarg1, varargin)
 
 %% Hard-coded parameters
 spExtension = 'singsp';
-
-
+spPrefix = 'TC[0]';
+spKeyword = 'gIncr_20';
 
 %% Default values for optional arguments
 param1Default = [];             % default TODO: Description of param1
@@ -81,8 +81,7 @@ otherArguments = struct2arglist(iP.Unmatched);
 % 
 
 % Locate the TC neuron data for each pharm condition
-all_files('Extension', spExtension);
-
+all_files('Prefix', spPrefix, 'Keyword', spKeyword, 'Extension', spExtension);
 
 %% Output results
 % TODO
