@@ -37,11 +37,13 @@ function gGababNs = compute_gabab_conductance (tVec, timeStart, amplitudeNs, ...
 % Requires:
 %       cd/find_closest.m
 %       cd/force_column_vector.m
+%       cd/force_matrix.m
 %       cd/force_row_vector.m
 %       cd/match_format_vectors.m
 %
 % Used by:
 %       cd/m3ha_compute_gabab_ipsc.m
+%       cd/m3ha_network_compare_ipsc.m
 %       cd/m3ha_resave_sweeps.m
 %       cd/m3ha_trace_comparison.m
 
@@ -90,6 +92,9 @@ sheetName = iP.Results.SheetName;
 %% Preparation
 % Make sure time vectors are column vectors
 tVec = force_column_vector(tVec);
+
+% Force as a matrix
+tVec = force_matrix(tVec);
 
 % Make sure parameters are row vectors
 [timeStart, amplitudeNs, tauRise, tauFallFast, tauFallSlow, weight] = ...

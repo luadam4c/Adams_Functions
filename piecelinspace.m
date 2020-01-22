@@ -24,6 +24,7 @@ function vector = piecelinspace (nodes, nPoints, varargin)
 %
 % Used by:
 %       cd/m3ha_compute_gabab_ipsc.m
+%       cd/m3ha_parse_sweep_settings.m
 %       /media/adamX/m3ha/data_dclamp/CountSweeps.m
 
 % File History:

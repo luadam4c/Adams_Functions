@@ -121,6 +121,7 @@ function [simParamsTable, simParamsPath] = ...
 %       cd/force_string_end.m
 %       cd/isnumericvector.m
 %       cd/ispositiveintegerscalar.m
+%       cd/m3ha_load_gabab_ipsc_params.m
 %       cd/match_row_count.m
 %       cd/transpose_table.m
 %
@@ -136,6 +137,7 @@ function [simParamsTable, simParamsPath] = ...
 % 2019-12-27 Added 'useHH'
 % 2020-01-02 Added 'tauhMode'
 % 2020-01-05 Fixe nSimsDefault
+% 2020-01-22 Now uses m3ha_load_gabab_ipsc_params.m
 % TODO: Remove the Cpr parameters and decide on them before
 % 
 
@@ -186,12 +188,7 @@ holdCurrentNoiseDefault = 0;    % (nA)
 currentPulseAmplitudeDefault = -0.050;                          % (nA)
 
 %% Default values for GABAB parameters
-gIncr = [100; 200; 400] / 100;
-gababAmpTemplate = [16.00; 24.00; 8.88; 6.32] / 1000;           % (uS)
-gababTriseTemplate = [52.00; 52.00; 38.63; 39.88];              % (ms)
-gababTfallFastTemplate = [90.10; 90.10; 273.40; 65.80];         % (ms)
-gababTfallSlowTemplate = [1073.20; 1073.20; 1022.00; 2600.00];  % (ms)
-gababWeightTemplate = [0.952; 0.952; 0.775; 0.629];
+gababAmpRatioDefault = [100; 200; 400] / 100;
 gababAmpDefault = [];           % set later
 gababTriseDefault = [];         % set later
 gababTfallFastDefault = [];     % set later
@@ -325,18 +322,24 @@ end
 
 % Decide on GABAB parameters
 if isempty(gababAmp)
+    % Load default GABAB IPSC parameters in uS
+    [gababAmpTemplate, gababTriseTemplate, gababTfallFastTemplate, ...
+            gababTfallSlowTemplate, gababWeightTemplate] = ...
+        m3ha_load_gabab_ipsc_params('AmpScaleFactor', ampScaleFactor, ...
+                                    'AmpUnits', 'uS');
+
     % Set the amplitude based on whether cprFlag is on
     if cprFlag
         % Set to zero
         gababAmp = 0;
     else
         % Use all possible combinations from the template
-        gababAmp = gIncr * transpose(gababAmpTemplate);
+        gababAmp = gababAmpRatioDefault * transpose(gababAmpTemplate);
     end
 
     % Match gababAmp
     [gababTrise, gababTfallFast, gababTfallSlow, gababWeight] = ...
-        argfun(@(x) ones(size(gIncr)) * transpose(x), ...
+        argfun(@(x) ones(size(gababAmpRatioDefault)) * transpose(x), ...
                 gababTriseTemplate, gababTfallFastTemplate, ...
                 gababTfallSlowTemplate, gababWeightTemplate);
 end
@@ -652,11 +655,11 @@ gababWeight = 0;
 if ~cprFlag
 
 %       cd/force_column_vector.m
-gababAmp = force_column_vector(gIncr * gababAmpTemplate');
-gababTrise = force_column_vector(gIncr * gababTriseTemplate');
-gababTfallFast = force_column_vector(gIncr * gababTfallFastTemplate');
-gababTfallSlow = force_column_vector(gIncr * gababTfallSlowTemplate');
-gababWeight = force_column_vector(gIncr * gababWeightTemplate');
+gababAmp = force_column_vector(gababAmpRatioDefault * gababAmpTemplate');
+gababTrise = force_column_vector(gababAmpRatioDefault * gababTriseTemplate');
+gababTfallFast = force_column_vector(gababAmpRatioDefault * gababTfallFastTemplate');
+gababTfallSlow = force_column_vector(gababAmpRatioDefault * gababTfallSlowTemplate');
+gababWeight = force_column_vector(gababAmpRatioDefault * gababWeightTemplate');
 
 elseif mod(nSims, nGababInputs) == 0
     % If nSims is divisible by nGababInputs,

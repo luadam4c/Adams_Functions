@@ -24,11 +24,10 @@ function paramsTable = m3ha_network_update_dependent_params (paramsTable, vararg
 %                       'noexp' - no experiment provided; do nothing
 %                   default == 'noexp'
 %
-% Requires:
-%       cd/m3ha_load_gabab_ipsc_params.m
+% Requires:    
 %
-% Used by:
-%       cd/m3ha_network_change_params.m
+% Used by:    
+%        cd/m3ha_network_change_params.m
 %
 
 % File History:
@@ -49,6 +48,12 @@ validExperiments = {'RTCl', 'm3ha', 'noexp'};
 % Note: amp in Christine's thesis was actually for 200 % G incr
 %       This must be consistent with /media/adamX/m3ha/data_dclamp/CountSweeps.m
 gabaaGmaxTemplate = [4.48; 6.72; 9.76; 4.48] ./ 1000;    % maximal conductance (uS)
+gababAmpTemplate = [16.00; 24.00; 8.88; 6.32] ./ 1000;   % conductance amplitude (uS)
+gababTriseTemplate = [52.00; 52.00; 38.63; 39.88]; % rising phase time constant (ms)
+gababTfallFastTemplate = [90.10; 90.10; 273.40; 65.80];% fast decay time constant (ms)
+gababTfallSlowTemplate = [1073.20; 1073.20; 1022.00; 2600.00];
+                                                % slow decay time constant (ms)
+gababWeightDefault = [0.952; 0.952; 0.775; 0.629];         % weight of the fast decay
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -118,14 +123,8 @@ case 'm3ha'
             gabaaGmaxTemplate(pCond) * 2 * gIncr/100;  
     end
 
-    % Load default GABAB IPSC parameters in uS and 
-    %   with the desired amplitude scaling factor
-    [gababAmpTemplate, gababTriseTemplate, gababTfallFastTemplate, ...
-            gababTfallSlowTemplate, gababWeightTemplate] = ...
-        m3ha_load_gabab_ipsc_params('AmpScaleFactor', gIncr, 'AmpUnits', 'uS');
-
     % Update GABA-B conductance amplitude (uS)
-    paramsTable{'TCgababAmp', 'Value'} = gababAmpTemplate(pCond);
+    paramsTable{'TCgababAmp', 'Value'} = gababAmpTemplate(pCond) * gIncr/100;
 
     % Update rising phase time constant (ms)
     paramsTable{'TCgababTrise', 'Value'} = gababTriseTemplate(pCond);
@@ -137,7 +136,7 @@ case 'm3ha'
     paramsTable{'TCgababTfallSlow', 'Value'} = gababTfallSlowTemplate(pCond);
 
     % Update weight of the fast decay
-    paramsTable{'TCgababW', 'Value'} = gababWeightTemplate(pCond);
+    paramsTable{'TCgababW', 'Value'} = gababWeightDefault(pCond);
 case {'RTCl', 'noexp'}
     % Do nothing
 end

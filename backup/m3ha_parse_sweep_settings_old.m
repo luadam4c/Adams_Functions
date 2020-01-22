@@ -2,14 +2,14 @@ function [numcells, numsets, numswps, cellnames, abffullfn, nswpsCPV, ...
                 nswpsUsed, fnrow, cellidrow, prow, vrow, grow, swpnrow, ...
                 gabab_amp, gabab_Trise, gabab_TfallFast, gabab_TfallSlow, ...
                 gabab_w, actIhold] = ...
-                m3ha_parse_sweep_settings (infolder, ljp, debugflag, debugFiles, ...
+                m3ha_parse_sweep_settings (infolder, ljp, debugflag, debug_files, ...
                     preallocateflag, maxcells, maxsets, maxswps)
 %% Counts total number of usable cells, sets and sweeps, generate filenames and record sweep properties
 % Usage: [numcells, numsets, numswps, cellnames, abffullfn, nswpsCPV, ...
 %               nswpsUsed, fnrow, cellidrow, prow, vrow, grow, swpnrow, ...
 %               gabab_amp, gabab_Trise, gabab_TfallFast, gabab_TfallSlow, ...
 %               gabab_w, actIhold] = ...
-%               m3ha_parse_sweep_settings (infolder, ljp, debugflag, debugFiles, ...
+%               m3ha_parse_sweep_settings (infolder, ljp, debugflag, debug_files, ...
 %                   preallocateflag, maxcells, maxsets, maxswps)
 % Arguments:
 %       infolder    - 
@@ -19,21 +19,16 @@ function [numcells, numsets, numswps, cellnames, abffullfn, nswpsCPV, ...
 %       maxsets     - (opt) Total number of cell-pharm-vhold conditions recorded
 %       maxswps     - (opt) Total number of sweeps recorded
 %
-% Required:
-%       cd/m3ha_load_gabab_ipsc_params.m
-%       cd/piecelinspace.m
-%
 % Used by:
 %       cd/m3ha_parse_dclamp_data.m
 %
 
 % File History:
 % 2016-11-07 Moved from dclampDataExtractor.m
-% 2016-11-30 E092810_0000 was added to brokenFiles and taken out of all analyses 
+% 2016-11-30 E092810_0000 was added to broken_files and taken out of all analyses 
 %        (otherwise the GAT1 block might be overrepresented statistically)
 % 2016-12-13 Reversed sign of LJP
 % 2018-08-06 Added actIhold
-% 2020-01-22 Now uses m3ha_load_gabab_ipsc_params.m
 %
 
 %% Fixed parameters used in the experiments
@@ -65,18 +60,21 @@ ffol{4} = {'101310_dclampnew11'};
 fg{4} = [100, 200, 400, 800];
 
 %% Problematic abf files
-brokenFiles = {'B100110_0000', ...     % Cannot open with abf2load
+broken_files = {'B100110_0000', ...     % Cannot open with abf2load
             'E100110_0001', ...         % Only one sweep was recorded
             'G091810_0000', ...         % Channels were mixed up for at least one trace
             'E092810_0000', ...         % A GAT1 block curve was applied instead of a GAT3 block
             };                          %     but E092810_0002 is already the GAT1 block
             
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Load template parameters used for GABAB IPSC conductance waveforms
+%% Template parameters used for GABAB IPSC conductance waveforms
 % Note: amp in Christine's thesis was actually for 200 % G incr
-[gababAmp, gababTRise, gababTFallFast, gababTFallSlow, gababWeight] = ...
-    m3ha_load_gabab_ipsc_params('AmpScaleFactor', 100, 'AmpUnits', 'nS');
+gtemp_amp = [16.00; 24.00; 8.88; 6.32];            % (nS)
+gtemp_Trise = [52.00; 52.00; 38.63; 39.88];        % (ms)
+gtemp_TfallFast = [90.10; 90.10; 273.40; 65.80];    % (ms)
+gtemp_TfallSlow = [1073.20; 1073.20; 1022.00; 2600.00];    % (ms)
+gtemp_w = [0.952; 0.952; 0.775; 0.629];
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Initialize counters
 celln = 0;      % number of cells counted so far
@@ -161,10 +159,10 @@ for f = 1:4
                     else
                         datfn = [cellnames{celln}, thisprefix, '_', setn];
                     end
-                    if ismember(datfn, brokenFiles)    % Skip this set if abf file cannot be parsed
+                    if ismember(datfn, broken_files)    % Skip this set if abf file cannot be parsed
                         continue;
                     end
-                    if debugflag && ~ismember(datfn, debugFiles)
+                    if debugflag && ~ismember(datfn, debug_files)
                         continue;
                     end
 
@@ -209,11 +207,11 @@ for f = 1:4
                         swpnrow(swpc) = swpntag(iSwp);  % Within condition sweep #
 
                         % Record GABAB IPSC conductance waveform parameters for this sweep
-                        gabab_amp(swpc) = (grow(swpc)/100) * gababAmp(prow(swpc));
-                        gabab_Trise(swpc) = gababTRise(prow(swpc));
-                        gabab_TfallFast(swpc) = gababTFallFast(prow(swpc));
-                        gabab_TfallSlow(swpc) = gababTFallSlow(prow(swpc));
-                        gabab_w(swpc) = gababWeight(prow(swpc));
+                        gabab_amp(swpc) = (grow(swpc)/100) * gtemp_amp(prow(swpc));
+                        gabab_Trise(swpc) = gtemp_Trise(prow(swpc));
+                        gabab_TfallFast(swpc) = gtemp_TfallFast(prow(swpc));
+                        gabab_TfallSlow(swpc) = gtemp_TfallSlow(prow(swpc));
+                        gabab_w(swpc) = gtemp_w(prow(swpc));
 
                         % Average out the holding currents
                         %   based on the sweep number

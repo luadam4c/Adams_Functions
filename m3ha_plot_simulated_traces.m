@@ -1,5 +1,5 @@
 function handles = m3ha_plot_simulated_traces (varargin)
-%% Plots simulated traces from NEURON output files
+%% Plots simulated traces from single neuron output files
 % Usage: handles = m3ha_plot_simulated_traces (varargin)
 % Explanation:
 %       TODO

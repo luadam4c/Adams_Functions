@@ -113,6 +113,7 @@ function varargout = all_files (varargin)
 % 2019-11-24 Now allows 'Directory' to be multiple directories
 % 2019-12-13 Added 'SubDirInstead' as an optional argument 
 % 2019-12-31 Fixed usage of the 'Prefix' option
+% 2019-01-22 Added usage of add_escape_char()
 % TODO: Fix bug when a dot is in the folder name
 
 %% Hard-coded parameters
@@ -208,6 +209,10 @@ end
 %% Find files
 % Get or check the regular expression to match
 if isempty(regExp)
+    % Add an escape character for special characters
+    [prefix, keyword, suffix, extension] = ...
+        argfun(@(x) add_escape_char(x), prefix, keyword, suffix, extension);
+
     if ~isempty(extension)
         % Match the prefix, keyword, suffix and extension
         regExp = sprintf('^%s.*%s.*%s%s$', prefix, keyword, suffix, extension);
@@ -329,6 +334,18 @@ end
 
 % Vertically concatenate all File objects
 filesOrDirs = vertcat(filesOrDirsAll{:});
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function str = add_escape_char (str)
+%% Adds an escape character for all special characters in the string
+% TODO: Pull out as a function
+% TODO for SHINSHIN: Examine usage of regexp for other special characters
+
+specialChars = {'[', ']'};
+specialCharsEscaped = {'\[', '\]'};
+
+str = replace(str, specialChars, specialCharsEscaped);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -52,6 +52,7 @@ function varargout = find_matching_files (fileStrs, varargin)
 % Used by:
 %       cd/create_pleth_EEG_movies.m
 %       cd/load_matching_sheets.m
+%       cd/m3ha_network_compare_ipsc.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_plot_figure04.m
@@ -176,6 +177,9 @@ else
     % Find the first matching file
     indMatched = find_first_match(distinctPartsBase, fileBases, ...
                                         'MatchMode', partType);
+    if any(isnan(indMatched))
+        error('Some files not matched!');
+    end
     files = files(indMatched);
     fullPaths = fullPaths(indMatched);
 end

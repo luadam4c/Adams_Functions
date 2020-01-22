@@ -1,6 +1,6 @@
-function [output1] = m3ha_network_compare_ipsc (reqarg1, varargin)
+% function m3ha_network_compare_ipsc (varargin)
 %% Compare an evoked IPSC against the recorded IPSC
-% Usage: [output1] = m3ha_network_compare_ipsc (reqarg1, varargin)
+% Usage: m3ha_network_compare_ipsc (varargin)
 % Explanation:
 %       TODO
 %
@@ -20,71 +20,108 @@ function [output1] = m3ha_network_compare_ipsc (reqarg1, varargin)
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
-%       ~/Adams_Functions/create_error_for_nargin.m
-%       ~/Adams_Functions/struct2arglist.m
-%       /TODO:dir/TODO:file
+%       cd/compute_gabab_conductance.m
+%       cd/create_labels_from_numbers.m
+%       cd/extract_columns.m
+%       cd/find_matching_files.m
+%       cd/load_neuron_outputs.m
+%       cd/m3ha_load_gabab_ipsc_params.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
 
 % File History:
-% 2020-01-10 Created by Adam Lu
+% 2020-01-22 Created by Adam Lu
 % 
 
 %% Hard-coded parameters
 spExtension = 'singsp';
 spPrefix = 'TC[0]';
 spKeyword = 'gIncr_20';
+ipscStartMs = 3000;
+ampScaleFactor = 200;
+ampUnits = 'nS';
+
+% Column numbers for simulated data
+%   Note: Must be consistent with m3ha_net.hoc
+TIME_COL_SIM = 1;
+VOLT_COL_SIM = 2;
+INA_COL_SIM = 3;
+IK_COL_SIM = 4;
+ICA_COL_SIM = 5;
+IGABAA_COL_SIM = 6;
+IGABAB_COL_SIM = 7;
+CAI_COL_SIM = 8;
+GGABAB_COL_SIM = 9;
+
+% Plot parameters
+xLimits = [2000, 10000];
+xLabel = 'Time (ms)';
+
+% TODO: Make optional arguments
+directory = pwd;
 
 %% Default values for optional arguments
-param1Default = [];             % default TODO: Description of param1
+% param1Default = [];             % default TODO: Description of param1
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
-% Check number of required arguments
-if nargin < 1    % TODO: 1 might need to be changed
-    error(create_error_for_nargin(mfilename));
-end
-
 % Set up Input Parser Scheme
-iP = inputParser;
-iP.FunctionName = mfilename;
-iP.KeepUnmatched = true;                        % allow extraneous options
-
-% Add required inputs to the Input Parser
-addRequired(iP, 'reqarg1');
+% iP = inputParser;
+% iP.FunctionName = mfilename;
+% iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'param1', param1Default);
+% addParameter(iP, 'param1', param1Default);
 
 % Read from the Input Parser
-parse(iP, reqarg1, varargin{:});
-param1 = iP.Results.param1;
+% parse(iP, varargin{:});
+% param1 = iP.Results.param1;
 
 % Keep unmatched arguments for the TODO() function
-otherArguments = struct2arglist(iP.Unmatched);
-
-% Check relationships between arguments
-% TODO
+% otherArguments = iP.Unmatched;
 
 %% Preparation
 % TODO
 
 %% Do the job
-% Load default GABAB IPSC parameters
-% TODO: m3ha_load_ipsc_params.m
-
-% Compute GABAB IPSC
-% TODO
-
-% 
+% Construct the pharm strings expected in file names
+pharmStrs = create_labels_from_numbers(1:4, 'Prefix', 'pCond_');
 
 % Locate the TC neuron data for each pharm condition
-all_files('Prefix', spPrefix, 'Keyword', spKeyword, 'Extension', spExtension);
+[~, dataPaths] = find_matching_files(pharmStrs, 'Directory', directory, ...
+                            'Prefix', spPrefix, 'Keyword', spKeyword, ...
+                            'Extension', spExtension);
+
+% Load simulated data
+simData = load_neuron_outputs('FileNames', dataPaths);
+
+% Extract vectors from simulated data
+[tVecsMs, gCmdSim] = extract_columns(simData, [TIME_COL_SIM, GGABAB_COL_SIM]);
+
+% Load default GABAB IPSC parameters in nS
+[ampOrig, tauRiseOrig, tauFallFastOrig, tauFallSlowOrig, weightOrig] = ...
+    m3ha_load_gabab_ipsc_params('AmpScaleFactor', ampScaleFactor, ...
+                                'AmpUnits', ampUnits);
+
+% Compute original GABAB conductance vectors
+gVecsOrig = compute_gabab_conductance(tVecsMs, ipscStartMs, ...
+                                ampOrig, tauRiseOrig, ...
+                                tauFallFastOrig, tauFallSlowOrig, weightOrig);
+
+% Clear simData to release memory
+clear simData
+
+% Create a figure
+fig = set_figure_properties('AlwaysNew', true);
+
+% Plot traces
+plot_traces(tVecsMs, gCmdSim, 'DataToCompare', gVecsOrig, ...
+            'PlotMode', 'parallel', ...
+            'XLimits', xLimits, 'XLabel', xLabel);
 
 %% Output results
-% TODO
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

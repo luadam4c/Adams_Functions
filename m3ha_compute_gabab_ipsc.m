@@ -6,6 +6,7 @@ function varargout = m3ha_compute_gabab_ipsc (outFolder, varargin)
 %       cd/compute_time_constant.m
 %       cd/create_labels_from_numbers.m
 %       cd/logscale.m
+%       cd/m3ha_load_gabab_ipsc_params.m
 %       cd/match_format_vectors.m
 %       cd/piecelinspace.m
 %       cd/plot_traces.m
@@ -20,13 +21,11 @@ function varargout = m3ha_compute_gabab_ipsc (outFolder, varargin)
 % 2020-01-03 Moved from plot_gababipsc.m
 % 2020-01-04 Added plotDualVaryTau and plotVaryDualtoGAT3toGAT1 
 % 2020-01-05 Changed ipscStart to 1000
+% 2020-01-22 Now uses m3ha_load_gabab_ipsc_params.m
 
 %% Hard-coded parameters
-ampOrig = [32.00; 48.00; 17.76; 12.64];                     % (nS)
-tauRiseOrig = [52.00; 52.00; 38.63; 39.88];                 % (ms)
-tauFallFastOrig = [90.10; 90.10; 273.40; 65.80];            % (ms)
-tauFallSlowOrig = [1073.20; 1073.20; 1022.00; 2600.00];     % (ms)
-weight = [0.952; 0.952; 0.775; 0.629];
+ampScaleFactor = 200;
+ampUnits = 'nS';
 
 % The following must be consistent with both dclampDataExtractor.m & ...
 %   singleneuron4compgabab.hoc
@@ -60,6 +59,11 @@ plotOldFigures = false;
 %% Preparation
 % Create a time vector in ms
 tVec = transpose(tStart:siMs:tStop);
+
+% Load default GABAB IPSC parameters
+[ampOrig, tauRiseOrig, tauFallFastOrig, tauFallSlowOrig, weight] = ...
+    m3ha_load_gabab_ipsc_params('AmpScaleFactor', ampScaleFactor, ...
+                                'AmpUnits', ampUnits);
 
 %% Extract values for the Control condition
 ampCon = ampOrig(1);

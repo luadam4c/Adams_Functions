@@ -37,6 +37,7 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 %       cd/match_time_points.m
 %
 % Used by:    
+%       cd/m3ha_network_compare_ipsc.m
 %       cd/m3ha_neuron_run_and_analyze.m
 %       cd/m3ha_plot_simulated_traces.m
 %       cd/m3ha_simulate_population.m
