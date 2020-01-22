@@ -26,6 +26,8 @@
 %       cd/find_matching_files.m
 %       cd/load_neuron_outputs.m
 %       cd/m3ha_load_gabab_ipsc_params.m
+%       cd/plot_traces.m
+%       cd/set_figure_properties.m
 %
 % Used by:
 %       /TODO:dir/TODO:file
@@ -57,6 +59,8 @@ GGABAB_COL_SIM = 9;
 % Plot parameters
 xLimits = [2000, 10000];
 xLabel = 'Time (ms)';
+pharmLabels = {'{\it s}-Control', '{\it s}-GAT1 Block', ...
+                    '{\it s}-GAT3 Block', '{\it s}-Dual Block'};
 
 % TODO: Make optional arguments
 directory = pwd;
@@ -98,15 +102,18 @@ pharmStrs = create_labels_from_numbers(1:4, 'Prefix', 'pCond_');
 simData = load_neuron_outputs('FileNames', dataPaths);
 
 % Extract vectors from simulated data
-[tVecsMs, gCmdSim] = extract_columns(simData, [TIME_COL_SIM, GGABAB_COL_SIM]);
+[tVecsMs, gCmdSimUs] = extract_columns(simData, [TIME_COL_SIM, GGABAB_COL_SIM]);
+
+% Convert to nS
+gCmdSimNs = convert_units(gCmdSimUs, 'uS', 'nS');
 
 % Load default GABAB IPSC parameters in nS
 [ampOrig, tauRiseOrig, tauFallFastOrig, tauFallSlowOrig, weightOrig] = ...
     m3ha_load_gabab_ipsc_params('AmpScaleFactor', ampScaleFactor, ...
                                 'AmpUnits', ampUnits);
 
-% Compute original GABAB conductance vectors
-gVecsOrig = compute_gabab_conductance(tVecsMs, ipscStartMs, ...
+% Compute original GABAB conductance vectors in nS
+gVecsOrigNs = compute_gabab_conductance(tVecsMs, ipscStartMs, ...
                                 ampOrig, tauRiseOrig, ...
                                 tauFallFastOrig, tauFallSlowOrig, weightOrig);
 
@@ -117,9 +124,9 @@ clear simData
 fig = set_figure_properties('AlwaysNew', true);
 
 % Plot traces
-plot_traces(tVecsMs, gCmdSim, 'DataToCompare', gVecsOrig, ...
+plot_traces(tVecsMs, gCmdSimNs, 'DataToCompare', gVecsOrigNs, ...
             'PlotMode', 'parallel', ...
-            'XLimits', xLimits, 'XLabel', xLabel);
+            'XLimits', xLimits, 'XLabel', xLabel, 'TraceLabels', pharmLabels);
 
 %% Output results
 

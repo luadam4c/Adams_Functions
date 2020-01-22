@@ -30,6 +30,7 @@ function output = apply_over_cells (myFunction, inputs, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/struct2arglist.m
 %
 % Used by:
 %       cd/combine_variables_across_tables.m

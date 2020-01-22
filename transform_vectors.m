@@ -45,7 +45,7 @@ function vecs = transform_vectors (vecs, amount, method, varargin)
 
 % File History:
 % 2019-04-26 Created by Adam Lu
-% 
+% TODO: Use apply_to_all_cells.m instead?
 
 %% Hard-coded parameters
 validMethods = {'add', 'subtract', 'multiply', 'divide'};

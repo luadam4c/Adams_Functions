@@ -25,8 +25,9 @@ function suffix = extract_common_suffix (strs, varargin)
 %       cd/extract_common_prefix.m
 %
 % Used by:
-%       cd/plot_swd_histogram.m
+%       cd/convert_units.m
 %       cd/extract_distinct_fileparts.m
+%       cd/plot_swd_histogram.m
 
 % File History:
 % 2018-12-26 Adapted from extract_common_prefix.m
