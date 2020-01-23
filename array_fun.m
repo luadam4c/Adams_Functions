@@ -49,7 +49,7 @@ function varargout = array_fun (myFunc, varargin)
 % File History:
 % 2020-01-01 Created by Adam Lu
 % 2020-01-02 Fixed to work with 2D arrays
-% 
+% TODO: Renew parpool if memory usage is too high
 
 %% Hard-coded parameters
 minItemsForParfor = 12;
