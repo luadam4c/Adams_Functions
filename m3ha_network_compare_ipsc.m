@@ -21,11 +21,14 @@
 %
 % Requires:
 %       cd/compute_gabab_conductance.m
+%       cd/convert_units.m
 %       cd/create_labels_from_numbers.m
 %       cd/extract_columns.m
+%       cd/extract_fileparts.m
 %       cd/find_matching_files.m
 %       cd/load_neuron_outputs.m
 %       cd/m3ha_load_gabab_ipsc_params.m
+%       cd/m3ha_network_compare_ipsc.m
 %       cd/plot_traces.m
 %       cd/set_figure_properties.m
 %
@@ -41,7 +44,7 @@ spExtension = 'singsp';
 spPrefix = 'TC[0]';
 spKeyword = 'gIncr_20';
 ipscStartMs = 3000;
-ampScaleFactor = 200;
+ampScaleFactor = 240;
 ampUnits = 'nS';
 
 % Column numbers for simulated data
@@ -61,6 +64,7 @@ xLimits = [2000, 10000];
 xLabel = 'Time (ms)';
 pharmLabels = {'{\it s}-Control', '{\it s}-GAT1 Block', ...
                     '{\it s}-GAT3 Block', '{\it s}-Dual Block'};
+figTypes = {'png', 'epsc'};
 
 % TODO: Make optional arguments
 directory = pwd;
@@ -98,6 +102,13 @@ pharmStrs = create_labels_from_numbers(1:4, 'Prefix', 'pCond_');
                             'Prefix', spPrefix, 'Keyword', spKeyword, ...
                             'Extension', spExtension);
 
+% Decide on figure name and title
+commonPrefix = extract_fileparts(dataPaths, 'commonprefix');
+commonSuffix = extract_fileparts(dataPaths, 'commonsuffix');
+figName = [commonPrefix, '_', commonSuffix, '_gabab_ipsc_comparison'];
+figTitle = ['GABA_B IPSC Comparison for ', commonPrefix, '_', commonSuffix];
+figTitle = replace(figTitle, '_', '\_');
+
 % Load simulated data
 simData = load_neuron_outputs('FileNames', dataPaths);
 
@@ -126,7 +137,11 @@ fig = set_figure_properties('AlwaysNew', true);
 % Plot traces
 plot_traces(tVecsMs, gCmdSimNs, 'DataToCompare', gVecsOrigNs, ...
             'PlotMode', 'parallel', ...
-            'XLimits', xLimits, 'XLabel', xLabel, 'TraceLabels', pharmLabels);
+            'XLimits', xLimits, 'XLabel', 'suppress', 'YLabel', pharmLabels, ...
+            'FigTitle', figTitle, 'LegendLocation', 'suppress');
+
+% Save figure
+save_all_figtypes(fig, figName, figTypes);
 
 %% Output results
 

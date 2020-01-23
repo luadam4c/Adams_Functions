@@ -7,6 +7,7 @@ function newValues = convert_units (oldValues, oldUnits, newUnits, varargin)
 % Example(s):
 %       convert_units(magic(3), 'mQ', 'nQ')
 %       convert_units(magic(3), 'ms', 's')
+%       TODO: convert_units(magic(3), 'hours', 'mins')
 %
 % Outputs:
 %       newValues   - new numeric values
@@ -31,11 +32,11 @@ function newValues = convert_units (oldValues, oldUnits, newUnits, varargin)
 %       cd/extract_common_suffix.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/m3ha_network_compare_ipsc.m
 
 % File History:
 % 2020-01-22 Created by Adam Lu
-% TODO: Merge with transform_vectors.m?
+% TODO: Use transform_vectors.m?
 
 %% Hard-coded parameters
 
