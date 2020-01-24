@@ -1704,7 +1704,7 @@ if plotIndividualFlag
             expStr);
 
     % Decide on figure title and figure name
-    figTitle = sprintf('All traces for Experiment %s', expStrForTitle);
+    figTitle = sprintf('Fits for %s', expStrForTitle);
     figName = fullfile(outFolder, [expStr, '_individual.png']);
 
     % Decide on the axes to be linked
