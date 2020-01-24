@@ -366,7 +366,8 @@ if chooseBestParamsFlag
         fprintf('Choosing initial parameters for cell %s ... \n', cellNameThis);
 
         % Set default sweep weights
-        sweepWeights = m3ha_decide_on_sweep_weights(sweepWeights, fileNamesThis);
+        sweepWeights = ...
+            m3ha_decide_on_sweep_weights(sweepWeights, fileNamesThis);
 
         % Choose the best initial parameters for each cell among all the
         %   custom files
@@ -617,26 +618,6 @@ newPngPaths = fullfile(outFolder, strcat('rank_', rankingStrs, '_', ...
 cellfun(@(x, y) copyfile(x, y), oldPngPaths, newPngPaths, ...
         'UniformOutput', false);
 
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function sweepWeights = m3ha_decide_on_sweep_weights (sweepWeights, fileNames)
-
-if isempty(sweepWeights)
-    % Count the number of files
-    nFiles = numel(fileNames);
-
-    % Make sure it is a multiple of 4
-    if mod(nFiles, 4) ~= 0
-        error('nFiles should be a multiple of 4!');
-    end
-
-    % Count the number of gIncr conditions to fit
-    nGIncr = nFiles / 4;
-
-    % Make sweeps with higher gIncrs weighted more
-    sweepWeights = repmat(transpose(1:nGIncr), 4, 1);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

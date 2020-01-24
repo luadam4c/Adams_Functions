@@ -354,6 +354,7 @@ There are 2 MATLAB scripts in this directory:
 - [**m3ha_correct_unbalanced_bridge.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_correct_unbalanced_bridge.m): Fix current pulse response traces that may have out-of-balance bridges
 - [**m3ha_create_cell_info_table.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_create_cell_info_table.m): Creates a table of cell information from the sweep information table
 - [**m3ha_decide_on_plot_vars.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_decide_on_plot_vars.m): Decides on the error and parameters to plot
+- [**m3ha_decide_on_sweep_weights.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_decide_on_sweep_weights.m): Set default weights for fitting for the GAT blockade project
 - [**m3ha_determine_row_conditions.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_determine_row_conditions.m): Determine the conditions for each row
 - [**m3ha_estimate_passive_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_estimate_passive_params.m): Estimates passive parameters for each cell from dclamp data recorded by Mark & Christine
 - [**m3ha_extract_cell_name.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_extract_cell_name.m): Extracts the cell name from strings but ignores anything before filesep
