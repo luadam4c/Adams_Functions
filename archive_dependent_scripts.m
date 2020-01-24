@@ -14,6 +14,7 @@ function varargout = archive_dependent_scripts (mFileName, varargin)
 % Outputs:
 %       functionListTable       - see all_dependent_functions.m
 %                               specified as a table
+%
 % Arguments:
 %       mFileName   - .m file name
 %                   must be a string scalar or a character vector
@@ -47,6 +48,7 @@ function varargout = archive_dependent_scripts (mFileName, varargin)
 %
 % Used by:
 %       cd/clc2_analyze.m
+%       cd/m3ha_rank_neurons.m
 
 % File History:
 % 2019-08-11 Created by Adam Lu

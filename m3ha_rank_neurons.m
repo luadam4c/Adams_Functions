@@ -21,6 +21,7 @@
 %
 % Requires:
 %       cd/apply_over_cells.m
+%       cd/archive_dependent_scripts.m
 %       cd/argfun.m
 %       cd/create_label_from_sequence.m
 %       cd/create_subplots.m
@@ -31,6 +32,7 @@
 %       cd/copy_into.m
 %       cd/create_error_for_nargin.m
 %       cd/m3ha_decide_on_plot_vars.m
+%       cd/m3ha_decide_on_sweep_weights.m
 %       cd/m3ha_extract_component_errors.m
 %       cd/m3ha_locate_homedir.m
 %       cd/m3ha_neuron_choose_best_params.m
@@ -49,6 +51,7 @@
 % 2019-12-18 Added bar plots and error history
 % 2019-12-30 Added error param comparison across cells
 % 2020-01-03 Restricted fitting window
+% 2020-01-24 Now uses m3ha_decide_on_sweep_weights.m
 
 %% Hard-coded parameters
 % Flags
@@ -62,13 +65,14 @@ plotHistogramsFlag = true;
 plotBarPlotFlag = true;
 plotParamViolinsFlag = true;
 plotErrorParamComparisonFlag = true;
+archiveScriptsFlag = true;
 
 % Fitting parameters 
 %   Note: Must be consistent with singleneuronfitting91.m
 useHH = false;
 buildMode = 'active';
 simMode = 'active';
-dataMode = 2;                       % data mode:
+dataMode = 3;                       % data mode:
                                     %   0 - all data
                                     %   1 - all of g incr = 100%, 200%, 400% 
                                     %   2 - same g incr but exclude 
@@ -117,9 +121,7 @@ rankSheetExtension = 'csv';
 %   Note: Should be consistent with singleneuronfitting78.m
 %       & compute_lts_errors.m & compute_single_neuron_errors.m
 ltsFeatureStrings = {'peak amp', 'peak time', 'max slope value'};
-sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
-% sweepWeights = [];
-% errorWeights = [1; 3; 1; 1; 1];
+sweepWeights = [];              % set later
 errorWeights = [1; 6; 5; 1; 1];
 ltsFeatureWeights = errorWeights(3:5);  
                                 % weights for LTS feature errors
@@ -156,6 +158,7 @@ cellNameStr = 'cellName';
 % iterSetStr = 'singleneuronfitting0-90';
 % dataMode = 2;
 % attemptNumberAcrossTrials = 4;
+% errorWeights = [1; 3; 1; 1; 1];
 % sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
 % outFolder = '20191229_ranked_singleneuronfitting0-91';
@@ -163,6 +166,7 @@ cellNameStr = 'cellName';
 % rankNumsToPlot = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
 % dataMode = 2;
 % attemptNumberAcrossTrials = 4;
+% errorWeights = [1; 3; 1; 1; 1];
 % sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
 % outFolder = '20200102_ranked_singleneuronfitting0-94';
@@ -172,6 +176,7 @@ cellNameStr = 'cellName';
 % rankNumsToPlot = [1:6, 8:12, 13:18, 21, 22, 24, 26:32, 34, 36];
 % dataMode = 2;
 % attemptNumberAcrossTrials = 4;
+% errorWeights = [1; 3; 1; 1; 1];
 % sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
 % outFolder = '20200103_ranked_singleneuronfitting0-94';
@@ -179,12 +184,14 @@ cellNameStr = 'cellName';
 % rankNumsToPlot = 1:11;
 % dataMode = 2;
 % attemptNumberAcrossTrials = 4;
+% errorWeights = [1; 6; 5; 1; 1];
 % sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
 % outFolder = '20200106_ranked_singleneuronfitting0-95';
 % iterSetStr = 'singleneuronfitting0-95';
 % rankNumsToPlot = 1:11;
 % dataMode = 2;
+% errorWeights = [1; 6; 5; 1; 1];
 % sweepWeights = [];
 % attemptNumberAcrossTrials = 3;
 
@@ -193,7 +200,16 @@ cellNameStr = 'cellName';
 % rankNumsToPlot = 1:11;
 % dataMode = 3;
 % attemptNumberAcrossTrials = 3;
+% errorWeights = [1; 6; 5; 1; 1];
 % sweepWeights = [];
+
+% outFolder = '20200123_ranked_singleneuronfitting0-97';
+% iterSetStr = 'singleneuronfitting0-97';
+% rankNumsToPlot = 1:11;
+% dataMode = 2;
+% attemptNumberAcrossTrials = 6;
+% errorWeights = [1; 6; 5; 1; 1];
+% sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
 outFolder = '';
 figTypes = {'png', 'epsc2'};
@@ -339,7 +355,7 @@ if chooseBestParamsFlag
                                 cellNamesToFit, 'UniformOutput', false);
 
     % Find the best parameters for each cell
-     for iCellToFit = nCellsToFit:-1:1
+    for iCellToFit = nCellsToFit:-1:1
         % Extract stuff for this cell
         cellNameThis = cellNamesToFit{iCellToFit};
         fileNamesThis = fileNamesToFit{iCellToFit};
@@ -348,6 +364,9 @@ if chooseBestParamsFlag
 
         % Display message
         fprintf('Choosing initial parameters for cell %s ... \n', cellNameThis);
+
+        % Set default sweep weights
+        sweepWeights = m3ha_decide_on_sweep_weights(sweepWeights, fileNamesThis);
 
         % Choose the best initial parameters for each cell among all the
         %   custom files
@@ -551,6 +570,10 @@ if plotErrorParamComparisonFlag
             'FigName', selectedFigName);
 end
 
+% Archive all scripts for this run
+if archiveScriptsFlag
+    archive_dependent_scripts(mfilename, 'OutFolder', outFolder);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -594,6 +617,26 @@ newPngPaths = fullfile(outFolder, strcat('rank_', rankingStrs, '_', ...
 cellfun(@(x, y) copyfile(x, y), oldPngPaths, newPngPaths, ...
         'UniformOutput', false);
 
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function sweepWeights = m3ha_decide_on_sweep_weights (sweepWeights, fileNames)
+
+if isempty(sweepWeights)
+    % Count the number of files
+    nFiles = numel(fileNames);
+
+    % Make sure it is a multiple of 4
+    if mod(nFiles, 4) ~= 0
+        error('nFiles should be a multiple of 4!');
+    end
+
+    % Count the number of gIncr conditions to fit
+    nGIncr = nFiles / 4;
+
+    % Make sweeps with higher gIncrs weighted more
+    sweepWeights = repmat(transpose(1:nGIncr), 4, 1);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
