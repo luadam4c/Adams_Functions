@@ -68,7 +68,7 @@ plotErrorParamComparisonFlag = true;
 useHH = false;
 buildMode = 'active';
 simMode = 'active';
-dataMode = 3;                       % data mode:
+dataMode = 2;                       % data mode:
                                     %   0 - all data
                                     %   1 - all of g incr = 100%, 200%, 400% 
                                     %   2 - same g incr but exclude 
@@ -83,7 +83,7 @@ columnMode = 1;                     % optimization mode:
 rowModeAcrossTrials = 1;            % row mode when fitting across trials:
                                     %   1 - each row is a pharm condition
                                     %   2 - each row is a pharm, g incr pair
-attemptNumberAcrossTrials = 3;      % attempt number for across trials:
+attemptNumberAcrossTrials = 6;      % attempt number for across trials:
                                     %   1 - Use 4 traces @ 200% gIncr 
                                     %           for this data mode
                                     %   2 - Use all traces @ 200% gIncr 
@@ -93,6 +93,9 @@ attemptNumberAcrossTrials = 3;      % attempt number for across trials:
                                     %           for this data mode
                                     %   5 - Use 4 traces @ 400% gIncr 
                                     %       for this data mode
+                                    %   6 - Same as 4 but prioritize least vHold
+                                    %   7 - Same as 1 but prioritize least vHold
+                                    %   8 - Same as 5 but prioritize least vHold
 
 % Directory names
 parentDirectoryTemp = '/media/adamX/m3ha';
@@ -114,8 +117,8 @@ rankSheetExtension = 'csv';
 %   Note: Should be consistent with singleneuronfitting78.m
 %       & compute_lts_errors.m & compute_single_neuron_errors.m
 ltsFeatureStrings = {'peak amp', 'peak time', 'max slope value'};
-% sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
-sweepWeights = [];
+sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
+% sweepWeights = [];
 % errorWeights = [1; 3; 1; 1; 1];
 errorWeights = [1; 6; 5; 1; 1];
 ltsFeatureWeights = errorWeights(3:5);  
@@ -148,29 +151,55 @@ cellNameStr = 'cellName';
 
 % TODO: Make optional argument
 % outFolder = '20191227_ranked_singleneuronfitting0-90';
+% iterSetStr = 'singleneuronfitting0-90';
 % rankNumsToPlot = [1, 2, 5, 6, 8, 9, 10, 11, 23, 34];
 % iterSetStr = 'singleneuronfitting0-90';
+% dataMode = 2;
+% attemptNumberAcrossTrials = 4;
+% sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
 % outFolder = '20191229_ranked_singleneuronfitting0-91';
+% iterSetStr = 'singleneuronfitting0-91';
 % rankNumsToPlot = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
+% dataMode = 2;
+% attemptNumberAcrossTrials = 4;
+% sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
 % outFolder = '20200102_ranked_singleneuronfitting0-94';
+% iterSetStr = 'singleneuronfitting0-94';
 % rankNumsToPlot = [1:6, 21, 36];
 % rankNumsToPlot = [1:6, 8, 10, 11, 13:18, 21, 22, 24, 27, 28, 36];
 % rankNumsToPlot = [1:6, 8:12, 13:18, 21, 22, 24, 26:32, 34, 36];
+% dataMode = 2;
+% attemptNumberAcrossTrials = 4;
+% sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
 % outFolder = '20200103_ranked_singleneuronfitting0-94';
+% iterSetStr = 'singleneuronfitting0-94';
 % rankNumsToPlot = 1:11;
+% dataMode = 2;
+% attemptNumberAcrossTrials = 4;
+% sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
 % outFolder = '20200106_ranked_singleneuronfitting0-95';
+% iterSetStr = 'singleneuronfitting0-95';
 % rankNumsToPlot = 1:11;
+% dataMode = 2;
+% sweepWeights = [];
+% attemptNumberAcrossTrials = 3;
+
+% outFolder = '20200108_ranked_singleneuronfitting0-95';
+% iterSetStr = 'singleneuronfitting0-95';
+% rankNumsToPlot = 1:11;
+% dataMode = 3;
+% attemptNumberAcrossTrials = 3;
+% sweepWeights = [];
 
 outFolder = '';
-outFolder = '20200108_ranked_singleneuronfitting0-95';
 figTypes = {'png', 'epsc2'};
 rankNumsToPlot = 1:11;
 errorParamXTicks = 6:6:36;
-iterSetStr = 'singleneuronfitting0-95';
+iterSetStr = 'singleneuronfitting0-97';
 paramDirNames = fullfile('best_params', ...
                         {'bestparams_20191112_singleneuronfitting0', ...
                         'bestparams_20191112_singleneuronfitting1', ...
@@ -192,7 +221,8 @@ paramDirNames = fullfile('best_params', ...
                         'bestparams_20191230_singleneuronfitting92', ...
                         'bestparams_20191231_singleneuronfitting93', ...
                         'bestparams_20191231_singleneuronfitting94', ...
-                        'bestparams_20200103_singleneuronfitting95'});
+                        'bestparams_20200103_singleneuronfitting95', ...
+                        'bestparams_20200120_singleneuronfitting97'});
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1

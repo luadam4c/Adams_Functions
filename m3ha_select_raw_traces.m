@@ -37,6 +37,9 @@ function [fileNames, rowConditions, figurePositions] = ...
 %                           4 - Use 1 trace for each pharm x gIncr 
 %                                   for this data mode
 %                           5 - Use 4 traces @ 400% gIncr for this data mode
+%                           6 - Same as 4 but prioritize least vHold
+%                           7 - Same as 1 but prioritize least vHold
+%                           8 - Same as 5 but prioritize least vHold
 %                       FOR columnMode == 2
 %                           1 - Find cells with LTSs present 
 %                                   for all pharm conditions @ 200% g_incr
@@ -115,10 +118,12 @@ function [fileNames, rowConditions, figurePositions] = ...
 %               for each cell
 % 2020-01-20 Now restricts gCondToUse to only those with data for 
 %               all pCondToUse present
+% 2020-01-23 Added attempt numbers 6-8
 
 %% Hard-coded parameters
 pharmStr = 'prow';
 gIncrStr = 'grow';
+vHoldStr = 'vrow';
 burstDelayStr = 'bursttime';
 ltsDelayStr = 'ltspeaktime';
 maxNoiseStr = 'maxnoise';
@@ -225,8 +230,9 @@ end
 
 % Extract from swpInfo
 fnrow = swpInfo.Properties.RowNames;
-grow = swpInfo{:, gIncrStr};
 prow = swpInfo{:, pharmStr};
+grow = swpInfo{:, gIncrStr};
+vrow = swpInfo{:, vHoldStr};
 burstTime = swpInfo{:, burstDelayStr};
 ltsPeakTime = swpInfo{:, ltsDelayStr};
 maxNoise = swpInfo{:, maxNoiseStr};
@@ -255,16 +261,17 @@ end
 % Set default attempt number
 if isempty(attemptNumber)
     if columnMode == 1
-        attemptNumber = 4;
+        attemptNumber = 6;
     else
-        attemptNumber = 5;
+        attemptNumber = 7;
     end
 end
 
 %% Determine row conditions
 % Update rowMode based on colMode and attemptNumber
 if rowMode ~= 1 && ...
-    ((colMode == 1 && attemptNumber <= 2) || ...
+    ((colMode == 1 && (attemptNumber <= 2 || attemptNumber == 5 || ...
+                        attemptNumber == 7 || attemptNumber == 8)) || ...
     (colMode == 2 && attemptNumber <= 3))
     fprintf(['Row Mode changed to 1 for ', ...
             'column mode %d and attempt number %d!\n'], ...
@@ -343,7 +350,7 @@ case 1
 
     % Decide on the indices based on attempt number
     switch attemptNumber
-    case {1, 2, 5}
+    case {1, 2, 5, 7, 8}
         % Print message
         if attemptNumber == 1
             fprintf('Attempt #1: Using 4 traces of %s @ 200%% gIncr ... \n', ...
@@ -353,6 +360,12 @@ case 1
                     cellName);
         elseif attemptNumber == 5
             fprintf('Attempt #5: Using 4 traces of %s @ 400%% gIncr ... \n', ...
+                    cellName);
+        elseif attemptNumber == 7
+            fprintf('Attempt #7: Using 4 traces of %s @ 200%% gIncr ... \n', ...
+                    cellName);
+        elseif attemptNumber == 8
+            fprintf('Attempt #8: Using 4 traces of %s @ 400%% gIncr ... \n', ...
                     cellName);
         end
 
@@ -364,18 +377,20 @@ case 1
 
         % Find the sweep indices for each pharmacological condition 
         %   @ 200% g_incr from this cell to be fitted
-        if attemptNumber == 1
+        if attemptNumber == 1 || attemptNumber == 7
             swpIndRow = cellfun(@(x) select_trace(x & isGCond{isGIncr200} & ...
                                                     toUse, ...
-                                                hasLts, hasBurst, maxNoise), ...
+                                                hasLts, hasBurst, maxNoise, ...
+                                                vrow, attemptNumber), ...
                                     isPCond, 'UniformOutput', false);
         elseif attemptNumber == 2
             swpIndRow = cellfun(@(x) find(x & isGCond{isGIncr200} & toUse), ...
                                     isPCond, 'UniformOutput', false);
-        elseif attemptNumber == 5
+        elseif attemptNumber == 5 || attemptNumber == 8
             swpIndRow = cellfun(@(x) select_trace(x & isGCond{isGIncr400} & ...
                                                     toUse, ...
-                                                hasLts, hasBurst, maxNoise), ...
+                                                hasLts, hasBurst, maxNoise, ...
+                                                vrow, attemptNumber), ...
                                     isPCond, 'UniformOutput', false);
         end
 
@@ -385,7 +400,8 @@ case 1
         end
 
         % Decide on the number of columns per row
-        if attemptNumber == 1 || attemptNumber == 5
+        if attemptNumber == 1 || attemptNumber == 5 || ...
+                attemptNumber == 7 || attemptNumber == 8
             % Use only the first column
             nColumns = 1;
         elseif attemptNumber == 2
@@ -408,10 +424,15 @@ case 1
 
         % Make sure each row has the same number of traces
         nColumns = min(cellfun(@length, swpIndRow));
-    case 4
+    case {4, 6}
         % Print message
-        fprintf('Attempt #4: Using one "best trial" for each ');
-        fprintf('pharm x gIncr condition of %s ... \n', cellName);
+        if attemptNumber == 4
+            fprintf(['Attempt #4: Using one "best trial" for each ', ...
+                    'pharm x gIncr condition of %s ... \n'], cellName);
+        elseif attemptNumber == 6
+            fprintf(['Attempt #6: Using one "best trial" for each ', ...
+                    'pharm x gIncr condition of %s ... \n'], cellName);
+        end
 
         % Take only the most representative trace from each condition
         if size(rowConditions, 2) == 1
@@ -429,7 +450,8 @@ case 1
 
                     % Select the "most representative trace"
                     swpIdxSelected = ...
-                        select_trace(isThisCond, hasLts, hasBurst, maxNoise);
+                        select_trace(isThisCond, hasLts, hasBurst, ...
+                                    maxNoise, vrow, attemptNumber);
 
                     if isempty(swpIdxSelected)
                         error(['Most representative trace not found', ...
@@ -444,7 +466,8 @@ case 1
             end
         elseif size(rowConditions, 2) == 2
             swpIndRow = arrayfun(@(x) select_trace(x & toUse, ...
-                                            hasLts, hasBurst, maxNoise), ...
+                                        hasLts, hasBurst, maxNoise, vrow, ...
+                                        attemptNumber), ...
                                 isRowCond, 'UniformOutput', false);
         end
 
@@ -609,7 +632,7 @@ case 2
 
                         % Select "most representative trace"
                         swpIdxSelected = select_trace(indThisCond, swpIndHasLts, ...
-                                                    swpIndHasBursts, maxNoise);
+                                            swpIndHasBursts, maxNoise, vrow, 6);
                         swpIndRow{iRow} = [swpIndRow{iRow}; swpIdxSelected];
                     end
                 end
@@ -637,7 +660,7 @@ case 2
 
                     % Select "most representative trace"
                     swpIdxSelected = select_trace(indThisCond, swpIndHasLts, ...
-                                                    swpIndHasBursts, maxNoise);
+                                            swpIndHasBursts, maxNoise, vrow, 6);
                     swpIndRow{iRow} = [swpIndRow{iRow}; swpIdxSelected];
                 end
 
@@ -694,7 +717,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function swpIdxSelected = select_trace (isThisCond, hasLts, hasBursts, maxNoise)
+function swpIdxSelected = select_trace (isThisCond, hasLts, hasBursts, ...
+                                        maxNoise, vrow, attemptNumber)
 %% Selects the most representative trace based on majority rule
 
 % Return error if there are no traces for this condition
@@ -727,23 +751,46 @@ indThisCondHasNoLts = find(isThisCondHasNoLts);
 indThisCondHasLtsOnly = find(isThisCondHasLtsOnly);
 indThisCondHasBurst = find(isThisCondHasBurst);
 
-% Select one "most representative" trace
+% Decide on the candidates
 if nIndThisCondHasNoLts > nIndThisCond / 2
-    % Look for the sweep with minimum noise in all traces with no LTS
-    [~, iTemp] = min(maxNoise(indThisCondHasNoLts));
-    swpIdxSelected = indThisCondHasNoLts(iTemp);
+    % Look in all traces with no LTS
+    indCandidates = indThisCondHasNoLts;
 elseif nIndThisCondHasLtsOnly > nIndThisCondHasBurst
-    % Look for the sweep with minimum noise in all traces with LTS but no burst
-    [~, iTemp] = min(maxNoise(indThisCondHasLtsOnly));
-    swpIdxSelected = indThisCondHasLtsOnly(iTemp);
+    % Look in all traces with LTS but no burst
+    indCandidates = indThisCondHasLtsOnly;
 elseif nIndThisCondHasBurst >= nIndThisCondHasLtsOnly
-    % Look for the sweep with minimum noise in all traces with burst
-    [~, iTemp] = min(maxNoise(indThisCondHasBurst));
-    swpIdxSelected = indThisCondHasBurst(iTemp);
+    % Look in all traces with burst
+    indCandidates = indThisCondHasBurst;
 else
     % Something is wrong 
     error('Error in LTS or burst data??\n');   
 end
+
+% Restrict further to those with lowest possible vHold condition value
+if attemptNumber >= 6
+    % Get all possible vHold condition values
+    uniqueVHolds = unique(vrow(indCandidates));
+
+    % Choose the least possible vHold condition value
+    leastVHold = min(uniqueVHolds);
+
+    % Restrict to traces with those vHold condition values
+    indCandidates = indCandidates(vrow(indCandidates) == leastVHold);
+end
+
+% Select trace with least maximum noise
+swpIdxSelected = select_trace_with_least_noise(indCandidates, maxNoise, ...
+                                                attemptNumber);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function swpIdxSelected = select_trace_with_least_noise (swpIdxCandidates, ...
+                                                maxNoise, attemptNumber)
+%% Select a trace with least maximum noise
+
+% Look for the sweep with minimum noise in all candidate traces
+[~, iTemp] = min(maxNoise(swpIdxCandidates));
+swpIdxSelected = swpIdxCandidates(iTemp);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

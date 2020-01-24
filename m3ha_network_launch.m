@@ -81,8 +81,10 @@ homeDirName = 'network_model';
 %                 'bestparams_20171213_singleneuronfitting16_Rivanna');
 % paramsDirName = fullfile('optimizer4gabab', 'best_params', ...
 %                 'bestparams_20180424_singleneuronfitting21_Rivanna');
+% paramsDirName = fullfile('optimizer4gabab', 'best_params', ...
+%                     'bestparams_20200103_ranked_singleneuronfitting0-94');
 paramsDirName = fullfile('optimizer4gabab', 'best_params', ...
-                    'bestparams_20200103_ranked_singleneuronfitting0-94');
+                        'bestparams_20200120_singleneuronfitting97');
 
 %% Flags
 debugFlag = false;              % whether to do a very short simulation
@@ -107,10 +109,10 @@ elseif nCells == 20 || nCells == 100
 else
     error('nCells = %d is not implemented yet!', nCells);
 end
-% savePlotMode = 'spikes';
+savePlotMode = 'spikes';
 
 %% Simulation modes
-simMode = 4;    % 1 - full simulation
+simMode = 1; %4;    % 1 - full simulation
                 % 2 - short simulation
                 % 3 - medium simulation
                 % 4 - no TC -> RT
@@ -391,6 +393,7 @@ pMax    = [4, 60];                  % maximum values of parameters to loop throu
 pInc    = [1, 5];                   % increments of parameters to loop through
 pIsLog  = [0, 0];                   % whether increments of parameters is in log
 %}
+
 %{
 pCond = 1;
 gIncr = 20;
@@ -402,6 +405,7 @@ pInc    = [1, 5];                   % increments of parameters to loop through
 pIsLog  = [0, 0];                   % whether increments of parameters is in log
 %}
 
+%{
 pCond = 1;
 gIncr = 20;
 pNames  = {'pCond'};                % names of parameters to loop through
@@ -410,6 +414,16 @@ pMin    = 1;                        % minimum values of parameters to loop throu
 pMax    = 4;                        % maximum values of parameters to loop through
 pInc    = 1;                        % increments of parameters to loop through
 pIsLog  = 0;                        % whether increments of parameters is in log
+%}
+
+pCond = 1;
+gIncr = 100/12;
+pNames  = {'pCond', 'gIncr'};       % names of parameters to loop through
+pLabels = {'Pharm Condition', 'gGABAB amp scaling (%)'};  % labels of parameters to loop through
+pMin    = [1, 25/12];               % minimum values of parameters to loop through
+pMax    = [4, 800/12];              % maximum values of parameters to loop through
+pInc    = [1, 2];                   % increments of parameters to loop through
+pIsLog  = [0, 1];                   % whether increments of parameters is in log
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
