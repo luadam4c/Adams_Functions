@@ -56,8 +56,8 @@ function m3ha_network_launch (nCells, useHH, candidateIDs)
 % 2020-01-06 Fixed bug for using new parameters
 % 2020-01-06 Changed the action potential threshold from 0 to -30 mV
 % 2020-01-07 Added simMode, etc. to fileSuffix
+% 2020-01-24 Added isCircular and made it true
 % TODO: Plot gAMPA and gGABA instead of the i's for synaptic event monitoring
-% TODO: Make the network circular to lose edge effects
 % TODO: Perform simulations to generate a linear model
 % TODO: Update specs for m3ha_network_raster_plot.m
 %
@@ -83,8 +83,10 @@ homeDirName = 'network_model';
 %                 'bestparams_20180424_singleneuronfitting21_Rivanna');
 % paramsDirName = fullfile('optimizer4gabab', 'best_params', ...
 %                     'bestparams_20200103_ranked_singleneuronfitting0-94');
+% paramsDirName = fullfile('optimizer4gabab', 'best_params', ...
+%                         'bestparams_20200120_singleneuronfitting97');
 paramsDirName = fullfile('optimizer4gabab', 'best_params', ...
-                        'bestparams_20200120_singleneuronfitting97');
+                        'bestparams_20200124_singleneuronfitting99');
 
 %% Flags
 debugFlag = false;              % whether to do a very short simulation
@@ -109,7 +111,7 @@ elseif nCells == 20 || nCells == 100
 else
     error('nCells = %d is not implemented yet!', nCells);
 end
-savePlotMode = 'spikes';
+% savePlotMode = 'spikes';
 
 %% Simulation modes
 simMode = 1; %4;    % 1 - full simulation
@@ -134,8 +136,12 @@ simMode = 1; %4;    % 1 - full simulation
 % 9 - Activate 10 center RE cells by injecting current pulses
 % 10 - Activate 20 center RE cells by injecting current pulses
 
-% actMode = 10;   
-actMode = 1;   
+% Decide on activation mode
+if nCells == 1
+    actMode = 1;
+else
+    actMode = 10;
+end
 
 % Decide on template TC neurons to use
 %% Template TC neurons;
@@ -467,7 +473,7 @@ synDel = 1;    % synaptic delay (ms)
 synWeight = 1;      % synaptic weight (fraction of channels activated)
                 %     for simplicity assume channels are always activated and that 
                 %     channels have linearly additive effects
-
+isCircular = 1; % whether the network is circular
 
 %% RE neuron parameters
 REnsegs = 1;    % number of segments in an RE cell (1, 3 or 9)
@@ -993,7 +999,7 @@ for iSim = 1:nSims
         '%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, ', ...
         '%g, %g, %g, %g, %g, %g, %g, %g, ', ...
         '%g, %g, %g, %g, %g, %g, %g, ', ...
-        '%d, %d, %d, %d, %d, %d, %d)\n'], ...
+        '%d, %d, %d, %d, %d, %d, %d, %d)\n'], ...
         sREREsynPaths{iSim}, sTCREsynPaths{iSim}, sRETCsynPaths{iSim}, ...
         REsp1cellID, REsp2cellID, TCsp1cellID, TCsp2cellID, useHH, REnsegs, ...
         REcldnum, REconsyn, REtauKCC2, REepas, REdiam, ...
@@ -1001,7 +1007,8 @@ for iSim = 1:nSims
         TCgababAmp, TCgababTrise, TCgababTfallFast, TCgababTfallSlow, TCgababW, ...
         RERErad, TCRErad, RETCrad, ...
         spThr, synDel, synWeight, cai0, cao0, cli0, clo0, ...
-        actCellID, actMode, saveNetwork, saveSpikes, saveSomaVoltage, saveSomaCli, saveSpecial)];
+        actCellID, actMode, saveNetwork, saveSpikes, ...
+        saveSomaVoltage, saveSomaCli, saveSpecial, isCircular)];
 
     % Commands to randomize leak current properties
     %     uniformly randomizes leak conductance in [REgpasLB, REgpasUB]
