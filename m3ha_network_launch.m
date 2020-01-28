@@ -105,13 +105,13 @@ loopMode = 'grid'; %cross;      % how to loop through parameters:
 
 % Decide on what to save and plot
 if nCells == 1 || nCells == 2
-    savePlotMode = 'spikes&special';
+    % savePlotMode = 'spikes&special';
+    savePlotMode = 'spikes';
 elseif nCells == 20 || nCells == 100
     savePlotMode = 'spikes';    
 else
     error('nCells = %d is not implemented yet!', nCells);
 end
-% savePlotMode = 'spikes';
 
 %% Simulation modes
 simMode = 1; %4;    % 1 - full simulation
@@ -537,7 +537,7 @@ end
 %   Note: Christine used -115 mV in dynamic clamp experiments
 %       Huguenard & Prince 1994 has -105 mV
 %       ek is -100 mV
-TCgababErev = -100; %-105; %-115
+TCgababErev = -115; %-100; %-105; %-115
 
 % Set initial GABA-B receptor parameters to be the Control, 100% gIncr values
 TCgababAmp = 0.016;         % conductance amplitude (uS)
