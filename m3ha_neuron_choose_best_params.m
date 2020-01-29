@@ -173,7 +173,7 @@ iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add required inputs to the Input Parser
 addRequired(iP, 'candParamsTablesOrFiles', ...
-    @(x) validateattributes(x, {'cell', 'string'}, {'2d'}));
+    @(x) validateattributes(x, {'cell', 'string', 'char'}, {'2d'}));
 
 % Add parameter-value pairs to the Input Parser
 addParameter(iP, 'UseHH', useHHDefault, ...
@@ -219,6 +219,9 @@ otherArguments = iP.Unmatched;
 % Parse first argument
 if istext(candParamsTablesOrFiles)
     candParamsFiles = candParamsTablesOrFiles;
+    if ischar(candParamsFiles)
+        candParamsFiles = {candParamsFiles};
+    end
     candParamsTables = {};
 else
     candParamsTables = candParamsTablesOrFiles;
@@ -227,7 +230,7 @@ end
 
 % Load parameters if necessary
 if isempty(candParamsTables)
-    candParamsTables = cellfun(@load_params, candParamsTablesOrFiles, ...
+    candParamsTables = cellfun(@load_params, candParamsFiles, ...
                                 'UniformOutput', false);
 end
 

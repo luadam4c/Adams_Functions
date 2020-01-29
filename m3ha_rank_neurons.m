@@ -55,17 +55,18 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = true;
-plotErrorHistoryFlag = true;
-plotErrorComparisonFlag = true;
-plotParamHistoryFlag = true;
-plotIndividualFlag = true;
-rankNeuronsFlag = true;
-plotHistogramsFlag = true;
-plotBarPlotFlag = true;
-plotParamViolinsFlag = true;
+chooseBestParamsFlag = false; %true;
+plotIndividualFlag = false; %true;
+rankNeuronsFlag = false; %true;
+plotHistogramsFlag = false; %true;
+plotBarPlotFlag = false; %true;
+plotParamViolinsFlag = false; %true;
 plotErrorParamComparisonFlag = true;
-archiveScriptsFlag = true;
+archiveScriptsFlag = false; %true;
+
+plotErrorHistoryFlag = false; %true;
+plotErrorComparisonFlag = false; %true;
+plotParamHistoryFlag = false; %true;
 
 % Fitting parameters 
 %   Note: Must be consistent with singleneuronfitting91.m
@@ -211,11 +212,21 @@ cellNameStr = 'cellName';
 % errorWeights = [1; 6; 5; 1; 1];
 % sweepWeights = [1; 2; 3; 1; 2; 3; 1; 2; 3; 1; 2; 3];
 
+% outFolder = '20200129_ranked_singleneuronfitting101';
+% rankNumsToPlot = 1:11;
+% rankNumsToPlot = [8, 18];
+% rankNumsToPlot = [8, 18, 20, 23, 24, 26, 27, 30, 31, 33, 35, 36];
+% rankNumsToPlot = [1, 4, 7, 9, 15, 16];
+% rankNumsToPlot = [1, 4, 7, 9, 15, 16, 30];
+% rankNumsToPlot = [1, 4, 7, 9, 15, 16, 8, 18, 20, 23, 24, 26, 27, 30, 31, 33, 35, 36];
+% iterSetStr = 'singleneuronfitting101';
+% paramDirNames = fullfile('best_params', ...
+%                         {'bestparams_20200126_singleneuronfitting101'});
+
 outFolder = '';
 figTypes = {'png', 'epsc2'};
 rankNumsToPlot = 1:11;
-errorParamXTicks = 6:6:36;
-iterSetStr = 'singleneuronfitting0-97';
+iterSetStr = 'singleneuronfitting0-102';
 paramDirNames = fullfile('best_params', ...
                         {'bestparams_20191112_singleneuronfitting0', ...
                         'bestparams_20191112_singleneuronfitting1', ...
@@ -235,10 +246,15 @@ paramDirNames = fullfile('best_params', ...
                         'bestparams_20191225_singleneuronfitting90', ...
                         'bestparams_20191227_singleneuronfitting91', ...
                         'bestparams_20191230_singleneuronfitting92', ...
-                        'bestparams_20191231_singleneuronfitting93', ...
                         'bestparams_20191231_singleneuronfitting94', ...
                         'bestparams_20200103_singleneuronfitting95', ...
-                        'bestparams_20200120_singleneuronfitting97'});
+                        'bestparams_20200120_singleneuronfitting97', ...
+                        'bestparams_20200124_singleneuronfitting99', ...
+                        'bestparams_20200126_singleneuronfitting101', ...
+                        'bestparams_20200129_singleneuronfitting102'});
+
+% For plots
+errorParamXTicks = 6:6:36;
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1
@@ -433,7 +449,9 @@ if rankNeuronsFlag
     writetable(rankTable, rankSheetPath);
 
     % Copy and rename .png files according to ranking
-    copy_and_rename_png_files(rankTable, outFolder, outFolder);
+    if plotIndividualFlag
+        copy_and_rename_png_files(rankTable, outFolder, outFolder);
+    end
 end
 
 %% Plot histograms
@@ -637,6 +655,8 @@ if numel(unique(cellNames)) ~= 1
 else
     cellName = cellNames{1};
 end
+
+                        'bestparams_20191231_singleneuronfitting93', ...
 
 %}
 
