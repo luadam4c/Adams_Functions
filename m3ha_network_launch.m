@@ -76,17 +76,15 @@ function m3ha_network_launch (nCells, useHH, candidateIDs)
 experimentName = 'm3ha';
 
 %% Hard-coded parameters
+% Make directory to save all data
+bestParamsDirName = fullfile('optimizer4gabab', 'best_params');
+% paramsDirName = 'bestparams_20171213_singleneuronfitting16_Rivanna';
+% paramsDirName = 'bestparams_20180424_singleneuronfitting21_Rivanna';
+% paramsDirName = 'bestparams_20200103_ranked_singleneuronfitting0-94';
+% paramsDirName = 'bestparams_20200120_singleneuronfitting97';
+% paramsDirName = 'bestparams_20200124_singleneuronfitting99';
+paramsDirName = 'bestparams_20200126_singleneuronfitting101';
 homeDirName = 'network_model';
-% paramsDirName = fullfile('optimizer4gabab', 'best_params', ...
-%                 'bestparams_20171213_singleneuronfitting16_Rivanna');
-% paramsDirName = fullfile('optimizer4gabab', 'best_params', ...
-%                 'bestparams_20180424_singleneuronfitting21_Rivanna');
-% paramsDirName = fullfile('optimizer4gabab', 'best_params', ...
-%                     'bestparams_20200103_ranked_singleneuronfitting0-94');
-% paramsDirName = fullfile('optimizer4gabab', 'best_params', ...
-%                         'bestparams_20200120_singleneuronfitting97');
-paramsDirName = fullfile('optimizer4gabab', 'best_params', ...
-                        'bestparams_20200124_singleneuronfitting99');
 
 %% Flags
 debugFlag = false;              % whether to do a very short simulation
@@ -105,8 +103,8 @@ loopMode = 'grid'; %cross;      % how to loop through parameters:
 
 % Decide on what to save and plot
 if nCells == 1 || nCells == 2
-    savePlotMode = 'spikes&special';
-    % savePlotMode = 'spikes';
+    % savePlotMode = 'spikes&special';
+    savePlotMode = 'spikes';
 elseif nCells == 20 || nCells == 100
     savePlotMode = 'spikes';    
 else
@@ -692,13 +690,18 @@ end
 % Find parent and home directory
 % parentDirectory = m3ha_locate_homedir;
 parentDirectory = '/media/adamX/m3ha';
+paramsDirectory = fullfile(parentDirectory, bestParamsDirName, paramsDirName);
 homeDirectory = fullfile(parentDirectory, homeDirName);
-paramsDirectory = fullfile(parentDirectory, paramsDirName);
 
 % Compile or re-compile .mod files in the home directory
 compile_mod_files(homeDirectory);
 
-% Make directory to save all data
+% Create or locate the parent output folder
+dateStamp = create_time_stamp('FormatOut', 'yyyymmdd');
+outFolderParent = fullfile(homeDirectory, [dateStamp, '_using_', paramsDirName]);
+check_dir(outFolderParent);
+
+% Create a file label
 %   Note: Use current date & time in the format: YYYYMMDDThhmm
 timeStamp = create_time_stamp('FormatOut', 'yyyymmddTHHMM');
 if nCandidates > 1
@@ -707,7 +710,9 @@ else
     templateLabel = templateNames{candidateIDs(1)};
 end
 fileLabel = [timeStamp, '_', templateLabel, '_', fileSuffix];
-outFolder = fullfile(homeDirectory, fileLabel);     
+
+% Create an output folder for this file label
+outFolder = fullfile(outFolderParent, fileLabel);
 check_dir(outFolder);
 
 %% Construct looped parameters
