@@ -2,6 +2,7 @@
 %% Plots Figure 03 for the GAT Blocker paper
 %
 % Requires:
+%       cd/archive_dependent_scripts.m
 %       cd/argfun.m
 %       cd/check_dir.m
 %       cd/create_subplots.m
@@ -38,7 +39,8 @@ simulateCpr = false; %true;
 plotCpr = false; %true;
 simulateIpscr = false; %true;
 plotIpscr = false; %true;
-plotOverlapped = true;
+plotOverlapped = false; %true;
+archiveScriptsFlag = false; %true;
 
 % Flags (ALREADY DONE!)
 estimatePassiveParams = false; %true;
@@ -227,6 +229,11 @@ if plotOverlapped
                                 overlappedFigWidth, overlappedFigHeight, ...
                                 overlappedXLimits, overlappedYLimits), ...
             exampleLabelsIpscr, outFoldersIpscr);
+end
+
+% Archive all scripts for this run
+if archiveScriptsFlag
+    archive_dependent_scripts(mfilename, 'OutFolder', figure03Dir);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

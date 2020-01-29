@@ -2,6 +2,7 @@
 %% Plots Figure 05 for the GAT Blocker paper
 %
 % Requires:
+%       cd/archive_dependent_scripts.m
 %       cd/check_dir.m
 %       cd/create_labels_from_numbers.m
 %       cd/extract_fileparts.m
@@ -31,6 +32,7 @@ plotAllTotalCurrents = false; %true;
 plotAllComponentCurrents = false; %true;
 plotDend2ITproperties = false; %true;
 plotM2h = false; %true;
+archiveScriptsFlag = false;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -238,6 +240,11 @@ if plotM2h
                                     m2hXLimits, m2hYLimits), ...
                 exampleLabelsVaryAll{iSheet}, outFoldersVaryAll{iSheet});
     end
+end
+
+% Archive all scripts for this run
+if archiveScriptsFlag
+    archive_dependent_scripts(mfilename, 'OutFolder', figure05Dir);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

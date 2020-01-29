@@ -3,6 +3,7 @@
 %
 % Requires:
 %       cd/all_files.m
+%       cd/archive_dependent_scripts.m
 %       cd/copy_into.m
 %       cd/extract_columns.m
 %       cd/extract_fileparts.m
@@ -37,6 +38,7 @@ copyExampleFiles = false; %true;
 plotExamplesFlag = false; %true;
 plotViolinPlotsFlag = false; %true;
 plotBarPlotsFlag = false; %true;
+archiveScriptsFlag = false; %true;
 
 % Analysis settings
 % Note: must be consistent with m3ha_compute_statistics.m
@@ -179,6 +181,11 @@ if plotBarPlotsFlag
     % Plot bar plots
     m3ha_plot_bar3(stats3dPath, 'RowsToPlot', measuresOfInterest, ...
                     'OutFolder', figure02Dir);
+end
+
+% Archive all scripts for this run
+if archiveScriptsFlag
+    archive_dependent_scripts(mfilename, 'OutFolder', figure02Dir);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

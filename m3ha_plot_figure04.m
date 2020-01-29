@@ -2,6 +2,7 @@
 %% Plots Figure 04 for the GAT Blocker paper
 %
 % Requires:
+%       cd/archive_dependent_scripts.m
 %       cd/argfun.m
 %       cd/create_label_from_sequence.m
 %       cd/create_labels_from_numbers.m
@@ -21,6 +22,7 @@
 % Flags
 plotViolinPlotsFlag = true;
 plotBarPlotsFlag = true;
+archiveScriptsFlag = true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -174,6 +176,11 @@ if plotBarPlotsFlag
     % Plot bar plots
     m3ha_plot_bar3(stats3dPath, 'RowsToPlot', measuresOfInterest, ...
                     'OutFolder', figure04Dir);
+end
+
+% Archive all scripts for this run
+if archiveScriptsFlag
+    archive_dependent_scripts(mfilename, 'OutFolder', figure04Dir);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

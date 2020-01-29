@@ -48,6 +48,11 @@ function varargout = archive_dependent_scripts (mFileName, varargin)
 %
 % Used by:
 %       cd/clc2_analyze.m
+%       cd/m3ha_oscillations_analyze.m
+%       cd/m3ha_plot_figure02.m.m
+%       cd/m3ha_plot_figure03.m.m
+%       cd/m3ha_plot_figure04.m.m
+%       cd/m3ha_plot_figure05.m.m
 %       cd/m3ha_rank_neurons.m
 
 % File History:
