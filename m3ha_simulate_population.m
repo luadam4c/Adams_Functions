@@ -60,12 +60,12 @@
 %% Hard-coded parameters
 % Flags
 chooseBestNeuronsFlag = false; %true;
-simulateFlag = true;
-combineFeatureTablesFlag = true;
-computeOpenProbabilityFlag = true;
+simulateFlag = false; %true;
+combineFeatureTablesFlag = false; %true;
+computeOpenProbabilityFlag = false; %true;
 plotOpenProbabilityFlag = true;
-plotViolinPlotsFlag = true;
-plotBarPlotsFlag = true;
+plotViolinPlotsFlag = false; %true;
+plotBarPlotsFlag = false; %true;
 
 % Simulation parameters
 useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
@@ -141,11 +141,10 @@ measuresOfInterest = {'ltsAmplitude'; 'ltsMaxSlope'; ...
                     'spikeFrequency'; 'spikeAdaptation'
                     'burstOnsetTime'; 'burstTimeJitter'; ...
                     'burstProbability'; 'spikesPerBurst'};
+openProbFigWidth = 5;       % (cm)
+openProbFigHeight = 3;      % (cm)
 
 % TODO: Make optional argument
-outFolder = '';
-prefix = '';
-figTypes = {'png', 'epsc2'};
 % outFolder = '20191227_population_rank1-10_useHH_true';
 % outFolder = fullfile(parentDirectoryTemp, fitDirName, ...
 %         '20191230_population_singleneuronfitting0-91_rank1-2,5,7-10,13,17,34');
@@ -157,8 +156,16 @@ figTypes = {'png', 'epsc2'};
 % rankDirName = '20191229_ranked_singleneuronfitting0-91';
 % rankNumsToUse = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
 % rankDirName = '20200103_ranked_singleneuronfitting0-94';
-rankDirName = '20200108_ranked_singleneuronfitting0-95';
+outFolder = fullfile(parentDirectoryTemp, fitDirName, ...
+                    '20200106_population_rank1-11_dataMode1_attemptNumber3');
 rankNumsToUse = 1:11;
+rankDirName = '20200103_ranked_singleneuronfitting0-94';
+
+% outFolder = '';
+prefix = '';
+figTypes = {'png', 'epsc2'};
+% rankDirName = '20200108_ranked_singleneuronfitting0-95';
+% rankNumsToUse = 1:11;
 ipscrWindow = [2000, 4800];     % only simulate up to that time
 fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
                                 %   recorded LTS would lie
@@ -242,6 +249,7 @@ simSwpInfoPath = fullfile(outFolder, [prefix, '_', simSwpInfoSuffix, '.csv']);
 stats2dPath = fullfile(outFolder, [prefix, '_', stats2dSuffix, '.mat']);
 stats3dPath = fullfile(outFolder, [prefix, '_', stats3dSuffix, '.mat']);
 openProbPathBase = fullfile(outFolder, [prefix, '_', openProbSuffix]);
+openProbPathBaseOrig = [openProbPathBase, '_orig'];
 
 %% Choose the best cells and the best parameters for each cell
 if chooseBestNeuronsFlag
@@ -450,8 +458,16 @@ if plotOpenProbabilityFlag
     % Set y axis to be on a log scale
     set(gca, 'YScale', 'log');
 
+    % Save the figure
+    save_all_figtypes(fig, openProbPathBaseOrig, 'png');
+
+    % Update figure for CorelDraw
+    update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                    'Width', openProbFigWidth, 'Height', openProbFigHeight);
+
     % Save figure
     save_all_figtypes(fig, openProbPathBase, figTypes);
+
 end 
 
 %% Plot violin plots

@@ -310,6 +310,7 @@ function handles = plot_traces (tVecs, data, varargin)
 % 2019-11-10 Fixed axes selection under non-'parallel' modes
 % 2019-11-17 Added 'FigSubTitles' as an optional argument
 % 2020-01-05 Added 'AlreadyRestricted' as an optional argument
+% 2020-01-30 Fixed the return of plotsData for parallel mode
 % TODO: Add 'TraceNumbers' as an optional argument
 % TODO: dataToCompareColorMap
 % TODO: Number of horizontal bars shouldn't need to match nTraces
@@ -928,7 +929,9 @@ if isempty(xLimits)
 end
 
 % Initialize graphics object arrays for plots
-if numel(nTracesPerPlot) > 1
+if numel(nTracesPerPlot) > 1 || ...
+        strcmp(plotMode, 'parallel') && numel(nTracesPerPlot) == 1 && ...
+            nTracesPerPlot > 1
     plotsData = cell(nPlots, 1);
     plotsDataToCompare = cell(nPlots, 1);
 else

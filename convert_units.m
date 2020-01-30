@@ -33,6 +33,7 @@ function newValues = convert_units (oldValues, oldUnits, newUnits, varargin)
 %
 % Used by:
 %       cd/m3ha_network_compare_ipsc.m
+%       cd/m3ha_plot_simulated_traces.m
 
 % File History:
 % 2020-01-22 Created by Adam Lu
