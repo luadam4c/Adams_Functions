@@ -63,13 +63,14 @@ function allData = combine_data_from_same_slice (varargin)
 % 2019-08-21 Now uses compute_index_boundaries.m
 % 2019-08-23 Fixed bug when there is only one phase
 % 2019-08-23 Pull out code to function combine_abf_data.m
+% 2020-01-30 Changed sortBy from 'date' to 'datenum'
 % TODO: Reorganize code to use structure arrays
 % TODO: Allow combination of .mat files
 % TODO: Combine gVecs as well
 
 %% Hard-coded parameters
 dataExt = 'abf';            % Currently only accepts abf files
-sortBy = 'date';
+sortBy = 'datenum';
 regexpSliceBase = '.*slice[0-9]*';
 regexpPhaseStr = 'phase[a-zA-Z0-9]*';
 

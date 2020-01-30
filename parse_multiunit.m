@@ -664,7 +664,7 @@ if toExtractData
     % Construct the .mat file expected
     [~, allMatPaths] = ...
         all_files('Directory', inFolder, 'RegExp', regexpSliceMatFile, ...
-                    'SortBy', 'date', 'ForceCellOutput', true);
+                    'SortBy', 'datenum', 'ForceCellOutput', true);
 
     % Load or combine data
     if numel(allMatPaths) > 1

@@ -379,7 +379,7 @@ There are 2 MATLAB scripts in this directory:
 - [**m3ha_log_errors_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_log_errors_params.m): Log errors and parameter values
 - [**m3ha_network_autocorrelogram.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_autocorrelogram.m): Shows an m3ha_network_autocorrelogram for each set of neurons (each .spi file in the infolder)
 - [**m3ha_network_change_params.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_change_params.m): Change parameter values in a parameters table
-- [**m3ha_network_compare_ipsc.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_compare_ipsc.m): function m3ha_network_compare_ipsc (varargin)
+- [**m3ha_network_compare_ipsc.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_compare_ipsc.m): Compare an evoked IPSC against the recorded IPSC
 - [**m3ha_network_define_actmode.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_define_actmode.m): Determine what cells are stimulated in each activation mode
 - [**m3ha_network_launch.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_launch.m): Launches NEURON with simulation commands and plot output figures
 - [**m3ha_network_plot_oscillations.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_network_plot_oscillations.m): Shows a swarm plot for each set of neurons (each .spi file in the infolder)
@@ -412,6 +412,7 @@ There are 2 MATLAB scripts in this directory:
 - [**m3ha_plot_figure03.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_figure03.m): m3ha_plot_figure03.m
 - [**m3ha_plot_figure04.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_figure04.m): m3ha_plot_figure04.m
 - [**m3ha_plot_figure05.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_figure05.m): m3ha_plot_figure05.m
+- [**m3ha_plot_figure07.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_figure07.m): m3ha_plot_figure07.m
 - [**m3ha_plot_histograms_refine_threshold.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_histograms_refine_threshold.m): Plot histograms for sweep information & passive fit results that will be used for fitting
 - [**m3ha_plot_simulated_traces.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_simulated_traces.m): Plots simulated traces from single neuron output files
 - [**m3ha_plot_traces_mat.m**](https://github.com/blabuva/Adams_Functions/blob/master/m3ha_plot_traces_mat.m): Plot traces from mat file

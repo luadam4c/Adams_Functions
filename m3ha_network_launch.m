@@ -103,8 +103,8 @@ loopMode = 'grid'; %cross;      % how to loop through parameters:
 
 % Decide on what to save and plot
 if nCells == 1 || nCells == 2
-    % savePlotMode = 'spikes&special';
-    savePlotMode = 'spikes';
+    savePlotMode = 'spikes&special';
+    % savePlotMode = 'spikes';
 elseif nCells == 20 || nCells == 100
     savePlotMode = 'spikes';    
 else
@@ -634,7 +634,9 @@ else
 end
 
 %% Arguments for plotting (not logged in sim_params)
-propertiesToPlot = 1:8;         % property #s of special neuron to record to be plotted (maximum range: 1~8, must be consistent with net.hoc)
+propertiesToPlotRT = 1:8;       % property #s of special neuron to record to be plotted (maximum range: 1~8, must be consistent with net.hoc)
+propertiesToPlotTC = 1:12;      % property #s of special neuron to record to be plotted (maximum range: 1~8, must be consistent with net.hoc)
+% propertiesToPlot = 1:8;
 % propertiesToPlot = [1, 5, 6, 8]; 
 cellsToPlot = [act, actLeft1, actLeft2, far]; % ID #s for neurons whose voltage is to be plotted
 
@@ -1125,9 +1127,11 @@ end
 % Show single neuron traces and heat maps for selected neurons (each .singv, .singcli & .singsp file)
 if plotSingleNeuronData
     m3ha_network_single_neuron(inFolder, 'OutFolder', outFolder, ...
-            'CellsToPlot', cellsToPlot, 'PropertiesToPlot', propertiesToPlot, ...
-            'RenewParpool', renewParpoolFlagPlots, ...
-            'MaxNumWorkers', maxNumWorkersPlots);
+        'CellsToPlot', cellsToPlot, ...
+        'PropertiesToPlotRT', propertiesToPlotRT, ...
+        'PropertiesToPlotTC', propertiesToPlotTC, ...
+        'RenewParpool', renewParpoolFlagPlots, ...
+        'MaxNumWorkers', maxNumWorkersPlots);
 end
 
 %% Compute time taken

@@ -1,6 +1,6 @@
-% function m3ha_network_compare_ipsc (varargin)
+function handles = m3ha_network_compare_ipsc (varargin)
 %% Compare an evoked IPSC against the recorded IPSC
-% Usage: m3ha_network_compare_ipsc (varargin)
+% Usage: handles = m3ha_network_compare_ipsc (varargin)
 % Explanation:
 %       TODO
 %
@@ -8,16 +8,26 @@
 %       TODO
 %
 % Outputs:
-%       output1     - TODO: Description of output1
+%       handles     - TODO: Description of output1
 %                   specified as a TODO
 %
 % Arguments:
-%       reqarg1     - TODO: Description of reqarg1
-%                   must be a TODO
-%       varargin    - 'param1': TODO: Description of param1
+%       varargin    - 'InFolder': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
-%                   - Any other parameter-value pair for TODO()
+%                   - 'AmpScaleFactor': amplitude scaling factor
+%                   must be a numeric scalar
+%                   default == 100%
+%                   - 'OutFolder': TODO: Description of param1
+%                   must be a TODO
+%                   default == TODO
+%                   - 'FigName': TODO: Description of param1
+%                   must be a TODO
+%                   default == TODO
+%                   - 'SaveNewFlag': TODO: Description of param1
+%                   must be a TODO
+%                   default == TODO
+%                   - Any other parameter-value pair for plot_traces()
 %
 % Requires:
 %       cd/compute_gabab_conductance.m
@@ -33,18 +43,16 @@
 %       cd/set_figure_properties.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/m3ha_plot_figure07.m
 
 % File History:
 % 2020-01-22 Created by Adam Lu
-% 
+% 2020-01-30 Added input parser
 
 %% Hard-coded parameters
 spExtension = 'singsp';
 spPrefix = 'TC[0]';
-spKeyword = 'gIncr_20';
 ipscStartMs = 3000;
-ampScaleFactor = 240;
 ampUnits = 'nS';
 
 % Column numbers for simulated data
@@ -64,51 +72,76 @@ xLimits = [2000, 10000];
 xLabel = 'Time (ms)';
 pharmLabels = {'{\it s}-Control', '{\it s}-GAT1 Block', ...
                     '{\it s}-GAT3 Block', '{\it s}-Dual Block'};
-figTypes = {'png', 'epsc'};
 
 % TODO: Make optional arguments
-directory = pwd;
+figTypes = 'png';
 
 %% Default values for optional arguments
-% param1Default = [];             % default TODO: Description of param1
+inFolderDefault = pwd;      % use current directory by default
+ampScaleFactorDefault = 200;
+outFolderDefault = '';      % set later
+figNameDefault = [];        % no figure name by default
+saveNewFlagDefault = true;  % create and save new figure by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Deal with arguments
 % Set up Input Parser Scheme
-% iP = inputParser;
-% iP.FunctionName = mfilename;
-% iP.KeepUnmatched = true;                        % allow extraneous options
+iP = inputParser;
+iP.FunctionName = mfilename;
+iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
-% addParameter(iP, 'param1', param1Default);
+addParameter(iP, 'InFolder', inFolderDefault);
+addParameter(iP, 'AmpScaleFactor', ampScaleFactorDefault, ...
+    @(x) assert(isempty(x) || isnumeric(x) && isscalar(x), ...
+                ['AmpScaleFactor must be either empty ', ...
+                    'or a numeric scalar!']));
+addParameter(iP, 'OutFolder', outFolderDefault);
+addParameter(iP, 'FigName', figNameDefault);
+addParameter(iP, 'SaveNewFlag', saveNewFlagDefault);
 
 % Read from the Input Parser
-% parse(iP, varargin{:});
-% param1 = iP.Results.param1;
+parse(iP, varargin{:});
+inFolder = iP.Results.InFolder;
+ampScaleFactor = iP.Results.AmpScaleFactor;
+outFolder = iP.Results.OutFolder;
+figName = iP.Results.FigName;
+saveNewFlag = iP.Results.SaveNewFlag;
 
-% Keep unmatched arguments for the TODO() function
-% otherArguments = iP.Unmatched;
+% Keep unmatched arguments for the plot_traces() function
+otherArguments = iP.Unmatched;
 
 %% Preparation
-% TODO
+% Set default output folder
+if isempty(outFolder)
+    outFolder = inFolder;
+end
 
-%% Do the job
+% Find the appropriate network gIncr
+ampScaleFactorNetwork = ampScaleFactor / 12;
+spKeyword = ['gIncr_', num2str(ampScaleFactorNetwork)];
+
 % Construct the pharm strings expected in file names
 pharmStrs = create_labels_from_numbers(1:4, 'Prefix', 'pCond_');
 
 % Locate the TC neuron data for each pharm condition
-[~, dataPaths] = find_matching_files(pharmStrs, 'Directory', directory, ...
+[~, dataPaths] = find_matching_files(pharmStrs, 'Directory', inFolder, ...
                             'Prefix', spPrefix, 'Keyword', spKeyword, ...
                             'Extension', spExtension);
 
-% Decide on figure name and title
-commonPrefix = extract_fileparts(dataPaths, 'commonprefix');
-commonSuffix = extract_fileparts(dataPaths, 'commonsuffix');
-figName = [commonPrefix, '_', commonSuffix, '_gabab_ipsc_comparison'];
+% Decide on figure name
+if isempty(figName) && saveNewFlag
+    commonPrefix = extract_fileparts(dataPaths, 'commonprefix');
+    commonSuffix = extract_fileparts(dataPaths, 'commonsuffix');
+    figName = [commonPrefix, '_', commonSuffix, '_gabab_ipsc_comparison'];
+end
+
+% Decide on figure title
 figTitle = ['GABA_B IPSC Comparison for ', commonPrefix, '_', commonSuffix];
 figTitle = replace(figTitle, '_', '\_');
 
+%% Do the job
 % Load simulated data
 simData = load_neuron_outputs('FileNames', dataPaths);
 
@@ -132,18 +165,17 @@ gVecsOrigNs = compute_gabab_conductance(tVecsMs, ipscStartMs, ...
 clear simData
 
 % Create a figure
-fig = set_figure_properties('AlwaysNew', true);
+if saveNewFlag
+    fig = set_figure_properties('AlwaysNew', true);
+end
 
 % Plot traces
-plot_traces(tVecsMs, gCmdSimNs, 'DataToCompare', gVecsOrigNs, ...
-            'PlotMode', 'parallel', ...
-            'XLimits', xLimits, 'XLabel', 'suppress', 'YLabel', pharmLabels, ...
-            'FigTitle', figTitle, 'LegendLocation', 'suppress');
-
-% Save figure
-save_all_figtypes(fig, figName, figTypes);
-
-%% Output results
+handles = plot_traces(tVecsMs, gCmdSimNs, 'DataToCompare', gVecsOrigNs, ...
+                        'PlotMode', 'parallel', 'XLimits', xLimits, ...
+                        'XLabel', 'suppress', 'YLabel', pharmLabels, ...
+                        'FigTitle', figTitle, 'LegendLocation', 'suppress', ...
+                        'FigName', figName, 'FigTypes', figTypes, ...
+                        otherArguments);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

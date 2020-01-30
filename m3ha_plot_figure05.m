@@ -54,7 +54,7 @@ paramFileSuffix = 'params';
 
 % Analysis settings
 % exampleCellNames = {'D101310'; 'C101210'};
-exampleCellNames = {'D101310', 'M101210'};
+exampleCellNames = {'D101310'; 'M101210'};
 
 % Must be consistent with m3ha_compute_gabab_ipsc.m
 gababIpscSheetBases = {'gababipsc_gat3_vary_amp2', ...
@@ -275,7 +275,7 @@ if plotM2h
     end
 end
 
-% Archive all scripts for this run
+%% Archive all scripts for this run
 if archiveScriptsFlag
     archive_dependent_scripts(mfilename, 'OutFolder', figure05Dir);
 end
@@ -317,8 +317,8 @@ function plot_overlapped (expStr, directory, plotType, outFolder, figTypes, ...
                             figWidth, figHeight, xLimits, yLimits, colorMap)
 
 % Create figure names
-figPathBaseOrig = fullfile(outFolder, [expStr, '_', plotType, '_orig']);
 figPathBase = fullfile(outFolder, [expStr, '_', plotType]);
+figPathBaseOrig = [figPathBase, '_orig'];
 
 % Create the figure
 fig = set_figure_properties('AlwaysNew', true);
@@ -330,7 +330,7 @@ m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
                 'XLimits', xLimits, 'YLimits', yLimits, ...
                 'ColorMap', colorMap);
 
-% Save the figure
+% Save original figure
 save_all_figtypes(fig, figPathBaseOrig, 'png');
 
 % Plot a scale bar
@@ -355,8 +355,8 @@ function plot_m2h (expStr, directory, outFolder, figTypes, ...
                     figWidth, figHeight, xLimits, yLimits, colorMap)
 
 % Create a figure name
-figPathBaseM2hOrig = fullfile(outFolder, [expStr, '_m2h_orig']);
 figPathBaseM2h = fullfile(outFolder, [expStr, '_m2h']);
+figPathBaseM2hOrig = [figPathBaseM2h, '_orig'];
 
 % Create the figure
 figM2h = set_figure_properties('AlwaysNew', true);
