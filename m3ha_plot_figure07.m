@@ -4,6 +4,7 @@
 % Requires:
 %       cd/archive_dependent_scripts.m
 %       cd/m3ha_network_compare_ipsc.m
+%       cd/m3ha_network_plot_essential.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
 %       cd/update_figure_for_corel.m
@@ -14,7 +15,7 @@
 %% Hard-coded parameters
 % Flags
 plotIpscComparison = true;
-plot2CellExamples = false; %true;
+plot2CellExamples = true;
 plot2CellPopulation = false; %true;
 
 archiveScriptsFlag = false; %true;
@@ -34,6 +35,8 @@ gIncr = 200;            % Original dynamic clamp gIncr value
 % Plot settings
 ipscFigWidth = 8.5;
 ipscFigHeight = 4;
+exampleFigWidth = 8.5;
+exampleFigHeight = 8.5;
 
 figTypes = {'png', 'epsc2'};
 
@@ -53,14 +56,20 @@ end
 
 %% Plots figures for comparing dynamic clamp ipsc
 if plotIpscComparison
-    cellfun(@(x, y) plot_ipsc_comparison(x, iterName, gIncr, y, figure07Dir, ...
-                                    figTypes, ipscFigWidth, ipscFigHeight), ...
+    cellfun(@(x, y) plot_ipsc_comparison(x, iterName, gIncr, y, ...
+                                        figure07Dir, figTypes, ...
+                                        ipscFigWidth, ipscFigHeight), ...
             exampleCellNames, exampleDirs);
 end
 
 %% Plots example 2-cell networks
 if plot2CellExamples
-    % TODO
+    for pharm = 1:4
+        cellfun(@(x, y) plot_2cell_examples(x, iterName, gIncr, pharm, y, ...
+                                        figure07Dir, figTypes, ...
+                                        exampleFigWidth, exampleFigHeight), ...
+                exampleCellNames, exampleDirs);
+    end
 end
 
 %% Plots quantification over all 2-cell networks
@@ -91,9 +100,45 @@ figPathBaseOrig = [figPathBase, '_orig'];
 % Create the figure
 fig = set_figure_properties('AlwaysNew', true);
 
-% Plots comparison
+% Plot comparison
 m3ha_network_compare_ipsc('SaveNewFlag', false, 'InFolder', inFolder, ...
                             'AmpScaleFactor', gIncr);
+
+% Save original figure
+save_all_figtypes(fig, figPathBaseOrig, 'png');
+
+% Update figure for CorelDraw
+update_figure_for_corel(fig, 'Units', 'centimeters', ...
+                        'Width', figWidth, 'Height', figHeight, ...
+                        'AlignSubplots', true);
+
+% Save the figure
+save_all_figtypes(fig, figPathBase, figTypes);
+
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function plot_2cell_examples(cellName, iterName, gIncr, pharm, ...
+                                inFolder, outFolder, ...
+                                figTypes, figWidth, figHeight)
+% Plot 2-cell network examples
+
+% Create a gIncr string
+gIncrStr = ['gIncr', num2str(gIncr)];
+pharmStr = ['pharm', num2str(pharm)];
+
+% Create figure names
+figPathBase = fullfile(outFolder, [cellName, '_', iterName, '_', gIncrStr, ...
+                                    '_', pharmStr, '_example']);
+figPathBaseOrig = [figPathBase, '_orig'];
+
+% Create the figure
+fig = set_figure_properties('AlwaysNew', true);
+
+% Plot example
+m3ha_network_plot_essential('SaveNewFlag', false, 'InFolder', inFolder, ...
+                            'AmpScaleFactor', gIncr, 'PharmCondition', pharm);
 
 % Save original figure
 save_all_figtypes(fig, figPathBaseOrig, 'png');

@@ -1,6 +1,6 @@
-function handles = m3ha_network_compare_ipsc (varargin)
+function handles = m3ha_network_plot_essential (varargin)
 %% Compare an evoked IPSC against the recorded IPSC
-% Usage: handles = m3ha_network_compare_ipsc (varargin)
+% Usage: handles = m3ha_network_plot_essential (varargin)
 % Explanation:
 %       TODO
 %
@@ -18,6 +18,9 @@ function handles = m3ha_network_compare_ipsc (varargin)
 %                   - 'AmpScaleFactor': amplitude scaling factor
 %                   must be a numeric scalar
 %                   default == 200%
+%                   - 'PharmCondition': pharmacological condition
+%                   must be a numeric scalar
+%                   default == 1
 %                   - 'OutFolder': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
@@ -30,6 +33,7 @@ function handles = m3ha_network_compare_ipsc (varargin)
 %                   - Any other parameter-value pair for plot_traces()
 %
 % Requires:
+%       TODO:
 %       cd/compute_gabab_conductance.m
 %       cd/convert_units.m
 %       cd/create_labels_from_numbers.m
@@ -38,7 +42,7 @@ function handles = m3ha_network_compare_ipsc (varargin)
 %       cd/find_matching_files.m
 %       cd/load_neuron_outputs.m
 %       cd/m3ha_load_gabab_ipsc_params.m
-%       cd/m3ha_network_compare_ipsc.m
+%       cd/m3ha_network_plot_essential.m
 %       cd/plot_traces.m
 %       cd/set_figure_properties.m
 %
@@ -46,14 +50,13 @@ function handles = m3ha_network_compare_ipsc (varargin)
 %       cd/m3ha_plot_figure07.m
 
 % File History:
-% 2020-01-22 Created by Adam Lu
-% 2020-01-30 Added input parser
+% 2020-01-30 Modified from m3ha_network_compare_ipsc.m
 
 %% Hard-coded parameters
 spExtension = 'singsp';
-spPrefix = 'TC[0]';
+spPrefixTC = 'TC[0]';
+spPrefixRT = 'RT[0]';
 ipscStartMs = 3000;
-ampUnits = 'nS';
 
 % Column numbers for simulated data
 %   Note: Must be consistent with m3ha_net.hoc
@@ -71,14 +74,15 @@ GGABAB_COL_SIM = 9;
 xLimits = [2000, 10000];
 xLabel = 'Time (ms)';
 pharmLabels = {'{\it s}-Control', '{\it s}-GAT1 Block', ...
-                    '{\it s}-GAT3 Block', '{\it s}-Dual Block'};
+                '{\it s}-GAT3 Block', '{\it s}-Dual Block'};
 
 % TODO: Make optional arguments
 figTypes = 'png';
 
 %% Default values for optional arguments
 inFolderDefault = pwd;      % use current directory by default
-ampScaleFactorDefault = 200;
+ampScaleFactorDefault = []; % set later
+pharmConditionDefault = []; % set later
 outFolderDefault = '';      % set later
 figNameDefault = [];        % no figure name by default
 saveNewFlagDefault = true;  % create and save new figure by default
@@ -97,6 +101,10 @@ addParameter(iP, 'AmpScaleFactor', ampScaleFactorDefault, ...
     @(x) assert(isempty(x) || isnumeric(x) && isscalar(x), ...
                 ['AmpScaleFactor must be either empty ', ...
                     'or a numeric scalar!']));
+addParameter(iP, 'PharmCondition', pharmConditionDefault, ...
+    @(x) assert(isempty(x) || isnumeric(x) && isscalar(x), ...
+                ['PharmCondition must be either empty ', ...
+                    'or a numeric scalar!']));
 addParameter(iP, 'OutFolder', outFolderDefault);
 addParameter(iP, 'FigName', figNameDefault);
 addParameter(iP, 'SaveNewFlag', saveNewFlagDefault);
@@ -105,6 +113,7 @@ addParameter(iP, 'SaveNewFlag', saveNewFlagDefault);
 parse(iP, varargin{:});
 inFolder = iP.Results.InFolder;
 ampScaleFactor = iP.Results.AmpScaleFactor;
+pharmCondition = iP.Results.PharmCondition;
 outFolder = iP.Results.OutFolder;
 figName = iP.Results.FigName;
 saveNewFlag = iP.Results.SaveNewFlag;
@@ -113,35 +122,47 @@ saveNewFlag = iP.Results.SaveNewFlag;
 otherArguments = iP.Unmatched;
 
 %% Preparation
+% Set default parameters
+if isempty(ampScaleFactor)
+    ampScaleFactor = 200;
+end
+if isempty(pharmCondition)
+    pharmCondition = 1;
+end
+
 % Set default output folder
 if isempty(outFolder)
     outFolder = inFolder;
 end
 
-% Find the appropriate network gIncr
+% Find the appropriate file keyword
 ampScaleFactorNetwork = ampScaleFactor / 12;
-spKeyword = ['gIncr_', num2str(ampScaleFactorNetwork)];
+spKeyword = ['pCond_', num2str(pharmCondition), ...
+            'gIncr_', num2str(ampScaleFactorNetwork)];
 
-% Construct the pharm strings expected in file names
-pharmStrs = create_labels_from_numbers(1:4, 'Prefix', 'pCond_');
+% Locate the RT neuron data
+[~, dataPathRT] = all_files('Directory', inFolder, ...
+                            'Prefix', spPrefixRT, 'Keyword', spKeyword, ...
+                            'Extension', spExtension);
 
-% Locate the TC neuron data for each pharm condition
-[~, dataPaths] = find_matching_files(pharmStrs, 'Directory', inFolder, ...
-                            'Prefix', spPrefix, 'Keyword', spKeyword, ...
+% Locate the TC neuron data
+[~, dataPathTC] = all_files('Directory', inFolder, ...
+                            'Prefix', spPrefixTC, 'Keyword', spKeyword, ...
                             'Extension', spExtension);
 
 % Decide on figure name
 if isempty(figName) && saveNewFlag
-    commonPrefix = extract_fileparts(dataPaths, 'commonprefix');
-    commonSuffix = extract_fileparts(dataPaths, 'commonsuffix');
-    figName = [commonPrefix, '_', commonSuffix, '_gabab_ipsc_comparison'];
+    commonPrefix = extract_fileparts({dataPathTC, dataPathRT}, 'commonprefix');
+    commonSuffix = extract_fileparts({dataPathTC, dataPathRT}, 'commonsuffix');
+    figName = [commonPrefix, '_', commonSuffix, '_essential'];
 end
 
 % Decide on figure title
-figTitle = ['GABA_B IPSC Comparison for ', commonPrefix, '_', commonSuffix];
+figTitle = ['Essential traces for ', commonPrefix, '_', commonSuffix];
 figTitle = replace(figTitle, '_', '\_');
 
 %% Do the job
+% TODO TODO TODO
 % Load simulated data
 simData = load_neuron_outputs('FileNames', dataPaths);
 
