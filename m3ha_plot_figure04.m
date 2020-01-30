@@ -33,8 +33,11 @@ fitDirName = 'optimizer4gabab';
 % rankDirName = '20191229_ranked_singleneuronfitting0-91';
 % rankNumsToUse = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
 
-rankDirName = '20200103_ranked_singleneuronfitting0-94';
-rankNumsToUse = 1:11;
+% rankDirName = '20200103_ranked_singleneuronfitting0-94';
+% rankNumsToUse = 1:11;
+
+rankDirName = '20200131_ranked_singleneuronfitting0-102';
+rankNumsToUse = 1:11; % TODO
 
 % Files
 datalogPath = fullfile(figure02Dir, 'dclampdatalog_take4.csv');

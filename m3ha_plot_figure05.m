@@ -1,5 +1,5 @@
 % m3ha_plot_figure05.m
-%% Plots Figure 05 for the GAT Blocker paper
+%% Plots Figure 05 & Figure 06 for the GAT Blocker paper
 %
 % Requires:
 %       cd/archive_dependent_scripts.m
@@ -18,6 +18,7 @@
 
 % File History:
 % 2019-12-29 Modified from m3ha_plot_figure03.m
+% 2020-01-29 Separated outputs to figure05Dir and figure06Dir
 
 %% Hard-coded parameters
 % Flags
@@ -25,19 +26,21 @@ updateScripts = false; %true;
 simulateIpscr = false; %true;
 simulateTauhModes = false; %true;
 computeIpscVariation = false; %true;
-simulateIpscVariation = false; %true;
+simulateIpscVariation = true;
 plotEssential = true;
 plotAllVoltages = false; %true;
 plotAllTotalCurrents = false; %true;
 plotAllComponentCurrents = false; %true;
-plotDend2ITproperties = false; %true;
-plotM2h = false; %true;
-archiveScriptsFlag = false;
+plotDend2ITproperties =false; %true;
+plotM2h = true;
+archiveScriptsFlag = false; %true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
 figure02Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure02');
 figure05Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure05');
+figure06Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure06');
+gababIpscDir = figure06Dir;
 fitDirectory = fullfile(parentDirectory, 'optimizer4gabab');
 
 % Files
@@ -47,8 +50,9 @@ paramFileSuffix = 'params';
 
 % Analysis settings
 % exampleCellNames = {'D101310'; 'C101210'};
-exampleCellNames = {'D101310'};
-% exampleCellNames = {'C101210'};
+exampleCellNames = {'D101310', 'M101210'};
+
+% Must be consistent with m3ha_compute_gabab_ipsc.m
 gababIpscSheetBases = {'gababipsc_gat3_vary_amp2', ...
                         'gababipsc_gat3_vary_amp', ...
                         'gababipsc_dual_vary_amp', ...
@@ -81,6 +85,9 @@ attemptNumberIpscr = 1;             % attempt number for IPSC response
 tauhModesAll = 1:5;
 
 % Plot settings
+colorMapFigure05 = [];              % use m3ha default
+colorMapFigure06 = @jet;            % rainbow colors
+
 overlappedFigWidth = 5.7;
 overlappedFigHeightPerRow = 1.5;
 overlappedXLimits = [2800, 4800]; %[2800, 4000];
@@ -134,9 +141,9 @@ if simulateIpscr || simulateTauhModes || simulateIpscVariation || ...
 
     % Create output folder names
     outFoldersIpscr = fullfile(figure05Dir, exampleLabelsIpscr);
-    outFoldersModeAll = cellfun(@(x) fullfile(figure05Dir, x), ...
+    outFoldersModeAll = cellfun(@(x) fullfile(figure06Dir, x), ...
                                 exampleLabelsModeAll, 'UniformOutput', false);
-    outFoldersVaryAll = cellfun(@(x) fullfile(figure05Dir, x), ...
+    outFoldersVaryAll = cellfun(@(x) fullfile(figure06Dir, x), ...
                                 exampleLabelsVaryAll, 'UniformOutput', false);
 end
 
@@ -161,14 +168,18 @@ end
 
 %% Compute all GABAB IPSC parameters and plot them
 if computeIpscVariation
-    m3ha_compute_gabab_ipsc(figure05Dir);
+    m3ha_compute_gabab_ipsc(gababIpscDir);
 end
 
 %% Simulate IPSC variation
 if simulateIpscVariation
     for iSheet = 1:numel(gababIpscSheetBases)
+        % Construct full path to GABA-B IPSC parameters spreadsheet
+        gababIpscSheetPath = fullfile(gababIpscDir, ...
+                                [gababIpscSheetBases{iSheet}, '.csv']);
+
         % Read GABA-B IPSC parameters table
-        gababTable = readtable([gababIpscSheetBases{iSheet}, '.csv']);
+        gababTable = readtable(gababIpscSheetPath);
 
         % Convert to a scalar structure
         gababStruct = table2struct(gababTable, 'ToScalar', true);
@@ -184,9 +195,9 @@ end
 if plotEssential
     for iSheet = 1:numel(gababIpscSheetBases)
         cellfun(@(x, y) plot_overlapped(x, y, 'essential', ...
-                        figure05Dir, figTypes, ...
+                        figure06Dir, figTypes, ...
                         overlappedFigWidth, 6 * overlappedFigHeightPerRow, ...
-                        overlappedXLimits, overlappedYLimits), ...
+                        overlappedXLimits, overlappedYLimits, colorMapFigure06), ...
                 exampleLabelsVaryAll{iSheet}, outFoldersVaryAll{iSheet});
     end
 end
@@ -196,7 +207,7 @@ if plotAllVoltages
     cellfun(@(x, y) plot_overlapped(x, y, 'allVoltages', ...
                     figure05Dir, figTypes, ...
                     overlappedFigWidth, 8 * overlappedFigHeightPerRow, ...
-                    overlappedXLimits, overlappedYLimits), ...
+                    overlappedXLimits, overlappedYLimits, colorMapFigure05), ...
             exampleLabelsIpscr, outFoldersIpscr);
 end
 
@@ -205,7 +216,7 @@ if plotAllTotalCurrents
     cellfun(@(x, y) plot_overlapped(x, y, 'allTotalCurrents', ...
                     figure05Dir, figTypes, ...
                     overlappedFigWidth, 7 * overlappedFigHeightPerRow, ...
-                    overlappedXLimits, overlappedYLimits), ...
+                    overlappedXLimits, overlappedYLimits, colorMapFigure05), ...
             exampleLabelsIpscr, outFoldersIpscr);
 end
 
@@ -214,7 +225,7 @@ if plotAllComponentCurrents
     cellfun(@(x, y) plot_overlapped(x, y, 'allComponentCurrents', ...
                     figure05Dir, figTypes, ...
                     overlappedFigWidth, 7 * overlappedFigHeightPerRow, ...
-                    overlappedXLimits, overlappedYLimits), ...
+                    overlappedXLimits, overlappedYLimits, colorMapFigure05), ...
             exampleLabelsIpscr, outFoldersIpscr);
 end
 
@@ -223,7 +234,7 @@ if plotDend2ITproperties
     cellfun(@(x, y) plot_overlapped(x, y, 'dend2ITproperties', ...
                     figure05Dir, figTypes, ...
                     overlappedFigWidth, 5 * overlappedFigHeightPerRow, ...
-                    overlappedXLimits, overlappedYLimits), ...
+                    overlappedXLimits, overlappedYLimits, colorMapFigure05), ...
             exampleLabelsIpscr, outFoldersIpscr);
 end
 
@@ -231,13 +242,13 @@ end
 if plotM2h
     cellfun(@(x, y) plot_m2h(x, y, figure05Dir, figTypes, ...
                                 m2hFigWidth, m2hFigHeight, ...
-                                m2hXLimits, m2hYLimits), ...
+                                m2hXLimits, m2hYLimits, colorMapFigure05), ...
             exampleLabelsIpscr, outFoldersIpscr);
 
     for iSheet = 1:numel(gababIpscSheetBases)
-        cellfun(@(x, y) plot_m2h(x, y, figure05Dir, figTypes, ...
+        cellfun(@(x, y) plot_m2h(x, y, figure06Dir, figTypes, ...
                                     m2hFigWidth, m2hFigHeight, ...
-                                    m2hXLimits, m2hYLimits), ...
+                                    m2hXLimits, m2hYLimits, colorMapFigure06), ...
                 exampleLabelsVaryAll{iSheet}, outFoldersVaryAll{iSheet});
     end
 end
@@ -281,7 +292,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_overlapped(expStr, directory, plotType, outFolder, figTypes, ...
-                            figWidth, figHeight, xLimits, yLimits)
+                            figWidth, figHeight, xLimits, yLimits, colorMap)
 
 % Create figure names
 figPathBaseOrig = fullfile(outFolder, [expStr, '_', plotType, '_orig']);
@@ -294,7 +305,8 @@ fig = set_figure_properties('AlwaysNew', true);
 m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
                 'PlotType', plotType, 'FigHandle', fig, ...
                 'FigTitle', 'suppress', 'XLabel', 'suppress', ...
-                'XLimits', xLimits, 'YLimits', yLimits);
+                'XLimits', xLimits, 'YLimits', yLimits, ...
+                'ColorMap', colorMap);
 
 % Save the figure
 save_all_figtypes(fig, figPathBaseOrig, 'png');
@@ -318,7 +330,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function plot_m2h(expStr, directory, outFolder, figTypes, ...
-                    figWidth, figHeight, xLimits, yLimits)
+                    figWidth, figHeight, xLimits, yLimits, colorMap)
 
 % Create a figure name
 figPathBaseM2hOrig = fullfile(outFolder, [expStr, '_m2h_orig']);
@@ -331,7 +343,8 @@ figM2h = set_figure_properties('AlwaysNew', true);
 m3ha_plot_simulated_traces('Directory', directory, 'ExpStr', expStr, ...
                 'PlotType', 'm2h', 'FigHandle', figM2h, ...
                 'FigTitle', 'suppress', ...
-                'XLimits', xLimits, 'YLimits', yLimits);
+                'XLimits', xLimits, 'YLimits', yLimits, ...
+                'ColorMap', colorMap);
 
 % Save the figure
 save_all_figtypes(figM2h, figPathBaseM2hOrig, 'png');

@@ -336,7 +336,6 @@ if isempty(colorMap)
         case {'overlapped', 'essential', 'allVoltages', 'allTotalCurrents', ...
                 'allComponentCurrents', 'allITproperties', ...
                 'dend2ITproperties', 'm2h'}
-            % Decide on the colors for parallel plots
             colorMap = decide_on_colormap([], 4);
             if nFiles > nRows
                 nColumns = ceil(nFiles / nRows);
@@ -345,10 +344,12 @@ if isempty(colorMap)
                                     nColumns, 1), nSlots, 3);
             end
         otherwise
-            % Decide on the colors for each row in the plots
-            colorMap = decide_on_colormap(colorMap, nFiles);
+            % Use default
     end
 end
+
+% Make sure the color map matches the number of files
+colorMap = decide_on_colormap(colorMap, nFiles);
 
 % Decide on the plot line width
 if isempty(lineWidth)
