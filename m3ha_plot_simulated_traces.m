@@ -374,7 +374,7 @@ if isempty(lineWidth)
     end
 end
 
-% Decide on the neuron parameters table
+% Decide on the simulation parameters table
 if isempty(simParamsTable)
     % Find the corresponding parameters file
     [~, simParamsPath] = all_files('Directory', directory, 'Keyword', expStr, ...
