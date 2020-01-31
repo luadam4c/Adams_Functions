@@ -1256,9 +1256,11 @@ case 'parallel'
 
         % Plot data to compare against as a black trace
         if ~isempty(dataToCompare{iPlot})
-            plotsDataToCompare(iPlot) = ...
+            pToCompare = ...
                 plot(tVecs{iPlot}, dataToCompare{iPlot}, 'Color', 'k', ...
                         'LineStyle', lineStyleToCompare, otherArguments{:});
+        else
+            pToCompare = gobjects(1);
         end
 
         % Plot the data using the color map
@@ -1361,6 +1363,11 @@ case 'parallel'
             plotsData{iPlot} = p;
         else
             plotsData(iPlot) = p;
+        end
+        if iscell(plotsDataToCompare)
+            plotsDataToCompare{iPlot} = pToCompare;
+        else
+            plotsDataToCompare(iPlot) = pToCompare;
         end
     end
     

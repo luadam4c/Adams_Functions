@@ -55,18 +55,18 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = false; %true;
-plotIndividualFlag = false; %true;
-rankNeuronsFlag = false; %true;
-plotHistogramsFlag = false; %true;
-plotBarPlotFlag = false; %true;
-plotParamViolinsFlag = false; %true;
+chooseBestParamsFlag = true;
+plotIndividualFlag = true;
+rankNeuronsFlag = true;
+plotHistogramsFlag = true;
+plotBarPlotFlag = true;
+plotParamViolinsFlag = true;
 plotErrorParamComparisonFlag = true;
-archiveScriptsFlag = false; %true;
+archiveScriptsFlag = true;
 
-plotErrorHistoryFlag = false; %true;
-plotErrorComparisonFlag = false; %true;
-plotParamHistoryFlag = false; %true;
+plotErrorHistoryFlag = true;
+plotErrorComparisonFlag = true;
+plotParamHistoryFlag = true;
 
 % Fitting parameters 
 %   Note: Must be consistent with singleneuronfitting91.m
@@ -88,7 +88,7 @@ columnMode = 1;                     % optimization mode:
 rowModeAcrossTrials = 1;            % row mode when fitting across trials:
                                     %   1 - each row is a pharm condition
                                     %   2 - each row is a pharm, g incr pair
-attemptNumberAcrossTrials = 6;      % attempt number for across trials:
+attemptNumberAcrossTrials = 3;      % attempt number for across trials:
                                     %   1 - Use 4 traces @ 200% gIncr 
                                     %           for this data mode
                                     %   2 - Use all traces @ 200% gIncr 
