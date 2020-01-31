@@ -64,6 +64,7 @@ function fig = set_figure_properties (varargin)
 %       cd/isemptycell.m
 %       cd/m3ha_compute_gabab_ipsc.m
 %       cd/m3ha_fminsearch3.m
+%       cd/m3ha_network_plot_essential.m
 %       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_network_show_net.m
 %       cd/m3ha_neuron_run_and_analyze.m

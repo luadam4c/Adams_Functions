@@ -33,10 +33,9 @@ function handles = m3ha_network_plot_essential (varargin)
 %                   - Any other parameter-value pair for plot_traces()
 %
 % Requires:
-%       cd/compute_total_current.m
-%       TODO:
 %       cd/all_files.m
 %       cd/argfun.m
+%       cd/compute_total_current.m
 %       cd/convert_units.m
 %       cd/extract_columns.m
 %       cd/extract_fileparts.m
@@ -182,10 +181,8 @@ end
 
 % Decide on figure name
 if isempty(figName) && saveNewFlag
-    commonPrefix = extract_fileparts({dataPathTC, dataPathRT}, 'commonprefix');
     commonSuffix = extract_fileparts({dataPathTC, dataPathRT}, 'commonsuffix');
-    figName = fullfile(outFolder, ...
-                        [commonPrefix, '_', commonSuffix, '_essential']);
+    figName = fullfile(outFolder, [commonSuffix, '_essential']);
 end
 
 % Decide on figure title
