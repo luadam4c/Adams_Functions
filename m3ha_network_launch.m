@@ -103,8 +103,8 @@ loopMode = 'grid'; %cross;      % how to loop through parameters:
 
 % Decide on what to save and plot
 if nCells == 1 || nCells == 2
-    savePlotMode = 'spikes&special';
-    % savePlotMode = 'spikes';
+    % savePlotMode = 'spikes&special';
+    savePlotMode = 'spikes';
 elseif nCells == 20 || nCells == 100
     savePlotMode = 'spikes';    
 else

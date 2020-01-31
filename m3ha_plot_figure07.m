@@ -24,7 +24,7 @@ archiveScriptsFlag = false; %true;
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
 figure07Dir = fullfile(parentDirectory, 'manuscript', 'figures', 'Figure07');
 networkDirectory = fullfile(parentDirectory, 'network_model');
-iterName = '20200129T1001_using_bestparams_20200126_singleneuronfitting101';
+iterName = '20200131T1345_using_bestparams_20200126_singleneuronfitting101';
 
 % Files
 
@@ -36,7 +36,7 @@ gIncr = 200;            % Original dynamic clamp gIncr value
 ipscFigWidth = 8.5;
 ipscFigHeight = 4;
 exampleFigWidth = 8.5;
-exampleFigHeight = 8.5;
+exampleFigHeight = 1.5 * 6;
 
 figTypes = {'png', 'epsc2'};
 
@@ -102,6 +102,7 @@ fig = set_figure_properties('AlwaysNew', true);
 
 % Plot comparison
 m3ha_network_plot_gabab('SaveNewFlag', false, 'InFolder', inFolder, ...
+                            'FigTitle', 'suppress', ...
                             'AmpScaleFactor', gIncr);
 
 % Save original figure
@@ -138,6 +139,7 @@ fig = set_figure_properties('AlwaysNew', true);
 
 % Plot example
 m3ha_network_plot_essential('SaveNewFlag', false, 'InFolder', inFolder, ...
+                            'FigTitle', 'suppress', ...
                             'AmpScaleFactor', gIncr, 'PharmCondition', pharm);
 
 % Save original figure

@@ -21,6 +21,9 @@ function handles = m3ha_network_plot_gabab (varargin)
 %                   - 'OutFolder': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
+%                   - 'FigTitle': TODO: Description of param1
+%                   must be a TODO
+%                   default == TODO
 %                   - 'FigName': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
@@ -79,6 +82,7 @@ figTypes = 'png';
 inFolderDefault = pwd;      % use current directory by default
 ampScaleFactorDefault = 200;
 outFolderDefault = '';      % set later
+figTitleDefault = '';           % set later
 figNameDefault = [];        % no figure name by default
 saveNewFlagDefault = true;  % create and save new figure by default
 
@@ -91,20 +95,27 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'InFolder', inFolderDefault);
+addParameter(iP, 'InFolder', inFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'AmpScaleFactor', ampScaleFactorDefault, ...
     @(x) assert(isempty(x) || isnumeric(x) && isscalar(x), ...
                 ['AmpScaleFactor must be either empty ', ...
                     'or a numeric scalar!']));
-addParameter(iP, 'OutFolder', outFolderDefault);
-addParameter(iP, 'FigName', figNameDefault);
-addParameter(iP, 'SaveNewFlag', saveNewFlagDefault);
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigTitle', figTitleDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigName', figNameDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'SaveNewFlag', saveNewFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
 inFolder = iP.Results.InFolder;
 ampScaleFactor = iP.Results.AmpScaleFactor;
 outFolder = iP.Results.OutFolder;
+figTitle = iP.Results.FigTitle;
 figName = iP.Results.FigName;
 saveNewFlag = iP.Results.SaveNewFlag;
 
@@ -134,12 +145,14 @@ if isempty(figName) && saveNewFlag
     commonPrefix = extract_fileparts(dataPaths, 'commonprefix');
     commonSuffix = extract_fileparts(dataPaths, 'commonsuffix');
     figName = fullfile(outFolder, [commonPrefix, '_', commonSuffix, ...
-                                    '_gabab_ipsc_comparison']);
+                                    '_gabab_ipsc_comparison.png']);
 end
 
 % Decide on figure title
-figTitle = ['GABA_B IPSC Comparison for ', commonPrefix, '_', commonSuffix];
-figTitle = replace(figTitle, '_', '\_');
+if isempty(figTitle)
+    figTitle = ['GABA_B IPSC Comparison for ', commonPrefix, '_', commonSuffix];
+    figTitle = replace(figTitle, '_', '\_');
+end
 
 %% Do the job
 % Load simulated data

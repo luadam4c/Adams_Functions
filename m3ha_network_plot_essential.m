@@ -24,6 +24,9 @@ function handles = m3ha_network_plot_essential (varargin)
 %                   - 'OutFolder': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
+%                   - 'FigTitle': TODO: Description of param1
+%                   must be a TODO
+%                   default == TODO
 %                   - 'FigName': TODO: Description of param1
 %                   must be a TODO
 %                   default == TODO
@@ -100,6 +103,7 @@ inFolderDefault = pwd;      % use current directory by default
 ampScaleFactorDefault = []; % set later
 pharmConditionDefault = []; % set later
 outFolderDefault = '';      % set later
+figTitleDefault = '';           % set later
 figNameDefault = [];        % no figure name by default
 saveNewFlagDefault = true;  % create and save new figure by default
 
@@ -112,7 +116,8 @@ iP.FunctionName = mfilename;
 iP.KeepUnmatched = true;                        % allow extraneous options
 
 % Add parameter-value pairs to the Input Parser
-addParameter(iP, 'InFolder', inFolderDefault);
+addParameter(iP, 'InFolder', inFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
 addParameter(iP, 'AmpScaleFactor', ampScaleFactorDefault, ...
     @(x) assert(isempty(x) || isnumeric(x) && isscalar(x), ...
                 ['AmpScaleFactor must be either empty ', ...
@@ -121,9 +126,14 @@ addParameter(iP, 'PharmCondition', pharmConditionDefault, ...
     @(x) assert(isempty(x) || isnumeric(x) && isscalar(x), ...
                 ['PharmCondition must be either empty ', ...
                     'or a numeric scalar!']));
-addParameter(iP, 'OutFolder', outFolderDefault);
-addParameter(iP, 'FigName', figNameDefault);
-addParameter(iP, 'SaveNewFlag', saveNewFlagDefault);
+addParameter(iP, 'OutFolder', outFolderDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigTitle', figTitleDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'FigName', figNameDefault, ...
+    @(x) validateattributes(x, {'char', 'string'}, {'scalartext'}));
+addParameter(iP, 'SaveNewFlag', saveNewFlagDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -131,6 +141,7 @@ inFolder = iP.Results.InFolder;
 ampScaleFactor = iP.Results.AmpScaleFactor;
 pharmCondition = iP.Results.PharmCondition;
 outFolder = iP.Results.OutFolder;
+figTitle = iP.Results.FigTitle;
 figName = iP.Results.FigName;
 saveNewFlag = iP.Results.SaveNewFlag;
 
@@ -182,12 +193,14 @@ end
 % Decide on figure name
 if isempty(figName) && saveNewFlag
     commonSuffix = extract_fileparts({dataPathTC, dataPathRT}, 'commonsuffix');
-    figName = fullfile(outFolder, [commonSuffix, '_essential']);
+    figName = fullfile(outFolder, [commonSuffix, '_essential.png']);
 end
 
 % Decide on figure title
-figTitle = ['Essential traces for ', commonPrefix, '_', commonSuffix];
-figTitle = replace(figTitle, '_', '\_');
+if isempty(figTitle)
+    figTitle = ['Essential traces for ', commonSuffix];
+    figTitle = replace(figTitle, '_', '\_');
+end
 
 %% Do the job
 % Load simulated data
