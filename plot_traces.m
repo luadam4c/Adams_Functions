@@ -255,7 +255,7 @@ function handles = plot_traces (tVecs, data, varargin)
 %
 % Used by:
 %       cd/m3ha_compute_gabab_ipsc.m
-%       cd/m3ha_network_compare_ipsc.m
+%       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_plot_example_jitter.m.m
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_simulated_traces.m

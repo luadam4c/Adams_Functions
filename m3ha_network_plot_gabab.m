@@ -1,6 +1,6 @@
-function handles = m3ha_network_compare_ipsc (varargin)
-%% Compare an evoked IPSC against the recorded IPSC
-% Usage: handles = m3ha_network_compare_ipsc (varargin)
+function handles = m3ha_network_plot_gabab (varargin)
+%% Compare evoked GABAB activation curves against the recorded GABAB IPSC
+% Usage: handles = m3ha_network_plot_gabab (varargin)
 % Explanation:
 %       TODO
 %
@@ -38,7 +38,6 @@ function handles = m3ha_network_compare_ipsc (varargin)
 %       cd/find_matching_files.m
 %       cd/load_neuron_outputs.m
 %       cd/m3ha_load_gabab_ipsc_params.m
-%       cd/m3ha_network_compare_ipsc.m
 %       cd/plot_traces.m
 %       cd/set_figure_properties.m
 %

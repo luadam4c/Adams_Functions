@@ -37,7 +37,8 @@ function [totalCurrent, compCurrents] = ...
 %       cd/compute_surface_area.m
 %
 % Used by:
-%       /TODO:dir/TODO:file
+%       cd/m3ha_network_plot_essential.m
+%       cd/m3ha_plot_simulated_traces.m
 
 % File History:
 % 2019-12-31 Created by Adam Lu

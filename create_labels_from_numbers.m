@@ -59,7 +59,7 @@ function labels = create_labels_from_numbers (numbers, varargin)
 %       cd/force_data_as_matrix.m
 %       cd/m3ha_compute_gabab_ipsc.m
 %       cd/m3ha_extract_component_errors.m
-%       cd/m3ha_network_compare_ipsc.m
+%       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_network_launch.m
 %       cd/m3ha_neuron_choose_best_params.m
 %       cd/m3ha_plot_figure04.m

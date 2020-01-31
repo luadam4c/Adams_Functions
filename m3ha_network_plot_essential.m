@@ -34,15 +34,13 @@ function handles = m3ha_network_plot_essential (varargin)
 %
 % Requires:
 %       TODO:
-%       cd/compute_gabab_conductance.m
+%       cd/all_files.m
+%       cd/argfun.m
+%       cd/compute_total_current.m
 %       cd/convert_units.m
-%       cd/create_labels_from_numbers.m
 %       cd/extract_columns.m
 %       cd/extract_fileparts.m
-%       cd/find_matching_files.m
 %       cd/load_neuron_outputs.m
-%       cd/m3ha_load_gabab_ipsc_params.m
-%       cd/m3ha_network_plot_essential.m
 %       cd/plot_traces.m
 %       cd/set_figure_properties.m
 %
@@ -50,7 +48,7 @@ function handles = m3ha_network_plot_essential (varargin)
 %       cd/m3ha_plot_figure07.m
 
 % File History:
-% 2020-01-30 Modified from m3ha_network_compare_ipsc.m
+% 2020-01-30 Modified from m3ha_network_plot_gabab.m
 
 %% Hard-coded parameters
 spExtension = 'singsp';
@@ -60,15 +58,31 @@ ipscStartMs = 3000;
 
 % Column numbers for simulated data
 %   Note: Must be consistent with m3ha_net.hoc
-TIME_COL_SIM = 1;
-VOLT_COL_SIM = 2;
-INA_COL_SIM = 3;
-IK_COL_SIM = 4;
-ICA_COL_SIM = 5;
-IGABAA_COL_SIM = 6;
-IGABAB_COL_SIM = 7;
-CAI_COL_SIM = 8;
-GGABAB_COL_SIM = 9;
+RT_TIME = 1;
+RT_VOLT = 2;
+RT_INA = 3;
+RT_IK = 4;
+RT_ICA = 5;
+RT_IAMPA = 6;
+RT_IGABAA = 7;
+RT_CAI = 8;
+RT_CLI = 9;
+
+TC_TIME = 1;
+TC_VOLT = 2;
+TC_IN = 3;
+TC_IK = 4;
+TC_ICA_SOMA = 5;
+TC_IGABAA = 6;
+TC_IGABAB = 7;
+TC_CAI = 8;
+TC_GGABAB = 9;
+TC_IT_M_DEND2 = 10;
+TC_IT_MINF_DEND2 = 11;
+TC_IT_H_DEND2 = 12;
+TC_IT_HINF_DEND2 = 13;
+TC_ICA_DEND1 = 14;
+TC_ICA_DEND2 = 15;
 
 % Plot parameters
 xLimits = [2000, 10000];
@@ -162,28 +176,61 @@ figTitle = ['Essential traces for ', commonPrefix, '_', commonSuffix];
 figTitle = replace(figTitle, '_', '\_');
 
 %% Do the job
-% TODO TODO TODO
 % Load simulated data
-simData = load_neuron_outputs('FileNames', dataPaths);
+[simDataRT, simDataTC] = ...
+    argfun(@(x) load_neuron_outputs('FileNames', x), dataPathRT, dataPathTC);
 
 % Extract vectors from simulated data
-[tVecsMs, gCmdSimUs] = extract_columns(simData, [TIME_COL_SIM, GGABAB_COL_SIM]);
+[tVecsMs, vVecRT] = ...
+    extract_columns(simDataRT, [RT_TIME, RT_VOLT]);
+[vVecTC, gCmdTCUs, itSomaTC, itDend1TC, itDend2TC, ...
+        itmDend2, itminfDend2, ithDend2, ithinfDend2] = ...
+    extract_columns(simDataTC, [TC_VOLT, TC_GGABAB, ...
+                                TC_ICA_SOMA, TC_ICA_DEND1, TC_ICA_DEND2, ...
+                                TC_IT_M_DEND2, TC_IT_MINF_DEND2, ...
+                                TC_IT_H_DEND2, TC_IT_HINF_DEND2]);
 
-% Convert to nS
-gCmdSimNs = convert_units(gCmdSimUs, 'uS', 'nS');
+% Convert conductance from uS to nS
+gCmdTCNs = convert_units(gCmdTCUs, 'uS', 'nS');
 
-% Load default GABAB IPSC parameters in nS
-[ampOrig, tauRiseOrig, tauFallFastOrig, tauFallSlowOrig, weightOrig] = ...
-    m3ha_load_gabab_ipsc_params('AmpScaleFactor', ampScaleFactor, ...
-                                'AmpUnits', ampUnits);
+% Compute total T current
+compute_total_current([itSomaTC, itDend1TC, itDend2TC], 'GeomParams', d)
 
-% Compute original GABAB conductance vectors in nS
-gVecsOrigNs = compute_gabab_conductance(tVecsMs, ipscStartMs, ...
-                                ampOrig, tauRiseOrig, ...
-                                tauFallFastOrig, tauFallSlowOrig, weightOrig);
+% Compute m2h
+itm2hDend2 = (itmDend2 .^ 2) .* ithDend2;
+itminf2hinfDend2 = (itminfDend2 .^ 2) .* ithinfDend2;
 
 % Clear simData to release memory
-clear simData
+clear simDataRT simDataTC
+
+% List all possible items to plot
+vecsAll = {vVecRT; vVecTC; gCmdTCUs; ...
+            vVecsDend2; iTotal; iExtSim; ...
+            gCmdSimNs; iIntTotal; iPasTotal; ...
+            itTotal; ihTotal; iaTotal; ikirTotal; inapTotal; itaTotal; ...
+            itTotalSoma; itTotalDend1; itTotalDend2; ...
+            iaTotalSoma; iaTotalDend1; iaTotalDend2; ...
+            itmSoma; itminfSoma; ithSoma; ithinfSoma; ...
+            itmDend1; itminfDend1; ithDend1; ithinfDend1; ...
+            itmDend2; itminfDend2; ithDend2; ithinfDend2; ...
+            itm2hDend2; itminf2hinfDend2};
+
+% List corresponding labels
+labelsAll = {'V_{rec} (mV)'; 'V_{soma} (mV)'; 'V_{dend1} (mV)'; ...
+            'V_{dend2} (mV)'; 'I_{total} (nA)'; 'I_{stim} (nA)'; ...
+            'g_{GABA_B} (nS)'; 'I_{int} (nA)'; 'I_{pas} (nA)'; ...
+            'I_{T} (nA)'; 'I_{h} (nA)'; 'I_{A} (nA)'; ...
+            'I_{Kir} (nA)'; 'I_{NaP} (nA)'; 'I_{T} + I_{A} (nA)'; ...
+            'I_{T,soma} (nA)'; 'I_{T,dend1} (nA)'; 'I_{T,dend2} (nA)'; ...
+            'I_{A,soma} (nA)'; 'I_{A,dend1} (nA)'; 'I_{A,dend2} (nA)'; ...
+            'm_{T,soma}'; 'm_{\infty,T,soma}'; ...
+            'h_{T,soma}'; 'h_{\infty,T,soma}'; ...
+            'm_{T,dend1}'; 'm_{\infty,T,dend1}'; ...
+            'h_{T,dend1}'; 'h_{\infty,T,dend1}'; ...
+            'm_{T,dend2}'; 'm_{\infty,T,dend2}'; ...
+            'h_{T,dend2}'; 'h_{\infty,T,dend2}'; ...
+            'm_{T,dend2}^2h_{T,dend2}'; ...
+            'm_{\infty,T,dend2}^2h_{\infty,T,dend2}'};
 
 % Create a figure
 if saveNewFlag
@@ -191,9 +238,9 @@ if saveNewFlag
 end
 
 % Plot traces
-handles = plot_traces(tVecsMs, gCmdSimNs, 'DataToCompare', gVecsOrigNs, ...
+handles = plot_traces(tVecsMs, gCmdTCNs, ...
                         'PlotMode', 'parallel', 'XLimits', xLimits, ...
-                        'XLabel', 'suppress', 'YLabel', pharmLabels, ...
+                        'XLabel', 'suppress', 'YLabel', yLabels, ...
                         'FigTitle', figTitle, 'LegendLocation', 'suppress', ...
                         'FigName', figName, 'FigTypes', figTypes, ...
                         otherArguments);

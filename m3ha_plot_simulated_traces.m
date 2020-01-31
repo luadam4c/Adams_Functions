@@ -86,6 +86,7 @@ function handles = m3ha_plot_simulated_traces (varargin)
 % Requires:
 %       cd/all_files.m
 %       cd/argfun.m
+%       cd/compute_total_current.m
 %       cd/construct_fullpath.m
 %       cd/convert_units.m
 %       cd/count_vectors.m
@@ -809,7 +810,7 @@ elseif strcmpi(buildMode, 'active')
                 inapDend2, inapmDend2, inaphDend2);
 end
 
-% Convert from uS to nS
+% Convert conductance from uS to nS
 gCmdSimNs = convert_units(gCmdSimUs, 'uS', 'nS');
 
 % Compute m2h

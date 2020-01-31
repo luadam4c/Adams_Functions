@@ -3,7 +3,7 @@
 %
 % Requires:
 %       cd/archive_dependent_scripts.m
-%       cd/m3ha_network_compare_ipsc.m
+%       cd/m3ha_network_plot_gabab.m
 %       cd/m3ha_network_plot_essential.m
 %       cd/save_all_figtypes.m
 %       cd/set_figure_properties.m
@@ -101,7 +101,7 @@ figPathBaseOrig = [figPathBase, '_orig'];
 fig = set_figure_properties('AlwaysNew', true);
 
 % Plot comparison
-m3ha_network_compare_ipsc('SaveNewFlag', false, 'InFolder', inFolder, ...
+m3ha_network_plot_gabab('SaveNewFlag', false, 'InFolder', inFolder, ...
                             'AmpScaleFactor', gIncr);
 
 % Save original figure
