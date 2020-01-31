@@ -133,7 +133,8 @@ pharmStrs = create_labels_from_numbers(1:4, 'Prefix', 'pCond_');
 if isempty(figName) && saveNewFlag
     commonPrefix = extract_fileparts(dataPaths, 'commonprefix');
     commonSuffix = extract_fileparts(dataPaths, 'commonsuffix');
-    figName = [commonPrefix, '_', commonSuffix, '_gabab_ipsc_comparison'];
+    figName = fullfile(outFolder, [commonPrefix, '_', commonSuffix, ...
+                                    '_gabab_ipsc_comparison']);
 end
 
 % Decide on figure title

@@ -53,7 +53,7 @@ function handles = m3ha_network_plot_essential (varargin)
 %% Hard-coded parameters
 spExtension = 'singsp';
 spPrefixTC = 'TC[0]';
-spPrefixRT = 'RT[0]';
+spPrefixRT = 'RE[0]';
 ipscStartMs = 3000;
 
 % Column numbers for simulated data
@@ -90,8 +90,11 @@ xLabel = 'Time (ms)';
 pharmLabels = {'{\it s}-Control', '{\it s}-GAT1 Block', ...
                 '{\it s}-GAT3 Block', '{\it s}-Dual Block'};
 
+paramsPrefix = 'TCparams';
+
 % TODO: Make optional arguments
 figTypes = 'png';
+simParamsTable = [];
 
 %% Default values for optional arguments
 inFolderDefault = pwd;      % use current directory by default
@@ -151,24 +154,38 @@ end
 
 % Find the appropriate file keyword
 ampScaleFactorNetwork = ampScaleFactor / 12;
-spKeyword = ['pCond_', num2str(pharmCondition), ...
+spKeyword = ['pCond_', num2str(pharmCondition), '_', ...
             'gIncr_', num2str(ampScaleFactorNetwork)];
 
 % Locate the RT neuron data
 [~, dataPathRT] = all_files('Directory', inFolder, ...
                             'Prefix', spPrefixRT, 'Keyword', spKeyword, ...
-                            'Extension', spExtension);
+                            'Extension', spExtension, 'MaxNum', 1);
 
 % Locate the TC neuron data
 [~, dataPathTC] = all_files('Directory', inFolder, ...
                             'Prefix', spPrefixTC, 'Keyword', spKeyword, ...
-                            'Extension', spExtension);
+                            'Extension', spExtension, 'MaxNum', 1);
+
+% Decide on the TC parameters table
+if isempty(simParamsTable)
+    % Find the corresponding parameters file
+    [~, simParamsPath] = ...
+        all_files('Directory', inFolder, 'Keyword', spKeyword, ...
+                    'Prefix', paramsPrefix, 'Extension', 'csv', ...
+                    'MaxNum', 1);
+
+    % Load the simulation parameters table
+    simParamsTable = readtable(simParamsPath);
+
+end
 
 % Decide on figure name
 if isempty(figName) && saveNewFlag
     commonPrefix = extract_fileparts({dataPathTC, dataPathRT}, 'commonprefix');
     commonSuffix = extract_fileparts({dataPathTC, dataPathRT}, 'commonsuffix');
-    figName = [commonPrefix, '_', commonSuffix, '_essential'];
+    figName = fullfile(outFolder, ...
+                        [commonPrefix, '_', commonSuffix, '_essential']);
 end
 
 % Decide on figure title
@@ -179,6 +196,9 @@ figTitle = replace(figTitle, '_', '\_');
 % Load simulated data
 [simDataRT, simDataTC] = ...
     argfun(@(x) load_neuron_outputs('FileNames', x), dataPathRT, dataPathTC);
+
+% Convert the table to a structure array
+simParamsStructArray = table2struct(simParamsTable);
 
 % Extract vectors from simulated data
 [tVecsMs, vVecRT] = ...
@@ -195,7 +215,8 @@ gCmdTCNs = convert_units(gCmdTCUs, 'uS', 'nS');
 
 % Compute total T current
 itTotalTC = ...
-    compute_total_current([itSomaTC, itDend1TC, itDend2TC], 'GeomParams', d)
+    compute_total_current([itSomaTC, itDend1TC, itDend2TC], ...
+                            'GeomParams', simParamsStructArray);
 
 % Compute m2h
 itm2hDend2 = (itmDend2 .^ 2) .* ithDend2;

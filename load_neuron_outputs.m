@@ -6,8 +6,10 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 % Example(s):
 %       TODO
 % Outputs:
-%       outputs     - a cell array of outputs
-%                   specified as a cell array
+%       outputs     - outputs of NEURON simulations
+%                   specified as a numeric array 
+%                       or a cell array of numeric arrays
+%
 % Arguments:
 %       varargin    - 'Directories': the name of the directory(ies) containing 
 %                                   the .out files, e.g. '20161216'
@@ -15,7 +17,7 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 %                       or a cell array of character arrays
 %                   default == pwd
 %                   - 'FileNames': names of .out files to load
-%                   must be empty, a characeter vector, a string array 
+%                   must be empty, a character vector, a string array 
 %                       or a cell array of character arrays
 %                   default == detect from pwd
 %                   - 'Verbose': whether to output parsed results
@@ -28,6 +30,9 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 %                   - 'tVecs': time vectors to match
 %                   must be a numeric array or a cell array of numeric arrays
 %                   default == [] (none provided)
+%                   - 'ForceCellOutput': whether to force output as a cell array
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == false
 %
 % Requires:
 %       cd/array_fun.m
@@ -47,6 +52,7 @@ function [outputs, fullPaths] = load_neuron_outputs (varargin)
 % 2018-10-31 Went back to using parfor for loading
 % 2018-11-16 Fixed directories and allowed it to be a cell array TODO: fix all_files?
 % 2020-01-01 Now uses array_fun.m
+% 2020-01-31 Added 'ForceCellOutput' as an optional argument
 
 %% Hard-coded parameters
 outputExtension = '.out';
@@ -57,6 +63,7 @@ fileNamesDefault = {};              % detect from pwd by default
 verboseDefault = false;             % print to standard output by default
 removeAfterLoadDefault = false;     % don't remove .out files by default
 tVecsDefault = [];
+forceCellOutputDefault = false; % don't force output as a cell array by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -78,6 +85,8 @@ addParameter(iP, 'tVecs', tVecsDefault, ...
     @(x) assert(isempty(x) || isnumeric(x) || iscellnumeric(x), ...
                 ['tVecs must be either a numeric array', ...
                     'or a cell array of numeric arrays!']));
+addParameter(iP, 'ForceCellOutput', forceCellOutputDefault, ...
+    @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});
@@ -86,6 +95,7 @@ fileNames = iP.Results.FileNames;
 verbose = iP.Results.Verbose;
 removeAfterLoad = iP.Results.RemoveAfterLoad;
 tVecs = iP.Results.tVecs;
+forceCellOutput = iP.Results.ForceCellOutput;
 
 %% Preparation
 % Decide on the files to use
@@ -102,9 +112,15 @@ if isempty(fileNames)
         fullPaths = {};
         return
     end
-elseif ischar(fileNames)
+end
+
+% Force as a cell array
+if ischar(fileNames)
     % Place in cell array
     fileNames = {fileNames};
+elseif iscell(fileNames)
+    % Always force output as a cell array in this case
+    forceCellOutput = true;
 end
 
 % Construct full paths and check whether the files exist
@@ -134,13 +150,18 @@ if ~isempty(tVecs)
                         outputs, tVecs, 'UniformOutput', false);
 end
 
+%% Outputs
+% Don't output as cell if not necessary
+if ~forceCellOutput && numel(outputs) == 1
+    outputs = outputs{1};
+end
+
 %% Remove files
 % Remove .out files created by NEURON if not to be saved
 %   Note: Never use parfor here, so don't use array_fun 
 if removeAfterLoad
     cellfun(@delete, fullPaths, 'UniformOutput', false);
 end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
