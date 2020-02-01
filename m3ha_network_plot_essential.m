@@ -104,7 +104,7 @@ ampScaleFactorDefault = []; % set later
 pharmConditionDefault = []; % set later
 outFolderDefault = '';      % set later
 figTitleDefault = '';           % set later
-figNameDefault = [];        % no figure name by default
+figNameDefault = '';        % no figure name by default
 saveNewFlagDefault = true;  % create and save new figure by default
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

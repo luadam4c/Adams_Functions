@@ -3,7 +3,7 @@ function [oscillatoryPeriod, oscillatoryIndex] = m3ha_network_autocorrelogram (i
 % Usage: [oscillatoryPeriod, oscillatoryIndex] = m3ha_network_autocorrelogram (infolder, varargin)
 %
 % Arguments:
-%    infolder   - the name of the directory containing the .syn files, e.g. '20170317T1127_Ggaba_0.01'
+%    infolder   - the name of the directory containing the .spi files, e.g. '20170317T1127_Ggaba_0.01'
 %               must be a directory
 %    varargin   - 'FigTypes': figure type(s) for saving; e.g., 'png', 'fig', or {'png', 'fig'}, etc.
 %               could be anything recognised by the built-in saveas() function
@@ -92,11 +92,11 @@ addParameter(iP, 'FigTypes', 'png', ...         % figure type(s) for saving; e.g
 addParameter(iP, 'OutFolder', '@infolder', @isdir); % the name of the directory that the plots will be placed
 addParameter(iP, 'MaxNumWorkers', 20, ...       % maximum number of workers for running NEURON
     @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
-addParameter(iP, 'RenewParpool', true, ...      % whether to renew parpool every batch to release memory
+addParameter(iP, 'RenewParpool', false, ...     % whether to renew parpool every batch to release memory
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 addParameter(iP, 'SingleTrialNum', 0, ...       % number of single trial ran
     @(x) validateattributes(x, {'numeric'}, {'nonnegative'}));
-addParameter(iP, 'PlotCorrelogram', true, ...        % whether to plot raster plots
+addParameter(iP, 'PlotCorrelogram', true, ...   % whether to plot raster plots
     @(x) validateattributes(x, {'logical', 'numeric'}, {'binary'}));
 
 % Read from the Input Parser
