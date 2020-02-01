@@ -40,7 +40,7 @@ function [oscillatoryPeriod, oscillatoryIndex] = m3ha_network_autocorrelogram (i
 %       /home/Matlab/Adams_Functions/save_all_figtypes.m
 %       /home/Matlab/Adams_Functions/plot_tuning_curve.m (through tuning_curves.m)
 %       /home/Matlab/Adams_Functions/plot_tuning_map.m (through tuning_maps.m)
-%       /home/Matlab/Adams_Functions/find_ind_str_in_cell.m
+%       /home/Matlab/Adams_Functions/find_in_strings.m
 %       /home/Matlab/Adams_Functions/extract_looped_params.m
 %
 % Used by:
@@ -73,7 +73,7 @@ end
 addpath_custom(fullfile(functionsdirectory, '/Downloaded_Functions/'));
                                     % for dirr.m & subaxis.m
 addpath_custom(fullfile(functionsdirectory, '/Adams_Functions/'));
-                                    % for isfigtype.m, find_ind_str_in_cell.m 
+                                    % for isfigtype.m, find_in_strings.m 
                                     %   extract_looped_params.m
 
 %% Deal with arguments
@@ -208,11 +208,11 @@ while ct < ntrials                  % while not trials are completed yet
             simfilecontent = textscan(fid, '%s %f %s', 'Delimiter', ',');
             paramnames = simfilecontent{1};
             params_val = simfilecontent{2};
-            tstart = params_val(find_ind_str_in_cell('tstart', paramnames, 'SearchMode', 'exact'));
-            tstop = params_val(find_ind_str_in_cell('tstop', paramnames, 'SearchMode', 'exact'));
-            stim_start = params_val(find_ind_str_in_cell('stim_start', paramnames, 'SearchMode', 'exact'));
-            stim_dur = params_val(find_ind_str_in_cell('stim_dur', paramnames, 'SearchMode', 'exact'));
-            stim_freq = params_val(find_ind_str_in_cell('stim_freq', paramnames, 'SearchMode', 'exact'));
+            tstart = params_val(find_in_strings('tstart', paramnames, 'SearchMode', 'exact'));
+            tstop = params_val(find_in_strings('tstop', paramnames, 'SearchMode', 'exact'));
+            stim_start = params_val(find_in_strings('stim_start', paramnames, 'SearchMode', 'exact'));
+            stim_dur = params_val(find_in_strings('stim_dur', paramnames, 'SearchMode', 'exact'));
+            stim_freq = params_val(find_in_strings('stim_freq', paramnames, 'SearchMode', 'exact'));
             fclose(fid);
 
             % Extract info
@@ -558,9 +558,9 @@ end
                 end
             end
 
-                        RERErad = params_val(find_ind_str_in_cell('RERErad', paramnames, 'SearchMode', 'exact'));
-            RETCrad = params_val(find_ind_str_in_cell('RETCrad', paramnames, 'SearchMode', 'exact'));
-            actcellID = params_val(find_ind_str_in_cell('actcellID', paramnames, 'SearchMode', 'exact'));
+                        RERErad = params_val(find_in_strings('RERErad', paramnames, 'SearchMode', 'exact'));
+            RETCrad = params_val(find_in_strings('RETCrad', paramnames, 'SearchMode', 'exact'));
+            actcellID = params_val(find_in_strings('actcellID', paramnames, 'SearchMode', 'exact'));
             figbaseWext = strrep(TCfiles(jnowTC).name, 'TC_', '');
            %pos_weight = cellfun(@(x,y) (x.^.7).*((length(edges)-y).^2.5), pks, lcs, 'UniformOutput', false);
                 %[~, prom_ind] = max(pos_weight{j});
