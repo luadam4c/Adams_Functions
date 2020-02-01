@@ -8,28 +8,30 @@ function handles = m3ha_network_plot_gabab (varargin)
 %       TODO
 %
 % Outputs:
-%       handles     - TODO: Description of output1
-%                   specified as a TODO
+%       handles     - handles to plotted objects
+%                   specified as a scalar structure
 %
 % Arguments:
-%       varargin    - 'InFolder': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'InFolder': directory containing the .singsp files
+%                   must be a string scalar or a character vector
+%                   default == pwd
 %                   - 'AmpScaleFactor': amplitude scaling factor
 %                   must be a numeric scalar
 %                   default == 200%
-%                   - 'OutFolder': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
-%                   - 'FigTitle': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
-%                   - 'FigName': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
-%                   - 'SaveNewFlag': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%                   - 'OutFolder': output folder
+%                   must be a string scalar or a character vector
+%                   default == inFolder
+%                   - 'FigTitle': figure title
+%                   must be a string scalar or a character vector
+%                   default == ['GABA_B IPSC Comparison for 
+%                               ', commonPrefix, '_', commonSuffix]
+%                   - 'FigName': figure path for saving
+%                   must be a string scalar or a character vector
+%                   default == [commonPrefix, '_', commonSuffix, ...
+%                                    '_gabab_ipsc_comparison.png']
+%                   - 'SaveNewFlag': whether to create and save new figure
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - Any other parameter-value pair for plot_traces()
 %
 % Requires:

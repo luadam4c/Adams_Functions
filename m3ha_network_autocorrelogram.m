@@ -169,8 +169,8 @@ while ct < ntrials                  % while not trials are completed yet
         % Recreate a parallel pool object using fewer workers to prevent running out of memory
         poolobj = parpool('local', numworkers);    
     end
-    parfor i = first:last
-    %for i = first:last
+    %parfor i = first:last
+    for i = first:last
         % Construct current parameter string
         pstring = '';               % initialize for parfor
         if iscell(pchvalues)

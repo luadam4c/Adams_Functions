@@ -1,5 +1,5 @@
 function handles = m3ha_network_plot_essential (varargin)
-%% Compare an evoked IPSC against the recorded IPSC
+%% Plots essential traces from special cells in the network
 % Usage: handles = m3ha_network_plot_essential (varargin)
 % Explanation:
 %       TODO
@@ -8,31 +8,31 @@ function handles = m3ha_network_plot_essential (varargin)
 %       TODO
 %
 % Outputs:
-%       handles     - TODO: Description of output1
-%                   specified as a TODO
+%       handles     - handles to plotted objects
+%                   specified as a scalar structure
 %
 % Arguments:
-%       varargin    - 'InFolder': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%       varargin    - 'InFolder': directory containing the .singsp files
+%                   must be a string scalar or a character vector
+%                   default == pwds
 %                   - 'AmpScaleFactor': amplitude scaling factor
 %                   must be a numeric scalar
 %                   default == 200%
 %                   - 'PharmCondition': pharmacological condition
 %                   must be a numeric scalar
 %                   default == 1
-%                   - 'OutFolder': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
-%                   - 'FigTitle': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
-%                   - 'FigName': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
-%                   - 'SaveNewFlag': TODO: Description of param1
-%                   must be a TODO
-%                   default == TODO
+%                   - 'OutFolder': output folder
+%                   must be a string scalar or a character vector
+%                   default == inFolder
+%                   - 'FigTitle': figure title
+%                   must be a string scalar or a character vector
+%                   default == ['Essential traces for ', commonSuffix]
+%                   - 'FigName': figure path for saving
+%                   must be a string scalar or a character vector
+%                   default == [commonSuffix, '_essential.png']
+%                   - 'SaveNewFlag': whether to create and save new figure
+%                   must be numeric/logical 1 (true) or 0 (false)
+%                   default == true
 %                   - Any other parameter-value pair for plot_traces()
 %
 % Requires:
@@ -54,8 +54,8 @@ function handles = m3ha_network_plot_essential (varargin)
 
 %% Hard-coded parameters
 spExtension = 'singsp';
-spPrefixTC = 'TC[0]';
-spPrefixRT = 'RE[0]';
+cellIdRT = 0;
+cellIdTC = 0;
 ipscStartMs = 3000;
 
 % Column numbers for simulated data
@@ -161,6 +161,10 @@ end
 if isempty(outFolder)
     outFolder = inFolder;
 end
+
+% Set up the special file prefixes
+spPrefixRT = sprintf('RE[%d]', cellIdRT);
+spPrefixTC = sprintf('TC[%d]', cellIdTC);
 
 % Find the appropriate file keyword
 ampScaleFactorNetwork = ampScaleFactor / 12;
