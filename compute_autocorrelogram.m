@@ -73,6 +73,7 @@ function [autoCorrParams, autoCorrData] = compute_autocorrelogram (spikeTimesMs,
 %       cd/struct2arglist.m
 %
 % Used by:
+%       cd/m3ha_network_analyze_spikes.m
 %       cd/parse_multiunit.m
 
 % File History:

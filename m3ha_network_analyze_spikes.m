@@ -1,6 +1,6 @@
-function oscTable = m3ha_network_analyze_spikes (varargin)
+function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 %% Analyzes .spi files in a directory
-% Usage: oscTable = m3ha_network_analyze_spikes (varargin)
+% Usage: [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 % Explanation:
 %       TODO
 %
@@ -8,7 +8,7 @@ function oscTable = m3ha_network_analyze_spikes (varargin)
 %       TODO
 %
 % Outputs:
-%       oscTable    - a table with each network as a row and columns:
+%       oscParams    - a table with each network as a row and columns:
 %                       condStr     - condition string
 %                   specified as a 2D table
 %
@@ -21,7 +21,8 @@ function oscTable = m3ha_network_analyze_spikes (varargin)
 %                   default == inFolder
 %                   - 'SheetName': spreadsheet path for saving
 %                   must be a string scalar or a character vector
-%                   default == TODO
+%                   default == fullfile(outFolder, 
+%                                   [dirBase, '_oscillation_params.csv'])
 %                   - Any other parameter-value pair for TODO()
 %
 % Requires:
@@ -29,6 +30,8 @@ function oscTable = m3ha_network_analyze_spikes (varargin)
 %       cd/apply_over_cells.m
 %       cd/argfun.m
 %       cd/array_fun.m
+%       cd/compute_autocorrelogram.m
+%       cd/compute_spike_histogram.m
 %       cd/extract_columns.m
 %       cd/extract_fileparts.m
 %       cd/load_neuron_outputs.m
@@ -50,9 +53,6 @@ prefixTC = 'TC';
 paramPrefix = 'sim_params';
 stimStartStr = 'stimStart';
 stimDurStr = 'stimDur';
-
-% TODO: Make optional arguments
-figTypes = 'png';
 
 %% Default values for optional arguments
 inFolderDefault = pwd;      % use current directory by default
@@ -82,7 +82,7 @@ outFolder = iP.Results.OutFolder;
 sheetName = iP.Results.SheetName;
 
 % Keep unmatched arguments for the TODO() function
-otherArguments = iP.Unmatched;
+% otherArguments = iP.Unmatched;
 
 %% Preparation
 % Set default output folder
@@ -109,7 +109,7 @@ condStr = extractAfter(spiPathBasesRT, [prefixRT, '_']);
 % Decide on spreadsheet name
 if isempty(sheetName)
     dirBase = extract_fileparts(inFolder, 'dirbase');
-    sheetName = fullfile(outFolder, [dirBase, '_oscillation_properties.csv']);
+    sheetName = fullfile(outFolder, [dirBase, '_oscillation_params.csv']);
 end
 
 %% Do the job
@@ -126,14 +126,14 @@ paramTables = array_fun(@(x, y) renamevars(x, 'Value', y), ...
                         paramTables, condStr, 'UniformOutput', false);
 
 % Combine all tables
-allParamsTable = apply_over_cells(@outerjoin, paramTables, 'Keys', 'Row', 'MergeKeys', true);
+allParamsTable = apply_over_cells(@horzcat, paramTables);
 
 % Initialize the oscillation table with simulation parameters
-oscTable = transpose_table(allParamsTable);
+oscParams = transpose_table(allParamsTable);
 
 % Extract the stimulation start time
-stimStartMs = oscTable.(stimStartStr);
-stimDurMs = oscTable.(stimDurStr);
+stimStartMs = oscParams.(stimStartStr);
+stimDurMs = oscParams.(stimDurStr);
 
 % Load simulated data
 [spikesDataRT, spikesDataTC] = ...
@@ -145,11 +145,16 @@ stimDurMs = oscTable.(stimDurStr);
                 spikesDataRT, spikesDataTC, num2cell(stimStartMs), ...
                 num2cell(stimDurMs));
 
-%% Add variable to the table
-% oscTable = addvars(oscTable, )
+% Convert structure arrays to tables
+[parsedParamsTable, parsedDataTable] = ...
+    argfun(@struct2table, parsedParams, parsedData);
+
+%% Return as output
+oscParams = horzcat(oscParams, parsedParamsTable);
+oscData = parsedDataTable;
 
 %% Save the output
-writetable(oscTable, sheetName);
+writetable(oscParams, sheetName);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -172,33 +177,42 @@ TC_SPIKETIME = 2;
 [cellIdTC, spikeTimesTC] = ...
     extract_columns(spikesDataTC, [TC_CELLID, TC_SPIKETIME]);
 
-% Determine the start of detection
-detectStartMs = stimStartMs + stimDurMs;
+% Decide whether there is an oscillation based on TC spikes
+hasOscillation = ~isempty(spikeTimesTC) && ...
+                            any(spikeTimesTC > stimStartMs + stimDurMs);
 
-% Decide whether there is an oscillation
-hasOscillation = ~isempty(spikeTimesTC) && any(spikeTimesTC > detectStartMs);
+% Use RT spikes to compute an oscillation duration
+%   TODO: Modify this for multi-cell layers
+[histParams, histData] = ...
+    compute_spike_histogram(spikeTimesRT, 'StimStartMs', stimStartMs);
 
-% Compute an oscillation duration
-% TODO
-
-% Compute an oscillation period
-% TODO
+% Use RT spikes to compute an oscillation period
+%   TODO: Modify this for multi-cell layers
+[autoCorrParams, autoCorrData] = ...
+    compute_autocorrelogram(spikeTimesRT, 'StimStartMs', stimStartMs, ...
+                            'SpikeHistParams', histParams, ...
+                            'SpikeHistData', histData);
 
 %% Save results in output
 parsedParams.stimStartMs = stimStartMs;
 parsedParams.stimDurMs = stimDurMs;
-parsedParams.oscDurationSec = oscDurationSec;
-parsedParams.oscPeriodMs = oscPeriodMs;
+parsedParams.hasOscillation = hasOscillation;
+parsedParams = merge_structs(parsedParams, histParams);
+parsedParams = merge_structs(parsedParams, autoCorrParams);
 
 parsedData.cellIdRT = cellIdRT;
 parsedData.spikeTimesRT = spikeTimesRT;
 parsedData.cellIdTC = cellIdTC;
 parsedData.spikeTimesTC = spikeTimesTC;
+parsedData = merge_structs(parsedData, histData);
+parsedData = merge_structs(parsedData, autoCorrData);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %{
 OLD CODE:
+
+allParamsTable = apply_over_cells(@outerjoin, paramTables, 'Keys', 'Row', 'MergeKeys', true);
 
 %}
 

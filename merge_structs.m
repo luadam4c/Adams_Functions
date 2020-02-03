@@ -3,11 +3,14 @@ function structNew = merge_structs (struct1, struct2, varargin)
 % Usage: structNew = merge_structs (struct1, struct2, varargin)
 % Explanation:
 %       TODO
+%
 % Example(s):
 %       TODO
+%
 % Outputs:
 %       structNew   - merged structure
 %                   specified as a scalar structure
+%
 % Arguments:    
 %       struct1     - first structure
 %                   must be a scalar structure
