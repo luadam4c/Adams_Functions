@@ -14,6 +14,7 @@ function m3ha_network_launch (nCells, useHH, candidateIDs)
 %       cd/find_matching_files.m
 %       cd/load_params.m
 %       cd/m3ha_locate_homedir.m
+%       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_network_change_params.m
 %       cd/m3ha_network_show_net.m
 %       cd/m3ha_network_raster_plot.m
@@ -83,7 +84,8 @@ bestParamsDirName = fullfile('optimizer4gabab', 'best_params');
 % paramsDirName = 'bestparams_20200103_ranked_singleneuronfitting0-94';
 % paramsDirName = 'bestparams_20200120_singleneuronfitting97';
 % paramsDirName = 'bestparams_20200124_singleneuronfitting99';
-paramsDirName = 'bestparams_20200126_singleneuronfitting101';
+% paramsDirName = 'bestparams_20200126_singleneuronfitting101';
+paramsDirName = 'bestparams_20200203_manual_singleneuronfitting0-102';
 homeDirName = 'network_model';
 
 %% Flags
@@ -1133,6 +1135,9 @@ if plotSingleNeuronData
         'RenewParpool', renewParpoolFlagPlots, ...
         'MaxNumWorkers', maxNumWorkersPlots);
 end
+
+% Analyze spikes for oscillations
+m3ha_network_analyze_spikes('InFolder', inFolder, 'OutFolder', outFolder);
 
 %% Compute time taken
 timeTaken = toc(timer2);

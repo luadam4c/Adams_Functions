@@ -39,6 +39,7 @@ function [oscParams, oscData] = m3ha_network_analyze_spikes (varargin)
 %       cd/transpose_table.m
 %
 % Used by:
+%       cd/m3ha_network_launch.m
 
 % File History:
 % 2020-01-30 Modified from m3ha_network_plot_essential.m
@@ -179,7 +180,7 @@ TC_SPIKETIME = 2;
 
 % Decide whether there is an oscillation based on TC spikes
 hasOscillation = ~isempty(spikeTimesTC) && ...
-                            any(spikeTimesTC > stimStartMs + stimDurMs);
+                    any(spikeTimesTC > stimStartMs + stimDurMs);
 
 % Use RT spikes to compute an oscillation duration
 %   TODO: Modify this for multi-cell layers
