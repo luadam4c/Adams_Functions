@@ -83,6 +83,7 @@ function varargout = all_files (varargin)
 %       cd/force_string_start.m
 %       cd/load_matching_sheets.m
 %       cd/m3ha_neuron_create_initial_params.m
+%       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_network_single_neuron.m
 %       cd/m3ha_network_plot_essential.m
 %       cd/m3ha_simulate_population.m

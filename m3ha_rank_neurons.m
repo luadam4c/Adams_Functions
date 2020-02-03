@@ -73,7 +73,7 @@ plotParamHistoryFlag = true;
 useHH = false;
 buildMode = 'active';
 simMode = 'active';
-dataMode = 3;                       % data mode:
+dataMode = 2; %3;                       % data mode:
                                     %   0 - all data
                                     %   1 - all of g incr = 100%, 200%, 400% 
                                     %   2 - same g incr but exclude 

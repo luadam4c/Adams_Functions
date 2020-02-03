@@ -44,12 +44,15 @@ function varargout = array_fun (myFunc, varargin)
 %       cd/load_neuron_outputs.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_import_raw_traces.m
+%       cd/m3ha_network_analyze_spikes.m
 %       cd/vecfun.m
 
 % File History:
 % 2020-01-01 Created by Adam Lu
 % 2020-01-02 Fixed to work with 2D arrays
 % TODO: Renew parpool if memory usage is too high
+% TODO: Convert all arguments to a cell array (with num2cell) 
+%       if any argument is a cell array
 
 %% Hard-coded parameters
 minItemsForParfor = 12;

@@ -29,6 +29,7 @@ function tableNew = transpose_table (tableOld, varargin)
 %
 % Used by:
 %       cd/extract_param_values.m
+%       cd/m3ha_network_analyze_spikes.m
 %       cd/m3ha_neuron_create_simulation_params.m
 
 % File History:
