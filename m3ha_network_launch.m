@@ -146,7 +146,7 @@ end
 
 % Decide on candidate TC neurons to use
 %% Candidate TC neurons;
-% candidateNames = {'D091710'; 'E091710'; 'B091810'; 'D091810'; ...
+% allCandidateNames = {'D091710'; 'E091710'; 'B091810'; 'D091810'; ...
 %                 'E091810'; 'F091810'; 'A092110'; 'C092110'; ...
 %                 'B092710'; 'C092710'; 'E092710'; 'A092810'; ...
 %                 'C092810'; 'K092810'; 'A092910'; 'C092910'; ...
@@ -711,9 +711,11 @@ fileSuffix = ['ncells_', num2str(nCells), '_useHH_', num2str(useHH), ...
 candidateSheetPath = fullfile(homeDirectory, candidateSheetName);
 candidateTable = readtable(candidateSheetPath, 'ReadRowNames', true);
 
-% Find the candidate names corresponding to the IDs
+% Import and sort
 allIds = candidateTable{:, 'candidateId'};
-candidateNames = candidateTable{ismember(allIds, candidateIDs), 'cellName'};
+allCandidateNames = candidateTable{:, 'cellName'};
+[allIds, origInd] = sort(allIds, 'ascend');
+allCandidateNames = allCandidateNames(origInd);
 
 % Create a file label
 %   Note: Use current date & time in the format: YYYYMMDDThhmm
@@ -721,7 +723,7 @@ timeStamp = create_time_stamp('FormatOut', 'yyyymmddTHHMM');
 if nCandidates > 1
     candidateLabel = ['hetero', num2str(nCandidates)];
 else
-    candidateLabel = candidateNames{candidateIDs(1)};
+    candidateLabel = allCandidateNames{candidateIDs};
 end
 fileLabel = [timeStamp, '_', candidateLabel, '_', fileSuffix];
 
@@ -916,11 +918,17 @@ stimCellIDs = m3ha_network_define_actmode(actMode, actCellID, nCells, ...
 % Seed random number generator with repetition number
 rng(seedNumber);
 
+if ischar(candidateNames)
+    candidateNames = {candidateNames};
+end
+candidateNamesUsed = candidateNames(randi(nCandidates, nCells, 1))
+
 % Generate candidate IDs to use for each TC neuron
+% TODO: distribute and randomize order
 candidateIDsUsed = candidateIDs(randi(nCandidates, nCells, 1));
 
 % Select candidates for each TC neuron
-candidateNamesUsed = candidateNames(candidateIDsUsed);
+candidateNamesUsed = allCandidateNames(candidateIDsUsed);
 
 % Create full paths to the candidate files
 [~, candidatePaths] = find_matching_files(candidateNamesUsed, ...
@@ -1280,6 +1288,8 @@ paramsTable{:, 'Value'} = paramsOut;
 
 % Create candidate file names
 candidateFileNames = strcat('bestparams_', candidateNamesUsed, '.csv');
+
+candidateNames = candidateTable{find_in_list(candidateIDs, allIds), 'cellName'};
 
 %}
 

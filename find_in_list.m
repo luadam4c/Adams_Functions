@@ -10,6 +10,7 @@ function varargout = find_in_list (cand, list, varargin)
 %
 % Example(s):
 %       [i, e] = find_in_list(3, [3, 4, 5, 3])
+%       [i, e] = find_in_list([5, 4], [3, 4, 5, 3])
 %       [i, e] = find_in_list([3, 4], [3, 4, 5, 3])
 %       [i, e] = find_in_list([3, 4], [3, 4, 5, 3], 'MaxNum', 1)
 %       [i, e] = find_in_list([2, 3, 4], [3, 4, 5, 3], 'MaxNum', 1)

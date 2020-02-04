@@ -165,7 +165,7 @@ openProbFigHeight = 3;      % (cm)
 % rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
 % rankNumsToUse = [1, 2, 5:10, 12:25, 29, 33];
 
-outFolder = '20200204_population_rank1-2,5-10,12-25,29,33_dataMode1_attemptNumber3';
+outFolder = '20200204_population_rank1-2,5-10,12-25,29,33_dataMode1_attemptNumber3_vtraub-65';
 figTypes = {'png', 'epsc2'};
 rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
 rankNumsToUse = [1, 2, 5:10, 12:25, 29, 33];
