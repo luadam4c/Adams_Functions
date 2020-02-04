@@ -98,6 +98,7 @@ end
 nRanks = numel(rankedElements);
 
 % Do for each rank
+% TODO: Use array_fun.m instead
 indicesEachRank = cell(nRanks, 1);
 parfor iRank = 1:nRanks
     % Get the current ranked element

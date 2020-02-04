@@ -59,14 +59,14 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestNeuronsFlag = true;
-simulateFlag = true;
+chooseBestNeuronsFlag = false; %true;
+simulateFlag = false; %true;
 combineFeatureTablesFlag = true;
 computeOpenProbabilityFlag = true;
 plotOpenProbabilityFlag = true;
 plotViolinPlotsFlag = true;
 plotBarPlotsFlag = true;
-archiveScriptsFlag = true;
+archiveScriptsFlag = false; %true;
 
 % Simulation parameters
 useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
@@ -161,15 +161,19 @@ openProbFigHeight = 3;      % (cm)
 %                     '20200106_population_rank1-11_dataMode1_attemptNumber3');
 % rankNumsToUse = 1:11;
 % rankDirName = '20200103_ranked_singleneuronfitting0-94';
+% outFolder = '20200203_population_rank1-2,5-10,12-25,29,33_dataMode1_attemptNumber3';
+% rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = [1, 2, 5:10, 12:25, 29, 33];
 
-outFolder = '';
-prefix = '';
+outFolder = '20200204_population_rank1-2,5-10,12-25,29,33_dataMode1_attemptNumber3';
 figTypes = {'png', 'epsc2'};
 rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
 rankNumsToUse = [1, 2, 5:10, 12:25, 29, 33];
 ipscrWindow = [2000, 4800];     % only simulate up to that time
 fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
                                 %   recorded LTS would lie
+
+prefix = '';
 
 %% Default values for optional arguments
 % param1Default = [];             % default TODO: Description of param1

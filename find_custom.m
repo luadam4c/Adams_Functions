@@ -24,11 +24,13 @@ function varargout = find_custom (X, varargin)
 %
 % Requires:
 %       cd/create_error_for_nargin.m
+%       cd/ispositiveintegerscalar.m
 %
 % Used by:
 %       cd/compute_peak_decay.m
 %       cd/compute_peak_halfwidth.m
 %       cd/ismatch.m
+%       cd/find_in_list.m
 %       cd/find_in_strings.m
 %       /home/Matlab/Kojis_Functions/find_directional_events.m
 %       /home/Matlab/minEASE/gui_examine_events.m
@@ -60,7 +62,9 @@ addRequired(iP, 'X', ...                        % Input array
 
 % Add optional inputs to the Input Parser
 addOptional(iP, 'n', nDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'positive', 'integer'}));
+    @(x) assert(isempty(x) || ispositiveintegerscalar(x), ...
+                ['n must be either empty ', ...
+                    'or a positive integer scalar!']));
 addOptional(iP, 'direction', directionDefault, ...
     @(x) any(validatestring(x, {'first', 'last'})));
 

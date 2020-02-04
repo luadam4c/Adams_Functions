@@ -119,6 +119,7 @@ function subVecs = extract_subvectors (vecs, varargin)
 %       cd/extract_columns.m
 %       cd/extract_common_directory.m
 %       cd/find_closest.m
+%       cd/find_in_list.m
 %       cd/find_passive_params.m
 %       cd/filter_and_extract_pulse_response.m
 %       cd/force_matrix.m

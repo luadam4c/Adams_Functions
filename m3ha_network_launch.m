@@ -39,7 +39,7 @@ function m3ha_network_launch (nCells, useHH, candidateIDs)
 % 2017-11-06 Moved code to define_actmode.m
 % 2017-11-07 Added candidateIDs
 % 2017-11-07 Added actMode = 8~10
-% 2017-11-08 Added templateLabel to fileLabel
+% 2017-11-08 Added candidateLabel to fileLabel
 % 2017-11-08 Added seedNumber
 % 2018-02-28 Don't use HH
 % 2018-03-29 Fixed ordering of useHH and REnsegs
@@ -87,6 +87,7 @@ bestParamsDirName = fullfile('optimizer4gabab', 'best_params');
 % paramsDirName = 'bestparams_20200126_singleneuronfitting101';
 paramsDirName = 'bestparams_20200203_manual_singleneuronfitting0-102';
 homeDirName = 'network_model';
+candidateSheetName = 'candidate_cells.csv';
 
 %% Flags
 debugFlag = false;              % whether to do a very short simulation
@@ -143,17 +144,17 @@ else
     actMode = 10;
 end
 
-% Decide on template TC neurons to use
-%% Template TC neurons;
-templateNames = {'D091710'; 'E091710'; 'B091810'; 'D091810'; ...
-                'E091810'; 'F091810'; 'A092110'; 'C092110'; ...
-                'B092710'; 'C092710'; 'E092710'; 'A092810'; ...
-                'C092810'; 'K092810'; 'A092910'; 'C092910'; ...
-                'D092910'; 'E092910'; 'B100110'; 'E100110'; ...
-                'A100810'; 'B100810'; 'D100810'; 'A101210'; ...
-                'C101210'; 'D101210'; 'E101210'; 'F101210'; ...
-                'I101210'; 'M101210'; 'B101310'; 'D101310'; ...
-                'E101310'; 'F101310'; 'G101310'; 'H101310'};
+% Decide on candidate TC neurons to use
+%% Candidate TC neurons;
+% candidateNames = {'D091710'; 'E091710'; 'B091810'; 'D091810'; ...
+%                 'E091810'; 'F091810'; 'A092110'; 'C092110'; ...
+%                 'B092710'; 'C092710'; 'E092710'; 'A092810'; ...
+%                 'C092810'; 'K092810'; 'A092910'; 'C092910'; ...
+%                 'D092910'; 'E092910'; 'B100110'; 'E100110'; ...
+%                 'A100810'; 'B100810'; 'D100810'; 'A101210'; ...
+%                 'C101210'; 'D101210'; 'E101210'; 'F101210'; ...
+%                 'I101210'; 'M101210'; 'B101310'; 'D101310'; ...
+%                 'E101310'; 'F101310'; 'G101310'; 'H101310'};
 %candidateIDs = 21;
 %candidateIDs = 3;
 %candidateIDs = 20;
@@ -296,12 +297,6 @@ end
 % Code not fixed yet
 plotTuning = 0;
 
-% Decide on the file label suffix
-% fileSuffix = 'stimstart_3000';
-fileSuffix = ['ncells_', num2str(nCells), '_useHH_', num2str(useHH), ...
-            '_templateIDs_', create_label_from_sequence(candidateIDs), ...
-            '_simMode_', num2str(simMode), '_actMode_', num2str(actMode), ...
-            '_', savePlotMode];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -680,7 +675,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Preparation
-% Count the number of template candidates
+% Count the number of candidate candidates
 nCandidates = length(candidateIDs);
 
 % Set a flag for whether heterogeneity is introduced
@@ -705,15 +700,30 @@ dateStamp = create_time_stamp('FormatOut', 'yyyymmdd');
 outFolderParent = fullfile(homeDirectory, [dateStamp, '_using_', paramsDirName]);
 check_dir(outFolderParent);
 
+% Decide on the file label suffix
+% fileSuffix = 'stimstart_3000';
+fileSuffix = ['ncells_', num2str(nCells), '_useHH_', num2str(useHH), ...
+            '_candidateIDs_', create_label_from_sequence(candidateIDs), ...
+            '_simMode_', num2str(simMode), '_actMode_', num2str(actMode), ...
+            '_', savePlotMode];
+
+% Find the candidate table file and read it
+candidateSheetPath = fullfile(homeDirectory, candidateSheetName);
+candidateTable = readtable(candidateSheetPath, 'ReadRowNames', true);
+
+% Find the candidate names corresponding to the IDs
+allIds = candidateTable{:, 'candidateId'};
+candidateNames = candidateTable{ismember(allIds, candidateIDs), 'cellName'};
+
 % Create a file label
 %   Note: Use current date & time in the format: YYYYMMDDThhmm
 timeStamp = create_time_stamp('FormatOut', 'yyyymmddTHHMM');
 if nCandidates > 1
-    templateLabel = ['hetero', num2str(nCandidates)];
+    candidateLabel = ['hetero', num2str(nCandidates)];
 else
-    templateLabel = templateNames{candidateIDs(1)};
+    candidateLabel = candidateNames{candidateIDs(1)};
 end
-fileLabel = [timeStamp, '_', templateLabel, '_', fileSuffix];
+fileLabel = [timeStamp, '_', candidateLabel, '_', fileSuffix];
 
 % Create an output folder for this file label
 outFolder = fullfile(outFolderParent, fileLabel);
@@ -906,18 +916,18 @@ stimCellIDs = m3ha_network_define_actmode(actMode, actCellID, nCells, ...
 % Seed random number generator with repetition number
 rng(seedNumber);
 
-% Generate template IDs to use for each TC neuron
-templateIDsUsed = candidateIDs(randi(nCandidates, nCells, 1));
+% Generate candidate IDs to use for each TC neuron
+candidateIDsUsed = candidateIDs(randi(nCandidates, nCells, 1));
 
-% Select templates for each TC neuron
-templateNamesUsed = templateNames(templateIDsUsed);
+% Select candidates for each TC neuron
+candidateNamesUsed = candidateNames(candidateIDsUsed);
 
-% Create full paths to the template files
-[~, templatePaths] = find_matching_files(templateNamesUsed, ...
+% Create full paths to the candidate files
+[~, candidatePaths] = find_matching_files(candidateNamesUsed, ...
                                     'Directory', paramsDirectory);
 
 % Import NEURON parameters
-TCparamTables = load_params(templatePaths);
+TCparamTables = load_params(candidatePaths);
 
 % Test if any parameters table is missing
 if any(isemptycell(TCparamTables))
@@ -999,7 +1009,7 @@ for iSim = 1:nSims
             TCgkbarIADend2(iCell), TCgkbarIKirSoma(iCell), ...
             TCgkbarIKirDend1(iCell), TCgkbarIKirDend2(iCell), ...
             TCgnabarINaPSoma(iCell), TCgnabarINaPDend1(iCell), ...
-            TCgnabarINaPDend2(iCell), useHH, templateIDsUsed(iCell))];
+            TCgnabarINaPDend2(iCell), useHH, candidateIDsUsed(iCell))];
     end
 
     % Commands to create RE neurons and build network
@@ -1255,7 +1265,7 @@ end
 
 % Import .p file data
 pfiledata = importdata(sprintf('pfiles/bestparams_%s.p', ...
-                                templateNamesUsed{iCell}));  % a XX x 4 array
+                                candidateNamesUsed{iCell}));  % a XX x 4 array
 nTCParams = size(pfiledata, 1);
 for k = 1:nTCParams                 % for each parameter saved
     % Store parameter in the corresponding vector
@@ -1268,8 +1278,8 @@ paramsOut = m3ha_network_change_params(pchname, pchvalue, ...
                     simParamNames, paramsIn, 'ExperimentName', experimentName);
 paramsTable{:, 'Value'} = paramsOut;
 
-% Create template file names
-templateFileNames = strcat('bestparams_', templateNamesUsed, '.csv');
+% Create candidate file names
+candidateFileNames = strcat('bestparams_', candidateNamesUsed, '.csv');
 
 %}
 

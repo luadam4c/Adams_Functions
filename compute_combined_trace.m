@@ -322,6 +322,7 @@ if isempty(seedsIn)
 end
 
 % Combine traces from each group separately
+% TODO: Use array_fun.m instead
 combTraceEachGroup = cell(nGroups, 1);
 parfor iGroup = 1:nGroups    
     % Get all indices with the current grouping value
