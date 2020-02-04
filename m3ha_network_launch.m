@@ -918,11 +918,6 @@ stimCellIDs = m3ha_network_define_actmode(actMode, actCellID, nCells, ...
 % Seed random number generator with repetition number
 rng(seedNumber);
 
-if ischar(candidateNames)
-    candidateNames = {candidateNames};
-end
-candidateNamesUsed = candidateNames(randi(nCandidates, nCells, 1))
-
 % Generate candidate IDs to use for each TC neuron
 % TODO: distribute and randomize order
 candidateIDsUsed = candidateIDs(randi(nCandidates, nCells, 1));

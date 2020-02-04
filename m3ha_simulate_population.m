@@ -168,7 +168,8 @@ openProbFigHeight = 3;      % (cm)
 outFolder = '20200204_population_rank1-2,5-10,12-25,29,33_dataMode1_attemptNumber3_vtraub-65';
 figTypes = {'png', 'epsc2'};
 rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
-rankNumsToUse = [1, 2, 5:10, 12:25, 29, 33];
+% rankNumsToUse = [1, 2, 5:10, 12:25, 29, 33];
+rankNumsToUse = [1, 2, 4:10, 12:25, 29, 33];
 ipscrWindow = [2000, 4800];     % only simulate up to that time
 fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
                                 %   recorded LTS would lie

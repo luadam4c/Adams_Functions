@@ -225,7 +225,8 @@ cellNameStr = 'cellName';
 
 outFolder = '20200203_ranked_manual_singleneuronfitting0-102';
 % rankNumsToPlot = [1, 2, 4, 7, 10];
-rankNumsToPlot = [1, 2, 5:10, 12:25, 29, 33];
+% rankNumsToPlot = [1, 2, 5:10, 12:25, 29, 33];
+rankNumsToUse = [1, 2, 4:10, 12:25, 29, 33];
 iterSetStr = 'manual_singleneuronfitting0-102';
 dataMode = 2; %3;                       % data mode:
                                     %   0 - all data
