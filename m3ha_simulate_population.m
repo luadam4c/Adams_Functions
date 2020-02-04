@@ -59,19 +59,20 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestNeuronsFlag = false; %true;
-simulateFlag = false; %true;
-combineFeatureTablesFlag = false; %true;
-computeOpenProbabilityFlag = false; %true;
+chooseBestNeuronsFlag = true;
+simulateFlag = true;
+combineFeatureTablesFlag = true;
+computeOpenProbabilityFlag = true;
 plotOpenProbabilityFlag = true;
-plotViolinPlotsFlag = false; %true;
-plotBarPlotsFlag = false; %true;
+plotViolinPlotsFlag = true;
+plotBarPlotsFlag = true;
+archiveScriptsFlag = true;
 
 % Simulation parameters
 useHH = true;           % whether to use Hudgin-Huxley Na+ and K+ channels
 buildMode = 'active';
 simMode = 'active';
-dataMode = 0;           % data mode:
+dataMode = 1; %0;           % data mode:
                         %   0 - all data
                         %   1 - all of g incr = 100%, 200%, 400% 
                         %   2 - same g incr but exclude 
@@ -156,16 +157,16 @@ openProbFigHeight = 3;      % (cm)
 % rankDirName = '20191229_ranked_singleneuronfitting0-91';
 % rankNumsToUse = [1, 2, 5, 7, 8, 9, 10, 13, 17, 34];
 % rankDirName = '20200103_ranked_singleneuronfitting0-94';
-outFolder = fullfile(parentDirectoryTemp, fitDirName, ...
-                    '20200106_population_rank1-11_dataMode1_attemptNumber3');
-rankNumsToUse = 1:11;
-rankDirName = '20200103_ranked_singleneuronfitting0-94';
+% outFolder = fullfile(parentDirectoryTemp, fitDirName, ...
+%                     '20200106_population_rank1-11_dataMode1_attemptNumber3');
+% rankNumsToUse = 1:11;
+% rankDirName = '20200103_ranked_singleneuronfitting0-94';
 
-% outFolder = '';
+outFolder = '';
 prefix = '';
 figTypes = {'png', 'epsc2'};
-% rankDirName = '20200108_ranked_singleneuronfitting0-95';
-% rankNumsToUse = 1:11;
+rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
+rankNumsToUse = [1, 2, 5:10, 12:25, 29, 33];
 ipscrWindow = [2000, 4800];     % only simulate up to that time
 fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
                                 %   recorded LTS would lie
@@ -535,6 +536,11 @@ if plotBarPlotsFlag
 
     % Plot all 3D bar plots
     m3ha_plot_bar3(stats3dPath, 'RowsToPlot', measuresOfInterest);
+end
+
+% Archive all scripts for this run
+if archiveScriptsFlag
+    archive_dependent_scripts(mfilename, 'OutFolder', outFolder);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

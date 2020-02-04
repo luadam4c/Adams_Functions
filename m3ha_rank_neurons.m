@@ -55,14 +55,14 @@
 
 %% Hard-coded parameters
 % Flags
-chooseBestParamsFlag = true;
-plotIndividualFlag = true;
-rankNeuronsFlag = true;
-plotHistogramsFlag = true;
-plotBarPlotFlag = true;
-plotParamViolinsFlag = true;
+chooseBestParamsFlag = false; %true;
+plotIndividualFlag = false; %true;
+rankNeuronsFlag = false; %true;
+plotHistogramsFlag = false; %true;
+plotBarPlotFlag = false; %true;
+plotParamViolinsFlag = false; %true;
 plotErrorParamComparisonFlag = true;
-archiveScriptsFlag = true;
+archiveScriptsFlag = false; %true;
 
 plotErrorHistoryFlag = false; %true;
 plotErrorComparisonFlag = false; %true;
@@ -217,8 +217,15 @@ cellNameStr = 'cellName';
 % sweepWeights = [];              % uses m3ha_decide_on_sweep_weights.m
 % errorWeights = [1; 6; 5; 1; 1];
 
+% outFolder = '20200203_ranked_manual_singleneuronfitting0-102';
+% iterSetStr = 'manual_singleneuronfitting0-102';
+% rankNumsToPlot = 1:11;
+% dataMode = 2;
+% attemptNumberAcrossTrials = 3;
+
 outFolder = '20200203_ranked_manual_singleneuronfitting0-102';
-rankNumsToPlot = 1:11;
+% rankNumsToPlot = [1, 2, 4, 7, 10];
+rankNumsToPlot = [1, 2, 5:10, 12:25, 29, 33];
 iterSetStr = 'manual_singleneuronfitting0-102';
 dataMode = 2; %3;                       % data mode:
                                     %   0 - all data
