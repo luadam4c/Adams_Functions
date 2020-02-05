@@ -351,13 +351,13 @@ if isempty(colorMap)
                 colorMap = reshape(repmat(reshape(colorMap, 1, []), ...
                                     nColumns, 1), nSlots, 3);
             end
+
+            % Make sure the color map matches the number of files
+            colorMap = decide_on_colormap(colorMap, nFiles);
         otherwise
             % Use default
     end
 end
-
-% Make sure the color map matches the number of files
-colorMap = decide_on_colormap(colorMap, nFiles);
 
 % Decide on the plot line width
 if isempty(lineWidth)
@@ -499,6 +499,7 @@ function handles = m3ha_plot_individual_traces(tVecs, vVecsSim, vVecsRec, ...
 
 % TODO
 plotSwpWeightsFlag = false;
+visibleStatus = 'on';
 
 %% Preparation
 % Decide on figure title
@@ -531,8 +532,7 @@ figExpansion = [nColumns / 3, nRows / 4];
 
 % Plot the individual traces
 figHandle = set_figure_properties('Visible', visibleStatus, ...
-                'AlwaysNew', true, 'FigExpansion', figExpansion, ...
-                'Name', 'All traces');
+                'FigExpansion', figExpansion, 'Name', 'All traces');
 
 % Plot the individual traces
 handles = plot_fitted_traces(tVecs, vVecsSim, 'ToAnnotate', false, ...
@@ -581,8 +581,7 @@ figExpansion = [nColumns / 3, nRows / 4];
 
 % Plot the individual traces
 figHandle = set_figure_properties('Visible', visibleStatus, ...
-                'AlwaysNew', true, 'FigExpansion', figExpansion, ...
-                'Name', 'All traces');
+                'FigExpansion', figExpansion, 'Name', 'All traces');
 
 % Plot the individual traces
 handles = plot_fitted_traces(tVecs, residuals, 'ToAnnotate', false, ...
@@ -1110,6 +1109,10 @@ figNameM2h = fullfile(outFolder, [expStr, '_simulated_m2h.png']);
 save_all_figtypes(figM2h, figNameM2h, figTypes);
 handles.handlesOverlapped = handlesOverlapped;
 handles.handlesM2h = handlesM2h;
+
+figHandle = set_figure_properties('Visible', visibleStatus, ...
+                'AlwaysNew', true, 'FigExpansion', figExpansion, ...
+                'Name', 'All traces');
 
 %}
 

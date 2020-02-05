@@ -62,11 +62,11 @@ iP.FunctionName = mfilename;
 addOptional(iP, 'geomParams', geomParamsDefault, ...
     @(x) validateattributes(x, {'struct'}, {'scalar'}));
 addOptional(iP, 'radiusSoma', radiusSomaDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative'}));
 addOptional(iP, 'radiusDend', radiusDendDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative'}));
 addOptional(iP, 'lengthDend', lengthDendDefault, ...
-    @(x) validateattributes(x, {'numeric'}, {'scalar', 'nonnegative'}));
+    @(x) validateattributes(x, {'numeric'}, {'nonnegative'}));
 
 % Read from the Input Parser
 parse(iP, varargin{:});

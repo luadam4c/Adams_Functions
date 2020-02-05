@@ -16,6 +16,7 @@
 % Flags
 plotIpscComparison = true;
 plot2CellExamples = true;
+combine2CellPopulation = false;
 plot2CellPopulation = false; %true;
 
 archiveScriptsFlag = false; %true;
@@ -70,6 +71,11 @@ if plot2CellExamples
                                         exampleFigWidth, exampleFigHeight), ...
                 exampleCellNames, exampleDirs);
     end
+end
+
+%% Combines quantification over all 2-cell networks
+if combine2CellPopulation
+    % TODO
 end
 
 %% Plots quantification over all 2-cell networks

@@ -34,17 +34,17 @@
 %% Hard-coded parameters
 % Flags
 updateScripts = false; %true;
-plotGeometry = false; %true;
-simulateCpr = true;
-plotCpr = true;
-simulateIpscr = true;
-plotIpscr = true;
-plotOverlapped = true;
+simulateCpr = false; %true;
+plotCpr = false; %true;
+simulateIpscr = false; %true;
+plotIpscr = false; %true;
+plotOverlapped = false; %true;
 archiveScriptsFlag = true;
 
 % Flags (ALREADY DONE!)
-estimatePassiveParams = false; %true;
-plotCurveFit = false; %true;
+estimatePassiveParams = true;
+plotCurveFit = true;
+plotGeometry = true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -137,7 +137,7 @@ swpInfo = m3ha_load_sweep_info('Directory', figure02Dir);
 %% Perform curve fitting to estimate passive parameters
 if estimatePassiveParams
     cellfun(@(x) estimate_passive_params_for_one_cell(x, ...
-                    swpInfo, dataMode, matFilesDir, ...
+                    swpInfo, dataModeCpr, matFilesDir, ...
                     initialSlopesPath, figure03Dir, passiveLogSuffix), ...
             exampleCellNames);
 end
