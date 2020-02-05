@@ -77,8 +77,8 @@ medianSize = 6;                 % size of median circle in points
 %% Default values for optional arguments
 rowsToPlotDefault = 'all';
 outFolderDefault = '';          % set later
-figWidthDefault = 5;
-figHeightDefault = 3.4;
+figWidthDefault = 3.4; %5;
+figHeightDefault = 3; %3.4;
 figTypesDefault = {'png', 'epsc2'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

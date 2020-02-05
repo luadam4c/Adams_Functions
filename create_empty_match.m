@@ -32,6 +32,7 @@ function empty = create_empty_match (array, varargin)
 % 2019-08-21 Defaults duration arrays to NaN minutes
 % 2019-08-21 Defaults graphics handle arrays to gobjects
 % 2019-10-03 Now creates a cell array of empty strings to match cellstrs
+% 2020-02-04 Fixed the case for structures
 % 
 
 %% Hard-coded parameters
@@ -88,7 +89,7 @@ elseif iscellstr(array)
 elseif iscell(array)
     empty = cell(nRows, nColumns);
 elseif isstruct(array)
-    empty = struct(nRows, nColumns);
+    empty = repmat(array([]), [nRows, nColumns]);
 elseif isdatetime(array)
     empty = NaT(nRows, nColumns);
 elseif isgraphics(array)

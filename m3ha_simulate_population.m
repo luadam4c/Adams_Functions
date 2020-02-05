@@ -61,11 +61,11 @@
 % Flags
 chooseBestNeuronsFlag = false; %true;
 simulateFlag = false; %true;
-combineFeatureTablesFlag = true;
-computeOpenProbabilityFlag = true;
-plotOpenProbabilityFlag = true;
-plotViolinPlotsFlag = true;
-plotBarPlotsFlag = true;
+combineFeatureTablesFlag = false; %true;
+computeOpenProbabilityFlag = false; %true;
+plotOpenProbabilityFlag = false; %true;
+plotViolinPlotsFlag = false; %true;
+plotBarPlotsFlag = true;        % Use MATLAB 2018a for this!
 archiveScriptsFlag = false; %true;
 
 % Simulation parameters
@@ -78,12 +78,18 @@ dataMode = 1; %0;           % data mode:
                         %   2 - same g incr but exclude 
                         %       cell-pharm-g_incr sets 
                         %       containing problematic sweeps
-attemptNumber = 3;      %   1 - Use 4 traces @ 200% gIncr for this data mode
-                        %   2 - Use all traces @ 200% gIncr for this data mode
+attemptNumber = 3;      %   1 - Use 4 traces @ 200% gIncr 
+                        %           for this data mode
+                        %   2 - Use all traces @ 200% gIncr 
+                        %           for this data mode
                         %   3 - Use all traces for this data mode
                         %   4 - Use 1 trace for each pharm x gIncr 
                         %           for this data mode
-                        %   5 - Use 4 traces @ 400% gIncr for this data mode         
+                        %   5 - Use 4 traces @ 400% gIncr 
+                        %       for this data mode
+                        %   6 - Same as 4 but prioritize least vHold
+                        %   7 - Same as 1 but prioritize least vHold
+                        %   8 - Same as 5 but prioritize least vHold
 
 % Directory names
 parentDirectoryTemp = '/media/adamX/m3ha';
@@ -164,11 +170,13 @@ openProbFigHeight = 3;      % (cm)
 % outFolder = '20200203_population_rank1-2,5-10,12-25,29,33_dataMode1_attemptNumber3';
 % rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
 % rankNumsToUse = [1, 2, 5:10, 12:25, 29, 33];
+% outFolder = '20200204_population_rank1-2,5-10,12-25,29,33_dataMode1_attemptNumber3_vtraub-65';
+% rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
+% rankNumsToUse = [1, 2, 5:10, 12:25, 29, 33];
 
-outFolder = '20200204_population_rank1-2,5-10,12-25,29,33_dataMode1_attemptNumber3_vtraub-65';
+outFolder = '20200204_population_rank1-2,4-10,12-25,29,33_dataMode1_attemptNumber3_vtraub-65';
 figTypes = {'png', 'epsc2'};
 rankDirName = '20200203_ranked_manual_singleneuronfitting0-102';
-% rankNumsToUse = [1, 2, 5:10, 12:25, 29, 33];
 rankNumsToUse = [1, 2, 4:10, 12:25, 29, 33];
 ipscrWindow = [2000, 4800];     % only simulate up to that time
 fitWindowIpscr = [3000, 4800];  % the time window (ms) where all 
@@ -291,10 +299,26 @@ end
 %% Simulate
 if simulateFlag
     % Decide on candidate parameters files
-    [~, paramPaths] = all_files('Directory', outFolder, 'Suffix', 'params');
+    [~, paramPaths] = all_files('Directory', outFolder, 'Suffix', 'params', ...
+                                'Recursive', false);
+
+    % Remove the ltsParams files
+    paramPaths = paramPaths(~contains(paramPaths, 'ltsParams'));
 
     % Extract the cell names
     cellNames = m3ha_extract_cell_name(paramPaths);
+
+    % Find all simulated LTS stats spreadsheets
+    [~, simLtsParamPaths] = ...
+        cellfun(@(x) find_matching_files(x, 'Directory', outFolder, ...
+                        'Suffix', simLtsParamsSuffix, 'Extension', 'csv', ...
+                        'Recursive', false, 'ReturnEmpty', true), ...
+                cellNames, 'UniformOutput', false);
+
+    % Don't simulate again if LTS stats spreadsheets already exist
+    alreadyDone = cellfun(@isfile, simLtsParamPaths);
+    paramPaths = paramPaths(~alreadyDone);
+    cellNames = cellNames(~alreadyDone);
 
     % Display message
     fprintf('All sweeps from the following cells will be simulated: \n');
@@ -324,9 +348,10 @@ if combineFeatureTablesFlag
     fprintf('Combining LTS & burst statistics ... \n');
 
     % Find all simulated LTS stats spreadsheets
+    %   Note: Ignore stuff in backup folders
     [~, simLtsParamPaths] = ...
         all_files('Directory', outFolder, 'Suffix', simLtsParamsSuffix, ...
-                    'Extension', 'csv');
+                    'Extension', 'csv', 'Recursive', false);
 
     % Combine the spreadsheets
     simSwpInfo = vertcat_spreadsheets(simLtsParamPaths);

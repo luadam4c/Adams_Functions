@@ -61,7 +61,7 @@ rankNeuronsFlag = false; %true;
 plotHistogramsFlag = false; %true;
 plotBarPlotFlag = false; %true;
 plotParamViolinsFlag = false; %true;
-plotErrorParamComparisonFlag = true;
+plotErrorParamComparisonFlag = false; %true;
 archiveScriptsFlag = false; %true;
 
 plotErrorHistoryFlag = false; %true;
@@ -226,7 +226,9 @@ cellNameStr = 'cellName';
 outFolder = '20200203_ranked_manual_singleneuronfitting0-102';
 % rankNumsToPlot = [1, 2, 4, 7, 10];
 % rankNumsToPlot = [1, 2, 5:10, 12:25, 29, 33];
-rankNumsToUse = [1, 2, 4:10, 12:25, 29, 33];
+% rankNumsToPlot = [1, 2, 4:10, 12:25, 29, 33];
+% rankNumsToPlot = [2, 7, 10, 12, 20];        % well-fitted, good response, not from D101310
+rankNumsToPlot = [7, 10, 22, 33];       % well-fitted, from curve-fitted geometry
 iterSetStr = 'manual_singleneuronfitting0-102';
 dataMode = 2; %3;                       % data mode:
                                     %   0 - all data

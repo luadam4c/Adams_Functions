@@ -20,9 +20,9 @@
 
 %% Hard-coded parameters
 % Flags
-plotViolinPlotsFlag = true;
-plotBarPlotsFlag = true;
-archiveScriptsFlag = true;
+plotViolinPlotsFlag = false; %true;
+plotBarPlotsFlag = false; %true;        % Use MATLAB 2018a for this!
+archiveScriptsFlag = false; %true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -85,13 +85,14 @@ conditionLabel3D = 'pharm_1-4_gincr_all_rec';
 pCond3D = num2cell(pharmAll);
 gCond3D = num2cell(gIncrAll);
 
-% violinFigHeight = 5;            % in centimeters
-% violinFigWidth = 3.4;           % in centimeters
-% violinRelativeBandWidth = 0.1;  % bandwidth relative to data range
-% medianColor = rgb('GreenYellow');     % color of median circle
-% medianSize = 6;                % size of median circle in points
-% bar3FigHeight = 6;              % in centimeters
-% bar3FigWidth = 6;               % in centimeters
+% Note: Use the default in m3ha_plot_violin.m and m3ha_plot_bar3.m
+% violinFigHeight = 3;            % in centimeters
+% violinFigWidth = 3.4;             % in centimeters
+% violinRelativeBandWidth = 0.1;    % bandwidth relative to data range
+% medianColor = rgb('GreenYellow'); % color of median circle
+% medianSize = 6;                   % size of median circle in points
+% bar3FigHeight = 4.3;              % in centimeters
+% bar3FigWidth = 4.3;               % in centimeters
 
 figTypes = {'png', 'epsc2'};
 

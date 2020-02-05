@@ -74,9 +74,9 @@ function handles = m3ha_plot_bar3 (statsPath, varargin)
 %% Default values for optional arguments
 rowsToPlotDefault = 'all';
 outFolderDefault = '';          % set later
-figWidthDefault = 6;
-figHeightDefault = 6;
-figTypesDefault = {'png', 'epsc2'};
+figWidthDefault = 4.3; %6;
+figHeightDefault = 4.3; %6;
+figTypesDefault = {'png', 'epsc'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

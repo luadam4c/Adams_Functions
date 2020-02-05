@@ -35,12 +35,12 @@
 % Flags
 updateScripts = false; %true;
 plotGeometry = false; %true;
-simulateCpr = false; %true;
-plotCpr = false; %true;
-simulateIpscr = false; %true;
-plotIpscr = false; %true;
-plotOverlapped = false; %true;
-archiveScriptsFlag = false; %true;
+simulateCpr = true;
+plotCpr = true;
+simulateIpscr = true;
+plotIpscr = true;
+plotOverlapped = true;
+archiveScriptsFlag = true;
 
 % Flags (ALREADY DONE!)
 estimatePassiveParams = false; %true;
@@ -62,8 +62,9 @@ passiveLogSuffix = 'dclampPassiveLog';
 paramFileSuffix = 'params';
 
 % Analysis settings
-exampleCellNames = {'D101310'; 'C101210'};
+% exampleCellNames = {'D101310'; 'C101210'};
 % exampleCellNames = {'C101210'};
+exampleCellNames = {'D101310'; 'G101310'; 'K092810'; 'E101210'; 'I101210'};
 
 % Simulation settings
 dataModeCpr = 1;                    % data mode for current pulse response
@@ -78,16 +79,19 @@ rowmodeIpscr = 1;                   % row mode for IPSC response
                                     %   1 - each row is a pharm condition
                                     %   2 - each row is a pharm, g incr pair
 attemptNumberCpr = 3;               % attempt number for current pulse response
-attemptNumberIpscr = 4;             % attempt number for IPSC response
+attemptNumberIpscr = 6;             % attempt number for IPSC response
                                     %   1 - Use 4 traces @ 200% gIncr 
                                     %           for this data mode
                                     %   2 - Use all traces @ 200% gIncr 
                                     %           for this data mode
                                     %   3 - Use all traces for this data mode
                                     %   4 - Use 1 trace for each pharm x gIncr 
-                                    %           pair for this data mode
+                                    %           for this data mode
                                     %   5 - Use 4 traces @ 400% gIncr 
                                     %       for this data mode
+                                    %   6 - Same as 4 but prioritize least vHold
+                                    %   7 - Same as 1 but prioritize least vHold
+                                    %   8 - Same as 5 but prioritize least vHold
 
 % Plot settings
 somaColor = rgb('DarkGreen');
@@ -181,6 +185,11 @@ if plotGeometry || simulateCpr || simulateIpscr || ...
                 exampleLabelsCpr, exampleLabelsIpscr);
     check_dir(outFoldersCpr);
     check_dir(outFoldersIpscr);
+end
+
+%% Change directory if simulating
+if simulateCpr || simulateIpscr
+    cd(figure03Dir);
 end
 
 %% Plot geometry
