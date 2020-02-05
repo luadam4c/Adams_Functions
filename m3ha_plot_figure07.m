@@ -30,8 +30,8 @@ plot2CellBars = false; %true;
 
 plot200CellExamples = false; %true;
 
-combine200CellPopulation = true;
-plot200CellViolins = false; %true;
+combine200CellPopulation = false; %true;
+plot200CellViolins = true;
 
 archiveScriptsFlag = false; %true;
 
@@ -87,7 +87,8 @@ candCellSheetPath = fullfile(networkDirectory, candCellSheetName);
 rankStr = ['rank', create_label_from_sequence(rankNumsToUse)];
 
 % Create a condition label
-conditionLabel2D = [popIterName2Cell, '_', rankStr, '_gIncr', num2str(gIncr)];
+conditionLabel2Cell = [popIterName2Cell, '_', rankStr, '_gIncr', num2str(gIncr)];
+conditionLabel200Cell = [popIterName200Cell, '_', rankStr, '_gIncr', num2str(gIncr)];
 
 % Create a population data spreadsheet name
 popDataSheetName2Cell = [popIterName2Cell, '_', rankStr, '_', ...
@@ -137,31 +138,60 @@ if combine200CellPopulation
                             rankNumsToUse, popDataPath200Cell);
 end
 
-%% Plots oscillation duration and period over pharm condition 
+%% Plots oscillation measures over pharm condition 
 %       across all 2-cell networks
 if plot2CellViolins
     % Construct stats table path
-    stats2dPath = fullfile(figure07Dir, strcat(conditionLabel2D, '_stats.mat'));
+    stats2dPath2Cell = ...
+        fullfile(figure07Dir, strcat(conditionLabel2Cell, '_stats.mat'));
 
     % Compute statistics if not done already
-    if ~isfile(stats2dPath)
+    if ~isfile(stats2dPath2Cell)
         % Compute statistics for all features
         disp('Computing statistics for violin plots ...');
         statsTable = m3ha_network_compute_statistics(popDataPath2Cell, gIncr, ...
                                             measuresOfInterest, measureTitles);
 
         % Generate labels
-        conditionLabel = conditionLabel2D;
+        conditionLabel = conditionLabel2Cell;
         pharmLabels = pharmLabelsShort;
 
         % Save stats table
-        save(stats2dPath, 'statsTable', 'pharmLabels', ...
+        save(stats2dPath2Cell, 'statsTable', 'pharmLabels', ...
                             'conditionLabel', '-v7.3');
     end
 
     % Plot violin plots
-    m3ha_plot_violin(stats2dPath, 'RowsToPlot', measuresOfInterest, ...
+    m3ha_plot_violin(stats2dPath2Cell, 'RowsToPlot', measuresOfInterest, ...
                     'OutFolder', figure07Dir);
+end
+
+%% Plots oscillation measures over pharm condition 
+%       across all 200-cell networks
+if plot200CellViolins
+    % Construct stats table path
+    stats2dPath200Cell = ...
+        fullfile(figure08Dir, strcat(conditionLabel200Cell, '_stats.mat'));
+
+    % Compute statistics if not done already
+    if ~isfile(stats2dPath200Cell)
+        % Compute statistics for all features
+        disp('Computing statistics for violin plots ...');
+        statsTable = m3ha_network_compute_statistics(popDataPath200Cell, gIncr, ...
+                                            measuresOfInterest, measureTitles);
+
+        % Generate labels
+        conditionLabel = conditionLabel200Cell;
+        pharmLabels = pharmLabelsShort;
+
+        % Save stats table
+        save(stats2dPath200Cell, 'statsTable', 'pharmLabels', ...
+                            'conditionLabel', '-v7.3');
+    end
+
+    % Plot violin plots
+    m3ha_plot_violin(stats2dPath200Cell, 'RowsToPlot', measuresOfInterest, ...
+                    'OutFolder', figure08Dir);
 end
 
 %% Plots percentage of 2-cell networks having oscillations over pharm condition
