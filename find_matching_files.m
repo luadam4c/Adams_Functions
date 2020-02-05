@@ -62,6 +62,7 @@ function varargout = find_matching_files (fileStrs, varargin)
 %       cd/m3ha_plot_figure03.m
 %       cd/m3ha_plot_figure04.m
 %       cd/m3ha_plot_figure05.m
+%       cd/m3ha_plot_figure07.m
 %       cd/m3ha_simulate_population.m
 %       cd/plot_traces_spike2_mat.m
 

@@ -17,6 +17,10 @@ function handles = m3ha_plot_violin (statsPath, varargin)
 %       statsPath  - path to a .mat file containing the variables:
 %                       statsTable - statistics table 
 %                                       returned by m3ha_compute_statistics.m
+%                           must have these columns:
+%                               measureTitle
+%                               measureStr
+%                               allValues
 %                       pharmLabels
 %                       conditionLabel
 %                   must be a string scalar or a character vector
@@ -60,6 +64,7 @@ function handles = m3ha_plot_violin (statsPath, varargin)
 % Used by:
 %       cd/m3ha_plot_figure02.m
 %       cd/m3ha_plot_figure04.m
+%       cd/m3ha_plot_figure07.m
 %       cd/m3ha_simulate_population.m
 
 % File History:

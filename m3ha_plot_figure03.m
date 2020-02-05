@@ -39,12 +39,12 @@ plotCpr = false; %true;
 simulateIpscr = false; %true;
 plotIpscr = false; %true;
 plotOverlapped = false; %true;
-archiveScriptsFlag = true;
+archiveScriptsFlag = false; %true;
 
 % Flags (ALREADY DONE!)
-estimatePassiveParams = true;
-plotCurveFit = true;
-plotGeometry = true;
+estimatePassiveParams = false; %true;
+plotCurveFit = false; %true;
+plotGeometry = false; %true;
 
 % Directories
 parentDirectory = fullfile('/media', 'adamX', 'm3ha');
@@ -62,6 +62,8 @@ passiveLogSuffix = 'dclampPassiveLog';
 paramFileSuffix = 'params';
 
 % Analysis settings
+
+% Should be consistent with m3ha_plot_figure02.m & m3ha_plot_figure07.m
 % exampleCellNames = {'D101310'; 'C101210'};
 % exampleCellNames = {'C101210'};
 exampleCellNames = {'D101310'; 'G101310'; 'K092810'; 'E101210'; 'I101210'};

@@ -44,13 +44,14 @@ function arrayNew = match_row_count (arrayOld, nRowsNew, varargin)
 %       cd/match_format_vector_sets.m
 %       cd/m3ha_compute_statistics.m
 %       cd/m3ha_neuron_create_simulation_params.m
-%       cd/plot_fitted_traces.m
+%       cd/m3ha_plot_figure07.m
 %       cd/match_column_count.m
 %       cd/match_format_vectors.m
 %       cd/match_time_info.m
 %       cd/parse_current_family.m
 %       cd/parse_ipsc.m
 %       cd/parse_spike2_mat.m
+%       cd/plot_fitted_traces.m
 %       cd/plot_struct.m
 %       cd/xolotl_add_current_injection.m
 %       cd/xolotl_add_voltage_clamp.m
